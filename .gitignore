@@ -1,0 +1,53 @@
+# User-specific config overrides (e.g. config_cerebras.yaml with API keys)
+config_*.yaml
+!config.yaml
+
+# User data
+users/
+logs/
+voices/
+
+# Elvira session output (generated, not tracked)
+elvira/elvira_session.json
+elvira/elvira_session_full.json
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+*.egg
+.venv/
+venv/
+
+# Tool caches
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# NiceGUI
+.nicegui/
+
+# TLS auto-generated certs
+cert.pem
+key.pem
+
+# Temp audio files
+*.tmp.mp3
+*.tmp.wav
+*.tmp.ogg
+.storage_secret

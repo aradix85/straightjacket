@@ -1,0 +1,27 @@
+# Delve setting package
+# Dungeon-crawling expansion for Ironsworn Classic.
+# Requires Classic as base setting.
+
+id: delve
+title: "Ironsworn: Delve"
+datasworn_id: delve
+parent: classic  # Expansion — inherits Classic's vocabulary and constraints
+description: >
+  Beneath the Ironlands lie ancient sites: ruins, caverns, tangled
+  depths. Delve adds site exploration, threats that lurk in the dark,
+  and the denizens that guard forgotten places.
+
+oracle_paths:
+  action_theme: []  # Uses Classic's action/theme
+  descriptor_focus: []
+  names: []  # Uses Classic's names
+  backstory: ""
+  factions: ""
+
+vocabulary:
+  substitutions: {}  # Inherits from Classic
+
+genre_constraints:
+  forbidden_terms: []  # Inherits from Classic
+  forbidden_concepts: []
+  genre_test: ""  # Inherits from Classic

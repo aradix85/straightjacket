@@ -1,0 +1,303 @@
+# Straightjacket engine mechanics
+# Game rules, NPC limits, pacing, damage tables.
+# Edit here to change how the game plays — no code changes needed.
+
+# ── NPC system ────────────────────────────────────────────────
+npc:
+  max_active: 12              # Soft limit; excess NPCs get retired
+  max_memory_entries: 25      # Per NPC (total: observations + reflections)
+  max_observations: 15        # Max observation memories per NPC
+  max_reflections: 8          # Max reflection memories per NPC
+  activation_threshold: 0.7   # Minimum TF-IDF score for full context in prompt
+  mention_threshold: 0.3      # Minimum score for name-only mention
+  max_activated: 3            # Max NPCs with full context per turn
+  reflection_threshold: 30    # Importance accumulator threshold for reflection
+  memory_recency_decay: 0.92  # Exponential decay factor for memory recency
+
+# ── Chaos factor ──────────────────────────────────────────────
+chaos:
+  min: 3
+  max: 9
+  start: 5
+  interrupt_types:
+    - npc_unexpected
+    - threat_escalation
+    - twist
+    - discovery
+    - environment_shift
+    - remote_event
+    - positive_windfall
+    - callback
+    - dilemma
+    - ticking_clock
+
+# ── Pacing ────────────────────────────────────────────────────
+pacing:
+  director_interval: 3        # Call director every N scenes (when no trigger)
+  max_narration_history: 5    # Recent narrations kept for prompt context
+  max_session_log: 50         # Scene log entries kept
+  window_size: 5              # Pacing analysis window
+  intense_threshold: 3        # Consecutive intense scenes before breather hint
+  calm_threshold: 2           # Consecutive calm scenes before action hint
+  autonomous_clock_tick_chance: 0.20  # Per-scene chance each threat clock ticks
+  weak_hit_clock_tick_chance: 0.50   # Chance threat clock ticks on WEAK_HIT at risky position
+
+# ── Story structure ───────────────────────────────────────────
+story:
+  kishotenketsu_probability:
+    melancholic: 0.70
+    cozy: 0.70
+    romantic: 0.70
+    cheerful_funny: 0.70
+    slice_of_life_90s: 0.70
+    fairy_tale: 0.70
+    tragicomic: 0.40
+    serious_balanced: 0.40
+    grounded_drama: 0.40
+    absurd_grotesque: 0.40
+    dark_gritty: 0.15
+    epic_heroic: 0.15
+    slow_burn_horror: 0.15
+    tarantino: 0.15
+    pulp: 0.15
+    slapstick: 0.15
+  kishotenketsu_default: 0.50
+
+# ── Character stats ───────────────────────────────────────────
+stats:
+  target_sum: 7               # Character stats must total this
+  min: 0                      # Minimum per stat
+  max: 3                      # Maximum per stat
+  names:                      # Stats the Brain can assign to a move
+    - edge
+    - heart
+    - iron
+    - shadow
+    - wits
+    - none
+
+# ── Resource tracks ───────────────────────────────────────────
+# Caps and starting values for health, spirit, supply.
+resources:
+  health_max: 5
+  spirit_max: 5
+  supply_max: 5
+  health_start: 5
+  spirit_start: 5
+  supply_start: 5
+
+# ── Momentum ──────────────────────────────────────────────────
+momentum:
+  floor: -6                   # Lowest momentum can go
+  max: 10                     # Highest momentum can go
+  start: 2                    # Starting momentum (also reset value per chapter)
+  gain:
+    weak_hit: 1
+    strong_hit:
+      standard: 2
+      great: 3
+  loss:
+    risky: 2
+    desperate: 3
+
+# ── NPC bonds ─────────────────────────────────────────────────
+bonds:
+  max: 4                      # Default bond_max for new NPCs
+  start: 0                    # Starting bond value
+
+# ── NPC activation scoring ───────────────────────────────────
+# Weights for the TF-IDF activation system that decides which NPCs
+# get full context in the narrator prompt.
+activation_scores:
+  target: 1.0                 # Brain-identified target NPC
+  name_match: 0.8             # Full name found in scan text
+  name_part: 0.6              # Name part (3+ chars) found
+  alias_match: 0.7            # Alias found in scan text
+  location_match: 0.3         # NPC description mentions current location
+  recent_interaction: 0.2     # NPC had interaction within last 2 scenes
+  max_recursive: 1            # Max NPCs activated via secret/agenda references
+
+# ── Damage tables ─────────────────────────────────────────────
+# Position-based damage per move category on MISS.
+# "controlled", "risky", "desperate" = position levels.
+damage:
+  miss:
+    endure:                   # endure_harm / endure_stress
+      controlled: 1
+      risky: 1
+      desperate: 2
+    combat:                   # clash / strike
+      controlled: 1
+      risky: 2
+      desperate: 3
+    social:
+      spirit:                 # compel / make_connection / test_bond
+        controlled: 1
+        risky: 1
+        desperate: 2
+      bond: 1                 # bond loss on social miss (flat)
+    other:
+      supply: 1               # supply loss on generic miss (flat)
+      health:                 # additional health loss on generic miss
+        controlled: 0
+        risky: 1
+        desperate: 2
+    clock_ticks:              # threat clock advancement on miss
+      controlled: 0
+      risky: 1
+      desperate: 2
+
+# ── Recovery (WEAK_HIT / STRONG_HIT on recovery moves) ───────
+recovery:
+  weak_hit: 1                 # heal/restore amount on weak hit
+  strong_hit:
+    standard: 1
+    great: 2
+
+# ── Location tracking ────────────────────────────────────────
+location:
+  history_size: 5             # How many previous locations to keep
+
+# ── Narrative direction ──────────────────────────────────────
+# Maps game state to writing instructions for the narrator.
+# Thresholds determine intensity level; result_map sets tempo and perspective.
+narrative_direction:
+  intensity:
+    critical_below: 1         # health OR spirit at this = critical
+    high_below: 3             # health OR spirit below this = high
+    moderate_below: 4         # health OR spirit below this = moderate
+    # Everything else = low
+  result_map:
+    MISS:
+      tempo: slow
+      perspective: sensory_loss
+    WEAK_HIT:
+      tempo: moderate
+      perspective: action_detail
+    STRONG_HIT:
+      tempo: brisk
+      perspective: action_detail
+    dialog:
+      tempo: measured
+      perspective: dialogue_rhythm
+    _default:
+      tempo: moderate
+      perspective: action_detail
+
+# ── Move categories ──────────────────────────────────────────
+# Which moves use which damage table in apply_consequences.
+# Add a new move here to route it to the correct damage logic.
+move_categories:
+  combat:
+    - clash
+    - strike
+  social:
+    - compel
+    - make_connection
+    - test_bond
+  endure:
+    - endure_harm
+    - endure_stress
+  recovery:
+    - endure_harm
+    - endure_stress
+    - resupply
+  bond_on_weak_hit:
+    - make_connection
+  bond_on_strong_hit:
+    - make_connection
+    - compel
+    - test_bond
+  disposition_shift_on_strong_hit:
+    - make_connection
+    - test_bond
+
+# ── Disposition shifts ───────────────────────────────────────
+# Progression ladder on STRONG_HIT social moves.
+disposition_shifts:
+  hostile: distrustful
+  distrustful: neutral
+  neutral: friendly
+  friendly: loyal
+
+# ── Disposition to seed emotion ──────────────────────────────
+# Maps canonical dispositions to emotional_weight for auto-seeded NPC memories.
+disposition_to_seed_emotion:
+  hostile: hostile
+  distrustful: suspicious
+  neutral: neutral
+  friendly: curious
+  loyal: trusting
+
+# ── Brain move classification ─────────────────────────────────
+# The Brain classifies player input into one of these moves.
+# Single source of truth for BRAIN_OUTPUT_SCHEMA and brain_parser prompt.
+# stats: which character stats can be used for this move.
+move_stats:
+  face_danger: edge|heart|iron|shadow|wits
+  compel: heart|iron|shadow
+  gather_information: wits
+  secure_advantage: edge|heart|iron|shadow|wits
+  clash: iron|edge
+  strike: iron|edge
+  endure_harm: iron
+  endure_stress: heart
+  make_connection: heart
+  test_bond: heart
+  resupply: wits
+  world_shaping: wits|heart|shadow
+  dialog: none
+
+# Flat list for reference. The engine derives move enums from move_stats keys
+# at runtime — this list is NOT read by code and exists only for human reference.
+moves:
+  - face_danger
+  - compel
+  - gather_information
+  - secure_advantage
+  - clash
+  - strike
+  - endure_harm
+  - endure_stress
+  - make_connection
+  - test_bond
+  - resupply
+  - world_shaping
+  - dialog
+
+
+
+# ── Creativity seeds ─────────────────────────────────────────
+# Random words used as loose inspiration for narrator opening scenes.
+# Prevents generic defaults across sessions.
+creativity_seeds:
+  - amber
+  - coyote
+  - furnace
+  - silk
+  - glacier
+  - compass
+  - terracotta
+  - jasmine
+  - anvil
+  - cobalt
+  - driftwood
+  - saffron
+  - limestone
+  - falcon
+  - obsidian
+  - cedar
+  - mercury
+  - lantern
+  - basalt
+  - thistle
+  - copper
+  - monsoon
+  - flint
+  - orchid
+  - pewter
+  - canyon
+  - quartz
+  - ember
+  - mahogany
+  - coral

@@ -1,0 +1,36 @@
+# Ironsworn Classic setting package
+# Dark fantasy. Low magic, harsh wilderness, iron vows.
+
+id: classic
+title: "Ironsworn"
+datasworn_id: classic
+description: >
+  The Ironlands are a rough, sparsely settled frontier. Communities
+  cling to survival against harsh weather, dangerous creatures, and
+  human threats. Iron vows bind you to your word. Magic is rare,
+  feared, and costly.
+
+oracle_paths:
+  action_theme: ["action_and_theme/action", "action_and_theme/theme"]
+  descriptor_focus: []  # Classic does not have descriptor/focus
+  names: ["name/ironlander"]
+  backstory: ""  # Classic has no dedicated backstory oracle
+  factions: ""
+
+vocabulary:
+  substitutions:
+    village: "settlement — small, vulnerable, walled if lucky"
+    magic: "ritual — rare, feared, always costs something"
+    monster: "creature or horror — the wilds are not safe"
+
+genre_constraints:
+  forbidden_terms:
+    - "spaceship"
+    - "computer"
+    - "technology"
+    - "laser"
+    - "robot"
+  forbidden_concepts:
+    - "modern or futuristic technology"
+    - "high magic or easy spellcasting"
+  genre_test: "Could this exist in a dark, low-magic Iron Age frontier?"

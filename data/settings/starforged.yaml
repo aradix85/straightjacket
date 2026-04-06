@@ -1,0 +1,45 @@
+# Starforged setting package
+# Sci-fi frontier. Human-centric, scavenged future.
+
+id: starforged
+title: "Ironsworn: Starforged"
+datasworn_id: starforged
+description: >
+  The Forge is a vast, chaotic expanse of space. Humanity fled here
+  two generations ago. Settlements are scattered, resources scarce,
+  dangers constant. You are a sworn adventurer, bound to dangerous
+  quests in this perilous frontier.
+
+# Oracle paths differ per setting. These tell the loader where to
+# find character creation data in the Datasworn JSON.
+oracle_paths:
+  action_theme: ["core/action", "core/theme"]
+  descriptor_focus: ["core/descriptor", "core/focus"]
+  names: ["characters/name/given", "characters/name/family_name", "characters/name/callsign"]
+  backstory: "campaign_launch/backstory_prompts"
+  factions: "factions"
+
+# Vocabulary: how this world describes its concepts.
+# Substitutions feed into the narrator prompt as a <vocabulary> block.
+vocabulary:
+  substitutions:
+    spaceship: "starship — worn, patched, held together by stubbornness"
+    alien: "creature — strange biology, not sentient unless proven"
+    gun: "sidearm or kinetic weapon"
+    planet: "world — each one hostile in its own way"
+    city: "settlement — a few hundred people at most, never a metropolis"
+
+# Genre constraints for the validator.
+# Starforged is sci-fi but grounded — no magic, no fantasy races.
+genre_constraints:
+  forbidden_terms:
+    - "magic"
+    - "spell"
+    - "enchanted"
+    - "elven"
+    - "dwarven"
+    - "dragon"
+  forbidden_concepts:
+    - "fantasy races (elves, dwarves, orcs)"
+    - "magic systems or spellcasting"
+  genre_test: ""  # Sci-fi permits most things — no strict conceptual test

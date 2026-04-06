@@ -1,0 +1,29 @@
+# Sundered Isles setting package
+# Science-fantasy seafaring. Pirates, cursed waters, ancient ruins.
+
+id: sundered_isles
+title: "Sundered Isles"
+datasworn_id: sundered_isles
+description: >
+  Vast uncharted seas dotted with strange islands. Ancient ruins hold
+  forgotten power. Cursed waters swallow the unwary. You captain a
+  ship and crew, sworn to a life of discovery, piracy, or redemption
+  on these sundered seas.
+
+oracle_paths:
+  action_theme: ["core/action", "core/theme"]
+  descriptor_focus: ["core/descriptor", "core/focus"]
+  names: ["character/name/given_name", "character/name/family_name"]
+  backstory: ""  # Sundered Isles uses character/backstory if available
+  factions: "faction"
+
+vocabulary:
+  substitutions:
+    spaceship: "ship — wood, canvas, and iron on open water"
+    planet: "island — each one a world unto itself"
+    settlement: "port — trade, gossip, and trouble"
+
+genre_constraints:
+  forbidden_terms: []  # Science-fantasy permits most things
+  forbidden_concepts: []
+  genre_test: ""  # No strict genre test — cursed waters and ancient ruins are on-genre

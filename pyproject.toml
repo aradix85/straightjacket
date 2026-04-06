@@ -1,0 +1,43 @@
+[project]
+name = "straightjacket"
+version = "0.31.0"
+requires-python = ">=3.11"
+
+[tool.ruff]
+line-length = 120
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "W", "F", "B", "SIM", "UP"]
+ignore = [
+    "E501",   # line length — handled by formatter, not linter
+    "E402",   # module-level import not at top — app.py needs ensure_requirements() first
+    "F401",   # unused imports in __init__.py re-exports
+    "SIM108", # ternary — readability over conciseness in game logic
+    "SIM117", # nested with — NiceGUI UI nesting (card > row) reads better separated
+]
+per-file-ignores = {"src/straightjacket/engine/__init__.py" = ["F401"], "src/straightjacket/engine/ai/__init__.py" = ["F401"], "src/straightjacket/engine/npc/__init__.py" = ["F401"], "src/straightjacket/engine/game/__init__.py" = ["F401"]}
+
+[tool.mypy]
+python_version = "3.11"
+warn_return_any = false
+warn_unused_configs = true
+disallow_untyped_defs = false
+check_untyped_defs = true
+ignore_missing_imports = true
+exclude = ["tests/", "data/"]
+
+[[tool.mypy.overrides]]
+module = [
+    "straightjacket.engine.config_loader",
+    "straightjacket.engine.engine_loader",
+    "straightjacket.engine.emotions_loader",
+    "straightjacket.engine.prompt_loader",
+    "straightjacket.engine.datasworn.*",
+]
+disable_error_code = ["no-any-return", "attr-defined"]
+
+[[tool.mypy.overrides]]
+# Protocol method with ... body — mypy can't prove the return type
+module = "straightjacket.engine.ai.provider_base"
+disable_error_code = ["return"]

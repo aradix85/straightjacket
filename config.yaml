@@ -1,0 +1,96 @@
+# Straightjacket configuration
+# General settings — API, language, UI preferences.
+# For game mechanics, see engine.yaml.
+# For AI prompts, see prompts.yaml.
+
+# ── Server ────────────────────────────────────────────────────
+server:
+  api_key: ""
+  invite_code: ""
+  enable_https: false
+  ssl_certfile: ""
+  ssl_keyfile: ""
+  storage_secret: ""
+  port: 8081
+
+# ── AI provider ───────────────────────────────────────────────
+# provider: "anthropic" or "openai_compatible"
+# api_base: only needed for openai_compatible
+# api_key_env: environment variable name that holds the API key
+
+ai:
+  provider: "openai_compatible"
+  api_base: "https://api.cerebras.ai/v1"
+  api_key_env: "CEREBRAS_API_KEY"
+  brain_model: "qwen-3-235b-a22b-instruct-2507"
+  narrator_model: "qwen-3-235b-a22b-instruct-2507"
+  director_model: "qwen-3-235b-a22b-instruct-2507"
+  role_overrides: {}
+  extra_body: {}
+  max_tokens:
+    brain: 8192
+    brain_setup: 8192
+    narrator: 8192
+    narrator_metadata: 8192
+    opening_setup: 8192
+    revelation_check: 8192
+    recap: 8192
+    architect: 8192
+    director: 8192
+    correction: 8192
+    chapter_summary: 8192
+  max_retries:
+    brain: 2
+    brain_setup: 2
+    narrator: 3
+    narrator_metadata: 2
+    opening_setup: 2
+    revelation_check: 2
+    recap: 1
+    architect: 2
+    director: 1
+    correction: 2
+    chapter_summary: 1
+  temperature:
+    brain: 0.4
+    brain_setup: 0.5
+    narrator: 0.7
+    narrator_metadata: 0.3
+    opening_setup: 0.5
+    revelation_check: 0.2
+    recap: 0.6
+    architect: 0.6
+    director: 0.5
+    correction: 0.3
+    chapter_summary: 0.4
+  top_p:
+    brain: 0.95
+    brain_setup: 0.95
+    narrator: 0.95
+    narrator_metadata: 0.95
+    opening_setup: 0.95
+    revelation_check: 0.95
+    recap: 0.95
+    architect: 0.95
+    director: 0.95
+    correction: 0.95
+    chapter_summary: 0.95
+
+# ── Language ──────────────────────────────────────────────────
+language:
+  ui_language: "en"
+  narration_language: "English"
+  default_player_name: "Unnamed"
+
+# ── User preference defaults ─────────────────────────────────
+user_defaults:
+  dice_display: 0
+  sr_chat: true
+
+# ── UI tuning ────────────────────────────────────────────────
+ui:
+  reconnect_timeout_sec: 180
+  invite_max_attempts: 5
+  invite_lockout_sec: 300
+  scroll_delay_ms: 500
+  temp_cleanup_delay_sec: 60
