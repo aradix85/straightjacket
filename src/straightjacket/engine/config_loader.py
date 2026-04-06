@@ -150,18 +150,6 @@ def default_player_name() -> str:
     """Default player name when none is provided."""
     return cfg().language.default_player_name
 
-def user_default(key: str) -> Any:
-    """Get a user preference default from config.
-
-    Single access point for all per-user defaults. Every s.get("key", fallback)
-    in the codebase should use this instead of a hardcoded fallback:
-        s.get("dice_display", user_default("dice_display"))
-
-    All defaults live in config.yaml under "user_defaults" and can be
-    changed there without touching code.
-    """
-    return cfg().user_defaults.get(key, None)
-
 def sampling_params(role: str) -> dict:
     """Get sampling parameters (temperature, top_p) for an AI role.
 

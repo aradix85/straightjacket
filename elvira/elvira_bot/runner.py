@@ -31,7 +31,6 @@ from straightjacket.engine.game import (
     start_new_game,
 )
 from straightjacket.engine.logging_util import log
-from straightjacket.engine.persistence import delete_chapter_archives, save_chapter_archive
 
 from .ai_helpers import ask_bot, build_turn_context, decide_burn_momentum, get_persona
 from .creation import roll_character
@@ -85,10 +84,8 @@ def run_session(bot_cfg: dict, auto_override: bool = False, turns_override: int 
     config = EngineConfig(narration_lang=narration_lang)
     create_user(username)
 
-    if clean_before and not game_cfg.get("load_existing"):
-        if delete_save(username, save_out):
-            print(f"[CLEAN] Deleted previous save '{save_out}'")
-        delete_chapter_archives(username, save_out)
+    if clean_before and not game_cfg.get("load_existing") and delete_save(username, save_out):
+        print(f"[CLEAN] Deleted previous save '{save_out}'")
 
     persona = get_persona(style)
 
@@ -501,15 +498,6 @@ def _chapter_transition(provider, config, game, chat_messages, username,
         slog.ended_reason = f"epilogue_error: {type(e).__name__}: {e}"
         slog.violations.append(f"CRASH in generate_epilogue: {tb[-500:]}")
         return game, "", chat_messages, True
-
-    try:
-        title = ""
-        if game.campaign.campaign_history:
-            title = game.campaign.campaign_history[-1].title
-        save_chapter_archive(username, save_out, chapter_num, chat_messages,
-                             title=title or f"Chapter {chapter_num}")
-    except Exception as e:
-        print(f"  [ARCHIVE] Failed: {e}")
 
     save_game(game, username, chat_messages, save_out)
 

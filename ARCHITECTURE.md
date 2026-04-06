@@ -45,7 +45,7 @@ Where to find things. If you want to change X, edit Y.
 | AI prompts (narrator, brain, director) | `prompts.yaml` (no Python) |
 | Emotion scoring, keyword boosts | `emotions.yaml` (no Python) |
 | UI text | `strings.yaml` (no Python) |
-| Server, API provider, language | `config.yaml` (no Python) |
+| Server port | `config.yaml` (no Python) |
 | Move types or stat assignments | `engine.yaml` → `move_stats` and `move_categories` |
 | A new setting (genre + constraints) | `data/settings/your_setting.yaml` + Datasworn JSON |
 | How dice rolls work | `mechanics.py` → `roll_action`, `apply_consequences` |
@@ -54,7 +54,7 @@ Where to find things. If you want to change X, edit Y.
 | Story structure / act tracking | `story_state.py`, `ai/architect.py` |
 | Correction (## undo) flow | `correction.py` |
 | Save format | `models.py` → `to_dict`/`from_dict` on the relevant dataclass |
-| Character creation UI | `ui/creation.py` (Datasworn-driven, no AI call) |
+| WebSocket protocol / UI | `web/handlers.py`, `web/static/index.html` |
 
 ## File Map
 
@@ -66,7 +66,7 @@ src/straightjacket/
 │   ├── parser.py            # Narrator output cleanup (10 regex steps)
 │   ├── correction.py        # ## correction and momentum burn re-narration
 │   ├── director.py          # Story steering, NPC reflections, act transitions
-│   ├── persistence.py       # Save/load, chapter archives
+│   ├── persistence.py       # Save/load
 │   ├── story_state.py       # Act tracking, revelation timing
 │   ├── prompt_builders.py   # All narrator prompt assembly
 │   ├── prompt_blocks.py     # Reusable XML blocks (content boundaries, backstory, etc.)
@@ -98,15 +98,14 @@ src/straightjacket/
 │   └── datasworn/
 │       ├── loader.py        # Reads Datasworn JSON (oracles, assets, moves)
 │       └── settings.py      # Setting packages (vocabulary, genre constraints)
-├── ui/                      # NiceGUI frontend (framework-bound)
-│   ├── phases.py            # Login → user selection → main game routing
-│   ├── gameplay.py          # Turn input → engine → render
-│   ├── creation.py          # Datasworn-driven character creation
-│   ├── endgame.py           # Momentum burn, epilogue, game over
-│   ├── sidebar.py           # Stats, NPCs, clocks, save/load
-│   ├── chat.py              # Message history rendering
-│   └── helpers.py           # Session state, scroll, entity highlighting
-├── i18n.py                  # String lookup (t()), emoji constants
+├── web/
+│   ├── server.py            # Starlette app, WebSocket endpoint, dispatch
+│   ├── handlers.py          # One async function per protocol message type
+│   ├── session.py           # Session dataclass (all mutable server state)
+│   ├── serializers.py       # Game state → client JSON (i18n labels resolved)
+│   └── static/
+│       └── index.html       # Single-page app (HTML + CSS + JS inline)
+├── i18n.py                  # String lookup (t()), label getters
 └── strings_loader.py        # Reads strings.yaml
 ```
 
@@ -122,14 +121,17 @@ src/straightjacket/
 
 **Provider abstraction.** `AIProvider` protocol with two implementations (Anthropic, OpenAI-compatible). The engine never imports provider SDKs directly. `create_with_retry` handles transient errors with exponential backoff.
 
+**Minimal UI.** Single HTML page, no build step, no npm. Server sends JSON, client renders. Scene headings for screen reader navigation, aria-live for automatic narration readout. Two buttons (Status, Save/Load), one text input.
+
 ## Testing
 
 ```bash
-python -m pytest tests/ -v          # 205 tests, ~5 seconds
-python elvira/elvira.py --auto --turns 5   # headless integration (needs API key)
+python -m pytest tests/ -v          # ~5 seconds
+python elvira/elvira.py --auto --turns 5   # direct engine (needs API key)
+python elvira/elvira.py --ws --auto --turns 5  # via WebSocket server
 ```
 
-Elvira is the real integration test. It drives the full engine with an AI player bot, checks state invariants after every turn, runs narration quality checks, tests the correction pipeline, and verifies NPC spatial consistency across chapter transitions.
+Elvira is the real integration test. Direct mode drives the engine with an AI player bot, checks state invariants after every turn, runs narration quality checks, tests the correction pipeline, and verifies NPC spatial consistency. WebSocket mode does the same but through the full server stack.
 
 ## Adding a New AI Provider
 

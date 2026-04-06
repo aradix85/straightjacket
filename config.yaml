@@ -1,16 +1,10 @@
 # Straightjacket configuration
-# General settings — API, language, UI preferences.
+# General settings — API provider, language.
 # For game mechanics, see engine.yaml.
 # For AI prompts, see prompts.yaml.
 
 # ── Server ────────────────────────────────────────────────────
 server:
-  api_key: ""
-  invite_code: ""
-  enable_https: false
-  ssl_certfile: ""
-  ssl_keyfile: ""
-  storage_secret: ""
   port: 8081
 
 # ── AI provider ───────────────────────────────────────────────
@@ -25,8 +19,8 @@ ai:
   brain_model: "qwen-3-235b-a22b-instruct-2507"
   narrator_model: "qwen-3-235b-a22b-instruct-2507"
   director_model: "qwen-3-235b-a22b-instruct-2507"
-  role_overrides: {}
-  extra_body: {}
+  extra_body:
+    disable_reasoning: true
   max_tokens:
     brain: 8192
     brain_setup: 8192
@@ -54,7 +48,7 @@ ai:
   temperature:
     brain: 0.4
     brain_setup: 0.5
-    narrator: 0.7
+    narrator: 0.8
     narrator_metadata: 0.3
     opening_setup: 0.5
     revelation_check: 0.2
@@ -78,19 +72,5 @@ ai:
 
 # ── Language ──────────────────────────────────────────────────
 language:
-  ui_language: "en"
   narration_language: "English"
   default_player_name: "Unnamed"
-
-# ── User preference defaults ─────────────────────────────────
-user_defaults:
-  dice_display: 0
-  sr_chat: true
-
-# ── UI tuning ────────────────────────────────────────────────
-ui:
-  reconnect_timeout_sec: 180
-  invite_max_attempts: 5
-  invite_lockout_sec: 300
-  scroll_delay_ms: 500
-  temp_cleanup_delay_sec: 60

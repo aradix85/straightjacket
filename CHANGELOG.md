@@ -5,6 +5,24 @@ Originally forked from [EdgeTales](https://github.com/edgetales/edgetales). See 
 
 ---
 
+## [0.32.0] — 2026-04-06
+
+NiceGUI replaced with Starlette + WebSocket. Minimal screen reader UI. Elvira WebSocket mode.
+
+- **NiceGUI removed.** Entire ui/ directory (11 files, 2635 lines), app.py, custom_head.html deleted. `nicegui` and `cryptography` removed from requirements.txt
+- **New web server**: Starlette + uvicorn, WebSocket protocol. Four modules: `web/server.py` (routing, dispatch), `web/handlers.py` (19 async handlers), `web/session.py` (Session + BurnOffer dataclasses), `web/serializers.py` (i18n label resolution, state/roll/creation serializers, dialog highlighting)
+- **Minimal HTML client**: single-page app (645 lines), no sidebar, no overlays except burn/gameover/story-complete. Scene headings (h2) for screen reader navigation, aria-live for automatic narration readout, focus management on every phase transition. Two buttons (Status, Save/Load), one text input. Type "recap" for story summary, "## correction" for undo
+- **Elvira WebSocket mode** (`--ws`): plays via WebSocket protocol, starts server in-process. Same AI behavior, same invariant/quality checks. Tests the full stack: protocol → handlers → engine → serializers. `debug_state` endpoint returns full GameState for invariant checking
+- **Chapter archives removed** from persistence.py (5 functions, ~80 lines). `delete_save` inlines orphan cleanup. `get_save_info` simplified from 12 fields to 5. `list_saves` inlined into `list_saves_with_info`. Dead `audio_bytes`/`audio_format` filtering removed from `save_game`
+- **Engine bug fixes**: `scene_present_ids` excluded mentioned NPCs (defeated presence guard), `"inactive"` ghost status removed from correction ops, `"TurnSnapshot"` string annotation → bare type, `damage()` fallback logs warning, dead `moves:` list removed from engine.yaml
+- **Test infrastructure**: `conftest.py` rewritten (only logging_util stub, no package-level stubs). Named fixtures (`load_engine`, `stub_engine`, `stub_emotions`). All 7 test files refactored to use fixtures. 49 new web module tests (Session, BurnOffer, serializers, WebSocket integration via Starlette TestClient)
+- **Docs updated**: SECURITY.md, CONTRIBUTING.md, ARCHITECTURE.md, README.md — all NiceGUI references removed, web module documented
+- `provider_base.py`: "NiceGUI event loop" → "server event loop"
+- `pyproject.toml`: SIM117 NiceGUI ignore removed
+- 254 tests, ruff clean, mypy clean (48 source files)
+
+---
+
 ## [0.31.0] — 2026-04-06
 
 Project independence. Renamed to Straightjacket. Full code audit.

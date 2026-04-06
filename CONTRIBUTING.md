@@ -3,9 +3,9 @@
 ## Quick version
 
 1. Fork, branch, make your change
-2. `python -m pytest tests/ -v` — all 205 tests must pass
+2. `python -m pytest tests/ -v` — all tests must pass
 3. `ruff check src/` — must be clean
-4. `mypy src/straightjacket/ --config-file pyproject.toml` — must be clean
+4. `mypy src/straightjacket/engine/ src/straightjacket/web/ --config-file pyproject.toml` — must be clean
 5. PR with a clear description of what and why
 
 ## Code standards
@@ -26,8 +26,8 @@ Game mechanics, emotion scoring, move types, damage tables, disposition shifts �
 
 One test per flow, not per assertion. A test should be capable of breaking when real code changes. No tests for Python builtins, trivial roundtrips, or config value assertions.
 
-If your change affects the turn pipeline, run Elvira: `python elvira/elvira.py --auto --turns 5` (needs an API key).
+If your change affects the turn pipeline, run Elvira: `python elvira/elvira.py --ws --auto --turns 5` (tests the full server stack, needs an API key).
 
 ## Accessibility
 
-This project is built by a blind developer. Screen reader accessibility is not optional. If you add UI elements: ARIA labels, keyboard navigation, no spatial-only references.
+This project is built by a blind developer. Screen reader accessibility is not optional. If you add UI elements: semantic HTML, ARIA live regions, heading structure, native form controls. No div-buttons, no spatial-only references.

@@ -18,7 +18,7 @@ cd straightjacket
 python run.py
 ```
 
-Creates a venv, installs dependencies, downloads game data, starts the server at **http://localhost:8081**. Set your API key in `config.yaml` or via environment variable.
+Creates a venv, installs dependencies, downloads game data, starts the server at **http://localhost:8081**. Set your API key via environment variable (configured in `config.yaml` under `ai.api_key_env`).
 
 ---
 
@@ -40,7 +40,7 @@ Five YAML files, each with a clear owner:
 
 | File | What | Who edits it |
 |---|---|---|
-| `config.yaml` | Server, AI provider, language, UI | Players |
+| `config.yaml` | Server port, AI provider, language | Players |
 | `engine.yaml` | Game rules, damage, chaos, NPC limits, move categories, pacing | Game designers |
 | `emotions.yaml` | Emotion scoring, keyword boosts, dispositions | Game designers |
 | `prompts.yaml` | AI system prompts (narrator, brain, director) | Prompt engineers |
@@ -62,15 +62,15 @@ All mutable game state is typed dataclasses with snapshot/restore for atomic und
 
 ## Tests
 
-205 tests. Run: `python -m pytest tests/ -v`
+Run: `python -m pytest tests/ -v`
 
-Includes [Elvira](elvira/), a headless AI-driven test bot that plays the game autonomously, checks state invariants after every turn, validates narration quality, and tests the correction pipeline.
+Includes [Elvira](elvira/), a headless AI-driven test bot that plays the game autonomously, checks state invariants after every turn, validates narration quality, and tests the correction pipeline. Elvira can run in direct mode (bypasses UI) or WebSocket mode (`--ws`, tests the full server stack).
 
 ---
 
 ## Accessibility
 
-Screen reader accessible: ARIA landmarks, live regions, heading navigation. Text-in, text-out by design. Built by a blind developer — accessibility is structural, not cosmetic.
+Screen reader accessible: semantic HTML, ARIA live regions for automatic narration readout, heading navigation per scene, native form controls. Text-in, text-out by design. Built by a blind developer — accessibility is structural, not cosmetic.
 
 ---
 

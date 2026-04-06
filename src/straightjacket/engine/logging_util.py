@@ -56,7 +56,7 @@ def log(msg: str, level: str = "info"):
     getattr(logger, level, logger.info)(msg)
 
 def load_global_config() -> dict:
-    """Load global server config (api_key, invite_code, enable_https, etc.).
+    """Load global server config.
 
     Delegates to cfg() — single source of truth for config.yaml.
     Returns the 'server' section as a flat dict.

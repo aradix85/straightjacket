@@ -148,7 +148,7 @@ def create_with_retry(
 
     IMPORTANT: This function uses blocking time.sleep() for backoff.
     All callers MUST run this via asyncio.to_thread() to avoid blocking
-    the NiceGUI event loop. Direct await will freeze the UI.
+    the server event loop.
 
     Returns the post-processed AIResponse.
     """

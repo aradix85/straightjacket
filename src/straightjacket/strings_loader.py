@@ -29,7 +29,7 @@ _strings: dict[str, str] | None = None
 
 
 def _get_ui_language() -> str:
-    """Read ui_language from config.yaml. Returns 'en' if unavailable."""
+    """Read ui_language from config.yaml. Returns 'en' if not set."""
     try:
         cfg_path = _SCRIPT_DIR / "config.yaml"
         if cfg_path.exists():
