@@ -7,7 +7,6 @@ every default is explicit, serialization is one call.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import datetime
 
 
 @dataclass
@@ -71,6 +70,8 @@ class ValidatorRecord:
     passed: bool = True
     retries: int = 0
     violations: list[str] = field(default_factory=list)
+    attempt_violations: list[int] = field(default_factory=list)  # violation count per attempt
+    picked_attempt: int = -1  # -1 = last attempt, 0+ = picked an earlier one
 
 
 @dataclass
@@ -164,6 +165,9 @@ class TurnRecord:
         if self.validator:
             if not self.validator.passed:
                 d["validator"] = f"FAIL({self.validator.retries}r, {len(self.validator.violations)}v)"
+                d["validator_violations"] = self.validator.violations[:5]
+                if self.narration:
+                    d["narration_excerpt"] = self.narration[:500]
             elif self.validator.retries > 0:
                 d["validator"] = f"pass({self.validator.retries}r)"
         if self.engine_log and self.engine_log.consequences:

@@ -13,15 +13,11 @@ from .config_loader import PROJECT_ROOT
 
 
 from .bootstrap_log import bootstrap_log as _log
+from .format_utils import PartialFormatDict
 
 _PROMPTS_PATH = PROJECT_ROOT / "prompts.yaml"
 
 _prompts: dict[str, str] | None = None
-
-class _DefaultDict(dict):
-    """Dict that returns '{key}' for missing keys, allowing partial formatting."""
-    def __missing__(self, key: str) -> str:
-        return "{" + key + "}"
 
 def _ensure_loaded() -> dict:
     """Load prompts from yaml on first access.
@@ -60,7 +56,7 @@ def get_prompt(name: str, **variables) -> str:
     if template is None:
         raise KeyError(f"Unknown prompt: '{name}'")
     if variables:
-        return template.format_map(_DefaultDict(variables))
+        return template.format_map(PartialFormatDict(variables))
     return template
 
 def reload_prompts():

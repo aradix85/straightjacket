@@ -9,11 +9,17 @@ import json
 
 # Stubs are set up in conftest.py
 
+from straightjacket.engine import engine_loader
 from straightjacket.engine.models import (
     ChapterSummary, CampaignState, MemoryEntry, NpcData, NpcEvolution,
     ClockData, SceneLogEntry, RollResult,
     GameState, StoryBlueprint, StoryAct,
 )
+
+
+def _load_engine():
+    engine_loader._eng = None
+    engine_loader.eng()
 
 # ── NpcData ───────────────────────────────────────────────────
 
@@ -149,6 +155,7 @@ def test_roll_action_cap():
         assert r.action_score <= 10
 
 def test_compel_no_disposition_shift():
+    _load_engine()
     """v0.9.86: compel STRONG_HIT grants bond+1 only, no disposition shift."""
     from straightjacket.engine.mechanics import apply_consequences
     from straightjacket.engine.models import BrainResult, RollResult
@@ -163,6 +170,7 @@ def test_compel_no_disposition_shift():
     assert npc.disposition == "neutral"
 
 def test_test_bond_disposition_shift():
+    _load_engine()
     """v0.9.86: test_bond STRONG_HIT grants bond+1 AND disposition shift."""
     from straightjacket.engine.mechanics import apply_consequences
     from straightjacket.engine.models import BrainResult, RollResult
@@ -220,6 +228,7 @@ def test_npc_agency_empty_on_wrong_scene():
     assert clock_events == []
 
 def test_autonomous_clocks_skip_npc_owned():
+    _load_engine()
     """Autonomous clock ticking skips NPC-owned clocks."""
     from straightjacket.engine.mechanics import tick_autonomous_clocks
     import random
@@ -270,6 +279,7 @@ def test_story_blueprint_triggered_director_phases_snapshot():
     assert game.narrative.story_blueprint.triggered_director_phases == ["resolution"]
 
 def test_phase_trigger_dedup():
+    _load_engine()
     """should_call_director skips already-fired phase triggers."""
     from straightjacket.engine.director import should_call_director
     game = GameState()
@@ -321,6 +331,7 @@ def test_memory_guard_allows_no_memories():
     assert npc.name == "Heinrich Blum"
 
 def test_social_move_unresolved_target_skips_bond():
+    _load_engine()
     """Social move with no resolvable target skips bond/disposition effects."""
     from straightjacket.engine.mechanics import apply_consequences
     from straightjacket.engine.models import BrainResult

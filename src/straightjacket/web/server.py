@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 """Starlette app: routes, WebSocket endpoint, message dispatch.
 
+Single-session server: one active player at a time. A new WebSocket
+connection takes over from any existing one (session takeover).
+
 Thin routing layer. All game logic is in handlers.py, all state in
 session.py, all serialization in serializers.py. This module owns
 only: HTTP routes, WebSocket lifecycle, session takeover, and the

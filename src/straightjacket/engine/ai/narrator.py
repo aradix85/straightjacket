@@ -16,14 +16,24 @@ from .schemas import NARRATOR_METADATA_SCHEMA
 
 def call_narrator(provider: AIProvider, prompt: str,
                   game: GameState | None = None,
-                  config: EngineConfig | None = None) -> str:
-    """Narrator call with conversation memory for style consistency."""
-    log(f"[Narrator] Calling narrator (prompt: {len(prompt)} chars)")
+                  config: EngineConfig | None = None,
+                  system_suffix: str = "",
+                  skip_history: bool = False) -> str:
+    """Narrator call with conversation memory for style consistency.
+
+    system_suffix: appended to the system prompt. Used by the validator
+    to inject correction instructions directly into the system context
+    on retries, where they carry more weight than user-message corrections.
+    skip_history: if True, do not include narration_history as conversation
+    context. Used on retries to prevent poisoned few-shot examples.
+    """
+    log(f"[Narrator] Calling narrator (prompt: {len(prompt)} chars"
+        f"{', skip_history' if skip_history else ''})")
     _c = cfg()
     messages = []
 
-    # Include last 3 narrations as conversation context
-    if game and game.narrative.narration_history:
+    # Include narration history as conversation context — unless this is a retry
+    if not skip_history and game and game.narrative.narration_history:
         for entry in game.narrative.narration_history[-eng().pacing.max_narration_history:]:
             messages.append({"role": "user", "content": entry.prompt_summary})
             messages.append({"role": "assistant", "content": entry.narration})
@@ -31,10 +41,14 @@ def call_narrator(provider: AIProvider, prompt: str,
     # Current prompt
     messages.append({"role": "user", "content": prompt})
 
+    system = get_narrator_system(config or EngineConfig(), game)
+    if system_suffix:
+        system = system + "\n" + system_suffix
+
     response = create_with_retry(
         provider, max_retries=_c.ai.max_retries.narrator,
         model=_c.ai.narrator_model, max_tokens=_c.ai.max_tokens.narrator,
-        system=get_narrator_system(config or EngineConfig(), game),
+        system=system,
         messages=messages,
         **sampling_params("narrator"),
     )

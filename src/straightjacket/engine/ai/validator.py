@@ -11,6 +11,7 @@ Cost: ~0.3s per check with a fast model.
 """
 
 import json
+import re
 
 from ..config_loader import cfg
 from ..logging_util import log
@@ -18,9 +19,37 @@ from ..models import EngineConfig, GameState
 from .provider_base import AIProvider, create_with_retry
 from .schemas import ARCHITECT_VALIDATOR_SCHEMA, VALIDATOR_SCHEMA
 
-# Maximum retries. Each retry re-validates. Set to 2 for Qwen (one retry
-# catches ~65% of violations, two retries push above 85%).
-MAX_VALIDATOR_RETRIES = 2
+MAX_VALIDATOR_RETRIES = 3
+
+
+def _strip_prompt_for_retry(prompt: str, violations: list[str]) -> str:
+    """Reduce NPC context in the prompt when violations suggest information leaking.
+
+    For RESOLUTION PACING violations: strip NPC secrets and memories from the prompt.
+    The model can't leak what it doesn't have. NPC names, dispositions, and basic
+    traits remain so the narrator can still write them in-character.
+    """
+    has_pacing = any("resolution pacing" in v.lower() or "monologue" in v.lower()
+                     for v in violations)
+    if not has_pacing:
+        return prompt
+
+    stripped = prompt
+    # Remove secrets from target_npc blocks
+    stripped = re.sub(
+        r'secrets\(weave subtly,never reveal\):\[.*?\]',
+        'secrets:[]',
+        stripped,
+        flags=re.DOTALL,
+    )
+    # Remove memory lines (recent: ... and insight: ...)
+    stripped = re.sub(r'^(?:recent|insight):.*$', '', stripped, flags=re.MULTILINE)
+    # Remove agenda lines (NPCs with less agenda = less monologue fuel)
+    stripped = re.sub(r'^agenda:.*$', 'agenda:(follow the scene)', stripped, flags=re.MULTILINE)
+
+    if stripped != prompt:
+        log("[Validator] Stripped NPC secrets/memories/agenda from retry prompt")
+    return stripped
 
 def validate_narration(
     provider: AIProvider,
@@ -28,71 +57,50 @@ def validate_narration(
     result_type: str,
     genre: str,
     player_words: str = "",
+    player_name: str = "",
     consequences: list | None = None,
     config: EngineConfig | None = None,
     genre_constraints: dict | None = None,
 ) -> dict:
     """Check narrator output against engine constraints.
 
-    Args:
-        narration: The narrator's prose output.
-        result_type: "MISS", "WEAK_HIT", "STRONG_HIT", "dialog", or "opening".
-        genre: The game's genre string (from setting_genre).
-        player_words: What the player actually typed.
-        consequences: Mechanical consequences from apply_consequences.
-        config: Engine config for language.
-        genre_constraints: Setting-specific constraints dict with keys
-            forbidden_terms, forbidden_concepts, genre_test. If None,
-            genre fidelity check is skipped.
+    Both layers always run, results are merged:
+    1. Rule-based (instant): player agency patterns, result integrity,
+       genre fidelity, output format, NPC monologue heuristic.
+    2. LLM (semantic): resolution pacing, subtle agency, contextual checks.
 
     Returns:
         Dict with "pass" (bool), "violations" (list[str]), "correction" (str).
-        On API failure, returns pass=True (fail-open, don't block gameplay).
     """
+    from .rule_validator import run_rule_checks
+
+    # Layer 1: rule-based (instant, free)
+    rule_result = run_rule_checks(narration, result_type, player_words, genre_constraints)
+    rule_violations = rule_result.get("violations", [])
+
+    # Layer 2: LLM (semantic)
+    llm_violations = []
     _c = cfg()
     cons_text = ", ".join(consequences) if consequences else "none"
+    pc_hint = f' The player character is "{player_name}" (the "you").' if player_name else ""
 
-    gc = genre_constraints or {}
-    forbidden_terms = gc.get("forbidden_terms", [])
-    forbidden_concepts = gc.get("forbidden_concepts", [])
-    genre_test = gc.get("genre_test", "")
+    system = f"""Constraint checker for RPG narration. Be STRICT but PRECISE.
 
-    if forbidden_terms or forbidden_concepts or genre_test:
-        genre_section = "2. GENRE FIDELITY: The narration must stay within the genre."
-        if forbidden_terms:
-            genre_section += f" Forbidden words: {', '.join(forbidden_terms)}."
-        if forbidden_concepts:
-            genre_section += " Forbidden concepts: " + "; ".join(forbidden_concepts) + "."
-        if genre_test:
-            genre_section += f" TEST: {genre_test}"
-    else:
-        genre_section = "2. GENRE FIDELITY: No specific genre constraints for this setting. Skip this check."
+RESOLUTION PACING: NPCs answer ONLY the specific question asked — no volunteering theories, connections, accusations, or context the player did not request. A new mystery must not be explained in the scene it appears. A new NPC must not monologue. Tension introduced must survive to the next scene.
 
-    system = f"""Constraint checker for an RPG narrator. You receive narration and mechanical context.
-Check these constraints and ONLY these. Be STRICT — when in doubt, flag it.
+PLAYER AGENCY: This applies ONLY to the player character (the "you" in narration).{pc_hint} NPCs MAY think, feel, remember, interpret — that is good characterization, not a violation. The narrator must not impose thoughts, feelings, interpretations, or memories on the PLAYER CHARACTER. "You see the door" = OK. "You see the fear in her eyes" = violation (imposes interpretation). "You notice she is trembling" = OK (observable). "You understand why she is trembling" = violation (imposes interpretation).
 
-1. RESULT INTEGRITY: If result_type is MISS, the narration must show concrete failure — the situation is worse, not a learning experience, not a silver lining, not "but at least...". If WEAK_HIT, there must be a real cost visible in the prose BUT the character must achieve their goal partially — not total defeat, not unconsciousness, not capture. If STRONG_HIT, success should be clean.
+RESULT INTEGRITY: If result_type is MISS, the failure must be concrete — no learning, no silver lining, no disguised success. If WEAK_HIT, there must be a SPECIFIC tangible cost visible in the prose: something broken, lost, spent, damaged, or worsened. Atmospheric tension alone is not a cost. "The fuel cell cracks" = cost. "The air feels heavier" = not a cost. If dialog, skip this check.
 
-{genre_section}
+Return pass=true if ALL constraints met.
+Return pass=false with:
+- violations: list each as "CATEGORY: what specifically went wrong"
+- correction: one sentence naming the exact problem and what to do instead"""
 
-3. PLAYER AGENCY: The narrator must not decide what the player character thinks, feels, plans, or decides next. The narrator must not invent memories, backstory, or past experiences for the player character ("You've seen one before," "You remember," "You knew"). The narrator must not skip ahead past the player's stated action. The narrator must not ignore the stated action.
-
-4. RESOLUTION PACING: The narrator must not resolve mysteries, conflicts, or tensions prematurely. Specific checks:
-- A new secret must not be explained in the same scene it is introduced.
-- NPCs must not name, identify, or explain mysterious objects the player just discovered.
-- An NPC who is asked a specific question must answer ONLY that question — they must NOT volunteer accusations, theories, connections to other events, or information the player did not ask about. One question asked = one fragment answered.
-- A new NPC must not deliver a monologue that explains the plot on their first appearance.
-- Tension introduced in this scene must survive to the next scene.
-
-5. SPEECH HANDLING: If <player_words> contains a described action rather than literal dialog (e.g. "I ask about the fire" rather than exact quoted speech), the narration must NOT quote it as literal dialog. It should be narrated as indirect speech or action description.
-
-If ALL constraints are met, return pass=true with empty violations and correction.
-If ANY constraint is violated, return pass=false with specific violations and a one-sentence correction instruction."""
-
-    prompt = f"""<narration>{narration[:2500]}</narration>
+    prompt = f"""<narration>{narration[:4000]}</narration>
 <context result_type="{result_type}" genre="{genre}" consequences="{cons_text}"/>
-<player_words>{player_words[:300]}</player_words>
-Check all constraints. Be strict on MISS (must be real failure) and resolution pacing (NPCs answer only what was asked, no info dumps)."""
+<player_words>{player_words[:500]}</player_words>
+Check constraints."""
 
     try:
         response = create_with_retry(
@@ -106,17 +114,29 @@ Check all constraints. Be strict on MISS (must be real failure) and resolution p
             top_p=0.9,
         )
         result = json.loads(response.content)
-        passed = result.get("pass", True)
-        violations = result.get("violations", [])
-        if not passed:
-            log(f"[Validator] FAILED: {violations}")
-        else:
-            log("[Validator] Passed")
-        return result
-
+        if not result.get("pass", True):
+            llm_violations = result.get("violations", [])
     except Exception as e:
-        log(f"[Validator] Check failed ({e}), passing by default", level="warning")
-        return {"pass": True, "violations": [], "correction": ""}
+        log(f"[Validator] LLM check failed ({e}), using rule results only", level="warning")
+
+    # Merge: deduplicate by category prefix, tag source for diagnostics
+    all_violations = [f"[rule] {v}" for v in rule_violations]
+    rule_categories = {v.split(":")[0].strip() for v in rule_violations}
+    for v in llm_violations:
+        cat = v.split(":")[0].strip()
+        if cat not in rule_categories:
+            all_violations.append(f"[llm] {v}")
+
+    if all_violations:
+        correction = "; ".join(
+            v.split(": ", 1)[1] if ": " in v else v for v in all_violations[:3]
+        )
+        log(f"[Validator] FAILED ({len(rule_violations)} rule, {len(llm_violations)} llm): "
+            f"{all_violations}")
+        return {"pass": False, "violations": all_violations, "correction": f"Fix: {correction}"}
+
+    log("[Validator] Passed (rule + llm)")
+    return {"pass": True, "violations": [], "correction": ""}
 
 def validate_and_retry(
     provider: AIProvider,
@@ -160,37 +180,116 @@ def validate_and_retry(
 
     report: dict = {"passed": True, "retries": 0, "violations": [], "checks": []}
 
+    # Track all attempts: (narration, violation_count, check_result)
+    attempts: list[tuple[str, int, dict]] = []
+
     for attempt in range(max_retries):
         check = validate_narration(
             provider, narration, result_type, game.setting_genre,
-            player_words=player_words, consequences=consequences,
+            player_words=player_words, player_name=game.player_name,
+            consequences=consequences,
             config=config, genre_constraints=gc_dict,
         )
         report["checks"].append(check)
+        violations = check.get("violations", [])
+        attempts.append((narration, len(violations), check))
+
         if check.get("pass", True) or not check.get("correction"):
             return narration, report
 
-        correction = check["correction"]
         report["retries"] = attempt + 1
-        log(f"[Validator] Retry {attempt + 1}/{max_retries}: {correction}")
+        log(f"[Validator] Retry {attempt + 1}/{max_retries}: {violations}")
 
-        retry_prompt = prompt + f"\n<constraint_correction>{correction}</constraint_correction>"
-        raw = call_narrator(provider, retry_prompt, game, config)
+        # Build concrete rewrite instructions per violation type.
+        # Tell the model what to DO, not just what it did wrong.
+        # Strip diagnostic tags before matching.
+        rewrite_instructions = []
+        for v in violations:
+            vl = re.sub(r'^\[(?:rule|llm)\]\s*', '', v).lower()
+            if "player agency" in vl:
+                rewrite_instructions.append(
+                    "Remove sentences where the PLAYER CHARACTER (the 'you') thinks, "
+                    "feels, realizes, interprets, or remembers. NPCs may think and feel "
+                    "freely. Describe only what the player character PERCEIVES.")
+            elif "resolution pacing" in vl or "monologue" in vl:
+                rewrite_instructions.append(
+                    "Cut the NPC's speech to answer ONLY the specific question asked. "
+                    "Remove all volunteered theories, explanations, connections. "
+                    "One short answer, then the NPC stops or acts.")
+            elif "result integrity" in vl and "silver" in vl:
+                rewrite_instructions.append(
+                    "Remove any positive outcome. The MISS ends with the situation "
+                    "worse than before. No learning, no lucky break.")
+            elif "result integrity" in vl and "annihilation" in vl:
+                rewrite_instructions.append(
+                    "Reduce the severity. A MISS is a setback: injury, lost ground, "
+                    "broken equipment. Not death or total defeat.")
+            elif "result integrity" in vl and ("cost" in vl or "weak" in vl):
+                rewrite_instructions.append(
+                    "Add a SPECIFIC tangible cost for the WEAK_HIT: something breaks, "
+                    "is lost, is spent, or worsens. Atmosphere alone is not a cost. "
+                    "Name the thing that is damaged or lost.")
+            elif "genre fidelity" in vl:
+                rewrite_instructions.append(
+                    "Remove the forbidden genre element. Replace with something "
+                    "that fits the world's rules.")
+            elif "output format" in vl:
+                rewrite_instructions.append(
+                    "Remove all metadata, brackets, markdown, role labels. "
+                    "Begin with narrative prose.")
+            else:
+                rewrite_instructions.append(f"Fix: {v}")
+        # Deduplicate identical instructions
+        seen: set[str] = set()
+        unique_instructions = []
+        for inst in rewrite_instructions:
+            if inst not in seen:
+                seen.add(inst)
+                unique_instructions.append(inst)
+
+        instructions_text = "\n".join(f"- {inst}" for inst in unique_instructions)
+        system_suffix = (
+            f"\n<correction_mode>\n"
+            f"Your previous narration was rejected. Rewrite following these instructions:\n"
+            f"{instructions_text}\n"
+            f"</correction_mode>"
+        )
+        retry_prompt = (
+            f"<REWRITE>\n{instructions_text}\n</REWRITE>\n\n" + prompt
+        )
+        # Strip NPC secrets/memories if pacing violation — remove fuel for info dumps.
+        retry_prompt = _strip_prompt_for_retry(retry_prompt, violations)
+        # Skip narration_history — previous narrations may contain the same
+        # violations and act as poisoned few-shot examples.
+        raw = call_narrator(provider, retry_prompt, game, config,
+                            system_suffix=system_suffix, skip_history=True)
         narration = parse_narrator_response(game, raw)
 
-    # Final validation after last retry (don't silently pass a bad final attempt)
+    # Final validation of last attempt
     final_check = validate_narration(
         provider, narration, result_type, game.setting_genre,
-        player_words=player_words, consequences=consequences,
+        player_words=player_words, player_name=game.player_name,
+        consequences=consequences,
         config=config, genre_constraints=gc_dict,
     )
     report["checks"].append(final_check)
+    final_violations = final_check.get("violations", [])
+    attempts.append((narration, len(final_violations), final_check))
+
     if not final_check.get("pass", True):
+        # Pick the attempt with the fewest violations
+        best_narration, best_count, best_check = min(attempts, key=lambda a: a[1])
         report["passed"] = False
-        report["violations"] = final_check.get("violations", [])
-        log(f"[Validator] Still failing after {max_retries} retries: "
-            f"{report['violations']}. Accepting best attempt.",
-            level="warning")
+        report["violations"] = best_check.get("violations", [])
+        if best_count < len(final_violations):
+            log(f"[Validator] Picking attempt with {best_count} violations "
+                f"over final attempt with {len(final_violations)}.",
+                level="warning")
+            narration = best_narration
+        else:
+            log(f"[Validator] Still failing after {max_retries} retries: "
+                f"{report['violations']}. Accepting best attempt.",
+                level="warning")
 
     return narration, report
 

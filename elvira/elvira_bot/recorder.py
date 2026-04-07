@@ -115,10 +115,22 @@ def _snapshot_validator(game: GameState) -> ValidatorRecord | None:
     val = game.narrative.session_log[-1].validator
     if not val:
         return None
+    # Extract per-attempt violation counts from checks trail
+    checks = val.get("checks", [])
+    attempt_violations = [len(c.get("violations", [])) for c in checks]
+    # Detect if best-of selection picked an earlier attempt
+    picked = -1
+    if not val.get("passed", True) and len(attempt_violations) >= 2:
+        final_v = attempt_violations[-1]
+        best_v = min(attempt_violations)
+        if best_v < final_v:
+            picked = attempt_violations.index(best_v)
     return ValidatorRecord(
         passed=val.get("passed", True),
         retries=val.get("retries", 0),
         violations=val.get("violations", []),
+        attempt_violations=attempt_violations,
+        picked_attempt=picked,
     )
 
 

@@ -21,7 +21,7 @@ Prompt Builder (prompt_builders.py) → assembles XML prompt with world, NPCs, r
   ↓
 Narrator (ai/narrator.py)    → AI writes prose (conversation memory for style consistency)
   ↓
-Validator (ai/validator.py)   → checks 5 constraints, up to 2 retries on failure
+Validator (ai/validator.py)   → hybrid rule-based + LLM check, up to 3 retries with prompt stripping
   ↓
 Parser (parser.py)            → strips leaked metadata from prose (10-step cleanup pipeline)
   ↓
@@ -61,7 +61,11 @@ Where to find things. If you want to change X, edit Y.
 ```
 src/straightjacket/
 ├── engine/
-│   ├── models.py            # All data: GameState, NpcData, ClockData, MemoryEntry, etc.
+│   ├── models.py            # Re-export hub for all dataclasses
+│   ├── models_base.py       # GameState, Resources, WorldState, NarrativeState
+│   ├── models_npc.py        # NpcData, MemoryEntry
+│   ├── models_story.py      # StoryBlueprint, StoryAct, Revelation, ChapterSummary
+│   ├── format_utils.py      # PartialFormatDict (shared by prompt_loader, strings_loader)
 │   ├── mechanics.py         # Dice, chaos, consequences, clocks, momentum
 │   ├── parser.py            # Narrator output cleanup (10 regex steps)
 │   ├── correction.py        # ## correction and momentum burn re-narration
@@ -82,7 +86,8 @@ src/straightjacket/
 │   │   ├── narrator.py      # Prose generation + metadata extraction calls
 │   │   ├── metadata.py      # Apply extracted metadata to game state
 │   │   ├── architect.py     # Story blueprint, recap, chapter summary
-│   │   ├── validator.py     # Post-narrator constraint checking
+│   │   ├── validator.py     # Hybrid constraint checking (rule-based + LLM)
+│   │   ├── rule_validator.py # Instant rule-based checks (player agency, result integrity, genre, format)
 │   │   └── schemas.py       # JSON output schemas (config-driven)
 │   ├── npc/
 │   │   ├── matching.py      # Name lookup, fuzzy matching, edit distance

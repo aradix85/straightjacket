@@ -5,7 +5,6 @@ from __future__ import annotations
 import json
 import random as _random
 import traceback
-from dataclasses import asdict
 from datetime import datetime
 from pathlib import Path
 
@@ -30,7 +29,6 @@ from straightjacket.engine.game import (
     start_new_chapter,
     start_new_game,
 )
-from straightjacket.engine.logging_util import log
 
 from .ai_helpers import ask_bot, build_turn_context, decide_burn_momentum, get_persona
 from .creation import roll_character

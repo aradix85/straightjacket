@@ -3,7 +3,7 @@
 
 config.yaml is the single source of truth for all engine settings.
 The file ships with the repo. If it's missing, the engine does not start.
-Config path can be overridden via EDGETALES_CONFIG environment variable.
+Config path can be overridden via STRAIGHTJACKET_CONFIG environment variable.
 """
 
 import os
@@ -18,7 +18,7 @@ from .bootstrap_log import bootstrap_log as _log
 # Project root: config.yaml, engine.yaml, data/, users/, logs/ all live here.
 # Single source of truth — every module imports PROJECT_ROOT from here.
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent.parent  # engine/ -> straightjacket/ -> src/ -> project root
-_CONFIG_PATH = Path(os.environ.get("EDGETALES_CONFIG", str(PROJECT_ROOT / "config.yaml")))
+_CONFIG_PATH = Path(os.environ.get("STRAIGHTJACKET_CONFIG", str(PROJECT_ROOT / "config.yaml")))
 
 def _read_version() -> str:
     """Read version from pyproject.toml — single source of truth."""
@@ -113,7 +113,7 @@ def _load_config_file() -> dict:
         raise FileNotFoundError(
             f"Config file not found: {_CONFIG_PATH}\n"
             f"The config.yaml file ships with the repo — if you deleted it, restore it from git.\n"
-            f"To use a different config file, set the EDGETALES_CONFIG environment variable."
+            f"To use a different config file, set the STRAIGHTJACKET_CONFIG environment variable."
         )
     with open(_CONFIG_PATH, encoding="utf-8") as f:
         data = yaml.safe_load(f)

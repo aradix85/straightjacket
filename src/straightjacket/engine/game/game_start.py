@@ -41,7 +41,7 @@ def start_new_game(provider: AIProvider, creation_data: dict,
     setting_id = creation_data.get("setting_id", "starforged")
     log(f"[NewGame] Starting: setting={setting_id}")
 
-    from ..datasworn.loader import _extract_title
+    from ..datasworn.loader import extract_title
     from ..datasworn.settings import active_package, load_package
     pkg = load_package(setting_id)
 
@@ -53,7 +53,7 @@ def start_new_game(provider: AIProvider, creation_data: dict,
     for pid in paths:
         asset = pkg.data.asset("path", pid)
         if asset:
-            path_names.append(_extract_title(asset, pid))
+            path_names.append(extract_title(asset, pid))
     concept = ", ".join(path_names) if path_names else ""
 
     _e = eng()

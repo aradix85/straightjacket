@@ -10,7 +10,7 @@ import re
 
 from straightjacket.engine.models import GameState
 
-from .models import NpcSnapshot, TurnRecord
+from .models import NpcSnapshot
 
 
 # ── Narration quality checks ─────────────────────────────────

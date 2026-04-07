@@ -19,8 +19,7 @@ ai:
   brain_model: "qwen-3-235b-a22b-instruct-2507"
   narrator_model: "qwen-3-235b-a22b-instruct-2507"
   director_model: "qwen-3-235b-a22b-instruct-2507"
-  extra_body:
-    disable_reasoning: true
+
   max_tokens:
     brain: 8192
     brain_setup: 8192

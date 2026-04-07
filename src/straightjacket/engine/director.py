@@ -24,13 +24,11 @@ from .story_state import get_current_act
 
 # DIRECTOR AGENT — Lazy story steering, summaries, reflections
 
-_DIRECTOR_SYSTEM_BASE: str | None = None
-
 def _get_director_system_base() -> str:
-    global _DIRECTOR_SYSTEM_BASE
-    if _DIRECTOR_SYSTEM_BASE is None:
-        _DIRECTOR_SYSTEM_BASE = get_prompt("director_system")
-    return _DIRECTOR_SYSTEM_BASE
+    """Load director system prompt fresh from prompt_loader each time.
+    prompt_loader caches internally; reload_prompts() clears that cache.
+    No module-level cache here — avoids stale prompts after reload."""
+    return get_prompt("director_system")
 
 def _director_system(game: GameState, config: EngineConfig | None = None) -> str:
     """Build Director system prompt with content_boundaries."""

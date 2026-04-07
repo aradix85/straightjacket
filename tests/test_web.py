@@ -10,13 +10,12 @@ use a local load_engine fixture that loads real engine.yaml.
 Run: python -m pytest tests/test_web.py -v
 """
 
-import json
 
 import pytest
 
 from straightjacket.engine import engine_loader
 from straightjacket.engine.models import (
-    BrainResult, ClockData, GameState, MemoryEntry, NpcData, RollResult, TurnSnapshot,
+    BrainResult, ClockData, GameState, NpcData, RollResult, TurnSnapshot,
 )
 from straightjacket.web.session import BurnOffer, Session
 from straightjacket.web.serializers import (
@@ -309,15 +308,6 @@ class TestBuildState:
         state = build_state(self._game())
         assert state["story_arc"] is None
 
-    def test_labels_present_and_nonempty(self, load_engine):
-        state = build_state(self._game())
-        labels = state["labels"]
-        for key in ["health", "spirit", "supply", "chaos", "crisis",
-                     "momentum", "stats", "tracks", "characters", "clocks",
-                     "story", "actions", "recap", "save_load", "switch_player"]:
-            assert key in labels, f"Missing label: {key}"
-            assert labels[key] != "", f"Empty label: {key}"
-
     def test_story_arc_present_with_blueprint(self, load_engine):
         from straightjacket.engine.models import StoryAct, StoryBlueprint
         game = self._game()
@@ -336,6 +326,9 @@ class TestBuildCreationOptions:
     def test_returns_settings(self, load_engine):
         opts = build_creation_options()
         assert "settings" in opts
+        from straightjacket.engine.datasworn.loader import list_available
+        if not list_available():
+            pytest.skip("No Datasworn JSON files in data/ — run download_datasworn.py")
         assert len(opts["settings"]) >= 1
 
     def test_settings_have_paths(self, load_engine):

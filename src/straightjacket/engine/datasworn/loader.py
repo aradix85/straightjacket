@@ -51,7 +51,7 @@ def data_dir() -> Path:
     """Return the data directory path."""
     return _DATA_DIR
 
-def _extract_title(obj: dict, fallback: str = "") -> str:
+def extract_title(obj: dict, fallback: str = "") -> str:
     """Extract display title from a Datasworn object.
 
     Handles three formats:
@@ -133,7 +133,7 @@ class Setting:
 
     @property
     def title(self) -> str:
-        return _extract_title(self._raw, self.id)
+        return extract_title(self._raw, self.id)
 
     @property
     def setting_type(self) -> str:
@@ -165,7 +165,7 @@ class Setting:
     def _parse_oracle_table(self, full_id: str, data: dict,
                             collection_path: str) -> OracleTable:
         """Parse a single oracle table from raw JSON."""
-        title = _extract_title(data, full_id)
+        title = extract_title(data, full_id)
 
         rows = []
         for r in data.get("rows", []):

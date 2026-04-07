@@ -6,7 +6,7 @@ AI-powered narrative solo RPG engine. You write the action. Dice determine outco
 
 The AI is the narrator — constrained by mechanics, validated by the engine, never in control. Config-driven, provider-independent, screen reader accessible.
 
-Runs on open source models. Two seconds per turn on Cerebras. Where open models fall short on constraint compliance, the engine compensates: constraint validator, retry logic, structural information gating.
+Runs on open source models. Two seconds per turn on Cerebras. Where open models fall short on constraint compliance, the engine compensates: hybrid rule-based + LLM validator, retry with prompt stripping, best-of selection across attempts.
 
 ---
 
@@ -26,7 +26,7 @@ Creates a venv, installs dependencies, downloads game data, starts the server at
 
 You type what your character does. The engine classifies the action, rolls dice, applies mechanical consequences. An AI narrator writes the scene within those constraints. A validator checks the output. A director steers pacing and NPC development across scenes.
 
-Four AI agents per turn: **Brain** (parses input into mechanics), **Narrator** (writes prose), **Validator** (checks constraints, retries on failure), **Director** (story steering, NPC reflections).
+Four AI agents per turn: **Brain** (parses input into mechanics), **Narrator** (writes prose), **Validator** (rule-based + LLM constraint checking, retries with prompt stripping), **Director** (story steering, NPC reflections).
 
 The AI never decides outcomes, moves resources, or controls the player character. That's the straightjacket.
 

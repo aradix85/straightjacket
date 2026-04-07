@@ -9,20 +9,13 @@ Loading order: strings_{code}.yaml merged over strings.yaml.
 Missing keys in the language file fall back to English automatically.
 """
 
-from pathlib import Path
-
 import yaml
 
 from .engine.bootstrap_log import bootstrap_log as _log
+from .engine.config_loader import PROJECT_ROOT
+from .engine.format_utils import PartialFormatDict
 
-_SCRIPT_DIR = Path(__file__).resolve().parent.parent.parent  # straightjacket/ -> src/ -> project root
-_STRINGS_DIR = _SCRIPT_DIR
-
-
-class _DefaultDict(dict):
-    """Dict that returns '{key}' for missing keys, allowing partial formatting."""
-    def __missing__(self, key: str) -> str:
-        return "{" + key + "}"
+_STRINGS_DIR = PROJECT_ROOT
 
 
 _strings: dict[str, str] | None = None
@@ -31,7 +24,7 @@ _strings: dict[str, str] | None = None
 def _get_ui_language() -> str:
     """Read ui_language from config.yaml. Returns 'en' if not set."""
     try:
-        cfg_path = _SCRIPT_DIR / "config.yaml"
+        cfg_path = PROJECT_ROOT / "config.yaml"
         if cfg_path.exists():
             with open(cfg_path, encoding="utf-8") as f:
                 data = yaml.safe_load(f)
@@ -82,7 +75,7 @@ def get_string(key: str, **variables) -> str:
     if template is None:
         return key
     if variables:
-        return template.format_map(_DefaultDict(variables))
+        return template.format_map(PartialFormatDict(variables))
     return template
 
 

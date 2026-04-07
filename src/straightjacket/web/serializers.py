@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
 """State serializers: game state → client JSON.
 
-Every function builds a JSON-serializable dict. All i18n label resolution
-happens here — the client never does lookups. This mirrors the engine's
-prompt_builders.py pattern: data assembly in Python, rendering in the consumer.
+Every function builds a JSON-serializable dict. Label resolution for
+roll data and NPC dispositions happens here. The HTML client hardcodes
+its own display labels for status text.
 """
 
 import re
 
 from ..engine.models import GameState, RollResult
 from ..engine.story_state import get_current_act
-from ..engine.datasworn.loader import _extract_title
+from ..engine.datasworn.loader import extract_title
 from ..engine.datasworn.settings import list_packages, load_package
 from ..engine.logging_util import log
 from ..i18n import (
@@ -22,7 +22,6 @@ from ..i18n import (
     get_stat_labels,
     get_story_phase_labels,
     get_time_labels,
-    t,
     translate_consequence,
 )
 
@@ -102,28 +101,6 @@ def build_state(game: GameState) -> dict:
         "story_arc": story_arc,
         "epilogue_shown": game.campaign.epilogue_shown,
         "epilogue_dismissed": game.campaign.epilogue_dismissed,
-        "labels": {
-            "health": t("sidebar.health"),
-            "spirit": t("sidebar.spirit"),
-            "supply": t("sidebar.supply"),
-            "chaos": t("sidebar.chaos"),
-            "crisis": t("sidebar.crisis"),
-            "momentum": t("sidebar.momentum"),
-            "stats": t("sidebar.stats"),
-            "tracks": t("sidebar.tracks"),
-            "characters": t("sidebar.characters"),
-            "clocks": t("sidebar.clocks"),
-            "story": t("sidebar.story"),
-            "actions": t("sidebar.actions"),
-            "recap": t("actions.recap_title"),
-            "save_load": t("actions.save_load"),
-            "chapters": t("sidebar.chapters"),
-            "switch_player": t("sidebar.switch_player"),
-            "act": t("sidebar.act"),
-            "chapter": t("sidebar.chapter"),
-            "scene": t("sidebar.scene"),
-            "story_complete": t("epilogue.story_complete"),
-        },
     }
 
 
@@ -190,7 +167,7 @@ def build_creation_options() -> dict:
                 asset_id = asset.get("_id", "").rsplit("/", 1)[-1]
                 paths.append({
                     "id": asset_id,
-                    "title": _extract_title(asset, asset_id),
+                    "title": extract_title(asset, asset_id),
                 })
             settings.append({
                 "id": pkg_id,

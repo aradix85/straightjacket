@@ -33,7 +33,6 @@ from .creation import roll_character
 from .invariants import assert_game_state
 from .models import ChapterRecord, NpcSnapshot, RollRecord, SessionLog, TurnRecord
 from .quality_checks import (
-    check_chapter_continuity,
     check_narration_quality,
     check_npc_spatial_consistency,
 )
@@ -403,11 +402,13 @@ async def run_ws_session(bot_cfg: dict, auto_override: bool = False,
             break
 
         # ── Chapter transition ────────────────────────────────
+        if game is None:
+            break
         bp = game.narrative.story_blueprint
         if bp and bp.story_complete and not game.campaign.epilogue_dismissed:
             narration, game, should_break = await _chapter_transition(
                 client, game, chapter_idx, max_chapters, print_full, slog)
-            if should_break or not game:
+            if should_break or game is None:
                 break
         else:
             break

@@ -414,7 +414,6 @@ inputForm.onsubmit = (e) => {
 function showStatus() {
   if (!lastState) { announce("No game active."); return; }
   const s = lastState;
-  const L = s.labels || {};
   let lines = [];
   lines.push(`${s.player_name} — ${s.character_concept || ""}`);
   if (s.location) lines.push(`Location: ${s.location}${s.time_label ? " · " + s.time_label : ""}`);

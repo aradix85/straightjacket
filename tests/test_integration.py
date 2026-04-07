@@ -367,8 +367,8 @@ def test_narrator_system_prompt_includes_constraints():
     system = get_narrator_system(
         EngineConfig(narration_lang="English"), game)
 
-    assert "PLAYER OWNERSHIP" in system
-    assert "MATERIAL WORLD" in system
+    assert "<world>" in system
+    assert "<player>" in system
     assert "spiders" in system  # Content boundary passed through
 
 

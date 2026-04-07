@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import random as _random
 
-from straightjacket.engine.datasworn.loader import _extract_title
+from straightjacket.engine.datasworn.loader import extract_title
 from straightjacket.engine.datasworn.settings import load_package
 
 STAT_NAMES = ["edge", "heart", "iron", "shadow", "wits"]
@@ -29,7 +29,7 @@ def roll_character(setting_id: str = "starforged", game_cfg: dict | None = None)
     for pid in paths:
         asset = pkg.data.asset("path", pid)
         if asset:
-            path_display.append(_extract_title(asset, pid))
+            path_display.append(extract_title(asset, pid))
 
     print(f"[CREATION] Setting: {pkg.title}")
     print(f"[CREATION] Name: {name} ({pronouns})")

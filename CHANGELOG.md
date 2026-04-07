@@ -5,6 +5,27 @@ Originally forked from [EdgeTales](https://github.com/edgetales/edgetales). See 
 
 ---
 
+---
+
+## [0.33.0] — 2026-04-07
+
+Prompt rewrite for Qwen3. Hybrid validator. Retry architecture overhaul. Test cleanup.
+
+- **prompts.yaml rewritten** for Qwen3-235B-A22B-Instruct-2507. Data-driven hierarchy: most-violated rules (information dosing, player agency, result integrity) placed directly after `<role>` tag for maximum attention weight. 217→162 lines. All conditional "If X: do Y" rules removed — XML tags in user prompt are self-documenting. Positive instructions preferred over prohibitions (SillyTavern community finding). Concrete examples per rule
+- **Hybrid validator** (`ai/rule_validator.py`): instant rule-based checks (regex patterns for player agency, result integrity, genre fidelity, output format, NPC monologue heuristic) run alongside LLM semantic checks. Both layers always run, results merged with source tagging (`[rule]`/`[llm]`). LLM prompt narrowed to resolution pacing and subtle agency — the checks that require semantic understanding
+- **Retry architecture overhauled**: max retries 2→3. Correction injected into system prompt (via `call_narrator` `system_suffix` parameter) AND user message prefix — double reinforcement at highest-weight positions. Concrete rewrite instructions per violation type ("Cut the NPC's speech to answer ONLY the question asked") instead of repeating what went wrong. Best-of selection across all attempts instead of always taking the last
+- **Prompt stripping on retry**: RESOLUTION PACING violations trigger removal of NPC secrets, memories, and agenda from the retry prompt. The model can't leak what it doesn't have
+- **Narration history skip on retry**: `call_narrator` `skip_history` parameter. Retries don't see previous narrations (which contained the same violations) as few-shot examples
+- **Validator LLM prompt sharpened**: PLAYER AGENCY explicitly scoped to player character only — NPCs MAY think/feel/remember (eliminates false positives on NPC characterization). Player character name injected for disambiguation. WEAK_HIT cost must be specific and nameable, not atmospheric. Dialog scenes skip RESULT INTEGRITY
+- **Validator diagnostics**: violations tagged with `[rule]`/`[llm]` source. Per-turn `validator_violations` list in Elvira session JSON. `full_debug_log` option for complete turn data
+- **models.py split** into 4 files: `models_base.py` (185 lines), `models_npc.py` (82), `models_story.py` (310), `models.py` (237, re-export hub)
+- **format_utils.py**: `PartialFormatDict` extracted, shared by prompt_loader and strings_loader
+- **`disable_reasoning` removed** from config.yaml — Instruct-2507 is non-thinking by design, Cerebras rejects the parameter
+- **Dead code removed**: sidebar strings (28 keys), `EDGETALES_CONFIG` env var, `labels` dict from `build_state()`, global F401 ruff ignore
+- **Test cleanup**: coverage-padding tests removed (364→341→366 with new rule_validator tests). 25 rule_validator tests. Tests verify behavior, not coverage percentages
+- **Elvira fail rate**: 84% → 27% (validator failures after all retries, measured across 4 Elvira runs)
+- 366 tests, ruff clean, mypy clean
+
 ## [0.32.0] — 2026-04-06
 
 NiceGUI replaced with Starlette + WebSocket. Minimal screen reader UI. Elvira WebSocket mode.

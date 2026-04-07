@@ -1,7 +1,18 @@
 [project]
 name = "straightjacket"
-version = "0.32.0"
+version = "0.33.0"
 requires-python = ">=3.11"
+dependencies = [
+    "starlette>=1.0,<2",
+    "uvicorn[standard]>=0.34,<1",
+    "pyyaml>=6.0,<7",
+    "anthropic>=0.40,<1",
+    "openai>=1.50,<3",
+]
+
+[project.optional-dependencies]
+test = ["pytest", "pytest-asyncio", "pytest-cov", "httpx", "types-PyYAML"]
+elvira = ["websockets>=13.0,<15"]
 
 [tool.ruff]
 line-length = 120
@@ -12,10 +23,9 @@ select = ["E", "W", "F", "B", "SIM", "UP"]
 ignore = [
     "E501",   # line length — handled by formatter, not linter
     "E402",   # module-level import not at top — app.py needs ensure_requirements() first
-    "F401",   # unused imports in __init__.py re-exports
     "SIM108", # ternary — readability over conciseness in game logic
 ]
-per-file-ignores = {"src/straightjacket/engine/__init__.py" = ["F401"], "src/straightjacket/engine/ai/__init__.py" = ["F401"], "src/straightjacket/engine/npc/__init__.py" = ["F401"], "src/straightjacket/engine/game/__init__.py" = ["F401"]}
+per-file-ignores = {"src/straightjacket/engine/__init__.py" = ["F401"], "src/straightjacket/engine/ai/__init__.py" = ["F401"], "src/straightjacket/engine/npc/__init__.py" = ["F401"], "src/straightjacket/engine/game/__init__.py" = ["F401"], "src/straightjacket/engine/models.py" = ["F401"]}
 
 [tool.mypy]
 python_version = "3.11"
@@ -23,8 +33,9 @@ warn_return_any = false
 warn_unused_configs = true
 disallow_untyped_defs = false
 check_untyped_defs = true
-ignore_missing_imports = true
+ignore_missing_imports = false
 exclude = ["tests/", "data/"]
+# NOTE: install types-PyYAML for mypy: pip install types-PyYAML
 
 [[tool.mypy.overrides]]
 module = [
@@ -40,3 +51,12 @@ disable_error_code = ["no-any-return", "attr-defined"]
 # Protocol method with ... body — mypy can't prove the return type
 module = "straightjacket.engine.ai.provider_base"
 disable_error_code = ["return"]
+
+[[tool.mypy.overrides]]
+# websockets has no type stubs
+module = "websockets"
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "strict"

@@ -216,24 +216,6 @@ settings.sr_chat: Screen reader in chat
 settings.sr_chat_tooltip: When disabled, the screen reader skips the game log (narrator text and your inputs). Ideal with TTS enabled — the voice reads the story, the screen reader navigates only menus.
 settings.title: Settings
 settings.ui_lang: Interface Language
-sidebar.3act: 3-Act
-sidebar.act: Act
-sidebar.bond: Bond
-sidebar.chaos: Chaos
-sidebar.chapter: Ch.
-sidebar.clocks: Clocks
-sidebar.crisis: CRISIS
-sidebar.deceased_persons: Deceased
-sidebar.finale: FINALE
-sidebar.health: Health
-sidebar.known_persons: Known
-sidebar.momentum: Momentum
-sidebar.npc_aka: aka
-sidebar.persons: Characters
-sidebar.scene: Scene
-sidebar.spirit: Spirit
-sidebar.story_complete: STORY COMPLETE
-sidebar.supply: Supply
 story.climax: Climax
 story.confrontation: Confrontation
 story.ketsu_resolution: Ketsu
