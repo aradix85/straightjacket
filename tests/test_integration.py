@@ -12,15 +12,14 @@ import json
 
 # Stubs are set up in conftest.py
 
-
 # ── MockProvider ─────────────────────────────────────────────
 
 
 class MockResponse:
-    def __init__(self, content, stop_reason="complete"):
+    def __init__(self, content: str, stop_reason: str = "complete") -> None:
         self.content = content
         self.stop_reason = stop_reason
-        self.tool_calls = []
+        self.tool_calls: list = []
         self.usage = {"input_tokens": 100, "output_tokens": 50}
 
 
@@ -31,21 +30,21 @@ class MockProvider:
     appropriate canned response.
     """
 
-    def __init__(self):
-        self.calls = []  # Record all calls for assertion
+    def __init__(self) -> None:
+        self.calls: list = []  # Record all calls for assertion
 
     def create_message(
         self,
-        model,
-        system,
-        messages,
-        max_tokens,
-        json_schema=None,
-        tools=None,
-        temperature=None,
-        top_p=None,
-        top_k=None,
-    ):
+        model: str,
+        system: str,
+        messages: list,
+        max_tokens: int,
+        json_schema: dict | None = None,
+        tools: list | None = None,
+        temperature: float | None = None,
+        top_p: float | None = None,
+        top_k: int | None = None,
+    ) -> MockResponse:
         self.calls.append(
             {
                 "model": model,
@@ -163,7 +162,7 @@ class MockProvider:
 # ── Test fixtures ────────────────────────────────────────────
 
 
-def _make_game():
+def _make_game():  # type: ignore[no-untyped-def]
     """Create a game state ready for turn processing."""
     from straightjacket.engine.models import GameState, MemoryEntry, NpcData, ClockData
 
@@ -217,7 +216,7 @@ def _make_game():
     return game
 
 
-def _stub_engine():
+def _stub_engine() -> None:
     """Load real engine.yaml for integration tests.
     Clear cached stub from test_engine.py if present."""
     from straightjacket.engine import engine_loader
@@ -229,7 +228,7 @@ def _stub_engine():
 # ── Turn pipeline tests ──────────────────────────────────────
 
 
-def test_turn_action_produces_narration():
+def test_turn_action_produces_narration() -> None:
     """Full action turn: brain → roll → consequences → narrator → metadata."""
     _stub_engine()
     from straightjacket.engine.game.turn import process_turn
@@ -240,7 +239,10 @@ def test_turn_action_produces_narration():
     initial_scene = game.narrative.scene_count
 
     game, narration, roll, burn_info, director_ctx = process_turn(
-        provider, game, "I search the room for clues", config=EngineConfig(narration_lang="English")
+        provider,  # type: ignore[arg-type]
+        game,
+        "I search the room for clues",
+        config=EngineConfig(narration_lang="English"),
     )
 
     # Scene count incremented
@@ -268,7 +270,7 @@ def test_turn_action_produces_narration():
     assert len(provider.calls) >= 3
 
 
-def test_turn_dialog_skips_roll():
+def test_turn_dialog_skips_roll() -> None:
     """Dialog turn should not produce a roll result."""
     _stub_engine()
     from straightjacket.engine.game.turn import process_turn
@@ -280,7 +282,7 @@ def test_turn_dialog_skips_roll():
     original_create = provider.create_message
     call_count = [0]
 
-    def dialog_brain(*args, **kwargs):
+    def dialog_brain(*args, **kwargs):  # type: ignore[no-untyped-def]
         call_count[0] += 1
         schema = kwargs.get("json_schema") or (args[5] if len(args) > 5 else None)
         if schema and "move" in schema.get("properties", {}):
@@ -305,11 +307,14 @@ def test_turn_dialog_skips_roll():
             )
         return original_create(*args, **kwargs)
 
-    provider.create_message = dialog_brain
+    provider.create_message = dialog_brain  # type: ignore[method-assign]
 
     game = _make_game()
     game, narration, roll, burn_info, director_ctx = process_turn(
-        provider, game, "I talk to Mira", config=EngineConfig(narration_lang="English")
+        provider,  # type: ignore[arg-type]
+        game,
+        "I talk to Mira",
+        config=EngineConfig(narration_lang="English"),
     )
 
     # No roll for dialog
@@ -320,7 +325,7 @@ def test_turn_dialog_skips_roll():
     assert game.narrative.scene_count == 4
 
 
-def test_turn_consequences_applied_on_miss():
+def test_turn_consequences_applied_on_miss() -> None:
     """On MISS, consequences should reduce resources."""
     _stub_engine()
     from straightjacket.engine.mechanics import apply_consequences
@@ -355,7 +360,7 @@ def test_turn_consequences_applied_on_miss():
     assert game.resources.momentum < initial_momentum
 
 
-def test_chaos_interrupt_respects_config():
+def test_chaos_interrupt_respects_config() -> None:
     """Chaos interrupt uses engine.yaml interrupt_types list."""
     _stub_engine()
     from straightjacket.engine.mechanics import check_chaos_interrupt
@@ -382,7 +387,7 @@ def test_chaos_interrupt_respects_config():
 # ── Prompt builder tests ─────────────────────────────────────
 
 
-def test_dialog_prompt_contains_world_and_character():
+def test_dialog_prompt_contains_world_and_character() -> None:
     """Dialog prompt must include world genre and character name."""
     _stub_engine()
     from straightjacket.engine.prompt_builders import build_dialog_prompt
@@ -406,7 +411,7 @@ def test_dialog_prompt_contains_world_and_character():
     assert "dialog" in prompt
 
 
-def test_action_prompt_contains_result_and_position():
+def test_action_prompt_contains_result_and_position() -> None:
     """Action prompt must include roll result and position."""
     _stub_engine()
     from straightjacket.engine.prompt_builders import build_action_prompt
@@ -449,7 +454,7 @@ def test_action_prompt_contains_result_and_position():
     assert "Search" in prompt or "search" in prompt
 
 
-def test_narrator_system_prompt_includes_constraints():
+def test_narrator_system_prompt_includes_constraints() -> None:
     """Narrator system prompt must include core constraints."""
     _stub_engine()
     from straightjacket.engine.prompt_blocks import get_narrator_system
@@ -468,7 +473,7 @@ def test_narrator_system_prompt_includes_constraints():
 # ── Correction flow tests ────────────────────────────────────
 
 
-def test_correction_brain_parses_response():
+def test_correction_brain_parses_response() -> None:
     """Correction brain should return a structured correction dict."""
     _stub_engine()
     from straightjacket.engine.correction import call_correction_brain
@@ -485,7 +490,10 @@ def test_correction_brain_parses_response():
     game.last_turn_snapshot.narration = "You swing your sword..."
 
     result = call_correction_brain(
-        provider, game, "I didn't want to attack, just talk", config=EngineConfig(narration_lang="English")
+        provider,  # type: ignore[arg-type]
+        game,
+        "I didn't want to attack, just talk",
+        config=EngineConfig(narration_lang="English"),
     )
 
     assert "correction_source" in result
@@ -495,7 +503,7 @@ def test_correction_brain_parses_response():
 # ── Momentum burn test ───────────────────────────────────────
 
 
-def test_momentum_burn_upgrades_result():
+def test_momentum_burn_upgrades_result() -> None:
     """can_burn_momentum should detect upgrade opportunities."""
     from straightjacket.engine.mechanics import can_burn_momentum
     from straightjacket.engine.models import RollResult
@@ -541,7 +549,7 @@ def test_momentum_burn_upgrades_result():
 # ── Story state tests ────────────────────────────────────────
 
 
-def test_story_completion_triggers():
+def test_story_completion_triggers() -> None:
     """Story should complete when final act entered and scenes exceed range."""
     from straightjacket.engine.story_state import get_current_act
 
@@ -597,7 +605,7 @@ def test_story_completion_triggers():
 # ── Correction flow ──────────────────────────────────────────
 
 
-def test_correction_state_ops_npc_edit():
+def test_correction_state_ops_npc_edit() -> None:
     """_apply_correction_ops applies npc_edit fields correctly."""
     _stub_engine()
     from straightjacket.engine.correction import _apply_correction_ops
@@ -624,7 +632,7 @@ def test_correction_state_ops_npc_edit():
     assert game.npcs[0].name == original_name  # name unchanged
 
 
-def test_correction_state_ops_npc_rename():
+def test_correction_state_ops_npc_rename() -> None:
     """_apply_correction_ops handles npc_edit with name change (rename)."""
     _stub_engine()
     from straightjacket.engine.correction import _apply_correction_ops
@@ -649,7 +657,7 @@ def test_correction_state_ops_npc_rename():
     assert "Mira" in game.npcs[0].aliases  # old name becomes alias
 
 
-def test_correction_state_ops_location_edit():
+def test_correction_state_ops_location_edit() -> None:
     """_apply_correction_ops updates location."""
     _stub_engine()
     from straightjacket.engine.correction import _apply_correction_ops
@@ -673,7 +681,7 @@ def test_correction_state_ops_location_edit():
     assert game.world.current_location == "The Dark Tower"
 
 
-def test_correction_state_ops_npc_split():
+def test_correction_state_ops_npc_split() -> None:
     """_apply_correction_ops splits an NPC into two."""
     _stub_engine()
     from straightjacket.engine.correction import _apply_correction_ops
@@ -700,7 +708,7 @@ def test_correction_state_ops_npc_split():
     assert new_npc.description == "Identical but different"
 
 
-def test_correction_state_ops_invalid_status_rejected():
+def test_correction_state_ops_invalid_status_rejected() -> None:
     """_apply_correction_ops rejects invalid NPC status values."""
     _stub_engine()
     from straightjacket.engine.correction import _apply_correction_ops
@@ -728,7 +736,7 @@ def test_correction_state_ops_invalid_status_rejected():
 # ── NPC lifecycle: description matching ──────────────────────
 
 
-def test_description_match_catches_identity_reveal():
+def test_description_match_catches_identity_reveal() -> None:
     """description_match_existing_npc finds NPCs by description overlap."""
     _stub_engine()
     from straightjacket.engine.npc.lifecycle import description_match_existing_npc
@@ -745,7 +753,7 @@ def test_description_match_catches_identity_reveal():
     assert match.name == "Mira"
 
 
-def test_description_match_rejects_short_descriptions():
+def test_description_match_rejects_short_descriptions() -> None:
     """description_match_existing_npc rejects descriptions < 10 chars."""
     _stub_engine()
     from straightjacket.engine.npc.lifecycle import description_match_existing_npc
@@ -758,7 +766,7 @@ def test_description_match_rejects_short_descriptions():
 # ── NPC lifecycle: merge identity ────────────────────────────
 
 
-def test_merge_npc_identity_updates_clock_owner():
+def test_merge_npc_identity_updates_clock_owner() -> None:
     """merge_npc_identity updates clock owners when NPC is renamed."""
     _stub_engine()
     from straightjacket.engine.npc.lifecycle import merge_npc_identity
@@ -776,7 +784,7 @@ def test_merge_npc_identity_updates_clock_owner():
 # ── Correction: npc_merge ────────────────────────────────────
 
 
-def test_correction_state_ops_npc_merge():
+def test_correction_state_ops_npc_merge() -> None:
     """npc_merge absorbs source NPC into target, transfers memories."""
     _stub_engine()
     from straightjacket.engine.correction import _apply_correction_ops
@@ -801,7 +809,7 @@ def test_correction_state_ops_npc_merge():
 # ── Chapter: about_npc id_remap ──────────────────────────────
 
 
-def test_chapter_about_npc_id_remap():
+def test_chapter_about_npc_id_remap() -> None:
     """Returning NPCs get new IDs at chapter boundary; about_npc refs must be rewritten."""
     _stub_engine()
     from straightjacket.engine.models import NpcData, MemoryEntry

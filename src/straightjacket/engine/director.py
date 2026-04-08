@@ -20,7 +20,7 @@ from .npc import (
 )
 from .prompt_blocks import get_narration_lang
 from .prompt_loader import get_prompt
-from .story_state import get_current_act, _default_scene_range
+from .story_state import get_current_act, default_scene_range
 
 # DIRECTOR AGENT — Lazy story steering, summaries, reflections
 
@@ -151,7 +151,7 @@ def build_director_prompt(game: GameState, latest_narration: str, config: Engine
         bp = game.narrative.story_blueprint
         transition_trigger = act.transition_trigger
         thematic = bp.thematic_thread
-        scene_range = act.scene_range or _default_scene_range()
+        scene_range = act.scene_range or default_scene_range()
         past_range = game.narrative.scene_count > scene_range[1]
         past_range_attr = ' PAST_RANGE="true"' if past_range else ""
         story_info = (
@@ -296,7 +296,7 @@ def call_director(
         return {}
 
 
-def apply_director_guidance(game: GameState, guidance: dict):
+def apply_director_guidance(game: GameState, guidance: dict) -> None:
     """Apply Director guidance to game state: store guidance, apply reflections,
     update session log with rich summary."""
     if not guidance:
@@ -459,7 +459,7 @@ def apply_director_guidance(game: GameState, guidance: dict):
     log(f"[Director] Guidance applied: pacing={guidance.get('pacing', '?')}")
 
 
-def reset_stale_reflection_flags(game: GameState):
+def reset_stale_reflection_flags(game: GameState) -> None:
     """Reset needs_reflection and importance_accumulator for all pending NPCs.
     Called by the UI layer when a Director turn is skipped (e.g. burn pending,
     or superseded by a new turn) to prevent indefinite flag accumulation."""

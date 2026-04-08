@@ -175,6 +175,6 @@ def highlight_dialog(text: str) -> str:
 
 def build_ui_strings() -> dict[str, str]:
     """All strings.yaml entries for the client. Sent once at connect."""
-    from ..strings_loader import _ensure_loaded
+    from ..strings_loader import all_strings
 
-    return dict(_ensure_loaded())
+    return all_strings()

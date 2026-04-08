@@ -7,11 +7,10 @@ Run: python -m pytest tests/test_engine.py -v
 
 # Stubs are set up in conftest.py
 
-
 # ── _ConfigNode tests ────────────────────────────────────────
 
 
-def test_confignode_dot_access():
+def test_confignode_dot_access() -> None:
     from straightjacket.engine.config_loader import _ConfigNode
 
     node = _ConfigNode({"ai": {"model": "qwen", "temp": 0.7}}, "cfg")
@@ -19,7 +18,7 @@ def test_confignode_dot_access():
     assert node.ai.temp == 0.7
 
 
-def test_confignode_error_shows_path():
+def test_confignode_error_shows_path() -> None:
     from straightjacket.engine.config_loader import _ConfigNode
 
     node = _ConfigNode({"ai": {"model": "qwen"}}, "cfg")
@@ -32,7 +31,7 @@ def test_confignode_error_shows_path():
         assert "model" in msg  # shows available keys
 
 
-def test_confignode_error_shows_available_keys():
+def test_confignode_error_shows_available_keys() -> None:
     from straightjacket.engine.config_loader import _ConfigNode
 
     node = _ConfigNode({"server": {"port": 8081}, "ai": {"model": "x"}}, "config")
@@ -46,7 +45,7 @@ def test_confignode_error_shows_available_keys():
         assert "server" in msg
 
 
-def test_confignode_getitem_error():
+def test_confignode_getitem_error() -> None:
     from straightjacket.engine.config_loader import _ConfigNode
 
     node = _ConfigNode({"a": 1}, "root")
@@ -57,7 +56,7 @@ def test_confignode_getitem_error():
         assert "root" in str(e)
 
 
-def test_confignode_get_default():
+def test_confignode_get_default() -> None:
     from straightjacket.engine.config_loader import _ConfigNode
 
     node = _ConfigNode({"a": 1}, "root")
@@ -65,7 +64,7 @@ def test_confignode_get_default():
     assert node.get("missing", 42) == 42
 
 
-def test_confignode_contains():
+def test_confignode_contains() -> None:
     from straightjacket.engine.config_loader import _ConfigNode
 
     node = _ConfigNode({"a": 1, "b": 2}, "root")
@@ -73,7 +72,7 @@ def test_confignode_contains():
     assert "c" not in node
 
 
-def test_confignode_repr():
+def test_confignode_repr() -> None:
     from straightjacket.engine.config_loader import _ConfigNode
 
     node = _ConfigNode({"x": 1}, "engine")
@@ -82,7 +81,7 @@ def test_confignode_repr():
     assert "x" in r
 
 
-def test_confignode_nested_path_tracking():
+def test_confignode_nested_path_tracking() -> None:
     from straightjacket.engine.config_loader import _ConfigNode
 
     node = _ConfigNode({"a": {"b": {"c": 1}}}, "cfg")
@@ -96,44 +95,44 @@ def test_confignode_nested_path_tracking():
 # ── locations_match tests ─────────────────────────────────────
 
 
-def test_locations_match_identical():
+def test_locations_match_identical() -> None:
     from straightjacket.engine.mechanics import locations_match
 
     assert locations_match("Tavern", "Tavern")
 
 
-def test_locations_match_case_insensitive():
+def test_locations_match_case_insensitive() -> None:
     from straightjacket.engine.mechanics import locations_match
 
     assert locations_match("Old Tavern", "old tavern")
 
 
-def test_locations_match_stopwords():
+def test_locations_match_stopwords() -> None:
     from straightjacket.engine.mechanics import locations_match
 
     assert locations_match("the dark forest", "dark forest")
 
 
-def test_locations_match_subset():
+def test_locations_match_subset() -> None:
     from straightjacket.engine.mechanics import locations_match
 
     assert locations_match("market square", "the old market square")
 
 
-def test_locations_match_different():
+def test_locations_match_different() -> None:
     from straightjacket.engine.mechanics import locations_match
 
     assert not locations_match("tavern", "castle")
 
 
-def test_locations_match_empty():
+def test_locations_match_empty() -> None:
     from straightjacket.engine.mechanics import locations_match
 
     assert locations_match("", "anywhere")
     assert locations_match("anywhere", "")
 
 
-def test_locations_match_underscore():
+def test_locations_match_underscore() -> None:
     from straightjacket.engine.mechanics import locations_match
 
     assert locations_match("dark_forest", "dark forest")
@@ -142,14 +141,14 @@ def test_locations_match_underscore():
 # ── salvage_truncated_narration tests ─────────────────────────
 
 
-def test_salvage_clean_text():
+def test_salvage_clean_text() -> None:
     from straightjacket.engine.parser import salvage_truncated_narration
 
     text = "The door opened. She stepped inside."
     assert salvage_truncated_narration(text) == text
 
 
-def test_salvage_strips_incomplete_game_data():
+def test_salvage_strips_incomplete_game_data() -> None:
     from straightjacket.engine.parser import salvage_truncated_narration
 
     text = 'The door opened. She stepped inside.<game_data>{"npcs": ['
@@ -158,7 +157,7 @@ def test_salvage_strips_incomplete_game_data():
     assert "stepped inside." in result
 
 
-def test_salvage_trims_mid_word():
+def test_salvage_trims_mid_word() -> None:
     from straightjacket.engine.parser import salvage_truncated_narration
 
     text = "The door opened. She stepped inside. The light was fadi"
@@ -166,7 +165,7 @@ def test_salvage_trims_mid_word():
     assert result.endswith("inside.")
 
 
-def test_salvage_preserves_complete_game_data():
+def test_salvage_preserves_complete_game_data() -> None:
     from straightjacket.engine.parser import salvage_truncated_narration
 
     text = 'Story text here.<game_data>{"npcs": []}</game_data>'
@@ -177,7 +176,7 @@ def test_salvage_preserves_complete_game_data():
 # ── NPC processing tests ──────────────────────────────────────
 
 
-def _make_game_with_npcs():
+def _make_game_with_npcs():  # type: ignore[no-untyped-def]
     """Create a minimal GameState with some NPCs for processing tests."""
     from straightjacket.engine.models import GameState, NpcData
 
@@ -191,7 +190,7 @@ def _make_game_with_npcs():
     return game
 
 
-def _stub_engine():
+def _stub_engine() -> None:
     """Stub eng() so processing.py can call eng().bonds.start etc."""
     from straightjacket.engine.config_loader import _ConfigNode
     from straightjacket.engine import engine_loader
@@ -234,7 +233,7 @@ def _stub_engine():
     )
 
 
-def test_process_new_npcs_adds_npc():
+def test_process_new_npcs_adds_npc() -> None:
     _stub_engine()
     from straightjacket.engine.npc.processing import process_new_npcs
 
@@ -250,7 +249,7 @@ def test_process_new_npcs_adds_npc():
     assert len(maren.memory) == 1  # seed memory
 
 
-def test_process_new_npcs_skips_player_character():
+def test_process_new_npcs_skips_player_character() -> None:
     _stub_engine()
     from straightjacket.engine.npc.processing import process_new_npcs
 
@@ -261,7 +260,7 @@ def test_process_new_npcs_skips_player_character():
     assert len(game.npcs) == 2  # unchanged
 
 
-def test_process_new_npcs_skips_existing():
+def test_process_new_npcs_skips_existing() -> None:
     _stub_engine()
     from straightjacket.engine.npc.processing import process_new_npcs
 
@@ -272,7 +271,7 @@ def test_process_new_npcs_skips_existing():
     assert len(game.npcs) == 2  # no duplicate
 
 
-def test_process_npc_renames_updates_name():
+def test_process_npc_renames_updates_name() -> None:
     _stub_engine()
     from straightjacket.engine.npc.processing import process_npc_renames
 
@@ -285,7 +284,7 @@ def test_process_npc_renames_updates_name():
     assert "Kira Voss" in npc.aliases
 
 
-def test_process_npc_renames_rejects_player_name():
+def test_process_npc_renames_rejects_player_name() -> None:
     _stub_engine()
     from straightjacket.engine.npc.processing import process_npc_renames
 
@@ -297,7 +296,7 @@ def test_process_npc_renames_rejects_player_name():
     assert npc.name == "Kira Voss"  # unchanged
 
 
-def test_process_npc_details_extends_surname():
+def test_process_npc_details_extends_surname() -> None:
     _stub_engine()
     from straightjacket.engine.npc.processing import process_npc_details
 
@@ -311,7 +310,7 @@ def test_process_npc_details_extends_surname():
     assert "Old Borin" in npc.aliases
 
 
-def test_process_npc_details_updates_description():
+def test_process_npc_details_updates_description() -> None:
     _stub_engine()
     from straightjacket.engine.npc.processing import process_npc_details
 

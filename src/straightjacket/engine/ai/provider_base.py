@@ -16,6 +16,22 @@ from typing import Protocol
 
 from ..logging_util import log
 
+# TOKEN TRACKING — per-call accumulator for session logging
+_token_log: list[dict[str, str | int]] = []
+
+
+def log_tokens(role: str, input_tokens: int, output_tokens: int) -> None:
+    """Record token usage for one AI call."""
+    _token_log.append({"role": role, "input": input_tokens, "output": output_tokens})
+
+
+def drain_token_log() -> list[dict[str, str | int]]:
+    """Return and clear accumulated token records. Call after each turn."""
+    records = list(_token_log)
+    _token_log.clear()
+    return records
+
+
 # NORMALIZED RESPONSE
 
 
@@ -144,6 +160,7 @@ def create_with_retry(
     temperature: float | None = None,
     top_p: float | None = None,
     top_k: int | None = None,
+    log_role: str = "",
 ) -> AIResponse:
     """Call provider.create_message with retry on transient errors.
 
@@ -157,6 +174,8 @@ def create_with_retry(
     IMPORTANT: This function uses blocking time.sleep() for backoff.
     All callers MUST run this via asyncio.to_thread() to avoid blocking
     the server event loop.
+
+    If log_role is set, logs token usage per call for budget tracking.
 
     Returns the post-processed AIResponse.
     """
@@ -173,7 +192,13 @@ def create_with_retry(
                 top_p=top_p,
                 top_k=top_k,
             )
-            return post_process_response(response)
+            result = post_process_response(response)
+            if log_role and result.usage:
+                inp = result.usage.get("input_tokens", 0)
+                out = result.usage.get("output_tokens", 0)
+                log(f"[TOKENS] {log_role}: {inp} in + {out} out = {inp + out} total")
+                log_tokens(log_role, inp, out)
+            return result
 
         except Exception as e:
             # Check if this is a retryable error

@@ -66,7 +66,7 @@ _STOPWORDS = frozenset(
 # RETIRE / REACTIVATE
 
 
-def retire_distant_npcs(game: "GameState", max_active: int | None = None):
+def retire_distant_npcs(game: "GameState", max_active: int | None = None) -> None:
     """Demote NPCs to 'background' if the active list exceeds the threshold.
     Background NPCs remain visible in the sidebar but are excluded from
     AI prompts and NPC agency checks to keep token budgets manageable."""
@@ -76,7 +76,7 @@ def retire_distant_npcs(game: "GameState", max_active: int | None = None):
     if len(active) <= max_active:
         return
 
-    def relevance(npc):
+    def relevance(npc: NpcData) -> int:
         last_scene = max((m.scene for m in npc.memory), default=0) or 0
         score = last_scene + npc.bond * 3
         if not npc.memory or last_scene >= game.narrative.scene_count:
@@ -90,7 +90,7 @@ def retire_distant_npcs(game: "GameState", max_active: int | None = None):
         log(f"[NPC] Demoted to background: {npc.name}")
 
 
-def reactivate_npc(npc: NpcData, reason: str = "", force: bool = False):
+def reactivate_npc(npc: NpcData, reason: str = "", force: bool = False) -> None:
     """Promote a background (or deceased with force=True) NPC back to active status.
     force=True enables resurrection of deceased NPCs (exact name match in narration)."""
     if npc.status == "deceased":
@@ -173,7 +173,7 @@ def sanitize_aliases(npc: NpcData) -> None:
     npc.aliases = clean
 
 
-def absorb_duplicate_npc(game: "GameState", original: NpcData, merged_name: str):
+def absorb_duplicate_npc(game: "GameState", original: NpcData, merged_name: str) -> None:
     """After an identity reveal renames an NPC, check if a duplicate with the
     new name was already created by process_new_npcs earlier in the same
     metadata cycle. If found, absorb its data and remove the duplicate.
@@ -193,7 +193,7 @@ def absorb_duplicate_npc(game: "GameState", original: NpcData, merged_name: str)
         dup_mems = dup.memory
 
         # Determine which is the richer, more established character.
-        def _richness(n):
+        def _richness(n: NpcData) -> int:
             return len(n.memory) * 2 + bool(n.agenda) * 3 + bool(n.instinct) * 3 + n.bond * 2 + bool(n.description) * 1
 
         dup_richer = _richness(dup) > _richness(original)

@@ -7,7 +7,7 @@ from .engine_loader import eng
 from .models import CurrentAct, GameState, Revelation
 
 
-def _default_scene_range() -> list[int]:
+def default_scene_range() -> list[int]:
     """Fallback scene range from engine.yaml when an act has no explicit range."""
     return list(eng().scene_range_default)
 
@@ -38,7 +38,7 @@ def get_current_act(game: GameState) -> CurrentAct:
     act_number = 1
 
     for i, act in enumerate(acts[:-1]):
-        sr = act.scene_range or _default_scene_range()
+        sr = act.scene_range or default_scene_range()
         act_id = f"act_{i}"
 
         if act_id in triggered or scene > sr[1]:
@@ -50,7 +50,7 @@ def get_current_act(game: GameState) -> CurrentAct:
             act_number = i + 1
             break
 
-    sr = current.scene_range or _default_scene_range()
+    sr = current.scene_range or default_scene_range()
     act_len = max(sr[1] - sr[0] + 1, 1)
     scenes_in = scene - sr[0] + 1
     if scenes_in <= act_len * 0.3:

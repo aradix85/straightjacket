@@ -79,4 +79,9 @@ def print_summary(slog: SessionLog, game: GameState | None) -> None:
     if ct > 0:
         cf = qs.get("correction_tests_failed", 0)
         print(f"  Corrections     : {ct} tested, {cf} failed")
+    ts = slog.token_summary
+    if ts.get("total", 0) > 0:
+        print(f"  Tokens          : {ts['total_input']} in + {ts['total_output']} out = {ts['total']} total")
+        for role, stats in sorted(ts.get("by_role", {}).items(), key=lambda x: -x[1]["input"]):
+            print(f"    {role:<20}: {stats['calls']}x, {stats['input']} in + {stats['output']} out")
     print(separator)

@@ -5,7 +5,7 @@
 1. Fork, branch, make your change
 2. `python -m pytest tests/ -v` — all tests must pass
 3. `ruff check src/` — must be clean
-4. `mypy src/straightjacket/engine/ src/straightjacket/web/ --config-file pyproject.toml` — must be clean
+4. `mypy src/ tests/ --config-file pyproject.toml` — must be clean
 5. PR with a clear description of what and why
 
 ## Code standards

@@ -13,9 +13,6 @@ from ..prompt_loader import get_prompt
 from .provider_base import AIProvider, create_with_retry
 from .schemas import NARRATOR_METADATA_SCHEMA
 
-# Set after each call_narrator(): True if the response was truncated and salvaged.
-narrator_was_salvaged: bool = False
-
 
 def call_narrator(
     provider: AIProvider,
@@ -33,11 +30,7 @@ def call_narrator(
     skip_history: if True, do not include narration_history as conversation
     context. Used on retries to prevent poisoned few-shot examples.
 
-    After this call, check narrator_was_salvaged to see if the response
-    was truncated and salvaged (trimmed to last complete sentence).
     """
-    global narrator_was_salvaged
-    narrator_was_salvaged = False
     log(f"[Narrator] Calling narrator (prompt: {len(prompt)} chars{', skip_history' if skip_history else ''})")
     _c = cfg()
     messages = []
@@ -63,6 +56,7 @@ def call_narrator(
         system=system,
         messages=messages,
         **sampling_params("narrator"),
+        log_role="narrator",
     )
     raw = response.content
     stop = response.stop_reason
@@ -71,7 +65,6 @@ def call_narrator(
     if stop == "truncated":
         log(f"[Narrator] WARNING: Response truncated at max_tokens ({len(raw)} chars)", level="warning")
         raw = salvage_truncated_narration(raw)
-        narrator_was_salvaged = True
     else:
         # Detect mid-sentence/mid-word cutoff despite "complete" (rare Sonnet bug)
         _prose = raw[: raw.find("<game_data>")] if "<game_data>" in raw else raw
@@ -83,7 +76,6 @@ def call_narrator(
                 level="warning",
             )
             raw = salvage_truncated_narration(raw)
-            narrator_was_salvaged = True
 
     log(f"[Narrator] Response ({len(raw)} chars): {raw[:120]}...")
     if "<game_data>" in raw:
@@ -128,6 +120,7 @@ IMPORTANT: {game.player_name} is the PLAYER CHARACTER — do NOT include them as
             messages=[{"role": "user", "content": prompt}],
             json_schema=OPENING_SETUP_SCHEMA,
             **sampling_params("opening_setup"),
+            log_role="narrator_retry",
         )
         data = json.loads(response.content)
         log(
@@ -232,6 +225,7 @@ Extract all metadata from the narration above. Remember: {game.player_name} is t
             messages=[{"role": "user", "content": prompt}],
             json_schema=NARRATOR_METADATA_SCHEMA,
             **sampling_params("narrator_metadata"),
+            log_role="metadata",
         )
         metadata = json.loads(response.content)
         log(

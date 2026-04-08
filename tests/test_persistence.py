@@ -1,3 +1,5 @@
+from typing import Any
+
 #!/usr/bin/env python3
 """Tests for persistence.py: save, load, list, delete."""
 
@@ -10,7 +12,7 @@ from straightjacket.engine.config_loader import _ConfigNode
 from straightjacket.engine.models import GameState, MemoryEntry, NpcData, ClockData
 
 
-def _stub():
+def _stub() -> None:
     engine_loader._eng = _ConfigNode(
         {
             "bonds": {"start": 0, "max": 4},
@@ -64,7 +66,7 @@ def _game() -> GameState:
 
 
 @pytest.fixture()
-def save_dir(tmp_path, monkeypatch):
+def save_dir(tmp_path: Any, monkeypatch: Any) -> object:  # type: ignore[override]
     """Redirect save directory to a temp path."""
     _stub()
     from straightjacket.engine import logging_util
@@ -74,7 +76,7 @@ def save_dir(tmp_path, monkeypatch):
     return tmp_path
 
 
-def test_save_and_load_roundtrip(save_dir):
+def test_save_and_load_roundtrip(save_dir: Any) -> None:
     from straightjacket.engine.persistence import save_game, load_game
 
     game = _game()
@@ -91,7 +93,7 @@ def test_save_and_load_roundtrip(save_dir):
     assert len(loaded_msgs) == 1
 
 
-def test_save_excludes_recaps(save_dir):
+def test_save_excludes_recaps(save_dir: Any) -> None:
     from straightjacket.engine.persistence import save_game, load_game
 
     game = _game()
@@ -105,7 +107,7 @@ def test_save_excludes_recaps(save_dir):
     assert not any(m.get("recap") for m in loaded_msgs)
 
 
-def test_load_nonexistent_returns_none(save_dir):
+def test_load_nonexistent_returns_none(save_dir: Any) -> None:
     from straightjacket.engine.persistence import load_game
 
     game, msgs = load_game("tester", "nonexistent")
@@ -113,14 +115,14 @@ def test_load_nonexistent_returns_none(save_dir):
     assert msgs == []
 
 
-def test_list_saves_empty(save_dir):
+def test_list_saves_empty(save_dir: Any) -> None:
     from straightjacket.engine.persistence import list_saves_with_info
 
     result = list_saves_with_info("empty_user")
     assert result == []
 
 
-def test_list_saves_with_saves(save_dir):
+def test_list_saves_with_saves(save_dir: Any) -> None:
     from straightjacket.engine.persistence import save_game, list_saves_with_info
 
     save_game(_game(), "lister", [], "save_a")
@@ -132,7 +134,7 @@ def test_list_saves_with_saves(save_dir):
     assert "save_b" in names
 
 
-def test_delete_save(save_dir):
+def test_delete_save(save_dir: Any) -> None:
     from straightjacket.engine.persistence import save_game, delete_save, list_saves_with_info
 
     save_game(_game(), "deleter", [], "to_delete")
@@ -140,13 +142,13 @@ def test_delete_save(save_dir):
     assert list_saves_with_info("deleter") == []
 
 
-def test_delete_nonexistent_returns_false(save_dir):
+def test_delete_nonexistent_returns_false(save_dir: Any) -> None:
     from straightjacket.engine.persistence import delete_save
 
     assert delete_save("nobody", "nope") is False
 
 
-def test_save_carries_version(save_dir):
+def test_save_carries_version(save_dir: Any) -> None:
     from straightjacket.engine.persistence import save_game
     from straightjacket.engine.config_loader import VERSION
 
@@ -156,11 +158,12 @@ def test_save_carries_version(save_dir):
     assert data["engine_version"] == VERSION
 
 
-def test_load_normalizes_npc_dispositions(save_dir):
+def test_load_normalizes_npc_dispositions(save_dir: Any) -> None:
     from straightjacket.engine.persistence import save_game, load_game
 
     game = _game()
     game.npcs[0].disposition = "wary"  # non-canonical, should normalize
     save_game(game, "tester", [], "disp_test")
     loaded, _ = load_game("tester", "disp_test")
+    assert loaded is not None
     assert loaded.npcs[0].disposition == "distrustful"

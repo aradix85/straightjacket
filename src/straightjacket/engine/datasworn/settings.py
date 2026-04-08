@@ -17,14 +17,19 @@ Usage:
     pkg.roll_action_theme()     # ("Distract", "Path") — meaning pair
 """
 
+from __future__ import annotations
+
 from dataclasses import dataclass, field
-from typing import Optional
+from typing import TYPE_CHECKING
 
 import yaml
 
 from ..config_loader import PROJECT_ROOT
 from ..logging_util import log
 from .loader import Setting, load_setting
+
+if TYPE_CHECKING:
+    from ..models import GameState
 
 _SETTINGS_DIR = PROJECT_ROOT / "data" / "settings"
 
@@ -43,7 +48,7 @@ class GenreConstraints:
 class SettingPackage:
     """A complete setting: metadata + vocabulary + constraints + Datasworn data."""
 
-    def __init__(self, config: dict, data: Setting, parent: Optional["SettingPackage"] = None):
+    def __init__(self, config: dict, data: Setting, parent: SettingPackage | None = None):
         self._config = config
         self._data = data
         self._parent = parent
@@ -165,12 +170,12 @@ def load_package(setting_id: str) -> SettingPackage:
     return pkg
 
 
-def clear_cache():
+def clear_cache() -> None:
     """Clear the package cache."""
     _cache.clear()
 
 
-def active_package(game):
+def active_package(game: GameState) -> SettingPackage | None:
     """Get the active setting package for a game. Returns None if not set or not found."""
     if not game.setting_id:
         return None

@@ -31,7 +31,7 @@ def _ensure_loaded() -> dict:
     return _strings
 
 
-def get_string(key: str, **variables) -> str:
+def get_string(key: str, **variables: str | int) -> str:
     """Get a string by key, filling template variables.
     Returns the key itself if not found (visible placeholder, not a crash)."""
     strings = _ensure_loaded()
@@ -49,8 +49,13 @@ def get_strings_by_prefix(prefix: str) -> dict[str, str]:
     return {k[len(prefix) :]: v for k, v in strings.items() if k.startswith(prefix)}
 
 
-def reload_strings():
+def reload_strings() -> None:
     """Force reload from disk."""
     global _strings
     _strings = None
     _ensure_loaded()
+
+
+def all_strings() -> dict[str, str]:
+    """Return all loaded strings. Used by the web layer to send UI strings to clients."""
+    return dict(_ensure_loaded())

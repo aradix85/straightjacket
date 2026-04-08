@@ -25,7 +25,7 @@ from straightjacket.engine.models import (
 )
 
 
-def _load_engine():
+def _load_engine() -> None:
     engine_loader._eng = None
     engine_loader.eng()
 
@@ -33,7 +33,7 @@ def _load_engine():
 # ── NpcData ───────────────────────────────────────────────────
 
 
-def test_npcdata_roundtrip():
+def test_npcdata_roundtrip() -> None:
     npc = NpcData(
         id="npc_1", name="Kira", bond=3, memory=[MemoryEntry(event="test", type="observation")], aliases=["K"]
     )
@@ -46,7 +46,7 @@ def test_npcdata_roundtrip():
     assert npc2.aliases == ["K"]
 
 
-def test_memoryentry_roundtrip():
+def test_memoryentry_roundtrip() -> None:
     m = MemoryEntry(
         scene=3,
         event="fought",
@@ -64,7 +64,7 @@ def test_memoryentry_roundtrip():
     assert m2.about_npc == "npc_1"
 
 
-def test_clockdata_roundtrip():
+def test_clockdata_roundtrip() -> None:
     c = ClockData(name="Doom", segments=4, filled=2, clock_type="scheme", owner="Kira")
     d = c.to_dict()
     c2 = ClockData.from_dict(d)
@@ -76,7 +76,7 @@ def test_clockdata_roundtrip():
 # ── SceneLogEntry ─────────────────────────────────────────────
 
 
-def test_scenelogentry_roundtrip():
+def test_scenelogentry_roundtrip() -> None:
     e = SceneLogEntry(scene=3, summary="Test", result="STRONG_HIT", consequences=["health -2"])
     d = e.to_dict()
     e2 = SceneLogEntry.from_dict(d)
@@ -84,7 +84,7 @@ def test_scenelogentry_roundtrip():
     assert e2.consequences == ["health -2"]
 
 
-def test_chapter_summary_roundtrip():
+def test_chapter_summary_roundtrip() -> None:
     cs = ChapterSummary(
         chapter=1,
         title="First Blood",
@@ -103,7 +103,7 @@ def test_chapter_summary_roundtrip():
     assert restored.scenes == cs.scenes
 
 
-def test_campaign_state_from_dict_converts_chapter_dicts():
+def test_campaign_state_from_dict_converts_chapter_dicts() -> None:
     """CampaignState.from_dict converts raw dicts in campaign_history to ChapterSummary."""
     data = {
         "campaign_history": [
@@ -132,7 +132,7 @@ def test_campaign_state_from_dict_converts_chapter_dicts():
     assert ch.npc_evolutions[0].name == "A"
 
 
-def test_campaign_state_roundtrip():
+def test_campaign_state_roundtrip() -> None:
     cs = CampaignState(
         campaign_history=[
             ChapterSummary(chapter=1, title="A", summary="B"),
@@ -150,7 +150,7 @@ def test_campaign_state_roundtrip():
 # ── GameState composite ──────────────────────────────────────
 
 
-def test_gamestate_full_json_roundtrip():
+def test_gamestate_full_json_roundtrip() -> None:
     game = GameState(player_name="Hero", edge=3, heart=1, iron=1, shadow=1, wits=1)
     game.npcs.append(NpcData(id="npc_1", name="Ally", bond=2, memory=[MemoryEntry(event="met")]))
     game.world.clocks.append(ClockData(name="Threat"))
@@ -162,7 +162,7 @@ def test_gamestate_full_json_roundtrip():
     assert g2.world.clocks[0].name == "Threat"
 
 
-def test_gamestate_snapshot_restore():
+def test_gamestate_snapshot_restore() -> None:
     game = GameState(player_name="Test")
     game.resources.health = 3
     game.world.chaos_factor = 7
@@ -180,7 +180,7 @@ def test_gamestate_snapshot_restore():
 # ── Mechanics (tested via models) ─────────────────────────────
 
 
-def test_roll_action_cap():
+def test_roll_action_cap() -> None:
     """Action score caps at 10."""
     from straightjacket.engine.mechanics import roll_action
     import random
@@ -191,7 +191,7 @@ def test_roll_action_cap():
         assert r.action_score <= 10
 
 
-def test_compel_no_disposition_shift():
+def test_compel_no_disposition_shift() -> None:
     _load_engine()
     """v0.9.86: compel STRONG_HIT grants bond+1 only, no disposition shift."""
     from straightjacket.engine.mechanics import apply_consequences
@@ -209,7 +209,7 @@ def test_compel_no_disposition_shift():
     assert npc.disposition == "neutral"
 
 
-def test_test_bond_disposition_shift():
+def test_test_bond_disposition_shift() -> None:
     _load_engine()
     """v0.9.86: test_bond STRONG_HIT grants bond+1 AND disposition shift."""
     from straightjacket.engine.mechanics import apply_consequences
@@ -227,7 +227,7 @@ def test_test_bond_disposition_shift():
     assert npc.disposition == "friendly"
 
 
-def test_npc_owned_threat_clock_ticks_in_agency():
+def test_npc_owned_threat_clock_ticks_in_agency() -> None:
     """v0.9.86: check_npc_agency ticks NPC-owned threat clocks."""
     from straightjacket.engine.mechanics import check_npc_agency
 
@@ -245,7 +245,7 @@ def test_npc_owned_threat_clock_ticks_in_agency():
     assert not clock_events[0].triggered
 
 
-def test_npc_agency_clock_fires_on_full():
+def test_npc_agency_clock_fires_on_full() -> None:
     """check_npc_agency returns triggered=True when clock fills completely."""
     from straightjacket.engine.mechanics import check_npc_agency
 
@@ -263,7 +263,7 @@ def test_npc_agency_clock_fires_on_full():
     assert any("CLOCK FILLED" in a for a in actions)
 
 
-def test_npc_agency_empty_on_wrong_scene():
+def test_npc_agency_empty_on_wrong_scene() -> None:
     """check_npc_agency returns empty on non-5th scenes."""
     from straightjacket.engine.mechanics import check_npc_agency
 
@@ -276,7 +276,7 @@ def test_npc_agency_empty_on_wrong_scene():
     assert clock_events == []
 
 
-def test_autonomous_clocks_skip_npc_owned():
+def test_autonomous_clocks_skip_npc_owned() -> None:
     _load_engine()
     """Autonomous clock ticking skips NPC-owned clocks."""
     from straightjacket.engine.mechanics import tick_autonomous_clocks
@@ -291,7 +291,7 @@ def test_autonomous_clocks_skip_npc_owned():
     assert clock.filled == 2
 
 
-def test_npc_arc_field():
+def test_npc_arc_field() -> None:
     """NpcData has arc field, serialized in to_dict/from_dict."""
     npc = NpcData(id="npc_1", name="Test", arc="Beginning to trust the player")
     assert npc.arc == "Beginning to trust the player"
@@ -301,7 +301,7 @@ def test_npc_arc_field():
     assert restored.arc == "Beginning to trust the player"
 
 
-def test_story_blueprint_triggered_director_phases():
+def test_story_blueprint_triggered_director_phases() -> None:
     """StoryBlueprint tracks triggered_director_phases for phase dedup."""
     bp = StoryBlueprint(
         central_conflict="test",
@@ -320,7 +320,7 @@ def test_story_blueprint_triggered_director_phases():
     assert restored.triggered_director_phases == ["climax"]
 
 
-def test_story_blueprint_triggered_director_phases_snapshot():
+def test_story_blueprint_triggered_director_phases_snapshot() -> None:
     """triggered_director_phases survives snapshot/restore cycle."""
     game = GameState()
     bp = StoryBlueprint(
@@ -340,7 +340,7 @@ def test_story_blueprint_triggered_director_phases_snapshot():
     assert game.narrative.story_blueprint.triggered_director_phases == ["resolution"]
 
 
-def test_phase_trigger_dedup():
+def test_phase_trigger_dedup() -> None:
     _load_engine()
     """should_call_director skips already-fired phase triggers."""
     from straightjacket.engine.director import should_call_director
@@ -372,7 +372,7 @@ def test_phase_trigger_dedup():
     assert reason2 != "phase:resolution"
 
 
-def test_memory_guard_rejects_zero_overlap():
+def test_memory_guard_rejects_zero_overlap() -> None:
     """process_npc_details rejects identity reveal when NPC has memories and zero word overlap."""
     from straightjacket.engine.npc.processing import process_npc_details
 
@@ -393,7 +393,7 @@ def test_memory_guard_rejects_zero_overlap():
     assert stub.id != "npc_1"
 
 
-def test_memory_guard_allows_no_memories():
+def test_memory_guard_allows_no_memories() -> None:
     """process_npc_details allows identity reveal when NPC has no memories."""
     from straightjacket.engine.npc.processing import process_npc_details
 
@@ -404,7 +404,7 @@ def test_memory_guard_allows_no_memories():
     assert npc.name == "Heinrich Blum"
 
 
-def test_social_move_unresolved_target_skips_bond():
+def test_social_move_unresolved_target_skips_bond() -> None:
     _load_engine()
     """Social move with no resolvable target skips bond/disposition effects."""
     from straightjacket.engine.mechanics import apply_consequences

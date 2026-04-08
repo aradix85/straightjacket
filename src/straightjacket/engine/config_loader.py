@@ -95,19 +95,19 @@ class _ConfigNode:
     def to_dict(self) -> dict:
         return self._data
 
-    def __iter__(self):
+    def __iter__(self) -> Any:
         return iter(self._data)
 
     def __len__(self) -> int:
         return len(self._data)
 
-    def keys(self):
+    def keys(self) -> Any:
         return self._data.keys()
 
-    def values(self):
+    def values(self) -> Any:
         return self._data.values()
 
-    def items(self):
+    def items(self) -> Any:
         return self._data.items()
 
 

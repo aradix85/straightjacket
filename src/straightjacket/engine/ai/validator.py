@@ -82,13 +82,16 @@ def validate_narration(
     cons_text = ", ".join(consequences) if consequences else "none"
     pc_hint = f' The player character is "{player_name}" (the "you").' if player_name else ""
 
-    system = f"""Constraint checker for RPG narration. Be STRICT but PRECISE.
+    system = f"""Constraint checker for RPG narration. Be STRICT but PRECISE. When in doubt, PASS — false positives waste tokens on retries and can degrade narration quality.
 
 RESOLUTION PACING: NPCs answer ONLY the specific question asked — no volunteering theories, connections, accusations, or context the player did not request. A new mystery must not be explained in the scene it appears. A new NPC must not monologue. Tension introduced must survive to the next scene.
 
-PLAYER AGENCY: This applies ONLY to the player character (the "you" in narration).{pc_hint} NPCs MAY think, feel, remember, interpret — that is good characterization, not a violation. The narrator must not impose thoughts, feelings, interpretations, or memories on the PLAYER CHARACTER. "You see the door" = OK. "You see the fear in her eyes" = violation (imposes interpretation). "You notice she is trembling" = OK (observable). "You understand why she is trembling" = violation (imposes interpretation).
+PLAYER AGENCY: This applies ONLY to the player character (the "you" in narration).{pc_hint} NPCs MAY think, feel, remember, interpret — that is good characterization, not a violation. The narrator must not impose thoughts, feelings, INTERPRETATIONS, or memories on the PLAYER CHARACTER. Key distinction: OBSERVABLE FACTS about the player character are allowed. INTERNAL STATES are not.
+- Observable (OK): "your boots sink into mud", "sweat runs down your neck", "your hands shake", "the wound burns", "your breath fogs"
+- Interpretation (violation): "you realize the truth", "you feel a surge of dread", "you understand why", "the silence offers you a choice", "you remember the promise"
+- The test: could a camera see it? If yes, it's observable. If it requires knowing the character's mind, it's a violation.
 
-RESULT INTEGRITY: If result_type is MISS, the failure must be concrete — no learning, no silver lining, no disguised success. If WEAK_HIT, there must be a SPECIFIC tangible cost visible in the prose: something broken, lost, spent, damaged, or worsened. Atmospheric tension alone is not a cost. "The fuel cell cracks" = cost. "The air feels heavier" = not a cost. If dialog, skip this check.
+RESULT INTEGRITY: If result_type is MISS, the failure must be concrete — the situation is WORSE than before. Sensory descriptions of the failure itself are ALLOWED on a MISS (pain, cold, noise, breakage, environmental damage). What is NOT allowed: the player character LEARNS something, DISCOVERS something, GAINS insight, or makes PROGRESS toward a goal. "Your skin burns and the wound splits open" = allowed (describing failure). "The hill remembers your name" = violation (revelation). "Frost forms on the valve" = allowed (environmental consequence). "The trail was leading you back to its lair" = violation (learning). If WEAK_HIT, there must be a SPECIFIC tangible cost visible in the prose: something broken, lost, spent, damaged, or worsened. Atmospheric tension alone is not a cost. "The fuel cell cracks" = cost. "The air feels heavier" = not a cost. If dialog, skip this check.
 
 Return pass=true if ALL constraints met.
 Return pass=false with:
@@ -111,6 +114,7 @@ Check constraints."""
             json_schema=VALIDATOR_SCHEMA,
             temperature=0.2,
             top_p=0.9,
+            log_role="validator",
         )
         result = json.loads(response.content)
         if not result.get("pass", True):
@@ -374,6 +378,7 @@ Check genre fidelity. Be strict — if it implies anything beyond physical reali
             json_schema=ARCHITECT_VALIDATOR_SCHEMA,
             temperature=0.2,
             top_p=0.9,
+            log_role="validator_architect",
         )
         result = json.loads(response.content)
         if not result.get("pass", True):

@@ -17,7 +17,7 @@ from ..npc import (
 from ..parser import apply_memory_updates
 
 
-def _resolve_slug_refs(game: GameState, mem_updates: list, fresh_npcs: list):
+def _resolve_slug_refs(game: GameState, mem_updates: list, fresh_npcs: list) -> None:
     """Rewrite memory_update npc_ids that are snake_case slugs for freshly created NPCs.
 
     When the Metadata Extractor creates new_npcs AND memory_updates in the same
@@ -68,7 +68,7 @@ def _resolve_slug_refs(game: GameState, mem_updates: list, fresh_npcs: list):
 
 def apply_narrator_metadata(
     game: GameState, metadata: dict, scene_present_ids: set | None = None, world_addition: str = ""
-):
+) -> None:
     """Apply structured metadata from the metadata extractor to game state.
     scene_present_ids: set of NPC IDs that were activated/present in the scene.
     world_addition: Brain's world_addition text, passed through to process_npc_details
@@ -144,7 +144,7 @@ def apply_narrator_metadata(
     _check_death_corroboration(game)
 
 
-def process_deceased_npcs(game: GameState, deceased_list: list, scene_present_ids: set | None = None):
+def process_deceased_npcs(game: GameState, deceased_list: list, scene_present_ids: set | None = None) -> None:
     """Mark NPCs as deceased based on metadata extractor report.
     Sets status='deceased' — this excludes them from all active processing:
     prompts, memories, reflections, sidebar, reactivation.
@@ -177,7 +177,7 @@ def process_deceased_npcs(game: GameState, deceased_list: list, scene_present_id
         log(f"[NPC] Marked as deceased: {npc.name} ({npc.id}, was {old_status})")
 
 
-def _process_lore_npcs(game: GameState, lore_list: list):
+def _process_lore_npcs(game: GameState, lore_list: list) -> None:
     """Create lore NPCs — historically significant, never physically present.
     Skips duplicates of existing NPCs. Lore NPCs can receive memories
     but are never activated in prompts or shown as present."""
@@ -212,7 +212,7 @@ def _death_emotions() -> set[str]:
     return set(eng().death_emotions)
 
 
-def _check_death_corroboration(game: GameState):
+def _check_death_corroboration(game: GameState) -> None:
     """Fallback off-screen death detection via cross-NPC memory voting.
 
     The primary deceased_npcs extractor requires a physically-witnessed death.

@@ -2,6 +2,7 @@
 """NPC memory system: importance scoring, memory retrieval, consolidation."""
 
 import re
+from typing import Literal, overload
 
 from ..emotions_loader import importance_map, keyword_boosts
 from ..engine_loader import eng
@@ -9,7 +10,15 @@ from ..logging_util import log
 from ..models import MemoryEntry, NpcData
 
 
-def score_importance(emotional_weight: str, event_text: str = "", debug: bool = False):
+@overload
+def score_importance(emotional_weight: str, event_text: str = "", debug: Literal[False] = ...) -> int: ...
+
+
+@overload
+def score_importance(emotional_weight: str, event_text: str = "", debug: Literal[True] = ...) -> tuple[int, str]: ...
+
+
+def score_importance(emotional_weight: str, event_text: str = "", debug: bool = False) -> int | tuple[int, str]:
     """Score the importance of a memory entry (1-10).
     Uses emotional_weight as primary signal, with keyword boosts from event text.
     Handles compound phrases and snake_case.

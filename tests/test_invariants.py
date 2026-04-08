@@ -16,16 +16,16 @@ from pathlib import Path as _Path
 
 _sys.path.insert(0, str(_Path(__file__).resolve().parent.parent / "elvira"))
 
-from elvira_bot.invariants import assert_game_state
-from elvira_bot.quality_checks import check_narration_quality
+from elvira_bot.invariants import assert_game_state  # type: ignore[import-not-found]
+from elvira_bot.quality_checks import check_narration_quality  # type: ignore[import-not-found]
 
 
-def _load_engine():
+def _load_engine() -> None:
     engine_loader._eng = None
     engine_loader.eng()
 
 
-def _stub_engine():
+def _stub_engine() -> None:
     """Stub with known limits for predictable assertions."""
     engine_loader._eng = _ConfigNode(
         {
@@ -78,7 +78,7 @@ def _clean_game() -> GameState:
 # ── Clean state passes ────────────────────────────────────────
 
 
-def test_clean_state_no_violations():
+def test_clean_state_no_violations() -> None:
     _load_engine()
     # Import from the package, not the bot — needs engine loaded
     game = _clean_game()
@@ -89,7 +89,7 @@ def test_clean_state_no_violations():
 # ── Resource violations ───────────────────────────────────────
 
 
-def test_catches_health_out_of_range():
+def test_catches_health_out_of_range() -> None:
     _load_engine()
     game = _clean_game()
     game.resources.health = 7
@@ -97,7 +97,7 @@ def test_catches_health_out_of_range():
     assert any("health" in v for v in violations)
 
 
-def test_catches_negative_spirit():
+def test_catches_negative_spirit() -> None:
     _load_engine()
     game = _clean_game()
     game.resources.spirit = -1
@@ -105,7 +105,7 @@ def test_catches_negative_spirit():
     assert any("spirit" in v for v in violations)
 
 
-def test_catches_momentum_exceeds_max():
+def test_catches_momentum_exceeds_max() -> None:
     _load_engine()
     game = _clean_game()
     game.resources.momentum = 12
@@ -117,7 +117,7 @@ def test_catches_momentum_exceeds_max():
 # ── Chaos violations ─────────────────────────────────────────
 
 
-def test_catches_chaos_below_min():
+def test_catches_chaos_below_min() -> None:
     _load_engine()
     game = _clean_game()
     game.world.chaos_factor = 2
@@ -125,7 +125,7 @@ def test_catches_chaos_below_min():
     assert any("chaos" in v.lower() for v in violations)
 
 
-def test_catches_chaos_above_max():
+def test_catches_chaos_above_max() -> None:
     _load_engine()
     game = _clean_game()
     game.world.chaos_factor = 10
@@ -136,7 +136,7 @@ def test_catches_chaos_above_max():
 # ── Crisis consistency ────────────────────────────────────────
 
 
-def test_catches_crisis_mode_when_both_positive():
+def test_catches_crisis_mode_when_both_positive() -> None:
     _load_engine()
     game = _clean_game()
     game.crisis_mode = True  # but health=5 spirit=5
@@ -144,7 +144,7 @@ def test_catches_crisis_mode_when_both_positive():
     assert any("crisis" in v.lower() for v in violations)
 
 
-def test_catches_game_over_missing():
+def test_catches_game_over_missing() -> None:
     _load_engine()
     game = _clean_game()
     game.resources.health = 0
@@ -158,7 +158,7 @@ def test_catches_game_over_missing():
 # ── NPC violations ────────────────────────────────────────────
 
 
-def test_catches_npc_empty_id():
+def test_catches_npc_empty_id() -> None:
     _load_engine()
     game = _clean_game()
     game.npcs[0].id = ""
@@ -166,7 +166,7 @@ def test_catches_npc_empty_id():
     assert any("empty id" in v for v in violations)
 
 
-def test_catches_npc_invalid_disposition():
+def test_catches_npc_invalid_disposition() -> None:
     _load_engine()
     game = _clean_game()
     game.npcs[0].disposition = "angry"  # not in canonical 5
@@ -174,7 +174,7 @@ def test_catches_npc_invalid_disposition():
     assert any("disposition" in v for v in violations)
 
 
-def test_catches_npc_bond_over_max():
+def test_catches_npc_bond_over_max() -> None:
     _load_engine()
     game = _clean_game()
     game.npcs[0].bond = 5
@@ -183,7 +183,7 @@ def test_catches_npc_bond_over_max():
     assert any("bond" in v for v in violations)
 
 
-def test_catches_npc_memory_missing_fields():
+def test_catches_npc_memory_missing_fields() -> None:
     _load_engine()
     game = _clean_game()
     game.npcs[0].memory = [MemoryEntry(scene=1, event="", type="", importance=0)]
@@ -193,7 +193,7 @@ def test_catches_npc_memory_missing_fields():
     assert any("importance" in v for v in violations)
 
 
-def test_catches_alias_duplicates_name():
+def test_catches_alias_duplicates_name() -> None:
     _load_engine()
     game = _clean_game()
     game.npcs[0].aliases = ["Kira"]  # same as name
@@ -204,7 +204,7 @@ def test_catches_alias_duplicates_name():
 # ── Clock violations ─────────────────────────────────────────
 
 
-def test_catches_clock_overfilled():
+def test_catches_clock_overfilled() -> None:
     _load_engine()
     game = _clean_game()
     game.world.clocks[0].filled = 8  # segments is 6
@@ -212,7 +212,7 @@ def test_catches_clock_overfilled():
     assert any("filled" in v for v in violations)
 
 
-def test_catches_fired_but_not_full():
+def test_catches_fired_but_not_full() -> None:
     _load_engine()
     game = _clean_game()
     game.world.clocks[0].fired = True
@@ -221,7 +221,7 @@ def test_catches_fired_but_not_full():
     assert any("fired" in v.lower() for v in violations)
 
 
-def test_catches_invalid_clock_type():
+def test_catches_invalid_clock_type() -> None:
     _load_engine()
     game = _clean_game()
     game.world.clocks[0].clock_type = "timer"  # not valid
@@ -238,33 +238,33 @@ if __name__ == "__main__":
 # ── Narration quality check tests ─────────────────────────────
 
 
-def test_quality_catches_leaked_result_type():
+def test_quality_catches_leaked_result_type() -> None:
     issues = check_narration_quality("The warrior strikes. STRONG_HIT. The blade bites deep.")
     assert any("result type" in i for i in issues)
 
 
-def test_quality_catches_leaked_stat_value():
+def test_quality_catches_leaked_stat_value() -> None:
     issues = check_narration_quality("You feel weakened. health = 3. The wound bleeds.")
     assert any("stat value" in i for i in issues)
 
 
-def test_quality_catches_xml_tags():
+def test_quality_catches_xml_tags() -> None:
     issues = check_narration_quality("The door creaks. <memory_updates>test</memory_updates>")
     assert any("XML" in i for i in issues)
 
 
-def test_quality_catches_markdown():
+def test_quality_catches_markdown() -> None:
     issues = check_narration_quality("She said **hello** to the stranger.")
     assert any("markdown bold" in i for i in issues)
 
 
-def test_quality_passes_clean_narration():
+def test_quality_passes_clean_narration() -> None:
     issues = check_narration_quality(
         "The wind howled through the broken windows. She stepped inside, her boots crunching on shattered glass."
     )
     assert issues == []
 
 
-def test_quality_catches_bracket_annotations():
+def test_quality_catches_bracket_annotations() -> None:
     issues = check_narration_quality("The blade struck true. [CLOCK CREATED: Shadow Rising 0/6]")
     assert any("bracket" in i for i in issues)

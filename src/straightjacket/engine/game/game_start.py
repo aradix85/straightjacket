@@ -96,10 +96,10 @@ def start_new_game(
 
     from concurrent.futures import ThreadPoolExecutor
 
-    def _run_narrator():
+    def _run_narrator() -> str:
         return call_narrator(provider, narrator_prompt, game, config)
 
-    def _run_architect():
+    def _run_architect() -> dict | None:
         return call_story_architect(provider, game, structure_type=structure, config=config)
 
     with ThreadPoolExecutor(max_workers=2) as pool:
@@ -170,7 +170,7 @@ def start_new_game(
     return game, narration
 
 
-def _apply_opening_setup(game: GameState, data: dict):
+def _apply_opening_setup(game: GameState, data: dict) -> None:
     """Apply structured opening setup data to game state."""
     from .setup_common import apply_world_setup, register_extracted_npcs, seed_opening_memories
 

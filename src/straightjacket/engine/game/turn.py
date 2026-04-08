@@ -24,7 +24,7 @@ from ..models import BrainResult, EngineConfig, GameState, NarrationEntry, RollR
 from ..npc import activate_npcs_for_prompt, find_npc, reactivate_npc
 from ..parser import parse_narrator_response
 from ..prompt_builders import build_action_prompt, build_dialog_prompt
-from ..story_state import _default_scene_range, get_pending_revelations, mark_revelation_used
+from ..story_state import default_scene_range, get_pending_revelations, mark_revelation_used
 
 # POST-NARRATION: shared logic for both dialog and action paths
 
@@ -301,7 +301,7 @@ def process_turn(
     return game, narration, roll, burn_info, director_ctx
 
 
-def _check_story_completion(game: GameState):
+def _check_story_completion(game: GameState) -> None:
     """Check if the story has reached its natural end point."""
     bp = game.narrative.story_blueprint
     if not bp or not bp.acts:
@@ -311,7 +311,7 @@ def _check_story_completion(game: GameState):
     acts = bp.acts
     if not acts:
         return
-    final_end = (acts[-1].scene_range or _default_scene_range())[1]
+    final_end = (acts[-1].scene_range or default_scene_range())[1]
     sc = game.narrative.scene_count
 
     triggered = set(bp.triggered_transitions)
@@ -330,7 +330,7 @@ def _check_story_completion(game: GameState):
         for i, act in enumerate(acts[:-1]):  # Never back-fill the final act
             act_id = f"act_{i}"
             if act_id not in bp.triggered_transitions:
-                act_range = act.scene_range or _default_scene_range()
+                act_range = act.scene_range or default_scene_range()
                 if sc > act_range[1]:
                     bp.triggered_transitions.append(act_id)
                     log(f"[Story] Back-filled transition: {act_id} (scene {sc} > range end {act_range[1]})")

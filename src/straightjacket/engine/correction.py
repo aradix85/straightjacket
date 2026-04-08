@@ -27,6 +27,7 @@ from .mechanics import (
     update_chaos_factor,
 )
 from .models import (
+    NPC_STATUSES,
     BrainResult,
     EngineConfig,
     GameState,
@@ -43,8 +44,6 @@ from .prompt_blocks import get_narration_lang
 from .prompt_loader import get_prompt
 from .prompt_builders import build_action_prompt, build_dialog_prompt
 
-MAX_NARRATION_CHARS = 1500
-
 
 def call_correction_brain(
     provider: AIProvider, game: GameState, correction_text: str, config: EngineConfig | None = None
@@ -57,7 +56,7 @@ def call_correction_brain(
     _cfg = config or EngineConfig()
     lang = get_narration_lang(_cfg)
 
-    def _npc_line(n):
+    def _npc_line(n: NpcData) -> str:
         aliases = f" aliases:{','.join(n.aliases)}" if n.aliases else ""
         return f'id:{n.id} name:"{n.name}"{aliases} disposition:{n.disposition} desc:"{n.description[:120]}"'
 
@@ -143,10 +142,8 @@ def _apply_correction_ops(game: GameState, ops: list) -> None:
                     edits.pop("aliases", None)
 
                 # Status validation
-                if "status" in edits:
-                    valid_statuses = {"active", "background", "deceased", "lore"}
-                    if edits["status"] not in valid_statuses:
-                        edits.pop("status")
+                if "status" in edits and edits["status"] not in NPC_STATUSES:
+                    edits.pop("status")
 
                 for k, v in edits.items():
                     setattr(npc, k, v)
@@ -348,7 +345,7 @@ def process_correction(
     narration_entry = NarrationEntry(
         scene=nar.scene_count,
         prompt_summary=f"[corrected] {intent}",
-        narration=narration[:MAX_NARRATION_CHARS],
+        narration=narration[: eng().pacing.max_narration_chars],
     )
 
     if source == "input_misread":

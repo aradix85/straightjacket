@@ -92,7 +92,7 @@ class OracleRow:
     # Some rows reference other oracle tables (e.g. "Roll twice")
     oracle_rolls: list | None = None
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.text
 
 
@@ -123,7 +123,7 @@ class OracleTable:
         """Roll and return just the text."""
         return self.roll().text
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self.rows)
 
 
@@ -154,12 +154,12 @@ class Setting:
 
     # ── Oracles ───────────────────────────────────────────────
 
-    def _load_oracles(self):
+    def _load_oracles(self) -> None:
         """Parse all oracle tables into OracleTable objects, recursively."""
         for coll_id, coll in self._raw.get("oracles", {}).items():
             self._load_oracle_collection(coll_id, coll)
 
-    def _load_oracle_collection(self, path: str, coll: dict):
+    def _load_oracle_collection(self, path: str, coll: dict) -> None:
         """Recursively load oracle tables from a collection."""
         # Direct tables in this collection
         for table_id, table_data in (coll.get("contents") or {}).items():
@@ -368,6 +368,6 @@ def load_setting(setting_id: str) -> Setting:
     return setting
 
 
-def clear_cache():
+def clear_cache() -> None:
     """Clear the setting cache. Use after data directory changes."""
     _cache.clear()

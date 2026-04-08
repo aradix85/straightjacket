@@ -48,9 +48,23 @@ def main():
         "--ws", action="store_true", help="WebSocket mode: play through the server instead of direct engine calls"
     )
     parser.add_argument("--port", type=int, default=None, help="Server port for --ws mode (default: from config.yaml)")
+    parser.add_argument(
+        "--setting", type=str, default=None, help="Override: setting_id (starforged, classic, sundered_isles)"
+    )
+    parser.add_argument(
+        "--style",
+        type=str,
+        default=None,
+        help="Override: play style (explorer, aggressor, dialogist, chaosagent, balanced)",
+    )
     args = parser.parse_args()
 
     bot_cfg = load_config(args.config)
+
+    if args.setting:
+        bot_cfg.setdefault("game", {})["setting_id"] = args.setting
+    if args.style:
+        bot_cfg.setdefault("bot_behavior", {})["style"] = args.style
 
     if args.ws:
         if args.port:

@@ -10,8 +10,8 @@ from ..engine_loader import eng
 # ── Schema builder helpers ────────────────────────────────────
 
 
-def _str(enum=None, desc=None):
-    d = {"type": "string"}
+def _str(enum: list[str] | None = None, desc: str | None = None) -> dict:
+    d: dict = {"type": "string"}
     if enum:
         d["enum"] = enum
     if desc:
@@ -19,42 +19,42 @@ def _str(enum=None, desc=None):
     return d
 
 
-def _int():
+def _int() -> dict:
     return {"type": "integer"}
 
 
-def _bool(desc=None):
-    d = {"type": "boolean"}
+def _bool(desc: str | None = None) -> dict:
+    d: dict = {"type": "boolean"}
     if desc:
         d["description"] = desc
     return d
 
 
-def _nullable(typ):
+def _nullable(typ: str) -> dict:
     return {"anyOf": [{"type": typ}, {"type": "null"}]}
 
 
-def _nullable_str():
+def _nullable_str() -> dict:
     return _nullable("string")
 
 
-def _nullable_int():
+def _nullable_int() -> dict:
     return _nullable("integer")
 
 
-def _nullable_obj(props):
+def _nullable_obj(props: dict) -> dict:
     return {"anyOf": [_obj(props), {"type": "null"}]}
 
 
-def _arr(item_schema):
+def _arr(item_schema: dict) -> dict:
     return {"type": "array", "items": item_schema}
 
 
-def _str_arr():
+def _str_arr() -> dict:
     return _arr({"type": "string"})
 
 
-def _obj(props, extra_required=None):
+def _obj(props: dict, extra_required: list[str] | None = None) -> dict:
     """Build a strict JSON object schema. All keys are required by default."""
     required = extra_required or list(props.keys())
     return {

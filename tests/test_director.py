@@ -13,7 +13,7 @@ from straightjacket.engine.models import (
 )
 
 
-def _stub():
+def _stub() -> None:
     engine_loader._eng = _ConfigNode(
         {
             "bonds": {"start": 0, "max": 4},
@@ -98,7 +98,7 @@ def _blueprint() -> StoryBlueprint:
 # ── apply_director_guidance: empty guidance resets flags ─────
 
 
-def test_empty_guidance_resets_reflection_flags():
+def test_empty_guidance_resets_reflection_flags() -> None:
     _stub()
     from straightjacket.engine.director import apply_director_guidance
 
@@ -112,7 +112,7 @@ def test_empty_guidance_resets_reflection_flags():
 # ── apply_director_guidance: stores guidance ─────────────────
 
 
-def test_stores_narrator_guidance():
+def test_stores_narrator_guidance() -> None:
     _stub()
     from straightjacket.engine.director import apply_director_guidance
 
@@ -135,7 +135,7 @@ def test_stores_narrator_guidance():
 # ── apply_director_guidance: scene summary ───────────────────
 
 
-def test_enriches_session_log_with_summary():
+def test_enriches_session_log_with_summary() -> None:
     _stub()
     from straightjacket.engine.director import apply_director_guidance
 
@@ -147,7 +147,7 @@ def test_enriches_session_log_with_summary():
 # ── apply_director_guidance: reflections ─────────────────────
 
 
-def test_reflection_adds_memory_and_resets_flag():
+def test_reflection_adds_memory_and_resets_flag() -> None:
     _stub()
     from straightjacket.engine.director import apply_director_guidance
 
@@ -176,7 +176,7 @@ def test_reflection_adds_memory_and_resets_flag():
     assert ref[-1].tone_key == "conflicted"
 
 
-def test_reflection_rejects_truncated():
+def test_reflection_rejects_truncated() -> None:
     _stub()
     from straightjacket.engine.director import apply_director_guidance
 
@@ -200,7 +200,7 @@ def test_reflection_rejects_truncated():
     assert game.npcs[0].needs_reflection is False
 
 
-def test_reflection_fills_empty_agenda_instinct():
+def test_reflection_fills_empty_agenda_instinct() -> None:
     _stub()
     from straightjacket.engine.director import apply_director_guidance
 
@@ -224,7 +224,7 @@ def test_reflection_fills_empty_agenda_instinct():
     assert borin.instinct == "goes quiet when cornered"
 
 
-def test_reflection_does_not_overwrite_existing_agenda():
+def test_reflection_does_not_overwrite_existing_agenda() -> None:
     _stub()
     from straightjacket.engine.director import apply_director_guidance
 
@@ -245,7 +245,7 @@ def test_reflection_does_not_overwrite_existing_agenda():
     assert game.npcs[0].agenda == "protect archives"
 
 
-def test_reflection_updates_stale_agenda():
+def test_reflection_updates_stale_agenda() -> None:
     _stub()
     from straightjacket.engine.director import apply_director_guidance
 
@@ -266,7 +266,7 @@ def test_reflection_updates_stale_agenda():
     assert game.npcs[0].agenda == "find the truth"
 
 
-def test_reflection_updates_arc():
+def test_reflection_updates_arc() -> None:
     _stub()
     from straightjacket.engine.director import apply_director_guidance
 
@@ -287,7 +287,7 @@ def test_reflection_updates_arc():
     assert game.npcs[0].arc == "Torn between loyalty and self-preservation."
 
 
-def test_reflection_rejects_too_long_arc():
+def test_reflection_rejects_too_long_arc() -> None:
     _stub()
     from straightjacket.engine.director import apply_director_guidance
 
@@ -309,7 +309,7 @@ def test_reflection_rejects_too_long_arc():
     assert game.npcs[0].arc == "Old arc."
 
 
-def test_reflection_updates_description():
+def test_reflection_updates_description() -> None:
     _stub()
     from straightjacket.engine.director import apply_director_guidance
 
@@ -330,7 +330,7 @@ def test_reflection_updates_description():
     assert "Battle-scarred" in game.npcs[0].description
 
 
-def test_reflection_strips_name_prefix_from_description():
+def test_reflection_strips_name_prefix_from_description() -> None:
     _stub()
     from straightjacket.engine.director import apply_director_guidance
 
@@ -352,7 +352,7 @@ def test_reflection_strips_name_prefix_from_description():
     assert "Battle-scarred" in game.npcs[0].description
 
 
-def test_reflection_rejects_too_long_description():
+def test_reflection_rejects_too_long_description() -> None:
     _stub()
     from straightjacket.engine.director import apply_director_guidance
 
@@ -374,7 +374,7 @@ def test_reflection_rejects_too_long_description():
     assert game.npcs[0].description == "Original."
 
 
-def test_reflection_rejects_truncated_description():
+def test_reflection_rejects_truncated_description() -> None:
     _stub()
     from straightjacket.engine.director import apply_director_guidance
 
@@ -399,7 +399,7 @@ def test_reflection_rejects_truncated_description():
 # ── apply_director_guidance: act transitions ─────────────────
 
 
-def test_act_transition_marks_blueprint():
+def test_act_transition_marks_blueprint() -> None:
     _stub()
     from straightjacket.engine.director import apply_director_guidance
 
@@ -409,7 +409,7 @@ def test_act_transition_marks_blueprint():
     assert "act_0" in game.narrative.story_blueprint.triggered_transitions
 
 
-def test_act_transition_backfills_skipped_acts():
+def test_act_transition_backfills_skipped_acts() -> None:
     _stub()
     from straightjacket.engine.director import apply_director_guidance
 
@@ -425,7 +425,7 @@ def test_act_transition_backfills_skipped_acts():
     assert "act_1" in bp.triggered_transitions
 
 
-def test_act_transition_ignores_final_act():
+def test_act_transition_ignores_final_act() -> None:
     _stub()
     from straightjacket.engine.director import apply_director_guidance
 
@@ -442,7 +442,7 @@ def test_act_transition_ignores_final_act():
 # ── apply_director_guidance: stale reflection reset ──────────
 
 
-def test_unreflected_npcs_get_reset():
+def test_unreflected_npcs_get_reset() -> None:
     _stub()
     from straightjacket.engine.director import apply_director_guidance
 
@@ -468,7 +468,7 @@ def test_unreflected_npcs_get_reset():
 # ── should_call_director ─────────────────────────────────────
 
 
-def test_should_call_on_miss():
+def test_should_call_on_miss() -> None:
     _stub()
     from straightjacket.engine.director import should_call_director
 
@@ -476,7 +476,7 @@ def test_should_call_on_miss():
     assert should_call_director(game, roll_result="MISS") == "miss"
 
 
-def test_should_call_on_chaos():
+def test_should_call_on_chaos() -> None:
     _stub()
     from straightjacket.engine.director import should_call_director
 
@@ -484,7 +484,7 @@ def test_should_call_on_chaos():
     assert should_call_director(game, chaos_used=True) == "chaos"
 
 
-def test_should_call_on_reflection_needed():
+def test_should_call_on_reflection_needed() -> None:
     _stub()
     from straightjacket.engine.director import should_call_director
 
@@ -494,7 +494,7 @@ def test_should_call_on_reflection_needed():
     assert "reflection" in reason
 
 
-def test_should_call_on_interval():
+def test_should_call_on_interval() -> None:
     _stub()
     from straightjacket.engine.director import should_call_director
 
@@ -504,7 +504,7 @@ def test_should_call_on_interval():
     assert should_call_director(game) == "interval"
 
 
-def test_should_call_returns_none_when_no_trigger():
+def test_should_call_returns_none_when_no_trigger() -> None:
     _stub()
     from straightjacket.engine.director import should_call_director
 
@@ -517,7 +517,7 @@ def test_should_call_returns_none_when_no_trigger():
 # ── reset_stale_reflection_flags ─────────────────────────────
 
 
-def test_reset_stale_reflection_flags():
+def test_reset_stale_reflection_flags() -> None:
     _stub()
     from straightjacket.engine.director import reset_stale_reflection_flags
 

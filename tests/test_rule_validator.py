@@ -14,37 +14,37 @@ from straightjacket.engine.ai.rule_validator import (
 # ── PLAYER AGENCY ────────────────────────────────────────────
 
 
-def test_agency_catches_you_feel_emotion():
+def test_agency_catches_you_feel_emotion() -> None:
     v = check_player_agency("You feel uneasy about the door.")
     assert any("PLAYER AGENCY" in x for x in v)
 
 
-def test_agency_allows_you_feel_physical():
+def test_agency_allows_you_feel_physical() -> None:
     v = check_player_agency("You feel the cold metal beneath your fingers.")
     assert len(v) == 0
 
 
-def test_agency_catches_you_realize():
+def test_agency_catches_you_realize() -> None:
     v = check_player_agency("You realize the map was wrong all along.")
     assert any("realize" in x for x in v)
 
 
-def test_agency_catches_you_remember():
+def test_agency_catches_you_remember() -> None:
     v = check_player_agency("You remember the old man's warning.")
     assert any("remember" in x for x in v)
 
 
-def test_agency_catches_surge_of_dread():
+def test_agency_catches_surge_of_dread() -> None:
     v = check_player_agency("A surge of dread washes over you.")
     assert any("PLAYER AGENCY" in x for x in v)
 
 
-def test_agency_catches_something_in_you():
+def test_agency_catches_something_in_you() -> None:
     v = check_player_agency("Something inside you shifts.")
     assert any("PLAYER AGENCY" in x for x in v)
 
 
-def test_agency_clean_narration_passes():
+def test_agency_clean_narration_passes() -> None:
     v = check_player_agency("The door hangs open. Cold air spills from the gap. Mud tracks lead inside, still wet.")
     assert len(v) == 0
 
@@ -52,22 +52,22 @@ def test_agency_clean_narration_passes():
 # ── RESULT INTEGRITY ─────────────────────────────────────────
 
 
-def test_miss_catches_at_least():
+def test_miss_catches_at_least() -> None:
     v = check_result_integrity("The blade misses, but at least the door is still open.", "MISS")
     assert any("silver lining" in x for x in v)
 
 
-def test_miss_catches_managed_to():
+def test_miss_catches_managed_to() -> None:
     v = check_result_integrity("You stumble but managed to keep your footing.", "MISS")
     assert any("silver lining" in x for x in v)
 
 
-def test_miss_catches_annihilation():
+def test_miss_catches_annihilation() -> None:
     v = check_result_integrity("Your vision fades to nothing. Everything ends.", "MISS")
     assert any("annihilation" in x for x in v)
 
 
-def test_miss_clean_failure_passes():
+def test_miss_clean_failure_passes() -> None:
     v = check_result_integrity(
         "The rope snaps. You hit the water hard, the current dragging you under.",
         "MISS",
@@ -75,7 +75,7 @@ def test_miss_clean_failure_passes():
     assert len(v) == 0
 
 
-def test_strong_hit_not_checked_for_silver_lining():
+def test_strong_hit_not_checked_for_silver_lining() -> None:
     v = check_result_integrity("At least the door opened easily.", "STRONG_HIT")
     assert len(v) == 0  # Silver lining check only on MISS
 
@@ -83,19 +83,19 @@ def test_strong_hit_not_checked_for_silver_lining():
 # ── GENRE FIDELITY ───────────────────────────────────────────
 
 
-def test_genre_catches_forbidden_term():
+def test_genre_catches_forbidden_term() -> None:
     gc = {"forbidden_terms": ["magic", "spell"]}
     v = check_genre_fidelity("She whispered a spell under her breath.", gc)
     assert any("spell" in x for x in v)
 
 
-def test_genre_passes_clean():
+def test_genre_passes_clean() -> None:
     gc = {"forbidden_terms": ["magic"]}
     v = check_genre_fidelity("She drew the knife from its sheath.", gc)
     assert len(v) == 0
 
 
-def test_genre_no_constraints_passes():
+def test_genre_no_constraints_passes() -> None:
     v = check_genre_fidelity("Magic filled the air.", None)
     assert len(v) == 0
 
@@ -103,22 +103,22 @@ def test_genre_no_constraints_passes():
 # ── OUTPUT FORMAT ────────────────────────────────────────────
 
 
-def test_format_catches_narrator_prefix():
+def test_format_catches_narrator_prefix() -> None:
     v = check_output_format("Narrator: The room was dark.")
     assert any("role label" in x for x in v)
 
 
-def test_format_catches_bracketed_annotation():
+def test_format_catches_bracketed_annotation() -> None:
     v = check_output_format("The door opened. [CLOCK CREATED: Threat]")
     assert any("bracketed" in x for x in v)
 
 
-def test_format_catches_code_block():
+def test_format_catches_code_block() -> None:
     v = check_output_format("```json\n{}\n```")
     assert any("code block" in x for x in v)
 
 
-def test_format_clean_passes():
+def test_format_clean_passes() -> None:
     v = check_output_format("\u201cGet back,\u201d she hissed, pulling the door shut.")
     assert len(v) == 0
 
@@ -126,7 +126,7 @@ def test_format_clean_passes():
 # ── NPC MONOLOGUE ────────────────────────────────────────────
 
 
-def test_monologue_catches_extended_speech():
+def test_monologue_catches_extended_speech() -> None:
     narration = (
         "\u201cFirst thing,\u201d she said. "
         "\u201cSecond thing.\u201d "
@@ -138,7 +138,7 @@ def test_monologue_catches_extended_speech():
     assert any("monologue" in x for x in v)
 
 
-def test_monologue_allows_dialog_exchange():
+def test_monologue_allows_dialog_exchange() -> None:
     narration = (
         "\u201cWhere is he?\u201d you ask, leaning against the bar. "
         "The bartender polishes a glass, eyes on the door. "
@@ -153,7 +153,7 @@ def test_monologue_allows_dialog_exchange():
 # ── INTEGRATION ──────────────────────────────────────────────
 
 
-def test_run_rule_checks_combines_violations():
+def test_run_rule_checks_combines_violations() -> None:
     result = run_rule_checks(
         narration="You feel a surge of dread. At least the torch still burns.",
         result_type="MISS",
@@ -162,7 +162,7 @@ def test_run_rule_checks_combines_violations():
     assert len(result["violations"]) >= 2
 
 
-def test_run_rule_checks_clean_passes():
+def test_run_rule_checks_clean_passes() -> None:
     result = run_rule_checks(
         narration=(
             "The rope snaps. The current takes you, cold and fast. Your shoulder hits a rock and the pack tears free."
@@ -175,7 +175,7 @@ def test_run_rule_checks_clean_passes():
 # ── PROMPT STRIPPING ─────────────────────────────────────────
 
 
-def test_strip_prompt_removes_secrets_on_pacing_violation():
+def test_strip_prompt_removes_secrets_on_pacing_violation() -> None:
     from straightjacket.engine.ai.validator import _strip_prompt_for_retry
 
     prompt = (
@@ -192,7 +192,7 @@ def test_strip_prompt_removes_secrets_on_pacing_violation():
     assert "deflects with humor" in result  # Instinct preserved
 
 
-def test_strip_prompt_unchanged_for_agency_violation():
+def test_strip_prompt_unchanged_for_agency_violation() -> None:
     from straightjacket.engine.ai.validator import _strip_prompt_for_retry
 
     prompt = '<target_npc>secrets(weave subtly,never reveal):["secret"]</target_npc>'

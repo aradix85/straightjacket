@@ -10,7 +10,7 @@ from straightjacket.engine.config_loader import _ConfigNode
 from straightjacket.engine.models import GameState, MemoryEntry, NpcData
 
 
-def _stub():
+def _stub() -> None:
     engine_loader._eng = _ConfigNode(
         {
             "bonds": {"start": 0, "max": 4},
@@ -87,7 +87,7 @@ def _game() -> GameState:
 # ── apply_narrator_metadata: scene context ───────────────────
 
 
-def test_metadata_sets_scene_context():
+def test_metadata_sets_scene_context() -> None:
     _stub()
     from straightjacket.engine.ai.metadata import apply_narrator_metadata
 
@@ -96,7 +96,7 @@ def test_metadata_sets_scene_context():
     assert game.world.current_scene_context == "A tense standoff."
 
 
-def test_metadata_ignores_empty_scene_context():
+def test_metadata_ignores_empty_scene_context() -> None:
     _stub()
     from straightjacket.engine.ai.metadata import apply_narrator_metadata
 
@@ -109,7 +109,7 @@ def test_metadata_ignores_empty_scene_context():
 # ── apply_narrator_metadata: location update ─────────────────
 
 
-def test_metadata_updates_location():
+def test_metadata_updates_location() -> None:
     _stub()
     from straightjacket.engine.ai.metadata import apply_narrator_metadata
 
@@ -118,7 +118,7 @@ def test_metadata_updates_location():
     assert game.world.current_location == "Market Square"
 
 
-def test_metadata_ignores_null_location():
+def test_metadata_ignores_null_location() -> None:
     _stub()
     from straightjacket.engine.ai.metadata import apply_narrator_metadata
 
@@ -127,7 +127,7 @@ def test_metadata_ignores_null_location():
     assert game.world.current_location == "Tavern"
 
 
-def test_metadata_ignores_none_location():
+def test_metadata_ignores_none_location() -> None:
     _stub()
     from straightjacket.engine.ai.metadata import apply_narrator_metadata
 
@@ -139,7 +139,7 @@ def test_metadata_ignores_none_location():
 # ── apply_narrator_metadata: time update ─────────────────────
 
 
-def test_metadata_updates_time():
+def test_metadata_updates_time() -> None:
     _stub()
     from straightjacket.engine.ai.metadata import apply_narrator_metadata
 
@@ -148,7 +148,7 @@ def test_metadata_updates_time():
     assert game.world.time_of_day == "night"
 
 
-def test_metadata_ignores_invalid_time():
+def test_metadata_ignores_invalid_time() -> None:
     _stub()
     from straightjacket.engine.ai.metadata import apply_narrator_metadata
 
@@ -157,7 +157,7 @@ def test_metadata_ignores_invalid_time():
     assert game.world.time_of_day == "evening"
 
 
-def test_metadata_normalizes_time_spaces():
+def test_metadata_normalizes_time_spaces() -> None:
     _stub()
     from straightjacket.engine.ai.metadata import apply_narrator_metadata
 
@@ -169,7 +169,7 @@ def test_metadata_normalizes_time_spaces():
 # ── process_deceased_npcs ────────────────────────────────────
 
 
-def test_deceased_marks_present_npc():
+def test_deceased_marks_present_npc() -> None:
     _stub()
     from straightjacket.engine.ai.metadata import process_deceased_npcs
 
@@ -178,7 +178,7 @@ def test_deceased_marks_present_npc():
     assert game.npcs[0].status == "deceased"
 
 
-def test_deceased_rejects_absent_npc():
+def test_deceased_rejects_absent_npc() -> None:
     _stub()
     from straightjacket.engine.ai.metadata import process_deceased_npcs
 
@@ -187,7 +187,7 @@ def test_deceased_rejects_absent_npc():
     assert game.npcs[0].status == "active"
 
 
-def test_deceased_allows_absent_npc_with_current_scene_memory():
+def test_deceased_allows_absent_npc_with_current_scene_memory() -> None:
     _stub()
     from straightjacket.engine.ai.metadata import process_deceased_npcs
 
@@ -197,7 +197,7 @@ def test_deceased_allows_absent_npc_with_current_scene_memory():
     assert game.npcs[0].status == "deceased"
 
 
-def test_deceased_skips_already_dead():
+def test_deceased_skips_already_dead() -> None:
     _stub()
     from straightjacket.engine.ai.metadata import process_deceased_npcs
 
@@ -207,7 +207,7 @@ def test_deceased_skips_already_dead():
     assert game.npcs[0].status == "deceased"
 
 
-def test_deceased_no_guard_without_present_ids():
+def test_deceased_no_guard_without_present_ids() -> None:
     _stub()
     from straightjacket.engine.ai.metadata import process_deceased_npcs
 
@@ -216,7 +216,7 @@ def test_deceased_no_guard_without_present_ids():
     assert game.npcs[0].status == "deceased"
 
 
-def test_deceased_unknown_npc_ignored():
+def test_deceased_unknown_npc_ignored() -> None:
     _stub()
     from straightjacket.engine.ai.metadata import process_deceased_npcs
 
@@ -228,7 +228,7 @@ def test_deceased_unknown_npc_ignored():
 # ── lore NPCs ────────────────────────────────────────────────
 
 
-def test_lore_npc_created():
+def test_lore_npc_created() -> None:
     _stub()
     from straightjacket.engine.ai.metadata import _process_lore_npcs
 
@@ -239,7 +239,7 @@ def test_lore_npc_created():
     assert lore[0].name == "Ancient King"
 
 
-def test_lore_npc_skips_existing():
+def test_lore_npc_skips_existing() -> None:
     _stub()
     from straightjacket.engine.ai.metadata import _process_lore_npcs
 
@@ -249,7 +249,7 @@ def test_lore_npc_skips_existing():
     assert len(game.npcs) == count_before
 
 
-def test_lore_npc_skips_empty_name():
+def test_lore_npc_skips_empty_name() -> None:
     _stub()
     from straightjacket.engine.ai.metadata import _process_lore_npcs
 
@@ -262,7 +262,7 @@ def test_lore_npc_skips_empty_name():
 # ── death corroboration ──────────────────────────────────────
 
 
-def test_death_corroboration_triggers():
+def test_death_corroboration_triggers() -> None:
     _stub()
     from straightjacket.engine.ai.metadata import _check_death_corroboration
 
@@ -276,7 +276,7 @@ def test_death_corroboration_triggers():
     assert game.npcs[1].status == "deceased"
 
 
-def test_death_corroboration_needs_cross_vote():
+def test_death_corroboration_needs_cross_vote() -> None:
     _stub()
     from straightjacket.engine.ai.metadata import _check_death_corroboration
 
@@ -288,7 +288,7 @@ def test_death_corroboration_needs_cross_vote():
     assert game.npcs[1].status == "active"
 
 
-def test_death_corroboration_ignores_reflections():
+def test_death_corroboration_ignores_reflections() -> None:
     _stub()
     from straightjacket.engine.ai.metadata import _check_death_corroboration
 
@@ -309,7 +309,7 @@ def test_death_corroboration_ignores_reflections():
     assert game.npcs[1].status == "active"
 
 
-def test_death_corroboration_ignores_old_scenes():
+def test_death_corroboration_ignores_old_scenes() -> None:
     _stub()
     from straightjacket.engine.ai.metadata import _check_death_corroboration
 
@@ -326,7 +326,7 @@ def test_death_corroboration_ignores_old_scenes():
 # ── slug reference resolution ────────────────────────────────
 
 
-def test_resolve_slug_refs():
+def test_resolve_slug_refs() -> None:
     _stub()
     from straightjacket.engine.ai.metadata import _resolve_slug_refs
 
@@ -338,7 +338,7 @@ def test_resolve_slug_refs():
     assert mem_updates[0]["npc_id"] == "npc_3"
 
 
-def test_resolve_slug_refs_skips_known_ids():
+def test_resolve_slug_refs_skips_known_ids() -> None:
     _stub()
     from straightjacket.engine.ai.metadata import _resolve_slug_refs
 
@@ -353,7 +353,7 @@ def test_resolve_slug_refs_skips_known_ids():
 # ── full pipeline ────────────────────────────────────────────
 
 
-def test_metadata_full_pipeline():
+def test_metadata_full_pipeline() -> None:
     _stub()
     from straightjacket.engine.ai.metadata import apply_narrator_metadata
 

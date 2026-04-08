@@ -20,9 +20,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 # Install logging_util stub BEFORE any engine import.
 # This is the ONLY module we fake. Every other module is real.
 _lm = types.ModuleType("straightjacket.engine.logging_util")
-_lm.log = lambda *a, **k: None
-_lm.setup_file_logging = lambda: None
-_lm.get_logger = lambda component: type(
+_lm.log = lambda *a, **k: None  # type: ignore[attr-defined]
+_lm.setup_file_logging = lambda: None  # type: ignore[attr-defined]
+_lm.get_logger = lambda component: type(  # type: ignore[attr-defined]
     "_L",
     (),
     {
@@ -32,17 +32,17 @@ _lm.get_logger = lambda component: type(
         "error": lambda self, *a: None,
     },
 )()
-_lm.get_save_dir = lambda username: Path("/tmp/straightjacket_test") / username / "saves"
-_lm._safe_name = lambda name: (
+_lm.get_save_dir = lambda username: Path("/tmp/straightjacket_test") / username / "saves"  # type: ignore[attr-defined]
+_lm._safe_name = lambda name: (  # type: ignore[attr-defined]
     name.replace("/", "").replace("\\", "").replace("\0", "").replace("..", "").strip() or "invalid"
 )
-_lm.load_global_config = lambda: {}
-_lm.save_global_config = lambda cfg: None
-_lm.load_user_config = lambda username: {}
-_lm.save_user_config = lambda username, cfg: None
-_lm.list_users = lambda: []
-_lm.create_user = lambda name: True
-_lm.delete_user = lambda name: True
+_lm.load_global_config = lambda: {}  # type: ignore[attr-defined]
+_lm.save_global_config = lambda cfg: None  # type: ignore[attr-defined]
+_lm.load_user_config = lambda username: {}  # type: ignore[attr-defined]
+_lm.save_user_config = lambda username, cfg: None  # type: ignore[attr-defined]
+_lm.list_users = lambda: []  # type: ignore[attr-defined]
+_lm.create_user = lambda name: True  # type: ignore[attr-defined]
+_lm.delete_user = lambda name: True  # type: ignore[attr-defined]
 sys.modules["straightjacket.engine.logging_util"] = _lm
 
 
@@ -50,7 +50,7 @@ sys.modules["straightjacket.engine.logging_util"] = _lm
 
 
 @pytest.fixture()
-def load_engine():
+def load_engine() -> None:
     """Load real engine.yaml."""
     from straightjacket.engine import engine_loader
 
@@ -59,7 +59,7 @@ def load_engine():
 
 
 @pytest.fixture()
-def stub_engine():
+def stub_engine() -> None:
     """Stub eng() with known values for predictable assertions."""
     from straightjacket.engine import engine_loader
     from straightjacket.engine.config_loader import _ConfigNode
@@ -142,7 +142,7 @@ def stub_engine():
 
 
 @pytest.fixture()
-def stub_emotions():
+def stub_emotions() -> None:
     """Stub emotions_loader with minimal importance map."""
     from straightjacket.engine import emotions_loader
 
@@ -178,5 +178,5 @@ def stub_emotions():
 
 
 @pytest.fixture()
-def stub_all(stub_engine, stub_emotions):
+def stub_all(stub_engine: None, stub_emotions: None) -> None:
     """Combined stub: engine + emotions. Use for tests that need both."""

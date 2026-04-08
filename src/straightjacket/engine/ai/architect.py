@@ -68,6 +68,7 @@ def call_recap(provider: AIProvider, game: GameState, config: EngineConfig | Non
                 }
             ],
             **sampling_params("recap"),
+            log_role="architect_opening",
         )
         return response.content
     except Exception as e:
@@ -122,6 +123,7 @@ npcs:{npc_text}{campaign_ctx}{backstory_text}"""
             messages=[{"role": "user", "content": user_msg}],
             json_schema=STORY_ARCHITECT_OUTPUT_SCHEMA,
             **sampling_params("architect"),
+            log_role="architect_chapter",
         )
         blueprint = json.loads(response.content)
         blueprint["revealed"] = []  # Track which revelations have fired
@@ -195,6 +197,7 @@ def call_chapter_summary(
             ],
             json_schema=CHAPTER_SUMMARY_OUTPUT_SCHEMA,
             **sampling_params("chapter_summary"),
+            log_role="architect_blueprint",
         )
         data = json.loads(response.content)
         data["chapter"] = game.campaign.chapter_number

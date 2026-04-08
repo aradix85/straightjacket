@@ -8,7 +8,7 @@ is determined by config.yaml ("ai.provider": "anthropic" or "openai_compatible")
 import hashlib
 import os
 
-from ..config_loader import _ConfigNode, cfg
+from ..config_loader import cfg
 from .provider_base import AIProvider
 
 # PROVIDER CACHE
@@ -47,7 +47,7 @@ def get_provider() -> AIProvider:
         from .provider_openai import OpenAICompatibleProvider
 
         cfg_extra = _c.ai.get("extra_body", None)
-        if isinstance(cfg_extra, _ConfigNode):
+        if hasattr(cfg_extra, "to_dict"):
             extra_body = cfg_extra.to_dict()
         elif isinstance(cfg_extra, dict):
             extra_body = cfg_extra
@@ -61,6 +61,6 @@ def get_provider() -> AIProvider:
     return provider
 
 
-def clear_provider_cache():
+def clear_provider_cache() -> None:
     """Clear cached providers. Use after config reload or key change."""
     _provider_cache.clear()

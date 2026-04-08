@@ -14,6 +14,7 @@ from ..mechanics import (
     record_scene_intensity,
 )
 from ..models import (
+    ChapterSummary,
     DirectorGuidance,
     EngineConfig,
     GameState,
@@ -110,7 +111,7 @@ def start_new_chapter(
 # ── Phase 1: Close previous chapter ─────────────────────────
 
 
-def _close_previous_chapter(provider, game, config):
+def _close_previous_chapter(provider: AIProvider, game: GameState, config: EngineConfig | None) -> ChapterSummary:
     """Generate chapter summary and advance chapter number."""
     epilogue = game.campaign.epilogue_text or ""
     chapter_summary = call_chapter_summary(provider, game, config, epilogue_text=epilogue)
@@ -174,7 +175,9 @@ def _prepare_npcs_for_new_chapter(game: GameState) -> None:
 # ── Phase 4: Generate opening ────────────────────────────────
 
 
-def _generate_chapter_opening(provider, game, config, returning_npcs):
+def _generate_chapter_opening(
+    provider: AIProvider, game: GameState, config: EngineConfig | None, returning_npcs: list[NpcData]
+) -> tuple[str, dict, dict]:
     """Run narrator + architect in parallel, validate, extract setup.
     Returns (narration, val_report, setup_data)."""
     from concurrent.futures import ThreadPoolExecutor
@@ -211,7 +214,7 @@ def _generate_chapter_opening(provider, game, config, returning_npcs):
     return narration, val_report, setup_data
 
 
-def _apply_blueprint(game, provider, blueprint):
+def _apply_blueprint(game: GameState, provider: AIProvider, blueprint: dict | None) -> None:
     """Validate and apply story architect blueprint."""
     from ..ai.validator import validate_architect
     from ..datasworn.settings import active_package
@@ -288,7 +291,7 @@ def _record_chapter_opening(game: GameState, narration: str, val_report: dict) -
 # ── Chapter opening setup ────────────────────────────────────
 
 
-def _apply_chapter_opening_setup(game: GameState, data: dict, returning_npcs: list[NpcData]):
+def _apply_chapter_opening_setup(game: GameState, data: dict, returning_npcs: list[NpcData]) -> None:
     """Apply opening setup extraction to a new chapter."""
     from .setup_common import apply_world_setup, register_extracted_npcs, seed_opening_memories
 

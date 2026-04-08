@@ -7,7 +7,7 @@ import json
 from ..config_loader import cfg, sampling_params
 from ..engine_loader import eng
 from ..logging_util import log
-from ..models import BrainResult, EngineConfig, GameState, Revelation
+from ..models import BrainResult, EngineConfig, GameState, NpcData, Revelation
 from ..prompt_blocks import (
     content_boundaries_block,
     get_narration_lang,
@@ -32,7 +32,7 @@ def call_brain(
     _c = cfg()
     log(f"[Brain] Scene {game.narrative.scene_count + 1} | Input: {player_message[:100]}")
 
-    def _brain_npc_line(n):
+    def _brain_npc_line(n: NpcData) -> str:
         line = f'- {n.name} (id:{n.id}): {n.disposition}, bond={n.bond}/{n.bond_max}, agenda="{n.agenda}"'
         if n.aliases:
             line += f" aliases:{','.join(n.aliases)}"
@@ -111,6 +111,7 @@ time:{w.time_of_day or "unspecified"} | prev_locations:{", ".join(w.location_his
             messages=[{"role": "user", "content": user_msg}],
             json_schema=get_brain_output_schema(),
             **sampling_params("brain"),
+            log_role="brain",
         )
         result = BrainResult.from_dict(json.loads(response.content))
         log(
@@ -175,6 +176,7 @@ def call_revelation_check(
             messages=[{"role": "user", "content": prompt}],
             json_schema=REVELATION_CHECK_SCHEMA,
             **sampling_params("revelation_check"),
+            log_role="brain_correction",
         )
         result = json.loads(response.content)
         confirmed = result.get("revelation_confirmed", True)

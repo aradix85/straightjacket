@@ -26,7 +26,7 @@ def locations_match(loc_a: str, loc_b: str) -> bool:
     if not loc_a or not loc_b:
         return True
 
-    def _words(s):
+    def _words(s: str) -> list[str]:
         return [w for w in s.replace("_", " ").strip().lower().split() if w not in _LOC_STOP]
 
     wa, wb = _words(loc_a), _words(loc_b)
@@ -43,7 +43,7 @@ def locations_match(loc_a: str, loc_b: str) -> bool:
 # CHAOS FACTOR SYSTEM
 
 
-def update_chaos_factor(game: GameState, result: str):
+def update_chaos_factor(game: GameState, result: str) -> None:
     """Adjust chaos factor based on roll result."""
     _e = eng()
     if result == "MISS":
@@ -70,7 +70,7 @@ def check_chaos_interrupt(game: GameState) -> str | None:
 TIME_PHASES = ["early_morning", "morning", "midday", "afternoon", "evening", "late_evening", "night", "deep_night"]
 
 
-def advance_time(game: GameState, progression: str):
+def advance_time(game: GameState, progression: str) -> None:
     """Advance time_of_day based on Brain's time_progression assessment."""
     if not game.world.time_of_day or progression in ("none", "short"):
         return
@@ -84,7 +84,7 @@ def advance_time(game: GameState, progression: str):
         game.world.time_of_day = TIME_PHASES[new_idx]
 
 
-def update_location(game: GameState, new_location: str):
+def update_location(game: GameState, new_location: str) -> None:
     """Update current location and maintain location history."""
     if not new_location:
         return
@@ -147,7 +147,7 @@ def get_pacing_hint(game: GameState) -> str:
     return "neutral"
 
 
-def record_scene_intensity(game: GameState, scene_type: str):
+def record_scene_intensity(game: GameState, scene_type: str) -> None:
     """Record a scene's intensity type for pacing analysis."""
     window = eng().pacing.window_size
     game.narrative.scene_intensity_history.append(scene_type)

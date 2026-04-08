@@ -29,6 +29,7 @@ from .models_base import (  # noqa: F401
     WorldState,
 )
 from .models_npc import (  # noqa: F401
+    NPC_STATUSES,
     MemoryEntry,
     NpcData,
 )
@@ -186,9 +187,13 @@ class GameState:
     last_turn_snapshot: TurnSnapshot | None = field(default=None, repr=False)
     post_epilogue_director_done: bool = field(default=False, repr=False)
 
+    _STAT_NAMES = frozenset({"edge", "heart", "iron", "shadow", "wits"})
+
     def get_stat(self, name: str) -> int:
         """Get a character stat by name (edge/heart/iron/shadow/wits)."""
-        return getattr(self, name, 0)
+        if name not in self._STAT_NAMES:
+            raise ValueError(f"Unknown stat: {name!r}")
+        return getattr(self, name)
 
     def snapshot(self) -> TurnSnapshot:
         """Complete snapshot of all mutable state. Called once at turn start."""

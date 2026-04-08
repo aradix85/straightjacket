@@ -17,13 +17,13 @@ from straightjacket.engine.models import (
 )
 
 
-def _load_engine():
+def _load_engine() -> None:
     """Load real engine.yaml (not a stub) for damage table accuracy."""
     engine_loader._eng = None
     engine_loader.eng()
 
 
-def _game(health=5, spirit=5, supply=5, momentum=3) -> GameState:
+def _game(health: int = 5, spirit: int = 5, supply: int = 5, momentum: int = 3) -> GameState:
     game = GameState(player_name="Hero")
     game.resources.health = health
     game.resources.spirit = spirit
@@ -48,7 +48,7 @@ def _brain(position: str = "risky", effect: str = "standard", target_npc: str | 
 # ── MISS: combat moves ───────────────────────────────────────
 
 
-def test_miss_clash_risky_damages_health():
+def test_miss_clash_risky_damages_health() -> None:
     _load_engine()
     from straightjacket.engine.mechanics import apply_consequences
 
@@ -59,7 +59,7 @@ def test_miss_clash_risky_damages_health():
     assert any("health" in c for c in cons)
 
 
-def test_miss_strike_desperate_damages_health_more():
+def test_miss_strike_desperate_damages_health_more() -> None:
     _load_engine()
     from straightjacket.engine.mechanics import apply_consequences
 
@@ -70,7 +70,7 @@ def test_miss_strike_desperate_damages_health_more():
     assert game_desp.resources.health < game_risky.resources.health
 
 
-def test_miss_combat_controlled_less_damage():
+def test_miss_combat_controlled_less_damage() -> None:
     _load_engine()
     from straightjacket.engine.mechanics import apply_consequences
 
@@ -83,7 +83,7 @@ def test_miss_combat_controlled_less_damage():
 # ── MISS: social moves ───────────────────────────────────────
 
 
-def test_miss_compel_loses_bond_and_spirit():
+def test_miss_compel_loses_bond_and_spirit() -> None:
     _load_engine()
     from straightjacket.engine.mechanics import apply_consequences
 
@@ -98,7 +98,7 @@ def test_miss_compel_loses_bond_and_spirit():
     assert any("spirit" in c for c in cons)
 
 
-def test_miss_social_bond_floor_zero():
+def test_miss_social_bond_floor_zero() -> None:
     _load_engine()
     from straightjacket.engine.mechanics import apply_consequences
 
@@ -113,7 +113,7 @@ def test_miss_social_bond_floor_zero():
 # ── MISS: endure_harm / endure_stress ─────────────────────────
 
 
-def test_miss_endure_harm_damages_health():
+def test_miss_endure_harm_damages_health() -> None:
     _load_engine()
     from straightjacket.engine.mechanics import apply_consequences
 
@@ -122,7 +122,7 @@ def test_miss_endure_harm_damages_health():
     assert game.resources.health < 5
 
 
-def test_miss_endure_stress_damages_spirit():
+def test_miss_endure_stress_damages_spirit() -> None:
     _load_engine()
     from straightjacket.engine.mechanics import apply_consequences
 
@@ -134,7 +134,7 @@ def test_miss_endure_stress_damages_spirit():
 # ── MISS: generic move (face_danger etc.) ─────────────────────
 
 
-def test_miss_face_danger_damages_supply_and_maybe_health():
+def test_miss_face_danger_damages_supply_and_maybe_health() -> None:
     _load_engine()
     from straightjacket.engine.mechanics import apply_consequences
 
@@ -143,7 +143,7 @@ def test_miss_face_danger_damages_supply_and_maybe_health():
     assert game.resources.supply < 5
 
 
-def test_miss_face_danger_controlled_no_health_loss():
+def test_miss_face_danger_controlled_no_health_loss() -> None:
     _load_engine()
     from straightjacket.engine.mechanics import apply_consequences
 
@@ -156,7 +156,7 @@ def test_miss_face_danger_controlled_no_health_loss():
 # ── MISS: momentum always lost ────────────────────────────────
 
 
-def test_miss_always_loses_momentum():
+def test_miss_always_loses_momentum() -> None:
     _load_engine()
     from straightjacket.engine.mechanics import apply_consequences
 
@@ -171,7 +171,7 @@ def test_miss_always_loses_momentum():
 # ── MISS: clock ticking ──────────────────────────────────────
 
 
-def test_miss_ticks_threat_clock():
+def test_miss_ticks_threat_clock() -> None:
     _load_engine()
     from straightjacket.engine.mechanics import apply_consequences
 
@@ -182,7 +182,7 @@ def test_miss_ticks_threat_clock():
     assert clock.filled > 2
 
 
-def test_miss_desperate_ticks_clock_more():
+def test_miss_desperate_ticks_clock_more() -> None:
     _load_engine()
     from straightjacket.engine.mechanics import apply_consequences
 
@@ -193,7 +193,7 @@ def test_miss_desperate_ticks_clock_more():
     assert clock.filled >= 4  # desperate = 2 ticks
 
 
-def test_miss_controlled_no_clock_tick():
+def test_miss_controlled_no_clock_tick() -> None:
     _load_engine()
     from straightjacket.engine.mechanics import apply_consequences
 
@@ -204,7 +204,7 @@ def test_miss_controlled_no_clock_tick():
     assert clock.filled == 2  # controlled = 0 ticks
 
 
-def test_miss_clock_fires_when_full():
+def test_miss_clock_fires_when_full() -> None:
     _load_engine()
     from straightjacket.engine.mechanics import apply_consequences
 
@@ -220,7 +220,7 @@ def test_miss_clock_fires_when_full():
 # ── WEAK_HIT ─────────────────────────────────────────────────
 
 
-def test_weak_hit_gains_momentum():
+def test_weak_hit_gains_momentum() -> None:
     _load_engine()
     from straightjacket.engine.mechanics import apply_consequences
 
@@ -229,7 +229,7 @@ def test_weak_hit_gains_momentum():
     assert game.resources.momentum > 2
 
 
-def test_weak_hit_endure_harm_heals():
+def test_weak_hit_endure_harm_heals() -> None:
     _load_engine()
     from straightjacket.engine.mechanics import apply_consequences
 
@@ -238,7 +238,7 @@ def test_weak_hit_endure_harm_heals():
     assert game.resources.health > 3
 
 
-def test_weak_hit_resupply_heals():
+def test_weak_hit_resupply_heals() -> None:
     _load_engine()
     from straightjacket.engine.mechanics import apply_consequences
 
@@ -247,7 +247,7 @@ def test_weak_hit_resupply_heals():
     assert game.resources.supply > 2
 
 
-def test_weak_hit_make_connection_gains_bond():
+def test_weak_hit_make_connection_gains_bond() -> None:
     _load_engine()
     from straightjacket.engine.mechanics import apply_consequences
 
@@ -258,7 +258,7 @@ def test_weak_hit_make_connection_gains_bond():
     assert npc.bond == 2
 
 
-def test_weak_hit_desperate_ticks_clock():
+def test_weak_hit_desperate_ticks_clock() -> None:
     """WEAK_HIT at desperate position always ticks threat clock."""
     _load_engine()
     from straightjacket.engine.mechanics import apply_consequences
@@ -270,7 +270,7 @@ def test_weak_hit_desperate_ticks_clock():
     assert clock.filled > 2
 
 
-def test_weak_hit_controlled_no_clock_tick():
+def test_weak_hit_controlled_no_clock_tick() -> None:
     """WEAK_HIT at controlled position never ticks threat clock."""
     _load_engine()
     from straightjacket.engine.mechanics import apply_consequences
@@ -285,7 +285,7 @@ def test_weak_hit_controlled_no_clock_tick():
 # ── STRONG_HIT ────────────────────────────────────────────────
 
 
-def test_strong_hit_gains_momentum():
+def test_strong_hit_gains_momentum() -> None:
     _load_engine()
     from straightjacket.engine.mechanics import apply_consequences
 
@@ -294,7 +294,7 @@ def test_strong_hit_gains_momentum():
     assert game.resources.momentum > 2
 
 
-def test_strong_hit_great_effect_more_momentum():
+def test_strong_hit_great_effect_more_momentum() -> None:
     _load_engine()
     from straightjacket.engine.mechanics import apply_consequences
 
@@ -305,7 +305,7 @@ def test_strong_hit_great_effect_more_momentum():
     assert game_great.resources.momentum > game_std.resources.momentum
 
 
-def test_strong_hit_endure_harm_heals():
+def test_strong_hit_endure_harm_heals() -> None:
     _load_engine()
     from straightjacket.engine.mechanics import apply_consequences
 
@@ -314,7 +314,7 @@ def test_strong_hit_endure_harm_heals():
     assert game.resources.health > 2
 
 
-def test_strong_hit_compel_gains_bond_no_disposition():
+def test_strong_hit_compel_gains_bond_no_disposition() -> None:
     """v0.9.86: compel STRONG_HIT grants bond+1 but NOT disposition shift."""
     _load_engine()
     from straightjacket.engine.mechanics import apply_consequences
@@ -327,7 +327,7 @@ def test_strong_hit_compel_gains_bond_no_disposition():
     assert npc.disposition == "neutral"  # NOT friendly
 
 
-def test_strong_hit_test_bond_gains_bond_and_disposition():
+def test_strong_hit_test_bond_gains_bond_and_disposition() -> None:
     """v0.9.86: test_bond STRONG_HIT grants bond+1 AND disposition shift."""
     _load_engine()
     from straightjacket.engine.mechanics import apply_consequences
@@ -340,7 +340,7 @@ def test_strong_hit_test_bond_gains_bond_and_disposition():
     assert npc.disposition == "friendly"
 
 
-def test_strong_hit_make_connection_disposition_shift():
+def test_strong_hit_make_connection_disposition_shift() -> None:
     _load_engine()
     from straightjacket.engine.mechanics import apply_consequences
 
@@ -355,7 +355,7 @@ def test_strong_hit_make_connection_disposition_shift():
 # ── Crisis detection ──────────────────────────────────────────
 
 
-def test_crisis_when_health_zero():
+def test_crisis_when_health_zero() -> None:
     _load_engine()
     from straightjacket.engine.mechanics import apply_consequences
 
@@ -365,7 +365,7 @@ def test_crisis_when_health_zero():
     assert game.game_over is False  # spirit still > 0
 
 
-def test_game_over_when_both_zero():
+def test_game_over_when_both_zero() -> None:
     _load_engine()
     from straightjacket.engine.mechanics import apply_consequences
 
@@ -377,7 +377,7 @@ def test_game_over_when_both_zero():
         assert game.game_over is True
 
 
-def test_crisis_clears_when_resources_recover():
+def test_crisis_clears_when_resources_recover() -> None:
     _load_engine()
     from straightjacket.engine.mechanics import apply_consequences
 
@@ -393,7 +393,7 @@ def test_crisis_clears_when_resources_recover():
 # ── Resource clamping ─────────────────────────────────────────
 
 
-def test_health_never_goes_below_zero():
+def test_health_never_goes_below_zero() -> None:
     _load_engine()
     from straightjacket.engine.mechanics import apply_consequences
 
@@ -402,7 +402,7 @@ def test_health_never_goes_below_zero():
     assert game.resources.health >= 0
 
 
-def test_bond_capped_at_bond_max():
+def test_bond_capped_at_bond_max() -> None:
     _load_engine()
     from straightjacket.engine.mechanics import apply_consequences
 

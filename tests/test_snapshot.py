@@ -26,7 +26,7 @@ from straightjacket.engine.models import (
 # ── TurnSnapshot round-trip ──────────────────────────────────
 
 
-def test_snapshot_basic_roundtrip():
+def test_snapshot_basic_roundtrip() -> None:
     game = GameState(player_name="Test")
     game.resources.health = 3
     game.resources.momentum = 5
@@ -45,7 +45,7 @@ def test_snapshot_basic_roundtrip():
     assert restored.npcs[0]["name"] == "Kira"
 
 
-def test_snapshot_with_brain_roundtrip():
+def test_snapshot_with_brain_roundtrip() -> None:
     snap = TurnSnapshot()
     snap.brain = BrainResult(
         move="face_danger",
@@ -67,7 +67,7 @@ def test_snapshot_with_brain_roundtrip():
     assert restored.brain.target_npc == "npc_1"
 
 
-def test_snapshot_with_roll_roundtrip():
+def test_snapshot_with_roll_roundtrip() -> None:
     snap = TurnSnapshot()
     snap.roll = RollResult(
         d1=4,
@@ -92,7 +92,7 @@ def test_snapshot_with_roll_roundtrip():
     assert restored.roll.match is False
 
 
-def test_snapshot_corrupted_roll_recovers():
+def test_snapshot_corrupted_roll_recovers() -> None:
     """If roll dict has wrong keys, from_dict should set roll=None."""
     d = {
         "resources": {},
@@ -111,7 +111,7 @@ def test_snapshot_corrupted_roll_recovers():
     assert restored.roll is None
 
 
-def test_snapshot_json_full_roundtrip():
+def test_snapshot_json_full_roundtrip() -> None:
     """Full JSON serialization round-trip (as used by persistence)."""
     snap = TurnSnapshot(
         resources={"health": 4, "spirit": 3, "supply": 5, "momentum": 6, "max_momentum": 10},
@@ -158,7 +158,7 @@ def test_snapshot_json_full_roundtrip():
 # ── GameState snapshot/restore with TurnSnapshot ─────────────
 
 
-def test_gamestate_snapshot_preserves_turn_context():
+def test_gamestate_snapshot_preserves_turn_context() -> None:
     """snapshot() creates TurnSnapshot; turn context is set afterward."""
     game = GameState(player_name="Hero")
     game.resources.health = 4
@@ -182,7 +182,7 @@ def test_gamestate_snapshot_preserves_turn_context():
     assert snap.brain.move == "gather_information"
 
 
-def test_gamestate_snapshot_last_turn_persists():
+def test_gamestate_snapshot_last_turn_persists() -> None:
     """last_turn_snapshot survives to_dict/from_dict (save/load)."""
     game = GameState(player_name="Hero")
     game.last_turn_snapshot = game.snapshot()
@@ -214,7 +214,7 @@ def test_gamestate_snapshot_last_turn_persists():
 # ── Chapter NPC deepcopy pattern ─────────────────────────────
 
 
-def test_npc_id_remapping():
+def test_npc_id_remapping() -> None:
     """Simulates the chapter transition ID remap logic."""
     game = GameState(player_name="Hero")
     # Extractor created npc_1 and npc_2 for new chapter NPCs
@@ -261,7 +261,7 @@ def test_npc_id_remapping():
 # ── StoryBlueprint serialization ──────────────────────────────
 
 
-def test_story_blueprint_roundtrip():
+def test_story_blueprint_roundtrip() -> None:
     """StoryBlueprint survives to_dict → from_dict."""
     from straightjacket.engine.models import StoryBlueprint
 
@@ -319,7 +319,7 @@ def test_story_blueprint_roundtrip():
     assert bp2.story_complete is False
 
 
-def test_gamestate_with_blueprint_roundtrip():
+def test_gamestate_with_blueprint_roundtrip() -> None:
     """GameState with StoryBlueprint survives full save/load cycle."""
     from straightjacket.engine.models import StoryBlueprint
 

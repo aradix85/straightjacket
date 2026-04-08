@@ -208,6 +208,9 @@ class NarrativeState:
             self.story_blueprint.triggered_transitions = list(bp_snap["triggered_transitions"])
             self.story_blueprint.triggered_director_phases = list(bp_snap["triggered_director_phases"])
             self.story_blueprint.story_complete = bp_snap["story_complete"]
+        elif bp_snap is None:
+            # Blueprint was absent at snapshot time — remove any blueprint added since
+            self.story_blueprint = None
 
     def to_dict(self) -> dict:
         return serialize(self)

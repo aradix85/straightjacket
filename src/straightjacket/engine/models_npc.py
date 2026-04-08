@@ -7,6 +7,9 @@ from dataclasses import dataclass, field
 
 from .serialization import deserialize, serialize
 
+# Canonical NPC status values. Used by correction ops and anywhere status is validated.
+NPC_STATUSES: frozenset[str] = frozenset({"active", "background", "deceased", "lore"})
+
 
 @dataclass
 class MemoryEntry:

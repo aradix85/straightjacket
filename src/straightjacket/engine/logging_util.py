@@ -32,7 +32,7 @@ def _get_user_config_file(username: str) -> Path:
     return _get_user_dir(username) / "settings.json"
 
 
-def setup_file_logging():
+def setup_file_logging() -> None:
     """Set up console logging. Safe to call multiple times."""
     logger = logging.getLogger("rpg_engine")
     if logger.handlers:
@@ -60,7 +60,7 @@ def get_logger(component: str) -> logging.Logger:
     return parent.getChild(component)
 
 
-def log(msg: str, level: str = "info"):
+def log(msg: str, level: str = "info") -> None:
     """Log a message via the root engine logger.
     Drop-in replacement for print() throughout the codebase.
     """
@@ -85,7 +85,7 @@ def load_global_config() -> dict:
         return {}
 
 
-def save_global_config(cfg: dict):
+def save_global_config(cfg: dict) -> None:
     """Merge and save server config section to the global config yaml.
     Existing keys are preserved, passed keys are updated.
     Restricts file permissions to owner-only.
@@ -124,7 +124,7 @@ def load_user_config(username: str) -> dict:
     return {}
 
 
-def save_user_config(username: str, cfg: dict):
+def save_user_config(username: str, cfg: dict) -> None:
     """Save per-user settings to settings.json."""
     cfg_file = _get_user_config_file(username)
     with contextlib.suppress(OSError):

@@ -52,7 +52,7 @@ def normalize_disposition(raw: str) -> str:
     return disposition_map().get(raw.lower().strip(), "neutral")
 
 
-def reload_emotions():
+def reload_emotions() -> None:
     """Force reload from disk."""
     global _data
     _data = None

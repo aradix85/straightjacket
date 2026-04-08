@@ -12,54 +12,16 @@ Emoji constants (E dict) are code constants, not translatable.
 
 from .strings_loader import get_string, get_strings_by_prefix
 
-# EMOJI / UNICODE CONSTANTS (shared across all modules)
+# UNICODE CONSTANTS (shared across all modules)
 
 E = {
-    "gear": "\u2699\ufe0f",
-    "swords": "\u2694\ufe0f",
-    "dice": "\U0001f3b2",
-    "skull": "\U0001f480",
-    "shield": "\U0001f6e1\ufe0f",
-    "pen": "\u270d\ufe0f",
-    "red_circle": "\U0001f534",
-    "orange_circle": "\U0001f7e0",
-    "green_circle": "\U0001f7e2",
-    "green_heart": "\U0001f49a",
-    "heart_red": "\u2764\ufe0f",
-    "heart_blue": "\U0001f499",
-    "yellow_dot": "\U0001f7e1",
-    "lightning": "\u26a1",
-    "dark_moon": "\U0001f311",
-    "brain": "\U0001f9e0",
-    "mask": "\U0001f3ad",
-    "pin": "\U0001f4cd",
-    "warn": "\u26a0\ufe0f",
-    "clock": "\u23f0",
-    "book": "\U0001f4d6",
-    "check": "\u2705",
-    "scroll": "\U0001f4dc",
-    "people": "\U0001f465",
-    "floppy": "\U0001f4be",
-    "trash": "\U0001f5d1\ufe0f",
-    "question": "\u2753",
-    "fire": "\U0001f525",
-    "refresh": "\U0001f504",
-    "x_mark": "\u274c",
-    "arrow_r": "\u2192",
-    "arrow_l": "\u2190",
-    "checkmark": "\u2713",
-    "dot": "\u00b7",
     "dash": "\u2014",
-    "tornado": "\U0001f32a\ufe0f",
-    "plus": "\u2795",
-    "star": "\u2728",
-    "comet": "\u2604\ufe0f",
 }
 
 # STRING LOOKUP
 
 
-def t(key: str, **kwargs) -> str:
+def t(key: str, **kwargs: str | int) -> str:
     """Look up a UI string by key."""
     return get_string(key, **kwargs)
 

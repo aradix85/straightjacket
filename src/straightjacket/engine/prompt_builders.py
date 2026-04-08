@@ -159,7 +159,7 @@ def _known_npcs_string(mentioned: list[NpcData], game: GameState, exclude_ids: s
     player_loc = game.world.current_location or ""
     parts = []
 
-    def _npc_entry(n):
+    def _npc_entry(n: NpcData) -> str:
         entry = f"{_xe(n.name)}({_xe(n.disposition)})"
         if n.status == "background":
             entry += "[bg]"

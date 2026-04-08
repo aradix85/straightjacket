@@ -19,7 +19,7 @@ from straightjacket.engine.models import (
 )
 
 
-def _stub():
+def _stub() -> None:
     engine_loader._eng = _ConfigNode(
         {
             "bonds": {"start": 0, "max": 4},
@@ -122,31 +122,31 @@ def _game() -> GameState:
 
 
 class _MockResponse:
-    def __init__(self, content, stop_reason="complete"):
+    def __init__(self, content: str, stop_reason: str = "complete") -> None:
         self.content = content
         self.stop_reason = stop_reason
-        self.tool_calls = []
+        self.tool_calls: list = []
         self.usage = {"input_tokens": 10, "output_tokens": 10}
 
 
 class _MockProvider:
-    def __init__(self, response_content="", fail=False):
+    def __init__(self, response_content: str = "", fail: bool = False) -> None:
         self._content = response_content
         self._fail = fail
-        self.calls = []
+        self.calls: list = []
 
     def create_message(
         self,
-        model,
-        system,
-        messages,
-        max_tokens,
-        json_schema=None,
-        tools=None,
-        temperature=None,
-        top_p=None,
-        top_k=None,
-    ):
+        model: str,
+        system: str,
+        messages: list,
+        max_tokens: int,
+        json_schema: dict | None = None,
+        tools: list | None = None,
+        temperature: float | None = None,
+        top_p: float | None = None,
+        top_k: int | None = None,
+    ) -> _MockResponse:
         self.calls.append({"system": system, "json_schema": json_schema})
         if self._fail:
             raise ConnectionError("mock fail")
@@ -156,56 +156,72 @@ class _MockProvider:
 # ── validator.py ─────────────────────────────────────────────
 
 
-def test_validate_narration_returns_violations():
+def test_validate_narration_returns_violations() -> None:
     _stub()
     from straightjacket.engine.ai.validator import validate_narration
 
     provider = _MockProvider(
         json.dumps({"pass": False, "violations": ["Silver lining on MISS"], "correction": "Make it worse."})
     )
-    result = validate_narration(provider, "Bad narration.", "MISS", "dark_fantasy")
+    result = validate_narration(
+        provider,  # type: ignore[arg-type]
+        "Bad narration.",
+        "MISS",
+        "dark_fantasy",
+    )
     assert result["pass"] is False
     assert len(result["violations"]) == 1
 
 
-def test_validate_narration_fail_open_on_api_error():
+def test_validate_narration_fail_open_on_api_error() -> None:
     _stub()
     from straightjacket.engine.ai.validator import validate_narration
 
     provider = _MockProvider(fail=True)
-    result = validate_narration(provider, "Text.", "MISS", "dark_fantasy")
+    result = validate_narration(
+        provider,  # type: ignore[arg-type]
+        "Text.",
+        "MISS",
+        "dark_fantasy",
+    )
     assert result["pass"] is True
 
 
-def test_validate_narration_catches_genre_violation_rule_based():
+def test_validate_narration_catches_genre_violation_rule_based() -> None:
     _stub()
     from straightjacket.engine.ai.validator import validate_narration
 
     provider = _MockProvider(json.dumps({"pass": True, "violations": [], "correction": ""}))
     gc = {"forbidden_terms": ["magic"], "forbidden_concepts": [], "genre_test": ""}
-    result = validate_narration(provider, "She cast a magic spell.", "MISS", "realistic", genre_constraints=gc)
+    result = validate_narration(
+        provider,  # type: ignore[arg-type]
+        "She cast a magic spell.",
+        "MISS",
+        "realistic",
+        genre_constraints=gc,
+    )
     assert result["pass"] is False
     assert any("magic" in v for v in result["violations"])
 
 
-def test_validate_and_retry_actually_retries():
+def test_validate_and_retry_actually_retries() -> None:
     _stub()
     from straightjacket.engine.ai.validator import validate_and_retry
 
     call_count = [0]
 
     class RetryProvider:
-        def create_message(
+        def create_message(  # type: ignore[override, no-untyped-def]
             self,
-            model,
-            system,
-            messages,
-            max_tokens,
-            json_schema=None,
-            tools=None,
-            temperature=None,
-            top_p=None,
-            top_k=None,
+            model: str,
+            system: str,
+            messages: list,
+            max_tokens: int,
+            json_schema: dict | None = None,
+            tools: list | None = None,
+            temperature: float | None = None,
+            top_p: float | None = None,
+            top_k: int | None = None,
         ):
             call_count[0] += 1
             if json_schema and "pass" in json_schema.get("properties", {}):
@@ -220,7 +236,7 @@ def test_validate_and_retry_actually_retries():
     assert len(report["checks"]) >= 2
 
 
-def test_validate_architect_fixes_violations():
+def test_validate_architect_fixes_violations() -> None:
     _stub()
     from straightjacket.engine.ai.validator import validate_architect
 
@@ -236,26 +252,38 @@ def test_validate_architect_fixes_violations():
     )
     bp = {"central_conflict": "Magic war", "antagonist_force": "Evil wizard"}
     gc = {"forbidden_terms": ["magic"], "forbidden_concepts": [], "genre_test": ""}
-    result = validate_architect(provider, bp, "realistic", "serious", genre_constraints=gc)
+    result = validate_architect(
+        provider,  # type: ignore[arg-type]
+        bp,
+        "realistic",
+        "serious",
+        genre_constraints=gc,
+    )
     assert result["central_conflict"] == "Political conspiracy"
     assert result["antagonist_force"] == "Corrupt senator"
 
 
-def test_validate_architect_fail_open_on_api_error():
+def test_validate_architect_fail_open_on_api_error() -> None:
     _stub()
     from straightjacket.engine.ai.validator import validate_architect
 
     provider = _MockProvider(fail=True)
     bp = {"central_conflict": "Original", "antagonist_force": "Original"}
     gc = {"forbidden_terms": ["x"], "forbidden_concepts": [], "genre_test": ""}
-    result = validate_architect(provider, bp, "genre", "tone", genre_constraints=gc)
+    result = validate_architect(
+        provider,  # type: ignore[arg-type]
+        bp,
+        "genre",
+        "tone",
+        genre_constraints=gc,
+    )
     assert result["central_conflict"] == "Original"
 
 
 # ── setup_common.py ──────────────────────────────────────────
 
 
-def test_register_extracted_npcs_skips_player():
+def test_register_extracted_npcs_skips_player() -> None:
     _stub()
     from straightjacket.engine.game.setup_common import register_extracted_npcs
 
@@ -273,7 +301,7 @@ def test_register_extracted_npcs_skips_player():
     assert max_id == 1
 
 
-def test_register_extracted_npcs_skips_returning():
+def test_register_extracted_npcs_skips_returning() -> None:
     _stub()
     from straightjacket.engine.game.setup_common import register_extracted_npcs
 
@@ -291,7 +319,7 @@ def test_register_extracted_npcs_skips_returning():
     assert "Borin" in names
 
 
-def test_seed_opening_memories_matches_and_skips():
+def test_seed_opening_memories_matches_and_skips() -> None:
     _stub()
     from straightjacket.engine.game.setup_common import seed_opening_memories
 
@@ -308,7 +336,7 @@ def test_seed_opening_memories_matches_and_skips():
     assert len(game.npcs[0].memory) == 1
 
 
-def test_apply_world_setup_replace_vs_extend():
+def test_apply_world_setup_replace_vs_extend() -> None:
     _stub()
     from straightjacket.engine.game.setup_common import apply_world_setup
 
@@ -341,14 +369,14 @@ def test_apply_world_setup_replace_vs_extend():
 # ── prompt_blocks.py ─────────────────────────────────────────
 
 
-def _load_prompts():
+def _load_prompts() -> None:
     from straightjacket.engine import prompt_loader
 
     prompt_loader._prompts = None
     prompt_loader._ensure_loaded()
 
 
-def test_status_context_maps_resources():
+def test_status_context_maps_resources() -> None:
     _stub()
     from straightjacket.engine.prompt_blocks import status_context_block
 
@@ -356,7 +384,7 @@ def test_status_context_maps_resources():
     assert "<character_state>" in result
 
 
-def test_narrative_direction_maps_result():
+def test_narrative_direction_maps_result() -> None:
     _stub()
     from straightjacket.engine.prompt_blocks import narrative_direction_block
 
@@ -364,7 +392,7 @@ def test_narrative_direction_maps_result():
     assert "tempo:slow" in result
 
 
-def test_narrative_direction_intensity_critical_on_crisis():
+def test_narrative_direction_intensity_critical_on_crisis() -> None:
     _stub()
     from straightjacket.engine.prompt_blocks import narrative_direction_block
 
@@ -374,7 +402,7 @@ def test_narrative_direction_intensity_critical_on_crisis():
     assert "intensity:critical" in narrative_direction_block(game, "MISS")
 
 
-def test_story_context_block_includes_conflict():
+def test_story_context_block_includes_conflict() -> None:
     _stub()
     from straightjacket.engine.prompt_blocks import story_context_block
 
@@ -388,7 +416,7 @@ def test_story_context_block_includes_conflict():
     assert "Shadow rises" in story_context_block(game)
 
 
-def test_story_context_block_epilogue_dismissed_open_ended():
+def test_story_context_block_epilogue_dismissed_open_ended() -> None:
     _stub()
     from straightjacket.engine.prompt_blocks import story_context_block
 
@@ -407,7 +435,7 @@ def test_story_context_block_epilogue_dismissed_open_ended():
     assert "open-ended play" in story_context_block(game)
 
 
-def test_recent_events_block_includes_summaries():
+def test_recent_events_block_includes_summaries() -> None:
     _stub()
     from straightjacket.engine.prompt_blocks import recent_events_block
 
@@ -421,7 +449,7 @@ def test_recent_events_block_includes_summaries():
     assert "Found a clue" in result
 
 
-def test_campaign_history_block_includes_chapters():
+def test_campaign_history_block_includes_chapters() -> None:
     _stub()
     _load_prompts()
     from straightjacket.engine.prompt_blocks import campaign_history_block
@@ -436,34 +464,34 @@ def test_campaign_history_block_includes_chapters():
 # ── provider_base.py ─────────────────────────────────────────
 
 
-def test_post_process_strips_think_tags():
+def test_post_process_strips_think_tags() -> None:
     from straightjacket.engine.ai.provider_base import AIResponse, post_process_response
 
     resp = AIResponse(content="<think>reasoning</think>The actual response.")
     assert "<think>" not in post_process_response(resp).content
 
 
-def test_post_process_preserves_think_on_tool_use():
+def test_post_process_preserves_think_on_tool_use() -> None:
     from straightjacket.engine.ai.provider_base import AIResponse, post_process_response
 
     resp = AIResponse(content="<think>kept</think>text", stop_reason="tool_use")
     assert "<think>" in post_process_response(resp).content
 
 
-def test_create_with_retry_retries_on_connection_error():
+def test_create_with_retry_retries_on_connection_error() -> None:
     from straightjacket.engine.ai.provider_base import create_with_retry
 
     call_count = [0]
 
     class FlakeyProvider:
-        def create_message(self, **kwargs):
+        def create_message(self, **kwargs: object) -> _MockResponse:  # type: ignore[override]
             call_count[0] += 1
             if call_count[0] <= 1:
                 raise ConnectionError("reset")
             return _MockResponse("OK")
 
     resp = create_with_retry(
-        FlakeyProvider(),
+        FlakeyProvider(),  # type: ignore[arg-type]  # type: ignore[arg-type]
         max_retries=2,
         model="m",
         system="s",
@@ -474,17 +502,17 @@ def test_create_with_retry_retries_on_connection_error():
     assert call_count[0] == 2
 
 
-def test_create_with_retry_raises_on_exhaustion():
+def test_create_with_retry_raises_on_exhaustion() -> None:
     from straightjacket.engine.ai.provider_base import create_with_retry
     import pytest
 
     class AlwaysFail:
-        def create_message(self, **kwargs):
+        def create_message(self, **kwargs: object) -> None:  # type: ignore[override]
             raise ConnectionError("permanent")
 
     with pytest.raises(ConnectionError):
         create_with_retry(
-            AlwaysFail(),
+            AlwaysFail(),  # type: ignore[arg-type]  # type: ignore[arg-type]
             max_retries=1,
             model="m",
             system="s",
@@ -496,7 +524,7 @@ def test_create_with_retry_raises_on_exhaustion():
 # ── strings_loader.py ────────────────────────────────────────
 
 
-def test_get_string_substitutes_variables():
+def test_get_string_substitutes_variables() -> None:
     from straightjacket.strings_loader import reload_strings, get_string
 
     reload_strings()
@@ -507,7 +535,7 @@ def test_get_string_substitutes_variables():
 # ── director_runner.py ───────────────────────────────────────
 
 
-def test_run_deferred_director_applies_guidance():
+def test_run_deferred_director_applies_guidance() -> None:
     _stub()
     _load_prompts()
     from straightjacket.engine.game.director_runner import run_deferred_director
@@ -527,36 +555,58 @@ def test_run_deferred_director_applies_guidance():
     )
     game = _game()
     game.narrative.session_log.append(SceneLogEntry(scene=5, summary="Last"))
-    run_deferred_director(provider, game, {"narration": "Text.", "config": None})
+    run_deferred_director(
+        provider,  # type: ignore[arg-type]
+        game,
+        {"narration": "Text.", "config": None},
+    )
     assert game.narrative.director_guidance.pacing == "building"
 
 
-def test_run_deferred_director_survives_api_error():
+def test_run_deferred_director_survives_api_error() -> None:
     _stub()
     from straightjacket.engine.game.director_runner import run_deferred_director
 
     provider = _MockProvider(fail=True)
     game = _game()
-    run_deferred_director(provider, game, {"narration": "text", "config": None})
+    run_deferred_director(
+        provider,  # type: ignore[arg-type]
+        game,
+        {"narration": "text", "config": None},
+    )
 
 
 # ── brain.py ─────────────────────────────────────────────────
 
 
-def test_revelation_check_returns_false_when_not_confirmed():
+def test_revelation_check_returns_false_when_not_confirmed() -> None:
     _stub()
     from straightjacket.engine.ai.brain import call_revelation_check
     from straightjacket.engine.models_story import Revelation
 
     provider = _MockProvider(json.dumps({"revelation_confirmed": False, "reasoning": "Absent."}))
     rev = Revelation(id="rev_1", content="The shadow is sentient", dramatic_weight="high")
-    assert call_revelation_check(provider, "The door opened.", rev) is False
+    assert (
+        call_revelation_check(
+            provider,  # type: ignore[arg-type]
+            "The door opened.",
+            rev,
+        )
+        is False
+    )
 
 
-def test_revelation_check_defaults_true_on_api_error():
+def test_revelation_check_defaults_true_on_api_error() -> None:
     _stub()
     from straightjacket.engine.ai.brain import call_revelation_check
     from straightjacket.engine.models_story import Revelation
 
     provider = _MockProvider(fail=True)
-    assert call_revelation_check(provider, "Text.", Revelation(id="r", content="X")) is True
+    assert (
+        call_revelation_check(
+            provider,  # type: ignore[arg-type]
+            "Text.",
+            Revelation(id="r", content="X"),
+        )
+        is True
+    )

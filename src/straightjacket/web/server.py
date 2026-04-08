@@ -16,7 +16,7 @@ from collections.abc import Callable
 from pathlib import Path
 
 from starlette.applications import Starlette
-from starlette.responses import FileResponse
+from starlette.responses import FileResponse, JSONResponse
 from starlette.routing import Route, WebSocketRoute
 from starlette.websockets import WebSocket, WebSocketDisconnect
 
@@ -189,14 +189,12 @@ async def websocket_endpoint(ws: WebSocket) -> None:
 # ── HTTP routes ───────────────────────────────────────────────
 
 
-async def homepage(_request):
+async def homepage(_request: object) -> FileResponse:
     return FileResponse(_STATIC_DIR / "index.html")
 
 
-async def health(_request):
+async def health(_request: object) -> JSONResponse:
     """Health check for monitoring and Elvira server readiness."""
-    from starlette.responses import JSONResponse
-
     return JSONResponse({"status": "ok"})
 
 

@@ -10,10 +10,12 @@ use a local load_engine fixture that loads real engine.yaml.
 Run: python -m pytest tests/test_web.py -v
 """
 
+from typing import Any
+
 import pytest
 
-from straightjacket.engine import engine_loader
-from straightjacket.engine.models import (
+from straightjacket.engine import engine_loader  # type: ignore[import-not-found]
+from straightjacket.engine.models import (  # type: ignore[import-not-found]
     BrainResult,
     ClockData,
     GameState,
@@ -21,8 +23,8 @@ from straightjacket.engine.models import (
     RollResult,
     TurnSnapshot,
 )
-from straightjacket.web.session import BurnOffer, Session
-from straightjacket.web.serializers import (
+from straightjacket.web.session import BurnOffer, Session  # type: ignore[import-not-found]
+from straightjacket.web.serializers import (  # type: ignore[import-not-found]
     build_creation_options,
     build_state,
     highlight_dialog,
@@ -30,7 +32,7 @@ from straightjacket.web.serializers import (
 
 
 @pytest.fixture()
-def load_engine():
+def load_engine() -> None:
     """Load real engine.yaml."""
     engine_loader._eng = None
     engine_loader.eng()
@@ -40,7 +42,7 @@ def load_engine():
 
 
 class TestSession:
-    def test_initial_state(self):
+    def test_initial_state(self) -> None:
         s = Session()
         assert s.player == ""
         assert s.game is None
@@ -49,7 +51,7 @@ class TestSession:
         assert s.chat_messages == []
         assert s.pending_burn is None
 
-    def test_append_chat(self):
+    def test_append_chat(self) -> None:
         s = Session()
         s.append_chat("user", "hello")
         s.append_chat("assistant", "world")
@@ -57,27 +59,27 @@ class TestSession:
         assert s.chat_messages[0] == {"role": "user", "content": "hello"}
         assert s.chat_messages[1] == {"role": "assistant", "content": "world"}
 
-    def test_append_chat_extra_fields(self):
+    def test_append_chat_extra_fields(self) -> None:
         s = Session()
         s.append_chat("assistant", "epilogue text", epilogue=True)
         assert s.chat_messages[0]["epilogue"] is True
 
-    def test_orphan_input_none_when_assistant_last(self):
+    def test_orphan_input_none_when_assistant_last(self) -> None:
         s = Session()
         s.append_chat("user", "action")
         s.append_chat("assistant", "narration")
         assert s.orphan_input() is None
 
-    def test_orphan_input_returns_text_when_user_last(self):
+    def test_orphan_input_returns_text_when_user_last(self) -> None:
         s = Session()
         s.append_chat("user", "orphaned action")
         assert s.orphan_input() == "orphaned action"
 
-    def test_orphan_input_none_when_empty(self):
+    def test_orphan_input_none_when_empty(self) -> None:
         s = Session()
         assert s.orphan_input() is None
 
-    def test_pop_last_user_message(self):
+    def test_pop_last_user_message(self) -> None:
         s = Session()
         s.append_chat("user", "first")
         s.append_chat("assistant", "response")
@@ -86,28 +88,28 @@ class TestSession:
         assert len(s.chat_messages) == 2
         assert s.chat_messages[-1]["role"] == "assistant"
 
-    def test_pop_last_user_message_noop_when_assistant_last(self):
+    def test_pop_last_user_message_noop_when_assistant_last(self) -> None:
         s = Session()
         s.append_chat("user", "x")
         s.append_chat("assistant", "y")
         s.pop_last_user_message()
         assert len(s.chat_messages) == 2
 
-    def test_replace_last_assistant(self):
+    def test_replace_last_assistant(self) -> None:
         s = Session()
         s.append_chat("user", "input")
         s.append_chat("assistant", "original")
         s.replace_last_assistant("replaced")
         assert s.chat_messages[-1]["content"] == "replaced"
 
-    def test_replace_last_assistant_skips_user(self):
+    def test_replace_last_assistant_skips_user(self) -> None:
         s = Session()
         s.append_chat("assistant", "first")
         s.append_chat("user", "second")
         s.replace_last_assistant("replaced")
         assert s.chat_messages[0]["content"] == "replaced"
 
-    def test_clear_game(self):
+    def test_clear_game(self) -> None:
         s = Session()
         s.game = GameState(player_name="Test")
         s.chat_messages = [{"role": "assistant", "content": "x"}]
@@ -126,13 +128,13 @@ class TestSession:
         assert s.save_name == "autosave"
         assert s.pending_burn is None
 
-    def test_has_game_property(self):
+    def test_has_game_property(self) -> None:
         s = Session()
         assert s.has_game is False
         s.game = GameState()
         assert s.has_game is True
 
-    def test_filtered_messages_strips_recaps(self):
+    def test_filtered_messages_strips_recaps(self) -> None:
         s = Session()
         s.chat_messages = [
             {"role": "assistant", "content": "narration"},
@@ -148,7 +150,7 @@ class TestSession:
 
 
 class TestBurnOffer:
-    def test_fields(self):
+    def test_fields(self) -> None:
         bo = BurnOffer(
             roll=RollResult(1, 2, 3, 4, "iron", 3, 6, "MISS", "strike"),
             new_result="STRONG_HIT",
@@ -162,7 +164,7 @@ class TestBurnOffer:
         assert bo.cost == 7
         assert bo.chaos_interrupt == "twist"
 
-    def test_chaos_interrupt_defaults_none(self):
+    def test_chaos_interrupt_defaults_none(self) -> None:
         bo = BurnOffer(
             roll=RollResult(1, 1, 1, 1, "wits", 1, 3, "MISS", "face_danger"),
             new_result="WEAK_HIT",
@@ -178,31 +180,31 @@ class TestBurnOffer:
 
 
 class TestHighlightDialog:
-    def test_curly_quotes(self):
+    def test_curly_quotes(self) -> None:
         text = "\u201cHello,\u201d she said."
         result = highlight_dialog(text)
         assert '<span class="dialog">' in result
         assert "Hello," in result
 
-    def test_straight_quotes(self):
+    def test_straight_quotes(self) -> None:
         result = highlight_dialog('"Hello," she said.')
         assert '<span class="dialog">' in result
 
-    def test_german_quotes(self):
+    def test_german_quotes(self) -> None:
         result = highlight_dialog("\u201eHallo,\u201c sagte sie.")
         assert '<span class="dialog">' in result
 
-    def test_no_quotes_unchanged(self):
+    def test_no_quotes_unchanged(self) -> None:
         text = "The wind howled through the broken windows."
         assert highlight_dialog(text) == text
 
-    def test_guillemets(self):
+    def test_guillemets(self) -> None:
         result = highlight_dialog("\u00abBonjour\u00bb dit-elle.")
         assert '<span class="dialog">' in result
 
 
 class TestBuildState:
-    def _game(self):
+    def _game(self) -> GameState:
         game = GameState(
             player_name="Kael",
             character_concept="Scholar",
@@ -231,7 +233,7 @@ class TestBuildState:
         ]
         return game
 
-    def test_basic_fields(self, load_engine):
+    def test_basic_fields(self, load_engine: None) -> None:
         state = build_state(self._game())
         assert state["player_name"] == "Kael"
         assert state["health"] == 4
@@ -239,39 +241,39 @@ class TestBuildState:
         assert state["scene"] == 5
         assert state["location"] == "Library"
 
-    def test_stats_have_labels(self, load_engine):
+    def test_stats_have_labels(self, load_engine: None) -> None:
         state = build_state(self._game())
         assert "label" in state["stats"]["edge"]
         assert "value" in state["stats"]["edge"]
         assert state["stats"]["edge"]["value"] == 1
 
-    def test_npcs_filtered(self, load_engine):
+    def test_npcs_filtered(self, load_engine: None) -> None:
         state = build_state(self._game())
         names = [n["name"] for n in state["npcs"]]
         assert "Mira" in names
         assert "Ghost" in names
         assert "Lore Figure" not in names
 
-    def test_npc_disposition_labeled(self, load_engine):
+    def test_npc_disposition_labeled(self, load_engine: None) -> None:
         state = build_state(self._game())
         mira = next(n for n in state["npcs"] if n["name"] == "Mira")
         assert mira["disposition_label"] != ""
 
-    def test_clocks_present(self, load_engine):
+    def test_clocks_present(self, load_engine: None) -> None:
         state = build_state(self._game())
         assert len(state["clocks"]) == 1
         assert state["clocks"][0]["name"] == "Doom"
         assert state["clocks"][0]["filled"] == 3
 
-    def test_time_label_resolved(self, load_engine):
+    def test_time_label_resolved(self, load_engine: None) -> None:
         state = build_state(self._game())
         assert state["time_label"] != ""
 
-    def test_story_arc_none_without_blueprint(self, load_engine):
+    def test_story_arc_none_without_blueprint(self, load_engine: None) -> None:
         state = build_state(self._game())
         assert state["story_arc"] is None
 
-    def test_story_arc_present_with_blueprint(self, load_engine):
+    def test_story_arc_present_with_blueprint(self, load_engine: None) -> None:
         from straightjacket.engine.models import StoryAct, StoryBlueprint
 
         game = self._game()
@@ -289,16 +291,16 @@ class TestBuildState:
 
 
 class TestBuildCreationOptions:
-    def test_returns_settings(self, load_engine):
+    def test_returns_settings(self, load_engine: None) -> None:
         opts = build_creation_options()
         assert "settings" in opts
-        from straightjacket.engine.datasworn.loader import list_available
+        from straightjacket.engine.datasworn.loader import list_available  # type: ignore[import-not-found]
 
         if not list_available():
             pytest.skip("No Datasworn JSON files in data/ — run download_datasworn.py")
         assert len(opts["settings"]) >= 1
 
-    def test_settings_have_paths(self, load_engine):
+    def test_settings_have_paths(self, load_engine: None) -> None:
         opts = build_creation_options()
         for s in opts["settings"]:
             assert "id" in s
@@ -306,12 +308,12 @@ class TestBuildCreationOptions:
             assert "paths" in s
             assert len(s["paths"]) > 0
 
-    def test_delve_excluded(self, load_engine):
+    def test_delve_excluded(self, load_engine: None) -> None:
         opts = build_creation_options()
         ids = [s["id"] for s in opts["settings"]]
         assert "delve" not in ids
 
-    def test_paths_have_id_and_title(self, load_engine):
+    def test_paths_have_id_and_title(self, load_engine: None) -> None:
         opts = build_creation_options()
         for s in opts["settings"]:
             for p in s["paths"]:
@@ -324,7 +326,7 @@ class TestBuildCreationOptions:
 
 class TestWebSocket:
     @pytest.fixture(autouse=True)
-    def _setup(self, load_engine):
+    def _setup(self, load_engine: None) -> None:
         """Reset session state before each test."""
         from straightjacket.web.server import _session
 
@@ -337,13 +339,13 @@ class TestWebSocket:
         self.session = _session
 
     @pytest.fixture()
-    def client(self):
+    def client(self) -> Any:
         from starlette.testclient import TestClient
-        from straightjacket.web.server import app
+        from straightjacket.web.server import app  # type: ignore[import-not-found]
 
         return TestClient(app)
 
-    def test_full_connection_flow(self, client):
+    def test_full_connection_flow(self, client: Any) -> None:
         """Full WebSocket flow: connect, create player, error handling, saves, cleanup."""
         with client.websocket_connect("/ws") as ws:
             # 1. Connect: receive ui_strings then players_list
@@ -390,7 +392,7 @@ class TestWebSocket:
             assert msg["type"] == "players_list"
             assert "ws_flow" not in msg["players"]
 
-    def test_reconnect_resends_player_state(self, client):
+    def test_reconnect_resends_player_state(self, client: Any) -> None:
         """Reconnect after player selection resends full state."""
         with client.websocket_connect("/ws") as ws1:
             ws1.receive_json()  # ui_strings

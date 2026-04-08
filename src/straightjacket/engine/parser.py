@@ -86,7 +86,7 @@ def salvage_truncated_narration(raw: str) -> str:
 # RESPONSE PARSER
 
 
-def _process_game_data(game: GameState, data: dict, force_npcs: bool = True):
+def _process_game_data(game: GameState, data: dict, force_npcs: bool = True) -> None:
     """Process structured game_data from narrator response (opening scene).
     Shared logic for both tagged and untagged game_data extraction.
     If force_npcs=False, only sets game.npcs when currently empty (fallback parsing)."""
@@ -343,7 +343,7 @@ def apply_memory_updates(
     scene_present_ids: set | None = None,
     pre_turn_npc_ids: set | None = None,
     pre_turn_lore_ids: set | None = None,
-):
+) -> None:
     """Apply NPC memory updates with importance scoring and consolidation.
 
     scene_present_ids: NPC IDs activated/mentioned in this scene (from activate_npcs_for_prompt).

@@ -133,6 +133,7 @@ class TurnRecord:
     violations: list[str] = field(default_factory=list)
     narration_quality: list[str] = field(default_factory=list)
     spatial_issues: list[str] = field(default_factory=list)
+    token_usage: list[dict] = field(default_factory=list)
     is_correction: bool = False
     error: str = ""
 
@@ -203,6 +204,8 @@ class TurnRecord:
             d["narration"] = self.narration[:500]
         if self.is_correction:
             d["correction"] = True
+        if self.token_usage:
+            d["tokens"] = self.token_usage
         return d
 
 
@@ -242,6 +245,7 @@ class SessionLog:
     chapter_continuity_issues: list[str] = field(default_factory=list)
     validator_summary: dict = field(default_factory=dict)
     quality_summary: dict = field(default_factory=dict)
+    token_summary: dict = field(default_factory=dict)
     correction_tests: list[dict] = field(default_factory=list)
     burn_stats: dict = field(default_factory=dict)
     ended_reason: str = "unknown"
@@ -292,6 +296,8 @@ class SessionLog:
         if self.quality_summary:
             d["quality_summary"] = self.quality_summary
         d["burn_stats"] = self.burn_stats
+        if self.token_summary:
+            d["token_summary"] = self.token_summary
         # Final NPC state (once, not per-turn)
         if self.turns:
             last = self.turns[-1]

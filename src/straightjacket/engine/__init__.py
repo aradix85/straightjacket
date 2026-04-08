@@ -53,6 +53,7 @@ from .logging_util import (
     setup_file_logging,
 )
 from .models import (
+    NPC_STATUSES,
     ChapterSummary,
     ClockData,
     ClockEvent,

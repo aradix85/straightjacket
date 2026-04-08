@@ -73,7 +73,9 @@ def run_session(bot_cfg: dict, auto_override: bool = False, turns_override: int 
     clean_before = session_cfg.get("clean_before_run", True)
     style = behavior.get("style", "balanced")
     burn_setting = behavior.get("burn_momentum", "auto")
-    log_file = Path(log_cfg.get("log_file", "elvira_session.json"))
+    log_file_base = Path(log_cfg.get("log_file", "elvira_session.json"))
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M")
+    log_file = log_file_base.with_stem(f"{log_file_base.stem}_{timestamp}")
     print_full = log_cfg.get("print_full_narration", False)
     print_rolls = log_cfg.get("print_roll_details", True)
     do_invariants = log_cfg.get("assert_state_invariants", True)
@@ -247,6 +249,7 @@ def run_session(bot_cfg: dict, auto_override: bool = False, turns_override: int 
     )
     slog.validator_summary = _aggregate_validator_stats(slog)
     slog.quality_summary = _aggregate_quality_stats(slog)
+    slog.token_summary = _aggregate_token_stats(slog)
     slog.burn_stats = {
         "offered": burns_offered,
         "taken": burns_taken,
@@ -659,4 +662,29 @@ def _aggregate_quality_stats(slog: SessionLog) -> dict:
         "correction_tests_total": len(slog.correction_tests),
         "correction_tests_failed": sum(1 for c in slog.correction_tests if not c.get("success")),
         "top_quality_issues": sorted(quality_counts.items(), key=lambda x: -x[1])[:10],
+    }
+
+
+def _aggregate_token_stats(slog: SessionLog) -> dict:
+    """Aggregate token usage across all turns by role."""
+    by_role: dict[str, dict[str, int]] = {}
+    total_input = 0
+    total_output = 0
+    for t in slog.turns:
+        for entry in t.token_usage:
+            role = str(entry.get("role", "unknown"))
+            inp = int(entry.get("input", 0))
+            out = int(entry.get("output", 0))
+            if role not in by_role:
+                by_role[role] = {"calls": 0, "input": 0, "output": 0}
+            by_role[role]["calls"] += 1
+            by_role[role]["input"] += inp
+            by_role[role]["output"] += out
+            total_input += inp
+            total_output += out
+    return {
+        "total_input": total_input,
+        "total_output": total_output,
+        "total": total_input + total_output,
+        "by_role": by_role,
     }

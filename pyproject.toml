@@ -1,6 +1,6 @@
 [project]
 name = "straightjacket"
-version = "0.34.0"
+version = "0.35.0"
 requires-python = ">=3.11"
 dependencies = [
     "starlette>=1.0,<2",
@@ -31,10 +31,10 @@ per-file-ignores = {"src/straightjacket/engine/__init__.py" = ["F401"], "src/str
 python_version = "3.11"
 warn_return_any = false
 warn_unused_configs = true
-disallow_untyped_defs = false
+disallow_untyped_defs = true
 check_untyped_defs = true
 ignore_missing_imports = false
-exclude = ["tests/", "data/"]
+exclude = ["data/"]
 # NOTE: install types-PyYAML for mypy: pip install types-PyYAML
 
 [[tool.mypy.overrides]]

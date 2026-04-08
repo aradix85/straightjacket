@@ -7,6 +7,30 @@ Originally forked from [EdgeTales](https://github.com/edgetales/edgetales). See 
 
 ---
 
+## [0.35.0] — 2026-04-08
+
+Code audit, strict type checking, Elvira batch runner, validator tuning, token logging.
+
+- **`disallow_untyped_defs = true`** in mypy config. All 57 src files + 16 test files fully type-annotated. Tests removed from mypy exclude. 73 files, zero errors
+- **Dubbele `_read_version()`** removed from `__init__.py` — imports `VERSION` from config_loader
+- **`narrator_was_salvaged` global** removed (never read outside narrator.py)
+- **`_default_scene_range`** made public (`default_scene_range`) — was underscore-imported across 3 modules
+- **`MAX_NARRATION_CHARS`** moved to engine.yaml (`pacing.max_narration_chars`)
+- **`NPC_STATUSES`** constant as frozenset in models_npc.py, used in correction.py validation
+- **Snapshot/restore blueprint asymmetry** fixed — `restore()` now clears blueprint when snapshot had None
+- **40 dead emoji entries** removed from i18n.py `E` dict (NiceGUI legacy)
+- **`_ConfigNode` isinstance** replaced with duck typing (`hasattr(to_dict)`)
+- **`get_stat()` silent fallback** replaced with `ValueError` on invalid stat name
+- **`_ensure_loaded` underscore import** replaced with public `all_strings()` in strings_loader.py
+- **`score_importance`** typed with `@overload` for correct debug=True/False return types
+- **Elvira `--setting` and `--style`** CLI overrides added to elvira.py
+- **Elvira batch runner** (`elvira_batch.py`): runs all settings × styles, aggregates compliance report
+- **Session log timestamps**: log filenames include `_YYYYMMDD_HHMM` — no more overwrites
+- **Token logging**: all 10 AI call sites tagged with `log_role`. Per-call token counts logged to console and accumulated per turn in Elvira session logs. Token summary in batch report
+- **Validator prompt tuned** for false positive reduction: "camera test" for PLAYER AGENCY, sensory descriptions of failure explicitly allowed on MISS, "when in doubt, PASS" directive. Compliance 73% → 86.5%
+
+---
+
 ## [0.34.0] — 2026-04-08
 
 Code audit and cleanup. i18n for HTML client. Dice roll display removed.

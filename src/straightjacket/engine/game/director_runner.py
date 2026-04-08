@@ -7,7 +7,7 @@ from ..logging_util import log
 from ..models import GameState
 
 
-def run_deferred_director(provider: AIProvider, game: GameState, director_ctx: dict):
+def run_deferred_director(provider: AIProvider, game: GameState, director_ctx: dict) -> None:
     """Run the Director call that was deferred from process_turn.
     Called by the UI layer AFTER rendering narration for non-blocking display.
     Modifies game state in-place (adds guidance + reflections)."""

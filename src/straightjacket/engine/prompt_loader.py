@@ -46,7 +46,7 @@ def _ensure_loaded() -> dict:
     return _prompts
 
 
-def get_prompt(name: str, **variables) -> str:
+def get_prompt(name: str, **variables: str) -> str:
     """Get a prompt by name, filling template variables.
 
     Missing variables are left as {name} in the output (partial formatting).
@@ -61,7 +61,7 @@ def get_prompt(name: str, **variables) -> str:
     return template
 
 
-def reload_prompts():
+def reload_prompts() -> None:
     """Force reload from disk."""
     global _prompts
     _prompts = None
