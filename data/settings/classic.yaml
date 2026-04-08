@@ -34,3 +34,13 @@ genre_constraints:
     - "modern or futuristic technology"
     - "high magic or easy spellcasting"
   genre_test: "Could this exist in a dark, low-magic Iron Age frontier?"
+
+creation_flow:
+  has_truths: true
+  has_backstory_oracle: false
+  has_name_tables: false       # Classic name oracle exists but is minimal
+  has_ship_creation: false
+  starting_asset_categories:
+    - companion
+    - ritual
+    - combat_talent

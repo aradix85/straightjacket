@@ -66,7 +66,7 @@ story:
 
 # ── Character stats ───────────────────────────────────────────
 stats:
-  target_sum: 7               # Character stats must total this
+  target_sum: 9               # Character stats must total this (3+2+2+1+1)
   min: 0                      # Minimum per stat
   max: 3                      # Maximum per stat
   names:                      # Stats the Brain can assign to a move
@@ -76,6 +76,42 @@ stats:
     - shadow
     - wits
     - none
+  # Valid stat distributions for character creation.
+  # Client should offer only these; engine validates.
+  valid_arrays:
+    - [3, 2, 2, 1, 1]        # Starforged / Classic default
+
+# ── Character creation ────────────────────────────────────────
+creation:
+  max_paths: 2                # Paths chosen at creation
+  max_starting_assets: 1      # Additional non-path assets at creation
+  starting_asset_categories:  # Asset categories available at creation
+    - companion
+    - module
+    - command_vehicle
+  background_vow_default_rank: extreme  # Default rank for background vow
+  # Chaos factor adjustment based on vow keywords.
+  # Engine matches vow text against these patterns (case-insensitive).
+  # First match wins. No match = no adjustment.
+  chaos_vow_modifiers:
+    desperate: [survive, defend, escape, siege, flee, hunted, destroy]
+    tense: [find, hunt, track, investigate, uncover, expose, avenge]
+    calm: [explore, map, chart, discover, trade, build, settle]
+  chaos_modifier_values:
+    desperate: 2              # chaos_start + 2
+    tense: 1                  # chaos_start + 1
+    calm: -1                  # chaos_start - 1
+  # Truths that imply a starting tension thread.
+  # Keys are truth option summaries (substring match, case-insensitive).
+  # Values are thread names seeded at creation.
+  truth_threads:
+    "scattered and isolated": "Isolation threatens supply lines"
+    "resources are scarce": "Scarcity drives conflict"
+    "war ravages": "War disrupts all plans"
+    "AI is feared": "Distrust of thinking machines"
+    "iron vows are sacred": "Your word binds you absolutely"
+    "magic is rare": "The old rituals carry a price"
+    "cursed waters": "The sea itself is hostile"
 
 # ── Resource tracks ───────────────────────────────────────────
 # Caps and starting values for health, spirit, supply.
@@ -299,3 +335,32 @@ creativity_seeds:
   - ember
   - mahogany
   - coral
+
+# ── Memory emotional weight derivation ───────────────────────
+# Engine derives emotional_weight for NPC memories from mechanical context.
+# Key: (move_category, result). Value: base emotional weight.
+# Disposition modifiers applied on top: hostile adds _hostile, friendly adds _warm.
+memory_emotions:
+  base:
+    combat_MISS: "fear_pain"
+    combat_WEAK_HIT: "tense_relief"
+    combat_STRONG_HIT: "fierce_triumph"
+    social_MISS: "suspicious_resentful"
+    social_WEAK_HIT: "guarded_cautious"
+    social_STRONG_HIT: "trusting_open"
+    endure_MISS: "desperate_suffering"
+    endure_WEAK_HIT: "grim_endurance"
+    endure_STRONG_HIT: "relieved"
+    recovery_WEAK_HIT: "grateful"
+    recovery_STRONG_HIT: "grateful_relieved"
+    other_MISS: "frustrated_setback"
+    other_WEAK_HIT: "wary_uncertain"
+    other_STRONG_HIT: "confident"
+    dialog: "neutral"
+  # Disposition modifiers: appended to base when NPC is present
+  disposition_suffix:
+    hostile: "_hostile"
+    distrustful: "_wary"
+    neutral: ""
+    friendly: "_warm"
+    loyal: "_devoted"

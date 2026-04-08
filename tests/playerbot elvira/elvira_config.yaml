@@ -16,7 +16,7 @@ game:
   # paths: set in code (random 2)
   backstory: ""                     # blank = roll from oracle
   background_vow: ""                # blank = roll meaning pair
-  # stats: leave empty for random valid allocation (sum=7, each 0-3)
+  # stats: leave empty for random valid allocation (from engine.yaml valid_arrays, default [3,2,2,1,1])
   stats: {}
   wishes: ""
   content_lines: ""

@@ -7,6 +7,41 @@ Originally forked from [EdgeTales](https://github.com/edgetales/edgetales). See 
 
 ---
 
+## [0.36.0] — 2026-04-08
+
+Character creation overhaul. Progress tracks, Mythic list seeding, stat validation, truths integration. AI surface reduction: pacing, act transitions, memory emotions, opening clock to engine.
+
+- **`ProgressTrack` dataclass** in models_base.py. Rank-based ticks_per_mark (troublesome=12, dangerous=8, formidable=4, extreme=2, epic=1). `mark_progress()`, `filled_boxes` property. `PROGRESS_RANKS` dict as single source of truth. Background vow becomes a progress track at creation
+- **`ThreadEntry` dataclass** in models_story.py. Mythic threads list: id, name, type (vow/goal/tension/subplot), weight, source, linked_track_id. Background vow seeded as first thread (weight 2). Truth selections that match engine.yaml patterns seed additional tension threads
+- **`CharacterListEntry` dataclass** in models_story.py. Mythic characters list: id, name, type (npc/entity/abstract), weight. Vow subject seeded as abstract entry. Opening scene NPCs populate the list after extraction
+- **`NarrativeState` extended** with `threads` and `characters_list`. Both included in snapshot/restore (length-based truncation)
+- **`GameState` extended** with `assets` (list of asset IDs), `vow_tracks` (list of ProgressTrack), `truths` (dict of truth selections). All serialized and persisted
+- **Stat validation** in `game_start.validate_stats()`. Checks sum, per-stat range, and distribution against `engine.yaml stats.valid_arrays`. Rejects invalid client input
+- **Creation enforcement** in `game_start.validate_creation()`. Validates path count, asset count, asset categories against setting's `creation_flow`, rejects truths for settings that don't support them
+- **`stats.target_sum` corrected** from 7 to 9. Was a pre-existing bug — Starforged [3,2,2,1,1] sums to 9
+- **Chaos factor derived from vow** in `game_start._compute_chaos_start()`. Keyword matching against engine.yaml `creation.chaos_vow_modifiers`: "survive the siege" → chaos +2, "explore the unknown" → chaos -1. Deterministic, no AI
+- **Truths in narrator prompt** via `prompt_blocks.truths_block()`. Player truth selections injected as `<world_truths>` block in every narrator system prompt. Treated as established canon
+- **Truth-to-thread derivation** via engine.yaml `creation.truth_threads`. Substring match on truth summaries seeds tension threads at creation. "Communities are scattered and isolated" → thread "Isolation threatens supply lines"
+- **Vow subject in characters list**. `creation_data.vow_subject` seeds an abstract entry in the Mythic characters list. "Find my lost sister" → sister appears as rollable target for random events before she's on-screen
+- **`build_creation_options` expanded**. Now sends: truths (per setting, with options), backstory prompts, name tables, starting assets (non-path, per setting), creation flow flags, stat constraints (target_sum, min, max, valid_arrays), creation defaults (max_paths, vow ranks). Client receives everything needed for a complete creation form
+- **`creation_flow` in settings YAML**. Per-setting flags: has_truths, has_backstory_oracle, has_name_tables, has_ship_creation, starting_asset_categories. Classic skips backstory oracle. Sundered Isles enables ship creation. Engine reads flags in `build_creation_options` and `SettingPackage.creation_flow`
+- **engine.yaml `creation` section**. max_paths, max_starting_assets, starting_asset_categories, background_vow_default_rank, chaos_vow_modifiers, chaos_modifier_values, truth_threads
+- **Director pacing to engine.** `apply_director_guidance` now ignores AI pacing and computes it from `get_pacing_hint()` via `_map_pacing_hint()`. AI pacing value logged when it disagrees, but engine value wins
+- **Director act_transition to engine.** `_check_engine_act_transition()` fires when scene_count ≥ act scene_range end. Deterministic, no AI flag needed. Back-fill of skipped acts preserved. AI `act_transition` field ignored
+- **Opening scene clock to engine.** `game_start` creates a threat clock (6 segments, 1 filled, named after background vow) before any AI call. Opening setup extractor no longer needed for clock creation
+- **Opening scene time_of_day to engine.** Set to "morning" by `game_start` before AI calls. AI extractor can still override if narration implies different time
+- **Memory emotional_weight derivation.** `mechanics.derive_memory_emotion()` computes emotional weight from (move_category, result, disposition) via engine.yaml `memory_emotions` table. Combines base emotion ("fear_pain", "trusting_open") with disposition suffix ("_hostile", "_warm"). Reduces metadata extractor's decision surface
+- **ARCHITECTURE.md updated**. File map, module ownership table, key design decisions, settings YAML format — all reflect new types, creation flow, and AI surface reduction
+- 57 new tests (test_creation.py): ProgressTrack mechanics, ThreadEntry/CharacterListEntry roundtrip, NarrativeState snapshot with threads, GameState with new fields, stat validation (valid/invalid sum/range/array/missing), chaos vow modifier, vow seeding, truth thread seeding, vow subject, truths block, build_creation_options structure, creation flow per setting, creation enforcement (paths/assets/truths/vow rank/cross-setting), memory emotion derivation, engine pacing override, opening clock
+- **Elvira character creation rewritten.** Stats from engine.yaml valid_arrays (was hardcoded sum=7 brute force). Truths rolled randomly per setting. Starting assets rolled from allowed categories. Vow rank and vow subject passed to engine. `_random_stats` now picks from valid_arrays and shuffles (deterministic, no retry loop)
+- **Elvira invariants expanded.** New checks: vow_tracks (id, name, rank, ticks range), threads (id uniqueness, weight > 0), characters_list (id uniqueness), truths (non-empty summaries), assets (non-empty ids)
+- **Elvira state recording.** StateSnapshot gains active_threads, active_characters, active_vow_tracks counts. Logged per turn for trend analysis
+- **Elvira mypy fix.** `_check_npc` `_e` parameter typed as `_ConfigNode` (was untyped, pre-existing error)
+- **elvira_config.yaml** stats comment corrected (was sum=7, now references engine.yaml valid_arrays)
+- 404 tests, ruff clean, mypy clean
+
+---
+
 ## [0.35.0] — 2026-04-08
 
 Code audit, strict type checking, Elvira batch runner, validator tuning, token logging.

@@ -27,3 +27,13 @@ genre_constraints:
   forbidden_terms: []  # Science-fantasy permits most things
   forbidden_concepts: []
   genre_test: ""  # No strict genre test — cursed waters and ancient ruins are on-genre
+
+creation_flow:
+  has_truths: true
+  has_backstory_oracle: false
+  has_name_tables: true
+  has_ship_creation: true       # Sundered Isles: ship is part of character
+  starting_asset_categories:
+    - companion
+    - module
+    - command_vehicle

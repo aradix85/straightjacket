@@ -433,3 +433,34 @@ def purge_old_fired_clocks(game: GameState, keep_scenes: int = 3) -> None:
     purged = before - len(game.world.clocks)
     if purged:
         log(f"[Clock] Purged {purged} expired fired clock(s) at scene {game.narrative.scene_count}")
+
+
+# MEMORY EMOTIONAL WEIGHT DERIVATION
+
+
+def derive_memory_emotion(move: str, result: str, disposition: str = "neutral") -> str:
+    """Derive emotional_weight for an NPC memory from mechanical context.
+
+    Uses engine.yaml memory_emotions table: (move_category, result) → base emotion,
+    then appends disposition suffix. Falls back to 'neutral' for unknown combinations.
+    """
+    _e = eng()
+    base_map = _e.memory_emotions.base
+    suffix_map = _e.memory_emotions.disposition_suffix
+
+    # Determine move category
+    category = "other"
+    for cat in ("combat", "social", "endure", "recovery"):
+        cat_moves = _e.move_categories.get(cat, [])
+        if move in cat_moves:
+            category = cat
+            break
+
+    if move == "dialog" or result == "dialog":
+        key = "dialog"
+    else:
+        key = f"{category}_{result}"
+
+    base = base_map.get(key, "neutral")
+    suffix = suffix_map.get(disposition, "")
+    return base + suffix

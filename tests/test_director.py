@@ -404,8 +404,9 @@ def test_act_transition_marks_blueprint() -> None:
     from straightjacket.engine.director import apply_director_guidance
 
     game = _game()
+    game.narrative.scene_count = 7  # At end of act 0 scene_range [1, 7]
     game.narrative.story_blueprint = _blueprint()
-    apply_director_guidance(game, {"act_transition": True})
+    apply_director_guidance(game, {"narrator_guidance": "proceed"})
     assert "act_0" in game.narrative.story_blueprint.triggered_transitions
 
 
@@ -414,13 +415,11 @@ def test_act_transition_backfills_skipped_acts() -> None:
     from straightjacket.engine.director import apply_director_guidance
 
     game = _game()
-    game.narrative.scene_count = 12
+    game.narrative.scene_count = 14  # At end of act 1 scene_range [8, 14]
     bp = _blueprint()
     bp.triggered_transitions = []  # Nothing triggered yet
     game.narrative.story_blueprint = bp
-    apply_director_guidance(game, {"act_transition": True})
-    # At scene 12 with no transitions, current act is confrontation (act_1)
-    # Back-fill should add act_0, then act_1
+    apply_director_guidance(game, {"narrator_guidance": "proceed"})
     assert "act_0" in bp.triggered_transitions
     assert "act_1" in bp.triggered_transitions
 
@@ -430,11 +429,11 @@ def test_act_transition_ignores_final_act() -> None:
     from straightjacket.engine.director import apply_director_guidance
 
     game = _game()
-    game.narrative.scene_count = 18
+    game.narrative.scene_count = 20  # At end of final act scene_range [15, 20]
     bp = _blueprint()
     bp.triggered_transitions = ["act_0", "act_1"]
     game.narrative.story_blueprint = bp
-    apply_director_guidance(game, {"act_transition": True})
+    apply_director_guidance(game, {})
     # Final act (act_2) should NOT be added
     assert "act_2" not in bp.triggered_transitions
 

@@ -74,6 +74,16 @@ def vocabulary_block(game: GameState | None = None) -> str:
     )
 
 
+def truths_block(game: GameState | None = None) -> str:
+    """Build world truths block from player's truth selections at creation."""
+    if not game or not game.truths:
+        return ""
+    lines = [f"  {truth_id}: {summary}" for truth_id, summary in game.truths.items()]
+    return (
+        "<world_truths>\nEstablished facts about this world. Treat as canon.\n" + "\n".join(lines) + "\n</world_truths>"
+    )
+
+
 def tone_authority_block(game: GameState | None = None) -> str:
     """Build tone authority block from the player's chosen tone.
     Injected before <rules> so it outranks generic style defaults."""
@@ -268,13 +278,18 @@ def get_narrator_system(config: EngineConfig, game: GameState | None = None) -> 
     bs = backstory_block(game)
     sc = status_context_block(game)
     vc = vocabulary_block(game)
+    tc = truths_block(game)
     ta = tone_authority_block(game)
-    return get_prompt(
-        "narrator_system",
-        lang=lang,
-        content_boundaries_block=cb,
-        backstory_block=bs,
-        status_context_block=sc,
-        tone_authority_block=ta,
-        dash=E["dash"],
-    ) + ("\n" + vc if vc else "")
+    return (
+        get_prompt(
+            "narrator_system",
+            lang=lang,
+            content_boundaries_block=cb,
+            backstory_block=bs,
+            status_context_block=sc,
+            tone_authority_block=ta,
+            dash=E["dash"],
+        )
+        + ("\n" + vc if vc else "")
+        + ("\n" + tc if tc else "")
+    )

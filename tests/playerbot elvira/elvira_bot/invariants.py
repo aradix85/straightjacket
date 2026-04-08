@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from straightjacket.engine.config_loader import _ConfigNode
 from straightjacket.engine.engine_loader import eng
 from straightjacket.engine.models import ClockData, GameState, MemoryEntry, NpcData
 
@@ -51,6 +52,42 @@ def assert_game_state(game: GameState, turn: int) -> list[str]:
     for clock in world.clocks:
         _check_clock(clock, turn, violations)
 
+    # Progress track invariants (vow_tracks)
+    for track in game.vow_tracks:
+        check(track.id != "", "vow_track with empty id")
+        check(track.name != "", f"vow_track '{track.id}' with empty name")
+        check(
+            track.rank in ("troublesome", "dangerous", "formidable", "extreme", "epic"),
+            f"vow_track '{track.id}' invalid rank '{track.rank}'",
+        )
+        check(
+            0 <= track.ticks <= track.max_ticks,
+            f"vow_track '{track.id}' ticks={track.ticks} out of [0,{track.max_ticks}]",
+        )
+
+    # Mythic threads invariants
+    thread_ids = set()
+    for t in game.narrative.threads:
+        check(t.id != "", "thread with empty id")
+        check(t.id not in thread_ids, f"duplicate thread id '{t.id}'")
+        thread_ids.add(t.id)
+        check(t.weight > 0, f"thread '{t.id}' weight={t.weight} <= 0")
+
+    # Mythic characters list invariants
+    char_ids = set()
+    for c in game.narrative.characters_list:
+        check(c.id != "", "character_list entry with empty id")
+        check(c.id not in char_ids, f"duplicate character_list id '{c.id}'")
+        char_ids.add(c.id)
+
+    # Truths consistency (if present, should be non-empty strings)
+    for truth_id, summary in game.truths.items():
+        check(bool(summary.strip()), f"truth '{truth_id}' has empty summary")
+
+    # Assets (if present, should be non-empty strings)
+    for asset_id in game.assets:
+        check(bool(asset_id.strip()), "empty asset id in assets list")
+
     # Session log consistency
     if game.narrative.session_log:
         last = game.narrative.session_log[-1]
@@ -62,7 +99,7 @@ def assert_game_state(game: GameState, turn: int) -> list[str]:
     return violations
 
 
-def _check_npc(npc: NpcData, turn: int, violations: list[str], _e) -> None:
+def _check_npc(npc: NpcData, turn: int, violations: list[str], _e: _ConfigNode) -> None:
     """Check NPC field invariants."""
 
     def check(condition: bool, msg: str) -> None:

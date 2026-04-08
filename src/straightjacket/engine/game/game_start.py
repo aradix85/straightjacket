@@ -12,13 +12,167 @@ from ..mechanics import (
     record_scene_intensity,
 )
 from ..models import (
+    CharacterListEntry,
     EngineConfig,
     GameState,
     NarrationEntry,
+    ProgressTrack,
     SceneLogEntry,
+    ThreadEntry,
 )
+from ..models_base import PROGRESS_RANKS
 from ..parser import parse_narrator_response
 from ..prompt_builders import build_new_game_prompt
+
+
+def validate_stats(stats: dict[str, int]) -> None:
+    """Validate stat distribution against engine.yaml constraints."""
+    _e = eng()
+    stat_names = [n for n in _e.stats.names if n != "none"]
+    for name in stat_names:
+        if name not in stats:
+            raise ValueError(f"Missing stat: {name}")
+    values = [stats[n] for n in stat_names]
+    if sum(values) != _e.stats.target_sum:
+        raise ValueError(f"Stats must total {_e.stats.target_sum}, got {sum(values)}")
+    for name in stat_names:
+        v = stats[name]
+        if v < _e.stats.min or v > _e.stats.max:
+            raise ValueError(f"Stat {name}={v} outside [{_e.stats.min}, {_e.stats.max}]")
+    if sorted(values, reverse=True) not in [list(a) for a in _e.stats.valid_arrays]:
+        raise ValueError(f"Invalid stat distribution: {sorted(values, reverse=True)}")
+
+
+def validate_creation(creation_data: dict, pkg: object) -> None:
+    """Validate creation data against engine.yaml and setting constraints."""
+    _e = eng()
+    from ..datasworn.settings import SettingPackage
+
+    if not isinstance(pkg, SettingPackage):
+        return
+    flow = pkg.creation_flow
+
+    # Path count
+    paths = creation_data.get("paths", [])
+    max_paths = _e.creation.max_paths
+    if len(paths) > max_paths:
+        raise ValueError(f"Too many paths: {len(paths)} (max {max_paths})")
+
+    # Paths must exist in this setting
+    for pid in paths:
+        if not pkg.data.asset("path", pid):
+            raise ValueError(f"Path '{pid}' not found in setting '{pkg.id}'")
+
+    # Asset count and categories
+    assets = creation_data.get("assets", [])
+    max_assets = _e.creation.max_starting_assets
+    if len(assets) > max_assets:
+        raise ValueError(f"Too many starting assets: {len(assets)} (max {max_assets})")
+    allowed_cats = set(flow.get("starting_asset_categories", []))
+    if allowed_cats:
+        for asset_id in assets:
+            found = False
+            for cat in allowed_cats:
+                if pkg.data.asset(cat, asset_id):
+                    found = True
+                    break
+            if not found:
+                raise ValueError(f"Asset '{asset_id}' not in allowed categories: {allowed_cats}")
+
+    # Truths: only allowed if setting has them
+    truths = creation_data.get("truths", {})
+    if truths and not flow.get("has_truths"):
+        raise ValueError(f"Setting '{pkg.id}' does not support truths")
+
+    # Background vow rank must be valid
+    vow_rank = creation_data.get("background_vow_rank", "")
+    if vow_rank and vow_rank not in PROGRESS_RANKS:
+        raise ValueError(f"Invalid vow rank: '{vow_rank}' (valid: {list(PROGRESS_RANKS.keys())})")
+
+
+def _compute_chaos_start(vow_text: str) -> int:
+    """Derive starting chaos factor from background vow keywords."""
+    _e = eng()
+    base = _e.chaos.start
+    if not vow_text:
+        return base
+    vow_lower = vow_text.lower()
+    modifiers = _e.creation.chaos_vow_modifiers
+    values = _e.creation.chaos_modifier_values
+    for level in ("desperate", "tense", "calm"):
+        keywords = modifiers.get(level, [])
+        if any(kw in vow_lower for kw in keywords):
+            adjustment = values.get(level, 0)
+            result = max(_e.chaos.min, min(_e.chaos.max, base + adjustment))
+            log(f"[NewGame] Chaos start {base}→{result} (vow keyword match: {level})")
+            return result
+    return base
+
+
+def _seed_background_vow(game: GameState, vow_text: str, rank: str = "") -> None:
+    """Create a ProgressTrack and ThreadEntry for the background vow."""
+    if not vow_text:
+        return
+    _e = eng()
+    vow_rank = rank if rank and rank in PROGRESS_RANKS else _e.creation.background_vow_default_rank
+    track = ProgressTrack(
+        id="vow_background",
+        name=vow_text,
+        track_type="vow",
+        rank=vow_rank,
+    )
+    game.vow_tracks.append(track)
+    game.narrative.threads.append(
+        ThreadEntry(
+            id="thread_background_vow",
+            name=vow_text,
+            thread_type="vow",
+            weight=2,
+            source="creation",
+            linked_track_id="vow_background",
+        )
+    )
+    log(f"[NewGame] Background vow track: rank={vow_rank}, thread seeded")
+
+
+def _seed_truth_threads(game: GameState) -> None:
+    """Derive initial tension threads from truth selections."""
+    if not game.truths:
+        return
+    _e = eng()
+    truth_map = _e.creation.truth_threads
+    counter = 0
+    for _truth_id, summary in game.truths.items():
+        summary_lower = summary.lower()
+        for pattern, thread_name in truth_map.items():
+            if pattern.lower() in summary_lower:
+                counter += 1
+                game.narrative.threads.append(
+                    ThreadEntry(
+                        id=f"thread_truth_{counter}",
+                        name=thread_name,
+                        thread_type="tension",
+                        weight=1,
+                        source="creation",
+                    )
+                )
+                log(f"[NewGame] Truth thread seeded: {thread_name}")
+                break  # One thread per truth
+
+
+def _seed_vow_subject(game: GameState, vow_subject: str) -> None:
+    """Add the vow's implied subject to the Mythic characters list."""
+    if not vow_subject:
+        return
+    game.narrative.characters_list.append(
+        CharacterListEntry(
+            id="char_vow_subject",
+            name=vow_subject,
+            entry_type="abstract",
+            weight=2,
+        )
+    )
+    log(f"[NewGame] Vow subject seeded in characters list: {vow_subject}")
 
 
 def start_new_game(
@@ -33,7 +187,11 @@ def start_new_game(
         paths: list[str]         — 2 Datasworn path IDs
         backstory: str           — backstory text
         background_vow: str      — what drives this character
+        background_vow_rank: str — vow rank (default from engine.yaml)
+        vow_subject: str         — implied person/entity in the vow (for Mythic characters list)
         stats: dict              — {edge, heart, iron, shadow, wits}
+        assets: list[str]        — additional asset IDs (non-path)
+        truths: dict[str, str]   — {truth_id: chosen_summary}
         wishes: str              — story wishes
         content_lines: str       — content exclusions
     """
@@ -46,6 +204,9 @@ def start_new_game(
     pkg = load_package(setting_id)
 
     stats = creation_data.get("stats", {"edge": 1, "heart": 2, "iron": 1, "shadow": 1, "wits": 2})
+    validate_stats(stats)
+    validate_creation(creation_data, pkg)
+
     paths = creation_data.get("paths", [])
 
     # Build character concept from paths
@@ -57,12 +218,14 @@ def start_new_game(
     concept = ", ".join(path_names) if path_names else ""
 
     _e = eng()
+    background_vow = creation_data.get("background_vow", "")
+
     game = GameState(
         player_name=creation_data.get("player_name", default_player_name()),
         character_concept=concept,
         pronouns=creation_data.get("pronouns", ""),
         paths=paths,
-        background_vow=creation_data.get("background_vow", ""),
+        background_vow=background_vow,
         setting_id=setting_id,
         setting_genre=pkg.id,
         setting_tone="",
@@ -74,6 +237,8 @@ def start_new_game(
         shadow=stats.get("shadow", 1),
         wits=stats.get("wits", 2),
         backstory=creation_data.get("backstory", ""),
+        assets=creation_data.get("assets", []),
+        truths=creation_data.get("truths", {}),
     )
     game.resources.health = _e.resources.health_start
     game.resources.spirit = _e.resources.spirit_start
@@ -81,10 +246,31 @@ def start_new_game(
     game.resources.momentum = _e.momentum.start
     game.resources.max_momentum = _e.momentum.max
     game.narrative.scene_count = 1
-    game.world.chaos_factor = _e.chaos.start
+    game.world.chaos_factor = _compute_chaos_start(background_vow)
     game.preferences.player_wishes = creation_data.get("wishes", "")
     game.preferences.content_lines = creation_data.get("content_lines", "")
-    log(f"[NewGame] Character: {game.player_name}, paths={paths}")
+
+    _seed_background_vow(game, background_vow, creation_data.get("background_vow_rank", ""))
+    _seed_truth_threads(game)
+    _seed_vow_subject(game, creation_data.get("vow_subject", ""))
+
+    # Engine-determined opening state (no AI needed)
+    game.world.time_of_day = "morning"
+    from ..models import ClockData
+
+    game.world.clocks.append(
+        ClockData(
+            name=game.background_vow or "Looming threat",
+            clock_type="threat",
+            segments=6,
+            filled=1,
+            trigger_description=f"Threat escalates beyond {game.player_name}'s control",
+            owner="",
+        )
+    )
+    log("[NewGame] Engine-created opening clock and time_of_day=morning")
+
+    log(f"[NewGame] Character: {game.player_name}, paths={paths}, assets={game.assets}")
 
     if username:
         user_cfg = load_user_config(username)
@@ -142,6 +328,13 @@ def start_new_game(
     # Opening-scene NPCs are extracted FROM the narration — introduced by definition
     for npc in game.npcs:
         npc.introduced = True
+
+    # Seed Mythic characters list from opening NPCs
+    for npc in game.npcs:
+        if npc.status == "active":
+            game.narrative.characters_list.append(
+                CharacterListEntry(id=npc.id, name=npc.name, entry_type="npc", weight=1)
+            )
 
     # Deceased NPCs in the opening scene (e.g. dramatic opener with a death).
     # NPCs are extracted with full schema first, so data is preserved.

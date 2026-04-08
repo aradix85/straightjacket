@@ -55,6 +55,15 @@ Where to find things. If you want to change X, edit Y.
 | Correction (## undo) flow | `correction.py` |
 | Save format | `models.py` → `to_dict`/`from_dict` on the relevant dataclass |
 | WebSocket protocol / UI | `web/handlers.py`, `web/static/index.html` |
+| Character creation validation | `game/game_start.py` → `validate_stats`, stat arrays in `engine.yaml` |
+| Creation data for client | `web/serializers.py` → `build_creation_options` |
+| Setting-specific creation flow | `data/settings/*.yaml` → `creation_flow` block |
+| Progress track mechanics | `models_base.py` → `ProgressTrack`, `PROGRESS_RANKS` |
+| Mythic threads/characters lists | `models_story.py` → `ThreadEntry`, `CharacterListEntry` |
+| Truths in narrator prompt | `prompt_blocks.py` → `truths_block` |
+| Director pacing (engine-computed) | `director.py` → `_map_pacing_hint`, reads `mechanics.get_pacing_hint` |
+| Act transitions (engine-computed) | `director.py` → `_check_engine_act_transition` |
+| Memory emotional weight (engine-computed) | `mechanics.py` → `derive_memory_emotion`, table in `engine.yaml` |
 
 ## File Map
 
@@ -62,9 +71,9 @@ Where to find things. If you want to change X, edit Y.
 src/straightjacket/
 ├── engine/
 │   ├── models.py            # Re-export hub for all dataclasses
-│   ├── models_base.py       # GameState, Resources, WorldState, NarrativeState
+│   ├── models_base.py       # EngineConfig, Resources, ProgressTrack, WorldState, ClockData/Event
 │   ├── models_npc.py        # NpcData, MemoryEntry
-│   ├── models_story.py      # StoryBlueprint, StoryAct, Revelation, ChapterSummary
+│   ├── models_story.py      # ThreadEntry, CharacterListEntry, NarrativeState, StoryBlueprint, etc.
 │   ├── format_utils.py      # PartialFormatDict (shared by prompt_loader, strings_loader)
 │   ├── mechanics.py         # Dice, chaos, consequences, clocks, momentum
 │   ├── parser.py            # Narrator output cleanup (10 regex steps)
@@ -128,6 +137,14 @@ src/straightjacket/
 
 **Minimal UI.** Single HTML page, no build step, no npm. Server sends JSON, client renders. Scene headings for screen reader navigation, aria-live for automatic narration readout. Two buttons (Status, Save/Load), one text input.
 
+**Progress tracks as dataclass.** ProgressTrack has rank-based ticks_per_mark (troublesome=12, epic=1). Background vow becomes a track at creation. Vow ranks and tick rates in PROGRESS_RANKS dict. Prepared for step 12 (full move integration) without requiring it.
+
+**Mythic lists seeded at creation.** Threads list starts with the background vow (weight 2) plus any tensions derived from truth selections via engine.yaml templates. Characters list starts with the vow subject (if provided) and opening scene NPCs. Both lists are in NarrativeState for snapshot/restore. Prepared for step 10 (random events roll on these lists).
+
+**Truths as world context.** Player truth selections stored in GameState.truths and injected into every narrator prompt as a `<world_truths>` block. The narrator treats them as established canon. Truths that match engine.yaml patterns automatically seed tension threads.
+
+**AI surface minimization.** Every value derivable from game state is computed by the engine. Director pacing is computed from scene_intensity_history, not requested from the AI. Act transitions fire when scene_count exceeds act range — deterministic, no AI flag. Memory emotional_weight is derived from (move_category, result, disposition) via engine.yaml lookup. Opening scene clock and time_of_day are engine-determined before any AI call. The AI receives results, not choices.
+
 ## Testing
 
 ```bash
@@ -186,8 +203,20 @@ oracle_paths:
     - "oracles/character/name/family"
   backstory:                        # Used for random backstory generation
     - "oracles/character/backstory"
+
+# Character creation flow: controls which UI steps the client presents.
+creation_flow:
+  has_truths: true                  # Setting has world truths to choose
+  has_backstory_oracle: true        # Datasworn backstory prompts available
+  has_name_tables: true             # Datasworn name oracle tables available
+  has_ship_creation: false          # Ship creation at character creation (Sundered Isles)
+  starting_asset_categories:        # Non-path asset categories available at creation
+    - companion
+    - module
 ```
 
 The `vocabulary` block maps generic fantasy/sci-fi terms to setting-specific language. This implements the design document's vocabulary control principle: the AI writes in the setting's voice instead of defaulting to genre conventions from training data.
 
 The `genre_constraints` block feeds both the rule-based validator (forbidden_terms checked via regex) and the architect validator (forbidden_concepts checked via LLM). The `genre_test` string is a yes/no question the LLM applies to story blueprints.
+
+The `creation_flow` block tells the client which character creation steps to present. Settings without backstory oracles (Classic) skip that step. Settings with ship creation (Sundered Isles) add it. The engine reads these flags in `build_creation_options()` and includes the relevant Datasworn data only when the flag is set.

@@ -36,6 +36,9 @@ class StateSnapshot:
     location: str = ""
     time_of_day: str = ""
     scene_context: str = ""
+    active_threads: int = 0
+    active_characters: int = 0
+    active_vow_tracks: int = 0
 
 
 @dataclass

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Base model types: serialization helpers, resource tracks, world state.
+"""Base model types: serialization helpers, resource tracks, world state, progress.
 
-EngineConfig, Resources, ClockData, WorldState, ClockEvent, PlayerPreferences.
+EngineConfig, Resources, ClockData, ProgressTrack, WorldState, ClockEvent, PlayerPreferences.
 """
 
 from __future__ import annotations
@@ -134,6 +134,48 @@ class WorldState:
         restored = deserialize(WorldState, snap)
         for f in self.__dataclass_fields__:
             setattr(self, f, getattr(restored, f))
+
+
+PROGRESS_RANKS: dict[str, int] = {
+    "troublesome": 12,  # 3 boxes (12 ticks) per mark
+    "dangerous": 8,  # 2 boxes (8 ticks) per mark
+    "formidable": 4,  # 1 box (4 ticks) per mark
+    "extreme": 2,  # 2 ticks per mark
+    "epic": 1,  # 1 tick per mark
+}
+
+
+@dataclass
+class ProgressTrack:
+    """Ranked progress track (vows, connections, expeditions, combat, custom)."""
+
+    id: str = ""
+    name: str = ""
+    track_type: str = "vow"  # vow, connection, expedition, combat, custom
+    rank: str = "dangerous"  # troublesome, dangerous, formidable, extreme, epic
+    ticks: int = 0
+    max_ticks: int = 40  # 10 boxes × 4 ticks
+
+    @property
+    def ticks_per_mark(self) -> int:
+        return PROGRESS_RANKS.get(self.rank, 8)
+
+    @property
+    def filled_boxes(self) -> int:
+        return self.ticks // 4
+
+    def mark_progress(self) -> int:
+        """Mark progress: add ticks_per_mark, clamped to max. Returns ticks added."""
+        old = self.ticks
+        self.ticks = min(self.max_ticks, self.ticks + self.ticks_per_mark)
+        return self.ticks - old
+
+    def to_dict(self) -> dict:
+        return serialize(self)
+
+    @classmethod
+    def from_dict(cls, data: dict) -> ProgressTrack:
+        return deserialize(cls, data)
 
 
 @dataclass

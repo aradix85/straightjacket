@@ -98,6 +98,19 @@ class SettingPackage:
         """Oracle path mappings for character creation."""
         return self._config.get("oracle_paths", {})
 
+    @property
+    def creation_flow(self) -> dict:
+        """Creation flow flags for the client UI."""
+        defaults = {
+            "has_truths": False,
+            "has_backstory_oracle": False,
+            "has_name_tables": False,
+            "has_ship_creation": False,
+            "starting_asset_categories": [],
+        }
+        flow = self._config.get("creation_flow", {})
+        return {**defaults, **flow}
+
     # ── Convenience: meaning pair rolls ───────────────────────
 
     def roll_action_theme(self) -> tuple[str, str]:

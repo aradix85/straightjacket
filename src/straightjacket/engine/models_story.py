@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-"""Story model types: scene log, narration, story blueprint, director guidance,
-narrative state, campaign state."""
+"""Story model types: threads, character lists, scene log, narration, story blueprint,
+director guidance, narrative state, campaign state."""
 
 from __future__ import annotations
 
@@ -8,6 +8,50 @@ from dataclasses import dataclass, field
 
 from .models_base import ClockEvent
 from .serialization import deserialize, serialize
+
+
+# ── Mythic GME lists (seeded at creation, maintained per scene) ──
+
+
+@dataclass
+class ThreadEntry:
+    """Active thread in the Mythic threads list."""
+
+    id: str = ""
+    name: str = ""
+    thread_type: str = "vow"  # vow, goal, tension, subplot
+    weight: int = 1
+    source: str = "creation"  # creation, vow, director, event
+    linked_track_id: str = ""  # ProgressTrack id if this thread is a vow
+    active: bool = True
+
+    def to_dict(self) -> dict:
+        return serialize(self)
+
+    @classmethod
+    def from_dict(cls, data: dict) -> ThreadEntry:
+        return deserialize(cls, data)
+
+
+@dataclass
+class CharacterListEntry:
+    """Entry in the Mythic characters list."""
+
+    id: str = ""
+    name: str = ""
+    entry_type: str = "npc"  # npc, entity, abstract
+    weight: int = 1
+    active: bool = True
+
+    def to_dict(self) -> dict:
+        return serialize(self)
+
+    @classmethod
+    def from_dict(cls, data: dict) -> CharacterListEntry:
+        return deserialize(cls, data)
+
+
+# ── Scene and narration log ──────────────────────────────────
 
 
 @dataclass
@@ -176,6 +220,8 @@ class NarrativeState:
     story_blueprint: StoryBlueprint | None = None
     director_guidance: DirectorGuidance = field(default_factory=DirectorGuidance)
     scene_intensity_history: list[str] = field(default_factory=list)
+    threads: list[ThreadEntry] = field(default_factory=list)
+    characters_list: list[CharacterListEntry] = field(default_factory=list)
 
     def snapshot(self) -> dict:
         """Lightweight snapshot for undo. Captures lengths (not full lists) and mutable sub-state."""
@@ -183,6 +229,8 @@ class NarrativeState:
             "scene_count": self.scene_count,
             "session_log_len": len(self.session_log),
             "narration_history_len": len(self.narration_history),
+            "threads_len": len(self.threads),
+            "characters_list_len": len(self.characters_list),
             "director_guidance": self.director_guidance.to_dict(),
             "scene_intensity_history": list(self.scene_intensity_history),
             "story_blueprint_snapshot": {
@@ -202,6 +250,8 @@ class NarrativeState:
         self.scene_intensity_history = list(snap["scene_intensity_history"])
         self.session_log = self.session_log[: snap["session_log_len"]]
         self.narration_history = self.narration_history[: snap["narration_history_len"]]
+        self.threads = self.threads[: snap["threads_len"]]
+        self.characters_list = self.characters_list[: snap["characters_list_len"]]
         bp_snap = snap["story_blueprint_snapshot"]
         if bp_snap is not None and self.story_blueprint is not None:
             self.story_blueprint.revealed = list(bp_snap["revealed"])

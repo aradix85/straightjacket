@@ -6,10 +6,11 @@ All model types are importable from here:
 
 Implementation split across:
 - serialization.py: generic serialize/deserialize
-- models_base.py: EngineConfig, Resources, ClockData, WorldState, ClockEvent, PlayerPreferences
+- models_base.py: EngineConfig, Resources, ClockData, ProgressTrack, WorldState, ClockEvent, PlayerPreferences
 - models_npc.py: MemoryEntry, NpcData
-- models_story.py: SceneLogEntry, NarrationEntry, StoryAct, CurrentAct, Revelation, PossibleEnding,
-                    StoryBlueprint, DirectorGuidance, NarrativeState, NpcEvolution, ChapterSummary, CampaignState
+- models_story.py: ThreadEntry, CharacterListEntry, SceneLogEntry, NarrationEntry, StoryAct, CurrentAct,
+                    Revelation, PossibleEnding, StoryBlueprint, DirectorGuidance, NarrativeState,
+                    NpcEvolution, ChapterSummary, CampaignState
 
 This file defines: RollResult, BrainResult, TurnSnapshot, GameState (top-level composites).
 """
@@ -25,6 +26,7 @@ from .models_base import (  # noqa: F401
     ClockEvent,
     EngineConfig,
     PlayerPreferences,
+    ProgressTrack,
     Resources,
     WorldState,
 )
@@ -35,6 +37,7 @@ from .models_npc import (  # noqa: F401
 )
 from .models_story import (  # noqa: F401
     CampaignState,
+    CharacterListEntry,
     ChapterSummary,
     CurrentAct,
     DirectorGuidance,
@@ -46,6 +49,7 @@ from .models_story import (  # noqa: F401
     SceneLogEntry,
     StoryAct,
     StoryBlueprint,
+    ThreadEntry,
 )
 from .serialization import deserialize, serialize
 
@@ -173,6 +177,9 @@ class GameState:
     shadow: int = 1
     wits: int = 2
     backstory: str = ""
+    assets: list[str] = field(default_factory=list)
+    vow_tracks: list[ProgressTrack] = field(default_factory=list)
+    truths: dict[str, str] = field(default_factory=dict)
 
     resources: Resources = field(default_factory=Resources)
     world: WorldState = field(default_factory=WorldState)
@@ -239,6 +246,8 @@ class GameState:
         "shadow",
         "wits",
         "backstory",
+        "assets",
+        "truths",
     )
 
     _SUB_OBJECTS = ("resources", "world", "narrative", "campaign", "preferences")
@@ -249,6 +258,7 @@ class GameState:
         for name in self._SUB_OBJECTS:
             d[name] = getattr(self, name).to_dict()
         d["npcs"] = [n.to_dict() for n in self.npcs]
+        d["vow_tracks"] = [t.to_dict() for t in self.vow_tracks]
         d["crisis_mode"] = self.crisis_mode
         d["game_over"] = self.game_over
         d["last_turn_snapshot"] = self.last_turn_snapshot.to_dict() if self.last_turn_snapshot else None
@@ -266,6 +276,7 @@ class GameState:
         game.campaign = CampaignState.from_dict(data["campaign"])
         game.preferences = PlayerPreferences.from_dict(data["preferences"])
         game.npcs = [NpcData.from_dict(n) for n in data["npcs"]]
+        game.vow_tracks = [ProgressTrack.from_dict(t) for t in data["vow_tracks"]]
         game.crisis_mode = data["crisis_mode"]
         game.game_over = data["game_over"]
         snap = data["last_turn_snapshot"]

@@ -105,32 +105,103 @@ def build_state(game: GameState) -> dict:
 
 def build_creation_options() -> dict:
     """All character creation data for the client form."""
+    from ..engine.engine_loader import eng
+
+    _e = eng()
     settings = []
     for pkg_id in list_packages():
         if pkg_id == "delve":
             continue
         try:
             pkg = load_package(pkg_id)
+
+            # Paths
             paths = []
             for asset in pkg.data.paths():
                 asset_id = asset.get("_id", "").rsplit("/", 1)[-1]
-                paths.append(
-                    {
-                        "id": asset_id,
-                        "title": extract_title(asset, asset_id),
-                    }
-                )
+                paths.append({"id": asset_id, "title": extract_title(asset, asset_id)})
+
+            # Truths (if setting has them)
+            truths = []
+            flow = pkg.creation_flow
+            if flow.get("has_truths"):
+                raw_truths = pkg.data.truths()
+                for truth_id, truth_data in raw_truths.items():
+                    options = []
+                    for opt in truth_data.get("options", []):
+                        options.append(
+                            {
+                                "summary": opt.get("summary", ""),
+                                "description": str(opt.get("description", ""))[:300],
+                                "quest_starter": str(opt.get("quest_starter", ""))[:200],
+                            }
+                        )
+                    truths.append(
+                        {
+                            "id": truth_id,
+                            "name": truth_data.get("name", truth_id),
+                            "options": options,
+                        }
+                    )
+
+            # Name tables
+            name_tables = {}
+            if flow.get("has_name_tables"):
+                for table_id, table in pkg.data.name_tables().items():
+                    name_tables[table_id] = [row.text for row in table.rows]
+
+            # Backstory prompts
+            backstory_prompts = []
+            if flow.get("has_backstory_oracle"):
+                bs = pkg.data.backstory_prompts()
+                if bs:
+                    backstory_prompts = [row.text for row in bs.rows]
+
+            # Starting assets (non-path)
+            starting_assets = []
+            asset_cats = flow.get("starting_asset_categories", [])
+            for cat in asset_cats:
+                for asset in pkg.data.assets(cat):
+                    asset_id = asset.get("_id", "").rsplit("/", 1)[-1]
+                    starting_assets.append(
+                        {
+                            "id": asset_id,
+                            "title": extract_title(asset, asset_id),
+                            "category": cat,
+                        }
+                    )
+
             settings.append(
                 {
                     "id": pkg_id,
                     "title": pkg.title,
                     "description": pkg.description,
                     "paths": paths,
+                    "truths": truths,
+                    "name_tables": name_tables,
+                    "backstory_prompts": backstory_prompts,
+                    "starting_assets": starting_assets,
+                    "creation_flow": flow,
                 }
             )
         except Exception as e:
             log(f"[Web] Failed to load package {pkg_id}: {e}", level="warning")
-    return {"settings": settings}
+
+    return {
+        "settings": settings,
+        "stat_constraints": {
+            "target_sum": _e.stats.target_sum,
+            "min": _e.stats.min,
+            "max": _e.stats.max,
+            "valid_arrays": [list(a) for a in _e.stats.valid_arrays],
+        },
+        "creation_defaults": {
+            "max_paths": _e.creation.max_paths,
+            "max_starting_assets": _e.creation.max_starting_assets,
+            "background_vow_default_rank": _e.creation.background_vow_default_rank,
+            "vow_ranks": ["troublesome", "dangerous", "formidable", "extreme", "epic"],
+        },
+    }
 
 
 def highlight_dialog(text: str) -> str:

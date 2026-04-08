@@ -43,3 +43,15 @@ genre_constraints:
     - "fantasy races (elves, dwarves, orcs)"
     - "magic systems or spellcasting"
   genre_test: ""  # Sci-fi permits most things — no strict conceptual test
+
+# Character creation flow flags.
+# Controls which UI steps the client presents.
+creation_flow:
+  has_truths: true
+  has_backstory_oracle: true
+  has_name_tables: true
+  has_ship_creation: false
+  starting_asset_categories:   # Override engine.yaml for this setting
+    - companion
+    - module
+    - command_vehicle

@@ -296,6 +296,40 @@ def call_director(
         return {}
 
 
+def _map_pacing_hint(hint: str) -> str:
+    """Map engine pacing hint to Director pacing vocabulary."""
+    return {"breather": "breather", "action": "tension_rising", "neutral": "building"}.get(hint, "building")
+
+
+def _check_engine_act_transition(game: GameState) -> None:
+    """Engine-deterministic act transition: fires when scene count exceeds act range."""
+    bp = game.narrative.story_blueprint
+    if not bp or not bp.acts:
+        return
+    act = get_current_act(game)
+    act_idx = act.act_number - 1
+    act_id = f"act_{act_idx}"
+    total_acts = len(bp.acts)
+    if act.act_number >= total_acts:
+        return
+    sr = act.scene_range or default_scene_range()
+    if game.narrative.scene_count < sr[1]:
+        return
+    if act_id in bp.triggered_transitions:
+        return
+    for i in range(act_idx):
+        fill_id = f"act_{i}"
+        if fill_id not in bp.triggered_transitions:
+            bp.triggered_transitions.append(fill_id)
+            log(f"[Director] Back-filled skipped act transition: {fill_id}")
+    bp.triggered_transitions.append(act_id)
+    trigger_text = act.transition_trigger or "?"
+    log(
+        f"[Director] Engine act transition: act {act.act_number} "
+        f"'{act.phase}' scene {game.narrative.scene_count} ≥ range end {sr[1]}: '{trigger_text[:80]}'"
+    )
+
+
 def apply_director_guidance(game: GameState, guidance: dict) -> None:
     """Apply Director guidance to game state: store guidance, apply reflections,
     update session log with rich summary."""
@@ -308,41 +342,25 @@ def apply_director_guidance(game: GameState, guidance: dict) -> None:
                 log(f"[Director] Reset reflection for {npc.name} (empty guidance)")
         return
 
-    # Store guidance for next narrator call
+    # Store guidance for next narrator call — pacing computed by engine, not AI
+    from .mechanics import get_pacing_hint
     from .models import DirectorGuidance
+
+    engine_pacing = _map_pacing_hint(get_pacing_hint(game))
+    ai_pacing = guidance.get("pacing", "")
+    if ai_pacing and ai_pacing != engine_pacing:
+        log(f"[Director] Pacing override: AI={ai_pacing} → engine={engine_pacing}")
 
     game.narrative.director_guidance = DirectorGuidance(
         narrator_guidance=guidance.get("narrator_guidance", ""),
         npc_guidance=guidance.get("npc_guidance", {}),
-        pacing=guidance.get("pacing", ""),
+        pacing=engine_pacing,
         arc_notes=guidance.get("arc_notes", ""),
     )
 
-    # Handle act transition: Director signals that the current act's
-    # transition_trigger has been fulfilled → mark in blueprint
-    if guidance.get("act_transition") and game.narrative.story_blueprint:
-        bp = game.narrative.story_blueprint
-        act = get_current_act(game)
-        act_idx = act.act_number - 1
-        act_id = f"act_{act_idx}"
-        total_acts = len(bp.acts)
-        # Guard: final act cannot be marked as triggered
-        if act.act_number >= total_acts:
-            log(f"[Director] Ignoring act_transition for final act {act.act_number}")
-        elif act_id not in bp.triggered_transitions:
-            # Back-fill: if we're marking act N as triggered but acts before it
-            # were never triggered, record them too
-            for i in range(act_idx):
-                fill_id = f"act_{i}"
-                if fill_id not in bp.triggered_transitions:
-                    bp.triggered_transitions.append(fill_id)
-                    log(f"[Director] Back-filled skipped act transition: {fill_id}")
-            bp.triggered_transitions.append(act_id)
-            trigger_text = act.transition_trigger or "?"
-            log(
-                f"[Director] Act transition triggered: act {act.act_number} "
-                f"'{act.phase}' → trigger fulfilled: '{trigger_text[:80]}'"
-            )
+    # Handle act transition: engine checks scene count vs act range.
+    # Director's act_transition signal is advisory — engine verifies.
+    _check_engine_act_transition(game)
 
     # Enrich the latest session log entry with Director's summary
     if guidance.get("scene_summary") and game.narrative.session_log:
