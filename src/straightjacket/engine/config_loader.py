@@ -17,18 +17,23 @@ from .bootstrap_log import bootstrap_log as _log
 
 # Project root: config.yaml, engine.yaml, data/, users/, logs/ all live here.
 # Single source of truth — every module imports PROJECT_ROOT from here.
-PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent.parent  # engine/ -> straightjacket/ -> src/ -> project root
+PROJECT_ROOT = (
+    Path(__file__).resolve().parent.parent.parent.parent
+)  # engine/ -> straightjacket/ -> src/ -> project root
 _CONFIG_PATH = Path(os.environ.get("STRAIGHTJACKET_CONFIG", str(PROJECT_ROOT / "config.yaml")))
+
 
 def _read_version() -> str:
     """Read version from pyproject.toml — single source of truth."""
     import re as _re
+
     pyproject = PROJECT_ROOT / "pyproject.toml"
     if pyproject.exists():
         m = _re.search(r'^version\s*=\s*"([^"]+)"', pyproject.read_text(encoding="utf-8"), _re.MULTILINE)
         if m:
             return m.group(1)
     return "0.0.0"
+
 
 VERSION = _read_version()
 
@@ -40,11 +45,13 @@ GLOBAL_CONFIG_FILE = _CONFIG_PATH
 
 # CONFIG OBJECT — dot-access wrapper
 
+
 class _ConfigNode:
     """Recursive dot-access wrapper over a dict.
     cfg.ai.brain_model works like cfg["ai"]["brain_model"].
     Tracks access path for clear error messages on typos.
     """
+
     def __init__(self, data: dict, _path: str = "config"):
         self._data = data
         self._path = _path
@@ -57,8 +64,7 @@ class _ConfigNode:
         except KeyError:
             available = ", ".join(sorted(self._data.keys()))
             raise AttributeError(
-                f"{self._path}.{key} does not exist. "
-                f"Available keys at {self._path}: {available}"
+                f"{self._path}.{key} does not exist. Available keys at {self._path}: {available}"
             ) from None
         if isinstance(val, dict):
             return _ConfigNode(val, f"{self._path}.{key}")
@@ -69,10 +75,7 @@ class _ConfigNode:
             val = self._data[key]
         except KeyError:
             available = ", ".join(sorted(self._data.keys()))
-            raise KeyError(
-                f"{self._path}['{key}'] does not exist. "
-                f"Available keys: {available}"
-            ) from None
+            raise KeyError(f"{self._path}['{key}'] does not exist. Available keys: {available}") from None
         if isinstance(val, dict):
             return _ConfigNode(val, f"{self._path}.{key}")
         return val
@@ -107,6 +110,7 @@ class _ConfigNode:
     def items(self):
         return self._data.items()
 
+
 def _load_config_file() -> dict:
     """Load config.yaml. Raises if missing or unreadable."""
     if not _CONFIG_PATH.exists():
@@ -122,7 +126,9 @@ def _load_config_file() -> dict:
     _log(f"[Config] Loaded {_CONFIG_PATH}")
     return data
 
+
 _cfg: _ConfigNode | None = None
+
 
 def cfg() -> _ConfigNode:
     """Get the global config object. Loads on first access."""
@@ -132,23 +138,28 @@ def cfg() -> _ConfigNode:
         _cfg = _ConfigNode(data)
     return _cfg
 
+
 def reload_config() -> _ConfigNode:
     """Force reload from disk. Use after external edits."""
     global _cfg
     _cfg = None
     return cfg()
 
+
 # CONVENIENCE ACCESSORS — single source of truth for defaults
 # These exist so that no module ever hardcodes "English",
 # "Unnamed", etc. as a fallback. Every default comes from config.
+
 
 def narration_language() -> str:
     """Narration language for AI prompts (English name, e.g. 'English', 'German')."""
     return cfg().language.narration_language
 
+
 def default_player_name() -> str:
     """Default player name when none is provided."""
     return cfg().language.default_player_name
+
 
 def sampling_params(role: str) -> dict:
     """Get sampling parameters (temperature, top_p) for an AI role.
@@ -169,5 +180,10 @@ def sampling_params(role: str) -> dict:
         val = getattr(_c.ai.top_p, role)
         params["top_p"] = float(val) if val is not None else None
     except AttributeError:
-        params["top_p"] = None
+        # Fall back to default if no per-role override
+        try:
+            val = _c.ai.top_p.default
+            params["top_p"] = float(val) if val is not None else None
+        except AttributeError:
+            params["top_p"] = None
     return params

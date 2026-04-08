@@ -2,7 +2,6 @@
 """AI Story Architect, Recap, and Chapter Summary calls."""
 
 import json
-import re
 
 from ...i18n import E
 from ..config_loader import cfg, sampling_params
@@ -18,74 +17,73 @@ from .provider_base import AIProvider, create_with_retry
 from .schemas import CHAPTER_SUMMARY_OUTPUT_SCHEMA, STORY_ARCHITECT_OUTPUT_SCHEMA
 
 
-def call_recap(provider: AIProvider, game: GameState,
-               config: EngineConfig | None = None) -> str:
+def call_recap(provider: AIProvider, game: GameState, config: EngineConfig | None = None) -> str:
     """Generate a 'previously on...' recap from the PLAYER'S perspective only."""
     _cfg = config or EngineConfig()
     lang = get_narration_lang(_cfg)
     log_text = "; ".join(
-        f'S{s.scene}:{s.rich_summary or s.summary}({s.result})'
-        for s in game.narrative.session_log[-15:]
+        f"S{s.scene}:{s.rich_summary or s.summary}({s.result})" for s in game.narrative.session_log[-15:]
     )
     # NPC text: Only player-visible info (no agenda, no secrets) and only introduced NPCs
-    npc_text = ", ".join(
-        f'{n.name}({n.disposition},B{n.bond})'
-        for n in game.npcs if n.status == "active" and n.introduced
-    ) or "(keine)"
-    # Last narrations for tone/content reference -- these ARE what the player saw
-    recent_narrations = "\n---\n".join(
-        entry.narration[:800]
-        for entry in game.narrative.narration_history[-5:]
+    npc_text = (
+        ", ".join(f"{n.name}({n.disposition},B{n.bond})" for n in game.npcs if n.status == "active" and n.introduced)
+        or "(none)"
     )
+    # Last narrations for tone/content reference -- these ARE what the player saw
+    recent_narrations = "\n---\n".join(entry.narration[:800] for entry in game.narrative.narration_history[-5:])
     # Story arc info: only act/phase, no central_conflict (that's director-level meta)
     arc_info = ""
     if game.narrative.story_blueprint and game.narrative.story_blueprint.acts:
         act = get_current_act(game)
         structure = game.narrative.story_blueprint.structure_type
-        arc_info = (f"\nstory_arc({structure}): "
-                    f"act={act.act_number}/{act.total_acts} "
-                    f"phase={act.phase} progress={act.progress}")
+        arc_info = (
+            f"\nstory_arc({structure}): act={act.act_number}/{act.total_acts} phase={act.phase} progress={act.progress}"
+        )
 
     campaign_info = ""
     if game.campaign.campaign_history:
-        campaign_info = f"\ncampaign: chapter {game.campaign.chapter_number} of {len(game.campaign.campaign_history) + 1}"
+        campaign_info = (
+            f"\ncampaign: chapter {game.campaign.chapter_number} of {len(game.campaign.campaign_history) + 1}"
+        )
         for ch in game.campaign.campaign_history[-2:]:
             campaign_info += f"\n  prev: {ch.title}: {ch.summary[:200]}"
 
     _c = cfg()
     try:
         response = create_with_retry(
-            provider, max_retries=_c.ai.max_retries.recap,
-            model=_c.ai.brain_model, max_tokens=_c.ai.max_tokens.recap,
-            system=get_prompt("recap",
-                              lang=lang,
-                              content_boundaries_block=content_boundaries_block(game)),
-            messages=[{"role": "user", "content":
-                       f"{game.player_name}{E['dash']}{game.character_concept}\n"
-                       f"genre:{game.setting_genre} tone:{game.setting_tone}\n"
-                       f"world:{game.setting_description}\n"
-                       f"at:{game.world.current_location}\nlog:{log_text}\nnpcs:{npc_text}"
-                       f"{arc_info}{campaign_info}\nnow:{game.world.current_scene_context}\n"
-                       f"recent_scenes:\n{recent_narrations}"}],
+            provider,
+            max_retries=_c.ai.max_retries.recap,
+            model=_c.ai.brain_model,
+            max_tokens=_c.ai.max_tokens.recap,
+            system=get_prompt("recap", lang=lang, content_boundaries_block=content_boundaries_block(game)),
+            messages=[
+                {
+                    "role": "user",
+                    "content": f"{game.player_name}{E['dash']}{game.character_concept}\n"
+                    f"genre:{game.setting_genre} tone:{game.setting_tone}\n"
+                    f"world:{game.setting_description}\n"
+                    f"at:{game.world.current_location}\nlog:{log_text}\nnpcs:{npc_text}"
+                    f"{arc_info}{campaign_info}\nnow:{game.world.current_scene_context}\n"
+                    f"recent_scenes:\n{recent_narrations}",
+                }
+            ],
             **sampling_params("recap"),
         )
-        return re.sub(r'\s*[—–]\s*', ' - ', response.content)
+        return response.content
     except Exception as e:
         log(f"[Recap] Failed: {e}", level="warning")
         return f"({game.player_name} recalls the recent events...)"
 
 
-
-def call_story_architect(provider: AIProvider, game: GameState,
-                         structure_type: str = "3act",
-                         config: EngineConfig | None = None) -> dict | None:
+def call_story_architect(
+    provider: AIProvider, game: GameState, structure_type: str = "3act", config: EngineConfig | None = None
+) -> dict | None:
     """Generate a story blueprint. Supports 3-act and Kishōtenketsu (4-act)."""
     _cfg = config or EngineConfig()
     lang = get_narration_lang(_cfg)
     cb = content_boundaries_block(game)
 
-    prompt_vars = dict(lang=lang,
-                        content_boundaries_block=cb, dash=E['dash'])
+    prompt_vars = dict(lang=lang, content_boundaries_block=cb, dash=E["dash"])
     if structure_type == "kishotenketsu":
         system = get_prompt("architect_kishotenketsu", **prompt_vars)
     else:
@@ -108,7 +106,7 @@ def call_story_architect(provider: AIProvider, game: GameState,
         backstory_text = f"\nbackstory(canon past):{game.backstory}"
     user_msg = f"""genre:{game.setting_genre} tone:{game.setting_tone}
 world:{game.setting_description}
-character:{game.player_name} {E['dash']} {game.character_concept}
+character:{game.player_name} {E["dash"]} {game.character_concept}
 location:{game.world.current_location}
 situation:{game.world.current_scene_context}
 npcs:{npc_text}{campaign_ctx}{backstory_text}"""
@@ -116,8 +114,11 @@ npcs:{npc_text}{campaign_ctx}{backstory_text}"""
     _c = cfg()
     try:
         response = create_with_retry(
-            provider, max_retries=_c.ai.max_retries.architect,
-            model=_c.ai.narrator_model, max_tokens=_c.ai.max_tokens.architect, system=system,
+            provider,
+            max_retries=_c.ai.max_retries.architect,
+            model=_c.ai.narrator_model,
+            max_tokens=_c.ai.max_tokens.architect,
+            system=system,
             messages=[{"role": "user", "content": user_msg}],
             json_schema=STORY_ARCHITECT_OUTPUT_SCHEMA,
             **sampling_params("architect"),
@@ -127,32 +128,42 @@ npcs:{npc_text}{campaign_ctx}{backstory_text}"""
         blueprint["triggered_transitions"] = []  # Track act transitions
         blueprint["story_complete"] = False
         blueprint["structure_type"] = structure_type
-        log(f"[Story] Architect succeeded: "
+
+        # Validate scene_range: must be exactly [start, end]
+        from ..engine_loader import eng as _eng
+
+        default_range = list(_eng().scene_range_default)
+        for act in blueprint.get("acts", []):
+            sr = act.get("scene_range", [])
+            if not isinstance(sr, list) or len(sr) != 2:
+                log(
+                    f"[Story] Invalid scene_range {sr!r} in act '{act.get('phase', '?')}', "
+                    f"replacing with default {default_range}",
+                    level="warning",
+                )
+                act["scene_range"] = list(default_range)
+
+        log(
+            f"[Story] Architect succeeded: "
             f"conflict={blueprint['central_conflict'][:80]}, "
             f"acts={len(blueprint['acts'])}, "
-            f"revelations={len(blueprint.get('revelations', []))}")
+            f"revelations={len(blueprint.get('revelations', []))}"
+        )
         return blueprint
 
     except Exception as e:
-        log(f"[Story] Architect failed ({type(e).__name__}: {e}), "
-            f"continuing without story blueprint", level="warning")
+        log(f"[Story] Architect failed ({type(e).__name__}: {e}), continuing without story blueprint", level="warning")
         return None
 
 
-def call_chapter_summary(provider: AIProvider, game: GameState,
-                          config: EngineConfig | None = None,
-                          epilogue_text: str = "") -> ChapterSummary:
+def call_chapter_summary(
+    provider: AIProvider, game: GameState, config: EngineConfig | None = None, epilogue_text: str = ""
+) -> ChapterSummary:
     """Generate a summary of the completed chapter for campaign history."""
     _cfg = config or EngineConfig()
     lang = get_narration_lang(_cfg)
-    log_text = "; ".join(
-        f'S{s.scene}:{s.summary}({s.result})'
-        for s in game.narrative.session_log[-20:]
-    )
-    npc_text = ", ".join(
-        f'{n.name}({n.disposition},B{n.bond})'
-        for n in game.npcs if n.status == "active"
-    ) or "(keine)"
+    log_text = "; ".join(f"S{s.scene}:{s.summary}({s.result})" for s in game.narrative.session_log[-20:])
+    npc_text = ", ".join(f"{n.name}({n.disposition},B{n.bond})" for n in game.npcs if n.status == "active") or "(none)"
 
     bp = game.narrative.story_blueprint
     conflict = bp.central_conflict if bp else ""
@@ -164,20 +175,24 @@ def call_chapter_summary(provider: AIProvider, game: GameState,
     _c = cfg()
     try:
         response = create_with_retry(
-            provider, max_retries=_c.ai.max_retries.chapter_summary,
-            model=_c.ai.brain_model, max_tokens=_c.ai.max_tokens.chapter_summary,
-            system=get_prompt("chapter_summary",
-                              lang=lang,
-                              content_boundaries_block=content_boundaries_block(game)),
-            messages=[{"role": "user", "content":
-                       f"character:{game.player_name} {E['dash']} {game.character_concept}\n"
-                       f"genre:{game.setting_genre} tone:{game.setting_tone}\n"
-                       f"world:{game.setting_description}\n"
-                       f"conflict:{conflict}\n"
-                       f"log:{log_text}\nnpcs:{npc_text}\n"
-                       f"location:{game.world.current_location}\n"
-                       f"situation:{game.world.current_scene_context}"
-                       f"{epilogue_block}"}],
+            provider,
+            max_retries=_c.ai.max_retries.chapter_summary,
+            model=_c.ai.brain_model,
+            max_tokens=_c.ai.max_tokens.chapter_summary,
+            system=get_prompt("chapter_summary", lang=lang, content_boundaries_block=content_boundaries_block(game)),
+            messages=[
+                {
+                    "role": "user",
+                    "content": f"character:{game.player_name} {E['dash']} {game.character_concept}\n"
+                    f"genre:{game.setting_genre} tone:{game.setting_tone}\n"
+                    f"world:{game.setting_description}\n"
+                    f"conflict:{conflict}\n"
+                    f"log:{log_text}\nnpcs:{npc_text}\n"
+                    f"location:{game.world.current_location}\n"
+                    f"situation:{game.world.current_scene_context}"
+                    f"{epilogue_block}",
+                }
+            ],
             json_schema=CHAPTER_SUMMARY_OUTPUT_SCHEMA,
             **sampling_params("chapter_summary"),
         )
@@ -186,8 +201,7 @@ def call_chapter_summary(provider: AIProvider, game: GameState,
         data["scenes"] = game.narrative.scene_count
         return ChapterSummary.from_dict(data)
     except Exception as e:
-        log(f"[ChapterSummary] Structured output failed ({type(e).__name__}: {e}), "
-            f"using fallback", level="warning")
+        log(f"[ChapterSummary] Structured output failed ({type(e).__name__}: {e}), using fallback", level="warning")
         return ChapterSummary(
             chapter=game.campaign.chapter_number,
             title=f"Chapter {game.campaign.chapter_number}",
@@ -195,5 +209,3 @@ def call_chapter_summary(provider: AIProvider, game: GameState,
             post_story_location=game.world.current_location,
             scenes=game.narrative.scene_count,
         )
-
-

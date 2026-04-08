@@ -9,7 +9,6 @@ Structured output uses response_format with json_schema (strict: true),
 which is supported by all target providers.
 """
 
-
 import json as _json
 
 from typing import Any
@@ -32,13 +31,13 @@ class OpenAICompatibleProvider:
         anything else -> "complete" (safe default)
     """
 
-    def __init__(self, api_key: str, api_base: str | None = None):
+    def __init__(self, api_key: str, api_base: str | None = None, extra_body: dict[str, Any] | None = None):
         if api_base:
             self._client = openai.OpenAI(api_key=api_key, base_url=api_base)
         else:
             self._client = openai.OpenAI(api_key=api_key)
-        log(f"[OpenAICompatibleProvider] Initialized"
-            f"{f' (base: {api_base})' if api_base else ''}")
+        self._extra_body = extra_body or {}
+        log(f"[OpenAICompatibleProvider] Initialized{f' (base: {api_base})' if api_base else ''}")
 
     def create_message(
         self,
@@ -68,18 +67,9 @@ class OpenAICompatibleProvider:
             create_kwargs["top_p"] = top_p
 
         # Provider-specific params (top_k, config overrides)
-        extra: dict[str, Any] = {}
+        extra: dict[str, Any] = dict(self._extra_body)
         if top_k is not None:
             extra["top_k"] = top_k
-        try:
-            from ..config_loader import _ConfigNode, cfg
-            cfg_extra = cfg().ai.get("extra_body", None)
-            if isinstance(cfg_extra, _ConfigNode):
-                extra.update(cfg_extra.to_dict())
-            elif isinstance(cfg_extra, dict):
-                extra.update(cfg_extra)
-        except (AttributeError, KeyError):
-            pass
         if extra:
             create_kwargs["extra_body"] = extra
 
@@ -105,11 +95,13 @@ class OpenAICompatibleProvider:
         parsed_tool_calls = []
         if choice.message.tool_calls:
             for tc in choice.message.tool_calls:
-                parsed_tool_calls.append({
-                    "id": tc.id,
-                    "name": tc.function.name,
-                    "arguments": _json.loads(tc.function.arguments),
-                })
+                parsed_tool_calls.append(
+                    {
+                        "id": tc.id,
+                        "name": tc.function.name,
+                        "arguments": _json.loads(tc.function.arguments),
+                    }
+                )
 
         finish = choice.finish_reason
         if finish == "length":

@@ -35,7 +35,7 @@ from ..engine import (
 )
 from ..engine.ai.api_client import get_provider
 from ..i18n import t
-from .serializers import build_creation_options, build_roll_data, build_state, highlight_dialog
+from .serializers import build_creation_options, build_state, highlight_dialog
 from .session import BurnOffer, Session
 
 
@@ -46,6 +46,7 @@ async def _send(ws: WebSocket, msg: dict) -> None:
 
 
 # ── Player management ─────────────────────────────────────────
+
 
 async def handle_list_players(session: Session, ws: WebSocket, _msg: dict) -> None:
     players = [u["name"] for u in list_users()]
@@ -74,21 +75,27 @@ async def handle_select_player(session: Session, ws: WebSocket, msg: dict) -> No
     if game:
         session.game = game
         session.chat_messages = messages
-        await _send(ws, {
-            "type": "player_selected",
-            "name": name,
-            "has_game": True,
-            "state": build_state(game),
-            "messages": session.filtered_messages(),
-        })
+        await _send(
+            ws,
+            {
+                "type": "player_selected",
+                "name": name,
+                "has_game": True,
+                "state": build_state(game),
+                "messages": session.filtered_messages(),
+            },
+        )
     else:
         session.clear_game()
-        await _send(ws, {
-            "type": "player_selected",
-            "name": name,
-            "has_game": False,
-            "creation_options": build_creation_options(),
-        })
+        await _send(
+            ws,
+            {
+                "type": "player_selected",
+                "name": name,
+                "has_game": False,
+                "creation_options": build_creation_options(),
+            },
+        )
 
 
 async def handle_delete_player(session: Session, ws: WebSocket, msg: dict) -> None:
@@ -103,6 +110,7 @@ async def handle_delete_player(session: Session, ws: WebSocket, msg: dict) -> No
 
 # ── Game creation ─────────────────────────────────────────────
 
+
 async def handle_start_game(session: Session, ws: WebSocket, msg: dict) -> None:
     if session.processing:
         await _send(ws, {"type": "error", "text": t("game.still_processing")})
@@ -114,18 +122,22 @@ async def handle_start_game(session: Session, ws: WebSocket, msg: dict) -> None:
 
         provider = get_provider()
         game, narration = await asyncio.to_thread(
-            start_new_game, provider, creation_data, session.config, session.player)
+            start_new_game, provider, creation_data, session.config, session.player
+        )
 
         session.game = game
         session.chat_messages = [{"role": "assistant", "content": narration}]
         save_game(game, session.player, session.chat_messages, session.save_name)
 
-        await _send(ws, {
-            "type": "narration",
-            "text": highlight_dialog(narration),
-            "scene": game.narrative.scene_count,
-            "location": game.world.current_location,
-        })
+        await _send(
+            ws,
+            {
+                "type": "narration",
+                "text": highlight_dialog(narration),
+                "scene": game.narrative.scene_count,
+                "location": game.world.current_location,
+            },
+        )
         await _send(ws, {"type": "state", "data": build_state(game)})
     except Exception as e:
         log(f"[Web] start_game failed: {e}", level="error")
@@ -135,6 +147,7 @@ async def handle_start_game(session: Session, ws: WebSocket, msg: dict) -> None:
 
 
 # ── Turn processing ───────────────────────────────────────────
+
 
 async def handle_player_input(session: Session, ws: WebSocket, msg: dict) -> None:
     if session.processing:
@@ -155,31 +168,31 @@ async def handle_player_input(session: Session, ws: WebSocket, msg: dict) -> Non
 
         provider = get_provider()
         game, narration, roll, burn_info, director_ctx = await asyncio.to_thread(
-            process_turn, provider, session.game, text, session.config)
+            process_turn, provider, session.game, text, session.config
+        )
         session.game = game
         session.append_chat("assistant", narration)
 
-        await _send(ws, {
-            "type": "scene_marker",
-            "scene": game.narrative.scene_count,
-            "location": game.world.current_location,
-        })
-        await _send(ws, {
-            "type": "narration",
-            "text": highlight_dialog(narration),
-            "scene": game.narrative.scene_count,
-            "location": game.world.current_location,
-        })
+        await _send(
+            ws,
+            {
+                "type": "scene_marker",
+                "scene": game.narrative.scene_count,
+                "location": game.world.current_location,
+            },
+        )
+        await _send(
+            ws,
+            {
+                "type": "narration",
+                "text": highlight_dialog(narration),
+                "scene": game.narrative.scene_count,
+                "location": game.world.current_location,
+            },
+        )
 
-        if roll:
-            last_log = game.narrative.session_log[-1] if game.narrative.session_log else None
-            await _send(ws, {"type": "roll", "data": build_roll_data(
-                roll,
-                last_log.consequences if last_log else [],
-                last_log.clock_events if last_log else [],
-                game.last_turn_snapshot.brain if game.last_turn_snapshot else None,
-                last_log.chaos_interrupt if last_log else None,
-            )})
+        # Roll data stays engine-internal; player sees only narration
+        # (design doc: "no stats, no dice, no system references")
 
         if burn_info:
             session.pending_burn = BurnOffer(
@@ -191,20 +204,25 @@ async def handle_player_input(session: Session, ws: WebSocket, msg: dict) -> Non
                 pre_snapshot=burn_info["pre_snapshot"],
                 chaos_interrupt=burn_info.get("chaos_interrupt"),
             )
-            await _send(ws, {
-                "type": "burn_offer",
-                "current": burn_info["roll"].result,
-                "upgrade": burn_info["new_result"],
-                "cost": burn_info["cost"],
-            })
+            await _send(
+                ws,
+                {
+                    "type": "burn_offer",
+                    "current": burn_info["roll"].result,
+                    "upgrade": burn_info["new_result"],
+                    "cost": burn_info["cost"],
+                },
+            )
 
         await _send(ws, {"type": "state", "data": build_state(game)})
 
         if game.game_over:
             await _send(ws, {"type": "game_over"})
-        elif (game.narrative.story_blueprint
-              and game.narrative.story_blueprint.story_complete
-              and not game.campaign.epilogue_dismissed):
+        elif (
+            game.narrative.story_blueprint
+            and game.narrative.story_blueprint.story_complete
+            and not game.campaign.epilogue_dismissed
+        ):
             await _send(ws, {"type": "story_complete"})
 
         save_game(game, session.player, session.chat_messages, session.save_name)
@@ -228,6 +246,7 @@ async def handle_player_input(session: Session, ws: WebSocket, msg: dict) -> Non
 
 # ── Correction ────────────────────────────────────────────────
 
+
 async def handle_correction(session: Session, ws: WebSocket, msg: dict) -> None:
     if session.processing:
         await _send(ws, {"type": "error", "text": t("game.still_processing")})
@@ -244,7 +263,8 @@ async def handle_correction(session: Session, ws: WebSocket, msg: dict) -> None:
         await _send(ws, {"type": "status", "text": "..."})
         provider = get_provider()
         game, narration, director_ctx = await asyncio.to_thread(
-            process_correction, provider, session.game, text, session.config)
+            process_correction, provider, session.game, text, session.config
+        )
         session.game = game
 
         await _send(ws, {"type": "replace_narration", "text": highlight_dialog(narration)})
@@ -269,6 +289,7 @@ async def handle_correction(session: Session, ws: WebSocket, msg: dict) -> None:
 
 # ── Momentum burn ─────────────────────────────────────────────
 
+
 async def handle_burn_momentum(session: Session, ws: WebSocket, msg: dict) -> None:
     if not session.game:
         return
@@ -286,7 +307,8 @@ async def handle_burn_momentum(session: Session, ws: WebSocket, msg: dict) -> No
         provider = get_provider()
         game, narration = await asyncio.to_thread(
             process_momentum_burn,
-            provider=provider, game=session.game,
+            provider=provider,
+            game=session.game,
             old_roll=burn.roll,
             new_result=burn.new_result,
             brain_data=burn.brain,
@@ -299,15 +321,6 @@ async def handle_burn_momentum(session: Session, ws: WebSocket, msg: dict) -> No
 
         await _send(ws, {"type": "replace_narration", "text": highlight_dialog(narration)})
 
-        if game.last_turn_snapshot and game.last_turn_snapshot.roll:
-            roll = game.last_turn_snapshot.roll
-            last_log = game.narrative.session_log[-1] if game.narrative.session_log else None
-            await _send(ws, {"type": "roll", "data": build_roll_data(
-                roll,
-                last_log.consequences if last_log else [],
-                last_log.clock_events if last_log else [],
-            )})
-
         await _send(ws, {"type": "state", "data": build_state(game)})
         session.replace_last_assistant(narration)
         save_game(game, session.player, session.chat_messages, session.save_name)
@@ -319,6 +332,7 @@ async def handle_burn_momentum(session: Session, ws: WebSocket, msg: dict) -> No
 
 
 # ── Saves ─────────────────────────────────────────────────────
+
 
 async def handle_list_saves(session: Session, ws: WebSocket, _msg: dict) -> None:
     if not session.player:
@@ -347,13 +361,16 @@ async def handle_load(session: Session, ws: WebSocket, msg: dict) -> None:
     session.game = game
     session.chat_messages = messages
     session.save_name = name
-    await _send(ws, {
-        "type": "player_selected",
-        "name": session.player,
-        "has_game": True,
-        "state": build_state(game),
-        "messages": session.filtered_messages(),
-    })
+    await _send(
+        ws,
+        {
+            "type": "player_selected",
+            "name": session.player,
+            "has_game": True,
+            "state": build_state(game),
+            "messages": session.filtered_messages(),
+        },
+    )
 
 
 async def handle_delete_save(session: Session, ws: WebSocket, msg: dict) -> None:
@@ -366,6 +383,7 @@ async def handle_delete_save(session: Session, ws: WebSocket, msg: dict) -> None
 
 
 # ── Recap ─────────────────────────────────────────────────────
+
 
 async def handle_recap(session: Session, ws: WebSocket, _msg: dict) -> None:
     if not session.game or session.processing:
@@ -384,6 +402,7 @@ async def handle_recap(session: Session, ws: WebSocket, _msg: dict) -> None:
 
 # ── Epilogue & chapters ──────────────────────────────────────
 
+
 async def handle_generate_epilogue(session: Session, ws: WebSocket, _msg: dict) -> None:
     if not session.game or session.processing:
         return
@@ -391,8 +410,7 @@ async def handle_generate_epilogue(session: Session, ws: WebSocket, _msg: dict) 
     try:
         await _send(ws, {"type": "status", "text": t("epilogue.generating")})
         provider = get_provider()
-        game, epilogue = await asyncio.to_thread(
-            generate_epilogue, provider, session.game, session.config)
+        game, epilogue = await asyncio.to_thread(generate_epilogue, provider, session.game, session.config)
         session.game = game
         session.append_chat("assistant", epilogue, epilogue=True)
         save_game(game, session.player, session.chat_messages, session.save_name)
@@ -422,17 +440,19 @@ async def handle_new_chapter(session: Session, ws: WebSocket, _msg: dict) -> Non
         await _send(ws, {"type": "status", "text": t("epilogue.chapter_msg", n=ch_num + 1)})
 
         provider = get_provider()
-        game, narration = await asyncio.to_thread(
-            start_new_chapter, provider, game, session.config, session.player)
+        game, narration = await asyncio.to_thread(start_new_chapter, provider, game, session.config, session.player)
         session.game = game
         session.chat_messages = [{"role": "assistant", "content": narration}]
         save_game(game, session.player, session.chat_messages, session.save_name)
 
-        await _send(ws, {
-            "type": "chapter_started",
-            "chapter": game.campaign.chapter_number,
-            "narration": highlight_dialog(narration),
-        })
+        await _send(
+            ws,
+            {
+                "type": "chapter_started",
+                "chapter": game.campaign.chapter_number,
+                "narration": highlight_dialog(narration),
+            },
+        )
         await _send(ws, {"type": "state", "data": build_state(game)})
     except Exception as e:
         log(f"[Web] new_chapter failed: {e}", level="error")
@@ -442,6 +462,7 @@ async def handle_new_chapter(session: Session, ws: WebSocket, _msg: dict) -> Non
 
 
 # ── Debug (Elvira integration testing) ────────────────────────
+
 
 async def handle_debug_state(session: Session, ws: WebSocket, _msg: dict) -> None:
     """Return full serialized GameState for invariant checking.

@@ -19,8 +19,6 @@ from ..models import EngineConfig, GameState
 from .provider_base import AIProvider, create_with_retry
 from .schemas import ARCHITECT_VALIDATOR_SCHEMA, VALIDATOR_SCHEMA
 
-MAX_VALIDATOR_RETRIES = 3
-
 
 def _strip_prompt_for_retry(prompt: str, violations: list[str]) -> str:
     """Reduce NPC context in the prompt when violations suggest information leaking.
@@ -29,27 +27,27 @@ def _strip_prompt_for_retry(prompt: str, violations: list[str]) -> str:
     The model can't leak what it doesn't have. NPC names, dispositions, and basic
     traits remain so the narrator can still write them in-character.
     """
-    has_pacing = any("resolution pacing" in v.lower() or "monologue" in v.lower()
-                     for v in violations)
+    has_pacing = any("resolution pacing" in v.lower() or "monologue" in v.lower() for v in violations)
     if not has_pacing:
         return prompt
 
     stripped = prompt
     # Remove secrets from target_npc blocks
     stripped = re.sub(
-        r'secrets\(weave subtly,never reveal\):\[.*?\]',
-        'secrets:[]',
+        r"secrets\(weave subtly,never reveal\):\[.*?\]",
+        "secrets:[]",
         stripped,
         flags=re.DOTALL,
     )
     # Remove memory lines (recent: ... and insight: ...)
-    stripped = re.sub(r'^(?:recent|insight):.*$', '', stripped, flags=re.MULTILINE)
+    stripped = re.sub(r"^(?:recent|insight):.*$", "", stripped, flags=re.MULTILINE)
     # Remove agenda lines (NPCs with less agenda = less monologue fuel)
-    stripped = re.sub(r'^agenda:.*$', 'agenda:(follow the scene)', stripped, flags=re.MULTILINE)
+    stripped = re.sub(r"^agenda:.*$", "agenda:(follow the scene)", stripped, flags=re.MULTILINE)
 
     if stripped != prompt:
         log("[Validator] Stripped NPC secrets/memories/agenda from retry prompt")
     return stripped
+
 
 def validate_narration(
     provider: AIProvider,
@@ -104,7 +102,8 @@ Check constraints."""
 
     try:
         response = create_with_retry(
-            provider, max_retries=1,
+            provider,
+            max_retries=1,
             model=_c.ai.brain_model,
             max_tokens=1024,
             system=system,
@@ -128,15 +127,13 @@ Check constraints."""
             all_violations.append(f"[llm] {v}")
 
     if all_violations:
-        correction = "; ".join(
-            v.split(": ", 1)[1] if ": " in v else v for v in all_violations[:3]
-        )
-        log(f"[Validator] FAILED ({len(rule_violations)} rule, {len(llm_violations)} llm): "
-            f"{all_violations}")
+        correction = "; ".join(v.split(": ", 1)[1] if ": " in v else v for v in all_violations[:3])
+        log(f"[Validator] FAILED ({len(rule_violations)} rule, {len(llm_violations)} llm): {all_violations}")
         return {"pass": False, "violations": all_violations, "correction": f"Fix: {correction}"}
 
     log("[Validator] Passed (rule + llm)")
     return {"pass": True, "violations": [], "correction": ""}
+
 
 def validate_and_retry(
     provider: AIProvider,
@@ -147,7 +144,7 @@ def validate_and_retry(
     player_words: str = "",
     consequences: list | None = None,
     config: EngineConfig | None = None,
-    max_retries: int = MAX_VALIDATOR_RETRIES,
+    max_retries: int | None = None,
 ) -> tuple[str, dict]:
     """Validate narration and retry up to max_retries times on failure.
 
@@ -167,6 +164,10 @@ def validate_and_retry(
     from ..datasworn.settings import active_package
     from ..parser import parse_narrator_response
 
+    # Resolve max_retries from config if not explicitly passed
+    if max_retries is None:
+        max_retries = cfg().ai.max_retries.narrator
+
     # Load genre constraints from setting package
     gc_dict = None
     pkg = active_package(game)
@@ -185,10 +186,15 @@ def validate_and_retry(
 
     for attempt in range(max_retries):
         check = validate_narration(
-            provider, narration, result_type, game.setting_genre,
-            player_words=player_words, player_name=game.player_name,
+            provider,
+            narration,
+            result_type,
+            game.setting_genre,
+            player_words=player_words,
+            player_name=game.player_name,
             consequences=consequences,
-            config=config, genre_constraints=gc_dict,
+            config=config,
+            genre_constraints=gc_dict,
         )
         report["checks"].append(check)
         violations = check.get("violations", [])
@@ -205,38 +211,43 @@ def validate_and_retry(
         # Strip diagnostic tags before matching.
         rewrite_instructions = []
         for v in violations:
-            vl = re.sub(r'^\[(?:rule|llm)\]\s*', '', v).lower()
+            vl = re.sub(r"^\[(?:rule|llm)\]\s*", "", v).lower()
             if "player agency" in vl:
                 rewrite_instructions.append(
                     "Remove sentences where the PLAYER CHARACTER (the 'you') thinks, "
                     "feels, realizes, interprets, or remembers. NPCs may think and feel "
-                    "freely. Describe only what the player character PERCEIVES.")
+                    "freely. Describe only what the player character PERCEIVES."
+                )
             elif "resolution pacing" in vl or "monologue" in vl:
                 rewrite_instructions.append(
                     "Cut the NPC's speech to answer ONLY the specific question asked. "
                     "Remove all volunteered theories, explanations, connections. "
-                    "One short answer, then the NPC stops or acts.")
+                    "One short answer, then the NPC stops or acts."
+                )
             elif "result integrity" in vl and "silver" in vl:
                 rewrite_instructions.append(
                     "Remove any positive outcome. The MISS ends with the situation "
-                    "worse than before. No learning, no lucky break.")
+                    "worse than before. No learning, no lucky break."
+                )
             elif "result integrity" in vl and "annihilation" in vl:
                 rewrite_instructions.append(
                     "Reduce the severity. A MISS is a setback: injury, lost ground, "
-                    "broken equipment. Not death or total defeat.")
+                    "broken equipment. Not death or total defeat."
+                )
             elif "result integrity" in vl and ("cost" in vl or "weak" in vl):
                 rewrite_instructions.append(
                     "Add a SPECIFIC tangible cost for the WEAK_HIT: something breaks, "
                     "is lost, is spent, or worsens. Atmosphere alone is not a cost. "
-                    "Name the thing that is damaged or lost.")
+                    "Name the thing that is damaged or lost."
+                )
             elif "genre fidelity" in vl:
                 rewrite_instructions.append(
-                    "Remove the forbidden genre element. Replace with something "
-                    "that fits the world's rules.")
+                    "Remove the forbidden genre element. Replace with something that fits the world's rules."
+                )
             elif "output format" in vl:
                 rewrite_instructions.append(
-                    "Remove all metadata, brackets, markdown, role labels. "
-                    "Begin with narrative prose.")
+                    "Remove all metadata, brackets, markdown, role labels. Begin with narrative prose."
+                )
             else:
                 rewrite_instructions.append(f"Fix: {v}")
         # Deduplicate identical instructions
@@ -254,23 +265,25 @@ def validate_and_retry(
             f"{instructions_text}\n"
             f"</correction_mode>"
         )
-        retry_prompt = (
-            f"<REWRITE>\n{instructions_text}\n</REWRITE>\n\n" + prompt
-        )
+        retry_prompt = f"<REWRITE>\n{instructions_text}\n</REWRITE>\n\n" + prompt
         # Strip NPC secrets/memories if pacing violation — remove fuel for info dumps.
         retry_prompt = _strip_prompt_for_retry(retry_prompt, violations)
         # Skip narration_history — previous narrations may contain the same
         # violations and act as poisoned few-shot examples.
-        raw = call_narrator(provider, retry_prompt, game, config,
-                            system_suffix=system_suffix, skip_history=True)
+        raw = call_narrator(provider, retry_prompt, game, config, system_suffix=system_suffix, skip_history=True)
         narration = parse_narrator_response(game, raw)
 
     # Final validation of last attempt
     final_check = validate_narration(
-        provider, narration, result_type, game.setting_genre,
-        player_words=player_words, player_name=game.player_name,
+        provider,
+        narration,
+        result_type,
+        game.setting_genre,
+        player_words=player_words,
+        player_name=game.player_name,
         consequences=consequences,
-        config=config, genre_constraints=gc_dict,
+        config=config,
+        genre_constraints=gc_dict,
     )
     report["checks"].append(final_check)
     final_violations = final_check.get("violations", [])
@@ -282,18 +295,24 @@ def validate_and_retry(
         report["passed"] = False
         report["violations"] = best_check.get("violations", [])
         if best_count < len(final_violations):
-            log(f"[Validator] Picking attempt with {best_count} violations "
+            log(
+                f"[Validator] Picking attempt with {best_count} violations "
                 f"over final attempt with {len(final_violations)}.",
-                level="warning")
+                level="warning",
+            )
             narration = best_narration
         else:
-            log(f"[Validator] Still failing after {max_retries} retries: "
+            log(
+                f"[Validator] Still failing after {max_retries} retries: "
                 f"{report['violations']}. Accepting best attempt.",
-                level="warning")
+                level="warning",
+            )
 
     return narration, report
 
+
 # ARCHITECT VALIDATION
+
 
 def validate_architect(
     provider: AIProvider,
@@ -346,7 +365,8 @@ Check genre fidelity. Be strict — if it implies anything beyond physical reali
 
     try:
         response = create_with_retry(
-            provider, max_retries=1,
+            provider,
+            max_retries=1,
             model=_c.ai.brain_model,
             max_tokens=1024,
             system=system,
@@ -372,6 +392,5 @@ Check genre fidelity. Be strict — if it implies anything beyond physical reali
         return blueprint
 
     except Exception as e:
-        log(f"[ArchitectValidator] Check failed ({e}), blueprint unchanged",
-            level="warning")
+        log(f"[ArchitectValidator] Check failed ({e}), blueprint unchanged", level="warning")
         return blueprint

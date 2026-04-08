@@ -7,35 +7,25 @@ EngineConfig, Resources, ClockData, WorldState, ClockEvent, PlayerPreferences.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any
 
 from .logging_util import log
-
-
-# ── Generic serialization helpers ─────────────────────────────
-
-def _fields_to_dict(obj: Any) -> dict:
-    """Serialize a dataclass by iterating its fields. No nested type handling."""
-    return {f.name: getattr(obj, f.name) for f in obj.__dataclass_fields__.values()}
-
-
-def _fields_from_dict(cls: Any, data: dict) -> Any:
-    """Deserialize a dataclass, filtering to known fields only."""
-    known = {f.name for f in cls.__dataclass_fields__.values()}
-    return cls(**{k: v for k, v in data.items() if k in known})
+from .serialization import deserialize, serialize
 
 
 # ENGINE CONFIG (runtime, from UI)
 
+
 @dataclass
 class EngineConfig:
     """Runtime configuration passed to engine functions."""
+
     narration_lang: str = ""
 
 
 @dataclass
 class Resources:
     """Mutable resource tracks: health, spirit, supply, momentum."""
+
     health: int = 5
     spirit: int = 5
     supply: int = 5
@@ -75,25 +65,20 @@ class Resources:
         self.momentum = max(floor, reset_value - (max_cap - self.max_momentum))
         log(f"[Resources] momentum burned ({old}→{self.momentum})")
 
-    def snapshot(self) -> dict:
-        return _fields_to_dict(self)
-
-    def restore(self, snap: dict) -> None:
-        self.health = snap["health"]
-        self.spirit = snap["spirit"]
-        self.supply = snap["supply"]
-        self.momentum = snap["momentum"]
-        self.max_momentum = snap["max_momentum"]
-
     def to_dict(self) -> dict:
-        return self.snapshot()
+        return serialize(self)
 
     @classmethod
     def from_dict(cls, data: dict) -> Resources:
-        return cls(
-            health=data["health"], spirit=data["spirit"], supply=data["supply"],
-            momentum=data["momentum"], max_momentum=data["max_momentum"],
-        )
+        return deserialize(cls, data)
+
+    def snapshot(self) -> dict:
+        return serialize(self)
+
+    def restore(self, snap: dict) -> None:
+        for k, v in snap.items():
+            if hasattr(self, k):
+                setattr(self, k, v)
 
 
 @dataclass
@@ -110,16 +95,17 @@ class ClockData:
     fired_at_scene: int = 0
 
     def to_dict(self) -> dict:
-        return _fields_to_dict(self)
+        return serialize(self)
 
     @classmethod
     def from_dict(cls, data: dict) -> ClockData:
-        return _fields_from_dict(cls, data)
+        return deserialize(cls, data)
 
 
 @dataclass
 class WorldState:
     """Physical world: location, time, chaos, clocks."""
+
     current_location: str = ""
     current_scene_context: str = ""
     time_of_day: str = ""
@@ -134,64 +120,49 @@ class WorldState:
         if self.chaos_factor != old:
             log(f"[World] chaos {old}→{self.chaos_factor}")
 
-    def snapshot(self) -> dict:
-        return {
-            "current_location": self.current_location,
-            "current_scene_context": self.current_scene_context,
-            "time_of_day": self.time_of_day,
-            "location_history": list(self.location_history),
-            "chaos_factor": self.chaos_factor,
-            "clocks": [c.to_dict() for c in self.clocks],
-        }
-
-    def restore(self, snap: dict) -> None:
-        self.current_location = snap["current_location"]
-        self.current_scene_context = snap["current_scene_context"]
-        self.time_of_day = snap["time_of_day"]
-        self.location_history = list(snap["location_history"])
-        self.chaos_factor = snap["chaos_factor"]
-        self.clocks = [ClockData.from_dict(c) for c in snap["clocks"]]
-
     def to_dict(self) -> dict:
-        return self.snapshot()
+        return serialize(self)
 
     @classmethod
     def from_dict(cls, data: dict) -> WorldState:
-        return cls(
-            current_location=data["current_location"],
-            current_scene_context=data["current_scene_context"],
-            time_of_day=data["time_of_day"],
-            location_history=list(data["location_history"]),
-            chaos_factor=data["chaos_factor"],
-            clocks=[ClockData.from_dict(c) for c in data["clocks"]],
-        )
+        return deserialize(cls, data)
+
+    def snapshot(self) -> dict:
+        return serialize(self)
+
+    def restore(self, snap: dict) -> None:
+        restored = deserialize(WorldState, snap)
+        for f in self.__dataclass_fields__:
+            setattr(self, f, getattr(restored, f))
 
 
 @dataclass
 class ClockEvent:
     """A clock tick event from apply_consequences or tick_autonomous_clocks."""
+
     clock: str = ""
     trigger: str = ""
     autonomous: bool = False
     triggered: bool = False
 
     def to_dict(self) -> dict:
-        return _fields_to_dict(self)
+        return serialize(self)
 
     @classmethod
     def from_dict(cls, data: dict) -> ClockEvent:
-        return _fields_from_dict(cls, data)
+        return deserialize(cls, data)
 
 
 @dataclass
 class PlayerPreferences:
     """Content boundaries and wishes (per-game, set at creation)."""
+
     player_wishes: str = ""
     content_lines: str = ""
 
     def to_dict(self) -> dict:
-        return _fields_to_dict(self)
+        return serialize(self)
 
     @classmethod
     def from_dict(cls, data: dict) -> PlayerPreferences:
-        return _fields_from_dict(cls, data)
+        return deserialize(cls, data)

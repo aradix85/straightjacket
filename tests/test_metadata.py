@@ -11,24 +11,53 @@ from straightjacket.engine.models import GameState, MemoryEntry, NpcData
 
 
 def _stub():
-    engine_loader._eng = _ConfigNode({
-        "bonds": {"start": 0, "max": 4},
-        "npc": {"max_active": 12, "reflection_threshold": 30,
-                "max_memory_entries": 25, "max_observations": 15,
-                "max_reflections": 8, "memory_recency_decay": 0.92},
-        "disposition_shifts": {"hostile": "distrustful", "distrustful": "neutral",
-                               "neutral": "friendly", "friendly": "loyal"},
-        "disposition_to_seed_emotion": {"hostile": "hostile", "distrustful": "suspicious",
-                                        "neutral": "neutral", "friendly": "curious", "loyal": "trusting"},
-        "move_categories": {"combat": ["clash"], "social": ["compel"], "endure": [],
-                            "recovery": [], "bond_on_weak_hit": [], "bond_on_strong_hit": [],
-                            "disposition_shift_on_strong_hit": []},
-    }, "engine")
+    engine_loader._eng = _ConfigNode(
+        {
+            "bonds": {"start": 0, "max": 4},
+            "npc": {
+                "max_active": 12,
+                "reflection_threshold": 30,
+                "max_memory_entries": 25,
+                "max_observations": 15,
+                "max_reflections": 8,
+                "memory_recency_decay": 0.92,
+            },
+            "disposition_shifts": {
+                "hostile": "distrustful",
+                "distrustful": "neutral",
+                "neutral": "friendly",
+                "friendly": "loyal",
+            },
+            "disposition_to_seed_emotion": {
+                "hostile": "hostile",
+                "distrustful": "suspicious",
+                "neutral": "neutral",
+                "friendly": "curious",
+                "loyal": "trusting",
+            },
+            "move_categories": {
+                "combat": ["clash"],
+                "social": ["compel"],
+                "endure": [],
+                "recovery": [],
+                "bond_on_weak_hit": [],
+                "bond_on_strong_hit": [],
+                "disposition_shift_on_strong_hit": [],
+            },
+            "death_emotions": ["betrayed", "devastated"],
+        },
+        "engine",
+    )
     emotions_loader._data = {
         "importance": {"neutral": 2, "curious": 3, "betrayed": 9, "devastated": 9, "hostile": 5},
         "keyword_boosts": {7: ["death", "killed"]},
-        "disposition_map": {"neutral": "neutral", "friendly": "friendly", "hostile": "hostile",
-                            "wary": "distrustful", "curious": "neutral"},
+        "disposition_map": {
+            "neutral": "neutral",
+            "friendly": "friendly",
+            "hostile": "hostile",
+            "wary": "distrustful",
+            "curious": "neutral",
+        },
     }
 
 
@@ -38,20 +67,30 @@ def _game() -> GameState:
     game.world.current_location = "Tavern"
     game.world.time_of_day = "evening"
     game.npcs = [
-        NpcData(id="npc_1", name="Kira", disposition="friendly", bond=2, bond_max=4,
-                status="active", last_location="Tavern",
-                memory=[MemoryEntry(scene=4, event="Talked to player", importance=3)]),
-        NpcData(id="npc_2", name="Borin", disposition="neutral", bond=0, bond_max=4,
-                status="active", last_location="Tavern"),
+        NpcData(
+            id="npc_1",
+            name="Kira",
+            disposition="friendly",
+            bond=2,
+            bond_max=4,
+            status="active",
+            last_location="Tavern",
+            memory=[MemoryEntry(scene=4, event="Talked to player", importance=3)],
+        ),
+        NpcData(
+            id="npc_2", name="Borin", disposition="neutral", bond=0, bond_max=4, status="active", last_location="Tavern"
+        ),
     ]
     return game
 
 
 # ── apply_narrator_metadata: scene context ───────────────────
 
+
 def test_metadata_sets_scene_context():
     _stub()
     from straightjacket.engine.ai.metadata import apply_narrator_metadata
+
     game = _game()
     apply_narrator_metadata(game, {"scene_context": "A tense standoff."})
     assert game.world.current_scene_context == "A tense standoff."
@@ -60,6 +99,7 @@ def test_metadata_sets_scene_context():
 def test_metadata_ignores_empty_scene_context():
     _stub()
     from straightjacket.engine.ai.metadata import apply_narrator_metadata
+
     game = _game()
     game.world.current_scene_context = "Old context"
     apply_narrator_metadata(game, {"scene_context": "  "})
@@ -68,9 +108,11 @@ def test_metadata_ignores_empty_scene_context():
 
 # ── apply_narrator_metadata: location update ─────────────────
 
+
 def test_metadata_updates_location():
     _stub()
     from straightjacket.engine.ai.metadata import apply_narrator_metadata
+
     game = _game()
     apply_narrator_metadata(game, {"location_update": "Market Square"})
     assert game.world.current_location == "Market Square"
@@ -79,6 +121,7 @@ def test_metadata_updates_location():
 def test_metadata_ignores_null_location():
     _stub()
     from straightjacket.engine.ai.metadata import apply_narrator_metadata
+
     game = _game()
     apply_narrator_metadata(game, {"location_update": "null"})
     assert game.world.current_location == "Tavern"
@@ -87,6 +130,7 @@ def test_metadata_ignores_null_location():
 def test_metadata_ignores_none_location():
     _stub()
     from straightjacket.engine.ai.metadata import apply_narrator_metadata
+
     game = _game()
     apply_narrator_metadata(game, {"location_update": "none"})
     assert game.world.current_location == "Tavern"
@@ -94,9 +138,11 @@ def test_metadata_ignores_none_location():
 
 # ── apply_narrator_metadata: time update ─────────────────────
 
+
 def test_metadata_updates_time():
     _stub()
     from straightjacket.engine.ai.metadata import apply_narrator_metadata
+
     game = _game()
     apply_narrator_metadata(game, {"time_update": "night"})
     assert game.world.time_of_day == "night"
@@ -105,6 +151,7 @@ def test_metadata_updates_time():
 def test_metadata_ignores_invalid_time():
     _stub()
     from straightjacket.engine.ai.metadata import apply_narrator_metadata
+
     game = _game()
     apply_narrator_metadata(game, {"time_update": "banana"})
     assert game.world.time_of_day == "evening"
@@ -113,6 +160,7 @@ def test_metadata_ignores_invalid_time():
 def test_metadata_normalizes_time_spaces():
     _stub()
     from straightjacket.engine.ai.metadata import apply_narrator_metadata
+
     game = _game()
     apply_narrator_metadata(game, {"time_update": "late evening"})
     assert game.world.time_of_day == "late_evening"
@@ -120,9 +168,11 @@ def test_metadata_normalizes_time_spaces():
 
 # ── process_deceased_npcs ────────────────────────────────────
 
+
 def test_deceased_marks_present_npc():
     _stub()
     from straightjacket.engine.ai.metadata import process_deceased_npcs
+
     game = _game()
     process_deceased_npcs(game, [{"npc_id": "npc_1"}], scene_present_ids={"npc_1"})
     assert game.npcs[0].status == "deceased"
@@ -131,6 +181,7 @@ def test_deceased_marks_present_npc():
 def test_deceased_rejects_absent_npc():
     _stub()
     from straightjacket.engine.ai.metadata import process_deceased_npcs
+
     game = _game()
     process_deceased_npcs(game, [{"npc_id": "npc_1"}], scene_present_ids={"npc_2"})
     assert game.npcs[0].status == "active"
@@ -139,6 +190,7 @@ def test_deceased_rejects_absent_npc():
 def test_deceased_allows_absent_npc_with_current_scene_memory():
     _stub()
     from straightjacket.engine.ai.metadata import process_deceased_npcs
+
     game = _game()
     game.npcs[0].memory.append(MemoryEntry(scene=5, event="Just arrived", importance=5))
     process_deceased_npcs(game, [{"npc_id": "npc_1"}], scene_present_ids={"npc_2"})
@@ -148,6 +200,7 @@ def test_deceased_allows_absent_npc_with_current_scene_memory():
 def test_deceased_skips_already_dead():
     _stub()
     from straightjacket.engine.ai.metadata import process_deceased_npcs
+
     game = _game()
     game.npcs[0].status = "deceased"
     process_deceased_npcs(game, [{"npc_id": "npc_1"}], scene_present_ids={"npc_1"})
@@ -157,6 +210,7 @@ def test_deceased_skips_already_dead():
 def test_deceased_no_guard_without_present_ids():
     _stub()
     from straightjacket.engine.ai.metadata import process_deceased_npcs
+
     game = _game()
     process_deceased_npcs(game, [{"npc_id": "npc_1"}], scene_present_ids=None)
     assert game.npcs[0].status == "deceased"
@@ -165,6 +219,7 @@ def test_deceased_no_guard_without_present_ids():
 def test_deceased_unknown_npc_ignored():
     _stub()
     from straightjacket.engine.ai.metadata import process_deceased_npcs
+
     game = _game()
     process_deceased_npcs(game, [{"npc_id": "nobody"}], scene_present_ids=None)
     assert all(n.status == "active" for n in game.npcs)
@@ -172,9 +227,11 @@ def test_deceased_unknown_npc_ignored():
 
 # ── lore NPCs ────────────────────────────────────────────────
 
+
 def test_lore_npc_created():
     _stub()
     from straightjacket.engine.ai.metadata import _process_lore_npcs
+
     game = _game()
     _process_lore_npcs(game, [{"name": "Ancient King", "description": "Legendary ruler"}])
     lore = [n for n in game.npcs if n.status == "lore"]
@@ -185,6 +242,7 @@ def test_lore_npc_created():
 def test_lore_npc_skips_existing():
     _stub()
     from straightjacket.engine.ai.metadata import _process_lore_npcs
+
     game = _game()
     count_before = len(game.npcs)
     _process_lore_npcs(game, [{"name": "Kira", "description": "Already exists"}])
@@ -194,6 +252,7 @@ def test_lore_npc_skips_existing():
 def test_lore_npc_skips_empty_name():
     _stub()
     from straightjacket.engine.ai.metadata import _process_lore_npcs
+
     game = _game()
     count_before = len(game.npcs)
     _process_lore_npcs(game, [{"name": "", "description": "No name"}])
@@ -202,17 +261,17 @@ def test_lore_npc_skips_empty_name():
 
 # ── death corroboration ──────────────────────────────────────
 
+
 def test_death_corroboration_triggers():
     _stub()
     from straightjacket.engine.ai.metadata import _check_death_corroboration
+
     game = _game()
     # npc_2 has cross-vote from npc_1 + self-vote → should die
-    game.npcs[0].memory.append(MemoryEntry(
-        scene=5, event="Borin was killed", importance=9,
-        emotional_weight="devastated", about_npc="npc_2"))
-    game.npcs[1].memory.append(MemoryEntry(
-        scene=5, event="I am dying", importance=9,
-        emotional_weight="devastated"))
+    game.npcs[0].memory.append(
+        MemoryEntry(scene=5, event="Borin was killed", importance=9, emotional_weight="devastated", about_npc="npc_2")
+    )
+    game.npcs[1].memory.append(MemoryEntry(scene=5, event="I am dying", importance=9, emotional_weight="devastated"))
     _check_death_corroboration(game)
     assert game.npcs[1].status == "deceased"
 
@@ -220,14 +279,11 @@ def test_death_corroboration_triggers():
 def test_death_corroboration_needs_cross_vote():
     _stub()
     from straightjacket.engine.ai.metadata import _check_death_corroboration
+
     game = _game()
     # Only self-vote, no cross-vote → should NOT die
-    game.npcs[1].memory.append(MemoryEntry(
-        scene=5, event="I am dying", importance=9,
-        emotional_weight="devastated"))
-    game.npcs[1].memory.append(MemoryEntry(
-        scene=5, event="Still dying", importance=9,
-        emotional_weight="devastated"))
+    game.npcs[1].memory.append(MemoryEntry(scene=5, event="I am dying", importance=9, emotional_weight="devastated"))
+    game.npcs[1].memory.append(MemoryEntry(scene=5, event="Still dying", importance=9, emotional_weight="devastated"))
     _check_death_corroboration(game)
     assert game.npcs[1].status == "active"
 
@@ -235,14 +291,20 @@ def test_death_corroboration_needs_cross_vote():
 def test_death_corroboration_ignores_reflections():
     _stub()
     from straightjacket.engine.ai.metadata import _check_death_corroboration
+
     game = _game()
     # Cross-vote is a reflection (Director-generated) → should not count
-    game.npcs[0].memory.append(MemoryEntry(
-        scene=5, event="Borin was killed", importance=9,
-        emotional_weight="devastated", about_npc="npc_2", type="reflection"))
-    game.npcs[1].memory.append(MemoryEntry(
-        scene=5, event="I am dying", importance=9,
-        emotional_weight="devastated"))
+    game.npcs[0].memory.append(
+        MemoryEntry(
+            scene=5,
+            event="Borin was killed",
+            importance=9,
+            emotional_weight="devastated",
+            about_npc="npc_2",
+            type="reflection",
+        )
+    )
+    game.npcs[1].memory.append(MemoryEntry(scene=5, event="I am dying", importance=9, emotional_weight="devastated"))
     _check_death_corroboration(game)
     assert game.npcs[1].status == "active"
 
@@ -250,23 +312,24 @@ def test_death_corroboration_ignores_reflections():
 def test_death_corroboration_ignores_old_scenes():
     _stub()
     from straightjacket.engine.ai.metadata import _check_death_corroboration
+
     game = _game()
     # Memories from scene 3, not current scene 5 → should not count
-    game.npcs[0].memory.append(MemoryEntry(
-        scene=3, event="Borin was killed", importance=9,
-        emotional_weight="devastated", about_npc="npc_2"))
-    game.npcs[1].memory.append(MemoryEntry(
-        scene=3, event="I am dying", importance=9,
-        emotional_weight="devastated"))
+    game.npcs[0].memory.append(
+        MemoryEntry(scene=3, event="Borin was killed", importance=9, emotional_weight="devastated", about_npc="npc_2")
+    )
+    game.npcs[1].memory.append(MemoryEntry(scene=3, event="I am dying", importance=9, emotional_weight="devastated"))
     _check_death_corroboration(game)
     assert game.npcs[1].status == "active"
 
 
 # ── slug reference resolution ────────────────────────────────
 
+
 def test_resolve_slug_refs():
     _stub()
     from straightjacket.engine.ai.metadata import _resolve_slug_refs
+
     game = _game()
     fresh = [NpcData(id="npc_3", name="Moderator mit Headset")]
     game.npcs.append(fresh[0])
@@ -278,6 +341,7 @@ def test_resolve_slug_refs():
 def test_resolve_slug_refs_skips_known_ids():
     _stub()
     from straightjacket.engine.ai.metadata import _resolve_slug_refs
+
     game = _game()
     fresh = [NpcData(id="npc_3", name="Someone")]
     game.npcs.append(fresh[0])
@@ -288,9 +352,11 @@ def test_resolve_slug_refs_skips_known_ids():
 
 # ── full pipeline ────────────────────────────────────────────
 
+
 def test_metadata_full_pipeline():
     _stub()
     from straightjacket.engine.ai.metadata import apply_narrator_metadata
+
     game = _game()
     metadata = {
         "scene_context": "A fight broke out.",

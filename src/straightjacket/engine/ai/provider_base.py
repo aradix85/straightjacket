@@ -18,6 +18,7 @@ from ..logging_util import log
 
 # NORMALIZED RESPONSE
 
+
 @dataclass
 class AIResponse:
     """Provider-agnostic AI response.
@@ -34,12 +35,15 @@ class AIResponse:
                     Empty list when no tools are called.
         usage: Optional token counts {"input_tokens": int, "output_tokens": int}.
     """
+
     content: str
     stop_reason: str = "complete"  # "complete" | "truncated" | "tool_use"
-    tool_calls: list = field(default_factory=list)
-    usage: dict | None = field(default=None, repr=False)
+    tool_calls: list[dict[str, str | dict]] = field(default_factory=list)
+    usage: dict[str, int] | None = field(default=None, repr=False)
+
 
 # PROVIDER PROTOCOL
+
 
 class AIProvider(Protocol):
     """Contract that every AI provider must implement.
@@ -89,9 +93,11 @@ class AIProvider(Protocol):
         """
         ...
 
+
 # RESPONSE POST-PROCESSING
 
 _THINK_TAG_RE = re.compile(r"<think>.*?</think>\s*", re.DOTALL)
+
 
 def post_process_response(response: AIResponse) -> AIResponse:
     """Apply model-agnostic post-processing to an AI response.
@@ -121,7 +127,9 @@ def post_process_response(response: AIResponse) -> AIResponse:
         )
     return response
 
+
 # RETRY WRAPPER
+
 
 def create_with_retry(
     provider: AIProvider,
@@ -174,10 +182,9 @@ def create_with_retry(
             is_retryable_status = status_code in (429, 500, 502, 503, 529)
 
             if attempt < max_retries and (is_retryable_status or is_connection_error):
-                wait = 2 ** attempt
+                wait = 2**attempt
                 error_desc = f"HTTP {status_code}" if status_code else str(e)[:80]
-                log(f"[AI] {error_desc}, retry {attempt + 1}/{max_retries} in {wait}s",
-                    level="warning")
+                log(f"[AI] {error_desc}, retry {attempt + 1}/{max_retries} in {wait}s", level="warning")
                 _time.sleep(wait)
                 continue
             raise

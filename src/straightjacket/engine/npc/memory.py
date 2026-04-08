@@ -9,8 +9,7 @@ from ..logging_util import log
 from ..models import MemoryEntry, NpcData
 
 
-def score_importance(emotional_weight: str, event_text: str = "",
-                     debug: bool = False):
+def score_importance(emotional_weight: str, event_text: str = "", debug: bool = False):
     """Score the importance of a memory entry (1-10).
     Uses emotional_weight as primary signal, with keyword boosts from event text.
     Handles compound phrases and snake_case.
@@ -24,15 +23,15 @@ def score_importance(emotional_weight: str, event_text: str = "",
         base = _imp[raw]
         debug_info = f"direct:{raw}={base}"
     else:
-        tokens = re.split(r'[_/,;:\s]+|(?:\s+and\s+)|(?:\s+mixed\s+with\s+)', raw)
+        tokens = re.split(r"[_/,;:\s]+|(?:\s+and\s+)|(?:\s+mixed\s+with\s+)", raw)
         tokens = [t.strip() for t in tokens if len(t.strip()) >= 3]
 
         best = 4  # default for unrecognized emotions
         best_token = "default"
         for token in tokens:
             if token in _imp and _imp[token] > best:
-                    best = _imp[token]
-                    best_token = f"token:{token}={best}"
+                best = _imp[token]
+                best_token = f"token:{token}={best}"
         base = best
         debug_info = best_token
 
@@ -53,9 +52,9 @@ def score_importance(emotional_weight: str, event_text: str = "",
     return result
 
 
-def retrieve_memories(npc: NpcData, context_text: str = "", max_count: int = 5,
-                      current_scene: int = 0,
-                      present_npc_ids: set | None = None) -> list[MemoryEntry]:
+def retrieve_memories(
+    npc: NpcData, context_text: str = "", max_count: int = 5, current_scene: int = 0, present_npc_ids: set | None = None
+) -> list[MemoryEntry]:
     """Retrieve the most relevant memories for an NPC using weighted scoring.
     Score = 0.40 x recency + 0.35 x importance + 0.25 x relevance
     Memories with about_npc matching a present NPC get a +0.6 relevance boost.
@@ -125,7 +124,7 @@ def consolidate_memory(npc: NpcData) -> None:
     reflections = [m for m in memories if m.type == "reflection"]
     observations = [m for m in memories if m.type != "reflection"]
 
-    kept_reflections = reflections[-eng().npc.max_reflections:]
+    kept_reflections = reflections[-eng().npc.max_reflections :]
     obs_budget = eng().npc.max_memory_entries - len(kept_reflections)
 
     if len(observations) <= obs_budget:
@@ -150,6 +149,8 @@ def consolidate_memory(npc: NpcData) -> None:
     npc.memory = all_kept
     removed = len(memories) - len(all_kept)
     if removed > 0:
-        log(f"[NPC] Consolidated {npc.name} memory: "
+        log(
+            f"[NPC] Consolidated {npc.name} memory: "
             f"{len(memories)} -> {len(all_kept)} ({removed} removed, "
-            f"{len(kept_reflections)} reflections, {len(kept_observations)} observations)")
+            f"{len(kept_reflections)} reflections, {len(kept_observations)} observations)"
+        )

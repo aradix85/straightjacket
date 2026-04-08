@@ -24,9 +24,18 @@ Game mechanics, emotion scoring, move types, damage tables, disposition shifts �
 
 ## Testing
 
-One test per flow, not per assertion. A test should be capable of breaking when real code changes. No tests for Python builtins, trivial roundtrips, or config value assertions.
+Two layers of testing, complementary:
 
-If your change affects the turn pipeline, run Elvira: `python elvira/elvira.py --ws --auto --turns 5` (tests the full server stack, needs an API key).
+The **unit/integration test suite** (`python -m pytest tests/ -v`) runs without an API key. It uses mock providers that return canned responses. Tests verify the engine's internal logic: consequences, NPC processing, serialization, correction flow, prompt assembly, WebSocket handlers. Every PR must pass this suite.
+
+**Elvira** (`elvira/elvira.py`) is a headless AI-driven test player that plays the game with real API calls. It checks state invariants after every turn, validates narration quality (leaked mechanics, spatial consistency), stress-tests the correction pipeline, and logs everything to JSON. Two modes:
+
+- Direct mode: `python elvira/elvira.py --auto --turns 5` — drives the engine directly, bypasses the UI. Fastest way to test engine changes.
+- WebSocket mode: `python elvira/elvira.py --ws --auto --turns 5` — plays through the full server stack. Tests the complete pipeline: WebSocket protocol, handlers, engine, serializers.
+
+If your change affects the turn pipeline, NPC processing, or prompt assembly, run Elvira. The unit tests catch logic bugs; Elvira catches constraint violations, narrator drift, and integration failures that only surface with real model output.
+
+Elvira configuration is in `elvira/elvira_config.yaml`. Session logs go to `elvira/elvira_session.json`. Add `--turns N` to control session length.
 
 ## Accessibility
 

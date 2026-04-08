@@ -26,23 +26,23 @@ def _build_moves_block() -> str:
     return "<moves>\n" + "\n".join(lines) + "\n  </moves>"
 
 
-def call_brain(provider: AIProvider, game: GameState, player_message: str,
-               config: EngineConfig | None = None) -> BrainResult:
+def call_brain(
+    provider: AIProvider, game: GameState, player_message: str, config: EngineConfig | None = None
+) -> BrainResult:
     _c = cfg()
     log(f"[Brain] Scene {game.narrative.scene_count + 1} | Input: {player_message[:100]}")
+
     def _brain_npc_line(n):
         line = f'- {n.name} (id:{n.id}): {n.disposition}, bond={n.bond}/{n.bond_max}, agenda="{n.agenda}"'
         if n.aliases:
-            line += f' aliases:{",".join(n.aliases)}'
+            line += f" aliases:{','.join(n.aliases)}"
         return line
-    npc_summary = "\n".join(
-        _brain_npc_line(n)
-        for n in game.npcs if n.status == "active"
-    ) or "(keine)"
+
+    npc_summary = "\n".join(_brain_npc_line(n) for n in game.npcs if n.status == "active") or "(none)"
     bg_npcs = [n for n in game.npcs if n.status == "background"]
     bg_summary = "\n".join(
-        f'- {n.name} (id:{n.id}): {n.disposition}, bond={n.bond}'
-        + (f' aliases:{",".join(n.aliases)}' if n.aliases else '')
+        f"- {n.name} (id:{n.id}): {n.disposition}, bond={n.bond}"
+        + (f" aliases:{','.join(n.aliases)}" if n.aliases else "")
         for n in bg_npcs
     )
     if bg_summary:
@@ -50,34 +50,39 @@ def call_brain(provider: AIProvider, game: GameState, player_message: str,
     lore_npcs = [n for n in game.npcs if n.status == "lore"]
     if lore_npcs:
         lore_summary = "\n".join(
-            f'- {n.name} (id:{n.id}): lore figure'
-            + (f' aliases:{",".join(n.aliases)}' if n.aliases else '')
+            f"- {n.name} (id:{n.id}): lore figure" + (f" aliases:{','.join(n.aliases)}" if n.aliases else "")
             for n in lore_npcs
         )
         npc_summary += f"\n(lore, historically significant, never physically present):\n{lore_summary}"
-    clock_summary = "\n".join(
-        f'- {c.name} ({c.clock_type}): {c.filled}/{c.segments}'
-        for c in game.world.clocks if c.filled < c.segments
-    ) or "(keine)"
-    last_scenes = "\n".join(
-        f'Scene {s.scene}: {s.rich_summary or s.summary}' for s in game.narrative.session_log[-5:]
-    ) or "(Start)"
+    clock_summary = (
+        "\n".join(
+            f"- {c.name} ({c.clock_type}): {c.filled}/{c.segments}" for c in game.world.clocks if c.filled < c.segments
+        )
+        or "(none)"
+    )
+    last_scenes = (
+        "\n".join(f"Scene {s.scene}: {s.rich_summary or s.summary}" for s in game.narrative.session_log[-5:])
+        or "(Start)"
+    )
 
     _cfg = config or EngineConfig()
     _brain_lang = get_narration_lang(_cfg)
 
-    system = get_prompt("brain_parser",
-                        lang=_brain_lang,
-                        content_boundaries_block=content_boundaries_block(game),
-                        moves_block=_build_moves_block())
+    system = get_prompt(
+        "brain_parser",
+        lang=_brain_lang,
+        content_boundaries_block=content_boundaries_block(game),
+        moves_block=_build_moves_block(),
+    )
 
     campaign_ctx = ""
     cam = game.campaign
     if cam.campaign_history:
-        campaign_ctx = f"\n<campaign>Chapter {cam.chapter_number}. Previous: " + "; ".join(
-            f'Ch{ch.chapter}:{ch.title}'
-            for ch in cam.campaign_history[-3:]
-        ) + "</campaign>"
+        campaign_ctx = (
+            f"\n<campaign>Chapter {cam.chapter_number}. Previous: "
+            + "; ".join(f"Ch{ch.chapter}:{ch.title}" for ch in cam.campaign_history[-3:])
+            + "</campaign>"
+        )
 
     backstory_ctx = ""
     if game.backstory:
@@ -88,7 +93,7 @@ def call_brain(provider: AIProvider, game: GameState, player_message: str,
     loc_hist_n = eng().location.history_size
     user_msg = f"""<state>
 loc:{w.current_location} | ctx:{w.current_scene_context}
-time:{w.time_of_day or 'unspecified'} | prev_locations:{', '.join(w.location_history[-loc_hist_n:]) or 'none'}
+time:{w.time_of_day or "unspecified"} | prev_locations:{", ".join(w.location_history[-loc_hist_n:]) or "none"}
 {game.player_name} H{res.health} Sp{res.spirit} Su{res.supply} M{res.momentum} chaos:{w.chaos_factor} | E{game.edge} H{game.heart} I{game.iron} Sh{game.shadow} W{game.wits}
 </state>
 <npcs>{npc_summary}</npcs>
@@ -98,27 +103,29 @@ time:{w.time_of_day or 'unspecified'} | prev_locations:{', '.join(w.location_his
 
     try:
         response = create_with_retry(
-            provider, max_retries=_c.ai.max_retries.brain,
-            model=_c.ai.brain_model, max_tokens=_c.ai.max_tokens.brain, system=system,
+            provider,
+            max_retries=_c.ai.max_retries.brain,
+            model=_c.ai.brain_model,
+            max_tokens=_c.ai.max_tokens.brain,
+            system=system,
             messages=[{"role": "user", "content": user_msg}],
             json_schema=get_brain_output_schema(),
             **sampling_params("brain"),
         )
         result = BrainResult.from_dict(json.loads(response.content))
-        log(f"[Brain] Result: move={result.move}, pos={result.position}, "
-            f"effect={result.effect}, intent={result.player_intent[:60]}")
+        log(
+            f"[Brain] Result: move={result.move}, pos={result.position}, "
+            f"effect={result.effect}, intent={result.player_intent[:60]}"
+        )
         return result
     except Exception as e:
-        log(f"[Brain] Structured output failed ({type(e).__name__}: {e}), "
-            f"falling back to dialog", level="warning")
-        return BrainResult(move="dialog", dialog_only=True,
-                           player_intent=player_message)
+        log(f"[Brain] Structured output failed ({type(e).__name__}: {e}), falling back to dialog", level="warning")
+        return BrainResult(move="dialog", dialog_only=True, player_intent=player_message, approach="fallback")
 
 
-
-def call_revelation_check(provider: AIProvider, narration: str,
-                          revelation: Revelation,
-                          config: EngineConfig | None = None) -> bool:
+def call_revelation_check(
+    provider: AIProvider, narration: str, revelation: Revelation, config: EngineConfig | None = None
+) -> bool:
     """Check whether the narrator actually wove a pending revelation into the narration.
 
     Called after call_narrator_metadata() when pending_revs was non-empty.
@@ -154,13 +161,14 @@ def call_revelation_check(provider: AIProvider, narration: str,
 
     prompt = (
         f'<revelation weight="{html.escape(rev_weight, quote=True)}">{html.escape(rev_content)}</revelation>\n\n'
-        f'<narration>{narration}</narration>\n\n'
-        f'Was this revelation meaningfully present in the narration above?'
+        f"<narration>{narration}</narration>\n\n"
+        f"Was this revelation meaningfully present in the narration above?"
     )
 
     try:
         response = create_with_retry(
-            provider, max_retries=_c.ai.max_retries.revelation_check,
+            provider,
+            max_retries=_c.ai.max_retries.revelation_check,
             model=_c.ai.brain_model,
             max_tokens=_c.ai.max_tokens.revelation_check,
             system=system,
@@ -171,10 +179,11 @@ def call_revelation_check(provider: AIProvider, narration: str,
         result = json.loads(response.content)
         confirmed = result.get("revelation_confirmed", True)
         reasoning = result.get("reasoning", "")
-        log(f"[Revelation] Check for '{revelation.id}': "
-            f"confirmed={confirmed} — {reasoning}")
+        log(f"[Revelation] Check for '{revelation.id}': confirmed={confirmed} — {reasoning}")
         return confirmed
     except Exception as e:
-        log(f"[Revelation] Check failed ({type(e).__name__}: {e}), "
-            f"defaulting to confirmed=True to avoid pending loop", level="warning")
+        log(
+            f"[Revelation] Check failed ({type(e).__name__}: {e}), defaulting to confirmed=True to avoid pending loop",
+            level="warning",
+        )
         return True

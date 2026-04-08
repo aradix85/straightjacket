@@ -25,8 +25,7 @@ class AnthropicProvider:
             self._client = anthropic.Anthropic(api_key=api_key, base_url=api_base)
         else:
             self._client = anthropic.Anthropic(api_key=api_key)
-        log(f"[AnthropicProvider] Initialized"
-            f"{f' (base: {api_base})' if api_base else ''}")
+        log(f"[AnthropicProvider] Initialized{f' (base: {api_base})' if api_base else ''}")
 
     def create_message(
         self,
@@ -81,11 +80,13 @@ class AnthropicProvider:
             if block.type == "text":
                 content += block.text
             elif block.type == "tool_use":
-                parsed_tool_calls.append({
-                    "id": block.id,
-                    "name": block.name,
-                    "arguments": block.input,
-                })
+                parsed_tool_calls.append(
+                    {
+                        "id": block.id,
+                        "name": block.name,
+                        "arguments": block.input,
+                    }
+                )
 
         stop = response.stop_reason
         if stop == "max_tokens":

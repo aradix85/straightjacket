@@ -13,12 +13,18 @@ from ..prompt_loader import get_prompt
 from .provider_base import AIProvider, create_with_retry
 from .schemas import NARRATOR_METADATA_SCHEMA
 
+# Set after each call_narrator(): True if the response was truncated and salvaged.
+narrator_was_salvaged: bool = False
 
-def call_narrator(provider: AIProvider, prompt: str,
-                  game: GameState | None = None,
-                  config: EngineConfig | None = None,
-                  system_suffix: str = "",
-                  skip_history: bool = False) -> str:
+
+def call_narrator(
+    provider: AIProvider,
+    prompt: str,
+    game: GameState | None = None,
+    config: EngineConfig | None = None,
+    system_suffix: str = "",
+    skip_history: bool = False,
+) -> str:
     """Narrator call with conversation memory for style consistency.
 
     system_suffix: appended to the system prompt. Used by the validator
@@ -26,15 +32,19 @@ def call_narrator(provider: AIProvider, prompt: str,
     on retries, where they carry more weight than user-message corrections.
     skip_history: if True, do not include narration_history as conversation
     context. Used on retries to prevent poisoned few-shot examples.
+
+    After this call, check narrator_was_salvaged to see if the response
+    was truncated and salvaged (trimmed to last complete sentence).
     """
-    log(f"[Narrator] Calling narrator (prompt: {len(prompt)} chars"
-        f"{', skip_history' if skip_history else ''})")
+    global narrator_was_salvaged
+    narrator_was_salvaged = False
+    log(f"[Narrator] Calling narrator (prompt: {len(prompt)} chars{', skip_history' if skip_history else ''})")
     _c = cfg()
     messages = []
 
     # Include narration history as conversation context — unless this is a retry
     if not skip_history and game and game.narrative.narration_history:
-        for entry in game.narrative.narration_history[-eng().pacing.max_narration_history:]:
+        for entry in game.narrative.narration_history[-eng().pacing.max_narration_history :]:
             messages.append({"role": "user", "content": entry.prompt_summary})
             messages.append({"role": "assistant", "content": entry.narration})
 
@@ -46,8 +56,10 @@ def call_narrator(provider: AIProvider, prompt: str,
         system = system + "\n" + system_suffix
 
     response = create_with_retry(
-        provider, max_retries=_c.ai.max_retries.narrator,
-        model=_c.ai.narrator_model, max_tokens=_c.ai.max_tokens.narrator,
+        provider,
+        max_retries=_c.ai.max_retries.narrator,
+        model=_c.ai.narrator_model,
+        max_tokens=_c.ai.max_tokens.narrator,
         system=system,
         messages=messages,
         **sampling_params("narrator"),
@@ -57,28 +69,31 @@ def call_narrator(provider: AIProvider, prompt: str,
 
     # Handle truncation: clean up to last complete sentence
     if stop == "truncated":
-        log(f"[Narrator] WARNING: Response truncated at max_tokens ({len(raw)} chars)",
-            level="warning")
+        log(f"[Narrator] WARNING: Response truncated at max_tokens ({len(raw)} chars)", level="warning")
         raw = salvage_truncated_narration(raw)
+        narrator_was_salvaged = True
     else:
         # Detect mid-sentence/mid-word cutoff despite "complete" (rare Sonnet bug)
-        _prose = raw[:raw.find('<game_data>')] if '<game_data>' in raw else raw
+        _prose = raw[: raw.find("<game_data>")] if "<game_data>" in raw else raw
         _stripped = _prose.rstrip()
         if _stripped and _stripped[-1] not in '.!?"\u201c\u201d\u00bb\u00ab\u2026)\u2013\u2014*':
-            log(f"[Narrator] WARNING: Response appears truncated despite complete "
-                f"({len(raw)} chars, ends with '{_stripped[-20:]}')", level="warning")
+            log(
+                f"[Narrator] WARNING: Response appears truncated despite complete "
+                f"({len(raw)} chars, ends with '{_stripped[-20:]}')",
+                level="warning",
+            )
             raw = salvage_truncated_narration(raw)
+            narrator_was_salvaged = True
 
     log(f"[Narrator] Response ({len(raw)} chars): {raw[:120]}...")
-    if '<game_data>' in raw:
+    if "<game_data>" in raw:
         log("[Narrator] Found <game_data> tag (opening/chapter scene)")
     return raw
 
 
-
-def call_opening_setup(provider: AIProvider, narration: str,
-                       game: GameState,
-                       config: EngineConfig | None = None) -> dict:
+def call_opening_setup(
+    provider: AIProvider, narration: str, game: GameState, config: EngineConfig | None = None
+) -> dict:
     """Extract structured opening scene data from narrator prose via fast model.
 
     This is the two-call pattern applied to the opening scene:
@@ -97,36 +112,50 @@ def call_opening_setup(provider: AIProvider, narration: str,
     prompt = f"""<narration>{narration}</narration>
 <player_character>{game.player_name}</player_character>
 <world genre="{game.setting_genre}" tone="{game.setting_tone}">{game.setting_description}</world>
-<current_location>{game.world.current_location or 'unknown'}</current_location>
+<current_location>{game.world.current_location or "unknown"}</current_location>
 Extract all NPCs, clocks, location, scene context, time of day, and initial NPC memories from the opening narration above.
 IMPORTANT: {game.player_name} is the PLAYER CHARACTER — do NOT include them as an NPC. NPCs are OTHER characters the player meets."""
 
     try:
         from .schemas import OPENING_SETUP_SCHEMA
+
         response = create_with_retry(
-            provider, max_retries=_c.ai.max_retries.opening_setup,
-            model=_c.ai.brain_model, max_tokens=_c.ai.max_tokens.opening_setup,
+            provider,
+            max_retries=_c.ai.max_retries.opening_setup,
+            model=_c.ai.brain_model,
+            max_tokens=_c.ai.max_tokens.opening_setup,
             system=system,
             messages=[{"role": "user", "content": prompt}],
             json_schema=OPENING_SETUP_SCHEMA,
             **sampling_params("opening_setup"),
         )
         data = json.loads(response.content)
-        log(f"[OpeningSetup] Extracted: {len(data.get('npcs', []))} NPCs, "
+        log(
+            f"[OpeningSetup] Extracted: {len(data.get('npcs', []))} NPCs, "
             f"{len(data.get('clocks', []))} clocks, "
-            f"loc={data.get('location')}, time={data.get('time_of_day')}")
+            f"loc={data.get('location')}, time={data.get('time_of_day')}"
+        )
         return data
     except Exception as e:
         log(f"[OpeningSetup] Extraction failed: {e}", level="warning")
-        return {"npcs": [], "clocks": [], "location": "", "scene_context": "",
-                "time_of_day": "morning", "memory_updates": []}
+        return {
+            "npcs": [],
+            "clocks": [],
+            "location": "",
+            "scene_context": "",
+            "time_of_day": "morning",
+            "memory_updates": [],
+        }
 
 
-def call_narrator_metadata(provider: AIProvider, narration: str,
-                           game: GameState,
-                           config: EngineConfig | None = None,
-                           brain: BrainResult | None = None,
-                           consequences: list | None = None) -> dict:
+def call_narrator_metadata(
+    provider: AIProvider,
+    narration: str,
+    game: GameState,
+    config: EngineConfig | None = None,
+    brain: BrainResult | None = None,
+    consequences: list | None = None,
+) -> dict:
     """Extract structured metadata from narrator prose via Haiku (Two-Call pattern).
 
     Args:
@@ -145,70 +174,83 @@ def call_narrator_metadata(provider: AIProvider, narration: str,
     for n in game.npcs:
         if n.status not in ("active", "background", "deceased", "lore"):
             continue
-        entry = f'{n.id}={n.name}'
+        entry = f"{n.id}={n.name}"
         if n.aliases:
-            entry += f' (aka {", ".join(n.aliases)})'
+            entry += f" (aka {', '.join(n.aliases)})"
         if n.status == "deceased":
-            entry += ' [DECEASED]'
+            entry += " [DECEASED]"
         elif n.status == "lore":
-            entry += ' [LORE]'
+            entry += " [LORE]"
         # Location hint for spatial disambiguation
         npc_loc = n.last_location
         if npc_loc:
-            entry += f' [at:{npc_loc}]'
+            entry += f" [at:{npc_loc}]"
         # Short description for identity disambiguation
         desc = n.description
         if desc:
-            entry += f' — {desc[:60]}'
+            entry += f" — {desc[:60]}"
         npc_refs.append(entry)
 
     # Mechanical context: what the engine decided this turn
     # Gives the extractor ground truth so it doesn't have to guess from prose
     mechanical_ctx = ""
     if brain:
-        parts = [f'move:{brain.move}']
+        parts = [f"move:{brain.move}"]
         if brain.stat and brain.stat != "none":
-            parts.append(f'stat:{brain.stat}')
+            parts.append(f"stat:{brain.stat}")
         if brain.target_npc:
-            parts.append(f'target:{brain.target_npc}')
+            parts.append(f"target:{brain.target_npc}")
         if brain.position:
-            parts.append(f'position:{brain.position}')
-        mechanical_ctx = f'\n<engine_context>{" | ".join(parts)}'
+            parts.append(f"position:{brain.position}")
+        mechanical_ctx = f"\n<engine_context>{' | '.join(parts)}"
         if consequences:
-            mechanical_ctx += f' | consequences: {", ".join(consequences)}'
-        mechanical_ctx += '</engine_context>'
+            mechanical_ctx += f" | consequences: {', '.join(consequences)}"
+        mechanical_ctx += "</engine_context>"
 
     system_base = get_prompt("narrator_metadata", lang=lang)
     # Add content boundaries so metadata extractor respects them
     # when creating new NPCs or writing memory events
     from ..prompt_blocks import content_boundaries_block
+
     cb = content_boundaries_block(game)
     system = f"{system_base}\n{cb}" if cb else system_base
 
     prompt = f"""<narration>{narration}</narration>
 <player_character>{game.player_name}</player_character>
-<known_npcs>{chr(10).join(npc_refs) if npc_refs else '(none)'}</known_npcs>
-<current_location>{game.world.current_location or 'unknown'}</current_location>
-<current_time>{game.world.time_of_day or 'unknown'}</current_time>{mechanical_ctx}
+<known_npcs>{chr(10).join(npc_refs) if npc_refs else "(none)"}</known_npcs>
+<current_location>{game.world.current_location or "unknown"}</current_location>
+<current_time>{game.world.time_of_day or "unknown"}</current_time>{mechanical_ctx}
 Extract all metadata from the narration above. Remember: {game.player_name} is the PLAYER CHARACTER, not an NPC."""
 
     try:
         response = create_with_retry(
-            provider, max_retries=_c.ai.max_retries.narrator_metadata,
-            model=_c.ai.brain_model, max_tokens=_c.ai.max_tokens.narrator_metadata,
+            provider,
+            max_retries=_c.ai.max_retries.narrator_metadata,
+            model=_c.ai.brain_model,
+            max_tokens=_c.ai.max_tokens.narrator_metadata,
             system=system,
             messages=[{"role": "user", "content": prompt}],
             json_schema=NARRATOR_METADATA_SCHEMA,
             **sampling_params("narrator_metadata"),
         )
         metadata = json.loads(response.content)
-        log(f"[Metadata] Extracted: {len(metadata.get('memory_updates', []))} memories, "
+        log(
+            f"[Metadata] Extracted: {len(metadata.get('memory_updates', []))} memories, "
             f"{len(metadata.get('new_npcs', []))} new NPCs, "
             f"{len(metadata.get('deceased_npcs', []))} deceased, "
-            f"loc={metadata.get('location_update')}, time={metadata.get('time_update')}")
+            f"loc={metadata.get('location_update')}, time={metadata.get('time_update')}"
+        )
         return metadata
     except Exception as e:
         log(f"[Metadata] Extraction failed: {e}", level="warning")
-        return {"scene_context": "", "location_update": None, "time_update": None,
-                "memory_updates": [], "new_npcs": [], "npc_renames": [], "npc_details": [],
-                "deceased_npcs": [], "lore_npcs": []}
+        return {
+            "scene_context": "",
+            "location_update": None,
+            "time_update": None,
+            "memory_updates": [],
+            "new_npcs": [],
+            "npc_renames": [],
+            "npc_details": [],
+            "deceased_npcs": [],
+            "lore_npcs": [],
+        }

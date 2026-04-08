@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """Turn processing: the core gameplay loop."""
 
-
 from ..ai.brain import call_brain, call_revelation_check
 from ..ai.metadata import apply_narrator_metadata
 from ..ai.narrator import call_narrator, call_narrator_metadata
@@ -25,9 +24,10 @@ from ..models import BrainResult, EngineConfig, GameState, NarrationEntry, RollR
 from ..npc import activate_npcs_for_prompt, find_npc, reactivate_npc
 from ..parser import parse_narrator_response
 from ..prompt_builders import build_action_prompt, build_dialog_prompt
-from ..story_state import get_pending_revelations, mark_revelation_used
+from ..story_state import _default_scene_range, get_pending_revelations, mark_revelation_used
 
 # POST-NARRATION: shared logic for both dialog and action paths
+
 
 def _finalize_scene(
     provider: AIProvider,
@@ -47,13 +47,13 @@ def _finalize_scene(
     agency_clock_events: list | None = None,
 ) -> tuple[bool, dict | None]:
     """Shared post-narration processing for dialog and action scenes."""
-    apply_narrator_metadata(game, metadata, scene_present_ids=scene_present_ids,
-                            world_addition=brain.world_addition or "")
+    apply_narrator_metadata(
+        game, metadata, scene_present_ids=scene_present_ids, world_addition=brain.world_addition or ""
+    )
 
     revelation_confirmed = False
     if pending_revs:
-        revelation_confirmed = call_revelation_check(
-            provider, narration, pending_revs[0], config)
+        revelation_confirmed = call_revelation_check(provider, narration, pending_revs[0], config)
         if revelation_confirmed:
             mark_revelation_used(game, pending_revs[0].id)
 
@@ -61,18 +61,20 @@ def _finalize_scene(
     record_scene_intensity(game, scene_type)
 
     nar = game.narrative
-    nar.narration_history.append(NarrationEntry(
-        scene=nar.scene_count,
-        prompt_summary=prompt_summary,
-        narration=narration,
-    ))
+    nar.narration_history.append(
+        NarrationEntry(
+            scene=nar.scene_count,
+            prompt_summary=prompt_summary,
+            narration=narration,
+        )
+    )
     if len(nar.narration_history) > eng().pacing.max_narration_history:
-        nar.narration_history = nar.narration_history[-eng().pacing.max_narration_history:]
+        nar.narration_history = nar.narration_history[-eng().pacing.max_narration_history :]
 
     log_entry.pop("_pacing_type", None)
     nar.session_log.append(SceneLogEntry(**log_entry))
     if len(nar.session_log) > eng().pacing.max_session_log:
-        nar.session_log = nar.session_log[-eng().pacing.max_session_log:]
+        nar.session_log = nar.session_log[-eng().pacing.max_session_log :]
 
     # Log revelation check result (only when a revelation was pending)
     if pending_revs and nar.session_log:
@@ -91,7 +93,8 @@ def _finalize_scene(
 
     director_ctx = None
     director_reason = should_call_director(
-        game, roll_result=roll_result_str,
+        game,
+        roll_result=roll_result_str,
         chaos_used=bool(chaos_interrupt),
         new_npcs_found=bool(metadata.get("new_npcs")),
         revelation_used=revelation_confirmed,
@@ -103,17 +106,19 @@ def _finalize_scene(
         # Mark phase trigger used so it doesn't re-fire every subsequent turn
         bp = game.narrative.story_blueprint
         if director_reason.startswith("phase:") and bp is not None:
-            bp.triggered_director_phases.append(director_reason[len("phase:"):])
+            bp.triggered_director_phases.append(director_reason[len("phase:") :])
     else:
         log(f"[Director] Skipped (no trigger at scene {nar.scene_count})")
 
     return revelation_confirmed, director_ctx
 
+
 # MAIN TURN ENTRY POINT
 
-def process_turn(provider: AIProvider, game: GameState,
-                 player_message: str,
-                 config: EngineConfig | None = None) -> tuple[GameState, str, RollResult | None, dict | None, dict | None]:
+
+def process_turn(
+    provider: AIProvider, game: GameState, player_message: str, config: EngineConfig | None = None
+) -> tuple[GameState, str, RollResult | None, dict | None, dict | None]:
     nar = game.narrative
     log(f"[Turn] Scene {nar.scene_count + 1} | Player: {player_message[:100]}")
 
@@ -144,33 +149,46 @@ def process_turn(provider: AIProvider, game: GameState,
     # ── Dialog path ───────────────────────────────────────────
     if brain.dialog_only or brain.move == "dialog":
         nar.scene_count += 1
-        prompt = build_dialog_prompt(game, brain, player_words=player_message,
-                                     chaos_interrupt=chaos_interrupt,
-                                     activated_npcs=activated_npcs,
-                                     mentioned_npcs=mentioned_npcs,
-                                     config=config)
+        prompt = build_dialog_prompt(
+            game,
+            brain,
+            player_words=player_message,
+            chaos_interrupt=chaos_interrupt,
+            activated_npcs=activated_npcs,
+            mentioned_npcs=mentioned_npcs,
+            config=config,
+        )
         raw = call_narrator(provider, prompt, game, config)
         narration = parse_narrator_response(game, raw)
 
         from ..ai.validator import validate_and_retry
+
         narration, val_report = validate_and_retry(
-            provider, narration, prompt, "dialog", game,
-            player_words=player_message, config=config)
+            provider, narration, prompt, "dialog", game, player_words=player_message, config=config
+        )
 
         if game.last_turn_snapshot is not None:
             game.last_turn_snapshot.narration = narration
-        metadata = call_narrator_metadata(provider, narration, game, config,
-                                           brain=brain)
+        metadata = call_narrator_metadata(provider, narration, game, config, brain=brain)
 
         _, director_ctx = _finalize_scene(
-            provider, game, narration, metadata, brain, player_message,
-            _scene_present_ids, pending_revs, chaos_interrupt,
+            provider,
+            game,
+            narration,
+            metadata,
+            brain,
+            player_message,
+            _scene_present_ids,
+            pending_revs,
+            chaos_interrupt,
             npc_activation_debug,
             log_entry={
                 "scene": nar.scene_count,
                 "summary": (brain.player_intent or player_message),
                 "move": brain.move,
-                "result": "dialog", "consequences": [], "clock_events": [],
+                "result": "dialog",
+                "consequences": [],
+                "clock_events": [],
                 "dramatic_question": brain.dramatic_question,
                 "chaos_interrupt": chaos_interrupt,
                 "npc_activation": npc_activation_debug,
@@ -189,9 +207,11 @@ def process_turn(provider: AIProvider, game: GameState,
     roll = roll_action(stat_name, game.get_stat(stat_name), brain.move)
     _raw = roll.d1 + roll.d2 + roll.stat_value
     _score_str = f"{_raw}→{roll.action_score}(cap)" if _raw > roll.action_score else str(roll.action_score)
-    log(f"[Roll] {roll.move} ({roll.stat_name}={roll.stat_value}): "
+    log(
+        f"[Roll] {roll.move} ({roll.stat_name}={roll.stat_value}): "
         f"{roll.d1}+{roll.d2}+{roll.stat_value}={_score_str} vs [{roll.c1},{roll.c2}] "
-        f"→ {roll.result}{' MATCH!' if roll.match else ''}")
+        f"→ {roll.result}{' MATCH!' if roll.match else ''}"
+    )
     if game.last_turn_snapshot is not None:
         game.last_turn_snapshot.roll = roll
 
@@ -212,35 +232,58 @@ def process_turn(provider: AIProvider, game: GameState,
 
     consequences, clock_events = apply_consequences(game, roll, brain)
     npc_agency, agency_clock_events = check_npc_agency(game)
-    prompt = build_action_prompt(game, brain, roll, consequences, clock_events, npc_agency,
-                                player_words=player_message, chaos_interrupt=chaos_interrupt,
-                                activated_npcs=activated_npcs, mentioned_npcs=mentioned_npcs,
-                                config=config)
+    prompt = build_action_prompt(
+        game,
+        brain,
+        roll,
+        consequences,
+        clock_events,
+        npc_agency,
+        player_words=player_message,
+        chaos_interrupt=chaos_interrupt,
+        activated_npcs=activated_npcs,
+        mentioned_npcs=mentioned_npcs,
+        config=config,
+    )
     raw = call_narrator(provider, prompt, game, config)
     narration = parse_narrator_response(game, raw)
 
     from ..ai.validator import validate_and_retry
+
     narration, val_report = validate_and_retry(
-        provider, narration, prompt, roll.result, game,
-        player_words=player_message, consequences=consequences,
-        config=config)
+        provider,
+        narration,
+        prompt,
+        roll.result,
+        game,
+        player_words=player_message,
+        consequences=consequences,
+        config=config,
+    )
 
     if game.last_turn_snapshot is not None:
         game.last_turn_snapshot.narration = narration
-    metadata = call_narrator_metadata(provider, narration, game, config,
-                                       brain=brain, consequences=consequences)
+    metadata = call_narrator_metadata(provider, narration, game, config, brain=brain, consequences=consequences)
 
     update_chaos_factor(game, roll.result)
 
     _, director_ctx = _finalize_scene(
-        provider, game, narration, metadata, brain, player_message,
-        _scene_present_ids, pending_revs, chaos_interrupt,
+        provider,
+        game,
+        narration,
+        metadata,
+        brain,
+        player_message,
+        _scene_present_ids,
+        pending_revs,
+        chaos_interrupt,
         npc_activation_debug,
         log_entry={
             "scene": nar.scene_count,
             "summary": (brain.player_intent or player_message),
             "move": brain.move,
-            "result": roll.result, "consequences": consequences,
+            "result": roll.result,
+            "consequences": consequences,
             "clock_events": clock_events,
             "position": brain.position,
             "effect": brain.effect,
@@ -257,6 +300,7 @@ def process_turn(provider: AIProvider, game: GameState,
     )
     return game, narration, roll, burn_info, director_ctx
 
+
 def _check_story_completion(game: GameState):
     """Check if the story has reached its natural end point."""
     bp = game.narrative.story_blueprint
@@ -267,7 +311,7 @@ def _check_story_completion(game: GameState):
     acts = bp.acts
     if not acts:
         return
-    final_end = (acts[-1].scene_range or [14, 20])[1]
+    final_end = (acts[-1].scene_range or _default_scene_range())[1]
     sc = game.narrative.scene_count
 
     triggered = set(bp.triggered_transitions)
@@ -276,8 +320,7 @@ def _check_story_completion(game: GameState):
 
     if final_act_entered and sc >= final_end:
         bp.story_complete = True
-        log(f"[Story] Complete: final act entered ('{penultimate_id}' triggered) "
-            f"+ scene {sc} >= range end {final_end}")
+        log(f"[Story] Complete: final act entered ('{penultimate_id}' triggered) + scene {sc} >= range end {final_end}")
         return
 
     # Back-fill: if scene_count >= final_end but Director never confirmed transitions
@@ -287,7 +330,7 @@ def _check_story_completion(game: GameState):
         for i, act in enumerate(acts[:-1]):  # Never back-fill the final act
             act_id = f"act_{i}"
             if act_id not in bp.triggered_transitions:
-                act_range = act.scene_range or [1, 20]
+                act_range = act.scene_range or _default_scene_range()
                 if sc > act_range[1]:
                     bp.triggered_transitions.append(act_id)
                     log(f"[Story] Back-filled transition: {act_id} (scene {sc} > range end {act_range[1]})")
@@ -295,8 +338,10 @@ def _check_story_completion(game: GameState):
         triggered = set(bp.triggered_transitions)
         if len(acts) >= 2 and penultimate_id in triggered:
             bp.story_complete = True
-            log(f"[Story] Complete (back-fill): '{penultimate_id}' triggered after "
-                f"scene-range back-fill, scene {sc} >= {final_end}")
+            log(
+                f"[Story] Complete (back-fill): '{penultimate_id}' triggered after "
+                f"scene-range back-fill, scene {sc} >= {final_end}"
+            )
             return
 
     if sc >= final_end + 5:

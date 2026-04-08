@@ -187,6 +187,10 @@ narrative_direction:
 # ── Move categories ──────────────────────────────────────────
 # Which moves use which damage table in apply_consequences.
 # Add a new move here to route it to the correct damage logic.
+# Note: endure moves appear in BOTH 'endure' (MISS damage) and 'recovery'
+# (WEAK_HIT/STRONG_HIT healing). This is intentional — the same move deals
+# damage on failure and heals on success. The if/elif branches in
+# apply_consequences ensure only one path runs per result type.
 move_categories:
   combat:
     - clash
@@ -248,24 +252,17 @@ move_stats:
   world_shaping: wits|heart|shadow
   dialog: none
 
-# Flat list for reference. The engine derives move enums from move_stats keys
-# at runtime — this list is NOT read by code and exists only for human reference.
-moves:
-  - face_danger
-  - compel
-  - gather_information
-  - secure_advantage
-  - clash
-  - strike
-  - endure_harm
-  - endure_stress
-  - make_connection
-  - test_bond
-  - resupply
-  - world_shaping
-  - dialog
 
+# ── Story defaults ────────────────────────────────────────────
+# Fallback scene range when an act has no explicit range.
+scene_range_default: [1, 20]
 
+# ── Death detection ───────────────────────────────────────────
+# Emotional weights that signal death-level trauma for off-screen
+# death corroboration in _check_death_corroboration.
+death_emotions:
+  - betrayed
+  - devastated
 
 # ── Creativity seeds ─────────────────────────────────────────
 # Random words used as loose inspiration for narrator opening scenes.

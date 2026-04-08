@@ -12,12 +12,19 @@ import json
 
 from straightjacket.engine import engine_loader
 from straightjacket.engine.models import (
-    BrainResult, EngineConfig, GameState, MemoryEntry,
-    NarrationEntry, NpcData, RollResult, SceneLogEntry,
+    BrainResult,
+    EngineConfig,
+    GameState,
+    MemoryEntry,
+    NarrationEntry,
+    NpcData,
+    RollResult,
+    SceneLogEntry,
 )
 
 
 # ── MockProvider ─────────────────────────────────────────────
+
 
 class MockResponse:
     def __init__(self, content, stop_reason="complete"):
@@ -32,60 +39,101 @@ class MockProvider:
         self.calls = []
         self._correction_source = correction_source
 
-    def create_message(self, model, system, messages, max_tokens,
-                       json_schema=None, tools=None,
-                       temperature=None, top_p=None, top_k=None):
+    def create_message(
+        self,
+        model,
+        system,
+        messages,
+        max_tokens,
+        json_schema=None,
+        tools=None,
+        temperature=None,
+        top_p=None,
+        top_k=None,
+    ):
         self.calls.append({"json_schema": json_schema})
 
         if json_schema and "correction_source" in json_schema.get("properties", {}):
-            return MockResponse(json.dumps({
-                "correction_source": self._correction_source,
-                "corrected_input": "I talk to Mira instead",
-                "reroll_needed": False,
-                "corrected_stat": "none",
-                "narrator_guidance": "Rewrite as peaceful dialog.",
-                "director_useful": False,
-                "state_ops": [{
-                    "op": "npc_edit", "npc_id": "npc_1",
-                    "split_name": None, "split_description": None,
-                    "merge_source_id": None,
-                    "fields": {"disposition": "loyal"},
-                    "value": None,
-                }] if self._correction_source == "state_error" else [],
-            }))
+            return MockResponse(
+                json.dumps(
+                    {
+                        "correction_source": self._correction_source,
+                        "corrected_input": "I talk to Mira instead",
+                        "reroll_needed": False,
+                        "corrected_stat": "none",
+                        "narrator_guidance": "Rewrite as peaceful dialog.",
+                        "director_useful": False,
+                        "state_ops": [
+                            {
+                                "op": "npc_edit",
+                                "npc_id": "npc_1",
+                                "split_name": None,
+                                "split_description": None,
+                                "merge_source_id": None,
+                                "fields": {"disposition": "loyal"},
+                                "value": None,
+                            }
+                        ]
+                        if self._correction_source == "state_error"
+                        else [],
+                    }
+                )
+            )
 
         if json_schema and "move" in json_schema.get("properties", {}):
-            return MockResponse(json.dumps({
-                "type": "action", "move": "dialog", "stat": "none",
-                "approach": "speaking gently",
-                "target_npc": "npc_1", "dialog_only": True,
-                "player_intent": "Talk to Mira",
-                "world_addition": None, "position": "controlled",
-                "effect": "standard", "dramatic_question": "",
-                "location_change": None, "time_progression": "none",
-            }))
+            return MockResponse(
+                json.dumps(
+                    {
+                        "type": "action",
+                        "move": "dialog",
+                        "stat": "none",
+                        "approach": "speaking gently",
+                        "target_npc": "npc_1",
+                        "dialog_only": True,
+                        "player_intent": "Talk to Mira",
+                        "world_addition": None,
+                        "position": "controlled",
+                        "effect": "standard",
+                        "dramatic_question": "",
+                        "location_change": None,
+                        "time_progression": "none",
+                    }
+                )
+            )
 
         if json_schema and "scene_context" in json_schema.get("properties", {}):
-            return MockResponse(json.dumps({
-                "scene_context": "Talking with Mira.",
-                "location_update": None, "time_update": None,
-                "memory_updates": [], "new_npcs": [],
-                "npc_renames": [], "npc_details": [],
-                "deceased_npcs": [], "lore_npcs": [],
-            }))
+            return MockResponse(
+                json.dumps(
+                    {
+                        "scene_context": "Talking with Mira.",
+                        "location_update": None,
+                        "time_update": None,
+                        "memory_updates": [],
+                        "new_npcs": [],
+                        "npc_renames": [],
+                        "npc_details": [],
+                        "deceased_npcs": [],
+                        "lore_npcs": [],
+                    }
+                )
+            )
 
         if json_schema and "pass" in json_schema.get("properties", {}):
-            return MockResponse(json.dumps({
-                "pass": True, "violations": [], "correction": "",
-            }))
+            return MockResponse(
+                json.dumps(
+                    {
+                        "pass": True,
+                        "violations": [],
+                        "correction": "",
+                    }
+                )
+            )
 
-        return MockResponse(
-            "Mira looked up from the archive, a question forming "
-            "behind her eyes. You spoke first."
-        )
+        return MockResponse("Mira looked up from the archive, a question forming behind her eyes. You spoke first.")
 
 
 # ── Fixtures ─────────────────────────────────────────────────
+
 
 def _load_engine():
     engine_loader._eng = None
@@ -94,22 +142,31 @@ def _load_engine():
 
 def _stub_emotions():
     from straightjacket.engine import emotions_loader
+
     emotions_loader._data = {
         "importance": {"neutral": 2, "curious": 4, "friendly": 3},
         "keyword_boosts": {},
         "disposition_map": {
-            "neutral": "neutral", "friendly": "friendly",
-            "loyal": "loyal", "hostile": "hostile",
+            "neutral": "neutral",
+            "friendly": "friendly",
+            "loyal": "loyal",
+            "hostile": "hostile",
         },
     }
 
 
 def _game() -> GameState:
     game = GameState(
-        player_name="Kael", character_concept="Wandering scholar",
-        setting_genre="dark_fantasy", setting_tone="serious_balanced",
+        player_name="Kael",
+        character_concept="Wandering scholar",
+        setting_genre="dark_fantasy",
+        setting_tone="serious_balanced",
         setting_description="A world of fading magic.",
-        edge=1, heart=2, iron=1, shadow=1, wits=2,
+        edge=1,
+        heart=2,
+        iron=1,
+        shadow=1,
+        wits=2,
     )
     game.resources.health = 4
     game.resources.spirit = 3
@@ -119,27 +176,33 @@ def _game() -> GameState:
     game.world.time_of_day = "evening"
     game.world.chaos_factor = 5
     game.npcs = [
-        NpcData(id="npc_1", name="Mira", disposition="friendly",
-                bond=2, bond_max=4, agenda="protect the archives",
-                instinct="trust cautiously",
-                description="Young archivist with ink-stained hands",
-                memory=[MemoryEntry(event="Met the player",
-                         emotional_weight="curious", type="observation",
-                         scene=1)]),
+        NpcData(
+            id="npc_1",
+            name="Mira",
+            disposition="friendly",
+            bond=2,
+            bond_max=4,
+            agenda="protect the archives",
+            instinct="trust cautiously",
+            description="Young archivist with ink-stained hands",
+            memory=[MemoryEntry(event="Met the player", emotional_weight="curious", type="observation", scene=1)],
+        ),
     ]
     game.narrative.scene_count = 3
-    game.narrative.session_log.append(SceneLogEntry(
-        scene=3, summary="Searched the room", move="face_danger",
-        result="MISS", consequences=["health -2"]))
-    game.narrative.narration_history.append(NarrationEntry(
-        scene=3, prompt_summary="Original scene", narration="Old narration."))
+    game.narrative.session_log.append(
+        SceneLogEntry(
+            scene=3, summary="Searched the room", move="face_danger", result="MISS", consequences=["health -2"]
+        )
+    )
+    game.narrative.narration_history.append(
+        NarrationEntry(scene=3, prompt_summary="Original scene", narration="Old narration.")
+    )
     game.last_turn_snapshot = game.snapshot()
     game.last_turn_snapshot.player_input = "I attack the guard"
-    game.last_turn_snapshot.brain = BrainResult(
-        move="strike", stat="iron", player_intent="Attack the guard")
+    game.last_turn_snapshot.brain = BrainResult(move="strike", stat="iron", player_intent="Attack the guard")
     game.last_turn_snapshot.roll = RollResult(
-        d1=2, d2=3, c1=7, c2=8, stat_name="iron", stat_value=1,
-        action_score=6, result="MISS", move="strike")
+        d1=2, d2=3, c1=7, c2=8, stat_name="iron", stat_value=1, action_score=6, result="MISS", move="strike"
+    )
     game.last_turn_snapshot.narration = "You swung wildly and missed."
     # Damage state after snapshot to verify restore
     game.resources.health = 1
@@ -147,6 +210,7 @@ def _game() -> GameState:
 
 
 # ── input_misread: full flow ─────────────────────────────────
+
 
 def test_correction_input_misread_full_flow():
     """input_misread: restore snapshot, re-brain, re-narrate, metadata, log."""
@@ -161,8 +225,8 @@ def test_correction_input_misread_full_flow():
 
     provider = MockProvider(correction_source="input_misread")
     game, narration, director_ctx = process_correction(
-        provider, game, "I didn't want to attack",
-        config=EngineConfig(narration_lang="English"))
+        provider, game, "I didn't want to attack", config=EngineConfig(narration_lang="English")
+    )
 
     assert game.resources.health == snap_health
     assert game.narrative.scene_count == scene_before + 1
@@ -173,6 +237,7 @@ def test_correction_input_misread_full_flow():
 
 
 # ── state_error: full flow ───────────────────────────────────
+
 
 def test_correction_state_error_full_flow():
     """state_error: patch NPC, re-narrate, metadata, replace last log entry."""
@@ -186,8 +251,8 @@ def test_correction_state_error_full_flow():
 
     provider = MockProvider(correction_source="state_error")
     game, narration, director_ctx = process_correction(
-        provider, game, "Mira should be loyal",
-        config=EngineConfig(narration_lang="English"))
+        provider, game, "Mira should be loyal", config=EngineConfig(narration_lang="English")
+    )
 
     assert game.npcs[0].disposition == "loyal"
     assert len(narration) > 10
@@ -196,6 +261,7 @@ def test_correction_state_error_full_flow():
 
 
 # ── momentum burn: full flow ─────────────────────────────────
+
 
 def test_momentum_burn_full_flow():
     """Burn: restore, reset momentum, STRONG_HIT consequences, re-narrate, update log."""
@@ -206,15 +272,18 @@ def test_momentum_burn_full_flow():
     game = _game()
     pre_snap = game.last_turn_snapshot
     snap_health = pre_snap.resources["health"]
-    game.narrative.session_log.append(SceneLogEntry(
-        scene=4, summary="Attack", move="strike", result="MISS"))
+    game.narrative.session_log.append(SceneLogEntry(scene=4, summary="Attack", move="strike", result="MISS"))
 
     provider = MockProvider()
     game, narration = process_momentum_burn(
-        provider, game, pre_snap.roll, "STRONG_HIT",
+        provider,
+        game,
+        pre_snap.roll,
+        "STRONG_HIT",
         BrainResult(move="strike", stat="iron", player_intent="Attack"),
         config=EngineConfig(narration_lang="English"),
-        pre_snapshot=pre_snap)
+        pre_snapshot=pre_snap,
+    )
 
     assert game.resources.health == snap_health
     _e = engine_loader.eng()
@@ -224,6 +293,7 @@ def test_momentum_burn_full_flow():
 
 
 # ── no snapshot: graceful error ──────────────────────────────
+
 
 def test_correction_no_snapshot():
     """No snapshot available: returns error string, no crash."""
@@ -236,8 +306,8 @@ def test_correction_no_snapshot():
 
     provider = MockProvider()
     game, narration, director_ctx = process_correction(
-        provider, game, "Fix something",
-        config=EngineConfig(narration_lang="English"))
+        provider, game, "Fix something", config=EngineConfig(narration_lang="English")
+    )
 
     assert director_ctx is None
     assert isinstance(narration, str)

@@ -12,6 +12,7 @@ from dataclasses import dataclass, field
 @dataclass
 class RollRecord:
     """Dice roll outcome for a single turn."""
+
     stat: str = ""
     d1: int = 0
     d2: int = 0
@@ -25,6 +26,7 @@ class RollRecord:
 @dataclass
 class StateSnapshot:
     """Resource/world state after a turn."""
+
     health: int = 0
     spirit: int = 0
     supply: int = 0
@@ -39,6 +41,7 @@ class StateSnapshot:
 @dataclass
 class NpcSnapshot:
     """Lightweight NPC state for session log."""
+
     id: str = ""
     name: str = ""
     status: str = ""
@@ -56,6 +59,7 @@ class NpcSnapshot:
 @dataclass
 class ClockSnapshot:
     """Clock state for session log."""
+
     name: str = ""
     clock_type: str = ""
     filled: int = 0
@@ -67,6 +71,7 @@ class ClockSnapshot:
 @dataclass
 class ValidatorRecord:
     """Constraint validator outcome."""
+
     passed: bool = True
     retries: int = 0
     violations: list[str] = field(default_factory=list)
@@ -77,6 +82,7 @@ class ValidatorRecord:
 @dataclass
 class EngineLogRecord:
     """Engine session_log entry snapshot."""
+
     summary: str = ""
     move: str = ""
     dramatic_question: str = ""
@@ -92,6 +98,7 @@ class EngineLogRecord:
 @dataclass
 class StoryArcRecord:
     """Current story arc position."""
+
     phase: str = ""
     title: str = ""
     goal: str = ""
@@ -102,6 +109,7 @@ class StoryArcRecord:
 @dataclass
 class TurnRecord:
     """Complete record of one turn."""
+
     turn: int = 0
     chapter: int = 0
     scene: int = 0
@@ -131,6 +139,7 @@ class TurnRecord:
     def to_dict(self) -> dict:
         """Serialize for JSON output. Strips None values and empty defaults."""
         from dataclasses import asdict
+
         d = asdict(self)
         # Remove empty/None fields for compact JSON
         return {k: v for k, v in d.items() if v is not None and v != "" and v != [] and v != {}}
@@ -200,6 +209,7 @@ class TurnRecord:
 @dataclass
 class ChapterRecord:
     """Summary of one chapter."""
+
     chapter: int = 0
     started_at_turn: int = 0
     turns_played: int = 0
@@ -209,6 +219,7 @@ class ChapterRecord:
 @dataclass
 class SessionLog:
     """Complete session log. Serializable to JSON."""
+
     started_at: str = ""
     ended_at: str = ""
     config: dict = field(default_factory=dict)
@@ -240,6 +251,7 @@ class SessionLog:
     def to_dict(self) -> dict:
         """Full serialization — debug mode. ~160KB for 24 turns."""
         from dataclasses import asdict
+
         d = asdict(self)
         d["turns"] = [t.to_dict() if isinstance(t, TurnRecord) else t for t in self.turns]
         return d
@@ -258,8 +270,7 @@ class SessionLog:
             "total_turns": self.total_turns,
             "ended_reason": self.ended_reason,
             "chapters": [
-                {"chapter": ch.chapter, "turns": ch.turns_played, "ended": ch.ended_reason}
-                for ch in self.chapters
+                {"chapter": ch.chapter, "turns": ch.turns_played, "ended": ch.ended_reason} for ch in self.chapters
             ],
         }
         # Story blueprint — conflict and structure only
@@ -272,16 +283,11 @@ class SessionLog:
                 "acts": [f"{a.get('phase', '?')}: {a.get('title', '?')}" for a in bp.get("acts", [])],
             }
         # Compact turns
-        d["turns"] = [
-            t.to_compact_dict() if isinstance(t, TurnRecord) else t
-            for t in self.turns
-        ]
+        d["turns"] = [t.to_compact_dict() if isinstance(t, TurnRecord) else t for t in self.turns]
         # Aggregated stats — truncate violation strings for readability
         vs = dict(self.validator_summary) if self.validator_summary else {}
         if vs.get("top_violations"):
-            vs["top_violations"] = [
-                [v[:120], count] for v, count in vs["top_violations"]
-            ]
+            vs["top_violations"] = [[v[:120], count] for v, count in vs["top_violations"]]
         d["validator_summary"] = vs
         if self.quality_summary:
             d["quality_summary"] = self.quality_summary
@@ -291,8 +297,13 @@ class SessionLog:
             last = self.turns[-1]
             if isinstance(last, TurnRecord) and last.npcs:
                 d["final_npcs"] = [
-                    {"name": n.name, "status": n.status, "disposition": n.disposition,
-                     "bond": n.bond, "memories": n.memory_count}
+                    {
+                        "name": n.name,
+                        "status": n.status,
+                        "disposition": n.disposition,
+                        "bond": n.bond,
+                        "memories": n.memory_count,
+                    }
                     for n in last.npcs
                 ]
         d["final_state"] = self.final_state

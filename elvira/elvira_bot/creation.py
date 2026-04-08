@@ -57,6 +57,7 @@ def _roll_name(pkg, game_cfg: dict) -> str:
         return game_cfg["player_name"]
     name_paths = pkg.oracle_paths.get("names", [])
     import contextlib
+
     parts = []
     for np in name_paths[:2]:
         with contextlib.suppress(KeyError):

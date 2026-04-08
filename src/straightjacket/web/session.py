@@ -78,8 +78,5 @@ class Session:
         return None
 
     def filtered_messages(self) -> list[dict]:
-        """Chat messages for client display — no audio binary, no recaps."""
-        return [
-            {k: v for k, v in m.items() if k not in ("audio_bytes", "audio_format")}
-            for m in self.chat_messages if not m.get("recap")
-        ]
+        """Chat messages for client display — no recaps."""
+        return [m for m in self.chat_messages if not m.get("recap")]

@@ -37,8 +37,10 @@ def process_npc_renames(game: "GameState", renames: list) -> None:
         if not npc and r.get("old_name"):
             npc = find_npc(game, r["old_name"])
         if not npc:
-            log(f"[NPC] Rename failed: could not find NPC '{r.get('npc_id', '')}' / '{r.get('old_name', '')}'",
-                level="warning")
+            log(
+                f"[NPC] Rename failed: could not find NPC '{r.get('npc_id', '')}' / '{r.get('old_name', '')}'",
+                level="warning",
+            )
             continue
         if npc.status == "deceased":
             log(f"[NPC] Rename skipped for deceased NPC: {npc.name}")
@@ -64,8 +66,7 @@ def process_npc_details(game: "GameState", details: list, world_addition: str = 
             continue
         npc = find_npc(game, d.get("npc_id", ""))
         if not npc:
-            log(f"[NPC] npc_details: could not find NPC '{d.get('npc_id', '')}'",
-                level="warning")
+            log(f"[NPC] npc_details: could not find NPC '{d.get('npc_id', '')}'", level="warning")
             continue
 
         new_name = d.get("full_name", "").strip()
@@ -82,14 +83,14 @@ def process_npc_details(game: "GameState", details: list, world_addition: str = 
                 if old_name and normalize_for_match(old_name) not in existing_norms:
                     npc.aliases.append(old_name)
                 npc.name = new_name
-                npc.aliases = [a for a in npc.aliases
-                               if normalize_for_match(a) != new_norm_d]
+                npc.aliases = [a for a in npc.aliases if normalize_for_match(a) != new_norm_d]
                 for alias in paren_aliases:
-                    if (normalize_for_match(alias) not in {normalize_for_match(a) for a in npc.aliases}
-                            and normalize_for_match(alias) != new_norm_d):
+                    if (
+                        normalize_for_match(alias) not in {normalize_for_match(a) for a in npc.aliases}
+                        and normalize_for_match(alias) != new_norm_d
+                    ):
                         npc.aliases.append(alias)
-                log(f"[NPC] Details update: '{old_name}' -> '{new_name}' "
-                    f"(surname established)")
+                log(f"[NPC] Details update: '{old_name}' -> '{new_name}' (surname established)")
             else:
                 # Memory guard: an NPC with memories is an established character.
                 # If zero word overlap between old name+aliases and new name,
@@ -101,9 +102,12 @@ def process_npc_details(game: "GameState", details: list, world_addition: str = 
                         known_words |= set(normalize_for_match(a).split())
                     new_name_words = set(normalize_for_match(new_name).split())
                     if not (new_name_words & known_words):
-                        log(f"[NPC] npc_details: REJECTED identity reveal "
+                        log(
+                            f"[NPC] npc_details: REJECTED identity reveal "
                             f"'{old_name}' → '{new_name}': NPC has memories and "
-                            f"zero word overlap — creating stub instead", level="warning")
+                            f"zero word overlap — creating stub instead",
+                            level="warning",
+                        )
                         if not find_npc(game, new_name):
                             stub_desc = d.get("description", "").strip()
                             if not stub_desc and world_addition:
@@ -122,8 +126,7 @@ def process_npc_details(game: "GameState", details: list, world_addition: str = 
                             game.npcs.append(stub)
                             log(f"[NPC] Created stub for rejected reveal: {new_name} ({npc_id})")
                         continue
-                log(f"[NPC] npc_details: treating '{old_name}' -> '{new_name}' "
-                    f"as identity reveal")
+                log(f"[NPC] npc_details: treating '{old_name}' -> '{new_name}' as identity reveal")
                 merge_npc_identity(npc, new_name, game=game)
                 absorb_duplicate_npc(game, npc, new_name)
 
@@ -132,11 +135,9 @@ def process_npc_details(game: "GameState", details: list, world_addition: str = 
             old_desc = npc.description
             if is_complete_description(new_desc) or not old_desc:
                 npc.description = new_desc
-                log(f"[NPC] Description updated for {npc.name}: "
-                    f"'{old_desc[:50]}' -> '{new_desc[:50]}'")
+                log(f"[NPC] Description updated for {npc.name}: '{old_desc[:50]}' -> '{new_desc[:50]}'")
             else:
-                log(f"[NPC] Rejected truncated description for {npc.name}: "
-                    f"'{new_desc[:60]}' -- keeping existing")
+                log(f"[NPC] Rejected truncated description for {npc.name}: '{new_desc[:60]}' -- keeping existing")
         extra = d.get("details", "").strip()
         if extra and extra not in (npc.description or ""):
             existing = npc.description
@@ -164,20 +165,17 @@ def process_new_npcs(game: "GameState", new_npcs: list) -> None:
             continue
 
         if name_norm in existing_names:
-            existing = next((n for n in game.npcs
-                             if normalize_for_match(n.name) == name_norm), None)
+            existing = next((n for n in game.npcs if normalize_for_match(n.name) == name_norm), None)
             if existing and existing.status in ("background", "lore"):
                 reactivate_npc(existing, reason="reappeared in new_npcs")
             elif existing and existing.status == "deceased":
-                reactivate_npc(existing, reason="resurrected -- exact name in new_npcs",
-                               force=True)
+                reactivate_npc(existing, reason="resurrected -- exact name in new_npcs", force=True)
             continue
 
         fuzzy_hit, match_type = fuzzy_match_existing_npc(game, nd["name"])
         if fuzzy_hit:
             if fuzzy_hit.status == "deceased":
-                log(f"[NPC] Fuzzy matched '{nd['name']}' to deceased "
-                    f"'{fuzzy_hit.name}' -- creating new NPC instead")
+                log(f"[NPC] Fuzzy matched '{nd['name']}' to deceased '{fuzzy_hit.name}' -- creating new NPC instead")
                 fuzzy_hit = None
             else:
                 if match_type == "stt_variant":
@@ -197,11 +195,15 @@ def process_new_npcs(game: "GameState", new_npcs: list) -> None:
             desc_hit = description_match_existing_npc(game, new_desc, name_norm)
             if desc_hit:
                 if desc_hit.status == "deceased":
-                    log(f"[NPC] Description matched '{nd['name']}' to deceased "
-                        f"'{desc_hit.name}' -- creating new NPC instead")
+                    log(
+                        f"[NPC] Description matched '{nd['name']}' to deceased "
+                        f"'{desc_hit.name}' -- creating new NPC instead"
+                    )
                 else:
-                    log(f"[NPC] Description-based dedup: '{nd['name']}' matches "
-                        f"'{desc_hit.name}' -- treating as identity reveal")
+                    log(
+                        f"[NPC] Description-based dedup: '{nd['name']}' matches "
+                        f"'{desc_hit.name}' -- treating as identity reveal"
+                    )
                     merge_npc_identity(desc_hit, nd["name"], new_desc, game=game)
                     existing_names.add(name_norm)
                     continue
@@ -230,13 +232,15 @@ def process_new_npcs(game: "GameState", new_npcs: list) -> None:
         seed_emotion = disp_to_emotion.get(seed_emotion, "neutral")
         seed_imp, seed_debug = score_importance(seed_emotion, seed_event, debug=True)
         seed_imp = max(seed_imp, 3)
-        npc.memory.append(MemoryEntry(
-            scene=game.narrative.scene_count,
-            event=seed_event,
-            emotional_weight=seed_emotion,
-            importance=seed_imp,
-            type="observation",
-            _score_debug=f"auto-seed from new_npcs | {seed_debug}",
-        ))
+        npc.memory.append(
+            MemoryEntry(
+                scene=game.narrative.scene_count,
+                event=seed_event,
+                emotional_weight=seed_emotion,
+                importance=seed_imp,
+                type="observation",
+                _score_debug=f"auto-seed from new_npcs | {seed_debug}",
+            )
+        )
 
     retire_distant_npcs(game)

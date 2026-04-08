@@ -41,16 +41,13 @@ DEFAULT_CONFIG = _HERE / "elvira_config.yaml"
 
 def main():
     parser = argparse.ArgumentParser(description="Straightjacket — Elvira Test Player Bot")
-    parser.add_argument("--config", type=Path, default=DEFAULT_CONFIG,
-                        help="Path to elvira_config.yaml")
-    parser.add_argument("--auto", action="store_true",
-                        help="Override: enable full auto mode")
-    parser.add_argument("--turns", type=int, default=None,
-                        help="Override: max turns per chapter")
-    parser.add_argument("--ws", action="store_true",
-                        help="WebSocket mode: play through the server instead of direct engine calls")
-    parser.add_argument("--port", type=int, default=None,
-                        help="Server port for --ws mode (default: from config.yaml)")
+    parser.add_argument("--config", type=Path, default=DEFAULT_CONFIG, help="Path to elvira_config.yaml")
+    parser.add_argument("--auto", action="store_true", help="Override: enable full auto mode")
+    parser.add_argument("--turns", type=int, default=None, help="Override: max turns per chapter")
+    parser.add_argument(
+        "--ws", action="store_true", help="WebSocket mode: play through the server instead of direct engine calls"
+    )
+    parser.add_argument("--port", type=int, default=None, help="Server port for --ws mode (default: from config.yaml)")
     args = parser.parse_args()
 
     bot_cfg = load_config(args.config)
@@ -59,6 +56,7 @@ def main():
         if args.port:
             bot_cfg["ws_port"] = args.port
         from elvira_bot.ws_runner import run_ws_session
+
         asyncio.run(run_ws_session(bot_cfg, auto_override=args.auto, turns_override=args.turns))
     else:
         run_session(bot_cfg, auto_override=args.auto, turns_override=args.turns)

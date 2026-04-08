@@ -47,9 +47,11 @@ _SETTING_FILES = {
     "sundered_isles": "sundered_isles.json",
 }
 
+
 def data_dir() -> Path:
     """Return the data directory path."""
     return _DATA_DIR
+
 
 def extract_title(obj: dict, fallback: str = "") -> str:
     """Extract display title from a Datasworn object.
@@ -71,16 +73,19 @@ def extract_title(obj: dict, fallback: str = "") -> str:
         return obj_id.rsplit("/", 1)[-1].replace("_", " ").title()
     return fallback
 
+
 def list_available() -> list[str]:
     """Return IDs of settings whose JSON files are present."""
-    return [sid for sid, fname in _SETTING_FILES.items()
-            if (_DATA_DIR / fname).exists()]
+    return [sid for sid, fname in _SETTING_FILES.items() if (_DATA_DIR / fname).exists()]
+
 
 # ORACLE TABLE
+
 
 @dataclass
 class OracleRow:
     """Single row in an oracle table."""
+
     min: int
     max: int
     text: str
@@ -90,9 +95,11 @@ class OracleRow:
     def __str__(self):
         return self.text
 
+
 @dataclass
 class OracleTable:
     """A rollable d100 (or dN) oracle table."""
+
     id: str
     title: str
     rows: list[OracleRow] = field(default_factory=list)
@@ -118,6 +125,7 @@ class OracleTable:
 
     def __len__(self):
         return len(self.rows)
+
 
 class Setting:
     """Loaded Datasworn setting with query methods."""
@@ -162,8 +170,7 @@ class Setting:
         for sub_id, sub_coll in (coll.get("collections") or {}).items():
             self._load_oracle_collection(f"{path}/{sub_id}", sub_coll)
 
-    def _parse_oracle_table(self, full_id: str, data: dict,
-                            collection_path: str) -> OracleTable:
+    def _parse_oracle_table(self, full_id: str, data: dict, collection_path: str) -> OracleTable:
         """Parse a single oracle table from raw JSON."""
         title = extract_title(data, full_id)
 
@@ -179,12 +186,14 @@ class Setting:
             else:
                 row_min = r.get("min", 0)
                 row_max = r.get("max", 0)
-            rows.append(OracleRow(
-                min=row_min,
-                max=row_max,
-                text=r.get("text", ""),
-                oracle_rolls=r.get("oracle_rolls"),
-            ))
+            rows.append(
+                OracleRow(
+                    min=row_min,
+                    max=row_max,
+                    text=r.get("text", ""),
+                    oracle_rolls=r.get("oracle_rolls"),
+                )
+            )
         return OracleTable(
             id=full_id,
             title=title,
@@ -318,7 +327,9 @@ class Setting:
         """Access the raw JSON dict (for anything not covered by methods)."""
         return self._raw
 
+
 _cache: dict[str, Setting] = {}
+
 
 def load_setting(setting_id: str) -> Setting:
     """Load a Datasworn setting by ID. Cached after first load.
@@ -337,17 +348,11 @@ def load_setting(setting_id: str) -> Setting:
         return _cache[setting_id]
 
     if setting_id not in _SETTING_FILES:
-        raise KeyError(
-            f"Unknown setting '{setting_id}'. "
-            f"Available: {list(_SETTING_FILES.keys())}"
-        )
+        raise KeyError(f"Unknown setting '{setting_id}'. Available: {list(_SETTING_FILES.keys())}")
 
     path = _DATA_DIR / _SETTING_FILES[setting_id]
     if not path.exists():
-        raise FileNotFoundError(
-            f"Datasworn JSON not found: {path}\n"
-            f"Run: python data/download_datasworn.py"
-        )
+        raise FileNotFoundError(f"Datasworn JSON not found: {path}\nRun: python data/download_datasworn.py")
 
     log(f"[Datasworn] Loading {setting_id} from {path.name}")
     with open(path, encoding="utf-8") as f:
@@ -358,10 +363,10 @@ def load_setting(setting_id: str) -> Setting:
 
     oracle_count = len(setting.oracle_ids())
     asset_count = sum(len(setting.assets(c)) for c in setting.asset_categories())
-    log(f"[Datasworn] {setting_id}: {oracle_count} oracle tables, "
-        f"{asset_count} assets, {len(setting.truths())} truths")
+    log(f"[Datasworn] {setting_id}: {oracle_count} oracle tables, {asset_count} assets, {len(setting.truths())} truths")
 
     return setting
+
 
 def clear_cache():
     """Clear the setting cache. Use after data directory changes."""

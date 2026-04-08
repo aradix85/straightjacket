@@ -1,18 +1,21 @@
 #!/usr/bin/env python3
 """Straightjacket game mechanics: chaos, time/location, pacing, dice, consequences."""
 
+from __future__ import annotations
+
 import random
 
 from ..i18n import E
+from .config_loader import _ConfigNode
 from .engine_loader import damage, eng
 from .logging_util import log
-from .models import BrainResult, ClockEvent, GameState, RollResult
+from .models import BrainResult, ClockEvent, GameState, NpcData, Resources, RollResult
 from .npc import find_npc, normalize_for_match
 
 # LOCATION MATCHING
 
-_LOC_STOP = {"in", "im", "an", "am", "auf", "bei", "vor", "der", "die", "das",
-             "des", "dem", "den", "von", "the", "of", "at", "near"}
+_LOC_STOP = {"in", "the", "of", "at", "near"}
+
 
 def locations_match(loc_a: str, loc_b: str) -> bool:
     """Fuzzy location comparison for deduplication and spatial guards.
@@ -22,9 +25,10 @@ def locations_match(loc_a: str, loc_b: str) -> bool:
     """
     if not loc_a or not loc_b:
         return True
+
     def _words(s):
-        return [w for w in s.replace("_", " ").strip().lower().split()
-                if w not in _LOC_STOP]
+        return [w for w in s.replace("_", " ").strip().lower().split() if w not in _LOC_STOP]
+
     wa, wb = _words(loc_a), _words(loc_b)
     if not wa or not wb:
         return False
@@ -35,7 +39,9 @@ def locations_match(loc_a: str, loc_b: str) -> bool:
         return set(shorter).issubset(set(longer))
     return shorter[0] == longer[0]
 
+
 # CHAOS FACTOR SYSTEM
+
 
 def update_chaos_factor(game: GameState, result: str):
     """Adjust chaos factor based on roll result."""
@@ -44,6 +50,7 @@ def update_chaos_factor(game: GameState, result: str):
         game.world.tick_chaos(+1, floor=_e.chaos.min, ceiling=_e.chaos.max)
     elif result == "STRONG_HIT":
         game.world.tick_chaos(-1, floor=_e.chaos.min, ceiling=_e.chaos.max)
+
 
 def check_chaos_interrupt(game: GameState) -> str | None:
     """Roll against chaos factor to see if a scene interrupt triggers."""
@@ -57,10 +64,11 @@ def check_chaos_interrupt(game: GameState) -> str | None:
         return random.choice(_e.chaos.interrupt_types)
     return None
 
+
 # TEMPORAL & SPATIAL CONSISTENCY
 
-TIME_PHASES = ["early_morning", "morning", "midday", "afternoon",
-               "evening", "late_evening", "night", "deep_night"]
+TIME_PHASES = ["early_morning", "morning", "midday", "afternoon", "evening", "late_evening", "night", "deep_night"]
+
 
 def advance_time(game: GameState, progression: str):
     """Advance time_of_day based on Brain's time_progression assessment."""
@@ -74,6 +82,7 @@ def advance_time(game: GameState, progression: str):
     if steps:
         new_idx = (idx + steps) % len(TIME_PHASES)
         game.world.time_of_day = TIME_PHASES[new_idx]
+
 
 def update_location(game: GameState, new_location: str):
     """Update current location and maintain location history."""
@@ -99,6 +108,7 @@ def update_location(game: GameState, new_location: str):
     w.location_history = w.location_history[-5:]
     w.current_location = new_location
 
+
 def apply_brain_location_time(game: GameState, brain: BrainResult) -> None:
     """Apply location change and time progression from Brain results."""
     loc = brain.location_change
@@ -106,12 +116,14 @@ def apply_brain_location_time(game: GameState, brain: BrainResult) -> None:
         update_location(game, loc)
     advance_time(game, brain.time_progression)
 
+
 # SCENE / SEQUEL PACING SYSTEM
+
 
 def get_pacing_hint(game: GameState) -> str:
     """Analyze recent scene intensity and suggest pacing."""
     _e = eng()
-    history = game.narrative.scene_intensity_history[-_e.pacing.window_size:]
+    history = game.narrative.scene_intensity_history[-_e.pacing.window_size :]
     if not history:
         return "neutral"
 
@@ -134,6 +146,7 @@ def get_pacing_hint(game: GameState) -> str:
         return "action"
     return "neutral"
 
+
 def record_scene_intensity(game: GameState, scene_type: str):
     """Record a scene's intensity type for pacing analysis."""
     window = eng().pacing.window_size
@@ -141,7 +154,9 @@ def record_scene_intensity(game: GameState, scene_type: str):
     if len(game.narrative.scene_intensity_history) > window:
         game.narrative.scene_intensity_history = game.narrative.scene_intensity_history[-window:]
 
+
 # KISHŌTENKETSU STRUCTURE SELECTION
+
 
 def choose_story_structure(tone: str) -> str:
     """Choose between '3act' and 'kishotenketsu' based on tone probability."""
@@ -150,7 +165,9 @@ def choose_story_structure(tone: str) -> str:
     probability = kprob.get(tone, _e.story.kishotenketsu_default)
     return "kishotenketsu" if random.random() < probability else "3act"
 
+
 # DICE & CONSEQUENCES
+
 
 def roll_action(stat_name: str, stat_value: int, move: str) -> RollResult:
     d1, d2 = random.randint(1, 6), random.randint(1, 6)
@@ -164,9 +181,11 @@ def roll_action(stat_name: str, stat_value: int, move: str) -> RollResult:
         result = "MISS"
     return RollResult(d1, d2, c1, c2, stat_name, stat_value, score, result, move, match=(c1 == c2))
 
+
 def _move_set(category: str) -> set[str]:
     """Read a move category set from engine.yaml move_categories."""
     return set(eng().move_categories.get(category, []))
+
 
 def apply_consequences(game: GameState, roll: RollResult, brain: BrainResult) -> tuple[list[str], list[ClockEvent]]:
     """Apply mechanical consequences. Position scales severity.
@@ -180,49 +199,14 @@ def apply_consequences(game: GameState, roll: RollResult, brain: BrainResult) ->
     res = game.resources
 
     if roll.move in _move_set("social") and target is None:
-        log(f"[Consequences] Social move '{roll.move}' has no resolvable target "
-            f"(target_npc={tid!r}) — bond/disposition effects skipped", level="warning")
+        log(
+            f"[Consequences] Social move '{roll.move}' has no resolvable target "
+            f"(target_npc={tid!r}) — bond/disposition effects skipped",
+            level="warning",
+        )
 
     if roll.result == "MISS":
-        if roll.move == "endure_harm":
-            dmg = damage("damage.miss.endure", position)
-            lost = res.damage("health", dmg)
-            if lost:
-                consequences.append(f"health -{lost}")
-        elif roll.move == "endure_stress":
-            dmg = damage("damage.miss.endure", position)
-            lost = res.damage("spirit", dmg)
-            if lost:
-                consequences.append(f"spirit -{lost}")
-        elif roll.move in _move_set("combat"):
-            dmg = damage("damage.miss.combat", position)
-            lost = res.damage("health", dmg)
-            if lost:
-                consequences.append(f"health -{lost}")
-        elif roll.move in _move_set("social"):
-            if target:
-                bond_loss = damage("damage.miss.social.bond", position)
-                old_bond = target.bond
-                target.bond = max(0, target.bond - bond_loss)
-                if target.bond < old_bond:
-                    consequences.append(f'{target.name} bond -{old_bond - target.bond}')
-            dmg = damage("damage.miss.social.spirit", position)
-            lost = res.damage("spirit", dmg)
-            if lost:
-                consequences.append(f"spirit -{lost}")
-        else:
-            parts = []
-            supply_loss = damage("damage.miss.other.supply", position)
-            lost_su = res.damage("supply", supply_loss)
-            if lost_su:
-                parts.append(f"supply -{lost_su}")
-            health_loss = damage("damage.miss.other.health", position)
-            if health_loss > 0:
-                lost_h = res.damage("health", health_loss)
-                if lost_h:
-                    parts.append(f"health -{lost_h}")
-            if parts:
-                consequences.append(", ".join(parts))
+        _apply_miss(res, roll, brain, target, position, consequences, _e)
 
         mom_loss = damage("momentum.loss", position)
         res.adjust_momentum(-mom_loss, floor=_e.momentum.floor, ceiling=_e.momentum.max)
@@ -230,45 +214,19 @@ def apply_consequences(game: GameState, roll: RollResult, brain: BrainResult) ->
 
         clock_ticks = damage("damage.miss.clock_ticks", position)
         if clock_ticks > 0:
-            for clock in game.world.clocks:
-                if clock.clock_type == "threat" and clock.filled < clock.segments:
-                    clock.filled = min(clock.segments, clock.filled + clock_ticks)
-                    if clock.filled >= clock.segments:
-                        clock.fired = True
-                        clock.fired_at_scene = game.narrative.scene_count
-                        clock_events.append(ClockEvent(clock=clock.name, trigger=clock.trigger_description))
-                    break
+            _tick_threat_clock(game, clock_ticks, clock_events)
 
     elif roll.result == "WEAK_HIT":
         res.adjust_momentum(+_e.momentum.gain.weak_hit, floor=_e.momentum.floor, ceiling=_e.momentum.max)
         if roll.move in _move_set("bond_on_weak_hit") and target:
             target.bond = min(target.bond_max, target.bond + 1)
-        rec = _e.recovery.weak_hit
-        if roll.move == "endure_harm":
-            gained = res.heal("health", rec, cap=_e.resources.health_max)
-            if gained:
-                consequences.append(f"health +{gained}")
-        elif roll.move == "endure_stress":
-            gained = res.heal("spirit", rec, cap=_e.resources.spirit_max)
-            if gained:
-                consequences.append(f"spirit +{gained}")
-        elif roll.move == "resupply":
-            gained = res.heal("supply", rec, cap=_e.resources.supply_max)
-            if gained:
-                consequences.append(f"supply +{gained}")
+        _apply_recovery(res, roll.move, _e.recovery.weak_hit, _e, consequences)
 
-        # Threat clock pressure on WEAK_HIT: controlled=no tick, risky=probabilistic, desperate=guaranteed
+        # Threat clock pressure: controlled=no tick, risky=probabilistic, desperate=guaranteed
         if position != "controlled":
             should_tick = (position == "desperate") or (random.random() < _e.pacing.weak_hit_clock_tick_chance)
             if should_tick:
-                for clock in game.world.clocks:
-                    if clock.clock_type == "threat" and clock.filled < clock.segments:
-                        clock.filled = min(clock.segments, clock.filled + 1)
-                        if clock.filled >= clock.segments:
-                            clock.fired = True
-                            clock.fired_at_scene = game.narrative.scene_count
-                            clock_events.append(ClockEvent(clock=clock.name, trigger=clock.trigger_description))
-                        break
+                _tick_threat_clock(game, 1, clock_events)
 
     else:  # STRONG_HIT
         effect = brain.effect
@@ -279,19 +237,7 @@ def apply_consequences(game: GameState, roll: RollResult, brain: BrainResult) ->
         if roll.move in _move_set("disposition_shift_on_strong_hit") and target:
             shifts = dict(_e.disposition_shifts.items())
             target.disposition = shifts.get(target.disposition, target.disposition)
-        gain = damage("recovery.strong_hit", effect)
-        if roll.move == "endure_harm":
-            gained = res.heal("health", gain, cap=_e.resources.health_max)
-            if gained:
-                consequences.append(f"health +{gained}")
-        elif roll.move == "endure_stress":
-            gained = res.heal("spirit", gain, cap=_e.resources.spirit_max)
-            if gained:
-                consequences.append(f"spirit +{gained}")
-        elif roll.move == "resupply":
-            gained = res.heal("supply", gain, cap=_e.resources.supply_max)
-            if gained:
-                consequences.append(f"supply +{gained}")
+        _apply_recovery(res, roll.move, damage("recovery.strong_hit", effect), _e, consequences)
 
     # --- Crisis check -----------------
     if res.health <= 0 and res.spirit <= 0:
@@ -303,6 +249,101 @@ def apply_consequences(game: GameState, roll: RollResult, brain: BrainResult) ->
         game.crisis_mode = False
 
     return consequences, clock_events
+
+
+# ── Consequence helpers ───────────────────────────────────────
+
+# Move → (track, damage_path) for miss damage routing.
+_MISS_ENDURE = {"endure_harm": "health", "endure_stress": "spirit"}
+
+
+def _apply_miss(
+    res: Resources,
+    roll: RollResult,
+    brain: BrainResult,
+    target: NpcData | None,
+    position: str,
+    consequences: list[str],
+    _e: _ConfigNode,
+) -> None:
+    """Apply miss-specific damage based on move category."""
+    move = roll.move
+
+    # Endure moves: single-track damage
+    if move in _MISS_ENDURE:
+        track = _MISS_ENDURE[move]
+        dmg = damage("damage.miss.endure", position)
+        lost = res.damage(track, dmg)
+        if lost:
+            consequences.append(f"{track} -{lost}")
+
+    # Combat: health damage
+    elif move in _move_set("combat"):
+        dmg = damage("damage.miss.combat", position)
+        lost = res.damage("health", dmg)
+        if lost:
+            consequences.append(f"health -{lost}")
+
+    # Social: bond loss + spirit damage
+    elif move in _move_set("social"):
+        if target:
+            bond_loss = damage("damage.miss.social.bond", position)
+            old_bond = target.bond
+            target.bond = max(0, target.bond - bond_loss)
+            if target.bond < old_bond:
+                consequences.append(f"{target.name} bond -{old_bond - target.bond}")
+        dmg = damage("damage.miss.social.spirit", position)
+        lost = res.damage("spirit", dmg)
+        if lost:
+            consequences.append(f"spirit -{lost}")
+
+    # Everything else: supply + optional health
+    else:
+        parts = []
+        supply_loss = damage("damage.miss.other.supply", position)
+        lost_su = res.damage("supply", supply_loss)
+        if lost_su:
+            parts.append(f"supply -{lost_su}")
+        health_loss = damage("damage.miss.other.health", position)
+        if health_loss > 0:
+            lost_h = res.damage("health", health_loss)
+            if lost_h:
+                parts.append(f"health -{lost_h}")
+        if parts:
+            consequences.append(", ".join(parts))
+
+
+# Move → (track, resource_cap_attr) for recovery routing.
+_RECOVERY_MOVES: dict[str, tuple[str, str]] = {
+    "endure_harm": ("health", "health_max"),
+    "endure_stress": ("spirit", "spirit_max"),
+    "resupply": ("supply", "supply_max"),
+}
+
+
+def _apply_recovery(res: Resources, move: str, amount: int, _e: _ConfigNode, consequences: list[str]) -> None:
+    """Apply recovery healing for endure/resupply moves."""
+    entry = _RECOVERY_MOVES.get(move)
+    if not entry:
+        return
+    track, cap_attr = entry
+    cap = getattr(_e.resources, cap_attr)
+    gained = res.heal(track, amount, cap=cap)
+    if gained:
+        consequences.append(f"{track} +{gained}")
+
+
+def _tick_threat_clock(game: GameState, ticks: int, clock_events: list[ClockEvent]) -> None:
+    """Advance the first unfilled threat clock by ticks. Fire if full."""
+    for clock in game.world.clocks:
+        if clock.clock_type == "threat" and clock.filled < clock.segments:
+            clock.filled = min(clock.segments, clock.filled + ticks)
+            if clock.filled >= clock.segments:
+                clock.fired = True
+                clock.fired_at_scene = game.narrative.scene_count
+                clock_events.append(ClockEvent(clock=clock.name, trigger=clock.trigger_description))
+            break
+
 
 def can_burn_momentum(game: GameState, roll: RollResult) -> str | None:
     """Check if momentum burn can upgrade the result. Returns new result or None."""
@@ -317,6 +358,7 @@ def can_burn_momentum(game: GameState, roll: RollResult) -> str | None:
         return "STRONG_HIT"
     return None
 
+
 def check_npc_agency(game: GameState) -> tuple[list[str], list[ClockEvent]]:
     """Advance NPC-owned clocks every 5th scene. Returns (actions, clock_events)."""
     if game.narrative.scene_count % 5 != 0:
@@ -325,15 +367,16 @@ def check_npc_agency(game: GameState) -> tuple[list[str], list[ClockEvent]]:
     clock_events: list[ClockEvent] = []
     for npc in game.npcs:
         if npc.status == "active" and npc.agenda:
-            actions.append(
-                f'NPC "{npc.name}" pursues agenda "{npc.agenda}" {E["dash"]} concrete offscreen action.')
+            actions.append(f'NPC "{npc.name}" pursues agenda "{npc.agenda}" {E["dash"]} concrete offscreen action.')
             npc_norms = {normalize_for_match(npc.name)}
             npc_norms.update(normalize_for_match(a) for a in npc.aliases)
             for clock in game.world.clocks:
-                if (clock.clock_type in ("scheme", "threat")
-                        and clock.owner not in ("", "world")
-                        and normalize_for_match(clock.owner) in npc_norms
-                        and clock.filled < clock.segments):
+                if (
+                    clock.clock_type in ("scheme", "threat")
+                    and clock.owner not in ("", "world")
+                    and normalize_for_match(clock.owner) in npc_norms
+                    and clock.filled < clock.segments
+                ):
                     clock.filled += 1
                     triggered = clock.filled >= clock.segments
                     if triggered:
@@ -350,6 +393,7 @@ def check_npc_agency(game: GameState) -> tuple[list[str], list[ClockEvent]]:
                     status = "TRIGGERED" if triggered else f"{clock.filled}/{clock.segments}"
                     log(f"[Clock] NPC agency tick: '{clock.name}' by '{npc.name}' → {status}")
     return actions, clock_events
+
 
 def tick_autonomous_clocks(game: GameState) -> list[ClockEvent]:
     """Autonomously advance threat clocks by chance each scene."""
@@ -379,13 +423,12 @@ def tick_autonomous_clocks(game: GameState) -> list[ClockEvent]:
             log(f"[Clock] Autonomous tick: '{clock.name}' → {status}")
     return ticked
 
+
 def purge_old_fired_clocks(game: GameState, keep_scenes: int = 3) -> None:
     """Remove fired clocks that triggered more than keep_scenes scenes ago."""
     before = len(game.world.clocks)
     game.world.clocks = [
-        c for c in game.world.clocks
-        if not c.fired
-        or (game.narrative.scene_count - c.fired_at_scene) <= keep_scenes
+        c for c in game.world.clocks if not c.fired or (game.narrative.scene_count - c.fired_at_scene) <= keep_scenes
     ]
     purged = before - len(game.world.clocks)
     if purged:

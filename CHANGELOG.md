@@ -7,6 +7,36 @@ Originally forked from [EdgeTales](https://github.com/edgetales/edgetales). See 
 
 ---
 
+## [0.34.0] — 2026-04-08
+
+Code audit and cleanup. i18n for HTML client. Dice roll display removed.
+
+- **Server binds localhost by default.** `server.host: "127.0.0.1"` in config.yaml. Was hardcoded `0.0.0.0` (all interfaces). SECURITY.md updated
+- **WebSocket origin check.** Rejects cross-site connections. Non-browser clients (Elvira, curl) pass through
+- **Dice roll display removed.** Server no longer sends roll data to the client. Player sees only narration — no stats, no dice, no system references (design document compliance). Engine-internal roll tracking unchanged (needed for momentum burn, correction, Elvira diagnostics). `build_roll_data()` removed from serializers.py. `appendRoll` removed from client
+- **HTML client i18n.** All hardcoded English strings moved to strings.yaml (ui.* prefix). Server sends `ui_strings` message at connect. Client uses `s("key")` lookup function. Zero hardcoded UI text remaining. Translators work with strings.yaml only
+- **strings.yaml cleanup.** 266 dead NiceGUI-era strings removed (332→66 live keys → 113 with new ui.* keys). All HTML (`<b>`, `<br>`) and markdown (`*...*`) stripped. Plain text only
+- **emotions.yaml gaps filled.** 36 terms from disposition_map added to importance map at correct tiers. Zero gaps between disposition_map and importance
+- **chapters.py refactored.** `start_new_chapter` split from ~160 lines into 6 focused functions
+- **"inactive" ghost status** removed from correction.py valid_statuses
+- **German strings in AI prompts** removed. "(keine)" → "(none)" in brain.py, architect.py
+- **Disposition schema** narrowed to canonical 5 (hostile, distrustful, neutral, friendly, loyal). Was 8 with synonyms that were silently normalized
+- **Em-dash normalization removed.** Was replacing em-dashes with " - " in 3 code paths. Em-dashes are typographically correct and screen readers handle them fine
+- **MAX_VALIDATOR_RETRIES** now config-driven (reads `ai.max_retries.narrator`). Was hardcoded constant
+- **config.yaml top_p** simplified. 11 identical `0.95` values → single `default: 0.95` with per-role override support
+- **scene_range validation** added after blueprint parsing. Invalid arrays replaced with engine.yaml default
+- **Provider cache key** changed from `hash()` to `hashlib.sha256` (stable, deterministic)
+- **provider_base.py** type annotations tightened: `tool_calls: list[dict[str, str | dict]]`, `usage: dict[str, int] | None`
+- **Brain dialog fallback** now sets `approach="fallback"` for downstream detection
+- **Narrator truncation tracking** via module-level `narrator_was_salvaged` flag
+- **api_client.py** extra_body handling made explicit (3 branches)
+- **Session model documented** in SECURITY.md (single-session, tab takeover)
+- **app_ws.py removed.** Duplicate entry point. Only `run.py` remains
+- **__init__.py** added `__version__` (reads pyproject.toml without triggering engine imports)
+- **Tooling:** `.editorconfig`, `.pre-commit-config.yaml` (ruff + mypy as system hook), `clean.py` (cross-platform pycache cleanup)
+- **Test cleanup.** 8 WebSocket ceremony tests → 1 flow test. 5 coverage-padding tests removed. 8 roll display tests removed. Em-dash tests updated. 367→347 tests, all passing
+- 347 tests, ruff clean, mypy clean
+
 ## [0.33.0] — 2026-04-07
 
 Prompt rewrite for Qwen3. Hybrid validator. Retry architecture overhaul. Test cleanup.

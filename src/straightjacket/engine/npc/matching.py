@@ -12,90 +12,206 @@ from ..logging_util import log
 from ..models import NpcData
 
 # TITLE / HONORIFIC FILTER
-# Practical subset: English basics, German basics, generic fantasy/sci-fi.
 # Prevents false positive fuzzy matches like "Mrs. Chen" ↔ "Mrs. Kowalski".
-NAME_TITLES = frozenset({
-    # English common
-    "mr", "mr.", "mrs", "mrs.", "ms", "ms.", "dr", "dr.", "sir", "lady",
-    "lord", "miss", "captain", "cpt", "lieutenant", "lt", "sergeant", "sgt",
-    "officer", "detective", "professor", "prof", "father", "sister", "brother",
-    "uncle", "aunt", "grandma", "grandpa", "old", "young", "the",
-    # English nobility/military
-    "king", "queen", "prince", "princess", "duke", "duchess", "baron", "baroness",
-    "count", "countess", "viscount", "marquis", "earl",
-    "colonel", "commander", "general", "admiral", "major", "corporal", "private",
-    "judge", "sheriff", "mayor", "governor", "senator", "chancellor",
-    # English clergy
-    "priest", "priestess", "bishop", "cardinal", "reverend", "pastor",
-    "rabbi", "imam", "monk", "abbot", "abbess",
-    # English diplomatic
-    "ambassador", "consul", "envoy", "delegate",
-    # German common
-    "herr", "frau", "fräulein", "doktor", "hauptmann", "leutnant",
-    "feldwebel", "meister", "schwester", "bruder",
-    "onkel", "tante", "oma", "opa", "alter", "alte", "der", "die", "das",
-    # German nobility/military
-    "herzog", "herzogin", "graf", "gräfin", "ritter", "fürst", "fürstin",
-    "markgraf", "knappe", "vogt", "marschall", "feldherr",
-    "kommandant", "kommandantin", "oberst",
-    # German clergy/academic
-    "abt", "äbtissin", "prior", "priorin", "kaplan", "nonne", "mönch",
-    "dekan", "rektor", "dozent", "direktor", "direktorin",
-    # French
-    "monsieur", "madame", "mademoiselle",
-    # Spanish
-    "señor", "señora", "señorita", "don", "doña",
-    # Fantasy/RPG — magic users
-    "wizard", "sorcerer", "sorceress", "mage", "warlock", "witch",
-    "archmage", "enchantress", "necromancer", "alchemist",
-    # Fantasy/RPG — classes
-    "paladin", "cleric", "rogue", "assassin", "berserker",
-    "barbarian", "gladiator", "champion", "sentinel", "guardian",
-    "inquisitor", "templar", "crusader",
-    # Fantasy/RPG — nobility
-    "squire", "knight", "liege", "regent", "viceroy",
-    "castellan", "seneschal", "steward", "herald", "grandmaster",
-    # Fantasy/RPG — spiritual
-    "shaman", "oracle", "prophet", "seer", "sage", "elder",
-    "druid", "mystic", "augur", "diviner",
-    # Fantasy/RPG — medieval trades
-    "peasant", "blacksmith", "fletcher", "reeve", "constable",
-    # Sci-fi
-    "ensign", "marshal", "overseer", "commissioner", "agent",
-    "operative", "warlord", "android", "emissary", "arbiter",
-    "overlord", "archon", "praetor", "legate", "centurion",
-    # Eastern
-    "shogun", "samurai", "ronin", "khan", "caliph", "emir", "shah",
-    # Generic descriptors
-    "outcast", "exile", "pilgrim", "wanderer", "mercenary",
-    "neighbor", "stranger", "customer",
-    "nachbar", "nachbarin", "fremder", "fremde",
-    # German RPG
-    "hexe", "hexer", "zauberer", "zauberin", "magier", "magierin",
-    "druide", "druidin", "schamane", "schamanin",
-    "söldner", "söldnerin", "krieger", "kriegerin",
-    "jäger", "jägerin", "wächter", "wächterin",
-})
+NAME_TITLES = frozenset(
+    {
+        # English common
+        "mr",
+        "mr.",
+        "mrs",
+        "mrs.",
+        "ms",
+        "ms.",
+        "dr",
+        "dr.",
+        "sir",
+        "lady",
+        "lord",
+        "miss",
+        "captain",
+        "cpt",
+        "lieutenant",
+        "lt",
+        "sergeant",
+        "sgt",
+        "officer",
+        "detective",
+        "professor",
+        "prof",
+        "father",
+        "sister",
+        "brother",
+        "uncle",
+        "aunt",
+        "grandma",
+        "grandpa",
+        "old",
+        "young",
+        "the",
+        # English nobility/military
+        "king",
+        "queen",
+        "prince",
+        "princess",
+        "duke",
+        "duchess",
+        "baron",
+        "baroness",
+        "count",
+        "countess",
+        "viscount",
+        "marquis",
+        "earl",
+        "colonel",
+        "commander",
+        "general",
+        "admiral",
+        "major",
+        "corporal",
+        "private",
+        "judge",
+        "sheriff",
+        "mayor",
+        "governor",
+        "senator",
+        "chancellor",
+        # English clergy
+        "priest",
+        "priestess",
+        "bishop",
+        "cardinal",
+        "reverend",
+        "pastor",
+        "rabbi",
+        "imam",
+        "monk",
+        "abbot",
+        "abbess",
+        # English diplomatic
+        "ambassador",
+        "consul",
+        "envoy",
+        "delegate",
+        # French
+        "monsieur",
+        "madame",
+        "mademoiselle",
+        # Spanish
+        "señor",
+        "señora",
+        "señorita",
+        "don",
+        "doña",
+        # Fantasy/RPG — magic users
+        "wizard",
+        "sorcerer",
+        "sorceress",
+        "mage",
+        "warlock",
+        "witch",
+        "archmage",
+        "enchantress",
+        "necromancer",
+        "alchemist",
+        # Fantasy/RPG — classes
+        "paladin",
+        "cleric",
+        "rogue",
+        "assassin",
+        "berserker",
+        "barbarian",
+        "gladiator",
+        "champion",
+        "sentinel",
+        "guardian",
+        "inquisitor",
+        "templar",
+        "crusader",
+        # Fantasy/RPG — nobility
+        "squire",
+        "knight",
+        "liege",
+        "regent",
+        "viceroy",
+        "castellan",
+        "seneschal",
+        "steward",
+        "herald",
+        "grandmaster",
+        # Fantasy/RPG — spiritual
+        "shaman",
+        "oracle",
+        "prophet",
+        "seer",
+        "sage",
+        "elder",
+        "druid",
+        "mystic",
+        "augur",
+        "diviner",
+        # Fantasy/RPG — medieval trades
+        "peasant",
+        "blacksmith",
+        "fletcher",
+        "reeve",
+        "constable",
+        # Sci-fi
+        "ensign",
+        "marshal",
+        "overseer",
+        "commissioner",
+        "agent",
+        "operative",
+        "warlord",
+        "android",
+        "emissary",
+        "arbiter",
+        "overlord",
+        "archon",
+        "praetor",
+        "legate",
+        "centurion",
+        # Eastern
+        "shogun",
+        "samurai",
+        "ronin",
+        "khan",
+        "caliph",
+        "emir",
+        "shah",
+        # Generic descriptors
+        "outcast",
+        "exile",
+        "pilgrim",
+        "wanderer",
+        "mercenary",
+        "neighbor",
+        "stranger",
+        "customer",
+    }
+)
 
 # NAME SANITIZATION
 _ALIAS_HINT_RE = re.compile(
-    r'\b(?:auch\s+bekannt\s+als|also\s+known\s+as|aka|genannt|called)\s+',
+    r"\b(?:also\s+known\s+as|aka|called)\s+",
     re.IGNORECASE,
 )
+
 
 def normalize_for_match(s: str) -> str:
     """Normalize a name string for comparison only — stored names are never modified.
     Collapses hyphens, underscores, and whitespace variants to a single space,
     then lowercases and strips. Makes 'Wacholder-im-Schnee', 'Wacholder im Schnee',
     and 'wacholder_im_schnee' all compare equal."""
-    return re.sub(r'[\s\-_]+', ' ', s).lower().strip()
+    return re.sub(r"[\s\-_]+", " ", s).lower().strip()
+
 
 def sanitize_npc_name(name: str) -> tuple[str, list[str]]:
     """Strip parenthetical annotations from NPC names.
     Returns (clean_name, extracted_aliases)."""
-    if not name or '(' not in name:
+    if not name or "(" not in name:
         return name.strip(), []
-    m = re.match(r'^(.+?)\s*\((.+)\)\s*$', name)
+    m = re.match(r"^(.+?)\s*\((.+)\)\s*$", name)
     if not m:
         return name.strip(), []
     clean = m.group(1).strip()
@@ -104,14 +220,15 @@ def sanitize_npc_name(name: str) -> tuple[str, list[str]]:
         return name.strip(), []
     alias_match = _ALIAS_HINT_RE.search(paren)
     if alias_match:
-        alias = paren[alias_match.end():].strip().rstrip('.')
+        alias = paren[alias_match.end() :].strip().rstrip(".")
         return clean, [alias] if alias else []
     return clean, [paren] if paren else []
+
 
 def apply_name_sanitization(npc: NpcData) -> None:
     """Sanitize an NPC's name in-place: strip parentheticals, add as aliases."""
     raw = npc.name
-    if '(' not in raw:
+    if "(" not in raw:
         return
     clean, extracted = sanitize_npc_name(raw)
     if clean == raw:
@@ -129,7 +246,9 @@ def apply_name_sanitization(npc: NpcData) -> None:
     npc.aliases = [a for a in npc.aliases if a.lower() != clean_lower]
     log(f"[NPC] Sanitized name: '{raw}' → '{clean}' (aliases: {npc.aliases})")
 
+
 # NPC LOOKUP
+
 
 def find_npc(game: "GameState", npc_ref: str) -> NpcData | None:
     """Find an NPC by ID, name, alias, or substring match."""
@@ -172,6 +291,7 @@ def find_npc(game: "GameState", npc_ref: str) -> NpcData | None:
             return best_match
     return None
 
+
 def resolve_about_npc(game: "GameState", raw: str | None, owner_id: str | None = None) -> str | None:
     """Resolve an about_npc value to a canonical npc_id.
     If owner_id is provided and the resolved ID matches it, returns None
@@ -189,17 +309,20 @@ def resolve_about_npc(game: "GameState", raw: str | None, owner_id: str | None =
         return resolved
     return None
 
+
 def next_npc_id(game: "GameState") -> tuple[str, int]:
     """Determine the next available NPC ID."""
     max_num = 0
     for n in game.npcs:
-        m = re.match(r'npc_(\d+)', n.id)
+        m = re.match(r"npc_(\d+)", n.id)
         if m:
             max_num = max(max_num, int(m.group(1)))
     max_num += 1
     return f"npc_{max_num}", max_num
 
+
 # EDIT DISTANCE & FUZZY MATCHING
+
 
 def edit_distance_le1(a: str, b: str) -> bool:
     """Check if Levenshtein distance between a and b is ≤ 1."""
@@ -221,6 +344,7 @@ def edit_distance_le1(a: str, b: str) -> bool:
             if diffs > 1:
                 return False
     return True
+
 
 def fuzzy_match_existing_npc(game: "GameState", new_name: str) -> tuple[NpcData | None, str | None]:
     """Check if a 'new' NPC name fuzzy-matches an existing NPC.
@@ -266,10 +390,7 @@ def fuzzy_match_existing_npc(game: "GameState", new_name: str) -> tuple[NpcData 
         name_words = {w for w in name_norm.split() if w.rstrip(".") not in NAME_TITLES}
         alias_words: set[str] = set()
         for alias in n.aliases:
-            alias_words.update(
-                w for w in normalize_for_match(alias).split()
-                if w.rstrip(".") not in NAME_TITLES
-            )
+            alias_words.update(w for w in normalize_for_match(alias).split() if w.rstrip(".") not in NAME_TITLES)
         all_words = name_words | alias_words
 
         overlap = new_words & all_words
@@ -318,6 +439,5 @@ def fuzzy_match_existing_npc(game: "GameState", new_name: str) -> tuple[NpcData 
                         log(f"[NPC] Edit-distance match: '{new_name}' ~ '{n.name}'")
 
     if best_match:
-        log(f"[NPC] Fuzzy match accepted: '{new_name}' → '{best_match.name}' "
-            f"(score={best_score}, type={best_type})")
+        log(f"[NPC] Fuzzy match accepted: '{new_name}' → '{best_match.name}' (score={best_score}, type={best_type})")
     return best_match, best_type

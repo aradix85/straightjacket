@@ -37,9 +37,14 @@ def record_turn(
 
     if roll:
         rec.roll = RollRecord(
-            stat=roll.stat_name, d1=roll.d1, d2=roll.d2,
-            total=roll.action_score, c1=roll.c1, c2=roll.c2,
-            result=roll.result, match=roll.match,
+            stat=roll.stat_name,
+            d1=roll.d1,
+            d2=roll.d2,
+            total=roll.action_score,
+            c1=roll.c1,
+            c2=roll.c2,
+            result=roll.result,
+            match=roll.match,
         )
 
     rec.state_after = _snapshot_state(game)
@@ -56,8 +61,11 @@ def record_turn(
 def _snapshot_state(game: GameState) -> StateSnapshot:
     res = game.resources
     return StateSnapshot(
-        health=res.health, spirit=res.spirit, supply=res.supply,
-        momentum=res.momentum, chaos=game.world.chaos_factor,
+        health=res.health,
+        spirit=res.spirit,
+        supply=res.supply,
+        momentum=res.momentum,
+        chaos=game.world.chaos_factor,
         scene=game.narrative.scene_count,
         location=game.world.current_location,
         time_of_day=game.world.time_of_day,
@@ -68,24 +76,33 @@ def _snapshot_state(game: GameState) -> StateSnapshot:
 def _snapshot_npcs(game: GameState) -> list[NpcSnapshot]:
     return [
         NpcSnapshot(
-            id=n.id, name=n.name, status=n.status,
-            disposition=n.disposition, bond=n.bond,
-            agenda=n.agenda, instinct=n.instinct, arc=n.arc,
+            id=n.id,
+            name=n.name,
+            status=n.status,
+            disposition=n.disposition,
+            bond=n.bond,
+            agenda=n.agenda,
+            instinct=n.instinct,
+            arc=n.arc,
             memory_count=len(n.memory),
             last_memory=(n.memory[-1].event[:100] if n.memory else ""),
             last_location=n.last_location,
             aliases=list(n.aliases),
         )
-        for n in game.npcs if n.status in ("active", "background")
+        for n in game.npcs
+        if n.status in ("active", "background")
     ]
 
 
 def _snapshot_clocks(game: GameState) -> list[ClockSnapshot]:
     return [
         ClockSnapshot(
-            name=c.name, clock_type=c.clock_type,
-            filled=c.filled, segments=c.segments,
-            owner=c.owner, fired=c.fired,
+            name=c.name,
+            clock_type=c.clock_type,
+            filled=c.filled,
+            segments=c.segments,
+            owner=c.owner,
+            fired=c.fired,
         )
         for c in game.world.clocks
     ]

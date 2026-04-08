@@ -6,6 +6,33 @@ Re-exports public symbols.
   from engine.ai import call_brain, call_narrator, ...
 """
 
+__all__ = [
+    "AIProvider",
+    "AIResponse",
+    "AnthropicProvider",
+    "CHAPTER_SUMMARY_OUTPUT_SCHEMA",
+    "CORRECTION_OUTPUT_SCHEMA",
+    "DIRECTOR_OUTPUT_SCHEMA",
+    "NARRATOR_METADATA_SCHEMA",
+    "OPENING_SETUP_SCHEMA",
+    "OpenAICompatibleProvider",
+    "STORY_ARCHITECT_OUTPUT_SCHEMA",
+    "apply_narrator_metadata",
+    "call_brain",
+    "call_chapter_summary",
+    "call_narrator",
+    "call_narrator_metadata",
+    "call_opening_setup",
+    "call_recap",
+    "call_story_architect",
+    "clear_provider_cache",
+    "create_with_retry",
+    "get_brain_output_schema",
+    "get_provider",
+    "post_process_response",
+]
+
+
 from .api_client import clear_provider_cache, get_provider
 from .architect import call_chapter_summary, call_recap, call_story_architect
 from .brain import call_brain

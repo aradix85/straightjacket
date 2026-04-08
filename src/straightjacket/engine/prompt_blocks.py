@@ -5,7 +5,6 @@ Each function builds one self-contained XML block. The narrator system prompt
 assembler (get_narrator_system) composes them. All blocks return empty string
 when not applicable — callers never need to check."""
 
-
 from ..i18n import E
 from .config_loader import narration_language
 from .engine_loader import eng
@@ -21,15 +20,13 @@ def get_narration_lang(config: EngineConfig) -> str:
     return config.narration_lang or narration_language()
 
 
-
-def content_boundaries_block(game: GameState | None = None,
-                               creation_data: dict | None = None) -> str:
+def content_boundaries_block(game: GameState | None = None, creation_data: dict | None = None) -> str:
     """Return content boundaries prompt block if any lines/wishes are set."""
     lines = ""
     wishes = ""
     if game:
-        lines = game.preferences.content_lines or ''
-        wishes = game.preferences.player_wishes or ''
+        lines = game.preferences.content_lines or ""
+        wishes = game.preferences.player_wishes or ""
     if not lines and not wishes and creation_data:
         lines = creation_data.get("content_lines", "")
         wishes = creation_data.get("wishes", "")
@@ -48,7 +45,7 @@ def backstory_block(game: GameState | None = None) -> str:
     """Return backstory prompt block if player provided backstory text."""
     if not game:
         return ""
-    backstory = game.backstory or ''
+    backstory = game.backstory or ""
     if not backstory.strip():
         return ""
     return get_prompt("block_backstory", backstory_text=_xe(backstory))
@@ -59,6 +56,7 @@ def vocabulary_block(game: GameState | None = None) -> str:
     if not game:
         return ""
     from .datasworn.settings import active_package
+
     pkg = active_package(game)
     if not pkg:
         return ""
@@ -71,8 +69,7 @@ def vocabulary_block(game: GameState | None = None) -> str:
     return (
         "<vocabulary>\n"
         "Use these terms instead of their generic equivalents. "
-        "The substitutions define how this world talks about itself.\n"
-        + "\n".join(lines) + "\n"
+        "The substitutions define how this world talks about itself.\n" + "\n".join(lines) + "\n"
         "</vocabulary>"
     )
 
@@ -92,8 +89,7 @@ def tone_authority_block(game: GameState | None = None) -> str:
     )
 
 
-def narrative_direction_block(game: GameState, roll_result: str = "",
-                               is_player_caused: bool = True) -> str:
+def narrative_direction_block(game: GameState, roll_result: str = "", is_player_caused: bool = True) -> str:
     """Derive narrative writing instructions from current game state.
     All thresholds and mappings read from engine.yaml narrative_direction."""
     nd = eng().narrative_direction
@@ -125,6 +121,7 @@ def narrative_direction_block(game: GameState, roll_result: str = "",
     parts.append("player:caused_this" if is_player_caused else "player:witnessing")
 
     from .mechanics import get_pacing_hint
+
     hint = get_pacing_hint(game)
     if hint == "breather":
         parts.append("position:aftermath")
@@ -133,7 +130,7 @@ def narrative_direction_block(game: GameState, roll_result: str = "",
     else:
         parts.append("position:steady")
 
-    return f'<narrative_direction>{" ".join(parts)}</narrative_direction>'
+    return f"<narrative_direction>{' '.join(parts)}</narrative_direction>"
 
 
 def status_context_block(game: GameState | None = None) -> str:
@@ -143,28 +140,43 @@ def status_context_block(game: GameState | None = None) -> str:
     h, sp, su = game.resources.health, game.resources.spirit, game.resources.supply
 
     health_desc = (
-        "uninjured" if h >= 5 else
-        "bruised — minor aches, nothing that slows them down" if h == 4 else
-        "injured — clearly hurting, moving with effort" if h == 3 else
-        "seriously wounded — every motion costs something" if h == 2 else
-        "critically injured — barely holding together, on the edge of collapse" if h == 1 else
-        "at the physical limit — collapse is imminent (see <flags>)"
+        "uninjured"
+        if h >= 5
+        else "bruised — minor aches, nothing that slows them down"
+        if h == 4
+        else "injured — clearly hurting, moving with effort"
+        if h == 3
+        else "seriously wounded — every motion costs something"
+        if h == 2
+        else "critically injured — barely holding together, on the edge of collapse"
+        if h == 1
+        else "at the physical limit — collapse is imminent (see <flags>)"
     )
     spirit_desc = (
-        "steady and composed" if sp >= 5 else
-        "mildly unsettled — small cracks under the surface" if sp == 4 else
-        "shaken — stress is showing, focus is harder to maintain" if sp == 3 else
-        "deeply troubled — holding on by a thread, doubt and fear are present" if sp == 2 else
-        "near breaking — barely functioning, the weight is crushing" if sp == 1 else
-        "at the mental limit — breakdown is imminent (see <flags>)"
+        "steady and composed"
+        if sp >= 5
+        else "mildly unsettled — small cracks under the surface"
+        if sp == 4
+        else "shaken — stress is showing, focus is harder to maintain"
+        if sp == 3
+        else "deeply troubled — holding on by a thread, doubt and fear are present"
+        if sp == 2
+        else "near breaking — barely functioning, the weight is crushing"
+        if sp == 1
+        else "at the mental limit — breakdown is imminent (see <flags>)"
     )
     supply_desc = (
-        "well-equipped" if su >= 5 else
-        "adequate — supplies are fine for now" if su == 4 else
-        "running low — rationing has begun, choices are being made" if su == 3 else
-        "critically short — scarcity is a real pressure" if su == 2 else
-        "nearly nothing — desperation is setting in" if su == 1 else
-        "out of resources entirely (see <flags>)"
+        "well-equipped"
+        if su >= 5
+        else "adequate — supplies are fine for now"
+        if su == 4
+        else "running low — rationing has begun, choices are being made"
+        if su == 3
+        else "critically short — scarcity is a real pressure"
+        if su == 2
+        else "nearly nothing — desperation is setting in"
+        if su == 1
+        else "out of resources entirely (see <flags>)"
     )
 
     return (
@@ -190,26 +202,22 @@ def story_context_block(game: GameState) -> str:
     rev_block = ""
     if pending:
         rev = pending[0]
-        rev_block = (
-            f'\n<revelation_ready weight="{rev.dramatic_weight}">'
-            f'{rev.content}'
-            f'</revelation_ready>'
-        )
+        rev_block = f'\n<revelation_ready weight="{rev.dramatic_weight}">{rev.content}</revelation_ready>'
 
     ending_hint = ""
     if bp.story_complete and game.campaign.epilogue_dismissed:
         ending_hint = (
-            f'\n<story_ending>The planned arc is complete and the player chose to continue '
-            f'beyond it (scene {game.narrative.scene_count}). Do NOT push toward a conclusion. '
-            f'Follow the player\'s organic lead — new threads, consequences, and character '
-            f'moments are all valid. Treat this as open-ended play.</story_ending>'
+            f"\n<story_ending>The planned arc is complete and the player chose to continue "
+            f"beyond it (scene {game.narrative.scene_count}). Do NOT push toward a conclusion. "
+            f"Follow the player's organic lead — new threads, consequences, and character "
+            f"moments are all valid. Treat this as open-ended play.</story_ending>"
         )
     elif bp.story_complete:
         endings = bp.possible_endings
-        ending_hint = f'\n<story_ending>Story has EXCEEDED its planned arc (scene {game.narrative.scene_count}). Guide toward a satisfying conclusion in the next 1-2 scenes. Possible endings: {", ".join(e.type for e in endings)}. Let player actions determine which ending, but actively weave toward closure.</story_ending>'
+        ending_hint = f"\n<story_ending>Story has EXCEEDED its planned arc (scene {game.narrative.scene_count}). Guide toward a satisfying conclusion in the next 1-2 scenes. Possible endings: {', '.join(e.type for e in endings)}. Let player actions determine which ending, but actively weave toward closure.</story_ending>"
     elif act.approaching_end:
         endings = bp.possible_endings
-        ending_hint = f'\n<story_ending>Story nearing conclusion. Possible endings: {", ".join(e.type for e in endings)}. Let player actions determine which.</story_ending>'
+        ending_hint = f"\n<story_ending>Story nearing conclusion. Possible endings: {', '.join(e.type for e in endings)}. Let player actions determine which.</story_ending>"
 
     structure = bp.structure_type
     thematic = bp.thematic_thread
@@ -218,9 +226,9 @@ def story_context_block(game: GameState) -> str:
         f'<story_arc structure="{_xa(structure)}" act="{act.act_number}/{act.total_acts}"'
         f' phase="{_xa(act.phase)}" progress="{act.progress}" mood="{_xa(act.mood)}"'
         f' conflict="{_xa(bp.central_conflict)}" act_goal="{_xa(act.goal)}"'
-        f'{thematic_attr}/>'
-        f'{rev_block}'
-        f'{ending_hint}\n'
+        f"{thematic_attr}/>"
+        f"{rev_block}"
+        f"{ending_hint}\n"
     )
 
 
@@ -248,9 +256,8 @@ def campaign_history_block(game: GameState) -> str:
         return ""
     parts = [f'<campaign_history chapters="{len(cam.campaign_history)}">']
     for ch in cam.campaign_history[-3:]:
-        parts.append(f'  <chapter n="{ch.chapter}" title="{_xa(ch.title)}">'
-                     f'{_xe(ch.summary)}</chapter>')
-    parts.append('</campaign_history>')
+        parts.append(f'  <chapter n="{ch.chapter}" title="{_xa(ch.title)}">{_xe(ch.summary)}</chapter>')
+    parts.append("</campaign_history>")
     return "\n".join(parts)
 
 
@@ -262,10 +269,12 @@ def get_narrator_system(config: EngineConfig, game: GameState | None = None) -> 
     sc = status_context_block(game)
     vc = vocabulary_block(game)
     ta = tone_authority_block(game)
-    return get_prompt("narrator_system",
-                      lang=lang,
-                      content_boundaries_block=cb,
-                      backstory_block=bs,
-                      status_context_block=sc,
-                      tone_authority_block=ta,
-                      dash=E['dash']) + ("\n" + vc if vc else "")
+    return get_prompt(
+        "narrator_system",
+        lang=lang,
+        content_boundaries_block=cb,
+        backstory_block=bs,
+        status_context_block=sc,
+        tone_authority_block=ta,
+        dash=E["dash"],
+    ) + ("\n" + vc if vc else "")

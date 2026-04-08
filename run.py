@@ -35,16 +35,10 @@ def _bootstrap():
         print("Creating virtual environment...")
         subprocess.check_call([sys.executable, "-m", "venv", str(ROOT / "venv")])
 
-    subprocess.check_call(
-        [str(venv_py), "-m", "pip", "install", "--quiet", "--upgrade",
-         "pip", "setuptools", "wheel"]
-    )
+    subprocess.check_call([str(venv_py), "-m", "pip", "install", "--quiet", "--upgrade", "pip", "setuptools", "wheel"])
 
     print("Checking dependencies...")
-    subprocess.check_call(
-        [str(venv_py), "-m", "pip", "install", "--quiet", "-r",
-         str(ROOT / "requirements.txt")]
-    )
+    subprocess.check_call([str(venv_py), "-m", "pip", "install", "--quiet", "-r", str(ROOT / "requirements.txt")])
 
     os.execv(str(venv_py), [str(venv_py), str(ROOT / "run.py")])
 
@@ -66,14 +60,17 @@ def _start():
     sys.path.insert(0, str(ROOT / "src"))
 
     from straightjacket.engine import cfg, log, setup_file_logging
+
     setup_file_logging()
 
     port = cfg().server.port
-    log(f"[Server] Starting Straightjacket on http://localhost:{port}")
+    host = cfg().server.host
+    log(f"[Server] Starting Straightjacket on http://{host}:{port}")
 
     import uvicorn
     from straightjacket.web.server import app
-    uvicorn.run(app, host="0.0.0.0", port=port, log_level="info")
+
+    uvicorn.run(app, host=host, port=port, log_level="info")
 
 
 if __name__ == "__main__":

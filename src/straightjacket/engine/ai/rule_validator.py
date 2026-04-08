@@ -36,7 +36,9 @@ def check_player_agency(narration: str) -> list[str]:
     for pattern in _AGENCY_PATTERNS:
         matches = pattern.findall(narration)
         for match in matches:
-            violations.append(f"PLAYER AGENCY: narrator wrote '{match.strip()}' — player owns their thoughts and feelings")
+            violations.append(
+                f"PLAYER AGENCY: narrator wrote '{match.strip()}' — player owns their thoughts and feelings"
+            )
     # Deduplicate similar violations
     seen = set()
     unique = []
@@ -75,51 +77,26 @@ def check_result_integrity(narration: str, result_type: str) -> list[str]:
     violations = []
     if result_type == "MISS":
         for pattern in _MISS_PATTERNS:
-            if pattern.search(narration):
-                match = pattern.search(narration).group()
+            m = pattern.search(narration)
+            if m:
                 violations.append(
-                    f"RESULT INTEGRITY: MISS contains silver lining '{match}' — "
-                    f"a MISS must show concrete failure with no upside")
+                    f"RESULT INTEGRITY: MISS contains silver lining '{m.group()}' — "
+                    f"a MISS must show concrete failure with no upside"
+                )
                 break  # One is enough
         for pattern in _ANNIHILATION_PATTERNS:
-            if pattern.search(narration):
-                match = pattern.search(narration).group()
+            m = pattern.search(narration)
+            if m:
                 violations.append(
-                    f"RESULT INTEGRITY: MISS is annihilation '{match}' — "
-                    f"a MISS is a setback, not death or total defeat")
+                    f"RESULT INTEGRITY: MISS is annihilation '{m.group()}' — "
+                    f"a MISS is a setback, not death or total defeat"
+                )
                 break
     return violations
 
 
-# ── SPEECH HANDLING ──────────────────────────────────────────
-
-def check_speech_handling(narration: str, player_words: str) -> list[str]:
-    """Check that described speech isn't turned into invented quotes."""
-    if not player_words:
-        return []
-    pw = player_words.strip().lower()
-    # Described speech patterns: "I ask about X", "I tell them Y", "I mention Z"
-    described = re.match(
-        r"^i\s+(?:ask|tell|mention|explain|describe|say that|inquire|question|demand|request|suggest)",
-        pw,
-    )
-    if not described:
-        return []
-    # Check if narration contains a direct quote that looks like invented player dialog
-    # Look for quoted speech attributed to player actions near described-speech verbs
-    # Simple heuristic: if narration has \u201c...\u201d and player_words has no quotes
-    if "\u201c" not in player_words and "\u201c" in narration:
-        # Count quoted segments — if there are player-attributed quotes, flag it
-        # This is a heuristic; the LLM validator catches subtle cases
-        quotes = re.findall(r'\u201c([^\u201d]{5,})\u201d', narration)
-        if len(quotes) >= 2:
-            # Multiple quotes — at least one might be invented for the player
-            # Can't tell rule-based which is player vs NPC, so skip
-            pass
-    return []
-
-
 # ── GENRE FIDELITY ───────────────────────────────────────────
+
 
 def check_genre_fidelity(narration: str, genre_constraints: dict | None) -> list[str]:
     """Check for forbidden terms in narration."""
@@ -136,11 +113,11 @@ def check_genre_fidelity(narration: str, genre_constraints: dict | None) -> list
 # ── OUTPUT FORMAT ────────────────────────────────────────────
 
 _FORMAT_PATTERNS = [
-    (re.compile(r'^\s*(?:Narrator|Assistant|System)\s*:', re.MULTILINE), "role label prefix"),
-    (re.compile(r'\[(?:CLOCK|THREAT|SCENE|NPC|CONTEXT|NOTE)[^\]]*\]'), "bracketed annotation"),
-    (re.compile(r'```'), "code block"),
-    (re.compile(r'^\s*#{1,6}\s', re.MULTILINE), "markdown heading"),
-    (re.compile(r'\*\*[^*]+\*\*'), "bold markdown"),
+    (re.compile(r"^\s*(?:Narrator|Assistant|System)\s*:", re.MULTILINE), "role label prefix"),
+    (re.compile(r"\[(?:CLOCK|THREAT|SCENE|NPC|CONTEXT|NOTE)[^\]]*\]"), "bracketed annotation"),
+    (re.compile(r"```"), "code block"),
+    (re.compile(r"^\s*#{1,6}\s", re.MULTILINE), "markdown heading"),
+    (re.compile(r"\*\*[^*]+\*\*"), "bold markdown"),
 ]
 
 
@@ -155,15 +132,16 @@ def check_output_format(narration: str) -> list[str]:
 
 # ── NPC MONOLOGUE HEURISTIC ──────────────────────────────────
 
+
 def check_npc_monologue(narration: str) -> list[str]:
     """Heuristic: flag NPC speech that spans 4+ consecutive quoted segments."""
     # Find all quoted segments
-    quotes = re.findall(r'\u201c[^\u201d]+\u201d', narration)
+    quotes = re.findall(r"\u201c[^\u201d]+\u201d", narration)
     if len(quotes) < 4:
         return []
     # Check if 4+ quotes appear with minimal non-quote text between them
     # This catches NPC monologues disguised as multiple quote blocks
-    parts = re.split(r'\u201c[^\u201d]+\u201d', narration)
+    parts = re.split(r"\u201c[^\u201d]+\u201d", narration)
     consecutive_short_gaps = 0
     for part in parts[1:-1]:  # Skip before first and after last quote
         stripped = part.strip()
@@ -177,6 +155,7 @@ def check_npc_monologue(narration: str) -> list[str]:
 
 
 # ── PUBLIC API ───────────────────────────────────────────────
+
 
 def run_rule_checks(
     narration: str,

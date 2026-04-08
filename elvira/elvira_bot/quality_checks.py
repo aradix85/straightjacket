@@ -17,15 +17,15 @@ from .models import NpcSnapshot
 
 # Patterns that should never appear in player-facing narration
 _LEAKED_MECHANICS = [
-    (re.compile(r'\b(?:MISS|WEAK_HIT|STRONG_HIT)\b'), "result type leaked"),
-    (re.compile(r'\b(?:health|spirit|supply|momentum)\s*[=:]\s*\d', re.IGNORECASE), "raw stat value leaked"),
-    (re.compile(r'<(?:game_data|memory_updates|scene_context|npc_rename|new_npcs)>'), "XML metadata tag leaked"),
-    (re.compile(r'```'), "code fence leaked"),
+    (re.compile(r"\b(?:MISS|WEAK_HIT|STRONG_HIT)\b"), "result type leaked"),
+    (re.compile(r"\b(?:health|spirit|supply|momentum)\s*[=:]\s*\d", re.IGNORECASE), "raw stat value leaked"),
+    (re.compile(r"<(?:game_data|memory_updates|scene_context|npc_rename|new_npcs)>"), "XML metadata tag leaked"),
+    (re.compile(r"```"), "code fence leaked"),
     (re.compile(r'\{[^}]*"(?:npc_id|emotional_weight|scene_context)"'), "JSON metadata leaked"),
-    (re.compile(r'\[(?:CLOCK|THREAT|SCENE CONTEXT|MEMORY)[^\]]*\]'), "bracket annotation leaked"),
-    (re.compile(r'\b(?:d6|d10|2d6|2d10|action_score|challenge_dice)\b', re.IGNORECASE), "dice mechanic term leaked"),
-    (re.compile(r'\*{2,}[^*]+\*{2,}'), "markdown bold leaked"),
-    (re.compile(r'^#{1,3}\s', re.MULTILINE), "markdown heading leaked"),
+    (re.compile(r"\[(?:CLOCK|THREAT|SCENE CONTEXT|MEMORY)[^\]]*\]"), "bracket annotation leaked"),
+    (re.compile(r"\b(?:d6|d10|2d6|2d10|action_score|challenge_dice)\b", re.IGNORECASE), "dice mechanic term leaked"),
+    (re.compile(r"\*{2,}[^*]+\*{2,}"), "markdown bold leaked"),
+    (re.compile(r"^#{1,3}\s", re.MULTILINE), "markdown heading leaked"),
 ]
 
 
@@ -41,6 +41,7 @@ def check_narration_quality(narration: str) -> list[str]:
 
 
 # ── NPC spatial consistency ──────────────────────────────────
+
 
 def check_npc_spatial_consistency(
     game: GameState,
@@ -90,14 +91,14 @@ def check_npc_spatial_consistency(
 
         if not mentioned:
             findings.append(
-                f"NPC '{npc.name}' teleported from '{old_loc}' to '{new_loc}' "
-                f"without appearing in narration"
+                f"NPC '{npc.name}' teleported from '{old_loc}' to '{new_loc}' without appearing in narration"
             )
 
     return findings
 
 
 # ── Chapter continuity checks ────────────────────────────────
+
 
 def check_chapter_continuity(
     game: GameState,
@@ -128,23 +129,17 @@ def check_chapter_continuity(
                     found = True
                     break
             if not found and prev.bond >= 2:
-                findings.append(
-                    f"NPC '{prev.name}' (bond={prev.bond}) missing after chapter transition"
-                )
+                findings.append(f"NPC '{prev.name}' (bond={prev.bond}) missing after chapter transition")
             continue
 
         current = current_by_name[name_lower]
 
         # Bond should be preserved (may be reduced by chapter consolidation but not zeroed)
         if prev.bond >= 3 and current.bond == 0:
-            findings.append(
-                f"NPC '{prev.name}' bond dropped from {prev.bond} to 0 across chapter"
-            )
+            findings.append(f"NPC '{prev.name}' bond dropped from {prev.bond} to 0 across chapter")
 
         # Memories should not be completely wiped
         if prev.memory_count > 3 and len(current.memory) == 0:
-            findings.append(
-                f"NPC '{prev.name}' lost all {prev.memory_count} memories across chapter"
-            )
+            findings.append(f"NPC '{prev.name}' lost all {prev.memory_count} memories across chapter")
 
     return findings

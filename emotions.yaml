@@ -21,6 +21,9 @@ importance:
   pensiveness: 2
   distraction: 2
   casual: 2
+  professional: 2
+  reserved: 2
+  pragmatic: 2
 
   # Tier 3: Mild engagement
   amused: 3
@@ -41,6 +44,10 @@ importance:
   nostalgic: 3
   merciful: 3
   interest: 3
+  intrigued: 3
+  surprised: 3
+  uncertain: 3
+  admiring: 3
 
   # Tier 4: Moderate tension
   annoyed: 4
@@ -64,6 +71,18 @@ importance:
   disdainful: 4
   pleading: 4
   boredom: 4
+  cautious: 4
+  guarded: 4
+  skeptical: 4
+  dismissive: 4
+  cold: 4
+  fearful: 4
+  afraid: 4
+  scared: 4
+  anxious: 4
+  distrustful: 4
+  resentful: 4
+  threatening: 4
 
   # Tier 5: Significant emotional moment
   grateful: 5
@@ -103,6 +122,15 @@ importance:
   resigned: 5
   mournful: 5
   remorseful: 5
+  helpful: 5
+  warm: 5
+  kind: 5
+  compassionate: 5
+  cooperative: 5
+  welcoming: 5
+  supportive: 5
+  respectful: 5
+  friendly: 5
 
   # Tier 6: Strong personal stake
   defiant: 6
@@ -119,6 +147,13 @@ importance:
   contemptuous: 6
   empowered: 6
   dominance: 6
+  aggressive: 6
+  antagonistic: 6
+  hateful: 6
+  violent: 6
+  loving: 6
+  faithful: 6
+  bonded: 6
 
   # Tier 7: Intense / transformative
   awed: 7
@@ -138,6 +173,8 @@ importance:
   tormented: 7
   triumphant: 7
   wrathful: 7
+  enraged: 7
+  murderous: 7
   bloodthirsty: 7
   ruthless: 7
   broken: 7

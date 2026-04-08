@@ -10,6 +10,7 @@ from .lifecycle import reactivate_npc
 from ..models import NpcData
 
 from typing import TYPE_CHECKING
+
 if TYPE_CHECKING:
     from ..models import BrainResult
 from .matching import find_npc
@@ -17,6 +18,7 @@ from .matching import find_npc
 # TF-IDF NPC RELEVANCE SCORING (zero-dependency implementation)
 # Replaces keyword-based activation. TF-IDF automatically weights rare/distinctive
 # words higher (proper nouns > common words), works across all languages.
+
 
 def compute_npc_tfidf_scores(npcs: list[NpcData], query_text: str) -> dict[str, float]:
     """Compute TF-IDF cosine similarity between query_text and each NPC's profile.
@@ -88,15 +90,18 @@ def compute_npc_tfidf_scores(npcs: list[NpcData], query_text: str) -> dict[str, 
         doc_norm = math.sqrt(sum(v * v for v in doc_vec.values())) or 1.0
 
         # Dot product
-        dot = sum(query_vec.get(t, 0) * doc_vec.get(t, 0)
-                  for t in set(query_vec) | set(doc_vec))
+        dot = sum(query_vec.get(t, 0) * doc_vec.get(t, 0) for t in set(query_vec) | set(doc_vec))
         scores[npc_id] = dot / (query_norm * doc_norm)
 
     return scores
 
+
 # NPC ACTIVATION FOR PROMPT
 
-def activate_npcs_for_prompt(game: "GameState", brain: "BrainResult", player_input: str) -> tuple[list[NpcData], list[NpcData], dict]:
+
+def activate_npcs_for_prompt(
+    game: "GameState", brain: "BrainResult", player_input: str
+) -> tuple[list[NpcData], list[NpcData], dict]:
     """Decide which NPCs get full context vs name-only mention in narrator prompt.
     Returns (activated_npcs, mentioned_npcs, activation_debug).
     activated = full context (memories, secrets, agenda)
@@ -193,7 +198,7 @@ def activate_npcs_for_prompt(game: "GameState", brain: "BrainResult", player_inp
         target_npc = find_npc(game, target_id) if target_id else None
         non_target = [n for n in activated if n is not target_npc]
         non_target.sort(key=lambda n: n.bond, reverse=True)
-        overflow = non_target[_max_activated - (1 if target_npc else 0):]
+        overflow = non_target[_max_activated - (1 if target_npc else 0) :]
         activated = [n for n in activated if n not in overflow]
         mentioned.extend(overflow)
 
@@ -217,7 +222,6 @@ def activate_npcs_for_prompt(game: "GameState", brain: "BrainResult", player_inp
 
     mentioned.extend(secondary_activated)
 
-    log(f"[NPC Activation] Activated: {[n.name for n in activated]}, "
-        f"Mentioned: {[n.name for n in mentioned]}")
+    log(f"[NPC Activation] Activated: {[n.name for n in activated]}, Mentioned: {[n.name for n in mentioned]}")
 
     return activated, mentioned, activation_debug

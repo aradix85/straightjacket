@@ -30,12 +30,15 @@ _SETTINGS_DIR = PROJECT_ROOT / "data" / "settings"
 
 # SETTING PACKAGE
 
+
 @dataclass
 class GenreConstraints:
     """Genre constraints for validator integration."""
+
     forbidden_terms: list[str] = field(default_factory=list)
     forbidden_concepts: list[str] = field(default_factory=list)
     genre_test: str = ""
+
 
 class SettingPackage:
     """A complete setting: metadata + vocabulary + constraints + Datasworn data."""
@@ -115,15 +118,16 @@ class SettingPackage:
         """Raw settings.yaml dict."""
         return self._config
 
+
 _cache: dict[str, SettingPackage] = {}
+
 
 def list_packages() -> list[str]:
     """List available setting package IDs (those with a settings.yaml)."""
     if not _SETTINGS_DIR.exists():
         return []
-    return sorted(
-        p.stem for p in _SETTINGS_DIR.glob("*.yaml")
-    )
+    return sorted(p.stem for p in _SETTINGS_DIR.glob("*.yaml"))
+
 
 def load_package(setting_id: str) -> SettingPackage:
     """Load a setting package by ID. Cached after first load.
@@ -140,10 +144,7 @@ def load_package(setting_id: str) -> SettingPackage:
 
     yaml_path = _SETTINGS_DIR / f"{setting_id}.yaml"
     if not yaml_path.exists():
-        raise FileNotFoundError(
-            f"Setting package not found: {yaml_path}\n"
-            f"Available: {list_packages()}"
-        )
+        raise FileNotFoundError(f"Setting package not found: {yaml_path}\nAvailable: {list_packages()}")
 
     with open(yaml_path, encoding="utf-8") as f:
         config = yaml.safe_load(f)
@@ -160,13 +161,14 @@ def load_package(setting_id: str) -> SettingPackage:
     pkg = SettingPackage(config, data, parent)
     _cache[setting_id] = pkg
 
-    log(f"[Setting] Loaded {setting_id}: {pkg.title}"
-        f"{f' (parent: {parent_id})' if parent_id else ''}")
+    log(f"[Setting] Loaded {setting_id}: {pkg.title}{f' (parent: {parent_id})' if parent_id else ''}")
     return pkg
+
 
 def clear_cache():
     """Clear the package cache."""
     _cache.clear()
+
 
 def active_package(game):
     """Get the active setting package for a game. Returns None if not set or not found."""

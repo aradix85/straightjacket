@@ -21,46 +21,33 @@ input, textarea, select { background: var(--bg-surface); color: var(--text); bor
 input:focus, textarea:focus, select:focus { border-color: var(--text-accent); }
 textarea { resize: vertical; }
 .hidden { display: none !important; }
-
-/* Main layout: single column, max width */
 main { max-width: 48rem; width: 100%; margin: 0 auto; padding: 0 1rem; flex: 1; display: flex; flex-direction: column; }
-
-/* Chat */
 #chat-log { flex: 1; overflow-y: auto; padding: 1rem 0; }
 .msg { margin-bottom: 1rem; line-height: 1.7; }
 .msg-narrator { white-space: pre-wrap; }
 .msg-narrator .dialog { color: var(--dialog-color); }
 .msg-player { color: var(--text-dim); font-style: italic; padding-left: 0.5rem; border-left: 2px solid var(--border); }
 .msg-system { color: var(--text-dim); font-size: 0.85rem; }
-.msg-roll { font-size: 0.85rem; color: var(--text-dim); margin-top: -0.5rem; margin-bottom: 1rem; }
 .msg-recap { color: var(--text-dim); font-style: italic; border-left: 2px solid var(--text-accent); padding-left: 0.5rem; }
 .msg-epilogue { border-left: 3px solid var(--text-accent); padding-left: 0.75rem; }
 .msg-correction { opacity: 0.7; }
 .msg-correction::before { content: "✎ "; }
 .msg-status { color: var(--text-accent); font-size: 0.85rem; padding: 0.5rem 0; border: 1px solid var(--border); border-radius: 4px; padding: 0.75rem; margin-bottom: 1rem; }
-
-/* Input bar */
 #input-bar { position: sticky; bottom: 0; background: var(--bg); border-top: 1px solid var(--border); padding: 0.5rem 0; }
 #input-bar form { display: flex; gap: 0.5rem; }
 #input-bar input[type="text"] { flex: 1; }
 #action-bar { display: flex; gap: 0.5rem; padding: 0.3rem 0; flex-wrap: wrap; }
 #action-bar button { font-size: 0.8rem; padding: 0.3rem 0.6rem; }
-
-/* Panels */
 .panel { padding: 2rem 0; }
 .panel h2 { font-size: 1.2rem; margin-bottom: 1rem; }
 .field { margin-bottom: 1rem; }
 .field label { display: block; font-size: 0.85rem; color: var(--text-dim); margin-bottom: 0.3rem; }
 .field input, .field textarea, .field select { width: 100%; }
 .player-btn { display: block; width: 100%; text-align: left; margin-bottom: 0.5rem; padding: 0.75rem 1rem; }
-
-/* Overlays (burn, story complete, game over only) */
 .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; z-index: 200; }
 .overlay-card { background: var(--bg-surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.5rem; max-width: 28rem; width: 90%; }
 .overlay-card h2 { margin-bottom: 0.75rem; }
 .overlay-card .actions { display: flex; gap: 0.5rem; margin-top: 1rem; }
-
-/* Banners */
 #error-banner { background: var(--error); color: #fff; text-align: center; padding: 0.5rem; display: none; }
 #reconnect-banner { background: var(--text-accent); color: #000; text-align: center; padding: 0.5rem; display: none; }
 </style>
@@ -71,73 +58,73 @@ main { max-width: 48rem; width: 100%; margin: 0 auto; padding: 0 1rem; flex: 1; 
 <div id="error-banner"></div>
 
 <main>
-  <h1 style="padding:0.75rem 0;font-size:1.1rem;border-bottom:1px solid var(--border)">Straightjacket</h1>
+  <h1 id="app-title" style="padding:0.75rem 0;font-size:1.1rem;border-bottom:1px solid var(--border)"></h1>
 
   <!-- Player selection -->
   <div id="phase-players" class="panel">
-    <h2>Who's playing?</h2>
+    <h2 id="who-plays"></h2>
     <div id="player-list"></div>
     <div class="field" style="margin-top:1rem">
-      <label for="new-player-name">New player</label>
+      <label for="new-player-name" id="new-player-label"></label>
       <div style="display:flex;gap:0.5rem">
-        <input type="text" id="new-player-name" placeholder="Name...">
-        <button id="create-player-btn" class="primary">Create</button>
+        <input type="text" id="new-player-name">
+        <button id="create-player-btn" class="primary"></button>
       </div>
     </div>
   </div>
 
   <!-- Character creation -->
   <div id="phase-creation" class="panel hidden">
-    <h2>Create your character</h2>
+    <h2 id="creation-heading"></h2>
     <div id="creation-form"></div>
   </div>
 
   <!-- Game -->
   <div id="phase-game" class="hidden" style="display:flex;flex-direction:column;flex:1">
-    <div id="chat-log" role="log" aria-live="polite" aria-label="Game log"></div>
+    <div id="chat-log" role="log" aria-live="polite"></div>
     <div id="input-bar">
       <div id="action-bar">
-        <button onclick="showStatus()">Status</button>
-        <button onclick="showSaves()">Save / Load</button>
+        <button id="btn-status"></button>
+        <button id="btn-saves"></button>
       </div>
-      <form id="input-form" aria-label="Player input">
-        <input type="text" id="player-input" placeholder="What do you do?" autocomplete="off" aria-label="What do you do?">
-        <button type="submit" aria-label="Send">→</button>
+      <form id="input-form">
+        <input type="text" id="player-input" autocomplete="off">
+        <button type="submit">→</button>
       </form>
     </div>
   </div>
 
   <!-- Burn offer -->
-  <div id="burn-overlay" class="overlay hidden" role="alertdialog" aria-label="Burn momentum?">
+  <div id="burn-overlay" class="overlay hidden" role="alertdialog">
     <div class="overlay-card">
-      <h2>Burn Momentum?</h2>
+      <h2 id="burn-title"></h2>
       <p id="burn-text"></p>
       <div class="actions">
-        <button id="burn-yes" class="primary">Yes!</button>
-        <button id="burn-no">No</button>
+        <button id="burn-yes" class="primary"></button>
+        <button id="burn-no"></button>
       </div>
     </div>
   </div>
 
   <!-- Story complete -->
-  <div id="complete-overlay" class="overlay hidden" role="alertdialog" aria-label="Story complete">
+  <div id="complete-overlay" class="overlay hidden" role="alertdialog">
     <div class="overlay-card">
-      <h2>The story has reached its conclusion</h2>
-      <p>You can keep playing or wrap up this chapter with an epilogue.</p>
+      <h2 id="complete-title"></h2>
+      <p id="complete-text"></p>
       <div class="actions">
-        <button id="complete-continue">Keep Playing</button>
-        <button id="complete-epilogue" class="primary">Generate Epilogue</button>
+        <button id="complete-continue"></button>
+        <button id="complete-epilogue" class="primary"></button>
       </div>
     </div>
   </div>
 
   <!-- Game over -->
-  <div id="gameover-overlay" class="overlay hidden" role="alertdialog" aria-label="Game over">
+  <div id="gameover-overlay" class="overlay hidden" role="alertdialog">
     <div class="overlay-card">
-      <h2>Adventure Over.</h2>
+      <h2 id="gameover-title"></h2>
       <div class="actions">
-        <button id="gameover-chapter">New Chapter</button>
-        <button id="gameover-restart">Start Over</button>
+        <button id="gameover-chapter"></button>
+        <button id="gameover-restart"></button>
       </div>
     </div>
   </div>
@@ -149,7 +136,15 @@ let ws = null;
 let retries = 0;
 let sessionTaken = false;
 let currentPlayer = "";
-let lastState = null;  // latest state dict from server
+let lastState = null;
+
+// UI strings from server (strings.yaml)
+let S = {};
+function s(key, vars) {
+  let t = S[key] || key;
+  if (vars) Object.entries(vars).forEach(([k,v]) => { t = t.replace(`{${k}}`, v); });
+  return t;
+}
 
 const MAX_RETRIES = 5;
 const RETRY_MS = 3000;
@@ -171,6 +166,38 @@ function showPhase(phase) {
   if (phase === "game") phaseGame.style.display = "flex";
 }
 
+// Apply strings to static HTML elements
+function applyStrings() {
+  $("app-title").textContent = s("ui.title");
+  $("who-plays").textContent = s("ui.who_plays");
+  $("new-player-label").textContent = s("ui.new_player");
+  $("new-player-name").placeholder = s("ui.name_placeholder");
+  $("create-player-btn").textContent = s("ui.create");
+  $("creation-heading").textContent = s("ui.create_character");
+  $("chat-log").setAttribute("aria-label", s("ui.game_log"));
+  $("input-form").setAttribute("aria-label", s("ui.player_input"));
+  $("player-input").placeholder = s("ui.input_placeholder");
+  $("player-input").setAttribute("aria-label", s("ui.input_placeholder"));
+  $("input-form").querySelector("button").setAttribute("aria-label", s("ui.send"));
+  $("btn-status").textContent = s("ui.status");
+  $("btn-saves").textContent = s("ui.save_load");
+  $("burn-title").textContent = s("ui.burn_title");
+  $("burn-overlay").setAttribute("aria-label", s("ui.burn_title"));
+  $("burn-yes").textContent = s("ui.burn_yes");
+  $("burn-no").textContent = s("ui.burn_no");
+  $("complete-title").textContent = s("ui.complete_title");
+  $("complete-text").textContent = s("ui.complete_text");
+  $("complete-overlay").setAttribute("aria-label", s("ui.complete_title"));
+  $("complete-continue").textContent = s("ui.keep_playing");
+  $("complete-epilogue").textContent = s("ui.generate_epilogue");
+  $("gameover-title").textContent = s("ui.gameover_title");
+  $("gameover-overlay").setAttribute("aria-label", s("ui.gameover_title"));
+  $("gameover-chapter").textContent = s("ui.new_chapter");
+  $("gameover-restart").textContent = s("ui.start_over");
+  $("btn-status").onclick = () => showStatus();
+  $("btn-saves").onclick = () => showSaves();
+}
+
 // ── WebSocket ────────────────────────────────────────────────
 function connect() {
   const proto = location.protocol === "https:" ? "wss:" : "ws:";
@@ -185,74 +212,57 @@ function connect() {
     if (retries < MAX_RETRIES) {
       retries++;
       reconnectBanner.style.display = "block";
-      reconnectBanner.textContent = `Connection lost, reconnecting... (${retries}/${MAX_RETRIES})`;
+      reconnectBanner.textContent = s("ui.reconnecting", {retries, max: MAX_RETRIES});
       setTimeout(connect, RETRY_MS);
     } else {
-      reconnectBanner.innerHTML = 'Connection lost. <button onclick="retries=0;connect()">Retry</button>';
+      reconnectBanner.innerHTML = `${s("ui.connection_lost")} <button onclick="retries=0;connect()">${s("ui.retry")}</button>`;
     }
   };
-  ws.onmessage = (e) => handleMessage(JSON.parse(e.data));
+  ws.onmessage = (e) => {
+    const msg = JSON.parse(e.data);
+    switch (msg.type) {
+      case "ui_strings": S = msg.strings || {}; applyStrings(); break;
+      case "players_list": renderPlayerList(msg.players); break;
+      case "player_selected": onPlayerSelected(msg); break;
+      case "saves_list": renderSavesList(msg.saves); break;
+      case "narration": appendNarration(msg); break;
+      case "replace_narration": replaceLast(msg.text); break;
+      case "state": onState(msg.data); break;
+      case "status": showStatusMsg(msg.text); break;
+      case "recap": appendRecap(msg.text); break;
+      case "epilogue": appendEpilogue(msg.text); break;
+      case "scene_marker": appendSceneHeading(msg.scene, msg.location); break;
+      case "burn_offer": showBurnOffer(msg); break;
+      case "story_complete": $("complete-overlay").classList.remove("hidden"); raf(() => $("complete-epilogue").focus()); break;
+      case "game_over": $("gameover-overlay").classList.remove("hidden"); raf(() => $("gameover-chapter").focus()); break;
+      case "chapter_started": onChapterStarted(msg); break;
+      case "retry_available": showRetryOffer(msg.text); break;
+      case "session_taken": onSessionTaken(); break;
+      case "error": showError(msg.text); break;
+    }
+  };
 }
 
-function send(msg) {
-  if (ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(msg));
-}
+function send(obj) { if (ws && ws.readyState === 1) ws.send(JSON.stringify(obj)); }
 
-// ── Message dispatch ─────────────────────────────────────────
-function handleMessage(msg) {
-  switch (msg.type) {
-    case "players_list": renderPlayerList(msg.players); break;
-    case "player_selected": onPlayerSelected(msg); break;
-    case "narration": appendNarration(msg); break;
-    case "replace_narration": replaceLastNarration(msg); break;
-    case "scene_marker": appendSceneMarker(msg); break;
-    case "roll": appendRoll(msg.data); break;
-    case "state": lastState = msg.data; break;
-    case "status": appendStatus(msg.text); break;
-    case "error": showError(msg.text); break;
-    case "burn_offer": showBurnOffer(msg); break;
-    case "story_complete":
-      $("complete-overlay").classList.remove("hidden");
-      raf(() => $("complete-epilogue").focus());
-      break;
-    case "game_over":
-      $("gameover-overlay").classList.remove("hidden");
-      raf(() => $("gameover-chapter").focus());
-      break;
-    case "recap": appendRecap(msg.text); break;
-    case "epilogue": appendEpilogue(msg.text); break;
-    case "chapter_started": onChapterStarted(msg); break;
-    case "saves_list": renderSavesList(msg.saves); break;
-    case "retry_available": showRetryOffer(msg.text); break;
-    case "session_taken": onSessionTaken(); break;
-  }
-}
-
-// ── Player selection ─────────────────────────────────────────
+// ── Player list ─────────────────────────────────────────────
 function renderPlayerList(players) {
   showPhase("players");
   const list = $("player-list");
   list.innerHTML = "";
   players.forEach(name => {
     const row = document.createElement("div");
-    row.style.cssText = "display:flex;gap:0.5rem;margin-bottom:0.5rem;align-items:center";
+    row.style.cssText = "display:flex;gap:0.5rem;margin-bottom:0.5rem";
     const btn = document.createElement("button");
-    btn.className = "player-btn";
+    btn.style.flex = "1"; btn.style.textAlign = "left";
     btn.textContent = name;
     btn.onclick = () => send({type: "select_player", name});
     const del = document.createElement("button");
     del.textContent = "✕";
-    del.title = "Delete " + name;
-    del.setAttribute("aria-label", "Delete " + name);
-    del.style.cssText = "min-width:36px;color:var(--error)";
-    del.onclick = () => { if (confirm(`Delete "${name}" and all their saves?`)) send({type: "delete_player", name}); };
-    row.appendChild(btn);
-    row.appendChild(del);
+    del.setAttribute("aria-label", s("ui.delete") + " " + name);
+    del.onclick = () => { if (confirm(s("ui.delete_confirm"))) send({type: "delete_player", name}); };
+    row.appendChild(btn); row.appendChild(del);
     list.appendChild(row);
-  });
-  raf(() => {
-    const first = list.querySelector(".player-btn");
-    if (first) first.focus(); else $("new-player-name").focus();
   });
 }
 
@@ -260,227 +270,173 @@ $("create-player-btn").onclick = () => {
   const name = $("new-player-name").value.trim();
   if (name) send({type: "create_player", name});
 };
-$("new-player-name").addEventListener("keydown", (e) => {
-  if (e.key === "Enter") { e.preventDefault(); $("create-player-btn").click(); }
-});
 
-// ── Player selected ──────────────────────────────────────────
+// ── Player selected ─────────────────────────────────────────
 function onPlayerSelected(msg) {
   currentPlayer = msg.name;
-  if (msg.has_game) {
-    lastState = msg.state;
+  if (msg.has_game && msg.state) {
     showPhase("game");
     chatLog.innerHTML = "";
-    renderChatHistory(msg.messages || []);
-    scroll();
-    raf(() => playerInput.focus());
-  } else {
-    renderCreationForm(msg.creation_options);
-    showPhase("creation");
-    raf(() => {
-      const f = $("creation-form").querySelector("input,select,textarea");
-      if (f) f.focus();
+    (msg.messages || []).forEach(m => {
+      if (m.role === "assistant") appendHTML("msg msg-narrator", m.content);
+      else if (m.role === "user") appendText("msg msg-player", m.content);
     });
+    onState(msg.state);
+    scroll();
+    playerInput.focus();
+  } else if (msg.creation_options) {
+    showPhase("creation");
+    renderCreationForm(msg.creation_options);
+  } else {
+    showPhase("creation");
   }
 }
 
-// ── Chat rendering ───────────────────────────────────────────
-function renderChatHistory(messages) {
-  messages.forEach(m => {
-    if (m.role === "assistant") {
-      appendHTML(m.epilogue ? "msg msg-epilogue" : "msg msg-narrator", m.content);
-    } else if (m.role === "user") {
-      appendHTML("msg msg-player", esc(m.content));
-    }
-  });
-}
-
+// ── Chat rendering ──────────────────────────────────────────
 function appendNarration(msg) {
   clearStatus();
-  appendSceneHeading(msg.scene, msg.location);
+  if (msg.scene && msg.location) appendSceneHeading(msg.scene, msg.location);
   appendHTML("msg msg-narrator", msg.text);
   scroll();
-  playerInput.focus();
+  announce(msg.text.replace(/<[^>]*>/g, "").substring(0, 300));
 }
-
-function replaceLastNarration(msg) {
-  clearStatus();
-  const narrations = chatLog.querySelectorAll(".msg-narrator");
-  if (narrations.length > 0) {
-    const last = narrations[narrations.length - 1];
-    last.innerHTML = msg.text;
-    last.classList.add("msg-correction");
-  }
-  announce("Narration corrected.");
-  scroll();
-  playerInput.focus();
-}
-
-function appendSceneHeading(scene, location) {
-  if (!scene) return;
-  // Only add if scene changed from last heading
-  const existing = chatLog.querySelectorAll("h2");
-  const last = existing.length > 0 ? existing[existing.length - 1] : null;
-  const text = `Scene ${scene}` + (location ? ` — ${location}` : "");
-  if (last && last.textContent === text) return;
-  const h = document.createElement("h2");
-  h.style.cssText = "font-size:0.95rem;color:var(--text-accent);margin-top:1.5rem;padding:0.3rem 0;border-top:1px solid var(--border)";
-  h.textContent = text;
-  chatLog.appendChild(h);
-}
-
-function appendSceneMarker(msg) {
-  appendSceneHeading(msg.scene, msg.location);
-}
-
-function appendRoll(data) {
-  if (!data) return;
-  const div = document.createElement("div");
-  div.className = "msg msg-roll";
-  let text = `${data.result_label || data.result}`;
-  if (data.match) text += " ☄️ Match";
-  text += ` — ${data.move_label} (${data.stat_label} ${data.stat_value})`;
-  text += `, ${data.d1}+${data.d2}+${data.stat_value}=${data.action_score} vs ${data.c1}|${data.c2}`;
-  if (data.position_label) text += ` [${data.position_label}/${data.effect_label}]`;
-  if (data.consequences && data.consequences.length) text += `. ${data.consequences.join(", ")}`;
-  data.clock_events.forEach(ce => { if (ce.clock) text += `. ⏰ ${ce.clock}: ${ce.trigger}`; });
-  if (data.chaos_interrupt) text += `. Chaos: ${data.chaos_interrupt}`;
-  div.textContent = text;
-  chatLog.appendChild(div);
-}
-
-function appendRecap(text) {
-  clearStatus();
-  appendHTML("msg msg-recap", text);
-  scroll();
-  playerInput.focus();
-}
-
-function appendEpilogue(text) {
-  clearStatus();
-  appendHTML("msg msg-epilogue", text);
-  scroll();
-  playerInput.focus();
-}
-
-function appendStatus(text) {
-  clearStatus();
-  const div = document.createElement("div");
-  div.className = "msg-status";
-  div.id = "_status";
-  div.textContent = text;
-  chatLog.appendChild(div);
-  scroll();
-}
-
-function clearStatus() {
-  const el = $("_status");
-  if (el) el.remove();
-}
-
 function appendHTML(cls, html) {
   const div = document.createElement("div");
   div.className = cls;
   div.innerHTML = html;
   chatLog.appendChild(div);
 }
+function appendText(cls, text) {
+  const div = document.createElement("div");
+  div.className = cls;
+  div.textContent = text;
+  chatLog.appendChild(div);
+}
+function appendSceneHeading(scene, loc) {
+  const h = document.createElement("h2");
+  h.style.cssText = "font-size:0.9rem;color:var(--text-dim);margin:1.5rem 0 0.5rem;border-bottom:1px solid var(--border);padding-bottom:0.3rem";
+  const label = s("ui.scene_marker", {n: scene});
+  h.textContent = loc ? `${label} — ${loc}` : label;
+  if (chatLog.lastElementChild?.tagName === "H2" && chatLog.lastElementChild.textContent === h.textContent) return;
+  chatLog.appendChild(h);
+}
+function appendRecap(text) {
+  clearStatus();
+  appendText("msg msg-recap", text);
+  scroll();
+}
+function appendEpilogue(html) {
+  clearStatus();
+  appendHTML("msg msg-epilogue", html);
+  scroll();
+}
+function replaceLast(html) {
+  clearStatus();
+  const narrations = chatLog.querySelectorAll(".msg-narrator");
+  const last = narrations[narrations.length - 1];
+  if (last) last.innerHTML = html;
+  scroll();
+}
+
+let _statusEl = null;
+function showStatusMsg(text) {
+  if (_statusEl && _statusEl.textContent === text) return;
+  clearStatus();
+  const div = document.createElement("div");
+  div.className = "msg msg-status";
+  div.textContent = text;
+  chatLog.appendChild(div);
+  _statusEl = div;
+  scroll();
+}
+function clearStatus() { if (_statusEl) { _statusEl.remove(); _statusEl = null; } }
 
 function scroll() { raf(() => chatLog.scrollTop = chatLog.scrollHeight); }
 
-// ── Player input ─────────────────────────────────────────────
+// ── State ───────────────────────────────────────────────────
+function onState(state) { lastState = state; }
+
+// ── Input ───────────────────────────────────────────────────
 inputForm.onsubmit = (e) => {
   e.preventDefault();
   const text = playerInput.value.trim();
   if (!text) return;
+  playerInput.value = "";
 
-  // Special commands
   if (text.toLowerCase() === "recap") {
     send({type: "recap"});
-    playerInput.value = "";
     return;
   }
-
   if (text.startsWith("##")) {
-    send({type: "correction", text: text.slice(2).trim()});
-  } else {
-    appendHTML("msg msg-player", esc(text));
-    send({type: "player_input", text});
+    appendText("msg msg-player msg-correction", text);
+    send({type: "correction", text: text.replace(/^#+\s*/, "")});
+    return;
   }
-  playerInput.value = "";
+  appendText("msg msg-player", text);
+  send({type: "player_input", text});
   scroll();
 };
 
-// ── Status (replaces sidebar) ────────────────────────────────
+// ── Status display ──────────────────────────────────────────
 function showStatus() {
-  if (!lastState) { announce("No game active."); return; }
-  const s = lastState;
-  let lines = [];
-  lines.push(`${s.player_name} — ${s.character_concept || ""}`);
-  if (s.location) lines.push(`Location: ${s.location}${s.time_label ? " · " + s.time_label : ""}`);
-  lines.push(`Scene ${s.scene}, Chapter ${s.chapter}`);
-  lines.push("");
-  for (const [key, stat] of Object.entries(s.stats)) lines.push(`${stat.label}: ${stat.value}`);
-  lines.push("");
-  lines.push(`Health: ${s.health}/5, Spirit: ${s.spirit}/5, Supply: ${s.supply}/5`);
-  lines.push(`Momentum: ${s.momentum}/${s.max_momentum}, Chaos: ${s.chaos}/9`);
-  if (s.crisis_mode) lines.push("⚠ CRISIS MODE");
-  if (s.story_arc) {
-    const sa = s.story_arc;
+  if (!lastState) return;
+  const st = lastState;
+  const lines = [];
+  lines.push(`${st.player_name} — ${st.character_concept || ""}`);
+  lines.push(`${s("ui.scene_marker", {n: st.scene})} | ${st.location || "?"} | ${st.time_label || ""}`);
+  Object.entries(st.stats).forEach(([k,v]) => { lines.push(`${v.label}: ${v.value}`); });
+  lines.push(`Health: ${st.health} | Spirit: ${st.spirit} | Supply: ${st.supply}`);
+  lines.push(`Momentum: ${st.momentum}/${st.max_momentum} | Chaos: ${st.chaos}`);
+  if (st.npcs?.length) {
     lines.push("");
-    lines.push(`Story: Act ${sa.act_number}/${sa.total_acts} — ${sa.phase_label}`);
-    if (sa.story_complete) lines.push("STORY COMPLETE");
+    st.npcs.forEach(n => {
+      let line = `${n.name} ${n.disposition_label} B${n.bond}/${n.bond_max}`;
+      if (n.status === "background") line += " (bg)";
+      if (n.status === "deceased") line += " (deceased)";
+      lines.push(line);
+    });
   }
-  const npcs = (s.npcs || []).filter(n => n.status !== "deceased");
-  if (npcs.length > 0) {
+  if (st.clocks?.length) {
     lines.push("");
-    lines.push("Characters:");
-    npcs.forEach(n => lines.push(`  ${n.name} — ${n.disposition_label} (bond ${n.bond}/${n.bond_max})`));
+    st.clocks.forEach(c => {
+      const bar = "█".repeat(c.filled) + "░".repeat(c.segments - c.filled);
+      lines.push(`${c.name} [${bar}] ${c.filled}/${c.segments}${c.fired ? " FIRED" : ""}`);
+    });
   }
-  const dead = (s.npcs || []).filter(n => n.status === "deceased");
-  if (dead.length > 0) dead.forEach(n => lines.push(`  ${n.name} — deceased`));
-  const clocks = (s.clocks || []).filter(c => !c.fired);
-  if (clocks.length > 0) {
-    lines.push("");
-    lines.push("Clocks:");
-    clocks.forEach(c => lines.push(`  ${c.name}: ${c.filled}/${c.segments}`));
+  if (st.story_arc) {
+    const a = st.story_arc;
+    lines.push(`\nAct ${a.act_number}/${a.total_acts}: ${a.title} (${a.phase_label}) [${a.progress}]`);
   }
-
   const div = document.createElement("div");
   div.className = "msg msg-system";
-  div.style.whiteSpace = "pre-wrap";
   div.textContent = lines.join("\n");
   chatLog.appendChild(div);
   scroll();
-  playerInput.focus();
 }
 
-// ── Save / Load ──────────────────────────────────────────────
+// ── Saves ───────────────────────────────────────────────────
 function showSaves() { send({type: "list_saves"}); }
-
 function renderSavesList(saves) {
   const div = document.createElement("div");
   div.className = "msg msg-system";
-  let html = "<strong>Saves</strong><br>";
-  if (saves.length === 0) html += "No saves found.<br>";
-  saves.forEach(s => {
-    html += `<button onclick="send({type:'load',name:'${esc(s.name)}'})">Load: ${esc(s.name)} (scene ${s.scene_count || "?"})</button> `;
-    if (s.name !== "autosave") html += `<button onclick="if(confirm('Delete?'))send({type:'delete_save',name:'${esc(s.name)}'})" style="color:var(--error)">✕</button>`;
+  let html = `<strong>${s("ui.saves")}</strong><br>`;
+  if (saves.length === 0) html += `${s("ui.no_saves")}<br>`;
+  saves.forEach(sv => {
+    html += `<button onclick="send({type:'load',name:'${esc(sv.name)}'})">${s("ui.load")}: ${esc(sv.name)} (scene ${sv.scene_count || "?"})</button> `;
+    if (sv.name !== "autosave") html += `<button onclick="if(confirm('${s("ui.delete_confirm")}'))send({type:'delete_save',name:'${esc(sv.name)}'})" style="color:var(--error)">✕</button>`;
     html += "<br>";
   });
-  html += `<label>Save as: <input type="text" id="_save-name" placeholder="name..." style="width:8rem"></label> `;
-  html += `<button onclick="const n=$('_save-name')?.value.trim();if(n)send({type:'save',name:n})" class="primary">Save</button>`;
+  html += `<label>${s("ui.save_as")}: <input type="text" id="_save-name" placeholder="${s("ui.name_placeholder")}" style="width:8rem"></label> `;
+  html += `<button onclick="const n=$('_save-name')?.value.trim();if(n)send({type:'save',name:n})" class="primary">${s("ui.save")}</button>`;
   div.innerHTML = html;
   chatLog.appendChild(div);
   scroll();
-  raf(() => {
-    const first = div.querySelector("button");
-    if (first) first.focus();
-  });
+  raf(() => { const first = div.querySelector("button"); if (first) first.focus(); });
 }
 
-// ── Burn offer ───────────────────────────────────────────────
+// ── Burn offer ──────────────────────────────────────────────
 function showBurnOffer(msg) {
-  $("burn-text").textContent = `${msg.current} → ${msg.upgrade} (costs ${msg.cost} momentum)`;
+  $("burn-text").textContent = s("ui.burn_text", {current: msg.current, upgrade: msg.upgrade, cost: msg.cost});
   $("burn-overlay").classList.remove("hidden");
   raf(() => $("burn-yes").focus());
 }
@@ -495,7 +451,7 @@ $("burn-no").onclick = () => {
   playerInput.focus();
 };
 
-// ── Story complete / game over ───────────────────────────────
+// ── Story complete / game over ──────────────────────────────
 $("complete-continue").onclick = () => {
   $("complete-overlay").classList.add("hidden");
   send({type: "dismiss_epilogue"});
@@ -515,7 +471,7 @@ $("gameover-restart").onclick = () => {
   send({type: "list_players"});
 };
 
-// ── Chapter started ──────────────────────────────────────────
+// ── Chapter started ─────────────────────────────────────────
 function onChapterStarted(msg) {
   clearStatus();
   chatLog.innerHTML = "";
@@ -525,16 +481,16 @@ function onChapterStarted(msg) {
   playerInput.focus();
 }
 
-// ── Retry / session taken / error ────────────────────────────
+// ── Retry / session taken / error ───────────────────────────
 function showRetryOffer(text) {
   appendHTML("msg msg-system",
-    `Last input wasn't processed: "${esc(text)}" <button onclick="send({type:'player_input',text:${JSON.stringify(text)}})">Retry</button>`);
+    `${s("ui.retry_text")}: "${esc(text)}" <button onclick="send({type:'player_input',text:${JSON.stringify(text)}})">${s("ui.retry")}</button>`);
 }
 
 function onSessionTaken() {
   sessionTaken = true;
   reconnectBanner.style.display = "block";
-  reconnectBanner.textContent = "Session taken over in another window.";
+  reconnectBanner.textContent = s("ui.session_taken");
   reconnectBanner.style.background = "var(--error)";
   reconnectBanner.style.color = "#fff";
 }
@@ -546,38 +502,37 @@ function showError(text) {
   setTimeout(() => { errorBanner.style.display = "none"; }, 8000);
 }
 
-// ── Character creation ───────────────────────────────────────
+// ── Character creation ──────────────────────────────────────
 function renderCreationForm(options) {
   const form = $("creation-form");
   const settings = options.settings || [];
-  if (settings.length === 0) { form.innerHTML = "<p>No settings available.</p>"; return; }
+  if (settings.length === 0) { form.innerHTML = `<p>${s("ui.no_settings")}</p>`; return; }
 
   let html = "";
-  html += `<div class="field"><label>Setting</label>`;
-  settings.forEach((s, i) => {
+  html += `<div class="field"><label>${s("ui.setting")}</label>`;
+  settings.forEach((st, i) => {
     html += `<label style="display:block;margin-bottom:0.5rem;cursor:pointer">`;
-    html += `<input type="radio" name="setting" value="${esc(s.id)}" ${i===0?"checked":""}> `;
-    html += `<strong>${esc(s.title)}</strong> — ${esc(s.description)}</label>`;
+    html += `<input type="radio" name="setting" value="${esc(st.id)}" ${i===0?"checked":""}> `;
+    html += `<strong>${esc(st.title)}</strong> — ${esc(st.description)}</label>`;
   });
   html += `</div>`;
-  html += `<div class="field"><label for="c-name">Character name</label><input type="text" id="c-name" value="${esc(currentPlayer)}"></div>`;
-  html += `<div class="field"><label for="c-pronouns">Pronouns</label><select id="c-pronouns"><option value="">—</option><option value="he/him">he/him</option><option value="she/her">she/her</option><option value="they/them">they/them</option></select></div>`;
-  html += `<div class="field"><label>Paths</label><div style="display:flex;gap:0.5rem"><select id="c-path1" style="flex:1"></select><select id="c-path2" style="flex:1"></select></div></div>`;
-  html += `<div class="field"><label for="c-backstory">Backstory</label><textarea id="c-backstory" rows="3"></textarea></div>`;
-  html += `<div class="field"><label for="c-vow">Background vow</label><input type="text" id="c-vow"></div>`;
-  html += `<div class="field"><label>Stats (total must be 7, each 0-3)</label><div style="display:flex;gap:0.5rem;flex-wrap:wrap">`;
-  ["edge","heart","iron","shadow","wits"].forEach(s => {
-    html += `<label>${s}: <input type="number" class="stat-input" data-stat="${s}" min="0" max="3" value="1" style="width:3rem"></label>`;
+  html += `<div class="field"><label for="c-name">${s("ui.character_name")}</label><input type="text" id="c-name" value="${esc(currentPlayer)}"></div>`;
+  html += `<div class="field"><label for="c-pronouns">${s("ui.pronouns")}</label><select id="c-pronouns"><option value="">—</option><option value="he/him">he/him</option><option value="she/her">she/her</option><option value="they/them">they/them</option></select></div>`;
+  html += `<div class="field"><label>${s("ui.paths")}</label><div style="display:flex;gap:0.5rem"><select id="c-path1" style="flex:1"></select><select id="c-path2" style="flex:1"></select></div></div>`;
+  html += `<div class="field"><label for="c-backstory">${s("ui.backstory")}</label><textarea id="c-backstory" rows="3"></textarea></div>`;
+  html += `<div class="field"><label for="c-vow">${s("ui.background_vow")}</label><input type="text" id="c-vow"></div>`;
+  html += `<div class="field"><label>${s("ui.stats_label")}</label><div style="display:flex;gap:0.5rem;flex-wrap:wrap">`;
+  ["edge","heart","iron","shadow","wits"].forEach(st => {
+    html += `<label>${st}: <input type="number" class="stat-input" data-stat="${st}" min="0" max="3" value="1" style="width:3rem"></label>`;
   });
-  html += `</div><div id="stat-total" style="font-size:0.8rem">Total: 5/7</div></div>`;
-  html += `<div class="field"><label for="c-boundaries">Content boundaries</label><textarea id="c-boundaries" rows="2"></textarea></div>`;
-  html += `<div class="field"><label for="c-wishes">Wishes</label><textarea id="c-wishes" rows="2"></textarea></div>`;
-  html += `<button id="start-game-btn" class="primary" style="width:100%;padding:0.75rem">Begin!</button>`;
+  html += `</div><div id="stat-total" style="font-size:0.8rem">${s("ui.stats_total", {t: 5})}</div></div>`;
+  html += `<div class="field"><label for="c-boundaries">${s("ui.content_boundaries")}</label><textarea id="c-boundaries" rows="2"></textarea></div>`;
+  html += `<div class="field"><label for="c-wishes">${s("ui.wishes")}</label><textarea id="c-wishes" rows="2"></textarea></div>`;
+  html += `<button id="start-game-btn" class="primary" style="width:100%;padding:0.75rem">${s("ui.begin")}</button>`;
   form.innerHTML = html;
 
-  // Paths
   const pathMap = {};
-  settings.forEach(s => { pathMap[s.id] = s.paths; });
+  settings.forEach(st => { pathMap[st.id] = st.paths; });
   function updatePaths() {
     const sid = document.querySelector('input[name="setting"]:checked')?.value;
     const paths = pathMap[sid] || [];
@@ -589,17 +544,15 @@ function renderCreationForm(options) {
   document.querySelectorAll('input[name="setting"]').forEach(r => r.onchange = updatePaths);
   updatePaths();
 
-  // Stat validation
   function updateStats() {
     let t = 0;
     document.querySelectorAll(".stat-input").forEach(i => { t += parseInt(i.value) || 0; });
-    $("stat-total").textContent = `Total: ${t}/7`;
+    $("stat-total").textContent = s("ui.stats_total", {t});
     $("stat-total").style.color = t === 7 ? "var(--success)" : "var(--error)";
   }
   document.querySelectorAll(".stat-input").forEach(i => i.oninput = updateStats);
   updateStats();
 
-  // Submit
   $("start-game-btn").onclick = () => {
     const stats = {};
     let total = 0;
@@ -608,8 +561,8 @@ function renderCreationForm(options) {
       stats[i.dataset.stat] = v;
       total += v;
     });
-    if (total !== 7) { alert("Stats must total 7."); return; }
-    if (Object.values(stats).some(v => v < 0 || v > 3)) { alert("Each stat must be 0-3."); return; }
+    if (total !== 7) { alert(s("ui.stats_must_total")); return; }
+    if (Object.values(stats).some(v => v < 0 || v > 3)) { alert(s("ui.stats_range")); return; }
     send({type: "start_game", creation_data: {
       setting_id: document.querySelector('input[name="setting"]:checked')?.value,
       player_name: $("c-name").value.trim() || currentPlayer,
@@ -625,7 +578,7 @@ function renderCreationForm(options) {
   };
 }
 
-// ── Utilities ────────────────────────────────────────────────
+// ── Utilities ───────────────────────────────────────────────
 function esc(s) { const d = document.createElement("div"); d.textContent = s; return d.innerHTML; }
 function raf(fn) { requestAnimationFrame(fn); }
 
@@ -637,7 +590,7 @@ _ann.style.cssText = "position:absolute;left:-9999px;width:1px;height:1px;overfl
 document.body.appendChild(_ann);
 function announce(text) { _ann.textContent = ""; raf(() => { _ann.textContent = text; }); }
 
-// ── Boot ─────────────────────────────────────────────────────
+// ── Boot ────────────────────────────────────────────────────
 connect();
 </script>
 </body>

@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """Game start: character creation and opening scene generation."""
 
-
 from ..ai import call_narrator, call_story_architect
 from ..ai.narrator import call_opening_setup
 from ..ai.provider_base import AIProvider
@@ -22,9 +21,9 @@ from ..parser import parse_narrator_response
 from ..prompt_builders import build_new_game_prompt
 
 
-def start_new_game(provider: AIProvider, creation_data: dict,
-                   config: EngineConfig | None = None,
-                   username: str = "") -> tuple[GameState, str]:
+def start_new_game(
+    provider: AIProvider, creation_data: dict, config: EngineConfig | None = None, username: str = ""
+) -> tuple[GameState, str]:
     """Create character from structured creation data, generate opening scene.
 
     creation_data keys:
@@ -43,6 +42,7 @@ def start_new_game(provider: AIProvider, creation_data: dict,
 
     from ..datasworn.loader import extract_title
     from ..datasworn.settings import active_package, load_package
+
     pkg = load_package(setting_id)
 
     stats = creation_data.get("stats", {"edge": 1, "heart": 2, "iron": 1, "shadow": 1, "wits": 2})
@@ -68,8 +68,10 @@ def start_new_game(provider: AIProvider, creation_data: dict,
         setting_tone="",
         setting_archetype="",
         setting_description=pkg.description,
-        edge=stats.get("edge", 1), heart=stats.get("heart", 2),
-        iron=stats.get("iron", 1), shadow=stats.get("shadow", 1),
+        edge=stats.get("edge", 1),
+        heart=stats.get("heart", 2),
+        iron=stats.get("iron", 1),
+        shadow=stats.get("shadow", 1),
         wits=stats.get("wits", 2),
         backstory=creation_data.get("backstory", ""),
     )
@@ -109,18 +111,25 @@ def start_new_game(provider: AIProvider, creation_data: dict,
     narration = parse_narrator_response(game, raw)
 
     from ..ai.validator import validate_and_retry, validate_architect
-    narration, val_report = validate_and_retry(
-        provider, narration, narrator_prompt, "opening", game, config=config)
+
+    narration, val_report = validate_and_retry(provider, narration, narrator_prompt, "opening", game, config=config)
 
     _pkg = active_package(game)
     _gc = None
     if _pkg:
         _g = _pkg.genre_constraints
-        _gc = {"forbidden_terms": _g.forbidden_terms, "forbidden_concepts": _g.forbidden_concepts, "genre_test": _g.genre_test}
+        _gc = {
+            "forbidden_terms": _g.forbidden_terms,
+            "forbidden_concepts": _g.forbidden_concepts,
+            "genre_test": _g.genre_test,
+        }
 
     from ..models import StoryBlueprint
+
     if blueprint is not None:
-        blueprint = validate_architect(provider, blueprint, game.setting_genre, game.setting_tone, genre_constraints=_gc)
+        blueprint = validate_architect(
+            provider, blueprint, game.setting_genre, game.setting_tone, genre_constraints=_gc
+        )
         game.narrative.story_blueprint = StoryBlueprint.from_dict(blueprint)
     else:
         game.narrative.story_blueprint = None
@@ -139,17 +148,25 @@ def start_new_game(provider: AIProvider, creation_data: dict,
     # No scene_present_ids guard — everything in the opening is witnessed.
     if setup_data.get("deceased_npcs"):
         from ..ai.metadata import process_deceased_npcs
+
         process_deceased_npcs(game, setup_data["deceased_npcs"])
 
     record_scene_intensity(game, "action")
 
-    game.narrative.narration_history.append(NarrationEntry(
-        prompt_summary=f"Opening scene: {game.player_name} in {game.world.current_location}",
-        narration=narration,
-    ))
-    game.narrative.session_log.append(SceneLogEntry(
-        scene=1, summary="Game start", result="opening", validator=val_report,
-    ))
+    game.narrative.narration_history.append(
+        NarrationEntry(
+            prompt_summary=f"Opening scene: {game.player_name} in {game.world.current_location}",
+            narration=narration,
+        )
+    )
+    game.narrative.session_log.append(
+        SceneLogEntry(
+            scene=1,
+            summary="Game start",
+            result="opening",
+            validator=val_report,
+        )
+    )
     return game, narration
 
 
@@ -159,11 +176,9 @@ def _apply_opening_setup(game: GameState, data: dict):
 
     if data.get("npcs"):
         register_extracted_npcs(game, data["npcs"], label="OpeningSetup")
-        log(f"[OpeningSetup] Registered {len(game.npcs)} NPCs: "
-            f"{[n.name for n in game.npcs]}")
+        log(f"[OpeningSetup] Registered {len(game.npcs)} NPCs: {[n.name for n in game.npcs]}")
 
     if data.get("memory_updates"):
         seed_opening_memories(game, data["memory_updates"], label="opening_setup")
 
     apply_world_setup(game, data, clocks_mode="replace")
-

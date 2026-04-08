@@ -8,7 +8,7 @@ from typing import Any
 
 from .config_loader import VERSION
 from .engine_loader import eng
-from .logging_util import get_save_dir, log
+from .logging_util import _safe_name, get_save_dir, log
 from .models import GameState
 from .npc import (
     apply_name_sanitization,
@@ -17,39 +17,31 @@ from .npc import (
 
 # SAVE / LOAD
 
-def save_game(game: GameState, username: str, chat_messages: list | None = None,
-              name: str = "autosave") -> Path:
+
+def save_game(game: GameState, username: str, chat_messages: list | None = None, name: str = "autosave") -> Path:
     """Save game state and chat history."""
+    name = _safe_name(name)
     save_dir = get_save_dir(username)
     save_dir.mkdir(parents=True, exist_ok=True)
-    # Version history: carry forward from existing save
-    version_history = []
     path = save_dir / f"{name}.json"
-    if path.exists():
-        try:
-            existing = json.loads(path.read_text(encoding="utf-8"))
-            version_history = existing.get("version_history", [])
-            if not version_history and existing.get("engine_version"):
-                version_history = [existing["engine_version"]]
-        except Exception:
-            pass
-    if not version_history or version_history[-1] != VERSION:
-        version_history.append(VERSION)
 
     data: dict[str, Any] = {"saved_at": datetime.now().isoformat()}
     data["engine_version"] = VERSION
-    data["version_history"] = version_history
     data["game_state"] = game.to_dict()
 
     # Chat history (exclude transient recaps)
     raw_messages = chat_messages or []
     data["chat_messages"] = [msg for msg in raw_messages if not msg.get("recap")]
     path.write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
-    log(f"[Save] Game saved: {username}/{name} (Scene {game.narrative.scene_count}, {len(data['chat_messages'])} chat msgs)")
+    log(
+        f"[Save] Game saved: {username}/{name} (Scene {game.narrative.scene_count}, {len(data['chat_messages'])} chat msgs)"
+    )
     return path
+
 
 def load_game(username: str, name: str = "autosave") -> tuple[GameState | None, list]:
     """Load game state and chat history. Returns (game, chat_messages)."""
+    name = _safe_name(name)
     save_dir = get_save_dir(username)
     path = save_dir / f"{name}.json"
     if not path.exists():
@@ -66,16 +58,16 @@ def load_game(username: str, name: str = "autosave") -> tuple[GameState | None, 
         name_lower = npc.name.lower()
         npc.aliases = [a for a in npc.aliases if a.lower() != name_lower]
         npc.needs_reflection = npc.importance_accumulator >= eng().npc.reflection_threshold
-        if (npc.status in ("active", "background")
-                and not npc.memory
-                and npc.introduced):
-            log(f"[Load] WARNING: NPC '{npc.name}' ({npc.id}) "
-                f"has no memories", level="warning")
+        if npc.status in ("active", "background") and not npc.memory and npc.introduced:
+            log(f"[Load] WARNING: NPC '{npc.name}' ({npc.id}) has no memories", level="warning")
         apply_name_sanitization(npc)
 
     chat_messages = data.get("chat_messages", [])
-    log(f"[Load] Game loaded: {username}/{name} ({game.player_name}, Scene {game.narrative.scene_count}, {len(chat_messages)} chat msgs)")
+    log(
+        f"[Load] Game loaded: {username}/{name} ({game.player_name}, Scene {game.narrative.scene_count}, {len(chat_messages)} chat msgs)"
+    )
     return game, chat_messages
+
 
 def list_saves_with_info(username: str) -> list[dict]:
     """List all saves with metadata, sorted newest first."""
@@ -87,21 +79,24 @@ def list_saves_with_info(username: str) -> list[dict]:
         try:
             data = json.loads(path.read_text(encoding="utf-8"))
             gs = data.get("game_state", {})
-            infos.append({
-                "name": path.stem,
-                "player_name": gs.get("player_name", "?"),
-                "scene_count": gs.get("narrative", {}).get("scene_count", 0),
-                "chapter_number": gs.get("campaign", {}).get("chapter_number", 1),
-                "saved_at": data.get("saved_at", ""),
-            })
+            infos.append(
+                {
+                    "name": path.stem,
+                    "player_name": gs.get("player_name", "?"),
+                    "scene_count": gs.get("narrative", {}).get("scene_count", 0),
+                    "chapter_number": gs.get("campaign", {}).get("chapter_number", 1),
+                    "saved_at": data.get("saved_at", ""),
+                }
+            )
         except Exception:
-            infos.append({"name": path.stem, "player_name": "?", "scene_count": 0,
-                          "chapter_number": 1, "saved_at": ""})
+            infos.append({"name": path.stem, "player_name": "?", "scene_count": 0, "chapter_number": 1, "saved_at": ""})
     infos.sort(key=lambda x: str(x.get("saved_at", "")), reverse=True)
     return infos
 
+
 def delete_save(username: str, name: str) -> bool:
     """Delete a save file. Returns True if deleted, False if not found."""
+    name = _safe_name(name)
     save_dir = get_save_dir(username)
     path = save_dir / f"{name}.json"
     if not path.exists():
@@ -111,7 +106,7 @@ def delete_save(username: str, name: str) -> bool:
     chapter_dir = save_dir / "chapters" / name
     if chapter_dir.exists():
         import shutil
+
         shutil.rmtree(chapter_dir, ignore_errors=True)
     log(f"[Save] Deleted: {username}/{name}")
     return True
-

@@ -5,7 +5,8 @@ All model types are importable from here:
     from .models import GameState, NpcData, RollResult, ...
 
 Implementation split across:
-- models_base.py: serialization helpers, EngineConfig, Resources, ClockData, WorldState, ClockEvent, PlayerPreferences
+- serialization.py: generic serialize/deserialize
+- models_base.py: EngineConfig, Resources, ClockData, WorldState, ClockEvent, PlayerPreferences
 - models_npc.py: MemoryEntry, NpcData
 - models_story.py: SceneLogEntry, NarrationEntry, StoryAct, CurrentAct, Revelation, PossibleEnding,
                     StoryBlueprint, DirectorGuidance, NarrativeState, NpcEvolution, ChapterSummary, CampaignState
@@ -26,8 +27,6 @@ from .models_base import (  # noqa: F401
     PlayerPreferences,
     Resources,
     WorldState,
-    _fields_from_dict,
-    _fields_to_dict,
 )
 from .models_npc import (  # noqa: F401
     MemoryEntry,
@@ -47,9 +46,11 @@ from .models_story import (  # noqa: F401
     StoryAct,
     StoryBlueprint,
 )
+from .serialization import deserialize, serialize
 
 
 # ROLL RESULT
+
 
 @dataclass
 class RollResult:
@@ -67,9 +68,11 @@ class RollResult:
 
 # BRAIN RESULT
 
+
 @dataclass
 class BrainResult:
     """Structured output from call_brain."""
+
     type: str = "action"
     move: str = "dialog"
     stat: str = "none"
@@ -86,10 +89,11 @@ class BrainResult:
 
     @classmethod
     def from_dict(cls, data: dict) -> BrainResult:
-        return _fields_from_dict(cls, data)
+        return deserialize(cls, data)
 
 
 # TURN SNAPSHOT
+
 
 @dataclass
 class TurnSnapshot:
@@ -98,6 +102,7 @@ class TurnSnapshot:
     State fields (resources, world, etc.) are stored as dicts for restore().
     Turn context (player_input, brain, roll, narration) is set during turn processing.
     """
+
     resources: dict = field(default_factory=dict)
     world: dict = field(default_factory=dict)
     narrative: dict = field(default_factory=dict)
@@ -120,7 +125,7 @@ class TurnSnapshot:
             "crisis_mode": self.crisis_mode,
             "game_over": self.game_over,
             "player_input": self.player_input,
-            "brain": _fields_to_dict(self.brain) if self.brain else None,
+            "brain": serialize(self.brain) if self.brain else None,
             "narration": self.narration,
         }
         if self.roll is not None:
@@ -131,7 +136,7 @@ class TurnSnapshot:
 
     @classmethod
     def from_dict(cls, data: dict) -> TurnSnapshot:
-        known = {f.name for f in cls.__dataclass_fields__.values()}
+        known = set(cls.__dataclass_fields__)
         kwargs = {k: v for k, v in data.items() if k in known}
         snap = cls(**kwargs)
         if isinstance(snap.roll, dict):
@@ -145,6 +150,7 @@ class TurnSnapshot:
 
 
 # GAME STATE
+
 
 @dataclass
 class GameState:
@@ -205,15 +211,29 @@ class GameState:
         self.npcs = [NpcData.from_dict(n) for n in snap.npcs]
         self.crisis_mode = snap.crisis_mode
         self.game_over = snap.game_over
-        log(f"[GameState] Restored from snapshot: "
+        log(
+            f"[GameState] Restored from snapshot: "
             f"H{self.resources.health} Sp{self.resources.spirit} "
-            f"Su{self.resources.supply} Chaos{self.world.chaos_factor}")
+            f"Su{self.resources.supply} Chaos{self.world.chaos_factor}"
+        )
 
     _IDENTITY_FIELDS = (
-        "player_name", "character_concept", "pronouns", "paths",
-        "background_vow", "setting_id", "setting_genre",
-        "setting_tone", "setting_archetype", "setting_description",
-        "edge", "heart", "iron", "shadow", "wits", "backstory",
+        "player_name",
+        "character_concept",
+        "pronouns",
+        "paths",
+        "background_vow",
+        "setting_id",
+        "setting_genre",
+        "setting_tone",
+        "setting_archetype",
+        "setting_description",
+        "edge",
+        "heart",
+        "iron",
+        "shadow",
+        "wits",
+        "backstory",
     )
 
     _SUB_OBJECTS = ("resources", "world", "narrative", "campaign", "preferences")

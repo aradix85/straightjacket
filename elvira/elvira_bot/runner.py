@@ -40,6 +40,7 @@ from .quality_checks import (
     check_npc_spatial_consistency,
 )
 from .recorder import record_turn
+from .display import print_narration, print_state, final_state_dict, print_summary
 
 _HERE = Path(__file__).resolve().parent.parent
 SEPARATOR = "=" * 62
@@ -99,13 +100,14 @@ def run_session(bot_cfg: dict, auto_override: bool = False, turns_override: int 
     # ── Game setup ────────────────────────────────────────────
     print(f"\n{SEPARATOR}")
     print(f"  Straightjacket — Elvira Test Bot — {style.upper()} mode")
-    print(f"  Auto: {'YES' if auto_mode else 'NO'} | Turns/ch: {max_turns} | "
-          f"Chapters: {max_chapters} | Lang: {narration_lang}")
+    print(
+        f"  Auto: {'YES' if auto_mode else 'NO'} | Turns/ch: {max_turns} | "
+        f"Chapters: {max_chapters} | Lang: {narration_lang}"
+    )
     print(f"  Engine: v{VERSION} | Provider: {cfg().ai.provider}")
     print(SEPARATOR)
 
-    game, narration, chat_messages = _setup_game(
-        provider, config, username, game_cfg, auto_mode, slog)
+    game, narration, chat_messages = _setup_game(provider, config, username, game_cfg, auto_mode, slog)
 
     slog.character = game.player_name
     slog.location_start = game.world.current_location
@@ -144,19 +146,29 @@ def run_session(bot_cfg: dict, auto_override: bool = False, turns_override: int 
 
             # Decide: correction test or normal turn
             is_correction_turn = (
-                total_turns > 1
-                and total_turns % CORRECTION_TEST_INTERVAL == 0
-                and game.last_turn_snapshot is not None
+                total_turns > 1 and total_turns % CORRECTION_TEST_INTERVAL == 0 and game.last_turn_snapshot is not None
             )
 
             if is_correction_turn:
                 game, narration, turn_rec, session_ended = _play_correction_turn(
-                    provider, config, game, narration, total_turns, persona, slog)
+                    provider, config, game, narration, total_turns, persona, slog
+                )
             else:
                 game, narration, turn_rec, session_ended = _play_turn(
-                    provider, config, game, narration, total_turns, persona,
-                    style, burn_setting, print_full, print_rolls, do_invariants,
-                    slog, prev_npcs)
+                    provider,
+                    config,
+                    game,
+                    narration,
+                    total_turns,
+                    persona,
+                    style,
+                    burn_setting,
+                    print_full,
+                    print_rolls,
+                    do_invariants,
+                    slog,
+                    prev_npcs,
+                )
 
             # Track burn stats
             if turn_rec.burn_offered:
@@ -199,23 +211,29 @@ def run_session(bot_cfg: dict, auto_override: bool = False, turns_override: int 
         if bp and bp.story_complete and not game.campaign.epilogue_dismissed:
             # Snapshot NPCs before transition for continuity check
             pre_chapter_npcs = [
-                NpcSnapshot(id=n.id, name=n.name, status=n.status,
-                            disposition=n.disposition, bond=n.bond,
-                            memory_count=len(n.memory), last_location=n.last_location)
-                for n in game.npcs if n.status in ("active", "background")
+                NpcSnapshot(
+                    id=n.id,
+                    name=n.name,
+                    status=n.status,
+                    disposition=n.disposition,
+                    bond=n.bond,
+                    memory_count=len(n.memory),
+                    last_location=n.last_location,
+                )
+                for n in game.npcs
+                if n.status in ("active", "background")
             ]
 
             game, narration, chat_messages, should_break = _chapter_transition(
-                provider, config, game, chat_messages, username, save_out,
-                chapter_num, chapter_idx, max_chapters, slog)
+                provider, config, game, chat_messages, username, save_out, chapter_num, chapter_idx, max_chapters, slog
+            )
 
             # Chapter continuity check
             if not should_break and pre_chapter_npcs:
                 cont_issues = check_chapter_continuity(game, pre_chapter_npcs)
                 for issue in cont_issues:
                     print(f"  [CONTINUITY] {issue}")
-                    slog.chapter_continuity_issues.append(
-                        f"Ch{chapter_num}→{chapter_num+1}: {issue}")
+                    slog.chapter_continuity_issues.append(f"Ch{chapter_num}→{chapter_num + 1}: {issue}")
 
             if should_break:
                 break
@@ -224,8 +242,9 @@ def run_session(bot_cfg: dict, auto_override: bool = False, turns_override: int 
 
     # ── Wrap up ───────────────────────────────────────────────
     slog.total_turns = total_turns
-    slog.ended_reason = slog.ended_reason if slog.ended_reason != "unknown" else (
-        ch_rec.ended_reason if slog.chapters else "complete")
+    slog.ended_reason = (
+        slog.ended_reason if slog.ended_reason != "unknown" else (ch_rec.ended_reason if slog.chapters else "complete")
+    )
     slog.validator_summary = _aggregate_validator_stats(slog)
     slog.quality_summary = _aggregate_quality_stats(slog)
     slog.burn_stats = {
@@ -233,10 +252,10 @@ def run_session(bot_cfg: dict, auto_override: bool = False, turns_override: int 
         "taken": burns_taken,
         "failed": burns_failed,
     }
-    slog.final_state = _final_state_dict(game)
+    slog.final_state = final_state_dict(game)
     slog.ended_at = datetime.now().isoformat()
 
-    _print_summary(slog, game)
+    print_summary(slog, game)
     _try_save(game, username, chat_messages, save_out)
 
     log_path = _HERE / log_file
@@ -253,6 +272,7 @@ def run_session(bot_cfg: dict, auto_override: bool = False, turns_override: int 
 
 # ── Setup ─────────────────────────────────────────────────────
 
+
 def _setup_game(provider, config, username, game_cfg, auto_mode, slog):
     if not auto_mode and game_cfg.get("load_existing"):
         save_name = game_cfg.get("save_name", "autosave")
@@ -264,8 +284,9 @@ def _setup_game(provider, config, username, game_cfg, auto_mode, slog):
             if msg.get("role") == "assistant" and not msg.get("recap"):
                 narration = msg.get("content", "")
                 break
-        print(f"[SETUP] Loaded: {game.player_name} (Ch{game.campaign.chapter_number}, "
-              f"Scene {game.narrative.scene_count})")
+        print(
+            f"[SETUP] Loaded: {game.player_name} (Ch{game.campaign.chapter_number}, Scene {game.narrative.scene_count})"
+        )
         return game, narration, chat_messages
 
     setting_id = game_cfg.get("setting_id", "starforged")
@@ -289,9 +310,22 @@ def _setup_game(provider, config, username, game_cfg, auto_mode, slog):
 
 # ── Normal turn ───────────────────────────────────────────────
 
-def _play_turn(provider, config, game, narration, turn, persona, style,
-               burn_setting, print_full, print_rolls, do_invariants,
-               slog, prev_npcs):
+
+def _play_turn(
+    provider,
+    config,
+    game,
+    narration,
+    turn,
+    persona,
+    style,
+    burn_setting,
+    print_full,
+    print_rolls,
+    do_invariants,
+    slog,
+    prev_npcs,
+):
     # 1. Bot decides action
     context = build_turn_context(game, narration, turn)
     try:
@@ -305,20 +339,20 @@ def _play_turn(provider, config, game, narration, turn, persona, style,
 
     # 2. Process turn
     try:
-        game, narration, roll, burn_info, director_ctx = process_turn(
-            provider, game, action, config)
+        game, narration, roll, burn_info, director_ctx = process_turn(provider, game, action, config)
     except Exception as e:
         print(f"[ERROR] process_turn failed: {e}")
         traceback.print_exc()
-        rec = TurnRecord(turn=turn, chapter=game.campaign.chapter_number,
-                         action=action, error=str(e))
+        rec = TurnRecord(turn=turn, chapter=game.campaign.chapter_number, action=action, error=str(e))
         return game, narration, rec, True
 
-    _print_narration(narration, print_full)
+    print_narration(narration, print_full)
     if roll and print_rolls:
-        print(f"  [ROLL] {roll.stat_name.upper()} {roll.stat_value} | "
-              f"Action {roll.d1}+{roll.stat_value}={roll.action_score} vs "
-              f"[{roll.c1}, {roll.c2}] -> {roll.result}")
+        print(
+            f"  [ROLL] {roll.stat_name.upper()} {roll.stat_value} | "
+            f"Action {roll.d1}+{roll.stat_value}={roll.action_score} vs "
+            f"[{roll.c1}, {roll.c2}] -> {roll.result}"
+        )
 
     # 3. Record turn state
     rec = record_turn(game, turn, action, narration, roll)
@@ -339,7 +373,7 @@ def _play_turn(provider, config, game, narration, turn, persona, style,
             rec.director_error = str(e)
 
     # 6. State summary
-    _print_state(game)
+    print_state(game)
 
     # 7. Narration quality check
     quality_issues = check_narration_quality(narration)
@@ -376,6 +410,7 @@ def _play_turn(provider, config, game, narration, turn, persona, style,
 
 # ── Correction test turn ──────────────────────────────────────
 
+
 def _play_correction_turn(provider, config, game, narration, turn, persona, slog):
     """Send a ## correction to stress-test the correction pipeline."""
     print(f"  [CORRECTION TEST] Sending ## correction at turn {turn}")
@@ -392,17 +427,26 @@ def _play_correction_turn(provider, config, game, narration, turn, persona, slog
 
     try:
         game, new_narration, director_ctx = process_correction(
-            provider, game, correction_text.lstrip("# ").strip(), config)
+            provider, game, correction_text.lstrip("# ").strip(), config
+        )
     except Exception as e:
         print(f"  [CORRECTION] Failed: {e}")
         traceback.print_exc()
-        rec = TurnRecord(turn=turn, chapter=game.campaign.chapter_number,
-                         action=correction_text, is_correction=True,
-                         error=f"correction: {e}")
-        slog.correction_tests.append({
-            "turn": turn, "correction": correction_text,
-            "success": False, "error": str(e),
-        })
+        rec = TurnRecord(
+            turn=turn,
+            chapter=game.campaign.chapter_number,
+            action=correction_text,
+            is_correction=True,
+            error=f"correction: {e}",
+        )
+        slog.correction_tests.append(
+            {
+                "turn": turn,
+                "correction": correction_text,
+                "success": False,
+                "error": str(e),
+            }
+        )
         return game, narration, rec, False  # don't end session on correction failure
 
     rec = record_turn(game, turn, correction_text, new_narration, None)
@@ -423,8 +467,8 @@ def _play_correction_turn(provider, config, game, narration, turn, persona, slog
         except Exception as e:
             rec.director_error = str(e)
 
-    _print_narration(new_narration, full=False)
-    _print_state(game)
+    print_narration(new_narration, full=False)
+    print_state(game)
 
     # Invariants after correction
     violations = assert_game_state(game, turn)
@@ -434,17 +478,22 @@ def _play_correction_turn(provider, config, game, narration, turn, persona, slog
             print(f"  !!  {v}")
             slog.violations.append(v)
 
-    slog.correction_tests.append({
-        "turn": turn, "correction": correction_text,
-        "success": True, "violations": violations,
-        "quality_issues": quality_issues,
-    })
+    slog.correction_tests.append(
+        {
+            "turn": turn,
+            "correction": correction_text,
+            "success": True,
+            "violations": violations,
+            "quality_issues": quality_issues,
+        }
+    )
     print("  [CORRECTION TEST] Completed successfully")
 
     return game, new_narration, rec, False
 
 
 # ── Momentum burn ─────────────────────────────────────────────
+
 
 def _handle_burn(provider, config, game, burn_info, burn_setting, style, rec):
     should_burn = False
@@ -458,13 +507,16 @@ def _handle_burn(provider, config, game, burn_info, burn_setting, style, rec):
 
     rec.burn_offered = burn_info["new_result"]
     rec.burn_taken = should_burn
-    print(f"  [BURN] Available ({burn_info['roll'].result} -> "
-          f"{burn_info['new_result']}) | Decision: {'BURN' if should_burn else 'skip'}")
+    print(
+        f"  [BURN] Available ({burn_info['roll'].result} -> "
+        f"{burn_info['new_result']}) | Decision: {'BURN' if should_burn else 'skip'}"
+    )
 
     if should_burn:
         try:
             game, narration = process_momentum_burn(
-                provider=provider, game=game,
+                provider=provider,
+                game=game,
                 old_roll=burn_info["roll"],
                 new_result=burn_info["new_result"],
                 brain_data=burn_info["brain"],
@@ -481,14 +533,16 @@ def _handle_burn(provider, config, game, burn_info, burn_setting, style, rec):
 
 # ── Chapter transition ────────────────────────────────────────
 
-def _chapter_transition(provider, config, game, chat_messages, username,
-                        save_out, chapter_num, chapter_idx, max_chapters, slog):
+
+def _chapter_transition(
+    provider, config, game, chat_messages, username, save_out, chapter_num, chapter_idx, max_chapters, slog
+):
     """Returns (game, narration, chat_messages, should_break)."""
     print(f"\n{SEPARATOR}\n  GENERATING EPILOGUE — Chapter {chapter_num}\n{SEPARATOR}")
     try:
         game, epilogue = generate_epilogue(provider, game, config)
         chat_messages.append({"role": "assistant", "content": epilogue, "epilogue": True})
-        _print_narration(epilogue, full=True)
+        print_narration(epilogue, full=True)
     except Exception as e:
         tb = traceback.format_exc()
         print(f"  [EPILOGUE] Failed: {e}")
@@ -520,20 +574,6 @@ def _chapter_transition(provider, config, game, chat_messages, username,
 
 # ── Helpers ───────────────────────────────────────────────────
 
-def _print_narration(narration: str, full: bool) -> None:
-    if full:
-        print(f"\n  [NARRATOR]\n{narration}\n")
-    else:
-        excerpt = narration.replace("\n", " ").strip()[:220]
-        print(f"\n  [NARRATOR] {excerpt}{'...' if len(narration) > 220 else ''}")
-
-
-def _print_state(game: GameState) -> None:
-    res = game.resources
-    print(f"  [STATE] H:{res.health} Sp:{res.spirit} Su:{res.supply} "
-          f"Mo:{res.momentum} Chaos:{game.world.chaos_factor} "
-          f"Scene:{game.narrative.scene_count}")
-
 
 def _try_save(game, username, chat_messages, save_out) -> None:
     try:
@@ -553,24 +593,7 @@ def _game_context_dict(game: GameState) -> dict:
         "paths": game.paths,
         "backstory": game.backstory,
         "background_vow": game.background_vow,
-        "stats": {"edge": game.edge, "heart": game.heart, "iron": game.iron,
-                  "shadow": game.shadow, "wits": game.wits},
-    }
-
-
-def _final_state_dict(game: GameState) -> dict:
-    return {
-        "character": game.player_name,
-        "chapter": game.campaign.chapter_number,
-        "location": game.world.current_location,
-        "scene": game.narrative.scene_count,
-        "health": game.resources.health,
-        "spirit": game.resources.spirit,
-        "supply": game.resources.supply,
-        "momentum": game.resources.momentum,
-        "chaos": game.world.chaos_factor,
-        "npcs": len(game.npcs),
-        "active_clocks": len([c for c in game.world.clocks if not c.fired]),
+        "stats": {"edge": game.edge, "heart": game.heart, "iron": game.iron, "shadow": game.shadow, "wits": game.wits},
     }
 
 
@@ -637,43 +660,3 @@ def _aggregate_quality_stats(slog: SessionLog) -> dict:
         "correction_tests_failed": sum(1 for c in slog.correction_tests if not c.get("success")),
         "top_quality_issues": sorted(quality_counts.items(), key=lambda x: -x[1])[:10],
     }
-
-
-def _print_summary(slog: SessionLog, game: GameState) -> None:
-    print(f"\n{SEPARATOR}")
-    print(f"  Session complete: {slog.ended_reason}")
-    print(f"  Chapters played : {len(slog.chapters)}")
-    print(f"  Total turns     : {slog.total_turns}")
-    print(f"  Violations      : {len(slog.violations)}")
-    print(f"  Final scene     : {game.narrative.scene_count}")
-    print(f"  Final health    : {game.resources.health} | spirit: {game.resources.spirit}")
-
-    vs = slog.validator_summary
-    if vs.get("turns_checked", 0) > 0:
-        print(f"  Validator       : {vs['turns_checked']} checked, {vs['turns_retried']} retried "
-              f"({vs['total_retries']} total), {vs['turns_failed']} still failed")
-        for violation, count in vs.get("top_violations", [])[:5]:
-            print(f"    {count}x: {violation[:100]}")
-
-    qs = slog.quality_summary
-    if qs.get("narration_quality_total", 0) > 0:
-        print(f"  Narration leaks : {qs['narration_quality_total']}")
-        for issue_type, count in qs.get("top_quality_issues", [])[:5]:
-            print(f"    {count}x: {issue_type}")
-
-    if qs.get("spatial_issues_total", 0) > 0:
-        print(f"  Spatial issues  : {qs['spatial_issues_total']}")
-
-    if qs.get("chapter_continuity_total", 0) > 0:
-        print(f"  Continuity      : {qs['chapter_continuity_total']}")
-
-    ct = qs.get("correction_tests_total", 0)
-    if ct > 0:
-        cf = qs.get("correction_tests_failed", 0)
-        print(f"  Corrections     : {ct} tested, {cf} failed")
-
-    bs = slog.burn_stats
-    if bs.get("offered", 0) > 0:
-        print(f"  Burns           : {bs['offered']} offered, {bs['taken']} taken, {bs['failed']} failed")
-
-    print(SEPARATOR)

@@ -2,6 +2,8 @@
 """Straightjacket correction flow: undo/redo turns, state patching."""
 
 import json
+import re
+import uuid
 
 from ..i18n import t
 from .ai import (
@@ -34,7 +36,7 @@ from .models import (
     SceneLogEntry,
     TurnSnapshot,
 )
-from .npc import activate_npcs_for_prompt, find_npc
+from .npc import activate_npcs_for_prompt, consolidate_memory, find_npc
 from .npc.lifecycle import sanitize_aliases
 from .parser import parse_narrator_response
 from .prompt_blocks import get_narration_lang
@@ -43,9 +45,10 @@ from .prompt_builders import build_action_prompt, build_dialog_prompt
 
 MAX_NARRATION_CHARS = 1500
 
-def call_correction_brain(provider: AIProvider, game: GameState,
-                           correction_text: str,
-                           config: EngineConfig | None = None) -> dict:
+
+def call_correction_brain(
+    provider: AIProvider, game: GameState, correction_text: str, config: EngineConfig | None = None
+) -> dict:
     """Analyse a ## correction request against the last turn snapshot."""
     snap = game.last_turn_snapshot
     if not snap:
@@ -55,10 +58,9 @@ def call_correction_brain(provider: AIProvider, game: GameState,
     lang = get_narration_lang(_cfg)
 
     def _npc_line(n):
-        aliases = f' aliases:{",".join(n.aliases)}' if n.aliases else ""
-        return (f'id:{n.id} name:"{n.name}"{aliases} '
-                f'disposition:{n.disposition} '
-                f'desc:"{n.description[:120]}"')
+        aliases = f" aliases:{','.join(n.aliases)}" if n.aliases else ""
+        return f'id:{n.id} name:"{n.name}"{aliases} disposition:{n.disposition} desc:"{n.description[:120]}"'
+
     npc_lines = "\n".join(_npc_line(n) for n in game.npcs) or "(none)"
 
     brain = snap.brain or BrainResult()
@@ -66,7 +68,8 @@ def call_correction_brain(provider: AIProvider, game: GameState,
     roll_summary = (
         f"{roll.result} ({roll.move}, {roll.stat_name}={roll.stat_value}, "
         f"d1={roll.d1}+d2={roll.d2} vs c1={roll.c1}/c2={roll.c2})"
-        if roll else "dialog (no roll)"
+        if roll
+        else "dialog (no roll)"
     )
 
     system = get_prompt("correction_brain", lang=lang)
@@ -93,19 +96,23 @@ npcs:
     _c = cfg()
     try:
         response = create_with_retry(
-            provider, max_retries=_c.ai.max_retries.correction,
-            model=_c.ai.brain_model, max_tokens=_c.ai.max_tokens.correction, system=system,
+            provider,
+            max_retries=_c.ai.max_retries.correction,
+            model=_c.ai.brain_model,
+            max_tokens=_c.ai.max_tokens.correction,
+            system=system,
             messages=[{"role": "user", "content": user_msg}],
             json_schema=CORRECTION_OUTPUT_SCHEMA,
             **sampling_params("correction"),
         )
         result = json.loads(response.content)
-        log(f"[Correction] source={result['correction_source']} "
-            f"reroll={result['reroll_needed']} ops={len(result['state_ops'])}")
+        log(
+            f"[Correction] source={result['correction_source']} "
+            f"reroll={result['reroll_needed']} ops={len(result['state_ops'])}"
+        )
         return result
     except Exception as e:
-        log(f"[Correction] Brain failed ({type(e).__name__}: {e}), "
-            f"falling back to no-op state_error", level="warning")
+        log(f"[Correction] Brain failed ({type(e).__name__}: {e}), falling back to no-op state_error", level="warning")
         return {
             "correction_source": "state_error",
             "corrected_input": "",
@@ -116,19 +123,17 @@ npcs:
             "state_ops": [],
         }
 
+
 def _apply_correction_ops(game: GameState, ops: list) -> None:
     """Apply the atomic state_ops returned by call_correction_brain."""
-    import uuid
     for op_dict in ops:
         op = op_dict.get("op")
 
         if op == "npc_edit":
             npc = find_npc(game, op_dict.get("npc_id", ""))
             if npc and op_dict.get("fields"):
-                allowed = {"name", "description", "disposition", "agenda",
-                           "instinct", "aliases", "bond", "status"}
-                edits = {k: v for k, v in op_dict["fields"].items()
-                         if k in allowed and v is not None}
+                allowed = {"name", "description", "disposition", "agenda", "instinct", "aliases", "bond", "status"}
+                edits = {k: v for k, v in op_dict["fields"].items() if k in allowed and v is not None}
 
                 # Rename detection: if name is changing, engine owns alias bookkeeping.
                 # Pop aliases from edits so the model can't overwrite our list.
@@ -139,7 +144,7 @@ def _apply_correction_ops(game: GameState, ops: list) -> None:
 
                 # Status validation
                 if "status" in edits:
-                    valid_statuses = {"active", "background", "inactive", "deceased", "lore"}
+                    valid_statuses = {"active", "background", "deceased", "lore"}
                     if edits["status"] not in valid_statuses:
                         edits.pop("status")
 
@@ -155,15 +160,15 @@ def _apply_correction_ops(game: GameState, ops: list) -> None:
 
                 # Clean up death annotation if status set to deceased
                 if edits.get("status") == "deceased" and npc.description:
-                    import re as _re
-                    npc.description = _re.sub(
-                        r'\s*\[?(VERSTORBEN|DECEASED|TOT|DEAD)\]?\s*', '',
-                        npc.description, flags=_re.IGNORECASE
+                    npc.description = re.sub(
+                        r"\s*\[?(VERSTORBEN|DECEASED|TOT|DEAD)\]?\s*", "", npc.description, flags=re.IGNORECASE
                     ).strip()
 
                 if edits:
-                    log(f"[Correction] npc_edit: {npc.name} fields={list(edits.keys())}"
-                        f"{' (RENAME)' if is_rename else ''}")
+                    log(
+                        f"[Correction] npc_edit: {npc.name} fields={list(edits.keys())}"
+                        f"{' (RENAME)' if is_rename else ''}"
+                    )
 
         elif op == "npc_split":
             existing = find_npc(game, op_dict.get("npc_id", ""))
@@ -193,7 +198,6 @@ def _apply_correction_ops(game: GameState, ops: list) -> None:
                     target.aliases.append(source.name)
                 game.npcs = [n for n in game.npcs if n.id != source.id]
                 sanitize_aliases(target)
-                from .npc import consolidate_memory
                 consolidate_memory(target)
                 log(f"[Correction] npc_merge: '{source.name}' absorbed into '{target.name}'")
 
@@ -218,15 +222,16 @@ def _apply_correction_ops(game: GameState, ops: list) -> None:
                 game.backstory += sep + op_dict["value"]
                 log("[Correction] backstory appended")
 
+
 def _restore_from_snapshot(game: GameState, snap: "TurnSnapshot") -> None:
     """Fully restore all turn-mutable GameState fields from a snapshot."""
     game.restore(snap)
     log("[Correction] State fully restored from snapshot")
 
-def process_correction(provider: AIProvider, game: GameState,
-                        correction_text: str,
-                        config: EngineConfig | None = None
-                        ) -> tuple[GameState, str, dict | None]:
+
+def process_correction(
+    provider: AIProvider, game: GameState, correction_text: str, config: EngineConfig | None = None
+) -> tuple[GameState, str, dict | None]:
     """Handle a ## correction request."""
     snap = game.last_turn_snapshot
     if not snap:
@@ -256,36 +261,63 @@ def process_correction(provider: AIProvider, game: GameState,
             consequences, clock_events = apply_consequences(game, roll, brain)
             npc_agency, _ = check_npc_agency(game)
             activated_npcs, mentioned_npcs, _ = activate_npcs_for_prompt(game, brain, corrected_input)
-            prompt = build_action_prompt(game, brain, roll, consequences, clock_events, npc_agency,
-                                         player_words=corrected_input, config=_cfg,
-                                         activated_npcs=activated_npcs, mentioned_npcs=mentioned_npcs)
+            prompt = build_action_prompt(
+                game,
+                brain,
+                roll,
+                consequences,
+                clock_events,
+                npc_agency,
+                player_words=corrected_input,
+                config=_cfg,
+                activated_npcs=activated_npcs,
+                mentioned_npcs=mentioned_npcs,
+            )
         else:
             roll = None
             nar.scene_count += 1
             activated_npcs, mentioned_npcs, _ = activate_npcs_for_prompt(game, brain, corrected_input)
-            prompt = build_dialog_prompt(game, brain, player_words=corrected_input,
-                                         activated_npcs=activated_npcs,
-                                         mentioned_npcs=mentioned_npcs, config=_cfg)
+            prompt = build_dialog_prompt(
+                game,
+                brain,
+                player_words=corrected_input,
+                activated_npcs=activated_npcs,
+                mentioned_npcs=mentioned_npcs,
+                config=_cfg,
+            )
 
     # Step 2b: state_error → patch state in-place, no re-roll
     else:
         roll = snap.roll
         brain = snap.brain or BrainResult()
         _apply_correction_ops(game, analysis.get("state_ops", []))
-        activated_npcs, mentioned_npcs, _ = activate_npcs_for_prompt(
-            game, brain, (snap.player_input or ""))
+        activated_npcs, mentioned_npcs, _ = activate_npcs_for_prompt(game, brain, (snap.player_input or ""))
         _last_entry = nar.session_log[-1] if nar.session_log else None
         if roll:
             consequences = _last_entry.consequences if _last_entry else []
             clock_events = _last_entry.clock_events if _last_entry else []
             npc_agency, _ = check_npc_agency(game)
-            prompt = build_action_prompt(game, brain, roll, consequences, clock_events, npc_agency,
-                                         player_words=(snap.player_input or ""), config=_cfg,
-                                         activated_npcs=activated_npcs, mentioned_npcs=mentioned_npcs)
+            prompt = build_action_prompt(
+                game,
+                brain,
+                roll,
+                consequences,
+                clock_events,
+                npc_agency,
+                player_words=(snap.player_input or ""),
+                config=_cfg,
+                activated_npcs=activated_npcs,
+                mentioned_npcs=mentioned_npcs,
+            )
         else:
-            prompt = build_dialog_prompt(game, brain, player_words=(snap.player_input or ""),
-                                         activated_npcs=activated_npcs,
-                                         mentioned_npcs=mentioned_npcs, config=_cfg)
+            prompt = build_dialog_prompt(
+                game,
+                brain,
+                player_words=(snap.player_input or ""),
+                activated_npcs=activated_npcs,
+                mentioned_npcs=mentioned_npcs,
+                config=_cfg,
+            )
 
     # Step 3: Narrator rewrite
     correction_tag = (
@@ -306,8 +338,9 @@ def process_correction(provider: AIProvider, game: GameState,
 
     # Step 4: Metadata extraction
     _scene_present_ids = {n.id for n in activated_npcs}
-    metadata = call_narrator_metadata(provider, narration, game, _cfg,
-                                       brain=brain, consequences=[] if source != "input_misread" else [])
+    metadata = call_narrator_metadata(
+        provider, narration, game, _cfg, brain=brain, consequences=[] if source != "input_misread" else []
+    )
     apply_narrator_metadata(game, metadata, scene_present_ids=_scene_present_ids)
 
     # Step 5: Update session_log / narration_history
@@ -327,16 +360,18 @@ def process_correction(provider: AIProvider, game: GameState,
         record_scene_intensity(game, scene_type)
         nar.narration_history.append(narration_entry)
         if len(nar.narration_history) > eng().pacing.max_narration_history:
-            nar.narration_history = nar.narration_history[-eng().pacing.max_narration_history:]
-        nar.session_log.append(SceneLogEntry(
-            scene=nar.scene_count,
-            summary=f"[corrected] {intent}",
-            move=brain.move,
-            result=roll.result if roll else "dialog",
-            dramatic_question=brain.dramatic_question,
-        ))
+            nar.narration_history = nar.narration_history[-eng().pacing.max_narration_history :]
+        nar.session_log.append(
+            SceneLogEntry(
+                scene=nar.scene_count,
+                summary=f"[corrected] {intent}",
+                move=brain.move,
+                result=roll.result if roll else "dialog",
+                dramatic_question=brain.dramatic_question,
+            )
+        )
         if len(nar.session_log) > eng().pacing.max_session_log:
-            nar.session_log = nar.session_log[-eng().pacing.max_session_log:]
+            nar.session_log = nar.session_log[-eng().pacing.max_session_log :]
     else:
         if nar.narration_history:
             nar.narration_history[-1] = narration_entry
@@ -345,19 +380,22 @@ def process_correction(provider: AIProvider, game: GameState,
         if nar.session_log:
             nar.session_log[-1].summary = f"[corrected] {intent}"
         else:
-            nar.session_log.append(SceneLogEntry(
-                scene=nar.scene_count,
-                summary=f"[corrected] {intent}",
-                move=brain.move,
-                result=roll.result if roll else "dialog",
-                dramatic_question=brain.dramatic_question,
-            ))
+            nar.session_log.append(
+                SceneLogEntry(
+                    scene=nar.scene_count,
+                    summary=f"[corrected] {intent}",
+                    move=brain.move,
+                    result=roll.result if roll else "dialog",
+                    dramatic_question=brain.dramatic_question,
+                )
+            )
 
     # Step 6: Director
     director_ctx = None
     if analysis.get("director_useful"):
         director_reason = should_call_director(
-            game, roll_result=roll.result if roll else "dialog",
+            game,
+            roll_result=roll.result if roll else "dialog",
             chaos_used=False,
             new_npcs_found=bool(metadata.get("new_npcs")),
             revelation_used=False,
@@ -367,17 +405,23 @@ def process_correction(provider: AIProvider, game: GameState,
             log(f"[Correction] Director queued (reason: {director_reason})")
             bp = game.narrative.story_blueprint
             if director_reason.startswith("phase:") and bp is not None:
-                bp.triggered_director_phases.append(director_reason[len("phase:"):])
+                bp.triggered_director_phases.append(director_reason[len("phase:") :])
 
     log(f"[Correction] Complete: source={source}, rewrite done")
     return game, narration, director_ctx
 
-def process_momentum_burn(provider: AIProvider, game: GameState,
-                          old_roll: RollResult, new_result: str,
-                          brain_data: BrainResult, player_words: str = "",
-                          config: EngineConfig | None = None,
-                          pre_snapshot: TurnSnapshot | None = None,
-                          chaos_interrupt: str | None = None) -> tuple[GameState, str]:
+
+def process_momentum_burn(
+    provider: AIProvider,
+    game: GameState,
+    old_roll: RollResult,
+    new_result: str,
+    brain_data: BrainResult,
+    player_words: str = "",
+    config: EngineConfig | None = None,
+    pre_snapshot: TurnSnapshot | None = None,
+    chaos_interrupt: str | None = None,
+) -> tuple[GameState, str]:
     """Re-narrate a scene after momentum burn upgrades the result."""
     if not pre_snapshot:
         log("[Burn] No pre_snapshot — cannot restore state", level="warning")
@@ -388,22 +432,39 @@ def process_momentum_burn(provider: AIProvider, game: GameState,
     _e = eng()
     game.resources.reset_momentum(floor=_e.momentum.floor, reset_value=_e.momentum.start, max_cap=_e.momentum.max)
 
-    upgraded = RollResult(old_roll.d1, old_roll.d2, old_roll.c1, old_roll.c2,
-                          old_roll.stat_name, old_roll.stat_value, old_roll.action_score,
-                          new_result, old_roll.move, old_roll.match)
+    upgraded = RollResult(
+        old_roll.d1,
+        old_roll.d2,
+        old_roll.c1,
+        old_roll.c2,
+        old_roll.stat_name,
+        old_roll.stat_value,
+        old_roll.action_score,
+        new_result,
+        old_roll.move,
+        old_roll.match,
+    )
 
     consequences, clock_events = apply_consequences(game, upgraded, brain_data)
     activated_npcs, mentioned_npcs, _ = activate_npcs_for_prompt(game, brain_data, player_words)
-    prompt = build_action_prompt(game, brain_data, upgraded, consequences, clock_events, [],
-                                player_words=player_words, chaos_interrupt=chaos_interrupt,
-                                activated_npcs=activated_npcs, mentioned_npcs=mentioned_npcs,
-                                config=config)
-    prompt = prompt.replace('<task>', '<momentum_burn>Character digs deep, turns the tide.</momentum_burn>\n<task>')
+    prompt = build_action_prompt(
+        game,
+        brain_data,
+        upgraded,
+        consequences,
+        clock_events,
+        [],
+        player_words=player_words,
+        chaos_interrupt=chaos_interrupt,
+        activated_npcs=activated_npcs,
+        mentioned_npcs=mentioned_npcs,
+        config=config,
+    )
+    prompt = prompt.replace("<task>", "<momentum_burn>Character digs deep, turns the tide.</momentum_burn>\n<task>")
 
     raw = call_narrator(provider, prompt, game, config)
     narration = parse_narrator_response(game, raw)
-    metadata = call_narrator_metadata(provider, narration, game, config,
-                                       brain=brain_data, consequences=consequences)
+    metadata = call_narrator_metadata(provider, narration, game, config, brain=brain_data, consequences=consequences)
     _scene_present_ids = {n.id for n in activated_npcs} | {n.id for n in mentioned_npcs}
     apply_narrator_metadata(game, metadata, scene_present_ids=_scene_present_ids)
 

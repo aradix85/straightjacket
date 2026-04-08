@@ -4,20 +4,31 @@
 from straightjacket.engine import engine_loader, emotions_loader
 from straightjacket.engine.config_loader import _ConfigNode
 from straightjacket.engine.models import (
-    GameState, MemoryEntry, NpcData, SceneLogEntry,
-    StoryAct, StoryBlueprint,
+    GameState,
+    MemoryEntry,
+    NpcData,
+    SceneLogEntry,
+    StoryAct,
+    StoryBlueprint,
 )
 
 
 def _stub():
-    engine_loader._eng = _ConfigNode({
-        "bonds": {"start": 0, "max": 4},
-        "npc": {"max_active": 12, "reflection_threshold": 30,
-                "max_memory_entries": 25, "max_observations": 15,
-                "max_reflections": 8, "memory_recency_decay": 0.92},
-        "pacing": {"director_interval": 3, "window_size": 5,
-                    "intense_threshold": 3, "calm_threshold": 2},
-    }, "engine")
+    engine_loader._eng = _ConfigNode(
+        {
+            "bonds": {"start": 0, "max": 4},
+            "npc": {
+                "max_active": 12,
+                "reflection_threshold": 30,
+                "max_memory_entries": 25,
+                "max_observations": 15,
+                "max_reflections": 8,
+                "memory_recency_decay": 0.92,
+            },
+            "pacing": {"director_interval": 3, "window_size": 5, "intense_threshold": 3, "calm_threshold": 2},
+        },
+        "engine",
+    )
     emotions_loader._data = {
         "importance": {"neutral": 2, "reflective": 4, "curious": 3, "conflicted": 6},
         "keyword_boosts": {},
@@ -30,38 +41,67 @@ def _game() -> GameState:
     game.narrative.scene_count = 6
     game.narrative.session_log.append(SceneLogEntry(scene=6, summary="Last scene"))
     game.npcs = [
-        NpcData(id="npc_1", name="Kira", disposition="friendly", bond=2,
-                agenda="protect archives", instinct="trust cautiously",
-                description="Young archivist.", needs_reflection=True,
-                importance_accumulator=35,
-                memory=[MemoryEntry(scene=5, event="Helped player", importance=5)]),
-        NpcData(id="npc_2", name="Borin", disposition="neutral", bond=0,
-                agenda="", instinct="", needs_reflection=True,
-                importance_accumulator=31),
+        NpcData(
+            id="npc_1",
+            name="Kira",
+            disposition="friendly",
+            bond=2,
+            agenda="protect archives",
+            instinct="trust cautiously",
+            description="Young archivist.",
+            needs_reflection=True,
+            importance_accumulator=35,
+            memory=[MemoryEntry(scene=5, event="Helped player", importance=5)],
+        ),
+        NpcData(
+            id="npc_2",
+            name="Borin",
+            disposition="neutral",
+            bond=0,
+            agenda="",
+            instinct="",
+            needs_reflection=True,
+            importance_accumulator=31,
+        ),
     ]
     return game
 
 
 def _blueprint() -> StoryBlueprint:
     return StoryBlueprint(
-        central_conflict="Shadow rises", antagonist_force="Darkness",
-        thematic_thread="Cost of survival", structure_type="3act",
+        central_conflict="Shadow rises",
+        antagonist_force="Darkness",
+        thematic_thread="Cost of survival",
+        structure_type="3act",
         acts=[
-            StoryAct(phase="setup", title="Gathering", scene_range=[1, 7],
-                     mood="mysterious", transition_trigger="Allies gathered"),
-            StoryAct(phase="confrontation", title="Darkness", scene_range=[8, 14],
-                     mood="tense", transition_trigger="Shadow revealed"),
-            StoryAct(phase="climax", title="Final", scene_range=[15, 20],
-                     mood="desperate", transition_trigger="Resolution"),
+            StoryAct(
+                phase="setup",
+                title="Gathering",
+                scene_range=[1, 7],
+                mood="mysterious",
+                transition_trigger="Allies gathered",
+            ),
+            StoryAct(
+                phase="confrontation",
+                title="Darkness",
+                scene_range=[8, 14],
+                mood="tense",
+                transition_trigger="Shadow revealed",
+            ),
+            StoryAct(
+                phase="climax", title="Final", scene_range=[15, 20], mood="desperate", transition_trigger="Resolution"
+            ),
         ],
     )
 
 
 # ── apply_director_guidance: empty guidance resets flags ─────
 
+
 def test_empty_guidance_resets_reflection_flags():
     _stub()
     from straightjacket.engine.director import apply_director_guidance
+
     game = _game()
     assert game.npcs[0].needs_reflection is True
     apply_director_guidance(game, {})
@@ -71,16 +111,21 @@ def test_empty_guidance_resets_reflection_flags():
 
 # ── apply_director_guidance: stores guidance ─────────────────
 
+
 def test_stores_narrator_guidance():
     _stub()
     from straightjacket.engine.director import apply_director_guidance
+
     game = _game()
-    apply_director_guidance(game, {
-        "narrator_guidance": "Build tension slowly.",
-        "npc_guidance": {"npc_1": "Kira should test loyalty."},
-        "pacing": "building",
-        "arc_notes": "Story progressing.",
-    })
+    apply_director_guidance(
+        game,
+        {
+            "narrator_guidance": "Build tension slowly.",
+            "npc_guidance": {"npc_1": "Kira should test loyalty."},
+            "pacing": "building",
+            "arc_notes": "Story progressing.",
+        },
+    )
     dg = game.narrative.director_guidance
     assert dg.narrator_guidance == "Build tension slowly."
     assert dg.npc_guidance == {"npc_1": "Kira should test loyalty."}
@@ -89,9 +134,11 @@ def test_stores_narrator_guidance():
 
 # ── apply_director_guidance: scene summary ───────────────────
 
+
 def test_enriches_session_log_with_summary():
     _stub()
     from straightjacket.engine.director import apply_director_guidance
+
     game = _game()
     apply_director_guidance(game, {"scene_summary": "A tense exchange."})
     assert game.narrative.session_log[-1].rich_summary == "A tense exchange."
@@ -99,18 +146,25 @@ def test_enriches_session_log_with_summary():
 
 # ── apply_director_guidance: reflections ─────────────────────
 
+
 def test_reflection_adds_memory_and_resets_flag():
     _stub()
     from straightjacket.engine.director import apply_director_guidance
+
     game = _game()
-    apply_director_guidance(game, {
-        "npc_reflections": [{
-            "npc_id": "npc_1",
-            "reflection": "Kira is beginning to trust the player.",
-            "tone": "reluctant_trust",
-            "tone_key": "conflicted",
-        }],
-    })
+    apply_director_guidance(
+        game,
+        {
+            "npc_reflections": [
+                {
+                    "npc_id": "npc_1",
+                    "reflection": "Kira is beginning to trust the player.",
+                    "tone": "reluctant_trust",
+                    "tone_key": "conflicted",
+                }
+            ],
+        },
+    )
     kira = game.npcs[0]
     assert kira.needs_reflection is False
     assert kira.importance_accumulator == 0
@@ -125,15 +179,21 @@ def test_reflection_adds_memory_and_resets_flag():
 def test_reflection_rejects_truncated():
     _stub()
     from straightjacket.engine.director import apply_director_guidance
+
     game = _game()
     mem_before = len(game.npcs[0].memory)
-    apply_director_guidance(game, {
-        "npc_reflections": [{
-            "npc_id": "npc_1",
-            "reflection": "Kira is beginning to tru",  # truncated, no sentence-ending punctuation
-            "tone_key": "conflicted",
-        }],
-    })
+    apply_director_guidance(
+        game,
+        {
+            "npc_reflections": [
+                {
+                    "npc_id": "npc_1",
+                    "reflection": "Kira is beginning to tru",  # truncated, no sentence-ending punctuation
+                    "tone_key": "conflicted",
+                }
+            ],
+        },
+    )
     # Truncated reflection rejected — no new memory
     assert len(game.npcs[0].memory) == mem_before
     # But flag still gets reset via fallback
@@ -143,16 +203,22 @@ def test_reflection_rejects_truncated():
 def test_reflection_fills_empty_agenda_instinct():
     _stub()
     from straightjacket.engine.director import apply_director_guidance
+
     game = _game()
-    apply_director_guidance(game, {
-        "npc_reflections": [{
-            "npc_id": "npc_2",
-            "reflection": "Borin is watching carefully.",
-            "tone_key": "neutral",
-            "agenda": "survive at any cost",
-            "instinct": "goes quiet when cornered",
-        }],
-    })
+    apply_director_guidance(
+        game,
+        {
+            "npc_reflections": [
+                {
+                    "npc_id": "npc_2",
+                    "reflection": "Borin is watching carefully.",
+                    "tone_key": "neutral",
+                    "agenda": "survive at any cost",
+                    "instinct": "goes quiet when cornered",
+                }
+            ],
+        },
+    )
     borin = game.npcs[1]
     assert borin.agenda == "survive at any cost"
     assert borin.instinct == "goes quiet when cornered"
@@ -161,91 +227,127 @@ def test_reflection_fills_empty_agenda_instinct():
 def test_reflection_does_not_overwrite_existing_agenda():
     _stub()
     from straightjacket.engine.director import apply_director_guidance
+
     game = _game()
-    apply_director_guidance(game, {
-        "npc_reflections": [{
-            "npc_id": "npc_1",
-            "reflection": "Kira reconsiders her goals.",
-            "tone_key": "conflicted",
-            "agenda": "new agenda",  # Should NOT overwrite — Kira already has one
-        }],
-    })
+    apply_director_guidance(
+        game,
+        {
+            "npc_reflections": [
+                {
+                    "npc_id": "npc_1",
+                    "reflection": "Kira reconsiders her goals.",
+                    "tone_key": "conflicted",
+                    "agenda": "new agenda",  # Should NOT overwrite — Kira already has one
+                }
+            ],
+        },
+    )
     assert game.npcs[0].agenda == "protect archives"
 
 
 def test_reflection_updates_stale_agenda():
     _stub()
     from straightjacket.engine.director import apply_director_guidance
+
     game = _game()
-    apply_director_guidance(game, {
-        "npc_reflections": [{
-            "npc_id": "npc_1",
-            "reflection": "Kira shifts her priorities.",
-            "tone_key": "conflicted",
-            "updated_agenda": "find the truth",
-        }],
-    })
+    apply_director_guidance(
+        game,
+        {
+            "npc_reflections": [
+                {
+                    "npc_id": "npc_1",
+                    "reflection": "Kira shifts her priorities.",
+                    "tone_key": "conflicted",
+                    "updated_agenda": "find the truth",
+                }
+            ],
+        },
+    )
     assert game.npcs[0].agenda == "find the truth"
 
 
 def test_reflection_updates_arc():
     _stub()
     from straightjacket.engine.director import apply_director_guidance
+
     game = _game()
-    apply_director_guidance(game, {
-        "npc_reflections": [{
-            "npc_id": "npc_1",
-            "reflection": "Kira is conflicted.",
-            "tone_key": "conflicted",
-            "updated_arc": "Torn between loyalty and self-preservation.",
-        }],
-    })
+    apply_director_guidance(
+        game,
+        {
+            "npc_reflections": [
+                {
+                    "npc_id": "npc_1",
+                    "reflection": "Kira is conflicted.",
+                    "tone_key": "conflicted",
+                    "updated_arc": "Torn between loyalty and self-preservation.",
+                }
+            ],
+        },
+    )
     assert game.npcs[0].arc == "Torn between loyalty and self-preservation."
 
 
 def test_reflection_rejects_too_long_arc():
     _stub()
     from straightjacket.engine.director import apply_director_guidance
+
     game = _game()
     game.npcs[0].arc = "Old arc."
-    apply_director_guidance(game, {
-        "npc_reflections": [{
-            "npc_id": "npc_1",
-            "reflection": "Kira evolves.",
-            "tone_key": "conflicted",
-            "updated_arc": "x" * 301,
-        }],
-    })
+    apply_director_guidance(
+        game,
+        {
+            "npc_reflections": [
+                {
+                    "npc_id": "npc_1",
+                    "reflection": "Kira evolves.",
+                    "tone_key": "conflicted",
+                    "updated_arc": "x" * 301,
+                }
+            ],
+        },
+    )
     assert game.npcs[0].arc == "Old arc."
 
 
 def test_reflection_updates_description():
     _stub()
     from straightjacket.engine.director import apply_director_guidance
+
     game = _game()
-    apply_director_guidance(game, {
-        "npc_reflections": [{
-            "npc_id": "npc_1",
-            "reflection": "Kira has changed.",
-            "tone_key": "conflicted",
-            "updated_description": "Battle-scarred archivist with haunted eyes.",
-        }],
-    })
+    apply_director_guidance(
+        game,
+        {
+            "npc_reflections": [
+                {
+                    "npc_id": "npc_1",
+                    "reflection": "Kira has changed.",
+                    "tone_key": "conflicted",
+                    "updated_description": "Battle-scarred archivist with haunted eyes.",
+                }
+            ],
+        },
+    )
     assert "Battle-scarred" in game.npcs[0].description
 
 
 def test_reflection_strips_name_prefix_from_description():
     _stub()
     from straightjacket.engine.director import apply_director_guidance
+
     game = _game()
-    apply_director_guidance(game, {
-        "npc_reflections": [{
-            "npc_id": "npc_1",
-            "reflection": "Kira has changed.",
-            "tone_key": "conflicted",
-            "updated_description": "Kira: Battle-scarred archivist with haunted eyes.",
-        }],
-    })
+    apply_director_guidance(
+        game,
+        {
+            "npc_reflections": [
+                {
+                    "npc_id": "npc_1",
+                    "reflection": "Kira has changed.",
+                    "tone_key": "conflicted",
+                    "updated_description": "Kira: Battle-scarred archivist with haunted eyes.",
+                }
+            ],
+        },
+    )
     assert not game.npcs[0].description.startswith("Kira:")
     assert "Battle-scarred" in game.npcs[0].description
 
@@ -253,40 +355,54 @@ def test_reflection_strips_name_prefix_from_description():
 def test_reflection_rejects_too_long_description():
     _stub()
     from straightjacket.engine.director import apply_director_guidance
+
     game = _game()
     game.npcs[0].description = "Original."
-    apply_director_guidance(game, {
-        "npc_reflections": [{
-            "npc_id": "npc_1",
-            "reflection": "Kira evolves.",
-            "tone_key": "conflicted",
-            "updated_description": "x" * 201,
-        }],
-    })
+    apply_director_guidance(
+        game,
+        {
+            "npc_reflections": [
+                {
+                    "npc_id": "npc_1",
+                    "reflection": "Kira evolves.",
+                    "tone_key": "conflicted",
+                    "updated_description": "x" * 201,
+                }
+            ],
+        },
+    )
     assert game.npcs[0].description == "Original."
 
 
 def test_reflection_rejects_truncated_description():
     _stub()
     from straightjacket.engine.director import apply_director_guidance
+
     game = _game()
     game.npcs[0].description = "Original description here."
-    apply_director_guidance(game, {
-        "npc_reflections": [{
-            "npc_id": "npc_1",
-            "reflection": "Kira evolves.",
-            "tone_key": "conflicted",
-            "updated_description": "Incomplete desc without",  # no sentence-ending punctuation
-        }],
-    })
+    apply_director_guidance(
+        game,
+        {
+            "npc_reflections": [
+                {
+                    "npc_id": "npc_1",
+                    "reflection": "Kira evolves.",
+                    "tone_key": "conflicted",
+                    "updated_description": "Incomplete desc without",  # no sentence-ending punctuation
+                }
+            ],
+        },
+    )
     assert game.npcs[0].description == "Original description here."
 
 
 # ── apply_director_guidance: act transitions ─────────────────
 
+
 def test_act_transition_marks_blueprint():
     _stub()
     from straightjacket.engine.director import apply_director_guidance
+
     game = _game()
     game.narrative.story_blueprint = _blueprint()
     apply_director_guidance(game, {"act_transition": True})
@@ -296,6 +412,7 @@ def test_act_transition_marks_blueprint():
 def test_act_transition_backfills_skipped_acts():
     _stub()
     from straightjacket.engine.director import apply_director_guidance
+
     game = _game()
     game.narrative.scene_count = 12
     bp = _blueprint()
@@ -311,6 +428,7 @@ def test_act_transition_backfills_skipped_acts():
 def test_act_transition_ignores_final_act():
     _stub()
     from straightjacket.engine.director import apply_director_guidance
+
     game = _game()
     game.narrative.scene_count = 18
     bp = _blueprint()
@@ -323,18 +441,25 @@ def test_act_transition_ignores_final_act():
 
 # ── apply_director_guidance: stale reflection reset ──────────
 
+
 def test_unreflected_npcs_get_reset():
     _stub()
     from straightjacket.engine.director import apply_director_guidance
+
     game = _game()
     # Only reflect Kira, not Borin
-    apply_director_guidance(game, {
-        "npc_reflections": [{
-            "npc_id": "npc_1",
-            "reflection": "Kira is evolving.",
-            "tone_key": "conflicted",
-        }],
-    })
+    apply_director_guidance(
+        game,
+        {
+            "npc_reflections": [
+                {
+                    "npc_id": "npc_1",
+                    "reflection": "Kira is evolving.",
+                    "tone_key": "conflicted",
+                }
+            ],
+        },
+    )
     # Borin was not reflected — should still get reset
     assert game.npcs[1].needs_reflection is False
     assert game.npcs[1].importance_accumulator == 0
@@ -342,9 +467,11 @@ def test_unreflected_npcs_get_reset():
 
 # ── should_call_director ─────────────────────────────────────
 
+
 def test_should_call_on_miss():
     _stub()
     from straightjacket.engine.director import should_call_director
+
     game = _game()
     assert should_call_director(game, roll_result="MISS") == "miss"
 
@@ -352,6 +479,7 @@ def test_should_call_on_miss():
 def test_should_call_on_chaos():
     _stub()
     from straightjacket.engine.director import should_call_director
+
     game = _game()
     assert should_call_director(game, chaos_used=True) == "chaos"
 
@@ -359,6 +487,7 @@ def test_should_call_on_chaos():
 def test_should_call_on_reflection_needed():
     _stub()
     from straightjacket.engine.director import should_call_director
+
     game = _game()
     reason = should_call_director(game)
     assert reason is not None
@@ -368,6 +497,7 @@ def test_should_call_on_reflection_needed():
 def test_should_call_on_interval():
     _stub()
     from straightjacket.engine.director import should_call_director
+
     game = _game()
     game.npcs = []  # No reflection triggers
     game.narrative.scene_count = 9  # divisible by director_interval=3
@@ -377,6 +507,7 @@ def test_should_call_on_interval():
 def test_should_call_returns_none_when_no_trigger():
     _stub()
     from straightjacket.engine.director import should_call_director
+
     game = _game()
     game.npcs = []
     game.narrative.scene_count = 7  # not divisible by 3
@@ -385,9 +516,11 @@ def test_should_call_returns_none_when_no_trigger():
 
 # ── reset_stale_reflection_flags ─────────────────────────────
 
+
 def test_reset_stale_reflection_flags():
     _stub()
     from straightjacket.engine.director import reset_stale_reflection_flags
+
     game = _game()
     reset_stale_reflection_flags(game)
     for npc in game.npcs:

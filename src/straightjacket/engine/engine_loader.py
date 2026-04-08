@@ -5,7 +5,6 @@ Singleton pattern matching config_loader.py. Provides dot-access
 to all game mechanics values (damage tables, NPC limits, chaos, etc.).
 """
 
-
 import yaml
 
 from .bootstrap_log import bootstrap_log as _log
@@ -15,14 +14,14 @@ _ENGINE_PATH = PROJECT_ROOT / "engine.yaml"
 
 _eng: _ConfigNode | None = None
 
+
 def eng() -> _ConfigNode:
     """Get the engine mechanics config. Loads on first access."""
     global _eng
     if _eng is None:
         if not _ENGINE_PATH.exists():
             raise FileNotFoundError(
-                f"Engine config not found: {_ENGINE_PATH}\n"
-                f"The engine.yaml file ships with the repo."
+                f"Engine config not found: {_ENGINE_PATH}\nThe engine.yaml file ships with the repo."
             )
         with open(_ENGINE_PATH, encoding="utf-8") as f:
             data = yaml.safe_load(f)
@@ -32,13 +31,20 @@ def eng() -> _ConfigNode:
         _log(f"[Engine] Loaded {_ENGINE_PATH}")
     return _eng
 
+
 def reload_engine() -> _ConfigNode:
-    """Force reload from disk."""
+    """Force reload from disk. Also clears derived caches (schemas)."""
     global _eng
     _eng = None
+    # Invalidate schema cache that depends on engine.yaml move/stat enums
+    from .ai.schemas import clear_brain_cache
+
+    clear_brain_cache()
     return eng()
 
+
 # CONVENIENCE: position-based damage lookup
+
 
 def damage(category: str, position: str = "risky") -> int:
     """Look up a damage value from engine.yaml damage tables.
@@ -61,7 +67,7 @@ def damage(category: str, position: str = "risky") -> int:
             return 0
 
     # Flat int (e.g. miss.social.bond: 1)
-    if isinstance(node, (int, float)):
+    if isinstance(node, int | float):
         return int(node)
 
     # Position-keyed dict (e.g. miss.combat: {controlled: 1, risky: 2, desperate: 3})

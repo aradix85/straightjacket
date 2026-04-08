@@ -32,8 +32,7 @@ def get_persona(style: str) -> str:
     return prompts.get(f"style_{style}", prompts.get("style_balanced", ""))
 
 
-def ask_bot(provider: AIProvider, system: str, user: str,
-            max_tokens: int = 300, model: str = "") -> str:
+def ask_bot(provider: AIProvider, system: str, user: str, max_tokens: int = 300, model: str = "") -> str:
     """Single-shot call to the bot player model."""
     _model = model or cfg().ai.brain_model
     response = provider.create_message(
@@ -51,15 +50,11 @@ def build_turn_context(game: GameState, narration: str, turn: int) -> str:
     res = game.resources
     world = game.world
 
-    active_npcs = "\n".join(
-        f"  - {n.name} [{n.disposition}]"
-        for n in game.npcs if n.status == "active"
-    ) or "  (none)"
+    active_npcs = "\n".join(f"  - {n.name} [{n.disposition}]" for n in game.npcs if n.status == "active") or "  (none)"
 
-    active_clocks = "\n".join(
-        f"  - {c.name}: {c.filled}/{c.segments} ticks"
-        for c in world.clocks if not c.fired
-    ) or "  (none)"
+    active_clocks = (
+        "\n".join(f"  - {c.name}: {c.filled}/{c.segments} ticks" for c in world.clocks if not c.fired) or "  (none)"
+    )
 
     story_block = ""
     bp = game.narrative.story_blueprint
@@ -67,10 +62,7 @@ def build_turn_context(game: GameState, narration: str, turn: int) -> str:
         act = get_current_act(game)
         sr = act.scene_range
         r_str = f"Scene {sr[0]}-{sr[1]}" if len(sr) == 2 else "?"
-        story_block = (
-            f"\nSTORY PHASE : Act {act.act_number}/{act.total_acts}"
-            f" - {act.title} ({r_str})"
-        )
+        story_block = f"\nSTORY PHASE : Act {act.act_number}/{act.total_acts} - {act.title} ({r_str})"
         conflict = bp.central_conflict
         if conflict:
             story_block += f"\nCENTRAL CONFLICT: {conflict[:120]}"
@@ -98,8 +90,7 @@ NOTE: Vary your approach — don't repeat the same action type multiple turns in
 What does {game.player_name} do next? Write only the player action."""
 
 
-def decide_burn_momentum(provider: AIProvider, game: GameState,
-                         burn_info: dict, style: str) -> bool:
+def decide_burn_momentum(provider: AIProvider, game: GameState, burn_info: dict, style: str) -> bool:
     """Decide whether to burn momentum. Aggressor always burns."""
     if style == "aggressor":
         return True
@@ -109,6 +100,5 @@ def decide_burn_momentum(provider: AIProvider, game: GameState,
         new_result=burn_info["new_result"],
         momentum=game.resources.momentum,
     )
-    answer = ask_bot(provider, "You are a solo RPG player making a tactical decision.",
-                     prompt, max_tokens=10)
+    answer = ask_bot(provider, "You are a solo RPG player making a tactical decision.", prompt, max_tokens=10)
     return answer.lower().startswith("y")

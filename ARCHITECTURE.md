@@ -146,7 +146,48 @@ Elvira is the real integration test. Direct mode drives the engine with an AI pl
 
 ## Adding a New Setting
 
-1. Get Datasworn JSON → `data/your_setting.json`
-2. Create `data/settings/your_setting.yaml` (see starforged.yaml as template)
-3. Define vocabulary substitutions, genre constraints, oracle paths
-4. The setting appears in character creation automatically
+Settings are data packages that combine a Datasworn JSON file (game content: moves, oracles, assets) with a settings YAML file (engine integration: vocabulary, genre constraints, oracle paths).
+
+### Step by step
+
+1. Get the Datasworn JSON for your setting → `data/your_setting.json`. Datasworn JSON files contain the game's mechanical content: moves, oracles, assets (paths/companions/etc). See [github.com/rsek/datasworn](https://github.com/rsek/datasworn) for the format.
+2. Create `data/settings/your_setting.yaml` (use `data/settings/starforged.yaml` as template).
+3. The setting appears in character creation automatically — no Python changes needed.
+
+### Settings YAML format
+
+```yaml
+# data/settings/your_setting.yaml
+id: your_setting                    # Must match the Datasworn JSON filename (without .json)
+title: "Your Setting Name"          # Display name in character creation
+description: "One paragraph describing the world, tone, and premise."
+
+# Vocabulary substitutions: generic term → setting-specific term.
+# Included in every narrator prompt to keep the AI in-genre.
+vocabulary:
+  spaceship: iron vessel
+  planet: forge-world
+  alien: abomination
+
+# Genre constraints: what must NOT appear in narration or story blueprints.
+genre_constraints:
+  forbidden_terms:                  # Words the narrator must never use
+    - magic
+    - spell
+    - wizard
+  forbidden_concepts:               # Broader prohibitions for the architect validator
+    - "supernatural powers beyond the setting's technology level"
+  genre_test: "Could this exist in a world with only pre-industrial technology?"
+
+# Oracle paths: where to find name tables and backstory prompts in the Datasworn JSON.
+oracle_paths:
+  names:                            # Used by Elvira's character creation for random names
+    - "oracles/character/name/given"
+    - "oracles/character/name/family"
+  backstory:                        # Used for random backstory generation
+    - "oracles/character/backstory"
+```
+
+The `vocabulary` block maps generic fantasy/sci-fi terms to setting-specific language. This implements the design document's vocabulary control principle: the AI writes in the setting's voice instead of defaulting to genre conventions from training data.
+
+The `genre_constraints` block feeds both the rule-based validator (forbidden_terms checked via regex) and the architect validator (forbidden_concepts checked via LLM). The `genre_test` string is a yes/no question the LLM applies to story blueprints.

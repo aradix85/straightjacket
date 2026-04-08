@@ -6,7 +6,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-from .models_base import ClockEvent, _fields_from_dict, _fields_to_dict
+from .models_base import ClockEvent
+from .serialization import deserialize, serialize
 
 
 @dataclass
@@ -30,22 +31,11 @@ class SceneLogEntry:
     revelation_check: dict = field(default_factory=dict)
 
     def to_dict(self) -> dict:
-        d = {}
-        for f in self.__dataclass_fields__.values():
-            val = getattr(self, f.name)
-            if f.name == "clock_events":
-                d[f.name] = [e.to_dict() for e in val]
-            else:
-                d[f.name] = val
-        return d
+        return serialize(self)
 
     @classmethod
     def from_dict(cls, data: dict) -> SceneLogEntry:
-        known = {f.name for f in cls.__dataclass_fields__.values()}
-        kwargs = {k: v for k, v in data.items() if k in known}
-        if "clock_events" in kwargs and isinstance(kwargs["clock_events"], list):
-            kwargs["clock_events"] = [ClockEvent.from_dict(e) for e in kwargs["clock_events"]]
-        return cls(**kwargs)
+        return deserialize(cls, data)
 
 
 @dataclass
@@ -57,16 +47,17 @@ class NarrationEntry:
     narration: str = ""
 
     def to_dict(self) -> dict:
-        return _fields_to_dict(self)
+        return serialize(self)
 
     @classmethod
     def from_dict(cls, data: dict) -> NarrationEntry:
-        return _fields_from_dict(cls, data)
+        return deserialize(cls, data)
 
 
 @dataclass
 class StoryAct:
     """Single act in a story blueprint."""
+
     phase: str = ""
     title: str = ""
     goal: str = ""
@@ -75,16 +66,17 @@ class StoryAct:
     transition_trigger: str = ""
 
     def to_dict(self) -> dict:
-        return _fields_to_dict(self)
+        return serialize(self)
 
     @classmethod
     def from_dict(cls, data: dict) -> StoryAct:
-        return _fields_from_dict(cls, data)
+        return deserialize(cls, data)
 
 
 @dataclass
 class CurrentAct:
-    """Computed act info from get_current_act(). StoryAct fields plus runtime state."""
+    """Computed act info from get_current_act(). Not serialized."""
+
     phase: str = ""
     title: str = ""
     goal: str = ""
@@ -100,36 +92,39 @@ class CurrentAct:
 @dataclass
 class Revelation:
     """Story revelation with timing and weight."""
+
     id: str = ""
     content: str = ""
     earliest_scene: int = 999
     dramatic_weight: str = "medium"
 
     def to_dict(self) -> dict:
-        return _fields_to_dict(self)
+        return serialize(self)
 
     @classmethod
     def from_dict(cls, data: dict) -> Revelation:
-        return _fields_from_dict(cls, data)
+        return deserialize(cls, data)
 
 
 @dataclass
 class PossibleEnding:
     """Possible story ending."""
+
     type: str = ""
     description: str = ""
 
     def to_dict(self) -> dict:
-        return _fields_to_dict(self)
+        return serialize(self)
 
     @classmethod
     def from_dict(cls, data: dict) -> PossibleEnding:
-        return _fields_from_dict(cls, data)
+        return deserialize(cls, data)
 
 
 @dataclass
 class StoryBlueprint:
     """Story architect output. Tracks act structure, revelations, and completion."""
+
     central_conflict: str = ""
     antagonist_force: str = ""
     thematic_thread: str = ""
@@ -143,36 +138,11 @@ class StoryBlueprint:
     story_complete: bool = False
 
     def to_dict(self) -> dict:
-        return {
-            "central_conflict": self.central_conflict,
-            "antagonist_force": self.antagonist_force,
-            "thematic_thread": self.thematic_thread,
-            "structure_type": self.structure_type,
-            "acts": [a.to_dict() for a in self.acts],
-            "revelations": [r.to_dict() for r in self.revelations],
-            "possible_endings": [e.to_dict() for e in self.possible_endings],
-            "revealed": list(self.revealed),
-            "triggered_transitions": list(self.triggered_transitions),
-            "triggered_director_phases": list(self.triggered_director_phases),
-            "story_complete": self.story_complete,
-        }
+        return serialize(self)
 
     @classmethod
     def from_dict(cls, data: dict) -> StoryBlueprint:
-        bp = cls(
-            central_conflict=data["central_conflict"],
-            antagonist_force=data["antagonist_force"],
-            thematic_thread=data["thematic_thread"],
-            structure_type=data["structure_type"],
-            revealed=list(data["revealed"]),
-            triggered_transitions=list(data["triggered_transitions"]),
-            triggered_director_phases=list(data.get("triggered_director_phases", [])),
-            story_complete=bool(data["story_complete"]),
-        )
-        bp.acts = [StoryAct.from_dict(a) for a in data["acts"]]
-        bp.revelations = [Revelation.from_dict(r) for r in data["revelations"]]
-        bp.possible_endings = [PossibleEnding.from_dict(e) for e in data["possible_endings"]]
-        return bp
+        return deserialize(cls, data)
 
     @property
     def has_acts(self) -> bool:
@@ -182,32 +152,24 @@ class StoryBlueprint:
 @dataclass
 class DirectorGuidance:
     """Director output stored between turns for narrator context."""
+
     narrator_guidance: str = ""
     npc_guidance: dict[str, str] = field(default_factory=dict)
     pacing: str = ""
     arc_notes: str = ""
 
     def to_dict(self) -> dict:
-        return {
-            "narrator_guidance": self.narrator_guidance,
-            "npc_guidance": dict(self.npc_guidance),
-            "pacing": self.pacing,
-            "arc_notes": self.arc_notes,
-        }
+        return serialize(self)
 
     @classmethod
     def from_dict(cls, data: dict) -> DirectorGuidance:
-        return cls(
-            narrator_guidance=data["narrator_guidance"],
-            npc_guidance=dict(data["npc_guidance"]),
-            pacing=data["pacing"],
-            arc_notes=data["arc_notes"],
-        )
+        return deserialize(cls, data)
 
 
 @dataclass
 class NarrativeState:
     """Scene tracking, history, story arc, director guidance."""
+
     scene_count: int = 0
     session_log: list[SceneLogEntry] = field(default_factory=list)
     narration_history: list[NarrationEntry] = field(default_factory=list)
@@ -216,6 +178,7 @@ class NarrativeState:
     scene_intensity_history: list[str] = field(default_factory=list)
 
     def snapshot(self) -> dict:
+        """Lightweight snapshot for undo. Captures lengths (not full lists) and mutable sub-state."""
         return {
             "scene_count": self.scene_count,
             "session_log_len": len(self.session_log),
@@ -227,62 +190,52 @@ class NarrativeState:
                 "triggered_transitions": list(self.story_blueprint.triggered_transitions),
                 "triggered_director_phases": list(self.story_blueprint.triggered_director_phases),
                 "story_complete": self.story_blueprint.story_complete,
-            } if self.story_blueprint else None,
+            }
+            if self.story_blueprint
+            else None,
         }
 
     def restore(self, snap: dict) -> None:
+        """Restore from a lightweight snapshot. Truncates lists to snapshotted lengths."""
         self.scene_count = snap["scene_count"]
         self.director_guidance = DirectorGuidance.from_dict(snap["director_guidance"])
         self.scene_intensity_history = list(snap["scene_intensity_history"])
-        self.session_log = self.session_log[:snap["session_log_len"]]
-        self.narration_history = self.narration_history[:snap["narration_history_len"]]
+        self.session_log = self.session_log[: snap["session_log_len"]]
+        self.narration_history = self.narration_history[: snap["narration_history_len"]]
         bp_snap = snap["story_blueprint_snapshot"]
         if bp_snap is not None and self.story_blueprint is not None:
             self.story_blueprint.revealed = list(bp_snap["revealed"])
             self.story_blueprint.triggered_transitions = list(bp_snap["triggered_transitions"])
-            self.story_blueprint.triggered_director_phases = list(bp_snap.get("triggered_director_phases", []))
+            self.story_blueprint.triggered_director_phases = list(bp_snap["triggered_director_phases"])
             self.story_blueprint.story_complete = bp_snap["story_complete"]
 
     def to_dict(self) -> dict:
-        return {
-            "scene_count": self.scene_count,
-            "session_log": [e.to_dict() for e in self.session_log],
-            "narration_history": [e.to_dict() for e in self.narration_history],
-            "story_blueprint": self.story_blueprint.to_dict() if self.story_blueprint else None,
-            "director_guidance": self.director_guidance.to_dict(),
-            "scene_intensity_history": list(self.scene_intensity_history),
-        }
+        return serialize(self)
 
     @classmethod
     def from_dict(cls, data: dict) -> NarrativeState:
-        n = cls()
-        n.scene_count = data["scene_count"]
-        n.session_log = [SceneLogEntry.from_dict(e) for e in data["session_log"]]
-        n.narration_history = [NarrationEntry.from_dict(e) for e in data["narration_history"]]
-        bp = data["story_blueprint"]
-        n.story_blueprint = StoryBlueprint.from_dict(bp) if bp is not None else None
-        n.director_guidance = DirectorGuidance.from_dict(data["director_guidance"])
-        n.scene_intensity_history = list(data["scene_intensity_history"])
-        return n
+        return deserialize(cls, data)
 
 
 @dataclass
 class NpcEvolution:
     """Projected NPC change from chapter summary."""
+
     name: str = ""
     projection: str = ""
 
     def to_dict(self) -> dict:
-        return _fields_to_dict(self)
+        return serialize(self)
 
     @classmethod
     def from_dict(cls, data: dict) -> NpcEvolution:
-        return _fields_from_dict(cls, data)
+        return deserialize(cls, data)
 
 
 @dataclass
 class ChapterSummary:
     """Summary of a completed chapter for campaign continuity."""
+
     chapter: int = 0
     title: str = ""
     summary: str = ""
@@ -294,37 +247,17 @@ class ChapterSummary:
     scenes: int = 0
 
     def to_dict(self) -> dict:
-        return {
-            "chapter": self.chapter,
-            "title": self.title,
-            "summary": self.summary,
-            "unresolved_threads": list(self.unresolved_threads),
-            "character_growth": self.character_growth,
-            "npc_evolutions": [e.to_dict() for e in self.npc_evolutions],
-            "thematic_question": self.thematic_question,
-            "post_story_location": self.post_story_location,
-            "scenes": self.scenes,
-        }
+        return serialize(self)
 
     @classmethod
     def from_dict(cls, data: dict) -> ChapterSummary:
-        evolutions = [NpcEvolution.from_dict(e) for e in data["npc_evolutions"]]
-        return cls(
-            chapter=data["chapter"],
-            title=data["title"],
-            summary=data["summary"],
-            unresolved_threads=list(data["unresolved_threads"]),
-            character_growth=data["character_growth"],
-            npc_evolutions=evolutions,
-            thematic_question=data["thematic_question"],
-            post_story_location=data["post_story_location"],
-            scenes=data["scenes"],
-        )
+        return deserialize(cls, data)
 
 
 @dataclass
 class CampaignState:
     """Chapter progression and epilogue."""
+
     campaign_history: list[ChapterSummary] = field(default_factory=list)
     chapter_number: int = 1
     epilogue_shown: bool = False
@@ -332,6 +265,10 @@ class CampaignState:
     epilogue_text: str = ""
 
     def snapshot(self) -> dict:
+        """Lightweight snapshot for turn undo. Only captures fields that can change
+        mid-turn. campaign_history, chapter_number, and epilogue_text are excluded
+        because they only change at chapter boundaries (start_new_chapter), never
+        during normal turn processing or correction."""
         return {
             "epilogue_shown": self.epilogue_shown,
             "epilogue_dismissed": self.epilogue_dismissed,
@@ -342,20 +279,8 @@ class CampaignState:
         self.epilogue_dismissed = snap["epilogue_dismissed"]
 
     def to_dict(self) -> dict:
-        return {
-            "campaign_history": [ch.to_dict() for ch in self.campaign_history],
-            "chapter_number": self.chapter_number,
-            "epilogue_shown": self.epilogue_shown,
-            "epilogue_dismissed": self.epilogue_dismissed,
-            "epilogue_text": self.epilogue_text,
-        }
+        return serialize(self)
 
     @classmethod
     def from_dict(cls, data: dict) -> CampaignState:
-        return cls(
-            campaign_history=[ChapterSummary.from_dict(ch) for ch in data["campaign_history"]],
-            chapter_number=data["chapter_number"],
-            epilogue_shown=data["epilogue_shown"],
-            epilogue_dismissed=data["epilogue_dismissed"],
-            epilogue_text=data["epilogue_text"],
-        )
+        return deserialize(cls, data)

@@ -62,13 +62,13 @@ def _resolve_slug_refs(game: GameState, mem_updates: list, fresh_npcs: list):
                         best_npc = npc
 
         if best_npc and best_score > 0:
-            log(f"[Metadata] Resolved slug '{ref}' → '{best_npc.name}' "
-                f"({best_npc.id}, score={best_score:.2f})")
+            log(f"[Metadata] Resolved slug '{ref}' → '{best_npc.name}' ({best_npc.id}, score={best_score:.2f})")
             u["npc_id"] = best_npc.id
 
-def apply_narrator_metadata(game: GameState, metadata: dict,
-                              scene_present_ids: set | None = None,
-                              world_addition: str = ""):
+
+def apply_narrator_metadata(
+    game: GameState, metadata: dict, scene_present_ids: set | None = None, world_addition: str = ""
+):
     """Apply structured metadata from the metadata extractor to game state.
     scene_present_ids: set of NPC IDs that were activated/present in the scene.
     world_addition: Brain's world_addition text, passed through to process_npc_details
@@ -125,10 +125,13 @@ def apply_narrator_metadata(game: GameState, metadata: dict,
 
     # Memory updates — pass presence guards for hallucination rejection
     if mem_updates:
-        apply_memory_updates(game, mem_updates,
-                             scene_present_ids=scene_present_ids,
-                             pre_turn_npc_ids=pre_npc_ids,
-                             pre_turn_lore_ids=pre_lore_ids)
+        apply_memory_updates(
+            game,
+            mem_updates,
+            scene_present_ids=scene_present_ids,
+            pre_turn_npc_ids=pre_npc_ids,
+            pre_turn_lore_ids=pre_lore_ids,
+        )
 
     # Lore NPCs — historically significant but never physically present
     lore_npcs = metadata.get("lore_npcs", [])
@@ -140,8 +143,8 @@ def apply_narrator_metadata(game: GameState, metadata: dict,
     # so all extractor-driven data is available.
     _check_death_corroboration(game)
 
-def process_deceased_npcs(game: GameState, deceased_list: list,
-                           scene_present_ids: set | None = None):
+
+def process_deceased_npcs(game: GameState, deceased_list: list, scene_present_ids: set | None = None):
     """Mark NPCs as deceased based on metadata extractor report.
     Sets status='deceased' — this excludes them from all active processing:
     prompts, memories, reflections, sidebar, reactivation.
@@ -161,18 +164,18 @@ def process_deceased_npcs(game: GameState, deceased_list: list,
         # Presence guard: NPC must have been in-scene to die on-screen
         if scene_present_ids is not None and npc.id not in scene_present_ids:
             # Allow if NPC was just introduced this scene (walk-in + die edge case)
-            has_current_scene_memory = any(
-                m.scene == game.narrative.scene_count
-                for m in npc.memory
-            )
+            has_current_scene_memory = any(m.scene == game.narrative.scene_count for m in npc.memory)
             if not has_current_scene_memory:
-                log(f"[NPC] Deceased report REJECTED for '{npc.name}' — "
+                log(
+                    f"[NPC] Deceased report REJECTED for '{npc.name}' — "
                     f"not present in scene {game.narrative.scene_count} (likely a dialog claim)",
-                    level="warning")
+                    level="warning",
+                )
                 continue
         old_status = npc.status
         npc.status = "deceased"
         log(f"[NPC] Marked as deceased: {npc.name} ({npc.id}, was {old_status})")
+
 
 def _process_lore_npcs(game: GameState, lore_list: list):
     """Create lore NPCs — historically significant, never physically present.
@@ -203,8 +206,11 @@ def _process_lore_npcs(game: GameState, lore_list: list):
         game.npcs.append(npc)
         log(f"[NPC] Lore figure created: {name} ({npc_id})")
 
-# Emotional weights that signal death-level trauma
-_DEATH_EMOTIONS = {"betrayed", "devastated"}
+
+def _death_emotions() -> set[str]:
+    """Emotional weights that signal death-level trauma. Loaded from engine.yaml."""
+    return set(eng().death_emotions)
+
 
 def _check_death_corroboration(game: GameState):
     """Fallback off-screen death detection via cross-NPC memory voting.
@@ -244,9 +250,11 @@ def _check_death_corroboration(game: GameState):
                     continue  # Exclude Director-generated
                 if mem.scene != current_scene:
                     continue
-                if (mem.about_npc == npc_id
-                        and mem.importance >= 9
-                        and mem.emotional_weight.lower() in _DEATH_EMOTIONS):
+                if (
+                    mem.about_npc == npc_id
+                    and mem.importance >= 9
+                    and mem.emotional_weight.lower() in _death_emotions()
+                ):
                     cross_votes += 1
 
         # Scan this NPC's own memories for self-votes
@@ -255,12 +263,13 @@ def _check_death_corroboration(game: GameState):
                 continue
             if mem.scene != current_scene:
                 continue
-            if (mem.importance >= 9
-                    and mem.emotional_weight.lower() == "devastated"):
+            if mem.importance >= 9 and mem.emotional_weight.lower() in _death_emotions():
                 self_votes += 1
 
         total = cross_votes + self_votes
         if cross_votes >= 1 and total >= 2:
             npc.status = "deceased"
-            log(f"[NPC] Off-screen death detected: {npc.name} ({npc_id}) — "
-                f"cv={cross_votes} sv={self_votes} total={total}")
+            log(
+                f"[NPC] Off-screen death detected: {npc.name} ({npc_id}) — "
+                f"cv={cross_votes} sv={self_votes} total={total}"
+            )

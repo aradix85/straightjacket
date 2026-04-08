@@ -5,6 +5,7 @@
 
 # ── Server ────────────────────────────────────────────────────
 server:
+  host: "127.0.0.1"        # Bind address. Use "0.0.0.0" for LAN play.
   port: 8081
 
 # ── AI provider ───────────────────────────────────────────────
@@ -57,17 +58,7 @@ ai:
     correction: 0.3
     chapter_summary: 0.4
   top_p:
-    brain: 0.95
-    brain_setup: 0.95
-    narrator: 0.95
-    narrator_metadata: 0.95
-    opening_setup: 0.95
-    revelation_check: 0.95
-    recap: 0.95
-    architect: 0.95
-    director: 0.95
-    correction: 0.95
-    chapter_summary: 0.95
+    default: 0.95              # Applied to all roles. Add per-role overrides here if needed.
 
 # ── Language ──────────────────────────────────────────────────
 language:

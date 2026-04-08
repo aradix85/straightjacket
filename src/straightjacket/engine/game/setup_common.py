@@ -49,7 +49,7 @@ def register_extracted_npcs(
     max_num = start_id
     if max_num == 0:
         for n in game.npcs:
-            m = re.match(r'npc_(\d+)', n.id)
+            m = re.match(r"npc_(\d+)", n.id)
             if m:
                 max_num = max(max_num, int(m.group(1)))
 
@@ -89,14 +89,16 @@ def seed_opening_memories(
         event = mu.get("event", "")
         emotional = mu.get("emotional_weight", "neutral")
         imp, dbg = score_importance(emotional, event, debug=True)
-        target.memory.append(MemoryEntry(
-            scene=game.narrative.scene_count,
-            event=event,
-            emotional_weight=emotional,
-            importance=imp,
-            type="observation",
-            _score_debug=f"{label} | {dbg}",
-        ))
+        target.memory.append(
+            MemoryEntry(
+                scene=game.narrative.scene_count,
+                event=event,
+                emotional_weight=emotional,
+                importance=imp,
+                type="observation",
+                _score_debug=f"{label} | {dbg}",
+            )
+        )
         target.importance_accumulator = target.importance_accumulator + imp
 
 

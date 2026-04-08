@@ -1,221 +1,70 @@
-actions.active_save: 'Active: {name}'
-actions.autosave: Autosave
-actions.delete: Delete
-actions.delete_confirm: Really delete save «{name}»?
-actions.deleted: Deleted!
-actions.game_loaded: 'Game loaded: {name}, Scene {scene}'
-actions.load: Load
-actions.load_confirm: Discard current progress and load «{name}»?
-actions.load_label: Load
-actions.new_game: New Game
-actions.new_game_confirm: End current game and start fresh?
-actions.no_saves: No save games found.
-actions.quick_save: Save
-actions.recap: Story so far...
+# Straightjacket UI strings
+# Referenced by Python (server-side) and JavaScript (client-side).
+# To translate: copy this file to strings_{lang}.yaml and translate all values.
+
+# ── Server-side (Python t() calls) ──────────────────────────
+
+actions.load_failed: Failed to load save.
 actions.recap_loading: Narrator is remembering...
-actions.recap_prefix: Story so far...
-actions.save: Save
-actions.save_as: Save As...
-actions.save_as_btn: Create New Save
-actions.save_as_placeholder: New save name...
-actions.save_chapter: Ch. {n}
-actions.save_date: '{date}'
-actions.save_name: Name
-actions.save_scene: Scene {n}
-actions.saved: Saved!
-actions.saves: Save Games
-actions.switch_user: Switch Player
-aria.archetype_selection: Select archetype
-aria.chaos_critical: critical
-aria.chaos_high: high
-aria.chaos_low: low
-aria.chaos_medium: moderate
-aria.chat_log: Game log
-aria.correction_badge: This message was corrected
-aria.delete_save: Delete save {name}
-aria.genre_selection: Select genre
-aria.input_area: Input area
-aria.load_save: Load save {name}
-aria.loading: Loading
-aria.location: Location
-aria.main_content: Main content
-aria.menu_close: Close menu
-aria.menu_open: Open menu
-aria.momentum_stat: 'Momentum: {current} of {max}'
-aria.narrator_says: 'Narrator:'
-aria.player_says: 'Player:'
-aria.recap_says: 'Recap:'
-aria.retry: Retry
-aria.save_info: Save details
-aria.send_message: Send message
-aria.sidebar: Character overview
-aria.skip_to_content: Skip to game log
-aria.stat_item: '{label}: {value}'
-aria.story_progress: Act {n} progress
-aria.tone_selection: Select tone
-chapters.back: Back to game
-chapters.chapter_label: Chapter {n}
-chapters.not_found: Chapter archive not found
-chapters.viewing: 📖 Chapter {n}
-chapters.viewing_title: '📖 Chapter {n}: {title}'
-conn.loading: Connecting...
-correction.badge: ✎ Corrected
+actions.saved: 'Saved!'
+
+consequence.bond: Bond
+consequence.health: Health
+consequence.momentum: Momentum
+consequence.spirit: Spirit
+consequence.supply: Supply
+
 correction.no_snapshot: No last turn in memory — correction not possible.
-creation.adjust: Adjust Draft
-creation.almost_done: '**Almost done!** Two more optional questions — feel free to leave them blank.'
-creation.archetype: Archetype
-creation.archetype_question: '**{tone}** — What kind of character do you want to be?'
-creation.back: Back
-creation.background: Background / Description
-creation.backstory_title: Backstory
-creation.boundaries_hint: Boundaries are saved and pre-filled automatically next time.
-creation.boundaries_label: '**Boundaries:** What must absolutely not appear?'
-creation.boundaries_placeholder: e.g. violence against children, spiders, specific phobias...
-creation.boundaries_title: Boundaries
-creation.custom_genre_title: '**Custom Genre** — Describe your world!'
-creation.custom_idea: Custom Idea...
-creation.custom_tone_btn: Custom Tone...
-creation.custom_tone_title: '**Custom Tone** — Describe the mood!'
-creation.desc_placeholder: e.g. A grizzled veteran who left his wife Sophie behind after the war...
-creation.desc_question: Want to tell us more about your character? Who are they, where do they come from? Relationships, past, motivation. *(Optional — everything you write here is treated as established
-  history)*
-creation.drafts: '**{n} Drafts** — Pick your favorite:'
-creation.error: 'Error: {error}'
-creation.generating: Creating character...
-creation.genre: Genre
-creation.genre_desc: Genre Description
-creation.genre_placeholder: Your genre...
-creation.name_placeholder: Your character's name...
-creation.name_question: '**What is your character''s name?**'
-creation.next: Next
-creation.regenerate: Regenerate with Changes
-creation.regenerating: Creating new draft...
-creation.reroll: Reroll
-creation.start: Begin Adventure!
-creation.tone: Tone
-creation.tone_desc: Tone Description
-creation.tone_placeholder: Mood...
-creation.tone_question: '**{genre}** — What tone should the story have?'
-creation.welcome: '**Welcome!** What world shall your story take place in?'
-creation.wishes_hint: Wishes are things that DON'T EXIST YET but should appear over the course of the story.
-creation.wishes_label: '**Wishes:** What should appear *in the future* of your story?'
-creation.wishes_placeholder: e.g. a loyal dog companion, political intrigue, magical artifacts...
-creation.wishes_title: Wishes
+
 creation.world_awakens: The world awakens...
-creation.world_awakens_2: Fates are being intertwined...
-creation.world_awakens_3: Your adventure takes shape...
-dice.action: '**Action:** {d1}+{d2}+{stat_value} = **{score}** vs **{c1}|{c2}**'
-dice.chaos_short: ⚡ Chaos!
-dice.consequences: '**Consequences:** {text}'
-dice.match: ☄️ **Fateful Roll!** Both challenge dice show {value}!
-dice.match_short: ☄️ Fateful Roll!
-dice.position: '**Position:** {position} — **Effect:** {effect}'
-epilogue.chapter_msg: Chapter {n}...
-epilogue.continue: Keep Playing
-epilogue.done_text: What would you like to do next?
-epilogue.done_title: Chapter Complete
-epilogue.generate: Generate Epilogue
+
+disposition.distrustful: 🟠 Distrustful
+disposition.friendly: 🟢 Friendly
+disposition.hostile: 🔴 Hostile
+disposition.loyal: 💚 Loyal
+disposition.neutral: ⚪ Neutral
+
+effect.great: Great
+effect.limited: Limited
+effect.standard: Standard
+
+epilogue.chapter_msg: 'Chapter {n}...'
 epilogue.generating: Writing epilogue…
-epilogue.marker: Epilogue
-epilogue.new_chapter: New Chapter
-epilogue.offer_text: You can keep playing or wrap up this chapter with an epilogue.
-epilogue.offer_title: The story has reached its conclusion
-epilogue.restart: Start Over
-game.error: 'Error: {error}'
-game.input_placeholder: What do you do?
-game.invalid_api_key: Invalid API Key!
-game.retry_btn: Retry
-game.retry_orphan: Your last input wasn’t processed (e.g. connection lost).
-game.retry_tooltip: Retry
-game.scene_marker: Scene {n} — {location}
+
 game.still_processing: One moment — still processing your previous input.
-gameover.chapter_msg: Chapter {n}...
-gameover.dark: Fate has struck.
-gameover.flavor: Some stories end before they are finished.
-gameover.new_chapter: New Chapter
-gameover.restart: Start Over
-gameover.title: '**Adventure Over.**'
-help.chaos_text: Measures tension (3–9). Rises on misses, falls on successes. High chaos can trigger unexpected scene interrupts.
-help.chaos_title: '**Chaos Factor**'
-help.clocks_text: Threats tick in the background. Misses fill threat clocks. Full clock = something bad happens.
-help.clocks_title: '**Clocks**'
-help.correction_example: 'Example: ## I didn''t want to attack, just talk'
-help.correction_text: 'Something went wrong? Type ## before your message to correct the last turn. For example if the narrator misunderstood what you meant.'
-help.correction_title: '**Correction**'
-help.crisis_text: Health OR Spirit at 0 = Crisis mode. Both at 0 = dramatic finale.
-help.crisis_title: '**Crisis**'
-help.freedom_text: You can do anything. Just say what you do — the world responds. You can also introduce new elements into the world.
-help.freedom_title: '**Player Freedom**'
-help.intro_text: Just write what your character does or says — in your own words. "I sneak past the guard", "I ask the innkeeper about the stranger" — the game handles the rest.
-help.intro_title: '**How do you play?**'
-help.match_text: When both challenge dice (d10) show the same number, it's a fateful roll — something special happens! On a hit + match = an unexpected advantage. On a miss + match = dramatic escalation.
-help.match_title: '**Fateful Roll (Match)**'
-help.momentum_text: Builds on successes. On a miss or weak hit, you can burn momentum — resets to 0, but upgrades the result.
-help.momentum_title: '**Momentum** (-6 to +10)'
-help.pos_controlled: <b>Controlled</b>
-help.pos_controlled_desc: Advantage, milder consequences
-help.pos_desperate: <b>Desperate</b>
-help.pos_desperate_desc: Disadvantage, harsher consequences
-help.pos_risky: <b>Risky</b>
-help.pos_risky_desc: Standard, anything can happen
-help.position_text: How dangerous is the situation? The game automatically judges how risky your action is — this affects how bad things can get on a miss.
-help.position_title: '**Position & Effect**'
-help.probe_detail: <b>2d6 + Attribute</b> (your action roll, max 10)<br>vs <b>2d10</b> (the challenge)
-help.probe_text: 'When you attempt something risky, dice are rolled:'
-help.probe_title: '**Roll**'
-help.result_miss: <b>Miss</b>
-help.result_miss_desc: Beats neither d10 → Something goes wrong
-help.result_strong: <b>Strong Hit</b>
-help.result_strong_desc: Action roll beats both d10 → Clean success
-help.result_weak: <b>Weak Hit</b>
-help.result_weak_desc: Beats one d10 → Success with complication
-help.results_text: 'Every roll has three possible outcomes:'
-help.results_title: '**Results**'
-help.stat_edge: <b>Edge</b> — Speed, stealth
-help.stat_heart: <b>Heart</b> — Empathy, courage, charm
-help.stat_iron: <b>Iron</b> — Strength, endurance
-help.stat_shadow: <b>Shadow</b> — Cunning, deception
-help.stat_wits: <b>Wits</b> — Knowledge, perception
-help.stats_text: 'Your character has five traits — they determine how good you are in different situations:'
-help.stats_title: '**Attributes** (7 points, 0–3 each)'
-help.title: Help — Game System
-help.track_health: <b>Health</b> — Physical condition
-help.track_spirit: <b>Spirit</b> — Mental condition
-help.track_supply: <b>Supply</b> — Resources, equipment
-help.tracks_text: 'Three tracks show how your character is doing:'
-help.tracks_title: '**Tracks** (0–5 each)'
-login.code_label: Invitation Code
-login.error: Wrong code.
-login.rate_limited: Too many attempts. Please wait 5 minutes.
-login.submit: Enter
-login.subtitle: Access by invitation only.
-login.title: Straightjacket
+
 momentum.gathering: Let us change the course of fate…
-momentum.no: 'No'
-momentum.question: '**Burn Momentum?** {cost} → 0 = **{result}**'
-momentum.strong_hit: Strong Hit
-momentum.weak_hit: Weak Hit
-momentum.yes: Yes!
-onboarding.confirm: Let’s go
-onboarding.subtitle: Choose your languages — you can change them later in the settings.
-onboarding.title: Welcome!
-save_info.archetype: Archetype
-save_info.backstory: Backstory
-save_info.boundaries: Boundaries
-save_info.concept: Concept
-save_info.genre: Genre
-save_info.tone: Tone
-save_info.wishes: Wishes
-settings.api_key: API Key
-settings.narration_lang: Narration Language
-settings.narrator_font: Display Mode
-settings.narrator_font_design: Straightjacket Design
-settings.narrator_font_sans: Sans-Serif
-settings.narrator_font_serif: Serif
-settings.sr_chat: Screen reader in chat
-settings.sr_chat_tooltip: When disabled, the screen reader skips the game log (narrator text and your inputs). Ideal with TTS enabled — the voice reads the story, the screen reader navigates only menus.
-settings.title: Settings
-settings.ui_lang: Interface Language
+
+move.clash: Clash
+move.compel: Compel
+move.endure_harm: Endure Harm
+move.endure_stress: Endure Stress
+move.face_danger: Face Danger
+move.gather_information: Gather Information
+move.make_connection: Make Connection
+move.resupply: Resupply
+move.secure_advantage: Secure Advantage
+move.strike: Strike
+move.test_bond: Test Bond
+move.world_shaping: World Shaping
+
+position.controlled: 🟢 Controlled
+position.desperate: 🔴 Desperate
+position.risky: 🟠 Risky
+
+result.MISS.label: ❌ Miss
+result.MISS.severity: error
+result.STRONG_HIT.label: ✅ Strong Hit
+result.STRONG_HIT.severity: success
+result.WEAK_HIT.label: ⚠️ Weak Hit
+result.WEAK_HIT.severity: warning
+
+stat.edge: Edge
+stat.heart: Heart
+stat.iron: Iron
+stat.shadow: Shadow
+stat.wits: Wits
+
 story.climax: Climax
 story.confrontation: Confrontation
 story.ketsu_resolution: Ketsu
@@ -223,111 +72,65 @@ story.ki_introduction: Ki
 story.setup: Setup
 story.sho_development: Shō
 story.ten_twist: Ten
-user.api_hint: Set your API key in the settings after selecting a player.
-user.api_missing: Please enter your API key in the settings.
-user.confirm_delete: Really delete "{name}"?
-user.create: Create Player
-user.exists: Player "{name}" already exists.
-user.manage: Manage Players
-user.name: Name
-user.name_placeholder: Your name...
-user.new_player: New Player
-user.no: 'No'
-user.remove_label: Remove Player
-user.subtitle: A Narrative Solo‑RPG Engine
-user.title: Straightjacket
-user.who_plays: Who's playing?
-user.yes: 'Yes'
-stat.edge: Edge
-stat.heart: Heart
-stat.iron: Iron
-stat.shadow: Shadow
-stat.wits: Wits
-disposition.hostile: 🔴 Hostile
-disposition.distrustful: 🟠 Distrustful
-disposition.neutral: ⚪ Neutral
-disposition.friendly: 🟢 Friendly
-disposition.loyal: 💚 Loyal
-move.face_danger: Face Danger
-move.compel: Compel
-move.gather_information: Gather Information
-move.secure_advantage: Secure Advantage
-move.clash: Clash
-move.strike: Strike
-move.endure_harm: Endure Harm
-move.endure_stress: Endure Stress
-move.make_connection: Make Connection
-move.test_bond: Test Bond
-move.resupply: Resupply
-move.world_shaping: World Shaping
-result.STRONG_HIT.label: ✅ Strong Hit
-result.STRONG_HIT.severity: success
-result.WEAK_HIT.label: ⚠️ Weak Hit
-result.WEAK_HIT.severity: warning
-result.MISS.label: ❌ Miss
-result.MISS.severity: error
-position.controlled: 🟢 Controlled
-position.risky: 🟠 Risky
-position.desperate: 🔴 Desperate
-effect.limited: Limited
-effect.standard: Standard
-effect.great: Great
-time.early_morning: Early Morning
-time.morning: Morning
-time.midday: Midday
+
 time.afternoon: Afternoon
+time.deep_night: Deep Night
+time.early_morning: Early Morning
 time.evening: Evening
 time.late_evening: Late Evening
+time.midday: Midday
+time.morning: Morning
 time.night: Night
-time.deep_night: Deep Night
-dice_option.0: ❌ Off
-dice_option.1: 🎲 Simple
-dice_option.2: 🔍 Detailed
-genre.dark_fantasy: 🏰 Dark Fantasy
-genre.high_fantasy: 📜 High Fantasy
-genre.science_fiction: 🚀 Sci-Fi
-genre.horror_mystery: 🔮 Horror / Mystery
-genre.steampunk: ⚙️ Steampunk
-genre.cyberpunk: 🌆 Cyberpunk
-genre.urban_fantasy: 🌍 Urban Fantasy
-genre.victorian_crime: ⚔️ Victorian Crime
-genre.historical_roman: 🛡️ Historical / Roman
-genre.fairy_tale: 💚 Fairy Tale World
-genre.slice_of_life_90s: 🎙️ Slice of Life 1990s
-genre.outdoor_survival: 🌿 Outdoor / Survival
-tone.dark_gritty: 🖤 Dark & Gritty
-tone.serious_balanced: ⚖️ Serious but Fair
-tone.melancholic: 🌗 Melancholic
-tone.absurd_grotesque: 💀 Absurd & Grotesque
-tone.slow_burn_horror: 🕯️ Slow-Burn Horror
-tone.cheerful_funny: 💛 Cheerful & Fun
-tone.romantic: ❤️ Romantic
-tone.slapstick: 🎭 Slapstick
-tone.epic_heroic: ⚡ Epic & Heroic
-tone.tarantino: 🔥 Tarantino-Style
-tone.cozy: 💚 Cozy & Comfy
-tone.tragicomic: 🧠 Tragicomic
-archetype.outsider_loner: 🗡️ Outsider / Loner
-archetype.investigator: 🔍 Investigator / Curious
-archetype.trickster: 💬 Trickster / Charmer
-archetype.protector: 🛡️ Protector / Warrior
-archetype.hardboiled: 🔥 Hardboiled / Veteran
-archetype.scholar: 📚 Scholar / Mystic
-archetype.healer: ❤️ Healer / Medic
-archetype.inventor: ⚙️ Crafter / Inventor
-archetype.artist: 🎤 Artist / Bard
-consequence.health: Health
-consequence.spirit: Spirit
-consequence.supply: Supply
-consequence.momentum: Momentum
-consequence.bond: Bond
-actions.chapter_n: Chapter {n}
-actions.chapters: Chapters
-actions.load_failed: Failed to load save.
-actions.load_title: Load
-actions.save_btn: Save
-gameover.overlay_title: GAME OVER
-settings.dice: Dice Display
-settings.save: Save
-settings.saved: Saved!
-settings.sr_tooltip: When disabled, the screen reader skips the game log (narrator text and your inputs). Ideal with TTS enabled — the voice reads the story, the screen reader navigates only menus.
+
+# ── Client-side (JavaScript UI) ─────────────────────────────
+
+ui.title: Straightjacket
+ui.who_plays: Who's playing?
+ui.new_player: New player
+ui.name_placeholder: Name...
+ui.create: Create
+ui.create_character: Create your character
+ui.setting: Setting
+ui.character_name: Character name
+ui.pronouns: Pronouns
+ui.paths: Paths
+ui.backstory: Backstory
+ui.background_vow: Background vow
+ui.content_boundaries: Content boundaries
+ui.wishes: Wishes
+ui.stats_label: Stats (total must be 7, each 0-3)
+ui.stats_total: 'Total: {t}/7'
+ui.stats_must_total: Stats must total 7.
+ui.stats_range: Each stat must be 0-3.
+ui.begin: Begin!
+ui.no_settings: No settings available.
+ui.input_placeholder: What do you do?
+ui.send: Send
+ui.status: Status
+ui.save_load: Save / Load
+ui.saves: Saves
+ui.no_saves: No saves found.
+ui.save_as: Save as
+ui.save: Save
+ui.load: Load
+ui.delete: Delete
+ui.delete_confirm: Delete?
+ui.burn_title: Burn Momentum?
+ui.burn_text: '{current} → {upgrade} (costs {cost} momentum)'
+ui.burn_yes: Yes!
+ui.burn_no: 'No'
+ui.complete_title: The story has reached its conclusion
+ui.complete_text: You can keep playing or wrap up this chapter with an epilogue.
+ui.keep_playing: Keep Playing
+ui.generate_epilogue: Generate Epilogue
+ui.gameover_title: Adventure Over.
+ui.new_chapter: New Chapter
+ui.start_over: Start Over
+ui.retry: Retry
+ui.retry_text: Last input wasn't processed
+ui.session_taken: Session taken over in another window.
+ui.reconnecting: 'Connection lost, reconnecting... ({retries}/{max})'
+ui.connection_lost: Connection lost.
+ui.scene_marker: 'Scene {n}'
+ui.game_log: Game log
+ui.player_input: Player input

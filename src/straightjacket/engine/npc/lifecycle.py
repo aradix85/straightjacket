@@ -19,9 +19,11 @@ from .matching import (
 
 # DISPOSITION NORMALIZATION
 
+
 def normalize_disposition(raw: str) -> str:
     """Normalize any AI-generated disposition to one of the 5 canonical values."""
     return _yaml_normalize_disposition(raw)
+
 
 def normalize_npc_dispositions(npcs: list) -> None:
     """Normalize all NPC dispositions in-place to canonical values."""
@@ -29,22 +31,40 @@ def normalize_npc_dispositions(npcs: list) -> None:
         if n.disposition:
             n.disposition = normalize_disposition(n.disposition)
 
-# STOPWORDS (DE+EN) for NPC description comparison.
-# German words are intentional: description matching must work across languages
-# because NPCs may have been created with German-language descriptions in
-# earlier sessions or upstream saves. Not a leftover from i18n removal.
-_STOPWORDS = frozenset({
-    "der", "die", "das", "den", "dem", "des", "ein", "eine", "einer", "einem",
-    "einen", "eines", "mit", "und", "oder", "für", "von", "vor", "bei", "aus",
-    "auf", "nach", "über", "unter", "aber", "als", "wie", "nicht", "sich",
-    "ist", "sind", "hat", "war", "wird", "kann", "sein", "ihre", "ihr",
-    "noch", "nur", "auch", "schon", "sehr", "dann", "wenn", "dass",
-    "the", "and", "for", "with", "from", "that", "this", "was", "are",
-    "has", "had", "not", "but", "his", "her", "its", "who", "whom",
-    "will", "can", "may", "been", "were", "into", "than", "then",
-})
+
+_STOPWORDS = frozenset(
+    {
+        "the",
+        "and",
+        "for",
+        "with",
+        "from",
+        "that",
+        "this",
+        "was",
+        "are",
+        "has",
+        "had",
+        "not",
+        "but",
+        "his",
+        "her",
+        "its",
+        "who",
+        "whom",
+        "will",
+        "can",
+        "may",
+        "been",
+        "were",
+        "into",
+        "than",
+        "then",
+    }
+)
 
 # RETIRE / REACTIVATE
+
 
 def retire_distant_npcs(game: "GameState", max_active: int | None = None):
     """Demote NPCs to 'background' if the active list exceeds the threshold.
@@ -57,10 +77,7 @@ def retire_distant_npcs(game: "GameState", max_active: int | None = None):
         return
 
     def relevance(npc):
-        last_scene = max(
-            (m.scene for m in npc.memory),
-            default=0
-        ) or 0
+        last_scene = max((m.scene for m in npc.memory), default=0) or 0
         score = last_scene + npc.bond * 3
         if not npc.memory or last_scene >= game.narrative.scene_count:
             score += 1000
@@ -71,6 +88,7 @@ def retire_distant_npcs(game: "GameState", max_active: int | None = None):
     for npc in active[:to_demote]:
         npc.status = "background"
         log(f"[NPC] Demoted to background: {npc.name}")
+
 
 def reactivate_npc(npc: NpcData, reason: str = "", force: bool = False):
     """Promote a background (or deceased with force=True) NPC back to active status.
@@ -86,7 +104,9 @@ def reactivate_npc(npc: NpcData, reason: str = "", force: bool = False):
         npc.status = "active"
         log(f"[NPC] Reactivated: {npc.name} (reason: {reason})")
 
+
 # IDENTITY MERGING
+
 
 def merge_npc_identity(existing: NpcData, new_name: str, new_desc: str = "", game: "GameState | None" = None) -> None:
     """Merge a new identity into an existing NPC (identity reveal).
@@ -106,8 +126,10 @@ def merge_npc_identity(existing: NpcData, new_name: str, new_desc: str = "", gam
     new_norm = normalize_for_match(new_name)
     existing.aliases = [a for a in existing.aliases if normalize_for_match(a) != new_norm]
     for alias in extra_aliases:
-        if (normalize_for_match(alias) not in {normalize_for_match(a) for a in existing.aliases}
-                and normalize_for_match(alias) != new_norm):
+        if (
+            normalize_for_match(alias) not in {normalize_for_match(a) for a in existing.aliases}
+            and normalize_for_match(alias) != new_norm
+        ):
             existing.aliases.append(alias)
     if new_desc and not existing.description:
         existing.description = new_desc
@@ -120,15 +142,16 @@ def merge_npc_identity(existing: NpcData, new_name: str, new_desc: str = "", gam
             if normalize_for_match(clock.owner) == old_name_norm:
                 old_owner = clock.owner
                 clock.owner = new_name
-                log(f"[Clock] Owner updated on NPC rename: '{clock.name}' "
-                    f"'{old_owner}' → '{new_name}'")
+                log(f"[Clock] Owner updated on NPC rename: '{clock.name}' '{old_owner}' → '{new_name}'")
     log(f"[NPC] Identity merged: '{old_name}' → '{new_name}' (aliases: {existing.aliases})")
+
 
 def is_complete_description(desc: str) -> bool:
     """Check if a description looks complete (not truncated mid-sentence)."""
     if not desc or len(desc) < 10:
         return False
-    return desc.rstrip().endswith(('.', '!', '?', '"', '»', '«', '…', ')', '–', '—'))
+    return desc.rstrip().endswith((".", "!", "?", '"', "»", "«", "…", ")", "–", "—"))
+
 
 def sanitize_aliases(npc: NpcData) -> None:
     """Remove duplicate and descriptor-style aliases from an NPC."""
@@ -148,6 +171,7 @@ def sanitize_aliases(npc: NpcData) -> None:
         seen.add(low)
         clean.append(a_stripped)
     npc.aliases = clean
+
 
 def absorb_duplicate_npc(game: "GameState", original: NpcData, merged_name: str):
     """After an identity reveal renames an NPC, check if a duplicate with the
@@ -170,20 +194,13 @@ def absorb_duplicate_npc(game: "GameState", original: NpcData, merged_name: str)
 
         # Determine which is the richer, more established character.
         def _richness(n):
-            return (len(n.memory) * 2
-                    + bool(n.agenda) * 3
-                    + bool(n.instinct) * 3
-                    + n.bond * 2
-                    + bool(n.description) * 1)
+            return len(n.memory) * 2 + bool(n.agenda) * 3 + bool(n.instinct) * 3 + n.bond * 2 + bool(n.description) * 1
 
         dup_richer = _richness(dup) > _richness(original)
 
         # Transfer memories (always combine both sets)
         original.memory.extend(dup_mems)
-        original.importance_accumulator = (
-            original.importance_accumulator
-            + dup.importance_accumulator
-        )
+        original.importance_accumulator = original.importance_accumulator + dup.importance_accumulator
 
         if dup_richer:
             # Dup is established — its substantive fields win
@@ -200,14 +217,15 @@ def absorb_duplicate_npc(game: "GameState", original: NpcData, merged_name: str)
             if dup.last_location:
                 original.last_location = dup.last_location
             if dup.secrets:
-                original.secrets.extend(
-                    s for s in dup.secrets if s not in original.secrets)
+                original.secrets.extend(s for s in dup.secrets if s not in original.secrets)
             if dup.last_reflection_scene > original.last_reflection_scene:
                 original.last_reflection_scene = dup.last_reflection_scene
             if dup.needs_reflection:
                 original.needs_reflection = True
-            log(f"[NPC] Absorb: dup '{dup.name}' ({dup_id}) was richer — "
-                f"its fields promoted into original '{original.name}' ({original.id})")
+            log(
+                f"[NPC] Absorb: dup '{dup.name}' ({dup_id}) was richer — "
+                f"its fields promoted into original '{original.name}' ({original.id})"
+            )
         else:
             # Original is established — only fill empty fields from dup
             if not original.description and dup.description:
@@ -219,22 +237,26 @@ def absorb_duplicate_npc(game: "GameState", original: NpcData, merged_name: str)
 
         existing_norms = {normalize_for_match(a) for a in original.aliases}
         for alias in dup.aliases:
-            if (normalize_for_match(alias) not in existing_norms
-                    and normalize_for_match(alias) != merged_norm):
+            if normalize_for_match(alias) not in existing_norms and normalize_for_match(alias) != merged_norm:
                 original.aliases.append(alias)
         if dup.last_location and not original.last_location:
             original.last_location = dup.last_location
 
         game.npcs.remove(dup)
-        log(f"[NPC] Absorbed duplicate '{dup.name}' ({dup_id}) "
+        log(
+            f"[NPC] Absorbed duplicate '{dup.name}' ({dup_id}) "
             f"into '{original.name}' ({original.id}): "
-            f"{len(dup_mems)} memories transferred")
+            f"{len(dup_mems)} memories transferred"
+        )
         sanitize_aliases(original)
         from .memory import consolidate_memory
+
         consolidate_memory(original)
         break
 
+
 # DESCRIPTION-BASED MATCHING
+
 
 def description_match_existing_npc(game: "GameState", new_desc: str, new_name_norm: str) -> NpcData | None:
     """Check if a new NPC's description closely matches an existing NPC's description.
@@ -246,19 +268,13 @@ def description_match_existing_npc(game: "GameState", new_desc: str, new_name_no
     if not new_desc or len(new_desc) < 10:
         return None
 
-    new_words = {
-        w.strip(".,;:!?\"'()-").lower()
-        for w in new_desc.split()
-        if len(w.strip(".,;:!?\"'()-")) >= 4
-    }
+    new_words = {w.strip(".,;:!?\"'()-").lower() for w in new_desc.split() if len(w.strip(".,;:!?\"'()-")) >= 4}
     new_words -= _STOPWORDS
 
     # Name-Reference Guard: strip words from the candidate NPC's own
     # name/aliases out of the new description's word set.
     candidate_name_words = {
-        w.strip(".,;:!?\"'()-").lower()
-        for w in new_name_norm.split()
-        if len(w.strip(".,;:!?\"'()-")) >= 4
+        w.strip(".,;:!?\"'()-").lower() for w in new_name_norm.split() if len(w.strip(".,;:!?\"'()-")) >= 4
     }
     new_words -= candidate_name_words
 
@@ -284,9 +300,7 @@ def description_match_existing_npc(game: "GameState", new_desc: str, new_name_no
             continue
 
         existing_words = {
-            w.strip(".,;:!?\"'()-").lower()
-            for w in existing_desc.split()
-            if len(w.strip(".,;:!?\"'()-")) >= 4
+            w.strip(".,;:!?\"'()-").lower() for w in existing_desc.split() if len(w.strip(".,;:!?\"'()-")) >= 4
         }
         existing_words -= _STOPWORDS
 
@@ -313,18 +327,18 @@ def description_match_existing_npc(game: "GameState", new_desc: str, new_name_no
         overlap_ratio = effective_overlap / max(min_set_size, 1)
         has_long_match = any(len(w) >= 12 for w in exact_overlap)
 
-        meets_threshold = (
-            (overlap_ratio >= 0.25 and effective_overlap >= 2.0)
-            or (has_long_match and effective_overlap >= 2.0)
+        meets_threshold = (overlap_ratio >= 0.25 and effective_overlap >= 2.0) or (
+            has_long_match and effective_overlap >= 2.0
         )
 
         if meets_threshold and effective_overlap > best_score:
             best_score = effective_overlap
             best_match = n
-            log(f"[NPC] Description match candidate: new='{new_desc[:50]}' ~ "
+            log(
+                f"[NPC] Description match candidate: new='{new_desc[:50]}' ~ "
                 f"existing='{n.name}' desc='{existing_desc[:50]}' "
                 f"(exact={exact_overlap}, substr={substring_matches}, "
-                f"effective={effective_overlap:.1f}, ratio={overlap_ratio:.1%})")
+                f"effective={effective_overlap:.1f}, ratio={overlap_ratio:.1%})"
+            )
 
     return best_match
-

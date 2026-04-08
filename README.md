@@ -46,7 +46,7 @@ Five YAML files, each with a clear owner:
 | `prompts.yaml` | AI system prompts (narrator, brain, director) | Prompt engineers |
 | `strings.yaml` | UI text (English default) | Translators |
 
-Three settings ship via [Datasworn](https://github.com/rsek/datasworn): Ironsworn Classic (dark fantasy), Starforged (sci-fi), Sundered Isles (seafaring). Each defines vocabulary, genre constraints, and oracle paths in `data/settings/*.yaml`. Adding a setting means adding one YAML file and a Datasworn JSON — no Python.
+Three settings ship via [Datasworn](https://github.com/rsek/datasworn): Ironsworn Classic (dark fantasy), Starforged (sci-fi), Sundered Isles (seafaring). Each defines vocabulary, genre constraints, and oracle paths in `data/settings/*.yaml`. Adding a setting means adding one YAML file and a Datasworn JSON — no Python. See [ARCHITECTURE.md](ARCHITECTURE.md) for the settings YAML format.
 
 Default AI: Qwen 3 235B via Cerebras. Also supports Anthropic (Claude), and any OpenAI-compatible API. Models configurable per role (Brain, Narrator, Director).
 
@@ -54,17 +54,21 @@ Default AI: Qwen 3 235B via Cerebras. Also supports Anthropic (Claude), and any 
 
 ## Architecture
 
-See [ARCHITECTURE.md](ARCHITECTURE.md) for the full turn pipeline, module ownership table, and file map.
+See [ARCHITECTURE.md](ARCHITECTURE.md) for the full turn pipeline, module ownership table, file map, and extension guides (new providers, new settings).
 
-All mutable game state is typed dataclasses with snapshot/restore for atomic undo. Zero hardcoded game logic enums — move types, damage tables, disposition shifts, and NPC seed emotions all read from engine.yaml.
+All mutable game state is typed dataclasses with snapshot/restore for atomic undo. Zero hardcoded game logic — move types, damage tables, disposition shifts, and NPC seed emotions all read from engine.yaml.
+
+The architecture implements the [Narrative RPG Engine](docs/narrative_rpg_engine_v2_4.pdf) design document: AI narrates, structured systems decide. The six functions from the design document (action resolution, fiction generation, timing, relationships, agency, world state) map to engine modules. The constraint enforcement strategy (engine-dictated consequences, vocabulary control, narrative direction derived from game state) follows the document's recommendations.
 
 ---
 
 ## Tests
 
-Run: `python -m pytest tests/ -v`
+Two complementary layers:
 
-Includes [Elvira](elvira/), a headless AI-driven test bot that plays the game autonomously, checks state invariants after every turn, validates narration quality, and tests the correction pipeline. Elvira can run in direct mode (bypasses UI) or WebSocket mode (`--ws`, tests the full server stack).
+**Unit/integration tests** (`python -m pytest tests/ -v`, ~370 tests, no API key needed): mock providers with canned responses test engine logic, NPC processing, serialization, correction flow, prompt assembly, WebSocket handlers. Every commit must pass.
+
+**[Elvira](elvira/)** (`python elvira/elvira.py --ws --auto --turns 5`, needs API key): headless AI-driven test player that plays the game with real model output. Checks state invariants after every turn, validates narration quality (leaked mechanics, NPC spatial consistency), stress-tests the correction pipeline, and logs diagnostics to JSON. Two modes: direct (engine only) and WebSocket (full server stack). See [CONTRIBUTING.md](CONTRIBUTING.md) for when to use which.
 
 ---
 

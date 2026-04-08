@@ -6,7 +6,6 @@ The file ships with the repo. If it's missing, the engine does not start.
 Template variables use {name} syntax, filled at runtime.
 """
 
-
 import yaml
 
 from .config_loader import PROJECT_ROOT
@@ -18,6 +17,7 @@ from .format_utils import PartialFormatDict
 _PROMPTS_PATH = PROJECT_ROOT / "prompts.yaml"
 
 _prompts: dict[str, str] | None = None
+
 
 def _ensure_loaded() -> dict:
     """Load prompts from yaml on first access.
@@ -45,6 +45,7 @@ def _ensure_loaded() -> dict:
         _log(f"[Prompts] Loaded {len(_prompts)} prompts from {_PROMPTS_PATH}")
     return _prompts
 
+
 def get_prompt(name: str, **variables) -> str:
     """Get a prompt by name, filling template variables.
 
@@ -58,6 +59,7 @@ def get_prompt(name: str, **variables) -> str:
     if variables:
         return template.format_map(PartialFormatDict(variables))
     return template
+
 
 def reload_prompts():
     """Force reload from disk."""

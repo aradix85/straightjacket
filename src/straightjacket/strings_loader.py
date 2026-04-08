@@ -1,12 +1,7 @@
 #!/usr/bin/env python3
 """Straightjacket string loader: yaml-driven UI strings.
 
-Loads UI strings from YAML. Language is set in config.yaml (language.ui_language).
-English strings live in strings.yaml (always loaded as fallback).
-Other languages: create strings_{code}.yaml with the same keys.
-
-Loading order: strings_{code}.yaml merged over strings.yaml.
-Missing keys in the language file fall back to English automatically.
+All UI strings live in strings.yaml. Loaded once on first access.
 """
 
 import yaml
@@ -15,55 +10,24 @@ from .engine.bootstrap_log import bootstrap_log as _log
 from .engine.config_loader import PROJECT_ROOT
 from .engine.format_utils import PartialFormatDict
 
-_STRINGS_DIR = PROJECT_ROOT
-
+_STRINGS_PATH = PROJECT_ROOT / "strings.yaml"
 
 _strings: dict[str, str] | None = None
 
 
-def _get_ui_language() -> str:
-    """Read ui_language from config.yaml. Returns 'en' if not set."""
-    try:
-        cfg_path = PROJECT_ROOT / "config.yaml"
-        if cfg_path.exists():
-            with open(cfg_path, encoding="utf-8") as f:
-                data = yaml.safe_load(f)
-            return data.get("language", {}).get("ui_language") or "en"
-    except Exception:
-        pass
-    return "en"
-
-
 def _ensure_loaded() -> dict:
-    """Load strings on first access. English base + language overlay."""
+    """Load strings on first access."""
     global _strings
     if _strings is None:
-        base_path = _STRINGS_DIR / "strings.yaml"
-        if not base_path.exists():
+        if not _STRINGS_PATH.exists():
             raise FileNotFoundError(
-                f"Strings file not found: {base_path}\n"
-                f"strings.yaml ships with the repo — restore it from git."
+                f"Strings file not found: {_STRINGS_PATH}\nstrings.yaml ships with the repo — restore it from git."
             )
-        with open(base_path, encoding="utf-8") as f:
+        with open(_STRINGS_PATH, encoding="utf-8") as f:
             base = yaml.safe_load(f) or {}
 
         _strings = {k: v for k, v in base.items() if isinstance(v, str)}
-
-        # Overlay language-specific file if it exists
-        lang = _get_ui_language()
-        if lang != "en":
-            lang_path = _STRINGS_DIR / f"strings_{lang}.yaml"
-            if lang_path.exists():
-                with open(lang_path, encoding="utf-8") as f:
-                    overlay = yaml.safe_load(f) or {}
-                count = 0
-                for k, v in overlay.items():
-                    if isinstance(v, str):
-                        _strings[k] = v
-                        count += 1
-                _log(f"[Strings] Loaded {count} overrides from {lang_path.name}")
-
-        _log(f"[Strings] {len(_strings)} strings ready (lang={lang})")
+        _log(f"[Strings] {len(_strings)} strings ready")
     return _strings
 
 
@@ -80,15 +44,13 @@ def get_string(key: str, **variables) -> str:
 
 
 def get_strings_by_prefix(prefix: str) -> dict[str, str]:
-    """Get all strings matching a prefix as {suffix: value} dict.
-    Example: get_strings_by_prefix("genre.") returns {"dark_fantasy": "...", ...}
-    """
+    """Get all strings matching a prefix as {suffix: value} dict."""
     strings = _ensure_loaded()
-    return {k[len(prefix):]: v for k, v in strings.items() if k.startswith(prefix)}
+    return {k[len(prefix) :]: v for k, v in strings.items() if k.startswith(prefix)}
 
 
 def reload_strings():
-    """Force reload from disk. Use after config or file changes."""
+    """Force reload from disk."""
     global _strings
     _strings = None
     _ensure_loaded()
