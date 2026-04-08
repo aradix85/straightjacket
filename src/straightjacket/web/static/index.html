@@ -506,9 +506,13 @@ function showError(text) {
 function renderCreationForm(options) {
   const form = $("creation-form");
   const settings = options.settings || [];
+  const sc = options.stat_constraints || {target_sum: 9, min: 0, max: 3};
+  const cd = options.creation_defaults || {max_paths: 2, background_vow_default_rank: "extreme", vow_ranks: ["troublesome","dangerous","formidable","extreme","epic"]};
   if (settings.length === 0) { form.innerHTML = `<p>${s("ui.no_settings")}</p>`; return; }
 
   let html = "";
+
+  // Setting picker
   html += `<div class="field"><label>${s("ui.setting")}</label>`;
   settings.forEach((st, i) => {
     html += `<label style="display:block;margin-bottom:0.5rem;cursor:pointer">`;
@@ -516,43 +520,141 @@ function renderCreationForm(options) {
     html += `<strong>${esc(st.title)}</strong> — ${esc(st.description)}</label>`;
   });
   html += `</div>`;
-  html += `<div class="field"><label for="c-name">${s("ui.character_name")}</label><input type="text" id="c-name" value="${esc(currentPlayer)}"></div>`;
+
+  // Name + roll button
+  html += `<div class="field"><label for="c-name">${s("ui.character_name")}</label>`;
+  html += `<div style="display:flex;gap:0.5rem"><input type="text" id="c-name" value="${esc(currentPlayer)}" style="flex:1">`;
+  html += `<button type="button" id="roll-name-btn">${s("ui.name_roll")}</button></div></div>`;
+
+  // Pronouns
   html += `<div class="field"><label for="c-pronouns">${s("ui.pronouns")}</label><select id="c-pronouns"><option value="">—</option><option value="he/him">he/him</option><option value="she/her">she/her</option><option value="they/them">they/them</option></select></div>`;
+
+  // Paths
   html += `<div class="field"><label>${s("ui.paths")}</label><div style="display:flex;gap:0.5rem"><select id="c-path1" style="flex:1"></select><select id="c-path2" style="flex:1"></select></div></div>`;
-  html += `<div class="field"><label for="c-backstory">${s("ui.backstory")}</label><textarea id="c-backstory" rows="3"></textarea></div>`;
+
+  // Truths container (populated per setting)
+  html += `<div class="field" id="truths-container"></div>`;
+
+  // Backstory
+  html += `<div class="field"><label for="c-backstory">${s("ui.backstory")}</label>`;
+  html += `<div style="display:flex;gap:0.5rem;align-items:start"><textarea id="c-backstory" rows="3" style="flex:1"></textarea>`;
+  html += `<button type="button" id="roll-backstory-btn">${s("ui.backstory_prompt")}</button></div></div>`;
+
+  // Vow + rank
   html += `<div class="field"><label for="c-vow">${s("ui.background_vow")}</label><input type="text" id="c-vow"></div>`;
-  html += `<div class="field"><label>${s("ui.stats_label")}</label><div style="display:flex;gap:0.5rem;flex-wrap:wrap">`;
+  html += `<div class="field"><label for="c-vow-rank">${s("ui.vow_rank")}</label><select id="c-vow-rank">`;
+  cd.vow_ranks.forEach(r => { html += `<option value="${r}" ${r===cd.background_vow_default_rank?"selected":""}>${r}</option>`; });
+  html += `</select></div>`;
+  html += `<div class="field"><label for="c-vow-subject">${s("ui.vow_subject")}</label><input type="text" id="c-vow-subject"></div>`;
+
+  // Starting asset container
+  html += `<div class="field" id="asset-container"></div>`;
+
+  // Stats
+  html += `<div class="field"><label>${s("ui.stats_label", {target: sc.target_sum, min: sc.min, max: sc.max})}</label><div style="display:flex;gap:0.5rem;flex-wrap:wrap">`;
   ["edge","heart","iron","shadow","wits"].forEach(st => {
-    html += `<label>${st}: <input type="number" class="stat-input" data-stat="${st}" min="0" max="3" value="1" style="width:3rem"></label>`;
+    html += `<label>${st}: <input type="number" class="stat-input" data-stat="${st}" min="${sc.min}" max="${sc.max}" value="1" style="width:3rem"></label>`;
   });
-  html += `</div><div id="stat-total" style="font-size:0.8rem">${s("ui.stats_total", {t: 5})}</div></div>`;
+  html += `</div><div id="stat-total" style="font-size:0.8rem"></div></div>`;
+
+  // Content boundaries + wishes
   html += `<div class="field"><label for="c-boundaries">${s("ui.content_boundaries")}</label><textarea id="c-boundaries" rows="2"></textarea></div>`;
   html += `<div class="field"><label for="c-wishes">${s("ui.wishes")}</label><textarea id="c-wishes" rows="2"></textarea></div>`;
   html += `<button id="start-game-btn" class="primary" style="width:100%;padding:0.75rem">${s("ui.begin")}</button>`;
   form.innerHTML = html;
 
-  const pathMap = {};
-  settings.forEach(st => { pathMap[st.id] = st.paths; });
+  // Build data maps per setting
+  const settingMap = {};
+  settings.forEach(st => { settingMap[st.id] = st; });
+
+  function curSetting() { return settingMap[document.querySelector('input[name="setting"]:checked')?.value] || settings[0]; }
+
+  // Path updates
   function updatePaths() {
-    const sid = document.querySelector('input[name="setting"]:checked')?.value;
-    const paths = pathMap[sid] || [];
+    const st = curSetting();
+    const paths = st.paths || [];
     ["c-path1","c-path2"].forEach(id => {
       $(id).innerHTML = paths.map(p => `<option value="${esc(p.id)}">${esc(p.title)}</option>`).join("");
     });
     if (paths.length > 1) $("c-path2").selectedIndex = 1;
   }
-  document.querySelectorAll('input[name="setting"]').forEach(r => r.onchange = updatePaths);
-  updatePaths();
 
+  // Truths updates
+  function updateTruths() {
+    const st = curSetting();
+    const container = $("truths-container");
+    const truths = st.truths || [];
+    if (!truths.length || !st.creation_flow?.has_truths) { container.innerHTML = ""; container.classList.add("hidden"); return; }
+    container.classList.remove("hidden");
+    let h = `<label>${s("ui.truths")}</label>`;
+    truths.forEach(t => {
+      h += `<div style="margin-bottom:0.75rem"><label for="truth-${esc(t.id)}">${s("ui.truth_pick", {name: t.name})}</label>`;
+      h += `<select id="truth-${esc(t.id)}" class="truth-select" data-truth-id="${esc(t.id)}" style="width:100%">`;
+      t.options.forEach((o, i) => { h += `<option value="${i}" title="${esc(o.description)}">${esc(o.summary)}</option>`; });
+      h += `</select></div>`;
+    });
+    container.innerHTML = h;
+  }
+
+  // Starting assets
+  function updateAssets() {
+    const st = curSetting();
+    const container = $("asset-container");
+    const assets = st.starting_assets || [];
+    if (!assets.length) { container.innerHTML = ""; container.classList.add("hidden"); return; }
+    container.classList.remove("hidden");
+    let h = `<label for="c-asset">${s("ui.starting_assets")}</label><select id="c-asset" style="width:100%">`;
+    h += `<option value="">— none —</option>`;
+    let lastCat = "";
+    assets.forEach(a => {
+      if (a.category !== lastCat) { if (lastCat) h += `</optgroup>`; h += `<optgroup label="${esc(a.category)}">`; lastCat = a.category; }
+      h += `<option value="${esc(a.id)}">${esc(a.title)}</option>`;
+    });
+    if (lastCat) h += `</optgroup>`;
+    h += `</select>`;
+    container.innerHTML = h;
+  }
+
+  // Name roll
+  function rollName() {
+    const st = curSetting();
+    const tables = st.name_tables || {};
+    const keys = Object.keys(tables);
+    if (!keys.length) return;
+    const parts = [];
+    keys.slice(0, 2).forEach(k => {
+      const list = tables[k];
+      if (list.length) parts.push(list[Math.floor(Math.random() * list.length)]);
+    });
+    if (parts.length) $("c-name").value = parts.join(" ");
+  }
+
+  // Backstory roll
+  function rollBackstory() {
+    const st = curSetting();
+    const prompts = st.backstory_prompts || [];
+    if (prompts.length) $("c-backstory").value = prompts[Math.floor(Math.random() * prompts.length)];
+  }
+
+  // Setting change wires
+  function onSettingChange() { updatePaths(); updateTruths(); updateAssets(); }
+  document.querySelectorAll('input[name="setting"]').forEach(r => r.onchange = onSettingChange);
+  onSettingChange();
+
+  $("roll-name-btn").onclick = rollName;
+  $("roll-backstory-btn").onclick = rollBackstory;
+
+  // Stats validation
   function updateStats() {
     let t = 0;
     document.querySelectorAll(".stat-input").forEach(i => { t += parseInt(i.value) || 0; });
-    $("stat-total").textContent = s("ui.stats_total", {t});
-    $("stat-total").style.color = t === 7 ? "var(--success)" : "var(--error)";
+    $("stat-total").textContent = s("ui.stats_total", {t, target: sc.target_sum});
+    $("stat-total").style.color = t === sc.target_sum ? "var(--success)" : "var(--error)";
   }
   document.querySelectorAll(".stat-input").forEach(i => i.oninput = updateStats);
   updateStats();
 
+  // Submit
   $("start-game-btn").onclick = () => {
     const stats = {};
     let total = 0;
@@ -561,8 +663,23 @@ function renderCreationForm(options) {
       stats[i.dataset.stat] = v;
       total += v;
     });
-    if (total !== 7) { alert(s("ui.stats_must_total")); return; }
-    if (Object.values(stats).some(v => v < 0 || v > 3)) { alert(s("ui.stats_range")); return; }
+    if (total !== sc.target_sum) { alert(s("ui.stats_must_total", {target: sc.target_sum})); return; }
+    if (Object.values(stats).some(v => v < sc.min || v > sc.max)) { alert(s("ui.stats_range", {min: sc.min, max: sc.max})); return; }
+
+    // Gather truths
+    const truths = {};
+    document.querySelectorAll(".truth-select").forEach(sel => {
+      const tid = sel.dataset.truthId;
+      const st = curSetting();
+      const truthDef = (st.truths || []).find(t => t.id === tid);
+      if (truthDef && truthDef.options[sel.value]) truths[tid] = truthDef.options[sel.value].summary;
+    });
+
+    // Gather asset
+    const assets = [];
+    const assetSel = $("c-asset");
+    if (assetSel && assetSel.value) assets.push(assetSel.value);
+
     send({type: "start_game", creation_data: {
       setting_id: document.querySelector('input[name="setting"]:checked')?.value,
       player_name: $("c-name").value.trim() || currentPlayer,
@@ -570,7 +687,11 @@ function renderCreationForm(options) {
       paths: [$("c-path1").value, $("c-path2").value],
       backstory: $("c-backstory").value.trim(),
       background_vow: $("c-vow").value.trim(),
+      background_vow_rank: $("c-vow-rank").value,
+      vow_subject: $("c-vow-subject").value.trim(),
       stats,
+      assets,
+      truths,
       wishes: $("c-wishes").value.trim(),
       content_lines: $("c-boundaries").value.trim(),
     }});

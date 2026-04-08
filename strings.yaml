@@ -95,13 +95,20 @@ ui.character_name: Character name
 ui.pronouns: Pronouns
 ui.paths: Paths
 ui.backstory: Backstory
+ui.backstory_prompt: "Roll a backstory prompt"
 ui.background_vow: Background vow
+ui.vow_rank: Vow rank
+ui.vow_subject: "Who or what is this vow about? (for the world to remember)"
+ui.truths: World truths
+ui.truth_pick: "Choose a truth for: {name}"
+ui.starting_assets: Starting asset
+ui.name_roll: Roll a name
 ui.content_boundaries: Content boundaries
 ui.wishes: Wishes
-ui.stats_label: Stats (total must be 7, each 0-3)
-ui.stats_total: 'Total: {t}/7'
-ui.stats_must_total: Stats must total 7.
-ui.stats_range: Each stat must be 0-3.
+ui.stats_label: "Stats (total must be {target}, each {min}-{max})"
+ui.stats_total: "Total: {t}/{target}"
+ui.stats_must_total: "Stats must total {target}."
+ui.stats_range: "Each stat must be {min}-{max}."
 ui.begin: Begin!
 ui.no_settings: No settings available.
 ui.input_placeholder: What do you do?
