@@ -2806,5 +2806,272 @@
       "max": 100,
       "descriptor": "Heroic"
     }
-  ]
+  ],
+  "characters_list_template": [
+    {
+      "min": 1,
+      "max": 4,
+      "result": "new_character"
+    },
+    {
+      "min": 5,
+      "max": 8,
+      "result": "new_character"
+    },
+    {
+      "min": 9,
+      "max": 12,
+      "result": "new_character"
+    },
+    {
+      "min": 13,
+      "max": 16,
+      "result": "choose_most_logical"
+    },
+    {
+      "min": 17,
+      "max": 20,
+      "result": "new_character"
+    },
+    {
+      "min": 21,
+      "max": 24,
+      "result": "new_character"
+    },
+    {
+      "min": 25,
+      "max": 28,
+      "result": "new_character"
+    },
+    {
+      "min": 29,
+      "max": 32,
+      "result": "choose_most_logical"
+    },
+    {
+      "min": 33,
+      "max": 36,
+      "result": "new_character"
+    },
+    {
+      "min": 37,
+      "max": 40,
+      "result": "new_character"
+    },
+    {
+      "min": 41,
+      "max": 44,
+      "result": "new_character"
+    },
+    {
+      "min": 45,
+      "max": 48,
+      "result": "choose_most_logical"
+    },
+    {
+      "min": 49,
+      "max": 52,
+      "result": "new_character"
+    },
+    {
+      "min": 53,
+      "max": 56,
+      "result": "choose_most_logical"
+    },
+    {
+      "min": 57,
+      "max": 60,
+      "result": "choose_most_logical"
+    },
+    {
+      "min": 61,
+      "max": 64,
+      "result": "choose_most_logical"
+    },
+    {
+      "min": 65,
+      "max": 68,
+      "result": "new_character"
+    },
+    {
+      "min": 69,
+      "max": 72,
+      "result": "choose_most_logical"
+    },
+    {
+      "min": 73,
+      "max": 76,
+      "result": "choose_most_logical"
+    },
+    {
+      "min": 77,
+      "max": 80,
+      "result": "choose_most_logical"
+    },
+    {
+      "min": 81,
+      "max": 84,
+      "result": "new_character"
+    },
+    {
+      "min": 85,
+      "max": 88,
+      "result": "choose_most_logical"
+    },
+    {
+      "min": 89,
+      "max": 92,
+      "result": "choose_most_logical"
+    },
+    {
+      "min": 93,
+      "max": 96,
+      "result": "choose_most_logical"
+    },
+    {
+      "min": 97,
+      "max": 100,
+      "result": "new_character"
+    }
+  ],
+  "plotlines_list_template": [
+    {
+      "min": 1,
+      "max": 4,
+      "result": "choose_most_logical"
+    },
+    {
+      "min": 5,
+      "max": 8,
+      "result": "new_plotline"
+    },
+    {
+      "min": 9,
+      "max": 12,
+      "result": "choose_most_logical"
+    },
+    {
+      "min": 13,
+      "max": 16,
+      "result": "choose_most_logical"
+    },
+    {
+      "min": 17,
+      "max": 20,
+      "result": "choose_most_logical"
+    },
+    {
+      "min": 21,
+      "max": 24,
+      "result": "new_plotline"
+    },
+    {
+      "min": 25,
+      "max": 28,
+      "result": "choose_most_logical"
+    },
+    {
+      "min": 29,
+      "max": 32,
+      "result": "choose_most_logical"
+    },
+    {
+      "min": 33,
+      "max": 36,
+      "result": "choose_most_logical"
+    },
+    {
+      "min": 37,
+      "max": 40,
+      "result": "new_plotline"
+    },
+    {
+      "min": 41,
+      "max": 44,
+      "result": "choose_most_logical"
+    },
+    {
+      "min": 45,
+      "max": 48,
+      "result": "choose_most_logical"
+    },
+    {
+      "min": 49,
+      "max": 52,
+      "result": "choose_most_logical"
+    },
+    {
+      "min": 53,
+      "max": 56,
+      "result": "new_plotline"
+    },
+    {
+      "min": 57,
+      "max": 60,
+      "result": "choose_most_logical"
+    },
+    {
+      "min": 61,
+      "max": 64,
+      "result": "choose_most_logical"
+    },
+    {
+      "min": 65,
+      "max": 68,
+      "result": "choose_most_logical"
+    },
+    {
+      "min": 69,
+      "max": 72,
+      "result": "new_plotline"
+    },
+    {
+      "min": 73,
+      "max": 76,
+      "result": "choose_most_logical"
+    },
+    {
+      "min": 77,
+      "max": 80,
+      "result": "choose_most_logical"
+    },
+    {
+      "min": 81,
+      "max": 84,
+      "result": "choose_most_logical"
+    },
+    {
+      "min": 85,
+      "max": 88,
+      "result": "new_plotline"
+    },
+    {
+      "min": 89,
+      "max": 92,
+      "result": "choose_most_logical"
+    },
+    {
+      "min": 93,
+      "max": 96,
+      "result": "choose_most_logical"
+    },
+    {
+      "min": 97,
+      "max": 100,
+      "result": "choose_most_logical"
+    }
+  ],
+  "turning_point_rules": {
+    "plot_points_per_turning_point": {
+      "min": 2,
+      "max": 5
+    },
+    "plotline_selection": "Roll d100 on plotlines list. No plotlines = automatic new plotline.",
+    "advancement_vs_conclusion": "Existing plotline starts as advancement. Becomes conclusion if Conclusion (1-8) is rolled as a plot point.",
+    "rolling_method": "Roll 3d10: one die for theme priority, two dice as d100 for plot point.",
+    "theme_4_5_alternation": "Result of 10 on theme die alternates between 4th and 5th priority theme.",
+    "max_entries_per_list_item": 3,
+    "conclusion_plot_point_range": "1-8 on any theme",
+    "none_plot_point_range": "9-24 on any theme"
+  }
 }

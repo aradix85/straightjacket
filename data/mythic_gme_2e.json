@@ -6221,106 +6221,118 @@
       "likelihood": "likely"
     }
   },
-  "npc_statistics": [
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    ""
-  ]
+  "npc_statistics": {
+    "yes": "Value is what you expect.",
+    "exceptional_yes": "Value is higher than expected, by about 25%.",
+    "no": "Value is lower than expected, by about 25%.",
+    "exceptional_no": "Value is much lower than expected, by about 50%.",
+    "random_event": "There is a special condition associated with this statistic.",
+    "note": "Use chaos factor 5 for these questions regardless of actual chaos factor."
+  },
+  "thread_discovery_check": [
+    {
+      "min": 1,
+      "max": 9,
+      "result": "progress",
+      "points": 2
+    },
+    {
+      "min": 10,
+      "max": 10,
+      "result": "flashpoint",
+      "points": 2
+    },
+    {
+      "min": 11,
+      "max": 14,
+      "result": "track",
+      "points": 1
+    },
+    {
+      "min": 15,
+      "max": 17,
+      "result": "progress",
+      "points": 3
+    },
+    {
+      "min": 18,
+      "max": 18,
+      "result": "flashpoint",
+      "points": 3
+    },
+    {
+      "min": 19,
+      "max": 19,
+      "result": "track",
+      "points": 2
+    },
+    {
+      "min": 20,
+      "max": 24,
+      "result": "strengthen_progress",
+      "points": 1
+    },
+    {
+      "min": 25,
+      "max": 999,
+      "result": "strengthen_progress",
+      "points": 2
+    }
+  ],
+  "discovery_fate_question": {
+    "yes": "Roll on Thread Discovery Check Table.",
+    "exceptional_yes": "Roll TWICE on Thread Discovery Check Table, combine results.",
+    "no": "Nothing found. No roll on Thread Discovery Check Table.",
+    "exceptional_no": "Nothing found. Cannot make another Discovery Check this scene.",
+    "min_odds": "fifty_fifty",
+    "roll_method": "1d10 + current_progress_points"
+  },
+  "fate_as_rpg_rules": {
+    "chaos_factor_override": 5,
+    "exceptional_handling": "Treat as regular Yes/No if the rule has no degrees of success.",
+    "random_events": "Ignore unless they make sense in context."
+  },
+  "prepared_adventure_event_focus": [
+    {
+      "min": 1,
+      "max": 20,
+      "result": "Adventure Feature"
+    },
+    {
+      "min": 21,
+      "max": 40,
+      "result": "NPC Action"
+    },
+    {
+      "min": 41,
+      "max": 50,
+      "result": "NPC Negative"
+    },
+    {
+      "min": 51,
+      "max": 55,
+      "result": "NPC Positive"
+    },
+    {
+      "min": 56,
+      "max": 70,
+      "result": "PC Negative"
+    },
+    {
+      "min": 71,
+      "max": 80,
+      "result": "PC Positive"
+    },
+    {
+      "min": 81,
+      "max": 100,
+      "result": "Current Context"
+    }
+  ],
+  "player_vs_pc_knowledge": {
+    "test_ask_real": "PC checks for discovery before asking fate question if it exists.",
+    "reliable_unreliable": "Player knowledge is not canon until PC discovers it. Can be wrong.",
+    "going_with_it": "Embrace player knowledge from cinematic big-picture view.",
+    "extra_knowledge_rp": "Player knowledge triggers opportunity for PC to earn it in-game."
+  }
 }
