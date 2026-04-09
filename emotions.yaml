@@ -2,6 +2,13 @@
 # Maps emotional_weight labels to importance scores (1-10).
 # Used by the NPC memory system to decide what matters.
 # 9-tier scale matching upstream for memory retrieval granularity.
+#
+# Compound emotions (e.g. "fear_pain_hostile" from derive_memory_emotion)
+# are NOT listed here. score_importance() splits them on _ / , ; and
+# scores the highest-matching token. This is intentional — listing all
+# (base × disposition) combinations would be ~65 entries that duplicate
+# the base scores. If a compound needs a different score than its parts,
+# add it explicitly below.
 
 # ── Importance tiers ──────────────────────────────────────────
 # Scale: 2=baseline, 3=mild, 4=moderate, 5=significant, 6=strong,

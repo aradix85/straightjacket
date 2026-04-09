@@ -5,11 +5,10 @@ config_*.yaml
 # User data
 users/
 logs/
-voices/
 
 # Elvira session output (generated, not tracked)
-elvira/elvira_session.json
-elvira/elvira_session_full.json
+tests/elvira/elvira_session.json
+tests/elvira/elvira_session_full.json
 
 # Python
 __pycache__/
@@ -39,15 +38,6 @@ venv/
 Thumbs.db
 desktop.ini
 
-# NiceGUI
-.nicegui/
-
 # TLS auto-generated certs
 cert.pem
 key.pem
-
-# Temp audio files
-*.tmp.mp3
-*.tmp.wav
-*.tmp.ogg
-.storage_secret

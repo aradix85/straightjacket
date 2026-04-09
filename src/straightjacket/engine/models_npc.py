@@ -5,14 +5,14 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-from .serialization import deserialize, serialize
+from .serialization import SerializableMixin, serialize
 
 # Canonical NPC status values. Used by correction ops and anywhere status is validated.
 NPC_STATUSES: frozenset[str] = frozenset({"active", "background", "deceased", "lore"})
 
 
 @dataclass
-class MemoryEntry:
+class MemoryEntry(SerializableMixin):
     """Single NPC memory (observation or reflection). All fields explicit."""
 
     scene: int = 0
@@ -31,13 +31,9 @@ class MemoryEntry:
             d.pop("_score_debug", None)
         return d
 
-    @classmethod
-    def from_dict(cls, data: dict) -> MemoryEntry:
-        return deserialize(cls, data)
-
 
 @dataclass
-class NpcData:
+class NpcData(SerializableMixin):
     """Single NPC. All fields explicit with defaults."""
 
     id: str = ""
@@ -59,10 +55,3 @@ class NpcData:
     last_reflection_scene: int = 0
     last_location: str = ""
     needs_reflection: bool = False
-
-    def to_dict(self) -> dict:
-        return serialize(self)
-
-    @classmethod
-    def from_dict(cls, data: dict) -> NpcData:
-        return deserialize(cls, data)

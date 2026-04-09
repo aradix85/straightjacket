@@ -68,24 +68,16 @@ class MockProvider:
                         "dialog_only": False,
                         "player_intent": "I search the room for clues",
                         "world_addition": None,
-                        "position": "risky",
-                        "effect": "standard",
-                        "dramatic_question": "Will they find what they need?",
                         "location_change": None,
-                        "time_progression": "short",
                     }
                 )
             )
 
-        if json_schema and "scene_context" in json_schema.get("properties", {}):
+        if json_schema and "new_npcs" in json_schema.get("properties", {}):
             # Narrator metadata call
             return MockResponse(
                 json.dumps(
                     {
-                        "scene_context": "The player searches a dusty room.",
-                        "location_update": None,
-                        "time_update": None,
-                        "memory_updates": [],
                         "new_npcs": [],
                         "npc_renames": [],
                         "npc_details": [],
@@ -216,21 +208,11 @@ def _make_game():  # type: ignore[no-untyped-def]
     return game
 
 
-def _stub_engine() -> None:
-    """Load real engine.yaml for integration tests.
-    Clear cached stub from test_engine.py if present."""
-    from straightjacket.engine import engine_loader
-
-    engine_loader._eng = None  # Clear any cached stub
-    engine_loader.eng()  # Load from real engine.yaml
-
-
 # ── Turn pipeline tests ──────────────────────────────────────
 
 
-def test_turn_action_produces_narration() -> None:
+def test_turn_action_produces_narration(load_engine: None) -> None:
     """Full action turn: brain → roll → consequences → narrator → metadata."""
-    _stub_engine()
     from straightjacket.engine.game.turn import process_turn
     from straightjacket.engine.models import EngineConfig
 
@@ -270,9 +252,8 @@ def test_turn_action_produces_narration() -> None:
     assert len(provider.calls) >= 3
 
 
-def test_turn_dialog_skips_roll() -> None:
+def test_turn_dialog_skips_roll(load_engine: None) -> None:
     """Dialog turn should not produce a roll result."""
-    _stub_engine()
     from straightjacket.engine.game.turn import process_turn
     from straightjacket.engine.models import EngineConfig
 
@@ -297,11 +278,7 @@ def test_turn_dialog_skips_roll() -> None:
                         "dialog_only": True,
                         "player_intent": "I talk to Mira",
                         "world_addition": None,
-                        "position": "risky",
-                        "effect": "standard",
-                        "dramatic_question": "Will Mira help?",
                         "location_change": None,
-                        "time_progression": "none",
                     }
                 )
             )
@@ -325,9 +302,8 @@ def test_turn_dialog_skips_roll() -> None:
     assert game.narrative.scene_count == 4
 
 
-def test_turn_consequences_applied_on_miss() -> None:
+def test_turn_consequences_applied_on_miss(load_engine: None) -> None:
     """On MISS, consequences should reduce resources."""
-    _stub_engine()
     from straightjacket.engine.mechanics import apply_consequences
 
     game = _make_game()
@@ -351,8 +327,8 @@ def test_turn_consequences_applied_on_miss() -> None:
 
     from straightjacket.engine.models import BrainResult
 
-    brain = BrainResult(position="risky", effect="standard")
-    consequences, clock_events = apply_consequences(game, roll, brain)
+    brain = BrainResult()
+    consequences, clock_events = apply_consequences(game, roll, brain, "risky", "standard")
 
     # Something should have changed
     assert len(consequences) > 0
@@ -360,9 +336,8 @@ def test_turn_consequences_applied_on_miss() -> None:
     assert game.resources.momentum < initial_momentum
 
 
-def test_chaos_interrupt_respects_config() -> None:
+def test_chaos_interrupt_respects_config(load_engine: None) -> None:
     """Chaos interrupt uses engine.yaml interrupt_types list."""
-    _stub_engine()
     from straightjacket.engine.mechanics import check_chaos_interrupt
     from straightjacket.engine.engine_loader import eng
 
@@ -387,9 +362,8 @@ def test_chaos_interrupt_respects_config() -> None:
 # ── Prompt builder tests ─────────────────────────────────────
 
 
-def test_dialog_prompt_contains_world_and_character() -> None:
+def test_dialog_prompt_contains_world_and_character(stub_engine: None) -> None:
     """Dialog prompt must include world genre and character name."""
-    _stub_engine()
     from straightjacket.engine.prompt_builders import build_dialog_prompt
     from straightjacket.engine.models import BrainResult, EngineConfig
 
@@ -398,8 +372,6 @@ def test_dialog_prompt_contains_world_and_character() -> None:
         move="dialog",
         target_npc="npc_1",
         player_intent="Ask about the archives",
-        dramatic_question="Will she share her knowledge?",
-        position="controlled",
     )
     prompt = build_dialog_prompt(
         game, brain, player_words="I ask Mira about the archives", config=EngineConfig(narration_lang="English")
@@ -411,9 +383,8 @@ def test_dialog_prompt_contains_world_and_character() -> None:
     assert "dialog" in prompt
 
 
-def test_action_prompt_contains_result_and_position() -> None:
+def test_action_prompt_contains_result_and_position(stub_engine: None) -> None:
     """Action prompt must include roll result and position."""
-    _stub_engine()
     from straightjacket.engine.prompt_builders import build_action_prompt
     from straightjacket.engine.models import BrainResult, EngineConfig, RollResult
 
@@ -423,7 +394,6 @@ def test_action_prompt_contains_result_and_position() -> None:
         stat="wits",
         player_intent="Search for hidden compartments",
         approach="carefully examining every surface",
-        dramatic_question="Is there a secret passage?",
     )
     roll = RollResult(
         d1=4,
@@ -454,9 +424,8 @@ def test_action_prompt_contains_result_and_position() -> None:
     assert "Search" in prompt or "search" in prompt
 
 
-def test_narrator_system_prompt_includes_constraints() -> None:
+def test_narrator_system_prompt_includes_constraints(stub_engine: None) -> None:
     """Narrator system prompt must include core constraints."""
-    _stub_engine()
     from straightjacket.engine.prompt_blocks import get_narrator_system
     from straightjacket.engine.models import EngineConfig
 
@@ -473,9 +442,8 @@ def test_narrator_system_prompt_includes_constraints() -> None:
 # ── Correction flow tests ────────────────────────────────────
 
 
-def test_correction_brain_parses_response() -> None:
+def test_correction_brain_parses_response(stub_engine: None) -> None:
     """Correction brain should return a structured correction dict."""
-    _stub_engine()
     from straightjacket.engine.correction import call_correction_brain
     from straightjacket.engine.models import BrainResult, EngineConfig
 
@@ -605,9 +573,8 @@ def test_story_completion_triggers() -> None:
 # ── Correction flow ──────────────────────────────────────────
 
 
-def test_correction_state_ops_npc_edit() -> None:
+def test_correction_state_ops_npc_edit(stub_engine: None) -> None:
     """_apply_correction_ops applies npc_edit fields correctly."""
-    _stub_engine()
     from straightjacket.engine.correction import _apply_correction_ops
 
     game = _make_game()
@@ -632,9 +599,8 @@ def test_correction_state_ops_npc_edit() -> None:
     assert game.npcs[0].name == original_name  # name unchanged
 
 
-def test_correction_state_ops_npc_rename() -> None:
+def test_correction_state_ops_npc_rename(stub_engine: None) -> None:
     """_apply_correction_ops handles npc_edit with name change (rename)."""
-    _stub_engine()
     from straightjacket.engine.correction import _apply_correction_ops
 
     game = _make_game()
@@ -657,9 +623,8 @@ def test_correction_state_ops_npc_rename() -> None:
     assert "Mira" in game.npcs[0].aliases  # old name becomes alias
 
 
-def test_correction_state_ops_location_edit() -> None:
+def test_correction_state_ops_location_edit(stub_engine: None) -> None:
     """_apply_correction_ops updates location."""
-    _stub_engine()
     from straightjacket.engine.correction import _apply_correction_ops
 
     game = _make_game()
@@ -681,9 +646,8 @@ def test_correction_state_ops_location_edit() -> None:
     assert game.world.current_location == "The Dark Tower"
 
 
-def test_correction_state_ops_npc_split() -> None:
+def test_correction_state_ops_npc_split(stub_engine: None) -> None:
     """_apply_correction_ops splits an NPC into two."""
-    _stub_engine()
     from straightjacket.engine.correction import _apply_correction_ops
 
     game = _make_game()
@@ -708,9 +672,8 @@ def test_correction_state_ops_npc_split() -> None:
     assert new_npc.description == "Identical but different"
 
 
-def test_correction_state_ops_invalid_status_rejected() -> None:
+def test_correction_state_ops_invalid_status_rejected(stub_engine: None) -> None:
     """_apply_correction_ops rejects invalid NPC status values."""
-    _stub_engine()
     from straightjacket.engine.correction import _apply_correction_ops
 
     game = _make_game()
@@ -736,9 +699,8 @@ def test_correction_state_ops_invalid_status_rejected() -> None:
 # ── NPC lifecycle: description matching ──────────────────────
 
 
-def test_description_match_catches_identity_reveal() -> None:
+def test_description_match_catches_identity_reveal(stub_engine: None) -> None:
     """description_match_existing_npc finds NPCs by description overlap."""
-    _stub_engine()
     from straightjacket.engine.npc.lifecycle import description_match_existing_npc
 
     game = _make_game()
@@ -753,9 +715,8 @@ def test_description_match_catches_identity_reveal() -> None:
     assert match.name == "Mira"
 
 
-def test_description_match_rejects_short_descriptions() -> None:
+def test_description_match_rejects_short_descriptions(stub_engine: None) -> None:
     """description_match_existing_npc rejects descriptions < 10 chars."""
-    _stub_engine()
     from straightjacket.engine.npc.lifecycle import description_match_existing_npc
 
     game = _make_game()
@@ -766,9 +727,8 @@ def test_description_match_rejects_short_descriptions() -> None:
 # ── NPC lifecycle: merge identity ────────────────────────────
 
 
-def test_merge_npc_identity_updates_clock_owner() -> None:
+def test_merge_npc_identity_updates_clock_owner(stub_engine: None) -> None:
     """merge_npc_identity updates clock owners when NPC is renamed."""
-    _stub_engine()
     from straightjacket.engine.npc.lifecycle import merge_npc_identity
     from straightjacket.engine.models import ClockData
 
@@ -784,9 +744,8 @@ def test_merge_npc_identity_updates_clock_owner() -> None:
 # ── Correction: npc_merge ────────────────────────────────────
 
 
-def test_correction_state_ops_npc_merge() -> None:
+def test_correction_state_ops_npc_merge(stub_engine: None) -> None:
     """npc_merge absorbs source NPC into target, transfers memories."""
-    _stub_engine()
     from straightjacket.engine.correction import _apply_correction_ops
     from straightjacket.engine.models import NpcData, MemoryEntry
 
@@ -809,9 +768,8 @@ def test_correction_state_ops_npc_merge() -> None:
 # ── Chapter: about_npc id_remap ──────────────────────────────
 
 
-def test_chapter_about_npc_id_remap() -> None:
+def test_chapter_about_npc_id_remap(stub_engine: None) -> None:
     """Returning NPCs get new IDs at chapter boundary; about_npc refs must be rewritten."""
-    _stub_engine()
     from straightjacket.engine.models import NpcData, MemoryEntry
 
     npc_a = NpcData(

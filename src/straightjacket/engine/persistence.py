@@ -58,8 +58,6 @@ def load_game(username: str, name: str = "autosave") -> tuple[GameState | None, 
         name_lower = npc.name.lower()
         npc.aliases = [a for a in npc.aliases if a.lower() != name_lower]
         npc.needs_reflection = npc.importance_accumulator >= eng().npc.reflection_threshold
-        if npc.status in ("active", "background") and not npc.memory and npc.introduced:
-            log(f"[Load] WARNING: NPC '{npc.name}' ({npc.id}) has no memories", level="warning")
         apply_name_sanitization(npc)
 
     chat_messages = data.get("chat_messages", [])

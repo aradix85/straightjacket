@@ -92,11 +92,7 @@ def get_brain_output_schema() -> dict:
                 "dialog_only": _bool(),
                 "player_intent": _str(),
                 "world_addition": _nullable_str(),
-                "position": _str(["controlled", "risky", "desperate"]),
-                "effect": _str(["limited", "standard", "great"]),
-                "dramatic_question": _str(),
                 "location_change": _nullable_str(),
-                "time_progression": _str(["none", "short", "moderate", "long"]),
             }
         )
     return _brain_cache
@@ -116,7 +112,6 @@ DIRECTOR_OUTPUT_SCHEMA = _obj(
                 }
             )
         ),
-        "pacing": _str(["tension_rising", "building", "climax", "breather", "resolution"]),
         "npc_reflections": _arr(
             _obj(
                 {
@@ -155,7 +150,6 @@ DIRECTOR_OUTPUT_SCHEMA = _obj(
             )
         ),
         "arc_notes": _str(),
-        "act_transition": _bool(),
     }
 )
 
@@ -220,19 +214,6 @@ CHAPTER_SUMMARY_OUTPUT_SCHEMA = _obj(
 
 NARRATOR_METADATA_SCHEMA = _obj(
     {
-        "scene_context": _str(),
-        "location_update": _nullable_str(),
-        "time_update": _nullable_str(),
-        "memory_updates": _arr(
-            _obj(
-                {
-                    "npc_id": _str(),
-                    "event": _str(),
-                    "emotional_weight": _str(),
-                    "about_npc": _nullable_str(),
-                }
-            )
-        ),
         "new_npcs": _arr(
             _obj(
                 {

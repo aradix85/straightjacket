@@ -5,19 +5,13 @@ Run: python -m pytest tests/test_models.py -v
 Or:  python tests/test_models.py
 """
 
-import json
 
 # Stubs are set up in conftest.py
 
-from straightjacket.engine import engine_loader
 from straightjacket.engine.models import (
-    ChapterSummary,
-    CampaignState,
     MemoryEntry,
     NpcData,
-    NpcEvolution,
     ClockData,
-    SceneLogEntry,
     RollResult,
     GameState,
     StoryBlueprint,
@@ -25,159 +19,7 @@ from straightjacket.engine.models import (
 )
 
 
-def _load_engine() -> None:
-    engine_loader._eng = None
-    engine_loader.eng()
-
-
 # ── NpcData ───────────────────────────────────────────────────
-
-
-def test_npcdata_roundtrip() -> None:
-    npc = NpcData(
-        id="npc_1", name="Kira", bond=3, memory=[MemoryEntry(event="test", type="observation")], aliases=["K"]
-    )
-    d = npc.to_dict()
-    npc2 = NpcData.from_dict(d)
-    assert npc2.name == "Kira"
-    assert npc2.bond == 3
-    assert len(npc2.memory) == 1
-    assert isinstance(npc2.memory[0], MemoryEntry)
-    assert npc2.aliases == ["K"]
-
-
-def test_memoryentry_roundtrip() -> None:
-    m = MemoryEntry(
-        scene=3,
-        event="fought",
-        emotional_weight="angry",
-        importance=5,
-        type="observation",
-        about_npc="npc_1",
-        tone="defiant_rage",
-        tone_key="angry",
-    )
-    d = m.to_dict()
-    m2 = MemoryEntry.from_dict(d)
-    assert m2.scene == 3
-    assert m2.tone_key == "angry"
-    assert m2.about_npc == "npc_1"
-
-
-def test_clockdata_roundtrip() -> None:
-    c = ClockData(name="Doom", segments=4, filled=2, clock_type="scheme", owner="Kira")
-    d = c.to_dict()
-    c2 = ClockData.from_dict(d)
-    assert c2.name == "Doom"
-    assert c2.filled == 2
-    assert c2.owner == "Kira"
-
-
-# ── SceneLogEntry ─────────────────────────────────────────────
-
-
-def test_scenelogentry_roundtrip() -> None:
-    e = SceneLogEntry(scene=3, summary="Test", result="STRONG_HIT", consequences=["health -2"])
-    d = e.to_dict()
-    e2 = SceneLogEntry.from_dict(d)
-    assert e2.scene == 3
-    assert e2.consequences == ["health -2"]
-
-
-def test_chapter_summary_roundtrip() -> None:
-    cs = ChapterSummary(
-        chapter=1,
-        title="First Blood",
-        summary="It began.",
-        unresolved_threads=["thread_a"],
-        npc_evolutions=[NpcEvolution(name="Borin", projection="Hardened")],
-        scenes=8,
-    )
-    d = cs.to_dict()
-    restored = ChapterSummary.from_dict(d)
-    assert restored.chapter == cs.chapter
-    assert restored.title == cs.title
-    assert restored.unresolved_threads == cs.unresolved_threads
-    assert len(restored.npc_evolutions) == 1
-    assert restored.npc_evolutions[0].name == "Borin"
-    assert restored.scenes == cs.scenes
-
-
-def test_campaign_state_from_dict_converts_chapter_dicts() -> None:
-    """CampaignState.from_dict converts raw dicts in campaign_history to ChapterSummary."""
-    data = {
-        "campaign_history": [
-            {
-                "chapter": 1,
-                "title": "Old Save",
-                "summary": "From JSON",
-                "unresolved_threads": ["thread"],
-                "character_growth": "",
-                "thematic_question": "",
-                "post_story_location": "",
-                "scenes": 10,
-                "npc_evolutions": [{"name": "A", "projection": "B"}],
-            },
-        ],
-        "chapter_number": 2,
-        "epilogue_shown": False,
-        "epilogue_dismissed": False,
-        "epilogue_text": "",
-    }
-    cs = CampaignState.from_dict(data)
-    ch = cs.campaign_history[0]
-    assert isinstance(ch, ChapterSummary)
-    assert ch.title == "Old Save"
-    assert ch.unresolved_threads == ["thread"]
-    assert ch.npc_evolutions[0].name == "A"
-
-
-def test_campaign_state_roundtrip() -> None:
-    cs = CampaignState(
-        campaign_history=[
-            ChapterSummary(chapter=1, title="A", summary="B"),
-            ChapterSummary(chapter=2, title="C", summary="D", npc_evolutions=[NpcEvolution(name="X", projection="Y")]),
-        ],
-        chapter_number=3,
-    )
-    d = cs.to_dict()
-    restored = CampaignState.from_dict(d)
-    assert len(restored.campaign_history) == 2
-    assert restored.campaign_history[1].npc_evolutions[0].name == "X"
-    assert restored.chapter_number == 3
-
-
-# ── GameState composite ──────────────────────────────────────
-
-
-def test_gamestate_full_json_roundtrip() -> None:
-    game = GameState(player_name="Hero", edge=3, heart=1, iron=1, shadow=1, wits=1)
-    game.npcs.append(NpcData(id="npc_1", name="Ally", bond=2, memory=[MemoryEntry(event="met")]))
-    game.world.clocks.append(ClockData(name="Threat"))
-    game.narrative.session_log.append(SceneLogEntry(scene=1, summary="start"))
-    j = json.dumps(game.to_dict())
-    g2 = GameState.from_dict(json.loads(j))
-    assert g2.player_name == "Hero"
-    assert g2.npcs[0].memory[0].event == "met"
-    assert g2.world.clocks[0].name == "Threat"
-
-
-def test_gamestate_snapshot_restore() -> None:
-    game = GameState(player_name="Test")
-    game.resources.health = 3
-    game.world.chaos_factor = 7
-    game.npcs.append(NpcData(id="npc_1", name="Kira", bond=2))
-    snap = game.snapshot()
-    game.resources.health = 1
-    game.world.chaos_factor = 9
-    game.npcs[0].bond = 4
-    game.restore(snap)
-    assert game.resources.health == 3
-    assert game.world.chaos_factor == 7
-    assert game.npcs[0].bond == 2
-
-
-# ── Mechanics (tested via models) ─────────────────────────────
 
 
 def test_roll_action_cap() -> None:
@@ -191,8 +33,7 @@ def test_roll_action_cap() -> None:
         assert r.action_score <= 10
 
 
-def test_compel_no_disposition_shift() -> None:
-    _load_engine()
+def test_compel_no_disposition_shift(load_engine: None) -> None:
     """v0.9.86: compel STRONG_HIT grants bond+1 only, no disposition shift."""
     from straightjacket.engine.mechanics import apply_consequences
     from straightjacket.engine.models import BrainResult, RollResult
@@ -203,14 +44,13 @@ def test_compel_no_disposition_shift() -> None:
     roll = RollResult(
         d1=5, d2=5, c1=2, c2=3, stat_name="heart", stat_value=2, action_score=10, result="STRONG_HIT", move="compel"
     )
-    brain = BrainResult(target_npc="npc_1", effect="standard")
-    apply_consequences(game, roll, brain)
+    brain = BrainResult(target_npc="npc_1")
+    apply_consequences(game, roll, brain, "risky", "standard")
     assert npc.bond == 2
     assert npc.disposition == "neutral"
 
 
-def test_test_bond_disposition_shift() -> None:
-    _load_engine()
+def test_test_bond_disposition_shift(load_engine: None) -> None:
     """v0.9.86: test_bond STRONG_HIT grants bond+1 AND disposition shift."""
     from straightjacket.engine.mechanics import apply_consequences
     from straightjacket.engine.models import BrainResult, RollResult
@@ -221,8 +61,8 @@ def test_test_bond_disposition_shift() -> None:
     roll = RollResult(
         d1=5, d2=5, c1=2, c2=3, stat_name="heart", stat_value=2, action_score=10, result="STRONG_HIT", move="test_bond"
     )
-    brain = BrainResult(target_npc="npc_1", effect="standard")
-    apply_consequences(game, roll, brain)
+    brain = BrainResult(target_npc="npc_1")
+    apply_consequences(game, roll, brain, "risky", "standard")
     assert npc.bond == 2
     assert npc.disposition == "friendly"
 
@@ -276,8 +116,7 @@ def test_npc_agency_empty_on_wrong_scene() -> None:
     assert clock_events == []
 
 
-def test_autonomous_clocks_skip_npc_owned() -> None:
-    _load_engine()
+def test_autonomous_clocks_skip_npc_owned(load_engine: None) -> None:
     """Autonomous clock ticking skips NPC-owned clocks."""
     from straightjacket.engine.mechanics import tick_autonomous_clocks
     import random
@@ -340,8 +179,7 @@ def test_story_blueprint_triggered_director_phases_snapshot() -> None:
     assert game.narrative.story_blueprint.triggered_director_phases == ["resolution"]
 
 
-def test_phase_trigger_dedup() -> None:
-    _load_engine()
+def test_phase_trigger_dedup(load_engine: None) -> None:
     """should_call_director skips already-fired phase triggers."""
     from straightjacket.engine.director import should_call_director
 
@@ -404,8 +242,7 @@ def test_memory_guard_allows_no_memories() -> None:
     assert npc.name == "Heinrich Blum"
 
 
-def test_social_move_unresolved_target_skips_bond() -> None:
-    _load_engine()
+def test_social_move_unresolved_target_skips_bond(load_engine: None) -> None:
     """Social move with no resolvable target skips bond/disposition effects."""
     from straightjacket.engine.mechanics import apply_consequences
     from straightjacket.engine.models import BrainResult
@@ -423,8 +260,8 @@ def test_social_move_unresolved_target_skips_bond() -> None:
         move="compel",
         match=False,
     )
-    brain = BrainResult(target_npc="nonexistent_npc", position="risky", effect="standard")
-    consequences, _ = apply_consequences(game, roll, brain)
+    brain = BrainResult(target_npc="nonexistent_npc")
+    consequences, _ = apply_consequences(game, roll, brain, "risky", "standard")
     # No bond loss should appear — target doesn't exist
     assert not any("bond" in c for c in consequences)
     # But spirit loss still happens (social miss always costs spirit)

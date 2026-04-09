@@ -114,10 +114,7 @@ time:{w.time_of_day or "unspecified"} | prev_locations:{", ".join(w.location_his
             log_role="brain",
         )
         result = BrainResult.from_dict(json.loads(response.content))
-        log(
-            f"[Brain] Result: move={result.move}, pos={result.position}, "
-            f"effect={result.effect}, intent={result.player_intent[:60]}"
-        )
+        log(f"[Brain] Result: move={result.move}, stat={result.stat}, intent={result.player_intent[:60]}")
         return result
     except Exception as e:
         log(f"[Brain] Structured output failed ({type(e).__name__}: {e}), falling back to dialog", level="warning")

@@ -97,8 +97,6 @@ def build_director_prompt(game: GameState, latest_narration: str, config: Engine
     log_entries = []
     for s in game.narrative.session_log[-8:]:
         entry = f"Scene {s.scene}: {s.summary} → {s.result}"
-        if s.dramatic_question:
-            entry += f" (Q: {s.dramatic_question})"
         log_entries.append(entry)
     log_text = "\n".join(log_entries) or "(start)"
 

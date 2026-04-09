@@ -50,10 +50,3 @@ def disposition_map() -> dict[str, str]:
 def normalize_disposition(raw: str) -> str:
     """Normalize any AI-generated disposition to one of the 5 canonical values."""
     return disposition_map().get(raw.lower().strip(), "neutral")
-
-
-def reload_emotions() -> None:
-    """Force reload from disk."""
-    global _data
-    _data = None
-    _ensure_loaded()

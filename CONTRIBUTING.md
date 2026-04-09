@@ -28,14 +28,14 @@ Two layers of testing, complementary:
 
 The **unit/integration test suite** (`python -m pytest tests/ -v`) runs without an API key. It uses mock providers that return canned responses. Tests verify the engine's internal logic: consequences, NPC processing, serialization, correction flow, prompt assembly, WebSocket handlers. Every PR must pass this suite.
 
-**Elvira** (`elvira/elvira.py`) is a headless AI-driven test player that plays the game with real API calls. It checks state invariants after every turn, validates narration quality (leaked mechanics, spatial consistency), stress-tests the correction pipeline, and logs everything to JSON. Two modes:
+**Elvira** (`tests/elvira/elvira.py`) is a headless AI-driven test player that plays the game with real API calls. It checks state invariants after every turn, validates narration quality (leaked mechanics, spatial consistency), stress-tests the correction pipeline, and logs everything to JSON. Two modes:
 
-- Direct mode: `python elvira/elvira.py --auto --turns 5` — drives the engine directly, bypasses the UI. Fastest way to test engine changes.
-- WebSocket mode: `python elvira/elvira.py --ws --auto --turns 5` — plays through the full server stack. Tests the complete pipeline: WebSocket protocol, handlers, engine, serializers.
+- Direct mode: `python tests/elvira/elvira.py --auto --turns 5` — drives the engine directly, bypasses the UI. Fastest way to test engine changes.
+- WebSocket mode: `python tests/elvira/elvira.py --ws --auto --turns 5` — plays through the full server stack. Tests the complete pipeline: WebSocket protocol, handlers, engine, serializers.
 
 If your change affects the turn pipeline, NPC processing, or prompt assembly, run Elvira. The unit tests catch logic bugs; Elvira catches constraint violations, narrator drift, and integration failures that only surface with real model output.
 
-Elvira configuration is in `elvira/elvira_config.yaml`. Session logs go to `elvira/elvira_session.json`. Add `--turns N` to control session length.
+Elvira configuration is in `tests/elvira/elvira_config.yaml`. Session logs go to `tests/elvira/elvira_session.json`. Add `--turns N` to control session length.
 
 ## Accessibility
 

@@ -1,48 +1,12 @@
-from typing import Any
-
 #!/usr/bin/env python3
 """Tests for persistence.py: save, load, list, delete."""
 
 import json
+from typing import Any
 
 import pytest
 
-from straightjacket.engine import engine_loader, emotions_loader
-from straightjacket.engine.config_loader import _ConfigNode
 from straightjacket.engine.models import GameState, MemoryEntry, NpcData, ClockData
-
-
-def _stub() -> None:
-    engine_loader._eng = _ConfigNode(
-        {
-            "bonds": {"start": 0, "max": 4},
-            "npc": {
-                "max_active": 12,
-                "reflection_threshold": 30,
-                "max_memory_entries": 25,
-                "max_observations": 15,
-                "max_reflections": 8,
-                "memory_recency_decay": 0.92,
-            },
-            "disposition_shifts": {"neutral": "friendly"},
-            "disposition_to_seed_emotion": {"neutral": "neutral"},
-            "move_categories": {
-                "combat": [],
-                "social": [],
-                "endure": [],
-                "recovery": [],
-                "bond_on_weak_hit": [],
-                "bond_on_strong_hit": [],
-                "disposition_shift_on_strong_hit": [],
-            },
-        },
-        "engine",
-    )
-    emotions_loader._data = {
-        "importance": {"neutral": 2},
-        "keyword_boosts": {},
-        "disposition_map": {"neutral": "neutral", "friendly": "friendly", "wary": "distrustful"},
-    }
 
 
 def _game() -> GameState:
@@ -66,9 +30,8 @@ def _game() -> GameState:
 
 
 @pytest.fixture()
-def save_dir(tmp_path: Any, monkeypatch: Any) -> object:  # type: ignore[override]
+def save_dir(tmp_path: Any, monkeypatch: Any, stub_all: None) -> object:  # type: ignore[override]
     """Redirect save directory to a temp path."""
-    _stub()
     from straightjacket.engine import logging_util
 
     monkeypatch.setattr(logging_util, "get_save_dir", lambda username: tmp_path / username / "saves")

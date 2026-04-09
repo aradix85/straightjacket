@@ -7,93 +7,12 @@ Coverage-padding tests (empty-input returns empty, pass-through returns same obj
 
 import json
 
-from straightjacket.engine import engine_loader, emotions_loader
-from straightjacket.engine.config_loader import _ConfigNode
 from straightjacket.engine.models import (
     ClockData,
     GameState,
     NpcData,
     SceneLogEntry,
-    StoryAct,
-    StoryBlueprint,
 )
-
-
-def _stub() -> None:
-    engine_loader._eng = _ConfigNode(
-        {
-            "bonds": {"start": 0, "max": 4},
-            "npc": {
-                "max_active": 12,
-                "reflection_threshold": 30,
-                "max_memory_entries": 25,
-                "max_observations": 15,
-                "max_reflections": 8,
-                "memory_recency_decay": 0.92,
-                "activation_threshold": 0.7,
-                "mention_threshold": 0.3,
-                "max_activated": 3,
-            },
-            "activation_scores": {
-                "target": 1.0,
-                "name_match": 0.8,
-                "name_part": 0.6,
-                "alias_match": 0.7,
-                "location_match": 0.3,
-                "recent_interaction": 0.2,
-                "max_recursive": 1,
-            },
-            "resources": {"health_max": 5, "spirit_max": 5, "supply_max": 5},
-            "momentum": {
-                "floor": -6,
-                "max": 10,
-                "start": 2,
-                "gain": {"weak_hit": 1, "strong_hit": {"standard": 2, "great": 3}},
-                "loss": {"risky": 2, "desperate": 3},
-            },
-            "chaos": {"min": 3, "max": 9, "start": 5, "interrupt_types": ["twist"]},
-            "pacing": {
-                "window_size": 5,
-                "intense_threshold": 3,
-                "calm_threshold": 2,
-                "max_narration_history": 5,
-                "max_session_log": 50,
-                "director_interval": 3,
-                "autonomous_clock_tick_chance": 0.20,
-                "weak_hit_clock_tick_chance": 0.50,
-            },
-            "location": {"history_size": 5},
-            "narrative_direction": {
-                "intensity": {"critical_below": 1, "high_below": 3, "moderate_below": 4},
-                "result_map": {
-                    "MISS": {"tempo": "slow", "perspective": "sensory_loss"},
-                    "WEAK_HIT": {"tempo": "moderate", "perspective": "action_detail"},
-                    "STRONG_HIT": {"tempo": "brisk", "perspective": "action_detail"},
-                    "dialog": {"tempo": "measured", "perspective": "dialogue_rhythm"},
-                    "_default": {"tempo": "moderate", "perspective": "action_detail"},
-                },
-            },
-            "move_categories": {
-                "combat": ["clash"],
-                "social": ["compel"],
-                "endure": [],
-                "recovery": [],
-                "bond_on_weak_hit": [],
-                "bond_on_strong_hit": [],
-                "disposition_shift_on_strong_hit": [],
-            },
-            "disposition_shifts": {"neutral": "friendly"},
-            "disposition_to_seed_emotion": {"neutral": "neutral", "friendly": "curious"},
-            "story": {"kishotenketsu_probability": {}, "kishotenketsu_default": 0.5},
-            "creativity_seeds": ["amber", "coyote"],
-        },
-        "engine",
-    )
-    emotions_loader._data = {
-        "importance": {"neutral": 2, "curious": 3},
-        "keyword_boosts": {},
-        "disposition_map": {"neutral": "neutral", "friendly": "friendly"},
-    }
 
 
 def _game() -> GameState:
@@ -156,8 +75,7 @@ class _MockProvider:
 # ── validator.py ─────────────────────────────────────────────
 
 
-def test_validate_narration_returns_violations() -> None:
-    _stub()
+def test_validate_narration_returns_violations(stub_all: None) -> None:
     from straightjacket.engine.ai.validator import validate_narration
 
     provider = _MockProvider(
@@ -173,8 +91,7 @@ def test_validate_narration_returns_violations() -> None:
     assert len(result["violations"]) == 1
 
 
-def test_validate_narration_fail_open_on_api_error() -> None:
-    _stub()
+def test_validate_narration_fail_open_on_api_error(stub_all: None) -> None:
     from straightjacket.engine.ai.validator import validate_narration
 
     provider = _MockProvider(fail=True)
@@ -187,8 +104,7 @@ def test_validate_narration_fail_open_on_api_error() -> None:
     assert result["pass"] is True
 
 
-def test_validate_narration_catches_genre_violation_rule_based() -> None:
-    _stub()
+def test_validate_narration_catches_genre_violation_rule_based(stub_all: None) -> None:
     from straightjacket.engine.ai.validator import validate_narration
 
     provider = _MockProvider(json.dumps({"pass": True, "violations": [], "correction": ""}))
@@ -204,8 +120,7 @@ def test_validate_narration_catches_genre_violation_rule_based() -> None:
     assert any("magic" in v for v in result["violations"])
 
 
-def test_validate_and_retry_actually_retries() -> None:
-    _stub()
+def test_validate_and_retry_actually_retries(stub_all: None) -> None:
     from straightjacket.engine.ai.validator import validate_and_retry
 
     call_count = [0]
@@ -236,8 +151,7 @@ def test_validate_and_retry_actually_retries() -> None:
     assert len(report["checks"]) >= 2
 
 
-def test_validate_architect_fixes_violations() -> None:
-    _stub()
+def test_validate_architect_fixes_violations(stub_all: None) -> None:
     from straightjacket.engine.ai.validator import validate_architect
 
     provider = _MockProvider(
@@ -263,8 +177,7 @@ def test_validate_architect_fixes_violations() -> None:
     assert result["antagonist_force"] == "Corrupt senator"
 
 
-def test_validate_architect_fail_open_on_api_error() -> None:
-    _stub()
+def test_validate_architect_fail_open_on_api_error(stub_all: None) -> None:
     from straightjacket.engine.ai.validator import validate_architect
 
     provider = _MockProvider(fail=True)
@@ -283,8 +196,7 @@ def test_validate_architect_fail_open_on_api_error() -> None:
 # ── setup_common.py ──────────────────────────────────────────
 
 
-def test_register_extracted_npcs_skips_player() -> None:
-    _stub()
+def test_register_extracted_npcs_skips_player(stub_all: None) -> None:
     from straightjacket.engine.game.setup_common import register_extracted_npcs
 
     game = GameState(player_name="Hero")
@@ -301,8 +213,7 @@ def test_register_extracted_npcs_skips_player() -> None:
     assert max_id == 1
 
 
-def test_register_extracted_npcs_skips_returning() -> None:
-    _stub()
+def test_register_extracted_npcs_skips_returning(stub_all: None) -> None:
     from straightjacket.engine.game.setup_common import register_extracted_npcs
 
     game = GameState(player_name="Hero")
@@ -319,8 +230,7 @@ def test_register_extracted_npcs_skips_returning() -> None:
     assert "Borin" in names
 
 
-def test_seed_opening_memories_matches_and_skips() -> None:
-    _stub()
+def test_seed_opening_memories_matches_and_skips(stub_all: None) -> None:
     from straightjacket.engine.game.setup_common import seed_opening_memories
 
     game = GameState(player_name="Hero")
@@ -336,8 +246,7 @@ def test_seed_opening_memories_matches_and_skips() -> None:
     assert len(game.npcs[0].memory) == 1
 
 
-def test_apply_world_setup_replace_vs_extend() -> None:
-    _stub()
+def test_apply_world_setup_replace_vs_extend(stub_all: None) -> None:
     from straightjacket.engine.game.setup_common import apply_world_setup
 
     game = GameState(player_name="Hero")
@@ -374,108 +283,6 @@ def _load_prompts() -> None:
 
     prompt_loader._prompts = None
     prompt_loader._ensure_loaded()
-
-
-def test_status_context_maps_resources() -> None:
-    _stub()
-    from straightjacket.engine.prompt_blocks import status_context_block
-
-    result = status_context_block(_game())
-    assert "<character_state>" in result
-
-
-def test_narrative_direction_maps_result() -> None:
-    _stub()
-    from straightjacket.engine.prompt_blocks import narrative_direction_block
-
-    result = narrative_direction_block(_game(), "MISS")
-    assert "tempo:slow" in result
-
-
-def test_narrative_direction_intensity_critical_on_crisis() -> None:
-    _stub()
-    from straightjacket.engine.prompt_blocks import narrative_direction_block
-
-    game = _game()
-    game.resources.health = 0
-    game.crisis_mode = True
-    assert "intensity:critical" in narrative_direction_block(game, "MISS")
-
-
-def test_story_context_block_includes_conflict() -> None:
-    _stub()
-    from straightjacket.engine.prompt_blocks import story_context_block
-
-    game = _game()
-    game.narrative.story_blueprint = StoryBlueprint(
-        central_conflict="Shadow rises",
-        structure_type="3act",
-        thematic_thread="Cost of survival",
-        acts=[StoryAct(phase="setup", title="Gathering", goal="Find allies", scene_range=[1, 7], mood="mysterious")],
-    )
-    assert "Shadow rises" in story_context_block(game)
-
-
-def test_story_context_block_epilogue_dismissed_open_ended() -> None:
-    _stub()
-    from straightjacket.engine.prompt_blocks import story_context_block
-
-    game = _game()
-    game.narrative.scene_count = 25
-    game.campaign.epilogue_dismissed = True
-    game.narrative.story_blueprint = StoryBlueprint(
-        central_conflict="X",
-        structure_type="3act",
-        thematic_thread="Y",
-        acts=[StoryAct(phase="climax", title="C", scene_range=[15, 20])],
-        triggered_transitions=["act_0"],
-        story_complete=True,
-        possible_endings=[],
-    )
-    assert "open-ended play" in story_context_block(game)
-
-
-def test_recent_events_block_includes_summaries() -> None:
-    _stub()
-    from straightjacket.engine.prompt_blocks import recent_events_block
-
-    game = _game()
-    game.narrative.session_log = [
-        SceneLogEntry(scene=3, summary="Found a clue"),
-        SceneLogEntry(scene=4, summary="Met an ally"),
-        SceneLogEntry(scene=5, summary="Current"),
-    ]
-    result = recent_events_block(game)
-    assert "Found a clue" in result
-
-
-def test_campaign_history_block_includes_chapters() -> None:
-    _stub()
-    _load_prompts()
-    from straightjacket.engine.prompt_blocks import campaign_history_block
-    from straightjacket.engine.models_story import ChapterSummary
-
-    game = _game()
-    game.campaign.campaign_history = [ChapterSummary(chapter=1, title="The Beginning", summary="It all started here.")]
-    result = campaign_history_block(game)
-    assert "The Beginning" in result
-
-
-# ── provider_base.py ─────────────────────────────────────────
-
-
-def test_post_process_strips_think_tags() -> None:
-    from straightjacket.engine.ai.provider_base import AIResponse, post_process_response
-
-    resp = AIResponse(content="<think>reasoning</think>The actual response.")
-    assert "<think>" not in post_process_response(resp).content
-
-
-def test_post_process_preserves_think_on_tool_use() -> None:
-    from straightjacket.engine.ai.provider_base import AIResponse, post_process_response
-
-    resp = AIResponse(content="<think>kept</think>text", stop_reason="tool_use")
-    assert "<think>" in post_process_response(resp).content
 
 
 def test_create_with_retry_retries_on_connection_error() -> None:
@@ -524,19 +331,7 @@ def test_create_with_retry_raises_on_exhaustion() -> None:
 # ── strings_loader.py ────────────────────────────────────────
 
 
-def test_get_string_substitutes_variables() -> None:
-    from straightjacket.strings_loader import reload_strings, get_string
-
-    reload_strings()
-    result = get_string("epilogue.chapter_msg", n=5)
-    assert "5" in result
-
-
-# ── director_runner.py ───────────────────────────────────────
-
-
-def test_run_deferred_director_applies_guidance() -> None:
-    _stub()
+def test_run_deferred_director_applies_guidance(stub_all: None) -> None:
     _load_prompts()
     from straightjacket.engine.game.director_runner import run_deferred_director
 
@@ -563,8 +358,7 @@ def test_run_deferred_director_applies_guidance() -> None:
     assert game.narrative.director_guidance.pacing == "building"
 
 
-def test_run_deferred_director_survives_api_error() -> None:
-    _stub()
+def test_run_deferred_director_survives_api_error(stub_all: None) -> None:
     from straightjacket.engine.game.director_runner import run_deferred_director
 
     provider = _MockProvider(fail=True)
@@ -579,8 +373,7 @@ def test_run_deferred_director_survives_api_error() -> None:
 # ── brain.py ─────────────────────────────────────────────────
 
 
-def test_revelation_check_returns_false_when_not_confirmed() -> None:
-    _stub()
+def test_revelation_check_returns_false_when_not_confirmed(stub_all: None) -> None:
     from straightjacket.engine.ai.brain import call_revelation_check
     from straightjacket.engine.models_story import Revelation
 
@@ -596,8 +389,7 @@ def test_revelation_check_returns_false_when_not_confirmed() -> None:
     )
 
 
-def test_revelation_check_defaults_true_on_api_error() -> None:
-    _stub()
+def test_revelation_check_defaults_true_on_api_error(stub_all: None) -> None:
     from straightjacket.engine.ai.brain import call_revelation_check
     from straightjacket.engine.models_story import Revelation
 

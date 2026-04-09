@@ -22,7 +22,11 @@ from .mechanics import (
     apply_brain_location_time,
     apply_consequences,
     check_npc_agency,
+    generate_engine_memories,
+    generate_scene_context,
     record_scene_intensity,
+    resolve_effect,
+    resolve_position,
     roll_action,
     update_chaos_factor,
 )
@@ -31,6 +35,7 @@ from .models import (
     BrainResult,
     EngineConfig,
     GameState,
+    MemoryEntry,
     NarrationEntry,
     NpcData,
     RollResult,
@@ -41,8 +46,8 @@ from .npc import activate_npcs_for_prompt, consolidate_memory, find_npc
 from .npc.lifecycle import sanitize_aliases
 from .parser import parse_narrator_response
 from .prompt_blocks import get_narration_lang
-from .prompt_loader import get_prompt
 from .prompt_builders import build_action_prompt, build_dialog_prompt
+from .prompt_loader import get_prompt
 
 
 def call_correction_brain(
@@ -255,7 +260,9 @@ def process_correction(
             stat_name = brain.stat
             roll = roll_action(stat_name, game.get_stat(stat_name), brain.move)
             log(f"[Correction] Re-rolled: {roll.result} ({stat_name})")
-            consequences, clock_events = apply_consequences(game, roll, brain)
+            position = resolve_position(game, brain)
+            effect = resolve_effect(game, brain, position)
+            consequences, clock_events = apply_consequences(game, roll, brain, position, effect)
             npc_agency, _ = check_npc_agency(game)
             activated_npcs, mentioned_npcs, _ = activate_npcs_for_prompt(game, brain, corrected_input)
             prompt = build_action_prompt(
@@ -269,6 +276,8 @@ def process_correction(
                 config=_cfg,
                 activated_npcs=activated_npcs,
                 mentioned_npcs=mentioned_npcs,
+                position=position,
+                effect=effect,
             )
         else:
             roll = None
@@ -333,8 +342,33 @@ def process_correction(
             game.last_turn_snapshot.brain = brain
             game.last_turn_snapshot.roll = roll
 
-    # Step 4: Metadata extraction
+    # Step 4: Engine-side state mutations + AI metadata extraction
     _scene_present_ids = {n.id for n in activated_npcs}
+
+    # Engine-generated scene context and memories
+    ctx = generate_scene_context(game, brain, roll, [n.name for n in activated_npcs])
+    game.world.current_scene_context = ctx
+    engine_mems = generate_engine_memories(
+        game, brain, roll, _scene_present_ids, consequences=consequences if roll else []
+    )
+    for mem in engine_mems:
+        _npc = find_npc(game, mem["npc_id"])
+        if _npc:
+            _npc.memory.append(
+                MemoryEntry(
+                    scene=game.narrative.scene_count,
+                    event=mem["event"],
+                    emotional_weight=mem["emotional_weight"],
+                    importance=mem["importance"],
+                    type="observation",
+                    about_npc=mem.get("about_npc"),
+                    _score_debug=mem.get("_score_debug", "engine-generated"),
+                )
+            )
+            _npc.importance_accumulator += mem["importance"]
+            if game.world.current_location:
+                _npc.last_location = game.world.current_location
+
     metadata = call_narrator_metadata(
         provider, narration, game, _cfg, brain=brain, consequences=[] if source != "input_misread" else []
     )
@@ -364,7 +398,6 @@ def process_correction(
                 summary=f"[corrected] {intent}",
                 move=brain.move,
                 result=roll.result if roll else "dialog",
-                dramatic_question=brain.dramatic_question,
             )
         )
         if len(nar.session_log) > eng().pacing.max_session_log:
@@ -383,7 +416,6 @@ def process_correction(
                     summary=f"[corrected] {intent}",
                     move=brain.move,
                     result=roll.result if roll else "dialog",
-                    dramatic_question=brain.dramatic_question,
                 )
             )
 
@@ -442,7 +474,9 @@ def process_momentum_burn(
         old_roll.match,
     )
 
-    consequences, clock_events = apply_consequences(game, upgraded, brain_data)
+    position = resolve_position(game, brain_data)
+    effect = resolve_effect(game, brain_data, position)
+    consequences, clock_events = apply_consequences(game, upgraded, brain_data, position, effect)
     activated_npcs, mentioned_npcs, _ = activate_npcs_for_prompt(game, brain_data, player_words)
     prompt = build_action_prompt(
         game,
@@ -455,14 +489,39 @@ def process_momentum_burn(
         chaos_interrupt=chaos_interrupt,
         activated_npcs=activated_npcs,
         mentioned_npcs=mentioned_npcs,
+        position=position,
+        effect=effect,
         config=config,
     )
     prompt = prompt.replace("<task>", "<momentum_burn>Character digs deep, turns the tide.</momentum_burn>\n<task>")
 
     raw = call_narrator(provider, prompt, game, config)
     narration = parse_narrator_response(game, raw)
-    metadata = call_narrator_metadata(provider, narration, game, config, brain=brain_data, consequences=consequences)
+
+    # Engine-side state mutations
     _scene_present_ids = {n.id for n in activated_npcs} | {n.id for n in mentioned_npcs}
+    ctx = generate_scene_context(game, brain_data, upgraded, [n.name for n in activated_npcs])
+    game.world.current_scene_context = ctx
+    engine_mems = generate_engine_memories(game, brain_data, upgraded, _scene_present_ids, consequences=consequences)
+    for mem in engine_mems:
+        _npc = find_npc(game, mem["npc_id"])
+        if _npc:
+            _npc.memory.append(
+                MemoryEntry(
+                    scene=game.narrative.scene_count,
+                    event=mem["event"],
+                    emotional_weight=mem["emotional_weight"],
+                    importance=mem["importance"],
+                    type="observation",
+                    about_npc=mem.get("about_npc"),
+                    _score_debug=mem.get("_score_debug", "engine-generated"),
+                )
+            )
+            _npc.importance_accumulator += mem["importance"]
+            if game.world.current_location:
+                _npc.last_location = game.world.current_location
+
+    metadata = call_narrator_metadata(provider, narration, game, config, brain=brain_data, consequences=consequences)
     apply_narrator_metadata(game, metadata, scene_present_ids=_scene_present_ids)
 
     update_chaos_factor(game, new_result)

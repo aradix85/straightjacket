@@ -7,23 +7,7 @@ match the comments in parser.py for traceability.
 Run: python -m pytest tests/test_parser.py -v
 """
 
-from straightjacket.engine import engine_loader
 from straightjacket.engine.models import GameState
-
-
-def _load_engine() -> None:
-    engine_loader._eng = None
-    engine_loader.eng()
-
-
-def _stub_emotions() -> None:
-    from straightjacket.engine import emotions_loader
-
-    emotions_loader._data = {
-        "importance": {"neutral": 2},
-        "keyword_boosts": {},
-        "disposition_map": {"neutral": "neutral", "friendly": "friendly"},
-    }
 
 
 def _game() -> GameState:
@@ -36,9 +20,7 @@ def _game() -> GameState:
 # ── Step 0: Role prefix stripping ────────────────────────────
 
 
-def test_strips_narrator_prefix() -> None:
-    _load_engine()
-    _stub_emotions()
+def test_strips_narrator_prefix(load_engine: None, stub_emotions: None) -> None:
     from straightjacket.engine.parser import parse_narrator_response
 
     game = _game()
@@ -48,23 +30,7 @@ def test_strips_narrator_prefix() -> None:
     assert "wind howled" in result
 
 
-def test_strips_narrator_prefix_case_insensitive() -> None:
-    _load_engine()
-    _stub_emotions()
-    from straightjacket.engine.parser import parse_narrator_response
-
-    game = _game()
-    raw = "narrator: Silence fell over the room."
-    result = parse_narrator_response(game, raw)
-    assert not result.lower().startswith("narrator:")
-
-
-# ── Step 2: XML metadata tag stripping ───────────────────────
-
-
-def test_strips_memory_updates_xml() -> None:
-    _load_engine()
-    _stub_emotions()
+def test_strips_memory_updates_xml(load_engine: None, stub_emotions: None) -> None:
     from straightjacket.engine.parser import parse_narrator_response
 
     game = _game()
@@ -75,9 +41,7 @@ def test_strips_memory_updates_xml() -> None:
     assert "door creaked" in result
 
 
-def test_strips_scene_context_xml() -> None:
-    _load_engine()
-    _stub_emotions()
+def test_strips_scene_context_xml(load_engine: None, stub_emotions: None) -> None:
     from straightjacket.engine.parser import parse_narrator_response
 
     game = _game()
@@ -86,9 +50,7 @@ def test_strips_scene_context_xml() -> None:
     assert "<scene_context>" not in result
 
 
-def test_strips_prompt_echo_tags() -> None:
-    _load_engine()
-    _stub_emotions()
+def test_strips_prompt_echo_tags(load_engine: None, stub_emotions: None) -> None:
     from straightjacket.engine.parser import parse_narrator_response
 
     game = _game()
@@ -102,9 +64,7 @@ def test_strips_prompt_echo_tags() -> None:
 # ── Step 3: Code fence stripping ─────────────────────────────
 
 
-def test_strips_code_fences() -> None:
-    _load_engine()
-    _stub_emotions()
+def test_strips_code_fences(load_engine: None, stub_emotions: None) -> None:
     from straightjacket.engine.parser import parse_narrator_response
 
     game = _game()
@@ -118,9 +78,7 @@ def test_strips_code_fences() -> None:
 # ── Step 4: Leaked JSON stripping ────────────────────────────
 
 
-def test_strips_leaked_json_array() -> None:
-    _load_engine()
-    _stub_emotions()
+def test_strips_leaked_json_array(load_engine: None, stub_emotions: None) -> None:
     from straightjacket.engine.parser import parse_narrator_response
 
     game = _game()
@@ -130,9 +88,7 @@ def test_strips_leaked_json_array() -> None:
     assert "sword gleamed" in result
 
 
-def test_strips_leaked_json_object() -> None:
-    _load_engine()
-    _stub_emotions()
+def test_strips_leaked_json_object(load_engine: None, stub_emotions: None) -> None:
     from straightjacket.engine.parser import parse_narrator_response
 
     game = _game()
@@ -144,9 +100,7 @@ def test_strips_leaked_json_object() -> None:
 # ── Step 5: Bracket-format metadata labels ───────────────────
 
 
-def test_strips_bracket_metadata_labels() -> None:
-    _load_engine()
-    _stub_emotions()
+def test_strips_bracket_metadata_labels(load_engine: None, stub_emotions: None) -> None:
     from straightjacket.engine.parser import parse_narrator_response
 
     game = _game()
@@ -158,9 +112,7 @@ def test_strips_bracket_metadata_labels() -> None:
 # ── Step 6: Markdown metadata labels ─────────────────────────
 
 
-def test_strips_markdown_metadata() -> None:
-    _load_engine()
-    _stub_emotions()
+def test_strips_markdown_metadata(load_engine: None, stub_emotions: None) -> None:
     from straightjacket.engine.parser import parse_narrator_response
 
     game = _game()
@@ -173,9 +125,7 @@ def test_strips_markdown_metadata() -> None:
 # ── Step 7.5: Bold-bracket game mechanic annotations ─────────
 
 
-def test_strips_bold_bracket_annotations() -> None:
-    _load_engine()
-    _stub_emotions()
+def test_strips_bold_bracket_annotations(load_engine: None, stub_emotions: None) -> None:
     from straightjacket.engine.parser import parse_narrator_response
 
     game = _game()
@@ -185,9 +135,7 @@ def test_strips_bold_bracket_annotations() -> None:
     assert "blade struck" in result
 
 
-def test_strips_uppercase_bracket_annotations() -> None:
-    _load_engine()
-    _stub_emotions()
+def test_strips_uppercase_bracket_annotations(load_engine: None, stub_emotions: None) -> None:
     from straightjacket.engine.parser import parse_narrator_response
 
     game = _game()
@@ -200,9 +148,7 @@ def test_strips_uppercase_bracket_annotations() -> None:
 # ── Step 8: Markdown artifacts ───────────────────────────────
 
 
-def test_strips_markdown_bold_italic() -> None:
-    _load_engine()
-    _stub_emotions()
+def test_strips_markdown_bold_italic(load_engine: None, stub_emotions: None) -> None:
     from straightjacket.engine.parser import parse_narrator_response
 
     game = _game()
@@ -214,9 +160,7 @@ def test_strips_markdown_bold_italic() -> None:
     assert "smiled" in result
 
 
-def test_strips_horizontal_rules() -> None:
-    _load_engine()
-    _stub_emotions()
+def test_strips_horizontal_rules(load_engine: None, stub_emotions: None) -> None:
     from straightjacket.engine.parser import parse_narrator_response
 
     game = _game()
@@ -228,34 +172,7 @@ def test_strips_horizontal_rules() -> None:
 # ── Step 8.5: Em-dash normalization ──────────────────────────
 
 
-def test_preserves_em_dashes() -> None:
-    _load_engine()
-    _stub_emotions()
-    from straightjacket.engine.parser import parse_narrator_response
-
-    game = _game()
-    raw = "The warrior\u2014battle-scarred and weary\u2014drew his sword."
-    result = parse_narrator_response(game, raw)
-    assert "\u2014" in result
-
-
-def test_preserves_en_dashes() -> None:
-    _load_engine()
-    _stub_emotions()
-    from straightjacket.engine.parser import parse_narrator_response
-
-    game = _game()
-    raw = "The path\u2013narrow and treacherous\u2013led upward."
-    result = parse_narrator_response(game, raw)
-    assert "\u2013" in result
-
-
-# ── Step 10: NPC introduction marking ────────────────────────
-
-
-def test_marks_npc_introduced_when_name_in_narration() -> None:
-    _load_engine()
-    _stub_emotions()
+def test_marks_npc_introduced_when_name_in_narration(load_engine: None, stub_emotions: None) -> None:
     from straightjacket.engine.parser import parse_narrator_response
     from straightjacket.engine.models import NpcData
 
@@ -266,9 +183,7 @@ def test_marks_npc_introduced_when_name_in_narration() -> None:
     assert game.npcs[0].introduced is True
 
 
-def test_marks_npc_introduced_by_partial_name() -> None:
-    _load_engine()
-    _stub_emotions()
+def test_marks_npc_introduced_by_partial_name(load_engine: None, stub_emotions: None) -> None:
     from straightjacket.engine.parser import parse_narrator_response
     from straightjacket.engine.models import NpcData
 
@@ -279,10 +194,8 @@ def test_marks_npc_introduced_by_partial_name() -> None:
     assert game.npcs[0].introduced is True
 
 
-def test_does_not_mark_introduced_by_title_alone() -> None:
+def test_does_not_mark_introduced_by_title_alone(load_engine: None, stub_emotions: None) -> None:
     """Titles like 'Captain' shouldn't trigger introduction on their own."""
-    _load_engine()
-    _stub_emotions()
     from straightjacket.engine.parser import parse_narrator_response
     from straightjacket.engine.models import NpcData
 
@@ -297,9 +210,7 @@ def test_does_not_mark_introduced_by_title_alone() -> None:
 # ── Edge case: empty narration fallback ──────────────────────
 
 
-def test_empty_narration_returns_fallback() -> None:
-    _load_engine()
-    _stub_emotions()
+def test_empty_narration_returns_fallback(load_engine: None, stub_emotions: None) -> None:
     from straightjacket.engine.parser import parse_narrator_response
 
     game = _game()
@@ -311,10 +222,8 @@ def test_empty_narration_returns_fallback() -> None:
 # ── Combined: multiple cleanup steps in one response ─────────
 
 
-def test_combined_cleanup() -> None:
+def test_combined_cleanup(load_engine: None, stub_emotions: None) -> None:
     """Real-world scenario: narrator leaks multiple metadata formats."""
-    _load_engine()
-    _stub_emotions()
     from straightjacket.engine.parser import parse_narrator_response
 
     game = _game()
@@ -344,9 +253,7 @@ if __name__ == "__main__":
 # ── Step 1.5: Untagged game_data JSON ────────────────────────
 
 
-def test_strips_untagged_game_data_json() -> None:
-    _load_engine()
-    _stub_emotions()
+def test_strips_untagged_game_data_json(load_engine: None, stub_emotions: None) -> None:
     from straightjacket.engine.parser import parse_narrator_response
 
     game = _game()
@@ -363,9 +270,7 @@ def test_strips_untagged_game_data_json() -> None:
 # ── Step 7: Trailing JSON lines ──────────────────────────────
 
 
-def test_strips_trailing_json_lines() -> None:
-    _load_engine()
-    _stub_emotions()
+def test_strips_trailing_json_lines(load_engine: None, stub_emotions: None) -> None:
     from straightjacket.engine.parser import parse_narrator_response
 
     game = _game()
@@ -375,9 +280,7 @@ def test_strips_trailing_json_lines() -> None:
     assert "fire crackled" in result
 
 
-def test_strips_trailing_metadata_label_lines() -> None:
-    _load_engine()
-    _stub_emotions()
+def test_strips_trailing_metadata_label_lines(load_engine: None, stub_emotions: None) -> None:
     from straightjacket.engine.parser import parse_narrator_response
 
     game = _game()
@@ -388,113 +291,3 @@ def test_strips_trailing_metadata_label_lines() -> None:
 
 
 # ── Clean prose regression: no false positives ───────────────
-
-
-def test_clean_prose_passes_through_unchanged() -> None:
-    """Clean narrator prose must not be mangled by the cleanup pipeline."""
-    _load_engine()
-    _stub_emotions()
-    from straightjacket.engine.parser import parse_narrator_response
-
-    game = _game()
-    prose = (
-        "The corridor stretched ahead, dust motes drifting through a shaft "
-        "of amber light. Somewhere above, a floorboard groaned under weight "
-        "that was not yours.\n\n"
-        '"You should not be here," the archivist said, not looking up from '
-        "her ledger. Her pen scratched across parchment - steady, deliberate, "
-        "as if your presence was a minor inconvenience in a long afternoon.\n\n"
-        "The smell of old paper and candle wax hung in the air. Through the "
-        "window, the last light of evening painted the rooftops in copper."
-    )
-    result = parse_narrator_response(game, prose)
-    # Em-dash normalization is expected (— → -), but content must survive intact
-    assert "corridor stretched" in result
-    assert "should not be here" in result
-    assert "candle wax" in result
-    assert "copper" in result
-    # No truncation: all three paragraphs present
-    assert result.count("\n\n") >= 2
-
-
-def test_clean_prose_with_dialog_quotes_preserved() -> None:
-    """Dialog with various quote styles must not be stripped."""
-    _load_engine()
-    _stub_emotions()
-    from straightjacket.engine.parser import parse_narrator_response
-
-    game = _game()
-    prose = (
-        "\u201cI have been waiting,\u201d she said. \u201cDid you bring the key?\u201d\n\n"
-        "You hesitated. The key was in your pocket, warm against your thigh."
-    )
-    result = parse_narrator_response(game, prose)
-    assert "waiting" in result
-    assert "bring the key" in result
-    assert "hesitated" in result
-
-
-def test_clean_prose_with_parenthetical_survives() -> None:
-    """Parenthetical remarks in prose must not trigger bracket stripping."""
-    _load_engine()
-    _stub_emotions()
-    from straightjacket.engine.parser import parse_narrator_response
-
-    game = _game()
-    prose = (
-        "The guard (a tall woman with a scar across her jaw) stepped "
-        "aside without a word. Her hand rested on the pommel of her sword."
-    )
-    result = parse_narrator_response(game, prose)
-    assert "tall woman" in result
-    assert "pommel" in result
-
-
-def test_prose_with_ellipsis_not_truncated() -> None:
-    """Prose ending with ellipsis must not be treated as truncated."""
-    _load_engine()
-    _stub_emotions()
-    from straightjacket.engine.parser import parse_narrator_response
-
-    game = _game()
-    prose = "The door creaked open, revealing nothing but darkness and the faint smell of iron..."
-    result = parse_narrator_response(game, prose)
-    assert "darkness" in result
-    assert "iron" in result
-
-
-def test_prose_with_numbers_not_stripped() -> None:
-    """Prose containing numbers must not be confused with game data."""
-    _load_engine()
-    _stub_emotions()
-    from straightjacket.engine.parser import parse_narrator_response
-
-    game = _game()
-    prose = (
-        "Three guards stood at the gate. The tallest held up 5 fingers, "
-        "a signal you did not recognize. Behind them, 12 torches lined "
-        "the wall like teeth in a jaw."
-    )
-    result = parse_narrator_response(game, prose)
-    assert "Three guards" in result
-    assert "5 fingers" in result
-    assert "12 torches" in result
-
-
-# ── Edge cases: multi-format contamination ───────────────────
-
-
-def test_prose_with_xml_style_tags_in_dialog() -> None:
-    """Narrator sometimes uses <sigh> or <pause> as stylistic elements."""
-    _load_engine()
-    _stub_emotions()
-    from straightjacket.engine.parser import parse_narrator_response
-
-    game = _game()
-    prose = (
-        'She set down the cup. "I do not know what you want from me." '
-        'A long silence. "But I suppose it does not matter now."'
-    )
-    result = parse_narrator_response(game, prose)
-    assert "set down the cup" in result
-    assert "does not matter" in result

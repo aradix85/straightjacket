@@ -14,17 +14,50 @@ from ..mechanics import (
     can_burn_momentum,
     check_chaos_interrupt,
     check_npc_agency,
+    generate_engine_memories,
+    generate_scene_context,
     purge_old_fired_clocks,
     record_scene_intensity,
+    resolve_effect,
+    resolve_position,
     roll_action,
     tick_autonomous_clocks,
     update_chaos_factor,
 )
-from ..models import BrainResult, EngineConfig, GameState, NarrationEntry, RollResult, SceneLogEntry
+from ..models import BrainResult, EngineConfig, GameState, MemoryEntry, NarrationEntry, RollResult, SceneLogEntry
 from ..npc import activate_npcs_for_prompt, find_npc, reactivate_npc
+from ..npc.memory import consolidate_memory
 from ..parser import parse_narrator_response
 from ..prompt_builders import build_action_prompt, build_dialog_prompt
 from ..story_state import default_scene_range, get_pending_revelations, mark_revelation_used
+
+
+def _apply_engine_memories(game: GameState, memories: list[dict]) -> None:
+    """Apply engine-generated memories to NPCs. Mirrors apply_memory_updates but skips
+    fuzzy matching and stub creation — engine knows exactly which NPCs are present."""
+    _e = eng()
+    for mem in memories:
+        npc = find_npc(game, mem["npc_id"])
+        if not npc:
+            continue
+        npc.memory.append(
+            MemoryEntry(
+                scene=game.narrative.scene_count,
+                event=mem["event"],
+                emotional_weight=mem["emotional_weight"],
+                importance=mem["importance"],
+                type="observation",
+                about_npc=mem.get("about_npc"),
+                _score_debug=mem.get("_score_debug", "engine-generated"),
+            )
+        )
+        npc.importance_accumulator += mem["importance"]
+        if game.world.current_location:
+            npc.last_location = game.world.current_location
+        if npc.importance_accumulator >= _e.npc.reflection_threshold:
+            npc.needs_reflection = True
+        consolidate_memory(npc)
+
 
 # POST-NARRATION: shared logic for both dialog and action paths
 
@@ -45,8 +78,23 @@ def _finalize_scene(
     roll_result_str: str,
     config: EngineConfig | None,
     agency_clock_events: list | None = None,
+    roll: RollResult | None = None,
+    consequences: list[str] | None = None,
+    position: str = "risky",
+    effect: str = "standard",
 ) -> tuple[bool, dict | None]:
     """Shared post-narration processing for dialog and action scenes."""
+    # Engine-side state mutations (step 3.1)
+    # Scene context: engine-generated from mechanical context
+    ctx = generate_scene_context(game, brain, roll, [n.name for n in game.npcs if n.id in scene_present_ids])
+    game.world.current_scene_context = ctx
+
+    # Engine-side memories for activated NPCs
+    engine_memories = generate_engine_memories(game, brain, roll, scene_present_ids, consequences=consequences)
+    if engine_memories:
+        _apply_engine_memories(game, engine_memories)
+
+    # AI metadata: NPC detection only (new_npcs, renames, details, deaths, lore)
     apply_narrator_metadata(
         game, metadata, scene_present_ids=scene_present_ids, world_addition=brain.world_addition or ""
     )
@@ -189,7 +237,6 @@ def process_turn(
                 "result": "dialog",
                 "consequences": [],
                 "clock_events": [],
-                "dramatic_question": brain.dramatic_question,
                 "chaos_interrupt": chaos_interrupt,
                 "npc_activation": npc_activation_debug,
                 "validator": val_report,
@@ -198,6 +245,8 @@ def process_turn(
             prompt_summary=f"Dialog: {(brain.player_intent or player_message)[:80]}",
             roll_result_str="dialog",
             config=config,
+            roll=None,
+            consequences=[],
         )
         return game, narration, None, None, director_ctx
 
@@ -230,7 +279,11 @@ def process_turn(
                 "pre_snapshot": game.last_turn_snapshot,
             }
 
-    consequences, clock_events = apply_consequences(game, roll, brain)
+    # Engine resolves position and effect (step 2) — deterministic from game state
+    position = resolve_position(game, brain)
+    effect = resolve_effect(game, brain, position)
+
+    consequences, clock_events = apply_consequences(game, roll, brain, position, effect)
     npc_agency, agency_clock_events = check_npc_agency(game)
     prompt = build_action_prompt(
         game,
@@ -244,6 +297,8 @@ def process_turn(
         activated_npcs=activated_npcs,
         mentioned_npcs=mentioned_npcs,
         config=config,
+        position=position,
+        effect=effect,
     )
     raw = call_narrator(provider, prompt, game, config)
     narration = parse_narrator_response(game, raw)
@@ -285,9 +340,8 @@ def process_turn(
             "result": roll.result,
             "consequences": consequences,
             "clock_events": clock_events,
-            "position": brain.position,
-            "effect": brain.effect,
-            "dramatic_question": brain.dramatic_question,
+            "position": position,
+            "effect": effect,
             "chaos_interrupt": chaos_interrupt,
             "npc_activation": npc_activation_debug,
             "validator": val_report,
@@ -297,6 +351,10 @@ def process_turn(
         roll_result_str=roll.result,
         config=config,
         agency_clock_events=agency_clock_events,
+        roll=roll,
+        consequences=consequences,
+        position=position,
+        effect=effect,
     )
     return game, narration, roll, burn_info, director_ctx
 

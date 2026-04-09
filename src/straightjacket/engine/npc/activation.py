@@ -2,18 +2,16 @@
 """NPC activation: TF-IDF relevance scoring and prompt context selection."""
 
 import math
+from typing import TYPE_CHECKING
 
 from ..engine_loader import eng
 from ..logging_util import log
-from ..models import GameState
+from ..models import GameState, NpcData
 from .lifecycle import reactivate_npc
-from ..models import NpcData
-
-from typing import TYPE_CHECKING
+from .matching import find_npc
 
 if TYPE_CHECKING:
     from ..models import BrainResult
-from .matching import find_npc
 
 # TF-IDF NPC RELEVANCE SCORING (zero-dependency implementation)
 # Replaces keyword-based activation. TF-IDF automatically weights rare/distinctive

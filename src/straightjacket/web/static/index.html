@@ -385,14 +385,14 @@ function showStatus() {
   lines.push(`${st.player_name} — ${st.character_concept || ""}`);
   lines.push(`${s("ui.scene_marker", {n: st.scene})} | ${st.location || "?"} | ${st.time_label || ""}`);
   Object.entries(st.stats).forEach(([k,v]) => { lines.push(`${v.label}: ${v.value}`); });
-  lines.push(`Health: ${st.health} | Spirit: ${st.spirit} | Supply: ${st.supply}`);
-  lines.push(`Momentum: ${st.momentum}/${st.max_momentum} | Chaos: ${st.chaos}`);
+  lines.push(`${s("ui.status_health")}: ${st.health} | ${s("ui.status_spirit")}: ${st.spirit} | ${s("ui.status_supply")}: ${st.supply}`);
+  lines.push(`${s("ui.status_momentum")}: ${st.momentum}/${st.max_momentum} | ${s("ui.status_chaos")}: ${st.chaos}`);
   if (st.npcs?.length) {
     lines.push("");
     st.npcs.forEach(n => {
       let line = `${n.name} ${n.disposition_label} B${n.bond}/${n.bond_max}`;
-      if (n.status === "background") line += " (bg)";
-      if (n.status === "deceased") line += " (deceased)";
+      if (n.status === "background") line += ` ${s("ui.status_bg")}`;
+      if (n.status === "deceased") line += ` ${s("ui.status_deceased")}`;
       lines.push(line);
     });
   }
@@ -400,12 +400,12 @@ function showStatus() {
     lines.push("");
     st.clocks.forEach(c => {
       const bar = "█".repeat(c.filled) + "░".repeat(c.segments - c.filled);
-      lines.push(`${c.name} [${bar}] ${c.filled}/${c.segments}${c.fired ? " FIRED" : ""}`);
+      lines.push(`${c.name} [${bar}] ${c.filled}/${c.segments}${c.fired ? " " + s("ui.status_fired") : ""}`);
     });
   }
   if (st.story_arc) {
     const a = st.story_arc;
-    lines.push(`\nAct ${a.act_number}/${a.total_acts}: ${a.title} (${a.phase_label}) [${a.progress}]`);
+    lines.push(`\n${s("ui.status_act", {n: a.act_number, total: a.total_acts, title: a.title, phase: a.phase_label, progress: a.progress})}`);
   }
   const div = document.createElement("div");
   div.className = "msg msg-system";
@@ -419,16 +419,43 @@ function showSaves() { send({type: "list_saves"}); }
 function renderSavesList(saves) {
   const div = document.createElement("div");
   div.className = "msg msg-system";
-  let html = `<strong>${s("ui.saves")}</strong><br>`;
-  if (saves.length === 0) html += `${s("ui.no_saves")}<br>`;
+  const title = document.createElement("strong");
+  title.textContent = s("ui.saves");
+  div.appendChild(title);
+  div.appendChild(document.createElement("br"));
+  if (saves.length === 0) {
+    div.appendChild(document.createTextNode(s("ui.no_saves")));
+    div.appendChild(document.createElement("br"));
+  }
   saves.forEach(sv => {
-    html += `<button onclick="send({type:'load',name:'${esc(sv.name)}'})">${s("ui.load")}: ${esc(sv.name)} (scene ${sv.scene_count || "?"})</button> `;
-    if (sv.name !== "autosave") html += `<button onclick="if(confirm('${s("ui.delete_confirm")}'))send({type:'delete_save',name:'${esc(sv.name)}'})" style="color:var(--error)">✕</button>`;
-    html += "<br>";
+    const loadBtn = document.createElement("button");
+    loadBtn.textContent = `${s("ui.load")}: ${sv.name} (scene ${sv.scene_count || "?"})`;
+    loadBtn.onclick = () => send({type: "load", name: sv.name});
+    div.appendChild(loadBtn);
+    div.appendChild(document.createTextNode(" "));
+    if (sv.name !== "autosave") {
+      const delBtn = document.createElement("button");
+      delBtn.textContent = "✕";
+      delBtn.style.color = "var(--error)";
+      delBtn.onclick = () => { if (confirm(s("ui.delete_confirm"))) send({type: "delete_save", name: sv.name}); };
+      div.appendChild(delBtn);
+    }
+    div.appendChild(document.createElement("br"));
   });
-  html += `<label>${s("ui.save_as")}: <input type="text" id="_save-name" placeholder="${s("ui.name_placeholder")}" style="width:8rem"></label> `;
-  html += `<button onclick="const n=$('_save-name')?.value.trim();if(n)send({type:'save',name:n})" class="primary">${s("ui.save")}</button>`;
-  div.innerHTML = html;
+  const saveLabel = document.createElement("label");
+  saveLabel.textContent = s("ui.save_as") + ": ";
+  const saveInput = document.createElement("input");
+  saveInput.type = "text";
+  saveInput.placeholder = s("ui.name_placeholder");
+  saveInput.style.width = "8rem";
+  saveLabel.appendChild(saveInput);
+  div.appendChild(saveLabel);
+  div.appendChild(document.createTextNode(" "));
+  const saveBtn = document.createElement("button");
+  saveBtn.className = "primary";
+  saveBtn.textContent = s("ui.save");
+  saveBtn.onclick = () => { const n = saveInput.value.trim(); if (n) send({type: "save", name: n}); };
+  div.appendChild(saveBtn);
   chatLog.appendChild(div);
   scroll();
   raf(() => { const first = div.querySelector("button"); if (first) first.focus(); });
@@ -483,8 +510,15 @@ function onChapterStarted(msg) {
 
 // ── Retry / session taken / error ───────────────────────────
 function showRetryOffer(text) {
-  appendHTML("msg msg-system",
-    `${s("ui.retry_text")}: "${esc(text)}" <button onclick="send({type:'player_input',text:${JSON.stringify(text)}})">${s("ui.retry")}</button>`);
+  const div = document.createElement("div");
+  div.className = "msg msg-system";
+  div.appendChild(document.createTextNode(s("ui.retry_text") + ': "' + text + '" '));
+  const btn = document.createElement("button");
+  btn.textContent = s("ui.retry");
+  btn.onclick = () => send({type: "player_input", text});
+  div.appendChild(btn);
+  chatLog.appendChild(div);
+  scroll();
 }
 
 function onSessionTaken() {

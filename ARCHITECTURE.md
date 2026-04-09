@@ -149,8 +149,8 @@ src/straightjacket/
 
 ```bash
 python -m pytest tests/ -v          # ~5 seconds
-python elvira/elvira.py --auto --turns 5   # direct engine (needs API key)
-python elvira/elvira.py --ws --auto --turns 5  # via WebSocket server
+python tests/elvira/elvira.py --auto --turns 5   # direct engine (needs API key)
+python tests/elvira/elvira.py --ws --auto --turns 5  # via WebSocket server
 ```
 
 Elvira is the real integration test. Direct mode drives the engine with an AI player bot, checks state invariants after every turn, runs narration quality checks, tests the correction pipeline, and verifies NPC spatial consistency. WebSocket mode does the same but through the full server stack.

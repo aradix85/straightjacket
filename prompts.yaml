@@ -10,12 +10,9 @@ brain_parser: |-
   <rules>
   Accept ALL player input. Pick the move matching their ACTION.
   dialog = pure conversation, no risk. Everything else = a move with a stat.
-  POSITION: controlled/risky/desperate. EFFECT: limited/standard/great.
-  DRAMATIC QUESTION: one yes/no sentence this scene must answer.
   world_addition: sensory-observable physical detail grounded in <world> genre, or null.
   location_change: short name in {lang} if moving, null if staying.
   player_intent and location_change in {lang}.
-  time_progression: none/short/moderate/long.
   </rules>
   {moves_block}
   <stats>edge=speed/stealth heart=empathy/charm iron=force shadow=cunning wits=knowledge</stats>
@@ -74,17 +71,12 @@ narrator_system: |-
   <style>Terse, vivid, sensory. Show, do not tell. Integrate player's world-building seamlessly.</style>
 
 narrator_metadata: |-
-  Metadata extractor for RPG engine. Analyze narration, extract game state changes. All text in {lang}.
-  scene_context: 1 sentence, current situation + mood. Extract from narration.
-  emotional_weight: neutral|curious|wary|angry|grateful|suspicious|terrified|loyal|conflicted|betrayed|devastated|euphoric
+  NPC detection extractor for RPG engine. Analyze narration for NPC-related changes only. All text in {lang}.
+  Engine handles location, time, scene context, and NPC memories — do NOT extract those.
   disposition: neutral|friendly|distrustful|hostile|loyal
-  time_update: early_morning|morning|midday|afternoon|evening|late_evening|night|deep_night or null
-  location_update: short name if physically moved, null if stayed.
   npc_renames: identity reveals only.
   npc_details: newly established facts (full_name, description).
   new_npcs: physically present and interacting. TEST: Can they hear the player? If not, not a new NPC.
-  memory_updates: per present NPC, use npc_id from known list.
-  about_npc: set when memory is about another NPC, null otherwise.
   deceased_npcs: on-screen deaths only. Dialog claims = unreliable.
   lore_npcs: historically significant, never physically present. Do not duplicate known NPCs.
 

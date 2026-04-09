@@ -110,11 +110,199 @@ def update_location(game: GameState, new_location: str) -> None:
 
 
 def apply_brain_location_time(game: GameState, brain: BrainResult) -> None:
-    """Apply location change and time progression from Brain results."""
+    """Apply location change and engine-resolved time progression."""
     loc = brain.location_change
-    if loc and loc != "null":
+    has_location_change = bool(loc and loc != "null")
+    if loc and has_location_change:
         update_location(game, loc)
-    advance_time(game, brain.time_progression)
+    time_prog = resolve_time_progression(brain.move, has_location_change)
+    advance_time(game, time_prog)
+
+
+# POSITION / EFFECT / TIME RESOLVERS (step 2)
+
+
+def resolve_position(game: GameState, brain: BrainResult) -> str:
+    """Engine-computed position from game state. Replaces Brain's position field.
+
+    Weighted scoring: each factor adds a signed weight. Sum maps to position
+    via thresholds. Situational overrides apply after the sum for edge cases.
+    """
+    _e = eng()
+    pr = _e.position_resolver
+    w = pr.weights
+    score = 0
+
+    # Resource pressure
+    res = game.resources
+    for val in (res.health, res.spirit, res.supply):
+        if val < w.resource_critical_below:
+            score += w.resource_critical
+        elif val < w.resource_low_below:
+            score += w.resource_low
+
+    # NPC disposition + bond (only when move targets an NPC)
+    if brain.target_npc:
+        target = find_npc(game, brain.target_npc)
+        if target:
+            disp_weights = {
+                "hostile": w.npc_hostile,
+                "distrustful": w.npc_distrustful,
+                "friendly": w.npc_friendly,
+                "loyal": w.npc_loyal,
+            }
+            score += disp_weights.get(target.disposition, 0)
+            if target.bond >= 3:
+                score += w.npc_bond_high
+            elif target.bond <= 0:
+                score += w.npc_bond_low
+
+    # Chaos factor
+    if game.world.chaos_factor >= 7:
+        score += w.chaos_high
+    elif game.world.chaos_factor <= 3:
+        score += w.chaos_low
+
+    # Recent roll momentum (consecutive results from session log)
+    recent = game.narrative.session_log[-3:] if game.narrative.session_log else []
+    recent_results = [e.result for e in recent if e.result]
+    if len(recent_results) >= 2 and all(r == "MISS" for r in recent_results[-2:]):
+        score += w.consecutive_misses
+    elif len(recent_results) >= 2 and all(r == "STRONG_HIT" for r in recent_results[-2:]):
+        score += w.consecutive_strong
+
+    # Threat pressure (clocks at >= 75% filled)
+    threat_penalty = 0
+    for clock in game.world.clocks:
+        if not clock.fired and clock.segments > 0 and clock.filled / clock.segments >= 0.75:
+            threat_penalty += w.threat_clock_critical
+    score += max(threat_penalty, w.threat_clock_critical * 2)  # cap at 2 clocks
+
+    # Secured advantage (previous move was secure_advantage with a hit)
+    if recent and recent[-1].move == "secure_advantage" and recent[-1].result in ("STRONG_HIT", "WEAK_HIT"):
+        score += w.secured_advantage
+
+    # Move category baseline
+    move = brain.move
+    cat = _move_category(move)
+    baselines = pr.move_baselines
+    score += baselines.get(cat, baselines.get("other", 0))
+
+    # Map sum to position
+    if score <= pr.desperate_below:
+        position = "desperate"
+    elif score >= pr.controlled_above:
+        position = "controlled"
+    else:
+        position = "risky"
+
+    # Situational overrides
+    has_secured = recent and recent[-1].move == "secure_advantage" and recent[-1].result in ("STRONG_HIT", "WEAK_HIT")
+    any_resource_critical = any(v < w.resource_critical_below for v in (res.health, res.spirit, res.supply))
+
+    for override in pr.get("overrides", []):
+        name = override.get("name", "")
+        conditions = override.get("conditions", [])
+        effect = override.get("effect", "")
+
+        match = True
+        for cond in conditions:
+            if (
+                cond == "secured_advantage"
+                and not has_secured
+                or cond == "any_resource_critical"
+                and not any_resource_critical
+                or cond == "crisis_mode"
+                and not game.crisis_mode
+                or cond == "recovery_move"
+                and cat != "recovery"
+                or cond == "previous_match"
+                and not (recent and recent[-1].result and getattr(recent[-1], "match", False))
+                or cond == "same_target_npc"
+                and not (recent and brain.target_npc and getattr(recent[-1], "target_npc", None) == brain.target_npc)
+            ):
+                match = False
+
+        if match and conditions:
+            if (
+                effect == "cap_at_risky"
+                and position == "controlled"
+                or effect == "floor_at_risky"
+                and position == "controlled"
+            ):
+                position = "risky"
+            elif effect == "floor_at_risky" and position == "desperate":
+                # floor_at_risky means position can't go below risky
+                pass  # desperate stays — floor means "at least risky", not "cap"
+            elif effect == "shift_up_one":
+                if position == "desperate":
+                    position = "risky"
+                elif position == "risky":
+                    position = "controlled"
+            log(f"[Position] Override '{name}' applied → {position}")
+
+    log(f"[Position] score={score}, position={position} (move={move}, cat={cat})")
+    return position
+
+
+def resolve_effect(game: GameState, brain: BrainResult, position: str) -> str:
+    """Engine-computed effect from game state + resolved position."""
+    _e = eng()
+    er = _e.effect_resolver
+    w = er.weights
+    score = 0
+
+    # Position correlation
+    pos_weights = {"desperate": w.desperate, "controlled": w.controlled}
+    score += pos_weights.get(position, 0)
+
+    # NPC bond (social moves)
+    if brain.target_npc:
+        target = find_npc(game, brain.target_npc)
+        if target:
+            if target.bond >= 3:
+                score += w.bond_high
+            elif target.bond <= 0:
+                score += w.bond_low
+
+    # Secured advantage
+    recent = game.narrative.session_log[-1:] if game.narrative.session_log else []
+    if recent and recent[0].move == "secure_advantage" and recent[0].result in ("STRONG_HIT", "WEAK_HIT"):
+        score += w.secured_advantage
+
+    # Move baseline
+    baselines = er.move_baselines
+    score += baselines.get(brain.move, baselines.get("other", 0))
+
+    # Map to effect
+    if score <= er.limited_below:
+        effect = "limited"
+    elif score >= er.great_above:
+        effect = "great"
+    else:
+        effect = "standard"
+
+    log(f"[Effect] score={score}, effect={effect} (position={position}, move={brain.move})")
+    return effect
+
+
+def resolve_time_progression(move: str, has_location_change: bool = False) -> str:
+    """Engine-computed time progression from move type. No AI needed."""
+    _e = eng()
+    tmap = _e.time_progression_map
+    if has_location_change:
+        return tmap.get("_with_location_change", "long")
+    return tmap.get(move, tmap.get("_default", "short"))
+
+
+def _move_category(move: str) -> str:
+    """Classify a move into its category for resolver lookups."""
+    _e = eng()
+    mc = _e.move_categories
+    for cat in ("combat", "social", "endure", "recovery"):
+        if move in mc.get(cat, []):
+            return cat
+    return "other"
 
 
 # SCENE / SEQUEL PACING SYSTEM
@@ -187,14 +375,15 @@ def _move_set(category: str) -> set[str]:
     return set(eng().move_categories.get(category, []))
 
 
-def apply_consequences(game: GameState, roll: RollResult, brain: BrainResult) -> tuple[list[str], list[ClockEvent]]:
+def apply_consequences(
+    game: GameState, roll: RollResult, brain: BrainResult, position: str, effect: str
+) -> tuple[list[str], list[ClockEvent]]:
     """Apply mechanical consequences. Position scales severity.
     All damage values and move categories come from engine.yaml."""
     consequences: list[str] = []
     clock_events: list[ClockEvent] = []
     tid = brain.target_npc
     target = find_npc(game, tid) if tid else None
-    position = brain.position
     _e = eng()
     res = game.resources
 
@@ -229,7 +418,6 @@ def apply_consequences(game: GameState, roll: RollResult, brain: BrainResult) ->
                 _tick_threat_clock(game, 1, clock_events)
 
     else:  # STRONG_HIT
-        effect = brain.effect
         mom_gain = damage("momentum.gain.strong_hit", effect)
         res.adjust_momentum(+mom_gain, floor=_e.momentum.floor, ceiling=_e.momentum.max)
         if roll.move in _move_set("bond_on_strong_hit") and target:
@@ -464,3 +652,119 @@ def derive_memory_emotion(move: str, result: str, disposition: str = "neutral") 
     base = base_map.get(key, "neutral")
     suffix = suffix_map.get(disposition, "")
     return base + suffix
+
+
+# ENGINE-SIDE MEMORY GENERATION (step 3.1)
+
+
+def generate_engine_memories(
+    game: GameState,
+    brain: BrainResult,
+    roll: RollResult | None,
+    activated_npc_ids: set[str],
+    consequences: list[str] | None = None,
+) -> list[dict]:
+    """Generate observation memories for activated NPCs from mechanical context.
+
+    Replaces AI-generated memory_updates for known events. Engine knows:
+    which NPCs were present, what move occurred, what the result was,
+    what consequences applied. Templates from engine.yaml produce
+    narrative-flavored memories the narrator can build on.
+    """
+    from .npc.memory import score_importance
+
+    _e = eng()
+    templates = _e.memory_templates
+    result_text_map = _e.memory_result_text
+    verb_map = _e.memory_move_verbs
+    scene = game.narrative.scene_count
+
+    move = brain.move
+    result = roll.result if roll else "dialog"
+    category = _move_category(move)
+    intent = brain.player_intent or ""
+
+    # Resolve template variables
+    result_key = "dialog" if move == "dialog" else f"{category}_{result}"
+    result_text = result_text_map.get(result_key, result_text_map.get("other_MISS", "something happened"))
+    move_verb = verb_map.get(move, verb_map.get("_default", "acted"))
+
+    if consequences:
+        result_text += f" ({', '.join(consequences[:3])})"
+
+    memories = []
+    for npc in game.npcs:
+        if npc.id not in activated_npc_ids:
+            continue
+        if npc.status not in ("active", "background"):
+            continue
+
+        # Choose template
+        is_dialog = move == "dialog" or (roll is None)
+        is_targeted = brain.target_npc and brain.target_npc == npc.id
+
+        if is_dialog:
+            if is_targeted or brain.target_npc:
+                template = templates.get("dialog", "scene {scene}: conversation with {npc}")
+            else:
+                template = templates.get("dialog_no_target", "scene {scene}: conversation — {intent}")
+        elif is_targeted:
+            template = templates.get(
+                "action_targeted", "scene {scene}: {player} {move_verb} involving {npc} — {result_text}"
+            )
+        else:
+            template = templates.get("action", "scene {scene}: {player} {move_verb} — {result_text}")
+
+        event_text = template.format(
+            scene=scene,
+            player=game.player_name,
+            npc=npc.name,
+            intent=intent[:80] if intent else "general",
+            move_verb=move_verb,
+            result_text=result_text,
+            move=move,
+            consequences=", ".join(consequences[:3]) if consequences else "",
+        )
+
+        emotional = derive_memory_emotion(move, result, npc.disposition)
+        importance, debug = score_importance(emotional, event_text, debug=True)
+
+        memories.append(
+            {
+                "npc_id": npc.id,
+                "event": event_text,
+                "emotional_weight": emotional,
+                "importance": importance,
+                "about_npc": brain.target_npc if brain.target_npc and brain.target_npc != npc.id else None,
+                "_score_debug": f"engine-generated | {debug}",
+            }
+        )
+
+    return memories
+
+
+def generate_scene_context(
+    game: GameState,
+    brain: BrainResult,
+    roll: RollResult | None,
+    activated_npc_names: list[str],
+) -> str:
+    """Engine-generated scene_context from mechanical context. Replaces AI-generated version."""
+    _e = eng()
+    move = brain.move
+    location = game.world.current_location or "unknown"
+    npc_summary = ", ".join(activated_npc_names[:3]) if activated_npc_names else "no one nearby"
+
+    if move == "dialog" or roll is None:
+        template = _e.get("scene_context_dialog", "conversation at {location} with {npc_summary}")
+        return template.format(location=location, npc_summary=npc_summary)
+
+    result = roll.result if roll else "MISS"
+    move_label = _e.memory_move_verbs.get(move, move)
+    template = _e.get("scene_context_template", "{result} on {move_label} at {location} — {npc_summary}")
+    return template.format(
+        result=result,
+        move_label=move_label,
+        location=location,
+        npc_summary=npc_summary,
+    )

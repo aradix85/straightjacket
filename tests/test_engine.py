@@ -190,51 +190,7 @@ def _make_game_with_npcs():  # type: ignore[no-untyped-def]
     return game
 
 
-def _stub_engine() -> None:
-    """Stub eng() so processing.py can call eng().bonds.start etc."""
-    from straightjacket.engine.config_loader import _ConfigNode
-    from straightjacket.engine import engine_loader
-
-    engine_loader._eng = _ConfigNode(
-        {
-            "bonds": {"start": 0, "max": 4},
-            "npc": {
-                "max_active": 12,
-                "reflection_threshold": 30,
-                "max_memory_entries": 25,
-                "max_observations": 15,
-                "max_reflections": 8,
-                "memory_recency_decay": 0.92,
-            },
-            "move_categories": {
-                "combat": ["clash", "strike"],
-                "social": ["compel", "make_connection", "test_bond"],
-                "endure": ["endure_harm", "endure_stress"],
-                "recovery": ["endure_harm", "endure_stress", "resupply"],
-                "bond_on_weak_hit": ["make_connection"],
-                "bond_on_strong_hit": ["make_connection", "compel", "test_bond"],
-                "disposition_shift_on_strong_hit": ["make_connection", "test_bond"],
-            },
-            "disposition_shifts": {
-                "hostile": "distrustful",
-                "distrustful": "neutral",
-                "neutral": "friendly",
-                "friendly": "loyal",
-            },
-            "disposition_to_seed_emotion": {
-                "hostile": "hostile",
-                "distrustful": "suspicious",
-                "neutral": "neutral",
-                "friendly": "curious",
-                "loyal": "trusting",
-            },
-        },
-        "engine",
-    )
-
-
-def test_process_new_npcs_adds_npc() -> None:
-    _stub_engine()
+def test_process_new_npcs_adds_npc(stub_engine: None) -> None:
     from straightjacket.engine.npc.processing import process_new_npcs
 
     game = _make_game_with_npcs()
@@ -249,8 +205,7 @@ def test_process_new_npcs_adds_npc() -> None:
     assert len(maren.memory) == 1  # seed memory
 
 
-def test_process_new_npcs_skips_player_character() -> None:
-    _stub_engine()
+def test_process_new_npcs_skips_player_character(stub_engine: None) -> None:
     from straightjacket.engine.npc.processing import process_new_npcs
 
     game = _make_game_with_npcs()
@@ -260,8 +215,7 @@ def test_process_new_npcs_skips_player_character() -> None:
     assert len(game.npcs) == 2  # unchanged
 
 
-def test_process_new_npcs_skips_existing() -> None:
-    _stub_engine()
+def test_process_new_npcs_skips_existing(stub_engine: None) -> None:
     from straightjacket.engine.npc.processing import process_new_npcs
 
     game = _make_game_with_npcs()
@@ -271,8 +225,7 @@ def test_process_new_npcs_skips_existing() -> None:
     assert len(game.npcs) == 2  # no duplicate
 
 
-def test_process_npc_renames_updates_name() -> None:
-    _stub_engine()
+def test_process_npc_renames_updates_name(stub_engine: None) -> None:
     from straightjacket.engine.npc.processing import process_npc_renames
 
     game = _make_game_with_npcs()
@@ -284,8 +237,7 @@ def test_process_npc_renames_updates_name() -> None:
     assert "Kira Voss" in npc.aliases
 
 
-def test_process_npc_renames_rejects_player_name() -> None:
-    _stub_engine()
+def test_process_npc_renames_rejects_player_name(stub_engine: None) -> None:
     from straightjacket.engine.npc.processing import process_npc_renames
 
     game = _make_game_with_npcs()
@@ -296,8 +248,7 @@ def test_process_npc_renames_rejects_player_name() -> None:
     assert npc.name == "Kira Voss"  # unchanged
 
 
-def test_process_npc_details_extends_surname() -> None:
-    _stub_engine()
+def test_process_npc_details_extends_surname(stub_engine: None) -> None:
     from straightjacket.engine.npc.processing import process_npc_details
 
     game = _make_game_with_npcs()
@@ -310,8 +261,7 @@ def test_process_npc_details_extends_surname() -> None:
     assert "Old Borin" in npc.aliases
 
 
-def test_process_npc_details_updates_description() -> None:
-    _stub_engine()
+def test_process_npc_details_updates_description(stub_engine: None) -> None:
     from straightjacket.engine.npc.processing import process_npc_details
 
     game = _make_game_with_npcs()

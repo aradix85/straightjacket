@@ -141,3 +141,14 @@ ui.connection_lost: Connection lost.
 ui.scene_marker: 'Scene {n}'
 ui.game_log: Game log
 ui.player_input: Player input
+
+# Status display (showStatus in index.html)
+ui.status_health: Health
+ui.status_spirit: Spirit
+ui.status_supply: Supply
+ui.status_momentum: Momentum
+ui.status_chaos: Chaos
+ui.status_act: 'Act {n}/{total}: {title} ({phase}) [{progress}]'
+ui.status_fired: FIRED
+ui.status_bg: (bg)
+ui.status_deceased: (deceased)

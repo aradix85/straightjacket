@@ -30,7 +30,6 @@ Usage:
 import json
 import random
 from dataclasses import dataclass, field
-from pathlib import Path
 
 from ..config_loader import PROJECT_ROOT
 from ..logging_util import log
@@ -46,11 +45,6 @@ _SETTING_FILES = {
     "starforged": "starforged.json",
     "sundered_isles": "sundered_isles.json",
 }
-
-
-def data_dir() -> Path:
-    """Return the data directory path."""
-    return _DATA_DIR
 
 
 def extract_title(obj: dict, fallback: str = "") -> str:

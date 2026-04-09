@@ -8,6 +8,8 @@ from ..i18n import E
 from .engine_loader import eng
 from .logging_util import log
 from .mechanics import get_pacing_hint, locations_match
+from collections.abc import Sequence
+
 from .models import BrainResult, EngineConfig, GameState, NpcData, RollResult
 from .npc import find_npc, retrieve_memories
 from .prompt_blocks import (
@@ -117,7 +119,7 @@ secrets(weave subtly,never reveal):{_xe(secs)}
 
 
 def _activated_npcs_block(
-    activated: list[NpcData], target_id: str | None, game: GameState, context_text: str = ""
+    activated: Sequence[NpcData], target_id: str | None, game: GameState, context_text: str = ""
 ) -> str:
     """Build context blocks for activated NPCs (not the target — those get _npc_block).
     Lighter context than target: name, disposition, bond, and 1-2 key memories."""
@@ -152,7 +154,7 @@ def _activated_npcs_block(
     return "\n".join(parts)
 
 
-def _known_npcs_string(mentioned: list[NpcData], game: GameState, exclude_ids: set | None = None) -> str:
+def _known_npcs_string(mentioned: Sequence[NpcData], game: GameState, exclude_ids: set | None = None) -> str:
     """Build compact known-NPCs line for name-only mentions.
     Also includes remaining active/background NPCs not in activated or mentioned."""
     exclude_ids = exclude_ids or set()
@@ -186,14 +188,12 @@ def _known_npcs_string(mentioned: list[NpcData], game: GameState, exclude_ids: s
     return ", ".join(parts) or "none"
 
 
-def _pacing_block(game: GameState, chaos_interrupt: str | None = None, dramatic_question: str = "") -> str:
-    """Build pacing/chaos/dramatic_question block for prompts."""
+def _pacing_block(game: GameState, chaos_interrupt: str | None = None) -> str:
+    """Build pacing/chaos block for prompts."""
     parts = []
     pacing = get_pacing_hint(game)
     if pacing != "neutral":
         parts.append(f'<pacing type="{pacing}"/>')
-    if dramatic_question:
-        parts.append(f"<dramatic_question>{_xe(dramatic_question)}</dramatic_question>")
     if chaos_interrupt:
         interrupt_descriptions = {
             "npc_unexpected": "An NPC arrives unexpectedly or acts completely against their established pattern",
@@ -210,23 +210,6 @@ def _pacing_block(game: GameState, chaos_interrupt: str | None = None, dramatic_
         desc = interrupt_descriptions.get(chaos_interrupt, "Something unexpected disrupts the scene")
         parts.append(f'<chaos_interrupt type="{chaos_interrupt}">{desc}</chaos_interrupt>')
     return "\n".join(parts)
-
-
-def _npcs_present_string(game: GameState) -> str:
-    """Build <npcs_present> content including aliases so Narrator recognizes known NPCs."""
-    player_loc = game.world.current_location or ""
-    parts = []
-    for n in game.npcs:
-        if n.status != "active":
-            continue
-        entry = f"{_xe(n.name)}:{_xe(n.disposition)}"
-        if n.aliases:
-            entry += f"(aka {_xe(','.join(n.aliases))})"
-        loc = _npc_location_hint(n, player_loc)
-        if loc:
-            entry += f"[at:{_xe(loc)}]"
-        parts.append(entry)
-    return ", ".join(parts) or "none"
 
 
 def _lore_figures_block(game: GameState) -> str:
@@ -258,27 +241,24 @@ def _npcs_section(
     game: GameState,
     brain: BrainResult,
     context_text: str,
-    activated_npcs: list[NpcData] | None,
-    mentioned_npcs: list[NpcData] | None,
+    activated_npcs: Sequence[NpcData] = (),
+    mentioned_npcs: Sequence[NpcData] = (),
 ) -> str:
     """Build the three-tier NPC section used by both dialog and action prompts."""
     target_id = brain.target_npc
-    if activated_npcs is not None:
-        activated_block = _activated_npcs_block(activated_npcs, target_id, game, context_text)
-        exclude_ids = {n.id for n in activated_npcs}
-        if target_id:
-            t = find_npc(game, target_id)
-            if t:
-                exclude_ids.add(t.id)
-        known_str = _known_npcs_string(mentioned_npcs or [], game, exclude_ids)
-        section = ""
-        if activated_block:
-            section += f"\n{activated_block}"
-        section += f"\n<known_npcs>{known_str}</known_npcs>"
-        section += _lore_figures_block(game)
-        return section
-    all_npcs = _npcs_present_string(game)
-    return f"\n<npcs_present>{all_npcs}</npcs_present>" + _lore_figures_block(game)
+    activated_block = _activated_npcs_block(activated_npcs, target_id, game, context_text)
+    exclude_ids = {n.id for n in activated_npcs}
+    if target_id:
+        t = find_npc(game, target_id)
+        if t:
+            exclude_ids.add(t.id)
+    known_str = _known_npcs_string(mentioned_npcs, game, exclude_ids)
+    section = ""
+    if activated_block:
+        section += f"\n{activated_block}"
+    section += f"\n<known_npcs>{known_str}</known_npcs>"
+    section += _lore_figures_block(game)
+    return section
 
 
 def _director_block(game: GameState) -> str:
@@ -297,8 +277,8 @@ def build_dialog_prompt(
     brain: BrainResult,
     player_words: str = "",
     chaos_interrupt: str | None = None,
-    activated_npcs: list[NpcData] | None = None,
-    mentioned_npcs: list[NpcData] | None = None,
+    activated_npcs: Sequence[NpcData] = (),
+    mentioned_npcs: Sequence[NpcData] = (),
     config: EngineConfig | None = None,
 ) -> str:
     context_text = f"{player_words} {brain.player_intent or ''} {game.world.current_scene_context or ''}"
@@ -309,7 +289,7 @@ def build_dialog_prompt(
     wl = f"\n<world_add>{_xe(wa)}</world_add>" if wa else ""
     crisis = "\n<crisis/>" if game.crisis_mode else ""
     pw = f"\n<player_words>{_xe(player_words)}</player_words>" if player_words else ""
-    pacing = _pacing_block(game, chaos_interrupt, brain.dramatic_question)
+    pacing = _pacing_block(game, chaos_interrupt)
     director = _director_block(game)
 
     return f"""<scene type="dialog" n="{game.narrative.scene_count}">
@@ -332,9 +312,11 @@ def build_action_prompt(
     npc_agency: list[str],
     player_words: str = "",
     chaos_interrupt: str | None = None,
-    activated_npcs: list[NpcData] | None = None,
-    mentioned_npcs: list[NpcData] | None = None,
+    activated_npcs: Sequence[NpcData] = (),
+    mentioned_npcs: Sequence[NpcData] = (),
     config: EngineConfig | None = None,
+    position: str = "risky",
+    effect: str = "standard",
 ) -> str:
     context_text = f"{player_words} {brain.player_intent or ''} {game.world.current_scene_context or ''}"
     npc = _npc_block(game, brain.target_npc, context_text=context_text)
@@ -343,9 +325,6 @@ def build_action_prompt(
     wa = brain.world_addition
     wl = f"\n<world_add>{_xe(wa)}</world_add>" if wa else ""
     pw = f"\n<player_words>{_xe(player_words)}</player_words>" if player_words else ""
-
-    position = brain.position
-    effect = brain.effect
 
     match_tag = ' match="true"' if roll.match else ""
     if roll.result == "MISS":
@@ -391,7 +370,7 @@ def build_action_prompt(
 
     flags = f"\n<flags>{','.join(status_flags)}</flags>" if status_flags else ""
     agency = f"\n<npc_agency>{_xe('| '.join(npc_agency))}</npc_agency>" if npc_agency else ""
-    pacing = _pacing_block(game, chaos_interrupt, brain.dramatic_question)
+    pacing = _pacing_block(game, chaos_interrupt)
     director = _director_block(game)
 
     return f"""<scene type="action" n="{game.narrative.scene_count}">

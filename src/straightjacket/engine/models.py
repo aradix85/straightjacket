@@ -86,11 +86,7 @@ class BrainResult:
     dialog_only: bool = False
     player_intent: str = ""
     world_addition: str | None = None
-    position: str = "risky"
-    effect: str = "standard"
-    dramatic_question: str = ""
     location_change: str | None = None
-    time_progression: str = "none"
 
     @classmethod
     def from_dict(cls, data: dict) -> BrainResult:
@@ -145,10 +141,7 @@ class TurnSnapshot:
         kwargs = {k: v for k, v in data.items() if k in known}
         snap = cls(**kwargs)
         if isinstance(snap.roll, dict):
-            try:
-                snap.roll = RollResult(**snap.roll)
-            except (TypeError, KeyError):
-                snap.roll = None
+            snap.roll = RollResult(**snap.roll)
         if isinstance(snap.brain, dict):
             snap.brain = BrainResult.from_dict(snap.brain)
         return snap

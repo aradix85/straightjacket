@@ -9,21 +9,21 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 
 from .logging_util import log
-from .serialization import deserialize, serialize
+from .serialization import SerializableMixin, deserialize, serialize
 
 
 # ENGINE CONFIG (runtime, from UI)
 
 
 @dataclass
-class EngineConfig:
+class EngineConfig(SerializableMixin):
     """Runtime configuration passed to engine functions."""
 
     narration_lang: str = ""
 
 
 @dataclass
-class Resources:
+class Resources(SerializableMixin):
     """Mutable resource tracks: health, spirit, supply, momentum."""
 
     health: int = 5
@@ -65,13 +65,6 @@ class Resources:
         self.momentum = max(floor, reset_value - (max_cap - self.max_momentum))
         log(f"[Resources] momentum burned ({old}→{self.momentum})")
 
-    def to_dict(self) -> dict:
-        return serialize(self)
-
-    @classmethod
-    def from_dict(cls, data: dict) -> Resources:
-        return deserialize(cls, data)
-
     def snapshot(self) -> dict:
         return serialize(self)
 
@@ -82,7 +75,7 @@ class Resources:
 
 
 @dataclass
-class ClockData:
+class ClockData(SerializableMixin):
     """Single clock (threat, scheme, or progress). All fields explicit."""
 
     name: str = ""
@@ -94,16 +87,9 @@ class ClockData:
     fired: bool = False
     fired_at_scene: int = 0
 
-    def to_dict(self) -> dict:
-        return serialize(self)
-
-    @classmethod
-    def from_dict(cls, data: dict) -> ClockData:
-        return deserialize(cls, data)
-
 
 @dataclass
-class WorldState:
+class WorldState(SerializableMixin):
     """Physical world: location, time, chaos, clocks."""
 
     current_location: str = ""
@@ -119,13 +105,6 @@ class WorldState:
         self.chaos_factor = max(floor, min(ceiling, self.chaos_factor + direction))
         if self.chaos_factor != old:
             log(f"[World] chaos {old}→{self.chaos_factor}")
-
-    def to_dict(self) -> dict:
-        return serialize(self)
-
-    @classmethod
-    def from_dict(cls, data: dict) -> WorldState:
-        return deserialize(cls, data)
 
     def snapshot(self) -> dict:
         return serialize(self)
@@ -146,7 +125,7 @@ PROGRESS_RANKS: dict[str, int] = {
 
 
 @dataclass
-class ProgressTrack:
+class ProgressTrack(SerializableMixin):
     """Ranked progress track (vows, connections, expeditions, combat, custom)."""
 
     id: str = ""
@@ -170,16 +149,9 @@ class ProgressTrack:
         self.ticks = min(self.max_ticks, self.ticks + self.ticks_per_mark)
         return self.ticks - old
 
-    def to_dict(self) -> dict:
-        return serialize(self)
-
-    @classmethod
-    def from_dict(cls, data: dict) -> ProgressTrack:
-        return deserialize(cls, data)
-
 
 @dataclass
-class ClockEvent:
+class ClockEvent(SerializableMixin):
     """A clock tick event from apply_consequences or tick_autonomous_clocks."""
 
     clock: str = ""
@@ -187,24 +159,10 @@ class ClockEvent:
     autonomous: bool = False
     triggered: bool = False
 
-    def to_dict(self) -> dict:
-        return serialize(self)
-
-    @classmethod
-    def from_dict(cls, data: dict) -> ClockEvent:
-        return deserialize(cls, data)
-
 
 @dataclass
-class PlayerPreferences:
+class PlayerPreferences(SerializableMixin):
     """Content boundaries and wishes (per-game, set at creation)."""
 
     player_wishes: str = ""
     content_lines: str = ""
-
-    def to_dict(self) -> dict:
-        return serialize(self)
-
-    @classmethod
-    def from_dict(cls, data: dict) -> PlayerPreferences:
-        return deserialize(cls, data)

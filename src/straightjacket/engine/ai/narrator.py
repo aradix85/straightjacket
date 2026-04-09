@@ -193,8 +193,6 @@ def call_narrator_metadata(
             parts.append(f"stat:{brain.stat}")
         if brain.target_npc:
             parts.append(f"target:{brain.target_npc}")
-        if brain.position:
-            parts.append(f"position:{brain.position}")
         mechanical_ctx = f"\n<engine_context>{' | '.join(parts)}"
         if consequences:
             mechanical_ctx += f" | consequences: {', '.join(consequences)}"
@@ -229,19 +227,16 @@ Extract all metadata from the narration above. Remember: {game.player_name} is t
         )
         metadata = json.loads(response.content)
         log(
-            f"[Metadata] Extracted: {len(metadata.get('memory_updates', []))} memories, "
+            f"[Metadata] Extracted: "
             f"{len(metadata.get('new_npcs', []))} new NPCs, "
+            f"{len(metadata.get('npc_renames', []))} renames, "
             f"{len(metadata.get('deceased_npcs', []))} deceased, "
-            f"loc={metadata.get('location_update')}, time={metadata.get('time_update')}"
+            f"{len(metadata.get('lore_npcs', []))} lore"
         )
         return metadata
     except Exception as e:
         log(f"[Metadata] Extraction failed: {e}", level="warning")
         return {
-            "scene_context": "",
-            "location_update": None,
-            "time_update": None,
-            "memory_updates": [],
             "new_npcs": [],
             "npc_renames": [],
             "npc_details": [],

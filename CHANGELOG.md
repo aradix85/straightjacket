@@ -7,6 +7,40 @@ Originally forked from [EdgeTales](https://github.com/edgetales/edgetales). See 
 
 ---
 
+## [0.37.0] — 2026-04-09
+
+Roadmap steps 2 + 3: Brain slimming and metadata extractor split. Massive AI surface reduction. Code audit: bloat removal, legacy cleanup, test infrastructure overhaul.
+
+### Step 2 — Brain slimming
+- **Position resolver** in mechanics.py. Engine-computed position (controlled/risky/desperate) via 8 weighted factors from engine.yaml: resource pressure, NPC disposition+bond, chaos factor, consecutive results, threat clock pressure, move category baseline, secured advantage, site depth (placeholder). 3 situational overrides for edge cases. ~25 lines scoring, deterministic, testable
+- **Effect resolver** in mechanics.py. Engine-computed effect (limited/standard/great) via 5 weighted factors: position correlation, NPC bond, secured advantage, move baseline. Same threshold mechanism
+- **Time progression resolver** in mechanics.py. Pure move-type → progression lookup from engine.yaml. No AI needed
+- **BrainResult** stripped from 13 to 9 fields: position, effect, dramatic_question, time_progression removed
+- **Brain schema** stripped of same 4 fields. ~50 tokens saved per Brain call
+- **Director schema** stripped of pacing and act_transition fields (already engine-computed since v0.36.0)
+- **SceneLogEntry** dramatic_question field removed
+- **prompts.yaml** brain_parser prompt stripped of position/effect/dramatic_question/time_progression instructions
+- 17 resolver tests added (test_resolvers.py)
+
+### Step 3 — Metadata extractor split
+- **Engine-generated memories** via `generate_engine_memories()` in mechanics.py. Templates in engine.yaml (memory_templates, memory_result_text, memory_move_verbs). Uses `derive_memory_emotion()` for emotional weight, `score_importance()` for importance scoring
+- **Engine-generated scene context** via `generate_scene_context()` from template in engine.yaml
+- **Metadata AI schema** reduced from 10 to 5 fields: scene_context, location_update, time_update, memory_updates, emotional_weight removed. AI extractor handles only: new_npcs, npc_renames, npc_details, deceased_npcs, lore_npcs
+- **Dead code removed**: `_resolve_slug_refs` (47 lines), `apply_memory_updates` (125 lines), all NPC imports in parser.py that were only used by the removed function
+- **prompts.yaml** narrator_metadata prompt stripped to NPC detection only
+
+### Code audit
+- **SerializableMixin** in serialization.py. Eliminates to_dict/from_dict boilerplate across 20 dataclasses (~80 lines removed)
+- **Stub migration**: 12 test files migrated from inline `_stub()` to conftest fixtures (stub_engine, stub_emotions, stub_all, load_engine). conftest extended with death_emotions, narrative_direction, story, creativity_seeds, scene_range_default, position_resolver, effect_resolver, time_progression_map, memory templates
+- **Legacy removal**: 6 NiceGUI-legacy i18n functions, `data_dir()`, `reload_emotions()`, .gitignore NiceGUI/voice entries
+- **Bug fixes**: api_client.py duck typing → isinstance. correction.py import order. npc/activation.py duplicate imports. persistence.py NPC integrity restored. TurnSnapshot defensive catch removed (corrupt = crash)
+- **HTML fixes**: XSS in renderSavesList and showRetryOffer (inline onclick → DOM events). Hardcoded English in showStatus → strings.yaml i18n
+- **Structure**: tests/playerbot elvira/ → tests/elvira/, all doc refs updated
+- **Type tightening**: prompt_builders Sequence types, GameState.from_dict strict (no backwards-compat defaults)
+- **Dead code**: parser.py _process_game_data + Step 1/1.5 game_data JSON parsing removed (replaced by two-call pattern)
+
+---
+
 ## [0.36.0] — 2026-04-08
 
 Character creation overhaul. Progress tracks, Mythic list seeding, stat validation, truths integration. AI surface reduction: pacing, act transitions, memory emotions, opening clock to engine.

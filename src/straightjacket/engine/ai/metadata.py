@@ -3,7 +3,6 @@
 
 from ..engine_loader import eng
 from ..logging_util import log
-from ..mechanics import TIME_PHASES, update_location
 from ..models import GameState, NpcData
 from ..npc import (
     apply_name_sanitization,
@@ -14,79 +13,21 @@ from ..npc import (
     process_npc_details,
     process_npc_renames,
 )
-from ..parser import apply_memory_updates
-
-
-def _resolve_slug_refs(game: GameState, mem_updates: list, fresh_npcs: list) -> None:
-    """Rewrite memory_update npc_ids that are snake_case slugs for freshly created NPCs.
-
-    When the Metadata Extractor creates new_npcs AND memory_updates in the same
-    response, it can't know the assigned npc_ids. It invents slugs like
-    'frau_seidlitz' or 'moderator_headset'. This function matches those slugs
-    against the NPCs just created by process_new_npcs using word-set overlap.
-
-    Example: 'moderator_headset' → words {'moderator','headset'}
-             'Moderator mit Headset' → words {'moderator','mit','headset'}
-             All ref words found → match → rewrite npc_id to assigned ID.
-    """
-    known_ids = {n.id for n in game.npcs}
-
-    for u in mem_updates:
-        ref = u.get("npc_id", "")
-        if not ref:
-            continue
-        # Already resolvable? Skip.
-        if ref in known_ids or any(n.name.lower() == ref.lower() for n in game.npcs):
-            continue
-        ref_words = set(ref.lower().replace("_", " ").split())
-        if not ref_words:
-            continue
-
-        best_npc = None
-        best_score: float = 0
-        for npc in fresh_npcs:
-            npc_words = set(npc.name.lower().split())
-            # All ref words must appear in the NPC name
-            if ref_words <= npc_words:
-                score = len(ref_words) / len(npc_words) if npc_words else 0
-                if score > best_score:
-                    best_score = score
-                    best_npc = npc
-            # Also check aliases
-            for alias in npc.aliases:
-                alias_words = set(alias.lower().split())
-                if ref_words <= alias_words:
-                    score = len(ref_words) / len(alias_words) if alias_words else 0
-                    if score > best_score:
-                        best_score = score
-                        best_npc = npc
-
-        if best_npc and best_score > 0:
-            log(f"[Metadata] Resolved slug '{ref}' → '{best_npc.name}' ({best_npc.id}, score={best_score:.2f})")
-            u["npc_id"] = best_npc.id
 
 
 def apply_narrator_metadata(
     game: GameState, metadata: dict, scene_present_ids: set | None = None, world_addition: str = ""
 ) -> None:
     """Apply structured metadata from the metadata extractor to game state.
+
+    After step 3: engine handles location, time, scene_context, and memories
+    (via apply_brain_location_time, generate_engine_memories, generate_scene_context).
+    AI metadata extractor handles only NPC detection from free narrator text:
+    new_npcs, npc_renames, npc_details, deceased_npcs, lore_npcs.
+
     scene_present_ids: set of NPC IDs that were activated/present in the scene.
     world_addition: Brain's world_addition text, passed through to process_npc_details
     as description fallback for rejected identity reveals."""
-    # Scene context (always present)
-    ctx = metadata.get("scene_context", "").strip()
-    if ctx:
-        game.world.current_scene_context = ctx
-
-    # Location update
-    new_loc = metadata.get("location_update")
-    if new_loc and new_loc.strip().lower() not in ("none", "null", "same", ""):
-        update_location(game, new_loc.strip())
-
-    # Time update
-    new_time = metadata.get("time_update")
-    if new_time and new_time.strip().lower().replace(" ", "_") in TIME_PHASES:
-        game.world.time_of_day = new_time.strip().lower().replace(" ", "_")
 
     # NPC renames
     renames = metadata.get("npc_renames", [])
@@ -95,18 +36,8 @@ def apply_narrator_metadata(
 
     # New NPCs
     new_npcs = metadata.get("new_npcs", [])
-    pre_npc_ids = {n.id for n in game.npcs}
-    pre_lore_ids = {n.id for n in game.npcs if n.status == "lore"}
     if new_npcs:
         process_new_npcs(game, new_npcs)
-
-    # Resolve memory_update references that use invented snake_case slugs
-    # for NPCs that were just created in this same metadata cycle.
-    mem_updates = metadata.get("memory_updates", [])
-    if mem_updates and new_npcs:
-        freshly_created = [n for n in game.npcs if n.id not in pre_npc_ids]
-        if freshly_created:
-            _resolve_slug_refs(game, mem_updates, freshly_created)
 
     # NPC details (sanitize nulls → empty strings before delegation)
     details = metadata.get("npc_details", [])
@@ -118,29 +49,17 @@ def apply_narrator_metadata(
                 d["description"] = ""
         process_npc_details(game, details, world_addition=world_addition)
 
-    # Deceased NPCs (process BEFORE memory updates so dead NPCs are skipped)
+    # Deceased NPCs (process BEFORE lore NPCs)
     deceased = metadata.get("deceased_npcs", [])
     if deceased:
         process_deceased_npcs(game, deceased, scene_present_ids=scene_present_ids)
-
-    # Memory updates — pass presence guards for hallucination rejection
-    if mem_updates:
-        apply_memory_updates(
-            game,
-            mem_updates,
-            scene_present_ids=scene_present_ids,
-            pre_turn_npc_ids=pre_npc_ids,
-            pre_turn_lore_ids=pre_lore_ids,
-        )
 
     # Lore NPCs — historically significant but never physically present
     lore_npcs = metadata.get("lore_npcs", [])
     if lore_npcs:
         _process_lore_npcs(game, lore_npcs)
 
-    # Off-screen death detection: fallback for deaths described as narrative fact
-    # but not witnessed on-screen. Runs after both deceased_npcs and memory_updates
-    # so all extractor-driven data is available.
+    # Off-screen death detection via cross-NPC memory voting
     _check_death_corroboration(game)
 
 

@@ -91,23 +91,15 @@ class MockProvider:
                         "dialog_only": True,
                         "player_intent": "Talk to Mira",
                         "world_addition": None,
-                        "position": "controlled",
-                        "effect": "standard",
-                        "dramatic_question": "",
                         "location_change": None,
-                        "time_progression": "none",
                     }
                 )
             )
 
-        if json_schema and "scene_context" in json_schema.get("properties", {}):
+        if json_schema and "new_npcs" in json_schema.get("properties", {}):
             return MockResponse(
                 json.dumps(
                     {
-                        "scene_context": "Talking with Mira.",
-                        "location_update": None,
-                        "time_update": None,
-                        "memory_updates": [],
                         "new_npcs": [],
                         "npc_renames": [],
                         "npc_details": [],
@@ -132,26 +124,6 @@ class MockProvider:
 
 
 # ── Fixtures ─────────────────────────────────────────────────
-
-
-def _load_engine() -> None:
-    engine_loader._eng = None
-    engine_loader.eng()
-
-
-def _stub_emotions() -> None:
-    from straightjacket.engine import emotions_loader
-
-    emotions_loader._data = {
-        "importance": {"neutral": 2, "curious": 4, "friendly": 3},
-        "keyword_boosts": {},
-        "disposition_map": {
-            "neutral": "neutral",
-            "friendly": "friendly",
-            "loyal": "loyal",
-            "hostile": "hostile",
-        },
-    }
 
 
 def _game() -> "GameState":
@@ -211,10 +183,8 @@ def _game() -> "GameState":
 # ── input_misread: full flow ─────────────────────────────────
 
 
-def test_correction_input_misread_full_flow() -> None:
+def test_correction_input_misread_full_flow(load_engine: None, stub_emotions: None) -> None:
     """input_misread: restore snapshot, re-brain, re-narrate, metadata, log."""
-    _load_engine()
-    _stub_emotions()
     from straightjacket.engine.correction import process_correction
 
     game = _game()
@@ -242,10 +212,8 @@ def test_correction_input_misread_full_flow() -> None:
 # ── state_error: full flow ───────────────────────────────────
 
 
-def test_correction_state_error_full_flow() -> None:
+def test_correction_state_error_full_flow(load_engine: None, stub_emotions: None) -> None:
     """state_error: patch NPC, re-narrate, metadata, replace last log entry."""
-    _load_engine()
-    _stub_emotions()
     from straightjacket.engine.correction import process_correction
 
     game = _game()
@@ -269,10 +237,8 @@ def test_correction_state_error_full_flow() -> None:
 # ── momentum burn: full flow ─────────────────────────────────
 
 
-def test_momentum_burn_full_flow() -> None:
+def test_momentum_burn_full_flow(load_engine: None, stub_emotions: None) -> None:
     """Burn: restore, reset momentum, STRONG_HIT consequences, re-narrate, update log."""
-    _load_engine()
-    _stub_emotions()
     from straightjacket.engine.correction import process_momentum_burn
 
     game = _game()
@@ -302,10 +268,8 @@ def test_momentum_burn_full_flow() -> None:
 # ── no snapshot: graceful error ──────────────────────────────
 
 
-def test_correction_no_snapshot() -> None:
+def test_correction_no_snapshot(load_engine: None, stub_emotions: None) -> None:
     """No snapshot available: returns error string, no crash."""
-    _load_engine()
-    _stub_emotions()
     from straightjacket.engine.correction import process_correction
 
     game = _game()

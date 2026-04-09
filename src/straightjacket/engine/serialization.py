@@ -6,17 +6,15 @@ lists of dataclasses, and optional fields automatically.
 
 Usage:
     @dataclass
-    class Clock:
+    class Clock(SerializableMixin):
         name: str = ""
         filled: int = 0
 
-    @dataclass
-    class World:
-        location: str = ""
-        clocks: list[Clock] = field(default_factory=list)
+    clock.to_dict()          # → {"name": "...", "filled": 0}
+    Clock.from_dict(data)    # → Clock(name="...", filled=0)
 
-    serialize(world_instance)  # → {"location": "...", "clocks": [{"name": ..., "filled": ...}]}
-    deserialize(World, data)   # → World(location="...", clocks=[Clock(...), ...])
+Classes that need custom serialization (e.g. MemoryEntry strips _score_debug)
+override to_dict and call serialize() directly.
 """
 
 from __future__ import annotations
@@ -130,3 +128,14 @@ def _deserialize_value(hint: Any, val: Any) -> Any:
         return dict(val)
 
     return val
+
+
+class SerializableMixin:
+    """Mixin that adds to_dict/from_dict to any dataclass via serialize/deserialize."""
+
+    def to_dict(self) -> dict:
+        return serialize(self)
+
+    @classmethod
+    def from_dict(cls, data: dict) -> Any:
+        return deserialize(cls, data)

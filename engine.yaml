@@ -290,6 +290,99 @@ move_stats:
   dialog: none
 
 
+# ── Position resolver (step 2.1) ─────────────────────────────
+# Engine computes position (controlled/risky/desperate) from game state.
+# Each factor contributes a signed weight. Sum maps to position via thresholds.
+# Default is risky when no strong signals push either way.
+position_resolver:
+  desperate_below: -3          # sum below this → desperate
+  controlled_above: 3          # sum above this → controlled
+  weights:
+    # Resource pressure (each resource checked independently)
+    resource_critical_below: 2   # resource value below this = critical
+    resource_low_below: 3        # resource value below this = low
+    resource_critical: -2        # weight per critical resource
+    resource_low: -1             # weight per low resource
+    # NPC disposition + bond (only when move targets an NPC)
+    npc_hostile: -2
+    npc_distrustful: -1
+    npc_friendly: 1
+    npc_loyal: 2
+    npc_bond_high: 1             # bond >= 3
+    npc_bond_low: -1             # bond <= 0
+    # Chaos factor
+    chaos_high: -1               # chaos >= 7
+    chaos_low: 1                 # chaos <= 3
+    # Roll momentum (consecutive results)
+    consecutive_misses: -2       # 2+ consecutive misses
+    consecutive_strong: 1        # 2+ consecutive strong hits
+    # Threat pressure
+    threat_clock_critical: -1    # per threat clock at >= 75% filled (max 2)
+    # Secured advantage (decays after one turn)
+    secured_advantage: 2
+  # Move category baselines
+  move_baselines:
+    combat: -1                   # combat starts toward risky
+    social: 0                    # social starts neutral
+    endure: 0
+    recovery: 1                  # recovery starts toward controlled
+    other: 0
+  # Situational overrides: evaluated after sum, can cap/floor/shift result.
+  # Each override: conditions → effect. Small set (edge cases, not common path).
+  overrides:
+    - name: setup_under_pressure
+      conditions: [secured_advantage, any_resource_critical]
+      effect: cap_at_risky       # a setup play in desperation = opportunity, not safety
+    - name: crisis_recovery
+      conditions: [crisis_mode, recovery_move]
+      effect: floor_at_risky     # healing under pressure is never safe
+    - name: matched_momentum
+      conditions: [previous_match, same_target_npc]
+      effect: shift_up_one       # fictional momentum from a dramatic matched roll
+
+# ── Effect resolver (step 2.2) ────────────────────────────────
+# Engine computes effect (limited/standard/great) from game state.
+# Same weighted scoring pattern as position resolver.
+effect_resolver:
+  limited_below: -2              # sum below this → limited
+  great_above: 2                 # sum above this → great
+  weights:
+    # Position correlation
+    desperate: -1                # worse position → worse effect
+    controlled: 1                # better position → better effect
+    # NPC bond (social moves)
+    bond_high: 1                 # bond >= 3 on social move
+    bond_low: -1                 # bond <= 0 on social move
+    # Secured advantage
+    secured_advantage: 1
+  move_baselines:
+    strike: 1                    # strike trends toward great
+    clash: 0
+    gather_information: 0
+    compel: 0
+    face_danger: 0
+    other: 0
+
+# ── Time progression resolver (step 2.3) ─────────────────────
+# Engine derives time progression from move type. No AI needed.
+time_progression_map:
+  dialog: none
+  gather_information: short
+  compel: short
+  make_connection: short
+  test_bond: short
+  face_danger: short
+  secure_advantage: short
+  clash: short
+  strike: short
+  endure_harm: none
+  endure_stress: none
+  resupply: moderate
+  world_shaping: moderate
+  _with_location_change: long    # any move + location_change → long
+  _default: short
+
+
 # ── Story defaults ────────────────────────────────────────────
 # Fallback scene range when an act has no explicit range.
 scene_range_default: [1, 20]
@@ -364,3 +457,56 @@ memory_emotions:
     neutral: ""
     friendly: "_warm"
     loyal: "_devoted"
+
+# ── Engine-generated memory templates (step 3.1) ─────────────
+# Templates for NPC observation memories created by engine, not AI.
+# Variables: {player}, {npc}, {intent}, {move}, {result_text}, {consequences}
+# result_text is resolved from memory_result_text below.
+# These produce narrative-flavored memories the narrator can build on.
+memory_templates:
+  action: "scene {scene}: {player} {move_verb} — {result_text}"
+  action_targeted: "scene {scene}: {player} {move_verb} involving {npc} — {result_text}"
+  dialog: "scene {scene}: {player} spoke with {npc} about {intent}"
+  dialog_no_target: "scene {scene}: {player} engaged in conversation — {intent}"
+
+# Result text per (category, result) — narrative fragments, not mechanical logs
+memory_result_text:
+  combat_MISS: "it went badly, the situation worsened"
+  combat_WEAK_HIT: "managed but took damage in the process"
+  combat_STRONG_HIT: "struck true and gained the upper hand"
+  social_MISS: "was rebuffed, trust eroded"
+  social_WEAK_HIT: "got somewhere but it came at a cost"
+  social_STRONG_HIT: "connected and made real progress"
+  endure_MISS: "buckled under the strain"
+  endure_WEAK_HIT: "held on, barely"
+  endure_STRONG_HIT: "endured and came through"
+  recovery_MISS: "the attempt to recover failed"
+  recovery_WEAK_HIT: "recovered somewhat"
+  recovery_STRONG_HIT: "recovered well"
+  other_MISS: "failed and the situation deteriorated"
+  other_WEAK_HIT: "partial success with complications"
+  other_STRONG_HIT: "succeeded cleanly"
+  dialog: "exchanged words"
+
+# Move verbs for memory template {move_verb}
+memory_move_verbs:
+  face_danger: "faced danger"
+  compel: "pressed someone"
+  gather_information: "investigated"
+  secure_advantage: "prepared carefully"
+  clash: "fought"
+  strike: "attacked"
+  endure_harm: "endured harm"
+  endure_stress: "weathered stress"
+  make_connection: "reached out"
+  test_bond: "tested a bond"
+  resupply: "resupplied"
+  world_shaping: "shaped the world"
+  dialog: "spoke"
+  _default: "acted"
+
+# ── Scene context template (step 3.1) ────────────────────────
+# Engine-generated scene_context replaces AI-generated version.
+# Variables: {location}, {move}, {result}, {npc_names}, {time}
+scene_context_template: "{result} on {move_label} at {location} — {npc_summary}"
+scene_context_dialog: "conversation at {location} with {npc_summary}"

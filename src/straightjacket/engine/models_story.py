@@ -7,14 +7,14 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 
 from .models_base import ClockEvent
-from .serialization import deserialize, serialize
+from .serialization import SerializableMixin
 
 
 # ── Mythic GME lists (seeded at creation, maintained per scene) ──
 
 
 @dataclass
-class ThreadEntry:
+class ThreadEntry(SerializableMixin):
     """Active thread in the Mythic threads list."""
 
     id: str = ""
@@ -25,16 +25,9 @@ class ThreadEntry:
     linked_track_id: str = ""  # ProgressTrack id if this thread is a vow
     active: bool = True
 
-    def to_dict(self) -> dict:
-        return serialize(self)
-
-    @classmethod
-    def from_dict(cls, data: dict) -> ThreadEntry:
-        return deserialize(cls, data)
-
 
 @dataclass
-class CharacterListEntry:
+class CharacterListEntry(SerializableMixin):
     """Entry in the Mythic characters list."""
 
     id: str = ""
@@ -43,19 +36,12 @@ class CharacterListEntry:
     weight: int = 1
     active: bool = True
 
-    def to_dict(self) -> dict:
-        return serialize(self)
-
-    @classmethod
-    def from_dict(cls, data: dict) -> CharacterListEntry:
-        return deserialize(cls, data)
-
 
 # ── Scene and narration log ──────────────────────────────────
 
 
 @dataclass
-class SceneLogEntry:
+class SceneLogEntry(SerializableMixin):
     """One entry in the session log. Created per turn/correction."""
 
     scene: int = 0
@@ -66,7 +52,6 @@ class SceneLogEntry:
     clock_events: list[ClockEvent] = field(default_factory=list)
     position: str = "risky"
     effect: str = "standard"
-    dramatic_question: str = ""
     chaos_interrupt: str | None = None
     npc_activation: dict = field(default_factory=dict)
     validator: dict = field(default_factory=dict)
@@ -74,32 +59,18 @@ class SceneLogEntry:
     director_trigger: str = ""
     revelation_check: dict = field(default_factory=dict)
 
-    def to_dict(self) -> dict:
-        return serialize(self)
-
-    @classmethod
-    def from_dict(cls, data: dict) -> SceneLogEntry:
-        return deserialize(cls, data)
-
 
 @dataclass
-class NarrationEntry:
+class NarrationEntry(SerializableMixin):
     """One entry in narration history. Used for narrator conversation context."""
 
     scene: int = 0
     prompt_summary: str = ""
     narration: str = ""
 
-    def to_dict(self) -> dict:
-        return serialize(self)
-
-    @classmethod
-    def from_dict(cls, data: dict) -> NarrationEntry:
-        return deserialize(cls, data)
-
 
 @dataclass
-class StoryAct:
+class StoryAct(SerializableMixin):
     """Single act in a story blueprint."""
 
     phase: str = ""
@@ -108,13 +79,6 @@ class StoryAct:
     scene_range: list[int] = field(default_factory=list)
     mood: str = ""
     transition_trigger: str = ""
-
-    def to_dict(self) -> dict:
-        return serialize(self)
-
-    @classmethod
-    def from_dict(cls, data: dict) -> StoryAct:
-        return deserialize(cls, data)
 
 
 @dataclass
@@ -134,7 +98,7 @@ class CurrentAct:
 
 
 @dataclass
-class Revelation:
+class Revelation(SerializableMixin):
     """Story revelation with timing and weight."""
 
     id: str = ""
@@ -142,31 +106,17 @@ class Revelation:
     earliest_scene: int = 999
     dramatic_weight: str = "medium"
 
-    def to_dict(self) -> dict:
-        return serialize(self)
-
-    @classmethod
-    def from_dict(cls, data: dict) -> Revelation:
-        return deserialize(cls, data)
-
 
 @dataclass
-class PossibleEnding:
+class PossibleEnding(SerializableMixin):
     """Possible story ending."""
 
     type: str = ""
     description: str = ""
 
-    def to_dict(self) -> dict:
-        return serialize(self)
-
-    @classmethod
-    def from_dict(cls, data: dict) -> PossibleEnding:
-        return deserialize(cls, data)
-
 
 @dataclass
-class StoryBlueprint:
+class StoryBlueprint(SerializableMixin):
     """Story architect output. Tracks act structure, revelations, and completion."""
 
     central_conflict: str = ""
@@ -181,20 +131,13 @@ class StoryBlueprint:
     triggered_director_phases: list[str] = field(default_factory=list)
     story_complete: bool = False
 
-    def to_dict(self) -> dict:
-        return serialize(self)
-
-    @classmethod
-    def from_dict(cls, data: dict) -> StoryBlueprint:
-        return deserialize(cls, data)
-
     @property
     def has_acts(self) -> bool:
         return bool(self.acts)
 
 
 @dataclass
-class DirectorGuidance:
+class DirectorGuidance(SerializableMixin):
     """Director output stored between turns for narrator context."""
 
     narrator_guidance: str = ""
@@ -202,16 +145,9 @@ class DirectorGuidance:
     pacing: str = ""
     arc_notes: str = ""
 
-    def to_dict(self) -> dict:
-        return serialize(self)
-
-    @classmethod
-    def from_dict(cls, data: dict) -> DirectorGuidance:
-        return deserialize(cls, data)
-
 
 @dataclass
-class NarrativeState:
+class NarrativeState(SerializableMixin):
     """Scene tracking, history, story arc, director guidance."""
 
     scene_count: int = 0
@@ -262,31 +198,17 @@ class NarrativeState:
             # Blueprint was absent at snapshot time — remove any blueprint added since
             self.story_blueprint = None
 
-    def to_dict(self) -> dict:
-        return serialize(self)
-
-    @classmethod
-    def from_dict(cls, data: dict) -> NarrativeState:
-        return deserialize(cls, data)
-
 
 @dataclass
-class NpcEvolution:
+class NpcEvolution(SerializableMixin):
     """Projected NPC change from chapter summary."""
 
     name: str = ""
     projection: str = ""
 
-    def to_dict(self) -> dict:
-        return serialize(self)
-
-    @classmethod
-    def from_dict(cls, data: dict) -> NpcEvolution:
-        return deserialize(cls, data)
-
 
 @dataclass
-class ChapterSummary:
+class ChapterSummary(SerializableMixin):
     """Summary of a completed chapter for campaign continuity."""
 
     chapter: int = 0
@@ -299,16 +221,9 @@ class ChapterSummary:
     post_story_location: str = ""
     scenes: int = 0
 
-    def to_dict(self) -> dict:
-        return serialize(self)
-
-    @classmethod
-    def from_dict(cls, data: dict) -> ChapterSummary:
-        return deserialize(cls, data)
-
 
 @dataclass
-class CampaignState:
+class CampaignState(SerializableMixin):
     """Chapter progression and epilogue."""
 
     campaign_history: list[ChapterSummary] = field(default_factory=list)
@@ -330,10 +245,3 @@ class CampaignState:
     def restore(self, snap: dict) -> None:
         self.epilogue_shown = snap["epilogue_shown"]
         self.epilogue_dismissed = snap["epilogue_dismissed"]
-
-    def to_dict(self) -> dict:
-        return serialize(self)
-
-    @classmethod
-    def from_dict(cls, data: dict) -> CampaignState:
-        return deserialize(cls, data)
