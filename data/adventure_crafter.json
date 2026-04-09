@@ -1,0 +1,2810 @@
+{
+  "random_themes": [
+    {
+      "min": 1,
+      "max": 2,
+      "theme": "action"
+    },
+    {
+      "min": 3,
+      "max": 4,
+      "theme": "tension"
+    },
+    {
+      "min": 5,
+      "max": 6,
+      "theme": "mystery"
+    },
+    {
+      "min": 7,
+      "max": 8,
+      "theme": "social"
+    },
+    {
+      "min": 9,
+      "max": 10,
+      "theme": "personal"
+    }
+  ],
+  "plot_point_theme_priority": [
+    {
+      "min": 1,
+      "max": 4,
+      "priority": 1
+    },
+    {
+      "min": 5,
+      "max": 7,
+      "priority": 2
+    },
+    {
+      "min": 8,
+      "max": 9,
+      "priority": 3
+    },
+    {
+      "min": 10,
+      "max": 10,
+      "priority": "4_or_5"
+    }
+  ],
+  "theme_translation": {
+    "standard": "any",
+    "horror": "tension",
+    "action_adventure": "action",
+    "mystery": "mystery",
+    "social": "social",
+    "personal": "personal",
+    "epic": "any"
+  },
+  "meta_plot_points": [
+    {
+      "name": "Character Exits The Adventure",
+      "min": 1,
+      "max": 18
+    },
+    {
+      "name": "Character Returns",
+      "min": 19,
+      "max": 27
+    },
+    {
+      "name": "Character Steps Up",
+      "min": 28,
+      "max": 36
+    },
+    {
+      "name": "Character Steps Down",
+      "min": 37,
+      "max": 55
+    },
+    {
+      "name": "Character Downgrade",
+      "min": 56,
+      "max": 73
+    },
+    {
+      "name": "Character Upgrade",
+      "min": 74,
+      "max": 82
+    },
+    {
+      "name": "Plotline Combo",
+      "min": 83,
+      "max": 100
+    }
+  ],
+  "plot_points": [
+    {
+      "name": "Conclusion",
+      "themes": {
+        "action": {
+          "min": 1,
+          "max": 8
+        },
+        "tension": {
+          "min": 1,
+          "max": 8
+        },
+        "mystery": {
+          "min": 1,
+          "max": 8
+        },
+        "social": {
+          "min": 1,
+          "max": 8
+        },
+        "personal": {
+          "min": 1,
+          "max": 8
+        }
+      }
+    },
+    {
+      "name": "None",
+      "themes": {
+        "action": {
+          "min": 9,
+          "max": 24
+        },
+        "tension": {
+          "min": 9,
+          "max": 24
+        },
+        "mystery": {
+          "min": 9,
+          "max": 24
+        },
+        "social": {
+          "min": 9,
+          "max": 24
+        },
+        "personal": {
+          "min": 9,
+          "max": 24
+        }
+      }
+    },
+    {
+      "name": "Into The Unknown",
+      "themes": {
+        "tension": {
+          "min": 25,
+          "max": 26
+        },
+        "mystery": {
+          "min": 25,
+          "max": 26
+        }
+      }
+    },
+    {
+      "name": "A Character Is Attacked In A Non-Lethal Way",
+      "themes": {
+        "action": {
+          "min": 25,
+          "max": 26
+        }
+      }
+    },
+    {
+      "name": "A Needed Resource Runs Out",
+      "themes": {
+        "tension": {
+          "min": 27,
+          "max": 27
+        }
+      }
+    },
+    {
+      "name": "Useful Information From An Unknown Source",
+      "themes": {
+        "mystery": {
+          "min": 27,
+          "max": 28
+        }
+      }
+    },
+    {
+      "name": "Impending Doom",
+      "themes": {
+        "tension": {
+          "min": 28,
+          "max": 28
+        }
+      }
+    },
+    {
+      "name": "Outcast",
+      "themes": {
+        "social": {
+          "min": 25,
+          "max": 26
+        }
+      }
+    },
+    {
+      "name": "Persuasion",
+      "themes": {
+        "personal": {
+          "min": 25,
+          "max": 26
+        }
+      }
+    },
+    {
+      "name": "A Motive Free Crime",
+      "themes": {
+        "tension": {
+          "min": 29,
+          "max": 29
+        },
+        "mystery": {
+          "min": 29,
+          "max": 30
+        }
+      }
+    },
+    {
+      "name": "Collateral Damage",
+      "themes": {
+        "action": {
+          "min": 27,
+          "max": 27
+        },
+        "tension": {
+          "min": 30,
+          "max": 30
+        }
+      }
+    },
+    {
+      "name": "Shady Places",
+      "themes": {
+        "tension": {
+          "min": 31,
+          "max": 32
+        }
+      }
+    },
+    {
+      "name": "A Character Is Attacked In A Lethal Way",
+      "themes": {
+        "action": {
+          "min": 28,
+          "max": 29
+        }
+      }
+    },
+    {
+      "name": "Do It, Or Else",
+      "themes": {
+        "tension": {
+          "min": 33,
+          "max": 33
+        },
+        "personal": {
+          "min": 27,
+          "max": 27
+        }
+      }
+    },
+    {
+      "name": "Remote Location",
+      "themes": {
+        "tension": {
+          "min": 34,
+          "max": 34
+        }
+      }
+    },
+    {
+      "name": "Ambush",
+      "themes": {
+        "action": {
+          "min": 30,
+          "max": 31
+        }
+      }
+    },
+    {
+      "name": "Sold!",
+      "themes": {
+        "social": {
+          "min": 27,
+          "max": 28
+        }
+      }
+    },
+    {
+      "name": "Catastrophe",
+      "themes": {
+        "action": {
+          "min": 32,
+          "max": 32
+        },
+        "tension": {
+          "min": 35,
+          "max": 35
+        }
+      }
+    },
+    {
+      "name": "Grisly Tone",
+      "themes": {
+        "tension": {
+          "min": 36,
+          "max": 36
+        }
+      }
+    },
+    {
+      "name": "Character Has A Clever Idea",
+      "themes": {
+        "action": {
+          "min": 33,
+          "max": 33
+        }
+      }
+    },
+    {
+      "name": "Something Is Getting Away",
+      "themes": {
+        "action": {
+          "min": 34,
+          "max": 34
+        },
+        "tension": {
+          "min": 37,
+          "max": 37
+        }
+      }
+    },
+    {
+      "name": "Retaliation",
+      "themes": {
+        "tension": {
+          "min": 38,
+          "max": 39
+        },
+        "social": {
+          "min": 29,
+          "max": 30
+        },
+        "personal": {
+          "min": 28,
+          "max": 28
+        }
+      }
+    },
+    {
+      "name": "A Character Disappears",
+      "themes": {
+        "tension": {
+          "min": 40,
+          "max": 40
+        },
+        "mystery": {
+          "min": 31,
+          "max": 32
+        }
+      }
+    },
+    {
+      "name": "Hunted",
+      "themes": {
+        "action": {
+          "min": 35,
+          "max": 36
+        },
+        "tension": {
+          "min": 41,
+          "max": 41
+        }
+      }
+    },
+    {
+      "name": "A High Energy Gathering",
+      "themes": {
+        "social": {
+          "min": 31,
+          "max": 31
+        }
+      }
+    },
+    {
+      "name": "A Rare Or Unique Social Gathering",
+      "themes": {
+        "social": {
+          "min": 32,
+          "max": 32
+        }
+      }
+    },
+    {
+      "name": "Bad Decision",
+      "themes": {
+        "tension": {
+          "min": 42,
+          "max": 42
+        },
+        "personal": {
+          "min": 29,
+          "max": 29
+        }
+      }
+    },
+    {
+      "name": "This Isn’t Working",
+      "themes": {
+        "mystery": {
+          "min": 33,
+          "max": 33
+        }
+      }
+    },
+    {
+      "name": "Distraction",
+      "themes": {
+        "action": {
+          "min": 37,
+          "max": 37
+        }
+      }
+    },
+    {
+      "name": "Ill Will",
+      "themes": {
+        "personal": {
+          "min": 30,
+          "max": 31
+        }
+      }
+    },
+    {
+      "name": "An Organization",
+      "themes": {
+        "social": {
+          "min": 33,
+          "max": 34
+        }
+      }
+    },
+    {
+      "name": "Wanted By The Law",
+      "themes": {
+        "tension": {
+          "min": 43,
+          "max": 43
+        },
+        "personal": {
+          "min": 32,
+          "max": 33
+        }
+      }
+    },
+    {
+      "name": "A Resource Disappears",
+      "themes": {
+        "mystery": {
+          "min": 34,
+          "max": 35
+        }
+      }
+    },
+    {
+      "name": "It Is Your Duty",
+      "themes": {
+        "personal": {
+          "min": 34,
+          "max": 35
+        }
+      }
+    },
+    {
+      "name": "Fortuitous Find",
+      "themes": {
+        "mystery": {
+          "min": 36,
+          "max": 36
+        }
+      }
+    },
+    {
+      "name": "Character Connection Severed",
+      "themes": {
+        "personal": {
+          "min": 36,
+          "max": 37
+        }
+      }
+    },
+    {
+      "name": "All Is Revealed!",
+      "themes": {
+        "mystery": {
+          "min": 37,
+          "max": 37
+        }
+      }
+    },
+    {
+      "name": "Humiliation",
+      "themes": {
+        "personal": {
+          "min": 38,
+          "max": 38
+        }
+      }
+    },
+    {
+      "name": "People Behaving Badly",
+      "themes": {
+        "social": {
+          "min": 35,
+          "max": 35
+        }
+      }
+    },
+    {
+      "name": "Useful Information From A Known Source",
+      "themes": {
+        "mystery": {
+          "min": 38,
+          "max": 39
+        }
+      }
+    },
+    {
+      "name": "Cryptic Information From A Known Source",
+      "themes": {
+        "mystery": {
+          "min": 40,
+          "max": 40
+        }
+      }
+    },
+    {
+      "name": "Lie Discovered",
+      "themes": {
+        "mystery": {
+          "min": 41,
+          "max": 42
+        }
+      }
+    },
+    {
+      "name": "A Character Is Attacked To Abduct",
+      "themes": {
+        "action": {
+          "min": 38,
+          "max": 39
+        }
+      }
+    },
+    {
+      "name": "Something Exotic",
+      "themes": {
+        "action": {
+          "min": 40,
+          "max": 40
+        },
+        "tension": {
+          "min": 44,
+          "max": 44
+        },
+        "mystery": {
+          "min": 43,
+          "max": 43
+        }
+      }
+    },
+    {
+      "name": "Immediately",
+      "themes": {
+        "action": {
+          "min": 41,
+          "max": 42
+        },
+        "tension": {
+          "min": 45,
+          "max": 45
+        }
+      }
+    },
+    {
+      "name": "Fame",
+      "themes": {
+        "social": {
+          "min": 36,
+          "max": 36
+        }
+      }
+    },
+    {
+      "name": "Chase",
+      "themes": {
+        "action": {
+          "min": 43,
+          "max": 44
+        }
+      }
+    },
+    {
+      "name": "Betrayal!",
+      "themes": {
+        "tension": {
+          "min": 46,
+          "max": 46
+        },
+        "personal": {
+          "min": 39,
+          "max": 40
+        }
+      }
+    },
+    {
+      "name": "A Crime Is Committed",
+      "themes": {
+        "mystery": {
+          "min": 44,
+          "max": 45
+        }
+      }
+    },
+    {
+      "name": "A Character Is Incapacitated",
+      "themes": {
+        "tension": {
+          "min": 47,
+          "max": 47
+        },
+        "personal": {
+          "min": 41,
+          "max": 42
+        }
+      }
+    },
+    {
+      "name": "It’s A Secret",
+      "themes": {
+        "mystery": {
+          "min": 46,
+          "max": 47
+        }
+      }
+    },
+    {
+      "name": "Something Lost Has Been Found",
+      "themes": {
+        "mystery": {
+          "min": 48,
+          "max": 48
+        }
+      }
+    },
+    {
+      "name": "Scapegoat",
+      "themes": {
+        "social": {
+          "min": 37,
+          "max": 37
+        }
+      }
+    },
+    {
+      "name": "Nowhere To Run",
+      "themes": {
+        "tension": {
+          "min": 48,
+          "max": 48
+        }
+      }
+    },
+    {
+      "name": "At Night",
+      "themes": {
+        "tension": {
+          "min": 49,
+          "max": 50
+        }
+      }
+    },
+    {
+      "name": "The Observer",
+      "themes": {
+        "mystery": {
+          "min": 49,
+          "max": 49
+        },
+        "social": {
+          "min": 38,
+          "max": 38
+        },
+        "personal": {
+          "min": 43,
+          "max": 43
+        }
+      }
+    },
+    {
+      "name": "Escape",
+      "themes": {
+        "action": {
+          "min": 45,
+          "max": 46
+        }
+      }
+    },
+    {
+      "name": "A Secret Weapon",
+      "themes": {
+        "tension": {
+          "min": 51,
+          "max": 51
+        },
+        "mystery": {
+          "min": 50,
+          "max": 50
+        }
+      }
+    },
+    {
+      "name": "Heavily Guarded",
+      "themes": {
+        "action": {
+          "min": 47,
+          "max": 48
+        },
+        "tension": {
+          "min": 52,
+          "max": 52
+        }
+      }
+    },
+    {
+      "name": "Rescue",
+      "themes": {
+        "action": {
+          "min": 49,
+          "max": 50
+        }
+      }
+    },
+    {
+      "name": "Liar!",
+      "themes": {
+        "mystery": {
+          "min": 51,
+          "max": 52
+        },
+        "social": {
+          "min": 39,
+          "max": 39
+        }
+      }
+    },
+    {
+      "name": "Home Sweet Home",
+      "themes": {
+        "personal": {
+          "min": 44,
+          "max": 45
+        }
+      }
+    },
+    {
+      "name": "A Character Acts Out Of Character",
+      "themes": {
+        "mystery": {
+          "min": 53,
+          "max": 53
+        }
+      }
+    },
+    {
+      "name": "Headquarters",
+      "themes": {
+        "social": {
+          "min": 40,
+          "max": 41
+        },
+        "personal": {
+          "min": 46,
+          "max": 46
+        }
+      }
+    },
+    {
+      "name": "Physical Contest Of Skills",
+      "themes": {
+        "action": {
+          "min": 51,
+          "max": 52
+        }
+      }
+    },
+    {
+      "name": "Dead",
+      "themes": {
+        "tension": {
+          "min": 53,
+          "max": 53
+        },
+        "mystery": {
+          "min": 54,
+          "max": 54
+        }
+      }
+    },
+    {
+      "name": "A Common Social Gathering",
+      "themes": {
+        "social": {
+          "min": 42,
+          "max": 43
+        }
+      }
+    },
+    {
+      "name": "Light Urban Setting",
+      "themes": {
+        "social": {
+          "min": 44,
+          "max": 45
+        }
+      }
+    },
+    {
+      "name": "Mystery Solved",
+      "themes": {
+        "mystery": {
+          "min": 55,
+          "max": 56
+        }
+      }
+    },
+    {
+      "name": "A Work Related Gathering",
+      "themes": {
+        "social": {
+          "min": 46,
+          "max": 47
+        }
+      }
+    },
+    {
+      "name": "Family Matters",
+      "themes": {
+        "personal": {
+          "min": 47,
+          "max": 48
+        }
+      }
+    },
+    {
+      "name": "Secret Information Leaked",
+      "themes": {
+        "mystery": {
+          "min": 57,
+          "max": 57
+        }
+      }
+    },
+    {
+      "name": "Suspicion",
+      "themes": {
+        "tension": {
+          "min": 54,
+          "max": 54
+        },
+        "mystery": {
+          "min": 58,
+          "max": 59
+        },
+        "social": {
+          "min": 48,
+          "max": 48
+        }
+      }
+    },
+    {
+      "name": "Lose Lose",
+      "themes": {
+        "tension": {
+          "min": 55,
+          "max": 55
+        }
+      }
+    },
+    {
+      "name": "A Figure From The Past",
+      "themes": {
+        "personal": {
+          "min": 49,
+          "max": 49
+        }
+      }
+    },
+    {
+      "name": "Mass Battle",
+      "themes": {
+        "action": {
+          "min": 53,
+          "max": 54
+        }
+      }
+    },
+    {
+      "name": "Out In The Open",
+      "themes": {
+        "tension": {
+          "min": 56,
+          "max": 56
+        }
+      }
+    },
+    {
+      "name": "Evidence",
+      "themes": {
+        "mystery": {
+          "min": 60,
+          "max": 61
+        }
+      }
+    },
+    {
+      "name": "A Character Is Diminished",
+      "themes": {
+        "tension": {
+          "min": 57,
+          "max": 58
+        },
+        "personal": {
+          "min": 50,
+          "max": 51
+        }
+      }
+    },
+    {
+      "name": "The Plot Thickens",
+      "themes": {
+        "mystery": {
+          "min": 62,
+          "max": 63
+        }
+      }
+    },
+    {
+      "name": "Enemies",
+      "themes": {
+        "tension": {
+          "min": 59,
+          "max": 59
+        },
+        "social": {
+          "min": 49,
+          "max": 49
+        },
+        "personal": {
+          "min": 52,
+          "max": 53
+        }
+      }
+    },
+    {
+      "name": "Dubious Rationale",
+      "themes": {
+        "mystery": {
+          "min": 64,
+          "max": 64
+        }
+      }
+    },
+    {
+      "name": "Menacing Tone",
+      "themes": {
+        "tension": {
+          "min": 60,
+          "max": 60
+        }
+      }
+    },
+    {
+      "name": "A Crucial Life Support System Begins To Fail",
+      "themes": {
+        "action": {
+          "min": 55,
+          "max": 55
+        },
+        "tension": {
+          "min": 61,
+          "max": 61
+        },
+        "mystery": {
+          "min": 65,
+          "max": 65
+        }
+      }
+    },
+    {
+      "name": "Dense Urban Setting",
+      "themes": {
+        "social": {
+          "min": 50,
+          "max": 51
+        }
+      }
+    },
+    {
+      "name": "Doing The Right Thing",
+      "themes": {
+        "personal": {
+          "min": 54,
+          "max": 54
+        }
+      }
+    },
+    {
+      "name": "Victory!",
+      "themes": {
+        "action": {
+          "min": 56,
+          "max": 57
+        },
+        "tension": {
+          "min": 62,
+          "max": 62
+        }
+      }
+    },
+    {
+      "name": "Taking Chances",
+      "themes": {
+        "action": {
+          "min": 58,
+          "max": 59
+        },
+        "tension": {
+          "min": 63,
+          "max": 63
+        }
+      }
+    },
+    {
+      "name": "A Group Is In Trouble",
+      "themes": {
+        "social": {
+          "min": 52,
+          "max": 53
+        }
+      }
+    },
+    {
+      "name": "Sole Survivor",
+      "themes": {
+        "action": {
+          "min": 60,
+          "max": 61
+        },
+        "tension": {
+          "min": 64,
+          "max": 64
+        }
+      }
+    },
+    {
+      "name": "Token Response",
+      "themes": {
+        "social": {
+          "min": 54,
+          "max": 54
+        }
+      }
+    },
+    {
+      "name": "Cryptic Information From An Unknown Source",
+      "themes": {
+        "mystery": {
+          "min": 66,
+          "max": 67
+        }
+      }
+    },
+    {
+      "name": "A Common Thread",
+      "themes": {
+        "mystery": {
+          "min": 68,
+          "max": 69
+        }
+      }
+    },
+    {
+      "name": "A Problem Returns",
+      "themes": {
+        "tension": {
+          "min": 65,
+          "max": 66
+        }
+      }
+    },
+    {
+      "name": "Stuck",
+      "themes": {
+        "tension": {
+          "min": 67,
+          "max": 68
+        }
+      }
+    },
+    {
+      "name": "At Your Mercy",
+      "themes": {
+        "personal": {
+          "min": 55,
+          "max": 56
+        }
+      }
+    },
+    {
+      "name": "Stop That",
+      "themes": {
+        "action": {
+          "min": 62,
+          "max": 63
+        }
+      }
+    },
+    {
+      "name": "Not Their Master",
+      "themes": {
+        "mystery": {
+          "min": 70,
+          "max": 70
+        },
+        "social": {
+          "min": 55,
+          "max": 55
+        }
+      }
+    },
+    {
+      "name": "Fall From Power",
+      "themes": {
+        "personal": {
+          "min": 57,
+          "max": 58
+        }
+      }
+    },
+    {
+      "name": "Help Is Offered, For A Price",
+      "themes": {
+        "personal": {
+          "min": 59,
+          "max": 60
+        }
+      }
+    },
+    {
+      "name": "Public Location",
+      "themes": {
+        "social": {
+          "min": 56,
+          "max": 57
+        }
+      }
+    },
+    {
+      "name": "The Leader",
+      "themes": {
+        "social": {
+          "min": 58,
+          "max": 59
+        }
+      }
+    },
+    {
+      "name": "Prized Possession",
+      "themes": {
+        "personal": {
+          "min": 61,
+          "max": 62
+        }
+      }
+    },
+    {
+      "name": "Savior",
+      "themes": {
+        "social": {
+          "min": 60,
+          "max": 61
+        }
+      }
+    },
+    {
+      "name": "Disarmed",
+      "themes": {
+        "tension": {
+          "min": 69,
+          "max": 70
+        },
+        "personal": {
+          "min": 63,
+          "max": 63
+        }
+      }
+    },
+    {
+      "name": "The Secret To The Power",
+      "themes": {
+        "mystery": {
+          "min": 71,
+          "max": 72
+        }
+      }
+    },
+    {
+      "name": "Hidden Agenda",
+      "themes": {
+        "mystery": {
+          "min": 73,
+          "max": 74
+        }
+      }
+    },
+    {
+      "name": "Defend Or Not To Defend",
+      "themes": {
+        "action": {
+          "min": 64,
+          "max": 65
+        }
+      }
+    },
+    {
+      "name": "Crash",
+      "themes": {
+        "action": {
+          "min": 66,
+          "max": 67
+        }
+      }
+    },
+    {
+      "name": "Reinforcements",
+      "themes": {
+        "social": {
+          "min": 62,
+          "max": 63
+        }
+      }
+    },
+    {
+      "name": "Government",
+      "themes": {
+        "social": {
+          "min": 64,
+          "max": 65
+        }
+      }
+    },
+    {
+      "name": "Physical Barrier To Overcome",
+      "themes": {
+        "action": {
+          "min": 68,
+          "max": 69
+        }
+      }
+    },
+    {
+      "name": "Injustice",
+      "themes": {
+        "social": {
+          "min": 66,
+          "max": 67
+        }
+      }
+    },
+    {
+      "name": "Quiet Catastrophe",
+      "themes": {
+        "tension": {
+          "min": 71,
+          "max": 71
+        }
+      }
+    },
+    {
+      "name": "An Object Of Unknown Use Is Found",
+      "themes": {
+        "mystery": {
+          "min": 75,
+          "max": 75
+        }
+      }
+    },
+    {
+      "name": "It’s All About You",
+      "themes": {
+        "personal": {
+          "min": 64,
+          "max": 65
+        }
+      }
+    },
+    {
+      "name": "A Celebration",
+      "themes": {
+        "social": {
+          "min": 68,
+          "max": 69
+        }
+      }
+    },
+    {
+      "name": "Standoff",
+      "themes": {
+        "tension": {
+          "min": 72,
+          "max": 72
+        },
+        "social": {
+          "min": 70,
+          "max": 70
+        }
+      }
+    },
+    {
+      "name": "Double Down",
+      "themes": {
+        "action": {
+          "min": 70,
+          "max": 71
+        }
+      }
+    },
+    {
+      "name": "Hidden Threat",
+      "themes": {
+        "tension": {
+          "min": 73,
+          "max": 73
+        }
+      }
+    },
+    {
+      "name": "Character Connection",
+      "themes": {
+        "personal": {
+          "min": 66,
+          "max": 67
+        }
+      }
+    },
+    {
+      "name": "Religion",
+      "themes": {
+        "social": {
+          "min": 71,
+          "max": 71
+        }
+      }
+    },
+    {
+      "name": "Innocent",
+      "themes": {
+        "social": {
+          "min": 72,
+          "max": 72
+        },
+        "personal": {
+          "min": 68,
+          "max": 68
+        }
+      }
+    },
+    {
+      "name": "Clear The Record",
+      "themes": {
+        "mystery": {
+          "min": 76,
+          "max": 76
+        }
+      }
+    },
+    {
+      "name": "Willing To Talk",
+      "themes": {
+        "personal": {
+          "min": 69,
+          "max": 70
+        }
+      }
+    },
+    {
+      "name": "Theft",
+      "themes": {
+        "action": {
+          "min": 72,
+          "max": 73
+        }
+      }
+    },
+    {
+      "name": "Character Harm",
+      "themes": {
+        "personal": {
+          "min": 71,
+          "max": 72
+        }
+      }
+    },
+    {
+      "name": "A Need To Hide",
+      "themes": {
+        "tension": {
+          "min": 74,
+          "max": 75
+        }
+      }
+    },
+    {
+      "name": "Followed",
+      "themes": {
+        "tension": {
+          "min": 76,
+          "max": 77
+        }
+      }
+    },
+    {
+      "name": "Framed",
+      "themes": {
+        "mystery": {
+          "min": 77,
+          "max": 77
+        },
+        "personal": {
+          "min": 73,
+          "max": 73
+        }
+      }
+    },
+    {
+      "name": "Preparation",
+      "themes": {
+        "social": {
+          "min": 73,
+          "max": 74
+        },
+        "personal": {
+          "min": 74,
+          "max": 75
+        }
+      }
+    },
+    {
+      "name": "An Improbable Crime",
+      "themes": {
+        "mystery": {
+          "min": 78,
+          "max": 78
+        }
+      }
+    },
+    {
+      "name": "Friend Focus",
+      "themes": {
+        "personal": {
+          "min": 76,
+          "max": 76
+        }
+      }
+    },
+    {
+      "name": "Untouchable",
+      "themes": {
+        "personal": {
+          "min": 77,
+          "max": 77
+        }
+      }
+    },
+    {
+      "name": "Bribe",
+      "themes": {
+        "personal": {
+          "min": 78,
+          "max": 78
+        }
+      }
+    },
+    {
+      "name": "Dealing With A Calamity",
+      "themes": {
+        "action": {
+          "min": 74,
+          "max": 75
+        }
+      }
+    },
+    {
+      "name": "Sudden Cessation",
+      "themes": {
+        "action": {
+          "min": 76,
+          "max": 77
+        }
+      }
+    },
+    {
+      "name": "It’s A Trap!",
+      "themes": {
+        "tension": {
+          "min": 78,
+          "max": 79
+        }
+      }
+    },
+    {
+      "name": "A Meeting Of Minds",
+      "themes": {
+        "social": {
+          "min": 75,
+          "max": 75
+        }
+      }
+    },
+    {
+      "name": "Time Limit",
+      "themes": {
+        "tension": {
+          "min": 80,
+          "max": 81
+        }
+      }
+    },
+    {
+      "name": "The Hidden Hand",
+      "themes": {
+        "mystery": {
+          "min": 79,
+          "max": 80
+        }
+      }
+    },
+    {
+      "name": "A Needed Resource Is Running Short",
+      "themes": {
+        "tension": {
+          "min": 82,
+          "max": 83
+        }
+      }
+    },
+    {
+      "name": "Organizations In Conflict",
+      "themes": {
+        "social": {
+          "min": 76,
+          "max": 76
+        }
+      }
+    },
+    {
+      "name": "Bad News",
+      "themes": {
+        "tension": {
+          "min": 84,
+          "max": 85
+        }
+      }
+    },
+    {
+      "name": "Character Assistance",
+      "themes": {
+        "personal": {
+          "min": 79,
+          "max": 80
+        }
+      }
+    },
+    {
+      "name": "Asking For Help",
+      "themes": {
+        "personal": {
+          "min": 81,
+          "max": 82
+        }
+      }
+    },
+    {
+      "name": "Hunker Down",
+      "themes": {
+        "tension": {
+          "min": 86,
+          "max": 86
+        }
+      }
+    },
+    {
+      "name": "Abandoned",
+      "themes": {
+        "tension": {
+          "min": 87,
+          "max": 88
+        }
+      }
+    },
+    {
+      "name": "Find It Or Else",
+      "themes": {
+        "mystery": {
+          "min": 81,
+          "max": 82
+        }
+      }
+    },
+    {
+      "name": "Used Against Them",
+      "themes": {
+        "action": {
+          "min": 78,
+          "max": 78
+        },
+        "tension": {
+          "min": 89,
+          "max": 89
+        }
+      }
+    },
+    {
+      "name": "Powerful Person",
+      "themes": {
+        "social": {
+          "min": 77,
+          "max": 77
+        }
+      }
+    },
+    {
+      "name": "Creepy Tone",
+      "themes": {
+        "tension": {
+          "min": 90,
+          "max": 91
+        }
+      }
+    },
+    {
+      "name": "Welcome To The Plot",
+      "themes": {
+        "personal": {
+          "min": 83,
+          "max": 83
+        }
+      }
+    },
+    {
+      "name": "Travel Setting",
+      "themes": {
+        "action": {
+          "min": 79,
+          "max": 79
+        },
+        "tension": {
+          "min": 92,
+          "max": 92
+        },
+        "mystery": {
+          "min": 83,
+          "max": 83
+        },
+        "social": {
+          "min": 78,
+          "max": 78
+        }
+      }
+    },
+    {
+      "name": "Escort Duty",
+      "themes": {
+        "social": {
+          "min": 79,
+          "max": 79
+        }
+      }
+    },
+    {
+      "name": "An Old Deal",
+      "themes": {
+        "mystery": {
+          "min": 84,
+          "max": 84
+        },
+        "social": {
+          "min": 80,
+          "max": 80
+        }
+      }
+    },
+    {
+      "name": "A New Enemy",
+      "themes": {
+        "tension": {
+          "min": 93,
+          "max": 93
+        }
+      }
+    },
+    {
+      "name": "Alliance",
+      "themes": {
+        "social": {
+          "min": 81,
+          "max": 82
+        }
+      }
+    },
+    {
+      "name": "Power Over Others",
+      "themes": {
+        "social": {
+          "min": 83,
+          "max": 84
+        }
+      }
+    },
+    {
+      "name": "A Mysterious New Person",
+      "themes": {
+        "mystery": {
+          "min": 85,
+          "max": 85
+        }
+      }
+    },
+    {
+      "name": "Frenetic Activity",
+      "themes": {
+        "action": {
+          "min": 80,
+          "max": 81
+        }
+      }
+    },
+    {
+      "name": "Rural Setting",
+      "themes": {
+        "tension": {
+          "min": 94,
+          "max": 94
+        },
+        "mystery": {
+          "min": 86,
+          "max": 86
+        },
+        "social": {
+          "min": 85,
+          "max": 85
+        }
+      }
+    },
+    {
+      "name": "Likeable",
+      "themes": {
+        "personal": {
+          "min": 84,
+          "max": 84
+        }
+      }
+    },
+    {
+      "name": "Someone Is Where They Should Not Be",
+      "themes": {
+        "mystery": {
+          "min": 87,
+          "max": 88
+        }
+      }
+    },
+    {
+      "name": "Sneaky Barrier",
+      "themes": {
+        "action": {
+          "min": 82,
+          "max": 83
+        }
+      }
+    },
+    {
+      "name": "Corruption",
+      "themes": {
+        "social": {
+          "min": 86,
+          "max": 87
+        }
+      }
+    },
+    {
+      "name": "Vulnerability Exploited",
+      "themes": {
+        "tension": {
+          "min": 95,
+          "max": 95
+        },
+        "mystery": {
+          "min": 89,
+          "max": 89
+        }
+      }
+    },
+    {
+      "name": "The Promise Of Reward",
+      "themes": {
+        "personal": {
+          "min": 85,
+          "max": 86
+        }
+      }
+    },
+    {
+      "name": "Fraud",
+      "themes": {
+        "mystery": {
+          "min": 90,
+          "max": 91
+        }
+      }
+    },
+    {
+      "name": "It’s Business",
+      "themes": {
+        "social": {
+          "min": 88,
+          "max": 89
+        }
+      }
+    },
+    {
+      "name": "Just Cause Gone Awry",
+      "themes": {
+        "social": {
+          "min": 90,
+          "max": 90
+        }
+      }
+    },
+    {
+      "name": "Expert Knowledge",
+      "themes": {
+        "personal": {
+          "min": 87,
+          "max": 87
+        }
+      }
+    },
+    {
+      "name": "A Moment Of Peace",
+      "themes": {
+        "action": {
+          "min": 84,
+          "max": 85
+        }
+      }
+    },
+    {
+      "name": "A Focus On The Mundane",
+      "themes": {
+        "personal": {
+          "min": 88,
+          "max": 89
+        }
+      }
+    },
+    {
+      "name": "Run Away!",
+      "themes": {
+        "personal": {
+          "min": 90,
+          "max": 91
+        }
+      }
+    },
+    {
+      "name": "Beat You To It",
+      "themes": {
+        "action": {
+          "min": 86,
+          "max": 87
+        },
+        "mystery": {
+          "min": 92,
+          "max": 93
+        }
+      }
+    },
+    {
+      "name": "Confrontation",
+      "themes": {
+        "action": {
+          "min": 88,
+          "max": 89
+        },
+        "social": {
+          "min": 91,
+          "max": 91
+        }
+      }
+    },
+    {
+      "name": "Argument",
+      "themes": {
+        "social": {
+          "min": 92,
+          "max": 93
+        }
+      }
+    },
+    {
+      "name": "Social Tension Set To Boiling",
+      "themes": {
+        "social": {
+          "min": 94,
+          "max": 94
+        }
+      }
+    },
+    {
+      "name": "Protector",
+      "themes": {
+        "action": {
+          "min": 90,
+          "max": 91
+        },
+        "personal": {
+          "min": 92,
+          "max": 93
+        }
+      }
+    },
+    {
+      "name": "Crescendo",
+      "themes": {
+        "action": {
+          "min": 92,
+          "max": 93
+        }
+      }
+    },
+    {
+      "name": "Destroy The Thing",
+      "themes": {
+        "action": {
+          "min": 94,
+          "max": 95
+        }
+      }
+    },
+    {
+      "name": "Conspiracy Theory",
+      "themes": {
+        "mystery": {
+          "min": 94,
+          "max": 94
+        }
+      }
+    },
+    {
+      "name": "Servant",
+      "themes": {
+        "social": {
+          "min": 95,
+          "max": 95
+        },
+        "personal": {
+          "min": 94,
+          "max": 95
+        }
+      }
+    },
+    {
+      "name": "An Opposing Story",
+      "themes": {
+        "mystery": {
+          "min": 95,
+          "max": 95
+        }
+      }
+    },
+    {
+      "name": "Meta",
+      "themes": {
+        "action": {
+          "min": 96,
+          "max": 100
+        },
+        "tension": {
+          "min": 96,
+          "max": 100
+        },
+        "mystery": {
+          "min": 96,
+          "max": 100
+        },
+        "social": {
+          "min": 96,
+          "max": 100
+        },
+        "personal": {
+          "min": 96,
+          "max": 100
+        }
+      }
+    }
+  ],
+  "character_special_trait": [
+    {
+      "min": 1,
+      "max": 50,
+      "trait": "individual"
+    },
+    {
+      "min": 51,
+      "max": 57,
+      "trait": "organization"
+    },
+    {
+      "min": 58,
+      "max": 64,
+      "trait": "object"
+    },
+    {
+      "min": 65,
+      "max": 71,
+      "trait": "connected_to_plotline"
+    },
+    {
+      "min": 72,
+      "max": 78,
+      "trait": "not_connected_to_plotline"
+    },
+    {
+      "min": 79,
+      "max": 85,
+      "trait": "assists_plotline"
+    },
+    {
+      "min": 86,
+      "max": 92,
+      "trait": "hinders_plotline"
+    },
+    {
+      "min": 93,
+      "max": 100,
+      "trait": "connected_to_existing_character"
+    }
+  ],
+  "character_identity": [
+    {
+      "min": 1,
+      "max": 33,
+      "identity": "Roll for two Identities"
+    },
+    {
+      "min": 50,
+      "max": 50,
+      "identity": "Mediator"
+    },
+    {
+      "min": 67,
+      "max": 67,
+      "identity": "Thief"
+    },
+    {
+      "min": 84,
+      "max": 84,
+      "identity": "Scientist"
+    },
+    {
+      "min": 34,
+      "max": 34,
+      "identity": "Warrior"
+    },
+    {
+      "min": 51,
+      "max": 51,
+      "identity": "Entertainer"
+    },
+    {
+      "min": 68,
+      "max": 68,
+      "identity": "Radical"
+    },
+    {
+      "min": 85,
+      "max": 85,
+      "identity": "Gatherer"
+    },
+    {
+      "min": 35,
+      "max": 35,
+      "identity": "Healer"
+    },
+    {
+      "min": 52,
+      "max": 52,
+      "identity": "Socialite"
+    },
+    {
+      "min": 69,
+      "max": 69,
+      "identity": "Executive"
+    },
+    {
+      "min": 86,
+      "max": 86,
+      "identity": "Foreigner"
+    },
+    {
+      "min": 36,
+      "max": 36,
+      "identity": "Protector"
+    },
+    {
+      "min": 53,
+      "max": 53,
+      "identity": "Athlete"
+    },
+    {
+      "min": 70,
+      "max": 70,
+      "identity": "Thug"
+    },
+    {
+      "min": 87,
+      "max": 87,
+      "identity": "Survivor"
+    },
+    {
+      "min": 37,
+      "max": 37,
+      "identity": "Assistant"
+    },
+    {
+      "min": 54,
+      "max": 54,
+      "identity": "Performer"
+    },
+    {
+      "min": 71,
+      "max": 71,
+      "identity": "Guard"
+    },
+    {
+      "min": 88,
+      "max": 88,
+      "identity": "Gambler"
+    },
+    {
+      "min": 38,
+      "max": 38,
+      "identity": "Dependent"
+    },
+    {
+      "min": 55,
+      "max": 55,
+      "identity": "Representative"
+    },
+    {
+      "min": 72,
+      "max": 72,
+      "identity": "Guardian"
+    },
+    {
+      "min": 89,
+      "max": 89,
+      "identity": "Rogue"
+    },
+    {
+      "min": 39,
+      "max": 39,
+      "identity": "Ruler"
+    },
+    {
+      "min": 56,
+      "max": 56,
+      "identity": "Merchant"
+    },
+    {
+      "min": 73,
+      "max": 73,
+      "identity": "Explorer"
+    },
+    {
+      "min": 90,
+      "max": 90,
+      "identity": "Farmer"
+    },
+    {
+      "min": 40,
+      "max": 40,
+      "identity": "Administrator"
+    },
+    {
+      "min": 57,
+      "max": 57,
+      "identity": "Trader"
+    },
+    {
+      "min": 74,
+      "max": 74,
+      "identity": "Hero"
+    },
+    {
+      "min": 91,
+      "max": 91,
+      "identity": "Killer"
+    },
+    {
+      "min": 41,
+      "max": 41,
+      "identity": "Victim"
+    },
+    {
+      "min": 58,
+      "max": 58,
+      "identity": "Creator"
+    },
+    {
+      "min": 75,
+      "max": 75,
+      "identity": "Villain"
+    },
+    {
+      "min": 92,
+      "max": 92,
+      "identity": "Professional"
+    },
+    {
+      "min": 42,
+      "max": 42,
+      "identity": "Scholar"
+    },
+    {
+      "min": 59,
+      "max": 59,
+      "identity": "Artist"
+    },
+    {
+      "min": 76,
+      "max": 76,
+      "identity": "Deceiver"
+    },
+    {
+      "min": 93,
+      "max": 93,
+      "identity": "Driver/Pilot"
+    },
+    {
+      "min": 43,
+      "max": 43,
+      "identity": "Expert"
+    },
+    {
+      "min": 60,
+      "max": 60,
+      "identity": "Servant"
+    },
+    {
+      "min": 77,
+      "max": 77,
+      "identity": "Engineer"
+    },
+    {
+      "min": 94,
+      "max": 94,
+      "identity": "Student"
+    },
+    {
+      "min": 44,
+      "max": 44,
+      "identity": "Elite"
+    },
+    {
+      "min": 61,
+      "max": 61,
+      "identity": "Laborer"
+    },
+    {
+      "min": 78,
+      "max": 78,
+      "identity": "Scout"
+    },
+    {
+      "min": 95,
+      "max": 95,
+      "identity": "Organizer"
+    },
+    {
+      "min": 45,
+      "max": 45,
+      "identity": "Investigator"
+    },
+    {
+      "min": 62,
+      "max": 62,
+      "identity": "Religious"
+    },
+    {
+      "min": 79,
+      "max": 79,
+      "identity": "Fixer"
+    },
+    {
+      "min": 96,
+      "max": 96,
+      "identity": "Deliverer"
+    },
+    {
+      "min": 46,
+      "max": 46,
+      "identity": "Criminal"
+    },
+    {
+      "min": 63,
+      "max": 63,
+      "identity": "Hunter"
+    },
+    {
+      "min": 80,
+      "max": 80,
+      "identity": "Wanderer"
+    },
+    {
+      "min": 97,
+      "max": 97,
+      "identity": "Lackey"
+    },
+    {
+      "min": 47,
+      "max": 47,
+      "identity": "Supporter"
+    },
+    {
+      "min": 64,
+      "max": 64,
+      "identity": "Leader"
+    },
+    {
+      "min": 81,
+      "max": 81,
+      "identity": "Subverter"
+    },
+    {
+      "min": 98,
+      "max": 98,
+      "identity": "Teacher"
+    },
+    {
+      "min": 48,
+      "max": 48,
+      "identity": "Helpless"
+    },
+    {
+      "min": 65,
+      "max": 65,
+      "identity": "Fighter"
+    },
+    {
+      "min": 82,
+      "max": 82,
+      "identity": "Soldier"
+    },
+    {
+      "min": 100,
+      "max": 100,
+      "identity": "Exotic"
+    },
+    {
+      "min": 49,
+      "max": 49,
+      "identity": "Outsider"
+    },
+    {
+      "min": 66,
+      "max": 66,
+      "identity": "Crafter"
+    },
+    {
+      "min": 83,
+      "max": 83,
+      "identity": "Law Enforcement"
+    }
+  ],
+  "character_descriptors": [
+    {
+      "min": 1,
+      "max": 21,
+      "descriptor": "Roll for two Descriptors"
+    },
+    {
+      "min": 41,
+      "max": 41,
+      "descriptor": "Small"
+    },
+    {
+      "min": 61,
+      "max": 61,
+      "descriptor": "Armed"
+    },
+    {
+      "min": 81,
+      "max": 81,
+      "descriptor": "Naive"
+    },
+    {
+      "min": 22,
+      "max": 22,
+      "descriptor": "Ugly"
+    },
+    {
+      "min": 42,
+      "max": 42,
+      "descriptor": "Large"
+    },
+    {
+      "min": 62,
+      "max": 62,
+      "descriptor": "Different"
+    },
+    {
+      "min": 82,
+      "max": 82,
+      "descriptor": "Confident"
+    },
+    {
+      "min": 23,
+      "max": 23,
+      "descriptor": "Beautiful"
+    },
+    {
+      "min": 43,
+      "max": 43,
+      "descriptor": "Quiet"
+    },
+    {
+      "min": 63,
+      "max": 63,
+      "descriptor": "Young"
+    },
+    {
+      "min": 83,
+      "max": 83,
+      "descriptor": "Surprising"
+    },
+    {
+      "min": 24,
+      "max": 24,
+      "descriptor": "Foul"
+    },
+    {
+      "min": 44,
+      "max": 44,
+      "descriptor": "Loud"
+    },
+    {
+      "min": 64,
+      "max": 64,
+      "descriptor": "Old"
+    },
+    {
+      "min": 84,
+      "max": 84,
+      "descriptor": "Passive"
+    },
+    {
+      "min": 25,
+      "max": 25,
+      "descriptor": "Sweet"
+    },
+    {
+      "min": 45,
+      "max": 45,
+      "descriptor": "Fast"
+    },
+    {
+      "min": 65,
+      "max": 65,
+      "descriptor": "Difficult"
+    },
+    {
+      "min": 85,
+      "max": 85,
+      "descriptor": "Bold"
+    },
+    {
+      "min": 26,
+      "max": 26,
+      "descriptor": "Unusual"
+    },
+    {
+      "min": 46,
+      "max": 46,
+      "descriptor": "Slow"
+    },
+    {
+      "min": 66,
+      "max": 66,
+      "descriptor": "Helpful"
+    },
+    {
+      "min": 86,
+      "max": 86,
+      "descriptor": "Careless"
+    },
+    {
+      "min": 27,
+      "max": 27,
+      "descriptor": "Common"
+    },
+    {
+      "min": 47,
+      "max": 47,
+      "descriptor": "Exotic"
+    },
+    {
+      "min": 67,
+      "max": 67,
+      "descriptor": "Harmful"
+    },
+    {
+      "min": 87,
+      "max": 87,
+      "descriptor": "Cautious"
+    },
+    {
+      "min": 28,
+      "max": 28,
+      "descriptor": "Intelligent"
+    },
+    {
+      "min": 48,
+      "max": 48,
+      "descriptor": "Uniformed"
+    },
+    {
+      "min": 68,
+      "max": 68,
+      "descriptor": "Disciplined"
+    },
+    {
+      "min": 88,
+      "max": 88,
+      "descriptor": "Sneaky"
+    },
+    {
+      "min": 29,
+      "max": 29,
+      "descriptor": "Ignorant"
+    },
+    {
+      "min": 49,
+      "max": 49,
+      "descriptor": "Interesting"
+    },
+    {
+      "min": 69,
+      "max": 69,
+      "descriptor": "Erratic"
+    },
+    {
+      "min": 89,
+      "max": 89,
+      "descriptor": "Intimidating"
+    },
+    {
+      "min": 30,
+      "max": 30,
+      "descriptor": "Educated"
+    },
+    {
+      "min": 50,
+      "max": 50,
+      "descriptor": "Colorful"
+    },
+    {
+      "min": 70,
+      "max": 70,
+      "descriptor": "Wild"
+    },
+    {
+      "min": 90,
+      "max": 90,
+      "descriptor": "Powerful"
+    },
+    {
+      "min": 31,
+      "max": 31,
+      "descriptor": "Skilled"
+    },
+    {
+      "min": 51,
+      "max": 51,
+      "descriptor": "Informative"
+    },
+    {
+      "min": 71,
+      "max": 71,
+      "descriptor": "Crazy"
+    },
+    {
+      "min": 91,
+      "max": 91,
+      "descriptor": "Powerless"
+    },
+    {
+      "min": 32,
+      "max": 32,
+      "descriptor": "Trained"
+    },
+    {
+      "min": 52,
+      "max": 52,
+      "descriptor": "Dangerous"
+    },
+    {
+      "min": 72,
+      "max": 72,
+      "descriptor": "Commanding"
+    },
+    {
+      "min": 92,
+      "max": 92,
+      "descriptor": "Hurt"
+    },
+    {
+      "min": 33,
+      "max": 33,
+      "descriptor": "Rude"
+    },
+    {
+      "min": 53,
+      "max": 53,
+      "descriptor": "Inept"
+    },
+    {
+      "min": 73,
+      "max": 73,
+      "descriptor": "Meek"
+    },
+    {
+      "min": 93,
+      "max": 93,
+      "descriptor": "Rough"
+    },
+    {
+      "min": 34,
+      "max": 34,
+      "descriptor": "Polite"
+    },
+    {
+      "min": 54,
+      "max": 54,
+      "descriptor": "Clumsy"
+    },
+    {
+      "min": 74,
+      "max": 74,
+      "descriptor": "Humorous"
+    },
+    {
+      "min": 94,
+      "max": 94,
+      "descriptor": "Gentle"
+    },
+    {
+      "min": 35,
+      "max": 35,
+      "descriptor": "Fancy"
+    },
+    {
+      "min": 55,
+      "max": 55,
+      "descriptor": "Capable"
+    },
+    {
+      "min": 75,
+      "max": 75,
+      "descriptor": "Frightened"
+    },
+    {
+      "min": 95,
+      "max": 95,
+      "descriptor": "Caring"
+    },
+    {
+      "min": 36,
+      "max": 36,
+      "descriptor": "Rough"
+    },
+    {
+      "min": 56,
+      "max": 56,
+      "descriptor": "Intrusive"
+    },
+    {
+      "min": 76,
+      "max": 76,
+      "descriptor": "Brave"
+    },
+    {
+      "min": 96,
+      "max": 96,
+      "descriptor": "Principled"
+    },
+    {
+      "min": 37,
+      "max": 37,
+      "descriptor": "Dirty"
+    },
+    {
+      "min": 57,
+      "max": 57,
+      "descriptor": "Respectful"
+    },
+    {
+      "min": 77,
+      "max": 77,
+      "descriptor": "Strong"
+    },
+    {
+      "min": 97,
+      "max": 97,
+      "descriptor": "Arrogant"
+    },
+    {
+      "min": 38,
+      "max": 38,
+      "descriptor": "Clean"
+    },
+    {
+      "min": 58,
+      "max": 58,
+      "descriptor": "Primitive"
+    },
+    {
+      "min": 78,
+      "max": 78,
+      "descriptor": "Weak"
+    },
+    {
+      "min": 98,
+      "max": 98,
+      "descriptor": "Curious"
+    },
+    {
+      "min": 39,
+      "max": 39,
+      "descriptor": "Wealthy"
+    },
+    {
+      "min": 59,
+      "max": 59,
+      "descriptor": "Sophisticated"
+    },
+    {
+      "min": 79,
+      "max": 79,
+      "descriptor": "Impulsive"
+    },
+    {
+      "min": 99,
+      "max": 99,
+      "descriptor": "Supportive"
+    },
+    {
+      "min": 40,
+      "max": 40,
+      "descriptor": "Poor"
+    },
+    {
+      "min": 60,
+      "max": 60,
+      "descriptor": "Elegant"
+    },
+    {
+      "min": 80,
+      "max": 80,
+      "descriptor": "Strategic"
+    },
+    {
+      "min": 100,
+      "max": 100,
+      "descriptor": "Heroic"
+    }
+  ]
+}

@@ -1,0 +1,3 @@
+# Datasworn JSON files are bundled (pinned at v0.0.10).
+# Mythic JSON files are downloaded from aradix85/wordmill-data.
+# Use data.py --force to update from upstream.

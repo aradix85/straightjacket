@@ -44,14 +44,21 @@ def _bootstrap():
 
 
 def _ensure_data():
-    """Download Datasworn JSON files if missing."""
+    """Download game data files if missing."""
     data_dir = ROOT / "data"
-    needed = ["classic.json", "starforged.json", "sundered_isles.json", "delve.json"]
+    needed = [
+        "classic.json",
+        "starforged.json",
+        "sundered_isles.json",
+        "delve.json",
+        "mythic_gme_2e.json",
+        "adventure_crafter.json",
+    ]
     missing = [f for f in needed if not (data_dir / f).exists()]
     if not missing:
         return
     print(f"Downloading game data ({len(missing)} files)...")
-    subprocess.check_call([sys.executable, str(data_dir / "download_datasworn.py")])
+    subprocess.check_call([sys.executable, str(data_dir / "data.py")])
 
 
 def _start():
