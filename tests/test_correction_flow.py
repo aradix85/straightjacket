@@ -96,6 +96,24 @@ class MockProvider:
                 )
             )
 
+        if tools and any(t.get("function", {}).get("name") == "roll_oracle" for t in tools):
+            # Brain tool calling mode
+            return MockResponse(
+                json.dumps(
+                    {
+                        "type": "action",
+                        "move": "dialog",
+                        "stat": "none",
+                        "approach": "speaking gently",
+                        "target_npc": "npc_1",
+                        "dialog_only": True,
+                        "player_intent": "Talk to Mira",
+                        "world_addition": None,
+                        "location_change": None,
+                    }
+                )
+            )
+
         if json_schema and "new_npcs" in json_schema.get("properties", {}):
             return MockResponse(
                 json.dumps(

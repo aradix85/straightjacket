@@ -318,6 +318,7 @@ def build_dialog_prompt(
     activated_npcs: Sequence[NpcData] = (),
     mentioned_npcs: Sequence[NpcData] = (),
     config: EngineConfig | None = None,
+    oracle_answer: str = "",
 ) -> str:
     context_text = f"{player_words} {brain.player_intent or ''} {game.world.current_scene_context or ''}"
     move_cat = "social"  # Dialog is always social context
@@ -330,16 +331,31 @@ def build_dialog_prompt(
     pw = f"\n<player_words>{_xe(player_words)}</player_words>" if player_words else ""
     pacing = _pacing_block(game, chaos_interrupt)
     director = _director_block(game)
+    oracle_tag = f"\n<oracle_answer>{_xe(oracle_answer)}</oracle_answer>" if oracle_answer else ""
 
-    return f"""<scene type="dialog" n="{game.narrative.scene_count}">
+    scene_type = "oracle" if oracle_answer else "dialog"
+    task = (
+        "2-3 paragraphs of immersive narration. The oracle has spoken: use <oracle_answer> as a creative seed "
+        "for what the player discovers or what happens. Interpret the word pair "
+        "through the current scene context. Do not quote the oracle words literally."
+        if oracle_answer
+        else (
+            f"2-3 paragraphs of immersive narration. Focus entirely on atmosphere, dialog, and character "
+            f"interaction. Even a quiet conversation carries the weight of the surrounding act phase "
+            f"{E['dash']} let <story_arc> mood shape the texture of the exchange. If <director_guidance> "
+            f"is present, follow its narrative direction while maintaining your creative voice."
+        )
+    )
+
+    return f"""<scene type="{scene_type}" n="{game.narrative.scene_count}">
 {_scene_header(game)}
-<intent>{_xe(brain.player_intent)}</intent>{pw}
+<intent>{_xe(brain.player_intent)}</intent>{pw}{oracle_tag}
 <location>{_xe(game.world.current_location)}</location>{_loc_hist(game)}{_time_ctx(game)}
 {npc}{npcs_sect}{wl}{crisis}
 {pacing}{director}
 {narrative_direction_block(game, "dialog")}
 {story_context_block(game)}{recent_events_block(game)}</scene>
-<task>2-3 paragraphs of immersive narration. Focus entirely on atmosphere, dialog, and character interaction. Even a quiet conversation carries the weight of the surrounding act phase {E["dash"]} let <story_arc> mood shape the texture of the exchange. If <director_guidance> is present, follow its narrative direction while maintaining your creative voice.</task>"""
+<task>{task}</task>"""
 
 
 def build_action_prompt(

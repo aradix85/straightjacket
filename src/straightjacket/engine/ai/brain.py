@@ -1,17 +1,23 @@
 #!/usr/bin/env python3
-"""AI Brain calls: action parsing and character/world generation."""
+"""AI Brain calls: action parsing via two-phase call.
+
+Phase 1 (optional): tool loop for context queries (NPC details, oracle rolls).
+Phase 2: json_schema call for structured classification.
+
+json_schema enforces complete output — without it the model defaults to dialog.
+"""
 
 import html
 import json
+import re
 
 from ..config_loader import cfg, sampling_params
 from ..engine_loader import eng
 from ..logging_util import log
-from ..models import BrainResult, EngineConfig, GameState, NpcData, Revelation
+from ..models import BrainResult, EngineConfig, GameState, Revelation
 from ..prompt_blocks import (
     content_boundaries_block,
     get_narration_lang,
-    story_context_block,
 )
 from ..prompt_loader import get_prompt
 from .provider_base import AIProvider, create_with_retry
@@ -26,47 +32,54 @@ def _build_moves_block() -> str:
     return "<moves>\n" + "\n".join(lines) + "\n  </moves>"
 
 
+# ── JSON extraction from text (used by Director) ────────────
+
+_JSON_BLOCK_RE = re.compile(r"```(?:json)?\s*(\{.*?\})\s*```", re.DOTALL)
+
+
+def _extract_json(text: str) -> dict | None:
+    """Extract JSON from text response. Handles bare JSON and fenced blocks."""
+    text = text.strip()
+    if text.startswith("{"):
+        try:
+            return json.loads(text)
+        except json.JSONDecodeError:
+            pass
+    m = _JSON_BLOCK_RE.search(text)
+    if m:
+        try:
+            return json.loads(m.group(1))
+        except json.JSONDecodeError:
+            pass
+    start = text.find("{")
+    end = text.rfind("}")
+    if start >= 0 and end > start:
+        try:
+            return json.loads(text[start : end + 1])
+        except json.JSONDecodeError:
+            pass
+    return None
+
+
+# ── Brain ────────────────────────────────────────────────────
+
+
 def call_brain(
     provider: AIProvider, game: GameState, player_message: str, config: EngineConfig | None = None
 ) -> BrainResult:
+    """Classify player input into a game move.
+
+    Two-phase call:
+    1. Tool loop (optional): Brain queries NPCs or oracles if needed.
+    2. json_schema call: enforces complete classification output.
+    """
+    from ..tools import get_tools, run_tool_loop
+
     _c = cfg()
-    log(f"[Brain] Scene {game.narrative.scene_count + 1} | Input: {player_message[:100]}")
-
-    def _brain_npc_line(n: NpcData) -> str:
-        line = f'- {n.name} (id:{n.id}): {n.disposition}, bond={n.bond}/{n.bond_max}, agenda="{n.agenda}"'
-        if n.aliases:
-            line += f" aliases:{','.join(n.aliases)}"
-        return line
-
-    npc_summary = "\n".join(_brain_npc_line(n) for n in game.npcs if n.status == "active") or "(none)"
-    bg_npcs = [n for n in game.npcs if n.status == "background"]
-    bg_summary = "\n".join(
-        f"- {n.name} (id:{n.id}): {n.disposition}, bond={n.bond}"
-        + (f" aliases:{','.join(n.aliases)}" if n.aliases else "")
-        for n in bg_npcs
-    )
-    if bg_summary:
-        npc_summary += f"\n(background, not currently present but known):\n{bg_summary}"
-    lore_npcs = [n for n in game.npcs if n.status == "lore"]
-    if lore_npcs:
-        lore_summary = "\n".join(
-            f"- {n.name} (id:{n.id}): lore figure" + (f" aliases:{','.join(n.aliases)}" if n.aliases else "")
-            for n in lore_npcs
-        )
-        npc_summary += f"\n(lore, historically significant, never physically present):\n{lore_summary}"
-    clock_summary = (
-        "\n".join(
-            f"- {c.name} ({c.clock_type}): {c.filled}/{c.segments}" for c in game.world.clocks if c.filled < c.segments
-        )
-        or "(none)"
-    )
-    last_scenes = (
-        "\n".join(f"Scene {s.scene}: {s.rich_summary or s.summary}" for s in game.narrative.session_log[-5:])
-        or "(Start)"
-    )
-
     _cfg = config or EngineConfig()
     _brain_lang = get_narration_lang(_cfg)
+
+    log(f"[Brain] Scene {game.narrative.scene_count + 1} | Input: {player_message[:100]}")
 
     system = get_prompt(
         "brain_parser",
@@ -75,63 +88,98 @@ def call_brain(
         moves_block=_build_moves_block(),
     )
 
-    campaign_ctx = ""
-    cam = game.campaign
-    if cam.campaign_history:
-        campaign_ctx = (
-            f"\n<campaign>Chapter {cam.chapter_number}. Previous: "
-            + "; ".join(f"Ch{ch.chapter}:{ch.title}" for ch in cam.campaign_history[-3:])
-            + "</campaign>"
-        )
-
-    backstory_ctx = ""
-    if game.backstory:
-        backstory_ctx = f"\n<backstory>{game.backstory}</backstory>"
-
     w = game.world
     res = game.resources
-    loc_hist_n = eng().location.history_size
+
+    # Minimal NPC list for target_npc resolution
+    npc_lines = []
+    for n in game.npcs:
+        if n.status in ("active", "background"):
+            entry = f"- {n.name} (id:{n.id})"
+            if n.aliases:
+                entry += f" aliases:{','.join(n.aliases)}"
+            npc_lines.append(entry)
+    npc_list = "\n".join(npc_lines) or "(none)"
+
     user_msg = f"""<state>
 loc:{w.current_location} | ctx:{w.current_scene_context}
-time:{w.time_of_day or "unspecified"} | prev_locations:{", ".join(w.location_history[-loc_hist_n:]) or "none"}
+time:{w.time_of_day or "unspecified"}
 {game.player_name} H{res.health} Sp{res.spirit} Su{res.supply} M{res.momentum} chaos:{w.chaos_factor} | E{game.edge} H{game.heart} I{game.iron} Sh{game.shadow} W{game.wits}
 </state>
-<npcs>{npc_summary}</npcs>
-<clocks>{clock_summary}</clocks>
-<recent>{last_scenes}</recent>
-{story_context_block(game)}{campaign_ctx}{backstory_ctx}<input>{player_message}</input>"""
+<npcs>{npc_list}</npcs>
+<input>{player_message}</input>"""
+
+    tools = get_tools("brain")
 
     try:
-        response = create_with_retry(
+        # Phase 1: tool loop for optional context queries
+        tool_context = ""
+        if tools:
+            response = create_with_retry(
+                provider,
+                max_retries=1,
+                model=_c.ai.brain_model,
+                max_tokens=_c.ai.max_tokens.brain,
+                system=system,
+                messages=[{"role": "user", "content": user_msg}],
+                tools=tools,
+                **sampling_params("brain"),
+                log_role="brain",
+            )
+
+            if response.stop_reason == "tool_use":
+                final_content, tool_log = run_tool_loop(
+                    provider,
+                    response,
+                    role="brain",
+                    game=game,
+                    model=_c.ai.brain_model,
+                    system=system,
+                    messages=[{"role": "user", "content": user_msg}],
+                    max_tokens=_c.ai.max_tokens.brain,
+                    max_tool_rounds=2,
+                    **sampling_params("brain"),
+                    log_role="brain",
+                )
+                if final_content.strip():
+                    tool_context = f"\n<tool_results>\n{final_content[:1500]}\n</tool_results>"
+                log(f"[Brain] Phase 1: {len(tool_log)} tool calls")
+            else:
+                log("[Brain] Phase 1: no tools called")
+
+        # Phase 2: json_schema call for classification
+        phase2_msg = user_msg
+        if tool_context:
+            phase2_msg = user_msg + tool_context
+
+        response2 = create_with_retry(
             provider,
             max_retries=_c.ai.max_retries.brain,
             model=_c.ai.brain_model,
             max_tokens=_c.ai.max_tokens.brain,
             system=system,
-            messages=[{"role": "user", "content": user_msg}],
+            messages=[{"role": "user", "content": phase2_msg}],
             json_schema=get_brain_output_schema(),
             **sampling_params("brain"),
             log_role="brain",
         )
-        result = BrainResult.from_dict(json.loads(response.content))
-        log(f"[Brain] Result: move={result.move}, stat={result.stat}, intent={result.player_intent[:60]}")
+
+        result = BrainResult.from_dict(json.loads(response2.content))
+        log(f"[Brain] move={result.move}, stat={result.stat}, intent={result.player_intent[:60]}")
         return result
+
     except Exception as e:
-        log(f"[Brain] Structured output failed ({type(e).__name__}: {e}), falling back to dialog", level="warning")
-        return BrainResult(move="dialog", dialog_only=True, player_intent=player_message, approach="fallback")
+        log(f"[Brain] Failed ({type(e).__name__}: {e}), treating as dialog", level="warning")
+        return BrainResult(move="dialog", dialog_only=True, player_intent=player_message, approach="error")
+
+
+# ── Revelation check ─────────────────────────────────────────
 
 
 def call_revelation_check(
     provider: AIProvider, narration: str, revelation: Revelation, config: EngineConfig | None = None
 ) -> bool:
-    """Check whether the narrator actually wove a pending revelation into the narration.
-
-    Called after call_narrator_metadata() when pending_revs was non-empty.
-    Returns True if the revelation was meaningfully present (and should be marked used),
-    False if the narrator skipped or barely touched it (stays pending for next scene).
-
-    On any failure, returns True (safe default: avoid infinite pending loops).
-    """
+    """Check whether the narrator actually wove a pending revelation into the narration."""
     from .schemas import REVELATION_CHECK_SCHEMA
 
     _cfg = config or EngineConfig()

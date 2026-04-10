@@ -17,10 +17,12 @@ ai:
   provider: "openai_compatible"
   api_base: "https://api.cerebras.ai/v1"
   api_key_env: "CEREBRAS_API_KEY"
-  brain_model: "qwen-3-235b-a22b-instruct-2507"
-  narrator_model: "qwen-3-235b-a22b-instruct-2507"
-  director_model: "qwen-3-235b-a22b-instruct-2507"
-  validator_model: "qwen-3-235b-a22b-instruct-2507"
+  brain_model: "zai-glm-4.7"
+  narrator_model: "zai-glm-4.7"
+  director_model: "zai-glm-4.7"
+  validator_model: "zai-glm-4.7"
+  extra_body:
+    disable_reasoning: true
 
   max_tokens:
     brain: 8192

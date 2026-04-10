@@ -5,6 +5,29 @@ Originally forked from [EdgeTales](https://github.com/edgetales/edgetales). See 
 
 ---
 
+## [0.41.0] — 2026-04-10
+
+Step 2: Brain and Director tool calling, Ask the Oracle.
+
+- Brain: two-phase call (optional tool loop + json_schema). Slim prompt with NPC names, stats, state
+- Director: two-phase call (tool loop for NPC/thread/clock queries + json_schema for structured output). Tokens now tracked via `log_role="director"`
+- `ask_the_oracle` move: engine rolls action/theme meaning pair from Datasworn tables, result injected as `<oracle_answer>` tag in narrator prompt
+- `max_narration_history` reduced from 5 to 3 (token optimization)
+- Fix: accumulator reset on failed reflections now preserves accumulator value. Only resets on successful reflection or API failure. Previously the Director's fallback reset zeroed the accumulator every time it ran without producing a reflection, preventing NPCs from ever reaching the reflection threshold
+- Elvira logging: BrainRecord per turn, NPC importance_accumulator and needs_reflection, engine result field, Director npc_guidance
+- Validated with GLM-4.7 on Cerebras: varied move classification, NPC memories building, Director guidance with npc_guidance
+- 485 tests
+
+## [0.40.0] — 2026-04-10
+
+Step 1: oracle roller. Vocabulary control. Cleanup.
+
+- `OracleResult` dataclass; `OracleTable.roll()` preserves actual die value
+- `roll_oracle` Brain tool: setting-aware Datasworn oracle roll
+- Vocabulary control per setting: substitutions, sensory palettes, config-driven atmospheric drift detection in rule validator. All four settings configured
+- Visual bar characters removed from clock display (accessibility)
+- 485 tests (18 new)
+
 ## [0.39.0] — 2026-04-10
 
 Steps 4–6: consequence sentences, NPC stance, information gating. Code audit.

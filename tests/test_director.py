@@ -416,9 +416,9 @@ def test_unreflected_npcs_get_reset(stub_all: None) -> None:
             ],
         },
     )
-    # Borin was not reflected — should still get reset
+    # Borin was not reflected — flag reset but accumulator preserved
     assert game.npcs[1].needs_reflection is False
-    assert game.npcs[1].importance_accumulator == 0
+    assert game.npcs[1].importance_accumulator == 31
 
 
 # ── should_call_director ─────────────────────────────────────
@@ -472,7 +472,9 @@ def test_reset_stale_reflection_flags(stub_all: None) -> None:
     from straightjacket.engine.director import reset_stale_reflection_flags
 
     game = _game()
+    # Save accumulators before reset
+    acc_before = {npc.id: npc.importance_accumulator for npc in game.npcs}
     reset_stale_reflection_flags(game)
     for npc in game.npcs:
         assert npc.needs_reflection is False
-        assert npc.importance_accumulator == 0
+        assert npc.importance_accumulator == acc_before[npc.id]

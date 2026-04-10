@@ -22,6 +22,18 @@ vocabulary:
     village: "settlement — small, vulnerable, walled if lucky"
     magic: "ritual — rare, feared, always costs something"
     monster: "creature or horror — the wilds are not safe"
+    glow: "gleam — reflected light, metal, wet stone. Not emanation"
+    pulse: "throb — heartbeat, wound, exertion. Not energy or force"
+    hum: "drone — wind, insects, a taut rope. Not latent power"
+    shimmer: "glint — sun on water, frost on iron. Not magical radiance"
+    whisper: "murmur — breath, wind through gaps, low speech. Not disembodied voices"
+    thrum: "rattle — loose timber, a bowstring, teeth. Not resonance from below"
+  sensory_palette: >
+    Mud, iron, cold, woodsmoke, wet wool, rain on stone, animal musk,
+    sweat, blood, pine resin, charcoal, tallow, damp earth, rust.
+    Sounds: wind, creaking wood, distant livestock, water over rocks,
+    boots on gravel, crows, hammering, fire snap.
+    The Ironlands are physical. Weight, texture, temperature, effort.
 
 genre_constraints:
   forbidden_terms:
@@ -34,6 +46,40 @@ genre_constraints:
     - "modern or futuristic technology"
     - "high magic or easy spellcasting"
   genre_test: "Could this exist in a dark, low-magic Iron Age frontier?"
+  atmospheric_drift:
+    - "pulse"
+    - "pulsing"
+    - "pulses"
+    - "pulsed"
+    - "thrum"
+    - "thrums"
+    - "thrumming"
+    - "hum"
+    - "hums"
+    - "humming"
+    - "shimmer"
+    - "shimmers"
+    - "shimmering"
+    - "glow"
+    - "glows"
+    - "glowing"
+    - "whisper"
+    - "whispers"
+    - "whispering"
+    - "emanate"
+    - "emanating"
+    - "resonate"
+    - "resonating"
+    - "reverberate"
+    - "reverberating"
+    - "unseen force"
+    - "omen"
+    - "portent"
+    - "eldritch"
+    - "otherworldly"
+    - "spectral"
+    - "ethereal"
+  atmospheric_drift_threshold: 3
 
 creation_flow:
   has_truths: true

@@ -22,8 +22,8 @@ game:
   content_lines: ""
 
 session:
-  max_chapters: 2                  # 1 = single story, 2+ = campaign with chapter transitions
-  max_turns: 25                    # per chapter (not total)
+  max_chapters: 1                  # 1 = single story, 2+ = campaign with chapter transitions
+  max_turns: 10                    # per chapter (not total)
   narration_lang: "English"
   save_every_n_turns: 5
   save_name_output: "elvira"       # save slot name (clean_before_run deletes this before starting)

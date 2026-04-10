@@ -56,6 +56,8 @@ class NpcSnapshot:
     memory_count: int = 0
     last_memory: str = ""
     last_location: str = ""
+    importance_accumulator: int = 0
+    needs_reflection: bool = False
     aliases: list[str] = field(default_factory=list)
 
 
@@ -83,11 +85,24 @@ class ValidatorRecord:
 
 
 @dataclass
+class BrainRecord:
+    """Brain classification result."""
+
+    move: str = ""
+    stat: str = ""
+    target_npc: str = ""
+    approach: str = ""
+    player_intent: str = ""
+    dialog_only: bool = False
+
+
+@dataclass
 class EngineLogRecord:
     """Engine session_log entry snapshot."""
 
     summary: str = ""
     move: str = ""
+    result: str = ""
     chaos_interrupt: str | None = None
     director_trigger: str = ""
     consequences: list[str] = field(default_factory=list)
@@ -120,6 +135,7 @@ class TurnRecord:
     narration: str = ""
     narration_excerpt: str = ""
     roll: RollRecord | None = None
+    brain: BrainRecord | None = None
     burn_offered: str = ""
     burn_taken: bool = False
     burn_error: str = ""

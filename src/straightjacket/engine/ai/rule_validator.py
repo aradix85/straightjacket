@@ -110,6 +110,43 @@ def check_genre_fidelity(narration: str, genre_constraints: dict | None) -> list
     return violations
 
 
+# ── ATMOSPHERIC REGISTER ────────────────────────────────────
+
+
+def check_atmospheric_register(narration: str, genre_constraints: dict | None) -> list[str]:
+    """Flag atmospheric register drift when setting-specific markers pile up.
+
+    Reads atmospheric_drift (word list) and atmospheric_drift_threshold (int)
+    from genre_constraints. No config = no check.
+    """
+    if not genre_constraints:
+        return []
+    drift_words = genre_constraints.get("atmospheric_drift", [])
+    threshold = genre_constraints.get("atmospheric_drift_threshold", 3)
+    if not drift_words or threshold < 1:
+        return []
+
+    narration_lower = narration.lower()
+    matches = []
+    for word in drift_words:
+        word_lower = word.lower()
+        # Count occurrences — simple substring for multi-word, word boundary for single
+        if " " in word_lower:
+            if word_lower in narration_lower:
+                matches.append(word_lower)
+        else:
+            hits = re.findall(rf"\b{re.escape(word_lower)}\b", narration_lower)
+            matches.extend(hits)
+
+    if len(matches) < threshold:
+        return []
+    unique = sorted(set(matches))
+    return [
+        f"ATMOSPHERIC REGISTER: {len(matches)} drift markers in one scene "
+        f"({', '.join(unique[:5])}). Ground the prose in physical sensation from <sensory_palette>"
+    ]
+
+
 # ── OUTPUT FORMAT ────────────────────────────────────────────
 
 _FORMAT_PATTERNS = [
@@ -246,6 +283,7 @@ def run_rule_checks(
     if result_type in ("MISS", "WEAK_HIT", "STRONG_HIT"):
         violations.extend(check_result_integrity(narration, result_type))
     violations.extend(check_genre_fidelity(narration, genre_constraints))
+    violations.extend(check_atmospheric_register(narration, genre_constraints))
     violations.extend(check_output_format(narration))
     violations.extend(check_npc_monologue(narration))
     if consequence_sentences:

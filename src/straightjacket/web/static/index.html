@@ -399,8 +399,7 @@ function showStatus() {
   if (st.clocks?.length) {
     lines.push("");
     st.clocks.forEach(c => {
-      const bar = "█".repeat(c.filled) + "░".repeat(c.segments - c.filled);
-      lines.push(`${c.name} [${bar}] ${c.filled}/${c.segments}${c.fired ? " " + s("ui.status_fired") : ""}`);
+      lines.push(`${c.name} ${c.filled}/${c.segments}${c.fired ? " " + s("ui.status_fired") : ""}`);
     });
   }
   if (st.story_arc) {

@@ -184,6 +184,11 @@ def validate_and_retry(
             "forbidden_concepts": gc.forbidden_concepts,
             "genre_test": gc.genre_test,
         }
+        # Atmospheric register control from raw config
+        raw_gc = pkg.raw_config.get("genre_constraints", {})
+        if "atmospheric_drift" in raw_gc:
+            gc_dict["atmospheric_drift"] = raw_gc["atmospheric_drift"]
+            gc_dict["atmospheric_drift_threshold"] = raw_gc.get("atmospheric_drift_threshold", 3)
 
     report: dict = {"passed": True, "retries": 0, "violations": [], "checks": []}
 
@@ -250,6 +255,12 @@ def validate_and_retry(
             elif "genre fidelity" in vl:
                 rewrite_instructions.append(
                     "Remove the forbidden genre element. Replace with something that fits the world's rules."
+                )
+            elif "atmospheric register" in vl:
+                rewrite_instructions.append(
+                    "Too many supernatural/horror words (pulse, hum, thrum, whisper, glow, shimmer). "
+                    "Replace with physical sensations from the <sensory_palette>: mud, iron, cold, "
+                    "woodsmoke, wind, creaking wood, weight, texture, temperature."
                 )
             elif "output format" in vl:
                 rewrite_instructions.append(

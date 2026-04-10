@@ -54,9 +54,27 @@ class MockProvider:
             }
         )
 
-        # Determine call type from schema
+        # Determine call type from schema or tools
         if json_schema and "move" in json_schema.get("properties", {}):
-            # Brain call
+            # Brain call (legacy json_schema mode)
+            return MockResponse(
+                json.dumps(
+                    {
+                        "type": "action",
+                        "move": "face_danger",
+                        "stat": "wits",
+                        "approach": "carefully examining the area",
+                        "target_npc": None,
+                        "dialog_only": False,
+                        "player_intent": "I search the room for clues",
+                        "world_addition": None,
+                        "location_change": None,
+                    }
+                )
+            )
+
+        if tools and any(t.get("function", {}).get("name") == "roll_oracle" for t in tools):
+            # Brain call (tool calling mode) — return JSON directly, no tool calls needed
             return MockResponse(
                 json.dumps(
                     {
@@ -266,7 +284,11 @@ def test_turn_dialog_skips_roll(load_engine: None) -> None:
     def dialog_brain(*args, **kwargs):  # type: ignore[no-untyped-def]
         call_count[0] += 1
         schema = kwargs.get("json_schema") or (args[5] if len(args) > 5 else None)
-        if schema and "move" in schema.get("properties", {}):
+        tools = kwargs.get("tools")
+        is_brain = (schema and "move" in schema.get("properties", {})) or (
+            tools and any(t.get("function", {}).get("name") == "roll_oracle" for t in tools)
+        )
+        if is_brain:
             return MockResponse(
                 json.dumps(
                     {

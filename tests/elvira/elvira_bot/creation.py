@@ -97,7 +97,7 @@ def _roll_backstory(pkg: SettingPackage, game_cfg: dict) -> str:
     try:
         table = pkg.data.backstory_prompts()
         if table:
-            return table.roll().text
+            return table.roll().value
     except Exception:
         pass
     return ""

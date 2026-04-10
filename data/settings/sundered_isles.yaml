@@ -22,11 +22,28 @@ vocabulary:
     spaceship: "ship — wood, canvas, and iron on open water"
     planet: "island — each one a world unto itself"
     settlement: "port — trade, gossip, and trouble"
+    computer: "chart or ledger — ink, not circuitry"
+  sensory_palette: >
+    Salt, tar, wet rope, gunpowder, rum, sun-bleached wood, barnacles,
+    fish guts, canvas snapping in wind. Sounds: rigging creak, waves
+    against hull, gulls, distant thunder, anchor chain, crew shanties.
+    Light: tropical sun, lantern sway below decks, phosphorescence,
+    storm light. The seas are vast, the ships are small.
 
 genre_constraints:
   forbidden_terms: []  # Science-fantasy permits most things
   forbidden_concepts: []
   genre_test: ""  # No strict genre test — cursed waters and ancient ruins are on-genre
+  atmospheric_drift:
+    - "spaceship"
+    - "computer"
+    - "laser"
+    - "robot"
+    - "android"
+    - "cybernetic"
+    - "elven"
+    - "dwarven"
+  atmospheric_drift_threshold: 2
 
 creation_flow:
   has_truths: true

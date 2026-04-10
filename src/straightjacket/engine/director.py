@@ -2,15 +2,14 @@
 """Straightjacket Director agent: story steering, NPC reflections, pacing."""
 
 import html
-import json
 import re
 
 from .ai.provider_base import AIProvider, create_with_retry
-from .ai.schemas import DIRECTOR_OUTPUT_SCHEMA
 from .config_loader import cfg, sampling_params
 from .engine_loader import eng
 from .logging_util import log
 from .models import EngineConfig, GameState, MemoryEntry
+from .tools import get_tools, run_tool_loop
 from .xml_utils import xa as _xa
 from .npc import (
     consolidate_memory,
@@ -89,16 +88,13 @@ def should_call_director(
 
 
 def build_director_prompt(game: GameState, latest_narration: str, config: EngineConfig | None = None) -> str:
-    """Build the Director analysis prompt."""
+    """Build the Director analysis prompt.
+
+    Slim prompt: reflection blocks, story arc, latest narration, task.
+    NPC overview, clocks, and session history available via tools.
+    """
     _cfg = config or EngineConfig()
     lang = get_narration_lang(_cfg)
-
-    # Recent session log
-    log_entries = []
-    for s in game.narrative.session_log[-8:]:
-        entry = f"Scene {s.scene}: {s.summary} → {s.result}"
-        log_entries.append(entry)
-    log_text = "\n".join(log_entries) or "(start)"
 
     # NPCs needing reflection or profile completion (empty agenda/instinct)
     reflection_blocks = []
@@ -116,8 +112,6 @@ def build_director_prompt(game: GameState, latest_narration: str, config: Engine
         prev_tone_text = ""
         if prev_reflections:
             prev_ref_text = f' last_reflection="{html.escape(prev_reflections[-1].event[:200], quote=True)}"'
-            # last_tone = narrative compound (e.g. "protective_guilt") for arc texture
-            # last_tone_key = enum word (e.g. "conflicted") for machine-readable evolution
             prev_tone_compound = prev_reflections[-1].tone or prev_reflections[-1].emotional_weight
             prev_tone_key_val = prev_reflections[-1].tone_key
             if prev_tone_compound:
@@ -125,11 +119,8 @@ def build_director_prompt(game: GameState, latest_narration: str, config: Engine
             if prev_tone_key_val:
                 prev_tone_text += f' last_tone_key="{html.escape(prev_tone_key_val, quote=True)}"'
         npc_desc = html.escape(n.description, quote=True)
-        # Expose instinct (stable wiring) and arc (current trajectory) so the
-        # Director can evolve arc without rewriting instinct.
         instinct_attr = f' instinct="{_xa(n.instinct)}"' if n.instinct.strip() else ""
         arc_attr = f' arc="{_xa(n.arc)}"' if n.arc.strip() else ""
-        # Flag NPCs that lack agenda/instinct so Director can suggest them
         needs_profile_attr = ""
         if not n.agenda.strip() or not n.instinct.strip():
             needs_profile_attr = ' needs_profile="true"'
@@ -168,61 +159,18 @@ def build_director_prompt(game: GameState, latest_narration: str, config: Engine
                 f'\n<transition_trigger act="{act.act_number}">{html.escape(transition_trigger)}</transition_trigger>'
             )
 
-    # Active NPC overview (include descriptions and aliases so Director stays consistent)
-    npc_overview = (
-        "\n".join(
-            f"- {n.name}({n.id}) {n.disposition} B{n.bond} "
-            f"status={n.status}"
-            + (f" aka {','.join(n.aliases)}" if n.aliases else "")
-            + (f" | {n.description[:80]}" if n.description else "")
-            for n in game.npcs
-            if n.status in ("active", "background", "lore")
-        )
-        or "(none)"
-    )
-
-    # Clocks overview for Director context
-    clocks_block = ""
-    if game.world.clocks:
-        active_lines = []
-        history_lines = []
-        for c in game.world.clocks:
-            filled = c.filled
-            segments = c.segments
-            bar = "█" * filled + "░" * (segments - filled)
-            pct = int(filled / segments * 100) if segments > 0 else 0
-            line = f"- {c.name} ({c.clock_type}): [{bar}] {filled}/{segments} ({pct}%) trigger: {c.trigger_description}"
-            if c.fired:
-                history_lines.append(line)
-            else:
-                active_lines.append(line)
-        parts = []
-        if active_lines:
-            parts.append("<clocks>\n" + "\n".join(active_lines) + "\n</clocks>")
-        if history_lines:
-            parts.append("<clocks_fired>\n" + "\n".join(history_lines) + "\n</clocks_fired>")
-        if parts:
-            clocks_block = "\n" + "\n".join(parts)
-
-    return f"""<scene_history>
-{log_text}
-</scene_history>
-
-<latest_scene>
+    return f"""<latest_scene>
 {latest_narration[:1000]}
 </latest_scene>
-
-<npcs>
-{npc_overview}
-</npcs>{clocks_block}
 {story_info}
 {reflection_section}
 
 <task>
 Analyze the latest scene and provide strategic guidance in {lang}.
+Use query_active_threads, query_active_clocks, query_npc tools to inspect game state as needed.
 LANGUAGE RULE: Every text field MUST be in {lang}. Do not use English for any field value, not even partially. Reflections, guidance, descriptions, summaries — all in {lang}.
 
-Field instructions:
+Respond with a JSON object containing these fields:
 - scene_summary: 2-3 sentence summary of what happened and WHY it matters (in {lang})
 - narrator_guidance: Specific direction for the next 1-2 scenes (in {lang}). If <story_arc> has a thematic_thread, occasionally anchor the guidance to the aspect of it most alive in the current moment.
 - npc_guidance: Array of {{"npc_id": "npc_1", "guidance": "what this NPC should do/feel next"}} — guidance text in {lang}
@@ -232,18 +180,16 @@ Field instructions:
   - reflection: 1-2 sentence higher-level insight (in {lang})
   - tone: 1-3 English words capturing the emotional shift (e.g. 'protective_guilt', 'reluctant_trust')
   - tone_key: ONE word from the enum (neutral, curious, wary, suspicious, grateful, terrified, loyal, conflicted, betrayed, devastated, euphoric, defiant, guilty, protective, angry, devoted, impressed, hopeful)
-  - updated_description: STRICTLY in {lang}. Max 100 characters. Role + key visual traits + personality. Keep physical details like age, hair, build. Do NOT start with the NPC's name. NO actions, NO posture. Example: 'Grumpy dwarf blacksmith with burn scars, secretly loyal'. null if unchanged.
+  - updated_description: STRICTLY in {lang}. Max 100 characters. Role + key visual traits + personality. Keep physical details like age, hair, build. Do NOT start with the NPC's name. NO actions, NO posture. null if unchanged.
   - agenda: NPC's hidden goal (max 8 words, only if needs_profile="true"), null otherwise
-  - instinct: NPC's psychological signature under real pressure (max 8 words, only if needs_profile="true"), null otherwise. NOT job demeanor or genre convention — the specific human underneath: what they do when their strategy fails, what betrays them, what is slightly irrational but inevitable. BAD: "stays calm under pressure" / "methodical and efficient". GOOD: "goes quiet and hyper-precise when cornered" / "agrees then quietly does what he intended". Instinct is set ONCE (first reflection, needs_profile=true) and never updated — it is the NPC's wiring, not their mood.
-  - updated_agenda: If the NPC already HAS an agenda but events have made it stale or obsolete, provide a NEW agenda (max 8 words, in {lang}). null if current agenda is still valid.
-  - updated_arc: The NPC's current narrative trajectory — what the story has made of them so far. 1-2 sentences in {lang}, from an inside perspective (their emotional state and what they have become, not what they will do next). Expected to change every reflection as the story develops. The <reflect> tag shows the current arc if set — build on it, deepen it, or shift it based on what just happened. Distinct from instinct (stable wiring) and npc_guidance (scene instruction). null only if the NPC has had zero meaningful story interaction.
+  - instinct: NPC's psychological signature under real pressure (max 8 words, only if needs_profile="true"), null otherwise. NOT job demeanor or genre convention — the specific human underneath. Instinct is set ONCE and never updated.
+  - updated_agenda: NEW agenda (max 8 words, in {lang}) if current agenda is stale. null if still valid.
+  - updated_arc: NPC's current narrative trajectory (1-2 sentences in {lang}). null only if zero meaningful interaction.
+  - about_npc: if the reflection is primarily about the relationship with another NPC, that NPC's id. null otherwise.
 - arc_notes: Brief story arc progress observation
-- act_transition: Evaluate whether the current act's <transition_trigger> has been fulfilled by recent events. Set to true if:
-  (a) the narrative condition described in the trigger has clearly been met, OR
-  (b) the story has moved PAST the act's scene_range (PAST_RANGE="true") and the trigger's spirit has been approximately met.
-  Set to false only if the trigger condition is clearly unmet AND we are still within scene_range. The scene_range is a fallback — content-driven transitions via this flag produce better pacing.
+- act_transition: true if current act's <transition_trigger> has been fulfilled. false if clearly unmet.
 
-If a <reflect> tag has a last_reflection attribute, write a NEW insight that builds on, deepens, or contradicts it. Do NOT repeat the same theme or emotional tone. If last_tone is present, evolve the emotion — show how the NPC's feelings have shifted, intensified, or transformed since then.
+If a <reflect> tag has a last_reflection attribute, write a NEW insight that builds on, deepens, or contradicts it. Do NOT repeat the same theme or emotional tone.
 </task>"""
 
 
@@ -251,28 +197,81 @@ def call_director(
     provider: AIProvider, game: GameState, latest_narration: str, config: EngineConfig | None = None
 ) -> dict:
     """Call the Director agent for scene analysis and story guidance.
-    Returns a dict with guidance fields, or empty dict on failure."""
+
+    Two-phase call:
+    1. Tool loop: Director queries NPCs, threads, clocks as needed.
+    2. json_schema call: Director produces structured guidance with full schema enforcement.
+
+    Phase 1 is skipped if no tools are available or the model doesn't call any.
+    """
+    from .ai.schemas import DIRECTOR_OUTPUT_SCHEMA
+
     log(f"[Director] Analyzing scene {game.narrative.scene_count}")
 
     prompt = build_director_prompt(game, latest_narration, config)
+    tools = get_tools("director")
+    system = _director_system(game, config)
 
     try:
         _c = cfg()
-        response = create_with_retry(
+
+        # Phase 1: tool loop for context gathering
+        tool_context = ""
+        if tools:
+            response = create_with_retry(
+                provider,
+                max_retries=1,
+                model=_c.ai.director_model,
+                max_tokens=_c.ai.max_tokens.director,
+                system=system,
+                messages=[{"role": "user", "content": prompt}],
+                tools=tools,
+                **sampling_params("director"),
+                log_role="director",
+            )
+
+            if response.stop_reason == "tool_use":
+                final_content, tool_log = run_tool_loop(
+                    provider,
+                    response,
+                    role="director",
+                    game=game,
+                    model=_c.ai.director_model,
+                    system=system,
+                    messages=[{"role": "user", "content": prompt}],
+                    max_tokens=_c.ai.max_tokens.director,
+                    max_tool_rounds=2,
+                    **sampling_params("director"),
+                    log_role="director",
+                )
+                if final_content.strip():
+                    tool_context = f"\n<tool_results>\n{final_content[:2000]}\n</tool_results>"
+                log(f"[Director] Phase 1: {len(tool_log)} tool calls")
+            else:
+                log("[Director] Phase 1: no tools called")
+
+        # Phase 2: json_schema call for structured output
+        phase2_prompt = prompt
+        if tool_context:
+            phase2_prompt = prompt + tool_context
+
+        response2 = create_with_retry(
             provider,
             max_retries=_c.ai.max_retries.director,
             model=_c.ai.director_model,
             max_tokens=_c.ai.max_tokens.director,
-            system=_director_system(game, config),
-            messages=[{"role": "user", "content": prompt}],
+            system=system,
+            messages=[{"role": "user", "content": phase2_prompt}],
             json_schema=DIRECTOR_OUTPUT_SCHEMA,
             **sampling_params("director"),
+            log_role="director",
         )
-        guidance = json.loads(response.content)
+
+        import json
+
+        guidance = json.loads(response2.content)
 
         # Convert npc_guidance from array (schema) to dict (internal format)
-        # Array format: [{"npc_id": "npc_1", "guidance": "..."}]
-        # Dict format:  {"npc_1": "..."} — used by narrator prompts and savegames
         if isinstance(guidance.get("npc_guidance"), list):
             guidance["npc_guidance"] = {
                 item["npc_id"]: item["guidance"]
@@ -288,7 +287,7 @@ def call_director(
         return guidance
     except Exception as e:
         log(
-            f"[Director] Structured output failed ({type(e).__name__}: {e}), continuing without guidance",
+            f"[Director] Failed ({type(e).__name__}: {e}), continuing without guidance",
             level="warning",
         )
         return {}
@@ -463,24 +462,24 @@ def apply_director_guidance(game: GameState, guidance: dict) -> None:
 
         log(f"[Director] Reflection for {ref_npc.name}: {reflection_text[:80]}")
 
-    # Fallback: reset needs_reflection AND accumulator for any NPCs the Director
-    # didn't successfully address. Without accumulator reset, the flag re-triggers
-    # immediately on the next memory update (zombie-reflection loop).
+    # Fallback: reset needs_reflection flag for any NPCs the Director
+    # didn't successfully address. Preserve accumulator so it can reach
+    # threshold again on the next Director call.
     for npc in game.npcs:
         if npc.needs_reflection and npc.id not in successfully_reflected_ids:
             npc.needs_reflection = False
-            npc.importance_accumulator = 0
-            log(f"[Director] Reset stale reflection for {npc.name} (accumulator zeroed)")
+            log(
+                f"[Director] Reset stale reflection flag for {npc.name} (accumulator preserved at {npc.importance_accumulator})"
+            )
 
     log(f"[Director] Guidance applied: pacing={guidance.get('pacing', '?')}")
 
 
 def reset_stale_reflection_flags(game: GameState) -> None:
-    """Reset needs_reflection and importance_accumulator for all pending NPCs.
+    """Reset needs_reflection for all pending NPCs.
     Called by the UI layer when a Director turn is skipped (e.g. burn pending,
-    or superseded by a new turn) to prevent indefinite flag accumulation."""
+    or superseded by a new turn). Preserves accumulator."""
     for npc in game.npcs:
         if npc.needs_reflection and npc.status in ("active", "background"):
             npc.needs_reflection = False
-            npc.importance_accumulator = 0
-            log(f"[Director] Reset stale reflection for {npc.name} (skipped turn)")
+            log(f"[Director] Reset stale reflection flag for {npc.name} (skipped turn, accumulator preserved)")

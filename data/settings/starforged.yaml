@@ -28,6 +28,14 @@ vocabulary:
     gun: "sidearm or kinetic weapon"
     planet: "world — each one hostile in its own way"
     city: "settlement — a few hundred people at most, never a metropolis"
+    whisper: "static — comms noise, interference, signal decay. Not voices"
+    omen: "warning sign — sensor anomaly, debris pattern, structural stress"
+  sensory_palette: >
+    Metal, recycled air, hydraulic fluid, ozone, cold vacuum beyond
+    the hull. Sounds: reactor hum, pressure seal hiss, boots on grating,
+    comms crackle, cargo shifting. Light: strip lighting, instrument
+    glow, starlight through ports. The Forge is industrial, cramped,
+    and always slightly broken.
 
 # Genre constraints for the validator.
 # Starforged is sci-fi but grounded — no magic, no fantasy races.
@@ -43,6 +51,20 @@ genre_constraints:
     - "fantasy races (elves, dwarves, orcs)"
     - "magic systems or spellcasting"
   genre_test: ""  # Sci-fi permits most things — no strict conceptual test
+  atmospheric_drift:
+    - "eldritch"
+    - "otherworldly"
+    - "spectral"
+    - "ethereal"
+    - "supernatural"
+    - "portent"
+    - "prophecy"
+    - "curse"
+    - "cursed"
+    - "ritual"
+    - "sorcery"
+    - "arcane"
+  atmospheric_drift_threshold: 2
 
 # Character creation flow flags.
 # Controls which UI steps the client presents.

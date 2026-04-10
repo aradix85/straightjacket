@@ -20,6 +20,12 @@ oracle_paths:
 
 vocabulary:
   substitutions: {}  # Inherits from Classic
+  sensory_palette: >
+    Damp stone, dripping water, stale air, fungal rot, iron oxide,
+    torch smoke, bat guano, crumbling mortar. Sounds: echoes, water
+    trickle, rock shift, distant collapse, your own breathing.
+    Light: torchlight, bioluminescence, absolute darkness.
+    Underground is claustrophobic, cold, and indifferent.
 
 genre_constraints:
   forbidden_terms: []  # Inherits from Classic

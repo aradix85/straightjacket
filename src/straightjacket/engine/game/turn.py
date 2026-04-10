@@ -59,6 +59,19 @@ def _apply_engine_memories(game: GameState, memories: list[dict]) -> None:
         consolidate_memory(npc)
 
 
+def _roll_oracle_answer(game: GameState) -> str:
+    """Roll an oracle answer for ask_the_oracle moves. Returns a meaning pair string."""
+    from ..datasworn.settings import active_package
+
+    pkg = active_package(game)
+    if not pkg:
+        return ""
+    action, theme = pkg.roll_action_theme()
+    if action and theme:
+        return f"{action} / {theme}"
+    return ""
+
+
 # POST-NARRATION: shared logic for both dialog and action paths
 
 
@@ -249,6 +262,65 @@ def process_turn(
             },
             prompt_summary=f"Dialog: {(brain.player_intent or player_message)[:80]}",
             roll_result_str="dialog",
+            config=config,
+            roll=None,
+            consequences=[],
+        )
+        return game, narration, None, None, director_ctx
+
+    # ── Oracle path ───────────────────────────────────────────
+    if brain.move == "ask_the_oracle":
+        nar.scene_count += 1
+        oracle_answer = _roll_oracle_answer(game)
+        prompt = build_dialog_prompt(
+            game,
+            brain,
+            player_words=player_message,
+            chaos_interrupt=chaos_interrupt,
+            activated_npcs=activated_npcs,
+            mentioned_npcs=mentioned_npcs,
+            config=config,
+            oracle_answer=oracle_answer,
+        )
+        raw = call_narrator(provider, prompt, game, config)
+        narration = parse_narrator_response(game, raw)
+
+        from ..ai.validator import validate_and_retry
+
+        narration, val_report = validate_and_retry(
+            provider, narration, prompt, "dialog", game, player_words=player_message, config=config
+        )
+
+        if game.last_turn_snapshot is not None:
+            game.last_turn_snapshot.narration = narration
+        metadata = call_narrator_metadata(provider, narration, game, config, brain=brain)
+
+        _, director_ctx = _finalize_scene(
+            provider,
+            game,
+            narration,
+            metadata,
+            brain,
+            player_message,
+            _scene_present_ids,
+            pending_revs,
+            chaos_interrupt,
+            npc_activation_debug,
+            log_entry={
+                "scene": nar.scene_count,
+                "summary": (brain.player_intent or player_message),
+                "move": "ask_the_oracle",
+                "result": "oracle",
+                "consequences": [],
+                "clock_events": [],
+                "chaos_interrupt": chaos_interrupt,
+                "npc_activation": npc_activation_debug,
+                "validator": val_report,
+                "_pacing_type": "breather",
+                "oracle_answer": oracle_answer,
+            },
+            prompt_summary=f"Oracle: {(brain.player_intent or player_message)[:80]}",
+            roll_result_str="oracle",
             config=config,
             roll=None,
             consequences=[],

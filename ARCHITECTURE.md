@@ -9,7 +9,7 @@ Player types "I search the room" → engine returns narration + updated game sta
 ```
 player input
   ↓
-Brain (ai/brain.py)           → classifies input into a move, stat, position, effect
+Brain (ai/brain.py)           → classifies input into a move and stat via tool calling
   ↓
 Roll (mechanics.py)           → 2d6+stat vs 2d10, result: STRONG_HIT / WEAK_HIT / MISS
   ↓
@@ -150,9 +150,9 @@ src/straightjacket/
 
 **Config-driven game logic.** Move types, damage tables, disposition shifts, NPC seed emotions — all in engine.yaml. Adding a move type means adding one line to `move_stats` and one to `move_categories`. No Python change.
 
-**Typed dataclasses everywhere.** GameState has sub-objects (Resources, WorldState, NarrativeState, CampaignState). NpcData has 19 fields. MemoryEntry has 10. Attribute access, never dict-style. `_fields_to_dict`/`_fields_from_dict` helpers handle flat serialization; complex classes override manually.
+**Typed dataclasses everywhere.** GameState has sub-objects (Resources, WorldState, NarrativeState, CampaignState). NpcData has 19 fields. MemoryEntry has 10. Attribute access, never dict-style. `SerializableMixin` handles serialization; complex classes override `to_dict`/`from_dict` manually.
 
-**Two-call pattern.** Narrator writes pure prose. A second fast-model call extracts structured metadata (NPCs, memories, location, time). This keeps the narrator prompt clean and works across providers.
+**Two-call pattern.** Narrator writes pure prose. A second fast-model call extracts NPC-related metadata (new NPCs, renames, details, deaths). This keeps the narrator prompt clean and works across providers.
 
 **Snapshot/restore.** `GameState.snapshot()` captures all mutable state before a turn. `restore()` reverts everything atomically. Used by correction (##) and momentum burn.
 
@@ -160,9 +160,9 @@ src/straightjacket/
 
 **Minimal UI.** Single HTML page, no build step, no npm. Server sends JSON, client renders. Scene headings for screen reader navigation, aria-live for automatic narration readout. Two buttons (Status, Save/Load), one text input.
 
-**Progress tracks as dataclass.** ProgressTrack has rank-based ticks_per_mark (troublesome=12, epic=1). Background vow becomes a track at creation. Vow ranks and tick rates in PROGRESS_RANKS dict. Prepared for step 12 (full move integration) without requiring it.
+**Progress tracks as dataclass.** ProgressTrack has rank-based ticks_per_mark (troublesome=12, epic=1). Background vow becomes a track at creation. Vow ranks and tick rates in PROGRESS_RANKS dict.
 
-**Mythic lists seeded at creation.** Threads list starts with the background vow (weight 2) plus any tensions derived from truth selections via engine.yaml templates. Characters list starts with the vow subject (if provided) and opening scene NPCs. Both lists are in NarrativeState for snapshot/restore. Prepared for step 10 (random events roll on these lists).
+**Mythic lists seeded at creation.** Threads list starts with the background vow (weight 2) plus any tensions derived from truth selections via engine.yaml templates. Characters list starts with the vow subject (if provided) and opening scene NPCs. Both lists are in NarrativeState for snapshot/restore.
 
 **Truths as world context.** Player truth selections stored in GameState.truths and injected into every narrator prompt as a `<world_truths>` block. The narrator treats them as established canon. Truths that match engine.yaml patterns automatically seed tension threads.
 
@@ -176,12 +176,12 @@ src/straightjacket/
 
 **Database as read model.** SQLite (in-memory, stdlib) mirrors GameState after every turn, creation, correction, restore, and load. GameState dataclasses remain the write model — all mutations go through Python. The database provides indexed queries for prompt builders, tool handlers, and future NPC trigger evaluation. Ephemeral: rebuilt from GameState on load/restore, no migration burden. JSON save files remain the persistence format.
 
-**Tool calling infrastructure.** Decorator-based registry (`@register("brain", "director")`) produces OpenAI function calling schemas from Python type hints. Iterative handler loop: AI calls tool → engine executes → result appended → AI continues, with configurable round limit. Tools are read-only: they query GameState and database but never mutate. Brain and Director currently use prompt injection; tool calling activates when oracle roller (step 7) and fate system (step 8) provide tools that deliver information the prompt cannot.
+**Tool calling.** Decorator-based registry (`@register("brain", "director")`) produces OpenAI function calling schemas from Python type hints. Iterative handler loop: AI calls tool → engine executes → result appended → AI continues, with configurable round limit. Tools are read-only: they query GameState and database but never mutate. Brain uses tool calling for classification (slim prompt, selective queries). Director uses two-phase: tool loop for context, then json_schema for structured output.
 
 ## Testing
 
 ```bash
-python -m pytest tests/ -v          # ~20 seconds, ~467 tests
+python -m pytest tests/ -v          # ~20 seconds, ~485 tests
 python tests/elvira/elvira.py --auto --turns 5   # direct engine (needs API key)
 python tests/elvira/elvira.py --ws --auto --turns 5  # via WebSocket server
 ```

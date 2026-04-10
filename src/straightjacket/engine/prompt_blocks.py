@@ -61,17 +61,20 @@ def vocabulary_block(game: GameState | None = None) -> str:
     if not pkg:
         return ""
     vocab = pkg.vocabulary
-    if not vocab:
+    palette = pkg.raw_config.get("vocabulary", {}).get("sensory_palette", "")
+    if not vocab and not palette:
         return ""
-    lines = []
-    for term, replacement in vocab.items():
-        lines.append(f"  {term} → {replacement}")
-    return (
-        "<vocabulary>\n"
-        "Use these terms instead of their generic equivalents. "
-        "The substitutions define how this world talks about itself.\n" + "\n".join(lines) + "\n"
-        "</vocabulary>"
-    )
+    parts = ["<vocabulary>"]
+    if vocab:
+        lines = [f"  {term} → {replacement}" for term, replacement in vocab.items()]
+        parts.append(
+            "Use these terms instead of their generic equivalents. "
+            "The substitutions define how this world talks about itself.\n" + "\n".join(lines)
+        )
+    if palette:
+        parts.append(f"<sensory_palette>{palette.strip()}</sensory_palette>")
+    parts.append("</vocabulary>")
+    return "\n".join(parts)
 
 
 def truths_block(game: GameState | None = None) -> str:

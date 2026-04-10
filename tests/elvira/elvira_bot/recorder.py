@@ -7,6 +7,7 @@ from straightjacket.engine.models import GameState, RollResult
 from straightjacket.engine.story_state import get_current_act
 
 from .models import (
+    BrainRecord,
     ClockSnapshot,
     EngineLogRecord,
     NpcSnapshot,
@@ -46,6 +47,19 @@ def record_turn(
             c2=roll.c2,
             result=roll.result,
             match=roll.match,
+        )
+
+    # Brain classification
+    snap = game.last_turn_snapshot
+    if snap and snap.brain:
+        b = snap.brain
+        rec.brain = BrainRecord(
+            move=b.move,
+            stat=b.stat,
+            target_npc=b.target_npc or "",
+            approach=b.approach,
+            player_intent=b.player_intent[:120],
+            dialog_only=b.dialog_only,
         )
 
     rec.state_after = _snapshot_state(game)
@@ -92,6 +106,8 @@ def _snapshot_npcs(game: GameState) -> list[NpcSnapshot]:
             memory_count=len(n.memory),
             last_memory=(n.memory[-1].event[:100] if n.memory else ""),
             last_location=n.last_location,
+            importance_accumulator=n.importance_accumulator,
+            needs_reflection=n.needs_reflection,
             aliases=list(n.aliases),
         )
         for n in game.npcs
@@ -120,6 +136,7 @@ def _snapshot_engine_log(game: GameState) -> EngineLogRecord | None:
     return EngineLogRecord(
         summary=sl.rich_summary or sl.summary,
         move=sl.move,
+        result=sl.result,
         chaos_interrupt=sl.chaos_interrupt,
         director_trigger=sl.director_trigger,
         consequences=list(sl.consequences),
@@ -173,8 +190,25 @@ def _snapshot_director_guidance(game: GameState) -> dict:
     dg = game.narrative.director_guidance
     if not dg:
         return {}
-    return {
+    d: dict = {
         "narrator_guidance": dg.narrator_guidance,
         "pacing": dg.pacing,
         "arc_notes": dg.arc_notes,
     }
+    if dg.npc_guidance:
+        d["npc_guidance"] = dg.npc_guidance
+    # scene_summary lives in session_log as rich_summary (set by apply_director_guidance)
+    if game.narrative.session_log:
+        rs = game.narrative.session_log[-1].rich_summary
+        if rs:
+            d["scene_summary"] = rs
+    # Count reflections applied this scene
+    scene = game.narrative.scene_count
+    reflections = []
+    for n in game.npcs:
+        for m in n.memory:
+            if m.type == "reflection" and m.scene == scene:
+                reflections.append({"npc": n.name, "tone": m.tone_key or m.tone, "text": m.event[:120]})
+    if reflections:
+        d["reflections"] = reflections
+    return d

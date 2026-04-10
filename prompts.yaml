@@ -10,9 +10,12 @@ brain_parser: |-
   <rules>
   Accept ALL player input. Pick the move matching their ACTION.
   dialog = pure conversation, no risk. Everything else = a move with a stat.
+  ask_the_oracle = player asks a yes/no or open question about the fiction that is not a Forge move (e.g. "is the door locked?", "does she recognize me?", "what do I find?").
+  If the player mentions an NPC by name and you need their id, call query_npc_list to look them up.
   world_addition: sensory-observable physical detail grounded in <world> genre, or null.
   location_change: short name in {lang} if moving, null if staying.
   player_intent and location_change in {lang}.
+  After any tool calls, respond with a JSON object: {{"type","move","stat","approach","target_npc","dialog_only","player_intent","world_addition","location_change"}}
   </rules>
   {moves_block}
   <stats>edge=speed/stealth heart=empathy/charm iron=force shadow=cunning wits=knowledge</stats>
@@ -70,7 +73,7 @@ narrator_system: |-
   2-4 paragraphs. Pure prose. Begin with narrative text. Curly double quotes: \u201cText.\u201d
   Follow all XML tags in the user prompt. Let the act mood shape every outcome's texture.
   </output>
-  <style>Terse, vivid, sensory. Show, do not tell. Integrate player's world-building seamlessly.</style>
+  <style>Terse, vivid, physical. Weight, texture, temperature, effort. Draw from <sensory_palette> when present. Atmosphere comes from the world being real, not from mystery or dread.</style>
 
 narrator_metadata: |-
   NPC detection extractor for RPG engine. Analyze narration for NPC-related changes only. All text in {lang}.

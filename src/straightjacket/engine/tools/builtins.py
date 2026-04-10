@@ -85,6 +85,36 @@ def query_active_clocks(game: GameState, clock_type: str = "", unfired_only: boo
 
 
 @register("brain")
+def roll_oracle(game: GameState, table_path: str) -> dict:
+    """Roll on a Datasworn oracle table. Returns the rolled value and table info.
+
+    table_path: oracle table path (e.g. 'core/action', 'characters/name/given')
+    """
+    from ..datasworn.loader import load_setting
+
+    if not game.setting_id:
+        return {"error": "No setting loaded"}
+
+    try:
+        setting = load_setting(game.setting_id)
+    except (KeyError, FileNotFoundError) as e:
+        return {"error": str(e)}
+
+    table = setting.oracle(table_path)
+    if table is None:
+        return {"error": f"Oracle table not found: {table_path}", "setting": game.setting_id}
+
+    result = table.roll()
+    return {
+        "value": result.value,
+        "roll": result.roll,
+        "table_path": result.table_path,
+        "table_title": result.table_title,
+        "setting": game.setting_id,
+    }
+
+
+@register("brain")
 def query_npc_list(game: GameState, status: str = "active") -> dict:
     """List NPCs filtered by status. Lightweight: names and dispositions only.
 

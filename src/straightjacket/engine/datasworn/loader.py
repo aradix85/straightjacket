@@ -91,6 +91,17 @@ class OracleRow:
 
 
 @dataclass
+class OracleResult:
+    """Result of rolling on an oracle table."""
+
+    value: str
+    roll: int
+    table_path: str
+    table_title: str
+    row: OracleRow
+
+
+@dataclass
 class OracleTable:
     """A rollable d100 (or dN) oracle table."""
 
@@ -100,22 +111,23 @@ class OracleTable:
     # Parent collection path for navigation
     collection_path: str = ""
 
-    def roll(self) -> OracleRow:
-        """Roll on this table and return the matching row."""
+    def roll(self) -> OracleResult:
+        """Roll on this table and return structured result with the actual die value."""
         if not self.rows:
             raise ValueError(f"Oracle table '{self.id}' has no rows")
         # Determine die size from max value of last row
         die_max = self.rows[-1].max
-        result = random.randint(1, die_max)
+        die_roll = random.randint(1, die_max)
         for row in self.rows:
-            if row.min <= result <= row.max:
-                return row
-        # Fallback: return last row (should not happen with valid data)
-        return self.rows[-1]
+            if row.min <= die_roll <= row.max:
+                return OracleResult(value=row.text, roll=die_roll, table_path=self.id, table_title=self.title, row=row)
+        # Fallback: last row (should not happen with valid data)
+        last = self.rows[-1]
+        return OracleResult(value=last.text, roll=die_roll, table_path=self.id, table_title=self.title, row=last)
 
     def roll_text(self) -> str:
         """Roll and return just the text."""
-        return self.roll().text
+        return self.roll().value
 
     def __len__(self) -> int:
         return len(self.rows)
