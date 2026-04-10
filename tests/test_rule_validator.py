@@ -198,3 +198,41 @@ def test_strip_prompt_unchanged_for_agency_violation() -> None:
     prompt = '<target_npc>secrets(weave subtly,never reveal):["secret"]</target_npc>'
     result = _strip_prompt_for_retry(prompt, ["PLAYER AGENCY: narrator decided feelings"])
     assert "secret" in result  # Not stripped for non-pacing violations
+
+
+# ── CONSEQUENCE KEYWORD CHECKS ───────────────────────────────
+
+
+def test_consequence_keyword_found() -> None:
+    from straightjacket.engine.ai.rule_validator import check_consequence_keywords
+
+    narration = "The blade finds the gap. Ash staggers, blood running down."
+    sentences = ["The blade finds the gap in your guard."]
+    violations = check_consequence_keywords(narration, sentences)
+    assert violations == []
+
+
+def test_consequence_keyword_missing() -> None:
+    from straightjacket.engine.ai.rule_validator import check_consequence_keywords
+
+    narration = "The sun shines brightly over the meadow."
+    sentences = ["The blade finds the gap in your guard."]
+    violations = check_consequence_keywords(narration, sentences)
+    assert len(violations) == 1
+    assert "CONSEQUENCE MISSING" in violations[0]
+
+
+def test_consequence_empty_sentences_passes() -> None:
+    from straightjacket.engine.ai.rule_validator import check_consequence_keywords
+
+    violations = check_consequence_keywords("anything", [])
+    assert violations == []
+
+
+def test_consequence_in_run_rule_checks() -> None:
+    from straightjacket.engine.ai.rule_validator import run_rule_checks
+
+    narration = "The sun shines. Nothing happened."
+    result = run_rule_checks(narration, "MISS", consequence_sentences=["The blade finds the gap in your guard."])
+    assert not result["pass"]
+    assert any("CONSEQUENCE" in v for v in result["violations"])

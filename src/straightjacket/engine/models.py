@@ -17,7 +17,6 @@ This file defines: RollResult, BrainResult, TurnSnapshot, GameState (top-level c
 
 from __future__ import annotations
 
-import dataclasses
 from dataclasses import dataclass, field
 
 from .logging_util import log
@@ -51,14 +50,14 @@ from .models_story import (  # noqa: F401
     StoryBlueprint,
     ThreadEntry,
 )
-from .serialization import deserialize, serialize
+from .serialization import SerializableMixin
 
 
 # ROLL RESULT
 
 
 @dataclass
-class RollResult:
+class RollResult(SerializableMixin):
     d1: int
     d2: int
     c1: int
@@ -75,7 +74,7 @@ class RollResult:
 
 
 @dataclass
-class BrainResult:
+class BrainResult(SerializableMixin):
     """Structured output from call_brain."""
 
     type: str = "action"
@@ -88,16 +87,12 @@ class BrainResult:
     world_addition: str | None = None
     location_change: str | None = None
 
-    @classmethod
-    def from_dict(cls, data: dict) -> BrainResult:
-        return deserialize(cls, data)
-
 
 # TURN SNAPSHOT
 
 
 @dataclass
-class TurnSnapshot:
+class TurnSnapshot(SerializableMixin):
     """Snapshot of game state plus turn context for correction/burn.
 
     State fields (resources, world, etc.) are stored as dicts for restore().
@@ -115,36 +110,6 @@ class TurnSnapshot:
     brain: BrainResult | None = None
     roll: RollResult | None = None
     narration: str | None = None
-
-    def to_dict(self) -> dict:
-        d = {
-            "resources": self.resources,
-            "world": self.world,
-            "narrative": self.narrative,
-            "campaign": self.campaign,
-            "npcs": self.npcs,
-            "crisis_mode": self.crisis_mode,
-            "game_over": self.game_over,
-            "player_input": self.player_input,
-            "brain": serialize(self.brain) if self.brain else None,
-            "narration": self.narration,
-        }
-        if self.roll is not None:
-            d["roll"] = dataclasses.asdict(self.roll)
-        else:
-            d["roll"] = None
-        return d
-
-    @classmethod
-    def from_dict(cls, data: dict) -> TurnSnapshot:
-        known = set(cls.__dataclass_fields__)
-        kwargs = {k: v for k, v in data.items() if k in known}
-        snap = cls(**kwargs)
-        if isinstance(snap.roll, dict):
-            snap.roll = RollResult(**snap.roll)
-        if isinstance(snap.brain, dict):
-            snap.brain = BrainResult.from_dict(snap.brain)
-        return snap
 
 
 # GAME STATE

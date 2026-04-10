@@ -265,6 +265,11 @@ def process_correction(
             consequences, clock_events = apply_consequences(game, roll, brain, position, effect)
             npc_agency, _ = check_npc_agency(game)
             activated_npcs, mentioned_npcs, _ = activate_npcs_for_prompt(game, brain, corrected_input)
+
+            from .mechanics import generate_consequence_sentences
+
+            consequence_sentences = generate_consequence_sentences(consequences, clock_events, game, brain)
+
             prompt = build_action_prompt(
                 game,
                 brain,
@@ -278,6 +283,7 @@ def process_correction(
                 mentioned_npcs=mentioned_npcs,
                 position=position,
                 effect=effect,
+                consequence_sentences=consequence_sentences,
             )
         else:
             roll = None
@@ -303,6 +309,11 @@ def process_correction(
             consequences = _last_entry.consequences if _last_entry else []
             clock_events = _last_entry.clock_events if _last_entry else []
             npc_agency, _ = check_npc_agency(game)
+
+            from .mechanics import generate_consequence_sentences
+
+            consequence_sentences = generate_consequence_sentences(consequences, clock_events, game, brain)
+
             prompt = build_action_prompt(
                 game,
                 brain,
@@ -314,6 +325,7 @@ def process_correction(
                 config=_cfg,
                 activated_npcs=activated_npcs,
                 mentioned_npcs=mentioned_npcs,
+                consequence_sentences=consequence_sentences,
             )
         else:
             prompt = build_dialog_prompt(
@@ -484,6 +496,11 @@ def process_momentum_burn(
     effect = resolve_effect(game, brain_data, position)
     consequences, clock_events = apply_consequences(game, upgraded, brain_data, position, effect)
     activated_npcs, mentioned_npcs, _ = activate_npcs_for_prompt(game, brain_data, player_words)
+
+    from .mechanics import generate_consequence_sentences
+
+    consequence_sentences = generate_consequence_sentences(consequences, clock_events, game, brain_data)
+
     prompt = build_action_prompt(
         game,
         brain_data,
@@ -498,6 +515,7 @@ def process_momentum_burn(
         position=position,
         effect=effect,
         config=config,
+        consequence_sentences=consequence_sentences,
     )
     prompt = prompt.replace("<task>", "<momentum_burn>Character digs deep, turns the tide.</momentum_burn>\n<task>")
 

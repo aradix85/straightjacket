@@ -21,7 +21,10 @@ import json
 import random as _random
 from datetime import datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from straightjacket.engine.ai.provider_base import AIProvider
 
 import websockets
 
@@ -454,7 +457,7 @@ async def run_ws_session(bot_cfg: dict, auto_override: bool = False, turns_overr
 
 async def _play_turn(
     client: WsClient,
-    provider,
+    provider: AIProvider,
     game: GameState,
     narration: str,
     turn: int,
@@ -492,7 +495,7 @@ async def _play_turn(
 
 
 async def _play_correction(
-    client: WsClient, provider, game: GameState, turn: int, slog: SessionLog
+    client: WsClient, provider: AIProvider, game: GameState, turn: int, slog: SessionLog
 ) -> tuple[str, TurnRecord]:
     """Send a correction. Returns (narration, partial_record)."""
     corrections = [
@@ -523,7 +526,13 @@ async def _play_correction(
 
 
 async def _handle_burn(
-    client: WsClient, provider, game: GameState, burn_offer: dict, burn_setting: str, style: str, rec: TurnRecord
+    client: WsClient,
+    provider: AIProvider,
+    game: GameState,
+    burn_offer: dict,
+    burn_setting: str,
+    style: str,
+    rec: TurnRecord,
 ) -> dict:
     """Decide and execute momentum burn."""
     # Build a burn_info-compatible dict for decide_burn_momentum.

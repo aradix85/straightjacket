@@ -31,6 +31,7 @@ def _row_to_npc(row: sqlite3.Row) -> NpcData:
         last_reflection_scene=row["last_reflection_scene"],
         last_location=row["last_location"],
         needs_reflection=bool(row["needs_reflection"]),
+        gather_count=row["gather_count"],
     )
 
 

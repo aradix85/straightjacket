@@ -415,6 +415,7 @@ def test_action_prompt_contains_result_and_position(stub_engine: None) -> None:
         consequences=[],
         clock_events=[],
         npc_agency=[],
+        consequence_sentences=["The tide shifts. Hero can feel it."],
         player_words="I search for hidden compartments",
         config=EngineConfig(narration_lang="English"),
     )

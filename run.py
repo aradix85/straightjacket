@@ -70,6 +70,12 @@ def _start():
 
     setup_file_logging()
 
+    # Early warning: check API key env var exists before starting server
+    env_var = cfg().ai.api_key_env
+    if not os.environ.get(env_var):
+        log(f"[Server] WARNING: ${env_var} is not set. AI calls will fail.", level="warning")
+        print(f"\n  ⚠ No API key: ${env_var} is not set. Set it before playing.\n")
+
     port = cfg().server.port
     host = cfg().server.host
     log(f"[Server] Starting Straightjacket on http://{host}:{port}")

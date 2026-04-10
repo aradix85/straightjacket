@@ -38,6 +38,8 @@ narrator_system: |-
 
   RESULT INTEGRITY: Follow <result type="..."> exactly. MISS = concrete failure, the situation is worse, no silver linings. WEAK_HIT = success with a tangible cost or complication. STRONG_HIT = clean success. A MISS is a setback, not annihilation. A WEAK_HIT costs something specific, not everything.
 
+  CONSEQUENCES: Each <consequence> tag describes something that HAPPENS in this scene. Weave every one into the prose {dash} the player must see each consequence occur. You may change the wording but not what happens. A consequence about lost supplies means supplies are lost. A consequence about a clock means the threat advances. Show them, do not skip them.
+
   {content_boundaries_block}{backstory_block}{status_context_block}{tone_authority_block}
 
   <player>

@@ -6,6 +6,8 @@ Run: python -m pytest tests/test_db.py -v
 
 # Stubs are set up in conftest.py
 
+import sqlite3
+
 from straightjacket.engine.db.connection import close_db, get_db, init_db, reset_db
 from straightjacket.engine.db.queries import query_clocks, query_memories, query_npcs, query_threads
 from straightjacket.engine.db.sync import sync
@@ -22,7 +24,7 @@ from straightjacket.engine.models import (
 )
 
 
-def _fresh_db():
+def _fresh_db() -> sqlite3.Connection:
     """Reset and return a fresh database connection."""
     return reset_db()
 

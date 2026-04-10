@@ -20,7 +20,8 @@ CREATE TABLE IF NOT EXISTS npcs (
     importance_accumulator INTEGER NOT NULL DEFAULT 0,
     last_reflection_scene  INTEGER NOT NULL DEFAULT 0,
     last_location TEXT NOT NULL DEFAULT '',
-    needs_reflection INTEGER NOT NULL DEFAULT 0  -- boolean
+    needs_reflection INTEGER NOT NULL DEFAULT 0,  -- boolean
+    gather_count INTEGER NOT NULL DEFAULT 0
 );
 
 CREATE TABLE IF NOT EXISTS memories (

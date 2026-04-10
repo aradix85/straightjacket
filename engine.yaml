@@ -510,3 +510,208 @@ memory_move_verbs:
 # Variables: {location}, {move}, {result}, {npc_names}, {time}
 scene_context_template: "{result} on {move_label} at {location} — {npc_summary}"
 scene_context_dialog: "conversation at {location} with {npc_summary}"
+
+# ── Consequence sentence templates (step 4) ──────────────────
+# Engine generates one narrative sentence per mechanical consequence.
+# Injected as <consequence> tags — narrator must weave them into prose.
+# Variables: {player}, {npc}, {location}, {amount}
+# Multiple templates per key: engine picks one at random.
+# Severity: light = 1 damage, heavy = 2+.
+consequence_templates:
+  health_light:
+    - "A blow lands — {player} staggers but stays upright."
+    - "The impact drives {player} back, leaving a mark."
+    - "Something catches {player} wrong. Pain flares, sharp and immediate."
+  health_heavy:
+    - "The hit is bad. {player} feels something give."
+    - "{player} goes down hard. Getting up takes everything."
+    - "Blood. Too much of it. {player} presses a hand to the wound."
+  spirit_light:
+    - "Something in {player} dims. The doubt is quiet but real."
+    - "The weight of it settles on {player}'s shoulders."
+    - "A familiar weariness creeps in — not the body, the will."
+  spirit_heavy:
+    - "{player}'s hands are shaking and it has nothing to do with cold."
+    - "For a moment {player} cannot remember why any of this matters."
+    - "The resolve that carried {player} here fractures."
+  supply_any:
+    - "Something essential is lost — {player} won't notice until it's needed."
+    - "The pack is lighter. Not in a good way."
+    - "Supplies spent. What remains will have to stretch."
+  momentum_loss:
+    - "The momentum that was building slips away."
+    - "Whatever advantage {player} had, it's gone."
+  bond_loss:
+    - "{npc}'s expression closes. A wall goes up."
+    - "Something shifts between {player} and {npc}. Trust, retreating."
+    - "The distance between {player} and {npc} grows."
+  health_gain:
+    - "The worst of it eases. {player} can breathe again."
+    - "{player} steadies. Not whole, but functional."
+  spirit_gain:
+    - "A moment of clarity cuts through the fog."
+    - "Something settles — not hope exactly, but enough to keep going."
+  supply_gain:
+    - "{player} restocks. The essentials, at least."
+  bond_gain:
+    - "Something unspoken passes between {player} and {npc}. Ground, gained."
+  momentum_gain:
+    - "The tide shifts. {player} can feel it."
+  disposition_shift:
+    - "{npc} looks at {player} differently now."
+  clock_tick:
+    - "Somewhere, a deadline moves closer."
+    - "The threat advances whether {player} is ready or not."
+  clock_triggered:
+    - "Time's up. {clock} — {trigger}."
+
+# Pay the Price: generic MISS consequences when the move category
+# doesn't specify something more targeted. One sentence, concrete.
+# Rolled from this list when no category-specific template applies.
+pay_the_price:
+  - "Something valuable breaks beyond easy repair."
+  - "An ally's patience runs out."
+  - "The environment turns hostile — what was safe, isn't."
+  - "A hidden cost surfaces: this was more expensive than it looked."
+  - "An old problem returns at the worst moment."
+  - "The way back is now closed."
+  - "Someone saw what {player} did. They won't forget."
+  - "The easy option disappears. Only hard choices remain."
+
+# ── NPC stance matrix (step 5) ───────────────────────────────
+# Engine computes per-NPC stance before narrator sees anything.
+# Replaces raw disposition/bond in prompt with behavioral constraint.
+# Lookup: (disposition, bond_range, move_category) → stance + constraint.
+# bond_range: low = 0-1, mid = 2-3, high = 4+.
+# move_category: combat, social, gather_information, other.
+# stance: one word. constraint: concrete behavioral limit for narrator.
+
+stance_matrix:
+  hostile:
+    low:
+      combat: {stance: "aggressive", constraint: "Attacks without hesitation. No quarter."}
+      social: {stance: "hostile", constraint: "Refuses to engage. Threats or silence."}
+      gather_information: {stance: "stonewalling", constraint: "Gives nothing. Lies if cornered."}
+      other: {stance: "obstructive", constraint: "Actively works against the player."}
+    mid:
+      combat: {stance: "brutal", constraint: "Fights to end it, not to posture."}
+      social: {stance: "confrontational", constraint: "Engages only to attack or accuse."}
+      gather_information: {stance: "misleading", constraint: "Half-truths designed to harm."}
+      other: {stance: "sabotaging", constraint: "Undermines without revealing intent."}
+    high:
+      combat: {stance: "conflicted_violent", constraint: "Fights but hesitates at key moments."}
+      social: {stance: "bitter", constraint: "Engages but every word carries an edge."}
+      gather_information: {stance: "grudging", constraint: "One fact, wrapped in resentment."}
+      other: {stance: "reluctant_hostile", constraint: "Opposes but doesn't commit fully."}
+  distrustful:
+    low:
+      combat: {stance: "defensive", constraint: "Protects self first. No risks for the player."}
+      social: {stance: "guarded", constraint: "One short answer, then deflects or leaves."}
+      gather_information: {stance: "evasive", constraint: "One fact, then silence. No elaboration."}
+      other: {stance: "wary", constraint: "Cooperates minimally. Watches for betrayal."}
+    mid:
+      combat: {stance: "cautious_ally", constraint: "Fights alongside but keeps distance."}
+      social: {stance: "testing", constraint: "Answers but probes for motives."}
+      gather_information: {stance: "conditional", constraint: "Shares information but expects something back."}
+      other: {stance: "transactional", constraint: "Helps if there's clear mutual benefit."}
+    high:
+      combat: {stance: "protective_wary", constraint: "Fights fiercely but won't take the player's word alone."}
+      social: {stance: "frank", constraint: "Direct but watches for reaction."}
+      gather_information: {stance: "forthcoming", constraint: "Shares what they know but flags uncertainty."}
+      other: {stance: "cooperative_guarded", constraint: "Works together but keeps an exit open."}
+  neutral:
+    low:
+      combat: {stance: "professional", constraint: "Fights if necessary. No personal stake."}
+      social: {stance: "polite", constraint: "Civil but surface-level. No investment."}
+      gather_information: {stance: "informative", constraint: "Answers what's asked. Volunteers nothing."}
+      other: {stance: "indifferent", constraint: "Helps if convenient. Walks away if not."}
+    mid:
+      combat: {stance: "reliable", constraint: "Fights alongside competently."}
+      social: {stance: "engaged", constraint: "Genuine conversation. Gives opinions when asked."}
+      gather_information: {stance: "helpful", constraint: "Shares freely. Points toward next steps."}
+      other: {stance: "willing", constraint: "Cooperates without needing persuasion."}
+    high:
+      combat: {stance: "solid_partner", constraint: "Trusted in a fight. Coordinates naturally."}
+      social: {stance: "open", constraint: "Speaks freely. Comfortable silence between words."}
+      gather_information: {stance: "generous", constraint: "Shares what they know and what they suspect."}
+      other: {stance: "proactive", constraint: "Anticipates needs. Acts without being asked."}
+  friendly:
+    low:
+      combat: {stance: "encouraging", constraint: "Fights with visible concern for the player."}
+      social: {stance: "warm", constraint: "Genuine warmth but respects distance."}
+      gather_information: {stance: "eager_to_help", constraint: "Shares everything they can. Apologizes for gaps."}
+      other: {stance: "supportive", constraint: "Offers help before being asked."}
+    mid:
+      combat: {stance: "fierce_ally", constraint: "Takes risks to protect the player."}
+      social: {stance: "confiding", constraint: "Shares personal concerns. Asks for the player's view."}
+      gather_information: {stance: "transparent", constraint: "Holds nothing back. Thinks out loud."}
+      other: {stance: "dependable", constraint: "Shows up. Does the work. No complaints."}
+    high:
+      combat: {stance: "devoted_fighter", constraint: "Would take a blow for the player without thinking."}
+      social: {stance: "intimate", constraint: "Speaks from vulnerability. Trusts completely."}
+      gather_information: {stance: "unreserved", constraint: "Shares secrets, suspicions, fears. Everything."}
+      other: {stance: "selfless", constraint: "Puts the player's needs first, even at cost."}
+  loyal:
+    low:
+      combat: {stance: "sworn_blade", constraint: "Fights with absolute commitment."}
+      social: {stance: "devoted", constraint: "Speaks with weight. Every word means something."}
+      gather_information: {stance: "trusted_counsel", constraint: "Shares analysis, not just facts."}
+      other: {stance: "unwavering", constraint: "Acts without hesitation on the player's behalf."}
+    mid:
+      combat: {stance: "bonded_warrior", constraint: "Fights as extension of the player. Wordless coordination."}
+      social: {stance: "soul_bound", constraint: "Communicates in shorthand. Deep mutual understanding."}
+      gather_information: {stance: "oracle", constraint: "Shares everything including things the player might not want to hear."}
+      other: {stance: "ride_or_die", constraint: "All in. No reservations. No exit strategy."}
+    high:
+      combat: {stance: "bonded_warrior", constraint: "Fights as extension of the player. Wordless coordination."}
+      social: {stance: "soul_bound", constraint: "Communicates in shorthand. Deep mutual understanding."}
+      gather_information: {stance: "oracle", constraint: "Shares everything including things the player might not want to hear."}
+      other: {stance: "ride_or_die", constraint: "All in. No reservations. No exit strategy."}
+
+# ── Information gate levels (step 6) ─────────────────────────
+# Engine computes per-NPC gate level (0-4) controlling what enters
+# the narrator prompt. Higher gate = more information visible.
+# Gate 0: name + description only (stranger)
+# Gate 1: + stance + constraint (surface contact)
+# Gate 2: + agenda + recent memories (some interaction)
+# Gate 3: + instinct + arc + all memories (trust building)
+# Gate 4: + secrets (fully open)
+information_gate:
+  # Points earned per factor. Gate = clamp(total_points, 0, 4).
+  points:
+    scenes_known_1: 0       # 0 scenes since introduction
+    scenes_known_2_3: 1     # 1+ scenes
+    scenes_known_4_plus: 2  # 4+ scenes
+    gather_success: 1       # per successful gather_information targeting this NPC
+    bond_1: 0               # bond 0-1
+    bond_2_3: 1             # bond 2-3
+    bond_4_plus: 2          # bond 4+
+  # Stance caps: maximum gate level per stance category.
+  # Prevents hostile/evasive NPCs from revealing too much.
+  stance_caps:
+    aggressive: 1
+    hostile: 1
+    stonewalling: 0
+    obstructive: 1
+    brutal: 1
+    confrontational: 1
+    misleading: 1
+    sabotaging: 1
+    conflicted_violent: 2
+    bitter: 2
+    grudging: 2
+    reluctant_hostile: 2
+    defensive: 1
+    guarded: 2
+    evasive: 1
+    wary: 2
+    cautious_ally: 2
+    testing: 2
+    conditional: 2
+    transactional: 2
+    protective_wary: 3
+    frank: 3
+    forthcoming: 3
+    cooperative_guarded: 3
+    # Neutral and above: no cap (defaults to 4)
+  default_cap: 4

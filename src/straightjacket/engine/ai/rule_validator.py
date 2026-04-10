@@ -154,6 +154,77 @@ def check_npc_monologue(narration: str) -> list[str]:
     return []
 
 
+# ── CONSEQUENCE VERIFICATION ────────────────────────────────
+
+_CONSEQUENCE_STOPWORDS = frozenset(
+    {
+        "the",
+        "and",
+        "for",
+        "with",
+        "from",
+        "that",
+        "this",
+        "was",
+        "are",
+        "has",
+        "had",
+        "not",
+        "but",
+        "his",
+        "her",
+        "its",
+        "who",
+        "will",
+        "can",
+        "been",
+        "into",
+        "than",
+        "then",
+        "about",
+        "something",
+        "nothing",
+        "their",
+        "your",
+        "what",
+        "when",
+        "where",
+        "does",
+        "doesn",
+        "again",
+        "back",
+        "just",
+        "now",
+        "still",
+        "even",
+        "more",
+        "much",
+        "very",
+        "only",
+        "also",
+    }
+)
+
+
+def check_consequence_keywords(narration: str, consequence_sentences: list[str]) -> list[str]:
+    """Check that each consequence sentence has at least one keyword reflected in narration."""
+    if not consequence_sentences:
+        return []
+    narration_lower = narration.lower()
+    violations = []
+    for sentence in consequence_sentences:
+        words = {w.strip(".,;:!?\"'()-").lower() for w in sentence.split() if len(w.strip(".,;:!?\"'()-")) >= 4}
+        keywords = words - _CONSEQUENCE_STOPWORDS
+        if not keywords:
+            continue
+        if not any(kw in narration_lower for kw in keywords):
+            violations.append(
+                f"CONSEQUENCE MISSING: narrator did not reflect '{sentence[:60]}' — "
+                f"none of {sorted(keywords)[:4]} found in narration"
+            )
+    return violations[:2]  # Cap to avoid noise
+
+
 # ── PUBLIC API ───────────────────────────────────────────────
 
 
@@ -162,6 +233,7 @@ def run_rule_checks(
     result_type: str,
     player_words: str = "",
     genre_constraints: dict | None = None,
+    consequence_sentences: list[str] | None = None,
 ) -> dict:
     """Run all rule-based checks. Returns same format as LLM validator.
 
@@ -176,6 +248,8 @@ def run_rule_checks(
     violations.extend(check_genre_fidelity(narration, genre_constraints))
     violations.extend(check_output_format(narration))
     violations.extend(check_npc_monologue(narration))
+    if consequence_sentences:
+        violations.extend(check_consequence_keywords(narration, consequence_sentences))
 
     if violations:
         correction = "; ".join(v.split(": ", 1)[1] if ": " in v else v for v in violations[:3])

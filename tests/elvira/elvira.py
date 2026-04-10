@@ -40,7 +40,7 @@ from elvira_bot.runner import load_config, run_session
 DEFAULT_CONFIG = _HERE / "elvira_config.yaml"
 
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser(description="Straightjacket — Elvira Test Player Bot")
     parser.add_argument("--config", type=Path, default=DEFAULT_CONFIG, help="Path to elvira_config.yaml")
     parser.add_argument("--auto", action="store_true", help="Override: enable full auto mode")

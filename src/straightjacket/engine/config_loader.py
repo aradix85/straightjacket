@@ -168,22 +168,26 @@ def sampling_params(role: str) -> dict:
         create_with_retry(provider, ..., **sampling_params("narrator"))
 
     Reads from config.yaml ai.temperature.<role> and ai.top_p.<role>.
-    Returns None for any param not configured, which means provider default.
+    Omits any param not configured (provider uses its own default).
     """
     _c = cfg()
-    params = {}
+    params: dict[str, float] = {}
     try:
-        params["temperature"] = getattr(_c.ai.temperature, role)
+        val = getattr(_c.ai.temperature, role)
+        if val is not None:
+            params["temperature"] = float(val)
     except AttributeError:
-        params["temperature"] = None
+        pass
     try:
         val = getattr(_c.ai.top_p, role)
-        params["top_p"] = float(val) if val is not None else None
+        if val is not None:
+            params["top_p"] = float(val)
     except AttributeError:
         # Fall back to default if no per-role override
         try:
             val = _c.ai.top_p.default
-            params["top_p"] = float(val) if val is not None else None
+            if val is not None:
+                params["top_p"] = float(val)
         except AttributeError:
-            params["top_p"] = None
+            pass
     return params

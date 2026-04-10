@@ -12,11 +12,21 @@ from .config_loader import GLOBAL_CONFIG_FILE, USERS_DIR
 
 
 def _safe_name(name: str) -> str:
-    """Sanitize a user/save name to prevent path traversal."""
-    # Strip path separators, parent references, and null bytes
+    """Sanitize a user/save name to prevent path traversal and filesystem issues.
+
+    Strips path separators, parent references, null bytes, and leading dots.
+    Rejects empty results and names that are filesystem-special (., ..).
+    Max 100 characters to prevent filesystem edge cases.
+    """
     clean = name.replace("/", "").replace("\\", "").replace("\0", "").replace("..", "").strip()
-    if not clean:
+    # Strip leading dots (hidden files/dirs on Unix)
+    clean = clean.lstrip(".")
+    # Collapse whitespace
+    clean = " ".join(clean.split())
+    if not clean or clean in (".", ".."):
         raise ValueError(f"Invalid name: {name!r}")
+    if len(clean) > 100:
+        raise ValueError(f"Name too long ({len(clean)} chars, max 100): {name[:20]!r}...")
     return clean
 
 

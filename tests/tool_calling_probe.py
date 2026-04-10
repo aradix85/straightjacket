@@ -18,6 +18,10 @@ import sys
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from straightjacket.engine.ai.provider_base import AIProvider
 
 # Add src to path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
@@ -205,7 +209,7 @@ DIRECTOR_SYSTEM = (
     "Query what you need, then provide your analysis."
 )
 
-CASES = [
+CASES: list[dict[str, Any]] = [
     # ── Brain: should call tools ──
     {
         "name": "brain_fate_simple",
@@ -336,7 +340,7 @@ CASES = [
 # ── Runner ────────────────────────────────────────────────────
 
 
-def run_probe(provider, model: str) -> list[ProbeResult]:
+def run_probe(provider: "AIProvider", model: str) -> list[ProbeResult]:
     """Run all test cases for one model."""
     results = []
 

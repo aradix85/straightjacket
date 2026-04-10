@@ -290,6 +290,17 @@ def process_turn(
 
     consequences, clock_events = apply_consequences(game, roll, brain, position, effect)
     npc_agency, agency_clock_events = check_npc_agency(game)
+
+    # Track gather_information successes for information gating (step 6)
+    if brain.move == "gather_information" and roll.result in ("STRONG_HIT", "WEAK_HIT") and brain.target_npc:
+        gather_target = find_npc(game, brain.target_npc)
+        if gather_target:
+            gather_target.gather_count += 1
+
+    from ..mechanics import generate_consequence_sentences
+
+    consequence_sentences = generate_consequence_sentences(consequences, clock_events, game, brain)
+
     prompt = build_action_prompt(
         game,
         brain,
@@ -304,6 +315,7 @@ def process_turn(
         config=config,
         position=position,
         effect=effect,
+        consequence_sentences=consequence_sentences,
     )
     raw = call_narrator(provider, prompt, game, config)
     narration = parse_narrator_response(game, raw)
@@ -319,6 +331,7 @@ def process_turn(
         player_words=player_message,
         consequences=consequences,
         config=config,
+        consequence_sentences=consequence_sentences,
     )
 
     if game.last_turn_snapshot is not None:

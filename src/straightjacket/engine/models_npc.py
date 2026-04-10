@@ -55,3 +55,4 @@ class NpcData(SerializableMixin):
     last_reflection_scene: int = 0
     last_location: str = ""
     needs_reflection: bool = False
+    gather_count: int = 0  # Successful gather_information moves targeting this NPC

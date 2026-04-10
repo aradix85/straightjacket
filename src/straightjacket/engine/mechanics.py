@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import random
+from dataclasses import dataclass
 
 from ..i18n import E
 from .config_loader import _ConfigNode
@@ -197,7 +198,9 @@ def resolve_position(game: GameState, brain: BrainResult) -> str:
         position = "risky"
 
     # Situational overrides
-    has_secured = recent and recent[-1].move == "secure_advantage" and recent[-1].result in ("STRONG_HIT", "WEAK_HIT")
+    has_secured = bool(
+        recent and recent[-1].move == "secure_advantage" and recent[-1].result in ("STRONG_HIT", "WEAK_HIT")
+    )
     any_resource_critical = any(v < w.resource_critical_below for v in (res.health, res.spirit, res.supply))
 
     for override in pr.get("overrides", []):
@@ -206,34 +209,25 @@ def resolve_position(game: GameState, brain: BrainResult) -> str:
         effect = override.get("effect", "")
 
         match = True
+        _cond_checks: dict[str, bool] = {
+            "secured_advantage": has_secured,
+            "any_resource_critical": any_resource_critical,
+            "crisis_mode": game.crisis_mode,
+            "recovery_move": cat == "recovery",
+            "previous_match": bool(recent and recent[-1].result and getattr(recent[-1], "match", False)),
+            "same_target_npc": bool(
+                recent and brain.target_npc and getattr(recent[-1], "target_npc", None) == brain.target_npc
+            ),
+        }
         for cond in conditions:
-            if (
-                cond == "secured_advantage"
-                and not has_secured
-                or cond == "any_resource_critical"
-                and not any_resource_critical
-                or cond == "crisis_mode"
-                and not game.crisis_mode
-                or cond == "recovery_move"
-                and cat != "recovery"
-                or cond == "previous_match"
-                and not (recent and recent[-1].result and getattr(recent[-1], "match", False))
-                or cond == "same_target_npc"
-                and not (recent and brain.target_npc and getattr(recent[-1], "target_npc", None) == brain.target_npc)
-            ):
+            if not _cond_checks.get(cond, False):
                 match = False
 
         if match and conditions:
-            if (
-                effect == "cap_at_risky"
-                and position == "controlled"
-                or effect == "floor_at_risky"
-                and position == "controlled"
-            ):
+            if effect == "cap_at_risky" and position == "controlled":  # noqa: SIM114
                 position = "risky"
             elif effect == "floor_at_risky" and position == "desperate":
-                # floor_at_risky means position can't go below risky
-                pass  # desperate stays — floor means "at least risky", not "cap"
+                position = "risky"
             elif effect == "shift_up_one":
                 if position == "desperate":
                     position = "risky"
@@ -768,3 +762,249 @@ def generate_scene_context(
         location=location,
         npc_summary=npc_summary,
     )
+
+
+# CONSEQUENCE SENTENCE GENERATION (step 4)
+
+
+def _pick_template(key: str, fallback: str = "") -> str:
+    """Pick a random template string from engine.yaml consequence_templates."""
+    templates = eng().get("consequence_templates", {})
+    options = templates.get(key, [])
+    if not options:
+        return fallback
+    if isinstance(options, str):
+        return options
+    return random.choice(options)
+
+
+def generate_consequence_sentences(
+    consequences: list[str],
+    clock_events: list[ClockEvent],
+    game: GameState,
+    brain: BrainResult,
+) -> list[str]:
+    """Generate narrative sentences for mechanical consequences.
+
+    Each mechanical consequence (e.g. "health -2") gets a concrete sentence
+    from engine.yaml templates. The narrator receives these as <consequence>
+    tags and must weave them into prose.
+    """
+    target = find_npc(game, brain.target_npc) if brain.target_npc else None
+    player = game.player_name
+    npc_name = target.name if target else ""
+    location = game.world.current_location or ""
+
+    sentences: list[str] = []
+
+    for cons in consequences:
+        sentence = _resolve_consequence_sentence(cons, player, npc_name, location)
+        if sentence:
+            sentences.append(sentence)
+
+    for event in clock_events:
+        if event.triggered:
+            tpl = _pick_template("clock_triggered", f"Time's up: {event.clock}.")
+            sentences.append(
+                tpl.format(
+                    player=player, npc=npc_name, location=location, clock=event.clock, trigger=event.trigger, amount=""
+                )
+            )
+        else:
+            tpl = _pick_template("clock_tick")
+            if tpl:
+                sentences.append(
+                    tpl.format(
+                        player=player,
+                        npc=npc_name,
+                        location=location,
+                        clock=event.clock,
+                        trigger=event.trigger,
+                        amount="",
+                    )
+                )
+
+    return sentences
+
+
+def _resolve_consequence_sentence(cons: str, player: str, npc_name: str, location: str) -> str:
+    """Resolve a single mechanical consequence string to a narrative sentence."""
+    fmt = {"player": player, "npc": npc_name, "location": location, "amount": ""}
+
+    # Parse "track -N" or "track +N" pattern
+    parts = cons.split()
+    if len(parts) >= 2:
+        track = parts[0].lower()
+        delta = parts[-1]
+
+        # "Kira bond -1" → track=bond, npc=Kira
+        if "bond" in cons.lower():
+            if "-" in delta:
+                tpl = _pick_template("bond_loss")
+                # Extract NPC name from "Name bond -N"
+                bond_npc = cons.split("bond")[0].strip()
+                if bond_npc:
+                    fmt["npc"] = bond_npc
+            else:
+                tpl = _pick_template("bond_gain")
+                bond_npc = cons.split("bond")[0].strip()
+                if bond_npc:
+                    fmt["npc"] = bond_npc
+            if tpl:
+                return tpl.format(**fmt)
+            return ""
+
+        if "-" in delta:
+            try:
+                amount = int(delta.replace("-", ""))
+            except ValueError:
+                amount = 1
+            fmt["amount"] = str(amount)
+            severity = "heavy" if amount >= 2 else "light"
+
+            if track in ("health", "spirit"):
+                tpl = _pick_template(f"{track}_{severity}")
+            elif track == "supply" or "supply" in cons:
+                tpl = _pick_template("supply_any")
+            elif track == "momentum":
+                tpl = _pick_template("momentum_loss")
+            else:
+                tpl = ""
+
+            if tpl:
+                return tpl.format(**fmt)
+
+        elif "+" in delta:
+            if track in ("health", "spirit"):
+                tpl = _pick_template(f"{track}_gain")
+            elif track == "supply" or "supply" in cons:
+                tpl = _pick_template("supply_gain")
+            elif track == "momentum":
+                tpl = _pick_template("momentum_gain")
+            else:
+                tpl = ""
+
+            if tpl:
+                return tpl.format(**fmt)
+
+    # Compound: "supply -1, health -1"
+    if "," in cons:
+        sub_sentences = []
+        for sub in cons.split(","):
+            sub = sub.strip()
+            if sub:
+                s = _resolve_consequence_sentence(sub, player, npc_name, location)
+                if s:
+                    sub_sentences.append(s)
+        return " ".join(sub_sentences)
+
+    return ""
+
+
+# NPC STANCE RESOLUTION (step 5)
+
+
+@dataclass
+class NpcStance:
+    """Computed stance for one NPC in a specific scene context."""
+
+    npc_id: str
+    npc_name: str
+    stance: str
+    constraint: str
+
+
+def resolve_npc_stance(npc: NpcData, move_category: str) -> NpcStance:
+    """Compute behavioral stance for an NPC based on disposition, bond, and move category.
+
+    Looks up the stance matrix in engine.yaml. Returns a stance label and a concrete
+    behavioral constraint for the narrator prompt.
+    """
+    _e = eng()
+    matrix = _e.get("stance_matrix", {})
+
+    disposition = npc.disposition
+    bond = npc.bond
+
+    if bond <= 1:
+        bond_range = "low"
+    elif bond <= 3:
+        bond_range = "mid"
+    else:
+        bond_range = "high"
+
+    # Normalize move_category for matrix lookup
+    cat = move_category
+    if cat not in ("combat", "social", "gather_information", "other"):
+        cat = "other"
+
+    # Three-level lookup: disposition → bond_range → move_category
+    disp_node = matrix.get(disposition, matrix.get("neutral", {}))
+    bond_node = disp_node.get(bond_range, disp_node.get("low", {}))
+    entry = bond_node.get(cat, bond_node.get("other", {}))
+
+    # entry is a _ConfigNode (dot-access wrapper), not a plain dict
+    try:
+        stance = entry.stance if hasattr(entry, "stance") else "neutral"
+        constraint = entry.constraint if hasattr(entry, "constraint") else ""
+    except (AttributeError, TypeError):
+        stance = "neutral"
+        constraint = ""
+
+    return NpcStance(
+        npc_id=npc.id,
+        npc_name=npc.name,
+        stance=stance,
+        constraint=constraint,
+    )
+
+
+# INFORMATION GATE (step 6)
+
+
+def compute_npc_gate(npc: NpcData, current_scene: int, stance: str) -> int:
+    """Compute information gate level (0-4) for an NPC.
+
+    Higher gate = more information visible in narrator prompt.
+    Gate 0: name + description. Gate 4: full secrets.
+    """
+    _e = eng()
+    gate_cfg = _e.get("information_gate", {})
+    points_cfg = gate_cfg.get("points", {})
+
+    # Scenes since introduction (from first memory, or 0 if no memories)
+    first_scene = min((m.scene for m in npc.memory), default=current_scene)
+    scenes_known = current_scene - first_scene
+
+    points = 0
+    if scenes_known >= 4:
+        points += points_cfg.get("scenes_known_4_plus", 2)
+    elif scenes_known >= 1:
+        points += points_cfg.get("scenes_known_2_3", 1)
+    else:
+        points += points_cfg.get("scenes_known_1", 0)
+
+    # Gather information successes
+    points += npc.gather_count * points_cfg.get("gather_success", 1)
+
+    # Bond level
+    if npc.bond >= 4:
+        points += points_cfg.get("bond_4_plus", 2)
+    elif npc.bond >= 2:
+        points += points_cfg.get("bond_2_3", 1)
+    else:
+        points += points_cfg.get("bond_1", 0)
+
+    gate = min(4, max(0, points))
+
+    # Stance cap
+    caps = gate_cfg.get("stance_caps", {})
+    default_cap = gate_cfg.get("default_cap", 4)
+    try:
+        cap = caps.get(stance, default_cap) if hasattr(caps, "get") else default_cap
+        if isinstance(cap, int):
+            gate = min(gate, cap)
+    except (AttributeError, TypeError):
+        pass
+
+    return gate

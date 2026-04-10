@@ -59,12 +59,13 @@ def validate_narration(
     consequences: list | None = None,
     config: EngineConfig | None = None,
     genre_constraints: dict | None = None,
+    consequence_sentences: list[str] | None = None,
 ) -> dict:
     """Check narrator output against engine constraints.
 
     Both layers always run, results are merged:
     1. Rule-based (instant): player agency patterns, result integrity,
-       genre fidelity, output format, NPC monologue heuristic.
+       genre fidelity, output format, NPC monologue heuristic, consequence keywords.
     2. LLM (semantic): resolution pacing, subtle agency, contextual checks.
 
     Returns:
@@ -73,7 +74,7 @@ def validate_narration(
     from .rule_validator import run_rule_checks
 
     # Layer 1: rule-based (instant, free)
-    rule_result = run_rule_checks(narration, result_type, player_words, genre_constraints)
+    rule_result = run_rule_checks(narration, result_type, player_words, genre_constraints, consequence_sentences)
     rule_violations = rule_result.get("violations", [])
 
     # Layer 2: LLM (semantic)
@@ -149,6 +150,7 @@ def validate_and_retry(
     consequences: list | None = None,
     config: EngineConfig | None = None,
     max_retries: int | None = None,
+    consequence_sentences: list[str] | None = None,
 ) -> tuple[str, dict]:
     """Validate narration and retry up to max_retries times on failure.
 
@@ -199,6 +201,7 @@ def validate_and_retry(
             consequences=consequences,
             config=config,
             genre_constraints=gc_dict,
+            consequence_sentences=consequence_sentences,
         )
         report["checks"].append(check)
         violations = check.get("violations", [])
@@ -252,6 +255,11 @@ def validate_and_retry(
                 rewrite_instructions.append(
                     "Remove all metadata, brackets, markdown, role labels. Begin with narrative prose."
                 )
+            elif "consequence missing" in vl:
+                rewrite_instructions.append(
+                    "Each <consequence> tag describes something that MUST happen in this scene. "
+                    "Show every consequence in the prose — the player must see it occur."
+                )
             else:
                 rewrite_instructions.append(f"Fix: {v}")
         # Deduplicate identical instructions
@@ -288,6 +296,7 @@ def validate_and_retry(
         consequences=consequences,
         config=config,
         genre_constraints=gc_dict,
+        consequence_sentences=consequence_sentences,
     )
     report["checks"].append(final_check)
     final_violations = final_check.get("violations", [])

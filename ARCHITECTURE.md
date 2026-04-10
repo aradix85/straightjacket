@@ -71,6 +71,13 @@ Where to find things. If you want to change X, edit Y.
 | Tool definitions for AI agents | `tools/registry.py` → `@register("brain")`, `get_tools(role)` |
 | Tool execution and iterative loop | `tools/handler.py` → `execute_tool_call`, `run_tool_loop` |
 | Built-in query tools | `tools/builtins.py` → `query_npc`, `query_active_threads`, `query_active_clocks`, `query_npc_list` |
+| Consequence sentence templates | `engine.yaml` → `consequence_templates`, `pay_the_price` (no Python) |
+| Consequence sentence generation | `mechanics.py` → `generate_consequence_sentences` |
+| NPC stance matrix | `engine.yaml` → `stance_matrix` (no Python) |
+| NPC stance resolution | `mechanics.py` → `resolve_npc_stance`, `NpcStance` |
+| Information gate levels | `engine.yaml` → `information_gate` (no Python) |
+| Information gate computation | `mechanics.py` → `compute_npc_gate` |
+| Gate-filtered NPC prompt data | `prompt_builders.py` → `_npc_block` (gate 0–4 filtering) |
 
 ## File Map
 
@@ -161,6 +168,12 @@ src/straightjacket/
 
 **AI surface minimization.** Every value derivable from game state is computed by the engine. Director pacing is computed from scene_intensity_history, not requested from the AI. Act transitions fire when scene_count exceeds act range — deterministic, no AI flag. Memory emotional_weight is derived from (move_category, result, disposition) via engine.yaml lookup. Opening scene clock and time_of_day are engine-determined before any AI call. The AI receives results, not choices.
 
+**Engine-dictated consequences.** `apply_consequences` produces mechanical changes AND narrative sentences from engine.yaml templates. Each consequence gets a `<consequence>` tag in the narrator prompt. The narrator weaves them into prose but cannot change what happened. The validator checks keyword presence. Oracle tables (step 7) will add variety; templates are primary.
+
+**NPC behavioral stance.** Engine computes per-NPC stance from disposition, bond, and move category via engine.yaml stance matrix (60 entries). The narrator receives `stance="evasive" constraint="One fact, then silence."` instead of raw `disposition="distrustful" bond="1/4"`. The engine tells the narrator how the NPC behaves, not just how they feel.
+
+**Information gating.** Per-NPC gate level (0–4) controls what enters the narrator prompt. Gate 0 = name + description (stranger). Gate 4 = full secrets. Computed from scenes known, gather_information successes, bond level, and stance cap. The narrator cannot reveal what it doesn't have. Stance caps prevent hostile NPCs from being too transparent regardless of bond.
+
 **Database as read model.** SQLite (in-memory, stdlib) mirrors GameState after every turn, creation, correction, restore, and load. GameState dataclasses remain the write model — all mutations go through Python. The database provides indexed queries for prompt builders, tool handlers, and future NPC trigger evaluation. Ephemeral: rebuilt from GameState on load/restore, no migration burden. JSON save files remain the persistence format.
 
 **Tool calling infrastructure.** Decorator-based registry (`@register("brain", "director")`) produces OpenAI function calling schemas from Python type hints. Iterative handler loop: AI calls tool → engine executes → result appended → AI continues, with configurable round limit. Tools are read-only: they query GameState and database but never mutate. Brain and Director currently use prompt injection; tool calling activates when oracle roller (step 7) and fate system (step 8) provide tools that deliver information the prompt cannot.
@@ -168,7 +181,7 @@ src/straightjacket/
 ## Testing
 
 ```bash
-python -m pytest tests/ -v          # ~16 seconds, ~416 tests
+python -m pytest tests/ -v          # ~20 seconds, ~467 tests
 python tests/elvira/elvira.py --auto --turns 5   # direct engine (needs API key)
 python tests/elvira/elvira.py --ws --auto --turns 5  # via WebSocket server
 ```

@@ -7,8 +7,12 @@ import random as _random
 import traceback
 from datetime import datetime
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import yaml
+
+if TYPE_CHECKING:
+    from straightjacket.engine.ai.provider_base import AIProvider
 
 from straightjacket.engine import (
     EngineConfig,
@@ -276,7 +280,9 @@ def run_session(bot_cfg: dict, auto_override: bool = False, turns_override: int 
 # ── Setup ─────────────────────────────────────────────────────
 
 
-def _setup_game(provider, config, username, game_cfg, auto_mode, slog):
+def _setup_game(
+    provider: AIProvider, config: EngineConfig, username: str, game_cfg: dict, auto_mode: bool, slog: SessionLog
+) -> tuple[GameState, str, list[dict]]:
     if not auto_mode and game_cfg.get("load_existing"):
         save_name = game_cfg.get("save_name", "autosave")
         game, chat_messages = load_game(username, save_name)
@@ -315,20 +321,20 @@ def _setup_game(provider, config, username, game_cfg, auto_mode, slog):
 
 
 def _play_turn(
-    provider,
-    config,
-    game,
-    narration,
-    turn,
-    persona,
-    style,
-    burn_setting,
-    print_full,
-    print_rolls,
-    do_invariants,
-    slog,
-    prev_npcs,
-):
+    provider: AIProvider,
+    config: EngineConfig,
+    game: GameState,
+    narration: str,
+    turn: int,
+    persona: str,
+    style: str,
+    burn_setting: str,
+    print_full: bool,
+    print_rolls: bool,
+    do_invariants: bool,
+    slog: SessionLog,
+    prev_npcs: list[NpcSnapshot] | None,
+) -> tuple[GameState, str, TurnRecord, bool]:
     # 1. Bot decides action
     context = build_turn_context(game, narration, turn)
     try:
@@ -414,7 +420,15 @@ def _play_turn(
 # ── Correction test turn ──────────────────────────────────────
 
 
-def _play_correction_turn(provider, config, game, narration, turn, persona, slog):
+def _play_correction_turn(
+    provider: AIProvider,
+    config: EngineConfig,
+    game: GameState,
+    narration: str,
+    turn: int,
+    persona: str,
+    slog: SessionLog,
+) -> tuple[GameState, str, TurnRecord, bool]:
     """Send a ## correction to stress-test the correction pipeline."""
     print(f"  [CORRECTION TEST] Sending ## correction at turn {turn}")
 
@@ -498,7 +512,15 @@ def _play_correction_turn(provider, config, game, narration, turn, persona, slog
 # ── Momentum burn ─────────────────────────────────────────────
 
 
-def _handle_burn(provider, config, game, burn_info, burn_setting, style, rec):
+def _handle_burn(
+    provider: AIProvider,
+    config: EngineConfig,
+    game: GameState,
+    burn_info: dict,
+    burn_setting: str,
+    style: str,
+    rec: TurnRecord,
+) -> GameState:
     should_burn = False
     if burn_setting == "always":
         should_burn = True
@@ -533,13 +555,21 @@ def _handle_burn(provider, config, game, burn_info, burn_setting, style, rec):
             rec.burn_error = str(e)
             print(f"  [BURN] Failed: {e}")
 
-
-# ── Chapter transition ────────────────────────────────────────
+    return game
 
 
 def _chapter_transition(
-    provider, config, game, chat_messages, username, save_out, chapter_num, chapter_idx, max_chapters, slog
-):
+    provider: AIProvider,
+    config: EngineConfig,
+    game: GameState,
+    chat_messages: list[dict],
+    username: str,
+    save_out: str,
+    chapter_num: int,
+    chapter_idx: int,
+    max_chapters: int,
+    slog: SessionLog,
+) -> tuple[GameState, str, list[dict], bool]:
     """Returns (game, narration, chat_messages, should_break)."""
     print(f"\n{SEPARATOR}\n  GENERATING EPILOGUE — Chapter {chapter_num}\n{SEPARATOR}")
     try:
@@ -578,7 +608,7 @@ def _chapter_transition(
 # ── Helpers ───────────────────────────────────────────────────
 
 
-def _try_save(game, username, chat_messages, save_out) -> None:
+def _try_save(game: GameState, username: str, chat_messages: list[dict], save_out: str) -> None:
     try:
         save_game(game, username, chat_messages, save_out)
         print(f"  [SAVE] Saved to '{save_out}'")

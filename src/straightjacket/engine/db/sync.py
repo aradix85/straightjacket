@@ -41,8 +41,9 @@ def _insert_npcs(conn: sqlite3.Connection, game: GameState) -> None:
         conn.execute(
             "INSERT INTO npcs (id, name, description, agenda, instinct, arc, secrets, "
             "disposition, bond, bond_max, status, introduced, aliases, keywords, "
-            "importance_accumulator, last_reflection_scene, last_location, needs_reflection) "
-            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            "importance_accumulator, last_reflection_scene, last_location, needs_reflection, "
+            "gather_count) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             (
                 n.id,
                 n.name,
@@ -62,6 +63,7 @@ def _insert_npcs(conn: sqlite3.Connection, game: GameState) -> None:
                 n.last_reflection_scene,
                 n.last_location,
                 int(n.needs_reflection),
+                n.gather_count,
             ),
         )
 

@@ -84,45 +84,81 @@ Write ONLY narrative prose. No metadata, no JSON.
 </task>"""
 
 
-def _npc_block(game: GameState, target_id: str | None, context_text: str = "") -> str:
-    """Build full context block for the target NPC using weighted memory retrieval."""
+def _npc_block(game: GameState, target_id: str | None, context_text: str = "", move_category: str = "other") -> str:
+    """Build context block for the target NPC, filtered by information gate level."""
+    from .mechanics import compute_npc_gate, resolve_npc_stance
+
     target = find_npc(game, target_id) if target_id else None
     if not target:
         return ""
-    # Retrieve best memories using weighted scoring
-    memories = retrieve_memories(
-        target, context_text=context_text, max_count=5, current_scene=game.narrative.scene_count
-    )
-    # Separate reflections and observations for structured display
-    reflections = [m for m in memories if m.type == "reflection"]
-    observations = [m for m in memories if m.type != "reflection"]
 
-    # Build memory text
-    mem_parts = []
-    if reflections:
-        ref_text = " | ".join(m.event for m in reflections)
-        mem_parts.append(f"insight: {ref_text}")
-    if observations:
-        obs_text = " | ".join(f"{m.event}({m.emotional_weight})" for m in observations)
-        mem_parts.append(f"recent: {obs_text}")
+    stance = resolve_npc_stance(target, move_category)
+    gate = compute_npc_gate(target, game.narrative.scene_count, stance.stance)
+    log(f"[Gate] {target.name}: gate={gate} (stance={stance.stance})")
 
-    mem_str = "\n".join(mem_parts) if mem_parts else "(no memories)"
-
-    secs = json.dumps(target.secrets, ensure_ascii=False)
     aliases_attr = f' aliases="{_xa(",".join(target.aliases))}"' if target.aliases else ""
-    arc_attr = f' arc="{_xa(target.arc)}"' if target.arc.strip() else ""
-    return f"""<target_npc name="{_xa(target.name)}" disposition="{_xa(target.disposition)}" bond="{target.bond}/{target.bond_max}"{aliases_attr}{arc_attr}>
-agenda:{_xe(target.agenda)} instinct:{_xe(target.instinct)}
-{_xe(mem_str)}
-secrets(weave subtly,never reveal):{_xe(secs)}
-</target_npc>"""
+
+    # Gate 0: name + description only
+    if gate == 0:
+        return f'<target_npc name="{_xa(target.name)}" gate="0"{aliases_attr}>{_xe(target.description)}</target_npc>'
+
+    # Gate 1+: add stance + constraint
+    stance_attr = f' stance="{_xa(stance.stance)}" constraint="{_xa(stance.constraint)}"'
+
+    # Gate 2+: add agenda + recent memories
+    agenda_line = ""
+    mem_str = ""
+    if gate >= 2:
+        agenda_line = f"agenda:{_xe(target.agenda)}"
+        memories = retrieve_memories(
+            target, context_text=context_text, max_count=3 if gate == 2 else 5, current_scene=game.narrative.scene_count
+        )
+        observations = [m for m in memories if m.type != "reflection"]
+        if observations:
+            obs_text = " | ".join(f"{m.event}({m.emotional_weight})" for m in observations)
+            mem_str = f"\nrecent: {obs_text}"
+
+    # Gate 3+: add instinct + arc + reflections
+    instinct_line = ""
+    arc_attr = ""
+    if gate >= 3:
+        instinct_line = f" instinct:{_xe(target.instinct)}"
+        if target.arc.strip():
+            arc_attr = f' arc="{_xa(target.arc)}"'
+        memories = retrieve_memories(
+            target, context_text=context_text, max_count=5, current_scene=game.narrative.scene_count
+        )
+        reflections = [m for m in memories if m.type == "reflection"]
+        observations = [m for m in memories if m.type != "reflection"]
+        mem_parts = []
+        if reflections:
+            mem_parts.append(f"insight: {' | '.join(m.event for m in reflections)}")
+        if observations:
+            mem_parts.append(f"recent: {' | '.join(f'{m.event}({m.emotional_weight})' for m in observations)}")
+        mem_str = "\n" + "\n".join(mem_parts) if mem_parts else ""
+
+    # Gate 4: add secrets
+    secrets_line = ""
+    if gate >= 4 and target.secrets:
+        secs = json.dumps(target.secrets, ensure_ascii=False)
+        secrets_line = f"\nsecrets(weave subtly,never reveal):{_xe(secs)}"
+
+    body = f"{agenda_line}{instinct_line}{mem_str}{secrets_line}" if gate >= 2 else _xe(target.description)
+
+    return f'<target_npc name="{_xa(target.name)}"{stance_attr}{aliases_attr}{arc_attr} gate="{gate}">\n{body}\n</target_npc>'
 
 
 def _activated_npcs_block(
-    activated: Sequence[NpcData], target_id: str | None, game: GameState, context_text: str = ""
+    activated: Sequence[NpcData],
+    target_id: str | None,
+    game: GameState,
+    context_text: str = "",
+    move_category: str = "other",
 ) -> str:
     """Build context blocks for activated NPCs (not the target — those get _npc_block).
-    Lighter context than target: name, disposition, bond, and 1-2 key memories."""
+    Lighter context than target: name, stance, and 1-2 key memories."""
+    from .mechanics import resolve_npc_stance
+
     parts = []
     for npc in activated:
         # Skip target NPC (handled by _npc_block)
@@ -147,9 +183,10 @@ def _activated_npcs_block(
             loc_hint = f' last_seen="{_xa(loc)}"'
 
         arc_hint = f' arc="{_xa(npc.arc)}"' if npc.arc.strip() else ""
+        stance = resolve_npc_stance(npc, move_category)
         parts.append(
-            f'<activated_npc name="{_xa(npc.name)}" disposition="{_xa(npc.disposition)}" '
-            f'bond="{npc.bond}"{arc_hint}{mem_hint}{loc_hint}/>'
+            f'<activated_npc name="{_xa(npc.name)}" stance="{_xa(stance.stance)}" '
+            f'constraint="{_xa(stance.constraint)}"{arc_hint}{mem_hint}{loc_hint}/>'
         )
     return "\n".join(parts)
 
@@ -243,10 +280,11 @@ def _npcs_section(
     context_text: str,
     activated_npcs: Sequence[NpcData] = (),
     mentioned_npcs: Sequence[NpcData] = (),
+    move_category: str = "other",
 ) -> str:
     """Build the three-tier NPC section used by both dialog and action prompts."""
     target_id = brain.target_npc
-    activated_block = _activated_npcs_block(activated_npcs, target_id, game, context_text)
+    activated_block = _activated_npcs_block(activated_npcs, target_id, game, context_text, move_category)
     exclude_ids = {n.id for n in activated_npcs}
     if target_id:
         t = find_npc(game, target_id)
@@ -282,8 +320,9 @@ def build_dialog_prompt(
     config: EngineConfig | None = None,
 ) -> str:
     context_text = f"{player_words} {brain.player_intent or ''} {game.world.current_scene_context or ''}"
-    npc = _npc_block(game, brain.target_npc, context_text=context_text)
-    npcs_sect = _npcs_section(game, brain, context_text, activated_npcs, mentioned_npcs)
+    move_cat = "social"  # Dialog is always social context
+    npc = _npc_block(game, brain.target_npc, context_text=context_text, move_category=move_cat)
+    npcs_sect = _npcs_section(game, brain, context_text, activated_npcs, mentioned_npcs, move_category=move_cat)
 
     wa = brain.world_addition
     wl = f"\n<world_add>{_xe(wa)}</world_add>" if wa else ""
@@ -310,6 +349,8 @@ def build_action_prompt(
     consequences: list[str],
     clock_events: list,
     npc_agency: list[str],
+    *,
+    consequence_sentences: Sequence[str],
     player_words: str = "",
     chaos_interrupt: str | None = None,
     activated_npcs: Sequence[NpcData] = (),
@@ -319,8 +360,15 @@ def build_action_prompt(
     effect: str = "standard",
 ) -> str:
     context_text = f"{player_words} {brain.player_intent or ''} {game.world.current_scene_context or ''}"
-    npc = _npc_block(game, brain.target_npc, context_text=context_text)
-    npcs_sect = _npcs_section(game, brain, context_text, activated_npcs, mentioned_npcs)
+    from .mechanics import _move_category
+
+    move_cat = _move_category(brain.move)
+    # Map engine categories to stance matrix categories
+    stance_cat = {"combat": "combat", "social": "social"}.get(move_cat, "other")
+    if brain.move == "gather_information":
+        stance_cat = "gather_information"
+    npc = _npc_block(game, brain.target_npc, context_text=context_text, move_category=stance_cat)
+    npcs_sect = _npcs_section(game, brain, context_text, activated_npcs, mentioned_npcs, move_category=stance_cat)
 
     wa = brain.world_addition
     wl = f"\n<world_add>{_xe(wa)}</world_add>" if wa else ""
@@ -373,17 +421,21 @@ def build_action_prompt(
     pacing = _pacing_block(game, chaos_interrupt)
     director = _director_block(game)
 
+    cons_tags = "\n".join(f"<consequence>{_xe(s)}</consequence>" for s in consequence_sentences)
+    if cons_tags:
+        cons_tags = f"\n{cons_tags}"
+
     return f"""<scene type="action" n="{game.narrative.scene_count}">
 {_scene_header(game)}
 <intent>{_xe(brain.player_intent)} ({_xe(brain.approach)})</intent>{pw}
-{constraint}
+{constraint}{cons_tags}
 {position_tag}
 <location>{_xe(game.world.current_location)}</location>{_loc_hist(game)}{_time_ctx(game)}
 {npc}{npcs_sect}{wl}{flags}{agency}
 {pacing}{director}
 {narrative_direction_block(game, roll.result)}
 {story_context_block(game)}{recent_events_block(game)}</scene>
-<task>2-4 paragraphs of immersive narration. Let the current act's mood from <story_arc> shape the texture of the outcome {E["dash"]} a STRONG_HIT in a desperate phase still carries the surrounding darkness. If <director_guidance> is present, follow its narrative direction while maintaining your creative voice.</task>"""
+<task>2-4 paragraphs of immersive narration. Weave every &lt;consequence&gt; into the prose — the player must see each one happen. Let the current act's mood from <story_arc> shape the texture of the outcome {E["dash"]} a STRONG_HIT in a desperate phase still carries the surrounding darkness. If <director_guidance> is present, follow its narrative direction while maintaining your creative voice.</task>"""
 
 
 # ── Chapter / epilogue prompts ───────────────────────────────

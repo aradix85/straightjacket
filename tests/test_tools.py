@@ -6,6 +6,8 @@ Run: python -m pytest tests/test_tools.py -v
 
 # Stubs are set up in conftest.py
 
+import sqlite3
+
 from straightjacket.engine.db.connection import close_db, reset_db
 from straightjacket.engine.db.sync import sync
 from straightjacket.engine.models import (
@@ -26,7 +28,7 @@ from straightjacket.engine.tools.registry import (
 from straightjacket.engine.tools.handler import execute_tool_call
 
 
-def _fresh_db():
+def _fresh_db() -> sqlite3.Connection:
     return reset_db()
 
 
@@ -229,6 +231,7 @@ def test_builtin_query_npc_not_found() -> None:
     _reload_builtins()
 
     handler = get_handler("director", "query_npc")
+    assert handler is not None
     result = handler(game=game, npc_id="nonexistent")
     assert "error" in result
     close_db()
