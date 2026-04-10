@@ -105,6 +105,13 @@ def start_new_chapter(
         user_cfg["content_lines"] = game.preferences.content_lines
         save_user_config(username, user_cfg)
 
+    # Sync new chapter state to database
+    from ..db import sync as _db_sync
+    from ..db.connection import reset_db
+
+    reset_db()
+    _db_sync(game)
+
     return game, narration
 
 

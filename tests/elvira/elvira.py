@@ -21,10 +21,11 @@ import logging
 import sys
 from pathlib import Path
 
-# Path setup
+# Path setup — works regardless of cwd
 _HERE = Path(__file__).resolve().parent
-_ROOT = _HERE.parent
+_ROOT = _HERE.parent.parent  # tests/elvira/ → tests/ → repo root
 sys.path.insert(0, str(_ROOT / "src"))
+sys.path.insert(0, str(_HERE))
 
 # Console logging (no log files)
 _logger = logging.getLogger("rpg_engine")

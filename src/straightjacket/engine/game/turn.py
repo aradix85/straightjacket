@@ -158,6 +158,11 @@ def _finalize_scene(
     else:
         log(f"[Director] Skipped (no trigger at scene {nar.scene_count})")
 
+    # Sync game state to database for query access
+    from ..db import sync as _db_sync
+
+    _db_sync(game)
+
     return revelation_confirmed, director_ctx
 
 

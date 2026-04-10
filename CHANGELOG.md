@@ -7,6 +7,31 @@ Originally forked from [EdgeTales](https://github.com/edgetales/edgetales). See 
 
 ---
 
+## [0.38.0] — 2026-04-10
+
+Roadmap steps 3.5 + 3.6: database layer and tool calling infrastructure.
+
+### Step 3.5 — Database layer
+- **SQLite read model** in `engine/db/`. In-memory database mirrors GameState for indexed queries. 8 tables: npcs, memories, threads, characters_list, clocks, scene_log, narration_history, vow_tracks. Schema in `db/schema.sql`
+- **Sync layer** `db/sync.py`: full replace after every turn, character creation, correction, momentum burn, new chapter, load, and restore. Children deleted before parents, parents inserted before children (foreign key safety)
+- **Query functions** `db/queries.py`: `query_npcs(status, disposition, location, bond_range, introduced)`, `query_memories(npc_id, min_importance, scene_range, type, limit)`, `query_threads(active, type)`, `query_clocks(type, fired, owner)`. All return dataclass instances
+- **Connection management** `db/connection.py`: singleton, `init_db()`, `get_db()`, `reset_db()`, `close_db()`. WAL mode, foreign keys enabled
+- **Hooks** in `game/turn.py` (_finalize_scene), `game/game_start.py`, `game/chapters.py`, `persistence.py` (load_game), `models.py` (GameState.restore), `correction.py` (process_correction, process_momentum_burn)
+- 34 database tests in `test_db.py`
+
+### Step 3.6 — Tool calling infrastructure
+- **Tool registry** `tools/registry.py`: `@register("brain", "director")` decorator. Builds OpenAI function calling schemas from Python type hints and docstrings. Per-role tool subsets via `get_tools(role)`
+- **Tool handler** `tools/handler.py`: `execute_tool_call()` dispatches to registered functions, `run_tool_loop()` runs iterative tool-call loop (AI calls tool → engine executes → result appended → AI continues) with configurable round limit
+- **Built-in tools** `tools/builtins.py`: `query_npc` (brain+director), `query_active_threads` (director), `query_active_clocks` (director), `query_npc_list` (brain). All read-only, query database
+- 15 tool tests in `test_tools.py`
+- **Tool calling probe** `tests/tool_calling_probe.py`: standalone evaluation script. 15 test cases across Brain and Director patterns. Multi-model comparison (Qwen vs GLM). Reports pass/fail per case, failure categorization, comparative verdict against 5% threshold
+
+### Other
+- **Elvira path fix**: `tests/elvira/elvira.py` now resolves paths correctly regardless of working directory
+- Version bump to 0.38.0
+
+---
+
 ## [0.37.0] — 2026-04-09
 
 Roadmap steps 2 + 3: Brain slimming and metadata extractor split. Massive AI surface reduction. Code audit: bloat removal, legacy cleanup, test infrastructure overhaul.

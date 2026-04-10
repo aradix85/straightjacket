@@ -437,6 +437,12 @@ def process_correction(
                 bp.triggered_director_phases.append(director_reason[len("phase:") :])
 
     log(f"[Correction] Complete: source={source}, rewrite done")
+
+    # Sync corrected state to database
+    from .db import sync as _db_sync
+
+    _db_sync(game)
+
     return game, narration, director_ctx
 
 
@@ -539,5 +545,10 @@ def process_momentum_burn(
         nar.session_log[-1].consequences = consequences
         nar.session_log[-1].clock_events = clock_events
         nar.session_log[-1].chaos_interrupt = chaos_interrupt
+
+    # Sync burned state to database
+    from .db import sync as _db_sync
+
+    _db_sync(game)
 
     return game, narration

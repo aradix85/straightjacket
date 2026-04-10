@@ -64,6 +64,14 @@ def load_game(username: str, name: str = "autosave") -> tuple[GameState | None, 
     log(
         f"[Load] Game loaded: {username}/{name} ({game.player_name}, Scene {game.narrative.scene_count}, {len(chat_messages)} chat msgs)"
     )
+
+    # Rebuild database from loaded state
+    from .db import sync as _db_sync
+    from .db.connection import reset_db
+
+    reset_db()
+    _db_sync(game)
+
     return game, chat_messages
 
 

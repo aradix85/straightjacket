@@ -221,6 +221,12 @@ class GameState:
             f"H{self.resources.health} Sp{self.resources.spirit} "
             f"Su{self.resources.supply} Chaos{self.world.chaos_factor}"
         )
+        # Rebuild database from restored state
+        from .db import sync as _db_sync
+        from .db.connection import reset_db
+
+        reset_db()
+        _db_sync(self)
 
     _IDENTITY_FIELDS = (
         "player_name",

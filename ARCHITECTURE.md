@@ -30,6 +30,8 @@ Metadata Extractor (ai/narrator.py → ai/metadata.py)
   ↓
 Director (director.py)        → lazy story steering, NPC reflections, act transitions
   ↓
+DB Sync (db/sync.py)          → full GameState → SQLite for query access
+  ↓
 Save (persistence.py)         → JSON to users/{name}/saves/
 ```
 
@@ -64,6 +66,11 @@ Where to find things. If you want to change X, edit Y.
 | Director pacing (engine-computed) | `director.py` → `_map_pacing_hint`, reads `mechanics.get_pacing_hint` |
 | Act transitions (engine-computed) | `director.py` → `_check_engine_act_transition` |
 | Memory emotional weight (engine-computed) | `mechanics.py` → `derive_memory_emotion`, table in `engine.yaml` |
+| Database queries (NPCs, memories, threads, clocks) | `db/queries.py` → `query_npcs`, `query_memories`, `query_threads`, `query_clocks` |
+| Database sync after state changes | `db/sync.py` → `sync(game)`, called by turn, creation, correction, restore, load |
+| Tool definitions for AI agents | `tools/registry.py` → `@register("brain")`, `get_tools(role)` |
+| Tool execution and iterative loop | `tools/handler.py` → `execute_tool_call`, `run_tool_loop` |
+| Built-in query tools | `tools/builtins.py` → `query_npc`, `query_active_threads`, `query_active_clocks`, `query_npc_list` |
 
 ## File Map
 
@@ -112,6 +119,15 @@ src/straightjacket/
 │   └── datasworn/
 │       ├── loader.py        # Reads Datasworn JSON (oracles, assets, moves)
 │       └── settings.py      # Setting packages (vocabulary, genre constraints)
+│   ├── db/
+│   │   ├── schema.sql       # Table definitions (8 tables, mirrors dataclasses)
+│   │   ├── connection.py    # In-memory SQLite singleton (init, get, reset, close)
+│   │   ├── sync.py          # Full GameState → database sync (replace, not diff)
+│   │   └── queries.py       # Read-only query functions → dataclass instances
+│   ├── tools/
+│   │   ├── registry.py      # @register decorator, type hints → OpenAI tool schemas
+│   │   ├── handler.py       # Tool dispatch, iterative tool-call loop
+│   │   └── builtins.py      # Built-in query tools for Brain and Director
 ├── web/
 │   ├── server.py            # Starlette app, WebSocket endpoint, dispatch
 │   ├── handlers.py          # One async function per protocol message type
@@ -145,10 +161,14 @@ src/straightjacket/
 
 **AI surface minimization.** Every value derivable from game state is computed by the engine. Director pacing is computed from scene_intensity_history, not requested from the AI. Act transitions fire when scene_count exceeds act range — deterministic, no AI flag. Memory emotional_weight is derived from (move_category, result, disposition) via engine.yaml lookup. Opening scene clock and time_of_day are engine-determined before any AI call. The AI receives results, not choices.
 
+**Database as read model.** SQLite (in-memory, stdlib) mirrors GameState after every turn, creation, correction, restore, and load. GameState dataclasses remain the write model — all mutations go through Python. The database provides indexed queries for prompt builders, tool handlers, and future NPC trigger evaluation. Ephemeral: rebuilt from GameState on load/restore, no migration burden. JSON save files remain the persistence format.
+
+**Tool calling infrastructure.** Decorator-based registry (`@register("brain", "director")`) produces OpenAI function calling schemas from Python type hints. Iterative handler loop: AI calls tool → engine executes → result appended → AI continues, with configurable round limit. Tools are read-only: they query GameState and database but never mutate. Brain and Director currently use prompt injection; tool calling activates when oracle roller (step 7) and fate system (step 8) provide tools that deliver information the prompt cannot.
+
 ## Testing
 
 ```bash
-python -m pytest tests/ -v          # ~5 seconds
+python -m pytest tests/ -v          # ~16 seconds, ~416 tests
 python tests/elvira/elvira.py --auto --turns 5   # direct engine (needs API key)
 python tests/elvira/elvira.py --ws --auto --turns 5  # via WebSocket server
 ```

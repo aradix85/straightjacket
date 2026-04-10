@@ -20,6 +20,7 @@ ai:
   brain_model: "qwen-3-235b-a22b-instruct-2507"
   narrator_model: "qwen-3-235b-a22b-instruct-2507"
   director_model: "qwen-3-235b-a22b-instruct-2507"
+  validator_model: "qwen-3-235b-a22b-instruct-2507"
 
   max_tokens:
     brain: 8192
@@ -33,6 +34,8 @@ ai:
     director: 8192
     correction: 8192
     chapter_summary: 8192
+    validator: 1024
+    validator_architect: 1024
   max_retries:
     brain: 2
     brain_setup: 2
@@ -45,6 +48,8 @@ ai:
     director: 1
     correction: 2
     chapter_summary: 1
+    validator: 1
+    validator_architect: 1
   temperature:
     brain: 0.4
     brain_setup: 0.5
@@ -57,6 +62,8 @@ ai:
     director: 0.5
     correction: 0.3
     chapter_summary: 0.4
+    validator: 0.2
+    validator_architect: 0.2
   top_p:
     default: 0.95              # Applied to all roles. Add per-role overrides here if needed.
 

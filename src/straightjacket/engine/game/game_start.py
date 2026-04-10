@@ -360,6 +360,12 @@ def start_new_game(
             validator=val_report,
         )
     )
+
+    # Sync initial game state to database
+    from ..db import sync as _db_sync
+
+    _db_sync(game)
+
     return game, narration
 
 
