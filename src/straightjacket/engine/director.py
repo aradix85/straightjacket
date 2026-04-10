@@ -240,7 +240,7 @@ def call_director(
                     system=system,
                     messages=[{"role": "user", "content": prompt}],
                     max_tokens=_c.ai.max_tokens.director,
-                    max_tool_rounds=2,
+                    max_tool_rounds=_c.ai.max_tool_rounds.director,
                     **sampling_params("director"),
                     log_role="director",
                 )

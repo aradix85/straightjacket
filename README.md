@@ -6,7 +6,7 @@ AI-powered narrative solo RPG engine. You write the action. Dice determine outco
 
 The AI is the narrator — constrained by mechanics, validated by the engine, never in control. Config-driven, provider-independent, screen reader accessible.
 
-Runs on open source models. Two seconds per turn on Cerebras. Where open models fall short on constraint compliance, the engine compensates: hybrid rule-based + LLM validator, retry with prompt stripping, best-of selection across attempts.
+Runs on open source models. ~2 seconds per turn on Cerebras. Where open models fall short on constraint compliance, the engine compensates: hybrid rule-based + LLM validator, retry with prompt stripping, best-of selection across attempts.
 
 ---
 
@@ -43,12 +43,12 @@ Five YAML files, each with a clear owner:
 | `config.yaml` | Server port, AI provider, language | Players |
 | `engine.yaml` | Game rules, damage, chaos, NPC limits, move categories, pacing | Game designers |
 | `emotions.yaml` | Emotion scoring, keyword boosts, dispositions | Game designers |
-| `prompts.yaml` | AI system prompts (narrator, brain, director) | Prompt engineers |
+| `prompts.yaml` | AI system prompts, task templates, instruction fragments | Prompt engineers |
 | `strings.yaml` | UI text (English default) | Translators |
 
 Four settings ship via [Datasworn](https://github.com/rsek/datasworn): Ironsworn Classic (dark fantasy), Starforged (sci-fi), Sundered Isles (seafaring), and Delve (dungeon-crawling expansion for Classic). Each defines vocabulary, sensory palette, genre constraints, and oracle paths in `data/settings/*.yaml`. Adding a setting means adding one YAML file and a Datasworn JSON — no Python. See [ARCHITECTURE.md](ARCHITECTURE.md) for the settings YAML format.
 
-Default AI: Qwen 3 235B via Cerebras. Also supports Anthropic (Claude), and any OpenAI-compatible API. Models configurable per role (Brain, Narrator, Director, Validator).
+Default AI: GLM-4.7 via Cerebras. Also supports Anthropic (Claude), and any OpenAI-compatible API. Models configurable per role (Brain, Narrator, Director, Validator).
 
 ---
 
@@ -56,7 +56,7 @@ Default AI: Qwen 3 235B via Cerebras. Also supports Anthropic (Claude), and any 
 
 See [ARCHITECTURE.md](ARCHITECTURE.md) for the full turn pipeline, module ownership table, file map, and extension guides (new providers, new settings).
 
-All mutable game state is typed dataclasses with snapshot/restore for atomic undo. Zero hardcoded game logic — move types, damage tables, disposition shifts, and NPC seed emotions all read from engine.yaml.
+All mutable game state is typed dataclasses with snapshot/restore for atomic undo. Zero hardcoded game logic — move types, damage tables, disposition shifts, and NPC seed emotions all read from engine.yaml. Zero hardcoded prompt text — all AI-facing text lives in prompts.yaml, Python only assembles.
 
 The architecture implements the [Narrative RPG Engine](docs/narrative_rpg_engine_v2_4.pdf) design document: AI narrates, structured systems decide. The six functions from the design document (action resolution, fiction generation, timing, relationships, agency, world state) map to engine modules. The constraint enforcement strategy (engine-dictated consequences, vocabulary control, narrative direction derived from game state) follows the document's recommendations.
 
@@ -82,7 +82,7 @@ Screen reader accessible: semantic HTML, ARIA live regions for automatic narrati
 
 ## Cost
 
-~$0.05–0.10/hour with Qwen 3 235B via Cerebras (~1.5s/turn).
+~$1/hour with GLM-4.7 via Cerebras ($2.25/M input, $2.75/M output, ~2s/turn).
 
 ---
 

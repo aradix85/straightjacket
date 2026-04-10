@@ -83,16 +83,21 @@ def validate_narration(
     cons_text = ", ".join(consequences) if consequences else "none"
     pc_hint = f' The player character is "{player_name}" (the "you").' if player_name else ""
 
-    system = f"""Constraint checker for RPG narration. Be STRICT but PRECISE. When in doubt, PASS — false positives waste tokens on retries and can degrade narration quality.
+    system = f"""Constraint checker for RPG narration. Be STRICT and PRECISE.
+
+GENRE PHYSICS: Materials MUST NOT exhibit consciousness, memory, or transformation. Wood does not weep, bleed, reshape, or form faces. Stone does not remember. Fluids do not change color symbolically. Inanimate objects MUST NOT have agency, awareness, or intent. If the setting is low-magic or grounded sci-fi, ANY supernatural element is a violation. When in doubt about genre physics, FAIL — genre drift is harder to fix than a retry.
 
 RESOLUTION PACING: NPCs answer ONLY the specific question asked — no volunteering theories, connections, accusations, or context the player did not request. A new mystery must not be explained in the scene it appears. A new NPC must not monologue. Tension introduced must survive to the next scene.
 
-PLAYER AGENCY: This applies ONLY to the player character (the "you" in narration).{pc_hint} NPCs MAY think, feel, remember, interpret — that is good characterization, not a violation. The narrator must not impose thoughts, feelings, INTERPRETATIONS, or memories on the PLAYER CHARACTER. Key distinction: OBSERVABLE FACTS about the player character are allowed. INTERNAL STATES are not.
+PLAYER AGENCY: This applies ONLY to the player character (the "you" in narration).{pc_hint} NPCs MAY think, feel, remember, interpret — that is good characterization, not a violation. The narrator MUST NOT impose thoughts, feelings, INTERPRETATIONS, or memories on the PLAYER CHARACTER. Key distinction: OBSERVABLE FACTS about the player character are allowed. INTERNAL STATES are not.
 - Observable (OK): "your boots sink into mud", "sweat runs down your neck", "your hands shake", "the wound burns", "your breath fogs"
-- Interpretation (violation): "you realize the truth", "you feel a surge of dread", "you understand why", "the silence offers you a choice", "you remember the promise"
+- Interpretation (violation): "you realize the truth", "you feel a surge of dread", "you understand why", "the silence offers you a choice", "you remember the promise", "the weight of failure presses on you", "makes you want to sit"
 - The test: could a camera see it? If yes, it's observable. If it requires knowing the character's mind, it's a violation.
 
-RESULT INTEGRITY: If result_type is MISS, the failure must be concrete — the situation is WORSE than before. Sensory descriptions of the failure itself are ALLOWED on a MISS (pain, cold, noise, breakage, environmental damage). What is NOT allowed: the player character LEARNS something, DISCOVERS something, GAINS insight, or makes PROGRESS toward a goal. "Your skin burns and the wound splits open" = allowed (describing failure). "The hill remembers your name" = violation (revelation). "Frost forms on the valve" = allowed (environmental consequence). "The trail was leading you back to its lair" = violation (learning). If WEAK_HIT, there must be a SPECIFIC tangible cost visible in the prose: something broken, lost, spent, damaged, or worsened. Atmospheric tension alone is not a cost. "The fuel cell cracks" = cost. "The air feels heavier" = not a cost. If dialog, skip this check.
+RESULT INTEGRITY: If result_type is MISS, the failure must be concrete — the situation is WORSE than before. Sensory descriptions of the failure itself are ALLOWED on a MISS (pain, cold, noise, breakage, environmental damage). What is NOT allowed: the player character LEARNS something, DISCOVERS something, GAINS insight, or makes PROGRESS toward a goal. "Your skin burns and the wound splits open" = allowed (describing failure). "The hill remembers your name" = violation (revelation AND genre physics). "Frost forms on the valve" = allowed (environmental consequence). "The trail was leading you back to its lair" = violation (learning). If WEAK_HIT, there must be a SPECIFIC tangible cost visible in the prose: something broken, lost, spent, damaged, or worsened. Atmospheric tension alone is not a cost. "The fuel cell cracks" = cost. "The air feels heavier" = not a cost. If dialog, skip this check.
+
+When in doubt about PLAYER AGENCY or RESOLUTION PACING, PASS — false positives waste tokens.
+When in doubt about GENRE PHYSICS, FAIL — genre drift compounds across scenes.
 
 Return pass=true if ALL constraints met.
 Return pass=false with:
@@ -256,9 +261,17 @@ def validate_and_retry(
                 rewrite_instructions.append(
                     "Remove the forbidden genre element. Replace with something that fits the world's rules."
                 )
+            elif "genre physics" in vl:
+                rewrite_instructions.append(
+                    "Materials MUST NOT exhibit consciousness, memory, or transformation. "
+                    "Wood does not weep, bleed, or form faces. Stone does not remember. "
+                    "Replace ALL supernatural material behavior with physical description "
+                    "from <sensory_palette>: grain, cracks, stains, weathering, temperature."
+                )
             elif "atmospheric register" in vl:
                 rewrite_instructions.append(
-                    "Too many supernatural/horror words (pulse, hum, thrum, whisper, glow, shimmer). "
+                    "Too many supernatural/horror words (pulse, hum, thrum, whisper, glow, shimmer, "
+                    "weep, ooze, writhe, visage, reshape). "
                     "Replace with physical sensations from the <sensory_palette>: mud, iron, cold, "
                     "woodsmoke, wind, creaking wood, weight, texture, temperature."
                 )
@@ -347,18 +360,25 @@ def validate_architect(
 ) -> dict:
     """Check story architect blueprint for genre fidelity.
 
-    Uses genre_constraints from the active setting package. If no constraints
-    are provided or they're empty, the blueprint passes unchanged.
+    Two layers:
+    1. Rule-based: check all text fields against atmospheric_drift words.
+    2. LLM: check central_conflict and antagonist_force semantically.
 
-    Returns the blueprint, possibly with corrected central_conflict and
-    antagonist_force. On API failure, returns the blueprint unchanged.
+    Returns the blueprint, possibly with corrected fields.
+    On API failure, returns the blueprint with only rule-based fixes applied.
     """
     gc = genre_constraints or {}
     forbidden_terms = gc.get("forbidden_terms", [])
     forbidden_concepts = gc.get("forbidden_concepts", [])
     genre_test = gc.get("genre_test", "")
+    drift_words = gc.get("atmospheric_drift", [])
 
-    # No constraints = no check needed
+    # Layer 1: rule-based drift check on all blueprint text fields
+    if drift_words:
+        drift_lower = {w.lower() for w in drift_words}
+        _check_blueprint_text_fields(blueprint, drift_lower)
+
+    # No LLM constraints = skip LLM check
     if not forbidden_terms and not forbidden_concepts and not genre_test:
         return blueprint
 
@@ -419,3 +439,32 @@ Check genre fidelity. Be strict — if it implies anything beyond physical reali
     except Exception as e:
         log(f"[ArchitectValidator] Check failed ({e}), blueprint unchanged", level="warning")
         return blueprint
+
+
+def _check_blueprint_text_fields(blueprint: dict, drift_words: set[str]) -> None:
+    """Rule-based drift check on blueprint text fields.
+
+    Scans central_conflict, antagonist_force, thematic_thread, and each act's
+    goal and transition_trigger for atmospheric drift words. Logs findings but
+    does not auto-rewrite free text — the mood sanitizer in architect.py handles moods.
+    """
+    fields_to_check = [
+        ("central_conflict", blueprint.get("central_conflict", "")),
+        ("antagonist_force", blueprint.get("antagonist_force", "")),
+        ("thematic_thread", blueprint.get("thematic_thread", "")),
+    ]
+    for act in blueprint.get("acts", []):
+        phase = act.get("phase", "?")
+        fields_to_check.append((f"act[{phase}].goal", act.get("goal", "")))
+        fields_to_check.append((f"act[{phase}].transition_trigger", act.get("transition_trigger", "")))
+
+    for field_name, text in fields_to_check:
+        if not text:
+            continue
+        text_lower = text.lower()
+        found = [w for w in drift_words if w in text_lower]
+        if found:
+            log(
+                f"[ArchitectValidator] Drift words in {field_name}: {found[:5]}. Text: '{text[:80]}'",
+                level="warning",
+            )

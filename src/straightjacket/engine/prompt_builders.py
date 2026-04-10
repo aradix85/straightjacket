@@ -17,6 +17,7 @@ from .prompt_blocks import (
     recent_events_block,
     story_context_block,
 )
+from .prompt_loader import get_prompt
 from .xml_utils import xa as _xa
 from .xml_utils import xe as _xe
 
@@ -66,21 +67,22 @@ def build_new_game_prompt(game: GameState) -> str:
     paths_tag = f"\n<paths>{_xe(', '.join(game.paths))}</paths>" if game.paths else ""
     vow_tag = f"\n<vow>{_xe(game.background_vow)}</vow>" if game.background_vow else ""
 
+    pronouns_hint = f" Use {game.pronouns} pronouns for the player character." if game.pronouns else ""
+    task = get_prompt(
+        "task_opening",
+        player_name=game.player_name,
+        pronouns_hint=pronouns_hint,
+        seed=seed,
+        dash=E["dash"],
+    )
+
     return f"""<scene type="opening">
 {_scene_header(game)}{pronouns_tag}{paths_tag}{vow_tag}
 <location>{_xe(game.world.current_location)}</location>{_loc_hist(game)}{_time_ctx(game)}
 <situation>{_xe(game.world.current_scene_context)}</situation>{crisis}
 {story}</scene>
 <task>
-Opening scene. 3-4 paragraphs. The player character arrives, wakes, or sits somewhere.
-Describe what they PERCEIVE: light, sounds, smells, the space. Atmosphere first, then one thing that is out of place — a detail that invites curiosity but explains nothing.
-One NPC is present and active — doing something, not waiting. A second person is glimpsed or mentioned but not yet met.
-The scene ends mid-moment: a sensory detail, an unfinished gesture, a sound from the wrong direction. The player decides what happens next.
-IMPORTANT: {game.player_name} is the PLAYER CHARACTER (the "you" in narration). Do NOT include them as an NPC.{f" Use {game.pronouns} pronouns for the player character." if game.pronouns else ""}
-If <backstory> exists in system context, treat those facts as established canon — reference naturally, do not retell.
-If player_wishes exist, do NOT address them in the opening — save them for later scenes.
-creativity_seed: {seed} (loose inspiration for NPC names, locations, scene details — not literal)
-Write ONLY narrative prose. No metadata, no JSON.
+{task}
 </task>"""
 
 
@@ -141,7 +143,8 @@ def _npc_block(game: GameState, target_id: str | None, context_text: str = "", m
     secrets_line = ""
     if gate >= 4 and target.secrets:
         secs = json.dumps(target.secrets, ensure_ascii=False)
-        secrets_line = f"\nsecrets(weave subtly,never reveal):{_xe(secs)}"
+        secrets_label = get_prompt("secrets_label")
+        secrets_line = f"\nsecrets({secrets_label}):{_xe(secs)}"
 
     body = f"{agenda_line}{instinct_line}{mem_str}{secrets_line}" if gate >= 2 else _xe(target.description)
 
@@ -334,18 +337,7 @@ def build_dialog_prompt(
     oracle_tag = f"\n<oracle_answer>{_xe(oracle_answer)}</oracle_answer>" if oracle_answer else ""
 
     scene_type = "oracle" if oracle_answer else "dialog"
-    task = (
-        "2-3 paragraphs of immersive narration. The oracle has spoken: use <oracle_answer> as a creative seed "
-        "for what the player discovers or what happens. Interpret the word pair "
-        "through the current scene context. Do not quote the oracle words literally."
-        if oracle_answer
-        else (
-            f"2-3 paragraphs of immersive narration. Focus entirely on atmosphere, dialog, and character "
-            f"interaction. Even a quiet conversation carries the weight of the surrounding act phase "
-            f"{E['dash']} let <story_arc> mood shape the texture of the exchange. If <director_guidance> "
-            f"is present, follow its narrative direction while maintaining your creative voice."
-        )
-    )
+    task = get_prompt("task_oracle") if oracle_answer else get_prompt("task_dialog")
 
     return f"""<scene type="{scene_type}" n="{game.narrative.scene_count}">
 {_scene_header(game)}
@@ -451,7 +443,7 @@ def build_action_prompt(
 {pacing}{director}
 {narrative_direction_block(game, roll.result)}
 {story_context_block(game)}{recent_events_block(game)}</scene>
-<task>2-4 paragraphs of immersive narration. Weave every &lt;consequence&gt; into the prose — the player must see each one happen. Let the current act's mood from <story_arc> shape the texture of the outcome {E["dash"]} a STRONG_HIT in a desperate phase still carries the surrounding darkness. If <director_guidance> is present, follow its narrative direction while maintaining your creative voice.</task>"""
+<task>{get_prompt("task_action", dash=E["dash"])}</task>"""
 
 
 # ── Chapter / epilogue prompts ───────────────────────────────
@@ -488,15 +480,7 @@ def build_epilogue_prompt(game: GameState) -> str:
 <session_log>{log_text}</session_log>
 </scene>
 <task>
-Write a beautiful EPILOGUE for this story (4-6 paragraphs). This is NOT a new scene — no dice, no mechanics.
-- PERSPECTIVE: Second person singular ("you") throughout. Do NOT shift to third person.
-- Reflect on the character's journey and growth
-- Give closure to the most important NPC relationships (reference them by name)
-- Resolve or acknowledge the central conflict based on what actually happened
-- Match the tone of the story — if it was dark, the ending can be bittersweet; if hopeful, it can be warm
-- End with a final image or moment that captures the essence of this adventure
-- Do NOT introduce new conflicts or cliffhangers — this is closure
-- No metadata blocks, no game_data, no memory_updates — pure narrative prose only
+{get_prompt("task_epilogue", dash=E["dash"])}
 </task>"""
 
 
@@ -548,15 +532,5 @@ def build_new_chapter_prompt(game: GameState) -> str:
 {npc_block}{evolutions_block}
 {story_context_block(game)}</scene>
 <task>
-Chapter {game.campaign.chapter_number} opening: 3-4 paragraphs. This is a NEW chapter in an ongoing campaign.
-- Reference the character's history and relationships naturally (don't recap everything, just hint)
-- Some time has passed since last chapter. Show how the world/relationships evolved
-- Use <npc_evolutions> as hints for how NPCs may have changed — show their evolution through behavior, dialog, and atmosphere rather than exposition
-- Introduce a NEW tension or situation that builds on unresolved threads
-- Returning NPCs should feel familiar but may have changed
-- Introduce 1-2 NEW NPCs alongside returning characters
-- Create one new threat clock for this chapter
-IMPORTANT: The <character> above is the PLAYER CHARACTER. Do NOT include them as an NPC.
-creativity_seed: {seed} (Use as loose inspiration for NPC names, locations, and scene details — not literally, but as creative anchors to avoid generic defaults)
-Write ONLY narrative prose. No metadata, no JSON, no game_data blocks.
+{get_prompt("task_chapter_opening", chapter_number=str(game.campaign.chapter_number), seed=seed, dash=E["dash"])}
 </task>"""

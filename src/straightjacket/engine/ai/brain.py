@@ -137,7 +137,7 @@ time:{w.time_of_day or "unspecified"}
                     system=system,
                     messages=[{"role": "user", "content": user_msg}],
                     max_tokens=_c.ai.max_tokens.brain,
-                    max_tool_rounds=2,
+                    max_tool_rounds=_c.ai.max_tool_rounds.brain,
                     **sampling_params("brain"),
                     log_role="brain",
                 )

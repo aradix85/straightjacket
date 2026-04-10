@@ -35,6 +35,7 @@ genre_constraints:
   forbidden_concepts: []
   genre_test: ""  # No strict genre test — cursed waters and ancient ruins are on-genre
   atmospheric_drift:
+    # Sci-fi bleed
     - "spaceship"
     - "computer"
     - "laser"
@@ -43,6 +44,21 @@ genre_constraints:
     - "cybernetic"
     - "elven"
     - "dwarven"
+    # GLM patterns (gothic material animation — out of place even in science-fantasy)
+    - "weep"
+    - "weeping"
+    - "writhe"
+    - "writhing"
+    - "visage"
+    - "visages"
+    - "ooze"
+    - "oozing"
+    - "reshape"
+    - "reshaping"
+    - "unnatural"
+    - "unnaturally"
+    - "apparition"
+    - "phantasm"
   atmospheric_drift_threshold: 2
 
 creation_flow:

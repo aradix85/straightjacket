@@ -22,50 +22,53 @@ ai:
   director_model: "zai-glm-4.7"
   validator_model: "zai-glm-4.7"
   extra_body:
-    disable_reasoning: true
+    reasoning_effort: "none"
 
   max_tokens:
-    brain: 8192
-    brain_setup: 8192
-    narrator: 8192
-    narrator_metadata: 8192
-    opening_setup: 8192
-    revelation_check: 8192
-    recap: 8192
-    architect: 8192
-    director: 8192
-    correction: 8192
-    chapter_summary: 8192
-    validator: 1024
-    validator_architect: 1024
+    brain: 8192               # avg 97, json classification
+    brain_setup: 8192        # character generation, larger json
+    narrator: 8192           # avg 312, prose output (retries need room)
+    narrator_metadata: 8192   # avg 101, npc extraction json
+    opening_setup: 8192      # structured extraction from opening narration
+    revelation_check: 8192    # single boolean + reasoning
+    recap: 8192              # 4-6 sentences
+    architect: 8192          # avg 833, story blueprint json
+    director: 8192           # avg 364, guidance + reflections json
+    correction: 8192         # correction analysis json
+    chapter_summary: 8192    # summary json
+    validator: 8192           # avg 96, pass/fail json
+    validator_architect: 8192 # pass/fail + optional rewrites
   max_retries:
-    brain: 2
-    brain_setup: 2
+    brain: 3
+    brain_setup: 3
     narrator: 3
-    narrator_metadata: 2
-    opening_setup: 2
-    revelation_check: 2
-    recap: 1
-    architect: 2
-    director: 1
-    correction: 2
-    chapter_summary: 1
-    validator: 1
-    validator_architect: 1
+    narrator_metadata: 3
+    opening_setup: 3
+    revelation_check: 3
+    recap: 3
+    architect: 3
+    director: 3
+    correction: 3
+    chapter_summary: 3
+    validator: 3
+    validator_architect: 3
+  max_tool_rounds:
+    brain: 3                 # NPC lookup, oracle rolls before classification
+    director: 3              # NPC/thread/clock queries before structured output
   temperature:
-    brain: 0.4
-    brain_setup: 0.5
-    narrator: 0.8
+    brain: 0.6
+    brain_setup: 0.6
+    narrator: 1.0
     narrator_metadata: 0.3
-    opening_setup: 0.5
-    revelation_check: 0.2
+    opening_setup: 0.6
+    revelation_check: 0.3
     recap: 0.6
-    architect: 0.6
-    director: 0.5
+    architect: 0.8
+    director: 0.8
     correction: 0.3
-    chapter_summary: 0.4
-    validator: 0.2
-    validator_architect: 0.2
+    chapter_summary: 0.6
+    validator: 0.3
+    validator_architect: 0.3
   top_p:
     default: 0.95              # Applied to all roles. Add per-role overrides here if needed.
 

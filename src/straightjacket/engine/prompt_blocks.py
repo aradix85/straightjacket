@@ -67,10 +67,9 @@ def vocabulary_block(game: GameState | None = None) -> str:
     parts = ["<vocabulary>"]
     if vocab:
         lines = [f"  {term} → {replacement}" for term, replacement in vocab.items()]
-        parts.append(
-            "Use these terms instead of their generic equivalents. "
-            "The substitutions define how this world talks about itself.\n" + "\n".join(lines)
-        )
+        from .prompt_loader import get_prompt as _get_prompt
+
+        parts.append(_get_prompt("vocabulary_instruction") + "\n" + "\n".join(lines))
     if palette:
         parts.append(f"<sensory_palette>{palette.strip()}</sensory_palette>")
     parts.append("</vocabulary>")

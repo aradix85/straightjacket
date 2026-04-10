@@ -131,6 +131,37 @@ npcs:{npc_text}{campaign_ctx}{backstory_text}"""
         blueprint["story_complete"] = False
         blueprint["structure_type"] = structure_type
 
+        # Validate act moods: strip forbidden mood terms that cause genre drift
+        _forbidden_moods = {
+            "surreal",
+            "disorienting",
+            "revelatory",
+            "haunted",
+            "spectral",
+            "ethereal",
+            "otherworldly",
+            "eldritch",
+            "supernatural",
+            "dreamlike",
+            "hallucinatory",
+            "phantasmagoric",
+            "uncanny",
+        }
+        for act in blueprint.get("acts", []):
+            mood = act.get("mood", "")
+            if mood:
+                mood_words = [w.strip() for w in mood.split(",")]
+                cleaned = [w for w in mood_words if w.lower() not in _forbidden_moods]
+                if len(cleaned) < len(mood_words):
+                    stripped_words = [w for w in mood_words if w.lower() in _forbidden_moods]
+                    if not cleaned:
+                        cleaned = ["tense", "grounded"]
+                    act["mood"] = ", ".join(cleaned)
+                    log(
+                        f"[Story] Stripped forbidden mood(s) {stripped_words} from act "
+                        f"'{act.get('phase', '?')}', now: '{act['mood']}'",
+                    )
+
         # Validate scene_range: must be exactly [start, end]
         from ..engine_loader import eng as _eng
 

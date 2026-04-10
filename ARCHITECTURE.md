@@ -51,7 +51,7 @@ Where to find things. If you want to change X, edit Y.
 | Move types or stat assignments | `engine.yaml` → `move_stats` and `move_categories` |
 | A new setting (genre + constraints) | `data/settings/your_setting.yaml` + Datasworn JSON |
 | How dice rolls work | `mechanics.py` → `roll_action`, `apply_consequences` |
-| How the narrator is prompted | `prompt_builders.py` → `build_action_prompt`, `build_dialog_prompt` |
+| How the narrator is prompted | `prompts.yaml` → task templates; `prompt_builders.py` → XML assembly |
 | NPC memory / activation logic | `npc/memory.py`, `npc/activation.py` |
 | Story structure / act tracking | `story_state.py`, `ai/architect.py` |
 | Correction (## undo) flow | `correction.py` |
@@ -95,7 +95,7 @@ src/straightjacket/
 │   ├── director.py          # Story steering, NPC reflections, act transitions
 │   ├── persistence.py       # Save/load
 │   ├── story_state.py       # Act tracking, revelation timing
-│   ├── prompt_builders.py   # All narrator prompt assembly
+│   ├── prompt_builders.py   # Narrator prompt XML assembly (task text from prompts.yaml)
 │   ├── prompt_blocks.py     # Reusable XML blocks (content boundaries, backstory, etc.)
 │   ├── prompt_loader.py     # Reads prompts.yaml
 │   ├── config_loader.py     # Reads config.yaml, provides cfg() singleton

@@ -52,6 +52,7 @@ genre_constraints:
     - "magic systems or spellcasting"
   genre_test: ""  # Sci-fi permits most things — no strict conceptual test
   atmospheric_drift:
+    # Fantasy/horror bleed
     - "eldritch"
     - "otherworldly"
     - "spectral"
@@ -64,6 +65,28 @@ genre_constraints:
     - "ritual"
     - "sorcery"
     - "arcane"
+    # GLM patterns (gothic material animation)
+    - "weep"
+    - "weeps"
+    - "weeping"
+    - "writhe"
+    - "writhes"
+    - "writhing"
+    - "visage"
+    - "visages"
+    - "ooze"
+    - "oozes"
+    - "oozing"
+    - "reshape"
+    - "reshapes"
+    - "reshaping"
+    - "unnatural"
+    - "unnaturally"
+    - "apparition"
+    - "phantasm"
+    - "phantom"
+    - "beckons"
+    - "beckoning"
   atmospheric_drift_threshold: 2
 
 # Character creation flow flags.

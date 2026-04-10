@@ -5,6 +5,27 @@ Originally forked from [EdgeTales](https://github.com/edgetales/edgetales). See 
 
 ---
 
+## [0.42.0] — 2026-04-10
+
+GLM-4.7 prompt tuning. Config-driven prompts.
+
+- Narrator system prompt restructured for GLM-4.7 begin-bias: hardest constraints (GENRE PHYSICS, PLAYER AGENCY, CONSEQUENCE COMPLIANCE) at top, MUST/STRICTLY language throughout
+- New GENRE PHYSICS constraint block: materials must not exhibit consciousness, memory, or transformation
+- All task templates, instruction fragments, and secrets label moved from Python to prompts.yaml (6 task templates, 2 instruction fragments). prompt_builders.py is now pure XML assembly
+- Vocabulary block instruction moved from prompt_blocks.py to prompts.yaml
+- Atmospheric drift wordlists expanded for GLM patterns (weep, ooze, writhe, visage, reshape, phantom, etc.) across all 4 settings. Thresholds lowered
+- Player agency rule validator: 3 new regex patterns for GLM-specific violations (weight of failure, makes you want to, objects imposing feelings)
+- LLM validator: new GENRE PHYSICS check with "when in doubt, FAIL" for genre drift
+- Architect: rule-based mood sanitizer strips forbidden moods (surreal, haunted, dreamlike, etc.) from blueprint acts. Rule-based drift check on all blueprint text fields
+- Architect/Kishōtenketsu prompts: FORBIDDEN mood terms list added
+- Director system prompt: genre constraint added to guidance
+- All prompts (brain, narrator, metadata, director, architect) converted to MUST/STRICTLY language
+- `max_tool_rounds` config section: brain and director tool round limits now in config.yaml
+- `reasoning_effort: "none"` replaces deprecated `disable_reasoning: true`
+- Narrator temperature 0.8 → 1.0 per Z.ai recommendation for GLM-4.7
+- Elvira results: retries 19 → 5, failures 2 → 0, first-pass rate 11% → 44%, zero genre drift, zero spatial issues
+- 485 tests
+
 ## [0.41.0] — 2026-04-10
 
 Step 2: Brain and Director tool calling, Ask the Oracle.

@@ -47,6 +47,7 @@ genre_constraints:
     - "high magic or easy spellcasting"
   genre_test: "Could this exist in a dark, low-magic Iron Age frontier?"
   atmospheric_drift:
+    # Qwen patterns (energy/vibration words)
     - "pulse"
     - "pulsing"
     - "pulses"
@@ -79,7 +80,35 @@ genre_constraints:
     - "otherworldly"
     - "spectral"
     - "ethereal"
-  atmospheric_drift_threshold: 3
+    # GLM patterns (gothic body horror, material animation)
+    - "weep"
+    - "weeps"
+    - "weeping"
+    - "seep"
+    - "seeps"
+    - "seeping"
+    - "ooze"
+    - "oozes"
+    - "oozing"
+    - "writhe"
+    - "writhes"
+    - "writhing"
+    - "visage"
+    - "visages"
+    - "howling"
+    - "whorls"
+    - "contours of faces"
+    - "reshape"
+    - "reshapes"
+    - "reshaping"
+    - "unnatural"
+    - "unnaturally"
+    - "beckons"
+    - "beckoning"
+    - "apparition"
+    - "phantasm"
+    - "phantom"
+  atmospheric_drift_threshold: 2
 
 creation_flow:
   has_truths: true

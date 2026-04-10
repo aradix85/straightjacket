@@ -26,6 +26,12 @@ _AGENCY_EMOTION_PATTERNS = [
     r"\b(?:a (?:wave|surge|pang|flash|jolt|stab) of (?:fear|dread|anger|grief|joy|relief|guilt|shame|hope|despair|panic|revulsion|unease|disgust|sadness|horror|rage|fury))\b",
     # "something in you" constructions
     r"\bsomething (?:in|inside|within) you\b",
+    # GLM patterns: abstract weight/pressure as emotional metaphor
+    r"\b(?:the )?weight of (?:your |the )?(?:failure|guilt|shame|loss|grief|regret|betrayal|silence)\b",
+    # GLM patterns: "makes you want to" — imposes desire
+    r"\bmakes you (?:want|need|wish|long|ache) to\b",
+    # GLM patterns: objects/situations imposing feelings
+    r"\b(?:the |a )?(?:silence|darkness|cold|emptiness|room|air|wind) (?:offers|invites|urges|compels|forces|demands|asks|tells) you\b",
 ]
 _AGENCY_PATTERNS = [re.compile(p, re.IGNORECASE) for p in _AGENCY_EMOTION_PATTERNS]
 
