@@ -1,0 +1,240 @@
+#!/usr/bin/env python3
+"""Mythic GME 2e random events: event focus, meaning tables, pipeline.
+
+Random events fire on fate doublets (step 3.3) and interrupt scenes (step 4.5).
+All engine-deterministic. The pipeline assembles structured events from dice
+rolls; the narrator weaves them into prose.
+
+Data: data/mythic_gme_2e.json → event_focus, meaning_tables.
+"""
+
+from __future__ import annotations
+
+import random
+
+from ..logging_util import log
+from ..models import GameState, RandomEvent
+from .fate import _load_mythic
+
+# PENDING EVENTS — accumulator drained by turn pipeline after Brain call.
+# Same pattern as provider_base._token_log.
+_pending_events: list[RandomEvent] = []
+
+
+def drain_pending_events() -> list[RandomEvent]:
+    """Return and clear pending random events. Call after Brain phase."""
+    events = list(_pending_events)
+    _pending_events.clear()
+    return events
+
+
+# Focus categories that require a target from the characters list.
+_NPC_FOCUS: frozenset[str] = frozenset(
+    {
+        "npc_action",
+        "npc_negative",
+        "npc_positive",
+        "new_npc",
+    }
+)
+
+# Focus categories that require a target from the threads list.
+_THREAD_FOCUS: frozenset[str] = frozenset(
+    {
+        "move_toward_thread",
+        "move_away_from_thread",
+        "close_thread",
+    }
+)
+
+
+# ── Event focus (step 6.1) ───────────────────────────────────
+
+
+def roll_event_focus(roll: int | None = None) -> tuple[str, int]:
+    """Roll d100 on the Event Focus Table. Returns (focus_category, roll)."""
+    data = _load_mythic()
+    table = data["event_focus"]
+
+    if roll is None:
+        roll = random.randint(1, 100)
+
+    for entry in table:
+        if entry["min"] <= roll <= entry["max"]:
+            return entry["focus"], roll
+
+    return "current_context", roll
+
+
+# ── Meaning tables (step 6.2) ────────────────────────────────
+
+
+def roll_meaning_table(table_name: str = "actions") -> tuple[str, str]:
+    """Roll on a meaning table. Returns (word1, word2).
+
+    Actions table: (verb, subject). For events and actions.
+    Descriptions table: (adverb, adjective). For qualities and states.
+    """
+    data = _load_mythic()
+    tables = data["meaning_tables"]
+
+    if table_name == "descriptions":
+        words1 = tables["descriptions"]["adverbs"]
+        words2 = tables["descriptions"]["adjectives"]
+    else:
+        words1 = tables["actions"]["verbs"]
+        words2 = tables["actions"]["subjects"]
+
+    w1 = words1[random.randint(0, len(words1) - 1)]
+    w2 = words2[random.randint(0, len(words2) - 1)]
+    return w1, w2
+
+
+# ── Target selection (step 6.3 step 2) ───────────────────────
+
+
+def _select_from_weighted_list(entries: list) -> tuple[str, str]:
+    """Select from a weighted list (threads or characters). Returns (name, id)."""
+    if not entries:
+        return "", ""
+
+    active = [e for e in entries if e.active]
+    if not active:
+        return "", ""
+
+    # Build weighted pool: each entry appears weight times.
+    pool: list[tuple[str, str]] = []
+    for entry in active:
+        pool.extend([(entry.name, entry.id)] * entry.weight)
+
+    if not pool:
+        return "", ""
+
+    return random.choice(pool)
+
+
+def _select_target(focus: str, game: GameState) -> tuple[str, str]:
+    """Select event target based on focus category. Returns (name, id).
+
+    NPC-focus categories select from characters_list.
+    Thread-focus categories select from threads list.
+    Empty list → falls back to current_context (no target).
+    """
+    if focus in _NPC_FOCUS:
+        name, target_id = _select_from_weighted_list(game.narrative.characters_list)
+        if not name:
+            log(f"[RandomEvent] NPC focus '{focus}' but characters list empty, using current_context")
+        return name, target_id
+
+    if focus in _THREAD_FOCUS:
+        name, target_id = _select_from_weighted_list(game.narrative.threads)
+        if not name:
+            log(f"[RandomEvent] Thread focus '{focus}' but threads list empty, using current_context")
+        return name, target_id
+
+    return "", ""
+
+
+# ── Random event pipeline (step 6.3) ─────────────────────────
+
+
+def generate_random_event(game: GameState, source: str = "") -> RandomEvent:
+    """Generate a complete random event from the Mythic GME 2e pipeline.
+
+    Four steps:
+    1. Roll d100 on Event Focus Table → category.
+    2. If category targets NPC/thread, select from weighted list.
+    3. Roll meaning tables → word pair.
+    4. Assemble RandomEvent.
+
+    The narrator receives the structured event as a <random_event> tag.
+    """
+    # Step 1: focus
+    focus, focus_roll = roll_event_focus()
+
+    # Step 2: target
+    target_name, target_id = _select_target(focus, game)
+
+    # Step 3: meaning
+    # Use actions for events/actions, descriptions for qualities
+    table_name = "descriptions" if focus in ("ambiguous_event",) else "actions"
+    word1, word2 = roll_meaning_table(table_name)
+
+    # Step 4: assemble
+    event = RandomEvent(
+        focus=focus,
+        focus_roll=focus_roll,
+        target=target_name,
+        target_id=target_id,
+        meaning_action=word1,
+        meaning_subject=word2,
+        meaning_table=table_name,
+        source=source,
+    )
+
+    target_str = f" target='{target_name}'" if target_name else ""
+    log(f"[RandomEvent] {focus}{target_str} → {word1} / {word2} (source={source})")
+    _pending_events.append(event)
+    return event
+
+
+# ── List maintenance (step 6.5) ──────────────────────────────
+
+
+def add_thread_weight(game: GameState, thread_id: str) -> None:
+    """Increase thread weight when invoked in a scene. Max 3 per thread."""
+    for t in game.narrative.threads:
+        if t.id == thread_id and t.active:
+            if t.weight < 3:
+                t.weight += 1
+                log(f"[Lists] Thread '{t.name}' weight → {t.weight}")
+            return
+
+
+def add_character_weight(game: GameState, character_id: str) -> None:
+    """Increase character weight when invoked in a scene. Max 3 per character."""
+    for c in game.narrative.characters_list:
+        if c.id == character_id and c.active:
+            if c.weight < 3:
+                c.weight += 1
+                log(f"[Lists] Character '{c.name}' weight → {c.weight}")
+            return
+
+
+def consolidate_threads(game: GameState) -> None:
+    """Consolidate threads list when it reaches 25 entries.
+
+    Entries with weight 3 get weight 2 on the new list; others get weight 1.
+    """
+    threads = [t for t in game.narrative.threads if t.active]
+    if len(threads) < 25:
+        return
+
+    for t in threads:
+        t.weight = 2 if t.weight >= 3 else 1
+
+    log(f"[Lists] Consolidated {len(threads)} threads")
+
+
+def consolidate_characters(game: GameState) -> None:
+    """Consolidate characters list when it reaches 25 entries.
+
+    Entries with weight 3 get weight 2 on the new list; others get weight 1.
+    """
+    chars = [c for c in game.narrative.characters_list if c.active]
+    if len(chars) < 25:
+        return
+
+    for c in chars:
+        c.weight = 2 if c.weight >= 3 else 1
+
+    log(f"[Lists] Consolidated {len(chars)} characters")
+
+
+def deactivate_thread(game: GameState, thread_id: str) -> None:
+    """Mark a thread as inactive (resolved/closed)."""
+    for t in game.narrative.threads:
+        if t.id == thread_id:
+            t.active = False
+            log(f"[Lists] Thread '{t.name}' deactivated")
+            return

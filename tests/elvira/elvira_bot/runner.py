@@ -548,7 +548,7 @@ def _handle_burn(
                 player_words=burn_info["player_words"],
                 config=config,
                 pre_snapshot=burn_info["pre_snapshot"],
-                chaos_interrupt=burn_info.get("chaos_interrupt"),
+                scene_setup=burn_info.get("scene_setup"),
             )
             print(f"  [BURN] Re-narrated: {narration.replace(chr(10), ' ')[:180]}...")
         except Exception as e:

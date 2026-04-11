@@ -202,7 +202,7 @@ async def handle_player_input(session: Session, ws: WebSocket, msg: dict) -> Non
                 brain=burn_info["brain"],
                 player_words=burn_info["player_words"],
                 pre_snapshot=burn_info["pre_snapshot"],
-                chaos_interrupt=burn_info.get("chaos_interrupt"),
+                scene_setup=burn_info.get("scene_setup"),
             )
             await _send(
                 ws,
@@ -315,7 +315,7 @@ async def handle_burn_momentum(session: Session, ws: WebSocket, msg: dict) -> No
             player_words=burn.player_words,
             config=session.config,
             pre_snapshot=burn.pre_snapshot,
-            chaos_interrupt=burn.chaos_interrupt,
+            scene_setup=burn.scene_setup,
         )
         session.game = game
 

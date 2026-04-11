@@ -35,8 +35,34 @@ def final_state_dict(game: GameState) -> dict:
         "supply": game.resources.supply,
         "momentum": game.resources.momentum,
         "chaos": game.world.chaos_factor,
-        "npcs": len(game.npcs),
-        "active_clocks": len([c for c in game.world.clocks if not c.fired]),
+        "npcs": [
+            {
+                "id": n.id,
+                "name": n.name,
+                "status": n.status,
+                "disposition": n.disposition,
+                "bond": n.bond,
+                "agenda": n.agenda,
+                "instinct": n.instinct,
+                "arc": n.arc,
+                "aliases": list(n.aliases),
+                "memory_count": len(n.memory),
+                "importance_accumulator": n.importance_accumulator,
+                "needs_reflection": n.needs_reflection,
+            }
+            for n in game.npcs
+        ],
+        "active_clocks": [
+            {
+                "name": c.name,
+                "clock_type": c.clock_type,
+                "filled": c.filled,
+                "segments": c.segments,
+                "owner": c.owner,
+            }
+            for c in game.world.clocks
+            if not c.fired
+        ],
     }
 
 

@@ -10,7 +10,8 @@ from .logging_util import log
 from .mechanics import get_pacing_hint, locations_match
 from collections.abc import Sequence
 
-from .models import BrainResult, EngineConfig, GameState, NpcData, RollResult
+from .models import BrainResult, EngineConfig, GameState, NpcData, RandomEvent, RollResult
+from .mechanics.scene import SceneSetup
 from .npc import find_npc, retrieve_memories
 from .prompt_blocks import (
     narrative_direction_block,
@@ -51,6 +52,15 @@ def _loc_hist(game: GameState) -> str:
     if not game.world.location_history:
         return ""
     return f"\n<prev_locations>{_xe(', '.join(game.world.location_history[-3:]))}</prev_locations>"
+
+
+def _scene_enrichment(game: GameState) -> str:
+    """Build scene enrichment context: top-weight active thread."""
+    threads = [t for t in game.narrative.threads if t.active]
+    if not threads:
+        return ""
+    threads.sort(key=lambda t: t.weight, reverse=True)
+    return f"\n<active_thread>{_xe(threads[0].name)}</active_thread>"
 
 
 # PROMPT BUILDERS
@@ -234,27 +244,43 @@ def _known_npcs_string(mentioned: Sequence[NpcData], game: GameState, exclude_id
     return ", ".join(parts) or "none"
 
 
-def _pacing_block(game: GameState, chaos_interrupt: str | None = None) -> str:
-    """Build pacing/chaos block for prompts."""
+def _pacing_block(game: GameState, scene_setup: SceneSetup | None = None) -> str:
+    """Build pacing and scene modification block for prompts."""
+    from .mechanics.scene import adjustment_descriptions
+
     parts = []
     pacing = get_pacing_hint(game)
     if pacing != "neutral":
         parts.append(f'<pacing type="{pacing}"/>')
-    if chaos_interrupt:
-        interrupt_descriptions = {
-            "npc_unexpected": "An NPC arrives unexpectedly or acts completely against their established pattern",
-            "threat_escalation": "An existing danger escalates dramatically or a new threat emerges from nowhere",
-            "twist": "Something believed to be true is revealed as false, or an ally shows hidden motives",
-            "discovery": "An unexpected object, clue, or piece of information falls into the player's hands",
-            "environment_shift": "The environment changes dramatically — sudden weather, structural collapse, fire, flood, unnatural darkness, or a strange phenomenon alters the scene conditions",
-            "remote_event": "News arrives or signs appear that something important happened elsewhere — an ally is in trouble, a faction made a move, or a place the player knows has changed",
-            "positive_windfall": "An unexpected piece of good fortune — a hidden cache, an uninvited ally, a lucky coincidence, or a momentary reprieve from danger",
-            "callback": "A consequence of a past action catches up — a previous decision backfires or pays off, an old debt is called in, or a forgotten detail becomes suddenly relevant",
-            "dilemma": "The scene presents the character with a forced choice between two things they value — there is no clean option, only sacrifice and consequence. Make BOTH options tangible and costly",
-            "ticking_clock": "A sudden time pressure or deadline is introduced — something must happen soon or an opportunity is lost, a threat becomes unstoppable, or a situation becomes irreversible",
-        }
-        desc = interrupt_descriptions.get(chaos_interrupt, "Something unexpected disrupts the scene")
-        parts.append(f'<chaos_interrupt type="{chaos_interrupt}">{desc}</chaos_interrupt>')
+
+    if scene_setup and scene_setup.scene_type == "altered":
+        descs = adjustment_descriptions(scene_setup.adjustments)
+        adj_text = "; ".join(descs)
+        parts.append(f"<altered_scene>{adj_text}</altered_scene>")
+    elif scene_setup and scene_setup.scene_type == "interrupt" and scene_setup.interrupt_event:
+        ev = scene_setup.interrupt_event
+        target_attr = f' target="{_xa(ev.target)}"' if ev.target else ""
+        parts.append(
+            f'<interrupt_scene focus="{_xa(ev.focus)}"{target_attr}>'
+            f"{_xe(ev.meaning_action)} / {_xe(ev.meaning_subject)}"
+            f"</interrupt_scene>"
+        )
+
+    return "\n".join(parts)
+
+
+def _random_events_block(events: Sequence[RandomEvent]) -> str:
+    """Build <random_event> tags for narrator prompt injection."""
+    if not events:
+        return ""
+    parts = []
+    for ev in events:
+        target_attr = f' target="{_xa(ev.target)}"' if ev.target else ""
+        parts.append(
+            f'<random_event focus="{_xa(ev.focus)}"{target_attr}>'
+            f"{_xe(ev.meaning_action)} / {_xe(ev.meaning_subject)}"
+            f"</random_event>"
+        )
     return "\n".join(parts)
 
 
@@ -323,11 +349,12 @@ def build_dialog_prompt(
     game: GameState,
     brain: BrainResult,
     player_words: str = "",
-    chaos_interrupt: str | None = None,
+    scene_setup: SceneSetup | None = None,
     activated_npcs: Sequence[NpcData] = (),
     mentioned_npcs: Sequence[NpcData] = (),
     config: EngineConfig | None = None,
     oracle_answer: str = "",
+    random_events: Sequence[RandomEvent] = (),
 ) -> str:
     context_text = f"{player_words} {brain.player_intent or ''} {game.world.current_scene_context or ''}"
     move_cat = "social"  # Dialog is always social context
@@ -338,7 +365,8 @@ def build_dialog_prompt(
     wl = f"\n<world_add>{_xe(wa)}</world_add>" if wa else ""
     crisis = "\n<crisis/>" if game.crisis_mode else ""
     pw = f"\n<player_words>{_xe(player_words)}</player_words>" if player_words else ""
-    pacing = _pacing_block(game, chaos_interrupt)
+    pacing = _pacing_block(game, scene_setup)
+    events_block = _random_events_block(random_events)
     director = _director_block(game)
     oracle_tag = f"\n<oracle_answer>{_xe(oracle_answer)}</oracle_answer>" if oracle_answer else ""
 
@@ -348,9 +376,10 @@ def build_dialog_prompt(
     return f"""<scene type="{scene_type}" n="{game.narrative.scene_count}">
 {_scene_header(game)}
 <intent>{_xe(brain.player_intent)}</intent>{pw}{oracle_tag}
-<location>{_xe(game.world.current_location)}</location>{_loc_hist(game)}{_time_ctx(game)}
+<location>{_xe(game.world.current_location)}</location>{_loc_hist(game)}{_time_ctx(game)}{_scene_enrichment(game)}
 {npc}{npcs_sect}{wl}{crisis}
-{pacing}{director}
+{pacing}
+{events_block}{director}
 {narrative_direction_block(game, "dialog")}
 {story_context_block(game)}{recent_events_block(game)}</scene>
 <task>{task}</task>"""
@@ -366,12 +395,13 @@ def build_action_prompt(
     *,
     consequence_sentences: Sequence[str],
     player_words: str = "",
-    chaos_interrupt: str | None = None,
+    scene_setup: SceneSetup | None = None,
     activated_npcs: Sequence[NpcData] = (),
     mentioned_npcs: Sequence[NpcData] = (),
     config: EngineConfig | None = None,
     position: str = "risky",
     effect: str = "standard",
+    random_events: Sequence[RandomEvent] = (),
 ) -> str:
     context_text = f"{player_words} {brain.player_intent or ''} {game.world.current_scene_context or ''}"
     from .mechanics import _move_category
@@ -432,7 +462,8 @@ def build_action_prompt(
 
     flags = f"\n<flags>{','.join(status_flags)}</flags>" if status_flags else ""
     agency = f"\n<npc_agency>{_xe('| '.join(npc_agency))}</npc_agency>" if npc_agency else ""
-    pacing = _pacing_block(game, chaos_interrupt)
+    pacing = _pacing_block(game, scene_setup)
+    events_block = _random_events_block(random_events)
     director = _director_block(game)
 
     cons_tags = "\n".join(f"<consequence>{_xe(s)}</consequence>" for s in consequence_sentences)
@@ -444,9 +475,10 @@ def build_action_prompt(
 <intent>{_xe(brain.player_intent)} ({_xe(brain.approach)})</intent>{pw}
 {constraint}{cons_tags}
 {position_tag}
-<location>{_xe(game.world.current_location)}</location>{_loc_hist(game)}{_time_ctx(game)}
+<location>{_xe(game.world.current_location)}</location>{_loc_hist(game)}{_time_ctx(game)}{_scene_enrichment(game)}
 {npc}{npcs_sect}{wl}{flags}{agency}
-{pacing}{director}
+{pacing}
+{events_block}{director}
 {narrative_direction_block(game, roll.result)}
 {story_context_block(game)}{recent_events_block(game)}</scene>
 <task>{get_prompt("task_action", dash=E["dash"])}</task>"""

@@ -358,27 +358,23 @@ def test_turn_consequences_applied_on_miss(load_engine: None) -> None:
     assert game.resources.momentum < initial_momentum
 
 
-def test_chaos_interrupt_respects_config(load_engine: None) -> None:
-    """Chaos interrupt uses engine.yaml interrupt_types list."""
-    from straightjacket.engine.mechanics import check_chaos_interrupt
-    from straightjacket.engine.engine_loader import eng
+def test_scene_test_produces_three_types(load_engine: None) -> None:
+    """Scene test produces expected, altered, or interrupt based on d10 vs CF."""
+    from straightjacket.engine.mechanics.scene import check_scene
 
     game = _make_game()
-    game.world.chaos_factor = 9  # Max chaos = high interrupt chance
+    game.world.chaos_factor = 9
 
-    valid_types = set(eng().chaos.interrupt_types)
-    found_interrupt = False
-
-    # Run many times to get at least one interrupt
-    for _ in range(100):
-        result = check_chaos_interrupt(game)
-        if result is not None:
-            assert result in valid_types, f"Unknown interrupt type: {result}"
-            found_interrupt = True
+    types_seen: set[str] = set()
+    for _ in range(200):
+        setup = check_scene(game)
+        types_seen.add(setup.scene_type)
+        if len(types_seen) == 3:
             break
-        game.world.chaos_factor = 9  # Reset (check_chaos_interrupt decrements)
 
-    assert found_interrupt, "Should have gotten at least one interrupt at chaos=9"
+    assert "expected" in types_seen
+    assert "altered" in types_seen
+    assert "interrupt" in types_seen
 
 
 # ── Prompt builder tests ─────────────────────────────────────

@@ -89,7 +89,7 @@ def test_catches_momentum_exceeds_max(load_engine: None) -> None:
 
 def test_catches_chaos_below_min(load_engine: None) -> None:
     game = _clean_game()
-    game.world.chaos_factor = 2
+    game.world.chaos_factor = 0
     violations = assert_game_state(game, turn=1)
     assert any("chaos" in v.lower() for v in violations)
 

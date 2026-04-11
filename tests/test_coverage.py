@@ -355,7 +355,7 @@ def test_run_deferred_director_applies_guidance(stub_all: None) -> None:
         game,
         {"narration": "Text.", "config": None},
     )
-    assert game.narrative.director_guidance.pacing == "building"
+    assert game.narrative.director_guidance.narrator_guidance == "Build tension."
 
 
 def test_run_deferred_director_survives_api_error(stub_all: None) -> None:

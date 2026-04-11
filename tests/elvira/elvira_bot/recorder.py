@@ -137,7 +137,7 @@ def _snapshot_engine_log(game: GameState) -> EngineLogRecord | None:
         summary=sl.rich_summary or sl.summary,
         move=sl.move,
         result=sl.result,
-        chaos_interrupt=sl.chaos_interrupt,
+        scene_type=sl.scene_type,
         director_trigger=sl.director_trigger,
         consequences=list(sl.consequences),
         clock_events=[e.to_dict() for e in sl.clock_events],
@@ -194,7 +194,6 @@ def _snapshot_director_guidance(game: GameState) -> dict:
         return {}
     d: dict = {
         "narrator_guidance": dg.narrator_guidance,
-        "pacing": dg.pacing,
         "arc_notes": dg.arc_notes,
     }
     if dg.npc_guidance:

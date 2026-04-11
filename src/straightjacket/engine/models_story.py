@@ -52,7 +52,7 @@ class SceneLogEntry(SerializableMixin):
     clock_events: list[ClockEvent] = field(default_factory=list)
     position: str = "risky"
     effect: str = "standard"
-    chaos_interrupt: str | None = None
+    scene_type: str = "expected"  # expected, altered, interrupt
     npc_activation: dict = field(default_factory=dict)
     validator: dict = field(default_factory=dict)
     rich_summary: str = ""
@@ -142,7 +142,6 @@ class DirectorGuidance(SerializableMixin):
 
     narrator_guidance: str = ""
     npc_guidance: dict[str, str] = field(default_factory=dict)
-    pacing: str = ""
     arc_notes: str = ""
 
 

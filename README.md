@@ -24,13 +24,13 @@ Creates a venv, installs dependencies, downloads game data, starts the server at
 
 ## How It Works
 
-You type what your character does. The engine classifies the action, rolls dice, applies mechanical consequences. An AI narrator writes the scene within those constraints. A validator checks the output. A director steers pacing and NPC development across scenes.
+You type what your character does. The engine classifies the action, rolls dice, applies mechanical consequences. An AI narrator writes the scene within those constraints. A validator checks the output. A director handles NPC reflections and story arc tracking.
 
-Four AI agents per turn: **Brain** (parses input into mechanics), **Narrator** (writes prose), **Validator** (rule-based + LLM constraint checking, retries with prompt stripping), **Director** (story steering, NPC reflections).
+Four AI agents per turn: **Brain** (parses input into mechanics), **Narrator** (writes prose), **Validator** (rule-based + LLM constraint checking, retries with prompt stripping), **Director** (NPC reflections, AIMS generation).
 
 The AI never decides outcomes, moves resources, or controls the player character. That's the straightjacket.
 
-Mechanics drawn from Ironsworn/Starforged (action rolls, momentum, bonds), Mythic GME (chaos factor), and Blades in the Dark (position & effect, clocks).
+Mechanics drawn from Ironsworn/Starforged (action rolls, momentum, bonds), Mythic GME 2e (fate questions, scene structure, random events, meaning tables), and Blades in the Dark (position & effect, clocks).
 
 ---
 
@@ -66,7 +66,7 @@ The architecture implements the [Narrative RPG Engine](docs/narrative_rpg_engine
 
 Two complementary layers:
 
-**Unit/integration tests** (`python -m pytest tests/ -v`, ~485 tests, no API key needed): mock providers with canned responses test engine logic, NPC processing, serialization, correction flow, prompt assembly, WebSocket handlers, database sync/queries, tool registry/dispatch. Every commit must pass.
+**Unit/integration tests** (`python -m pytest tests/ -v`, ~538 tests, no API key needed): mock providers with canned responses test engine logic, NPC processing, serialization, correction flow, prompt assembly, WebSocket handlers, database sync/queries, tool registry/dispatch. Every commit must pass.
 
 **[Elvira](tests/elvira/)** (`python tests/elvira/elvira.py --auto --turns 5`, needs API key): headless AI-driven test player that plays the game with real model output. Checks state invariants after every turn, validates narration quality (leaked mechanics, NPC spatial consistency), stress-tests the correction pipeline, and logs diagnostics to JSON. Two modes: direct (engine only) and WebSocket (full server stack). See [CONTRIBUTING.md](CONTRIBUTING.md) for when to use which.
 

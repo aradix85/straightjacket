@@ -5,6 +5,21 @@ Originally forked from [EdgeTales](https://github.com/edgetales/edgetales). See 
 
 ---
 
+## [0.44.0] — 2026-04-11
+
+Mythic GME 2e integration: fate system, scene structure, random events. Director reduced.
+
+- Fate system (step 3): fate chart resolver (9×9 odds/chaos matrix), fate check resolver (2d10 + modifiers), random event trigger on doublets, likelihood resolver (NPC disposition + chaos + resources → odds), `fate_question` Brain tool
+- Scene structure (step 4): `check_scene()` replaces `check_chaos_interrupt()`. d10 vs CF → expected/altered/interrupt. Scene Adjustment Table (d10, single/double adjustments). `<altered_scene>` and `<interrupt_scene>` tags in narrator prompt. Scene-end bookkeeping: chaos adjustment for all scene types including dialog (NPC stance evaluation), list maintenance (weight bumps, new NPC addition, consolidation at 25 entries). Expected scene enrichment via `<active_thread>` tag
+- Director reduction (step 5): pacing removed from Director output, DirectorGuidance dataclass, prompt, schema. Pacing fully engine-computed via scene structure + narrative direction. NPC reflections and AIMS retained
+- Random events (step 6): event focus table (12 categories), meaning tables (actions + descriptions), random event pipeline (focus → target → meaning → assemble), weighted list selection, pending event buffer with drain, `<random_event>` tag prompt injection, fate doublet → event integration
+- New dataclasses: `FateResult`, `RandomEvent`, `SceneSetup`
+- New modules: `mechanics/fate.py`, `mechanics/random_events.py`, `mechanics/scene.py`
+- Removed: legacy `mechanics.py` monolith (1011 lines dead code), `check_chaos_interrupt()`, `chaos_interrupt` field on SceneLogEntry, `DirectorGuidance.pacing`, `_map_pacing_hint()`
+- Chaos factor range changed from 3–9 to 1–9 (Mythic 2e)
+- engine.yaml: new `fate` section (default_method, likelihood_rules)
+- 538 tests (+53 net: +57 new, -4 window dressing), ruff clean, mypy clean
+
 ## [0.43.0] — 2026-04-11
 
 Config-driven refactor. Mechanics modularized. Finalization deduplicated.

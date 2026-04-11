@@ -27,6 +27,7 @@ from .mechanics import (
     roll_action,
     update_chaos_factor,
 )
+from .mechanics.scene import SceneSetup
 from .models import (
     NPC_STATUSES,
     BrainResult,
@@ -446,7 +447,7 @@ def process_momentum_burn(
     player_words: str = "",
     config: EngineConfig | None = None,
     pre_snapshot: TurnSnapshot | None = None,
-    chaos_interrupt: str | None = None,
+    scene_setup: SceneSetup | None = None,
 ) -> tuple[GameState, str]:
     """Re-narrate a scene after momentum burn upgrades the result."""
     if not pre_snapshot:
@@ -488,7 +489,7 @@ def process_momentum_burn(
         clock_events,
         [],
         player_words=player_words,
-        chaos_interrupt=chaos_interrupt,
+        scene_setup=scene_setup,
         activated_npcs=activated_npcs,
         mentioned_npcs=mentioned_npcs,
         position=position,
@@ -530,7 +531,7 @@ def process_momentum_burn(
         nar.session_log[-1].result = new_result
         nar.session_log[-1].consequences = consequences
         nar.session_log[-1].clock_events = clock_events
-        nar.session_log[-1].chaos_interrupt = chaos_interrupt
+        nar.session_log[-1].scene_type = scene_setup.scene_type if scene_setup else "expected"
 
     # Sync burned state to database
     from .db import sync as _db_sync

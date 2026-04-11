@@ -77,7 +77,7 @@ CREATE TABLE IF NOT EXISTS scene_log (
     clock_events TEXT NOT NULL DEFAULT '[]',    -- JSON array of ClockEvent dicts
     position    TEXT NOT NULL DEFAULT 'risky',
     effect      TEXT NOT NULL DEFAULT 'standard',
-    chaos_interrupt TEXT,
+    scene_type TEXT DEFAULT "expected",
     npc_activation TEXT NOT NULL DEFAULT '{}',  -- JSON dict
     validator   TEXT NOT NULL DEFAULT '{}',     -- JSON dict
     rich_summary TEXT NOT NULL DEFAULT '',

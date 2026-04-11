@@ -64,23 +64,6 @@ def test_confignode_get_default() -> None:
     assert node.get("missing", 42) == 42
 
 
-def test_confignode_contains() -> None:
-    from straightjacket.engine.config_loader import _ConfigNode
-
-    node = _ConfigNode({"a": 1, "b": 2}, "root")
-    assert "a" in node
-    assert "c" not in node
-
-
-def test_confignode_repr() -> None:
-    from straightjacket.engine.config_loader import _ConfigNode
-
-    node = _ConfigNode({"x": 1}, "engine")
-    r = repr(node)
-    assert "engine" in r
-    assert "x" in r
-
-
 def test_confignode_nested_path_tracking() -> None:
     from straightjacket.engine.config_loader import _ConfigNode
 

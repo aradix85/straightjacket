@@ -161,6 +161,38 @@ class ClockEvent(SerializableMixin):
 
 
 @dataclass
+class RandomEvent(SerializableMixin):
+    """Structured random event from Mythic GME 2e event pipeline.
+
+    Assembled from: event focus (d100) + target selection + meaning table roll.
+    Injected as <random_event> tag in narrator prompt.
+    """
+
+    focus: str = ""  # event focus category (e.g. "npc_action", "pc_negative")
+    focus_roll: int = 0
+    target: str = ""  # selected NPC name, thread name, or empty
+    target_id: str = ""  # NPC id or thread id
+    meaning_action: str = ""  # verb from actions table
+    meaning_subject: str = ""  # subject from actions table
+    meaning_table: str = "actions"  # which meaning table was used
+    source: str = ""  # "fate_doublet", "interrupt_scene"
+
+
+@dataclass
+class FateResult(SerializableMixin):
+    """Result of a fate question (Mythic GME 2e fate chart or fate check)."""
+
+    answer: str = ""  # yes, no, exceptional_yes, exceptional_no
+    odds: str = "fifty_fifty"
+    chaos_factor: int = 5
+    method: str = "fate_chart"  # fate_chart, fate_check
+    roll: int = 0  # d100 for chart, 2d10 sum for check
+    random_event_triggered: bool = False
+    random_event: RandomEvent | None = None
+    question: str = ""
+
+
+@dataclass
 class PlayerPreferences(SerializableMixin):
     """Content boundaries and wishes (per-game, set at creation)."""
 

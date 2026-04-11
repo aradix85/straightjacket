@@ -13,6 +13,7 @@ from typing import Any
 
 from starlette.websockets import WebSocket
 
+from ..engine.mechanics.scene import SceneSetup
 from ..engine.models import BrainResult, EngineConfig, GameState, RollResult, TurnSnapshot
 
 
@@ -26,7 +27,7 @@ class BurnOffer:
     brain: BrainResult
     player_words: str
     pre_snapshot: TurnSnapshot
-    chaos_interrupt: str | None = None
+    scene_setup: SceneSetup | None = None
 
 
 @dataclass

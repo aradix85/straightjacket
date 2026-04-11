@@ -24,8 +24,10 @@ from .models_base import (  # noqa: F401
     ClockData,
     ClockEvent,
     EngineConfig,
+    FateResult,
     PlayerPreferences,
     ProgressTrack,
+    RandomEvent,
     Resources,
     WorldState,
 )

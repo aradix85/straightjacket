@@ -9,6 +9,8 @@ Player types "I search the room" → engine returns narration + updated game sta
 ```
 player input
   ↓
+Scene Test (mechanics/scene.py) → d10 vs chaos factor: expected / altered / interrupt
+  ↓
 Brain (ai/brain.py)           → classifies input into a move and stat via tool calling
   ↓
 Roll (mechanics/consequences.py) → 2d6+stat vs 2d10, result: STRONG_HIT / WEAK_HIT / MISS
@@ -17,7 +19,7 @@ Consequences (mechanics/consequences.py) → damage tables from engine.yaml, clo
   ↓
 NPC Activation (npc/activation.py) → TF-IDF scores decide which NPCs get full context
   ↓
-Prompt Builder (prompt_builders.py) → assembles XML prompt with world, NPCs, result, pacing
+Prompt Builder (prompt_builders.py) → assembles XML prompt with world, NPCs, result, scene type
   ↓
 Narrator (ai/narrator.py)    → AI writes prose (conversation memory for style consistency)
   ↓
@@ -28,7 +30,9 @@ Parser (parser.py)            → strips leaked metadata from prose (10-step cle
 Metadata Extractor (ai/narrator.py → ai/metadata.py)
                               → separate AI call extracts NPCs, memories, location, time
   ↓
-Director (director.py)        → lazy story steering, NPC reflections, act transitions
+Scene-End Bookkeeping         → chaos adjustment, list weight updates, consolidation
+  ↓
+Director (director.py)        → NPC reflections, AIMS generation, act transitions
   ↓
 DB Sync (db/sync.py)          → full GameState → SQLite for query access
   ↓
@@ -63,14 +67,18 @@ Where to find things. If you want to change X, edit Y.
 | Progress track mechanics | `models_base.py` → `ProgressTrack`, `PROGRESS_RANKS` |
 | Mythic threads/characters lists | `models_story.py` → `ThreadEntry`, `CharacterListEntry` |
 | Truths in narrator prompt | `prompt_blocks.py` → `truths_block` |
-| Director pacing (engine-computed) | `director.py` → `_map_pacing_hint`, reads `mechanics/world.py` → `get_pacing_hint` |
+| Pacing (engine-computed) | `mechanics/world.py` → `get_pacing_hint`; scene structure via `mechanics/scene.py` |
 | Act transitions (engine-computed) | `director.py` → `_check_engine_act_transition` |
 | Memory emotional weight (engine-computed) | `mechanics/engine_memories.py` → `derive_memory_emotion`, table in `engine.yaml` |
 | Database queries (NPCs, memories, threads, clocks) | `db/queries.py` → `query_npcs`, `query_memories`, `query_threads`, `query_clocks` |
 | Database sync after state changes | `db/sync.py` → `sync(game)`, called by turn, creation, correction, restore, load |
 | Tool definitions for AI agents | `tools/registry.py` → `@register("brain")`, `get_tools(role)` |
 | Tool execution and iterative loop | `tools/handler.py` → `execute_tool_call`, `run_tool_loop` |
-| Built-in query tools | `tools/builtins.py` → `query_npc`, `query_active_threads`, `query_active_clocks`, `query_npc_list` |
+| Built-in query tools | `tools/builtins.py` → `query_npc`, `query_active_threads`, `query_active_clocks`, `query_npc_list`, `fate_question` |
+| Fate questions (yes/no) | `mechanics/fate.py` → `resolve_fate`, `resolve_likelihood`; `engine.yaml` → `fate` |
+| Scene structure (expected/altered/interrupt) | `mechanics/scene.py` → `check_scene`, `SceneSetup` |
+| Random events and meaning tables | `mechanics/random_events.py` → `generate_random_event`, `roll_event_focus`, `roll_meaning_table` |
+| Mythic list maintenance (weight, consolidation) | `mechanics/random_events.py` → `add_thread_weight`, `add_character_weight`, `consolidate_threads` |
 | Consequence sentence templates | `engine.yaml` → `consequence_templates`, `pay_the_price` (no Python) |
 | Consequence sentence generation | `mechanics/consequences.py` → `generate_consequence_sentences` |
 | NPC stance matrix | `engine.yaml` → `stance_matrix` (no Python) |
@@ -85,16 +93,19 @@ Where to find things. If you want to change X, edit Y.
 src/straightjacket/
 ├── engine/
 │   ├── models.py            # Re-export hub for all dataclasses
-│   ├── models_base.py       # EngineConfig, Resources, ProgressTrack, WorldState, ClockData/Event
+│   ├── models_base.py       # EngineConfig, Resources, ProgressTrack, WorldState, ClockData/Event, RandomEvent, FateResult
 │   ├── models_npc.py        # NpcData, MemoryEntry
 │   ├── models_story.py      # ThreadEntry, CharacterListEntry, NarrativeState, StoryBlueprint, etc.
 │   ├── format_utils.py      # PartialFormatDict (shared by prompt_loader, strings_loader)
 │   ├── mechanics/
-│   │   ├── world.py            # Location matching, chaos, time, pacing, story structure
+│   │   ├── world.py            # Location matching, chaos adjustment, time, pacing, story structure
 │   │   ├── resolvers.py        # Position, effect, time progression, move category
 │   │   ├── consequences.py     # Dice, consequences, clocks, momentum, consequence sentences
 │   │   ├── stance_gate.py      # NPC stance resolution, information gating
-│   │   └── engine_memories.py  # Memory emotion derivation, engine memories, scene context
+│   │   ├── engine_memories.py  # Memory emotion derivation, engine memories, scene context
+│   │   ├── fate.py             # Mythic GME 2e fate chart, fate check, likelihood resolver
+│   │   ├── random_events.py    # Event focus, meaning tables, random event pipeline, list maintenance
+│   │   └── scene.py            # Scene structure: chaos check, altered/interrupt scenes
 │   ├── parser.py            # Narrator output cleanup (10 regex steps)
 │   ├── correction.py        # ## correction and momentum burn re-narration
 │   ├── director.py          # Story steering, NPC reflections, act transitions
@@ -185,10 +196,18 @@ src/straightjacket/
 
 **Tool calling.** Decorator-based registry (`@register("brain", "director")`) produces OpenAI function calling schemas from Python type hints. Iterative handler loop: AI calls tool → engine executes → result appended → AI continues, with configurable round limit. Tools are read-only: they query GameState and database but never mutate. Brain uses tool calling for classification (slim prompt, selective queries). Director uses two-phase: tool loop for context, then json_schema for structured output.
 
+**Fate system (Mythic GME 2e).** Probabilistic yes/no questions about the fiction. Two methods: fate chart (9×9 odds/chaos matrix, d100) and fate check (2d10 + modifiers). Both produce four outcomes (yes, no, exceptional yes, exceptional no) and can trigger random events via the doublet rule. Likelihood resolver maps game state (NPC disposition, chaos, resources) to odds level via engine.yaml lookup table. Brain calls `fate_question` tool; engine resolves everything.
+
+**Scene structure (Mythic GME 2e).** Every turn starts with a scene test: d10 vs chaos factor. Expected (roll > CF), altered (roll ≤ CF, odd), or interrupt (roll ≤ CF, even). Altered scenes roll on the Scene Adjustment Table. Interrupt scenes generate a random event via the pipeline. Scene test runs before Brain call. Replaces the old chaos interrupt system.
+
+**Random events.** Four-step pipeline: event focus (d100, 12 categories) → target selection from weighted Mythic lists → meaning table roll (actions or descriptions) → structured `RandomEvent` assembly. Events fire on fate doublets and interrupt scenes. `<random_event>` and `<interrupt_scene>` tags injected into narrator prompt. List maintenance: present NPCs/threads get weight bumps, new NPCs added to characters list, consolidation at 25 entries.
+
+**Director reduction.** Director no longer advises on pacing — that is fully engine-computed from scene structure and narrative direction. Director retains NPC reflections (AIMS, arc updates, description updates) and optional chapter summaries. Act transitions are engine-computed from scene count vs act range.
+
 ## Testing
 
 ```bash
-python -m pytest tests/ -v          # ~20 seconds, ~485 tests
+python -m pytest tests/ -v          # ~30 seconds, ~538 tests
 python tests/elvira/elvira.py --auto --turns 5   # direct engine (needs API key)
 python tests/elvira/elvira.py --ws --auto --turns 5  # via WebSocket server
 ```

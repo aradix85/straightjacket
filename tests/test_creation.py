@@ -459,33 +459,3 @@ def test_derive_memory_emotion_recovery_strong(load_engine: None) -> None:
     result = derive_memory_emotion("endure_harm", "STRONG_HIT", "loyal")
     # endure_harm is in both endure and recovery categories; endure matches first
     assert "devoted" in result
-
-
-# ── Engine pacing override ────────────────────────────────────
-
-
-def test_director_pacing_is_engine_computed(load_engine: None) -> None:
-    from straightjacket.engine.director import apply_director_guidance
-
-    game = GameState(player_name="Test")
-    game.narrative.scene_count = 3
-    # Force intense history so engine says "breather"
-    game.narrative.scene_intensity_history = ["action", "action", "action", "action"]
-    apply_director_guidance(game, {"pacing": "tension_rising", "narrator_guidance": "test"})
-    assert game.narrative.director_guidance.pacing == "breather"
-
-
-# ── Opening clock engine-created ──────────────────────────────
-
-
-def test_opening_clock_created_before_ai(load_engine: None) -> None:
-    """Verify game_start sets time and clock before any AI call."""
-    game = GameState(player_name="Test", background_vow="Find the artifact")
-    # Simulate what game_start does before AI calls
-    game.world.time_of_day = "morning"
-    from straightjacket.engine.models import ClockData
-
-    game.world.clocks.append(ClockData(name="Find the artifact", clock_type="threat", segments=6, filled=1))
-    assert game.world.time_of_day == "morning"
-    assert len(game.world.clocks) == 1
-    assert game.world.clocks[0].filled == 1

@@ -151,6 +151,8 @@ class TestSession:
 
 class TestBurnOffer:
     def test_fields(self) -> None:
+        from straightjacket.engine.mechanics.scene import SceneSetup
+
         bo = BurnOffer(
             roll=RollResult(1, 2, 3, 4, "iron", 3, 6, "MISS", "strike"),
             new_result="STRONG_HIT",
@@ -158,13 +160,14 @@ class TestBurnOffer:
             brain=BrainResult(move="strike", stat="iron"),
             player_words="I attack",
             pre_snapshot=TurnSnapshot(),
-            chaos_interrupt="twist",
+            scene_setup=SceneSetup(scene_type="altered", adjustments=["add_character"]),
         )
         assert bo.new_result == "STRONG_HIT"
         assert bo.cost == 7
-        assert bo.chaos_interrupt == "twist"
+        assert bo.scene_setup is not None
+        assert bo.scene_setup.scene_type == "altered"
 
-    def test_chaos_interrupt_defaults_none(self) -> None:
+    def test_scene_setup_defaults_none(self) -> None:
         bo = BurnOffer(
             roll=RollResult(1, 1, 1, 1, "wits", 1, 3, "MISS", "face_danger"),
             new_result="WEAK_HIT",
@@ -173,7 +176,7 @@ class TestBurnOffer:
             player_words="x",
             pre_snapshot=TurnSnapshot(),
         )
-        assert bo.chaos_interrupt is None
+        assert bo.scene_setup is None
 
 
 # ── Serializers ───────────────────────────────────────────────

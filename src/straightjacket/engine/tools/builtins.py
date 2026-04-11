@@ -122,3 +122,37 @@ def query_npc_list(game: GameState, status: str = "active") -> dict:
     """
     npcs = query_npcs(status=status)
     return {"npcs": [{"id": n.id, "name": n.name, "disposition": n.disposition, "bond": n.bond} for n in npcs]}
+
+
+@register("brain")
+def fate_question(game: GameState, question: str, context_hint: str = "") -> dict:
+    """Ask a yes/no question about the fiction. Returns probabilistic answer.
+
+    question: the yes/no question to ask (e.g. 'Is the door locked?')
+    context_hint: situational context for odds (e.g. 'hostile NPC', 'safe area')
+    """
+    from ..mechanics.fate import resolve_fate, resolve_likelihood
+
+    odds = resolve_likelihood(game, context_hint)
+    result = resolve_fate(
+        game,
+        odds=odds,
+        chaos_factor=game.world.chaos_factor,
+        question=question,
+    )
+    response: dict = {
+        "answer": result.answer,
+        "odds": result.odds,
+        "chaos_factor": result.chaos_factor,
+        "roll": result.roll,
+        "random_event_triggered": result.random_event_triggered,
+        "question": question,
+    }
+    if result.random_event is not None:
+        ev = result.random_event
+        response["random_event"] = {
+            "focus": ev.focus,
+            "target": ev.target,
+            "meaning": f"{ev.meaning_action} / {ev.meaning_subject}",
+        }
+    return response

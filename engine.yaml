@@ -28,7 +28,7 @@ npc:
 
 # ── Chaos factor ──────────────────────────────────────────────
 chaos:
-  min: 3
+  min: 1
   max: 9
   start: 5
   interrupt_types:
@@ -816,3 +816,39 @@ architect:
     - hallucinatory
     - phantasmagoric
     - uncanny
+
+# ── Fate system (Mythic GME 2e) ──────────────────────────────
+# Probabilistic yes/no questions about the fiction.
+# Data in data/mythic_gme_2e.json. Config here controls method and likelihood.
+fate:
+  default_method: fate_chart        # fate_chart or fate_check
+  likelihood_rules:
+    # NPC disposition → score modifier
+    disposition_scores:
+      hostile: -3
+      distrustful: -2
+      neutral: 0
+      friendly: 2
+      loyal: 3
+    # Chaos factor thresholds
+    chaos_thresholds:
+      high: 7
+      low: 3
+    chaos_scores:
+      high: -1                      # High chaos = less favorable
+      low: 1                        # Low chaos = more favorable
+    # Resource pressure
+    resource_critical_below: 2
+    resource_scores:
+      critical: -1
+    # Score → odds mapping (checked in order, first match wins)
+    score_to_odds:
+      - {min_score: 5, odds: certain}
+      - {min_score: 4, odds: nearly_certain}
+      - {min_score: 3, odds: very_likely}
+      - {min_score: 1, odds: likely}
+      - {min_score: -1, odds: fifty_fifty}
+      - {min_score: -3, odds: unlikely}
+      - {min_score: -4, odds: very_unlikely}
+      - {min_score: -5, odds: nearly_impossible}
+      - {min_score: -99, odds: impossible}

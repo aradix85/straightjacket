@@ -39,26 +39,27 @@ def locations_match(loc_a: str, loc_b: str) -> bool:
 # CHAOS FACTOR SYSTEM
 
 
-def update_chaos_factor(game: GameState, result: str) -> None:
-    """Adjust chaos factor based on roll result."""
+def update_chaos_factor(game: GameState, result: str, target_npc_id: str | None = None) -> None:
+    """Adjust chaos factor based on roll result or dialog outcome.
+
+    Action scenes: STRONG_HIT −1, MISS +1, WEAK_HIT no change.
+    Dialog scenes: derive from target NPC stance. Hostile/distrustful → +1 (not in control).
+    Friendly/loyal → −1 (in control). Neutral/no target → no change.
+    """
     _e = eng()
     if result == "MISS":
         game.world.tick_chaos(+1, floor=_e.chaos.min, ceiling=_e.chaos.max)
     elif result == "STRONG_HIT":
         game.world.tick_chaos(-1, floor=_e.chaos.min, ceiling=_e.chaos.max)
+    elif result == "dialog" and target_npc_id:
+        from ..npc import find_npc
 
-
-def check_chaos_interrupt(game: GameState) -> str | None:
-    """Roll against chaos factor to see if a scene interrupt triggers."""
-    _e = eng()
-    threshold = game.world.chaos_factor - 3
-    if threshold <= 0:
-        return None
-    roll = random.randint(1, 10)
-    if roll <= threshold:
-        game.world.tick_chaos(-1, floor=_e.chaos.min, ceiling=_e.chaos.max)
-        return random.choice(_e.chaos.interrupt_types)
-    return None
+        npc = find_npc(game, target_npc_id)
+        if npc:
+            if npc.disposition in ("hostile", "distrustful"):
+                game.world.tick_chaos(+1, floor=_e.chaos.min, ceiling=_e.chaos.max)
+            elif npc.disposition in ("friendly", "loyal"):
+                game.world.tick_chaos(-1, floor=_e.chaos.min, ceiling=_e.chaos.max)
 
 
 # TEMPORAL & SPATIAL CONSISTENCY

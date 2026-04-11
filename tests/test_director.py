@@ -95,14 +95,12 @@ def test_stores_narrator_guidance(stub_all: None) -> None:
         {
             "narrator_guidance": "Build tension slowly.",
             "npc_guidance": {"npc_1": "Kira should test loyalty."},
-            "pacing": "building",
             "arc_notes": "Story progressing.",
         },
     )
     dg = game.narrative.director_guidance
     assert dg.narrator_guidance == "Build tension slowly."
     assert dg.npc_guidance == {"npc_1": "Kira should test loyalty."}
-    assert dg.pacing == "building"
 
 
 # ── apply_director_guidance: scene summary ───────────────────

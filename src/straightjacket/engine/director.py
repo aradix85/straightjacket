@@ -174,7 +174,6 @@ Respond with a JSON object containing these fields:
 - scene_summary: 2-3 sentence summary of what happened and WHY it matters (in {lang})
 - narrator_guidance: Specific direction for the next 1-2 scenes (in {lang}). If <story_arc> has a thematic_thread, occasionally anchor the guidance to the aspect of it most alive in the current moment.
 - npc_guidance: Array of {{"npc_id": "npc_1", "guidance": "what this NPC should do/feel next"}} — guidance text in {lang}
-- pacing: one of tension_rising, building, climax, breather, resolution
 - npc_reflections: Only for NPCs listed in <reflect> tags. Each object has:
   - npc_id: the NPC's ID from the <reflect> tag
   - reflection: 1-2 sentence higher-level insight (in {lang})
@@ -293,11 +292,6 @@ def call_director(
         return {}
 
 
-def _map_pacing_hint(hint: str) -> str:
-    """Map engine pacing hint to Director pacing vocabulary."""
-    return {"breather": "breather", "action": "tension_rising", "neutral": "building"}.get(hint, "building")
-
-
 def _check_engine_act_transition(game: GameState) -> None:
     """Engine-deterministic act transition: fires when scene count exceeds act range."""
     bp = game.narrative.story_blueprint
@@ -339,19 +333,12 @@ def apply_director_guidance(game: GameState, guidance: dict) -> None:
                 log(f"[Director] Reset reflection for {npc.name} (empty guidance)")
         return
 
-    # Store guidance for next narrator call — pacing computed by engine, not AI
-    from .mechanics import get_pacing_hint
+    # Store guidance for next narrator call
     from .models import DirectorGuidance
-
-    engine_pacing = _map_pacing_hint(get_pacing_hint(game))
-    ai_pacing = guidance.get("pacing", "")
-    if ai_pacing and ai_pacing != engine_pacing:
-        log(f"[Director] Pacing override: AI={ai_pacing} → engine={engine_pacing}")
 
     game.narrative.director_guidance = DirectorGuidance(
         narrator_guidance=guidance.get("narrator_guidance", ""),
         npc_guidance=guidance.get("npc_guidance", {}),
-        pacing=engine_pacing,
         arc_notes=guidance.get("arc_notes", ""),
     )
 
@@ -472,7 +459,7 @@ def apply_director_guidance(game: GameState, guidance: dict) -> None:
                 f"[Director] Reset stale reflection flag for {npc.name} (accumulator preserved at {npc.importance_accumulator})"
             )
 
-    log(f"[Director] Guidance applied: pacing={guidance.get('pacing', '?')}")
+    log("[Director] Guidance applied")
 
 
 def reset_stale_reflection_flags(game: GameState) -> None:
