@@ -13,6 +13,18 @@ npc:
   max_activated: 3            # Max NPCs with full context per turn
   reflection_threshold: 30    # Importance accumulator threshold for reflection
   memory_recency_decay: 0.92  # Exponential decay factor for memory recency
+  reflection_importance: 8    # Importance score assigned to Director reflections
+  death_corroboration_min_importance: 9  # Min importance for death corroboration voting
+  seed_importance_floor: 3    # Floor for auto-seeded NPC memories
+  reflection_recency_floor: 0.6  # Min recency score for reflection memories
+  about_npc_relevance_boost: 0.6  # Relevance boost when memory.about_npc matches present NPC
+  consolidation_recency_ratio: 0.6  # Fraction of observation budget reserved for recent memories
+  monologue_max_chars: 200    # Max chars per NPC speech block before validator flags it
+  description_max_chars: 200  # Max chars for Director-updated NPC descriptions
+  arc_max_chars: 300          # Max chars for Director-updated NPC arcs
+  # Memory counts per information gate level (gate 0-4)
+  gate_memory_counts: {0: 0, 1: 0, 2: 3, 3: 5, 4: 5}
+  activated_memory_count: 2   # Memories shown for activated (non-target) NPCs
 
 # ── Chaos factor ──────────────────────────────────────────────
 chaos:
@@ -42,6 +54,7 @@ pacing:
   calm_threshold: 2           # Consecutive calm scenes before action hint
   autonomous_clock_tick_chance: 0.20  # Per-scene chance each threat clock ticks
   weak_hit_clock_tick_chance: 0.50   # Chance threat clock ticks on WEAK_HIT at risky position
+  fired_clock_keep_scenes: 3  # Keep fired clocks for this many scenes before purging
 
 # ── Story structure ───────────────────────────────────────────
 story:
@@ -716,3 +729,90 @@ information_gate:
     cooperative_guarded: 3
     # Neutral and above: no cap (defaults to 4)
   default_cap: 4
+
+# ── Enums ─────────────────────────────────────────────────────
+# Single source of truth for all enum-like values used across the engine.
+# Python reads these at runtime; schemas are built from them dynamically.
+enums:
+  time_phases:
+    - early_morning
+    - morning
+    - midday
+    - afternoon
+    - evening
+    - late_evening
+    - night
+    - deep_night
+  npc_statuses:
+    - active
+    - background
+    - deceased
+    - lore
+  dispositions:
+    - hostile
+    - distrustful
+    - neutral
+    - friendly
+    - loyal
+  memory_types:
+    - observation
+    - reflection
+  clock_types:
+    - threat
+    - scheme
+    - progress
+  thread_types:
+    - vow
+    - goal
+    - tension
+    - subplot
+  story_structures:
+    - 3act
+    - kishotenketsu
+  positions:
+    - controlled
+    - risky
+    - desperate
+
+# ── Memory retrieval weights ─────────────────────────────────
+memory_retrieval_weights:
+  recency: 0.40
+  importance: 0.35
+  relevance: 0.25
+
+# ── Opening scene defaults ───────────────────────────────────
+opening:
+  time_of_day: morning
+  clock_segments: 6
+  clock_filled: 1
+  clock_fallback_name: "Looming threat"
+  clock_trigger_template: "Threat escalates beyond {player}'s control"
+
+# ── Move routing ─────────────────────────────────────────────
+# Maps moves to resource tracks for miss damage and recovery healing.
+# These replace hardcoded Python dicts with config-driven lookups.
+move_routing:
+  miss_endure:
+    endure_harm: health
+    endure_stress: spirit
+  recovery:
+    endure_harm: {track: health, cap: health_max}
+    endure_stress: {track: spirit, cap: spirit_max}
+    resupply: {track: supply, cap: supply_max}
+
+# ── Architect constraints ────────────────────────────────────
+architect:
+  forbidden_moods:
+    - surreal
+    - disorienting
+    - revelatory
+    - haunted
+    - spectral
+    - ethereal
+    - otherworldly
+    - eldritch
+    - supernatural
+    - dreamlike
+    - hallucinatory
+    - phantasmagoric
+    - uncanny

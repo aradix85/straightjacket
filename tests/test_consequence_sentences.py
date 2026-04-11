@@ -222,4 +222,4 @@ def test_task_mentions_consequence_weaving() -> None:
         player_words="climb",
         consequence_sentences=sentences,
     )
-    assert "consequence" in prompt.lower().split("<task>")[-1]
+    assert "<consequence>" in prompt.lower()

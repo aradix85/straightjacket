@@ -11,9 +11,9 @@ player input
   ↓
 Brain (ai/brain.py)           → classifies input into a move and stat via tool calling
   ↓
-Roll (mechanics.py)           → 2d6+stat vs 2d10, result: STRONG_HIT / WEAK_HIT / MISS
+Roll (mechanics/consequences.py) → 2d6+stat vs 2d10, result: STRONG_HIT / WEAK_HIT / MISS
   ↓
-Consequences (mechanics.py)   → damage tables from engine.yaml, clock ticks, crisis check
+Consequences (mechanics/consequences.py) → damage tables from engine.yaml, clock ticks, crisis check
   ↓
 NPC Activation (npc/activation.py) → TF-IDF scores decide which NPCs get full context
   ↓
@@ -50,7 +50,7 @@ Where to find things. If you want to change X, edit Y.
 | Server port | `config.yaml` (no Python) |
 | Move types or stat assignments | `engine.yaml` → `move_stats` and `move_categories` |
 | A new setting (genre + constraints) | `data/settings/your_setting.yaml` + Datasworn JSON |
-| How dice rolls work | `mechanics.py` → `roll_action`, `apply_consequences` |
+| How dice rolls work | `mechanics/consequences.py` → `roll_action`, `apply_consequences` |
 | How the narrator is prompted | `prompts.yaml` → task templates; `prompt_builders.py` → XML assembly |
 | NPC memory / activation logic | `npc/memory.py`, `npc/activation.py` |
 | Story structure / act tracking | `story_state.py`, `ai/architect.py` |
@@ -63,20 +63,20 @@ Where to find things. If you want to change X, edit Y.
 | Progress track mechanics | `models_base.py` → `ProgressTrack`, `PROGRESS_RANKS` |
 | Mythic threads/characters lists | `models_story.py` → `ThreadEntry`, `CharacterListEntry` |
 | Truths in narrator prompt | `prompt_blocks.py` → `truths_block` |
-| Director pacing (engine-computed) | `director.py` → `_map_pacing_hint`, reads `mechanics.get_pacing_hint` |
+| Director pacing (engine-computed) | `director.py` → `_map_pacing_hint`, reads `mechanics/world.py` → `get_pacing_hint` |
 | Act transitions (engine-computed) | `director.py` → `_check_engine_act_transition` |
-| Memory emotional weight (engine-computed) | `mechanics.py` → `derive_memory_emotion`, table in `engine.yaml` |
+| Memory emotional weight (engine-computed) | `mechanics/engine_memories.py` → `derive_memory_emotion`, table in `engine.yaml` |
 | Database queries (NPCs, memories, threads, clocks) | `db/queries.py` → `query_npcs`, `query_memories`, `query_threads`, `query_clocks` |
 | Database sync after state changes | `db/sync.py` → `sync(game)`, called by turn, creation, correction, restore, load |
 | Tool definitions for AI agents | `tools/registry.py` → `@register("brain")`, `get_tools(role)` |
 | Tool execution and iterative loop | `tools/handler.py` → `execute_tool_call`, `run_tool_loop` |
 | Built-in query tools | `tools/builtins.py` → `query_npc`, `query_active_threads`, `query_active_clocks`, `query_npc_list` |
 | Consequence sentence templates | `engine.yaml` → `consequence_templates`, `pay_the_price` (no Python) |
-| Consequence sentence generation | `mechanics.py` → `generate_consequence_sentences` |
+| Consequence sentence generation | `mechanics/consequences.py` → `generate_consequence_sentences` |
 | NPC stance matrix | `engine.yaml` → `stance_matrix` (no Python) |
-| NPC stance resolution | `mechanics.py` → `resolve_npc_stance`, `NpcStance` |
+| NPC stance resolution | `mechanics/stance_gate.py` → `resolve_npc_stance`, `NpcStance` |
 | Information gate levels | `engine.yaml` → `information_gate` (no Python) |
-| Information gate computation | `mechanics.py` → `compute_npc_gate` |
+| Information gate computation | `mechanics/stance_gate.py` → `compute_npc_gate` |
 | Gate-filtered NPC prompt data | `prompt_builders.py` → `_npc_block` (gate 0–4 filtering) |
 
 ## File Map
@@ -89,7 +89,12 @@ src/straightjacket/
 │   ├── models_npc.py        # NpcData, MemoryEntry
 │   ├── models_story.py      # ThreadEntry, CharacterListEntry, NarrativeState, StoryBlueprint, etc.
 │   ├── format_utils.py      # PartialFormatDict (shared by prompt_loader, strings_loader)
-│   ├── mechanics.py         # Dice, chaos, consequences, clocks, momentum
+│   ├── mechanics/
+│   │   ├── world.py            # Location matching, chaos, time, pacing, story structure
+│   │   ├── resolvers.py        # Position, effect, time progression, move category
+│   │   ├── consequences.py     # Dice, consequences, clocks, momentum, consequence sentences
+│   │   ├── stance_gate.py      # NPC stance resolution, information gating
+│   │   └── engine_memories.py  # Memory emotion derivation, engine memories, scene context
 │   ├── parser.py            # Narrator output cleanup (10 regex steps)
 │   ├── correction.py        # ## correction and momentum burn re-narration
 │   ├── director.py          # Story steering, NPC reflections, act transitions
@@ -122,7 +127,9 @@ src/straightjacket/
 │   │   ├── turn.py          # Main turn pipeline (process_turn)
 │   │   ├── game_start.py    # Character creation → opening scene
 │   │   ├── chapters.py      # Epilogue, new chapter orchestration
-│   │   └── setup_common.py  # Shared opening setup logic
+│   │   ├── setup_common.py  # Shared opening setup logic
+│   │   ├── finalization.py  # Shared post-narration state mutations
+│   │   └── director_runner.py # Deferred Director call
 │   └── datasworn/
 │       ├── loader.py        # Reads Datasworn JSON (oracles, assets, moves)
 │       └── settings.py      # Setting packages (vocabulary, genre constraints)

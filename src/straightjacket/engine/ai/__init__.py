@@ -13,8 +13,6 @@ __all__ = [
     "CHAPTER_SUMMARY_OUTPUT_SCHEMA",
     "CORRECTION_OUTPUT_SCHEMA",
     "DIRECTOR_OUTPUT_SCHEMA",
-    "NARRATOR_METADATA_SCHEMA",
-    "OPENING_SETUP_SCHEMA",
     "OpenAICompatibleProvider",
     "STORY_ARCHITECT_OUTPUT_SCHEMA",
     "apply_narrator_metadata",
@@ -28,6 +26,8 @@ __all__ = [
     "clear_provider_cache",
     "create_with_retry",
     "get_brain_output_schema",
+    "get_narrator_metadata_schema",
+    "get_opening_setup_schema",
     "get_provider",
     "post_process_response",
 ]
@@ -52,8 +52,8 @@ from .schemas import (
     CHAPTER_SUMMARY_OUTPUT_SCHEMA,
     CORRECTION_OUTPUT_SCHEMA,
     DIRECTOR_OUTPUT_SCHEMA,
-    NARRATOR_METADATA_SCHEMA,
-    OPENING_SETUP_SCHEMA,
     STORY_ARCHITECT_OUTPUT_SCHEMA,
     get_brain_output_schema,
+    get_narrator_metadata_schema,
+    get_opening_setup_schema,
 )

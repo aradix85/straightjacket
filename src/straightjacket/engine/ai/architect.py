@@ -5,6 +5,7 @@ import json
 
 from ...i18n import E
 from ..config_loader import cfg, sampling_params
+from ..engine_loader import eng
 from ..logging_util import log
 from ..models import ChapterSummary, EngineConfig, GameState
 from ..prompt_blocks import (
@@ -132,21 +133,7 @@ npcs:{npc_text}{campaign_ctx}{backstory_text}"""
         blueprint["structure_type"] = structure_type
 
         # Validate act moods: strip forbidden mood terms that cause genre drift
-        _forbidden_moods = {
-            "surreal",
-            "disorienting",
-            "revelatory",
-            "haunted",
-            "spectral",
-            "ethereal",
-            "otherworldly",
-            "eldritch",
-            "supernatural",
-            "dreamlike",
-            "hallucinatory",
-            "phantasmagoric",
-            "uncanny",
-        }
+        _forbidden_moods = set(eng().architect.forbidden_moods)
         for act in blueprint.get("acts", []):
             mood = act.get("mood", "")
             if mood:
@@ -163,9 +150,7 @@ npcs:{npc_text}{campaign_ctx}{backstory_text}"""
                     )
 
         # Validate scene_range: must be exactly [start, end]
-        from ..engine_loader import eng as _eng
-
-        default_range = list(_eng().scene_range_default)
+        default_range = list(eng().scene_range_default)
         for act in blueprint.get("acts", []):
             sr = act.get("scene_range", [])
             if not isinstance(sr, list) or len(sr) != 2:

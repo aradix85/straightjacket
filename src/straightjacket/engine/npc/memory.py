@@ -65,8 +65,8 @@ def retrieve_memories(
     npc: NpcData, context_text: str = "", max_count: int = 5, current_scene: int = 0, present_npc_ids: set | None = None
 ) -> list[MemoryEntry]:
     """Retrieve the most relevant memories for an NPC using weighted scoring.
-    Score = 0.40 x recency + 0.35 x importance + 0.25 x relevance
-    Memories with about_npc matching a present NPC get a +0.6 relevance boost.
+    Weights from engine.yaml memory_retrieval_weights.
+    Memories with about_npc matching a present NPC get a relevance boost.
     Always includes at least 1 reflection if available."""
     memories = npc.memory
     if not memories:
@@ -74,6 +74,13 @@ def retrieve_memories(
 
     _present = present_npc_ids or set()
     reflections = [m for m in memories if m.type == "reflection"]
+    _e = eng()
+    _w = _e.memory_retrieval_weights
+    w_recency = _w.recency
+    w_importance = _w.importance
+    w_relevance = _w.relevance
+    recency_floor = _e.npc.reflection_recency_floor
+    about_boost = _e.npc.about_npc_relevance_boost
 
     context_words = set()
     if context_text:
@@ -82,9 +89,9 @@ def retrieve_memories(
     def _score_memory(mem: MemoryEntry) -> float:
         scene_gap = max(0, current_scene - mem.scene)
         if mem.type == "reflection":
-            recency = max(0.6, eng().npc.memory_recency_decay ** scene_gap)
+            recency = max(recency_floor, _e.npc.memory_recency_decay**scene_gap)
         else:
-            recency = eng().npc.memory_recency_decay ** scene_gap
+            recency = _e.npc.memory_recency_decay**scene_gap
 
         importance = mem.importance / 10.0
 
@@ -96,9 +103,9 @@ def retrieve_memories(
                 relevance = min(1.0, len(overlap) / max(3, len(context_words)) * 2)
 
         if _present and mem.about_npc in _present:
-            relevance = min(1.0, relevance + 0.6)
+            relevance = min(1.0, relevance + about_boost)
 
-        return 0.40 * recency + 0.35 * importance + 0.25 * relevance
+        return w_recency * recency + w_importance * importance + w_relevance * relevance
 
     scored = [(m, _score_memory(m)) for m in memories]
     scored.sort(key=lambda x: x[1], reverse=True)
@@ -139,7 +146,7 @@ def consolidate_memory(npc: NpcData) -> None:
     if len(observations) <= obs_budget:
         kept_observations = observations
     else:
-        recency_budget = max(3, int(obs_budget * 0.6))
+        recency_budget = max(3, int(obs_budget * eng().npc.consolidation_recency_ratio))
         importance_budget = obs_budget - recency_budget
 
         by_recency = sorted(observations, key=lambda m: m.scene, reverse=True)

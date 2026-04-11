@@ -231,7 +231,7 @@ def process_new_npcs(game: "GameState", new_npcs: list) -> None:
         disp_to_emotion = dict(eng().disposition_to_seed_emotion.items())
         seed_emotion = disp_to_emotion.get(seed_emotion, "neutral")
         seed_imp, seed_debug = score_importance(seed_emotion, seed_event, debug=True)
-        seed_imp = max(seed_imp, 3)
+        seed_imp = max(seed_imp, eng().npc.seed_importance_floor)
         npc.memory.append(
             MemoryEntry(
                 scene=game.narrative.scene_count,

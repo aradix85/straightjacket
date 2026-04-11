@@ -71,9 +71,11 @@ _brain_cache = None
 
 
 def clear_brain_cache() -> None:
-    """Invalidate cached schema. Called by reload_engine()."""
-    global _brain_cache
+    """Invalidate cached schemas. Called by reload_engine()."""
+    global _brain_cache, _metadata_cache, _opening_cache
     _brain_cache = None
+    _metadata_cache = None
+    _opening_cache = None
 
 
 def get_brain_output_schema() -> dict:
@@ -212,97 +214,121 @@ CHAPTER_SUMMARY_OUTPUT_SCHEMA = _obj(
 
 # ── Narrator metadata output ─────────────────────────────────
 
-NARRATOR_METADATA_SCHEMA = _obj(
-    {
-        "new_npcs": _arr(
-            _obj(
-                {
-                    "name": _str(),
-                    "description": _str(),
-                    "disposition": _str(["hostile", "distrustful", "neutral", "friendly", "loyal"]),
-                }
-            )
-        ),
-        "npc_renames": _arr(
-            _obj(
-                {
-                    "npc_id": _str(),
-                    "new_name": _str(),
-                    "reason": _str(),
-                }
-            )
-        ),
-        "npc_details": _arr(
-            _obj(
-                {
-                    "npc_id": _str(),
-                    "full_name": _nullable_str(),
-                    "description": _nullable_str(),
-                    "extra": _nullable_str(),
-                }
-            )
-        ),
-        "deceased_npcs": _arr(_obj({"npc_id": _str()})),
-        "lore_npcs": _arr(
-            _obj(
-                {
-                    "name": _str(),
-                    "description": _str(),
-                }
-            )
-        ),
-    }
-)
+# ── Narrator metadata output ─────────────────────────────────
+
+_metadata_cache: dict | None = None
+
+
+def get_narrator_metadata_schema() -> dict:
+    """Build narrator metadata schema with config-driven disposition enum."""
+    global _metadata_cache
+    if _metadata_cache is None:
+        _e = eng()
+        dispositions = list(_e.enums.dispositions)
+        _metadata_cache = _obj(
+            {
+                "new_npcs": _arr(
+                    _obj(
+                        {
+                            "name": _str(),
+                            "description": _str(),
+                            "disposition": _str(dispositions),
+                        }
+                    )
+                ),
+                "npc_renames": _arr(
+                    _obj(
+                        {
+                            "npc_id": _str(),
+                            "new_name": _str(),
+                            "reason": _str(),
+                        }
+                    )
+                ),
+                "npc_details": _arr(
+                    _obj(
+                        {
+                            "npc_id": _str(),
+                            "full_name": _nullable_str(),
+                            "description": _nullable_str(),
+                            "extra": _nullable_str(),
+                        }
+                    )
+                ),
+                "deceased_npcs": _arr(_obj({"npc_id": _str()})),
+                "lore_npcs": _arr(
+                    _obj(
+                        {
+                            "name": _str(),
+                            "description": _str(),
+                        }
+                    )
+                ),
+            }
+        )
+    return _metadata_cache
 
 
 # ── Opening setup output ─────────────────────────────────────
 
-OPENING_SETUP_SCHEMA = _obj(
-    {
-        "npcs": _arr(
-            _obj(
-                {
-                    "name": _str(),
-                    "description": _str(),
-                    "agenda": _str(),
-                    "instinct": _str(),
-                    "secrets": _str_arr(),
-                    "disposition": _str(["hostile", "distrustful", "neutral", "friendly", "loyal"]),
-                    "bond": _int(),
-                    "bond_max": _int(),
-                }
-            )
-        ),
-        "clocks": _arr(
-            _obj(
-                {
-                    "id": _str(),
-                    "name": _str(),
-                    "clock_type": _str(["threat", "progress"]),
-                    "segments": _int(),
-                    "filled": _int(),
-                    "trigger_description": _str(),
-                    "owner": _str(),
-                }
-            )
-        ),
-        "location": _str(),
-        "scene_context": _str(),
-        "time_of_day": _str(
-            ["early_morning", "morning", "midday", "afternoon", "evening", "late_evening", "night", "deep_night"]
-        ),
-        "memory_updates": _arr(
-            _obj(
-                {
-                    "npc_name": _str(),
-                    "event": _str(),
-                    "emotional_weight": _str(),
-                }
-            )
-        ),
-        "deceased_npcs": _arr(_obj({"npc_id": _str()})),
-    }
-)
+# ── Opening setup output ─────────────────────────────────────
+
+_opening_cache: dict | None = None
+
+
+def get_opening_setup_schema() -> dict:
+    """Build opening setup schema with config-driven enums."""
+    global _opening_cache
+    if _opening_cache is None:
+        _e = eng()
+        dispositions = list(_e.enums.dispositions)
+        time_phases = list(_e.enums.time_phases)
+        clock_types = [ct for ct in _e.enums.clock_types if ct != "scheme"]  # Opening only gets threat/progress
+        _opening_cache = _obj(
+            {
+                "npcs": _arr(
+                    _obj(
+                        {
+                            "name": _str(),
+                            "description": _str(),
+                            "agenda": _str(),
+                            "instinct": _str(),
+                            "secrets": _str_arr(),
+                            "disposition": _str(dispositions),
+                            "bond": _int(),
+                            "bond_max": _int(),
+                        }
+                    )
+                ),
+                "clocks": _arr(
+                    _obj(
+                        {
+                            "id": _str(),
+                            "name": _str(),
+                            "clock_type": _str(clock_types),
+                            "segments": _int(),
+                            "filled": _int(),
+                            "trigger_description": _str(),
+                            "owner": _str(),
+                        }
+                    )
+                ),
+                "location": _str(),
+                "scene_context": _str(),
+                "time_of_day": _str(time_phases),
+                "memory_updates": _arr(
+                    _obj(
+                        {
+                            "npc_name": _str(),
+                            "event": _str(),
+                            "emotional_weight": _str(),
+                        }
+                    )
+                ),
+                "deceased_npcs": _arr(_obj({"npc_id": _str()})),
+            }
+        )
+    return _opening_cache
 
 
 # ── Correction output ─────────────────────────────────────────

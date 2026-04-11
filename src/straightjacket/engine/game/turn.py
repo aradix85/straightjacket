@@ -2,8 +2,7 @@
 """Turn processing: the core gameplay loop."""
 
 from ..ai.brain import call_brain, call_revelation_check
-from ..ai.metadata import apply_narrator_metadata
-from ..ai.narrator import call_narrator, call_narrator_metadata
+from ..ai.narrator import call_narrator
 from ..ai.provider_base import AIProvider
 from ..director import should_call_director
 from ..engine_loader import eng
@@ -14,8 +13,6 @@ from ..mechanics import (
     can_burn_momentum,
     check_chaos_interrupt,
     check_npc_agency,
-    generate_engine_memories,
-    generate_scene_context,
     purge_old_fired_clocks,
     record_scene_intensity,
     resolve_effect,
@@ -24,39 +21,13 @@ from ..mechanics import (
     tick_autonomous_clocks,
     update_chaos_factor,
 )
-from ..models import BrainResult, EngineConfig, GameState, MemoryEntry, NarrationEntry, RollResult, SceneLogEntry
+from ..models import BrainResult, EngineConfig, GameState, NarrationEntry, RollResult, SceneLogEntry
 from ..npc import activate_npcs_for_prompt, find_npc, reactivate_npc
-from ..npc.memory import consolidate_memory
 from ..parser import parse_narrator_response
 from ..prompt_builders import build_action_prompt, build_dialog_prompt
 from ..story_state import default_scene_range, get_pending_revelations, mark_revelation_used
 
-
-def _apply_engine_memories(game: GameState, memories: list[dict]) -> None:
-    """Apply engine-generated memories to NPCs. Mirrors apply_memory_updates but skips
-    fuzzy matching and stub creation — engine knows exactly which NPCs are present."""
-    _e = eng()
-    for mem in memories:
-        npc = find_npc(game, mem["npc_id"])
-        if not npc:
-            continue
-        npc.memory.append(
-            MemoryEntry(
-                scene=game.narrative.scene_count,
-                event=mem["event"],
-                emotional_weight=mem["emotional_weight"],
-                importance=mem["importance"],
-                type="observation",
-                about_npc=mem.get("about_npc"),
-                _score_debug=mem.get("_score_debug", "engine-generated"),
-            )
-        )
-        npc.importance_accumulator += mem["importance"]
-        if game.world.current_location:
-            npc.last_location = game.world.current_location
-        if npc.importance_accumulator >= _e.npc.reflection_threshold:
-            npc.needs_reflection = True
-        consolidate_memory(npc)
+from .finalization import apply_post_narration
 
 
 def _roll_oracle_answer(game: GameState) -> str:
@@ -79,7 +50,6 @@ def _finalize_scene(
     provider: AIProvider,
     game: GameState,
     narration: str,
-    metadata: dict,
     brain: BrainResult,
     player_message: str,
     scene_present_ids: set,
@@ -97,19 +67,20 @@ def _finalize_scene(
     effect: str = "standard",
 ) -> tuple[bool, dict | None]:
     """Shared post-narration processing for dialog and action scenes."""
-    # Engine-side state mutations (step 3.1)
-    # Scene context: engine-generated from mechanical context
-    ctx = generate_scene_context(game, brain, roll, [n.name for n in game.npcs if n.id in scene_present_ids])
-    game.world.current_scene_context = ctx
+    activated_npc_names = [n.name for n in game.npcs if n.id in scene_present_ids]
 
-    # Engine-side memories for activated NPCs
-    engine_memories = generate_engine_memories(game, brain, roll, scene_present_ids, consequences=consequences)
-    if engine_memories:
-        _apply_engine_memories(game, engine_memories)
-
-    # AI metadata: NPC detection only (new_npcs, renames, details, deaths, lore)
-    apply_narrator_metadata(
-        game, metadata, scene_present_ids=scene_present_ids, world_addition=brain.world_addition or ""
+    # Engine-side state mutations (step 3.1): scene context, memories, metadata
+    metadata = apply_post_narration(
+        provider,
+        game,
+        narration,
+        brain,
+        roll,
+        scene_present_ids,
+        activated_npc_names,
+        config=config,
+        consequences=consequences,
+        world_addition=brain.world_addition or "",
     )
 
     revelation_confirmed = False
@@ -235,13 +206,11 @@ def process_turn(
 
         if game.last_turn_snapshot is not None:
             game.last_turn_snapshot.narration = narration
-        metadata = call_narrator_metadata(provider, narration, game, config, brain=brain)
 
         _, director_ctx = _finalize_scene(
             provider,
             game,
             narration,
-            metadata,
             brain,
             player_message,
             _scene_present_ids,
@@ -293,13 +262,11 @@ def process_turn(
 
         if game.last_turn_snapshot is not None:
             game.last_turn_snapshot.narration = narration
-        metadata = call_narrator_metadata(provider, narration, game, config, brain=brain)
 
         _, director_ctx = _finalize_scene(
             provider,
             game,
             narration,
-            metadata,
             brain,
             player_message,
             _scene_present_ids,
@@ -408,7 +375,6 @@ def process_turn(
 
     if game.last_turn_snapshot is not None:
         game.last_turn_snapshot.narration = narration
-    metadata = call_narrator_metadata(provider, narration, game, config, brain=brain, consequences=consequences)
 
     update_chaos_factor(game, roll.result)
 
@@ -416,7 +382,6 @@ def process_turn(
         provider,
         game,
         narration,
-        metadata,
         brain,
         player_message,
         _scene_present_ids,
@@ -471,18 +436,14 @@ def _check_story_completion(game: GameState) -> None:
         log(f"[Story] Complete: final act entered ('{penultimate_id}' triggered) + scene {sc} >= range end {final_end}")
         return
 
-    # Back-fill: if scene_count >= final_end but Director never confirmed transitions
-    # (e.g. fast play where Director was consistently superseded), back-fill from
-    # scene ranges before checking again.
     if sc >= final_end and not final_act_entered:
-        for i, act in enumerate(acts[:-1]):  # Never back-fill the final act
+        for i, act in enumerate(acts[:-1]):
             act_id = f"act_{i}"
             if act_id not in bp.triggered_transitions:
                 act_range = act.scene_range or default_scene_range()
                 if sc > act_range[1]:
                     bp.triggered_transitions.append(act_id)
                     log(f"[Story] Back-filled transition: {act_id} (scene {sc} > range end {act_range[1]})")
-        # Re-check after back-fill
         triggered = set(bp.triggered_transitions)
         if len(acts) >= 2 and penultimate_id in triggered:
             bp.story_complete = True

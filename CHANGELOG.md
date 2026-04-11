@@ -5,6 +5,19 @@ Originally forked from [EdgeTales](https://github.com/edgetales/edgetales). See 
 
 ---
 
+## [0.43.0] — 2026-04-11
+
+Config-driven refactor. Mechanics modularized. Finalization deduplicated.
+
+- 28 magic numbers moved from Python to engine.yaml: NPC reflection importance, death corroboration threshold, seed importance floor, gate memory counts, activated memory count, memory retrieval weights, reflection recency floor, about_npc relevance boost, consolidation ratio, monologue/description/arc char limits, opening clock defaults, fired clock keep_scenes, move routing (miss_endure, recovery), architect forbidden moods
+- New engine.yaml sections: `enums` (9 enum lists), `memory_retrieval_weights`, `opening`, `move_routing`, `architect`
+- NARRATOR_METADATA_SCHEMA and OPENING_SETUP_SCHEMA converted to lazy cached functions with config-driven enum values
+- mechanics.py (1030 lines) split into mechanics/ package: world.py, resolvers.py, consequences.py, stance_gate.py, engine_memories.py. Re-export hub preserves all existing imports
+- New game/finalization.py: shared `apply_engine_memories` and `apply_post_narration` used by turn, correction, and momentum burn
+- Bug fix: correction and momentum burn now run `consolidate_memory` and set `needs_reflection` flags (previously skipped)
+- Pre-existing test failure fixed (test_task_mentions_consequence_weaving checked wrong prompt section)
+- 485 tests, ruff clean, mypy clean
+
 ## [0.42.0] — 2026-04-10
 
 GLM-4.7 prompt tuning. Config-driven prompts.

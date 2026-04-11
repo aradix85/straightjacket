@@ -160,6 +160,8 @@ def _check_death_corroboration(game: GameState) -> None:
         cross_votes = 0
         self_votes = 0
 
+        min_importance = eng().npc.death_corroboration_min_importance
+
         # Scan all OTHER NPCs' memories for cross-votes about this NPC
         for other in game.npcs:
             if other.id == npc_id:
@@ -171,7 +173,7 @@ def _check_death_corroboration(game: GameState) -> None:
                     continue
                 if (
                     mem.about_npc == npc_id
-                    and mem.importance >= 9
+                    and mem.importance >= min_importance
                     and mem.emotional_weight.lower() in _death_emotions()
                 ):
                     cross_votes += 1
@@ -182,7 +184,7 @@ def _check_death_corroboration(game: GameState) -> None:
                 continue
             if mem.scene != current_scene:
                 continue
-            if mem.importance >= 9 and mem.emotional_weight.lower() in _death_emotions():
+            if mem.importance >= min_importance and mem.emotional_weight.lower() in _death_emotions():
                 self_votes += 1
 
         total = cross_votes + self_votes

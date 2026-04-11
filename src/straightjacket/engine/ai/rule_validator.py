@@ -203,9 +203,12 @@ def check_npc_monologue(narration: str) -> list[str]:
     if not quotes:
         return []
 
-    # Check 1: single NPC speech block over 200 chars
+    # Check 1: single NPC speech block over configured limit
+    from ..engine_loader import eng as _eng
+
+    monologue_max = _eng().npc.monologue_max_chars
     for q in quotes:
-        if len(q) > 200:
+        if len(q) > monologue_max:
             return [f"RESOLUTION PACING: NPC speech block is {len(q)} characters — max two sentences per NPC response"]
 
     # Check 2: 4+ quotes with short gaps (split monologue)

@@ -110,10 +110,12 @@ def _npc_block(game: GameState, target_id: str | None, context_text: str = "", m
     # Gate 2+: add agenda + recent memories
     agenda_line = ""
     mem_str = ""
+    gate_mem_counts = eng().npc.gate_memory_counts
     if gate >= 2:
         agenda_line = f"agenda:{_xe(target.agenda)}"
+        mem_count = gate_mem_counts.get(gate, gate_mem_counts.get(min(gate, 4), 5))
         memories = retrieve_memories(
-            target, context_text=context_text, max_count=3 if gate == 2 else 5, current_scene=game.narrative.scene_count
+            target, context_text=context_text, max_count=mem_count, current_scene=game.narrative.scene_count
         )
         observations = [m for m in memories if m.type != "reflection"]
         if observations:
@@ -127,8 +129,9 @@ def _npc_block(game: GameState, target_id: str | None, context_text: str = "", m
         instinct_line = f" instinct:{_xe(target.instinct)}"
         if target.arc.strip():
             arc_attr = f' arc="{_xa(target.arc)}"'
+        mem_count_3 = gate_mem_counts.get(gate, gate_mem_counts.get(min(gate, 4), 5))
         memories = retrieve_memories(
-            target, context_text=context_text, max_count=5, current_scene=game.narrative.scene_count
+            target, context_text=context_text, max_count=mem_count_3, current_scene=game.narrative.scene_count
         )
         reflections = [m for m in memories if m.type == "reflection"]
         observations = [m for m in memories if m.type != "reflection"]
@@ -168,7 +171,10 @@ def _activated_npcs_block(
         if target_id and (npc.id == target_id or npc.name.lower() == str(target_id).lower()):
             continue
         memories = retrieve_memories(
-            npc, context_text=context_text, max_count=2, current_scene=game.narrative.scene_count
+            npc,
+            context_text=context_text,
+            max_count=eng().npc.activated_memory_count,
+            current_scene=game.narrative.scene_count,
         )
         mem_hint = ""
         if memories:

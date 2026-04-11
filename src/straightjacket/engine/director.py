@@ -388,7 +388,7 @@ def apply_director_guidance(game: GameState, guidance: dict) -> None:
                 emotional_weight=ref.get("tone_key") or "reflective",
                 tone=ref.get("tone", ""),
                 tone_key=ref.get("tone_key", ""),
-                importance=8,
+                importance=eng().npc.reflection_importance,
                 type="reflection",
                 about_npc=resolve_about_npc(game, ref.get("about_npc"), owner_id=ref_npc.id),
             )
@@ -415,7 +415,7 @@ def apply_director_guidance(game: GameState, guidance: dict) -> None:
             ref_npc.agenda = updated_agenda
             log(f"[Director] Agenda updated for {ref_npc.name}: '{old_agenda[:40]}' → '{updated_agenda[:40]}'")
         if updated_arc:
-            if len(updated_arc) > 300:
+            if len(updated_arc) > eng().npc.arc_max_chars:
                 log(f"[Director] Rejected arc for {ref_npc.name}: too long ({len(updated_arc)} chars)", level="warning")
             else:
                 old_arc = ref_npc.arc
@@ -441,7 +441,7 @@ def apply_director_guidance(game: GameState, guidance: dict) -> None:
             ).strip()
         if new_desc and len(new_desc) > 10:
             # Reject scene snapshots: too long
-            if len(new_desc) > 200:
+            if len(new_desc) > eng().npc.description_max_chars:
                 log(
                     f"[Director] Rejected description for {ref_npc.name}: "
                     f"too long ({len(new_desc)} chars), likely scene snapshot"

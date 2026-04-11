@@ -5,7 +5,7 @@ import re
 
 from ..engine_loader import eng
 from ..logging_util import log
-from ..mechanics import TIME_PHASES, update_location
+from ..mechanics import _time_phases, update_location
 from ..models import ClockData, GameState, MemoryEntry, NpcData
 from ..npc import apply_name_sanitization, normalize_npc_dispositions, score_importance
 
@@ -122,5 +122,5 @@ def apply_world_setup(game: GameState, data: dict, *, clocks_mode: str = "replac
         game.world.current_scene_context = data["scene_context"]
 
     tod = data.get("time_of_day", "")
-    if tod and tod.replace(" ", "_") in TIME_PHASES:
+    if tod and tod.replace(" ", "_") in _time_phases():
         game.world.time_of_day = tod.replace(" ", "_")

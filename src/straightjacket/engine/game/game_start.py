@@ -255,20 +255,22 @@ def start_new_game(
     _seed_vow_subject(game, creation_data.get("vow_subject", ""))
 
     # Engine-determined opening state (no AI needed)
-    game.world.time_of_day = "morning"
+    _opening = _e.opening
+    game.world.time_of_day = _opening.time_of_day
     from ..models import ClockData
 
+    _trigger = _opening.clock_trigger_template.format(player=game.player_name)
     game.world.clocks.append(
         ClockData(
-            name=game.background_vow or "Looming threat",
+            name=game.background_vow or _opening.clock_fallback_name,
             clock_type="threat",
-            segments=6,
-            filled=1,
-            trigger_description=f"Threat escalates beyond {game.player_name}'s control",
+            segments=_opening.clock_segments,
+            filled=_opening.clock_filled,
+            trigger_description=_trigger,
             owner="",
         )
     )
-    log("[NewGame] Engine-created opening clock and time_of_day=morning")
+    log(f"[NewGame] Engine-created opening clock and time_of_day={_opening.time_of_day}")
 
     log(f"[NewGame] Character: {game.player_name}, paths={paths}, assets={game.assets}")
 

@@ -11,7 +11,7 @@ from ..parser import salvage_truncated_narration
 from ..prompt_blocks import get_narration_lang, get_narrator_system
 from ..prompt_loader import get_prompt
 from .provider_base import AIProvider, create_with_retry
-from .schemas import NARRATOR_METADATA_SCHEMA
+from .schemas import get_narrator_metadata_schema
 
 
 def call_narrator(
@@ -117,7 +117,7 @@ Extract all NPCs, clocks, location, scene context, time of day, and initial NPC 
 IMPORTANT: {game.player_name} is the PLAYER CHARACTER — do NOT include them as an NPC. NPCs are OTHER characters the player meets."""
 
     try:
-        from .schemas import OPENING_SETUP_SCHEMA
+        from .schemas import get_opening_setup_schema
 
         response = create_with_retry(
             provider,
@@ -126,7 +126,7 @@ IMPORTANT: {game.player_name} is the PLAYER CHARACTER — do NOT include them as
             max_tokens=_c.ai.max_tokens.opening_setup,
             system=system,
             messages=[{"role": "user", "content": prompt}],
-            json_schema=OPENING_SETUP_SCHEMA,
+            json_schema=get_opening_setup_schema(),
             **sampling_params("opening_setup"),
             log_role="narrator_retry",
         )
@@ -229,7 +229,7 @@ Extract all metadata from the narration above. Remember: {game.player_name} is t
             max_tokens=_c.ai.max_tokens.narrator_metadata,
             system=system,
             messages=[{"role": "user", "content": prompt}],
-            json_schema=NARRATOR_METADATA_SCHEMA,
+            json_schema=get_narrator_metadata_schema(),
             **sampling_params("narrator_metadata"),
             log_role="metadata",
         )

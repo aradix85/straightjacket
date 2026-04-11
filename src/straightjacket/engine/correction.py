@@ -7,23 +7,20 @@ import uuid
 
 from ..i18n import t
 from .ai import (
-    apply_narrator_metadata,
     call_brain,
     call_narrator,
-    call_narrator_metadata,
 )
 from .ai.provider_base import AIProvider, create_with_retry
 from .ai.schemas import CORRECTION_OUTPUT_SCHEMA
 from .config_loader import cfg, sampling_params
 from .director import should_call_director
 from .engine_loader import eng
+from .game.finalization import apply_post_narration
 from .logging_util import log
 from .mechanics import (
     apply_brain_location_time,
     apply_consequences,
     check_npc_agency,
-    generate_engine_memories,
-    generate_scene_context,
     record_scene_intensity,
     resolve_effect,
     resolve_position,
@@ -35,7 +32,6 @@ from .models import (
     BrainResult,
     EngineConfig,
     GameState,
-    MemoryEntry,
     NarrationEntry,
     NpcData,
     RollResult,
@@ -357,34 +353,17 @@ def process_correction(
     # Step 4: Engine-side state mutations + AI metadata extraction
     _scene_present_ids = {n.id for n in activated_npcs}
 
-    # Engine-generated scene context and memories
-    ctx = generate_scene_context(game, brain, roll, [n.name for n in activated_npcs])
-    game.world.current_scene_context = ctx
-    engine_mems = generate_engine_memories(
-        game, brain, roll, _scene_present_ids, consequences=consequences if roll else []
+    metadata = apply_post_narration(
+        provider,
+        game,
+        narration,
+        brain,
+        roll,
+        _scene_present_ids,
+        [n.name for n in activated_npcs],
+        config=_cfg,
+        consequences=consequences if roll else [],
     )
-    for mem in engine_mems:
-        _npc = find_npc(game, mem["npc_id"])
-        if _npc:
-            _npc.memory.append(
-                MemoryEntry(
-                    scene=game.narrative.scene_count,
-                    event=mem["event"],
-                    emotional_weight=mem["emotional_weight"],
-                    importance=mem["importance"],
-                    type="observation",
-                    about_npc=mem.get("about_npc"),
-                    _score_debug=mem.get("_score_debug", "engine-generated"),
-                )
-            )
-            _npc.importance_accumulator += mem["importance"]
-            if game.world.current_location:
-                _npc.last_location = game.world.current_location
-
-    metadata = call_narrator_metadata(
-        provider, narration, game, _cfg, brain=brain, consequences=[] if source != "input_misread" else []
-    )
-    apply_narrator_metadata(game, metadata, scene_present_ids=_scene_present_ids)
 
     # Step 5: Update session_log / narration_history
     intent = (brain.player_intent or snap.player_input or "")[:80]
@@ -524,29 +503,18 @@ def process_momentum_burn(
 
     # Engine-side state mutations
     _scene_present_ids = {n.id for n in activated_npcs} | {n.id for n in mentioned_npcs}
-    ctx = generate_scene_context(game, brain_data, upgraded, [n.name for n in activated_npcs])
-    game.world.current_scene_context = ctx
-    engine_mems = generate_engine_memories(game, brain_data, upgraded, _scene_present_ids, consequences=consequences)
-    for mem in engine_mems:
-        _npc = find_npc(game, mem["npc_id"])
-        if _npc:
-            _npc.memory.append(
-                MemoryEntry(
-                    scene=game.narrative.scene_count,
-                    event=mem["event"],
-                    emotional_weight=mem["emotional_weight"],
-                    importance=mem["importance"],
-                    type="observation",
-                    about_npc=mem.get("about_npc"),
-                    _score_debug=mem.get("_score_debug", "engine-generated"),
-                )
-            )
-            _npc.importance_accumulator += mem["importance"]
-            if game.world.current_location:
-                _npc.last_location = game.world.current_location
 
-    metadata = call_narrator_metadata(provider, narration, game, config, brain=brain_data, consequences=consequences)
-    apply_narrator_metadata(game, metadata, scene_present_ids=_scene_present_ids)
+    apply_post_narration(
+        provider,
+        game,
+        narration,
+        brain_data,
+        upgraded,
+        _scene_present_ids,
+        [n.name for n in activated_npcs],
+        config=config,
+        consequences=consequences,
+    )
 
     update_chaos_factor(game, new_result)
 
