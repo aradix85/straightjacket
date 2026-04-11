@@ -90,7 +90,7 @@ class ClockData(SerializableMixin):
 
 @dataclass
 class WorldState(SerializableMixin):
-    """Physical world: location, time, chaos, clocks."""
+    """Physical world: location, time, chaos, clocks, combat position."""
 
     current_location: str = ""
     current_scene_context: str = ""
@@ -98,6 +98,7 @@ class WorldState(SerializableMixin):
     location_history: list[str] = field(default_factory=list)
     chaos_factor: int = 5
     clocks: list[ClockData] = field(default_factory=list)
+    combat_position: str = ""  # "in_control", "bad_spot", or "" (not in combat)
 
     def tick_chaos(self, direction: int, floor: int = 3, ceiling: int = 9) -> None:
         """Adjust chaos factor. +1 on miss, -1 on strong hit or interrupt."""
@@ -152,7 +153,7 @@ class ProgressTrack(SerializableMixin):
 
 @dataclass
 class ClockEvent(SerializableMixin):
-    """A clock tick event from apply_consequences or tick_autonomous_clocks."""
+    """A clock tick event from resolve_move_outcome or tick_autonomous_clocks."""
 
     clock: str = ""
     trigger: str = ""

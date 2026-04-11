@@ -12,7 +12,6 @@ import json
 import re
 
 from ..config_loader import cfg, sampling_params
-from ..engine_loader import eng
 from ..logging_util import log
 from ..models import BrainResult, EngineConfig, GameState, Revelation
 from ..prompt_blocks import (
@@ -24,12 +23,16 @@ from .provider_base import AIProvider, create_with_retry
 from .schemas import get_brain_output_schema
 
 
-def _build_moves_block() -> str:
-    """Build <moves> block from engine.yaml move_stats mapping."""
-    _e = eng()
-    move_stats = _e.move_stats
-    lines = [f"  {move}:{stats}" for move, stats in move_stats.items()]
-    return "<moves>\n" + "\n".join(lines) + "\n  </moves>"
+def _build_moves_block(setting_id: str) -> str:
+    """Build <moves> instruction block directing Brain to use available_moves tool."""
+    return (
+        "<moves>\n"
+        "  Call available_moves to get the list of moves the player can make right now.\n"
+        "  The tool returns move keys, stats, and roll types based on current game state.\n"
+        "  dialog = pure conversation, no risk. ask_the_oracle = yes/no question about the fiction.\n"
+        "  world_shaping = player declares something about the world (wits|heart|shadow).\n"
+        "</moves>"
+    )
 
 
 # ── JSON extraction from text (used by Director) ────────────
@@ -85,7 +88,7 @@ def call_brain(
         "brain_parser",
         lang=_brain_lang,
         content_boundaries_block=content_boundaries_block(game),
-        moves_block=_build_moves_block(),
+        moves_block=_build_moves_block(game.setting_id),
     )
 
     w = game.world

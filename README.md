@@ -41,7 +41,7 @@ Five YAML files, each with a clear owner:
 | File | What | Who edits it |
 |---|---|---|
 | `config.yaml` | Server port, AI provider, language | Players |
-| `engine.yaml` | Game rules, damage, chaos, NPC limits, move categories, pacing | Game designers |
+| `engine.yaml` | Game rules, move outcomes, damage, chaos, NPC limits, pacing | Game designers |
 | `emotions.yaml` | Emotion scoring, keyword boosts, dispositions | Game designers |
 | `prompts.yaml` | AI system prompts, task templates, instruction fragments | Prompt engineers |
 | `strings.yaml` | UI text (English default) | Translators |
@@ -56,7 +56,7 @@ Default AI: GLM-4.7 via Cerebras. Also supports Anthropic (Claude), and any Open
 
 See [ARCHITECTURE.md](ARCHITECTURE.md) for the full turn pipeline, module ownership table, file map, and extension guides (new providers, new settings).
 
-All mutable game state is typed dataclasses with snapshot/restore for atomic undo. Zero hardcoded game logic — move types, damage tables, disposition shifts, and NPC seed emotions all read from engine.yaml. Zero hardcoded prompt text — all AI-facing text lives in prompts.yaml, Python only assembles.
+All mutable game state is typed dataclasses with snapshot/restore for atomic undo. Zero hardcoded game logic — move outcomes, damage tables, disposition shifts, and NPC seed emotions all read from engine.yaml. Move definitions load from Datasworn JSON per setting. Zero hardcoded prompt text — all AI-facing text lives in prompts.yaml, Python only assembles.
 
 The architecture implements the [Narrative RPG Engine](docs/narrative_rpg_engine_v2_4.pdf) design document: AI narrates, structured systems decide. The six functions from the design document (action resolution, fiction generation, timing, relationships, agency, world state) map to engine modules. The constraint enforcement strategy (engine-dictated consequences, vocabulary control, narrative direction derived from game state) follows the document's recommendations.
 
@@ -66,7 +66,7 @@ The architecture implements the [Narrative RPG Engine](docs/narrative_rpg_engine
 
 Two complementary layers:
 
-**Unit/integration tests** (`python -m pytest tests/ -v`, ~538 tests, no API key needed): mock providers with canned responses test engine logic, NPC processing, serialization, correction flow, prompt assembly, WebSocket handlers, database sync/queries, tool registry/dispatch. Every commit must pass.
+**Unit/integration tests** (`python -m pytest tests/ -v`, ~665 tests, no API key needed): mock providers with canned responses test engine logic, NPC processing, serialization, correction flow, prompt assembly, WebSocket handlers, database sync/queries, tool registry/dispatch. Every commit must pass.
 
 **[Elvira](tests/elvira/)** (`python tests/elvira/elvira.py --auto --turns 5`, needs API key): headless AI-driven test player that plays the game with real model output. Checks state invariants after every turn, validates narration quality (leaked mechanics, NPC spatial consistency), stress-tests the correction pipeline, and logs diagnostics to JSON. Two modes: direct (engine only) and WebSocket (full server stack). See [CONTRIBUTING.md](CONTRIBUTING.md) for when to use which.
 

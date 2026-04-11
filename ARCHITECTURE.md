@@ -52,9 +52,14 @@ Where to find things. If you want to change X, edit Y.
 | Emotion scoring, keyword boosts | `emotions.yaml` (no Python) |
 | UI text | `strings.yaml` (no Python) |
 | Server port | `config.yaml` (no Python) |
-| Move types or stat assignments | `engine.yaml` → `move_stats` and `move_categories` |
+| Move types or stat assignments | Datasworn JSON (moves loaded automatically per setting) |
 | A new setting (genre + constraints) | `data/settings/your_setting.yaml` + Datasworn JSON |
-| How dice rolls work | `mechanics/consequences.py` → `roll_action`, `apply_consequences` |
+| How dice rolls work | `mechanics/consequences.py` → `roll_action`, `roll_progress` |
+| Move outcome effects | `engine.yaml` → `move_outcomes` (no Python for simple moves) |
+| Move outcome handlers (suffer, threshold, recovery) | `mechanics/move_outcome.py` |
+| Which moves are available in a game state | `tools/builtins.py` → `available_moves`, `_is_move_available` |
+| Move data model and loading | `datasworn/moves.py` → `Move`, `get_moves` |
+| Combat position (in_control / bad_spot) | `models_base.py` → `WorldState.combat_position`, set by move outcomes |
 | How the narrator is prompted | `prompts.yaml` → task templates; `prompt_builders.py` → XML assembly |
 | NPC memory / activation logic | `npc/memory.py`, `npc/activation.py` |
 | Story structure / act tracking | `story_state.py`, `ai/architect.py` |
@@ -74,7 +79,7 @@ Where to find things. If you want to change X, edit Y.
 | Database sync after state changes | `db/sync.py` → `sync(game)`, called by turn, creation, correction, restore, load |
 | Tool definitions for AI agents | `tools/registry.py` → `@register("brain")`, `get_tools(role)` |
 | Tool execution and iterative loop | `tools/handler.py` → `execute_tool_call`, `run_tool_loop` |
-| Built-in query tools | `tools/builtins.py` → `query_npc`, `query_active_threads`, `query_active_clocks`, `query_npc_list`, `fate_question` |
+| Built-in query tools | `tools/builtins.py` → `query_npc`, `query_active_threads`, `query_active_clocks`, `query_npc_list`, `fate_question`, `available_moves` |
 | Fate questions (yes/no) | `mechanics/fate.py` → `resolve_fate`, `resolve_likelihood`; `engine.yaml` → `fate` |
 | Scene structure (expected/altered/interrupt) | `mechanics/scene.py` → `check_scene`, `SceneSetup` |
 | Random events and meaning tables | `mechanics/random_events.py` → `generate_random_event`, `roll_event_focus`, `roll_meaning_table` |
@@ -100,7 +105,8 @@ src/straightjacket/
 │   ├── mechanics/
 │   │   ├── world.py            # Location matching, chaos adjustment, time, pacing, story structure
 │   │   ├── resolvers.py        # Position, effect, time progression, move category
-│   │   ├── consequences.py     # Dice, consequences, clocks, momentum, consequence sentences
+│   │   ├── consequences.py     # Dice rolls (action + progress), clocks, momentum burn, consequence sentences
+│   │   ├── move_outcome.py     # Data-driven move outcome resolution, effect parser, handlers
 │   │   ├── stance_gate.py      # NPC stance resolution, information gating
 │   │   ├── engine_memories.py  # Memory emotion derivation, engine memories, scene context
 │   │   ├── fate.py             # Mythic GME 2e fate chart, fate check, likelihood resolver
@@ -143,6 +149,7 @@ src/straightjacket/
 │   │   └── director_runner.py # Deferred Director call
 │   └── datasworn/
 │       ├── loader.py        # Reads Datasworn JSON (oracles, assets, moves)
+│       ├── moves.py         # Move dataclass, loader, expansion merge, cached accessor
 │       └── settings.py      # Setting packages (vocabulary, genre constraints)
 │   ├── db/
 │   │   ├── schema.sql       # Table definitions (8 tables, mirrors dataclasses)
@@ -166,9 +173,9 @@ src/straightjacket/
 
 ## Key Design Decisions
 
-**Config-driven game logic.** Move types, damage tables, disposition shifts, NPC seed emotions — all in engine.yaml. Adding a move type means adding one line to `move_stats` and one to `move_categories`. No Python change.
+**Config-driven game logic.** Move outcomes, NPC limits, disposition shifts, damage tables — all in engine.yaml or Datasworn JSON. Adding a move means adding one YAML entry to `move_outcomes`. No Python change. Move definitions (stats, roll types, trigger conditions) load directly from Datasworn JSON per setting.
 
-**Typed dataclasses everywhere.** GameState has sub-objects (Resources, WorldState, NarrativeState, CampaignState). NpcData has 19 fields. MemoryEntry has 10. Attribute access, never dict-style. `SerializableMixin` handles serialization; complex classes override `to_dict`/`from_dict` manually.
+**Typed dataclasses everywhere.** GameState has sub-objects (Resources, WorldState, NarrativeState, CampaignState). NpcData has 19 fields. MemoryEntry has 10. Move has 15 fields with typed trigger conditions and roll options. Attribute access, never dict-style. `SerializableMixin` handles serialization; complex classes override `to_dict`/`from_dict` manually.
 
 **Two-call pattern.** Narrator writes pure prose. A second fast-model call extracts NPC-related metadata (new NPCs, renames, details, deaths). This keeps the narrator prompt clean and works across providers.
 
@@ -186,7 +193,7 @@ src/straightjacket/
 
 **AI surface minimization.** Every value derivable from game state is computed by the engine. Director pacing is computed from scene_intensity_history, not requested from the AI. Act transitions fire when scene_count exceeds act range — deterministic, no AI flag. Memory emotional_weight is derived from (move_category, result, disposition) via engine.yaml lookup. Opening scene clock and time_of_day are engine-determined before any AI call. The AI receives results, not choices.
 
-**Engine-dictated consequences.** `apply_consequences` produces mechanical changes AND narrative sentences from engine.yaml templates. Each consequence gets a `<consequence>` tag in the narrator prompt. The narrator weaves them into prose but cannot change what happened. The validator checks keyword presence. Oracle tables (step 7) will add variety; templates are primary.
+**Data-driven move outcomes.** `resolve_move_outcome` reads structured effect lists from engine.yaml per move per result. Simple moves (momentum, resources, progress, position) are pure data — no Python. Complex moves (suffer, threshold, recovery) use named handlers that share patterns across moves. The `available_moves` Brain tool filters moves by game state (combat position, active tracks) so the Brain only sees valid options. Consequence sentences generated from outcome strings via engine.yaml templates.
 
 **NPC behavioral stance.** Engine computes per-NPC stance from disposition, bond, and move category via engine.yaml stance matrix (60 entries). The narrator receives `stance="evasive" constraint="One fact, then silence."` instead of raw `disposition="distrustful" bond="1/4"`. The engine tells the narrator how the NPC behaves, not just how they feel.
 
@@ -207,7 +214,7 @@ src/straightjacket/
 ## Testing
 
 ```bash
-python -m pytest tests/ -v          # ~30 seconds, ~538 tests
+python -m pytest tests/ -v          # ~30 seconds, ~665 tests
 python tests/elvira/elvira.py --auto --turns 5   # direct engine (needs API key)
 python tests/elvira/elvira.py --ws --auto --turns 5  # via WebSocket server
 ```

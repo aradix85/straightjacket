@@ -115,7 +115,7 @@ class TestSession:
         s.chat_messages = [{"role": "assistant", "content": "x"}]
         s.save_name = "custom"
         s.pending_burn = BurnOffer(
-            roll=RollResult(1, 1, 1, 1, "wits", 2, 4, "MISS", "face_danger"),
+            roll=RollResult(1, 1, 1, 1, "wits", 2, 4, "MISS", "adventure/face_danger"),
             new_result="WEAK_HIT",
             cost=5,
             brain=BrainResult(),
@@ -154,10 +154,10 @@ class TestBurnOffer:
         from straightjacket.engine.mechanics.scene import SceneSetup
 
         bo = BurnOffer(
-            roll=RollResult(1, 2, 3, 4, "iron", 3, 6, "MISS", "strike"),
+            roll=RollResult(1, 2, 3, 4, "iron", 3, 6, "MISS", "combat/strike"),
             new_result="STRONG_HIT",
             cost=7,
-            brain=BrainResult(move="strike", stat="iron"),
+            brain=BrainResult(move="combat/strike", stat="iron"),
             player_words="I attack",
             pre_snapshot=TurnSnapshot(),
             scene_setup=SceneSetup(scene_type="altered", adjustments=["add_character"]),
@@ -169,7 +169,7 @@ class TestBurnOffer:
 
     def test_scene_setup_defaults_none(self) -> None:
         bo = BurnOffer(
-            roll=RollResult(1, 1, 1, 1, "wits", 1, 3, "MISS", "face_danger"),
+            roll=RollResult(1, 1, 1, 1, "wits", 1, 3, "MISS", "adventure/face_danger"),
             new_result="WEAK_HIT",
             cost=3,
             brain=BrainResult(),

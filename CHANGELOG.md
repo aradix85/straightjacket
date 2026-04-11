@@ -5,6 +5,24 @@ Originally forked from [EdgeTales](https://github.com/edgetales/edgetales). See 
 
 ---
 
+## [0.45.0] — 2026-04-11
+
+Full Forge move system. Data-driven consequence resolution. Combat position. Available moves tool.
+
+- Move data model and loader (`datasworn/moves.py`): Move dataclass with trigger conditions, roll options, outcomes. Loader for all 4 settings with expansion merge (Delve→Classic, SI→Starforged). Cached accessor `get_moves(setting_id)`
+- Move outcome resolver (`mechanics/move_outcome.py`): 15 effect types (momentum, health, spirit, supply, integrity, mark_progress, pay_the_price, next_move_bonus, suffer_move, position, legacy_reward, fill_clock, bond, disposition_shift, narrative). 3 handlers (suffer, threshold, recovery) for complex conditional moves. Config-driven from `engine.yaml move_outcomes`
+- All 112 moves across 4 settings have structured outcomes in engine.yaml. No-roll and special_track moves excluded (no mechanical outcome)
+- `apply_consequences` and all category-based routing deleted. `move_categories` cleaned (bond/disposition entries removed — handled by move outcomes)
+- `resolve_move_outcome` wired into turn.py and correction.py (all 3 former `apply_consequences` call sites)
+- Progress rolls: `roll_progress()` function, turn pipeline routes based on `move.roll_type`. No action dice, filled_boxes vs 2d10
+- Combat position: `combat_position` field on WorldState (in_control, bad_spot). Set by move outcomes, persisted in snapshot/restore
+- `available_moves` Brain tool: state-aware move filtering. Combat position restricts combat moves (in_control→strike/gain_ground, bad_spot→clash/react_under_fire). Track existence gates progress moves. Suffer/threshold moves excluded (reactive)
+- Brain schema enum: all Datasworn moves across all settings. Brain prompt directs to call `available_moves` tool instead of hardcoded move list
+- `brain_moves` and `brain_move_stats` removed from engine.yaml (replaced by Datasworn data + available_moves tool)
+- All move references across codebase migrated to full Datasworn keys (category/move_key format)
+- Elvira: `combat_position` in StateSnapshot, recorder, and invariant checker
+- 665 tests (+127 net), ruff clean, mypy clean
+
 ## [0.44.0] — 2026-04-11
 
 Mythic GME 2e integration: fate system, scene structure, random events. Director reduced.

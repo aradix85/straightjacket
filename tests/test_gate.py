@@ -130,9 +130,19 @@ def test_gate_never_above_4() -> None:
 
 def _build_prompt(npc: NpcData, scene: int = 5) -> str:
     game = _game(npc, scene)
-    brain = BrainResult(move="face_danger", stat="edge", target_npc="npc_1", player_intent="approach carefully")
+    brain = BrainResult(
+        move="adventure/face_danger", stat="edge", target_npc="npc_1", player_intent="approach carefully"
+    )
     roll = RollResult(
-        d1=3, d2=4, c1=6, c2=7, stat_name="edge", stat_value=2, action_score=9, result="WEAK_HIT", move="face_danger"
+        d1=3,
+        d2=4,
+        c1=6,
+        c2=7,
+        stat_name="edge",
+        stat_value=2,
+        action_score=9,
+        result="WEAK_HIT",
+        move="adventure/face_danger",
     )
     return build_action_prompt(
         game,

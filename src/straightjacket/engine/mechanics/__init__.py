@@ -22,7 +22,6 @@ __all__ = [
     "add_thread_weight",
     "advance_time",
     "apply_brain_location_time",
-    "apply_consequences",
     "can_burn_momentum",
     "check_npc_agency",
     "choose_story_structure",
@@ -60,12 +59,12 @@ __all__ = [
 from .consequences import (
     _pick_template,
     _resolve_consequence_sentence,
-    apply_consequences,
     can_burn_momentum,
     check_npc_agency,
     generate_consequence_sentences,
     purge_old_fired_clocks,
     roll_action,
+    roll_progress,
     tick_autonomous_clocks,
 )
 from .engine_memories import (

@@ -31,12 +31,20 @@ def _game() -> GameState:
 
 
 def _brain(target: str | None = None) -> BrainResult:
-    return BrainResult(move="face_danger", stat="edge", player_intent="climb the wall", target_npc=target)
+    return BrainResult(move="adventure/face_danger", stat="edge", player_intent="climb the wall", target_npc=target)
 
 
 def _roll(result: str = "MISS") -> RollResult:
     return RollResult(
-        d1=2, d2=3, c1=8, c2=9, stat_name="edge", stat_value=2, action_score=7, result=result, move="face_danger"
+        d1=2,
+        d2=3,
+        c1=8,
+        c2=9,
+        stat_name="edge",
+        stat_value=2,
+        action_score=7,
+        result=result,
+        move="adventure/face_danger",
     )
 
 

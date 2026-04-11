@@ -9,7 +9,6 @@ from ..engine_loader import eng
 from ..logging_util import log
 from ..mechanics import (
     apply_brain_location_time,
-    apply_consequences,
     can_burn_momentum,
     check_npc_agency,
     purge_old_fired_clocks,
@@ -17,12 +16,15 @@ from ..mechanics import (
     resolve_effect,
     resolve_position,
     roll_action,
+    roll_progress,
     tick_autonomous_clocks,
     update_chaos_factor,
 )
+from ..mechanics.move_outcome import resolve_move_outcome
 from ..mechanics.random_events import drain_pending_events
 from ..mechanics.scene import SceneSetup, check_scene
-from ..models import BrainResult, EngineConfig, GameState, NarrationEntry, RollResult, SceneLogEntry
+from ..datasworn.moves import get_moves
+from ..models import BrainResult, EngineConfig, GameState, NarrationEntry, ProgressTrack, RollResult, SceneLogEntry
 from ..npc import activate_npcs_for_prompt, find_npc, reactivate_npc
 from ..parser import parse_narrator_response
 from ..prompt_builders import build_action_prompt, build_dialog_prompt
@@ -42,6 +44,29 @@ def _roll_oracle_answer(game: GameState) -> str:
     if action and theme:
         return f"{action} / {theme}"
     return ""
+
+
+def _find_progress_track(game: GameState, track_category: str) -> ProgressTrack | None:
+    """Find the most relevant progress track for a progress move.
+
+    Searches vow_tracks by track_type matching the move's track_category.
+    Returns the most recent (last) matching track, or None.
+    """
+    cat_lower = track_category.lower()
+    type_map = {
+        "vow": "vow",
+        "connection": "connection",
+        "combat": "combat",
+        "expedition": "expedition",
+        "delve": "delve",
+        "scene challenge": "scene_challenge",
+    }
+    track_type = type_map.get(cat_lower, cat_lower)
+
+    for track in reversed(game.vow_tracks):
+        if track.track_type == track_type:
+            return track
+    return None
 
 
 # ── Scene-end list maintenance (step 4.6 / 6.5) ──────────────
@@ -361,21 +386,43 @@ def process_turn(
 
     # ── Action path ───────────────────────────────────────────
     nar.scene_count += 1
-    stat_name = brain.stat
-    roll = roll_action(stat_name, game.get_stat(stat_name), brain.move)
-    _raw = roll.d1 + roll.d2 + roll.stat_value
-    _score_str = f"{_raw}→{roll.action_score}(cap)" if _raw > roll.action_score else str(roll.action_score)
-    log(
-        f"[Roll] {roll.move} ({roll.stat_name}={roll.stat_value}): "
-        f"{roll.d1}+{roll.d2}+{roll.stat_value}={_score_str} vs [{roll.c1},{roll.c2}] "
-        f"→ {roll.result}{' MATCH!' if roll.match else ''}"
-    )
+
+    # Determine roll type from Datasworn move data
+    ds_moves = get_moves(game.setting_id) if game.setting_id else {}
+    ds_move = ds_moves.get(brain.move)
+    is_progress_roll = ds_move is not None and ds_move.roll_type == "progress_roll"
+
+    if is_progress_roll:
+        assert ds_move is not None  # guaranteed by is_progress_roll check
+        # Progress roll: filled_boxes vs 2d10, no action dice
+        track = _find_progress_track(game, ds_move.track_category)
+        filled = track.filled_boxes if track else 0
+        track_name = track.name if track else ds_move.track_category
+        roll = roll_progress(track_name, filled, brain.move)
+        log(
+            f"[Roll] {roll.move} (progress: {track_name}={filled} boxes): "
+            f"{roll.action_score} vs [{roll.c1},{roll.c2}] "
+            f"→ {roll.result}{' MATCH!' if roll.match else ''}"
+        )
+    else:
+        # Action roll: 2d6+stat vs 2d10
+        stat_name = brain.stat
+        roll = roll_action(stat_name, game.get_stat(stat_name), brain.move)
+        _raw = roll.d1 + roll.d2 + roll.stat_value
+        _score_str = f"{_raw}→{roll.action_score}(cap)" if _raw > roll.action_score else str(roll.action_score)
+        log(
+            f"[Roll] {roll.move} ({roll.stat_name}={roll.stat_value}): "
+            f"{roll.d1}+{roll.d2}+{roll.stat_value}={_score_str} vs [{roll.c1},{roll.c2}] "
+            f"→ {roll.result}{' MATCH!' if roll.match else ''}"
+        )
+
     if game.last_turn_snapshot is not None:
         game.last_turn_snapshot.roll = roll
 
     # Check burn possibility BEFORE consequences reduce momentum
+    # (progress rolls cannot be momentum-burned in Starforged — no action dice)
     burn_info = None
-    if roll.result in ("MISS", "WEAK_HIT") and game.resources.momentum > 0:
+    if not is_progress_roll and roll.result in ("MISS", "WEAK_HIT") and game.resources.momentum > 0:
         potential_burn = can_burn_momentum(game, roll)
         if potential_burn:
             burn_info = {
@@ -392,11 +439,44 @@ def process_turn(
     position = resolve_position(game, brain)
     effect = resolve_effect(game, brain, position)
 
-    consequences, clock_events = apply_consequences(game, roll, brain, position, effect)
+    # Move outcome resolution (step 7b) — replaces category-based apply_consequences
+    outcome = resolve_move_outcome(game, brain.move, roll.result, target_npc_id=brain.target_npc)
+    consequences = outcome.consequences
+
+    # Combat position
+    if outcome.combat_position:
+        game.world.combat_position = outcome.combat_position
+
+    # Threat clock ticking — engine-level, independent of specific move
+    clock_events: list = []
+    from ..engine_loader import damage
+    from ..mechanics.consequences import tick_threat_clock
+
+    if roll.result == "MISS":
+        clock_ticks = damage("damage.miss.clock_ticks", position)
+        if clock_ticks > 0:
+            tick_threat_clock(game, clock_ticks, clock_events)
+    elif roll.result == "WEAK_HIT" and position != "controlled":
+        import random as _rnd
+
+        should_tick = (position == "desperate") or (_rnd.random() < eng().pacing.weak_hit_clock_tick_chance)
+        if should_tick:
+            tick_threat_clock(game, 1, clock_events)
+
+    # Crisis check
+    res = game.resources
+    if res.health <= 0 and res.spirit <= 0:
+        game.game_over = True
+        game.crisis_mode = True
+    elif res.health <= 0 or res.spirit <= 0:
+        game.crisis_mode = True
+    else:
+        game.crisis_mode = False
+
     npc_agency, agency_clock_events = check_npc_agency(game)
 
     # Track gather_information successes for information gating (step 6)
-    if brain.move == "gather_information" and roll.result in ("STRONG_HIT", "WEAK_HIT") and brain.target_npc:
+    if brain.move == "adventure/gather_information" and roll.result in ("STRONG_HIT", "WEAK_HIT") and brain.target_npc:
         gather_target = find_npc(game, brain.target_npc)
         if gather_target:
             gather_target.gather_count += 1

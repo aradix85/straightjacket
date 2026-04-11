@@ -12,7 +12,6 @@ from straightjacket.engine.models import (
     MemoryEntry,
     NpcData,
     ClockData,
-    RollResult,
     GameState,
     StoryBlueprint,
     StoryAct,
@@ -29,40 +28,30 @@ def test_roll_action_cap() -> None:
 
     random.seed(42)
     for _ in range(50):
-        r = roll_action("edge", 3, "face_danger")
+        r = roll_action("edge", 3, "adventure/face_danger")
         assert r.action_score <= 10
 
 
 def test_compel_no_disposition_shift(load_engine: None) -> None:
-    """v0.9.86: compel STRONG_HIT grants bond+1 only, no disposition shift."""
-    from straightjacket.engine.mechanics import apply_consequences
-    from straightjacket.engine.models import BrainResult, RollResult
+    """compel STRONG_HIT grants bond+1 only, no disposition shift."""
+    from straightjacket.engine.mechanics.move_outcome import resolve_move_outcome
 
     game = GameState()
     npc = NpcData(id="npc_1", name="Test", disposition="neutral", bond=1, bond_max=4)
     game.npcs.append(npc)
-    roll = RollResult(
-        d1=5, d2=5, c1=2, c2=3, stat_name="heart", stat_value=2, action_score=10, result="STRONG_HIT", move="compel"
-    )
-    brain = BrainResult(target_npc="npc_1")
-    apply_consequences(game, roll, brain, "risky", "standard")
+    resolve_move_outcome(game, "adventure/compel", "STRONG_HIT", target_npc_id="npc_1")
     assert npc.bond == 2
     assert npc.disposition == "neutral"
 
 
 def test_test_bond_disposition_shift(load_engine: None) -> None:
-    """v0.9.86: test_bond STRONG_HIT grants bond+1 AND disposition shift."""
-    from straightjacket.engine.mechanics import apply_consequences
-    from straightjacket.engine.models import BrainResult, RollResult
+    """test_your_relationship STRONG_HIT grants bond+1 AND disposition shift."""
+    from straightjacket.engine.mechanics.move_outcome import resolve_move_outcome
 
     game = GameState()
     npc = NpcData(id="npc_1", name="Test", disposition="neutral", bond=1, bond_max=4)
     game.npcs.append(npc)
-    roll = RollResult(
-        d1=5, d2=5, c1=2, c2=3, stat_name="heart", stat_value=2, action_score=10, result="STRONG_HIT", move="test_bond"
-    )
-    brain = BrainResult(target_npc="npc_1")
-    apply_consequences(game, roll, brain, "risky", "standard")
+    resolve_move_outcome(game, "connection/test_your_relationship", "STRONG_HIT", target_npc_id="npc_1")
     assert npc.bond == 2
     assert npc.disposition == "friendly"
 
@@ -243,26 +232,13 @@ def test_memory_guard_allows_no_memories() -> None:
 
 
 def test_social_move_unresolved_target_skips_bond(load_engine: None) -> None:
-    """Social move with no resolvable target skips bond/disposition effects."""
-    from straightjacket.engine.mechanics import apply_consequences
-    from straightjacket.engine.models import BrainResult
+    """Social move with unresolvable target_npc skips bond/disposition changes."""
+    from straightjacket.engine.mechanics.move_outcome import resolve_move_outcome
 
     game = GameState()
-    roll = RollResult(
-        d1=1,
-        d2=1,
-        c1=10,
-        c2=10,
-        stat_name="heart",
-        stat_value=2,
-        action_score=4,
-        result="MISS",
-        move="compel",
-        match=False,
-    )
-    brain = BrainResult(target_npc="nonexistent_npc")
-    consequences, _ = apply_consequences(game, roll, brain, "risky", "standard")
-    # No bond loss should appear — target doesn't exist
-    assert not any("bond" in c for c in consequences)
-    # But spirit loss still happens (social miss always costs spirit)
-    assert any("spirit" in c for c in consequences)
+    npc = NpcData(id="npc_1", name="Test", disposition="neutral", bond=1, bond_max=4)
+    game.npcs.append(npc)
+    # target_npc that doesn't match any NPC
+    resolve_move_outcome(game, "adventure/compel", "STRONG_HIT", target_npc_id="nonexistent")
+    assert npc.bond == 1  # unchanged
+    assert npc.disposition == "neutral"  # unchanged

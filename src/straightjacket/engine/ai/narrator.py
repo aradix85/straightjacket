@@ -163,7 +163,7 @@ def call_narrator_metadata(
         brain: Brain output dict for this turn (move, target_npc, result context).
                Gives the extractor mechanical ground truth so it validates
                interpretations against known facts instead of inferring from prose.
-        consequences: List of consequence strings from apply_consequences.
+        consequences: List of consequence strings from resolve_move_outcome.
     """
     _c = cfg()
     _cfg = config or EngineConfig()

@@ -428,14 +428,14 @@ def test_validate_creation_valid_vow_rank_passes(load_engine: None) -> None:
 def test_derive_memory_emotion_combat_miss(load_engine: None) -> None:
     from straightjacket.engine.mechanics import derive_memory_emotion
 
-    result = derive_memory_emotion("clash", "MISS", "hostile")
+    result = derive_memory_emotion("combat/clash", "MISS", "hostile")
     assert result == "fear_pain_hostile"
 
 
 def test_derive_memory_emotion_social_strong_hit_friendly(load_engine: None) -> None:
     from straightjacket.engine.mechanics import derive_memory_emotion
 
-    result = derive_memory_emotion("compel", "STRONG_HIT", "friendly")
+    result = derive_memory_emotion("adventure/compel", "STRONG_HIT", "friendly")
     assert result == "trusting_open_warm"
 
 
@@ -456,6 +456,6 @@ def test_derive_memory_emotion_unknown_move(load_engine: None) -> None:
 def test_derive_memory_emotion_recovery_strong(load_engine: None) -> None:
     from straightjacket.engine.mechanics import derive_memory_emotion
 
-    result = derive_memory_emotion("endure_harm", "STRONG_HIT", "loyal")
+    result = derive_memory_emotion("suffer/endure_harm", "STRONG_HIT", "loyal")
     # endure_harm is in both endure and recovery categories; endure matches first
     assert "devoted" in result

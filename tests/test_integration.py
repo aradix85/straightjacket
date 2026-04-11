@@ -61,7 +61,7 @@ class MockProvider:
                 json.dumps(
                     {
                         "type": "action",
-                        "move": "face_danger",
+                        "move": "adventure/face_danger",
                         "stat": "wits",
                         "approach": "carefully examining the area",
                         "target_npc": None,
@@ -79,7 +79,7 @@ class MockProvider:
                 json.dumps(
                     {
                         "type": "action",
-                        "move": "face_danger",
+                        "move": "adventure/face_danger",
                         "stat": "wits",
                         "approach": "carefully examining the area",
                         "target_npc": None,
@@ -254,7 +254,7 @@ def test_turn_action_produces_narration(load_engine: None) -> None:
 
     # Got a roll result (not dialog)
     assert roll is not None
-    assert roll.move == "face_danger"
+    assert roll.move == "adventure/face_danger"
     assert roll.stat_name == "wits"
     assert roll.result in ("STRONG_HIT", "WEAK_HIT", "MISS")
 
@@ -264,7 +264,7 @@ def test_turn_action_produces_narration(load_engine: None) -> None:
 
     # Session log was updated
     assert len(game.narrative.session_log) == 1
-    assert game.narrative.session_log[0].move == "face_danger"
+    assert game.narrative.session_log[0].move == "adventure/face_danger"
 
     # Provider was called multiple times (brain, narrator, validator, metadata)
     assert len(provider.calls) >= 3
@@ -325,37 +325,15 @@ def test_turn_dialog_skips_roll(load_engine: None) -> None:
 
 
 def test_turn_consequences_applied_on_miss(load_engine: None) -> None:
-    """On MISS, consequences should reduce resources."""
-    from straightjacket.engine.mechanics import apply_consequences
+    """On MISS, move outcomes should apply mechanical effects."""
+    from straightjacket.engine.mechanics.move_outcome import resolve_move_outcome
 
     game = _make_game()
-    initial_momentum = game.resources.momentum
 
-    # Force a MISS by using a mock roll
-    from straightjacket.engine.models import RollResult
+    result = resolve_move_outcome(game, "adventure/face_danger", "MISS")
 
-    roll = RollResult(
-        d1=1,
-        d2=1,
-        c1=10,
-        c2=10,
-        stat_name="wits",
-        stat_value=2,
-        action_score=4,
-        result="MISS",
-        move="face_danger",
-        match=True,
-    )
-
-    from straightjacket.engine.models import BrainResult
-
-    brain = BrainResult()
-    consequences, clock_events = apply_consequences(game, roll, brain, "risky", "standard")
-
-    # Something should have changed
-    assert len(consequences) > 0
-    # Momentum should have decreased
-    assert game.resources.momentum < initial_momentum
+    # face_danger MISS = pay_the_price
+    assert result.pay_the_price is True
 
 
 def test_scene_test_produces_three_types(load_engine: None) -> None:
@@ -408,7 +386,7 @@ def test_action_prompt_contains_result_and_position(stub_engine: None) -> None:
 
     game = _make_game()
     brain = BrainResult(
-        move="face_danger",
+        move="adventure/face_danger",
         stat="wits",
         player_intent="Search for hidden compartments",
         approach="carefully examining every surface",
@@ -422,7 +400,7 @@ def test_action_prompt_contains_result_and_position(stub_engine: None) -> None:
         stat_value=2,
         action_score=9,
         result="STRONG_HIT",
-        move="face_danger",
+        move="adventure/face_danger",
         match=False,
     )
 
@@ -472,7 +450,7 @@ def test_correction_brain_parses_response(stub_engine: None) -> None:
     # Create a fake snapshot (normally done by turn processing)
     game.last_turn_snapshot = game.snapshot()
     game.last_turn_snapshot.player_input = "I attack the guard"
-    game.last_turn_snapshot.brain = BrainResult(move="strike", stat="iron", player_intent="Attack the guard")
+    game.last_turn_snapshot.brain = BrainResult(move="combat/strike", stat="iron", player_intent="Attack the guard")
     game.last_turn_snapshot.roll = None
     game.last_turn_snapshot.narration = "You swing your sword..."
 
@@ -508,7 +486,7 @@ def test_momentum_burn_upgrades_result() -> None:
         stat_value=2,
         action_score=4,
         result="MISS",
-        move="face_danger",
+        move="adventure/face_danger",
         match=False,
     )
 
@@ -525,7 +503,7 @@ def test_momentum_burn_upgrades_result() -> None:
         stat_value=2,
         action_score=4,
         result="MISS",
-        move="face_danger",
+        move="adventure/face_danger",
         match=False,
     )
 

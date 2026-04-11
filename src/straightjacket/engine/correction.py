@@ -19,7 +19,6 @@ from .game.finalization import apply_post_narration
 from .logging_util import log
 from .mechanics import (
     apply_brain_location_time,
-    apply_consequences,
     check_npc_agency,
     record_scene_intensity,
     resolve_effect,
@@ -27,6 +26,7 @@ from .mechanics import (
     roll_action,
     update_chaos_factor,
 )
+from .mechanics.move_outcome import resolve_move_outcome
 from .mechanics.scene import SceneSetup
 from .models import (
     NPC_STATUSES,
@@ -259,9 +259,37 @@ def process_correction(
             log(f"[Correction] Re-rolled: {roll.result} ({stat_name})")
             position = resolve_position(game, brain)
             effect = resolve_effect(game, brain, position)
-            consequences, clock_events = apply_consequences(game, roll, brain, position, effect)
+
+            outcome = resolve_move_outcome(game, brain.move, roll.result, target_npc_id=brain.target_npc)
+            consequences = outcome.consequences
+            if outcome.combat_position:
+                game.world.combat_position = outcome.combat_position
+
+            clock_events: list = []
+            from .engine_loader import damage
+            from .mechanics.consequences import tick_threat_clock
+
+            if roll.result == "MISS":
+                clock_ticks = damage("damage.miss.clock_ticks", position)
+                if clock_ticks > 0:
+                    tick_threat_clock(game, clock_ticks, clock_events)
+
+            # Crisis check
+            _res = game.resources
+            if _res.health <= 0 and _res.spirit <= 0:
+                game.game_over = True
+                game.crisis_mode = True
+            elif _res.health <= 0 or _res.spirit <= 0:
+                game.crisis_mode = True
+            else:
+                game.crisis_mode = False
+
             npc_agency, _ = check_npc_agency(game)
             activated_npcs, mentioned_npcs, _ = activate_npcs_for_prompt(game, brain, corrected_input)
+
+            from .mechanics import generate_consequence_sentences
+
+            consequence_sentences = generate_consequence_sentences(consequences, clock_events, game, brain)
 
             from .mechanics import generate_consequence_sentences
 
@@ -474,7 +502,31 @@ def process_momentum_burn(
 
     position = resolve_position(game, brain_data)
     effect = resolve_effect(game, brain_data, position)
-    consequences, clock_events = apply_consequences(game, upgraded, brain_data, position, effect)
+
+    outcome = resolve_move_outcome(game, upgraded.move, upgraded.result, target_npc_id=brain_data.target_npc)
+    consequences = outcome.consequences
+    if outcome.combat_position:
+        game.world.combat_position = outcome.combat_position
+
+    clock_events: list = []
+    from .engine_loader import damage
+    from .mechanics.consequences import tick_threat_clock
+
+    if upgraded.result == "MISS":
+        clock_ticks = damage("damage.miss.clock_ticks", position)
+        if clock_ticks > 0:
+            tick_threat_clock(game, clock_ticks, clock_events)
+
+    # Crisis check
+    _res = game.resources
+    if _res.health <= 0 and _res.spirit <= 0:
+        game.game_over = True
+        game.crisis_mode = True
+    elif _res.health <= 0 or _res.spirit <= 0:
+        game.crisis_mode = True
+    else:
+        game.crisis_mode = False
+
     activated_npcs, mentioned_npcs, _ = activate_npcs_for_prompt(game, brain_data, player_words)
 
     from .mechanics import generate_consequence_sentences

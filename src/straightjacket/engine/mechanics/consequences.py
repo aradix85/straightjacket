@@ -6,10 +6,9 @@ from __future__ import annotations
 import random
 
 from ...i18n import E
-from ..config_loader import _ConfigNode
-from ..engine_loader import damage, eng
+from ..engine_loader import eng
 from ..logging_util import log
-from ..models import BrainResult, ClockEvent, GameState, NpcData, Resources, RollResult
+from ..models import BrainResult, ClockEvent, GameState, RollResult
 from ..npc import find_npc, normalize_for_match
 
 
@@ -29,167 +28,34 @@ def roll_action(stat_name: str, stat_value: int, move: str) -> RollResult:
     return RollResult(d1, d2, c1, c2, stat_name, stat_value, score, result, move, match=(c1 == c2))
 
 
-def _move_set(category: str) -> set[str]:
-    """Read a move category set from engine.yaml move_categories."""
-    return set(eng().move_categories.get(category, []))
-
-
-# CONSEQUENCES
-
-
-def apply_consequences(
-    game: GameState, roll: RollResult, brain: BrainResult, position: str, effect: str
-) -> tuple[list[str], list[ClockEvent]]:
-    """Apply mechanical consequences. Position scales severity.
-    All damage values and move categories come from engine.yaml."""
-    consequences: list[str] = []
-    clock_events: list[ClockEvent] = []
-    tid = brain.target_npc
-    target = find_npc(game, tid) if tid else None
-    _e = eng()
-    res = game.resources
-
-    if roll.move in _move_set("social") and target is None:
-        log(
-            f"[Consequences] Social move '{roll.move}' has no resolvable target "
-            f"(target_npc={tid!r}) — bond/disposition effects skipped",
-            level="warning",
-        )
-
-    if roll.result == "MISS":
-        _apply_miss(res, roll, brain, target, position, consequences, _e)
-
-        mom_loss = damage("momentum.loss", position)
-        res.adjust_momentum(-mom_loss, floor=_e.momentum.floor, ceiling=_e.momentum.max)
-        consequences.append(f"momentum -{mom_loss}")
-
-        clock_ticks = damage("damage.miss.clock_ticks", position)
-        if clock_ticks > 0:
-            _tick_threat_clock(game, clock_ticks, clock_events)
-
-    elif roll.result == "WEAK_HIT":
-        res.adjust_momentum(+_e.momentum.gain.weak_hit, floor=_e.momentum.floor, ceiling=_e.momentum.max)
-        if roll.move in _move_set("bond_on_weak_hit") and target:
-            target.bond = min(target.bond_max, target.bond + 1)
-        _apply_recovery(res, roll.move, _e.recovery.weak_hit, _e, consequences)
-
-        # Threat clock pressure: controlled=no tick, risky=probabilistic, desperate=guaranteed
-        if position != "controlled":
-            should_tick = (position == "desperate") or (random.random() < _e.pacing.weak_hit_clock_tick_chance)
-            if should_tick:
-                _tick_threat_clock(game, 1, clock_events)
-
-    else:  # STRONG_HIT
-        mom_gain = damage("momentum.gain.strong_hit", effect)
-        res.adjust_momentum(+mom_gain, floor=_e.momentum.floor, ceiling=_e.momentum.max)
-        if roll.move in _move_set("bond_on_strong_hit") and target:
-            target.bond = min(target.bond_max, target.bond + 1)
-        if roll.move in _move_set("disposition_shift_on_strong_hit") and target:
-            shifts = dict(_e.disposition_shifts.items())
-            target.disposition = shifts.get(target.disposition, target.disposition)
-        _apply_recovery(res, roll.move, damage("recovery.strong_hit", effect), _e, consequences)
-
-    # --- Crisis check -----------------
-    if res.health <= 0 and res.spirit <= 0:
-        game.game_over = True
-        game.crisis_mode = True
-    elif res.health <= 0 or res.spirit <= 0:
-        game.crisis_mode = True
+def roll_progress(track_name: str, filled_boxes: int, move: str) -> RollResult:
+    """Progress roll: filled_boxes (0–10) vs 2d10 challenge dice. No action dice."""
+    c1, c2 = random.randint(1, 10), random.randint(1, 10)
+    score = min(filled_boxes, 10)
+    if score > c1 and score > c2:
+        result = "STRONG_HIT"
+    elif score > c1 or score > c2:
+        result = "WEAK_HIT"
     else:
-        game.crisis_mode = False
-
-    return consequences, clock_events
-
-
-# ── Consequence helpers ───────────────────────────────────────
-
-
-def _miss_endure_map() -> dict[str, str]:
-    """Read miss endure move→track mapping from engine.yaml."""
-    return dict(eng().move_routing.miss_endure.items())
-
-
-def _apply_miss(
-    res: Resources,
-    roll: RollResult,
-    brain: BrainResult,
-    target: NpcData | None,
-    position: str,
-    consequences: list[str],
-    _e: _ConfigNode,
-) -> None:
-    """Apply miss-specific damage based on move category."""
-    move = roll.move
-
-    # Endure moves: single-track damage
-    miss_endure = _miss_endure_map()
-    if move in miss_endure:
-        track = miss_endure[move]
-        dmg = damage("damage.miss.endure", position)
-        lost = res.damage(track, dmg)
-        if lost:
-            consequences.append(f"{track} -{lost}")
-
-    # Combat: health damage
-    elif move in _move_set("combat"):
-        dmg = damage("damage.miss.combat", position)
-        lost = res.damage("health", dmg)
-        if lost:
-            consequences.append(f"health -{lost}")
-
-    # Social: bond loss + spirit damage
-    elif move in _move_set("social"):
-        if target:
-            bond_loss = damage("damage.miss.social.bond", position)
-            old_bond = target.bond
-            target.bond = max(0, target.bond - bond_loss)
-            if target.bond < old_bond:
-                consequences.append(f"{target.name} bond -{old_bond - target.bond}")
-        dmg = damage("damage.miss.social.spirit", position)
-        lost = res.damage("spirit", dmg)
-        if lost:
-            consequences.append(f"spirit -{lost}")
-
-    # Everything else: supply + optional health
-    else:
-        parts = []
-        supply_loss = damage("damage.miss.other.supply", position)
-        lost_su = res.damage("supply", supply_loss)
-        if lost_su:
-            parts.append(f"supply -{lost_su}")
-        health_loss = damage("damage.miss.other.health", position)
-        if health_loss > 0:
-            lost_h = res.damage("health", health_loss)
-            if lost_h:
-                parts.append(f"health -{lost_h}")
-        if parts:
-            consequences.append(", ".join(parts))
+        result = "MISS"
+    return RollResult(
+        d1=0,
+        d2=0,
+        c1=c1,
+        c2=c2,
+        stat_name=track_name,
+        stat_value=filled_boxes,
+        action_score=score,
+        result=result,
+        move=move,
+        match=(c1 == c2),
+    )
 
 
-def _recovery_moves_map() -> dict[str, tuple[str, str]]:
-    """Read recovery move→(track, cap_attr) mapping from engine.yaml."""
-    raw = eng().move_routing.recovery
-    result = {}
-    for move in raw:
-        entry = raw[move]
-        result[move] = (entry.track, entry.cap)
-    return result
+# CLOCKS
 
 
-def _apply_recovery(res: Resources, move: str, amount: int, _e: _ConfigNode, consequences: list[str]) -> None:
-    """Apply recovery healing for endure/resupply moves."""
-    recovery_map = _recovery_moves_map()
-    entry = recovery_map.get(move)
-    if not entry:
-        return
-    track, cap_attr = entry
-    cap = getattr(_e.resources, cap_attr)
-    gained = res.heal(track, amount, cap=cap)
-    if gained:
-        consequences.append(f"{track} +{gained}")
-
-
-def _tick_threat_clock(game: GameState, ticks: int, clock_events: list[ClockEvent]) -> None:
+def tick_threat_clock(game: GameState, ticks: int, clock_events: list[ClockEvent]) -> None:
     """Advance the first unfilled threat clock by ticks. Fire if full."""
     for clock in game.world.clocks:
         if clock.clock_type == "threat" and clock.filled < clock.segments:

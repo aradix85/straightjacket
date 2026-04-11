@@ -39,6 +39,7 @@ class StateSnapshot:
     active_threads: int = 0
     active_characters: int = 0
     active_vow_tracks: int = 0
+    combat_position: str = ""
 
 
 @dataclass

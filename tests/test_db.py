@@ -78,7 +78,7 @@ def _game_with_npcs() -> GameState:
     )
     game.narrative.scene_count = 5
     game.narrative.session_log.append(
-        SceneLogEntry(scene=1, summary="Arrived at docks", move="face_danger", result="WEAK_HIT")
+        SceneLogEntry(scene=1, summary="Arrived at docks", move="adventure/face_danger", result="WEAK_HIT")
     )
     game.narrative.narration_history.append(
         NarrationEntry(scene=1, prompt_summary="Opening", narration="The salt air bit at your skin.")
@@ -178,7 +178,7 @@ def test_sync_scene_log() -> None:
     conn = get_db()
     rows = conn.execute("SELECT * FROM scene_log").fetchall()
     assert len(rows) == 1
-    assert rows[0]["move"] == "face_danger"
+    assert rows[0]["move"] == "adventure/face_danger"
     close_db()
 
 

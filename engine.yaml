@@ -243,28 +243,19 @@ narrative_direction:
 # apply_consequences ensure only one path runs per result type.
 move_categories:
   combat:
-    - clash
-    - strike
+    - combat/clash
+    - combat/strike
   social:
-    - compel
-    - make_connection
-    - test_bond
+    - adventure/compel
+    - connection/make_a_connection
+    - connection/test_your_relationship
   endure:
-    - endure_harm
-    - endure_stress
+    - suffer/endure_harm
+    - suffer/endure_stress
   recovery:
-    - endure_harm
-    - endure_stress
-    - resupply
-  bond_on_weak_hit:
-    - make_connection
-  bond_on_strong_hit:
-    - make_connection
-    - compel
-    - test_bond
-  disposition_shift_on_strong_hit:
-    - make_connection
-    - test_bond
+    - suffer/endure_harm
+    - suffer/endure_stress
+    - recover/resupply
 
 # ── Disposition shifts ───────────────────────────────────────
 # Progression ladder on STRONG_HIT social moves.
@@ -282,26 +273,6 @@ disposition_to_seed_emotion:
   neutral: neutral
   friendly: curious
   loyal: trusting
-
-# ── Brain move classification ─────────────────────────────────
-# The Brain classifies player input into one of these moves.
-# Single source of truth for BRAIN_OUTPUT_SCHEMA and brain_parser prompt.
-# stats: which character stats can be used for this move.
-move_stats:
-  face_danger: edge|heart|iron|shadow|wits
-  compel: heart|iron|shadow
-  gather_information: wits
-  secure_advantage: edge|heart|iron|shadow|wits
-  clash: iron|edge
-  strike: iron|edge
-  endure_harm: iron
-  endure_stress: heart
-  make_connection: heart
-  test_bond: heart
-  resupply: wits
-  world_shaping: wits|heart|shadow
-  ask_the_oracle: none
-  dialog: none
 
 
 # ── Position resolver (step 2.1) ─────────────────────────────
@@ -370,28 +341,28 @@ effect_resolver:
     # Secured advantage
     secured_advantage: 1
   move_baselines:
-    strike: 1                    # strike trends toward great
-    clash: 0
-    gather_information: 0
-    compel: 0
-    face_danger: 0
+    combat/strike: 1                    # strike trends toward great
+    combat/clash: 0
+    adventure/gather_information: 0
+    adventure/compel: 0
+    adventure/face_danger: 0
     other: 0
 
 # ── Time progression resolver (step 2.3) ─────────────────────
 # Engine derives time progression from move type. No AI needed.
 time_progression_map:
   dialog: none
-  gather_information: short
-  compel: short
-  make_connection: short
-  test_bond: short
-  face_danger: short
-  secure_advantage: short
-  clash: short
-  strike: short
-  endure_harm: none
-  endure_stress: none
-  resupply: moderate
+  adventure/gather_information: short
+  adventure/compel: short
+  connection/make_a_connection: short
+  connection/test_your_relationship: short
+  adventure/face_danger: short
+  adventure/secure_an_advantage: short
+  combat/clash: short
+  combat/strike: short
+  suffer/endure_harm: none
+  suffer/endure_stress: none
+  recover/resupply: moderate
   world_shaping: moderate
   _with_location_change: long    # any move + location_change → long
   _default: short
@@ -504,17 +475,17 @@ memory_result_text:
 
 # Move verbs for memory template {move_verb}
 memory_move_verbs:
-  face_danger: "faced danger"
-  compel: "pressed someone"
-  gather_information: "investigated"
-  secure_advantage: "prepared carefully"
-  clash: "fought"
-  strike: "attacked"
-  endure_harm: "endured harm"
-  endure_stress: "weathered stress"
-  make_connection: "reached out"
-  test_bond: "tested a bond"
-  resupply: "resupplied"
+  adventure/face_danger: "faced danger"
+  adventure/compel: "pressed someone"
+  adventure/gather_information: "investigated"
+  adventure/secure_an_advantage: "prepared carefully"
+  combat/clash: "fought"
+  combat/strike: "attacked"
+  suffer/endure_harm: "endured harm"
+  suffer/endure_stress: "weathered stress"
+  connection/make_a_connection: "reached out"
+  connection/test_your_relationship: "tested a bond"
+  recover/resupply: "resupplied"
   world_shaping: "shaped the world"
   dialog: "spoke"
   _default: "acted"
@@ -793,12 +764,12 @@ opening:
 # These replace hardcoded Python dicts with config-driven lookups.
 move_routing:
   miss_endure:
-    endure_harm: health
-    endure_stress: spirit
+    suffer/endure_harm: health
+    suffer/endure_stress: spirit
   recovery:
-    endure_harm: {track: health, cap: health_max}
-    endure_stress: {track: spirit, cap: spirit_max}
-    resupply: {track: supply, cap: supply_max}
+    suffer/endure_harm: {track: health, cap: health_max}
+    suffer/endure_stress: {track: spirit, cap: spirit_max}
+    recover/resupply: {track: supply, cap: supply_max}
 
 # ── Architect constraints ────────────────────────────────────
 architect:
@@ -852,3 +823,368 @@ fate:
       - {min_score: -4, odds: very_unlikely}
       - {min_score: -5, odds: nearly_impossible}
       - {min_score: -99, odds: impossible}
+
+# ── Move outcomes (step 7b) ──────────────────────────────────
+# Data-driven mechanical effects per move per result.
+# Simple moves: list of effect strings.
+# Complex moves: handler name + params dict.
+# See mechanics/move_outcome.py for effect vocabulary.
+
+move_outcomes:
+
+  # ── Adventure moves ──────────────────────────────────────────
+
+  adventure/face_danger:
+    strong_hit: [momentum +1]
+    weak_hit: [suffer_move -1]
+    miss: [pay_the_price]
+
+  adventure/secure_an_advantage:
+    strong_hit: [momentum +2, next_move_bonus +1]
+    weak_hit: [momentum +2]           # resolved choice: momentum over next_move_bonus
+    miss: [pay_the_price]
+
+  adventure/gather_information:
+    strong_hit: [momentum +2]
+    weak_hit: [momentum +1]
+    miss: [pay_the_price]
+
+  adventure/compel:
+    strong_hit: [momentum +1, bond +1]
+    weak_hit: [momentum +1]
+    miss: [pay_the_price]
+
+  adventure/check_your_gear:
+    strong_hit: [momentum +1]
+    weak_hit: [supply -1]             # resolved choice: supply loss over momentum loss
+    miss: [pay_the_price]
+
+  # ── Combat moves ─────────────────────────────────────────────
+
+  combat/enter_the_fray:
+    strong_hit: [momentum +2, position in_control]
+    weak_hit: [momentum +2]           # resolved choice: momentum over position
+    miss: [position bad_spot]
+
+  combat/strike:
+    strong_hit: [mark_progress 2, position in_control]
+    weak_hit: [mark_progress 2, position bad_spot]
+    miss: [pay_the_price, position bad_spot]
+
+  combat/clash:
+    strong_hit: [mark_progress 2, position in_control]
+    weak_hit: [mark_progress 1, pay_the_price, position bad_spot]
+    miss: [pay_the_price, position bad_spot]
+
+  combat/gain_ground:
+    strong_hit: [mark_progress 1, momentum +2]   # resolved choice: progress + momentum
+    weak_hit: [mark_progress 1]                   # resolved choice: progress
+    miss: [pay_the_price, position bad_spot]
+
+  combat/react_under_fire:
+    strong_hit: [momentum +1, position in_control]
+    weak_hit: [suffer_move -1, position bad_spot]
+    miss: [pay_the_price, position bad_spot]
+
+  combat/battle:
+    strong_hit: [momentum +2]
+    weak_hit: [pay_the_price]
+    miss: [pay_the_price]
+
+  combat/take_decisive_action:
+    strong_hit: [momentum +1, position in_control]
+    weak_hit: [pay_the_price, position bad_spot]
+    miss: [pay_the_price]
+
+  # ── Quest moves ──────────────────────────────────────────────
+
+  quest/swear_an_iron_vow:
+    strong_hit: [momentum +2]
+    weak_hit: [momentum +1]
+    miss: [narrative]
+
+  quest/fulfill_your_vow:
+    strong_hit: [legacy_reward quests]
+    weak_hit: [legacy_reward quests]   # full reward if player swears follow-up vow
+    miss: [narrative]                  # player chooses: forsake or recommit
+
+  # ── Connection moves ─────────────────────────────────────────
+
+  connection/make_a_connection:
+    strong_hit: [momentum +1, bond +1, disposition_shift]
+    weak_hit: [momentum +1, bond +1]
+    miss: [pay_the_price]
+
+  connection/develop_your_relationship:
+    strong_hit: [legacy_reward bonds]  # 2 ticks on bonds legacy
+    weak_hit: [momentum +2]
+    miss: [narrative]
+
+  connection/test_your_relationship:
+    strong_hit: [bond +1, disposition_shift]  # triggers Develop Your Relationship
+    weak_hit: [bond +1]                       # triggers Develop Your Relationship + complication
+    miss: [pay_the_price]
+
+  connection/forge_a_bond:
+    strong_hit: [legacy_reward bonds]
+    weak_hit: [legacy_reward bonds]    # conditional on fulfilling request
+    miss: [narrative]
+
+  # ── Exploration moves ────────────────────────────────────────
+
+  exploration/undertake_an_expedition:
+    strong_hit: [mark_progress 1]
+    weak_hit: [mark_progress 1, suffer_move -2]  # resolved choice: suffer en route
+    miss: [pay_the_price]
+
+  exploration/explore_a_waypoint:
+    strong_hit: [momentum +2]          # resolved choice: opportunity over progress
+    weak_hit: [momentum +1]
+    miss: [pay_the_price]
+
+  exploration/set_a_course:
+    strong_hit: [momentum +1]
+    weak_hit: [suffer_move -2]         # resolved choice: suffer costs en route
+    miss: [pay_the_price]
+
+  exploration/finish_an_expedition:
+    strong_hit: [legacy_reward discoveries]
+    weak_hit: [narrative]              # legacy reward at reduced rank
+    miss: [pay_the_price]              # resolved choice: abandon
+
+  # ── Recover moves ────────────────────────────────────────────
+
+  recover/heal:
+    handler: recovery
+    params:
+      track: health
+      full_amount: 3
+      impact_amount: 2
+      blocking_impact: wounded
+      weak_hit_cost_type: momentum
+      weak_hit_cost: -2
+
+  recover/hearten:
+    handler: recovery
+    params:
+      track: spirit
+      full_amount: 2
+      impact_amount: 1
+      blocking_impact: shaken
+      weak_hit_cost_type: momentum
+      weak_hit_cost: -1
+
+  recover/resupply:
+    strong_hit: [supply +2]            # resolved choice: supply over specific item
+    weak_hit: [supply +2]              # same effect, with narrative complication
+    miss: [pay_the_price]
+
+  recover/repair:
+    # Repair uses a point system that depends on situation (at facility / in field / under fire).
+    # Engine cannot determine situation automatically — treat as narrative with resource effect.
+    strong_hit: [narrative]
+    weak_hit: [narrative]
+    miss: [pay_the_price]
+
+  recover/sojourn:
+    # Sojourn triggers other recovery moves (Heal, Hearten, Repair, Resupply) as auto-strong-hits.
+    # For now, apply a broad recovery effect.
+    strong_hit: [health +2, spirit +1]   # approximation of 2 recovery sub-moves
+    weak_hit: [health +1]                # approximation of 1 recovery sub-move
+    miss: [pay_the_price]
+
+  # ── Suffer moves ─────────────────────────────────────────────
+
+  suffer/endure_harm:
+    handler: suffer
+    params:
+      track: health
+      recovery: 1
+      miss_extra_track: -1
+      miss_extra_momentum: -2
+      impact_pair: [wounded, permanently_harmed]
+      blocking_impact: wounded
+
+  suffer/endure_stress:
+    handler: suffer
+    params:
+      track: spirit
+      recovery: 1
+      miss_extra_track: -1
+      miss_extra_momentum: -2
+      impact_pair: [shaken, traumatized]
+      blocking_impact: shaken
+
+  suffer/withstand_damage:
+    handler: suffer
+    params:
+      track: integrity
+      recovery: 1
+      miss_extra_track: -1
+      miss_extra_momentum: -2
+      impact_pair: [battered, cursed]
+      blocking_impact: battered
+
+  suffer/companion_takes_a_hit:
+    handler: suffer
+    params:
+      track: companion_health
+      recovery: 1
+      miss_extra_track: -1
+      miss_extra_momentum: -2
+      impact_pair: []
+      blocking_impact: ""
+
+  suffer/lose_momentum:
+    strong_hit: [narrative]
+    weak_hit: [narrative]
+    miss: [narrative]
+
+  suffer/sacrifice_resources:
+    strong_hit: [narrative]
+    weak_hit: [narrative]
+    miss: [narrative]
+
+  # ── Threshold moves ──────────────────────────────────────────
+
+  threshold/face_death:
+    handler: threshold
+    params:
+      impact: doomed
+      game_over_text: "you are dead"
+
+  threshold/face_desolation:
+    handler: threshold
+    params:
+      impact: tormented
+      game_over_text: "you succumb to despair and are lost"
+
+  # ── Scene challenge moves ────────────────────────────────────
+
+  scene_challenge/face_danger:
+    strong_hit: [mark_progress 1]
+    weak_hit: [mark_progress 1, fill_clock 1]
+    miss: [fill_clock 1, pay_the_price]
+
+  scene_challenge/secure_an_advantage:
+    strong_hit: [momentum +2, next_move_bonus +1]
+    weak_hit: [momentum +2]           # resolved choice: momentum over bonus
+    miss: [fill_clock 1, pay_the_price]
+
+  scene_challenge/finish_the_scene:
+    strong_hit: [narrative]
+    weak_hit: [pay_the_price]
+    miss: [pay_the_price]
+
+
+  # ── Classic-specific moves ───────────────────────────────────
+  # Classic uses different category names: relationship/ instead of connection/
+
+  adventure/heal:
+    handler: recovery
+    params:
+      track: health
+      full_amount: 3
+      impact_amount: 2
+      blocking_impact: wounded
+      weak_hit_cost_type: supply
+      weak_hit_cost: -1
+
+  adventure/make_camp:
+    # Resolved choice: recuperate + focus
+    strong_hit: [health +1, momentum +1]
+    weak_hit: [health +1]
+    miss: [pay_the_price]
+
+  adventure/reach_your_destination:
+    # Progress roll for journeys (Classic equivalent of Finish an Expedition)
+    strong_hit: [momentum +1]
+    weak_hit: [narrative]
+    miss: [pay_the_price]
+
+  adventure/resupply:
+    strong_hit: [supply +2]
+    weak_hit: [supply +2, momentum -2]   # take supply but lose momentum
+    miss: [pay_the_price]
+
+  adventure/undertake_a_journey:
+    strong_hit: [mark_progress 1]
+    weak_hit: [mark_progress 1, supply -1]
+    miss: [pay_the_price]
+
+  combat/end_the_fight:
+    # Progress roll for combat (Classic equivalent of Take Decisive Action)
+    strong_hit: [narrative]
+    weak_hit: [pay_the_price]
+    miss: [pay_the_price]
+
+  relationship/compel:
+    strong_hit: [momentum +1, bond +1]
+    weak_hit: [momentum +1]
+    miss: [pay_the_price]
+
+  relationship/draw_the_circle:
+    strong_hit: [momentum +1]
+    weak_hit: [momentum +1]
+    miss: [pay_the_price]
+
+  relationship/forge_a_bond:
+    strong_hit: [bond +1]
+    weak_hit: [bond +1]                  # conditional on fulfilling request
+    miss: [pay_the_price]
+
+  relationship/sojourn:
+    # Resolved choice: recuperate + relax
+    strong_hit: [health +1, spirit +1]
+    weak_hit: [health +1]
+    miss: [pay_the_price]
+
+  relationship/test_your_bond:
+    strong_hit: [spirit +1]              # resolved choice: spirit over momentum
+    weak_hit: [narrative]
+    miss: [pay_the_price]
+
+  suffer/companion_endure_harm:
+    handler: suffer
+    params:
+      track: companion_health
+      recovery: 1
+      miss_extra_track: -1
+      miss_extra_momentum: -1
+      impact_pair: []
+      blocking_impact: ""
+
+  suffer/face_death:
+    handler: threshold
+    params:
+      impact: doomed
+      game_over_text: "you are dead"
+
+  suffer/face_desolation:
+    handler: threshold
+    params:
+      impact: tormented
+      game_over_text: "you succumb to despair and are lost"
+
+  # ── Delve-specific moves ─────────────────────────────────────
+
+  delve/check_your_gear:
+    strong_hit: [momentum +1]
+    weak_hit: [momentum +1, supply -1]
+    miss: [pay_the_price]
+
+  delve/delve_the_depths:
+    strong_hit: [mark_progress 1]
+    weak_hit: [narrative]                # roll on table per stat (narrator constraint)
+    miss: [narrative]                    # Reveal a Danger (narrator constraint)
+
+  delve/escape_the_depths:
+    strong_hit: [momentum +1]
+    weak_hit: [narrative]                # resolved choice: one cost
+    miss: [narrative]                    # Reveal a Danger
+
+  delve/locate_your_objective:
+    # Progress roll for delve sites
+    strong_hit: [momentum +1]
+    weak_hit: [narrative]
+    miss: [pay_the_price]

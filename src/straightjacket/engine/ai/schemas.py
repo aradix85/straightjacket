@@ -82,12 +82,26 @@ def get_brain_output_schema() -> dict:
     global _brain_cache
     if _brain_cache is None:
         _e = eng()
-        moves = list(_e.move_stats.keys())
         stat_names = list(_e.stats.names)
+
+        # Build move enum: all Datasworn moves across all settings + engine-specific
+        from ..datasworn.moves import get_moves
+
+        all_move_keys: set[str] = set()
+        for setting_id in ("starforged", "classic", "delve", "sundered_isles"):
+            try:
+                moves = get_moves(setting_id)
+                all_move_keys.update(k for k, m in moves.items() if m.roll_type not in ("no_roll", "special_track"))
+            except (FileNotFoundError, KeyError):
+                pass
+
+        # Engine-specific moves
+        all_move_keys.update(("dialog", "ask_the_oracle", "world_shaping"))
+
         _brain_cache = _obj(
             {
                 "type": _str(["action"]),
-                "move": _str(moves),
+                "move": _str(sorted(all_move_keys)),
                 "stat": _str(stat_names),
                 "approach": _str(),
                 "target_npc": _nullable_str(),

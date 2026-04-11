@@ -52,6 +52,12 @@ def assert_game_state(game: GameState, turn: int) -> list[str]:
     for clock in world.clocks:
         _check_clock(clock, turn, violations)
 
+    # Combat position
+    check(
+        world.combat_position in ("", "in_control", "bad_spot"),
+        f"invalid combat_position '{world.combat_position}'",
+    )
+
     # Progress track invariants (vow_tracks)
     for track in game.vow_tracks:
         check(track.id != "", "vow_track with empty id")

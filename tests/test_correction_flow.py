@@ -180,7 +180,11 @@ def _game() -> "GameState":
     game.narrative.scene_count = 3
     game.narrative.session_log.append(
         SceneLogEntry(
-            scene=3, summary="Searched the room", move="face_danger", result="MISS", consequences=["health -2"]
+            scene=3,
+            summary="Searched the room",
+            move="adventure/face_danger",
+            result="MISS",
+            consequences=["health -2"],
         )
     )
     game.narrative.narration_history.append(
@@ -188,9 +192,9 @@ def _game() -> "GameState":
     )
     game.last_turn_snapshot = game.snapshot()
     game.last_turn_snapshot.player_input = "I attack the guard"
-    game.last_turn_snapshot.brain = BrainResult(move="strike", stat="iron", player_intent="Attack the guard")
+    game.last_turn_snapshot.brain = BrainResult(move="combat/strike", stat="iron", player_intent="Attack the guard")
     game.last_turn_snapshot.roll = RollResult(
-        d1=2, d2=3, c1=7, c2=8, stat_name="iron", stat_value=1, action_score=6, result="MISS", move="strike"
+        d1=2, d2=3, c1=7, c2=8, stat_name="iron", stat_value=1, action_score=6, result="MISS", move="combat/strike"
     )
     game.last_turn_snapshot.narration = "You swung wildly and missed."
     # Damage state after snapshot to verify restore
@@ -263,7 +267,7 @@ def test_momentum_burn_full_flow(load_engine: None, stub_emotions: None) -> None
     pre_snap = game.last_turn_snapshot
     assert pre_snap is not None
     snap_health = pre_snap.resources["health"]
-    game.narrative.session_log.append(SceneLogEntry(scene=4, summary="Attack", move="strike", result="MISS"))
+    game.narrative.session_log.append(SceneLogEntry(scene=4, summary="Attack", move="combat/strike", result="MISS"))
 
     provider = MockProvider()
     game, narration = process_momentum_burn(
@@ -271,14 +275,16 @@ def test_momentum_burn_full_flow(load_engine: None, stub_emotions: None) -> None
         game,
         pre_snap.roll,  # type: ignore[arg-type]
         "STRONG_HIT",
-        BrainResult(move="strike", stat="iron", player_intent="Attack"),
+        BrainResult(move="combat/strike", stat="iron", player_intent="Attack"),
         config=EngineConfig(narration_lang="English"),
         pre_snapshot=pre_snap,
     )
 
     assert game.resources.health == snap_health
     _e = engine_loader.eng()
-    assert game.resources.momentum == _e.momentum.start + _e.momentum.gain.strong_hit.standard
+    # Strike STRONG_HIT gives mark_progress + position, no momentum change.
+    # Momentum was reset to start value by burn.
+    assert game.resources.momentum == _e.momentum.start
     assert len(narration) > 10
     assert game.narrative.session_log[-1].result == "STRONG_HIT"
 

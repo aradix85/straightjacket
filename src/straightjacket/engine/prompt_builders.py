@@ -409,7 +409,7 @@ def build_action_prompt(
     move_cat = _move_category(brain.move)
     # Map engine categories to stance matrix categories
     stance_cat = {"combat": "combat", "social": "social"}.get(move_cat, "other")
-    if brain.move == "gather_information":
+    if brain.move == "adventure/gather_information":
         stance_cat = "gather_information"
     npc = _npc_block(game, brain.target_npc, context_text=context_text, move_category=stance_cat)
     npcs_sect = _npcs_section(game, brain, context_text, activated_npcs, mentioned_npcs, move_category=stance_cat)

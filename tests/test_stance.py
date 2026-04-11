@@ -125,7 +125,9 @@ def test_stance_constraint_not_empty() -> None:
 def test_stance_in_target_npc_block() -> None:
     npc = _npc("distrustful", bond=1)
     game = _game(npc)
-    brain = BrainResult(move="gather_information", stat="wits", target_npc="npc_1", player_intent="ask about the cargo")
+    brain = BrainResult(
+        move="adventure/gather_information", stat="wits", target_npc="npc_1", player_intent="ask about the cargo"
+    )
     roll = RollResult(
         d1=3,
         d2=4,
@@ -135,7 +137,7 @@ def test_stance_in_target_npc_block() -> None:
         stat_value=2,
         action_score=9,
         result="WEAK_HIT",
-        move="gather_information",
+        move="adventure/gather_information",
     )
     prompt = build_action_prompt(
         game,
@@ -159,9 +161,17 @@ def test_stance_in_activated_npc_block() -> None:
     npc2 = NpcData(id="npc_2", name="Rowan", disposition="hostile", bond=0, agenda="Fight", instinct="Reckless")
     game = _game()
     game.npcs = [npc1, npc2]
-    brain = BrainResult(move="face_danger", stat="edge", target_npc="npc_1", player_intent="dodge")
+    brain = BrainResult(move="adventure/face_danger", stat="edge", target_npc="npc_1", player_intent="dodge")
     roll = RollResult(
-        d1=4, d2=5, c1=3, c2=4, stat_name="edge", stat_value=2, action_score=10, result="STRONG_HIT", move="face_danger"
+        d1=4,
+        d2=5,
+        c1=3,
+        c2=4,
+        stat_name="edge",
+        stat_value=2,
+        action_score=10,
+        result="STRONG_HIT",
+        move="adventure/face_danger",
     )
     prompt = build_action_prompt(
         game,
