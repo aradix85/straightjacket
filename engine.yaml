@@ -520,49 +520,49 @@ scene_context_dialog: "conversation at {location} with {npc_summary}"
 # Severity: light = 1 damage, heavy = 2+.
 consequence_templates:
   health_light:
-    - "A blow lands — {player} staggers but stays upright."
-    - "The impact drives {player} back, leaving a mark."
-    - "Something catches {player} wrong. Pain flares, sharp and immediate."
+    - "{player} takes a hit — bruised ribs, split skin, something that slows them down."
+    - "The impact catches {player} in the side. Blood wells through torn fabric."
+    - "Pain flares where the blow landed. {player} staggers, favoring one leg."
   health_heavy:
-    - "The hit is bad. {player} feels something give."
-    - "{player} goes down hard. Getting up takes everything."
-    - "Blood. Too much of it. {player} presses a hand to the wound."
+    - "{player} crumples. Something is broken — bone, cartilage, certainty."
+    - "Blood runs freely. {player} presses both hands to the wound."
+    - "{player} goes down hard. Standing takes too long and costs too much."
   spirit_light:
-    - "Something in {player} dims. The doubt is quiet but real."
-    - "The weight of it settles on {player}'s shoulders."
-    - "A familiar weariness creeps in — not the body, the will."
+    - "{player}'s focus slips. Doubt creeps in."
+    - "{player} falters — hands slow, breathing heavy, resolve thinning."
+    - "Exhaustion drags at {player}. The task ahead looks harder now."
   spirit_heavy:
-    - "{player}'s hands are shaking and it has nothing to do with cold."
-    - "For a moment {player} cannot remember why any of this matters."
-    - "The resolve that carried {player} here fractures."
+    - "{player}'s hands shake. Focus scatters."
+    - "{player} stops mid-step. The purpose that drove them here feels hollow."
+    - "{player}'s composure cracks — voice tight, breathing ragged."
   supply_any:
-    - "Something essential is lost — {player} won't notice until it's needed."
-    - "The pack is lighter. Not in a good way."
-    - "Supplies spent. What remains will have to stretch."
+    - "{player} loses gear from the pack — dropped, broken, or spent."
+    - "Supplies run low. {player} checks the pack and finds less than expected."
+    - "Something essential is gone from {player}'s kit."
   momentum_loss:
-    - "The momentum that was building slips away."
-    - "Whatever advantage {player} had, it's gone."
+    - "{player} loses momentum. The advantage is gone."
+    - "The momentum shifts against {player}. Ground lost."
   bond_loss:
-    - "{npc}'s expression closes. A wall goes up."
-    - "Something shifts between {player} and {npc}. Trust, retreating."
-    - "The distance between {player} and {npc} grows."
+    - "{npc} steps back and crosses their arms. Trust broken."
+    - "{npc} turns away from {player}. The conversation is over."
+    - "{npc} withdraws — jaw tight, eyes averted, distance deliberate."
   health_gain:
-    - "The worst of it eases. {player} can breathe again."
-    - "{player} steadies. Not whole, but functional."
+    - "{player} catches breath. The worst pain recedes."
+    - "{player} steadies. Wounded, but functional."
   spirit_gain:
-    - "A moment of clarity cuts through the fog."
-    - "Something settles — not hope exactly, but enough to keep going."
+    - "Clarity returns to {player}. Enough to keep moving."
+    - "{player} steadies. The fog lifts, if only slightly."
   supply_gain:
-    - "{player} restocks. The essentials, at least."
+    - "{player} restocks the essentials."
   bond_gain:
-    - "Something unspoken passes between {player} and {npc}. Ground, gained."
+    - "{npc} meets {player}'s gaze and holds it. Trust, earned."
   momentum_gain:
-    - "The tide shifts. {player} can feel it."
+    - "{player} finds an opening. The advantage shifts."
   disposition_shift:
-    - "{npc} looks at {player} differently now."
+    - "{npc}'s attitude toward {player} shifts — visible in posture, tone, or gaze."
   clock_tick:
-    - "Somewhere, a deadline moves closer."
-    - "The threat advances whether {player} is ready or not."
+    - "Time passes. The threat advances."
+    - "The deadline moves closer whether {player} is ready or not."
   clock_triggered:
     - "Time's up. {clock} — {trigger}."
 

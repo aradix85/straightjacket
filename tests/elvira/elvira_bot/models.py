@@ -81,6 +81,7 @@ class ValidatorRecord:
     retries: int = 0
     violations: list[str] = field(default_factory=list)
     attempt_violations: list[int] = field(default_factory=list)  # violation count per attempt
+    attempt_violation_text: list[list[str]] = field(default_factory=list)  # full text per attempt
     picked_attempt: int = -1  # -1 = last attempt, 0+ = picked an earlier one
 
 

@@ -230,9 +230,10 @@ def test_consequence_empty_sentences_passes() -> None:
 
 
 def test_consequence_in_run_rule_checks() -> None:
+    """Consequence checking moved to LLM validator — rule checker passes these through."""
     from straightjacket.engine.ai.rule_validator import run_rule_checks
 
     narration = "The sun shines. Nothing happened."
     result = run_rule_checks(narration, "MISS", consequence_sentences=["The blade finds the gap in your guard."])
-    assert not result["pass"]
-    assert any("CONSEQUENCE" in v for v in result["violations"])
+    # Rule checker no longer checks consequences — LLM validator handles semantic matching
+    assert result["pass"]

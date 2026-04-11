@@ -1,0 +1,2577 @@
+{
+  "started_at": "2026-04-11T01:59:33.810964",
+  "ended_at": "2026-04-11T02:00:50.367005",
+  "config": {
+    "username": "elvira",
+    "auto_mode": true,
+    "game": {
+      "load_existing": false,
+      "save_name": "autosave",
+      "setting_id": "starforged",
+      "player_name": "",
+      "pronouns": "",
+      "backstory": "",
+      "background_vow": "",
+      "stats": {},
+      "wishes": "",
+      "content_lines": ""
+    },
+    "session": {
+      "max_chapters": 1,
+      "max_turns": 10,
+      "narration_lang": "English",
+      "save_every_n_turns": 5,
+      "save_name_output": "elvira",
+      "clean_before_run": true
+    },
+    "bot_behavior": {
+      "burn_momentum": "auto",
+      "style": "explorer"
+    },
+    "logging": {
+      "log_file": "elvira_session.json",
+      "full_debug_log": true,
+      "print_full_narration": true,
+      "print_roll_details": true,
+      "assert_state_invariants": true
+    }
+  },
+  "engine_version": "0.39.0",
+  "auto_mode": true,
+  "style": "explorer",
+  "max_chapters": 1,
+  "character": "Corey Sayer",
+  "location_start": "Mess Hall",
+  "game_context": {
+    "setting_id": "starforged",
+    "setting_genre": "starforged",
+    "setting_tone": "",
+    "character_concept": "Ace, Weapon Master",
+    "pronouns": "they/them",
+    "paths": [
+      "ace",
+      "weapon_master"
+    ],
+    "backstory": "You are the sole survivor of an attack or calamity",
+    "background_vow": "Charge Pride",
+    "stats": {
+      "edge": 2,
+      "heart": 2,
+      "iron": 1,
+      "shadow": 3,
+      "wits": 1
+    }
+  },
+  "creation_data": {
+    "setting_id": "starforged",
+    "player_name": "Corey Sayer",
+    "pronouns": "they/them",
+    "paths": [
+      "ace",
+      "weapon_master"
+    ],
+    "backstory": "You are the sole survivor of an attack or calamity",
+    "background_vow": "Charge Pride",
+    "background_vow_rank": "extreme",
+    "vow_subject": "",
+    "stats": {
+      "edge": 2,
+      "heart": 2,
+      "iron": 1,
+      "shadow": 3,
+      "wits": 1
+    },
+    "assets": [
+      "grappler"
+    ],
+    "truths": {
+      "cataclysm": "Interdimensional entities invaded our reality.",
+      "exodus": "When the Exodus fleet set off on a ponderous journey to a new home outside our galaxy, they marked the Forge as their destination. Countless generations lived out their lives aboard those titanic ships during the millennia-long passage.",
+      "communities": "We have made our mark in this galaxy, but the energy storms we call balefires threaten to undo that progress, leaving our communities isolated and vulnerable.",
+      "iron": "The Ironsworn bind their honor to iron blades.",
+      "laws": "Much of the settled domains are a lawless frontier. Criminal factions and corrupt leaders often hold sway.",
+      "religion": "Our faith is as diverse as our people.",
+      "magic": "Unnatural energies flow through the Forge. Magic and science are two sides of the same coin.",
+      "communication_and_data": "Much was lost when we came to the Forge. It is a dark age.",
+      "medicine": "Our advanced medical technologies and expertise was lost during the Exodus.",
+      "artificial_intelligence": "Artificial consciousness emerged in the time before the Exodus, and sentient machines live with us here in the Forge.",
+      "war": "Here in the Forge, resources are too precious to support organized fighting forces or advanced weaponry.",
+      "lifeforms": "Life in the Forge was seeded and engineered by the Essentia, ancient entities who enact their inscrutable will in this galaxy.",
+      "precursors": "The Ascendancy, an advanced spacefaring empire, once ruled the entirety of the Forge. Vaults of inscrutable purpose are all that remain to mark the Ascendancy's legacy, but those places are untethered from our own reality.",
+      "horrors": "Most insist that horrors aren’t real. Spacers know the truth."
+    },
+    "wishes": "",
+    "content_lines": ""
+  },
+  "opening_narration": "The recycled air in the mess hall tastes of ozone and hydraulic fluid, the perpetual tang of life sustained inside a leaking hull. Strips of overhead light flicker in time with the heavy thrum of the starship’s reactor, vibrating through the metal deckplates beneath your boots. You stand by the viewport, watching the void of the Forge stretch out into darkness, punctuated only by the distant, angry glow of balefire storms. It is quiet here, save for the low hiss of a pressure seal cycling somewhere down the corridor and the clatter of a tool hitting the floor.\n\nJasmine works at the galley counter, her back turned as she scrapes blackened carbon residue from a heating element. The motion is rhythmic and aggressive, the metal scraper screeching against the alloy. A cup of lukewarm synthe-caff sits near your elbow, untouched. A heavy shadow shifts across the far bulkhead, and you glimpse a figure in a heavy coat stepping into the corridor, their face obscured by a welding mask, but you hear the distinct rattle of a kinetic weapon holster against their thigh as they disappear from view.\n\nThe screeching of the scraper stops abruptly. Jasmine turns, tossing the tool into a basin with a loud clang. \\u201cPewter isn't answering the comms,\\u201d she says, wiping grease onto her trousers. She looks past you toward the airlock hatch, her jaw set tight. A red warning light on the bulkhead flares once, bathing the room in a harsh crimson glow, and then dies.",
+  "opening_validator": {
+    "passed": true,
+    "retries": 0,
+    "violations": [],
+    "attempt_violations": [],
+    "attempt_violation_text": [],
+    "picked_attempt": -1
+  },
+  "story_blueprint": {
+    "structure_type": "kishotenketsu",
+    "central_conflict": "Surviving the harsh environment of The Forge while managing the psychological toll of being a Sole Survivor and the physical demands of being a Weapon Master.",
+    "thematic_thread": "Resilience through mastery; finding purpose in a broken world.",
+    "acts": [
+      {
+        "phase": "ki_introduction",
+        "title": "The Drift",
+        "goal": "Establish the harsh reality of The Forge and Corey's isolated existence.",
+        "scene_range": [
+          1,
+          5
+        ],
+        "mood": "bleak, desolate, gritty",
+        "transition_trigger": "Discovery of a derelict settlement signal."
+      },
+      {
+        "phase": "sho_development",
+        "title": "The Contract",
+        "goal": "Navigate local politics and secure a dangerous contract to replenish dwindling supplies.",
+        "scene_range": [
+          6,
+          11
+        ],
+        "mood": "tense, pragmatic, crowded",
+        "transition_trigger": "Acceptance of a perilous extraction mission in a volatile sector."
+      },
+      {
+        "phase": "ten_twist",
+        "title": "The Echo",
+        "goal": "Confront the source of the mission's danger, which mirrors the catastrophe of Corey's past.",
+        "scene_range": [
+          12,
+          16
+        ],
+        "mood": "volatile, claustrophobic, urgent",
+        "transition_trigger": "Encounter with an anomaly that matches the signature of the past calamity."
+      },
+      {
+        "phase": "ketsu_resolution",
+        "title": "The Return",
+        "goal": "Resolve the immediate threat and integrate the experience into a new path forward.",
+        "scene_range": [
+          17,
+          20
+        ],
+        "mood": "somber, determined, quiet",
+        "transition_trigger": "Securing the extraction and escaping the collapsing sector."
+      }
+    ]
+  },
+  "chapters": [
+    {
+      "chapter": 1,
+      "started_at_turn": 1,
+      "turns_played": 10,
+      "ended_reason": "max_turns_reached"
+    }
+  ],
+  "turns": [
+    {
+      "turn": 1,
+      "chapter": 1,
+      "scene": 2,
+      "location": "Mess Hall",
+      "action": "I pick up the cup of synthe-caff, more to warm my hands than to drink, and move closer to the counter where Jasmine is working. I lean in slightly, lowering my voice to match the quiet tension of the room, and ask, \"What kind of mood was Pewter in before the comms went dead? Was he arguing with anyone, or was he already on edge?\"",
+      "narration": "The ceramic cup radiates a faint, transient warmth against your palms, a poor shield against the recycled chill. You step toward the counter, the grating crunching softly under your weight, and ask about Pewter's state and any conflicts.\n\nJasmine stops scrubbing. She rests the metal scraper on the edge of the greasy basin, water dripping from her elbow. \\u201cHe was pacing the deckplates like a caged creature.\\u201d She turns away, grabbing a rag to wipe down the surface. \\u201cI didn't hear him raise his voice.\\u201d\n\nShe reaches into her pocket and pulls out a crumpled data-chip, tossing it onto the counter between you. It skids across the wet surface and stops near your hand. A sharp, rhythmic banging echoes from the ventilation shaft above, like metal striking metal in the windless dark.",
+      "narration_excerpt": "The ceramic cup radiates a faint, transient warmth against your palms, a poor shield against the recycled chill. You step toward the counter, the grating crunching softly under your weight, and ask about Pewter's state and any conflicts.  Jasmine stops scrubbing. She rests the metal scraper on the e",
+      "roll": {
+        "stat": "wits",
+        "d1": 5,
+        "d2": 5,
+        "total": 10,
+        "c1": 8,
+        "c2": 8,
+        "result": "STRONG_HIT",
+        "match": true
+      },
+      "brain": {
+        "move": "gather_information",
+        "stat": "wits",
+        "target_npc": "npc_1",
+        "approach": "Questioning Jasmine about Pewter's state of mind and any conflicts before he went silent",
+        "player_intent": "Learn about Pewter's mood and any arguments prior to losing contact",
+        "dialog_only": false
+      },
+      "burn_taken": false,
+      "director_ran": false,
+      "director_guidance": {
+        "narrator_guidance": "",
+        "pacing": "",
+        "arc_notes": ""
+      },
+      "state_after": {
+        "health": 5,
+        "spirit": 5,
+        "supply": 5,
+        "momentum": 4,
+        "chaos": 4,
+        "scene": 2,
+        "location": "Mess Hall",
+        "time_of_day": "deep_night",
+        "scene_context": "STRONG_HIT on investigated at Mess Hall — Jasmine, Pewter, Unidentified Figure",
+        "active_threads": 1,
+        "active_characters": 3,
+        "active_vow_tracks": 1
+      },
+      "npcs": [
+        {
+          "id": "npc_1",
+          "name": "Jasmine",
+          "status": "active",
+          "disposition": "neutral",
+          "bond": 0,
+          "agenda": "Maintain the ship's galley and monitor crew status.",
+          "instinct": "Clean aggressively when stressed.",
+          "arc": "",
+          "memory_count": 2,
+          "last_memory": "scene 2: Corey Sayer investigated involving Jasmine — succeeded cleanly",
+          "last_location": "Mess Hall",
+          "importance_accumulator": 8,
+          "needs_reflection": false,
+          "aliases": []
+        },
+        {
+          "id": "npc_2",
+          "name": "Pewter",
+          "status": "active",
+          "disposition": "neutral",
+          "bond": 0,
+          "agenda": "Unknown (currently absent).",
+          "instinct": "Unknown.",
+          "arc": "",
+          "memory_count": 1,
+          "last_memory": "scene 2: Corey Sayer investigated — succeeded cleanly",
+          "last_location": "Mess Hall",
+          "importance_accumulator": 4,
+          "needs_reflection": false,
+          "aliases": []
+        },
+        {
+          "id": "npc_3",
+          "name": "Unidentified Figure",
+          "status": "active",
+          "disposition": "distrustful",
+          "bond": 0,
+          "agenda": "Unknown.",
+          "instinct": "Move unnoticed through the ship's corridors.",
+          "arc": "",
+          "memory_count": 2,
+          "last_memory": "scene 2: Corey Sayer investigated — succeeded cleanly",
+          "last_location": "Mess Hall",
+          "importance_accumulator": 9,
+          "needs_reflection": false,
+          "aliases": []
+        }
+      ],
+      "clocks": [
+        {
+          "name": "Pewter's Silence",
+          "clock_type": "threat",
+          "filled": 1,
+          "segments": 6,
+          "owner": "Pewter",
+          "fired": false
+        }
+      ],
+      "validator": {
+        "passed": true,
+        "retries": 1,
+        "violations": [],
+        "attempt_violations": [
+          1,
+          0
+        ],
+        "attempt_violation_text": [
+          [
+            "[llm] RESOLUTION PACING: Jasmine volunteers unsolicited information about Pewter asking for the cargo manifest, which the player did not ask about."
+          ],
+          []
+        ],
+        "picked_attempt": -1
+      },
+      "engine_log": {
+        "summary": "Learn about Pewter's mood and any arguments prior to losing contact",
+        "move": "gather_information",
+        "result": "STRONG_HIT",
+        "chaos_interrupt": null,
+        "director_trigger": "",
+        "consequences": [],
+        "clock_events": [],
+        "position": "risky",
+        "effect": "standard",
+        "npc_activation": {
+          "Jasmine": {
+            "score": 2.1,
+            "reasons": [
+              "target",
+              "name",
+              "tfidf:0.07",
+              "recent"
+            ],
+            "status": "activated"
+          },
+          "Pewter": {
+            "score": 0.8,
+            "reasons": [
+              "name"
+            ],
+            "status": "activated"
+          },
+          "Unidentified Figure": {
+            "score": 0.89,
+            "reasons": [
+              "part:figure",
+              "tfidf:0.06",
+              "recent"
+            ],
+            "status": "activated"
+          }
+        }
+      },
+      "story_arc": {
+        "phase": "ki_introduction",
+        "title": "The Drift",
+        "goal": "Establish the harsh reality of The Forge and Corey's isolated existence.",
+        "mood": "bleak, desolate, gritty",
+        "story_complete": false
+      },
+      "token_usage": [
+        {
+          "role": "narrator",
+          "input": 2021,
+          "output": 415
+        },
+        {
+          "role": "architect_chapter",
+          "input": 758,
+          "output": 635
+        },
+        {
+          "role": "validator",
+          "input": 1354,
+          "output": 18
+        },
+        {
+          "role": "narrator_retry",
+          "input": 1278,
+          "output": 421
+        },
+        {
+          "role": "brain",
+          "input": 969,
+          "output": 12
+        },
+        {
+          "role": "brain",
+          "input": 1049,
+          "output": 203
+        },
+        {
+          "role": "brain",
+          "input": 1148,
+          "output": 189
+        },
+        {
+          "role": "narrator",
+          "input": 2715,
+          "output": 314
+        },
+        {
+          "role": "validator",
+          "input": 1303,
+          "output": 18
+        },
+        {
+          "role": "metadata",
+          "input": 1095,
+          "output": 72
+        },
+        {
+          "role": "narrator",
+          "input": 2258,
+          "output": 323
+        },
+        {
+          "role": "architect_chapter",
+          "input": 720,
+          "output": 608
+        },
+        {
+          "role": "validator",
+          "input": 1260,
+          "output": 18
+        },
+        {
+          "role": "validator_architect",
+          "input": 432,
+          "output": 25
+        },
+        {
+          "role": "narrator_retry",
+          "input": 1183,
+          "output": 370
+        },
+        {
+          "role": "brain",
+          "input": 966,
+          "output": 27
+        },
+        {
+          "role": "brain",
+          "input": 1224,
+          "output": 163
+        },
+        {
+          "role": "brain",
+          "input": 1105,
+          "output": 134
+        },
+        {
+          "role": "narrator",
+          "input": 2902,
+          "output": 235
+        },
+        {
+          "role": "validator",
+          "input": 1215,
+          "output": 68
+        },
+        {
+          "role": "narrator",
+          "input": 3520,
+          "output": 185
+        },
+        {
+          "role": "validator",
+          "input": 1204,
+          "output": 18
+        },
+        {
+          "role": "metadata",
+          "input": 998,
+          "output": 140
+        }
+      ],
+      "is_correction": false
+    },
+    {
+      "turn": 2,
+      "chapter": 1,
+      "scene": 3,
+      "location": "Mess Hall",
+      "action": "I pick up the crumpled data-chip, turning it over in my fingers to check for any physical markings or labels while keeping my voice low. \"Jasmine, did he say anything before he started pacing? Did he mention who might be looking for him?\" I gesture toward the ceiling with my chin. \"And who do you think is up there making that racket?\"",
+      "narration": "The data-chip is warm in your palm, the plastic casing gouged with deep scratches. You turn it under the flickering strip-lighting and spot a faded logo stamped near the edge—a stylized hammer cracked down the center. Dark residue stains the contact points. Overhead, the rhythmic thudding vibrates through the deck plating, a heavy, deliberate impact like metal striking metal.\n\nYou voice your questions to Jasmine.\n\nShe does not look up from the stained counter. \\u201cNothing.\\u201d She wipes the surface with a rag.\n\nYou nod toward the ceiling.\n\nJasmine glances upward as another thud rattles the overhead light fixture. \\u201cCargo loaders.\\u201d She turns back to her work.",
+      "narration_excerpt": "The data-chip is warm in your palm, the plastic casing gouged with deep scratches. You turn it under the flickering strip-lighting and spot a faded logo stamped near the edge—a stylized hammer cracked down the center. Dark residue stains the contact points. Overhead, the rhythmic thudding vibrates t",
+      "roll": {
+        "stat": "wits",
+        "d1": 4,
+        "d2": 6,
+        "total": 10,
+        "c1": 1,
+        "c2": 2,
+        "result": "STRONG_HIT",
+        "match": false
+      },
+      "brain": {
+        "move": "gather_information",
+        "stat": "wits",
+        "target_npc": "npc_1",
+        "approach": "Examine the data-chip for markings and question Jasmine about the unidentified figure's behavior and the noise from above",
+        "player_intent": "Examine the data-chip for physical markings and question Jasmine about what the unidentified figure said before pacing, ",
+        "dialog_only": false
+      },
+      "burn_taken": false,
+      "director_ran": true,
+      "director_guidance": {
+        "narrator_guidance": "",
+        "pacing": "",
+        "arc_notes": ""
+      },
+      "state_after": {
+        "health": 5,
+        "spirit": 5,
+        "supply": 5,
+        "momentum": 6,
+        "chaos": 3,
+        "scene": 3,
+        "location": "Mess Hall",
+        "time_of_day": "deep_night",
+        "scene_context": "STRONG_HIT on investigated at Mess Hall — Jasmine, Pewter, Unidentified Figure",
+        "active_threads": 1,
+        "active_characters": 3,
+        "active_vow_tracks": 1
+      },
+      "npcs": [
+        {
+          "id": "npc_1",
+          "name": "Jasmine",
+          "status": "active",
+          "disposition": "neutral",
+          "bond": 0,
+          "agenda": "Maintain the ship's galley and monitor crew status.",
+          "instinct": "Clean aggressively when stressed.",
+          "arc": "",
+          "memory_count": 3,
+          "last_memory": "scene 3: Corey Sayer investigated involving Jasmine — succeeded cleanly",
+          "last_location": "Mess Hall",
+          "importance_accumulator": 12,
+          "needs_reflection": false,
+          "aliases": []
+        },
+        {
+          "id": "npc_2",
+          "name": "Pewter",
+          "status": "active",
+          "disposition": "neutral",
+          "bond": 0,
+          "agenda": "Unknown (currently absent).",
+          "instinct": "Unknown.",
+          "arc": "",
+          "memory_count": 2,
+          "last_memory": "scene 3: Corey Sayer investigated — succeeded cleanly",
+          "last_location": "Mess Hall",
+          "importance_accumulator": 8,
+          "needs_reflection": false,
+          "aliases": []
+        },
+        {
+          "id": "npc_3",
+          "name": "Unidentified Figure",
+          "status": "active",
+          "disposition": "distrustful",
+          "bond": 0,
+          "agenda": "Unknown.",
+          "instinct": "Move unnoticed through the ship's corridors.",
+          "arc": "",
+          "memory_count": 3,
+          "last_memory": "scene 3: Corey Sayer investigated — succeeded cleanly",
+          "last_location": "Mess Hall",
+          "importance_accumulator": 13,
+          "needs_reflection": false,
+          "aliases": []
+        }
+      ],
+      "clocks": [
+        {
+          "name": "Pewter's Silence",
+          "clock_type": "threat",
+          "filled": 1,
+          "segments": 6,
+          "owner": "Pewter",
+          "fired": false
+        }
+      ],
+      "validator": {
+        "passed": false,
+        "retries": 3,
+        "violations": [
+          "[llm] RESOLUTION PACING: Jasmine answered two specific questions but then volunteered unsolicited information about her emotional state and actions ('She glances up at the bulkhead... She picks up a rag...') which extends the scene beyond the direct answers.",
+          "[llm] RESOLUTION PACING: Jasmine answered more than the specific questions asked by providing context about the thudding sound and her reaction to it, violating the rule that NPCs must answer ONLY the specific question asked."
+        ],
+        "attempt_violations": [
+          2,
+          2,
+          2,
+          2
+        ],
+        "attempt_violation_text": [
+          [
+            "[llm] RESOLUTION PACING: Jasmine answered two specific questions but then volunteered unsolicited information about her emotional state and actions ('She glances up at the bulkhead... She picks up a rag...') which extends the scene beyond the direct answers.",
+            "[llm] RESOLUTION PACING: Jasmine answered more than the specific questions asked by providing context about the thudding sound and her reaction to it, violating the rule that NPCs must answer ONLY the specific question asked."
+          ],
+          [
+            "[llm] RESOLUTION PACING: Jasmine answered the first question but did not answer the second question about who might be looking for him or the third question about the noise upstairs, violating the requirement to answer the specific question asked.",
+            "[llm] PLAYER AGENCY: The narration states 'You keep your voice low and ask your questions,' which dictates the player character's specific action and manner of speaking, taking away the choice of how to interact."
+          ],
+          [
+            "[llm] RESOLUTION PACING: Jasmine answered two separate questions (what he said and what the noise is) and performed an action, exceeding the limit of one specific answer per interaction.",
+            "[llm] PLAYER AGENCY: The narration decided that the player character 'waits, watching her, then nod[s] toward the ceiling', dictating specific physical actions and timing that were not explicitly requested by the player."
+          ],
+          [
+            "[llm] RESOLUTION PACING: Jasmine answers the specific question about the ceiling noise but fails to answer the first question about what the man said or who was looking for him.",
+            "[llm] RESOLUTION PACING: Jasmine provides two separate answers in two separate turns, totaling more than two sentences of dialogue in response to the player's input."
+          ]
+        ],
+        "picked_attempt": -1
+      },
+      "engine_log": {
+        "summary": "Examine the data-chip for physical markings and question Jasmine about what the unidentified figure said before pacing, who might be looking for him, and what's causing the noise above",
+        "move": "gather_information",
+        "result": "STRONG_HIT",
+        "chaos_interrupt": null,
+        "director_trigger": "interval",
+        "consequences": [],
+        "clock_events": [],
+        "position": "risky",
+        "effect": "standard",
+        "npc_activation": {
+          "Jasmine": {
+            "score": 2.0,
+            "reasons": [
+              "target",
+              "name",
+              "recent"
+            ],
+            "status": "activated"
+          },
+          "Pewter": {
+            "score": 1.0,
+            "reasons": [
+              "name",
+              "recent"
+            ],
+            "status": "activated"
+          },
+          "Unidentified Figure": {
+            "score": 1.0,
+            "reasons": [
+              "name",
+              "recent"
+            ],
+            "status": "activated"
+          }
+        }
+      },
+      "story_arc": {
+        "phase": "ki_introduction",
+        "title": "The Drift",
+        "goal": "Establish the harsh reality of The Forge and Corey's isolated existence.",
+        "mood": "bleak, desolate, gritty",
+        "story_complete": false
+      },
+      "token_usage": [
+        {
+          "role": "brain",
+          "input": 935,
+          "output": 27
+        },
+        {
+          "role": "brain",
+          "input": 1320,
+          "output": 200
+        },
+        {
+          "role": "brain",
+          "input": 1111,
+          "output": 171
+        },
+        {
+          "role": "narrator",
+          "input": 3170,
+          "output": 201
+        },
+        {
+          "role": "validator",
+          "input": 1207,
+          "output": 141
+        },
+        {
+          "role": "narrator",
+          "input": 3592,
+          "output": 159
+        },
+        {
+          "role": "validator",
+          "input": 1164,
+          "output": 138
+        },
+        {
+          "role": "narrator",
+          "input": 3631,
+          "output": 165
+        },
+        {
+          "role": "validator",
+          "input": 1180,
+          "output": 132
+        },
+        {
+          "role": "narrator",
+          "input": 3647,
+          "output": 155
+        },
+        {
+          "role": "validator",
+          "input": 1170,
+          "output": 108
+        },
+        {
+          "role": "metadata",
+          "input": 986,
+          "output": 70
+        }
+      ],
+      "is_correction": false
+    },
+    {
+      "turn": 3,
+      "chapter": 1,
+      "scene": 4,
+      "location": "Mess Hall",
+      "action": "I try to catch Jasmine’s eye, asking in a softer tone, \"You have a name for what they're loading up there, or just 'Cargo'?\" Then, leaning an elbow on the counter to bridge the distance, I add, \"It sounds brutal... how do you sleep through the noise, Jasmine? Do you have any quiet places on this ship, or is it just the mess for you?\"",
+      "narration": "You lean an elbow on the counter, the metal cool against your skin, and ask about the cargo and her ability to rest amidst the din. Jasmine scrubs a dark stain on the alloy, the rag moving in tight, repetitive circles while the overhead vents rattle with a rhythmic thudding.\n\nShe glances briefly at the ceiling, then back to her work. \\u201cHeavy shielding.\\u201d She jams the cleaning rag into the basin with enough force to splash gray water onto the deck.\n\nThe impacts from above cease abruptly, plunging the room into a ringing silence. Jasmine freezes, her grip tightening on the counter edge, before she grabs a fresh rag and resumes scrubbing at a frantic speed.",
+      "narration_excerpt": "You lean an elbow on the counter, the metal cool against your skin, and ask about the cargo and her ability to rest amidst the din. Jasmine scrubs a dark stain on the alloy, the rag moving in tight, repetitive circles while the overhead vents rattle with a rhythmic thudding.  She glances briefly at ",
+      "brain": {
+        "move": "dialog",
+        "stat": "none",
+        "target_npc": "npc_1",
+        "approach": "none",
+        "player_intent": "Build rapport with Jasmine by asking about the cargo and her personal experience on the ship",
+        "dialog_only": true
+      },
+      "burn_taken": false,
+      "director_ran": false,
+      "director_guidance": {
+        "narrator_guidance": "The thudding overhead is too rhythmic for standard machinery. Have the impacts align with a specific pattern or pause abruptly, forcing Jasmine to break her cleaning routine. This physical grounding reinforces the harsh environment of The Forge without introducing supernatural elements.",
+        "pacing": "breather",
+        "arc_notes": "The environmental tension is rising, emphasizing the survival aspect of the arc. The mystery of the data-chip and the overhead noise creates a layered threat situation.",
+        "npc_guidance": {
+          "npc_1": "Jasmine should stop wiping the counter when the noise pauses, her body tensing visibly before she resumes scrubbing with frantic speed."
+        }
+      },
+      "state_after": {
+        "health": 5,
+        "spirit": 5,
+        "supply": 5,
+        "momentum": 6,
+        "chaos": 3,
+        "scene": 4,
+        "location": "Mess Hall",
+        "time_of_day": "deep_night",
+        "scene_context": "conversation at Mess Hall with Jasmine, Pewter, Unidentified Figure",
+        "active_threads": 1,
+        "active_characters": 3,
+        "active_vow_tracks": 1
+      },
+      "npcs": [
+        {
+          "id": "npc_1",
+          "name": "Jasmine",
+          "status": "active",
+          "disposition": "neutral",
+          "bond": 0,
+          "agenda": "Maintain normalcy despite the danger.",
+          "instinct": "Clean aggressively when stressed.",
+          "arc": "Jasmine is struggling to keep her sanctuary intact as external pressures mount.",
+          "memory_count": 5,
+          "last_memory": "scene 4: Corey Sayer spoke with Jasmine about Build rapport with Jasmine by asking about the cargo a",
+          "last_location": "Mess Hall",
+          "importance_accumulator": 2,
+          "needs_reflection": false,
+          "aliases": []
+        },
+        {
+          "id": "npc_2",
+          "name": "Pewter",
+          "status": "active",
+          "disposition": "neutral",
+          "bond": 0,
+          "agenda": "Unknown (currently absent).",
+          "instinct": "Unknown.",
+          "arc": "",
+          "memory_count": 3,
+          "last_memory": "scene 4: Corey Sayer spoke with Pewter about Build rapport with Jasmine by asking about the cargo an",
+          "last_location": "Mess Hall",
+          "importance_accumulator": 10,
+          "needs_reflection": false,
+          "aliases": []
+        },
+        {
+          "id": "npc_3",
+          "name": "Unidentified Figure",
+          "status": "active",
+          "disposition": "distrustful",
+          "bond": 0,
+          "agenda": "Unknown.",
+          "instinct": "Move unnoticed through the ship's corridors.",
+          "arc": "",
+          "memory_count": 4,
+          "last_memory": "scene 4: Corey Sayer spoke with Unidentified Figure about Build rapport with Jasmine by asking about",
+          "last_location": "Mess Hall",
+          "importance_accumulator": 17,
+          "needs_reflection": false,
+          "aliases": []
+        }
+      ],
+      "clocks": [
+        {
+          "name": "Pewter's Silence",
+          "clock_type": "threat",
+          "filled": 1,
+          "segments": 6,
+          "owner": "Pewter",
+          "fired": false
+        }
+      ],
+      "validator": {
+        "passed": true,
+        "retries": 1,
+        "violations": [],
+        "attempt_violations": [
+          1,
+          0
+        ],
+        "attempt_violation_text": [
+          [
+            "[llm] RESOLUTION PACING: NPC answered two distinct questions (about the cargo shielding and the engine room noise) when the player asked for a name for the cargo and about sleeping/quiet places, exceeding the limit of one specific answer."
+          ],
+          []
+        ],
+        "picked_attempt": -1
+      },
+      "engine_log": {
+        "summary": "Build rapport with Jasmine by asking about the cargo and her personal experience on the ship",
+        "move": "dialog",
+        "result": "dialog",
+        "chaos_interrupt": null,
+        "director_trigger": "",
+        "consequences": [],
+        "clock_events": [],
+        "position": "risky",
+        "effect": "standard",
+        "npc_activation": {
+          "Jasmine": {
+            "score": 2.0,
+            "reasons": [
+              "target",
+              "name",
+              "recent"
+            ],
+            "status": "activated"
+          },
+          "Pewter": {
+            "score": 1.0,
+            "reasons": [
+              "name",
+              "recent"
+            ],
+            "status": "activated"
+          },
+          "Unidentified Figure": {
+            "score": 1.0,
+            "reasons": [
+              "name",
+              "recent"
+            ],
+            "status": "activated"
+          }
+        }
+      },
+      "story_arc": {
+        "phase": "ki_introduction",
+        "title": "The Drift",
+        "goal": "Establish the harsh reality of The Forge and Corey's isolated existence.",
+        "mood": "bleak, desolate, gritty",
+        "story_complete": false
+      },
+      "token_usage": [
+        {
+          "role": "director",
+          "input": 1424,
+          "output": 24
+        },
+        {
+          "role": "director",
+          "input": 1757,
+          "output": 438
+        },
+        {
+          "role": "director",
+          "input": 2021,
+          "output": 340
+        },
+        {
+          "role": "brain",
+          "input": 942,
+          "output": 14
+        },
+        {
+          "role": "brain",
+          "input": 1191,
+          "output": 91
+        },
+        {
+          "role": "brain",
+          "input": 1009,
+          "output": 63
+        },
+        {
+          "role": "narrator",
+          "input": 3406,
+          "output": 203
+        },
+        {
+          "role": "validator",
+          "input": 1223,
+          "output": 91
+        },
+        {
+          "role": "narrator",
+          "input": 3635,
+          "output": 147
+        },
+        {
+          "role": "validator",
+          "input": 1167,
+          "output": 19
+        },
+        {
+          "role": "metadata",
+          "input": 977,
+          "output": 97
+        }
+      ],
+      "is_correction": false
+    },
+    {
+      "turn": 4,
+      "chapter": 1,
+      "scene": 5,
+      "location": "Mess Hall",
+      "action": "I glance at the ceiling as the silence settles, feeling the tension radiating off Jasmine, and gently ask, \"Jasmine, what is that shielding actually protecting us from?\" before leaning closer to inspect the dark stain on the alloy she is scrubbing so furiously.",
+      "narration": "The ventilation fans drone steadily overhead. \\u201cBalefire radiation,\\u201d Jasmine says, not looking up from the counter. \\u201cSolar flares from the drift.\\u201d She attacks the alloy with a rag, her knuckles white against the metal.\n\nYou lean in to inspect the mark she is scrubbing. Under the strip-lighting, the dark blotch shimmers with an oily, iridescent sheen. When your fingers brush the surface, the metal radiates a lingering, stinging warmth, and a sharp, acrid chemical scent rises from the contact.\n\nA rhythmic thudding echoes through the deck plates, distinct and repetitive: thud, thud, pause. Jasmine freezes, her arm locked in mid-stroke, her shoulders rising tight against her neck. The silence stretches for three seconds. The impacts resume with a faster cadence, and she drives the rag against the stain with frantic speed, the sound of fabric scratching on metal filling the room.",
+      "narration_excerpt": "The ventilation fans drone steadily overhead. \\u201cBalefire radiation,\\u201d Jasmine says, not looking up from the counter. \\u201cSolar flares from the drift.\\u201d She attacks the alloy with a rag, her knuckles white against the metal.  You lean in to inspect the mark she is scrubbing. Under the s",
+      "roll": {
+        "stat": "wits",
+        "d1": 5,
+        "d2": 2,
+        "total": 8,
+        "c1": 10,
+        "c2": 6,
+        "result": "WEAK_HIT",
+        "match": false
+      },
+      "brain": {
+        "move": "gather_information",
+        "stat": "wits",
+        "target_npc": "npc_1",
+        "approach": "Inspection of the stain and questioning Jasmine",
+        "player_intent": "Ask Jasmine what the shielding protects them from and closely inspect the dark stain on the alloy counter",
+        "dialog_only": false
+      },
+      "burn_taken": false,
+      "director_ran": false,
+      "director_guidance": {
+        "narrator_guidance": "The thudding overhead is too rhythmic for standard machinery. Have the impacts align with a specific pattern or pause abruptly, forcing Jasmine to break her cleaning routine. This physical grounding reinforces the harsh environment of The Forge without introducing supernatural elements.",
+        "pacing": "breather",
+        "arc_notes": "The environmental tension is rising, emphasizing the survival aspect of the arc. The mystery of the data-chip and the overhead noise creates a layered threat situation.",
+        "npc_guidance": {
+          "npc_1": "Jasmine should stop wiping the counter when the noise pauses, her body tensing visibly before she resumes scrubbing with frantic speed."
+        }
+      },
+      "state_after": {
+        "health": 5,
+        "spirit": 5,
+        "supply": 5,
+        "momentum": 7,
+        "chaos": 3,
+        "scene": 5,
+        "location": "Mess Hall",
+        "time_of_day": "deep_night",
+        "scene_context": "WEAK_HIT on investigated at Mess Hall — Jasmine, Pewter, Unidentified Figure",
+        "active_threads": 1,
+        "active_characters": 3,
+        "active_vow_tracks": 1
+      },
+      "npcs": [
+        {
+          "id": "npc_1",
+          "name": "Jasmine",
+          "status": "active",
+          "disposition": "neutral",
+          "bond": 0,
+          "agenda": "Maintain normalcy despite the danger.",
+          "instinct": "Clean aggressively when stressed.",
+          "arc": "Jasmine is struggling to keep her sanctuary intact as external pressures mount.",
+          "memory_count": 6,
+          "last_memory": "scene 5: Corey Sayer investigated involving Jasmine — partial success with complications",
+          "last_location": "Mess Hall",
+          "importance_accumulator": 6,
+          "needs_reflection": false,
+          "aliases": []
+        },
+        {
+          "id": "npc_2",
+          "name": "Pewter",
+          "status": "active",
+          "disposition": "neutral",
+          "bond": 0,
+          "agenda": "Unknown (currently absent).",
+          "instinct": "Unknown.",
+          "arc": "",
+          "memory_count": 4,
+          "last_memory": "scene 5: Corey Sayer investigated — partial success with complications",
+          "last_location": "Mess Hall",
+          "importance_accumulator": 14,
+          "needs_reflection": false,
+          "aliases": []
+        },
+        {
+          "id": "npc_3",
+          "name": "Unidentified Figure",
+          "status": "active",
+          "disposition": "distrustful",
+          "bond": 0,
+          "agenda": "Unknown.",
+          "instinct": "Move unnoticed through the ship's corridors.",
+          "arc": "",
+          "memory_count": 5,
+          "last_memory": "scene 5: Corey Sayer investigated — partial success with complications",
+          "last_location": "Mess Hall",
+          "importance_accumulator": 21,
+          "needs_reflection": false,
+          "aliases": []
+        }
+      ],
+      "clocks": [
+        {
+          "name": "Pewter's Silence",
+          "clock_type": "threat",
+          "filled": 3,
+          "segments": 6,
+          "owner": "Pewter",
+          "fired": false
+        }
+      ],
+      "validator": {
+        "passed": true,
+        "retries": 1,
+        "violations": [],
+        "attempt_violations": [
+          1,
+          0
+        ],
+        "attempt_violation_text": [
+          [
+            "[rule] PLAYER AGENCY: narrator wrote 'pressing against your ears' — player owns their thoughts and feelings"
+          ],
+          []
+        ],
+        "picked_attempt": -1
+      },
+      "engine_log": {
+        "summary": "Ask Jasmine what the shielding protects them from and closely inspect the dark stain on the alloy counter",
+        "move": "gather_information",
+        "result": "WEAK_HIT",
+        "chaos_interrupt": null,
+        "director_trigger": "",
+        "consequences": [],
+        "clock_events": [
+          {
+            "clock": "Pewter's Silence",
+            "trigger": "Pewter's failure to respond escalates to a critical incident.",
+            "autonomous": false,
+            "triggered": false
+          }
+        ],
+        "position": "risky",
+        "effect": "standard",
+        "npc_activation": {
+          "Jasmine": {
+            "score": 2.1,
+            "reasons": [
+              "target",
+              "name",
+              "tfidf:0.06",
+              "recent"
+            ],
+            "status": "activated"
+          },
+          "Pewter": {
+            "score": 1.0,
+            "reasons": [
+              "name",
+              "recent"
+            ],
+            "status": "activated"
+          },
+          "Unidentified Figure": {
+            "score": 1.1,
+            "reasons": [
+              "name",
+              "tfidf:0.07",
+              "recent"
+            ],
+            "status": "activated"
+          }
+        }
+      },
+      "story_arc": {
+        "phase": "ki_introduction",
+        "title": "The Drift",
+        "goal": "Establish the harsh reality of The Forge and Corey's isolated existence.",
+        "mood": "bleak, desolate, gritty",
+        "story_complete": false
+      },
+      "token_usage": [
+        {
+          "role": "brain",
+          "input": 908,
+          "output": 14
+        },
+        {
+          "role": "brain",
+          "input": 1279,
+          "output": 146
+        },
+        {
+          "role": "brain",
+          "input": 1030,
+          "output": 118
+        },
+        {
+          "role": "narrator",
+          "input": 3491,
+          "output": 210
+        },
+        {
+          "role": "narrator",
+          "input": 4342,
+          "output": 207
+        },
+        {
+          "role": "validator",
+          "input": 1199,
+          "output": 17
+        },
+        {
+          "role": "metadata",
+          "input": 1042,
+          "output": 79
+        }
+      ],
+      "is_correction": false
+    },
+    {
+      "turn": 5,
+      "chapter": 1,
+      "scene": 6,
+      "location": "Mess Hall",
+      "action": "I pull my hand back from the warm metal and step away from the counter, turning my attention to the heavy door where the thudding vibrates through the frame. \"Is that him?\" I ask Jasmine in a low voice, keeping my eyes locked on the portal. \"Is that Pewter?\" I move toward the wall adjacent to the door, pressing my ear against the cold rivets to separate the rhythmic impacts from the drone of the vents and listen for any伴随 the sounds—a voice, a scrape, or labored breathing.",
+      "narration": "You pull your hand back from the warm metal and step away from the counter, turning your attention to the heavy door where the thudding vibrates through the frame. \\u201cIs that him?\\u201d you ask Jasmine in a low voice, keeping your eyes locked on the portal. \\u201cIs that Pewter?\\u201d You move toward the wall adjacent to the door, pressing your ear against the cold rivets to separate the rhythmic impacts from the drone of the vents and listen for any accompanying sounds.\n\nThe metal carries a dull, repetitive shock: body-check against the frame. Underneath the thud, a faint metallic rasp reaches you—the slide of a boot sole losing traction on grating. A wet, hacking cough follows, muffled but distinct, then a grunt of exertion as another impact shakes the wall beside your head.\n\nJasmine drops her rag, the cloth splatting into the cleaning fluid. She stares at the door, hands trembling at her sides, and backs away until her spine hits the supply shelf behind her. The impacts stop instantly, leaving only the sound of your own breathing and the steady thrum of the ship's reactor.",
+      "narration_excerpt": "You pull your hand back from the warm metal and step away from the counter, turning your attention to the heavy door where the thudding vibrates through the frame. \\u201cIs that him?\\u201d you ask Jasmine in a low voice, keeping your eyes locked on the portal. \\u201cIs that Pewter?\\u201d You move to",
+      "roll": {
+        "stat": "wits",
+        "d1": 2,
+        "d2": 3,
+        "total": 6,
+        "c1": 3,
+        "c2": 6,
+        "result": "WEAK_HIT",
+        "match": false
+      },
+      "brain": {
+        "move": "face_danger",
+        "stat": "wits",
+        "target_npc": "",
+        "approach": "listening intently to identify the source and nature of the thudding through the door",
+        "player_intent": "Determine if the thudding at the door is Pewter and identify any accompanying sounds",
+        "dialog_only": false
+      },
+      "burn_offered": "STRONG_HIT",
+      "burn_taken": false,
+      "director_ran": true,
+      "director_guidance": {
+        "narrator_guidance": "The thudding overhead is too rhythmic for standard machinery. Have the impacts align with a specific pattern or pause abruptly, forcing Jasmine to break her cleaning routine. This physical grounding reinforces the harsh environment of The Forge without introducing supernatural elements.",
+        "pacing": "breather",
+        "arc_notes": "The environmental tension is rising, emphasizing the survival aspect of the arc. The mystery of the data-chip and the overhead noise creates a layered threat situation.",
+        "npc_guidance": {
+          "npc_1": "Jasmine should stop wiping the counter when the noise pauses, her body tensing visibly before she resumes scrubbing with frantic speed."
+        }
+      },
+      "state_after": {
+        "health": 5,
+        "spirit": 5,
+        "supply": 5,
+        "momentum": 8,
+        "chaos": 3,
+        "scene": 6,
+        "location": "Mess Hall",
+        "time_of_day": "deep_night",
+        "scene_context": "WEAK_HIT on faced danger at Mess Hall — Jasmine, Pewter, Unidentified Figure",
+        "active_threads": 1,
+        "active_characters": 3,
+        "active_vow_tracks": 1
+      },
+      "npcs": [
+        {
+          "id": "npc_1",
+          "name": "Jasmine",
+          "status": "active",
+          "disposition": "neutral",
+          "bond": 0,
+          "agenda": "Maintain normalcy despite the danger.",
+          "instinct": "Clean aggressively when stressed.",
+          "arc": "Jasmine is struggling to keep her sanctuary intact as external pressures mount.",
+          "memory_count": 7,
+          "last_memory": "scene 6: Corey Sayer faced danger — partial success with complications",
+          "last_location": "Mess Hall",
+          "importance_accumulator": 10,
+          "needs_reflection": false,
+          "aliases": []
+        },
+        {
+          "id": "npc_2",
+          "name": "Pewter",
+          "status": "active",
+          "disposition": "neutral",
+          "bond": 0,
+          "agenda": "Unknown (currently absent).",
+          "instinct": "Unknown.",
+          "arc": "",
+          "memory_count": 5,
+          "last_memory": "scene 6: Corey Sayer faced danger — partial success with complications",
+          "last_location": "Mess Hall",
+          "importance_accumulator": 18,
+          "needs_reflection": false,
+          "aliases": []
+        },
+        {
+          "id": "npc_3",
+          "name": "Unidentified Figure",
+          "status": "active",
+          "disposition": "distrustful",
+          "bond": 0,
+          "agenda": "Unknown.",
+          "instinct": "Move unnoticed through the ship's corridors.",
+          "arc": "",
+          "memory_count": 6,
+          "last_memory": "scene 6: Corey Sayer faced danger — partial success with complications",
+          "last_location": "Mess Hall",
+          "importance_accumulator": 25,
+          "needs_reflection": false,
+          "aliases": []
+        }
+      ],
+      "clocks": [
+        {
+          "name": "Pewter's Silence",
+          "clock_type": "threat",
+          "filled": 4,
+          "segments": 6,
+          "owner": "Pewter",
+          "fired": false
+        }
+      ],
+      "validator": {
+        "passed": true,
+        "retries": 0,
+        "violations": [],
+        "attempt_violations": [
+          0
+        ],
+        "attempt_violation_text": [
+          []
+        ],
+        "picked_attempt": -1
+      },
+      "engine_log": {
+        "summary": "Determine if the thudding at the door is Pewter and identify any accompanying sounds",
+        "move": "face_danger",
+        "result": "WEAK_HIT",
+        "chaos_interrupt": null,
+        "director_trigger": "interval",
+        "consequences": [],
+        "clock_events": [],
+        "position": "risky",
+        "effect": "standard",
+        "npc_activation": {
+          "Jasmine": {
+            "score": 1.0,
+            "reasons": [
+              "name",
+              "recent"
+            ],
+            "status": "activated"
+          },
+          "Pewter": {
+            "score": 1.0,
+            "reasons": [
+              "name",
+              "recent"
+            ],
+            "status": "activated"
+          },
+          "Unidentified Figure": {
+            "score": 1.0,
+            "reasons": [
+              "name",
+              "recent"
+            ],
+            "status": "activated"
+          }
+        }
+      },
+      "story_arc": {
+        "phase": "sho_development",
+        "title": "The Contract",
+        "goal": "Navigate local politics and secure a dangerous contract to replenish dwindling supplies.",
+        "mood": "tense, pragmatic, crowded",
+        "story_complete": false
+      },
+      "token_usage": [
+        {
+          "role": "brain",
+          "input": 967,
+          "output": 27
+        },
+        {
+          "role": "brain",
+          "input": 1599,
+          "output": 165
+        },
+        {
+          "role": "brain",
+          "input": 1108,
+          "output": 134
+        },
+        {
+          "role": "narrator",
+          "input": 3402,
+          "output": 243
+        },
+        {
+          "role": "validator",
+          "input": 1290,
+          "output": 18
+        },
+        {
+          "role": "metadata",
+          "input": 1073,
+          "output": 84
+        },
+        {
+          "role": "brain_correction",
+          "input": 622,
+          "output": 55
+        }
+      ],
+      "is_correction": false
+    },
+    {
+      "turn": 6,
+      "chapter": 1,
+      "scene": 7,
+      "location": "Mess Hall",
+      "action": "I watch Jasmine trembling against the shelves and push off the wall, walking over to her with my hands raised and open to show I mean no harm. \"Hey, breathe,\" I say softly, trying to catch her eyes. \"Who is Pewter to you? Why does the sound of him at the door scare you so much?\"",
+      "narration": "You push off the wall and cross the room slowly, keeping your palms open and turned outward. Jasmine flinches as you approach, her breath hitching in her throat. \\u201cHey, breathe,\\u201d you say softly, pitching your voice below the hum of the vents. You hold her gaze, ignoring the way your fingers twitch near the grip of your sidearm. \\u201cWho is Pewter to you? Why does the sound of him at the door scare you so much?\\u201d\n\nJasmine exhales a sharp, shuddering breath and her shoulders drop an inch. She pushes away from the shelf and immediately grabs a canister of protein ration, slamming it onto the counter to line it up with the edge. \\u201cHe\\u2019s a spacer,\\u201d she says, her voice steady but pitched high. \\u201cBut he don\\u2019t knock like that.\\u201d She wipes a speck of dust from the lid with her thumb, her eyes darting back to the door. \\u201cHe sounds broken.\\u201d\n\nA heavy thud rattles the frame, followed by the sound of something sliding down the metal and landing on the deck with a wet, heavy smack. Jasmine freezes with her hand on the canister, staring at the portal, while the wet, ragged cough from the other side filters through the pressure seal.",
+      "narration_excerpt": "You push off the wall and cross the room slowly, keeping your palms open and turned outward. Jasmine flinches as you approach, her breath hitching in her throat. \\u201cHey, breathe,\\u201d you say softly, pitching your voice below the hum of the vents. You hold her gaze, ignoring the way your fingers",
+      "roll": {
+        "stat": "heart",
+        "d1": 4,
+        "d2": 5,
+        "total": 10,
+        "c1": 2,
+        "c2": 3,
+        "result": "STRONG_HIT",
+        "match": false
+      },
+      "brain": {
+        "move": "compel",
+        "stat": "heart",
+        "target_npc": "npc_1",
+        "approach": "empathy and reassurance",
+        "player_intent": "Comfort Jasmine and learn why Pewter terrifies her",
+        "dialog_only": false
+      },
+      "burn_taken": false,
+      "director_ran": true,
+      "director_guidance": {
+        "narrator_guidance": "Jasmine needs to show her instinctive response to stress—cleaning or organizing—as a coping mechanism while the threat at the door looms. The door interaction should test whether Pewter is still coherent or compromised, with the wet cough and body-checks suggesting physical injury or environmental exposure. Keep this grounded in physical reality: no supernatural horror, only the harsh consequences of The Forge's conditions. This scene should build tension toward the decision to open the door or secure it.",
+        "pacing": "building",
+        "arc_notes": "The harsh environment of The Forge is physically manifesting through Pewter's condition, reinforcing the theme of survival's toll. Jasmine's coping mechanisms highlight the psychological weight of the setting. The impending door encounter tests the group's resilience and mastery of the situation.",
+        "npc_guidance": {
+          "npc_1": "Jasmine should instinctively return to cleaning or organizing the galley supplies as a way to reassert control, even while terrified. Her hands should tremble but move with the muscle memory of routine work—straightening cans, wiping surfaces—anything to create order in chaos.",
+          "npc_2": "Pewter is outside, physically compromised. If the door opens, he should show signs of environmental exposure—labored breathing, difficulty standing, perhaps clutching his side. His responses should be fragmented, pain-clouded, but still recognizably Pewter."
+        }
+      },
+      "state_after": {
+        "health": 5,
+        "spirit": 5,
+        "supply": 5,
+        "momentum": 10,
+        "chaos": 3,
+        "scene": 7,
+        "location": "Mess Hall",
+        "time_of_day": "deep_night",
+        "scene_context": "STRONG_HIT on pressed someone at Mess Hall — Jasmine, Pewter, Unidentified Figure",
+        "active_threads": 1,
+        "active_characters": 3,
+        "active_vow_tracks": 1
+      },
+      "npcs": [
+        {
+          "id": "npc_1",
+          "name": "Jasmine",
+          "status": "active",
+          "disposition": "neutral",
+          "bond": 1,
+          "agenda": "Maintain normalcy despite the danger.",
+          "instinct": "Clean aggressively when stressed.",
+          "arc": "Jasmine is struggling to keep her sanctuary intact as external pressures mount.",
+          "memory_count": 9,
+          "last_memory": "scene 7: Corey Sayer pressed someone involving Jasmine — connected and made real progress",
+          "last_location": "Mess Hall",
+          "importance_accumulator": 5,
+          "needs_reflection": false,
+          "aliases": []
+        },
+        {
+          "id": "npc_2",
+          "name": "Pewter",
+          "status": "active",
+          "disposition": "neutral",
+          "bond": 0,
+          "agenda": "Unknown (currently absent).",
+          "instinct": "Unknown.",
+          "arc": "",
+          "memory_count": 6,
+          "last_memory": "scene 7: Corey Sayer pressed someone — connected and made real progress",
+          "last_location": "Mess Hall",
+          "importance_accumulator": 23,
+          "needs_reflection": false,
+          "aliases": []
+        },
+        {
+          "id": "npc_3",
+          "name": "Unidentified Figure",
+          "status": "active",
+          "disposition": "distrustful",
+          "bond": 0,
+          "agenda": "Unknown.",
+          "instinct": "Move unnoticed through the ship's corridors.",
+          "arc": "",
+          "memory_count": 7,
+          "last_memory": "scene 7: Corey Sayer pressed someone — connected and made real progress",
+          "last_location": "Mess Hall",
+          "importance_accumulator": 30,
+          "needs_reflection": true,
+          "aliases": []
+        }
+      ],
+      "clocks": [
+        {
+          "name": "Pewter's Silence",
+          "clock_type": "threat",
+          "filled": 4,
+          "segments": 6,
+          "owner": "Pewter",
+          "fired": false
+        }
+      ],
+      "validator": {
+        "passed": true,
+        "retries": 0,
+        "violations": [],
+        "attempt_violations": [
+          0
+        ],
+        "attempt_violation_text": [
+          []
+        ],
+        "picked_attempt": -1
+      },
+      "engine_log": {
+        "summary": "Comfort Jasmine and learn why Pewter terrifies her",
+        "move": "compel",
+        "result": "STRONG_HIT",
+        "chaos_interrupt": null,
+        "director_trigger": "reflection:Unidentified Figure",
+        "consequences": [],
+        "clock_events": [],
+        "position": "risky",
+        "effect": "standard",
+        "npc_activation": {
+          "Jasmine": {
+            "score": 2.0,
+            "reasons": [
+              "target",
+              "name",
+              "recent"
+            ],
+            "status": "activated"
+          },
+          "Pewter": {
+            "score": 1.41,
+            "reasons": [
+              "name",
+              "tfidf:0.07",
+              "location",
+              "recent"
+            ],
+            "status": "activated"
+          },
+          "Unidentified Figure": {
+            "score": 1.0,
+            "reasons": [
+              "name",
+              "recent"
+            ],
+            "status": "activated"
+          }
+        }
+      },
+      "story_arc": {
+        "phase": "sho_development",
+        "title": "The Contract",
+        "goal": "Navigate local politics and secure a dangerous contract to replenish dwindling supplies.",
+        "mood": "tense, pragmatic, crowded",
+        "story_complete": false
+      },
+      "token_usage": [
+        {
+          "role": "director",
+          "input": 1498,
+          "output": 12
+        },
+        {
+          "role": "director",
+          "input": 1601,
+          "output": 27
+        },
+        {
+          "role": "director",
+          "input": 2295,
+          "output": 702
+        },
+        {
+          "role": "director",
+          "input": 2094,
+          "output": 452
+        },
+        {
+          "role": "brain",
+          "input": 927,
+          "output": 27
+        },
+        {
+          "role": "brain",
+          "input": 1620,
+          "output": 132
+        },
+        {
+          "role": "brain",
+          "input": 1035,
+          "output": 102
+        },
+        {
+          "role": "narrator",
+          "input": 3718,
+          "output": 297
+        },
+        {
+          "role": "validator",
+          "input": 1303,
+          "output": 18
+        },
+        {
+          "role": "metadata",
+          "input": 1135,
+          "output": 86
+        },
+        {
+          "role": "brain_correction",
+          "input": 676,
+          "output": 57
+        }
+      ],
+      "is_correction": false
+    },
+    {
+      "turn": 7,
+      "chapter": 1,
+      "scene": 8,
+      "location": "Mess Hall",
+      "action": "I signal Jasmine to stay put with a sharp gesture and move to the wall-mounted intercom panel near the door, pressing my ear against the cold metal to listen closely, then I whisper into the comms unit, \"Pewter, is that you? What's your status?\"",
+      "narration": "You slice your hand through the air, a sharp command for Jasmine to hold her position. She presses her back against the supply shelf, knuckles white around the protein canister. You step to the intercom panel, the metal casing cold against your ear, and lean in until the static fuzz fills your hearing. \\u201cPewter, is that you? What\\u2019s your status?\\u201d you whisper, keeping your voice low but firm.\n\nA wet, rattling inhale scratches through the speaker, followed by a long pause. \\u201cSayer,\\u201d Pewter wheezes, the sound thick with fluid. \\u201cSuit breach. Drift exposure.\\u201d He sucks in a sharp breath. \\u201cDon\\u2019t open the outer lock.\\u201d The line cuts out with a sharp electronic pop, leaving only the low hum of the mess hall lighting.\n\nA shadow shifts at the far end of the corridor where the light flickers and dies. A silhouette lingers near the bulkhead junction, motionless, watching the door but making no move to approach. Jasmine stares at the intercom, her breath coming in short, shallow gasps, while the wet slap of a hand dragging against the outside hull vibrates faintly through the floor grating.",
+      "narration_excerpt": "You slice your hand through the air, a sharp command for Jasmine to hold her position. She presses her back against the supply shelf, knuckles white around the protein canister. You step to the intercom panel, the metal casing cold against your ear, and lean in until the static fuzz fills your heari",
+      "roll": {
+        "stat": "wits",
+        "d1": 5,
+        "d2": 6,
+        "total": 10,
+        "c1": 8,
+        "c2": 7,
+        "result": "STRONG_HIT",
+        "match": false
+      },
+      "brain": {
+        "move": "gather_information",
+        "stat": "wits",
+        "target_npc": "npc_2",
+        "approach": "Pressing ear to the intercom panel and whispering to Pewter to assess his status through the comms system while staying alert to the unidentified figure's reactions",
+        "player_intent": "Determine if Pewter is at the door and assess his condition while communicating through the intercom",
+        "dialog_only": false
+      },
+      "burn_taken": false,
+      "director_ran": false,
+      "director_guidance": {
+        "narrator_guidance": "Reveal what is happening at the door immediately. Pewter's Silence clock is at 4/6 (>=50%), so this event must have consequences: Pewter should be injured, exposed, or compromised in a way that forces Corey to choose between securing the perimeter or saving him. After the door is resolved, recommend a breather to assess the physical damage and psychological impact on Jasmine.",
+        "pacing": "breather",
+        "arc_notes": "The threat of Pewter serves as the external pressure testing the group's internal resilience. The thematic thread of mastery is tested as Corey must manage a tactical breach while handling Jasmine's fragility. The Silence clock is ticking down to a hard narrative event regarding Pewter's fate.",
+        "npc_guidance": {
+          "npc_3": "The Unidentified Figure should observe the crisis from the shadows without intervening yet. They are assessing Corey's competence. If Pewter poses a bio-hazard, they may retreat or seal themselves off."
+        }
+      },
+      "state_after": {
+        "health": 5,
+        "spirit": 5,
+        "supply": 5,
+        "momentum": 10,
+        "chaos": 3,
+        "scene": 8,
+        "location": "Mess Hall",
+        "time_of_day": "deep_night",
+        "scene_context": "STRONG_HIT on investigated at Mess Hall — Jasmine, Pewter, Unidentified Figure",
+        "active_threads": 1,
+        "active_characters": 3,
+        "active_vow_tracks": 1
+      },
+      "npcs": [
+        {
+          "id": "npc_1",
+          "name": "Jasmine",
+          "status": "active",
+          "disposition": "neutral",
+          "bond": 1,
+          "agenda": "Maintain normalcy despite the danger.",
+          "instinct": "Clean aggressively when stressed.",
+          "arc": "Jasmine is struggling to keep her sanctuary intact as external pressures mount.",
+          "memory_count": 10,
+          "last_memory": "scene 8: Corey Sayer investigated — succeeded cleanly",
+          "last_location": "Mess Hall",
+          "importance_accumulator": 9,
+          "needs_reflection": false,
+          "aliases": []
+        },
+        {
+          "id": "npc_2",
+          "name": "Pewter",
+          "status": "active",
+          "disposition": "neutral",
+          "bond": 0,
+          "agenda": "Unknown (currently absent).",
+          "instinct": "Unknown.",
+          "arc": "",
+          "memory_count": 7,
+          "last_memory": "scene 8: Corey Sayer investigated involving Pewter — succeeded cleanly",
+          "last_location": "Mess Hall",
+          "importance_accumulator": 27,
+          "needs_reflection": false,
+          "aliases": []
+        },
+        {
+          "id": "npc_3",
+          "name": "Unidentified Figure",
+          "status": "active",
+          "disposition": "distrustful",
+          "bond": 0,
+          "agenda": "Determine if Corey is useful.",
+          "instinct": "Move unnoticed through the ship's corridors.",
+          "arc": "Transitioning from a suspicious lurker to a calculating observer deciding whether to engage or flee.",
+          "memory_count": 9,
+          "last_memory": "scene 8: Corey Sayer investigated — succeeded cleanly",
+          "last_location": "Mess Hall",
+          "importance_accumulator": 4,
+          "needs_reflection": false,
+          "aliases": []
+        }
+      ],
+      "clocks": [
+        {
+          "name": "Pewter's Silence",
+          "clock_type": "threat",
+          "filled": 4,
+          "segments": 6,
+          "owner": "Pewter",
+          "fired": false
+        }
+      ],
+      "validator": {
+        "passed": true,
+        "retries": 0,
+        "violations": [],
+        "attempt_violations": [
+          0
+        ],
+        "attempt_violation_text": [
+          []
+        ],
+        "picked_attempt": -1
+      },
+      "engine_log": {
+        "summary": "Determine if Pewter is at the door and assess his condition while communicating through the intercom",
+        "move": "gather_information",
+        "result": "STRONG_HIT",
+        "chaos_interrupt": null,
+        "director_trigger": "",
+        "consequences": [],
+        "clock_events": [],
+        "position": "risky",
+        "effect": "standard",
+        "npc_activation": {
+          "Jasmine": {
+            "score": 1.0,
+            "reasons": [
+              "name",
+              "recent"
+            ],
+            "status": "activated"
+          },
+          "Pewter": {
+            "score": 2.09,
+            "reasons": [
+              "target",
+              "name",
+              "tfidf:0.06",
+              "recent"
+            ],
+            "status": "activated"
+          },
+          "Unidentified Figure": {
+            "score": 1.08,
+            "reasons": [
+              "name",
+              "tfidf:0.06",
+              "recent"
+            ],
+            "status": "activated"
+          }
+        }
+      },
+      "story_arc": {
+        "phase": "sho_development",
+        "title": "The Contract",
+        "goal": "Navigate local politics and secure a dangerous contract to replenish dwindling supplies.",
+        "mood": "tense, pragmatic, crowded",
+        "story_complete": false
+      },
+      "token_usage": [
+        {
+          "role": "director",
+          "input": 1730,
+          "output": 41
+        },
+        {
+          "role": "director",
+          "input": 2187,
+          "output": 510
+        },
+        {
+          "role": "director",
+          "input": 2334,
+          "output": 412
+        },
+        {
+          "role": "brain",
+          "input": 917,
+          "output": 14
+        },
+        {
+          "role": "brain",
+          "input": 1258,
+          "output": 14
+        },
+        {
+          "role": "brain",
+          "input": 1620,
+          "output": 169
+        },
+        {
+          "role": "brain",
+          "input": 1062,
+          "output": 140
+        },
+        {
+          "role": "narrator",
+          "input": 3837,
+          "output": 276
+        },
+        {
+          "role": "validator",
+          "input": 1272,
+          "output": 17
+        },
+        {
+          "role": "metadata",
+          "input": 1112,
+          "output": 72
+        },
+        {
+          "role": "brain_correction",
+          "input": 655,
+          "output": 59
+        }
+      ],
+      "is_correction": false
+    },
+    {
+      "turn": 8,
+      "chapter": 1,
+      "scene": 8,
+      "location": "Mess Hall",
+      "action": "## That's not what I said — I was asking a question, not making a statement",
+      "narration": "You signal Jasmine with a sharp, chopping motion, pointing her back to the shadows. She obeys, pressing herself flat against the cold bulkhead, her knuckles white where she grips the shelf edge. You move to the wall-mounted intercom, the metal casing chilling your fingertips as you lean in, pressing your ear against the grill to filter the static from the noise beyond.\n\n\\u201cPewter, is that you?\\u201d you whisper, keeping your voice low to avoid carrying through the thin metal. \\u201cWhat\\u2019s your status?\\u201d\n\nA wet, ragged inhale crackles through the speaker, followed by a long, gurgling pause. \\u201cSuit breach,\\u201d Pewter wheezes, the sound thick with fluid. \\u201cDrift exposure.\\u201d A harsh cough tears through the comms, ending in a sharp electronic pop that cuts the line dead, leaving only the low hum of the ship and the scrape of something heavy dragging across the deck plating outside.",
+      "narration_excerpt": "You signal Jasmine with a sharp, chopping motion, pointing her back to the shadows. She obeys, pressing herself flat against the cold bulkhead, her knuckles white where she grips the shelf edge. You move to the wall-mounted intercom, the metal casing chilling your fingertips as you lean in, pressing",
+      "brain": {
+        "move": "face_danger",
+        "stat": "wits",
+        "target_npc": "Pewter",
+        "approach": "pressing ear to intercom to listen and whisper through comms",
+        "player_intent": "Signal Jasmine to stay put, listen at the intercom panel, and quietly ask Pewter for status confirmation",
+        "dialog_only": false
+      },
+      "burn_taken": false,
+      "director_ran": false,
+      "director_guidance": {
+        "narrator_guidance": "Reveal what is happening at the door immediately. Pewter's Silence clock is at 4/6 (>=50%), so this event must have consequences: Pewter should be injured, exposed, or compromised in a way that forces Corey to choose between securing the perimeter or saving him. After the door is resolved, recommend a breather to assess the physical damage and psychological impact on Jasmine.",
+        "pacing": "breather",
+        "arc_notes": "The threat of Pewter serves as the external pressure testing the group's internal resilience. The thematic thread of mastery is tested as Corey must manage a tactical breach while handling Jasmine's fragility. The Silence clock is ticking down to a hard narrative event regarding Pewter's fate.",
+        "npc_guidance": {
+          "npc_3": "The Unidentified Figure should observe the crisis from the shadows without intervening yet. They are assessing Corey's competence. If Pewter poses a bio-hazard, they may retreat or seal themselves off."
+        }
+      },
+      "state_after": {
+        "health": 5,
+        "spirit": 5,
+        "supply": 5,
+        "momentum": 10,
+        "chaos": 3,
+        "scene": 8,
+        "location": "Mess Hall",
+        "time_of_day": "deep_night",
+        "scene_context": "conversation at Mess Hall with Jasmine, Pewter, Unidentified Figure",
+        "active_threads": 1,
+        "active_characters": 3,
+        "active_vow_tracks": 1
+      },
+      "npcs": [
+        {
+          "id": "npc_1",
+          "name": "Jasmine",
+          "status": "active",
+          "disposition": "neutral",
+          "bond": 1,
+          "agenda": "Maintain normalcy despite the danger.",
+          "instinct": "Clean aggressively when stressed.",
+          "arc": "Jasmine is struggling to keep her sanctuary intact as external pressures mount.",
+          "memory_count": 10,
+          "last_memory": "scene 8: Corey Sayer spoke with Jasmine about Signal Jasmine to stay put, listen at the intercom pan",
+          "last_location": "Mess Hall",
+          "importance_accumulator": 7,
+          "needs_reflection": false,
+          "aliases": []
+        },
+        {
+          "id": "npc_2",
+          "name": "Pewter",
+          "status": "active",
+          "disposition": "neutral",
+          "bond": 0,
+          "agenda": "Unknown (currently absent).",
+          "instinct": "Unknown.",
+          "arc": "",
+          "memory_count": 7,
+          "last_memory": "scene 8: Corey Sayer spoke with Pewter about Signal Jasmine to stay put, listen at the intercom pane",
+          "last_location": "Mess Hall",
+          "importance_accumulator": 25,
+          "needs_reflection": false,
+          "aliases": []
+        },
+        {
+          "id": "npc_3",
+          "name": "Unidentified Figure",
+          "status": "active",
+          "disposition": "distrustful",
+          "bond": 0,
+          "agenda": "Determine if Corey is useful.",
+          "instinct": "Move unnoticed through the ship's corridors.",
+          "arc": "Transitioning from a suspicious lurker to a calculating observer deciding whether to engage or flee.",
+          "memory_count": 9,
+          "last_memory": "scene 8: Corey Sayer spoke with Unidentified Figure about Signal Jasmine to stay put, listen at the ",
+          "last_location": "Mess Hall",
+          "importance_accumulator": 4,
+          "needs_reflection": false,
+          "aliases": []
+        }
+      ],
+      "clocks": [
+        {
+          "name": "Pewter's Silence",
+          "clock_type": "threat",
+          "filled": 4,
+          "segments": 6,
+          "owner": "Pewter",
+          "fired": false
+        }
+      ],
+      "engine_log": {
+        "summary": "[corrected] Signal Jasmine to stay put, listen at the intercom panel, and quietly ask Pewter",
+        "move": "face_danger",
+        "result": "dialog",
+        "chaos_interrupt": null,
+        "director_trigger": "",
+        "consequences": [],
+        "clock_events": [],
+        "position": "risky",
+        "effect": "standard",
+        "npc_activation": {}
+      },
+      "story_arc": {
+        "phase": "sho_development",
+        "title": "The Contract",
+        "goal": "Navigate local politics and secure a dangerous contract to replenish dwindling supplies.",
+        "mood": "tense, pragmatic, crowded",
+        "story_complete": false
+      },
+      "token_usage": [
+        {
+          "role": "brain",
+          "input": 917,
+          "output": 14
+        },
+        {
+          "role": "brain",
+          "input": 1258,
+          "output": 167
+        },
+        {
+          "role": "brain",
+          "input": 1060,
+          "output": 136
+        },
+        {
+          "role": "narrator",
+          "input": 3885,
+          "output": 221
+        },
+        {
+          "role": "metadata",
+          "input": 1057,
+          "output": 75
+        }
+      ],
+      "is_correction": true
+    },
+    {
+      "turn": 9,
+      "chapter": 1,
+      "scene": 9,
+      "location": "Mess Hall",
+      "action": "I freeze at the sudden electronic pop, my heart hammering against my ribs as I turn back to Jasmine, pressing a finger firmly to my lips to signal absolute silence. I motion her further into the corner between the bulkhead and a large, sealed ration crate, giving us a narrow angle of cover. I crouch beside her and keep my voice to the barest thread of a whisper. \"Jasmine, when things went bad in the cargo bay last week, where did your brother hide? I know you two were close. I need to know his safe spots.\" While she answers, I carefully examine the sealed crate beside us, looking for maintenance symbols or pressure indicators to see if it's vented or vacuum-sealed, then press my ear against its cold metal surface to listen for any vibrations from the corridor beyond.",
+      "narration": "You signal for silence and herd Jasmine into the corner between the bulkhead and the heavy ration crate. You crouch low, scanning the faded hazmat stencils on the container and noting the green pressure indicator confirming a vacuum seal. Pressing your ear against the cold metal, you whisper your question about her brother's hiding spots.\n\nJasmine wraps her arms around her knees, her gaze fixed on the deck plating. \\u201cThe maintenance shafts,\\u201d she breathes, falling silent and gripping her elbows tightly.\n\nThrough the crate, the dull hum of the ship vibrates against your skull, sharpening into the heavy tread of boots in the corridor. You brace yourself, but the sudden impact against the mess hall door is violent enough to shatter the crate's glass pressure gauge. The safety glass sprays across the deck, the shards glittering under the strip lights as the lock mechanism groans and begins to cycle open.",
+      "narration_excerpt": "You signal for silence and herd Jasmine into the corner between the bulkhead and the heavy ration crate. You crouch low, scanning the faded hazmat stencils on the container and noting the green pressure indicator confirming a vacuum seal. Pressing your ear against the cold metal, you whisper your qu",
+      "roll": {
+        "stat": "wits",
+        "d1": 2,
+        "d2": 2,
+        "total": 5,
+        "c1": 8,
+        "c2": 1,
+        "result": "WEAK_HIT",
+        "match": false
+      },
+      "brain": {
+        "move": "gather_information",
+        "stat": "wits",
+        "target_npc": "npc_1",
+        "approach": "pressing Jasmine for her brother's hiding spots while examining the crate and listening through it",
+        "player_intent": "Press Jasmine for information about her brother's hiding spots while examining the crate and listening for vibrations",
+        "dialog_only": false
+      },
+      "burn_offered": "STRONG_HIT",
+      "burn_taken": false,
+      "director_ran": true,
+      "director_guidance": {
+        "narrator_guidance": "Reveal what is happening at the door immediately. Pewter's Silence clock is at 4/6 (>=50%), so this event must have consequences: Pewter should be injured, exposed, or compromised in a way that forces Corey to choose between securing the perimeter or saving him. After the door is resolved, recommend a breather to assess the physical damage and psychological impact on Jasmine.",
+        "pacing": "breather",
+        "arc_notes": "The threat of Pewter serves as the external pressure testing the group's internal resilience. The thematic thread of mastery is tested as Corey must manage a tactical breach while handling Jasmine's fragility. The Silence clock is ticking down to a hard narrative event regarding Pewter's fate.",
+        "npc_guidance": {
+          "npc_3": "The Unidentified Figure should observe the crisis from the shadows without intervening yet. They are assessing Corey's competence. If Pewter poses a bio-hazard, they may retreat or seal themselves off."
+        }
+      },
+      "state_after": {
+        "health": 5,
+        "spirit": 5,
+        "supply": 5,
+        "momentum": 10,
+        "chaos": 3,
+        "scene": 9,
+        "location": "Mess Hall",
+        "time_of_day": "deep_night",
+        "scene_context": "WEAK_HIT on investigated at Mess Hall — Jasmine, Pewter, Unidentified Figure",
+        "active_threads": 1,
+        "active_characters": 3,
+        "active_vow_tracks": 1
+      },
+      "npcs": [
+        {
+          "id": "npc_1",
+          "name": "Jasmine",
+          "status": "active",
+          "disposition": "neutral",
+          "bond": 1,
+          "agenda": "Maintain normalcy despite the danger.",
+          "instinct": "Clean aggressively when stressed.",
+          "arc": "Jasmine is struggling to keep her sanctuary intact as external pressures mount.",
+          "memory_count": 11,
+          "last_memory": "scene 9: Corey Sayer investigated involving Jasmine — partial success with complications",
+          "last_location": "Mess Hall",
+          "importance_accumulator": 11,
+          "needs_reflection": false,
+          "aliases": []
+        },
+        {
+          "id": "npc_2",
+          "name": "Pewter",
+          "status": "active",
+          "disposition": "neutral",
+          "bond": 0,
+          "agenda": "Unknown (currently absent).",
+          "instinct": "Unknown.",
+          "arc": "",
+          "memory_count": 8,
+          "last_memory": "scene 9: Corey Sayer investigated — partial success with complications",
+          "last_location": "Mess Hall",
+          "importance_accumulator": 29,
+          "needs_reflection": false,
+          "aliases": []
+        },
+        {
+          "id": "npc_3",
+          "name": "Unidentified Figure",
+          "status": "active",
+          "disposition": "distrustful",
+          "bond": 0,
+          "agenda": "Determine if Corey is useful.",
+          "instinct": "Move unnoticed through the ship's corridors.",
+          "arc": "Transitioning from a suspicious lurker to a calculating observer deciding whether to engage or flee.",
+          "memory_count": 10,
+          "last_memory": "scene 9: Corey Sayer investigated — partial success with complications",
+          "last_location": "Mess Hall",
+          "importance_accumulator": 8,
+          "needs_reflection": false,
+          "aliases": []
+        }
+      ],
+      "clocks": [
+        {
+          "name": "Pewter's Silence",
+          "clock_type": "threat",
+          "filled": 5,
+          "segments": 6,
+          "owner": "Pewter",
+          "fired": false
+        }
+      ],
+      "validator": {
+        "passed": true,
+        "retries": 1,
+        "violations": [],
+        "attempt_violations": [
+          2,
+          0
+        ],
+        "attempt_violation_text": [
+          [
+            "[llm] RESOLUTION PACING: NPC Jasmine speaks three sentences, volunteering unsolicited context about the brother's safety and the hull failure.",
+            "[llm] RESULT INTEGRITY: WEAK_HIT result lacks a specific tangible cost (something broken, lost, spent, or damaged)."
+          ],
+          []
+        ],
+        "picked_attempt": -1
+      },
+      "engine_log": {
+        "summary": "Press Jasmine for information about her brother's hiding spots while examining the crate and listening for vibrations",
+        "move": "gather_information",
+        "result": "WEAK_HIT",
+        "chaos_interrupt": null,
+        "director_trigger": "interval",
+        "consequences": [],
+        "clock_events": [],
+        "position": "risky",
+        "effect": "standard",
+        "npc_activation": {
+          "Jasmine": {
+            "score": 2.0,
+            "reasons": [
+              "target",
+              "name",
+              "recent"
+            ],
+            "status": "activated"
+          },
+          "Pewter": {
+            "score": 1.0,
+            "reasons": [
+              "name",
+              "recent"
+            ],
+            "status": "activated"
+          },
+          "Unidentified Figure": {
+            "score": 1.0,
+            "reasons": [
+              "name",
+              "recent"
+            ],
+            "status": "activated"
+          }
+        }
+      },
+      "story_arc": {
+        "phase": "sho_development",
+        "title": "The Contract",
+        "goal": "Navigate local politics and secure a dangerous contract to replenish dwindling supplies.",
+        "mood": "tense, pragmatic, crowded",
+        "story_complete": false
+      },
+      "token_usage": [
+        {
+          "role": "brain",
+          "input": 1020,
+          "output": 40
+        },
+        {
+          "role": "brain",
+          "input": 2124,
+          "output": 171
+        },
+        {
+          "role": "brain",
+          "input": 1167,
+          "output": 141
+        },
+        {
+          "role": "narrator",
+          "input": 4105,
+          "output": 334
+        },
+        {
+          "role": "validator",
+          "input": 1386,
+          "output": 107
+        },
+        {
+          "role": "narrator",
+          "input": 4860,
+          "output": 193
+        },
+        {
+          "role": "validator",
+          "input": 1245,
+          "output": 17
+        },
+        {
+          "role": "metadata",
+          "input": 1031,
+          "output": 123
+        },
+        {
+          "role": "brain_correction",
+          "input": 572,
+          "output": 49
+        }
+      ],
+      "is_correction": false
+    },
+    {
+      "turn": 10,
+      "chapter": 1,
+      "scene": 10,
+      "location": "Mess Hall",
+      "action": "I snatch a jagged shard of the safety glass from the floor, gripping the cold edge tight enough to ground myself, then shove Jasmine further behind the bulkhead into the shadows. Stepping clear of the debris but keeping my back to the wall, I train my eyes on the widening seam of the door and call out, \"Pewter? Is that you, or has the silence finally broken?\"",
+      "narration": "You scoop up the largest shard of safety glass, the edges serrated and cold against your palm, and kick the glittering debris into a wide arc before the door. Jasmine presses deeper into the corner, her breath shallow and silent. You flatten your spine against the bulkhead, the glass a fang of light in the gloom, and watch the hydraulic pistons hiss apart.\n\nThe door retracts, and the figure on the threshold checks their stride to avoid the scattered shards. It is not Pewter. A stranger in a pressure-worn flight suit stands there, gaze darting past you to scan the shadows where Jasmine hides. \\u201cHe\\u2019s freezing to death in the airlock,\\u201d the stranger rasps, his voice dry and cracked. He keeps his hands visible, empty, but his weight is settled on his back leg, ready to spring. \\u201cAnd your time just ran out.\\u201d Behind him, the corridor lights flicker and die, plunging the mess hall into emergency red as a proximity alarm begins to pulse through the deck plates.",
+      "narration_excerpt": "You scoop up the largest shard of safety glass, the edges serrated and cold against your palm, and kick the glittering debris into a wide arc before the door. Jasmine presses deeper into the corner, her breath shallow and silent. You flatten your spine against the bulkhead, the glass a fang of light",
+      "roll": {
+        "stat": "wits",
+        "d1": 2,
+        "d2": 4,
+        "total": 7,
+        "c1": 3,
+        "c2": 9,
+        "result": "WEAK_HIT",
+        "match": false
+      },
+      "brain": {
+        "move": "face_danger",
+        "stat": "wits",
+        "target_npc": "",
+        "approach": "Read the situation at the door while preparing for a threat",
+        "player_intent": "Arm myself with glass shard, protect Jasmine, and confront whoever is opening the door",
+        "dialog_only": false
+      },
+      "burn_offered": "STRONG_HIT",
+      "burn_taken": false,
+      "director_ran": true,
+      "director_guidance": {
+        "narrator_guidance": "The door cycles open, revealing an intruder. Corey must immediately leverage the environmental hazard of the shattered glass—perhaps kicking it toward the entry or using the noise to mask movement—to establish dominance. Emphasize the 'mastery through resilience' theme by having Corey control the geometry of the engagement rather than reacting defensively.",
+        "pacing": "building",
+        "arc_notes": "The 'Sho' development phase intensifies as the physical environment (The Forge) becomes an active combat zone. The thematic thread shifts from mental resilience to physical application of mastery under duress.",
+        "npc_guidance": {
+          "npc_1": "Jasmine curls into a tighter ball, squeezing her eyes shut to block out the violence. She is effectively paralyzed by the breach and waits for Corey's lead.",
+          "npc_3": "The intruder steps through the door but checks their stride upon seeing the glass, wary of the trap. They scan for Jasmine first, treating Corey as a secondary threat to be managed."
+        }
+      },
+      "state_after": {
+        "health": 5,
+        "spirit": 5,
+        "supply": 5,
+        "momentum": 10,
+        "chaos": 3,
+        "scene": 10,
+        "location": "Mess Hall",
+        "time_of_day": "deep_night",
+        "scene_context": "WEAK_HIT on faced danger at Mess Hall — Jasmine, Pewter, Unidentified Figure",
+        "active_threads": 1,
+        "active_characters": 3,
+        "active_vow_tracks": 1
+      },
+      "npcs": [
+        {
+          "id": "npc_1",
+          "name": "Jasmine",
+          "status": "active",
+          "disposition": "neutral",
+          "bond": 1,
+          "agenda": "Survive the raid.",
+          "instinct": "Clean aggressively when stressed.",
+          "arc": "Forced from passive hiding into active survival.",
+          "memory_count": 13,
+          "last_memory": "scene 10: Corey Sayer faced danger — partial success with complications",
+          "last_location": "Mess Hall",
+          "importance_accumulator": 4,
+          "needs_reflection": false,
+          "aliases": []
+        },
+        {
+          "id": "npc_2",
+          "name": "Pewter",
+          "status": "active",
+          "disposition": "neutral",
+          "bond": 0,
+          "agenda": "Unknown (currently absent).",
+          "instinct": "Unknown.",
+          "arc": "",
+          "memory_count": 9,
+          "last_memory": "scene 10: Corey Sayer faced danger — partial success with complications",
+          "last_location": "Mess Hall",
+          "importance_accumulator": 33,
+          "needs_reflection": true,
+          "aliases": []
+        },
+        {
+          "id": "npc_3",
+          "name": "Unidentified Figure",
+          "status": "active",
+          "disposition": "distrustful",
+          "bond": 0,
+          "agenda": "Determine if Corey is useful.",
+          "instinct": "Move unnoticed through the ship's corridors.",
+          "arc": "Transitioning from a suspicious lurker to a calculating observer deciding whether to engage or flee.",
+          "memory_count": 11,
+          "last_memory": "scene 10: Corey Sayer faced danger — partial success with complications",
+          "last_location": "Mess Hall",
+          "importance_accumulator": 12,
+          "needs_reflection": false,
+          "aliases": []
+        },
+        {
+          "id": "npc_4",
+          "name": "Stranger",
+          "status": "active",
+          "disposition": "hostile",
+          "bond": 0,
+          "agenda": "",
+          "instinct": "",
+          "arc": "",
+          "memory_count": 1,
+          "last_memory": "Pressure-worn flight suit, dry and cracked voice, hands visible and empty, weight settled on back le",
+          "last_location": "Mess Hall",
+          "importance_accumulator": 0,
+          "needs_reflection": false,
+          "aliases": []
+        }
+      ],
+      "clocks": [
+        {
+          "name": "Pewter's Silence",
+          "clock_type": "threat",
+          "filled": 6,
+          "segments": 6,
+          "owner": "Pewter",
+          "fired": true
+        }
+      ],
+      "validator": {
+        "passed": true,
+        "retries": 0,
+        "violations": [],
+        "attempt_violations": [
+          0
+        ],
+        "attempt_violation_text": [
+          []
+        ],
+        "picked_attempt": -1
+      },
+      "engine_log": {
+        "summary": "Arm myself with glass shard, protect Jasmine, and confront whoever is opening the door",
+        "move": "face_danger",
+        "result": "WEAK_HIT",
+        "chaos_interrupt": null,
+        "director_trigger": "new_npcs",
+        "consequences": [],
+        "clock_events": [
+          {
+            "clock": "Pewter's Silence",
+            "trigger": "Pewter's failure to respond escalates to a critical incident.",
+            "autonomous": false,
+            "triggered": false
+          }
+        ],
+        "position": "risky",
+        "effect": "standard",
+        "npc_activation": {
+          "Jasmine": {
+            "score": 1.0,
+            "reasons": [
+              "name",
+              "recent"
+            ],
+            "status": "activated"
+          },
+          "Pewter": {
+            "score": 1.0,
+            "reasons": [
+              "name",
+              "recent"
+            ],
+            "status": "activated"
+          },
+          "Unidentified Figure": {
+            "score": 1.0,
+            "reasons": [
+              "name",
+              "recent"
+            ],
+            "status": "activated"
+          }
+        }
+      },
+      "story_arc": {
+        "phase": "sho_development",
+        "title": "The Contract",
+        "goal": "Navigate local politics and secure a dangerous contract to replenish dwindling supplies.",
+        "mood": "tense, pragmatic, crowded",
+        "story_complete": false
+      },
+      "token_usage": [
+        {
+          "role": "director",
+          "input": 1467,
+          "output": 25
+        },
+        {
+          "role": "director",
+          "input": 1941,
+          "output": 27
+        },
+        {
+          "role": "director",
+          "input": 2665,
+          "output": 722
+        },
+        {
+          "role": "director",
+          "input": 2089,
+          "output": 419
+        },
+        {
+          "role": "brain",
+          "input": 940,
+          "output": 27
+        },
+        {
+          "role": "brain",
+          "input": 1664,
+          "output": 161
+        },
+        {
+          "role": "brain",
+          "input": 1077,
+          "output": 130
+        },
+        {
+          "role": "narrator",
+          "input": 3875,
+          "output": 228
+        },
+        {
+          "role": "validator",
+          "input": 1307,
+          "output": 18
+        },
+        {
+          "role": "metadata",
+          "input": 1059,
+          "output": 78
+        },
+        {
+          "role": "brain_correction",
+          "input": 607,
+          "output": 60
+        }
+      ],
+      "is_correction": false
+    }
+  ],
+  "violations": [],
+  "narration_quality_issues": [],
+  "spatial_issues": [],
+  "chapter_continuity_issues": [],
+  "validator_summary": {
+    "turns_checked": 9,
+    "turns_retried": 5,
+    "turns_failed": 1,
+    "total_retries": 7,
+    "rule_fast_path_violations": 1,
+    "top_violations": [
+      [
+        "[llm] RESOLUTION PACING: Jasmine volunteers unsolicited information about Pewter asking for the cargo manifest, which the player did not ask about.",
+        1
+      ],
+      [
+        "[llm] RESOLUTION PACING: Jasmine answered two specific questions but then volunteered unsolicited information about her emotional state and actions ('She glances up at the bulkhead... She picks up a rag...') which extends the scene beyond the direct answers.",
+        1
+      ],
+      [
+        "[llm] RESOLUTION PACING: Jasmine answered more than the specific questions asked by providing context about the thudding sound and her reaction to it, violating the rule that NPCs must answer ONLY the specific question asked.",
+        1
+      ],
+      [
+        "[llm] RESOLUTION PACING: Jasmine answered the first question but did not answer the second question about who might be looking for him or the third question about the noise upstairs, violating the requirement to answer the specific question asked.",
+        1
+      ],
+      [
+        "[llm] PLAYER AGENCY: The narration states 'You keep your voice low and ask your questions,' which dictates the player character's specific action and manner of speaking, taking away the choice of how to interact.",
+        1
+      ],
+      [
+        "[llm] RESOLUTION PACING: Jasmine answered two separate questions (what he said and what the noise is) and performed an action, exceeding the limit of one specific answer per interaction.",
+        1
+      ],
+      [
+        "[llm] PLAYER AGENCY: The narration decided that the player character 'waits, watching her, then nod[s] toward the ceiling', dictating specific physical actions and timing that were not explicitly requested by the player.",
+        1
+      ],
+      [
+        "[llm] RESOLUTION PACING: Jasmine answers the specific question about the ceiling noise but fails to answer the first question about what the man said or who was looking for him.",
+        1
+      ],
+      [
+        "[llm] RESOLUTION PACING: Jasmine provides two separate answers in two separate turns, totaling more than two sentences of dialogue in response to the player's input.",
+        1
+      ],
+      [
+        "[llm] RESOLUTION PACING: NPC answered two distinct questions (about the cargo shielding and the engine room noise) when the player asked for a name for the cargo and about sleeping/quiet places, exceeding the limit of one specific answer.",
+        1
+      ]
+    ]
+  },
+  "quality_summary": {
+    "narration_quality_total": 0,
+    "spatial_issues_total": 0,
+    "chapter_continuity_total": 0,
+    "correction_tests_total": 1,
+    "correction_tests_failed": 0,
+    "top_quality_issues": []
+  },
+  "token_summary": {
+    "total_input": 178158,
+    "total_output": 16641,
+    "total": 194799,
+    "by_role": {
+      "narrator": {
+        "calls": 20,
+        "input": 70012,
+        "output": 4711
+      },
+      "architect_chapter": {
+        "calls": 2,
+        "input": 1478,
+        "output": 1243
+      },
+      "validator": {
+        "calls": 18,
+        "input": 22449,
+        "output": 981
+      },
+      "narrator_retry": {
+        "calls": 2,
+        "input": 2461,
+        "output": 791
+      },
+      "brain": {
+        "calls": 34,
+        "input": 39526,
+        "output": 3483
+      },
+      "metadata": {
+        "calls": 11,
+        "input": 11565,
+        "output": 976
+      },
+      "validator_architect": {
+        "calls": 1,
+        "input": 432,
+        "output": 25
+      },
+      "director": {
+        "calls": 14,
+        "input": 27103,
+        "output": 4151
+      },
+      "brain_correction": {
+        "calls": 5,
+        "input": 3132,
+        "output": 280
+      }
+    }
+  },
+  "correction_tests": [
+    {
+      "turn": 8,
+      "correction": "## That's not what I said — I was asking a question, not making a statement",
+      "success": true,
+      "violations": [],
+      "quality_issues": []
+    }
+  ],
+  "burn_stats": {
+    "offered": 3,
+    "taken": 0,
+    "failed": 0
+  },
+  "ended_reason": "max_turns_reached",
+  "total_turns": 10,
+  "final_state": {
+    "character": "Corey Sayer",
+    "chapter": 1,
+    "location": "Mess Hall",
+    "scene": 10,
+    "health": 5,
+    "spirit": 5,
+    "supply": 5,
+    "momentum": 10,
+    "chaos": 3,
+    "npcs": 4,
+    "active_clocks": 0
+  }
+}

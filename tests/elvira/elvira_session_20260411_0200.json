@@ -1,0 +1,904 @@
+{
+  "engine_version": "0.39.0",
+  "style": "explorer",
+  "character": "Annora Malek",
+  "setting": "starforged",
+  "total_turns": 10,
+  "ended_reason": "max_turns_reached",
+  "chapters": [
+    {
+      "chapter": 1,
+      "turns": 10,
+      "ended": "max_turns_reached"
+    }
+  ],
+  "story": {
+    "structure": "3act",
+    "conflict": "Surface layer: Surviving the hostile environment of a derelict research station to secure a valuable salvage claim. Hidden layer: Confronting the criminal identity Annora fled from and deciding whethe",
+    "thematic": "Redemption through survival—can one truly outrun their nature, or does the frontier force it to the surface?",
+    "acts": [
+      "setup: The Silent Signal",
+      "confrontation: Ghost in the Machine",
+      "climax: Zero Sum"
+    ]
+  },
+  "turns": [
+    {
+      "turn": 1,
+      "scene": 2,
+      "result": "STRONG_HIT",
+      "move": "compel",
+      "action": "I stand up slowly from the bunk, keeping my eyes fixed on the dented bulkhead, a",
+      "state": "H5 Sp5 Su5 M4 C3",
+      "phase": "setup",
+      "tokens": [
+        {
+          "role": "director",
+          "input": 1806,
+          "output": 38
+        },
+        {
+          "role": "director",
+          "input": 2368,
+          "output": 705
+        },
+        {
+          "role": "director",
+          "input": 2419,
+          "output": 644
+        },
+        {
+          "role": "narrator",
+          "input": 2291,
+          "output": 372
+        },
+        {
+          "role": "architect_chapter",
+          "input": 766,
+          "output": 639
+        },
+        {
+          "role": "narrator",
+          "input": 3230,
+          "output": 312
+        },
+        {
+          "role": "validator",
+          "input": 1249,
+          "output": 17
+        },
+        {
+          "role": "validator_architect",
+          "input": 452,
+          "output": 25
+        },
+        {
+          "role": "narrator_retry",
+          "input": 1173,
+          "output": 347
+        },
+        {
+          "role": "brain",
+          "input": 976,
+          "output": 14
+        },
+        {
+          "role": "brain",
+          "input": 1147,
+          "output": 164
+        },
+        {
+          "role": "brain",
+          "input": 1116,
+          "output": 134
+        },
+        {
+          "role": "narrator",
+          "input": 2914,
+          "output": 243
+        },
+        {
+          "role": "validator",
+          "input": 1278,
+          "output": 18
+        },
+        {
+          "role": "metadata",
+          "input": 1046,
+          "output": 81
+        }
+      ]
+    },
+    {
+      "turn": 2,
+      "scene": 3,
+      "result": "MISS",
+      "move": "face_danger",
+      "action": "I raise my hands slowly, palms open, and keep my voice low to steady the situati",
+      "state": "H4 Sp5 Su4 M2 C4",
+      "consequences": [
+        "supply -1, health -1",
+        "momentum -2"
+      ],
+      "phase": "setup",
+      "director": true,
+      "tokens": [
+        {
+          "role": "brain",
+          "input": 961,
+          "output": 27
+        },
+        {
+          "role": "brain",
+          "input": 1400,
+          "output": 179
+        },
+        {
+          "role": "brain",
+          "input": 1116,
+          "output": 152
+        },
+        {
+          "role": "narrator",
+          "input": 3292,
+          "output": 290
+        },
+        {
+          "role": "validator",
+          "input": 1414,
+          "output": 19
+        },
+        {
+          "role": "metadata",
+          "input": 1126,
+          "output": 84
+        }
+      ]
+    },
+    {
+      "turn": 3,
+      "scene": 4,
+      "result": "STRONG_HIT",
+      "move": "secure_advantage",
+      "match": true,
+      "action": "I scramble backward, keeping low to stay beneath the creature's erratic strikes,",
+      "state": "H4 Sp5 Su4 M4 C3",
+      "validator": "FAIL(3r, 1v)",
+      "validator_violations": [
+        "[llm] RESOLUTION PACING: Jasmine answers the specific question about the containment unit but also volunteers the solution to the puzzle (hit the leak with an electrical charge) and context about the fracture being a pressure seal, explaining the mystery in the same scene it appears."
+      ],
+      "narration_excerpt": "You drop to your knees, the medscanner clutched tight in your grip, and crawl beneath the sweeping arc of a serrated limb. The beast crashes into the cargo locker, shearing metal off the bulkhead in a shower of sparks, but you keep your eyes on the scanner’s display. It flickers erratically, locking onto a bio-luminescent patch beneath the creature's thorax where the grey sludge weeps from a hairline fracture in the chitin. The readout spikes with energy readings, a perfect match for the illegal",
+      "phase": "setup",
+      "narration": "You drop to your knees, the medscanner clutched tight in your grip, and crawl beneath the sweeping arc of a serrated limb. The beast crashes into the cargo locker, shearing metal off the bulkhead in a shower of sparks, but you keep your eyes on the scanner’s display. It flickers erratically, locking onto a bio-luminescent patch beneath the creature's thorax where the grey sludge weeps from a hairline fracture in the chitin. The readout spikes with energy readings, a perfect match for the illegal",
+      "tokens": [
+        {
+          "role": "director",
+          "input": 1629,
+          "output": 28
+        },
+        {
+          "role": "director",
+          "input": 1745,
+          "output": 470
+        },
+        {
+          "role": "director",
+          "input": 2229,
+          "output": 425
+        },
+        {
+          "role": "brain",
+          "input": 979,
+          "output": 14
+        },
+        {
+          "role": "brain",
+          "input": 1265,
+          "output": 179
+        },
+        {
+          "role": "brain",
+          "input": 1134,
+          "output": 150
+        },
+        {
+          "role": "narrator",
+          "input": 3867,
+          "output": 311
+        },
+        {
+          "role": "validator",
+          "input": 1354,
+          "output": 97
+        },
+        {
+          "role": "narrator",
+          "input": 4422,
+          "output": 225
+        },
+        {
+          "role": "validator",
+          "input": 1268,
+          "output": 114
+        },
+        {
+          "role": "narrator",
+          "input": 4336,
+          "output": 196
+        },
+        {
+          "role": "validator",
+          "input": 1239,
+          "output": 96
+        },
+        {
+          "role": "narrator",
+          "input": 4417,
+          "output": 233
+        },
+        {
+          "role": "validator",
+          "input": 1276,
+          "output": 149
+        },
+        {
+          "role": "metadata",
+          "input": 1174,
+          "output": 118
+        }
+      ]
+    },
+    {
+      "turn": 4,
+      "scene": 5,
+      "result": "STRONG_HIT",
+      "move": "gather_information",
+      "action": "\"Cedar,\" I whisper into the dark of the ventilation shaft, twisting around to fa",
+      "state": "H4 Sp5 Su4 M6 C3",
+      "validator": "FAIL(3r, 1v)",
+      "validator_violations": [
+        "[llm] RESOLUTION PACING: Jasmine volunteers unsolicited information about the maintenance seal's frequency and its reaction to the guardian's signature, explaining the mystery in the same scene it appears."
+      ],
+      "narration_excerpt": "<o>\nThe light from your scanner sweeps the curved walls of the ventilation shaft, picking out deep, parallel gouges in the metal plating and rust-colored streaks smeared across the joints where something heavy was dragged through repeatedly. Below the grate, the construct slams into the blast doors with a sound like tearing sheet metal, the impact vibrating through the floor grating and into your ribs. The air in the duct tastes of ozone and hydraulic fluid, cold against your skin as you shift y",
+      "phase": "setup",
+      "narration": "<o>\nThe light from your scanner sweeps the curved walls of the ventilation shaft, picking out deep, parallel gouges in the metal plating and rust-colored streaks smeared across the joints where something heavy was dragged through repeatedly. Below the grate, the construct slams into the blast doors with a sound like tearing sheet metal, the impact vibrating through the floor grating and into your ribs. The air in the duct tastes of ozone and hydraulic fluid, cold against your skin as you shift y",
+      "tokens": [
+        {
+          "role": "brain",
+          "input": 960,
+          "output": 40
+        },
+        {
+          "role": "brain",
+          "input": 1911,
+          "output": 184
+        },
+        {
+          "role": "brain",
+          "input": 1120,
+          "output": 154
+        },
+        {
+          "role": "narrator",
+          "input": 4071,
+          "output": 292
+        },
+        {
+          "role": "validator",
+          "input": 1321,
+          "output": 104
+        },
+        {
+          "role": "narrator",
+          "input": 4579,
+          "output": 238
+        },
+        {
+          "role": "validator",
+          "input": 1269,
+          "output": 102
+        },
+        {
+          "role": "narrator",
+          "input": 4609,
+          "output": 193
+        },
+        {
+          "role": "validator",
+          "input": 1221,
+          "output": 102
+        },
+        {
+          "role": "narrator",
+          "input": 4479,
+          "output": 206
+        },
+        {
+          "role": "validator",
+          "input": 1234,
+          "output": 82
+        },
+        {
+          "role": "metadata",
+          "input": 1066,
+          "output": 170
+        }
+      ]
+    },
+    {
+      "turn": 5,
+      "scene": 6,
+      "result": "STRONG_HIT",
+      "move": "gather_information",
+      "action": "I run my scanner over the junction box Jasmine pointed out, studying the mainten",
+      "state": "H4 Sp5 Su4 M8 C3",
+      "validator": "FAIL(3r, 2v)",
+      "validator_violations": [
+        "[llm] RESOLUTION PACING: Jasmine volunteers unsolicited backstory about the warden, explains its behavior, identifies the energy spike, and proposes a solution, all without being asked.",
+        "[llm] RESOLUTION PACING: Jasmine speaks four sentences in a row, exceeding the two-sentence limit."
+      ],
+      "narration_excerpt": "<o>\nThe scanner’s holographic display flickers with a pale amber readout, showing faint concentric pulses emanating from the seal's surface—a dormant resonance pattern that hums in time with the ship's auxiliary power. The creature slams against the blast doors below, the impact shuddering through the deck plates and shaking dust from the overhead conduit lines.\n\nJasmine wipes a streak of grime from her forehead, eyes fixed on the rhythmic light on your screen. \"It sealed the bridge on a rig I c",
+      "phase": "setup",
+      "director": true,
+      "narration": "<o>\nThe scanner’s holographic display flickers with a pale amber readout, showing faint concentric pulses emanating from the seal's surface—a dormant resonance pattern that hums in time with the ship's auxiliary power. The creature slams against the blast doors below, the impact shuddering through the deck plates and shaking dust from the overhead conduit lines.\n\nJasmine wipes a streak of grime from her forehead, eyes fixed on the rhythmic light on your screen. \"It sealed the bridge on a rig I c",
+      "tokens": [
+        {
+          "role": "brain",
+          "input": 960,
+          "output": 14
+        },
+        {
+          "role": "brain",
+          "input": 1320,
+          "output": 160
+        },
+        {
+          "role": "brain",
+          "input": 1096,
+          "output": 130
+        },
+        {
+          "role": "narrator",
+          "input": 3971,
+          "output": 300
+        },
+        {
+          "role": "validator",
+          "input": 1330,
+          "output": 101
+        },
+        {
+          "role": "narrator",
+          "input": 4429,
+          "output": 198
+        },
+        {
+          "role": "validator",
+          "input": 1202,
+          "output": 106
+        },
+        {
+          "role": "narrator",
+          "input": 4301,
+          "output": 170
+        },
+        {
+          "role": "validator",
+          "input": 1202,
+          "output": 95
+        },
+        {
+          "role": "narrator",
+          "input": 4301,
+          "output": 170
+        },
+        {
+          "role": "validator",
+          "input": 1202,
+          "output": 95
+        },
+        {
+          "role": "metadata",
+          "input": 1035,
+          "output": 199
+        },
+        {
+          "role": "brain_correction",
+          "input": 549,
+          "output": 58
+        }
+      ]
+    },
+    {
+      "turn": 6,
+      "scene": 7,
+      "result": "STRONG_HIT",
+      "move": "secure_advantage",
+      "action": "I inspect the exposed wiring in the junction box, then glance over at Jasmine. \"",
+      "state": "H4 Sp5 Su4 M10 C3",
+      "validator": "pass(1r)",
+      "phase": "confrontation",
+      "tokens": [
+        {
+          "role": "director",
+          "input": 1468,
+          "output": 38
+        },
+        {
+          "role": "director",
+          "input": 1948,
+          "output": 14
+        },
+        {
+          "role": "director",
+          "input": 2302,
+          "output": 719
+        },
+        {
+          "role": "director",
+          "input": 2082,
+          "output": 559
+        },
+        {
+          "role": "brain",
+          "input": 948,
+          "output": 14
+        },
+        {
+          "role": "brain",
+          "input": 1327,
+          "output": 149
+        },
+        {
+          "role": "brain",
+          "input": 1073,
+          "output": 121
+        },
+        {
+          "role": "narrator",
+          "input": 3772,
+          "output": 264
+        },
+        {
+          "role": "validator",
+          "input": 1284,
+          "output": 83
+        },
+        {
+          "role": "narrator",
+          "input": 4499,
+          "output": 241
+        },
+        {
+          "role": "validator",
+          "input": 1261,
+          "output": 18
+        },
+        {
+          "role": "metadata",
+          "input": 1098,
+          "output": 233
+        },
+        {
+          "role": "brain_correction",
+          "input": 620,
+          "output": 44
+        }
+      ]
+    },
+    {
+      "turn": 7,
+      "scene": 8,
+      "result": "STRONG_HIT",
+      "move": "gather_information",
+      "match": true,
+      "action": "I keep my multitool in hand and step carefully toward the mag-seal patch, inspec",
+      "state": "H4 Sp5 Su4 M10 C3",
+      "validator": "pass(1r)",
+      "phase": "confrontation",
+      "director": true,
+      "tokens": [
+        {
+          "role": "brain",
+          "input": 947,
+          "output": 14
+        },
+        {
+          "role": "brain",
+          "input": 1284,
+          "output": 142
+        },
+        {
+          "role": "brain",
+          "input": 1065,
+          "output": 128
+        },
+        {
+          "role": "narrator",
+          "input": 3914,
+          "output": 211
+        },
+        {
+          "role": "validator",
+          "input": 1229,
+          "output": 103
+        },
+        {
+          "role": "narrator",
+          "input": 4628,
+          "output": 201
+        },
+        {
+          "role": "validator",
+          "input": 1183,
+          "output": 19
+        },
+        {
+          "role": "metadata",
+          "input": 1027,
+          "output": 126
+        },
+        {
+          "role": "brain_correction",
+          "input": 544,
+          "output": 58
+        }
+      ]
+    },
+    {
+      "turn": 8,
+      "scene": 8,
+      "result": "dialog",
+      "action": "## That's not what I said — I was asking a question, not making a statement",
+      "state": "H4 Sp5 Su4 M10 C3",
+      "phase": "confrontation",
+      "correction": true,
+      "tokens": [
+        {
+          "role": "director",
+          "input": 1722,
+          "output": 41
+        },
+        {
+          "role": "director",
+          "input": 2192,
+          "output": 27
+        },
+        {
+          "role": "director",
+          "input": 2900,
+          "output": 598
+        },
+        {
+          "role": "director",
+          "input": 2323,
+          "output": 454
+        },
+        {
+          "role": "brain",
+          "input": 947,
+          "output": 14
+        },
+        {
+          "role": "brain",
+          "input": 1284,
+          "output": 169
+        },
+        {
+          "role": "brain",
+          "input": 1092,
+          "output": 139
+        },
+        {
+          "role": "narrator",
+          "input": 3874,
+          "output": 118
+        },
+        {
+          "role": "metadata",
+          "input": 980,
+          "output": 76
+        }
+      ]
+    },
+    {
+      "turn": 9,
+      "scene": 9,
+      "result": "STRONG_HIT",
+      "move": "gather_information",
+      "action": "I lean forward, squinting at the holographic ID card clipped to the console to r",
+      "state": "H4 Sp5 Su4 M10 C3",
+      "validator": "pass(1r)",
+      "phase": "confrontation",
+      "director": true,
+      "tokens": [
+        {
+          "role": "brain",
+          "input": 908,
+          "output": 14
+        },
+        {
+          "role": "brain",
+          "input": 1259,
+          "output": 158
+        },
+        {
+          "role": "brain",
+          "input": 1042,
+          "output": 129
+        },
+        {
+          "role": "narrator",
+          "input": 3803,
+          "output": 216
+        },
+        {
+          "role": "validator",
+          "input": 1175,
+          "output": 119
+        },
+        {
+          "role": "narrator",
+          "input": 4530,
+          "output": 125
+        },
+        {
+          "role": "validator",
+          "input": 1081,
+          "output": 18
+        },
+        {
+          "role": "metadata",
+          "input": 959,
+          "output": 66
+        },
+        {
+          "role": "brain_correction",
+          "input": 476,
+          "output": 51
+        }
+      ]
+    },
+    {
+      "turn": 10,
+      "scene": 10,
+      "result": "STRONG_HIT",
+      "move": "gather_information",
+      "action": "I approach the holographic emitter and squint at the flickering image of Lieuten",
+      "state": "H4 Sp5 Su4 M10 C3",
+      "validator": "pass(2r)",
+      "phase": "confrontation",
+      "tokens": [
+        {
+          "role": "director",
+          "input": 1688,
+          "output": 41
+        },
+        {
+          "role": "director",
+          "input": 2173,
+          "output": 437
+        },
+        {
+          "role": "director",
+          "input": 2274,
+          "output": 439
+        },
+        {
+          "role": "brain",
+          "input": 944,
+          "output": 14
+        },
+        {
+          "role": "brain",
+          "input": 1295,
+          "output": 144
+        },
+        {
+          "role": "brain",
+          "input": 1064,
+          "output": 129
+        },
+        {
+          "role": "narrator",
+          "input": 3807,
+          "output": 225
+        },
+        {
+          "role": "validator",
+          "input": 1239,
+          "output": 120
+        },
+        {
+          "role": "narrator",
+          "input": 4938,
+          "output": 170
+        },
+        {
+          "role": "validator",
+          "input": 1163,
+          "output": 92
+        },
+        {
+          "role": "narrator",
+          "input": 4780,
+          "output": 140
+        },
+        {
+          "role": "validator",
+          "input": 1133,
+          "output": 17
+        },
+        {
+          "role": "metadata",
+          "input": 1006,
+          "output": 199
+        },
+        {
+          "role": "brain_correction",
+          "input": 496,
+          "output": 44
+        }
+      ]
+    }
+  ],
+  "validator_summary": {
+    "turns_checked": 9,
+    "turns_retried": 7,
+    "turns_failed": 3,
+    "total_retries": 14,
+    "rule_fast_path_violations": 0,
+    "top_violations": [
+      [
+        "[llm] RESOLUTION PACING: Jasmine speaks four sentences, exceeding the two-sentence limit.",
+        3
+      ],
+      [
+        "[llm] RESOLUTION PACING: Jasmine volunteers unsolicited backstory about a past incident and explains the creature's moti",
+        2
+      ],
+      [
+        "[llm] RESOLUTION PACING: Jasmine answers the specific question about the containment unit but also volunteers the soluti",
+        1
+      ],
+      [
+        "[llm] RESOLUTION PACING: NPC Jasmine volunteers unsolicited information ('It wasn't growth, it was a guardian') and cont",
+        1
+      ],
+      [
+        "[llm] RESOLUTION PACING: NPC Jasmine speaks two sentences, but the second sentence provides unrequested context/theory, ",
+        1
+      ],
+      [
+        "[llm] RESOLUTION PACING: NPC answers the specific question asked and volunteers unsolicited context about the creature's",
+        1
+      ],
+      [
+        "[llm] GENRE PHYSICS: Inanimate residue is described as 'weeping', attributing human emotion/biological function to a flu",
+        1
+      ],
+      [
+        "[llm] RESOLUTION PACING: NPC Jasmine answers the specific question asked but then adds unsolicited context about scrambl",
+        1
+      ],
+      [
+        "[llm] PLAYER AGENCY: Narrator decides the player character shouts a specific question about 'what were you growing' and ",
+        1
+      ],
+      [
+        "[llm] RESOLUTION PACING: Jasmine volunteers unsolicited context about the drive core, the Vault, and the Obsidian Wing's",
+        1
+      ]
+    ]
+  },
+  "quality_summary": {
+    "narration_quality_total": 0,
+    "spatial_issues_total": 0,
+    "chapter_continuity_total": 0,
+    "correction_tests_total": 1,
+    "correction_tests_failed": 0,
+    "top_quality_issues": []
+  },
+  "burn_stats": {
+    "offered": 0,
+    "taken": 0,
+    "failed": 0
+  },
+  "token_summary": {
+    "total_input": 220662,
+    "total_output": 19214,
+    "total": 239876,
+    "by_role": {
+      "director": {
+        "calls": 17,
+        "input": 35268,
+        "output": 5677
+      },
+      "narrator": {
+        "calls": 26,
+        "input": 106054,
+        "output": 5860
+      },
+      "architect_chapter": {
+        "calls": 1,
+        "input": 766,
+        "output": 639
+      },
+      "validator": {
+        "calls": 24,
+        "input": 29807,
+        "output": 1886
+      },
+      "validator_architect": {
+        "calls": 1,
+        "input": 452,
+        "output": 25
+      },
+      "narrator_retry": {
+        "calls": 1,
+        "input": 1173,
+        "output": 347
+      },
+      "brain": {
+        "calls": 30,
+        "input": 33940,
+        "output": 3173
+      },
+      "metadata": {
+        "calls": 10,
+        "input": 10517,
+        "output": 1352
+      },
+      "brain_correction": {
+        "calls": 5,
+        "input": 2685,
+        "output": 255
+      }
+    }
+  },
+  "final_npcs": [
+    {
+      "name": "Jasmine",
+      "status": "active",
+      "disposition": "neutral",
+      "bond": 1,
+      "memories": 11
+    },
+    {
+      "name": "Cedar",
+      "status": "active",
+      "disposition": "neutral",
+      "bond": 0,
+      "memories": 11
+    },
+    {
+      "name": "Unknown Creature",
+      "status": "active",
+      "disposition": "hostile",
+      "bond": 0,
+      "memories": 10
+    }
+  ],
+  "final_state": {
+    "character": "Annora Malek",
+    "chapter": 1,
+    "location": "Cramped cargo bay of a starship",
+    "scene": 10,
+    "health": 4,
+    "spirit": 5,
+    "supply": 4,
+    "momentum": 10,
+    "chaos": 3,
+    "npcs": 4,
+    "active_clocks": 1
+  },
+  "correction_tests": [
+    {
+      "turn": 8,
+      "correction": "## That's not what I said — I was asking a question, not making a statement",
+      "success": true,
+      "violations": [],
+      "quality_issues": []
+    }
+  ]
+}

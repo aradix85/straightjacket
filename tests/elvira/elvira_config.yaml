@@ -42,6 +42,6 @@ bot_behavior:
 logging:
   log_file: "elvira_session.json"
   full_debug_log: true              # true = also write elvira_session_full.json with complete turn data
-  print_full_narration: false
+  print_full_narration: true
   print_roll_details: true
   assert_state_invariants: true

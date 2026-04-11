@@ -63,10 +63,11 @@ def validate_narration(
 ) -> dict:
     """Check narrator output against engine constraints.
 
-    Both layers always run, results are merged:
+    Two layers, short-circuit on rule failures:
     1. Rule-based (instant): player agency patterns, result integrity,
        genre fidelity, output format, NPC monologue heuristic, consequence keywords.
     2. LLM (semantic): resolution pacing, subtle agency, contextual checks.
+       Skipped when rule-based already found violations (fast retry path).
 
     Returns:
         Dict with "pass" (bool), "violations" (list[str]), "correction" (str).
@@ -74,30 +75,53 @@ def validate_narration(
     from .rule_validator import run_rule_checks
 
     # Layer 1: rule-based (instant, free)
-    rule_result = run_rule_checks(narration, result_type, player_words, genre_constraints, consequence_sentences)
+    rule_result = run_rule_checks(
+        narration, result_type, player_words, genre_constraints, consequence_sentences, player_name
+    )
     rule_violations = rule_result.get("violations", [])
 
-    # Layer 2: LLM (semantic)
+    # Fast path: rule violations found → skip LLM, retry immediately
+    if rule_violations:
+        all_violations = [f"[rule] {v}" for v in rule_violations]
+        correction = "; ".join(v.split(": ", 1)[1] if ": " in v else v for v in all_violations[:3])
+        log(f"[Validator] FAILED (rule fast path, {len(rule_violations)} violations): {all_violations}")
+        return {"pass": False, "violations": all_violations, "correction": f"Fix: {correction}"}
+
+    # Layer 2: LLM (semantic) — only when rules passed
     llm_violations = []
     _c = cfg()
     cons_text = ", ".join(consequences) if consequences else "none"
     pc_hint = f' The player character is "{player_name}" (the "you").' if player_name else ""
+    cons_sentence_text = ""
+    if consequence_sentences:
+        cons_sentence_text = (
+            "\n\nCONSEQUENCE COMPLIANCE: Each consequence below MUST be reflected in the narration. "
+            "The narrator may use different words but the event described MUST visibly occur. "
+            "If a consequence is completely absent from the prose, flag it.\n"
+            + "\n".join(f"- {s}" for s in consequence_sentences)
+        )
 
     system = f"""Constraint checker for RPG narration. Be STRICT and PRECISE.
 
 GENRE PHYSICS: Materials MUST NOT exhibit consciousness, memory, or transformation. Wood does not weep, bleed, reshape, or form faces. Stone does not remember. Fluids do not change color symbolically. Inanimate objects MUST NOT have agency, awareness, or intent. If the setting is low-magic or grounded sci-fi, ANY supernatural element is a violation. When in doubt about genre physics, FAIL — genre drift is harder to fix than a retry.
 
-RESOLUTION PACING: NPCs answer ONLY the specific question asked — no volunteering theories, connections, accusations, or context the player did not request. A new mystery must not be explained in the scene it appears. A new NPC must not monologue. Tension introduced must survive to the next scene.
+RESOLUTION PACING: NPCs answer ONLY the specific question asked — no volunteering theories, connections, accusations, or context the player did not request. Count the NPC's spoken sentences: more than TWO is a violation. A new mystery must not be explained in the scene it appears. Tension introduced must survive to the next scene.
+WRONG: Player asks where the ship docked. NPC answers, then adds that Ashwatch burned, the woman disappeared, and she had debts — all unsolicited.
+WRONG: Player asks about tracks. NPC identifies the stride, explains it's not a ghost, names the hatch, and suggests checking the forges — four facts when one was asked.
+RIGHT: NPC gives one direct answer, then stops talking or does something physical.
 
-PLAYER AGENCY: This applies ONLY to the player character (the "you" in narration).{pc_hint} NPCs MAY think, feel, remember, interpret — that is good characterization, not a violation. The narrator MUST NOT impose thoughts, feelings, INTERPRETATIONS, or memories on the PLAYER CHARACTER. Key distinction: OBSERVABLE FACTS about the player character are allowed. INTERNAL STATES are not.
-- Observable (OK): "your boots sink into mud", "sweat runs down your neck", "your hands shake", "the wound burns", "your breath fogs"
-- Interpretation (violation): "you realize the truth", "you feel a surge of dread", "you understand why", "the silence offers you a choice", "you remember the promise", "the weight of failure presses on you", "makes you want to sit"
-- The test: could a camera see it? If yes, it's observable. If it requires knowing the character's mind, it's a violation.
+PLAYER AGENCY: This applies ONLY to the player character (the "you" in narration).{pc_hint}
+TWO CATEGORIES — only the first is a violation:
+COGNITIVE (VIOLATION): The narrator decides what the player character thinks, concludes, realizes, remembers, decides, believes, or intends. "you realize", "you understand why", "you decide to trust him", "you remember the promise", "makes you want to", "something inside you". These take choices away from the player.
+SENSORY (ALLOWED): The narrator describes how things feel, look, sound, smell to the player character — including subjective or metaphorical descriptions. "unnervingly white", "sharp enough to cut", "silence feels heavy", "cold enough to bite", "the air tastes of copper". These create atmosphere and are ALWAYS allowed. PASS these.
+NPC EXCEPTION: Any description of an NPC's behavior, demeanor, or emotional state is ALWAYS allowed. "hollow", "mechanical", "guarded", "stripped of emotion" about an NPC = PASS.
 
-RESULT INTEGRITY: If result_type is MISS, the failure must be concrete — the situation is WORSE than before. Sensory descriptions of the failure itself are ALLOWED on a MISS (pain, cold, noise, breakage, environmental damage). What is NOT allowed: the player character LEARNS something, DISCOVERS something, GAINS insight, or makes PROGRESS toward a goal. "Your skin burns and the wound splits open" = allowed (describing failure). "The hill remembers your name" = violation (revelation AND genre physics). "Frost forms on the valve" = allowed (environmental consequence). "The trail was leading you back to its lair" = violation (learning). If WEAK_HIT, there must be a SPECIFIC tangible cost visible in the prose: something broken, lost, spent, damaged, or worsened. Atmospheric tension alone is not a cost. "The fuel cell cracks" = cost. "The air feels heavier" = not a cost. If dialog, skip this check.
-
-When in doubt about PLAYER AGENCY or RESOLUTION PACING, PASS — false positives waste tokens.
-When in doubt about GENRE PHYSICS, FAIL — genre drift compounds across scenes.
+RESULT INTEGRITY: If result_type is MISS, the failure must be concrete — the situation is WORSE than before. What is NOT allowed: the player character LEARNS, DISCOVERS, GAINS insight, or makes PROGRESS. If WEAK_HIT, there must be a SPECIFIC tangible cost: something broken, lost, spent, damaged. Atmospheric tension alone is not a cost. If dialog, skip this check.
+{cons_sentence_text}
+DOUBT RULES:
+- PLAYER AGENCY: flag ONLY cognitive violations (thoughts, decisions, conclusions, memories). Sensory descriptions and atmospheric metaphors are NEVER violations — PASS those without hesitation.
+- RESOLUTION PACING: flag ONLY when the NPC speaks more than two sentences or volunteers information the player did not ask about. A short answer followed by a physical action is ALLOWED — pass those.
+- GENRE PHYSICS: when in doubt, FAIL — genre drift compounds.
 
 Return pass=true if ALL constraints met.
 Return pass=false with:
@@ -128,17 +152,10 @@ Check constraints."""
     except Exception as e:
         log(f"[Validator] LLM check failed ({e}), using rule results only", level="warning")
 
-    # Merge: deduplicate by category prefix, tag source for diagnostics
-    all_violations = [f"[rule] {v}" for v in rule_violations]
-    rule_categories = {v.split(":")[0].strip() for v in rule_violations}
-    for v in llm_violations:
-        cat = v.split(":")[0].strip()
-        if cat not in rule_categories:
-            all_violations.append(f"[llm] {v}")
-
-    if all_violations:
+    if llm_violations:
+        all_violations = [f"[llm] {v}" for v in llm_violations]
         correction = "; ".join(v.split(": ", 1)[1] if ": " in v else v for v in all_violations[:3])
-        log(f"[Validator] FAILED ({len(rule_violations)} rule, {len(llm_violations)} llm): {all_violations}")
+        log(f"[Validator] FAILED ({len(llm_violations)} llm): {all_violations}")
         return {"pass": False, "violations": all_violations, "correction": f"Fix: {correction}"}
 
     log("[Validator] Passed (rule + llm)")
@@ -301,12 +318,27 @@ def validate_and_retry(
             f"{instructions_text}\n"
             f"</correction_mode>"
         )
-        retry_prompt = f"<REWRITE>\n{instructions_text}\n</REWRITE>\n\n" + prompt
-        # Strip NPC secrets/memories if pacing violation — remove fuel for info dumps.
-        retry_prompt = _strip_prompt_for_retry(retry_prompt, violations)
+        retry_prompt = _strip_prompt_for_retry(prompt, violations)
+        # Include the failed narration as assistant turn + correction as user turn.
+        # This gives the model its own output to correct rather than rewriting blind.
+        failed_narration_msg = {"role": "assistant", "content": narration}
+        correction_msg = {
+            "role": "user",
+            "content": f"<REWRITE>\nYour narration above violated constraints:\n{instructions_text}\n"
+            f"Rewrite the COMPLETE scene following the original prompt below. "
+            f"Keep what worked, fix what was flagged.\n</REWRITE>\n\n{retry_prompt}",
+        }
         # Skip narration_history — previous narrations may contain the same
         # violations and act as poisoned few-shot examples.
-        raw = call_narrator(provider, retry_prompt, game, config, system_suffix=system_suffix, skip_history=True)
+        raw = call_narrator(
+            provider,
+            retry_prompt,
+            game,
+            config,
+            system_suffix=system_suffix,
+            skip_history=True,
+            extra_messages=[failed_narration_msg, correction_msg],
+        )
         narration = parse_narrator_response(game, raw)
 
     # Final validation of last attempt

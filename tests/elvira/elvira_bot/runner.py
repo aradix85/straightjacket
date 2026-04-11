@@ -657,6 +657,7 @@ def _log_story_blueprint(game: GameState, slog: SessionLog) -> None:
 
 def _aggregate_validator_stats(slog: SessionLog) -> dict:
     total = failed = retried = total_retries = 0
+    rule_fast_path = 0
     violation_counts: dict[str, int] = {}
     for t in slog.turns:
         if t.validator:
@@ -666,13 +667,18 @@ def _aggregate_validator_stats(slog: SessionLog) -> dict:
                 total_retries += t.validator.retries
             if not t.validator.passed:
                 failed += 1
-            for v in t.validator.violations:
-                violation_counts[v] = violation_counts.get(v, 0) + 1
+            # Count violations from ALL attempts, not just the final one
+            for attempt_violations in t.validator.attempt_violation_text:
+                for v in attempt_violations:
+                    violation_counts[v] = violation_counts.get(v, 0) + 1
+                    if v.startswith("[rule]"):
+                        rule_fast_path += 1
     return {
         "turns_checked": total,
         "turns_retried": retried,
         "turns_failed": failed,
         "total_retries": total_retries,
+        "rule_fast_path_violations": rule_fast_path,
         "top_violations": sorted(violation_counts.items(), key=lambda x: -x[1])[:10],
     }
 

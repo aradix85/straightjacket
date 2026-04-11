@@ -1,0 +1,2603 @@
+{
+  "started_at": "2026-04-11T02:00:50.415369",
+  "ended_at": "2026-04-11T02:02:13.123489",
+  "config": {
+    "username": "elvira",
+    "auto_mode": true,
+    "game": {
+      "load_existing": false,
+      "save_name": "autosave",
+      "setting_id": "starforged",
+      "player_name": "",
+      "pronouns": "",
+      "backstory": "",
+      "background_vow": "",
+      "stats": {},
+      "wishes": "",
+      "content_lines": ""
+    },
+    "session": {
+      "max_chapters": 1,
+      "max_turns": 10,
+      "narration_lang": "English",
+      "save_every_n_turns": 5,
+      "save_name_output": "elvira",
+      "clean_before_run": true
+    },
+    "bot_behavior": {
+      "burn_momentum": "auto",
+      "style": "explorer"
+    },
+    "logging": {
+      "log_file": "elvira_session.json",
+      "full_debug_log": true,
+      "print_full_narration": true,
+      "print_roll_details": true,
+      "assert_state_invariants": true
+    }
+  },
+  "engine_version": "0.39.0",
+  "auto_mode": true,
+  "style": "explorer",
+  "max_chapters": 1,
+  "character": "Annora Malek",
+  "location_start": "Cramped cargo bay of a starship",
+  "game_context": {
+    "setting_id": "starforged",
+    "setting_genre": "starforged",
+    "setting_tone": "",
+    "character_concept": "Naturalist, Outcast",
+    "pronouns": "they/them",
+    "paths": [
+      "naturalist",
+      "outcast"
+    ],
+    "backstory": "You are running from a criminal past",
+    "background_vow": "Explore Stranger",
+    "stats": {
+      "edge": 1,
+      "heart": 2,
+      "iron": 3,
+      "shadow": 2,
+      "wits": 1
+    }
+  },
+  "creation_data": {
+    "setting_id": "starforged",
+    "player_name": "Annora Malek",
+    "pronouns": "they/them",
+    "paths": [
+      "naturalist",
+      "outcast"
+    ],
+    "backstory": "You are running from a criminal past",
+    "background_vow": "Explore Stranger",
+    "background_vow_rank": "extreme",
+    "vow_subject": "",
+    "stats": {
+      "edge": 1,
+      "heart": 2,
+      "iron": 3,
+      "shadow": 2,
+      "wits": 1
+    },
+    "assets": [
+      "research_lab"
+    ],
+    "truths": {
+      "cataclysm": "The Sun Plague extinguished the stars in our home galaxy.",
+      "exodus": "A ragtag fleet of ships—propelled at tremendous speeds by experimental FTL drives—carried our ancestors to the Forge. But the technology that powered the ships is said to be the source of the Sundering, a fracturing of reality that plagues us here today.",
+      "communities": "Dangers abound, but there is safety in numbers. Many ships and settlements are united under the banner of one of the Founder Clans.",
+      "iron": "The Ironsworn bind their honor to iron blades.",
+      "laws": "Laws and governance vary across settled domains, but bounty hunters are given wide latitude to pursue their contracts. Their authority is almost universally recognized, and supersedes local laws.",
+      "religion": "Our gods failed us. We left them behind.",
+      "magic": "Supernatural powers are wielded by those rare people we call paragons.",
+      "communication_and_data": "Information is life. We rely on spaceborne couriers to transport messages and data across the vast distances between settlements.",
+      "medicine": "Our advanced medical technologies and expertise was lost during the Exodus.",
+      "artificial_intelligence": "We no longer have access to advanced computer systems. Instead, we must rely on the seers we call Adepts.",
+      "war": "Here in the Forge, resources are too precious to support organized fighting forces or advanced weaponry.",
+      "lifeforms": "Many sites and planets are infested by dreadful forgespawn. These aberrant creatures threaten to overrun other life in the galaxy.",
+      "precursors": "The Ascendancy, an advanced spacefaring empire, once ruled the entirety of the Forge. Vaults of inscrutable purpose are all that remain to mark the Ascendancy's legacy, but those places are untethered from our own reality.",
+      "horrors": "Most insist that horrors aren’t real. Spacers know the truth."
+    },
+    "wishes": "",
+    "content_lines": ""
+  },
+  "opening_narration": "The starship’s ventilation fans rattle in the bulkhead, circulating air that tastes of recycled carbon and hydraulic fluid. Strip lights flicker on overhead, casting a stark, white glare across the cramped cargo bay where you sit on your bunk. The metal deckplates are cold against your boots, and the steady pressure of the engine idling beneath the floor vibrates in your teeth. Condensation slicks the walls, gathering in the rivets and dripping onto the floor with a repetitive, dull splash.\n\nJasmine is at the workbench, wrestling with a rusted load limiter. Her greasy jumpsuit is dark with sweat at the collar as she leans her weight into a wrench. The tool slips, grating harshly against the nut, and she curses under her breath, wiping her palm on a rag. Beyond the blast door to the aft corridor, the heavy ring of a hammer against anvil echoes—Cedar is already at the makeshift forge, working the iron.\n\nA sharp wind whistles through a hairline fracture in the viewport seal, cutting through the warmth of the cabin. Your gaze catches on a patch of floor near the airlock that glistens darkly. It isn't oil or coolant. Grey sludge, thick and wet as river clay, is smeared across the grate, flecked with bits of black stone. It tracks from the outer hatch and stops dead at the bulkhead. The metal panel there dents outward with a sudden, violent clang, silencing the hammer strikes from the corridor.",
+  "opening_validator": {
+    "passed": true,
+    "retries": 1,
+    "violations": [],
+    "attempt_violations": [],
+    "attempt_violation_text": [],
+    "picked_attempt": -1
+  },
+  "story_blueprint": {
+    "structure_type": "3act",
+    "central_conflict": "Surface layer: Surviving the hostile environment of a derelict research station to secure a valuable salvage claim. Hidden layer: Confronting the criminal identity Annora fled from and deciding whether her past defines her future.",
+    "thematic_thread": "Redemption through survival—can one truly outrun their nature, or does the frontier force it to the surface?",
+    "acts": [
+      {
+        "phase": "setup",
+        "title": "The Silent Signal",
+        "goal": "Investigate a derelict research vessel broadcasting a distress signal from a volatile region of space.",
+        "scene_range": [
+          1,
+          6
+        ],
+        "mood": "Tense, cold, calculating",
+        "transition_trigger": "Player successfully docks with the derelict station and powers up the auxiliary bridge."
+      },
+      {
+        "phase": "confrontation",
+        "title": "Ghost in the Machine",
+        "goal": "Navigate the failing station, secure the salvage core, and deal with the arrival of a rival bounty hunter.",
+        "scene_range": [
+          7,
+          14
+        ],
+        "mood": "Claustrophobic, desperate, frantic",
+        "transition_trigger": "The rival bounty hunter corners Annora in the cargo bay, triggering a standoff over the data core."
+      },
+      {
+        "phase": "climax",
+        "title": "Zero Sum",
+        "goal": "Choose between securing the salvage for freedom or destroying the evidence to protect the innocent researchers left behind.",
+        "scene_range": [
+          15,
+          18
+        ],
+        "mood": "Explosive, sharp, consequential",
+        "transition_trigger": "The station's reactor begins a critical meltdown sequence after the firefight."
+      }
+    ]
+  },
+  "chapters": [
+    {
+      "chapter": 1,
+      "started_at_turn": 1,
+      "turns_played": 10,
+      "ended_reason": "max_turns_reached"
+    }
+  ],
+  "turns": [
+    {
+      "turn": 1,
+      "chapter": 1,
+      "scene": 2,
+      "location": "Cramped cargo bay of a starship",
+      "action": "I stand up slowly from the bunk, keeping my eyes fixed on the dented bulkhead, and move closer to Jasmine but stop short of the strange sludge. \"Jasmine,\" I say quietly, not taking my gaze off the dark patch on the floor. \"You've been staring at that load limiter for hours. Is your head actually in the engine right now, or are you thinking about the message you received from your sister last week? How is she doing?\"",
+      "narration": "Jasmine freezes mid-turn on the wrench, the grease on her hands glistening under the strip lights. She slowly lowers the tool, her gaze drifting from the grimy load limiter to your face, then down to the floor. The mention of her sister tightens her jaw, the muscles feathering under the layer of engine smut, and she wipes her palms on her jumpsuit with deliberate, stiff motions. \"She's holding on, Annora. Working the ice fields.\" Her voice is flat, stripped of its usual bite. \"Why are you asking?\"\n\nShe follows your line of sight to the grey sludge oozing toward the drain. The metallic screech from the bulkhead returns, high and grating, as another dent bulges outward, popping the rivets. The vibration rattles the tools on the bench, and the sludge ripples like disturbed water. Cedar’s hammering from the corridor cuts off abruptly, leaving only the heavy, wet hiss of the air recyclers and the groan of stressed metal. Jasmine takes a sharp step back, her boots scuffing the deck, and reaches for a kinetic sidearm holstered near the workbench.",
+      "narration_excerpt": "Jasmine freezes mid-turn on the wrench, the grease on her hands glistening under the strip lights. She slowly lowers the tool, her gaze drifting from the grimy load limiter to your face, then down to the floor. The mention of her sister tightens her jaw, the muscles feathering under the layer of eng",
+      "roll": {
+        "stat": "heart",
+        "d1": 2,
+        "d2": 6,
+        "total": 10,
+        "c1": 9,
+        "c2": 1,
+        "result": "STRONG_HIT",
+        "match": false
+      },
+      "brain": {
+        "move": "compel",
+        "stat": "heart",
+        "target_npc": "npc_1",
+        "approach": "Using personal connection to Jasmine's sister to draw her attention from the work and toward the pressing danger",
+        "player_intent": "Draw Jasmine's attention away from the load limiter and toward the suspicious sludge and dented bulkhead",
+        "dialog_only": false
+      },
+      "burn_taken": false,
+      "director_ran": false,
+      "director_guidance": {
+        "narrator_guidance": "",
+        "pacing": "",
+        "arc_notes": ""
+      },
+      "state_after": {
+        "health": 5,
+        "spirit": 5,
+        "supply": 5,
+        "momentum": 4,
+        "chaos": 3,
+        "scene": 2,
+        "location": "Cramped cargo bay of a starship",
+        "time_of_day": "deep_night",
+        "scene_context": "STRONG_HIT on pressed someone at Cramped cargo bay of a starship — Jasmine, Cedar",
+        "active_threads": 1,
+        "active_characters": 2,
+        "active_vow_tracks": 1
+      },
+      "npcs": [
+        {
+          "id": "npc_1",
+          "name": "Jasmine",
+          "status": "active",
+          "disposition": "neutral",
+          "bond": 1,
+          "agenda": "Repair the ship's malfunctioning equipment.",
+          "instinct": "Wipe grease on a rag when frustrated.",
+          "arc": "",
+          "memory_count": 2,
+          "last_memory": "scene 2: Annora Malek pressed someone involving Jasmine — connected and made real progress",
+          "last_location": "Cramped cargo bay of a starship",
+          "importance_accumulator": 9,
+          "needs_reflection": false,
+          "aliases": []
+        },
+        {
+          "id": "npc_2",
+          "name": "Cedar",
+          "status": "active",
+          "disposition": "neutral",
+          "bond": 0,
+          "agenda": "Forge iron tools or parts for the ship.",
+          "instinct": "Strike the anvil with a hammer when working.",
+          "arc": "",
+          "memory_count": 2,
+          "last_memory": "scene 2: Annora Malek pressed someone — connected and made real progress",
+          "last_location": "Cramped cargo bay of a starship",
+          "importance_accumulator": 7,
+          "needs_reflection": false,
+          "aliases": []
+        }
+      ],
+      "clocks": [
+        {
+          "name": "Unknown Intrusion",
+          "clock_type": "threat",
+          "filled": 1,
+          "segments": 6,
+          "owner": "The Forge",
+          "fired": false
+        }
+      ],
+      "validator": {
+        "passed": true,
+        "retries": 0,
+        "violations": [],
+        "attempt_violations": [
+          0
+        ],
+        "attempt_violation_text": [
+          []
+        ],
+        "picked_attempt": -1
+      },
+      "engine_log": {
+        "summary": "Draw Jasmine's attention away from the load limiter and toward the suspicious sludge and dented bulkhead",
+        "move": "compel",
+        "result": "STRONG_HIT",
+        "chaos_interrupt": null,
+        "director_trigger": "",
+        "consequences": [],
+        "clock_events": [],
+        "position": "risky",
+        "effect": "standard",
+        "npc_activation": {
+          "Jasmine": {
+            "score": 2.08,
+            "reasons": [
+              "target",
+              "name",
+              "tfidf:0.05",
+              "recent"
+            ],
+            "status": "activated"
+          },
+          "Cedar": {
+            "score": 1.0,
+            "reasons": [
+              "name",
+              "recent"
+            ],
+            "status": "activated"
+          }
+        }
+      },
+      "story_arc": {
+        "phase": "setup",
+        "title": "The Silent Signal",
+        "goal": "Investigate a derelict research vessel broadcasting a distress signal from a volatile region of space.",
+        "mood": "Tense, cold, calculating",
+        "story_complete": false
+      },
+      "token_usage": [
+        {
+          "role": "director",
+          "input": 1806,
+          "output": 38
+        },
+        {
+          "role": "director",
+          "input": 2368,
+          "output": 705
+        },
+        {
+          "role": "director",
+          "input": 2419,
+          "output": 644
+        },
+        {
+          "role": "narrator",
+          "input": 2291,
+          "output": 372
+        },
+        {
+          "role": "architect_chapter",
+          "input": 766,
+          "output": 639
+        },
+        {
+          "role": "narrator",
+          "input": 3230,
+          "output": 312
+        },
+        {
+          "role": "validator",
+          "input": 1249,
+          "output": 17
+        },
+        {
+          "role": "validator_architect",
+          "input": 452,
+          "output": 25
+        },
+        {
+          "role": "narrator_retry",
+          "input": 1173,
+          "output": 347
+        },
+        {
+          "role": "brain",
+          "input": 976,
+          "output": 14
+        },
+        {
+          "role": "brain",
+          "input": 1147,
+          "output": 164
+        },
+        {
+          "role": "brain",
+          "input": 1116,
+          "output": 134
+        },
+        {
+          "role": "narrator",
+          "input": 2914,
+          "output": 243
+        },
+        {
+          "role": "validator",
+          "input": 1278,
+          "output": 18
+        },
+        {
+          "role": "metadata",
+          "input": 1046,
+          "output": 81
+        }
+      ],
+      "is_correction": false
+    },
+    {
+      "turn": 2,
+      "chapter": 1,
+      "scene": 3,
+      "location": "Cramped cargo bay of a starship",
+      "action": "I raise my hands slowly, palms open, and keep my voice low to steady the situation. \"Just checking in, Jasmine. Family is all we have out here.\" I glance toward the corridor where Cedar's hammering fell silent, my brow furrowing. \"Did Cedar stop working? It got too quiet too fast.\" Without moving closer to her, I shift my weight to look past the workbench, trying to catch a glimpse of the grey sludge's source or any movement in the shadows near the bulging bulkhead.",
+      "narration": "Jasmine ignores your open palms, her focus locked entirely on the buckling metal. \"He didn't stop,\" she snaps, her voice tight. \"Something stopped him.\"\n\nThe bulkhead screams, a high-pitched tearing of steel that shears through the air. A jagged fissure bursts open across the panel, venting a cloud of noxious, yellowish gas that instantly stings your eyes and throat. You cough violently, doubling over as the chemical burn seizes your chest. Through watering vision, you see your medical satchel slide off the bench as the ship lists, spilling bandages and antiseptic vials into the widening pool of grey sludge. The fluid hisses, dissolving the fabric and glass into a bubbling foam.\n\nA heavy, taloned limb hooks into the tear, ripping the bulkhead the rest of the way open with a screech of tortured metal. The creature shambles into the cargo bay—a hulking mass of chitin and blackened iron, dripping wet grey residue onto the deck. It strikes blindly with a serrated forelimb, catching a stack of supply crates and pulverizing them into splinters and plastic shards. Debris sprays across the room, pinging off your armor. You scramble backward, your boots sliding on the slick, contaminated floor, your grip on your weapon uncertain as the beast blocks the path to the airlock.",
+      "narration_excerpt": "Jasmine ignores your open palms, her focus locked entirely on the buckling metal. \"He didn't stop,\" she snaps, her voice tight. \"Something stopped him.\"  The bulkhead screams, a high-pitched tearing of steel that shears through the air. A jagged fissure bursts open across the panel, venting a cloud ",
+      "roll": {
+        "stat": "wits",
+        "d1": 1,
+        "d2": 2,
+        "total": 4,
+        "c1": 9,
+        "c2": 6,
+        "result": "MISS",
+        "match": false
+      },
+      "brain": {
+        "move": "face_danger",
+        "stat": "wits",
+        "target_npc": "",
+        "approach": "Observing quietly and scanning for the source of the grey sludge and any movement in the shadows",
+        "player_intent": "De-escalate with Jasmine while investigating the suspicious quiet and the source of the grey sludge near the bulging bul",
+        "dialog_only": false
+      },
+      "burn_taken": false,
+      "director_ran": true,
+      "director_guidance": {
+        "narrator_guidance": "",
+        "pacing": "",
+        "arc_notes": ""
+      },
+      "state_after": {
+        "health": 4,
+        "spirit": 5,
+        "supply": 4,
+        "momentum": 2,
+        "chaos": 4,
+        "scene": 3,
+        "location": "Cramped cargo bay of a starship",
+        "time_of_day": "deep_night",
+        "scene_context": "MISS on faced danger at Cramped cargo bay of a starship — Jasmine, Cedar",
+        "active_threads": 1,
+        "active_characters": 2,
+        "active_vow_tracks": 1
+      },
+      "npcs": [
+        {
+          "id": "npc_1",
+          "name": "Jasmine",
+          "status": "active",
+          "disposition": "neutral",
+          "bond": 1,
+          "agenda": "Repair the ship's malfunctioning equipment.",
+          "instinct": "Wipe grease on a rag when frustrated.",
+          "arc": "",
+          "memory_count": 3,
+          "last_memory": "scene 3: Annora Malek faced danger — failed and the situation deteriorated (supply -1, health -1, mo",
+          "last_location": "Cramped cargo bay of a starship",
+          "importance_accumulator": 13,
+          "needs_reflection": false,
+          "aliases": []
+        },
+        {
+          "id": "npc_2",
+          "name": "Cedar",
+          "status": "active",
+          "disposition": "neutral",
+          "bond": 0,
+          "agenda": "Forge iron tools or parts for the ship.",
+          "instinct": "Strike the anvil with a hammer when working.",
+          "arc": "",
+          "memory_count": 3,
+          "last_memory": "scene 3: Annora Malek faced danger — failed and the situation deteriorated (supply -1, health -1, mo",
+          "last_location": "Cramped cargo bay of a starship",
+          "importance_accumulator": 11,
+          "needs_reflection": false,
+          "aliases": []
+        },
+        {
+          "id": "npc_3",
+          "name": "Unknown Creature",
+          "status": "active",
+          "disposition": "hostile",
+          "bond": 0,
+          "agenda": "",
+          "instinct": "",
+          "arc": "",
+          "memory_count": 1,
+          "last_memory": "A hulking mass of chitin and blackened iron, dripping wet grey residue, with a heavy, taloned limb a",
+          "last_location": "Cramped cargo bay of a starship",
+          "importance_accumulator": 0,
+          "needs_reflection": false,
+          "aliases": []
+        }
+      ],
+      "clocks": [
+        {
+          "name": "Unknown Intrusion",
+          "clock_type": "threat",
+          "filled": 2,
+          "segments": 6,
+          "owner": "The Forge",
+          "fired": false
+        }
+      ],
+      "validator": {
+        "passed": true,
+        "retries": 0,
+        "violations": [],
+        "attempt_violations": [
+          0
+        ],
+        "attempt_violation_text": [
+          []
+        ],
+        "picked_attempt": -1
+      },
+      "engine_log": {
+        "summary": "De-escalate with Jasmine while investigating the suspicious quiet and the source of the grey sludge near the bulging bulkhead",
+        "move": "face_danger",
+        "result": "MISS",
+        "chaos_interrupt": null,
+        "director_trigger": "miss",
+        "consequences": [
+          "supply -1, health -1",
+          "momentum -2"
+        ],
+        "clock_events": [],
+        "position": "risky",
+        "effect": "standard",
+        "npc_activation": {
+          "Jasmine": {
+            "score": 1.0,
+            "reasons": [
+              "name",
+              "recent"
+            ],
+            "status": "activated"
+          },
+          "Cedar": {
+            "score": 1.0,
+            "reasons": [
+              "name",
+              "recent"
+            ],
+            "status": "activated"
+          }
+        }
+      },
+      "story_arc": {
+        "phase": "setup",
+        "title": "The Silent Signal",
+        "goal": "Investigate a derelict research vessel broadcasting a distress signal from a volatile region of space.",
+        "mood": "Tense, cold, calculating",
+        "story_complete": false
+      },
+      "token_usage": [
+        {
+          "role": "brain",
+          "input": 961,
+          "output": 27
+        },
+        {
+          "role": "brain",
+          "input": 1400,
+          "output": 179
+        },
+        {
+          "role": "brain",
+          "input": 1116,
+          "output": 152
+        },
+        {
+          "role": "narrator",
+          "input": 3292,
+          "output": 290
+        },
+        {
+          "role": "validator",
+          "input": 1414,
+          "output": 19
+        },
+        {
+          "role": "metadata",
+          "input": 1126,
+          "output": 84
+        }
+      ],
+      "is_correction": false
+    },
+    {
+      "turn": 3,
+      "chapter": 1,
+      "scene": 4,
+      "location": "Cramped cargo bay of a starship",
+      "action": "I scramble backward, keeping low to stay beneath the creature's erratic strikes, and snatch my medscanner from the pile of spilled equipment before the sludge consumes it. While the monster is distracted pulverizing the crates, I drag Jasmine toward the ventilation grate near the floor, scanning the beast's chitinous plating for the source of that leaking residue. \"Jasmine, look at me!\" I shout over the din, shoving her toward the opening. \"Is that the same containment unit you and Cedar were running diagnostics on yesterday? What were you growing in that sector?\"",
+      "narration": "You drop to your knees, the medscanner clutched tight in your grip, and crawl beneath the sweeping arc of a serrated limb. The beast crashes into the cargo locker, shearing metal off the bulkhead in a shower of sparks, but you keep your eyes on the scanner’s display. It flickers erratically, locking onto a bio-luminescent patch beneath the creature's thorax where the grey sludge weeps from a hairline fracture in the chitin. The readout spikes with energy readings, a perfect match for the illegal containment signatures you saw yesterday.\n\nYou grab Jasmine by the strap of her jumpsuit, dragging her toward the ventilation grate as the beast thrashes against the far wall. \"Jasmine, look at me!\" you shout over the screech of tearing metal. She stumbles, her boots sliding on the slick residue, but her eyes snap to yours. \"Is that the same containment unit you and Cedar were running diagnostics on yesterday? What were you growing in that sector?\"\n\nShe jams a pry-bar into the grate, wrenching it open with a grunt of effort. \"It wasn't growth, it was a guardian!\" she yells, shoving you toward the opening as the creature turns its head. \"That fracture is the pressure seal! Hit the leak with an electrical charge and it'll overheat!\" She scrambles into the duct behind you, kicking the grate back into place just as the beast’s claws rake across the metal, sending a violent vibration through the floor.",
+      "narration_excerpt": "You drop to your knees, the medscanner clutched tight in your grip, and crawl beneath the sweeping arc of a serrated limb. The beast crashes into the cargo locker, shearing metal off the bulkhead in a shower of sparks, but you keep your eyes on the scanner’s display. It flickers erratically, locking",
+      "roll": {
+        "stat": "wits",
+        "d1": 4,
+        "d2": 3,
+        "total": 8,
+        "c1": 6,
+        "c2": 6,
+        "result": "STRONG_HIT",
+        "match": true
+      },
+      "brain": {
+        "move": "secure_advantage",
+        "stat": "wits",
+        "target_npc": "Jasmine",
+        "approach": "Scanning the creature's chitinous plating while dragging Jasmine to safety and interrogating her about the containment unit",
+        "player_intent": "Escape through the ventilation grate while identifying the creature's weakness and getting information from Jasmine abou",
+        "dialog_only": false
+      },
+      "burn_taken": false,
+      "director_ran": false,
+      "director_guidance": {
+        "narrator_guidance": "Focus the next scene on immediate physical survival using the environment; the creature's blind aggression makes it vulnerable to the hazardous gas or loose debris. Jasmine's comment suggests she knows the station's defense protocols—force her to use that knowledge to stun the creature, creating a momentary pause. After neutralizing the immediate threat, shift to a 'breather' scene to treat injuries and assess the destroyed supplies.",
+        "pacing": "breather",
+        "arc_notes": "The external threat clock advances as the creature breaches the hull, raising the stakes from environmental hazards to active combat. The destruction of medical supplies raises the tension clock for survival resources.",
+        "npc_guidance": {
+          "npc_3": "The creature should attack the nearest noise or movement with overwhelming force but recoil if it encounters the specific defensive frequency or barrier that halted it before.",
+          "npc_2": "Jasmine must shift from observation to action; she needs to identify the weak point in the creature's armor or the mechanism that stopped it."
+        }
+      },
+      "state_after": {
+        "health": 4,
+        "spirit": 5,
+        "supply": 4,
+        "momentum": 4,
+        "chaos": 3,
+        "scene": 4,
+        "location": "Cramped cargo bay of a starship",
+        "time_of_day": "deep_night",
+        "scene_context": "STRONG_HIT on prepared carefully at Cramped cargo bay of a starship — Jasmine, Cedar, Unknown Creature",
+        "active_threads": 1,
+        "active_characters": 2,
+        "active_vow_tracks": 1
+      },
+      "npcs": [
+        {
+          "id": "npc_1",
+          "name": "Jasmine",
+          "status": "active",
+          "disposition": "neutral",
+          "bond": 1,
+          "agenda": "Repair the ship's malfunctioning equipment.",
+          "instinct": "Wipe grease on a rag when frustrated.",
+          "arc": "",
+          "memory_count": 4,
+          "last_memory": "scene 4: Annora Malek prepared carefully — succeeded cleanly",
+          "last_location": "Cramped cargo bay of a starship",
+          "importance_accumulator": 17,
+          "needs_reflection": false,
+          "aliases": []
+        },
+        {
+          "id": "npc_2",
+          "name": "Cedar",
+          "status": "active",
+          "disposition": "neutral",
+          "bond": 0,
+          "agenda": "Forge iron tools or parts for the ship.",
+          "instinct": "Strike the anvil with a hammer when working.",
+          "arc": "",
+          "memory_count": 4,
+          "last_memory": "scene 4: Annora Malek prepared carefully — succeeded cleanly",
+          "last_location": "Cramped cargo bay of a starship",
+          "importance_accumulator": 15,
+          "needs_reflection": false,
+          "aliases": []
+        },
+        {
+          "id": "npc_3",
+          "name": "Unknown Creature",
+          "status": "active",
+          "disposition": "hostile",
+          "bond": 0,
+          "agenda": "Break through the cargo bay containment.",
+          "instinct": "Lash out at unknown stimuli.",
+          "arc": "The creature's breach reveals the station's security is active but corrupted, turning defenses into intruders.",
+          "memory_count": 3,
+          "last_memory": "scene 4: Annora Malek prepared carefully — succeeded cleanly",
+          "last_location": "Cramped cargo bay of a starship",
+          "importance_accumulator": 6,
+          "needs_reflection": false,
+          "aliases": []
+        }
+      ],
+      "clocks": [
+        {
+          "name": "Unknown Intrusion",
+          "clock_type": "threat",
+          "filled": 2,
+          "segments": 6,
+          "owner": "The Forge",
+          "fired": false
+        }
+      ],
+      "validator": {
+        "passed": false,
+        "retries": 3,
+        "violations": [
+          "[llm] RESOLUTION PACING: Jasmine answers the specific question about the containment unit but also volunteers the solution to the puzzle (hit the leak with an electrical charge) and context about the fracture being a pressure seal, explaining the mystery in the same scene it appears."
+        ],
+        "attempt_violations": [
+          1,
+          2,
+          2,
+          2
+        ],
+        "attempt_violation_text": [
+          [
+            "[llm] RESOLUTION PACING: Jasmine answers the specific question about the containment unit but also volunteers the solution to the puzzle (hit the leak with an electrical charge) and context about the fracture being a pressure seal, explaining the mystery in the same scene it appears."
+          ],
+          [
+            "[llm] RESOLUTION PACING: NPC Jasmine volunteers unsolicited information ('It wasn't growth, it was a guardian') and context about the creature's nature, answering more than the specific question asked.",
+            "[llm] RESOLUTION PACING: NPC Jasmine speaks two sentences, but the second sentence provides unrequested context/theory, violating the rule against volunteering information."
+          ],
+          [
+            "[llm] RESOLUTION PACING: NPC answers the specific question asked and volunteers unsolicited context about the creature's nature ('It was a guardian').",
+            "[llm] GENRE PHYSICS: Inanimate residue is described as 'weeping', attributing human emotion/biological function to a fluid."
+          ],
+          [
+            "[llm] RESOLUTION PACING: NPC Jasmine answers the specific question asked but then adds unsolicited context about scrambling into the duct, slipping, kicking the grate, and the creature's reaction, exceeding the two-sentence limit and volunteering narrative details not requested.",
+            "[llm] PLAYER AGENCY: Narrator decides the player character shouts a specific question about 'what were you growing' and identifies a 'hairline fracture', taking away the player's choice of what to ask and what to observe."
+          ]
+        ],
+        "picked_attempt": 0
+      },
+      "engine_log": {
+        "summary": "Escape through the ventilation grate while identifying the creature's weakness and getting information from Jasmine about its origin",
+        "move": "secure_advantage",
+        "result": "STRONG_HIT",
+        "chaos_interrupt": null,
+        "director_trigger": "",
+        "consequences": [],
+        "clock_events": [],
+        "position": "risky",
+        "effect": "standard",
+        "npc_activation": {
+          "Jasmine": {
+            "score": 2.0,
+            "reasons": [
+              "target",
+              "name",
+              "recent"
+            ],
+            "status": "activated"
+          },
+          "Cedar": {
+            "score": 1.0,
+            "reasons": [
+              "name",
+              "recent"
+            ],
+            "status": "activated"
+          },
+          "Unknown Creature": {
+            "score": 0.8,
+            "reasons": [
+              "part:creature",
+              "recent"
+            ],
+            "status": "activated"
+          }
+        }
+      },
+      "story_arc": {
+        "phase": "setup",
+        "title": "The Silent Signal",
+        "goal": "Investigate a derelict research vessel broadcasting a distress signal from a volatile region of space.",
+        "mood": "Tense, cold, calculating",
+        "story_complete": false
+      },
+      "token_usage": [
+        {
+          "role": "director",
+          "input": 1629,
+          "output": 28
+        },
+        {
+          "role": "director",
+          "input": 1745,
+          "output": 470
+        },
+        {
+          "role": "director",
+          "input": 2229,
+          "output": 425
+        },
+        {
+          "role": "brain",
+          "input": 979,
+          "output": 14
+        },
+        {
+          "role": "brain",
+          "input": 1265,
+          "output": 179
+        },
+        {
+          "role": "brain",
+          "input": 1134,
+          "output": 150
+        },
+        {
+          "role": "narrator",
+          "input": 3867,
+          "output": 311
+        },
+        {
+          "role": "validator",
+          "input": 1354,
+          "output": 97
+        },
+        {
+          "role": "narrator",
+          "input": 4422,
+          "output": 225
+        },
+        {
+          "role": "validator",
+          "input": 1268,
+          "output": 114
+        },
+        {
+          "role": "narrator",
+          "input": 4336,
+          "output": 196
+        },
+        {
+          "role": "validator",
+          "input": 1239,
+          "output": 96
+        },
+        {
+          "role": "narrator",
+          "input": 4417,
+          "output": 233
+        },
+        {
+          "role": "validator",
+          "input": 1276,
+          "output": 149
+        },
+        {
+          "role": "metadata",
+          "input": 1174,
+          "output": 118
+        }
+      ],
+      "is_correction": false
+    },
+    {
+      "turn": 4,
+      "chapter": 1,
+      "scene": 5,
+      "location": "Cramped cargo bay of a starship",
+      "action": "\"Cedar,\" I whisper into the dark of the ventilation shaft, twisting around to face Jasmine as we inch away from the chaos. \"Does he know? If this thing was your *guardian*, why is it loose in the cargo bay?\" I keep my movements slow and deliberate, scanning the duct interior for any claw marks or old stains that hint at previous escape routes. \"Is there anything in there worth dying for, or just more corporate secrets?\"",
+      "narration": "<o>\nThe light from your scanner sweeps the curved walls of the ventilation shaft, picking out deep, parallel gouges in the metal plating and rust-colored streaks smeared across the joints where something heavy was dragged through repeatedly. Below the grate, the construct slams into the blast doors with a sound like tearing sheet metal, the impact vibrating through the floor grating and into your ribs. The air in the duct tastes of ozone and hydraulic fluid, cold against your skin as you shift your weight in the cramped space.\n\nCedar keeps his eyes on the darkness behind you, his knuckles white where he grips his sidearm. \"He knows.\" He checks the charge on his weapon, the indicator light blinking once.\n\nJasmine leans past you, tapping a sequence into her datapad that illuminates the sweat on her forehead. \"Just the secrets.\" She points to a small junction box mounted near the vent opening. \"The maintenance seal has a frequency. It reacts to the guardian's signature.\"",
+      "narration_excerpt": "<o> The light from your scanner sweeps the curved walls of the ventilation shaft, picking out deep, parallel gouges in the metal plating and rust-colored streaks smeared across the joints where something heavy was dragged through repeatedly. Below the grate, the construct slams into the blast doors ",
+      "roll": {
+        "stat": "wits",
+        "d1": 5,
+        "d2": 4,
+        "total": 10,
+        "c1": 5,
+        "c2": 4,
+        "result": "STRONG_HIT",
+        "match": false
+      },
+      "brain": {
+        "move": "gather_information",
+        "stat": "wits",
+        "target_npc": "npc_2",
+        "approach": "Scanning the ventilation shaft interior for claw marks, stains, or signs of previous escape routes while questioning Cedar about the creature's origins and what might be worth protecting in the cargo bay.",
+        "player_intent": "Question Cedar about whether the unknown creature being a 'guardian' means someone knows it's loose, and determine if th",
+        "dialog_only": false
+      },
+      "burn_taken": false,
+      "director_ran": false,
+      "director_guidance": {
+        "narrator_guidance": "Focus the next scene on immediate physical survival using the environment; the creature's blind aggression makes it vulnerable to the hazardous gas or loose debris. Jasmine's comment suggests she knows the station's defense protocols—force her to use that knowledge to stun the creature, creating a momentary pause. After neutralizing the immediate threat, shift to a 'breather' scene to treat injuries and assess the destroyed supplies.",
+        "pacing": "breather",
+        "arc_notes": "The external threat clock advances as the creature breaches the hull, raising the stakes from environmental hazards to active combat. The destruction of medical supplies raises the tension clock for survival resources.",
+        "npc_guidance": {
+          "npc_3": "The creature should attack the nearest noise or movement with overwhelming force but recoil if it encounters the specific defensive frequency or barrier that halted it before.",
+          "npc_2": "Jasmine must shift from observation to action; she needs to identify the weak point in the creature's armor or the mechanism that stopped it."
+        }
+      },
+      "state_after": {
+        "health": 4,
+        "spirit": 5,
+        "supply": 4,
+        "momentum": 6,
+        "chaos": 3,
+        "scene": 5,
+        "location": "Cramped cargo bay of a starship",
+        "time_of_day": "deep_night",
+        "scene_context": "STRONG_HIT on investigated at Cramped cargo bay of a starship — Jasmine, Cedar, Unknown Creature",
+        "active_threads": 1,
+        "active_characters": 2,
+        "active_vow_tracks": 1
+      },
+      "npcs": [
+        {
+          "id": "npc_1",
+          "name": "Jasmine",
+          "status": "active",
+          "disposition": "neutral",
+          "bond": 1,
+          "agenda": "Repair the ship's malfunctioning equipment.",
+          "instinct": "Wipe grease on a rag when frustrated.",
+          "arc": "",
+          "memory_count": 5,
+          "last_memory": "scene 5: Annora Malek investigated — succeeded cleanly",
+          "last_location": "Cramped cargo bay of a starship",
+          "importance_accumulator": 21,
+          "needs_reflection": false,
+          "aliases": []
+        },
+        {
+          "id": "npc_2",
+          "name": "Cedar",
+          "status": "active",
+          "disposition": "neutral",
+          "bond": 0,
+          "agenda": "Forge iron tools or parts for the ship.",
+          "instinct": "Strike the anvil with a hammer when working.",
+          "arc": "",
+          "memory_count": 5,
+          "last_memory": "scene 5: Annora Malek investigated involving Cedar — succeeded cleanly",
+          "last_location": "Cramped cargo bay of a starship",
+          "importance_accumulator": 19,
+          "needs_reflection": false,
+          "aliases": []
+        },
+        {
+          "id": "npc_3",
+          "name": "Unknown Creature",
+          "status": "active",
+          "disposition": "hostile",
+          "bond": 0,
+          "agenda": "Break through the cargo bay containment.",
+          "instinct": "Lash out at unknown stimuli.",
+          "arc": "The creature's breach reveals the station's security is active but corrupted, turning defenses into intruders.",
+          "memory_count": 4,
+          "last_memory": "scene 5: Annora Malek investigated — succeeded cleanly",
+          "last_location": "Cramped cargo bay of a starship",
+          "importance_accumulator": 12,
+          "needs_reflection": false,
+          "aliases": []
+        }
+      ],
+      "clocks": [
+        {
+          "name": "Unknown Intrusion",
+          "clock_type": "threat",
+          "filled": 2,
+          "segments": 6,
+          "owner": "The Forge",
+          "fired": false
+        }
+      ],
+      "validator": {
+        "passed": false,
+        "retries": 3,
+        "violations": [
+          "[llm] RESOLUTION PACING: Jasmine volunteers unsolicited information about the maintenance seal's frequency and its reaction to the guardian's signature, explaining the mystery in the same scene it appears."
+        ],
+        "attempt_violations": [
+          2,
+          2,
+          2,
+          1
+        ],
+        "attempt_violation_text": [
+          [
+            "[llm] RESOLUTION PACING: Jasmine volunteers unsolicited context about the drive core, the Vault, and the Obsidian Wing's intentions, explaining the mystery immediately.",
+            "[llm] RESOLUTION PACING: Jasmine speaks four sentences, exceeding the two-sentence limit."
+          ],
+          [
+            "[llm] RESOLUTION PACING: Jasmine volunteers unsolicited context about the drive core and value, answering more than the specific question asked.",
+            "[llm] PLAYER AGENCY: Narrator concludes that the creature has been escaping for a long time and defines what Jasmine and Cedar thought they were guarding."
+          ],
+          [
+            "[llm] RESOLUTION PACING: Jasmine volunteers three facts (seal has frequency, points to junction box, reacts to guardian's signature) in response to no specific question.",
+            "[llm] RESOLUTION PACING: Cedar volunteers two sentences of context ('He knows', 'There is nothing else') without being asked a specific question."
+          ],
+          [
+            "[llm] RESOLUTION PACING: Jasmine volunteers unsolicited information about the maintenance seal's frequency and its reaction to the guardian's signature, explaining the mystery in the same scene it appears."
+          ]
+        ],
+        "picked_attempt": -1
+      },
+      "engine_log": {
+        "summary": "Question Cedar about whether the unknown creature being a 'guardian' means someone knows it's loose, and determine if there's anything in the cargo bay worth dying for beyond corporate secrets",
+        "move": "gather_information",
+        "result": "STRONG_HIT",
+        "chaos_interrupt": null,
+        "director_trigger": "",
+        "consequences": [],
+        "clock_events": [],
+        "position": "risky",
+        "effect": "standard",
+        "npc_activation": {
+          "Jasmine": {
+            "score": 1.0,
+            "reasons": [
+              "name",
+              "recent"
+            ],
+            "status": "activated"
+          },
+          "Cedar": {
+            "score": 2.0,
+            "reasons": [
+              "target",
+              "name",
+              "recent"
+            ],
+            "status": "activated"
+          },
+          "Unknown Creature": {
+            "score": 1.11,
+            "reasons": [
+              "name",
+              "tfidf:0.07",
+              "recent"
+            ],
+            "status": "activated"
+          }
+        }
+      },
+      "story_arc": {
+        "phase": "setup",
+        "title": "The Silent Signal",
+        "goal": "Investigate a derelict research vessel broadcasting a distress signal from a volatile region of space.",
+        "mood": "Tense, cold, calculating",
+        "story_complete": false
+      },
+      "token_usage": [
+        {
+          "role": "brain",
+          "input": 960,
+          "output": 40
+        },
+        {
+          "role": "brain",
+          "input": 1911,
+          "output": 184
+        },
+        {
+          "role": "brain",
+          "input": 1120,
+          "output": 154
+        },
+        {
+          "role": "narrator",
+          "input": 4071,
+          "output": 292
+        },
+        {
+          "role": "validator",
+          "input": 1321,
+          "output": 104
+        },
+        {
+          "role": "narrator",
+          "input": 4579,
+          "output": 238
+        },
+        {
+          "role": "validator",
+          "input": 1269,
+          "output": 102
+        },
+        {
+          "role": "narrator",
+          "input": 4609,
+          "output": 193
+        },
+        {
+          "role": "validator",
+          "input": 1221,
+          "output": 102
+        },
+        {
+          "role": "narrator",
+          "input": 4479,
+          "output": 206
+        },
+        {
+          "role": "validator",
+          "input": 1234,
+          "output": 82
+        },
+        {
+          "role": "metadata",
+          "input": 1066,
+          "output": 170
+        }
+      ],
+      "is_correction": false
+    },
+    {
+      "turn": 5,
+      "chapter": 1,
+      "scene": 6,
+      "location": "Cramped cargo bay of a starship",
+      "action": "I run my scanner over the junction box Jasmine pointed out, studying the maintenance seal closely while keeping my voice low. \"It reacts? You've seen this tech before, haven't you, Jasmine? It feels too specific for a coincidence.\" I extend a hand towards the seal, letting the device hover near the mechanism without touching it yet to gauge the energy signature before I ask her, \"What exactly happened the last time you crossed paths with this guardian's design?\"",
+      "narration": "<o>\nThe scanner’s holographic display flickers with a pale amber readout, showing faint concentric pulses emanating from the seal's surface—a dormant resonance pattern that hums in time with the ship's auxiliary power. The creature slams against the blast doors below, the impact shuddering through the deck plates and shaking dust from the overhead conduit lines.\n\nJasmine wipes a streak of grime from her forehead, eyes fixed on the rhythmic light on your screen. \"It sealed the bridge on a rig I crewed five years ago and waited for the air to run out.\" She turns immediately to the junction box, prying the cover off with a multitool to expose the raw wiring. \"It listens to resonance spikes. Pipe this frequency through the local comms and it will think it's hitting a forcefield.\"",
+      "narration_excerpt": "<o> The scanner’s holographic display flickers with a pale amber readout, showing faint concentric pulses emanating from the seal's surface—a dormant resonance pattern that hums in time with the ship's auxiliary power. The creature slams against the blast doors below, the impact shuddering through t",
+      "roll": {
+        "stat": "wits",
+        "d1": 6,
+        "d2": 4,
+        "total": 10,
+        "c1": 8,
+        "c2": 1,
+        "result": "STRONG_HIT",
+        "match": false
+      },
+      "brain": {
+        "move": "gather_information",
+        "stat": "wits",
+        "target_npc": "npc_1",
+        "approach": "Using the scanner to analyze the energy signature of the maintenance seal while questioning Jasmine about her past experience with this technology",
+        "player_intent": "Analyze the junction box's energy signature and extract information from Jasmine about her history with this guardian te",
+        "dialog_only": false
+      },
+      "burn_taken": false,
+      "director_ran": true,
+      "director_guidance": {
+        "narrator_guidance": "Focus the next scene on immediate physical survival using the environment; the creature's blind aggression makes it vulnerable to the hazardous gas or loose debris. Jasmine's comment suggests she knows the station's defense protocols—force her to use that knowledge to stun the creature, creating a momentary pause. After neutralizing the immediate threat, shift to a 'breather' scene to treat injuries and assess the destroyed supplies.",
+        "pacing": "breather",
+        "arc_notes": "The external threat clock advances as the creature breaches the hull, raising the stakes from environmental hazards to active combat. The destruction of medical supplies raises the tension clock for survival resources.",
+        "npc_guidance": {
+          "npc_3": "The creature should attack the nearest noise or movement with overwhelming force but recoil if it encounters the specific defensive frequency or barrier that halted it before.",
+          "npc_2": "Jasmine must shift from observation to action; she needs to identify the weak point in the creature's armor or the mechanism that stopped it."
+        }
+      },
+      "state_after": {
+        "health": 4,
+        "spirit": 5,
+        "supply": 4,
+        "momentum": 8,
+        "chaos": 3,
+        "scene": 6,
+        "location": "Cramped cargo bay of a starship",
+        "time_of_day": "deep_night",
+        "scene_context": "STRONG_HIT on investigated at Cramped cargo bay of a starship — Jasmine, Cedar, Unknown Creature",
+        "active_threads": 1,
+        "active_characters": 2,
+        "active_vow_tracks": 1
+      },
+      "npcs": [
+        {
+          "id": "npc_1",
+          "name": "Jasmine",
+          "status": "active",
+          "disposition": "neutral",
+          "bond": 1,
+          "agenda": "Repair the ship's malfunctioning equipment.",
+          "instinct": "Wipe grease on a rag when frustrated.",
+          "arc": "",
+          "memory_count": 6,
+          "last_memory": "scene 6: Annora Malek investigated involving Jasmine — succeeded cleanly",
+          "last_location": "Cramped cargo bay of a starship",
+          "importance_accumulator": 25,
+          "needs_reflection": false,
+          "aliases": []
+        },
+        {
+          "id": "npc_2",
+          "name": "Cedar",
+          "status": "active",
+          "disposition": "neutral",
+          "bond": 0,
+          "agenda": "Forge iron tools or parts for the ship.",
+          "instinct": "Strike the anvil with a hammer when working.",
+          "arc": "",
+          "memory_count": 6,
+          "last_memory": "scene 6: Annora Malek investigated — succeeded cleanly",
+          "last_location": "Cramped cargo bay of a starship",
+          "importance_accumulator": 23,
+          "needs_reflection": false,
+          "aliases": []
+        },
+        {
+          "id": "npc_3",
+          "name": "Unknown Creature",
+          "status": "active",
+          "disposition": "hostile",
+          "bond": 0,
+          "agenda": "Break through the cargo bay containment.",
+          "instinct": "Lash out at unknown stimuli.",
+          "arc": "The creature's breach reveals the station's security is active but corrupted, turning defenses into intruders.",
+          "memory_count": 5,
+          "last_memory": "scene 6: Annora Malek investigated — succeeded cleanly",
+          "last_location": "Cramped cargo bay of a starship",
+          "importance_accumulator": 18,
+          "needs_reflection": false,
+          "aliases": []
+        }
+      ],
+      "clocks": [
+        {
+          "name": "Unknown Intrusion",
+          "clock_type": "threat",
+          "filled": 2,
+          "segments": 6,
+          "owner": "The Forge",
+          "fired": false
+        }
+      ],
+      "validator": {
+        "passed": false,
+        "retries": 3,
+        "violations": [
+          "[llm] RESOLUTION PACING: Jasmine volunteers unsolicited backstory about the warden, explains its behavior, identifies the energy spike, and proposes a solution, all without being asked.",
+          "[llm] RESOLUTION PACING: Jasmine speaks four sentences in a row, exceeding the two-sentence limit."
+        ],
+        "attempt_violations": [
+          2,
+          2,
+          2,
+          2
+        ],
+        "attempt_violation_text": [
+          [
+            "[llm] RESOLUTION PACING: Jasmine volunteers unsolicited backstory about the warden, explains its behavior, identifies the energy spike, and proposes a solution, all without being asked.",
+            "[llm] RESOLUTION PACING: Jasmine speaks four sentences in a row, exceeding the two-sentence limit."
+          ],
+          [
+            "[llm] RESOLUTION PACING: Jasmine answered the unasked question of how to defeat the mechanism ('Pipe this frequency...') and provided unsolicited backstory about a past incident ('It sealed the bridge...').",
+            "[llm] RESOLUTION PACING: Jasmine spoke four sentences, exceeding the two-sentence limit."
+          ],
+          [
+            "[llm] RESOLUTION PACING: Jasmine volunteers unsolicited backstory about a past incident and explains the creature's motivation/behavior without being asked.",
+            "[llm] RESOLUTION PACING: Jasmine speaks four sentences, exceeding the two-sentence limit."
+          ],
+          [
+            "[llm] RESOLUTION PACING: Jasmine volunteers unsolicited backstory about a past incident and explains the creature's motivation/behavior without being asked.",
+            "[llm] RESOLUTION PACING: Jasmine speaks four sentences, exceeding the two-sentence limit."
+          ]
+        ],
+        "picked_attempt": -1
+      },
+      "engine_log": {
+        "summary": "Analyze the junction box's energy signature and extract information from Jasmine about her history with this guardian tech",
+        "move": "gather_information",
+        "result": "STRONG_HIT",
+        "chaos_interrupt": null,
+        "director_trigger": "interval",
+        "consequences": [],
+        "clock_events": [],
+        "position": "risky",
+        "effect": "standard",
+        "npc_activation": {
+          "Jasmine": {
+            "score": 2.08,
+            "reasons": [
+              "target",
+              "name",
+              "tfidf:0.05",
+              "recent"
+            ],
+            "status": "activated"
+          },
+          "Cedar": {
+            "score": 1.0,
+            "reasons": [
+              "name",
+              "recent"
+            ],
+            "status": "activated"
+          },
+          "Unknown Creature": {
+            "score": 1.08,
+            "reasons": [
+              "name",
+              "tfidf:0.06",
+              "recent"
+            ],
+            "status": "activated"
+          }
+        }
+      },
+      "story_arc": {
+        "phase": "setup",
+        "title": "The Silent Signal",
+        "goal": "Investigate a derelict research vessel broadcasting a distress signal from a volatile region of space.",
+        "mood": "Tense, cold, calculating",
+        "story_complete": false
+      },
+      "token_usage": [
+        {
+          "role": "brain",
+          "input": 960,
+          "output": 14
+        },
+        {
+          "role": "brain",
+          "input": 1320,
+          "output": 160
+        },
+        {
+          "role": "brain",
+          "input": 1096,
+          "output": 130
+        },
+        {
+          "role": "narrator",
+          "input": 3971,
+          "output": 300
+        },
+        {
+          "role": "validator",
+          "input": 1330,
+          "output": 101
+        },
+        {
+          "role": "narrator",
+          "input": 4429,
+          "output": 198
+        },
+        {
+          "role": "validator",
+          "input": 1202,
+          "output": 106
+        },
+        {
+          "role": "narrator",
+          "input": 4301,
+          "output": 170
+        },
+        {
+          "role": "validator",
+          "input": 1202,
+          "output": 95
+        },
+        {
+          "role": "narrator",
+          "input": 4301,
+          "output": 170
+        },
+        {
+          "role": "validator",
+          "input": 1202,
+          "output": 95
+        },
+        {
+          "role": "metadata",
+          "input": 1035,
+          "output": 199
+        },
+        {
+          "role": "brain_correction",
+          "input": 549,
+          "output": 58
+        }
+      ],
+      "is_correction": false
+    },
+    {
+      "turn": 6,
+      "chapter": 1,
+      "scene": 7,
+      "location": "Cramped cargo bay of a starship",
+      "action": "I inspect the exposed wiring in the junction box, then glance over at Jasmine. \"Five years is a long time to carry a grudge against a lock, Jasmine. Did you lose anyone you cared about in that rig, or were you just lucky enough to be on the right side of the door?\" As I speak, I carefully splice the scanner's output into the comms line to broadcast the frequency.",
+      "narration": "<o>\nThe copper wiring is brittle under your fingertips, the insulation cracking as you strip the ends with the edge of your multitool. You splice the scanner’s feed into the comms line, the connection sparking once before stabilizing. The blue LED inside the box shifts to a rapid strobe, pulsing in time with the frequency you stole from the maintenance seal.\n\nJasmine stares at the flashing light, her expression hardening as she watches the cable jiggle with every impact from the creature below. \"Wrong side of the door.\" She pulls a mag-seal patch from her belt and slaps it over the exposed junction, securing the splice. She presses her back against the cold bulkhead, sliding down until she sits on the deck.\n\nBelow the grate, the creature’s roaring assault cuts off abruptly, replaced by a confused, repetitive clicking against the blast doors as it recoils from the perceived forcefield. Cedar lowers his weapon, the tension draining from his shoulders, though he keeps the muzzle pointed at the grate. The silence rushes back in, broken only by the distant hum of the station's failing reactor and the faint static of the comms channel broadcasting the deceiving signal.",
+      "narration_excerpt": "<o> The copper wiring is brittle under your fingertips, the insulation cracking as you strip the ends with the edge of your multitool. You splice the scanner’s feed into the comms line, the connection sparking once before stabilizing. The blue LED inside the box shifts to a rapid strobe, pulsing in ",
+      "roll": {
+        "stat": "wits",
+        "d1": 1,
+        "d2": 3,
+        "total": 5,
+        "c1": 1,
+        "c2": 3,
+        "result": "STRONG_HIT",
+        "match": false
+      },
+      "brain": {
+        "move": "secure_advantage",
+        "stat": "wits",
+        "target_npc": "",
+        "approach": "splice the scanner's output into the comms line to broadcast the frequency",
+        "player_intent": "Inspect the exposed wiring and splice the scanner's output into the comms line to broadcast the frequency",
+        "dialog_only": false
+      },
+      "burn_taken": false,
+      "director_ran": false,
+      "director_guidance": {
+        "narrator_guidance": "Execute the frequency bypass to trick the creature. Use this moment to test Jasmine's composure; the thematic thread asks if she is defined by her past or if she can weaponize it for survival. If the deception works, offer a brief 'breather' to let the adrenaline fade and process the revelation of her history.",
+        "pacing": "breather",
+        "arc_notes": "The setup phase is concluding as the immediate physical threat (the creature) engages directly with the crew's skills. The hidden layer of criminal identity remains dormant but is primed for exploration once the physical danger stabilizes.",
+        "npc_guidance": {
+          "npc_1": "Execute the wiring bypass quickly. Let a slight tremor in your hands betray the personal weight of this encounter, but do not falter in the connection.",
+          "npc_2": "Keep weapons trained on the door. Watch Jasmine with a mix of suspicion and relief as her specific knowledge proves useful, but stay ready for the trick to fail."
+        }
+      },
+      "state_after": {
+        "health": 4,
+        "spirit": 5,
+        "supply": 4,
+        "momentum": 10,
+        "chaos": 3,
+        "scene": 7,
+        "location": "Cramped cargo bay of a starship",
+        "time_of_day": "deep_night",
+        "scene_context": "STRONG_HIT on prepared carefully at Cramped cargo bay of a starship — Jasmine, Cedar, Unknown Creature",
+        "active_threads": 1,
+        "active_characters": 2,
+        "active_vow_tracks": 1
+      },
+      "npcs": [
+        {
+          "id": "npc_1",
+          "name": "Jasmine",
+          "status": "active",
+          "disposition": "neutral",
+          "bond": 1,
+          "agenda": "Prove her past is an asset, not a liability.",
+          "instinct": "Wipe grease on a rag when frustrated.",
+          "arc": "Confronting the creature that once trapped her crew, Jasmine seeks redemption by saving the current team with the very knowledge that haunts her.",
+          "memory_count": 8,
+          "last_memory": "scene 7: Annora Malek prepared carefully — succeeded cleanly",
+          "last_location": "Cramped cargo bay of a starship",
+          "importance_accumulator": 4,
+          "needs_reflection": false,
+          "aliases": []
+        },
+        {
+          "id": "npc_2",
+          "name": "Cedar",
+          "status": "active",
+          "disposition": "neutral",
+          "bond": 0,
+          "agenda": "Forge iron tools or parts for the ship.",
+          "instinct": "Strike the anvil with a hammer when working.",
+          "arc": "",
+          "memory_count": 8,
+          "last_memory": "scene 7: Annora Malek prepared carefully — succeeded cleanly",
+          "last_location": "Cramped cargo bay of a starship",
+          "importance_accumulator": 4,
+          "needs_reflection": false,
+          "aliases": []
+        },
+        {
+          "id": "npc_3",
+          "name": "Unknown Creature",
+          "status": "active",
+          "disposition": "hostile",
+          "bond": 0,
+          "agenda": "Break through the cargo bay containment.",
+          "instinct": "Lash out at unknown stimuli.",
+          "arc": "The creature's breach reveals the station's security is active but corrupted, turning defenses into intruders.",
+          "memory_count": 6,
+          "last_memory": "scene 7: Annora Malek prepared carefully — succeeded cleanly",
+          "last_location": "Cramped cargo bay of a starship",
+          "importance_accumulator": 24,
+          "needs_reflection": false,
+          "aliases": []
+        }
+      ],
+      "clocks": [
+        {
+          "name": "Unknown Intrusion",
+          "clock_type": "threat",
+          "filled": 2,
+          "segments": 6,
+          "owner": "The Forge",
+          "fired": false
+        }
+      ],
+      "validator": {
+        "passed": true,
+        "retries": 1,
+        "violations": [],
+        "attempt_violations": [
+          1,
+          0
+        ],
+        "attempt_violation_text": [
+          [
+            "[llm] RESOLUTION PACING: Jasmine volunteers unsolicited context about the situation, the lock, and luck, exceeding the two-sentence limit and explaining the mystery in the scene it appears."
+          ],
+          []
+        ],
+        "picked_attempt": -1
+      },
+      "engine_log": {
+        "summary": "Inspect the exposed wiring and splice the scanner's output into the comms line to broadcast the frequency",
+        "move": "secure_advantage",
+        "result": "STRONG_HIT",
+        "chaos_interrupt": null,
+        "director_trigger": "",
+        "consequences": [],
+        "clock_events": [],
+        "position": "risky",
+        "effect": "standard",
+        "npc_activation": {
+          "Jasmine": {
+            "score": 1.0,
+            "reasons": [
+              "name",
+              "recent"
+            ],
+            "status": "activated"
+          },
+          "Cedar": {
+            "score": 1.0,
+            "reasons": [
+              "name",
+              "recent"
+            ],
+            "status": "activated"
+          },
+          "Unknown Creature": {
+            "score": 1.0,
+            "reasons": [
+              "name",
+              "recent"
+            ],
+            "status": "activated"
+          }
+        }
+      },
+      "story_arc": {
+        "phase": "confrontation",
+        "title": "Ghost in the Machine",
+        "goal": "Navigate the failing station, secure the salvage core, and deal with the arrival of a rival bounty hunter.",
+        "mood": "Claustrophobic, desperate, frantic",
+        "story_complete": false
+      },
+      "token_usage": [
+        {
+          "role": "director",
+          "input": 1468,
+          "output": 38
+        },
+        {
+          "role": "director",
+          "input": 1948,
+          "output": 14
+        },
+        {
+          "role": "director",
+          "input": 2302,
+          "output": 719
+        },
+        {
+          "role": "director",
+          "input": 2082,
+          "output": 559
+        },
+        {
+          "role": "brain",
+          "input": 948,
+          "output": 14
+        },
+        {
+          "role": "brain",
+          "input": 1327,
+          "output": 149
+        },
+        {
+          "role": "brain",
+          "input": 1073,
+          "output": 121
+        },
+        {
+          "role": "narrator",
+          "input": 3772,
+          "output": 264
+        },
+        {
+          "role": "validator",
+          "input": 1284,
+          "output": 83
+        },
+        {
+          "role": "narrator",
+          "input": 4499,
+          "output": 241
+        },
+        {
+          "role": "validator",
+          "input": 1261,
+          "output": 18
+        },
+        {
+          "role": "metadata",
+          "input": 1098,
+          "output": 233
+        },
+        {
+          "role": "brain_correction",
+          "input": 620,
+          "output": 44
+        }
+      ],
+      "is_correction": false
+    },
+    {
+      "turn": 7,
+      "chapter": 1,
+      "scene": 8,
+      "location": "Cramped cargo bay of a starship",
+      "action": "I keep my multitool in hand and step carefully toward the mag-seal patch, inspecting the connection to ensure the false signal is holding steady against the creature's interference. \"Cedar,\" I say quietly, keeping my eyes on the patched wiring, \"you mentioned you were stationed here before the evacuation. Did you leave anyone behind in that bio-lab—the woman on the ID card?\"",
+      "narration": "<o>\nThe mag-seal patch thrums beneath your fingertips, the amber light steady and rhythmic against the dull metal of the junction box. The wiring radiates a gentle warmth, the electromagnetic feedback vibrating faintly against your skin without any flickers or drops in the signal. Below, the creature has ceased its assault entirely, leaving only the sound of its claws scraping idly against the blast doors as it paces, deceived by the phantom barrier.\n\nCedar keeps his sidearm lowered but aimed at the grate, his jaw tightening as he processes the name on the ID card. \"She wasn't on the manifest.\" He glances once at Jasmine, then goes back to watching the darkness of the vent.\n\nJasmine rests her forehead on her knees, her breath hitching once before she steadies it.",
+      "narration_excerpt": "<o> The mag-seal patch thrums beneath your fingertips, the amber light steady and rhythmic against the dull metal of the junction box. The wiring radiates a gentle warmth, the electromagnetic feedback vibrating faintly against your skin without any flickers or drops in the signal. Below, the creatur",
+      "roll": {
+        "stat": "wits",
+        "d1": 3,
+        "d2": 2,
+        "total": 6,
+        "c1": 4,
+        "c2": 4,
+        "result": "STRONG_HIT",
+        "match": true
+      },
+      "brain": {
+        "move": "gather_information",
+        "stat": "wits",
+        "target_npc": "npc_2",
+        "approach": "Inspecting the mag-seal patch while interrogating Cedar about the evacuation",
+        "player_intent": "Inspect the mag-seal patch to verify the false signal is holding, and question Cedar about whether anyone was left behin",
+        "dialog_only": false
+      },
+      "burn_taken": false,
+      "director_ran": true,
+      "director_guidance": {
+        "narrator_guidance": "Execute the frequency bypass to trick the creature. Use this moment to test Jasmine's composure; the thematic thread asks if she is defined by her past or if she can weaponize it for survival. If the deception works, offer a brief 'breather' to let the adrenaline fade and process the revelation of her history.",
+        "pacing": "breather",
+        "arc_notes": "The setup phase is concluding as the immediate physical threat (the creature) engages directly with the crew's skills. The hidden layer of criminal identity remains dormant but is primed for exploration once the physical danger stabilizes.",
+        "npc_guidance": {
+          "npc_1": "Execute the wiring bypass quickly. Let a slight tremor in your hands betray the personal weight of this encounter, but do not falter in the connection.",
+          "npc_2": "Keep weapons trained on the door. Watch Jasmine with a mix of suspicion and relief as her specific knowledge proves useful, but stay ready for the trick to fail."
+        }
+      },
+      "state_after": {
+        "health": 4,
+        "spirit": 5,
+        "supply": 4,
+        "momentum": 10,
+        "chaos": 3,
+        "scene": 8,
+        "location": "Cramped cargo bay of a starship",
+        "time_of_day": "deep_night",
+        "scene_context": "STRONG_HIT on investigated at Cramped cargo bay of a starship — Jasmine, Cedar, Unknown Creature",
+        "active_threads": 1,
+        "active_characters": 2,
+        "active_vow_tracks": 1
+      },
+      "npcs": [
+        {
+          "id": "npc_1",
+          "name": "Jasmine",
+          "status": "active",
+          "disposition": "neutral",
+          "bond": 1,
+          "agenda": "Prove her past is an asset, not a liability.",
+          "instinct": "Wipe grease on a rag when frustrated.",
+          "arc": "Confronting the creature that once trapped her crew, Jasmine seeks redemption by saving the current team with the very knowledge that haunts her.",
+          "memory_count": 9,
+          "last_memory": "scene 8: Annora Malek investigated — succeeded cleanly",
+          "last_location": "Cramped cargo bay of a starship",
+          "importance_accumulator": 8,
+          "needs_reflection": false,
+          "aliases": []
+        },
+        {
+          "id": "npc_2",
+          "name": "Cedar",
+          "status": "active",
+          "disposition": "neutral",
+          "bond": 0,
+          "agenda": "Forge iron tools or parts for the ship.",
+          "instinct": "Strike the anvil with a hammer when working.",
+          "arc": "",
+          "memory_count": 9,
+          "last_memory": "scene 8: Annora Malek investigated involving Cedar — succeeded cleanly",
+          "last_location": "Cramped cargo bay of a starship",
+          "importance_accumulator": 8,
+          "needs_reflection": false,
+          "aliases": []
+        },
+        {
+          "id": "npc_3",
+          "name": "Unknown Creature",
+          "status": "active",
+          "disposition": "hostile",
+          "bond": 0,
+          "agenda": "Break through the cargo bay containment.",
+          "instinct": "Lash out at unknown stimuli.",
+          "arc": "The creature's breach reveals the station's security is active but corrupted, turning defenses into intruders.",
+          "memory_count": 7,
+          "last_memory": "scene 8: Annora Malek investigated — succeeded cleanly",
+          "last_location": "Cramped cargo bay of a starship",
+          "importance_accumulator": 30,
+          "needs_reflection": true,
+          "aliases": []
+        }
+      ],
+      "clocks": [
+        {
+          "name": "Unknown Intrusion",
+          "clock_type": "threat",
+          "filled": 2,
+          "segments": 6,
+          "owner": "The Forge",
+          "fired": false
+        }
+      ],
+      "validator": {
+        "passed": true,
+        "retries": 1,
+        "violations": [],
+        "attempt_violations": [
+          2,
+          0
+        ],
+        "attempt_violation_text": [
+          [
+            "[llm] RESOLUTION PACING: Cedar volunteers unsolicited information about checking logs and the bio-lab status, exceeding the specific question asked.",
+            "[llm] RESOLUTION PACING: Jasmine volunteers a major plot revelation ('She was the experiment') without being prompted, explaining the mystery in the same scene it appears."
+          ],
+          []
+        ],
+        "picked_attempt": -1
+      },
+      "engine_log": {
+        "summary": "Inspect the mag-seal patch to verify the false signal is holding, and question Cedar about whether anyone was left behind in the bio-lab during the evacuation",
+        "move": "gather_information",
+        "result": "STRONG_HIT",
+        "chaos_interrupt": null,
+        "director_trigger": "reflection:Unknown Creature",
+        "consequences": [],
+        "clock_events": [],
+        "position": "controlled",
+        "effect": "standard",
+        "npc_activation": {
+          "Jasmine": {
+            "score": 1.0,
+            "reasons": [
+              "name",
+              "recent"
+            ],
+            "status": "activated"
+          },
+          "Cedar": {
+            "score": 2.0,
+            "reasons": [
+              "target",
+              "name",
+              "recent"
+            ],
+            "status": "activated"
+          },
+          "Unknown Creature": {
+            "score": 1.0,
+            "reasons": [
+              "name",
+              "recent"
+            ],
+            "status": "activated"
+          }
+        }
+      },
+      "story_arc": {
+        "phase": "confrontation",
+        "title": "Ghost in the Machine",
+        "goal": "Navigate the failing station, secure the salvage core, and deal with the arrival of a rival bounty hunter.",
+        "mood": "Claustrophobic, desperate, frantic",
+        "story_complete": false
+      },
+      "token_usage": [
+        {
+          "role": "brain",
+          "input": 947,
+          "output": 14
+        },
+        {
+          "role": "brain",
+          "input": 1284,
+          "output": 142
+        },
+        {
+          "role": "brain",
+          "input": 1065,
+          "output": 128
+        },
+        {
+          "role": "narrator",
+          "input": 3914,
+          "output": 211
+        },
+        {
+          "role": "validator",
+          "input": 1229,
+          "output": 103
+        },
+        {
+          "role": "narrator",
+          "input": 4628,
+          "output": 201
+        },
+        {
+          "role": "validator",
+          "input": 1183,
+          "output": 19
+        },
+        {
+          "role": "metadata",
+          "input": 1027,
+          "output": 126
+        },
+        {
+          "role": "brain_correction",
+          "input": 544,
+          "output": 58
+        }
+      ],
+      "is_correction": false
+    },
+    {
+      "turn": 8,
+      "chapter": 1,
+      "scene": 8,
+      "location": "Cramped cargo bay of a starship",
+      "action": "## That's not what I said — I was asking a question, not making a statement",
+      "narration": "<o>\nThe mag-seal patch shivers against the bulkhead, the amber light holding steady despite the faint magnetic distortion rippling through the exposed wiring. The creature below scrapes a claw against the blast door one last time before falling silent, leaving only the low hum of the false signal to fill the air.\n\nCedar keeps his weapon trained on the grate, his eyes flicking briefly to the ID card clipped to the console. \"She wasn't on the evacuation roster.\" He glances at Jasmine, then shifts his weight and checks the charge indicator on his sidearm.",
+      "narration_excerpt": "<o> The mag-seal patch shivers against the bulkhead, the amber light holding steady despite the faint magnetic distortion rippling through the exposed wiring. The creature below scrapes a claw against the blast door one last time before falling silent, leaving only the low hum of the false signal to",
+      "brain": {
+        "move": "gather_information",
+        "stat": "wits",
+        "target_npc": "npc_2",
+        "approach": "inspecting the mag-seal patch to verify the false signal is holding, while questioning Cedar about anyone left behind in the bio-lab",
+        "player_intent": "Verify the mag-seal patch is functioning and learn if Cedar left anyone behind in the bio-lab",
+        "dialog_only": false
+      },
+      "burn_taken": false,
+      "director_ran": false,
+      "director_guidance": {
+        "narrator_guidance": "Execute the frequency bypass to trick the creature. Use this moment to test Jasmine's composure; the thematic thread asks if she is defined by her past or if she can weaponize it for survival. If the deception works, offer a brief 'breather' to let the adrenaline fade and process the revelation of her history.",
+        "pacing": "breather",
+        "arc_notes": "The setup phase is concluding as the immediate physical threat (the creature) engages directly with the crew's skills. The hidden layer of criminal identity remains dormant but is primed for exploration once the physical danger stabilizes.",
+        "npc_guidance": {
+          "npc_1": "Execute the wiring bypass quickly. Let a slight tremor in your hands betray the personal weight of this encounter, but do not falter in the connection.",
+          "npc_2": "Keep weapons trained on the door. Watch Jasmine with a mix of suspicion and relief as her specific knowledge proves useful, but stay ready for the trick to fail."
+        }
+      },
+      "state_after": {
+        "health": 4,
+        "spirit": 5,
+        "supply": 4,
+        "momentum": 10,
+        "chaos": 3,
+        "scene": 8,
+        "location": "Cramped cargo bay of a starship",
+        "time_of_day": "deep_night",
+        "scene_context": "conversation at Cramped cargo bay of a starship with Jasmine, Cedar, Unknown Creature",
+        "active_threads": 1,
+        "active_characters": 2,
+        "active_vow_tracks": 1
+      },
+      "npcs": [
+        {
+          "id": "npc_1",
+          "name": "Jasmine",
+          "status": "active",
+          "disposition": "neutral",
+          "bond": 1,
+          "agenda": "Prove her past is an asset, not a liability.",
+          "instinct": "Wipe grease on a rag when frustrated.",
+          "arc": "Confronting the creature that once trapped her crew, Jasmine seeks redemption by saving the current team with the very knowledge that haunts her.",
+          "memory_count": 9,
+          "last_memory": "scene 8: Annora Malek spoke with Jasmine about Verify the mag-seal patch is functioning and learn if",
+          "last_location": "Cramped cargo bay of a starship",
+          "importance_accumulator": 6,
+          "needs_reflection": false,
+          "aliases": []
+        },
+        {
+          "id": "npc_2",
+          "name": "Cedar",
+          "status": "active",
+          "disposition": "neutral",
+          "bond": 0,
+          "agenda": "Forge iron tools or parts for the ship.",
+          "instinct": "Strike the anvil with a hammer when working.",
+          "arc": "",
+          "memory_count": 9,
+          "last_memory": "scene 8: Annora Malek spoke with Cedar about Verify the mag-seal patch is functioning and learn if C",
+          "last_location": "Cramped cargo bay of a starship",
+          "importance_accumulator": 6,
+          "needs_reflection": false,
+          "aliases": []
+        },
+        {
+          "id": "npc_3",
+          "name": "Unknown Creature",
+          "status": "active",
+          "disposition": "hostile",
+          "bond": 0,
+          "agenda": "Break through the cargo bay containment.",
+          "instinct": "Lash out at unknown stimuli.",
+          "arc": "The creature's breach reveals the station's security is active but corrupted, turning defenses into intruders.",
+          "memory_count": 7,
+          "last_memory": "scene 8: Annora Malek spoke with Unknown Creature about Verify the mag-seal patch is functioning and",
+          "last_location": "Cramped cargo bay of a starship",
+          "importance_accumulator": 30,
+          "needs_reflection": false,
+          "aliases": []
+        }
+      ],
+      "clocks": [
+        {
+          "name": "Unknown Intrusion",
+          "clock_type": "threat",
+          "filled": 2,
+          "segments": 6,
+          "owner": "The Forge",
+          "fired": false
+        }
+      ],
+      "engine_log": {
+        "summary": "[corrected] Verify the mag-seal patch is functioning and learn if Cedar left anyone behind i",
+        "move": "gather_information",
+        "result": "dialog",
+        "chaos_interrupt": null,
+        "director_trigger": "",
+        "consequences": [],
+        "clock_events": [],
+        "position": "risky",
+        "effect": "standard",
+        "npc_activation": {}
+      },
+      "story_arc": {
+        "phase": "confrontation",
+        "title": "Ghost in the Machine",
+        "goal": "Navigate the failing station, secure the salvage core, and deal with the arrival of a rival bounty hunter.",
+        "mood": "Claustrophobic, desperate, frantic",
+        "story_complete": false
+      },
+      "token_usage": [
+        {
+          "role": "director",
+          "input": 1722,
+          "output": 41
+        },
+        {
+          "role": "director",
+          "input": 2192,
+          "output": 27
+        },
+        {
+          "role": "director",
+          "input": 2900,
+          "output": 598
+        },
+        {
+          "role": "director",
+          "input": 2323,
+          "output": 454
+        },
+        {
+          "role": "brain",
+          "input": 947,
+          "output": 14
+        },
+        {
+          "role": "brain",
+          "input": 1284,
+          "output": 169
+        },
+        {
+          "role": "brain",
+          "input": 1092,
+          "output": 139
+        },
+        {
+          "role": "narrator",
+          "input": 3874,
+          "output": 118
+        },
+        {
+          "role": "metadata",
+          "input": 980,
+          "output": 76
+        }
+      ],
+      "is_correction": true
+    },
+    {
+      "turn": 9,
+      "chapter": 1,
+      "scene": 9,
+      "location": "Cramped cargo bay of a starship",
+      "action": "I lean forward, squinting at the holographic ID card clipped to the console to read the name and rank, and then glance at Cedar. \"Who wasn't on the roster, Cedar? Did you know her?\"",
+      "narration": "<o>\nThe holographic emitter flickers with a pale blue strobe, casting long shadows against the bulkhead. The image sharpens to reveal a woman with severe cheekbones and a regulation haircut, the text beneath her portrait reading LT. YARA KESSLER, SECURITY.\n\nCedar glances at the projection, then back to the blast door. \"She wasn't on the roster.\" He shifts his grip on the kinetic weapon, knuckles white against the grip.",
+      "narration_excerpt": "<o> The holographic emitter flickers with a pale blue strobe, casting long shadows against the bulkhead. The image sharpens to reveal a woman with severe cheekbones and a regulation haircut, the text beneath her portrait reading LT. YARA KESSLER, SECURITY.  Cedar glances at the projection, then back",
+      "roll": {
+        "stat": "wits",
+        "d1": 4,
+        "d2": 3,
+        "total": 8,
+        "c1": 7,
+        "c2": 5,
+        "result": "STRONG_HIT",
+        "match": false
+      },
+      "brain": {
+        "move": "gather_information",
+        "stat": "wits",
+        "target_npc": "npc_2",
+        "approach": "You're examining the holographic ID card and questioning Cedar about someone who wasn't on the roster",
+        "player_intent": "Read the name and rank on the holographic ID card and ask Cedar about who wasn't on the roster",
+        "dialog_only": false
+      },
+      "burn_taken": false,
+      "director_ran": true,
+      "director_guidance": {
+        "narrator_guidance": "Execute the frequency bypass to trick the creature. Use this moment to test Jasmine's composure; the thematic thread asks if she is defined by her past or if she can weaponize it for survival. If the deception works, offer a brief 'breather' to let the adrenaline fade and process the revelation of her history.",
+        "pacing": "breather",
+        "arc_notes": "The setup phase is concluding as the immediate physical threat (the creature) engages directly with the crew's skills. The hidden layer of criminal identity remains dormant but is primed for exploration once the physical danger stabilizes.",
+        "npc_guidance": {
+          "npc_1": "Execute the wiring bypass quickly. Let a slight tremor in your hands betray the personal weight of this encounter, but do not falter in the connection.",
+          "npc_2": "Keep weapons trained on the door. Watch Jasmine with a mix of suspicion and relief as her specific knowledge proves useful, but stay ready for the trick to fail."
+        }
+      },
+      "state_after": {
+        "health": 4,
+        "spirit": 5,
+        "supply": 4,
+        "momentum": 10,
+        "chaos": 3,
+        "scene": 9,
+        "location": "Cramped cargo bay of a starship",
+        "time_of_day": "deep_night",
+        "scene_context": "STRONG_HIT on investigated at Cramped cargo bay of a starship — Jasmine, Cedar, Unknown Creature",
+        "active_threads": 1,
+        "active_characters": 2,
+        "active_vow_tracks": 1
+      },
+      "npcs": [
+        {
+          "id": "npc_1",
+          "name": "Jasmine",
+          "status": "active",
+          "disposition": "neutral",
+          "bond": 1,
+          "agenda": "Prove her past is an asset, not a liability.",
+          "instinct": "Wipe grease on a rag when frustrated.",
+          "arc": "Confronting the creature that once trapped her crew, Jasmine seeks redemption by saving the current team with the very knowledge that haunts her.",
+          "memory_count": 10,
+          "last_memory": "scene 9: Annora Malek investigated — succeeded cleanly",
+          "last_location": "Cramped cargo bay of a starship",
+          "importance_accumulator": 10,
+          "needs_reflection": false,
+          "aliases": []
+        },
+        {
+          "id": "npc_2",
+          "name": "Cedar",
+          "status": "active",
+          "disposition": "neutral",
+          "bond": 0,
+          "agenda": "Forge iron tools or parts for the ship.",
+          "instinct": "Strike the anvil with a hammer when working.",
+          "arc": "",
+          "memory_count": 10,
+          "last_memory": "scene 9: Annora Malek investigated involving Cedar — succeeded cleanly",
+          "last_location": "Cramped cargo bay of a starship",
+          "importance_accumulator": 10,
+          "needs_reflection": false,
+          "aliases": []
+        },
+        {
+          "id": "npc_3",
+          "name": "Unknown Creature",
+          "status": "active",
+          "disposition": "hostile",
+          "bond": 0,
+          "agenda": "Break through the cargo bay containment.",
+          "instinct": "Lash out at unknown stimuli.",
+          "arc": "The creature's breach reveals the station's security is active but corrupted, turning defenses into intruders.",
+          "memory_count": 8,
+          "last_memory": "scene 9: Annora Malek investigated — succeeded cleanly",
+          "last_location": "Cramped cargo bay of a starship",
+          "importance_accumulator": 36,
+          "needs_reflection": true,
+          "aliases": []
+        }
+      ],
+      "clocks": [
+        {
+          "name": "Unknown Intrusion",
+          "clock_type": "threat",
+          "filled": 2,
+          "segments": 6,
+          "owner": "The Forge",
+          "fired": false
+        }
+      ],
+      "validator": {
+        "passed": true,
+        "retries": 1,
+        "violations": [],
+        "attempt_violations": [
+          2,
+          0
+        ],
+        "attempt_violation_text": [
+          [
+            "[llm] RESOLUTION PACING: NPC Cedar volunteers three unsolicited facts (she wasn't on the roster, he never saw her on the station, she should have been at the evac point) when the player only asked if he knew her.",
+            "[llm] RESOLUTION PACING: NPC Cedar speaks more than two sentences."
+          ],
+          []
+        ],
+        "picked_attempt": -1
+      },
+      "engine_log": {
+        "summary": "Read the name and rank on the holographic ID card and ask Cedar about who wasn't on the roster",
+        "move": "gather_information",
+        "result": "STRONG_HIT",
+        "chaos_interrupt": null,
+        "director_trigger": "reflection:Unknown Creature",
+        "consequences": [],
+        "clock_events": [],
+        "position": "risky",
+        "effect": "standard",
+        "npc_activation": {
+          "Jasmine": {
+            "score": 1.0,
+            "reasons": [
+              "name",
+              "recent"
+            ],
+            "status": "activated"
+          },
+          "Cedar": {
+            "score": 2.0,
+            "reasons": [
+              "target",
+              "name",
+              "recent"
+            ],
+            "status": "activated"
+          },
+          "Unknown Creature": {
+            "score": 1.09,
+            "reasons": [
+              "name",
+              "tfidf:0.06",
+              "recent"
+            ],
+            "status": "activated"
+          }
+        }
+      },
+      "story_arc": {
+        "phase": "confrontation",
+        "title": "Ghost in the Machine",
+        "goal": "Navigate the failing station, secure the salvage core, and deal with the arrival of a rival bounty hunter.",
+        "mood": "Claustrophobic, desperate, frantic",
+        "story_complete": false
+      },
+      "token_usage": [
+        {
+          "role": "brain",
+          "input": 908,
+          "output": 14
+        },
+        {
+          "role": "brain",
+          "input": 1259,
+          "output": 158
+        },
+        {
+          "role": "brain",
+          "input": 1042,
+          "output": 129
+        },
+        {
+          "role": "narrator",
+          "input": 3803,
+          "output": 216
+        },
+        {
+          "role": "validator",
+          "input": 1175,
+          "output": 119
+        },
+        {
+          "role": "narrator",
+          "input": 4530,
+          "output": 125
+        },
+        {
+          "role": "validator",
+          "input": 1081,
+          "output": 18
+        },
+        {
+          "role": "metadata",
+          "input": 959,
+          "output": 66
+        },
+        {
+          "role": "brain_correction",
+          "input": 476,
+          "output": 51
+        }
+      ],
+      "is_correction": false
+    },
+    {
+      "turn": 10,
+      "chapter": 1,
+      "scene": 10,
+      "location": "Cramped cargo bay of a starship",
+      "action": "I approach the holographic emitter and squint at the flickering image of Lieutenant Kessler. \"Do you know her, Cedar? She wasn't on the roster, but she looks important.\" I gesture toward her stern portrait. \"What was she like before the station went dark? Did she have a family waiting for her back home, or was she strictly married to the Corps?\"",
+      "narration": "<o>\nCedar glances at the flickering blue projection, then wipes grease from his hands with a rag. \"No family.\" He turns his back to the hologram, picking up a worn iron file to work on the drive coil.\n\nA sharp clang vibrates through the deck plates, followed by the screech of tearing metal. The heavy impacts on the blast door have shifted to the hinge mechanism, the rhythm precise and deliberate as the creature exploits the structural weakness.\n\nJasmine keeps her eyes on the sealed entrance, her fingers twitching near her sidearm.",
+      "narration_excerpt": "<o> Cedar glances at the flickering blue projection, then wipes grease from his hands with a rag. \"No family.\" He turns his back to the hologram, picking up a worn iron file to work on the drive coil.  A sharp clang vibrates through the deck plates, followed by the screech of tearing metal. The heav",
+      "roll": {
+        "stat": "wits",
+        "d1": 4,
+        "d2": 6,
+        "total": 10,
+        "c1": 8,
+        "c2": 4,
+        "result": "STRONG_HIT",
+        "match": false
+      },
+      "brain": {
+        "move": "gather_information",
+        "stat": "wits",
+        "target_npc": "npc_2",
+        "approach": "Asking Cedar about Lieutenant Kessler's background and personal life",
+        "player_intent": "Learn about Lieutenant Kessler's identity, background, and whether she had family waiting back home",
+        "dialog_only": false
+      },
+      "burn_taken": false,
+      "director_ran": false,
+      "director_guidance": {
+        "narrator_guidance": "Borin should test loyalty before revealing the passage. Use the discovery of Kessler's hidden profile to interrogate Annora's knowledge of the station's layout or past security protocols. If she knows too much, it validates his suspicions; if she knows nothing, it confirms she is just another disposable pawn to the station's masters. Keep the scene grounded in the physical strain of the environment—sweat, cold metal, and the rhythmic thudding from the corridor.",
+        "pacing": "building",
+        "arc_notes": "The discovery of the erased roster entry parallels Annora's erased identity, reinforcing the theme that the past is never truly buried on the frontier. As the physical barrier (the door) weakens, the emotional barriers between the crew are also being tested by these revelations.",
+        "npc_guidance": {
+          "npc_3": "Continue battering the blast door, but shift the impact point to the hinge mechanism. The creature is learning the physics of the barrier, escalating the threat from random noise to imminent structural failure."
+        }
+      },
+      "state_after": {
+        "health": 4,
+        "spirit": 5,
+        "supply": 4,
+        "momentum": 10,
+        "chaos": 3,
+        "scene": 10,
+        "location": "Cramped cargo bay of a starship",
+        "time_of_day": "deep_night",
+        "scene_context": "STRONG_HIT on investigated at Cramped cargo bay of a starship — Jasmine, Cedar, Unknown Creature",
+        "active_threads": 1,
+        "active_characters": 2,
+        "active_vow_tracks": 1
+      },
+      "npcs": [
+        {
+          "id": "npc_1",
+          "name": "Jasmine",
+          "status": "active",
+          "disposition": "neutral",
+          "bond": 1,
+          "agenda": "Prove her past is an asset, not a liability.",
+          "instinct": "Wipe grease on a rag when frustrated.",
+          "arc": "Confronting the creature that once trapped her crew, Jasmine seeks redemption by saving the current team with the very knowledge that haunts her.",
+          "memory_count": 11,
+          "last_memory": "scene 10: Annora Malek investigated — succeeded cleanly",
+          "last_location": "Cramped cargo bay of a starship",
+          "importance_accumulator": 14,
+          "needs_reflection": false,
+          "aliases": []
+        },
+        {
+          "id": "npc_2",
+          "name": "Cedar",
+          "status": "active",
+          "disposition": "neutral",
+          "bond": 0,
+          "agenda": "Forge iron tools or parts for the ship.",
+          "instinct": "Strike the anvil with a hammer when working.",
+          "arc": "",
+          "memory_count": 11,
+          "last_memory": "scene 10: Annora Malek investigated involving Cedar — succeeded cleanly",
+          "last_location": "Cramped cargo bay of a starship",
+          "importance_accumulator": 14,
+          "needs_reflection": false,
+          "aliases": []
+        },
+        {
+          "id": "npc_3",
+          "name": "Unknown Creature",
+          "status": "active",
+          "disposition": "hostile",
+          "bond": 0,
+          "agenda": "Exploit blast door hinge mechanism.",
+          "instinct": "Lash out at unknown stimuli.",
+          "arc": "The creature's shift to tactical targeting suggests a return to guardian protocols, making it a calculating threat rather than a mindless beast.",
+          "memory_count": 10,
+          "last_memory": "scene 10: Annora Malek investigated — succeeded cleanly",
+          "last_location": "Cramped cargo bay of a starship",
+          "importance_accumulator": 6,
+          "needs_reflection": false,
+          "aliases": []
+        }
+      ],
+      "clocks": [
+        {
+          "name": "Unknown Intrusion",
+          "clock_type": "threat",
+          "filled": 2,
+          "segments": 6,
+          "owner": "The Forge",
+          "fired": false
+        }
+      ],
+      "validator": {
+        "passed": true,
+        "retries": 2,
+        "violations": [],
+        "attempt_violations": [
+          3,
+          2,
+          0
+        ],
+        "attempt_violation_text": [
+          [
+            "[llm] RESOLUTION PACING: Cedar volunteers three unsolicited facts (rotation origin, personality, and lack of family) when asked only if he knew her.",
+            "[llm] RESOLUTION PACING: Jasmine volunteers two unsolicited facts (override codes and reason for staying) without being asked.",
+            "[llm] PLAYER AGENCY: Narrator decides the player character thinks the portrait looks 'important'."
+          ],
+          [
+            "[llm] RESOLUTION PACING: Cedar answers the specific question about family but then volunteers unsolicited information about her origin and rotation date.",
+            "[llm] RESOLUTION PACING: Cedar speaks three sentences, exceeding the two-sentence limit."
+          ],
+          []
+        ],
+        "picked_attempt": -1
+      },
+      "engine_log": {
+        "summary": "Learn about Lieutenant Kessler's identity, background, and whether she had family waiting back home",
+        "move": "gather_information",
+        "result": "STRONG_HIT",
+        "chaos_interrupt": null,
+        "director_trigger": "",
+        "consequences": [],
+        "clock_events": [],
+        "position": "risky",
+        "effect": "standard",
+        "npc_activation": {
+          "Jasmine": {
+            "score": 1.0,
+            "reasons": [
+              "name",
+              "recent"
+            ],
+            "status": "activated"
+          },
+          "Cedar": {
+            "score": 2.0,
+            "reasons": [
+              "target",
+              "name",
+              "recent"
+            ],
+            "status": "activated"
+          },
+          "Unknown Creature": {
+            "score": 1.0,
+            "reasons": [
+              "name",
+              "recent"
+            ],
+            "status": "activated"
+          }
+        }
+      },
+      "story_arc": {
+        "phase": "confrontation",
+        "title": "Ghost in the Machine",
+        "goal": "Navigate the failing station, secure the salvage core, and deal with the arrival of a rival bounty hunter.",
+        "mood": "Claustrophobic, desperate, frantic",
+        "story_complete": false
+      },
+      "token_usage": [
+        {
+          "role": "director",
+          "input": 1688,
+          "output": 41
+        },
+        {
+          "role": "director",
+          "input": 2173,
+          "output": 437
+        },
+        {
+          "role": "director",
+          "input": 2274,
+          "output": 439
+        },
+        {
+          "role": "brain",
+          "input": 944,
+          "output": 14
+        },
+        {
+          "role": "brain",
+          "input": 1295,
+          "output": 144
+        },
+        {
+          "role": "brain",
+          "input": 1064,
+          "output": 129
+        },
+        {
+          "role": "narrator",
+          "input": 3807,
+          "output": 225
+        },
+        {
+          "role": "validator",
+          "input": 1239,
+          "output": 120
+        },
+        {
+          "role": "narrator",
+          "input": 4938,
+          "output": 170
+        },
+        {
+          "role": "validator",
+          "input": 1163,
+          "output": 92
+        },
+        {
+          "role": "narrator",
+          "input": 4780,
+          "output": 140
+        },
+        {
+          "role": "validator",
+          "input": 1133,
+          "output": 17
+        },
+        {
+          "role": "metadata",
+          "input": 1006,
+          "output": 199
+        },
+        {
+          "role": "brain_correction",
+          "input": 496,
+          "output": 44
+        }
+      ],
+      "is_correction": false
+    }
+  ],
+  "violations": [],
+  "narration_quality_issues": [],
+  "spatial_issues": [],
+  "chapter_continuity_issues": [],
+  "validator_summary": {
+    "turns_checked": 9,
+    "turns_retried": 7,
+    "turns_failed": 3,
+    "total_retries": 14,
+    "rule_fast_path_violations": 0,
+    "top_violations": [
+      [
+        "[llm] RESOLUTION PACING: Jasmine speaks four sentences, exceeding the two-sentence limit.",
+        3
+      ],
+      [
+        "[llm] RESOLUTION PACING: Jasmine volunteers unsolicited backstory about a past incident and explains the creature's motivation/behavior without being asked.",
+        2
+      ],
+      [
+        "[llm] RESOLUTION PACING: Jasmine answers the specific question about the containment unit but also volunteers the solution to the puzzle (hit the leak with an electrical charge) and context about the fracture being a pressure seal, explaining the mystery in the same scene it appears.",
+        1
+      ],
+      [
+        "[llm] RESOLUTION PACING: NPC Jasmine volunteers unsolicited information ('It wasn't growth, it was a guardian') and context about the creature's nature, answering more than the specific question asked.",
+        1
+      ],
+      [
+        "[llm] RESOLUTION PACING: NPC Jasmine speaks two sentences, but the second sentence provides unrequested context/theory, violating the rule against volunteering information.",
+        1
+      ],
+      [
+        "[llm] RESOLUTION PACING: NPC answers the specific question asked and volunteers unsolicited context about the creature's nature ('It was a guardian').",
+        1
+      ],
+      [
+        "[llm] GENRE PHYSICS: Inanimate residue is described as 'weeping', attributing human emotion/biological function to a fluid.",
+        1
+      ],
+      [
+        "[llm] RESOLUTION PACING: NPC Jasmine answers the specific question asked but then adds unsolicited context about scrambling into the duct, slipping, kicking the grate, and the creature's reaction, exceeding the two-sentence limit and volunteering narrative details not requested.",
+        1
+      ],
+      [
+        "[llm] PLAYER AGENCY: Narrator decides the player character shouts a specific question about 'what were you growing' and identifies a 'hairline fracture', taking away the player's choice of what to ask and what to observe.",
+        1
+      ],
+      [
+        "[llm] RESOLUTION PACING: Jasmine volunteers unsolicited context about the drive core, the Vault, and the Obsidian Wing's intentions, explaining the mystery immediately.",
+        1
+      ]
+    ]
+  },
+  "quality_summary": {
+    "narration_quality_total": 0,
+    "spatial_issues_total": 0,
+    "chapter_continuity_total": 0,
+    "correction_tests_total": 1,
+    "correction_tests_failed": 0,
+    "top_quality_issues": []
+  },
+  "token_summary": {
+    "total_input": 220662,
+    "total_output": 19214,
+    "total": 239876,
+    "by_role": {
+      "director": {
+        "calls": 17,
+        "input": 35268,
+        "output": 5677
+      },
+      "narrator": {
+        "calls": 26,
+        "input": 106054,
+        "output": 5860
+      },
+      "architect_chapter": {
+        "calls": 1,
+        "input": 766,
+        "output": 639
+      },
+      "validator": {
+        "calls": 24,
+        "input": 29807,
+        "output": 1886
+      },
+      "validator_architect": {
+        "calls": 1,
+        "input": 452,
+        "output": 25
+      },
+      "narrator_retry": {
+        "calls": 1,
+        "input": 1173,
+        "output": 347
+      },
+      "brain": {
+        "calls": 30,
+        "input": 33940,
+        "output": 3173
+      },
+      "metadata": {
+        "calls": 10,
+        "input": 10517,
+        "output": 1352
+      },
+      "brain_correction": {
+        "calls": 5,
+        "input": 2685,
+        "output": 255
+      }
+    }
+  },
+  "correction_tests": [
+    {
+      "turn": 8,
+      "correction": "## That's not what I said — I was asking a question, not making a statement",
+      "success": true,
+      "violations": [],
+      "quality_issues": []
+    }
+  ],
+  "burn_stats": {
+    "offered": 0,
+    "taken": 0,
+    "failed": 0
+  },
+  "ended_reason": "max_turns_reached",
+  "total_turns": 10,
+  "final_state": {
+    "character": "Annora Malek",
+    "chapter": 1,
+    "location": "Cramped cargo bay of a starship",
+    "scene": 10,
+    "health": 4,
+    "spirit": 5,
+    "supply": 4,
+    "momentum": 10,
+    "chaos": 3,
+    "npcs": 4,
+    "active_clocks": 1
+  }
+}

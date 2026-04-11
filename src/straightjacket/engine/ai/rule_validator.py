@@ -18,8 +18,10 @@ from ..logging_util import log
 _AGENCY_EMOTION_PATTERNS = [
     # "You feel" + emotion/interpretation (not physical object)
     r"\byou feel\b(?!\s+(?:the|a|an|your|its|it|his|her|their|cold|hot|warm|cool|wet|dry|rough|smooth|sharp|dull|soft|hard|heavy|light|damp|slick|gritty|sticky))\s+\w+",
-    # Direct thought/interpretation attributions (not 'know' — too ambiguous for rule-based)
-    r"\byou (?:realize|understand|sense that|suspect|conclude|decide|think|believe|assume|recognize that|grasp)\b",
+    # Direct thought/interpretation attributions
+    # "you think" only when NOT followed by about/of/through/over (those are actions)
+    r"\byou (?:realize|understand|sense that|suspect|conclude|decide|believe|assume|recognize that|grasp)\b",
+    r"\byou think\b(?!\s+(?:about|of|through|over|back))",
     # Invented memories
     r"\byou (?:remember|recall|knew|have seen|'ve seen)\b",
     # Emotional state declarations
@@ -27,11 +29,24 @@ _AGENCY_EMOTION_PATTERNS = [
     # "something in you" constructions
     r"\bsomething (?:in|inside|within) you\b",
     # GLM patterns: abstract weight/pressure as emotional metaphor
-    r"\b(?:the )?weight of (?:your |the )?(?:failure|guilt|shame|loss|grief|regret|betrayal|silence)\b",
+    r"\b(?:the )?weight of (?:your |the |his |her )?(?:failure|guilt|shame|loss|grief|regret|betrayal|silence|withdrawal)\b",
     # GLM patterns: "makes you want to" — imposes desire
     r"\bmakes you (?:want|need|wish|long|ache) to\b",
     # GLM patterns: objects/situations imposing feelings
     r"\b(?:the |a )?(?:silence|darkness|cold|emptiness|room|air|wind) (?:offers|invites|urges|compels|forces|demands|asks|tells) you\b",
+    # GLM patterns: pressure/weight settling on player (from Elvira data)
+    r"\b(?:press(?:es|ing)|settl(?:es|ing)|weigh(?:s|ing)|hang(?:s|ing)|bears? down) (?:against |on |upon )?your (?:chest|shoulders|ears|back|spine|ribs)\b",
+    # GLM patterns: dragging posture/body as emotional metaphor
+    r"\bdragging your (?:posture|shoulders|head|body|gaze)\b",
+    # GLM patterns: crushing/suffocating as emotional descriptor
+    r"\b(?:crushing|suffocating) (?:pressure|weight|silence|darkness|realization)\b",
+    # GLM patterns: "feels distant/underwater" — imposed dissociation
+    r"\b(?:sound|voice|world|noise)s? feels? (?:distant|muffled|far away|underwater)\b",
+    # GLM patterns: "as if you are" — imposed internal comparison
+    r"\bas if you (?:are|were) (?:already |somehow )?(?:underwater|drowning|falling|sinking|floating)\b",
+    # GLM MISS patterns: evaporation/loss metaphors applied to player state
+    r"\b(?:whatever |the )?(?:fragile |thin )?(?:advantage|connection|trust|hope|progress) you (?:thought you )?held\b",
+    r"\b(?:advantage|connection|trust|hope) (?:you held |between you )?(?:evaporates?|dissolves?|vanishes?|crumbles?)\b",
 ]
 _AGENCY_PATTERNS = [re.compile(p, re.IGNORECASE) for p in _AGENCY_EMOTION_PATTERNS]
 
@@ -136,7 +151,6 @@ def check_atmospheric_register(narration: str, genre_constraints: dict | None) -
     matches = []
     for word in drift_words:
         word_lower = word.lower()
-        # Count occurrences — simple substring for multi-word, word boundary for single
         if " " in word_lower:
             if word_lower in narration_lower:
                 matches.append(word_lower)
@@ -175,25 +189,42 @@ def check_output_format(narration: str) -> list[str]:
 
 # ── NPC MONOLOGUE HEURISTIC ──────────────────────────────────
 
+_QUOTE_RE = re.compile(r"\u201c([^\u201d]+)\u201d")
+
 
 def check_npc_monologue(narration: str) -> list[str]:
-    """Heuristic: flag NPC speech that spans 4+ consecutive quoted segments."""
-    # Find all quoted segments
-    quotes = re.findall(r"\u201c[^\u201d]+\u201d", narration)
-    if len(quotes) < 4:
+    """Heuristic: flag NPC speech that is too long or too frequent.
+
+    Two checks:
+    1. Any single quoted block over 200 chars (long monologue in one quote).
+    2. 4+ quoted segments with short non-quote gaps (split monologue).
+    """
+    quotes = _QUOTE_RE.findall(narration)
+    if not quotes:
         return []
-    # Check if 4+ quotes appear with minimal non-quote text between them
-    # This catches NPC monologues disguised as multiple quote blocks
-    parts = re.split(r"\u201c[^\u201d]+\u201d", narration)
-    consecutive_short_gaps = 0
-    for part in parts[1:-1]:  # Skip before first and after last quote
-        stripped = part.strip()
-        if len(stripped) < 40:  # Short gap between quotes = same speaker monologuing
-            consecutive_short_gaps += 1
-        else:
-            consecutive_short_gaps = 0
-        if consecutive_short_gaps >= 3:
-            return ["RESOLUTION PACING: NPC delivers an extended monologue (4+ quoted segments with minimal breaks)"]
+
+    # Check 1: single NPC speech block over 200 chars
+    for q in quotes:
+        if len(q) > 200:
+            return [f"RESOLUTION PACING: NPC speech block is {len(q)} characters — max two sentences per NPC response"]
+
+    # Check 2: 4+ quotes with short gaps (split monologue)
+    if len(quotes) >= 4:
+        parts = _QUOTE_RE.split(narration)
+        # parts alternates: [before, quote1, between, quote2, ...]
+        # Non-quote gaps are at even indices starting from 2
+        consecutive_short_gaps = 0
+        for i in range(2, len(parts), 2):
+            stripped = parts[i].strip()
+            if len(stripped) < 40:
+                consecutive_short_gaps += 1
+            else:
+                consecutive_short_gaps = 0
+            if consecutive_short_gaps >= 3:
+                return [
+                    "RESOLUTION PACING: NPC delivers an extended monologue (4+ quoted segments with minimal breaks)"
+                ]
+
     return []
 
 
@@ -249,23 +280,80 @@ _CONSEQUENCE_STOPWORDS = frozenset(
 )
 
 
-def check_consequence_keywords(narration: str, consequence_sentences: list[str]) -> list[str]:
-    """Check that each consequence sentence has at least one keyword reflected in narration."""
+def check_consequence_keywords(narration: str, consequence_sentences: list[str], player_name: str = "") -> list[str]:
+    """Check that each consequence sentence has at least one keyword reflected in narration.
+
+    Strips possessives, contractions, and player name words (narrator writes
+    "you" not the character name). Uses stem matching for common consequence
+    verbs the model paraphrases.
+    """
     if not consequence_sentences:
         return []
     narration_lower = narration.lower()
+    # Player name words to exclude — narrator writes "you", not "Wanderer-369"
+    name_words = {w.strip(".,;:!?\"'()-").lower() for w in player_name.split()} if player_name else set()
     violations = []
     for sentence in consequence_sentences:
-        words = {w.strip(".,;:!?\"'()-").lower() for w in sentence.split() if len(w.strip(".,;:!?\"'()-")) >= 4}
-        keywords = words - _CONSEQUENCE_STOPWORDS
+        raw_words = {w.strip(".,;:!?\"'()-").lower() for w in sentence.split()}
+        cleaned = set()
+        for w in raw_words:
+            # Strip possessives: "Corvo's" → "corvo", "player's" → "player"
+            if w.endswith("'s") or w.endswith("\u2019s"):
+                w = w[:-2]
+            # Skip contractions like "it's", "don't"
+            elif "'" in w or "\u2019" in w:
+                continue
+            if len(w) >= 4:
+                cleaned.add(w)
+        keywords = cleaned - _CONSEQUENCE_STOPWORDS - name_words
         if not keywords:
             continue
-        if not any(kw in narration_lower for kw in keywords):
-            violations.append(
-                f"CONSEQUENCE MISSING: narrator did not reflect '{sentence[:60]}' — "
-                f"none of {sorted(keywords)[:4]} found in narration"
-            )
-    return violations[:2]  # Cap to avoid noise
+        if any(kw in narration_lower for kw in keywords):
+            continue
+        stems_found = False
+        for kw in keywords:
+            stem_variants = _CONSEQUENCE_STEMS.get(kw, ())
+            if any(sv in narration_lower for sv in stem_variants):
+                stems_found = True
+                break
+        if stems_found:
+            continue
+        violations.append(
+            f"CONSEQUENCE MISSING: narrator did not reflect '{sentence[:60]}' — "
+            f"none of {sorted(keywords)[:4]} found in narration"
+        )
+    return violations[:2]
+
+
+_CONSEQUENCE_STEMS: dict[str, tuple[str, ...]] = {
+    "breaks": ("broke", "broken", "snaps", "snapped", "crack", "cracked", "shatter"),
+    "broken": ("breaks", "broke", "snaps", "cracked", "shatter"),
+    "closes": ("closed", "closing", "shuts", "shut"),
+    "dims": ("dimmed", "dimming", "fades", "faded", "darkens", "darkened"),
+    "loses": ("lost", "losing", "gone"),
+    "lost": ("loses", "losing", "gone"),
+    "gone": ("lost", "loses", "vanish", "disappear"),
+    "pulls": ("pulled", "pulling", "draws", "drew"),
+    "withdraws": ("withdrew", "withdrawal", "retreats", "retreated", "pulls"),
+    "fractures": ("fractured", "cracks", "cracked", "breaks", "broken"),
+    "settles": ("settled", "settling", "sinks", "sank"),
+    "falters": ("faltered", "faltering", "wavers", "wavered"),
+    "evaporates": ("evaporated", "vanishes", "vanished", "dissolves", "dissolved"),
+    "staggers": ("staggered", "staggering", "stumbles", "stumbled"),
+    "crumples": ("crumpled", "collapses", "collapsed"),
+    "advantage": ("edge", "leverage", "upper hand", "opening"),
+    "momentum": ("advantage", "edge", "leverage", "initiative"),
+    "doubt": ("uncertain", "hesitat", "waver"),
+    "exhaustion": ("exhausted", "fatigue", "fatigued", "weariness", "weary", "tired"),
+    "slips": ("slipped", "slipping", "falters", "faltered"),
+    "supplies": ("supply", "gear", "pack", "rations", "kit", "provisions"),
+    "dropped": ("drops", "drop", "fell", "spill", "spilled"),
+    "spent": ("used", "consumed", "depleted", "empty", "emptied"),
+    "turns": ("turned", "turning"),
+    "crosses": ("crossed", "crossing"),
+    "steps": ("stepped", "stepping"),
+    "shifts": ("shifted", "shifting", "changes", "changed"),
+}
 
 
 # ── PUBLIC API ───────────────────────────────────────────────
@@ -277,12 +365,9 @@ def run_rule_checks(
     player_words: str = "",
     genre_constraints: dict | None = None,
     consequence_sentences: list[str] | None = None,
+    player_name: str = "",
 ) -> dict:
-    """Run all rule-based checks. Returns same format as LLM validator.
-
-    Returns:
-        {"pass": bool, "violations": list[str], "correction": str}
-    """
+    """Run all rule-based checks. Returns same format as LLM validator."""
     violations = []
 
     violations.extend(check_player_agency(narration))
@@ -292,8 +377,6 @@ def run_rule_checks(
     violations.extend(check_atmospheric_register(narration, genre_constraints))
     violations.extend(check_output_format(narration))
     violations.extend(check_npc_monologue(narration))
-    if consequence_sentences:
-        violations.extend(check_consequence_keywords(narration, consequence_sentences))
 
     if violations:
         correction = "; ".join(v.split(": ", 1)[1] if ": " in v else v for v in violations[:3])

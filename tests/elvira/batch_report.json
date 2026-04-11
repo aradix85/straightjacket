@@ -1,0 +1,266 @@
+[
+  {
+    "setting": "starforged",
+    "style": "explorer",
+    "repeat": 1,
+    "crashed": false,
+    "total_turns": 1,
+    "ended_reason": "engine_error",
+    "turns_checked": 0,
+    "turns_retried": 0,
+    "turns_failed": 0,
+    "total_retries": 0,
+    "compliance_rate": 0.0,
+    "top_violations": [],
+    "invariant_violations": 0,
+    "quality_issues": 0,
+    "spatial_issues": 0,
+    "correction_tests": 0,
+    "correction_failures": 0,
+    "burn_stats": {
+      "offered": 0,
+      "taken": 0,
+      "failed": 0
+    },
+    "token_summary": {
+      "total_input": 0,
+      "total_output": 0,
+      "total": 0,
+      "by_role": {}
+    }
+  },
+  {
+    "setting": "starforged",
+    "style": "explorer",
+    "repeat": 2,
+    "crashed": false,
+    "total_turns": 10,
+    "ended_reason": "max_turns_reached",
+    "turns_checked": 9,
+    "turns_retried": 5,
+    "turns_failed": 1,
+    "total_retries": 7,
+    "compliance_rate": 88.9,
+    "top_violations": [
+      [
+        "[llm] RESOLUTION PACING: Jasmine volunteers unsolicited information about Pewter asking for the cargo manifest, which the player did not ask about.",
+        1
+      ],
+      [
+        "[llm] RESOLUTION PACING: Jasmine answered two specific questions but then volunteered unsolicited information about her emotional state and actions ('She glances up at the bulkhead... She picks up a rag...') which extends the scene beyond the direct answers.",
+        1
+      ],
+      [
+        "[llm] RESOLUTION PACING: Jasmine answered more than the specific questions asked by providing context about the thudding sound and her reaction to it, violating the rule that NPCs must answer ONLY the specific question asked.",
+        1
+      ],
+      [
+        "[llm] RESOLUTION PACING: Jasmine answered the first question but did not answer the second question about who might be looking for him or the third question about the noise upstairs, violating the requirement to answer the specific question asked.",
+        1
+      ],
+      [
+        "[llm] PLAYER AGENCY: The narration states 'You keep your voice low and ask your questions,' which dictates the player character's specific action and manner of speaking, taking away the choice of how to interact.",
+        1
+      ],
+      [
+        "[llm] RESOLUTION PACING: Jasmine answered two separate questions (what he said and what the noise is) and performed an action, exceeding the limit of one specific answer per interaction.",
+        1
+      ],
+      [
+        "[llm] PLAYER AGENCY: The narration decided that the player character 'waits, watching her, then nod[s] toward the ceiling', dictating specific physical actions and timing that were not explicitly requested by the player.",
+        1
+      ],
+      [
+        "[llm] RESOLUTION PACING: Jasmine answers the specific question about the ceiling noise but fails to answer the first question about what the man said or who was looking for him.",
+        1
+      ],
+      [
+        "[llm] RESOLUTION PACING: Jasmine provides two separate answers in two separate turns, totaling more than two sentences of dialogue in response to the player's input.",
+        1
+      ],
+      [
+        "[llm] RESOLUTION PACING: NPC answered two distinct questions (about the cargo shielding and the engine room noise) when the player asked for a name for the cargo and about sleeping/quiet places, exceeding the limit of one specific answer.",
+        1
+      ]
+    ],
+    "invariant_violations": 0,
+    "quality_issues": 0,
+    "spatial_issues": 0,
+    "correction_tests": 1,
+    "correction_failures": 0,
+    "burn_stats": {
+      "offered": 3,
+      "taken": 0,
+      "failed": 0
+    },
+    "token_summary": {
+      "total_input": 178158,
+      "total_output": 16641,
+      "total": 194799,
+      "by_role": {
+        "narrator": {
+          "calls": 20,
+          "input": 70012,
+          "output": 4711
+        },
+        "architect_chapter": {
+          "calls": 2,
+          "input": 1478,
+          "output": 1243
+        },
+        "validator": {
+          "calls": 18,
+          "input": 22449,
+          "output": 981
+        },
+        "narrator_retry": {
+          "calls": 2,
+          "input": 2461,
+          "output": 791
+        },
+        "brain": {
+          "calls": 34,
+          "input": 39526,
+          "output": 3483
+        },
+        "metadata": {
+          "calls": 11,
+          "input": 11565,
+          "output": 976
+        },
+        "validator_architect": {
+          "calls": 1,
+          "input": 432,
+          "output": 25
+        },
+        "director": {
+          "calls": 14,
+          "input": 27103,
+          "output": 4151
+        },
+        "brain_correction": {
+          "calls": 5,
+          "input": 3132,
+          "output": 280
+        }
+      }
+    }
+  },
+  {
+    "setting": "starforged",
+    "style": "explorer",
+    "repeat": 3,
+    "crashed": false,
+    "total_turns": 10,
+    "ended_reason": "max_turns_reached",
+    "turns_checked": 9,
+    "turns_retried": 7,
+    "turns_failed": 3,
+    "total_retries": 14,
+    "compliance_rate": 66.7,
+    "top_violations": [
+      [
+        "[llm] RESOLUTION PACING: Jasmine speaks four sentences, exceeding the two-sentence limit.",
+        3
+      ],
+      [
+        "[llm] RESOLUTION PACING: Jasmine volunteers unsolicited backstory about a past incident and explains the creature's motivation/behavior without being asked.",
+        2
+      ],
+      [
+        "[llm] RESOLUTION PACING: Jasmine answers the specific question about the containment unit but also volunteers the solution to the puzzle (hit the leak with an electrical charge) and context about the fracture being a pressure seal, explaining the mystery in the same scene it appears.",
+        1
+      ],
+      [
+        "[llm] RESOLUTION PACING: NPC Jasmine volunteers unsolicited information ('It wasn't growth, it was a guardian') and context about the creature's nature, answering more than the specific question asked.",
+        1
+      ],
+      [
+        "[llm] RESOLUTION PACING: NPC Jasmine speaks two sentences, but the second sentence provides unrequested context/theory, violating the rule against volunteering information.",
+        1
+      ],
+      [
+        "[llm] RESOLUTION PACING: NPC answers the specific question asked and volunteers unsolicited context about the creature's nature ('It was a guardian').",
+        1
+      ],
+      [
+        "[llm] GENRE PHYSICS: Inanimate residue is described as 'weeping', attributing human emotion/biological function to a fluid.",
+        1
+      ],
+      [
+        "[llm] RESOLUTION PACING: NPC Jasmine answers the specific question asked but then adds unsolicited context about scrambling into the duct, slipping, kicking the grate, and the creature's reaction, exceeding the two-sentence limit and volunteering narrative details not requested.",
+        1
+      ],
+      [
+        "[llm] PLAYER AGENCY: Narrator decides the player character shouts a specific question about 'what were you growing' and identifies a 'hairline fracture', taking away the player's choice of what to ask and what to observe.",
+        1
+      ],
+      [
+        "[llm] RESOLUTION PACING: Jasmine volunteers unsolicited context about the drive core, the Vault, and the Obsidian Wing's intentions, explaining the mystery immediately.",
+        1
+      ]
+    ],
+    "invariant_violations": 0,
+    "quality_issues": 0,
+    "spatial_issues": 0,
+    "correction_tests": 1,
+    "correction_failures": 0,
+    "burn_stats": {
+      "offered": 0,
+      "taken": 0,
+      "failed": 0
+    },
+    "token_summary": {
+      "total_input": 220662,
+      "total_output": 19214,
+      "total": 239876,
+      "by_role": {
+        "director": {
+          "calls": 17,
+          "input": 35268,
+          "output": 5677
+        },
+        "narrator": {
+          "calls": 26,
+          "input": 106054,
+          "output": 5860
+        },
+        "architect_chapter": {
+          "calls": 1,
+          "input": 766,
+          "output": 639
+        },
+        "validator": {
+          "calls": 24,
+          "input": 29807,
+          "output": 1886
+        },
+        "validator_architect": {
+          "calls": 1,
+          "input": 452,
+          "output": 25
+        },
+        "narrator_retry": {
+          "calls": 1,
+          "input": 1173,
+          "output": 347
+        },
+        "brain": {
+          "calls": 30,
+          "input": 33940,
+          "output": 3173
+        },
+        "metadata": {
+          "calls": 10,
+          "input": 10517,
+          "output": 1352
+        },
+        "brain_correction": {
+          "calls": 5,
+          "input": 2685,
+          "output": 255
+        }
+      }
+    }
+  }
+]

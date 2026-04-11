@@ -21,6 +21,7 @@ def call_narrator(
     config: EngineConfig | None = None,
     system_suffix: str = "",
     skip_history: bool = False,
+    extra_messages: list[dict] | None = None,
 ) -> str:
     """Narrator call with conversation memory for style consistency.
 
@@ -29,6 +30,9 @@ def call_narrator(
     on retries, where they carry more weight than user-message corrections.
     skip_history: if True, do not include narration_history as conversation
     context. Used on retries to prevent poisoned few-shot examples.
+    extra_messages: if provided, appended after the main prompt message.
+    Used by retry to include the failed narration as assistant turn +
+    correction instruction as user turn.
 
     """
     log(f"[Narrator] Calling narrator (prompt: {len(prompt)} chars{', skip_history' if skip_history else ''})")
@@ -43,6 +47,10 @@ def call_narrator(
 
     # Current prompt
     messages.append({"role": "user", "content": prompt})
+
+    # Extra messages for retry context (failed narration + correction)
+    if extra_messages:
+        messages.extend(extra_messages)
 
     system = get_narrator_system(config or EngineConfig(), game)
     if system_suffix:

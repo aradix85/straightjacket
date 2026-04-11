@@ -233,6 +233,7 @@ def build_report(results: list[dict], settings: list[str], styles: list[str], tu
 def main() -> None:
     parser = argparse.ArgumentParser(description="Elvira batch runner — compliance validation")
     parser.add_argument("--config", type=Path, default=DEFAULT_CONFIG, help="Base config file")
+    parser.add_argument("--turns", type=int, default=None, help="Turns per session (overrides config)")
     parser.add_argument("--repeats", type=int, default=1, help="Repeat each combination N times (default: 1)")
     parser.add_argument("--settings", nargs="+", default=None, help="Settings to test (default: all except delve)")
     parser.add_argument("--styles", nargs="+", default=None, help="Styles to test (default: all 5)")
@@ -242,6 +243,8 @@ def main() -> None:
     args = parser.parse_args()
 
     base_cfg = load_config(args.config)
+    if args.turns is not None:
+        base_cfg.setdefault("session", {})["max_turns"] = args.turns
     max_turns = base_cfg.get("session", {}).get("max_turns", 25)
 
     available_settings = [s for s in list_packages() if s != "delve"]
