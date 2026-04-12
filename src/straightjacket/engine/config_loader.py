@@ -97,6 +97,20 @@ class ToolRounds:
 
 
 @dataclass
+class PerRoleDict:
+    """Per-AI-role dict values (extra_body). Default applies when no per-role override exists."""
+
+    _data: dict[str, dict[str, Any]] = field(default_factory=dict, repr=False)
+
+    def get(self, key: str, default: dict[str, Any] | None = None) -> dict[str, Any]:
+        if key in self._data:
+            return self._data[key]
+        if "default" in self._data:
+            return self._data["default"]
+        return default or {}
+
+
+@dataclass
 class AIConfig:
     """AI provider and model configuration."""
 
@@ -108,7 +122,8 @@ class AIConfig:
     narrator_model: str = ""
     director_model: str = ""
     validator_model: str = ""
-    extra_body: dict[str, Any] = field(default_factory=dict)
+    metadata_model: str = ""
+    extra_body: PerRoleDict = field(default_factory=PerRoleDict)
     max_tokens: PerRoleInt = field(default_factory=PerRoleInt)
     max_retries: PerRoleInt = field(default_factory=PerRoleInt)
     max_tool_rounds: ToolRounds = field(default_factory=ToolRounds)
@@ -158,6 +173,17 @@ def _build_per_role_float(data: dict) -> PerRoleFloat:
     return PerRoleFloat(_data={k: float(v) for k, v in data.items() if v is not None})
 
 
+def _build_per_role_dict(data: dict | Any) -> PerRoleDict:
+    """Build PerRoleDict from YAML. Accepts either a flat dict (becomes default) or a role-keyed dict of dicts."""
+    if not isinstance(data, dict):
+        return PerRoleDict()
+    # If any value is a dict, treat as role-keyed
+    if any(isinstance(v, dict) for v in data.values()):
+        return PerRoleDict(_data={k: dict(v) for k, v in data.items() if isinstance(v, dict)})
+    # Flat dict: use as default for all roles
+    return PerRoleDict(_data={"default": dict(data)})
+
+
 def _parse_config(data: dict) -> AppConfig:
     """Parse raw config.yaml dict into typed AppConfig."""
     c = AppConfig()
@@ -177,7 +203,8 @@ def _parse_config(data: dict) -> AppConfig:
             narrator_model=ad.get("narrator_model", ""),
             director_model=ad.get("director_model", ""),
             validator_model=ad.get("validator_model", ""),
-            extra_body=dict(ad.get("extra_body", {})) if isinstance(ad.get("extra_body"), dict) else {},
+            metadata_model=ad.get("metadata_model", ""),
+            extra_body=_build_per_role_dict(ad.get("extra_body", {})),
             max_tokens=_build_per_role_int(ad.get("max_tokens", {})),
             max_retries=_build_per_role_int(
                 ad.get("max_retries", {}), PerRoleInt(**{f: 3 for f in PerRoleInt.__dataclass_fields__})
@@ -254,13 +281,13 @@ def default_player_name() -> str:
 
 
 def sampling_params(role: str) -> dict:
-    """Get sampling parameters (temperature, top_p) for an AI role.
+    """Get sampling parameters (temperature, top_p, extra_body) for an AI role.
 
     Returns a dict suitable for unpacking into create_with_retry():
         create_with_retry(provider, ..., **sampling_params("narrator"))
     """
     _c = cfg()
-    params: dict[str, float] = {}
+    params: dict[str, Any] = {}
     try:
         val = getattr(_c.ai.temperature, role)
         if val is not None:
@@ -276,4 +303,7 @@ def sampling_params(role: str) -> dict:
         default = _c.ai.top_p.get("default")
         if default is not None:
             params["top_p"] = float(default)
+    eb = _c.ai.extra_body.get(role)
+    if eb:
+        params["extra_body"] = eb
     return params

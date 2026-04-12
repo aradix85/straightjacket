@@ -198,11 +198,12 @@ def available_moves(game: GameState) -> dict:
     ds_moves = get_moves(game.setting_id)
     combat_pos = game.world.combat_position
     in_combat = combat_pos in ("in_control", "bad_spot")
-    has_vow = any(t.track_type == "vow" for t in game.progress_tracks)
-    has_expedition = any(t.track_type == "expedition" for t in game.progress_tracks)
-    has_scene_challenge = any(t.track_type == "scene_challenge" for t in game.progress_tracks)
-    has_combat_track = any(t.track_type == "combat" for t in game.progress_tracks)
-    has_connection = any(t.track_type == "connection" for t in game.progress_tracks)
+    active_tracks = [t for t in game.progress_tracks if t.status == "active"]
+    has_vow = any(t.track_type == "vow" for t in active_tracks)
+    has_expedition = any(t.track_type == "expedition" for t in active_tracks)
+    has_scene_challenge = any(t.track_type == "scene_challenge" for t in active_tracks)
+    has_combat_track = any(t.track_type == "combat" for t in active_tracks)
+    has_connection = any(t.track_type == "connection" for t in active_tracks)
 
     result: list[dict] = []
 

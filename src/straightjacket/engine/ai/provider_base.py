@@ -97,6 +97,7 @@ class AIProvider(Protocol):
         temperature: float | None = None,
         top_p: float | None = None,
         top_k: int | None = None,
+        extra_body: dict | None = None,
     ) -> AIResponse:
         """Send a message to the AI model and return a normalized response.
 
@@ -171,6 +172,7 @@ def create_with_retry(
     temperature: float | None = None,
     top_p: float | None = None,
     top_k: int | None = None,
+    extra_body: dict | None = None,
     log_role: str = "",
 ) -> AIResponse:
     """Call provider.create_message with retry on transient errors.
@@ -202,6 +204,7 @@ def create_with_retry(
                 temperature=temperature,
                 top_p=top_p,
                 top_k=top_k,
+                extra_body=extra_body,
             )
             result = post_process_response(response)
             if log_role and result.usage:

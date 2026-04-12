@@ -363,6 +363,10 @@ inputForm.onsubmit = (e) => {
     send({type: "status_query"});
     return;
   }
+  if (cmd === "/tracks" || cmd === "tracks") {
+    send({type: "tracks_query"});
+    return;
+  }
   if (text.startsWith("##")) {
     appendText("msg msg-player msg-correction", text);
     send({type: "correction", text: text.replace(/^#+\s*/, "")});

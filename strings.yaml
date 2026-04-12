@@ -151,3 +151,7 @@ status.clock_fired: '{name}: triggered.'
 status.act: 'Story: {title} ({phase}, {progress}).'
 status.no_game: No active game.
 status.tracks: '{name}: {progress}.'
+status.track_combat: '{name}: {progress}, {position}.'
+status.track_expedition: '{name} (expedition): {progress}.'
+status.track_scene_challenge: '{name} (scene challenge): {progress}.'
+status.no_tracks: No active tracks.

@@ -155,6 +155,34 @@ def build_narrative_status(game: GameState) -> str:
     return "\n".join(lines)
 
 
+_COMBAT_POS_DESC: dict[str, str] = {
+    "in_control": "in control",
+    "bad_spot": "in a bad spot",
+}
+
+
+def build_tracks_status(game: GameState) -> str:
+    """Narrative track status for /tracks command. No mechanical numbers."""
+    active = [tr for tr in game.progress_tracks if tr.status == "active"]
+    if not active:
+        return t("status.no_tracks")
+
+    lines = []
+    for tr in active:
+        track_desc = _describe_resource(tr.filled_boxes, _TRACK_DESC)
+        if tr.track_type == "combat":
+            pos_desc = _COMBAT_POS_DESC.get(game.world.combat_position, "")
+            lines.append(t("status.track_combat", name=tr.name, progress=track_desc, position=pos_desc))
+        elif tr.track_type == "expedition":
+            lines.append(t("status.track_expedition", name=tr.name, progress=track_desc))
+        elif tr.track_type == "scene_challenge":
+            lines.append(t("status.track_scene_challenge", name=tr.name, progress=track_desc))
+        else:
+            lines.append(t("status.tracks", name=tr.name, progress=track_desc))
+
+    return "\n".join(lines)
+
+
 def build_creation_options() -> dict:
     """All character creation data for the client form."""
     from ..engine.engine_loader import eng

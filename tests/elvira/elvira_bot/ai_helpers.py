@@ -12,8 +12,12 @@ from straightjacket.engine.story_state import get_current_act
 
 _HERE = Path(__file__).resolve().parent.parent
 _PROMPTS_PATH = _HERE / "elvira_prompts.yaml"
+_CONFIG_PATH = _HERE / "elvira_config.yaml"
 
 _prompts: dict[str, str] | None = None
+_bot_model: str | None = None
+_bot_temperature: float | None = None
+_bot_config_loaded: bool = False
 
 
 def _load_prompts() -> dict[str, str]:
@@ -26,6 +30,24 @@ def _load_prompts() -> dict[str, str]:
     return _prompts
 
 
+def _load_bot_config() -> None:
+    """Load bot AI config from elvira_config.yaml once."""
+    global _bot_model, _bot_temperature, _bot_config_loaded
+    if _bot_config_loaded:
+        return
+    _bot_config_loaded = True
+    if _CONFIG_PATH.exists():
+        with open(_CONFIG_PATH, encoding="utf-8") as f:
+            ecfg = yaml.safe_load(f) or {}
+        ai_cfg = ecfg.get("ai", {})
+        _bot_model = ai_cfg.get("bot_model", "") or None
+        temp = ai_cfg.get("temperature")
+        if temp is not None:
+            _bot_temperature = float(temp)
+    if not _bot_model:
+        _bot_model = cfg().ai.brain_model
+
+
 def get_persona(style: str) -> str:
     """Get the system prompt for a play style."""
     prompts = _load_prompts()
@@ -34,12 +56,14 @@ def get_persona(style: str) -> str:
 
 def ask_bot(provider: AIProvider, system: str, user: str, max_tokens: int = 300, model: str = "") -> str:
     """Single-shot call to the bot player model."""
-    _model = model or cfg().ai.brain_model
+    _load_bot_config()
+    _model = model or _bot_model or cfg().ai.brain_model
     response = provider.create_message(
         model=_model,
         system=system,
         messages=[{"role": "user", "content": user}],
         max_tokens=max_tokens,
+        temperature=_bot_temperature,
     )
     response = post_process_response(response)
     return response.content.strip()

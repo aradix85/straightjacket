@@ -43,6 +43,7 @@ from .handlers import (
     handle_select_player,
     handle_start_game,
     handle_status_query,
+    handle_tracks_query,
 )
 from .serializers import build_creation_options, build_ui_strings
 from .session import Session
@@ -72,6 +73,7 @@ _HANDLERS: dict[str, Callable] = {
     "delete_save": handle_delete_save,
     "recap": handle_recap,
     "status_query": handle_status_query,
+    "tracks_query": handle_tracks_query,
     "generate_epilogue": handle_generate_epilogue,
     "dismiss_epilogue": handle_dismiss_epilogue,
     "new_chapter": handle_new_chapter,

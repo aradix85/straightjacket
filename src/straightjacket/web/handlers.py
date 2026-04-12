@@ -35,7 +35,7 @@ from ..engine import (
 )
 from ..engine.ai.api_client import get_provider
 from ..i18n import t
-from .serializers import build_creation_options, build_narrative_status, highlight_dialog
+from .serializers import build_creation_options, build_narrative_status, build_tracks_status, highlight_dialog
 from .session import BurnOffer, Session
 
 
@@ -405,6 +405,14 @@ async def handle_status_query(session: Session, ws: WebSocket, _msg: dict) -> No
         await _send(ws, {"type": "status", "text": t("status.no_game")})
         return
     text = build_narrative_status(session.game)
+    await _send(ws, {"type": "status", "text": text})
+
+
+async def handle_tracks_query(session: Session, ws: WebSocket, _msg: dict) -> None:
+    if not session.game:
+        await _send(ws, {"type": "status", "text": t("status.no_game")})
+        return
+    text = build_tracks_status(session.game)
     await _send(ws, {"type": "status", "text": text})
 
 

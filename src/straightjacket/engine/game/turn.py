@@ -116,7 +116,7 @@ def _find_progress_track(game: GameState, track_category: str, target_track: str
 
 
 def complete_track(game: GameState, track_id: str, outcome: str) -> None:
-    """Mark a track as completed or failed. Updates linked thread if vow."""
+    """Mark a track as completed or failed. Clears combat_position for combat tracks, deactivates linked thread for vows."""
     track = next((t for t in game.progress_tracks if t.id == track_id), None)
     if not track:
         log(f"[Track] complete_track: not found {track_id}")
@@ -124,13 +124,31 @@ def complete_track(game: GameState, track_id: str, outcome: str) -> None:
     track.status = outcome  # "completed" or "failed"
     log(f"[Track] {track.name} ({track.track_type}) → {outcome}")
 
-    # Update linked thread
+    if track.track_type == "combat" and game.world.combat_position:
+        game.world.combat_position = ""
+        log("[Track] Combat ended: cleared combat_position")
+
     if track.track_type == "vow":
         for thread in game.narrative.threads:
             if thread.linked_track_id == track_id:
                 thread.active = False
                 log(f"[Track] Linked thread '{thread.name}' deactivated")
                 break
+
+
+def sync_combat_tracks(game: GameState) -> None:
+    """Remove orphaned combat tracks when combat_position has been cleared.
+
+    Called after post-narration processing. If combat ended via narrative
+    (metadata extractor cleared combat_position) but the combat track is
+    still active, the engine removes it.
+    """
+    if game.world.combat_position:
+        return
+    for track in game.progress_tracks:
+        if track.track_type == "combat" and track.status == "active":
+            track.status = "failed"
+            log(f"[Track] Orphaned combat track '{track.name}' removed (combat_position cleared)")
 
 
 # ── Scene-end list maintenance (step 4.6 / 6.5) ──────────────
@@ -208,6 +226,9 @@ def _finalize_scene(
         consequences=consequences,
         world_addition=brain.world_addition or "",
     )
+
+    # Combat track ↔ combat_position sync (step 10.1)
+    sync_combat_tracks(game)
 
     revelation_confirmed = False
     if ctx.pending_revs:
@@ -535,6 +556,16 @@ def process_turn(
             complete_track(game, track.id, "completed")
         elif roll.result == "MISS":
             complete_track(game, track.id, "failed")
+
+    # Scene challenge progress routing (step 10.2): adventure moves also mark
+    # progress on active scene_challenge track when one exists
+    sc_progress_moves = eng().get_raw("scene_challenge_progress_moves", [])
+    if brain.move in sc_progress_moves and roll.result in ("STRONG_HIT", "WEAK_HIT"):
+        sc_track = _find_progress_track(game, "scene_challenge")
+        if sc_track:
+            added = sc_track.mark_progress()
+            if added:
+                log(f"[Track] Scene challenge '{sc_track.name}': +{added} ticks ({sc_track.filled_boxes}/10 boxes)")
 
     # WEAK_HIT clock ticking — turn-only (not on correction/burn re-narration)
     if roll.result == "WEAK_HIT" and position != "controlled":

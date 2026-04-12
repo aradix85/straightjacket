@@ -5,6 +5,23 @@ Originally forked from [EdgeTales](https://github.com/edgetales/edgetales). See 
 
 ---
 
+## [0.47.0] — 2026-04-13
+
+Combat, expedition, and scene challenge track lifecycle. Step 10.
+
+- Bug fix: `available_moves` now filters progress tracks by `status == "active"`. Completed/failed tracks no longer expose their moves (fulfill_your_vow, take_decisive_action, finish_an_expedition, finish_the_scene)
+- `complete_track` clears `combat_position` when combat track completes or fails
+- `sync_combat_tracks` removes orphaned active combat tracks when `combat_position` is cleared by narrative (metadata extractor). Called in `_finalize_scene` after post-narration
+- Scene challenge progress routing: `scene_challenge_progress_moves` list in engine.yaml. When active scene_challenge track exists and move is `adventure/face_danger` or `adventure/secure_an_advantage` with a hit, engine marks progress on scene_challenge track in addition to normal outcome
+- `/tracks` status command: `handle_tracks_query` handler, `build_tracks_status` serializer with type-specific context (combat shows position, expedition/scene_challenge labeled). Client routing for `/tracks` and `tracks` commands
+- strings.yaml: `status.track_combat`, `status.track_expedition`, `status.track_scene_challenge`, `status.no_tracks`
+- ARCHITECTURE.md: module ownership updated for combat sync, scene challenge routing, /tracks command
+- Multi-model support: `extra_body` in config.yaml is now per-role via `PerRoleDict`, consistent with temperature/top_p. Flat dict becomes default for all roles; per-role overrides replace the default entirely (e.g. GLM roles get `reasoning_effort: "none"`, Qwen roles get empty dict). Resolved in `sampling_params()`, passed per-call through `create_with_retry` — no state stored in provider
+- `metadata_model` field in config.yaml: metadata extractor (two-call pattern) can use a separate model. Falls back to `brain_model` if empty
+- Elvira bot model configurable via `elvira_config.yaml` → `ai.bot_model`. Defaults to `brain_model` if omitted
+- All models set to GLM-4.7 as baseline. Switch validator/metadata/elvira to Qwen after testing
+- 692 tests (+33 net), ruff clean, mypy clean
+
 ## [0.46.50] — 2026-04-12
 
 Config-driven prompt file. Shared resolution and narration. Typed config. Cleanup.

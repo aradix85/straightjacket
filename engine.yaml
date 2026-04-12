@@ -834,6 +834,13 @@ track_creating_moves:
   exploration/undertake_an_expedition: expedition
   scene_challenge/begin_the_scene: scene_challenge
 
+# Moves that also mark progress on an active scene_challenge track.
+# When a scene challenge is active and the player uses one of these adventure moves,
+# the engine marks progress on the scene_challenge track in addition to normal outcome.
+scene_challenge_progress_moves:
+  - adventure/face_danger
+  - adventure/secure_an_advantage
+
 # ── Move outcomes (step 7b) ──────────────────────────────────
 # Data-driven mechanical effects per move per result.
 # Simple moves: list of effect strings.

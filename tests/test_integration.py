@@ -44,6 +44,7 @@ class MockProvider:
         temperature: float | None = None,
         top_p: float | None = None,
         top_k: int | None = None,
+        extra_body: dict | None = None,
     ) -> MockResponse:
         self.calls.append(
             {

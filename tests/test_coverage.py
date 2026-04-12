@@ -65,6 +65,7 @@ class _MockProvider:
         temperature: float | None = None,
         top_p: float | None = None,
         top_k: int | None = None,
+        extra_body: dict | None = None,
     ) -> _MockResponse:
         self.calls.append({"system": system, "json_schema": json_schema})
         if self._fail:
@@ -137,6 +138,7 @@ def test_validate_and_retry_actually_retries(stub_all: None) -> None:
             temperature: float | None = None,
             top_p: float | None = None,
             top_k: int | None = None,
+            extra_body: dict | None = None,
         ):
             call_count[0] += 1
             if json_schema and "pass" in json_schema.get("properties", {}):

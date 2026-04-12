@@ -83,9 +83,13 @@ Where to find things. If you want to change X, edit Y.
 | Built-in Director tools | `tools/builtins.py` → `query_npc`, `query_active_threads`, `query_active_clocks` |
 | Engine query functions (no tool registration) | `tools/builtins.py` → `available_moves`, `fate_question`, `roll_oracle`, `query_npc_list`, `list_tracks` |
 | Track-creating moves | `engine.yaml` → `track_creating_moves` (no Python) |
-| Track lifecycle (creation, completion) | `game/turn.py` → `_find_progress_track`, `complete_track` |
+| Track lifecycle (creation, completion) | `game/turn.py` → `_find_progress_track`, `complete_track`, `sync_combat_tracks` |
+| Combat track ↔ combat_position sync | `game/turn.py` → `complete_track` (clears position), `sync_combat_tracks` (orphan cleanup) |
+| Scene challenge progress routing | `engine.yaml` → `scene_challenge_progress_moves`; `game/turn.py` action path |
+| Which moves are available in a game state | `tools/builtins.py` → `available_moves`, `_is_move_available` (filters by `status == "active"`) |
 | NPC bond level | `npc/bond.py` → `get_npc_bond` (reads connection track, not NpcData) |
 | Status commands (/status, /score) | `web/handlers.py` → `handle_status_query`; `web/serializers.py` → `build_narrative_status` |
+| Status command /tracks | `web/handlers.py` → `handle_tracks_query`; `web/serializers.py` → `build_tracks_status` |
 | Fate questions (yes/no) | `mechanics/fate.py` → `resolve_fate`, `resolve_likelihood`; `engine.yaml` → `fate` |
 | Scene structure (expected/altered/interrupt) | `mechanics/scene.py` → `check_scene`, `SceneSetup` |
 | Random events and meaning tables | `mechanics/random_events.py` → `generate_random_event`, `roll_event_focus`, `roll_meaning_table` |

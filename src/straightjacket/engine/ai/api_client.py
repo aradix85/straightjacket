@@ -46,8 +46,7 @@ def get_provider() -> AIProvider:
     elif provider_type == "openai_compatible":
         from .provider_openai import OpenAICompatibleProvider
 
-        extra_body = _c.ai.extra_body or {}
-        provider = OpenAICompatibleProvider(api_key=resolved_key, api_base=api_base, extra_body=extra_body)
+        provider = OpenAICompatibleProvider(api_key=resolved_key, api_base=api_base)
     else:
         raise ValueError(f"Unknown AI provider: {provider_type!r}")
 

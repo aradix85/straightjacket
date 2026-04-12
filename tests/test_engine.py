@@ -55,9 +55,17 @@ def test_appconfig_per_role_float_missing() -> None:
 def test_appconfig_extra_body() -> None:
     from straightjacket.engine.config_loader import _parse_config
 
+    # Flat dict becomes default for all roles
     data = {"ai": {"extra_body": {"reasoning_effort": "none"}}}
     config = _parse_config(data)
-    assert config.ai.extra_body == {"reasoning_effort": "none"}
+    assert config.ai.extra_body.get("narrator") == {"reasoning_effort": "none"}
+    assert config.ai.extra_body.get("brain") == {"reasoning_effort": "none"}
+
+    # Per-role overrides
+    data2 = {"ai": {"extra_body": {"default": {"reasoning_effort": "none"}, "validator": {}}}}
+    config2 = _parse_config(data2)
+    assert config2.ai.extra_body.get("narrator") == {"reasoning_effort": "none"}
+    assert config2.ai.extra_body.get("validator") == {}
 
 
 # ── locations_match tests ─────────────────────────────────────

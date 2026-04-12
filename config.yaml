@@ -22,8 +22,12 @@ ai:
   narrator_model: "zai-glm-4.7"
   director_model: "zai-glm-4.7"
   validator_model: "zai-glm-4.7"
+  metadata_model: "zai-glm-4.7"       # Metadata extractor (two-call pattern). Falls back to brain_model if empty.
   extra_body:
-    reasoning_effort: "none"
+    default:                           # Applied to all roles unless overridden per-role
+      reasoning_effort: "none"
+    # Per-role overrides (uncomment when switching roles to models that don't need reasoning_effort):
+    # validator: {}                    # Empty dict = no extra_body for this role
 
   max_tokens:
     brain: 8192               # avg 97, json classification

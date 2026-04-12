@@ -23,7 +23,7 @@ class OpenAICompatibleProvider:
     """AIProvider implementation for OpenAI-compatible APIs.
 
     Structured output: uses response_format with json_schema and strict: true.
-    Confirmed working on Cerebras (Qwen 3 235B), OpenRouter, and OpenAI.
+    Confirmed working on Cerebras (GLM-4.7, Qwen 3 235B), OpenRouter, and OpenAI.
 
     Stop reason mapping:
         "stop" -> "complete"
@@ -31,12 +31,11 @@ class OpenAICompatibleProvider:
         anything else -> "complete" (safe default)
     """
 
-    def __init__(self, api_key: str, api_base: str | None = None, extra_body: dict[str, Any] | None = None):
+    def __init__(self, api_key: str, api_base: str | None = None):
         if api_base:
             self._client = openai.OpenAI(api_key=api_key, base_url=api_base)
         else:
             self._client = openai.OpenAI(api_key=api_key)
-        self._extra_body = extra_body or {}
         log(f"[OpenAICompatibleProvider] Initialized{f' (base: {api_base})' if api_base else ''}")
 
     def create_message(
@@ -50,6 +49,7 @@ class OpenAICompatibleProvider:
         temperature: float | None = None,
         top_p: float | None = None,
         top_k: int | None = None,
+        extra_body: dict | None = None,
     ) -> AIResponse:
         """Send a message via the OpenAI-compatible SDK."""
 
@@ -66,8 +66,12 @@ class OpenAICompatibleProvider:
         if top_p is not None:
             create_kwargs["top_p"] = top_p
 
-        # Provider-specific params (top_k, config overrides)
-        extra: dict[str, Any] = dict(self._extra_body)
+        # Provider-specific params (top_k, per-role extra_body from config)
+        extra: dict[str, Any] = dict(extra_body) if extra_body else {}
+        if top_k is not None:
+            extra["top_k"] = top_k
+        if extra:
+            create_kwargs["extra_body"] = extra
         if top_k is not None:
             extra["top_k"] = top_k
         if extra:

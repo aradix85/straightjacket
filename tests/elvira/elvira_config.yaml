@@ -1,10 +1,17 @@
 # Straightjacket Test Player Bot — Elvira Configuration
-# Uses the same AI provider as the engine (config.yaml).
+# Uses the same AI provider as the engine (config.yaml) unless overridden below.
 # Set your API key via config.yaml or the env var configured there.
 
 username: "elvira"
 
 auto_mode: true
+
+# Bot AI model. Elvira's player bot uses this model for action generation
+# and tactical decisions. Defaults to config.yaml brain_model if omitted.
+# Qwen is faster and cheaper — good enough for test player input generation.
+ai:
+  bot_model: "qwen-3-235b-a22b-instruct-2507"
+  temperature: 0.7                    # Higher = more varied test inputs
 
 game:
   load_existing: false
