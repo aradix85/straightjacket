@@ -49,7 +49,7 @@ def _roll_oracle_answer(game: GameState) -> str:
 def _find_progress_track(game: GameState, track_category: str) -> ProgressTrack | None:
     """Find the most relevant progress track for a progress move.
 
-    Searches vow_tracks by track_type matching the move's track_category.
+    Searches progress_tracks by track_type matching the move's track_category.
     Returns the most recent (last) matching track, or None.
     """
     cat_lower = track_category.lower()
@@ -63,7 +63,7 @@ def _find_progress_track(game: GameState, track_category: str) -> ProgressTrack 
     }
     track_type = type_map.get(cat_lower, cat_lower)
 
-    for track in reversed(game.vow_tracks):
+    for track in reversed(game.progress_tracks):
         if track.track_type == track_type:
             return track
     return None
@@ -271,65 +271,12 @@ def process_turn(
 
     pending_revs = get_pending_revelations(game)
 
-    # ── Dialog path ───────────────────────────────────────────
-    if brain.dialog_only or brain.move == "dialog":
+    # ── Dialog / Oracle path ─────────────────────────────────────
+    if brain.dialog_only or brain.move == "dialog" or brain.move == "ask_the_oracle":
+        is_oracle = brain.move == "ask_the_oracle"
         nar.scene_count += 1
-        prompt = build_dialog_prompt(
-            game,
-            brain,
-            player_words=player_message,
-            scene_setup=scene_setup,
-            activated_npcs=activated_npcs,
-            mentioned_npcs=mentioned_npcs,
-            config=config,
-            random_events=pending_random_events,
-        )
-        raw = call_narrator(provider, prompt, game, config)
-        narration = parse_narrator_response(game, raw)
 
-        from ..ai.validator import validate_and_retry
-
-        narration, val_report = validate_and_retry(
-            provider, narration, prompt, "dialog", game, player_words=player_message, config=config
-        )
-
-        if game.last_turn_snapshot is not None:
-            game.last_turn_snapshot.narration = narration
-
-        _, director_ctx = _finalize_scene(
-            provider,
-            game,
-            narration,
-            brain,
-            player_message,
-            _scene_present_ids,
-            pending_revs,
-            scene_setup,
-            npc_activation_debug,
-            log_entry={
-                "scene": nar.scene_count,
-                "summary": (brain.player_intent or player_message),
-                "move": brain.move,
-                "result": "dialog",
-                "consequences": [],
-                "clock_events": [],
-                "scene_type": scene_setup.scene_type,
-                "npc_activation": npc_activation_debug,
-                "validator": val_report,
-                "_pacing_type": "breather",
-            },
-            prompt_summary=f"Dialog: {(brain.player_intent or player_message)[:80]}",
-            roll_result_str="dialog",
-            config=config,
-            roll=None,
-            consequences=[],
-        )
-        return game, narration, None, None, director_ctx
-
-    # ── Oracle path ───────────────────────────────────────────
-    if brain.move == "ask_the_oracle":
-        nar.scene_count += 1
-        oracle_answer = _roll_oracle_answer(game)
+        oracle_answer = _roll_oracle_answer(game) if is_oracle else ""
         prompt = build_dialog_prompt(
             game,
             brain,
@@ -353,6 +300,22 @@ def process_turn(
         if game.last_turn_snapshot is not None:
             game.last_turn_snapshot.narration = narration
 
+        result_label = "oracle" if is_oracle else "dialog"
+        log_entry: dict = {
+            "scene": nar.scene_count,
+            "summary": (brain.player_intent or player_message),
+            "move": brain.move,
+            "result": result_label,
+            "consequences": [],
+            "clock_events": [],
+            "scene_type": scene_setup.scene_type,
+            "npc_activation": npc_activation_debug,
+            "validator": val_report,
+            "_pacing_type": "breather",
+        }
+        if is_oracle:
+            log_entry["oracle_answer"] = oracle_answer
+
         _, director_ctx = _finalize_scene(
             provider,
             game,
@@ -363,21 +326,9 @@ def process_turn(
             pending_revs,
             scene_setup,
             npc_activation_debug,
-            log_entry={
-                "scene": nar.scene_count,
-                "summary": (brain.player_intent or player_message),
-                "move": "ask_the_oracle",
-                "result": "oracle",
-                "consequences": [],
-                "clock_events": [],
-                "scene_type": scene_setup.scene_type,
-                "npc_activation": npc_activation_debug,
-                "validator": val_report,
-                "_pacing_type": "breather",
-                "oracle_answer": oracle_answer,
-            },
-            prompt_summary=f"Oracle: {(brain.player_intent or player_message)[:80]}",
-            roll_result_str="oracle",
+            log_entry=log_entry,
+            prompt_summary=f"{result_label.capitalize()}: {(brain.player_intent or player_message)[:80]}",
+            roll_result_str=result_label,
             config=config,
             roll=None,
             consequences=[],

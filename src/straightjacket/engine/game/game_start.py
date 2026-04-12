@@ -121,7 +121,7 @@ def _seed_background_vow(game: GameState, vow_text: str, rank: str = "") -> None
         track_type="vow",
         rank=vow_rank,
     )
-    game.vow_tracks.append(track)
+    game.progress_tracks.append(track)
     game.narrative.threads.append(
         ThreadEntry(
             id="thread_background_vow",

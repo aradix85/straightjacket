@@ -135,9 +135,9 @@ def test_seed_background_vow(load_engine: None) -> None:
 
     game = GameState(player_name="Test")
     _seed_background_vow(game, "Find my sister", "extreme")
-    assert len(game.vow_tracks) == 1
-    assert game.vow_tracks[0].rank == "extreme"
-    assert game.vow_tracks[0].name == "Find my sister"
+    assert len(game.progress_tracks) == 1
+    assert game.progress_tracks[0].rank == "extreme"
+    assert game.progress_tracks[0].name == "Find my sister"
     assert len(game.narrative.threads) == 1
     assert game.narrative.threads[0].linked_track_id == "vow_background"
     assert game.narrative.threads[0].weight == 2
@@ -148,7 +148,7 @@ def test_seed_background_vow_custom_rank(load_engine: None) -> None:
 
     game = GameState(player_name="Test")
     _seed_background_vow(game, "Minor task", "troublesome")
-    assert game.vow_tracks[0].rank == "troublesome"
+    assert game.progress_tracks[0].rank == "troublesome"
 
 
 def test_seed_background_vow_invalid_rank_uses_default(load_engine: None) -> None:
@@ -156,7 +156,7 @@ def test_seed_background_vow_invalid_rank_uses_default(load_engine: None) -> Non
 
     game = GameState(player_name="Test")
     _seed_background_vow(game, "Quest", "nonexistent_rank")
-    assert game.vow_tracks[0].rank == "extreme"  # default from engine.yaml
+    assert game.progress_tracks[0].rank == "extreme"  # default from engine.yaml
 
 
 def test_seed_background_vow_empty_skips(load_engine: None) -> None:
@@ -164,7 +164,7 @@ def test_seed_background_vow_empty_skips(load_engine: None) -> None:
 
     game = GameState(player_name="Test")
     _seed_background_vow(game, "", "")
-    assert len(game.vow_tracks) == 0
+    assert len(game.progress_tracks) == 0
     assert len(game.narrative.threads) == 0
 
 

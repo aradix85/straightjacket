@@ -26,7 +26,7 @@ def resolve_npc_stance(npc: NpcData, move_category: str) -> NpcStance:
     behavioral constraint for the narrator prompt.
     """
     _e = eng()
-    matrix = _e.get("stance_matrix", {})
+    matrix = _e.get_raw("stance_matrix", {})
 
     disposition = npc.disposition
     bond = npc.bond
@@ -48,13 +48,8 @@ def resolve_npc_stance(npc: NpcData, move_category: str) -> NpcStance:
     bond_node = disp_node.get(bond_range, disp_node.get("low", {}))
     entry = bond_node.get(cat, bond_node.get("other", {}))
 
-    # entry is a _ConfigNode (dot-access wrapper), not a plain dict
-    try:
-        stance = entry.stance if hasattr(entry, "stance") else "neutral"
-        constraint = entry.constraint if hasattr(entry, "constraint") else ""
-    except (AttributeError, TypeError):
-        stance = "neutral"
-        constraint = ""
+    stance = entry.get("stance", "neutral") if isinstance(entry, dict) else "neutral"
+    constraint = entry.get("constraint", "") if isinstance(entry, dict) else ""
 
     return NpcStance(
         npc_id=npc.id,
@@ -71,7 +66,7 @@ def compute_npc_gate(npc: NpcData, current_scene: int, stance: str) -> int:
     Gate 0: name + description. Gate 4: full secrets.
     """
     _e = eng()
-    gate_cfg = _e.get("information_gate", {})
+    gate_cfg = _e.get_raw("information_gate", {})
     points_cfg = gate_cfg.get("points", {})
 
     # Scenes since introduction (from first memory, or 0 if no memories)
@@ -102,11 +97,8 @@ def compute_npc_gate(npc: NpcData, current_scene: int, stance: str) -> int:
     # Stance cap
     caps = gate_cfg.get("stance_caps", {})
     default_cap = gate_cfg.get("default_cap", 4)
-    try:
-        cap = caps.get(stance, default_cap) if hasattr(caps, "get") else default_cap
-        if isinstance(cap, int):
-            gate = min(gate, cap)
-    except (AttributeError, TypeError):
-        pass
+    cap = caps.get(stance, default_cap)
+    if isinstance(cap, int):
+        gate = min(gate, cap)
 
     return gate

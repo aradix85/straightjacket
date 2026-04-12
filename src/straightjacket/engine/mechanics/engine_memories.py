@@ -15,13 +15,14 @@ def derive_memory_emotion(move: str, result: str, disposition: str = "neutral") 
     then appends disposition suffix. Falls back to 'neutral' for unknown combinations.
     """
     _e = eng()
-    base_map = _e.memory_emotions.base
-    suffix_map = _e.memory_emotions.disposition_suffix
+    base_map = _e.get_raw("memory_emotions", {}).get("base", {})
+    suffix_map = _e.get_raw("memory_emotions", {}).get("disposition_suffix", {})
 
     # Determine move category
     category = "other"
+    move_cats = _e.get_raw("move_categories", {})
     for cat in ("combat", "social", "endure", "recovery"):
-        cat_moves = _e.move_categories.get(cat, [])
+        cat_moves = move_cats.get(cat, [])
         if move in cat_moves:
             category = cat
             break
@@ -53,9 +54,9 @@ def generate_engine_memories(
     from ..npc.memory import score_importance
 
     _e = eng()
-    templates = _e.memory_templates
-    result_text_map = _e.memory_result_text
-    verb_map = _e.memory_move_verbs
+    templates = _e.get_raw("memory_templates", {})
+    result_text_map = _e.get_raw("memory_result_text", {})
+    verb_map = _e.get_raw("memory_move_verbs", {})
     scene = game.narrative.scene_count
 
     move = brain.move
@@ -135,12 +136,12 @@ def generate_scene_context(
     npc_summary = ", ".join(activated_npc_names[:3]) if activated_npc_names else "no one nearby"
 
     if move == "dialog" or roll is None:
-        template = _e.get("scene_context_dialog", "conversation at {location} with {npc_summary}")
+        template = _e.get_raw("scene_context_dialog", "conversation at {location} with {npc_summary}")
         return template.format(location=location, npc_summary=npc_summary)
 
     result = roll.result if roll else "MISS"
-    move_label = _e.memory_move_verbs.get(move, move)
-    template = _e.get("scene_context_template", "{result} on {move_label} at {location} — {npc_summary}")
+    move_label = _e.get_raw("memory_move_verbs", {}).get(move, move)
+    template = _e.get_raw("scene_context_template", "{result} on {move_label} at {location} — {npc_summary}")
     return template.format(
         result=result,
         move_label=move_label,

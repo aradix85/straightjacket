@@ -180,7 +180,7 @@ def apply_effects(game: GameState, effects: list[MoveEffect], target_npc_id: str
 
         elif effect.type == "disposition_shift":
             if target:
-                shifts = dict(_e.disposition_shifts.items())
+                shifts = _e.get_raw("disposition_shifts", {})
                 old_disp = target.disposition
                 target.disposition = shifts.get(target.disposition, target.disposition)
                 if target.disposition != old_disp:
@@ -399,7 +399,7 @@ def resolve_move_outcome(
         OutcomeResult with consequences, position changes, etc.
     """
     _e = eng()
-    outcomes_cfg = _e.move_outcomes
+    outcomes_cfg = _e.get_raw("move_outcomes", {})
 
     result_key = roll_result.lower()
 
@@ -411,7 +411,7 @@ def resolve_move_outcome(
     handler = move_cfg.get("handler")
     if handler:
         params_raw = move_cfg.get("params")
-        params_dict = dict(params_raw.items()) if params_raw is not None else {}
+        params_dict = dict(params_raw) if params_raw is not None else {}
         return _dispatch_handler(game, handler, roll_result, params_dict)
 
     # Effect-list based moves

@@ -104,31 +104,27 @@ def tone_authority_block(game: GameState | None = None) -> str:
 def narrative_direction_block(game: GameState, roll_result: str = "", is_player_caused: bool = True) -> str:
     """Derive narrative writing instructions from current game state.
     All thresholds and mappings read from engine.yaml narrative_direction."""
-    nd = eng().narrative_direction
+    nd = eng().get_raw("narrative_direction", {})
     parts = []
 
     h, sp = game.resources.health, game.resources.spirit
     low_resource = min(h, sp)
-    if game.game_over or game.crisis_mode or low_resource < nd.intensity.critical_below:
+    intensity = nd.get("intensity", {})
+    if game.game_over or game.crisis_mode or low_resource < intensity.get("critical_below", 1):
         parts.append("intensity:critical")
-    elif low_resource < nd.intensity.high_below:
+    elif low_resource < intensity.get("high_below", 3):
         parts.append("intensity:high")
-    elif low_resource < nd.intensity.moderate_below:
+    elif low_resource < intensity.get("moderate_below", 4):
         parts.append("intensity:moderate")
     else:
         parts.append("intensity:low")
 
-    rm = nd.result_map
-    if hasattr(rm, roll_result):
-        entry = getattr(rm, roll_result)
-    elif hasattr(rm, "_default"):
-        entry = rm._default
-    else:
-        entry = None
+    rm = nd.get("result_map", {})
+    entry = rm.get(roll_result, rm.get("_default"))
 
-    if entry:
-        parts.append(f"tempo:{entry.tempo}")
-        parts.append(f"perspective:{entry.perspective}")
+    if entry and isinstance(entry, dict):
+        parts.append(f"tempo:{entry.get('tempo', 'moderate')}")
+        parts.append(f"perspective:{entry.get('perspective', 'action_detail')}")
 
     parts.append("player:caused_this" if is_player_caused else "player:witnessing")
 

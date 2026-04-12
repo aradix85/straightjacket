@@ -228,7 +228,7 @@ def process_new_npcs(game: "GameState", new_npcs: list) -> None:
 
         seed_event = nd.get("description", "") or f"{npc.name} appeared"
         seed_emotion = normalize_disposition(nd.get("disposition", "neutral"))
-        disp_to_emotion = dict(eng().disposition_to_seed_emotion.items())
+        disp_to_emotion = eng().get_raw("disposition_to_seed_emotion", {})
         seed_emotion = disp_to_emotion.get(seed_emotion, "neutral")
         seed_imp, seed_debug = score_importance(seed_emotion, seed_event, debug=True)
         seed_imp = max(seed_imp, eng().npc.seed_importance_floor)

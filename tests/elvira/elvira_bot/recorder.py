@@ -88,7 +88,7 @@ def _snapshot_state(game: GameState) -> StateSnapshot:
         scene_context=game.world.current_scene_context,
         active_threads=len([t for t in game.narrative.threads if t.active]),
         active_characters=len([c for c in game.narrative.characters_list if c.active]),
-        active_vow_tracks=len(game.vow_tracks),
+        active_progress_tracks=len(game.progress_tracks),
         combat_position=game.world.combat_position,
     )
 

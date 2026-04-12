@@ -11,7 +11,6 @@ Config: engine.yaml → fate (method selection, likelihood mapping).
 
 from __future__ import annotations
 
-import contextlib
 import json
 import random
 
@@ -288,22 +287,22 @@ def resolve_likelihood(game: GameState, context_hint: str = "") -> str:
         if npc:
             disp = npc.disposition
             disp_scores = rules.disposition_scores
-            with contextlib.suppress(AttributeError):
-                score += int(getattr(disp_scores, disp))
+            if disp in disp_scores:
+                score += int(disp_scores[disp])
 
     # Chaos factor influence
     cf = game.world.chaos_factor
     cf_thresholds = rules.chaos_thresholds
-    if cf >= cf_thresholds.high:
-        score += int(rules.chaos_scores.high)
-    elif cf <= cf_thresholds.low:
-        score += int(rules.chaos_scores.low)
+    if cf >= cf_thresholds.get("high", 7):
+        score += int(rules.chaos_scores.get("high", -1))
+    elif cf <= cf_thresholds.get("low", 3):
+        score += int(rules.chaos_scores.get("low", 1))
 
     # Resource pressure
     res = game.resources
     resource_critical = int(rules.resource_critical_below)
     if res.health <= resource_critical or res.spirit <= resource_critical:
-        score += int(rules.resource_scores.critical)
+        score += int(rules.resource_scores.get("critical", -1))
 
     # Map score to odds level
     return _score_to_odds(score, rules)

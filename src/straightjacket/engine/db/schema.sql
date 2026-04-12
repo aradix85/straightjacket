@@ -92,7 +92,7 @@ CREATE TABLE IF NOT EXISTS narration_history (
     narration   TEXT NOT NULL DEFAULT ''
 );
 
-CREATE TABLE IF NOT EXISTS vow_tracks (
+CREATE TABLE IF NOT EXISTS progress_tracks (
     id          TEXT PRIMARY KEY,
     name        TEXT NOT NULL DEFAULT '',
     track_type  TEXT NOT NULL DEFAULT 'vow',

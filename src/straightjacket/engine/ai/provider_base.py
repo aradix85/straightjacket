@@ -12,9 +12,20 @@ don't need to know which provider produced the response.
 import re
 import time as _time
 from dataclasses import dataclass, field
-from typing import Protocol
+from typing import Any, Protocol
+from collections.abc import Callable
 
 from ..logging_util import log
+
+# Backoff sleep — replaceable for tests
+_backoff_sleep: Callable[[float], Any] = _time.sleep
+
+
+def set_backoff_sleep(fn: Callable[[float], Any]) -> None:
+    """Replace the backoff sleep function. Use in tests to skip waits."""
+    global _backoff_sleep
+    _backoff_sleep = fn
+
 
 # TOKEN TRACKING — per-call accumulator for session logging
 _token_log: list[dict[str, str | int]] = []
@@ -210,6 +221,6 @@ def create_with_retry(
                 wait = 2**attempt
                 error_desc = f"HTTP {status_code}" if status_code else str(e)[:80]
                 log(f"[AI] {error_desc}, retry {attempt + 1}/{max_retries} in {wait}s", level="warning")
-                _time.sleep(wait)
+                _backoff_sleep(wait)
                 continue
             raise

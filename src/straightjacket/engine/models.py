@@ -138,7 +138,7 @@ class GameState:
     wits: int = 2
     backstory: str = ""
     assets: list[str] = field(default_factory=list)
-    vow_tracks: list[ProgressTrack] = field(default_factory=list)
+    progress_tracks: list[ProgressTrack] = field(default_factory=list)
     truths: dict[str, str] = field(default_factory=dict)
 
     resources: Resources = field(default_factory=Resources)
@@ -224,7 +224,7 @@ class GameState:
         for name in self._SUB_OBJECTS:
             d[name] = getattr(self, name).to_dict()
         d["npcs"] = [n.to_dict() for n in self.npcs]
-        d["vow_tracks"] = [t.to_dict() for t in self.vow_tracks]
+        d["progress_tracks"] = [t.to_dict() for t in self.progress_tracks]
         d["crisis_mode"] = self.crisis_mode
         d["game_over"] = self.game_over
         d["last_turn_snapshot"] = self.last_turn_snapshot.to_dict() if self.last_turn_snapshot else None
@@ -242,7 +242,7 @@ class GameState:
         game.campaign = CampaignState.from_dict(data["campaign"])
         game.preferences = PlayerPreferences.from_dict(data["preferences"])
         game.npcs = [NpcData.from_dict(n) for n in data["npcs"]]
-        game.vow_tracks = [ProgressTrack.from_dict(t) for t in data["vow_tracks"]]
+        game.progress_tracks = [ProgressTrack.from_dict(t) for t in data["progress_tracks"]]
         game.crisis_mode = data["crisis_mode"]
         game.game_over = data["game_over"]
         snap = data["last_turn_snapshot"]

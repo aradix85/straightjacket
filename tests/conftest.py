@@ -45,6 +45,11 @@ _lm.create_user = lambda name: True  # type: ignore[attr-defined]
 _lm.delete_user = lambda name: True  # type: ignore[attr-defined]
 sys.modules["straightjacket.engine.logging_util"] = _lm
 
+# Skip retry backoff sleeps in tests — saves ~13 seconds per full run.
+from straightjacket.engine.ai.provider_base import set_backoff_sleep
+
+set_backoff_sleep(lambda _: None)
+
 
 # ── Reusable fixtures ────────────────────────────────────────
 
@@ -62,9 +67,9 @@ def load_engine() -> None:
 def stub_engine() -> None:
     """Stub eng() with known values for predictable assertions."""
     from straightjacket.engine import engine_loader
-    from straightjacket.engine.config_loader import _ConfigNode
+    from straightjacket.engine.engine_config import parse_engine_yaml
 
-    engine_loader._eng = _ConfigNode(
+    engine_loader._eng = parse_engine_yaml(
         {
             "bonds": {"start": 0, "max": 4},
             "npc": {
@@ -283,8 +288,7 @@ def stub_engine() -> None:
                     "uncanny",
                 ],
             },
-        },
-        "engine",
+        }
     )
 
 

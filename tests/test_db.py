@@ -83,7 +83,7 @@ def _game_with_npcs() -> GameState:
     game.narrative.narration_history.append(
         NarrationEntry(scene=1, prompt_summary="Opening", narration="The salt air bit at your skin.")
     )
-    game.vow_tracks.append(
+    game.progress_tracks.append(
         ProgressTrack(id="vow_bg", name="Find the vault", track_type="vow", rank="dangerous", ticks=8)
     )
     return game
@@ -105,9 +105,9 @@ def test_init_creates_tables() -> None:
         "memories",
         "narration_history",
         "npcs",
+        "progress_tracks",
         "scene_log",
         "threads",
-        "vow_tracks",
     ]
     assert tables == expected
     close_db()
@@ -193,12 +193,12 @@ def test_sync_narration_history() -> None:
     close_db()
 
 
-def test_sync_vow_tracks() -> None:
+def test_sync_progress_tracks() -> None:
     _fresh_db()
     game = _game_with_npcs()
     sync(game)
     conn = get_db()
-    rows = conn.execute("SELECT * FROM vow_tracks").fetchall()
+    rows = conn.execute("SELECT * FROM progress_tracks").fetchall()
     assert len(rows) == 1
     assert rows[0]["ticks"] == 8
     assert rows[0]["rank"] == "dangerous"

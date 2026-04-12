@@ -84,7 +84,7 @@ class TestAvailableMoves:
         from straightjacket.engine.tools.builtins import available_moves
 
         game = _game()
-        game.vow_tracks.append(ProgressTrack(id="v1", name="Test Vow", track_type="vow", ticks=20))
+        game.progress_tracks.append(ProgressTrack(id="v1", name="Test Vow", track_type="vow", ticks=20))
         result = available_moves(game)
         move_keys = {m["move"] for m in result["moves"]}
         assert "quest/fulfill_your_vow" in move_keys
@@ -140,7 +140,7 @@ class TestAvailableMoves:
         move_keys = {m["move"] for m in result["moves"]}
         assert "combat/take_decisive_action" not in move_keys
 
-        game.vow_tracks.append(ProgressTrack(id="c1", name="Fight", track_type="combat", ticks=12))
+        game.progress_tracks.append(ProgressTrack(id="c1", name="Fight", track_type="combat", ticks=12))
         result2 = available_moves(game)
         move_keys2 = {m["move"] for m in result2["moves"]}
         assert "combat/take_decisive_action" in move_keys2

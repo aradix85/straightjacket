@@ -1,21 +1,26 @@
 #!/usr/bin/env python3
 """Engine mechanics loader: reads engine.yaml.
 
-Singleton pattern matching config_loader.py. Provides dot-access
-to all game mechanics values (damage tables, NPC limits, chaos, etc.).
+Singleton pattern matching config_loader.py. Returns typed EngineSettings
+for structured sections, with get_raw() for flexible sections.
 """
+
+from __future__ import annotations
+
+from typing import Any
 
 import yaml
 
 from .bootstrap_log import bootstrap_log as _log
-from .config_loader import PROJECT_ROOT, _ConfigNode
+from .config_loader import PROJECT_ROOT
+from .engine_config import EngineSettings, parse_engine_yaml
 
 _ENGINE_PATH = PROJECT_ROOT / "engine.yaml"
 
-_eng: _ConfigNode | None = None
+_eng: EngineSettings | None = None
 
 
-def eng() -> _ConfigNode:
+def eng() -> EngineSettings:
     """Get the engine mechanics config. Loads on first access."""
     global _eng
     if _eng is None:
@@ -27,16 +32,15 @@ def eng() -> _ConfigNode:
             data = yaml.safe_load(f)
         if not isinstance(data, dict):
             raise ValueError(f"engine.yaml is not a valid YAML dict: {_ENGINE_PATH}")
-        _eng = _ConfigNode(data, "engine")
+        _eng = parse_engine_yaml(data)
         _log(f"[Engine] Loaded {_ENGINE_PATH}")
     return _eng
 
 
-def reload_engine() -> _ConfigNode:
+def reload_engine() -> EngineSettings:
     """Force reload from disk. Also clears derived caches (schemas)."""
     global _eng
     _eng = None
-    # Invalidate schema cache that depends on engine.yaml move/stat enums
     from .ai.schemas import clear_brain_cache
 
     clear_brain_cache()
@@ -49,36 +53,23 @@ def reload_engine() -> _ConfigNode:
 def damage(category: str, position: str = "risky") -> int:
     """Look up a damage value from engine.yaml damage tables.
 
-    Usage:
-        damage("miss.combat", "desperate")     -> 3
-        damage("miss.social.spirit", "risky")   -> 1
-        damage("miss.other.supply")             -> 1  (flat, ignores position)
-        damage("miss.clock_ticks", "desperate") -> 2
-        damage("momentum.loss", "desperate")    -> 3
-
-    Handles both position-keyed dicts and flat ints.
+    Navigates the raw YAML dict. Handles position-keyed dicts and flat ints.
     Returns 0 if the path doesn't exist.
     """
-    node = eng()
+    raw = eng()._raw
+    node: Any = raw
     for key in category.split("."):
         try:
-            node = getattr(node, key) if isinstance(node, _ConfigNode) else node[key]
-        except (AttributeError, KeyError, TypeError):
+            node = node[key]
+        except (KeyError, TypeError, IndexError):
             return 0
 
-    # Flat int (e.g. miss.social.bond: 1)
     if isinstance(node, int | float):
         return int(node)
 
-    # Position-keyed dict (e.g. miss.combat: {controlled: 1, risky: 2, desperate: 3})
-    if isinstance(node, _ConfigNode):
-        try:
-            return int(getattr(node, position))
-        except (AttributeError, KeyError):
-            # Fall back to risky if position not found
-            try:
-                return int(node.risky)
-            except (AttributeError, KeyError):
-                return 0
+    if isinstance(node, dict):
+        val = node.get(position, node.get("risky"))
+        if isinstance(val, int | float):
+            return int(val)
 
     return 0

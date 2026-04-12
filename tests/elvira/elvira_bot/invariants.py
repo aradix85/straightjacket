@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from straightjacket.engine.config_loader import _ConfigNode
+from straightjacket.engine.engine_config import EngineSettings
 from straightjacket.engine.engine_loader import eng
 from straightjacket.engine.models import ClockData, GameState, MemoryEntry, NpcData
 
@@ -58,17 +58,17 @@ def assert_game_state(game: GameState, turn: int) -> list[str]:
         f"invalid combat_position '{world.combat_position}'",
     )
 
-    # Progress track invariants (vow_tracks)
-    for track in game.vow_tracks:
-        check(track.id != "", "vow_track with empty id")
-        check(track.name != "", f"vow_track '{track.id}' with empty name")
+    # Progress track invariants (progress_tracks)
+    for track in game.progress_tracks:
+        check(track.id != "", "progress_track with empty id")
+        check(track.name != "", f"progress_track '{track.id}' with empty name")
         check(
             track.rank in ("troublesome", "dangerous", "formidable", "extreme", "epic"),
-            f"vow_track '{track.id}' invalid rank '{track.rank}'",
+            f"progress_track '{track.id}' invalid rank '{track.rank}'",
         )
         check(
             0 <= track.ticks <= track.max_ticks,
-            f"vow_track '{track.id}' ticks={track.ticks} out of [0,{track.max_ticks}]",
+            f"progress_track '{track.id}' ticks={track.ticks} out of [0,{track.max_ticks}]",
         )
 
     # Mythic threads invariants
@@ -105,7 +105,7 @@ def assert_game_state(game: GameState, turn: int) -> list[str]:
     return violations
 
 
-def _check_npc(npc: NpcData, turn: int, violations: list[str], _e: _ConfigNode) -> None:
+def _check_npc(npc: NpcData, turn: int, violations: list[str], _e: EngineSettings) -> None:
     """Check NPC field invariants."""
 
     def check(condition: bool, msg: str) -> None:

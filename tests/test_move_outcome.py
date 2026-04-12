@@ -473,7 +473,7 @@ class TestProgressRollPipeline:
         from straightjacket.engine.game.turn import _find_progress_track
         from straightjacket.engine.models import ProgressTrack
 
-        game_real.vow_tracks = [
+        game_real.progress_tracks = [
             ProgressTrack(id="v1", name="Old vow", track_type="vow", ticks=8),
             ProgressTrack(id="c1", name="Fight", track_type="combat", ticks=12),
             ProgressTrack(id="v2", name="New vow", track_type="vow", ticks=20),

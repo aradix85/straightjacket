@@ -167,7 +167,7 @@ def purge_old_fired_clocks(game: GameState, keep_scenes: int | None = None) -> N
 
 def _pick_template(key: str, fallback: str = "") -> str:
     """Pick a random template string from engine.yaml consequence_templates."""
-    templates = eng().get("consequence_templates", {})
+    templates = eng().get_raw("consequence_templates", {})
     options = templates.get(key, [])
     if not options:
         return fallback
