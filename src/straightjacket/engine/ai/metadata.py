@@ -117,8 +117,6 @@ def _process_lore_npcs(game: GameState, lore_list: list) -> None:
             id=npc_id,
             name=name,
             description=entry.get("description", ""),
-            bond=eng().bonds.start,
-            bond_max=eng().bonds.max,
             status="lore",
         )
         apply_name_sanitization(npc)

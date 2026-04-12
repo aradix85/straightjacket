@@ -25,7 +25,6 @@ def _make_game() -> "GameState":
             id="npc_1",
             name="Kira Voss",
             disposition="friendly",
-            bond=2,
             description="Tall woman with red hair",
             agenda="find the artifact",
             instinct="protect allies",
@@ -35,7 +34,6 @@ def _make_game() -> "GameState":
             id="npc_2",
             name="Old Borin",
             disposition="neutral",
-            bond=0,
             description="Grumpy dwarf blacksmith",
             agenda="",
             instinct="",
@@ -409,7 +407,7 @@ def test_retire_distant_npcs(stub_engine: None) -> None:
     game = _make_game()
     # Add many NPCs to exceed max_active=12
     for i in range(15):
-        game.npcs.append(NpcData(id=f"npc_{i + 10}", name=f"NPC {i}", status="active", bond=0, memory=[]))
+        game.npcs.append(NpcData(id=f"npc_{i + 10}", name=f"NPC {i}", status="active", memory=[]))
     retire_distant_npcs(game)
     active = [n for n in game.npcs if n.status == "active"]
     assert len(active) <= 12

@@ -39,7 +39,6 @@ def _game_with_npcs() -> GameState:
             description="A smuggler with cold eyes",
             agenda="Access the vault",
             disposition="distrustful",
-            bond=1,
             status="active",
             last_location="docks",
             aliases=["K"],
@@ -54,7 +53,6 @@ def _game_with_npcs() -> GameState:
             name="Rowan",
             description="A healer",
             disposition="friendly",
-            bond=3,
             status="background",
             last_location="clinic",
             memory=[
@@ -263,18 +261,6 @@ def test_query_npcs_by_location() -> None:
     _fresh_db()
     sync(_game_with_npcs())
     result = query_npcs(location="docks")
-    assert len(result) == 1
-    assert result[0].name == "Kira"
-    close_db()
-
-
-def test_query_npcs_by_bond_range() -> None:
-    _fresh_db()
-    sync(_game_with_npcs())
-    result = query_npcs(bond_min=2)
-    assert len(result) == 1
-    assert result[0].name == "Rowan"
-    result = query_npcs(bond_max=1)
     assert len(result) == 1
     assert result[0].name == "Kira"
     close_db()

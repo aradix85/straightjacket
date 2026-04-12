@@ -1,106 +1,90 @@
 #!/usr/bin/env python3
-"""State serializers: game state → client JSON.
+"""State serializers: game state → client-facing text and JSON.
 
-Every function builds a JSON-serializable dict. Label resolution for
-roll data and NPC dispositions happens here. The HTML client hardcodes
-its own display labels for status text.
+build_narrative_status: plain-text narrative summary for /status command.
+build_creation_options: JSON for character creation form.
+highlight_dialog: wrap quoted speech in HTML spans.
+build_ui_strings: all strings.yaml entries for the client.
 """
 
 import re
 
 from ..engine.models import GameState
+from ..engine.npc import get_npc_bond
 from ..engine.story_state import get_current_act
 from ..engine.datasworn.loader import extract_title
 from ..engine.datasworn.settings import list_packages, load_package
 from ..engine.logging_util import log
 from ..i18n import (
     get_disposition_labels,
-    get_stat_labels,
     get_story_phase_labels,
     get_time_labels,
+    t,
 )
 
 
-def build_state(game: GameState) -> dict:
-    """Full game state dict for the client sidebar."""
-    sl = get_stat_labels()
+def build_narrative_status(game: GameState) -> str:
+    """Plain-text narrative status for /status and /score commands."""
     dl = get_disposition_labels()
     tl = get_time_labels()
     pl = get_story_phase_labels()
 
-    npcs = []
+    r = game.resources
+    time_label = tl.get(game.world.time_of_day, "") if game.world.time_of_day else ""
+    lines = [
+        t(
+            "status.resources",
+            name=game.player_name,
+            scene=game.narrative.scene_count,
+            location=game.world.current_location or "?",
+            time=time_label or "?",
+            health=r.health,
+            spirit=r.spirit,
+            supply=r.supply,
+            momentum=r.momentum,
+            max_momentum=r.max_momentum,
+            chaos=game.world.chaos_factor,
+        )
+    ]
+
+    # Progress tracks
+    for tr in game.progress_tracks:
+        lines.append(t("status.tracks", name=tr.name, rank=tr.rank, filled=tr.filled_boxes))
+
+    # NPCs
     for n in game.npcs:
-        if n.status not in ("active", "background", "deceased"):
-            continue
-        npcs.append(
-            {
-                "name": n.name,
-                "status": n.status,
-                "disposition": n.disposition,
-                "disposition_label": dl.get(n.disposition, n.disposition),
-                "bond": n.bond,
-                "bond_max": n.bond_max,
-                "aliases": list(n.aliases),
-            }
-        )
+        disp_label = dl.get(n.disposition, n.disposition)
+        bond = get_npc_bond(game, n.id)
+        if n.status == "deceased":
+            lines.append(t("status.npc_deceased", name=n.name))
+        elif n.status == "background":
+            lines.append(t("status.npc_background", name=n.name, disposition=disp_label, bond=bond, bond_max=10))
+        elif n.status == "active":
+            lines.append(t("status.npc", name=n.name, disposition=disp_label, bond=bond, bond_max=10))
 
-    clocks = []
+    # Clocks
     for c in game.world.clocks:
-        clocks.append(
-            {
-                "name": c.name,
-                "clock_type": c.clock_type,
-                "filled": c.filled,
-                "segments": c.segments,
-                "fired": c.fired,
-            }
-        )
+        if c.fired:
+            lines.append(t("status.clock_fired", name=c.name))
+        else:
+            lines.append(t("status.clock", name=c.name, filled=c.filled, segments=c.segments))
 
-    story_arc = None
+    # Story arc
     bp = game.narrative.story_blueprint
     if bp and bp.acts:
         act = get_current_act(game)
-        story_arc = {
-            "act_number": act.act_number,
-            "total_acts": act.total_acts,
-            "phase": act.phase,
-            "phase_label": pl.get(act.phase, act.phase),
-            "title": act.title,
-            "progress": act.progress,
-            "story_complete": bp.story_complete,
-        }
+        lines.append(
+            t(
+                "status.act",
+                n=act.act_number,
+                total=act.total_acts,
+                title=act.title,
+                phase=pl.get(act.phase, act.phase),
+                progress=act.progress,
+            )
+        )
 
-    time_label = tl.get(game.world.time_of_day, "") if game.world.time_of_day else ""
-
-    return {
-        "player_name": game.player_name,
-        "character_concept": game.character_concept,
-        "location": game.world.current_location,
-        "time_of_day": game.world.time_of_day,
-        "time_label": time_label,
-        "scene": game.narrative.scene_count,
-        "chapter": game.campaign.chapter_number,
-        "stats": {
-            "edge": {"value": game.edge, "label": sl.get("edge", "Edge")},
-            "heart": {"value": game.heart, "label": sl.get("heart", "Heart")},
-            "iron": {"value": game.iron, "label": sl.get("iron", "Iron")},
-            "shadow": {"value": game.shadow, "label": sl.get("shadow", "Shadow")},
-            "wits": {"value": game.wits, "label": sl.get("wits", "Wits")},
-        },
-        "health": game.resources.health,
-        "spirit": game.resources.spirit,
-        "supply": game.resources.supply,
-        "momentum": game.resources.momentum,
-        "max_momentum": game.resources.max_momentum,
-        "chaos": game.world.chaos_factor,
-        "crisis_mode": game.crisis_mode,
-        "game_over": game.game_over,
-        "npcs": npcs,
-        "clocks": clocks,
-        "story_arc": story_arc,
-        "epilogue_shown": game.campaign.epilogue_shown,
-        "epilogue_dismissed": game.campaign.epilogue_dismissed,
-    }
+    return "\n".join(lines)
 
 
 def build_creation_options() -> dict:

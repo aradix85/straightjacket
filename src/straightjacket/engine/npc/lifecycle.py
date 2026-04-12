@@ -78,7 +78,9 @@ def retire_distant_npcs(game: "GameState", max_active: int | None = None) -> Non
 
     def relevance(npc: NpcData) -> int:
         last_scene = max((m.scene for m in npc.memory), default=0) or 0
-        score = last_scene + npc.bond * 3
+        from .bond import get_npc_bond
+
+        score = last_scene + get_npc_bond(game, npc.id) * 3
         if not npc.memory or last_scene >= game.narrative.scene_count:
             score += 1000
         return score
@@ -194,7 +196,15 @@ def absorb_duplicate_npc(game: "GameState", original: NpcData, merged_name: str)
 
         # Determine which is the richer, more established character.
         def _richness(n: NpcData) -> int:
-            return len(n.memory) * 2 + bool(n.agenda) * 3 + bool(n.instinct) * 3 + n.bond * 2 + bool(n.description) * 1
+            from .bond import get_npc_bond
+
+            return (
+                len(n.memory) * 2
+                + bool(n.agenda) * 3
+                + bool(n.instinct) * 3
+                + get_npc_bond(game, n.id) * 2
+                + bool(n.description) * 1
+            )
 
         dup_richer = _richness(dup) > _richness(original)
 
@@ -210,8 +220,6 @@ def absorb_duplicate_npc(game: "GameState", original: NpcData, merged_name: str)
                 original.agenda = dup.agenda
             if dup.instinct:
                 original.instinct = dup.instinct
-            if dup.bond > original.bond:
-                original.bond = dup.bond
             if dup.disposition and dup.disposition != "neutral":
                 original.disposition = dup.disposition
             if dup.last_location:

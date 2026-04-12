@@ -210,8 +210,6 @@ def _make_game():  # type: ignore[no-untyped-def]
             id="npc_1",
             name="Mira",
             disposition="friendly",
-            bond=2,
-            bond_max=4,
             agenda="protect the archives",
             instinct="trust cautiously",
             description="Young archivist with ink-stained hands",
@@ -769,12 +767,8 @@ def test_chapter_about_npc_id_remap(stub_engine: None) -> None:
     """Returning NPCs get new IDs at chapter boundary; about_npc refs must be rewritten."""
     from straightjacket.engine.models import NpcData, MemoryEntry
 
-    npc_a = NpcData(
-        id="npc_1", name="Kira", bond=2, memory=[MemoryEntry(scene=3, event="trusts Borin", about_npc="npc_2")]
-    )
-    npc_b = NpcData(
-        id="npc_2", name="Borin", bond=1, memory=[MemoryEntry(scene=3, event="suspects Kira", about_npc="npc_1")]
-    )
+    npc_a = NpcData(id="npc_1", name="Kira", memory=[MemoryEntry(scene=3, event="trusts Borin", about_npc="npc_2")])
+    npc_b = NpcData(id="npc_2", name="Borin", memory=[MemoryEntry(scene=3, event="suspects Kira", about_npc="npc_1")])
 
     # Simulate the ID remap logic from start_new_chapter
     from straightjacket.engine.npc import next_npc_id

@@ -79,7 +79,11 @@ Where to find things. If you want to change X, edit Y.
 | Database sync after state changes | `db/sync.py` → `sync(game)`, called by turn, creation, correction, restore, load |
 | Tool definitions for AI agents | `tools/registry.py` → `@register("brain")`, `get_tools(role)` |
 | Tool execution and iterative loop | `tools/handler.py` → `execute_tool_call`, `run_tool_loop` |
-| Built-in query tools | `tools/builtins.py` → `query_npc`, `query_active_threads`, `query_active_clocks`, `query_npc_list`, `fate_question`, `available_moves` |
+| Built-in query tools | `tools/builtins.py` → `query_npc`, `query_active_threads`, `query_active_clocks`, `query_npc_list`, `fate_question`, `available_moves`, `list_tracks` |
+| Track-creating moves | `engine.yaml` → `track_creating_moves` (no Python) |
+| Track lifecycle (creation, completion) | `game/turn.py` → `_find_progress_track`, `complete_track` |
+| NPC bond level | `npc/bond.py` → `get_npc_bond` (reads connection track, not NpcData) |
+| Status commands (/status, /score) | `web/handlers.py` → `handle_status_query`; `web/serializers.py` → `build_narrative_status` |
 | Fate questions (yes/no) | `mechanics/fate.py` → `resolve_fate`, `resolve_likelihood`; `engine.yaml` → `fate` |
 | Scene structure (expected/altered/interrupt) | `mechanics/scene.py` → `check_scene`, `SceneSetup` |
 | Random events and meaning tables | `mechanics/random_events.py` → `generate_random_event`, `roll_event_focus`, `roll_meaning_table` |
@@ -135,6 +139,7 @@ src/straightjacket/
 │   │   ├── rule_validator.py # Instant rule-based checks (player agency, result integrity, genre, format)
 │   │   └── schemas.py       # JSON output schemas (config-driven)
 │   ├── npc/
+│   │   ├── bond.py          # get_npc_bond: bond from connection track
 │   │   ├── matching.py      # Name lookup, fuzzy matching, edit distance
 │   │   ├── memory.py        # Importance scoring, retrieval, consolidation
 │   │   ├── activation.py    # TF-IDF context selection for prompts
@@ -175,7 +180,7 @@ src/straightjacket/
 
 **Config-driven game logic.** Move outcomes, NPC limits, disposition shifts, damage tables — all in engine.yaml or Datasworn JSON. Adding a move means adding one YAML entry to `move_outcomes`. No Python change. Move definitions (stats, roll types, trigger conditions) load directly from Datasworn JSON per setting.
 
-**Typed dataclasses everywhere.** GameState has sub-objects (Resources, WorldState, NarrativeState, CampaignState). NpcData has 19 fields. MemoryEntry has 10. Move has 15 fields with typed trigger conditions and roll options. Attribute access, never dict-style. `SerializableMixin` handles serialization; complex classes override `to_dict`/`from_dict` manually.
+**Typed dataclasses everywhere.** GameState has sub-objects (Resources, WorldState, NarrativeState, CampaignState). NpcData has 17 fields. MemoryEntry has 10. Move has 15 fields with typed trigger conditions and roll options. Attribute access, never dict-style. `SerializableMixin` handles serialization; complex classes override `to_dict`/`from_dict` manually.
 
 **Two-call pattern.** Narrator writes pure prose. A second fast-model call extracts NPC-related metadata (new NPCs, renames, details, deaths). This keeps the narrator prompt clean and works across providers.
 
@@ -183,9 +188,9 @@ src/straightjacket/
 
 **Provider abstraction.** `AIProvider` protocol with two implementations (Anthropic, OpenAI-compatible). The engine never imports provider SDKs directly. `create_with_retry` handles transient errors with exponential backoff.
 
-**Minimal UI.** Single HTML page, no build step, no npm. Server sends JSON, client renders. Scene headings for screen reader navigation, aria-live for automatic narration readout. Two buttons (Status, Save/Load), one text input.
+**Minimal UI.** Single HTML page, no build step, no npm. Server sends JSON, client renders. Scene headings for screen reader navigation, aria-live for automatic narration readout. One button (Save/Load), one text input. Status via `/status` and `/score` text commands — engine answers directly, no AI call.
 
-**Progress tracks as dataclass.** ProgressTrack has rank-based ticks_per_mark (troublesome=12, epic=1). Background vow becomes a track at creation. Vow ranks and tick rates in PROGRESS_RANKS dict.
+**Progress tracks as dataclass.** ProgressTrack has rank-based ticks_per_mark (troublesome=12, epic=1), status (active/completed/failed). Background vow becomes a track at creation. Track-creating moves defined in engine.yaml `track_creating_moves` — engine creates tracks from Brain output. Connection tracks replace NpcData.bond: `get_npc_bond(game, npc_id)` reads connection track filled_boxes.
 
 **Mythic lists seeded at creation.** Threads list starts with the background vow (weight 2) plus any tensions derived from truth selections via engine.yaml templates. Characters list starts with the vow subject (if provided) and opening scene NPCs. Both lists are in NarrativeState for snapshot/restore.
 
@@ -195,7 +200,7 @@ src/straightjacket/
 
 **Data-driven move outcomes.** `resolve_move_outcome` reads structured effect lists from engine.yaml per move per result. Simple moves (momentum, resources, progress, position) are pure data — no Python. Complex moves (suffer, threshold, recovery) use named handlers that share patterns across moves. The `available_moves` Brain tool filters moves by game state (combat position, active tracks) so the Brain only sees valid options. Consequence sentences generated from outcome strings via engine.yaml templates.
 
-**NPC behavioral stance.** Engine computes per-NPC stance from disposition, bond, and move category via engine.yaml stance matrix (60 entries). The narrator receives `stance="evasive" constraint="One fact, then silence."` instead of raw `disposition="distrustful" bond="1/4"`. The engine tells the narrator how the NPC behaves, not just how they feel.
+**NPC behavioral stance.** Engine computes per-NPC stance from disposition, bond (via connection track), and move category via engine.yaml stance matrix (60 entries). The narrator receives `stance="evasive" constraint="One fact, then silence."` instead of raw disposition values. The engine tells the narrator how the NPC behaves, not just how they feel.
 
 **Information gating.** Per-NPC gate level (0–4) controls what enters the narrator prompt. Gate 0 = name + description (stranger). Gate 4 = full secrets. Computed from scenes known, gather_information successes, bond level, and stance cap. The narrator cannot reveal what it doesn't have. Stance caps prevent hostile NPCs from being too transparent regardless of bond.
 
@@ -214,7 +219,7 @@ src/straightjacket/
 ## Testing
 
 ```bash
-python -m pytest tests/ -v          # ~30 seconds, ~665 tests
+python -m pytest tests/ -v          # ~30 seconds, ~662 tests
 python tests/elvira/elvira.py --auto --turns 5   # direct engine (needs API key)
 python tests/elvira/elvira.py --ws --auto --turns 5  # via WebSocket server
 ```

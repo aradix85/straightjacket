@@ -135,6 +135,7 @@ class ProgressTrack(SerializableMixin):
     rank: str = "dangerous"  # troublesome, dangerous, formidable, extreme, epic
     ticks: int = 0
     max_ticks: int = 40  # 10 boxes × 4 ticks
+    status: str = "active"  # active, completed, failed
 
     @property
     def ticks_per_mark(self) -> int:

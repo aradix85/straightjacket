@@ -11,8 +11,6 @@ CREATE TABLE IF NOT EXISTS npcs (
     arc         TEXT NOT NULL DEFAULT '',
     secrets     TEXT NOT NULL DEFAULT '[]',    -- JSON array
     disposition TEXT NOT NULL DEFAULT 'neutral',
-    bond        INTEGER NOT NULL DEFAULT 0,
-    bond_max    INTEGER NOT NULL DEFAULT 4,
     status      TEXT NOT NULL DEFAULT 'active',
     introduced  INTEGER NOT NULL DEFAULT 1,    -- boolean
     aliases     TEXT NOT NULL DEFAULT '[]',     -- JSON array
@@ -98,7 +96,8 @@ CREATE TABLE IF NOT EXISTS progress_tracks (
     track_type  TEXT NOT NULL DEFAULT 'vow',
     rank        TEXT NOT NULL DEFAULT 'dangerous',
     ticks       INTEGER NOT NULL DEFAULT 0,
-    max_ticks   INTEGER NOT NULL DEFAULT 40
+    max_ticks   INTEGER NOT NULL DEFAULT 40,
+    status      TEXT NOT NULL DEFAULT 'active'
 );
 
 -- Indexes for common query patterns.

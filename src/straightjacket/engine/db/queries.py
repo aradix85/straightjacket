@@ -21,8 +21,6 @@ def _row_to_npc(row: sqlite3.Row) -> NpcData:
         arc=row["arc"],
         secrets=json.loads(row["secrets"]),
         disposition=row["disposition"],
-        bond=row["bond"],
-        bond_max=row["bond_max"],
         status=row["status"],
         introduced=bool(row["introduced"]),
         aliases=json.loads(row["aliases"]),
@@ -39,8 +37,6 @@ def query_npcs(
     status: str | None = None,
     disposition: str | None = None,
     location: str | None = None,
-    bond_min: int | None = None,
-    bond_max: int | None = None,
     introduced: bool | None = None,
 ) -> list[NpcData]:
     """Query NPCs with optional filters. Returns NpcData instances without memories."""
@@ -57,12 +53,6 @@ def query_npcs(
     if location is not None:
         clauses.append("last_location = ?")
         params.append(location)
-    if bond_min is not None:
-        clauses.append("bond >= ?")
-        params.append(bond_min)
-    if bond_max is not None:
-        clauses.append("bond <= ?")
-        params.append(bond_max)
     if introduced is not None:
         clauses.append("introduced = ?")
         params.append(int(introduced))

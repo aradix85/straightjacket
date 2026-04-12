@@ -41,7 +41,6 @@ def _game_with_data() -> GameState:
             name="Kira",
             agenda="Access the vault",
             disposition="distrustful",
-            bond=1,
             status="active",
             last_location="docks",
             memory=[
@@ -53,7 +52,6 @@ def _game_with_data() -> GameState:
             id="npc_2",
             name="Rowan",
             disposition="friendly",
-            bond=3,
             status="active",
             memory=[
                 MemoryEntry(scene=2, event="Healed the player", importance=4, type="observation"),

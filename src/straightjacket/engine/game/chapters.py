@@ -24,6 +24,7 @@ from ..models import (
 )
 from ..npc import (
     consolidate_memory,
+    get_npc_bond,
     next_npc_id,
 )
 from ..parser import parse_narrator_response
@@ -167,7 +168,7 @@ def _prepare_npcs_for_new_chapter(game: GameState) -> None:
     for npc in game.npcs:
         if npc.status == "deceased" or npc.status != "active":
             continue
-        is_filler = npc.bond == 0 and len(npc.memory) <= 1 and not npc.agenda.strip()
+        is_filler = get_npc_bond(game, npc.id) == 0 and len(npc.memory) <= 1 and not npc.agenda.strip()
         if is_filler:
             npc.status = "background"
             log(f"[Campaign] Retired NPC to background at chapter boundary: {npc.name} (low-engagement filler)")

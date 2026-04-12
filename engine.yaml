@@ -824,6 +824,16 @@ fate:
       - {min_score: -5, odds: nearly_impossible}
       - {min_score: -99, odds: impossible}
 
+# ── Track-creating moves (step 8) ────────────────────────────
+# Moves that create a new progress track. Brain must supply track_name.
+# track_category maps to ProgressTrack.track_type.
+track_creating_moves:
+  quest/swear_an_iron_vow: vow
+  connection/make_a_connection: connection
+  combat/enter_the_fray: combat
+  exploration/undertake_an_expedition: expedition
+  scene_challenge/begin_the_scene: scene_challenge
+
 # ── Move outcomes (step 7b) ──────────────────────────────────
 # Data-driven mechanical effects per move per result.
 # Simple moves: list of effect strings.

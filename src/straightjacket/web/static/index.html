@@ -84,7 +84,6 @@ main { max-width: 48rem; width: 100%; margin: 0 auto; padding: 0 1rem; flex: 1; 
     <div id="chat-log" role="log" aria-live="polite"></div>
     <div id="input-bar">
       <div id="action-bar">
-        <button id="btn-status"></button>
         <button id="btn-saves"></button>
       </div>
       <form id="input-form">
@@ -136,7 +135,6 @@ let ws = null;
 let retries = 0;
 let sessionTaken = false;
 let currentPlayer = "";
-let lastState = null;
 
 // UI strings from server (strings.yaml)
 let S = {};
@@ -179,7 +177,6 @@ function applyStrings() {
   $("player-input").placeholder = s("ui.input_placeholder");
   $("player-input").setAttribute("aria-label", s("ui.input_placeholder"));
   $("input-form").querySelector("button").setAttribute("aria-label", s("ui.send"));
-  $("btn-status").textContent = s("ui.status");
   $("btn-saves").textContent = s("ui.save_load");
   $("burn-title").textContent = s("ui.burn_title");
   $("burn-overlay").setAttribute("aria-label", s("ui.burn_title"));
@@ -194,7 +191,6 @@ function applyStrings() {
   $("gameover-overlay").setAttribute("aria-label", s("ui.gameover_title"));
   $("gameover-chapter").textContent = s("ui.new_chapter");
   $("gameover-restart").textContent = s("ui.start_over");
-  $("btn-status").onclick = () => showStatus();
   $("btn-saves").onclick = () => showSaves();
 }
 
@@ -227,7 +223,6 @@ function connect() {
       case "saves_list": renderSavesList(msg.saves); break;
       case "narration": appendNarration(msg); break;
       case "replace_narration": replaceLast(msg.text); break;
-      case "state": onState(msg.data); break;
       case "status": showStatusMsg(msg.text); break;
       case "recap": appendRecap(msg.text); break;
       case "epilogue": appendEpilogue(msg.text); break;
@@ -274,14 +269,13 @@ $("create-player-btn").onclick = () => {
 // ── Player selected ─────────────────────────────────────────
 function onPlayerSelected(msg) {
   currentPlayer = msg.name;
-  if (msg.has_game && msg.state) {
+  if (msg.has_game) {
     showPhase("game");
     chatLog.innerHTML = "";
     (msg.messages || []).forEach(m => {
       if (m.role === "assistant") appendHTML("msg msg-narrator", m.content);
       else if (m.role === "user") appendText("msg msg-player", m.content);
     });
-    onState(msg.state);
     scroll();
     playerInput.focus();
   } else if (msg.creation_options) {
@@ -353,9 +347,6 @@ function clearStatus() { if (_statusEl) { _statusEl.remove(); _statusEl = null; 
 
 function scroll() { raf(() => chatLog.scrollTop = chatLog.scrollHeight); }
 
-// ── State ───────────────────────────────────────────────────
-function onState(state) { lastState = state; }
-
 // ── Input ───────────────────────────────────────────────────
 inputForm.onsubmit = (e) => {
   e.preventDefault();
@@ -367,6 +358,11 @@ inputForm.onsubmit = (e) => {
     send({type: "recap"});
     return;
   }
+  const cmd = text.toLowerCase();
+  if (cmd === "/status" || cmd === "/score" || cmd === "status" || cmd === "score") {
+    send({type: "status_query"});
+    return;
+  }
   if (text.startsWith("##")) {
     appendText("msg msg-player msg-correction", text);
     send({type: "correction", text: text.replace(/^#+\s*/, "")});
@@ -376,42 +372,6 @@ inputForm.onsubmit = (e) => {
   send({type: "player_input", text});
   scroll();
 };
-
-// ── Status display ──────────────────────────────────────────
-function showStatus() {
-  if (!lastState) return;
-  const st = lastState;
-  const lines = [];
-  lines.push(`${st.player_name} — ${st.character_concept || ""}`);
-  lines.push(`${s("ui.scene_marker", {n: st.scene})} | ${st.location || "?"} | ${st.time_label || ""}`);
-  Object.entries(st.stats).forEach(([k,v]) => { lines.push(`${v.label}: ${v.value}`); });
-  lines.push(`${s("ui.status_health")}: ${st.health} | ${s("ui.status_spirit")}: ${st.spirit} | ${s("ui.status_supply")}: ${st.supply}`);
-  lines.push(`${s("ui.status_momentum")}: ${st.momentum}/${st.max_momentum} | ${s("ui.status_chaos")}: ${st.chaos}`);
-  if (st.npcs?.length) {
-    lines.push("");
-    st.npcs.forEach(n => {
-      let line = `${n.name} ${n.disposition_label} B${n.bond}/${n.bond_max}`;
-      if (n.status === "background") line += ` ${s("ui.status_bg")}`;
-      if (n.status === "deceased") line += ` ${s("ui.status_deceased")}`;
-      lines.push(line);
-    });
-  }
-  if (st.clocks?.length) {
-    lines.push("");
-    st.clocks.forEach(c => {
-      lines.push(`${c.name} ${c.filled}/${c.segments}${c.fired ? " " + s("ui.status_fired") : ""}`);
-    });
-  }
-  if (st.story_arc) {
-    const a = st.story_arc;
-    lines.push(`\n${s("ui.status_act", {n: a.act_number, total: a.total_acts, title: a.title, phase: a.phase_label, progress: a.progress})}`);
-  }
-  const div = document.createElement("div");
-  div.className = "msg msg-system";
-  div.textContent = lines.join("\n");
-  chatLog.appendChild(div);
-  scroll();
-}
 
 // ── Saves ───────────────────────────────────────────────────
 function showSaves() { send({type: "list_saves"}); }

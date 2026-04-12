@@ -46,11 +46,12 @@ def _roll_oracle_answer(game: GameState) -> str:
     return ""
 
 
-def _find_progress_track(game: GameState, track_category: str) -> ProgressTrack | None:
-    """Find the most relevant progress track for a progress move.
+def _find_progress_track(game: GameState, track_category: str, target_track: str | None = None) -> ProgressTrack | None:
+    """Find the active progress track for a progress move.
 
-    Searches progress_tracks by track_type matching the move's track_category.
-    Returns the most recent (last) matching track, or None.
+    If target_track is given, matches by name substring (case-insensitive).
+    If omitted and multiple active tracks of the type exist, raises ValueError.
+    Filters out completed/failed tracks.
     """
     cat_lower = track_category.lower()
     type_map = {
@@ -63,10 +64,44 @@ def _find_progress_track(game: GameState, track_category: str) -> ProgressTrack 
     }
     track_type = type_map.get(cat_lower, cat_lower)
 
-    for track in reversed(game.progress_tracks):
-        if track.track_type == track_type:
-            return track
-    return None
+    candidates = [t for t in game.progress_tracks if t.track_type == track_type and t.status == "active"]
+
+    if not candidates:
+        return None
+
+    if target_track:
+        target_lower = target_track.lower()
+        matches = [t for t in candidates if target_lower in t.name.lower()]
+        if len(matches) == 1:
+            return matches[0]
+        if len(matches) > 1:
+            names = ", ".join(t.name for t in matches)
+            raise ValueError(f"Ambiguous target_track '{target_track}' matches: {names}")
+        return None
+
+    if len(candidates) == 1:
+        return candidates[0]
+
+    names = ", ".join(t.name for t in candidates)
+    raise ValueError(f"Multiple active {track_type} tracks: {names}. Brain must set target_track.")
+
+
+def complete_track(game: GameState, track_id: str, outcome: str) -> None:
+    """Mark a track as completed or failed. Updates linked thread if vow."""
+    track = next((t for t in game.progress_tracks if t.id == track_id), None)
+    if not track:
+        log(f"[Track] complete_track: not found {track_id}")
+        return
+    track.status = outcome  # "completed" or "failed"
+    log(f"[Track] {track.name} ({track.track_type}) → {outcome}")
+
+    # Update linked thread
+    if track.track_type == "vow":
+        for thread in game.narrative.threads:
+            if thread.linked_track_id == track_id:
+                thread.active = False
+                log(f"[Track] Linked thread '{thread.name}' deactivated")
+                break
 
 
 # ── Scene-end list maintenance (step 4.6 / 6.5) ──────────────
@@ -338,6 +373,41 @@ def process_turn(
     # ── Action path ───────────────────────────────────────────
     nar.scene_count += 1
 
+    # Track creation (step 8.5): if move creates a track, do it before the roll
+    track_creating = eng().get_raw("track_creating_moves", {})
+    track_category = track_creating.get(brain.move)
+    if track_category:
+        if not brain.track_name:
+            raise ValueError(f"Move {brain.move} requires track_name but Brain omitted it.")
+        if not brain.track_rank:
+            raise ValueError(f"Move {brain.move} requires track_rank but Brain omitted it.")
+        slug = brain.track_name.lower().replace(" ", "_")
+        track_id = f"{track_category}_{slug}"
+        new_track = ProgressTrack(
+            id=track_id,
+            name=brain.track_name,
+            track_type=track_category,
+            rank=brain.track_rank,
+        )
+        game.progress_tracks.append(new_track)
+        log(f"[Track] Created {track_category} track: {brain.track_name} ({brain.track_rank}), id={track_id}")
+
+        # Vow tracks also create a thread entry
+        if track_category == "vow":
+            from ..models import ThreadEntry
+
+            game.narrative.threads.append(
+                ThreadEntry(
+                    id=f"thread_{slug}",
+                    name=brain.track_name,
+                    thread_type="vow",
+                    weight=2,
+                    source="vow",
+                    linked_track_id=track_id,
+                )
+            )
+            log(f"[Track] Created linked thread for vow: {brain.track_name}")
+
     # Determine roll type from Datasworn move data
     ds_moves = get_moves(game.setting_id) if game.setting_id else {}
     ds_move = ds_moves.get(brain.move)
@@ -346,7 +416,7 @@ def process_turn(
     if is_progress_roll:
         assert ds_move is not None  # guaranteed by is_progress_roll check
         # Progress roll: filled_boxes vs 2d10, no action dice
-        track = _find_progress_track(game, ds_move.track_category)
+        track = _find_progress_track(game, ds_move.track_category, target_track=brain.target_track)
         filled = track.filled_boxes if track else 0
         track_name = track.name if track else ds_move.track_category
         roll = roll_progress(track_name, filled, brain.move)
@@ -393,6 +463,24 @@ def process_turn(
     # Move outcome resolution (step 7b) — replaces category-based apply_consequences
     outcome = resolve_move_outcome(game, brain.move, roll.result, target_npc_id=brain.target_npc)
     consequences = outcome.consequences
+
+    # Progress marks wiring (step 8.2): consume marks on active track
+    if outcome.progress_marks > 0:
+        progress_track = _find_progress_track(
+            game, ds_move.track_category if ds_move else "vow", target_track=brain.target_track
+        )
+        if progress_track:
+            for _ in range(outcome.progress_marks):
+                added = progress_track.mark_progress()
+                if added:
+                    log(f"[Track] {progress_track.name}: +{added} ticks ({progress_track.filled_boxes}/10 boxes)")
+
+    # Track completion on progress roll result
+    if is_progress_roll and track:
+        if roll.result == "STRONG_HIT":
+            complete_track(game, track.id, "completed")
+        elif roll.result == "MISS":
+            complete_track(game, track.id, "failed")
 
     # Combat position
     if outcome.combat_position:

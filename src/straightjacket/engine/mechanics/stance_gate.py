@@ -6,7 +6,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from ..engine_loader import eng
-from ..models import NpcData
+from ..models import GameState, NpcData
+from ..npc import get_npc_bond
 
 
 @dataclass
@@ -19,17 +20,13 @@ class NpcStance:
     constraint: str
 
 
-def resolve_npc_stance(npc: NpcData, move_category: str) -> NpcStance:
-    """Compute behavioral stance for an NPC based on disposition, bond, and move category.
-
-    Looks up the stance matrix in engine.yaml. Returns a stance label and a concrete
-    behavioral constraint for the narrator prompt.
-    """
+def resolve_npc_stance(game: GameState, npc: NpcData, move_category: str) -> NpcStance:
+    """Compute behavioral stance from disposition, bond (connection track), and move category."""
     _e = eng()
     matrix = _e.get_raw("stance_matrix", {})
 
     disposition = npc.disposition
-    bond = npc.bond
+    bond = get_npc_bond(game, npc.id)
 
     if bond <= 1:
         bond_range = "low"
@@ -59,17 +56,12 @@ def resolve_npc_stance(npc: NpcData, move_category: str) -> NpcStance:
     )
 
 
-def compute_npc_gate(npc: NpcData, current_scene: int, stance: str) -> int:
-    """Compute information gate level (0-4) for an NPC.
-
-    Higher gate = more information visible in narrator prompt.
-    Gate 0: name + description. Gate 4: full secrets.
-    """
+def compute_npc_gate(game: GameState, npc: NpcData, current_scene: int, stance: str) -> int:
+    """Compute information gate level (0-4) for an NPC."""
     _e = eng()
     gate_cfg = _e.get_raw("information_gate", {})
     points_cfg = gate_cfg.get("points", {})
 
-    # Scenes since introduction (from first memory, or 0 if no memories)
     first_scene = min((m.scene for m in npc.memory), default=current_scene)
     scenes_known = current_scene - first_scene
 
@@ -81,13 +73,12 @@ def compute_npc_gate(npc: NpcData, current_scene: int, stance: str) -> int:
     else:
         points += points_cfg.get("scenes_known_1", 0)
 
-    # Gather information successes
     points += npc.gather_count * points_cfg.get("gather_success", 1)
 
-    # Bond level
-    if npc.bond >= 4:
+    bond = get_npc_bond(game, npc.id)
+    if bond >= 4:
         points += points_cfg.get("bond_4_plus", 2)
-    elif npc.bond >= 2:
+    elif bond >= 2:
         points += points_cfg.get("bond_2_3", 1)
     else:
         points += points_cfg.get("bond_1", 0)

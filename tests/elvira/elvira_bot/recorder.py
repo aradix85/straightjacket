@@ -100,7 +100,6 @@ def _snapshot_npcs(game: GameState) -> list[NpcSnapshot]:
             name=n.name,
             status=n.status,
             disposition=n.disposition,
-            bond=n.bond,
             agenda=n.agenda,
             instinct=n.instinct,
             arc=n.arc,

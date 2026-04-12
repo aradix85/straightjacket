@@ -9,6 +9,7 @@ from ..logging_util import log
 from ..models import GameState, NpcData
 from .lifecycle import reactivate_npc
 from .matching import find_npc
+from .bond import get_npc_bond
 
 if TYPE_CHECKING:
     from ..models import BrainResult
@@ -195,7 +196,7 @@ def activate_npcs_for_prompt(
     if len(activated) > _max_activated:
         target_npc = find_npc(game, target_id) if target_id else None
         non_target = [n for n in activated if n is not target_npc]
-        non_target.sort(key=lambda n: n.bond, reverse=True)
+        non_target.sort(key=lambda n: get_npc_bond(game, n.id), reverse=True)
         overflow = non_target[_max_activated - (1 if target_npc else 0) :]
         activated = [n for n in activated if n not in overflow]
         mentioned.extend(overflow)

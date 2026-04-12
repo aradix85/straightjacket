@@ -4,7 +4,7 @@
 Verifies engine-computed values match expected game state conditions.
 """
 
-from straightjacket.engine.models import BrainResult, ClockData, GameState, NpcData, SceneLogEntry
+from straightjacket.engine.models import BrainResult, ClockData, GameState, NpcData, ProgressTrack, SceneLogEntry
 
 
 # ── Position resolver ────────────────────────────────────────
@@ -53,7 +53,7 @@ def test_position_hostile_npc_pushes_desperate(stub_engine: None) -> None:
     game.resources.spirit = 3
     game.resources.supply = 3
     game.world.chaos_factor = 7
-    game.npcs = [NpcData(id="npc_1", name="Enemy", disposition="hostile", bond=0)]
+    game.npcs = [NpcData(id="npc_1", name="Enemy", disposition="hostile")]
     brain = BrainResult(move="adventure/compel", stat="heart", target_npc="npc_1")
     pos = resolve_position(game, brain)
     assert pos == "desperate"
@@ -67,7 +67,10 @@ def test_position_friendly_npc_helps(stub_engine: None) -> None:
     game.resources.spirit = 5
     game.resources.supply = 5
     game.world.chaos_factor = 5
-    game.npcs = [NpcData(id="npc_1", name="Ally", disposition="friendly", bond=3)]
+    game.npcs = [NpcData(id="npc_1", name="Ally", disposition="friendly")]
+    game.progress_tracks.append(
+        ProgressTrack(id="connection_npc_1", name="Ally", track_type="connection", rank="dangerous", ticks=12)
+    )
     brain = BrainResult(move="adventure/compel", stat="heart", target_npc="npc_1")
     pos = resolve_position(game, brain)
     assert pos in ("risky", "controlled")  # friendly + high bond pushes up
@@ -127,7 +130,7 @@ def test_effect_desperate_pushes_limited(stub_engine: None) -> None:
     from straightjacket.engine.mechanics import resolve_effect
 
     game = GameState(player_name="Test")
-    game.npcs = [NpcData(id="npc_1", name="Enemy", disposition="hostile", bond=0)]
+    game.npcs = [NpcData(id="npc_1", name="Enemy", disposition="hostile")]
     brain = BrainResult(move="adventure/compel", stat="heart", target_npc="npc_1")
     effect = resolve_effect(game, brain, "desperate")
     assert effect in ("limited", "standard")
@@ -137,7 +140,10 @@ def test_effect_controlled_pushes_great(stub_engine: None) -> None:
     from straightjacket.engine.mechanics import resolve_effect
 
     game = GameState(player_name="Test")
-    game.npcs = [NpcData(id="npc_1", name="Ally", disposition="friendly", bond=3)]
+    game.npcs = [NpcData(id="npc_1", name="Ally", disposition="friendly")]
+    game.progress_tracks.append(
+        ProgressTrack(id="connection_npc_1", name="Ally", track_type="connection", rank="dangerous", ticks=12)
+    )
     # Add secured advantage
     game.narrative.session_log.append(SceneLogEntry(scene=1, move="secure_advantage", result="STRONG_HIT"))
     brain = BrainResult(move="combat/strike", stat="iron", target_npc="npc_1")

@@ -15,6 +15,7 @@ from straightjacket.engine.models import (
     BrainResult,
     GameState,
     NpcData,
+    ProgressTrack,
     RollResult,
 )
 from straightjacket.engine.prompt_builders import build_action_prompt, build_dialog_prompt
@@ -23,7 +24,7 @@ from straightjacket.engine.prompt_builders import build_action_prompt, build_dia
 pytestmark = pytest.mark.usefixtures("load_engine")
 
 
-def _npc(disposition: str = "neutral", bond: int = 1) -> NpcData:
+def _npc(disposition: str = "neutral") -> NpcData:
     from straightjacket.engine.models import MemoryEntry
 
     return NpcData(
@@ -33,18 +34,26 @@ def _npc(disposition: str = "neutral", bond: int = 1) -> NpcData:
         agenda="Protect her cargo",
         instinct="Counts exits before entering",
         disposition=disposition,
-        bond=bond,
-        bond_max=4,
         memory=[MemoryEntry(scene=1, event="Kira appeared at the docks", emotional_weight="neutral", importance=3)],
     )
 
 
-def _game(npc: NpcData | None = None) -> GameState:
+def _game(npc: NpcData | None = None, bond: int = 0) -> GameState:
     game = GameState(player_name="Ash", setting_id="starforged", setting_genre="starforged")
     game.world.current_location = "The Docks"
     game.narrative.scene_count = 3
     if npc:
         game.npcs.append(npc)
+        if bond > 0:
+            game.progress_tracks.append(
+                ProgressTrack(
+                    id=f"connection_{npc.id}",
+                    name=npc.name,
+                    track_type="connection",
+                    rank="dangerous",
+                    ticks=bond * 4,
+                )
+            )
     return game
 
 
@@ -52,58 +61,67 @@ def _game(npc: NpcData | None = None) -> GameState:
 
 
 def test_hostile_low_combat() -> None:
-    npc = _npc("hostile", bond=0)
-    stance = resolve_npc_stance(npc, "combat")
+    npc = _npc("hostile")
+    game = _game(npc, bond=0)
+    stance = resolve_npc_stance(game, npc, "combat")
     assert stance.stance == "aggressive"
     assert "quarter" in stance.constraint.lower() or "hesitation" in stance.constraint.lower()
 
 
 def test_distrustful_low_gather() -> None:
-    npc = _npc("distrustful", bond=1)
-    stance = resolve_npc_stance(npc, "gather_information")
+    npc = _npc("distrustful")
+    game = _game(npc, bond=1)
+    stance = resolve_npc_stance(game, npc, "gather_information")
     assert stance.stance == "evasive"
     assert "silence" in stance.constraint.lower()
 
 
 def test_friendly_mid_social() -> None:
-    npc = _npc("friendly", bond=2)
-    stance = resolve_npc_stance(npc, "social")
+    npc = _npc("friendly")
+    game = _game(npc, bond=2)
+    stance = resolve_npc_stance(game, npc, "social")
     assert stance.stance == "confiding"
 
 
 def test_loyal_high_other() -> None:
-    npc = _npc("loyal", bond=4)
-    stance = resolve_npc_stance(npc, "other")
+    npc = _npc("loyal")
+    game = _game(npc, bond=4)
+    stance = resolve_npc_stance(game, npc, "other")
     assert stance.stance == "ride_or_die"
 
 
 def test_neutral_low_other() -> None:
-    npc = _npc("neutral", bond=0)
-    stance = resolve_npc_stance(npc, "other")
+    npc = _npc("neutral")
+    game = _game(npc, bond=0)
+    stance = resolve_npc_stance(game, npc, "other")
     assert stance.stance == "indifferent"
 
 
 def test_bond_range_mid() -> None:
-    npc = _npc("neutral", bond=2)
-    stance = resolve_npc_stance(npc, "social")
+    npc = _npc("neutral")
+    game = _game(npc, bond=2)
+    stance = resolve_npc_stance(game, npc, "social")
     assert stance.stance == "engaged"
 
 
 def test_bond_range_high() -> None:
-    npc = _npc("neutral", bond=4)
-    stance = resolve_npc_stance(npc, "social")
+    npc = _npc("neutral")
+    game = _game(npc, bond=4)
+    stance = resolve_npc_stance(game, npc, "social")
     assert stance.stance == "open"
 
 
 def test_unknown_move_category_defaults_to_other() -> None:
-    npc = _npc("neutral", bond=1)
-    stance = resolve_npc_stance(npc, "unknown_category")
-    assert stance.stance == resolve_npc_stance(npc, "other").stance
+    npc = _npc("neutral")
+    game = _game(npc, bond=1)
+    stance = resolve_npc_stance(game, npc, "unknown_category")
+    assert stance.stance == resolve_npc_stance(game, npc, "other").stance
 
 
 def test_stance_has_npc_metadata() -> None:
-    npc = _npc("friendly", bond=3)
-    stance = resolve_npc_stance(npc, "social")
+    npc = _npc("friendly")
+    game = _game(npc, bond=3)
+    stance = resolve_npc_stance(game, npc, "social")
     assert stance.npc_id == "npc_1"
     assert stance.npc_name == "Kira"
 
@@ -113,8 +131,9 @@ def test_stance_constraint_not_empty() -> None:
     for disp in ("hostile", "distrustful", "neutral", "friendly", "loyal"):
         for bond in (0, 2, 4):
             for cat in ("combat", "social", "gather_information", "other"):
-                npc = _npc(disp, bond)
-                stance = resolve_npc_stance(npc, cat)
+                npc = _npc(disp)
+                game = _game(npc, bond=bond)
+                stance = resolve_npc_stance(game, npc, cat)
                 assert stance.constraint, f"Empty constraint for {disp}/{bond}/{cat}"
                 assert stance.stance, f"Empty stance for {disp}/{bond}/{cat}"
 
@@ -123,8 +142,8 @@ def test_stance_constraint_not_empty() -> None:
 
 
 def test_stance_in_target_npc_block() -> None:
-    npc = _npc("distrustful", bond=1)
-    game = _game(npc)
+    npc = _npc("distrustful")
+    game = _game(npc, bond=1)
     brain = BrainResult(
         move="adventure/gather_information", stat="wits", target_npc="npc_1", player_intent="ask about the cargo"
     )
@@ -157,10 +176,13 @@ def test_stance_in_target_npc_block() -> None:
 
 
 def test_stance_in_activated_npc_block() -> None:
-    npc1 = NpcData(id="npc_1", name="Kira", disposition="friendly", bond=2, agenda="Trade", instinct="Cautious")
-    npc2 = NpcData(id="npc_2", name="Rowan", disposition="hostile", bond=0, agenda="Fight", instinct="Reckless")
+    npc1 = NpcData(id="npc_1", name="Kira", disposition="friendly", agenda="Trade", instinct="Cautious")
+    npc2 = NpcData(id="npc_2", name="Rowan", disposition="hostile", agenda="Fight", instinct="Reckless")
     game = _game()
     game.npcs = [npc1, npc2]
+    game.progress_tracks.append(
+        ProgressTrack(id="connection_npc_1", name="Kira", track_type="connection", rank="dangerous", ticks=8)
+    )
     brain = BrainResult(move="adventure/face_danger", stat="edge", target_npc="npc_1", player_intent="dodge")
     roll = RollResult(
         d1=4,
@@ -190,8 +212,8 @@ def test_stance_in_activated_npc_block() -> None:
 
 
 def test_dialog_prompt_uses_social_stance() -> None:
-    npc = _npc("distrustful", bond=1)
-    game = _game(npc)
+    npc = _npc("distrustful")
+    game = _game(npc, bond=1)
     brain = BrainResult(move="dialog", dialog_only=True, target_npc="npc_1", player_intent="ask a question")
     prompt = build_dialog_prompt(
         game,

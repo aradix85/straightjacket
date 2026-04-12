@@ -26,7 +26,7 @@ from straightjacket.engine.models import (  # type: ignore[import-not-found]
 from straightjacket.web.session import BurnOffer, Session  # type: ignore[import-not-found]
 from straightjacket.web.serializers import (  # type: ignore[import-not-found]
     build_creation_options,
-    build_state,
+    build_narrative_status,
     highlight_dialog,
 )
 
@@ -206,7 +206,7 @@ class TestHighlightDialog:
         assert '<span class="dialog">' in result
 
 
-class TestBuildState:
+class TestBuildNarrativeStatus:
     def _game(self) -> GameState:
         game = GameState(
             player_name="Kael",
@@ -227,54 +227,43 @@ class TestBuildState:
         game.world.chaos_factor = 6
         game.narrative.scene_count = 5
         game.npcs = [
-            NpcData(id="npc_1", name="Mira", status="active", disposition="friendly", bond=2, bond_max=4),
-            NpcData(id="npc_2", name="Ghost", status="deceased", disposition="neutral", bond=0, bond_max=4),
-            NpcData(id="npc_3", name="Lore Figure", status="lore", disposition="neutral", bond=0, bond_max=4),
+            NpcData(id="npc_1", name="Mira", status="active", disposition="friendly"),
+            NpcData(id="npc_2", name="Ghost", status="deceased", disposition="neutral"),
+            NpcData(id="npc_3", name="Lore Figure", status="lore", disposition="neutral"),
         ]
         game.world.clocks = [
             ClockData(name="Doom", clock_type="threat", segments=6, filled=3),
         ]
         return game
 
-    def test_basic_fields(self, load_engine: None) -> None:
-        state = build_state(self._game())
-        assert state["player_name"] == "Kael"
-        assert state["health"] == 4
-        assert state["chaos"] == 6
-        assert state["scene"] == 5
-        assert state["location"] == "Library"
+    def test_returns_string(self, load_engine: None) -> None:
+        text = build_narrative_status(self._game())
+        assert isinstance(text, str)
+        assert "Kael" in text
 
-    def test_stats_have_labels(self, load_engine: None) -> None:
-        state = build_state(self._game())
-        assert "label" in state["stats"]["edge"]
-        assert "value" in state["stats"]["edge"]
-        assert state["stats"]["edge"]["value"] == 1
+    def test_contains_resources(self, load_engine: None) -> None:
+        text = build_narrative_status(self._game())
+        assert "4" in text  # health
+        assert "3" in text  # spirit
+        assert "5" in text  # supply/momentum
+
+    def test_contains_location(self, load_engine: None) -> None:
+        text = build_narrative_status(self._game())
+        assert "Library" in text
 
     def test_npcs_filtered(self, load_engine: None) -> None:
-        state = build_state(self._game())
-        names = [n["name"] for n in state["npcs"]]
-        assert "Mira" in names
-        assert "Ghost" in names
-        assert "Lore Figure" not in names
-
-    def test_npc_disposition_labeled(self, load_engine: None) -> None:
-        state = build_state(self._game())
-        mira = next(n for n in state["npcs"] if n["name"] == "Mira")
-        assert mira["disposition_label"] != ""
+        text = build_narrative_status(self._game())
+        assert "Mira" in text
+        assert "Ghost" in text
+        assert "Lore Figure" not in text
 
     def test_clocks_present(self, load_engine: None) -> None:
-        state = build_state(self._game())
-        assert len(state["clocks"]) == 1
-        assert state["clocks"][0]["name"] == "Doom"
-        assert state["clocks"][0]["filled"] == 3
+        text = build_narrative_status(self._game())
+        assert "Doom" in text
 
-    def test_time_label_resolved(self, load_engine: None) -> None:
-        state = build_state(self._game())
-        assert state["time_label"] != ""
-
-    def test_story_arc_none_without_blueprint(self, load_engine: None) -> None:
-        state = build_state(self._game())
-        assert state["story_arc"] is None
+    def test_story_arc_absent_without_blueprint(self, load_engine: None) -> None:
+        text = build_narrative_status(self._game())
+        assert "act" not in text.lower() or "Story:" not in text
 
     def test_story_arc_present_with_blueprint(self, load_engine: None) -> None:
         from straightjacket.engine.models import StoryAct, StoryBlueprint
@@ -287,10 +276,8 @@ class TestBuildState:
             structure_type="3act",
             acts=[StoryAct(phase="setup", title="Begin", scene_range=[1, 10], mood="dark")],
         )
-        state = build_state(game)
-        assert state["story_arc"] is not None
-        assert state["story_arc"]["phase"] == "setup"
-        assert state["story_arc"]["phase_label"] != ""
+        text = build_narrative_status(game)
+        assert "Begin" in text
 
 
 class TestBuildCreationOptions:

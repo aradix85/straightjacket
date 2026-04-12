@@ -172,11 +172,22 @@ def apply_effects(game: GameState, effects: list[MoveEffect], target_npc_id: str
 
         elif effect.type == "bond":
             if target:
-                old_bond = target.bond
-                target.bond = max(0, min(target.bond_max, target.bond + effect.value))
-                delta = target.bond - old_bond
-                if delta != 0:
-                    result.consequences.append(f"{target.name} bond {'+' if delta > 0 else ''}{delta}")
+                # Find connection track for this NPC
+                conn_track = next(
+                    (
+                        t
+                        for t in game.progress_tracks
+                        if t.track_type == "connection" and t.id == f"connection_{target.id}" and t.status == "active"
+                    ),
+                    None,
+                )
+                if conn_track:
+                    for _ in range(abs(effect.value)):
+                        added = conn_track.mark_progress()
+                        if added:
+                            result.consequences.append(f"{target.name} bond progress +{added} ticks")
+                else:
+                    log(f"[MoveOutcome] bond effect but no connection track for {target.name}")
 
         elif effect.type == "disposition_shift":
             if target:

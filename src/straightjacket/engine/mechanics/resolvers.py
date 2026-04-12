@@ -6,7 +6,7 @@ from __future__ import annotations
 from ..engine_loader import eng
 from ..logging_util import log
 from ..models import BrainResult, GameState
-from ..npc import find_npc
+from ..npc import find_npc, get_npc_bond
 
 
 def resolve_position(game: GameState, brain: BrainResult) -> str:
@@ -39,9 +39,9 @@ def resolve_position(game: GameState, brain: BrainResult) -> str:
                 "loyal": w.get("npc_loyal", 2),
             }
             score += disp_weights.get(target.disposition, 0)
-            if target.bond >= 3:
+            if get_npc_bond(game, target.id) >= 3:
                 score += w.get("npc_bond_high", 1)
-            elif target.bond <= 0:
+            elif get_npc_bond(game, target.id) <= 0:
                 score += w.get("npc_bond_low", -1)
 
     # Chaos factor
@@ -141,9 +141,9 @@ def resolve_effect(game: GameState, brain: BrainResult, position: str) -> str:
     if brain.target_npc:
         target = find_npc(game, brain.target_npc)
         if target:
-            if target.bond >= 3:
+            if get_npc_bond(game, target.id) >= 3:
                 score += w.get("bond_high", 1)
-            elif target.bond <= 0:
+            elif get_npc_bond(game, target.id) <= 0:
                 score += w.get("bond_low", -1)
 
     # Secured advantage

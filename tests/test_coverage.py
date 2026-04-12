@@ -36,7 +36,7 @@ def _game() -> GameState:
     g.resources.spirit = 4
     g.preferences.content_lines = "no spiders"
     g.preferences.player_wishes = "a loyal dog"
-    g.npcs = [NpcData(id="npc_1", name="Kira", disposition="friendly", bond=2)]
+    g.npcs = [NpcData(id="npc_1", name="Kira", disposition="friendly")]
     return g
 
 

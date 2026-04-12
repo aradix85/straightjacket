@@ -23,7 +23,7 @@ The original prototype, the NiceGUI web interface approach, and the idea of comb
 - Chapter system (campaign continuity, epilogues, NPC ID remapping)
 - Elvira test bot (headless integration testing with invariant checking)
 - Accessibility architecture (ARIA, screen reader support)
-- 665-test suite
+- 662-test suite
 
 ## Structural differences from EdgeTales
 

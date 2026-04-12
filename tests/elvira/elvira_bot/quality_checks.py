@@ -128,15 +128,11 @@ def check_chapter_continuity(
                 if any(a.lower().strip() == name_lower for a in n.aliases):
                     found = True
                     break
-            if not found and prev.bond >= 2:
-                findings.append(f"NPC '{prev.name}' (bond={prev.bond}) missing after chapter transition")
+            if not found:
+                findings.append(f"NPC '{prev.name}' missing after chapter transition")
             continue
 
         current = current_by_name[name_lower]
-
-        # Bond should be preserved (may be reduced by chapter consolidation but not zeroed)
-        if prev.bond >= 3 and current.bond == 0:
-            findings.append(f"NPC '{prev.name}' bond dropped from {prev.bond} to 0 across chapter")
 
         # Memories should not be completely wiped
         if prev.memory_count > 3 and len(current.memory) == 0:

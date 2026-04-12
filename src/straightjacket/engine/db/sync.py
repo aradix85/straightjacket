@@ -40,10 +40,10 @@ def _insert_npcs(conn: sqlite3.Connection, game: GameState) -> None:
     for n in game.npcs:
         conn.execute(
             "INSERT INTO npcs (id, name, description, agenda, instinct, arc, secrets, "
-            "disposition, bond, bond_max, status, introduced, aliases, keywords, "
+            "disposition, status, introduced, aliases, keywords, "
             "importance_accumulator, last_reflection_scene, last_location, needs_reflection, "
             "gather_count) "
-            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             (
                 n.id,
                 n.name,
@@ -53,8 +53,6 @@ def _insert_npcs(conn: sqlite3.Connection, game: GameState) -> None:
                 n.arc,
                 json.dumps(n.secrets, ensure_ascii=False),
                 n.disposition,
-                n.bond,
-                n.bond_max,
                 n.status,
                 int(n.introduced),
                 json.dumps(n.aliases, ensure_ascii=False),
@@ -149,6 +147,7 @@ def _insert_narration_history(conn: sqlite3.Connection, game: GameState) -> None
 def _insert_progress_tracks(conn: sqlite3.Connection, game: GameState) -> None:
     for t in game.progress_tracks:
         conn.execute(
-            "INSERT INTO progress_tracks (id, name, track_type, rank, ticks, max_ticks) VALUES (?, ?, ?, ?, ?, ?)",
-            (t.id, t.name, t.track_type, t.rank, t.ticks, t.max_ticks),
+            "INSERT INTO progress_tracks (id, name, track_type, rank, ticks, max_ticks, status) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?)",
+            (t.id, t.name, t.track_type, t.rank, t.ticks, t.max_ticks, t.status),
         )

@@ -15,6 +15,7 @@ __all__ = [
     "edit_distance_le1",
     "find_npc",
     "fuzzy_match_existing_npc",
+    "get_npc_bond",
     "is_complete_description",
     "merge_npc_identity",
     "next_npc_id",
@@ -76,3 +77,6 @@ from .processing import (
     process_npc_details,
     process_npc_renames,
 )
+
+# --- bond query: separate module to avoid circular imports ---
+from .bond import get_npc_bond

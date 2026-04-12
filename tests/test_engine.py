@@ -167,8 +167,8 @@ def _make_game_with_npcs():  # type: ignore[no-untyped-def]
     game.narrative.scene_count = 5
     game.world.current_location = "Tavern"
     game.npcs = [
-        NpcData(id="npc_1", name="Kira Voss", disposition="friendly", bond=2, description="Tall woman with red hair"),
-        NpcData(id="npc_2", name="Old Borin", disposition="neutral", bond=0, description="Grumpy dwarf blacksmith"),
+        NpcData(id="npc_1", name="Kira Voss", disposition="friendly", description="Tall woman with red hair"),
+        NpcData(id="npc_2", name="Old Borin", disposition="neutral", description="Grumpy dwarf blacksmith"),
     ]
     return game
 

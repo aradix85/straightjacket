@@ -18,15 +18,11 @@ def _game() -> GameState:
             id="npc_1",
             name="Kira",
             disposition="friendly",
-            bond=2,
-            bond_max=4,
             status="active",
             last_location="Tavern",
             memory=[MemoryEntry(scene=4, event="Talked to player", importance=3)],
         ),
-        NpcData(
-            id="npc_2", name="Borin", disposition="neutral", bond=0, bond_max=4, status="active", last_location="Tavern"
-        ),
+        NpcData(id="npc_2", name="Borin", disposition="neutral", status="active", last_location="Tavern"),
     ]
     return game
 

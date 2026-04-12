@@ -109,6 +109,14 @@ def get_brain_output_schema() -> dict:
                 "player_intent": _str(),
                 "world_addition": _nullable_str(),
                 "location_change": _nullable_str(),
+                "track_name": _nullable_str(),
+                "track_rank": {
+                    "anyOf": [
+                        {"type": "string", "enum": ["troublesome", "dangerous", "formidable", "extreme", "epic"]},
+                        {"type": "null"},
+                    ]
+                },
+                "target_track": _nullable_str(),
             }
         )
     return _brain_cache
@@ -309,8 +317,6 @@ def get_opening_setup_schema() -> dict:
                             "instinct": _str(),
                             "secrets": _str_arr(),
                             "disposition": _str(dispositions),
-                            "bond": _int(),
-                            "bond_max": _int(),
                         }
                     )
                 ),
@@ -381,7 +387,6 @@ CORRECTION_OUTPUT_SCHEMA = _obj(
                             "agenda": _nullable_str(),
                             "instinct": _nullable_str(),
                             "aliases": {"anyOf": [_str_arr(), {"type": "null"}]},
-                            "bond": _nullable_int(),
                         }
                     ),
                     "value": _nullable_str(),

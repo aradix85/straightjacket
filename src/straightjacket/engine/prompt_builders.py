@@ -12,7 +12,7 @@ from collections.abc import Sequence
 
 from .models import BrainResult, EngineConfig, GameState, NpcData, RandomEvent, RollResult
 from .mechanics.scene import SceneSetup
-from .npc import find_npc, retrieve_memories
+from .npc import find_npc, get_npc_bond, retrieve_memories
 from .prompt_blocks import (
     narrative_direction_block,
     recent_events_block,
@@ -104,8 +104,8 @@ def _npc_block(game: GameState, target_id: str | None, context_text: str = "", m
     if not target:
         return ""
 
-    stance = resolve_npc_stance(target, move_category)
-    gate = compute_npc_gate(target, game.narrative.scene_count, stance.stance)
+    stance = resolve_npc_stance(game, target, move_category)
+    gate = compute_npc_gate(game, target, game.narrative.scene_count, stance.stance)
     log(f"[Gate] {target.name}: gate={gate} (stance={stance.stance})")
 
     aliases_attr = f' aliases="{_xa(",".join(target.aliases))}"' if target.aliases else ""
@@ -202,7 +202,7 @@ def _activated_npcs_block(
             loc_hint = f' last_seen="{_xa(loc)}"'
 
         arc_hint = f' arc="{_xa(npc.arc)}"' if npc.arc.strip() else ""
-        stance = resolve_npc_stance(npc, move_category)
+        stance = resolve_npc_stance(game, npc, move_category)
         parts.append(
             f'<activated_npc name="{_xa(npc.name)}" stance="{_xa(stance.stance)}" '
             f'constraint="{_xa(stance.constraint)}"{arc_hint}{mem_hint}{loc_hint}/>'
@@ -497,7 +497,7 @@ def build_epilogue_prompt(game: GameState) -> str:
     conflict = bp.central_conflict if bp else ""
 
     npc_block = "\n".join(
-        f'<npc name="{_xa(n.name)}" disposition="{_xa(n.disposition)}" bond="{n.bond}/{n.bond_max}">'
+        f'<npc name="{_xa(n.name)}" disposition="{_xa(n.disposition)}" bond="{get_npc_bond(game, n.id)}/10">'
         f"{_xe(n.description)}</npc>"
         for n in game.npcs
         if n.status == "active"
@@ -528,7 +528,7 @@ def build_new_chapter_prompt(game: GameState) -> str:
 
     npc_block = "\n".join(
         f'<returning_npc id="{_xa(n.id)}" name="{_xa(n.name)}" disposition="{_xa(n.disposition)}" '
-        f'bond="{n.bond}/{n.bond_max}"'
+        f'bond="{get_npc_bond(game, n.id)}/10"'
         + (f' aliases="{_xa(",".join(n.aliases))}"' if n.aliases else "")
         + f">{_xe(n.description)}</returning_npc>"
         for n in game.npcs

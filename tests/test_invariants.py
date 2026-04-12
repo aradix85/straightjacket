@@ -33,8 +33,6 @@ def _clean_game() -> GameState:
             name="Kira",
             status="active",
             disposition="friendly",
-            bond=2,
-            bond_max=4,
             memory=[MemoryEntry(scene=1, event="Met player", type="observation", importance=3)],
         ),
     ]
@@ -136,14 +134,6 @@ def test_catches_npc_invalid_disposition(load_engine: None) -> None:
     game.npcs[0].disposition = "angry"  # not in canonical 5
     violations = assert_game_state(game, turn=1)
     assert any("disposition" in v for v in violations)
-
-
-def test_catches_npc_bond_over_max(load_engine: None) -> None:
-    game = _clean_game()
-    game.npcs[0].bond = 5
-    game.npcs[0].bond_max = 4
-    violations = assert_game_state(game, turn=1)
-    assert any("bond" in v for v in violations)
 
 
 def test_catches_npc_memory_missing_fields(load_engine: None) -> None:

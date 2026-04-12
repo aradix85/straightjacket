@@ -13,6 +13,7 @@ from straightjacket.engine.models import (
     NpcData,
     ClockData,
     GameState,
+    ProgressTrack,
     StoryBlueprint,
     StoryAct,
 )
@@ -33,26 +34,34 @@ def test_roll_action_cap() -> None:
 
 
 def test_compel_no_disposition_shift(load_engine: None) -> None:
-    """compel STRONG_HIT grants bond+1 only, no disposition shift."""
+    """compel STRONG_HIT marks connection progress, no disposition shift."""
     from straightjacket.engine.mechanics.move_outcome import resolve_move_outcome
 
     game = GameState()
-    npc = NpcData(id="npc_1", name="Test", disposition="neutral", bond=1, bond_max=4)
+    npc = NpcData(id="npc_1", name="Test", disposition="neutral")
     game.npcs.append(npc)
+    game.progress_tracks.append(
+        ProgressTrack(id="connection_npc_1", name="Test", track_type="connection", rank="dangerous", ticks=0)
+    )
     resolve_move_outcome(game, "adventure/compel", "STRONG_HIT", target_npc_id="npc_1")
-    assert npc.bond == 2
+    conn = next(t for t in game.progress_tracks if t.id == "connection_npc_1")
+    assert conn.ticks > 0  # bond progress marked
     assert npc.disposition == "neutral"
 
 
 def test_test_bond_disposition_shift(load_engine: None) -> None:
-    """test_your_relationship STRONG_HIT grants bond+1 AND disposition shift."""
+    """test_your_relationship STRONG_HIT marks connection progress AND disposition shift."""
     from straightjacket.engine.mechanics.move_outcome import resolve_move_outcome
 
     game = GameState()
-    npc = NpcData(id="npc_1", name="Test", disposition="neutral", bond=1, bond_max=4)
+    npc = NpcData(id="npc_1", name="Test", disposition="neutral")
     game.npcs.append(npc)
+    game.progress_tracks.append(
+        ProgressTrack(id="connection_npc_1", name="Test", track_type="connection", rank="dangerous", ticks=0)
+    )
     resolve_move_outcome(game, "connection/test_your_relationship", "STRONG_HIT", target_npc_id="npc_1")
-    assert npc.bond == 2
+    conn = next(t for t in game.progress_tracks if t.id == "connection_npc_1")
+    assert conn.ticks > 0
     assert npc.disposition == "friendly"
 
 
@@ -236,9 +245,8 @@ def test_social_move_unresolved_target_skips_bond(load_engine: None) -> None:
     from straightjacket.engine.mechanics.move_outcome import resolve_move_outcome
 
     game = GameState()
-    npc = NpcData(id="npc_1", name="Test", disposition="neutral", bond=1, bond_max=4)
+    npc = NpcData(id="npc_1", name="Test", disposition="neutral")
     game.npcs.append(npc)
     # target_npc that doesn't match any NPC
     resolve_move_outcome(game, "adventure/compel", "STRONG_HIT", target_npc_id="nonexistent")
-    assert npc.bond == 1  # unchanged
     assert npc.disposition == "neutral"  # unchanged

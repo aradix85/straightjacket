@@ -50,7 +50,6 @@ class NpcSnapshot:
     name: str = ""
     status: str = ""
     disposition: str = ""
-    bond: int = 0
     agenda: str = ""
     instinct: str = ""
     arc: str = ""

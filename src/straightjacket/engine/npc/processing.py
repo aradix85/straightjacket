@@ -118,8 +118,6 @@ def process_npc_details(game: "GameState", details: list, world_addition: str = 
                                 name=new_name,
                                 description=stub_desc,
                                 disposition=normalize_disposition("neutral"),
-                                bond=eng().bonds.start,
-                                bond_max=eng().bonds.max,
                                 aliases=paren_aliases,
                                 last_location=game.world.current_location or "",
                             )
@@ -216,8 +214,6 @@ def process_new_npcs(game: "GameState", new_npcs: list) -> None:
             name=clean_name,
             description=nd.get("description", "").strip(),
             disposition=normalize_disposition(nd.get("disposition", "neutral")),
-            bond=eng().bonds.start,
-            bond_max=eng().bonds.max,
             aliases=paren_aliases,
             last_location=game.world.current_location or "",
         )

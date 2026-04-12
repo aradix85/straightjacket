@@ -20,8 +20,6 @@ def _game() -> GameState:
             id="npc_1",
             name="Ally",
             disposition="friendly",
-            bond=2,
-            bond_max=4,
             memory=[MemoryEntry(scene=1, event="Met player", importance=3)],
         ),
     ]

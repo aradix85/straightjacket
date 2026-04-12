@@ -163,7 +163,7 @@ def test_generate_sentences_empty_consequences() -> None:
 
 def test_generate_sentences_with_npc_target() -> None:
     game = _game()
-    game.npcs.append(NpcData(id="npc_1", name="Kira", disposition="distrustful", bond=1))
+    game.npcs.append(NpcData(id="npc_1", name="Kira", disposition="distrustful"))
     brain = _brain(target="npc_1")
     consequences = ["Kira bond -1"]
     sentences = generate_consequence_sentences(consequences, [], game, brain)

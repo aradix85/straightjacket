@@ -222,7 +222,6 @@ def run_session(bot_cfg: dict, auto_override: bool = False, turns_override: int 
                     name=n.name,
                     status=n.status,
                     disposition=n.disposition,
-                    bond=n.bond,
                     memory_count=len(n.memory),
                     last_location=n.last_location,
                 )

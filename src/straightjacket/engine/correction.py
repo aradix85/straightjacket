@@ -133,7 +133,7 @@ def _apply_correction_ops(game: GameState, ops: list) -> None:
         if op == "npc_edit":
             npc = find_npc(game, op_dict.get("npc_id", ""))
             if npc and op_dict.get("fields"):
-                allowed = {"name", "description", "disposition", "agenda", "instinct", "aliases", "bond", "status"}
+                allowed = {"name", "description", "disposition", "agenda", "instinct", "aliases", "status"}
                 edits = {k: v for k, v in op_dict["fields"].items() if k in allowed and v is not None}
 
                 # Rename detection: if name is changing, engine owns alias bookkeeping.
@@ -179,8 +179,6 @@ def _apply_correction_ops(game: GameState, ops: list) -> None:
                     id=new_id,
                     name=new_name,
                     description=new_desc,
-                    bond=eng().bonds.start,
-                    bond_max=eng().bonds.max,
                 )
                 game.npcs.append(new_npc)
                 log(f"[Correction] npc_split: '{existing.name}' → also '{new_name}' ({new_id})")

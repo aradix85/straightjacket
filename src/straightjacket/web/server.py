@@ -42,8 +42,9 @@ from .handlers import (
     handle_save,
     handle_select_player,
     handle_start_game,
+    handle_status_query,
 )
-from .serializers import build_creation_options, build_state, build_ui_strings
+from .serializers import build_creation_options, build_ui_strings
 from .session import Session
 
 # ── Static files ──────────────────────────────────────────────
@@ -70,6 +71,7 @@ _HANDLERS: dict[str, Callable] = {
     "load": handle_load,
     "delete_save": handle_delete_save,
     "recap": handle_recap,
+    "status_query": handle_status_query,
     "generate_epilogue": handle_generate_epilogue,
     "dismiss_epilogue": handle_dismiss_epilogue,
     "new_chapter": handle_new_chapter,
@@ -138,7 +140,6 @@ async def websocket_endpoint(ws: WebSocket) -> None:
                     "type": "player_selected",
                     "name": _session.player,
                     "has_game": True,
-                    "state": build_state(_session.game),
                     "messages": _session.filtered_messages(),
                 },
             )

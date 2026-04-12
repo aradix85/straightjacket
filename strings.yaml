@@ -113,7 +113,6 @@ ui.begin: Begin!
 ui.no_settings: No settings available.
 ui.input_placeholder: What do you do?
 ui.send: Send
-ui.status: Status
 ui.save_load: Save / Load
 ui.saves: Saves
 ui.no_saves: No saves found.
@@ -142,13 +141,13 @@ ui.scene_marker: 'Scene {n}'
 ui.game_log: Game log
 ui.player_input: Player input
 
-# Status display (showStatus in index.html)
-ui.status_health: Health
-ui.status_spirit: Spirit
-ui.status_supply: Supply
-ui.status_momentum: Momentum
-ui.status_chaos: Chaos
-ui.status_act: 'Act {n}/{total}: {title} ({phase}) [{progress}]'
-ui.status_fired: FIRED
-ui.status_bg: (bg)
-ui.status_deceased: (deceased)
+# Narrative status (server-side, handle_status_query)
+status.resources: '{name} — Scene {scene}, {location}, {time}. Health {health}, spirit {spirit}, supply {supply}. Momentum {momentum} (max {max_momentum}). Chaos factor {chaos}.'
+status.npc: '{name}: {disposition}. Bond {bond}/{bond_max}.'
+status.npc_deceased: '{name}: deceased.'
+status.npc_background: '{name}: {disposition}. Bond {bond}/{bond_max} (background).'
+status.clock: '{name}: {filled}/{segments}.'
+status.clock_fired: '{name}: triggered.'
+status.act: 'Story: act {n}/{total} — {title} ({phase}, {progress}).'
+status.no_game: No active game.
+status.tracks: 'Vow: {name} ({rank}) — {filled}/10 boxes.'

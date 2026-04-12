@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING
 
 from ..db.queries import query_clocks, query_memories, query_npcs, query_threads
 from ..models import GameState
+from ..npc import get_npc_bond
 from .registry import register
 
 if TYPE_CHECKING:
@@ -34,8 +35,7 @@ def query_npc(game: GameState, npc_id: str) -> dict:
         "id": npc.id,
         "name": npc.name,
         "disposition": npc.disposition,
-        "bond": npc.bond,
-        "bond_max": npc.bond_max,
+        "bond": get_npc_bond(game, npc.id),
         "status": npc.status,
         "agenda": npc.agenda,
         "instinct": npc.instinct,
@@ -126,7 +126,11 @@ def query_npc_list(game: GameState, status: str = "active") -> dict:
     status: filter by status ('active', 'background', 'deceased', 'lore')
     """
     npcs = query_npcs(status=status)
-    return {"npcs": [{"id": n.id, "name": n.name, "disposition": n.disposition, "bond": n.bond} for n in npcs]}
+    return {
+        "npcs": [
+            {"id": n.id, "name": n.name, "disposition": n.disposition, "bond": get_npc_bond(game, n.id)} for n in npcs
+        ]
+    }
 
 
 @register("brain")
@@ -161,6 +165,31 @@ def fate_question(game: GameState, question: str, context_hint: str = "") -> dic
             "meaning": f"{ev.meaning_action} / {ev.meaning_subject}",
         }
     return response
+
+
+@register("brain")
+def list_tracks(game: GameState, track_type: str = "") -> dict:
+    """List active progress tracks. Call before progress moves to see available targets.
+
+    track_type: filter by type ('vow', 'connection', 'combat', 'expedition'), empty for all
+    """
+    tracks = [t for t in game.progress_tracks if t.status == "active"]
+    if track_type:
+        tracks = [t for t in tracks if t.track_type == track_type]
+    return {
+        "tracks": [
+            {
+                "id": t.id,
+                "name": t.name,
+                "type": t.track_type,
+                "rank": t.rank,
+                "filled_boxes": t.filled_boxes,
+                "ticks": t.ticks,
+                "max_ticks": t.max_ticks,
+            }
+            for t in tracks
+        ]
+    }
 
 
 @register("brain")

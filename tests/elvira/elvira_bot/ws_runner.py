@@ -110,7 +110,6 @@ class WsClient:
             "narration": None,
             "replace_narration": None,
             "burn_offer": None,
-            "state": None,
             "error": None,
             "game_over": False,
             "story_complete": False,
@@ -134,9 +133,8 @@ class WsClient:
                 result["replace_narration"] = msg
             elif t == "burn_offer":
                 result["burn_offer"] = msg
-            elif t == "state":
-                result["state"] = msg.get("data")
-                break  # state is always last in the turn sequence
+            elif t == "turn_complete":
+                break  # turn_complete is always last in the turn sequence
             elif t == "error":
                 result["error"] = msg.get("text", "Unknown error")
                 break
@@ -298,8 +296,7 @@ async def run_ws_session(bot_cfg: dict, auto_override: bool = False, turns_overr
             if m.get("role") == "assistant":
                 narration = m.get("content", "")
                 break
-        state = msg.get("state", {})
-        print(f"[SETUP] Loaded: {state.get('player_name', '?')} at {state.get('location', '?')}")
+        print("[SETUP] Loaded game, fetching state via debug endpoint")
 
     game = await client.get_debug_state()
     if not game:

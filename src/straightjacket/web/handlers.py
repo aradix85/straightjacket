@@ -35,7 +35,7 @@ from ..engine import (
 )
 from ..engine.ai.api_client import get_provider
 from ..i18n import t
-from .serializers import build_creation_options, build_state, highlight_dialog
+from .serializers import build_creation_options, build_narrative_status, highlight_dialog
 from .session import BurnOffer, Session
 
 
@@ -81,7 +81,6 @@ async def handle_select_player(session: Session, ws: WebSocket, msg: dict) -> No
                 "type": "player_selected",
                 "name": name,
                 "has_game": True,
-                "state": build_state(game),
                 "messages": session.filtered_messages(),
             },
         )
@@ -138,7 +137,6 @@ async def handle_start_game(session: Session, ws: WebSocket, msg: dict) -> None:
                 "location": game.world.current_location,
             },
         )
-        await _send(ws, {"type": "state", "data": build_state(game)})
     except Exception as e:
         log(f"[Web] start_game failed: {e}", level="error")
         await _send(ws, {"type": "error", "text": str(e)})
@@ -214,8 +212,6 @@ async def handle_player_input(session: Session, ws: WebSocket, msg: dict) -> Non
                 },
             )
 
-        await _send(ws, {"type": "state", "data": build_state(game)})
-
         if game.game_over:
             await _send(ws, {"type": "game_over"})
         elif (
@@ -235,6 +231,8 @@ async def handle_player_input(session: Session, ws: WebSocket, msg: dict) -> Non
                 log(f"[Web] Director failed: {e}", level="warning")
         elif any(n.needs_reflection for n in game.npcs):
             reset_stale_reflection_flags(game)
+
+        await _send(ws, {"type": "turn_complete"})
 
     except Exception as e:
         log(f"[Web] player_input failed: {e}", level="error")
@@ -268,7 +266,6 @@ async def handle_correction(session: Session, ws: WebSocket, msg: dict) -> None:
         session.game = game
 
         await _send(ws, {"type": "replace_narration", "text": highlight_dialog(narration)})
-        await _send(ws, {"type": "state", "data": build_state(game)})
 
         session.append_chat("user", f"## {text}")
         session.append_chat("assistant", narration)
@@ -280,6 +277,7 @@ async def handle_correction(session: Session, ws: WebSocket, msg: dict) -> None:
                 save_game(game, session.player, session.chat_messages, session.save_name)
             except Exception:
                 pass
+        await _send(ws, {"type": "turn_complete"})
     except Exception as e:
         log(f"[Web] correction failed: {e}", level="error")
         await _send(ws, {"type": "error", "text": str(e)})
@@ -321,9 +319,9 @@ async def handle_burn_momentum(session: Session, ws: WebSocket, msg: dict) -> No
 
         await _send(ws, {"type": "replace_narration", "text": highlight_dialog(narration)})
 
-        await _send(ws, {"type": "state", "data": build_state(game)})
         session.replace_last_assistant(narration)
         save_game(game, session.player, session.chat_messages, session.save_name)
+        await _send(ws, {"type": "turn_complete"})
     except Exception as e:
         log(f"[Web] burn failed: {e}", level="error")
         await _send(ws, {"type": "error", "text": str(e)})
@@ -367,7 +365,6 @@ async def handle_load(session: Session, ws: WebSocket, msg: dict) -> None:
             "type": "player_selected",
             "name": session.player,
             "has_game": True,
-            "state": build_state(game),
             "messages": session.filtered_messages(),
         },
     )
@@ -400,6 +397,17 @@ async def handle_recap(session: Session, ws: WebSocket, _msg: dict) -> None:
         session.processing = False
 
 
+# ── Status query ─────────────────────────────────────────────
+
+
+async def handle_status_query(session: Session, ws: WebSocket, _msg: dict) -> None:
+    if not session.game:
+        await _send(ws, {"type": "status", "text": t("status.no_game")})
+        return
+    text = build_narrative_status(session.game)
+    await _send(ws, {"type": "status", "text": text})
+
+
 # ── Epilogue & chapters ──────────────────────────────────────
 
 
@@ -415,7 +423,6 @@ async def handle_generate_epilogue(session: Session, ws: WebSocket, _msg: dict) 
         session.append_chat("assistant", epilogue, epilogue=True)
         save_game(game, session.player, session.chat_messages, session.save_name)
         await _send(ws, {"type": "epilogue", "text": highlight_dialog(epilogue)})
-        await _send(ws, {"type": "state", "data": build_state(game)})
     except Exception as e:
         await _send(ws, {"type": "error", "text": str(e)})
     finally:
@@ -427,7 +434,6 @@ async def handle_dismiss_epilogue(session: Session, ws: WebSocket, _msg: dict) -
         return
     session.game.campaign.epilogue_dismissed = True
     save_game(session.game, session.player, session.chat_messages, session.save_name)
-    await _send(ws, {"type": "state", "data": build_state(session.game)})
 
 
 async def handle_new_chapter(session: Session, ws: WebSocket, _msg: dict) -> None:
@@ -453,7 +459,6 @@ async def handle_new_chapter(session: Session, ws: WebSocket, _msg: dict) -> Non
                 "narration": highlight_dialog(narration),
             },
         )
-        await _send(ws, {"type": "state", "data": build_state(game)})
     except Exception as e:
         log(f"[Web] new_chapter failed: {e}", level="error")
         await _send(ws, {"type": "error", "text": str(e)})

@@ -119,7 +119,6 @@ def _check_npc(npc: NpcData, turn: int, violations: list[str], _e: EngineSetting
         npc.disposition in ("hostile", "distrustful", "neutral", "friendly", "loyal"),
         f"invalid disposition '{npc.disposition}'",
     )
-    check(0 <= npc.bond <= npc.bond_max, f"bond={npc.bond} out of [0,{npc.bond_max}]")
     check(isinstance(npc.memory, list), f"memory is {type(npc.memory).__name__}, not list")
     check(isinstance(npc.aliases, list), f"aliases is {type(npc.aliases).__name__}, not list")
 

@@ -88,6 +88,9 @@ class BrainResult(SerializableMixin):
     player_intent: str = ""
     world_addition: str | None = None
     location_change: str | None = None
+    track_name: str | None = None
+    track_rank: str | None = None
+    target_track: str | None = None
 
 
 # TURN SNAPSHOT

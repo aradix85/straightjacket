@@ -8,6 +8,7 @@ from ..config_loader import cfg, sampling_params
 from ..engine_loader import eng
 from ..logging_util import log
 from ..models import ChapterSummary, EngineConfig, GameState
+from ..npc import get_npc_bond
 from ..prompt_blocks import (
     content_boundaries_block,
     get_narration_lang,
@@ -27,7 +28,11 @@ def call_recap(provider: AIProvider, game: GameState, config: EngineConfig | Non
     )
     # NPC text: Only player-visible info (no agenda, no secrets) and only introduced NPCs
     npc_text = (
-        ", ".join(f"{n.name}({n.disposition},B{n.bond})" for n in game.npcs if n.status == "active" and n.introduced)
+        ", ".join(
+            f"{n.name}({n.disposition},B{get_npc_bond(game, n.id)})"
+            for n in game.npcs
+            if n.status == "active" and n.introduced
+        )
         or "(none)"
     )
     # Last narrations for tone/content reference -- these ARE what the player saw
@@ -181,7 +186,10 @@ def call_chapter_summary(
     _cfg = config or EngineConfig()
     lang = get_narration_lang(_cfg)
     log_text = "; ".join(f"S{s.scene}:{s.summary}({s.result})" for s in game.narrative.session_log[-20:])
-    npc_text = ", ".join(f"{n.name}({n.disposition},B{n.bond})" for n in game.npcs if n.status == "active") or "(none)"
+    npc_text = (
+        ", ".join(f"{n.name}({n.disposition},B{get_npc_bond(game, n.id)})" for n in game.npcs if n.status == "active")
+        or "(none)"
+    )
 
     bp = game.narrative.story_blueprint
     conflict = bp.central_conflict if bp else ""

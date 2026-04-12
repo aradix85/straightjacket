@@ -479,13 +479,30 @@ class TestProgressRollPipeline:
             ProgressTrack(id="v2", name="New vow", track_type="vow", ticks=20),
         ]
 
-        vow = _find_progress_track(game_real, "Vow")
-        assert vow is not None
-        assert vow.name == "New vow"  # most recent
+        # Multiple vow tracks without target_track → error
+        with pytest.raises(ValueError, match="Multiple active vow tracks"):
+            _find_progress_track(game_real, "Vow")
 
+        # With target_track → finds by name substring
+        vow = _find_progress_track(game_real, "Vow", target_track="New")
+        assert vow is not None
+        assert vow.name == "New vow"
+
+        vow_old = _find_progress_track(game_real, "Vow", target_track="Old")
+        assert vow_old is not None
+        assert vow_old.name == "Old vow"
+
+        # Single combat track → auto-selects
         combat = _find_progress_track(game_real, "Combat")
         assert combat is not None
         assert combat.name == "Fight"
 
+        # No expedition tracks → None
         expedition = _find_progress_track(game_real, "Expedition")
         assert expedition is None
+
+        # Completed tracks filtered out
+        game_real.progress_tracks[0].status = "completed"
+        vow_active = _find_progress_track(game_real, "Vow")
+        assert vow_active is not None
+        assert vow_active.name == "New vow"  # only active one left

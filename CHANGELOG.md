@@ -5,6 +5,28 @@ Originally forked from [EdgeTales](https://github.com/edgetales/edgetales). See 
 
 ---
 
+## [0.46.0] — 2026-04-12
+
+Track lifecycle. Connection tracks replace bond. Status commands. UI cleanup.
+
+- Track lifecycle (`game/turn.py`): creation, progress marking, completion/failure. `track_creating_moves` in engine.yaml maps moves to track types. Engine creates ProgressTrack from Brain output (track_name + track_rank, both required). Vow tracks auto-create linked ThreadEntry. `complete_track` marks completed/failed, deactivates linked thread
+- `ProgressTrack.status` field: active/completed/failed. `_find_progress_track` filters by status, matches by name substring via `target_track`, raises on ambiguous multiple tracks
+- Progress marks wired: `outcome.progress_marks` consumed after `resolve_move_outcome`, marks progress on active track
+- Track completion on progress roll: STRONG_HIT → completed, MISS → failed
+- `list_tracks` Brain tool: `@register("brain")`, filters by track_type, returns id/name/type/rank/filled_boxes/ticks
+- Brain schema: `track_name` (nullable string), `track_rank` (nullable enum, required on track-creating moves), `target_track` (nullable string for multi-track disambiguation)
+- Connection tracks replace `NpcData.bond` and `bond_max` (deleted). Bond reads via `get_npc_bond(game, npc_id)` → connection track `filled_boxes`. New `npc/bond.py` module
+- `bond` effect in move outcomes marks connection track progress instead of mutating NpcData
+- `resolve_npc_stance` and `compute_npc_gate` take `game` argument, read bond from connection tracks
+- All bond reads migrated: stance_gate, resolvers, prompt_builders, director, architect, chapters, lifecycle, activation, tools, correction, metadata, processing, setup_common, serializers
+- DB schema: bond/bond_max columns removed from npcs table, status column added to progress_tracks
+- Status commands: `/status` and `/score` (also `status`, `score`). Engine answers directly via strings.yaml templates, no AI call. Status button removed from UI
+- `build_state` removed (was 80 lines). No per-turn state blob. Client state cache (`lastState`, `onState`, `showStatus`) removed
+- `turn_complete` WebSocket message replaces `state` as end-of-turn signal. Elvira ws_runner updated
+- Opening setup schema: bond/bond_max fields removed from NPC output
+- Correction schema: bond field removed from npc_edit fields
+- 662 tests (-3 net: bond invariant test, bond range query test removed; connection track tests added via expanded _find_progress_track test), ruff clean, mypy clean
+
 ## [0.45.0] — 2026-04-11
 
 Full Forge move system. Data-driven consequence resolution. Combat position. Available moves tool.

@@ -14,6 +14,7 @@ from .xml_utils import xa as _xa
 from .npc import (
     consolidate_memory,
     find_npc,
+    get_npc_bond,
     is_complete_description,
     resolve_about_npc,
 )
@@ -126,7 +127,7 @@ def build_director_prompt(game: GameState, latest_narration: str, config: Engine
             needs_profile_attr = ' needs_profile="true"'
         reflection_blocks.append(
             f'<reflect npc_id="{html.escape(n.id, quote=True)}" name="{html.escape(n.name, quote=True)}" '
-            f'disposition="{html.escape(n.disposition, quote=True)}" bond="{n.bond}" '
+            f'disposition="{html.escape(n.disposition, quote=True)}" bond="{get_npc_bond(game, n.id)}" '
             f'description="{npc_desc}"{instinct_attr}{arc_attr}{prev_ref_text}{prev_tone_text}{needs_profile_attr}>'
             f"{html.escape(mem_text)}</reflect>"
         )

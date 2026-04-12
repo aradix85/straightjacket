@@ -3,7 +3,6 @@
 
 import re
 
-from ..engine_loader import eng
 from ..logging_util import log
 from ..mechanics import _time_phases, update_location
 from ..models import ClockData, GameState, MemoryEntry, NpcData
@@ -59,10 +58,11 @@ def register_extracted_npcs(
             continue
         max_num += 1
         nd["id"] = f"npc_{max_num}"
-        nd.setdefault("bond", eng().bonds.start)
-        nd.setdefault("bond_max", eng().bonds.max)
         nd.setdefault("introduced", False)
         nd.setdefault("last_location", game.world.current_location or "")
+        # Remove bond/bond_max from AI output — bond lives in connection tracks
+        nd.pop("bond", None)
+        nd.pop("bond_max", None)
         npc = NpcData.from_dict(nd)
         apply_name_sanitization(npc)
         game.npcs.append(npc)

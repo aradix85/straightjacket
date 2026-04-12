@@ -44,8 +44,6 @@ class NpcData(SerializableMixin):
     arc: str = ""  # Narrative trajectory — set by Director, evolves each reflection
     secrets: list[str] = field(default_factory=list)
     disposition: str = "neutral"
-    bond: int = 0
-    bond_max: int = 4
     status: str = "active"
     memory: list[MemoryEntry] = field(default_factory=list)
     introduced: bool = True
