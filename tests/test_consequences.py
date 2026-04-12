@@ -152,7 +152,7 @@ def test_can_burn_momentum_zero_momentum() -> None:
 # ── NPC agency ───────────────────────────────────────────────
 
 
-def test_npc_agency_fires_on_scene_5(load_engine) -> None:
+def test_npc_agency_fires_on_scene_5(load_engine: None) -> None:
     from straightjacket.engine.mechanics.consequences import check_npc_agency
 
     game = _game()
@@ -164,7 +164,7 @@ def test_npc_agency_fires_on_scene_5(load_engine) -> None:
     assert "Kira" in actions[0]
 
 
-def test_npc_agency_skips_non_multiple_of_5(load_engine) -> None:
+def test_npc_agency_skips_non_multiple_of_5(load_engine: None) -> None:
     from straightjacket.engine.mechanics.consequences import check_npc_agency
 
     game = _game()
@@ -175,7 +175,7 @@ def test_npc_agency_skips_non_multiple_of_5(load_engine) -> None:
     assert len(actions) == 0
 
 
-def test_npc_agency_ticks_owned_clock(load_engine) -> None:
+def test_npc_agency_ticks_owned_clock(load_engine: None) -> None:
     from straightjacket.engine.mechanics.consequences import check_npc_agency
 
     game = _game()
@@ -191,7 +191,7 @@ def test_npc_agency_ticks_owned_clock(load_engine) -> None:
 # ── Autonomous clocks ────────────────────────────────────────
 
 
-def test_autonomous_clock_tick(load_engine) -> None:
+def test_autonomous_clock_tick(load_engine: None) -> None:
     from straightjacket.engine.mechanics.consequences import tick_autonomous_clocks
 
     game = _game()
@@ -209,7 +209,7 @@ def test_autonomous_clock_tick(load_engine) -> None:
 # ── Purge fired clocks ───────────────────────────────────────
 
 
-def test_purge_old_fired_clocks(load_engine) -> None:
+def test_purge_old_fired_clocks(load_engine: None) -> None:
     from straightjacket.engine.mechanics.consequences import purge_old_fired_clocks
 
     game = _game()

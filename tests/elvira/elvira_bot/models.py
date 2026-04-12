@@ -326,7 +326,6 @@ class SessionLog:
                         "name": n.name,
                         "status": n.status,
                         "disposition": n.disposition,
-                        "bond": n.bond,
                         "memories": n.memory_count,
                     }
                     for n in last.npcs

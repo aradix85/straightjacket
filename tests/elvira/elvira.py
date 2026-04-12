@@ -25,7 +25,7 @@ from pathlib import Path
 _HERE = Path(__file__).resolve().parent
 _ROOT = _HERE.parent.parent  # tests/elvira/ → tests/ → repo root
 sys.path.insert(0, str(_ROOT / "src"))
-sys.path.insert(0, str(_HERE))
+sys.path.insert(0, str(_ROOT))
 
 # Console logging (no log files)
 _logger = logging.getLogger("rpg_engine")
@@ -35,7 +35,7 @@ if not _logger.handlers:
     _logger.setLevel(logging.DEBUG)
     _logger.addHandler(_ch)
 
-from elvira_bot.runner import load_config, run_session
+from tests.elvira.elvira_bot.runner import load_config, run_session
 
 DEFAULT_CONFIG = _HERE / "elvira_config.yaml"
 
@@ -70,7 +70,7 @@ def main() -> None:
     if args.ws:
         if args.port:
             bot_cfg["ws_port"] = args.port
-        from elvira_bot.ws_runner import run_ws_session
+        from tests.elvira.elvira_bot.ws_runner import run_ws_session
 
         asyncio.run(run_ws_session(bot_cfg, auto_override=args.auto, turns_override=args.turns))
     else:

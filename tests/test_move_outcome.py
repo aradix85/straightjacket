@@ -22,7 +22,7 @@ from straightjacket.engine.models import GameState, Resources
 
 
 @pytest.fixture()
-def game(stub_engine):
+def game(stub_engine: None) -> GameState:
     """Fresh game state with known resource values (stubbed engine config)."""
     g = GameState()
     g.resources = Resources(health=5, spirit=5, supply=5, momentum=2, max_momentum=10)
@@ -31,7 +31,7 @@ def game(stub_engine):
 
 
 @pytest.fixture()
-def game_real(load_engine):
+def game_real(load_engine: None) -> GameState:
     """Fresh game state with real engine.yaml (for config-driven resolution tests)."""
     g = GameState()
     g.resources = Resources(health=5, spirit=5, supply=5, momentum=2, max_momentum=10)
@@ -43,85 +43,85 @@ def game_real(load_engine):
 
 
 class TestParseEffect:
-    def test_momentum_positive(self):
+    def test_momentum_positive(self) -> None:
         e = parse_effect("momentum +2")
         assert e.type == "momentum"
         assert e.value == 2
 
-    def test_momentum_negative(self):
+    def test_momentum_negative(self) -> None:
         e = parse_effect("momentum -1")
         assert e.type == "momentum"
         assert e.value == -1
 
-    def test_health_positive(self):
+    def test_health_positive(self) -> None:
         e = parse_effect("health +3")
         assert e.type == "health"
         assert e.value == 3
 
-    def test_spirit_negative(self):
+    def test_spirit_negative(self) -> None:
         e = parse_effect("spirit -2")
         assert e.type == "spirit"
         assert e.value == -2
 
-    def test_supply_negative(self):
+    def test_supply_negative(self) -> None:
         e = parse_effect("supply -1")
         assert e.type == "supply"
         assert e.value == -1
 
-    def test_mark_progress(self):
+    def test_mark_progress(self) -> None:
         e = parse_effect("mark_progress 2")
         assert e.type == "mark_progress"
         assert e.value == 2
 
-    def test_pay_the_price(self):
+    def test_pay_the_price(self) -> None:
         e = parse_effect("pay_the_price")
         assert e.type == "pay_the_price"
 
-    def test_position_in_control(self):
+    def test_position_in_control(self) -> None:
         e = parse_effect("position in_control")
         assert e.type == "position"
         assert e.target == "in_control"
 
-    def test_position_bad_spot(self):
+    def test_position_bad_spot(self) -> None:
         e = parse_effect("position bad_spot")
         assert e.type == "position"
         assert e.target == "bad_spot"
 
-    def test_next_move_bonus(self):
+    def test_next_move_bonus(self) -> None:
         e = parse_effect("next_move_bonus +1")
         assert e.type == "next_move_bonus"
         assert e.value == 1
 
-    def test_suffer_move(self):
+    def test_suffer_move(self) -> None:
         e = parse_effect("suffer_move -2")
         assert e.type == "suffer_move"
         assert e.value == -2
 
-    def test_legacy_reward(self):
+    def test_legacy_reward(self) -> None:
         e = parse_effect("legacy_reward quests")
         assert e.type == "legacy_reward"
         assert e.target == "quests"
 
-    def test_fill_clock(self):
+    def test_fill_clock(self) -> None:
         e = parse_effect("fill_clock 1")
         assert e.type == "fill_clock"
         assert e.value == 1
 
-    def test_narrative(self):
+    def test_narrative(self) -> None:
         e = parse_effect("narrative")
         assert e.type == "narrative"
 
-    def test_unknown(self):
+    def test_unknown(self) -> None:
         e = parse_effect("xyzzy")
         assert e.type == "unknown"
 
-    def test_parse_effects_list(self):
+    def test_parse_effects_list(self) -> None:
         effects = parse_effects(["momentum +1", "position in_control"])
         assert len(effects) == 2
         assert effects[0].type == "momentum"
         assert effects[1].type == "position"
 
-    def test_integrity(self):
+    def test_integrity(self) -> None:
         e = parse_effect("integrity +1")
         assert e.type == "integrity"
         assert e.value == 1
@@ -131,44 +131,44 @@ class TestParseEffect:
 
 
 class TestApplyEffects:
-    def test_momentum_gain(self, game):
+    def test_momentum_gain(self, game: GameState) -> None:
         effects = parse_effects(["momentum +2"])
         result = apply_effects(game, effects)
         assert game.resources.momentum == 4
         assert "momentum +2" in result.consequences
 
-    def test_momentum_loss(self, game):
+    def test_momentum_loss(self, game: GameState) -> None:
         effects = parse_effects(["momentum -1"])
         result = apply_effects(game, effects)
         assert game.resources.momentum == 1
         assert "momentum -1" in result.consequences
 
-    def test_momentum_clamped_to_max(self, game):
+    def test_momentum_clamped_to_max(self, game: GameState) -> None:
         game.resources.momentum = 9
         effects = parse_effects(["momentum +2"])
         apply_effects(game, effects)
         assert game.resources.momentum == 10
 
-    def test_momentum_clamped_to_floor(self, game):
+    def test_momentum_clamped_to_floor(self, game: GameState) -> None:
         game.resources.momentum = -5
         effects = parse_effects(["momentum -2"])
         apply_effects(game, effects)
         assert game.resources.momentum == -6  # floor is -6
 
-    def test_health_gain(self, game):
+    def test_health_gain(self, game: GameState) -> None:
         game.resources.health = 3
         effects = parse_effects(["health +2"])
         result = apply_effects(game, effects)
         assert game.resources.health == 5
         assert "health +2" in result.consequences
 
-    def test_health_loss(self, game):
+    def test_health_loss(self, game: GameState) -> None:
         effects = parse_effects(["health -2"])
         result = apply_effects(game, effects)
         assert game.resources.health == 3
         assert "health -2" in result.consequences
 
-    def test_health_clamped_to_max(self, game):
+    def test_health_clamped_to_max(self, game: GameState) -> None:
         game.resources.health = 5
         effects = parse_effects(["health +1"])
         result = apply_effects(game, effects)
@@ -176,59 +176,59 @@ class TestApplyEffects:
         # No consequence logged when no actual change
         assert not any("health" in c for c in result.consequences)
 
-    def test_spirit_gain(self, game):
+    def test_spirit_gain(self, game: GameState) -> None:
         game.resources.spirit = 3
         effects = parse_effects(["spirit +2"])
         apply_effects(game, effects)
         assert game.resources.spirit == 5
 
-    def test_supply_loss(self, game):
+    def test_supply_loss(self, game: GameState) -> None:
         effects = parse_effects(["supply -1"])
         apply_effects(game, effects)
         assert game.resources.supply == 4
 
-    def test_mark_progress(self, game):
+    def test_mark_progress(self, game: GameState) -> None:
         effects = parse_effects(["mark_progress 2"])
         result = apply_effects(game, effects)
         assert result.progress_marks == 2
 
-    def test_pay_the_price(self, game):
+    def test_pay_the_price(self, game: GameState) -> None:
         effects = parse_effects(["pay_the_price"])
         result = apply_effects(game, effects)
         assert result.pay_the_price is True
 
-    def test_position_in_control(self, game):
+    def test_position_in_control(self, game: GameState) -> None:
         effects = parse_effects(["position in_control"])
         result = apply_effects(game, effects)
         assert result.combat_position == "in_control"
 
-    def test_position_bad_spot(self, game):
+    def test_position_bad_spot(self, game: GameState) -> None:
         effects = parse_effects(["position bad_spot"])
         result = apply_effects(game, effects)
         assert result.combat_position == "bad_spot"
 
-    def test_next_move_bonus(self, game):
+    def test_next_move_bonus(self, game: GameState) -> None:
         effects = parse_effects(["next_move_bonus +1"])
         result = apply_effects(game, effects)
         assert result.next_move_bonus == 1
 
-    def test_fill_clock(self, game):
+    def test_fill_clock(self, game: GameState) -> None:
         effects = parse_effects(["fill_clock 2"])
         result = apply_effects(game, effects)
         assert result.clock_fills == 2
 
-    def test_narrative(self, game):
+    def test_narrative(self, game: GameState) -> None:
         effects = parse_effects(["narrative"])
         result = apply_effects(game, effects)
         assert result.narrative_only is True
 
-    def test_multiple_effects(self, game):
+    def test_multiple_effects(self, game: GameState) -> None:
         effects = parse_effects(["momentum +2", "position in_control"])
         result = apply_effects(game, effects)
         assert game.resources.momentum == 4
         assert result.combat_position == "in_control"
 
-    def test_suffer_move_generic(self, game):
+    def test_suffer_move_generic(self, game: GameState) -> None:
         """Generic suffer picks highest track."""
         game.resources.health = 5
         game.resources.spirit = 3
@@ -244,14 +244,14 @@ class TestApplyEffects:
 
 
 class TestSufferHandler:
-    def test_strong_hit_recovery(self, game):
+    def test_strong_hit_recovery(self, game: GameState) -> None:
         game.resources.health = 3
         params = {"track": "health", "recovery": 1, "blocking_impact": "wounded"}
         result = apply_suffer_handler(game, "STRONG_HIT", params)
         assert game.resources.health == 4
         assert "health +1" in result.consequences
 
-    def test_strong_hit_track_at_max(self, game):
+    def test_strong_hit_track_at_max(self, game: GameState) -> None:
         """When track is at max, take momentum instead."""
         game.resources.health = 5
         params = {"track": "health", "recovery": 1, "blocking_impact": "wounded"}
@@ -259,7 +259,7 @@ class TestSufferHandler:
         assert game.resources.momentum == 3
         assert "momentum +1" in result.consequences
 
-    def test_weak_hit_exchange(self, game):
+    def test_weak_hit_exchange(self, game: GameState) -> None:
         game.resources.health = 3
         game.resources.momentum = 4
         params = {"track": "health", "recovery": 1, "blocking_impact": "wounded"}
@@ -267,7 +267,7 @@ class TestSufferHandler:
         assert game.resources.health == 4
         assert game.resources.momentum == 3
 
-    def test_miss_extra_damage(self, game):
+    def test_miss_extra_damage(self, game: GameState) -> None:
         game.resources.health = 3
         params = {
             "track": "health",
@@ -278,7 +278,7 @@ class TestSufferHandler:
         apply_suffer_handler(game, "MISS", params)
         assert game.resources.health == 2
 
-    def test_miss_at_zero_reports_impact(self, game):
+    def test_miss_at_zero_reports_impact(self, game: GameState) -> None:
         game.resources.health = 0
         game.resources.momentum = 5
         params = {
@@ -297,18 +297,18 @@ class TestSufferHandler:
 
 
 class TestThresholdHandler:
-    def test_strong_hit_survive(self, game):
+    def test_strong_hit_survive(self, game: GameState) -> None:
         params = {"impact": "doomed", "game_over_text": "you are dead"}
         result = apply_threshold_handler(game, "STRONG_HIT", params)
         assert result.narrative_only is True
         assert not game.game_over
 
-    def test_weak_hit_impact(self, game):
+    def test_weak_hit_impact(self, game: GameState) -> None:
         params = {"impact": "doomed", "game_over_text": "you are dead"}
         result = apply_threshold_handler(game, "WEAK_HIT", params)
         assert "mark doomed" in result.consequences
 
-    def test_miss_game_over(self, game):
+    def test_miss_game_over(self, game: GameState) -> None:
         params = {"impact": "doomed", "game_over_text": "you are dead"}
         result = apply_threshold_handler(game, "MISS", params)
         assert game.game_over is True
@@ -319,7 +319,7 @@ class TestThresholdHandler:
 
 
 class TestRecoveryHandler:
-    def test_strong_hit_full_recovery(self, game):
+    def test_strong_hit_full_recovery(self, game: GameState) -> None:
         game.resources.health = 2
         params = {
             "track": "health",
@@ -330,7 +330,7 @@ class TestRecoveryHandler:
         apply_recovery_handler(game, "STRONG_HIT", params)
         assert game.resources.health == 5
 
-    def test_weak_hit_with_cost(self, game):
+    def test_weak_hit_with_cost(self, game: GameState) -> None:
         game.resources.health = 2
         game.resources.momentum = 5
         params = {
@@ -345,7 +345,7 @@ class TestRecoveryHandler:
         assert game.resources.health == 5
         assert game.resources.momentum == 3
 
-    def test_miss_pay_the_price(self, game):
+    def test_miss_pay_the_price(self, game: GameState) -> None:
         params = {"track": "health", "full_amount": 3, "impact_amount": 2, "blocking_impact": "wounded"}
         result = apply_recovery_handler(game, "MISS", params)
         assert result.pay_the_price is True
@@ -355,68 +355,68 @@ class TestRecoveryHandler:
 
 
 class TestResolveOutcome:
-    def test_face_danger_strong_hit(self, game_real):
+    def test_face_danger_strong_hit(self, game_real: GameState) -> None:
         result = resolve_move_outcome(game_real, "adventure/face_danger", "STRONG_HIT")
         assert game_real.resources.momentum == 3
         assert "momentum +1" in result.consequences
 
-    def test_face_danger_miss(self, game_real):
+    def test_face_danger_miss(self, game_real: GameState) -> None:
         result = resolve_move_outcome(game_real, "adventure/face_danger", "MISS")
         assert result.pay_the_price is True
 
-    def test_strike_strong_hit_position(self, game_real):
+    def test_strike_strong_hit_position(self, game_real: GameState) -> None:
         result = resolve_move_outcome(game_real, "combat/strike", "STRONG_HIT")
         assert result.combat_position == "in_control"
         assert result.progress_marks == 2
 
-    def test_strike_weak_hit_bad_spot(self, game_real):
+    def test_strike_weak_hit_bad_spot(self, game_real: GameState) -> None:
         result = resolve_move_outcome(game_real, "combat/strike", "WEAK_HIT")
         assert result.combat_position == "bad_spot"
         assert result.progress_marks == 2
 
-    def test_enter_fray_strong_hit(self, game_real):
+    def test_enter_fray_strong_hit(self, game_real: GameState) -> None:
         result = resolve_move_outcome(game_real, "combat/enter_the_fray", "STRONG_HIT")
         assert game_real.resources.momentum == 4
         assert result.combat_position == "in_control"
 
-    def test_endure_harm_handler(self, game_real):
+    def test_endure_harm_handler(self, game_real: GameState) -> None:
         game_real.resources.health = 3
         resolve_move_outcome(game_real, "suffer/endure_harm", "STRONG_HIT")
         assert game_real.resources.health == 4
 
-    def test_endure_stress_handler(self, game_real):
+    def test_endure_stress_handler(self, game_real: GameState) -> None:
         game_real.resources.spirit = 3
         resolve_move_outcome(game_real, "suffer/endure_stress", "STRONG_HIT")
         assert game_real.resources.spirit == 4
 
-    def test_face_death_miss(self, game_real):
+    def test_face_death_miss(self, game_real: GameState) -> None:
         resolve_move_outcome(game_real, "threshold/face_death", "MISS")
         assert game_real.game_over is True
 
-    def test_heal_strong_hit(self, game_real):
+    def test_heal_strong_hit(self, game_real: GameState) -> None:
         game_real.resources.health = 2
         resolve_move_outcome(game_real, "recover/heal", "STRONG_HIT")
         assert game_real.resources.health == 5
 
-    def test_scene_challenge_face_danger_weak_hit(self, game_real):
+    def test_scene_challenge_face_danger_weak_hit(self, game_real: GameState) -> None:
         result = resolve_move_outcome(game_real, "scene_challenge/face_danger", "WEAK_HIT")
         assert result.progress_marks == 1
         assert result.clock_fills == 1
 
-    def test_unknown_move_raises(self, game_real):
+    def test_unknown_move_raises(self, game_real: GameState) -> None:
         with pytest.raises(ValueError, match="No outcome config"):
             resolve_move_outcome(game_real, "nonexistent/move", "STRONG_HIT")
 
-    def test_gather_information_strong_hit(self, game_real):
+    def test_gather_information_strong_hit(self, game_real: GameState) -> None:
         result = resolve_move_outcome(game_real, "adventure/gather_information", "STRONG_HIT")
         assert game_real.resources.momentum == 4
         assert "momentum +2" in result.consequences
 
-    def test_swear_vow_strong_hit(self, game_real):
+    def test_swear_vow_strong_hit(self, game_real: GameState) -> None:
         resolve_move_outcome(game_real, "quest/swear_an_iron_vow", "STRONG_HIT")
         assert game_real.resources.momentum == 4
 
-    def test_resupply_miss(self, game_real):
+    def test_resupply_miss(self, game_real: GameState) -> None:
         result = resolve_move_outcome(game_real, "recover/resupply", "MISS")
         assert result.pay_the_price is True
 
@@ -425,23 +425,23 @@ class TestResolveOutcome:
 
 
 class TestCombatPosition:
-    def test_combat_position_default_empty(self):
+    def test_combat_position_default_empty(self) -> None:
         g = GameState()
         assert g.world.combat_position == ""
 
-    def test_combat_position_serializes(self):
+    def test_combat_position_serializes(self) -> None:
         g = GameState()
         g.world.combat_position = "in_control"
         d = g.world.to_dict()
         assert d["combat_position"] == "in_control"
 
-    def test_combat_position_deserializes(self):
+    def test_combat_position_deserializes(self) -> None:
         from straightjacket.engine.models_base import WorldState
 
         w = WorldState.from_dict({"combat_position": "bad_spot", "chaos_factor": 5})
         assert w.combat_position == "bad_spot"
 
-    def test_combat_position_snapshot_restore(self):
+    def test_combat_position_snapshot_restore(self) -> None:
         g = GameState()
         g.world.combat_position = "in_control"
         snap = g.snapshot()
@@ -454,7 +454,7 @@ class TestCombatPosition:
 
 
 class TestProgressRollPipeline:
-    def test_progress_roll_uses_track_boxes(self, game_real):
+    def test_progress_roll_uses_track_boxes(self, game_real: GameState) -> None:
         """roll_progress uses filled_boxes from the track."""
         from straightjacket.engine.mechanics.consequences import roll_progress
         from straightjacket.engine.models import ProgressTrack
@@ -468,7 +468,7 @@ class TestProgressRollPipeline:
         assert roll.d1 == 0
         assert roll.d2 == 0
 
-    def test_find_progress_track(self, game_real):
+    def test_find_progress_track(self, game_real: GameState) -> None:
         """_find_progress_track returns the right track by category."""
         from straightjacket.engine.game.turn import _find_progress_track
         from straightjacket.engine.models import ProgressTrack

@@ -22,8 +22,9 @@ from datetime import datetime
 from pathlib import Path
 
 _HERE = Path(__file__).resolve().parent
-_ROOT = _HERE.parent
+_ROOT = _HERE.parent.parent  # tests/elvira/ → tests/ → repo root
 sys.path.insert(0, str(_ROOT / "src"))
+sys.path.insert(0, str(_ROOT))
 
 # Console logging (same as elvira.py)
 import logging
@@ -37,8 +38,8 @@ if not _logger.handlers:
 
 from straightjacket.engine.datasworn.settings import list_packages
 
-from elvira_bot.models import SessionLog
-from elvira_bot.runner import load_config, run_session
+from tests.elvira.elvira_bot.models import SessionLog
+from tests.elvira.elvira_bot.runner import load_config, run_session
 
 DEFAULT_CONFIG = _HERE / "elvira_config.yaml"
 ALL_STYLES = ["explorer", "aggressor", "dialogist", "chaosagent", "balanced"]

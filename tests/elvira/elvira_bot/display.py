@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from straightjacket.engine.models import GameState
+from straightjacket.engine.npc import get_npc_bond
 
 from .models import SessionLog
 
@@ -41,7 +42,7 @@ def final_state_dict(game: GameState) -> dict:
                 "name": n.name,
                 "status": n.status,
                 "disposition": n.disposition,
-                "bond": n.bond,
+                "bond": get_npc_bond(game, n.id),
                 "agenda": n.agenda,
                 "instinct": n.instinct,
                 "arc": n.arc,
