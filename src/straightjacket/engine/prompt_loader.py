@@ -7,42 +7,41 @@ Template variables use {name} syntax, filled at runtime.
 """
 
 import yaml
+from pathlib import Path
 
-from .config_loader import PROJECT_ROOT
+from .config_loader import PROJECT_ROOT, cfg
 
 
 from .bootstrap_log import bootstrap_log as _log
 from .format_utils import PartialFormatDict
 
-_PROMPTS_PATH = PROJECT_ROOT / "prompts.yaml"
+
+def _prompts_path() -> Path:
+    filename = cfg().get("ai", {}).get("prompts_file", "prompts.yaml")
+    return PROJECT_ROOT / filename
+
 
 _prompts: dict[str, str] | None = None
 
 
 def _ensure_loaded() -> dict:
-    """Load prompts from yaml on first access.
-
-    prompts.yaml is the single source of truth. If it's missing, raise an error.
-    """
+    """Load prompts from yaml on first access."""
     global _prompts
     if _prompts is None:
-        if not _PROMPTS_PATH.exists():
-            raise FileNotFoundError(
-                f"Prompts file not found: {_PROMPTS_PATH}\n"
-                f"The prompts.yaml file ships with the repo — if you deleted it, restore it from git."
-            )
-        with open(_PROMPTS_PATH, encoding="utf-8") as f:
+        path = _prompts_path()
+        if not path.exists():
+            raise FileNotFoundError(f"Prompts file not found: {path}\nCheck ai.prompts_file in config.yaml.")
+        with open(path, encoding="utf-8") as f:
             data = yaml.safe_load(f)
         if not isinstance(data, dict):
-            raise ValueError(f"Prompts file is not a valid YAML dict: {_PROMPTS_PATH}")
-        # Validate all values are strings
+            raise ValueError(f"Prompts file is not a valid YAML dict: {path}")
         _prompts = {}
         for key, val in data.items():
             if isinstance(val, str):
                 _prompts[key] = val
             else:
                 _log(f"[Prompts] Ignoring non-string prompt '{key}'", level="warning")
-        _log(f"[Prompts] Loaded {len(_prompts)} prompts from {_PROMPTS_PATH}")
+        _log(f"[Prompts] Loaded {len(_prompts)} prompts from {path}")
     return _prompts
 
 

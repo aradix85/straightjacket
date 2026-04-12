@@ -17,6 +17,7 @@ ai:
   provider: "openai_compatible"
   api_base: "https://api.cerebras.ai/v1"
   api_key_env: "CEREBRAS_API_KEY"
+  prompts_file: "prompts.yaml"        # Per-provider prompt tuning: prompts_claude.yaml, prompts_glm47.yaml, etc.
   brain_model: "zai-glm-4.7"
   narrator_model: "zai-glm-4.7"
   director_model: "zai-glm-4.7"
