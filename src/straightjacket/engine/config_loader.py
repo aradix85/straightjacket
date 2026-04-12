@@ -7,6 +7,7 @@ Config path can be overridden via STRAIGHTJACKET_CONFIG environment variable.
 """
 
 import os
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
@@ -43,72 +44,163 @@ USERS_DIR = PROJECT_ROOT / "users"
 USERS_DIR.mkdir(exist_ok=True)
 GLOBAL_CONFIG_FILE = _CONFIG_PATH
 
-# CONFIG OBJECT — dot-access wrapper
+
+# ── Typed config dataclasses ─────────────────────────────────
 
 
-class _ConfigNode:
-    """Recursive dot-access wrapper over a dict.
-    cfg.ai.brain_model works like cfg["ai"]["brain_model"].
-    Tracks access path for clear error messages on typos.
-    """
+@dataclass
+class PerRoleInt:
+    """Per-AI-role integer values (max_tokens, max_retries, max_tool_rounds)."""
 
-    def __init__(self, data: dict, _path: str = "config"):
-        self._data = data
-        self._path = _path
+    brain: int = 8192
+    brain_setup: int = 8192
+    narrator: int = 8192
+    narrator_metadata: int = 8192
+    opening_setup: int = 8192
+    revelation_check: int = 8192
+    recap: int = 8192
+    architect: int = 8192
+    director: int = 8192
+    correction: int = 8192
+    chapter_summary: int = 8192
+    validator: int = 8192
+    validator_architect: int = 8192
 
-    def __getattr__(self, key: str) -> Any:
-        if key in ("_data", "_path"):
+    def __getattr__(self, key: str) -> int:
+        raise AttributeError(f"No per-role value for '{key}'")
+
+
+@dataclass
+class PerRoleFloat:
+    """Per-AI-role float values (temperature, top_p)."""
+
+    _data: dict[str, float] = field(default_factory=dict, repr=False)
+
+    def __getattr__(self, key: str) -> float | None:
+        if key == "_data":
             return super().__getattribute__(key)
         try:
-            val = self._data[key]
+            return self._data[key]
         except KeyError:
-            available = ", ".join(sorted(self._data.keys()))
-            raise AttributeError(
-                f"{self._path}.{key} does not exist. Available keys at {self._path}: {available}"
-            ) from None
-        if isinstance(val, dict):
-            return _ConfigNode(val, f"{self._path}.{key}")
-        return val
+            raise AttributeError(f"No per-role value for '{key}'") from None
 
-    def __getitem__(self, key: str) -> Any:
-        try:
-            val = self._data[key]
-        except KeyError:
-            available = ", ".join(sorted(self._data.keys()))
-            raise KeyError(f"{self._path}['{key}'] does not exist. Available keys: {available}") from None
-        if isinstance(val, dict):
-            return _ConfigNode(val, f"{self._path}.{key}")
-        return val
+    def get(self, key: str, default: float | None = None) -> float | None:
+        return self._data.get(key, default)
 
-    def __contains__(self, key: str) -> bool:
-        return key in self._data
 
-    def __repr__(self) -> str:
-        return f"Config({self._path}, keys={list(self._data.keys())})"
+@dataclass
+class ToolRounds:
+    """Max tool calling rounds per AI role."""
 
-    def get(self, key: str, default: Any = None) -> Any:
-        val = self._data.get(key, default)
-        if isinstance(val, dict):
-            return _ConfigNode(val, f"{self._path}.{key}")
-        return val
+    brain: int = 3
+    director: int = 3
 
-    def to_dict(self) -> dict:
-        return self._data
 
-    def __iter__(self) -> Any:
-        return iter(self._data)
+@dataclass
+class AIConfig:
+    """AI provider and model configuration."""
 
-    def __len__(self) -> int:
-        return len(self._data)
+    provider: str = "openai_compatible"
+    api_base: str = ""
+    api_key_env: str = ""
+    prompts_file: str = "prompts.yaml"
+    brain_model: str = ""
+    narrator_model: str = ""
+    director_model: str = ""
+    validator_model: str = ""
+    extra_body: dict[str, Any] = field(default_factory=dict)
+    max_tokens: PerRoleInt = field(default_factory=PerRoleInt)
+    max_retries: PerRoleInt = field(default_factory=PerRoleInt)
+    max_tool_rounds: ToolRounds = field(default_factory=ToolRounds)
+    temperature: PerRoleFloat = field(default_factory=PerRoleFloat)
+    top_p: PerRoleFloat = field(default_factory=PerRoleFloat)
 
-    def keys(self) -> Any:
-        return self._data.keys()
 
-    def values(self) -> Any:
-        return self._data.values()
+@dataclass
+class ServerConfig:
+    """Server bind settings."""
 
-    def items(self) -> Any:
-        return self._data.items()
+    host: str = "127.0.0.1"
+    port: int = 8081
+
+
+@dataclass
+class LanguageConfig:
+    """Language and naming defaults."""
+
+    narration_language: str = "English"
+    default_player_name: str = "Unnamed"
+
+
+@dataclass
+class AppConfig:
+    """Complete typed application config from config.yaml."""
+
+    server: ServerConfig = field(default_factory=ServerConfig)
+    ai: AIConfig = field(default_factory=AIConfig)
+    language: LanguageConfig = field(default_factory=LanguageConfig)
+
+
+def _build_per_role_int(data: dict, defaults: PerRoleInt | None = None) -> PerRoleInt:
+    """Build PerRoleInt from YAML dict, using defaults for missing keys."""
+    base = defaults or PerRoleInt()
+    kwargs: dict[str, int] = {}
+    for f in PerRoleInt.__dataclass_fields__:
+        if f in data:
+            kwargs[f] = int(data[f])
+        else:
+            kwargs[f] = getattr(base, f)
+    return PerRoleInt(**kwargs)
+
+
+def _build_per_role_float(data: dict) -> PerRoleFloat:
+    """Build PerRoleFloat from YAML dict."""
+    return PerRoleFloat(_data={k: float(v) for k, v in data.items() if v is not None})
+
+
+def _parse_config(data: dict) -> AppConfig:
+    """Parse raw config.yaml dict into typed AppConfig."""
+    c = AppConfig()
+
+    if "server" in data:
+        sd = data["server"]
+        c.server = ServerConfig(host=sd.get("host", "127.0.0.1"), port=sd.get("port", 8081))
+
+    if "ai" in data:
+        ad = data["ai"]
+        c.ai = AIConfig(
+            provider=ad.get("provider", "openai_compatible"),
+            api_base=ad.get("api_base", ""),
+            api_key_env=ad.get("api_key_env", ""),
+            prompts_file=ad.get("prompts_file", "prompts.yaml"),
+            brain_model=ad.get("brain_model", ""),
+            narrator_model=ad.get("narrator_model", ""),
+            director_model=ad.get("director_model", ""),
+            validator_model=ad.get("validator_model", ""),
+            extra_body=dict(ad.get("extra_body", {})) if isinstance(ad.get("extra_body"), dict) else {},
+            max_tokens=_build_per_role_int(ad.get("max_tokens", {})),
+            max_retries=_build_per_role_int(
+                ad.get("max_retries", {}), PerRoleInt(**{f: 3 for f in PerRoleInt.__dataclass_fields__})
+            ),
+            max_tool_rounds=ToolRounds(
+                brain=ad.get("max_tool_rounds", {}).get("brain", 3),
+                director=ad.get("max_tool_rounds", {}).get("director", 3),
+            ),
+            temperature=_build_per_role_float(ad.get("temperature", {})),
+            top_p=_build_per_role_float(ad.get("top_p", {})),
+        )
+
+    if "language" in data:
+        ld = data["language"]
+        c.language = LanguageConfig(
+            narration_language=ld.get("narration_language", "English"),
+            default_player_name=ld.get("default_player_name", "Unnamed"),
+        )
+
+    return c
+
+
+# ── Singleton ────────────────────────────────────────────────
 
 
 def _load_config_file() -> dict:
@@ -127,19 +219,19 @@ def _load_config_file() -> dict:
     return data
 
 
-_cfg: _ConfigNode | None = None
+_cfg: AppConfig | None = None
 
 
-def cfg() -> _ConfigNode:
+def cfg() -> AppConfig:
     """Get the global config object. Loads on first access."""
     global _cfg
     if _cfg is None:
         data = _load_config_file()
-        _cfg = _ConfigNode(data)
+        _cfg = _parse_config(data)
     return _cfg
 
 
-def reload_config() -> _ConfigNode:
+def reload_config() -> AppConfig:
     """Force reload from disk. Use after external edits."""
     global _cfg
     _cfg = None
@@ -166,9 +258,6 @@ def sampling_params(role: str) -> dict:
 
     Returns a dict suitable for unpacking into create_with_retry():
         create_with_retry(provider, ..., **sampling_params("narrator"))
-
-    Reads from config.yaml ai.temperature.<role> and ai.top_p.<role>.
-    Omits any param not configured (provider uses its own default).
     """
     _c = cfg()
     params: dict[str, float] = {}
@@ -184,10 +273,7 @@ def sampling_params(role: str) -> dict:
             params["top_p"] = float(val)
     except AttributeError:
         # Fall back to default if no per-role override
-        try:
-            val = _c.ai.top_p.default
-            if val is not None:
-                params["top_p"] = float(val)
-        except AttributeError:
-            pass
+        default = _c.ai.top_p.get("default")
+        if default is not None:
+            params["top_p"] = float(default)
     return params

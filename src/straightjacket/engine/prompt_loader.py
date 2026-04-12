@@ -17,8 +17,7 @@ from .format_utils import PartialFormatDict
 
 
 def _prompts_path() -> Path:
-    filename = cfg().get("ai", {}).get("prompts_file", "prompts.yaml")
-    return PROJECT_ROOT / filename
+    return PROJECT_ROOT / cfg().ai.prompts_file
 
 
 _prompts: dict[str, str] | None = None

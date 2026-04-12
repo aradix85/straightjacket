@@ -91,6 +91,8 @@ class BrainResult(SerializableMixin):
     track_name: str | None = None
     track_rank: str | None = None
     target_track: str | None = None
+    fate_question: str | None = None  # Yes/no question about the fiction; engine resolves after classification
+    oracle_table: str | None = None  # Datasworn oracle path; engine rolls after classification
 
 
 # TURN SNAPSHOT

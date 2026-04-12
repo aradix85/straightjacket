@@ -18,7 +18,7 @@ if TYPE_CHECKING:
     from ..datasworn.moves import Move
 
 
-@register("brain", "director")
+@register("director")
 def query_npc(game: GameState, npc_id: str) -> dict:
     """Query an NPC's current state: disposition, bond, recent memories, agenda.
 
@@ -89,7 +89,6 @@ def query_active_clocks(game: GameState, clock_type: str = "", unfired_only: boo
     }
 
 
-@register("brain")
 def roll_oracle(game: GameState, table_path: str) -> dict:
     """Roll on a Datasworn oracle table. Returns the rolled value and table info.
 
@@ -119,7 +118,6 @@ def roll_oracle(game: GameState, table_path: str) -> dict:
     }
 
 
-@register("brain")
 def query_npc_list(game: GameState, status: str = "active") -> dict:
     """List NPCs filtered by status. Lightweight: names and dispositions only.
 
@@ -133,7 +131,6 @@ def query_npc_list(game: GameState, status: str = "active") -> dict:
     }
 
 
-@register("brain")
 def fate_question(game: GameState, question: str, context_hint: str = "") -> dict:
     """Ask a yes/no question about the fiction. Returns probabilistic answer.
 
@@ -167,7 +164,6 @@ def fate_question(game: GameState, question: str, context_hint: str = "") -> dic
     return response
 
 
-@register("brain")
 def list_tracks(game: GameState, track_type: str = "") -> dict:
     """List active progress tracks. Call before progress moves to see available targets.
 
@@ -192,7 +188,6 @@ def list_tracks(game: GameState, track_type: str = "") -> dict:
     }
 
 
-@register("brain")
 def available_moves(game: GameState) -> dict:
     """Get the list of moves available in the current game state. Call this to see what moves the player can make."""
     from ..datasworn.moves import get_moves

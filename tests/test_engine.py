@@ -7,72 +7,57 @@ Run: python -m pytest tests/test_engine.py -v
 
 # Stubs are set up in conftest.py
 
-# ── _ConfigNode tests ────────────────────────────────────────
+# ── AppConfig tests ──────────────────────────────────────────
 
 
-def test_confignode_dot_access() -> None:
-    from straightjacket.engine.config_loader import _ConfigNode
+def test_appconfig_typed_access() -> None:
+    from straightjacket.engine.config_loader import _parse_config
 
-    node = _ConfigNode({"ai": {"model": "qwen", "temp": 0.7}}, "cfg")
-    assert node.ai.model == "qwen"
-    assert node.ai.temp == 0.7
+    data = {"ai": {"provider": "openai_compatible", "brain_model": "qwen", "temperature": {"brain": 0.6}}}
+    config = _parse_config(data)
+    assert config.ai.provider == "openai_compatible"
+    assert config.ai.brain_model == "qwen"
+    assert config.ai.temperature.get("brain") == 0.6
 
 
-def test_confignode_error_shows_path() -> None:
-    from straightjacket.engine.config_loader import _ConfigNode
+def test_appconfig_defaults() -> None:
+    from straightjacket.engine.config_loader import _parse_config
 
-    node = _ConfigNode({"ai": {"model": "qwen"}}, "cfg")
+    config = _parse_config({})
+    assert config.server.host == "127.0.0.1"
+    assert config.server.port == 8081
+    assert config.language.narration_language == "English"
+    assert config.ai.prompts_file == "prompts.yaml"
+
+
+def test_appconfig_per_role_int() -> None:
+    from straightjacket.engine.config_loader import _parse_config
+
+    data = {"ai": {"max_tokens": {"brain": 4096, "narrator": 2048}}}
+    config = _parse_config(data)
+    assert config.ai.max_tokens.brain == 4096
+    assert config.ai.max_tokens.narrator == 2048
+    assert config.ai.max_tokens.architect == 8192  # default
+
+
+def test_appconfig_per_role_float_missing() -> None:
+    from straightjacket.engine.config_loader import _parse_config
+
+    data = {"ai": {"temperature": {"brain": 0.6}}}
+    config = _parse_config(data)
     try:
-        _ = node.ai.brain_modle  # typo
+        _ = config.ai.temperature.narrator
         raise AssertionError("Should have raised")
-    except AttributeError as e:
-        msg = str(e)
-        assert "cfg.ai.brain_modle" in msg
-        assert "model" in msg  # shows available keys
+    except AttributeError:
+        pass
 
 
-def test_confignode_error_shows_available_keys() -> None:
-    from straightjacket.engine.config_loader import _ConfigNode
+def test_appconfig_extra_body() -> None:
+    from straightjacket.engine.config_loader import _parse_config
 
-    node = _ConfigNode({"server": {"port": 8081}, "ai": {"model": "x"}}, "config")
-    try:
-        _ = node.database
-        raise AssertionError("Should have raised")
-    except AttributeError as e:
-        msg = str(e)
-        assert "config.database" in msg
-        assert "ai" in msg
-        assert "server" in msg
-
-
-def test_confignode_getitem_error() -> None:
-    from straightjacket.engine.config_loader import _ConfigNode
-
-    node = _ConfigNode({"a": 1}, "root")
-    try:
-        _ = node["b"]
-        raise AssertionError("Should have raised")
-    except KeyError as e:
-        assert "root" in str(e)
-
-
-def test_confignode_get_default() -> None:
-    from straightjacket.engine.config_loader import _ConfigNode
-
-    node = _ConfigNode({"a": 1}, "root")
-    assert node.get("a") == 1
-    assert node.get("missing", 42) == 42
-
-
-def test_confignode_nested_path_tracking() -> None:
-    from straightjacket.engine.config_loader import _ConfigNode
-
-    node = _ConfigNode({"a": {"b": {"c": 1}}}, "cfg")
-    try:
-        _ = node.a.b.typo
-        raise AssertionError()
-    except AttributeError as e:
-        assert "cfg.a.b.typo" in str(e)
+    data = {"ai": {"extra_body": {"reasoning_effort": "none"}}}
+    config = _parse_config(data)
+    assert config.ai.extra_body == {"reasoning_effort": "none"}
 
 
 # ── locations_match tests ─────────────────────────────────────

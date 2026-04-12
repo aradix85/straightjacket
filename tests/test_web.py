@@ -243,9 +243,9 @@ class TestBuildNarrativeStatus:
 
     def test_contains_resources(self, load_engine: None) -> None:
         text = build_narrative_status(self._game())
-        assert "4" in text  # health
-        assert "3" in text  # spirit
-        assert "5" in text  # supply/momentum
+        assert "bruised" in text  # health 4
+        assert "shaken" in text  # spirit 3
+        assert "well-equipped" in text  # supply 5
 
     def test_contains_location(self, load_engine: None) -> None:
         text = build_narrative_status(self._game())

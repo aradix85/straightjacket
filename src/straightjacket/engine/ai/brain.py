@@ -1,10 +1,8 @@
 #!/usr/bin/env python3
-"""AI Brain calls: action parsing via two-phase call.
+"""AI Brain: single-call action classification via prompt injection + json_schema.
 
-Phase 1 (optional): tool loop for context queries (NPC details, oracle rolls).
-Phase 2: json_schema call for structured classification.
-
-json_schema enforces complete output — without it the model defaults to dialog.
+Brain receives full game state context (NPCs, moves, tracks) in the prompt.
+No tool calling — all info is static and compact. json_schema enforces output.
 """
 
 import html
@@ -23,16 +21,30 @@ from .provider_base import AIProvider, create_with_retry
 from .schemas import get_brain_output_schema
 
 
-def _build_moves_block(setting_id: str) -> str:
-    """Build <moves> instruction block directing Brain to use available_moves tool."""
-    return (
-        "<moves>\n"
-        "  Call available_moves to get the list of moves the player can make right now.\n"
-        "  The tool returns move keys, stats, and roll types based on current game state.\n"
-        "  dialog = pure conversation, no risk. ask_the_oracle = yes/no question about the fiction.\n"
-        "  world_shaping = player declares something about the world (wits|heart|shadow).\n"
-        "</moves>"
-    )
+def _build_moves_block(game: GameState) -> str:
+    """Build <moves> block with available moves pre-computed by the engine."""
+    from ..tools.builtins import available_moves
+
+    data = available_moves(game)
+    moves = data.get("moves", [])
+    combat_pos = data.get("combat_position", "")
+
+    lines = []
+    for m in moves:
+        stats = ", ".join(m["stats"]) if m["stats"] else "none"
+        lines.append(f"  {m['move']} ({m['name']}) stats:[{stats}] roll:{m['roll_type']}")
+
+    pos_line = f"  combat_position: {combat_pos}" if combat_pos else ""
+    return "<moves>\n" + "\n".join(lines) + ("\n" + pos_line if pos_line else "") + "\n</moves>"
+
+
+def _build_tracks_block(game: GameState) -> str:
+    """Build compact tracks context for Brain."""
+    tracks = [t for t in game.progress_tracks if t.status == "active"]
+    if not tracks:
+        return ""
+    lines = [f"  {t.name} ({t.track_type}, {t.rank}) {t.filled_boxes}/10" for t in tracks]
+    return "<tracks>\n" + "\n".join(lines) + "\n</tracks>"
 
 
 # ── JSON extraction from text (used by Director) ────────────
@@ -70,14 +82,12 @@ def _extract_json(text: str) -> dict | None:
 def call_brain(
     provider: AIProvider, game: GameState, player_message: str, config: EngineConfig | None = None
 ) -> BrainResult:
-    """Classify player input into a game move.
+    """Classify player input into a game move. Single call with injected context.
 
-    Two-phase call:
-    1. Tool loop (optional): Brain queries NPCs or oracles if needed.
-    2. json_schema call: enforces complete classification output.
+    All game state (NPCs, moves, tracks) is in the prompt. No tool calling.
+    fate_question and oracle_table fields on BrainResult are resolved by the
+    engine after classification (see turn.py).
     """
-    from ..tools import get_tools, run_tool_loop
-
     _c = cfg()
     _cfg = config or EngineConfig()
     _brain_lang = get_narration_lang(_cfg)
@@ -88,86 +98,46 @@ def call_brain(
         "brain_parser",
         lang=_brain_lang,
         content_boundaries_block=content_boundaries_block(game),
-        moves_block=_build_moves_block(game.setting_id),
+        moves_block=_build_moves_block(game),
     )
 
     w = game.world
-    res = game.resources
 
-    # Minimal NPC list for target_npc resolution
+    # NPC list with dispositions for target_npc resolution
     npc_lines = []
     for n in game.npcs:
         if n.status in ("active", "background"):
-            entry = f"- {n.name} (id:{n.id})"
+            entry = f"  {n.name} (id:{n.id}, {n.disposition})"
             if n.aliases:
                 entry += f" aliases:{','.join(n.aliases)}"
             npc_lines.append(entry)
-    npc_list = "\n".join(npc_lines) or "(none)"
+    npc_block = "<npcs>\n" + "\n".join(npc_lines) + "\n</npcs>" if npc_lines else "<npcs>(none)</npcs>"
+
+    tracks_block = _build_tracks_block(game)
 
     user_msg = f"""<state>
 loc:{w.current_location} | ctx:{w.current_scene_context}
 time:{w.time_of_day or "unspecified"}
-{game.player_name} H{res.health} Sp{res.spirit} Su{res.supply} M{res.momentum} chaos:{w.chaos_factor} | E{game.edge} H{game.heart} I{game.iron} Sh{game.shadow} W{game.wits}
+{game.player_name} E{game.edge} H{game.heart} I{game.iron} Sh{game.shadow} W{game.wits}
 </state>
-<npcs>{npc_list}</npcs>
+{npc_block}
+{tracks_block}
 <input>{player_message}</input>"""
 
-    tools = get_tools("brain")
-
     try:
-        # Phase 1: tool loop for optional context queries
-        tool_context = ""
-        if tools:
-            response = create_with_retry(
-                provider,
-                max_retries=1,
-                model=_c.ai.brain_model,
-                max_tokens=_c.ai.max_tokens.brain,
-                system=system,
-                messages=[{"role": "user", "content": user_msg}],
-                tools=tools,
-                **sampling_params("brain"),
-                log_role="brain",
-            )
-
-            if response.stop_reason == "tool_use":
-                final_content, tool_log = run_tool_loop(
-                    provider,
-                    response,
-                    role="brain",
-                    game=game,
-                    model=_c.ai.brain_model,
-                    system=system,
-                    messages=[{"role": "user", "content": user_msg}],
-                    max_tokens=_c.ai.max_tokens.brain,
-                    max_tool_rounds=_c.ai.max_tool_rounds.brain,
-                    **sampling_params("brain"),
-                    log_role="brain",
-                )
-                if final_content.strip():
-                    tool_context = f"\n<tool_results>\n{final_content[:1500]}\n</tool_results>"
-                log(f"[Brain] Phase 1: {len(tool_log)} tool calls")
-            else:
-                log("[Brain] Phase 1: no tools called")
-
-        # Phase 2: json_schema call for classification
-        phase2_msg = user_msg
-        if tool_context:
-            phase2_msg = user_msg + tool_context
-
-        response2 = create_with_retry(
+        response = create_with_retry(
             provider,
             max_retries=_c.ai.max_retries.brain,
             model=_c.ai.brain_model,
             max_tokens=_c.ai.max_tokens.brain,
             system=system,
-            messages=[{"role": "user", "content": phase2_msg}],
+            messages=[{"role": "user", "content": user_msg}],
             json_schema=get_brain_output_schema(),
             **sampling_params("brain"),
             log_role="brain",
         )
 
-        result = BrainResult.from_dict(json.loads(response2.content))
+        result = BrainResult.from_dict(json.loads(response.content))
         log(f"[Brain] move={result.move}, stat={result.stat}, intent={result.player_intent[:60]}")
         return result
 

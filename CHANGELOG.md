@@ -5,6 +5,21 @@ Originally forked from [EdgeTales](https://github.com/edgetales/edgetales). See 
 
 ---
 
+## [0.46.50] — 2026-04-12
+
+Config-driven prompt file. Shared resolution and narration. Typed config. Cleanup.
+
+- Prompt file path now configurable via `config.yaml` → `ai.prompts_file` (default: `prompts.yaml`). `prompt_loader.py` reads filename from config instead of hardcoding
+- `resolve_action_consequences` and `_update_crisis` in `game/finalization.py`: shared pre-narration resolution (move outcome, combat position, MISS clock ticks, crisis check) used by turn, correction, and momentum burn
+- `narrate_scene` in `game/finalization.py`: shared narrator call → parse → optional validation. Used by all four narration paths (turn dialog, turn action, correction, momentum burn). Validation runs when `validate_result_type` is set. Eliminates 4 duplicated narrator→parse sequences and 2 inline `validate_and_retry` imports
+- `SceneContext` dataclass in `game/turn.py`: bundles 12 shared parameters built once per turn. `_finalize_scene` signature reduced from 18 to 8 parameters
+- `_ConfigNode` replaced by typed `AppConfig` dataclass tree (`AIConfig`, `ServerConfig`, `LanguageConfig`, `PerRoleInt`, `PerRoleFloat`, `ToolRounds`). No dynamic dict access, no `.get()` escape hatch, full mypy coverage
+- `parse_engine_yaml` boilerplate reduced: 12 identical if/in/_build_nested blocks replaced by `_SIMPLE_SECTIONS` loop. 5 sections with pre-processing remain explicit
+- correction.py: 5 inline imports moved to top-level, unused `resolve_move_outcome` import removed, `call_narrator`/`parse_narrator_response` replaced by `narrate_scene`
+- Status commands (`/status`, `/score`) now fully narrative: "seriously wounded" instead of "health 2", "growing trust" instead of "bond 4/10", "building" instead of "3/6". No numbers, no momentum, no chaos factor. Aligns with design document principle: player sees only story, never system references
+- Step 9b: Brain back to single-call prompt injection. All game state (available moves, NPCs with dispositions, active tracks) injected as XML context blocks. No tool loop. `fate_question` and `oracle_table` fields on BrainResult resolved by engine after classification. All Brain tool registrations removed. `query_npc` changed to director-only. ~13x Brain token reduction (67K → ~5K over 10 turns)
+- 659 tests (-2 removed Brain tool registration tests, +1 Brain-deregistered verification test), ruff clean, mypy clean
+
 ## [0.46.0] — 2026-04-12
 
 Track lifecycle. Connection tracks replace bond. Status commands. UI cleanup.

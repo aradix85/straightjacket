@@ -221,13 +221,6 @@ def test_likelihood_factors_stack(load_engine: None) -> None:
 # ── Tool integration ─────────────────────────────────────────
 
 
-def test_fate_question_tool_registered() -> None:
-    """fate_question is registered as a Brain tool."""
-    from straightjacket.engine.tools.registry import list_tools
-
-    assert "fate_question" in list_tools("brain")
-
-
 def test_fate_question_tool_end_to_end(load_engine: None) -> None:
     """fate_question tool resolves likelihood, rolls fate, returns structured result."""
     from straightjacket.engine.tools.builtins import fate_question

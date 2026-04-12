@@ -269,11 +269,25 @@ def _build_nested(cls: type, data: dict) -> Any:
     import dataclasses
 
     known = {f.name for f in dataclasses.fields(cls)}
-    kwargs = {}
-    for k, v in data.items():
-        if k in known:
-            kwargs[k] = v
-    return cls(**kwargs)
+    return cls(**{k: v for k, v in data.items() if k in known})
+
+
+# Sections that map directly: YAML key → EngineSettings field → dataclass type.
+# _build_nested handles these without any pre-processing.
+_SIMPLE_SECTIONS: dict[str, type] = {
+    "chaos": ChaosConfig,
+    "pacing": PacingConfig,
+    "creation": CreationConfig,
+    "resources": ResourcesConfig,
+    "bonds": BondsConfig,
+    "activation_scores": ActivationScores,
+    "location": LocationConfig,
+    "opening": OpeningConfig,
+    "architect": ArchitectConfig,
+    "story": StoryConfig,
+    "enums": EnumsConfig,
+    "memory_retrieval_weights": MemoryRetrievalWeights,
+}
 
 
 def parse_engine_yaml(data: dict) -> EngineSettings:
@@ -281,25 +295,22 @@ def parse_engine_yaml(data: dict) -> EngineSettings:
     s = EngineSettings()
     s._raw = data
 
+    # Auto-parse simple sections
+    for key, cls in _SIMPLE_SECTIONS.items():
+        if key in data:
+            setattr(s, key, _build_nested(cls, data[key]))
+
+    # Sections with pre-processing
     if "npc" in data:
-        # gate_memory_counts keys come as strings from YAML, need int conversion
         npc_data = dict(data["npc"])
         if "gate_memory_counts" in npc_data:
             npc_data["gate_memory_counts"] = {int(k): v for k, v in npc_data["gate_memory_counts"].items()}
         s.npc = _build_nested(NpcConfig, npc_data)
-    if "chaos" in data:
-        s.chaos = _build_nested(ChaosConfig, data["chaos"])
-    if "pacing" in data:
-        s.pacing = _build_nested(PacingConfig, data["pacing"])
     if "stats" in data:
         d = dict(data["stats"])
         if "valid_arrays" in d:
             d["valid_arrays"] = [list(a) for a in d["valid_arrays"]]
         s.stats = _build_nested(StatsConfig, d)
-    if "creation" in data:
-        s.creation = _build_nested(CreationConfig, data["creation"])
-    if "resources" in data:
-        s.resources = _build_nested(ResourcesConfig, data["resources"])
     if "momentum" in data:
         md = dict(data["momentum"])
         gain_data = md.pop("gain", {})
@@ -309,27 +320,11 @@ def parse_engine_yaml(data: dict) -> EngineSettings:
             strong_hit=dict(gain_data.get("strong_hit", {"standard": 2, "great": 3})),
         )
         s.momentum = MomentumConfig(**md, gain=gain, loss=dict(loss_data))
-    if "bonds" in data:
-        s.bonds = _build_nested(BondsConfig, data["bonds"])
-    if "activation_scores" in data:
-        s.activation_scores = _build_nested(ActivationScores, data["activation_scores"])
-    if "location" in data:
-        s.location = _build_nested(LocationConfig, data["location"])
-    if "opening" in data:
-        s.opening = _build_nested(OpeningConfig, data["opening"])
-    if "architect" in data:
-        s.architect = _build_nested(ArchitectConfig, data["architect"])
     if "fate" in data:
         fd = dict(data["fate"])
         lr_data = fd.pop("likelihood_rules", {})
         lr = _build_nested(FateLikelihoodRules, lr_data)
         s.fate = FateConfig(default_method=fd.get("default_method", "fate_chart"), likelihood_rules=lr)
-    if "story" in data:
-        s.story = _build_nested(StoryConfig, data["story"])
-    if "enums" in data:
-        s.enums = _build_nested(EnumsConfig, data["enums"])
-    if "memory_retrieval_weights" in data:
-        s.memory_retrieval_weights = _build_nested(MemoryRetrievalWeights, data["memory_retrieval_weights"])
     if "recovery" in data:
         rd = dict(data["recovery"])
         sh = rd.pop("strong_hit", {"standard": 1, "great": 2})

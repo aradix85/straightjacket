@@ -142,12 +142,12 @@ ui.game_log: Game log
 ui.player_input: Player input
 
 # Narrative status (server-side, handle_status_query)
-status.resources: '{name} — Scene {scene}, {location}, {time}. Health {health}, spirit {spirit}, supply {supply}. Momentum {momentum} (max {max_momentum}). Chaos factor {chaos}.'
-status.npc: '{name}: {disposition}. Bond {bond}/{bond_max}.'
+status.resources: '{name} — {location}, {time}. Physical: {health}. Mental: {spirit}. Supplies: {supply}.'
+status.npc: '{name}: {disposition}, {bond}.'
 status.npc_deceased: '{name}: deceased.'
-status.npc_background: '{name}: {disposition}. Bond {bond}/{bond_max} (background).'
-status.clock: '{name}: {filled}/{segments}.'
+status.npc_background: '{name}: {disposition}, {bond} (not recently seen).'
+status.clock: '{name}: {urgency}.'
 status.clock_fired: '{name}: triggered.'
-status.act: 'Story: act {n}/{total} — {title} ({phase}, {progress}).'
+status.act: 'Story: {title} ({phase}, {progress}).'
 status.no_game: No active game.
-status.tracks: 'Vow: {name} ({rank}) — {filled}/10 boxes.'
+status.tracks: '{name}: {progress}.'

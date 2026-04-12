@@ -250,7 +250,6 @@ def apply_suffer_handler(game: GameState, roll_result: str, params: dict) -> Out
     res = game.resources
     track = params.get("track", "health")
     recovery = params.get("recovery", 1)
-    params.get("blocking_impact", "")
     miss_extra_track = params.get("miss_extra_track", -1)
     miss_extra_momentum = params.get("miss_extra_momentum", -2)
 

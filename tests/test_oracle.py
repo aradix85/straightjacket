@@ -9,7 +9,7 @@ import importlib
 import straightjacket.engine.tools.builtins as _builtins_mod
 from straightjacket.engine.datasworn.loader import load_setting, list_available
 from straightjacket.engine.models import GameState
-from straightjacket.engine.tools.registry import get_handler, get_tools
+from straightjacket.engine.tools.registry import get_handler
 
 
 def _reload_builtins() -> None:
@@ -109,10 +109,11 @@ def test_setting_isolation() -> None:
 # ── Tool registration ───────────────────────────────────────────
 
 
-def test_roll_oracle_registered_for_brain() -> None:
+def test_roll_oracle_not_registered_for_brain() -> None:
+    """roll_oracle is no longer a Brain tool (9b: Brain uses prompt injection)."""
     _reload_builtins()
     handler = get_handler("brain", "roll_oracle")
-    assert handler is not None
+    assert handler is None
 
 
 def test_roll_oracle_not_registered_for_director() -> None:
@@ -121,75 +122,57 @@ def test_roll_oracle_not_registered_for_director() -> None:
     assert handler is None
 
 
-def test_roll_oracle_tool_schema() -> None:
-    _reload_builtins()
-    tools = get_tools("brain")
-    oracle_tools = [t for t in tools if t["function"]["name"] == "roll_oracle"]
-    assert len(oracle_tools) == 1
-    func = oracle_tools[0]["function"]
-    assert "table_path" in func["parameters"]["properties"]
-    assert func["parameters"]["properties"]["table_path"]["type"] == "string"
-    assert "table_path" in func["parameters"]["required"]
+# ── Direct function execution ────────────────────────────────
 
 
-# ── Tool execution ───────────────────────────────────────────────
+def test_roll_oracle_success() -> None:
+    from straightjacket.engine.tools.builtins import roll_oracle
 
-
-def test_roll_oracle_tool_success() -> None:
-    _reload_builtins()
-    handler = get_handler("brain", "roll_oracle")
-    assert handler is not None
     game = GameState(setting_id="starforged")
-    result = handler(game=game, table_path="core/action")
+    result = roll_oracle(game=game, table_path="core/action")
     assert "value" in result
     assert result["table_path"] == "core/action"
     assert result["setting"] == "starforged"
-    assert result["value"]  # non-empty string
+    assert result["value"]
 
 
-def test_roll_oracle_tool_unknown_table() -> None:
-    _reload_builtins()
-    handler = get_handler("brain", "roll_oracle")
-    assert handler is not None
+def test_roll_oracle_unknown_table() -> None:
+    from straightjacket.engine.tools.builtins import roll_oracle
+
     game = GameState(setting_id="starforged")
-    result = handler(game=game, table_path="nonexistent/table")
+    result = roll_oracle(game=game, table_path="nonexistent/table")
     assert "error" in result
     assert "not found" in result["error"]
 
 
-def test_roll_oracle_tool_no_setting() -> None:
-    _reload_builtins()
-    handler = get_handler("brain", "roll_oracle")
-    assert handler is not None
+def test_roll_oracle_no_setting() -> None:
+    from straightjacket.engine.tools.builtins import roll_oracle
+
     game = GameState()
-    result = handler(game=game, table_path="core/action")
+    result = roll_oracle(game=game, table_path="core/action")
     assert "error" in result
 
 
-def test_roll_oracle_tool_invalid_setting() -> None:
-    _reload_builtins()
-    handler = get_handler("brain", "roll_oracle")
-    assert handler is not None
+def test_roll_oracle_invalid_setting() -> None:
+    from straightjacket.engine.tools.builtins import roll_oracle
+
     game = GameState(setting_id="nonexistent_setting")
-    result = handler(game=game, table_path="core/action")
+    result = roll_oracle(game=game, table_path="core/action")
     assert "error" in result
 
 
-def test_roll_oracle_tool_per_setting() -> None:
-    """Tool uses game.setting_id to select the correct setting."""
-    _reload_builtins()
-    handler = get_handler("brain", "roll_oracle")
-    assert handler is not None
-    # Starforged has core/action
+def test_roll_oracle_per_setting() -> None:
+    """Function uses game.setting_id to select the correct setting."""
+    from straightjacket.engine.tools.builtins import roll_oracle
+
     game_sf = GameState(setting_id="starforged")
-    result_sf = handler(game=game_sf, table_path="core/action")
+    result_sf = roll_oracle(game=game_sf, table_path="core/action")
     assert "value" in result_sf
 
-    # Classic does NOT have core/action
     game_cl = GameState(setting_id="classic")
-    result_cl = handler(game=game_cl, table_path="core/action")
+    result_cl = roll_oracle(game=game_cl, table_path="core/action")
     assert "error" in result_cl
 
     # Classic has action_and_theme/action
-    result_cl2 = handler(game=game_cl, table_path="action_and_theme/action")
+    result_cl2 = roll_oracle(game=game_cl, table_path="action_and_theme/action")
     assert "value" in result_cl2

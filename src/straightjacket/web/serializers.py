@@ -23,51 +23,121 @@ from ..i18n import (
 )
 
 
+def _describe_resource(value: int, descriptions: dict[int, str]) -> str:
+    """Map a resource value to its narrative description."""
+    for threshold in sorted(descriptions.keys(), reverse=True):
+        if value >= threshold:
+            return descriptions[threshold]
+    return descriptions[min(descriptions.keys())]
+
+
+_HEALTH_DESC: dict[int, str] = {
+    5: "uninjured",
+    4: "bruised, minor aches",
+    3: "injured, moving with effort",
+    2: "seriously wounded",
+    1: "critically injured, barely holding together",
+    0: "at the physical limit, collapse is imminent",
+}
+
+_SPIRIT_DESC: dict[int, str] = {
+    5: "steady and composed",
+    4: "mildly unsettled",
+    3: "shaken, stress is showing",
+    2: "deeply troubled, holding on by a thread",
+    1: "near breaking",
+    0: "at the mental limit",
+}
+
+_SUPPLY_DESC: dict[int, str] = {
+    5: "well-equipped",
+    4: "adequate for now",
+    3: "running low, rationing has begun",
+    2: "critically short",
+    1: "nearly nothing, desperation setting in",
+    0: "completely out of resources",
+}
+
+_BOND_DESC: dict[int, str] = {
+    8: "deeply bonded",
+    6: "strong connection",
+    4: "growing trust",
+    2: "tentative acquaintance",
+    0: "stranger",
+}
+
+_CLOCK_DESC: dict[str, str] = {
+    "early": "distant",
+    "mid": "building",
+    "late": "imminent",
+    "full": "triggered",
+}
+
+_TRACK_DESC: dict[int, str] = {
+    8: "nearly complete",
+    6: "well underway",
+    4: "making progress",
+    2: "early stages",
+    0: "just begun",
+}
+
+
 def build_narrative_status(game: GameState) -> str:
-    """Plain-text narrative status for /status and /score commands."""
+    """Narrative status for /status and /score commands. No mechanical numbers."""
     dl = get_disposition_labels()
     tl = get_time_labels()
     pl = get_story_phase_labels()
 
     r = game.resources
     time_label = tl.get(game.world.time_of_day, "") if game.world.time_of_day else ""
+    health_desc = _describe_resource(r.health, _HEALTH_DESC)
+    spirit_desc = _describe_resource(r.spirit, _SPIRIT_DESC)
+    supply_desc = _describe_resource(r.supply, _SUPPLY_DESC)
+
     lines = [
         t(
             "status.resources",
             name=game.player_name,
-            scene=game.narrative.scene_count,
             location=game.world.current_location or "?",
             time=time_label or "?",
-            health=r.health,
-            spirit=r.spirit,
-            supply=r.supply,
-            momentum=r.momentum,
-            max_momentum=r.max_momentum,
-            chaos=game.world.chaos_factor,
+            health=health_desc,
+            spirit=spirit_desc,
+            supply=supply_desc,
         )
     ]
 
     # Progress tracks
     for tr in game.progress_tracks:
-        lines.append(t("status.tracks", name=tr.name, rank=tr.rank, filled=tr.filled_boxes))
+        if tr.status != "active":
+            continue
+        track_desc = _describe_resource(tr.filled_boxes, _TRACK_DESC)
+        lines.append(t("status.tracks", name=tr.name, progress=track_desc))
 
     # NPCs
     for n in game.npcs:
         disp_label = dl.get(n.disposition, n.disposition)
         bond = get_npc_bond(game, n.id)
+        bond_desc = _describe_resource(bond, _BOND_DESC)
         if n.status == "deceased":
             lines.append(t("status.npc_deceased", name=n.name))
         elif n.status == "background":
-            lines.append(t("status.npc_background", name=n.name, disposition=disp_label, bond=bond, bond_max=10))
+            lines.append(t("status.npc_background", name=n.name, disposition=disp_label, bond=bond_desc))
         elif n.status == "active":
-            lines.append(t("status.npc", name=n.name, disposition=disp_label, bond=bond, bond_max=10))
+            lines.append(t("status.npc", name=n.name, disposition=disp_label, bond=bond_desc))
 
     # Clocks
     for c in game.world.clocks:
         if c.fired:
             lines.append(t("status.clock_fired", name=c.name))
         else:
-            lines.append(t("status.clock", name=c.name, filled=c.filled, segments=c.segments))
+            ratio = c.filled / c.segments if c.segments > 0 else 0
+            if ratio >= 0.75:
+                urgency = _CLOCK_DESC["late"]
+            elif ratio >= 0.35:
+                urgency = _CLOCK_DESC["mid"]
+            else:
+                urgency = _CLOCK_DESC["early"]
+            lines.append(t("status.clock", name=c.name, urgency=urgency))
 
     # Story arc
     bp = game.narrative.story_blueprint
@@ -76,8 +146,6 @@ def build_narrative_status(game: GameState) -> str:
         lines.append(
             t(
                 "status.act",
-                n=act.act_number,
-                total=act.total_acts,
                 title=act.title,
                 phase=pl.get(act.phase, act.phase),
                 progress=act.progress,

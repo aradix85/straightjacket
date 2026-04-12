@@ -11,24 +11,23 @@ player input
   ↓
 Scene Test (mechanics/scene.py) → d10 vs chaos factor: expected / altered / interrupt
   ↓
-Brain (ai/brain.py)           → classifies input into a move and stat via tool calling
+Brain (ai/brain.py)           → single-call classification with injected game state (no tool calling)
   ↓
 Roll (mechanics/consequences.py) → 2d6+stat vs 2d10, result: STRONG_HIT / WEAK_HIT / MISS
   ↓
-Consequences (mechanics/consequences.py) → damage tables from engine.yaml, clock ticks, crisis check
+Consequences (game/finalization.py) → move outcome, combat position, clock ticks, crisis check
   ↓
 NPC Activation (npc/activation.py) → TF-IDF scores decide which NPCs get full context
   ↓
 Prompt Builder (prompt_builders.py) → assembles XML prompt with world, NPCs, result, scene type
   ↓
-Narrator (ai/narrator.py)    → AI writes prose (conversation memory for style consistency)
+Narrate (game/finalization.py → narrate_scene)
+  → narrator call (ai/narrator.py) → prose with conversation memory
+  → parser (parser.py) → strips leaked metadata (10-step cleanup)
+  → validator (ai/validator.py) → hybrid rule-based + LLM check, retries with prompt stripping
   ↓
-Validator (ai/validator.py)   → hybrid rule-based + LLM check, up to 3 retries with prompt stripping
-  ↓
-Parser (parser.py)            → strips leaked metadata from prose (10-step cleanup pipeline)
-  ↓
-Metadata Extractor (ai/narrator.py → ai/metadata.py)
-                              → separate AI call extracts NPCs, memories, location, time
+Post-Narration (game/finalization.py → apply_post_narration)
+  → engine memories, scene context, AI metadata extraction (ai/metadata.py)
   ↓
 Scene-End Bookkeeping         → chaos adjustment, list weight updates, consolidation
   ↓
@@ -48,7 +47,7 @@ Where to find things. If you want to change X, edit Y.
 | I want to change... | Edit this |
 |---|---|
 | Game rules, damage, NPC limits | `engine.yaml` (no Python) |
-| AI prompts (narrator, brain, director) | `prompts.yaml` (no Python) |
+| AI prompts (narrator, brain, director) | prompts YAML file (filename set in `config.yaml` → `ai.prompts_file`) |
 | Emotion scoring, keyword boosts | `emotions.yaml` (no Python) |
 | UI text | `strings.yaml` (no Python) |
 | Server port | `config.yaml` (no Python) |
@@ -57,10 +56,12 @@ Where to find things. If you want to change X, edit Y.
 | How dice rolls work | `mechanics/consequences.py` → `roll_action`, `roll_progress` |
 | Move outcome effects | `engine.yaml` → `move_outcomes` (no Python for simple moves) |
 | Move outcome handlers (suffer, threshold, recovery) | `mechanics/move_outcome.py` |
+| Move outcome resolution + crisis check | `game/finalization.py` → `resolve_action_consequences`, `ActionOutcome` |
+| Narrator call + parse + validate | `game/finalization.py` → `narrate_scene` (all four narration paths) |
 | Which moves are available in a game state | `tools/builtins.py` → `available_moves`, `_is_move_available` |
 | Move data model and loading | `datasworn/moves.py` → `Move`, `get_moves` |
 | Combat position (in_control / bad_spot) | `models_base.py` → `WorldState.combat_position`, set by move outcomes |
-| How the narrator is prompted | `prompts.yaml` → task templates; `prompt_builders.py` → XML assembly |
+| How the narrator is prompted | prompts YAML → task templates; `prompt_builders.py` → XML assembly |
 | NPC memory / activation logic | `npc/memory.py`, `npc/activation.py` |
 | Story structure / act tracking | `story_state.py`, `ai/architect.py` |
 | Correction (## undo) flow | `correction.py` |
@@ -77,9 +78,10 @@ Where to find things. If you want to change X, edit Y.
 | Memory emotional weight (engine-computed) | `mechanics/engine_memories.py` → `derive_memory_emotion`, table in `engine.yaml` |
 | Database queries (NPCs, memories, threads, clocks) | `db/queries.py` → `query_npcs`, `query_memories`, `query_threads`, `query_clocks` |
 | Database sync after state changes | `db/sync.py` → `sync(game)`, called by turn, creation, correction, restore, load |
-| Tool definitions for AI agents | `tools/registry.py` → `@register("brain")`, `get_tools(role)` |
+| Tool definitions for AI agents | `tools/registry.py` → `@register("director")`, `get_tools(role)` |
 | Tool execution and iterative loop | `tools/handler.py` → `execute_tool_call`, `run_tool_loop` |
-| Built-in query tools | `tools/builtins.py` → `query_npc`, `query_active_threads`, `query_active_clocks`, `query_npc_list`, `fate_question`, `available_moves`, `list_tracks` |
+| Built-in Director tools | `tools/builtins.py` → `query_npc`, `query_active_threads`, `query_active_clocks` |
+| Engine query functions (no tool registration) | `tools/builtins.py` → `available_moves`, `fate_question`, `roll_oracle`, `query_npc_list`, `list_tracks` |
 | Track-creating moves | `engine.yaml` → `track_creating_moves` (no Python) |
 | Track lifecycle (creation, completion) | `game/turn.py` → `_find_progress_track`, `complete_track` |
 | NPC bond level | `npc/bond.py` → `get_npc_bond` (reads connection track, not NpcData) |
@@ -123,7 +125,7 @@ src/straightjacket/
 │   ├── story_state.py       # Act tracking, revelation timing
 │   ├── prompt_builders.py   # Narrator prompt XML assembly (task text from prompts.yaml)
 │   ├── prompt_blocks.py     # Reusable XML blocks (content boundaries, backstory, etc.)
-│   ├── prompt_loader.py     # Reads prompts.yaml
+│   ├── prompt_loader.py     # Reads prompts YAML (filename from config.yaml ai.prompts_file)
 │   ├── config_loader.py     # Reads config.yaml, provides cfg() singleton
 │   ├── engine_loader.py     # Reads engine.yaml, provides eng() singleton
 │   ├── emotions_loader.py   # Reads emotions.yaml
@@ -131,7 +133,7 @@ src/straightjacket/
 │   │   ├── provider_base.py # AIProvider protocol + retry wrapper
 │   │   ├── provider_anthropic.py
 │   │   ├── provider_openai.py  # Any OpenAI-compatible API
-│   │   ├── brain.py         # Input → move classification
+│   │   ├── brain.py         # Single-call move classification (prompt injection, no tools)
 │   │   ├── narrator.py      # Prose generation + metadata extraction calls
 │   │   ├── metadata.py      # Apply extracted metadata to game state
 │   │   ├── architect.py     # Story blueprint, recap, chapter summary
@@ -150,7 +152,7 @@ src/straightjacket/
 │   │   ├── game_start.py    # Character creation → opening scene
 │   │   ├── chapters.py      # Epilogue, new chapter orchestration
 │   │   ├── setup_common.py  # Shared opening setup logic
-│   │   ├── finalization.py  # Shared post-narration state mutations
+│   │   ├── finalization.py  # Shared pre- and post-narration: outcome resolution, crisis, memories, metadata
 │   │   └── director_runner.py # Deferred Director call
 │   └── datasworn/
 │       ├── loader.py        # Reads Datasworn JSON (oracles, assets, moves)
@@ -164,7 +166,7 @@ src/straightjacket/
 │   ├── tools/
 │   │   ├── registry.py      # @register decorator, type hints → OpenAI tool schemas
 │   │   ├── handler.py       # Tool dispatch, iterative tool-call loop
-│   │   └── builtins.py      # Built-in query tools for Brain and Director
+│   │   └── builtins.py      # Built-in query tools (Director) and engine functions (fate, oracle, moves)
 ├── web/
 │   ├── server.py            # Starlette app, WebSocket endpoint, dispatch
 │   ├── handlers.py          # One async function per protocol message type
@@ -188,7 +190,7 @@ src/straightjacket/
 
 **Provider abstraction.** `AIProvider` protocol with two implementations (Anthropic, OpenAI-compatible). The engine never imports provider SDKs directly. `create_with_retry` handles transient errors with exponential backoff.
 
-**Minimal UI.** Single HTML page, no build step, no npm. Server sends JSON, client renders. Scene headings for screen reader navigation, aria-live for automatic narration readout. One button (Save/Load), one text input. Status via `/status` and `/score` text commands — engine answers directly, no AI call.
+**Minimal UI.** Single HTML page, no build step, no npm. Server sends JSON, client renders. Scene headings for screen reader navigation, aria-live for automatic narration readout. One button (Save/Load), one text input. Status via `/status` and `/score` text commands — engine answers directly, no AI call. Status output is narrative, not mechanical: "seriously wounded" instead of "health 2", "growing trust" instead of "bond 4/10". The player never sees numbers, dice, or system terms.
 
 **Progress tracks as dataclass.** ProgressTrack has rank-based ticks_per_mark (troublesome=12, epic=1), status (active/completed/failed). Background vow becomes a track at creation. Track-creating moves defined in engine.yaml `track_creating_moves` — engine creates tracks from Brain output. Connection tracks replace NpcData.bond: `get_npc_bond(game, npc_id)` reads connection track filled_boxes.
 
@@ -198,7 +200,9 @@ src/straightjacket/
 
 **AI surface minimization.** Every value derivable from game state is computed by the engine. Director pacing is computed from scene_intensity_history, not requested from the AI. Act transitions fire when scene_count exceeds act range — deterministic, no AI flag. Memory emotional_weight is derived from (move_category, result, disposition) via engine.yaml lookup. Opening scene clock and time_of_day are engine-determined before any AI call. The AI receives results, not choices.
 
-**Data-driven move outcomes.** `resolve_move_outcome` reads structured effect lists from engine.yaml per move per result. Simple moves (momentum, resources, progress, position) are pure data — no Python. Complex moves (suffer, threshold, recovery) use named handlers that share patterns across moves. The `available_moves` Brain tool filters moves by game state (combat position, active tracks) so the Brain only sees valid options. Consequence sentences generated from outcome strings via engine.yaml templates.
+**Data-driven move outcomes.** `resolve_move_outcome` reads structured effect lists from engine.yaml per move per result. Simple moves (momentum, resources, progress, position) are pure data — no Python. Complex moves (suffer, threshold, recovery) use named handlers that share patterns across moves. The `available_moves` function filters moves by game state (combat position, active tracks); Brain receives the filtered list in its prompt. Consequence sentences generated from outcome strings via engine.yaml templates.
+
+**Shared outcome resolution.** Three codepaths produce action narration: normal turns, corrections (input_misread), and momentum burns. All three share `resolve_action_consequences` in `game/finalization.py` — move outcome, combat position, MISS clock ticking, crisis check. Turn.py adds WEAK_HIT clock ticking (intentionally turn-only — correction and burn re-narrate an already-resolved scene). All four narration paths (turn dialog, turn action, correction, burn) share `narrate_scene` — narrator call, parse, optional validation — in one call. Post-narration state mutations share `apply_post_narration` from the same module.
 
 **NPC behavioral stance.** Engine computes per-NPC stance from disposition, bond (via connection track), and move category via engine.yaml stance matrix (60 entries). The narrator receives `stance="evasive" constraint="One fact, then silence."` instead of raw disposition values. The engine tells the narrator how the NPC behaves, not just how they feel.
 
@@ -206,9 +210,9 @@ src/straightjacket/
 
 **Database as read model.** SQLite (in-memory, stdlib) mirrors GameState after every turn, creation, correction, restore, and load. GameState dataclasses remain the write model — all mutations go through Python. The database provides indexed queries for prompt builders, tool handlers, and future NPC trigger evaluation. Ephemeral: rebuilt from GameState on load/restore, no migration burden. JSON save files remain the persistence format.
 
-**Tool calling.** Decorator-based registry (`@register("brain", "director")`) produces OpenAI function calling schemas from Python type hints. Iterative handler loop: AI calls tool → engine executes → result appended → AI continues, with configurable round limit. Tools are read-only: they query GameState and database but never mutate. Brain uses tool calling for classification (slim prompt, selective queries). Director uses two-phase: tool loop for context, then json_schema for structured output.
+**Tool calling.** Director uses decorator-based registry (`@register("director")`) producing OpenAI function calling schemas from Python type hints. Iterative handler loop: AI calls tool → engine executes → result appended → AI continues, with configurable round limit. Tools are read-only: they query GameState and database but never mutate. Director uses two-phase: tool loop for context, then json_schema for structured output. Brain does not use tool calling — all game state is injected via prompt (moves, NPCs, tracks). Brain's fate_question and oracle_table fields are resolved by the engine after classification.
 
-**Fate system (Mythic GME 2e).** Probabilistic yes/no questions about the fiction. Two methods: fate chart (9×9 odds/chaos matrix, d100) and fate check (2d10 + modifiers). Both produce four outcomes (yes, no, exceptional yes, exceptional no) and can trigger random events via the doublet rule. Likelihood resolver maps game state (NPC disposition, chaos, resources) to odds level via engine.yaml lookup table. Brain calls `fate_question` tool; engine resolves everything.
+**Fate system (Mythic GME 2e).** Probabilistic yes/no questions about the fiction. Two methods: fate chart (9×9 odds/chaos matrix, d100) and fate check (2d10 + modifiers). Both produce four outcomes (yes, no, exceptional yes, exceptional no) and can trigger random events via the doublet rule. Likelihood resolver maps game state (NPC disposition, chaos, resources) to odds level via engine.yaml lookup table. Brain sets `fate_question` field; engine resolves after classification.
 
 **Scene structure (Mythic GME 2e).** Every turn starts with a scene test: d10 vs chaos factor. Expected (roll > CF), altered (roll ≤ CF, odd), or interrupt (roll ≤ CF, even). Altered scenes roll on the Scene Adjustment Table. Interrupt scenes generate a random event via the pipeline. Scene test runs before Brain call. Replaces the old chaos interrupt system.
 

@@ -87,10 +87,11 @@ def load_global_config() -> dict:
     Returns the 'server' section as a flat dict.
     """
     try:
+        from dataclasses import asdict
+
         from .config_loader import cfg as _cfg
 
-        server = _cfg().server
-        return server.to_dict()
+        return asdict(_cfg().server)
     except Exception:
         return {}
 

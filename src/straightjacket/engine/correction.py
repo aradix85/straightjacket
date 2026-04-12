@@ -8,25 +8,24 @@ import uuid
 from ..i18n import t
 from .ai import (
     call_brain,
-    call_narrator,
 )
 from .ai.provider_base import AIProvider, create_with_retry
 from .ai.schemas import CORRECTION_OUTPUT_SCHEMA
 from .config_loader import cfg, sampling_params
 from .director import should_call_director
 from .engine_loader import eng
-from .game.finalization import apply_post_narration
+from .game.finalization import apply_post_narration, narrate_scene, resolve_action_consequences
 from .logging_util import log
 from .mechanics import (
     apply_brain_location_time,
     check_npc_agency,
+    generate_consequence_sentences,
     record_scene_intensity,
     resolve_effect,
     resolve_position,
     roll_action,
     update_chaos_factor,
 )
-from .mechanics.move_outcome import resolve_move_outcome
 from .mechanics.scene import SceneSetup
 from .models import (
     NPC_STATUSES,
@@ -41,7 +40,6 @@ from .models import (
 )
 from .npc import activate_npcs_for_prompt, consolidate_memory, find_npc
 from .npc.lifecycle import sanitize_aliases
-from .parser import parse_narrator_response
 from .prompt_blocks import get_narration_lang
 from .prompt_builders import build_action_prompt, build_dialog_prompt
 from .prompt_loader import get_prompt
@@ -258,38 +256,12 @@ def process_correction(
             position = resolve_position(game, brain)
             effect = resolve_effect(game, brain, position)
 
-            outcome = resolve_move_outcome(game, brain.move, roll.result, target_npc_id=brain.target_npc)
-            consequences = outcome.consequences
-            if outcome.combat_position:
-                game.world.combat_position = outcome.combat_position
-
-            clock_events: list = []
-            from .engine_loader import damage
-            from .mechanics.consequences import tick_threat_clock
-
-            if roll.result == "MISS":
-                clock_ticks = damage("damage.miss.clock_ticks", position)
-                if clock_ticks > 0:
-                    tick_threat_clock(game, clock_ticks, clock_events)
-
-            # Crisis check
-            _res = game.resources
-            if _res.health <= 0 and _res.spirit <= 0:
-                game.game_over = True
-                game.crisis_mode = True
-            elif _res.health <= 0 or _res.spirit <= 0:
-                game.crisis_mode = True
-            else:
-                game.crisis_mode = False
+            action = resolve_action_consequences(game, brain, roll, position)
+            consequences = action.consequences
+            clock_events = action.clock_events
 
             npc_agency, _ = check_npc_agency(game)
             activated_npcs, mentioned_npcs, _ = activate_npcs_for_prompt(game, brain, corrected_input)
-
-            from .mechanics import generate_consequence_sentences
-
-            consequence_sentences = generate_consequence_sentences(consequences, clock_events, game, brain)
-
-            from .mechanics import generate_consequence_sentences
 
             consequence_sentences = generate_consequence_sentences(consequences, clock_events, game, brain)
 
@@ -333,8 +305,6 @@ def process_correction(
             clock_events = _last_entry.clock_events if _last_entry else []
             npc_agency, _ = check_npc_agency(game)
 
-            from .mechanics import generate_consequence_sentences
-
             consequence_sentences = generate_consequence_sentences(consequences, clock_events, game, brain)
 
             prompt = build_action_prompt(
@@ -368,8 +338,7 @@ def process_correction(
     )
     prompt = prompt + correction_tag
 
-    raw = call_narrator(provider, prompt, game, _cfg)
-    narration = parse_narrator_response(game, raw)
+    narration, _ = narrate_scene(provider, game, prompt, config=_cfg)
 
     if game.last_turn_snapshot is not None:
         game.last_turn_snapshot.narration = narration
@@ -377,9 +346,8 @@ def process_correction(
             game.last_turn_snapshot.brain = brain
             game.last_turn_snapshot.roll = roll
 
-    # Step 4: Engine-side state mutations + AI metadata extraction
-    _scene_present_ids = {n.id for n in activated_npcs}
-
+    # Step 4: Engine-side state mutations
+    _scene_present_ids = {n.id for n in activated_npcs} | {n.id for n in mentioned_npcs}
     metadata = apply_post_narration(
         provider,
         game,
@@ -387,7 +355,7 @@ def process_correction(
         brain,
         roll,
         _scene_present_ids,
-        [n.name for n in activated_npcs],
+        [n.name for n in game.npcs if n.id in _scene_present_ids],
         config=_cfg,
         consequences=consequences if roll else [],
     )
@@ -501,33 +469,11 @@ def process_momentum_burn(
     position = resolve_position(game, brain_data)
     effect = resolve_effect(game, brain_data, position)
 
-    outcome = resolve_move_outcome(game, upgraded.move, upgraded.result, target_npc_id=brain_data.target_npc)
-    consequences = outcome.consequences
-    if outcome.combat_position:
-        game.world.combat_position = outcome.combat_position
-
-    clock_events: list = []
-    from .engine_loader import damage
-    from .mechanics.consequences import tick_threat_clock
-
-    if upgraded.result == "MISS":
-        clock_ticks = damage("damage.miss.clock_ticks", position)
-        if clock_ticks > 0:
-            tick_threat_clock(game, clock_ticks, clock_events)
-
-    # Crisis check
-    _res = game.resources
-    if _res.health <= 0 and _res.spirit <= 0:
-        game.game_over = True
-        game.crisis_mode = True
-    elif _res.health <= 0 or _res.spirit <= 0:
-        game.crisis_mode = True
-    else:
-        game.crisis_mode = False
+    action = resolve_action_consequences(game, brain_data, upgraded, position)
+    consequences = action.consequences
+    clock_events = action.clock_events
 
     activated_npcs, mentioned_npcs, _ = activate_npcs_for_prompt(game, brain_data, player_words)
-
-    from .mechanics import generate_consequence_sentences
 
     consequence_sentences = generate_consequence_sentences(consequences, clock_events, game, brain_data)
 
@@ -549,12 +495,9 @@ def process_momentum_burn(
     )
     prompt = prompt.replace("<task>", "<momentum_burn>Character digs deep, turns the tide.</momentum_burn>\n<task>")
 
-    raw = call_narrator(provider, prompt, game, config)
-    narration = parse_narrator_response(game, raw)
+    narration, _ = narrate_scene(provider, game, prompt, config=config)
 
-    # Engine-side state mutations
     _scene_present_ids = {n.id for n in activated_npcs} | {n.id for n in mentioned_npcs}
-
     apply_post_narration(
         provider,
         game,
@@ -562,7 +505,7 @@ def process_momentum_burn(
         brain_data,
         upgraded,
         _scene_present_ids,
-        [n.name for n in activated_npcs],
+        [n.name for n in game.npcs if n.id in _scene_present_ids],
         config=config,
         consequences=consequences,
     )
@@ -583,7 +526,6 @@ def process_momentum_burn(
         nar.session_log[-1].clock_events = clock_events
         nar.session_log[-1].scene_type = scene_setup.scene_type if scene_setup else "expected"
 
-    # Sync burned state to database
     from .db import sync as _db_sync
 
     _db_sync(game)

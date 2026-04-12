@@ -264,14 +264,13 @@ def test_builtin_query_active_clocks() -> None:
 
 
 def test_builtin_query_npc_list() -> None:
+    from straightjacket.engine.tools.builtins import query_npc_list
+
     _fresh_db()
     game = _game_with_data()
     sync(game)
-    _reload_builtins()
 
-    handler = get_handler("brain", "query_npc_list")
-    assert handler is not None
-    result = handler(game=game, status="active")
+    result = query_npc_list(game=game, status="active")
     assert len(result["npcs"]) == 2
     names = {n["name"] for n in result["npcs"]}
     assert "Kira" in names
@@ -279,8 +278,8 @@ def test_builtin_query_npc_list() -> None:
     close_db()
 
 
-def test_builtin_query_npc_shared_registration() -> None:
-    """query_npc is registered for both brain and director."""
+def test_builtin_query_npc_director_only() -> None:
+    """query_npc is registered for director only (Brain uses prompt injection)."""
     _reload_builtins()
-    assert get_handler("brain", "query_npc") is not None
+    assert get_handler("brain", "query_npc") is None
     assert get_handler("director", "query_npc") is not None

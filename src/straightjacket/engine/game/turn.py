@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """Turn processing: the core gameplay loop."""
 
+from dataclasses import dataclass, field
+
 from ..ai.brain import call_brain, call_revelation_check
-from ..ai.narrator import call_narrator
 from ..ai.provider_base import AIProvider
 from ..director import should_call_director
 from ..engine_loader import eng
@@ -11,6 +12,7 @@ from ..mechanics import (
     apply_brain_location_time,
     can_burn_momentum,
     check_npc_agency,
+    generate_consequence_sentences,
     purge_old_fired_clocks,
     record_scene_intensity,
     resolve_effect,
@@ -20,17 +22,44 @@ from ..mechanics import (
     tick_autonomous_clocks,
     update_chaos_factor,
 )
-from ..mechanics.move_outcome import resolve_move_outcome
 from ..mechanics.random_events import drain_pending_events
 from ..mechanics.scene import SceneSetup, check_scene
 from ..datasworn.moves import get_moves
-from ..models import BrainResult, EngineConfig, GameState, NarrationEntry, ProgressTrack, RollResult, SceneLogEntry
+from ..models import (
+    BrainResult,
+    ClockEvent,
+    EngineConfig,
+    GameState,
+    NarrationEntry,
+    NpcData,
+    ProgressTrack,
+    RandomEvent,
+    RollResult,
+    SceneLogEntry,
+)
 from ..npc import activate_npcs_for_prompt, find_npc, reactivate_npc
-from ..parser import parse_narrator_response
 from ..prompt_builders import build_action_prompt, build_dialog_prompt
 from ..story_state import default_scene_range, get_pending_revelations, mark_revelation_used
 
-from .finalization import apply_post_narration
+from .finalization import apply_post_narration, narrate_scene
+
+
+@dataclass
+class SceneContext:
+    """Shared context built once per turn, passed to both dialog and action paths."""
+
+    provider: AIProvider
+    game: GameState
+    brain: BrainResult
+    config: EngineConfig | None
+    player_message: str
+    scene_setup: SceneSetup
+    scene_present_ids: set[str]
+    pending_revs: list
+    npc_activation_debug: dict
+    activated_npcs: list[NpcData] = field(default_factory=list)
+    mentioned_npcs: list[NpcData] = field(default_factory=list)
+    pending_random_events: list[RandomEvent] = field(default_factory=list)
 
 
 def _roll_oracle_answer(game: GameState) -> str:
@@ -152,50 +181,44 @@ def _update_scene_lists(game: GameState, brain: BrainResult, metadata: dict, sce
 
 
 def _finalize_scene(
-    provider: AIProvider,
-    game: GameState,
+    ctx: SceneContext,
     narration: str,
-    brain: BrainResult,
-    player_message: str,
-    scene_present_ids: set,
-    pending_revs: list,
-    scene_setup: SceneSetup,
-    npc_activation_debug: dict,
     log_entry: dict,
     prompt_summary: str,
     roll_result_str: str,
-    config: EngineConfig | None,
-    agency_clock_events: list | None = None,
     roll: RollResult | None = None,
     consequences: list[str] | None = None,
-    position: str = "risky",
-    effect: str = "standard",
+    agency_clock_events: list[ClockEvent] | None = None,
 ) -> tuple[bool, dict | None]:
     """Shared post-narration processing for dialog and action scenes."""
+    game = ctx.game
+    brain = ctx.brain
+    scene_present_ids = ctx.scene_present_ids
     activated_npc_names = [n.name for n in game.npcs if n.id in scene_present_ids]
 
-    # Engine-side state mutations (step 3.1): scene context, memories, metadata
     metadata = apply_post_narration(
-        provider,
+        ctx.provider,
         game,
         narration,
         brain,
         roll,
         scene_present_ids,
         activated_npc_names,
-        config=config,
+        config=ctx.config,
         consequences=consequences,
         world_addition=brain.world_addition or "",
     )
 
     revelation_confirmed = False
-    if pending_revs:
-        revelation_confirmed = call_revelation_check(provider, narration, pending_revs[0], config)
+    if ctx.pending_revs:
+        revelation_confirmed = call_revelation_check(ctx.provider, narration, ctx.pending_revs[0], ctx.config)
         if revelation_confirmed:
-            mark_revelation_used(game, pending_revs[0].id)
+            mark_revelation_used(game, ctx.pending_revs[0].id)
 
     scene_type = (
-        scene_setup.scene_type if scene_setup.scene_type != "expected" else log_entry.get("_pacing_type", "action")
+        ctx.scene_setup.scene_type
+        if ctx.scene_setup.scene_type != "expected"
+        else log_entry.get("_pacing_type", "action")
     )
     record_scene_intensity(game, scene_type)
 
@@ -216,9 +239,9 @@ def _finalize_scene(
         nar.session_log = nar.session_log[-eng().pacing.max_session_log :]
 
     # Log revelation check result (only when a revelation was pending)
-    if pending_revs and nar.session_log:
+    if ctx.pending_revs and nar.session_log:
         nar.session_log[-1].revelation_check = {
-            "id": pending_revs[0].id,
+            "id": ctx.pending_revs[0].id,
             "confirmed": revelation_confirmed,
         }
 
@@ -245,12 +268,12 @@ def _finalize_scene(
     director_reason = should_call_director(
         game,
         roll_result=roll_result_str,
-        chaos_used=scene_setup.scene_type != "expected",
+        chaos_used=ctx.scene_setup.scene_type != "expected",
         new_npcs_found=bool(metadata.get("new_npcs")),
         revelation_used=revelation_confirmed,
     )
     if director_reason:
-        director_ctx = {"narration": narration, "config": config}
+        director_ctx = {"narration": narration, "config": ctx.config}
         if nar.session_log:
             nar.session_log[-1].director_trigger = director_reason
         # Mark phase trigger used so it doesn't re-fire every subsequent turn
@@ -289,7 +312,29 @@ def process_turn(
     brain = call_brain(provider, game, player_message, config)
     game.last_turn_snapshot.brain = brain
 
-    # Drain any random events generated by fate_question tool calls during Brain phase
+    # Resolve fate question if Brain requested one
+    fate_result = None
+    if brain.fate_question:
+        from ..mechanics.fate import resolve_fate, resolve_likelihood
+
+        odds = resolve_likelihood(game, brain.fate_question)
+        fate_result = resolve_fate(game, odds=odds, chaos_factor=game.world.chaos_factor, question=brain.fate_question)
+        log(f"[Brain] Fate question resolved: '{brain.fate_question}' → {fate_result.answer}")
+
+    # Resolve oracle roll if Brain requested one
+    oracle_result = ""
+    if brain.oracle_table:
+        from ..datasworn.settings import active_package
+
+        pkg = active_package(game)
+        if pkg:
+            try:
+                oracle_result = pkg.data.roll_oracle(brain.oracle_table)
+                log(f"[Brain] Oracle rolled: {brain.oracle_table} → {oracle_result}")
+            except KeyError:
+                log(f"[Brain] Oracle table not found: {brain.oracle_table}", level="warning")
+
+    # Drain any random events generated by fate resolution
     pending_random_events = drain_pending_events()
 
     # Reactivate background NPC if Brain targets one
@@ -306,6 +351,21 @@ def process_turn(
 
     pending_revs = get_pending_revelations(game)
 
+    ctx = SceneContext(
+        provider=provider,
+        game=game,
+        brain=brain,
+        config=config,
+        player_message=player_message,
+        scene_setup=scene_setup,
+        scene_present_ids=_scene_present_ids,
+        pending_revs=pending_revs,
+        npc_activation_debug=npc_activation_debug,
+        activated_npcs=activated_npcs,
+        mentioned_npcs=mentioned_npcs,
+        pending_random_events=pending_random_events,
+    )
+
     # ── Dialog / Oracle path ─────────────────────────────────────
     if brain.dialog_only or brain.move == "dialog" or brain.move == "ask_the_oracle":
         is_oracle = brain.move == "ask_the_oracle"
@@ -317,19 +377,19 @@ def process_turn(
             brain,
             player_words=player_message,
             scene_setup=scene_setup,
-            activated_npcs=activated_npcs,
-            mentioned_npcs=mentioned_npcs,
+            activated_npcs=ctx.activated_npcs,
+            mentioned_npcs=ctx.mentioned_npcs,
             config=config,
             oracle_answer=oracle_answer,
-            random_events=pending_random_events,
+            random_events=ctx.pending_random_events,
         )
-        raw = call_narrator(provider, prompt, game, config)
-        narration = parse_narrator_response(game, raw)
-
-        from ..ai.validator import validate_and_retry
-
-        narration, val_report = validate_and_retry(
-            provider, narration, prompt, "dialog", game, player_words=player_message, config=config
+        narration, val_report = narrate_scene(
+            provider,
+            game,
+            prompt,
+            config=config,
+            validate_result_type="dialog",
+            player_words=player_message,
         )
 
         if game.last_turn_snapshot is not None:
@@ -352,21 +412,11 @@ def process_turn(
             log_entry["oracle_answer"] = oracle_answer
 
         _, director_ctx = _finalize_scene(
-            provider,
-            game,
+            ctx,
             narration,
-            brain,
-            player_message,
-            _scene_present_ids,
-            pending_revs,
-            scene_setup,
-            npc_activation_debug,
             log_entry=log_entry,
             prompt_summary=f"{result_label.capitalize()}: {(brain.player_intent or player_message)[:80]}",
             roll_result_str=result_label,
-            config=config,
-            roll=None,
-            consequences=[],
         )
         return game, narration, None, None, director_ctx
 
@@ -460,12 +510,16 @@ def process_turn(
     position = resolve_position(game, brain)
     effect = resolve_effect(game, brain, position)
 
-    # Move outcome resolution (step 7b) — replaces category-based apply_consequences
-    outcome = resolve_move_outcome(game, brain.move, roll.result, target_npc_id=brain.target_npc)
-    consequences = outcome.consequences
+    # Move outcome + MISS clocks + crisis (shared with correction/burn)
+    from .finalization import resolve_action_consequences
+
+    action = resolve_action_consequences(game, brain, roll, position)
+    consequences = action.consequences
+    clock_events = action.clock_events
 
     # Progress marks wiring (step 8.2): consume marks on active track
-    if outcome.progress_marks > 0:
+    outcome = action.outcome
+    if outcome and outcome.progress_marks > 0:
         progress_track = _find_progress_track(
             game, ds_move.track_category if ds_move else "vow", target_track=brain.target_track
         )
@@ -482,35 +536,15 @@ def process_turn(
         elif roll.result == "MISS":
             complete_track(game, track.id, "failed")
 
-    # Combat position
-    if outcome.combat_position:
-        game.world.combat_position = outcome.combat_position
-
-    # Threat clock ticking — engine-level, independent of specific move
-    clock_events: list = []
-    from ..engine_loader import damage
-    from ..mechanics.consequences import tick_threat_clock
-
-    if roll.result == "MISS":
-        clock_ticks = damage("damage.miss.clock_ticks", position)
-        if clock_ticks > 0:
-            tick_threat_clock(game, clock_ticks, clock_events)
-    elif roll.result == "WEAK_HIT" and position != "controlled":
+    # WEAK_HIT clock ticking — turn-only (not on correction/burn re-narration)
+    if roll.result == "WEAK_HIT" and position != "controlled":
         import random as _rnd
+
+        from ..mechanics.consequences import tick_threat_clock
 
         should_tick = (position == "desperate") or (_rnd.random() < eng().pacing.weak_hit_clock_tick_chance)
         if should_tick:
             tick_threat_clock(game, 1, clock_events)
-
-    # Crisis check
-    res = game.resources
-    if res.health <= 0 and res.spirit <= 0:
-        game.game_over = True
-        game.crisis_mode = True
-    elif res.health <= 0 or res.spirit <= 0:
-        game.crisis_mode = True
-    else:
-        game.crisis_mode = False
 
     npc_agency, agency_clock_events = check_npc_agency(game)
 
@@ -519,8 +553,6 @@ def process_turn(
         gather_target = find_npc(game, brain.target_npc)
         if gather_target:
             gather_target.gather_count += 1
-
-    from ..mechanics import generate_consequence_sentences
 
     consequence_sentences = generate_consequence_sentences(consequences, clock_events, game, brain)
 
@@ -533,28 +565,22 @@ def process_turn(
         npc_agency,
         player_words=player_message,
         scene_setup=scene_setup,
-        activated_npcs=activated_npcs,
-        mentioned_npcs=mentioned_npcs,
+        activated_npcs=ctx.activated_npcs,
+        mentioned_npcs=ctx.mentioned_npcs,
         config=config,
         position=position,
         effect=effect,
         consequence_sentences=consequence_sentences,
-        random_events=pending_random_events,
+        random_events=ctx.pending_random_events,
     )
-    raw = call_narrator(provider, prompt, game, config)
-    narration = parse_narrator_response(game, raw)
-
-    from ..ai.validator import validate_and_retry
-
-    narration, val_report = validate_and_retry(
+    narration, val_report = narrate_scene(
         provider,
-        narration,
-        prompt,
-        roll.result,
         game,
+        prompt,
+        config=config,
+        validate_result_type=roll.result,
         player_words=player_message,
         consequences=consequences,
-        config=config,
         consequence_sentences=consequence_sentences,
     )
 
@@ -562,15 +588,8 @@ def process_turn(
         game.last_turn_snapshot.narration = narration
 
     _, director_ctx = _finalize_scene(
-        provider,
-        game,
+        ctx,
         narration,
-        brain,
-        player_message,
-        _scene_present_ids,
-        pending_revs,
-        scene_setup,
-        npc_activation_debug,
         log_entry={
             "scene": nar.scene_count,
             "summary": (brain.player_intent or player_message),
@@ -587,12 +606,9 @@ def process_turn(
         },
         prompt_summary=f"Action ({roll.result}): {(brain.player_intent or player_message)[:80]}",
         roll_result_str=roll.result,
-        config=config,
-        agency_clock_events=agency_clock_events,
         roll=roll,
         consequences=consequences,
-        position=position,
-        effect=effect,
+        agency_clock_events=agency_clock_events,
     )
     return game, narration, roll, burn_info, director_ctx
 
