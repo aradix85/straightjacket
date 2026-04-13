@@ -122,7 +122,7 @@ IMPORTANT: {game.player_name} is the PLAYER CHARACTER — do NOT include them as
         response = create_with_retry(
             provider,
             max_retries=_c.ai.max_retries.opening_setup,
-            model=_c.ai.brain_model,
+            model=_c.ai.fast_model or _c.ai.brain_model,
             max_tokens=_c.ai.max_tokens.opening_setup,
             system=system,
             messages=[{"role": "user", "content": prompt}],
@@ -225,7 +225,7 @@ Extract all metadata from the narration above. Remember: {game.player_name} is t
         response = create_with_retry(
             provider,
             max_retries=_c.ai.max_retries.narrator_metadata,
-            model=_c.ai.metadata_model or _c.ai.brain_model,
+            model=_c.ai.fast_model or _c.ai.brain_model,
             max_tokens=_c.ai.max_tokens.narrator_metadata,
             system=system,
             messages=[{"role": "user", "content": prompt}],

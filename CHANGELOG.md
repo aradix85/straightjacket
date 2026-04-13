@@ -7,20 +7,42 @@ Originally forked from [EdgeTales](https://github.com/edgetales/edgetales). See 
 
 ## [0.47.0] — 2026-04-13
 
-Combat, expedition, and scene challenge track lifecycle. Step 10.
+Combat, expedition, and scene challenge track lifecycle (step 10). Multi-model support. Validator and Elvira overhaul.
 
-- Bug fix: `available_moves` now filters progress tracks by `status == "active"`. Completed/failed tracks no longer expose their moves (fulfill_your_vow, take_decisive_action, finish_an_expedition, finish_the_scene)
+Step 10 — Track lifecycle:
+- Bug fix: `available_moves` now filters progress tracks by `status == "active"`. Completed/failed tracks no longer expose their moves
 - `complete_track` clears `combat_position` when combat track completes or fails
-- `sync_combat_tracks` removes orphaned active combat tracks when `combat_position` is cleared by narrative (metadata extractor). Called in `_finalize_scene` after post-narration
-- Scene challenge progress routing: `scene_challenge_progress_moves` list in engine.yaml. When active scene_challenge track exists and move is `adventure/face_danger` or `adventure/secure_an_advantage` with a hit, engine marks progress on scene_challenge track in addition to normal outcome
-- `/tracks` status command: `handle_tracks_query` handler, `build_tracks_status` serializer with type-specific context (combat shows position, expedition/scene_challenge labeled). Client routing for `/tracks` and `tracks` commands
-- strings.yaml: `status.track_combat`, `status.track_expedition`, `status.track_scene_challenge`, `status.no_tracks`
-- ARCHITECTURE.md: module ownership updated for combat sync, scene challenge routing, /tracks command
-- Multi-model support: `extra_body` in config.yaml is now per-role via `PerRoleDict`, consistent with temperature/top_p. Flat dict becomes default for all roles; per-role overrides replace the default entirely (e.g. GLM roles get `reasoning_effort: "none"`, Qwen roles get empty dict). Resolved in `sampling_params()`, passed per-call through `create_with_retry` — no state stored in provider
-- `metadata_model` field in config.yaml: metadata extractor (two-call pattern) can use a separate model. Falls back to `brain_model` if empty
-- Elvira bot model configurable via `elvira_config.yaml` → `ai.bot_model`. Defaults to `brain_model` if omitted
-- All models set to GLM-4.7 as baseline. Switch validator/metadata/elvira to Qwen after testing
-- 692 tests (+33 net), ruff clean, mypy clean
+- `sync_combat_tracks` removes orphaned active combat tracks when `combat_position` is cleared by narrative. Called in `_finalize_scene` after post-narration
+- Scene challenge progress routing: `scene_challenge_progress_moves` list in engine.yaml. Adventure moves mark progress on active scene_challenge track on hit
+- `/tracks` status command: handler, serializer with type-specific context, client routing, strings.yaml templates
+
+Multi-model support:
+- `extra_body` per-role via `PerRoleDict`, consistent with temperature/top_p. Flat dict becomes default; per-role overrides replace entirely. Resolved in `sampling_params()`, passed per-call — no state in provider
+- `fast_model` field: used by metadata extractor, opening_setup, revelation_check, recap, chapter_summary. Falls back to `brain_model` if empty
+- `validator_model` now actually used by validator (was hardcoded to `brain_model`)
+- `run_tool_loop` accepts `extra_body` parameter — fixes director crash when extra_body is per-role
+- Recommended config: GLM-4.7 on brain/narrator/director/architect, Qwen3-235B on validator/fast_model. Tested against GPT-OSS-120B (too strict, more retries) and GLM-only (too expensive, reasoning_effort conflicts with json_schema)
+
+Validator prompt rewrite:
+- RESOLUTION PACING: information discipline instead of sentence counting. Explicit anti-instruction against counting sentences (GLM hallucinated the old rule). NPC speech length is never a violation — only unsolicited facts
+- RESULT INTEGRITY: explicit skip for STRONG_HIT and dialog (was triggering false positives)
+- Empty-response fallback: retry without json_schema when GLM returns empty content, then parse from fenced blocks
+
+Elvira test bot:
+- Bot model configurable via `elvira_config.yaml` → `ai.bot_model` + `ai.temperature`
+- Turn-type sequencing: `build_turn_context` injects mandatory action type per turn (DIALOG, INVESTIGATE, PHYSICAL RISK, etc.) above narration context
+- Previous action tracking: prev_action passed between turns to prevent repetition
+- Active tracks (vows, connections, combat) shown in bot context
+- Setting selection respects config `setting_id` even in auto_mode (was always random)
+- Prompts rewritten with concrete examples per action type
+
+Bug fixes:
+- `enter_the_fray` without track_name: auto-generates from player intent instead of crashing
+- `SceneLogEntry` missing `oracle_answer` field: added
+- `characters_list` UNIQUE constraint: INSERT OR REPLACE prevents crash on duplicate NPC ids
+- Token logging: warns when provider returns no usage data
+
+692 tests, ruff clean, mypy clean
 
 ## [0.46.50] — 2026-04-12
 

@@ -51,6 +51,8 @@ Where to find things. If you want to change X, edit Y.
 | Emotion scoring, keyword boosts | `emotions.yaml` (no Python) |
 | UI text | `strings.yaml` (no Python) |
 | Server port | `config.yaml` (no Python) |
+| AI model assignment per role | `config.yaml` → `brain_model`, `narrator_model`, `director_model`, `validator_model`, `fast_model` |
+| Provider-specific params per role | `config.yaml` → `extra_body` (per-role via `PerRoleDict`) |
 | Move types or stat assignments | Datasworn JSON (moves loaded automatically per setting) |
 | A new setting (genre + constraints) | `data/settings/your_setting.yaml` + Datasworn JSON |
 | How dice rolls work | `mechanics/consequences.py` → `roll_action`, `roll_progress` |
@@ -101,6 +103,24 @@ Where to find things. If you want to change X, edit Y.
 | Information gate levels | `engine.yaml` → `information_gate` (no Python) |
 | Information gate computation | `mechanics/stance_gate.py` → `compute_npc_gate` |
 | Gate-filtered NPC prompt data | `prompt_builders.py` → `_npc_block` (gate 0–4 filtering) |
+
+## AI Model Assignment
+
+The engine supports multiple models via a single provider (e.g. Cerebras). Each AI call uses a model determined by config.yaml fields. `extra_body` overrides are per-role via `PerRoleDict` — a flat dict becomes the default, per-role keys replace it entirely.
+
+```
+brain_model     → Brain (move classification), correction analysis
+narrator_model  → Narrator (prose), recap
+director_model  → Director (NPC reflections, scene analysis — uses tool calling)
+validator_model → Validator (constraint checking), architect validator
+fast_model      → Metadata extractor, opening_setup, revelation_check, recap, chapter_summary
+```
+
+`fast_model` falls back to `brain_model` if empty. `validator_model` falls back to `brain_model` if empty.
+
+Recommended assignment (Cerebras): GLM-4.7 on brain/narrator/director/architect (creative + classification), Qwen3-235B-Instruct on validator/fast_model (analytical, structured output). GPT-OSS-120B tested but too strict as validator (9 retries vs Qwen's 1). GLM-only works but validator needs `reasoning_effort` disabled (empty `extra_body` override) to avoid empty json_schema responses.
+
+Elvira test bot model is configured separately in `tests/elvira/elvira_config.yaml` → `ai.bot_model`.
 
 ## File Map
 
@@ -188,11 +208,11 @@ src/straightjacket/
 
 **Typed dataclasses everywhere.** GameState has sub-objects (Resources, WorldState, NarrativeState, CampaignState). NpcData has 17 fields. MemoryEntry has 10. Move has 15 fields with typed trigger conditions and roll options. Attribute access, never dict-style. `SerializableMixin` handles serialization; complex classes override `to_dict`/`from_dict` manually.
 
-**Two-call pattern.** Narrator writes pure prose. A second fast-model call extracts NPC-related metadata (new NPCs, renames, details, deaths). This keeps the narrator prompt clean and works across providers.
+**Two-call pattern.** Narrator writes pure prose. A second call on `fast_model` extracts NPC-related metadata (new NPCs, renames, details, deaths). Same pattern for opening_setup, revelation_check, recap, and chapter_summary. `fast_model` defaults to a cheaper/faster model for these analytical calls.
 
 **Snapshot/restore.** `GameState.snapshot()` captures all mutable state before a turn. `restore()` reverts everything atomically. Used by correction (##) and momentum burn.
 
-**Provider abstraction.** `AIProvider` protocol with two implementations (Anthropic, OpenAI-compatible). The engine never imports provider SDKs directly. `create_with_retry` handles transient errors with exponential backoff.
+**Provider abstraction.** `AIProvider` protocol with two implementations (Anthropic, OpenAI-compatible). The engine never imports provider SDKs directly. `create_with_retry` handles transient errors with exponential backoff. Multi-model: config.yaml assigns models per role — `brain_model`, `narrator_model`, `director_model` for creative calls (GLM-4.7), `validator_model` and `fast_model` for analytical calls (Qwen3 235B). Provider-specific parameters (`extra_body`) are per-role via `PerRoleDict`, resolved in `sampling_params()` and passed per-call. The provider stores no model state.
 
 **Minimal UI.** Single HTML page, no build step, no npm. Server sends JSON, client renders. Scene headings for screen reader navigation, aria-live for automatic narration readout. One button (Save/Load), one text input. Status via `/status` and `/score` text commands — engine answers directly, no AI call. Status output is narrative, not mechanical: "seriously wounded" instead of "health 2", "growing trust" instead of "bond 4/10". The player never sees numbers, dice, or system terms.
 
@@ -227,7 +247,7 @@ src/straightjacket/
 ## Testing
 
 ```bash
-python -m pytest tests/ -v          # ~30 seconds, ~662 tests
+python -m pytest tests/ -v          # ~15 seconds, ~692 tests
 python tests/elvira/elvira.py --auto --turns 5   # direct engine (needs API key)
 python tests/elvira/elvira.py --ws --auto --turns 5  # via WebSocket server
 ```

@@ -53,6 +53,7 @@ def run_tool_loop(
     max_tool_rounds: int = 5,
     temperature: float | None = None,
     top_p: float | None = None,
+    extra_body: dict | None = None,
     log_role: str = "",
 ) -> tuple[str, list[dict]]:
     """Iterative tool-call loop.
@@ -122,6 +123,7 @@ def run_tool_loop(
             tools=get_tools(role),
             temperature=temperature,
             top_p=top_p,
+            extra_body=extra_body,
             log_role=log_role,
         )
 

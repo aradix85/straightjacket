@@ -69,15 +69,24 @@ def ask_bot(provider: AIProvider, system: str, user: str, max_tokens: int = 300,
     return response.content.strip()
 
 
-def build_turn_context(game: GameState, narration: str, turn: int) -> str:
-    """Build what the bot-Claude sees each turn. Uses engine's get_current_act()."""
+def build_turn_context(game: GameState, narration: str, turn: int, prev_action: str = "") -> str:
+    """Build what the bot sees each turn. Includes prev action for variety enforcement."""
     res = game.resources
     world = game.world
 
     active_npcs = "\n".join(f"  - {n.name} [{n.disposition}]" for n in game.npcs if n.status == "active") or "  (none)"
 
     active_clocks = (
-        "\n".join(f"  - {c.name}: {c.filled}/{c.segments} ticks" for c in world.clocks if not c.fired) or "  (none)"
+        "\n".join(f"  - {c.name}: {c.filled}/{c.segments}" for c in world.clocks if not c.fired) or "  (none)"
+    )
+
+    active_tracks = (
+        "\n".join(
+            f"  - {t.name} ({t.track_type}, {t.rank}): {t.filled_boxes}/10"
+            for t in game.progress_tracks
+            if t.status == "active"
+        )
+        or "  (none)"
     )
 
     story_block = ""
@@ -91,7 +100,32 @@ def build_turn_context(game: GameState, narration: str, turn: int) -> str:
         if conflict:
             story_block += f"\nCENTRAL CONFLICT: {conflict[:120]}"
 
-    return f"""TURN {turn} - Scene {game.narrative.scene_count}
+    # Turn-type schedule — explicit directive at the TOP of context
+    turn_types = [
+        "DIALOG — talk to an NPC, ask a question, no pressure",
+        "INVESTIGATE — examine, search, study something in the environment",
+        "PHYSICAL RISK — face danger, fight, climb, force something",
+        "DIALOG or INVESTIGATE — follow up on what you learned",
+        "SOCIAL PRESSURE — compel, threaten, persuade, negotiate",
+        "TRAVEL — move to a new location, explore a new area",
+        "INVESTIGATE — study what you find in the new location",
+        "PHYSICAL RISK — take a dangerous action based on what you know",
+        "DIALOG — talk to someone about what happened",
+        "ACT ON YOUR VOW — whatever move fits best",
+    ]
+    turn_idx = (turn - 1) % len(turn_types)
+    turn_directive = turn_types[turn_idx]
+
+    prev_block = ""
+    if prev_action:
+        prev_block = f"\nYour previous action was: {prev_action[:80]}\nDo NOT repeat that type of action."
+
+    return f"""=== MANDATORY ACTION TYPE: {turn_directive} ===
+You MUST write a {turn_directive.split(' — ')[0]} action this turn.
+Only deviate if you are wounded, under attack, or in immediate danger.
+{prev_block}
+
+TURN {turn} - Scene {game.narrative.scene_count}
 
 --- LATEST NARRATION ---
 {narration.strip()}
@@ -101,16 +135,15 @@ CHARACTER : {game.player_name}
 Location  : {world.current_location or "(unknown)"}
 Time      : {world.time_of_day or "(unknown)"}
 
-STATS     : Edge {game.edge} | Heart {game.heart} | Iron {game.iron} | Shadow {game.shadow} | Wits {game.wits}
 RESOURCES : Health {res.health}/5 | Spirit {res.spirit}/5 | Supply {res.supply}/5 | Momentum {res.momentum}/{res.max_momentum}
-CHAOS     : {world.chaos_factor}  |  Chapter {game.campaign.chapter_number}{story_block}
-
+{story_block}
 ACTIVE NPCs:
 {active_npcs}
+ACTIVE TRACKS (vows, connections, combat):
+{active_tracks}
 ACTIVE CLOCKS:
 {active_clocks}
 
-NOTE: Vary your approach — don't repeat the same action type multiple turns in a row.
 What does {game.player_name} do next? Write only the player action."""
 
 

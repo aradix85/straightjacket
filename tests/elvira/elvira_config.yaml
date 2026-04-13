@@ -10,14 +10,14 @@ auto_mode: true
 # and tactical decisions. Defaults to config.yaml brain_model if omitted.
 # Qwen is faster and cheaper — good enough for test player input generation.
 ai:
-  bot_model: "qwen-3-235b-a22b-instruct-2507"
+  bot_model: "gpt-oss-120b"
   temperature: 0.7                    # Higher = more varied test inputs
 
 game:
   load_existing: false
   save_name: "autosave"
   # Datasworn creation fields. Leave blank to roll randomly.
-  setting_id: "starforged"          # starforged, classic, sundered_isles (blank = random)
+  setting_id: "starforged"            # Fixed for reproducible test runs
   player_name: ""                   # blank = roll from oracle
   pronouns: ""                      # blank = random
   # paths: set in code (random 2)

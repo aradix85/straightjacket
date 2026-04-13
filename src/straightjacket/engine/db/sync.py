@@ -88,7 +88,7 @@ def _insert_threads(conn: sqlite3.Connection, game: GameState) -> None:
 def _insert_characters_list(conn: sqlite3.Connection, game: GameState) -> None:
     for c in game.narrative.characters_list:
         conn.execute(
-            "INSERT INTO characters_list (id, name, entry_type, weight, active) VALUES (?, ?, ?, ?, ?)",
+            "INSERT OR IGNORE INTO characters_list (id, name, entry_type, weight, active) VALUES (?, ?, ?, ?, ?)",
             (c.id, c.name, c.entry_type, c.weight, int(c.active)),
         )
 

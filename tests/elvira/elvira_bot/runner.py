@@ -146,6 +146,7 @@ def run_session(bot_cfg: dict, auto_override: bool = False, turns_override: int 
             print(SEPARATOR)
 
         # ── Turn loop ─────────────────────────────────────────
+        prev_action = ""
         for _ in range(max_turns):
             total_turns += 1
             print(f"\n{SEPARATOR}\n  TURN {total_turns}/{max_chapters * max_turns}\n{SEPARATOR}")
@@ -174,7 +175,10 @@ def run_session(bot_cfg: dict, auto_override: bool = False, turns_override: int 
                     do_invariants,
                     slog,
                     prev_npcs,
+                    prev_action=prev_action,
                 )
+
+            prev_action = turn_rec.action or ""
 
             # Track burn stats
             if turn_rec.burn_offered:
@@ -297,8 +301,8 @@ def _setup_game(
         )
         return game, narration, chat_messages
 
-    setting_id = game_cfg.get("setting_id", "starforged")
-    if auto_mode:
+    setting_id = game_cfg.get("setting_id", "")
+    if not setting_id:
         available = [s for s in list_packages() if s != "delve"] or ["starforged"]
         setting_id = _random.choice(available)
 
@@ -333,9 +337,10 @@ def _play_turn(
     do_invariants: bool,
     slog: SessionLog,
     prev_npcs: list[NpcSnapshot] | None,
+    prev_action: str = "",
 ) -> tuple[GameState, str, TurnRecord, bool]:
     # 1. Bot decides action
-    context = build_turn_context(game, narration, turn)
+    context = build_turn_context(game, narration, turn, prev_action=prev_action)
     try:
         action = ask_bot(provider, persona, context, max_tokens=500)
     except Exception as e:

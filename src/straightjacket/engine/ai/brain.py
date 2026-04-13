@@ -188,7 +188,7 @@ def call_revelation_check(
         response = create_with_retry(
             provider,
             max_retries=_c.ai.max_retries.revelation_check,
-            model=_c.ai.brain_model,
+            model=_c.ai.fast_model or _c.ai.brain_model,
             max_tokens=_c.ai.max_tokens.revelation_check,
             system=system,
             messages=[{"role": "user", "content": prompt}],

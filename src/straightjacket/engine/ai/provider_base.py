@@ -207,11 +207,14 @@ def create_with_retry(
                 extra_body=extra_body,
             )
             result = post_process_response(response)
-            if log_role and result.usage:
-                inp = result.usage.get("input_tokens", 0)
-                out = result.usage.get("output_tokens", 0)
-                log(f"[TOKENS] {log_role}: {inp} in + {out} out = {inp + out} total")
-                log_tokens(log_role, inp, out)
+            if log_role:
+                if result.usage:
+                    inp = result.usage.get("input_tokens", 0)
+                    out = result.usage.get("output_tokens", 0)
+                    log(f"[TOKENS] {log_role}: {inp} in + {out} out = {inp + out} total")
+                    log_tokens(log_role, inp, out)
+                else:
+                    log(f"[TOKENS] {log_role}: usage not returned by provider", level="warning")
             return result
 
         except Exception as e:

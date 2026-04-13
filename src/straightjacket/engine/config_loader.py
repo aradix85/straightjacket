@@ -122,7 +122,7 @@ class AIConfig:
     narrator_model: str = ""
     director_model: str = ""
     validator_model: str = ""
-    metadata_model: str = ""
+    fast_model: str = ""  # Analytical calls: metadata, revelation_check, opening_setup, recap
     extra_body: PerRoleDict = field(default_factory=PerRoleDict)
     max_tokens: PerRoleInt = field(default_factory=PerRoleInt)
     max_retries: PerRoleInt = field(default_factory=PerRoleInt)
@@ -203,7 +203,7 @@ def _parse_config(data: dict) -> AppConfig:
             narrator_model=ad.get("narrator_model", ""),
             director_model=ad.get("director_model", ""),
             validator_model=ad.get("validator_model", ""),
-            metadata_model=ad.get("metadata_model", ""),
+            fast_model=ad.get("fast_model", ""),
             extra_body=_build_per_role_dict(ad.get("extra_body", {})),
             max_tokens=_build_per_role_int(ad.get("max_tokens", {})),
             max_retries=_build_per_role_int(

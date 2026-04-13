@@ -178,11 +178,10 @@ def _update_scene_lists(game: GameState, brain: BrainResult, metadata: dict, sce
         name = new_npc.get("name", "")
         if not name:
             continue
-        existing = any(c.name == name for c in game.narrative.characters_list)
+        npc_obj = next((n for n in game.npcs if n.name == name), None)
+        entry_id = npc_obj.id if npc_obj else f"char_{len(game.narrative.characters_list) + 1}"
+        existing = any(c.name == name or c.id == entry_id for c in game.narrative.characters_list)
         if not existing:
-            # Find the NPC id from game.npcs (process_new_npcs already added it)
-            npc_obj = next((n for n in game.npcs if n.name == name), None)
-            entry_id = npc_obj.id if npc_obj else f"char_{len(game.narrative.characters_list) + 1}"
             game.narrative.characters_list.append(
                 CharacterListEntry(id=entry_id, name=name, entry_type="npc", weight=1, active=True)
             )
@@ -449,9 +448,11 @@ def process_turn(
     track_category = track_creating.get(brain.move)
     if track_category:
         if not brain.track_name:
-            raise ValueError(f"Move {brain.move} requires track_name but Brain omitted it.")
+            brain.track_name = brain.player_intent[:40].strip() or "Unnamed conflict"
+            log(f"[Track] Brain omitted track_name, generated: {brain.track_name}", level="warning")
         if not brain.track_rank:
-            raise ValueError(f"Move {brain.move} requires track_rank but Brain omitted it.")
+            brain.track_rank = "dangerous"
+            log("[Track] Brain omitted track_rank, defaulting to dangerous", level="warning")
         slug = brain.track_name.lower().replace(" ", "_")
         track_id = f"{track_category}_{slug}"
         new_track = ProgressTrack(

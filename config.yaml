@@ -12,37 +12,46 @@ server:
 # provider: "anthropic" or "openai_compatible"
 # api_base: only needed for openai_compatible
 # api_key_env: environment variable name that holds the API key
+#
+# Model assignment (Cerebras):
+#   GLM-4.7 — brain, narrator, director, architect (creative + classification)
+#   Qwen3 235B Instruct — validator, fast_model (analytical, structured output)
 
 ai:
   provider: "openai_compatible"
   api_base: "https://api.cerebras.ai/v1"
   api_key_env: "CEREBRAS_API_KEY"
-  prompts_file: "prompts.yaml"        # Per-provider prompt tuning: prompts_claude.yaml, prompts_glm47.yaml, etc.
+  prompts_file: "prompts.yaml"
   brain_model: "zai-glm-4.7"
   narrator_model: "zai-glm-4.7"
   director_model: "zai-glm-4.7"
-  validator_model: "zai-glm-4.7"
-  metadata_model: "zai-glm-4.7"       # Metadata extractor (two-call pattern). Falls back to brain_model if empty.
+  validator_model: "qwen-3-235b-a22b-instruct-2507"
+  fast_model: "qwen-3-235b-a22b-instruct-2507"
   extra_body:
-    default:                           # Applied to all roles unless overridden per-role
+    default:                           # GLM roles
       reasoning_effort: "none"
-    # Per-role overrides (uncomment when switching roles to models that don't need reasoning_effort):
-    # validator: {}                    # Empty dict = no extra_body for this role
+    validator: {}                      # Qwen — no reasoning_effort
+    validator_architect: {}
+    narrator_metadata: {}
+    opening_setup: {}
+    revelation_check: {}
+    recap: {}
+    chapter_summary: {}
 
   max_tokens:
-    brain: 8192               # avg 97, json classification
-    brain_setup: 8192        # character generation, larger json
-    narrator: 8192           # avg 312, prose output (retries need room)
-    narrator_metadata: 8192   # avg 101, npc extraction json
-    opening_setup: 8192      # structured extraction from opening narration
-    revelation_check: 8192    # single boolean + reasoning
-    recap: 8192              # 4-6 sentences
-    architect: 8192          # avg 833, story blueprint json
-    director: 8192           # avg 364, guidance + reflections json
-    correction: 8192         # correction analysis json
-    chapter_summary: 8192    # summary json
-    validator: 8192           # avg 96, pass/fail json
-    validator_architect: 8192 # pass/fail + optional rewrites
+    brain: 8192
+    brain_setup: 8192
+    narrator: 8192
+    narrator_metadata: 8192
+    opening_setup: 8192
+    revelation_check: 8192
+    recap: 8192
+    architect: 8192
+    director: 8192
+    correction: 8192
+    chapter_summary: 8192
+    validator: 8192
+    validator_architect: 8192
   max_retries:
     brain: 3
     brain_setup: 3
@@ -58,8 +67,8 @@ ai:
     validator: 3
     validator_architect: 3
   max_tool_rounds:
-    brain: 3                 # NPC lookup, oracle rolls before classification
-    director: 3              # NPC/thread/clock queries before structured output
+    brain: 3
+    director: 3
   temperature:
     brain: 0.6
     brain_setup: 0.6
@@ -75,7 +84,7 @@ ai:
     validator: 0.3
     validator_architect: 0.3
   top_p:
-    default: 0.95              # Applied to all roles. Add per-role overrides here if needed.
+    default: 0.95
 
 # ── Language ──────────────────────────────────────────────────
 language:

@@ -59,7 +59,7 @@ def call_recap(provider: AIProvider, game: GameState, config: EngineConfig | Non
         response = create_with_retry(
             provider,
             max_retries=_c.ai.max_retries.recap,
-            model=_c.ai.brain_model,
+            model=_c.ai.fast_model or _c.ai.brain_model,
             max_tokens=_c.ai.max_tokens.recap,
             system=get_prompt("recap", lang=lang, content_boundaries_block=content_boundaries_block(game)),
             messages=[
@@ -203,7 +203,7 @@ def call_chapter_summary(
         response = create_with_retry(
             provider,
             max_retries=_c.ai.max_retries.chapter_summary,
-            model=_c.ai.brain_model,
+            model=_c.ai.fast_model or _c.ai.brain_model,
             max_tokens=_c.ai.max_tokens.chapter_summary,
             system=get_prompt("chapter_summary", lang=lang, content_boundaries_block=content_boundaries_block(game)),
             messages=[

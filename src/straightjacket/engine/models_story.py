@@ -57,6 +57,7 @@ class SceneLogEntry(SerializableMixin):
     validator: dict = field(default_factory=dict)
     rich_summary: str = ""
     director_trigger: str = ""
+    oracle_answer: str = ""
     revelation_check: dict = field(default_factory=dict)
 
 

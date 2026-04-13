@@ -13,7 +13,7 @@ Cost: ~0.3s per check with a fast model.
 import json
 import re
 
-from ..config_loader import cfg
+from ..config_loader import cfg, sampling_params
 from ..logging_util import log
 from ..models import EngineConfig, GameState
 from .provider_base import AIProvider, create_with_retry
@@ -105,10 +105,16 @@ def validate_narration(
 
 GENRE PHYSICS: Materials MUST NOT exhibit consciousness, memory, or transformation. Wood does not weep, bleed, reshape, or form faces. Stone does not remember. Fluids do not change color symbolically. Inanimate objects MUST NOT have agency, awareness, or intent. If the setting is low-magic or grounded sci-fi, ANY supernatural element is a violation. When in doubt about genre physics, FAIL — genre drift is harder to fix than a retry.
 
-RESOLUTION PACING: NPCs answer ONLY the specific question asked — no volunteering theories, connections, accusations, or context the player did not request. Count the NPC's spoken sentences: more than TWO is a violation. A new mystery must not be explained in the scene it appears. Tension introduced must survive to the next scene.
-WRONG: Player asks where the ship docked. NPC answers, then adds that Ashwatch burned, the woman disappeared, and she had debts — all unsolicited.
-WRONG: Player asks about tracks. NPC identifies the stride, explains it's not a ghost, names the hatch, and suggests checking the forges — four facts when one was asked.
-RIGHT: NPC gives one direct answer, then stops talking or does something physical.
+RESOLUTION PACING: NPCs respond to what was asked or done — nothing more. The test is INFORMATION, not length.
+VIOLATION: NPC volunteers facts, theories, names, locations, or connections that the player did not ask about and has not earned through a successful move. Each NPC response should contain at most ONE new fact beyond the direct answer.
+ALLOWED: NPC speaks at length IF every sentence responds to the player's action or question. Emotional reactions, resistance, physical actions, and atmosphere are always fine regardless of length.
+IMPORTANT: Do NOT count sentences. Sentence count is NEVER a violation. An NPC speaking three, four, or ten sentences is FINE if they are all responsive to the player. Only flag unsolicited NEW FACTS.
+WRONG: Player asks where the ship docked. NPC answers, then adds that Ashwatch burned, the woman disappeared, and she had debts — three unsolicited facts.
+WRONG: Player asks about tracks. NPC identifies the stride, names the hatch, and suggests checking the forges — volunteering a plan the player didn't ask for.
+RIGHT: Player asks where the ship docked. NPC says it was the eastern pier, hesitates, then looks away. One fact, one reaction.
+RIGHT: Player compels an NPC. NPC argues back, deflects, eventually gives in with a grudging answer. Long exchange, but every sentence is a response to pressure.
+RIGHT: NPC gives orders during a crisis — "Lock the hatch, reroute power, brace for impact." These are reactive, not unsolicited facts.
+A new mystery must not be explained in the scene it appears. Tension introduced must survive to the next scene.
 
 PLAYER AGENCY: This applies ONLY to the player character (the "you" in narration).{pc_hint}
 TWO CATEGORIES — only the first is a violation:
@@ -116,11 +122,11 @@ COGNITIVE (VIOLATION): The narrator decides what the player character thinks, co
 SENSORY (ALLOWED): The narrator describes how things feel, look, sound, smell to the player character — including subjective or metaphorical descriptions. "unnervingly white", "sharp enough to cut", "silence feels heavy", "cold enough to bite", "the air tastes of copper". These create atmosphere and are ALWAYS allowed. PASS these.
 NPC EXCEPTION: Any description of an NPC's behavior, demeanor, or emotional state is ALWAYS allowed. "hollow", "mechanical", "guarded", "stripped of emotion" about an NPC = PASS.
 
-RESULT INTEGRITY: If result_type is MISS, the failure must be concrete — the situation is WORSE than before. What is NOT allowed: the player character LEARNS, DISCOVERS, GAINS insight, or makes PROGRESS. If WEAK_HIT, there must be a SPECIFIC tangible cost: something broken, lost, spent, damaged. Atmospheric tension alone is not a cost. If dialog, skip this check.
+RESULT INTEGRITY: If result_type is MISS, the failure must be concrete — the situation is WORSE than before. What is NOT allowed: the player character LEARNS, DISCOVERS, GAINS insight, or makes PROGRESS. If WEAK_HIT, there must be a SPECIFIC tangible cost: something broken, lost, spent, damaged. Atmospheric tension alone is not a cost. If STRONG_HIT or dialog, skip this check entirely — STRONG_HIT is clean success with no required cost.
 {cons_sentence_text}
 DOUBT RULES:
 - PLAYER AGENCY: flag ONLY cognitive violations (thoughts, decisions, conclusions, memories). Sensory descriptions and atmospheric metaphors are NEVER violations — PASS those without hesitation.
-- RESOLUTION PACING: flag ONLY when the NPC speaks more than two sentences or volunteers information the player did not ask about. A short answer followed by a physical action is ALLOWED — pass those.
+- RESOLUTION PACING: flag ONLY when the NPC volunteers unsolicited facts — names, locations, theories, plans — that the player did not ask about. Length alone is NEVER a violation. Emotional reactions, resistance, and physical actions are ALWAYS allowed.
 - GENRE PHYSICS: when in doubt, FAIL — genre drift compounds.
 
 Return pass=true if ALL constraints met.
@@ -137,18 +143,40 @@ Check constraints."""
         response = create_with_retry(
             provider,
             max_retries=1,
-            model=_c.ai.brain_model,
-            max_tokens=1024,
+            model=_c.ai.validator_model or _c.ai.brain_model,
+            max_tokens=_c.ai.max_tokens.validator,
             system=system,
             messages=[{"role": "user", "content": prompt}],
             json_schema=VALIDATOR_SCHEMA,
-            temperature=0.2,
-            top_p=0.9,
+            **sampling_params("validator"),
             log_role="validator",
         )
-        result = json.loads(response.content)
-        if not result.get("pass", True):
-            llm_violations = result.get("violations", [])
+        content = response.content.strip()
+        if not content:
+            # Empty response from json_schema mode — retry without schema
+            log("[Validator] Empty response from json_schema, retrying without schema")
+            response = create_with_retry(
+                provider,
+                max_retries=1,
+                model=_c.ai.validator_model or _c.ai.brain_model,
+                max_tokens=_c.ai.max_tokens.validator,
+                system=system
+                + '\n\nRespond with ONLY a JSON object: {"pass": true/false, "violations": [...], "correction": "..."}',
+                messages=[{"role": "user", "content": prompt}],
+                **sampling_params("validator"),
+                log_role="validator",
+            )
+            content = response.content.strip()
+        if content:
+            # Try direct parse, then extract from fenced blocks
+            try:
+                result = json.loads(content)
+            except json.JSONDecodeError:
+                from .brain import _extract_json
+
+                result = _extract_json(content)
+            if result and not result.get("pass", True):
+                llm_violations = result.get("violations", [])
     except Exception as e:
         log(f"[Validator] LLM check failed ({e}), using rule results only", level="warning")
 
@@ -443,13 +471,12 @@ Check genre fidelity. Be strict — if it implies anything beyond physical reali
         response = create_with_retry(
             provider,
             max_retries=1,
-            model=_c.ai.brain_model,
-            max_tokens=1024,
+            model=_c.ai.validator_model or _c.ai.brain_model,
+            max_tokens=_c.ai.max_tokens.validator_architect,
             system=system,
             messages=[{"role": "user", "content": prompt}],
             json_schema=ARCHITECT_VALIDATOR_SCHEMA,
-            temperature=0.2,
-            top_p=0.9,
+            **sampling_params("validator_architect"),
             log_role="validator_architect",
         )
         result = json.loads(response.content)
