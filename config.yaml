@@ -12,11 +12,6 @@ server:
 # provider: "anthropic" or "openai_compatible"
 # api_base: only needed for openai_compatible
 # api_key_env: environment variable name that holds the API key
-#
-# Model assignment (Cerebras):
-#   GLM-4.7 — brain, narrator, director, architect (creative + classification)
-#   Qwen3 235B Instruct — validator, fast_model (analytical, structured output)
-
 ai:
   provider: "openai_compatible"
   api_base: "https://api.cerebras.ai/v1"
@@ -25,8 +20,8 @@ ai:
   brain_model: "zai-glm-4.7"
   narrator_model: "zai-glm-4.7"
   director_model: "zai-glm-4.7"
-  validator_model: "qwen-3-235b-a22b-instruct-2507"
-  fast_model: "qwen-3-235b-a22b-instruct-2507"
+  validator_model: "gpt-oss-120b"
+  fast_model: "gpt-oss-120b"
   extra_body:
     default:                           # GLM roles
       reasoning_effort: "none"
