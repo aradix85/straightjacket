@@ -64,26 +64,31 @@ class ClusterConfig:
     extra_body: dict[str, Any] = field(default_factory=dict)
 
 
-# Default role → cluster mapping. Overridable in config.yaml.
+# Default role → cluster mapping. Override via role_cluster in config.yaml.
 _DEFAULT_ROLE_CLUSTER: dict[str, str] = {
-    "narrator": "creative",
+    "narrator": "narrator",
     "architect": "creative",
     "brain": "classification",
     "correction": "classification",
-    "director": "tool_calling",
+    "director": "creative",
     "validator": "analytical",
     "validator_architect": "analytical",
-    "narrator_metadata": "extraction",
-    "opening_setup": "extraction",
-    "revelation_check": "extraction",
-    "chapter_summary": "extraction",
-    "recap": "extraction",
+    "narrator_metadata": "analytical",
+    "opening_setup": "analytical",
+    "revelation_check": "analytical",
+    "chapter_summary": "analytical",
+    "recap": "analytical",
 }
 
 
 @dataclass
 class AIConfig:
-    """AI provider and model configuration."""
+    """AI provider and model configuration.
+
+    Clusters are the single source of truth. No per-role overrides.
+    To change a role's parameters, either change the cluster or remap
+    the role to a different cluster via role_cluster.
+    """
 
     provider: str = "openai_compatible"
     api_base: str = ""
@@ -91,14 +96,6 @@ class AIConfig:
     prompts_file: str = "prompts.yaml"
     clusters: dict[str, ClusterConfig] = field(default_factory=dict)
     role_cluster: dict[str, str] = field(default_factory=dict)
-    role_model: dict[str, str] = field(default_factory=dict)
-    # Per-role overrides — flat dicts, no wrapper types. sampling_params() resolves.
-    max_tokens: dict[str, int] = field(default_factory=dict)
-    max_retries: dict[str, int] = field(default_factory=dict)
-    temperature: dict[str, float] = field(default_factory=dict)
-    top_p: dict[str, float] = field(default_factory=dict)
-    max_tool_rounds: dict[str, int] = field(default_factory=dict)
-    extra_body: dict[str, dict[str, Any]] = field(default_factory=dict)
 
 
 @dataclass
@@ -165,13 +162,6 @@ def _parse_config(data: dict) -> AppConfig:
             prompts_file=ad.get("prompts_file", "prompts.yaml"),
             clusters=clusters,
             role_cluster=ad.get("role_cluster", {}),
-            role_model=ad.get("role_model", {}),
-            max_tokens={k: int(v) for k, v in ad.get("max_tokens", {}).items()},
-            max_retries={k: int(v) for k, v in ad.get("max_retries", {}).items()},
-            temperature={k: float(v) for k, v in ad.get("temperature", {}).items() if v is not None},
-            top_p={k: float(v) for k, v in ad.get("top_p", {}).items() if v is not None},
-            max_tool_rounds={k: int(v) for k, v in ad.get("max_tool_rounds", {}).items()},
-            extra_body={k: dict(v) for k, v in ad.get("extra_body", {}).items() if isinstance(v, dict)},
         )
 
     if "language" in data:
@@ -245,46 +235,34 @@ def _cluster_for_role(role: str) -> ClusterConfig | None:
 
 
 def model_for_role(role: str) -> str:
-    """Resolve the model for an AI role via: per-role override → cluster → error."""
-    _c = cfg()
-    if role in _c.ai.role_model:
-        return _c.ai.role_model[role]
+    """Resolve the model for an AI role from its cluster."""
     cluster = _cluster_for_role(role)
     if cluster and cluster.model:
         return cluster.model
+    _c = cfg()
     cluster_name = _c.ai.role_cluster.get(role, _DEFAULT_ROLE_CLUSTER.get(role, ""))
-    raise ValueError(
-        f"No model configured for role '{role}'. "
-        f"Set ai.clusters.{cluster_name}.model or ai.role_model.{role} in config.yaml."
-    )
+    raise ValueError(f"No model configured for role '{role}'. Set ai.clusters.{cluster_name}.model in config.yaml.")
 
 
 def sampling_params(role: str) -> dict:
-    """Get all call parameters for an AI role.
+    """Get all call parameters for an AI role from its cluster.
 
-    Resolution order per parameter: per-role override → cluster default → global default.
-    Returns a dict suitable for unpacking into create_with_retry():
-        create_with_retry(provider, **sampling_params("narrator"), system=..., messages=...)
+    The cluster is the single source of truth.
+    Returns a dict suitable for unpacking into create_with_retry().
     """
-    _c = cfg()
     cluster = _cluster_for_role(role)
     if not cluster:
         raise ValueError(
             f"No cluster configured for role '{role}'. Check ai.clusters and role_cluster mapping in config.yaml."
         )
 
-    params: dict[str, Any] = {}
-
-    # Every parameter: per-role override → cluster value. No hidden defaults.
-    params["max_tokens"] = _c.ai.max_tokens.get(role, cluster.max_tokens)
-    params["max_retries"] = _c.ai.max_retries.get(role, cluster.max_retries)
-    params["temperature"] = _c.ai.temperature.get(role, cluster.temperature)
-    params["top_p"] = _c.ai.top_p.get(role, cluster.top_p)
-
-    role_eb = _c.ai.extra_body.get(role)
-    if role_eb is not None:
-        params["extra_body"] = role_eb
-    elif cluster.extra_body:
+    params: dict[str, Any] = {
+        "max_tokens": cluster.max_tokens,
+        "max_retries": cluster.max_retries,
+        "temperature": cluster.temperature,
+        "top_p": cluster.top_p,
+    }
+    if cluster.extra_body:
         params["extra_body"] = cluster.extra_body
 
     return params

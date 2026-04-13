@@ -7,8 +7,12 @@ Uses the same provider and config infrastructure as the engine.
 Usage:
     python tests/model_eval/eval.py                          # all roles, configured models
     python tests/model_eval/eval.py --role brain             # brain only
-    python tests/model_eval/eval.py --role brain --model gpt-oss-120b  # override model
+    python tests/model_eval/eval.py --role brain --model gpt-oss-120b  # test model with role's cluster params
     python tests/model_eval/eval.py --verbose                # show full model output
+
+The --model flag overrides only the model, not the cluster parameters.
+This tests whether the model can function within the role's existing
+parameter constraints (temperature, extra_body, etc.).
 """
 
 from __future__ import annotations
@@ -389,6 +393,14 @@ _ROLE_EVALUATORS = {
     "extraction": eval_extraction,
 }
 
+# Eval roles map to engine roles for model/params resolution.
+# "extraction" tests narrator_metadata capability.
+_EVAL_TO_ENGINE_ROLE: dict[str, str] = {
+    "brain": "brain",
+    "validator": "validator",
+    "extraction": "narrator_metadata",
+}
+
 
 def load_cases() -> dict[str, list[dict]]:
     """Load test cases from YAML."""
@@ -401,15 +413,9 @@ def run_role(
 ) -> RoleReport:
     """Run all cases for one role."""
     evaluator = _ROLE_EVALUATORS[role]
-
-    # Resolve model and params
-    if model_override:
-        model = model_override
-        params = sampling_params(role)
-    else:
-        model = model_for_role(role)
-        params = sampling_params(role)
-
+    engine_role = _EVAL_TO_ENGINE_ROLE[role]
+    model = model_override or model_for_role(engine_role)
+    params = sampling_params(engine_role)
     report = RoleReport(role=role, model=model)
 
     for case in cases:
@@ -481,7 +487,8 @@ def main() -> None:
             print(f"\n{role}: no test cases")
             continue
 
-        model = args.model or model_for_role(role)
+        engine_role = _EVAL_TO_ENGINE_ROLE[role]
+        model = args.model or model_for_role(engine_role)
         print(f"\n{role} ({model})")
         print("-" * 40)
 

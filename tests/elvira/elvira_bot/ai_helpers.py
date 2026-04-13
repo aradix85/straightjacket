@@ -124,7 +124,7 @@ def build_turn_context(game: GameState, narration: str, turn: int, prev_action: 
         prev_block = f"\nYour previous action was: {prev_action[:80]}\nDo NOT repeat that type of action."
 
     return f"""=== MANDATORY ACTION TYPE: {turn_directive} ===
-You MUST write a {turn_directive.split(' — ')[0]} action this turn.
+You MUST write a {turn_directive.split(" — ")[0]} action this turn.
 Only deviate if you are wounded, under attack, or in immediate danger.
 {prev_block}
 

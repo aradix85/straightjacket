@@ -5,7 +5,7 @@ import html
 import re
 
 from .ai.provider_base import AIProvider, create_with_retry
-from .config_loader import cfg, model_for_role, sampling_params
+from .config_loader import model_for_role, sampling_params
 from .engine_loader import eng
 from .logging_util import log
 from .models import EngineConfig, GameState, MemoryEntry
@@ -215,9 +215,6 @@ def call_director(
     try:
         _dp = sampling_params("director")
         _director_model = model_for_role("director")
-        _max_tool_rounds = cfg().ai.max_tool_rounds.get("director")
-        if _max_tool_rounds is None:
-            raise ValueError("ai.max_tool_rounds.director not configured in config.yaml.")
 
         # Phase 1: tool loop for context gathering
         tool_context = ""
@@ -244,7 +241,7 @@ def call_director(
                     system=system,
                     messages=[{"role": "user", "content": prompt}],
                     max_tokens=_dp["max_tokens"],
-                    max_tool_rounds=_max_tool_rounds,
+                    max_tool_rounds=eng().pacing.max_tool_rounds,
                     temperature=_dp.get("temperature"),
                     top_p=_dp.get("top_p"),
                     extra_body=_dp.get("extra_body"),

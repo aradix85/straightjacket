@@ -10,11 +10,11 @@ Originally forked from [EdgeTales](https://github.com/edgetales/edgetales). See 
 Cluster-based AI model assignment. Full codebase review. Bug fixes.
 
 Cluster refactor:
-- Five model clusters: creative (narrator, architect), classification (brain, correction), tool_calling (director), analytical (validator, validator_architect), extraction (narrator_metadata, opening_setup, revelation_check, chapter_summary, recap)
-- `ClusterConfig` dataclass: model, temperature, top_p, max_tokens, max_retries, extra_body. Every field required — parser validates and errors on missing fields
-- `model_for_role(role)` resolves model via per-role override → cluster. `sampling_params(role)` resolves all call parameters via per-role override → cluster. No hidden defaults, no fallbacks
-- `max_tool_rounds` as per-role config (only director uses it), not on cluster
-- Removed: `PerRoleInt` (12 hardcoded fields), `PerRoleIntDict`, `PerRoleFloat`, `PerRoleDict`, `ToolRounds`, all builder functions, `brain_model`/`narrator_model`/`director_model`/`validator_model`/`fast_model` fields, all `or` fallback chains, all legacy migration code
+- Four model clusters: narrator (prose, high temperature), creative (architect, director), classification (brain, correction), analytical (validator, validator_architect, narrator_metadata, opening_setup, revelation_check, chapter_summary, recap)
+- `ClusterConfig` dataclass: model, temperature, top_p, max_tokens, max_retries, extra_body. Every field required — parser validates and errors on missing fields. Clusters are the single source of truth — no per-role overrides
+- `model_for_role(role)` resolves model from cluster. `sampling_params(role)` resolves all call parameters from cluster. No hidden defaults, no fallbacks, no override layers
+- `max_tool_rounds` moved to engine.yaml `pacing` section (mechanical limit, not model parameter)
+- Removed: `PerRoleInt` (12 hardcoded fields), `PerRoleIntDict`, `PerRoleFloat`, `PerRoleDict`, `ToolRounds`, all builder functions, `brain_model`/`narrator_model`/`director_model`/`validator_model`/`fast_model` fields, all `or` fallback chains, all legacy migration code, all per-role override dicts
 - All 15 `create_with_retry` call sites refactored: model and all parameters resolved from config, no direct config field access in AI modules
 - `cfg()` and `_c = cfg()` removed from brain.py, narrator.py, architect.py, correction.py, validator.py — these modules now import only `model_for_role` and `sampling_params`
 
@@ -39,7 +39,7 @@ Documentation:
 - ARCHITECTURE.md: Known Limitations section, cluster-based AI Model Assignment section
 - SECURITY.md: prompt injection via player input section
 
-693 tests (+1), ruff clean, mypy clean
+692 tests, ruff clean, mypy clean (80 source files)
 
 ## [0.47.0] — 2026-04-13
 

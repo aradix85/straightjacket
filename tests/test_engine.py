@@ -26,13 +26,12 @@ def test_appconfig_typed_access() -> None:
                     "max_tool_rounds": 0,
                 }
             },
-            "temperature": {"brain": 0.6},
         }
     }
     config = _parse_config(data)
     assert config.ai.provider == "openai_compatible"
     assert config.ai.clusters["classification"].model == "qwen"
-    assert config.ai.temperature.get("brain") == 0.6
+    assert config.ai.clusters["classification"].temperature == 0.5
 
 
 def test_appconfig_defaults() -> None:
@@ -45,44 +44,62 @@ def test_appconfig_defaults() -> None:
     assert config.ai.prompts_file == "prompts.yaml"
 
 
-def test_appconfig_per_role_int() -> None:
+def test_cluster_all_fields_accessible() -> None:
     from straightjacket.engine.config_loader import _parse_config
 
-    data = {"ai": {"max_tokens": {"brain": 4096, "narrator": 2048}}}
+    data = {
+        "ai": {
+            "clusters": {
+                "analytical": {
+                    "model": "gpt-oss",
+                    "temperature": 0.3,
+                    "top_p": 0.95,
+                    "max_tokens": 4096,
+                    "max_retries": 2,
+                    "extra_body": {"foo": "bar"},
+                }
+            }
+        }
+    }
     config = _parse_config(data)
-    assert config.ai.max_tokens["brain"] == 4096
-    assert config.ai.max_tokens["narrator"] == 2048
-    assert "architect" not in config.ai.max_tokens  # no hidden defaults
-
-
-def test_appconfig_per_role_float_missing() -> None:
-    from straightjacket.engine.config_loader import _parse_config
-
-    data = {"ai": {"temperature": {"brain": 0.6}}}
-    config = _parse_config(data)
-    assert config.ai.temperature["brain"] == 0.6
-    assert "narrator" not in config.ai.temperature  # no hidden defaults
-
-
-def test_appconfig_extra_body() -> None:
-    from straightjacket.engine.config_loader import _parse_config
-
-    # Per-role extra_body overrides
-    data = {"ai": {"extra_body": {"narrator": {"reasoning_effort": "none"}, "validator": {}}}}
-    config = _parse_config(data)
-    assert config.ai.extra_body["narrator"] == {"reasoning_effort": "none"}
-    assert config.ai.extra_body["validator"] == {}
-    assert "brain" not in config.ai.extra_body  # not configured = not present
+    c = config.ai.clusters["analytical"]
+    assert c.model == "gpt-oss"
+    assert c.temperature == 0.3
+    assert c.top_p == 0.95
+    assert c.max_tokens == 4096
+    assert c.max_retries == 2
+    assert c.extra_body == {"foo": "bar"}
 
 
 def test_cluster_requires_all_fields() -> None:
     from straightjacket.engine.config_loader import _parse_config
     import pytest
 
-    # Missing model field should raise
     data = {"ai": {"clusters": {"creative": {"temperature": 0.9}}}}
     with pytest.raises(ValueError, match="missing required fields"):
         _parse_config(data)
+
+
+def test_role_cluster_override() -> None:
+    from straightjacket.engine.config_loader import _parse_config
+
+    data = {
+        "ai": {
+            "clusters": {
+                "classification": {
+                    "model": "fast",
+                    "temperature": 0.5,
+                    "top_p": 0.95,
+                    "max_tokens": 8192,
+                    "max_retries": 3,
+                    "max_tool_rounds": 0,
+                },
+            },
+            "role_cluster": {"recap": "classification"},
+        }
+    }
+    config = _parse_config(data)
+    assert config.ai.role_cluster["recap"] == "classification"
 
 
 # ── locations_match tests ─────────────────────────────────────

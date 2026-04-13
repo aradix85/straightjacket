@@ -51,7 +51,7 @@ Where to find things. If you want to change X, edit Y.
 | Emotion scoring, keyword boosts | `emotions.yaml` (no Python) |
 | UI text | `strings.yaml` (no Python) |
 | Server port | `config.yaml` (no Python) |
-| AI model assignment per role | `config.yaml` → `clusters` (per-cluster model), `role_model` (per-role override), `role_cluster` (remap role to cluster) |
+| AI model assignment per role | `config.yaml` → `clusters` (per-cluster model + parameters), `role_cluster` (remap role to cluster) |
 | Provider-specific params per role | `config.yaml` → `extra_body` (per-role via `PerRoleDict`) |
 | Move types or stat assignments | Datasworn JSON (moves loaded automatically per setting) |
 | A new setting (genre + constraints) | `data/settings/your_setting.yaml` + Datasworn JSON |
@@ -111,12 +111,12 @@ The engine assigns models to AI roles via clusters. Each cluster groups roles th
 ```
 Cluster          Roles                                              Needs
 ─────────────────────────────────────────────────────────────────────────────
-creative         narrator, architect                                prose quality, genre awareness
-classification   brain, correction                                  json_schema, fast parsing
-tool_calling     director                                           tool calling + json_schema
-analytical       validator, validator_architect                     strict constraint checking
-extraction       narrator_metadata, opening_setup, recap,           json_schema, fast, cheap
-                 revelation_check, chapter_summary
+narrator         narrator                                           prose generation (high temperature)
+creative         architect, director                                genre-aware structured output + tool calling
+classification   brain, correction                                  input parsing, json_schema
+analytical       validator, validator_architect, narrator_metadata,  constraint checking, data extraction
+                 opening_setup, revelation_check, chapter_summary,
+                 recap
 ```
 
 Config structure in `config.yaml`:
@@ -124,25 +124,29 @@ Config structure in `config.yaml`:
 ```yaml
 ai:
   clusters:
+    narrator:
+      model: "zai-glm-4.7"
+      temperature: 1.0
+      top_p: 0.95
+      max_tokens: 8192
+      max_retries: 3
+      extra_body: {reasoning_effort: "none"}
     creative:
       model: "zai-glm-4.7"
-      temperature: 0.9
-      extra_body: {reasoning_effort: "none"}
-    extraction:
+      temperature: 0.8
+      ...
+    analytical:
       model: "gpt-oss-120b"
-      temperature: 0.3
-  # Override a specific role's model (takes precedence over cluster):
-  role_model:
-    brain: "qwen3-235b-instruct"
+      temperature: 0.5
+      ...
   # Remap a role to a different cluster:
   role_cluster:
-    architect: "extraction"    # Use cheap model for blueprints
-  # Per-role temperature overrides (take precedence over cluster):
-  temperature:
-    narrator: 1.0
+    architect: "analytical"
 ```
 
-Sampling parameters resolve per parameter: per-role override → cluster default → global default. `sampling_params(role)` returns the resolved dict for `create_with_retry()`.
+Clusters are the single source of truth. `sampling_params(role)` resolves all call parameters from the role's cluster. `model_for_role(role)` resolves the model. No per-role overrides — to change a role's parameters, change the cluster or remap the role via `role_cluster`.
+
+`max_tool_rounds` is an engine mechanical limit, configured in `engine.yaml` under `pacing.max_tool_rounds`.
 
 Elvira test bot model is configured separately in `tests/elvira/elvira_config.yaml` → `ai.bot_model`.
 
@@ -232,11 +236,11 @@ src/straightjacket/
 
 **Typed dataclasses everywhere.** GameState has sub-objects (Resources, WorldState, NarrativeState, CampaignState). NpcData has 17 fields. MemoryEntry has 10. Move has 15 fields with typed trigger conditions and roll options. Attribute access, never dict-style. `SerializableMixin` handles serialization; complex classes override `to_dict`/`from_dict` manually.
 
-**Two-call pattern.** Narrator writes pure prose. A second call on the extraction cluster model extracts NPC-related metadata (new NPCs, renames, details, deaths). Same pattern for opening_setup, revelation_check, recap, and chapter_summary. The extraction cluster typically uses a cheaper/faster model for these analytical calls.
+**Two-call pattern.** Narrator writes pure prose. A second call on the analytical cluster model extracts NPC-related metadata (new NPCs, renames, details, deaths). Same pattern for opening_setup, revelation_check, recap, and chapter_summary. The analytical cluster typically uses a cheaper/faster model for these structured output calls.
 
 **Snapshot/restore.** `GameState.snapshot()` captures all mutable state before a turn. `restore()` reverts everything atomically. Used by correction (##) and momentum burn.
 
-**Provider abstraction.** `AIProvider` protocol with two implementations (Anthropic, OpenAI-compatible). The engine never imports provider SDKs directly. `create_with_retry` handles transient errors with exponential backoff. Multi-model: config.yaml assigns models via clusters — creative (narrator, architect), classification (brain, correction), tool_calling (director), analytical (validator), extraction (metadata, recap, opening_setup, revelation_check, chapter_summary). `model_for_role(role)` resolves the model; `sampling_params(role)` resolves all call parameters. Per-role overrides take precedence over cluster defaults. The provider stores no model state.
+**Provider abstraction.** `AIProvider` protocol with two implementations (Anthropic, OpenAI-compatible). The engine never imports provider SDKs directly. `create_with_retry` handles transient errors with exponential backoff. Multi-model: config.yaml assigns models via four clusters — narrator (prose), creative (architect, director), classification (brain, correction), analytical (validator, metadata, recap, and other structured output roles). Clusters are the single source of truth for all call parameters. `model_for_role(role)` resolves the model; `sampling_params(role)` resolves temperature, top_p, max_tokens, max_retries, and extra_body. The provider stores no model state.
 
 **Minimal UI.** Single HTML page, no build step, no npm. Server sends JSON, client renders. Scene headings for screen reader navigation, aria-live for automatic narration readout. One button (Save/Load), one text input. Status via `/status` and `/score` text commands — engine answers directly, no AI call. Status output is narrative, not mechanical: "seriously wounded" instead of "health 2", "growing trust" instead of "bond 4/10". The player never sees numbers, dice, or system terms.
 
@@ -283,7 +287,7 @@ src/straightjacket/
 ## Testing
 
 ```bash
-python -m pytest tests/ -v          # ~15 seconds, ~693 tests
+python -m pytest tests/ -v          # ~15 seconds, ~692 tests
 python tests/elvira/elvira.py --auto --turns 5   # direct engine (needs API key)
 python tests/elvira/elvira.py --ws --auto --turns 5  # via WebSocket server
 ```

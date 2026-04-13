@@ -12,18 +12,28 @@ ai:
   prompts_file: "prompts.yaml"
 
   # ── Model clusters ──────────────────────────────────────────
-  # Every field is required. No hidden defaults.
+  # Clusters are the single source of truth for all AI call parameters.
+  # Every field is required. No per-role overrides — to change a role's
+  # parameters, change the cluster or remap the role via role_cluster.
   #
   # Built-in role → cluster mapping (override via role_cluster):
-  #   creative:       narrator, architect
-  #   classification: brain, correction
-  #   tool_calling:   director
-  #   analytical:     validator, validator_architect
-  #   extraction:     narrator_metadata, opening_setup, revelation_check, chapter_summary, recap
+  #   narrator:        narrator
+  #   creative:        architect, director
+  #   classification:  brain, correction
+  #   analytical:      validator, validator_architect, narrator_metadata,
+  #                    opening_setup, revelation_check, chapter_summary, recap
   clusters:
+    narrator:
+      model: "zai-glm-4.7"
+      temperature: 1.0
+      top_p: 0.95
+      max_tokens: 8192
+      max_retries: 3
+      extra_body:
+        reasoning_effort: "none"
     creative:
       model: "zai-glm-4.7"
-      temperature: 0.9
+      temperature: 0.8
       top_p: 0.95
       max_tokens: 8192
       max_retries: 3
@@ -37,61 +47,15 @@ ai:
       max_retries: 3
       extra_body:
         reasoning_effort: "none"
-    tool_calling:
-      model: "zai-glm-4.7"
-      temperature: 0.8
-      top_p: 0.95
-      max_tokens: 8192
-      max_retries: 3
-      extra_body:
-        reasoning_effort: "none"
     analytical:
       model: "gpt-oss-120b"
-      temperature: 0.3
+      temperature: 0.5
       top_p: 0.95
       max_tokens: 8192
       max_retries: 3
-    extraction:
-      model: "gpt-oss-120b"
-      temperature: 0.3
-      top_p: 0.95
-      max_tokens: 8192
-      max_retries: 3
-
-  # ── Per-role overrides ──────────────────────────────────────
-  # Take precedence over cluster values.
-
-  # role_model:
-  #   brain: "qwen3-235b-instruct"
 
   # role_cluster:
-  #   architect: "extraction"        # Use cheap model for blueprints
-
-  temperature:
-    narrator: 1.0
-    architect: 0.8
-    brain: 0.6
-    correction: 0.3
-    narrator_metadata: 0.3
-    opening_setup: 0.6
-    revelation_check: 0.3
-    recap: 0.6
-    chapter_summary: 0.6
-    validator: 0.3
-    validator_architect: 0.3
-    director: 0.8
-
-  max_tool_rounds:
-    director: 3
-
-  extra_body:
-    validator: {}
-    validator_architect: {}
-    narrator_metadata: {}
-    opening_setup: {}
-    revelation_check: {}
-    recap: {}
-    chapter_summary: {}
+  #   architect: "analytical"       # Remap a role to a different cluster
 
 language:
   narration_language: "English"

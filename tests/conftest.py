@@ -130,6 +130,7 @@ def stub_engine() -> None:
                 "weak_hit_clock_tick_chance": 0.50,
                 "fired_clock_keep_scenes": 3,
                 "npc_agency_interval": 5,
+                "max_tool_rounds": 3,
             },
             "location": {"history_size": 5},
             "move_categories": {
