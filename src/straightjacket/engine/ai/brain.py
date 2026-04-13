@@ -29,10 +29,23 @@ def _build_moves_block(game: GameState) -> str:
     moves = data.get("moves", [])
     combat_pos = data.get("combat_position", "")
 
+    # Trigger text for engine-specific moves and commonly confused Datasworn moves.
+    # Hints are contrastive: they say what the move IS and what distinguishes it from similar moves.
+    _TRIGGER_HINTS: dict[str, str] = {
+        "dialog": "pure conversation with an NPC, no risk, no action, no world declarations",
+        "ask_the_oracle": "yes/no or open question about the fiction, not an action",
+        "world_shaping": "player DECLARES a new fact about the world — 'there is a well', 'the door has a lock', 'I say there's a market nearby'. NOT dialog (no NPC addressed). NOT a question (that is ask_the_oracle). The player is TELLING the fiction what exists.",
+        "adventure/face_danger": "attempt something risky or react to an imminent threat RIGHT NOW (not preparation, not investigation)",
+        "adventure/gather_information": "search for clues, investigate, study, research, analyze evidence — the goal is to LEARN something unknown (not to gain a tactical edge — that is secure_an_advantage)",
+        "adventure/secure_an_advantage": "prepare, position, set up, hide, scout ahead, gain leverage BEFORE acting — the goal is a TACTICAL EDGE for the next action (not to discover new information — that is gather_information)",
+    }
+
     lines = []
     for m in moves:
         stats = ", ".join(m["stats"]) if m["stats"] else "none"
-        lines.append(f"  {m['move']} ({m['name']}) stats:[{stats}] roll:{m['roll_type']}")
+        hint = _TRIGGER_HINTS.get(m["move"], "")
+        trigger = f" when:{hint}" if hint else ""
+        lines.append(f"  {m['move']} ({m['name']}) stats:[{stats}] roll:{m['roll_type']}{trigger}")
 
     pos_line = f"  combat_position: {combat_pos}" if combat_pos else ""
     return "<moves>\n" + "\n".join(lines) + ("\n" + pos_line if pos_line else "") + "\n</moves>"

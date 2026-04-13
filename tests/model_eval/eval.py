@@ -7,12 +7,15 @@ Uses the same provider and config infrastructure as the engine.
 Usage:
     python tests/model_eval/eval.py                          # all roles, configured models
     python tests/model_eval/eval.py --role brain             # brain only
-    python tests/model_eval/eval.py --role brain --model gpt-oss-120b  # test model with role's cluster params
+    python tests/model_eval/eval.py --role brain --model gpt-oss-120b  # override model
     python tests/model_eval/eval.py --verbose                # show full model output
+    python tests/model_eval/eval.py --compare                # all 3 Cerebras models × all roles → JSON
+    python tests/model_eval/eval.py --compare --runs 3       # 3 runs per case for variance
+    python tests/model_eval/eval.py --compare --output r.json  # custom output path
 
 The --model flag overrides only the model, not the cluster parameters.
-This tests whether the model can function within the role's existing
-parameter constraints (temperature, extra_body, etc.).
+The --compare flag runs GLM-4.7, GPT-OSS-120B, and Qwen3-235B over all roles
+and writes a JSON report with per-case results and a comparison matrix.
 """
 
 from __future__ import annotations
@@ -439,7 +442,8 @@ _AGENCY_MARKERS = [
 
 def eval_narrator(provider: AIProvider, case: dict, model: str, params: dict) -> CaseResult:
     """Evaluate narrator output for mechanical constraint compliance."""
-    from straightjacket.engine.models import BrainResult, GameState, RollResult
+    from straightjacket.engine.models import BrainResult, EngineConfig, GameState, RollResult
+    from straightjacket.engine.prompt_blocks import get_narrator_system
     from straightjacket.engine.prompt_builders import build_action_prompt
 
     result = CaseResult(case_id=case["id"], role="narrator")
@@ -492,7 +496,7 @@ def eval_narrator(provider: AIProvider, case: dict, model: str, params: dict) ->
         player_words=case["player_words"],
         consequence_sentences=consequence_sentences,
     )
-    system = get_prompt("narrator", lang="English")
+    system = get_narrator_system(EngineConfig(), game)
 
     try:
         response = create_with_retry(
@@ -781,34 +785,96 @@ def load_cases() -> dict[str, list[dict]]:
         return yaml.safe_load(f)
 
 
+def _clean_params_for_model(params: dict, model: str) -> dict:
+    """Adjust extra_body for model compatibility.
+
+    GLM: supports reasoning_effort (including "none").
+    GPT-OSS: requires reasoning_effort in {low, medium, high}, "none" → "low".
+    Qwen: does not support reasoning_effort at all.
+    """
+    extra = params.get("extra_body")
+    if not extra or "reasoning_effort" not in extra:
+        return params
+
+    params = dict(params)  # shallow copy
+    extra = dict(extra)
+
+    if "qwen" in model.lower() or "gpt-oss" in model.lower():
+        del extra["reasoning_effort"]
+
+    params["extra_body"] = extra if extra else {}
+    if not params["extra_body"]:
+        del params["extra_body"]
+    return params
+
+
 def run_role(
-    provider: AIProvider, role: str, cases: list[dict], model_override: str = "", verbose: bool = False
+    provider: AIProvider,
+    role: str,
+    cases: list[dict],
+    model_override: str = "",
+    verbose: bool = False,
+    runs: int = 1,
 ) -> RoleReport:
-    """Run all cases for one role."""
+    """Run all cases for one role, optionally multiple times for variance measurement."""
     evaluator = _ROLE_EVALUATORS[role]
     engine_role = _EVAL_TO_ENGINE_ROLE[role]
     model = model_override or model_for_role(engine_role)
-    params = sampling_params(engine_role)
+    params = _clean_params_for_model(sampling_params(engine_role), model)
     report = RoleReport(role=role, model=model)
 
     for case in cases:
         case_id = case["id"]
-        print(f"  {case_id} ... ", end="", flush=True)
-        case_result = evaluator(provider, case, model, params)
-        report.results.append(case_result)
+        if runs == 1:
+            print(f"  {case_id} ... ", end="", flush=True)
+            case_result = evaluator(provider, case, model, params)
+            report.results.append(case_result)
 
-        if case_result.error:
-            print(f"ERROR: {case_result.error}")
-        elif case_result.passed:
-            print(f"PASS ({', '.join(case_result.checks)})")
+            if case_result.error:
+                print(f"ERROR: {case_result.error}")
+            elif case_result.passed:
+                print(f"PASS ({', '.join(case_result.checks)})")
+            else:
+                print("FAIL")
+                for f in case_result.failures:
+                    print(f"    {f}")
+
+            if verbose and case_result.raw_output:
+                for line in case_result.raw_output.splitlines():
+                    print(f"    | {line}")
         else:
-            print("FAIL")
-            for f in case_result.failures:
-                print(f"    {f}")
+            passed_count = 0
+            last_result = None
+            for _run_i in range(runs):
+                case_result = evaluator(provider, case, model, params)
+                if case_result.passed:
+                    passed_count += 1
+                last_result = case_result
 
-        if verbose and case_result.raw_output:
-            for line in case_result.raw_output.splitlines():
-                print(f"    | {line}")
+            rate = passed_count / runs
+            status = f"{passed_count}/{runs}"
+            if rate == 1.0:
+                print(f"  {case_id} ... {status} PASS")
+            elif rate == 0.0:
+                print(f"  {case_id} ... {status} FAIL")
+                if last_result:
+                    for f in last_result.failures:
+                        print(f"    {f}")
+            else:
+                print(f"  {case_id} ... {status} FLAKY")
+                if last_result and not last_result.passed:
+                    for f in last_result.failures:
+                        print(f"    last failure: {f}")
+
+            # For aggregation, mark as passed only if all runs passed
+            assert last_result is not None
+            last_result.passed = passed_count == runs
+            last_result.checks.insert(0, f"pass_rate={passed_count}/{runs}")
+            report.results.append(last_result)
+
+            if verbose and last_result.raw_output:
+                for line in last_result.raw_output.splitlines():
+                    print(f"    | {line}")
 
     return report
 
@@ -834,11 +900,112 @@ def print_report(reports: list[RoleReport]) -> None:
         print(f"  {total_failed} failures")
 
 
+# ── Compare mode ─────────────────────────────────────────────
+
+_CEREBRAS_MODELS = ["zai-glm-4.7", "gpt-oss-120b", "qwen-3-235b-a22b-instruct-2507"]
+
+
+def _report_to_dict(report: RoleReport) -> dict:
+    """Serialize a RoleReport for JSON output."""
+    return {
+        "role": report.role,
+        "model": report.model,
+        "passed": report.passed,
+        "failed": report.failed,
+        "total": report.total,
+        "cases": [
+            {
+                "id": r.case_id,
+                "passed": r.passed,
+                "checks": r.checks,
+                "failures": r.failures,
+                "error": r.error,
+                "raw_output": r.raw_output[:2000] if r.raw_output else "",
+            }
+            for r in report.results
+        ],
+    }
+
+
+def run_compare(provider: AIProvider, all_cases: dict[str, list[dict]], verbose: bool = False, runs: int = 1) -> dict:
+    """Run all models over all roles and produce comparison data."""
+    from datetime import UTC, datetime
+
+    comparison: dict = {
+        "timestamp": datetime.now(UTC).isoformat(),
+        "models": _CEREBRAS_MODELS,
+        "runs_per_case": runs,
+        "results": {},
+        "matrix": {},
+    }
+
+    for model in _CEREBRAS_MODELS:
+        comparison["results"][model] = {}
+
+        print(f"\n{'=' * 60}")
+        print(f"MODEL: {model}")
+        print(f"{'=' * 60}")
+
+        for role in _ROLE_EVALUATORS:
+            cases = all_cases.get(role, [])
+            if not cases:
+                continue
+
+            print(f"\n  {role}")
+            print(f"  {'-' * 36}")
+
+            report = run_role(provider, role, cases, model_override=model, verbose=verbose, runs=runs)
+            comparison["results"][model][role] = _report_to_dict(report)
+
+            # Build matrix entry: model × role → pass_rate
+            key = f"{model}:{role}"
+            comparison["matrix"][key] = {
+                "model": model,
+                "role": role,
+                "passed": report.passed,
+                "total": report.total,
+                "pass_rate": round(report.passed / report.total, 2) if report.total else 0,
+            }
+
+    # Summary table
+    print(f"\n{'=' * 60}")
+    print("COMPARISON MATRIX")
+    print(f"{'=' * 60}")
+
+    roles = [r for r in _ROLE_EVALUATORS if all_cases.get(r)]
+    header = f"  {'model':40s}" + "".join(f"{r:>12s}" for r in roles)
+    print(header)
+    print("  " + "-" * (40 + 12 * len(roles)))
+
+    for model in _CEREBRAS_MODELS:
+        row = f"  {model:40s}"
+        for role in roles:
+            entry = comparison["matrix"].get(f"{model}:{role}")
+            if entry:
+                row += (
+                    f"{entry['passed']}/{entry['total']:>9s}" if False else f"  {entry['passed']}/{entry['total']:>8}"
+                )
+            else:
+                row += f"{'—':>12s}"
+        print(row)
+
+    return comparison
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Per-role AI model evaluation")
     parser.add_argument("--role", choices=list(_ROLE_EVALUATORS.keys()), help="Evaluate one role only")
     parser.add_argument("--model", default="", help="Override model for all roles")
     parser.add_argument("--verbose", action="store_true", help="Show full model output")
+    parser.add_argument(
+        "--compare",
+        action="store_true",
+        help="Run all three Cerebras models over all roles, output JSON report",
+    )
+    parser.add_argument(
+        "--output", default="", help="JSON output path for --compare (default: model_eval_results.json)"
+    )
+    parser.add_argument("--runs", type=int, default=1, help="Run each case N times to measure variance (default: 1)")
     args = parser.parse_args()
 
     # Load engine config (needed for schemas, prompts, provider)
@@ -850,6 +1017,14 @@ def main() -> None:
 
     provider = get_provider()
     all_cases = load_cases()
+
+    if args.compare:
+        comparison = run_compare(provider, all_cases, verbose=args.verbose, runs=args.runs)
+        out_path = args.output or str(_HERE / "model_eval_results.json")
+        with open(out_path, "w", encoding="utf-8") as f:
+            json.dump(comparison, f, indent=2, ensure_ascii=False)
+        print(f"\nResults written to {out_path}")
+        return
 
     roles = [args.role] if args.role else list(_ROLE_EVALUATORS.keys())
     reports: list[RoleReport] = []
@@ -865,7 +1040,7 @@ def main() -> None:
         print(f"\n{role} ({model})")
         print("-" * 40)
 
-        report = run_role(provider, role, cases, model_override=args.model, verbose=args.verbose)
+        report = run_role(provider, role, cases, model_override=args.model, verbose=args.verbose, runs=args.runs)
         reports.append(report)
 
     print_report(reports)
