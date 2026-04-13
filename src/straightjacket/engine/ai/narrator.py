@@ -3,7 +3,7 @@
 
 import json
 
-from ..config_loader import cfg, sampling_params
+from ..config_loader import model_for_role, sampling_params
 from ..engine_loader import eng
 from ..logging_util import log
 from ..models import BrainResult, EngineConfig, GameState
@@ -36,7 +36,6 @@ def call_narrator(
 
     """
     log(f"[Narrator] Calling narrator (prompt: {len(prompt)} chars{', skip_history' if skip_history else ''})")
-    _c = cfg()
     messages = []
 
     # Include narration history as conversation context — unless this is a retry
@@ -58,9 +57,7 @@ def call_narrator(
 
     response = create_with_retry(
         provider,
-        max_retries=_c.ai.max_retries.narrator,
-        model=_c.ai.narrator_model,
-        max_tokens=_c.ai.max_tokens.narrator,
+        model=model_for_role("narrator"),
         system=system,
         messages=messages,
         **sampling_params("narrator"),
@@ -104,7 +101,6 @@ def call_opening_setup(
     This replaces the old approach of embedding game_data JSON inside the
     narrator response, which was unreliable across providers.
     """
-    _c = cfg()
     lang = get_narration_lang(config or EngineConfig())
 
     system = get_prompt("opening_setup_extractor", lang=lang)
@@ -121,9 +117,7 @@ IMPORTANT: {game.player_name} is the PLAYER CHARACTER — do NOT include them as
 
         response = create_with_retry(
             provider,
-            max_retries=_c.ai.max_retries.opening_setup,
-            model=_c.ai.fast_model or _c.ai.brain_model,
-            max_tokens=_c.ai.max_tokens.opening_setup,
+            model=model_for_role("opening_setup"),
             system=system,
             messages=[{"role": "user", "content": prompt}],
             json_schema=get_opening_setup_schema(),
@@ -165,7 +159,6 @@ def call_narrator_metadata(
                interpretations against known facts instead of inferring from prose.
         consequences: List of consequence strings from resolve_move_outcome.
     """
-    _c = cfg()
     _cfg = config or EngineConfig()
     lang = get_narration_lang(_cfg)
 
@@ -224,9 +217,7 @@ Extract all metadata from the narration above. Remember: {game.player_name} is t
     try:
         response = create_with_retry(
             provider,
-            max_retries=_c.ai.max_retries.narrator_metadata,
-            model=_c.ai.fast_model or _c.ai.brain_model,
-            max_tokens=_c.ai.max_tokens.narrator_metadata,
+            model=model_for_role("narrator_metadata"),
             system=system,
             messages=[{"role": "user", "content": prompt}],
             json_schema=get_narrator_metadata_schema(),

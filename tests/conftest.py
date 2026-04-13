@@ -118,7 +118,7 @@ def stub_engine() -> None:
                 "gain": {"weak_hit": 1, "strong_hit": {"standard": 2, "great": 3}},
                 "loss": {"risky": 2, "desperate": 3},
             },
-            "chaos": {"min": 3, "max": 9, "start": 5, "interrupt_types": ["twist"]},
+            "chaos": {"min": 1, "max": 9, "start": 5, "interrupt_types": ["twist"]},
             "pacing": {
                 "window_size": 5,
                 "intense_threshold": 3,
@@ -129,6 +129,7 @@ def stub_engine() -> None:
                 "autonomous_clock_tick_chance": 0.20,
                 "weak_hit_clock_tick_chance": 0.50,
                 "fired_clock_keep_scenes": 3,
+                "npc_agency_interval": 5,
             },
             "location": {"history_size": 5},
             "move_categories": {

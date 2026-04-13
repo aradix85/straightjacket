@@ -24,7 +24,7 @@ Game mechanics, emotion scoring, move types, damage tables, disposition shifts �
 
 ## Testing
 
-Two layers of testing, complementary:
+Three layers of testing, complementary:
 
 The **unit/integration test suite** (`python -m pytest tests/ -v`) runs without an API key. It uses mock providers that return canned responses. Tests verify the engine's internal logic: consequences, NPC processing, serialization, correction flow, prompt assembly, WebSocket handlers. Every PR must pass this suite.
 
@@ -34,6 +34,8 @@ The **unit/integration test suite** (`python -m pytest tests/ -v`) runs without 
 - WebSocket mode: `python tests/elvira/elvira.py --ws --auto --turns 5` — plays through the full server stack. Tests the complete pipeline: WebSocket protocol, handlers, engine, serializers.
 
 If your change affects the turn pipeline, NPC processing, or prompt assembly, run Elvira. The unit tests catch logic bugs; Elvira catches constraint violations, narrator drift, and integration failures that only surface with real model output.
+
+**Model eval** (`tests/model_eval/eval.py`) evaluates whether a model can handle a specific AI role. Tests each role in isolation with fixed inputs and expected outputs. Use before switching a cluster's model or overriding a role. Add `--role brain --model gpt-oss-120b` to test one role on one model. Test cases are in `tests/model_eval/cases.yaml` — add cases when you encounter a role-specific failure pattern.
 
 Elvira configuration is in `tests/elvira/elvira_config.yaml`. Session logs go to `tests/elvira/elvira_session.json`. Add `--turns N` to control session length.
 

@@ -15,6 +15,12 @@ Player names and save names are sanitized before use as filesystem paths. Path s
 
 The sanitization is in `logging_util._safe_name()` and is applied in all persistence functions (save, load, delete) and user management functions (create, delete).
 
+## Prompt injection via player input
+
+Player input is included in AI prompts as XML element content. All player-supplied text (input, names, backstory, vow text) is escaped via `xml_utils.xe()` (HTML entity escaping) before insertion into prompt XML. This prevents players from injecting XML tags that could alter AI behavior — e.g. closing a `<scene>` tag and injecting a fake `<result type="STRONG_HIT">`.
+
+The escaping is applied in `prompt_builders.py` (all prompt assembly functions) and `brain.py` (Brain prompt). The Brain's `player_intent` field is AI-generated from player input, not raw player text, which provides a secondary layer of isolation.
+
 ## Session model
 
 Single-session server: one active player at a time. Opening a second browser tab or reconnecting takes over the existing session — the previous connection is closed with a notification. This is by design (solo RPG), not a bug. There is no multi-user support.

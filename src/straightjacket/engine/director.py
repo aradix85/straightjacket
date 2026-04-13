@@ -5,7 +5,7 @@ import html
 import re
 
 from .ai.provider_base import AIProvider, create_with_retry
-from .config_loader import cfg, sampling_params
+from .config_loader import cfg, model_for_role, sampling_params
 from .engine_loader import eng
 from .logging_util import log
 from .models import EngineConfig, GameState, MemoryEntry
@@ -213,21 +213,25 @@ def call_director(
     system = _director_system(game, config)
 
     try:
-        _c = cfg()
+        _dp = sampling_params("director")
+        _director_model = model_for_role("director")
+        _max_tool_rounds = cfg().ai.max_tool_rounds.get("director")
+        if _max_tool_rounds is None:
+            raise ValueError("ai.max_tool_rounds.director not configured in config.yaml.")
 
         # Phase 1: tool loop for context gathering
         tool_context = ""
         if tools:
+            _dp1 = dict(_dp)
+            _dp1["max_retries"] = 1  # Single attempt for tool phase
             response = create_with_retry(
                 provider,
-                max_retries=1,
-                model=_c.ai.director_model,
-                max_tokens=_c.ai.max_tokens.director,
+                model=_director_model,
                 system=system,
                 messages=[{"role": "user", "content": prompt}],
                 tools=tools,
-                **sampling_params("director"),
                 log_role="director",
+                **_dp1,
             )
 
             if response.stop_reason == "tool_use":
@@ -236,12 +240,14 @@ def call_director(
                     response,
                     role="director",
                     game=game,
-                    model=_c.ai.director_model,
+                    model=_director_model,
                     system=system,
                     messages=[{"role": "user", "content": prompt}],
-                    max_tokens=_c.ai.max_tokens.director,
-                    max_tool_rounds=_c.ai.max_tool_rounds.director,
-                    **sampling_params("director"),
+                    max_tokens=_dp["max_tokens"],
+                    max_tool_rounds=_max_tool_rounds,
+                    temperature=_dp.get("temperature"),
+                    top_p=_dp.get("top_p"),
+                    extra_body=_dp.get("extra_body"),
                     log_role="director",
                 )
                 if final_content.strip():
@@ -257,14 +263,12 @@ def call_director(
 
         response2 = create_with_retry(
             provider,
-            max_retries=_c.ai.max_retries.director,
-            model=_c.ai.director_model,
-            max_tokens=_c.ai.max_tokens.director,
+            model=_director_model,
             system=system,
             messages=[{"role": "user", "content": phase2_prompt}],
             json_schema=DIRECTOR_OUTPUT_SCHEMA,
-            **sampling_params("director"),
             log_role="director",
+            **_dp,
         )
 
         import json

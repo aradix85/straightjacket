@@ -1,0 +1,142 @@
+# Model evaluation test cases.
+# Each role has a set of cases with input and expected output checks.
+# The eval runner sends the input through the same pipeline the engine uses
+# and checks the output against the expectations.
+
+brain:
+  - id: "dialog_simple"
+    input: "I talk to Kira about the missing shipment"
+    expect:
+      move: "dialog"
+      dialog_only: true
+      target_npc: "npc_1"
+
+  - id: "face_danger_physical"
+    input: "I climb the crumbling wall to reach the upper level"
+    expect:
+      move_prefix: "adventure/face_danger"
+      stat: "edge"
+      dialog_only: false
+
+  - id: "face_danger_mental"
+    input: "I try to decipher the old star charts before the power fails"
+    expect:
+      move_prefix: "adventure/face_danger"
+      stat: "wits"
+      dialog_only: false
+
+  - id: "compel_npc"
+    input: "I pressure Borin into revealing what he knows about the sabotage"
+    expect:
+      move_prefix: "adventure/compel"
+      stat_oneof: ["heart", "iron", "shadow"]
+      target_npc: "npc_2"
+      dialog_only: false
+
+  - id: "gather_information"
+    input: "I search the cargo hold for evidence of tampering"
+    expect:
+      move_prefix: "adventure/gather_information"
+      stat: "wits"
+      dialog_only: false
+
+  - id: "strike_combat"
+    input: "I swing my blade at the creature's exposed flank"
+    expect:
+      move_prefix: "combat/"
+      stat_oneof: ["iron", "edge"]
+      dialog_only: false
+
+  - id: "fate_question"
+    input: "Is the door locked?"
+    expect:
+      move: "ask_the_oracle"
+      fate_question_present: true
+
+  - id: "world_shaping"
+    input: "I say there's an old well in the courtyard"
+    expect:
+      move: "world_shaping"
+      world_addition_present: true
+
+  - id: "secure_advantage"
+    input: "I hide behind the crates and wait for the guard to pass"
+    expect:
+      move_prefix: "adventure/secure_an_advantage"
+      stat: "shadow"
+      dialog_only: false
+
+  - id: "location_change"
+    input: "I leave the tavern and head to the docks"
+    expect:
+      dialog_only: false
+      location_change_present: true
+
+validator:
+  - id: "clean_pass"
+    narration: "You push through the rusted hatch. Cold air hits your face. The corridor stretches ahead, dark and silent. Your boots scrape on metal grating."
+    result_type: "STRONG_HIT"
+    genre: "starforged"
+    expect:
+      pass: true
+
+  - id: "agency_violation"
+    narration: "You feel a surge of dread as the door opens. You realize this was a mistake. The weight of your failure presses down on you."
+    result_type: "MISS"
+    genre: "starforged"
+    expect:
+      pass: false
+      violation_contains: "AGENCY"
+
+  - id: "genre_violation_fantasy"
+    narration: "The elven runes glow with ancient magic as you approach the altar. A spectral figure materializes before you."
+    result_type: "STRONG_HIT"
+    genre: "starforged"
+    expect:
+      pass: false
+      violation_contains_any: ["GENRE", "magic", "elven", "spectral"]
+
+  - id: "miss_silver_lining"
+    narration: "You stumble and the device slips from your fingers. But as it falls, you notice a hidden panel behind the console — something useful."
+    result_type: "MISS"
+    genre: "starforged"
+    expect:
+      pass: false
+      violation_contains: "RESULT"
+
+  - id: "npc_monologue"
+    narration: "Kira leans forward. \"The shipment was diverted three days ago. I traced it to the eastern docks. The manifest was forged by someone in the guild. They used a dead man's seal. I suspect Borin, but I have no proof yet. We need to check the records before anyone else does.\""
+    result_type: "WEAK_HIT"
+    genre: "starforged"
+    expect:
+      pass: false
+
+extraction:
+  - id: "new_npc_detected"
+    narration: "A tall woman with a scar across her jaw steps out of the shadows. \"Name's Vex,\" she says, hand resting on a holstered sidearm. \"You're in the wrong corridor.\""
+    player_name: "Ash"
+    known_npcs: []
+    expect:
+      new_npc_name: "Vex"
+      new_npc_count: 1
+
+  - id: "no_player_as_npc"
+    narration: "Ash pushes through the door. The room is empty except for dust and broken furniture."
+    player_name: "Ash"
+    known_npcs: []
+    expect:
+      new_npc_count: 0
+
+  - id: "known_npc_not_duplicated"
+    narration: "Kira is already waiting by the console when you arrive. She nods once, not looking up from the screen."
+    player_name: "Ash"
+    known_npcs: ["npc_1=Kira"]
+    expect:
+      new_npc_count: 0
+
+  - id: "death_detection"
+    narration: "Borin crumples to the deck, blood pooling beneath him. His eyes go glassy. He doesn't move again."
+    player_name: "Ash"
+    known_npcs: ["npc_2=Borin"]
+    expect:
+      deceased_npc_present: true

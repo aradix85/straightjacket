@@ -4,7 +4,7 @@
 import json
 
 from ...i18n import E
-from ..config_loader import cfg, sampling_params
+from ..config_loader import model_for_role, sampling_params
 from ..engine_loader import eng
 from ..logging_util import log
 from ..models import ChapterSummary, EngineConfig, GameState
@@ -54,13 +54,10 @@ def call_recap(provider: AIProvider, game: GameState, config: EngineConfig | Non
         for ch in game.campaign.campaign_history[-2:]:
             campaign_info += f"\n  prev: {ch.title}: {ch.summary[:200]}"
 
-    _c = cfg()
     try:
         response = create_with_retry(
             provider,
-            max_retries=_c.ai.max_retries.recap,
-            model=_c.ai.fast_model or _c.ai.brain_model,
-            max_tokens=_c.ai.max_tokens.recap,
+            model=model_for_role("recap"),
             system=get_prompt("recap", lang=lang, content_boundaries_block=content_boundaries_block(game)),
             messages=[
                 {
@@ -74,7 +71,7 @@ def call_recap(provider: AIProvider, game: GameState, config: EngineConfig | Non
                 }
             ],
             **sampling_params("recap"),
-            log_role="architect_opening",
+            log_role="recap",
         )
         return response.content
     except Exception as e:
@@ -118,18 +115,15 @@ location:{game.world.current_location}
 situation:{game.world.current_scene_context}
 npcs:{npc_text}{campaign_ctx}{backstory_text}"""
 
-    _c = cfg()
     try:
         response = create_with_retry(
             provider,
-            max_retries=_c.ai.max_retries.architect,
-            model=_c.ai.narrator_model,
-            max_tokens=_c.ai.max_tokens.architect,
+            model=model_for_role("architect"),
             system=system,
             messages=[{"role": "user", "content": user_msg}],
             json_schema=STORY_ARCHITECT_OUTPUT_SCHEMA,
             **sampling_params("architect"),
-            log_role="architect_chapter",
+            log_role="architect",
         )
         blueprint = json.loads(response.content)
         blueprint["revealed"] = []  # Track which revelations have fired
@@ -198,13 +192,10 @@ def call_chapter_summary(
     if epilogue_text:
         epilogue_block = f"\n<epilogue>\n{epilogue_text}\n</epilogue>"
 
-    _c = cfg()
     try:
         response = create_with_retry(
             provider,
-            max_retries=_c.ai.max_retries.chapter_summary,
-            model=_c.ai.fast_model or _c.ai.brain_model,
-            max_tokens=_c.ai.max_tokens.chapter_summary,
+            model=model_for_role("chapter_summary"),
             system=get_prompt("chapter_summary", lang=lang, content_boundaries_block=content_boundaries_block(game)),
             messages=[
                 {
@@ -221,7 +212,7 @@ def call_chapter_summary(
             ],
             json_schema=CHAPTER_SUMMARY_OUTPUT_SCHEMA,
             **sampling_params("chapter_summary"),
-            log_role="architect_blueprint",
+            log_role="chapter_summary",
         )
         data = json.loads(response.content)
         data["chapter"] = game.campaign.chapter_number

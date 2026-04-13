@@ -13,10 +13,25 @@ Run: python -m pytest tests/test_engine.py -v
 def test_appconfig_typed_access() -> None:
     from straightjacket.engine.config_loader import _parse_config
 
-    data = {"ai": {"provider": "openai_compatible", "brain_model": "qwen", "temperature": {"brain": 0.6}}}
+    data = {
+        "ai": {
+            "provider": "openai_compatible",
+            "clusters": {
+                "classification": {
+                    "model": "qwen",
+                    "temperature": 0.5,
+                    "top_p": 0.95,
+                    "max_tokens": 8192,
+                    "max_retries": 3,
+                    "max_tool_rounds": 0,
+                }
+            },
+            "temperature": {"brain": 0.6},
+        }
+    }
     config = _parse_config(data)
     assert config.ai.provider == "openai_compatible"
-    assert config.ai.brain_model == "qwen"
+    assert config.ai.clusters["classification"].model == "qwen"
     assert config.ai.temperature.get("brain") == 0.6
 
 
@@ -35,9 +50,9 @@ def test_appconfig_per_role_int() -> None:
 
     data = {"ai": {"max_tokens": {"brain": 4096, "narrator": 2048}}}
     config = _parse_config(data)
-    assert config.ai.max_tokens.brain == 4096
-    assert config.ai.max_tokens.narrator == 2048
-    assert config.ai.max_tokens.architect == 8192  # default
+    assert config.ai.max_tokens["brain"] == 4096
+    assert config.ai.max_tokens["narrator"] == 2048
+    assert "architect" not in config.ai.max_tokens  # no hidden defaults
 
 
 def test_appconfig_per_role_float_missing() -> None:
@@ -45,27 +60,29 @@ def test_appconfig_per_role_float_missing() -> None:
 
     data = {"ai": {"temperature": {"brain": 0.6}}}
     config = _parse_config(data)
-    try:
-        _ = config.ai.temperature.narrator
-        raise AssertionError("Should have raised")
-    except AttributeError:
-        pass
+    assert config.ai.temperature["brain"] == 0.6
+    assert "narrator" not in config.ai.temperature  # no hidden defaults
 
 
 def test_appconfig_extra_body() -> None:
     from straightjacket.engine.config_loader import _parse_config
 
-    # Flat dict becomes default for all roles
-    data = {"ai": {"extra_body": {"reasoning_effort": "none"}}}
+    # Per-role extra_body overrides
+    data = {"ai": {"extra_body": {"narrator": {"reasoning_effort": "none"}, "validator": {}}}}
     config = _parse_config(data)
-    assert config.ai.extra_body.get("narrator") == {"reasoning_effort": "none"}
-    assert config.ai.extra_body.get("brain") == {"reasoning_effort": "none"}
+    assert config.ai.extra_body["narrator"] == {"reasoning_effort": "none"}
+    assert config.ai.extra_body["validator"] == {}
+    assert "brain" not in config.ai.extra_body  # not configured = not present
 
-    # Per-role overrides
-    data2 = {"ai": {"extra_body": {"default": {"reasoning_effort": "none"}, "validator": {}}}}
-    config2 = _parse_config(data2)
-    assert config2.ai.extra_body.get("narrator") == {"reasoning_effort": "none"}
-    assert config2.ai.extra_body.get("validator") == {}
+
+def test_cluster_requires_all_fields() -> None:
+    from straightjacket.engine.config_loader import _parse_config
+    import pytest
+
+    # Missing model field should raise
+    data = {"ai": {"clusters": {"creative": {"temperature": 0.9}}}}
+    with pytest.raises(ValueError, match="missing required fields"):
+        _parse_config(data)
 
 
 # ── locations_match tests ─────────────────────────────────────

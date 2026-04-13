@@ -7,7 +7,7 @@ username: "elvira"
 auto_mode: false
 
 # Bot AI model. Elvira's player bot uses this model for action generation
-# and tactical decisions. Defaults to config.yaml brain_model if omitted.
+# and tactical decisions. Defaults to classification cluster model if omitted.
 ai:
   bot_model: "gpt-oss-120b"
   temperature: 0.7                    # Higher = more varied test inputs

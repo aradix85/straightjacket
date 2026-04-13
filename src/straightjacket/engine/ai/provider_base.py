@@ -161,8 +161,8 @@ def post_process_response(response: AIResponse) -> AIResponse:
 
 def create_with_retry(
     provider: AIProvider,
-    max_retries: int = 2,
     *,
+    max_retries: int = 2,
     model: str,
     system: str,
     messages: list[dict],

@@ -48,7 +48,7 @@ Five YAML files, each with a clear owner:
 
 Four settings ship via [Datasworn](https://github.com/rsek/datasworn): Ironsworn Classic (dark fantasy), Starforged (sci-fi), Sundered Isles (seafaring), and Delve (dungeon-crawling expansion for Classic). Each defines vocabulary, sensory palette, genre constraints, and oracle paths in `data/settings/*.yaml`. Adding a setting means adding one YAML file and a Datasworn JSON — no Python. See [ARCHITECTURE.md](ARCHITECTURE.md) for the settings YAML format.
 
-Default AI: GLM-4.7 via Cerebras for creative roles (brain, narrator, director, architect). Qwen3 235B Instruct for analytical roles (validator, metadata extraction, recap). GPT-OSS 120B for Elvira test bot. Also supports Anthropic (Claude) and any OpenAI-compatible API. Models configurable per role in `config.yaml`.
+Default AI: GLM-4.7 via Cerebras for creative roles (narrator, architect), classification (brain, correction), and tool calling (director). GPT-OSS-120B for analytical roles (validator) and extraction (metadata, opening_setup, revelation_check, chapter_summary, recap). Models assigned via clusters in `config.yaml` — switch a cluster's model to move all its roles at once, or override individual roles.
 
 ---
 
@@ -64,13 +64,13 @@ The architecture implements the [Narrative RPG Engine](docs/narrative_rpg_engine
 
 ## Tests
 
-Two complementary layers:
+Three complementary layers:
 
-**Unit/integration tests** (`python -m pytest tests/ -v`, ~692 tests, no API key needed): mock providers with canned responses test engine logic, NPC processing, serialization, correction flow, prompt assembly, WebSocket handlers, database sync/queries, tool registry/dispatch. Every commit must pass.
+**Unit/integration tests** (`python -m pytest tests/ -v`, ~693 tests, no API key needed): mock providers with canned responses test engine logic, NPC processing, serialization, correction flow, prompt assembly, WebSocket handlers, database sync/queries, tool registry/dispatch. Every commit must pass.
 
 **[Elvira](tests/elvira/)** (`python tests/elvira/elvira.py --auto --turns 5`, needs API key): headless AI-driven test player that plays the game with real model output. Checks state invariants after every turn, validates narration quality (leaked mechanics, NPC spatial consistency), stress-tests the correction pipeline, and logs diagnostics to JSON. Two modes: direct (engine only) and WebSocket (full server stack). See [CONTRIBUTING.md](CONTRIBUTING.md) for when to use which.
 
-**Tool calling probe** (`python tests/tool_calling_probe.py`, needs API key): evaluates tool calling reliability across models. Tests Brain and Director tool patterns, reports pass/fail per case and comparative verdict. Use `--model slug` for single model or default for Qwen + GLM comparison.
+**[Model eval](tests/model_eval/)** (`python tests/model_eval/eval.py`, needs API key): per-role model evaluation. Tests each AI role in isolation with fixed inputs and expected outputs. Use to evaluate whether a model can handle a specific role before switching config. Supports `--role brain` for single-role testing, `--model gpt-oss-120b` to override the configured model, and `--verbose` for full model output. Test cases live in `tests/model_eval/cases.yaml`.
 
 ---
 

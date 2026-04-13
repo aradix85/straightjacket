@@ -55,6 +55,7 @@ pacing:
   autonomous_clock_tick_chance: 0.20  # Per-scene chance each threat clock ticks
   weak_hit_clock_tick_chance: 0.50   # Chance threat clock ticks on WEAK_HIT at risky position
   fired_clock_keep_scenes: 3  # Keep fired clocks for this many scenes before purging
+  npc_agency_interval: 5     # NPC-owned clocks advance every N scenes
 
 # ── Story structure ───────────────────────────────────────────
 story:

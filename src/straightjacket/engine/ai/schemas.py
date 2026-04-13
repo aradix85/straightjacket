@@ -238,8 +238,6 @@ CHAPTER_SUMMARY_OUTPUT_SCHEMA = _obj(
 
 # ── Narrator metadata output ─────────────────────────────────
 
-# ── Narrator metadata output ─────────────────────────────────
-
 _metadata_cache: dict | None = None
 
 
@@ -292,8 +290,6 @@ def get_narrator_metadata_schema() -> dict:
         )
     return _metadata_cache
 
-
-# ── Opening setup output ─────────────────────────────────────
 
 # ── Opening setup output ─────────────────────────────────────
 

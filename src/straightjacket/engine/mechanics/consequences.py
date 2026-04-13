@@ -85,8 +85,8 @@ def can_burn_momentum(game: GameState, roll: RollResult) -> str | None:
 
 
 def check_npc_agency(game: GameState) -> tuple[list[str], list[ClockEvent]]:
-    """Advance NPC-owned clocks every 5th scene. Returns (actions, clock_events)."""
-    if game.narrative.scene_count % 5 != 0:
+    """Advance NPC-owned clocks at configured interval. Returns (actions, clock_events)."""
+    if game.narrative.scene_count % eng().pacing.npc_agency_interval != 0:
         return [], []
     actions: list[str] = []
     clock_events: list[ClockEvent] = []

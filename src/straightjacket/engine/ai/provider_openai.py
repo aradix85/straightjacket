@@ -72,10 +72,6 @@ class OpenAICompatibleProvider:
             extra["top_k"] = top_k
         if extra:
             create_kwargs["extra_body"] = extra
-        if top_k is not None:
-            extra["top_k"] = top_k
-        if extra:
-            create_kwargs["extra_body"] = extra
 
         if json_schema is not None:
             schema_name = json_schema.get("name", "response")

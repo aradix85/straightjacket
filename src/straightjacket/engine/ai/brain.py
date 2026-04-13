@@ -9,7 +9,7 @@ import html
 import json
 import re
 
-from ..config_loader import cfg, sampling_params
+from ..config_loader import model_for_role, sampling_params
 from ..logging_util import log
 from ..models import BrainResult, EngineConfig, GameState, Revelation
 from ..prompt_blocks import (
@@ -88,7 +88,6 @@ def call_brain(
     fate_question and oracle_table fields on BrainResult are resolved by the
     engine after classification (see turn.py).
     """
-    _c = cfg()
     _cfg = config or EngineConfig()
     _brain_lang = get_narration_lang(_cfg)
 
@@ -127,9 +126,7 @@ time:{w.time_of_day or "unspecified"}
     try:
         response = create_with_retry(
             provider,
-            max_retries=_c.ai.max_retries.brain,
-            model=_c.ai.brain_model,
-            max_tokens=_c.ai.max_tokens.brain,
+            model=model_for_role("brain"),
             system=system,
             messages=[{"role": "user", "content": user_msg}],
             json_schema=get_brain_output_schema(),
@@ -160,8 +157,6 @@ def call_revelation_check(
     rev_content = revelation.content
     rev_weight = revelation.dramatic_weight
 
-    _c = cfg()
-
     system = (
         f"You are a story-consistency checker for an RPG engine. "
         f"Your task is to determine whether a specific revelation was meaningfully "
@@ -187,9 +182,7 @@ def call_revelation_check(
     try:
         response = create_with_retry(
             provider,
-            max_retries=_c.ai.max_retries.revelation_check,
-            model=_c.ai.fast_model or _c.ai.brain_model,
-            max_tokens=_c.ai.max_tokens.revelation_check,
+            model=model_for_role("revelation_check"),
             system=system,
             messages=[{"role": "user", "content": prompt}],
             json_schema=REVELATION_CHECK_SCHEMA,

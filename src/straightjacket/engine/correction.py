@@ -11,7 +11,7 @@ from .ai import (
 )
 from .ai.provider_base import AIProvider, create_with_retry
 from .ai.schemas import CORRECTION_OUTPUT_SCHEMA
-from .config_loader import cfg, sampling_params
+from .config_loader import model_for_role, sampling_params
 from .director import should_call_director
 from .engine_loader import eng
 from .game.finalization import apply_post_narration, narrate_scene, resolve_action_consequences
@@ -92,13 +92,10 @@ npcs:
 </current_state>"""
 
     log(f"[Correction] Analysing: {correction_text[:100]}")
-    _c = cfg()
     try:
         response = create_with_retry(
             provider,
-            max_retries=_c.ai.max_retries.correction,
-            model=_c.ai.brain_model,
-            max_tokens=_c.ai.max_tokens.correction,
+            model=model_for_role("correction"),
             system=system,
             messages=[{"role": "user", "content": user_msg}],
             json_schema=CORRECTION_OUTPUT_SCHEMA,
@@ -235,6 +232,7 @@ def process_correction(
 
     _cfg = config or EngineConfig()
     nar = game.narrative
+    consequences: list[str] = []
 
     # Step 1: Analyse the correction
     analysis = call_correction_brain(provider, game, correction_text, _cfg)

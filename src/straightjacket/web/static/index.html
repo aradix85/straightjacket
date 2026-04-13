@@ -233,6 +233,8 @@ function connect() {
       case "chapter_started": onChapterStarted(msg); break;
       case "retry_available": showRetryOffer(msg.text); break;
       case "session_taken": onSessionTaken(); break;
+      case "turn_complete": break;
+      case "debug_state": break;
       case "error": showError(msg.text); break;
     }
   };

@@ -62,6 +62,7 @@ class PacingConfig:
     autonomous_clock_tick_chance: float = 0.20
     weak_hit_clock_tick_chance: float = 0.50
     fired_clock_keep_scenes: int = 3
+    npc_agency_interval: int = 5
 
 
 @dataclass

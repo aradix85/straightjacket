@@ -13,7 +13,7 @@ Cost: ~0.3s per check with a fast model.
 import json
 import re
 
-from ..config_loader import cfg, sampling_params
+from ..config_loader import model_for_role, sampling_params
 from ..logging_util import log
 from ..models import EngineConfig, GameState
 from .provider_base import AIProvider, create_with_retry
@@ -89,7 +89,6 @@ def validate_narration(
 
     # Layer 2: LLM (semantic) — only when rules passed
     llm_violations = []
-    _c = cfg()
     cons_text = ", ".join(consequences) if consequences else "none"
     pc_hint = f' The player character is "{player_name}" (the "you").' if player_name else ""
     cons_sentence_text = ""
@@ -140,31 +139,31 @@ Return pass=false with:
 Check constraints."""
 
     try:
+        _vp = sampling_params("validator")
+        _vp["max_retries"] = 1  # Single attempt for LLM constraint check
         response = create_with_retry(
             provider,
-            max_retries=1,
-            model=_c.ai.validator_model or _c.ai.brain_model,
-            max_tokens=_c.ai.max_tokens.validator,
+            model=model_for_role("validator"),
             system=system,
             messages=[{"role": "user", "content": prompt}],
             json_schema=VALIDATOR_SCHEMA,
-            **sampling_params("validator"),
             log_role="validator",
+            **_vp,
         )
         content = response.content.strip()
         if not content:
             # Empty response from json_schema mode — retry without schema
             log("[Validator] Empty response from json_schema, retrying without schema")
+            _vp2 = sampling_params("validator")
+            _vp2["max_retries"] = 1
             response = create_with_retry(
                 provider,
-                max_retries=1,
-                model=_c.ai.validator_model or _c.ai.brain_model,
-                max_tokens=_c.ai.max_tokens.validator,
+                model=model_for_role("validator"),
                 system=system
                 + '\n\nRespond with ONLY a JSON object: {"pass": true/false, "violations": [...], "correction": "..."}',
                 messages=[{"role": "user", "content": prompt}],
-                **sampling_params("validator"),
                 log_role="validator",
+                **_vp2,
             )
             content = response.content.strip()
         if content:
@@ -222,7 +221,7 @@ def validate_and_retry(
 
     # Resolve max_retries from config if not explicitly passed
     if max_retries is None:
-        max_retries = cfg().ai.max_retries.narrator
+        max_retries = sampling_params("narrator").get("max_retries", 3)
 
     # Load genre constraints from setting package
     gc_dict = None
@@ -442,7 +441,6 @@ def validate_architect(
     if not forbidden_terms and not forbidden_concepts and not genre_test:
         return blueprint
 
-    _c = cfg()
     conflict = blueprint.get("central_conflict", "")
     antagonist = blueprint.get("antagonist_force", "")
 
@@ -468,16 +466,16 @@ If it violates, return pass=false with the violations listed, and provide rewrit
 Check genre fidelity. Be strict — if it implies anything beyond physical reality, flag it."""
 
     try:
+        _vap = sampling_params("validator_architect")
+        _vap["max_retries"] = 1
         response = create_with_retry(
             provider,
-            max_retries=1,
-            model=_c.ai.validator_model or _c.ai.brain_model,
-            max_tokens=_c.ai.max_tokens.validator_architect,
+            model=model_for_role("validator_architect"),
             system=system,
             messages=[{"role": "user", "content": prompt}],
             json_schema=ARCHITECT_VALIDATOR_SCHEMA,
-            **sampling_params("validator_architect"),
             log_role="validator_architect",
+            **_vap,
         )
         result = json.loads(response.content)
         if not result.get("pass", True):

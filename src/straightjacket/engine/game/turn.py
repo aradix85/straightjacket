@@ -4,7 +4,7 @@
 from dataclasses import dataclass, field
 
 from ..ai.brain import call_brain, call_revelation_check
-from ..ai.provider_base import AIProvider
+from ..ai.provider_base import AIProvider, drain_token_log
 from ..director import should_call_director
 from ..engine_loader import eng
 from ..logging_util import log
@@ -319,6 +319,10 @@ def process_turn(
 ) -> tuple[GameState, str, RollResult | None, dict | None, dict | None]:
     nar = game.narrative
     log(f"[Turn] Scene {nar.scene_count + 1} | Player: {player_message[:100]}")
+
+    # Drain stale accumulators from a failed previous turn
+    drain_pending_events()
+    drain_token_log()
 
     purge_old_fired_clocks(game)
 

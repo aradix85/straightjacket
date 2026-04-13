@@ -6,7 +6,6 @@ import yaml
 from pathlib import Path
 
 from straightjacket.engine.ai.provider_base import AIProvider, post_process_response
-from straightjacket.engine.config_loader import cfg
 from straightjacket.engine.models import GameState
 from straightjacket.engine.story_state import get_current_act
 
@@ -45,7 +44,9 @@ def _load_bot_config() -> None:
         if temp is not None:
             _bot_temperature = float(temp)
     if not _bot_model:
-        _bot_model = cfg().ai.brain_model
+        from straightjacket.engine.config_loader import model_for_role
+
+        _bot_model = model_for_role("brain")
 
 
 def get_persona(style: str) -> str:
@@ -57,7 +58,9 @@ def get_persona(style: str) -> str:
 def ask_bot(provider: AIProvider, system: str, user: str, max_tokens: int = 300, model: str = "") -> str:
     """Single-shot call to the bot player model."""
     _load_bot_config()
-    _model = model or _bot_model or cfg().ai.brain_model
+    from straightjacket.engine.config_loader import model_for_role
+
+    _model = model or _bot_model or model_for_role("brain")
     response = provider.create_message(
         model=_model,
         system=system,

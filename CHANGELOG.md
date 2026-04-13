@@ -5,6 +5,42 @@ Originally forked from [EdgeTales](https://github.com/edgetales/edgetales). See 
 
 ---
 
+## [0.48.0] — 2026-04-13
+
+Cluster-based AI model assignment. Full codebase review. Bug fixes.
+
+Cluster refactor:
+- Five model clusters: creative (narrator, architect), classification (brain, correction), tool_calling (director), analytical (validator, validator_architect), extraction (narrator_metadata, opening_setup, revelation_check, chapter_summary, recap)
+- `ClusterConfig` dataclass: model, temperature, top_p, max_tokens, max_retries, extra_body. Every field required — parser validates and errors on missing fields
+- `model_for_role(role)` resolves model via per-role override → cluster. `sampling_params(role)` resolves all call parameters via per-role override → cluster. No hidden defaults, no fallbacks
+- `max_tool_rounds` as per-role config (only director uses it), not on cluster
+- Removed: `PerRoleInt` (12 hardcoded fields), `PerRoleIntDict`, `PerRoleFloat`, `PerRoleDict`, `ToolRounds`, all builder functions, `brain_model`/`narrator_model`/`director_model`/`validator_model`/`fast_model` fields, all `or` fallback chains, all legacy migration code
+- All 15 `create_with_retry` call sites refactored: model and all parameters resolved from config, no direct config field access in AI modules
+- `cfg()` and `_c = cfg()` removed from brain.py, narrator.py, architect.py, correction.py, validator.py — these modules now import only `model_for_role` and `sampling_params`
+
+Model eval (`tests/model_eval/`):
+- Per-role evaluation script: tests brain (10 cases), validator (5 cases), extraction (4 cases) in isolation with fixed inputs and expected outputs
+- Uses same provider/config infrastructure as engine — `model_for_role`, `sampling_params`, `create_with_retry`
+- `--role` for single-role, `--model` for model override, `--verbose` for full output
+- mypy checked (80 source files)
+
+Bug fixes:
+- `provider_openai.py`: duplicate `top_k`/`extra_body` assignment removed (copy-paste bug)
+- `models_base.py`: `tick_chaos` default floor 3→1 (Mythic 2e)
+- `correction.py`: `consequences` initialized at top of `process_correction`
+- `consequences.py`: hardcoded `% 5` replaced by config-driven `eng().pacing.npc_agency_interval`
+- `architect.py`: three inconsistent `log_role` values corrected (recap, architect, chapter_summary)
+- `schemas.py`: duplicate section comments removed
+- `index.html`: `turn_complete` and `debug_state` added as explicit no-op cases in WebSocket switch
+- `turn.py`: drain `_pending_events` and `_token_log` at turn start (stale accumulator leakage on failed turns)
+- `conftest.py`: chaos.min 3→1, npc_agency_interval added to stub
+
+Documentation:
+- ARCHITECTURE.md: Known Limitations section, cluster-based AI Model Assignment section
+- SECURITY.md: prompt injection via player input section
+
+693 tests (+1), ruff clean, mypy clean
+
 ## [0.47.0] — 2026-04-13
 
 Combat, expedition, and scene challenge track lifecycle (step 10). Multi-model support. Validator and Elvira overhaul.

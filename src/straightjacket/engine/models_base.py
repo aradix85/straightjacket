@@ -100,7 +100,7 @@ class WorldState(SerializableMixin):
     clocks: list[ClockData] = field(default_factory=list)
     combat_position: str = ""  # "in_control", "bad_spot", or "" (not in combat)
 
-    def tick_chaos(self, direction: int, floor: int = 3, ceiling: int = 9) -> None:
+    def tick_chaos(self, direction: int, floor: int = 1, ceiling: int = 9) -> None:
         """Adjust chaos factor. +1 on miss, -1 on strong hit or interrupt."""
         old = self.chaos_factor
         self.chaos_factor = max(floor, min(ceiling, self.chaos_factor + direction))

@@ -1,31 +1,91 @@
 # Straightjacket configuration
-# General settings — API provider, language.
-# For game mechanics, see engine.yaml.
-# For AI prompts, see prompts.yaml.
+# For game mechanics, see engine.yaml. For AI prompts, see prompts.yaml.
 
-# ── Server ────────────────────────────────────────────────────
 server:
-  host: "127.0.0.1"        # Bind address. Use "0.0.0.0" for LAN play.
+  host: "127.0.0.1"
   port: 8081
 
-# ── AI provider ───────────────────────────────────────────────
-# provider: "anthropic" or "openai_compatible"
-# api_base: only needed for openai_compatible
-# api_key_env: environment variable name that holds the API key
 ai:
   provider: "openai_compatible"
   api_base: "https://api.cerebras.ai/v1"
   api_key_env: "CEREBRAS_API_KEY"
   prompts_file: "prompts.yaml"
-  brain_model: "zai-glm-4.7"
-  narrator_model: "zai-glm-4.7"
-  director_model: "zai-glm-4.7"
-  validator_model: "gpt-oss-120b"
-  fast_model: "gpt-oss-120b"
+
+  # ── Model clusters ──────────────────────────────────────────
+  # Every field is required. No hidden defaults.
+  #
+  # Built-in role → cluster mapping (override via role_cluster):
+  #   creative:       narrator, architect
+  #   classification: brain, correction
+  #   tool_calling:   director
+  #   analytical:     validator, validator_architect
+  #   extraction:     narrator_metadata, opening_setup, revelation_check, chapter_summary, recap
+  clusters:
+    creative:
+      model: "zai-glm-4.7"
+      temperature: 0.9
+      top_p: 0.95
+      max_tokens: 8192
+      max_retries: 3
+      extra_body:
+        reasoning_effort: "none"
+    classification:
+      model: "zai-glm-4.7"
+      temperature: 0.5
+      top_p: 0.95
+      max_tokens: 8192
+      max_retries: 3
+      extra_body:
+        reasoning_effort: "none"
+    tool_calling:
+      model: "zai-glm-4.7"
+      temperature: 0.8
+      top_p: 0.95
+      max_tokens: 8192
+      max_retries: 3
+      extra_body:
+        reasoning_effort: "none"
+    analytical:
+      model: "gpt-oss-120b"
+      temperature: 0.3
+      top_p: 0.95
+      max_tokens: 8192
+      max_retries: 3
+    extraction:
+      model: "gpt-oss-120b"
+      temperature: 0.3
+      top_p: 0.95
+      max_tokens: 8192
+      max_retries: 3
+
+  # ── Per-role overrides ──────────────────────────────────────
+  # Take precedence over cluster values.
+
+  # role_model:
+  #   brain: "qwen3-235b-instruct"
+
+  # role_cluster:
+  #   architect: "extraction"        # Use cheap model for blueprints
+
+  temperature:
+    narrator: 1.0
+    architect: 0.8
+    brain: 0.6
+    correction: 0.3
+    narrator_metadata: 0.3
+    opening_setup: 0.6
+    revelation_check: 0.3
+    recap: 0.6
+    chapter_summary: 0.6
+    validator: 0.3
+    validator_architect: 0.3
+    director: 0.8
+
+  max_tool_rounds:
+    director: 3
+
   extra_body:
-    default:                           # GLM roles
-      reasoning_effort: "none"
-    validator: {}                      # Qwen — no reasoning_effort
+    validator: {}
     validator_architect: {}
     narrator_metadata: {}
     opening_setup: {}
@@ -33,55 +93,6 @@ ai:
     recap: {}
     chapter_summary: {}
 
-  max_tokens:
-    brain: 8192
-    brain_setup: 8192
-    narrator: 8192
-    narrator_metadata: 8192
-    opening_setup: 8192
-    revelation_check: 8192
-    recap: 8192
-    architect: 8192
-    director: 8192
-    correction: 8192
-    chapter_summary: 8192
-    validator: 8192
-    validator_architect: 8192
-  max_retries:
-    brain: 3
-    brain_setup: 3
-    narrator: 3
-    narrator_metadata: 3
-    opening_setup: 3
-    revelation_check: 3
-    recap: 3
-    architect: 3
-    director: 3
-    correction: 3
-    chapter_summary: 3
-    validator: 3
-    validator_architect: 3
-  max_tool_rounds:
-    brain: 3
-    director: 3
-  temperature:
-    brain: 0.6
-    brain_setup: 0.6
-    narrator: 1.0
-    narrator_metadata: 0.3
-    opening_setup: 0.6
-    revelation_check: 0.3
-    recap: 0.6
-    architect: 0.8
-    director: 0.8
-    correction: 0.3
-    chapter_summary: 0.6
-    validator: 0.3
-    validator_architect: 0.3
-  top_p:
-    default: 0.95
-
-# ── Language ──────────────────────────────────────────────────
 language:
   narration_language: "English"
   default_player_name: "Unnamed"
