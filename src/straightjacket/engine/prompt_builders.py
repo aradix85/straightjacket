@@ -404,9 +404,9 @@ def build_action_prompt(
     random_events: Sequence[RandomEvent] = (),
 ) -> str:
     context_text = f"{player_words} {brain.player_intent or ''} {game.world.current_scene_context or ''}"
-    from .mechanics import _move_category
+    from .mechanics import move_category
 
-    move_cat = _move_category(brain.move)
+    move_cat = move_category(brain.move)
     # Map engine categories to stance matrix categories
     stance_cat = {"combat": "combat", "social": "social"}.get(move_cat, "other")
     if brain.move == "adventure/gather_information":

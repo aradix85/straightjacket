@@ -14,26 +14,14 @@ import contextlib
 
 from starlette.websockets import WebSocket
 
-from ..engine import (
-    call_recap,
-    create_user,
-    delete_save,
-    delete_user,
-    generate_epilogue,
-    list_saves_with_info,
-    list_users,
-    load_game,
-    log,
-    process_correction,
-    process_momentum_burn,
-    process_turn,
-    reset_stale_reflection_flags,
-    run_deferred_director,
-    save_game,
-    start_new_chapter,
-    start_new_game,
-)
 from ..engine.ai.api_client import get_provider
+from ..engine.ai.architect import call_recap
+from ..engine.correction import process_correction, process_momentum_burn
+from ..engine.director import reset_stale_reflection_flags
+from ..engine.game import generate_epilogue, process_turn, run_deferred_director, start_new_chapter, start_new_game
+from ..engine.logging_util import log
+from ..engine.persistence import delete_save, list_saves_with_info, load_game, save_game
+from ..engine.user_management import create_user, delete_user, list_users
 from ..i18n import t
 from .serializers import build_creation_options, build_narrative_status, build_tracks_status, highlight_dialog
 from .session import BurnOffer, Session

@@ -165,7 +165,7 @@ def purge_old_fired_clocks(game: GameState, keep_scenes: int | None = None) -> N
 # ── Consequence sentence generation (step 4) ────────────────
 
 
-def _pick_template(key: str, fallback: str = "") -> str:
+def pick_template(key: str, fallback: str = "") -> str:
     """Pick a random template string from engine.yaml consequence_templates."""
     templates = eng().get_raw("consequence_templates", {})
     options = templates.get(key, [])
@@ -196,20 +196,20 @@ def generate_consequence_sentences(
     sentences: list[str] = []
 
     for cons in consequences:
-        sentence = _resolve_consequence_sentence(cons, player, npc_name, location)
+        sentence = resolve_consequence_sentence(cons, player, npc_name, location)
         if sentence:
             sentences.append(sentence)
 
     for event in clock_events:
         if event.triggered:
-            tpl = _pick_template("clock_triggered", f"Time's up: {event.clock}.")
+            tpl = pick_template("clock_triggered", f"Time's up: {event.clock}.")
             sentences.append(
                 tpl.format(
                     player=player, npc=npc_name, location=location, clock=event.clock, trigger=event.trigger, amount=""
                 )
             )
         else:
-            tpl = _pick_template("clock_tick")
+            tpl = pick_template("clock_tick")
             if tpl:
                 sentences.append(
                     tpl.format(
@@ -225,7 +225,7 @@ def generate_consequence_sentences(
     return sentences
 
 
-def _resolve_consequence_sentence(cons: str, player: str, npc_name: str, location: str) -> str:
+def resolve_consequence_sentence(cons: str, player: str, npc_name: str, location: str) -> str:
     """Resolve a single mechanical consequence string to a narrative sentence."""
     fmt = {"player": player, "npc": npc_name, "location": location, "amount": ""}
 
@@ -238,13 +238,13 @@ def _resolve_consequence_sentence(cons: str, player: str, npc_name: str, locatio
         # "Kira bond -1" → track=bond, npc=Kira
         if "bond" in cons.lower():
             if "-" in delta:
-                tpl = _pick_template("bond_loss")
+                tpl = pick_template("bond_loss")
                 # Extract NPC name from "Name bond -N"
                 bond_npc = cons.split("bond")[0].strip()
                 if bond_npc:
                     fmt["npc"] = bond_npc
             else:
-                tpl = _pick_template("bond_gain")
+                tpl = pick_template("bond_gain")
                 bond_npc = cons.split("bond")[0].strip()
                 if bond_npc:
                     fmt["npc"] = bond_npc
@@ -261,11 +261,11 @@ def _resolve_consequence_sentence(cons: str, player: str, npc_name: str, locatio
             severity = "heavy" if amount >= 2 else "light"
 
             if track in ("health", "spirit"):
-                tpl = _pick_template(f"{track}_{severity}")
+                tpl = pick_template(f"{track}_{severity}")
             elif track == "supply" or "supply" in cons:
-                tpl = _pick_template("supply_any")
+                tpl = pick_template("supply_any")
             elif track == "momentum":
-                tpl = _pick_template("momentum_loss")
+                tpl = pick_template("momentum_loss")
             else:
                 tpl = ""
 
@@ -274,11 +274,11 @@ def _resolve_consequence_sentence(cons: str, player: str, npc_name: str, locatio
 
         elif "+" in delta:
             if track in ("health", "spirit"):
-                tpl = _pick_template(f"{track}_gain")
+                tpl = pick_template(f"{track}_gain")
             elif track == "supply" or "supply" in cons:
-                tpl = _pick_template("supply_gain")
+                tpl = pick_template("supply_gain")
             elif track == "momentum":
-                tpl = _pick_template("momentum_gain")
+                tpl = pick_template("momentum_gain")
             else:
                 tpl = ""
 
@@ -291,7 +291,7 @@ def _resolve_consequence_sentence(cons: str, player: str, npc_name: str, locatio
         for sub in cons.split(","):
             sub = sub.strip()
             if sub:
-                s = _resolve_consequence_sentence(sub, player, npc_name, location)
+                s = resolve_consequence_sentence(sub, player, npc_name, location)
                 if s:
                     sub_sentences.append(s)
         return " ".join(sub_sentences)

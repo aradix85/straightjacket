@@ -72,7 +72,7 @@ def resolve_position(game: GameState, brain: BrainResult) -> str:
 
     # Move category baseline
     move = brain.move
-    cat = _move_category(move)
+    cat = move_category(move)
     baselines = pr.get("move_baselines", {})
     score += baselines.get(cat, baselines.get("other", 0))
 
@@ -176,7 +176,7 @@ def resolve_time_progression(move: str, has_location_change: bool = False) -> st
     return tmap.get(move, tmap.get("_default", "short"))
 
 
-def _move_category(move: str) -> str:
+def move_category(move: str) -> str:
     """Classify a move into its category for resolver lookups."""
     _e = eng()
     mc = _e.get_raw("move_categories", {})

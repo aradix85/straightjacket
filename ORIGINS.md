@@ -42,7 +42,8 @@ The original prototype, the NiceGUI web interface approach, and the idea of comb
 ## Credits
 
 - **Lars** ([EdgeTales](https://github.com/edgetales/edgetales)) — original prototype and foundational ideas
-- **Shawn Tomkin** — Ironsworn/Starforged (CC-BY-4.0)
+- **Shawn Tomkin** — Ironsworn/Starforged (CC BY-NC-SA 4.0)
 - **rsek** — [Datasworn](https://github.com/rsek/datasworn) data format
-- **Tana Pigeon** — Mythic GME (chaos factor concept)
+- **Tana Pigeon** — Mythic Game Master Emulator Second Edition (fate system, scene structure, random events, meaning tables, thread/character list mechanics)
 - **John Harper** — Blades in the Dark (position & effect, clocks)
+- **Gnome Stew** — AIMS framework (Agenda, Instinct, Moves, Secrets) for NPC agency

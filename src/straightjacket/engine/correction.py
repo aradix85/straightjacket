@@ -6,9 +6,7 @@ import re
 import uuid
 
 from ..i18n import t
-from .ai import (
-    call_brain,
-)
+from .ai.brain import call_brain
 from .ai.provider_base import AIProvider, create_with_retry
 from .ai.schemas import CORRECTION_OUTPUT_SCHEMA
 from .config_loader import model_for_role, sampling_params

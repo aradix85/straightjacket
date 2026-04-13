@@ -30,9 +30,9 @@ def _game() -> GameState:
 @pytest.fixture()
 def save_dir(tmp_path: Any, monkeypatch: Any, stub_all: None) -> object:  # type: ignore[override]
     """Redirect save directory to a temp path."""
-    from straightjacket.engine import logging_util
+    from straightjacket.engine import persistence
 
-    monkeypatch.setattr(logging_util, "get_save_dir", lambda username: tmp_path / username / "saves")
+    monkeypatch.setattr(persistence, "get_save_dir", lambda username: tmp_path / username / "saves")
     (tmp_path / "tester" / "saves").mkdir(parents=True, exist_ok=True)
     return tmp_path
 

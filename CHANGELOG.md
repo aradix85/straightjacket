@@ -5,6 +5,29 @@ Originally forked from [EdgeTales](https://github.com/edgetales/edgetales). See 
 
 ---
 
+## [0.48.1] — 2026-04-13
+
+Codebase audit. Module ownership cleanup. Documentation corrections.
+
+Module split:
+- `logging_util.py` split: logging functions stay (log, setup_file_logging, get_logger). User/save directory management, config load/save moved to new `user_management.py` (_safe_name, get_save_dir, create_user, delete_user, list_users, load_user_config, save_user_config, load_global_config, save_global_config)
+- `engine/__init__.py` re-export hub eliminated (88→8 lines). All consumers (web/handlers.py, web/server.py, elvira runner) import directly from submodules. No module imports via the hub
+
+Import normalization:
+- All AI module imports use direct submodule paths (`from .ai.brain import call_brain`), not the ai/ re-export hub. correction.py and game_start.py were the last holdouts
+- Underscore-prefixed public functions renamed: `_move_category` → `move_category`, `_time_phases` → `time_phases`, `_pick_template` → `pick_template`, `_resolve_consequence_sentence` → `resolve_consequence_sentence`. All call sites and tests updated
+
+Bug fixes:
+- `validator.py`: `sampling_params()` return dict was mutated in-place (3 sites). Now copied with `dict()` before mutation
+- `brain.py`: `call_revelation_check` logged tokens as `"brain_correction"`, now correctly `"revelation_check"`
+
+Documentation:
+- ARCHITECTURE.md: file map updated for user_management.py, logging_util.py description corrected. Module ownership table: PerRoleDict reference removed, user management entry added. Known Limitations: generator system, NPC-player emotional dynamics, asset mechanics described without roadmap references
+- ORIGINS.md: Mythic GME credit expanded, Ironsworn license corrected (CC BY-NC-SA 4.0), AIMS/Gnome Stew credit added
+- README.md: license section corrected
+
+692 tests, ruff clean, mypy clean (128 files: 79 source, 49 tests)
+
 ## [0.48.0] — 2026-04-13
 
 Cluster-based AI model assignment. Full codebase review. Bug fixes.

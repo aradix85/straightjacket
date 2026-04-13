@@ -8,7 +8,8 @@ from ..ai.architect import call_chapter_summary, call_story_architect
 from ..ai.narrator import call_narrator, call_opening_setup
 from ..ai.provider_base import AIProvider
 from ..engine_loader import eng
-from ..logging_util import load_user_config, log, save_user_config
+from ..logging_util import log
+from ..user_management import load_user_config, save_user_config
 from ..mechanics import (
     choose_story_structure,
     record_scene_intensity,

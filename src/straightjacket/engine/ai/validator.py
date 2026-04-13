@@ -139,7 +139,7 @@ Return pass=false with:
 Check constraints."""
 
     try:
-        _vp = sampling_params("validator")
+        _vp = dict(sampling_params("validator"))
         _vp["max_retries"] = 1  # Single attempt for LLM constraint check
         response = create_with_retry(
             provider,
@@ -154,7 +154,7 @@ Check constraints."""
         if not content:
             # Empty response from json_schema mode — retry without schema
             log("[Validator] Empty response from json_schema, retrying without schema")
-            _vp2 = sampling_params("validator")
+            _vp2 = dict(sampling_params("validator"))
             _vp2["max_retries"] = 1
             response = create_with_retry(
                 provider,
@@ -466,7 +466,7 @@ If it violates, return pass=false with the violations listed, and provide rewrit
 Check genre fidelity. Be strict — if it implies anything beyond physical reality, flag it."""
 
     try:
-        _vap = sampling_params("validator_architect")
+        _vap = dict(sampling_params("validator_architect"))
         _vap["max_retries"] = 1
         response = create_with_retry(
             provider,

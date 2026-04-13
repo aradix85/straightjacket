@@ -20,7 +20,7 @@ from starlette.responses import FileResponse, JSONResponse
 from starlette.routing import Route, WebSocketRoute
 from starlette.websockets import WebSocket, WebSocketDisconnect
 
-from ..engine import narration_language
+from ..engine.config_loader import narration_language
 from ..engine.logging_util import log
 from ..engine.models import EngineConfig
 from .handlers import (

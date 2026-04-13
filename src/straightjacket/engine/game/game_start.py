@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 """Game start: character creation and opening scene generation."""
 
-from ..ai import call_narrator, call_story_architect
-from ..ai.narrator import call_opening_setup
+from ..ai.architect import call_story_architect
+from ..ai.narrator import call_narrator, call_opening_setup
 from ..ai.provider_base import AIProvider
 from ..config_loader import default_player_name
 from ..engine_loader import eng
-from ..logging_util import load_user_config, log, save_user_config
+from ..logging_util import log
+from ..user_management import load_user_config, save_user_config
 from ..mechanics import (
     choose_story_structure,
     record_scene_intensity,

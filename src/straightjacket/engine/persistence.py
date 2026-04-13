@@ -8,7 +8,8 @@ from typing import Any
 
 from .config_loader import VERSION
 from .engine_loader import eng
-from .logging_util import _safe_name, get_save_dir, log
+from .logging_util import log
+from .user_management import _safe_name, get_save_dir
 from .models import GameState
 from .npc import (
     apply_name_sanitization,

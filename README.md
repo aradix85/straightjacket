@@ -96,4 +96,4 @@ The initial prototype was built on top of [EdgeTales](https://github.com/edgetal
 
 ## License
 
-AGPL-3.0. Game data from [Datasworn](https://github.com/rsek/datasworn) (CC-BY-4.0, some CC-BY-NC-SA-4.0). Mechanics: Ironsworn/Starforged (Shawn Tomkin, CC-BY-4.0), Mythic GME (Tana Pigeon), Blades in the Dark (John Harper).
+AGPL-3.0. Game data from [Datasworn](https://github.com/rsek/datasworn) (CC BY-NC-SA 4.0). Mechanics: Ironsworn/Starforged (Shawn Tomkin, CC BY-NC-SA 4.0), Mythic GME 2e (Tana Pigeon, CC BY-NC 4.0), Blades in the Dark (John Harper).

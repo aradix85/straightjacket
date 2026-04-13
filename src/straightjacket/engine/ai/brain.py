@@ -187,7 +187,7 @@ def call_revelation_check(
             messages=[{"role": "user", "content": prompt}],
             json_schema=REVELATION_CHECK_SCHEMA,
             **sampling_params("revelation_check"),
-            log_role="brain_correction",
+            log_role="revelation_check",
         )
         result = json.loads(response.content)
         confirmed = result.get("revelation_confirmed", True)

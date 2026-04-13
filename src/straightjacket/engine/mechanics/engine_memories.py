@@ -5,7 +5,7 @@ from __future__ import annotations
 
 from ..engine_loader import eng
 from ..models import BrainResult, GameState, RollResult
-from .resolvers import _move_category
+from .resolvers import move_category
 
 
 def derive_memory_emotion(move: str, result: str, disposition: str = "neutral") -> str:
@@ -61,7 +61,7 @@ def generate_engine_memories(
 
     move = brain.move
     result = roll.result if roll else "dialog"
-    category = _move_category(move)
+    category = move_category(move)
     intent = brain.player_intent or ""
 
     # Resolve template variables

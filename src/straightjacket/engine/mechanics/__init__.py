@@ -16,14 +16,13 @@ Implementation split across:
 
 __all__ = [
     "NpcStance",
-    "_move_category",
-    "_time_phases",
     "add_character_weight",
     "add_thread_weight",
     "advance_time",
     "apply_brain_location_time",
     "can_burn_momentum",
     "check_npc_agency",
+    "check_scene",
     "choose_story_structure",
     "compute_npc_gate",
     "consolidate_characters",
@@ -37,8 +36,11 @@ __all__ = [
     "generate_scene_context",
     "get_pacing_hint",
     "locations_match",
+    "move_category",
+    "pick_template",
     "purge_old_fired_clocks",
     "record_scene_intensity",
+    "resolve_consequence_sentence",
     "resolve_effect",
     "resolve_fate",
     "resolve_fate_chart",
@@ -50,19 +52,19 @@ __all__ = [
     "roll_action",
     "roll_event_focus",
     "roll_meaning_table",
-    "check_scene",
     "tick_autonomous_clocks",
+    "time_phases",
     "update_chaos_factor",
     "update_location",
 ]
 
 from .consequences import (
-    _pick_template,
-    _resolve_consequence_sentence,
     can_burn_momentum,
     check_npc_agency,
     generate_consequence_sentences,
+    pick_template,
     purge_old_fired_clocks,
+    resolve_consequence_sentence,
     roll_action,
     roll_progress,
     tick_autonomous_clocks,
@@ -90,7 +92,7 @@ from .random_events import (
     roll_meaning_table,
 )
 from .resolvers import (
-    _move_category,
+    move_category,
     resolve_effect,
     resolve_position,
     resolve_time_progression,
@@ -104,13 +106,13 @@ from .stance_gate import (
     resolve_npc_stance,
 )
 from .world import (
-    _time_phases,
     advance_time,
     apply_brain_location_time,
     choose_story_structure,
     get_pacing_hint,
     locations_match,
     record_scene_intensity,
+    time_phases,
     update_chaos_factor,
     update_location,
 )

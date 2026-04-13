@@ -140,3 +140,68 @@ extraction:
     known_npcs: ["npc_2=Borin"]
     expect:
       deceased_npc_present: true
+
+narrator:
+  - id: "miss_no_silver_lining"
+    result_type: "MISS"
+    consequences: ["health -2"]
+    player_words: "I try to jump across the gap"
+    expect:
+      no_silver_lining: true
+      no_metadata_leak: true
+      no_result_type_leak: true
+
+  - id: "strong_hit_positive"
+    result_type: "STRONG_HIT"
+    consequences: ["momentum +1"]
+    player_words: "I search the wreckage for supplies"
+    expect:
+      no_metadata_leak: true
+      no_result_type_leak: true
+
+  - id: "weak_hit_has_cost"
+    result_type: "WEAK_HIT"
+    consequences: ["supply -1"]
+    player_words: "I negotiate with the merchant for passage"
+    expect:
+      no_silver_lining: false
+      no_metadata_leak: true
+      no_result_type_leak: true
+
+  - id: "player_agency_respected"
+    result_type: "MISS"
+    consequences: ["spirit -1"]
+    player_words: "I open the sealed door"
+    expect:
+      no_agency_violation: true
+      no_metadata_leak: true
+
+  - id: "consequence_woven"
+    result_type: "MISS"
+    consequences: ["health -2", "momentum -3"]
+    consequence_sentences: ["The impact drives the air from your lungs.", "Whatever edge you had, it's gone now."]
+    player_words: "I charge through the barricade"
+    expect:
+      consequence_reflected: true
+      no_metadata_leak: true
+
+director:
+  - id: "tool_call_with_npc"
+    trigger: "reflection"
+    expect:
+      calls_tool: true
+      valid_json_output: true
+      has_npc_reflection: true
+
+  - id: "structured_output_complete"
+    trigger: "interval"
+    expect:
+      valid_json_output: true
+      has_scene_summary: true
+      has_narrator_guidance: true
+
+  - id: "tool_call_threads"
+    trigger: "miss"
+    expect:
+      calls_tool: true
+      valid_json_output: true

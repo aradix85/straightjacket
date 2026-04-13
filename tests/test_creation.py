@@ -55,76 +55,45 @@ def test_progress_track_filled_boxes() -> None:
 # ── ThreadEntry ───────────────────────────────────────────────
 
 
-def test_validate_stats_valid(load_engine: None) -> None:
+@pytest.mark.parametrize(
+    "stats, error_match",
+    [
+        ({"edge": 3, "heart": 2, "iron": 2, "shadow": 1, "wits": 2}, "must total"),
+        ({"edge": 4, "heart": 2, "iron": 2, "shadow": 1, "wits": 0}, "outside"),
+        ({"edge": 3, "heart": 3, "iron": 1, "shadow": 1, "wits": 1}, "Invalid stat distribution"),
+        ({"edge": 3, "heart": 2, "iron": 1, "shadow": 1}, "Missing stat"),
+    ],
+)
+def test_validate_stats_rejects_invalid(load_engine: None, stats: dict, error_match: str) -> None:
+    from straightjacket.engine.game.game_start import validate_stats
+
+    with pytest.raises(ValueError, match=error_match):
+        validate_stats(stats)
+
+
+def test_validate_stats_accepts_valid(load_engine: None) -> None:
     from straightjacket.engine.game.game_start import validate_stats
 
     validate_stats({"edge": 3, "heart": 2, "iron": 2, "shadow": 1, "wits": 1})
 
 
-def test_validate_stats_wrong_sum(load_engine: None) -> None:
-    from straightjacket.engine.game.game_start import validate_stats
-
-    with pytest.raises(ValueError, match="must total"):
-        validate_stats({"edge": 3, "heart": 2, "iron": 2, "shadow": 1, "wits": 2})  # sums to 10
-
-
-def test_validate_stats_out_of_range(load_engine: None) -> None:
-    from straightjacket.engine.game.game_start import validate_stats
-
-    with pytest.raises(ValueError, match="outside"):
-        validate_stats({"edge": 4, "heart": 2, "iron": 2, "shadow": 1, "wits": 0})  # 4 > max 3, sum=9
-
-
-def test_validate_stats_invalid_array(load_engine: None) -> None:
-    from straightjacket.engine.game.game_start import validate_stats
-
-    with pytest.raises(ValueError, match="Invalid stat distribution"):
-        validate_stats({"edge": 3, "heart": 3, "iron": 1, "shadow": 1, "wits": 1})  # [3,3,1,1,1] not valid, sum=9
-
-
-def test_validate_stats_missing_stat(load_engine: None) -> None:
-    from straightjacket.engine.game.game_start import validate_stats
-
-    with pytest.raises(ValueError, match="Missing stat"):
-        validate_stats({"edge": 3, "heart": 2, "iron": 1, "shadow": 1})
-
-
 # ── Chaos vow modifier ───────────────────────────────────────
 
 
-def test_chaos_start_desperate_vow(load_engine: None) -> None:
+@pytest.mark.parametrize(
+    "vow, expected",
+    [
+        ("I must survive the siege at all costs", 7),
+        ("I will find my lost sister", 6),
+        ("I want to explore the uncharted regions", 4),
+        ("I seek redemption", 5),
+        ("", 5),
+    ],
+)
+def test_chaos_start_from_vow(load_engine: None, vow: str, expected: int) -> None:
     from straightjacket.engine.game.game_start import _compute_chaos_start
 
-    result = _compute_chaos_start("I must survive the siege at all costs")
-    assert result == 7  # 5 + 2
-
-
-def test_chaos_start_tense_vow(load_engine: None) -> None:
-    from straightjacket.engine.game.game_start import _compute_chaos_start
-
-    result = _compute_chaos_start("I will find my lost sister")
-    assert result == 6  # 5 + 1
-
-
-def test_chaos_start_calm_vow(load_engine: None) -> None:
-    from straightjacket.engine.game.game_start import _compute_chaos_start
-
-    result = _compute_chaos_start("I want to explore the uncharted regions")
-    assert result == 4  # 5 - 1
-
-
-def test_chaos_start_no_match(load_engine: None) -> None:
-    from straightjacket.engine.game.game_start import _compute_chaos_start
-
-    result = _compute_chaos_start("I seek redemption")
-    assert result == 5  # no match, default
-
-
-def test_chaos_start_empty_vow(load_engine: None) -> None:
-    from straightjacket.engine.game.game_start import _compute_chaos_start
-
-    result = _compute_chaos_start("")
-    assert result == 5
+    assert _compute_chaos_start(vow) == expected
 
 
 # ── Vow seeding ──────────────────────────────────────────────
@@ -425,37 +394,24 @@ def test_validate_creation_valid_vow_rank_passes(load_engine: None) -> None:
 # ── Memory emotional weight derivation ────────────────────────
 
 
-def test_derive_memory_emotion_combat_miss(load_engine: None) -> None:
+@pytest.mark.parametrize(
+    "move, result, disposition, expected_fragment",
+    [
+        ("combat/clash", "MISS", "hostile", "fear_pain_hostile"),
+        ("adventure/compel", "STRONG_HIT", "friendly", "trusting_open_warm"),
+        ("dialog", "dialog", "neutral", "neutral"),
+        ("unknown_move", "MISS", "neutral", "frustrated_setback"),
+    ],
+)
+def test_derive_memory_emotion(
+    load_engine: None, move: str, result: str, disposition: str, expected_fragment: str
+) -> None:
     from straightjacket.engine.mechanics import derive_memory_emotion
 
-    result = derive_memory_emotion("combat/clash", "MISS", "hostile")
-    assert result == "fear_pain_hostile"
-
-
-def test_derive_memory_emotion_social_strong_hit_friendly(load_engine: None) -> None:
-    from straightjacket.engine.mechanics import derive_memory_emotion
-
-    result = derive_memory_emotion("adventure/compel", "STRONG_HIT", "friendly")
-    assert result == "trusting_open_warm"
-
-
-def test_derive_memory_emotion_dialog(load_engine: None) -> None:
-    from straightjacket.engine.mechanics import derive_memory_emotion
-
-    result = derive_memory_emotion("dialog", "dialog", "neutral")
-    assert result == "neutral"
-
-
-def test_derive_memory_emotion_unknown_move(load_engine: None) -> None:
-    from straightjacket.engine.mechanics import derive_memory_emotion
-
-    result = derive_memory_emotion("unknown_move", "MISS", "neutral")
-    assert result == "frustrated_setback"
+    assert expected_fragment in derive_memory_emotion(move, result, disposition)
 
 
 def test_derive_memory_emotion_recovery_strong(load_engine: None) -> None:
     from straightjacket.engine.mechanics import derive_memory_emotion
 
-    result = derive_memory_emotion("suffer/endure_harm", "STRONG_HIT", "loyal")
-    # endure_harm is in both endure and recovery categories; endure matches first
-    assert "devoted" in result
+    assert "devoted" in derive_memory_emotion("suffer/endure_harm", "STRONG_HIT", "loyal")

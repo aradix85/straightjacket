@@ -14,15 +14,10 @@ import yaml
 if TYPE_CHECKING:
     from straightjacket.engine.ai.provider_base import AIProvider
 
-from straightjacket.engine import (
-    EngineConfig,
-    GameState,
-    create_user,
-    delete_save,
-    get_provider,
-    load_game,
-    save_game,
-)
+from straightjacket.engine.ai.api_client import get_provider
+from straightjacket.engine.models import EngineConfig, GameState
+from straightjacket.engine.persistence import delete_save, load_game, save_game
+from straightjacket.engine.user_management import create_user
 from straightjacket.engine.config_loader import VERSION, cfg
 from straightjacket.engine.correction import process_correction, process_momentum_burn
 from straightjacket.engine.datasworn.settings import list_packages

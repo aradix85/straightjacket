@@ -65,14 +65,14 @@ def update_chaos_factor(game: GameState, result: str, target_npc_id: str | None 
 # TEMPORAL & SPATIAL CONSISTENCY
 
 
-def _time_phases() -> list[str]:
+def time_phases() -> list[str]:
     """Read time phases from engine.yaml."""
     return list(eng().enums.time_phases)
 
 
 def advance_time(game: GameState, progression: str) -> None:
     """Advance time_of_day based on Brain's time_progression assessment."""
-    phases = _time_phases()
+    phases = time_phases()
     if not game.world.time_of_day or progression in ("none", "short"):
         return
     try:
