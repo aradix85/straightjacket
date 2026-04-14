@@ -59,6 +59,14 @@ genre_constraints:
     - "unnaturally"
     - "apparition"
     - "phantasm"
+    # Qwen patterns (poetic material agency)
+    - "sighs"
+    - "exhales"
+    - "exhaling"
+    - "awakens"
+    - "waking"
+    - "shimmers"
+    - "shimmering"
   atmospheric_drift_threshold: 2
 
 creation_flow:

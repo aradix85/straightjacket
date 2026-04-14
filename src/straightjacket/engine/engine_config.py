@@ -31,9 +31,6 @@ class NpcConfig:
     reflection_recency_floor: float = 0.6
     about_npc_relevance_boost: float = 0.6
     consolidation_recency_ratio: float = 0.6
-    monologue_max_chars: int = 200
-    description_max_chars: int = 200
-    arc_max_chars: int = 300
     gate_memory_counts: dict[int, int] = field(default_factory=lambda: {0: 0, 1: 0, 2: 3, 3: 5, 4: 5})
     activated_memory_count: int = 2
 

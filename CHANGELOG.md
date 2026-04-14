@@ -5,6 +5,56 @@ Originally forked from [EdgeTales](https://github.com/edgetales/edgetales). See 
 
 ---
 
+## [0.49.0] — 2026-04-14
+
+Model optimization: GLM-4.7 removed, two-model architecture (Qwen 3 narrator, GPT-OSS everything else). Narrator prompt rewritten for Qwen 3. Validator tuned for Qwen patterns. Arbitrary length limits removed.
+
+Model changes:
+- GLM-4.7 removed from all clusters. Creative cluster (architect, director) now uses GPT-OSS. Cost reduction ~54% per session, no quality loss on non-narrator roles
+- Narrator: Qwen 3 235B, top_p lowered from 0.95 to 0.8 (Qwen recommended for non-thinking mode)
+- All non-narrator roles: GPT-OSS 120B (~3000 t/s, $0.35/$0.75 per M tokens)
+
+Narrator prompt (prompts.yaml):
+- Header updated: GLM-specific advice replaced with Qwen 3 guidance (examples over directives, constraints at top)
+- narrator_system rewritten: MUST/STRICTLY language replaced with concrete WRONG/RIGHT examples targeting Qwen patterns
+- Genre physics: added Qwen-specific WRONG examples (sighs, exhales, pulses, awakens, breathes)
+- Player agency: added Qwen-specific WRONG examples (sticks in your mind, you've found the break, you can tell)
+- NPC speech: renamed from "SPEECH BUDGET" to "SPEECH CONTENT". Sentence/length limits removed. Constraint is now purely content-based: NPCs answer what was asked, say nothing beyond the question's scope. Length is explicitly allowed for complex answers
+- task_dialog: "max two sentences" replaced with content scope rule
+
+Validator (rule_validator.py):
+- NPC monologue check: character count check removed (was 200-char limit). Only structural dominance check remains (4+ quoted segments with minimal breaks)
+- Player agency: 4 new Qwen-specific regex patterns (you've found the break, sticks in your mind, you can tell, you notice yourself thinking)
+- Player agency: quoted NPC speech now stripped before regex matching (fixes false positive on NPC saying "You think X?")
+- GLM-specific comments removed from pattern list
+
+Engine config:
+- `monologue_max_chars` removed from engine.yaml and engine_config.py (unused after validator change)
+- `description_max_chars` removed from engine.yaml, engine_config.py, and director.py (arbitrary limit, never hit in practice)
+- `arc_max_chars` removed from engine.yaml, engine_config.py, and director.py (arbitrary limit, never hit in practice)
+- Director: arc and description length rejection removed. `is_complete_description` check retained (catches truncated output)
+
+Atmospheric drift (setting YAML files):
+- All settings: Qwen material agency words added (sighs, exhales, awakens, shimmers)
+- starforged: hums, pulses, exhales, thrums removed (legitimate sci-fi machine vocabulary). seeps removed (coolant seeps is physical)
+- classic: glow/glows/glowing removed (light glows physically), seep/seeps/seeping removed (water seeps physically), whisper/whispers/whispering removed (people whisper)
+- sundered_isles: seeps/seeping removed (water on ships is physical). hums, pulses, thrums removed (ship machinery)
+
+Elvira batch runner (tests/elvira/elvira_batch.py):
+- Default styles changed from all 5 to explorer, aggressor, dialogist (most diagnostic coverage)
+- Text report output removed, JSON only. Default output: batch_report.json
+
+Baseline comparison (9 sessions, Elvira batch):
+- Cost per session: $0.117 → $0.055 (−53%)
+- Cost per turn (real player, no bot): ~$0.012
+- Genre physics violations: 24 → 7 (−71%)
+- Player agency violations: 12 → 3 (−75%)
+- Consequence compliance: 10 → 4 (−60%)
+- Result integrity: 9 → 5 (−44%)
+- Resolution pacing: stable (dominant remaining violation category, ~60% retry fix rate)
+
+---
+
 ## [0.48.1] — 2026-04-13
 
 Codebase audit. Module ownership cleanup. Documentation corrections.

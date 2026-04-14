@@ -112,7 +112,7 @@ The engine assigns models to AI roles via clusters. Each cluster groups roles th
 ```
 Cluster          Roles                                              Needs
 ─────────────────────────────────────────────────────────────────────────────
-narrator         narrator                                           prose generation (high temperature)
+narrator         narrator                                           prose generation (creative writing)
 creative         architect, director                                genre-aware structured output + tool calling
 classification   brain, correction                                  input parsing, json_schema
 analytical       validator, validator_architect, narrator_metadata,  constraint checking, data extraction
@@ -126,15 +126,14 @@ Config structure in `config.yaml`:
 ai:
   clusters:
     narrator:
-      model: "zai-glm-4.7"
-      temperature: 1.0
-      top_p: 0.95
+      model: "qwen-3-235b-a22b-instruct-2507"
+      temperature: 0.7
+      top_p: 0.8
       max_tokens: 8192
       max_retries: 3
-      extra_body: {reasoning_effort: "none"}
     creative:
-      model: "zai-glm-4.7"
-      temperature: 0.8
+      model: "gpt-oss-120b"
+      temperature: 0.7
       ...
     analytical:
       model: "gpt-oss-120b"
@@ -243,7 +242,7 @@ src/straightjacket/
 
 **Snapshot/restore.** `GameState.snapshot()` captures all mutable state before a turn. `restore()` reverts everything atomically. Used by correction (##) and momentum burn.
 
-**Provider abstraction.** `AIProvider` protocol with two implementations (Anthropic, OpenAI-compatible). The engine never imports provider SDKs directly. `create_with_retry` handles transient errors with exponential backoff. Multi-model: config.yaml assigns models via four clusters — narrator (prose), creative (architect, director), classification (brain, correction), analytical (validator, metadata, recap, and other structured output roles). Clusters are the single source of truth for all call parameters. `model_for_role(role)` resolves the model; `sampling_params(role)` resolves temperature, top_p, max_tokens, max_retries, and extra_body. The provider stores no model state.
+**Provider abstraction.** `AIProvider` protocol with two implementations (Anthropic, OpenAI-compatible). The engine never imports provider SDKs directly. `create_with_retry` handles transient errors with exponential backoff. Multi-model: config.yaml assigns models via four clusters — narrator (Qwen 3 for prose), creative (GPT-OSS for architect, director), classification (GPT-OSS for brain, correction), analytical (GPT-OSS for validator, metadata, recap, and other structured output roles). Clusters are the single source of truth for all call parameters. `model_for_role(role)` resolves the model; `sampling_params(role)` resolves temperature, top_p, max_tokens, max_retries, and extra_body. The provider stores no model state.
 
 **Minimal UI.** Single HTML page, no build step, no npm. Server sends JSON, client renders. Scene headings for screen reader navigation, aria-live for automatic narration readout. One button (Save/Load), one text input. Status via `/status` and `/score` text commands — engine answers directly, no AI call. Status output is narrative, not mechanical: "seriously wounded" instead of "health 2", "growing trust" instead of "bond 4/10". The player never sees numbers, dice, or system terms.
 
@@ -277,7 +276,7 @@ src/straightjacket/
 
 ## Known Limitations
 
-**Validator is model-specific.** The hybrid validator (rule-based + LLM) is tuned for GLM-4.7 patterns. Switching narrator model will likely require re-tuning: new agency violation patterns, different atmospheric drift words, different monologue tendencies. The rule validator catches the common cases; the LLM validator catches the rest but is inherently fragile — an unreliable system checking another unreliable system.
+**Validator is model-specific.** The hybrid validator (rule-based + LLM) is tuned for Qwen 3 patterns on Cerebras. The rule validator catches common violations (player agency regex patterns, atmospheric drift wordlists, split-monologue detection). The LLM validator catches the rest — resolution pacing (NPC speech content), genre physics, consequence compliance. Resolution pacing remains the hardest violation to correct: Qwen's creative writing training biases it toward information-rich NPC dialog. Retry success rate is ~60% for pacing violations. Switching narrator model will require re-tuning: new agency patterns, different drift words, different pacing tendencies.
 
 **Single session.** One player at a time. The module-level accumulators (`_pending_events`, `_token_log`) and the in-memory SQLite database assume single-threaded access. Multi-session would require per-session state isolation.
 

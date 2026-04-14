@@ -19,9 +19,6 @@ npc:
   reflection_recency_floor: 0.6  # Min recency score for reflection memories
   about_npc_relevance_boost: 0.6  # Relevance boost when memory.about_npc matches present NPC
   consolidation_recency_ratio: 0.6  # Fraction of observation budget reserved for recent memories
-  monologue_max_chars: 200    # Max chars per NPC speech block before validator flags it
-  description_max_chars: 200  # Max chars for Director-updated NPC descriptions
-  arc_max_chars: 300          # Max chars for Director-updated NPC arcs
   # Memory counts per information gate level (gate 0-4)
   gate_memory_counts: {0: 0, 1: 0, 2: 3, 3: 5, 4: 5}
   activated_memory_count: 2   # Memories shown for activated (non-target) NPCs

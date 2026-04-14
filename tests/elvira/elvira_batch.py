@@ -43,6 +43,7 @@ from tests.elvira.elvira_bot.runner import load_config, run_session
 
 DEFAULT_CONFIG = _HERE / "elvira_config.yaml"
 ALL_STYLES = ["explorer", "aggressor", "dialogist", "chaosagent", "balanced"]
+DEFAULT_STYLES = ["explorer", "aggressor", "dialogist"]
 SEPARATOR = "=" * 62
 
 
@@ -239,7 +240,7 @@ def main() -> None:
     parser.add_argument("--settings", nargs="+", default=None, help="Settings to test (default: all except delve)")
     parser.add_argument("--styles", nargs="+", default=None, help="Styles to test (default: all 5)")
     parser.add_argument(
-        "--output", type=Path, default=None, help="Report output path (default: elvira/batch_report.txt)"
+        "--output", type=Path, default=None, help="JSON output path (default: elvira/batch_report.json)"
     )
     args = parser.parse_args()
 
@@ -250,7 +251,7 @@ def main() -> None:
 
     available_settings = [s for s in list_packages() if s != "delve"]
     settings = args.settings or available_settings
-    styles = args.styles or ALL_STYLES
+    styles = args.styles or DEFAULT_STYLES
 
     # Validate inputs
     for s in settings:
@@ -276,15 +277,10 @@ def main() -> None:
     print(report)
     print(SEPARATOR)
 
-    # Write report
-    report_path = args.output or (_HERE / "batch_report.txt")
-    report_path.write_text(report, encoding="utf-8")
-    print(f"\n[BATCH] Report written to: {report_path}")
-
     # Write raw JSON for programmatic analysis
-    json_path = report_path.with_suffix(".json")
+    json_path = args.output or (_HERE / "batch_report.json")
     json_path.write_text(json.dumps(results, indent=2, ensure_ascii=False), encoding="utf-8")
-    print(f"[BATCH] Raw data written to: {json_path}")
+    print(f"\n[BATCH] Results written to: {json_path}")
 
 
 if __name__ == "__main__":

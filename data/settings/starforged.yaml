@@ -65,7 +65,7 @@ genre_constraints:
     - "ritual"
     - "sorcery"
     - "arcane"
-    # GLM patterns (gothic material animation)
+    # Material animation (objects acting alive)
     - "weep"
     - "weeps"
     - "weeping"
@@ -87,6 +87,14 @@ genre_constraints:
     - "phantom"
     - "beckons"
     - "beckoning"
+    # Qwen patterns (poetic material agency — only words that give
+    # consciousness to inert matter. hums/pulses/exhales/thrums are
+    # legitimate for machines and reactors in sci-fi.)
+    - "sighs"
+    - "awakens"
+    - "waking"
+    - "shimmers"
+    - "shimmering"
   atmospheric_drift_threshold: 2
 
 # Character creation flow flags.

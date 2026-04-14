@@ -28,34 +28,48 @@ _AGENCY_EMOTION_PATTERNS = [
     r"\b(?:a (?:wave|surge|pang|flash|jolt|stab) of (?:fear|dread|anger|grief|joy|relief|guilt|shame|hope|despair|panic|revulsion|unease|disgust|sadness|horror|rage|fury))\b",
     # "something in you" constructions
     r"\bsomething (?:in|inside|within) you\b",
-    # GLM patterns: abstract weight/pressure as emotional metaphor
+    # Abstract weight/pressure as emotional metaphor
     r"\b(?:the )?weight of (?:your |the |his |her )?(?:failure|guilt|shame|loss|grief|regret|betrayal|silence|withdrawal)\b",
-    # GLM patterns: "makes you want to" — imposes desire
+    # "makes you want to" — imposes desire
     r"\bmakes you (?:want|need|wish|long|ache) to\b",
-    # GLM patterns: objects/situations imposing feelings
+    # Objects/situations imposing feelings
     r"\b(?:the |a )?(?:silence|darkness|cold|emptiness|room|air|wind) (?:offers|invites|urges|compels|forces|demands|asks|tells) you\b",
-    # GLM patterns: pressure/weight settling on player (from Elvira data)
+    # Pressure/weight settling on player
     r"\b(?:press(?:es|ing)|settl(?:es|ing)|weigh(?:s|ing)|hang(?:s|ing)|bears? down) (?:against |on |upon )?your (?:chest|shoulders|ears|back|spine|ribs)\b",
-    # GLM patterns: dragging posture/body as emotional metaphor
+    # Dragging posture/body as emotional metaphor
     r"\bdragging your (?:posture|shoulders|head|body|gaze)\b",
-    # GLM patterns: crushing/suffocating as emotional descriptor
+    # Crushing/suffocating as emotional descriptor
     r"\b(?:crushing|suffocating) (?:pressure|weight|silence|darkness|realization)\b",
-    # GLM patterns: "feels distant/underwater" — imposed dissociation
+    # "feels distant/underwater" — imposed dissociation
     r"\b(?:sound|voice|world|noise)s? feels? (?:distant|muffled|far away|underwater)\b",
-    # GLM patterns: "as if you are" — imposed internal comparison
+    # "as if you are" — imposed internal comparison
     r"\bas if you (?:are|were) (?:already |somehow )?(?:underwater|drowning|falling|sinking|floating)\b",
-    # GLM MISS patterns: evaporation/loss metaphors applied to player state
+    # Evaporation/loss metaphors applied to player state
     r"\b(?:whatever |the )?(?:fragile |thin )?(?:advantage|connection|trust|hope|progress) you (?:thought you )?held\b",
     r"\b(?:advantage|connection|trust|hope) (?:you held |between you )?(?:evaporates?|dissolves?|vanishes?|crumbles?)\b",
+    # Qwen patterns: knowledge/conclusion imposed on player (from Elvira baseline)
+    r"\byou(?:'ve| have) found (?:the |a )?(?:break|answer|pattern|key|link|cause|source|reason)\b",
+    r"\b(?:sticks|lodges|burns|stays|lingers|registers) in your (?:mind|memory|thoughts|head)\b",
+    r"\byou (?:can tell|can sense|can feel|just know|already know|know enough)\b",
+    r"\byou (?:notice|catch|spot|see) (?:yourself|your own)\s+(?:thinking|feeling|hoping|wanting)\b",
 ]
 _AGENCY_PATTERNS = [re.compile(p, re.IGNORECASE) for p in _AGENCY_EMOTION_PATTERNS]
 
 
+_QUOTE_STRIP_RE = re.compile(r"\u201c[^\u201d]*\u201d")
+
+
 def check_player_agency(narration: str) -> list[str]:
-    """Check for narrator deciding player character's thoughts/feelings."""
+    """Check for narrator deciding player character's thoughts/feelings.
+
+    Strips quoted NPC speech first — "You think X?" from an NPC is not
+    a player agency violation.
+    """
+    # Remove quoted speech to avoid false positives on NPC dialog
+    prose_only = _QUOTE_STRIP_RE.sub("", narration)
     violations = []
     for pattern in _AGENCY_PATTERNS:
-        matches = pattern.findall(narration)
+        matches = pattern.findall(prose_only)
         for match in matches:
             violations.append(
                 f"PLAYER AGENCY: narrator wrote '{match.strip()}' — player owns their thoughts and feelings"
@@ -193,40 +207,30 @@ _QUOTE_RE = re.compile(r"\u201c([^\u201d]+)\u201d")
 
 
 def check_npc_monologue(narration: str) -> list[str]:
-    """Heuristic: flag NPC speech that is too long or too frequent.
+    """Heuristic: flag NPC speech that dominates the scene.
 
-    Two checks:
-    1. Any single quoted block over 200 chars (long monologue in one quote).
-    2. 4+ quoted segments with short non-quote gaps (split monologue).
+    Only checks structural dominance — content quality (unsolicited info)
+    is left to the LLM validator. Speech length alone is not a violation.
+
+    Flags when 4+ quoted segments appear with minimal narrative between them,
+    indicating an NPC monologue that crowds out player action and scene detail.
     """
     quotes = _QUOTE_RE.findall(narration)
-    if not quotes:
+    if len(quotes) < 4:
         return []
 
-    # Check 1: single NPC speech block over configured limit
-    from ..engine_loader import eng as _eng
-
-    monologue_max = _eng().npc.monologue_max_chars
-    for q in quotes:
-        if len(q) > monologue_max:
-            return [f"RESOLUTION PACING: NPC speech block is {len(q)} characters — max two sentences per NPC response"]
-
-    # Check 2: 4+ quotes with short gaps (split monologue)
-    if len(quotes) >= 4:
-        parts = _QUOTE_RE.split(narration)
-        # parts alternates: [before, quote1, between, quote2, ...]
-        # Non-quote gaps are at even indices starting from 2
-        consecutive_short_gaps = 0
-        for i in range(2, len(parts), 2):
-            stripped = parts[i].strip()
-            if len(stripped) < 40:
-                consecutive_short_gaps += 1
-            else:
-                consecutive_short_gaps = 0
-            if consecutive_short_gaps >= 3:
-                return [
-                    "RESOLUTION PACING: NPC delivers an extended monologue (4+ quoted segments with minimal breaks)"
-                ]
+    parts = _QUOTE_RE.split(narration)
+    # parts alternates: [before, quote1, between, quote2, ...]
+    # Non-quote gaps are at even indices starting from 2
+    consecutive_short_gaps = 0
+    for i in range(2, len(parts), 2):
+        stripped = parts[i].strip()
+        if len(stripped) < 40:
+            consecutive_short_gaps += 1
+        else:
+            consecutive_short_gaps = 0
+        if consecutive_short_gaps >= 3:
+            return ["RESOLUTION PACING: NPC delivers an extended monologue (4+ quoted segments with minimal breaks)"]
 
     return []
 

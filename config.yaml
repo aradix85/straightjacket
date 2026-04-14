@@ -12,9 +12,9 @@ ai:
   prompts_file: "prompts.yaml"
 
   # ── Model clusters ──────────────────────────────────────────
-  # Clusters are the single source of truth for all AI call parameters.
-  # Every field is required. No per-role overrides — to change a role's
-  # parameters, change the cluster or remap the role via role_cluster.
+  # Two clusters: Qwen 3 for narrator (prose), GPT-OSS for everything else.
+  # Qwen 3: best narrator quality (100% eval), optimized for creative writing.
+  # GPT-OSS: fast, cheap, strong on structured output and classification.
   #
   # Built-in role → cluster mapping (override via role_cluster):
   #   narrator:        narrator
@@ -26,17 +26,15 @@ ai:
     narrator:
       model: "qwen-3-235b-a22b-instruct-2507"
       temperature: 0.7
-      top_p: 0.95
+      top_p: 0.8
       max_tokens: 8192
       max_retries: 3
     creative:
-      model: "zai-glm-4.7"
-      temperature: 0.8
+      model: "gpt-oss-120b"
+      temperature: 0.7
       top_p: 0.95
       max_tokens: 8192
       max_retries: 3
-      extra_body:
-        reasoning_effort: "none"
     classification:
       model: "gpt-oss-120b"
       temperature: 0.5

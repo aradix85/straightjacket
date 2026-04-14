@@ -404,12 +404,9 @@ def apply_director_guidance(game: GameState, guidance: dict) -> None:
             ref_npc.agenda = updated_agenda
             log(f"[Director] Agenda updated for {ref_npc.name}: '{old_agenda[:40]}' → '{updated_agenda[:40]}'")
         if updated_arc:
-            if len(updated_arc) > eng().npc.arc_max_chars:
-                log(f"[Director] Rejected arc for {ref_npc.name}: too long ({len(updated_arc)} chars)", level="warning")
-            else:
-                old_arc = ref_npc.arc
-                ref_npc.arc = updated_arc
-                log(f"[Director] Arc updated for {ref_npc.name}: '{old_arc[:60]}' → '{updated_arc[:60]}'")
+            old_arc = ref_npc.arc
+            ref_npc.arc = updated_arc
+            log(f"[Director] Arc updated for {ref_npc.name}: '{old_arc[:60]}' → '{updated_arc[:60]}'")
 
         # Update description if Director provided a meaningful character description
         new_desc = (ref.get("updated_description") or "").strip()
@@ -429,13 +426,7 @@ def apply_director_guidance(game: GameState, guidance: dict) -> None:
                 flags=re.IGNORECASE,
             ).strip()
         if new_desc and len(new_desc) > 10:
-            # Reject scene snapshots: too long
-            if len(new_desc) > eng().npc.description_max_chars:
-                log(
-                    f"[Director] Rejected description for {ref_npc.name}: "
-                    f"too long ({len(new_desc)} chars), likely scene snapshot"
-                )
-            elif not is_complete_description(new_desc) and ref_npc.description:
+            if not is_complete_description(new_desc) and ref_npc.description:
                 log(
                     f"[Director] Rejected truncated description for {ref_npc.name}: "
                     f"'{new_desc[:60]}' — keeping existing"

@@ -61,12 +61,6 @@ genre_constraints:
     - "shimmer"
     - "shimmers"
     - "shimmering"
-    - "glow"
-    - "glows"
-    - "glowing"
-    - "whisper"
-    - "whispers"
-    - "whispering"
     - "emanate"
     - "emanating"
     - "resonate"
@@ -84,9 +78,6 @@ genre_constraints:
     - "weep"
     - "weeps"
     - "weeping"
-    - "seep"
-    - "seeps"
-    - "seeping"
     - "ooze"
     - "oozes"
     - "oozing"
@@ -108,6 +99,12 @@ genre_constraints:
     - "apparition"
     - "phantasm"
     - "phantom"
+    # Qwen patterns (poetic material agency)
+    - "sighs"
+    - "exhales"
+    - "exhaling"
+    - "awakens"
+    - "waking"
   atmospheric_drift_threshold: 2
 
 creation_flow:
