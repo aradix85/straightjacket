@@ -84,13 +84,17 @@ def test_strong_hit_not_checked_for_silver_lining() -> None:
 
 
 def test_genre_catches_forbidden_term() -> None:
-    gc = {"forbidden_terms": ["magic", "spell"]}
+    from straightjacket.engine.datasworn.settings import GenreConstraints
+
+    gc = GenreConstraints(forbidden_terms=["magic", "spell"])
     v = check_genre_fidelity("She whispered a spell under her breath.", gc)
     assert any("spell" in x for x in v)
 
 
 def test_genre_passes_clean() -> None:
-    gc = {"forbidden_terms": ["magic"]}
+    from straightjacket.engine.datasworn.settings import GenreConstraints
+
+    gc = GenreConstraints(forbidden_terms=["magic"])
     v = check_genre_fidelity("She drew the knife from its sheath.", gc)
     assert len(v) == 0
 
@@ -154,20 +158,28 @@ def test_monologue_allows_dialog_exchange() -> None:
 
 
 def test_run_rule_checks_combines_violations() -> None:
+    from straightjacket.engine.ai.rule_validator import ValidationContext
+    from straightjacket.engine.models import GameState
+
+    ctx = ValidationContext.build(GameState(), result_type="MISS")
     result = run_rule_checks(
         narration="You feel a surge of dread. At least the torch still burns.",
-        result_type="MISS",
+        ctx=ctx,
     )
     assert not result["pass"]
     assert len(result["violations"]) >= 2
 
 
 def test_run_rule_checks_clean_passes() -> None:
+    from straightjacket.engine.ai.rule_validator import ValidationContext
+    from straightjacket.engine.models import GameState
+
+    ctx = ValidationContext.build(GameState(), result_type="MISS")
     result = run_rule_checks(
         narration=(
             "The rope snaps. The current takes you, cold and fast. Your shoulder hits a rock and the pack tears free."
         ),
-        result_type="MISS",
+        ctx=ctx,
     )
     assert result["pass"]
 
@@ -231,9 +243,13 @@ def test_consequence_empty_sentences_passes() -> None:
 
 def test_consequence_in_run_rule_checks() -> None:
     """Consequence checking moved to LLM validator — rule checker passes these through."""
-    from straightjacket.engine.ai.rule_validator import run_rule_checks
+    from straightjacket.engine.ai.rule_validator import ValidationContext, run_rule_checks
+    from straightjacket.engine.models import GameState
 
     narration = "The sun shines. Nothing happened."
-    result = run_rule_checks(narration, "MISS", consequence_sentences=["The blade finds the gap in your guard."])
+    ctx = ValidationContext.build(
+        GameState(), result_type="MISS", consequence_sentences=["The blade finds the gap in your guard."]
+    )
+    result = run_rule_checks(narration, ctx)
     # Rule checker no longer checks consequences — LLM validator handles semantic matching
     assert result["pass"]

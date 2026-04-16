@@ -232,12 +232,7 @@ def _apply_blueprint(game: GameState, provider: AIProvider, blueprint: dict | No
     gc = None
     pkg = active_package(game)
     if pkg:
-        g = pkg.genre_constraints
-        gc = {
-            "forbidden_terms": g.forbidden_terms,
-            "forbidden_concepts": g.forbidden_concepts,
-            "genre_test": g.genre_test,
-        }
+        gc = pkg.genre_constraints
 
     if blueprint is not None:
         blueprint = validate_architect(provider, blueprint, game.setting_genre, game.setting_tone, genre_constraints=gc)

@@ -201,7 +201,8 @@ class TestSufferHandler:
             },
         )
         assert game.resources.momentum == 3
-        assert any("must mark" in c for c in result.consequences)
+        assert any("mark wounded" in c for c in result.consequences)
+        assert "wounded" in game.impacts
 
 
 # ── Threshold handler ────────────────────────────────────────

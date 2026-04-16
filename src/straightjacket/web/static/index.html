@@ -369,6 +369,10 @@ inputForm.onsubmit = (e) => {
     send({type: "tracks_query"});
     return;
   }
+  if (cmd === "/threats" || cmd === "threats") {
+    send({type: "threats_query"});
+    return;
+  }
   if (text.startsWith("##")) {
     appendText("msg msg-player msg-correction", text);
     send({type: "correction", text: text.replace(/^#+\s*/, "")});

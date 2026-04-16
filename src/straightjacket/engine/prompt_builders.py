@@ -10,7 +10,7 @@ from .logging_util import log
 from .mechanics import get_pacing_hint, locations_match
 from collections.abc import Sequence
 
-from .models import BrainResult, EngineConfig, GameState, NpcData, RandomEvent, RollResult
+from .models import BrainResult, EngineConfig, GameState, NpcData, RandomEvent, RollResult, ThreatEvent
 from .mechanics.scene import SceneSetup
 from .npc import find_npc, get_npc_bond, retrieve_memories
 from .prompt_blocks import (
@@ -36,11 +36,18 @@ def creativity_seed(n: int = 3, rng: random.Random | None = None) -> str:
 
 def _scene_header(game: GameState) -> str:
     """Single source of truth for <world>/<character> opening lines in all narrator prompts."""
+    impacts_tag = ""
+    if game.impacts:
+        from .mechanics.impacts import impact_label
+
+        labels = ", ".join(impact_label(k) for k in game.impacts)
+        impacts_tag = f'\n<character_state impacts="{_xa(labels)}"/>'
     return (
         f'<world genre="{_xa(game.setting_genre)}" tone="{_xa(game.setting_tone)}">'
         f"{_xe(game.setting_description)}</world>\n"
         f'<character name="{_xa(game.player_name)}">'
         f"{_xe(game.character_concept)}</character>"
+        f"{impacts_tag}"
     )
 
 
@@ -402,6 +409,7 @@ def build_action_prompt(
     position: str = "risky",
     effect: str = "standard",
     random_events: Sequence[RandomEvent] = (),
+    threat_events: Sequence[ThreatEvent] = (),
 ) -> str:
     context_text = f"{player_words} {brain.player_intent or ''} {game.world.current_scene_context or ''}"
     from .mechanics import move_category
@@ -470,10 +478,22 @@ def build_action_prompt(
     if cons_tags:
         cons_tags = f"\n{cons_tags}"
 
+    threat_tag_parts = []
+    for te in threat_events:
+        if te.source == "forsake_vow":
+            threat_tag_parts.append(f'<vow_forsaken threat="{_xa(te.threat_name)}"/>')
+        elif te.source == "overcome_under_pressure":
+            threat_tag_parts.append(f'<threat_overcome name="{_xa(te.threat_name)}"/>')
+        else:
+            threat_tag_parts.append(f'<threat_advance name="{_xa(te.threat_name)}" menace_full="{te.menace_full}"/>')
+    threat_tags = "\n".join(threat_tag_parts)
+    if threat_tags:
+        threat_tags = f"\n{threat_tags}"
+
     return f"""<scene type="action" n="{game.narrative.scene_count}">
 {_scene_header(game)}
 <intent>{_xe(brain.player_intent)} ({_xe(brain.approach)})</intent>{pw}
-{constraint}{cons_tags}
+{constraint}{cons_tags}{threat_tags}
 {position_tag}
 <location>{_xe(game.world.current_location)}</location>{_loc_hist(game)}{_time_ctx(game)}{_scene_enrichment(game)}
 {npc}{npcs_sect}{wl}{flags}{agency}

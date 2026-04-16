@@ -61,17 +61,16 @@ def vocabulary_block(game: GameState | None = None) -> str:
     if not pkg:
         return ""
     vocab = pkg.vocabulary
-    palette = pkg.raw_config.get("vocabulary", {}).get("sensory_palette", "")
-    if not vocab and not palette:
+    if vocab.is_empty():
         return ""
     parts = ["<vocabulary>"]
-    if vocab:
-        lines = [f"  {term} → {replacement}" for term, replacement in vocab.items()]
+    if vocab.substitutions:
+        lines = [f"  {term} → {replacement}" for term, replacement in vocab.substitutions.items()]
         from .prompt_loader import get_prompt as _get_prompt
 
         parts.append(_get_prompt("vocabulary_instruction") + "\n" + "\n".join(lines))
-    if palette:
-        parts.append(f"<sensory_palette>{palette.strip()}</sensory_palette>")
+    if vocab.sensory_palette:
+        parts.append(f"<sensory_palette>{vocab.sensory_palette.strip()}</sensory_palette>")
     parts.append("</vocabulary>")
     return "\n".join(parts)
 
@@ -104,27 +103,24 @@ def tone_authority_block(game: GameState | None = None) -> str:
 def narrative_direction_block(game: GameState, roll_result: str = "", is_player_caused: bool = True) -> str:
     """Derive narrative writing instructions from current game state.
     All thresholds and mappings read from engine.yaml narrative_direction."""
-    nd = eng().get_raw("narrative_direction", {})
+    nd = eng().narrative_direction
     parts = []
 
     h, sp = game.resources.health, game.resources.spirit
     low_resource = min(h, sp)
-    intensity = nd.get("intensity", {})
-    if game.game_over or game.crisis_mode or low_resource < intensity.get("critical_below", 1):
+    intensity = nd.intensity
+    if game.game_over or game.crisis_mode or low_resource < intensity.critical_below:
         parts.append("intensity:critical")
-    elif low_resource < intensity.get("high_below", 3):
+    elif low_resource < intensity.high_below:
         parts.append("intensity:high")
-    elif low_resource < intensity.get("moderate_below", 4):
+    elif low_resource < intensity.moderate_below:
         parts.append("intensity:moderate")
     else:
         parts.append("intensity:low")
 
-    rm = nd.get("result_map", {})
-    entry = rm.get(roll_result, rm.get("_default"))
-
-    if entry and isinstance(entry, dict):
-        parts.append(f"tempo:{entry.get('tempo', 'moderate')}")
-        parts.append(f"perspective:{entry.get('perspective', 'action_detail')}")
+    entry = nd.entry_for(roll_result)
+    parts.append(f"tempo:{entry.tempo}")
+    parts.append(f"perspective:{entry.perspective}")
 
     parts.append("player:caused_this" if is_player_caused else "player:witnessing")
 

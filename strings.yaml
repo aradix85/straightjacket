@@ -155,3 +155,6 @@ status.track_combat: '{name}: {progress}, {position}.'
 status.track_expedition: '{name} (expedition): {progress}.'
 status.track_scene_challenge: '{name} (scene challenge): {progress}.'
 status.no_tracks: No active tracks.
+status.impacts: 'Impacts: {impacts}.'
+status.threat: '{name}: {urgency}.'
+status.no_threats: No active threats.

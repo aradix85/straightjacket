@@ -106,6 +106,13 @@ def build_narrative_status(game: GameState) -> str:
         )
     ]
 
+    # Active impacts
+    if game.impacts:
+        from ..engine.mechanics.impacts import impact_label
+
+        labels = [impact_label(k) for k in game.impacts]
+        lines.append(t("status.impacts", impacts=", ".join(labels)))
+
     # Progress tracks
     for tr in game.progress_tracks:
         if tr.status != "active":
@@ -183,6 +190,29 @@ def build_tracks_status(game: GameState) -> str:
     return "\n".join(lines)
 
 
+_MENACE_DESC: dict[int, str] = {
+    8: "near tipping point",
+    6: "looming",
+    4: "growing",
+    2: "stirring",
+    0: "distant",
+}
+
+
+def build_threats_status(game: GameState) -> str:
+    """Narrative threat status for /threats command. No mechanical numbers."""
+    active = [th for th in game.threats if th.status == "active"]
+    if not active:
+        return t("status.no_threats")
+
+    lines = []
+    for th in active:
+        urgency = _describe_resource(th.menace_filled_boxes, _MENACE_DESC)
+        lines.append(t("status.threat", name=th.name, urgency=urgency))
+
+    return "\n".join(lines)
+
+
 def build_creation_options() -> dict:
     """All character creation data for the client form."""
     from ..engine.engine_loader import eng
@@ -204,7 +234,7 @@ def build_creation_options() -> dict:
             # Truths (if setting has them)
             truths = []
             flow = pkg.creation_flow
-            if flow.get("has_truths"):
+            if flow.has_truths:
                 raw_truths = pkg.data.truths()
                 for truth_id, truth_data in raw_truths.items():
                     options = []
@@ -226,21 +256,20 @@ def build_creation_options() -> dict:
 
             # Name tables
             name_tables = {}
-            if flow.get("has_name_tables"):
+            if flow.has_name_tables:
                 for table_id, table in pkg.data.name_tables().items():
                     name_tables[table_id] = [row.text for row in table.rows]
 
             # Backstory prompts
             backstory_prompts = []
-            if flow.get("has_backstory_oracle"):
+            if flow.has_backstory_oracle:
                 bs = pkg.data.backstory_prompts()
                 if bs:
                     backstory_prompts = [row.text for row in bs.rows]
 
             # Starting assets (non-path)
             starting_assets = []
-            asset_cats = flow.get("starting_asset_categories", [])
-            for cat in asset_cats:
+            for cat in flow.starting_asset_categories:
                 for asset in pkg.data.assets(cat):
                     asset_id = asset.get("_id", "").rsplit("/", 1)[-1]
                     starting_assets.append(
@@ -261,7 +290,13 @@ def build_creation_options() -> dict:
                     "name_tables": name_tables,
                     "backstory_prompts": backstory_prompts,
                     "starting_assets": starting_assets,
-                    "creation_flow": flow,
+                    "creation_flow": {
+                        "has_truths": flow.has_truths,
+                        "has_backstory_oracle": flow.has_backstory_oracle,
+                        "has_name_tables": flow.has_name_tables,
+                        "has_ship_creation": flow.has_ship_creation,
+                        "starting_asset_categories": flow.starting_asset_categories,
+                    },
                 }
             )
         except Exception as e:

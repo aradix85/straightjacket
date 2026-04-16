@@ -15,71 +15,68 @@ def resolve_position(game: GameState, brain: BrainResult) -> str:
     Weighted scoring: each factor adds a signed weight. Sum maps to position
     via thresholds. Situational overrides apply after the sum for edge cases.
     """
-    _e = eng()
-    pr = _e.get_raw("position_resolver", {})
-    w = pr.get("weights", {})
+    cfg = eng().position_resolver
+    w = cfg.weights
     score = 0
 
     # Resource pressure
     res = game.resources
     for val in (res.health, res.spirit, res.supply):
-        if val < w.get("resource_critical_below", 2):
-            score += w.get("resource_critical", -2)
-        elif val < w.get("resource_low_below", 3):
-            score += w.get("resource_low", -1)
+        if val < w.resource_critical_below:
+            score += w.resource_critical
+        elif val < w.resource_low_below:
+            score += w.resource_low
 
     # NPC disposition + bond (only when move targets an NPC)
     if brain.target_npc:
         target = find_npc(game, brain.target_npc)
         if target:
             disp_weights = {
-                "hostile": w.get("npc_hostile", -2),
-                "distrustful": w.get("npc_distrustful", -1),
-                "friendly": w.get("npc_friendly", 1),
-                "loyal": w.get("npc_loyal", 2),
+                "hostile": w.npc_hostile,
+                "distrustful": w.npc_distrustful,
+                "friendly": w.npc_friendly,
+                "loyal": w.npc_loyal,
             }
             score += disp_weights.get(target.disposition, 0)
             if get_npc_bond(game, target.id) >= 3:
-                score += w.get("npc_bond_high", 1)
+                score += w.npc_bond_high
             elif get_npc_bond(game, target.id) <= 0:
-                score += w.get("npc_bond_low", -1)
+                score += w.npc_bond_low
 
     # Chaos factor
     if game.world.chaos_factor >= 7:
-        score += w.get("chaos_high", -1)
+        score += w.chaos_high
     elif game.world.chaos_factor <= 3:
-        score += w.get("chaos_low", 1)
+        score += w.chaos_low
 
     # Recent roll momentum (consecutive results from session log)
     recent = game.narrative.session_log[-3:] if game.narrative.session_log else []
     recent_results = [e.result for e in recent if e.result]
     if len(recent_results) >= 2 and all(r == "MISS" for r in recent_results[-2:]):
-        score += w.get("consecutive_misses", -2)
+        score += w.consecutive_misses
     elif len(recent_results) >= 2 and all(r == "STRONG_HIT" for r in recent_results[-2:]):
-        score += w.get("consecutive_strong", 1)
+        score += w.consecutive_strong
 
     # Threat pressure (clocks at >= 75% filled)
     threat_penalty = 0
-    _tcp = w.get("threat_clock_critical", -1)
     for clock in game.world.clocks:
         if not clock.fired and clock.segments > 0 and clock.filled / clock.segments >= 0.75:
-            threat_penalty += _tcp
-    score += max(threat_penalty, _tcp * 2)  # cap at 2 clocks
+            threat_penalty += w.threat_clock_critical
+    score += max(threat_penalty, w.threat_clock_critical * 2)  # cap at 2 clocks
 
     # Secured advantage (previous move was secure_advantage with a hit)
     if recent and recent[-1].move == "secure_advantage" and recent[-1].result in ("STRONG_HIT", "WEAK_HIT"):
-        score += w.get("secured_advantage", 2)
+        score += w.secured_advantage
 
     # Move category baseline
     move = brain.move
     cat = move_category(move)
-    baselines = pr.get("move_baselines", {})
-    score += baselines.get(cat, baselines.get("other", 0))
+    score += cfg.move_baselines.get(cat, cfg.move_baselines.get("other", 0))
 
     # Map sum to position
-    if score <= pr.get("desperate_below", -3):
+    if score <= cfg.desperate_below:
         position = "desperate"
-    elif score >= pr.get("controlled_above", 3):
+    elif score >= cfg.controlled_above:
         position = "controlled"
     else:
         position = "risky"
@@ -88,14 +85,9 @@ def resolve_position(game: GameState, brain: BrainResult) -> str:
     has_secured = bool(
         recent and recent[-1].move == "secure_advantage" and recent[-1].result in ("STRONG_HIT", "WEAK_HIT")
     )
-    any_resource_critical = any(v < w.get("resource_critical_below", 2) for v in (res.health, res.spirit, res.supply))
+    any_resource_critical = any(v < w.resource_critical_below for v in (res.health, res.spirit, res.supply))
 
-    for override in pr.get("overrides", []):
-        name = override.get("name", "")
-        conditions = override.get("conditions", [])
-        effect = override.get("effect", "")
-
-        match = True
+    for override in cfg.overrides:
         _cond_checks: dict[str, bool] = {
             "secured_advantage": has_secured,
             "any_resource_critical": any_resource_critical,
@@ -106,21 +98,19 @@ def resolve_position(game: GameState, brain: BrainResult) -> str:
                 recent and brain.target_npc and getattr(recent[-1], "target_npc", None) == brain.target_npc
             ),
         }
-        for cond in conditions:
-            if not _cond_checks.get(cond, False):
-                match = False
+        match = all(_cond_checks.get(cond, False) for cond in override.conditions)
 
-        if match and conditions:
-            if effect == "cap_at_risky" and position == "controlled":  # noqa: SIM114
+        if match and override.conditions:
+            if override.effect == "cap_at_risky" and position == "controlled":  # noqa: SIM114
                 position = "risky"
-            elif effect == "floor_at_risky" and position == "desperate":
+            elif override.effect == "floor_at_risky" and position == "desperate":
                 position = "risky"
-            elif effect == "shift_up_one":
+            elif override.effect == "shift_up_one":
                 if position == "desperate":
                     position = "risky"
                 elif position == "risky":
                     position = "controlled"
-            log(f"[Position] Override '{name}' applied → {position}")
+            log(f"[Position] Override '{override.name}' applied → {position}")
 
     log(f"[Position] score={score}, position={position} (move={move}, cat={cat})")
     return position
@@ -128,13 +118,12 @@ def resolve_position(game: GameState, brain: BrainResult) -> str:
 
 def resolve_effect(game: GameState, brain: BrainResult, position: str) -> str:
     """Engine-computed effect from game state + resolved position."""
-    _e = eng()
-    er = _e.get_raw("effect_resolver", {})
-    w = er.get("weights", {})
+    cfg = eng().effect_resolver
+    w = cfg.weights
     score = 0
 
     # Position correlation
-    pos_weights = {"desperate": w.get("desperate", -1), "controlled": w.get("controlled", 1)}
+    pos_weights = {"desperate": w.desperate, "controlled": w.controlled}
     score += pos_weights.get(position, 0)
 
     # NPC bond (social moves)
@@ -142,23 +131,22 @@ def resolve_effect(game: GameState, brain: BrainResult, position: str) -> str:
         target = find_npc(game, brain.target_npc)
         if target:
             if get_npc_bond(game, target.id) >= 3:
-                score += w.get("bond_high", 1)
+                score += w.bond_high
             elif get_npc_bond(game, target.id) <= 0:
-                score += w.get("bond_low", -1)
+                score += w.bond_low
 
     # Secured advantage
     recent = game.narrative.session_log[-1:] if game.narrative.session_log else []
     if recent and recent[0].move == "secure_advantage" and recent[0].result in ("STRONG_HIT", "WEAK_HIT"):
-        score += w.get("secured_advantage", 1)
+        score += w.secured_advantage
 
     # Move baseline
-    baselines = er.get("move_baselines", {})
-    score += baselines.get(brain.move, baselines.get("other", 0))
+    score += cfg.move_baselines.get(brain.move, cfg.move_baselines.get("other", 0))
 
     # Map to effect
-    if score <= er.get("limited_below", -2):
+    if score <= cfg.limited_below:
         effect = "limited"
-    elif score >= er.get("great_above", 2):
+    elif score >= cfg.great_above:
         effect = "great"
     else:
         effect = "standard"

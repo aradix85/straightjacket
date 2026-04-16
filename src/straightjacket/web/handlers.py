@@ -23,7 +23,13 @@ from ..engine.logging_util import log
 from ..engine.persistence import delete_save, list_saves_with_info, load_game, save_game
 from ..engine.user_management import create_user, delete_user, list_users
 from ..i18n import t
-from .serializers import build_creation_options, build_narrative_status, build_tracks_status, highlight_dialog
+from .serializers import (
+    build_creation_options,
+    build_narrative_status,
+    build_threats_status,
+    build_tracks_status,
+    highlight_dialog,
+)
 from .session import BurnOffer, Session
 
 
@@ -401,6 +407,14 @@ async def handle_tracks_query(session: Session, ws: WebSocket, _msg: dict) -> No
         await _send(ws, {"type": "status", "text": t("status.no_game")})
         return
     text = build_tracks_status(session.game)
+    await _send(ws, {"type": "status", "text": text})
+
+
+async def handle_threats_query(session: Session, ws: WebSocket, _msg: dict) -> None:
+    if not session.game:
+        await _send(ws, {"type": "status", "text": t("status.no_game")})
+        return
+    text = build_threats_status(session.game)
     await _send(ws, {"type": "status", "text": text})
 
 

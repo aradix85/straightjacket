@@ -240,15 +240,17 @@ def eval_brain(provider: AIProvider, case: dict, model: str, params: dict) -> Ca
 
 def eval_validator(provider: AIProvider, case: dict, model: str, params: dict) -> CaseResult:
     """Evaluate one Validator test case."""
-    from straightjacket.engine.ai.rule_validator import run_rule_checks
+    from straightjacket.engine.ai.rule_validator import ValidationContext, run_rule_checks
     from straightjacket.engine.ai.schemas import VALIDATOR_SCHEMA
+    from straightjacket.engine.models import GameState
 
     result = CaseResult(case_id=case["id"], role="validator")
     narration = case["narration"]
     result_type = case.get("result_type", "STRONG_HIT")
 
     # Layer 1: rule-based checks (always the same, model-independent)
-    rule_result = run_rule_checks(narration, result_type)
+    ctx = ValidationContext.build(GameState(), result_type=result_type)
+    rule_result = run_rule_checks(narration, ctx)
     rule_violations: list[str] = rule_result.get("violations", [])
 
     # Layer 2: LLM check

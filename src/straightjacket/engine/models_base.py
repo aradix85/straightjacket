@@ -152,6 +152,63 @@ class ProgressTrack(SerializableMixin):
         return self.ticks - old
 
 
+THREAT_CATEGORIES: tuple[str, ...] = (
+    "burgeoning_conflict",
+    "cursed_site",
+    "environmental_calamity",
+    "malignant_plague",
+    "rampaging_creature",
+    "ravaging_horde",
+    "scheming_leader",
+    "power_hungry_mystic",
+    "zealous_cult",
+)
+
+
+@dataclass
+class ThreatData(SerializableMixin):
+    """Active threat with menace track competing against a vow's progress."""
+
+    id: str = ""
+    name: str = ""
+    category: str = ""  # one of THREAT_CATEGORIES
+    description: str = ""
+    linked_vow_id: str = ""  # ProgressTrack id of the associated vow
+    rank: str = "dangerous"  # matches linked vow rank; determines menace tick size
+    menace_ticks: int = 0
+    max_menace_ticks: int = 40  # 10 boxes × 4 ticks
+    status: str = "active"  # active, resolved, overcome
+
+    @property
+    def menace_per_mark(self) -> int:
+        return PROGRESS_RANKS.get(self.rank, 8)
+
+    @property
+    def menace_filled_boxes(self) -> int:
+        return self.menace_ticks // 4
+
+    def advance_menace(self, marks: int = 1) -> int:
+        """Advance menace track. Returns ticks added."""
+        old = self.menace_ticks
+        self.menace_ticks = min(self.max_menace_ticks, self.menace_ticks + self.menace_per_mark * marks)
+        return self.menace_ticks - old
+
+    @property
+    def menace_full(self) -> bool:
+        return self.menace_ticks >= self.max_menace_ticks
+
+
+@dataclass
+class ThreatEvent(SerializableMixin):
+    """A menace advancement event, parallel to ClockEvent."""
+
+    threat_id: str = ""
+    threat_name: str = ""
+    ticks_added: int = 0
+    menace_full: bool = False
+    source: str = ""  # "miss", "random_event", "autonomous"
+
+
 @dataclass
 class ClockEvent(SerializableMixin):
     """A clock tick event from resolve_move_outcome or tick_autonomous_clocks."""

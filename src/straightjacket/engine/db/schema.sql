@@ -100,6 +100,18 @@ CREATE TABLE IF NOT EXISTS progress_tracks (
     status      TEXT NOT NULL DEFAULT 'active'
 );
 
+CREATE TABLE IF NOT EXISTS threats (
+    id              TEXT PRIMARY KEY,
+    name            TEXT NOT NULL DEFAULT '',
+    category        TEXT NOT NULL DEFAULT '',
+    description     TEXT NOT NULL DEFAULT '',
+    linked_vow_id   TEXT NOT NULL DEFAULT '',
+    rank            TEXT NOT NULL DEFAULT 'dangerous',
+    menace_ticks    INTEGER NOT NULL DEFAULT 0,
+    max_menace_ticks INTEGER NOT NULL DEFAULT 40,
+    status          TEXT NOT NULL DEFAULT 'active'
+);
+
 -- Indexes for common query patterns.
 CREATE INDEX IF NOT EXISTS idx_npcs_status ON npcs(status);
 CREATE INDEX IF NOT EXISTS idx_npcs_disposition ON npcs(disposition);
@@ -110,4 +122,6 @@ CREATE INDEX IF NOT EXISTS idx_memories_scene ON memories(scene);
 CREATE INDEX IF NOT EXISTS idx_threads_active ON threads(active);
 CREATE INDEX IF NOT EXISTS idx_clocks_clock_type ON clocks(clock_type);
 CREATE INDEX IF NOT EXISTS idx_clocks_fired ON clocks(fired);
+CREATE INDEX IF NOT EXISTS idx_threats_status ON threats(status);
+CREATE INDEX IF NOT EXISTS idx_threats_linked_vow ON threats(linked_vow_id);
 CREATE INDEX IF NOT EXISTS idx_scene_log_scene ON scene_log(scene);

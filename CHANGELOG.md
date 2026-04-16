@@ -5,6 +5,59 @@ Originally forked from [EdgeTales](https://github.com/edgetales/edgetales). See 
 
 ---
 
+## [0.50.0] — 2026-04-16
+
+Step 11 of the roadmap: threats & menace, impacts, NPC name generation via oracles. Plus a typed-config refactor across engine.yaml and data/settings/*.yaml.
+
+Threats (11a):
+- ThreatData: category, rank-based menace track, linked_vow_id, status (active/resolved/overcome)
+- Menace advances on MISS, autonomous per-scene ticks, random events can target threats
+- Full menace forces Forsake Your Vow: vow failed, linked thread deactivated, spirit damage
+- complete_track resolves linked threat (overcome on vow success, resolved on failure)
+- Prompt tags on state change only: `<threat_advance>`, `<vow_forsaken>`, `<threat_overcome>`
+- Rule validator: `check_threat_advance` requires narrator to acknowledge menace advancement
+- `/threats` command with narrative urgency (distant → near tipping point)
+- DB schema: threats table
+
+Impacts (11b):
+- 10 impacts in engine.yaml (wounded, shaken, unprepared, doomed, tormented, indebted, battered, cursed, permanently_harmed, traumatized)
+- Each reduces max_momentum by 1; permanent impacts can't be cleared naturally
+- wounded/shaken/unprepared block heal/hearten/resupply recovery
+- Suffer handler marks impact on MISS at zero track; threshold handler marks on WEAK_HIT face_death/face_desolation; recovery handler clears blocking impact on STRONG/WEAK hit
+- recover/resupply converted to recovery handler (was narrative)
+- Consequence templates: impact_mark, impact_clear
+- `/status` shows active impacts; `<character_state impacts="...">` prompt tag when present
+- Rule validator: `check_impact_acknowledgment` detects impact changes via snapshot diff
+
+NPC names (11c):
+- `npc/naming.py`: `roll_oracle_name` uses active setting's `oracle_paths.names`
+- Rules: 1 path single roll, 2 paths joined, 3+ paths 50% last-only or first-two joined
+- Parent-chain fallback (Delve inherits from Classic)
+- AI name preserved as alias for continuity matching
+- Fixed classic.yaml: names path corrected to actual Datasworn ids
+
+Typed config:
+- engine.yaml: `ImpactConfig`, `PositionResolverConfig`, `EffectResolverConfig`, `InformationGateConfig`, `NarrativeDirectionConfig` (with nested weights/thresholds/entries)
+- data/settings/*.yaml: `SettingConfig`, `VocabularyConfig`, `OraclePaths`, `CreationFlow`; `GenreConstraints` extended with atmospheric_drift fields
+- `SettingPackage.raw_config` removed; dict → typed conversion at load
+
+Validator chain:
+- `ValidationContext` dataclass bundles game + turn-specific inputs
+- `run_rule_checks` and `validate_narration` take context, not 6+ loose params
+- `validate_and_retry` builds context once; `narrate_scene` and turn.py no longer thread validation data
+- `validate_architect` takes typed `GenreConstraints`
+
+Serialization:
+- GameState inherits SerializableMixin; manual to_dict/from_dict removed
+
+Bugfixes:
+- progress_tracks added to GameState.snapshot/restore (correction and momentum burn now revert track state correctly)
+- Removed obsolete `test_reflection_rejects_too_long_arc` (arc_max_chars was removed in 0.49.0)
+
+Tests: 757 passed (up from 692). New: test_threats.py, test_impacts.py, test_npc_naming.py. Ruff clean, mypy clean on 82 source files.
+
+---
+
 ## [0.49.0] — 2026-04-14
 
 Model optimization: GLM-4.7 removed, two-model architecture (Qwen 3 narrator, GPT-OSS everything else). Narrator prompt rewritten for Qwen 3. Validator tuned for Qwen patterns. Arbitrary length limits removed.

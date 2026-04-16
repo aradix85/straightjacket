@@ -77,45 +77,51 @@ class _MockProvider:
 
 
 def test_validate_narration_returns_violations(stub_all: None) -> None:
+    from straightjacket.engine.ai.rule_validator import ValidationContext
     from straightjacket.engine.ai.validator import validate_narration
+    from straightjacket.engine.models import GameState
 
     provider = _MockProvider(
         json.dumps({"pass": False, "violations": ["Silver lining on MISS"], "correction": "Make it worse."})
     )
+    ctx = ValidationContext.build(GameState(), result_type="MISS")
     result = validate_narration(
         provider,  # type: ignore[arg-type]
         "Bad narration.",
-        "MISS",
-        "dark_fantasy",
+        ctx,
     )
     assert result["pass"] is False
     assert len(result["violations"]) == 1
 
 
 def test_validate_narration_fail_open_on_api_error(stub_all: None) -> None:
+    from straightjacket.engine.ai.rule_validator import ValidationContext
     from straightjacket.engine.ai.validator import validate_narration
+    from straightjacket.engine.models import GameState
 
     provider = _MockProvider(fail=True)
+    ctx = ValidationContext.build(GameState(), result_type="MISS")
     result = validate_narration(
         provider,  # type: ignore[arg-type]
         "Text.",
-        "MISS",
-        "dark_fantasy",
+        ctx,
     )
     assert result["pass"] is True
 
 
 def test_validate_narration_catches_genre_violation_rule_based(stub_all: None) -> None:
+    from straightjacket.engine.ai.rule_validator import ValidationContext
     from straightjacket.engine.ai.validator import validate_narration
+    from straightjacket.engine.datasworn.settings import GenreConstraints
+    from straightjacket.engine.models import GameState
 
     provider = _MockProvider(json.dumps({"pass": True, "violations": [], "correction": ""}))
-    gc = {"forbidden_terms": ["magic"], "forbidden_concepts": [], "genre_test": ""}
+    gc = GenreConstraints(forbidden_terms=["magic"])
+    ctx = ValidationContext.build(GameState(), result_type="MISS", genre_constraints=gc)
     result = validate_narration(
         provider,  # type: ignore[arg-type]
         "She cast a magic spell.",
-        "MISS",
-        "realistic",
-        genre_constraints=gc,
+        ctx,
     )
     assert result["pass"] is False
     assert any("magic" in v for v in result["violations"])
@@ -155,6 +161,7 @@ def test_validate_and_retry_actually_retries(stub_all: None) -> None:
 
 def test_validate_architect_fixes_violations(stub_all: None) -> None:
     from straightjacket.engine.ai.validator import validate_architect
+    from straightjacket.engine.datasworn.settings import GenreConstraints
 
     provider = _MockProvider(
         json.dumps(
@@ -167,7 +174,7 @@ def test_validate_architect_fixes_violations(stub_all: None) -> None:
         )
     )
     bp = {"central_conflict": "Magic war", "antagonist_force": "Evil wizard"}
-    gc = {"forbidden_terms": ["magic"], "forbidden_concepts": [], "genre_test": ""}
+    gc = GenreConstraints(forbidden_terms=["magic"])
     result = validate_architect(
         provider,  # type: ignore[arg-type]
         bp,
@@ -181,10 +188,11 @@ def test_validate_architect_fixes_violations(stub_all: None) -> None:
 
 def test_validate_architect_fail_open_on_api_error(stub_all: None) -> None:
     from straightjacket.engine.ai.validator import validate_architect
+    from straightjacket.engine.datasworn.settings import GenreConstraints
 
     provider = _MockProvider(fail=True)
     bp = {"central_conflict": "Original", "antagonist_force": "Original"}
-    gc = {"forbidden_terms": ["x"], "forbidden_concepts": [], "genre_test": ""}
+    gc = GenreConstraints(forbidden_terms=["x"])
     result = validate_architect(
         provider,  # type: ignore[arg-type]
         bp,

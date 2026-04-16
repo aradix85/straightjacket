@@ -11,8 +11,8 @@ Usage:
     packages = list_packages()  # ['classic', 'delve', 'starforged', 'sundered_isles']
     pkg = load_package("starforged")
     pkg.title                   # "Ironsworn: Starforged"
-    pkg.vocabulary              # substitution dict
-    pkg.genre_constraints       # forbidden terms, concepts, test
+    pkg.vocabulary              # typed VocabularyConfig
+    pkg.genre_constraints       # typed GenreConstraints
     pkg.data                    # Datasworn Setting object (oracles, assets, etc.)
     pkg.roll_action_theme()     # ("Distract", "Path") — meaning pair
 """
@@ -33,7 +33,8 @@ if TYPE_CHECKING:
 
 _SETTINGS_DIR = PROJECT_ROOT / "data" / "settings"
 
-# SETTING PACKAGE
+
+# ── Typed config dataclasses ─────────────────────────────────
 
 
 @dataclass
@@ -43,27 +44,135 @@ class GenreConstraints:
     forbidden_terms: list[str] = field(default_factory=list)
     forbidden_concepts: list[str] = field(default_factory=list)
     genre_test: str = ""
+    atmospheric_drift: list[str] = field(default_factory=list)
+    atmospheric_drift_threshold: int = 3
+
+    def is_empty(self) -> bool:
+        """True if all constraint fields are empty — signals 'inherit from parent'."""
+        return (
+            not self.forbidden_terms
+            and not self.forbidden_concepts
+            and not self.genre_test
+            and not self.atmospheric_drift
+        )
+
+
+@dataclass
+class VocabularyConfig:
+    """World-specific vocabulary substitutions and sensory palette."""
+
+    substitutions: dict[str, str] = field(default_factory=dict)
+    sensory_palette: str = ""
+
+    def is_empty(self) -> bool:
+        return not self.substitutions and not self.sensory_palette
+
+
+@dataclass
+class OraclePaths:
+    """Oracle path mappings for character creation."""
+
+    action_theme: list[str] = field(default_factory=list)
+    descriptor_focus: list[str] = field(default_factory=list)
+    names: list[str] = field(default_factory=list)
+    backstory: str = ""
+    factions: str = ""
+
+
+@dataclass
+class CreationFlow:
+    """Character creation flow flags for the client UI."""
+
+    has_truths: bool = False
+    has_backstory_oracle: bool = False
+    has_name_tables: bool = False
+    has_ship_creation: bool = False
+    starting_asset_categories: list[str] = field(default_factory=list)
+
+
+@dataclass
+class SettingConfig:
+    """Parsed settings.yaml — complete typed config for a setting package."""
+
+    id: str = ""
+    title: str = ""
+    datasworn_id: str = ""
+    description: str = ""
+    parent: str = ""
+    oracle_paths: OraclePaths = field(default_factory=OraclePaths)
+    vocabulary: VocabularyConfig = field(default_factory=VocabularyConfig)
+    genre_constraints: GenreConstraints = field(default_factory=GenreConstraints)
+    creation_flow: CreationFlow = field(default_factory=CreationFlow)
+
+
+def _parse_setting_config(data: dict) -> SettingConfig:
+    """Parse raw settings.yaml dict into typed SettingConfig."""
+    cfg = SettingConfig(
+        id=data.get("id", ""),
+        title=data.get("title", ""),
+        datasworn_id=data.get("datasworn_id", ""),
+        description=data.get("description", ""),
+        parent=data.get("parent", ""),
+    )
+
+    op = data.get("oracle_paths", {})
+    cfg.oracle_paths = OraclePaths(
+        action_theme=list(op.get("action_theme", [])),
+        descriptor_focus=list(op.get("descriptor_focus", [])),
+        names=list(op.get("names", [])),
+        backstory=op.get("backstory", ""),
+        factions=op.get("factions", ""),
+    )
+
+    vd = data.get("vocabulary", {})
+    cfg.vocabulary = VocabularyConfig(
+        substitutions=dict(vd.get("substitutions", {})),
+        sensory_palette=vd.get("sensory_palette", ""),
+    )
+
+    gc = data.get("genre_constraints", {})
+    cfg.genre_constraints = GenreConstraints(
+        forbidden_terms=list(gc.get("forbidden_terms", [])),
+        forbidden_concepts=list(gc.get("forbidden_concepts", [])),
+        genre_test=gc.get("genre_test", ""),
+        atmospheric_drift=list(gc.get("atmospheric_drift", [])),
+        atmospheric_drift_threshold=gc.get("atmospheric_drift_threshold", 3),
+    )
+
+    flow = data.get("creation_flow", {})
+    cfg.creation_flow = CreationFlow(
+        has_truths=flow.get("has_truths", False),
+        has_backstory_oracle=flow.get("has_backstory_oracle", False),
+        has_name_tables=flow.get("has_name_tables", False),
+        has_ship_creation=flow.get("has_ship_creation", False),
+        starting_asset_categories=list(flow.get("starting_asset_categories", [])),
+    )
+
+    return cfg
+
+
+# ── Setting package ───────────────────────────────────────────
 
 
 class SettingPackage:
-    """A complete setting: metadata + vocabulary + constraints + Datasworn data."""
+    """A complete setting: typed config + Datasworn data."""
 
-    def __init__(self, config: dict, data: Setting, parent: SettingPackage | None = None):
+    def __init__(self, config: SettingConfig, data: Setting, parent: SettingPackage | None = None):
         self._config = config
         self._data = data
         self._parent = parent
 
     @property
     def id(self) -> str:
-        return self._config.get("id", "")
+        return self._config.id
 
     @property
     def title(self) -> str:
-        return self._config.get("title", self._data.title)
+        return self._config.title or self._data.title
 
     @property
     def description(self) -> str:
-        return self._config.get("description", "")
+        return self._config.description
 
     @property
     def data(self) -> Setting:
@@ -71,51 +180,34 @@ class SettingPackage:
         return self._data
 
     @property
-    def vocabulary(self) -> dict[str, str]:
-        """Substitution vocabulary. Inherits from parent if empty."""
-        subs = self._config.get("vocabulary", {}).get("substitutions", {})
-        if not subs and self._parent:
+    def vocabulary(self) -> VocabularyConfig:
+        """Vocabulary. Inherits from parent if empty."""
+        if self._config.vocabulary.is_empty() and self._parent:
             return self._parent.vocabulary
-        return subs
+        return self._config.vocabulary
 
     @property
     def genre_constraints(self) -> GenreConstraints:
-        """Genre constraints for validator. Inherits from parent if empty."""
-        gc = self._config.get("genre_constraints", {})
-        terms = gc.get("forbidden_terms", [])
-        concepts = gc.get("forbidden_concepts", [])
-        test = gc.get("genre_test", "")
-        if not terms and not concepts and not test and self._parent:
+        """Genre constraints. Inherits from parent if empty."""
+        if self._config.genre_constraints.is_empty() and self._parent:
             return self._parent.genre_constraints
-        return GenreConstraints(
-            forbidden_terms=terms,
-            forbidden_concepts=concepts,
-            genre_test=test,
-        )
+        return self._config.genre_constraints
 
     @property
-    def oracle_paths(self) -> dict:
+    def oracle_paths(self) -> OraclePaths:
         """Oracle path mappings for character creation."""
-        return self._config.get("oracle_paths", {})
+        return self._config.oracle_paths
 
     @property
-    def creation_flow(self) -> dict:
+    def creation_flow(self) -> CreationFlow:
         """Creation flow flags for the client UI."""
-        defaults = {
-            "has_truths": False,
-            "has_backstory_oracle": False,
-            "has_name_tables": False,
-            "has_ship_creation": False,
-            "starting_asset_categories": [],
-        }
-        flow = self._config.get("creation_flow", {})
-        return {**defaults, **flow}
+        return self._config.creation_flow
 
     # ── Convenience: meaning pair rolls ───────────────────────
 
     def roll_action_theme(self) -> tuple[str, str]:
         """Roll action + theme meaning pair."""
-        paths = self.oracle_paths.get("action_theme", [])
+        paths = self._config.oracle_paths.action_theme
         if len(paths) >= 2:
             action = self._data.roll_oracle(paths[0])
             theme = self._data.roll_oracle(paths[1])
@@ -124,17 +216,12 @@ class SettingPackage:
 
     def roll_descriptor_focus(self) -> tuple[str, str]:
         """Roll descriptor + focus meaning pair."""
-        paths = self.oracle_paths.get("descriptor_focus", [])
+        paths = self._config.oracle_paths.descriptor_focus
         if len(paths) >= 2:
             desc = self._data.roll_oracle(paths[0])
             focus = self._data.roll_oracle(paths[1])
             return desc, focus
         return "", ""
-
-    @property
-    def raw_config(self) -> dict:
-        """Raw settings.yaml dict."""
-        return self._config
 
 
 _cache: dict[str, SettingPackage] = {}
@@ -165,21 +252,21 @@ def load_package(setting_id: str) -> SettingPackage:
         raise FileNotFoundError(f"Setting package not found: {yaml_path}\nAvailable: {list_packages()}")
 
     with open(yaml_path, encoding="utf-8") as f:
-        config = yaml.safe_load(f)
+        raw = yaml.safe_load(f)
 
-    datasworn_id = config.get("datasworn_id", setting_id)
+    config = _parse_setting_config(raw)
+    datasworn_id = config.datasworn_id or setting_id
     data = load_setting(datasworn_id)
 
     # Load parent if specified (e.g. Delve inherits from Classic)
     parent = None
-    parent_id = config.get("parent")
-    if parent_id:
-        parent = load_package(parent_id)
+    if config.parent:
+        parent = load_package(config.parent)
 
     pkg = SettingPackage(config, data, parent)
     _cache[setting_id] = pkg
 
-    log(f"[Setting] Loaded {setting_id}: {pkg.title}{f' (parent: {parent_id})' if parent_id else ''}")
+    log(f"[Setting] Loaded {setting_id}: {pkg.title}{f' (parent: {config.parent})' if config.parent else ''}")
     return pkg
 
 

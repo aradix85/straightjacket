@@ -209,6 +209,19 @@ def process_new_npcs(game: "GameState", new_npcs: list) -> None:
         npc_id, _ = next_npc_id(game)
         clean_name, paren_aliases = sanitize_npc_name(nd["name"].strip())
 
+        # Oracle-rolled name override: if the active setting has name tables,
+        # replace AI name with an oracle roll. Preserve AI name as alias for
+        # back-reference matching.
+        from .naming import roll_oracle_name
+
+        oracle_name = roll_oracle_name(game)
+        if oracle_name:
+            ai_name = clean_name
+            clean_name = oracle_name
+            if ai_name and ai_name.lower() != oracle_name.lower():
+                paren_aliases.append(ai_name)
+            log(f"[NPC name] Oracle rolled '{oracle_name}' (AI: '{ai_name}')")
+
         npc = NpcData(
             id=npc_id,
             name=clean_name,

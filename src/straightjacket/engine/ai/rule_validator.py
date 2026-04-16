@@ -6,9 +6,60 @@ Used as first pass before the LLM validator (which handles semantic checks
 like RESOLUTION PACING that require understanding context).
 """
 
-import re
+from __future__ import annotations
 
+import re
+from dataclasses import dataclass, field
+
+from ..datasworn.settings import GenreConstraints
 from ..logging_util import log
+from ..models import GameState
+
+
+@dataclass
+class ValidationContext:
+    """Turn-specific context for validation. Built once per validation cycle."""
+
+    game: GameState
+    result_type: str = ""
+    player_words: str = ""
+    consequences: list[str] = field(default_factory=list)
+    consequence_sentences: list[str] = field(default_factory=list)
+    genre_constraints: GenreConstraints | None = None
+    threat_names: list[str] = field(default_factory=list)
+    impact_changes: list[str] = field(default_factory=list)  # Impact labels added/cleared this turn
+
+    @classmethod
+    def build(
+        cls,
+        game: GameState,
+        result_type: str = "",
+        player_words: str = "",
+        consequences: list[str] | None = None,
+        consequence_sentences: list[str] | None = None,
+        genre_constraints: GenreConstraints | None = None,
+    ) -> ValidationContext:
+        """Build context, deriving threat_names and impact_changes from game state."""
+        # Detect impacts changed this turn by comparing to snapshot
+        changes: list[str] = []
+        snap = game.last_turn_snapshot
+        if snap is not None:
+            old = set(snap.impacts)
+            new = set(game.impacts)
+            from ..mechanics.impacts import impact_label
+
+            changes = [impact_label(k) for k in (old ^ new)]
+
+        return cls(
+            game=game,
+            result_type=result_type,
+            player_words=player_words,
+            consequences=consequences or [],
+            consequence_sentences=consequence_sentences or [],
+            genre_constraints=genre_constraints,
+            threat_names=[t.name for t in game.threats if t.status == "active"],
+            impact_changes=changes,
+        )
 
 
 # ── PLAYER AGENCY ────────────────────────────────────────────
@@ -133,13 +184,13 @@ def check_result_integrity(narration: str, result_type: str) -> list[str]:
 # ── GENRE FIDELITY ───────────────────────────────────────────
 
 
-def check_genre_fidelity(narration: str, genre_constraints: dict | None) -> list[str]:
+def check_genre_fidelity(narration: str, genre_constraints: GenreConstraints | None) -> list[str]:
     """Check for forbidden terms in narration."""
     if not genre_constraints:
         return []
     violations = []
     narration_lower = narration.lower()
-    for term in genre_constraints.get("forbidden_terms", []):
+    for term in genre_constraints.forbidden_terms:
         if term.lower() in narration_lower:
             violations.append(f"GENRE FIDELITY: forbidden term '{term}' found in narration")
     return violations
@@ -148,7 +199,7 @@ def check_genre_fidelity(narration: str, genre_constraints: dict | None) -> list
 # ── ATMOSPHERIC REGISTER ────────────────────────────────────
 
 
-def check_atmospheric_register(narration: str, genre_constraints: dict | None) -> list[str]:
+def check_atmospheric_register(narration: str, genre_constraints: GenreConstraints | None) -> list[str]:
     """Flag atmospheric register drift when setting-specific markers pile up.
 
     Reads atmospheric_drift (word list) and atmospheric_drift_threshold (int)
@@ -156,8 +207,8 @@ def check_atmospheric_register(narration: str, genre_constraints: dict | None) -
     """
     if not genre_constraints:
         return []
-    drift_words = genre_constraints.get("atmospheric_drift", [])
-    threshold = genre_constraints.get("atmospheric_drift_threshold", 3)
+    drift_words = genre_constraints.atmospheric_drift
+    threshold = genre_constraints.atmospheric_drift_threshold
     if not drift_words or threshold < 1:
         return []
 
@@ -363,27 +414,69 @@ _CONSEQUENCE_STEMS: dict[str, tuple[str, ...]] = {
 }
 
 
+# ── THREAT ADVANCE VERIFICATION ─────────────────────────────
+
+
+def check_threat_advance(narration: str, threat_names: list[str]) -> list[str]:
+    """Check that narrator acknowledges threat menace advancement.
+
+    When a <threat_advance> tag was in the prompt, the narration should
+    reflect the threat's growing pressure — by name or by implication.
+    """
+    if not threat_names:
+        return []
+    narration_lower = narration.lower()
+    for name in threat_names:
+        words = {w.strip(".,;:!?\"'()-").lower() for w in name.split() if len(w) >= 3}
+        words -= _CONSEQUENCE_STOPWORDS
+        if any(w in narration_lower for w in words):
+            continue
+        return [
+            f"THREAT ADVANCE: narrator did not reflect threat '{name}' advancing — "
+            f"the growing menace must be felt in the scene"
+        ]
+    return []
+
+
+def check_impact_acknowledgment(narration: str, impact_changes: list[str]) -> list[str]:
+    """Check that narrator acknowledges impact changes (mark/clear) this turn.
+
+    When game.impacts changed since last snapshot, the narration must mention
+    the impact label (or a clear synonym) — the character's condition changed.
+    """
+    if not impact_changes:
+        return []
+    narration_lower = narration.lower()
+    for label in impact_changes:
+        if label.lower() in narration_lower:
+            continue
+        # Allow first word of multi-word labels ("permanently harmed" → "permanently" or "harmed")
+        words = [w.lower() for w in label.split() if len(w) >= 4]
+        if any(w in narration_lower for w in words):
+            continue
+        return [
+            f"IMPACT CHANGE: narrator did not reflect impact '{label}' — "
+            f"the character's condition shifted and must be felt in the prose"
+        ]
+    return []
+
+
 # ── PUBLIC API ───────────────────────────────────────────────
 
 
-def run_rule_checks(
-    narration: str,
-    result_type: str,
-    player_words: str = "",
-    genre_constraints: dict | None = None,
-    consequence_sentences: list[str] | None = None,
-    player_name: str = "",
-) -> dict:
+def run_rule_checks(narration: str, ctx: ValidationContext) -> dict:
     """Run all rule-based checks. Returns same format as LLM validator."""
     violations = []
 
     violations.extend(check_player_agency(narration))
-    if result_type in ("MISS", "WEAK_HIT", "STRONG_HIT"):
-        violations.extend(check_result_integrity(narration, result_type))
-    violations.extend(check_genre_fidelity(narration, genre_constraints))
-    violations.extend(check_atmospheric_register(narration, genre_constraints))
+    if ctx.result_type in ("MISS", "WEAK_HIT", "STRONG_HIT"):
+        violations.extend(check_result_integrity(narration, ctx.result_type))
+    violations.extend(check_genre_fidelity(narration, ctx.genre_constraints))
+    violations.extend(check_atmospheric_register(narration, ctx.genre_constraints))
     violations.extend(check_output_format(narration))
     violations.extend(check_npc_monologue(narration))
+    violations.extend(check_threat_advance(narration, ctx.threat_names))
+    violations.extend(check_impact_acknowledgment(narration, ctx.impact_changes))
 
     if violations:
         correction = "; ".join(v.split(": ", 1)[1] if ": " in v else v for v in violations[:3])

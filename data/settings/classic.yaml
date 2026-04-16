@@ -13,7 +13,7 @@ description: >
 oracle_paths:
   action_theme: ["action_and_theme/action", "action_and_theme/theme"]
   descriptor_focus: []  # Classic does not have descriptor/focus
-  names: ["name/ironlander"]
+  names: ["name/ironlander/a", "name/ironlander/b"]
   backstory: ""  # Classic has no dedicated backstory oracle
   factions: ""
 

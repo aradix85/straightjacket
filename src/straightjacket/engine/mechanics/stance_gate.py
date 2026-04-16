@@ -59,37 +59,34 @@ def resolve_npc_stance(game: GameState, npc: NpcData, move_category: str) -> Npc
 def compute_npc_gate(game: GameState, npc: NpcData, current_scene: int, stance: str) -> int:
     """Compute information gate level (0-4) for an NPC."""
     _e = eng()
-    gate_cfg = _e.get_raw("information_gate", {})
-    points_cfg = gate_cfg.get("points", {})
+    cfg = _e.information_gate
+    p = cfg.points
 
     first_scene = min((m.scene for m in npc.memory), default=current_scene)
     scenes_known = current_scene - first_scene
 
     points = 0
     if scenes_known >= 4:
-        points += points_cfg.get("scenes_known_4_plus", 2)
+        points += p.scenes_known_4_plus
     elif scenes_known >= 1:
-        points += points_cfg.get("scenes_known_2_3", 1)
+        points += p.scenes_known_2_3
     else:
-        points += points_cfg.get("scenes_known_1", 0)
+        points += p.scenes_known_1
 
-    points += npc.gather_count * points_cfg.get("gather_success", 1)
+    points += npc.gather_count * p.gather_success
 
     bond = get_npc_bond(game, npc.id)
     if bond >= 4:
-        points += points_cfg.get("bond_4_plus", 2)
+        points += p.bond_4_plus
     elif bond >= 2:
-        points += points_cfg.get("bond_2_3", 1)
+        points += p.bond_2_3
     else:
-        points += points_cfg.get("bond_1", 0)
+        points += p.bond_1
 
     gate = min(4, max(0, points))
 
     # Stance cap
-    caps = gate_cfg.get("stance_caps", {})
-    default_cap = gate_cfg.get("default_cap", 4)
-    cap = caps.get(stance, default_cap)
-    if isinstance(cap, int):
-        gate = min(gate, cap)
+    cap = cfg.stance_caps.get(stance, cfg.default_cap)
+    gate = min(gate, cap)
 
     return gate

@@ -165,6 +165,141 @@ class ArchitectConfig:
 
 
 @dataclass
+class ThreatConfig:
+    """Threat menace system."""
+
+    menace_on_miss: int = 1
+    autonomous_tick_chance: float = 0.15
+    menace_high_threshold: float = 0.75
+    forsake_spirit_cost: int = 2
+
+
+@dataclass
+class ImpactConfig:
+    """Single impact definition from engine.yaml `impacts` section."""
+
+    key: str = ""
+    label: str = ""
+    description: str = ""
+    blocks_recovery: str = ""  # health / spirit / supply / "" (empty = no block)
+    permanent: bool = False
+
+
+@dataclass
+class PositionResolverWeights:
+    """Weights applied to resource/npc/chaos/momentum/threat factors."""
+
+    resource_critical_below: int = 2
+    resource_low_below: int = 3
+    resource_critical: int = -2
+    resource_low: int = -1
+    npc_hostile: int = -2
+    npc_distrustful: int = -1
+    npc_friendly: int = 1
+    npc_loyal: int = 2
+    npc_bond_high: int = 1
+    npc_bond_low: int = -1
+    chaos_high: int = -1
+    chaos_low: int = 1
+    consecutive_misses: int = -2
+    consecutive_strong: int = 1
+    threat_clock_critical: int = -1
+    secured_advantage: int = 2
+
+
+@dataclass
+class PositionOverride:
+    """Situational override: evaluated after sum, caps/floors/shifts result."""
+
+    name: str = ""
+    conditions: list[str] = field(default_factory=list)
+    effect: str = ""  # cap_at_risky / floor_at_risky / shift_up_one / etc.
+
+
+@dataclass
+class PositionResolverConfig:
+    """Weighted scoring config for resolving action position."""
+
+    desperate_below: int = -3
+    controlled_above: int = 3
+    weights: PositionResolverWeights = field(default_factory=PositionResolverWeights)
+    move_baselines: dict[str, int] = field(default_factory=dict)
+    overrides: list[PositionOverride] = field(default_factory=list)
+
+
+@dataclass
+class EffectResolverWeights:
+    """Weights applied to position correlation + bond + secured advantage."""
+
+    desperate: int = -1
+    controlled: int = 1
+    bond_high: int = 1
+    bond_low: int = -1
+    secured_advantage: int = 1
+
+
+@dataclass
+class EffectResolverConfig:
+    """Weighted scoring config for resolving action effect."""
+
+    limited_below: int = -2
+    great_above: int = 2
+    weights: EffectResolverWeights = field(default_factory=EffectResolverWeights)
+    move_baselines: dict[str, int] = field(default_factory=dict)
+
+
+@dataclass
+class InformationGatePoints:
+    """Points awarded per factor for computing information gate level."""
+
+    scenes_known_1: int = 0
+    scenes_known_2_3: int = 1
+    scenes_known_4_plus: int = 2
+    gather_success: int = 1
+    bond_1: int = 0
+    bond_2_3: int = 1
+    bond_4_plus: int = 2
+
+
+@dataclass
+class InformationGateConfig:
+    """Information gate: how much NPCs reveal based on scenes/bond/stance."""
+
+    points: InformationGatePoints = field(default_factory=InformationGatePoints)
+    stance_caps: dict[str, int] = field(default_factory=dict)
+    default_cap: int = 4
+
+
+@dataclass
+class NarrativeIntensityThresholds:
+    """Resource thresholds for narrative intensity classification."""
+
+    critical_below: int = 1
+    high_below: int = 3
+    moderate_below: int = 4
+
+
+@dataclass
+class NarrativeDirectionEntry:
+    """Tempo + perspective for a single roll result."""
+
+    tempo: str = "moderate"
+    perspective: str = "action_detail"
+
+
+@dataclass
+class NarrativeDirectionConfig:
+    """Narrative writing directions derived from game state."""
+
+    intensity: NarrativeIntensityThresholds = field(default_factory=NarrativeIntensityThresholds)
+    result_map: dict[str, NarrativeDirectionEntry] = field(default_factory=dict)
+
+    def entry_for(self, roll_result: str) -> NarrativeDirectionEntry:
+        """Get the entry for a roll result, falling back to _default."""
+        return self.result_map.get(roll_result, self.result_map.get("_default", NarrativeDirectionEntry()))
+
+
+@dataclass
 class FateLikelihoodRules:
     """Fate system likelihood resolution rules."""
 
@@ -244,6 +379,12 @@ class EngineSettings:
     location: LocationConfig = field(default_factory=LocationConfig)
     opening: OpeningConfig = field(default_factory=OpeningConfig)
     architect: ArchitectConfig = field(default_factory=ArchitectConfig)
+    threats: ThreatConfig = field(default_factory=ThreatConfig)
+    impacts: dict[str, ImpactConfig] = field(default_factory=dict)
+    position_resolver: PositionResolverConfig = field(default_factory=PositionResolverConfig)
+    effect_resolver: EffectResolverConfig = field(default_factory=EffectResolverConfig)
+    information_gate: InformationGateConfig = field(default_factory=InformationGateConfig)
+    narrative_direction: NarrativeDirectionConfig = field(default_factory=NarrativeDirectionConfig)
     fate: FateConfig = field(default_factory=FateConfig)
     story: StoryConfig = field(default_factory=StoryConfig)
     enums: EnumsConfig = field(default_factory=EnumsConfig)
@@ -283,6 +424,7 @@ _SIMPLE_SECTIONS: dict[str, type] = {
     "location": LocationConfig,
     "opening": OpeningConfig,
     "architect": ArchitectConfig,
+    "threats": ThreatConfig,
     "story": StoryConfig,
     "enums": EnumsConfig,
     "memory_retrieval_weights": MemoryRetrievalWeights,
@@ -328,6 +470,46 @@ def parse_engine_yaml(data: dict) -> EngineSettings:
         rd = dict(data["recovery"])
         sh = rd.pop("strong_hit", {"standard": 1, "great": 2})
         s.recovery = RecoveryConfig(weak_hit=rd.get("weak_hit", 1), strong_hit=dict(sh))
+    if "impacts" in data:
+        s.impacts = {
+            key: _build_nested(ImpactConfig, {**impact_data, "key": key})
+            for key, impact_data in data["impacts"].items()
+        }
+    if "position_resolver" in data:
+        pr = dict(data["position_resolver"])
+        weights = _build_nested(PositionResolverWeights, pr.pop("weights", {}))
+        overrides = [_build_nested(PositionOverride, o) for o in pr.pop("overrides", [])]
+        s.position_resolver = PositionResolverConfig(
+            desperate_below=pr.get("desperate_below", -3),
+            controlled_above=pr.get("controlled_above", 3),
+            weights=weights,
+            move_baselines=dict(pr.get("move_baselines", {})),
+            overrides=overrides,
+        )
+    if "effect_resolver" in data:
+        er = dict(data["effect_resolver"])
+        weights = _build_nested(EffectResolverWeights, er.pop("weights", {}))
+        s.effect_resolver = EffectResolverConfig(
+            limited_below=er.get("limited_below", -2),
+            great_above=er.get("great_above", 2),
+            weights=weights,
+            move_baselines=dict(er.get("move_baselines", {})),
+        )
+    if "information_gate" in data:
+        ig = dict(data["information_gate"])
+        points = _build_nested(InformationGatePoints, ig.pop("points", {}))
+        s.information_gate = InformationGateConfig(
+            points=points,
+            stance_caps=dict(ig.get("stance_caps", {})),
+            default_cap=ig.get("default_cap", 4),
+        )
+    if "narrative_direction" in data:
+        nd = dict(data["narrative_direction"])
+        intensity = _build_nested(NarrativeIntensityThresholds, nd.pop("intensity", {}))
+        result_map = {
+            key: _build_nested(NarrativeDirectionEntry, entry) for key, entry in nd.pop("result_map", {}).items()
+        }
+        s.narrative_direction = NarrativeDirectionConfig(intensity=intensity, result_map=result_map)
 
     # Scalar top-level fields
     if "scene_range_default" in data:

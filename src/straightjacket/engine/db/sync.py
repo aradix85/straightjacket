@@ -24,6 +24,7 @@ def sync(game: GameState) -> None:
         conn.execute("DELETE FROM scene_log")
         conn.execute("DELETE FROM narration_history")
         conn.execute("DELETE FROM progress_tracks")
+        conn.execute("DELETE FROM threats")
         # Insert: parents before children
         _insert_npcs(conn, game)
         _insert_memories(conn, game)
@@ -33,6 +34,7 @@ def sync(game: GameState) -> None:
         _insert_scene_log(conn, game)
         _insert_narration_history(conn, game)
         _insert_progress_tracks(conn, game)
+        _insert_threats(conn, game)
     log(f"[DB] Synced: {len(game.npcs)} npcs, {len(game.world.clocks)} clocks, scene {game.narrative.scene_count}")
 
 
@@ -150,4 +152,24 @@ def _insert_progress_tracks(conn: sqlite3.Connection, game: GameState) -> None:
             "INSERT INTO progress_tracks (id, name, track_type, rank, ticks, max_ticks, status) "
             "VALUES (?, ?, ?, ?, ?, ?, ?)",
             (t.id, t.name, t.track_type, t.rank, t.ticks, t.max_ticks, t.status),
+        )
+
+
+def _insert_threats(conn: sqlite3.Connection, game: GameState) -> None:
+    for t in game.threats:
+        conn.execute(
+            "INSERT INTO threats (id, name, category, description, linked_vow_id, "
+            "rank, menace_ticks, max_menace_ticks, status) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            (
+                t.id,
+                t.name,
+                t.category,
+                t.description,
+                t.linked_vow_id,
+                t.rank,
+                t.menace_ticks,
+                t.max_menace_ticks,
+                t.status,
+            ),
         )

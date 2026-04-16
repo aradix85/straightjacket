@@ -290,6 +290,24 @@ def stub_engine() -> None:
                     "uncanny",
                 ],
             },
+            "threats": {
+                "menace_on_miss": 1,
+                "autonomous_tick_chance": 0.15,
+                "menace_high_threshold": 0.75,
+                "forsake_spirit_cost": 2,
+            },
+            "impacts": {
+                "wounded": {"label": "wounded", "blocks_recovery": "health", "permanent": False},
+                "shaken": {"label": "shaken", "blocks_recovery": "spirit", "permanent": False},
+                "unprepared": {"label": "unprepared", "blocks_recovery": "supply", "permanent": False},
+                "doomed": {"label": "doomed", "blocks_recovery": "", "permanent": False},
+                "tormented": {"label": "tormented", "blocks_recovery": "", "permanent": False},
+                "indebted": {"label": "indebted", "blocks_recovery": "", "permanent": False},
+                "battered": {"label": "battered", "blocks_recovery": "", "permanent": False},
+                "cursed": {"label": "cursed", "blocks_recovery": "", "permanent": False},
+                "permanently_harmed": {"label": "permanently harmed", "blocks_recovery": "", "permanent": True},
+                "traumatized": {"label": "traumatized", "blocks_recovery": "", "permanent": True},
+            },
         }
     )
 

@@ -67,7 +67,7 @@ Where to find things. If you want to change X, edit Y.
 | NPC memory / activation logic | `npc/memory.py`, `npc/activation.py` |
 | Story structure / act tracking | `story_state.py`, `ai/architect.py` |
 | Correction (## undo) flow | `correction.py` |
-| Save format | `models.py` → `to_dict`/`from_dict` on the relevant dataclass |
+| Save format | `models.py` → SerializableMixin on each dataclass (no manual `to_dict`/`from_dict`) |
 | User/save directory management | `user_management.py` → `create_user`, `get_save_dir`, `_safe_name` |
 | WebSocket protocol / UI | `web/handlers.py`, `web/static/index.html` |
 | Character creation validation | `game/game_start.py` → `validate_stats`, stat arrays in `engine.yaml` |
@@ -79,7 +79,7 @@ Where to find things. If you want to change X, edit Y.
 | Pacing (engine-computed) | `mechanics/world.py` → `get_pacing_hint`; scene structure via `mechanics/scene.py` |
 | Act transitions (engine-computed) | `director.py` → `_check_engine_act_transition` |
 | Memory emotional weight (engine-computed) | `mechanics/engine_memories.py` → `derive_memory_emotion`, table in `engine.yaml` |
-| Database queries (NPCs, memories, threads, clocks) | `db/queries.py` → `query_npcs`, `query_memories`, `query_threads`, `query_clocks` |
+| Database queries (NPCs, memories, threads, clocks, threats) | `db/queries.py` → `query_npcs`, `query_memories`, `query_threads`, `query_clocks` |
 | Database sync after state changes | `db/sync.py` → `sync(game)`, called by turn, creation, correction, restore, load |
 | Tool definitions for AI agents | `tools/registry.py` → `@register("director")`, `get_tools(role)` |
 | Tool execution and iterative loop | `tools/handler.py` → `execute_tool_call`, `run_tool_loop` |
@@ -93,6 +93,7 @@ Where to find things. If you want to change X, edit Y.
 | NPC bond level | `npc/bond.py` → `get_npc_bond` (reads connection track, not NpcData) |
 | Status commands (/status, /score) | `web/handlers.py` → `handle_status_query`; `web/serializers.py` → `build_narrative_status` |
 | Status command /tracks | `web/handlers.py` → `handle_tracks_query`; `web/serializers.py` → `build_tracks_status` |
+| Status command /threats | `web/handlers.py` → `handle_threats_query`; `web/serializers.py` → `build_threats_status` |
 | Fate questions (yes/no) | `mechanics/fate.py` → `resolve_fate`, `resolve_likelihood`; `engine.yaml` → `fate` |
 | Scene structure (expected/altered/interrupt) | `mechanics/scene.py` → `check_scene`, `SceneSetup` |
 | Random events and meaning tables | `mechanics/random_events.py` → `generate_random_event`, `roll_event_focus`, `roll_meaning_table` |
@@ -101,9 +102,14 @@ Where to find things. If you want to change X, edit Y.
 | Consequence sentence generation | `mechanics/consequences.py` → `generate_consequence_sentences` |
 | NPC stance matrix | `engine.yaml` → `stance_matrix` (no Python) |
 | NPC stance resolution | `mechanics/stance_gate.py` → `resolve_npc_stance`, `NpcStance` |
-| Information gate levels | `engine.yaml` → `information_gate` (no Python) |
+| Information gate levels | `engine.yaml` → `information_gate` (typed `InformationGateConfig`) |
 | Information gate computation | `mechanics/stance_gate.py` → `compute_npc_gate` |
 | Gate-filtered NPC prompt data | `prompt_builders.py` → `_npc_block` (gate 0–4 filtering) |
+| Threat menace track, Forsake Your Vow | `engine.yaml` → `threats`; `mechanics/threats.py` → `advance_menace_on_miss`, `tick_autonomous_threats`, `resolve_full_menace` |
+| Threat-vow coupling | `models_base.py` → `ThreatData.linked_vow_id`; `game/turn.py` → `complete_track` resolves linked threat |
+| Impacts (wounded, shaken, etc.) | `engine.yaml` → `impacts` (typed `ImpactConfig`); `mechanics/impacts.py` → `apply_impact`, `clear_impact`, `blocks_recovery`, `recalc_max_momentum` |
+| NPC name generation | `npc/naming.py` → `roll_oracle_name`; `data/settings/*.yaml` → `oracle_paths.names` |
+| Validator context bundling | `ai/rule_validator.py` → `ValidationContext` (adding new check = 1 field + 1 build line + 1 check call) |
 
 ## AI Model Assignment
 
@@ -318,50 +324,58 @@ Settings are data packages that combine a Datasworn JSON file (game content: mov
 
 ### Settings YAML format
 
+Each setting YAML is parsed at load time into a typed `SettingConfig` dataclass (with nested `VocabularyConfig`, `OraclePaths`, `GenreConstraints`, `CreationFlow`). Downstream code reads typed attributes, never raw dicts.
+
 ```yaml
 # data/settings/your_setting.yaml
 id: your_setting                    # Must match the Datasworn JSON filename (without .json)
 title: "Your Setting Name"          # Display name in character creation
+datasworn_id: your_setting          # Datasworn JSON basename (often same as id)
 description: "One paragraph describing the world, tone, and premise."
+parent: ""                          # Optional: parent setting id (e.g. Delve → Classic)
 
-# Vocabulary substitutions: generic term → setting-specific term.
-# Included in every narrator prompt to keep the AI in-genre.
+# Vocabulary: setting-specific language control.
 vocabulary:
-  spaceship: iron vessel
-  planet: forge-world
-  alien: abomination
+  substitutions:                    # Generic term → setting-specific phrase
+    spaceship: "starship — worn, patched, held together by stubbornness"
+    alien: "creature — strange biology, not sentient unless proven"
+  sensory_palette: >                # Included in <sensory_palette> prompt block
+    Metal, recycled air, hydraulic fluid, ozone, cold vacuum beyond the hull.
 
 # Genre constraints: what must NOT appear in narration or story blueprints.
 genre_constraints:
-  forbidden_terms:                  # Words the narrator must never use
+  forbidden_terms:                  # Words the rule validator flags
     - magic
     - spell
-    - wizard
   forbidden_concepts:               # Broader prohibitions for the architect validator
     - "supernatural powers beyond the setting's technology level"
-  genre_test: "Could this exist in a world with only pre-industrial technology?"
+  genre_test: "Could this exist without magic?"
+  atmospheric_drift:                # Words that signal genre bleed when they pile up
+    - eldritch
+    - otherworldly
+  atmospheric_drift_threshold: 2    # Minimum drift words to flag a violation
 
-# Oracle paths: where to find name tables and backstory prompts in the Datasworn JSON.
+# Oracle paths in the Datasworn JSON.
+# names: used by engine NPC name generator (step 11c). 1 path = single roll;
+# 2 paths = join both; 3+ paths = 50% last-only (callsign) or first-two joined.
 oracle_paths:
-  names:                            # Used by Elvira's character creation for random names
-    - "oracles/character/name/given"
-    - "oracles/character/name/family"
-  backstory:                        # Used for random backstory generation
-    - "oracles/character/backstory"
+  action_theme: ["core/action", "core/theme"]
+  descriptor_focus: ["core/descriptor", "core/focus"]
+  names: ["characters/name/given", "characters/name/family_name", "characters/name/callsign"]
+  backstory: "campaign_launch/backstory_prompts"
+  factions: "factions"
 
 # Character creation flow: controls which UI steps the client presents.
 creation_flow:
-  has_truths: true                  # Setting has world truths to choose
-  has_backstory_oracle: true        # Datasworn backstory prompts available
-  has_name_tables: true             # Datasworn name oracle tables available
-  has_ship_creation: false          # Ship creation at character creation (Sundered Isles)
-  starting_asset_categories:        # Non-path asset categories available at creation
+  has_truths: true
+  has_backstory_oracle: true
+  has_name_tables: true
+  has_ship_creation: false
+  starting_asset_categories:
     - companion
     - module
 ```
 
-The `vocabulary` block maps generic fantasy/sci-fi terms to setting-specific language. This implements the design document's vocabulary control principle: the AI writes in the setting's voice instead of defaulting to genre conventions from training data.
+The `vocabulary` block keeps the AI in-setting. `genre_constraints` feeds both the rule validator (forbidden_terms, atmospheric_drift) and the architect validator (forbidden_concepts, genre_test). `oracle_paths.names` drives engine NPC name generation — engine rolls from these tables, AI name kept as alias. `creation_flow` tells the client which creation steps to show.
 
-The `genre_constraints` block feeds both the rule-based validator (forbidden_terms checked via regex) and the architect validator (forbidden_concepts checked via LLM). The `genre_test` string is a yes/no question the LLM applies to story blueprints.
-
-The `creation_flow` block tells the client which character creation steps to present. Settings without backstory oracles (Classic) skip that step. Settings with ship creation (Sundered Isles) add it. The engine reads these flags in `build_creation_options()` and includes the relevant Datasworn data only when the flag is set.
+Settings inherit from `parent` when present (Delve → Classic). Vocabulary, genre constraints, and oracle name paths fall through to the parent when the child's are empty.

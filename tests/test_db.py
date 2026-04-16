@@ -106,6 +106,7 @@ def test_init_creates_tables() -> None:
         "progress_tracks",
         "scene_log",
         "threads",
+        "threats",
     ]
     assert tables == expected
     close_db()

@@ -138,7 +138,7 @@ def _roll_truths(pkg: SettingPackage, game_cfg: dict) -> dict[str, str]:
     if game_cfg.get("truths"):
         return game_cfg["truths"]
     flow = pkg.creation_flow
-    if not flow.get("has_truths"):
+    if not flow.has_truths:
         return {}
     raw_truths = pkg.data.truths()
     if not raw_truths:
@@ -158,7 +158,7 @@ def _roll_starting_assets(pkg: SettingPackage, game_cfg: dict) -> list[str]:
         return game_cfg["assets"]
     _e = eng()
     flow = pkg.creation_flow
-    cats = flow.get("starting_asset_categories", [])
+    cats = flow.starting_asset_categories
     if not cats:
         return []
     max_assets = _e.creation.max_starting_assets

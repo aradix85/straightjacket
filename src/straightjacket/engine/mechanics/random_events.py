@@ -47,6 +47,15 @@ _THREAD_FOCUS: frozenset[str] = frozenset(
     }
 )
 
+# Focus categories that can target an active threat (menace advance).
+# When threats exist, 50% chance to target a threat instead of generic.
+_THREAT_ELIGIBLE_FOCUS: frozenset[str] = frozenset(
+    {
+        "pc_negative",
+        "move_away_from_thread",
+    }
+)
+
 
 # ── Event focus (step 6.1) ───────────────────────────────────
 
@@ -118,8 +127,17 @@ def _select_target(focus: str, game: GameState) -> tuple[str, str]:
 
     NPC-focus categories select from characters_list.
     Thread-focus categories select from threads list.
+    Threat-eligible categories may target an active threat (50% when threats exist).
     Empty list → falls back to current_context (no target).
     """
+    # Threat targeting: eligible focus + active threats → 50% chance
+    if focus in _THREAT_ELIGIBLE_FOCUS:
+        active_threats = [t for t in game.threats if t.status == "active" and not t.menace_full]
+        if active_threats and random.random() < 0.5:
+            threat = random.choice(active_threats)
+            log(f"[RandomEvent] Threat-eligible focus '{focus}' → targeting threat '{threat.name}'")
+            return threat.name, threat.id
+
     if focus in _NPC_FOCUS:
         name, target_id = _select_from_weighted_list(game.narrative.characters_list)
         if not name:

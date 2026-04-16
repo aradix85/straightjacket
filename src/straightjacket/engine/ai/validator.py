@@ -14,9 +14,11 @@ import json
 import re
 
 from ..config_loader import model_for_role, sampling_params
+from ..datasworn.settings import GenreConstraints
 from ..logging_util import log
 from ..models import EngineConfig, GameState
 from .provider_base import AIProvider, create_with_retry
+from .rule_validator import ValidationContext
 from .schemas import ARCHITECT_VALIDATOR_SCHEMA, VALIDATOR_SCHEMA
 
 
@@ -52,14 +54,8 @@ def _strip_prompt_for_retry(prompt: str, violations: list[str]) -> str:
 def validate_narration(
     provider: AIProvider,
     narration: str,
-    result_type: str,
-    genre: str,
-    player_words: str = "",
-    player_name: str = "",
-    consequences: list | None = None,
+    ctx: ValidationContext,
     config: EngineConfig | None = None,
-    genre_constraints: dict | None = None,
-    consequence_sentences: list[str] | None = None,
 ) -> dict:
     """Check narrator output against engine constraints.
 
@@ -75,9 +71,7 @@ def validate_narration(
     from .rule_validator import run_rule_checks
 
     # Layer 1: rule-based (instant, free)
-    rule_result = run_rule_checks(
-        narration, result_type, player_words, genre_constraints, consequence_sentences, player_name
-    )
+    rule_result = run_rule_checks(narration, ctx)
     rule_violations = rule_result.get("violations", [])
 
     # Fast path: rule violations found → skip LLM, retry immediately
@@ -89,15 +83,16 @@ def validate_narration(
 
     # Layer 2: LLM (semantic) — only when rules passed
     llm_violations = []
-    cons_text = ", ".join(consequences) if consequences else "none"
+    cons_text = ", ".join(ctx.consequences) if ctx.consequences else "none"
+    player_name = ctx.game.player_name
     pc_hint = f' The player character is "{player_name}" (the "you").' if player_name else ""
     cons_sentence_text = ""
-    if consequence_sentences:
+    if ctx.consequence_sentences:
         cons_sentence_text = (
             "\n\nCONSEQUENCE COMPLIANCE: Each consequence below MUST be reflected in the narration. "
             "The narrator may use different words but the event described MUST visibly occur. "
             "If a consequence is completely absent from the prose, flag it.\n"
-            + "\n".join(f"- {s}" for s in consequence_sentences)
+            + "\n".join(f"- {s}" for s in ctx.consequence_sentences)
         )
 
     system = f"""Constraint checker for RPG narration. Be STRICT and PRECISE.
@@ -134,8 +129,8 @@ Return pass=false with:
 - correction: one sentence naming the exact problem and what to do instead"""
 
     prompt = f"""<narration>{narration[:4000]}</narration>
-<context result_type="{result_type}" genre="{genre}" consequences="{cons_text}"/>
-<player_words>{player_words[:500]}</player_words>
+<context result_type="{ctx.result_type}" genre="{ctx.game.setting_genre}" consequences="{cons_text}"/>
+<player_words>{ctx.player_words[:500]}</player_words>
 Check constraints."""
 
     try:
@@ -207,6 +202,7 @@ def validate_and_retry(
     narrator again, parses the response, and re-validates the new output.
 
     Genre constraints are loaded from the active setting package if available.
+    Threat names and player info are derived from game state via ValidationContext.
 
     Returns:
         (narration, report) where report contains:
@@ -223,21 +219,21 @@ def validate_and_retry(
     if max_retries is None:
         max_retries = sampling_params("narrator").get("max_retries", 3)
 
-    # Load genre constraints from setting package
-    gc_dict = None
+    # Load genre constraints from setting package (typed — no dict conversion)
+    gc = None
     pkg = active_package(game)
     if pkg:
         gc = pkg.genre_constraints
-        gc_dict = {
-            "forbidden_terms": gc.forbidden_terms,
-            "forbidden_concepts": gc.forbidden_concepts,
-            "genre_test": gc.genre_test,
-        }
-        # Atmospheric register control from raw config
-        raw_gc = pkg.raw_config.get("genre_constraints", {})
-        if "atmospheric_drift" in raw_gc:
-            gc_dict["atmospheric_drift"] = raw_gc["atmospheric_drift"]
-            gc_dict["atmospheric_drift_threshold"] = raw_gc.get("atmospheric_drift_threshold", 3)
+
+    # Build validation context once — all checks share it
+    val_ctx = ValidationContext.build(
+        game,
+        result_type=result_type,
+        player_words=player_words,
+        consequences=consequences,
+        consequence_sentences=consequence_sentences,
+        genre_constraints=gc,
+    )
 
     report: dict = {"passed": True, "retries": 0, "violations": [], "checks": []}
 
@@ -245,18 +241,7 @@ def validate_and_retry(
     attempts: list[tuple[str, int, dict]] = []
 
     for attempt in range(max_retries):
-        check = validate_narration(
-            provider,
-            narration,
-            result_type,
-            game.setting_genre,
-            player_words=player_words,
-            player_name=game.player_name,
-            consequences=consequences,
-            config=config,
-            genre_constraints=gc_dict,
-            consequence_sentences=consequence_sentences,
-        )
+        check = validate_narration(provider, narration, val_ctx, config=config)
         report["checks"].append(check)
         violations = check.get("violations", [])
         attempts.append((narration, len(violations), check))
@@ -369,18 +354,7 @@ def validate_and_retry(
         narration = parse_narrator_response(game, raw)
 
     # Final validation of last attempt
-    final_check = validate_narration(
-        provider,
-        narration,
-        result_type,
-        game.setting_genre,
-        player_words=player_words,
-        player_name=game.player_name,
-        consequences=consequences,
-        config=config,
-        genre_constraints=gc_dict,
-        consequence_sentences=consequence_sentences,
-    )
+    final_check = validate_narration(provider, narration, val_ctx, config=config)
     report["checks"].append(final_check)
     final_violations = final_check.get("violations", [])
     attempts.append((narration, len(final_violations), final_check))
@@ -415,7 +389,7 @@ def validate_architect(
     blueprint: dict,
     genre: str,
     tone: str,
-    genre_constraints: dict | None = None,
+    genre_constraints: GenreConstraints | None = None,
 ) -> dict:
     """Check story architect blueprint for genre fidelity.
 
@@ -426,31 +400,32 @@ def validate_architect(
     Returns the blueprint, possibly with corrected fields.
     On API failure, returns the blueprint with only rule-based fixes applied.
     """
-    gc = genre_constraints or {}
-    forbidden_terms = gc.get("forbidden_terms", [])
-    forbidden_concepts = gc.get("forbidden_concepts", [])
-    genre_test = gc.get("genre_test", "")
-    drift_words = gc.get("atmospheric_drift", [])
+    if genre_constraints is None:
+        return blueprint
 
     # Layer 1: rule-based drift check on all blueprint text fields
-    if drift_words:
-        drift_lower = {w.lower() for w in drift_words}
+    if genre_constraints.atmospheric_drift:
+        drift_lower = {w.lower() for w in genre_constraints.atmospheric_drift}
         _check_blueprint_text_fields(blueprint, drift_lower)
 
     # No LLM constraints = skip LLM check
-    if not forbidden_terms and not forbidden_concepts and not genre_test:
+    if (
+        not genre_constraints.forbidden_terms
+        and not genre_constraints.forbidden_concepts
+        and not genre_constraints.genre_test
+    ):
         return blueprint
 
     conflict = blueprint.get("central_conflict", "")
     antagonist = blueprint.get("antagonist_force", "")
 
     constraint_text = ""
-    if forbidden_terms:
-        constraint_text += f"Forbidden terms: {', '.join(forbidden_terms)}. "
-    if forbidden_concepts:
-        constraint_text += "Forbidden concepts: " + "; ".join(forbidden_concepts) + ". "
-    if genre_test:
-        constraint_text += f"Test: {genre_test}"
+    if genre_constraints.forbidden_terms:
+        constraint_text += f"Forbidden terms: {', '.join(genre_constraints.forbidden_terms)}. "
+    if genre_constraints.forbidden_concepts:
+        constraint_text += "Forbidden concepts: " + "; ".join(genre_constraints.forbidden_concepts) + ". "
+    if genre_constraints.genre_test:
+        constraint_text += f"Test: {genre_constraints.genre_test}"
 
     system = f"""Genre fidelity checker for an RPG story blueprint. You receive the central_conflict and antagonist_force from a story architect.
 

@@ -250,3 +250,28 @@ def test_social_move_unresolved_target_skips_bond(load_engine: None) -> None:
     # target_npc that doesn't match any NPC
     resolve_move_outcome(game, "adventure/compel", "STRONG_HIT", target_npc_id="nonexistent")
     assert npc.disposition == "neutral"  # unchanged
+
+
+def test_progress_tracks_snapshot_restore() -> None:
+    """Progress tracks are fully restored on snapshot/restore cycle."""
+    game = GameState()
+    game.progress_tracks.append(ProgressTrack(id="v1", name="Vow", track_type="vow", rank="dangerous", ticks=8))
+    game.progress_tracks.append(ProgressTrack(id="c1", name="Fight", track_type="combat", rank="formidable", ticks=0))
+
+    snap = game.snapshot()
+
+    # Mutate after snapshot: mark progress, create new track, complete one
+    game.progress_tracks[0].mark_progress()
+    game.progress_tracks[1].status = "completed"
+    game.progress_tracks.append(ProgressTrack(id="v2", name="New Vow", track_type="vow"))
+
+    assert game.progress_tracks[0].ticks == 16  # 8 + 8 (dangerous ticks_per_mark)
+    assert len(game.progress_tracks) == 3
+
+    game.restore(snap)
+
+    assert len(game.progress_tracks) == 2
+    assert game.progress_tracks[0].ticks == 8
+    assert game.progress_tracks[0].name == "Vow"
+    assert game.progress_tracks[1].status == "active"
+    assert game.progress_tracks[1].ticks == 0

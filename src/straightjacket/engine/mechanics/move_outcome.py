@@ -253,8 +253,9 @@ def apply_suffer_handler(game: GameState, roll_result: str, params: dict) -> Out
     miss_extra_track = params.get("miss_extra_track", -1)
     miss_extra_momentum = params.get("miss_extra_momentum", -2)
 
-    # For now, impacts are not yet tracked (step 9). We always take the track recovery.
-    has_blocking_impact = False  # TODO step 9: check game.impacts
+    from .impacts import apply_impact, blocks_recovery
+
+    has_blocking_impact = bool(blocks_recovery(game, track))
 
     if roll_result == "STRONG_HIT":
         if track in ("health", "spirit", "supply") and not has_blocking_impact:
@@ -295,13 +296,15 @@ def apply_suffer_handler(game: GameState, roll_result: str, params: dict) -> Out
             res.adjust_momentum(miss_extra_momentum, floor=_e.momentum.floor, ceiling=_e.momentum.max)
             result.consequences.append(f"momentum {miss_extra_momentum}")
 
-        # Check if at zero — would mark impact (step 9) or roll table
+        # Track at zero → mark impact. Engine picks first of impact_pair.
         track_value = getattr(res, track, None) if track in ("health", "spirit", "supply") else None
         if track_value is not None and track_value <= 0:
             impact_pair = params.get("impact_pair", [])
             if impact_pair:
-                result.consequences.append(f"must mark {impact_pair[0]} or {impact_pair[1]}")
-                # TODO step 9: actually mark the impact
+                # First impact if not yet active, otherwise the worse one
+                chosen = impact_pair[0] if impact_pair[0] not in game.impacts else impact_pair[1]
+                if apply_impact(game, chosen):
+                    result.consequences.append(f"mark {chosen}")
 
     return result
 
@@ -323,10 +326,11 @@ def apply_threshold_handler(game: GameState, roll_result: str, params: dict) -> 
         result.narrative_only = True
 
     elif roll_result == "WEAK_HIT":
+        from .impacts import apply_impact
+
         impact = params.get("impact", "")
-        if impact:
+        if impact and apply_impact(game, impact):
             result.consequences.append(f"mark {impact}")
-            # TODO step 9: game.impacts.add(impact)
         result.consequences.append("swear a deathbound vow")
 
     else:  # MISS
@@ -361,14 +365,14 @@ def apply_recovery_handler(game: GameState, roll_result: str, params: dict) -> O
     weak_cost_type = params.get("weak_hit_cost_type", "momentum")
     weak_cost = params.get("weak_hit_cost", -2)
 
-    # TODO step 9: check if blocking impact is active
-    has_impact = False
+    from .impacts import clear_impact
+
+    has_impact = bool(blocking_impact) and blocking_impact in game.impacts
 
     if roll_result in ("STRONG_HIT", "WEAK_HIT"):
         amount = impact_amount if has_impact else full_amount
-        if has_impact:
+        if has_impact and clear_impact(game, blocking_impact):
             result.consequences.append(f"clear {blocking_impact}")
-            # TODO step 9: game.impacts.remove(blocking_impact)
 
         if track in ("health", "spirit", "supply"):
             cap = getattr(_e.resources, f"{track}_max")

@@ -69,7 +69,7 @@ def validate_creation(creation_data: dict, pkg: object) -> None:
     max_assets = _e.creation.max_starting_assets
     if len(assets) > max_assets:
         raise ValueError(f"Too many starting assets: {len(assets)} (max {max_assets})")
-    allowed_cats = set(flow.get("starting_asset_categories", []))
+    allowed_cats = set(flow.starting_asset_categories)
     if allowed_cats:
         for asset_id in assets:
             found = False
@@ -82,7 +82,7 @@ def validate_creation(creation_data: dict, pkg: object) -> None:
 
     # Truths: only allowed if setting has them
     truths = creation_data.get("truths", {})
-    if truths and not flow.get("has_truths"):
+    if truths and not flow.has_truths:
         raise ValueError(f"Setting '{pkg.id}' does not support truths")
 
     # Background vow rank must be valid
@@ -304,14 +304,7 @@ def start_new_game(
     narration, val_report = validate_and_retry(provider, narration, narrator_prompt, "opening", game, config=config)
 
     _pkg = active_package(game)
-    _gc = None
-    if _pkg:
-        _g = _pkg.genre_constraints
-        _gc = {
-            "forbidden_terms": _g.forbidden_terms,
-            "forbidden_concepts": _g.forbidden_concepts,
-            "genre_test": _g.genre_test,
-        }
+    _gc = _pkg.genre_constraints if _pkg else None
 
     from ..models import StoryBlueprint
 

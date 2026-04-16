@@ -146,10 +146,10 @@ def test_setting_creation_flow_starforged() -> None:
     clear_cache()
     pkg = load_package("starforged")
     flow = pkg.creation_flow
-    assert flow["has_truths"] is True
-    assert flow["has_backstory_oracle"] is True
-    assert flow["has_name_tables"] is True
-    assert flow["has_ship_creation"] is False
+    assert flow.has_truths is True
+    assert flow.has_backstory_oracle is True
+    assert flow.has_name_tables is True
+    assert flow.has_ship_creation is False
 
 
 def test_setting_creation_flow_classic() -> None:
@@ -158,8 +158,8 @@ def test_setting_creation_flow_classic() -> None:
     clear_cache()
     pkg = load_package("classic")
     flow = pkg.creation_flow
-    assert flow["has_truths"] is True
-    assert flow["has_backstory_oracle"] is False
+    assert flow.has_truths is True
+    assert flow.has_backstory_oracle is False
 
 
 def test_setting_creation_flow_sundered_isles() -> None:
@@ -168,7 +168,7 @@ def test_setting_creation_flow_sundered_isles() -> None:
     clear_cache()
     pkg = load_package("sundered_isles")
     flow = pkg.creation_flow
-    assert flow["has_ship_creation"] is True
+    assert flow.has_ship_creation is True
 
 
 # ── build_creation_options ────────────────────────────────────

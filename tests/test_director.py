@@ -249,27 +249,6 @@ def test_reflection_updates_arc(stub_all: None) -> None:
     assert game.npcs[0].arc == "Torn between loyalty and self-preservation."
 
 
-def test_reflection_rejects_too_long_arc(stub_all: None) -> None:
-    from straightjacket.engine.director import apply_director_guidance
-
-    game = _game()
-    game.npcs[0].arc = "Old arc."
-    apply_director_guidance(
-        game,
-        {
-            "npc_reflections": [
-                {
-                    "npc_id": "npc_1",
-                    "reflection": "Kira evolves.",
-                    "tone_key": "conflicted",
-                    "updated_arc": "x" * 301,
-                }
-            ],
-        },
-    )
-    assert game.npcs[0].arc == "Old arc."
-
-
 def test_reflection_updates_description(stub_all: None) -> None:
     from straightjacket.engine.director import apply_director_guidance
 

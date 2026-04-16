@@ -548,6 +548,14 @@ consequence_templates:
     - "The deadline moves closer whether {player} is ready or not."
   clock_triggered:
     - "Time's up. {clock} — {trigger}."
+  impact_mark:
+    - "{player} carries a lasting mark of this: {impact}."
+    - "Something has changed in {player}. {impact} — the kind of wound that stays."
+    - "{player} is now {impact}. The cost of this moment won't fade with rest."
+  impact_clear:
+    - "The weight of being {impact} lifts from {player}."
+    - "{player} sheds the hold of {impact} — no longer what they were."
+    - "{impact} no longer defines {player}. Something has healed."
 
 # Pay the Price: generic MISS consequences when the move category
 # doesn't specify something more targeted. One sentence, concrete.
@@ -787,6 +795,74 @@ architect:
     - phantasmagoric
     - uncanny
 
+# ── Threats and menace ────────────────────────────────────────
+# Threats compete against vow progress via menace tracks.
+# Menace fills on misses and autonomous ticks. Full menace → Forsake Your Vow.
+threats:
+  menace_on_miss: 1                 # Menace marks on MISS (linked threat only)
+  autonomous_tick_chance: 0.15      # Per-scene chance each active threat ticks menace
+  menace_high_threshold: 0.75       # Menace ratio above this = "near tipping point"
+  forsake_spirit_cost: 2            # Spirit damage when menace forces Forsake Your Vow
+
+# ── Impacts ───────────────────────────────────────────────────
+# Impacts are persistent conditions that reduce max_momentum by 1 each.
+# Some block specific recovery moves. Permanent impacts never clear naturally.
+impacts:
+  # Misfortunes — situational harm
+  wounded:
+    label: wounded
+    description: "A serious physical injury that won't heal on its own"
+    blocks_recovery: health          # heal move blocked until cleared
+    permanent: false
+  shaken:
+    label: shaken
+    description: "A psychic wound that lingers"
+    blocks_recovery: spirit          # hearten move blocked until cleared
+    permanent: false
+  unprepared:
+    label: unprepared
+    description: "Without proper gear or supplies"
+    blocks_recovery: supply          # resupply blocked until cleared
+    permanent: false
+  # Burdens — personal obligations
+  doomed:
+    label: doomed
+    description: "Marked for death, fate closing in"
+    blocks_recovery: ""
+    permanent: false
+  tormented:
+    label: tormented
+    description: "Haunted by guilt or loss"
+    blocks_recovery: ""
+    permanent: false
+  indebted:
+    label: indebted
+    description: "Owes a significant debt that demands repayment"
+    blocks_recovery: ""
+    permanent: false
+  # Vehicle troubles (command_vehicle, Sundered Isles ships)
+  battered:
+    label: battered
+    description: "Vessel is beaten up, barely holding together"
+    blocks_recovery: ""
+    permanent: false
+  cursed:
+    label: cursed
+    description: "Vessel bears an ill omen"
+    blocks_recovery: ""
+    permanent: false
+  # Lasting effects — permanent
+  permanently_harmed:
+    label: permanently harmed
+    description: "A wound that will never fully heal"
+    blocks_recovery: ""
+    permanent: true
+  traumatized:
+    label: traumatized
+    description: "A mental scar that will never fully fade"
+    blocks_recovery: ""
+    permanent: true
+
 # ── Fate system (Mythic GME 2e) ──────────────────────────────
 # Probabilistic yes/no questions about the fiction.
 # Data in data/mythic_gme_2e.json. Config here controls method and likelihood.
@@ -991,9 +1067,14 @@ move_outcomes:
       weak_hit_cost: -1
 
   recover/resupply:
-    strong_hit: [supply +2]            # resolved choice: supply over specific item
-    weak_hit: [supply +2]              # same effect, with narrative complication
-    miss: [pay_the_price]
+    handler: recovery
+    params:
+      track: supply
+      full_amount: 2
+      impact_amount: 1
+      blocking_impact: unprepared
+      weak_hit_cost_type: momentum
+      weak_hit_cost: -1
 
   recover/repair:
     # Repair uses a point system that depends on situation (at facility / in field / under fire).

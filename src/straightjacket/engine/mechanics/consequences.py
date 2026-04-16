@@ -229,6 +229,26 @@ def resolve_consequence_sentence(cons: str, player: str, npc_name: str, location
     """Resolve a single mechanical consequence string to a narrative sentence."""
     fmt = {"player": player, "npc": npc_name, "location": location, "amount": ""}
 
+    # Impact marking: "mark wounded" / "clear wounded"
+    if cons.startswith("mark "):
+        impact_key = cons[5:].strip()
+        from .impacts import impact_label
+
+        fmt["impact"] = impact_label(impact_key)
+        tpl = pick_template("impact_mark")
+        if tpl:
+            return tpl.format(**fmt)
+        return ""
+    if cons.startswith("clear "):
+        impact_key = cons[6:].strip()
+        from .impacts import impact_label
+
+        fmt["impact"] = impact_label(impact_key)
+        tpl = pick_template("impact_clear")
+        if tpl:
+            return tpl.format(**fmt)
+        return ""
+
     # Parse "track -N" or "track +N" pattern
     parts = cons.split()
     if len(parts) >= 2:

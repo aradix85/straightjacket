@@ -29,6 +29,8 @@ from .models_base import (  # noqa: F401
     ProgressTrack,
     RandomEvent,
     Resources,
+    ThreatData,
+    ThreatEvent,
     WorldState,
 )
 from .models_npc import (  # noqa: F401
@@ -111,6 +113,9 @@ class TurnSnapshot(SerializableMixin):
     narrative: dict = field(default_factory=dict)
     campaign: dict = field(default_factory=dict)
     npcs: list[dict] = field(default_factory=list)
+    progress_tracks: list[dict] = field(default_factory=list)
+    threats: list[dict] = field(default_factory=list)
+    impacts: list[str] = field(default_factory=list)
     crisis_mode: bool = False
     game_over: bool = False
     player_input: str = ""
@@ -123,7 +128,7 @@ class TurnSnapshot(SerializableMixin):
 
 
 @dataclass
-class GameState:
+class GameState(SerializableMixin):
     """Complete game state. Sub-objects own logically grouped fields."""
 
     player_name: str = ""
@@ -144,6 +149,8 @@ class GameState:
     backstory: str = ""
     assets: list[str] = field(default_factory=list)
     progress_tracks: list[ProgressTrack] = field(default_factory=list)
+    threats: list[ThreatData] = field(default_factory=list)
+    impacts: list[str] = field(default_factory=list)
     truths: dict[str, str] = field(default_factory=dict)
 
     resources: Resources = field(default_factory=Resources)
@@ -175,6 +182,9 @@ class GameState:
             narrative=self.narrative.snapshot(),
             campaign=self.campaign.snapshot(),
             npcs=[n.to_dict() for n in self.npcs],
+            progress_tracks=[t.to_dict() for t in self.progress_tracks],
+            threats=[t.to_dict() for t in self.threats],
+            impacts=list(self.impacts),
             crisis_mode=self.crisis_mode,
             game_over=self.game_over,
         )
@@ -186,6 +196,9 @@ class GameState:
         self.narrative.restore(snap.narrative)
         self.campaign.restore(snap.campaign)
         self.npcs = [NpcData.from_dict(n) for n in snap.npcs]
+        self.progress_tracks = [ProgressTrack.from_dict(t) for t in snap.progress_tracks]
+        self.threats = [ThreatData.from_dict(t) for t in snap.threats]
+        self.impacts = list(snap.impacts)
         self.crisis_mode = snap.crisis_mode
         self.game_over = snap.game_over
         log(
@@ -199,57 +212,3 @@ class GameState:
 
         reset_db()
         _db_sync(self)
-
-    _IDENTITY_FIELDS = (
-        "player_name",
-        "character_concept",
-        "pronouns",
-        "paths",
-        "background_vow",
-        "setting_id",
-        "setting_genre",
-        "setting_tone",
-        "setting_archetype",
-        "setting_description",
-        "edge",
-        "heart",
-        "iron",
-        "shadow",
-        "wits",
-        "backstory",
-        "assets",
-        "truths",
-    )
-
-    _SUB_OBJECTS = ("resources", "world", "narrative", "campaign", "preferences")
-
-    def to_dict(self) -> dict:
-        """Serialize to nested dict for JSON persistence."""
-        d = {k: getattr(self, k) for k in self._IDENTITY_FIELDS}
-        for name in self._SUB_OBJECTS:
-            d[name] = getattr(self, name).to_dict()
-        d["npcs"] = [n.to_dict() for n in self.npcs]
-        d["progress_tracks"] = [t.to_dict() for t in self.progress_tracks]
-        d["crisis_mode"] = self.crisis_mode
-        d["game_over"] = self.game_over
-        d["last_turn_snapshot"] = self.last_turn_snapshot.to_dict() if self.last_turn_snapshot else None
-        return d
-
-    @classmethod
-    def from_dict(cls, data: dict) -> GameState:
-        """Deserialize from nested dict."""
-        game = cls()
-        for k in cls._IDENTITY_FIELDS:
-            setattr(game, k, data[k])
-        game.resources = Resources.from_dict(data["resources"])
-        game.world = WorldState.from_dict(data["world"])
-        game.narrative = NarrativeState.from_dict(data["narrative"])
-        game.campaign = CampaignState.from_dict(data["campaign"])
-        game.preferences = PlayerPreferences.from_dict(data["preferences"])
-        game.npcs = [NpcData.from_dict(n) for n in data["npcs"]]
-        game.progress_tracks = [ProgressTrack.from_dict(t) for t in data["progress_tracks"]]
-        game.crisis_mode = data["crisis_mode"]
-        game.game_over = data["game_over"]
-        snap = data["last_turn_snapshot"]
-        game.last_turn_snapshot = TurnSnapshot.from_dict(snap) if snap is not None else None
-        return game
