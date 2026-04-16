@@ -160,7 +160,7 @@ def test_validate_and_retry_actually_retries(stub_all: None) -> None:
 
 
 def test_validate_architect_fixes_violations(stub_all: None) -> None:
-    from straightjacket.engine.ai.validator import validate_architect
+    from straightjacket.engine.ai.architect_validator import validate_architect
     from straightjacket.engine.datasworn.settings import GenreConstraints
 
     provider = _MockProvider(
@@ -187,7 +187,7 @@ def test_validate_architect_fixes_violations(stub_all: None) -> None:
 
 
 def test_validate_architect_fail_open_on_api_error(stub_all: None) -> None:
-    from straightjacket.engine.ai.validator import validate_architect
+    from straightjacket.engine.ai.architect_validator import validate_architect
     from straightjacket.engine.datasworn.settings import GenreConstraints
 
     provider = _MockProvider(fail=True)

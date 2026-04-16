@@ -506,6 +506,10 @@ function showError(text) {
 }
 
 // ── Character creation ──────────────────────────────────────
+// NOTE: renderCreationForm builds HTML via string concatenation + innerHTML.
+// All data comes from our own server (build_creation_options), not user input.
+// The esc() function escapes all interpolated values. If setting descriptions
+// ever include user-generated content, this must be audited for XSS.
 function renderCreationForm(options) {
   const form = $("creation-form");
   const settings = options.settings || [];

@@ -1,6 +1,6 @@
 [project]
 name = "straightjacket"
-version = "0.50.0"
+version = "0.51.0"
 requires-python = ">=3.11"
 dependencies = [
     "starlette>=1.0,<2",
@@ -25,7 +25,7 @@ ignore = [
     "E402",   # module-level import not at top — app.py needs ensure_requirements() first
     "SIM108", # ternary — readability over conciseness in game logic
 ]
-per-file-ignores = {"src/straightjacket/engine/__init__.py" = ["F401"], "src/straightjacket/engine/ai/__init__.py" = ["F401"], "src/straightjacket/engine/npc/__init__.py" = ["F401"], "src/straightjacket/engine/game/__init__.py" = ["F401"], "src/straightjacket/engine/db/__init__.py" = ["F401"], "src/straightjacket/engine/tools/__init__.py" = ["F401"], "src/straightjacket/engine/mechanics/__init__.py" = ["F401"], "src/straightjacket/engine/models.py" = ["F401"]}
+per-file-ignores = {"src/straightjacket/engine/__init__.py" = ["F401"], "src/straightjacket/engine/npc/__init__.py" = ["F401"], "src/straightjacket/engine/game/__init__.py" = ["F401"], "src/straightjacket/engine/db/__init__.py" = ["F401"], "src/straightjacket/engine/tools/__init__.py" = ["F401"], "src/straightjacket/engine/mechanics/__init__.py" = ["F401"], "src/straightjacket/engine/models.py" = ["F401"]}
 
 [tool.mypy]
 python_version = "3.11"
@@ -37,16 +37,6 @@ check_untyped_defs = true
 ignore_missing_imports = false
 exclude = ["data/"]
 # NOTE: install types-PyYAML for mypy: pip install types-PyYAML
-
-[[tool.mypy.overrides]]
-module = [
-    "straightjacket.engine.config_loader",
-    "straightjacket.engine.engine_loader",
-    "straightjacket.engine.emotions_loader",
-    "straightjacket.engine.prompt_loader",
-    "straightjacket.engine.datasworn.*",
-]
-disable_error_code = ["no-any-return", "attr-defined"]
 
 [[tool.mypy.overrides]]
 # Protocol method with ... body — mypy can't prove the return type

@@ -42,7 +42,13 @@ class CharacterListEntry(SerializableMixin):
 
 @dataclass
 class SceneLogEntry(SerializableMixin):
-    """One entry in the session log. Created per turn/correction."""
+    """One entry in the session log. Created per turn/correction.
+
+    npc_activation, validator, and revelation_check are intentionally untyped dicts.
+    They carry ephemeral diagnostic data (debug scores, validation reports) that
+    varies per turn and is never read back by game logic — only logged and displayed.
+    Typing them would add dataclasses with no consumers.
+    """
 
     scene: int = 0
     summary: str = ""
@@ -53,12 +59,12 @@ class SceneLogEntry(SerializableMixin):
     position: str = "risky"
     effect: str = "standard"
     scene_type: str = "expected"  # expected, altered, interrupt
-    npc_activation: dict = field(default_factory=dict)
-    validator: dict = field(default_factory=dict)
+    npc_activation: dict = field(default_factory=dict)  # diagnostic: {npc_name: {score, reasons, status}}
+    validator: dict = field(default_factory=dict)  # diagnostic: {passed, retries, violations, checks}
     rich_summary: str = ""
     director_trigger: str = ""
     oracle_answer: str = ""
-    revelation_check: dict = field(default_factory=dict)
+    revelation_check: dict = field(default_factory=dict)  # diagnostic: {id, confirmed}
 
 
 @dataclass

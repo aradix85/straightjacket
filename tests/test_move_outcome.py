@@ -371,7 +371,7 @@ class TestProgressRollPipeline:
         assert roll.stat_value == 6 and roll.action_score == 6 and roll.d1 == 0 and roll.d2 == 0
 
     def test_find_progress_track(self, game_real: GameState) -> None:
-        from straightjacket.engine.game.turn import _find_progress_track
+        from straightjacket.engine.game.tracks import find_progress_track as _find_progress_track
         from straightjacket.engine.models import ProgressTrack
 
         game_real.progress_tracks = [

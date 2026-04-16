@@ -32,17 +32,6 @@ _lm.get_logger = lambda component: type(  # type: ignore[attr-defined]
         "error": lambda self, *a: None,
     },
 )()
-_lm.get_save_dir = lambda username: Path("/tmp/straightjacket_test") / username / "saves"  # type: ignore[attr-defined]
-_lm._safe_name = lambda name: (  # type: ignore[attr-defined]
-    name.replace("/", "").replace("\\", "").replace("\0", "").replace("..", "").strip() or "invalid"
-)
-_lm.load_global_config = lambda: {}  # type: ignore[attr-defined]
-_lm.save_global_config = lambda cfg: None  # type: ignore[attr-defined]
-_lm.load_user_config = lambda username: {}  # type: ignore[attr-defined]
-_lm.save_user_config = lambda username, cfg: None  # type: ignore[attr-defined]
-_lm.list_users = lambda: []  # type: ignore[attr-defined]
-_lm.create_user = lambda name: True  # type: ignore[attr-defined]
-_lm.delete_user = lambda name: True  # type: ignore[attr-defined]
 sys.modules["straightjacket.engine.logging_util"] = _lm
 
 # Skip retry backoff sleeps in tests — saves ~13 seconds per full run.

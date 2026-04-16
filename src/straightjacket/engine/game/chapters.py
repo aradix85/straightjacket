@@ -41,20 +41,9 @@ def generate_epilogue(
     )
 
     raw = call_narrator(provider, build_epilogue_prompt(game), game, config)
+    narration = parse_narrator_response(game, raw)
 
-    narration = raw
-    narration = re.sub(
-        r"<(?:game_data|new_npcs|memory_updates|scene_context)>.*?</(?:game_data|new_npcs|memory_updates|scene_context)>",
-        "",
-        narration,
-        flags=re.DOTALL,
-    )
-    narration = re.sub(
-        r"</?(?:game_data|new_npcs|memory_updates|scene_context|task|scene|world|character|situation|conflict|possible_endings|session_log|npc|returning_npc|campaign_history|chapter|story_arc|story_ending|momentum_burn)[^>]*>",
-        "",
-        narration,
-    )
-    narration = re.sub(r"^\s*[\[{].*$", "", narration, flags=re.MULTILINE)
+    # Epilogue-specific: strip "Epilogue" heading the model sometimes prepends
     narration = re.sub(
         r"^\s*#*\s*\*{0,3}\s*(?:Epilog(?:ue)?|Épilogue|Epílogo|Epilogo)\s*\*{0,3}\s*\n+",
         "",
@@ -225,7 +214,7 @@ def _generate_chapter_opening(
 
 def _apply_blueprint(game: GameState, provider: AIProvider, blueprint: dict | None) -> None:
     """Validate and apply story architect blueprint."""
-    from ..ai.validator import validate_architect
+    from ..ai.architect_validator import validate_architect
     from ..datasworn.settings import active_package
     from ..models import StoryBlueprint
 
@@ -297,29 +286,6 @@ def _record_chapter_opening(game: GameState, narration: str, val_report: dict) -
 
 def _apply_chapter_opening_setup(game: GameState, data: dict, returning_npcs: list[NpcData]) -> None:
     """Apply opening setup extraction to a new chapter."""
-    from .setup_common import apply_world_setup, register_extracted_npcs, seed_opening_memories
+    from .setup_common import apply_opening_setup
 
-    returning_names = {n.name.lower().strip() for n in returning_npcs}
-
-    max_num = 0
-    for n in game.npcs + returning_npcs:
-        m = re.match(r"npc_(\d+)", str(n.id))
-        if m:
-            max_num = max(max_num, int(m.group(1)))
-
-    if data.get("npcs"):
-        register_extracted_npcs(
-            game,
-            data["npcs"],
-            skip_names=returning_names,
-            start_id=max_num,
-            label="ChapterSetup",
-        )
-        returning_ids = {r.id for r in returning_npcs}
-        new_names = [n.name for n in game.npcs if n.id not in returning_ids]
-        log(f"[ChapterSetup] Registered {len(new_names)} new NPCs: {new_names}")
-
-    if data.get("memory_updates"):
-        seed_opening_memories(game, data["memory_updates"], label="chapter_setup")
-
-    apply_world_setup(game, data, clocks_mode="extend")
+    apply_opening_setup(game, data, returning_npcs=returning_npcs, clocks_mode="extend", label="ChapterSetup")

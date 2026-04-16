@@ -291,7 +291,7 @@ class TestResolveForsakeVow:
 
 class TestVowCompletionResolveThreat:
     def test_vow_completed_resolves_threat_as_overcome(self) -> None:
-        from straightjacket.engine.game.turn import complete_track
+        from straightjacket.engine.game.tracks import complete_track
 
         game = _game_with_threat()
         game.threats[0].menace_ticks = 20
@@ -299,14 +299,14 @@ class TestVowCompletionResolveThreat:
         assert game.threats[0].status == "overcome"
 
     def test_vow_failed_resolves_threat_as_resolved(self) -> None:
-        from straightjacket.engine.game.turn import complete_track
+        from straightjacket.engine.game.tracks import complete_track
 
         game = _game_with_threat()
         complete_track(game, "vow_hunt", "failed")
         assert game.threats[0].status == "resolved"
 
     def test_non_vow_track_does_not_touch_threats(self) -> None:
-        from straightjacket.engine.game.turn import complete_track
+        from straightjacket.engine.game.tracks import complete_track
 
         game = _game_with_threat()
         game.progress_tracks.append(ProgressTrack(id="combat_1", name="Fight", track_type="combat", ticks=20))

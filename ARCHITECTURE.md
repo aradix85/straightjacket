@@ -65,8 +65,9 @@ Where to find things. If you want to change X, edit Y.
 | Combat position (in_control / bad_spot) | `models_base.py` → `WorldState.combat_position`, set by move outcomes |
 | How the narrator is prompted | prompts YAML → task templates; `prompt_builders.py` → XML assembly |
 | NPC memory / activation logic | `npc/memory.py`, `npc/activation.py` |
-| Story structure / act tracking | `story_state.py`, `ai/architect.py` |
+| Story structure / act tracking | `story_state.py` → `get_current_act`, `check_story_completion`; `ai/architect.py` |
 | Correction (## undo) flow | `correction.py` |
+| Momentum burn re-narration | `game/momentum_burn.py` → `process_momentum_burn` |
 | Save format | `models.py` → SerializableMixin on each dataclass (no manual `to_dict`/`from_dict`) |
 | User/save directory management | `user_management.py` → `create_user`, `get_save_dir`, `_safe_name` |
 | WebSocket protocol / UI | `web/handlers.py`, `web/static/index.html` |
@@ -86,8 +87,8 @@ Where to find things. If you want to change X, edit Y.
 | Built-in Director tools | `tools/builtins.py` → `query_npc`, `query_active_threads`, `query_active_clocks` |
 | Engine query functions (no tool registration) | `tools/builtins.py` → `available_moves`, `fate_question`, `roll_oracle`, `query_npc_list`, `list_tracks` |
 | Track-creating moves | `engine.yaml` → `track_creating_moves` (no Python) |
-| Track lifecycle (creation, completion) | `game/turn.py` → `_find_progress_track`, `complete_track`, `sync_combat_tracks` |
-| Combat track ↔ combat_position sync | `game/turn.py` → `complete_track` (clears position), `sync_combat_tracks` (orphan cleanup) |
+| Track lifecycle (creation, completion) | `game/tracks.py` → `find_progress_track`, `complete_track`, `sync_combat_tracks` |
+| Combat track ↔ combat_position sync | `game/tracks.py` → `complete_track` (clears position), `sync_combat_tracks` (orphan cleanup) |
 | Scene challenge progress routing | `engine.yaml` → `scene_challenge_progress_moves`; `game/turn.py` action path |
 | Which moves are available in a game state | `tools/builtins.py` → `available_moves`, `_is_move_available` (filters by `status == "active"`) |
 | NPC bond level | `npc/bond.py` → `get_npc_bond` (reads connection track, not NpcData) |
@@ -106,10 +107,11 @@ Where to find things. If you want to change X, edit Y.
 | Information gate computation | `mechanics/stance_gate.py` → `compute_npc_gate` |
 | Gate-filtered NPC prompt data | `prompt_builders.py` → `_npc_block` (gate 0–4 filtering) |
 | Threat menace track, Forsake Your Vow | `engine.yaml` → `threats`; `mechanics/threats.py` → `advance_menace_on_miss`, `tick_autonomous_threats`, `resolve_full_menace` |
-| Threat-vow coupling | `models_base.py` → `ThreatData.linked_vow_id`; `game/turn.py` → `complete_track` resolves linked threat |
+| Threat-vow coupling | `models_base.py` → `ThreatData.linked_vow_id`; `game/tracks.py` → `complete_track` resolves linked threat |
 | Impacts (wounded, shaken, etc.) | `engine.yaml` → `impacts` (typed `ImpactConfig`); `mechanics/impacts.py` → `apply_impact`, `clear_impact`, `blocks_recovery`, `recalc_max_momentum` |
 | NPC name generation | `npc/naming.py` → `roll_oracle_name`; `data/settings/*.yaml` → `oracle_paths.names` |
 | Validator context bundling | `ai/rule_validator.py` → `ValidationContext` (adding new check = 1 field + 1 build line + 1 check call) |
+| Architect blueprint validation | `ai/architect_validator.py` → `validate_architect`, `_check_blueprint_text_fields` |
 
 ## AI Model Assignment
 
@@ -177,10 +179,10 @@ src/straightjacket/
 │   │   ├── random_events.py    # Event focus, meaning tables, random event pipeline, list maintenance
 │   │   └── scene.py            # Scene structure: chaos check, altered/interrupt scenes
 │   ├── parser.py            # Narrator output cleanup (10 regex steps)
-│   ├── correction.py        # ## correction and momentum burn re-narration
+│   ├── correction.py        # ## correction flow (undo/redo turns, state patching)
 │   ├── director.py          # Story steering, NPC reflections, act transitions
 │   ├── persistence.py       # Save/load
-│   ├── story_state.py       # Act tracking, revelation timing
+│   ├── story_state.py       # Act tracking, revelation timing, story completion check
 │   ├── prompt_builders.py   # Narrator prompt XML assembly (task text from prompts.yaml)
 │   ├── prompt_blocks.py     # Reusable XML blocks (content boundaries, backstory, etc.)
 │   ├── prompt_loader.py     # Reads prompts YAML (filename from config.yaml ai.prompts_file)
@@ -197,8 +199,10 @@ src/straightjacket/
 │   │   ├── narrator.py      # Prose generation + metadata extraction calls
 │   │   ├── metadata.py      # Apply extracted metadata to game state
 │   │   ├── architect.py     # Story blueprint, recap, chapter summary
-│   │   ├── validator.py     # Hybrid constraint checking (rule-based + LLM)
+│   │   ├── architect_validator.py # Blueprint genre fidelity check (rule-based + LLM)
+│   │   ├── validator.py     # Narrator constraint checking (rule-based + LLM) and retry loop
 │   │   ├── rule_validator.py # Instant rule-based checks (player agency, result integrity, genre, format)
+│   │   ├── json_utils.py    # Shared JSON extraction from text responses
 │   │   └── schemas.py       # JSON output schemas (config-driven)
 │   ├── npc/
 │   │   ├── bond.py          # get_npc_bond: bond from connection track
@@ -206,9 +210,12 @@ src/straightjacket/
 │   │   ├── memory.py        # Importance scoring, retrieval, consolidation
 │   │   ├── activation.py    # TF-IDF context selection for prompts
 │   │   ├── lifecycle.py     # Identity merging, retiring, reactivation
+│   │   ├── naming.py        # Oracle-based NPC name generation
 │   │   └── processing.py    # Narrator metadata → NPC state changes
 │   ├── game/
 │   │   ├── turn.py          # Main turn pipeline (process_turn)
+│   │   ├── tracks.py        # Progress track mechanics (find, complete, sync, oracle rolls)
+│   │   ├── momentum_burn.py # Momentum burn re-narration pipeline
 │   │   ├── game_start.py    # Character creation → opening scene
 │   │   ├── chapters.py      # Epilogue, new chapter orchestration
 │   │   ├── setup_common.py  # Shared opening setup logic
@@ -294,12 +301,12 @@ src/straightjacket/
 
 **No asset mechanics.** Assets are stored as ID strings but have no mechanical effect. The modifier pipeline (stat bonuses, rerolls, companion health, vehicle condition) is not implemented.
 
-**Blueprint is AI-generated at game start.** The story architect produces a 3-act or Kishōtenketsu blueprint via a single AI call. Quality varies by model. The engine compensates with mood sanitization and genre validation, but blueprint quality directly affects Director guidance and narrative direction.
+**Blueprint is AI-generated at game start.** The story architect produces a 3-act or Kishōtenketsu blueprint via a single AI call. Quality varies by model — Qwen trends toward supernatural horror patterns. The engine compensates with mood sanitization and genre validation, but blueprint quality directly affects Director guidance and narrative direction. This will be replaced by Adventure Crafter's table-driven plot structure, consistent with the design document principle that the engine decides, the AI narrates.
 
 ## Testing
 
 ```bash
-python -m pytest tests/ -v          # ~15 seconds, ~692 tests
+python -m pytest tests/ -v          # ~15 seconds, ~757 tests
 python tests/elvira/elvira.py --auto --turns 5   # direct engine (needs API key)
 python tests/elvira/elvira.py --ws --auto --turns 5  # via WebSocket server
 ```

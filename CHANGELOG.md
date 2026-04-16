@@ -5,6 +5,43 @@ Originally forked from [EdgeTales](https://github.com/edgetales/edgetales). See 
 
 ---
 
+## [0.51.0] — 2026-04-16
+
+Codebase audit and modularization. No new features — structural improvements only.
+
+Modularization — 5 splits, 4 new modules:
+- `game/tracks.py` (107 lines): `find_progress_track`, `complete_track`, `sync_combat_tracks`, `roll_oracle_answer` extracted from turn.py
+- `game/momentum_burn.py` (130 lines): `process_momentum_burn` extracted from correction.py
+- `ai/architect_validator.py` (127 lines): `validate_architect`, `_check_blueprint_text_fields` extracted from validator.py
+- `ai/json_utils.py` (34 lines): `extract_json` extracted from brain.py (was cross-module dep with validator.py)
+- `check_story_completion` moved from turn.py to story_state.py
+
+Result: turn.py 739→599, correction.py 529→426, validator.py 502→380, brain.py 216→188.
+
+DRY: unified opening setup:
+- `apply_opening_setup()` in setup_common.py replaces duplicate wiring in `_apply_opening_setup` (game_start.py) and `_apply_chapter_opening_setup` (chapters.py)
+
+Epilogue parser bypass fix:
+- `generate_epilogue` now uses `parse_narrator_response` (10-step cleanup pipeline) instead of 4 custom regexes. Epilogue-specific heading strip retained as post-parse step
+
+Cleanup:
+- Removed 9 dead user_management function stubs from logging_util mock in conftest.py (moved to user_management.py in 0.48.1)
+- Removed stale mypy `no-any-return` and `attr-defined` overrides for config_loader, engine_loader, emotions_loader, prompt_loader, datasworn.* (dead weight after typed config refactor in 0.50.0)
+- Removed dead `ai/__init__.py` re-export hub (59 lines, 25+ symbols, zero consumers). Removed F401 pyproject override
+- Delve atmospheric_drift: removed 32-entry copy-paste list, now inherits correctly via `parent: classic` chain (55 entries)
+
+Documentation:
+- `SceneLogEntry`: docstring explaining why `npc_activation`, `validator`, `revelation_check` are intentionally untyped dicts
+- HTML client: safety comment at `renderCreationForm` about innerHTML usage pattern
+- ARCHITECTURE.md: file map and module ownership table updated for all new modules
+- README.md: model description corrected (Qwen 3 + GPT-OSS), test count 692→757, cost $0.13→$0.055
+- SECURITY.md: `logging_util._safe_name()` → `user_management.py._safe_name()`
+- config.yaml: comment corrected ("Two clusters" → "Two models across four clusters")
+
+Tests: 757 passed (unchanged). Ruff clean, mypy clean on 86 source files (was 82).
+
+---
+
 ## [0.50.0] — 2026-04-16
 
 Step 11 of the roadmap: threats & menace, impacts, NPC name generation via oracles. Plus a typed-config refactor across engine.yaml and data/settings/*.yaml.

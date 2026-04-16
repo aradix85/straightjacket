@@ -299,7 +299,8 @@ def start_new_game(
 
     narration = parse_narrator_response(game, raw)
 
-    from ..ai.validator import validate_and_retry, validate_architect
+    from ..ai.architect_validator import validate_architect
+    from ..ai.validator import validate_and_retry
 
     narration, val_report = validate_and_retry(provider, narration, narrator_prompt, "opening", game, config=config)
 
@@ -367,13 +368,6 @@ def start_new_game(
 
 def _apply_opening_setup(game: GameState, data: dict) -> None:
     """Apply structured opening setup data to game state."""
-    from .setup_common import apply_world_setup, register_extracted_npcs, seed_opening_memories
+    from .setup_common import apply_opening_setup
 
-    if data.get("npcs"):
-        register_extracted_npcs(game, data["npcs"], label="OpeningSetup")
-        log(f"[OpeningSetup] Registered {len(game.npcs)} NPCs: {[n.name for n in game.npcs]}")
-
-    if data.get("memory_updates"):
-        seed_opening_memories(game, data["memory_updates"], label="opening_setup")
-
-    apply_world_setup(game, data, clocks_mode="replace")
+    apply_opening_setup(game, data, clocks_mode="replace", label="OpeningSetup")

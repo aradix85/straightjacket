@@ -111,7 +111,7 @@ def resolve_full_menace(game: GameState) -> list[ThreatEvent]:
 
     Called once per turn after all menace advances.
     """
-    from ..game.turn import complete_track
+    from ..game.tracks import complete_track
 
     spirit_cost = eng().threats.forsake_spirit_cost
     events: list[ThreatEvent] = []

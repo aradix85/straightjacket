@@ -92,3 +92,49 @@ def mark_revelation_used(game: GameState, rev_id: str) -> None:
     bp = game.narrative.story_blueprint
     if bp and rev_id not in bp.revealed:
         bp.revealed.append(rev_id)
+
+
+def check_story_completion(game: GameState) -> None:
+    """Check if the story has reached its natural end point."""
+    from .logging_util import log
+
+    bp = game.narrative.story_blueprint
+    if not bp or not bp.acts:
+        return
+    if bp.story_complete:
+        return
+    acts = bp.acts
+    if not acts:
+        return
+    final_end = (acts[-1].scene_range or default_scene_range())[1]
+    sc = game.narrative.scene_count
+
+    triggered = set(bp.triggered_transitions)
+    penultimate_id = f"act_{len(acts) - 2}"
+    final_act_entered = len(acts) >= 2 and penultimate_id in triggered
+
+    if final_act_entered and sc >= final_end:
+        bp.story_complete = True
+        log(f"[Story] Complete: final act entered ('{penultimate_id}' triggered) + scene {sc} >= range end {final_end}")
+        return
+
+    if sc >= final_end and not final_act_entered:
+        for i, act in enumerate(acts[:-1]):
+            act_id = f"act_{i}"
+            if act_id not in bp.triggered_transitions:
+                act_range = act.scene_range or default_scene_range()
+                if sc > act_range[1]:
+                    bp.triggered_transitions.append(act_id)
+                    log(f"[Story] Back-filled transition: {act_id} (scene {sc} > range end {act_range[1]})")
+        triggered = set(bp.triggered_transitions)
+        if len(acts) >= 2 and penultimate_id in triggered:
+            bp.story_complete = True
+            log(
+                f"[Story] Complete (back-fill): '{penultimate_id}' triggered after "
+                f"scene-range back-fill, scene {sc} >= {final_end}"
+            )
+            return
+
+    if sc >= final_end + 5:
+        bp.story_complete = True
+        log(f"[Story] Complete (fallback): scene {sc} >= final_end+5 ({final_end + 5})")

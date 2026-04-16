@@ -15,7 +15,7 @@ def _game(setting: str = "starforged", combat_position: str = "") -> GameState:
 
 class TestCombatTrackSync:
     def test_complete_combat_track_clears_position(self) -> None:
-        from straightjacket.engine.game.turn import complete_track
+        from straightjacket.engine.game.tracks import complete_track
 
         game = _game(combat_position="in_control")
         game.progress_tracks.append(ProgressTrack(id="c1", name="Fight", track_type="combat", ticks=20))
@@ -24,7 +24,7 @@ class TestCombatTrackSync:
         assert game.world.combat_position == ""
 
     def test_fail_combat_track_clears_position(self) -> None:
-        from straightjacket.engine.game.turn import complete_track
+        from straightjacket.engine.game.tracks import complete_track
 
         game = _game(combat_position="bad_spot")
         game.progress_tracks.append(ProgressTrack(id="c1", name="Fight", track_type="combat", ticks=8))
@@ -33,7 +33,7 @@ class TestCombatTrackSync:
         assert game.world.combat_position == ""
 
     def test_complete_vow_does_not_clear_position(self) -> None:
-        from straightjacket.engine.game.turn import complete_track
+        from straightjacket.engine.game.tracks import complete_track
 
         game = _game(combat_position="in_control")
         game.progress_tracks.append(ProgressTrack(id="v1", name="Vow", track_type="vow", ticks=40))
@@ -41,7 +41,7 @@ class TestCombatTrackSync:
         assert game.world.combat_position == "in_control"
 
     def test_sync_removes_orphaned_combat_track(self) -> None:
-        from straightjacket.engine.game.turn import sync_combat_tracks
+        from straightjacket.engine.game.tracks import sync_combat_tracks
 
         game = _game(combat_position="")
         game.progress_tracks.append(ProgressTrack(id="c1", name="Fight", track_type="combat", ticks=12))
@@ -49,7 +49,7 @@ class TestCombatTrackSync:
         assert game.progress_tracks[0].status == "failed"
 
     def test_sync_ignores_active_combat_when_position_set(self) -> None:
-        from straightjacket.engine.game.turn import sync_combat_tracks
+        from straightjacket.engine.game.tracks import sync_combat_tracks
 
         game = _game(combat_position="in_control")
         game.progress_tracks.append(ProgressTrack(id="c1", name="Fight", track_type="combat", ticks=12))
@@ -57,7 +57,7 @@ class TestCombatTrackSync:
         assert game.progress_tracks[0].status == "active"
 
     def test_sync_ignores_already_completed_combat_track(self) -> None:
-        from straightjacket.engine.game.turn import sync_combat_tracks
+        from straightjacket.engine.game.tracks import sync_combat_tracks
 
         game = _game(combat_position="")
         game.progress_tracks.append(
@@ -67,7 +67,7 @@ class TestCombatTrackSync:
         assert game.progress_tracks[0].status == "completed"
 
     def test_sync_does_not_touch_non_combat_tracks(self) -> None:
-        from straightjacket.engine.game.turn import sync_combat_tracks
+        from straightjacket.engine.game.tracks import sync_combat_tracks
 
         game = _game(combat_position="")
         game.progress_tracks.append(ProgressTrack(id="v1", name="Vow", track_type="vow", ticks=12))

@@ -40,9 +40,10 @@ from ..models import (
 )
 from ..npc import activate_npcs_for_prompt, find_npc, reactivate_npc
 from ..prompt_builders import build_action_prompt, build_dialog_prompt
-from ..story_state import default_scene_range, get_pending_revelations, mark_revelation_used
+from ..story_state import check_story_completion, get_pending_revelations, mark_revelation_used
 
 from .finalization import apply_post_narration, narrate_scene
+from .tracks import complete_track, find_progress_track, roll_oracle_answer, sync_combat_tracks
 
 
 @dataclass
@@ -61,103 +62,6 @@ class SceneContext:
     activated_npcs: list[NpcData] = field(default_factory=list)
     mentioned_npcs: list[NpcData] = field(default_factory=list)
     pending_random_events: list[RandomEvent] = field(default_factory=list)
-
-
-def _roll_oracle_answer(game: GameState) -> str:
-    """Roll an oracle answer for ask_the_oracle moves. Returns a meaning pair string."""
-    from ..datasworn.settings import active_package
-
-    pkg = active_package(game)
-    if not pkg:
-        return ""
-    action, theme = pkg.roll_action_theme()
-    if action and theme:
-        return f"{action} / {theme}"
-    return ""
-
-
-def _find_progress_track(game: GameState, track_category: str, target_track: str | None = None) -> ProgressTrack | None:
-    """Find the active progress track for a progress move.
-
-    If target_track is given, matches by name substring (case-insensitive).
-    If omitted and multiple active tracks of the type exist, raises ValueError.
-    Filters out completed/failed tracks.
-    """
-    cat_lower = track_category.lower()
-    type_map = {
-        "vow": "vow",
-        "connection": "connection",
-        "combat": "combat",
-        "expedition": "expedition",
-        "delve": "delve",
-        "scene challenge": "scene_challenge",
-    }
-    track_type = type_map.get(cat_lower, cat_lower)
-
-    candidates = [t for t in game.progress_tracks if t.track_type == track_type and t.status == "active"]
-
-    if not candidates:
-        return None
-
-    if target_track:
-        target_lower = target_track.lower()
-        matches = [t for t in candidates if target_lower in t.name.lower()]
-        if len(matches) == 1:
-            return matches[0]
-        if len(matches) > 1:
-            names = ", ".join(t.name for t in matches)
-            raise ValueError(f"Ambiguous target_track '{target_track}' matches: {names}")
-        return None
-
-    if len(candidates) == 1:
-        return candidates[0]
-
-    names = ", ".join(t.name for t in candidates)
-    raise ValueError(f"Multiple active {track_type} tracks: {names}. Brain must set target_track.")
-
-
-def complete_track(game: GameState, track_id: str, outcome: str) -> None:
-    """Mark a track as completed or failed. Handles side effects:
-    - Combat tracks: clear combat_position
-    - Vow tracks: deactivate linked thread, resolve linked threat
-    """
-    track = next((t for t in game.progress_tracks if t.id == track_id), None)
-    if not track:
-        log(f"[Track] complete_track: not found {track_id}")
-        return
-    track.status = outcome  # "completed" or "failed"
-    log(f"[Track] {track.name} ({track.track_type}) → {outcome}")
-
-    if track.track_type == "combat" and game.world.combat_position:
-        game.world.combat_position = ""
-        log("[Track] Combat ended: cleared combat_position")
-
-    if track.track_type == "vow":
-        for thread in game.narrative.threads:
-            if thread.linked_track_id == track_id:
-                thread.active = False
-                log(f"[Track] Linked thread '{thread.name}' deactivated")
-                break
-        # Resolve linked threat when vow completes or fails
-        for threat in game.threats:
-            if threat.linked_vow_id == track_id and threat.status == "active":
-                threat.status = "overcome" if outcome == "completed" else "resolved"
-                log(f"[Track] Linked threat '{threat.name}' → {threat.status}")
-
-
-def sync_combat_tracks(game: GameState) -> None:
-    """Remove orphaned combat tracks when combat_position has been cleared.
-
-    Called after post-narration processing. If combat ended via narrative
-    (metadata extractor cleared combat_position) but the combat track is
-    still active, the engine removes it.
-    """
-    if game.world.combat_position:
-        return
-    for track in game.progress_tracks:
-        if track.track_type == "combat" and track.status == "active":
-            track.status = "failed"
-            log(f"[Track] Orphaned combat track '{track.name}' removed (combat_position cleared)")
 
 
 # ── Scene-end list maintenance (step 4.6 / 6.5) ──────────────
@@ -286,7 +190,7 @@ def _finalize_scene(
     tick_autonomous_threats(game)
     resolve_full_menace(game)
 
-    _check_story_completion(game)
+    check_story_completion(game)
 
     # Scene-end bookkeeping (step 4.6)
     # 1. Chaos adjustment — applies to all scene types
@@ -417,7 +321,7 @@ def process_turn(
         is_oracle = brain.move == "ask_the_oracle"
         nar.scene_count += 1
 
-        oracle_answer = _roll_oracle_answer(game) if is_oracle else ""
+        oracle_answer = roll_oracle_answer(game) if is_oracle else ""
         prompt = build_dialog_prompt(
             game,
             brain,
@@ -514,7 +418,7 @@ def process_turn(
     if is_progress_roll:
         assert ds_move is not None  # guaranteed by is_progress_roll check
         # Progress roll: filled_boxes vs 2d10, no action dice
-        track = _find_progress_track(game, ds_move.track_category, target_track=brain.target_track)
+        track = find_progress_track(game, ds_move.track_category, target_track=brain.target_track)
         filled = track.filled_boxes if track else 0
         track_name = track.name if track else ds_move.track_category
         roll = roll_progress(track_name, filled, brain.move)
@@ -568,7 +472,7 @@ def process_turn(
     # Progress marks wiring (step 8.2): consume marks on active track
     outcome = action.outcome
     if outcome and outcome.progress_marks > 0:
-        progress_track = _find_progress_track(
+        progress_track = find_progress_track(
             game, ds_move.track_category if ds_move else "vow", target_track=brain.target_track
         )
         if progress_track:
@@ -588,7 +492,7 @@ def process_turn(
     # progress on active scene_challenge track when one exists
     sc_progress_moves = eng().get_raw("scene_challenge_progress_moves", [])
     if brain.move in sc_progress_moves and roll.result in ("STRONG_HIT", "WEAK_HIT"):
-        sc_track = _find_progress_track(game, "scene_challenge")
+        sc_track = find_progress_track(game, "scene_challenge")
         if sc_track:
             added = sc_track.mark_progress()
             if added:
@@ -693,47 +597,3 @@ def process_turn(
         agency_clock_events=agency_clock_events,
     )
     return game, narration, roll, burn_info, director_ctx
-
-
-def _check_story_completion(game: GameState) -> None:
-    """Check if the story has reached its natural end point."""
-    bp = game.narrative.story_blueprint
-    if not bp or not bp.acts:
-        return
-    if bp.story_complete:
-        return
-    acts = bp.acts
-    if not acts:
-        return
-    final_end = (acts[-1].scene_range or default_scene_range())[1]
-    sc = game.narrative.scene_count
-
-    triggered = set(bp.triggered_transitions)
-    penultimate_id = f"act_{len(acts) - 2}"
-    final_act_entered = len(acts) >= 2 and penultimate_id in triggered
-
-    if final_act_entered and sc >= final_end:
-        bp.story_complete = True
-        log(f"[Story] Complete: final act entered ('{penultimate_id}' triggered) + scene {sc} >= range end {final_end}")
-        return
-
-    if sc >= final_end and not final_act_entered:
-        for i, act in enumerate(acts[:-1]):
-            act_id = f"act_{i}"
-            if act_id not in bp.triggered_transitions:
-                act_range = act.scene_range or default_scene_range()
-                if sc > act_range[1]:
-                    bp.triggered_transitions.append(act_id)
-                    log(f"[Story] Back-filled transition: {act_id} (scene {sc} > range end {act_range[1]})")
-        triggered = set(bp.triggered_transitions)
-        if len(acts) >= 2 and penultimate_id in triggered:
-            bp.story_complete = True
-            log(
-                f"[Story] Complete (back-fill): '{penultimate_id}' triggered after "
-                f"scene-range back-fill, scene {sc} >= {final_end}"
-            )
-            return
-
-    if sc >= final_end + 5:
-        bp.story_complete = True
-        log(f"[Story] Complete (fallback): scene {sc} >= final_end+5 ({final_end + 5})")

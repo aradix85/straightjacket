@@ -13,7 +13,7 @@ API keys are never logged, never included in save files, and never sent over the
 
 Player names and save names are sanitized before use as filesystem paths. Path separators (`/`, `\`), parent references (`..`), and null bytes are stripped. This prevents path traversal attacks where a crafted name could read or write files outside the intended directory.
 
-The sanitization is in `logging_util._safe_name()` and is applied in all persistence functions (save, load, delete) and user management functions (create, delete).
+The sanitization is in `user_management.py._safe_name()` and is applied in all persistence functions (save, load, delete) and user management functions (create, delete).
 
 ## Prompt injection via player input
 

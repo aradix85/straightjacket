@@ -12,7 +12,7 @@ ai:
   prompts_file: "prompts.yaml"
 
   # ── Model clusters ──────────────────────────────────────────
-  # Two clusters: Qwen 3 for narrator (prose), GPT-OSS for everything else.
+  # Two models across four clusters: Qwen 3 for narrator (prose), GPT-OSS for everything else.
   # Qwen 3: best narrator quality (100% eval), optimized for creative writing.
   # GPT-OSS: fast, cheap, strong on structured output and classification.
   #

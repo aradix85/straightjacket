@@ -16,7 +16,8 @@ from starlette.websockets import WebSocket
 
 from ..engine.ai.api_client import get_provider
 from ..engine.ai.architect import call_recap
-from ..engine.correction import process_correction, process_momentum_burn
+from ..engine.correction import process_correction
+from ..engine.game.momentum_burn import process_momentum_burn
 from ..engine.director import reset_stale_reflection_flags
 from ..engine.game import generate_epilogue, process_turn, run_deferred_director, start_new_chapter, start_new_game
 from ..engine.logging_util import log

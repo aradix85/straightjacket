@@ -124,3 +124,48 @@ def apply_world_setup(game: GameState, data: dict, *, clocks_mode: str = "replac
     tod = data.get("time_of_day", "")
     if tod and tod.replace(" ", "_") in time_phases():
         game.world.time_of_day = tod.replace(" ", "_")
+
+
+def apply_opening_setup(
+    game: GameState,
+    data: dict,
+    *,
+    returning_npcs: list[NpcData] | None = None,
+    clocks_mode: str = "replace",
+    label: str = "OpeningSetup",
+) -> None:
+    """Unified opening setup: register NPCs, seed memories, apply world state.
+
+    Used by both new game and new chapter. The returning_npcs parameter
+    controls chapter-specific behavior (skip returning NPC names, compute
+    start_id across both lists).
+    """
+    skip_names: set[str] | None = None
+    start_id = 0
+
+    if returning_npcs:
+        skip_names = {n.name.lower().strip() for n in returning_npcs}
+        for n in game.npcs + returning_npcs:
+            m = re.match(r"npc_(\d+)", str(n.id))
+            if m:
+                start_id = max(start_id, int(m.group(1)))
+
+    if data.get("npcs"):
+        register_extracted_npcs(
+            game,
+            data["npcs"],
+            skip_names=skip_names,
+            start_id=start_id,
+            label=label,
+        )
+        if returning_npcs:
+            returning_ids = {r.id for r in returning_npcs}
+            new_names = [n.name for n in game.npcs if n.id not in returning_ids]
+            log(f"[{label}] Registered {len(new_names)} new NPCs: {new_names}")
+        else:
+            log(f"[{label}] Registered {len(game.npcs)} NPCs: {[n.name for n in game.npcs]}")
+
+    if data.get("memory_updates"):
+        seed_opening_memories(game, data["memory_updates"], label=label.lower().replace("setup", "setup"))
+
+    apply_world_setup(game, data, clocks_mode=clocks_mode)

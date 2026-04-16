@@ -260,7 +260,7 @@ def test_correction_state_error_full_flow(load_engine: None, stub_emotions: None
 
 def test_momentum_burn_full_flow(load_engine: None, stub_emotions: None) -> None:
     """Burn: restore, reset momentum, STRONG_HIT consequences, re-narrate, update log."""
-    from straightjacket.engine.correction import process_momentum_burn
+    from straightjacket.engine.game.momentum_burn import process_momentum_burn
 
     game = _game()
     pre_snap = game.last_turn_snapshot

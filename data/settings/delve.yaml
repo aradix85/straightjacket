@@ -28,43 +28,7 @@ vocabulary:
     Underground is claustrophobic, cold, and indifferent.
 
 genre_constraints:
-  forbidden_terms: []  # Inherits from Classic
+  forbidden_terms: []  # Inherits from Classic via parent chain
   forbidden_concepts: []
-  genre_test: ""  # Inherits from Classic
-  atmospheric_drift:
-    # Same as Classic — Delve inherits Classic's world rules
-    # Qwen patterns
-    - "pulse"
-    - "pulsing"
-    - "thrum"
-    - "thrumming"
-    - "shimmer"
-    - "shimmering"
-    - "emanate"
-    - "emanating"
-    - "resonate"
-    - "resonating"
-    - "unseen force"
-    - "portent"
-    - "eldritch"
-    - "otherworldly"
-    - "spectral"
-    - "ethereal"
-    # GLM patterns
-    - "weep"
-    - "weeping"
-    - "ooze"
-    - "oozing"
-    - "writhe"
-    - "writhing"
-    - "visage"
-    - "visages"
-    - "reshape"
-    - "reshaping"
-    - "unnatural"
-    - "unnaturally"
-    - "apparition"
-    - "phantasm"
-    - "phantom"
-    - "beckoning"
-  atmospheric_drift_threshold: 2
+  genre_test: ""
+  atmospheric_drift: []  # Inherits from Classic — Delve shares Classic's world rules
