@@ -469,17 +469,14 @@ def process_turn(
     consequences = action.consequences
     clock_events = action.clock_events
 
-    # Progress marks wiring (step 8.2): consume marks on active track
+    # Progress marks and legacy tracks (shared with correction/burn)
     outcome = action.outcome
-    if outcome and outcome.progress_marks > 0:
-        progress_track = find_progress_track(
-            game, ds_move.track_category if ds_move else "vow", target_track=brain.target_track
-        )
-        if progress_track:
-            for _ in range(outcome.progress_marks):
-                added = progress_track.mark_progress()
-                if added:
-                    log(f"[Track] {progress_track.name}: +{added} ticks ({progress_track.filled_boxes}/10 boxes)")
+    if outcome:
+        from .finalization import apply_progress_and_legacy
+
+        source_category = ds_move.track_category if ds_move else "vow"
+        source_rank = track.rank if is_progress_roll and track else "dangerous"
+        apply_progress_and_legacy(game, outcome, brain, source_category, source_rank)
 
     # Track completion on progress roll result
     if is_progress_roll and track:

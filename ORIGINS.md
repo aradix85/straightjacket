@@ -23,14 +23,14 @@ The original prototype, the NiceGUI web interface approach, and the idea of comb
 - Chapter system (campaign continuity, epilogues, NPC ID remapping)
 - Elvira test bot (headless integration testing with invariant checking)
 - Accessibility architecture (ARIA, screen reader support)
-- 692-test suite
+- 786-test suite
 
 ## Structural differences from EdgeTales
 
 | EdgeTales | Straightjacket |
 |---|---|
-| Single-file engine (engine.py) | 15+ module engine package |
-| Single-file app (app.py) | app.py + 7-module UI package |
+| Single-file engine (engine.py) | Multi-package engine (~80 modules across mechanics, ai, npc, game, datasworn, db, tools) |
+| Single-file app (app.py) | Starlette/uvicorn server + single-page HTML client (web/ package: server, handlers, session, serializers, static) |
 | Hardcoded constants | YAML-driven configuration |
 | NPC/clock/memory as dicts | Typed dataclasses throughout |
 | Hardcoded move list | Config-driven (engine.yaml) |

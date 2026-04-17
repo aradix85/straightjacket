@@ -5,7 +5,42 @@ Originally forked from [EdgeTales](https://github.com/edgetales/edgetales). See 
 
 ---
 
-## [0.51.0] — 2026-04-16
+## [0.52.0] — 2026-04-17
+
+Step 12: legacy tracks and XP. Campaign progression mechanics.
+
+Legacy tracks (12.1):
+- Three campaign-persistent ProgressTracks on `CampaignState`: `legacy_quests`, `legacy_bonds`, `legacy_discoveries`. All start at epic rank.
+- `mechanics/legacy.py`: `mark_legacy(game, track_name, source_rank)` marks progress on a legacy track. Source rank determines tick amount (troublesome=1, dangerous=2, formidable=4, extreme=8, epic=12 ticks per mark). Filled boxes grant XP per `engine.yaml legacy.xp_per_box` (default 2).
+- `outcome.legacy_track` (set by `legacy_reward` effect but previously never acted upon) is now consumed. Source rank taken from the completing track when available.
+
+XP and Advance (12.2):
+- `CampaignState` fields: `xp`, `xp_spent`, property `xp_available`.
+- `advance_asset(game, asset_id, kind)`: spend XP on asset upgrade or new asset. Costs in `engine.yaml legacy` (asset_upgrade_cost=2, new_asset_cost=3).
+- Threat overcome bonus: when a vow completes with a linked threat at high menace (>= `threat_overcome_threshold`, default 0.5), extra XP is granted (`threat_overcome_bonus`, default 2). Applied automatically in `complete_track`.
+
+Shared re-resolution (12.1 architectural fix):
+- New `apply_progress_and_legacy(game, outcome, brain, source_category, source_rank)` helper in `game/finalization.py`.
+- Consumed by turn.py, correction.py (input_misread re-roll), and momentum_burn.py.
+- Without this, correction and momentum burn silently dropped progress marks and legacy rewards from the re-resolved outcome — snapshot restored the original state but re-roll's gains were never applied. Also fixes pre-existing progress_marks drop.
+- Track completion and scene_challenge routing remain turn-only — those are mechanical turn boundaries, not re-narration events.
+
+Status (12.3):
+- `/status` narratively reports XP availability ("modest lessons to draw on") and legacy progress per track ("a growing legacy"). No numbers, consistent with existing status design.
+- New strings: `status.xp`, `status.legacy`, `status.legacy_item`.
+
+Snapshot/restore:
+- `CampaignState.snapshot/restore` extended to include xp, xp_spent, and all three legacy tracks. Correction and momentum burn now revert campaign progression mid-turn. `campaign_history` and `chapter_number` intentionally excluded — they only change at chapter boundaries.
+
+Config:
+- `LegacyConfig` dataclass in `engine_config.py`. Registered in `_SIMPLE_SECTIONS`.
+- New `legacy:` section in `engine.yaml`.
+
+Tests: 786 passed (up from 757). New: `test_legacy.py` (29 tests covering mark, advance, threat bonus, snapshot/restore, shared helper for correction/burn paths). Ruff clean, mypy clean on 87 source files (was 86).
+
+---
+
+
 
 Codebase audit and modularization. No new features — structural improvements only.
 

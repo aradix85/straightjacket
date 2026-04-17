@@ -81,6 +81,24 @@ _TRACK_DESC: dict[int, str] = {
     0: "just begun",
 }
 
+# Legacy tracks are 0-10 boxes; narrative descriptions at progress thresholds
+_LEGACY_DESC: dict[int, str] = {
+    10: "a storied legacy",
+    8: "a substantial legacy",
+    5: "a growing legacy",
+    2: "the first marks of a legacy",
+    0: "a blank slate",
+}
+
+# XP availability in narrative terms
+_XP_DESC: dict[int, str] = {
+    10: "rich with hard-won lessons",
+    6: "a substantial store of experience",
+    3: "modest lessons to draw on",
+    1: "a scrap of experience",
+    0: "nothing yet to draw on",
+}
+
 
 def build_narrative_status(game: GameState) -> str:
     """Narrative status for /status and /score commands. No mechanical numbers."""
@@ -156,6 +174,32 @@ def build_narrative_status(game: GameState) -> str:
                 title=act.title,
                 phase=pl.get(act.phase, act.phase),
                 progress=act.progress,
+            )
+        )
+
+    # Experience and legacy (step 12)
+    camp = game.campaign
+    if camp.xp_available > 0 or camp.xp_spent > 0:
+        lines.append(t("status.xp", xp=_describe_resource(camp.xp_available, _XP_DESC)))
+    if any(lt.filled_boxes > 0 for lt in (camp.legacy_quests, camp.legacy_bonds, camp.legacy_discoveries)):
+        lines.append(
+            t(
+                "status.legacy",
+                quests=t(
+                    "status.legacy_item",
+                    name=camp.legacy_quests.name,
+                    progress=_describe_resource(camp.legacy_quests.filled_boxes, _LEGACY_DESC),
+                ),
+                bonds=t(
+                    "status.legacy_item",
+                    name=camp.legacy_bonds.name,
+                    progress=_describe_resource(camp.legacy_bonds.filled_boxes, _LEGACY_DESC),
+                ),
+                discoveries=t(
+                    "status.legacy_item",
+                    name=camp.legacy_discoveries.name,
+                    progress=_describe_resource(camp.legacy_discoveries.filled_boxes, _LEGACY_DESC),
+                ),
             )
         )
 

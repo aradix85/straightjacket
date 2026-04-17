@@ -60,7 +60,6 @@ Where to find things. If you want to change X, edit Y.
 | Move outcome handlers (suffer, threshold, recovery) | `mechanics/move_outcome.py` |
 | Move outcome resolution + crisis check | `game/finalization.py` → `resolve_action_consequences`, `ActionOutcome` |
 | Narrator call + parse + validate | `game/finalization.py` → `narrate_scene` (all four narration paths) |
-| Which moves are available in a game state | `tools/builtins.py` → `available_moves`, `_is_move_available` |
 | Move data model and loading | `datasworn/moves.py` → `Move`, `get_moves` |
 | Combat position (in_control / bad_spot) | `models_base.py` → `WorldState.combat_position`, set by move outcomes |
 | How the narrator is prompted | prompts YAML → task templates; `prompt_builders.py` → XML assembly |
@@ -109,6 +108,7 @@ Where to find things. If you want to change X, edit Y.
 | Threat menace track, Forsake Your Vow | `engine.yaml` → `threats`; `mechanics/threats.py` → `advance_menace_on_miss`, `tick_autonomous_threats`, `resolve_full_menace` |
 | Threat-vow coupling | `models_base.py` → `ThreatData.linked_vow_id`; `game/tracks.py` → `complete_track` resolves linked threat |
 | Impacts (wounded, shaken, etc.) | `engine.yaml` → `impacts` (typed `ImpactConfig`); `mechanics/impacts.py` → `apply_impact`, `clear_impact`, `blocks_recovery`, `recalc_max_momentum` |
+| Legacy tracks, XP, asset advancement | `engine.yaml` → `legacy` (typed `LegacyConfig`); `mechanics/legacy.py` → `mark_legacy`, `apply_threat_overcome_bonus`, `advance_asset`; `CampaignState.legacy_quests/bonds/discoveries` |
 | NPC name generation | `npc/naming.py` → `roll_oracle_name`; `data/settings/*.yaml` → `oracle_paths.names` |
 | Validator context bundling | `ai/rule_validator.py` → `ValidationContext` (adding new check = 1 field + 1 build line + 1 check call) |
 | Architect blueprint validation | `ai/architect_validator.py` → `validate_architect`, `_check_blueprint_text_fields` |
@@ -177,7 +177,10 @@ src/straightjacket/
 │   │   ├── engine_memories.py  # Memory emotion derivation, engine memories, scene context
 │   │   ├── fate.py             # Mythic GME 2e fate chart, fate check, likelihood resolver
 │   │   ├── random_events.py    # Event focus, meaning tables, random event pipeline, list maintenance
-│   │   └── scene.py            # Scene structure: chaos check, altered/interrupt scenes
+│   │   ├── scene.py            # Scene structure: chaos check, altered/interrupt scenes
+│   │   ├── threats.py          # Threat menace advancement, autonomous ticks, Forsake Your Vow
+│   │   ├── impacts.py          # Impact apply/clear, max_momentum recalc, recovery blocking
+│   │   └── legacy.py           # Legacy tracks (quests/bonds/discoveries), XP, asset advancement
 │   ├── parser.py            # Narrator output cleanup (10 regex steps)
 │   ├── correction.py        # ## correction flow (undo/redo turns, state patching)
 │   ├── director.py          # Story steering, NPC reflections, act transitions
@@ -269,7 +272,7 @@ src/straightjacket/
 
 **Data-driven move outcomes.** `resolve_move_outcome` reads structured effect lists from engine.yaml per move per result. Simple moves (momentum, resources, progress, position) are pure data — no Python. Complex moves (suffer, threshold, recovery) use named handlers that share patterns across moves. The `available_moves` function filters moves by game state (combat position, active tracks); Brain receives the filtered list in its prompt. Consequence sentences generated from outcome strings via engine.yaml templates.
 
-**Shared outcome resolution.** Three codepaths produce action narration: normal turns, corrections (input_misread), and momentum burns. All three share `resolve_action_consequences` in `game/finalization.py` — move outcome, combat position, MISS clock ticking, crisis check. Turn.py adds WEAK_HIT clock ticking (intentionally turn-only — correction and burn re-narrate an already-resolved scene). All four narration paths (turn dialog, turn action, correction, burn) share `narrate_scene` — narrator call, parse, optional validation — in one call. Post-narration state mutations share `apply_post_narration` from the same module.
+**Shared outcome resolution.** Three codepaths produce action narration: normal turns, corrections (input_misread), and momentum burns. All three share `resolve_action_consequences` in `game/finalization.py` — move outcome, combat position, MISS clock ticking, crisis check. They also share `apply_progress_and_legacy` — consumes `outcome.progress_marks` on the active track and `outcome.legacy_track` on campaign legacy tracks. Without this shared step, correction and burn would silently drop progress and legacy rewards from the re-resolved outcome after the snapshot restore. Turn.py adds WEAK_HIT clock ticking, track completion on progress rolls, and scene_challenge routing (intentionally turn-only — these are mechanical turn boundaries, not re-narration events). All four narration paths (turn dialog, turn action, correction, burn) share `narrate_scene` — narrator call, parse, optional validation — in one call. Post-narration state mutations share `apply_post_narration` from the same module.
 
 **NPC behavioral stance.** Engine computes per-NPC stance from disposition, bond (via connection track), and move category via engine.yaml stance matrix (60 entries). The narrator receives `stance="evasive" constraint="One fact, then silence."` instead of raw disposition values. The engine tells the narrator how the NPC behaves, not just how they feel.
 
@@ -277,7 +280,7 @@ src/straightjacket/
 
 **Database as read model.** SQLite (in-memory, stdlib) mirrors GameState after every turn, creation, correction, restore, and load. GameState dataclasses remain the write model — all mutations go through Python. The database provides indexed queries for prompt builders, tool handlers, and future NPC trigger evaluation. Ephemeral: rebuilt from GameState on load/restore, no migration burden. JSON save files remain the persistence format.
 
-**Tool calling.** Director uses decorator-based registry (`@register("director")`) producing OpenAI function calling schemas from Python type hints. Iterative handler loop: AI calls tool → engine executes → result appended → AI continues, with configurable round limit. Tools are read-only: they query GameState and database but never mutate. Director uses two-phase: tool loop for context, then json_schema for structured output. Brain does not use tool calling — all game state is injected via prompt (moves, NPCs, tracks). Brain's fate_question and oracle_table fields are resolved by the engine after classification.
+**Tool calling.** Director uses decorator-based registry (`@register("director")`) producing OpenAI function calling schemas from Python type hints. Iterative handler loop: AI calls tool → engine executes → result appended → AI continues, with configurable round limit. Tools are read-only: they query GameState and database but never mutate. Director uses two-phase: tool loop for context, then json_schema for structured output. Brain does not use tool calling — all game state is injected via prompt (moves, NPCs, tracks). Brain's fate_question and oracle_table fields are resolved by the engine after classification. This is a pragmatic divergence from the design document, which proposes tool calling as the central engine-AI communication mechanism. In practice, Brain tool calling cost ~13x more tokens (67K vs 5K over 10 turns) without improving classification quality — see CHANGELOG 0.46.50. The core principle ("tools determine results, AI narrates") is preserved: the engine still produces all mechanical outcomes. Only the mechanism (prompt injection vs tool calls) differs.
 
 **Fate system (Mythic GME 2e).** Probabilistic yes/no questions about the fiction. Two methods: fate chart (9×9 odds/chaos matrix, d100) and fate check (2d10 + modifiers). Both produce four outcomes (yes, no, exceptional yes, exceptional no) and can trigger random events via the doublet rule. Likelihood resolver maps game state (NPC disposition, chaos, resources) to odds level via engine.yaml lookup table. Brain sets `fate_question` field; engine resolves after classification.
 
@@ -301,12 +304,12 @@ src/straightjacket/
 
 **No asset mechanics.** Assets are stored as ID strings but have no mechanical effect. The modifier pipeline (stat bonuses, rerolls, companion health, vehicle condition) is not implemented.
 
-**Blueprint is AI-generated at game start.** The story architect produces a 3-act or Kishōtenketsu blueprint via a single AI call. Quality varies by model — Qwen trends toward supernatural horror patterns. The engine compensates with mood sanitization and genre validation, but blueprint quality directly affects Director guidance and narrative direction. This will be replaced by Adventure Crafter's table-driven plot structure, consistent with the design document principle that the engine decides, the AI narrates.
+**Blueprint is AI-generated at game start.** The story architect produces a 3-act or Kishōtenketsu blueprint via a single AI call. Quality varies by model — Qwen trends toward supernatural horror patterns. The engine compensates with mood sanitization and genre validation, but blueprint quality directly affects Director guidance and narrative direction. Roadmap step 29 replaces this with Adventure Crafter's table-driven plot structure, consistent with the design document principle that the engine decides, the AI narrates.
 
 ## Testing
 
 ```bash
-python -m pytest tests/ -v          # ~15 seconds, ~757 tests
+python -m pytest tests/ -v          # ~15 seconds, ~786 tests
 python tests/elvira/elvira.py --auto --turns 5   # direct engine (needs API key)
 python tests/elvira/elvira.py --ws --auto --turns 5  # via WebSocket server
 ```

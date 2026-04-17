@@ -71,6 +71,39 @@ def resolve_action_consequences(
     )
 
 
+def apply_progress_and_legacy(
+    game: GameState,
+    outcome: OutcomeResult,
+    brain: BrainResult,
+    source_track_category: str = "vow",
+    source_track_rank: str = "dangerous",
+) -> None:
+    """Consume progress_marks and legacy_track from a resolved outcome.
+
+    Shared by turn, correction (input_misread), and momentum burn — these paths
+    all produce a fresh outcome from resolve_move_outcome after the snapshot is
+    restored. Without this, progress and legacy gains from the re-resolved roll
+    would be silently dropped.
+
+    Track completion on progress roll result and scene_challenge routing remain
+    turn-only — correction and burn re-narrate an already-resolved scene.
+    """
+    from ..game.tracks import find_progress_track
+    from ..logging_util import log
+    from ..mechanics.legacy import mark_legacy
+
+    if outcome.progress_marks > 0:
+        track = find_progress_track(game, source_track_category, target_track=brain.target_track)
+        if track:
+            for _ in range(outcome.progress_marks):
+                added = track.mark_progress()
+                if added:
+                    log(f"[Track] {track.name}: +{added} ticks ({track.filled_boxes}/10 boxes)")
+
+    if outcome.legacy_track:
+        mark_legacy(game, outcome.legacy_track, source_rank=source_track_rank)
+
+
 def _update_crisis(game: GameState) -> None:
     """Set crisis_mode and game_over from resource state."""
     res = game.resources

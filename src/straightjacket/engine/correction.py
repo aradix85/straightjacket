@@ -10,6 +10,7 @@ from .ai.brain import call_brain
 from .ai.provider_base import AIProvider, create_with_retry
 from .ai.schemas import CORRECTION_OUTPUT_SCHEMA
 from .config_loader import model_for_role, sampling_params
+from .datasworn.moves import get_moves
 from .director import should_call_director
 from .engine_loader import eng
 from .game.finalization import apply_post_narration, narrate_scene, resolve_action_consequences
@@ -253,6 +254,19 @@ def process_correction(
             action = resolve_action_consequences(game, brain, roll, position)
             consequences = action.consequences
             clock_events = action.clock_events
+
+            # Re-apply progress and legacy marks from the re-resolved outcome
+            # (snapshot restored the original state, so we need to re-consume)
+            if action.outcome:
+                from .game.finalization import apply_progress_and_legacy
+                from .game.tracks import find_progress_track
+
+                ds_moves = get_moves(game.setting_id) if game.setting_id else {}
+                ds_move = ds_moves.get(brain.move)
+                source_category = ds_move.track_category if ds_move else "vow"
+                src_track = find_progress_track(game, source_category, target_track=brain.target_track)
+                source_rank = src_track.rank if src_track else "dangerous"
+                apply_progress_and_legacy(game, action.outcome, brain, source_category, source_rank)
 
             npc_agency, _ = check_npc_agency(game)
             activated_npcs, mentioned_npcs, _ = activate_npcs_for_prompt(game, brain, corrected_input)

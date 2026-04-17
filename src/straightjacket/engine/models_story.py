@@ -6,7 +6,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-from .models_base import ClockEvent
+from .models_base import ClockEvent, ProgressTrack
 from .serialization import SerializableMixin
 
 
@@ -230,7 +230,7 @@ class ChapterSummary(SerializableMixin):
 
 @dataclass
 class CampaignState(SerializableMixin):
-    """Chapter progression and epilogue."""
+    """Chapter progression, epilogue, campaign-persistent XP and legacy tracks."""
 
     campaign_history: list[ChapterSummary] = field(default_factory=list)
     chapter_number: int = 1
@@ -238,16 +238,46 @@ class CampaignState(SerializableMixin):
     epilogue_dismissed: bool = False
     epilogue_text: str = ""
 
+    # Campaign-persistent progression (step 12)
+    xp: int = 0  # Total XP earned across campaign
+    xp_spent: int = 0  # Total XP spent on assets/upgrades
+    legacy_quests: ProgressTrack = field(
+        default_factory=lambda: ProgressTrack(id="legacy_quests", name="Quests", track_type="legacy", rank="epic")
+    )
+    legacy_bonds: ProgressTrack = field(
+        default_factory=lambda: ProgressTrack(id="legacy_bonds", name="Bonds", track_type="legacy", rank="epic")
+    )
+    legacy_discoveries: ProgressTrack = field(
+        default_factory=lambda: ProgressTrack(
+            id="legacy_discoveries", name="Discoveries", track_type="legacy", rank="epic"
+        )
+    )
+
+    @property
+    def xp_available(self) -> int:
+        return self.xp - self.xp_spent
+
     def snapshot(self) -> dict:
-        """Lightweight snapshot for turn undo. Only captures fields that can change
+        """Lightweight snapshot for turn undo. Captures fields that can change
         mid-turn. campaign_history, chapter_number, and epilogue_text are excluded
         because they only change at chapter boundaries (start_new_chapter), never
-        during normal turn processing or correction."""
+        during normal turn processing or correction. Legacy tracks and XP CAN
+        change mid-turn via legacy_reward effects and threat bonuses."""
         return {
             "epilogue_shown": self.epilogue_shown,
             "epilogue_dismissed": self.epilogue_dismissed,
+            "xp": self.xp,
+            "xp_spent": self.xp_spent,
+            "legacy_quests": self.legacy_quests.to_dict(),
+            "legacy_bonds": self.legacy_bonds.to_dict(),
+            "legacy_discoveries": self.legacy_discoveries.to_dict(),
         }
 
     def restore(self, snap: dict) -> None:
         self.epilogue_shown = snap["epilogue_shown"]
         self.epilogue_dismissed = snap["epilogue_dismissed"]
+        self.xp = snap["xp"]
+        self.xp_spent = snap["xp_spent"]
+        self.legacy_quests = ProgressTrack.from_dict(snap["legacy_quests"])
+        self.legacy_bonds = ProgressTrack.from_dict(snap["legacy_bonds"])
+        self.legacy_discoveries = ProgressTrack.from_dict(snap["legacy_discoveries"])

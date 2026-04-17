@@ -25,6 +25,7 @@ from ..engine.logging_util import log
 from ..engine.models import EngineConfig
 from .handlers import (
     _send,
+    handle_advance_asset,
     handle_burn_momentum,
     handle_correction,
     handle_create_player,
@@ -76,6 +77,7 @@ _HANDLERS: dict[str, Callable] = {
     "status_query": handle_status_query,
     "tracks_query": handle_tracks_query,
     "threats_query": handle_threats_query,
+    "advance_asset": handle_advance_asset,
     "generate_epilogue": handle_generate_epilogue,
     "dismiss_epilogue": handle_dismiss_epilogue,
     "new_chapter": handle_new_chapter,

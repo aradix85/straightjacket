@@ -186,6 +186,18 @@ class ImpactConfig:
 
 
 @dataclass
+class LegacyConfig:
+    """Legacy tracks and XP mechanics."""
+
+    xp_per_box: int = 2  # XP granted per filled box (Ironsworn default)
+    starting_rank: str = "epic"  # All legacy tracks start at epic rank (1 tick/mark)
+    threat_overcome_bonus: int = 2  # Extra XP when vow completes with overcome threat at high menace
+    threat_overcome_threshold: float = 0.5  # Menace >= this fraction to earn bonus
+    asset_upgrade_cost: int = 2  # XP per asset ability upgrade
+    new_asset_cost: int = 3  # XP for a new asset
+
+
+@dataclass
 class PositionResolverWeights:
     """Weights applied to resource/npc/chaos/momentum/threat factors."""
 
@@ -381,6 +393,7 @@ class EngineSettings:
     architect: ArchitectConfig = field(default_factory=ArchitectConfig)
     threats: ThreatConfig = field(default_factory=ThreatConfig)
     impacts: dict[str, ImpactConfig] = field(default_factory=dict)
+    legacy: LegacyConfig = field(default_factory=LegacyConfig)
     position_resolver: PositionResolverConfig = field(default_factory=PositionResolverConfig)
     effect_resolver: EffectResolverConfig = field(default_factory=EffectResolverConfig)
     information_gate: InformationGateConfig = field(default_factory=InformationGateConfig)
@@ -425,6 +438,7 @@ _SIMPLE_SECTIONS: dict[str, type] = {
     "opening": OpeningConfig,
     "architect": ArchitectConfig,
     "threats": ThreatConfig,
+    "legacy": LegacyConfig,
     "story": StoryConfig,
     "enums": EnumsConfig,
     "memory_retrieval_weights": MemoryRetrievalWeights,

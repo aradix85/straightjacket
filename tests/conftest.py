@@ -297,6 +297,14 @@ def stub_engine() -> None:
                 "permanently_harmed": {"label": "permanently harmed", "blocks_recovery": "", "permanent": True},
                 "traumatized": {"label": "traumatized", "blocks_recovery": "", "permanent": True},
             },
+            "legacy": {
+                "xp_per_box": 2,
+                "starting_rank": "epic",
+                "threat_overcome_bonus": 2,
+                "threat_overcome_threshold": 0.5,
+                "asset_upgrade_cost": 2,
+                "new_asset_cost": 3,
+            },
         }
     )
 

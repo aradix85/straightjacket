@@ -77,6 +77,11 @@ def complete_track(game: GameState, track_id: str, outcome: str) -> None:
             if threat.linked_vow_id == track_id and threat.status == "active":
                 threat.status = "overcome" if outcome == "completed" else "resolved"
                 log(f"[Track] Linked threat '{threat.name}' → {threat.status}")
+                # Step 12.2: XP bonus when vow completes with high-menace threat overcome
+                if threat.status == "overcome":
+                    from ..mechanics.legacy import apply_threat_overcome_bonus
+
+                    apply_threat_overcome_bonus(game, threat)
 
 
 def sync_combat_tracks(game: GameState) -> None:

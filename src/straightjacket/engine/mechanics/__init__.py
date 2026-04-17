@@ -15,11 +15,14 @@ Implementation split across:
 """
 
 __all__ = [
+    "LEGACY_TRACKS",
     "NpcStance",
     "add_character_weight",
     "add_thread_weight",
+    "advance_asset",
     "advance_time",
     "apply_brain_location_time",
+    "apply_threat_overcome_bonus",
     "can_burn_momentum",
     "check_npc_agency",
     "check_scene",
@@ -34,8 +37,10 @@ __all__ = [
     "generate_engine_memories",
     "generate_random_event",
     "generate_scene_context",
+    "get_legacy_track",
     "get_pacing_hint",
     "locations_match",
+    "mark_legacy",
     "move_category",
     "pick_template",
     "purge_old_fired_clocks",
@@ -79,6 +84,13 @@ from .fate import (
     resolve_fate_chart,
     resolve_fate_check,
     resolve_likelihood,
+)
+from .legacy import (
+    LEGACY_TRACKS,
+    advance_asset,
+    apply_threat_overcome_bonus,
+    get_legacy_track,
+    mark_legacy,
 )
 from .random_events import (
     add_character_weight,

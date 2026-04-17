@@ -70,6 +70,19 @@ def process_momentum_burn(
     consequences = action.consequences
     clock_events = action.clock_events
 
+    # Re-apply progress and legacy marks from re-resolved outcome after upgrade
+    if action.outcome:
+        from ..datasworn.moves import get_moves
+        from .finalization import apply_progress_and_legacy
+        from .tracks import find_progress_track
+
+        ds_moves = get_moves(game.setting_id) if game.setting_id else {}
+        ds_move = ds_moves.get(brain_data.move)
+        source_category = ds_move.track_category if ds_move else "vow"
+        src_track = find_progress_track(game, source_category, target_track=brain_data.target_track)
+        source_rank = src_track.rank if src_track else "dangerous"
+        apply_progress_and_legacy(game, action.outcome, brain_data, source_category, source_rank)
+
     activated_npcs, mentioned_npcs, _ = activate_npcs_for_prompt(game, brain_data, player_words)
 
     consequence_sentences = generate_consequence_sentences(consequences, clock_events, game, brain_data)

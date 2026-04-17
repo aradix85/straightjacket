@@ -804,6 +804,17 @@ threats:
   menace_high_threshold: 0.75       # Menace ratio above this = "near tipping point"
   forsake_spirit_cost: 2            # Spirit damage when menace forces Forsake Your Vow
 
+# ── Legacy tracks and XP ──────────────────────────────────────
+# Legacy tracks (quests, bonds, discoveries) persist across chapters.
+# Filled boxes grant XP. XP is spent on asset abilities or new assets.
+legacy:
+  xp_per_box: 2                     # XP per filled box on any legacy track
+  starting_rank: epic               # All legacy tracks: 1 tick/mark (rank-adjusted by source vow/bond)
+  threat_overcome_bonus: 2          # Bonus XP when vow completes with overcome threat at high menace
+  threat_overcome_threshold: 0.5    # Menace ratio >= this to earn overcome bonus
+  asset_upgrade_cost: 2             # XP per asset ability upgrade
+  new_asset_cost: 3                 # XP for a new asset
+
 # ── Impacts ───────────────────────────────────────────────────
 # Impacts are persistent conditions that reduce max_momentum by 1 each.
 # Some block specific recovery moves. Permanent impacts never clear naturally.

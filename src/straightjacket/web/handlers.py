@@ -419,6 +419,31 @@ async def handle_threats_query(session: Session, ws: WebSocket, _msg: dict) -> N
     await _send(ws, {"type": "status", "text": text})
 
 
+async def handle_advance_asset(session: Session, ws: WebSocket, msg: dict) -> None:
+    """Spend XP on an asset upgrade or acquire a new asset (step 12.2)."""
+    if not session.game:
+        await _send(ws, {"type": "status", "text": t("status.no_game")})
+        return
+    from ..engine.mechanics.legacy import advance_asset
+
+    kind = msg.get("kind", "upgrade")
+    asset_id = msg.get("asset_id", "").strip()
+    if kind not in ("upgrade", "new") or not asset_id:
+        await _send(ws, {"type": "status", "text": t("advance.usage")})
+        return
+    spent = advance_asset(session.game, asset_id, kind)
+    if spent == 0:
+        await _send(ws, {"type": "status", "text": t("advance.insufficient")})
+        return
+    # Persist: XP/legacy/assets all changed
+    from ..engine.db.sync import sync as _db_sync
+
+    _db_sync(session.game)
+    save_game(session.game, session.player, session.chat_messages, session.save_name)
+    msg_key = "advance.upgraded" if kind == "upgrade" else "advance.acquired"
+    await _send(ws, {"type": "status", "text": t(msg_key, asset=asset_id, cost=spent)})
+
+
 # ── Epilogue & chapters ──────────────────────────────────────
 
 

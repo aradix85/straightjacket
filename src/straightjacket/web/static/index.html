@@ -373,6 +373,16 @@ inputForm.onsubmit = (e) => {
     send({type: "threats_query"});
     return;
   }
+  if (cmd.startsWith("/advance ") || cmd.startsWith("advance ")) {
+    const parts = text.trim().split(/\s+/);
+    // /advance upgrade <asset_id>  OR  /advance new <asset_id>
+    if (parts.length >= 3 && (parts[1] === "upgrade" || parts[1] === "new")) {
+      send({type: "advance_asset", kind: parts[1], asset_id: parts.slice(2).join(" ")});
+    } else {
+      send({type: "advance_asset", kind: "", asset_id: ""});  // triggers usage message
+    }
+    return;
+  }
   if (text.startsWith("##")) {
     appendText("msg msg-player msg-correction", text);
     send({type: "correction", text: text.replace(/^#+\s*/, "")});

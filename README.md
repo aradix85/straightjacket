@@ -26,7 +26,7 @@ Creates a venv, installs dependencies, downloads game data, starts the server at
 
 You type what your character does. The engine classifies the action, rolls dice, applies mechanical consequences. An AI narrator writes the scene within those constraints. A validator checks the output. A director handles NPC reflections and story arc tracking.
 
-Four AI agents per turn: **Brain** (parses input into mechanics), **Narrator** (writes prose), **Validator** (rule-based + LLM constraint checking, retries with prompt stripping), **Director** (NPC reflections, AIMS generation).
+Four AI agents per turn: **Brain** (parses input into mechanics), **Narrator** (writes prose), **Validator** (rule-based + LLM constraint checking, retries with prompt stripping), **Director** (NPC reflections, AIMS generation). A fifth agent, **Architect**, runs at game start and chapter transitions to build the story blueprint.
 
 The AI never decides outcomes, moves resources, or controls the player character. That's the straightjacket.
 
@@ -66,7 +66,7 @@ The architecture implements the [Narrative RPG Engine](docs/narrative_rpg_engine
 
 Three complementary layers:
 
-**Unit/integration tests** (`python -m pytest tests/ -v`, ~757 tests, no API key needed): mock providers with canned responses test engine logic, NPC processing, serialization, correction flow, prompt assembly, WebSocket handlers, database sync/queries, tool registry/dispatch. Every commit must pass.
+**Unit/integration tests** (`python -m pytest tests/ -v`, ~786 tests, no API key needed): mock providers with canned responses test engine logic, NPC processing, serialization, correction flow, prompt assembly, WebSocket handlers, database sync/queries, tool registry/dispatch. Every commit must pass.
 
 **[Elvira](tests/elvira/)** (`python tests/elvira/elvira.py --auto --turns 5`, needs API key): headless AI-driven test player that plays the game with real model output. Checks state invariants after every turn, validates narration quality (leaked mechanics, NPC spatial consistency), stress-tests the correction pipeline, and logs diagnostics to JSON. Two modes: direct (engine only) and WebSocket (full server stack). See [CONTRIBUTING.md](CONTRIBUTING.md) for when to use which.
 
@@ -82,7 +82,7 @@ Screen reader accessible: semantic HTML, ARIA live regions for automatic narrati
 
 ## Cost
 
-~$0.055 per 10-turn session with Qwen 3 + GPT-OSS two-model setup via Cerebras (~2s/turn). ~$0.012 per turn for real player input (no bot overhead).
+~$0.012 per turn for real player input. ~$0.055 per 10-turn Elvira bot session (bot input is terse, so per-turn cost is lower than real play). Qwen 3 narrator + GPT-OSS-120B for everything else, via Cerebras (~2s/turn).
 
 ---
 

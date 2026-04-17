@@ -158,3 +158,10 @@ status.no_tracks: No active tracks.
 status.impacts: 'Impacts: {impacts}.'
 status.threat: '{name}: {urgency}.'
 status.no_threats: No active threats.
+status.xp: 'Experience: {xp} available.'
+status.legacy: 'Legacy — {quests}; {bonds}; {discoveries}.'
+status.legacy_item: '{name}: {progress}'
+advance.usage: 'Usage: /advance upgrade <asset> or /advance new <asset>.'
+advance.insufficient: 'Not enough experience to advance that.'
+advance.upgraded: 'Advanced {asset} (cost: {cost} experience).'
+advance.acquired: 'Acquired {asset} (cost: {cost} experience).'
