@@ -4,7 +4,6 @@
 import json
 import random
 
-from ..i18n import E
 from .engine_loader import eng
 from .logging_util import log
 from .mechanics import get_pacing_hint, locations_match
@@ -90,7 +89,6 @@ def build_new_game_prompt(game: GameState) -> str:
         player_name=game.player_name,
         pronouns_hint=pronouns_hint,
         seed=seed,
-        dash=E["dash"],
     )
 
     return f"""<scene type="opening">
@@ -501,7 +499,7 @@ def build_action_prompt(
 {events_block}{director}
 {narrative_direction_block(game, roll.result)}
 {story_context_block(game)}{recent_events_block(game)}</scene>
-<task>{get_prompt("task_action", dash=E["dash"])}</task>"""
+<task>{get_prompt("task_action")}</task>"""
 
 
 # ── Chapter / epilogue prompts ───────────────────────────────
@@ -538,7 +536,7 @@ def build_epilogue_prompt(game: GameState) -> str:
 <session_log>{log_text}</session_log>
 </scene>
 <task>
-{get_prompt("task_epilogue", dash=E["dash"])}
+{get_prompt("task_epilogue")}
 </task>"""
 
 
@@ -590,5 +588,5 @@ def build_new_chapter_prompt(game: GameState) -> str:
 {npc_block}{evolutions_block}
 {story_context_block(game)}</scene>
 <task>
-{get_prompt("task_chapter_opening", chapter_number=str(game.campaign.chapter_number), seed=seed, dash=E["dash"])}
+{get_prompt("task_chapter_opening", chapter_number=str(game.campaign.chapter_number), seed=seed)}
 </task>"""

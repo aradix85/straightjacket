@@ -54,12 +54,27 @@ def load_engine() -> None:
 
 @pytest.fixture()
 def stub_engine() -> None:
-    """Stub eng() with known values for predictable assertions."""
+    """Stub eng() with known values for predictable assertions.
+
+    The `validator` section (regex patterns, rewrite instructions, stems) is
+    loaded from the real engine.yaml — duplicating 30+ regexes in this stub
+    would rot. Test code that touches the validator gets real data; everything
+    else is stubbed.
+    """
+    from pathlib import Path
+
+    import yaml as _yaml
+
     from straightjacket.engine import engine_loader
+    from straightjacket.engine.config_loader import PROJECT_ROOT
     from straightjacket.engine.engine_config import parse_engine_yaml
+
+    with open(Path(PROJECT_ROOT) / "engine.yaml", encoding="utf-8") as f:
+        real_validator = _yaml.safe_load(f)["validator"]
 
     engine_loader._eng = parse_engine_yaml(
         {
+            "validator": real_validator,
             "bonds": {"start": 0, "max": 4},
             "npc": {
                 "max_active": 12,

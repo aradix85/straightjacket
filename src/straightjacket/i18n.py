@@ -7,16 +7,9 @@ Language is set in config.yaml (language.ui_language). To add a language,
 create strings_{code}.yaml with translated keys.
 
 This module provides t() for string lookup and getter helpers for label dicts.
-Emoji constants (E dict) are code constants, not translatable.
 """
 
 from .strings_loader import get_string, get_strings_by_prefix
-
-# UNICODE CONSTANTS (shared across all modules)
-
-E = {
-    "dash": "\u2014",
-}
 
 # STRING LOOKUP
 

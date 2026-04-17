@@ -71,7 +71,8 @@ def call_narrator(
         log(f"[Narrator] WARNING: Response truncated at max_tokens ({len(raw)} chars)", level="warning")
         raw = salvage_truncated_narration(raw)
     else:
-        # Detect mid-sentence/mid-word cutoff despite "complete" (rare Sonnet bug)
+        # Detect mid-sentence/mid-word cutoff despite "complete" stop reason
+        # (observed across providers — not model-specific)
         _prose = raw[: raw.find("<game_data>")] if "<game_data>" in raw else raw
         _stripped = _prose.rstrip()
         if _stripped and _stripped[-1] not in '.!?"\u201c\u201d\u00bb\u00ab\u2026)\u2013\u2014*':

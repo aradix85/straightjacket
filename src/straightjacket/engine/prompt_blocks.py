@@ -5,7 +5,6 @@ Each function builds one self-contained XML block. The narrator system prompt
 assembler (get_narrator_system) composes them. All blocks return empty string
 when not applicable — callers never need to check."""
 
-from ..i18n import E
 from .config_loader import narration_language
 from .engine_loader import eng
 from .models import EngineConfig, GameState
@@ -282,7 +281,6 @@ def get_narrator_system(config: EngineConfig, game: GameState | None = None) -> 
             backstory_block=bs,
             status_context_block=sc,
             tone_authority_block=ta,
-            dash=E["dash"],
         )
         + ("\n" + vc if vc else "")
         + ("\n" + tc if tc else "")

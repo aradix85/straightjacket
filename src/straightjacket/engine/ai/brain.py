@@ -143,21 +143,7 @@ def call_revelation_check(
     rev_content = revelation.content
     rev_weight = revelation.dramatic_weight
 
-    system = (
-        f"You are a story-consistency checker for an RPG engine. "
-        f"Your task is to determine whether a specific revelation was meaningfully "
-        f"present in a narrator's prose passage.\n\n"
-        f"A revelation is considered CONFIRMED (revelation_confirmed=true) when:\n"
-        f"- The core insight or twist is clearly present in the narration, OR\n"
-        f"- It is strongly and unambiguously foreshadowed (not just vaguely hinted), OR\n"
-        f"- A character explicitly reveals information that matches the revelation content.\n\n"
-        f"A revelation is NOT confirmed (revelation_confirmed=false) when:\n"
-        f"- The narration does not touch on the revelation at all, OR\n"
-        f"- Only a very superficial or incidental reference appears that a reader "
-        f"would not recognise as the revelation.\n\n"
-        f"The narration is in {lang}. Reason in {lang} if helpful, but the JSON fields "
-        f"must always be populated."
-    )
+    system = get_prompt("revelation_check_system", lang=lang)
 
     prompt = (
         f'<revelation weight="{html.escape(rev_weight, quote=True)}">{html.escape(rev_content)}</revelation>\n\n'

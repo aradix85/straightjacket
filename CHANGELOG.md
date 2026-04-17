@@ -5,6 +5,79 @@ Originally forked from [EdgeTales](https://github.com/edgetales/edgetales). See 
 
 ---
 
+## [0.52.2] — 2026-04-17
+
+Config-driven cleanup, second pass. Every AI-facing string and regex that can live in yaml, now does. No fallbacks, no legacy accessors.
+
+prompts.yaml (2 new entries, `{dash}` placeholder eliminated):
+- `architect_validator_system`: genre fidelity system prompt (was an f-string in `ai/architect_validator.py`). Placeholder `{constraint_text}`.
+- `architect_validator_user`: central_conflict + antagonist_force check (was an f-string in the same file). Placeholders `{genre}`, `{tone}`, `{conflict}`, `{antagonist}`.
+- `{dash}` placeholder removed project-wide. Previously prompts.yaml used `{dash}` and every call site threaded `dash=E["dash"]` through `get_prompt`. The em-dash is now a literal `—` in all 33 prompt locations. 8 call sites across director, validator, architect, prompt_builders, prompt_blocks, and 3 inline f-strings in architect and consequences updated to use the literal. Cleaner prompt YAML, shorter call sites.
+
+engine.yaml (new validator data):
+- `format_patterns`: 5 output-format leak patterns (role label prefix, bracketed annotation, code block, markdown heading, bold markdown) as structured list of `{pattern, label, flags}` dicts. Previously `_FORMAT_PATTERNS` tuple list in `ai/rule_validator.py`.
+- `quote_patterns.strip` / `quote_patterns.match`: curly-double-quote regexes for NPC speech detection. Previously `_QUOTE_STRIP_RE` and `_QUOTE_RE` module constants.
+
+EngineSettings pattern helpers:
+- `compiled_patterns(section, key)` — flat pattern list, IGNORECASE.
+- `compiled_labeled_patterns(section, key)` — list of `(pattern, label)` from structured dicts with optional `flags: multiline`.
+- `compiled_pattern(section, key, subkey)` — single regex at a nested path.
+- All three cache on the instance. `reload_engine()` resets the cache via instance replacement.
+
+Code removal:
+- `i18n.py`: `E = {"dash": "\u2014"}` dict removed along with its "Emoji constants" comment block. No remaining consumers.
+- `ai/rule_validator.py`: `_FORMAT_PATTERNS`, `_QUOTE_STRIP_RE`, `_QUOTE_RE` module constants removed. 413 lines, was 488. With 0.52.1 this file is down 75 lines from baseline.
+- Dead `from ..i18n import E` import in `prompt_builders.py` removed (was orphaned after the `{dash}` project-wide substitution).
+
+Scope audit: `call_narrator_metadata` and `call_opening_setup` in `narrator.py`, and the recap/blueprint/chapter_summary user prompts in `ai/architect.py`, contain inline f-strings with only XML-wrapped game state (`<narration>...</narration>`, `<known_npcs>...</known_npcs>`). These are data assembly, not AI instructions — moving them to yaml would add indirection without config value. Left as-is. `correction.py` already uses `get_prompt("correction_brain")` cleanly.
+
+Tests: 786 passed (unchanged). Ruff clean, ruff format clean, mypy clean on 87 source files.
+
+---
+
+## [0.52.1] — 2026-04-17
+
+Config-driven cleanup. All AI-facing text removed from Python.
+
+Hardcoded prompt text audited and relocated. 11.4K characters across four Python modules — ~63% of prompts.yaml's size — lived in f-strings and if/elif ladders in violation of the "zero hardcoded prompt text" principle.
+
+prompts.yaml (7 new entries):
+- `validator_system`: LLM validator system prompt (4.3K chars). Placeholders `{pc_hint}`, `{consequence_compliance_block}`, `{dash}`. Previously an f-string in `ai/validator.py`.
+- `validator_consequence_compliance`: optional CONSEQUENCE COMPLIANCE block with `{consequence_list}` placeholder.
+- `validator_pc_hint`: player character hint with `{player_name}`. Leading space preserved via `|2-` indent indicator.
+- `validator_json_suffix`: JSON retry suffix used when validator returns empty content.
+- `director_task`: Director task template (2.5K chars). Placeholders `{lang}`, `{dash}`. Previously an f-string in `director.py → build_director_prompt`.
+- `revelation_check_system`: revelation consistency checker system prompt (0.8K chars). Placeholder `{lang}`. Previously an f-string in `ai/brain.py → call_revelation_check`.
+
+engine.yaml (new `validator:` section):
+- `rewrite_instructions`: 12 per-violation rewrite templates (player agency, resolution pacing, monologue, result integrity × 3, genre fidelity, genre physics, atmospheric register, output format, consequence missing). Replaces 11-branch if/elif in `validate_and_retry`. Compound keys use ` AND ` for multi-substring matching (e.g. `"result integrity AND silver"`).
+- `consequence_stems`: 27 verb → variant tuples for narrator paraphrase matching. Replaces `_CONSEQUENCE_STEMS` module-level dict in `ai/rule_validator.py`. Explicitly documented as English-only pending per-language stem maps.
+- `agency_patterns`: 20 player-agency regex patterns. Replaces `_AGENCY_EMOTION_PATTERNS` in `ai/rule_validator.py`.
+- `miss_silver_lining_patterns`: 8 MISS-softening patterns. Replaces `_MISS_SILVER_LINING_PATTERNS`.
+- `miss_annihilation_patterns`: 3 player-death patterns. Replaces `_MISS_ANNIHILATION_PATTERNS`.
+
+Pattern caching: `EngineSettings.compiled_patterns(section, key)` compiles regex lists once per settings instance and caches them on the instance (not module-level). `reload_engine()` builds a fresh instance, so the cache resets automatically — no manual invalidation, no global state leaking across tests.
+
+No fallbacks policy: accessors that read validator sections now raise `KeyError` if the section or key is missing (`_raw["validator"]["..."]`) rather than silently returning empty defaults. The `stub_engine` test fixture loads the real `validator:` section from `engine.yaml` so tests see the same data the engine does — duplicating 30+ regexes in the stub would rot.
+
+Verification: each relocated prompt rendered character-for-character identical to the pre-refactor Python output across all placeholder combinations (tested validator_system with/without player and consequences, director_task in English and Dutch, revelation_check_system, all 12 rewrite violation categories, all 27 stems).
+
+Other fixes:
+- `run.py`: broken `from straightjacket.engine import cfg, log, setup_file_logging` (stale since 0.48.1 when the re-export hub was eliminated). Split into direct submodule imports. Without this fix `python run.py` raised `ImportError` on startup. No test covered the launcher.
+- `director.py`: removed stale `pacing={guidance.get('pacing', '?')}` log line. Pacing was removed from DirectorGuidance in 0.44.0; the field would always log `'?'`.
+
+Code impact:
+- `ai/validator.py`: 70 lines of hardcoded prompt text removed; 3 `get_prompt` calls + 1 yaml-driven lookup loop replace them. 355 lines, was 380.
+- `director.py`: f-string task template removed; 1 `get_prompt` call. Stale `pacing={guidance.get('pacing', '?')}` log line removed (pacing was removed from DirectorGuidance in 0.44.0 and would always log `'?'`). 442 lines, was 465.
+- `ai/brain.py`: 15-line f-string replaced by 1 `get_prompt` call. 175 lines, was 188.
+- `ai/rule_validator.py`: 28-line consequence stems dict + 20-pattern agency list + 8-pattern silver-lining list + 3-pattern annihilation list all removed; replaced by `eng()._raw["validator"][...]` access + `eng().compiled_patterns(...)` for regex lists. 412 lines, was 488.
+- `engine/engine_config.py`: `EngineSettings` gains a `_compiled_patterns` cache field and `compiled_patterns(section, key)` method. Cache lives on the settings instance; `reload_engine()` resets it via instance replacement.
+- `tests/conftest.py`: `stub_engine` now loads the real `validator:` section from `engine.yaml` so validator-dependent tests get accurate pattern data without duplication.
+
+Tests: 786 passed (unchanged). Ruff clean, ruff format clean, mypy clean on 87 source files.
+
+---
+
 ## [0.52.0] — 2026-04-17
 
 Step 12: legacy tracks and XP. Campaign progression mechanics.

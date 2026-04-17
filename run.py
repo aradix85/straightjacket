@@ -66,7 +66,8 @@ def _start():
     _ensure_data()
     sys.path.insert(0, str(ROOT / "src"))
 
-    from straightjacket.engine import cfg, log, setup_file_logging
+    from straightjacket.engine.config_loader import cfg
+    from straightjacket.engine.logging_util import log, setup_file_logging
 
     setup_file_logging()
 

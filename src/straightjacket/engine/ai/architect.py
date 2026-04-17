@@ -3,7 +3,6 @@
 
 import json
 
-from ...i18n import E
 from ..config_loader import model_for_role, sampling_params
 from ..engine_loader import eng
 from ..logging_util import log
@@ -62,7 +61,7 @@ def call_recap(provider: AIProvider, game: GameState, config: EngineConfig | Non
             messages=[
                 {
                     "role": "user",
-                    "content": f"{game.player_name}{E['dash']}{game.character_concept}\n"
+                    "content": f"{game.player_name}—{game.character_concept}\n"
                     f"genre:{game.setting_genre} tone:{game.setting_tone}\n"
                     f"world:{game.setting_description}\n"
                     f"at:{game.world.current_location}\nlog:{log_text}\nnpcs:{npc_text}"
@@ -87,7 +86,7 @@ def call_story_architect(
     lang = get_narration_lang(_cfg)
     cb = content_boundaries_block(game)
 
-    prompt_vars = dict(lang=lang, content_boundaries_block=cb, dash=E["dash"])
+    prompt_vars = dict(lang=lang, content_boundaries_block=cb)
     if structure_type == "kishotenketsu":
         system = get_prompt("architect_kishotenketsu", **prompt_vars)
     else:
@@ -110,7 +109,7 @@ def call_story_architect(
         backstory_text = f"\nbackstory(canon past):{game.backstory}"
     user_msg = f"""genre:{game.setting_genre} tone:{game.setting_tone}
 world:{game.setting_description}
-character:{game.player_name} {E["dash"]} {game.character_concept}
+character:{game.player_name} — {game.character_concept}
 location:{game.world.current_location}
 situation:{game.world.current_scene_context}
 npcs:{npc_text}{campaign_ctx}{backstory_text}"""
@@ -200,7 +199,7 @@ def call_chapter_summary(
             messages=[
                 {
                     "role": "user",
-                    "content": f"character:{game.player_name} {E['dash']} {game.character_concept}\n"
+                    "content": f"character:{game.player_name} — {game.character_concept}\n"
                     f"genre:{game.setting_genre} tone:{game.setting_tone}\n"
                     f"world:{game.setting_description}\n"
                     f"conflict:{conflict}\n"

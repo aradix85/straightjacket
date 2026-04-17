@@ -5,7 +5,6 @@ from __future__ import annotations
 
 import random
 
-from ...i18n import E
 from ..engine_loader import eng
 from ..logging_util import log
 from ..models import BrainResult, ClockEvent, GameState, RollResult
@@ -92,7 +91,7 @@ def check_npc_agency(game: GameState) -> tuple[list[str], list[ClockEvent]]:
     clock_events: list[ClockEvent] = []
     for npc in game.npcs:
         if npc.status == "active" and npc.agenda:
-            actions.append(f'NPC "{npc.name}" pursues agenda "{npc.agenda}" {E["dash"]} concrete offscreen action.')
+            actions.append(f'NPC "{npc.name}" pursues agenda "{npc.agenda}" — concrete offscreen action.')
             npc_norms = {normalize_for_match(npc.name)}
             npc_norms.update(normalize_for_match(a) for a in npc.aliases)
             for clock in game.world.clocks:

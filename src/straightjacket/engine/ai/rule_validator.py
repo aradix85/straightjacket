@@ -63,51 +63,8 @@ class ValidationContext:
 
 
 # ── PLAYER AGENCY ────────────────────────────────────────────
-
-# Patterns where "You feel/sense/realize" is followed by an emotion or interpretation,
-# NOT a physical sensation. "You feel the cold metal" = OK. "You feel uneasy" = violation.
-_AGENCY_EMOTION_PATTERNS = [
-    # "You feel" + emotion/interpretation (not physical object)
-    r"\byou feel\b(?!\s+(?:the|a|an|your|its|it|his|her|their|cold|hot|warm|cool|wet|dry|rough|smooth|sharp|dull|soft|hard|heavy|light|damp|slick|gritty|sticky))\s+\w+",
-    # Direct thought/interpretation attributions
-    # "you think" only when NOT followed by about/of/through/over (those are actions)
-    r"\byou (?:realize|understand|sense that|suspect|conclude|decide|believe|assume|recognize that|grasp)\b",
-    r"\byou think\b(?!\s+(?:about|of|through|over|back))",
-    # Invented memories
-    r"\byou (?:remember|recall|knew|have seen|'ve seen)\b",
-    # Emotional state declarations
-    r"\b(?:a (?:wave|surge|pang|flash|jolt|stab) of (?:fear|dread|anger|grief|joy|relief|guilt|shame|hope|despair|panic|revulsion|unease|disgust|sadness|horror|rage|fury))\b",
-    # "something in you" constructions
-    r"\bsomething (?:in|inside|within) you\b",
-    # Abstract weight/pressure as emotional metaphor
-    r"\b(?:the )?weight of (?:your |the |his |her )?(?:failure|guilt|shame|loss|grief|regret|betrayal|silence|withdrawal)\b",
-    # "makes you want to" — imposes desire
-    r"\bmakes you (?:want|need|wish|long|ache) to\b",
-    # Objects/situations imposing feelings
-    r"\b(?:the |a )?(?:silence|darkness|cold|emptiness|room|air|wind) (?:offers|invites|urges|compels|forces|demands|asks|tells) you\b",
-    # Pressure/weight settling on player
-    r"\b(?:press(?:es|ing)|settl(?:es|ing)|weigh(?:s|ing)|hang(?:s|ing)|bears? down) (?:against |on |upon )?your (?:chest|shoulders|ears|back|spine|ribs)\b",
-    # Dragging posture/body as emotional metaphor
-    r"\bdragging your (?:posture|shoulders|head|body|gaze)\b",
-    # Crushing/suffocating as emotional descriptor
-    r"\b(?:crushing|suffocating) (?:pressure|weight|silence|darkness|realization)\b",
-    # "feels distant/underwater" — imposed dissociation
-    r"\b(?:sound|voice|world|noise)s? feels? (?:distant|muffled|far away|underwater)\b",
-    # "as if you are" — imposed internal comparison
-    r"\bas if you (?:are|were) (?:already |somehow )?(?:underwater|drowning|falling|sinking|floating)\b",
-    # Evaporation/loss metaphors applied to player state
-    r"\b(?:whatever |the )?(?:fragile |thin )?(?:advantage|connection|trust|hope|progress) you (?:thought you )?held\b",
-    r"\b(?:advantage|connection|trust|hope) (?:you held |between you )?(?:evaporates?|dissolves?|vanishes?|crumbles?)\b",
-    # Qwen patterns: knowledge/conclusion imposed on player (from Elvira baseline)
-    r"\byou(?:'ve| have) found (?:the |a )?(?:break|answer|pattern|key|link|cause|source|reason)\b",
-    r"\b(?:sticks|lodges|burns|stays|lingers|registers) in your (?:mind|memory|thoughts|head)\b",
-    r"\byou (?:can tell|can sense|can feel|just know|already know|know enough)\b",
-    r"\byou (?:notice|catch|spot|see) (?:yourself|your own)\s+(?:thinking|feeling|hoping|wanting)\b",
-]
-_AGENCY_PATTERNS = [re.compile(p, re.IGNORECASE) for p in _AGENCY_EMOTION_PATTERNS]
-
-
-_QUOTE_STRIP_RE = re.compile(r"\u201c[^\u201d]*\u201d")
+# Regex patterns live in engine.yaml validator.agency_patterns.
+# English-only, tuned for Qwen 3 narrator drift.
 
 
 def check_player_agency(narration: str) -> list[str]:
@@ -116,10 +73,12 @@ def check_player_agency(narration: str) -> list[str]:
     Strips quoted NPC speech first — "You think X?" from an NPC is not
     a player agency violation.
     """
+    from ..engine_loader import eng
+
     # Remove quoted speech to avoid false positives on NPC dialog
-    prose_only = _QUOTE_STRIP_RE.sub("", narration)
+    prose_only = eng().compiled_pattern("validator", "quote_patterns", "strip").sub("", narration)
     violations = []
-    for pattern in _AGENCY_PATTERNS:
+    for pattern in eng().compiled_patterns("validator", "agency_patterns"):
         matches = pattern.findall(prose_only)
         for match in matches:
             violations.append(
@@ -137,32 +96,16 @@ def check_player_agency(narration: str) -> list[str]:
 
 
 # ── RESULT INTEGRITY ─────────────────────────────────────────
-
-_MISS_SILVER_LINING_PATTERNS = [
-    r"\bat least\b",
-    r"\bfortunately\b",
-    r"\bluckily\b",
-    r"\bmanage[sd]? to\b",
-    r"\bbut (?:you|the|it|she|he|they)\b.*\b(?:safe|survive|escape|learn|gain|find|discover)\b",
-    r"\bsilver lining\b",
-    r"\bblessing in disguise\b",
-    r"\bbright side\b",
-]
-_MISS_PATTERNS = [re.compile(p, re.IGNORECASE) for p in _MISS_SILVER_LINING_PATTERNS]
-
-_MISS_ANNIHILATION_PATTERNS = [
-    r"\byou (?:die|are dead|collapse.{0,20}lifeless|stop breathing)\b",
-    r"\beverything (?:goes black|fades to nothing|ends)\b",
-    r"\byour (?:vision|world|consciousness) (?:fades|dims|goes|ends)\b",
-]
-_ANNIHILATION_PATTERNS = [re.compile(p, re.IGNORECASE) for p in _MISS_ANNIHILATION_PATTERNS]
+# Patterns in engine.yaml validator.miss_silver_lining_patterns / .miss_annihilation_patterns
 
 
 def check_result_integrity(narration: str, result_type: str) -> list[str]:
     """Check that narration matches the mechanical result type."""
+    from ..engine_loader import eng
+
     violations = []
     if result_type == "MISS":
-        for pattern in _MISS_PATTERNS:
+        for pattern in eng().compiled_patterns("validator", "miss_silver_lining_patterns"):
             m = pattern.search(narration)
             if m:
                 violations.append(
@@ -170,7 +113,7 @@ def check_result_integrity(narration: str, result_type: str) -> list[str]:
                     f"a MISS must show concrete failure with no upside"
                 )
                 break  # One is enough
-        for pattern in _ANNIHILATION_PATTERNS:
+        for pattern in eng().compiled_patterns("validator", "miss_annihilation_patterns"):
             m = pattern.search(narration)
             if m:
                 violations.append(
@@ -233,28 +176,21 @@ def check_atmospheric_register(narration: str, genre_constraints: GenreConstrain
 
 
 # ── OUTPUT FORMAT ────────────────────────────────────────────
-
-_FORMAT_PATTERNS = [
-    (re.compile(r"^\s*(?:Narrator|Assistant|System)\s*:", re.MULTILINE), "role label prefix"),
-    (re.compile(r"\[(?:CLOCK|THREAT|SCENE|NPC|CONTEXT|NOTE)[^\]]*\]"), "bracketed annotation"),
-    (re.compile(r"```"), "code block"),
-    (re.compile(r"^\s*#{1,6}\s", re.MULTILINE), "markdown heading"),
-    (re.compile(r"\*\*[^*]+\*\*"), "bold markdown"),
-]
+# Patterns in engine.yaml validator.format_patterns
 
 
 def check_output_format(narration: str) -> list[str]:
     """Check for metadata/formatting leaking into prose."""
+    from ..engine_loader import eng
+
     violations = []
-    for pattern, label in _FORMAT_PATTERNS:
+    for pattern, label in eng().compiled_labeled_patterns("validator", "format_patterns"):
         if pattern.search(narration):
             violations.append(f"OUTPUT FORMAT: narration contains {label}")
     return violations
 
 
 # ── NPC MONOLOGUE HEURISTIC ──────────────────────────────────
-
-_QUOTE_RE = re.compile(r"\u201c([^\u201d]+)\u201d")
 
 
 def check_npc_monologue(narration: str) -> list[str]:
@@ -266,11 +202,14 @@ def check_npc_monologue(narration: str) -> list[str]:
     Flags when 4+ quoted segments appear with minimal narrative between them,
     indicating an NPC monologue that crowds out player action and scene detail.
     """
-    quotes = _QUOTE_RE.findall(narration)
+    from ..engine_loader import eng
+
+    quote_re = eng().compiled_pattern("validator", "quote_patterns", "match")
+    quotes = quote_re.findall(narration)
     if len(quotes) < 4:
         return []
 
-    parts = _QUOTE_RE.split(narration)
+    parts = quote_re.split(narration)
     # parts alternates: [before, quote1, between, quote2, ...]
     # Non-quote gaps are at even indices starting from 2
     consecutive_short_gaps = 0
@@ -369,8 +308,9 @@ def check_consequence_keywords(narration: str, consequence_sentences: list[str],
         if any(kw in narration_lower for kw in keywords):
             continue
         stems_found = False
+        stems_map = _consequence_stems()
         for kw in keywords:
-            stem_variants = _CONSEQUENCE_STEMS.get(kw, ())
+            stem_variants = stems_map.get(kw, ())
             if any(sv in narration_lower for sv in stem_variants):
                 stems_found = True
                 break
@@ -383,35 +323,15 @@ def check_consequence_keywords(narration: str, consequence_sentences: list[str],
     return violations[:2]
 
 
-_CONSEQUENCE_STEMS: dict[str, tuple[str, ...]] = {
-    "breaks": ("broke", "broken", "snaps", "snapped", "crack", "cracked", "shatter"),
-    "broken": ("breaks", "broke", "snaps", "cracked", "shatter"),
-    "closes": ("closed", "closing", "shuts", "shut"),
-    "dims": ("dimmed", "dimming", "fades", "faded", "darkens", "darkened"),
-    "loses": ("lost", "losing", "gone"),
-    "lost": ("loses", "losing", "gone"),
-    "gone": ("lost", "loses", "vanish", "disappear"),
-    "pulls": ("pulled", "pulling", "draws", "drew"),
-    "withdraws": ("withdrew", "withdrawal", "retreats", "retreated", "pulls"),
-    "fractures": ("fractured", "cracks", "cracked", "breaks", "broken"),
-    "settles": ("settled", "settling", "sinks", "sank"),
-    "falters": ("faltered", "faltering", "wavers", "wavered"),
-    "evaporates": ("evaporated", "vanishes", "vanished", "dissolves", "dissolved"),
-    "staggers": ("staggered", "staggering", "stumbles", "stumbled"),
-    "crumples": ("crumpled", "collapses", "collapsed"),
-    "advantage": ("edge", "leverage", "upper hand", "opening"),
-    "momentum": ("advantage", "edge", "leverage", "initiative"),
-    "doubt": ("uncertain", "hesitat", "waver"),
-    "exhaustion": ("exhausted", "fatigue", "fatigued", "weariness", "weary", "tired"),
-    "slips": ("slipped", "slipping", "falters", "faltered"),
-    "supplies": ("supply", "gear", "pack", "rations", "kit", "provisions"),
-    "dropped": ("drops", "drop", "fell", "spill", "spilled"),
-    "spent": ("used", "consumed", "depleted", "empty", "emptied"),
-    "turns": ("turned", "turning"),
-    "crosses": ("crossed", "crossing"),
-    "steps": ("stepped", "stepping"),
-    "shifts": ("shifted", "shifting", "changes", "changed"),
-}
+def _consequence_stems() -> dict[str, tuple[str, ...]]:
+    """Load consequence stem map from engine.yaml validator.consequence_stems.
+
+    Raises KeyError if the section is missing — no silent fallback.
+    """
+    from ..engine_loader import eng
+
+    raw = eng()._raw["validator"]["consequence_stems"]
+    return {k: tuple(v) for k, v in raw.items()}
 
 
 # ── THREAT ADVANCE VERIFICATION ─────────────────────────────

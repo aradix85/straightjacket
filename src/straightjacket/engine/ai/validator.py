@@ -14,8 +14,10 @@ import json
 import re
 
 from ..config_loader import model_for_role, sampling_params
+from ..engine_loader import eng
 from ..logging_util import log
 from ..models import EngineConfig, GameState
+from ..prompt_loader import get_prompt
 from .provider_base import AIProvider, create_with_retry
 from .rule_validator import ValidationContext
 from .schemas import VALIDATOR_SCHEMA
@@ -84,48 +86,19 @@ def validate_narration(
     llm_violations = []
     cons_text = ", ".join(ctx.consequences) if ctx.consequences else "none"
     player_name = ctx.game.player_name
-    pc_hint = f' The player character is "{player_name}" (the "you").' if player_name else ""
+    pc_hint = get_prompt("validator_pc_hint", player_name=player_name) if player_name else ""
     cons_sentence_text = ""
     if ctx.consequence_sentences:
-        cons_sentence_text = (
-            "\n\nCONSEQUENCE COMPLIANCE: Each consequence below MUST be reflected in the narration. "
-            "The narrator may use different words but the event described MUST visibly occur. "
-            "If a consequence is completely absent from the prose, flag it.\n"
-            + "\n".join(f"- {s}" for s in ctx.consequence_sentences)
+        cons_sentence_text = get_prompt(
+            "validator_consequence_compliance",
+            consequence_list="\n".join(f"- {s}" for s in ctx.consequence_sentences),
         )
 
-    system = f"""Constraint checker for RPG narration. Be STRICT and PRECISE.
-
-GENRE PHYSICS: Materials MUST NOT exhibit consciousness, memory, or transformation. Wood does not weep, bleed, reshape, or form faces. Stone does not remember. Fluids do not change color symbolically. Inanimate objects MUST NOT have agency, awareness, or intent. If the setting is low-magic or grounded sci-fi, ANY supernatural element is a violation. When in doubt about genre physics, FAIL — genre drift is harder to fix than a retry.
-
-RESOLUTION PACING: NPCs respond to what was asked or done — nothing more. The test is INFORMATION, not length.
-VIOLATION: NPC volunteers facts, theories, names, locations, or connections that the player did not ask about and has not earned through a successful move. Each NPC response should contain at most ONE new fact beyond the direct answer.
-ALLOWED: NPC speaks at length IF every sentence responds to the player's action or question. Emotional reactions, resistance, physical actions, and atmosphere are always fine regardless of length.
-IMPORTANT: Do NOT count sentences. Sentence count is NEVER a violation. An NPC speaking three, four, or ten sentences is FINE if they are all responsive to the player. Only flag unsolicited NEW FACTS.
-WRONG: Player asks where the ship docked. NPC answers, then adds that Ashwatch burned, the woman disappeared, and she had debts — three unsolicited facts.
-WRONG: Player asks about tracks. NPC identifies the stride, names the hatch, and suggests checking the forges — volunteering a plan the player didn't ask for.
-RIGHT: Player asks where the ship docked. NPC says it was the eastern pier, hesitates, then looks away. One fact, one reaction.
-RIGHT: Player compels an NPC. NPC argues back, deflects, eventually gives in with a grudging answer. Long exchange, but every sentence is a response to pressure.
-RIGHT: NPC gives orders during a crisis — "Lock the hatch, reroute power, brace for impact." These are reactive, not unsolicited facts.
-A new mystery must not be explained in the scene it appears. Tension introduced must survive to the next scene.
-
-PLAYER AGENCY: This applies ONLY to the player character (the "you" in narration).{pc_hint}
-TWO CATEGORIES — only the first is a violation:
-COGNITIVE (VIOLATION): The narrator decides what the player character thinks, concludes, realizes, remembers, decides, believes, or intends. "you realize", "you understand why", "you decide to trust him", "you remember the promise", "makes you want to", "something inside you". These take choices away from the player.
-SENSORY (ALLOWED): The narrator describes how things feel, look, sound, smell to the player character — including subjective or metaphorical descriptions. "unnervingly white", "sharp enough to cut", "silence feels heavy", "cold enough to bite", "the air tastes of copper". These create atmosphere and are ALWAYS allowed. PASS these.
-NPC EXCEPTION: Any description of an NPC's behavior, demeanor, or emotional state is ALWAYS allowed. "hollow", "mechanical", "guarded", "stripped of emotion" about an NPC = PASS.
-
-RESULT INTEGRITY: If result_type is MISS, the failure must be concrete — the situation is WORSE than before. What is NOT allowed: the player character LEARNS, DISCOVERS, GAINS insight, or makes PROGRESS. If WEAK_HIT, there must be a SPECIFIC tangible cost: something broken, lost, spent, damaged. Atmospheric tension alone is not a cost. If STRONG_HIT or dialog, skip this check entirely — STRONG_HIT is clean success with no required cost.
-{cons_sentence_text}
-DOUBT RULES:
-- PLAYER AGENCY: flag ONLY cognitive violations (thoughts, decisions, conclusions, memories). Sensory descriptions and atmospheric metaphors are NEVER violations — PASS those without hesitation.
-- RESOLUTION PACING: flag ONLY when the NPC volunteers unsolicited facts — names, locations, theories, plans — that the player did not ask about. Length alone is NEVER a violation. Emotional reactions, resistance, and physical actions are ALWAYS allowed.
-- GENRE PHYSICS: when in doubt, FAIL — genre drift compounds.
-
-Return pass=true if ALL constraints met.
-Return pass=false with:
-- violations: list each as "CATEGORY: what specifically went wrong"
-- correction: one sentence naming the exact problem and what to do instead"""
+    system = get_prompt(
+        "validator_system",
+        pc_hint=pc_hint,
+        consequence_compliance_block=cons_sentence_text,
+    )
 
     prompt = f"""<narration>{narration[:4000]}</narration>
 <context result_type="{ctx.result_type}" genre="{ctx.game.setting_genre}" consequences="{cons_text}"/>
@@ -153,8 +126,7 @@ Check constraints."""
             response = create_with_retry(
                 provider,
                 model=model_for_role("validator"),
-                system=system
-                + '\n\nRespond with ONLY a JSON object: {"pass": true/false, "violations": [...], "correction": "..."}',
+                system=system + get_prompt("validator_json_suffix"),
                 messages=[{"role": "user", "content": prompt}],
                 log_role="validator",
                 **_vp2,
@@ -253,67 +225,22 @@ def validate_and_retry(
 
         # Build concrete rewrite instructions per violation type.
         # Tell the model what to DO, not just what it did wrong.
-        # Strip diagnostic tags before matching.
+        # Strip diagnostic tags before matching. Rules live in engine.yaml
+        # validator.rewrite_instructions. Keys containing ' AND ' require all
+        # parts to be substrings of the violation; plain keys are single-substring.
+        # A violation that matches no rule falls through as "Fix: <raw>" — that
+        # is intentional LLM behavior, not a config fallback.
+        rules = eng()._raw["validator"]["rewrite_instructions"]
         rewrite_instructions = []
         for v in violations:
             vl = re.sub(r"^\[(?:rule|llm)\]\s*", "", v).lower()
-            if "player agency" in vl:
-                rewrite_instructions.append(
-                    "Remove sentences where the PLAYER CHARACTER (the 'you') thinks, "
-                    "feels, realizes, interprets, or remembers. NPCs may think and feel "
-                    "freely. Describe only what the player character PERCEIVES."
-                )
-            elif "resolution pacing" in vl or "monologue" in vl:
-                rewrite_instructions.append(
-                    "Cut the NPC's speech to answer ONLY the specific question asked. "
-                    "Remove all volunteered theories, explanations, connections. "
-                    "One short answer, then the NPC stops or acts."
-                )
-            elif "result integrity" in vl and "silver" in vl:
-                rewrite_instructions.append(
-                    "Remove any positive outcome. The MISS ends with the situation "
-                    "worse than before. No learning, no lucky break."
-                )
-            elif "result integrity" in vl and "annihilation" in vl:
-                rewrite_instructions.append(
-                    "Reduce the severity. A MISS is a setback: injury, lost ground, "
-                    "broken equipment. Not death or total defeat."
-                )
-            elif "result integrity" in vl and ("cost" in vl or "weak" in vl):
-                rewrite_instructions.append(
-                    "Add a SPECIFIC tangible cost for the WEAK_HIT: something breaks, "
-                    "is lost, is spent, or worsens. Atmosphere alone is not a cost. "
-                    "Name the thing that is damaged or lost."
-                )
-            elif "genre fidelity" in vl:
-                rewrite_instructions.append(
-                    "Remove the forbidden genre element. Replace with something that fits the world's rules."
-                )
-            elif "genre physics" in vl:
-                rewrite_instructions.append(
-                    "Materials MUST NOT exhibit consciousness, memory, or transformation. "
-                    "Wood does not weep, bleed, or form faces. Stone does not remember. "
-                    "Replace ALL supernatural material behavior with physical description "
-                    "from <sensory_palette>: grain, cracks, stains, weathering, temperature."
-                )
-            elif "atmospheric register" in vl:
-                rewrite_instructions.append(
-                    "Too many supernatural/horror words (pulse, hum, thrum, whisper, glow, shimmer, "
-                    "weep, ooze, writhe, visage, reshape). "
-                    "Replace with physical sensations from the <sensory_palette>: mud, iron, cold, "
-                    "woodsmoke, wind, creaking wood, weight, texture, temperature."
-                )
-            elif "output format" in vl:
-                rewrite_instructions.append(
-                    "Remove all metadata, brackets, markdown, role labels. Begin with narrative prose."
-                )
-            elif "consequence missing" in vl:
-                rewrite_instructions.append(
-                    "Each <consequence> tag describes something that MUST happen in this scene. "
-                    "Show every consequence in the prose — the player must see it occur."
-                )
-            else:
-                rewrite_instructions.append(f"Fix: {v}")
+            matched = None
+            for key, template in rules.items():
+                parts = [p.strip() for p in key.split(" AND ")]
+                if all(p in vl for p in parts):
+                    matched = template
+                    break
+            rewrite_instructions.append(matched if matched else f"Fix: {v}")
         # Deduplicate identical instructions
         seen: set[str] = set()
         unique_instructions = []

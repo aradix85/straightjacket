@@ -412,9 +412,67 @@ class EngineSettings:
     # Flexible sections — accessed via get_raw() as plain dicts
     _raw: dict = field(default_factory=dict, repr=False)
 
+    # Lazy cache for compiled regex pattern lists. Lives with the settings
+    # instance: reload_engine() builds a fresh instance, so the cache resets
+    # automatically. No manual invalidation needed.
+    _compiled_patterns: dict[str, Any] = field(default_factory=dict, repr=False)
+
     def get_raw(self, key: str, default: Any = None) -> Any:
         """Access flexible sections (stance_matrix, move_outcomes, etc.) as plain dicts."""
         return self._raw.get(key, default)
+
+    def compiled_patterns(self, section: str, key: str) -> list[Any]:
+        """Compile and cache a regex pattern list from `_raw[section][key]`.
+
+        Patterns are compiled once per EngineSettings instance with re.IGNORECASE.
+        Raises KeyError if the section or key is missing — no silent fallback.
+        """
+        import re
+
+        cache_key = f"patterns:{section}.{key}"
+        if cache_key in self._compiled_patterns:
+            return self._compiled_patterns[cache_key]
+        raw_patterns = self._raw[section][key]
+        compiled = [re.compile(p, re.IGNORECASE) for p in raw_patterns]
+        self._compiled_patterns[cache_key] = compiled
+        return compiled
+
+    def compiled_labeled_patterns(self, section: str, key: str) -> list[tuple[Any, str]]:
+        """Compile and cache a list of {pattern, label, flags?} dicts.
+
+        Each entry produces (compiled_regex, label). Supported flags: 'multiline'.
+        Raises KeyError if section or key is missing.
+        """
+        import re
+
+        cache_key = f"labeled:{section}.{key}"
+        if cache_key in self._compiled_patterns:
+            return self._compiled_patterns[cache_key]
+        entries = self._raw[section][key]
+        flag_map = {"multiline": re.MULTILINE}
+        compiled: list[tuple[Any, str]] = []
+        for entry in entries:
+            flags = 0
+            for flag_name in entry.get("flags", "").split():
+                flags |= flag_map[flag_name]
+            compiled.append((re.compile(entry["pattern"], flags), entry["label"]))
+        self._compiled_patterns[cache_key] = compiled
+        return compiled
+
+    def compiled_pattern(self, section: str, key: str, subkey: str) -> Any:
+        """Compile and cache a single regex from `_raw[section][key][subkey]`.
+
+        Raises KeyError if the path is missing.
+        """
+        import re
+
+        cache_key = f"single:{section}.{key}.{subkey}"
+        if cache_key in self._compiled_patterns:
+            return self._compiled_patterns[cache_key]
+        raw = self._raw[section][key][subkey]
+        compiled = re.compile(raw)
+        self._compiled_patterns[cache_key] = compiled
+        return compiled
 
 
 def _build_nested(cls: type, data: dict) -> Any:

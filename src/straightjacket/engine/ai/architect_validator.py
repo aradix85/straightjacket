@@ -10,6 +10,7 @@ import json
 from ..config_loader import model_for_role, sampling_params
 from ..datasworn.settings import GenreConstraints
 from ..logging_util import log
+from ..prompt_loader import get_prompt
 from .provider_base import AIProvider, create_with_retry
 from .schemas import ARCHITECT_VALIDATOR_SCHEMA
 
@@ -57,18 +58,14 @@ def validate_architect(
     if genre_constraints.genre_test:
         constraint_text += f"Test: {genre_constraints.genre_test}"
 
-    system = f"""Genre fidelity checker for an RPG story blueprint. You receive the central_conflict and antagonist_force from a story architect.
-
-Check for genre violations. {constraint_text}
-
-If the blueprint passes, return pass=true with empty fields.
-If it violates, return pass=false with the violations listed, and provide rewritten versions that preserve the dramatic intent but stay within genre. Keep the same scale and stakes."""
-
-    prompt = f"""<genre>{genre}</genre>
-<tone>{tone}</tone>
-<central_conflict>{conflict}</central_conflict>
-<antagonist_force>{antagonist}</antagonist_force>
-Check genre fidelity. Be strict — if it implies anything beyond physical reality, flag it."""
+    system = get_prompt("architect_validator_system", constraint_text=constraint_text)
+    prompt = get_prompt(
+        "architect_validator_user",
+        genre=genre,
+        tone=tone,
+        conflict=conflict,
+        antagonist=antagonist,
+    )
 
     try:
         _vap = dict(sampling_params("validator_architect"))
