@@ -164,12 +164,14 @@ def purge_old_fired_clocks(game: GameState, keep_scenes: int | None = None) -> N
 # ── Consequence sentence generation (step 4) ────────────────
 
 
-def pick_template(key: str, fallback: str = "") -> str:
-    """Pick a random template string from engine.yaml consequence_templates."""
-    templates = eng().get_raw("consequence_templates", {})
-    options = templates.get(key, [])
-    if not options:
-        return fallback
+def pick_template(key: str) -> str:
+    """Pick a random template string from engine.yaml consequence_templates.
+
+    Strict: raises KeyError if the key is missing from yaml. Every template key
+    the engine ever references must be present under `consequence_templates`.
+    """
+    templates = eng().get_raw("consequence_templates")
+    options = templates[key]
     if isinstance(options, str):
         return options
     return random.choice(options)
@@ -200,26 +202,12 @@ def generate_consequence_sentences(
             sentences.append(sentence)
 
     for event in clock_events:
-        if event.triggered:
-            tpl = pick_template("clock_triggered", f"Time's up: {event.clock}.")
-            sentences.append(
-                tpl.format(
-                    player=player, npc=npc_name, location=location, clock=event.clock, trigger=event.trigger, amount=""
-                )
+        tpl = pick_template("clock_triggered" if event.triggered else "clock_tick")
+        sentences.append(
+            tpl.format(
+                player=player, npc=npc_name, location=location, clock=event.clock, trigger=event.trigger, amount=""
             )
-        else:
-            tpl = pick_template("clock_tick")
-            if tpl:
-                sentences.append(
-                    tpl.format(
-                        player=player,
-                        npc=npc_name,
-                        location=location,
-                        clock=event.clock,
-                        trigger=event.trigger,
-                        amount="",
-                    )
-                )
+        )
 
     return sentences
 
@@ -234,19 +222,13 @@ def resolve_consequence_sentence(cons: str, player: str, npc_name: str, location
         from .impacts import impact_label
 
         fmt["impact"] = impact_label(impact_key)
-        tpl = pick_template("impact_mark")
-        if tpl:
-            return tpl.format(**fmt)
-        return ""
+        return pick_template("impact_mark").format(**fmt)
     if cons.startswith("clear "):
         impact_key = cons[6:].strip()
         from .impacts import impact_label
 
         fmt["impact"] = impact_label(impact_key)
-        tpl = pick_template("impact_clear")
-        if tpl:
-            return tpl.format(**fmt)
-        return ""
+        return pick_template("impact_clear").format(**fmt)
 
     # Parse "track -N" or "track +N" pattern
     parts = cons.split()
@@ -256,20 +238,11 @@ def resolve_consequence_sentence(cons: str, player: str, npc_name: str, location
 
         # "Kira bond -1" → track=bond, npc=Kira
         if "bond" in cons.lower():
-            if "-" in delta:
-                tpl = pick_template("bond_loss")
-                # Extract NPC name from "Name bond -N"
-                bond_npc = cons.split("bond")[0].strip()
-                if bond_npc:
-                    fmt["npc"] = bond_npc
-            else:
-                tpl = pick_template("bond_gain")
-                bond_npc = cons.split("bond")[0].strip()
-                if bond_npc:
-                    fmt["npc"] = bond_npc
-            if tpl:
-                return tpl.format(**fmt)
-            return ""
+            bond_npc = cons.split("bond")[0].strip()
+            if bond_npc:
+                fmt["npc"] = bond_npc
+            tpl_key = "bond_loss" if "-" in delta else "bond_gain"
+            return pick_template(tpl_key).format(**fmt)
 
         if "-" in delta:
             try:
@@ -280,29 +253,21 @@ def resolve_consequence_sentence(cons: str, player: str, npc_name: str, location
             severity = "heavy" if amount >= 2 else "light"
 
             if track in ("health", "spirit"):
-                tpl = pick_template(f"{track}_{severity}")
-            elif track == "supply" or "supply" in cons:
-                tpl = pick_template("supply_any")
-            elif track == "momentum":
-                tpl = pick_template("momentum_loss")
-            else:
-                tpl = ""
+                return pick_template(f"{track}_{severity}").format(**fmt)
+            if track == "supply" or "supply" in cons:
+                return pick_template("supply_any").format(**fmt)
+            if track == "momentum":
+                return pick_template("momentum_loss").format(**fmt)
+            return ""
 
-            if tpl:
-                return tpl.format(**fmt)
-
-        elif "+" in delta:
+        if "+" in delta:
             if track in ("health", "spirit"):
-                tpl = pick_template(f"{track}_gain")
-            elif track == "supply" or "supply" in cons:
-                tpl = pick_template("supply_gain")
-            elif track == "momentum":
-                tpl = pick_template("momentum_gain")
-            else:
-                tpl = ""
-
-            if tpl:
-                return tpl.format(**fmt)
+                return pick_template(f"{track}_gain").format(**fmt)
+            if track == "supply" or "supply" in cons:
+                return pick_template("supply_gain").format(**fmt)
+            if track == "momentum":
+                return pick_template("momentum_gain").format(**fmt)
+            return ""
 
     # Compound: "supply -1, health -1"
     if "," in cons:

@@ -121,9 +121,10 @@ class OracleTable:
         for row in self.rows:
             if row.min <= die_roll <= row.max:
                 return OracleResult(value=row.text, roll=die_roll, table_path=self.id, table_title=self.title, row=row)
-        # Fallback: last row (should not happen with valid data)
-        last = self.rows[-1]
-        return OracleResult(value=last.text, roll=die_roll, table_path=self.id, table_title=self.title, row=last)
+        # Unreachable with well-formed Datasworn data: roll is in [1, die_max]
+        # and rows are expected to cover that range contiguously. A gap means
+        # the source JSON is malformed.
+        raise ValueError(f"Oracle table '{self.id}' rolled {die_roll} but no row covers it — malformed row ranges")
 
     def roll_text(self) -> str:
         """Roll and return just the text."""
@@ -281,7 +282,12 @@ class Setting:
     # ── Character creation data ───────────────────────────────
 
     def backstory_prompts(self) -> OracleTable | None:
-        """Get backstory prompts oracle (Starforged: campaign_launch/backstory_prompts)."""
+        """Get backstory prompts oracle.
+
+        TODO tranche 2 (1.4 close-out): reads setting-specific cascade instead
+        of consulting `SettingPackage.oracle_paths.backstory`. The yaml path
+        exists but is ignored here — cascade order is a legacy fallback.
+        """
         t = self.oracle("campaign_launch/backstory_prompts")
         if t:
             return t

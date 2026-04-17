@@ -15,8 +15,10 @@ def resolve_position(game: GameState, brain: BrainResult) -> str:
     Weighted scoring: each factor adds a signed weight. Sum maps to position
     via thresholds. Situational overrides apply after the sum for edge cases.
     """
-    cfg = eng().position_resolver
+    _e = eng()
+    cfg = _e.position_resolver
     w = cfg.weights
+    chaos_cfg = _e.chaos_resolver
     score = 0
 
     # Resource pressure
@@ -44,34 +46,39 @@ def resolve_position(game: GameState, brain: BrainResult) -> str:
                 score += w.npc_bond_low
 
     # Chaos factor
-    if game.world.chaos_factor >= 7:
+    if game.world.chaos_factor >= chaos_cfg.high_threshold:
         score += w.chaos_high
-    elif game.world.chaos_factor <= 3:
+    elif game.world.chaos_factor <= chaos_cfg.low_threshold:
         score += w.chaos_low
 
     # Recent roll momentum (consecutive results from session log)
-    recent = game.narrative.session_log[-3:] if game.narrative.session_log else []
+    recent = game.narrative.session_log[-chaos_cfg.recent_session_window :] if game.narrative.session_log else []
     recent_results = [e.result for e in recent if e.result]
-    if len(recent_results) >= 2 and all(r == "MISS" for r in recent_results[-2:]):
+    streak = chaos_cfg.recent_result_window
+    if len(recent_results) >= streak and all(r == "MISS" for r in recent_results[-streak:]):
         score += w.consecutive_misses
-    elif len(recent_results) >= 2 and all(r == "STRONG_HIT" for r in recent_results[-2:]):
+    elif len(recent_results) >= streak and all(r == "STRONG_HIT" for r in recent_results[-streak:]):
         score += w.consecutive_strong
 
-    # Threat pressure (clocks at >= 75% filled)
+    # Threat pressure (clocks at or above pressure threshold filled)
     threat_penalty = 0
     for clock in game.world.clocks:
-        if not clock.fired and clock.segments > 0 and clock.filled / clock.segments >= 0.75:
+        if (
+            not clock.fired
+            and clock.segments > 0
+            and clock.filled / clock.segments >= chaos_cfg.clock_pressure_threshold
+        ):
             threat_penalty += w.threat_clock_critical
-    score += max(threat_penalty, w.threat_clock_critical * 2)  # cap at 2 clocks
+    score += max(threat_penalty, w.threat_clock_critical * chaos_cfg.clock_pressure_cap_multiplier)
 
     # Secured advantage (previous move was secure_advantage with a hit)
     if recent and recent[-1].move == "secure_advantage" and recent[-1].result in ("STRONG_HIT", "WEAK_HIT"):
         score += w.secured_advantage
 
-    # Move category baseline
-    move = brain.move
-    cat = move_category(move)
-    score += cfg.move_baselines.get(cat, cfg.move_baselines.get("other", 0))
+    # Move category baseline — move_baselines is a plain dict; 'other' is the
+    # canonical bucket for un-categorised moves and is required in yaml.
+    cat = move_category(brain.move)
+    score += cfg.move_baselines[cat] if cat in cfg.move_baselines else cfg.move_baselines["other"]
 
     # Map sum to position
     if score <= cfg.desperate_below:
@@ -112,7 +119,7 @@ def resolve_position(game: GameState, brain: BrainResult) -> str:
                     position = "controlled"
             log(f"[Position] Override '{override.name}' applied → {position}")
 
-    log(f"[Position] score={score}, position={position} (move={move}, cat={cat})")
+    log(f"[Position] score={score}, position={position} (move={brain.move}, cat={cat})")
     return position
 
 
@@ -140,8 +147,8 @@ def resolve_effect(game: GameState, brain: BrainResult, position: str) -> str:
     if recent and recent[0].move == "secure_advantage" and recent[0].result in ("STRONG_HIT", "WEAK_HIT"):
         score += w.secured_advantage
 
-    # Move baseline
-    score += cfg.move_baselines.get(brain.move, cfg.move_baselines.get("other", 0))
+    # Move baseline — move_baselines requires an 'other' entry in yaml.
+    score += cfg.move_baselines[brain.move] if brain.move in cfg.move_baselines else cfg.move_baselines["other"]
 
     # Map to effect
     if score <= cfg.limited_below:
@@ -156,19 +163,26 @@ def resolve_effect(game: GameState, brain: BrainResult, position: str) -> str:
 
 
 def resolve_time_progression(move: str, has_location_change: bool = False) -> str:
-    """Engine-computed time progression from move type. No AI needed."""
-    _e = eng()
-    tmap = _e.get_raw("time_progression_map", {})
+    """Engine-computed time progression from move type. No AI needed.
+
+    Yaml-authoritative: `time_progression_map` must define every move and the
+    `_with_location_change` / `_default` fallbacks.
+    """
+    tmap = eng().get_raw("time_progression_map")
     if has_location_change:
-        return tmap.get("_with_location_change", "long")
-    return tmap.get(move, tmap.get("_default", "short"))
+        return tmap["_with_location_change"]
+    return tmap[move] if move in tmap else tmap["_default"]
 
 
 def move_category(move: str) -> str:
-    """Classify a move into its category for resolver lookups."""
-    _e = eng()
-    mc = _e.get_raw("move_categories", {})
+    """Classify a move into its category for resolver lookups.
+
+    Returns 'other' for any move not listed in `move_categories`. The 'other'
+    bucket is intentionally implicit — it's the default category, not a yaml
+    entry.
+    """
+    mc = eng().get_raw("move_categories")
     for cat in ("combat", "social", "endure", "recovery"):
-        if move in mc.get(cat, []):
+        if move in mc[cat]:
             return cat
     return "other"

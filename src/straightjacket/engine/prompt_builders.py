@@ -57,7 +57,8 @@ def _time_ctx(game: GameState) -> str:
 def _loc_hist(game: GameState) -> str:
     if not game.world.location_history:
         return ""
-    return f"\n<prev_locations>{_xe(', '.join(game.world.location_history[-3:]))}</prev_locations>"
+    n = eng().location.prompt_history_size
+    return f"\n<prev_locations>{_xe(', '.join(game.world.location_history[-n:]))}</prev_locations>"
 
 
 def _scene_enrichment(game: GameState) -> str:
@@ -193,11 +194,12 @@ def _activated_npcs_block(
         )
         mem_hint = ""
         if memories:
+            pd = eng().prompt_display
             reflections = [m for m in memories if m.type == "reflection"]
             if reflections:
-                mem_hint = f' insight="{_xa(reflections[0].event[:80])}"'
+                mem_hint = f' insight="{_xa(reflections[0].event[: pd.insight_chars])}"'
             else:
-                hint_text = f"{memories[0].event[:60]}({memories[0].emotional_weight})"
+                hint_text = f"{memories[0].event[: pd.recent_event_chars]}({memories[0].emotional_weight})"
                 mem_hint = f' recent="{_xa(hint_text)}"'
 
         # Spatial hint: show last location if different from player's current location
@@ -296,12 +298,13 @@ def _lore_figures_block(game: GameState) -> str:
     if not lore:
         return ""
     parts = []
+    pd = eng().prompt_display
     for n in lore:
         entry = _xe(n.name)
         if n.description:
-            entry += f": {_xe(n.description[:80])}"
+            entry += f": {_xe(n.description[: pd.lore_description_chars])}"
         if n.aliases:
-            entry += f" (aka {_xe(', '.join(n.aliases[:2]))})"
+            entry += f" (aka {_xe(', '.join(n.aliases[: pd.lore_max_aliases]))})"
         parts.append(entry)
     return f"\n<lore_figures>{'; '.join(parts)}</lore_figures>"
 
@@ -521,8 +524,10 @@ def build_epilogue_prompt(game: GameState) -> str:
         if n.status == "active"
     )
 
+    epilogue_scenes = eng().prompt_display.epilogue_log_scenes
     log_text = "; ".join(
-        f"S{s.scene}:{_xe(s.rich_summary or s.summary)}({s.result})" for s in game.narrative.session_log[-15:]
+        f"S{s.scene}:{_xe(s.rich_summary or s.summary)}({s.result})"
+        for s in game.narrative.session_log[-epilogue_scenes:]
     )
 
     return f"""<scene type="epilogue">

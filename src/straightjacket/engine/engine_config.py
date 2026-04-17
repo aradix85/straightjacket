@@ -4,6 +4,9 @@
 Replaces _ConfigNode dot-access wrapper for engine.yaml with validated,
 type-safe dataclasses. Flexible sections (stance_matrix, move_outcomes,
 consequence_templates, etc.) stay as plain dicts.
+
+Strict contract: every domain field is required. Missing yaml keys raise
+KeyError — no hidden Python defaults for domain config.
 """
 
 from __future__ import annotations
@@ -16,410 +19,625 @@ from typing import Any
 class NpcConfig:
     """NPC system limits and thresholds."""
 
-    max_active: int = 12
-    max_memory_entries: int = 25
-    max_observations: int = 15
-    max_reflections: int = 8
-    activation_threshold: float = 0.7
-    mention_threshold: float = 0.3
-    max_activated: int = 3
-    reflection_threshold: int = 30
-    memory_recency_decay: float = 0.92
-    reflection_importance: int = 8
-    death_corroboration_min_importance: int = 9
-    seed_importance_floor: int = 3
-    reflection_recency_floor: float = 0.6
-    about_npc_relevance_boost: float = 0.6
-    consolidation_recency_ratio: float = 0.6
-    gate_memory_counts: dict[int, int] = field(default_factory=lambda: {0: 0, 1: 0, 2: 3, 3: 5, 4: 5})
-    activated_memory_count: int = 2
+    max_active: int
+    max_memory_entries: int
+    max_observations: int
+    max_reflections: int
+    activation_threshold: float
+    mention_threshold: float
+    max_activated: int
+    reflection_threshold: int
+    memory_recency_decay: float
+    reflection_importance: int
+    death_corroboration_min_importance: int
+    seed_importance_floor: int
+    reflection_recency_floor: float
+    about_npc_relevance_boost: float
+    consolidation_recency_ratio: float
+    gate_memory_counts: dict[int, int]
+    activated_memory_count: int
 
 
 @dataclass
 class ChaosConfig:
     """Chaos factor bounds."""
 
-    min: int = 1
-    max: int = 9
-    start: int = 5
-    interrupt_types: list[str] = field(default_factory=list)
+    min: int
+    max: int
+    start: int
+    interrupt_types: list[str]
 
 
 @dataclass
 class PacingConfig:
     """Pacing thresholds and limits."""
 
-    director_interval: int = 3
-    max_narration_history: int = 3
-    max_narration_chars: int = 1500
-    max_session_log: int = 50
-    window_size: int = 5
-    intense_threshold: int = 3
-    calm_threshold: int = 2
-    autonomous_clock_tick_chance: float = 0.20
-    weak_hit_clock_tick_chance: float = 0.50
-    fired_clock_keep_scenes: int = 3
-    npc_agency_interval: int = 5
-    max_tool_rounds: int = 3
+    director_interval: int
+    max_narration_history: int
+    max_narration_chars: int
+    max_session_log: int
+    window_size: int
+    intense_threshold: int
+    calm_threshold: int
+    autonomous_clock_tick_chance: float
+    weak_hit_clock_tick_chance: float
+    fired_clock_keep_scenes: int
+    npc_agency_interval: int
+    max_tool_rounds: int
 
 
 @dataclass
 class StatsConfig:
     """Character stat rules."""
 
-    target_sum: int = 9
-    min: int = 0
-    max: int = 3
-    names: list[str] = field(default_factory=lambda: ["edge", "heart", "iron", "shadow", "wits", "none"])
-    valid_arrays: list[list[int]] = field(default_factory=lambda: [[3, 2, 2, 1, 1]])
+    target_sum: int
+    min: int
+    max: int
+    names: list[str]
+    valid_arrays: list[list[int]]
 
 
 @dataclass
 class CreationConfig:
     """Character creation rules."""
 
-    max_paths: int = 2
-    max_starting_assets: int = 1
-    starting_asset_categories: list[str] = field(default_factory=list)
-    background_vow_default_rank: str = "extreme"
-    chaos_vow_modifiers: dict[str, list[str]] = field(default_factory=dict)
-    chaos_modifier_values: dict[str, int] = field(default_factory=dict)
-    truth_threads: dict[str, str] = field(default_factory=dict)
+    max_paths: int
+    max_starting_assets: int
+    starting_asset_categories: list[str]
+    background_vow_default_rank: str
+    brain_track_rank_fallback: str
+    chaos_vow_modifiers: dict[str, list[str]]
+    chaos_modifier_values: dict[str, int]
+    truth_threads: dict[str, str]
 
 
 @dataclass
 class ResourcesConfig:
     """Resource track caps and starting values."""
 
-    health_max: int = 5
-    spirit_max: int = 5
-    supply_max: int = 5
-    health_start: int = 5
-    spirit_start: int = 5
-    supply_start: int = 5
+    health_max: int
+    spirit_max: int
+    supply_max: int
+    health_start: int
+    spirit_start: int
+    supply_start: int
 
 
 @dataclass
 class MomentumGain:
     """Momentum gain values per result."""
 
-    weak_hit: int = 1
-    strong_hit: dict[str, int] = field(default_factory=lambda: {"standard": 2, "great": 3})
+    weak_hit: int
+    strong_hit: dict[str, int]
 
 
 @dataclass
 class MomentumConfig:
     """Momentum bounds and gain/loss tables."""
 
-    floor: int = -6
-    max: int = 10
-    start: int = 2
-    gain: MomentumGain = field(default_factory=MomentumGain)
-    loss: dict[str, int] = field(default_factory=lambda: {"risky": 2, "desperate": 3})
+    floor: int
+    max: int
+    start: int
+    gain: MomentumGain
+    loss: dict[str, int]
 
 
 @dataclass
 class BondsConfig:
     """NPC bond defaults."""
 
-    max: int = 4
-    start: int = 0
+    max: int
+    start: int
 
 
 @dataclass
 class ActivationScores:
     """TF-IDF activation scoring weights."""
 
-    target: float = 1.0
-    name_match: float = 0.8
-    name_part: float = 0.6
-    alias_match: float = 0.7
-    location_match: float = 0.3
-    recent_interaction: float = 0.2
-    max_recursive: int = 1
+    target: float
+    name_match: float
+    name_part: float
+    alias_match: float
+    location_match: float
+    recent_interaction: float
+    max_recursive: int
 
 
 @dataclass
 class LocationConfig:
     """Location tracking."""
 
-    history_size: int = 5
+    history_size: int
+    prompt_history_size: int
+
+
+@dataclass
+class PromptDisplayConfig:
+    """Text truncation caps for narrator/Brain prompt assembly."""
+
+    insight_chars: int
+    recent_event_chars: int
+    lore_description_chars: int
+    lore_max_aliases: int
+    epilogue_log_scenes: int
+    recent_events_window: int
+    campaign_history_chapters: int
 
 
 @dataclass
 class OpeningConfig:
     """Opening scene defaults."""
 
-    time_of_day: str = "morning"
-    clock_segments: int = 6
-    clock_filled: int = 1
-    clock_fallback_name: str = "Looming threat"
-    clock_trigger_template: str = "Threat escalates beyond {player}'s control"
+    time_of_day: str
+    clock_segments: int
+    clock_filled: int
+    clock_trigger_template: str
 
 
 @dataclass
 class ArchitectConfig:
     """Story architect constraints."""
 
-    forbidden_moods: list[str] = field(default_factory=list)
+    forbidden_moods: list[str]
 
 
 @dataclass
 class ThreatConfig:
     """Threat menace system."""
 
-    menace_on_miss: int = 1
-    autonomous_tick_chance: float = 0.15
-    menace_high_threshold: float = 0.75
-    forsake_spirit_cost: int = 2
+    menace_on_miss: int
+    autonomous_tick_chance: float
+    menace_high_threshold: float
+    forsake_spirit_cost: int
 
 
 @dataclass
 class ImpactConfig:
     """Single impact definition from engine.yaml `impacts` section."""
 
-    key: str = ""
-    label: str = ""
-    description: str = ""
-    blocks_recovery: str = ""  # health / spirit / supply / "" (empty = no block)
-    permanent: bool = False
+    key: str
+    label: str
+    description: str
+    blocks_recovery: str  # health / spirit / supply / "" (empty = no block)
+    permanent: bool
 
 
 @dataclass
 class LegacyConfig:
     """Legacy tracks and XP mechanics."""
 
-    xp_per_box: int = 2  # XP granted per filled box (Ironsworn default)
-    starting_rank: str = "epic"  # All legacy tracks start at epic rank (1 tick/mark)
-    threat_overcome_bonus: int = 2  # Extra XP when vow completes with overcome threat at high menace
-    threat_overcome_threshold: float = 0.5  # Menace >= this fraction to earn bonus
-    asset_upgrade_cost: int = 2  # XP per asset ability upgrade
-    new_asset_cost: int = 3  # XP for a new asset
+    xp_per_box: int
+    starting_rank: str
+    threat_overcome_bonus: int
+    threat_overcome_threshold: float
+    asset_upgrade_cost: int
+    new_asset_cost: int
+    ticks_by_rank: dict[str, int]
 
 
 @dataclass
 class PositionResolverWeights:
     """Weights applied to resource/npc/chaos/momentum/threat factors."""
 
-    resource_critical_below: int = 2
-    resource_low_below: int = 3
-    resource_critical: int = -2
-    resource_low: int = -1
-    npc_hostile: int = -2
-    npc_distrustful: int = -1
-    npc_friendly: int = 1
-    npc_loyal: int = 2
-    npc_bond_high: int = 1
-    npc_bond_low: int = -1
-    chaos_high: int = -1
-    chaos_low: int = 1
-    consecutive_misses: int = -2
-    consecutive_strong: int = 1
-    threat_clock_critical: int = -1
-    secured_advantage: int = 2
+    resource_critical_below: int
+    resource_low_below: int
+    resource_critical: int
+    resource_low: int
+    npc_hostile: int
+    npc_distrustful: int
+    npc_friendly: int
+    npc_loyal: int
+    npc_bond_high: int
+    npc_bond_low: int
+    chaos_high: int
+    chaos_low: int
+    consecutive_misses: int
+    consecutive_strong: int
+    threat_clock_critical: int
+    secured_advantage: int
 
 
 @dataclass
 class PositionOverride:
     """Situational override: evaluated after sum, caps/floors/shifts result."""
 
-    name: str = ""
-    conditions: list[str] = field(default_factory=list)
-    effect: str = ""  # cap_at_risky / floor_at_risky / shift_up_one / etc.
+    name: str
+    conditions: list[str]
+    effect: str  # cap_at_risky / floor_at_risky / shift_up_one / etc.
 
 
 @dataclass
 class PositionResolverConfig:
     """Weighted scoring config for resolving action position."""
 
-    desperate_below: int = -3
-    controlled_above: int = 3
-    weights: PositionResolverWeights = field(default_factory=PositionResolverWeights)
-    move_baselines: dict[str, int] = field(default_factory=dict)
-    overrides: list[PositionOverride] = field(default_factory=list)
+    desperate_below: int
+    controlled_above: int
+    weights: PositionResolverWeights
+    move_baselines: dict[str, int]
+    overrides: list[PositionOverride]
 
 
 @dataclass
 class EffectResolverWeights:
     """Weights applied to position correlation + bond + secured advantage."""
 
-    desperate: int = -1
-    controlled: int = 1
-    bond_high: int = 1
-    bond_low: int = -1
-    secured_advantage: int = 1
+    desperate: int
+    controlled: int
+    bond_high: int
+    bond_low: int
+    secured_advantage: int
 
 
 @dataclass
 class EffectResolverConfig:
     """Weighted scoring config for resolving action effect."""
 
-    limited_below: int = -2
-    great_above: int = 2
-    weights: EffectResolverWeights = field(default_factory=EffectResolverWeights)
-    move_baselines: dict[str, int] = field(default_factory=dict)
+    limited_below: int
+    great_above: int
+    weights: EffectResolverWeights
+    move_baselines: dict[str, int]
 
 
 @dataclass
 class InformationGatePoints:
     """Points awarded per factor for computing information gate level."""
 
-    scenes_known_1: int = 0
-    scenes_known_2_3: int = 1
-    scenes_known_4_plus: int = 2
-    gather_success: int = 1
-    bond_1: int = 0
-    bond_2_3: int = 1
-    bond_4_plus: int = 2
+    scenes_known_1: int
+    scenes_known_2_3: int
+    scenes_known_4_plus: int
+    gather_success: int
+    bond_1: int
+    bond_2_3: int
+    bond_4_plus: int
 
 
 @dataclass
 class InformationGateConfig:
     """Information gate: how much NPCs reveal based on scenes/bond/stance."""
 
-    points: InformationGatePoints = field(default_factory=InformationGatePoints)
-    stance_caps: dict[str, int] = field(default_factory=dict)
-    default_cap: int = 4
+    points: InformationGatePoints
+    stance_caps: dict[str, int]
+    default_cap: int
 
 
 @dataclass
 class NarrativeIntensityThresholds:
     """Resource thresholds for narrative intensity classification."""
 
-    critical_below: int = 1
-    high_below: int = 3
-    moderate_below: int = 4
+    critical_below: int
+    high_below: int
+    moderate_below: int
 
 
 @dataclass
 class NarrativeDirectionEntry:
     """Tempo + perspective for a single roll result."""
 
-    tempo: str = "moderate"
-    perspective: str = "action_detail"
+    tempo: str
+    perspective: str
 
 
 @dataclass
 class NarrativeDirectionConfig:
     """Narrative writing directions derived from game state."""
 
-    intensity: NarrativeIntensityThresholds = field(default_factory=NarrativeIntensityThresholds)
-    result_map: dict[str, NarrativeDirectionEntry] = field(default_factory=dict)
+    intensity: NarrativeIntensityThresholds
+    result_map: dict[str, NarrativeDirectionEntry]
 
     def entry_for(self, roll_result: str) -> NarrativeDirectionEntry:
-        """Get the entry for a roll result, falling back to _default."""
-        return self.result_map.get(roll_result, self.result_map.get("_default", NarrativeDirectionEntry()))
+        """Get the entry for a roll result. Raises KeyError if missing."""
+        return self.result_map[roll_result]
 
 
 @dataclass
 class FateLikelihoodRules:
     """Fate system likelihood resolution rules."""
 
-    disposition_scores: dict[str, int] = field(default_factory=dict)
-    chaos_thresholds: dict[str, int] = field(default_factory=dict)
-    chaos_scores: dict[str, int] = field(default_factory=dict)
-    resource_critical_below: int = 2
-    resource_scores: dict[str, int] = field(default_factory=dict)
-    score_to_odds: list[dict[str, Any]] = field(default_factory=list)
+    disposition_scores: dict[str, int]
+    chaos_thresholds: dict[str, int]
+    chaos_scores: dict[str, int]
+    resource_critical_below: int
+    resource_scores: dict[str, int]
+    score_to_odds: list[dict[str, Any]]
 
 
 @dataclass
 class FateConfig:
     """Fate system (Mythic GME 2e) config."""
 
-    default_method: str = "fate_chart"
-    likelihood_rules: FateLikelihoodRules = field(default_factory=FateLikelihoodRules)
+    default_method: str
+    likelihood_rules: FateLikelihoodRules
 
 
 @dataclass
 class StoryConfig:
     """Story structure config."""
 
-    kishotenketsu_probability: dict[str, float] = field(default_factory=dict)
-    kishotenketsu_default: float = 0.50
+    kishotenketsu_probability: dict[str, float]
+    kishotenketsu_fallback_probability: float
 
 
 @dataclass
 class EnumsConfig:
     """Enum value lists used by schemas."""
 
-    time_phases: list[str] = field(default_factory=list)
-    npc_statuses: list[str] = field(default_factory=list)
-    dispositions: list[str] = field(default_factory=list)
-    memory_types: list[str] = field(default_factory=list)
-    clock_types: list[str] = field(default_factory=list)
-    thread_types: list[str] = field(default_factory=list)
-    story_structures: list[str] = field(default_factory=list)
-    positions: list[str] = field(default_factory=list)
+    time_phases: list[str]
+    npc_statuses: list[str]
+    dispositions: list[str]
+    memory_types: list[str]
+    clock_types: list[str]
+    thread_types: list[str]
+    story_structures: list[str]
+    positions: list[str]
 
 
 @dataclass
 class MemoryRetrievalWeights:
     """Memory scoring weights."""
 
-    recency: float = 0.40
-    importance: float = 0.35
-    relevance: float = 0.25
+    recency: float
+    importance: float
+    relevance: float
 
 
 @dataclass
 class RecoveryConfig:
     """Recovery move healing amounts."""
 
-    weak_hit: int = 1
-    strong_hit: dict[str, int] = field(default_factory=lambda: {"standard": 1, "great": 2})
+    weak_hit: int
+    strong_hit: dict[str, int]
+
+
+@dataclass
+class FuzzyMatchConfig:
+    """Thresholds for fuzzy string matching (NPC names, aliases)."""
+
+    min_word_length: int
+    min_phrase_length: int
+    exact_dedup_threshold: float
+
+
+@dataclass
+class NpcMatchingConfig:
+    """NPC matching thresholds and bonuses."""
+
+    stt_alias_bonus: int
+    stt_phrase_length: int
+    alias_min_length: int
+
+
+@dataclass
+class MonologueDetectionConfig:
+    """Thresholds for detecting split monologues in parser."""
+
+    min_word_count: int
+
+
+@dataclass
+class ActProgressConfig:
+    """Act transition and chapter-summary parameters."""
+
+    filler_max: int
+    recap_scene_max: int
+
+
+@dataclass
+class RateLimitConfig:
+    """Web server rate limiting."""
+
+    window_seconds: float
+    max_requests: int
+    warn_probe_max_tries: int
+    warn_probe_poll_seconds: float
+
+
+@dataclass
+class RetryConfig:
+    """Provider retry policy."""
+
+    max_retries: int
+    retryable_http_codes: list[int]
+    backoff_base: int
+
+
+@dataclass
+class TfIdfConfig:
+    """TF-IDF NPC activation parameters."""
+
+    token_min_length: int
+    memory_window: int
+    session_window: int
+    score_floor: float
+    memory_score_cap: float
+    memory_score_multiplier: float
+    recency_window: int
+    recency_offset: int
+
+
+@dataclass
+class MemoryConfig:
+    """NPC memory configuration beyond retrieval weights."""
+
+    min_token_length: int
+    consolidation_floor: int
+    unknown_emotion_importance: int
+
+
+@dataclass
+class ChaosResolverConfig:
+    """Chaos factor resolver thresholds."""
+
+    high_threshold: int
+    low_threshold: int
+    recent_session_window: int
+    recent_result_window: int
+    clock_pressure_threshold: float
+    clock_pressure_cap_multiplier: int
+
+
+@dataclass
+class DescriptionDedupConfig:
+    """NPC description deduplication thresholds (lifecycle)."""
+
+    identity_score_delta: int
+    bond_multiplier: int
+    richness_alias: int
+    richness_description: int
+    richness_aim: int
+    richness_memory: int
+    richness_other: int
+    max_alias_word_count: int
+    min_desc_chars: int
+    min_word_chars_for_match: int
+    min_new_word_count: int
+    min_substring_match_len: int
+    long_word_chars: int
+    partial_match_weight: float
+    effective_overlap_min: float
+    min_overlap_ratio: float
+
+
+@dataclass
+class RuleValidatorConfig:
+    """Rule validator NPC-monologue thresholds."""
+
+    min_quote_count: int
+    max_gap_chars: int
+    max_consecutive_short_gaps: int
+
+
+@dataclass
+class ParserConfig:
+    """Parser thresholds for monologue splitting and stripping."""
+
+    max_label_length: int
+    min_line_length: int
+
+
+@dataclass
+class StoryStateConfig:
+    """Story state intensity and scene offset tuning."""
+
+    intensity_smoothing_current: float
+    intensity_smoothing_previous: float
+    crisis_scene_offset: int
+
+
+@dataclass
+class ChapterConfig:
+    """Chapter transition thresholds."""
+
+    filler_max: int
+    open_threads_max: int
+
+
+@dataclass
+class SetupCommonConfig:
+    """Shared opening setup thresholds."""
+
+    part_name_min_length: int
+
+
+@dataclass
+class MetadataVotingConfig:
+    """Metadata cross-vote thresholds."""
+
+    min_cross_votes: int
+    min_total_votes: int
+
+
+@dataclass
+class NamingConfig:
+    """NPC naming configuration."""
+
+    callsign_probability: float
+
+
+@dataclass
+class RandomEventsConfig:
+    """Random-event pipeline tuning (Mythic GME 2e)."""
+
+    threat_target_probability: float
+    description_focus_categories: list[str]
+    list_weight_max: int
+    consolidation_threshold: int
+    consolidation_weight_high: int
+    consolidation_weight_low: int
+    consolidation_weight_default: int
 
 
 @dataclass
 class EngineSettings:
     """Complete typed engine configuration.
 
-    Typed sections have dedicated dataclasses with validated fields.
+    Every domain field is required — missing yaml keys raise KeyError.
     Flexible sections (stance_matrix, move_outcomes, etc.) are plain dicts
-    accessed via get_raw().
+    accessed via get_raw() which is also strict.
     """
 
-    npc: NpcConfig = field(default_factory=NpcConfig)
-    chaos: ChaosConfig = field(default_factory=ChaosConfig)
-    pacing: PacingConfig = field(default_factory=PacingConfig)
-    stats: StatsConfig = field(default_factory=StatsConfig)
-    creation: CreationConfig = field(default_factory=CreationConfig)
-    resources: ResourcesConfig = field(default_factory=ResourcesConfig)
-    momentum: MomentumConfig = field(default_factory=MomentumConfig)
-    bonds: BondsConfig = field(default_factory=BondsConfig)
-    activation_scores: ActivationScores = field(default_factory=ActivationScores)
-    location: LocationConfig = field(default_factory=LocationConfig)
-    opening: OpeningConfig = field(default_factory=OpeningConfig)
-    architect: ArchitectConfig = field(default_factory=ArchitectConfig)
-    threats: ThreatConfig = field(default_factory=ThreatConfig)
-    impacts: dict[str, ImpactConfig] = field(default_factory=dict)
-    legacy: LegacyConfig = field(default_factory=LegacyConfig)
-    position_resolver: PositionResolverConfig = field(default_factory=PositionResolverConfig)
-    effect_resolver: EffectResolverConfig = field(default_factory=EffectResolverConfig)
-    information_gate: InformationGateConfig = field(default_factory=InformationGateConfig)
-    narrative_direction: NarrativeDirectionConfig = field(default_factory=NarrativeDirectionConfig)
-    fate: FateConfig = field(default_factory=FateConfig)
-    story: StoryConfig = field(default_factory=StoryConfig)
-    enums: EnumsConfig = field(default_factory=EnumsConfig)
-    memory_retrieval_weights: MemoryRetrievalWeights = field(default_factory=MemoryRetrievalWeights)
-    recovery: RecoveryConfig = field(default_factory=RecoveryConfig)
+    npc: NpcConfig
+    chaos: ChaosConfig
+    pacing: PacingConfig
+    stats: StatsConfig
+    creation: CreationConfig
+    resources: ResourcesConfig
+    momentum: MomentumConfig
+    bonds: BondsConfig
+    activation_scores: ActivationScores
+    location: LocationConfig
+    prompt_display: PromptDisplayConfig
+    opening: OpeningConfig
+    architect: ArchitectConfig
+    threats: ThreatConfig
+    impacts: dict[str, ImpactConfig]
+    legacy: LegacyConfig
+    position_resolver: PositionResolverConfig
+    effect_resolver: EffectResolverConfig
+    information_gate: InformationGateConfig
+    narrative_direction: NarrativeDirectionConfig
+    fate: FateConfig
+    story: StoryConfig
+    enums: EnumsConfig
+    memory_retrieval_weights: MemoryRetrievalWeights
+    recovery: RecoveryConfig
+    fuzzy_match: FuzzyMatchConfig
+    npc_matching: NpcMatchingConfig
+    monologue_detection: MonologueDetectionConfig
+    act_progress: ActProgressConfig
+    rate_limit: RateLimitConfig
+    retry: RetryConfig
+    tf_idf: TfIdfConfig
+    memory: MemoryConfig
+    chaos_resolver: ChaosResolverConfig
+    description_dedup: DescriptionDedupConfig
+    rule_validator: RuleValidatorConfig
+    parser: ParserConfig
+    story_state: StoryStateConfig
+    chapter: ChapterConfig
+    setup_common: SetupCommonConfig
+    metadata_voting: MetadataVotingConfig
+    naming: NamingConfig
+    random_events: RandomEventsConfig
 
     # Scalar top-level fields
-    scene_range_default: list[int] = field(default_factory=lambda: [1, 20])
-    death_emotions: list[str] = field(default_factory=list)
-    creativity_seeds: list[str] = field(default_factory=list)
+    scene_range_default: list[int]
+    death_emotions: list[str]
+    creativity_seeds: list[str]
 
-    # Flexible sections — accessed via get_raw() as plain dicts
-    _raw: dict = field(default_factory=dict, repr=False)
+    # Flexible sections — accessed via get_raw() as plain dicts.
+    _raw: dict[str, Any] = field(default_factory=dict, repr=False)
 
     # Lazy cache for compiled regex pattern lists. Lives with the settings
     # instance: reload_engine() builds a fresh instance, so the cache resets
     # automatically. No manual invalidation needed.
     _compiled_patterns: dict[str, Any] = field(default_factory=dict, repr=False)
 
-    def get_raw(self, key: str, default: Any = None) -> Any:
-        """Access flexible sections (stance_matrix, move_outcomes, etc.) as plain dicts."""
-        return self._raw.get(key, default)
+    def get_raw(self, key: str) -> Any:
+        """Access a flexible top-level yaml section (stance_matrix, move_outcomes, etc.).
+
+        Strict: raises KeyError if the key is missing. No fallback for domain data.
+        """
+        return self._raw[key]
 
     def compiled_patterns(self, section: str, key: str) -> list[Any]:
         """Compile and cache a regex pattern list from `_raw[section][key]`.
@@ -475,16 +693,19 @@ class EngineSettings:
         return compiled
 
 
-def _build_nested(cls: type, data: dict) -> Any:
-    """Build a dataclass from a dict, ignoring unknown keys."""
+def _build_strict(cls: type, data: dict[str, Any]) -> Any:
+    """Build a dataclass from a dict. Raises KeyError on missing required fields
+    and ValueError on unknown keys."""
     import dataclasses
 
     known = {f.name for f in dataclasses.fields(cls)}
-    return cls(**{k: v for k, v in data.items() if k in known})
+    unknown = set(data.keys()) - known
+    if unknown:
+        raise ValueError(f"Unknown keys for {cls.__name__}: {sorted(unknown)}")
+    return cls(**data)
 
 
-# Sections that map directly: YAML key → EngineSettings field → dataclass type.
-# _build_nested handles these without any pre-processing.
+# Sections that map directly: YAML key → dataclass type.
 _SIMPLE_SECTIONS: dict[str, type] = {
     "chaos": ChaosConfig,
     "pacing": PacingConfig,
@@ -493,102 +714,164 @@ _SIMPLE_SECTIONS: dict[str, type] = {
     "bonds": BondsConfig,
     "activation_scores": ActivationScores,
     "location": LocationConfig,
+    "prompt_display": PromptDisplayConfig,
     "opening": OpeningConfig,
     "architect": ArchitectConfig,
     "threats": ThreatConfig,
-    "legacy": LegacyConfig,
     "story": StoryConfig,
     "enums": EnumsConfig,
     "memory_retrieval_weights": MemoryRetrievalWeights,
+    "fuzzy_match": FuzzyMatchConfig,
+    "npc_matching": NpcMatchingConfig,
+    "monologue_detection": MonologueDetectionConfig,
+    "act_progress": ActProgressConfig,
+    "rate_limit": RateLimitConfig,
+    "retry": RetryConfig,
+    "tf_idf": TfIdfConfig,
+    "memory": MemoryConfig,
+    "chaos_resolver": ChaosResolverConfig,
+    "description_dedup": DescriptionDedupConfig,
+    "rule_validator": RuleValidatorConfig,
+    "parser": ParserConfig,
+    "story_state": StoryStateConfig,
+    "chapter": ChapterConfig,
+    "setup_common": SetupCommonConfig,
+    "metadata_voting": MetadataVotingConfig,
+    "naming": NamingConfig,
+    "random_events": RandomEventsConfig,
 }
 
 
-def parse_engine_yaml(data: dict) -> EngineSettings:
-    """Parse raw engine.yaml dict into typed EngineSettings."""
-    s = EngineSettings()
-    s._raw = data
+def parse_engine_yaml(data: dict[str, Any]) -> EngineSettings:
+    """Parse raw engine.yaml dict into typed EngineSettings.
 
-    # Auto-parse simple sections
-    for key, cls in _SIMPLE_SECTIONS.items():
-        if key in data:
-            setattr(s, key, _build_nested(cls, data[key]))
+    Strict: missing required yaml keys raise KeyError, unknown keys raise ValueError.
+    Pre-processing only happens for sections whose yaml shape differs from the
+    dataclass shape (nested dataclasses, int coercion for int-keyed dicts, etc.).
+    """
+    # Auto-parse simple sections (all required)
+    simple_parsed: dict[str, Any] = {key: _build_strict(cls, data[key]) for key, cls in _SIMPLE_SECTIONS.items()}
 
-    # Sections with pre-processing
-    if "npc" in data:
-        npc_data = dict(data["npc"])
-        if "gate_memory_counts" in npc_data:
-            npc_data["gate_memory_counts"] = {int(k): v for k, v in npc_data["gate_memory_counts"].items()}
-        s.npc = _build_nested(NpcConfig, npc_data)
-    if "stats" in data:
-        d = dict(data["stats"])
-        if "valid_arrays" in d:
-            d["valid_arrays"] = [list(a) for a in d["valid_arrays"]]
-        s.stats = _build_nested(StatsConfig, d)
-    if "momentum" in data:
-        md = dict(data["momentum"])
-        gain_data = md.pop("gain", {})
-        loss_data = md.pop("loss", {})
-        gain = MomentumGain(
-            weak_hit=gain_data.get("weak_hit", 1),
-            strong_hit=dict(gain_data.get("strong_hit", {"standard": 2, "great": 3})),
-        )
-        s.momentum = MomentumConfig(**md, gain=gain, loss=dict(loss_data))
-    if "fate" in data:
-        fd = dict(data["fate"])
-        lr_data = fd.pop("likelihood_rules", {})
-        lr = _build_nested(FateLikelihoodRules, lr_data)
-        s.fate = FateConfig(default_method=fd.get("default_method", "fate_chart"), likelihood_rules=lr)
-    if "recovery" in data:
-        rd = dict(data["recovery"])
-        sh = rd.pop("strong_hit", {"standard": 1, "great": 2})
-        s.recovery = RecoveryConfig(weak_hit=rd.get("weak_hit", 1), strong_hit=dict(sh))
-    if "impacts" in data:
-        s.impacts = {
-            key: _build_nested(ImpactConfig, {**impact_data, "key": key})
-            for key, impact_data in data["impacts"].items()
-        }
-    if "position_resolver" in data:
-        pr = dict(data["position_resolver"])
-        weights = _build_nested(PositionResolverWeights, pr.pop("weights", {}))
-        overrides = [_build_nested(PositionOverride, o) for o in pr.pop("overrides", [])]
-        s.position_resolver = PositionResolverConfig(
-            desperate_below=pr.get("desperate_below", -3),
-            controlled_above=pr.get("controlled_above", 3),
-            weights=weights,
-            move_baselines=dict(pr.get("move_baselines", {})),
-            overrides=overrides,
-        )
-    if "effect_resolver" in data:
-        er = dict(data["effect_resolver"])
-        weights = _build_nested(EffectResolverWeights, er.pop("weights", {}))
-        s.effect_resolver = EffectResolverConfig(
-            limited_below=er.get("limited_below", -2),
-            great_above=er.get("great_above", 2),
-            weights=weights,
-            move_baselines=dict(er.get("move_baselines", {})),
-        )
-    if "information_gate" in data:
-        ig = dict(data["information_gate"])
-        points = _build_nested(InformationGatePoints, ig.pop("points", {}))
-        s.information_gate = InformationGateConfig(
-            points=points,
-            stance_caps=dict(ig.get("stance_caps", {})),
-            default_cap=ig.get("default_cap", 4),
-        )
-    if "narrative_direction" in data:
-        nd = dict(data["narrative_direction"])
-        intensity = _build_nested(NarrativeIntensityThresholds, nd.pop("intensity", {}))
-        result_map = {
-            key: _build_nested(NarrativeDirectionEntry, entry) for key, entry in nd.pop("result_map", {}).items()
-        }
-        s.narrative_direction = NarrativeDirectionConfig(intensity=intensity, result_map=result_map)
+    # npc: gate_memory_counts has int keys — coerce defensively
+    npc_data = dict(data["npc"])
+    npc_data["gate_memory_counts"] = {int(k): v for k, v in npc_data["gate_memory_counts"].items()}
+    npc = _build_strict(NpcConfig, npc_data)
 
-    # Scalar top-level fields
-    if "scene_range_default" in data:
-        s.scene_range_default = list(data["scene_range_default"])
-    if "death_emotions" in data:
-        s.death_emotions = list(data["death_emotions"])
-    if "creativity_seeds" in data:
-        s.creativity_seeds = list(data["creativity_seeds"])
+    # stats: valid_arrays may come as tuples from yaml
+    stats_data = dict(data["stats"])
+    stats_data["valid_arrays"] = [list(a) for a in stats_data["valid_arrays"]]
+    stats = _build_strict(StatsConfig, stats_data)
 
-    return s
+    # momentum: nested MomentumGain
+    m_data = dict(data["momentum"])
+    gain = _build_strict(MomentumGain, dict(m_data.pop("gain")))
+    loss = dict(m_data.pop("loss"))
+    momentum = MomentumConfig(**m_data, gain=gain, loss=loss)
+
+    # fate: nested FateLikelihoodRules
+    f_data = dict(data["fate"])
+    lr = _build_strict(FateLikelihoodRules, dict(f_data.pop("likelihood_rules")))
+    fate = FateConfig(default_method=f_data["default_method"], likelihood_rules=lr)
+
+    # recovery: nested dict for strong_hit
+    r_data = dict(data["recovery"])
+    recovery = RecoveryConfig(weak_hit=r_data["weak_hit"], strong_hit=dict(r_data["strong_hit"]))
+
+    # impacts: keyed dict of ImpactConfig, key injected from outer key
+    impacts = {
+        key: _build_strict(ImpactConfig, {**impact_data, "key": key}) for key, impact_data in data["impacts"].items()
+    }
+
+    # legacy: ticks_by_rank sub-map
+    legacy_data = dict(data["legacy"])
+    legacy_data["ticks_by_rank"] = dict(legacy_data["ticks_by_rank"])
+    legacy = _build_strict(LegacyConfig, legacy_data)
+
+    # position_resolver: nested weights + overrides
+    pr = dict(data["position_resolver"])
+    pr_weights = _build_strict(PositionResolverWeights, dict(pr.pop("weights")))
+    pr_overrides = [_build_strict(PositionOverride, dict(o)) for o in pr.pop("overrides")]
+    position_resolver = PositionResolverConfig(
+        desperate_below=pr["desperate_below"],
+        controlled_above=pr["controlled_above"],
+        weights=pr_weights,
+        move_baselines=dict(pr["move_baselines"]),
+        overrides=pr_overrides,
+    )
+
+    # effect_resolver: nested weights
+    er = dict(data["effect_resolver"])
+    er_weights = _build_strict(EffectResolverWeights, dict(er.pop("weights")))
+    effect_resolver = EffectResolverConfig(
+        limited_below=er["limited_below"],
+        great_above=er["great_above"],
+        weights=er_weights,
+        move_baselines=dict(er["move_baselines"]),
+    )
+
+    # information_gate: nested points
+    ig = dict(data["information_gate"])
+    ig_points = _build_strict(InformationGatePoints, dict(ig.pop("points")))
+    information_gate = InformationGateConfig(
+        points=ig_points,
+        stance_caps=dict(ig["stance_caps"]),
+        default_cap=ig["default_cap"],
+    )
+
+    # narrative_direction: nested intensity + result_map of NarrativeDirectionEntry
+    nd = dict(data["narrative_direction"])
+    nd_intensity = _build_strict(NarrativeIntensityThresholds, dict(nd.pop("intensity")))
+    nd_result_map = {
+        key: _build_strict(NarrativeDirectionEntry, dict(entry)) for key, entry in nd["result_map"].items()
+    }
+    narrative_direction = NarrativeDirectionConfig(intensity=nd_intensity, result_map=nd_result_map)
+
+    return EngineSettings(
+        npc=npc,
+        chaos=simple_parsed["chaos"],
+        pacing=simple_parsed["pacing"],
+        stats=stats,
+        creation=simple_parsed["creation"],
+        resources=simple_parsed["resources"],
+        momentum=momentum,
+        bonds=simple_parsed["bonds"],
+        activation_scores=simple_parsed["activation_scores"],
+        location=simple_parsed["location"],
+        prompt_display=simple_parsed["prompt_display"],
+        opening=simple_parsed["opening"],
+        architect=simple_parsed["architect"],
+        threats=simple_parsed["threats"],
+        impacts=impacts,
+        legacy=legacy,
+        position_resolver=position_resolver,
+        effect_resolver=effect_resolver,
+        information_gate=information_gate,
+        narrative_direction=narrative_direction,
+        fate=fate,
+        story=simple_parsed["story"],
+        enums=simple_parsed["enums"],
+        memory_retrieval_weights=simple_parsed["memory_retrieval_weights"],
+        recovery=recovery,
+        fuzzy_match=simple_parsed["fuzzy_match"],
+        npc_matching=simple_parsed["npc_matching"],
+        monologue_detection=simple_parsed["monologue_detection"],
+        act_progress=simple_parsed["act_progress"],
+        rate_limit=simple_parsed["rate_limit"],
+        retry=simple_parsed["retry"],
+        tf_idf=simple_parsed["tf_idf"],
+        memory=simple_parsed["memory"],
+        chaos_resolver=simple_parsed["chaos_resolver"],
+        description_dedup=simple_parsed["description_dedup"],
+        rule_validator=simple_parsed["rule_validator"],
+        parser=simple_parsed["parser"],
+        story_state=simple_parsed["story_state"],
+        chapter=simple_parsed["chapter"],
+        setup_common=simple_parsed["setup_common"],
+        metadata_voting=simple_parsed["metadata_voting"],
+        naming=simple_parsed["naming"],
+        random_events=simple_parsed["random_events"],
+        scene_range_default=list(data["scene_range_default"]),
+        death_emotions=list(data["death_emotions"]),
+        creativity_seeds=list(data["creativity_seeds"]),
+        _raw=data,
+    )

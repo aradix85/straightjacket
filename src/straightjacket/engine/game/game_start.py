@@ -232,11 +232,11 @@ def start_new_game(
         setting_tone="",
         setting_archetype="",
         setting_description=pkg.description,
-        edge=stats.get("edge", 1),
-        heart=stats.get("heart", 2),
-        iron=stats.get("iron", 1),
-        shadow=stats.get("shadow", 1),
-        wits=stats.get("wits", 2),
+        edge=stats["edge"],
+        heart=stats["heart"],
+        iron=stats["iron"],
+        shadow=stats["shadow"],
+        wits=stats["wits"],
         backstory=creation_data.get("backstory", ""),
         assets=creation_data.get("assets", []),
         truths=creation_data.get("truths", {}),
@@ -261,9 +261,14 @@ def start_new_game(
     from ..models import ClockData
 
     _trigger = _opening.clock_trigger_template.format(player=game.player_name)
+    if not game.background_vow:
+        raise ValueError(
+            "Opening clock requires a background vow. "
+            "Character creation must populate game.background_vow before calling new-game setup."
+        )
     game.world.clocks.append(
         ClockData(
-            name=game.background_vow or _opening.clock_fallback_name,
+            name=game.background_vow,
             clock_type="threat",
             segments=_opening.clock_segments,
             filled=_opening.clock_filled,

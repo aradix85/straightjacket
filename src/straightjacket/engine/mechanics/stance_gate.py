@@ -21,9 +21,13 @@ class NpcStance:
 
 
 def resolve_npc_stance(game: GameState, npc: NpcData, move_category: str) -> NpcStance:
-    """Compute behavioral stance from disposition, bond (connection track), and move category."""
-    _e = eng()
-    matrix = _e.get_raw("stance_matrix", {})
+    """Compute behavioral stance from disposition, bond (connection track), and move category.
+
+    The stance_matrix in engine.yaml must contain every combination of
+    disposition × bond_range × category. Missing entries are a yaml error,
+    not a runtime fallback. Unknown move_category is normalised to 'other'.
+    """
+    matrix = eng().get_raw("stance_matrix")
 
     disposition = npc.disposition
     bond = get_npc_bond(game, npc.id)
@@ -35,24 +39,14 @@ def resolve_npc_stance(game: GameState, npc: NpcData, move_category: str) -> Npc
     else:
         bond_range = "high"
 
-    # Normalize move_category for matrix lookup
-    cat = move_category
-    if cat not in ("combat", "social", "gather_information", "other"):
-        cat = "other"
+    cat = move_category if move_category in ("combat", "social", "gather_information", "other") else "other"
 
-    # Three-level lookup: disposition → bond_range → move_category
-    disp_node = matrix.get(disposition, matrix.get("neutral", {}))
-    bond_node = disp_node.get(bond_range, disp_node.get("low", {}))
-    entry = bond_node.get(cat, bond_node.get("other", {}))
-
-    stance = entry.get("stance", "neutral") if isinstance(entry, dict) else "neutral"
-    constraint = entry.get("constraint", "") if isinstance(entry, dict) else ""
-
+    entry = matrix[disposition][bond_range][cat]
     return NpcStance(
         npc_id=npc.id,
         npc_name=npc.name,
-        stance=stance,
-        constraint=constraint,
+        stance=entry["stance"],
+        constraint=entry["constraint"],
     )
 
 

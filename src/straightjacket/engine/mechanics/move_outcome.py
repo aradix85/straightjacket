@@ -4,6 +4,16 @@
 Replaces the category-based apply_consequences with move-specific outcomes.
 Each move outcome is a list of effect strings parsed from engine.yaml.
 
+TODO tranche 6.2: ~25 `result.consequences.append(...)` call sites below
+build narrator-facing consequence labels as hardcoded f-strings (e.g.
+"momentum +1", "mark {impact}", "swear a deathbound vow", "clock +N",
+"{target.name} disposition {old}→{new}"). These are read by validator and
+narrator prompts. Move all templates to a dedicated yaml section (e.g.
+`consequence_labels:`) keyed by effect-type, with placeholders for values.
+The existing `"swear a deathbound vow"` and `"mark {impact}"` already carry
+individual TODOs as examples. When implementing tranche 6, audit every
+append in this file — they are all in the same category.
+
 Effect vocabulary:
     momentum +N / -N        Resource change (clamped to floor/ceiling)
     health +N / -N          Resource change
@@ -191,10 +201,12 @@ def apply_effects(game: GameState, effects: list[MoveEffect], target_npc_id: str
 
         elif effect.type == "disposition_shift":
             if target:
-                shifts = _e.get_raw("disposition_shifts", {})
+                shifts = _e.get_raw("disposition_shifts")
                 old_disp = target.disposition
-                target.disposition = shifts.get(target.disposition, target.disposition)
-                if target.disposition != old_disp:
+                # Top of the ladder (loyal) has no further shift; yaml only lists
+                # dispositions that advance. Unchanged when no entry exists.
+                if old_disp in shifts:
+                    target.disposition = shifts[old_disp]
                     result.consequences.append(f"{target.name} disposition {old_disp}→{target.disposition}")
 
         elif effect.type == "narrative":
@@ -248,10 +260,10 @@ def apply_suffer_handler(game: GameState, roll_result: str, params: dict) -> Out
     result = OutcomeResult()
     _e = eng()
     res = game.resources
-    track = params.get("track", "health")
-    recovery = params.get("recovery", 1)
-    miss_extra_track = params.get("miss_extra_track", -1)
-    miss_extra_momentum = params.get("miss_extra_momentum", -2)
+    track = params["track"]
+    recovery = params["recovery"]
+    miss_extra_track = params["miss_extra_track"]
+    miss_extra_momentum = params["miss_extra_momentum"]
 
     from .impacts import apply_impact, blocks_recovery
 
@@ -299,7 +311,7 @@ def apply_suffer_handler(game: GameState, roll_result: str, params: dict) -> Out
         # Track at zero → mark impact. Engine picks first of impact_pair.
         track_value = getattr(res, track, None) if track in ("health", "spirit", "supply") else None
         if track_value is not None and track_value <= 0:
-            impact_pair = params.get("impact_pair", [])
+            impact_pair = params["impact_pair"]
             if impact_pair:
                 # First impact if not yet active, otherwise the worse one
                 chosen = impact_pair[0] if impact_pair[0] not in game.impacts else impact_pair[1]
@@ -328,14 +340,16 @@ def apply_threshold_handler(game: GameState, roll_result: str, params: dict) -> 
     elif roll_result == "WEAK_HIT":
         from .impacts import apply_impact
 
-        impact = params.get("impact", "")
+        impact = params["impact"]
         if impact and apply_impact(game, impact):
+            # TODO tranche 6.2: "mark {impact}" is narrator-facing consequence text; move template to engine.yaml.
             result.consequences.append(f"mark {impact}")
+        # TODO tranche 6.2: "swear a deathbound vow" is narrator-facing consequence text; move to engine.yaml.
         result.consequences.append("swear a deathbound vow")
 
     else:  # MISS
         game.game_over = True
-        result.consequences.append(params.get("game_over_text", "you are lost"))
+        result.consequences.append(params["game_over_text"])
 
     return result
 
@@ -349,21 +363,21 @@ def apply_recovery_handler(game: GameState, roll_result: str, params: dict) -> O
 
     Params:
       track: health / spirit / supply
-      full_amount: recovery without impact (default 3 for heal, 2 for hearten/resupply)
-      impact_amount: recovery when clearing impact (default 2 for heal, 1 for hearten/resupply)
+      full_amount: recovery without impact
+      impact_amount: recovery when clearing impact
       blocking_impact: impact name (wounded, shaken, unprepared)
       weak_hit_cost_type: momentum / supply
-      weak_hit_cost: amount (default -2)
+      weak_hit_cost: amount
     """
     result = OutcomeResult()
     _e = eng()
     res = game.resources
-    track = params.get("track", "health")
-    full_amount = params.get("full_amount", 2)
-    impact_amount = params.get("impact_amount", 1)
-    blocking_impact = params.get("blocking_impact", "")
-    weak_cost_type = params.get("weak_hit_cost_type", "momentum")
-    weak_cost = params.get("weak_hit_cost", -2)
+    track = params["track"]
+    full_amount = params["full_amount"]
+    impact_amount = params["impact_amount"]
+    blocking_impact = params["blocking_impact"]
+    weak_cost_type = params["weak_hit_cost_type"]
+    weak_cost = params["weak_hit_cost"]
 
     from .impacts import clear_impact
 
@@ -413,7 +427,7 @@ def resolve_move_outcome(
         OutcomeResult with consequences, position changes, etc.
     """
     _e = eng()
-    outcomes_cfg = _e.get_raw("move_outcomes", {})
+    outcomes_cfg = _e.get_raw("move_outcomes")
 
     result_key = roll_result.lower()
 
@@ -424,8 +438,8 @@ def resolve_move_outcome(
     # Handler-based moves
     handler = move_cfg.get("handler")
     if handler:
-        params_raw = move_cfg.get("params")
-        params_dict = dict(params_raw) if params_raw is not None else {}
+        # Handler moves require a params block in yaml.
+        params_dict = dict(move_cfg["params"])
         return _dispatch_handler(game, handler, roll_result, params_dict)
 
     # Effect-list based moves
@@ -444,14 +458,12 @@ def resolve_move_outcome(
 
 
 def _dispatch_handler(game: GameState, handler: str, roll_result: str, params: dict) -> OutcomeResult:
-    """Dispatch to the appropriate handler function."""
+    """Dispatch to the appropriate handler function. Raises on unknown handler."""
     handlers = {
         "suffer": apply_suffer_handler,
         "threshold": apply_threshold_handler,
         "recovery": apply_recovery_handler,
     }
-    fn = handlers.get(handler)
-    if fn is None:
-        log(f"[MoveOutcome] Unknown handler: {handler!r}", level="warning")
-        return OutcomeResult(narrative_only=True)
-    return fn(game, roll_result, params)
+    if handler not in handlers:
+        raise ValueError(f"Unknown move-outcome handler {handler!r}. Valid: {sorted(handlers)}.")
+    return handlers[handler](game, roll_result, params)

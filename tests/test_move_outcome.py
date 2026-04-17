@@ -147,6 +147,40 @@ class TestApplyEffects:
         assert "health -1" in result.consequences
 
 
+_SUFFER_DEFAULTS = {
+    "track": "health",
+    "recovery": 1,
+    "miss_extra_track": -1,
+    "miss_extra_momentum": -2,
+    "impact_pair": [],
+    "blocking_impact": "",
+}
+
+
+def _suffer_params(**overrides: object) -> dict:
+    """Build a complete suffer-handler params dict for tests."""
+    merged = dict(_SUFFER_DEFAULTS)
+    merged.update(overrides)  # type: ignore[arg-type]
+    return merged
+
+
+_RECOVERY_DEFAULTS = {
+    "track": "health",
+    "full_amount": 3,
+    "impact_amount": 2,
+    "blocking_impact": "",
+    "weak_hit_cost_type": "momentum",
+    "weak_hit_cost": -2,
+}
+
+
+def _recovery_params(**overrides: object) -> dict:
+    """Build a complete recovery-handler params dict for tests."""
+    merged = dict(_RECOVERY_DEFAULTS)
+    merged.update(overrides)  # type: ignore[arg-type]
+    return merged
+
+
 # ── Suffer handler ───────────────────────────────────────────
 
 
@@ -154,14 +188,14 @@ class TestSufferHandler:
     def test_strong_hit_recovery(self, game: GameState) -> None:
         game.resources.health = 3
         result = apply_suffer_handler(
-            game, "STRONG_HIT", {"track": "health", "recovery": 1, "blocking_impact": "wounded"}
+            game, "STRONG_HIT", _suffer_params(track="health", recovery=1, blocking_impact="wounded")
         )
         assert game.resources.health == 4
         assert "health +1" in result.consequences
 
     def test_strong_hit_track_at_max_takes_momentum(self, game: GameState) -> None:
         result = apply_suffer_handler(
-            game, "STRONG_HIT", {"track": "health", "recovery": 1, "blocking_impact": "wounded"}
+            game, "STRONG_HIT", _suffer_params(track="health", recovery=1, blocking_impact="wounded")
         )
         assert game.resources.momentum == 3
         assert "momentum +1" in result.consequences
@@ -169,7 +203,7 @@ class TestSufferHandler:
     def test_weak_hit_exchange(self, game: GameState) -> None:
         game.resources.health = 3
         game.resources.momentum = 4
-        apply_suffer_handler(game, "WEAK_HIT", {"track": "health", "recovery": 1, "blocking_impact": "wounded"})
+        apply_suffer_handler(game, "WEAK_HIT", _suffer_params(track="health", recovery=1, blocking_impact="wounded"))
         assert game.resources.health == 4
         assert game.resources.momentum == 3
 
@@ -178,12 +212,12 @@ class TestSufferHandler:
         apply_suffer_handler(
             game,
             "MISS",
-            {
-                "track": "health",
-                "miss_extra_track": -1,
-                "miss_extra_momentum": -2,
-                "impact_pair": ["wounded", "permanently_harmed"],
-            },
+            _suffer_params(
+                track="health",
+                miss_extra_track=-1,
+                miss_extra_momentum=-2,
+                impact_pair=["wounded", "permanently_harmed"],
+            ),
         )
         assert game.resources.health == 2
 
@@ -193,12 +227,12 @@ class TestSufferHandler:
         result = apply_suffer_handler(
             game,
             "MISS",
-            {
-                "track": "health",
-                "miss_extra_track": -1,
-                "miss_extra_momentum": -2,
-                "impact_pair": ["wounded", "permanently_harmed"],
-            },
+            _suffer_params(
+                track="health",
+                miss_extra_track=-1,
+                miss_extra_momentum=-2,
+                impact_pair=["wounded", "permanently_harmed"],
+            ),
         )
         assert game.resources.momentum == 3
         assert any("mark wounded" in c for c in result.consequences)
@@ -237,7 +271,9 @@ class TestRecoveryHandler:
     def test_strong_hit_full_recovery(self, game: GameState) -> None:
         game.resources.health = 2
         apply_recovery_handler(
-            game, "STRONG_HIT", {"track": "health", "full_amount": 3, "impact_amount": 2, "blocking_impact": "wounded"}
+            game,
+            "STRONG_HIT",
+            _recovery_params(track="health", full_amount=3, impact_amount=2, blocking_impact="wounded"),
         )
         assert game.resources.health == 5
 
@@ -247,21 +283,23 @@ class TestRecoveryHandler:
         apply_recovery_handler(
             game,
             "WEAK_HIT",
-            {
-                "track": "health",
-                "full_amount": 3,
-                "impact_amount": 2,
-                "blocking_impact": "wounded",
-                "weak_hit_cost_type": "momentum",
-                "weak_hit_cost": -2,
-            },
+            _recovery_params(
+                track="health",
+                full_amount=3,
+                impact_amount=2,
+                blocking_impact="wounded",
+                weak_hit_cost_type="momentum",
+                weak_hit_cost=-2,
+            ),
         )
         assert game.resources.health == 5
         assert game.resources.momentum == 3
 
     def test_miss_pay_the_price(self, game: GameState) -> None:
         result = apply_recovery_handler(
-            game, "MISS", {"track": "health", "full_amount": 3, "impact_amount": 2, "blocking_impact": "wounded"}
+            game,
+            "MISS",
+            _recovery_params(track="health", full_amount=3, impact_amount=2, blocking_impact="wounded"),
         )
         assert result.pay_the_price is True
 

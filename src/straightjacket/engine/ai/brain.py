@@ -125,6 +125,7 @@ time:{w.time_of_day or "unspecified"}
         return result
 
     except Exception as e:
+        # Intentional graceful degradation — see AI-CALL SUPPRESSION POLICY in provider_base.py.
         log(f"[Brain] Failed ({type(e).__name__}: {e}), treating as dialog", level="warning")
         return BrainResult(move="dialog", dialog_only=True, player_intent=player_message, approach="error")
 
@@ -167,6 +168,7 @@ def call_revelation_check(
         log(f"[Revelation] Check for '{revelation.id}': confirmed={confirmed} — {reasoning}")
         return confirmed
     except Exception as e:
+        # Intentional graceful degradation — see AI-CALL SUPPRESSION POLICY in provider_base.py.
         log(
             f"[Revelation] Check failed ({type(e).__name__}: {e}), defaulting to confirmed=True to avoid pending loop",
             level="warning",

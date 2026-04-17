@@ -143,6 +143,7 @@ Check constraints."""
             if result and not result.get("pass", True):
                 llm_violations = result.get("violations", [])
     except Exception as e:
+        # Intentional graceful degradation — see AI-CALL SUPPRESSION POLICY in provider_base.py.
         log(f"[Validator] LLM check failed ({e}), using rule results only", level="warning")
 
     if llm_violations:
@@ -186,9 +187,10 @@ def validate_and_retry(
     from ..datasworn.settings import active_package
     from ..parser import parse_narrator_response
 
-    # Resolve max_retries from config if not explicitly passed
+    # Resolve max_retries from cluster config if not explicitly passed.
+    # sampling_params always returns a dict with max_retries (required field).
     if max_retries is None:
-        max_retries = sampling_params("narrator").get("max_retries", 3)
+        max_retries = sampling_params("narrator")["max_retries"]
 
     # Load genre constraints from setting package (typed — no dict conversion)
     gc = None

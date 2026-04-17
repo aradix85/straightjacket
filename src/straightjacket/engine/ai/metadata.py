@@ -186,7 +186,8 @@ def _check_death_corroboration(game: GameState) -> None:
                 self_votes += 1
 
         total = cross_votes + self_votes
-        if cross_votes >= 1 and total >= 2:
+        voting = eng().metadata_voting
+        if cross_votes >= voting.min_cross_votes and total >= voting.min_total_votes:
             npc.status = "deceased"
             log(
                 f"[NPC] Off-screen death detected: {npc.name} ({npc_id}) — "

@@ -158,15 +158,18 @@ def _prepare_npcs_for_new_chapter(game: GameState) -> None:
     for npc in game.npcs:
         if npc.status == "deceased" or npc.status != "active":
             continue
-        is_filler = get_npc_bond(game, npc.id) == 0 and len(npc.memory) <= 1 and not npc.agenda.strip()
+        is_filler = (
+            get_npc_bond(game, npc.id) == 0 and len(npc.memory) <= eng().chapter.filler_max and not npc.agenda.strip()
+        )
         if is_filler:
             npc.status = "background"
             log(f"[Campaign] Retired NPC to background at chapter boundary: {npc.name} (low-engagement filler)")
 
+    _chap_cfg = eng().chapter
     for npc in game.npcs:
-        if npc.memory and len(npc.memory) > 5:
+        if npc.memory and len(npc.memory) > _chap_cfg.open_threads_max:
             scored = sorted(npc.memory, key=lambda m: (m.importance, m.scene), reverse=True)
-            npc.memory = sorted(scored[:5], key=lambda m: m.scene)
+            npc.memory = sorted(scored[: _chap_cfg.open_threads_max], key=lambda m: m.scene)
         consolidate_memory(npc)
 
 

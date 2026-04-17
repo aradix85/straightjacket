@@ -264,6 +264,7 @@ def call_director(
         )
         return guidance
     except Exception as e:
+        # Intentional graceful degradation — see AI-CALL SUPPRESSION POLICY in provider_base.py.
         log(
             f"[Director] Failed ({type(e).__name__}: {e}), continuing without guidance",
             level="warning",
@@ -351,6 +352,7 @@ def apply_director_guidance(game: GameState, guidance: dict) -> None:
             MemoryEntry(
                 scene=game.narrative.scene_count,
                 event=reflection_text,
+                # TODO tranche 6.2: "reflective" is narrator-facing default; move to engine.yaml.
                 emotional_weight=ref.get("tone_key") or "reflective",
                 tone=ref.get("tone", ""),
                 tone_key=ref.get("tone_key", ""),

@@ -172,9 +172,11 @@ class TestSufferHandlerMarksImpact:
         game.resources.health = 0
         params = {
             "track": "health",
+            "recovery": 1,
             "miss_extra_track": -1,
             "miss_extra_momentum": -2,
             "impact_pair": ["wounded", "permanently_harmed"],
+            "blocking_impact": "wounded",
         }
         result = apply_suffer_handler(game, "MISS", params)
         assert "wounded" in game.impacts
@@ -189,9 +191,11 @@ class TestSufferHandlerMarksImpact:
         apply_impact(game, "wounded")
         params = {
             "track": "health",
+            "recovery": 1,
             "miss_extra_track": -1,
             "miss_extra_momentum": -2,
             "impact_pair": ["wounded", "permanently_harmed"],
+            "blocking_impact": "wounded",
         }
         apply_suffer_handler(game, "MISS", params)
         assert "permanently_harmed" in game.impacts
@@ -209,6 +213,8 @@ class TestRecoveryHandlerClearsImpact:
             "full_amount": 3,
             "impact_amount": 2,
             "blocking_impact": "wounded",
+            "weak_hit_cost_type": "momentum",
+            "weak_hit_cost": -2,
         }
         result = apply_recovery_handler(game, "STRONG_HIT", params)
         assert "wounded" not in game.impacts
@@ -223,6 +229,8 @@ class TestRecoveryHandlerClearsImpact:
             "full_amount": 3,
             "impact_amount": 2,
             "blocking_impact": "wounded",
+            "weak_hit_cost_type": "momentum",
+            "weak_hit_cost": -2,
         }
         result = apply_recovery_handler(game, "STRONG_HIT", params)
         assert not any("wounded" in c for c in result.consequences)

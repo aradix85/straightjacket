@@ -36,6 +36,7 @@ def execute_tool_call(role: str, tool_call: dict, game: GameState) -> str:
             return json.dumps(result, ensure_ascii=False)
         return str(result)
     except Exception as e:
+        # Intentional graceful degradation — see AI-CALL SUPPRESSION POLICY in provider_base.py.
         log(f"[Tools] {name} failed: {e}", level="warning")
         return json.dumps({"error": f"{name} failed: {e}"})
 

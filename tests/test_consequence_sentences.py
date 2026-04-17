@@ -56,12 +56,9 @@ def test_pick_template_returns_string() -> None:
     assert isinstance(result, str) and len(result) > 0
 
 
-def test_pick_template_unknown_key_returns_fallback() -> None:
-    assert pick_template("nonexistent_key", "fallback text") == "fallback text"
-
-
-def test_pick_template_unknown_key_empty_default() -> None:
-    assert pick_template("nonexistent_key") == ""
+def test_pick_template_unknown_key_raises() -> None:
+    with pytest.raises(KeyError):
+        pick_template("nonexistent_key")
 
 
 # ── Single consequence resolution ─────────────────────────────

@@ -374,15 +374,16 @@ def process_turn(
     nar.scene_count += 1
 
     # Track creation (step 8.5): if move creates a track, do it before the roll
-    track_creating = eng().get_raw("track_creating_moves", {})
+    track_creating = eng().get_raw("track_creating_moves")
     track_category = track_creating.get(brain.move)
     if track_category:
         if not brain.track_name:
+            # TODO tranche 6.2: "Unnamed conflict" is narrator-facing; move to engine.yaml.
             brain.track_name = brain.player_intent[:40].strip() or "Unnamed conflict"
             log(f"[Track] Brain omitted track_name, generated: {brain.track_name}", level="warning")
         if not brain.track_rank:
-            brain.track_rank = "dangerous"
-            log("[Track] Brain omitted track_rank, defaulting to dangerous", level="warning")
+            brain.track_rank = eng().creation.brain_track_rank_fallback
+            log(f"[Track] Brain omitted track_rank, defaulting to {brain.track_rank}", level="warning")
         slug = brain.track_name.lower().replace(" ", "_")
         track_id = f"{track_category}_{slug}"
         new_track = ProgressTrack(
@@ -487,7 +488,7 @@ def process_turn(
 
     # Scene challenge progress routing (step 10.2): adventure moves also mark
     # progress on active scene_challenge track when one exists
-    sc_progress_moves = eng().get_raw("scene_challenge_progress_moves", [])
+    sc_progress_moves = eng().get_raw("scene_challenge_progress_moves")
     if brain.move in sc_progress_moves and roll.result in ("STRONG_HIT", "WEAK_HIT"):
         sc_track = find_progress_track(game, "scene_challenge")
         if sc_track:

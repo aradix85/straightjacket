@@ -74,7 +74,7 @@ story:
     tarantino: 0.15
     pulp: 0.15
     slapstick: 0.15
-  kishotenketsu_default: 0.50
+  kishotenketsu_fallback_probability: 0.50  # Probability used when mood has no explicit entry above
 
 # ── Character stats ───────────────────────────────────────────
 stats:
@@ -102,6 +102,7 @@ creation:
     - module
     - command_vehicle
   background_vow_default_rank: extreme  # Default rank for background vow
+  brain_track_rank_fallback: dangerous   # Fallback rank when Brain omits track_rank on a track-creating move
   # Chaos factor adjustment based on vow keywords.
   # Engine matches vow text against these patterns (case-insensitive).
   # First match wins. No match = no adjustment.
@@ -204,8 +205,22 @@ recovery:
     great: 2
 
 # ── Location tracking ────────────────────────────────────────
+# ── Prompt display limits ─────────────────────────────────────
+# Text truncation caps used when assembling narrator/Brain prompts.
+# These trade context fidelity against token budget — raise for richer prompts,
+# lower for tighter cost envelopes.
+prompt_display:
+  insight_chars: 80         # reflection insight snippet in <activated_npc>
+  recent_event_chars: 60    # recent-event hint in <activated_npc>
+  lore_description_chars: 80  # lore-figure description in <lore_figures>
+  lore_max_aliases: 2       # aliases shown per lore figure
+  epilogue_log_scenes: 15   # session-log window in epilogue prompt
+  recent_events_window: 7   # how many past scenes to show in <recent_events> (excludes current)
+  campaign_history_chapters: 3  # how many recent chapter summaries in <campaign_history>
+
 location:
-  history_size: 5             # How many previous locations to keep
+  history_size: 5             # How many previous locations to keep in game state
+  prompt_history_size: 3      # How many of those to show the narrator per turn
 
 # ── Narrative direction ──────────────────────────────────────
 # Maps game state to writing instructions for the narrator.
@@ -763,7 +778,6 @@ opening:
   time_of_day: morning
   clock_segments: 6
   clock_filled: 1
-  clock_fallback_name: "Looming threat"
   clock_trigger_template: "Threat escalates beyond {player}'s control"
 
 # ── Move routing ─────────────────────────────────────────────
@@ -814,6 +828,14 @@ legacy:
   threat_overcome_threshold: 0.5    # Menace ratio >= this to earn overcome bonus
   asset_upgrade_cost: 2             # XP per asset ability upgrade
   new_asset_cost: 3                 # XP for a new asset
+  # Ticks-per-mark by progress rank (Ironsworn standard).
+  # Used by mark_legacy to scale legacy track gain by the source vow/bond rank.
+  ticks_by_rank:
+    troublesome: 1
+    dangerous: 2
+    formidable: 4
+    extreme: 8
+    epic: 12
 
 # ── Impacts ───────────────────────────────────────────────────
 # Impacts are persistent conditions that reduce max_momentum by 1 each.
@@ -1296,6 +1318,144 @@ move_outcomes:
     strong_hit: [momentum +1]
     weak_hit: [narrative]
     miss: [pay_the_price]
+
+# ── Tuning parameters (previously magic numbers in Python) ───
+# Every value here was a hardcoded constant in source code. Moving them
+# here makes behavior tunable without code changes.
+
+# Fuzzy string matching thresholds (NPC names, aliases, dedup).
+fuzzy_match:
+  min_word_length: 5              # Minimum length for a word to participate in fuzzy match
+  min_phrase_length: 12           # Minimum length for a phrase-level fuzzy match
+  exact_dedup_threshold: 0.4      # Jaccard similarity below this = not a duplicate
+
+# NPC matching scoring.
+npc_matching:
+  stt_alias_bonus: 10             # Score bonus for a starts-with alias match
+  stt_phrase_length: 12           # Phrase length cut-off for starts-with bonus
+  alias_min_length: 4             # Minimum alias character length to register
+
+# Parser monologue detection.
+monologue_detection:
+  min_word_count: 30              # NPC speech shorter than this is not a monologue
+
+# Act progression thresholds.
+act_progress:
+  filler_max: 1                   # Scenes with intensity <= this are treated as filler
+  recap_scene_max: 5              # Chapter-summary recap keeps at most this many scenes
+
+# Web server rate limiting and readiness probe.
+rate_limit:
+  window_seconds: 5.0             # Rolling window size
+  max_requests: 20                # Max messages per client per window
+  warn_probe_max_tries: 100       # Readiness-probe retry attempts before giving up
+  warn_probe_poll_seconds: 0.1    # Sleep between readiness-probe retries
+
+# Provider retry policy (transient HTTP failures).
+retry:
+  max_retries: 2                  # Retry count before surfacing the error
+  retryable_http_codes:           # HTTP status codes that trigger retry
+    - 429
+    - 500
+    - 502
+    - 503
+    - 529
+  backoff_base: 2                 # Exponential backoff base: delay = base ** attempt
+
+# TF-IDF activation scoring windows and caps.
+tf_idf:
+  token_min_length: 3             # Minimum token length for TF-IDF indexing
+  memory_window: 5                # Last N memories considered for document frequency
+  session_window: 2               # Last N session turns considered for target detection
+  score_floor: 0.05               # Minimum TF-IDF score for a token to contribute
+  memory_score_cap: 0.5           # Upper bound on memory-sourced TF-IDF contribution
+  memory_score_multiplier: 1.5    # Multiplier applied to memory-sourced scores pre-cap
+  recency_window: 3               # Last N turns weighted as recent interaction
+  recency_offset: 2               # Offset applied when computing recency decay index
+
+# NPC memory tuning.
+memory:
+  min_token_length: 3             # Ignore tokens shorter than this when scoring memories
+  consolidation_floor: 3          # Minimum number of recency-budget slots during consolidation
+  unknown_emotion_importance: 4   # Base importance for an emotion that is not in emotions.yaml
+
+# Chaos resolver thresholds (position + clock pressure).
+chaos_resolver:
+  high_threshold: 7               # chaos_factor >= this = high chaos
+  low_threshold: 3                # chaos_factor <= this = low chaos
+  recent_session_window: 3        # How many session entries form the "recent" roll window
+  recent_result_window: 2         # Streak length for consecutive-result scoring
+  clock_pressure_threshold: 0.75  # Clock fill ratio above this = pressure
+  clock_pressure_cap_multiplier: 2  # Max clocks that count toward pressure (cap = weight * this)
+
+# NPC lifecycle: description deduplication scoring.
+description_dedup:
+  identity_score_delta: 1000      # Score added for "currently present" bonus in retire_distant_npcs
+  bond_multiplier: 3              # Bond value multiplier in relevance score
+  # Richness scoring weights (absorb_duplicate_npc)
+  richness_alias: 2               # Weight per alias when computing NPC richness
+  richness_description: 3         # Weight per description presence
+  richness_aim: 3                 # Weight per agenda / instinct presence
+  richness_memory: 2              # Weight per memory-count unit
+  richness_other: 1               # Weight for remaining fields (description bool)
+  # Alias sanitisation
+  max_alias_word_count: 4         # Aliases with more words than this are discarded as descriptor prose
+  # Description-to-description match thresholds
+  min_desc_chars: 10              # Minimum description length to run the match
+  min_word_chars_for_match: 4     # Word char length to count toward the word set
+  min_new_word_count: 2           # Minimum distinctive word count required in the new description
+  min_substring_match_len: 5      # Both words must be at least this long to allow substring matching
+  long_word_chars: 12             # Words this long or longer trigger the "long match" bonus
+  partial_match_weight: 0.5       # Weight of substring / long-word matches vs exact overlap
+  effective_overlap_min: 2.0      # Minimum effective overlap to accept a match
+  min_overlap_ratio: 0.25         # Minimum overlap / smaller-set-size ratio to accept a match
+
+# Rule validator format/structure thresholds.
+rule_validator:
+  # NPC-monologue check: flag when 4+ quotes appear with minimal narrative gaps.
+  min_quote_count: 4              # Minimum quote count to run the check at all
+  max_gap_chars: 40               # Gap char length below which a gap counts as "short"
+  max_consecutive_short_gaps: 3   # Streak of short gaps that triggers a violation
+
+# Parser splitting thresholds.
+parser:
+  max_label_length: 30            # Labels longer than this are not treated as role prefixes
+  min_line_length: 4              # Lines shorter than this are ignored during splitting
+
+# Story state intensity smoothing.
+story_state:
+  intensity_smoothing_current: 0.3   # Current-scene weight in smoothed intensity
+  intensity_smoothing_previous: 0.7  # Previous-scene weight in smoothed intensity
+  crisis_scene_offset: 5             # Scenes before crisis fires used as floor offset
+
+# Chapter transition thresholds.
+chapter:
+  filler_max: 1                   # Scenes with intensity <= this are filler for transition heuristic
+  open_threads_max: 5             # Max open threads included in new-chapter prompt
+
+# Shared opening setup.
+setup_common:
+  part_name_min_length: 4         # Minimum character count for a part name to be accepted
+
+# Metadata cross-vote thresholds.
+metadata_voting:
+  min_cross_votes: 1              # Minimum corroborating voters for a cross-vote to pass
+  min_total_votes: 2              # Minimum total voters (reporter + corroborators)
+
+# NPC naming.
+naming:
+  callsign_probability: 0.5       # Probability of callsign-only name when 3+ name tables exist
+
+# Random-event pipeline tuning (Mythic GME 2e).
+random_events:
+  threat_target_probability: 0.5  # Probability that a threat-eligible focus targets a threat
+  description_focus_categories:   # Focus categories that roll on the descriptions meaning table
+    - ambiguous_event
+  list_weight_max: 3              # Cap on weight bumps per character/thread
+  consolidation_threshold: 25     # Consolidate characters/threads list at this size
+  consolidation_weight_high: 3    # Weights at or above this become weight 2 after consolidation
+  consolidation_weight_low: 2     # Weight assigned to above-threshold entries post-consolidation
+  consolidation_weight_default: 1 # Weight assigned to everyone else post-consolidation
 
 # ── Validator data ──────────────────────────────────────────
 # Data consumed by ai/validator.py and ai/rule_validator.py.

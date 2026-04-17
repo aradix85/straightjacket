@@ -64,23 +64,6 @@ class ClusterConfig:
     extra_body: dict[str, Any] = field(default_factory=dict)
 
 
-# Default role → cluster mapping. Override via role_cluster in config.yaml.
-_DEFAULT_ROLE_CLUSTER: dict[str, str] = {
-    "narrator": "narrator",
-    "architect": "creative",
-    "brain": "classification",
-    "correction": "classification",
-    "director": "creative",
-    "validator": "analytical",
-    "validator_architect": "analytical",
-    "narrator_metadata": "analytical",
-    "opening_setup": "analytical",
-    "revelation_check": "analytical",
-    "chapter_summary": "analytical",
-    "recap": "analytical",
-}
-
-
 @dataclass
 class AIConfig:
     """AI provider and model configuration.
@@ -90,88 +73,82 @@ class AIConfig:
     the role to a different cluster via role_cluster.
     """
 
-    provider: str = "openai_compatible"
-    api_base: str = ""
-    api_key_env: str = ""
-    prompts_file: str = "prompts.yaml"
-    clusters: dict[str, ClusterConfig] = field(default_factory=dict)
-    role_cluster: dict[str, str] = field(default_factory=dict)
+    provider: str
+    api_base: str
+    api_key_env: str
+    prompts_file: str
+    clusters: dict[str, ClusterConfig]
+    role_cluster: dict[str, str]
 
 
 @dataclass
 class ServerConfig:
     """Server bind settings."""
 
-    host: str = "127.0.0.1"
-    port: int = 8081
+    host: str
+    port: int
 
 
 @dataclass
 class LanguageConfig:
     """Language and naming defaults."""
 
-    narration_language: str = "English"
-    default_player_name: str = "Unnamed"
+    narration_language: str
+    default_player_name: str
 
 
 @dataclass
 class AppConfig:
     """Complete typed application config from config.yaml."""
 
-    server: ServerConfig = field(default_factory=ServerConfig)
-    ai: AIConfig = field(default_factory=AIConfig)
-    language: LanguageConfig = field(default_factory=LanguageConfig)
+    server: ServerConfig
+    ai: AIConfig
+    language: LanguageConfig
 
 
 def _parse_config(data: dict) -> AppConfig:
-    """Parse raw config.yaml dict into typed AppConfig."""
-    c = AppConfig()
+    """Parse raw config.yaml dict into typed AppConfig. Strict — missing keys raise."""
+    sd = data["server"]
+    server = ServerConfig(host=sd["host"], port=sd["port"])
 
-    if "server" in data:
-        sd = data["server"]
-        c.server = ServerConfig(host=sd.get("host", "127.0.0.1"), port=sd.get("port", 8081))
-
-    if "ai" in data:
-        ad = data["ai"]
-
-        # Parse clusters — every field is required
-        _REQUIRED_CLUSTER_FIELDS = ("model", "temperature", "top_p", "max_tokens", "max_retries")
-        clusters: dict[str, ClusterConfig] = {}
-        for cname, cdata in ad.get("clusters", {}).items():
-            if not isinstance(cdata, dict):
-                continue
-            missing = [f for f in _REQUIRED_CLUSTER_FIELDS if f not in cdata]
-            if missing:
-                raise ValueError(
-                    f"Cluster '{cname}' missing required fields: {missing}. "
-                    f"Every cluster must specify: {list(_REQUIRED_CLUSTER_FIELDS)}."
-                )
-            clusters[cname] = ClusterConfig(
-                model=cdata["model"],
-                temperature=float(cdata["temperature"]),
-                top_p=float(cdata["top_p"]),
-                max_tokens=int(cdata["max_tokens"]),
-                max_retries=int(cdata["max_retries"]),
-                extra_body=cdata.get("extra_body", {}),
+    ad = data["ai"]
+    # Parse clusters — every field is required
+    _REQUIRED_CLUSTER_FIELDS = ("model", "temperature", "top_p", "max_tokens", "max_retries")
+    clusters: dict[str, ClusterConfig] = {}
+    for cname, cdata in ad["clusters"].items():
+        if not isinstance(cdata, dict):
+            continue
+        missing = [f for f in _REQUIRED_CLUSTER_FIELDS if f not in cdata]
+        if missing:
+            raise ValueError(
+                f"Cluster '{cname}' missing required fields: {missing}. "
+                f"Every cluster must specify: {list(_REQUIRED_CLUSTER_FIELDS)}."
             )
-
-        c.ai = AIConfig(
-            provider=ad.get("provider", "openai_compatible"),
-            api_base=ad.get("api_base", ""),
-            api_key_env=ad.get("api_key_env", ""),
-            prompts_file=ad.get("prompts_file", "prompts.yaml"),
-            clusters=clusters,
-            role_cluster=ad.get("role_cluster", {}),
+        clusters[cname] = ClusterConfig(
+            model=cdata["model"],
+            temperature=float(cdata["temperature"]),
+            top_p=float(cdata["top_p"]),
+            max_tokens=int(cdata["max_tokens"]),
+            max_retries=int(cdata["max_retries"]),
+            extra_body=cdata.get("extra_body", {}),
         )
 
-    if "language" in data:
-        ld = data["language"]
-        c.language = LanguageConfig(
-            narration_language=ld.get("narration_language", "English"),
-            default_player_name=ld.get("default_player_name", "Unnamed"),
-        )
+    ai = AIConfig(
+        provider=ad["provider"],
+        api_base=ad["api_base"],
+        api_key_env=ad["api_key_env"],
+        prompts_file=ad["prompts_file"],
+        clusters=clusters,
+        role_cluster=ad["role_cluster"],
+    )
 
-    return c
+    ld = data["language"]
+    language = LanguageConfig(
+        narration_language=ld["narration_language"],
+        default_player_name=ld["default_player_name"],
+    )
+
+    return AppConfig(server=server, ai=ai, language=language)
 
 
 # ── Singleton ────────────────────────────────────────────────
@@ -227,21 +204,35 @@ def default_player_name() -> str:
     return cfg().language.default_player_name
 
 
-def _cluster_for_role(role: str) -> ClusterConfig | None:
-    """Get the cluster config for a role. Returns None if no cluster assigned."""
+def _cluster_for_role(role: str) -> ClusterConfig:
+    """Get the cluster config for a role. Raises if role is not mapped.
+
+    config.yaml must list every role under ai.role_cluster, pointing to a
+    cluster defined in ai.clusters. No Python defaults — if a role is
+    missing here, it must be added to config.yaml.
+    """
     _c = cfg()
-    cluster_name = _c.ai.role_cluster.get(role, _DEFAULT_ROLE_CLUSTER.get(role, ""))
-    return _c.ai.clusters.get(cluster_name) if cluster_name else None
+    if role not in _c.ai.role_cluster:
+        raise ValueError(
+            f"Role '{role}' has no cluster assignment in config.yaml. "
+            f"Add '{role}: <cluster_name>' under ai.role_cluster."
+        )
+    cluster_name = _c.ai.role_cluster[role]
+    if cluster_name not in _c.ai.clusters:
+        raise ValueError(
+            f"Role '{role}' maps to cluster '{cluster_name}', but no such cluster "
+            f"is defined under ai.clusters in config.yaml."
+        )
+    return _c.ai.clusters[cluster_name]
 
 
 def model_for_role(role: str) -> str:
     """Resolve the model for an AI role from its cluster."""
     cluster = _cluster_for_role(role)
-    if cluster and cluster.model:
-        return cluster.model
-    _c = cfg()
-    cluster_name = _c.ai.role_cluster.get(role, _DEFAULT_ROLE_CLUSTER.get(role, ""))
-    raise ValueError(f"No model configured for role '{role}'. Set ai.clusters.{cluster_name}.model in config.yaml.")
+    if not cluster.model:
+        cluster_name = cfg().ai.role_cluster[role]
+        raise ValueError(f"No model configured for role '{role}'. Set ai.clusters.{cluster_name}.model in config.yaml.")
+    return cluster.model
 
 
 def sampling_params(role: str) -> dict:
@@ -251,10 +242,6 @@ def sampling_params(role: str) -> dict:
     Returns a dict suitable for unpacking into create_with_retry().
     """
     cluster = _cluster_for_role(role)
-    if not cluster:
-        raise ValueError(
-            f"No cluster configured for role '{role}'. Check ai.clusters and role_cluster mapping in config.yaml."
-        )
 
     params: dict[str, Any] = {
         "max_tokens": cluster.max_tokens,

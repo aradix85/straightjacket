@@ -15,13 +15,6 @@ ai:
   # Two models across four clusters: Qwen 3 for narrator (prose), GPT-OSS for everything else.
   # Qwen 3: best narrator quality (100% eval), optimized for creative writing.
   # GPT-OSS: fast, cheap, strong on structured output and classification.
-  #
-  # Built-in role → cluster mapping (override via role_cluster):
-  #   narrator:        narrator
-  #   creative:        architect, director
-  #   classification:  brain, correction
-  #   analytical:      validator, validator_architect, narrator_metadata,
-  #                    opening_setup, revelation_check, chapter_summary, recap
   clusters:
     narrator:
       model: "qwen-3-235b-a22b-instruct-2507"
@@ -48,8 +41,21 @@ ai:
       max_tokens: 8192
       max_retries: 3
 
-  # role_cluster:
-  #   architect: "analytical"       # Remap a role to a different cluster
+  # ── Role → cluster mapping ──────────────────────────────────
+  # Every AI role must appear here. Unlisted roles raise at runtime.
+  role_cluster:
+    narrator: narrator
+    architect: creative
+    director: creative
+    brain: classification
+    correction: classification
+    validator: analytical
+    validator_architect: analytical
+    narrator_metadata: analytical
+    opening_setup: analytical
+    revelation_check: analytical
+    chapter_summary: analytical
+    recap: analytical
 
 language:
   narration_language: "English"

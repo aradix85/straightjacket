@@ -204,22 +204,21 @@ def check_npc_monologue(narration: str) -> list[str]:
     """
     from ..engine_loader import eng
 
+    _rv = eng().rule_validator
     quote_re = eng().compiled_pattern("validator", "quote_patterns", "match")
     quotes = quote_re.findall(narration)
-    if len(quotes) < 4:
+    if len(quotes) < _rv.min_quote_count:
         return []
 
     parts = quote_re.split(narration)
-    # parts alternates: [before, quote1, between, quote2, ...]
-    # Non-quote gaps are at even indices starting from 2
     consecutive_short_gaps = 0
     for i in range(2, len(parts), 2):
         stripped = parts[i].strip()
-        if len(stripped) < 40:
+        if len(stripped) < _rv.max_gap_chars:
             consecutive_short_gaps += 1
         else:
             consecutive_short_gaps = 0
-        if consecutive_short_gaps >= 3:
+        if consecutive_short_gaps >= _rv.max_consecutive_short_gaps:
             return ["RESOLUTION PACING: NPC delivers an extended monologue (4+ quoted segments with minimal breaks)"]
 
     return []

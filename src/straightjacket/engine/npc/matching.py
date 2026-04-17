@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from ..models import GameState
 
+from ..engine_loader import eng
 from ..logging_util import log
 from ..models import NpcData
 
@@ -265,17 +266,18 @@ def find_npc(game: "GameState", npc_ref: str) -> NpcData | None:
         for alias in n.aliases:
             if normalize_for_match(alias) == ref_norm:
                 return n
-    if len(ref_norm) >= 5:
+    if len(ref_norm) >= eng().fuzzy_match.min_word_length:
         ref_words = set(ref_norm.split())
         if ref_words and ref_words <= NAME_TITLES:
             return None
         best_match = None
         best_score = 0
+        min_len = eng().fuzzy_match.min_word_length
         for n in game.npcs:
             name_norm = normalize_for_match(n.name)
             if ref_norm in name_norm or name_norm in ref_norm:
                 score = min(len(ref_norm), len(name_norm))
-                if score >= 5 and score > best_score:
+                if score >= min_len and score > best_score:
                     best_score = score
                     best_match = n
                 continue
@@ -283,7 +285,7 @@ def find_npc(game: "GameState", npc_ref: str) -> NpcData | None:
                 alias_norm = normalize_for_match(alias)
                 if ref_norm in alias_norm or alias_norm in ref_norm:
                     score = min(len(ref_norm), len(alias_norm))
-                    if score >= 5 and score > best_score:
+                    if score >= min_len and score > best_score:
                         best_score = score
                         best_match = n
         if best_match:
@@ -359,6 +361,8 @@ def fuzzy_match_existing_npc(game: "GameState", new_name: str) -> tuple[NpcData 
     best_match = None
     best_score = 0
     best_type = "identity"
+    _fuzzy = eng().fuzzy_match
+    _npc_match = eng().npc_matching
 
     for n in game.npcs:
         name_norm = normalize_for_match(n.name)
@@ -368,7 +372,7 @@ def fuzzy_match_existing_npc(game: "GameState", new_name: str) -> tuple[NpcData 
         # 1. Substring check
         if new_norm in name_norm or name_norm in new_norm:
             shorter_len = min(len(new_norm), len(name_norm))
-            if shorter_len >= 5 and shorter_len > best_score:
+            if shorter_len >= _fuzzy.min_word_length and shorter_len > best_score:
                 best_score = shorter_len
                 best_match = n
                 best_type = "identity"
@@ -381,7 +385,7 @@ def fuzzy_match_existing_npc(game: "GameState", new_name: str) -> tuple[NpcData 
                 return n, "identity"
             if new_norm in alias_norm or alias_norm in new_norm:
                 shorter_len = min(len(new_norm), len(alias_norm))
-                if shorter_len >= 5 and shorter_len > best_score:
+                if shorter_len >= _fuzzy.min_word_length and shorter_len > best_score:
                     best_score = shorter_len
                     best_match = n
                     best_type = "identity"
@@ -394,7 +398,7 @@ def fuzzy_match_existing_npc(game: "GameState", new_name: str) -> tuple[NpcData 
         all_words = name_words | alias_words
 
         overlap = new_words & all_words
-        significant_overlap = [w for w in overlap if len(w) >= 5]
+        significant_overlap = [w for w in overlap if len(w) >= _fuzzy.min_word_length]
 
         if significant_overlap:
             overlap_dominated = False
@@ -402,7 +406,7 @@ def fuzzy_match_existing_npc(game: "GameState", new_name: str) -> tuple[NpcData 
                 word = significant_overlap[0]
                 name_ratio = len(word) / max(len(name_norm), 1)
                 new_ratio = len(word) / max(len(new_norm), 1)
-                if max(name_ratio, new_ratio) < 0.4:
+                if max(name_ratio, new_ratio) < _fuzzy.exact_dedup_threshold:
                     overlap_dominated = True
 
             if not overlap_dominated:
@@ -429,9 +433,9 @@ def fuzzy_match_existing_npc(game: "GameState", new_name: str) -> tuple[NpcData 
                     break
 
             if not fail and near >= 1:
-                accept = exact >= 1 or (len(new_name_words) == 1 and len(new_name_words[0]) >= 5)
+                accept = exact >= 1 or (len(new_name_words) == 1 and len(new_name_words[0]) >= _fuzzy.min_word_length)
                 if accept:
-                    stt_score = sum(len(w) for w in new_name_words) + 10
+                    stt_score = sum(len(w) for w in new_name_words) + _npc_match.stt_alias_bonus
                     if stt_score > best_score:
                         best_score = stt_score
                         best_match = n

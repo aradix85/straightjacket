@@ -3,6 +3,7 @@
 
 import re
 
+from ..engine_loader import eng
 from ..logging_util import log
 from ..mechanics import time_phases, update_location
 from ..models import ClockData, GameState, MemoryEntry, NpcData
@@ -12,11 +13,12 @@ from ..npc import apply_name_sanitization, normalize_npc_dispositions, score_imp
 def _find_npc_by_name(npcs: list[NpcData], npc_name: str) -> NpcData | None:
     """Find an NPC by name or partial name match. Used for memory seeding."""
     name_lower = npc_name.lower().strip()
+    min_part = eng().setup_common.part_name_min_length
     for n in npcs:
         if n.name.lower().strip() == name_lower:
             return n
         for part in npc_name.split():
-            if len(part) >= 4 and part.lower() in n.name.lower():
+            if len(part) >= min_part and part.lower() in n.name.lower():
                 return n
     return None
 

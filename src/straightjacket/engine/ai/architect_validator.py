@@ -3,6 +3,8 @@
 
 Extracted from validator.py. Checks story blueprints for genre fidelity
 using rule-based drift detection and LLM semantic checking.
+
+NOTE: Slated for deletion in roadmap step 29b along with architect.py.
 """
 
 import json
@@ -96,6 +98,7 @@ def validate_architect(
         return blueprint
 
     except Exception as e:
+        # Intentional graceful degradation — see AI-CALL SUPPRESSION POLICY in provider_base.py.
         log(f"[ArchitectValidator] Check failed ({e}), blueprint unchanged", level="warning")
         return blueprint
 

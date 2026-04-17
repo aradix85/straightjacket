@@ -64,7 +64,9 @@ def salvage_truncated_narration(raw: str) -> str:
     if stripped.endswith(('."', '!"', '?"', ".»", "!»", "?»")):
         last_sentence = max(last_sentence, len(stripped))
 
-    if last_sentence > 30 and last_sentence < len(prose):
+    from .engine_loader import eng as _eng
+
+    if last_sentence > _eng().parser.max_label_length and last_sentence < len(prose):
         trimmed = prose[:last_sentence].rstrip()
         log(f"[Narrator] Trimmed truncated prose: {len(prose)} → {len(trimmed)} chars")
         prose = trimmed
@@ -205,9 +207,12 @@ def parse_narrator_response(game: GameState, raw: str) -> str:
             # Check individual name parts (e.g. "Totewald" from
             # "Geschäftsführer Clemens Totewald") — min 4 chars to avoid
             # matching generic words like "der", "von"; skip known titles
+            from .engine_loader import eng as _eng
+
+            min_part = _eng().parser.min_line_length
             for part in name.split():
                 part_clean = part.strip(".,;:!?\"'()-").lower()
-                if len(part_clean) >= 4 and part_clean not in NAME_TITLES and part_clean in narration_lower:
+                if len(part_clean) >= min_part and part_clean not in NAME_TITLES and part_clean in narration_lower:
                     npc.introduced = True
                     break
 

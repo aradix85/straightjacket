@@ -5,6 +5,59 @@ Originally forked from [EdgeTales](https://github.com/edgetales/edgetales). See 
 
 ---
 
+## [0.53.0] — 2026-04-18
+
+Tranche 1 of the config-strict refactor. Every domain-config access now raises on missing data; every tuning number that determined engine behaviour is in yaml.
+
+**engine_config.py — strict dataclasses.** Every field is required. `_build_strict` raises `KeyError` on missing yaml keys and `ValueError` on unknown ones. No more hidden Python defaults for domain config. `get_raw(key)` drops its `default` parameter — missing flexible sections raise `KeyError`.
+
+**config_loader.py — strict `_parse_config`.** `AIConfig`, `ServerConfig`, `LanguageConfig` all have required fields. `_DEFAULT_ROLE_CLUSTER` Python dict removed; `config.yaml` now carries the full role → cluster mapping explicitly. Missing role assignment raises.
+
+**engine.yaml additions.** 19 new tuning sections consolidating magic numbers that previously lived in Python: `fuzzy_match`, `npc_matching`, `monologue_detection`, `act_progress`, `rate_limit`, `retry`, `tf_idf`, `memory`, `chaos_resolver`, `description_dedup`, `rule_validator`, `parser`, `story_state`, `chapter`, `setup_common`, `metadata_voting`, `naming`, `random_events`, `prompt_display`. `legacy.ticks_by_rank` table added (was a hardcoded Python dict). `kishotenketsu_default` renamed to `kishotenketsu_fallback_probability`. `opening.clock_fallback_name` removed — background_vow is required at opening-clock construction. New `creation.brain_track_rank_fallback`. New `location.prompt_history_size` (distinct from existing `history_size`).
+
+**get_raw call-site cleanup.** All 15 `eng().get_raw(key, default)` calls across `engine_memories.py`, `resolvers.py`, `move_outcome.py`, `stance_gate.py`, `consequences.py`, `turn.py`, `processing.py` replaced with strict `get_raw(key)`.
+
+**Structural fallback hotspots:**
+- `stance_gate.resolve_npc_stance`: five nested `.get()` fallbacks replaced with direct `matrix[disposition][bond_range][cat]` lookup.
+- `consequences.pick_template`: `fallback=""` parameter removed.
+- `move_outcome.py` handlers: all seven `params.get(key, default)` calls replaced with strict `params[key]`. `_dispatch_handler` raises on unknown handlers.
+- `move_outcome.disposition_shift`: explicit "top of ladder" check replaces silent `shifts.get(disp, disp)`.
+- `legacy.mark_legacy`: hardcoded `ticks_by_rank` dict removed; reads `eng().legacy.ticks_by_rank`.
+- `engine_memories.derive_memory_emotion`: `.get(key, "neutral")` chains replaced with strict lookups.
+- `datasworn/loader.OracleTable.roll()`: silent last-row fallback removed. Malformed row ranges raise `ValueError`.
+- `game_start.py`: hardcoded stat defaults 1/2/1/1/2 removed — client must send complete stats.
+- `validator.py`: `sampling_params("narrator").get("max_retries", 3)` made strict.
+- `emotions_loader.py`: `importance` / `keyword_boosts` / `disposition_map` fetch with `{}` fallback made strict. `normalize_disposition` keeps its "neutral" default (AI-output sanitisation, not config-access).
+- `turn.py`: hardcoded `"dangerous"` fallback for missing track_rank moved to `creation.brain_track_rank_fallback`.
+- `models_base.py`: `PROGRESS_RANKS.get(rank, 8)` in `ProgressTrack.ticks_per_mark` and `ThreatData.menace_per_mark` made strict. The dict stays in Python — it is the track-fill table (higher rank = slower progress), **not** a duplicate of `legacy.ticks_by_rank` in yaml (which is the inverse legacy-reward table). Comment added.
+- `fate.py`: four `.get(key, default)` calls on `chaos_thresholds`, `chaos_scores`, `resource_scores` made strict.
+- `engine_loader.damage()`: three violations in one function removed. Previously: `try/except → return 0`, double `.get(position, .get("risky"))`, trailing `return 0` on type mismatch. Now raises `KeyError` on missing path or position, `TypeError` on non-numeric leaf.
+
+**Magic numbers → yaml.** `resolvers.py` (chaos thresholds, session windows, clock cap), `random_events.py` (threat probability, consolidation), `memory.py` (token length, consolidation floor, unknown-emotion importance), `activation.py` (eight TF-IDF constants), `matching.py` (fuzzy thresholds and STT bonus), `lifecycle.py` (bond multiplier, identity score delta, richness weights, ten description-match thresholds), `naming.py` (callsign probability), `setup_common.py` (part-name threshold), `metadata.py` (cross-vote thresholds), `rule_validator.py` (monologue thresholds), `parser.py` (label and line lengths), `story_state.py` (intensity smoothing, crisis offset), `chapters.py` (filler max, open threads max), `web/server.py` (rate limit window, readiness probe), `provider_base.py` (retry HTTP codes, backoff base), `prompt_builders.py` (five text-truncation caps), `prompt_blocks.py` (recent events and campaign history windows), `world.py` (location history size). New `PromptDisplayConfig` dataclass with seven fields.
+
+**Yaml field rename pass.** Placeholder names from the extraction pass cleaned up: `rule_validator.min_narration_length` → `min_quote_count`, `min_scene_chars` → `max_gap_chars`, `min_ellipsis_window` → `max_consecutive_short_gaps`. Two unused fields removed. `description_dedup` field names replaced with intent-matching names: `max_alias_word_count`, `min_desc_chars`, `min_word_chars_for_match`, `min_new_word_count`, `min_substring_match_len`, `long_word_chars`, `partial_match_weight`, `effective_overlap_min`, `min_overlap_ratio`.
+
+**AI-call exception suppression policy.** `provider_base.py` module docstring documents the carve-out for 12 `except Exception` sites across `brain.py`, `narrator.py`, `validator.py`, `director.py`, `architect.py`, `architect_validator.py`, `correction.py`, `game/director_runner.py`, `tools/handler.py`. Transient API failures (429, 5xx, network) should degrade gracefully (Brain → "dialog", validator retry → empty) rather than crash the session. Each suppression logs at warning level. Every site has a one-line comment pointing to the policy.
+
+**Ruff config.** Added `SIM401` to ignore list — it conflicts with the no-fallback rule on `dict.get`.
+
+**Tests.** `tests/conftest.py` `stub_engine` fixture rewritten: starts from the real `engine.yaml` and overrides only test-specific values. No more manually-synced dict; new yaml keys flow into tests automatically. `test_move_outcome.py` and `test_impacts.py` updated with full handler params. Fallback-based tests in `test_consequence_sentences.py` and `test_legacy.py` replaced with strict-raises tests. `test_engine.py` empty-config parse now asserts `KeyError`.
+
+**Flagged for later tranches** (no fix this tranche; TODOs in source code):
+- `schemas.py`: 11 field descriptions in JSON schemas are AI-facing text → tranche 6.1.
+- `director.py:355` `or "reflective"` → tranche 6.2.
+- `turn.py:381` `or "Unnamed conflict"` → tranche 6.2.
+- `npc/processing.py:247` `or f"{npc.name} appeared"` → tranche 6.2.
+- `move_outcome.py`: ~25 consequence-label f-strings feed validator and narrator prompts → tranche 6.2 (new `consequence_labels:` yaml section).
+- `settings.py:139` `atmospheric_drift_threshold` Python fallback `3` → tranche 2.2 (parent-chain resolver).
+- `datasworn/loader.py:287` `backstory_prompts()` cascade ignores `oracle_paths.backstory` → tranche 2.3.
+- `models_base.py:123` `PROGRESS_RANKS` dict → tranche 3.1 (separate yaml key, not a merge).
+- `architect.py` and `architect_validator.py`: module docstrings declare these slated for deletion in roadmap 29b. Magic numbers and hardcoded prompts left untouched.
+
+Tests: 785 passing (was 786; two fallback-tests deleted, one strict-raises test added). Ruff clean, ruff format clean, mypy clean on 87 source files.
+
+---
+
 ## [0.52.2] — 2026-04-17
 
 Config-driven cleanup, second pass. Every AI-facing string and regex that can live in yaml, now does. No fallbacks, no legacy accessors.

@@ -80,9 +80,10 @@ def retire_distant_npcs(game: "GameState", max_active: int | None = None) -> Non
         last_scene = max((m.scene for m in npc.memory), default=0) or 0
         from .bond import get_npc_bond
 
-        score = last_scene + get_npc_bond(game, npc.id) * 3
+        dd = eng().description_dedup
+        score = last_scene + get_npc_bond(game, npc.id) * dd.bond_multiplier
         if not npc.memory or last_scene >= game.narrative.scene_count:
-            score += 1000
+            score += dd.identity_score_delta
         return score
 
     active.sort(key=relevance)
@@ -161,6 +162,7 @@ def sanitize_aliases(npc: NpcData) -> None:
     aliases = npc.aliases
     if not aliases:
         return
+    dd = eng().description_dedup
     seen = set()
     clean = []
     for a in aliases:
@@ -168,7 +170,7 @@ def sanitize_aliases(npc: NpcData) -> None:
         low = a_stripped.lower()
         if not a_stripped or low in seen or low == name.lower():
             continue
-        if len(a_stripped.split()) > 4:
+        if len(a_stripped.split()) > dd.max_alias_word_count:
             continue
         seen.add(low)
         clean.append(a_stripped)
@@ -198,12 +200,13 @@ def absorb_duplicate_npc(game: "GameState", original: NpcData, merged_name: str)
         def _richness(n: NpcData) -> int:
             from .bond import get_npc_bond
 
+            dd = eng().description_dedup
             return (
-                len(n.memory) * 2
-                + bool(n.agenda) * 3
-                + bool(n.instinct) * 3
-                + get_npc_bond(game, n.id) * 2
-                + bool(n.description) * 1
+                len(n.memory) * dd.richness_memory
+                + bool(n.agenda) * dd.richness_aim
+                + bool(n.instinct) * dd.richness_aim
+                + get_npc_bond(game, n.id) * dd.richness_memory
+                + bool(n.description) * dd.richness_other
             )
 
         dup_richer = _richness(dup) > _richness(original)
@@ -273,20 +276,28 @@ def description_match_existing_npc(game: "GameState", new_desc: str, new_name_no
     new_name_norm should be pre-normalized via normalize_for_match."""
     from ..mechanics import locations_match
 
-    if not new_desc or len(new_desc) < 10:
+    dd = eng().description_dedup
+
+    if not new_desc or len(new_desc) < dd.min_desc_chars:
         return None
 
-    new_words = {w.strip(".,;:!?\"'()-").lower() for w in new_desc.split() if len(w.strip(".,;:!?\"'()-")) >= 4}
+    new_words = {
+        w.strip(".,;:!?\"'()-").lower()
+        for w in new_desc.split()
+        if len(w.strip(".,;:!?\"'()-")) >= dd.min_word_chars_for_match
+    }
     new_words -= _STOPWORDS
 
     # Name-Reference Guard: strip words from the candidate NPC's own
     # name/aliases out of the new description's word set.
     candidate_name_words = {
-        w.strip(".,;:!?\"'()-").lower() for w in new_name_norm.split() if len(w.strip(".,;:!?\"'()-")) >= 4
+        w.strip(".,;:!?\"'()-").lower()
+        for w in new_name_norm.split()
+        if len(w.strip(".,;:!?\"'()-")) >= dd.min_word_chars_for_match
     }
     new_words -= candidate_name_words
 
-    if len(new_words) < 2:
+    if len(new_words) < dd.min_new_word_count:
         return None
 
     best_match = None
@@ -308,7 +319,9 @@ def description_match_existing_npc(game: "GameState", new_desc: str, new_name_no
             continue
 
         existing_words = {
-            w.strip(".,;:!?\"'()-").lower() for w in existing_desc.split() if len(w.strip(".,;:!?\"'()-")) >= 4
+            w.strip(".,;:!?\"'()-").lower()
+            for w in existing_desc.split()
+            if len(w.strip(".,;:!?\"'()-")) >= dd.min_word_chars_for_match
         }
         existing_words -= _STOPWORDS
 
@@ -316,27 +329,29 @@ def description_match_existing_npc(game: "GameState", new_desc: str, new_name_no
         substring_matches = set()
         for nw in new_words - exact_overlap:
             for ew in existing_words - exact_overlap:
-                if len(nw) >= 5 and len(ew) >= 5:
+                if len(nw) >= dd.min_substring_match_len and len(ew) >= dd.min_substring_match_len:
                     if nw in ew or ew in nw:
                         substring_matches.add(nw)
                         break
-                    nw_parts = set(p for p in nw.split("-") if len(p) >= 4)
-                    ew_parts = set(p for p in ew.split("-") if len(p) >= 4)
+                    nw_parts = {p for p in nw.split("-") if len(p) >= dd.min_word_chars_for_match}
+                    ew_parts = {p for p in ew.split("-") if len(p) >= dd.min_word_chars_for_match}
                     if nw_parts & ew_parts:
                         substring_matches.add(nw)
                         break
 
-        long_exact = sum(1 for w in exact_overlap if len(w) >= 12)
-        effective_overlap: float = len(exact_overlap) + long_exact * 0.5 + len(substring_matches) * 0.5
-        if effective_overlap < 2.0:
+        long_exact = sum(1 for w in exact_overlap if len(w) >= dd.long_word_chars)
+        effective_overlap: float = (
+            len(exact_overlap) + long_exact * dd.partial_match_weight + len(substring_matches) * dd.partial_match_weight
+        )
+        if effective_overlap < dd.effective_overlap_min:
             continue
 
         min_set_size = min(len(new_words), len(existing_words))
         overlap_ratio = effective_overlap / max(min_set_size, 1)
-        has_long_match = any(len(w) >= 12 for w in exact_overlap)
+        has_long_match = any(len(w) >= dd.long_word_chars for w in exact_overlap)
 
-        meets_threshold = (overlap_ratio >= 0.25 and effective_overlap >= 2.0) or (
-            has_long_match and effective_overlap >= 2.0
+        meets_threshold = (overlap_ratio >= dd.min_overlap_ratio and effective_overlap >= dd.effective_overlap_min) or (
+            has_long_match and effective_overlap >= dd.effective_overlap_min
         )
 
         if meets_threshold and effective_overlap > best_score:

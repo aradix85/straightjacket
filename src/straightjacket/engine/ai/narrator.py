@@ -133,6 +133,7 @@ IMPORTANT: {game.player_name} is the PLAYER CHARACTER — do NOT include them as
         )
         return data
     except Exception as e:
+        # Intentional graceful degradation — see AI-CALL SUPPRESSION POLICY in provider_base.py.
         log(f"[OpeningSetup] Extraction failed: {e}", level="warning")
         return {
             "npcs": [],
@@ -235,6 +236,7 @@ Extract all metadata from the narration above. Remember: {game.player_name} is t
         )
         return metadata
     except Exception as e:
+        # Intentional graceful degradation — see AI-CALL SUPPRESSION POLICY in provider_base.py.
         log(f"[Metadata] Extraction failed: {e}", level="warning")
         return {
             "new_npcs": [],

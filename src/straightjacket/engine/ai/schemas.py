@@ -3,6 +3,11 @@
 
 Move and stat enums are config-driven from engine.yaml.
 Schema builder helpers eliminate repeated boilerplate.
+
+TODO tranche 6.1: field `description=` strings in these schemas are sent to
+AI models as part of the structured-output JSON schema. They are AI-facing
+text. When localisation lands, they should be externalised to prompts.yaml
+(or a sibling schemas.yaml) keyed by schema name + field path.
 """
 
 from ..engine_loader import eng

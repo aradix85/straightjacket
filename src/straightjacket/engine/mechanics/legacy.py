@@ -42,14 +42,8 @@ def mark_legacy(game: GameState, track_name: str, source_rank: str = "dangerous"
     Returns XP granted from newly filled boxes.
     """
     track = get_legacy_track(game, track_name)
-    ticks_by_rank = {
-        "troublesome": 1,
-        "dangerous": 2,
-        "formidable": 4,
-        "extreme": 8,
-        "epic": 12,
-    }
-    ticks = ticks_by_rank.get(source_rank, 2)
+    ticks_by_rank = eng().legacy.ticks_by_rank
+    ticks = ticks_by_rank[source_rank]
 
     old_boxes = track.filled_boxes
     track.ticks = min(track.max_ticks, track.ticks + ticks)

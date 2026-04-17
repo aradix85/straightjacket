@@ -24,12 +24,14 @@ class TestMarkLegacy:
         mark_legacy(game, "quests", "formidable")
         assert game.campaign.legacy_quests.ticks == 4
 
-    def test_mark_unknown_rank_defaults_to_dangerous(self, stub_engine: None) -> None:
+    def test_mark_unknown_rank_raises(self, stub_engine: None) -> None:
+        import pytest
+
         from straightjacket.engine.mechanics.legacy import mark_legacy
 
         game = _game()
-        mark_legacy(game, "quests", "bogus")
-        assert game.campaign.legacy_quests.ticks == 2
+        with pytest.raises(KeyError):
+            mark_legacy(game, "quests", "bogus")
 
     def test_mark_unknown_track_raises(self, stub_engine: None) -> None:
         import pytest

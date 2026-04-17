@@ -32,21 +32,26 @@ def _ensure_loaded() -> dict:
 
 
 def importance_map() -> dict[str, int]:
-    """Get the emotional_weight → importance score mapping."""
-    return _ensure_loaded().get("importance", {})
+    """Get the emotional_weight → importance score mapping. Raises if missing."""
+    return _ensure_loaded()["importance"]
 
 
 def keyword_boosts() -> dict[int, list[str]]:
-    """Get keyword boost tiers: {min_score: [keywords]}."""
-    raw = _ensure_loaded().get("keyword_boosts", {})
+    """Get keyword boost tiers: {min_score: [keywords]}. Raises if missing."""
+    raw = _ensure_loaded()["keyword_boosts"]
     return {int(k): v for k, v in raw.items()}
 
 
 def disposition_map() -> dict[str, str]:
-    """Get disposition normalization map (any label → canonical 5)."""
-    return _ensure_loaded().get("disposition_map", {})
+    """Get disposition normalization map (any label → canonical 5). Raises if missing."""
+    return _ensure_loaded()["disposition_map"]
 
 
 def normalize_disposition(raw: str) -> str:
-    """Normalize any AI-generated disposition to one of the 5 canonical values."""
+    """Normalize any AI-generated disposition to one of the 5 canonical values.
+
+    The disposition_map falls back to "neutral" for unknown labels — this is
+    AI-output sanitisation (the narrator invents new words), not a domain
+    fallback on the yaml config itself.
+    """
     return disposition_map().get(raw.lower().strip(), "neutral")

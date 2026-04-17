@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
-"""AI Story Architect, Recap, and Chapter Summary calls."""
+"""AI Story Architect, Recap, and Chapter Summary calls.
+
+NOTE: This module is slated for deletion in roadmap step 29b (see HANDOVER.md).
+Magic numbers for text truncation and log windows inside the prompts below are
+intentionally left hardcoded — fixing them would be wasted work before removal.
+"""
 
 import json
 
@@ -74,6 +79,7 @@ def call_recap(provider: AIProvider, game: GameState, config: EngineConfig | Non
         )
         return response.content
     except Exception as e:
+        # Intentional graceful degradation — see AI-CALL SUPPRESSION POLICY in provider_base.py.
         log(f"[Recap] Failed: {e}", level="warning")
         return f"({game.player_name} recalls the recent events...)"
 
@@ -168,6 +174,7 @@ npcs:{npc_text}{campaign_ctx}{backstory_text}"""
         return blueprint
 
     except Exception as e:
+        # Intentional graceful degradation — see AI-CALL SUPPRESSION POLICY in provider_base.py.
         log(f"[Story] Architect failed ({type(e).__name__}: {e}), continuing without story blueprint", level="warning")
         return None
 
@@ -218,6 +225,7 @@ def call_chapter_summary(
         data["scenes"] = game.narrative.scene_count
         return ChapterSummary.from_dict(data)
     except Exception as e:
+        # Intentional graceful degradation — see AI-CALL SUPPRESSION POLICY in provider_base.py.
         log(f"[ChapterSummary] Structured output failed ({type(e).__name__}: {e}), using fallback", level="warning")
         return ChapterSummary(
             chapter=game.campaign.chapter_number,

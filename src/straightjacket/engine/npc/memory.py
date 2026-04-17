@@ -26,6 +26,7 @@ def score_importance(emotional_weight: str, event_text: str = "", debug: bool = 
     raw = emotional_weight.lower().strip()
     debug_info = ""
     _imp = importance_map()
+    _mem_cfg = eng().memory
 
     # Direct hit — fast path
     if raw in _imp:
@@ -33,9 +34,9 @@ def score_importance(emotional_weight: str, event_text: str = "", debug: bool = 
         debug_info = f"direct:{raw}={base}"
     else:
         tokens = re.split(r"[_/,;:\s]+|(?:\s+and\s+)|(?:\s+mixed\s+with\s+)", raw)
-        tokens = [t.strip() for t in tokens if len(t.strip()) >= 3]
+        tokens = [t.strip() for t in tokens if len(t.strip()) >= _mem_cfg.min_token_length]
 
-        best = 4  # default for unrecognized emotions
+        best = _mem_cfg.unknown_emotion_importance
         best_token = "default"
         for token in tokens:
             if token in _imp and _imp[token] > best:
@@ -76,6 +77,7 @@ def retrieve_memories(
     reflections = [m for m in memories if m.type == "reflection"]
     _e = eng()
     _w = _e.memory_retrieval_weights
+    _mem_cfg = _e.memory
     w_recency = _w.recency
     w_importance = _w.importance
     w_relevance = _w.relevance
@@ -84,7 +86,7 @@ def retrieve_memories(
 
     context_words = set()
     if context_text:
-        context_words = {w.lower() for w in context_text.split() if len(w) >= 3}
+        context_words = {w.lower() for w in context_text.split() if len(w) >= _mem_cfg.min_token_length}
 
     def _score_memory(mem: MemoryEntry) -> float:
         scene_gap = max(0, current_scene - mem.scene)
@@ -97,10 +99,10 @@ def retrieve_memories(
 
         relevance = 0.0
         if context_words:
-            event_words = {w.lower() for w in mem.event.split() if len(w) >= 3}
+            event_words = {w.lower() for w in mem.event.split() if len(w) >= _mem_cfg.min_token_length}
             overlap = context_words & event_words
             if overlap:
-                relevance = min(1.0, len(overlap) / max(3, len(context_words)) * 2)
+                relevance = min(1.0, len(overlap) / max(_mem_cfg.min_token_length, len(context_words)) * 2)
 
         if _present and mem.about_npc in _present:
             relevance = min(1.0, relevance + about_boost)
@@ -134,19 +136,20 @@ def consolidate_memory(npc: NpcData) -> None:
            observations sorted by importance then recency (max eng().npc.max_observations).
     Total never exceeds eng().npc.max_memory_entries."""
     memories = npc.memory
-    if len(memories) <= eng().npc.max_memory_entries:
+    _e = eng()
+    if len(memories) <= _e.npc.max_memory_entries:
         return
 
     reflections = [m for m in memories if m.type == "reflection"]
     observations = [m for m in memories if m.type != "reflection"]
 
-    kept_reflections = reflections[-eng().npc.max_reflections :]
-    obs_budget = eng().npc.max_memory_entries - len(kept_reflections)
+    kept_reflections = reflections[-_e.npc.max_reflections :]
+    obs_budget = _e.npc.max_memory_entries - len(kept_reflections)
 
     if len(observations) <= obs_budget:
         kept_observations = observations
     else:
-        recency_budget = max(3, int(obs_budget * eng().npc.consolidation_recency_ratio))
+        recency_budget = max(_e.memory.consolidation_floor, int(obs_budget * _e.npc.consolidation_recency_ratio))
         importance_budget = obs_budget - recency_budget
 
         by_recency = sorted(observations, key=lambda m: m.scene, reverse=True)

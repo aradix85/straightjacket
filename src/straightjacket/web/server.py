@@ -21,6 +21,7 @@ from starlette.routing import Route, WebSocketRoute
 from starlette.websockets import WebSocket, WebSocketDisconnect
 
 from ..engine.config_loader import narration_language
+from ..engine.engine_loader import eng
 from ..engine.logging_util import log
 from ..engine.models import EngineConfig
 from .handlers import (
@@ -122,10 +123,11 @@ async def websocket_endpoint(ws: WebSocket) -> None:
             await _session.active_ws.close()
     # Wait for in-flight processing to finish before accepting new commands.
     # Prevents the new connection from reading partially-mutated game state.
-    for _ in range(100):  # 10s max wait
+    _rl = eng().rate_limit
+    for _ in range(_rl.warn_probe_max_tries):
         if not _session.processing:
             break
-        await asyncio.sleep(0.1)
+        await asyncio.sleep(_rl.warn_probe_poll_seconds)
     _session.active_ws = ws
 
     # Initial state
@@ -162,10 +164,10 @@ async def websocket_endpoint(ws: WebSocket) -> None:
     except Exception:
         return
 
-    # Message loop with rate limiting (10 messages per second burst, 2/s sustained)
+    # Message loop with rate limiting — parameters from engine.yaml rate_limit.
     _msg_times: list[float] = []
-    _RATE_WINDOW = 5.0  # seconds
-    _RATE_MAX = 20  # max messages per window
+    _RATE_WINDOW = _rl.window_seconds
+    _RATE_MAX = _rl.max_requests
 
     try:
         while True:

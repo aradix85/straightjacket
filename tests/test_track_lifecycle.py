@@ -82,7 +82,7 @@ class TestSceneChallengeRouting:
     def test_face_danger_marks_scene_challenge(self, load_engine: None) -> None:
         from straightjacket.engine.engine_loader import eng
 
-        sc_moves = eng().get_raw("scene_challenge_progress_moves", [])
+        sc_moves = eng().get_raw("scene_challenge_progress_moves")
         assert "adventure/face_danger" in sc_moves
         assert "adventure/secure_an_advantage" in sc_moves
 

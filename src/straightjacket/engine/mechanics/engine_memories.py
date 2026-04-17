@@ -8,32 +8,23 @@ from ..models import BrainResult, GameState, RollResult
 from .resolvers import move_category
 
 
-def derive_memory_emotion(move: str, result: str, disposition: str = "neutral") -> str:
+def derive_memory_emotion(move: str, result: str, disposition: str) -> str:
     """Derive emotional_weight for an NPC memory from mechanical context.
 
     Uses engine.yaml memory_emotions table: (move_category, result) → base emotion,
-    then appends disposition suffix. Falls back to 'neutral' for unknown combinations.
+    then appends disposition suffix. Raises KeyError on unknown combinations —
+    every move/result/disposition Brain produces must be mapped in yaml.
     """
     _e = eng()
-    base_map = _e.get_raw("memory_emotions", {}).get("base", {})
-    suffix_map = _e.get_raw("memory_emotions", {}).get("disposition_suffix", {})
+    memory_emotions = _e.get_raw("memory_emotions")
+    base_map = memory_emotions["base"]
+    suffix_map = memory_emotions["disposition_suffix"]
 
-    # Determine move category
-    category = "other"
-    move_cats = _e.get_raw("move_categories", {})
-    for cat in ("combat", "social", "endure", "recovery"):
-        cat_moves = move_cats.get(cat, [])
-        if move in cat_moves:
-            category = cat
-            break
+    category = move_category(move)
+    key = "dialog" if move == "dialog" or result == "dialog" else f"{category}_{result}"
 
-    if move == "dialog" or result == "dialog":
-        key = "dialog"
-    else:
-        key = f"{category}_{result}"
-
-    base = base_map.get(key, "neutral")
-    suffix = suffix_map.get(disposition, "")
+    base = base_map[key]
+    suffix = suffix_map[disposition]
     return base + suffix
 
 
@@ -54,9 +45,9 @@ def generate_engine_memories(
     from ..npc.memory import score_importance
 
     _e = eng()
-    templates = _e.get_raw("memory_templates", {})
-    result_text_map = _e.get_raw("memory_result_text", {})
-    verb_map = _e.get_raw("memory_move_verbs", {})
+    templates = _e.get_raw("memory_templates")
+    result_text_map = _e.get_raw("memory_result_text")
+    verb_map = _e.get_raw("memory_move_verbs")
     scene = game.narrative.scene_count
 
     move = brain.move
@@ -64,10 +55,10 @@ def generate_engine_memories(
     category = move_category(move)
     intent = brain.player_intent or ""
 
-    # Resolve template variables
+    # Resolve template variables — every key must be present in yaml.
     result_key = "dialog" if move == "dialog" else f"{category}_{result}"
-    result_text = result_text_map.get(result_key, result_text_map.get("other_MISS", "something happened"))
-    move_verb = verb_map.get(move, verb_map.get("_default", "acted"))
+    result_text = result_text_map[result_key]
+    move_verb = verb_map[move] if move in verb_map else verb_map["_default"]
 
     if consequences:
         result_text += f" ({', '.join(consequences[:3])})"
@@ -79,21 +70,17 @@ def generate_engine_memories(
         if npc.status not in ("active", "background"):
             continue
 
-        # Choose template
         is_dialog = move == "dialog" or (roll is None)
         is_targeted = brain.target_npc and brain.target_npc == npc.id
 
         if is_dialog:
-            if is_targeted or brain.target_npc:
-                template = templates.get("dialog", "scene {scene}: conversation with {npc}")
-            else:
-                template = templates.get("dialog_no_target", "scene {scene}: conversation — {intent}")
+            template_key = "dialog" if (is_targeted or brain.target_npc) else "dialog_no_target"
         elif is_targeted:
-            template = templates.get(
-                "action_targeted", "scene {scene}: {player} {move_verb} involving {npc} — {result_text}"
-            )
+            template_key = "action_targeted"
         else:
-            template = templates.get("action", "scene {scene}: {player} {move_verb} — {result_text}")
+            template_key = "action"
+
+        template = templates[template_key]
 
         event_text = template.format(
             scene=scene,
@@ -136,12 +123,13 @@ def generate_scene_context(
     npc_summary = ", ".join(activated_npc_names[:3]) if activated_npc_names else "no one nearby"
 
     if move == "dialog" or roll is None:
-        template = _e.get_raw("scene_context_dialog", "conversation at {location} with {npc_summary}")
+        template = _e.get_raw("scene_context_dialog")
         return template.format(location=location, npc_summary=npc_summary)
 
     result = roll.result if roll else "MISS"
-    move_label = _e.get_raw("memory_move_verbs", {}).get(move, move)
-    template = _e.get_raw("scene_context_template", "{result} on {move_label} at {location} — {npc_summary}")
+    verb_map = _e.get_raw("memory_move_verbs")
+    move_label = verb_map[move] if move in verb_map else move
+    template = _e.get_raw("scene_context_template")
     return template.format(
         result=result,
         move_label=move_label,

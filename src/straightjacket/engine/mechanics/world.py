@@ -106,7 +106,7 @@ def update_location(game: GameState, new_location: str) -> None:
             w.location_history.append(w.current_location)
     else:
         w.location_history.append(w.current_location)
-    w.location_history = w.location_history[-5:]
+    w.location_history = w.location_history[-eng().location.history_size :]
     w.current_location = new_location
 
 
@@ -167,5 +167,5 @@ def choose_story_structure(tone: str) -> str:
     """Choose between '3act' and 'kishotenketsu' based on tone probability."""
     _e = eng()
     kprob = _e.story.kishotenketsu_probability
-    probability = kprob.get(tone, _e.story.kishotenketsu_default)
+    probability = kprob[tone] if tone in kprob else _e.story.kishotenketsu_fallback_probability
     return "kishotenketsu" if random.random() < probability else "3act"

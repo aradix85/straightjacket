@@ -25,9 +25,12 @@ def compute_npc_tfidf_scores(npcs: list[NpcData], query_text: str) -> dict[str, 
     if not query_text or not npcs:
         return {}
 
+    _tf = eng().tf_idf
+    min_tok = _tf.token_min_length
+
     # Tokenize: lowercase, split on non-alpha, filter short tokens
     def _tokenize(text: str) -> list[str]:
-        return [w for w in text.lower().split() if len(w) >= 3 and w.isalpha()]
+        return [w for w in text.lower().split() if len(w) >= min_tok and w.isalpha()]
 
     # Build NPC documents: combine name, description, agenda, aliases, memory events
     docs = {}  # npc_id → token list
@@ -41,8 +44,8 @@ def compute_npc_tfidf_scores(npcs: list[NpcData], query_text: str) -> dict[str, 
             npc.agenda,
             " ".join(npc.aliases),
         ]
-        # Include recent memory events (last 5)
-        for m in npc.memory[-5:]:
+        # Include recent memory events
+        for m in npc.memory[-_tf.memory_window :]:
             parts.append(m.event)
         docs[npc_id] = _tokenize(" ".join(parts))
 
@@ -107,6 +110,7 @@ def activate_npcs_for_prompt(
     mentioned = name + disposition only
     activation_debug = {npc_name: {score, reasons, status}} for diagnostics"""
     target_id = brain.target_npc
+    _tf = eng().tf_idf
 
     # Build scan text from all available context
     scan_parts = [
@@ -116,7 +120,7 @@ def activate_npcs_for_prompt(
         game.world.current_scene_context or "",
         game.world.current_location or "",
     ]
-    for s in game.narrative.session_log[-2:]:
+    for s in game.narrative.session_log[-_tf.session_window :]:
         scan_parts.append(s.summary)
     scan_text = " ".join(scan_parts).lower()
 
@@ -148,7 +152,7 @@ def activate_npcs_for_prompt(
             reasons.append("name")
         else:
             for part in npc_name_lower.split():
-                if len(part) >= 3 and part in scan_text:
+                if len(part) >= _tf.token_min_length and part in scan_text:
                     score += _scores.name_part
                     reasons.append(f"part:{part}")
                     break
@@ -162,8 +166,8 @@ def activate_npcs_for_prompt(
 
         # 4. TF-IDF content similarity
         tfidf = tfidf_scores.get(npc.id, 0.0)
-        if tfidf > 0.05:
-            tfidf_contrib = min(0.5, tfidf * 1.5)
+        if tfidf > _tf.score_floor:
+            tfidf_contrib = min(_tf.memory_score_cap, tfidf * _tf.memory_score_multiplier)
             score += tfidf_contrib
             reasons.append(f"tfidf:{tfidf:.2f}")
 
@@ -174,8 +178,8 @@ def activate_npcs_for_prompt(
             reasons.append("location")
 
         # 6. Recent interaction bonus
-        recent_scenes = [m.scene for m in npc.memory[-3:]]
-        if recent_scenes and max(recent_scenes) >= game.narrative.scene_count - 2:
+        recent_scenes = [m.scene for m in npc.memory[-_tf.recency_window :]]
+        if recent_scenes and max(recent_scenes) >= game.narrative.scene_count - _tf.recency_offset:
             score += _scores.recent_interaction
             reasons.append("recent")
 

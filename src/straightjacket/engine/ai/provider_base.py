@@ -7,6 +7,30 @@ it goes through this interface.
 
 AIResponse normalizes the response format across providers so call sites
 don't need to know which provider produced the response.
+
+── AI-CALL EXCEPTION SUPPRESSION POLICY ──────────────────────────────────
+The straightjacket absolute_rules forbid `try/except Exception` suppression
+by default. AI-call sites are an explicit carve-out, documented here so
+future Claude sessions do not mistake them for bugs.
+
+Why exceptions are swallowed at AI-call sites (brain.py, narrator.py,
+validator.py, director.py, correction.py, architect*.py, tools/handler.py):
+
+1. AI calls fail transiently (rate limits, network blips, provider outages,
+   429/500/502/503/529). These are not bugs in the engine — they are the
+   weather the engine lives in.
+2. The retry wrapper (create_with_retry) already handles retryable HTTP
+   status codes with exponential backoff. What remains after retries
+   exhaust is unrecoverable for this call.
+3. Strict-raise would crash the player's session on any transient fault.
+   Graceful degradation — Brain → "dialog", revelation → confirmed=True,
+   narrator retry → empty string, etc. — is worse only in that it hides
+   the fault; the warning log preserves debuggability.
+4. Every suppression site logs the exception at warning or error level
+   with the type name. Faults are observable, just non-fatal.
+
+When this policy does NOT apply: config loading, yaml parsing, file
+persistence, input validation, domain-rule enforcement. Those must raise.
 """
 
 import re
@@ -219,12 +243,15 @@ def create_with_retry(
 
         except Exception as e:
             # Check if this is a retryable error
+            from ..engine_loader import eng as _eng
+
+            _retry_cfg = _eng().retry
             status_code = getattr(e, "status_code", None)
             is_connection_error = "connection" in type(e).__name__.lower() or "connect" in str(e).lower()
-            is_retryable_status = status_code in (429, 500, 502, 503, 529)
+            is_retryable_status = status_code in _retry_cfg.retryable_http_codes
 
             if attempt < max_retries and (is_retryable_status or is_connection_error):
-                wait = 2**attempt
+                wait = _retry_cfg.backoff_base**attempt
                 error_desc = f"HTTP {status_code}" if status_code else str(e)[:80]
                 log(f"[AI] {error_desc}, retry {attempt + 1}/{max_retries} in {wait}s", level="warning")
                 _backoff_sleep(wait)

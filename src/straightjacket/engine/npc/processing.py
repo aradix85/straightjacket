@@ -152,9 +152,18 @@ def process_new_npcs(game: "GameState", new_npcs: list) -> None:
     player_parts = set(player_norm.split())
     existing_names = {normalize_for_match(n.name) for n in game.npcs}
 
-    for nd in new_npcs:
-        if not isinstance(nd, dict) or not nd.get("name"):
+    for raw_nd in new_npcs:
+        if not isinstance(raw_nd, dict) or not raw_nd.get("name"):
             continue
+        # AI-output sanitization: the narrator may omit description/disposition.
+        # We normalise here so the rest of the function can treat nd as a
+        # well-formed record. This is input sanitisation of external data,
+        # not a domain-config fallback.
+        nd = {
+            "name": raw_nd["name"],
+            "description": (raw_nd.get("description") or "").strip(),
+            "disposition": raw_nd.get("disposition") or "neutral",
+        }
         name_norm = normalize_for_match(nd["name"])
 
         name_parts = set(name_norm.split())
@@ -184,11 +193,11 @@ def process_new_npcs(game: "GameState", new_npcs: list) -> None:
                     if fuzzy_hit.status in ("background", "lore"):
                         reactivate_npc(fuzzy_hit, reason="STT variant reappeared")
                 else:
-                    merge_npc_identity(fuzzy_hit, nd["name"], nd.get("description", ""), game=game)
+                    merge_npc_identity(fuzzy_hit, nd["name"], nd["description"], game=game)
                 existing_names.add(name_norm)
                 continue
 
-        new_desc = nd.get("description", "")
+        new_desc = nd["description"]
         if new_desc and len(new_desc) >= 10:
             desc_hit = description_match_existing_npc(game, new_desc, name_norm)
             if desc_hit:
@@ -225,8 +234,8 @@ def process_new_npcs(game: "GameState", new_npcs: list) -> None:
         npc = NpcData(
             id=npc_id,
             name=clean_name,
-            description=nd.get("description", "").strip(),
-            disposition=normalize_disposition(nd.get("disposition", "neutral")),
+            description=nd["description"],
+            disposition=normalize_disposition(nd["disposition"]),
             aliases=paren_aliases,
             last_location=game.world.current_location or "",
         )
@@ -235,10 +244,14 @@ def process_new_npcs(game: "GameState", new_npcs: list) -> None:
         existing_names.add(name_norm)
         log(f"[NPC] New mid-game NPC: {npc.name} ({npc_id}, {npc.disposition})")
 
-        seed_event = nd.get("description", "") or f"{npc.name} appeared"
-        seed_emotion = normalize_disposition(nd.get("disposition", "neutral"))
-        disp_to_emotion = eng().get_raw("disposition_to_seed_emotion", {})
-        seed_emotion = disp_to_emotion.get(seed_emotion, "neutral")
+        # TODO tranche 6.1: "{npc.name} appeared" is narrator-facing text; move to engine.yaml.
+        if nd["description"]:
+            seed_event = nd["description"]
+        else:
+            seed_event = f"{npc.name} appeared"
+        seed_disposition = normalize_disposition(nd["disposition"])
+        disp_to_emotion = eng().get_raw("disposition_to_seed_emotion")
+        seed_emotion = disp_to_emotion[seed_disposition] if seed_disposition in disp_to_emotion else "neutral"
         seed_imp, seed_debug = score_importance(seed_emotion, seed_event, debug=True)
         seed_imp = max(seed_imp, eng().npc.seed_importance_floor)
         npc.memory.append(

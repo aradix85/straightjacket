@@ -136,6 +136,9 @@ def _parse_setting_config(data: dict) -> SettingConfig:
         forbidden_concepts=list(gc.get("forbidden_concepts", [])),
         genre_test=gc.get("genre_test", ""),
         atmospheric_drift=list(gc.get("atmospheric_drift", [])),
+        # TODO tranche 2: atmospheric_drift_threshold default is a Python-literal
+        # fallback. The parent-chain resolver should inject it from the parent
+        # setting's yaml, not hardcode 3 here.
         atmospheric_drift_threshold=gc.get("atmospheric_drift_threshold", 3),
     )
 

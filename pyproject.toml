@@ -1,6 +1,6 @@
 [project]
 name = "straightjacket"
-version = "0.52.2"
+version = "0.53.0"
 requires-python = ">=3.11"
 dependencies = [
     "starlette>=1.0,<2",
@@ -24,6 +24,7 @@ ignore = [
     "E501",   # line length — handled by formatter, not linter
     "E402",   # module-level import not at top — app.py needs ensure_requirements() first
     "SIM108", # ternary — readability over conciseness in game logic
+    "SIM401", # dict.get(k, fallback) — conflicts with the no-fallback rule on domain config
 ]
 per-file-ignores = {"src/straightjacket/engine/__init__.py" = ["F401"], "src/straightjacket/engine/npc/__init__.py" = ["F401"], "src/straightjacket/engine/game/__init__.py" = ["F401"], "src/straightjacket/engine/db/__init__.py" = ["F401"], "src/straightjacket/engine/tools/__init__.py" = ["F401"], "src/straightjacket/engine/mechanics/__init__.py" = ["F401"], "src/straightjacket/engine/models.py" = ["F401"]}
 

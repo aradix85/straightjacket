@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import random
 
+from ..engine_loader import eng
 from ..logging_util import log
 from ..models import GameState, RandomEvent
 from .fate import _load_mythic
@@ -127,13 +128,14 @@ def _select_target(focus: str, game: GameState) -> tuple[str, str]:
 
     NPC-focus categories select from characters_list.
     Thread-focus categories select from threads list.
-    Threat-eligible categories may target an active threat (50% when threats exist).
+    Threat-eligible categories may target an active threat (probability from yaml).
     Empty list → falls back to current_context (no target).
     """
-    # Threat targeting: eligible focus + active threats → 50% chance
+    cfg = eng().random_events
+    # Threat targeting: eligible focus + active threats → configured probability
     if focus in _THREAT_ELIGIBLE_FOCUS:
         active_threats = [t for t in game.threats if t.status == "active" and not t.menace_full]
-        if active_threats and random.random() < 0.5:
+        if active_threats and random.random() < cfg.threat_target_probability:
             threat = random.choice(active_threats)
             log(f"[RandomEvent] Threat-eligible focus '{focus}' → targeting threat '{threat.name}'")
             return threat.name, threat.id
@@ -167,6 +169,8 @@ def generate_random_event(game: GameState, source: str = "") -> RandomEvent:
 
     The narrator receives the structured event as a <random_event> tag.
     """
+    cfg = eng().random_events
+
     # Step 1: focus
     focus, focus_roll = roll_event_focus()
 
@@ -175,7 +179,7 @@ def generate_random_event(game: GameState, source: str = "") -> RandomEvent:
 
     # Step 3: meaning
     # Use actions for events/actions, descriptions for qualities
-    table_name = "descriptions" if focus in ("ambiguous_event",) else "actions"
+    table_name = "descriptions" if focus in cfg.description_focus_categories else "actions"
     word1, word2 = roll_meaning_table(table_name)
 
     # Step 4: assemble
@@ -200,51 +204,65 @@ def generate_random_event(game: GameState, source: str = "") -> RandomEvent:
 
 
 def add_thread_weight(game: GameState, thread_id: str) -> None:
-    """Increase thread weight when invoked in a scene. Max 3 per thread."""
+    """Increase thread weight when invoked in a scene. Capped by yaml list_weight_max."""
+    cap = eng().random_events.list_weight_max
     for t in game.narrative.threads:
         if t.id == thread_id and t.active:
-            if t.weight < 3:
+            if t.weight < cap:
                 t.weight += 1
                 log(f"[Lists] Thread '{t.name}' weight → {t.weight}")
             return
 
 
 def add_character_weight(game: GameState, character_id: str) -> None:
-    """Increase character weight when invoked in a scene. Max 3 per character."""
+    """Increase character weight when invoked in a scene. Capped by yaml list_weight_max."""
+    cap = eng().random_events.list_weight_max
     for c in game.narrative.characters_list:
         if c.id == character_id and c.active:
-            if c.weight < 3:
+            if c.weight < cap:
                 c.weight += 1
                 log(f"[Lists] Character '{c.name}' weight → {c.weight}")
             return
 
 
 def consolidate_threads(game: GameState) -> None:
-    """Consolidate threads list when it reaches 25 entries.
+    """Consolidate threads list when it reaches the configured threshold.
 
-    Entries with weight 3 get weight 2 on the new list; others get weight 1.
+    Entries with weight >= consolidation_weight_high get weight_low on the new
+    list; others get weight_default.
     """
+    cfg = eng().random_events
     threads = [t for t in game.narrative.threads if t.active]
-    if len(threads) < 25:
+    if len(threads) < cfg.consolidation_threshold:
         return
 
     for t in threads:
-        t.weight = 2 if t.weight >= 3 else 1
+        t.weight = (
+            cfg.consolidation_weight_low
+            if t.weight >= cfg.consolidation_weight_high
+            else cfg.consolidation_weight_default
+        )
 
     log(f"[Lists] Consolidated {len(threads)} threads")
 
 
 def consolidate_characters(game: GameState) -> None:
-    """Consolidate characters list when it reaches 25 entries.
+    """Consolidate characters list when it reaches the configured threshold.
 
-    Entries with weight 3 get weight 2 on the new list; others get weight 1.
+    Entries with weight >= consolidation_weight_high get weight_low on the new
+    list; others get weight_default.
     """
+    cfg = eng().random_events
     chars = [c for c in game.narrative.characters_list if c.active]
-    if len(chars) < 25:
+    if len(chars) < cfg.consolidation_threshold:
         return
 
     for c in chars:
-        c.weight = 2 if c.weight >= 3 else 1
+        c.weight = (
+            cfg.consolidation_weight_low
+            if c.weight >= cfg.consolidation_weight_high
+            else cfg.consolidation_weight_default
+        )
 
     log(f"[Lists] Consolidated {len(chars)} characters")
 

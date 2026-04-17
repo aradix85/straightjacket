@@ -53,9 +53,10 @@ def get_current_act(game: GameState) -> CurrentAct:
     sr = current.scene_range or default_scene_range()
     act_len = max(sr[1] - sr[0] + 1, 1)
     scenes_in = scene - sr[0] + 1
-    if scenes_in <= act_len * 0.3:
+    cfg = eng().story_state
+    if scenes_in <= act_len * cfg.intensity_smoothing_current:
         progress = "early"
-    elif scenes_in <= act_len * 0.7:
+    elif scenes_in <= act_len * cfg.intensity_smoothing_previous:
         progress = "mid"
     else:
         progress = "late"
@@ -135,6 +136,7 @@ def check_story_completion(game: GameState) -> None:
             )
             return
 
-    if sc >= final_end + 5:
+    offset = eng().story_state.crisis_scene_offset
+    if sc >= final_end + offset:
         bp.story_complete = True
-        log(f"[Story] Complete (fallback): scene {sc} >= final_end+5 ({final_end + 5})")
+        log(f"[Story] Complete (fallback): scene {sc} >= final_end+{offset} ({final_end + offset})")

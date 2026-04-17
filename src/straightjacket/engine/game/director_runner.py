@@ -17,4 +17,5 @@ def run_deferred_director(provider: AIProvider, game: GameState, director_ctx: d
         guidance = call_director(provider, game, narration, config)
         apply_director_guidance(game, guidance)
     except Exception as e:
+        # Intentional graceful degradation — see AI-CALL SUPPRESSION POLICY in provider_base.py.
         log(f"[Director] Deferred call failed gracefully: {e}", level="warning")

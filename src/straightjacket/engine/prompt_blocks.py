@@ -239,7 +239,8 @@ def recent_events_block(game: GameState) -> str:
     """Build compact factual timeline from session_log for narrator consistency."""
     if not game.narrative.session_log or len(game.narrative.session_log) < 2:
         return ""
-    entries = game.narrative.session_log[-8:-1] if len(game.narrative.session_log) > 1 else []
+    window = eng().prompt_display.recent_events_window
+    entries = game.narrative.session_log[-(window + 1) : -1] if len(game.narrative.session_log) > 1 else []
     if not entries:
         return ""
     lines = []
@@ -258,7 +259,8 @@ def campaign_history_block(game: GameState) -> str:
     if not cam.campaign_history:
         return ""
     parts = [f'<campaign_history chapters="{len(cam.campaign_history)}">']
-    for ch in cam.campaign_history[-3:]:
+    n = eng().prompt_display.campaign_history_chapters
+    for ch in cam.campaign_history[-n:]:
         parts.append(f'  <chapter n="{ch.chapter}" title="{_xa(ch.title)}">{_xe(ch.summary)}</chapter>')
     parts.append("</campaign_history>")
     return "\n".join(parts)

@@ -53,23 +53,30 @@ def reload_engine() -> EngineSettings:
 def damage(category: str, position: str = "risky") -> int:
     """Look up a damage value from engine.yaml damage tables.
 
-    Navigates the raw YAML dict. Handles position-keyed dicts and flat ints.
-    Returns 0 if the path doesn't exist.
+    Navigates the raw YAML dict by dotted-path. Each segment of `category` is
+    a key into the dict. Leaves may be flat ints (position-agnostic) or dicts
+    keyed by combat position.
+
+    Strict: raises KeyError on missing paths and missing positions. Callers
+    must supply a valid category path and a position that exists in the table.
     """
     raw = eng()._raw
     node: Any = raw
     for key in category.split("."):
-        try:
-            node = node[key]
-        except (KeyError, TypeError, IndexError):
-            return 0
+        node = node[key]  # KeyError on missing key — straightjacket rule
 
     if isinstance(node, int | float):
         return int(node)
 
     if isinstance(node, dict):
-        val = node.get(position, node.get("risky"))
-        if isinstance(val, int | float):
-            return int(val)
+        if position not in node:
+            raise KeyError(
+                f"damage table at '{category}' has no entry for position '{position}' — "
+                f"available: {sorted(node.keys())}"
+            )
+        val = node[position]
+        if not isinstance(val, int | float):
+            raise TypeError(f"damage table '{category}.{position}' is not numeric: {val!r}")
+        return int(val)
 
-    return 0
+    raise TypeError(f"damage table at '{category}' is neither a number nor a position dict: {type(node).__name__}")

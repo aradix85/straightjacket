@@ -11,6 +11,7 @@ from __future__ import annotations
 import random
 
 from ..datasworn.settings import SettingPackage, active_package
+from ..engine_loader import eng
 from ..logging_util import log
 from ..models import GameState
 
@@ -46,7 +47,7 @@ def roll_oracle_name(game: GameState) -> str:
         elif len(paths) == 2:
             name = f"{data.roll_oracle(paths[0])} {data.roll_oracle(paths[1])}"
         else:
-            if random.random() < 0.5:
+            if random.random() < eng().naming.callsign_probability:
                 name = data.roll_oracle(paths[-1])
             else:
                 name = f"{data.roll_oracle(paths[0])} {data.roll_oracle(paths[1])}"

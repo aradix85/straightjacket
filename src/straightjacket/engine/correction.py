@@ -105,6 +105,7 @@ npcs:
         )
         return result
     except Exception as e:
+        # Intentional graceful degradation — see AI-CALL SUPPRESSION POLICY in provider_base.py.
         log(f"[Correction] Brain failed ({type(e).__name__}: {e}), falling back to no-op state_error", level="warning")
         return {
             "correction_source": "state_error",
