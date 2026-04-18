@@ -11,12 +11,7 @@ description: >
   depths. Delve adds site exploration, threats that lurk in the dark,
   and the denizens that guard forgotten places.
 
-oracle_paths:
-  action_theme: []  # Uses Classic's action/theme
-  descriptor_focus: []
-  names: []  # Uses Classic's names
-  backstory: ""
-  factions: ""
+oracle_paths: {}  # All fields inherit from Classic via parent chain
 
 vocabulary:
   substitutions: {}  # Inherits from Classic
@@ -27,8 +22,11 @@ vocabulary:
     Light: torchlight, bioluminescence, absolute darkness.
     Underground is claustrophobic, cold, and indifferent.
 
-genre_constraints:
-  forbidden_terms: []  # Inherits from Classic via parent chain
-  forbidden_concepts: []
-  genre_test: ""
-  atmospheric_drift: []  # Inherits from Classic — Delve shares Classic's world rules
+genre_constraints: {}  # All fields inherit from Classic via parent chain
+
+creation_flow:
+  has_truths: false             # Delve character inherits Classic truths; not re-selected
+  has_backstory_oracle: false
+  has_name_tables: false
+  has_ship_creation: false
+  starting_asset_categories: [] # Delve adds no new starting assets beyond Classic

@@ -112,11 +112,11 @@ def test_validate_narration_fail_open_on_api_error(stub_all: None) -> None:
 def test_validate_narration_catches_genre_violation_rule_based(stub_all: None) -> None:
     from straightjacket.engine.ai.rule_validator import ValidationContext
     from straightjacket.engine.ai.validator import validate_narration
-    from straightjacket.engine.datasworn.settings import GenreConstraints
     from straightjacket.engine.models import GameState
+    from tests.conftest import make_genre_constraints
 
     provider = _MockProvider(json.dumps({"pass": True, "violations": [], "correction": ""}))
-    gc = GenreConstraints(forbidden_terms=["magic"])
+    gc = make_genre_constraints(forbidden_terms=["magic"])
     ctx = ValidationContext.build(GameState(), result_type="MISS", genre_constraints=gc)
     result = validate_narration(
         provider,  # type: ignore[arg-type]
@@ -161,7 +161,7 @@ def test_validate_and_retry_actually_retries(stub_all: None) -> None:
 
 def test_validate_architect_fixes_violations(stub_all: None) -> None:
     from straightjacket.engine.ai.architect_validator import validate_architect
-    from straightjacket.engine.datasworn.settings import GenreConstraints
+    from tests.conftest import make_genre_constraints
 
     provider = _MockProvider(
         json.dumps(
@@ -174,7 +174,7 @@ def test_validate_architect_fixes_violations(stub_all: None) -> None:
         )
     )
     bp = {"central_conflict": "Magic war", "antagonist_force": "Evil wizard"}
-    gc = GenreConstraints(forbidden_terms=["magic"])
+    gc = make_genre_constraints(forbidden_terms=["magic"])
     result = validate_architect(
         provider,  # type: ignore[arg-type]
         bp,
@@ -188,11 +188,11 @@ def test_validate_architect_fixes_violations(stub_all: None) -> None:
 
 def test_validate_architect_fail_open_on_api_error(stub_all: None) -> None:
     from straightjacket.engine.ai.architect_validator import validate_architect
-    from straightjacket.engine.datasworn.settings import GenreConstraints
+    from tests.conftest import make_genre_constraints
 
     provider = _MockProvider(fail=True)
     bp = {"central_conflict": "Original", "antagonist_force": "Original"}
-    gc = GenreConstraints(forbidden_terms=["x"])
+    gc = make_genre_constraints(forbidden_terms=["x"])
     result = validate_architect(
         provider,  # type: ignore[arg-type]
         bp,

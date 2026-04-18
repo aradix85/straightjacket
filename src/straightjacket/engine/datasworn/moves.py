@@ -5,19 +5,20 @@ Parses Datasworn JSON move definitions into typed dataclasses.
 Supports all four Ironsworn-family settings and handles expansion
 overrides (Delve→Classic, Sundered Isles→Starforged).
 
-Usage:
-    from straightjacket.engine.datasworn.moves import load_moves
+The expansion→base relationship is declared in each setting's
+settings.yaml (`parent:` field) and read here via settings.parent_of().
+No Python-side mapping is kept.
 
-    moves = load_moves("starforged")
-    fd = moves["face_danger"]
+Usage:
+    from straightjacket.engine.datasworn.moves import load_moves, get_moves
+
+    moves = get_moves("starforged")          # standalone setting
+    moves = get_moves("sundered_isles")      # auto-resolves parent (starforged)
+    fd = moves["adventure/face_danger"]
     fd.roll_type        # "action_roll"
     fd.valid_stats      # ["edge", "heart", "iron", "shadow", "wits"]
     fd.category         # "adventure"
     fd.outcomes         # {"strong_hit": MoveOutcome(...), ...}
-
-    # Expansion merge:
-    moves = load_moves("sundered_isles", parent_id="starforged")
-    # SI overrides applied on top of Starforged base
 """
 
 from __future__ import annotations
@@ -26,20 +27,20 @@ from dataclasses import dataclass, field
 
 from ..logging_util import log
 from .loader import Setting, load_setting
+from .settings import datasworn_id_of, parent_of
 
-
-# ── Roll option: one way a move can be rolled ─────────────────
+# ── Roll option ───────────────────────────────────────────────
 
 
 @dataclass
 class RollOption:
     """Single roll option within a trigger condition.
 
-    using: what to roll with — "stat", "condition_meter", "asset_control",
-           "custom", "progress_track", or a legacy track name.
-    stat: stat name when using="stat" (edge, heart, iron, shadow, wits).
-    condition_meter: meter name when using="condition_meter" (health, spirit, supply).
-    control: asset control name when using="asset_control" (health, integrity, supply).
+    using: "stat", "condition_meter", "asset_control", "custom",
+           "progress_track", or a legacy track name.
+    stat: stat name when using="stat".
+    condition_meter: meter name when using="condition_meter".
+    control: asset control name when using="asset_control".
     assets: asset glob patterns when using="asset_control".
     value: fixed numeric value when using="custom".
     label: display label when using="custom".
@@ -54,25 +55,19 @@ class RollOption:
     label: str = ""
 
 
-# ── Trigger condition: one way to activate a move ─────────────
+# ── Trigger condition ─────────────────────────────────────────
 
 
 @dataclass
 class TriggerCondition:
-    """One trigger condition (a move can have multiple).
-
-    method: how to select the roll value — "player_choice", "highest",
-            "lowest", "progress_roll", "all".
-    roll_options: the values available for this condition.
-    text: flavor text describing when this condition applies.
-    """
+    """One trigger condition (a move can have multiple)."""
 
     method: str = ""
     roll_options: list[RollOption] = field(default_factory=list)
     text: str = ""
 
 
-# ── Move outcome: what happens on a given result ─────────────
+# ── Move outcome ──────────────────────────────────────────────
 
 
 @dataclass
@@ -82,39 +77,28 @@ class MoveOutcome:
     text: str = ""
 
 
-# ── Move: complete move definition ───────────────────────────
+# ── Move ──────────────────────────────────────────────────────
 
 
 @dataclass
 class Move:
-    """Datasworn move definition.
-
-    Pure data — no game logic. The engine reads these to determine
-    valid stats, roll type, and associated oracles/tracks.
-    """
+    """Datasworn move definition. Pure data — no game logic."""
 
     id: str = ""
-    key: str = ""  # short name: "face_danger", "endure_harm"
-    name: str = ""  # display name: "Face Danger", "Endure Harm"
-    category: str = ""  # parent category: "adventure", "combat", "suffer"
-    roll_type: str = ""  # "action_roll", "progress_roll", "no_roll", "special_track"
-    text: str = ""  # full move text (markdown)
+    key: str = ""
+    name: str = ""
+    category: str = ""
+    roll_type: str = ""
+    text: str = ""
 
     trigger_text: str = ""
     conditions: list[TriggerCondition] = field(default_factory=list)
 
     outcomes: dict[str, MoveOutcome] = field(default_factory=dict)
 
-    # Track category for progress moves (e.g. "Vow", "Connection", "Combat")
     track_category: str = ""
-
-    # Oracle references (Datasworn IDs or inline tables)
     oracle_ids: list[str] = field(default_factory=list)
-
-    # Expansion: what this move replaces (Datasworn IDs)
     replaces: list[str] = field(default_factory=list)
-
-    # Whether momentum burn is allowed (SI overrides set this explicitly)
     allow_momentum_burn: bool | None = None
 
     @property
@@ -153,7 +137,6 @@ class Move:
 
 
 def _parse_roll_option(raw: dict) -> RollOption:
-    """Parse a single roll_option dict from Datasworn JSON."""
     assets_raw = raw.get("assets")
     return RollOption(
         using=raw.get("using", ""),
@@ -167,7 +150,6 @@ def _parse_roll_option(raw: dict) -> RollOption:
 
 
 def _parse_condition(raw: dict) -> TriggerCondition:
-    """Parse a single trigger condition dict."""
     roll_options = [_parse_roll_option(ro) for ro in raw.get("roll_options", [])]
     return TriggerCondition(
         method=raw.get("method", ""),
@@ -177,7 +159,6 @@ def _parse_condition(raw: dict) -> TriggerCondition:
 
 
 def _parse_outcomes(raw: dict | None) -> dict[str, MoveOutcome]:
-    """Parse outcomes dict. Returns empty dict for no-roll moves."""
     if not raw:
         return {}
     result: dict[str, MoveOutcome] = {}
@@ -191,9 +172,9 @@ def _parse_outcomes(raw: dict | None) -> dict[str, MoveOutcome]:
 def _parse_oracle_ids(raw: list | dict | None) -> list[str]:
     """Extract oracle IDs from the oracles field.
 
-    Two formats:
+    Two Datasworn formats:
       Starforged/Classic/Delve: list of string IDs
-      Sundered Isles: dict of inline oracle tables (extract the _id)
+      Sundered Isles:           dict of inline oracle tables (extract _id)
     """
     if isinstance(raw, list):
         return [o for o in raw if isinstance(o, str)]
@@ -207,7 +188,6 @@ def _parse_oracle_ids(raw: list | dict | None) -> list[str]:
 
 
 def _parse_replaces(raw: list | str | None) -> list[str]:
-    """Normalize replaces field to list of strings."""
     if isinstance(raw, list):
         return [r for r in raw if isinstance(r, str)]
     if isinstance(raw, str):
@@ -216,10 +196,8 @@ def _parse_replaces(raw: list | str | None) -> list[str]:
 
 
 def _parse_move(raw: dict, category: str) -> Move:
-    """Parse a single move dict from Datasworn JSON."""
     trigger = raw.get("trigger", {})
     conditions_raw = trigger.get("conditions") or []
-
     tracks = raw.get("tracks", {})
     allow_burn = raw.get("allow_momentum_burn")
 
@@ -240,15 +218,8 @@ def _parse_move(raw: dict, category: str) -> Move:
     )
 
 
-# ── Loading ──────────────────────────────────────────────────
-
-
 def _load_moves_from_setting(setting: Setting) -> dict[str, Move]:
-    """Load all moves from a Datasworn Setting, keyed by category/move_key.
-
-    Using category/key avoids collisions (Starforged has both
-    adventure/face_danger and scene_challenge/face_danger).
-    """
+    """Load all moves from a Datasworn Setting, keyed by category/move_key."""
     raw_moves = setting.raw.get("moves", {})
     result: dict[str, Move] = {}
     for cat_key, cat_data in raw_moves.items():
@@ -263,41 +234,34 @@ def _load_moves_from_setting(setting: Setting) -> dict[str, Move]:
 def load_moves(setting_id: str, parent_id: str | None = None) -> dict[str, Move]:
     """Load moves for a setting, with optional parent merge.
 
+    Both setting_id and parent_id are setting IDs (yaml stems), not
+    Datasworn IDs. The function resolves each to its Datasworn JSON
+    via the settings.yaml `datasworn_id` field.
+
     For standalone settings (Classic, Starforged): loads directly.
     For expansions (Delve, Sundered Isles): loads parent first,
     then applies expansion overrides on top.
 
     Returns dict keyed by "category/move_key" (e.g. "adventure/face_danger").
     """
-    if parent_id:
-        parent_setting = load_setting(parent_id)
-        moves = _load_moves_from_setting(parent_setting)
-        expansion_setting = load_setting(setting_id)
-        expansion_moves = _load_moves_from_setting(expansion_setting)
+    setting_ds = load_setting(datasworn_id_of(setting_id))
 
-        # Apply overrides: expansion moves replace parent moves with same key
+    if parent_id:
+        parent_ds = load_setting(datasworn_id_of(parent_id))
+        moves = _load_moves_from_setting(parent_ds)
+        expansion_moves = _load_moves_from_setting(setting_ds)
         for key, move in expansion_moves.items():
             moves[key] = move
-
         log(
             f"[Moves] Loaded {setting_id} ({len(expansion_moves)} moves) "
             f"on {parent_id} ({len(moves) - len(expansion_moves)} base) = {len(moves)} total"
         )
     else:
-        setting = load_setting(setting_id)
-        moves = _load_moves_from_setting(setting)
+        moves = _load_moves_from_setting(setting_ds)
         log(f"[Moves] Loaded {setting_id}: {len(moves)} moves")
 
     return moves
 
-
-# ── Cache ────────────────────────────────────────────────────
-
-# Parent mapping: which setting is the base for each expansion.
-_PARENT_MAP: dict[str, str] = {
-    "delve": "classic",
-    "sundered_isles": "starforged",
-}
 
 _cache: dict[str, dict[str, Move]] = {}
 
@@ -305,12 +269,13 @@ _cache: dict[str, dict[str, Move]] = {}
 def get_moves(setting_id: str) -> dict[str, Move]:
     """Get moves for a setting. Cached after first load.
 
-    Automatically resolves parent for expansions.
+    Auto-resolves parent for expansions by reading `parent:` from the
+    setting's yaml.
     """
     if setting_id in _cache:
         return _cache[setting_id]
 
-    parent = _PARENT_MAP.get(setting_id)
+    parent = parent_of(setting_id)
     moves = load_moves(setting_id, parent_id=parent)
     _cache[setting_id] = moves
     return moves

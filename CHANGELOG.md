@@ -5,6 +5,36 @@ Originally forked from [EdgeTales](https://github.com/edgetales/edgetales). See 
 
 ---
 
+---
+
+## [0.54.0] — 2026-04-18
+
+Tranche 2 of the config-strict refactor. Settings discovery and inheritance are now yaml-driven and strict. Multilingual residue that bypassed the language pipeline is removed.
+
+**Auto-discovery.** `_SETTING_FILES` (loader.py) and `_PARENT_MAP` (moves.py) removed. `list_available()` scans `data/settings/*.yaml`; `get_moves()` reads `parent:` from the child yaml. New `parent_of()` and `datasworn_id_of()` helpers. `sundered_isles.yaml` gains `parent: starforged`.
+
+**Strict settings parse.** `datasworn/settings.py` rewritten. Required top-level keys (`id`, `title`, `datasworn_id`, `description`, `oracle_paths`, `vocabulary`, `genre_constraints`) raise `KeyError` if missing. `parent` and `creation_flow` optional. Partial dataclasses (`_OraclePathsPartial`, `_GenreConstraintsPartial`, `_CreationFlowPartial`) carry `T | None` per field; resolver walks chain child → root and picks first non-None. Resolved `OraclePaths` / `GenreConstraints` / `CreationFlow` have no defaults.
+
+**Delve yaml.** `oracle_paths` and `genre_constraints` collapsed to `{}` (pure inheritance from Classic). `creation_flow` made explicit with all flags false — was previously coming from silent dataclass defaults.
+
+**`active_package` strict.** Try/except on `(FileNotFoundError, KeyError)` removed. Returns `None` only for empty `game.setting_id`; invalid setting_id now raises.
+
+**Parent-chain resolver.** `atmospheric_drift_threshold=3` Python fallback removed. Delve now correctly inherits Classic's threshold (2). `oracle_paths`, `genre_constraints`, `creation_flow` all per-field inheritable.
+
+**Oracle paths.** Hardcoded cascades in `Setting.backstory_prompts()` and `Setting.name_tables()` deleted. Methods moved to `SettingPackage`, read `oracle_paths.backstory` / `oracle_paths.names`. New `SettingPackage.oracle_data_for(path)` walks the chain for oracle data (Delve's names live in Classic's JSON). Callers updated: `web/serializers.py`, `npc/naming.py`, `tests/elvira/elvira_bot/creation.py`.
+
+**Multilingual residue removed.** `parser.py`: French close-guillemets (`.»`, `!»`, `?»`) and `szenenkontext` alternative dropped; German comment example replaced with English. `game/chapters.py`: epilogue regex reduced from five locale variants to `Epilog(?:ue)?`. `web/serializers.py` `highlight_dialog`: German, guillemets, and French single-guillemet quote detection removed. Two tests dropped (`test_german_quotes`, `test_guillemets`).
+
+**`roll_oracle` tool.** Routes through `load_package(...).data`. Try/except retained — tool-contract boundary for structured error returns to the AI caller, not silent suppression.
+
+**Tests.** `tests/conftest.py` gains `make_genre_constraints()` factory with test-defaults. Five sites in `test_rule_validator.py` and `test_coverage.py` use it — resolved production dataclass has no defaults.
+
+**Docs.** `ARCHITECTURE.md` "Settings YAML format" rewritten for strict parse and two-granularity inheritance model.
+
+**Deferred.** `progress.ticks_per_mark` extensibility → tranche 3.1. Violation-templates consolidation → tranche 6.1.
+
+---
+
 ## [0.53.0] — 2026-04-18
 
 Tranche 1 of the config-strict refactor. Every domain-config access now raises on missing data; every tuning number that determined engine behaviour is in yaml.

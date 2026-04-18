@@ -193,17 +193,9 @@ class TestHighlightDialog:
         result = highlight_dialog('"Hello," she said.')
         assert '<span class="dialog">' in result
 
-    def test_german_quotes(self) -> None:
-        result = highlight_dialog("\u201eHallo,\u201c sagte sie.")
-        assert '<span class="dialog">' in result
-
     def test_no_quotes_unchanged(self) -> None:
         text = "The wind howled through the broken windows."
         assert highlight_dialog(text) == text
-
-    def test_guillemets(self) -> None:
-        result = highlight_dialog("\u00abBonjour\u00bb dit-elle.")
-        assert '<span class="dialog">' in result
 
 
 class TestBuildNarrativeStatus:

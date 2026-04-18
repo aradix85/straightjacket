@@ -45,7 +45,7 @@ def generate_epilogue(
 
     # Epilogue-specific: strip "Epilogue" heading the model sometimes prepends
     narration = re.sub(
-        r"^\s*#*\s*\*{0,3}\s*(?:Epilog(?:ue)?|Épilogue|Epílogo|Epilogo)\s*\*{0,3}\s*\n+",
+        r"^\s*#*\s*\*{0,3}\s*Epilog(?:ue)?\s*\*{0,3}\s*\n+",
         "",
         narration,
         count=1,

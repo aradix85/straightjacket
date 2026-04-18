@@ -4,6 +4,7 @@
 id: sundered_isles
 title: "Sundered Isles"
 datasworn_id: sundered_isles
+parent: starforged  # Expansion — shares Starforged moves; vocabulary/constraints override in full
 description: >
   Vast uncharted seas dotted with strange islands. Ancient ruins hold
   forgotten power. Cursed waters swallow the unwary. You captain a

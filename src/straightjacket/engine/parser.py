@@ -38,7 +38,6 @@ def salvage_truncated_narration(raw: str) -> str:
         '." ',
         '."\n',
         '."',
-        ".»",
         ".\n\n",
         "! ",
         '!" ',
@@ -61,7 +60,7 @@ def salvage_truncated_narration(raw: str) -> str:
     stripped = prose.rstrip()
     if stripped and stripped[-1] in ".!?":
         last_sentence = max(last_sentence, len(stripped))
-    if stripped.endswith(('."', '!"', '?"', ".»", "!»", "?»")):
+    if stripped.endswith(('."', '!"', '?"')):
         last_sentence = max(last_sentence, len(stripped))
 
     from .engine_loader import eng as _eng
@@ -140,7 +139,7 @@ def parse_narrator_response(game: GameState, raw: str) -> str:
 
     # --- 6) Strip markdown metadata labels (Scene Context:, etc.) ---
     meta_match = re.search(
-        r"^[*_#\s]*(scene[\s_-]*context|memory[\s_-]*updates?|szenenkontext|location)\s*[*_#]*\s*[:=]\s*",
+        r"^[*_#\s]*(scene[\s_-]*context|memory[\s_-]*updates?|location)\s*[*_#]*\s*[:=]\s*",
         narration,
         re.IGNORECASE | re.MULTILINE,
     )
@@ -160,9 +159,7 @@ def parse_narrator_response(game: GameState, raw: str) -> str:
             lines.pop()
             continue
         clean_last = re.sub(r"^[\s*_#]+", "", last)
-        if re.match(
-            r"^(scene[\s_-]*context|memory[\s_-]*updates?|location|szenenkontext)\s*[:=]", clean_last, re.IGNORECASE
-        ):
+        if re.match(r"^(scene[\s_-]*context|memory[\s_-]*updates?|location)\s*[:=]", clean_last, re.IGNORECASE):
             lines.pop()
             continue
         break
@@ -205,8 +202,8 @@ def parse_narrator_response(game: GameState, raw: str) -> str:
                 npc.introduced = True
                 continue
             # Check individual name parts (e.g. "Totewald" from
-            # "Geschäftsführer Clemens Totewald") — min 4 chars to avoid
-            # matching generic words like "der", "von"; skip known titles
+            # "Director Clemens Totewald") — min 4 chars to avoid
+            # matching generic short words; skip known titles
             from .engine_loader import eng as _eng
 
             min_part = _eng().parser.min_line_length

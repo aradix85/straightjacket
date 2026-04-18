@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import random
 
-from ..datasworn.settings import SettingPackage, active_package
+from ..datasworn.settings import active_package
 from ..engine_loader import eng
 from ..logging_util import log
 from ..models import GameState
@@ -25,32 +25,34 @@ def roll_oracle_name(game: GameState) -> str:
     - 2 paths: join both with a space (given + family)
     - 3+ paths: 50% chance last-only (callsign), else first two joined
 
-    Paths and oracle data may come from a parent setting (e.g. Delve → Classic).
+    `oracle_paths.names` is already parent-chain resolved by SettingPackage.
+    Oracle data may live in a parent setting's Datasworn JSON; the package
+    walks its chain when resolving a path.
     """
     pkg = active_package(game)
     if pkg is None:
         return ""
 
-    # Walk up parent chain to find the package that owns name oracles
-    source_pkg: SettingPackage | None = pkg
-    while source_pkg is not None and not source_pkg.oracle_paths.names:
-        source_pkg = source_pkg._parent
-    if source_pkg is None:
+    paths = pkg.oracle_paths.names
+    if not paths:
         return ""
 
-    paths = source_pkg.oracle_paths.names
-    data = source_pkg.data
+    def roll(path: str) -> str:
+        data = pkg.oracle_data_for(path)
+        if data is None:
+            raise KeyError(f"Oracle '{path}' not found in setting chain for {pkg.id}")
+        return data.roll_oracle(path)
 
     try:
         if len(paths) == 1:
-            name = data.roll_oracle(paths[0])
+            name = roll(paths[0])
         elif len(paths) == 2:
-            name = f"{data.roll_oracle(paths[0])} {data.roll_oracle(paths[1])}"
+            name = f"{roll(paths[0])} {roll(paths[1])}"
         else:
             if random.random() < eng().naming.callsign_probability:
-                name = data.roll_oracle(paths[-1])
+                name = roll(paths[-1])
             else:
-                name = f"{data.roll_oracle(paths[0])} {data.roll_oracle(paths[1])}"
+                name = f"{roll(paths[0])} {roll(paths[1])}"
     except KeyError as e:
         log(f"[NPC name] Oracle roll failed: {e}", level="warning")
         return ""

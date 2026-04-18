@@ -93,18 +93,22 @@ def roll_oracle(game: GameState, table_path: str) -> dict:
     """Roll on a Datasworn oracle table. Returns the rolled value and table info.
 
     table_path: oracle table path (e.g. 'core/action', 'characters/name/given')
+
+    Errors are returned as structured dicts so the caller (AI tool invoker) can
+    handle them in-band rather than via exception propagation — this is the
+    tool contract for all built-ins.
     """
-    from ..datasworn.loader import load_setting
+    from ..datasworn.settings import load_package
 
     if not game.setting_id:
         return {"error": "No setting loaded"}
 
     try:
-        setting = load_setting(game.setting_id)
+        pkg = load_package(game.setting_id)
     except (KeyError, FileNotFoundError) as e:
         return {"error": str(e)}
 
-    table = setting.oracle(table_path)
+    table = pkg.data.oracle(table_path)
     if table is None:
         return {"error": f"Oracle table not found: {table_path}", "setting": game.setting_id}
 

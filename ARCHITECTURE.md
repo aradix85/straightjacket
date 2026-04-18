@@ -328,64 +328,55 @@ Settings are data packages that combine a Datasworn JSON file (game content: mov
 
 ### Step by step
 
-1. Get the Datasworn JSON for your setting → `data/your_setting.json`. Datasworn JSON files contain the game's mechanical content: moves, oracles, assets (paths/companions/etc). See [github.com/rsek/datasworn](https://github.com/rsek/datasworn) for the format.
-2. Create `data/settings/your_setting.yaml` (use `data/settings/starforged.yaml` as template).
+1. Place the Datasworn JSON at `data/<datasworn_id>.json`, where `<datasworn_id>` is the value you will declare inside the yaml. Datasworn JSON files contain the game's mechanical content: moves, oracles, assets (paths/companions/etc). See [github.com/rsek/datasworn](https://github.com/rsek/datasworn) for the format.
+2. Create `data/settings/<id>.yaml` (use `data/settings/starforged.yaml` as template). The yaml stem is the setting id used by the engine; `datasworn_id` inside the yaml points at the JSON file.
 3. The setting appears in character creation automatically — no Python changes needed.
 
 ### Settings YAML format
 
-Each setting YAML is parsed at load time into a typed `SettingConfig` dataclass (with nested `VocabularyConfig`, `OraclePaths`, `GenreConstraints`, `CreationFlow`). Downstream code reads typed attributes, never raw dicts.
+Parsed strictly at load. Required top-level keys: `id`, `title`, `datasworn_id`, `description`, `oracle_paths`, `vocabulary`, `genre_constraints`. Optional: `parent`, `creation_flow`. Missing required keys raise `KeyError`.
 
 ```yaml
-# data/settings/your_setting.yaml
-id: your_setting                    # Must match the Datasworn JSON filename (without .json)
-title: "Your Setting Name"          # Display name in character creation
-datasworn_id: your_setting          # Datasworn JSON basename (often same as id)
-description: "One paragraph describing the world, tone, and premise."
-parent: ""                          # Optional: parent setting id (e.g. Delve → Classic)
+id: your_setting                    # yaml stem
+title: "Your Setting Name"
+datasworn_id: your_setting          # Datasworn JSON basename
+description: "One paragraph."
+parent: classic                     # Optional: inherits from this setting
 
-# Vocabulary: setting-specific language control.
 vocabulary:
-  substitutions:                    # Generic term → setting-specific phrase
-    spaceship: "starship — worn, patched, held together by stubbornness"
-    alien: "creature — strange biology, not sentient unless proven"
-  sensory_palette: >                # Included in <sensory_palette> prompt block
-    Metal, recycled air, hydraulic fluid, ozone, cold vacuum beyond the hull.
+  substitutions: { spaceship: "starship — worn, patched" }
+  sensory_palette: "Metal, recycled air, ozone."
 
-# Genre constraints: what must NOT appear in narration or story blueprints.
 genre_constraints:
-  forbidden_terms:                  # Words the rule validator flags
-    - magic
-    - spell
-  forbidden_concepts:               # Broader prohibitions for the architect validator
-    - "supernatural powers beyond the setting's technology level"
+  forbidden_terms: [magic, spell]
+  forbidden_concepts: ["supernatural powers beyond tech level"]
   genre_test: "Could this exist without magic?"
-  atmospheric_drift:                # Words that signal genre bleed when they pile up
-    - eldritch
-    - otherworldly
-  atmospheric_drift_threshold: 2    # Minimum drift words to flag a violation
+  atmospheric_drift: [eldritch, otherworldly]
+  atmospheric_drift_threshold: 2
 
-# Oracle paths in the Datasworn JSON.
-# names: used by engine NPC name generator (step 11c). 1 path = single roll;
-# 2 paths = join both; 3+ paths = 50% last-only (callsign) or first-two joined.
 oracle_paths:
   action_theme: ["core/action", "core/theme"]
   descriptor_focus: ["core/descriptor", "core/focus"]
-  names: ["characters/name/given", "characters/name/family_name", "characters/name/callsign"]
+  names: ["characters/name/given", "characters/name/family_name"]
   backstory: "campaign_launch/backstory_prompts"
   factions: "factions"
 
-# Character creation flow: controls which UI steps the client presents.
 creation_flow:
   has_truths: true
   has_backstory_oracle: true
   has_name_tables: true
   has_ship_creation: false
-  starting_asset_categories:
-    - companion
-    - module
+  starting_asset_categories: [companion, module]
 ```
 
-The `vocabulary` block keeps the AI in-setting. `genre_constraints` feeds both the rule validator (forbidden_terms, atmospheric_drift) and the architect validator (forbidden_concepts, genre_test). `oracle_paths.names` drives engine NPC name generation — engine rolls from these tables, AI name kept as alias. `creation_flow` tells the client which creation steps to show.
+`vocabulary` keeps AI in-setting. `genre_constraints` feeds rule and architect validators. `oracle_paths.names` drives engine NPC name rolls. `creation_flow` controls client UI steps.
 
-Settings inherit from `parent` when present (Delve → Classic). Vocabulary, genre constraints, and oracle name paths fall through to the parent when the child's are empty.
+### Inheritance
+
+With `parent:`, blocks inherit from the parent yaml, resolved at load.
+
+`oracle_paths`, `genre_constraints`, `creation_flow`: per-field. Omitted field → parent's value. Present field (even empty) → explicit override. Root settings must specify every field.
+
+`vocabulary`: section-level. Both sub-fields empty → whole block from parent.
+
+Discovery is yaml-only: `list_available()` scans `data/settings/*.yaml`, `get_moves()` reads `parent:` from the child yaml. No Python mapping tables.

@@ -301,13 +301,13 @@ def build_creation_options() -> dict:
             # Name tables
             name_tables = {}
             if flow.has_name_tables:
-                for table_id, table in pkg.data.name_tables().items():
+                for table_id, table in pkg.name_tables().items():
                     name_tables[table_id] = [row.text for row in table.rows]
 
             # Backstory prompts
             backstory_prompts = []
             if flow.has_backstory_oracle:
-                bs = pkg.data.backstory_prompts()
+                bs = pkg.backstory_prompts()
                 if bs:
                     backstory_prompts = [row.text for row in bs.rows]
 
@@ -372,33 +372,15 @@ def highlight_dialog(text: str) -> str:
             return open_q + content + close_q
         return f'{open_q}<span class="dialog">{inner}</span>{close_q}'
 
-    # DE: „..."
-    text = re.sub(
-        r'(\u201e)([^\u201e\u201c\u201d"\n]{1,600}?)([\u201c\u201d"])',
-        lambda m: _wrap(m.group(1), m.group(2), m.group(3)),
-        text,
-    )
-    # EN curly: "..."
+    # Curly double quotes: "..."
     text = re.sub(
         r"(\u201c)([^\u201c\u201d\n]{1,600}?)(\u201d)", lambda m: _wrap(m.group(1), m.group(2), m.group(3)), text
     )
-    # Guillemets
-    text = re.sub(
-        r"(\u00bb)([^\u00ab\u00bb\n]{1,600}?)(\u00ab)" r"|(\u00ab)([^\u00ab\u00bb\n]{1,600}?)(\u00bb)",
-        lambda m: (
-            _wrap(m.group(1), m.group(2), m.group(3)) if m.group(1) else _wrap(m.group(4), m.group(5), m.group(6))
-        ),
-        text,
-    )
     # Straight ASCII
     text = re.sub(r'(?<!<span class="dialog">)"([^"\n]{1,600}?)"', lambda m: _wrap('"', m.group(1), '"'), text)
-    # EN single curly
+    # Curly single quotes: '...'
     text = re.sub(
         r"(\u2018)([^\u2018\u2019\n]{1,600}?)(\u2019)", lambda m: _wrap(m.group(1), m.group(2), m.group(3)), text
-    )
-    # French single guillemets
-    text = re.sub(
-        r"(\u2039)([^\u2039\u203a\n]{1,600}?)(\u203a)", lambda m: _wrap(m.group(1), m.group(2), m.group(3)), text
     )
     return text
 

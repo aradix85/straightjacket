@@ -6,12 +6,19 @@ Reads compiled Datasworn JSON files and provides typed access to:
 - Assets (paths, companions, deeds, modules, vehicles)
 - Moves (player actions with triggers and outcomes)
 - Truths (world-building options)
-- Character creation data (backstory prompts, names, background assets)
 - Faction oracles
 
 The loader is setting-agnostic. Each setting (Classic, Starforged,
 Sundered Isles, Delve) produces the same interface. Delve is an
 expansion (type: "expansion") that layers on top of Classic.
+
+Character-creation data (backstory prompts, name tables) is not
+exposed here — it belongs to SettingPackage, which reads paths
+from the settings.yaml and resolves them against this loader.
+
+Mapping from setting-id to JSON filename is driven by each setting's
+yaml (`datasworn_id` field), read lazily via
+`settings.datasworn_id_of()` to avoid a circular import at module load.
 
 Usage:
     from straightjacket.engine.datasworn.loader import load_setting, list_available
@@ -34,17 +41,7 @@ from dataclasses import dataclass, field
 from ..config_loader import PROJECT_ROOT
 from ..logging_util import log
 
-# DATA DIRECTORY
-
 _DATA_DIR = PROJECT_ROOT / "data"
-
-# Map setting IDs to JSON filenames
-_SETTING_FILES = {
-    "classic": "classic.json",
-    "delve": "delve.json",
-    "starforged": "starforged.json",
-    "sundered_isles": "sundered_isles.json",
-}
 
 
 def extract_title(obj: dict, fallback: str = "") -> str:
@@ -54,13 +51,15 @@ def extract_title(obj: dict, fallback: str = "") -> str:
       {"title": {"canonical": "...", "standard": "..."}}  — Starforged
       {"title": "string"}                                  — some objects
       {"title": None} or missing                           — Classic assets (use key)
+
+    Datasworn JSON is external third-party data; .get() on it is
+    data-shape probing, not domain-config reading.
     """
     title_raw = obj.get("title")
     if isinstance(title_raw, dict):
         return str(title_raw.get("canonical") or title_raw.get("standard") or fallback)
     if isinstance(title_raw, str) and title_raw:
         return title_raw
-    # Fallback: derive from _id or use the provided fallback
     obj_id = obj.get("_id", "")
     if obj_id:
         # "classic/assets/path/alchemist" → "Alchemist"
@@ -69,11 +68,22 @@ def extract_title(obj: dict, fallback: str = "") -> str:
 
 
 def list_available() -> list[str]:
-    """Return IDs of settings whose JSON files are present."""
-    return [sid for sid, fname in _SETTING_FILES.items() if (_DATA_DIR / fname).exists()]
+    """Return setting IDs whose settings.yaml declares a Datasworn JSON that exists on disk."""
+    # Late import: settings.py imports from loader.py.
+    from .settings import datasworn_id_of, list_packages
+
+    result = []
+    for setting_id in list_packages():
+        try:
+            ds_id = datasworn_id_of(setting_id)
+        except (FileNotFoundError, KeyError):
+            continue
+        if (_DATA_DIR / f"{ds_id}.json").exists():
+            result.append(setting_id)
+    return result
 
 
-# ORACLE TABLE
+# ── Oracle tables ─────────────────────────────────────────────
 
 
 @dataclass
@@ -108,22 +118,19 @@ class OracleTable:
     id: str
     title: str
     rows: list[OracleRow] = field(default_factory=list)
-    # Parent collection path for navigation
     collection_path: str = ""
 
     def roll(self) -> OracleResult:
-        """Roll on this table and return structured result with the actual die value."""
+        """Roll on this table and return a structured result with the actual die value."""
         if not self.rows:
             raise ValueError(f"Oracle table '{self.id}' has no rows")
-        # Determine die size from max value of last row
         die_max = self.rows[-1].max
         die_roll = random.randint(1, die_max)
         for row in self.rows:
             if row.min <= die_roll <= row.max:
                 return OracleResult(value=row.text, roll=die_roll, table_path=self.id, table_title=self.title, row=row)
         # Unreachable with well-formed Datasworn data: roll is in [1, die_max]
-        # and rows are expected to cover that range contiguously. A gap means
-        # the source JSON is malformed.
+        # and rows cover that range contiguously. A gap means the JSON is malformed.
         raise ValueError(f"Oracle table '{self.id}' rolled {die_roll} but no row covers it — malformed row ranges")
 
     def roll_text(self) -> str:
@@ -168,19 +175,15 @@ class Setting:
 
     def _load_oracle_collection(self, path: str, coll: dict) -> None:
         """Recursively load oracle tables from a collection."""
-        # Direct tables in this collection
         for table_id, table_data in (coll.get("contents") or {}).items():
             full_id = f"{path}/{table_id}"
             self._oracles[full_id] = self._parse_oracle_table(full_id, table_data, path)
-
-        # Sub-collections (recursive)
         for sub_id, sub_coll in (coll.get("collections") or {}).items():
             self._load_oracle_collection(f"{path}/{sub_id}", sub_coll)
 
     def _parse_oracle_table(self, full_id: str, data: dict, collection_path: str) -> OracleTable:
         """Parse a single oracle table from raw JSON."""
         title = extract_title(data, full_id)
-
         rows = []
         for r in data.get("rows", []):
             # Two row formats across Datasworn versions:
@@ -201,12 +204,7 @@ class Setting:
                     oracle_rolls=r.get("oracle_rolls"),
                 )
             )
-        return OracleTable(
-            id=full_id,
-            title=title,
-            rows=rows,
-            collection_path=collection_path,
-        )
+        return OracleTable(id=full_id, title=title, rows=rows, collection_path=collection_path)
 
     def oracle(self, oracle_id: str) -> OracleTable | None:
         """Get an oracle table by ID path (e.g. 'core/action')."""
@@ -279,56 +277,13 @@ class Setting:
         """Get condition meter definitions (health, spirit, supply)."""
         return dict(self._raw.get("rules", {}).get("condition_meters", {}))
 
-    # ── Character creation data ───────────────────────────────
-
-    def backstory_prompts(self) -> OracleTable | None:
-        """Get backstory prompts oracle.
-
-        TODO tranche 2 (1.4 close-out): reads setting-specific cascade instead
-        of consulting `SettingPackage.oracle_paths.backstory`. The yaml path
-        exists but is ignored here — cascade order is a legacy fallback.
-        """
-        t = self.oracle("campaign_launch/backstory_prompts")
-        if t:
-            return t
-        # Sundered Isles: character/backstory or getting_underway/*
-        t = self.oracle("character/backstory")
-        if t:
-            return t
-        # Classic: not available as a dedicated oracle
-        return None
-
-    def name_tables(self) -> dict[str, OracleTable]:
-        """Get character name oracle tables. Returns {table_id: OracleTable}."""
-        result = {}
-        # Starforged: characters/name/given, characters/name/family_name, characters/name/callsign
-        for oid in self.oracle_ids_in("characters/name"):
-            table = self._oracles[oid]
-            # Use the last segment as key
-            short_id = oid.rsplit("/", 1)[-1]
-            result[short_id] = table
-        # Sundered Isles: character/name/*
-        if not result:
-            for oid in self.oracle_ids_in("character/name"):
-                table = self._oracles[oid]
-                short_id = oid.rsplit("/", 1)[-1]
-                result[short_id] = table
-        # Classic: characters/name (if it exists as a sub-collection)
-        if not result:
-            for oid in self.oracle_ids():
-                if "name" in oid and "character" in oid:
-                    table = self._oracles[oid]
-                    short_id = oid.rsplit("/", 1)[-1]
-                    result[short_id] = table
-        return result
-
     def faction_oracles(self) -> dict[str, OracleTable]:
         """Get faction-related oracle tables."""
-        result = {}
+        result: dict[str, OracleTable] = {}
         for prefix in ("factions", "faction"):
             for oid in self.oracle_ids_in(prefix):
                 table = self._oracles[oid]
-                short_id = oid.split("/", 1)[-1]  # strip first segment
+                short_id = oid.split("/", 1)[-1]
                 result[short_id] = table
         return result
 
@@ -343,39 +298,38 @@ class Setting:
 _cache: dict[str, Setting] = {}
 
 
-def load_setting(setting_id: str) -> Setting:
-    """Load a Datasworn setting by ID. Cached after first load.
+def load_setting(datasworn_id: str) -> Setting:
+    """Load a Datasworn setting by its datasworn_id. Cached after first load.
 
     Args:
-        setting_id: One of 'classic', 'delve', 'starforged', 'sundered_isles'.
+        datasworn_id: the `datasworn_id` value declared in a settings.yaml
+                      (e.g. 'classic', 'starforged', 'sundered_isles', 'delve').
 
     Returns:
         Setting object with query methods.
 
     Raises:
         FileNotFoundError: if the JSON file is not present (run download_datasworn.py).
-        KeyError: if the setting_id is not recognized.
     """
-    if setting_id in _cache:
-        return _cache[setting_id]
+    if datasworn_id in _cache:
+        return _cache[datasworn_id]
 
-    if setting_id not in _SETTING_FILES:
-        raise KeyError(f"Unknown setting '{setting_id}'. Available: {list(_SETTING_FILES.keys())}")
-
-    path = _DATA_DIR / _SETTING_FILES[setting_id]
+    path = _DATA_DIR / f"{datasworn_id}.json"
     if not path.exists():
         raise FileNotFoundError(f"Datasworn JSON not found: {path}\nRun: python data/download_datasworn.py")
 
-    log(f"[Datasworn] Loading {setting_id} from {path.name}")
+    log(f"[Datasworn] Loading {datasworn_id} from {path.name}")
     with open(path, encoding="utf-8") as f:
         raw = json.load(f)
 
     setting = Setting(raw)
-    _cache[setting_id] = setting
+    _cache[datasworn_id] = setting
 
     oracle_count = len(setting.oracle_ids())
     asset_count = sum(len(setting.assets(c)) for c in setting.asset_categories())
-    log(f"[Datasworn] {setting_id}: {oracle_count} oracle tables, {asset_count} assets, {len(setting.truths())} truths")
+    log(
+        f"[Datasworn] {datasworn_id}: {oracle_count} oracle tables, {asset_count} assets, {len(setting.truths())} truths"
+    )
 
     return setting
 

@@ -84,17 +84,17 @@ def test_strong_hit_not_checked_for_silver_lining() -> None:
 
 
 def test_genre_catches_forbidden_term() -> None:
-    from straightjacket.engine.datasworn.settings import GenreConstraints
+    from tests.conftest import make_genre_constraints
 
-    gc = GenreConstraints(forbidden_terms=["magic", "spell"])
+    gc = make_genre_constraints(forbidden_terms=["magic", "spell"])
     v = check_genre_fidelity("She whispered a spell under her breath.", gc)
     assert any("spell" in x for x in v)
 
 
 def test_genre_passes_clean() -> None:
-    from straightjacket.engine.datasworn.settings import GenreConstraints
+    from tests.conftest import make_genre_constraints
 
-    gc = GenreConstraints(forbidden_terms=["magic"])
+    gc = make_genre_constraints(forbidden_terms=["magic"])
     v = check_genre_fidelity("She drew the knife from its sheath.", gc)
     assert len(v) == 0
 
