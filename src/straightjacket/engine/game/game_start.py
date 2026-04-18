@@ -21,9 +21,13 @@ from ..models import (
     SceneLogEntry,
     ThreadEntry,
 )
-from ..models_base import PROGRESS_RANKS
 from ..parser import parse_narrator_response
 from ..prompt_builders import build_new_game_prompt
+
+
+def _valid_ranks() -> set[str]:
+    """Valid progress-track ranks from engine.yaml."""
+    return set(eng().progress.track_types["default"].ticks_per_mark.keys())
 
 
 def validate_stats(stats: dict[str, int]) -> None:
@@ -87,8 +91,9 @@ def validate_creation(creation_data: dict, pkg: object) -> None:
 
     # Background vow rank must be valid
     vow_rank = creation_data.get("background_vow_rank", "")
-    if vow_rank and vow_rank not in PROGRESS_RANKS:
-        raise ValueError(f"Invalid vow rank: '{vow_rank}' (valid: {list(PROGRESS_RANKS.keys())})")
+    valid = _valid_ranks()
+    if vow_rank and vow_rank not in valid:
+        raise ValueError(f"Invalid vow rank: '{vow_rank}' (valid: {sorted(valid)})")
 
 
 def _compute_chaos_start(vow_text: str) -> int:
@@ -100,10 +105,9 @@ def _compute_chaos_start(vow_text: str) -> int:
     vow_lower = vow_text.lower()
     modifiers = _e.creation.chaos_vow_modifiers
     values = _e.creation.chaos_modifier_values
-    for level in ("desperate", "tense", "calm"):
-        keywords = modifiers.get(level, [])
+    for level, keywords in modifiers.items():
         if any(kw in vow_lower for kw in keywords):
-            adjustment = values.get(level, 0)
+            adjustment = values[level]
             result = max(_e.chaos.min, min(_e.chaos.max, base + adjustment))
             log(f"[NewGame] Chaos start {base}→{result} (vow keyword match: {level})")
             return result
@@ -115,7 +119,12 @@ def _seed_background_vow(game: GameState, vow_text: str, rank: str = "") -> None
     if not vow_text:
         return
     _e = eng()
-    vow_rank = rank if rank and rank in PROGRESS_RANKS else _e.creation.background_vow_default_rank
+    if rank:
+        if rank not in _valid_ranks():
+            raise ValueError(f"Invalid vow rank: '{rank}' (valid: {sorted(_valid_ranks())})")
+        vow_rank = rank
+    else:
+        vow_rank = _e.creation.background_vow_default_rank
     track = ProgressTrack(
         id="vow_background",
         name=vow_text,
@@ -196,7 +205,9 @@ def start_new_game(
         wishes: str              — story wishes
         content_lines: str       — content exclusions
     """
-    setting_id = creation_data.get("setting_id", "starforged")
+    if "setting_id" not in creation_data:
+        raise ValueError("creation_data missing required key 'setting_id'")
+    setting_id = creation_data["setting_id"]
     log(f"[NewGame] Starting: setting={setting_id}")
 
     from ..datasworn.loader import extract_title
@@ -204,7 +215,9 @@ def start_new_game(
 
     pkg = load_package(setting_id)
 
-    stats = creation_data.get("stats", {"edge": 1, "heart": 2, "iron": 1, "shadow": 1, "wits": 2})
+    if "stats" not in creation_data:
+        raise ValueError("creation_data missing required key 'stats'")
+    stats = creation_data["stats"]
     validate_stats(stats)
     validate_creation(creation_data, pkg)
 
@@ -220,6 +233,8 @@ def start_new_game(
 
     _e = eng()
     background_vow = creation_data.get("background_vow", "")
+    stat_names = [n for n in _e.stats.names if n != "none"]
+    stat_kwargs = {n: stats[n] for n in stat_names}
 
     game = GameState(
         player_name=creation_data.get("player_name", default_player_name()),
@@ -232,14 +247,10 @@ def start_new_game(
         setting_tone="",
         setting_archetype="",
         setting_description=pkg.description,
-        edge=stats["edge"],
-        heart=stats["heart"],
-        iron=stats["iron"],
-        shadow=stats["shadow"],
-        wits=stats["wits"],
         backstory=creation_data.get("backstory", ""),
         assets=creation_data.get("assets", []),
         truths=creation_data.get("truths", {}),
+        **stat_kwargs,
     )
     game.resources.health = _e.resources.health_start
     game.resources.spirit = _e.resources.spirit_start

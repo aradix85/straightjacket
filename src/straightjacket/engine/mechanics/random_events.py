@@ -29,35 +29,6 @@ def drain_pending_events() -> list[RandomEvent]:
     return events
 
 
-# Focus categories that require a target from the characters list.
-_NPC_FOCUS: frozenset[str] = frozenset(
-    {
-        "npc_action",
-        "npc_negative",
-        "npc_positive",
-        "new_npc",
-    }
-)
-
-# Focus categories that require a target from the threads list.
-_THREAD_FOCUS: frozenset[str] = frozenset(
-    {
-        "move_toward_thread",
-        "move_away_from_thread",
-        "close_thread",
-    }
-)
-
-# Focus categories that can target an active threat (menace advance).
-# When threats exist, 50% chance to target a threat instead of generic.
-_THREAT_ELIGIBLE_FOCUS: frozenset[str] = frozenset(
-    {
-        "pc_negative",
-        "move_away_from_thread",
-    }
-)
-
-
 # ── Event focus (step 6.1) ───────────────────────────────────
 
 
@@ -73,7 +44,7 @@ def roll_event_focus(roll: int | None = None) -> tuple[str, int]:
         if entry["min"] <= roll <= entry["max"]:
             return entry["focus"], roll
 
-    return "current_context", roll
+    raise ValueError(f"event_focus table has no entry covering roll={roll}; table must span 1..100")
 
 
 # ── Meaning tables (step 6.2) ────────────────────────────────
@@ -133,20 +104,20 @@ def _select_target(focus: str, game: GameState) -> tuple[str, str]:
     """
     cfg = eng().random_events
     # Threat targeting: eligible focus + active threats → configured probability
-    if focus in _THREAT_ELIGIBLE_FOCUS:
+    if focus in cfg.threat_eligible_focus_categories:
         active_threats = [t for t in game.threats if t.status == "active" and not t.menace_full]
         if active_threats and random.random() < cfg.threat_target_probability:
             threat = random.choice(active_threats)
             log(f"[RandomEvent] Threat-eligible focus '{focus}' → targeting threat '{threat.name}'")
             return threat.name, threat.id
 
-    if focus in _NPC_FOCUS:
+    if focus in cfg.npc_focus_categories:
         name, target_id = _select_from_weighted_list(game.narrative.characters_list)
         if not name:
             log(f"[RandomEvent] NPC focus '{focus}' but characters list empty, using current_context")
         return name, target_id
 
-    if focus in _THREAD_FOCUS:
+    if focus in cfg.thread_focus_categories:
         name, target_id = _select_from_weighted_list(game.narrative.threads)
         if not name:
             log(f"[RandomEvent] Thread focus '{focus}' but threads list empty, using current_context")

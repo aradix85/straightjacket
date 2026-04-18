@@ -226,55 +226,6 @@ def check_npc_monologue(narration: str) -> list[str]:
 
 # ── CONSEQUENCE VERIFICATION ────────────────────────────────
 
-_CONSEQUENCE_STOPWORDS = frozenset(
-    {
-        "the",
-        "and",
-        "for",
-        "with",
-        "from",
-        "that",
-        "this",
-        "was",
-        "are",
-        "has",
-        "had",
-        "not",
-        "but",
-        "his",
-        "her",
-        "its",
-        "who",
-        "will",
-        "can",
-        "been",
-        "into",
-        "than",
-        "then",
-        "about",
-        "something",
-        "nothing",
-        "their",
-        "your",
-        "what",
-        "when",
-        "where",
-        "does",
-        "doesn",
-        "again",
-        "back",
-        "just",
-        "now",
-        "still",
-        "even",
-        "more",
-        "much",
-        "very",
-        "only",
-        "also",
-    }
-)
-
 
 def check_consequence_keywords(narration: str, consequence_sentences: list[str], player_name: str = "") -> list[str]:
     """Check that each consequence sentence has at least one keyword reflected in narration.
@@ -285,6 +236,9 @@ def check_consequence_keywords(narration: str, consequence_sentences: list[str],
     """
     if not consequence_sentences:
         return []
+    from ..engine_loader import eng
+
+    stopwords = eng().stopwords.consequence
     narration_lower = narration.lower()
     # Player name words to exclude — narrator writes "you", not "Wanderer-369"
     name_words = {w.strip(".,;:!?\"'()-").lower() for w in player_name.split()} if player_name else set()
@@ -301,7 +255,7 @@ def check_consequence_keywords(narration: str, consequence_sentences: list[str],
                 continue
             if len(w) >= 4:
                 cleaned.add(w)
-        keywords = cleaned - _CONSEQUENCE_STOPWORDS - name_words
+        keywords = cleaned - stopwords - name_words
         if not keywords:
             continue
         if any(kw in narration_lower for kw in keywords):
@@ -344,10 +298,13 @@ def check_threat_advance(narration: str, threat_names: list[str]) -> list[str]:
     """
     if not threat_names:
         return []
+    from ..engine_loader import eng
+
+    stopwords = eng().stopwords.consequence
     narration_lower = narration.lower()
     for name in threat_names:
         words = {w.strip(".,;:!?\"'()-").lower() for w in name.split() if len(w) >= 3}
-        words -= _CONSEQUENCE_STOPWORDS
+        words -= stopwords
         if any(w in narration_lower for w in words):
             continue
         return [

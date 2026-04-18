@@ -5,7 +5,6 @@ Straightjacket NPC Package — public API.
 """
 
 __all__ = [
-    "NAME_TITLES",
     "absorb_duplicate_npc",
     "activate_npcs_for_prompt",
     "apply_name_sanitization",
@@ -53,7 +52,6 @@ from .lifecycle import (
     retire_distant_npcs,
 )
 from .matching import (
-    NAME_TITLES,
     apply_name_sanitization,
     edit_distance_le1,
     find_npc,

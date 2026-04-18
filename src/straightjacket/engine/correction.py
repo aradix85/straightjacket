@@ -8,7 +8,7 @@ import uuid
 from ..i18n import t
 from .ai.brain import call_brain
 from .ai.provider_base import AIProvider, create_with_retry
-from .ai.schemas import CORRECTION_OUTPUT_SCHEMA
+from .ai.schemas import get_correction_output_schema
 from .config_loader import model_for_role, sampling_params
 from .datasworn.moves import get_moves
 from .director import should_call_director
@@ -95,7 +95,7 @@ npcs:
             model=model_for_role("correction"),
             system=system,
             messages=[{"role": "user", "content": user_msg}],
-            json_schema=CORRECTION_OUTPUT_SCHEMA,
+            json_schema=get_correction_output_schema(),
             **sampling_params("correction"),
         )
         result = json.loads(response.content)

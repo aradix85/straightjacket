@@ -216,6 +216,51 @@ class LegacyConfig:
 
 
 @dataclass
+class ProgressTrackType:
+    """One track variant's tick-per-mark table, keyed by rank."""
+
+    ticks_per_mark: dict[str, int]
+
+
+@dataclass
+class ProgressConfig:
+    """Progress-track mechanics. Extensible per track_type."""
+
+    track_types: dict[str, ProgressTrackType]
+
+    def ticks_per_mark(self, rank: str, track_type: str = "default") -> int:
+        """Look up ticks per mark for a rank. Strict on both keys."""
+        return self.track_types[track_type].ticks_per_mark[rank]
+
+
+@dataclass
+class EngineMove:
+    """Engine-defined move (dialog, ask_the_oracle, world_shaping).
+
+    Single source of truth for engine-specific moves. Datasworn-defined moves
+    live in the setting yamls; these live in engine.yaml.
+    """
+
+    name: str
+    stats: list[str]
+    roll_type: str
+
+
+@dataclass
+class StopwordsConfig:
+    """Stopword lists filtered during keyword matching and fuzzy comparison.
+
+    Named sub-lists, each a frozenset for O(1) membership. Consumed by
+    npc/lifecycle.py (general), ai/rule_validator.py (consequence), and
+    mechanics/world.py (location).
+    """
+
+    general: frozenset[str]
+    consequence: frozenset[str]
+    location: frozenset[str]
+
+
+@dataclass
 class PositionResolverWeights:
     """Weights applied to resource/npc/chaos/momentum/threat factors."""
 
@@ -346,6 +391,8 @@ class FateConfig:
     """Fate system (Mythic GME 2e) config."""
 
     default_method: str
+    odds_modifiers: dict[str, int]
+    chaos_modifiers: dict[int, int]
     likelihood_rules: FateLikelihoodRules
 
 
@@ -559,6 +606,9 @@ class RandomEventsConfig:
 
     threat_target_probability: float
     description_focus_categories: list[str]
+    npc_focus_categories: list[str]
+    thread_focus_categories: list[str]
+    threat_eligible_focus_categories: list[str]
     list_weight_max: int
     consolidation_threshold: int
     consolidation_weight_high: int
@@ -591,6 +641,10 @@ class EngineSettings:
     threats: ThreatConfig
     impacts: dict[str, ImpactConfig]
     legacy: LegacyConfig
+    progress: ProgressConfig
+    engine_moves: dict[str, EngineMove]
+    stopwords: StopwordsConfig
+    name_titles: frozenset[str]
     position_resolver: PositionResolverConfig
     effect_resolver: EffectResolverConfig
     information_gate: InformationGateConfig
@@ -768,10 +822,17 @@ def parse_engine_yaml(data: dict[str, Any]) -> EngineSettings:
     loss = dict(m_data.pop("loss"))
     momentum = MomentumConfig(**m_data, gain=gain, loss=loss)
 
-    # fate: nested FateLikelihoodRules
+    # fate: nested FateLikelihoodRules, plus modifier tables with int-keyed chaos
     f_data = dict(data["fate"])
     lr = _build_strict(FateLikelihoodRules, dict(f_data.pop("likelihood_rules")))
-    fate = FateConfig(default_method=f_data["default_method"], likelihood_rules=lr)
+    odds_modifiers = dict(f_data["odds_modifiers"])
+    chaos_modifiers = {int(k): int(v) for k, v in f_data["chaos_modifiers"].items()}
+    fate = FateConfig(
+        default_method=f_data["default_method"],
+        odds_modifiers=odds_modifiers,
+        chaos_modifiers=chaos_modifiers,
+        likelihood_rules=lr,
+    )
 
     # recovery: nested dict for strong_hit
     r_data = dict(data["recovery"])
@@ -786,6 +847,31 @@ def parse_engine_yaml(data: dict[str, Any]) -> EngineSettings:
     legacy_data = dict(data["legacy"])
     legacy_data["ticks_by_rank"] = dict(legacy_data["ticks_by_rank"])
     legacy = _build_strict(LegacyConfig, legacy_data)
+
+    # progress: track_types keyed by variant, each holding ticks_per_mark
+    progress_raw = data["progress"]
+    track_types = {
+        name: _build_strict(ProgressTrackType, {"ticks_per_mark": dict(tt["ticks_per_mark"])})
+        for name, tt in progress_raw["track_types"].items()
+    }
+    progress = ProgressConfig(track_types=track_types)
+
+    # engine_moves: keyed by move id, each with name/stats/roll_type
+    engine_moves = {
+        key: _build_strict(EngineMove, {"name": m["name"], "stats": list(m["stats"]), "roll_type": m["roll_type"]})
+        for key, m in data["engine_moves"].items()
+    }
+
+    # stopwords: three named frozensets
+    sw_raw = data["stopwords"]
+    stopwords = StopwordsConfig(
+        general=frozenset(sw_raw["general"]),
+        consequence=frozenset(sw_raw["consequence"]),
+        location=frozenset(sw_raw["location"]),
+    )
+
+    # name_titles: single frozenset of honorifics stripped during fuzzy NPC matching
+    name_titles = frozenset(data["name_titles"])
 
     # position_resolver: nested weights + overrides
     pr = dict(data["position_resolver"])
@@ -843,6 +929,10 @@ def parse_engine_yaml(data: dict[str, Any]) -> EngineSettings:
         threats=simple_parsed["threats"],
         impacts=impacts,
         legacy=legacy,
+        progress=progress,
+        engine_moves=engine_moves,
+        stopwords=stopwords,
+        name_titles=name_titles,
         position_resolver=position_resolver,
         effect_resolver=effect_resolver,
         information_gate=information_gate,

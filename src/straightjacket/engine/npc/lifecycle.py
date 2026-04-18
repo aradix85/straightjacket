@@ -32,37 +32,6 @@ def normalize_npc_dispositions(npcs: list) -> None:
             n.disposition = normalize_disposition(n.disposition)
 
 
-_STOPWORDS = frozenset(
-    {
-        "the",
-        "and",
-        "for",
-        "with",
-        "from",
-        "that",
-        "this",
-        "was",
-        "are",
-        "has",
-        "had",
-        "not",
-        "but",
-        "his",
-        "her",
-        "its",
-        "who",
-        "whom",
-        "will",
-        "can",
-        "may",
-        "been",
-        "were",
-        "into",
-        "than",
-        "then",
-    }
-)
-
 # RETIRE / REACTIVATE
 
 
@@ -277,6 +246,7 @@ def description_match_existing_npc(game: "GameState", new_desc: str, new_name_no
     from ..mechanics import locations_match
 
     dd = eng().description_dedup
+    stopwords = eng().stopwords.general
 
     if not new_desc or len(new_desc) < dd.min_desc_chars:
         return None
@@ -286,7 +256,7 @@ def description_match_existing_npc(game: "GameState", new_desc: str, new_name_no
         for w in new_desc.split()
         if len(w.strip(".,;:!?\"'()-")) >= dd.min_word_chars_for_match
     }
-    new_words -= _STOPWORDS
+    new_words -= stopwords
 
     # Name-Reference Guard: strip words from the candidate NPC's own
     # name/aliases out of the new description's word set.
@@ -323,7 +293,7 @@ def description_match_existing_npc(game: "GameState", new_desc: str, new_name_no
             for w in existing_desc.split()
             if len(w.strip(".,;:!?\"'()-")) >= dd.min_word_chars_for_match
         }
-        existing_words -= _STOPWORDS
+        existing_words -= stopwords
 
         exact_overlap = new_words & existing_words
         substring_matches = set()

@@ -14,183 +14,7 @@ from ..models import NpcData
 
 # TITLE / HONORIFIC FILTER
 # Prevents false positive fuzzy matches like "Mrs. Chen" ↔ "Mrs. Kowalski".
-NAME_TITLES = frozenset(
-    {
-        # English common
-        "mr",
-        "mr.",
-        "mrs",
-        "mrs.",
-        "ms",
-        "ms.",
-        "dr",
-        "dr.",
-        "sir",
-        "lady",
-        "lord",
-        "miss",
-        "captain",
-        "cpt",
-        "lieutenant",
-        "lt",
-        "sergeant",
-        "sgt",
-        "officer",
-        "detective",
-        "professor",
-        "prof",
-        "father",
-        "sister",
-        "brother",
-        "uncle",
-        "aunt",
-        "grandma",
-        "grandpa",
-        "old",
-        "young",
-        "the",
-        # English nobility/military
-        "king",
-        "queen",
-        "prince",
-        "princess",
-        "duke",
-        "duchess",
-        "baron",
-        "baroness",
-        "count",
-        "countess",
-        "viscount",
-        "marquis",
-        "earl",
-        "colonel",
-        "commander",
-        "general",
-        "admiral",
-        "major",
-        "corporal",
-        "private",
-        "judge",
-        "sheriff",
-        "mayor",
-        "governor",
-        "senator",
-        "chancellor",
-        # English clergy
-        "priest",
-        "priestess",
-        "bishop",
-        "cardinal",
-        "reverend",
-        "pastor",
-        "rabbi",
-        "imam",
-        "monk",
-        "abbot",
-        "abbess",
-        # English diplomatic
-        "ambassador",
-        "consul",
-        "envoy",
-        "delegate",
-        # French
-        "monsieur",
-        "madame",
-        "mademoiselle",
-        # Spanish
-        "señor",
-        "señora",
-        "señorita",
-        "don",
-        "doña",
-        # Fantasy/RPG — magic users
-        "wizard",
-        "sorcerer",
-        "sorceress",
-        "mage",
-        "warlock",
-        "witch",
-        "archmage",
-        "enchantress",
-        "necromancer",
-        "alchemist",
-        # Fantasy/RPG — classes
-        "paladin",
-        "cleric",
-        "rogue",
-        "assassin",
-        "berserker",
-        "barbarian",
-        "gladiator",
-        "champion",
-        "sentinel",
-        "guardian",
-        "inquisitor",
-        "templar",
-        "crusader",
-        # Fantasy/RPG — nobility
-        "squire",
-        "knight",
-        "liege",
-        "regent",
-        "viceroy",
-        "castellan",
-        "seneschal",
-        "steward",
-        "herald",
-        "grandmaster",
-        # Fantasy/RPG — spiritual
-        "shaman",
-        "oracle",
-        "prophet",
-        "seer",
-        "sage",
-        "elder",
-        "druid",
-        "mystic",
-        "augur",
-        "diviner",
-        # Fantasy/RPG — medieval trades
-        "peasant",
-        "blacksmith",
-        "fletcher",
-        "reeve",
-        "constable",
-        # Sci-fi
-        "ensign",
-        "marshal",
-        "overseer",
-        "commissioner",
-        "agent",
-        "operative",
-        "warlord",
-        "android",
-        "emissary",
-        "arbiter",
-        "overlord",
-        "archon",
-        "praetor",
-        "legate",
-        "centurion",
-        # Eastern
-        "shogun",
-        "samurai",
-        "ronin",
-        "khan",
-        "caliph",
-        "emir",
-        "shah",
-        # Generic descriptors
-        "outcast",
-        "exile",
-        "pilgrim",
-        "wanderer",
-        "mercenary",
-        "neighbor",
-        "stranger",
-        "customer",
-    }
-)
+# Data source: engine.yaml name_titles.
 
 # NAME SANITIZATION
 _ALIAS_HINT_RE = re.compile(
@@ -268,7 +92,7 @@ def find_npc(game: "GameState", npc_ref: str) -> NpcData | None:
                 return n
     if len(ref_norm) >= eng().fuzzy_match.min_word_length:
         ref_words = set(ref_norm.split())
-        if ref_words and ref_words <= NAME_TITLES:
+        if ref_words and ref_words <= eng().name_titles:
             return None
         best_match = None
         best_score = 0
@@ -356,7 +180,8 @@ def fuzzy_match_existing_npc(game: "GameState", new_name: str) -> tuple[NpcData 
         return None, None
     new_norm = normalize_for_match(new_name)
     new_words_raw = set(new_norm.split())
-    new_words = {w for w in new_words_raw if w.rstrip(".") not in NAME_TITLES}
+    titles = eng().name_titles
+    new_words = {w for w in new_words_raw if w.rstrip(".") not in titles}
 
     best_match = None
     best_score = 0
@@ -391,10 +216,10 @@ def fuzzy_match_existing_npc(game: "GameState", new_name: str) -> tuple[NpcData 
                     best_type = "identity"
 
         # 3. Significant word overlap
-        name_words = {w for w in name_norm.split() if w.rstrip(".") not in NAME_TITLES}
+        name_words = {w for w in name_norm.split() if w.rstrip(".") not in titles}
         alias_words: set[str] = set()
         for alias in n.aliases:
-            alias_words.update(w for w in normalize_for_match(alias).split() if w.rstrip(".") not in NAME_TITLES)
+            alias_words.update(w for w in normalize_for_match(alias).split() if w.rstrip(".") not in titles)
         all_words = name_words | alias_words
 
         overlap = new_words & all_words
@@ -416,8 +241,8 @@ def fuzzy_match_existing_npc(game: "GameState", new_name: str) -> tuple[NpcData 
                     best_match = n
 
         # 4. Edit distance variant check
-        ext_name_words = sorted(w for w in name_norm.split() if w.rstrip(".") not in NAME_TITLES)
-        new_name_words = sorted(w for w in new_norm.split() if w.rstrip(".") not in NAME_TITLES)
+        ext_name_words = sorted(w for w in name_norm.split() if w.rstrip(".") not in titles)
+        new_name_words = sorted(w for w in new_norm.split() if w.rstrip(".") not in titles)
 
         if ext_name_words and new_name_words and len(ext_name_words) == len(new_name_words):
             exact = 0

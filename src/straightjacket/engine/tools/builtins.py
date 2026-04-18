@@ -10,6 +10,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from ..db.queries import query_clocks, query_memories, query_npcs, query_threads
+from ..engine_loader import eng
 from ..models import GameState
 from ..npc import get_npc_bond
 from .registry import register
@@ -236,17 +237,16 @@ def available_moves(game: GameState) -> dict:
             }
         )
 
-    # Engine-specific moves (always available)
-    result.append({"move": "dialog", "name": "Dialog", "stats": [], "roll_type": "none"})
-    result.append({"move": "ask_the_oracle", "name": "Ask the Oracle", "stats": [], "roll_type": "none"})
-    result.append(
-        {
-            "move": "world_shaping",
-            "name": "World Shaping",
-            "stats": ["wits", "heart", "shadow"],
-            "roll_type": "action_roll",
-        }
-    )
+    # Engine-specific moves (always available) — defined in engine.yaml
+    for key, em in eng().engine_moves.items():
+        result.append(
+            {
+                "move": key,
+                "name": em.name,
+                "stats": list(em.stats),
+                "roll_type": em.roll_type,
+            }
+        )
 
     return {"moves": result, "combat_position": combat_pos}
 

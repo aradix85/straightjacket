@@ -12,7 +12,6 @@ import re
 from .logging_util import log
 from .models import GameState
 from .npc import (
-    NAME_TITLES,
     normalize_npc_dispositions,
 )
 
@@ -206,10 +205,12 @@ def parse_narrator_response(game: GameState, raw: str) -> str:
             # matching generic short words; skip known titles
             from .engine_loader import eng as _eng
 
-            min_part = _eng().parser.min_line_length
+            _e = _eng()
+            min_part = _e.parser.min_line_length
+            titles = _e.name_titles
             for part in name.split():
                 part_clean = part.strip(".,;:!?\"'()-").lower()
-                if len(part_clean) >= min_part and part_clean not in NAME_TITLES and part_clean in narration_lower:
+                if len(part_clean) >= min_part and part_clean not in titles and part_clean in narration_lower:
                     npc.introduced = True
                     break
 

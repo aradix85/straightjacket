@@ -73,14 +73,16 @@ def _obj(props: dict, extra_required: list[str] | None = None) -> dict:
 # ── Brain output (config-driven moves/stats) ─────────────────
 
 _brain_cache = None
+_correction_cache: dict | None = None
 
 
 def clear_brain_cache() -> None:
     """Invalidate cached schemas. Called by reload_engine()."""
-    global _brain_cache, _metadata_cache, _opening_cache
+    global _brain_cache, _metadata_cache, _opening_cache, _correction_cache
     _brain_cache = None
     _metadata_cache = None
     _opening_cache = None
+    _correction_cache = None
 
 
 def get_brain_output_schema() -> dict:
@@ -89,19 +91,20 @@ def get_brain_output_schema() -> dict:
         _e = eng()
         stat_names = list(_e.stats.names)
 
-        # Build move enum: all Datasworn moves across all settings + engine-specific
+        # Build move enum: all Datasworn moves across every discovered setting + engine-specific
         from ..datasworn.moves import get_moves
+        from ..datasworn.settings import list_packages
 
         all_move_keys: set[str] = set()
-        for setting_id in ("starforged", "classic", "delve", "sundered_isles"):
-            try:
-                moves = get_moves(setting_id)
-                all_move_keys.update(k for k, m in moves.items() if m.roll_type not in ("no_roll", "special_track"))
-            except (FileNotFoundError, KeyError):
-                pass
+        for setting_id in list_packages():
+            moves = get_moves(setting_id)
+            all_move_keys.update(k for k, m in moves.items() if m.roll_type not in ("no_roll", "special_track"))
 
-        # Engine-specific moves
-        all_move_keys.update(("dialog", "ask_the_oracle", "world_shaping"))
+        # Engine-specific moves — from engine.yaml, single source of truth
+        all_move_keys.update(_e.engine_moves.keys())
+
+        # Progress ranks from engine.yaml
+        rank_enum = sorted(_e.progress.track_types["default"].ticks_per_mark.keys())
 
         _brain_cache = _obj(
             {
@@ -117,7 +120,7 @@ def get_brain_output_schema() -> dict:
                 "track_name": _nullable_str(),
                 "track_rank": {
                     "anyOf": [
-                        {"type": "string", "enum": ["troublesome", "dangerous", "formidable", "extreme", "epic"]},
+                        {"type": "string", "enum": rank_enum},
                         {"type": "null"},
                     ]
                 },
@@ -356,48 +359,54 @@ def get_opening_setup_schema() -> dict:
 
 # ── Correction output ─────────────────────────────────────────
 
-CORRECTION_OUTPUT_SCHEMA = _obj(
-    {
-        "correction_source": _str(["input_misread", "state_error"]),
-        "corrected_input": _str(),
-        "reroll_needed": _bool(),
-        "corrected_stat": _str(["edge", "heart", "iron", "shadow", "wits", "none"]),
-        "narrator_guidance": _str(),
-        "director_useful": _bool(),
-        "state_ops": _arr(
-            _obj(
-                {
-                    "op": _str(
-                        [
-                            "npc_edit",
-                            "npc_split",
-                            "npc_merge",
-                            "location_edit",
-                            "scene_context",
-                            "time_edit",
-                            "backstory_append",
-                        ]
-                    ),
-                    "npc_id": _nullable_str(),
-                    "split_name": _nullable_str(),
-                    "split_description": _nullable_str(),
-                    "merge_source_id": _nullable_str(),
-                    "fields": _nullable_obj(
+
+def get_correction_output_schema() -> dict:
+    global _correction_cache
+    if _correction_cache is None:
+        stat_names = list(eng().stats.names)
+        _correction_cache = _obj(
+            {
+                "correction_source": _str(["input_misread", "state_error"]),
+                "corrected_input": _str(),
+                "reroll_needed": _bool(),
+                "corrected_stat": _str(stat_names),
+                "narrator_guidance": _str(),
+                "director_useful": _bool(),
+                "state_ops": _arr(
+                    _obj(
                         {
-                            "name": _nullable_str(),
-                            "description": _nullable_str(),
-                            "disposition": _nullable_str(),
-                            "agenda": _nullable_str(),
-                            "instinct": _nullable_str(),
-                            "aliases": {"anyOf": [_str_arr(), {"type": "null"}]},
+                            "op": _str(
+                                [
+                                    "npc_edit",
+                                    "npc_split",
+                                    "npc_merge",
+                                    "location_edit",
+                                    "scene_context",
+                                    "time_edit",
+                                    "backstory_append",
+                                ]
+                            ),
+                            "npc_id": _nullable_str(),
+                            "split_name": _nullable_str(),
+                            "split_description": _nullable_str(),
+                            "merge_source_id": _nullable_str(),
+                            "fields": _nullable_obj(
+                                {
+                                    "name": _nullable_str(),
+                                    "description": _nullable_str(),
+                                    "disposition": _nullable_str(),
+                                    "agenda": _nullable_str(),
+                                    "instinct": _nullable_str(),
+                                    "aliases": {"anyOf": [_str_arr(), {"type": "null"}]},
+                                }
+                            ),
+                            "value": _nullable_str(),
                         }
-                    ),
-                    "value": _nullable_str(),
-                }
-            )
-        ),
-    }
-)
+                    )
+                ),
+            }
+        )
+    return _correction_cache
 
 
 # ── Revelation check output ──────────────────────────────────

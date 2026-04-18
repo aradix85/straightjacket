@@ -10,8 +10,6 @@ from ..models import BrainResult, GameState
 
 # LOCATION MATCHING
 
-_LOC_STOP = {"in", "the", "of", "at", "near"}
-
 
 def locations_match(loc_a: str, loc_b: str) -> bool:
     """Fuzzy location comparison for deduplication and spatial guards.
@@ -22,8 +20,10 @@ def locations_match(loc_a: str, loc_b: str) -> bool:
     if not loc_a or not loc_b:
         return True
 
+    stop = eng().stopwords.location
+
     def _words(s: str) -> list[str]:
-        return [w for w in s.replace("_", " ").strip().lower().split() if w not in _LOC_STOP]
+        return [w for w in s.replace("_", " ").strip().lower().split() if w not in stop]
 
     wa, wb = _words(loc_a), _words(loc_b)
     if not wa or not wb:

@@ -77,8 +77,7 @@ def resolve_fate_chart(odds: str, chaos_factor: int, roll: int | None = None) ->
     chart = data["fate_chart"]
 
     if odds not in chart:
-        log(f"[Fate] Unknown odds '{odds}', defaulting to fifty_fifty", level="warning")
-        odds = "fifty_fifty"
+        raise KeyError(f"Unknown odds level '{odds}' (valid: {sorted(chart.keys())})")
 
     cf_index = max(0, min(8, chaos_factor - 1))
     cell = chart[odds][cf_index]
@@ -86,9 +85,9 @@ def resolve_fate_chart(odds: str, chaos_factor: int, roll: int | None = None) ->
     if roll is None:
         roll = random.randint(1, 100)
 
-    ey_threshold = cell.get("exceptional_yes")
+    ey_threshold = cell["exceptional_yes"]
     yes_threshold = cell["yes"]
-    en_threshold = cell.get("exceptional_no")
+    en_threshold = cell["exceptional_no"]
 
     if ey_threshold is not None and roll <= ey_threshold:
         answer = "exceptional_yes"
@@ -135,33 +134,6 @@ def _check_chart_random_event(roll: int, chaos_factor: int) -> bool:
 # ── Fate check method (step 3.2) ─────────────────────────────
 
 
-# Odds modifier lookup (from mythic_gme_2e.json, hardcoded for speed)
-_ODDS_MODIFIERS: dict[str, int] = {
-    "certain": 5,
-    "nearly_certain": 4,
-    "very_likely": 2,
-    "likely": 1,
-    "fifty_fifty": 0,
-    "unlikely": -1,
-    "very_unlikely": -2,
-    "nearly_impossible": -4,
-    "impossible": -5,
-}
-
-# Chaos factor modifier lookup
-_CF_MODIFIERS: dict[int, int] = {
-    9: 5,
-    8: 4,
-    7: 2,
-    6: 1,
-    5: 0,
-    4: -1,
-    3: -2,
-    2: -4,
-    1: -5,
-}
-
-
 def resolve_fate_check(odds: str, chaos_factor: int, dice: tuple[int, int] | None = None) -> FateResult:
     """Resolve a fate question using the fate check method.
 
@@ -173,9 +145,11 @@ def resolve_fate_check(odds: str, chaos_factor: int, dice: tuple[int, int] | Non
         chaos_factor: 1–9
         dice: override (d1, d2) tuple (for testing), None = random
     """
-    if odds not in _ODDS_MODIFIERS:
-        log(f"[Fate] Unknown odds '{odds}', defaulting to fifty_fifty", level="warning")
-        odds = "fifty_fifty"
+    cfg = eng().fate
+    if odds not in cfg.odds_modifiers:
+        raise KeyError(f"Unknown odds level '{odds}' (valid: {sorted(cfg.odds_modifiers.keys())})")
+    if chaos_factor not in cfg.chaos_modifiers:
+        raise KeyError(f"Unknown chaos_factor {chaos_factor} (valid: {sorted(cfg.chaos_modifiers.keys())})")
 
     if dice is None:
         d1 = random.randint(1, 10)
@@ -183,8 +157,8 @@ def resolve_fate_check(odds: str, chaos_factor: int, dice: tuple[int, int] | Non
     else:
         d1, d2 = dice
 
-    odds_mod = _ODDS_MODIFIERS[odds]
-    cf_mod = _CF_MODIFIERS.get(chaos_factor, 0)
+    odds_mod = cfg.odds_modifiers[odds]
+    cf_mod = cfg.chaos_modifiers[chaos_factor]
     total = d1 + d2 + odds_mod + cf_mod
 
     # Determine answer. Exceptional ranges take priority.
@@ -325,4 +299,6 @@ def _score_to_odds(score: int, rules: Any) -> str:
     for entry in thresholds:
         if score >= int(entry["min_score"]):
             return str(entry["odds"])
-    return "fifty_fifty"
+    raise ValueError(
+        f"score_to_odds has no matching threshold for score={score}; table must include a catch-all entry at the bottom"
+    )

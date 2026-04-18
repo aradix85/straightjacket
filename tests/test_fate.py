@@ -6,6 +6,8 @@ Run: python -m pytest tests/test_fate.py -v
 
 # Stubs are set up in conftest.py
 
+import pytest
+
 from straightjacket.engine.mechanics.fate import (
     ODDS_LEVELS,
     _check_chart_random_event,
@@ -50,10 +52,10 @@ def test_fate_chart_null_thresholds() -> None:
     assert resolve_fate_chart("impossible", chaos_factor=1, roll=1).answer == "yes"
 
 
-def test_fate_chart_unknown_odds_defaults() -> None:
-    """Unknown odds level falls back to fifty_fifty without crashing."""
-    result = resolve_fate_chart("totally_bonkers", chaos_factor=5, roll=50)
-    assert result.odds == "fifty_fifty"
+def test_fate_chart_unknown_odds_raises() -> None:
+    """Unknown odds level raises — no silent fallback on domain data."""
+    with pytest.raises(KeyError, match="Unknown odds level"):
+        resolve_fate_chart("totally_bonkers", chaos_factor=5, roll=50)
 
 
 # ── Fate chart random event trigger ──────────────────────────

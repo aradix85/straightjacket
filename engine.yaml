@@ -248,6 +248,28 @@ narrative_direction:
       tempo: moderate
       perspective: action_detail
 
+# ── Engine-specific moves ────────────────────────────────────
+# Moves defined by the engine itself (not Datasworn data). Always available
+# across all settings. Single source of truth: builtins.available_moves injects
+# them into the Brain's move list, ai/schemas builds the enum from the same
+# keys, and narrator/consequences label them from this table.
+engine_moves:
+  dialog:
+    name: Dialog
+    stats: []
+    roll_type: none
+  ask_the_oracle:
+    name: Ask the Oracle
+    stats: []
+    roll_type: none
+  world_shaping:
+    name: World Shaping
+    stats:
+      - wits
+      - heart
+      - shadow
+    roll_type: action_roll
+
 # ── Move categories ──────────────────────────────────────────
 # Which moves use which damage table in apply_consequences.
 # Add a new move here to route it to the correct damage logic.
@@ -818,6 +840,25 @@ threats:
   menace_high_threshold: 0.75       # Menace ratio above this = "near tipping point"
   forsake_spirit_cost: 2            # Spirit damage when menace forces Forsake Your Vow
 
+# ── Progress tracks ───────────────────────────────────────────
+# Ticks-per-mark by rank for progress tracks and threat menace tracks.
+# Higher rank = slower progress (more ticks needed per mark).
+# Distinct from legacy.ticks_by_rank, which is the inverse XP-reward table.
+#
+# Structure is extensible: track_types is a map keyed by track variant.
+# Current variants all use the same table (`default`). Future variants
+# (site-exploration tracks, phased thread tracks) can add their own keys
+# without breaking the existing one.
+progress:
+  track_types:
+    default:
+      ticks_per_mark:
+        troublesome: 12              # 3 boxes (12 ticks) per mark
+        dangerous: 8                 # 2 boxes (8 ticks) per mark
+        formidable: 4                # 1 box (4 ticks) per mark
+        extreme: 2                   # 2 ticks per mark
+        epic: 1                      # 1 tick per mark
+
 # ── Legacy tracks and XP ──────────────────────────────────────
 # Legacy tracks (quests, bonds, discoveries) persist across chapters.
 # Filled boxes grant XP. XP is spent on asset abilities or new assets.
@@ -901,6 +942,28 @@ impacts:
 # Data in data/mythic_gme_2e.json. Config here controls method and likelihood.
 fate:
   default_method: fate_chart        # fate_chart or fate_check
+  # Odds modifier table (Mythic GME 2e fate check)
+  odds_modifiers:
+    certain: 5
+    nearly_certain: 4
+    very_likely: 2
+    likely: 1
+    fifty_fifty: 0
+    unlikely: -1
+    very_unlikely: -2
+    nearly_impossible: -4
+    impossible: -5
+  # Chaos-factor modifier table (fate check), keyed by chaos_factor 1–9
+  chaos_modifiers:
+    1: -5
+    2: -4
+    3: -2
+    4: -1
+    5: 0
+    6: 1
+    7: 2
+    8: 4
+    9: 5
   likelihood_rules:
     # NPC disposition → score modifier
     disposition_scores:
@@ -1451,11 +1514,279 @@ random_events:
   threat_target_probability: 0.5  # Probability that a threat-eligible focus targets a threat
   description_focus_categories:   # Focus categories that roll on the descriptions meaning table
     - ambiguous_event
+  # Focus categories that require a target from the characters list.
+  npc_focus_categories:
+    - npc_action
+    - npc_negative
+    - npc_positive
+    - new_npc
+  # Focus categories that require a target from the threads list.
+  thread_focus_categories:
+    - move_toward_thread
+    - move_away_from_thread
+    - close_thread
+  # Focus categories that can target an active threat (menace advance).
+  # When threats exist, threat_target_probability decides threat vs generic.
+  threat_eligible_focus_categories:
+    - pc_negative
+    - move_away_from_thread
   list_weight_max: 3              # Cap on weight bumps per character/thread
   consolidation_threshold: 25     # Consolidate characters/threads list at this size
   consolidation_weight_high: 3    # Weights at or above this become weight 2 after consolidation
   consolidation_weight_low: 2     # Weight assigned to above-threshold entries post-consolidation
   consolidation_weight_default: 1 # Weight assigned to everyone else post-consolidation
+
+# ── Stopwords and honorifics ─────────────────────────────────
+# Stopword lists consumed by npc/lifecycle.py, ai/rule_validator.py,
+# and mechanics/world.py. Single source of truth for filtering common
+# function words from keyword matching and fuzzy comparison.
+stopwords:
+  # Generic function words used by NPC descriptor-keyword extraction.
+  general:
+    - the
+    - and
+    - for
+    - with
+    - from
+    - that
+    - this
+    - was
+    - are
+    - has
+    - had
+    - not
+    - but
+    - his
+    - her
+    - its
+    - who
+    - whom
+    - will
+    - can
+    - may
+    - been
+    - were
+    - into
+    - than
+    - then
+  # Function words + discourse markers used by consequence keyword
+  # matching and threat-name acknowledgement.
+  consequence:
+    - the
+    - and
+    - for
+    - with
+    - from
+    - that
+    - this
+    - was
+    - are
+    - has
+    - had
+    - not
+    - but
+    - his
+    - her
+    - its
+    - who
+    - will
+    - can
+    - been
+    - into
+    - than
+    - then
+    - about
+    - something
+    - nothing
+    - their
+    - your
+    - what
+    - when
+    - where
+    - does
+    - doesn
+    - again
+    - back
+    - just
+    - now
+    - still
+    - even
+    - more
+    - much
+    - very
+    - only
+    - also
+  # Prepositions stripped from location strings before fuzzy matching.
+  location:
+    - in
+    - the
+    - of
+    - at
+    - near
+
+# Titles and honorifics (English + French + Spanish + fantasy/sci-fi/eastern).
+# Stripped from NPC names during fuzzy matching — prevents 'Mrs. Chen' ↔ 'Mrs.
+# Kowalski' false positives.
+name_titles:
+  - "mr"
+  - "mr."
+  - "mrs"
+  - "mrs."
+  - "ms"
+  - "ms."
+  - "dr"
+  - "dr."
+  - "sir"
+  - "lady"
+  - "lord"
+  - "miss"
+  - "captain"
+  - "cpt"
+  - "lieutenant"
+  - "lt"
+  - "sergeant"
+  - "sgt"
+  - "officer"
+  - "detective"
+  - "professor"
+  - "prof"
+  - "father"
+  - "sister"
+  - "brother"
+  - "uncle"
+  - "aunt"
+  - "grandma"
+  - "grandpa"
+  - "old"
+  - "young"
+  - "the"
+  - "king"
+  - "queen"
+  - "prince"
+  - "princess"
+  - "duke"
+  - "duchess"
+  - "baron"
+  - "baroness"
+  - "count"
+  - "countess"
+  - "viscount"
+  - "marquis"
+  - "earl"
+  - "colonel"
+  - "commander"
+  - "general"
+  - "admiral"
+  - "major"
+  - "corporal"
+  - "private"
+  - "judge"
+  - "sheriff"
+  - "mayor"
+  - "governor"
+  - "senator"
+  - "chancellor"
+  - "priest"
+  - "priestess"
+  - "bishop"
+  - "cardinal"
+  - "reverend"
+  - "pastor"
+  - "rabbi"
+  - "imam"
+  - "monk"
+  - "abbot"
+  - "abbess"
+  - "ambassador"
+  - "consul"
+  - "envoy"
+  - "delegate"
+  - "monsieur"
+  - "madame"
+  - "mademoiselle"
+  - "señor"
+  - "señora"
+  - "señorita"
+  - "don"
+  - "doña"
+  - "wizard"
+  - "sorcerer"
+  - "sorceress"
+  - "mage"
+  - "warlock"
+  - "witch"
+  - "archmage"
+  - "enchantress"
+  - "necromancer"
+  - "alchemist"
+  - "paladin"
+  - "cleric"
+  - "rogue"
+  - "assassin"
+  - "berserker"
+  - "barbarian"
+  - "gladiator"
+  - "champion"
+  - "sentinel"
+  - "guardian"
+  - "inquisitor"
+  - "templar"
+  - "crusader"
+  - "squire"
+  - "knight"
+  - "liege"
+  - "regent"
+  - "viceroy"
+  - "castellan"
+  - "seneschal"
+  - "steward"
+  - "herald"
+  - "grandmaster"
+  - "shaman"
+  - "oracle"
+  - "prophet"
+  - "seer"
+  - "sage"
+  - "elder"
+  - "druid"
+  - "mystic"
+  - "augur"
+  - "diviner"
+  - "peasant"
+  - "blacksmith"
+  - "fletcher"
+  - "reeve"
+  - "constable"
+  - "ensign"
+  - "marshal"
+  - "overseer"
+  - "commissioner"
+  - "agent"
+  - "operative"
+  - "warlord"
+  - "android"
+  - "emissary"
+  - "arbiter"
+  - "overlord"
+  - "archon"
+  - "praetor"
+  - "legate"
+  - "centurion"
+  - "shogun"
+  - "samurai"
+  - "ronin"
+  - "khan"
+  - "caliph"
+  - "emir"
+  - "shah"
+  - "outcast"
+  - "exile"
+  - "pilgrim"
+  - "wanderer"
+  - "mercenary"
+  - "neighbor"
+  - "stranger"
+  - "customer"
 
 # ── Validator data ──────────────────────────────────────────
 # Data consumed by ai/validator.py and ai/rule_validator.py.

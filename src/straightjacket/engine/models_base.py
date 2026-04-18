@@ -116,19 +116,10 @@ class WorldState(SerializableMixin):
             setattr(self, f, getattr(restored, f))
 
 
-# Progress-track ticks per mark by rank. This is the track-fill table: higher
-# rank = slower progress (more ticks needed per box). Do NOT confuse with
-# engine.yaml `legacy.ticks_by_rank`, which is the inverse legacy-reward table
-# (higher rank = more XP ticks on completion).
-# TODO tranche 3.1: still lives only in Python. Move to engine.yaml under
-# `progress.ticks_per_mark` (or similar) when data-dedup tranche lands.
-PROGRESS_RANKS: dict[str, int] = {
-    "troublesome": 12,  # 3 boxes (12 ticks) per mark
-    "dangerous": 8,  # 2 boxes (8 ticks) per mark
-    "formidable": 4,  # 1 box (4 ticks) per mark
-    "extreme": 2,  # 2 ticks per mark
-    "epic": 1,  # 1 tick per mark
-}
+# Progress-track ticks-per-mark now live in engine.yaml under
+# `progress.track_types.default.ticks_per_mark`. Do NOT confuse with
+# engine.yaml `legacy.ticks_by_rank`, which is the inverse legacy-reward
+# table (higher rank = more XP ticks on completion).
 
 
 @dataclass
@@ -145,7 +136,9 @@ class ProgressTrack(SerializableMixin):
 
     @property
     def ticks_per_mark(self) -> int:
-        return PROGRESS_RANKS[self.rank]
+        from .engine_loader import eng
+
+        return eng().progress.ticks_per_mark(self.rank)
 
     @property
     def filled_boxes(self) -> int:
@@ -187,10 +180,13 @@ class ThreatData(SerializableMixin):
 
     @property
     def menace_per_mark(self) -> int:
-        # PROGRESS_RANKS is the ticks-per-mark table for progress/menace tracks.
-        # This is distinct from engine.yaml's legacy.ticks_by_rank, which is the
-        # legacy-track reward table (inverse scale). See models_base.PROGRESS_RANKS.
-        return PROGRESS_RANKS[self.rank]
+        # engine.yaml `progress.track_types.default.ticks_per_mark` is the
+        # ticks-per-mark table for progress/menace tracks. Distinct from
+        # engine.yaml's legacy.ticks_by_rank, which is the legacy-track reward
+        # table (inverse scale).
+        from .engine_loader import eng
+
+        return eng().progress.ticks_per_mark(self.rank)
 
     @property
     def menace_filled_boxes(self) -> int:

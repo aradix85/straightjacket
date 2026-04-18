@@ -8,18 +8,19 @@ import pytest
 
 # Stubs are set up in conftest.py
 
+from straightjacket.engine.engine_loader import eng
 from straightjacket.engine.models import (
     GameState,
     ProgressTrack,
 )
-from straightjacket.engine.models_base import PROGRESS_RANKS
 
 
 # ── ProgressTrack ─────────────────────────────────────────────
 
 
 def test_progress_track_ticks_per_mark() -> None:
-    for rank, expected in PROGRESS_RANKS.items():
+    expected_table = eng().progress.track_types["default"].ticks_per_mark
+    for rank, expected in expected_table.items():
         t = ProgressTrack(rank=rank)
         assert t.ticks_per_mark == expected
 
@@ -120,12 +121,12 @@ def test_seed_background_vow_custom_rank(load_engine: None) -> None:
     assert game.progress_tracks[0].rank == "troublesome"
 
 
-def test_seed_background_vow_invalid_rank_uses_default(load_engine: None) -> None:
+def test_seed_background_vow_invalid_rank_raises(load_engine: None) -> None:
     from straightjacket.engine.game.game_start import _seed_background_vow
 
     game = GameState(player_name="Test")
-    _seed_background_vow(game, "Quest", "nonexistent_rank")
-    assert game.progress_tracks[0].rank == "extreme"  # default from engine.yaml
+    with pytest.raises(ValueError, match="Invalid vow rank"):
+        _seed_background_vow(game, "Quest", "nonexistent_rank")
 
 
 def test_seed_background_vow_empty_skips(load_engine: None) -> None:
