@@ -247,6 +247,43 @@ class EngineMove:
 
 
 @dataclass
+class FlagCondition:
+    """Named boolean flag must be true for the move to be available."""
+
+    flag: str
+
+
+@dataclass
+class NotFlagCondition:
+    """Named boolean flag must be false for the move to be available."""
+
+    not_flag: str
+
+
+@dataclass
+class CombatPosCondition:
+    """combat_position must be one of the listed values for the move to be available."""
+
+    combat_pos_in: list[str]
+
+
+MoveAvailabilityCondition = FlagCondition | NotFlagCondition | CombatPosCondition
+
+
+@dataclass
+class MoveAvailabilityRule:
+    """Availability rule for one move key.
+
+    `never` is the reactive case: suffer and threshold moves are never
+    offered to the Brain. Otherwise `available` is a list of conditions — all
+    must hold. Empty list means always available.
+    """
+
+    never: bool
+    available: list[MoveAvailabilityCondition]
+
+
+@dataclass
 class StopwordsConfig:
     """Stopword lists filtered during keyword matching and fuzzy comparison.
 
@@ -643,6 +680,7 @@ class EngineSettings:
     legacy: LegacyConfig
     progress: ProgressConfig
     engine_moves: dict[str, EngineMove]
+    move_availability: dict[str, MoveAvailabilityRule]
     stopwords: StopwordsConfig
     name_titles: frozenset[str]
     position_resolver: PositionResolverConfig
@@ -796,6 +834,39 @@ _SIMPLE_SECTIONS: dict[str, type] = {
 }
 
 
+def _parse_move_availability_condition(cond: dict[str, Any]) -> MoveAvailabilityCondition:
+    """Parse a single condition dict into the matching dataclass.
+
+    Exactly one of `flag`, `not_flag`, `combat_pos_in` must be set.
+    """
+    keys = set(cond.keys())
+    if keys == {"flag"}:
+        return FlagCondition(flag=cond["flag"])
+    if keys == {"not_flag"}:
+        return NotFlagCondition(not_flag=cond["not_flag"])
+    if keys == {"combat_pos_in"}:
+        return CombatPosCondition(combat_pos_in=list(cond["combat_pos_in"]))
+    raise ValueError(
+        f"Invalid move_availability condition: {cond!r}. Expected exactly one of: flag, not_flag, combat_pos_in."
+    )
+
+
+def _parse_move_availability_rule(rule: dict[str, Any]) -> MoveAvailabilityRule:
+    """Parse a rule dict into a MoveAvailabilityRule.
+
+    Accepts either {"never": true} or {"available": [<conditions>]}.
+    """
+    keys = set(rule.keys())
+    if keys == {"never"}:
+        if not rule["never"]:
+            raise ValueError(f"move_availability rule with never=false is not allowed: {rule!r}")
+        return MoveAvailabilityRule(never=True, available=[])
+    if keys == {"available"}:
+        conds = [_parse_move_availability_condition(dict(c)) for c in rule["available"]]
+        return MoveAvailabilityRule(never=False, available=conds)
+    raise ValueError(f"Invalid move_availability rule: {rule!r}. Expected exactly one of: never, available.")
+
+
 def parse_engine_yaml(data: dict[str, Any]) -> EngineSettings:
     """Parse raw engine.yaml dict into typed EngineSettings.
 
@@ -861,6 +932,11 @@ def parse_engine_yaml(data: dict[str, Any]) -> EngineSettings:
         key: _build_strict(EngineMove, {"name": m["name"], "stats": list(m["stats"]), "roll_type": m["roll_type"]})
         for key, m in data["engine_moves"].items()
     }
+
+    # move_availability: keyed by datasworn move id, each is either
+    # {"never": true} or {"available": [<conditions>]}. Conditions are
+    # dicts with exactly one of: flag, not_flag, combat_pos_in.
+    move_availability = {key: _parse_move_availability_rule(rule) for key, rule in data["move_availability"].items()}
 
     # stopwords: three named frozensets
     sw_raw = data["stopwords"]
@@ -931,6 +1007,7 @@ def parse_engine_yaml(data: dict[str, Any]) -> EngineSettings:
         legacy=legacy,
         progress=progress,
         engine_moves=engine_moves,
+        move_availability=move_availability,
         stopwords=stopwords,
         name_titles=name_titles,
         position_resolver=position_resolver,

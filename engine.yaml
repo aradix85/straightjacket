@@ -244,9 +244,6 @@ narrative_direction:
     dialog:
       tempo: measured
       perspective: dialogue_rhythm
-    _default:
-      tempo: moderate
-      perspective: action_detail
 
 # ── Engine-specific moves ────────────────────────────────────
 # Moves defined by the engine itself (not Datasworn data). Always available
@@ -269,6 +266,113 @@ engine_moves:
       - heart
       - shadow
     roll_type: action_roll
+
+# ── Move availability ────────────────────────────────────────
+# When a move is offered to the Brain. Every rollable move across all
+# supported settings is listed here; an unlisted move raises on evaluation
+# (no silent defaults). `available` is a list of conditions — all must hold.
+# Empty list means always available. `never: true` means never offered.
+#
+# Condition forms:
+#   flag: <name>                -> the named boolean flag must be true
+#   not_flag: <name>            -> the named boolean flag must be false
+#   combat_pos_in: [<values>]   -> combat_position must be in the list
+#
+# Available flags: in_combat, has_vow, has_expedition, has_scene_challenge,
+# has_combat_track, has_connection.
+move_availability:
+  # Adventure (Ironsworn classic + delve + Starforged/Sundered Isles variants)
+  adventure/face_danger: { available: [] }
+  adventure/gather_information: { available: [] }
+  adventure/heal: { available: [] }
+  adventure/make_camp: { available: [] }
+  adventure/reach_your_destination: { available: [] }
+  adventure/resupply: { available: [] }
+  adventure/secure_an_advantage: { available: [] }
+  adventure/undertake_a_journey: { available: [] }
+  adventure/check_your_gear: { available: [] }
+  adventure/compel: { available: [] }
+
+  # Combat (Ironsworn classic + delve)
+  combat/end_the_fight: { available: [{ flag: in_combat }] }
+
+  # Combat (Starforged / Sundered Isles positional model)
+  combat/enter_the_fray: { available: [{ not_flag: in_combat }] }
+  combat/battle: { available: [{ not_flag: in_combat }] }
+  combat/take_decisive_action:
+    available:
+      - flag: in_combat
+      - flag: has_combat_track
+  combat/strike:
+    available:
+      - flag: in_combat
+      - combat_pos_in: [in_control]
+  combat/gain_ground:
+    available:
+      - flag: in_combat
+      - combat_pos_in: [in_control]
+  combat/clash:
+    available:
+      - flag: in_combat
+      - combat_pos_in: [bad_spot]
+  combat/react_under_fire:
+    available:
+      - flag: in_combat
+      - combat_pos_in: [bad_spot]
+
+  # Connection (Starforged / Sundered Isles)
+  connection/make_a_connection: { available: [] }
+  connection/develop_your_relationship: { available: [] }
+  connection/test_your_relationship: { available: [] }
+  connection/forge_a_bond: { available: [{ flag: has_connection }] }
+
+  # Delve (Ironsworn Delve expansion)
+  delve/check_your_gear: { available: [] }
+  delve/delve_the_depths: { available: [] }
+  delve/escape_the_depths: { available: [] }
+  delve/locate_your_objective: { available: [] }
+
+  # Exploration (Starforged / Sundered Isles)
+  exploration/set_a_course: { available: [] }
+  exploration/undertake_an_expedition: { available: [] }
+  exploration/explore_a_waypoint: { available: [{ flag: has_expedition }] }
+  exploration/finish_an_expedition: { available: [{ flag: has_expedition }] }
+
+  # Quest (shared)
+  quest/swear_an_iron_vow: { available: [] }
+  quest/fulfill_your_vow: { available: [{ flag: has_vow }] }
+
+  # Recover (Starforged / Sundered Isles)
+  recover/heal: { available: [] }
+  recover/hearten: { available: [] }
+  recover/repair: { available: [] }
+  recover/resupply: { available: [] }
+  recover/sojourn: { available: [] }
+
+  # Relationship (Ironsworn classic + delve — pre-Starforged vocabulary)
+  relationship/compel: { available: [] }
+  relationship/draw_the_circle: { available: [] }
+  relationship/forge_a_bond: { available: [] }
+  relationship/sojourn: { available: [] }
+  relationship/test_your_bond: { available: [] }
+
+  # Scene challenge (Starforged / Sundered Isles)
+  scene_challenge/face_danger: { available: [{ flag: has_scene_challenge }] }
+  scene_challenge/secure_an_advantage: { available: [{ flag: has_scene_challenge }] }
+  scene_challenge/finish_the_scene: { available: [{ flag: has_scene_challenge }] }
+
+  # Suffer — reactive, never player-initiated
+  suffer/companion_endure_harm: { never: true }
+  suffer/companion_takes_a_hit: { never: true }
+  suffer/endure_harm: { never: true }
+  suffer/endure_stress: { never: true }
+  suffer/face_death: { never: true }
+  suffer/face_desolation: { never: true }
+  suffer/withstand_damage: { never: true }
+
+  # Threshold — reactive, never player-initiated
+  threshold/face_death: { never: true }
+  threshold/face_desolation: { never: true }
 
 # ── Move categories ──────────────────────────────────────────
 # Which moves use which damage table in apply_consequences.
@@ -401,7 +505,7 @@ time_progression_map:
   recover/resupply: moderate
   world_shaping: moderate
   _with_location_change: long    # any move + location_change → long
-  _default: short
+  _catchall: short
 
 
 # ── Story defaults ────────────────────────────────────────────

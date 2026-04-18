@@ -166,12 +166,12 @@ def resolve_time_progression(move: str, has_location_change: bool = False) -> st
     """Engine-computed time progression from move type. No AI needed.
 
     Yaml-authoritative: `time_progression_map` must define every move and the
-    `_with_location_change` / `_default` fallbacks.
+    `_with_location_change` / `_catchall` fallbacks.
     """
     tmap = eng().get_raw("time_progression_map")
     if has_location_change:
         return tmap["_with_location_change"]
-    return tmap[move] if move in tmap else tmap["_default"]
+    return tmap[move] if move in tmap else tmap["_catchall"]
 
 
 def move_category(move: str) -> str:

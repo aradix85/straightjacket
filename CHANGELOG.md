@@ -5,6 +5,28 @@ Originally forked from [EdgeTales](https://github.com/edgetales/edgetales). See 
 
 ---
 
+## [0.57.1] — 2026-04-18
+
+Test suite runs 16x faster — 49 seconds down to 3 seconds — with no test removed.
+
+The `load_engine` and `stub_engine` fixtures in `tests/conftest.py` were function-scoped, which meant every test that used them reparsed the 82KB `engine.yaml` from scratch. Measurement showed that 427 tests each spent ~100ms in setup, totalling 44 of the 49 seconds. The actual test logic across 783 tests ran in under a second.
+
+Fix: session-scope the yaml parse behind two hidden fixtures (`_real_engine`, `_stub_engine_instance`). The per-test `load_engine` and `stub_engine` fixtures now just pointer-swap the cached instance into `engine_loader._eng`. A duplicate `load_engine` fixture in `test_web.py` was updated to use the same session cache.
+
+Safe because no test mutates `eng()` after installing it — they only read from the config snapshot.
+
+---
+
+## [0.57.0] — 2026-04-18
+
+Tranches 4 and 5: yaml-internal naming cleanup, and move availability rules moved from Python into `engine.yaml`.
+
+Tranche 4 reviewed six `_default` entries in `engine.yaml`. `time_progression_map._default` is a real resolver fallback and was renamed to `_catchall` (with the callsite in `resolvers.py` updated) so the naming matches the semantics. `narrative_direction.result_map._default` turned out to be dead — no callsite ever read it, the resolver raises on unknown keys — and was removed outright rather than renamed as the handover suggested. `move_verbs._default` is narrator-facing text and stays for tranche 6. The remaining three were already correctly named.
+
+Tranche 5 moved the 77-line `_is_move_available` rule table in `tools/builtins.py` into a new `move_availability:` section in `engine.yaml`. Every rollable move across Classic, Delve, Starforged, and Sundered Isles is listed explicitly; unlisted keys raise. Each entry is either `{never: true}` (reactive moves that are never player-initiated) or `{available: [<conditions>]}` where conditions combine named boolean flags and combat-position checks. Three new condition dataclasses (`FlagCondition`, `NotFlagCondition`, `CombatPosCondition`) plus `MoveAvailabilityRule` in `engine_config.py`; the Python function is now a thin yaml-driven evaluator. Before extraction, the Python was cleaned up: a dead duplicated branch in `scene_challenge`, several redundant `return True` statements, and a stale delve comment referencing unimplemented site-state were removed.
+
+---
+
 ## [0.55.0] — 2026-04-18
 
 Tranche 3: data tables that lived only in Python moved to `engine.yaml`. Silent fallbacks found alongside now raise.

@@ -32,10 +32,9 @@ from straightjacket.web.serializers import (  # type: ignore[import-not-found]
 
 
 @pytest.fixture()
-def load_engine() -> None:
-    """Load real engine.yaml."""
-    engine_loader._eng = None
-    engine_loader.eng()
+def load_engine(_real_engine) -> None:  # type: ignore[no-untyped-def]
+    """Install real engine.yaml into engine_loader._eng."""
+    engine_loader._eng = _real_engine
 
 
 # ── Session dataclass ─────────────────────────────────────────

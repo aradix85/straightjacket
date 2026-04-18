@@ -43,40 +43,57 @@ set_backoff_sleep(lambda _: None)
 # ── Reusable fixtures ────────────────────────────────────────
 
 
-@pytest.fixture()
-def load_engine() -> None:
-    """Load real engine.yaml."""
-    from straightjacket.engine import engine_loader
-
-    engine_loader._eng = None
-    engine_loader.eng()
-
-
-@pytest.fixture()
-def stub_engine() -> None:
-    """Stub eng() with known values for predictable assertions.
-
-    The stub starts from the real engine.yaml so every required key is present,
-    then overrides a small set of fields for deterministic assertions. This
-    keeps the stub in sync with engine_config.py automatically — when a new
-    field is added, tests continue to work as long as the yaml file is updated.
-    """
+@pytest.fixture(scope="session")
+def _real_engine():  # type: ignore[no-untyped-def]
+    """Parse engine.yaml once per test session."""
     from pathlib import Path
 
     import yaml as _yaml
 
-    from straightjacket.engine import engine_loader
     from straightjacket.engine.config_loader import PROJECT_ROOT
     from straightjacket.engine.engine_config import parse_engine_yaml
 
     with open(Path(PROJECT_ROOT) / "engine.yaml", encoding="utf-8") as f:
         data = _yaml.safe_load(f)
+    return parse_engine_yaml(data)
 
-    # Test-only overrides: deterministic values for assertions.
+
+@pytest.fixture(scope="session")
+def _stub_engine_instance():  # type: ignore[no-untyped-def]
+    """Parse engine.yaml once per test session with deterministic test overrides."""
+    from pathlib import Path
+
+    import yaml as _yaml
+
+    from straightjacket.engine.config_loader import PROJECT_ROOT
+    from straightjacket.engine.engine_config import parse_engine_yaml
+
+    with open(Path(PROJECT_ROOT) / "engine.yaml", encoding="utf-8") as f:
+        data = _yaml.safe_load(f)
     data["story"]["kishotenketsu_probability"] = {"dark_gritty": 0.15}
     data["creativity_seeds"] = ["amber", "glacier", "compass", "obsidian", "cedar"]
+    return parse_engine_yaml(data)
 
-    engine_loader._eng = parse_engine_yaml(data)
+
+@pytest.fixture()
+def load_engine(_real_engine) -> None:  # type: ignore[no-untyped-def]
+    """Install real engine.yaml into engine_loader._eng."""
+    from straightjacket.engine import engine_loader
+
+    engine_loader._eng = _real_engine
+
+
+@pytest.fixture()
+def stub_engine(_stub_engine_instance) -> None:  # type: ignore[no-untyped-def]
+    """Install stubbed engine with deterministic test overrides.
+
+    The stub overrides two fields (kishotenketsu_probability, creativity_seeds)
+    for predictable assertions. Session-cached: the expensive yaml parse happens
+    once per test session, per-test fixture setup is a pointer swap.
+    """
+    from straightjacket.engine import engine_loader
+
+    engine_loader._eng = _stub_engine_instance
 
 
 @pytest.fixture()
