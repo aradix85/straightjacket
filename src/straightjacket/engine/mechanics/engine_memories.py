@@ -58,7 +58,7 @@ def generate_engine_memories(
     # Resolve template variables — every key must be present in yaml.
     result_key = "dialog" if move == "dialog" else f"{category}_{result}"
     result_text = result_text_map[result_key]
-    move_verb = verb_map[move] if move in verb_map else verb_map["_default"]
+    move_verb = verb_map[move] if move in verb_map else verb_map["_catchall"]
 
     if consequences:
         result_text += f" ({', '.join(consequences[:3])})"
@@ -118,9 +118,10 @@ def generate_scene_context(
 ) -> str:
     """Engine-generated scene_context from mechanical context. Replaces AI-generated version."""
     _e = eng()
+    _defaults = _e.ai_text.narrator_defaults
     move = brain.move
-    location = game.world.current_location or "unknown"
-    npc_summary = ", ".join(activated_npc_names[:3]) if activated_npc_names else "no one nearby"
+    location = game.world.current_location or _defaults["unknown_location"]
+    npc_summary = ", ".join(activated_npc_names[:3]) if activated_npc_names else _defaults["no_npcs_nearby"]
 
     if move == "dialog" or roll is None:
         template = _e.get_raw("scene_context_dialog")

@@ -57,7 +57,8 @@ def call_correction_brain(
         aliases = f" aliases:{','.join(n.aliases)}" if n.aliases else ""
         return f'id:{n.id} name:"{n.name}"{aliases} disposition:{n.disposition} desc:"{n.description[:120]}"'
 
-    npc_lines = "\n".join(_npc_line(n) for n in game.npcs) or "(none)"
+    _defaults = eng().ai_text.narrator_defaults
+    npc_lines = "\n".join(_npc_line(n) for n in game.npcs) or _defaults["no_npcs"]
 
     brain = snap.brain or BrainResult()
     roll = snap.roll
@@ -65,7 +66,7 @@ def call_correction_brain(
         f"{roll.result} ({roll.move}, {roll.stat_name}={roll.stat_value}, "
         f"d1={roll.d1}+d2={roll.d2} vs c1={roll.c1}/c2={roll.c2})"
         if roll
-        else "dialog (no roll)"
+        else _defaults["no_roll"]
     )
 
     system = get_prompt("correction_brain", lang=lang)

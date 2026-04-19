@@ -248,7 +248,7 @@ def _known_npcs_string(mentioned: Sequence[NpcData], game: GameState, exclude_id
             continue
         parts.append(_npc_entry(n))
 
-    return ", ".join(parts) or "none"
+    return ", ".join(parts) or eng().ai_text.narrator_defaults["no_npcs"]
 
 
 def _pacing_block(game: GameState, scene_setup: SceneSetup | None = None) -> str:

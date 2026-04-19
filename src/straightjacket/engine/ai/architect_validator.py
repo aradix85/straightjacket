@@ -3,18 +3,17 @@
 
 Extracted from validator.py. Checks story blueprints for genre fidelity
 using rule-based drift detection and LLM semantic checking.
-
-NOTE: Slated for deletion in roadmap step 29b along with architect.py.
 """
 
 import json
 
 from ..config_loader import model_for_role, sampling_params
 from ..datasworn.settings import GenreConstraints
+from ..engine_loader import eng
 from ..logging_util import log
 from ..prompt_loader import get_prompt
 from .provider_base import AIProvider, create_with_retry
-from .schemas import ARCHITECT_VALIDATOR_SCHEMA
+from .schemas import get_architect_validator_schema
 
 
 def validate_architect(
@@ -52,13 +51,16 @@ def validate_architect(
     conflict = blueprint.get("central_conflict", "")
     antagonist = blueprint.get("antagonist_force", "")
 
+    labels = eng().ai_text.architect_labels
     constraint_text = ""
     if genre_constraints.forbidden_terms:
-        constraint_text += f"Forbidden terms: {', '.join(genre_constraints.forbidden_terms)}. "
+        constraint_text += f"{labels['forbidden_terms_prefix']}: {', '.join(genre_constraints.forbidden_terms)}. "
     if genre_constraints.forbidden_concepts:
-        constraint_text += "Forbidden concepts: " + "; ".join(genre_constraints.forbidden_concepts) + ". "
+        constraint_text += (
+            f"{labels['forbidden_concepts_prefix']}: " + "; ".join(genre_constraints.forbidden_concepts) + ". "
+        )
     if genre_constraints.genre_test:
-        constraint_text += f"Test: {genre_constraints.genre_test}"
+        constraint_text += f"{labels['genre_test_prefix']}: {genre_constraints.genre_test}"
 
     system = get_prompt("architect_validator_system", constraint_text=constraint_text)
     prompt = get_prompt(
@@ -77,7 +79,7 @@ def validate_architect(
             model=model_for_role("validator_architect"),
             system=system,
             messages=[{"role": "user", "content": prompt}],
-            json_schema=ARCHITECT_VALIDATOR_SCHEMA,
+            json_schema=get_architect_validator_schema(),
             log_role="validator_architect",
             **_vap,
         )
@@ -87,11 +89,12 @@ def validate_architect(
             log(f"[ArchitectValidator] FAILED: {violations}")
             fixed_conflict = result.get("fixed_conflict", "").strip()
             fixed_antagonist = result.get("fixed_antagonist", "").strip()
+            _trunc = eng().architect_limits.log_truncate_short
             if fixed_conflict:
-                log(f"[ArchitectValidator] Conflict: '{conflict[:60]}' → '{fixed_conflict[:60]}'")
+                log(f"[ArchitectValidator] Conflict: '{conflict[:_trunc]}' → '{fixed_conflict[:_trunc]}'")
                 blueprint["central_conflict"] = fixed_conflict
             if fixed_antagonist:
-                log(f"[ArchitectValidator] Antagonist: '{antagonist[:60]}' → '{fixed_antagonist[:60]}'")
+                log(f"[ArchitectValidator] Antagonist: '{antagonist[:_trunc]}' → '{fixed_antagonist[:_trunc]}'")
                 blueprint["antagonist_force"] = fixed_antagonist
         else:
             log("[ArchitectValidator] Passed")
@@ -115,6 +118,7 @@ def _check_blueprint_text_fields(blueprint: dict, drift_words: set[str]) -> None
         fields_to_check.append((f"act[{phase}].goal", act.get("goal", "")))
         fields_to_check.append((f"act[{phase}].transition_trigger", act.get("transition_trigger", "")))
 
+    _limits = eng().architect_limits
     for field_name, text in fields_to_check:
         if not text:
             continue
@@ -122,6 +126,7 @@ def _check_blueprint_text_fields(blueprint: dict, drift_words: set[str]) -> None
         found = [w for w in drift_words if w in text_lower]
         if found:
             log(
-                f"[ArchitectValidator] Drift words in {field_name}: {found[:5]}. Text: '{text[:80]}'",
+                f"[ArchitectValidator] Drift words in {field_name}: "
+                f"{found[: _limits.drift_words_log_window]}. Text: '{text[: _limits.log_truncate_medium]}'",
                 level="warning",
             )

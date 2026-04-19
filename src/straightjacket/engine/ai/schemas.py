@@ -3,11 +3,9 @@
 
 Move and stat enums are config-driven from engine.yaml.
 Schema builder helpers eliminate repeated boilerplate.
-
-TODO tranche 6.1: field `description=` strings in these schemas are sent to
-AI models as part of the structured-output JSON schema. They are AI-facing
-text. When localisation lands, they should be externalised to prompts.yaml
-(or a sibling schemas.yaml) keyed by schema name + field path.
+Field-level `description=` strings sent to AI as part of the
+structured-output JSON schema live in `engine.yaml ai_text.schema_descriptions`,
+keyed by schema name.
 """
 
 from ..engine_loader import eng
@@ -79,10 +77,14 @@ _correction_cache: dict | None = None
 def clear_brain_cache() -> None:
     """Invalidate cached schemas. Called by reload_engine()."""
     global _brain_cache, _metadata_cache, _opening_cache, _correction_cache
+    global _revelation_check_cache, _validator_cache, _architect_validator_cache
     _brain_cache = None
     _metadata_cache = None
     _opening_cache = None
     _correction_cache = None
+    _revelation_check_cache = None
+    _validator_cache = None
+    _architect_validator_cache = None
 
 
 def get_brain_output_schema() -> dict:
@@ -411,32 +413,56 @@ def get_correction_output_schema() -> dict:
 
 # ── Revelation check output ──────────────────────────────────
 
-REVELATION_CHECK_SCHEMA = _obj(
-    {
-        "revelation_confirmed": _bool("True if the narration clearly contains or foreshadows the revelation."),
-        "reasoning": _str(desc="One sentence explaining why."),
-    }
-)
+_revelation_check_cache: dict | None = None
+
+
+def get_revelation_check_schema() -> dict:
+    global _revelation_check_cache
+    if _revelation_check_cache is None:
+        descs = eng().ai_text.schema_descriptions["revelation_check"]
+        _revelation_check_cache = _obj(
+            {
+                "revelation_confirmed": _bool(descs["revelation_confirmed"]),
+                "reasoning": _str(desc=descs["reasoning"]),
+            }
+        )
+    return _revelation_check_cache
 
 
 # ── Narrator validator output ─────────────────────────────────
 
-VALIDATOR_SCHEMA = _obj(
-    {
-        "pass": _bool("true if narration respects all constraints"),
-        "violations": _arr(_str()),
-        "correction": _str(desc="One-sentence fix instruction. Empty if pass=true."),
-    }
-)
+_validator_cache: dict | None = None
+
+
+def get_validator_schema() -> dict:
+    global _validator_cache
+    if _validator_cache is None:
+        descs = eng().ai_text.schema_descriptions["validator"]
+        _validator_cache = _obj(
+            {
+                "pass": _bool(descs["pass"]),
+                "violations": _arr(_str()),
+                "correction": _str(desc=descs["correction"]),
+            }
+        )
+    return _validator_cache
 
 
 # ── Architect validator output ────────────────────────────────
 
-ARCHITECT_VALIDATOR_SCHEMA = _obj(
-    {
-        "pass": _bool("true if blueprint respects genre constraints"),
-        "violations": _arr(_str()),
-        "fixed_conflict": _str(desc="Rewritten central_conflict for genre. Empty if pass=true."),
-        "fixed_antagonist": _str(desc="Rewritten antagonist_force for genre. Empty if pass=true."),
-    }
-)
+_architect_validator_cache: dict | None = None
+
+
+def get_architect_validator_schema() -> dict:
+    global _architect_validator_cache
+    if _architect_validator_cache is None:
+        descs = eng().ai_text.schema_descriptions["architect_validator"]
+        _architect_validator_cache = _obj(
+            {
+                "pass": _bool(descs["pass"]),
+                "violations": _arr(_str()),
+                "fixed_conflict": _str(desc=descs["fixed_conflict"]),
+                "fixed_antagonist": _str(desc=descs["fixed_antagonist"]),
+            }
+        )
+    return _architect_validator_cache

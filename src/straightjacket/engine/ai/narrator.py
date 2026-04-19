@@ -105,11 +105,12 @@ def call_opening_setup(
     lang = get_narration_lang(config or EngineConfig())
 
     system = get_prompt("opening_setup_extractor", lang=lang)
+    _defaults = eng().ai_text.narrator_defaults
 
     prompt = f"""<narration>{narration}</narration>
 <player_character>{game.player_name}</player_character>
 <world genre="{game.setting_genre}" tone="{game.setting_tone}">{game.setting_description}</world>
-<current_location>{game.world.current_location or "unknown"}</current_location>
+<current_location>{game.world.current_location or _defaults["unknown_location"]}</current_location>
 Extract all NPCs, clocks, location, scene context, time of day, and initial NPC memories from the opening narration above.
 IMPORTANT: {game.player_name} is the PLAYER CHARACTER — do NOT include them as an NPC. NPCs are OTHER characters the player meets."""
 
@@ -208,12 +209,13 @@ def call_narrator_metadata(
 
     cb = content_boundaries_block(game)
     system = f"{system_base}\n{cb}" if cb else system_base
+    _defaults = eng().ai_text.narrator_defaults
 
     prompt = f"""<narration>{narration}</narration>
 <player_character>{game.player_name}</player_character>
-<known_npcs>{chr(10).join(npc_refs) if npc_refs else "(none)"}</known_npcs>
-<current_location>{game.world.current_location or "unknown"}</current_location>
-<current_time>{game.world.time_of_day or "unknown"}</current_time>{mechanical_ctx}
+<known_npcs>{chr(10).join(npc_refs) if npc_refs else _defaults["no_npcs"]}</known_npcs>
+<current_location>{game.world.current_location or _defaults["unknown_location"]}</current_location>
+<current_time>{game.world.time_of_day or _defaults["unknown_time"]}</current_time>{mechanical_ctx}
 Extract all metadata from the narration above. Remember: {game.player_name} is the PLAYER CHARACTER, not an NPC."""
 
     try:

@@ -4,15 +4,10 @@
 Replaces the category-based apply_consequences with move-specific outcomes.
 Each move outcome is a list of effect strings parsed from engine.yaml.
 
-TODO tranche 6.2: ~25 `result.consequences.append(...)` call sites below
-build narrator-facing consequence labels as hardcoded f-strings (e.g.
-"momentum +1", "mark {impact}", "swear a deathbound vow", "clock +N",
-"{target.name} disposition {old}→{new}"). These are read by validator and
-narrator prompts. Move all templates to a dedicated yaml section (e.g.
-`consequence_labels:`) keyed by effect-type, with placeholders for values.
-The existing `"swear a deathbound vow"` and `"mark {impact}"` already carry
-individual TODOs as examples. When implementing tranche 6, audit every
-append in this file — they are all in the same category.
+Narrator-facing consequence labels are templates from engine.yaml
+ai_text.consequence_labels, keyed by effect type. Each template uses
+str.format with named placeholders (value, n, track, name, old, new, impact).
+The resulting strings end up in the <consequences> block read by the narrator.
 
 Effect vocabulary:
     momentum +N / -N        Resource change (clamped to floor/ceiling)
@@ -132,39 +127,42 @@ def apply_effects(game: GameState, effects: list[MoveEffect], target_npc_id: str
 
     result = OutcomeResult()
     _e = eng()
+    _labels = _e.ai_text.consequence_labels
     res = game.resources
     target = find_npc(game, target_npc_id) if target_npc_id else None
 
     for effect in effects:
         if effect.type == "momentum":
             res.adjust_momentum(effect.value, floor=_e.momentum.floor, ceiling=_e.momentum.max)
-            result.consequences.append(f"momentum {'+' if effect.value > 0 else ''}{effect.value}")
+            sign = "+" if effect.value > 0 else ""
+            result.consequences.append(_labels["momentum_change"].format(value=f"{sign}{effect.value}"))
 
         elif effect.type in ("health", "spirit", "supply"):
             if effect.value > 0:
                 cap = getattr(_e.resources, f"{effect.type}_max")
                 gained = res.heal(effect.type, effect.value, cap=cap)
                 if gained:
-                    result.consequences.append(f"{effect.type} +{gained}")
+                    result.consequences.append(_labels["track_gain"].format(track=effect.type, n=gained))
             else:
                 lost = res.damage(effect.type, abs(effect.value))
                 if lost:
-                    result.consequences.append(f"{effect.type} -{lost}")
+                    result.consequences.append(_labels["track_loss"].format(track=effect.type, n=lost))
 
         elif effect.type == "integrity":
             # Future: asset condition tracks (step 10). Log and skip for now.
-            result.consequences.append(f"integrity {'+' if effect.value > 0 else ''}{effect.value}")
+            sign = "+" if effect.value > 0 else ""
+            result.consequences.append(_labels["integrity_change"].format(value=f"{sign}{effect.value}"))
 
         elif effect.type == "mark_progress":
             result.progress_marks += effect.value
-            result.consequences.append(f"mark progress ×{effect.value}")
+            result.consequences.append(_labels["mark_progress"].format(n=effect.value))
 
         elif effect.type == "pay_the_price":
             result.pay_the_price = True
 
         elif effect.type == "next_move_bonus":
             result.next_move_bonus = effect.value
-            result.consequences.append(f"next move +{effect.value}")
+            result.consequences.append(_labels["next_move_bonus"].format(n=effect.value))
 
         elif effect.type == "position":
             result.combat_position = effect.target
@@ -174,11 +172,11 @@ def apply_effects(game: GameState, effects: list[MoveEffect], target_npc_id: str
 
         elif effect.type == "legacy_reward":
             result.legacy_track = effect.target
-            result.consequences.append(f"legacy reward ({effect.target})")
+            result.consequences.append(_labels["legacy_reward"].format(track=effect.target))
 
         elif effect.type == "fill_clock":
             result.clock_fills += effect.value
-            result.consequences.append(f"clock +{effect.value}")
+            result.consequences.append(_labels["clock_fill"].format(n=effect.value))
 
         elif effect.type == "bond":
             if target:
@@ -195,7 +193,7 @@ def apply_effects(game: GameState, effects: list[MoveEffect], target_npc_id: str
                     for _ in range(abs(effect.value)):
                         added = conn_track.mark_progress()
                         if added:
-                            result.consequences.append(f"{target.name} bond progress +{added} ticks")
+                            result.consequences.append(_labels["bond_progress"].format(name=target.name, n=added))
                 else:
                     log(f"[MoveOutcome] bond effect but no connection track for {target.name}")
 
@@ -207,7 +205,9 @@ def apply_effects(game: GameState, effects: list[MoveEffect], target_npc_id: str
                 # dispositions that advance. Unchanged when no entry exists.
                 if old_disp in shifts:
                     target.disposition = shifts[old_disp]
-                    result.consequences.append(f"{target.name} disposition {old_disp}→{target.disposition}")
+                    result.consequences.append(
+                        _labels["disposition_shift"].format(name=target.name, old=old_disp, new=target.disposition)
+                    )
 
         elif effect.type == "narrative":
             result.narrative_only = True
@@ -221,6 +221,7 @@ def apply_effects(game: GameState, effects: list[MoveEffect], target_npc_id: str
 def _apply_generic_suffer(game: GameState, amount: int, result: OutcomeResult) -> None:
     """Apply generic suffer move: pick the most appropriate track based on game state."""
     _e = eng()
+    _labels = _e.ai_text.consequence_labels
     res = game.resources
     # Pick the track with the most room to lose
     tracks = [
@@ -233,7 +234,7 @@ def _apply_generic_suffer(game: GameState, amount: int, result: OutcomeResult) -
     track = tracks[0][0]
     lost = res.damage(track, amount)
     if lost:
-        result.consequences.append(f"{track} -{lost}")
+        result.consequences.append(_labels["track_loss"].format(track=track, n=lost))
 
 
 # ── Handler-based resolution ─────────────────────────────────
@@ -259,6 +260,7 @@ def apply_suffer_handler(game: GameState, roll_result: str, params: dict) -> Out
     """
     result = OutcomeResult()
     _e = eng()
+    _labels = _e.ai_text.consequence_labels
     res = game.resources
     track = params["track"]
     recovery = params["recovery"]
@@ -274,15 +276,15 @@ def apply_suffer_handler(game: GameState, roll_result: str, params: dict) -> Out
             cap = getattr(_e.resources, f"{track}_max")
             gained = res.heal(track, recovery, cap=cap)
             if gained:
-                result.consequences.append(f"{track} +{gained}")
+                result.consequences.append(_labels["track_gain"].format(track=track, n=gained))
             else:
                 # Track already at max, take momentum instead
                 res.adjust_momentum(1, floor=_e.momentum.floor, ceiling=_e.momentum.max)
-                result.consequences.append("momentum +1")
+                result.consequences.append(_labels["momentum_change"].format(value="+1"))
         else:
             # Blocking impact or non-standard track: take momentum
             res.adjust_momentum(1, floor=_e.momentum.floor, ceiling=_e.momentum.max)
-            result.consequences.append("momentum +1")
+            result.consequences.append(_labels["momentum_change"].format(value="+1"))
 
     elif roll_result == "WEAK_HIT":
         if track in ("health", "spirit", "supply") and not has_blocking_impact:
@@ -290,23 +292,23 @@ def apply_suffer_handler(game: GameState, roll_result: str, params: dict) -> Out
             res.adjust_momentum(-1, floor=_e.momentum.floor, ceiling=_e.momentum.max)
             cap = getattr(_e.resources, f"{track}_max")
             gained = res.heal(track, recovery, cap=cap)
-            result.consequences.append("momentum -1")
+            result.consequences.append(_labels["momentum_change"].format(value="-1"))
             if gained:
-                result.consequences.append(f"{track} +{gained}")
+                result.consequences.append(_labels["track_gain"].format(track=track, n=gained))
 
     else:  # MISS
         # Extra track damage or momentum loss — engine picks track damage
         if track in ("health", "spirit", "supply"):
             lost = res.damage(track, abs(miss_extra_track))
             if lost:
-                result.consequences.append(f"{track} -{lost}")
+                result.consequences.append(_labels["track_loss"].format(track=track, n=lost))
             else:
                 # Track already at 0, take momentum instead
                 res.adjust_momentum(miss_extra_momentum, floor=_e.momentum.floor, ceiling=_e.momentum.max)
-                result.consequences.append(f"momentum {miss_extra_momentum}")
+                result.consequences.append(_labels["momentum_change"].format(value=str(miss_extra_momentum)))
         else:
             res.adjust_momentum(miss_extra_momentum, floor=_e.momentum.floor, ceiling=_e.momentum.max)
-            result.consequences.append(f"momentum {miss_extra_momentum}")
+            result.consequences.append(_labels["momentum_change"].format(value=str(miss_extra_momentum)))
 
         # Track at zero → mark impact. Engine picks first of impact_pair.
         track_value = getattr(res, track, None) if track in ("health", "spirit", "supply") else None
@@ -316,7 +318,7 @@ def apply_suffer_handler(game: GameState, roll_result: str, params: dict) -> Out
                 # First impact if not yet active, otherwise the worse one
                 chosen = impact_pair[0] if impact_pair[0] not in game.impacts else impact_pair[1]
                 if apply_impact(game, chosen):
-                    result.consequences.append(f"mark {chosen}")
+                    result.consequences.append(_labels["mark_impact"].format(impact=chosen))
 
     return result
 
@@ -333,6 +335,7 @@ def apply_threshold_handler(game: GameState, roll_result: str, params: dict) -> 
       game_over_text: narrative for miss
     """
     result = OutcomeResult()
+    _labels = eng().ai_text.consequence_labels
 
     if roll_result == "STRONG_HIT":
         result.narrative_only = True
@@ -342,10 +345,8 @@ def apply_threshold_handler(game: GameState, roll_result: str, params: dict) -> 
 
         impact = params["impact"]
         if impact and apply_impact(game, impact):
-            # TODO tranche 6.2: "mark {impact}" is narrator-facing consequence text; move template to engine.yaml.
-            result.consequences.append(f"mark {impact}")
-        # TODO tranche 6.2: "swear a deathbound vow" is narrator-facing consequence text; move to engine.yaml.
-        result.consequences.append("swear a deathbound vow")
+            result.consequences.append(_labels["mark_impact"].format(impact=impact))
+        result.consequences.append(_labels["threshold_vow"])
 
     else:  # MISS
         game.game_over = True
@@ -371,6 +372,7 @@ def apply_recovery_handler(game: GameState, roll_result: str, params: dict) -> O
     """
     result = OutcomeResult()
     _e = eng()
+    _labels = _e.ai_text.consequence_labels
     res = game.resources
     track = params["track"]
     full_amount = params["full_amount"]
@@ -386,22 +388,22 @@ def apply_recovery_handler(game: GameState, roll_result: str, params: dict) -> O
     if roll_result in ("STRONG_HIT", "WEAK_HIT"):
         amount = impact_amount if has_impact else full_amount
         if has_impact and clear_impact(game, blocking_impact):
-            result.consequences.append(f"clear {blocking_impact}")
+            result.consequences.append(_labels["clear_impact"].format(impact=blocking_impact))
 
         if track in ("health", "spirit", "supply"):
             cap = getattr(_e.resources, f"{track}_max")
             gained = res.heal(track, amount, cap=cap)
             if gained:
-                result.consequences.append(f"{track} +{gained}")
+                result.consequences.append(_labels["track_gain"].format(track=track, n=gained))
 
         if roll_result == "WEAK_HIT":
             if weak_cost_type == "momentum":
                 res.adjust_momentum(weak_cost, floor=_e.momentum.floor, ceiling=_e.momentum.max)
-                result.consequences.append(f"momentum {weak_cost}")
+                result.consequences.append(_labels["momentum_change"].format(value=str(weak_cost)))
             elif weak_cost_type == "supply":
                 lost = res.damage("supply", abs(weak_cost))
                 if lost:
-                    result.consequences.append(f"supply -{lost}")
+                    result.consequences.append(_labels["track_loss"].format(track="supply", n=lost))
 
     else:  # MISS
         result.pay_the_price = True

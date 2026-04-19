@@ -20,7 +20,7 @@ from ..models import EngineConfig, GameState
 from ..prompt_loader import get_prompt
 from .provider_base import AIProvider, create_with_retry
 from .rule_validator import ValidationContext
-from .schemas import VALIDATOR_SCHEMA
+from .schemas import get_validator_schema
 
 
 def _strip_prompt_for_retry(prompt: str, violations: list[str]) -> str:
@@ -113,7 +113,7 @@ Check constraints."""
             model=model_for_role("validator"),
             system=system,
             messages=[{"role": "user", "content": prompt}],
-            json_schema=VALIDATOR_SCHEMA,
+            json_schema=get_validator_schema(),
             log_role="validator",
             **_vp,
         )
@@ -233,6 +233,7 @@ def validate_and_retry(
         # A violation that matches no rule falls through as "Fix: <raw>" — that
         # is intentional LLM behavior, not a config fallback.
         rules = eng()._raw["validator"]["rewrite_instructions"]
+        _vblocks = eng().ai_text.validator_blocks
         rewrite_instructions = []
         for v in violations:
             vl = re.sub(r"^\[(?:rule|llm)\]\s*", "", v).lower()
@@ -242,7 +243,9 @@ def validate_and_retry(
                 if all(p in vl for p in parts):
                     matched = template
                     break
-            rewrite_instructions.append(matched if matched else f"Fix: {v}")
+            rewrite_instructions.append(
+                matched if matched else _vblocks["unmatched_violation_template"].format(violation=v)
+            )
         # Deduplicate identical instructions
         seen: set[str] = set()
         unique_instructions = []
@@ -253,10 +256,7 @@ def validate_and_retry(
 
         instructions_text = "\n".join(f"- {inst}" for inst in unique_instructions)
         system_suffix = (
-            f"\n<correction_mode>\n"
-            f"Your previous narration was rejected. Rewrite following these instructions:\n"
-            f"{instructions_text}\n"
-            f"</correction_mode>"
+            f"\n<correction_mode>\n{_vblocks['correction_mode_open']}\n{instructions_text}\n</correction_mode>"
         )
         retry_prompt = _strip_prompt_for_retry(prompt, violations)
         # Include the failed narration as assistant turn + correction as user turn.
@@ -264,9 +264,8 @@ def validate_and_retry(
         failed_narration_msg = {"role": "assistant", "content": narration}
         correction_msg = {
             "role": "user",
-            "content": f"<REWRITE>\nYour narration above violated constraints:\n{instructions_text}\n"
-            f"Rewrite the COMPLETE scene following the original prompt below. "
-            f"Keep what worked, fix what was flagged.\n</REWRITE>\n\n{retry_prompt}",
+            "content": f"<REWRITE>\n{_vblocks['rewrite_user_prefix']}\n{instructions_text}\n"
+            f"{_vblocks['rewrite_user_suffix']}\n</REWRITE>\n\n{retry_prompt}",
         }
         # Skip narration_history — previous narrations may contain the same
         # violations and act as poisoned few-shot examples.

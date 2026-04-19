@@ -628,7 +628,7 @@ memory_move_verbs:
   recover/resupply: "resupplied"
   world_shaping: "shaped the world"
   dialog: "spoke"
-  _default: "acted"
+  _catchall: "acted"
 
 # ── Scene context template (step 3.1) ────────────────────────
 # Engine-generated scene_context replaces AI-generated version.
@@ -2046,3 +2046,112 @@ validator:
   quote_patterns:
     strip: "\u201c[^\u201d]*\u201d"
     match: "\u201c([^\u201d]+)\u201d"
+
+# ── AI-facing text templates (tranche 6) ─────────────────────
+# All hardcoded English strings that flow into AI prompts, json_schema
+# descriptions, narrator-facing consequence labels, validator correction
+# instructions, and similar AI-bound text. Externalised here so localisation
+# and prompt tuning do not require Python edits.
+#
+# Sub-sections:
+#   brain_trigger_hints    — contrastive trigger text for moves the brain confuses
+#   schema_descriptions    — `description=` strings injected into json_schema fields
+#   consequence_labels     — narrator-facing mechanical consequence templates
+#   validator_blocks       — wrapper text for the correction-mode retry prompt
+#   narrator_defaults      — fallback strings when game state is empty in AI prompts
+#   architect_labels       — label fragments concatenated into architect-validator prompts
+ai_text:
+  brain_trigger_hints:
+    dialog: "pure conversation with an NPC, no risk, no action, no world declarations"
+    ask_the_oracle: "yes/no or open question about the fiction, not an action"
+    world_shaping: "player DECLARES a new fact about the world — 'there is a well', 'the door has a lock', 'I say there's a market nearby'. NOT dialog (no NPC addressed). NOT a question (that is ask_the_oracle). The player is TELLING the fiction what exists."
+    adventure/face_danger: "attempt something risky or react to an imminent threat RIGHT NOW (not preparation, not investigation)"
+    adventure/gather_information: "search for clues, investigate, study, research, analyze evidence — the goal is to LEARN something unknown (not to gain a tactical edge — that is secure_an_advantage)"
+    adventure/secure_an_advantage: "prepare, position, set up, hide, scout ahead, gain leverage BEFORE acting — the goal is a TACTICAL EDGE for the next action (not to discover new information — that is gather_information)"
+
+  # JSON schema field descriptions sent to the AI as part of structured output spec.
+  # Keyed by schema name. Field names match the json_schema property names.
+  schema_descriptions:
+    revelation_check:
+      revelation_confirmed: "True if the narration clearly contains or foreshadows the revelation."
+      reasoning: "One sentence explaining why."
+    validator:
+      pass: "true if narration respects all constraints"
+      correction: "One-sentence fix instruction. Empty if pass=true."
+    architect_validator:
+      pass: "true if blueprint respects genre constraints"
+      fixed_conflict: "Rewritten central_conflict for genre. Empty if pass=true."
+      fixed_antagonist: "Rewritten antagonist_force for genre. Empty if pass=true."
+
+  # Narrator-facing consequence templates produced by move_outcome.py.
+  # These end up in the <consequences> block read by the narrator.
+  # Placeholder syntax: standard str.format ({name}, {n}, etc.).
+  # A leading "+" is included for positive numeric values where the
+  # caller passes a signed integer; templates that always emit a sign
+  # use {value} with the sign embedded by the caller.
+  consequence_labels:
+    momentum_change: "momentum {value}"
+    track_gain: "{track} +{n}"
+    track_loss: "{track} -{n}"
+    integrity_change: "integrity {value}"
+    mark_progress: "mark progress ×{n}"
+    next_move_bonus: "next move +{n}"
+    legacy_reward: "legacy reward ({track})"
+    clock_fill: "clock +{n}"
+    bond_progress: "{name} bond progress +{n} ticks"
+    disposition_shift: "{name} disposition {old}→{new}"
+    mark_impact: "mark {impact}"
+    clear_impact: "clear {impact}"
+    threshold_vow: "swear a deathbound vow"
+
+  # Wrapper text and per-violation fallback for the validator retry prompt.
+  # The matched-rewrite-instruction templates themselves live in
+  # validator.rewrite_instructions (already yaml-driven). This section
+  # holds the surrounding AI-facing text that wraps the matched instructions.
+  validator_blocks:
+    correction_mode_open: "Your previous narration was rejected. Rewrite following these instructions:"
+    rewrite_user_prefix: "Your narration above violated constraints:"
+    rewrite_user_suffix: "Rewrite the COMPLETE scene following the original prompt below. Keep what worked, fix what was flagged."
+    unmatched_violation_template: "Fix: {violation}"
+    momentum_burn_injection: "<momentum_burn>Character digs deep, turns the tide.</momentum_burn>"
+
+  # Default placeholder strings injected into AI prompts when game state
+  # is empty (no NPCs known yet, no location set, etc.). These end up
+  # inside prompt context blocks the AI reads.
+  narrator_defaults:
+    unknown_location: "unknown"
+    unknown_time: "unspecified"
+    no_npcs: "(none)"
+    no_npcs_yet: "none yet"
+    no_npcs_nearby: "no one nearby"
+    no_roll: "dialog (no roll)"
+    npc_appeared_event: "{npc_name} appeared"
+    unnamed_track: "Unnamed conflict"
+    reflection_tone_fallback: "reflective"
+    default_act_mood: ["tense", "grounded"]
+    recap_fallback: "({player_name} recalls the recent events...)"
+    chapter_summary_fallback_title: "Chapter {chapter}"
+    chapter_summary_fallback_text: "{player_name} had an adventure in {location}."
+
+  # Label fragments concatenated by architect_validator when building
+  # the constraint_text passed to the validator-architect AI prompt.
+  architect_labels:
+    forbidden_terms_prefix: "Forbidden terms"
+    forbidden_concepts_prefix: "Forbidden concepts"
+    genre_test_prefix: "Test"
+
+# ── Magic-number constants for architect/recap ──
+# Truncation lengths and history windows used by architect.py and architect_validator.py.
+architect_limits:
+  recap_log_window: 15
+  recap_narration_window: 5
+  recap_narration_truncate: 800
+  recap_campaign_history_window: 2
+  recap_campaign_summary_truncate: 200
+  architect_campaign_window: 3
+  chapter_summary_log_window: 20
+  log_truncate_short: 60
+  log_truncate_medium: 80
+  log_truncate_long: 120
+  log_truncate_xlong: 200
+  drift_words_log_window: 5

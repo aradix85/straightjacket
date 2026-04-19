@@ -103,7 +103,8 @@ def process_momentum_burn(
         config=config,
         consequence_sentences=consequence_sentences,
     )
-    prompt = prompt.replace("<task>", "<momentum_burn>Character digs deep, turns the tide.</momentum_burn>\n<task>")
+    injection = eng().ai_text.validator_blocks["momentum_burn_injection"]
+    prompt = prompt.replace("<task>", f"{injection}\n<task>")
 
     narration, _ = narrate_scene(provider, game, prompt, config=config)
 

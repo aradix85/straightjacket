@@ -1,10 +1,5 @@
 #!/usr/bin/env python3
-"""AI Story Architect, Recap, and Chapter Summary calls.
-
-NOTE: This module is slated for deletion in roadmap step 29b (see HANDOVER.md).
-Magic numbers for text truncation and log windows inside the prompts below are
-intentionally left hardcoded — fixing them would be wasted work before removal.
-"""
+"""AI Story Architect, Recap, and Chapter Summary calls."""
 
 import json
 
@@ -27,8 +22,12 @@ def call_recap(provider: AIProvider, game: GameState, config: EngineConfig | Non
     """Generate a 'previously on...' recap from the PLAYER'S perspective only."""
     _cfg = config or EngineConfig()
     lang = get_narration_lang(_cfg)
+    _e = eng()
+    _defaults = _e.ai_text.narrator_defaults
+    _limits = _e.architect_limits
     log_text = "; ".join(
-        f"S{s.scene}:{s.rich_summary or s.summary}({s.result})" for s in game.narrative.session_log[-15:]
+        f"S{s.scene}:{s.rich_summary or s.summary}({s.result})"
+        for s in game.narrative.session_log[-_limits.recap_log_window :]
     )
     # NPC text: Only player-visible info (no agenda, no secrets) and only introduced NPCs
     npc_text = (
@@ -37,10 +36,13 @@ def call_recap(provider: AIProvider, game: GameState, config: EngineConfig | Non
             for n in game.npcs
             if n.status == "active" and n.introduced
         )
-        or "(none)"
+        or _defaults["no_npcs"]
     )
     # Last narrations for tone/content reference -- these ARE what the player saw
-    recent_narrations = "\n---\n".join(entry.narration[:800] for entry in game.narrative.narration_history[-5:])
+    recent_narrations = "\n---\n".join(
+        entry.narration[: _limits.recap_narration_truncate]
+        for entry in game.narrative.narration_history[-_limits.recap_narration_window :]
+    )
     # Story arc info: only act/phase, no central_conflict (that's director-level meta)
     arc_info = ""
     if game.narrative.story_blueprint and game.narrative.story_blueprint.acts:
@@ -55,8 +57,8 @@ def call_recap(provider: AIProvider, game: GameState, config: EngineConfig | Non
         campaign_info = (
             f"\ncampaign: chapter {game.campaign.chapter_number} of {len(game.campaign.campaign_history) + 1}"
         )
-        for ch in game.campaign.campaign_history[-2:]:
-            campaign_info += f"\n  prev: {ch.title}: {ch.summary[:200]}"
+        for ch in game.campaign.campaign_history[-_limits.recap_campaign_history_window :]:
+            campaign_info += f"\n  prev: {ch.title}: {ch.summary[: _limits.recap_campaign_summary_truncate]}"
 
     try:
         response = create_with_retry(
@@ -81,7 +83,7 @@ def call_recap(provider: AIProvider, game: GameState, config: EngineConfig | Non
     except Exception as e:
         # Intentional graceful degradation — see AI-CALL SUPPRESSION POLICY in provider_base.py.
         log(f"[Recap] Failed: {e}", level="warning")
-        return f"({game.player_name} recalls the recent events...)"
+        return _defaults["recap_fallback"].format(player_name=game.player_name)
 
 
 def call_story_architect(
@@ -91,6 +93,9 @@ def call_story_architect(
     _cfg = config or EngineConfig()
     lang = get_narration_lang(_cfg)
     cb = content_boundaries_block(game)
+    _e = eng()
+    _defaults = _e.ai_text.narrator_defaults
+    _limits = _e.architect_limits
 
     prompt_vars = dict(lang=lang, content_boundaries_block=cb)
     if structure_type == "kishotenketsu":
@@ -98,11 +103,11 @@ def call_story_architect(
     else:
         system = get_prompt("architect_3act", **prompt_vars)
 
-    npc_text = ", ".join(n.name for n in game.npcs) if game.npcs else "none yet"
+    npc_text = ", ".join(n.name for n in game.npcs) if game.npcs else _defaults["no_npcs_yet"]
     campaign_ctx = ""
     if game.campaign.campaign_history:
         campaign_ctx = f"\ncampaign_chapter:{game.campaign.chapter_number}"
-        for ch in game.campaign.campaign_history[-3:]:
+        for ch in game.campaign.campaign_history[-_limits.architect_campaign_window :]:
             campaign_ctx += f"\n  prev_chapter_{ch.chapter}: {ch.summary}"
             if ch.unresolved_threads:
                 campaign_ctx += f" [threads: {'; '.join(ch.unresolved_threads)}]"
@@ -137,7 +142,8 @@ npcs:{npc_text}{campaign_ctx}{backstory_text}"""
         blueprint["structure_type"] = structure_type
 
         # Validate act moods: strip forbidden mood terms that cause genre drift
-        _forbidden_moods = set(eng().architect.forbidden_moods)
+        _forbidden_moods = set(_e.architect.forbidden_moods)
+        _mood_fallback = list(_defaults["default_act_mood"])
         for act in blueprint.get("acts", []):
             mood = act.get("mood", "")
             if mood:
@@ -146,7 +152,7 @@ npcs:{npc_text}{campaign_ctx}{backstory_text}"""
                 if len(cleaned) < len(mood_words):
                     stripped_words = [w for w in mood_words if w.lower() in _forbidden_moods]
                     if not cleaned:
-                        cleaned = ["tense", "grounded"]
+                        cleaned = list(_mood_fallback)
                     act["mood"] = ", ".join(cleaned)
                     log(
                         f"[Story] Stripped forbidden mood(s) {stripped_words} from act "
@@ -154,7 +160,7 @@ npcs:{npc_text}{campaign_ctx}{backstory_text}"""
                     )
 
         # Validate scene_range: must be exactly [start, end]
-        default_range = list(eng().scene_range_default)
+        default_range = list(_e.scene_range_default)
         for act in blueprint.get("acts", []):
             sr = act.get("scene_range", [])
             if not isinstance(sr, list) or len(sr) != 2:
@@ -167,7 +173,7 @@ npcs:{npc_text}{campaign_ctx}{backstory_text}"""
 
         log(
             f"[Story] Architect succeeded: "
-            f"conflict={blueprint['central_conflict'][:80]}, "
+            f"conflict={blueprint['central_conflict'][: _limits.log_truncate_medium]}, "
             f"acts={len(blueprint['acts'])}, "
             f"revelations={len(blueprint.get('revelations', []))}"
         )
@@ -185,10 +191,15 @@ def call_chapter_summary(
     """Generate a summary of the completed chapter for campaign history."""
     _cfg = config or EngineConfig()
     lang = get_narration_lang(_cfg)
-    log_text = "; ".join(f"S{s.scene}:{s.summary}({s.result})" for s in game.narrative.session_log[-20:])
+    _e = eng()
+    _defaults = _e.ai_text.narrator_defaults
+    _limits = _e.architect_limits
+    log_text = "; ".join(
+        f"S{s.scene}:{s.summary}({s.result})" for s in game.narrative.session_log[-_limits.chapter_summary_log_window :]
+    )
     npc_text = (
         ", ".join(f"{n.name}({n.disposition},B{get_npc_bond(game, n.id)})" for n in game.npcs if n.status == "active")
-        or "(none)"
+        or _defaults["no_npcs"]
     )
 
     bp = game.narrative.story_blueprint
@@ -229,8 +240,10 @@ def call_chapter_summary(
         log(f"[ChapterSummary] Structured output failed ({type(e).__name__}: {e}), using fallback", level="warning")
         return ChapterSummary(
             chapter=game.campaign.chapter_number,
-            title=f"Chapter {game.campaign.chapter_number}",
-            summary=f"{game.player_name} had an adventure in {game.world.current_location}.",
+            title=_defaults["chapter_summary_fallback_title"].format(chapter=game.campaign.chapter_number),
+            summary=_defaults["chapter_summary_fallback_text"].format(
+                player_name=game.player_name, location=game.world.current_location
+            ),
             post_story_location=game.world.current_location,
             scenes=game.narrative.scene_count,
         )

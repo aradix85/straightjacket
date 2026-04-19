@@ -378,8 +378,7 @@ def process_turn(
     track_category = track_creating.get(brain.move)
     if track_category:
         if not brain.track_name:
-            # TODO tranche 6.2: "Unnamed conflict" is narrator-facing; move to engine.yaml.
-            brain.track_name = brain.player_intent[:40].strip() or "Unnamed conflict"
+            brain.track_name = brain.player_intent[:40].strip() or eng().ai_text.narrator_defaults["unnamed_track"]
             log(f"[Track] Brain omitted track_name, generated: {brain.track_name}", level="warning")
         if not brain.track_rank:
             brain.track_rank = eng().creation.brain_track_rank_fallback

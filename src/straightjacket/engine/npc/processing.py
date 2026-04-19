@@ -244,11 +244,10 @@ def process_new_npcs(game: "GameState", new_npcs: list) -> None:
         existing_names.add(name_norm)
         log(f"[NPC] New mid-game NPC: {npc.name} ({npc_id}, {npc.disposition})")
 
-        # TODO tranche 6.1: "{npc.name} appeared" is narrator-facing text; move to engine.yaml.
         if nd["description"]:
             seed_event = nd["description"]
         else:
-            seed_event = f"{npc.name} appeared"
+            seed_event = eng().ai_text.narrator_defaults["npc_appeared_event"].format(npc_name=npc.name)
         seed_disposition = normalize_disposition(nd["disposition"])
         disp_to_emotion = eng().get_raw("disposition_to_seed_emotion")
         seed_emotion = disp_to_emotion[seed_disposition] if seed_disposition in disp_to_emotion else "neutral"

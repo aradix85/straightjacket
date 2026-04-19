@@ -9,6 +9,7 @@ import html
 import json
 
 from ..config_loader import model_for_role, sampling_params
+from ..engine_loader import eng
 from ..logging_util import log
 from ..models import BrainResult, EngineConfig, GameState, Revelation
 from ..prompt_blocks import (
@@ -28,21 +29,12 @@ def _build_moves_block(game: GameState) -> str:
     moves = data.get("moves", [])
     combat_pos = data.get("combat_position", "")
 
-    # Trigger text for engine-specific moves and commonly confused Datasworn moves.
-    # Hints are contrastive: they say what the move IS and what distinguishes it from similar moves.
-    _TRIGGER_HINTS: dict[str, str] = {
-        "dialog": "pure conversation with an NPC, no risk, no action, no world declarations",
-        "ask_the_oracle": "yes/no or open question about the fiction, not an action",
-        "world_shaping": "player DECLARES a new fact about the world — 'there is a well', 'the door has a lock', 'I say there's a market nearby'. NOT dialog (no NPC addressed). NOT a question (that is ask_the_oracle). The player is TELLING the fiction what exists.",
-        "adventure/face_danger": "attempt something risky or react to an imminent threat RIGHT NOW (not preparation, not investigation)",
-        "adventure/gather_information": "search for clues, investigate, study, research, analyze evidence — the goal is to LEARN something unknown (not to gain a tactical edge — that is secure_an_advantage)",
-        "adventure/secure_an_advantage": "prepare, position, set up, hide, scout ahead, gain leverage BEFORE acting — the goal is a TACTICAL EDGE for the next action (not to discover new information — that is gather_information)",
-    }
+    trigger_hints = eng().ai_text.brain_trigger_hints
 
     lines = []
     for m in moves:
         stats = ", ".join(m["stats"]) if m["stats"] else "none"
-        hint = _TRIGGER_HINTS.get(m["move"], "")
+        hint = trigger_hints.get(m["move"], "")
         trigger = f" when:{hint}" if hint else ""
         lines.append(f"  {m['move']} ({m['name']}) stats:[{stats}] roll:{m['roll_type']}{trigger}")
 
@@ -87,6 +79,7 @@ def call_brain(
     )
 
     w = game.world
+    _ai_text = eng().ai_text.narrator_defaults
 
     # NPC list with dispositions for target_npc resolution
     npc_lines = []
@@ -96,13 +89,13 @@ def call_brain(
             if n.aliases:
                 entry += f" aliases:{','.join(n.aliases)}"
             npc_lines.append(entry)
-    npc_block = "<npcs>\n" + "\n".join(npc_lines) + "\n</npcs>" if npc_lines else "<npcs>(none)</npcs>"
+    npc_block = "<npcs>\n" + "\n".join(npc_lines) + "\n</npcs>" if npc_lines else f"<npcs>{_ai_text['no_npcs']}</npcs>"
 
     tracks_block = _build_tracks_block(game)
 
     user_msg = f"""<state>
 loc:{w.current_location} | ctx:{w.current_scene_context}
-time:{w.time_of_day or "unspecified"}
+time:{w.time_of_day or _ai_text["unknown_time"]}
 {game.player_name} E{game.edge} H{game.heart} I{game.iron} Sh{game.shadow} W{game.wits}
 </state>
 {npc_block}
@@ -137,7 +130,7 @@ def call_revelation_check(
     provider: AIProvider, narration: str, revelation: Revelation, config: EngineConfig | None = None
 ) -> bool:
     """Check whether the narrator actually wove a pending revelation into the narration."""
-    from .schemas import REVELATION_CHECK_SCHEMA
+    from .schemas import get_revelation_check_schema
 
     _cfg = config or EngineConfig()
     lang = get_narration_lang(_cfg)
@@ -158,7 +151,7 @@ def call_revelation_check(
             model=model_for_role("revelation_check"),
             system=system,
             messages=[{"role": "user", "content": prompt}],
-            json_schema=REVELATION_CHECK_SCHEMA,
+            json_schema=get_revelation_check_schema(),
             **sampling_params("revelation_check"),
             log_role="revelation_check",
         )

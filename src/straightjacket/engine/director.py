@@ -352,8 +352,7 @@ def apply_director_guidance(game: GameState, guidance: dict) -> None:
             MemoryEntry(
                 scene=game.narrative.scene_count,
                 event=reflection_text,
-                # TODO tranche 6.2: "reflective" is narrator-facing default; move to engine.yaml.
-                emotional_weight=ref.get("tone_key") or "reflective",
+                emotional_weight=ref.get("tone_key") or eng().ai_text.narrator_defaults["reflection_tone_fallback"],
                 tone=ref.get("tone", ""),
                 tone_key=ref.get("tone_key", ""),
                 importance=eng().npc.reflection_importance,

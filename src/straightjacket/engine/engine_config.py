@@ -654,6 +654,40 @@ class RandomEventsConfig:
 
 
 @dataclass
+class AiTextConfig:
+    """All hardcoded English strings that flow into AI prompts, json_schema
+    descriptions, narrator-facing consequence labels, and validator correction
+    instructions. Strict: every leaf dict is a fixed-shape mapping; missing
+    expected keys raise KeyError at the callsite.
+    """
+
+    brain_trigger_hints: dict[str, str]
+    schema_descriptions: dict[str, dict[str, str]]
+    consequence_labels: dict[str, str]
+    validator_blocks: dict[str, str]
+    narrator_defaults: dict[str, Any]
+    architect_labels: dict[str, str]
+
+
+@dataclass
+class ArchitectLimitsConfig:
+    """Truncation lengths and history windows used by architect.py and recap."""
+
+    recap_log_window: int
+    recap_narration_window: int
+    recap_narration_truncate: int
+    recap_campaign_history_window: int
+    recap_campaign_summary_truncate: int
+    architect_campaign_window: int
+    chapter_summary_log_window: int
+    log_truncate_short: int
+    log_truncate_medium: int
+    log_truncate_long: int
+    log_truncate_xlong: int
+    drift_words_log_window: int
+
+
+@dataclass
 class EngineSettings:
     """Complete typed engine configuration.
 
@@ -710,6 +744,8 @@ class EngineSettings:
     metadata_voting: MetadataVotingConfig
     naming: NamingConfig
     random_events: RandomEventsConfig
+    ai_text: AiTextConfig
+    architect_limits: ArchitectLimitsConfig
 
     # Scalar top-level fields
     scene_range_default: list[int]
@@ -831,6 +867,8 @@ _SIMPLE_SECTIONS: dict[str, type] = {
     "metadata_voting": MetadataVotingConfig,
     "naming": NamingConfig,
     "random_events": RandomEventsConfig,
+    "ai_text": AiTextConfig,
+    "architect_limits": ArchitectLimitsConfig,
 }
 
 
@@ -1037,6 +1075,8 @@ def parse_engine_yaml(data: dict[str, Any]) -> EngineSettings:
         metadata_voting=simple_parsed["metadata_voting"],
         naming=simple_parsed["naming"],
         random_events=simple_parsed["random_events"],
+        ai_text=simple_parsed["ai_text"],
+        architect_limits=simple_parsed["architect_limits"],
         scene_range_default=list(data["scene_range_default"]),
         death_emotions=list(data["death_emotions"]),
         creativity_seeds=list(data["creativity_seeds"]),
