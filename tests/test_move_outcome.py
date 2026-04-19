@@ -16,7 +16,7 @@ from straightjacket.engine.mechanics.move_outcome import (
     resolve_move_outcome,
 )
 from straightjacket.engine.models import GameState, Resources
-from tests._helpers import make_game_state
+from tests._helpers import make_game_state, make_progress_track
 
 
 # ── Fixtures ─────────────────────────────────────────────────
@@ -402,21 +402,19 @@ class TestCombatPosition:
 class TestProgressRollPipeline:
     def test_progress_roll_uses_track_boxes(self, game_real: GameState) -> None:
         from straightjacket.engine.mechanics.consequences import roll_progress
-        from straightjacket.engine.models import ProgressTrack
 
-        track = ProgressTrack(id="v1", name="Find the artifact", track_type="vow", rank="dangerous", ticks=24)
+        track = make_progress_track(id="v1", name="Find the artifact", track_type="vow", rank="dangerous", ticks=24)
         assert track.filled_boxes == 6
         roll = roll_progress(track.name, track.filled_boxes, "quest/fulfill_your_vow")
         assert roll.stat_value == 6 and roll.action_score == 6 and roll.d1 == 0 and roll.d2 == 0
 
     def test_find_progress_track(self, game_real: GameState) -> None:
         from straightjacket.engine.game.tracks import find_progress_track as _find_progress_track
-        from straightjacket.engine.models import ProgressTrack
 
         game_real.progress_tracks = [
-            ProgressTrack(id="v1", name="Old vow", track_type="vow", ticks=8),
-            ProgressTrack(id="c1", name="Fight", track_type="combat", ticks=12),
-            ProgressTrack(id="v2", name="New vow", track_type="vow", ticks=20),
+            make_progress_track(id="v1", name="Old vow", track_type="vow", ticks=8),
+            make_progress_track(id="c1", name="Fight", track_type="combat", ticks=12),
+            make_progress_track(id="v2", name="New vow", track_type="vow", ticks=20),
         ]
         with pytest.raises(ValueError, match="Multiple active vow tracks"):
             _find_progress_track(game_real, "Vow")

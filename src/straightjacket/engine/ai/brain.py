@@ -135,8 +135,17 @@ time:{w.time_of_day or _ai_text["unknown_time"]}
 
     except Exception as e:
         # Intentional graceful degradation — see AI-CALL SUPPRESSION POLICY in provider_base.py.
+        # All three required fields (type/move/stat) supplied explicitly: the fallback is
+        # a conscious choice of "treat as dialog action with no stat roll", not a silent default.
         log(f"[Brain] Failed ({type(e).__name__}: {e}), treating as dialog", level="warning")
-        return BrainResult(move="dialog", dialog_only=True, player_intent=player_message, approach="error")
+        return BrainResult(
+            type="action",
+            move="dialog",
+            stat="none",
+            dialog_only=True,
+            player_intent=player_message,
+            approach="error",
+        )
 
 
 # ── Revelation check ─────────────────────────────────────────

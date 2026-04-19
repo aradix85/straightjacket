@@ -8,7 +8,7 @@ Run: python -m pytest tests/test_parser.py -v
 """
 
 from straightjacket.engine.models import GameState
-from tests._helpers import make_game_state
+from tests._helpers import make_game_state, make_npc
 
 
 def _game() -> GameState:
@@ -175,10 +175,9 @@ def test_strips_horizontal_rules(load_engine: None, stub_emotions: None) -> None
 
 def test_marks_npc_introduced_when_name_in_narration(load_engine: None, stub_emotions: None) -> None:
     from straightjacket.engine.parser import parse_narrator_response
-    from straightjacket.engine.models import NpcData
 
     game = _game()
-    game.npcs = [NpcData(id="npc_1", name="Mira Ashwood", introduced=False)]
+    game.npcs = [make_npc(id="npc_1", name="Mira Ashwood", introduced=False)]
     raw = "Mira Ashwood stood by the window, watching the rain."
     parse_narrator_response(game, raw)
     assert game.npcs[0].introduced is True
@@ -186,10 +185,9 @@ def test_marks_npc_introduced_when_name_in_narration(load_engine: None, stub_emo
 
 def test_marks_npc_introduced_by_partial_name(load_engine: None, stub_emotions: None) -> None:
     from straightjacket.engine.parser import parse_narrator_response
-    from straightjacket.engine.models import NpcData
 
     game = _game()
-    game.npcs = [NpcData(id="npc_1", name="Captain Ashwood", introduced=False)]
+    game.npcs = [make_npc(id="npc_1", name="Captain Ashwood", introduced=False)]
     raw = "Ashwood nodded slowly, his hand on the hilt."
     parse_narrator_response(game, raw)
     assert game.npcs[0].introduced is True
@@ -198,10 +196,9 @@ def test_marks_npc_introduced_by_partial_name(load_engine: None, stub_emotions: 
 def test_does_not_mark_introduced_by_title_alone(load_engine: None, stub_emotions: None) -> None:
     """Titles like 'Captain' shouldn't trigger introduction on their own."""
     from straightjacket.engine.parser import parse_narrator_response
-    from straightjacket.engine.models import NpcData
 
     game = _game()
-    game.npcs = [NpcData(id="npc_1", name="Captain Jo", introduced=False)]
+    game.npcs = [make_npc(id="npc_1", name="Captain Jo", introduced=False)]
     raw = "The captain surveyed the field."  # generic "captain", not the name
     parse_narrator_response(game, raw)
     # "captain" matches the title filter in NAME_TITLES, and "jo" is only 2 chars

@@ -12,30 +12,26 @@ import pytest
 
 from straightjacket.engine.mechanics import resolve_npc_stance
 from straightjacket.engine.models import (
-    BrainResult,
     GameState,
     NpcData,
-    ProgressTrack,
     RollResult,
 )
 from straightjacket.engine.prompt_builders import build_action_prompt, build_dialog_prompt
-from tests._helpers import make_game_state
+from tests._helpers import make_brain_result, make_game_state, make_memory, make_npc, make_progress_track
 
 # Use real engine.yaml for stance matrix tests
 pytestmark = pytest.mark.usefixtures("load_engine")
 
 
 def _npc(disposition: str = "neutral") -> NpcData:
-    from straightjacket.engine.models import MemoryEntry
-
-    return NpcData(
+    return make_npc(
         id="npc_1",
         name="Kira",
         description="A wary trader",
         agenda="Protect her cargo",
         instinct="Counts exits before entering",
         disposition=disposition,
-        memory=[MemoryEntry(scene=1, event="Kira appeared at the docks", emotional_weight="neutral", importance=3)],
+        memory=[make_memory(scene=1, event="Kira appeared at the docks", emotional_weight="neutral", importance=3)],
     )
 
 
@@ -47,7 +43,7 @@ def _game(npc: NpcData | None = None, bond: int = 0) -> GameState:
         game.npcs.append(npc)
         if bond > 0:
             game.progress_tracks.append(
-                ProgressTrack(
+                make_progress_track(
                     id=f"connection_{npc.id}",
                     name=npc.name,
                     track_type="connection",
@@ -145,7 +141,7 @@ def test_stance_constraint_not_empty() -> None:
 def test_stance_in_target_npc_block() -> None:
     npc = _npc("distrustful")
     game = _game(npc, bond=1)
-    brain = BrainResult(
+    brain = make_brain_result(
         move="adventure/gather_information", stat="wits", target_npc="npc_1", player_intent="ask about the cargo"
     )
     roll = RollResult(
@@ -177,14 +173,14 @@ def test_stance_in_target_npc_block() -> None:
 
 
 def test_stance_in_activated_npc_block() -> None:
-    npc1 = NpcData(id="npc_1", name="Kira", disposition="friendly", agenda="Trade", instinct="Cautious")
-    npc2 = NpcData(id="npc_2", name="Rowan", disposition="hostile", agenda="Fight", instinct="Reckless")
+    npc1 = make_npc(id="npc_1", name="Kira", disposition="friendly", agenda="Trade", instinct="Cautious")
+    npc2 = make_npc(id="npc_2", name="Rowan", disposition="hostile", agenda="Fight", instinct="Reckless")
     game = _game()
     game.npcs = [npc1, npc2]
     game.progress_tracks.append(
-        ProgressTrack(id="connection_npc_1", name="Kira", track_type="connection", rank="dangerous", ticks=8)
+        make_progress_track(id="connection_npc_1", name="Kira", track_type="connection", rank="dangerous", ticks=8)
     )
-    brain = BrainResult(move="adventure/face_danger", stat="edge", target_npc="npc_1", player_intent="dodge")
+    brain = make_brain_result(move="adventure/face_danger", stat="edge", target_npc="npc_1", player_intent="dodge")
     roll = RollResult(
         d1=4,
         d2=5,
@@ -215,7 +211,7 @@ def test_stance_in_activated_npc_block() -> None:
 def test_dialog_prompt_uses_social_stance() -> None:
     npc = _npc("distrustful")
     game = _game(npc, bond=1)
-    brain = BrainResult(move="dialog", dialog_only=True, target_npc="npc_1", player_intent="ask a question")
+    brain = make_brain_result(move="dialog", dialog_only=True, target_npc="npc_1", player_intent="ask a question")
     prompt = build_dialog_prompt(
         game,
         brain,

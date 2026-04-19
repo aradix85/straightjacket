@@ -17,8 +17,7 @@ from straightjacket.engine.mechanics.fate import (
     resolve_fate_check,
     resolve_likelihood,
 )
-from straightjacket.engine.models import NpcData
-from tests._helpers import make_game_state
+from tests._helpers import make_game_state, make_npc
 
 
 # ── Fate chart method ────────────────────────────────────────
@@ -171,11 +170,11 @@ def test_likelihood_npc_disposition_shifts_odds(load_engine: None) -> None:
     game = make_game_state()
     game.world.chaos_factor = 5
 
-    friendly = NpcData(id="npc_1", name="Kira", status="active", disposition="friendly")
+    friendly = make_npc(id="npc_1", name="Kira", status="active", disposition="friendly")
     game.npcs = [friendly]
     friendly_odds = resolve_likelihood(game, context_hint="Kira")
 
-    hostile = NpcData(id="npc_1", name="Kira", status="active", disposition="hostile")
+    hostile = make_npc(id="npc_1", name="Kira", status="active", disposition="hostile")
     game.npcs = [hostile]
     hostile_odds = resolve_likelihood(game, context_hint="Kira")
 
@@ -215,7 +214,7 @@ def test_likelihood_factors_stack(load_engine: None) -> None:
     game = make_game_state()
     game.world.chaos_factor = 8
     game.resources.health = 1
-    npc = NpcData(id="npc_1", name="Kira", status="active", disposition="hostile")
+    npc = make_npc(id="npc_1", name="Kira", status="active", disposition="hostile")
     game.npcs.append(npc)
     odds = resolve_likelihood(game, context_hint="Kira")
     assert odds in ("very_unlikely", "nearly_impossible", "impossible")
@@ -230,7 +229,7 @@ def test_fate_question_tool_end_to_end(load_engine: None) -> None:
 
     game = make_game_state()
     game.world.chaos_factor = 5
-    npc = NpcData(id="npc_1", name="Kira", status="active", disposition="loyal")
+    npc = make_npc(id="npc_1", name="Kira", status="active", disposition="loyal")
     game.npcs.append(npc)
 
     result = fate_question(game, question="Does Kira help?", context_hint="Kira")

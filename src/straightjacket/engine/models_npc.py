@@ -13,16 +13,21 @@ NPC_STATUSES: frozenset[str] = frozenset({"active", "background", "deceased", "l
 
 @dataclass
 class MemoryEntry(SerializableMixin):
-    """Single NPC memory (observation or reflection). All fields explicit."""
+    """Single NPC memory (observation or reflection).
 
-    scene: int = 0
-    event: str = ""
-    emotional_weight: str = "neutral"
-    importance: int = 3
-    type: str = "observation"  # observation, reflection
+    scene/event/emotional_weight/importance/type are required — a memory without
+    these is meaningless. tone and tone_key are legit optional: not every memory
+    is scored for narrative tone; empty strings mean "not scored".
+    """
+
+    scene: int
+    event: str
+    emotional_weight: str  # emotion keyword from emotions/importance.yaml
+    importance: int  # 1-5, scored by score_importance or set by reflection
+    type: str  # observation, reflection
+    tone: str = ""  # narrative compound (e.g. "protective_guilt"); "" = not scored
+    tone_key: str = ""  # machine-readable enum word; "" = not scored
     about_npc: str | None = None
-    tone: str = ""  # Narrative compound (e.g. "protective_guilt")
-    tone_key: str = ""  # Machine-readable enum word
     _score_debug: str = ""  # Debug info from score_importance
 
     def to_dict(self) -> dict:
@@ -34,19 +39,24 @@ class MemoryEntry(SerializableMixin):
 
 @dataclass
 class NpcData(SerializableMixin):
-    """Single NPC. All fields explicit with defaults."""
+    """Single NPC. Structural identity fields required; runtime-state fields default sensibly.
 
-    id: str = ""
-    name: str = ""
+    `introduced` defaults to False: a freshly constructed NPC hasn't been shown
+    on-screen yet. Sites that construct NPCs from visible narration set
+    introduced=True explicitly.
+    """
+
+    id: str
+    name: str
+    disposition: str  # one of engine.disposition values
+    status: str  # one of NPC_STATUSES
     description: str = ""
     agenda: str = ""
     instinct: str = ""
     arc: str = ""  # Narrative trajectory — set by Director, evolves each reflection
     secrets: list[str] = field(default_factory=list)
-    disposition: str = "neutral"
-    status: str = "active"
     memory: list[MemoryEntry] = field(default_factory=list)
-    introduced: bool = True
+    introduced: bool = False
     aliases: list[str] = field(default_factory=list)
     keywords: list[str] = field(default_factory=list)
     importance_accumulator: int = 0

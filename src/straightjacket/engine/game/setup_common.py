@@ -62,6 +62,10 @@ def register_extracted_npcs(
         nd["id"] = f"npc_{max_num}"
         nd.setdefault("introduced", False)
         nd.setdefault("last_location", game.world.current_location or "")
+        # Extracted NPCs are present in narration — active by definition. Not a silent
+        # default: status is not part of the AI extractor's output contract, it's set here
+        # because all paths through register_extracted_npcs imply "NPC is active".
+        nd["status"] = "active"
         # Remove bond/bond_max from AI output — bond lives in connection tracks
         nd.pop("bond", None)
         nd.pop("bond_max", None)
@@ -89,7 +93,9 @@ def seed_opening_memories(
         if not target:
             continue
         event = mu.get("event", "")
-        emotional = mu.get("emotional_weight", "neutral")
+        if "emotional_weight" not in mu:
+            raise KeyError(f"Memory update from {label} missing required 'emotional_weight' for npc='{npc_name}'")
+        emotional = mu["emotional_weight"]
         imp, dbg = score_importance(emotional, event, debug=True)
         target.memory.append(
             MemoryEntry(
@@ -98,6 +104,8 @@ def seed_opening_memories(
                 emotional_weight=emotional,
                 importance=imp,
                 type="observation",
+                tone="",
+                tone_key="",
                 _score_debug=f"{label} | {dbg}",
             )
         )

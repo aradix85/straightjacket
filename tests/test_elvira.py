@@ -7,13 +7,9 @@ Catches attribute errors and structural issues when engine dataclasses change.
 import pytest
 
 from straightjacket.engine.models import (
-    ClockData,
     GameState,
-    MemoryEntry,
-    NpcData,
-    ProgressTrack,
 )
-from tests._helpers import make_game_state
+from tests._helpers import make_clock, make_game_state, make_memory, make_npc, make_progress_track
 
 
 @pytest.fixture()
@@ -34,21 +30,21 @@ def game(load_engine: None) -> GameState:
     g.world.combat_position = ""
     g.narrative.scene_count = 5
     g.npcs = [
-        NpcData(
+        make_npc(
             id="npc_1",
             name="Kira",
             status="active",
             disposition="friendly",
             agenda="Trade",
             instinct="Cautious",
-            memory=[MemoryEntry(scene=1, event="Met at docks", emotional_weight="neutral", importance=3)],
+            memory=[make_memory(scene=1, event="Met at docks", emotional_weight="neutral", importance=3)],
         ),
-        NpcData(id="npc_2", name="Ghost", status="deceased", disposition="neutral"),
+        make_npc(id="npc_2", name="Ghost", status="deceased", disposition="neutral"),
     ]
-    g.world.clocks = [ClockData(name="Doom", clock_type="threat", segments=6, filled=3)]
+    g.world.clocks = [make_clock(name="Doom", clock_type="threat", segments=6, filled=3)]
     g.progress_tracks = [
-        ProgressTrack(id="vow_find_truth", name="Find the Truth", track_type="vow", rank="dangerous", ticks=16),
-        ProgressTrack(id="connection_npc_1", name="Kira", track_type="connection", rank="dangerous", ticks=8),
+        make_progress_track(id="vow_find_truth", name="Find the Truth", track_type="vow", rank="dangerous", ticks=16),
+        make_progress_track(id="connection_npc_1", name="Kira", track_type="connection", rank="dangerous", ticks=8),
     ]
     return g
 

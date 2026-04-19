@@ -6,6 +6,8 @@ imports resolve and its key functions are callable — catching issues
 like removed fields (e.g. NpcData.bond) that would crash at runtime.
 """
 
+from tests._helpers import make_npc
+
 
 def test_import_display() -> None:
     from tests.elvira.elvira_bot.display import final_state_dict, print_narration, print_state, print_summary
@@ -40,13 +42,12 @@ def test_import_invariants() -> None:
 
 def test_final_state_dict_runs(load_engine: None) -> None:
     """Verify final_state_dict doesn't crash on a minimal game state."""
-    from straightjacket.engine.models import NpcData
 
     from tests._helpers import make_game_state
     from tests.elvira.elvira_bot.display import final_state_dict
 
     game = make_game_state(player_name="Test")
-    game.npcs.append(NpcData(id="npc_1", name="Kira", status="active", disposition="friendly"))
+    game.npcs.append(make_npc(id="npc_1", name="Kira", status="active", disposition="friendly"))
     result = final_state_dict(game)
     assert result["character"] == "Test"
     assert len(result["npcs"]) == 1

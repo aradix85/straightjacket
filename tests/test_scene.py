@@ -12,7 +12,7 @@ from straightjacket.engine.mechanics.scene import (
     adjustment_descriptions,
     check_scene,
 )
-from tests._helpers import make_game_state
+from tests._helpers import make_game_state, make_random_event
 
 
 # ── Scene test (chaos check) ────────────────────────────────
@@ -139,9 +139,8 @@ def test_scene_setup_roundtrip() -> None:
 
 def test_scene_setup_interrupt_roundtrip() -> None:
     """SceneSetup with interrupt event round-trips."""
-    from straightjacket.engine.models import RandomEvent
 
-    event = RandomEvent(focus="npc_action", meaning_action="Betray", meaning_subject="Trust")
+    event = make_random_event(focus="npc_action", meaning_action="Betray", meaning_subject="Trust")
     setup = SceneSetup(scene_type="interrupt", chaos_roll=4, interrupt_event=event)
     d = setup.to_dict()
     restored = SceneSetup.from_dict(d)

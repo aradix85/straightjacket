@@ -17,3 +17,6 @@ status.no_threats: No active threats.
 status.xp: 'Experience: {xp} available.'
 status.legacy: Legacy — {quests}; {bonds}; {discoveries}.
 status.legacy_item: '{name}: {progress}'
+status.legacy_name_quests: Quests
+status.legacy_name_bonds: Bonds
+status.legacy_name_discoveries: Discoveries

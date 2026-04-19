@@ -60,7 +60,10 @@ def call_correction_brain(
     _defaults = eng().ai_text.narrator_defaults
     npc_lines = "\n".join(_npc_line(n) for n in game.npcs) or _defaults["no_npcs"]
 
-    brain = snap.brain or BrainResult()
+    # Sentinel BrainResult for turns with no brain classification (pre-brain
+    # correction or dialog-only). "none" on type/move/stat makes this visible
+    # in the correction prompt rather than looking like a real classification.
+    brain = snap.brain or BrainResult(type="none", move="none", stat="none")
     roll = snap.roll
     roll_summary = (
         f"{roll.result} ({roll.move}, {roll.stat_name}={roll.stat_value}, "
@@ -169,10 +172,18 @@ def _apply_correction_ops(game: GameState, ops: list) -> None:
                 new_name = op_dict.get("split_name") or "Unknown"
                 new_desc = op_dict.get("split_description") or ""
                 new_id = f"npc_{uuid.uuid4().hex[:8]}"
+                # Split creates a sibling NPC mid-correction. disposition/status default
+                # to the existing NPC's values — the split is a clarification that two
+                # characters were conflated, so the second one inherits the same stance
+                # until further narration distinguishes them. introduced=True because the
+                # split is happening *because* both appeared on screen in the same scene.
                 new_npc = NpcData(
                     id=new_id,
                     name=new_name,
                     description=new_desc,
+                    disposition=existing.disposition,
+                    status=existing.status,
+                    introduced=True,
                 )
                 game.npcs.append(new_npc)
                 log(f"[Correction] npc_split: '{existing.name}' → also '{new_name}' ({new_id})")
@@ -306,7 +317,8 @@ def process_correction(
     # Step 2b: state_error → patch state in-place, no re-roll
     else:
         roll = snap.roll
-        brain = snap.brain or BrainResult()
+        # Same sentinel as the correction-prompt branch above — see line 63 rationale.
+        brain = snap.brain or BrainResult(type="none", move="none", stat="none")
         _apply_correction_ops(game, analysis.get("state_ops", []))
         activated_npcs, mentioned_npcs, _ = activate_npcs_for_prompt(game, brain, (snap.player_input or ""))
         _last_entry = nar.session_log[-1] if nar.session_log else None

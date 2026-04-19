@@ -227,6 +227,7 @@ class ProgressTrackType:
 class ProgressConfig:
     """Progress-track mechanics. Extensible per track_type."""
 
+    max_ticks: int  # 10 boxes × 4 ticks per box — Ironsworn convention
     track_types: dict[str, ProgressTrackType]
 
     def ticks_per_mark(self, rank: str, track_type: str = "default") -> int:
@@ -964,7 +965,7 @@ def parse_engine_yaml(data: dict[str, Any]) -> EngineSettings:
         name: _build_strict(ProgressTrackType, {"ticks_per_mark": dict(tt["ticks_per_mark"])})
         for name, tt in progress_raw["track_types"].items()
     }
-    progress = ProgressConfig(track_types=track_types)
+    progress = ProgressConfig(max_ticks=progress_raw["max_ticks"], track_types=track_types)
 
     # engine_moves: keyed by move id, each with name/stats/roll_type
     engine_moves = {

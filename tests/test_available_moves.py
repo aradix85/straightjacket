@@ -1,7 +1,7 @@
 """Tests for available_moves tool (step 7 combat/exploration routing)."""
 
-from straightjacket.engine.models import GameState, ProgressTrack, Resources
-from tests._helpers import make_game_state
+from straightjacket.engine.models import GameState, Resources
+from tests._helpers import make_game_state, make_progress_track
 
 
 def _game(setting: str = "starforged", combat_position: str = "") -> GameState:
@@ -85,7 +85,7 @@ class TestAvailableMoves:
         from straightjacket.engine.tools.builtins import available_moves
 
         game = _game()
-        game.progress_tracks.append(ProgressTrack(id="v1", name="Test Vow", track_type="vow", ticks=20))
+        game.progress_tracks.append(make_progress_track(id="v1", name="Test Vow", track_type="vow", ticks=20))
         result = available_moves(game)
         move_keys = {m["move"] for m in result["moves"]}
         assert "quest/fulfill_your_vow" in move_keys
@@ -141,7 +141,7 @@ class TestAvailableMoves:
         move_keys = {m["move"] for m in result["moves"]}
         assert "combat/take_decisive_action" not in move_keys
 
-        game.progress_tracks.append(ProgressTrack(id="c1", name="Fight", track_type="combat", ticks=12))
+        game.progress_tracks.append(make_progress_track(id="c1", name="Fight", track_type="combat", ticks=12))
         result2 = available_moves(game)
         move_keys2 = {m["move"] for m in result2["moves"]}
         assert "combat/take_decisive_action" in move_keys2

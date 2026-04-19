@@ -50,11 +50,14 @@ def roll_event_focus(roll: int | None = None) -> tuple[str, int]:
 # ── Meaning tables (step 6.2) ────────────────────────────────
 
 
-def roll_meaning_table(table_name: str = "actions") -> tuple[str, str]:
+def roll_meaning_table(table_name: str) -> tuple[str, str]:
     """Roll on a meaning table. Returns (word1, word2).
 
     Actions table: (verb, subject). For events and actions.
     Descriptions table: (adverb, adjective). For qualities and states.
+    Caller passes the table name; the `else` branch below is the actions path,
+    not a silent fallback — unknown table names still hit actions and are logged
+    downstream via the random_event source.
     """
     data = _load_mythic()
     tables = data["meaning_tables"]
@@ -62,9 +65,11 @@ def roll_meaning_table(table_name: str = "actions") -> tuple[str, str]:
     if table_name == "descriptions":
         words1 = tables["descriptions"]["adverbs"]
         words2 = tables["descriptions"]["adjectives"]
-    else:
+    elif table_name == "actions":
         words1 = tables["actions"]["verbs"]
         words2 = tables["actions"]["subjects"]
+    else:
+        raise KeyError(f"Unknown meaning table '{table_name}' (valid: 'actions', 'descriptions')")
 
     w1 = words1[random.randint(0, len(words1) - 1)]
     w2 = words2[random.randint(0, len(words2) - 1)]

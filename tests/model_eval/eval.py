@@ -45,6 +45,7 @@ from straightjacket.engine.config_loader import (
     sampling_params,
 )
 from straightjacket.engine.prompt_loader import get_prompt
+from tests._helpers import make_brain_result, make_clock, make_memory, make_npc
 
 _HERE = Path(__file__).resolve().parent
 _CASES_PATH = _HERE / "cases.yaml"
@@ -92,7 +93,7 @@ class RoleReport:
 
 def _build_brain_context() -> tuple[str, str]:
     """Build minimal but realistic Brain prompt context."""
-    from straightjacket.engine.models import GameState, NpcData
+    from straightjacket.engine.models import GameState
 
     game = GameState(
         player_name="Ash",
@@ -105,8 +106,8 @@ def _build_brain_context() -> tuple[str, str]:
     game.world.current_scene_context = "Investigating missing shipment"
     game.world.time_of_day = "evening"
     game.npcs = [
-        NpcData(id="npc_1", name="Kira", disposition="friendly", status="active"),
-        NpcData(id="npc_2", name="Borin", disposition="neutral", status="active"),
+        make_npc(id="npc_1", name="Kira", disposition="friendly", status="active"),
+        make_npc(id="npc_2", name="Borin", disposition="neutral", status="active"),
     ]
 
     from straightjacket.engine.ai.brain import _build_moves_block, _build_tracks_block, build_stats_line
@@ -440,7 +441,7 @@ _AGENCY_MARKERS = [
 
 def eval_narrator(provider: AIProvider, case: dict, model: str, params: dict) -> CaseResult:
     """Evaluate narrator output for mechanical constraint compliance."""
-    from straightjacket.engine.models import BrainResult, EngineConfig, GameState, RollResult
+    from straightjacket.engine.models import EngineConfig, GameState, RollResult
     from straightjacket.engine.prompt_blocks import get_narrator_system
     from straightjacket.engine.prompt_builders import build_action_prompt
 
@@ -462,7 +463,7 @@ def eval_narrator(provider: AIProvider, case: dict, model: str, params: dict) ->
     consequences = case.get("consequences", [])
     consequence_sentences = case.get("consequence_sentences", [])
 
-    brain = BrainResult(
+    brain = make_brain_result(
         move="adventure/face_danger",
         stat="edge",
         player_intent=case["player_words"],
@@ -567,10 +568,7 @@ def eval_narrator(provider: AIProvider, case: dict, model: str, params: dict) ->
 def _build_director_game() -> GameState:
     """Build a realistic game state for Director evaluation."""
     from straightjacket.engine.models import (
-        ClockData,
         GameState,
-        MemoryEntry,
-        NpcData,
         SceneLogEntry,
     )
     from straightjacket.engine.models_story import ThreadEntry
@@ -589,7 +587,7 @@ def _build_director_game() -> GameState:
     game.narrative.scene_count = 8
 
     game.npcs = [
-        NpcData(
+        make_npc(
             id="npc_1",
             name="Kira",
             disposition="friendly",
@@ -599,11 +597,11 @@ def _build_director_game() -> GameState:
             agenda="Find the saboteur",
             instinct="Protect the crew",
             memory=[
-                MemoryEntry(scene=5, event="Helped player find evidence", type="cooperation", importance=4),
-                MemoryEntry(scene=7, event="Argued about next steps", type="conflict", importance=3),
+                make_memory(scene=5, event="Helped player find evidence", type="cooperation", importance=4),
+                make_memory(scene=7, event="Argued about next steps", type="conflict", importance=3),
             ],
         ),
-        NpcData(
+        make_npc(
             id="npc_2",
             name="Borin",
             disposition="neutral",
@@ -614,8 +612,8 @@ def _build_director_game() -> GameState:
         ),
     ]
     game.world.clocks = [
-        ClockData(name="Cargo Theft Investigation", clock_type="progress", segments=6, filled=3),
-        ClockData(name="Pirate Fleet Approaching", clock_type="threat", segments=8, filled=5),
+        make_clock(name="Cargo Theft Investigation", clock_type="progress", segments=6, filled=3),
+        make_clock(name="Pirate Fleet Approaching", clock_type="threat", segments=8, filled=5),
     ]
     game.narrative.threads = [
         ThreadEntry(id="t1", name="Missing Shipment", thread_type="tension", active=True, weight=3),

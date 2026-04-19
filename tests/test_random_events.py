@@ -21,7 +21,7 @@ from straightjacket.engine.models import (
     RandomEvent,
     ThreadEntry,
 )
-from tests._helpers import make_game_state
+from tests._helpers import make_fate_result, make_game_state, make_random_event
 
 
 # ── Event focus ──────────────────────────────────────────────
@@ -67,10 +67,12 @@ def test_meaning_table_descriptions_returns_pair() -> None:
     assert w1 and w2
 
 
-def test_meaning_table_default_is_actions() -> None:
-    """No argument defaults to actions table."""
-    w1, w2 = roll_meaning_table()
-    assert w1 and w2
+def test_meaning_table_requires_table_name() -> None:
+    """table_name is required — no silent default."""
+    import pytest
+
+    with pytest.raises(TypeError):
+        roll_meaning_table()  # type: ignore[call-arg]
 
 
 # ── Target selection ─────────────────────────────────────────
@@ -267,7 +269,7 @@ def test_deactivate_thread() -> None:
 
 def test_random_event_roundtrip() -> None:
     """RandomEvent round-trips through to_dict/from_dict."""
-    event = RandomEvent(
+    event = make_random_event(
         focus="npc_action",
         focus_roll=25,
         target="Kira",
@@ -289,8 +291,8 @@ def test_fate_result_with_random_event_roundtrip() -> None:
     """FateResult with attached RandomEvent survives serialization."""
     from straightjacket.engine.models import FateResult
 
-    event = RandomEvent(focus="pc_negative", meaning_action="Betray", meaning_subject="Hope")
-    result = FateResult(
+    event = make_random_event(focus="pc_negative", meaning_action="Betray", meaning_subject="Hope")
+    result = make_fate_result(
         answer="yes",
         random_event_triggered=True,
         random_event=event,

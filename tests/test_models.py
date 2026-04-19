@@ -9,14 +9,11 @@ Or:  python tests/test_models.py
 # Stubs are set up in conftest.py
 
 from straightjacket.engine.models import (
-    MemoryEntry,
     NpcData,
-    ClockData,
-    ProgressTrack,
     StoryBlueprint,
     StoryAct,
 )
-from tests._helpers import make_game_state
+from tests._helpers import make_clock, make_game_state, make_memory, make_npc, make_progress_track
 
 
 # ── NpcData ───────────────────────────────────────────────────
@@ -38,10 +35,10 @@ def test_compel_no_disposition_shift(load_engine: None) -> None:
     from straightjacket.engine.mechanics.move_outcome import resolve_move_outcome
 
     game = make_game_state()
-    npc = NpcData(id="npc_1", name="Test", disposition="neutral")
+    npc = make_npc(id="npc_1", name="Test", disposition="neutral")
     game.npcs.append(npc)
     game.progress_tracks.append(
-        ProgressTrack(id="connection_npc_1", name="Test", track_type="connection", rank="dangerous", ticks=0)
+        make_progress_track(id="connection_npc_1", name="Test", track_type="connection", rank="dangerous", ticks=0)
     )
     resolve_move_outcome(game, "adventure/compel", "STRONG_HIT", target_npc_id="npc_1")
     conn = next(t for t in game.progress_tracks if t.id == "connection_npc_1")
@@ -54,10 +51,10 @@ def test_test_bond_disposition_shift(load_engine: None) -> None:
     from straightjacket.engine.mechanics.move_outcome import resolve_move_outcome
 
     game = make_game_state()
-    npc = NpcData(id="npc_1", name="Test", disposition="neutral")
+    npc = make_npc(id="npc_1", name="Test", disposition="neutral")
     game.npcs.append(npc)
     game.progress_tracks.append(
-        ProgressTrack(id="connection_npc_1", name="Test", track_type="connection", rank="dangerous", ticks=0)
+        make_progress_track(id="connection_npc_1", name="Test", track_type="connection", rank="dangerous", ticks=0)
     )
     resolve_move_outcome(game, "connection/test_your_relationship", "STRONG_HIT", target_npc_id="npc_1")
     conn = next(t for t in game.progress_tracks if t.id == "connection_npc_1")
@@ -71,9 +68,9 @@ def test_npc_owned_threat_clock_ticks_in_agency() -> None:
 
     game = make_game_state()
     game.narrative.scene_count = 5
-    npc = NpcData(id="npc_1", name="Villain", agenda="Take over", status="active")
+    npc = make_npc(id="npc_1", name="Villain", agenda="Take over", status="active")
     game.npcs.append(npc)
-    clock = ClockData(name="Villain Plan", clock_type="threat", segments=6, filled=3, owner="Villain")
+    clock = make_clock(name="Villain Plan", clock_type="threat", segments=6, filled=3, owner="Villain")
     game.world.clocks.append(clock)
     actions, clock_events = check_npc_agency(game)
     assert clock.filled == 4
@@ -89,9 +86,9 @@ def test_npc_agency_clock_fires_on_full() -> None:
 
     game = make_game_state()
     game.narrative.scene_count = 10
-    npc = NpcData(id="npc_1", name="Villain", agenda="Take over", status="active")
+    npc = make_npc(id="npc_1", name="Villain", agenda="Take over", status="active")
     game.npcs.append(npc)
-    clock = ClockData(name="Villain Plan", clock_type="threat", segments=4, filled=3, owner="Villain")
+    clock = make_clock(name="Villain Plan", clock_type="threat", segments=4, filled=3, owner="Villain")
     game.world.clocks.append(clock)
     actions, clock_events = check_npc_agency(game)
     assert clock.filled == 4
@@ -107,7 +104,7 @@ def test_npc_agency_empty_on_wrong_scene() -> None:
 
     game = make_game_state()
     game.narrative.scene_count = 3
-    npc = NpcData(id="npc_1", name="Villain", agenda="Take over", status="active")
+    npc = make_npc(id="npc_1", name="Villain", agenda="Take over", status="active")
     game.npcs.append(npc)
     actions, clock_events = check_npc_agency(game)
     assert actions == []
@@ -121,7 +118,7 @@ def test_autonomous_clocks_skip_npc_owned(load_engine: None) -> None:
 
     random.seed(0)
     game = make_game_state()
-    clock = ClockData(name="NPC Clock", clock_type="threat", segments=6, filled=2, owner="Villain")
+    clock = make_clock(name="NPC Clock", clock_type="threat", segments=6, filled=2, owner="Villain")
     game.world.clocks.append(clock)
     for _ in range(20):
         tick_autonomous_clocks(game)
@@ -130,7 +127,7 @@ def test_autonomous_clocks_skip_npc_owned(load_engine: None) -> None:
 
 def test_npc_arc_field() -> None:
     """NpcData has arc field, serialized in to_dict/from_dict."""
-    npc = NpcData(id="npc_1", name="Test", arc="Beginning to trust the player")
+    npc = make_npc(id="npc_1", name="Test", arc="Beginning to trust the player")
     assert npc.arc == "Beginning to trust the player"
     d = npc.to_dict()
     assert d["arc"] == "Beginning to trust the player"
@@ -213,11 +210,11 @@ def test_memory_guard_rejects_zero_overlap() -> None:
     from straightjacket.engine.npc.processing import process_npc_details
 
     game = make_game_state()
-    npc = NpcData(
+    npc = make_npc(
         id="npc_1",
         name="Theo",
         status="active",
-        memory=[MemoryEntry(scene=1, event="Met the player", importance=5)],
+        memory=[make_memory(scene=1, event="Met the player", importance=5)],
     )
     game.npcs.append(npc)
     # Try to rename Theo to Klaus Kinski — zero word overlap, should be rejected
@@ -234,7 +231,7 @@ def test_memory_guard_allows_no_memories() -> None:
     from straightjacket.engine.npc.processing import process_npc_details
 
     game = make_game_state()
-    npc = NpcData(id="npc_1", name="Der Fremde", status="active")
+    npc = make_npc(id="npc_1", name="Der Fremde", status="active")
     game.npcs.append(npc)
     process_npc_details(game, [{"npc_id": "npc_1", "full_name": "Heinrich Blum"}])
     assert npc.name == "Heinrich Blum"
@@ -245,7 +242,7 @@ def test_social_move_unresolved_target_skips_bond(load_engine: None) -> None:
     from straightjacket.engine.mechanics.move_outcome import resolve_move_outcome
 
     game = make_game_state()
-    npc = NpcData(id="npc_1", name="Test", disposition="neutral")
+    npc = make_npc(id="npc_1", name="Test", disposition="neutral")
     game.npcs.append(npc)
     # target_npc that doesn't match any NPC
     resolve_move_outcome(game, "adventure/compel", "STRONG_HIT", target_npc_id="nonexistent")
@@ -255,15 +252,17 @@ def test_social_move_unresolved_target_skips_bond(load_engine: None) -> None:
 def test_progress_tracks_snapshot_restore() -> None:
     """Progress tracks are fully restored on snapshot/restore cycle."""
     game = make_game_state()
-    game.progress_tracks.append(ProgressTrack(id="v1", name="Vow", track_type="vow", rank="dangerous", ticks=8))
-    game.progress_tracks.append(ProgressTrack(id="c1", name="Fight", track_type="combat", rank="formidable", ticks=0))
+    game.progress_tracks.append(make_progress_track(id="v1", name="Vow", track_type="vow", rank="dangerous", ticks=8))
+    game.progress_tracks.append(
+        make_progress_track(id="c1", name="Fight", track_type="combat", rank="formidable", ticks=0)
+    )
 
     snap = game.snapshot()
 
     # Mutate after snapshot: mark progress, create new track, complete one
     game.progress_tracks[0].mark_progress()
     game.progress_tracks[1].status = "completed"
-    game.progress_tracks.append(ProgressTrack(id="v2", name="New Vow", track_type="vow"))
+    game.progress_tracks.append(make_progress_track(id="v2", name="New Vow", track_type="vow"))
 
     assert game.progress_tracks[0].ticks == 16  # 8 + 8 (dangerous ticks_per_mark)
     assert len(game.progress_tracks) == 3

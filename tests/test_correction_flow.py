@@ -12,15 +12,13 @@ import json
 
 from straightjacket.engine import engine_loader
 from straightjacket.engine.models import (
-    BrainResult,
     EngineConfig,
     GameState,
-    MemoryEntry,
     NarrationEntry,
-    NpcData,
     RollResult,
     SceneLogEntry,
 )
+from tests._helpers import make_brain_result, make_memory, make_npc
 
 # ── MockProvider ─────────────────────────────────────────────
 
@@ -162,14 +160,14 @@ def _game() -> "GameState":
     game.world.time_of_day = "evening"
     game.world.chaos_factor = 5
     game.npcs = [
-        NpcData(
+        make_npc(
             id="npc_1",
             name="Mira",
             disposition="friendly",
             agenda="protect the archives",
             instinct="trust cautiously",
             description="Young archivist with ink-stained hands",
-            memory=[MemoryEntry(event="Met the player", emotional_weight="curious", type="observation", scene=1)],
+            memory=[make_memory(event="Met the player", emotional_weight="curious", type="observation", scene=1)],
         ),
     ]
     game.narrative.scene_count = 3
@@ -187,7 +185,9 @@ def _game() -> "GameState":
     )
     game.last_turn_snapshot = game.snapshot()
     game.last_turn_snapshot.player_input = "I attack the guard"
-    game.last_turn_snapshot.brain = BrainResult(move="combat/strike", stat="iron", player_intent="Attack the guard")
+    game.last_turn_snapshot.brain = make_brain_result(
+        move="combat/strike", stat="iron", player_intent="Attack the guard"
+    )
     game.last_turn_snapshot.roll = RollResult(
         d1=2, d2=3, c1=7, c2=8, stat_name="iron", stat_value=1, action_score=6, result="MISS", move="combat/strike"
     )
@@ -270,7 +270,7 @@ def test_momentum_burn_full_flow(load_engine: None, stub_emotions: None) -> None
         game,
         pre_snap.roll,  # type: ignore[arg-type]
         "STRONG_HIT",
-        BrainResult(move="combat/strike", stat="iron", player_intent="Attack"),
+        make_brain_result(move="combat/strike", stat="iron", player_intent="Attack"),
         config=EngineConfig(narration_lang="English"),
         pre_snapshot=pre_snap,
     )

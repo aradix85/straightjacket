@@ -1,16 +1,16 @@
 """Tests for step 11a: threats and menace tracks."""
 
-from straightjacket.engine.models import GameState, ProgressTrack, Resources, ThreatData, WorldState
-from tests._helpers import make_game_state
+from straightjacket.engine.models import GameState, Resources, ThreatData
+from tests._helpers import make_game_state, make_progress_track, make_threat, make_world_state
 
 
 def _game_with_threat() -> GameState:
     g = make_game_state(player_name="Hero", setting_id="starforged")
     g.resources = Resources(health=5, spirit=5, supply=5, momentum=2, max_momentum=10)
-    g.world = WorldState(current_location="Iron Hold")
-    vow = ProgressTrack(id="vow_hunt", name="Hunt the beast", track_type="vow", rank="dangerous", ticks=8)
+    g.world = make_world_state(current_location="Iron Hold")
+    vow = make_progress_track(id="vow_hunt", name="Hunt the beast", track_type="vow", rank="dangerous", ticks=8)
     g.progress_tracks.append(vow)
-    threat = ThreatData(
+    threat = make_threat(
         id="threat_beast",
         name="The Beast Awakens",
         category="rampaging_creature",
@@ -27,35 +27,35 @@ def _game_with_threat() -> GameState:
 
 class TestThreatData:
     def test_menace_per_mark_dangerous(self) -> None:
-        t = ThreatData(rank="dangerous")
+        t = make_threat(rank="dangerous")
         assert t.menace_per_mark == 8
 
     def test_menace_per_mark_epic(self) -> None:
-        t = ThreatData(rank="epic")
+        t = make_threat(rank="epic")
         assert t.menace_per_mark == 1
 
     def test_advance_menace(self) -> None:
-        t = ThreatData(rank="dangerous", menace_ticks=0)
+        t = make_threat(rank="dangerous", menace_ticks=0)
         added = t.advance_menace(1)
         assert added == 8
         assert t.menace_ticks == 8
         assert t.menace_filled_boxes == 2
 
     def test_advance_menace_clamped(self) -> None:
-        t = ThreatData(rank="dangerous", menace_ticks=36)
+        t = make_threat(rank="dangerous", menace_ticks=36)
         added = t.advance_menace(1)
         assert added == 4  # clamped to 40
         assert t.menace_ticks == 40
         assert t.menace_full
 
     def test_menace_full_property(self) -> None:
-        t = ThreatData(menace_ticks=40)
+        t = make_threat(menace_ticks=40)
         assert t.menace_full
-        t2 = ThreatData(menace_ticks=39)
+        t2 = make_threat(menace_ticks=39)
         assert not t2.menace_full
 
     def test_serialization_round_trip(self) -> None:
-        t = ThreatData(
+        t = make_threat(
             id="t1",
             name="Plague",
             category="malignant_plague",
@@ -80,7 +80,7 @@ class TestThreatSnapshotRestore:
         snap = game.snapshot()
 
         game.threats[0].advance_menace(2)
-        game.threats.append(ThreatData(id="t2", name="New Threat"))
+        game.threats.append(make_threat(id="t2", name="New Threat"))
         assert game.threats[0].menace_ticks == 16
         assert len(game.threats) == 2
 
@@ -310,6 +310,6 @@ class TestVowCompletionResolveThreat:
         from straightjacket.engine.game.tracks import complete_track
 
         game = _game_with_threat()
-        game.progress_tracks.append(ProgressTrack(id="combat_1", name="Fight", track_type="combat", ticks=20))
+        game.progress_tracks.append(make_progress_track(id="combat_1", name="Fight", track_type="combat", ticks=20))
         complete_track(game, "combat_1", "completed")
         assert game.threats[0].status == "active"

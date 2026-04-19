@@ -11,15 +11,12 @@ import pytest
 
 from straightjacket.engine.mechanics import compute_npc_gate, resolve_npc_stance
 from straightjacket.engine.models import (
-    BrainResult,
     GameState,
-    MemoryEntry,
     NpcData,
-    ProgressTrack,
     RollResult,
 )
 from straightjacket.engine.prompt_builders import build_action_prompt
-from tests._helpers import make_game_state
+from tests._helpers import make_brain_result, make_game_state, make_memory, make_npc, make_progress_track
 
 # Use real engine.yaml
 pytestmark = pytest.mark.usefixtures("load_engine")
@@ -33,10 +30,10 @@ def _npc(
     secrets: list[str] | None = None,
 ) -> NpcData:
     mems = [
-        MemoryEntry(scene=first_scene + i, event=f"Event {i}", emotional_weight="neutral", importance=3)
+        make_memory(scene=first_scene + i, event=f"Event {i}", emotional_weight="neutral", importance=3)
         for i in range(memories)
     ]
-    return NpcData(
+    return make_npc(
         id="npc_1",
         name="Kira",
         description="A wary trader with a scar across her left cheek",
@@ -57,7 +54,7 @@ def _game(npc: NpcData, scene: int = 5, bond: int = 0) -> GameState:
     game.npcs.append(npc)
     if bond > 0:
         game.progress_tracks.append(
-            ProgressTrack(
+            make_progress_track(
                 id=f"connection_{npc.id}",
                 name=npc.name,
                 track_type="connection",
@@ -147,7 +144,7 @@ def test_gate_never_above_4() -> None:
 
 def _build_prompt(npc: NpcData, scene: int = 5, bond: int = 0) -> str:
     game = _game(npc, scene, bond=bond)
-    brain = BrainResult(
+    brain = make_brain_result(
         move="adventure/face_danger", stat="edge", target_npc="npc_1", player_intent="approach carefully"
     )
     roll = RollResult(

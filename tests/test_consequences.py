@@ -4,14 +4,12 @@ Move-specific consequence tests are in test_move_outcome.py.
 """
 
 from straightjacket.engine.models import (
-    ClockData,
     ClockEvent,
     GameState,
-    NpcData,
     Resources,
     RollResult,
 )
-from tests._helpers import make_game_state
+from tests._helpers import make_clock, make_game_state, make_npc
 
 
 def _game(health: int = 5, spirit: int = 5, supply: int = 5, momentum: int = 3) -> GameState:
@@ -65,7 +63,7 @@ def test_tick_threat_clock() -> None:
     from straightjacket.engine.mechanics.consequences import tick_threat_clock
 
     game = _game()
-    game.world.clocks = [ClockData(name="Storm", clock_type="threat", segments=4, filled=2)]
+    game.world.clocks = [make_clock(name="Storm", clock_type="threat", segments=4, filled=2)]
     events: list[ClockEvent] = []
     tick_threat_clock(game, 1, events)
     assert game.world.clocks[0].filled == 3
@@ -76,7 +74,7 @@ def test_tick_threat_clock_fires_when_full() -> None:
     from straightjacket.engine.mechanics.consequences import tick_threat_clock
 
     game = _game()
-    game.world.clocks = [ClockData(name="Storm", clock_type="threat", segments=4, filled=3)]
+    game.world.clocks = [make_clock(name="Storm", clock_type="threat", segments=4, filled=3)]
     events: list[ClockEvent] = []
     tick_threat_clock(game, 1, events)
     assert game.world.clocks[0].filled == 4
@@ -89,7 +87,7 @@ def test_tick_threat_clock_skips_non_threat() -> None:
     from straightjacket.engine.mechanics.consequences import tick_threat_clock
 
     game = _game()
-    game.world.clocks = [ClockData(name="Progress", clock_type="progress", segments=4, filled=2)]
+    game.world.clocks = [make_clock(name="Progress", clock_type="progress", segments=4, filled=2)]
     events: list[ClockEvent] = []
     tick_threat_clock(game, 1, events)
     assert game.world.clocks[0].filled == 2
@@ -99,7 +97,7 @@ def test_tick_threat_clock_skips_full() -> None:
     from straightjacket.engine.mechanics.consequences import tick_threat_clock
 
     game = _game()
-    game.world.clocks = [ClockData(name="Done", clock_type="threat", segments=4, filled=4, fired=True)]
+    game.world.clocks = [make_clock(name="Done", clock_type="threat", segments=4, filled=4, fired=True)]
     events: list[ClockEvent] = []
     tick_threat_clock(game, 1, events)
     assert len(events) == 0
@@ -158,7 +156,7 @@ def test_npc_agency_fires_on_scene_5(load_engine: None) -> None:
 
     game = _game()
     game.narrative.scene_count = 5
-    npc = NpcData(id="npc_1", name="Kira", status="active", agenda="find the vault")
+    npc = make_npc(id="npc_1", name="Kira", status="active", agenda="find the vault")
     game.npcs.append(npc)
     actions, _ = check_npc_agency(game)
     assert len(actions) == 1
@@ -170,7 +168,7 @@ def test_npc_agency_skips_non_multiple_of_5(load_engine: None) -> None:
 
     game = _game()
     game.narrative.scene_count = 3
-    npc = NpcData(id="npc_1", name="Kira", status="active", agenda="find the vault")
+    npc = make_npc(id="npc_1", name="Kira", status="active", agenda="find the vault")
     game.npcs.append(npc)
     actions, _ = check_npc_agency(game)
     assert len(actions) == 0
@@ -181,9 +179,9 @@ def test_npc_agency_ticks_owned_clock(load_engine: None) -> None:
 
     game = _game()
     game.narrative.scene_count = 5
-    npc = NpcData(id="npc_1", name="Kira", status="active", agenda="find the vault")
+    npc = make_npc(id="npc_1", name="Kira", status="active", agenda="find the vault")
     game.npcs.append(npc)
-    game.world.clocks = [ClockData(name="Kira's scheme", clock_type="scheme", segments=4, filled=1, owner="Kira")]
+    game.world.clocks = [make_clock(name="Kira's scheme", clock_type="scheme", segments=4, filled=1, owner="Kira")]
     actions, events = check_npc_agency(game)
     assert game.world.clocks[0].filled == 2
     assert len(events) == 1
@@ -196,7 +194,7 @@ def test_autonomous_clock_tick(load_engine: None) -> None:
     from straightjacket.engine.mechanics.consequences import tick_autonomous_clocks
 
     game = _game()
-    game.world.clocks = [ClockData(name="Plague", clock_type="threat", segments=6, filled=2, owner="world")]
+    game.world.clocks = [make_clock(name="Plague", clock_type="threat", segments=6, filled=2, owner="world")]
     ticked = False
     for _ in range(100):
         game.world.clocks[0].filled = 2
@@ -216,9 +214,9 @@ def test_purge_old_fired_clocks(load_engine: None) -> None:
     game = _game()
     game.narrative.scene_count = 10
     game.world.clocks = [
-        ClockData(name="Old", clock_type="threat", segments=4, filled=4, fired=True, fired_at_scene=3),
-        ClockData(name="Recent", clock_type="threat", segments=4, filled=4, fired=True, fired_at_scene=9),
-        ClockData(name="Active", clock_type="threat", segments=4, filled=2),
+        make_clock(name="Old", clock_type="threat", segments=4, filled=4, fired=True, fired_at_scene=3),
+        make_clock(name="Recent", clock_type="threat", segments=4, filled=4, fired=True, fired_at_scene=9),
+        make_clock(name="Active", clock_type="threat", segments=4, filled=2),
     ]
     purge_old_fired_clocks(game)
     names = [c.name for c in game.world.clocks]

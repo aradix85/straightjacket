@@ -10,9 +10,9 @@ CREATE TABLE IF NOT EXISTS npcs (
     instinct    TEXT NOT NULL DEFAULT '',
     arc         TEXT NOT NULL DEFAULT '',
     secrets     TEXT NOT NULL DEFAULT '[]',    -- JSON array
-    disposition TEXT NOT NULL DEFAULT 'neutral',
-    status      TEXT NOT NULL DEFAULT 'active',
-    introduced  INTEGER NOT NULL DEFAULT 1,    -- boolean
+    disposition TEXT NOT NULL,
+    status      TEXT NOT NULL,
+    introduced  INTEGER NOT NULL DEFAULT 0,    -- boolean; fresh NPCs not yet shown on-screen
     aliases     TEXT NOT NULL DEFAULT '[]',     -- JSON array
     keywords    TEXT NOT NULL DEFAULT '[]',     -- JSON array
     importance_accumulator INTEGER NOT NULL DEFAULT 0,
@@ -25,11 +25,11 @@ CREATE TABLE IF NOT EXISTS npcs (
 CREATE TABLE IF NOT EXISTS memories (
     rowid       INTEGER PRIMARY KEY AUTOINCREMENT,
     npc_id      TEXT NOT NULL REFERENCES npcs(id),
-    scene       INTEGER NOT NULL DEFAULT 0,
-    event       TEXT NOT NULL DEFAULT '',
-    emotional_weight TEXT NOT NULL DEFAULT 'neutral',
-    importance  INTEGER NOT NULL DEFAULT 3,
-    type        TEXT NOT NULL DEFAULT 'observation',
+    scene       INTEGER NOT NULL,
+    event       TEXT NOT NULL,
+    emotional_weight TEXT NOT NULL,
+    importance  INTEGER NOT NULL,
+    type        TEXT NOT NULL,
     about_npc   TEXT,
     tone        TEXT NOT NULL DEFAULT '',
     tone_key    TEXT NOT NULL DEFAULT ''
@@ -55,9 +55,9 @@ CREATE TABLE IF NOT EXISTS characters_list (
 
 CREATE TABLE IF NOT EXISTS clocks (
     rowid       INTEGER PRIMARY KEY AUTOINCREMENT,
-    name        TEXT NOT NULL DEFAULT '',
-    clock_type  TEXT NOT NULL DEFAULT 'threat',
-    segments    INTEGER NOT NULL DEFAULT 6,
+    name        TEXT NOT NULL,
+    clock_type  TEXT NOT NULL,
+    segments    INTEGER NOT NULL,
     filled      INTEGER NOT NULL DEFAULT 0,
     trigger_description TEXT NOT NULL DEFAULT '',
     owner       TEXT NOT NULL DEFAULT '',
@@ -93,10 +93,10 @@ CREATE TABLE IF NOT EXISTS narration_history (
 CREATE TABLE IF NOT EXISTS progress_tracks (
     id          TEXT PRIMARY KEY,
     name        TEXT NOT NULL DEFAULT '',
-    track_type  TEXT NOT NULL DEFAULT 'vow',
-    rank        TEXT NOT NULL DEFAULT 'dangerous',
+    track_type  TEXT NOT NULL,
+    rank        TEXT NOT NULL,
     ticks       INTEGER NOT NULL DEFAULT 0,
-    max_ticks   INTEGER NOT NULL DEFAULT 40,
+    max_ticks   INTEGER NOT NULL,
     status      TEXT NOT NULL DEFAULT 'active'
 );
 
@@ -106,9 +106,9 @@ CREATE TABLE IF NOT EXISTS threats (
     category        TEXT NOT NULL DEFAULT '',
     description     TEXT NOT NULL DEFAULT '',
     linked_vow_id   TEXT NOT NULL DEFAULT '',
-    rank            TEXT NOT NULL DEFAULT 'dangerous',
+    rank            TEXT NOT NULL,
     menace_ticks    INTEGER NOT NULL DEFAULT 0,
-    max_menace_ticks INTEGER NOT NULL DEFAULT 40,
+    max_menace_ticks INTEGER NOT NULL,
     status          TEXT NOT NULL DEFAULT 'active'
 );
 

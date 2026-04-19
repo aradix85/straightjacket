@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from straightjacket.engine.models import GameState, ThreatData
-from tests._helpers import make_game_state
+from straightjacket.engine.models import GameState
+from tests._helpers import make_brain_result, make_game_state, make_progress_track, make_threat
 
 
 def _game() -> GameState:
@@ -135,7 +135,7 @@ class TestThreatOvercomeBonus:
         from straightjacket.engine.mechanics.legacy import apply_threat_overcome_bonus
 
         game = _game()
-        threat = ThreatData(id="t1", name="Foo", menace_ticks=30, max_menace_ticks=40)
+        threat = make_threat(id="t1", name="Foo", menace_ticks=30, max_menace_ticks=40)
         bonus = apply_threat_overcome_bonus(game, threat)
         assert bonus == 2
         assert game.campaign.xp == 2
@@ -144,7 +144,7 @@ class TestThreatOvercomeBonus:
         from straightjacket.engine.mechanics.legacy import apply_threat_overcome_bonus
 
         game = _game()
-        threat = ThreatData(id="t1", name="Foo", menace_ticks=10, max_menace_ticks=40)  # 25%
+        threat = make_threat(id="t1", name="Foo", menace_ticks=10, max_menace_ticks=40)  # 25%
         bonus = apply_threat_overcome_bonus(game, threat)
         assert bonus == 0
         assert game.campaign.xp == 0
@@ -153,7 +153,7 @@ class TestThreatOvercomeBonus:
         from straightjacket.engine.mechanics.legacy import apply_threat_overcome_bonus
 
         game = _game()
-        threat = ThreatData(id="t1", name="Foo", menace_ticks=20, max_menace_ticks=40)  # 50%
+        threat = make_threat(id="t1", name="Foo", menace_ticks=20, max_menace_ticks=40)  # 50%
         bonus = apply_threat_overcome_bonus(game, threat)
         assert bonus == 2
 
@@ -161,7 +161,7 @@ class TestThreatOvercomeBonus:
         from straightjacket.engine.mechanics.legacy import apply_threat_overcome_bonus
 
         game = _game()
-        threat = ThreatData(id="t1", name="Foo", menace_ticks=0, max_menace_ticks=0)
+        threat = make_threat(id="t1", name="Foo", menace_ticks=0, max_menace_ticks=0)
         bonus = apply_threat_overcome_bonus(game, threat)
         assert bonus == 0
 
@@ -228,45 +228,43 @@ class TestSharedProgressAndLegacyHelper:
     def test_helper_consumes_legacy_track(self, stub_engine: None) -> None:
         from straightjacket.engine.game.finalization import apply_progress_and_legacy
         from straightjacket.engine.mechanics.move_outcome import OutcomeResult
-        from straightjacket.engine.models import BrainResult
 
         game = _game()
         outcome = OutcomeResult(legacy_track="quests")
-        brain = BrainResult(move="quest/fulfill_your_vow")
+        brain = make_brain_result(move="quest/fulfill_your_vow")
         apply_progress_and_legacy(game, outcome, brain, "vow", "dangerous")
         assert game.campaign.legacy_quests.ticks == 2
 
     def test_helper_consumes_progress_marks(self, stub_engine: None) -> None:
         from straightjacket.engine.game.finalization import apply_progress_and_legacy
         from straightjacket.engine.mechanics.move_outcome import OutcomeResult
-        from straightjacket.engine.models import BrainResult, ProgressTrack
 
         game = _game()
-        game.progress_tracks.append(ProgressTrack(id="t1", name="Vow to Ally", track_type="vow", rank="dangerous"))
+        game.progress_tracks.append(
+            make_progress_track(id="t1", name="Vow to Ally", track_type="vow", rank="dangerous")
+        )
         outcome = OutcomeResult(progress_marks=1)
-        brain = BrainResult(move="exploration/undertake_an_expedition")
+        brain = make_brain_result(move="exploration/undertake_an_expedition")
         apply_progress_and_legacy(game, outcome, brain, "vow", "dangerous")
         assert game.progress_tracks[0].ticks == 8  # dangerous = 8 ticks per mark
 
     def test_helper_handles_both_in_one_outcome(self, stub_engine: None) -> None:
         from straightjacket.engine.game.finalization import apply_progress_and_legacy
         from straightjacket.engine.mechanics.move_outcome import OutcomeResult
-        from straightjacket.engine.models import BrainResult
 
         game = _game()
         outcome = OutcomeResult(progress_marks=0, legacy_track="bonds")
-        brain = BrainResult(move="connection/develop_your_relationship")
+        brain = make_brain_result(move="connection/develop_your_relationship")
         apply_progress_and_legacy(game, outcome, brain, "vow", "formidable")
         assert game.campaign.legacy_bonds.ticks == 4  # formidable = 4 ticks
 
     def test_helper_noop_on_empty_outcome(self, stub_engine: None) -> None:
         from straightjacket.engine.game.finalization import apply_progress_and_legacy
         from straightjacket.engine.mechanics.move_outcome import OutcomeResult
-        from straightjacket.engine.models import BrainResult
 
         game = _game()
         outcome = OutcomeResult()
-        brain = BrainResult(move="quest/swear_an_iron_vow")
+        brain = make_brain_result(move="quest/swear_an_iron_vow")
         apply_progress_and_legacy(game, outcome, brain, "vow", "dangerous")
         assert game.campaign.legacy_quests.ticks == 0
         assert game.campaign.xp == 0

@@ -17,11 +17,10 @@ from straightjacket.engine.models import (
     BrainResult,
     ClockEvent,
     GameState,
-    NpcData,
     RollResult,
 )
 from straightjacket.engine.prompt_builders import build_action_prompt
-from tests._helpers import make_game_state
+from tests._helpers import make_brain_result, make_game_state, make_npc
 
 
 def _game() -> GameState:
@@ -32,7 +31,9 @@ def _game() -> GameState:
 
 
 def _brain(target: str | None = None) -> BrainResult:
-    return BrainResult(move="adventure/face_danger", stat="edge", player_intent="climb the wall", target_npc=target)
+    return make_brain_result(
+        move="adventure/face_danger", stat="edge", player_intent="climb the wall", target_npc=target
+    )
 
 
 def _roll(result: str = "MISS") -> RollResult:
@@ -116,7 +117,7 @@ def test_generate_sentences_empty_returns_empty() -> None:
 
 def test_generate_sentences_with_npc_target() -> None:
     game = _game()
-    game.npcs.append(NpcData(id="npc_1", name="Kira", disposition="distrustful"))
+    game.npcs.append(make_npc(id="npc_1", name="Kira", disposition="distrustful"))
     sentences = generate_consequence_sentences(["Kira bond -1"], [], game, _brain(target="npc_1"))
     assert len(sentences) >= 1 and any("Kira" in s for s in sentences)
 

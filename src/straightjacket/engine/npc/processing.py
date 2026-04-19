@@ -113,13 +113,20 @@ def process_npc_details(game: "GameState", details: list, world_addition: str = 
                             if not stub_desc and world_addition:
                                 stub_desc = world_addition.strip()
                             npc_id, _ = next_npc_id(game)
+                            # Stub for rejected identity-reveal: the AI suggested this is a
+                            # new identity for an existing NPC, but word-overlap check rejected.
+                            # introduced=False because this stub wasn't actually shown on-screen
+                            # as a distinct character — it's a placeholder until further narration
+                            # clarifies whether the name belongs to someone new.
                             stub = NpcData(
                                 id=npc_id,
                                 name=new_name,
                                 description=stub_desc,
                                 disposition=normalize_disposition("neutral"),
+                                status="active",
                                 aliases=paren_aliases,
                                 last_location=game.world.current_location or "",
+                                introduced=False,
                             )
                             game.npcs.append(stub)
                             log(f"[NPC] Created stub for rejected reveal: {new_name} ({npc_id})")
@@ -236,8 +243,10 @@ def process_new_npcs(game: "GameState", new_npcs: list) -> None:
             name=clean_name,
             description=nd["description"],
             disposition=normalize_disposition(nd["disposition"]),
+            status="active",
             aliases=paren_aliases,
             last_location=game.world.current_location or "",
+            introduced=True,  # Extracted from current scene narration — NPC is on-screen now.
         )
 
         game.npcs.append(npc)
@@ -250,7 +259,7 @@ def process_new_npcs(game: "GameState", new_npcs: list) -> None:
             seed_event = eng().ai_text.narrator_defaults["npc_appeared_event"].format(npc_name=npc.name)
         seed_disposition = normalize_disposition(nd["disposition"])
         disp_to_emotion = eng().get_raw("disposition_to_seed_emotion")
-        seed_emotion = disp_to_emotion[seed_disposition] if seed_disposition in disp_to_emotion else "neutral"
+        seed_emotion = disp_to_emotion[seed_disposition]
         seed_imp, seed_debug = score_importance(seed_emotion, seed_event, debug=True)
         seed_imp = max(seed_imp, eng().npc.seed_importance_floor)
         npc.memory.append(
@@ -260,6 +269,8 @@ def process_new_npcs(game: "GameState", new_npcs: list) -> None:
                 emotional_weight=seed_emotion,
                 importance=seed_imp,
                 type="observation",
+                tone="",
+                tone_key="",
                 _score_debug=f"auto-seed from new_npcs | {seed_debug}",
             )
         )

@@ -11,10 +11,7 @@ import sqlite3
 from straightjacket.engine.db.connection import close_db, reset_db
 from straightjacket.engine.db.sync import sync
 from straightjacket.engine.models import (
-    ClockData,
     GameState,
-    MemoryEntry,
-    NpcData,
     ThreadEntry,
 )
 from straightjacket.engine.tools.registry import (
@@ -36,7 +33,7 @@ def _game_with_data() -> GameState:
     """GameState with NPCs, threads, clocks for tool testing."""
     game = make_game_state(player_name="Ash", setting_id="starforged")
     game.npcs = [
-        NpcData(
+        make_npc(
             id="npc_1",
             name="Kira",
             agenda="Access the vault",
@@ -44,26 +41,26 @@ def _game_with_data() -> GameState:
             status="active",
             last_location="docks",
             memory=[
-                MemoryEntry(scene=1, event="Met at the docks", importance=5, emotional_weight="curious"),
-                MemoryEntry(scene=3, event="Broke a promise", importance=8, emotional_weight="betrayed"),
+                make_memory(scene=1, event="Met at the docks", importance=5, emotional_weight="curious"),
+                make_memory(scene=3, event="Broke a promise", importance=8, emotional_weight="betrayed"),
             ],
         ),
-        NpcData(
+        make_npc(
             id="npc_2",
             name="Rowan",
             disposition="friendly",
             status="active",
             memory=[
-                MemoryEntry(scene=2, event="Healed the player", importance=4, type="observation"),
+                make_memory(scene=2, event="Healed the player", importance=4, type="observation"),
             ],
         ),
     ]
     game.narrative.threads.append(
         ThreadEntry(id="thread_1", name="Find the vault", thread_type="vow", weight=2, active=True)
     )
-    game.world.clocks.append(ClockData(name="Vault heist", clock_type="scheme", segments=6, filled=2, owner="Kira"))
+    game.world.clocks.append(make_clock(name="Vault heist", clock_type="scheme", segments=6, filled=2, owner="Kira"))
     game.world.clocks.append(
-        ClockData(name="Storm", clock_type="threat", segments=4, filled=4, fired=True, fired_at_scene=5)
+        make_clock(name="Storm", clock_type="threat", segments=4, filled=4, fired=True, fired_at_scene=5)
     )
     return game
 
@@ -200,7 +197,7 @@ def test_execute_tool_call_error() -> None:
 
 import importlib
 import straightjacket.engine.tools.builtins as _builtins_mod
-from tests._helpers import make_game_state
+from tests._helpers import make_clock, make_game_state, make_memory, make_npc
 
 
 def _reload_builtins() -> None:

@@ -16,14 +16,11 @@ import pytest
 
 from straightjacket.engine import engine_loader  # type: ignore[import-not-found]
 from straightjacket.engine.models import (  # type: ignore[import-not-found]
-    BrainResult,
-    ClockData,
     GameState,
-    NpcData,
     RollResult,
     TurnSnapshot,
 )
-from tests._helpers import make_game_state
+from tests._helpers import make_brain_result, make_clock, make_game_state, make_npc
 from straightjacket.web.session import BurnOffer, Session  # type: ignore[import-not-found]
 from straightjacket.web.serializers import (  # type: ignore[import-not-found]
     build_creation_options,
@@ -118,7 +115,7 @@ class TestSession:
             roll=RollResult(1, 1, 1, 1, "wits", 2, 4, "MISS", "adventure/face_danger"),
             new_result="WEAK_HIT",
             cost=5,
-            brain=BrainResult(),
+            brain=make_brain_result(),
             player_words="x",
             pre_snapshot=TurnSnapshot(),
         )
@@ -157,7 +154,7 @@ class TestBurnOffer:
             roll=RollResult(1, 2, 3, 4, "iron", 3, 6, "MISS", "combat/strike"),
             new_result="STRONG_HIT",
             cost=7,
-            brain=BrainResult(move="combat/strike", stat="iron"),
+            brain=make_brain_result(move="combat/strike", stat="iron"),
             player_words="I attack",
             pre_snapshot=TurnSnapshot(),
             scene_setup=SceneSetup(scene_type="altered", adjustments=["add_character"]),
@@ -172,7 +169,7 @@ class TestBurnOffer:
             roll=RollResult(1, 1, 1, 1, "wits", 1, 3, "MISS", "adventure/face_danger"),
             new_result="WEAK_HIT",
             cost=3,
-            brain=BrainResult(),
+            brain=make_brain_result(),
             player_words="x",
             pre_snapshot=TurnSnapshot(),
         )
@@ -215,12 +212,12 @@ class TestBuildNarrativeStatus:
         game.world.chaos_factor = 6
         game.narrative.scene_count = 5
         game.npcs = [
-            NpcData(id="npc_1", name="Mira", status="active", disposition="friendly"),
-            NpcData(id="npc_2", name="Ghost", status="deceased", disposition="neutral"),
-            NpcData(id="npc_3", name="Lore Figure", status="lore", disposition="neutral"),
+            make_npc(id="npc_1", name="Mira", status="active", disposition="friendly"),
+            make_npc(id="npc_2", name="Ghost", status="deceased", disposition="neutral"),
+            make_npc(id="npc_3", name="Lore Figure", status="lore", disposition="neutral"),
         ]
         game.world.clocks = [
-            ClockData(name="Doom", clock_type="threat", segments=6, filled=3),
+            make_clock(name="Doom", clock_type="threat", segments=6, filled=3),
         ]
         return game
 

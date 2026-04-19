@@ -125,7 +125,7 @@ def _seed_background_vow(game: GameState, vow_text: str, rank: str = "") -> None
         vow_rank = rank
     else:
         vow_rank = _e.creation.background_vow_default_rank
-    track = ProgressTrack(
+    track = ProgressTrack.new(
         id="vow_background",
         name=vow_text,
         track_type="vow",
@@ -252,11 +252,8 @@ def start_new_game(
         truths=creation_data.get("truths", {}),
         stats=stat_dict,
     )
-    game.resources.health = _e.resources.health_start
-    game.resources.spirit = _e.resources.spirit_start
-    game.resources.supply = _e.resources.supply_start
-    game.resources.momentum = _e.momentum.start
-    game.resources.max_momentum = _e.momentum.max
+    # Resources seeded via Resources.from_config on GameState; chaos overridden here
+    # with vow-keyword-modified start rather than the base config value.
     game.narrative.scene_count = 1
     game.world.chaos_factor = _compute_chaos_start(background_vow)
     game.preferences.player_wishes = creation_data.get("wishes", "")

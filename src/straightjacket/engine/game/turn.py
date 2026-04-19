@@ -385,7 +385,7 @@ def process_turn(
             log(f"[Track] Brain omitted track_rank, defaulting to {brain.track_rank}", level="warning")
         slug = brain.track_name.lower().replace(" ", "_")
         track_id = f"{track_category}_{slug}"
-        new_track = ProgressTrack(
+        new_track = ProgressTrack.new(
             id=track_id,
             name=brain.track_name,
             track_type=track_category,

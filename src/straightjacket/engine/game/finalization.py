@@ -134,6 +134,8 @@ def apply_engine_memories(game: GameState, memories: list[dict]) -> None:
                 emotional_weight=mem["emotional_weight"],
                 importance=mem["importance"],
                 type="observation",
+                tone=mem.get("tone", ""),
+                tone_key=mem.get("tone_key", ""),
                 about_npc=mem.get("about_npc"),
                 _score_debug=mem.get("_score_debug", "engine-generated"),
             )

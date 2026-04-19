@@ -13,8 +13,8 @@ Run: python -m pytest tests/test_npc.py -v
 
 # Stubs set up in conftest.py
 
-from straightjacket.engine.models import GameState, MemoryEntry, NpcData
-from tests._helpers import make_game_state
+from straightjacket.engine.models import GameState
+from tests._helpers import make_brain_result, make_game_state, make_memory, make_npc
 
 
 def _make_game() -> "GameState":
@@ -22,7 +22,7 @@ def _make_game() -> "GameState":
     game.narrative.scene_count = 5
     game.world.current_location = "Tavern"
     game.npcs = [
-        NpcData(
+        make_npc(
             id="npc_1",
             name="Kira Voss",
             disposition="friendly",
@@ -31,7 +31,7 @@ def _make_game() -> "GameState":
             instinct="protect allies",
             aliases=["Kira"],
         ),
-        NpcData(
+        make_npc(
             id="npc_2",
             name="Old Borin",
             disposition="neutral",
@@ -121,7 +121,7 @@ def test_fuzzy_match_stt_variant(stub_engine: None) -> None:
 
     game = make_game_state(player_name="Hero")
     game.npcs = [
-        NpcData(id="npc_1", name="Eisenberg", disposition="neutral"),
+        make_npc(id="npc_1", name="Eisenberg", disposition="neutral"),
     ]
     # Single-word name: "Eisenborg" is edit-distance-1 from "Eisenberg"
     # (no significant-word-overlap continue-skip because there's no shared word)
@@ -139,7 +139,7 @@ def test_fuzzy_match_stt_variant_multiword(stub_engine: None) -> None:
 
     game = make_game_state(player_name="Hero")
     game.npcs = [
-        NpcData(id="npc_1", name="Markus Eisenberg", disposition="neutral"),
+        make_npc(id="npc_1", name="Markus Eisenberg", disposition="neutral"),
     ]
     match, match_type = fuzzy_match_existing_npc(game, "Markus Eisenborg")
     assert match is not None
@@ -257,8 +257,8 @@ def test_score_importance_debug(stub_engine: None, stub_emotions: None) -> None:
 def test_consolidate_memory_under_limit(stub_engine: None, stub_emotions: None) -> None:
     from straightjacket.engine.npc.memory import consolidate_memory
 
-    npc = NpcData(id="npc_1", name="Test")
-    npc.memory = [MemoryEntry(scene=i, event=f"event {i}", type="observation", importance=3) for i in range(5)]
+    npc = make_npc(id="npc_1", name="Test")
+    npc.memory = [make_memory(scene=i, event=f"event {i}", type="observation", importance=3) for i in range(5)]
     consolidate_memory(npc)
     assert len(npc.memory) == 5  # under limit, no change
 
@@ -266,10 +266,10 @@ def test_consolidate_memory_under_limit(stub_engine: None, stub_emotions: None) 
 def test_consolidate_memory_over_limit(stub_engine: None, stub_emotions: None) -> None:
     from straightjacket.engine.npc.memory import consolidate_memory
 
-    npc = NpcData(id="npc_1", name="Test")
+    npc = make_npc(id="npc_1", name="Test")
     # Create 30 memories (over the 25 limit)
-    npc.memory = [MemoryEntry(scene=i, event=f"event {i}", type="observation", importance=i % 10) for i in range(30)]
-    npc.memory.append(MemoryEntry(scene=31, event="reflection", type="reflection", importance=8))
+    npc.memory = [make_memory(scene=i, event=f"event {i}", type="observation", importance=i % 10) for i in range(30)]
+    npc.memory.append(make_memory(scene=31, event="reflection", type="reflection", importance=8))
     consolidate_memory(npc)
     assert len(npc.memory) <= 25
     # Reflection should be kept
@@ -279,7 +279,7 @@ def test_consolidate_memory_over_limit(stub_engine: None, stub_emotions: None) -
 def test_retrieve_memories_empty(stub_engine: None) -> None:
     from straightjacket.engine.npc.memory import retrieve_memories
 
-    npc = NpcData(id="npc_1", name="Test")
+    npc = make_npc(id="npc_1", name="Test")
     result = retrieve_memories(npc, current_scene=5)
     assert result == []
 
@@ -287,13 +287,13 @@ def test_retrieve_memories_empty(stub_engine: None) -> None:
 def test_retrieve_memories_includes_reflection(stub_engine: None) -> None:
     from straightjacket.engine.npc.memory import retrieve_memories
 
-    npc = NpcData(id="npc_1", name="Test")
+    npc = make_npc(id="npc_1", name="Test")
     npc.memory = [
-        MemoryEntry(scene=1, event="saw player", type="observation", importance=3),
-        MemoryEntry(scene=2, event="reflection on trust", type="reflection", importance=8),
-        MemoryEntry(scene=3, event="traded goods", type="observation", importance=2),
-        MemoryEntry(scene=4, event="fought together", type="observation", importance=5),
-        MemoryEntry(scene=5, event="shared a meal", type="observation", importance=3),
+        make_memory(scene=1, event="saw player", type="observation", importance=3),
+        make_memory(scene=2, event="reflection on trust", type="reflection", importance=8),
+        make_memory(scene=3, event="traded goods", type="observation", importance=2),
+        make_memory(scene=4, event="fought together", type="observation", importance=5),
+        make_memory(scene=5, event="shared a meal", type="observation", importance=3),
     ]
     result = retrieve_memories(npc, max_count=3, current_scene=6)
     assert len(result) == 3
@@ -303,10 +303,10 @@ def test_retrieve_memories_includes_reflection(stub_engine: None) -> None:
 def test_retrieve_memories_about_npc_boost(stub_engine: None) -> None:
     from straightjacket.engine.npc.memory import retrieve_memories
 
-    npc = NpcData(id="npc_1", name="Test")
+    npc = make_npc(id="npc_1", name="Test")
     npc.memory = [
-        MemoryEntry(scene=1, event="old boring event", type="observation", importance=2, about_npc="npc_3"),
-        MemoryEntry(scene=5, event="recent event", type="observation", importance=3, about_npc=None),
+        make_memory(scene=1, event="old boring event", type="observation", importance=2, about_npc="npc_3"),
+        make_memory(scene=5, event="recent event", type="observation", importance=3, about_npc=None),
     ]
     # When npc_3 is present, memory about npc_3 gets boosted
     result = retrieve_memories(npc, max_count=1, current_scene=6, present_npc_ids={"npc_3"})
@@ -319,7 +319,7 @@ def test_retrieve_memories_about_npc_boost(stub_engine: None) -> None:
 def test_reactivate_background_npc(stub_engine: None) -> None:
     from straightjacket.engine.npc.lifecycle import reactivate_npc
 
-    npc = NpcData(id="npc_1", name="Test", status="background")
+    npc = make_npc(id="npc_1", name="Test", status="background")
     reactivate_npc(npc, reason="test")
     assert npc.status == "active"
 
@@ -327,7 +327,7 @@ def test_reactivate_background_npc(stub_engine: None) -> None:
 def test_reactivate_deceased_refused(stub_engine: None) -> None:
     from straightjacket.engine.npc.lifecycle import reactivate_npc
 
-    npc = NpcData(id="npc_1", name="Test", status="deceased")
+    npc = make_npc(id="npc_1", name="Test", status="deceased")
     reactivate_npc(npc, reason="test")
     assert npc.status == "deceased"  # no force = stays dead
 
@@ -335,7 +335,7 @@ def test_reactivate_deceased_refused(stub_engine: None) -> None:
 def test_reactivate_deceased_forced(stub_engine: None) -> None:
     from straightjacket.engine.npc.lifecycle import reactivate_npc
 
-    npc = NpcData(id="npc_1", name="Test", status="deceased")
+    npc = make_npc(id="npc_1", name="Test", status="deceased")
     reactivate_npc(npc, reason="resurrection", force=True)
     assert npc.status == "active"
 
@@ -343,7 +343,7 @@ def test_reactivate_deceased_forced(stub_engine: None) -> None:
 def test_merge_npc_identity(stub_engine: None) -> None:
     from straightjacket.engine.npc.lifecycle import merge_npc_identity
 
-    npc = NpcData(id="npc_1", name="Old Man", disposition="neutral")
+    npc = make_npc(id="npc_1", name="Old Man", disposition="neutral")
     merge_npc_identity(npc, "Professor Heinrich")
     assert npc.name == "Professor Heinrich"
     assert "Old Man" in npc.aliases
@@ -352,7 +352,7 @@ def test_merge_npc_identity(stub_engine: None) -> None:
 def test_merge_npc_identity_same_name_skipped(stub_engine: None) -> None:
     from straightjacket.engine.npc.lifecycle import merge_npc_identity
 
-    npc = NpcData(id="npc_1", name="Kira", disposition="neutral")
+    npc = make_npc(id="npc_1", name="Kira", disposition="neutral")
     merge_npc_identity(npc, "Kira")
     assert npc.name == "Kira"
     assert npc.aliases == []
@@ -361,7 +361,7 @@ def test_merge_npc_identity_same_name_skipped(stub_engine: None) -> None:
 def test_sanitize_aliases(stub_engine: None) -> None:
     from straightjacket.engine.npc.lifecycle import sanitize_aliases
 
-    npc = NpcData(
+    npc = make_npc(
         id="npc_1",
         name="Kira Voss",
         aliases=["Kira", "Kira", "Kira Voss", "A very long description that is not really an alias at all ever"],
@@ -378,11 +378,11 @@ def test_absorb_duplicate_npc(stub_engine: None, stub_emotions: None) -> None:
 
     game = _make_game()
     # Add a duplicate NPC with the same name
-    dup = NpcData(
+    dup = make_npc(
         id="npc_3",
         name="Kira Voss",
         description="Same person, different entry",
-        memory=[MemoryEntry(scene=5, event="dup memory", type="observation", importance=5)],
+        memory=[make_memory(scene=5, event="dup memory", type="observation", importance=5)],
     )
     game.npcs.append(dup)
 
@@ -408,7 +408,7 @@ def test_retire_distant_npcs(stub_engine: None) -> None:
     game = _make_game()
     # Add many NPCs to exceed max_active=12
     for i in range(15):
-        game.npcs.append(NpcData(id=f"npc_{i + 10}", name=f"NPC {i}", status="active", memory=[]))
+        game.npcs.append(make_npc(id=f"npc_{i + 10}", name=f"NPC {i}", status="active", memory=[]))
     retire_distant_npcs(game)
     active = [n for n in game.npcs if n.status == "active"]
     assert len(active) <= 12
@@ -421,8 +421,8 @@ def test_tfidf_scores_basic(stub_engine: None) -> None:
     from straightjacket.engine.npc.activation import compute_npc_tfidf_scores
 
     npcs = [
-        NpcData(id="npc_1", name="Kira Voss", description="sword fighter warrior"),
-        NpcData(id="npc_2", name="Old Borin", description="blacksmith forge anvil"),
+        make_npc(id="npc_1", name="Kira Voss", description="sword fighter warrior"),
+        make_npc(id="npc_2", name="Old Borin", description="blacksmith forge anvil"),
     ]
     scores = compute_npc_tfidf_scores(npcs, "sword and shield warrior")
     assert scores["npc_1"] > scores["npc_2"]
@@ -432,9 +432,8 @@ def test_activate_npcs_target_always_activated(stub_engine: None) -> None:
     from straightjacket.engine.npc.activation import activate_npcs_for_prompt
 
     game = _make_game()
-    from straightjacket.engine.models import BrainResult
 
-    brain = BrainResult(target_npc="npc_2", player_intent="talk to blacksmith")
+    brain = make_brain_result(target_npc="npc_2", player_intent="talk to blacksmith")
     activated, mentioned, debug = activate_npcs_for_prompt(game, brain, "talk to blacksmith")
     activated_ids = {n.id for n in activated}
     assert "npc_2" in activated_ids
@@ -444,9 +443,8 @@ def test_activate_npcs_name_mention(stub_engine: None) -> None:
     from straightjacket.engine.npc.activation import activate_npcs_for_prompt
 
     game = _make_game()
-    from straightjacket.engine.models import BrainResult
 
-    brain = BrainResult(player_intent="I look for Kira")
+    brain = make_brain_result(player_intent="I look for Kira")
     activated, mentioned, debug = activate_npcs_for_prompt(game, brain, "I look for Kira")
     all_npcs = {n.id for n in activated} | {n.id for n in mentioned}
     assert "npc_1" in all_npcs

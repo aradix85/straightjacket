@@ -7,8 +7,8 @@ it catches every violation. Also verifies it passes clean states.
 Run: python -m pytest tests/test_invariants.py -v
 """
 
-from straightjacket.engine.models import ClockData, GameState, MemoryEntry, NpcData
-from tests._helpers import make_game_state
+from straightjacket.engine.models import GameState
+from tests._helpers import make_clock, make_game_state, make_memory, make_npc
 
 import sys as _sys
 from pathlib import Path as _Path
@@ -29,16 +29,16 @@ def _clean_game() -> GameState:
     game.world.chaos_factor = 5
     game.narrative.scene_count = 3
     game.npcs = [
-        NpcData(
+        make_npc(
             id="npc_1",
             name="Kira",
             status="active",
             disposition="friendly",
-            memory=[MemoryEntry(scene=1, event="Met player", type="observation", importance=3)],
+            memory=[make_memory(scene=1, event="Met player", type="observation", importance=3)],
         ),
     ]
     game.world.clocks = [
-        ClockData(name="Doom", clock_type="threat", segments=6, filled=2),
+        make_clock(name="Doom", clock_type="threat", segments=6, filled=2),
     ]
     from straightjacket.engine.models import SceneLogEntry
 
@@ -139,7 +139,7 @@ def test_catches_npc_invalid_disposition(load_engine: None) -> None:
 
 def test_catches_npc_memory_missing_fields(load_engine: None) -> None:
     game = _clean_game()
-    game.npcs[0].memory = [MemoryEntry(scene=1, event="", type="", importance=0)]
+    game.npcs[0].memory = [make_memory(scene=1, event="", type="", importance=0)]
     violations = assert_game_state(game, turn=1)
     assert any("event" in v for v in violations)
     assert any("type" in v for v in violations)

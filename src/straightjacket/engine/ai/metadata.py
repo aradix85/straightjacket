@@ -113,11 +113,16 @@ def _process_lore_npcs(game: GameState, lore_list: list) -> None:
         if fuzzy:
             continue
         npc_id, _ = next_npc_id(game)
+        # Lore NPCs are historically significant but never physically present;
+        # disposition=neutral because there is no active stance toward the player,
+        # and introduced=False because they never appear on-screen.
         npc = NpcData(
             id=npc_id,
             name=name,
             description=entry.get("description", ""),
+            disposition="neutral",
             status="lore",
+            introduced=False,
         )
         apply_name_sanitization(npc)
         game.npcs.append(npc)

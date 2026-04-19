@@ -5,6 +5,18 @@ Originally forked from [EdgeTales](https://github.com/edgetales/edgetales). See 
 
 ---
 
+## [0.61.0] — 2026-04-19
+
+Batch F from the v0.60.0 audit. Dataclass-field defaults that duplicated yaml or hardcoded a domain enum are gone. `Resources` and `WorldState` got `from_config()` classmethods used as `GameState`'s default factories. `ProgressTrack` and `ThreatData` got `.new()` factories that read `max_ticks` from the new `progress.yaml max_ticks` key. `ClockData`, `FateResult`, `MemoryEntry`, `RandomEvent`, and the structural fields on `NpcData` are now required. `NpcData.introduced` flipped from True to False — fresh NPCs haven't been shown on screen. `CampaignState` legacy tracks read display names from `strings/status.yaml` and rank from `legacy.yaml`. `BrainResult.type/move/stat` became kw_only required; the brain-exception fallback and the correction null-brain sentinel supply them explicitly.
+
+`db/schema.sql` dropped `DEFAULT` clauses on now-required fields and flipped `introduced` to 0. Dead `game.resources.health = ...` overrides in `game_start.py` are gone — `from_config()` already reads those keys. Two silent fallbacks found in passing: the `"neutral"` on `disp_to_emotion.get(...)` in `npc/processing.py` and the `"actions"` default on `roll_meaning_table()` both raise now.
+
+Tests: `tests/_helpers.py` grew from one helper to nine, one per dataclass, holding test-only defaults like `"dangerous"` rank and `"neutral"` disposition. 30 test files migrated to the helpers; tests that exercise specific values still pass their own kwargs. Production stays strict, test boilerplate lives in one place.
+
+Delivery gate: 783 tests green in 3.8s, ruff + ruff format + mypy clean on 87 source files.
+
+---
+
 ## [0.60.0] — 2026-04-19
 
 Tranche 8 expanded: every yaml store in the repo is now modular. Callsites unchanged — each loader globs its directory, merges top-level keys, raises on duplicates.

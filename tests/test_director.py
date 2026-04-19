@@ -3,13 +3,11 @@
 
 from straightjacket.engine.models import (
     GameState,
-    MemoryEntry,
-    NpcData,
     SceneLogEntry,
     StoryAct,
     StoryBlueprint,
 )
-from tests._helpers import make_game_state
+from tests._helpers import make_game_state, make_memory, make_npc
 
 
 def _game() -> GameState:
@@ -17,7 +15,7 @@ def _game() -> GameState:
     game.narrative.scene_count = 6
     game.narrative.session_log.append(SceneLogEntry(scene=6, summary="Last scene"))
     game.npcs = [
-        NpcData(
+        make_npc(
             id="npc_1",
             name="Kira",
             disposition="friendly",
@@ -26,9 +24,9 @@ def _game() -> GameState:
             description="Young archivist.",
             needs_reflection=True,
             importance_accumulator=35,
-            memory=[MemoryEntry(scene=5, event="Helped player", importance=5)],
+            memory=[make_memory(scene=5, event="Helped player", importance=5)],
         ),
-        NpcData(
+        make_npc(
             id="npc_2",
             name="Borin",
             disposition="neutral",

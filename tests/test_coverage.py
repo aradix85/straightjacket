@@ -8,12 +8,10 @@ Coverage-padding tests (empty-input returns empty, pass-through returns same obj
 import json
 
 from straightjacket.engine.models import (
-    ClockData,
     GameState,
-    NpcData,
     SceneLogEntry,
 )
-from tests._helpers import make_game_state
+from tests._helpers import make_clock, make_game_state, make_npc
 
 
 def _game() -> GameState:
@@ -33,7 +31,7 @@ def _game() -> GameState:
     g.resources.spirit = 4
     g.preferences.content_lines = "no spiders"
     g.preferences.player_wishes = "a loyal dog"
-    g.npcs = [NpcData(id="npc_1", name="Kira", disposition="friendly")]
+    g.npcs = [make_npc(id="npc_1", name="Kira", disposition="friendly")]
     return g
 
 
@@ -239,7 +237,7 @@ def test_seed_opening_memories_matches_and_skips(stub_all: None) -> None:
 
     game = make_game_state(player_name="Hero")
     game.narrative.scene_count = 1
-    game.npcs = [NpcData(id="npc_1", name="Captain Ashwood")]
+    game.npcs = [make_npc(id="npc_1", name="Captain Ashwood")]
     seed_opening_memories(
         game,
         [
@@ -254,7 +252,7 @@ def test_apply_world_setup_replace_vs_extend(stub_all: None) -> None:
     from straightjacket.engine.game.setup_common import apply_world_setup
 
     game = make_game_state(player_name="Hero")
-    game.world.clocks = [ClockData(name="Old")]
+    game.world.clocks = [make_clock(name="Old")]
     apply_world_setup(
         game,
         {
@@ -268,7 +266,7 @@ def test_apply_world_setup_replace_vs_extend(stub_all: None) -> None:
     assert len(game.world.clocks) == 1
     assert game.world.clocks[0].name == "New"
 
-    game.world.clocks = [ClockData(name="Old")]
+    game.world.clocks = [make_clock(name="Old")]
     apply_world_setup(
         game,
         {

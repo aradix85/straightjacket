@@ -6,7 +6,8 @@ from typing import Any
 
 import pytest
 
-from straightjacket.engine.models import GameState, MemoryEntry, NpcData, ClockData
+from straightjacket.engine.models import GameState
+from tests._helpers import make_clock, make_memory, make_npc
 
 
 def _game() -> GameState:
@@ -16,14 +17,14 @@ def _game() -> GameState:
     game.world.current_location = "TestTavern"
     game.narrative.scene_count = 3
     game.npcs = [
-        NpcData(
+        make_npc(
             id="npc_1",
             name="Ally",
             disposition="friendly",
-            memory=[MemoryEntry(scene=1, event="Met player", importance=3)],
+            memory=[make_memory(scene=1, event="Met player", importance=3)],
         ),
     ]
-    game.world.clocks = [ClockData(name="Doom", segments=6, filled=2)]
+    game.world.clocks = [make_clock(name="Doom", segments=6, filled=2)]
     return game
 
 

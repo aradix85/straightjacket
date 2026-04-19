@@ -7,6 +7,8 @@ the full pipeline without real API calls.
 Run: python -m pytest tests/test_integration.py -v
 """
 
+from tests._helpers import make_brain_result, make_clock, make_memory, make_npc
+
 import sys
 import json
 
@@ -175,7 +177,7 @@ class MockProvider:
 
 def _make_game():  # type: ignore[no-untyped-def]
     """Create a game state ready for turn processing."""
-    from straightjacket.engine.models import GameState, MemoryEntry, NpcData, ClockData
+    from straightjacket.engine.models import GameState
 
     game = GameState(
         player_name="Kael",
@@ -193,7 +195,7 @@ def _make_game():  # type: ignore[no-untyped-def]
     game.world.time_of_day = "evening"
     game.world.chaos_factor = 5
     game.world.clocks = [
-        ClockData(
+        make_clock(
             name="Shadow Rising",
             clock_type="threat",
             segments=6,
@@ -203,7 +205,7 @@ def _make_game():  # type: ignore[no-untyped-def]
         ),
     ]
     game.npcs = [
-        NpcData(
+        make_npc(
             id="npc_1",
             name="Mira",
             disposition="friendly",
@@ -211,7 +213,7 @@ def _make_game():  # type: ignore[no-untyped-def]
             instinct="trust cautiously",
             description="Young archivist with ink-stained hands",
             memory=[
-                MemoryEntry(
+                make_memory(
                     event="Met the player at the entrance", emotional_weight="curious", type="observation", scene=1
                 )
             ],
@@ -356,10 +358,10 @@ def test_scene_test_produces_three_types(load_engine: None) -> None:
 def test_dialog_prompt_contains_world_and_character(stub_engine: None) -> None:
     """Dialog prompt must include world genre and character name."""
     from straightjacket.engine.prompt_builders import build_dialog_prompt
-    from straightjacket.engine.models import BrainResult, EngineConfig
+    from straightjacket.engine.models import EngineConfig
 
     game = _make_game()
-    brain = BrainResult(
+    brain = make_brain_result(
         move="dialog",
         target_npc="npc_1",
         player_intent="Ask about the archives",
@@ -377,10 +379,10 @@ def test_dialog_prompt_contains_world_and_character(stub_engine: None) -> None:
 def test_action_prompt_contains_result_and_position(stub_engine: None) -> None:
     """Action prompt must include roll result and position."""
     from straightjacket.engine.prompt_builders import build_action_prompt
-    from straightjacket.engine.models import BrainResult, EngineConfig, RollResult
+    from straightjacket.engine.models import EngineConfig, RollResult
 
     game = _make_game()
-    brain = BrainResult(
+    brain = make_brain_result(
         move="adventure/face_danger",
         stat="wits",
         player_intent="Search for hidden compartments",
@@ -437,7 +439,7 @@ def test_narrator_system_prompt_includes_constraints(stub_engine: None) -> None:
 def test_correction_brain_parses_response(stub_engine: None) -> None:
     """Correction brain should return a structured correction dict."""
     from straightjacket.engine.correction import call_correction_brain
-    from straightjacket.engine.models import BrainResult, EngineConfig
+    from straightjacket.engine.models import EngineConfig
 
     provider = MockProvider()
     game = _make_game()
@@ -445,7 +447,9 @@ def test_correction_brain_parses_response(stub_engine: None) -> None:
     # Create a fake snapshot (normally done by turn processing)
     game.last_turn_snapshot = game.snapshot()
     game.last_turn_snapshot.player_input = "I attack the guard"
-    game.last_turn_snapshot.brain = BrainResult(move="combat/strike", stat="iron", player_intent="Attack the guard")
+    game.last_turn_snapshot.brain = make_brain_result(
+        move="combat/strike", stat="iron", player_intent="Attack the guard"
+    )
     game.last_turn_snapshot.roll = None
     game.last_turn_snapshot.narration = "You swing your sword..."
 
@@ -722,11 +726,10 @@ def test_description_match_rejects_short_descriptions(stub_engine: None) -> None
 def test_merge_npc_identity_updates_clock_owner(stub_engine: None) -> None:
     """merge_npc_identity updates clock owners when NPC is renamed."""
     from straightjacket.engine.npc.lifecycle import merge_npc_identity
-    from straightjacket.engine.models import ClockData
 
     game = _make_game()
     game.world.clocks = [
-        ClockData(name="Mira's scheme", clock_type="scheme", owner="Mira"),
+        make_clock(name="Mira's scheme", clock_type="scheme", owner="Mira"),
     ]
     npc = game.npcs[0]  # Mira
     merge_npc_identity(npc, "Captain Voss", game=game)
@@ -739,14 +742,13 @@ def test_merge_npc_identity_updates_clock_owner(stub_engine: None) -> None:
 def test_correction_state_ops_npc_merge(stub_engine: None) -> None:
     """npc_merge absorbs source NPC into target, transfers memories."""
     from straightjacket.engine.correction import _apply_correction_ops
-    from straightjacket.engine.models import NpcData, MemoryEntry
 
     game = _make_game()
-    source = NpcData(
+    source = make_npc(
         id="npc_3",
         name="Stranger",
         disposition="neutral",
-        memory=[MemoryEntry(scene=2, event="saw fire", importance=5)],
+        memory=[make_memory(scene=2, event="saw fire", importance=5)],
     )
     game.npcs.append(source)
     ops = [{"op": "npc_merge", "npc_id": "npc_1", "merge_source_id": "npc_3"}]
@@ -762,10 +764,9 @@ def test_correction_state_ops_npc_merge(stub_engine: None) -> None:
 
 def test_chapter_about_npc_id_remap(stub_engine: None) -> None:
     """Returning NPCs get new IDs at chapter boundary; about_npc refs must be rewritten."""
-    from straightjacket.engine.models import NpcData, MemoryEntry
 
-    npc_a = NpcData(id="npc_1", name="Kira", memory=[MemoryEntry(scene=3, event="trusts Borin", about_npc="npc_2")])
-    npc_b = NpcData(id="npc_2", name="Borin", memory=[MemoryEntry(scene=3, event="suspects Kira", about_npc="npc_1")])
+    npc_a = make_npc(id="npc_1", name="Kira", memory=[make_memory(scene=3, event="trusts Borin", about_npc="npc_2")])
+    npc_b = make_npc(id="npc_2", name="Borin", memory=[make_memory(scene=3, event="suspects Kira", about_npc="npc_1")])
 
     # Simulate the ID remap logic from start_new_chapter
     from straightjacket.engine.npc import next_npc_id

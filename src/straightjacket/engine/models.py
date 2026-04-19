@@ -79,11 +79,16 @@ class RollResult(SerializableMixin):
 
 @dataclass
 class BrainResult(SerializableMixin):
-    """Structured output from call_brain."""
+    """Structured output from call_brain.
 
-    type: str = "action"
-    move: str = "dialog"
-    stat: str = "none"
+    type/move/stat required — brain classification never produces a silent
+    default. The AI-call carve-out graceful-degradation path in brain.py
+    supplies them explicitly on exception.
+    """
+
+    type: str = field(kw_only=True)
+    move: str = field(kw_only=True)
+    stat: str = field(kw_only=True)
     approach: str = ""
     target_npc: str | None = None
     dialog_only: bool = False
@@ -153,8 +158,8 @@ class GameState(SerializableMixin):
     impacts: list[str] = field(default_factory=list)
     truths: dict[str, str] = field(default_factory=dict)
 
-    resources: Resources = field(default_factory=Resources)
-    world: WorldState = field(default_factory=WorldState)
+    resources: Resources = field(default_factory=Resources.from_config)
+    world: WorldState = field(default_factory=WorldState.from_config)
     narrative: NarrativeState = field(default_factory=NarrativeState)
     campaign: CampaignState = field(default_factory=CampaignState)
     preferences: PlayerPreferences = field(default_factory=PlayerPreferences)

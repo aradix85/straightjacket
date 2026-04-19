@@ -1,13 +1,13 @@
 """Tests for step 10: track type lifecycle, combat sync, scene challenge routing."""
 
-from straightjacket.engine.models import GameState, ProgressTrack, Resources, WorldState
-from tests._helpers import make_game_state
+from straightjacket.engine.models import GameState, Resources
+from tests._helpers import make_game_state, make_progress_track, make_world_state
 
 
 def _game(setting: str = "starforged", combat_position: str = "") -> GameState:
     g = make_game_state(player_name="Hero", setting_id=setting)
     g.resources = Resources(health=5, spirit=5, supply=5, momentum=2, max_momentum=10)
-    g.world = WorldState(current_location="Iron Hold", combat_position=combat_position)
+    g.world = make_world_state(current_location="Iron Hold", combat_position=combat_position)
     return g
 
 
@@ -19,7 +19,7 @@ class TestCombatTrackSync:
         from straightjacket.engine.game.tracks import complete_track
 
         game = _game(combat_position="in_control")
-        game.progress_tracks.append(ProgressTrack(id="c1", name="Fight", track_type="combat", ticks=20))
+        game.progress_tracks.append(make_progress_track(id="c1", name="Fight", track_type="combat", ticks=20))
         complete_track(game, "c1", "completed")
         assert game.progress_tracks[0].status == "completed"
         assert game.world.combat_position == ""
@@ -28,7 +28,7 @@ class TestCombatTrackSync:
         from straightjacket.engine.game.tracks import complete_track
 
         game = _game(combat_position="bad_spot")
-        game.progress_tracks.append(ProgressTrack(id="c1", name="Fight", track_type="combat", ticks=8))
+        game.progress_tracks.append(make_progress_track(id="c1", name="Fight", track_type="combat", ticks=8))
         complete_track(game, "c1", "failed")
         assert game.progress_tracks[0].status == "failed"
         assert game.world.combat_position == ""
@@ -37,7 +37,7 @@ class TestCombatTrackSync:
         from straightjacket.engine.game.tracks import complete_track
 
         game = _game(combat_position="in_control")
-        game.progress_tracks.append(ProgressTrack(id="v1", name="Vow", track_type="vow", ticks=40))
+        game.progress_tracks.append(make_progress_track(id="v1", name="Vow", track_type="vow", ticks=40))
         complete_track(game, "v1", "completed")
         assert game.world.combat_position == "in_control"
 
@@ -45,7 +45,7 @@ class TestCombatTrackSync:
         from straightjacket.engine.game.tracks import sync_combat_tracks
 
         game = _game(combat_position="")
-        game.progress_tracks.append(ProgressTrack(id="c1", name="Fight", track_type="combat", ticks=12))
+        game.progress_tracks.append(make_progress_track(id="c1", name="Fight", track_type="combat", ticks=12))
         sync_combat_tracks(game)
         assert game.progress_tracks[0].status == "failed"
 
@@ -53,7 +53,7 @@ class TestCombatTrackSync:
         from straightjacket.engine.game.tracks import sync_combat_tracks
 
         game = _game(combat_position="in_control")
-        game.progress_tracks.append(ProgressTrack(id="c1", name="Fight", track_type="combat", ticks=12))
+        game.progress_tracks.append(make_progress_track(id="c1", name="Fight", track_type="combat", ticks=12))
         sync_combat_tracks(game)
         assert game.progress_tracks[0].status == "active"
 
@@ -62,7 +62,7 @@ class TestCombatTrackSync:
 
         game = _game(combat_position="")
         game.progress_tracks.append(
-            ProgressTrack(id="c1", name="Fight", track_type="combat", ticks=40, status="completed")
+            make_progress_track(id="c1", name="Fight", track_type="combat", ticks=40, status="completed")
         )
         sync_combat_tracks(game)
         assert game.progress_tracks[0].status == "completed"
@@ -71,7 +71,7 @@ class TestCombatTrackSync:
         from straightjacket.engine.game.tracks import sync_combat_tracks
 
         game = _game(combat_position="")
-        game.progress_tracks.append(ProgressTrack(id="v1", name="Vow", track_type="vow", ticks=12))
+        game.progress_tracks.append(make_progress_track(id="v1", name="Vow", track_type="vow", ticks=12))
         sync_combat_tracks(game)
         assert game.progress_tracks[0].status == "active"
 
@@ -90,7 +90,7 @@ class TestSceneChallengeRouting:
     def test_scene_challenge_progress_on_hit(self, load_engine: None) -> None:
         """Scene challenge track gets progress when adventure move succeeds."""
         game = _game()
-        sc = ProgressTrack(id="sc1", name="Escape", track_type="scene_challenge", rank="dangerous")
+        sc = make_progress_track(id="sc1", name="Escape", track_type="scene_challenge", rank="dangerous")
         game.progress_tracks.append(sc)
         old_ticks = sc.ticks
         sc.mark_progress()
@@ -106,7 +106,7 @@ class TestAvailableMovesStatusFilter:
 
         game = _game()
         game.progress_tracks.append(
-            ProgressTrack(id="v1", name="Old Vow", track_type="vow", ticks=40, status="completed")
+            make_progress_track(id="v1", name="Old Vow", track_type="vow", ticks=40, status="completed")
         )
         result = available_moves(game)
         move_keys = {m["move"] for m in result["moves"]}
@@ -116,7 +116,7 @@ class TestAvailableMovesStatusFilter:
         from straightjacket.engine.tools.builtins import available_moves
 
         game = _game()
-        game.progress_tracks.append(ProgressTrack(id="v1", name="Active Vow", track_type="vow", ticks=20))
+        game.progress_tracks.append(make_progress_track(id="v1", name="Active Vow", track_type="vow", ticks=20))
         result = available_moves(game)
         move_keys = {m["move"] for m in result["moves"]}
         assert "quest/fulfill_your_vow" in move_keys
@@ -126,7 +126,7 @@ class TestAvailableMovesStatusFilter:
 
         game = _game(combat_position="in_control")
         game.progress_tracks.append(
-            ProgressTrack(id="c1", name="Fight", track_type="combat", ticks=20, status="failed")
+            make_progress_track(id="c1", name="Fight", track_type="combat", ticks=20, status="failed")
         )
         result = available_moves(game)
         move_keys = {m["move"] for m in result["moves"]}
@@ -137,7 +137,7 @@ class TestAvailableMovesStatusFilter:
 
         game = _game()
         game.progress_tracks.append(
-            ProgressTrack(id="e1", name="Journey", track_type="expedition", ticks=40, status="completed")
+            make_progress_track(id="e1", name="Journey", track_type="expedition", ticks=40, status="completed")
         )
         result = available_moves(game)
         move_keys = {m["move"] for m in result["moves"]}
@@ -148,7 +148,7 @@ class TestAvailableMovesStatusFilter:
 
         game = _game()
         game.progress_tracks.append(
-            ProgressTrack(id="sc1", name="Escape", track_type="scene_challenge", ticks=40, status="completed")
+            make_progress_track(id="sc1", name="Escape", track_type="scene_challenge", ticks=40, status="completed")
         )
         result = available_moves(game)
         move_keys = {m["move"] for m in result["moves"]}
@@ -170,7 +170,7 @@ class TestTracksStatus:
         from straightjacket.web.serializers import build_tracks_status
 
         game = _game()
-        game.progress_tracks.append(ProgressTrack(id="v1", name="Iron Vow", track_type="vow", ticks=20))
+        game.progress_tracks.append(make_progress_track(id="v1", name="Iron Vow", track_type="vow", ticks=20))
         result = build_tracks_status(game)
         assert "Iron Vow" in result
 
@@ -178,7 +178,7 @@ class TestTracksStatus:
         from straightjacket.web.serializers import build_tracks_status
 
         game = _game(combat_position="in_control")
-        game.progress_tracks.append(ProgressTrack(id="c1", name="Fight", track_type="combat", ticks=12))
+        game.progress_tracks.append(make_progress_track(id="c1", name="Fight", track_type="combat", ticks=12))
         result = build_tracks_status(game)
         assert "Fight" in result
         assert "in control" in result
@@ -188,7 +188,7 @@ class TestTracksStatus:
 
         game = _game()
         game.progress_tracks.append(
-            ProgressTrack(id="v1", name="Done Vow", track_type="vow", ticks=40, status="completed")
+            make_progress_track(id="v1", name="Done Vow", track_type="vow", ticks=40, status="completed")
         )
         result = build_tracks_status(game)
         assert "Done Vow" not in result

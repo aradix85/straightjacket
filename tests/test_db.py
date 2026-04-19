@@ -16,13 +16,12 @@ from straightjacket.engine.models import (
     GameState,
     MemoryEntry,
     NpcData,
-    ProgressTrack,
     ThreadEntry,
     CharacterListEntry,
     NarrationEntry,
     SceneLogEntry,
 )
-from tests._helpers import make_game_state
+from tests._helpers import make_clock, make_game_state, make_memory, make_npc, make_progress_track
 
 
 def _fresh_db() -> sqlite3.Connection:
@@ -34,7 +33,7 @@ def _game_with_npcs() -> GameState:
     """GameState with two NPCs, memories, a thread, a clock, and a scene log entry."""
     game = make_game_state(player_name="Ash", setting_id="starforged")
     game.npcs = [
-        NpcData(
+        make_npc(
             id="npc_1",
             name="Kira",
             description="A smuggler with cold eyes",
@@ -45,11 +44,11 @@ def _game_with_npcs() -> GameState:
             aliases=["K"],
             secrets=["Knows the vault code"],
             memory=[
-                MemoryEntry(scene=1, event="Met the player at the docks", importance=5, emotional_weight="curious"),
-                MemoryEntry(scene=3, event="Player broke a promise", importance=8, emotional_weight="betrayed"),
+                make_memory(scene=1, event="Met the player at the docks", importance=5, emotional_weight="curious"),
+                make_memory(scene=3, event="Player broke a promise", importance=8, emotional_weight="betrayed"),
             ],
         ),
-        NpcData(
+        make_npc(
             id="npc_2",
             name="Rowan",
             description="A healer",
@@ -57,8 +56,8 @@ def _game_with_npcs() -> GameState:
             status="background",
             last_location="clinic",
             memory=[
-                MemoryEntry(scene=2, event="Healed the player's wound", importance=4, type="observation"),
-                MemoryEntry(
+                make_memory(scene=2, event="Healed the player's wound", importance=4, type="observation"),
+                make_memory(
                     scene=4, event="Growing respect for the player", importance=7, type="reflection", tone="protective"
                 ),
             ],
@@ -71,9 +70,9 @@ def _game_with_npcs() -> GameState:
         ThreadEntry(id="thread_2", name="Old grudge", thread_type="tension", weight=1, active=False)
     )
     game.narrative.characters_list.append(CharacterListEntry(id="npc_1", name="Kira", entry_type="npc", weight=2))
-    game.world.clocks.append(ClockData(name="Vault heist", clock_type="scheme", segments=6, filled=2, owner="Kira"))
+    game.world.clocks.append(make_clock(name="Vault heist", clock_type="scheme", segments=6, filled=2, owner="Kira"))
     game.world.clocks.append(
-        ClockData(name="Storm", clock_type="threat", segments=4, filled=4, fired=True, fired_at_scene=5)
+        make_clock(name="Storm", clock_type="threat", segments=4, filled=4, fired=True, fired_at_scene=5)
     )
     game.narrative.scene_count = 5
     game.narrative.session_log.append(
@@ -83,7 +82,7 @@ def _game_with_npcs() -> GameState:
         NarrationEntry(scene=1, prompt_summary="Opening", narration="The salt air bit at your skin.")
     )
     game.progress_tracks.append(
-        ProgressTrack(id="vow_bg", name="Find the vault", track_type="vow", rank="dangerous", ticks=8)
+        make_progress_track(id="vow_bg", name="Find the vault", track_type="vow", rank="dangerous", ticks=8)
     )
     return game
 

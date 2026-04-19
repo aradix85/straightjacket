@@ -9,10 +9,7 @@ import pytest
 # Stubs are set up in conftest.py
 
 from straightjacket.engine.engine_loader import eng
-from straightjacket.engine.models import (
-    ProgressTrack,
-)
-from tests._helpers import make_game_state
+from tests._helpers import make_game_state, make_progress_track
 
 
 # ── ProgressTrack ─────────────────────────────────────────────
@@ -21,12 +18,12 @@ from tests._helpers import make_game_state
 def test_progress_track_ticks_per_mark() -> None:
     expected_table = eng().progress.track_types["default"].ticks_per_mark
     for rank, expected in expected_table.items():
-        t = ProgressTrack(rank=rank)
+        t = make_progress_track(rank=rank)
         assert t.ticks_per_mark == expected
 
 
 def test_progress_track_mark_progress_troublesome() -> None:
-    t = ProgressTrack(rank="troublesome", ticks=0)
+    t = make_progress_track(rank="troublesome", ticks=0)
     added = t.mark_progress()
     assert added == 12
     assert t.ticks == 12
@@ -34,7 +31,7 @@ def test_progress_track_mark_progress_troublesome() -> None:
 
 
 def test_progress_track_mark_progress_epic() -> None:
-    t = ProgressTrack(rank="epic", ticks=0)
+    t = make_progress_track(rank="epic", ticks=0)
     added = t.mark_progress()
     assert added == 1
     assert t.ticks == 1
@@ -42,14 +39,14 @@ def test_progress_track_mark_progress_epic() -> None:
 
 
 def test_progress_track_mark_progress_clamps_at_max() -> None:
-    t = ProgressTrack(rank="troublesome", ticks=36)
+    t = make_progress_track(rank="troublesome", ticks=36)
     added = t.mark_progress()
     assert t.ticks == 40
     assert added == 4
 
 
 def test_progress_track_filled_boxes() -> None:
-    t = ProgressTrack(ticks=17)
+    t = make_progress_track(ticks=17)
     assert t.filled_boxes == 4  # 17 // 4
 
 

@@ -228,6 +228,48 @@ class ChapterSummary(SerializableMixin):
     scenes: int = 0
 
 
+def _legacy_quests_factory() -> ProgressTrack:
+    from .engine_loader import eng
+    from ..i18n import t
+
+    _e = eng()
+    return ProgressTrack(
+        id="legacy_quests",
+        name=t("status.legacy_name_quests"),
+        track_type="legacy",
+        rank=_e.legacy.starting_rank,
+        max_ticks=_e.progress.max_ticks,
+    )
+
+
+def _legacy_bonds_factory() -> ProgressTrack:
+    from .engine_loader import eng
+    from ..i18n import t
+
+    _e = eng()
+    return ProgressTrack(
+        id="legacy_bonds",
+        name=t("status.legacy_name_bonds"),
+        track_type="legacy",
+        rank=_e.legacy.starting_rank,
+        max_ticks=_e.progress.max_ticks,
+    )
+
+
+def _legacy_discoveries_factory() -> ProgressTrack:
+    from .engine_loader import eng
+    from ..i18n import t
+
+    _e = eng()
+    return ProgressTrack(
+        id="legacy_discoveries",
+        name=t("status.legacy_name_discoveries"),
+        track_type="legacy",
+        rank=_e.legacy.starting_rank,
+        max_ticks=_e.progress.max_ticks,
+    )
+
+
 @dataclass
 class CampaignState(SerializableMixin):
     """Chapter progression, epilogue, campaign-persistent XP and legacy tracks."""
@@ -238,20 +280,12 @@ class CampaignState(SerializableMixin):
     epilogue_dismissed: bool = False
     epilogue_text: str = ""
 
-    # Campaign-persistent progression (step 12)
+    # Campaign-persistent progression
     xp: int = 0  # Total XP earned across campaign
     xp_spent: int = 0  # Total XP spent on assets/upgrades
-    legacy_quests: ProgressTrack = field(
-        default_factory=lambda: ProgressTrack(id="legacy_quests", name="Quests", track_type="legacy", rank="epic")
-    )
-    legacy_bonds: ProgressTrack = field(
-        default_factory=lambda: ProgressTrack(id="legacy_bonds", name="Bonds", track_type="legacy", rank="epic")
-    )
-    legacy_discoveries: ProgressTrack = field(
-        default_factory=lambda: ProgressTrack(
-            id="legacy_discoveries", name="Discoveries", track_type="legacy", rank="epic"
-        )
-    )
+    legacy_quests: ProgressTrack = field(default_factory=_legacy_quests_factory)
+    legacy_bonds: ProgressTrack = field(default_factory=_legacy_bonds_factory)
+    legacy_discoveries: ProgressTrack = field(default_factory=_legacy_discoveries_factory)
 
     @property
     def xp_available(self) -> int:
