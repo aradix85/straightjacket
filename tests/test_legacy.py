@@ -3,10 +3,11 @@
 from __future__ import annotations
 
 from straightjacket.engine.models import GameState, ThreatData
+from tests._helpers import make_game_state
 
 
 def _game() -> GameState:
-    return GameState(player_name="Hero", setting_id="starforged")
+    return make_game_state(player_name="Hero", setting_id="starforged")
 
 
 class TestMarkLegacy:

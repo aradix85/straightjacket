@@ -17,7 +17,8 @@ from straightjacket.engine.mechanics.fate import (
     resolve_fate_check,
     resolve_likelihood,
 )
-from straightjacket.engine.models import GameState, NpcData
+from straightjacket.engine.models import NpcData
+from tests._helpers import make_game_state
 
 
 # ── Fate chart method ────────────────────────────────────────
@@ -126,7 +127,7 @@ def test_fate_results_carry_random_event_flag() -> None:
 
 def test_resolve_fate_method_override(load_engine: None) -> None:
     """Explicit method parameter overrides engine.yaml default."""
-    game = GameState()
+    game = make_game_state()
     game.world.chaos_factor = 5
     chart = resolve_fate(game, "fifty_fifty", chaos_factor=5, method="fate_chart")
     check = resolve_fate(game, "fifty_fifty", chaos_factor=5, method="fate_check")
@@ -160,14 +161,14 @@ def test_fate_check_all_odds_all_cf() -> None:
 
 def test_likelihood_default_fifty_fifty(load_engine: None) -> None:
     """No context factors → fifty_fifty."""
-    game = GameState()
+    game = make_game_state()
     game.world.chaos_factor = 5
     assert resolve_likelihood(game) == "fifty_fifty"
 
 
 def test_likelihood_npc_disposition_shifts_odds(load_engine: None) -> None:
     """NPC disposition in context_hint shifts odds in expected direction."""
-    game = GameState()
+    game = make_game_state()
     game.world.chaos_factor = 5
 
     friendly = NpcData(id="npc_1", name="Kira", status="active", disposition="friendly")
@@ -183,9 +184,9 @@ def test_likelihood_npc_disposition_shifts_odds(load_engine: None) -> None:
 
 def test_likelihood_chaos_shifts_odds(load_engine: None) -> None:
     """High chaos shifts down, low chaos shifts up."""
-    high = GameState()
+    high = make_game_state()
     high.world.chaos_factor = 8
-    low = GameState()
+    low = make_game_state()
     low.world.chaos_factor = 2
 
     high_odds = resolve_likelihood(high)
@@ -195,12 +196,12 @@ def test_likelihood_chaos_shifts_odds(load_engine: None) -> None:
 
 def test_likelihood_critical_resources(load_engine: None) -> None:
     """Critical health contributes negative score (stacks with other factors)."""
-    game = GameState()
+    game = make_game_state()
     game.world.chaos_factor = 5
     game.resources.health = 1
     odds_critical = resolve_likelihood(game)
 
-    game2 = GameState()
+    game2 = make_game_state()
     game2.world.chaos_factor = 5
     game2.resources.health = 5
     odds_healthy = resolve_likelihood(game2)
@@ -211,7 +212,7 @@ def test_likelihood_critical_resources(load_engine: None) -> None:
 
 def test_likelihood_factors_stack(load_engine: None) -> None:
     """Multiple negative factors produce strongly unfavorable odds."""
-    game = GameState()
+    game = make_game_state()
     game.world.chaos_factor = 8
     game.resources.health = 1
     npc = NpcData(id="npc_1", name="Kira", status="active", disposition="hostile")
@@ -227,7 +228,7 @@ def test_fate_question_tool_end_to_end(load_engine: None) -> None:
     """fate_question tool resolves likelihood, rolls fate, returns structured result."""
     from straightjacket.engine.tools.builtins import fate_question
 
-    game = GameState()
+    game = make_game_state()
     game.world.chaos_factor = 5
     npc = NpcData(id="npc_1", name="Kira", status="active", disposition="loyal")
     game.npcs.append(npc)

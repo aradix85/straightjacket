@@ -1,10 +1,11 @@
 """Tests for step 11a: threats and menace tracks."""
 
 from straightjacket.engine.models import GameState, ProgressTrack, Resources, ThreatData, WorldState
+from tests._helpers import make_game_state
 
 
 def _game_with_threat() -> GameState:
-    g = GameState(player_name="Hero", setting_id="starforged")
+    g = make_game_state(player_name="Hero", setting_id="starforged")
     g.resources = Resources(health=5, spirit=5, supply=5, momentum=2, max_momentum=10)
     g.world = WorldState(current_location="Iron Hold")
     vow = ProgressTrack(id="vow_hunt", name="Hunt the beast", track_type="vow", rank="dangerous", ticks=8)
@@ -214,7 +215,7 @@ class TestThreatsStatus:
     def test_no_threats(self, load_engine: None) -> None:
         from straightjacket.web.serializers import build_threats_status
 
-        game = GameState()
+        game = make_game_state()
         text = build_threats_status(game)
         assert "No active threats" in text
 

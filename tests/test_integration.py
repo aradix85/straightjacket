@@ -183,11 +183,7 @@ def _make_game():  # type: ignore[no-untyped-def]
         setting_genre="dark_fantasy",
         setting_tone="serious_balanced",
         setting_description="A world of fading magic and creeping shadow.",
-        edge=1,
-        heart=2,
-        iron=1,
-        shadow=1,
-        wits=2,
+        stats={"edge": 1, "heart": 2, "iron": 1, "shadow": 1, "wits": 2},
     )
     game.resources.health = 4
     game.resources.spirit = 3

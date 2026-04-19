@@ -9,10 +9,11 @@ from straightjacket.engine.models import (
     StoryAct,
     StoryBlueprint,
 )
+from tests._helpers import make_game_state
 
 
 def _game() -> GameState:
-    game = GameState(player_name="Hero")
+    game = make_game_state(player_name="Hero")
     game.narrative.scene_count = 6
     game.narrative.session_log.append(SceneLogEntry(scene=6, summary="Last scene"))
     game.npcs = [

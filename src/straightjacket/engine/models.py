@@ -141,17 +141,11 @@ class GameState(SerializableMixin):
     setting_tone: str = ""
     setting_archetype: str = ""
     setting_description: str = ""
-    # TODO tranche 7: these five stat fields hardcode the Ironsworn stat names
-    # (duplicating engine.yaml stats.names) and carry the canonical 3-2-2-1-1
-    # array as defaults (magic-number tuning on dataclass fields). Readers go
-    # through eng().stats.names since tranche 3.3; migration here is a storage-
-    # schema change — touches save-file format, snapshot/restore, and the db
-    # read-model. Not a drop-in edit.
-    edge: int = 1
-    heart: int = 2
-    iron: int = 1
-    shadow: int = 1
-    wits: int = 2
+    # Stats are required at construction. Keys and valid values come from
+    # engine.yaml stats (names, min, max, valid_arrays). No default here —
+    # a default would duplicate domain config and silently substitute an
+    # invalid character-creation state for a missing one.
+    stats: dict[str, int] = field(kw_only=True)
     backstory: str = ""
     assets: list[str] = field(default_factory=list)
     progress_tracks: list[ProgressTrack] = field(default_factory=list)
@@ -179,7 +173,9 @@ class GameState(SerializableMixin):
         valid = {n for n in eng().stats.names if n != "none"}
         if name not in valid:
             raise ValueError(f"Unknown stat: {name!r} (valid: {sorted(valid)})")
-        return getattr(self, name)
+        if name not in self.stats:
+            raise KeyError(f"Stat {name!r} not set on GameState")
+        return self.stats[name]
 
     def snapshot(self) -> TurnSnapshot:
         """Complete snapshot of all mutable state. Called once at turn start."""

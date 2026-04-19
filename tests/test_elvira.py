@@ -13,12 +13,13 @@ from straightjacket.engine.models import (
     NpcData,
     ProgressTrack,
 )
+from tests._helpers import make_game_state
 
 
 @pytest.fixture()
 def game(load_engine: None) -> GameState:
     """Minimal game state with NPCs, clocks, tracks — exercises all snapshot fields."""
-    g = GameState(
+    g = make_game_state(
         player_name="Elvira",
         setting_id="starforged",
         setting_genre="starforged",

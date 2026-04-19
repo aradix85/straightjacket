@@ -10,7 +10,7 @@ from straightjacket.engine.models import GameState, MemoryEntry, NpcData, ClockD
 
 
 def _game() -> GameState:
-    game = GameState(player_name="TestHero", edge=2, heart=2, iron=1, shadow=1, wits=1)
+    game = GameState(player_name="TestHero", stats={"edge": 2, "heart": 2, "iron": 1, "shadow": 1, "wits": 1})
     game.resources.health = 4
     game.resources.momentum = 3
     game.world.current_location = "TestTavern"

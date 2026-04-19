@@ -152,11 +152,7 @@ def _game() -> "GameState":
         setting_genre="dark_fantasy",
         setting_tone="serious_balanced",
         setting_description="A world of fading magic.",
-        edge=1,
-        heart=2,
-        iron=1,
-        shadow=1,
-        wits=2,
+        stats={"edge": 1, "heart": 2, "iron": 1, "shadow": 1, "wits": 2},
     )
     game.resources.health = 4
     game.resources.spirit = 3

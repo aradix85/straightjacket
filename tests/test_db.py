@@ -22,6 +22,7 @@ from straightjacket.engine.models import (
     NarrationEntry,
     SceneLogEntry,
 )
+from tests._helpers import make_game_state
 
 
 def _fresh_db() -> sqlite3.Connection:
@@ -31,7 +32,7 @@ def _fresh_db() -> sqlite3.Connection:
 
 def _game_with_npcs() -> GameState:
     """GameState with two NPCs, memories, a thread, a clock, and a scene log entry."""
-    game = GameState(player_name="Ash", setting_id="starforged")
+    game = make_game_state(player_name="Ash", setting_id="starforged")
     game.npcs = [
         NpcData(
             id="npc_1",
@@ -217,7 +218,7 @@ def test_sync_replaces_not_appends() -> None:
 
 def test_sync_empty_game() -> None:
     _fresh_db()
-    game = GameState()
+    game = make_game_state()
     sync(game)
     conn = get_db()
     assert conn.execute("SELECT COUNT(*) FROM npcs").fetchone()[0] == 0

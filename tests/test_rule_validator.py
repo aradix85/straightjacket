@@ -9,6 +9,7 @@ from straightjacket.engine.ai.rule_validator import (
     check_result_integrity,
     run_rule_checks,
 )
+from tests._helpers import make_game_state
 
 
 # ── PLAYER AGENCY ────────────────────────────────────────────
@@ -159,9 +160,8 @@ def test_monologue_allows_dialog_exchange() -> None:
 
 def test_run_rule_checks_combines_violations() -> None:
     from straightjacket.engine.ai.rule_validator import ValidationContext
-    from straightjacket.engine.models import GameState
 
-    ctx = ValidationContext.build(GameState(), result_type="MISS")
+    ctx = ValidationContext.build(make_game_state(), result_type="MISS")
     result = run_rule_checks(
         narration="You feel a surge of dread. At least the torch still burns.",
         ctx=ctx,
@@ -172,9 +172,8 @@ def test_run_rule_checks_combines_violations() -> None:
 
 def test_run_rule_checks_clean_passes() -> None:
     from straightjacket.engine.ai.rule_validator import ValidationContext
-    from straightjacket.engine.models import GameState
 
-    ctx = ValidationContext.build(GameState(), result_type="MISS")
+    ctx = ValidationContext.build(make_game_state(), result_type="MISS")
     result = run_rule_checks(
         narration=(
             "The rope snaps. The current takes you, cold and fast. Your shoulder hits a rock and the pack tears free."
@@ -244,11 +243,10 @@ def test_consequence_empty_sentences_passes() -> None:
 def test_consequence_in_run_rule_checks() -> None:
     """Consequence checking moved to LLM validator — rule checker passes these through."""
     from straightjacket.engine.ai.rule_validator import ValidationContext, run_rule_checks
-    from straightjacket.engine.models import GameState
 
     narration = "The sun shines. Nothing happened."
     ctx = ValidationContext.build(
-        GameState(), result_type="MISS", consequence_sentences=["The blade finds the gap in your guard."]
+        make_game_state(), result_type="MISS", consequence_sentences=["The blade finds the gap in your guard."]
     )
     result = run_rule_checks(narration, ctx)
     # Rule checker no longer checks consequences — LLM validator handles semantic matching

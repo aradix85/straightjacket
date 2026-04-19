@@ -92,6 +92,14 @@ stats:
   # Client should offer only these; engine validates.
   valid_arrays:
     - [3, 2, 2, 1, 1]        # Starforged / Classic default
+  # Abbreviations used to render stats compactly in AI prompts
+  # (e.g. "E2 H1 I2 Sh1 W3"). "none" has no abbreviation — it isn't rendered.
+  prompt_abbreviations:
+    edge: E
+    heart: H
+    iron: I
+    shadow: Sh
+    wits: W
 
 # ── Character creation ────────────────────────────────────────
 creation:

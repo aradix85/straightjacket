@@ -34,7 +34,7 @@ def _fresh_db() -> sqlite3.Connection:
 
 def _game_with_data() -> GameState:
     """GameState with NPCs, threads, clocks for tool testing."""
-    game = GameState(player_name="Ash", setting_id="starforged")
+    game = make_game_state(player_name="Ash", setting_id="starforged")
     game.npcs = [
         NpcData(
             id="npc_1",
@@ -165,7 +165,7 @@ def test_execute_tool_call_success() -> None:
         """Echo a message."""
         return {"echo": message}
 
-    game = GameState()
+    game = make_game_state()
     result = execute_tool_call("test", {"name": "echo", "arguments": {"message": "hello"}}, game)
     assert '"echo": "hello"' in result
     clear_registry()
@@ -173,7 +173,7 @@ def test_execute_tool_call_success() -> None:
 
 def test_execute_tool_call_unknown() -> None:
     clear_registry()
-    game = GameState()
+    game = make_game_state()
     result = execute_tool_call("test", {"name": "nonexistent", "arguments": {}}, game)
     assert "unknown tool" in result
     clear_registry()
@@ -187,7 +187,7 @@ def test_execute_tool_call_error() -> None:
         """Always fails."""
         raise ValueError("boom")
 
-    game = GameState()
+    game = make_game_state()
     result = execute_tool_call("test", {"name": "broken", "arguments": {}}, game)
     assert "failed" in result
     assert "boom" in result
@@ -200,6 +200,7 @@ def test_execute_tool_call_error() -> None:
 
 import importlib
 import straightjacket.engine.tools.builtins as _builtins_mod
+from tests._helpers import make_game_state
 
 
 def _reload_builtins() -> None:

@@ -19,6 +19,7 @@ from straightjacket.engine.models import (
     RollResult,
 )
 from straightjacket.engine.prompt_builders import build_action_prompt, build_dialog_prompt
+from tests._helpers import make_game_state
 
 # Use real engine.yaml for stance matrix tests
 pytestmark = pytest.mark.usefixtures("load_engine")
@@ -39,7 +40,7 @@ def _npc(disposition: str = "neutral") -> NpcData:
 
 
 def _game(npc: NpcData | None = None, bond: int = 0) -> GameState:
-    game = GameState(player_name="Ash", setting_id="starforged", setting_genre="starforged")
+    game = make_game_state(player_name="Ash", setting_id="starforged", setting_genre="starforged")
     game.world.current_location = "The Docks"
     game.narrative.scene_count = 3
     if npc:

@@ -626,7 +626,7 @@ def _game_context_dict(game: GameState) -> dict:
         "paths": game.paths,
         "backstory": game.backstory,
         "background_vow": game.background_vow,
-        "stats": {"edge": game.edge, "heart": game.heart, "iron": game.iron, "shadow": game.shadow, "wits": game.wits},
+        "stats": dict(game.stats),
     }
 
 

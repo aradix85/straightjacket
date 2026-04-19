@@ -8,10 +8,11 @@ Run: python -m pytest tests/test_parser.py -v
 """
 
 from straightjacket.engine.models import GameState
+from tests._helpers import make_game_state
 
 
 def _game() -> GameState:
-    game = GameState(player_name="Hero")
+    game = make_game_state(player_name="Hero")
     game.narrative.scene_count = 3
     game.world.current_location = "Tavern"
     return game

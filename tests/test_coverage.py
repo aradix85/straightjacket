@@ -13,6 +13,7 @@ from straightjacket.engine.models import (
     NpcData,
     SceneLogEntry,
 )
+from tests._helpers import make_game_state
 
 
 def _game() -> GameState:
@@ -21,11 +22,7 @@ def _game() -> GameState:
         setting_genre="dark_fantasy",
         setting_tone="serious",
         setting_description="A dark world.",
-        edge=1,
-        heart=2,
-        iron=1,
-        shadow=1,
-        wits=2,
+        stats={"edge": 1, "heart": 2, "iron": 1, "shadow": 1, "wits": 2},
         backstory="Was a farmer.",
     )
     g.narrative.scene_count = 5
@@ -79,12 +76,11 @@ class _MockProvider:
 def test_validate_narration_returns_violations(stub_all: None) -> None:
     from straightjacket.engine.ai.rule_validator import ValidationContext
     from straightjacket.engine.ai.validator import validate_narration
-    from straightjacket.engine.models import GameState
 
     provider = _MockProvider(
         json.dumps({"pass": False, "violations": ["Silver lining on MISS"], "correction": "Make it worse."})
     )
-    ctx = ValidationContext.build(GameState(), result_type="MISS")
+    ctx = ValidationContext.build(make_game_state(), result_type="MISS")
     result = validate_narration(
         provider,  # type: ignore[arg-type]
         "Bad narration.",
@@ -97,10 +93,9 @@ def test_validate_narration_returns_violations(stub_all: None) -> None:
 def test_validate_narration_fail_open_on_api_error(stub_all: None) -> None:
     from straightjacket.engine.ai.rule_validator import ValidationContext
     from straightjacket.engine.ai.validator import validate_narration
-    from straightjacket.engine.models import GameState
 
     provider = _MockProvider(fail=True)
-    ctx = ValidationContext.build(GameState(), result_type="MISS")
+    ctx = ValidationContext.build(make_game_state(), result_type="MISS")
     result = validate_narration(
         provider,  # type: ignore[arg-type]
         "Text.",
@@ -112,12 +107,11 @@ def test_validate_narration_fail_open_on_api_error(stub_all: None) -> None:
 def test_validate_narration_catches_genre_violation_rule_based(stub_all: None) -> None:
     from straightjacket.engine.ai.rule_validator import ValidationContext
     from straightjacket.engine.ai.validator import validate_narration
-    from straightjacket.engine.models import GameState
     from tests.conftest import make_genre_constraints
 
     provider = _MockProvider(json.dumps({"pass": True, "violations": [], "correction": ""}))
     gc = make_genre_constraints(forbidden_terms=["magic"])
-    ctx = ValidationContext.build(GameState(), result_type="MISS", genre_constraints=gc)
+    ctx = ValidationContext.build(make_game_state(), result_type="MISS", genre_constraints=gc)
     result = validate_narration(
         provider,  # type: ignore[arg-type]
         "She cast a magic spell.",
@@ -209,7 +203,7 @@ def test_validate_architect_fail_open_on_api_error(stub_all: None) -> None:
 def test_register_extracted_npcs_skips_player(stub_all: None) -> None:
     from straightjacket.engine.game.setup_common import register_extracted_npcs
 
-    game = GameState(player_name="Hero")
+    game = make_game_state(player_name="Hero")
     game.world.current_location = "Tavern"
     max_id = register_extracted_npcs(
         game,
@@ -226,7 +220,7 @@ def test_register_extracted_npcs_skips_player(stub_all: None) -> None:
 def test_register_extracted_npcs_skips_returning(stub_all: None) -> None:
     from straightjacket.engine.game.setup_common import register_extracted_npcs
 
-    game = GameState(player_name="Hero")
+    game = make_game_state(player_name="Hero")
     register_extracted_npcs(
         game,
         [
@@ -243,7 +237,7 @@ def test_register_extracted_npcs_skips_returning(stub_all: None) -> None:
 def test_seed_opening_memories_matches_and_skips(stub_all: None) -> None:
     from straightjacket.engine.game.setup_common import seed_opening_memories
 
-    game = GameState(player_name="Hero")
+    game = make_game_state(player_name="Hero")
     game.narrative.scene_count = 1
     game.npcs = [NpcData(id="npc_1", name="Captain Ashwood")]
     seed_opening_memories(
@@ -259,7 +253,7 @@ def test_seed_opening_memories_matches_and_skips(stub_all: None) -> None:
 def test_apply_world_setup_replace_vs_extend(stub_all: None) -> None:
     from straightjacket.engine.game.setup_common import apply_world_setup
 
-    game = GameState(player_name="Hero")
+    game = make_game_state(player_name="Hero")
     game.world.clocks = [ClockData(name="Old")]
     apply_world_setup(
         game,

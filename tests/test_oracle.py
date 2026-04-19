@@ -8,8 +8,8 @@ import importlib
 
 import straightjacket.engine.tools.builtins as _builtins_mod
 from straightjacket.engine.datasworn.loader import load_setting, list_available
-from straightjacket.engine.models import GameState
 from straightjacket.engine.tools.registry import get_handler
+from tests._helpers import make_game_state
 
 
 def _reload_builtins() -> None:
@@ -128,7 +128,7 @@ def test_roll_oracle_not_registered_for_director() -> None:
 def test_roll_oracle_success() -> None:
     from straightjacket.engine.tools.builtins import roll_oracle
 
-    game = GameState(setting_id="starforged")
+    game = make_game_state(setting_id="starforged")
     result = roll_oracle(game=game, table_path="core/action")
     assert "value" in result
     assert result["table_path"] == "core/action"
@@ -139,7 +139,7 @@ def test_roll_oracle_success() -> None:
 def test_roll_oracle_unknown_table() -> None:
     from straightjacket.engine.tools.builtins import roll_oracle
 
-    game = GameState(setting_id="starforged")
+    game = make_game_state(setting_id="starforged")
     result = roll_oracle(game=game, table_path="nonexistent/table")
     assert "error" in result
     assert "not found" in result["error"]
@@ -148,7 +148,7 @@ def test_roll_oracle_unknown_table() -> None:
 def test_roll_oracle_no_setting() -> None:
     from straightjacket.engine.tools.builtins import roll_oracle
 
-    game = GameState()
+    game = make_game_state()
     result = roll_oracle(game=game, table_path="core/action")
     assert "error" in result
 
@@ -156,7 +156,7 @@ def test_roll_oracle_no_setting() -> None:
 def test_roll_oracle_invalid_setting() -> None:
     from straightjacket.engine.tools.builtins import roll_oracle
 
-    game = GameState(setting_id="nonexistent_setting")
+    game = make_game_state(setting_id="nonexistent_setting")
     result = roll_oracle(game=game, table_path="core/action")
     assert "error" in result
 
@@ -165,11 +165,11 @@ def test_roll_oracle_per_setting() -> None:
     """Function uses game.setting_id to select the correct setting."""
     from straightjacket.engine.tools.builtins import roll_oracle
 
-    game_sf = GameState(setting_id="starforged")
+    game_sf = make_game_state(setting_id="starforged")
     result_sf = roll_oracle(game=game_sf, table_path="core/action")
     assert "value" in result_sf
 
-    game_cl = GameState(setting_id="classic")
+    game_cl = make_game_state(setting_id="classic")
     result_cl = roll_oracle(game=game_cl, table_path="core/action")
     assert "error" in result_cl
 

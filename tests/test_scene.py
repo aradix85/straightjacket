@@ -12,7 +12,7 @@ from straightjacket.engine.mechanics.scene import (
     adjustment_descriptions,
     check_scene,
 )
-from straightjacket.engine.models import GameState
+from tests._helpers import make_game_state
 
 
 # ── Scene test (chaos check) ────────────────────────────────
@@ -20,7 +20,7 @@ from straightjacket.engine.models import GameState
 
 def test_expected_when_roll_above_cf() -> None:
     """Roll > CF → expected scene."""
-    game = GameState()
+    game = make_game_state()
     game.world.chaos_factor = 5
     setup = check_scene(game, roll=6)
     assert setup.scene_type == "expected"
@@ -28,7 +28,7 @@ def test_expected_when_roll_above_cf() -> None:
 
 def test_expected_when_roll_is_10() -> None:
     """Roll 10 is always expected regardless of CF."""
-    game = GameState()
+    game = make_game_state()
     game.world.chaos_factor = 9
     setup = check_scene(game, roll=10)
     assert setup.scene_type == "expected"
@@ -36,7 +36,7 @@ def test_expected_when_roll_is_10() -> None:
 
 def test_altered_when_roll_le_cf_odd() -> None:
     """Roll ≤ CF and odd → altered scene."""
-    game = GameState()
+    game = make_game_state()
     game.world.chaos_factor = 5
     setup = check_scene(game, roll=3)
     assert setup.scene_type == "altered"
@@ -45,7 +45,7 @@ def test_altered_when_roll_le_cf_odd() -> None:
 
 def test_interrupt_when_roll_le_cf_even() -> None:
     """Roll ≤ CF and even → interrupt scene with random event."""
-    game = GameState()
+    game = make_game_state()
     game.world.chaos_factor = 5
     setup = check_scene(game, roll=4)
     assert setup.scene_type == "interrupt"
@@ -56,7 +56,7 @@ def test_interrupt_when_roll_le_cf_even() -> None:
 
 def test_cf1_only_roll1_triggers() -> None:
     """At CF1, only roll=1 (odd, ≤1) triggers altered. Roll 2+ is expected."""
-    game = GameState()
+    game = make_game_state()
     game.world.chaos_factor = 1
     assert check_scene(game, roll=1).scene_type == "altered"
     assert check_scene(game, roll=2).scene_type == "expected"
@@ -64,7 +64,7 @@ def test_cf1_only_roll1_triggers() -> None:
 
 def test_cf9_most_rolls_trigger() -> None:
     """At CF9, rolls 1-9 trigger altered/interrupt. Only 10 is expected."""
-    game = GameState()
+    game = make_game_state()
     game.world.chaos_factor = 9
     assert check_scene(game, roll=10).scene_type == "expected"
     assert check_scene(game, roll=9).scene_type == "altered"  # 9 odd
@@ -73,7 +73,7 @@ def test_cf9_most_rolls_trigger() -> None:
 
 def test_chaos_roll_stored() -> None:
     """SceneSetup records the chaos roll."""
-    game = GameState()
+    game = make_game_state()
     game.world.chaos_factor = 5
     setup = check_scene(game, roll=7)
     assert setup.chaos_roll == 7

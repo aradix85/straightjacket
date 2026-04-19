@@ -10,9 +10,9 @@ import pytest
 
 from straightjacket.engine.engine_loader import eng
 from straightjacket.engine.models import (
-    GameState,
     ProgressTrack,
 )
+from tests._helpers import make_game_state
 
 
 # ── ProgressTrack ─────────────────────────────────────────────
@@ -103,7 +103,7 @@ def test_chaos_start_from_vow(load_engine: None, vow: str, expected: int) -> Non
 def test_seed_background_vow(load_engine: None) -> None:
     from straightjacket.engine.game.game_start import _seed_background_vow
 
-    game = GameState(player_name="Test")
+    game = make_game_state(player_name="Test")
     _seed_background_vow(game, "Find my sister", "extreme")
     assert len(game.progress_tracks) == 1
     assert game.progress_tracks[0].rank == "extreme"
@@ -116,7 +116,7 @@ def test_seed_background_vow(load_engine: None) -> None:
 def test_seed_background_vow_custom_rank(load_engine: None) -> None:
     from straightjacket.engine.game.game_start import _seed_background_vow
 
-    game = GameState(player_name="Test")
+    game = make_game_state(player_name="Test")
     _seed_background_vow(game, "Minor task", "troublesome")
     assert game.progress_tracks[0].rank == "troublesome"
 
@@ -124,7 +124,7 @@ def test_seed_background_vow_custom_rank(load_engine: None) -> None:
 def test_seed_background_vow_invalid_rank_raises(load_engine: None) -> None:
     from straightjacket.engine.game.game_start import _seed_background_vow
 
-    game = GameState(player_name="Test")
+    game = make_game_state(player_name="Test")
     with pytest.raises(ValueError, match="Invalid vow rank"):
         _seed_background_vow(game, "Quest", "nonexistent_rank")
 
@@ -132,7 +132,7 @@ def test_seed_background_vow_invalid_rank_raises(load_engine: None) -> None:
 def test_seed_background_vow_empty_skips(load_engine: None) -> None:
     from straightjacket.engine.game.game_start import _seed_background_vow
 
-    game = GameState(player_name="Test")
+    game = make_game_state(player_name="Test")
     _seed_background_vow(game, "", "")
     assert len(game.progress_tracks) == 0
     assert len(game.narrative.threads) == 0
@@ -256,7 +256,7 @@ def test_build_creation_options_has_creation_flow(load_engine: None) -> None:
 def test_seed_truth_threads_matches(load_engine: None) -> None:
     from straightjacket.engine.game.game_start import _seed_truth_threads
 
-    game = GameState(player_name="Test", truths={"communities": "Communities are scattered and isolated"})
+    game = make_game_state(player_name="Test", truths={"communities": "Communities are scattered and isolated"})
     _seed_truth_threads(game)
     assert len(game.narrative.threads) == 1
     assert game.narrative.threads[0].thread_type == "tension"
@@ -266,7 +266,7 @@ def test_seed_truth_threads_matches(load_engine: None) -> None:
 def test_seed_truth_threads_no_match(load_engine: None) -> None:
     from straightjacket.engine.game.game_start import _seed_truth_threads
 
-    game = GameState(player_name="Test", truths={"cataclysm": "Something unique happened"})
+    game = make_game_state(player_name="Test", truths={"cataclysm": "Something unique happened"})
     _seed_truth_threads(game)
     assert len(game.narrative.threads) == 0
 
@@ -274,7 +274,7 @@ def test_seed_truth_threads_no_match(load_engine: None) -> None:
 def test_seed_truth_threads_empty_truths(load_engine: None) -> None:
     from straightjacket.engine.game.game_start import _seed_truth_threads
 
-    game = GameState(player_name="Test")
+    game = make_game_state(player_name="Test")
     _seed_truth_threads(game)
     assert len(game.narrative.threads) == 0
 
@@ -285,7 +285,7 @@ def test_seed_truth_threads_empty_truths(load_engine: None) -> None:
 def test_seed_vow_subject(load_engine: None) -> None:
     from straightjacket.engine.game.game_start import _seed_vow_subject
 
-    game = GameState(player_name="Test")
+    game = make_game_state(player_name="Test")
     _seed_vow_subject(game, "my lost sister")
     assert len(game.narrative.characters_list) == 1
     assert game.narrative.characters_list[0].name == "my lost sister"
@@ -296,7 +296,7 @@ def test_seed_vow_subject(load_engine: None) -> None:
 def test_seed_vow_subject_empty_skips(load_engine: None) -> None:
     from straightjacket.engine.game.game_start import _seed_vow_subject
 
-    game = GameState(player_name="Test")
+    game = make_game_state(player_name="Test")
     _seed_vow_subject(game, "")
     assert len(game.narrative.characters_list) == 0
 
@@ -307,7 +307,7 @@ def test_seed_vow_subject_empty_skips(load_engine: None) -> None:
 def test_truths_block_with_truths() -> None:
     from straightjacket.engine.prompt_blocks import truths_block
 
-    game = GameState(player_name="Test", truths={"cataclysm": "The Sun Plague", "exodus": "We fled"})
+    game = make_game_state(player_name="Test", truths={"cataclysm": "The Sun Plague", "exodus": "We fled"})
     block = truths_block(game)
     assert "<world_truths>" in block
     assert "The Sun Plague" in block
@@ -317,7 +317,7 @@ def test_truths_block_with_truths() -> None:
 def test_truths_block_empty() -> None:
     from straightjacket.engine.prompt_blocks import truths_block
 
-    game = GameState(player_name="Test")
+    game = make_game_state(player_name="Test")
     assert truths_block(game) == ""
 
 

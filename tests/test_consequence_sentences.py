@@ -21,10 +21,11 @@ from straightjacket.engine.models import (
     RollResult,
 )
 from straightjacket.engine.prompt_builders import build_action_prompt
+from tests._helpers import make_game_state
 
 
 def _game() -> GameState:
-    game = GameState(player_name="Ash", setting_id="starforged", setting_genre="starforged")
+    game = make_game_state(player_name="Ash", setting_id="starforged", setting_genre="starforged")
     game.world.current_location = "The Docks"
     game.narrative.scene_count = 3
     return game

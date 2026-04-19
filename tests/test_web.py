@@ -23,6 +23,7 @@ from straightjacket.engine.models import (  # type: ignore[import-not-found]
     RollResult,
     TurnSnapshot,
 )
+from tests._helpers import make_game_state
 from straightjacket.web.session import BurnOffer, Session  # type: ignore[import-not-found]
 from straightjacket.web.serializers import (  # type: ignore[import-not-found]
     build_creation_options,
@@ -110,7 +111,7 @@ class TestSession:
 
     def test_clear_game(self) -> None:
         s = Session()
-        s.game = GameState(player_name="Test")
+        s.game = make_game_state(player_name="Test")
         s.chat_messages = [{"role": "assistant", "content": "x"}]
         s.save_name = "custom"
         s.pending_burn = BurnOffer(
@@ -130,7 +131,7 @@ class TestSession:
     def test_has_game_property(self) -> None:
         s = Session()
         assert s.has_game is False
-        s.game = GameState()
+        s.game = make_game_state()
         assert s.has_game is True
 
     def test_filtered_messages_strips_recaps(self) -> None:
@@ -202,11 +203,7 @@ class TestBuildNarrativeStatus:
         game = GameState(
             player_name="Kael",
             character_concept="Scholar",
-            edge=1,
-            heart=2,
-            iron=1,
-            shadow=1,
-            wits=2,
+            stats={"edge": 1, "heart": 2, "iron": 1, "shadow": 1, "wits": 2},
             setting_genre="dark_fantasy",
         )
         game.resources.health = 4

@@ -234,7 +234,7 @@ def start_new_game(
     _e = eng()
     background_vow = creation_data.get("background_vow", "")
     stat_names = [n for n in _e.stats.names if n != "none"]
-    stat_kwargs = {n: stats[n] for n in stat_names}
+    stat_dict = {n: stats[n] for n in stat_names}
 
     game = GameState(
         player_name=creation_data.get("player_name", default_player_name()),
@@ -250,7 +250,7 @@ def start_new_game(
         backstory=creation_data.get("backstory", ""),
         assets=creation_data.get("assets", []),
         truths=creation_data.get("truths", {}),
-        **stat_kwargs,
+        stats=stat_dict,
     )
     game.resources.health = _e.resources.health_start
     game.resources.spirit = _e.resources.spirit_start

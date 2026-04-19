@@ -1,3 +1,5 @@
+from tests._helpers import make_game_state
+
 #!/usr/bin/env python3
 """Tests for engine logic: utilities, config, NPC processing.
 
@@ -185,9 +187,9 @@ def test_salvage_preserves_complete_game_data() -> None:
 
 def _make_game_with_npcs():  # type: ignore[no-untyped-def]
     """Create a minimal GameState with some NPCs for processing tests."""
-    from straightjacket.engine.models import GameState, NpcData
+    from straightjacket.engine.models import NpcData
 
-    game = GameState(player_name="Hero")
+    game = make_game_state(player_name="Hero")
     game.narrative.scene_count = 5
     game.world.current_location = "Tavern"
     game.npcs = [

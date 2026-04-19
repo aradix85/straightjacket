@@ -16,6 +16,7 @@ from straightjacket.engine.mechanics.move_outcome import (
     resolve_move_outcome,
 )
 from straightjacket.engine.models import GameState, Resources
+from tests._helpers import make_game_state
 
 
 # ── Fixtures ─────────────────────────────────────────────────
@@ -24,7 +25,7 @@ from straightjacket.engine.models import GameState, Resources
 @pytest.fixture()
 def game(stub_engine: None) -> GameState:
     """Fresh game state with known resource values (stubbed engine config)."""
-    g = GameState()
+    g = make_game_state()
     g.resources = Resources(health=5, spirit=5, supply=5, momentum=2, max_momentum=10)
     g.setting_id = "starforged"
     return g
@@ -33,7 +34,7 @@ def game(stub_engine: None) -> GameState:
 @pytest.fixture()
 def game_real(load_engine: None) -> GameState:
     """Fresh game state with real engine.yaml (for config-driven resolution tests)."""
-    g = GameState()
+    g = make_game_state()
     g.resources = Resources(health=5, spirit=5, supply=5, momentum=2, max_momentum=10)
     g.setting_id = "starforged"
     return g
@@ -375,10 +376,10 @@ class TestResolveOutcome:
 
 class TestCombatPosition:
     def test_default_empty(self) -> None:
-        assert GameState().world.combat_position == ""
+        assert make_game_state().world.combat_position == ""
 
     def test_serializes(self) -> None:
-        g = GameState()
+        g = make_game_state()
         g.world.combat_position = "in_control"
         assert g.world.to_dict()["combat_position"] == "in_control"
 
@@ -388,7 +389,7 @@ class TestCombatPosition:
         assert WorldState.from_dict({"combat_position": "bad_spot", "chaos_factor": 5}).combat_position == "bad_spot"
 
     def test_snapshot_restore(self) -> None:
-        g = GameState()
+        g = make_game_state()
         g.world.combat_position = "in_control"
         snap = g.snapshot()
         g.world.combat_position = "bad_spot"

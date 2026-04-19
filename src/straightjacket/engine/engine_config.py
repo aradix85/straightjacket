@@ -75,6 +75,7 @@ class StatsConfig:
     max: int
     names: list[str]
     valid_arrays: list[list[int]]
+    prompt_abbreviations: dict[str, str]
 
 
 @dataclass

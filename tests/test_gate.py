@@ -19,6 +19,7 @@ from straightjacket.engine.models import (
     RollResult,
 )
 from straightjacket.engine.prompt_builders import build_action_prompt
+from tests._helpers import make_game_state
 
 # Use real engine.yaml
 pytestmark = pytest.mark.usefixtures("load_engine")
@@ -50,7 +51,7 @@ def _npc(
 
 
 def _game(npc: NpcData, scene: int = 5, bond: int = 0) -> GameState:
-    game = GameState(player_name="Ash", setting_id="starforged", setting_genre="starforged")
+    game = make_game_state(player_name="Ash", setting_id="starforged", setting_genre="starforged")
     game.world.current_location = "The Docks"
     game.narrative.scene_count = scene
     game.npcs.append(npc)

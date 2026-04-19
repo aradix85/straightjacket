@@ -42,6 +42,22 @@ def _build_moves_block(game: GameState) -> str:
     return "<moves>\n" + "\n".join(lines) + ("\n" + pos_line if pos_line else "") + "\n</moves>"
 
 
+def build_stats_line(game: GameState) -> str:
+    """Render player stats compactly for AI prompts (e.g. 'Ash E2 H1 I2 Sh1 W3').
+
+    Abbreviations come from engine.yaml stats.prompt_abbreviations. Any stat
+    without an abbreviation is skipped (the yaml 'none' entry has no
+    abbreviation and is not rendered).
+    """
+    cfg = eng().stats
+    parts = [game.player_name]
+    for name in cfg.names:
+        if name not in cfg.prompt_abbreviations:
+            continue
+        parts.append(f"{cfg.prompt_abbreviations[name]}{game.stats[name]}")
+    return " ".join(parts)
+
+
 def _build_tracks_block(game: GameState) -> str:
     """Build compact tracks context for Brain."""
     tracks = [t for t in game.progress_tracks if t.status == "active"]
@@ -96,7 +112,7 @@ def call_brain(
     user_msg = f"""<state>
 loc:{w.current_location} | ctx:{w.current_scene_context}
 time:{w.time_of_day or _ai_text["unknown_time"]}
-{game.player_name} E{game.edge} H{game.heart} I{game.iron} Sh{game.shadow} W{game.wits}
+{build_stats_line(game)}
 </state>
 {npc_block}
 {tracks_block}

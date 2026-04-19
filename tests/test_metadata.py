@@ -6,10 +6,11 @@ lore NPC creation, death corroboration voting, slug reference resolution.
 """
 
 from straightjacket.engine.models import GameState, MemoryEntry, NpcData
+from tests._helpers import make_game_state
 
 
 def _game() -> GameState:
-    game = GameState(player_name="Hero")
+    game = make_game_state(player_name="Hero")
     game.narrative.scene_count = 5
     game.world.current_location = "Tavern"
     game.world.time_of_day = "evening"

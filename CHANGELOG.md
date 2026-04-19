@@ -5,7 +5,19 @@ Originally forked from [EdgeTales](https://github.com/edgetales/edgetales). See 
 
 ---
 
-## [0.58.0] — 2026-04-19
+## [0.59.0] — 2026-04-19
+
+Tranche 7: the five hardcoded stat fields on GameState (`edge`, `heart`, `iron`, `shadow`, `wits`) are gone. They duplicated `engine.yaml stats.names` in Python, carried the canonical 3-2-2-1-1 array as magic-number dataclass defaults, and had been flagged as a storage-schema migration since tranche 3. GameState now has a single `stats: dict[str, int]` field declared `kw_only=True` so it can sit among default fields while remaining a required kwarg — no default dict, no silent substitute for a missing character-creation state. `GameState.get_stat` reads from the dict and raises on an unknown or unset key. Save-file format breaks; there were no live saves to migrate.
+
+One architecturally significant pre-existing violation got swept up. The Brain prompt in `ai/brain.py` rendered stats as a hardcoded `E{edge} H{heart} I{iron} Sh{shadow} W{wits}` f-string, duplicating the stat names a second time and hardcoding the English abbreviations. The abbreviations now live in a new `stats.prompt_abbreviations` yaml subsection (which also carries a field in `StatsConfig`), and `ai/brain.py` gained a `build_stats_line(game)` helper that iterates `eng().stats.names` and emits only stats that have an abbreviation. The stat named `none` has no abbreviation and is not rendered. The same helper is called from `tests/model_eval/eval.py` which had two copies of the same hardcoded template; they're gone. `tests/elvira/elvira_bot/runner.py` built a stats dict via attribute access on the five old fields — it now copies `game.stats` directly.
+
+Tests got a `tests/_helpers.py` module with a single `make_game_state(**kwargs)` helper. It defaults to the canonical 3-2-2-1-1 array when a test doesn't pass `stats=` explicitly, so tests that don't care about specific stat values keep their minimal constructors. Tests that do care pass their own dict, which wins via setdefault. Roughly 125 `GameState(...)` call sites across 34 test files were migrated — 36 explicit stat-kwarg sites to the dict form, the rest to `make_game_state`. `GameState.stats` being a required kwarg in production means the helper is the only place the canonical test array is stated; production code (`game/game_start.py`) passes stats explicitly from validated creation data.
+
+Delivery gate: 783 tests green in under 5 seconds, ruff + ruff format + mypy clean on 87 source files.
+
+---
+
+
 
 Tranche 6: every hardcoded English string that ends up in an AI prompt, narrator output, or json_schema description now lives in `engine.yaml` under a new `ai_text:` section. Eight `TODO tranche 6` markers across the codebase are gone, plus roughly fifteen unmarked sites discovered along the way.
 

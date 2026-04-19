@@ -40,11 +40,12 @@ def test_import_invariants() -> None:
 
 def test_final_state_dict_runs(load_engine: None) -> None:
     """Verify final_state_dict doesn't crash on a minimal game state."""
-    from straightjacket.engine.models import GameState, NpcData
+    from straightjacket.engine.models import NpcData
 
+    from tests._helpers import make_game_state
     from tests.elvira.elvira_bot.display import final_state_dict
 
-    game = GameState(player_name="Test")
+    game = make_game_state(player_name="Test")
     game.npcs.append(NpcData(id="npc_1", name="Kira", status="active", disposition="friendly"))
     result = final_state_dict(game)
     assert result["character"] == "Test"

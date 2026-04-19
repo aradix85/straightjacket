@@ -18,10 +18,10 @@ from straightjacket.engine.mechanics.random_events import (
 )
 from straightjacket.engine.models import (
     CharacterListEntry,
-    GameState,
     RandomEvent,
     ThreadEntry,
 )
+from tests._helpers import make_game_state
 
 
 # ── Event focus ──────────────────────────────────────────────
@@ -78,7 +78,7 @@ def test_meaning_table_default_is_actions() -> None:
 
 def test_target_npc_focus_selects_from_characters(load_engine: None) -> None:
     """NPC-focus categories select from characters list."""
-    game = GameState()
+    game = make_game_state()
     game.narrative.characters_list = [
         CharacterListEntry(id="c1", name="Kira", weight=1, active=True),
     ]
@@ -89,7 +89,7 @@ def test_target_npc_focus_selects_from_characters(load_engine: None) -> None:
 
 def test_target_thread_focus_selects_from_threads(load_engine: None) -> None:
     """Thread-focus categories select from threads list."""
-    game = GameState()
+    game = make_game_state()
     game.narrative.threads = [
         ThreadEntry(id="t1", name="Find the vault", weight=1, active=True),
     ]
@@ -100,7 +100,7 @@ def test_target_thread_focus_selects_from_threads(load_engine: None) -> None:
 
 def test_target_empty_list_returns_empty() -> None:
     """Empty list returns empty target (falls back to current_context)."""
-    game = GameState()
+    game = make_game_state()
     name, target_id = _select_target("npc_action", game)
     assert name == ""
     assert target_id == ""
@@ -108,7 +108,7 @@ def test_target_empty_list_returns_empty() -> None:
 
 def test_target_pc_focus_no_target() -> None:
     """PC-focus and current_context don't select targets."""
-    game = GameState()
+    game = make_game_state()
     game.narrative.characters_list = [
         CharacterListEntry(id="c1", name="Kira", weight=1, active=True),
     ]
@@ -120,7 +120,7 @@ def test_target_pc_focus_no_target() -> None:
 
 def test_target_respects_weight() -> None:
     """Higher-weight entries are more likely to be selected."""
-    game = GameState()
+    game = make_game_state()
     game.narrative.characters_list = [
         CharacterListEntry(id="c1", name="Rare", weight=1, active=True),
         CharacterListEntry(id="c2", name="Common", weight=3, active=True),
@@ -136,7 +136,7 @@ def test_target_respects_weight() -> None:
 
 def test_target_skips_inactive() -> None:
     """Inactive entries are not selected."""
-    game = GameState()
+    game = make_game_state()
     game.narrative.threads = [
         ThreadEntry(id="t1", name="Closed", weight=3, active=False),
         ThreadEntry(id="t2", name="Open", weight=1, active=True),
@@ -150,7 +150,7 @@ def test_target_skips_inactive() -> None:
 
 def test_generate_random_event_produces_complete_event() -> None:
     """Pipeline produces a RandomEvent with all fields populated."""
-    game = GameState()
+    game = make_game_state()
     game.narrative.threads = [
         ThreadEntry(id="t1", name="Main quest", weight=2, active=True),
     ]
@@ -167,7 +167,7 @@ def test_generate_random_event_produces_complete_event() -> None:
 
 def test_generate_random_event_empty_lists() -> None:
     """Pipeline works with empty NPC/thread lists (falls back to no target)."""
-    game = GameState()
+    game = make_game_state()
     event = generate_random_event(game, source="test")
     assert event.focus != ""
     assert event.meaning_action != ""
@@ -181,7 +181,7 @@ def test_fate_doublet_generates_random_event(load_engine: None) -> None:
     from straightjacket.engine.mechanics.fate import resolve_fate_chart
     from straightjacket.engine.mechanics.random_events import generate_random_event
 
-    game = GameState()
+    game = make_game_state()
     game.world.chaos_factor = 5
     game.narrative.characters_list = [
         CharacterListEntry(id="c1", name="Kira", weight=1, active=True),
@@ -211,7 +211,7 @@ def test_fate_no_doublet_no_event(load_engine: None) -> None:
 
 def test_add_thread_weight_increments() -> None:
     """Thread weight increases by 1 when invoked."""
-    game = GameState()
+    game = make_game_state()
     game.narrative.threads = [ThreadEntry(id="t1", name="Quest", weight=1, active=True)]
     add_thread_weight(game, "t1")
     assert game.narrative.threads[0].weight == 2
@@ -219,7 +219,7 @@ def test_add_thread_weight_increments() -> None:
 
 def test_add_thread_weight_caps_at_3() -> None:
     """Thread weight cannot exceed 3."""
-    game = GameState()
+    game = make_game_state()
     game.narrative.threads = [ThreadEntry(id="t1", name="Quest", weight=3, active=True)]
     add_thread_weight(game, "t1")
     assert game.narrative.threads[0].weight == 3
@@ -227,7 +227,7 @@ def test_add_thread_weight_caps_at_3() -> None:
 
 def test_add_character_weight_increments() -> None:
     """Character weight increases by 1 when invoked."""
-    game = GameState()
+    game = make_game_state()
     game.narrative.characters_list = [CharacterListEntry(id="c1", name="Kira", weight=1, active=True)]
     add_character_weight(game, "c1")
     assert game.narrative.characters_list[0].weight == 2
@@ -235,7 +235,7 @@ def test_add_character_weight_increments() -> None:
 
 def test_consolidate_threads_at_threshold() -> None:
     """Consolidation at 25 entries: weight 3 → 2, others → 1."""
-    game = GameState()
+    game = make_game_state()
     for i in range(25):
         w = 3 if i < 5 else 1
         game.narrative.threads.append(ThreadEntry(id=f"t{i}", name=f"Thread {i}", weight=w, active=True))
@@ -248,7 +248,7 @@ def test_consolidate_threads_at_threshold() -> None:
 
 def test_consolidate_threads_under_threshold_noop() -> None:
     """Consolidation does nothing below 25 entries."""
-    game = GameState()
+    game = make_game_state()
     game.narrative.threads = [ThreadEntry(id="t1", name="Quest", weight=3, active=True)]
     consolidate_threads(game)
     assert game.narrative.threads[0].weight == 3
@@ -256,7 +256,7 @@ def test_consolidate_threads_under_threshold_noop() -> None:
 
 def test_deactivate_thread() -> None:
     """Deactivated thread is marked inactive."""
-    game = GameState()
+    game = make_game_state()
     game.narrative.threads = [ThreadEntry(id="t1", name="Quest", weight=2, active=True)]
     deactivate_thread(game, "t1")
     assert game.narrative.threads[0].active is False

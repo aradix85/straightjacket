@@ -11,10 +11,11 @@ from straightjacket.engine.models import (
     Resources,
     RollResult,
 )
+from tests._helpers import make_game_state
 
 
 def _game(health: int = 5, spirit: int = 5, supply: int = 5, momentum: int = 3) -> GameState:
-    g = GameState(player_name="Hero")
+    g = make_game_state(player_name="Hero")
     g.resources = Resources(health=health, spirit=spirit, supply=supply, momentum=momentum, max_momentum=10)
     return g
 

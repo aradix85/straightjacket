@@ -99,11 +99,7 @@ def _build_brain_context() -> tuple[str, str]:
         setting_id="starforged",
         setting_genre="starforged",
         setting_tone="serious",
-        edge=2,
-        heart=1,
-        iron=2,
-        shadow=1,
-        wits=3,
+        stats={"edge": 2, "heart": 1, "iron": 2, "shadow": 1, "wits": 3},
     )
     game.world.current_location = "Cargo Bay"
     game.world.current_scene_context = "Investigating missing shipment"
@@ -113,7 +109,7 @@ def _build_brain_context() -> tuple[str, str]:
         NpcData(id="npc_2", name="Borin", disposition="neutral", status="active"),
     ]
 
-    from straightjacket.engine.ai.brain import _build_moves_block, _build_tracks_block
+    from straightjacket.engine.ai.brain import _build_moves_block, _build_tracks_block, build_stats_line
     from straightjacket.engine.prompt_blocks import content_boundaries_block
 
     system = get_prompt(
@@ -133,7 +129,7 @@ def _build_brain_context() -> tuple[str, str]:
     user_template = f"""<state>
 loc:{game.world.current_location} | ctx:{game.world.current_scene_context}
 time:{game.world.time_of_day}
-{game.player_name} E{game.edge} H{game.heart} I{game.iron} Sh{game.shadow} W{game.wits}
+{build_stats_line(game)}
 </state>
 {npc_block}
 {tracks_block}
@@ -455,11 +451,7 @@ def eval_narrator(provider: AIProvider, case: dict, model: str, params: dict) ->
         setting_id="starforged",
         setting_genre="starforged",
         setting_tone="serious",
-        edge=2,
-        heart=1,
-        iron=2,
-        shadow=1,
-        wits=3,
+        stats={"edge": 2, "heart": 1, "iron": 2, "shadow": 1, "wits": 3},
     )
     game.world.current_location = "Cargo Bay"
     game.world.current_scene_context = "Investigating missing shipment"
@@ -588,11 +580,7 @@ def _build_director_game() -> GameState:
         setting_id="starforged",
         setting_genre="starforged",
         setting_tone="serious",
-        edge=2,
-        heart=1,
-        iron=2,
-        shadow=1,
-        wits=3,
+        stats={"edge": 2, "heart": 1, "iron": 2, "shadow": 1, "wits": 3},
     )
     game.world.current_location = "Cargo Bay"
     game.world.current_scene_context = "Investigating missing shipment"

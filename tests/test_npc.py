@@ -14,10 +14,11 @@ Run: python -m pytest tests/test_npc.py -v
 # Stubs set up in conftest.py
 
 from straightjacket.engine.models import GameState, MemoryEntry, NpcData
+from tests._helpers import make_game_state
 
 
 def _make_game() -> "GameState":
-    game = GameState(player_name="Hero")
+    game = make_game_state(player_name="Hero")
     game.narrative.scene_count = 5
     game.world.current_location = "Tavern"
     game.npcs = [
@@ -118,7 +119,7 @@ def test_edit_distance_le1() -> None:
 def test_fuzzy_match_stt_variant(stub_engine: None) -> None:
     from straightjacket.engine.npc.matching import fuzzy_match_existing_npc
 
-    game = GameState(player_name="Hero")
+    game = make_game_state(player_name="Hero")
     game.npcs = [
         NpcData(id="npc_1", name="Eisenberg", disposition="neutral"),
     ]
@@ -136,7 +137,7 @@ def test_fuzzy_match_stt_variant_multiword(stub_engine: None) -> None:
     Fixed: overlap ratio rejection no longer skips the edit-distance check."""
     from straightjacket.engine.npc.matching import fuzzy_match_existing_npc
 
-    game = GameState(player_name="Hero")
+    game = make_game_state(player_name="Hero")
     game.npcs = [
         NpcData(id="npc_1", name="Markus Eisenberg", disposition="neutral"),
     ]

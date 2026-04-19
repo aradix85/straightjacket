@@ -1,10 +1,11 @@
 """Tests for step 11b: impacts (persistent conditions that reduce max_momentum)."""
 
 from straightjacket.engine.models import GameState, Resources
+from tests._helpers import make_game_state
 
 
 def _game() -> GameState:
-    g = GameState(player_name="Hero", setting_id="starforged")
+    g = make_game_state(player_name="Hero", setting_id="starforged")
     g.resources = Resources(health=3, spirit=3, supply=3, momentum=5, max_momentum=10)
     return g
 

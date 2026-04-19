@@ -1,10 +1,11 @@
 """Tests for step 10: track type lifecycle, combat sync, scene challenge routing."""
 
 from straightjacket.engine.models import GameState, ProgressTrack, Resources, WorldState
+from tests._helpers import make_game_state
 
 
 def _game(setting: str = "starforged", combat_position: str = "") -> GameState:
-    g = GameState(player_name="Hero", setting_id=setting)
+    g = make_game_state(player_name="Hero", setting_id=setting)
     g.resources = Resources(health=5, spirit=5, supply=5, momentum=2, max_momentum=10)
     g.world = WorldState(current_location="Iron Hold", combat_position=combat_position)
     return g

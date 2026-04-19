@@ -12,11 +12,11 @@ from straightjacket.engine.models import (
     MemoryEntry,
     NpcData,
     ClockData,
-    GameState,
     ProgressTrack,
     StoryBlueprint,
     StoryAct,
 )
+from tests._helpers import make_game_state
 
 
 # ── NpcData ───────────────────────────────────────────────────
@@ -37,7 +37,7 @@ def test_compel_no_disposition_shift(load_engine: None) -> None:
     """compel STRONG_HIT marks connection progress, no disposition shift."""
     from straightjacket.engine.mechanics.move_outcome import resolve_move_outcome
 
-    game = GameState()
+    game = make_game_state()
     npc = NpcData(id="npc_1", name="Test", disposition="neutral")
     game.npcs.append(npc)
     game.progress_tracks.append(
@@ -53,7 +53,7 @@ def test_test_bond_disposition_shift(load_engine: None) -> None:
     """test_your_relationship STRONG_HIT marks connection progress AND disposition shift."""
     from straightjacket.engine.mechanics.move_outcome import resolve_move_outcome
 
-    game = GameState()
+    game = make_game_state()
     npc = NpcData(id="npc_1", name="Test", disposition="neutral")
     game.npcs.append(npc)
     game.progress_tracks.append(
@@ -69,7 +69,7 @@ def test_npc_owned_threat_clock_ticks_in_agency() -> None:
     """v0.9.86: check_npc_agency ticks NPC-owned threat clocks."""
     from straightjacket.engine.mechanics import check_npc_agency
 
-    game = GameState()
+    game = make_game_state()
     game.narrative.scene_count = 5
     npc = NpcData(id="npc_1", name="Villain", agenda="Take over", status="active")
     game.npcs.append(npc)
@@ -87,7 +87,7 @@ def test_npc_agency_clock_fires_on_full() -> None:
     """check_npc_agency returns triggered=True when clock fills completely."""
     from straightjacket.engine.mechanics import check_npc_agency
 
-    game = GameState()
+    game = make_game_state()
     game.narrative.scene_count = 10
     npc = NpcData(id="npc_1", name="Villain", agenda="Take over", status="active")
     game.npcs.append(npc)
@@ -105,7 +105,7 @@ def test_npc_agency_empty_on_wrong_scene() -> None:
     """check_npc_agency returns empty on non-5th scenes."""
     from straightjacket.engine.mechanics import check_npc_agency
 
-    game = GameState()
+    game = make_game_state()
     game.narrative.scene_count = 3
     npc = NpcData(id="npc_1", name="Villain", agenda="Take over", status="active")
     game.npcs.append(npc)
@@ -120,7 +120,7 @@ def test_autonomous_clocks_skip_npc_owned(load_engine: None) -> None:
     import random
 
     random.seed(0)
-    game = GameState()
+    game = make_game_state()
     clock = ClockData(name="NPC Clock", clock_type="threat", segments=6, filled=2, owner="Villain")
     game.world.clocks.append(clock)
     for _ in range(20):
@@ -159,7 +159,7 @@ def test_story_blueprint_triggered_director_phases() -> None:
 
 def test_story_blueprint_triggered_director_phases_snapshot() -> None:
     """triggered_director_phases survives snapshot/restore cycle."""
-    game = GameState()
+    game = make_game_state()
     bp = StoryBlueprint(
         central_conflict="c",
         antagonist_force="a",
@@ -181,7 +181,7 @@ def test_phase_trigger_dedup(load_engine: None) -> None:
     """should_call_director skips already-fired phase triggers."""
     from straightjacket.engine.director import should_call_director
 
-    game = GameState()
+    game = make_game_state()
     game.narrative.scene_count = 12
     bp = StoryBlueprint(
         central_conflict="c",
@@ -212,7 +212,7 @@ def test_memory_guard_rejects_zero_overlap() -> None:
     """process_npc_details rejects identity reveal when NPC has memories and zero word overlap."""
     from straightjacket.engine.npc.processing import process_npc_details
 
-    game = GameState()
+    game = make_game_state()
     npc = NpcData(
         id="npc_1",
         name="Theo",
@@ -233,7 +233,7 @@ def test_memory_guard_allows_no_memories() -> None:
     """process_npc_details allows identity reveal when NPC has no memories."""
     from straightjacket.engine.npc.processing import process_npc_details
 
-    game = GameState()
+    game = make_game_state()
     npc = NpcData(id="npc_1", name="Der Fremde", status="active")
     game.npcs.append(npc)
     process_npc_details(game, [{"npc_id": "npc_1", "full_name": "Heinrich Blum"}])
@@ -244,7 +244,7 @@ def test_social_move_unresolved_target_skips_bond(load_engine: None) -> None:
     """Social move with unresolvable target_npc skips bond/disposition changes."""
     from straightjacket.engine.mechanics.move_outcome import resolve_move_outcome
 
-    game = GameState()
+    game = make_game_state()
     npc = NpcData(id="npc_1", name="Test", disposition="neutral")
     game.npcs.append(npc)
     # target_npc that doesn't match any NPC
@@ -254,7 +254,7 @@ def test_social_move_unresolved_target_skips_bond(load_engine: None) -> None:
 
 def test_progress_tracks_snapshot_restore() -> None:
     """Progress tracks are fully restored on snapshot/restore cycle."""
-    game = GameState()
+    game = make_game_state()
     game.progress_tracks.append(ProgressTrack(id="v1", name="Vow", track_type="vow", rank="dangerous", ticks=8))
     game.progress_tracks.append(ProgressTrack(id="c1", name="Fight", track_type="combat", rank="formidable", ticks=0))
 

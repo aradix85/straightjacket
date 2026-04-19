@@ -8,6 +8,7 @@ Run: python -m pytest tests/test_invariants.py -v
 """
 
 from straightjacket.engine.models import ClockData, GameState, MemoryEntry, NpcData
+from tests._helpers import make_game_state
 
 import sys as _sys
 from pathlib import Path as _Path
@@ -19,7 +20,7 @@ from elvira_bot.quality_checks import check_narration_quality  # type: ignore[im
 
 
 def _clean_game() -> GameState:
-    game = GameState(player_name="Hero")
+    game = make_game_state(player_name="Hero")
     game.resources.health = 5
     game.resources.spirit = 5
     game.resources.supply = 5
