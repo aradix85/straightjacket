@@ -1,10 +1,10 @@
-#!/usr/bin/env python3
 """Straightjacket string loader: yaml-driven UI strings.
 
 UI strings live in strings/, one yaml file per key prefix (actions.yaml,
 consequence.yaml, ui.yaml, etc.). Each file contains fully-dotted keys
 under that prefix (e.g. strings/actions.yaml holds `actions.load_failed`).
-The loader globs the directory and merges.
+The loader globs the directory and merges. Duplicate keys across files raise.
+Missing keys at lookup time raise — strings are domain data, no silent fallback.
 """
 
 from pathlib import Path
@@ -20,8 +20,7 @@ _STRINGS_DIR = PROJECT_ROOT / "strings"
 _strings: dict[str, str] | None = None
 
 
-def _ensure_loaded() -> dict:
-    """Load strings on first access."""
+def _ensure_loaded() -> dict[str, str]:
     global _strings
     if _strings is None:
         if not _STRINGS_DIR.is_dir():
@@ -40,7 +39,7 @@ def _ensure_loaded() -> dict:
                 raise ValueError(f"{path} is not a valid YAML dict")
             for key, val in data.items():
                 if not isinstance(val, str):
-                    continue
+                    raise ValueError(f"{path}: key '{key}' must be a string, got {type(val).__name__}")
                 if key in _strings:
                     raise ValueError(f"Duplicate string key '{key}' in {path} — already defined in {origin[key]}")
                 _strings[key] = val
@@ -50,30 +49,25 @@ def _ensure_loaded() -> dict:
 
 
 def get_string(key: str, **variables: str | int) -> str:
-    """Get a string by key, filling template variables.
-    Returns the key itself if not found (visible placeholder, not a crash)."""
     strings = _ensure_loaded()
-    template = strings.get(key)
-    if template is None:
-        return key
+    if key not in strings:
+        raise KeyError(f"Unknown UI string key: '{key}'")
+    template = strings[key]
     if variables:
         return template.format_map(PartialFormatDict(variables))
     return template
 
 
 def get_strings_by_prefix(prefix: str) -> dict[str, str]:
-    """Get all strings matching a prefix as {suffix: value} dict."""
     strings = _ensure_loaded()
     return {k[len(prefix) :]: v for k, v in strings.items() if k.startswith(prefix)}
 
 
 def reload_strings() -> None:
-    """Force reload from disk."""
     global _strings
     _strings = None
     _ensure_loaded()
 
 
 def all_strings() -> dict[str, str]:
-    """Return all loaded strings. Used by the web layer to send UI strings to clients."""
     return dict(_ensure_loaded())
