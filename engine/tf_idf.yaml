@@ -1,0 +1,9 @@
+tf_idf:
+  token_min_length: 3
+  memory_window: 5
+  session_window: 2
+  score_floor: 0.05
+  memory_score_cap: 0.5
+  memory_score_multiplier: 1.5
+  recency_window: 3
+  recency_offset: 2

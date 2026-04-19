@@ -1,0 +1,9 @@
+track_creating_moves:
+  quest/swear_an_iron_vow: vow
+  connection/make_a_connection: connection
+  combat/enter_the_fray: combat
+  exploration/undertake_an_expedition: expedition
+  scene_challenge/begin_the_scene: scene_challenge
+scene_challenge_progress_moves:
+- adventure/face_danger
+- adventure/secure_an_advantage

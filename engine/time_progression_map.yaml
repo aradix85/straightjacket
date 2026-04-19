@@ -1,0 +1,16 @@
+time_progression_map:
+  dialog: none
+  adventure/gather_information: short
+  adventure/compel: short
+  connection/make_a_connection: short
+  connection/test_your_relationship: short
+  adventure/face_danger: short
+  adventure/secure_an_advantage: short
+  combat/clash: short
+  combat/strike: short
+  suffer/endure_harm: none
+  suffer/endure_stress: none
+  recover/resupply: moderate
+  world_shaping: moderate
+  _with_location_change: long
+  _catchall: short

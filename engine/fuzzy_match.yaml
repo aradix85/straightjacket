@@ -1,0 +1,4 @@
+fuzzy_match:
+  min_word_length: 5
+  min_phrase_length: 12
+  exact_dedup_threshold: 0.4

@@ -45,31 +45,21 @@ set_backoff_sleep(lambda _: None)
 
 @pytest.fixture(scope="session")
 def _real_engine():  # type: ignore[no-untyped-def]
-    """Parse engine.yaml once per test session."""
-    from pathlib import Path
-
-    import yaml as _yaml
-
-    from straightjacket.engine.config_loader import PROJECT_ROOT
+    """Parse engine/*.yaml once per test session."""
+    from straightjacket.engine.engine_loader import _load_merged, _ENGINE_DIR
     from straightjacket.engine.engine_config import parse_engine_yaml
 
-    with open(Path(PROJECT_ROOT) / "engine.yaml", encoding="utf-8") as f:
-        data = _yaml.safe_load(f)
+    data = _load_merged(_ENGINE_DIR)
     return parse_engine_yaml(data)
 
 
 @pytest.fixture(scope="session")
 def _stub_engine_instance():  # type: ignore[no-untyped-def]
-    """Parse engine.yaml once per test session with deterministic test overrides."""
-    from pathlib import Path
-
-    import yaml as _yaml
-
-    from straightjacket.engine.config_loader import PROJECT_ROOT
+    """Parse engine/*.yaml once per test session with deterministic test overrides."""
+    from straightjacket.engine.engine_loader import _load_merged, _ENGINE_DIR
     from straightjacket.engine.engine_config import parse_engine_yaml
 
-    with open(Path(PROJECT_ROOT) / "engine.yaml", encoding="utf-8") as f:
-        data = _yaml.safe_load(f)
+    data = _load_merged(_ENGINE_DIR)
     data["story"]["kishotenketsu_probability"] = {"dark_gritty": 0.15}
     data["creativity_seeds"] = ["amber", "glacier", "compass", "obsidian", "cedar"]
     return parse_engine_yaml(data)
@@ -77,7 +67,7 @@ def _stub_engine_instance():  # type: ignore[no-untyped-def]
 
 @pytest.fixture()
 def load_engine(_real_engine) -> None:  # type: ignore[no-untyped-def]
-    """Install real engine.yaml into engine_loader._eng."""
+    """Install real engine into engine_loader._eng."""
     from straightjacket.engine import engine_loader
 
     engine_loader._eng = _real_engine

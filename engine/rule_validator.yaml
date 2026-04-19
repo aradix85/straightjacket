@@ -1,0 +1,4 @@
+rule_validator:
+  min_quote_count: 4
+  max_gap_chars: 40
+  max_consecutive_short_gaps: 3

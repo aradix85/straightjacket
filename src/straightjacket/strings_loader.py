@@ -1,8 +1,13 @@
 #!/usr/bin/env python3
 """Straightjacket string loader: yaml-driven UI strings.
 
-All UI strings live in strings.yaml. Loaded once on first access.
+UI strings live in strings/, one yaml file per key prefix (actions.yaml,
+consequence.yaml, ui.yaml, etc.). Each file contains fully-dotted keys
+under that prefix (e.g. strings/actions.yaml holds `actions.load_failed`).
+The loader globs the directory and merges.
 """
+
+from pathlib import Path
 
 import yaml
 
@@ -10,7 +15,7 @@ from .engine.bootstrap_log import bootstrap_log as _log
 from .engine.config_loader import PROJECT_ROOT
 from .engine.format_utils import PartialFormatDict
 
-_STRINGS_PATH = PROJECT_ROOT / "strings.yaml"
+_STRINGS_DIR = PROJECT_ROOT / "strings"
 
 _strings: dict[str, str] | None = None
 
@@ -19,14 +24,27 @@ def _ensure_loaded() -> dict:
     """Load strings on first access."""
     global _strings
     if _strings is None:
-        if not _STRINGS_PATH.exists():
+        if not _STRINGS_DIR.is_dir():
             raise FileNotFoundError(
-                f"Strings file not found: {_STRINGS_PATH}\nstrings.yaml ships with the repo — restore it from git."
+                f"Strings directory not found: {_STRINGS_DIR}\nstrings/ ships with the repo — restore it from git."
             )
-        with open(_STRINGS_PATH, encoding="utf-8") as f:
-            base = yaml.safe_load(f) or {}
-
-        _strings = {k: v for k, v in base.items() if isinstance(v, str)}
+        files = sorted(_STRINGS_DIR.glob("*.yaml"))
+        if not files:
+            raise FileNotFoundError(f"No yaml files found in {_STRINGS_DIR}")
+        _strings = {}
+        origin: dict[str, Path] = {}
+        for path in files:
+            with open(path, encoding="utf-8") as f:
+                data = yaml.safe_load(f) or {}
+            if not isinstance(data, dict):
+                raise ValueError(f"{path} is not a valid YAML dict")
+            for key, val in data.items():
+                if not isinstance(val, str):
+                    continue
+                if key in _strings:
+                    raise ValueError(f"Duplicate string key '{key}' in {path} — already defined in {origin[key]}")
+                _strings[key] = val
+                origin[key] = path
         _log(f"[Strings] {len(_strings)} strings ready")
     return _strings
 

@@ -1,0 +1,56 @@
+ui.title: Straightjacket
+ui.who_plays: Who's playing?
+ui.new_player: New player
+ui.name_placeholder: Name...
+ui.create: Create
+ui.create_character: Create your character
+ui.setting: Setting
+ui.character_name: Character name
+ui.pronouns: Pronouns
+ui.paths: Paths
+ui.backstory: Backstory
+ui.backstory_prompt: Roll a backstory prompt
+ui.background_vow: Background vow
+ui.vow_rank: Vow rank
+ui.vow_subject: Who or what is this vow about? (for the world to remember)
+ui.truths: World truths
+ui.truth_pick: 'Choose a truth for: {name}'
+ui.starting_assets: Starting asset
+ui.name_roll: Roll a name
+ui.content_boundaries: Content boundaries
+ui.wishes: Wishes
+ui.stats_label: Stats (total must be {target}, each {min}-{max})
+ui.stats_total: 'Total: {t}/{target}'
+ui.stats_must_total: Stats must total {target}.
+ui.stats_range: Each stat must be {min}-{max}.
+ui.begin: Begin!
+ui.no_settings: No settings available.
+ui.input_placeholder: What do you do?
+ui.send: Send
+ui.save_load: Save / Load
+ui.saves: Saves
+ui.no_saves: No saves found.
+ui.save_as: Save as
+ui.save: Save
+ui.load: Load
+ui.delete: Delete
+ui.delete_confirm: Delete?
+ui.burn_title: Burn Momentum?
+ui.burn_text: '{current} → {upgrade} (costs {cost} momentum)'
+ui.burn_yes: Yes!
+ui.burn_no: 'No'
+ui.complete_title: The story has reached its conclusion
+ui.complete_text: You can keep playing or wrap up this chapter with an epilogue.
+ui.keep_playing: Keep Playing
+ui.generate_epilogue: Generate Epilogue
+ui.gameover_title: Adventure Over.
+ui.new_chapter: New Chapter
+ui.start_over: Start Over
+ui.retry: Retry
+ui.retry_text: Last input wasn't processed
+ui.session_taken: Session taken over in another window.
+ui.reconnecting: Connection lost, reconnecting... ({retries}/{max})
+ui.connection_lost: Connection lost.
+ui.scene_marker: Scene {n}
+ui.game_log: Game log
+ui.player_input: Player input

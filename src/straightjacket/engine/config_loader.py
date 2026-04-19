@@ -76,7 +76,7 @@ class AIConfig:
     provider: str
     api_base: str
     api_key_env: str
-    prompts_file: str
+    prompts_dir: str
     clusters: dict[str, ClusterConfig]
     role_cluster: dict[str, str]
 
@@ -137,7 +137,7 @@ def _parse_config(data: dict) -> AppConfig:
         provider=ad["provider"],
         api_base=ad["api_base"],
         api_key_env=ad["api_key_env"],
-        prompts_file=ad["prompts_file"],
+        prompts_dir=ad["prompts_dir"],
         clusters=clusters,
         role_cluster=ad["role_cluster"],
     )

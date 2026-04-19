@@ -1,12 +1,18 @@
 #!/usr/bin/env python3
-"""Engine mechanics loader: reads engine.yaml.
+"""Engine mechanics loader: reads and merges engine/*.yaml files.
 
 Singleton pattern matching config_loader.py. Returns typed EngineSettings
 for structured sections, with get_raw() for flexible sections.
+
+Engine config is split across one yaml per subsystem under engine/. The
+loader globs the directory, merges top-level keys into a single dict, and
+hands that dict to parse_engine_yaml. Duplicate top-level keys across files
+raise — each key belongs in exactly one file.
 """
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Any
 
 import yaml
@@ -15,25 +21,42 @@ from .bootstrap_log import bootstrap_log as _log
 from .config_loader import PROJECT_ROOT
 from .engine_config import EngineSettings, parse_engine_yaml
 
-_ENGINE_PATH = PROJECT_ROOT / "engine.yaml"
+_ENGINE_DIR = PROJECT_ROOT / "engine"
 
 _eng: EngineSettings | None = None
+
+
+def _load_merged(engine_dir: Path) -> dict[str, Any]:
+    """Read every engine/*.yaml and merge top-level keys. Duplicate keys raise."""
+    if not engine_dir.is_dir():
+        raise FileNotFoundError(
+            f"Engine config directory not found: {engine_dir}\nThe engine/ directory ships with the repo."
+        )
+    files = sorted(engine_dir.glob("*.yaml"))
+    if not files:
+        raise FileNotFoundError(f"No yaml files found in {engine_dir}")
+    merged: dict[str, Any] = {}
+    origin: dict[str, Path] = {}
+    for path in files:
+        with open(path, encoding="utf-8") as f:
+            data = yaml.safe_load(f)
+        if not isinstance(data, dict):
+            raise ValueError(f"{path} is not a valid YAML dict")
+        for key, value in data.items():
+            if key in merged:
+                raise ValueError(f"Duplicate top-level key '{key}' in {path} — already defined in {origin[key]}")
+            merged[key] = value
+            origin[key] = path
+    return merged
 
 
 def eng() -> EngineSettings:
     """Get the engine mechanics config. Loads on first access."""
     global _eng
     if _eng is None:
-        if not _ENGINE_PATH.exists():
-            raise FileNotFoundError(
-                f"Engine config not found: {_ENGINE_PATH}\nThe engine.yaml file ships with the repo."
-            )
-        with open(_ENGINE_PATH, encoding="utf-8") as f:
-            data = yaml.safe_load(f)
-        if not isinstance(data, dict):
-            raise ValueError(f"engine.yaml is not a valid YAML dict: {_ENGINE_PATH}")
+        data = _load_merged(_ENGINE_DIR)
         _eng = parse_engine_yaml(data)
-        _log(f"[Engine] Loaded {_ENGINE_PATH}")
+        _log(f"[Engine] Loaded {_ENGINE_DIR} ({len(data)} sections)")
     return _eng
 
 

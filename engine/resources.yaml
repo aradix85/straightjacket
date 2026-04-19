@@ -1,0 +1,7 @@
+resources:
+  health_max: 5
+  spirit_max: 5
+  supply_max: 5
+  health_start: 5
+  spirit_start: 5
+  supply_start: 5

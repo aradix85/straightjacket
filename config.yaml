@@ -1,5 +1,5 @@
 # Straightjacket configuration
-# For game mechanics, see engine.yaml. For AI prompts, see prompts.yaml.
+# For game mechanics, see engine/*.yaml. For AI prompts, see prompts/*.yaml.
 
 server:
   host: "127.0.0.1"
@@ -9,7 +9,7 @@ ai:
   provider: "openai_compatible"
   api_base: "https://api.cerebras.ai/v1"
   api_key_env: "CEREBRAS_API_KEY"
-  prompts_file: "prompts.yaml"
+  prompts_dir: "prompts"
 
   # ── Model clusters ──────────────────────────────────────────
   # Two models across four clusters: Qwen 3 for narrator (prose), GPT-OSS for everything else.

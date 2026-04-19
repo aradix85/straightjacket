@@ -1,0 +1,187 @@
+npc:
+  max_active: 12
+  max_memory_entries: 25
+  max_observations: 15
+  max_reflections: 8
+  activation_threshold: 0.7
+  mention_threshold: 0.3
+  max_activated: 3
+  reflection_threshold: 30
+  memory_recency_decay: 0.92
+  reflection_importance: 8
+  death_corroboration_min_importance: 9
+  seed_importance_floor: 3
+  reflection_recency_floor: 0.6
+  about_npc_relevance_boost: 0.6
+  consolidation_recency_ratio: 0.6
+  gate_memory_counts:
+    0: 0
+    1: 0
+    2: 3
+    3: 5
+    4: 5
+  activated_memory_count: 2
+name_titles:
+- mr
+- mr.
+- mrs
+- mrs.
+- ms
+- ms.
+- dr
+- dr.
+- sir
+- lady
+- lord
+- miss
+- captain
+- cpt
+- lieutenant
+- lt
+- sergeant
+- sgt
+- officer
+- detective
+- professor
+- prof
+- father
+- sister
+- brother
+- uncle
+- aunt
+- grandma
+- grandpa
+- old
+- young
+- the
+- king
+- queen
+- prince
+- princess
+- duke
+- duchess
+- baron
+- baroness
+- count
+- countess
+- viscount
+- marquis
+- earl
+- colonel
+- commander
+- general
+- admiral
+- major
+- corporal
+- private
+- judge
+- sheriff
+- mayor
+- governor
+- senator
+- chancellor
+- priest
+- priestess
+- bishop
+- cardinal
+- reverend
+- pastor
+- rabbi
+- imam
+- monk
+- abbot
+- abbess
+- ambassador
+- consul
+- envoy
+- delegate
+- monsieur
+- madame
+- mademoiselle
+- señor
+- señora
+- señorita
+- don
+- doña
+- wizard
+- sorcerer
+- sorceress
+- mage
+- warlock
+- witch
+- archmage
+- enchantress
+- necromancer
+- alchemist
+- paladin
+- cleric
+- rogue
+- assassin
+- berserker
+- barbarian
+- gladiator
+- champion
+- sentinel
+- guardian
+- inquisitor
+- templar
+- crusader
+- squire
+- knight
+- liege
+- regent
+- viceroy
+- castellan
+- seneschal
+- steward
+- herald
+- grandmaster
+- shaman
+- oracle
+- prophet
+- seer
+- sage
+- elder
+- druid
+- mystic
+- augur
+- diviner
+- peasant
+- blacksmith
+- fletcher
+- reeve
+- constable
+- ensign
+- marshal
+- overseer
+- commissioner
+- agent
+- operative
+- warlord
+- android
+- emissary
+- arbiter
+- overlord
+- archon
+- praetor
+- legate
+- centurion
+- shogun
+- samurai
+- ronin
+- khan
+- caliph
+- emir
+- shah
+- outcast
+- exile
+- pilgrim
+- wanderer
+- mercenary
+- neighbor
+- stranger
+- customer
+npc_matching:
+  stt_alias_bonus: 10
+  stt_phrase_length: 12
+  alias_min_length: 4

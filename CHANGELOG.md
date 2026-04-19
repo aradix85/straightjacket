@@ -5,6 +5,20 @@ Originally forked from [EdgeTales](https://github.com/edgetales/edgetales). See 
 
 ---
 
+## [0.60.0] — 2026-04-19
+
+Tranche 8 expanded: every yaml store in the repo is now modular. Callsites unchanged — each loader globs its directory, merges top-level keys, raises on duplicates.
+
+`engine.yaml` (2165 lines) split into 58 files under `engine/`, one per subsystem, filename matching the section. Small siblings bundled where splitting would give one-key files: `npc.yaml` bundles npc/name_titles/npc_matching, `memory.yaml` the six memory sections, `architect.yaml` architect/architect_limits, `disposition.yaml` the two disposition maps, `scene_context.yaml` the two one-liners, `creativity_seeds.yaml` adds scene_range_default, `track_moves.yaml` the two track-move lists. Per-subsystem split chosen because tranches cluster that way (tranche 5 = move_availability only, tranche 6 = ai_text+architect, tranche 7 = stats only).
+
+`emotions.yaml` (293 lines) split into `emotions/importance.yaml`, `keyword_boosts.yaml`, `disposition_map.yaml`. `prompts.yaml` (30 prompts) split into seven cluster-files under `prompts/`: brain, narrator, architect, validator, director, tasks, blocks. `strings.yaml` (142 keys) split into eighteen files under `strings/`, one per dotted-key prefix so translators edit one file at a time. `config.yaml` stays single — 62 lines, user-edited, not worth the usability hit.
+
+One config rename: `ai.prompts_file` → `ai.prompts_dir` in `config.yaml` and `AIConfig`. One test-helper config followed. Session-cache behaviour preserved in `tests/conftest.py`.
+
+Delivery gate: 783 tests green in 3.4 seconds, ruff + ruff format + mypy clean on 87 source files.
+
+---
+
 ## [0.59.0] — 2026-04-19
 
 Tranche 7: the five hardcoded stat fields on GameState (`edge`, `heart`, `iron`, `shadow`, `wits`) are gone. They duplicated `engine.yaml stats.names` in Python, carried the canonical 3-2-2-1-1 array as magic-number dataclass defaults, and had been flagged as a storage-schema migration since tranche 3. GameState now has a single `stats: dict[str, int]` field declared `kw_only=True` so it can sit among default fields while remaining a required kwarg — no default dict, no silent substitute for a missing character-creation state. `GameState.get_stat` reads from the dict and raises on an unknown or unset key. Save-file format breaks; there were no live saves to migrate.

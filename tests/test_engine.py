@@ -21,7 +21,7 @@ def _full_config_data(**overrides: object) -> dict:
             "provider": "openai_compatible",
             "api_base": "",
             "api_key_env": "",
-            "prompts_file": "prompts.yaml",
+            "prompts_dir": "prompts",
             "clusters": {
                 "classification": {
                     "model": "qwen",

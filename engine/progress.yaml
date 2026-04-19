@@ -1,0 +1,9 @@
+progress:
+  track_types:
+    default:
+      ticks_per_mark:
+        troublesome: 12
+        dangerous: 8
+        formidable: 4
+        extreme: 2
+        epic: 1

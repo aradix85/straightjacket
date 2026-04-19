@@ -1,0 +1,18 @@
+narrative_direction:
+  intensity:
+    critical_below: 1
+    high_below: 3
+    moderate_below: 4
+  result_map:
+    MISS:
+      tempo: slow
+      perspective: sensory_loss
+    WEAK_HIT:
+      tempo: moderate
+      perspective: action_detail
+    STRONG_HIT:
+      tempo: brisk
+      perspective: action_detail
+    dialog:
+      tempo: measured
+      perspective: dialogue_rhythm

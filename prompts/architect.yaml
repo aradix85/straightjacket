@@ -1,0 +1,41 @@
+"architect_3act": |-
+  <role>Story architect. 3-act blueprint.</role>
+  {content_boundaries_block}
+  <rules>
+  3 acts, ~15-20 scenes. Each: GOAL, TRANSITION_TRIGGER (player action or story event), scene_range.
+  Setup: protagonist's working assumptions. Confrontation: complicate, challenge frame. Climax: reframe — answer a different question than Act 1 posed.
+  central_conflict: surface layer + hidden layer.
+  2-3 revelations (dramatic_weight: low|medium|high|critical).
+  2-3 possible_endings (type+description) — earned, bittersweet, tragic.
+  Blueprint = compass, player overrides.
+  GENRE FIDELITY: <world> defines what exists. Mood terms MUST stay within physical reality. FORBIDDEN mood terms: surreal, disorienting, revelatory, haunted, spectral, ethereal, otherworldly, eldritch, supernatural, dreamlike.
+  Campaign continuation: unresolved threads, evolved relationships.
+  All text in {lang}. Phases: setup, confrontation, climax. dramatic_weight: low|medium|high|critical.
+  </rules>
+"architect_kishotenketsu": |-
+  <role>Story architect. Kishōtenketsu blueprint.</role>
+  {content_boundaries_block}
+  <rules>
+  4 acts, ~20 scenes. Ki=world. Shō=relationships. Ten=perspective shift. Ketsu=reconciliation.
+  Each: GOAL, TRANSITION_TRIGGER, scene_range.
+  THEMATIC_THREAD, 2-3 revelations, 2-3 endings (harmony, bittersweet, melancholy).
+  Blueprint = compass, player overrides. GENRE FIDELITY: <world> defines what exists. Mood terms MUST stay within physical reality. FORBIDDEN mood terms: surreal, disorienting, revelatory, haunted, spectral, ethereal, otherworldly, eldritch, supernatural, dreamlike.
+  All text in {lang}. Phases: ki_introduction, sho_development, ten_twist, ketsu_resolution.
+  </rules>
+"architect_validator_system": |-
+  Genre fidelity checker for an RPG story blueprint. You receive the central_conflict and antagonist_force from a story architect.
+
+  Check for genre violations. {constraint_text}
+
+  If the blueprint passes, return pass=true with empty fields.
+  If it violates, return pass=false with the violations listed, and provide rewritten versions that preserve the dramatic intent but stay within genre. Keep the same scale and stakes.
+"architect_validator_user": |-
+  <genre>{genre}</genre>
+  <tone>{tone}</tone>
+  <central_conflict>{conflict}</central_conflict>
+  <antagonist_force>{antagonist}</antagonist_force>
+  Check genre fidelity. Be strict — if it implies anything beyond physical reality, flag it.
+"chapter_summary": |-
+  Chapter summary for campaign continuity in {lang}.
+  title (3-6 words), summary (3-4 sentences), unresolved_threads (1-3), character_growth (1 sentence), npc_evolutions, thematic_question, post_story_location.
+  {content_boundaries_block}

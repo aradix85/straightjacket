@@ -1,0 +1,10 @@
+"block_content_boundaries_lines": |-
+  <lines>These topics do not exist in this world: {content_lines}</lines>
+"block_content_boundaries_wishes": |-
+  <player_wishes>Story seeds to weave over time. Max one per scene. Opening = world and mood. {wishes}</player_wishes>
+"block_backstory": |-
+  <backstory>Established canon. These people know the player. These events happened. {backstory_text}</backstory>
+"secrets_label": |-
+  MUST NOT reveal directly,weave across 3+ scenes
+"vocabulary_instruction": |-
+  You MUST use these terms instead of their generic equivalents. These substitutions define how this world describes itself. NEVER use the generic term when the substitution exists.

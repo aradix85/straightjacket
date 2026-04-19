@@ -1,0 +1,8 @@
+activation_scores:
+  target: 1.0
+  name_match: 0.8
+  name_part: 0.6
+  alias_match: 0.7
+  location_match: 0.3
+  recent_interaction: 0.2
+  max_recursive: 1

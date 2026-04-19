@@ -1,0 +1,46 @@
+creation:
+  max_paths: 2
+  max_starting_assets: 1
+  starting_asset_categories:
+  - companion
+  - module
+  - command_vehicle
+  background_vow_default_rank: extreme
+  brain_track_rank_fallback: dangerous
+  chaos_vow_modifiers:
+    desperate:
+    - survive
+    - defend
+    - escape
+    - siege
+    - flee
+    - hunted
+    - destroy
+    tense:
+    - find
+    - hunt
+    - track
+    - investigate
+    - uncover
+    - expose
+    - avenge
+    calm:
+    - explore
+    - map
+    - chart
+    - discover
+    - trade
+    - build
+    - settle
+  chaos_modifier_values:
+    desperate: 2
+    tense: 1
+    calm: -1
+  truth_threads:
+    scattered and isolated: Isolation threatens supply lines
+    resources are scarce: Scarcity drives conflict
+    war ravages: War disrupts all plans
+    AI is feared: Distrust of thinking machines
+    iron vows are sacred: Your word binds you absolutely
+    magic is rare: The old rituals carry a price
+    cursed waters: The sea itself is hostile

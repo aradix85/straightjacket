@@ -1,0 +1,133 @@
+move_availability:
+  adventure/face_danger:
+    available: []
+  adventure/gather_information:
+    available: []
+  adventure/heal:
+    available: []
+  adventure/make_camp:
+    available: []
+  adventure/reach_your_destination:
+    available: []
+  adventure/resupply:
+    available: []
+  adventure/secure_an_advantage:
+    available: []
+  adventure/undertake_a_journey:
+    available: []
+  adventure/check_your_gear:
+    available: []
+  adventure/compel:
+    available: []
+  combat/end_the_fight:
+    available:
+    - flag: in_combat
+  combat/enter_the_fray:
+    available:
+    - not_flag: in_combat
+  combat/battle:
+    available:
+    - not_flag: in_combat
+  combat/take_decisive_action:
+    available:
+    - flag: in_combat
+    - flag: has_combat_track
+  combat/strike:
+    available:
+    - flag: in_combat
+    - combat_pos_in:
+      - in_control
+  combat/gain_ground:
+    available:
+    - flag: in_combat
+    - combat_pos_in:
+      - in_control
+  combat/clash:
+    available:
+    - flag: in_combat
+    - combat_pos_in:
+      - bad_spot
+  combat/react_under_fire:
+    available:
+    - flag: in_combat
+    - combat_pos_in:
+      - bad_spot
+  connection/make_a_connection:
+    available: []
+  connection/develop_your_relationship:
+    available: []
+  connection/test_your_relationship:
+    available: []
+  connection/forge_a_bond:
+    available:
+    - flag: has_connection
+  delve/check_your_gear:
+    available: []
+  delve/delve_the_depths:
+    available: []
+  delve/escape_the_depths:
+    available: []
+  delve/locate_your_objective:
+    available: []
+  exploration/set_a_course:
+    available: []
+  exploration/undertake_an_expedition:
+    available: []
+  exploration/explore_a_waypoint:
+    available:
+    - flag: has_expedition
+  exploration/finish_an_expedition:
+    available:
+    - flag: has_expedition
+  quest/swear_an_iron_vow:
+    available: []
+  quest/fulfill_your_vow:
+    available:
+    - flag: has_vow
+  recover/heal:
+    available: []
+  recover/hearten:
+    available: []
+  recover/repair:
+    available: []
+  recover/resupply:
+    available: []
+  recover/sojourn:
+    available: []
+  relationship/compel:
+    available: []
+  relationship/draw_the_circle:
+    available: []
+  relationship/forge_a_bond:
+    available: []
+  relationship/sojourn:
+    available: []
+  relationship/test_your_bond:
+    available: []
+  scene_challenge/face_danger:
+    available:
+    - flag: has_scene_challenge
+  scene_challenge/secure_an_advantage:
+    available:
+    - flag: has_scene_challenge
+  scene_challenge/finish_the_scene:
+    available:
+    - flag: has_scene_challenge
+  suffer/companion_endure_harm:
+    never: true
+  suffer/companion_takes_a_hit:
+    never: true
+  suffer/endure_harm:
+    never: true
+  suffer/endure_stress:
+    never: true
+  suffer/face_death:
+    never: true
+  suffer/face_desolation:
+    never: true
+  suffer/withstand_damage:
+    never: true
+  threshold/face_death:
+    never: true
+  threshold/face_desolation:
+    never: true

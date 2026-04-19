@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 """Straightjacket prompt loader: yaml-driven AI prompts.
 
-prompts.yaml is the single source of truth for all AI system prompts.
-The file ships with the repo. If it's missing, the engine does not start.
-Template variables use {name} syntax, filled at runtime.
+Prompts live in a directory of yaml files, one per subsystem cluster
+(brain, narrator, architect, validator, director, tasks, blocks). The loader
+globs the directory and merges top-level keys. The file ships with the repo.
+If it's missing, the engine does not start. Template variables use {name}
+syntax, filled at runtime.
 """
 
 import yaml
@@ -16,31 +18,39 @@ from .bootstrap_log import bootstrap_log as _log
 from .format_utils import PartialFormatDict
 
 
-def _prompts_path() -> Path:
-    return PROJECT_ROOT / cfg().ai.prompts_file
+def _prompts_dir() -> Path:
+    return PROJECT_ROOT / cfg().ai.prompts_dir
 
 
 _prompts: dict[str, str] | None = None
 
 
 def _ensure_loaded() -> dict:
-    """Load prompts from yaml on first access."""
+    """Load prompts from yaml directory on first access."""
     global _prompts
     if _prompts is None:
-        path = _prompts_path()
-        if not path.exists():
-            raise FileNotFoundError(f"Prompts file not found: {path}\nCheck ai.prompts_file in config.yaml.")
-        with open(path, encoding="utf-8") as f:
-            data = yaml.safe_load(f)
-        if not isinstance(data, dict):
-            raise ValueError(f"Prompts file is not a valid YAML dict: {path}")
+        directory = _prompts_dir()
+        if not directory.is_dir():
+            raise FileNotFoundError(f"Prompts directory not found: {directory}\nCheck ai.prompts_dir in config.yaml.")
+        files = sorted(directory.glob("*.yaml"))
+        if not files:
+            raise FileNotFoundError(f"No yaml files found in {directory}")
         _prompts = {}
-        for key, val in data.items():
-            if isinstance(val, str):
+        origin: dict[str, Path] = {}
+        for path in files:
+            with open(path, encoding="utf-8") as f:
+                data = yaml.safe_load(f)
+            if not isinstance(data, dict):
+                raise ValueError(f"{path} is not a valid YAML dict")
+            for key, val in data.items():
+                if not isinstance(val, str):
+                    _log(f"[Prompts] Ignoring non-string prompt '{key}' in {path}", level="warning")
+                    continue
+                if key in _prompts:
+                    raise ValueError(f"Duplicate prompt key '{key}' in {path} — already defined in {origin[key]}")
                 _prompts[key] = val
-            else:
-                _log(f"[Prompts] Ignoring non-string prompt '{key}'", level="warning")
-        _log(f"[Prompts] Loaded {len(_prompts)} prompts from {path}")
+                origin[key] = path
+        _log(f"[Prompts] Loaded {len(_prompts)} prompts from {directory}")
     return _prompts
 
 

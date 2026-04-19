@@ -1,0 +1,35 @@
+information_gate:
+  points:
+    scenes_known_1: 0
+    scenes_known_2_3: 1
+    scenes_known_4_plus: 2
+    gather_success: 1
+    bond_1: 0
+    bond_2_3: 1
+    bond_4_plus: 2
+  stance_caps:
+    aggressive: 1
+    hostile: 1
+    stonewalling: 0
+    obstructive: 1
+    brutal: 1
+    confrontational: 1
+    misleading: 1
+    sabotaging: 1
+    conflicted_violent: 2
+    bitter: 2
+    grudging: 2
+    reluctant_hostile: 2
+    defensive: 1
+    guarded: 2
+    evasive: 1
+    wary: 2
+    cautious_ally: 2
+    testing: 2
+    conditional: 2
+    transactional: 2
+    protective_wary: 3
+    frank: 3
+    forthcoming: 3
+    cooperative_guarded: 3
+  default_cap: 4

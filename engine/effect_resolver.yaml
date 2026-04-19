@@ -1,0 +1,16 @@
+effect_resolver:
+  limited_below: -2
+  great_above: 2
+  weights:
+    desperate: -1
+    controlled: 1
+    bond_high: 1
+    bond_low: -1
+    secured_advantage: 1
+  move_baselines:
+    combat/strike: 1
+    combat/clash: 0
+    adventure/gather_information: 0
+    adventure/compel: 0
+    adventure/face_danger: 0
+    other: 0

@@ -1,0 +1,9 @@
+retry:
+  max_retries: 2
+  retryable_http_codes:
+  - 429
+  - 500
+  - 502
+  - 503
+  - 529
+  backoff_base: 2

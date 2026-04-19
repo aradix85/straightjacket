@@ -1,0 +1,5 @@
+threats:
+  menace_on_miss: 1
+  autonomous_tick_chance: 0.15
+  menace_high_threshold: 0.75
+  forsake_spirit_cost: 2

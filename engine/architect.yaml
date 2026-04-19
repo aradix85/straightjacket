@@ -1,0 +1,28 @@
+architect:
+  forbidden_moods:
+  - surreal
+  - disorienting
+  - revelatory
+  - haunted
+  - spectral
+  - ethereal
+  - otherworldly
+  - eldritch
+  - supernatural
+  - dreamlike
+  - hallucinatory
+  - phantasmagoric
+  - uncanny
+architect_limits:
+  recap_log_window: 15
+  recap_narration_window: 5
+  recap_narration_truncate: 800
+  recap_campaign_history_window: 2
+  recap_campaign_summary_truncate: 200
+  architect_campaign_window: 3
+  chapter_summary_log_window: 20
+  log_truncate_short: 60
+  log_truncate_medium: 80
+  log_truncate_long: 120
+  log_truncate_xlong: 200
+  drift_words_log_window: 5

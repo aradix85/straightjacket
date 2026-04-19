@@ -1,0 +1,57 @@
+fate:
+  default_method: fate_chart
+  odds_modifiers:
+    certain: 5
+    nearly_certain: 4
+    very_likely: 2
+    likely: 1
+    fifty_fifty: 0
+    unlikely: -1
+    very_unlikely: -2
+    nearly_impossible: -4
+    impossible: -5
+  chaos_modifiers:
+    1: -5
+    2: -4
+    3: -2
+    4: -1
+    5: 0
+    6: 1
+    7: 2
+    8: 4
+    9: 5
+  likelihood_rules:
+    disposition_scores:
+      hostile: -3
+      distrustful: -2
+      neutral: 0
+      friendly: 2
+      loyal: 3
+    chaos_thresholds:
+      high: 7
+      low: 3
+    chaos_scores:
+      high: -1
+      low: 1
+    resource_critical_below: 2
+    resource_scores:
+      critical: -1
+    score_to_odds:
+    - min_score: 5
+      odds: certain
+    - min_score: 4
+      odds: nearly_certain
+    - min_score: 3
+      odds: very_likely
+    - min_score: 1
+      odds: likely
+    - min_score: -1
+      odds: fifty_fifty
+    - min_score: -3
+      odds: unlikely
+    - min_score: -4
+      odds: very_unlikely
+    - min_score: -5
+      odds: nearly_impossible
+    - min_score: -99
+      odds: impossible

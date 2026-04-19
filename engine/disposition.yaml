@@ -1,0 +1,11 @@
+disposition_shifts:
+  hostile: distrustful
+  distrustful: neutral
+  neutral: friendly
+  friendly: loyal
+disposition_to_seed_emotion:
+  hostile: hostile
+  distrustful: suspicious
+  neutral: neutral
+  friendly: curious
+  loyal: trusting

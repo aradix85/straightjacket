@@ -41,10 +41,10 @@ Five YAML files, each with a clear owner:
 | File | What | Who edits it |
 |---|---|---|
 | `config.yaml` | Server port, AI provider, language | Players |
-| `engine.yaml` | Game rules, move outcomes, damage, chaos, NPC limits, pacing | Game designers |
-| `emotions.yaml` | Emotion scoring, keyword boosts, dispositions | Game designers |
-| `prompts.yaml` | AI system prompts, task templates, instruction fragments | Prompt engineers |
-| `strings.yaml` | UI text (English default) | Translators |
+| `engine/*.yaml` | Game rules, move outcomes, damage, chaos, NPC limits, pacing — one file per subsystem | Game designers |
+| `emotions/*.yaml` | Emotion scoring, keyword boosts, dispositions — one file per subsystem | Game designers |
+| `prompts/*.yaml` | AI system prompts, task templates, instruction fragments — one file per cluster (brain, narrator, architect, validator, director, tasks, blocks) | Prompt engineers |
+| `strings/*.yaml` | UI text (English default) — one file per key prefix | Translators |
 
 Four settings ship via [Datasworn](https://github.com/rsek/datasworn): Ironsworn Classic (dark fantasy), Starforged (sci-fi), Sundered Isles (seafaring), and Delve (dungeon-crawling expansion for Classic). Each defines vocabulary, sensory palette, genre constraints, and oracle paths in `data/settings/*.yaml`. Adding a setting means adding one YAML file and a Datasworn JSON — no Python. See [ARCHITECTURE.md](ARCHITECTURE.md) for the settings YAML format.
 
@@ -56,7 +56,7 @@ Default AI: Qwen 3 235B via Cerebras for narrator (high temperature prose), GPT-
 
 See [ARCHITECTURE.md](ARCHITECTURE.md) for the full turn pipeline, module ownership table, file map, and extension guides (new providers, new settings).
 
-All mutable game state is typed dataclasses with snapshot/restore for atomic undo. Zero hardcoded game logic — move outcomes, damage tables, disposition shifts, and NPC seed emotions all read from engine.yaml. Move definitions load from Datasworn JSON per setting. Zero hardcoded prompt text — all AI-facing text lives in prompts.yaml, Python only assembles.
+All mutable game state is typed dataclasses with snapshot/restore for atomic undo. Zero hardcoded game logic — move outcomes, damage tables, disposition shifts, and NPC seed emotions all read from the engine config (one yaml per subsystem under `engine/`). Move definitions load from Datasworn JSON per setting. Zero hardcoded prompt text — all AI-facing text lives under `prompts/` (one yaml per cluster), Python only assembles.
 
 The architecture implements the [Narrative RPG Engine](docs/narrative_rpg_engine_v2_4.pdf) design document: AI narrates, structured systems decide. The six functions from the design document (action resolution, fiction generation, timing, relationships, agency, world state) map to engine modules. The constraint enforcement strategy (engine-dictated consequences, vocabulary control, narrative direction derived from game state) follows the document's recommendations.
 

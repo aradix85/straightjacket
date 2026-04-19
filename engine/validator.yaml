@@ -1,0 +1,218 @@
+validator:
+  rewrite_instructions:
+    player agency: Remove sentences where the PLAYER CHARACTER (the 'you') thinks, feels, realizes, interprets, or remembers.
+      NPCs may think and feel freely. Describe only what the player character PERCEIVES.
+    resolution pacing: Cut the NPC's speech to answer ONLY the specific question asked. Remove all volunteered theories, explanations,
+      connections. One short answer, then the NPC stops or acts.
+    monologue: Cut the NPC's speech to answer ONLY the specific question asked. Remove all volunteered theories, explanations,
+      connections. One short answer, then the NPC stops or acts.
+    result integrity AND silver: Remove any positive outcome. The MISS ends with the situation worse than before. No learning,
+      no lucky break.
+    result integrity AND annihilation: 'Reduce the severity. A MISS is a setback: injury, lost ground, broken equipment. Not
+      death or total defeat.'
+    result integrity AND cost: 'Add a SPECIFIC tangible cost for the WEAK_HIT: something breaks, is lost, is spent, or worsens.
+      Atmosphere alone is not a cost. Name the thing that is damaged or lost.'
+    result integrity AND weak: 'Add a SPECIFIC tangible cost for the WEAK_HIT: something breaks, is lost, is spent, or worsens.
+      Atmosphere alone is not a cost. Name the thing that is damaged or lost.'
+    genre fidelity: Remove the forbidden genre element. Replace with something that fits the world's rules.
+    genre physics: 'Materials MUST NOT exhibit consciousness, memory, or transformation. Wood does not weep, bleed, or form
+      faces. Stone does not remember. Replace ALL supernatural material behavior with physical description from <sensory_palette>:
+      grain, cracks, stains, weathering, temperature.'
+    atmospheric register: 'Too many supernatural/horror words (pulse, hum, thrum, whisper, glow, shimmer, weep, ooze, writhe,
+      visage, reshape). Replace with physical sensations from the <sensory_palette>: mud, iron, cold, woodsmoke, wind, creaking
+      wood, weight, texture, temperature.'
+    output format: Remove all metadata, brackets, markdown, role labels. Begin with narrative prose.
+    consequence missing: Each <consequence> tag describes something that MUST happen in this scene. Show every consequence
+      in the prose — the player must see it occur.
+  consequence_stems:
+    breaks:
+    - broke
+    - broken
+    - snaps
+    - snapped
+    - crack
+    - cracked
+    - shatter
+    broken:
+    - breaks
+    - broke
+    - snaps
+    - cracked
+    - shatter
+    closes:
+    - closed
+    - closing
+    - shuts
+    - shut
+    dims:
+    - dimmed
+    - dimming
+    - fades
+    - faded
+    - darkens
+    - darkened
+    loses:
+    - lost
+    - losing
+    - gone
+    lost:
+    - loses
+    - losing
+    - gone
+    gone:
+    - lost
+    - loses
+    - vanish
+    - disappear
+    pulls:
+    - pulled
+    - pulling
+    - draws
+    - drew
+    withdraws:
+    - withdrew
+    - withdrawal
+    - retreats
+    - retreated
+    - pulls
+    fractures:
+    - fractured
+    - cracks
+    - cracked
+    - breaks
+    - broken
+    settles:
+    - settled
+    - settling
+    - sinks
+    - sank
+    falters:
+    - faltered
+    - faltering
+    - wavers
+    - wavered
+    evaporates:
+    - evaporated
+    - vanishes
+    - vanished
+    - dissolves
+    - dissolved
+    staggers:
+    - staggered
+    - staggering
+    - stumbles
+    - stumbled
+    crumples:
+    - crumpled
+    - collapses
+    - collapsed
+    advantage:
+    - edge
+    - leverage
+    - upper hand
+    - opening
+    momentum:
+    - advantage
+    - edge
+    - leverage
+    - initiative
+    doubt:
+    - uncertain
+    - hesitat
+    - waver
+    exhaustion:
+    - exhausted
+    - fatigue
+    - fatigued
+    - weariness
+    - weary
+    - tired
+    slips:
+    - slipped
+    - slipping
+    - falters
+    - faltered
+    supplies:
+    - supply
+    - gear
+    - pack
+    - rations
+    - kit
+    - provisions
+    dropped:
+    - drops
+    - drop
+    - fell
+    - spill
+    - spilled
+    spent:
+    - used
+    - consumed
+    - depleted
+    - empty
+    - emptied
+    turns:
+    - turned
+    - turning
+    crosses:
+    - crossed
+    - crossing
+    steps:
+    - stepped
+    - stepping
+    shifts:
+    - shifted
+    - shifting
+    - changes
+    - changed
+  agency_patterns:
+  - \byou feel\b(?!\s+(?:the|a|an|your|its|it|his|her|their|cold|hot|warm|cool|wet|dry|rough|smooth|sharp|dull|soft|hard|heavy|light|damp|slick|gritty|sticky))\s+\w+
+  - \byou (?:realize|understand|sense that|suspect|conclude|decide|believe|assume|recognize that|grasp)\b
+  - \byou think\b(?!\s+(?:about|of|through|over|back))
+  - \byou (?:remember|recall|knew|have seen|'ve seen)\b
+  - \b(?:a (?:wave|surge|pang|flash|jolt|stab) of (?:fear|dread|anger|grief|joy|relief|guilt|shame|hope|despair|panic|revulsion|unease|disgust|sadness|horror|rage|fury))\b
+  - \bsomething (?:in|inside|within) you\b
+  - \b(?:the )?weight of (?:your |the |his |her )?(?:failure|guilt|shame|loss|grief|regret|betrayal|silence|withdrawal)\b
+  - \bmakes you (?:want|need|wish|long|ache) to\b
+  - \b(?:the |a )?(?:silence|darkness|cold|emptiness|room|air|wind) (?:offers|invites|urges|compels|forces|demands|asks|tells)
+    you\b
+  - \b(?:press(?:es|ing)|settl(?:es|ing)|weigh(?:s|ing)|hang(?:s|ing)|bears? down) (?:against |on |upon )?your (?:chest|shoulders|ears|back|spine|ribs)\b
+  - \bdragging your (?:posture|shoulders|head|body|gaze)\b
+  - \b(?:crushing|suffocating) (?:pressure|weight|silence|darkness|realization)\b
+  - \b(?:sound|voice|world|noise)s? feels? (?:distant|muffled|far away|underwater)\b
+  - \bas if you (?:are|were) (?:already |somehow )?(?:underwater|drowning|falling|sinking|floating)\b
+  - \b(?:whatever |the )?(?:fragile |thin )?(?:advantage|connection|trust|hope|progress) you (?:thought you )?held\b
+  - \b(?:advantage|connection|trust|hope) (?:you held |between you )?(?:evaporates?|dissolves?|vanishes?|crumbles?)\b
+  - \byou(?:'ve| have) found (?:the |a )?(?:break|answer|pattern|key|link|cause|source|reason)\b
+  - \b(?:sticks|lodges|burns|stays|lingers|registers) in your (?:mind|memory|thoughts|head)\b
+  - \byou (?:can tell|can sense|can feel|just know|already know|know enough)\b
+  - \byou (?:notice|catch|spot|see) (?:yourself|your own)\s+(?:thinking|feeling|hoping|wanting)\b
+  miss_silver_lining_patterns:
+  - \bat least\b
+  - \bfortunately\b
+  - \bluckily\b
+  - \bmanage[sd]? to\b
+  - \bbut (?:you|the|it|she|he|they)\b.*\b(?:safe|survive|escape|learn|gain|find|discover)\b
+  - \bsilver lining\b
+  - \bblessing in disguise\b
+  - \bbright side\b
+  miss_annihilation_patterns:
+  - \byou (?:die|are dead|collapse.{0,20}lifeless|stop breathing)\b
+  - \beverything (?:goes black|fades to nothing|ends)\b
+  - \byour (?:vision|world|consciousness) (?:fades|dims|goes|ends)\b
+  format_patterns:
+  - pattern: '^\s*(?:Narrator|Assistant|System)\s*:'
+    flags: multiline
+    label: role label prefix
+  - pattern: \[(?:CLOCK|THREAT|SCENE|NPC|CONTEXT|NOTE)[^\]]*\]
+    label: bracketed annotation
+  - pattern: '```'
+    label: code block
+  - pattern: ^\s*#{1,6}\s
+    flags: multiline
+    label: markdown heading
+  - pattern: \*\*[^*]+\*\*
+    label: bold markdown
+  quote_patterns:
+    strip: “[^”]*”
+    match: “([^”]+)”

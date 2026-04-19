@@ -1,0 +1,68 @@
+memory:
+  min_token_length: 3
+  consolidation_floor: 3
+  unknown_emotion_importance: 4
+memory_emotions:
+  base:
+    combat_MISS: fear_pain
+    combat_WEAK_HIT: tense_relief
+    combat_STRONG_HIT: fierce_triumph
+    social_MISS: suspicious_resentful
+    social_WEAK_HIT: guarded_cautious
+    social_STRONG_HIT: trusting_open
+    endure_MISS: desperate_suffering
+    endure_WEAK_HIT: grim_endurance
+    endure_STRONG_HIT: relieved
+    recovery_WEAK_HIT: grateful
+    recovery_STRONG_HIT: grateful_relieved
+    other_MISS: frustrated_setback
+    other_WEAK_HIT: wary_uncertain
+    other_STRONG_HIT: confident
+    dialog: neutral
+  disposition_suffix:
+    hostile: _hostile
+    distrustful: _wary
+    neutral: ''
+    friendly: _warm
+    loyal: _devoted
+memory_templates:
+  action: 'scene {scene}: {player} {move_verb} — {result_text}'
+  action_targeted: 'scene {scene}: {player} {move_verb} involving {npc} — {result_text}'
+  dialog: 'scene {scene}: {player} spoke with {npc} about {intent}'
+  dialog_no_target: 'scene {scene}: {player} engaged in conversation — {intent}'
+memory_result_text:
+  combat_MISS: it went badly, the situation worsened
+  combat_WEAK_HIT: managed but took damage in the process
+  combat_STRONG_HIT: struck true and gained the upper hand
+  social_MISS: was rebuffed, trust eroded
+  social_WEAK_HIT: got somewhere but it came at a cost
+  social_STRONG_HIT: connected and made real progress
+  endure_MISS: buckled under the strain
+  endure_WEAK_HIT: held on, barely
+  endure_STRONG_HIT: endured and came through
+  recovery_MISS: the attempt to recover failed
+  recovery_WEAK_HIT: recovered somewhat
+  recovery_STRONG_HIT: recovered well
+  other_MISS: failed and the situation deteriorated
+  other_WEAK_HIT: partial success with complications
+  other_STRONG_HIT: succeeded cleanly
+  dialog: exchanged words
+memory_move_verbs:
+  adventure/face_danger: faced danger
+  adventure/compel: pressed someone
+  adventure/gather_information: investigated
+  adventure/secure_an_advantage: prepared carefully
+  combat/clash: fought
+  combat/strike: attacked
+  suffer/endure_harm: endured harm
+  suffer/endure_stress: weathered stress
+  connection/make_a_connection: reached out
+  connection/test_your_relationship: tested a bond
+  recover/resupply: resupplied
+  world_shaping: shaped the world
+  dialog: spoke
+  _catchall: acted
+memory_retrieval_weights:
+  recency: 0.4
+  importance: 0.35
+  relevance: 0.25

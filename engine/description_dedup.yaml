@@ -1,0 +1,17 @@
+description_dedup:
+  identity_score_delta: 1000
+  bond_multiplier: 3
+  richness_alias: 2
+  richness_description: 3
+  richness_aim: 3
+  richness_memory: 2
+  richness_other: 1
+  max_alias_word_count: 4
+  min_desc_chars: 10
+  min_word_chars_for_match: 4
+  min_new_word_count: 2
+  min_substring_match_len: 5
+  long_word_chars: 12
+  partial_match_weight: 0.5
+  effective_overlap_min: 2.0
+  min_overlap_ratio: 0.25

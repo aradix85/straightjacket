@@ -1,0 +1,5 @@
+rate_limit:
+  window_seconds: 5.0
+  max_requests: 20
+  warn_probe_max_tries: 100
+  warn_probe_poll_seconds: 0.1

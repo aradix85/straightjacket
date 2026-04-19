@@ -1,0 +1,5 @@
+opening:
+  time_of_day: morning
+  clock_segments: 6
+  clock_filled: 1
+  clock_trigger_template: Threat escalates beyond {player}'s control

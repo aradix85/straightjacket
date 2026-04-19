@@ -1,0 +1,51 @@
+impacts:
+  wounded:
+    label: wounded
+    description: A serious physical injury that won't heal on its own
+    blocks_recovery: health
+    permanent: false
+  shaken:
+    label: shaken
+    description: A psychic wound that lingers
+    blocks_recovery: spirit
+    permanent: false
+  unprepared:
+    label: unprepared
+    description: Without proper gear or supplies
+    blocks_recovery: supply
+    permanent: false
+  doomed:
+    label: doomed
+    description: Marked for death, fate closing in
+    blocks_recovery: ''
+    permanent: false
+  tormented:
+    label: tormented
+    description: Haunted by guilt or loss
+    blocks_recovery: ''
+    permanent: false
+  indebted:
+    label: indebted
+    description: Owes a significant debt that demands repayment
+    blocks_recovery: ''
+    permanent: false
+  battered:
+    label: battered
+    description: Vessel is beaten up, barely holding together
+    blocks_recovery: ''
+    permanent: false
+  cursed:
+    label: cursed
+    description: Vessel bears an ill omen
+    blocks_recovery: ''
+    permanent: false
+  permanently_harmed:
+    label: permanently harmed
+    description: A wound that will never fully heal
+    blocks_recovery: ''
+    permanent: true
+  traumatized:
+    label: traumatized
+    description: A mental scar that will never fully fade
+    blocks_recovery: ''
+    permanent: true

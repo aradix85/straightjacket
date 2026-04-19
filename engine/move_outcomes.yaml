@@ -1,0 +1,442 @@
+move_outcomes:
+  adventure/face_danger:
+    strong_hit:
+    - momentum +1
+    weak_hit:
+    - suffer_move -1
+    miss:
+    - pay_the_price
+  adventure/secure_an_advantage:
+    strong_hit:
+    - momentum +2
+    - next_move_bonus +1
+    weak_hit:
+    - momentum +2
+    miss:
+    - pay_the_price
+  adventure/gather_information:
+    strong_hit:
+    - momentum +2
+    weak_hit:
+    - momentum +1
+    miss:
+    - pay_the_price
+  adventure/compel:
+    strong_hit:
+    - momentum +1
+    - bond +1
+    weak_hit:
+    - momentum +1
+    miss:
+    - pay_the_price
+  adventure/check_your_gear:
+    strong_hit:
+    - momentum +1
+    weak_hit:
+    - supply -1
+    miss:
+    - pay_the_price
+  combat/enter_the_fray:
+    strong_hit:
+    - momentum +2
+    - position in_control
+    weak_hit:
+    - momentum +2
+    miss:
+    - position bad_spot
+  combat/strike:
+    strong_hit:
+    - mark_progress 2
+    - position in_control
+    weak_hit:
+    - mark_progress 2
+    - position bad_spot
+    miss:
+    - pay_the_price
+    - position bad_spot
+  combat/clash:
+    strong_hit:
+    - mark_progress 2
+    - position in_control
+    weak_hit:
+    - mark_progress 1
+    - pay_the_price
+    - position bad_spot
+    miss:
+    - pay_the_price
+    - position bad_spot
+  combat/gain_ground:
+    strong_hit:
+    - mark_progress 1
+    - momentum +2
+    weak_hit:
+    - mark_progress 1
+    miss:
+    - pay_the_price
+    - position bad_spot
+  combat/react_under_fire:
+    strong_hit:
+    - momentum +1
+    - position in_control
+    weak_hit:
+    - suffer_move -1
+    - position bad_spot
+    miss:
+    - pay_the_price
+    - position bad_spot
+  combat/battle:
+    strong_hit:
+    - momentum +2
+    weak_hit:
+    - pay_the_price
+    miss:
+    - pay_the_price
+  combat/take_decisive_action:
+    strong_hit:
+    - momentum +1
+    - position in_control
+    weak_hit:
+    - pay_the_price
+    - position bad_spot
+    miss:
+    - pay_the_price
+  quest/swear_an_iron_vow:
+    strong_hit:
+    - momentum +2
+    weak_hit:
+    - momentum +1
+    miss:
+    - narrative
+  quest/fulfill_your_vow:
+    strong_hit:
+    - legacy_reward quests
+    weak_hit:
+    - legacy_reward quests
+    miss:
+    - narrative
+  connection/make_a_connection:
+    strong_hit:
+    - momentum +1
+    - bond +1
+    - disposition_shift
+    weak_hit:
+    - momentum +1
+    - bond +1
+    miss:
+    - pay_the_price
+  connection/develop_your_relationship:
+    strong_hit:
+    - legacy_reward bonds
+    weak_hit:
+    - momentum +2
+    miss:
+    - narrative
+  connection/test_your_relationship:
+    strong_hit:
+    - bond +1
+    - disposition_shift
+    weak_hit:
+    - bond +1
+    miss:
+    - pay_the_price
+  connection/forge_a_bond:
+    strong_hit:
+    - legacy_reward bonds
+    weak_hit:
+    - legacy_reward bonds
+    miss:
+    - narrative
+  exploration/undertake_an_expedition:
+    strong_hit:
+    - mark_progress 1
+    weak_hit:
+    - mark_progress 1
+    - suffer_move -2
+    miss:
+    - pay_the_price
+  exploration/explore_a_waypoint:
+    strong_hit:
+    - momentum +2
+    weak_hit:
+    - momentum +1
+    miss:
+    - pay_the_price
+  exploration/set_a_course:
+    strong_hit:
+    - momentum +1
+    weak_hit:
+    - suffer_move -2
+    miss:
+    - pay_the_price
+  exploration/finish_an_expedition:
+    strong_hit:
+    - legacy_reward discoveries
+    weak_hit:
+    - narrative
+    miss:
+    - pay_the_price
+  recover/heal:
+    handler: recovery
+    params:
+      track: health
+      full_amount: 3
+      impact_amount: 2
+      blocking_impact: wounded
+      weak_hit_cost_type: momentum
+      weak_hit_cost: -2
+  recover/hearten:
+    handler: recovery
+    params:
+      track: spirit
+      full_amount: 2
+      impact_amount: 1
+      blocking_impact: shaken
+      weak_hit_cost_type: momentum
+      weak_hit_cost: -1
+  recover/resupply:
+    handler: recovery
+    params:
+      track: supply
+      full_amount: 2
+      impact_amount: 1
+      blocking_impact: unprepared
+      weak_hit_cost_type: momentum
+      weak_hit_cost: -1
+  recover/repair:
+    strong_hit:
+    - narrative
+    weak_hit:
+    - narrative
+    miss:
+    - pay_the_price
+  recover/sojourn:
+    strong_hit:
+    - health +2
+    - spirit +1
+    weak_hit:
+    - health +1
+    miss:
+    - pay_the_price
+  suffer/endure_harm:
+    handler: suffer
+    params:
+      track: health
+      recovery: 1
+      miss_extra_track: -1
+      miss_extra_momentum: -2
+      impact_pair:
+      - wounded
+      - permanently_harmed
+      blocking_impact: wounded
+  suffer/endure_stress:
+    handler: suffer
+    params:
+      track: spirit
+      recovery: 1
+      miss_extra_track: -1
+      miss_extra_momentum: -2
+      impact_pair:
+      - shaken
+      - traumatized
+      blocking_impact: shaken
+  suffer/withstand_damage:
+    handler: suffer
+    params:
+      track: integrity
+      recovery: 1
+      miss_extra_track: -1
+      miss_extra_momentum: -2
+      impact_pair:
+      - battered
+      - cursed
+      blocking_impact: battered
+  suffer/companion_takes_a_hit:
+    handler: suffer
+    params:
+      track: companion_health
+      recovery: 1
+      miss_extra_track: -1
+      miss_extra_momentum: -2
+      impact_pair: []
+      blocking_impact: ''
+  suffer/lose_momentum:
+    strong_hit:
+    - narrative
+    weak_hit:
+    - narrative
+    miss:
+    - narrative
+  suffer/sacrifice_resources:
+    strong_hit:
+    - narrative
+    weak_hit:
+    - narrative
+    miss:
+    - narrative
+  threshold/face_death:
+    handler: threshold
+    params:
+      impact: doomed
+      game_over_text: you are dead
+  threshold/face_desolation:
+    handler: threshold
+    params:
+      impact: tormented
+      game_over_text: you succumb to despair and are lost
+  scene_challenge/face_danger:
+    strong_hit:
+    - mark_progress 1
+    weak_hit:
+    - mark_progress 1
+    - fill_clock 1
+    miss:
+    - fill_clock 1
+    - pay_the_price
+  scene_challenge/secure_an_advantage:
+    strong_hit:
+    - momentum +2
+    - next_move_bonus +1
+    weak_hit:
+    - momentum +2
+    miss:
+    - fill_clock 1
+    - pay_the_price
+  scene_challenge/finish_the_scene:
+    strong_hit:
+    - narrative
+    weak_hit:
+    - pay_the_price
+    miss:
+    - pay_the_price
+  adventure/heal:
+    handler: recovery
+    params:
+      track: health
+      full_amount: 3
+      impact_amount: 2
+      blocking_impact: wounded
+      weak_hit_cost_type: supply
+      weak_hit_cost: -1
+  adventure/make_camp:
+    strong_hit:
+    - health +1
+    - momentum +1
+    weak_hit:
+    - health +1
+    miss:
+    - pay_the_price
+  adventure/reach_your_destination:
+    strong_hit:
+    - momentum +1
+    weak_hit:
+    - narrative
+    miss:
+    - pay_the_price
+  adventure/resupply:
+    strong_hit:
+    - supply +2
+    weak_hit:
+    - supply +2
+    - momentum -2
+    miss:
+    - pay_the_price
+  adventure/undertake_a_journey:
+    strong_hit:
+    - mark_progress 1
+    weak_hit:
+    - mark_progress 1
+    - supply -1
+    miss:
+    - pay_the_price
+  combat/end_the_fight:
+    strong_hit:
+    - narrative
+    weak_hit:
+    - pay_the_price
+    miss:
+    - pay_the_price
+  relationship/compel:
+    strong_hit:
+    - momentum +1
+    - bond +1
+    weak_hit:
+    - momentum +1
+    miss:
+    - pay_the_price
+  relationship/draw_the_circle:
+    strong_hit:
+    - momentum +1
+    weak_hit:
+    - momentum +1
+    miss:
+    - pay_the_price
+  relationship/forge_a_bond:
+    strong_hit:
+    - bond +1
+    weak_hit:
+    - bond +1
+    miss:
+    - pay_the_price
+  relationship/sojourn:
+    strong_hit:
+    - health +1
+    - spirit +1
+    weak_hit:
+    - health +1
+    miss:
+    - pay_the_price
+  relationship/test_your_bond:
+    strong_hit:
+    - spirit +1
+    weak_hit:
+    - narrative
+    miss:
+    - pay_the_price
+  suffer/companion_endure_harm:
+    handler: suffer
+    params:
+      track: companion_health
+      recovery: 1
+      miss_extra_track: -1
+      miss_extra_momentum: -1
+      impact_pair: []
+      blocking_impact: ''
+  suffer/face_death:
+    handler: threshold
+    params:
+      impact: doomed
+      game_over_text: you are dead
+  suffer/face_desolation:
+    handler: threshold
+    params:
+      impact: tormented
+      game_over_text: you succumb to despair and are lost
+  delve/check_your_gear:
+    strong_hit:
+    - momentum +1
+    weak_hit:
+    - momentum +1
+    - supply -1
+    miss:
+    - pay_the_price
+  delve/delve_the_depths:
+    strong_hit:
+    - mark_progress 1
+    weak_hit:
+    - narrative
+    miss:
+    - narrative
+  delve/escape_the_depths:
+    strong_hit:
+    - momentum +1
+    weak_hit:
+    - narrative
+    miss:
+    - narrative
+  delve/locate_your_objective:
+    strong_hit:
+    - momentum +1
+    weak_hit:
+    - narrative
+    miss:
+    - pay_the_price

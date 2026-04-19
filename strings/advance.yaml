@@ -1,0 +1,4 @@
+advance.usage: 'Usage: /advance upgrade <asset> or /advance new <asset>.'
+advance.insufficient: Not enough experience to advance that.
+advance.upgraded: 'Advanced {asset} (cost: {cost} experience).'
+advance.acquired: 'Acquired {asset} (cost: {cost} experience).'

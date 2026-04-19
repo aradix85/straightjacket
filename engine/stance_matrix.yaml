@@ -1,0 +1,201 @@
+stance_matrix:
+  hostile:
+    low:
+      combat:
+        stance: aggressive
+        constraint: Attacks without hesitation. No quarter.
+      social:
+        stance: hostile
+        constraint: Refuses to engage. Threats or silence.
+      gather_information:
+        stance: stonewalling
+        constraint: Gives nothing. Lies if cornered.
+      other:
+        stance: obstructive
+        constraint: Actively works against the player.
+    mid:
+      combat:
+        stance: brutal
+        constraint: Fights to end it, not to posture.
+      social:
+        stance: confrontational
+        constraint: Engages only to attack or accuse.
+      gather_information:
+        stance: misleading
+        constraint: Half-truths designed to harm.
+      other:
+        stance: sabotaging
+        constraint: Undermines without revealing intent.
+    high:
+      combat:
+        stance: conflicted_violent
+        constraint: Fights but hesitates at key moments.
+      social:
+        stance: bitter
+        constraint: Engages but every word carries an edge.
+      gather_information:
+        stance: grudging
+        constraint: One fact, wrapped in resentment.
+      other:
+        stance: reluctant_hostile
+        constraint: Opposes but doesn't commit fully.
+  distrustful:
+    low:
+      combat:
+        stance: defensive
+        constraint: Protects self first. No risks for the player.
+      social:
+        stance: guarded
+        constraint: One short answer, then deflects or leaves.
+      gather_information:
+        stance: evasive
+        constraint: One fact, then silence. No elaboration.
+      other:
+        stance: wary
+        constraint: Cooperates minimally. Watches for betrayal.
+    mid:
+      combat:
+        stance: cautious_ally
+        constraint: Fights alongside but keeps distance.
+      social:
+        stance: testing
+        constraint: Answers but probes for motives.
+      gather_information:
+        stance: conditional
+        constraint: Shares information but expects something back.
+      other:
+        stance: transactional
+        constraint: Helps if there's clear mutual benefit.
+    high:
+      combat:
+        stance: protective_wary
+        constraint: Fights fiercely but won't take the player's word alone.
+      social:
+        stance: frank
+        constraint: Direct but watches for reaction.
+      gather_information:
+        stance: forthcoming
+        constraint: Shares what they know but flags uncertainty.
+      other:
+        stance: cooperative_guarded
+        constraint: Works together but keeps an exit open.
+  neutral:
+    low:
+      combat:
+        stance: professional
+        constraint: Fights if necessary. No personal stake.
+      social:
+        stance: polite
+        constraint: Civil but surface-level. No investment.
+      gather_information:
+        stance: informative
+        constraint: Answers what's asked. Volunteers nothing.
+      other:
+        stance: indifferent
+        constraint: Helps if convenient. Walks away if not.
+    mid:
+      combat:
+        stance: reliable
+        constraint: Fights alongside competently.
+      social:
+        stance: engaged
+        constraint: Genuine conversation. Gives opinions when asked.
+      gather_information:
+        stance: helpful
+        constraint: Shares freely. Points toward next steps.
+      other:
+        stance: willing
+        constraint: Cooperates without needing persuasion.
+    high:
+      combat:
+        stance: solid_partner
+        constraint: Trusted in a fight. Coordinates naturally.
+      social:
+        stance: open
+        constraint: Speaks freely. Comfortable silence between words.
+      gather_information:
+        stance: generous
+        constraint: Shares what they know and what they suspect.
+      other:
+        stance: proactive
+        constraint: Anticipates needs. Acts without being asked.
+  friendly:
+    low:
+      combat:
+        stance: encouraging
+        constraint: Fights with visible concern for the player.
+      social:
+        stance: warm
+        constraint: Genuine warmth but respects distance.
+      gather_information:
+        stance: eager_to_help
+        constraint: Shares everything they can. Apologizes for gaps.
+      other:
+        stance: supportive
+        constraint: Offers help before being asked.
+    mid:
+      combat:
+        stance: fierce_ally
+        constraint: Takes risks to protect the player.
+      social:
+        stance: confiding
+        constraint: Shares personal concerns. Asks for the player's view.
+      gather_information:
+        stance: transparent
+        constraint: Holds nothing back. Thinks out loud.
+      other:
+        stance: dependable
+        constraint: Shows up. Does the work. No complaints.
+    high:
+      combat:
+        stance: devoted_fighter
+        constraint: Would take a blow for the player without thinking.
+      social:
+        stance: intimate
+        constraint: Speaks from vulnerability. Trusts completely.
+      gather_information:
+        stance: unreserved
+        constraint: Shares secrets, suspicions, fears. Everything.
+      other:
+        stance: selfless
+        constraint: Puts the player's needs first, even at cost.
+  loyal:
+    low:
+      combat:
+        stance: sworn_blade
+        constraint: Fights with absolute commitment.
+      social:
+        stance: devoted
+        constraint: Speaks with weight. Every word means something.
+      gather_information:
+        stance: trusted_counsel
+        constraint: Shares analysis, not just facts.
+      other:
+        stance: unwavering
+        constraint: Acts without hesitation on the player's behalf.
+    mid:
+      combat:
+        stance: bonded_warrior
+        constraint: Fights as extension of the player. Wordless coordination.
+      social:
+        stance: soul_bound
+        constraint: Communicates in shorthand. Deep mutual understanding.
+      gather_information:
+        stance: oracle
+        constraint: Shares everything including things the player might not want to hear.
+      other:
+        stance: ride_or_die
+        constraint: All in. No reservations. No exit strategy.
+    high:
+      combat:
+        stance: bonded_warrior
+        constraint: Fights as extension of the player. Wordless coordination.
+      social:
+        stance: soul_bound
+        constraint: Communicates in shorthand. Deep mutual understanding.
+      gather_information:
+        stance: oracle
+        constraint: Shares everything including things the player might not want to hear.
+      other:
+        stance: ride_or_die
+        constraint: All in. No reservations. No exit strategy.

@@ -1,0 +1,5 @@
+recovery:
+  weak_hit: 1
+  strong_hit:
+    standard: 1
+    great: 2

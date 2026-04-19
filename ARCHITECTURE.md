@@ -47,9 +47,9 @@ Where to find things. If you want to change X, edit Y.
 | I want to change... | Edit this |
 |---|---|
 | Game rules, damage, NPC limits | `engine.yaml` (no Python) |
-| AI prompts (narrator, brain, director) | prompts YAML file (filename set in `config.yaml` → `ai.prompts_file`) |
-| Emotion scoring, keyword boosts | `emotions.yaml` (no Python) |
-| UI text | `strings.yaml` (no Python) |
+| AI prompts (narrator, brain, director) | `prompts/*.yaml` (directory set in `config.yaml` → `ai.prompts_dir`) |
+| Emotion scoring, keyword boosts | `emotions/*.yaml` (no Python) |
+| UI text | `strings/*.yaml` (no Python) |
 | Server port | `config.yaml` (no Python) |
 | AI model assignment per role | `config.yaml` → `clusters` (per-cluster model + parameters), `role_cluster` (remap role to cluster) |
 | Provider-specific params per role | `config.yaml` → `extra_body` (per-cluster) |
@@ -62,7 +62,7 @@ Where to find things. If you want to change X, edit Y.
 | Narrator call + parse + validate | `game/finalization.py` → `narrate_scene` (all four narration paths) |
 | Move data model and loading | `datasworn/moves.py` → `Move`, `get_moves` |
 | Combat position (in_control / bad_spot) | `models_base.py` → `WorldState.combat_position`, set by move outcomes |
-| How the narrator is prompted | prompts YAML → task templates; `prompt_builders.py` → XML assembly |
+| How the narrator is prompted | `prompts/*.yaml` → task templates; `prompt_builders.py` → XML assembly |
 | NPC memory / activation logic | `npc/memory.py`, `npc/activation.py` |
 | Story structure / act tracking | `story_state.py` → `get_current_act`, `check_story_completion`; `ai/architect.py` |
 | Correction (## undo) flow | `correction.py` |
@@ -186,12 +186,12 @@ src/straightjacket/
 │   ├── director.py          # Story steering, NPC reflections, act transitions
 │   ├── persistence.py       # Save/load
 │   ├── story_state.py       # Act tracking, revelation timing, story completion check
-│   ├── prompt_builders.py   # Narrator prompt XML assembly (task text from prompts.yaml)
+│   ├── prompt_builders.py   # Narrator prompt XML assembly (task text from prompts/)
 │   ├── prompt_blocks.py     # Reusable XML blocks (content boundaries, backstory, etc.)
-│   ├── prompt_loader.py     # Reads prompts YAML (filename from config.yaml ai.prompts_file)
+│   ├── prompt_loader.py     # Merges prompts/*.yaml (directory from config.yaml ai.prompts_dir)
 │   ├── config_loader.py     # Reads config.yaml, provides cfg() singleton
-│   ├── engine_loader.py     # Reads engine.yaml, provides eng() singleton
-│   ├── emotions_loader.py   # Reads emotions.yaml
+│   ├── engine_loader.py     # Merges engine/*.yaml, provides eng() singleton
+│   ├── emotions_loader.py   # Merges emotions/*.yaml
 │   ├── logging_util.py      # log(), setup_file_logging(), get_logger()
 │   ├── user_management.py   # User CRUD, save directories, _safe_name, config load/save
 │   ├── ai/
@@ -245,12 +245,14 @@ src/straightjacket/
 │   └── static/
 │       └── index.html       # Single-page app (HTML + CSS + JS inline)
 ├── i18n.py                  # String lookup (t()), label getters
-└── strings_loader.py        # Reads strings.yaml
+└── strings_loader.py        # Merges strings/*.yaml
 ```
 
 ## Key Design Decisions
 
 **Config-driven game logic.** Move outcomes, NPC limits, disposition shifts, damage tables — all in engine.yaml or Datasworn JSON. Adding a move means adding one YAML entry to `move_outcomes`. No Python change. Move definitions (stats, roll types, trigger conditions) load directly from Datasworn JSON per setting.
+
+**Modular yaml stores.** Every yaml store in the repo is a directory of files, not a single file: `engine/` (58 files, one per subsystem), `emotions/` (3), `prompts/` (7 cluster-files), `strings/` (18, one per dotted-key prefix). Each loader globs its directory, merges top-level keys, raises on duplicates. Callsites only talk to `eng()` / `get_prompt()` / `t()` / `importance_map()` — filesystem layout is invisible to the rest of the codebase. `config.yaml` stays single (small, user-edited). `data/settings/*.yaml` was already one file per setting.
 
 **Typed dataclasses everywhere.** GameState has sub-objects (Resources, WorldState, NarrativeState, CampaignState). NpcData has 17 fields. MemoryEntry has 10. Move has 15 fields with typed trigger conditions and roll options. Attribute access, never dict-style. `SerializableMixin` handles serialization; complex classes override `to_dict`/`from_dict` manually.
 

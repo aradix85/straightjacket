@@ -1,0 +1,6 @@
+result.MISS.label: ❌ Miss
+result.MISS.severity: error
+result.STRONG_HIT.label: ✅ Strong Hit
+result.STRONG_HIT.severity: success
+result.WEAK_HIT.label: ⚠️ Weak Hit
+result.WEAK_HIT.severity: warning

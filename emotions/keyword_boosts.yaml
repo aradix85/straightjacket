@@ -1,0 +1,24 @@
+keyword_boosts:
+  7:
+  - saved
+  - death
+  - killed
+  - died
+  - life
+  - murder
+  - sacrifice
+  5:
+  - secret
+  - revealed
+  - betrayed
+  - trust
+  - oath
+  - sworn
+  - love
+  3:
+  - gift
+  - helped
+  - fought
+  - protected
+  - warned
+  - lied

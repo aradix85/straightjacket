@@ -1,0 +1,2 @@
+monologue_detection:
+  min_word_count: 30

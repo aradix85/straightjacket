@@ -1,0 +1,19 @@
+status.resources: '{name} — {location}, {time}. Physical: {health}. Mental: {spirit}. Supplies: {supply}.'
+status.npc: '{name}: {disposition}, {bond}.'
+status.npc_deceased: '{name}: deceased.'
+status.npc_background: '{name}: {disposition}, {bond} (not recently seen).'
+status.clock: '{name}: {urgency}.'
+status.clock_fired: '{name}: triggered.'
+status.act: 'Story: {title} ({phase}, {progress}).'
+status.no_game: No active game.
+status.tracks: '{name}: {progress}.'
+status.track_combat: '{name}: {progress}, {position}.'
+status.track_expedition: '{name} (expedition): {progress}.'
+status.track_scene_challenge: '{name} (scene challenge): {progress}.'
+status.no_tracks: No active tracks.
+status.impacts: 'Impacts: {impacts}.'
+status.threat: '{name}: {urgency}.'
+status.no_threats: No active threats.
+status.xp: 'Experience: {xp} available.'
+status.legacy: Legacy — {quests}; {bonds}; {discoveries}.
+status.legacy_item: '{name}: {progress}'

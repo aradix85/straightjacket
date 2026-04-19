@@ -1,0 +1,21 @@
+random_events:
+  threat_target_probability: 0.5
+  description_focus_categories:
+  - ambiguous_event
+  npc_focus_categories:
+  - npc_action
+  - npc_negative
+  - npc_positive
+  - new_npc
+  thread_focus_categories:
+  - move_toward_thread
+  - move_away_from_thread
+  - close_thread
+  threat_eligible_focus_categories:
+  - pc_negative
+  - move_away_from_thread
+  list_weight_max: 3
+  consolidation_threshold: 25
+  consolidation_weight_high: 3
+  consolidation_weight_low: 2
+  consolidation_weight_default: 1

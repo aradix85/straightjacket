@@ -1,0 +1,8 @@
+prompt_display:
+  insight_chars: 80
+  recent_event_chars: 60
+  lore_description_chars: 80
+  lore_max_aliases: 2
+  epilogue_log_scenes: 15
+  recent_events_window: 7
+  campaign_history_chapters: 3

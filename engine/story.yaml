@@ -1,0 +1,23 @@
+story:
+  kishotenketsu_probability:
+    melancholic: 0.7
+    cozy: 0.7
+    romantic: 0.7
+    cheerful_funny: 0.7
+    slice_of_life_90s: 0.7
+    fairy_tale: 0.7
+    tragicomic: 0.4
+    serious_balanced: 0.4
+    grounded_drama: 0.4
+    absurd_grotesque: 0.4
+    dark_gritty: 0.15
+    epic_heroic: 0.15
+    slow_burn_horror: 0.15
+    tarantino: 0.15
+    pulp: 0.15
+    slapstick: 0.15
+  kishotenketsu_fallback_probability: 0.5
+story_state:
+  intensity_smoothing_current: 0.3
+  intensity_smoothing_previous: 0.7
+  crisis_scene_offset: 5

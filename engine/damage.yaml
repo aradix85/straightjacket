@@ -1,0 +1,26 @@
+damage:
+  miss:
+    endure:
+      controlled: 1
+      risky: 1
+      desperate: 2
+    combat:
+      controlled: 1
+      risky: 2
+      desperate: 3
+    social:
+      spirit:
+        controlled: 1
+        risky: 1
+        desperate: 2
+      bond: 1
+    other:
+      supply: 1
+      health:
+        controlled: 0
+        risky: 1
+        desperate: 2
+    clock_ticks:
+      controlled: 0
+      risky: 1
+      desperate: 2

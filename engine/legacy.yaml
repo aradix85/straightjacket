@@ -1,0 +1,13 @@
+legacy:
+  xp_per_box: 2
+  starting_rank: epic
+  threat_overcome_bonus: 2
+  threat_overcome_threshold: 0.5
+  asset_upgrade_cost: 2
+  new_asset_cost: 3
+  ticks_by_rank:
+    troublesome: 1
+    dangerous: 2
+    formidable: 4
+    extreme: 8
+    epic: 12

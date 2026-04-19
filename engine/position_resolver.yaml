@@ -1,0 +1,42 @@
+position_resolver:
+  desperate_below: -3
+  controlled_above: 3
+  weights:
+    resource_critical_below: 2
+    resource_low_below: 3
+    resource_critical: -2
+    resource_low: -1
+    npc_hostile: -2
+    npc_distrustful: -1
+    npc_friendly: 1
+    npc_loyal: 2
+    npc_bond_high: 1
+    npc_bond_low: -1
+    chaos_high: -1
+    chaos_low: 1
+    consecutive_misses: -2
+    consecutive_strong: 1
+    threat_clock_critical: -1
+    secured_advantage: 2
+  move_baselines:
+    combat: -1
+    social: 0
+    endure: 0
+    recovery: 1
+    other: 0
+  overrides:
+  - name: setup_under_pressure
+    conditions:
+    - secured_advantage
+    - any_resource_critical
+    effect: cap_at_risky
+  - name: crisis_recovery
+    conditions:
+    - crisis_mode
+    - recovery_move
+    effect: floor_at_risky
+  - name: matched_momentum
+    conditions:
+    - previous_match
+    - same_target_npc
+    effect: shift_up_one

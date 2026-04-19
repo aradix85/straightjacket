@@ -20,7 +20,7 @@ See [ARCHITECTURE.md](ARCHITECTURE.md) for the module ownership table. The short
 
 ## Config-driven design
 
-Game mechanics, emotion scoring, move types, damage tables, disposition shifts — all in YAML. The Python code reads config at runtime. Before adding a constant to Python, check if it belongs in engine.yaml or emotions.yaml instead.
+Game mechanics, emotion scoring, move types, damage tables, disposition shifts — all in YAML. The Python code reads config at runtime. Before adding a constant to Python, check if it belongs in the engine config (one yaml per subsystem under `engine/`) or emotions.yaml instead.
 
 ## Testing
 

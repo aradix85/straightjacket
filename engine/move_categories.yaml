@@ -1,0 +1,15 @@
+move_categories:
+  combat:
+  - combat/clash
+  - combat/strike
+  social:
+  - adventure/compel
+  - connection/make_a_connection
+  - connection/test_your_relationship
+  endure:
+  - suffer/endure_harm
+  - suffer/endure_stress
+  recovery:
+  - suffer/endure_harm
+  - suffer/endure_stress
+  - recover/resupply

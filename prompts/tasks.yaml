@@ -1,0 +1,38 @@
+"task_opening": |-
+  Opening scene. 3-4 paragraphs. The player character arrives, wakes, or sits somewhere.
+  Describe what they PERCEIVE: light, sounds, smells, the space. Atmosphere first, then one thing that is out of place — a detail that invites curiosity but explains nothing.
+  One NPC is present and active — doing something, not waiting. A second person is glimpsed or mentioned but not yet met.
+  The scene ends mid-moment: a sensory detail, an unfinished gesture, a sound from the wrong direction. The player decides what happens next.
+  IMPORTANT: {player_name} is the PLAYER CHARACTER (the "you" in narration). MUST NOT include them as an NPC.{pronouns_hint}
+  If <backstory> exists in system context, treat those facts as established canon — reference naturally, MUST NOT retell.
+  If player_wishes exist, MUST NOT address them in the opening — save them for later scenes.
+  creativity_seed: {seed} (loose inspiration for NPC names, locations, scene details — not literal)
+  Write ONLY narrative prose. No metadata, no JSON.
+"task_dialog": |-
+  2-3 paragraphs of immersive narration. Focus entirely on atmosphere, dialog, and character interaction. NPC speech content rule applies: NPCs answer what was asked and say nothing beyond the question's scope. The surrounding act phase from <story_arc> MUST shape the texture of the exchange. If <director_guidance> is present, you MUST follow its narrative direction.
+"task_oracle": |-
+  2-3 paragraphs of immersive narration. The oracle has spoken: use <oracle_answer> as a creative seed for what the player discovers or what happens. Interpret the word pair through the current scene context. MUST NOT quote the oracle words literally.
+"task_action": |-
+  2-4 paragraphs of immersive narration. The current act's mood from story_arc MUST shape the texture of the outcome — a STRONG_HIT in a desperate phase still carries the surrounding darkness. If director_guidance is present, you MUST follow its narrative direction.
+"task_epilogue": |-
+  Write a beautiful EPILOGUE for this story (4-6 paragraphs). This is NOT a new scene — no dice, no mechanics.
+  PERSPECTIVE: Second person singular ("you") throughout. MUST NOT shift to third person.
+  Reflect on the character's journey and growth.
+  Give closure to the most important NPC relationships (reference them by name).
+  Resolve or acknowledge the central conflict based on what actually happened.
+  Match the tone of the story — if it was dark, the ending can be bittersweet; if hopeful, it can be warm.
+  End with a final image or moment that captures the essence of this adventure.
+  MUST NOT introduce new conflicts or cliffhangers — this is closure.
+  No metadata blocks, no game_data, no memory_updates — pure narrative prose only.
+"task_chapter_opening": |-
+  Chapter {chapter_number} opening: 3-4 paragraphs. This is a NEW chapter in an ongoing campaign.
+  Reference the character's history and relationships naturally (MUST NOT recap everything, just hint).
+  Some time has passed since last chapter. Show how the world and relationships evolved.
+  Use <npc_evolutions> as hints for how NPCs may have changed — show their evolution through behavior, dialog, and atmosphere rather than exposition.
+  Introduce a NEW tension or situation that builds on unresolved threads.
+  Returning NPCs MUST feel familiar but may have changed.
+  Introduce 1-2 NEW NPCs alongside returning characters.
+  Create one new threat clock for this chapter.
+  IMPORTANT: The <character> above is the PLAYER CHARACTER. MUST NOT include them as an NPC.
+  creativity_seed: {seed} (loose inspiration for NPC names, locations, and scene details — not literal)
+  Write ONLY narrative prose. No metadata, no JSON, no game_data blocks.
