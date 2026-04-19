@@ -35,9 +35,11 @@ def _strip_prompt_for_retry(prompt: str, violations: list[str]) -> str:
         return prompt
 
     stripped = prompt
-    # Remove secrets from target_npc blocks
+    # Remove secrets from target_npc blocks. Match the structural shape
+    # `secrets(<any label>):[<json array>]` so the regex survives any edit
+    # to the `secrets_label` yaml value.
     stripped = re.sub(
-        r"secrets\(weave subtly,never reveal\):\[.*?\]",
+        r"secrets\([^)]*\):\[.*?\]",
         "secrets:[]",
         stripped,
         flags=re.DOTALL,
@@ -232,7 +234,7 @@ def validate_and_retry(
         # parts to be substrings of the violation; plain keys are single-substring.
         # A violation that matches no rule falls through as "Fix: <raw>" — that
         # is intentional LLM behavior, not a config fallback.
-        rules = eng()._raw["validator"]["rewrite_instructions"]
+        rules = eng().get_raw("validator")["rewrite_instructions"]
         _vblocks = eng().ai_text.validator_blocks
         rewrite_instructions = []
         for v in violations:

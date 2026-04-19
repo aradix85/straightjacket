@@ -5,6 +5,7 @@ import html
 import re
 
 from .ai.provider_base import AIProvider, create_with_retry
+from .ai.schemas import get_director_output_schema
 from .config_loader import model_for_role, sampling_params
 from .engine_loader import eng
 from .logging_util import log
@@ -181,8 +182,6 @@ def call_director(
 
     Phase 1 is skipped if no tools are available or the model doesn't call any.
     """
-    from .ai.schemas import DIRECTOR_OUTPUT_SCHEMA
-
     log(f"[Director] Analyzing scene {game.narrative.scene_count}")
 
     prompt = build_director_prompt(game, latest_narration, config)
@@ -240,7 +239,7 @@ def call_director(
             model=_director_model,
             system=system,
             messages=[{"role": "user", "content": phase2_prompt}],
-            json_schema=DIRECTOR_OUTPUT_SCHEMA,
+            json_schema=get_director_output_schema(),
             log_role="director",
             **_dp,
         )

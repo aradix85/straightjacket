@@ -186,15 +186,17 @@ def test_run_rule_checks_clean_passes() -> None:
 # ── PROMPT STRIPPING ─────────────────────────────────────────
 
 
-def test_strip_prompt_removes_secrets_on_pacing_violation() -> None:
+def test_strip_prompt_removes_secrets_on_pacing(load_engine: None) -> None:
     from straightjacket.engine.ai.validator import _strip_prompt_for_retry
+    from straightjacket.engine.prompt_loader import get_prompt
 
+    label = get_prompt("secrets_label")
     prompt = (
         '<target_npc name="Kira" disposition="friendly">\n'
         "agenda:Find the lost artifact\n"
         "instinct:deflects with humor\n"
         "recent: Saw the player arrive(curious)\n"
-        'secrets(weave subtly,never reveal):["she is the spy"]\n'
+        f'secrets({label}):["she is the spy"]\n'
         "</target_npc>"
     )
     result = _strip_prompt_for_retry(prompt, ["RESOLUTION PACING: NPC volunteered too much"])
@@ -203,10 +205,12 @@ def test_strip_prompt_removes_secrets_on_pacing_violation() -> None:
     assert "deflects with humor" in result  # Instinct preserved
 
 
-def test_strip_prompt_unchanged_for_agency_violation() -> None:
+def test_strip_prompt_unchanged_for_agency_violation(load_engine: None) -> None:
     from straightjacket.engine.ai.validator import _strip_prompt_for_retry
+    from straightjacket.engine.prompt_loader import get_prompt
 
-    prompt = '<target_npc>secrets(weave subtly,never reveal):["secret"]</target_npc>'
+    label = get_prompt("secrets_label")
+    prompt = f'<target_npc>secrets({label}):["secret"]</target_npc>'
     result = _strip_prompt_for_retry(prompt, ["PLAYER AGENCY: narrator decided feelings"])
     assert "secret" in result  # Not stripped for non-pacing violations
 

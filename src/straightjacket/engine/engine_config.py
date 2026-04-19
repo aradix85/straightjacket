@@ -455,6 +455,11 @@ class EnumsConfig:
     thread_types: list[str]
     story_structures: list[str]
     positions: list[str]
+    tone_keys: list[str]
+    correction_ops: list[str]
+    correction_fields: list[str]
+    dramatic_weights: list[str]
+    odds_levels: list[str]
 
 
 @dataclass

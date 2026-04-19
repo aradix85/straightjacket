@@ -83,9 +83,9 @@ def damage(category: str, position: str = "risky") -> int:
     Strict: raises KeyError on missing paths and missing positions. Callers
     must supply a valid category path and a position that exists in the table.
     """
-    raw = eng()._raw
-    node: Any = raw
-    for key in category.split("."):
+    segments = category.split(".")
+    node: Any = eng().get_raw(segments[0])
+    for key in segments[1:]:
         node = node[key]  # KeyError on missing key — straightjacket rule
 
     if isinstance(node, int | float):

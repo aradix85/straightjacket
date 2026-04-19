@@ -46,17 +46,10 @@ def _reset_mythic_cache() -> None:
 
 # ── Odds levels ──────────────────────────────────────────────
 
-ODDS_LEVELS: tuple[str, ...] = (
-    "certain",
-    "nearly_certain",
-    "very_likely",
-    "likely",
-    "fifty_fifty",
-    "unlikely",
-    "very_unlikely",
-    "nearly_impossible",
-    "impossible",
-)
+
+def get_odds_levels() -> tuple[str, ...]:
+    """Odds levels in order from most-favorable to least-favorable."""
+    return tuple(eng().enums.odds_levels)
 
 
 # ── Fate chart method (step 3.1) ─────────────────────────────
@@ -69,7 +62,7 @@ def resolve_fate_chart(odds: str, chaos_factor: int, roll: int | None = None) ->
     against thresholds for exceptional_yes, yes, exceptional_no.
 
     Args:
-        odds: one of ODDS_LEVELS
+        odds: one of get_odds_levels()
         chaos_factor: 1–9
         roll: override d100 roll (for testing), None = random
     """
@@ -141,7 +134,7 @@ def resolve_fate_check(odds: str, chaos_factor: int, dice: tuple[int, int] | Non
     Exceptional takes priority over normal in overlap ranges.
 
     Args:
-        odds: one of ODDS_LEVELS
+        odds: one of get_odds_levels()
         chaos_factor: 1–9
         dice: override (d1, d2) tuple (for testing), None = random
     """
@@ -214,7 +207,7 @@ def resolve_fate(
 
     Args:
         game: GameState for random event generation and context
-        odds: one of ODDS_LEVELS
+        odds: one of get_odds_levels()
         chaos_factor: 1–9
         method: "fate_chart" or "fate_check", None = read from engine.yaml
         question: the question being asked (stored in result for logging)

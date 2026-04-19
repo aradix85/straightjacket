@@ -72,12 +72,15 @@ def _obj(props: dict, extra_required: list[str] | None = None) -> dict:
 
 _brain_cache = None
 _correction_cache: dict | None = None
+_director_cache: dict | None = None
+_story_architect_cache: dict | None = None
 
 
 def clear_brain_cache() -> None:
     """Invalidate cached schemas. Called by reload_engine()."""
     global _brain_cache, _metadata_cache, _opening_cache, _correction_cache
     global _revelation_check_cache, _validator_cache, _architect_validator_cache
+    global _director_cache, _story_architect_cache
     _brain_cache = None
     _metadata_cache = None
     _opening_cache = None
@@ -85,6 +88,8 @@ def clear_brain_cache() -> None:
     _revelation_check_cache = None
     _validator_cache = None
     _architect_validator_cache = None
+    _director_cache = None
+    _story_architect_cache = None
 
 
 def get_brain_output_schema() -> dict:
@@ -136,99 +141,90 @@ def get_brain_output_schema() -> dict:
 
 # ── Director output ───────────────────────────────────────────
 
-DIRECTOR_OUTPUT_SCHEMA = _obj(
-    {
-        "scene_summary": _str(),
-        "narrator_guidance": _str(),
-        "npc_guidance": _arr(
-            _obj(
-                {
-                    "npc_id": _str(),
-                    "guidance": _str(),
-                }
-            )
-        ),
-        "npc_reflections": _arr(
-            _obj(
-                {
-                    "npc_id": _str(),
-                    "reflection": _str(),
-                    "tone": _str(),
-                    "tone_key": _str(
-                        [
-                            "neutral",
-                            "curious",
-                            "wary",
-                            "suspicious",
-                            "grateful",
-                            "terrified",
-                            "loyal",
-                            "conflicted",
-                            "betrayed",
-                            "devastated",
-                            "euphoric",
-                            "defiant",
-                            "guilty",
-                            "protective",
-                            "angry",
-                            "devoted",
-                            "impressed",
-                            "hopeful",
-                        ]
-                    ),
-                    "updated_description": _nullable_str(),
-                    "about_npc": _nullable_str(),
-                    "agenda": _nullable_str(),
-                    "instinct": _nullable_str(),
-                    "updated_agenda": _nullable_str(),
-                    "updated_arc": _nullable_str(),
-                }
-            )
-        ),
-        "arc_notes": _str(),
-    }
-)
+
+def get_director_output_schema() -> dict:
+    global _director_cache
+    if _director_cache is None:
+        _e = eng()
+        _director_cache = _obj(
+            {
+                "scene_summary": _str(),
+                "narrator_guidance": _str(),
+                "npc_guidance": _arr(
+                    _obj(
+                        {
+                            "npc_id": _str(),
+                            "guidance": _str(),
+                        }
+                    )
+                ),
+                "npc_reflections": _arr(
+                    _obj(
+                        {
+                            "npc_id": _str(),
+                            "reflection": _str(),
+                            "tone": _str(),
+                            "tone_key": _str(list(_e.enums.tone_keys)),
+                            "updated_description": _nullable_str(),
+                            "about_npc": _nullable_str(),
+                            "agenda": _nullable_str(),
+                            "instinct": _nullable_str(),
+                            "updated_agenda": _nullable_str(),
+                            "updated_arc": _nullable_str(),
+                        }
+                    )
+                ),
+                "arc_notes": _str(),
+            }
+        )
+    return _director_cache
 
 
 # ── Story architect output ────────────────────────────────────
 
-STORY_ARCHITECT_OUTPUT_SCHEMA = _obj(
-    {
-        "central_conflict": _str(),
-        "antagonist_force": _str(),
-        "thematic_thread": _str(),
-        "acts": _arr(
-            _obj(
-                {
-                    "phase": _str(),
-                    "title": _str(),
-                    "goal": _str(),
-                    "scene_range": _arr(_int()),
-                    "mood": _str(),
-                    "transition_trigger": _str(),
-                }
-            )
-        ),
-        "revelations": _arr(
-            _obj(
-                {
-                    "id": _str(),
-                    "content": _str(),
-                    "earliest_scene": _int(),
-                    "dramatic_weight": _str(["low", "medium", "high", "critical"]),
-                }
-            )
-        ),
-        "possible_endings": _arr(
-            _obj(
-                {
-                    "type": _str(),
-                    "description": _str(),
-                }
-            )
-        ),
-    }
-)
+
+def get_story_architect_output_schema() -> dict:
+    global _story_architect_cache
+    if _story_architect_cache is None:
+        _e = eng()
+        _story_architect_cache = _obj(
+            {
+                "central_conflict": _str(),
+                "antagonist_force": _str(),
+                "thematic_thread": _str(),
+                "acts": _arr(
+                    _obj(
+                        {
+                            "phase": _str(),
+                            "title": _str(),
+                            "goal": _str(),
+                            "scene_range": _arr(_int()),
+                            "mood": _str(),
+                            "transition_trigger": _str(),
+                        }
+                    )
+                ),
+                "revelations": _arr(
+                    _obj(
+                        {
+                            "id": _str(),
+                            "content": _str(),
+                            "earliest_scene": _int(),
+                            "dramatic_weight": _str(list(_e.enums.dramatic_weights)),
+                        }
+                    )
+                ),
+                "possible_endings": _arr(
+                    _obj(
+                        {
+                            "type": _str(),
+                            "description": _str(),
+                        }
+                    )
+                ),
+            }
+        )
+    return _story_architect_cache
 
 
 # ── Chapter summary output ────────────────────────────────────
@@ -365,7 +361,14 @@ def get_opening_setup_schema() -> dict:
 def get_correction_output_schema() -> dict:
     global _correction_cache
     if _correction_cache is None:
-        stat_names = list(eng().stats.names)
+        _e = eng()
+        stat_names = list(_e.stats.names)
+        field_props: dict = {}
+        for fname in _e.enums.correction_fields:
+            if fname == "aliases":
+                field_props[fname] = {"anyOf": [_str_arr(), {"type": "null"}]}
+            else:
+                field_props[fname] = _nullable_str()
         _correction_cache = _obj(
             {
                 "correction_source": _str(["input_misread", "state_error"]),
@@ -377,31 +380,12 @@ def get_correction_output_schema() -> dict:
                 "state_ops": _arr(
                     _obj(
                         {
-                            "op": _str(
-                                [
-                                    "npc_edit",
-                                    "npc_split",
-                                    "npc_merge",
-                                    "location_edit",
-                                    "scene_context",
-                                    "time_edit",
-                                    "backstory_append",
-                                ]
-                            ),
+                            "op": _str(list(_e.enums.correction_ops)),
                             "npc_id": _nullable_str(),
                             "split_name": _nullable_str(),
                             "split_description": _nullable_str(),
                             "merge_source_id": _nullable_str(),
-                            "fields": _nullable_obj(
-                                {
-                                    "name": _nullable_str(),
-                                    "description": _nullable_str(),
-                                    "disposition": _nullable_str(),
-                                    "agenda": _nullable_str(),
-                                    "instinct": _nullable_str(),
-                                    "aliases": {"anyOf": [_str_arr(), {"type": "null"}]},
-                                }
-                            ),
+                            "fields": _nullable_obj(field_props),
                             "value": _nullable_str(),
                         }
                     )

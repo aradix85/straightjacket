@@ -9,9 +9,9 @@ Run: python -m pytest tests/test_fate.py -v
 import pytest
 
 from straightjacket.engine.mechanics.fate import (
-    ODDS_LEVELS,
     _check_chart_random_event,
     _check_check_random_event,
+    get_odds_levels,
     resolve_fate,
     resolve_fate_chart,
     resolve_fate_check,
@@ -137,18 +137,18 @@ def test_resolve_fate_method_override(load_engine: None) -> None:
 # ── Exhaustive coverage ──────────────────────────────────────
 
 
-def test_fate_chart_all_odds_all_cf() -> None:
+def test_fate_chart_all_odds_all_cf(load_engine: None) -> None:
     """Every (odds, CF) combination resolves without error at boundary rolls."""
-    for odds in ODDS_LEVELS:
+    for odds in get_odds_levels():
         for cf in range(1, 10):
             for roll in (1, 50, 100):
                 result = resolve_fate_chart(odds, cf, roll=roll)
                 assert result.answer in ("yes", "no", "exceptional_yes", "exceptional_no")
 
 
-def test_fate_check_all_odds_all_cf() -> None:
+def test_fate_check_all_odds_all_cf(load_engine: None) -> None:
     """Every (odds, CF) combination resolves without error at edge dice."""
-    for odds in ODDS_LEVELS:
+    for odds in get_odds_levels():
         for cf in range(1, 10):
             for dice in ((1, 1), (5, 5), (10, 10), (1, 10)):
                 result = resolve_fate_check(odds, cf, dice=dice)
@@ -178,7 +178,7 @@ def test_likelihood_npc_disposition_shifts_odds(load_engine: None) -> None:
     game.npcs = [hostile]
     hostile_odds = resolve_likelihood(game, context_hint="Kira")
 
-    assert ODDS_LEVELS.index(friendly_odds) < ODDS_LEVELS.index(hostile_odds)
+    assert get_odds_levels().index(friendly_odds) < get_odds_levels().index(hostile_odds)
 
 
 def test_likelihood_chaos_shifts_odds(load_engine: None) -> None:
@@ -190,7 +190,7 @@ def test_likelihood_chaos_shifts_odds(load_engine: None) -> None:
 
     high_odds = resolve_likelihood(high)
     low_odds = resolve_likelihood(low)
-    assert ODDS_LEVELS.index(low_odds) < ODDS_LEVELS.index(high_odds)
+    assert get_odds_levels().index(low_odds) < get_odds_levels().index(high_odds)
 
 
 def test_likelihood_critical_resources(load_engine: None) -> None:
@@ -206,7 +206,7 @@ def test_likelihood_critical_resources(load_engine: None) -> None:
     odds_healthy = resolve_likelihood(game2)
 
     # Critical should be same or worse than healthy
-    assert ODDS_LEVELS.index(odds_critical) >= ODDS_LEVELS.index(odds_healthy)
+    assert get_odds_levels().index(odds_critical) >= get_odds_levels().index(odds_healthy)
 
 
 def test_likelihood_factors_stack(load_engine: None) -> None:

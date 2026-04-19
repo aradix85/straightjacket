@@ -38,3 +38,53 @@ enums:
   - controlled
   - risky
   - desperate
+  tone_keys:
+  - neutral
+  - curious
+  - wary
+  - suspicious
+  - grateful
+  - terrified
+  - loyal
+  - conflicted
+  - betrayed
+  - devastated
+  - euphoric
+  - defiant
+  - guilty
+  - protective
+  - angry
+  - devoted
+  - impressed
+  - hopeful
+  correction_ops:
+  - npc_edit
+  - npc_split
+  - npc_merge
+  - location_edit
+  - scene_context
+  - time_edit
+  - backstory_append
+  correction_fields:
+  - name
+  - description
+  - disposition
+  - agenda
+  - instinct
+  - aliases
+  - status
+  dramatic_weights:
+  - low
+  - medium
+  - high
+  - critical
+  odds_levels:
+  - certain
+  - nearly_certain
+  - very_likely
+  - likely
+  - fifty_fifty
+  - unlikely
+  - very_unlikely
+  - nearly_impossible
+  - impossible

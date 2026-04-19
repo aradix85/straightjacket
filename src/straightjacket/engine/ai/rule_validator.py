@@ -283,7 +283,7 @@ def _consequence_stems() -> dict[str, tuple[str, ...]]:
     """
     from ..engine_loader import eng
 
-    raw = eng()._raw["validator"]["consequence_stems"]
+    raw = eng().get_raw("validator")["consequence_stems"]
     return {k: tuple(v) for k, v in raw.items()}
 
 

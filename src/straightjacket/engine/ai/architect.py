@@ -15,7 +15,7 @@ from ..prompt_blocks import (
 from ..prompt_loader import get_prompt
 from ..story_state import get_current_act
 from .provider_base import AIProvider, create_with_retry
-from .schemas import CHAPTER_SUMMARY_OUTPUT_SCHEMA, STORY_ARCHITECT_OUTPUT_SCHEMA
+from .schemas import CHAPTER_SUMMARY_OUTPUT_SCHEMA, get_story_architect_output_schema
 
 
 def call_recap(provider: AIProvider, game: GameState, config: EngineConfig | None = None) -> str:
@@ -131,7 +131,7 @@ npcs:{npc_text}{campaign_ctx}{backstory_text}"""
             model=model_for_role("architect"),
             system=system,
             messages=[{"role": "user", "content": user_msg}],
-            json_schema=STORY_ARCHITECT_OUTPUT_SCHEMA,
+            json_schema=get_story_architect_output_schema(),
             **sampling_params("architect"),
             log_role="architect",
         )

@@ -5,7 +5,33 @@ Originally forked from [EdgeTales](https://github.com/edgetales/edgetales). See 
 
 ---
 
-## [0.61.0] — 2026-04-19
+## [0.63.0] — 2026-04-19
+
+Two small audit batches (N — validator regex drift, and G — `_raw` direct access). What started as a cosmetic cleanup turned up a live latent bug along the way.
+
+The secret-stripping regex in `ai/validator.py` hardcoded the literal label `"weave subtly,never reveal"`, a string that was supposed to mirror `secrets_label` in `prompts/blocks.yaml`. That yaml value currently reads `"MUST NOT reveal directly,weave across 3+ scenes"` — the two drifted apart at some earlier point and nobody noticed, because the existing tests fabricated their input using the old label, so the test suite kept matching itself. In production the regex never matched the real prompts; every retry on a pacing violation was running with NPC secrets left in the context block. The regex is now structural — `secrets\([^)]*\):\[.*?\]` — so it matches any parenthetical label. Tests for both the pacing-match and the agency-nomatch paths were rewritten to read `secrets_label` from yaml at test time.
+
+The `_raw` audit called out two callsites (`ai/rule_validator.py`, `ai/validator.py`) that bypassed `EngineSettings.get_raw()` and reached into the private `_raw` dict directly. Both now go through `get_raw()`. A third site surfaced while sweeping — `engine_loader.damage()` itself was walking from `eng()._raw` root to support dotted-path lookups like `"damage.miss.clock_ticks"`. Split on the first segment and the rest of the path walks through `get_raw(first)` just fine, so that's now consistent too.
+
+Delivery gate: 783 tests green in 4.3s, ruff + ruff format + mypy clean on 87 source files.
+
+---
+
+
+
+Batch E from the v0.61.0 audit. Five domain enums that were hardcoded inside `src/straightjacket/engine/ai/schemas.py` and `src/straightjacket/engine/mechanics/fate.py` now live in `engine/enums.yaml` alongside the existing enum lists. `EnumsConfig` grew five fields: `tone_keys`, `correction_ops`, `correction_fields`, `dramatic_weights`, `odds_levels`. The schema builders read them via `eng().enums.<name>`.
+
+`DIRECTOR_OUTPUT_SCHEMA` and `STORY_ARCHITECT_OUTPUT_SCHEMA` were still import-time module constants — the only two left after the v0.58 schema-builder refactor moved validator/revelation-check/architect-validator to lazy builders. Both are now `get_director_output_schema()` and `get_story_architect_output_schema()`. Their callsites in `architect.py` and `director.py` were updated, and a pre-existing function-level import of the old constant in `director.py` got promoted to the top of the file.
+
+`fate.py`'s module-level `ODDS_LEVELS` tuple is gone; `get_odds_levels()` returns a tuple built from `eng().enums.odds_levels`. Test `test_fate.py` flipped the import, updated call sites to the function, and the two tests that iterate all odds now request the `load_engine` fixture.
+
+One divergence surfaced and got fixed in passing. The correction schema advertised six editable NPC fields (`name`, `description`, `disposition`, `agenda`, `instinct`, `aliases`) while `_apply_correction_ops` in `correction.py` also accepted `status`. The allowed-set was the wider contract; the schema is now aligned to it, so the AI can propose `status` edits directly instead of the code silently accepting a field the schema never exposed.
+
+Delivery gate: 783 tests green in 4.2s, ruff + ruff format + mypy clean on 87 source files.
+
+---
+
+
 
 Batch F from the v0.60.0 audit. Dataclass-field defaults that duplicated yaml or hardcoded a domain enum are gone. `Resources` and `WorldState` got `from_config()` classmethods used as `GameState`'s default factories. `ProgressTrack` and `ThreatData` got `.new()` factories that read `max_ticks` from the new `progress.yaml max_ticks` key. `ClockData`, `FateResult`, `MemoryEntry`, `RandomEvent`, and the structural fields on `NpcData` are now required. `NpcData.introduced` flipped from True to False — fresh NPCs haven't been shown on screen. `CampaignState` legacy tracks read display names from `strings/status.yaml` and rank from `legacy.yaml`. `BrainResult.type/move/stat` became kw_only required; the brain-exception fallback and the correction null-brain sentinel supply them explicitly.
 
