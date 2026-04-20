@@ -1,19 +1,15 @@
 """User and save directory management, config load/save.
 
 Split from logging_util.py — these are filesystem operations for user data,
-not logging concerns. logging_util.py retains only log(), setup_file_logging(),
-and get_logger().
+not logging concerns. logging_util.py retains only log() and setup_file_logging().
 """
 
 import json
 import shutil
-from dataclasses import asdict
 from datetime import datetime
 from pathlib import Path
 
-import yaml
-
-from .config_loader import GLOBAL_CONFIG_FILE, USERS_DIR, cfg as _cfg
+from .config_loader import USERS_DIR
 from .logging_util import log
 
 
@@ -44,44 +40,6 @@ def get_save_dir(username: str) -> Path:
 
 def _get_user_config_file(username: str) -> Path:
     return _get_user_dir(username) / "settings.json"
-
-
-def load_global_config() -> dict:
-    """Load global server config.
-
-    Delegates to cfg() — single source of truth for config.yaml.
-    Returns the 'server' section as a flat dict.
-    """
-
-    try:
-        return asdict(_cfg().server)
-    except (OSError, ValueError, KeyError) as e:
-        log(f"[UserMgmt] load_global_config failed: {e}", level="warning")
-        return {}
-
-
-def save_global_config(cfg: dict) -> None:
-    """Merge and save server config section to the global config yaml."""
-
-    try:
-        full_cfg: dict = {}
-        if GLOBAL_CONFIG_FILE.exists():
-            full_cfg = yaml.safe_load(GLOBAL_CONFIG_FILE.read_text(encoding="utf-8")) or {}
-        if "server" not in full_cfg:
-            full_cfg["server"] = {}
-        full_cfg["server"].update(cfg)
-        GLOBAL_CONFIG_FILE.write_text(
-            yaml.dump(full_cfg, default_flow_style=False, allow_unicode=True), encoding="utf-8"
-        )
-    except OSError as e:
-        log(f"[UserMgmt] save_global_config write failed: {e}", level="warning")
-        return
-    try:
-        import stat
-
-        GLOBAL_CONFIG_FILE.chmod(stat.S_IRUSR | stat.S_IWUSR)
-    except OSError as e:
-        log(f"[UserMgmt] chmod on {GLOBAL_CONFIG_FILE.name} failed: {e}", level="warning")
 
 
 def load_user_config(username: str) -> dict:

@@ -34,7 +34,7 @@ _AI_CALL_CARVE_OUT_FILES = {
     "engine/ai/architect_validator.py",
     "engine/ai/metadata.py",
     "engine/ai/provider_base.py",
-    "engine/correction.py",
+    "engine/correction/analysis.py",
     "engine/director.py",
     "engine/game/director_runner.py",
     "engine/tools/handler.py",

@@ -133,10 +133,6 @@ class StoryBlueprint(SerializableMixin):
     triggered_director_phases: list[str] = field(default_factory=list)
     story_complete: bool = False
 
-    @property
-    def has_acts(self) -> bool:
-        return bool(self.acts)
-
 
 @dataclass
 class DirectorGuidance(SerializableMixin):

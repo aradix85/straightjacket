@@ -6,6 +6,7 @@ Config path can be overridden via STRAIGHTJACKET_CONFIG environment variable.
 """
 
 import os
+import re
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -25,14 +26,13 @@ _CONFIG_PATH = Path(os.environ.get("STRAIGHTJACKET_CONFIG", str(PROJECT_ROOT / "
 
 def _read_version() -> str:
     """Read version from pyproject.toml — single source of truth."""
-    import re as _re
-
     pyproject = PROJECT_ROOT / "pyproject.toml"
-    if pyproject.exists():
-        m = _re.search(r'^version\s*=\s*"([^"]+)"', pyproject.read_text(encoding="utf-8"), _re.MULTILINE)
-        if m:
-            return m.group(1)
-    return "0.0.0"
+    if not pyproject.exists():
+        raise RuntimeError(f"pyproject.toml not found at {pyproject}; cannot determine version")
+    m = re.search(r'^version\s*=\s*"([^"]+)"', pyproject.read_text(encoding="utf-8"), re.MULTILINE)
+    if not m:
+        raise RuntimeError(f'no `version = "..."` line in {pyproject}')
+    return m.group(1)
 
 
 VERSION = _read_version()

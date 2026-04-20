@@ -68,7 +68,7 @@ def extract_title(obj: dict, fallback: str = "") -> str:
 
 def list_available() -> list[str]:
     """Return setting IDs whose settings.yaml declares a Datasworn JSON that exists on disk."""
-    # Late import: settings.py imports from loader.py.
+    # circular: settings.py imports from loader.py
     from .settings import datasworn_id_of, list_packages
 
     result = []
@@ -153,15 +153,6 @@ class Setting:
     def title(self) -> str:
         return extract_title(self._raw, self.id)
 
-    @property
-    def setting_type(self) -> str:
-        """'ruleset' for standalone, 'expansion' for add-ons like Delve."""
-        return self._raw.get("type", "ruleset")
-
-    @property
-    def license(self) -> str:
-        return self._raw.get("license", "")
-
     def _load_oracles(self) -> None:
         """Parse all oracle tables into OracleTable objects, recursively."""
         for coll_id, coll in self._raw.get("oracles", {}).items():
@@ -208,21 +199,12 @@ class Setting:
         """List all oracle table IDs."""
         return sorted(self._oracles.keys())
 
-    def oracle_ids_in(self, collection: str) -> list[str]:
-        """List oracle IDs within a collection (e.g. 'characters')."""
-        prefix = collection + "/"
-        return sorted(k for k in self._oracles if k.startswith(prefix))
-
     def roll_oracle(self, oracle_id: str) -> str:
         """Roll on an oracle table and return the text. Raises KeyError if not found."""
         table = self._oracles.get(oracle_id)
         if table is None:
             raise KeyError(f"Oracle table '{oracle_id}' not found in {self.id}")
         return table.roll_text()
-
-    def oracle_collections(self) -> list[str]:
-        """List top-level oracle collection IDs."""
-        return sorted(self._raw.get("oracles", {}).keys())
 
     def asset_categories(self) -> list[str]:
         """List asset category IDs (e.g. 'path', 'companion')."""
@@ -242,10 +224,6 @@ class Setting:
         """Convenience: get all path assets (character creation)."""
         return self.assets("path")
 
-    def move_categories(self) -> list[str]:
-        """List move category IDs."""
-        return sorted(self._raw.get("moves", {}).keys())
-
     def moves(self, category: str) -> list[dict]:
         """Get all moves in a category. Returns raw dicts."""
         cat = self._raw.get("moves", {}).get(category, {})
@@ -258,20 +236,6 @@ class Setting:
     def stats(self) -> dict:
         """Get stat definitions. Returns {stat_id: stat_dict}."""
         return dict(self._raw.get("rules", {}).get("stats", {}))
-
-    def condition_meters(self) -> dict:
-        """Get condition meter definitions (health, spirit, supply)."""
-        return dict(self._raw.get("rules", {}).get("condition_meters", {}))
-
-    def faction_oracles(self) -> dict[str, OracleTable]:
-        """Get faction-related oracle tables."""
-        result: dict[str, OracleTable] = {}
-        for prefix in ("factions", "faction"):
-            for oid in self.oracle_ids_in(prefix):
-                table = self._oracles[oid]
-                short_id = oid.split("/", 1)[-1]
-                result[short_id] = table
-        return result
 
     @property
     def raw(self) -> dict:

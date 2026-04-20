@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from .engine_loader import eng
+from .logging_util import log
 from .models import CurrentAct, GameState, Revelation
 
 
@@ -96,8 +97,6 @@ def mark_revelation_used(game: GameState, rev_id: str) -> None:
 
 def check_story_completion(game: GameState) -> None:
     """Check if the story has reached its natural end point."""
-    from .logging_util import log
-
     bp = game.narrative.story_blueprint
     if not bp or not bp.acts:
         return

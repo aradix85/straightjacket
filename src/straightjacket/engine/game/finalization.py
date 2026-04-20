@@ -48,7 +48,7 @@ def resolve_action_consequences(
 ) -> ActionOutcome:
     """Resolve move outcome, apply combat position, tick clocks on MISS, check crisis.
 
-    Shared by turn.py, correction.py (input_misread), and momentum burn.
+    Shared by turn.py, correction/ (input_misread), and momentum burn.
     Turn.py adds WEAK_HIT clock ticking separately (intentionally turn-only).
     """
     outcome = resolve_move_outcome(game, brain.move, roll.result, target_npc_id=brain.target_npc)
@@ -125,19 +125,18 @@ def apply_engine_memories(game: GameState, memories: list[dict]) -> None:
         npc = find_npc(game, mem["npc_id"])
         if not npc:
             continue
-        npc.memory.append(
-            MemoryEntry(
-                scene=game.narrative.scene_count,
-                event=mem["event"],
-                emotional_weight=mem["emotional_weight"],
-                importance=mem["importance"],
-                type="observation",
-                tone=mem.get("tone", ""),
-                tone_key=mem.get("tone_key", ""),
-                about_npc=mem.get("about_npc"),
-                _score_debug=mem.get("_score_debug", "engine-generated"),
-            )
+        entry = MemoryEntry(
+            scene=game.narrative.scene_count,
+            event=mem["event"],
+            emotional_weight=mem["emotional_weight"],
+            importance=mem["importance"],
+            type="observation",
+            tone=mem.get("tone", ""),
+            tone_key=mem.get("tone_key", ""),
+            about_npc=mem.get("about_npc"),
         )
+        entry._score_debug = mem["_score_debug"] if "_score_debug" in mem else "engine-generated"
+        npc.memory.append(entry)
         npc.importance_accumulator += mem["importance"]
         if game.world.current_location:
             npc.last_location = game.world.current_location

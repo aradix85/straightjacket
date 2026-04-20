@@ -19,22 +19,6 @@ def setup_file_logging() -> None:
     logger.addHandler(ch)
 
 
-def get_logger(component: str) -> logging.Logger:
-    """Get a child logger for a specific engine component.
-
-    Usage in modules:
-        _log = get_logger("npc")
-        _log.info("[NPC] Something happened")
-
-    Component loggers inherit from rpg_engine but can be configured
-    independently: logging.getLogger("rpg_engine.ai").setLevel(logging.WARNING)
-    """
-    parent = logging.getLogger("rpg_engine")
-    if not parent.handlers:
-        setup_file_logging()
-    return parent.getChild(component)
-
-
 def log(msg: str, level: str = "info") -> None:
     """Log a message via the root engine logger."""
     logger = logging.getLogger("rpg_engine")

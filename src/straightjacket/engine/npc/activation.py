@@ -74,12 +74,16 @@ def compute_npc_tfidf_scores(npcs: list[NpcData], query_text: str) -> dict[str, 
         tf: dict[str, int] = {}
         for t in tokens:
             tf[t] = tf.get(t, 0) + 1
-        # Normalize TF by document length
-        doc_len = len(tokens) or 1
+        # Normalize TF by document length. Empty token lists never reach here
+        # (caller short-circuits on `if not tokens`) but guard anyway.
+        if not tokens:
+            return {}
+        doc_len = len(tokens)
         return {t: (count / doc_len) * idf.get(t, 0) for t, count in tf.items()}
 
     query_vec = _tfidf_vector(query_tokens)
-    query_norm = math.sqrt(sum(v * v for v in query_vec.values())) or 1.0
+    _q_sumsq = sum(v * v for v in query_vec.values())
+    query_norm = math.sqrt(_q_sumsq) if _q_sumsq > 0 else 1.0
 
     # Cosine similarity for each NPC
     scores = {}
@@ -88,7 +92,8 @@ def compute_npc_tfidf_scores(npcs: list[NpcData], query_text: str) -> dict[str, 
             scores[npc_id] = 0.0
             continue
         doc_vec = _tfidf_vector(tokens)
-        doc_norm = math.sqrt(sum(v * v for v in doc_vec.values())) or 1.0
+        _d_sumsq = sum(v * v for v in doc_vec.values())
+        doc_norm = math.sqrt(_d_sumsq) if _d_sumsq > 0 else 1.0
 
         # Dot product
         dot = sum(query_vec.get(t, 0) * doc_vec.get(t, 0) for t in set(query_vec) | set(doc_vec))

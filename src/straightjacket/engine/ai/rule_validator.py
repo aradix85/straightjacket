@@ -202,65 +202,6 @@ def check_npc_monologue(narration: str) -> list[str]:
     return []
 
 
-def check_consequence_keywords(narration: str, consequence_sentences: list[str], player_name: str = "") -> list[str]:
-    """Check that each consequence sentence has at least one keyword reflected in narration.
-
-    Strips possessives, contractions, and player name words (narrator writes
-    "you" not the character name). Uses stem matching for common consequence
-    verbs the model paraphrases.
-    """
-    if not consequence_sentences:
-        return []
-    stopwords = eng().stopwords.consequence
-    narration_lower = narration.lower()
-    # Player name words to exclude — narrator writes "you", not "Wanderer-369"
-    name_words = {w.strip(".,;:!?\"'()-").lower() for w in player_name.split()} if player_name else set()
-    violations = []
-    for sentence in consequence_sentences:
-        raw_words = {w.strip(".,;:!?\"'()-").lower() for w in sentence.split()}
-        cleaned = set()
-        for w in raw_words:
-            # Strip possessives: "Corvo's" → "corvo", "player's" → "player"
-            if w.endswith("'s") or w.endswith("\u2019s"):
-                w = w[:-2]
-            # Skip contractions like "it's", "don't"
-            elif "'" in w or "\u2019" in w:
-                continue
-            if len(w) >= 4:
-                cleaned.add(w)
-        keywords = cleaned - stopwords - name_words
-        if not keywords:
-            continue
-        if any(kw in narration_lower for kw in keywords):
-            continue
-        stems_found = False
-        stems_map = _consequence_stems()
-        for kw in keywords:
-            stem_variants = stems_map.get(kw, ())
-            if any(sv in narration_lower for sv in stem_variants):
-                stems_found = True
-                break
-        if stems_found:
-            continue
-        _rv = eng().rule_validator
-        violations.append(
-            _rv.violation_templates["consequence_missing"].format(
-                sentence=sentence[: _rv.consequence_sentence_preview],
-                keywords=sorted(keywords)[:4],
-            )
-        )
-    return violations[:2]
-
-
-def _consequence_stems() -> dict[str, tuple[str, ...]]:
-    """Load consequence stem map from engine.yaml validator.consequence_stems.
-
-    Raises KeyError if the section is missing — no silent fallback.
-    """
-    raw = eng().get_raw("validator")["consequence_stems"]
-    return {k: tuple(v) for k, v in raw.items()}
-
-
 def check_threat_advance(narration: str, threat_names: list[str]) -> list[str]:
     """Check that narrator acknowledges threat menace advancement.
 

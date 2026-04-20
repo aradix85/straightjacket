@@ -42,7 +42,6 @@ from .engine_config_dataclasses import (
     MetadataVotingConfig,
     MomentumConfig,
     MomentumGain,
-    MonologueDetectionConfig,
     MoveAvailabilityCondition,
     MoveAvailabilityRule,
     NamingConfig,
@@ -55,6 +54,7 @@ from .engine_config_dataclasses import (
     OpeningConfig,
     PacingConfig,
     ParserConfig,
+    PersistenceConfig,
     PositionOverride,
     PositionResolverConfig,
     PositionResolverWeights,
@@ -120,7 +120,6 @@ class EngineSettings:
     recovery: RecoveryConfig
     fuzzy_match: FuzzyMatchConfig
     npc_matching: NpcMatchingConfig
-    monologue_detection: MonologueDetectionConfig
     act_progress: ActProgressConfig
     rate_limit: RateLimitConfig
     retry: RetryConfig
@@ -140,6 +139,7 @@ class EngineSettings:
     architect_limits: ArchitectLimitsConfig
     status_descriptions: StatusDescriptionsConfig
     truncations: TruncationsConfig
+    persistence: PersistenceConfig
 
     # Scalar top-level fields
     scene_range_default: list[int]
@@ -241,7 +241,6 @@ _SIMPLE_SECTIONS: dict[str, type] = {
     "memory_retrieval_weights": MemoryRetrievalWeights,
     "fuzzy_match": FuzzyMatchConfig,
     "npc_matching": NpcMatchingConfig,
-    "monologue_detection": MonologueDetectionConfig,
     "act_progress": ActProgressConfig,
     "rate_limit": RateLimitConfig,
     "retry": RetryConfig,
@@ -261,6 +260,7 @@ _SIMPLE_SECTIONS: dict[str, type] = {
     "architect_limits": ArchitectLimitsConfig,
     "status_descriptions": StatusDescriptionsConfig,
     "truncations": TruncationsConfig,
+    "persistence": PersistenceConfig,
 }
 
 
@@ -451,7 +451,6 @@ def parse_engine_yaml(data: dict[str, Any]) -> EngineSettings:
         recovery=recovery,
         fuzzy_match=simple_parsed["fuzzy_match"],
         npc_matching=simple_parsed["npc_matching"],
-        monologue_detection=simple_parsed["monologue_detection"],
         act_progress=simple_parsed["act_progress"],
         rate_limit=simple_parsed["rate_limit"],
         retry=simple_parsed["retry"],
@@ -471,6 +470,7 @@ def parse_engine_yaml(data: dict[str, Any]) -> EngineSettings:
         architect_limits=simple_parsed["architect_limits"],
         status_descriptions=simple_parsed["status_descriptions"],
         truncations=simple_parsed["truncations"],
+        persistence=simple_parsed["persistence"],
         scene_range_default=list(data["scene_range_default"]),
         death_emotions=list(data["death_emotions"]),
         creativity_seeds=list(data["creativity_seeds"]),

@@ -8,36 +8,16 @@ enums:
   - late_evening
   - night
   - deep_night
-  npc_statuses:
-  - active
-  - background
-  - deceased
-  - lore
   dispositions:
   - hostile
   - distrustful
   - neutral
   - friendly
   - loyal
-  memory_types:
-  - observation
-  - reflection
   clock_types:
   - threat
   - scheme
   - progress
-  thread_types:
-  - vow
-  - goal
-  - tension
-  - subplot
-  story_structures:
-  - 3act
-  - kishotenketsu
-  positions:
-  - controlled
-  - risky
-  - desperate
   tone_keys:
   - neutral
   - curious

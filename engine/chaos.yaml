@@ -2,17 +2,6 @@ chaos:
   min: 1
   max: 9
   start: 5
-  interrupt_types:
-  - npc_unexpected
-  - threat_escalation
-  - twist
-  - discovery
-  - environment_shift
-  - remote_event
-  - positive_windfall
-  - callback
-  - dilemma
-  - ticking_clock
 chaos_resolver:
   high_threshold: 7
   low_threshold: 3

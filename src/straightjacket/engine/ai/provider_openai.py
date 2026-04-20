@@ -15,7 +15,7 @@ from typing import Any
 import openai
 
 from ..logging_util import log
-from .provider_base import AIResponse
+from .provider_base import AIResponse, extract_usage, normalize_stop_reason
 
 
 class OpenAICompatibleProvider:
@@ -73,7 +73,7 @@ class OpenAICompatibleProvider:
             create_kwargs["extra_body"] = extra
 
         if json_schema is not None:
-            schema_name = json_schema.get("name", "response")
+            schema_name = json_schema["title"]
             create_kwargs["response_format"] = {
                 "type": "json_schema",
                 "json_schema": {
@@ -102,20 +102,9 @@ class OpenAICompatibleProvider:
                     }
                 )
 
-        finish = choice.finish_reason
-        if finish == "length":
-            stop_reason = "truncated"
-        elif finish == "tool_calls":
-            stop_reason = "tool_use"
-        else:
-            stop_reason = "complete"
+        stop_reason = normalize_stop_reason(choice.finish_reason, "length", "tool_calls")
 
-        usage = None
-        if hasattr(response, "usage") and response.usage:
-            usage = {
-                "input_tokens": getattr(response.usage, "prompt_tokens", 0),
-                "output_tokens": getattr(response.usage, "completion_tokens", 0),
-            }
+        usage = extract_usage(getattr(response, "usage", None), "prompt_tokens", "completion_tokens")
 
         return AIResponse(
             content=content,

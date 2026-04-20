@@ -40,10 +40,6 @@ def _nullable_str() -> dict:
     return _nullable("string")
 
 
-def _nullable_int() -> dict:
-    return _nullable("integer")
-
-
 def _nullable_obj(props: dict) -> dict:
     return {"anyOf": [_obj(props), {"type": "null"}]}
 
@@ -56,37 +52,29 @@ def _str_arr() -> dict:
     return _arr({"type": "string"})
 
 
-def _obj(props: dict, extra_required: list[str] | None = None) -> dict:
-    """Build a strict JSON object schema. All keys are required by default."""
+def _obj(props: dict, extra_required: list[str] | None = None, title: str | None = None) -> dict:
+    """Build a strict JSON object schema. All keys are required by default.
+
+    `title` is the JSON Schema `title` keyword. OpenAI's structured-output API
+    requires a schema name; `provider_openai` reads this field. Anthropic
+    ignores it.
+    """
     required = extra_required or list(props.keys())
-    return {
+    out: dict = {
         "type": "object",
         "properties": props,
         "required": required,
         "additionalProperties": False,
     }
+    if title is not None:
+        out["title"] = title
+    return out
 
 
 _brain_cache = None
 _correction_cache: dict | None = None
 _director_cache: dict | None = None
 _story_architect_cache: dict | None = None
-
-
-def clear_brain_cache() -> None:
-    """Invalidate cached schemas. Called by reload_engine()."""
-    global _brain_cache, _metadata_cache, _opening_cache, _correction_cache
-    global _revelation_check_cache, _validator_cache, _architect_validator_cache
-    global _director_cache, _story_architect_cache
-    _brain_cache = None
-    _metadata_cache = None
-    _opening_cache = None
-    _correction_cache = None
-    _revelation_check_cache = None
-    _validator_cache = None
-    _architect_validator_cache = None
-    _director_cache = None
-    _story_architect_cache = None
 
 
 def get_brain_output_schema() -> dict:
@@ -128,7 +116,8 @@ def get_brain_output_schema() -> dict:
                 "target_track": _nullable_str(),
                 "fate_question": _nullable_str(),
                 "oracle_table": _nullable_str(),
-            }
+            },
+            title=_e.ai_text.schema_titles["brain_output"],
         )
     return _brain_cache
 
@@ -166,7 +155,8 @@ def get_director_output_schema() -> dict:
                     )
                 ),
                 "arc_notes": _str(),
-            }
+            },
+            title=_e.ai_text.schema_titles["director_output"],
         )
     return _director_cache
 
@@ -210,22 +200,31 @@ def get_story_architect_output_schema() -> dict:
                         }
                     )
                 ),
-            }
+            },
+            title=_e.ai_text.schema_titles["story_architect_output"],
         )
     return _story_architect_cache
 
 
-CHAPTER_SUMMARY_OUTPUT_SCHEMA = _obj(
-    {
-        "title": _str(),
-        "summary": _str(),
-        "unresolved_threads": _str_arr(),
-        "character_growth": _str(),
-        "npc_evolutions": _arr(_obj({"name": _str(), "projection": _str()})),
-        "thematic_question": _str(),
-        "post_story_location": _str(),
-    }
-)
+_chapter_summary_cache: dict | None = None
+
+
+def get_chapter_summary_schema() -> dict:
+    global _chapter_summary_cache
+    if _chapter_summary_cache is None:
+        _chapter_summary_cache = _obj(
+            {
+                "title": _str(),
+                "summary": _str(),
+                "unresolved_threads": _str_arr(),
+                "character_growth": _str(),
+                "npc_evolutions": _arr(_obj({"name": _str(), "projection": _str()})),
+                "thematic_question": _str(),
+                "post_story_location": _str(),
+            },
+            title=eng().ai_text.schema_titles["chapter_summary_output"],
+        )
+    return _chapter_summary_cache
 
 
 _metadata_cache: dict | None = None
@@ -276,7 +275,8 @@ def get_narrator_metadata_schema() -> dict:
                         }
                     )
                 ),
-            }
+            },
+            title=_e.ai_text.schema_titles["narrator_metadata"],
         )
     return _metadata_cache
 
@@ -332,7 +332,8 @@ def get_opening_setup_schema() -> dict:
                     )
                 ),
                 "deceased_npcs": _arr(_obj({"npc_id": _str()})),
-            }
+            },
+            title=_e.ai_text.schema_titles["opening_setup"],
         )
     return _opening_cache
 
@@ -369,7 +370,8 @@ def get_correction_output_schema() -> dict:
                         }
                     )
                 ),
-            }
+            },
+            title=_e.ai_text.schema_titles["correction_output"],
         )
     return _correction_cache
 
@@ -380,12 +382,14 @@ _revelation_check_cache: dict | None = None
 def get_revelation_check_schema() -> dict:
     global _revelation_check_cache
     if _revelation_check_cache is None:
-        descs = eng().ai_text.schema_descriptions["revelation_check"]
+        _e = eng()
+        descs = _e.ai_text.schema_descriptions["revelation_check"]
         _revelation_check_cache = _obj(
             {
                 "revelation_confirmed": _bool(descs["revelation_confirmed"]),
                 "reasoning": _str(desc=descs["reasoning"]),
-            }
+            },
+            title=_e.ai_text.schema_titles["revelation_check"],
         )
     return _revelation_check_cache
 
@@ -396,13 +400,15 @@ _validator_cache: dict | None = None
 def get_validator_schema() -> dict:
     global _validator_cache
     if _validator_cache is None:
-        descs = eng().ai_text.schema_descriptions["validator"]
+        _e = eng()
+        descs = _e.ai_text.schema_descriptions["validator"]
         _validator_cache = _obj(
             {
                 "pass": _bool(descs["pass"]),
                 "violations": _arr(_str()),
                 "correction": _str(desc=descs["correction"]),
-            }
+            },
+            title=_e.ai_text.schema_titles["validator"],
         )
     return _validator_cache
 
@@ -413,13 +419,15 @@ _architect_validator_cache: dict | None = None
 def get_architect_validator_schema() -> dict:
     global _architect_validator_cache
     if _architect_validator_cache is None:
-        descs = eng().ai_text.schema_descriptions["architect_validator"]
+        _e = eng()
+        descs = _e.ai_text.schema_descriptions["architect_validator"]
         _architect_validator_cache = _obj(
             {
                 "pass": _bool(descs["pass"]),
                 "violations": _arr(_str()),
                 "fixed_conflict": _str(desc=descs["fixed_conflict"]),
                 "fixed_antagonist": _str(desc=descs["fixed_antagonist"]),
-            }
+            },
+            title=_e.ai_text.schema_titles["architect_validator"],
         )
     return _architect_validator_cache

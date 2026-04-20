@@ -166,11 +166,7 @@ def _finalize_scene(
         if revelation_confirmed:
             mark_revelation_used(game, ctx.pending_revs[0].id)
 
-    scene_type = (
-        ctx.scene_setup.scene_type
-        if ctx.scene_setup.scene_type != "expected"
-        else log_entry.get("_pacing_type", "action")
-    )
+    scene_type = ctx.scene_setup.scene_type if ctx.scene_setup.scene_type != "expected" else log_entry["_pacing_type"]
     record_scene_intensity(game, scene_type)
 
     nar = game.narrative

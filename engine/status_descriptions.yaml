@@ -30,7 +30,6 @@ status_descriptions:
     early: distant
     mid: building
     late: imminent
-    full: triggered
   track:
     8: nearly complete
     6: well underway

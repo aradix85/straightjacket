@@ -83,7 +83,7 @@ def validate_architect(
             **_vap,
         )
         result = json.loads(response.content)
-        if not result.get("pass", True):
+        if not result["pass"]:
             violations = result.get("violations", [])
             log(f"[ArchitectValidator] FAILED: {violations}")
             fixed_conflict = result.get("fixed_conflict", "").strip()
@@ -113,7 +113,7 @@ def _check_blueprint_text_fields(blueprint: dict, drift_words: set[str]) -> None
         ("thematic_thread", blueprint.get("thematic_thread", "")),
     ]
     for act in blueprint.get("acts", []):
-        phase = act.get("phase", "?")
+        phase = act["phase"]
         fields_to_check.append((f"act[{phase}].goal", act.get("goal", "")))
         fields_to_check.append((f"act[{phase}].transition_trigger", act.get("transition_trigger", "")))
 

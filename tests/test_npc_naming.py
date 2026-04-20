@@ -52,7 +52,7 @@ def test_process_new_npcs_uses_oracle_name(stub_all: None, load_engine: None) ->
 
     clear_cache()
     game = make_game_state(player_name="Hero", setting_id="classic")
-    with patch("straightjacket.engine.npc.naming.roll_oracle_name", return_value="Sigrid Ironhand"):
+    with patch("straightjacket.engine.npc.processing.roll_oracle_name", return_value="Sigrid Ironhand"):
         process_new_npcs(game, [{"name": "AI Generated Name", "description": "a warrior", "disposition": "neutral"}])
     assert len(game.npcs) == 1
     assert game.npcs[0].name == "Sigrid Ironhand"

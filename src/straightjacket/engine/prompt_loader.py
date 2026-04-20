@@ -7,14 +7,12 @@ If it's missing, the engine does not start. Template variables use {name}
 syntax, filled at runtime.
 """
 
-import yaml
 from pathlib import Path
 
-from .config_loader import PROJECT_ROOT, cfg
-
-
 from .bootstrap_log import bootstrap_log as _log
+from .config_loader import PROJECT_ROOT, cfg
 from .format_utils import PartialFormatDict
+from .yaml_merge import load_yaml_dir
 
 
 def _prompts_dir() -> Path:
@@ -29,26 +27,13 @@ def _ensure_loaded() -> dict:
     global _prompts
     if _prompts is None:
         directory = _prompts_dir()
-        if not directory.is_dir():
-            raise FileNotFoundError(f"Prompts directory not found: {directory}\nCheck ai.prompts_dir in config.yaml.")
-        files = sorted(directory.glob("*.yaml"))
-        if not files:
-            raise FileNotFoundError(f"No yaml files found in {directory}")
+        raw = load_yaml_dir(directory, missing_dir_hint="Check ai.prompts_dir in config.yaml.")
         _prompts = {}
-        origin: dict[str, Path] = {}
-        for path in files:
-            with open(path, encoding="utf-8") as f:
-                data = yaml.safe_load(f)
-            if not isinstance(data, dict):
-                raise ValueError(f"{path} is not a valid YAML dict")
-            for key, val in data.items():
-                if not isinstance(val, str):
-                    _log(f"[Prompts] Ignoring non-string prompt '{key}' in {path}", level="warning")
-                    continue
-                if key in _prompts:
-                    raise ValueError(f"Duplicate prompt key '{key}' in {path} — already defined in {origin[key]}")
-                _prompts[key] = val
-                origin[key] = path
+        for key, val in raw.items():
+            if not isinstance(val, str):
+                _log(f"[Prompts] Ignoring non-string prompt '{key}' (type {type(val).__name__})", level="warning")
+                continue
+            _prompts[key] = val
         _log(f"[Prompts] Loaded {len(_prompts)} prompts from {directory}")
     return _prompts
 
@@ -66,10 +51,3 @@ def get_prompt(name: str, **variables: str) -> str:
     if variables:
         return template.format_map(PartialFormatDict(variables))
     return template
-
-
-def reload_prompts() -> None:
-    """Force reload from disk."""
-    global _prompts
-    _prompts = None
-    _ensure_loaded()

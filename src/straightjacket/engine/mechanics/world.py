@@ -51,6 +51,7 @@ def update_chaos_factor(game: GameState, result: str, target_npc_id: str | None 
     elif result == "STRONG_HIT":
         game.world.tick_chaos(-1, floor=_e.chaos.min, ceiling=_e.chaos.max)
     elif result == "dialog" and target_npc_id:
+        # circular: npc package ↔ mechanics via prompt_blocks/processing
         from ..npc import find_npc
 
         npc = find_npc(game, target_npc_id)
@@ -111,6 +112,7 @@ def update_location(game: GameState, new_location: str) -> None:
 
 def apply_brain_location_time(game: GameState, brain: BrainResult) -> None:
     """Apply location change and engine-resolved time progression."""
+    # circular: resolvers → npc → mechanics package
     from .resolvers import resolve_time_progression
 
     loc = brain.location_change

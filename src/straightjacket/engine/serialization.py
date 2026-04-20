@@ -19,6 +19,7 @@ override to_dict and call serialize() directly.
 from __future__ import annotations
 
 import dataclasses
+import types
 from typing import Any, Union, get_args, get_origin, get_type_hints
 
 
@@ -39,8 +40,6 @@ def _resolve_item_type(tp: Any) -> type | None:
 
 def _unwrap_optional(tp: Any) -> tuple[type | None, bool]:
     """Unwrap Optional[X] / X | None → (X, True). Non-optional → (tp, False)."""
-    import types
-
     origin = get_origin(tp)
     if origin is Union or isinstance(tp, types.UnionType):
         args = get_args(tp)

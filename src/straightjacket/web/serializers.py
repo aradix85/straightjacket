@@ -45,12 +45,13 @@ def build_narrative_status(game: GameState) -> str:
     spirit_desc = _describe_resource(r.spirit, eng().status_descriptions.spirit)
     supply_desc = _describe_resource(r.supply, eng().status_descriptions.supply)
 
+    _defaults = eng().ai_text.narrator_defaults
     lines = [
         t(
             "status.resources",
             name=game.player_name,
-            location=game.world.current_location or "?",
-            time=time_label or "?",
+            location=game.world.current_location or _defaults["unknown_location"],
+            time=time_label or _defaults["unknown_time"],
             health=health_desc,
             spirit=spirit_desc,
             supply=supply_desc,
@@ -268,6 +269,7 @@ def build_creation_options() -> dict:
                 }
             )
         except Exception as e:
+            # tool boundary: per-package loader must not poison the whole list
             log(f"[Web] Failed to load package {pkg_id}: {e}", level="warning")
 
     return {

@@ -11,15 +11,7 @@ import random
 
 from ..engine_loader import eng
 from ..logging_util import log
-from ..models import GameState, ThreatData, ThreatEvent
-
-
-def find_threat_for_vow(game: GameState, vow_id: str) -> ThreatData | None:
-    """Find the active threat linked to a vow track."""
-    for t in game.threats:
-        if t.linked_vow_id == vow_id and t.status == "active":
-            return t
-    return None
+from ..models import GameState, ThreatEvent
 
 
 def advance_menace_on_miss(game: GameState, move: str) -> list[ThreatEvent]:
@@ -110,6 +102,7 @@ def resolve_full_menace(game: GameState) -> list[ThreatEvent]:
 
     Called once per turn after all menace advances.
     """
+    # circular: game.turn imports from mechanics.threats
     from ..game.tracks import complete_track
 
     spirit_cost = eng().threats.forsake_spirit_cost

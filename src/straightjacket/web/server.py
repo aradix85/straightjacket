@@ -12,6 +12,7 @@ handler dispatch table.
 import asyncio
 from collections.abc import Callable
 from pathlib import Path
+from urllib.parse import urlparse
 
 from starlette.applications import Starlette
 from starlette.responses import FileResponse, JSONResponse
@@ -93,8 +94,6 @@ def _check_origin(ws: WebSocket) -> bool:
         return True
     # Fail-closed: any parse error means we cannot verify the origin, so reject.
     try:
-        from urllib.parse import urlparse
-
         host = urlparse(origin).hostname or ""
         return host in _SAFE_ORIGINS
     except ValueError as e:
@@ -191,6 +190,7 @@ async def websocket_endpoint(ws: WebSocket) -> None:
     except WebSocketDisconnect:
         pass
     except Exception as e:
+        # tool boundary: WebSocket lifecycle
         log(f"[Web] WebSocket error: {e}", level="error")
     finally:
         if _session.active_ws is ws:

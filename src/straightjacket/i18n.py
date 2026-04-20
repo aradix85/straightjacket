@@ -13,10 +13,6 @@ def t(key: str, **kwargs: str | int) -> str:
     return get_string(key, **kwargs)
 
 
-def get_stat_labels() -> dict[str, str]:
-    return get_strings_by_prefix("stat.")
-
-
 def get_disposition_labels() -> dict[str, str]:
     return get_strings_by_prefix("disposition.")
 

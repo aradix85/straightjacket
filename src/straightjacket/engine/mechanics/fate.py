@@ -36,12 +36,6 @@ def _load_mythic() -> dict:
     return _mythic
 
 
-def _reset_mythic_cache() -> None:
-    """Clear cached data. Used in tests."""
-    global _mythic
-    _mythic = None
-
-
 def get_odds_levels() -> tuple[str, ...]:
     """Odds levels in order from most-favorable to least-favorable."""
     return tuple(eng().enums.odds_levels)
@@ -209,6 +203,7 @@ def resolve_fate(
     result.question = question
 
     if result.random_event_triggered:
+        # circular: random_events imports from fate
         from .random_events import generate_random_event
 
         result.random_event = generate_random_event(game, source="fate_doublet")

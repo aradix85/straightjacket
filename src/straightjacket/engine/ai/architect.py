@@ -14,7 +14,7 @@ from ..prompt_blocks import (
 from ..prompt_loader import get_prompt
 from ..story_state import get_current_act
 from .provider_base import AIProvider, create_with_retry
-from .schemas import CHAPTER_SUMMARY_OUTPUT_SCHEMA, get_story_architect_output_schema
+from .schemas import get_chapter_summary_schema, get_story_architect_output_schema
 
 
 def call_recap(provider: AIProvider, game: GameState, config: EngineConfig | None = None) -> str:
@@ -226,7 +226,7 @@ def call_chapter_summary(
                     f"{epilogue_block}",
                 }
             ],
-            json_schema=CHAPTER_SUMMARY_OUTPUT_SCHEMA,
+            json_schema=get_chapter_summary_schema(),
             **sampling_params("chapter_summary"),
             log_role="chapter_summary",
         )

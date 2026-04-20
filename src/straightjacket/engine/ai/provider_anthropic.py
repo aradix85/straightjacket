@@ -5,7 +5,7 @@ from typing import Any
 import anthropic
 
 from ..logging_util import log
-from .provider_base import AIResponse
+from .provider_base import AIResponse, extract_usage, normalize_stop_reason
 
 
 class AnthropicProvider:
@@ -88,20 +88,9 @@ class AnthropicProvider:
                     }
                 )
 
-        stop = response.stop_reason
-        if stop == "max_tokens":
-            stop_reason = "truncated"
-        elif stop == "tool_use":
-            stop_reason = "tool_use"
-        else:
-            stop_reason = "complete"
+        stop_reason = normalize_stop_reason(response.stop_reason, "max_tokens", "tool_use")
 
-        usage = None
-        if hasattr(response, "usage") and response.usage:
-            usage = {
-                "input_tokens": getattr(response.usage, "input_tokens", 0),
-                "output_tokens": getattr(response.usage, "output_tokens", 0),
-            }
+        usage = extract_usage(getattr(response, "usage", None), "input_tokens", "output_tokens")
 
         return AIResponse(
             content=content,

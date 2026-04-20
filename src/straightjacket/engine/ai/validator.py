@@ -18,6 +18,7 @@ from ..engine_loader import eng
 from ..logging_util import log
 from ..models import EngineConfig, GameState
 from ..parser import parse_narrator_response
+from .json_utils import extract_json
 from ..prompt_loader import get_prompt
 from .narrator import call_narrator
 from .provider_base import AIProvider, create_with_retry
@@ -143,10 +144,8 @@ Check constraints."""
             try:
                 result = json.loads(content)
             except json.JSONDecodeError:
-                from .json_utils import extract_json
-
                 result = extract_json(content)
-            if result and not result.get("pass", True):
+            if result and not result["pass"]:
                 llm_violations = result.get("violations", [])
     except Exception as e:
         # Intentional graceful degradation — see AI-CALL SUPPRESSION POLICY in provider_base.py.
@@ -221,7 +220,7 @@ def validate_and_retry(
         violations = check.get("violations", [])
         attempts.append((narration, len(violations), check))
 
-        if check.get("pass", True) or not check.get("correction"):
+        if check["pass"] or not check.get("correction"):
             return narration, report
 
         report["retries"] = attempt + 1
@@ -288,7 +287,7 @@ def validate_and_retry(
     final_violations = final_check.get("violations", [])
     attempts.append((narration, len(final_violations), final_check))
 
-    if not final_check.get("pass", True):
+    if not final_check["pass"]:
         # Pick the attempt with the fewest violations
         best_narration, best_count, best_check = min(attempts, key=lambda a: a[1])
         report["passed"] = False

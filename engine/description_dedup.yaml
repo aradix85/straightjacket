@@ -1,8 +1,6 @@
 description_dedup:
   identity_score_delta: 1000
   bond_multiplier: 3
-  richness_alias: 2
-  richness_description: 3
   richness_aim: 3
   richness_memory: 2
   richness_other: 1

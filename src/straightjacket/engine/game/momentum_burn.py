@@ -1,6 +1,6 @@
 """Momentum burn: re-narrate a scene after burning momentum to upgrade the result.
 
-Extracted from correction.py. Shares snapshot/restore pattern with correction
+Extracted from the original correction.py flow. Shares snapshot/restore pattern with correction
 but is a separate game flow with its own pipeline.
 """
 

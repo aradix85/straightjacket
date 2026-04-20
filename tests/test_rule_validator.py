@@ -218,32 +218,6 @@ def test_strip_prompt_unchanged_for_agency_violation(load_engine: None) -> None:
 # ── CONSEQUENCE KEYWORD CHECKS ───────────────────────────────
 
 
-def test_consequence_keyword_found() -> None:
-    from straightjacket.engine.ai.rule_validator import check_consequence_keywords
-
-    narration = "The blade finds the gap. Ash staggers, blood running down."
-    sentences = ["The blade finds the gap in your guard."]
-    violations = check_consequence_keywords(narration, sentences)
-    assert violations == []
-
-
-def test_consequence_keyword_missing() -> None:
-    from straightjacket.engine.ai.rule_validator import check_consequence_keywords
-
-    narration = "The sun shines brightly over the meadow."
-    sentences = ["The blade finds the gap in your guard."]
-    violations = check_consequence_keywords(narration, sentences)
-    assert len(violations) == 1
-    assert "CONSEQUENCE MISSING" in violations[0]
-
-
-def test_consequence_empty_sentences_passes() -> None:
-    from straightjacket.engine.ai.rule_validator import check_consequence_keywords
-
-    violations = check_consequence_keywords("anything", [])
-    assert violations == []
-
-
 def test_consequence_in_run_rule_checks() -> None:
     """Consequence checking moved to LLM validator — rule checker passes these through."""
     from straightjacket.engine.ai.rule_validator import ValidationContext, run_rule_checks

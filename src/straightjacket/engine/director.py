@@ -297,7 +297,7 @@ def _check_engine_act_transition(game: GameState) -> None:
             bp.triggered_transitions.append(fill_id)
             log(f"[Director] Back-filled skipped act transition: {fill_id}")
     bp.triggered_transitions.append(act_id)
-    trigger_text = act.transition_trigger or "?"
+    trigger_text = act.transition_trigger or eng().ai_text.narrator_defaults["unknown_transition_trigger"]
     log(
         f"[Director] Engine act transition: act {act.act_number} "
         f"'{act.phase}' scene {game.narrative.scene_count} ≥ range end {sr[1]}: "

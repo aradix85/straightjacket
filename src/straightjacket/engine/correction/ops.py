@@ -5,6 +5,7 @@ from __future__ import annotations
 import re
 import uuid
 
+from ..engine_loader import eng
 from ..logging_util import log
 from ..models import NPC_STATUSES, GameState, NpcData
 from ..npc import consolidate_memory, find_npc
@@ -58,7 +59,7 @@ def _apply_correction_ops(game: GameState, ops: list) -> None:
         elif op == "npc_split":
             existing = find_npc(game, op_dict.get("npc_id", ""))
             if existing:
-                new_name = op_dict.get("split_name") or "Unknown"
+                new_name = op_dict.get("split_name") or eng().ai_text.narrator_defaults["split_default_name"]
                 new_desc = op_dict.get("split_description") or ""
                 new_id = f"npc_{uuid.uuid4().hex[:8]}"
                 # Split creates a sibling NPC mid-correction. disposition/status default

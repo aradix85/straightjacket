@@ -13,11 +13,11 @@ from __future__ import annotations
 
 import json
 
-from ..ai.provider_base import AIProvider, AIResponse
+from ..ai.provider_base import AIProvider, AIResponse, create_with_retry
 from ..engine_loader import eng
 from ..logging_util import log
 from ..models import GameState
-from .registry import get_handler
+from .registry import get_handler, get_tools
 
 
 def execute_tool_call(role: str, tool_call: dict, game: GameState) -> str:
@@ -65,8 +65,6 @@ def run_tool_loop(
     Returns (final_content, tool_log) where tool_log is a list of
     {name, arguments, result} dicts for diagnostics.
     """
-    from ..ai.provider_base import create_with_retry
-
     tool_log: list[dict] = []
     current = response
     conversation = list(messages)
@@ -113,8 +111,6 @@ def run_tool_loop(
             log(f"[Tools] {tc['name']}({tc.get('arguments', {})}) → {result_str[: _trunc.log_medium]}")
 
         # Re-prompt with tool results
-        from .registry import get_tools
-
         current = create_with_retry(
             provider,
             max_retries=eng().retry.constraint_check_max_retries,

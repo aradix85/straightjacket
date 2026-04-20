@@ -34,6 +34,7 @@ class NpcConfig:
     consolidation_recency_ratio: float
     gate_memory_counts: dict[int, int]
     activated_memory_count: int
+    default_new_npc_disposition: str
 
 
 @dataclass
@@ -43,7 +44,6 @@ class ChaosConfig:
     min: int
     max: int
     start: int
-    interrupt_types: list[str]
 
 
 @dataclass
@@ -447,13 +447,8 @@ class EnumsConfig:
     """Enum value lists used by schemas."""
 
     time_phases: list[str]
-    npc_statuses: list[str]
     dispositions: list[str]
-    memory_types: list[str]
     clock_types: list[str]
-    thread_types: list[str]
-    story_structures: list[str]
-    positions: list[str]
     tone_keys: list[str]
     correction_ops: list[str]
     correction_fields: list[str]
@@ -483,7 +478,6 @@ class FuzzyMatchConfig:
     """Thresholds for fuzzy string matching (NPC names, aliases)."""
 
     min_word_length: int
-    min_phrase_length: int
     exact_dedup_threshold: float
 
 
@@ -492,15 +486,6 @@ class NpcMatchingConfig:
     """NPC matching thresholds and bonuses."""
 
     stt_alias_bonus: int
-    stt_phrase_length: int
-    alias_min_length: int
-
-
-@dataclass
-class MonologueDetectionConfig:
-    """Thresholds for detecting split monologues in parser."""
-
-    min_word_count: int
 
 
 @dataclass
@@ -508,7 +493,6 @@ class ActProgressConfig:
     """Act transition and chapter-summary parameters."""
 
     filler_max: int
-    recap_scene_max: int
 
 
 @dataclass
@@ -571,8 +555,6 @@ class DescriptionDedupConfig:
 
     identity_score_delta: int
     bond_multiplier: int
-    richness_alias: int
-    richness_description: int
     richness_aim: int
     richness_memory: int
     richness_other: int
@@ -595,7 +577,6 @@ class RuleValidatorConfig:
     max_gap_chars: int
     max_consecutive_short_gaps: int
     violation_dedup_key_length: int
-    consequence_sentence_preview: int
     violation_templates: dict[str, str]
 
 
@@ -691,6 +672,7 @@ class AiTextConfig:
     expected keys raise KeyError at the callsite.
     """
 
+    schema_titles: dict[str, str]
     brain_trigger_hints: dict[str, str]
     schema_descriptions: dict[str, dict[str, str]]
     consequence_labels: dict[str, str]
@@ -735,3 +717,10 @@ class TruncationsConfig:
     prompt_xxlong: int
     narration_preview: int
     narration_max: int
+
+
+@dataclass
+class PersistenceConfig:
+    """Save-game filesystem behaviour."""
+
+    default_save_name: str

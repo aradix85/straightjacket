@@ -25,6 +25,7 @@ from .matching import (
     sanitize_npc_name,
 )
 from .memory import score_importance
+from .naming import roll_oracle_name
 
 
 def process_npc_renames(game: "GameState", renames: list) -> None:
@@ -160,18 +161,19 @@ def process_new_npcs(game: "GameState", new_npcs: list) -> None:
     player_norm = normalize_for_match(game.player_name)
     player_parts = set(player_norm.split())
     existing_names = {normalize_for_match(n.name) for n in game.npcs}
+    default_disp = eng().npc.default_new_npc_disposition
 
     for raw_nd in new_npcs:
         if not isinstance(raw_nd, dict) or not raw_nd.get("name"):
             continue
         # AI-output sanitization: the narrator may omit description/disposition.
         # We normalise here so the rest of the function can treat nd as a
-        # well-formed record. This is input sanitisation of external data,
-        # not a domain-config fallback.
+        # well-formed record. Missing fields fall back to config-declared
+        # defaults; this is not a hidden domain-literal fallback.
         nd = {
             "name": raw_nd["name"],
             "description": (raw_nd.get("description") or "").strip(),
-            "disposition": raw_nd.get("disposition") or "neutral",
+            "disposition": raw_nd.get("disposition") or default_disp,
         }
         name_norm = normalize_for_match(nd["name"])
 
@@ -230,8 +232,6 @@ def process_new_npcs(game: "GameState", new_npcs: list) -> None:
         # Oracle-rolled name override: if the active setting has name tables,
         # replace AI name with an oracle roll. Preserve AI name as alias for
         # back-reference matching.
-        from .naming import roll_oracle_name
-
         oracle_name = roll_oracle_name(game)
         if oracle_name:
             ai_name = clean_name

@@ -41,6 +41,7 @@ def generate_engine_memories(
     what consequences applied. Templates from engine.yaml produce
     narrative-flavored memories the narrator can build on.
     """
+    # circular: npc package ↔ mechanics
     from ..npc.memory import score_importance
 
     _e = eng()

@@ -63,11 +63,5 @@ def get_strings_by_prefix(prefix: str) -> dict[str, str]:
     return {k[len(prefix) :]: v for k, v in strings.items() if k.startswith(prefix)}
 
 
-def reload_strings() -> None:
-    global _strings
-    _strings = None
-    _ensure_loaded()
-
-
 def all_strings() -> dict[str, str]:
     return dict(_ensure_loaded())

@@ -65,20 +65,22 @@ def _reset_random() -> None:
 @pytest.fixture(scope="session")
 def _real_engine():  # type: ignore[no-untyped-def]
     """Parse engine/*.yaml once per test session."""
-    from straightjacket.engine.engine_loader import _load_merged, _ENGINE_DIR
+    from straightjacket.engine.engine_loader import _ENGINE_DIR
     from straightjacket.engine.engine_config import parse_engine_yaml
+    from straightjacket.engine.yaml_merge import load_yaml_dir
 
-    data = _load_merged(_ENGINE_DIR)
+    data = load_yaml_dir(_ENGINE_DIR, missing_dir_hint="The engine/ directory ships with the repo.")
     return parse_engine_yaml(data)
 
 
 @pytest.fixture(scope="session")
 def _stub_engine_instance():  # type: ignore[no-untyped-def]
     """Parse engine/*.yaml once per test session with deterministic test overrides."""
-    from straightjacket.engine.engine_loader import _load_merged, _ENGINE_DIR
+    from straightjacket.engine.engine_loader import _ENGINE_DIR
     from straightjacket.engine.engine_config import parse_engine_yaml
+    from straightjacket.engine.yaml_merge import load_yaml_dir
 
-    data = _load_merged(_ENGINE_DIR)
+    data = load_yaml_dir(_ENGINE_DIR, missing_dir_hint="The engine/ directory ships with the repo.")
     data["story"]["kishotenketsu_probability"] = {"dark_gritty": 0.15}
     data["creativity_seeds"] = ["amber", "glacier", "compass", "obsidian", "cedar"]
     return parse_engine_yaml(data)

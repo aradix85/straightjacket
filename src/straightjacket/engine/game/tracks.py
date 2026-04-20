@@ -7,6 +7,7 @@ from __future__ import annotations
 
 from ..datasworn.settings import active_package
 from ..logging_util import log
+from ..mechanics.legacy import apply_threat_overcome_bonus
 from ..models import GameState, ProgressTrack
 
 
@@ -79,8 +80,6 @@ def complete_track(game: GameState, track_id: str, outcome: str) -> None:
                 log(f"[Track] Linked threat '{threat.name}' → {threat.status}")
                 # Step 12.2: XP bonus when vow completes with high-menace threat overcome
                 if threat.status == "overcome":
-                    from ..mechanics.legacy import apply_threat_overcome_bonus
-
                     apply_threat_overcome_bonus(game, threat)
 
 

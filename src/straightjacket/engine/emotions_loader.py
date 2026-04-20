@@ -5,47 +5,23 @@ mapping from a directory of yaml files instead of hardcoded Python dicts.
 One file per subsystem: importance.yaml, keyword_boosts.yaml, disposition_map.yaml.
 """
 
-from pathlib import Path
-
-import yaml
-
 from .bootstrap_log import bootstrap_log as _log
 from .config_loader import PROJECT_ROOT
+from .yaml_merge import load_yaml_dir
 
 _EMOTIONS_DIR = PROJECT_ROOT / "emotions"
 
 _data: dict | None = None
 
 
-def _load_merged(emotions_dir: Path) -> dict:
-    """Read every emotions/*.yaml and merge top-level keys. Duplicates raise."""
-    if not emotions_dir.is_dir():
-        raise FileNotFoundError(
-            f"Emotions config directory not found: {emotions_dir}\nThe emotions/ directory ships with the repo."
-        )
-    files = sorted(emotions_dir.glob("*.yaml"))
-    if not files:
-        raise FileNotFoundError(f"No yaml files found in {emotions_dir}")
-    merged: dict = {}
-    origin: dict[str, Path] = {}
-    for path in files:
-        with open(path, encoding="utf-8") as f:
-            data = yaml.safe_load(f)
-        if not isinstance(data, dict):
-            raise ValueError(f"{path} is not a valid YAML dict")
-        for key, value in data.items():
-            if key in merged:
-                raise ValueError(f"Duplicate top-level key '{key}' in {path} — already defined in {origin[key]}")
-            merged[key] = value
-            origin[key] = path
-    return merged
-
-
 def _ensure_loaded() -> dict:
     """Load emotions directory on first access."""
     global _data
     if _data is None:
-        _data = _load_merged(_EMOTIONS_DIR)
+        _data = load_yaml_dir(
+            _EMOTIONS_DIR,
+            missing_dir_hint="The emotions/ directory ships with the repo.",
+        )
         _log(f"[Emotions] Loaded {_EMOTIONS_DIR} ({len(_data)} sections)")
     return _data
 

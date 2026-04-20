@@ -214,9 +214,10 @@ class GameState(SerializableMixin):
             f"Su{self.resources.supply} Chaos{self.world.chaos_factor}"
         )
         # Rebuild database from restored state.
-        # Circular-break: db/queries.py imports from .models, so these imports
-        # are deferred until restore() is actually called.
+        # circular: db/queries.py imports from .models, deferred until restore() runs
         from .db import sync as _db_sync
+
+        # circular: same reason
         from .db.connection import reset_db
 
         reset_db()

@@ -13,7 +13,6 @@ description: >
 
 oracle_paths:
   action_theme: ["core/action", "core/theme"]
-  descriptor_focus: ["core/descriptor", "core/focus"]
   names: ["character/name/given_name", "character/name/family_name"]
   backstory: ""  # Sundered Isles uses character/backstory if available
   factions: "faction"

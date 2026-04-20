@@ -17,6 +17,7 @@ from ..engine.ai.architect import call_recap
 from ..engine.correction import process_correction
 from ..engine.db.sync import sync as _db_sync
 from ..engine.director import reset_stale_reflection_flags
+from ..engine.engine_loader import eng
 from ..engine.game import generate_epilogue, process_turn, run_deferred_director, start_new_chapter, start_new_game
 from ..engine.game.momentum_burn import process_momentum_burn
 from ..engine.logging_util import log
@@ -67,9 +68,10 @@ async def handle_select_player(session: Session, ws: WebSocket, msg: dict) -> No
         return
 
     session.player = name
-    session.save_name = "autosave"
+    default_save = eng().persistence.default_save_name
+    session.save_name = default_save
 
-    game, messages = load_game(name, "autosave")
+    game, messages = load_game(name, default_save)
     if game:
         session.game = game
         session.chat_messages = messages
@@ -133,6 +135,7 @@ async def handle_start_game(session: Session, ws: WebSocket, msg: dict) -> None:
             },
         )
     except Exception as e:
+        # tool boundary: WebSocket message handler
         log(f"[Web] start_game failed: {e}", level="error")
         await _send(ws, {"type": "error", "text": str(e)})
     finally:
@@ -220,6 +223,7 @@ async def handle_player_input(session: Session, ws: WebSocket, msg: dict) -> Non
                 await asyncio.to_thread(run_deferred_director, provider, game, director_ctx)
                 save_game(game, session.player, session.chat_messages, session.save_name)
             except Exception as e:
+                # carve-out: director AI call, graceful degradation
                 log(f"[Web] Director failed: {e}", level="warning")
         elif any(n.needs_reflection for n in game.npcs):
             reset_stale_reflection_flags(game)
@@ -227,6 +231,7 @@ async def handle_player_input(session: Session, ws: WebSocket, msg: dict) -> Non
         await _send(ws, {"type": "turn_complete"})
 
     except Exception as e:
+        # tool boundary: WebSocket message handler
         log(f"[Web] player_input failed: {e}", level="error")
         await _send(ws, {"type": "error", "text": str(e)})
         session.pop_last_user_message()
@@ -271,6 +276,7 @@ async def handle_correction(session: Session, ws: WebSocket, msg: dict) -> None:
                 log(f"[Web] deferred director after correction failed: {e}", level="warning")
         await _send(ws, {"type": "turn_complete"})
     except Exception as e:
+        # tool boundary: WebSocket message handler
         log(f"[Web] correction failed: {e}", level="error")
         await _send(ws, {"type": "error", "text": str(e)})
     finally:
@@ -312,6 +318,7 @@ async def handle_burn_momentum(session: Session, ws: WebSocket, msg: dict) -> No
         save_game(game, session.player, session.chat_messages, session.save_name)
         await _send(ws, {"type": "turn_complete"})
     except Exception as e:
+        # tool boundary: WebSocket message handler
         log(f"[Web] burn failed: {e}", level="error")
         await _send(ws, {"type": "error", "text": str(e)})
     finally:
@@ -337,7 +344,7 @@ async def handle_save(session: Session, ws: WebSocket, msg: dict) -> None:
 async def handle_load(session: Session, ws: WebSocket, msg: dict) -> None:
     if not session.player:
         return
-    name = msg.get("name", "autosave").strip()
+    name = msg.get("name", "").strip() or eng().persistence.default_save_name
     game, messages = load_game(session.player, name)
     if not game:
         await _send(ws, {"type": "error", "text": t("actions.load_failed")})
@@ -375,6 +382,7 @@ async def handle_recap(session: Session, ws: WebSocket, _msg: dict) -> None:
         recap_text = await asyncio.to_thread(call_recap, provider, session.game, session.config)
         await _send(ws, {"type": "recap", "text": recap_text})
     except Exception as e:
+        # tool boundary: WebSocket message handler
         await _send(ws, {"type": "error", "text": str(e)})
     finally:
         session.processing = False
@@ -410,7 +418,7 @@ async def handle_advance_asset(session: Session, ws: WebSocket, msg: dict) -> No
         await _send(ws, {"type": "status", "text": t("status.no_game")})
         return
 
-    kind = msg.get("kind", "upgrade")
+    kind = msg.get("kind", "").strip()
     asset_id = msg.get("asset_id", "").strip()
     if kind not in ("upgrade", "new") or not asset_id:
         await _send(ws, {"type": "status", "text": t("advance.usage")})
@@ -440,6 +448,7 @@ async def handle_generate_epilogue(session: Session, ws: WebSocket, _msg: dict) 
         save_game(game, session.player, session.chat_messages, session.save_name)
         await _send(ws, {"type": "epilogue", "text": highlight_dialog(epilogue)})
     except Exception as e:
+        # tool boundary: WebSocket message handler
         await _send(ws, {"type": "error", "text": str(e)})
     finally:
         session.processing = False
@@ -476,6 +485,7 @@ async def handle_new_chapter(session: Session, ws: WebSocket, _msg: dict) -> Non
             },
         )
     except Exception as e:
+        # tool boundary: WebSocket message handler
         log(f"[Web] new_chapter failed: {e}", level="error")
         await _send(ws, {"type": "error", "text": str(e)})
     finally:

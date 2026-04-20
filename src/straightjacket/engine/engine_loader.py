@@ -11,62 +11,29 @@ raise — each key belongs in exactly one file.
 
 from __future__ import annotations
 
-from pathlib import Path
 from typing import Any
-
-import yaml
 
 from .bootstrap_log import bootstrap_log as _log
 from .config_loader import PROJECT_ROOT
 from .engine_config import EngineSettings, parse_engine_yaml
+from .yaml_merge import load_yaml_dir
 
 _ENGINE_DIR = PROJECT_ROOT / "engine"
 
 _eng: EngineSettings | None = None
 
 
-def _load_merged(engine_dir: Path) -> dict[str, Any]:
-    """Read every engine/*.yaml and merge top-level keys. Duplicate keys raise."""
-    if not engine_dir.is_dir():
-        raise FileNotFoundError(
-            f"Engine config directory not found: {engine_dir}\nThe engine/ directory ships with the repo."
-        )
-    files = sorted(engine_dir.glob("*.yaml"))
-    if not files:
-        raise FileNotFoundError(f"No yaml files found in {engine_dir}")
-    merged: dict[str, Any] = {}
-    origin: dict[str, Path] = {}
-    for path in files:
-        with open(path, encoding="utf-8") as f:
-            data = yaml.safe_load(f)
-        if not isinstance(data, dict):
-            raise ValueError(f"{path} is not a valid YAML dict")
-        for key, value in data.items():
-            if key in merged:
-                raise ValueError(f"Duplicate top-level key '{key}' in {path} — already defined in {origin[key]}")
-            merged[key] = value
-            origin[key] = path
-    return merged
-
-
 def eng() -> EngineSettings:
     """Get the engine mechanics config. Loads on first access."""
     global _eng
     if _eng is None:
-        data = _load_merged(_ENGINE_DIR)
+        data = load_yaml_dir(
+            _ENGINE_DIR,
+            missing_dir_hint="The engine/ directory ships with the repo.",
+        )
         _eng = parse_engine_yaml(data)
         _log(f"[Engine] Loaded {_ENGINE_DIR} ({len(data)} sections)")
     return _eng
-
-
-def reload_engine() -> EngineSettings:
-    """Force reload from disk. Also clears derived caches (schemas)."""
-    global _eng
-    _eng = None
-    from .ai.schemas import clear_brain_cache
-
-    clear_brain_cache()
-    return eng()
 
 
 # CONVENIENCE: position-based damage lookup

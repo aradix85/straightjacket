@@ -173,7 +173,7 @@ def call_revelation_check(
             log_role="revelation_check",
         )
         result = json.loads(response.content)
-        confirmed = result.get("revelation_confirmed", True)
+        confirmed = result["revelation_confirmed"]
         reasoning = result.get("reasoning", "")
         log(f"[Revelation] Check for '{revelation.id}': confirmed={confirmed} — {reasoning}")
         return confirmed

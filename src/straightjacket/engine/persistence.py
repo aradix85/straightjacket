@@ -1,6 +1,7 @@
 """Straightjacket persistence: save/load games."""
 
 import json
+import shutil
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -20,7 +21,7 @@ from .npc import (
 # SAVE / LOAD
 
 
-def save_game(game: GameState, username: str, chat_messages: list | None = None, name: str = "autosave") -> Path:
+def save_game(game: GameState, username: str, chat_messages: list | None, name: str) -> Path:
     """Save game state and chat history."""
     name = _safe_name(name)
     save_dir = get_save_dir(username)
@@ -41,7 +42,7 @@ def save_game(game: GameState, username: str, chat_messages: list | None = None,
     return path
 
 
-def load_game(username: str, name: str = "autosave") -> tuple[GameState | None, list]:
+def load_game(username: str, name: str) -> tuple[GameState | None, list]:
     """Load game state and chat history. Returns (game, chat_messages)."""
     name = _safe_name(name)
     save_dir = get_save_dir(username)
@@ -116,8 +117,6 @@ def delete_save(username: str, name: str) -> bool:
     # Clean up any orphaned chapter archive directory
     chapter_dir = save_dir / "chapters" / name
     if chapter_dir.exists():
-        import shutil
-
         shutil.rmtree(chapter_dir, ignore_errors=True)
     log(f"[Save] Deleted: {username}/{name}")
     return True

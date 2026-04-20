@@ -7,7 +7,55 @@ Originally forked from [EdgeTales](https://github.com/edgetales/edgetales). See 
 
 ---
 
-## [0.67.0] — 2026-04-20
+## [0.70.0] — 2026-04-20
+
+Second dead-code pass, finishing what 0.69 left in "twijfelgeval" territory.
+
+`check_consequence_keywords` removed. A test comment ("Consequence checking moved to LLM validator") proved the function had been intentionally cut from `run_rule_checks` in an earlier refactor; the function, its `_consequence_stems()` helper, three dedicated tests, the `consequence_sentence_preview` dataclass field + yaml key, the `consequence_missing` violation template, the `consequence missing:` rewrite-instruction, and 141 lines of `consequence_stems:` yaml data all gone. `reload_config` kept: `tests/model_eval/eval.py` is an actively maintained standalone CLI for per-role model evaluation and uses it legitimately.
+
+Duplicate provider code extracted. `provider_base.py` now exports `normalize_stop_reason(raw, truncated_value, tool_use_value)` and `extract_usage(raw_usage, input_key, output_key)`; both providers use them. Each `create_message` lost twelve lines; the stop-reason and usage vocabularies stay provider-specific at the call site. The other two pylint-flagged duplicates (`build_action_prompt` calls in two sites, `AIResponse(...)` constructor) are not extracted — the first is pseudo-duplication (legitimate API call, local variables), the second is already the shared return path the extracted helpers feed.
+
+Dead config scrub. Thirteen yaml-bound dataclass fields that no code reads are gone from both the dataclass definitions and the yaml files: `ChaosConfig.interrupt_types`, five `EnumsConfig` enum lists (`npc_statuses`, `memory_types`, `thread_types`, `story_structures`, `positions`), `FuzzyMatchConfig.min_phrase_length`, `NpcMatchingConfig.stt_phrase_length` + `alias_min_length`, `ActProgressConfig.recap_scene_max`, `DescriptionDedupConfig.richness_alias` + `richness_description`, `status_descriptions.clock.full`. `MonologueDetectionConfig` was dead in full — class, yaml file (`engine/monologue_detection.yaml`), and its wiring through `EngineSettings` and `simple_map` all deleted.
+
+Delivery gate: 793 tests green (−3 from 0.69 for the removed consequence-keyword tests), ruff + ruff format + mypy clean on 92 source files.
+
+---
+
+Dead-code sweep. Vulture + manual verification found 23 callables, one full data path, one yaml file and 92 source files' worth of small trims that had no runtime readers.
+
+Removed callables: `clear_provider_cache`, `_nullable_int`, `clear_brain_cache` (only caller was the also-removed `reload_engine`), five `DataswornData` methods (`setting_type`, `license`, `oracle_collections`, `move_categories`, `condition_meters`, `faction_oracles`, `oracle_ids_in`), `reload_engine`, `_reset_mythic_cache`, `find_threat_for_vow`, the `has_acts` property, `reload_prompts`, `reload_strings`, `load_global_config` + `save_global_config` (and with them the now-unused `stat`, `asdict`, `yaml`, `GLOBAL_CONFIG_FILE`, `_cfg` imports), `get_stat_labels`, `get_logger`.
+
+Removed data path: `roll_descriptor_focus` plus the full chain — two dataclass fields (`OraclePaths.descriptor_focus`, `_OraclePathsPartial.descriptor_focus`), one yaml parse branch, one `pick()` call at resolve time, and the `descriptor_focus:` keys in four setting yamls (`classic`, `starforged`, `sundered_isles`, `delve`). `starforged`/`sundered_isles` had actual data there; `classic`/`delve` were empty sentinels. Nobody read the result.
+
+Removed yaml: `engine/move_routing.yaml` was a top-level section with no `get_raw` caller. Verified by dotted-path scan, not just string-literal scan, because `get_raw("section")` is a different access pattern from `["section"]` subscript. The same scan saved `engine/damage.yaml`, which I also initially removed — the `damage()` convenience function in `engine_loader.py` reads `eng().get_raw("damage")` via `damage("damage.miss.clock_ticks", position)` in `game/finalization.py`, and my first string-literal-only grep missed it because the literal `"damage"` was everywhere else too (method names, field names). Restored; lesson filed.
+
+Duplicate-code extraction: `engine_loader`, `emotions_loader` and `prompt_loader` each had a near-identical "read all *.yaml in a directory, raise on duplicate top-level keys" merge loop. Hoisted to a new `engine/yaml_merge.py` module exporting `load_yaml_dir(directory, *, missing_dir_hint, value_filter=None)`. `prompt_loader` needed the post-merge type-filter branch because it logs-and-ignores non-string prompt values; the shared helper stays focused on merge semantics and prompt_loader does the filter in its own loop after merging. `tests/conftest.py` was importing the private `_load_merged` symbol directly — switched to `load_yaml_dir` at the two fixture call-sites.
+
+Session autosave default: the last domain literal from 0.68's autosave cleanup. `web/session.py::Session` had `save_name: str = "autosave"` and a second `"autosave"` in `clear_game()`. Both now route through `eng().persistence.default_save_name` via a `_default_save_name` helper. The dataclass field uses `field(default_factory=...)` so `Session()` with no args still works for the thirteen test sites.
+
+Two duplicate-code findings left untouched, by design. The action-prompt construction in `correction/orchestrator` and `game/turn` share nine lines with the same argument list — a real refactor, not this session's scope. And the `AIResponse(content=..., stop_reason=..., tool_calls=..., usage=...)` packing in `provider_anthropic` and `provider_openai` is superficially similar but the surrounding stop-reason mapping is provider-specific enough that extracting would weaken the adapter boundary rather than strengthen it.
+
+Three regressions during the sweep, all caught by running pytest after each deletion. `set_backoff_sleep` was used by `tests/conftest.py` to skip retry backoff during the test run; removed then restored. The `has_game` property on `Session` had two dedicated tests; removed then restored. `_load_merged` in `engine_loader.py` was imported by `tests/conftest.py` fixtures; the refactor moved the logic to `yaml_merge.py` and the conftest was updated. Each regression traces back to the same failure mode: filtering grep output too aggressively and trusting the result over running the tests. After the first one I added a post-deletion pytest run to the loop; the later two still slipped because "no callers" is not the same as "no breakage" — it misses private-symbol imports and reflective access.
+
+Twijfelgevallen left for a human eye: `reload_config` is used only by `tests/model_eval/eval.py` (test-only utility — keep for model eval, remove if that script is also archaeology). `check_consequence_keywords` in `ai/rule_validator.py` has three direct test importers but zero production callers — either the production path that uses it was amputated at some point (bug, rule-validator missing a check) or the function always existed for tests alone (sloppy but harmless). Both left alone pending a decision.
+
+Delivery gate: 796 tests green, ruff + ruff format + mypy clean on 92 source files.
+
+---
+
+All four `test_project_rules.py` debt checks pass: the rule file had been right, the code needed to catch up.
+
+Twelve `.get("key", <domain literal>)` sites and eight `X or "<literal>"` fallbacks removed. AI-response parsers (`result.get("pass", True)` in `validator.py` × 3 and `architect_validator.py`, `result.get("revelation_confirmed", True)` in `brain.py`, `act.get("phase", "?")`) now read keys strictly; the existing `except Exception` graceful-degradation handlers own the "what if the response is malformed" policy instead of hiding it in a `.get` default. Schemas in `ai/schemas.py` now carry a JSON-Schema-standard `title` seeded from a new `ai_text.schema_titles` block; `provider_openai.py` reads it strictly, and `provider_openai.py`'s fallback on `"response"` turned out to be 100% dead code. `CHAPTER_SUMMARY_OUTPUT_SCHEMA` became `get_chapter_summary_schema()` because titles resolve through `eng()`. Narrator-facing fallbacks (`transition_trigger or "?"`, `current_location or "?"`, `split_name or "Unknown"`, `disposition or "neutral"`, `time_label or "?"`) read from `ai_text.narrator_defaults` and a new `npc.default_new_npc_disposition`. Three TF-IDF divide-by-zero guards rewritten as explicit `if ... else` so the rule-test's arithmetic carve-out recognises them.
+
+Twelve broad-`except Exception` sites in `web/` got policy-marker comments on the first line inside the handler body (that is where `_line_has_marker` reads). `engine/correction/analysis.py` was added to the AI-call carve-out whitelist in the test — a straight oversight after the 0.59 `correction.py` → `correction/` package split. Twenty-three inline imports: eleven had no cycle to break and were hoisted to module top (`re`, `types`, `shutil`, `stat`, `urllib.parse` plus six package-internal symbols that were already top-level elsewhere); twelve genuine circular-breaks and optional-SDK lazy-loads now carry a `# circular:` or `# lazy:` marker on the immediately preceding line.
+
+Dead code deleted: `src/straightjacket/engine/correction.py` sat next to the `correction/` package that superseded it in 0.59. Import resolution picked the package; the file had been unreachable for nine versions. Stale references in `provider_base.py`, `game/finalization.py`, `game/momentum_burn.py` and the rule-test's carve-out whitelist updated.
+
+Off-scope bugs caught in passing. `config_loader.py::_read_version` silently returned `"0.0.0"` if `pyproject.toml` was missing or the version line did not match — a silent domain default the AST scanner could not catch. It now raises `RuntimeError`. The `save_game` / `load_game` `name: str = "autosave"` defaults were dead code (every caller passes an explicit name) and are gone; the autosave slot name is now a first-class config value via a new `engine/persistence.yaml`, `PersistenceConfig` dataclass, and `eng().persistence.default_save_name`. `test_process_new_npcs_uses_oracle_name` was patching `npc.naming.roll_oracle_name`, which only worked when the import was inline; after hoisting it patches the name at its rebind site — `npc.processing.roll_oracle_name`.
+
+Delivery gate: 796 tests green (+4 from 0.67), ruff + ruff format + mypy clean on 91 source files.
+
+---
 
 Two file splits triggered by a codebase-size audit. `correction.py` (461 lines) became a package: `orchestrator.py` (process_correction, snapshot restore), `ops.py` (atomic NPC/location/time/backstory patches), `analysis.py` (the correction brain call), and `__init__.py` that re-exports the three public names. The three-file layout is internal; consumers still import from `straightjacket.engine.correction`.
 

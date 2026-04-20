@@ -81,7 +81,6 @@ class OraclePaths:
     """Resolved oracle path mappings for character creation."""
 
     action_theme: list[str]
-    descriptor_focus: list[str]
     names: list[str]
     backstory: str
     factions: str
@@ -114,7 +113,6 @@ class _OraclePathsPartial:
     """Parsed oracle_paths block. None per field = key absent in yaml."""
 
     action_theme: list[str] | None = None
-    descriptor_focus: list[str] | None = None
     names: list[str] | None = None
     backstory: str | None = None
     factions: str | None = None
@@ -165,8 +163,6 @@ def _parse_oracle_paths_partial(data: dict) -> _OraclePathsPartial:
     partial = _OraclePathsPartial()
     if "action_theme" in data:
         partial.action_theme = list(data["action_theme"])
-    if "descriptor_focus" in data:
-        partial.descriptor_focus = list(data["descriptor_focus"])
     if "names" in data:
         partial.names = list(data["names"])
     if "backstory" in data:
@@ -268,7 +264,6 @@ def _resolve_oracle_paths(chain: list[_SettingConfig], yaml_path: str) -> Oracle
 
     return OraclePaths(
         action_theme=pick("action_theme"),  # type: ignore[arg-type]
-        descriptor_focus=pick("descriptor_focus"),  # type: ignore[arg-type]
         names=pick("names"),  # type: ignore[arg-type]
         backstory=pick("backstory"),  # type: ignore[arg-type]
         factions=pick("factions"),  # type: ignore[arg-type]
@@ -374,15 +369,6 @@ class SettingPackage:
             action = self._data.roll_oracle(paths[0])
             theme = self._data.roll_oracle(paths[1])
             return action, theme
-        return "", ""
-
-    def roll_descriptor_focus(self) -> tuple[str, str]:
-        """Roll descriptor + focus meaning pair. Empty strings if not configured."""
-        paths = self._oracle_paths.descriptor_focus
-        if len(paths) >= 2:
-            desc = self._data.roll_oracle(paths[0])
-            focus = self._data.roll_oracle(paths[1])
-            return desc, focus
         return "", ""
 
     def oracle_data_for(self, oracle_path: str) -> Setting | None:

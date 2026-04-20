@@ -190,9 +190,7 @@ def parse_narrator_response(game: GameState, raw: str) -> str:
             # Check individual name parts (e.g. "Totewald" from
             # "Director Clemens Totewald") — min 4 chars to avoid
             # matching generic short words; skip known titles
-            from .engine_loader import eng as _eng
-
-            _e = _eng()
+            _e = eng()
             min_part = _e.parser.min_line_length
             titles = _e.name_titles
             for part in name.split():

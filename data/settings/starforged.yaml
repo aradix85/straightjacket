@@ -14,7 +14,6 @@ description: >
 # find character creation data in the Datasworn JSON.
 oracle_paths:
   action_theme: ["core/action", "core/theme"]
-  descriptor_focus: ["core/descriptor", "core/focus"]
   names: ["characters/name/given", "characters/name/family_name", "characters/name/callsign"]
   backstory: "campaign_launch/backstory_prompts"
   factions: "factions"

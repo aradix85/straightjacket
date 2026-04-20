@@ -13,7 +13,7 @@ by default. AI-call sites are an explicit carve-out, documented here so
 future Claude sessions do not mistake them for bugs.
 
 Why exceptions are swallowed at AI-call sites (brain.py, narrator.py,
-validator.py, director.py, correction.py, architect*.py, tools/handler.py):
+validator.py, director.py, correction/analysis.py, architect*.py, tools/handler.py):
 
 1. AI calls fail transiently (rate limits, network blips, provider outages,
    429/500/502/503/529). These are not bugs in the engine — they are the
@@ -40,12 +40,12 @@ from collections.abc import Callable
 
 from ..logging_util import log
 
-# Backoff sleep — replaceable for tests
+# Backoff sleep — replaceable for tests to skip waits.
 _backoff_sleep: Callable[[float], Any] = _time.sleep
 
 
 def set_backoff_sleep(fn: Callable[[float], Any]) -> None:
-    """Replace the backoff sleep function. Use in tests to skip waits."""
+    """Replace the backoff sleep function. Used by tests/conftest.py."""
     global _backoff_sleep
     _backoff_sleep = fn
 
@@ -90,6 +90,35 @@ class AIResponse:
     stop_reason: str = "complete"  # "complete" | "truncated" | "tool_use"
     tool_calls: list[dict[str, str | dict]] = field(default_factory=list)
     usage: dict[str, int] | None = field(default=None, repr=False)
+
+
+def normalize_stop_reason(raw: str, truncated_value: str, tool_use_value: str) -> str:
+    """Map provider-specific stop-reason strings to the normalized enum.
+
+    Providers use different vocabularies: Anthropic says "max_tokens"/"tool_use",
+    OpenAI says "length"/"tool_calls". Caller passes its two non-complete values;
+    anything else is treated as "complete".
+    """
+    if raw == truncated_value:
+        return "truncated"
+    if raw == tool_use_value:
+        return "tool_use"
+    return "complete"
+
+
+def extract_usage(raw_usage: Any, input_key: str, output_key: str) -> dict[str, int] | None:
+    """Pull a usage object's input/output token counts into normalized form.
+
+    Anthropic attrs: `input_tokens` / `output_tokens`.
+    OpenAI attrs:    `prompt_tokens` / `completion_tokens`.
+    Returns None when the provider returned no usage object.
+    """
+    if not raw_usage:
+        return None
+    return {
+        "input_tokens": getattr(raw_usage, input_key, 0),
+        "output_tokens": getattr(raw_usage, output_key, 0),
+    }
 
 
 # PROVIDER PROTOCOL
@@ -241,7 +270,8 @@ def create_with_retry(
             return result
 
         except Exception as e:
-            # Check if this is a retryable error
+            # carve-out: retry policy on AI provider call
+            # circular: engine_loader → ai.schemas → provider_base
             from ..engine_loader import eng as _eng
 
             _retry_cfg = _eng().retry

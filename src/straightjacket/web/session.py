@@ -12,8 +12,13 @@ from typing import Any
 
 from starlette.websockets import WebSocket
 
+from ..engine.engine_loader import eng
 from ..engine.mechanics.scene import SceneSetup
 from ..engine.models import BrainResult, EngineConfig, GameState, RollResult, TurnSnapshot
+
+
+def _default_save_name() -> str:
+    return eng().persistence.default_save_name
 
 
 @dataclass
@@ -37,7 +42,7 @@ class Session:
     game: GameState | None = None
     chat_messages: list[dict] = field(default_factory=list)
     config: EngineConfig = field(default_factory=EngineConfig)
-    save_name: str = "autosave"
+    save_name: str = field(default_factory=_default_save_name)
     processing: bool = False
     active_ws: WebSocket | None = field(default=None, repr=False)
     pending_burn: BurnOffer | None = None
@@ -50,7 +55,7 @@ class Session:
         """Reset game state for new player or new game."""
         self.game = None
         self.chat_messages = []
-        self.save_name = "autosave"
+        self.save_name = _default_save_name()
         self.pending_burn = None
 
     def append_chat(self, role: str, content: str, **extra: Any) -> None:
