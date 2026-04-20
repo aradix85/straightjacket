@@ -65,7 +65,7 @@ Where to find things. If you want to change X, edit Y.
 | How the narrator is prompted | `prompts/*.yaml` → task templates; `prompt_builders.py` → XML assembly |
 | NPC memory / activation logic | `npc/memory.py`, `npc/activation.py` |
 | Story structure / act tracking | `story_state.py` → `get_current_act`, `check_story_completion`; `ai/architect.py` |
-| Correction (## undo) flow | `correction.py` |
+| Correction (## undo) flow | `correction/` (package: `analysis.py` brain call, `ops.py` atomic state patches, `orchestrator.py` snapshot restore + re-narrate) |
 | Momentum burn re-narration | `game/momentum_burn.py` → `process_momentum_burn` |
 | Save format | `models.py` → SerializableMixin on each dataclass (no manual `to_dict`/`from_dict`) |
 | User/save directory management | `user_management.py` → `create_user`, `get_save_dir`, `_safe_name` |
@@ -167,6 +167,8 @@ src/straightjacket/
 │   ├── models_base.py       # EngineConfig, Resources, ProgressTrack, WorldState, ClockData/Event, RandomEvent, FateResult
 │   ├── models_npc.py        # NpcData, MemoryEntry
 │   ├── models_story.py      # ThreadEntry, CharacterListEntry, NarrativeState, StoryBlueprint, etc.
+│   ├── engine_config.py     # EngineSettings composition + _build_strict / load_strict yaml parse; re-exports dataclasses
+│   ├── engine_config_dataclasses.py  # 63 subsystem dataclasses that bind engine.yaml sections
 │   ├── format_utils.py      # PartialFormatDict (shared by prompt_loader, strings_loader)
 │   ├── mechanics/
 │   │   ├── world.py            # Location matching, chaos adjustment, time, pacing, story structure
@@ -182,7 +184,11 @@ src/straightjacket/
 │   │   ├── impacts.py          # Impact apply/clear, max_momentum recalc, recovery blocking
 │   │   └── legacy.py           # Legacy tracks (quests/bonds/discoveries), XP, asset advancement
 │   ├── parser.py            # Narrator output cleanup (10 regex steps)
-│   ├── correction.py        # ## correction flow (undo/redo turns, state patching)
+│   ├── correction/          # ## correction subpackage
+│   │   ├── __init__.py      # Re-exports process_correction, call_correction_brain, _apply_correction_ops
+│   │   ├── analysis.py      # Correction brain call (classify misread vs state error)
+│   │   ├── ops.py           # Atomic state patches (npc edit/split/merge, location, time, backstory)
+│   │   └── orchestrator.py  # Snapshot restore, optional re-roll, re-narrate, post-narration flow
 │   ├── director.py          # Story steering, NPC reflections, act transitions
 │   ├── persistence.py       # Save/load
 │   ├── story_state.py       # Act tracking, revelation timing, story completion check
@@ -253,6 +259,8 @@ src/straightjacket/
 **Config-driven game logic.** Move outcomes, NPC limits, disposition shifts, damage tables — all in engine.yaml or Datasworn JSON. Adding a move means adding one YAML entry to `move_outcomes`. No Python change. Move definitions (stats, roll types, trigger conditions) load directly from Datasworn JSON per setting.
 
 **Modular yaml stores.** Every yaml store in the repo is a directory of files, not a single file: `engine/` (58 files, one per subsystem), `emotions/` (3), `prompts/` (7 cluster-files), `strings/` (18, one per dotted-key prefix). Each loader globs its directory, merges top-level keys, raises on duplicates. Callsites only talk to `eng()` / `get_prompt()` / `t()` / `importance_map()` — filesystem layout is invisible to the rest of the codebase. `config.yaml` stays single (small, user-edited). `data/settings/*.yaml` was already one file per setting.
+
+**Subpackage public API via `__init__.py`.** Subpackages `mechanics`, `npc`, `game`, `db`, and `tools` each expose their public API by re-exporting from their submodules in `__init__.py`. Callers import `from straightjacket.engine.mechanics import roll_action`, not `from straightjacket.engine.mechanics.consequences import roll_action`. This keeps the internal module layout free to change without breaking consumers. The top-level `engine/__init__.py` deliberately does NOT re-export — it is a package marker only (8 lines, docstring). `models.py` is a separate re-export hub for every dataclass across `models_base.py`, `models_npc.py`, and `models_story.py`. The F401 ignore in `pyproject.toml` for these seven files covers this intentional public-API surface. The 0.48.1 and 0.51 audits removed the top-level `engine/__init__.py` and `ai/__init__.py` hubs because they had zero consumers; the remaining hubs stay because they do.
 
 **Typed dataclasses everywhere.** GameState has sub-objects (Resources, WorldState, NarrativeState, CampaignState). NpcData has 17 fields. MemoryEntry has 10. Move has 15 fields with typed trigger conditions and roll options. Attribute access, never dict-style. `SerializableMixin` handles serialization; complex classes override `to_dict`/`from_dict` manually.
 

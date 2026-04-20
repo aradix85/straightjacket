@@ -5,6 +5,44 @@ Originally forked from [EdgeTales](https://github.com/edgetales/edgetales). See 
 
 ---
 
+---
+
+## [0.67.0] — 2026-04-20
+
+Two file splits triggered by a codebase-size audit. `correction.py` (461 lines) became a package: `orchestrator.py` (process_correction, snapshot restore), `ops.py` (atomic NPC/location/time/backstory patches), `analysis.py` (the correction brain call), and `__init__.py` that re-exports the three public names. The three-file layout is internal; consumers still import from `straightjacket.engine.correction`.
+
+`engine_config.py` (1139 lines) split into two files: `engine_config_dataclasses.py` (739 lines) now holds the 63 subsystem dataclasses plus the `MoveAvailabilityCondition` type-alias, while `engine_config.py` (478 lines) keeps `EngineSettings` and the `_build_strict` / `load_strict` parse logic. All 64 names are re-exported explicitly from `engine_config.py` via a named import list rather than a star-import, so the public API stays identical without introducing implicit exports.
+
+Module coupling measurement taken along the way: 76 modules, 434 local-import edges, average out-degree 5.7, heaviest importers are orchestrators (turn.py 20, correction 19), heaviest imported modules are infrastructure (logging_util 49, models 45, engine_loader 44). No feature-module god-object; the graph is flat.
+
+Delivery gate: 786 existing tests green, ruff + ruff format + mypy clean on 91 source files. The four failing `test_project_rules.py` checks remain the unchanged debt measurement.
+
+---
+
+## [0.66.0] — 2026-04-20
+
+Elvira gains three new diagnostic layers, all dumped into the existing `elvira_session.json` so there is still one file to hand to Claude after a run.
+
+Two new per-turn invariants in `tests/elvira/elvira_bot/invariants.py`. First: NPC presence in `GameState` must match NPC presence in the SQLite read model. Drift between the two causes prompt-builders and tool-handlers to see stale data while production code sees live data — the same class of bug as the 0.47 `characters_list INSERT OR REPLACE` crash. The check skips when the db is empty (unit-test contexts that call `assert_game_state` directly without running the turn pipeline that calls `sync(game)`), so it only flags real divergence after a real sync. Second: `world.combat_position` and active combat progress tracks must be consistent — an `in_control`/`bad_spot` position without an active combat track, or a cleared position with orphan active combat tracks, both signal the combat lifecycle has leaked state.
+
+New `tests/elvira/elvira_bot/drift_checks.py` runs two post-run analyses whose output lands under a new `drift_summary` key in the session log. Validator balance counts how many violations came from the rule-validator (`[rule]` prefix) versus the LLM-validator (`[llm]` prefix) across all turns and all retry attempts. A run with 20+ total violations where one side contributes under 10% is flagged as suspected drift — the same pathology that slipped past fourteen versions of testing in v0.63 when a hardcoded label in the secret-stripping regex had silently stopped matching. Blueprint drift re-runs the architect_validator's atmospheric_drift wordcheck against the stored blueprint, post-hoc and independent of whatever the architect_validator decided at creation time. Returns the actual offending words and the field they came from so you can see which act or which thematic field produced them.
+
+`drift_summary` is wired into both `runner.py` (direct mode) and `ws_runner.py` (full-stack mode), emitted in `to_diagnostic_dict`, and naturally present in the full debug dump.
+
+Delivery gate: 786 existing tests green, ruff + ruff format + mypy clean on 90 files. The four failing `test_project_rules.py` checks from 0.65.0 remain the measurement of debt, unchanged. Not verified: these additions have not been run against a live Elvira session with an API key — that is the first thing to do next session.
+
+---
+
+## [0.65.0] — 2026-04-20
+
+New `tests/test_project_rules.py` runs ten AST/regex scans that enforce the absolute rules mechanically. Six pass against the current codebase, four fail and measure residual debt: 12 `.get("key", <literal>)` domain defaults (including three `result.get("pass", True)` in the AI validator where malformed responses register as passing), 7 `X or "literal"` fallbacks, 11 broad `except Exception` handlers in web/ and provider_base.py without the policy-marker comment the convention requires, and 23 inline imports without reason comments — the 0.64.0 changelog claimed "roughly a dozen, each carrying a comment"; the actual count was almost double and none in the sample inspected carried a marker.
+
+Documentation fix: new ARCHITECTURE.md paragraph makes the subpackage `__init__.py` re-export convention explicit. `mechanics`, `npc`, `game`, `db`, and `tools` are public API facades (46 consumers of `mechanics`, 20 of `npc`); top-level `engine/__init__.py` is not; `models.py` is a deliberate hub. Before, only `models.py` was documented — the rest was silent convention, and the F401 ignore list in `pyproject.toml` had no paper trail.
+
+Delivery gate: 786 existing tests green, ruff + ruff format + mypy clean on 88 files. The four failing project-rules tests are the measurement, not a broken suite.
+
+---
+
 ## [0.64.0] — 2026-04-20
 
 Full sweep of the v0.63.0 audit. Ten batches covering hardcoded narrator/UI strings, silent error suppression, half-wired features, magic truncation numbers, SQL schema drift, inline-import hygiene, orphan config keys, test isolation, and cosmetic noise. A handful of live bugs surfaced while sweeping and were fixed in passing.

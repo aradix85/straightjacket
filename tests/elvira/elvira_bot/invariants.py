@@ -102,6 +102,19 @@ def assert_game_state(game: GameState, turn: int) -> list[str]:
             f"session_log last scene={last.scene} != scene_count={game.narrative.scene_count}",
         )
 
+    # NPC-DB sync: every NPC in GameState must also be in the DB read model,
+    # and vice versa. Drift here caused the 0.47 characters_list crash
+    # (INSERT OR REPLACE paper over duplicate ids) and is the kind of bug
+    # that stays latent until a specific query hits it.
+    _check_npc_db_sync(game, turn, violations)
+
+    # Combat track ↔ combat_position coupling: if combat_position is set,
+    # there must be an active combat progress track; if not, there must
+    # not be an orphan active combat track. Inconsistency here caused
+    # combat moves to be unavailable when player was "in combat" per the
+    # world state.
+    _check_combat_track_sync(game, turn, violations)
+
     return violations
 
 
@@ -157,3 +170,62 @@ def _check_clock(clock: ClockData, turn: int, violations: list[str]) -> None:
     check(0 <= clock.filled <= clock.segments, f"filled={clock.filled} out of [0,{clock.segments}]")
     if clock.fired:
         check(clock.filled >= clock.segments, f"fired=True but filled={clock.filled} < segments={clock.segments}")
+
+
+def _check_npc_db_sync(game: GameState, turn: int, violations: list[str]) -> None:
+    """NPCs in GameState must match NPCs in the DB read model.
+
+    Silent divergence here means a prompt-builder or tool-handler query
+    returns stale data while production code sees the live data.
+    """
+    # lazy: db only exists when a game has started — invariant runs per-turn
+    from straightjacket.engine.db.connection import get_db  # lazy: db singleton init
+
+    try:
+        conn = get_db()
+    except Exception as e:
+        violations.append(f"[TURN {turn}] DB sync: cannot access db ({type(e).__name__}: {e})")
+        return
+
+    try:
+        db_ids = {row[0] for row in conn.execute("SELECT id FROM npcs").fetchall()}
+    except Exception as e:
+        violations.append(f"[TURN {turn}] DB sync: query failed ({type(e).__name__}: {e})")
+        return
+
+    game_ids = {n.id for n in game.npcs}
+
+    # Skip when the DB was never synced for this GameState — unit tests
+    # and other contexts that call assert_game_state directly (without
+    # running the turn pipeline that invokes sync(game)) leave the db
+    # empty. A real divergence is meaningful only when the db has
+    # actually been populated at some point.
+    if not db_ids and game_ids:
+        return
+
+    missing_in_db = game_ids - db_ids
+    missing_in_game = db_ids - game_ids
+    for npc_id in missing_in_db:
+        violations.append(f"[TURN {turn}] DB sync: NPC '{npc_id}' in GameState but not in db")
+    for npc_id in missing_in_game:
+        violations.append(f"[TURN {turn}] DB sync: NPC '{npc_id}' in db but not in GameState")
+
+
+def _check_combat_track_sync(game: GameState, turn: int, violations: list[str]) -> None:
+    """combat_position and active combat progress track must be consistent.
+
+    If combat_position is set ('in_control' or 'bad_spot'), at least one
+    combat-typed active progress track must exist. If combat_position is
+    cleared, no orphan active combat track may remain.
+    """
+    cp = game.world.combat_position
+    active_combat_tracks = [
+        t for t in game.progress_tracks if t.status == "active" and getattr(t, "track_type", "") == "combat"
+    ]
+    if cp in ("in_control", "bad_spot") and not active_combat_tracks:
+        violations.append(f"[TURN {turn}] Combat sync: combat_position='{cp}' but no active combat track")
+    if cp == "" and active_combat_tracks:
+        names = ", ".join(t.name for t in active_combat_tracks)
+        violations.append(
+            f"[TURN {turn}] Combat sync: combat_position cleared but orphan active combat track(s): {names}"
+        )

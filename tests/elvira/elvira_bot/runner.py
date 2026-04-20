@@ -32,6 +32,7 @@ from straightjacket.engine.game import (
 
 from .ai_helpers import ask_bot, build_turn_context, decide_burn_momentum, get_persona
 from .creation import roll_character
+from .drift_checks import compute_drift_summary
 from .invariants import assert_game_state
 from .models import ChapterRecord, NpcSnapshot, SessionLog, TurnRecord, ValidatorRecord
 from .quality_checks import (
@@ -253,6 +254,7 @@ def run_session(bot_cfg: dict, auto_override: bool = False, turns_override: int 
     slog.validator_summary = _aggregate_validator_stats(slog)
     slog.quality_summary = _aggregate_quality_stats(slog)
     slog.token_summary = _aggregate_token_stats(slog)
+    slog.drift_summary = compute_drift_summary(slog)
     slog.burn_stats = {
         "offered": burns_offered,
         "taken": burns_taken,

@@ -33,6 +33,7 @@ from straightjacket.engine.models import GameState
 
 from .ai_helpers import ask_bot, build_turn_context, decide_burn_momentum, get_persona
 from .creation import roll_character
+from .drift_checks import compute_drift_summary
 from .invariants import assert_game_state
 from .models import ChapterRecord, NpcSnapshot, SessionLog, TurnRecord
 from .quality_checks import (
@@ -428,6 +429,7 @@ async def run_ws_session(bot_cfg: dict, auto_override: bool = False, turns_overr
     if game:
         slog.final_state = final_state_dict(game)
     slog.ended_at = datetime.now().isoformat()
+    slog.drift_summary = compute_drift_summary(slog)
 
     print_summary(slog, game)
 

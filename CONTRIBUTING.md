@@ -24,11 +24,13 @@ Game mechanics, emotion scoring, move types, damage tables, disposition shifts �
 
 ## Testing
 
-Three layers of testing, complementary:
+Four layers of testing, complementary:
 
 The **unit/integration test suite** (`python -m pytest tests/ -v`) runs without an API key. It uses mock providers that return canned responses. Tests verify the engine's internal logic: consequences, NPC processing, serialization, correction flow, prompt assembly, WebSocket handlers. Every PR must pass this suite.
 
-**Elvira** (`tests/elvira/elvira.py`) is a headless AI-driven test player that plays the game with real API calls. It checks state invariants after every turn, validates narration quality (leaked mechanics, spatial consistency), stress-tests the correction pipeline, and logs everything to JSON. Two modes:
+**Project rules** (`tests/test_project_rules.py`) are ten AST/regex scans that enforce the absolute rules mechanically: no silent domain defaults, no `X or "literal"` fallbacks, no broad `except Exception` without a policy marker, no dataclass defaults on config binding fields, no untagged TODOs, no banner comments, inline imports carry reason comments, every `@dataclass` in `models*.py` inherits `SerializableMixin`, no direct provider SDK imports outside the adapters, no hardcoded model names in engine code. Failures are deterministic measurements — the tests fail on residual debt without blocking feature work. When you touch a file that already has violations, fix them in the same commit.
+
+**Elvira** (`tests/elvira/elvira.py`) is a headless AI-driven test player that plays the game with real API calls. It checks state invariants after every turn (including NPC-DB sync and combat-track sync), validates narration quality (leaked mechanics, spatial consistency), stress-tests the correction pipeline, runs post-run drift checks (validator balance, blueprint drift), and logs everything to a single `elvira_session.json`. Two modes:
 
 - Direct mode: `python tests/elvira/elvira.py --auto --turns 5` — drives the engine directly, bypasses the UI. Fastest way to test engine changes.
 - WebSocket mode: `python tests/elvira/elvira.py --ws --auto --turns 5` — plays through the full server stack. Tests the complete pipeline: WebSocket protocol, handlers, engine, serializers.

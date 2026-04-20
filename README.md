@@ -64,11 +64,13 @@ The architecture implements the [Narrative RPG Engine](docs/narrative_rpg_engine
 
 ## Tests
 
-Three complementary layers:
+Four complementary layers:
 
 **Unit/integration tests** (`python -m pytest tests/ -v`, ~786 tests, no API key needed): mock providers with canned responses test engine logic, NPC processing, serialization, correction flow, prompt assembly, WebSocket handlers, database sync/queries, tool registry/dispatch. Every commit must pass.
 
-**[Elvira](tests/elvira/)** (`python tests/elvira/elvira.py --auto --turns 5`, needs API key): headless AI-driven test player that plays the game with real model output. Checks state invariants after every turn, validates narration quality (leaked mechanics, NPC spatial consistency), stress-tests the correction pipeline, and logs diagnostics to JSON. Two modes: direct (engine only) and WebSocket (full server stack). See [CONTRIBUTING.md](CONTRIBUTING.md) for when to use which.
+**Project rules** (`tests/test_project_rules.py`, no API key needed): 10 AST/regex scans that enforce the absolute rules mechanically — no silent domain defaults in `.get()`, no `X or "literal"` fallbacks on lookups, no broad `except Exception` without a policy marker, no dataclass defaults on config binding fields, no untagged TODOs, no banner comments, inline imports carry reason comments, every `@dataclass` in `models*.py` inherits `SerializableMixin`, no direct provider SDK imports outside the adapters, no hardcoded model names in engine code. Failures are deterministic measurements of residual debt; they are not blocking for feature work.
+
+**[Elvira](tests/elvira/)** (`python tests/elvira/elvira.py --auto --turns 5`, needs API key): headless AI-driven test player that plays the game with real model output. Checks state invariants after every turn (including NPC-DB sync and combat-track sync), validates narration quality (leaked mechanics, NPC spatial consistency), stress-tests the correction pipeline, runs post-run drift checks (validator balance, blueprint drift), and logs everything to a single `elvira_session.json`. Two modes: direct (engine only) and WebSocket (full server stack). See [CONTRIBUTING.md](CONTRIBUTING.md) for when to use which.
 
 **[Model eval](tests/model_eval/)** (`python tests/model_eval/eval.py`, needs API key): per-role model evaluation. Tests each AI role in isolation with fixed inputs and expected outputs. Use to evaluate whether a model can handle a specific role before switching config. Supports `--role brain` for single-role testing, `--model gpt-oss-120b` to override the configured model, and `--verbose` for full model output. Test cases live in `tests/model_eval/cases.yaml`.
 

@@ -267,6 +267,7 @@ class SessionLog:
     token_summary: dict = field(default_factory=dict)
     correction_tests: list[dict] = field(default_factory=list)
     burn_stats: dict = field(default_factory=dict)
+    drift_summary: dict = field(default_factory=dict)
     ended_reason: str = "unknown"
     total_turns: int = 0
     final_state: dict = field(default_factory=dict)
@@ -317,6 +318,8 @@ class SessionLog:
         d["burn_stats"] = self.burn_stats
         if self.token_summary:
             d["token_summary"] = self.token_summary
+        if self.drift_summary:
+            d["drift_summary"] = self.drift_summary
         # Final NPC state (once, not per-turn)
         if self.turns:
             last = self.turns[-1]
