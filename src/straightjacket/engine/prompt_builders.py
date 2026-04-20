@@ -1,18 +1,24 @@
-#!/usr/bin/env python3
 """Straightjacket prompt builders: dialog, action, NPC blocks, pacing."""
 
 import json
 import random
+from collections.abc import Sequence
 
 from .engine_loader import eng
 from .logging_util import log
-from .mechanics import get_pacing_hint, locations_match
-from collections.abc import Sequence
-
+from .mechanics import (
+    compute_npc_gate,
+    get_pacing_hint,
+    locations_match,
+    move_category,
+    resolve_npc_stance,
+)
+from .mechanics.scene import SceneSetup, adjustment_descriptions
+from .mechanics.impacts import impact_label
 from .models import BrainResult, EngineConfig, GameState, NpcData, RandomEvent, RollResult, ThreatEvent
-from .mechanics.scene import SceneSetup
 from .npc import find_npc, get_npc_bond, retrieve_memories
 from .prompt_blocks import (
+    campaign_history_block,
     narrative_direction_block,
     recent_events_block,
     story_context_block,
@@ -30,15 +36,10 @@ def creativity_seed(n: int = 3, rng: random.Random | None = None) -> str:
     return " ".join(_rng.sample(words, min(n, len(words))))
 
 
-# ── Shared prompt fragments ──────────────────────────────────
-
-
 def _scene_header(game: GameState) -> str:
     """Single source of truth for <world>/<character> opening lines in all narrator prompts."""
     impacts_tag = ""
     if game.impacts:
-        from .mechanics.impacts import impact_label
-
         labels = ", ".join(impact_label(k) for k in game.impacts)
         impacts_tag = f'\n<character_state impacts="{_xa(labels)}"/>'
     return (
@@ -104,7 +105,6 @@ def build_new_game_prompt(game: GameState) -> str:
 
 def _npc_block(game: GameState, target_id: str | None, context_text: str = "", move_category: str = "other") -> str:
     """Build context block for the target NPC, filtered by information gate level."""
-    from .mechanics import compute_npc_gate, resolve_npc_stance
 
     target = find_npc(game, target_id) if target_id else None
     if not target:
@@ -179,7 +179,6 @@ def _activated_npcs_block(
 ) -> str:
     """Build context blocks for activated NPCs (not the target — those get _npc_block).
     Lighter context than target: name, stance, and 1-2 key memories."""
-    from .mechanics import resolve_npc_stance
 
     parts = []
     for npc in activated:
@@ -253,7 +252,6 @@ def _known_npcs_string(mentioned: Sequence[NpcData], game: GameState, exclude_id
 
 def _pacing_block(game: GameState, scene_setup: SceneSetup | None = None) -> str:
     """Build pacing and scene modification block for prompts."""
-    from .mechanics.scene import adjustment_descriptions
 
     parts = []
     pacing = get_pacing_hint(game)
@@ -413,7 +411,6 @@ def build_action_prompt(
     threat_events: Sequence[ThreatEvent] = (),
 ) -> str:
     context_text = f"{player_words} {brain.player_intent or ''} {game.world.current_scene_context or ''}"
-    from .mechanics import move_category
 
     move_cat = move_category(brain.move)
     # Map engine categories to stance matrix categories
@@ -505,12 +502,8 @@ def build_action_prompt(
 <task>{get_prompt("task_action")}</task>"""
 
 
-# ── Chapter / epilogue prompts ───────────────────────────────
-
-
 def build_epilogue_prompt(game: GameState) -> str:
     """Build prompt for generating an epilogue that wraps up the story."""
-    from .prompt_blocks import campaign_history_block
 
     bp = game.narrative.story_blueprint
     endings = bp.possible_endings if bp else []
@@ -547,7 +540,6 @@ def build_epilogue_prompt(game: GameState) -> str:
 
 def build_new_chapter_prompt(game: GameState) -> str:
     """Build opening prompt for a new chapter in an ongoing campaign."""
-    from .prompt_blocks import campaign_history_block
 
     npc_block = "\n".join(
         f'<returning_npc id="{_xa(n.id)}" name="{_xa(n.name)}" disposition="{_xa(n.disposition)}" '

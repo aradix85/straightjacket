@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Straightjacket tools package — tool calling infrastructure.
 
 Public API:

@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """NPC stance resolution and information gating."""
 
 from __future__ import annotations

@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Impact mechanics: apply, clear, max_momentum adjustment, move blocking.
 
 Impacts are persistent conditions that reduce max_momentum by 1 each.

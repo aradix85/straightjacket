@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """NPC bond query: reads connection track progress."""
 
 from __future__ import annotations

@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Prompt block builders: XML context blocks for narrator and other AI prompts.
 
 Each function builds one self-contained XML block. The narrator system prompt
@@ -6,7 +5,9 @@ assembler (get_narrator_system) composes them. All blocks return empty string
 when not applicable — callers never need to check."""
 
 from .config_loader import narration_language
+from .datasworn.settings import active_package
 from .engine_loader import eng
+from .mechanics import get_pacing_hint
 from .models import EngineConfig, GameState
 from .prompt_loader import get_prompt
 from .story_state import get_current_act, get_pending_revelations
@@ -54,7 +55,6 @@ def vocabulary_block(game: GameState | None = None) -> str:
     """Build vocabulary control block from the active setting package."""
     if not game:
         return ""
-    from .datasworn.settings import active_package
 
     pkg = active_package(game)
     if not pkg:
@@ -122,8 +122,6 @@ def narrative_direction_block(game: GameState, roll_result: str = "", is_player_
     parts.append(f"perspective:{entry.perspective}")
 
     parts.append("player:caused_this" if is_player_caused else "player:witnessing")
-
-    from .mechanics import get_pacing_hint
 
     hint = get_pacing_hint(game)
     if hint == "breather":

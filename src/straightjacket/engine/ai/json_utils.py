@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Shared JSON extraction utility.
 
 Used by brain.py (Director JSON parsing) and validator.py (fallback JSON parsing).

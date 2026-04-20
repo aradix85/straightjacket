@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Datasworn move loader.
 
 Parses Datasworn JSON move definitions into typed dataclasses.
@@ -29,8 +28,6 @@ from ..logging_util import log
 from .loader import Setting, load_setting
 from .settings import datasworn_id_of, parent_of
 
-# ── Roll option ───────────────────────────────────────────────
-
 
 @dataclass
 class RollOption:
@@ -55,9 +52,6 @@ class RollOption:
     label: str = ""
 
 
-# ── Trigger condition ─────────────────────────────────────────
-
-
 @dataclass
 class TriggerCondition:
     """One trigger condition (a move can have multiple)."""
@@ -67,17 +61,11 @@ class TriggerCondition:
     text: str = ""
 
 
-# ── Move outcome ──────────────────────────────────────────────
-
-
 @dataclass
 class MoveOutcome:
     """Outcome text for one result tier (strong_hit, weak_hit, miss)."""
 
     text: str = ""
-
-
-# ── Move ──────────────────────────────────────────────────────
 
 
 @dataclass
@@ -131,9 +119,6 @@ class Move:
         if self.conditions:
             return self.conditions[0].method
         return ""
-
-
-# ── Parsing ──────────────────────────────────────────────────
 
 
 def _parse_roll_option(raw: dict) -> RollOption:

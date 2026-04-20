@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Straightjacket data models.
 
 All model types are importable from here:
@@ -19,6 +18,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
+from .engine_loader import eng
 from .logging_util import log
 from .models_base import (  # noqa: F401
     ClockData,
@@ -173,7 +173,6 @@ class GameState(SerializableMixin):
 
     def get_stat(self, name: str) -> int:
         """Get a character stat by name. Valid names come from engine.yaml stats.names."""
-        from .engine_loader import eng
 
         valid = {n for n in eng().stats.names if n != "none"}
         if name not in valid:
@@ -214,7 +213,9 @@ class GameState(SerializableMixin):
             f"H{self.resources.health} Sp{self.resources.spirit} "
             f"Su{self.resources.supply} Chaos{self.world.chaos_factor}"
         )
-        # Rebuild database from restored state
+        # Rebuild database from restored state.
+        # Circular-break: db/queries.py imports from .models, so these imports
+        # are deferred until restore() is actually called.
         from .db import sync as _db_sync
         from .db.connection import reset_db
 

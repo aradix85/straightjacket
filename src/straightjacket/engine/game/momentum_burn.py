@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Momentum burn: re-narrate a scene after burning momentum to upgrade the result.
 
 Extracted from correction.py. Shares snapshot/restore pattern with correction
@@ -6,6 +5,8 @@ but is a separate game flow with its own pipeline.
 """
 
 from ..ai.provider_base import AIProvider
+from ..datasworn.moves import get_moves
+from ..db import sync as _db_sync
 from ..engine_loader import eng
 from ..logging_util import log
 from ..mechanics import (
@@ -26,7 +27,8 @@ from ..models import (
 from ..npc import activate_npcs_for_prompt
 from ..prompt_builders import build_action_prompt
 
-from .finalization import apply_post_narration, narrate_scene, resolve_action_consequences
+from .finalization import apply_post_narration, apply_progress_and_legacy, narrate_scene, resolve_action_consequences
+from .tracks import find_progress_track
 
 
 def process_momentum_burn(
@@ -72,10 +74,6 @@ def process_momentum_burn(
 
     # Re-apply progress and legacy marks from re-resolved outcome after upgrade
     if action.outcome:
-        from ..datasworn.moves import get_moves
-        from .finalization import apply_progress_and_legacy
-        from .tracks import find_progress_track
-
         ds_moves = get_moves(game.setting_id) if game.setting_id else {}
         ds_move = ds_moves.get(brain_data.move)
         source_category = ds_move.track_category if ds_move else "vow"
@@ -127,7 +125,7 @@ def process_momentum_burn(
     if nar.narration_history:
         nar.narration_history[-1] = NarrationEntry(
             scene=nar.scene_count,
-            prompt_summary=f"Momentum burn ({new_result}): {brain_data.player_intent[:80]}",
+            prompt_summary=f"Momentum burn ({new_result}): {brain_data.player_intent[: eng().truncations.log_medium]}",
             narration=narration,
         )
 
@@ -136,8 +134,6 @@ def process_momentum_burn(
         nar.session_log[-1].consequences = consequences
         nar.session_log[-1].clock_events = clock_events
         nar.session_log[-1].scene_type = scene_setup.scene_type if scene_setup else "expected"
-
-    from ..db import sync as _db_sync
 
     _db_sync(game)
 

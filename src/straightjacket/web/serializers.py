@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """State serializers: game state → client-facing text and JSON.
 
 build_narrative_status: plain-text narrative summary for /status command.
@@ -9,6 +8,8 @@ build_ui_strings: all strings.yaml entries for the client.
 
 import re
 
+from ..engine.engine_loader import eng
+from ..engine.mechanics.impacts import impact_label
 from ..engine.models import GameState
 from ..engine.npc import get_npc_bond
 from ..engine.story_state import get_current_act
@@ -21,6 +22,7 @@ from ..i18n import (
     get_time_labels,
     t,
 )
+from ..strings_loader import all_strings
 
 
 def _describe_resource(value: int, descriptions: dict[int, str]) -> str:
@@ -31,75 +33,6 @@ def _describe_resource(value: int, descriptions: dict[int, str]) -> str:
     return descriptions[min(descriptions.keys())]
 
 
-_HEALTH_DESC: dict[int, str] = {
-    5: "uninjured",
-    4: "bruised, minor aches",
-    3: "injured, moving with effort",
-    2: "seriously wounded",
-    1: "critically injured, barely holding together",
-    0: "at the physical limit, collapse is imminent",
-}
-
-_SPIRIT_DESC: dict[int, str] = {
-    5: "steady and composed",
-    4: "mildly unsettled",
-    3: "shaken, stress is showing",
-    2: "deeply troubled, holding on by a thread",
-    1: "near breaking",
-    0: "at the mental limit",
-}
-
-_SUPPLY_DESC: dict[int, str] = {
-    5: "well-equipped",
-    4: "adequate for now",
-    3: "running low, rationing has begun",
-    2: "critically short",
-    1: "nearly nothing, desperation setting in",
-    0: "completely out of resources",
-}
-
-_BOND_DESC: dict[int, str] = {
-    8: "deeply bonded",
-    6: "strong connection",
-    4: "growing trust",
-    2: "tentative acquaintance",
-    0: "stranger",
-}
-
-_CLOCK_DESC: dict[str, str] = {
-    "early": "distant",
-    "mid": "building",
-    "late": "imminent",
-    "full": "triggered",
-}
-
-_TRACK_DESC: dict[int, str] = {
-    8: "nearly complete",
-    6: "well underway",
-    4: "making progress",
-    2: "early stages",
-    0: "just begun",
-}
-
-# Legacy tracks are 0-10 boxes; narrative descriptions at progress thresholds
-_LEGACY_DESC: dict[int, str] = {
-    10: "a storied legacy",
-    8: "a substantial legacy",
-    5: "a growing legacy",
-    2: "the first marks of a legacy",
-    0: "a blank slate",
-}
-
-# XP availability in narrative terms
-_XP_DESC: dict[int, str] = {
-    10: "rich with hard-won lessons",
-    6: "a substantial store of experience",
-    3: "modest lessons to draw on",
-    1: "a scrap of experience",
-    0: "nothing yet to draw on",
-}
-
-
 def build_narrative_status(game: GameState) -> str:
     """Narrative status for /status and /score commands. No mechanical numbers."""
     dl = get_disposition_labels()
@@ -108,9 +41,9 @@ def build_narrative_status(game: GameState) -> str:
 
     r = game.resources
     time_label = tl.get(game.world.time_of_day, "") if game.world.time_of_day else ""
-    health_desc = _describe_resource(r.health, _HEALTH_DESC)
-    spirit_desc = _describe_resource(r.spirit, _SPIRIT_DESC)
-    supply_desc = _describe_resource(r.supply, _SUPPLY_DESC)
+    health_desc = _describe_resource(r.health, eng().status_descriptions.health)
+    spirit_desc = _describe_resource(r.spirit, eng().status_descriptions.spirit)
+    supply_desc = _describe_resource(r.supply, eng().status_descriptions.supply)
 
     lines = [
         t(
@@ -126,8 +59,6 @@ def build_narrative_status(game: GameState) -> str:
 
     # Active impacts
     if game.impacts:
-        from ..engine.mechanics.impacts import impact_label
-
         labels = [impact_label(k) for k in game.impacts]
         lines.append(t("status.impacts", impacts=", ".join(labels)))
 
@@ -135,14 +66,14 @@ def build_narrative_status(game: GameState) -> str:
     for tr in game.progress_tracks:
         if tr.status != "active":
             continue
-        track_desc = _describe_resource(tr.filled_boxes, _TRACK_DESC)
+        track_desc = _describe_resource(tr.filled_boxes, eng().status_descriptions.track)
         lines.append(t("status.tracks", name=tr.name, progress=track_desc))
 
     # NPCs
     for n in game.npcs:
         disp_label = dl.get(n.disposition, n.disposition)
         bond = get_npc_bond(game, n.id)
-        bond_desc = _describe_resource(bond, _BOND_DESC)
+        bond_desc = _describe_resource(bond, eng().status_descriptions.bond)
         if n.status == "deceased":
             lines.append(t("status.npc_deceased", name=n.name))
         elif n.status == "background":
@@ -156,12 +87,13 @@ def build_narrative_status(game: GameState) -> str:
             lines.append(t("status.clock_fired", name=c.name))
         else:
             ratio = c.filled / c.segments if c.segments > 0 else 0
+            clock_desc = eng().status_descriptions.clock
             if ratio >= 0.75:
-                urgency = _CLOCK_DESC["late"]
+                urgency = clock_desc["late"]
             elif ratio >= 0.35:
-                urgency = _CLOCK_DESC["mid"]
+                urgency = clock_desc["mid"]
             else:
-                urgency = _CLOCK_DESC["early"]
+                urgency = clock_desc["early"]
             lines.append(t("status.clock", name=c.name, urgency=urgency))
 
     # Story arc
@@ -180,36 +112,31 @@ def build_narrative_status(game: GameState) -> str:
     # Experience and legacy (step 12)
     camp = game.campaign
     if camp.xp_available > 0 or camp.xp_spent > 0:
-        lines.append(t("status.xp", xp=_describe_resource(camp.xp_available, _XP_DESC)))
+        lines.append(t("status.xp", xp=_describe_resource(camp.xp_available, eng().status_descriptions.xp)))
     if any(lt.filled_boxes > 0 for lt in (camp.legacy_quests, camp.legacy_bonds, camp.legacy_discoveries)):
+        legacy_desc = eng().status_descriptions.legacy
         lines.append(
             t(
                 "status.legacy",
                 quests=t(
                     "status.legacy_item",
                     name=camp.legacy_quests.name,
-                    progress=_describe_resource(camp.legacy_quests.filled_boxes, _LEGACY_DESC),
+                    progress=_describe_resource(camp.legacy_quests.filled_boxes, legacy_desc),
                 ),
                 bonds=t(
                     "status.legacy_item",
                     name=camp.legacy_bonds.name,
-                    progress=_describe_resource(camp.legacy_bonds.filled_boxes, _LEGACY_DESC),
+                    progress=_describe_resource(camp.legacy_bonds.filled_boxes, legacy_desc),
                 ),
                 discoveries=t(
                     "status.legacy_item",
                     name=camp.legacy_discoveries.name,
-                    progress=_describe_resource(camp.legacy_discoveries.filled_boxes, _LEGACY_DESC),
+                    progress=_describe_resource(camp.legacy_discoveries.filled_boxes, legacy_desc),
                 ),
             )
         )
 
     return "\n".join(lines)
-
-
-_COMBAT_POS_DESC: dict[str, str] = {
-    "in_control": "in control",
-    "bad_spot": "in a bad spot",
-}
 
 
 def build_tracks_status(game: GameState) -> str:
@@ -219,10 +146,16 @@ def build_tracks_status(game: GameState) -> str:
         return t("status.no_tracks")
 
     lines = []
+    track_desc_map = eng().status_descriptions.track
+    combat_pos_desc = eng().status_descriptions.combat_position
     for tr in active:
-        track_desc = _describe_resource(tr.filled_boxes, _TRACK_DESC)
+        track_desc = _describe_resource(tr.filled_boxes, track_desc_map)
         if tr.track_type == "combat":
-            pos_desc = _COMBAT_POS_DESC.get(game.world.combat_position, "")
+            # combat_position is "" only when a combat track is in transition
+            # (end-of-combat cleared the position, orphaned-track sweep pending).
+            # Fall back to "" so downstream status prose stays well-formed.
+            cp = game.world.combat_position
+            pos_desc = combat_pos_desc[cp] if cp else ""
             lines.append(t("status.track_combat", name=tr.name, progress=track_desc, position=pos_desc))
         elif tr.track_type == "expedition":
             lines.append(t("status.track_expedition", name=tr.name, progress=track_desc))
@@ -234,15 +167,6 @@ def build_tracks_status(game: GameState) -> str:
     return "\n".join(lines)
 
 
-_MENACE_DESC: dict[int, str] = {
-    8: "near tipping point",
-    6: "looming",
-    4: "growing",
-    2: "stirring",
-    0: "distant",
-}
-
-
 def build_threats_status(game: GameState) -> str:
     """Narrative threat status for /threats command. No mechanical numbers."""
     active = [th for th in game.threats if th.status == "active"]
@@ -250,8 +174,9 @@ def build_threats_status(game: GameState) -> str:
         return t("status.no_threats")
 
     lines = []
+    menace_desc = eng().status_descriptions.menace
     for th in active:
-        urgency = _describe_resource(th.menace_filled_boxes, _MENACE_DESC)
+        urgency = _describe_resource(th.menace_filled_boxes, menace_desc)
         lines.append(t("status.threat", name=th.name, urgency=urgency))
 
     return "\n".join(lines)
@@ -259,8 +184,6 @@ def build_threats_status(game: GameState) -> str:
 
 def build_creation_options() -> dict:
     """All character creation data for the client form."""
-    from ..engine.engine_loader import eng
-
     _e = eng()
     settings = []
     for pkg_id in list_packages():
@@ -280,14 +203,15 @@ def build_creation_options() -> dict:
             flow = pkg.creation_flow
             if flow.has_truths:
                 raw_truths = pkg.data.truths()
+                _trunc = eng().truncations
                 for truth_id, truth_data in raw_truths.items():
                     options = []
                     for opt in truth_data.get("options", []):
                         options.append(
                             {
                                 "summary": opt.get("summary", ""),
-                                "description": str(opt.get("description", ""))[:300],
-                                "quest_starter": str(opt.get("quest_starter", ""))[:200],
+                                "description": str(opt.get("description", ""))[: _trunc.prompt_medium],
+                                "quest_starter": str(opt.get("quest_starter", ""))[: _trunc.prompt_short],
                             }
                         )
                     truths.append(
@@ -358,7 +282,7 @@ def build_creation_options() -> dict:
             "max_paths": _e.creation.max_paths,
             "max_starting_assets": _e.creation.max_starting_assets,
             "background_vow_default_rank": _e.creation.background_vow_default_rank,
-            "vow_ranks": ["troublesome", "dangerous", "formidable", "extreme", "epic"],
+            "vow_ranks": list(_e.legacy.ticks_by_rank.keys()),
         },
     }
 
@@ -387,6 +311,5 @@ def highlight_dialog(text: str) -> str:
 
 def build_ui_strings() -> dict[str, str]:
     """All strings.yaml entries for the client. Sent once at connect."""
-    from ..strings_loader import all_strings
 
     return all_strings()

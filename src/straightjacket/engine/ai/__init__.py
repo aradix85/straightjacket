@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Straightjacket AI package.
 
 All consumers import directly from submodules:

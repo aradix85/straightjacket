@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Legacy tracks and XP mechanics.
 
 Three campaign-persistent legacy tracks (quests, bonds, discoveries) accumulate

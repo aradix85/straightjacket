@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Starlette app: routes, WebSocket endpoint, message dispatch.
 
 Single-session server: one active player at a time. A new WebSocket
@@ -11,7 +10,6 @@ handler dispatch table.
 """
 
 import asyncio
-import contextlib
 from collections.abc import Callable
 from pathlib import Path
 
@@ -24,6 +22,7 @@ from ..engine.config_loader import narration_language
 from ..engine.engine_loader import eng
 from ..engine.logging_util import log
 from ..engine.models import EngineConfig
+from ..i18n import t
 from .handlers import (
     _send,
     handle_advance_asset,
@@ -51,15 +50,12 @@ from .handlers import (
 from .serializers import build_creation_options, build_ui_strings
 from .session import Session
 
-# ── Static files ──────────────────────────────────────────────
 
 _STATIC_DIR = Path(__file__).resolve().parent / "static"
 
-# ── Shared session ────────────────────────────────────────────
 
 _session = Session(config=EngineConfig(narration_lang=narration_language()))
 
-# ── Handler dispatch table ────────────────────────────────────
 
 _HANDLERS: dict[str, Callable] = {
     "list_players": handle_list_players,
@@ -85,7 +81,6 @@ _HANDLERS: dict[str, Callable] = {
     "debug_state": handle_debug_state,
 }
 
-# ── Origin check ──────────────────────────────────────────────
 
 _SAFE_ORIGINS = {"localhost", "127.0.0.1", "[::1]"}
 
@@ -93,18 +88,18 @@ _SAFE_ORIGINS = {"localhost", "127.0.0.1", "[::1]"}
 def _check_origin(ws: WebSocket) -> bool:
     """Reject WebSocket connections from untrusted origins (cross-site hijacking)."""
     origin = (ws.headers.get("origin") or "").strip()
+    # Non-browser clients (curl, Elvira) don't send Origin — allow through.
     if not origin:
-        return True  # Non-browser clients (curl, Elvira) don't send Origin
+        return True
+    # Fail-closed: any parse error means we cannot verify the origin, so reject.
     try:
         from urllib.parse import urlparse
 
         host = urlparse(origin).hostname or ""
         return host in _SAFE_ORIGINS
-    except Exception:
+    except ValueError as e:
+        log(f"[Web] Origin parse failed for '{origin}': {e}", level="warning")
         return False
-
-
-# ── WebSocket endpoint ────────────────────────────────────────
 
 
 async def websocket_endpoint(ws: WebSocket) -> None:
@@ -118,9 +113,13 @@ async def websocket_endpoint(ws: WebSocket) -> None:
 
     # Session takeover: notify old connection and wait for any in-flight turn
     if _session.active_ws is not None:
-        with contextlib.suppress(Exception):
+        try:
             await _session.active_ws.send_json({"type": "session_taken"})
             await _session.active_ws.close()
+        except (WebSocketDisconnect, RuntimeError, OSError) as e:
+            # Old socket already dead (disconnect) or in an invalid state —
+            # takeover still proceeds; nothing else to clean up here.
+            log(f"[Web] takeover notify on old ws failed: {e}", level="debug")
     # Wait for in-flight processing to finish before accepting new commands.
     # Prevents the new connection from reading partially-mutated game state.
     _rl = eng().rate_limit
@@ -161,7 +160,10 @@ async def websocket_endpoint(ws: WebSocket) -> None:
                     "creation_options": build_creation_options(),
                 },
             )
-    except Exception:
+    except (WebSocketDisconnect, RuntimeError, OSError) as e:
+        # Client closed before we finished sending initial state. Nothing to
+        # recover; message loop below will exit on the same disconnect.
+        log(f"[Web] initial state send failed: {e}", level="warning")
         return
 
     # Message loop with rate limiting — parameters from engine.yaml rate_limit.
@@ -176,7 +178,7 @@ async def websocket_endpoint(ws: WebSocket) -> None:
             now = asyncio.get_event_loop().time()
             _msg_times = [t for t in _msg_times if now - t < _RATE_WINDOW]
             if len(_msg_times) >= _RATE_MAX:
-                await _send(ws, {"type": "error", "text": "Rate limited. Please slow down."})
+                await _send(ws, {"type": "error", "text": t("error.rate_limited")})
                 continue
             _msg_times.append(now)
 
@@ -185,7 +187,7 @@ async def websocket_endpoint(ws: WebSocket) -> None:
             if handler:
                 await handler(_session, ws, data)
             else:
-                await _send(ws, {"type": "error", "text": f"Unknown message type: {msg_type}"})
+                await _send(ws, {"type": "error", "text": t("error.unknown_msg_type", msg_type=msg_type)})
     except WebSocketDisconnect:
         pass
     except Exception as e:
@@ -193,9 +195,6 @@ async def websocket_endpoint(ws: WebSocket) -> None:
     finally:
         if _session.active_ws is ws:
             _session.active_ws = None
-
-
-# ── HTTP routes ───────────────────────────────────────────────
 
 
 async def homepage(_request: object) -> FileResponse:
@@ -206,8 +205,6 @@ async def health(_request: object) -> JSONResponse:
     """Health check for monitoring and Elvira server readiness."""
     return JSONResponse({"status": "ok"})
 
-
-# ── App ───────────────────────────────────────────────────────
 
 app = Starlette(
     routes=[

@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Bootstrap logger for modules that load before logging_util is ready.
 
 config_loader, prompt_loader, and emotions_loader all run during import,

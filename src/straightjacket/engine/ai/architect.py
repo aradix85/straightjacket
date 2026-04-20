@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """AI Story Architect, Recap, and Chapter Summary calls."""
 
 import json
@@ -173,7 +172,7 @@ npcs:{npc_text}{campaign_ctx}{backstory_text}"""
 
         log(
             f"[Story] Architect succeeded: "
-            f"conflict={blueprint['central_conflict'][: _limits.log_truncate_medium]}, "
+            f"conflict={blueprint['central_conflict'][: _e.truncations.log_medium]}, "
             f"acts={len(blueprint['acts'])}, "
             f"revelations={len(blueprint.get('revelations', []))}"
         )

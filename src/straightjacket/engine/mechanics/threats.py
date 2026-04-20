@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Threat menace mechanics: advancement, autonomous ticks, resolution.
 
 Threats have menace tracks that compete against linked vow progress.

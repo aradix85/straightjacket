@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """AI provider abstraction: base protocol and response dataclass.
 
 Every AI provider (Anthropic, OpenAI-compatible, etc.) implements the
@@ -252,7 +251,7 @@ def create_with_retry(
 
             if attempt < max_retries and (is_retryable_status or is_connection_error):
                 wait = _retry_cfg.backoff_base**attempt
-                error_desc = f"HTTP {status_code}" if status_code else str(e)[:80]
+                error_desc = f"HTTP {status_code}" if status_code else str(e)[: _eng().truncations.log_medium]
                 log(f"[AI] {error_desc}, retry {attempt + 1}/{max_retries} in {wait}s", level="warning")
                 _backoff_sleep(wait)
                 continue

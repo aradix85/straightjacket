@@ -7,6 +7,7 @@ creation:
   - command_vehicle
   background_vow_default_rank: extreme
   brain_track_rank_fallback: dangerous
+  brain_track_name_max_length: 40
   chaos_vow_modifiers:
     desperate:
     - survive

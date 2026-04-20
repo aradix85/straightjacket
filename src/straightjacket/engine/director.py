@@ -1,7 +1,7 @@
-#!/usr/bin/env python3
 """Straightjacket Director agent: story steering, NPC reflections, pacing."""
 
 import html
+import json
 import re
 
 from .ai.provider_base import AIProvider, create_with_retry
@@ -9,7 +9,8 @@ from .ai.schemas import get_director_output_schema
 from .config_loader import model_for_role, sampling_params
 from .engine_loader import eng
 from .logging_util import log
-from .models import EngineConfig, GameState, MemoryEntry
+from .models import DirectorGuidance, EngineConfig, GameState, MemoryEntry
+from .prompt_blocks import content_boundaries_block
 from .tools import get_tools, run_tool_loop
 from .xml_utils import xa as _xa
 from .npc import (
@@ -35,7 +36,6 @@ def _get_director_system_base() -> str:
 
 def _director_system(game: GameState, config: EngineConfig | None = None) -> str:
     """Build Director system prompt with content_boundaries."""
-    from .prompt_blocks import content_boundaries_block
 
     cb = content_boundaries_block(game)
     base = _get_director_system_base()
@@ -113,7 +113,11 @@ def build_director_prompt(game: GameState, latest_narration: str, config: Engine
         prev_ref_text = ""
         prev_tone_text = ""
         if prev_reflections:
-            prev_ref_text = f' last_reflection="{html.escape(prev_reflections[-1].event[:200], quote=True)}"'
+            prev_ref_text = (
+                f' last_reflection="'
+                f"{html.escape(prev_reflections[-1].event[: eng().truncations.prompt_short], quote=True)}"
+                f'"'
+            )
             prev_tone_compound = prev_reflections[-1].tone or prev_reflections[-1].emotional_weight
             prev_tone_key_val = prev_reflections[-1].tone_key
             if prev_tone_compound:
@@ -163,7 +167,7 @@ def build_director_prompt(game: GameState, latest_narration: str, config: Engine
 
     task = get_prompt("director_task", lang=lang)
     return f"""<latest_scene>
-{latest_narration[:1000]}
+{latest_narration[: eng().truncations.prompt_xlong]}
 </latest_scene>
 {story_info}
 {reflection_section}
@@ -224,7 +228,9 @@ def call_director(
                     log_role="director",
                 )
                 if final_content.strip():
-                    tool_context = f"\n<tool_results>\n{final_content[:2000]}\n</tool_results>"
+                    tool_context = (
+                        f"\n<tool_results>\n{final_content[: eng().truncations.prompt_xxlong]}\n</tool_results>"
+                    )
                 log(f"[Director] Phase 1: {len(tool_log)} tool calls")
             else:
                 log("[Director] Phase 1: no tools called")
@@ -244,8 +250,6 @@ def call_director(
             **_dp,
         )
 
-        import json
-
         guidance = json.loads(response2.content)
 
         # Convert npc_guidance from array (schema) to dict (internal format)
@@ -259,7 +263,7 @@ def call_director(
         log(
             f"[Director] Guidance: "
             f"reflections={len(guidance.get('npc_reflections', []))}, "
-            f"summary={guidance.get('scene_summary', '')[:80]}"
+            f"summary={guidance.get('scene_summary', '')[: eng().truncations.log_medium]}"
         )
         return guidance
     except Exception as e:
@@ -296,7 +300,8 @@ def _check_engine_act_transition(game: GameState) -> None:
     trigger_text = act.transition_trigger or "?"
     log(
         f"[Director] Engine act transition: act {act.act_number} "
-        f"'{act.phase}' scene {game.narrative.scene_count} ≥ range end {sr[1]}: '{trigger_text[:80]}'"
+        f"'{act.phase}' scene {game.narrative.scene_count} ≥ range end {sr[1]}: "
+        f"'{trigger_text[: eng().truncations.log_medium]}'"
     )
 
 
@@ -313,7 +318,6 @@ def apply_director_guidance(game: GameState, guidance: dict) -> None:
         return
 
     # Store guidance for next narrator call
-    from .models import DirectorGuidance
 
     game.narrative.director_guidance = DirectorGuidance(
         narrator_guidance=guidance.get("narrator_guidance", ""),
@@ -342,7 +346,8 @@ def apply_director_guidance(game: GameState, guidance: dict) -> None:
         # Reject truncated reflections (max_tokens cutoff)
         if not reflection_text.rstrip().endswith((".", "!", "?", '"', "»", "…", ")", "–", "—")):
             log(
-                f"[Director] Rejected truncated reflection for {ref_npc.name}: '{reflection_text[:60]}'",
+                f"[Director] Rejected truncated reflection for {ref_npc.name}: "
+                f"'{reflection_text[: eng().truncations.log_short]}'",
                 level="warning",
             )
             continue
@@ -379,11 +384,19 @@ def apply_director_guidance(game: GameState, guidance: dict) -> None:
         if updated_agenda and ref_npc.agenda.strip():
             old_agenda = ref_npc.agenda
             ref_npc.agenda = updated_agenda
-            log(f"[Director] Agenda updated for {ref_npc.name}: '{old_agenda[:40]}' → '{updated_agenda[:40]}'")
+            _trunc = eng().truncations
+            log(
+                f"[Director] Agenda updated for {ref_npc.name}: "
+                f"'{old_agenda[: _trunc.log_xshort]}' → '{updated_agenda[: _trunc.log_xshort]}'"
+            )
         if updated_arc:
             old_arc = ref_npc.arc
             ref_npc.arc = updated_arc
-            log(f"[Director] Arc updated for {ref_npc.name}: '{old_arc[:60]}' → '{updated_arc[:60]}'")
+            _trunc = eng().truncations
+            log(
+                f"[Director] Arc updated for {ref_npc.name}: "
+                f"'{old_arc[: _trunc.log_short]}' → '{updated_arc[: _trunc.log_short]}'"
+            )
 
         # Update description if Director provided a meaningful character description
         new_desc = (ref.get("updated_description") or "").strip()
@@ -403,21 +416,25 @@ def apply_director_guidance(game: GameState, guidance: dict) -> None:
                 flags=re.IGNORECASE,
             ).strip()
         if new_desc and len(new_desc) > 10:
+            _trunc = eng().truncations
             if not is_complete_description(new_desc) and ref_npc.description:
                 log(
                     f"[Director] Rejected truncated description for {ref_npc.name}: "
-                    f"'{new_desc[:60]}' — keeping existing"
+                    f"'{new_desc[: _trunc.log_short]}' — keeping existing"
                 )
             else:
                 old_desc = ref_npc.description
                 ref_npc.description = new_desc
-                log(f"[Director] Description updated for {ref_npc.name}: '{old_desc[:60]}' → '{new_desc[:60]}'")
+                log(
+                    f"[Director] Description updated for {ref_npc.name}: "
+                    f"'{old_desc[: _trunc.log_short]}' → '{new_desc[: _trunc.log_short]}'"
+                )
 
         # Consolidate after adding reflection
         consolidate_memory(ref_npc)
         successfully_reflected_ids.add(npc_id)
 
-        log(f"[Director] Reflection for {ref_npc.name}: {reflection_text[:80]}")
+        log(f"[Director] Reflection for {ref_npc.name}: {reflection_text[: eng().truncations.log_medium]}")
 
     # Fallback: reset needs_reflection flag for any NPCs the Director
     # didn't successfully address. Preserve accumulator so it can reach

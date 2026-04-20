@@ -21,8 +21,4 @@ architect_limits:
   recap_campaign_summary_truncate: 200
   architect_campaign_window: 3
   chapter_summary_log_window: 20
-  log_truncate_short: 60
-  log_truncate_medium: 80
-  log_truncate_long: 120
-  log_truncate_xlong: 200
   drift_words_log_window: 5

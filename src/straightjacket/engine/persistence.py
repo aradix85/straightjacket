@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Straightjacket persistence: save/load games."""
 
 import json
@@ -7,6 +6,8 @@ from pathlib import Path
 from typing import Any
 
 from .config_loader import VERSION
+from .db import sync as _db_sync
+from .db.connection import reset_db
 from .engine_loader import eng
 from .logging_util import log
 from .user_management import _safe_name, get_save_dir
@@ -67,8 +68,6 @@ def load_game(username: str, name: str = "autosave") -> tuple[GameState | None, 
     )
 
     # Rebuild database from loaded state
-    from .db import sync as _db_sync
-    from .db.connection import reset_db
 
     reset_db()
     _db_sync(game)
@@ -77,7 +76,11 @@ def load_game(username: str, name: str = "autosave") -> tuple[GameState | None, 
 
 
 def list_saves_with_info(username: str) -> list[dict]:
-    """List all saves with metadata, sorted newest first."""
+    """List all saves with metadata, sorted newest first.
+
+    Corrupt save files (unreadable JSON or missing required fields) are skipped
+    with a warning — a single bad file must not crash the whole list.
+    """
     save_dir = get_save_dir(username)
     if not save_dir.exists():
         return []
@@ -85,19 +88,20 @@ def list_saves_with_info(username: str) -> list[dict]:
     for path in save_dir.glob("*.json"):
         try:
             data = json.loads(path.read_text(encoding="utf-8"))
-            gs = data.get("game_state", {})
+            gs = data["game_state"]
             infos.append(
                 {
                     "name": path.stem,
-                    "player_name": gs.get("player_name", "?"),
-                    "scene_count": gs.get("narrative", {}).get("scene_count", 0),
-                    "chapter_number": gs.get("campaign", {}).get("chapter_number", 1),
-                    "saved_at": data.get("saved_at", ""),
+                    "player_name": gs["player_name"],
+                    "scene_count": gs["narrative"]["scene_count"],
+                    "chapter_number": gs["campaign"]["chapter_number"],
+                    "saved_at": data["saved_at"],
                 }
             )
-        except Exception:
-            infos.append({"name": path.stem, "player_name": "?", "scene_count": 0, "chapter_number": 1, "saved_at": ""})
-    infos.sort(key=lambda x: str(x.get("saved_at", "")), reverse=True)
+        except (OSError, json.JSONDecodeError, KeyError) as e:
+            log(f"[Persistence] Skipping corrupt save '{path.name}': {e}", level="warning")
+            continue
+    infos.sort(key=lambda x: str(x["saved_at"]), reverse=True)
     return infos
 
 

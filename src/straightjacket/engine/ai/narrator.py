@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """AI Narrator calls: prose generation and metadata extraction."""
 
 import json
@@ -8,10 +7,10 @@ from ..engine_loader import eng
 from ..logging_util import log
 from ..models import BrainResult, EngineConfig, GameState
 from ..parser import salvage_truncated_narration
-from ..prompt_blocks import get_narration_lang, get_narrator_system
+from ..prompt_blocks import content_boundaries_block, get_narration_lang, get_narrator_system
 from ..prompt_loader import get_prompt
 from .provider_base import AIProvider, create_with_retry
-from .schemas import get_narrator_metadata_schema
+from .schemas import get_narrator_metadata_schema, get_opening_setup_schema
 
 
 def call_narrator(
@@ -83,7 +82,7 @@ def call_narrator(
             )
             raw = salvage_truncated_narration(raw)
 
-    log(f"[Narrator] Response ({len(raw)} chars): {raw[:120]}...")
+    log(f"[Narrator] Response ({len(raw)} chars): {raw[: eng().truncations.log_xlong]}...")
     if "<game_data>" in raw:
         log("[Narrator] Found <game_data> tag (opening/chapter scene)")
     return raw
@@ -115,8 +114,6 @@ Extract all NPCs, clocks, location, scene context, time of day, and initial NPC 
 IMPORTANT: {game.player_name} is the PLAYER CHARACTER — do NOT include them as an NPC. NPCs are OTHER characters the player meets."""
 
     try:
-        from .schemas import get_opening_setup_schema
-
         response = create_with_retry(
             provider,
             model=model_for_role("opening_setup"),
@@ -136,12 +133,13 @@ IMPORTANT: {game.player_name} is the PLAYER CHARACTER — do NOT include them as
     except Exception as e:
         # Intentional graceful degradation — see AI-CALL SUPPRESSION POLICY in provider_base.py.
         log(f"[OpeningSetup] Extraction failed: {e}", level="warning")
+        defaults = eng().ai_text.narrator_defaults
         return {
             "npcs": [],
             "clocks": [],
             "location": "",
             "scene_context": "",
-            "time_of_day": "morning",
+            "time_of_day": defaults["unknown_time"],
             "memory_updates": [],
         }
 
@@ -185,7 +183,7 @@ def call_narrator_metadata(
         # Short description for identity disambiguation
         desc = n.description
         if desc:
-            entry += f" — {desc[:60]}"
+            entry += f" — {desc[: eng().truncations.prompt_xshort]}"
         npc_refs.append(entry)
 
     # Mechanical context: what the engine decided this turn
@@ -205,7 +203,6 @@ def call_narrator_metadata(
     system_base = get_prompt("narrator_metadata", lang=lang)
     # Add content boundaries so metadata extractor respects them
     # when creating new NPCs or writing memory events
-    from ..prompt_blocks import content_boundaries_block
 
     cb = content_boundaries_block(game)
     system = f"{system_base}\n{cb}" if cb else system_base

@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Straightjacket prompt loader: yaml-driven AI prompts.
 
 Prompts live in a directory of yaml files, one per subsystem cluster

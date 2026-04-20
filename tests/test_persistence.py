@@ -120,6 +120,22 @@ def test_save_carries_version(save_dir: Any) -> None:
     assert data["engine_version"] == VERSION
 
 
+def test_list_saves_skips_corrupt_files(save_dir: Any) -> None:
+    """Corrupt JSON and missing-field saves are skipped with a warning, not crashed on."""
+    from straightjacket.engine.persistence import save_game, list_saves_with_info, get_save_dir
+
+    save_game(_game(), "mixed", [], "good_save")
+    save_root = get_save_dir("mixed")
+    # Malformed JSON
+    (save_root / "broken_json.json").write_text("{not valid json", encoding="utf-8")
+    # Valid JSON, but missing required keys
+    (save_root / "missing_fields.json").write_text(json.dumps({"engine_version": "0.0.0"}), encoding="utf-8")
+
+    result = list_saves_with_info("mixed")
+    names = {s["name"] for s in result}
+    assert names == {"good_save"}
+
+
 def test_load_normalizes_npc_dispositions(save_dir: Any) -> None:
     from straightjacket.engine.persistence import save_game, load_game
 

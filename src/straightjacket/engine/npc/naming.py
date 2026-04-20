@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """NPC name generation via Datasworn oracle tables.
 
 When a setting provides name oracles (oracle_paths.names), engine rolls

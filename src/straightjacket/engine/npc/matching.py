@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """NPC name matching: title/honorific filtering, sanitization, fuzzy matching,
 edit-distance."""
 

@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """NPC lifecycle: creation, identity merging, renaming, retiring, reactivating,
 description-based dedup, duplicate absorption."""
 
@@ -12,10 +11,12 @@ from ..emotions_loader import normalize_disposition as _yaml_normalize_dispositi
 from ..engine_loader import eng
 from ..logging_util import log
 from ..models import NpcData
+from .bond import get_npc_bond
 from .matching import (
     normalize_for_match,
     sanitize_npc_name,
 )
+from .memory import consolidate_memory
 
 # DISPOSITION NORMALIZATION
 
@@ -47,7 +48,6 @@ def retire_distant_npcs(game: "GameState", max_active: int | None = None) -> Non
 
     def relevance(npc: NpcData) -> int:
         last_scene = max((m.scene for m in npc.memory), default=0) or 0
-        from .bond import get_npc_bond
 
         dd = eng().description_dedup
         score = last_scene + get_npc_bond(game, npc.id) * dd.bond_multiplier
@@ -167,8 +167,6 @@ def absorb_duplicate_npc(game: "GameState", original: NpcData, merged_name: str)
 
         # Determine which is the richer, more established character.
         def _richness(n: NpcData) -> int:
-            from .bond import get_npc_bond
-
             dd = eng().description_dedup
             return (
                 len(n.memory) * dd.richness_memory
@@ -229,7 +227,6 @@ def absorb_duplicate_npc(game: "GameState", original: NpcData, merged_name: str)
             f"{len(dup_mems)} memories transferred"
         )
         sanitize_aliases(original)
-        from .memory import consolidate_memory
 
         consolidate_memory(original)
         break
@@ -243,7 +240,6 @@ def description_match_existing_npc(game: "GameState", new_desc: str, new_name_no
     Catches identity reveals where names share zero words but the character
     is clearly the same. Returns the matching NPC dict or None.
     new_name_norm should be pre-normalized via normalize_for_match."""
-    from ..mechanics import locations_match
 
     dd = eng().description_dedup
     stopwords = eng().stopwords.general
@@ -279,6 +275,8 @@ def description_match_existing_npc(game: "GameState", new_desc: str, new_name_no
         if normalize_for_match(n.name) == new_name_norm:
             continue
         # Spatial guard: different location = can't be the same person
+        from ..mechanics import locations_match  # Circular: mechanics imports from npc, delay until call
+
         npc_loc = n.last_location.strip()
         current_loc = (game.world.current_location or "").strip()
         if npc_loc and current_loc and not locations_match(npc_loc, current_loc):

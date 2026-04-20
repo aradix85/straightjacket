@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Shared setup logic for opening scenes (new game and new chapter)."""
 
 import re

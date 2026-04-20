@@ -216,3 +216,8 @@ validator:
   quote_patterns:
     strip: “[^”]*”
     match: “([^”]+)”
+  # Replacement strings used by _strip_prompt_for_retry when a RESOLUTION PACING
+  # violation fires. Prompt-structural text — the narrator sees these on retry.
+  retry_strip:
+    empty_secrets: "secrets:[]"
+    agenda_placeholder: "agenda:(follow the scene)"

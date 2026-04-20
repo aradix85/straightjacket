@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Mythic GME 2e scene structure: chaos check, altered scenes, interrupt scenes.
 
 Every turn starts with a scene test that determines whether the scene plays

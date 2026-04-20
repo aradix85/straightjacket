@@ -1,25 +1,29 @@
 -- Straightjacket database schema.
 -- Tables mirror engine dataclasses. Columns match field names.
 -- Ephemeral: rebuilt from GameState on every load/restore.
+--
+-- INSERT contract: sync.py is the sole writer and always provides every
+-- column. No DEFAULT clauses on data columns — a missing value from a
+-- caller is a bug to surface, not to paper over.
 
 CREATE TABLE IF NOT EXISTS npcs (
     id          TEXT PRIMARY KEY,
     name        TEXT NOT NULL,
-    description TEXT NOT NULL DEFAULT '',
-    agenda      TEXT NOT NULL DEFAULT '',
-    instinct    TEXT NOT NULL DEFAULT '',
-    arc         TEXT NOT NULL DEFAULT '',
-    secrets     TEXT NOT NULL DEFAULT '[]',    -- JSON array
+    description TEXT NOT NULL,
+    agenda      TEXT NOT NULL,
+    instinct    TEXT NOT NULL,
+    arc         TEXT NOT NULL,
+    secrets     TEXT NOT NULL,                  -- JSON array
     disposition TEXT NOT NULL,
     status      TEXT NOT NULL,
-    introduced  INTEGER NOT NULL DEFAULT 0,    -- boolean; fresh NPCs not yet shown on-screen
-    aliases     TEXT NOT NULL DEFAULT '[]',     -- JSON array
-    keywords    TEXT NOT NULL DEFAULT '[]',     -- JSON array
-    importance_accumulator INTEGER NOT NULL DEFAULT 0,
-    last_reflection_scene  INTEGER NOT NULL DEFAULT 0,
-    last_location TEXT NOT NULL DEFAULT '',
-    needs_reflection INTEGER NOT NULL DEFAULT 0,  -- boolean
-    gather_count INTEGER NOT NULL DEFAULT 0
+    introduced  INTEGER NOT NULL,                -- boolean; fresh NPCs not yet shown on-screen
+    aliases     TEXT NOT NULL,                   -- JSON array
+    keywords    TEXT NOT NULL,                   -- JSON array
+    importance_accumulator INTEGER NOT NULL,
+    last_reflection_scene  INTEGER NOT NULL,
+    last_location TEXT NOT NULL,
+    needs_reflection INTEGER NOT NULL,           -- boolean
+    gather_count INTEGER NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS memories (
@@ -31,26 +35,26 @@ CREATE TABLE IF NOT EXISTS memories (
     importance  INTEGER NOT NULL,
     type        TEXT NOT NULL,
     about_npc   TEXT,
-    tone        TEXT NOT NULL DEFAULT '',
-    tone_key    TEXT NOT NULL DEFAULT ''
+    tone        TEXT NOT NULL,
+    tone_key    TEXT NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS threads (
     id          TEXT PRIMARY KEY,
-    name        TEXT NOT NULL DEFAULT '',
-    thread_type TEXT NOT NULL DEFAULT 'vow',
-    weight      INTEGER NOT NULL DEFAULT 1,
-    source      TEXT NOT NULL DEFAULT 'creation',
-    linked_track_id TEXT NOT NULL DEFAULT '',
-    active      INTEGER NOT NULL DEFAULT 1     -- boolean
+    name        TEXT NOT NULL,
+    thread_type TEXT NOT NULL,
+    weight      INTEGER NOT NULL,
+    source      TEXT NOT NULL,
+    linked_track_id TEXT NOT NULL,
+    active      INTEGER NOT NULL                 -- boolean
 );
 
 CREATE TABLE IF NOT EXISTS characters_list (
     id          TEXT PRIMARY KEY,
-    name        TEXT NOT NULL DEFAULT '',
-    entry_type  TEXT NOT NULL DEFAULT 'npc',
-    weight      INTEGER NOT NULL DEFAULT 1,
-    active      INTEGER NOT NULL DEFAULT 1     -- boolean
+    name        TEXT NOT NULL,
+    entry_type  TEXT NOT NULL,
+    weight      INTEGER NOT NULL,
+    active      INTEGER NOT NULL                 -- boolean
 );
 
 CREATE TABLE IF NOT EXISTS clocks (
@@ -58,58 +62,59 @@ CREATE TABLE IF NOT EXISTS clocks (
     name        TEXT NOT NULL,
     clock_type  TEXT NOT NULL,
     segments    INTEGER NOT NULL,
-    filled      INTEGER NOT NULL DEFAULT 0,
-    trigger_description TEXT NOT NULL DEFAULT '',
-    owner       TEXT NOT NULL DEFAULT '',
-    fired       INTEGER NOT NULL DEFAULT 0,    -- boolean
-    fired_at_scene INTEGER NOT NULL DEFAULT 0
+    filled      INTEGER NOT NULL,
+    trigger_description TEXT NOT NULL,
+    owner       TEXT NOT NULL,
+    fired       INTEGER NOT NULL,                -- boolean
+    fired_at_scene INTEGER NOT NULL              -- 0 = not yet fired (runtime state)
 );
 
 CREATE TABLE IF NOT EXISTS scene_log (
     rowid       INTEGER PRIMARY KEY AUTOINCREMENT,
-    scene       INTEGER NOT NULL DEFAULT 0,
-    summary     TEXT NOT NULL DEFAULT '',
-    move        TEXT NOT NULL DEFAULT '',
-    result      TEXT NOT NULL DEFAULT '',
-    consequences TEXT NOT NULL DEFAULT '[]',    -- JSON array
-    clock_events TEXT NOT NULL DEFAULT '[]',    -- JSON array of ClockEvent dicts
-    position    TEXT NOT NULL DEFAULT 'risky',
-    effect      TEXT NOT NULL DEFAULT 'standard',
-    scene_type TEXT DEFAULT "expected",
-    npc_activation TEXT NOT NULL DEFAULT '{}',  -- JSON dict
-    validator   TEXT NOT NULL DEFAULT '{}',     -- JSON dict
-    rich_summary TEXT NOT NULL DEFAULT '',
-    director_trigger TEXT NOT NULL DEFAULT '',
-    revelation_check TEXT NOT NULL DEFAULT '{}' -- JSON dict
+    scene       INTEGER NOT NULL,
+    summary     TEXT NOT NULL,
+    move        TEXT NOT NULL,
+    result      TEXT NOT NULL,
+    consequences TEXT NOT NULL,                  -- JSON array
+    clock_events TEXT NOT NULL,                  -- JSON array of ClockEvent dicts
+    position    TEXT NOT NULL,
+    effect      TEXT NOT NULL,
+    scene_type  TEXT NOT NULL,
+    npc_activation TEXT NOT NULL,                -- JSON dict
+    validator   TEXT NOT NULL,                   -- JSON dict
+    rich_summary TEXT NOT NULL,
+    director_trigger TEXT NOT NULL,
+    oracle_answer TEXT NOT NULL,
+    revelation_check TEXT NOT NULL               -- JSON dict
 );
 
 CREATE TABLE IF NOT EXISTS narration_history (
     rowid       INTEGER PRIMARY KEY AUTOINCREMENT,
-    scene       INTEGER NOT NULL DEFAULT 0,
-    prompt_summary TEXT NOT NULL DEFAULT '',
-    narration   TEXT NOT NULL DEFAULT ''
+    scene       INTEGER NOT NULL,
+    prompt_summary TEXT NOT NULL,
+    narration   TEXT NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS progress_tracks (
     id          TEXT PRIMARY KEY,
-    name        TEXT NOT NULL DEFAULT '',
+    name        TEXT NOT NULL,
     track_type  TEXT NOT NULL,
     rank        TEXT NOT NULL,
-    ticks       INTEGER NOT NULL DEFAULT 0,
+    ticks       INTEGER NOT NULL,
     max_ticks   INTEGER NOT NULL,
-    status      TEXT NOT NULL DEFAULT 'active'
+    status      TEXT NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS threats (
     id              TEXT PRIMARY KEY,
-    name            TEXT NOT NULL DEFAULT '',
-    category        TEXT NOT NULL DEFAULT '',
-    description     TEXT NOT NULL DEFAULT '',
-    linked_vow_id   TEXT NOT NULL DEFAULT '',
+    name            TEXT NOT NULL,
+    category        TEXT NOT NULL,
+    description     TEXT NOT NULL,
+    linked_vow_id   TEXT NOT NULL,
     rank            TEXT NOT NULL,
-    menace_ticks    INTEGER NOT NULL DEFAULT 0,
+    menace_ticks    INTEGER NOT NULL,
     max_menace_ticks INTEGER NOT NULL,
-    status          TEXT NOT NULL DEFAULT 'active'
+    status          TEXT NOT NULL
 );
 
 -- Indexes for common query patterns.

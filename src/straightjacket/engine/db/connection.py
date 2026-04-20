@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Database connection management. In-memory SQLite, singleton."""
 
 from __future__ import annotations

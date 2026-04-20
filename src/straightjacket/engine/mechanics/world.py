@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """World-state mechanics: location matching, chaos factor, time progression, pacing."""
 
 from __future__ import annotations

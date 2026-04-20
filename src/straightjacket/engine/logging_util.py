@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Straightjacket logging: console logger setup and log() entry point.
 
 User/save directory management and config load/save live in user_management.py.

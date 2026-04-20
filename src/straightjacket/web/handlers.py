@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """WebSocket message handlers. One function per protocol message type.
 
 Each handler receives (session, ws, msg) and is fully async.
@@ -10,17 +9,18 @@ They never access module-level globals.
 """
 
 import asyncio
-import contextlib
 
-from starlette.websockets import WebSocket
+from starlette.websockets import WebSocket, WebSocketDisconnect
 
 from ..engine.ai.api_client import get_provider
 from ..engine.ai.architect import call_recap
 from ..engine.correction import process_correction
-from ..engine.game.momentum_burn import process_momentum_burn
+from ..engine.db.sync import sync as _db_sync
 from ..engine.director import reset_stale_reflection_flags
 from ..engine.game import generate_epilogue, process_turn, run_deferred_director, start_new_chapter, start_new_game
+from ..engine.game.momentum_burn import process_momentum_burn
 from ..engine.logging_util import log
+from ..engine.mechanics.legacy import advance_asset
 from ..engine.persistence import delete_save, list_saves_with_info, load_game, save_game
 from ..engine.user_management import create_user, delete_user, list_users
 from ..i18n import t
@@ -35,12 +35,15 @@ from .session import BurnOffer, Session
 
 
 async def _send(ws: WebSocket, msg: dict) -> None:
-    """Send JSON, swallowing errors if the connection is dead."""
-    with contextlib.suppress(Exception):
+    """Send JSON, tolerating a dead/closed connection.
+
+    A send against a closed or mid-disconnect WebSocket raises; there is
+    nothing the caller can do to recover, so we log at debug and continue.
+    """
+    try:
         await ws.send_json(msg)
-
-
-# ── Player management ─────────────────────────────────────────
+    except (WebSocketDisconnect, RuntimeError, OSError) as e:
+        log(f"[Web] _send on dead ws ({msg.get('type', '?')}): {e}", level="debug")
 
 
 async def handle_list_players(session: Session, ws: WebSocket, _msg: dict) -> None:
@@ -51,7 +54,7 @@ async def handle_list_players(session: Session, ws: WebSocket, _msg: dict) -> No
 async def handle_create_player(session: Session, ws: WebSocket, msg: dict) -> None:
     name = msg.get("name", "").strip()
     if not name:
-        await _send(ws, {"type": "error", "text": "Player name cannot be empty."})
+        await _send(ws, {"type": "error", "text": t("error.empty_player_name")})
         return
     create_user(name)
     await handle_select_player(session, ws, {"name": name})
@@ -60,7 +63,7 @@ async def handle_create_player(session: Session, ws: WebSocket, msg: dict) -> No
 async def handle_select_player(session: Session, ws: WebSocket, msg: dict) -> None:
     name = msg.get("name", "").strip()
     if not name:
-        await _send(ws, {"type": "error", "text": "No player name provided."})
+        await _send(ws, {"type": "error", "text": t("error.no_player_name")})
         return
 
     session.player = name
@@ -102,9 +105,6 @@ async def handle_delete_player(session: Session, ws: WebSocket, msg: dict) -> No
     await handle_list_players(session, ws, msg)
 
 
-# ── Game creation ─────────────────────────────────────────────
-
-
 async def handle_start_game(session: Session, ws: WebSocket, msg: dict) -> None:
     if session.processing:
         await _send(ws, {"type": "error", "text": t("game.still_processing")})
@@ -139,15 +139,12 @@ async def handle_start_game(session: Session, ws: WebSocket, msg: dict) -> None:
         session.processing = False
 
 
-# ── Turn processing ───────────────────────────────────────────
-
-
 async def handle_player_input(session: Session, ws: WebSocket, msg: dict) -> None:
     if session.processing:
         await _send(ws, {"type": "error", "text": t("game.still_processing")})
         return
     if not session.game:
-        await _send(ws, {"type": "error", "text": "No active game."})
+        await _send(ws, {"type": "error", "text": t("error.no_active_game")})
         return
 
     text = msg.get("text", "").strip()
@@ -237,9 +234,6 @@ async def handle_player_input(session: Session, ws: WebSocket, msg: dict) -> Non
         session.processing = False
 
 
-# ── Correction ────────────────────────────────────────────────
-
-
 async def handle_correction(session: Session, ws: WebSocket, msg: dict) -> None:
     if session.processing:
         await _send(ws, {"type": "error", "text": t("game.still_processing")})
@@ -270,17 +264,17 @@ async def handle_correction(session: Session, ws: WebSocket, msg: dict) -> None:
             try:
                 await asyncio.to_thread(run_deferred_director, provider, game, director_ctx)
                 save_game(game, session.player, session.chat_messages, session.save_name)
-            except Exception:
-                pass
+            except Exception as e:
+                # Correction narration is already applied and saved. A failing
+                # deferred director only updates Act/threat pacing metadata —
+                # skip with a log rather than failing the whole correction flow.
+                log(f"[Web] deferred director after correction failed: {e}", level="warning")
         await _send(ws, {"type": "turn_complete"})
     except Exception as e:
         log(f"[Web] correction failed: {e}", level="error")
         await _send(ws, {"type": "error", "text": str(e)})
     finally:
         session.processing = False
-
-
-# ── Momentum burn ─────────────────────────────────────────────
 
 
 async def handle_burn_momentum(session: Session, ws: WebSocket, msg: dict) -> None:
@@ -322,9 +316,6 @@ async def handle_burn_momentum(session: Session, ws: WebSocket, msg: dict) -> No
         await _send(ws, {"type": "error", "text": str(e)})
     finally:
         session.processing = False
-
-
-# ── Saves ─────────────────────────────────────────────────────
 
 
 async def handle_list_saves(session: Session, ws: WebSocket, _msg: dict) -> None:
@@ -374,9 +365,6 @@ async def handle_delete_save(session: Session, ws: WebSocket, msg: dict) -> None
     await handle_list_saves(session, ws, msg)
 
 
-# ── Recap ─────────────────────────────────────────────────────
-
-
 async def handle_recap(session: Session, ws: WebSocket, _msg: dict) -> None:
     if not session.game or session.processing:
         return
@@ -390,9 +378,6 @@ async def handle_recap(session: Session, ws: WebSocket, _msg: dict) -> None:
         await _send(ws, {"type": "error", "text": str(e)})
     finally:
         session.processing = False
-
-
-# ── Status query ─────────────────────────────────────────────
 
 
 async def handle_status_query(session: Session, ws: WebSocket, _msg: dict) -> None:
@@ -424,7 +409,6 @@ async def handle_advance_asset(session: Session, ws: WebSocket, msg: dict) -> No
     if not session.game:
         await _send(ws, {"type": "status", "text": t("status.no_game")})
         return
-    from ..engine.mechanics.legacy import advance_asset
 
     kind = msg.get("kind", "upgrade")
     asset_id = msg.get("asset_id", "").strip()
@@ -436,15 +420,11 @@ async def handle_advance_asset(session: Session, ws: WebSocket, msg: dict) -> No
         await _send(ws, {"type": "status", "text": t("advance.insufficient")})
         return
     # Persist: XP/legacy/assets all changed
-    from ..engine.db.sync import sync as _db_sync
 
     _db_sync(session.game)
     save_game(session.game, session.player, session.chat_messages, session.save_name)
     msg_key = "advance.upgraded" if kind == "upgrade" else "advance.acquired"
     await _send(ws, {"type": "status", "text": t(msg_key, asset=asset_id, cost=spent)})
-
-
-# ── Epilogue & chapters ──────────────────────────────────────
 
 
 async def handle_generate_epilogue(session: Session, ws: WebSocket, _msg: dict) -> None:
@@ -500,9 +480,6 @@ async def handle_new_chapter(session: Session, ws: WebSocket, _msg: dict) -> Non
         await _send(ws, {"type": "error", "text": str(e)})
     finally:
         session.processing = False
-
-
-# ── Debug (Elvira integration testing) ────────────────────────
 
 
 async def handle_debug_state(session: Session, ws: WebSocket, _msg: dict) -> None:

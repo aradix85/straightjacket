@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Engine mechanics loader: reads and merges engine/*.yaml files.
 
 Singleton pattern matching config_loader.py. Returns typed EngineSettings

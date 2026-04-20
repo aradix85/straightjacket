@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """AI Brain: single-call action classification via prompt injection + json_schema.
 
 Brain receives full game state context (NPCs, moves, tracks) in the prompt.
@@ -17,13 +16,13 @@ from ..prompt_blocks import (
     get_narration_lang,
 )
 from ..prompt_loader import get_prompt
+from ..tools.builtins import available_moves
 from .provider_base import AIProvider, create_with_retry
-from .schemas import get_brain_output_schema
+from .schemas import get_brain_output_schema, get_revelation_check_schema
 
 
 def _build_moves_block(game: GameState) -> str:
     """Build <moves> block with available moves pre-computed by the engine."""
-    from ..tools.builtins import available_moves
 
     data = available_moves(game)
     moves = data.get("moves", [])
@@ -67,12 +66,6 @@ def _build_tracks_block(game: GameState) -> str:
     return "<tracks>\n" + "\n".join(lines) + "\n</tracks>"
 
 
-# ── JSON extraction from text (used by Director) ────────────
-
-
-# ── Brain ────────────────────────────────────────────────────
-
-
 def call_brain(
     provider: AIProvider, game: GameState, player_message: str, config: EngineConfig | None = None
 ) -> BrainResult:
@@ -85,7 +78,7 @@ def call_brain(
     _cfg = config or EngineConfig()
     _brain_lang = get_narration_lang(_cfg)
 
-    log(f"[Brain] Scene {game.narrative.scene_count + 1} | Input: {player_message[:100]}")
+    log(f"[Brain] Scene {game.narrative.scene_count + 1} | Input: {player_message[: eng().truncations.log_long]}")
 
     system = get_prompt(
         "brain_parser",
@@ -130,7 +123,10 @@ time:{w.time_of_day or _ai_text["unknown_time"]}
         )
 
         result = BrainResult.from_dict(json.loads(response.content))
-        log(f"[Brain] move={result.move}, stat={result.stat}, intent={result.player_intent[:60]}")
+        log(
+            f"[Brain] move={result.move}, stat={result.stat}, "
+            f"intent={result.player_intent[: eng().truncations.log_short]}"
+        )
         return result
 
     except Exception as e:
@@ -148,14 +144,10 @@ time:{w.time_of_day or _ai_text["unknown_time"]}
         )
 
 
-# ── Revelation check ─────────────────────────────────────────
-
-
 def call_revelation_check(
     provider: AIProvider, narration: str, revelation: Revelation, config: EngineConfig | None = None
 ) -> bool:
     """Check whether the narrator actually wove a pending revelation into the narration."""
-    from .schemas import get_revelation_check_schema
 
     _cfg = config or EngineConfig()
     lang = get_narration_lang(_cfg)

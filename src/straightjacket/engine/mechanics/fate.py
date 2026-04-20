@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Mythic GME 2e fate system: fate chart, fate check, likelihood resolver.
 
 Two resolution methods for yes/no questions about the fiction. Both produce
@@ -21,7 +20,6 @@ from ..engine_loader import eng
 from ..logging_util import log
 from ..models import FateResult, GameState, NpcData
 
-# ── Data loading ─────────────────────────────────────────────
 
 _MYTHIC_DATA_PATH = PROJECT_ROOT / "data" / "mythic_gme_2e.json"
 
@@ -44,15 +42,9 @@ def _reset_mythic_cache() -> None:
     _mythic = None
 
 
-# ── Odds levels ──────────────────────────────────────────────
-
-
 def get_odds_levels() -> tuple[str, ...]:
     """Odds levels in order from most-favorable to least-favorable."""
     return tuple(eng().enums.odds_levels)
-
-
-# ── Fate chart method (step 3.1) ─────────────────────────────
 
 
 def resolve_fate_chart(odds: str, chaos_factor: int, roll: int | None = None) -> FateResult:
@@ -124,9 +116,6 @@ def _check_chart_random_event(roll: int, chaos_factor: int) -> bool:
     return ones <= chaos_factor
 
 
-# ── Fate check method (step 3.2) ─────────────────────────────
-
-
 def resolve_fate_check(odds: str, chaos_factor: int, dice: tuple[int, int] | None = None) -> FateResult:
     """Resolve a fate question using the fate check method.
 
@@ -191,9 +180,6 @@ def _check_check_random_event(d1: int, d2: int, chaos_factor: int) -> bool:
     return d1 <= chaos_factor
 
 
-# ── Unified resolver ─────────────────────────────────────────
-
-
 def resolve_fate(
     game: GameState,
     odds: str,
@@ -228,9 +214,6 @@ def resolve_fate(
         result.random_event = generate_random_event(game, source="fate_doublet")
 
     return result
-
-
-# ── Likelihood resolver (step 3.4) ───────────────────────────
 
 
 def resolve_likelihood(game: GameState, context_hint: str = "") -> str:

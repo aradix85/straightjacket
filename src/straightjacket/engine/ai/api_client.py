@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """AI provider router: creates and caches the right provider based on config.
 
 Single entry point for getting an AI provider. The provider type
@@ -40,10 +39,13 @@ def get_provider() -> AIProvider:
     api_base = _c.ai.api_base or None
 
     if provider_type == "anthropic":
+        # Lazy: each provider module imports its own vendor SDK (anthropic / openai).
+        # Keep the import inside the branch so unused providers don't need their SDK installed.
         from .provider_anthropic import AnthropicProvider
 
         provider: AIProvider = AnthropicProvider(api_key=resolved_key, api_base=api_base)
     elif provider_type == "openai_compatible":
+        # Lazy: see comment above.
         from .provider_openai import OpenAICompatibleProvider
 
         provider = OpenAICompatibleProvider(api_key=resolved_key, api_base=api_base)

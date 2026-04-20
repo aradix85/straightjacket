@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Straightjacket game mechanics.
 
 Re-exports all public symbols from submodules. Existing imports

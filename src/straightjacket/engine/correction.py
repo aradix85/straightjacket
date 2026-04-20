@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Straightjacket correction flow: undo/redo turns, state patching."""
 
 import json
@@ -11,9 +10,16 @@ from .ai.provider_base import AIProvider, create_with_retry
 from .ai.schemas import get_correction_output_schema
 from .config_loader import model_for_role, sampling_params
 from .datasworn.moves import get_moves
+from .db import sync as _db_sync
 from .director import should_call_director
 from .engine_loader import eng
-from .game.finalization import apply_post_narration, narrate_scene, resolve_action_consequences
+from .game.finalization import (
+    apply_post_narration,
+    apply_progress_and_legacy,
+    narrate_scene,
+    resolve_action_consequences,
+)
+from .game.tracks import find_progress_track
 from .logging_util import log
 from .mechanics import (
     apply_brain_location_time,
@@ -53,11 +59,15 @@ def call_correction_brain(
     _cfg = config or EngineConfig()
     lang = get_narration_lang(_cfg)
 
+    _defaults = eng().ai_text.narrator_defaults
+    _trunc = eng().truncations
+
     def _npc_line(n: NpcData) -> str:
         aliases = f" aliases:{','.join(n.aliases)}" if n.aliases else ""
-        return f'id:{n.id} name:"{n.name}"{aliases} disposition:{n.disposition} desc:"{n.description[:120]}"'
+        return (
+            f'id:{n.id} name:"{n.name}"{aliases} disposition:{n.disposition} desc:"{n.description[: _trunc.log_xlong]}"'
+        )
 
-    _defaults = eng().ai_text.narrator_defaults
     npc_lines = "\n".join(_npc_line(n) for n in game.npcs) or _defaults["no_npcs"]
 
     # Sentinel BrainResult for turns with no brain classification (pre-brain
@@ -79,20 +89,20 @@ def call_correction_brain(
 
 <last_turn>
 player_input: {(snap.player_input or "")}
-brain_interpretation: move={brain.move} stat={brain.stat} intent={brain.player_intent[:200]}
+brain_interpretation: move={brain.move} stat={brain.stat} intent={brain.player_intent[: _trunc.prompt_short]}
 roll: {roll_summary}
-narration (first 600 chars): {(snap.narration or "")[:600]}
+narration (first {_trunc.narration_preview} chars): {(snap.narration or "")[: _trunc.narration_preview]}
 </last_turn>
 
 <current_state>
 location: {w.current_location}
-scene_context: {w.current_scene_context[:200]}
+scene_context: {w.current_scene_context[: _trunc.prompt_short]}
 time: {w.time_of_day}
 npcs:
 {npc_lines}
 </current_state>"""
 
-    log(f"[Correction] Analysing: {correction_text[:100]}")
+    log(f"[Correction] Analysing: {correction_text[: _trunc.log_long]}")
     try:
         response = create_with_retry(
             provider,
@@ -271,9 +281,6 @@ def process_correction(
             # Re-apply progress and legacy marks from the re-resolved outcome
             # (snapshot restored the original state, so we need to re-consume)
             if action.outcome:
-                from .game.finalization import apply_progress_and_legacy
-                from .game.tracks import find_progress_track
-
                 ds_moves = get_moves(game.setting_id) if game.setting_id else {}
                 ds_move = ds_moves.get(brain.move)
                 source_category = ds_move.track_category if ds_move else "vow"
@@ -383,7 +390,7 @@ def process_correction(
     )
 
     # Step 5: Update session_log / narration_history
-    intent = (brain.player_intent or snap.player_input or "")[:80]
+    intent = (brain.player_intent or snap.player_input or "")[: eng().truncations.log_medium]
     narration_entry = NarrationEntry(
         scene=nar.scene_count,
         prompt_summary=f"[corrected] {intent}",
@@ -447,7 +454,6 @@ def process_correction(
     log(f"[Correction] Complete: source={source}, rewrite done")
 
     # Sync corrected state to database
-    from .db import sync as _db_sync
 
     _db_sync(game)
 

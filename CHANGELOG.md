@@ -5,6 +5,32 @@ Originally forked from [EdgeTales](https://github.com/edgetales/edgetales). See 
 
 ---
 
+## [0.64.0] — 2026-04-20
+
+Full sweep of the v0.63.0 audit. Ten batches covering hardcoded narrator/UI strings, silent error suppression, half-wired features, magic truncation numbers, SQL schema drift, inline-import hygiene, orphan config keys, test isolation, and cosmetic noise. A handful of live bugs surfaced while sweeping and were fixed in passing.
+
+Hardcoded strings moved to config. Ten violation-message templates in `ai/rule_validator.py` now live in `engine/rule_validator.yaml` under `violation_templates`; the category prefixes ("PLAYER AGENCY:", "IMPACT CHANGE:", etc.) stay as stable labels so downstream substring matching keeps working. Ten threshold dictionaries in `web/serializers.py` (`_HEALTH_DESC` through `_MENACE_DESC`) moved to a new `engine/status_descriptions.yaml` with a typed `StatusDescriptionsConfig`. Five error strings from `web/handlers.py` and `web/server.py` live in `strings/error.yaml`. Two prompt-structural replacements in the retry-strip path moved to `validator.yaml` under `retry_strip`. The hardcoded `"morning"` fallback in `ai/narrator.py` now reads `narrator_defaults["unknown_time"]` from `ai_text.yaml`. The vow-ranks list in `build_creation_options` is derived from `eng().legacy.ticks_by_rank.keys()` instead of hardcoded.
+
+Silent error suppression cleaned up. `persistence.list_saves_with_info` no longer papers over corrupt save files with placeholder records — it skips them with a warning and a new test exercises the path. Four sites in `user_management.py` replaced bare `except Exception: pass` with narrow filesystem-exception clauses and warning logs. Three `contextlib.suppress` / `except Exception: pass` sites in `web/handlers.py` and `web/server.py` became typed catches on `WebSocketDisconnect / RuntimeError / OSError` with logs that explain why the swallow is acceptable (dead socket, stale client, invariant-transition race).
+
+Pay-the-price consumer wired up. The feature had been half-built for several versions: `OutcomeResult.pay_the_price` was being set, the yaml referenced the effect, tests checked the flag, but no code actually rolled the oracle or passed the result to the narrator. New helper `_roll_pay_the_price` picks a random line from `engine/pay_the_price.yaml`, substitutes `{player}`, and appends it to `result.consequences`. Wired into both write sites (`apply_effects` and `apply_recovery_handler` miss branch). Narrator now sees the chosen consequence as a regular `<consequence>` tag and the rule-validator checks for reflection.
+
+Magic truncation numbers consolidated. Thirty-five `[:N]` slice sites across logs and prompts (`N` in {40, 60, 80, 100, 120, 200, 300, 500, 600, 1000, 2000, 4000}) now read named keys from `engine/truncations.yaml` via a new `TruncationsConfig`: `log_xshort/short/medium/long/xlong`, `prompt_xshort/short/medium/long/xlong/xxlong`, `narration_preview`, `narration_max`. The `log_truncate_*` fields moved out of `architect_limits` where they didn't belong. The dead `retry.max_retries: 2` key (never read in production) was replaced with `constraint_check_max_retries: 1`, which the three sites that previously hardcoded `max_retries=1` overrides (validator, architect-validator, tool-handler) now consume.
+
+SQL schema aligned with the `sync.py` insert contract. Every `DEFAULT` clause on data columns was dropped — `sync.py` is the sole writer and always provides every column, so DEFAULTs were dead code that hid bugs. `scene_type` had an odd inconsistency (no `NOT NULL`, double-quoted literal) that got fixed in the same pass. A genuine bug surfaced: `SceneLogEntry.oracle_answer` was present in the dataclass, serialised to savefiles, but absent from `schema.sql` and `sync.py` — so DB state and savefile state disagreed. Added to both for consistency.
+
+Inline imports swept. From 154 function-level imports across the codebase down to roughly a dozen, each of those now carrying a comment explaining why it can't be top-level: `models.py → db` is a genuine cycle (db queries import models); `npc/lifecycle.py → mechanics` is another (mechanics.consequences imports find_npc); `api_client.py` provider imports stay lazy so unused providers don't need their SDK installed. The rest got promoted. This surfaced and fixed a family of subtle bugs from ruff's auto-fix ripping top-level imports that it considered unused while inlines still existed — every such case is now either top-level-and-used or inline-with-comment.
+
+Orphan strings scan found zero real orphans after accounting for html consumers, `get_strings_by_prefix` usage, and dynamic key construction (`handlers.py:451` builds `"advance.upgraded"` vs `"advance.acquired"` at runtime). The two vermeende orphans were false positives; nothing to delete.
+
+Test isolation hardened. New autouse `_reset_random` fixture in `conftest.py` reseeds `random` after every test — tests that call `random.seed(N)` for deterministic rolls no longer bleed their seed into subsequent tests. Shebang-before-imports in `test_engine.py` fixed.
+
+Cosmetic pass: 83 unused shebangs removed from non-entry-point modules. 255 lines of section-banner comments (`# ─── NAME ───`) removed across the codebase. Trivial one-line docstrings left alone — judgment call; they're noise but some are close enough to borderline useful that a mechanical sweep would lose signal too.
+
+Delivery gate: 786 tests green, ruff + ruff format + mypy clean on 87 source files.
+
+---
+
 ## [0.63.0] — 2026-04-19
 
 Two small audit batches (N — validator regex drift, and G — `_raw` direct access). What started as a cosmetic cleanup turned up a live latent bug along the way.

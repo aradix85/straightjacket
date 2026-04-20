@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Mythic GME 2e random events: event focus, meaning tables, pipeline.
 
 Random events fire on fate doublets (step 3.3) and interrupt scenes (step 4.5).
@@ -29,9 +28,6 @@ def drain_pending_events() -> list[RandomEvent]:
     return events
 
 
-# ── Event focus (step 6.1) ───────────────────────────────────
-
-
 def roll_event_focus(roll: int | None = None) -> tuple[str, int]:
     """Roll d100 on the Event Focus Table. Returns (focus_category, roll)."""
     data = _load_mythic()
@@ -45,9 +41,6 @@ def roll_event_focus(roll: int | None = None) -> tuple[str, int]:
             return entry["focus"], roll
 
     raise ValueError(f"event_focus table has no entry covering roll={roll}; table must span 1..100")
-
-
-# ── Meaning tables (step 6.2) ────────────────────────────────
 
 
 def roll_meaning_table(table_name: str) -> tuple[str, str]:
@@ -74,9 +67,6 @@ def roll_meaning_table(table_name: str) -> tuple[str, str]:
     w1 = words1[random.randint(0, len(words1) - 1)]
     w2 = words2[random.randint(0, len(words2) - 1)]
     return w1, w2
-
-
-# ── Target selection (step 6.3 step 2) ───────────────────────
 
 
 def _select_from_weighted_list(entries: list) -> tuple[str, str]:
@@ -131,9 +121,6 @@ def _select_target(focus: str, game: GameState) -> tuple[str, str]:
     return "", ""
 
 
-# ── Random event pipeline (step 6.3) ─────────────────────────
-
-
 def generate_random_event(game: GameState, source: str = "") -> RandomEvent:
     """Generate a complete random event from the Mythic GME 2e pipeline.
 
@@ -174,9 +161,6 @@ def generate_random_event(game: GameState, source: str = "") -> RandomEvent:
     log(f"[RandomEvent] {focus}{target_str} → {word1} / {word2} (source={source})")
     _pending_events.append(event)
     return event
-
-
-# ── List maintenance (step 6.5) ──────────────────────────────
 
 
 def add_thread_weight(game: GameState, thread_id: str) -> None:

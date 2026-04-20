@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Move outcome resolution: data-driven mechanical effects.
 
 Replaces the category-based apply_consequences with move-specific outcomes.
@@ -35,15 +34,16 @@ Handler-based moves use engine.yaml params instead of effect lists:
 
 from __future__ import annotations
 
+import random
 import re
 from dataclasses import dataclass, field
 
 from ..engine_loader import eng
 from ..logging_util import log
 from ..models import GameState
+from ..npc import find_npc
 
-
-# ── Parsed effect ────────────────────────────────────────────
+from .impacts import apply_impact, blocks_recovery, clear_impact
 
 
 @dataclass
@@ -104,9 +104,6 @@ def parse_effects(effect_list: list[str]) -> list[MoveEffect]:
     return [parse_effect(e) for e in effect_list]
 
 
-# ── Effect application ───────────────────────────────────────
-
-
 @dataclass
 class OutcomeResult:
     """Result of applying a move outcome. Fed to consequence sentence generation and narrator prompt."""
@@ -121,9 +118,18 @@ class OutcomeResult:
     narrative_only: bool = False
 
 
+def _roll_pay_the_price(game: GameState) -> str:
+    """Pick one of the pay_the_price oracle outcomes and return the formatted line.
+
+    The lines are in engine/pay_the_price.yaml. Some contain a {player}
+    placeholder; all other tokens pass through unchanged.
+    """
+    pay_lines = eng().get_raw("pay_the_price")
+    return random.choice(pay_lines).format(player=game.player_name)
+
+
 def apply_effects(game: GameState, effects: list[MoveEffect], target_npc_id: str | None = None) -> OutcomeResult:
     """Apply a list of parsed effects to game state. Returns result summary."""
-    from ..npc import find_npc
 
     result = OutcomeResult()
     _e = eng()
@@ -159,6 +165,7 @@ def apply_effects(game: GameState, effects: list[MoveEffect], target_npc_id: str
 
         elif effect.type == "pay_the_price":
             result.pay_the_price = True
+            result.consequences.append(_roll_pay_the_price(game))
 
         elif effect.type == "next_move_bonus":
             result.next_move_bonus = effect.value
@@ -237,7 +244,6 @@ def _apply_generic_suffer(game: GameState, amount: int, result: OutcomeResult) -
         result.consequences.append(_labels["track_loss"].format(track=track, n=lost))
 
 
-# ── Handler-based resolution ─────────────────────────────────
 # These handle complex moves with conditional logic that doesn't
 # fit in the simple effect list format.
 
@@ -266,8 +272,6 @@ def apply_suffer_handler(game: GameState, roll_result: str, params: dict) -> Out
     recovery = params["recovery"]
     miss_extra_track = params["miss_extra_track"]
     miss_extra_momentum = params["miss_extra_momentum"]
-
-    from .impacts import apply_impact, blocks_recovery
 
     has_blocking_impact = bool(blocks_recovery(game, track))
 
@@ -341,8 +345,6 @@ def apply_threshold_handler(game: GameState, roll_result: str, params: dict) -> 
         result.narrative_only = True
 
     elif roll_result == "WEAK_HIT":
-        from .impacts import apply_impact
-
         impact = params["impact"]
         if impact and apply_impact(game, impact):
             result.consequences.append(_labels["mark_impact"].format(impact=impact))
@@ -381,8 +383,6 @@ def apply_recovery_handler(game: GameState, roll_result: str, params: dict) -> O
     weak_cost_type = params["weak_hit_cost_type"]
     weak_cost = params["weak_hit_cost"]
 
-    from .impacts import clear_impact
-
     has_impact = bool(blocking_impact) and blocking_impact in game.impacts
 
     if roll_result in ("STRONG_HIT", "WEAK_HIT"):
@@ -407,11 +407,9 @@ def apply_recovery_handler(game: GameState, roll_result: str, params: dict) -> O
 
     else:  # MISS
         result.pay_the_price = True
+        result.consequences.append(_roll_pay_the_price(game))
 
     return result
-
-
-# ── Main resolver ────────────────────────────────────────────
 
 
 def resolve_move_outcome(

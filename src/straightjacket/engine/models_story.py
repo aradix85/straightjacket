@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Story model types: threads, character lists, scene log, narration, story blueprint,
 director guidance, narrative state, campaign state."""
 
@@ -6,11 +5,10 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
+from ..i18n import t
+from .engine_loader import eng
 from .models_base import ClockEvent, ProgressTrack
 from .serialization import SerializableMixin
-
-
-# ── Mythic GME lists (seeded at creation, maintained per scene) ──
 
 
 @dataclass
@@ -35,9 +33,6 @@ class CharacterListEntry(SerializableMixin):
     entry_type: str = "npc"  # npc, entity, abstract
     weight: int = 1
     active: bool = True
-
-
-# ── Scene and narration log ──────────────────────────────────
 
 
 @dataclass
@@ -229,9 +224,6 @@ class ChapterSummary(SerializableMixin):
 
 
 def _legacy_quests_factory() -> ProgressTrack:
-    from .engine_loader import eng
-    from ..i18n import t
-
     _e = eng()
     return ProgressTrack(
         id="legacy_quests",
@@ -243,9 +235,6 @@ def _legacy_quests_factory() -> ProgressTrack:
 
 
 def _legacy_bonds_factory() -> ProgressTrack:
-    from .engine_loader import eng
-    from ..i18n import t
-
     _e = eng()
     return ProgressTrack(
         id="legacy_bonds",
@@ -257,9 +246,6 @@ def _legacy_bonds_factory() -> ProgressTrack:
 
 
 def _legacy_discoveries_factory() -> ProgressTrack:
-    from .engine_loader import eng
-    from ..i18n import t
-
     _e = eng()
     return ProgressTrack(
         id="legacy_discoveries",

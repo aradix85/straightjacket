@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Shared finalization: outcome resolution, crisis check, engine memories, metadata.
 
 Used by turn processing, correction, and momentum burn. Each caller handles
@@ -12,20 +11,22 @@ from dataclasses import dataclass, field
 from ..ai.metadata import apply_narrator_metadata
 from ..ai.narrator import call_narrator, call_narrator_metadata
 from ..ai.provider_base import AIProvider
+from ..ai.validator import validate_and_retry
 from ..engine_loader import damage, eng
+from ..logging_util import log
 from ..mechanics import (
     generate_engine_memories,
     generate_scene_context,
 )
 from ..mechanics.consequences import tick_threat_clock
+from ..mechanics.legacy import mark_legacy
 from ..mechanics.move_outcome import OutcomeResult, resolve_move_outcome
 from ..models import BrainResult, ClockEvent, EngineConfig, GameState, MemoryEntry, RollResult
 from ..npc import find_npc
 from ..npc.memory import consolidate_memory
 from ..parser import parse_narrator_response
 
-
-# ── Pre-narration: outcome resolution + clocks + crisis ──────
+from ..game.tracks import find_progress_track
 
 
 @dataclass
@@ -88,9 +89,6 @@ def apply_progress_and_legacy(
     Track completion on progress roll result and scene_challenge routing remain
     turn-only — correction and burn re-narrate an already-resolved scene.
     """
-    from ..game.tracks import find_progress_track
-    from ..logging_util import log
-    from ..mechanics.legacy import mark_legacy
 
     if outcome.progress_marks > 0:
         track = find_progress_track(game, source_track_category, target_track=brain.target_track)
@@ -181,9 +179,6 @@ def apply_post_narration(
     return metadata
 
 
-# ── Narrate: shared narrator→parse→(validate) ───────────────
-
-
 def narrate_scene(
     provider: AIProvider,
     game: GameState,
@@ -203,7 +198,6 @@ def narrate_scene(
     If validate_result_type is set (e.g. "MISS", "dialog"), runs validate_and_retry.
     Otherwise skips validation. val_report is empty dict when validation skipped.
     """
-    from ..ai.validator import validate_and_retry
 
     raw = call_narrator(provider, prompt, game, config)
     narration = parse_narrator_response(game, raw)

@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Engine JSON output schemas built from compact specs.
 
 Move and stat enums are config-driven from engine.yaml.
@@ -8,9 +7,9 @@ structured-output JSON schema live in `engine.yaml ai_text.schema_descriptions`,
 keyed by schema name.
 """
 
+from ..datasworn.moves import get_moves
+from ..datasworn.settings import list_packages
 from ..engine_loader import eng
-
-# ── Schema builder helpers ────────────────────────────────────
 
 
 def _str(enum: list[str] | None = None, desc: str | None = None) -> dict:
@@ -68,8 +67,6 @@ def _obj(props: dict, extra_required: list[str] | None = None) -> dict:
     }
 
 
-# ── Brain output (config-driven moves/stats) ─────────────────
-
 _brain_cache = None
 _correction_cache: dict | None = None
 _director_cache: dict | None = None
@@ -99,9 +96,6 @@ def get_brain_output_schema() -> dict:
         stat_names = list(_e.stats.names)
 
         # Build move enum: all Datasworn moves across every discovered setting + engine-specific
-        from ..datasworn.moves import get_moves
-        from ..datasworn.settings import list_packages
-
         all_move_keys: set[str] = set()
         for setting_id in list_packages():
             moves = get_moves(setting_id)
@@ -137,9 +131,6 @@ def get_brain_output_schema() -> dict:
             }
         )
     return _brain_cache
-
-
-# ── Director output ───────────────────────────────────────────
 
 
 def get_director_output_schema() -> dict:
@@ -178,9 +169,6 @@ def get_director_output_schema() -> dict:
             }
         )
     return _director_cache
-
-
-# ── Story architect output ────────────────────────────────────
 
 
 def get_story_architect_output_schema() -> dict:
@@ -227,8 +215,6 @@ def get_story_architect_output_schema() -> dict:
     return _story_architect_cache
 
 
-# ── Chapter summary output ────────────────────────────────────
-
 CHAPTER_SUMMARY_OUTPUT_SCHEMA = _obj(
     {
         "title": _str(),
@@ -241,8 +227,6 @@ CHAPTER_SUMMARY_OUTPUT_SCHEMA = _obj(
     }
 )
 
-
-# ── Narrator metadata output ─────────────────────────────────
 
 _metadata_cache: dict | None = None
 
@@ -296,8 +280,6 @@ def get_narrator_metadata_schema() -> dict:
         )
     return _metadata_cache
 
-
-# ── Opening setup output ─────────────────────────────────────
 
 _opening_cache: dict | None = None
 
@@ -355,9 +337,6 @@ def get_opening_setup_schema() -> dict:
     return _opening_cache
 
 
-# ── Correction output ─────────────────────────────────────────
-
-
 def get_correction_output_schema() -> dict:
     global _correction_cache
     if _correction_cache is None:
@@ -395,8 +374,6 @@ def get_correction_output_schema() -> dict:
     return _correction_cache
 
 
-# ── Revelation check output ──────────────────────────────────
-
 _revelation_check_cache: dict | None = None
 
 
@@ -412,8 +389,6 @@ def get_revelation_check_schema() -> dict:
         )
     return _revelation_check_cache
 
-
-# ── Narrator validator output ─────────────────────────────────
 
 _validator_cache: dict | None = None
 
@@ -431,8 +406,6 @@ def get_validator_schema() -> dict:
         )
     return _validator_cache
 
-
-# ── Architect validator output ────────────────────────────────
 
 _architect_validator_cache: dict | None = None
 

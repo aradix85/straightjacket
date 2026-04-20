@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Base model types: serialization helpers, resource tracks, world state, progress.
 
 EngineConfig, Resources, ClockData, ProgressTrack, WorldState, ClockEvent, PlayerPreferences.
@@ -8,6 +7,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
+from .engine_loader import eng
 from .logging_util import log
 from .serialization import SerializableMixin, deserialize, serialize
 
@@ -39,8 +39,6 @@ class Resources(SerializableMixin):
 
     @classmethod
     def from_config(cls) -> Resources:
-        from .engine_loader import eng
-
         _e = eng()
         return cls(
             health=_e.resources.health_start,
@@ -131,8 +129,6 @@ class WorldState(SerializableMixin):
 
     @classmethod
     def from_config(cls) -> WorldState:
-        from .engine_loader import eng
-
         return cls(chaos_factor=eng().chaos.start)
 
     def tick_chaos(self, direction: int, floor: int = 1, ceiling: int = 9) -> None:
@@ -177,14 +173,11 @@ class ProgressTrack(SerializableMixin):
     @classmethod
     def new(cls, *, id: str, name: str, track_type: str, rank: str, ticks: int = 0) -> ProgressTrack:
         """Fresh track with max_ticks from progress.yaml."""
-        from .engine_loader import eng
 
         return cls(id=id, name=name, track_type=track_type, rank=rank, max_ticks=eng().progress.max_ticks, ticks=ticks)
 
     @property
     def ticks_per_mark(self) -> int:
-        from .engine_loader import eng
-
         return eng().progress.ticks_per_mark(self.rank)
 
     @property
@@ -234,7 +227,6 @@ class ThreatData(SerializableMixin):
         cls, *, id: str, name: str, category: str, linked_vow_id: str, rank: str, description: str = ""
     ) -> ThreatData:
         """Fresh threat with max_menace_ticks from progress.yaml."""
-        from .engine_loader import eng
 
         return cls(
             id=id,
@@ -252,7 +244,6 @@ class ThreatData(SerializableMixin):
         # ticks-per-mark table for progress/menace tracks. Distinct from
         # engine.yaml's legacy.ticks_by_rank, which is the legacy-track reward
         # table (inverse scale).
-        from .engine_loader import eng
 
         return eng().progress.ticks_per_mark(self.rank)
 

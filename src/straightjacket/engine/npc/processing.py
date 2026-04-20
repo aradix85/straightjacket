@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """NPC metadata processing: create, rename, and update NPCs from narrator output."""
 
 from typing import TYPE_CHECKING
@@ -142,7 +141,10 @@ def process_npc_details(game: "GameState", details: list, world_addition: str = 
                 npc.description = new_desc
                 log(f"[NPC] Description updated for {npc.name}: '{old_desc[:50]}' -> '{new_desc[:50]}'")
             else:
-                log(f"[NPC] Rejected truncated description for {npc.name}: '{new_desc[:60]}' -- keeping existing")
+                log(
+                    f"[NPC] Rejected truncated description for {npc.name}: "
+                    f"'{new_desc[: eng().truncations.log_short]}' -- keeping existing"
+                )
         extra = d.get("details", "").strip()
         if extra and extra not in (npc.description or ""):
             existing = npc.description
@@ -150,7 +152,7 @@ def process_npc_details(game: "GameState", details: list, world_addition: str = 
                 npc.description = f"{existing}. {extra}"
             else:
                 npc.description = extra
-            log(f"[NPC] Details enriched for {npc.name}: {extra[:80]}")
+            log(f"[NPC] Details enriched for {npc.name}: {extra[: eng().truncations.log_medium]}")
 
 
 def process_new_npcs(game: "GameState", new_npcs: list) -> None:

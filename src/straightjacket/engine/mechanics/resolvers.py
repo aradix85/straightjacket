@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Engine resolvers: position, effect, time progression, move category."""
 
 from __future__ import annotations

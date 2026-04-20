@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Setting package loader.
 
 Combines a settings.yaml (vocabulary, genre constraints, metadata)
@@ -55,9 +54,6 @@ if TYPE_CHECKING:
 _SETTINGS_DIR = PROJECT_ROOT / "data" / "settings"
 
 
-# ── Resolved, fully-specified dataclasses (what callers see) ──
-
-
 @dataclass
 class GenreConstraints:
     """Resolved genre constraints. Every field explicit after parent-chain walk."""
@@ -100,9 +96,6 @@ class CreationFlow:
     has_name_tables: bool
     has_ship_creation: bool
     starting_asset_categories: list[str]
-
-
-# ── Partial config dataclasses (parse output, None = inherit) ──
 
 
 @dataclass
@@ -158,9 +151,6 @@ class _SettingConfig:
     genre_constraints: _GenreConstraintsPartial
     creation_flow: _CreationFlowPartial
     parent: str | None
-
-
-# ── Parsing: strict on top-level keys, partial on inheritable sub-fields ──
 
 
 def _require(data: dict, key: str, yaml_path: str) -> object:
@@ -247,9 +237,6 @@ def _parse_setting_config(data: dict, yaml_path: str) -> _SettingConfig:
     )
 
 
-# ── Per-field parent-chain resolution ─────────────────────────
-
-
 def _resolve_genre_constraints(chain: list[_SettingConfig], yaml_path: str) -> GenreConstraints:
     """Walk chain (child → root) and pick first non-None for each field."""
 
@@ -305,9 +292,6 @@ def _resolve_creation_flow(chain: list[_SettingConfig], yaml_path: str) -> Creat
         has_ship_creation=pick("has_ship_creation"),  # type: ignore[arg-type]
         starting_asset_categories=pick("starting_asset_categories"),  # type: ignore[arg-type]
     )
-
-
-# ── Setting package ───────────────────────────────────────────
 
 
 class SettingPackage:
@@ -383,8 +367,6 @@ class SettingPackage:
     def creation_flow(self) -> CreationFlow:
         return self._creation_flow
 
-    # ── Convenience: meaning pair rolls ───────────────────────
-
     def roll_action_theme(self) -> tuple[str, str]:
         """Roll action + theme meaning pair. Empty strings if pair not configured."""
         paths = self._oracle_paths.action_theme
@@ -402,8 +384,6 @@ class SettingPackage:
             focus = self._data.roll_oracle(paths[1])
             return desc, focus
         return "", ""
-
-    # ── Character creation data (walk parent chain for oracle data) ──
 
     def oracle_data_for(self, oracle_path: str) -> Setting | None:
         """Find the Datasworn data in this chain that contains the given oracle path."""
@@ -447,8 +427,6 @@ class SettingPackage:
             result[short_id] = table
         return result
 
-
-# ── Discovery and caching ─────────────────────────────────────
 
 _cache: dict[str, SettingPackage] = {}
 

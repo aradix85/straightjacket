@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """AI metadata processing: apply narrator metadata and NPC death tracking."""
 
 from ..engine_loader import eng

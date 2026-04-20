@@ -1,0 +1,62 @@
+status_descriptions:
+  health:
+    5: uninjured
+    4: bruised, minor aches
+    3: injured, moving with effort
+    2: seriously wounded
+    1: critically injured, barely holding together
+    0: at the physical limit, collapse is imminent
+  spirit:
+    5: steady and composed
+    4: mildly unsettled
+    3: shaken, stress is showing
+    2: deeply troubled, holding on by a thread
+    1: near breaking
+    0: at the mental limit
+  supply:
+    5: well-equipped
+    4: adequate for now
+    3: running low, rationing has begun
+    2: critically short
+    1: nearly nothing, desperation setting in
+    0: completely out of resources
+  bond:
+    8: deeply bonded
+    6: strong connection
+    4: growing trust
+    2: tentative acquaintance
+    0: stranger
+  clock:
+    early: distant
+    mid: building
+    late: imminent
+    full: triggered
+  track:
+    8: nearly complete
+    6: well underway
+    4: making progress
+    2: early stages
+    0: just begun
+  # Legacy tracks are 0-10 boxes; narrative descriptions at progress thresholds.
+  legacy:
+    10: a storied legacy
+    8: a substantial legacy
+    5: a growing legacy
+    2: the first marks of a legacy
+    0: a blank slate
+  # XP availability in narrative terms.
+  xp:
+    10: rich with hard-won lessons
+    6: a substantial store of experience
+    3: modest lessons to draw on
+    1: a scrap of experience
+    0: nothing yet to draw on
+  combat_position:
+    in_control: in control
+    bad_spot: in a bad spot
+  menace:
+    8: near tipping point
+    6: looming
+    4: growing
+    2: stirring
+    0: distant

@@ -139,6 +139,44 @@ class TestApplyEffects:
         assert game.resources.momentum == 4
         assert result.combat_position == "in_control"
 
+    def test_pay_the_price_appends_oracle_line(self, game: GameState) -> None:
+        """pay_the_price rolls the oracle table and adds the chosen line to consequences."""
+        from straightjacket.engine.engine_loader import eng
+
+        pay_lines = eng().get_raw("pay_the_price")
+        result = apply_effects(game, parse_effects(["pay_the_price"]))
+        assert result.pay_the_price is True
+        assert len(result.consequences) == 1
+        # The appended consequence must be one of the oracle lines (with
+        # {player} substituted where applicable).
+        rendered = {line.format(player=game.player_name) for line in pay_lines}
+        assert result.consequences[0] in rendered
+
+    def test_pay_the_price_substitutes_player_name(self, game: GameState) -> None:
+        """Lines containing {player} are rendered with the current player name."""
+        import random as _random
+
+        # Force selection of the line that contains {player}: index 6 in the yaml
+        # ("Someone saw what {player} did. They won't forget.")
+        _random.seed(12345)
+        from straightjacket.engine.engine_loader import eng
+
+        pay_lines = eng().get_raw("pay_the_price")
+        player_line_idx = next(i for i, line in enumerate(pay_lines) if "{player}" in line)
+
+        # Seed-search for a seed that picks the player line.
+        for seed in range(200):
+            _random.seed(seed)
+            if _random.randrange(len(pay_lines)) == player_line_idx:
+                _random.seed(seed)
+                break
+        else:
+            raise AssertionError("no seed in 0..199 selects the {player} line")
+
+        result = apply_effects(game, parse_effects(["pay_the_price"]))
+        assert game.player_name in result.consequences[0]
+        assert "{player}" not in result.consequences[0]
+
     def test_suffer_move_picks_highest_track(self, game: GameState) -> None:
         game.resources.health = 5
         game.resources.spirit = 3

@@ -1,10 +1,14 @@
-#!/usr/bin/env python3
 """Turn processing: the core gameplay loop."""
 
 from dataclasses import dataclass, field
 
+import random
+
 from ..ai.brain import call_brain, call_revelation_check
 from ..ai.provider_base import AIProvider, drain_token_log
+from ..datasworn.moves import get_moves
+from ..datasworn.settings import active_package
+from ..db import sync as _db_sync
 from ..director import should_call_director
 from ..engine_loader import eng
 from ..logging_util import log
@@ -22,11 +26,25 @@ from ..mechanics import (
     tick_autonomous_clocks,
     update_chaos_factor,
 )
-from ..mechanics.random_events import drain_pending_events
+from ..mechanics.consequences import tick_threat_clock
+from ..mechanics.fate import resolve_fate, resolve_likelihood
+from ..mechanics.random_events import (
+    add_character_weight,
+    add_thread_weight,
+    consolidate_characters,
+    consolidate_threads,
+    drain_pending_events,
+)
 from ..mechanics.scene import SceneSetup, check_scene
-from ..datasworn.moves import get_moves
+from ..mechanics.threats import (
+    advance_menace_on_miss,
+    advance_threat_by_id,
+    resolve_full_menace,
+    tick_autonomous_threats,
+)
 from ..models import (
     BrainResult,
+    CharacterListEntry,
     ClockEvent,
     EngineConfig,
     GameState,
@@ -36,13 +54,19 @@ from ..models import (
     RandomEvent,
     RollResult,
     SceneLogEntry,
+    ThreadEntry,
     ThreatEvent,
 )
 from ..npc import activate_npcs_for_prompt, find_npc, reactivate_npc
 from ..prompt_builders import build_action_prompt, build_dialog_prompt
 from ..story_state import check_story_completion, get_pending_revelations, mark_revelation_used
 
-from .finalization import apply_post_narration, narrate_scene
+from .finalization import (
+    apply_post_narration,
+    apply_progress_and_legacy,
+    narrate_scene,
+    resolve_action_consequences,
+)
 from .tracks import complete_track, find_progress_track, roll_oracle_answer, sync_combat_tracks
 
 
@@ -64,9 +88,6 @@ class SceneContext:
     pending_random_events: list[RandomEvent] = field(default_factory=list)
 
 
-# ── Scene-end list maintenance (step 4.6 / 6.5) ──────────────
-
-
 def _update_scene_lists(game: GameState, brain: BrainResult, metadata: dict, scene_present_ids: set) -> None:
     """Update Mythic thread/character lists after a scene.
 
@@ -74,9 +95,6 @@ def _update_scene_lists(game: GameState, brain: BrainResult, metadata: dict, sce
     - New NPCs from metadata get added to characters list.
     - Target NPC's thread (if any) gets weight bumped.
     """
-    from ..mechanics.random_events import add_character_weight, add_thread_weight
-    from ..models import CharacterListEntry
-
     # Weight bump for present NPCs
     for npc in game.npcs:
         if npc.id in scene_present_ids:
@@ -185,8 +203,6 @@ def _finalize_scene(
         nar.session_log[-1].clock_events.extend(auto_clock_events)
 
     # Autonomous threat menace ticks (step 11a)
-    from ..mechanics.threats import resolve_full_menace, tick_autonomous_threats
-
     tick_autonomous_threats(game)
     resolve_full_menace(game)
 
@@ -197,8 +213,6 @@ def _finalize_scene(
     update_chaos_factor(game, roll_result_str, target_npc_id=brain.target_npc)
 
     # 2. List maintenance — invoked NPCs/threads get weight bump
-    from ..mechanics.random_events import consolidate_characters, consolidate_threads
-
     _update_scene_lists(game, brain, metadata, scene_present_ids)
     consolidate_threads(game)
     consolidate_characters(game)
@@ -223,8 +237,6 @@ def _finalize_scene(
         log(f"[Director] Skipped (no trigger at scene {nar.scene_count})")
 
     # Sync game state to database for query access
-    from ..db import sync as _db_sync
-
     _db_sync(game)
 
     return revelation_confirmed, director_ctx
@@ -237,7 +249,7 @@ def process_turn(
     provider: AIProvider, game: GameState, player_message: str, config: EngineConfig | None = None
 ) -> tuple[GameState, str, RollResult | None, dict | None, dict | None]:
     nar = game.narrative
-    log(f"[Turn] Scene {nar.scene_count + 1} | Player: {player_message[:100]}")
+    log(f"[Turn] Scene {nar.scene_count + 1} | Player: {player_message[: eng().truncations.log_long]}")
 
     # Drain stale accumulators from a failed previous turn
     drain_pending_events()
@@ -258,8 +270,6 @@ def process_turn(
     # Resolve fate question if Brain requested one
     fate_result = None
     if brain.fate_question:
-        from ..mechanics.fate import resolve_fate, resolve_likelihood
-
         odds = resolve_likelihood(game, brain.fate_question)
         fate_result = resolve_fate(game, odds=odds, chaos_factor=game.world.chaos_factor, question=brain.fate_question)
         log(f"[Brain] Fate question resolved: '{brain.fate_question}' → {fate_result.answer}")
@@ -267,8 +277,6 @@ def process_turn(
     # Resolve oracle roll if Brain requested one
     oracle_result = ""
     if brain.oracle_table:
-        from ..datasworn.settings import active_package
-
         pkg = active_package(game)
         if pkg:
             try:
@@ -281,8 +289,6 @@ def process_turn(
     pending_random_events = drain_pending_events()
 
     # Random events targeting threats → advance menace (step 11a)
-    from ..mechanics.threats import advance_threat_by_id
-
     for event in pending_random_events:
         if event.target_id and any(t.id == event.target_id for t in game.threats):
             advance_threat_by_id(game, event.target_id, marks=1, source="random_event")
@@ -316,7 +322,6 @@ def process_turn(
         pending_random_events=pending_random_events,
     )
 
-    # ── Dialog / Oracle path ─────────────────────────────────────
     if brain.dialog_only or brain.move == "dialog" or brain.move == "ask_the_oracle":
         is_oracle = brain.move == "ask_the_oracle"
         nar.scene_count += 1
@@ -365,12 +370,11 @@ def process_turn(
             ctx,
             narration,
             log_entry=log_entry,
-            prompt_summary=f"{result_label.capitalize()}: {(brain.player_intent or player_message)[:80]}",
+            prompt_summary=f"{result_label.capitalize()}: {(brain.player_intent or player_message)[: eng().truncations.log_medium]}",
             roll_result_str=result_label,
         )
         return game, narration, None, None, director_ctx
 
-    # ── Action path ───────────────────────────────────────────
     nar.scene_count += 1
 
     # Track creation (step 8.5): if move creates a track, do it before the roll
@@ -378,7 +382,11 @@ def process_turn(
     track_category = track_creating.get(brain.move)
     if track_category:
         if not brain.track_name:
-            brain.track_name = brain.player_intent[:40].strip() or eng().ai_text.narrator_defaults["unnamed_track"]
+            _cr = eng().creation
+            brain.track_name = (
+                brain.player_intent[: _cr.brain_track_name_max_length].strip()
+                or eng().ai_text.narrator_defaults["unnamed_track"]
+            )
             log(f"[Track] Brain omitted track_name, generated: {brain.track_name}", level="warning")
         if not brain.track_rank:
             brain.track_rank = eng().creation.brain_track_rank_fallback
@@ -396,8 +404,6 @@ def process_turn(
 
         # Vow tracks also create a thread entry
         if track_category == "vow":
-            from ..models import ThreadEntry
-
             game.narrative.threads.append(
                 ThreadEntry(
                     id=f"thread_{slug}",
@@ -463,8 +469,6 @@ def process_turn(
     effect = resolve_effect(game, brain, position)
 
     # Move outcome + MISS clocks + crisis (shared with correction/burn)
-    from .finalization import resolve_action_consequences
-
     action = resolve_action_consequences(game, brain, roll, position)
     consequences = action.consequences
     clock_events = action.clock_events
@@ -472,8 +476,6 @@ def process_turn(
     # Progress marks and legacy tracks (shared with correction/burn)
     outcome = action.outcome
     if outcome:
-        from .finalization import apply_progress_and_legacy
-
         source_category = ds_move.track_category if ds_move else "vow"
         source_rank = track.rank if is_progress_roll and track else "dangerous"
         apply_progress_and_legacy(game, outcome, brain, source_category, source_rank)
@@ -497,19 +499,13 @@ def process_turn(
 
     # WEAK_HIT clock ticking — turn-only (not on correction/burn re-narration)
     if roll.result == "WEAK_HIT" and position != "controlled":
-        import random as _rnd
-
-        from ..mechanics.consequences import tick_threat_clock
-
-        should_tick = (position == "desperate") or (_rnd.random() < eng().pacing.weak_hit_clock_tick_chance)
+        should_tick = (position == "desperate") or (random.random() < eng().pacing.weak_hit_clock_tick_chance)
         if should_tick:
             tick_threat_clock(game, 1, clock_events)
 
     npc_agency, agency_clock_events = check_npc_agency(game)
 
     # Threat menace advancement on MISS (step 11a)
-    from ..mechanics.threats import advance_menace_on_miss, resolve_full_menace
-
     threat_events = advance_menace_on_miss(game, brain.move) if roll.result == "MISS" else []
 
     # Check if any menace is now full → Forsake Your Vow
@@ -587,7 +583,7 @@ def process_turn(
             "validator": val_report,
             "_pacing_type": "action",
         },
-        prompt_summary=f"Action ({roll.result}): {(brain.player_intent or player_message)[:80]}",
+        prompt_summary=f"Action ({roll.result}): {(brain.player_intent or player_message)[: eng().truncations.log_medium]}",
         roll_result_str=roll.result,
         roll=roll,
         consequences=consequences,

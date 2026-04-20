@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Director runner: deferred Director call."""
 
 from ..ai.provider_base import AIProvider

@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Straightjacket Engine Package.
 
 Submodules are imported directly by consumers:

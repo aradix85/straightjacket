@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Dice rolls, mechanical consequences, clocks, momentum burn, consequence sentences."""
 
 from __future__ import annotations
@@ -9,6 +8,8 @@ from ..engine_loader import eng
 from ..logging_util import log
 from ..models import BrainResult, ClockEvent, GameState, RollResult
 from ..npc import find_npc, normalize_for_match
+
+from .impacts import impact_label
 
 
 # DICE
@@ -78,9 +79,6 @@ def can_burn_momentum(game: GameState, roll: RollResult) -> str | None:
     if roll.result == "WEAK_HIT" and mom > roll.c1 and mom > roll.c2:
         return "STRONG_HIT"
     return None
-
-
-# ── NPC agency & autonomous clocks ────────────────────────────
 
 
 def check_npc_agency(game: GameState) -> tuple[list[str], list[ClockEvent]]:
@@ -161,9 +159,6 @@ def purge_old_fired_clocks(game: GameState, keep_scenes: int | None = None) -> N
         log(f"[Clock] Purged {purged} expired fired clock(s) at scene {game.narrative.scene_count}")
 
 
-# ── Consequence sentence generation (step 4) ────────────────
-
-
 def pick_template(key: str) -> str:
     """Pick a random template string from engine.yaml consequence_templates.
 
@@ -219,14 +214,10 @@ def resolve_consequence_sentence(cons: str, player: str, npc_name: str, location
     # Impact marking: "mark wounded" / "clear wounded"
     if cons.startswith("mark "):
         impact_key = cons[5:].strip()
-        from .impacts import impact_label
-
         fmt["impact"] = impact_label(impact_key)
         return pick_template("impact_mark").format(**fmt)
     if cons.startswith("clear "):
         impact_key = cons[6:].strip()
-        from .impacts import impact_label
-
         fmt["impact"] = impact_label(impact_key)
         return pick_template("impact_clear").format(**fmt)
 

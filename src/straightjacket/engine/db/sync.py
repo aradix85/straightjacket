@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Sync GameState to database. Full replace, not diff."""
 
 from __future__ import annotations
@@ -118,7 +117,8 @@ def _insert_scene_log(conn: sqlite3.Connection, game: GameState) -> None:
         conn.execute(
             "INSERT INTO scene_log (scene, summary, move, result, consequences, clock_events, "
             "position, effect, scene_type, npc_activation, validator, rich_summary, "
-            "director_trigger, revelation_check) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            "director_trigger, oracle_answer, revelation_check) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             (
                 s.scene,
                 s.summary,
@@ -133,6 +133,7 @@ def _insert_scene_log(conn: sqlite3.Connection, game: GameState) -> None:
                 json.dumps(s.validator, ensure_ascii=False),
                 s.rich_summary,
                 s.director_trigger,
+                s.oracle_answer,
                 json.dumps(s.revelation_check, ensure_ascii=False),
             ),
         )

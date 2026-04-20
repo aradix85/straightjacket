@@ -2,3 +2,23 @@ rule_validator:
   min_quote_count: 4
   max_gap_chars: 40
   max_consecutive_short_gaps: 3
+  # Dedup-window used to collapse near-duplicate violations before they reach
+  # the narrator. First N chars of the message are the dedup key.
+  violation_dedup_key_length: 60
+  # Length of the sentence fragment shown in the CONSEQUENCE MISSING
+  # violation template — enough to identify the unreflected consequence.
+  consequence_sentence_preview: 60
+  # Violation correction templates used by rule_validator.py checks.
+  # Prefixes ("PLAYER AGENCY: ", "IMPACT CHANGE: " etc.) are the stable category
+  # labels that downstream code and tests match on via substring — keep them.
+  violation_templates:
+    player_agency: "PLAYER AGENCY: narrator wrote '{match}' — player owns their thoughts and feelings"
+    miss_silver_lining: "RESULT INTEGRITY: MISS contains silver lining '{match}' — a MISS must show concrete failure with no upside"
+    miss_annihilation: "RESULT INTEGRITY: MISS is annihilation '{match}' — a MISS is a setback, not death or total defeat"
+    genre_forbidden_term: "GENRE FIDELITY: forbidden term '{term}' found in narration"
+    atmospheric_register: "ATMOSPHERIC REGISTER: {count} drift markers in one scene ({examples}). Ground the prose in physical sensation from <sensory_palette>"
+    output_format: "OUTPUT FORMAT: narration contains {label}"
+    npc_monologue: "RESOLUTION PACING: NPC delivers an extended monologue (4+ quoted segments with minimal breaks)"
+    consequence_missing: "CONSEQUENCE MISSING: narrator did not reflect '{sentence}' — none of {keywords} found in narration"
+    threat_advance: "THREAT ADVANCE: narrator did not reflect threat '{name}' advancing — the growing menace must be felt in the scene"
+    impact_change: "IMPACT CHANGE: narrator did not reflect impact '{label}' — the character's condition shifted and must be felt in the prose"

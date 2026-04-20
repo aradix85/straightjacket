@@ -40,6 +40,25 @@ from straightjacket.engine.ai.provider_base import set_backoff_sleep
 set_backoff_sleep(lambda _: None)
 
 
+# ── Random-state isolation ────────────────────────────────────
+
+
+@pytest.fixture(autouse=True)
+def _reset_random() -> None:
+    """Reset random.seed state between tests.
+
+    Some tests call random.seed(N) to force deterministic dice/oracle rolls.
+    Without isolation, the seeded state bleeds into the next test and makes
+    its random calls deterministic too — a silent source of order-dependent
+    flakiness. Reseeding from /dev/urandom-like entropy after each test
+    restores independence.
+    """
+    import random as _random
+
+    yield
+    _random.seed()
+
+
 # ── Reusable fixtures ────────────────────────────────────────
 
 

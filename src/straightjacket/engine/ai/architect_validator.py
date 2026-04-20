@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Architect blueprint genre validation.
 
 Extracted from validator.py. Checks story blueprints for genre fidelity
@@ -73,7 +72,7 @@ def validate_architect(
 
     try:
         _vap = dict(sampling_params("validator_architect"))
-        _vap["max_retries"] = 1
+        _vap["max_retries"] = eng().retry.constraint_check_max_retries
         response = create_with_retry(
             provider,
             model=model_for_role("validator_architect"),
@@ -89,7 +88,7 @@ def validate_architect(
             log(f"[ArchitectValidator] FAILED: {violations}")
             fixed_conflict = result.get("fixed_conflict", "").strip()
             fixed_antagonist = result.get("fixed_antagonist", "").strip()
-            _trunc = eng().architect_limits.log_truncate_short
+            _trunc = eng().truncations.log_short
             if fixed_conflict:
                 log(f"[ArchitectValidator] Conflict: '{conflict[:_trunc]}' → '{fixed_conflict[:_trunc]}'")
                 blueprint["central_conflict"] = fixed_conflict
@@ -119,6 +118,7 @@ def _check_blueprint_text_fields(blueprint: dict, drift_words: set[str]) -> None
         fields_to_check.append((f"act[{phase}].transition_trigger", act.get("transition_trigger", "")))
 
     _limits = eng().architect_limits
+    _trunc = eng().truncations
     for field_name, text in fields_to_check:
         if not text:
             continue
@@ -127,6 +127,6 @@ def _check_blueprint_text_fields(blueprint: dict, drift_words: set[str]) -> None
         if found:
             log(
                 f"[ArchitectValidator] Drift words in {field_name}: "
-                f"{found[: _limits.drift_words_log_window]}. Text: '{text[: _limits.log_truncate_medium]}'",
+                f"{found[: _limits.drift_words_log_window]}. Text: '{text[: _trunc.log_medium]}'",
                 level="warning",
             )

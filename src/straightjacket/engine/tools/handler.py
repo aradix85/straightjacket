@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Tool call handler: dispatch and iterative tool-call loop.
 
 The handler receives an AIResponse with tool_calls, executes each tool,
@@ -15,6 +14,7 @@ from __future__ import annotations
 import json
 
 from ..ai.provider_base import AIProvider, AIResponse
+from ..engine_loader import eng
 from ..logging_util import log
 from ..models import GameState
 from .registry import get_handler
@@ -93,13 +93,14 @@ def run_tool_loop(
         conversation.append(assistant_msg)
 
         # Execute each tool call and append results
+        _trunc = eng().truncations
         for tc in current.tool_calls:
             result_str = execute_tool_call(role, tc, game)
             tool_log.append(
                 {
                     "name": tc["name"],
                     "arguments": tc.get("arguments", {}),
-                    "result": result_str[:500],
+                    "result": result_str[: _trunc.prompt_long],
                 }
             )
             conversation.append(
@@ -109,14 +110,14 @@ def run_tool_loop(
                     "content": result_str,
                 }
             )
-            log(f"[Tools] {tc['name']}({tc.get('arguments', {})}) → {result_str[:80]}")
+            log(f"[Tools] {tc['name']}({tc.get('arguments', {})}) → {result_str[: _trunc.log_medium]}")
 
         # Re-prompt with tool results
         from .registry import get_tools
 
         current = create_with_retry(
             provider,
-            max_retries=1,
+            max_retries=eng().retry.constraint_check_max_retries,
             model=model,
             system=system,
             messages=conversation,

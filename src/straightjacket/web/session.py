@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Server session state. One active session at a time.
 
 All mutable state lives here. Handlers receive the session object,

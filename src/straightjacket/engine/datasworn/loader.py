@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Datasworn JSON loader.
 
 Reads compiled Datasworn JSON files and provides typed access to:
@@ -83,9 +82,6 @@ def list_available() -> list[str]:
     return result
 
 
-# ── Oracle tables ─────────────────────────────────────────────
-
-
 @dataclass
 class OracleRow:
     """Single row in an oracle table."""
@@ -166,8 +162,6 @@ class Setting:
     def license(self) -> str:
         return self._raw.get("license", "")
 
-    # ── Oracles ───────────────────────────────────────────────
-
     def _load_oracles(self) -> None:
         """Parse all oracle tables into OracleTable objects, recursively."""
         for coll_id, coll in self._raw.get("oracles", {}).items():
@@ -230,8 +224,6 @@ class Setting:
         """List top-level oracle collection IDs."""
         return sorted(self._raw.get("oracles", {}).keys())
 
-    # ── Assets ────────────────────────────────────────────────
-
     def asset_categories(self) -> list[str]:
         """List asset category IDs (e.g. 'path', 'companion')."""
         return sorted(self._raw.get("assets", {}).keys())
@@ -250,8 +242,6 @@ class Setting:
         """Convenience: get all path assets (character creation)."""
         return self.assets("path")
 
-    # ── Moves ─────────────────────────────────────────────────
-
     def move_categories(self) -> list[str]:
         """List move category IDs."""
         return sorted(self._raw.get("moves", {}).keys())
@@ -261,13 +251,9 @@ class Setting:
         cat = self._raw.get("moves", {}).get(category, {})
         return list(cat.get("contents", {}).values())
 
-    # ── Truths ────────────────────────────────────────────────
-
     def truths(self) -> dict:
         """Get all truths (world-building options). Returns {id: truth_dict}."""
         return dict(self._raw.get("truths", {}))
-
-    # ── Stats and rules ───────────────────────────────────────
 
     def stats(self) -> dict:
         """Get stat definitions. Returns {stat_id: stat_dict}."""
@@ -286,8 +272,6 @@ class Setting:
                 short_id = oid.split("/", 1)[-1]
                 result[short_id] = table
         return result
-
-    # ── Raw access ────────────────────────────────────────────
 
     @property
     def raw(self) -> dict:

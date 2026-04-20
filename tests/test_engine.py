@@ -1,11 +1,9 @@
-from tests._helpers import make_game_state, make_npc
-
-#!/usr/bin/env python3
 """Tests for engine logic: utilities, config, NPC processing.
 
 Run: python -m pytest tests/test_engine.py -v
 """
 
+from tests._helpers import make_game_state, make_npc
 
 # Stubs are set up in conftest.py
 

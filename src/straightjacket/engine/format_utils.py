@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Shared utility: partial-format dict.
 
 Used by prompt_loader and strings_loader. Zero internal dependencies

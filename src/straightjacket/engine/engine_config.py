@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Typed engine configuration dataclasses.
 
 Replaces _ConfigNode dot-access wrapper for engine.yaml with validated,
@@ -11,6 +10,8 @@ KeyError — no hidden Python defaults for domain config.
 
 from __future__ import annotations
 
+import dataclasses
+import re
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -87,6 +88,7 @@ class CreationConfig:
     starting_asset_categories: list[str]
     background_vow_default_rank: str
     brain_track_rank_fallback: str
+    brain_track_name_max_length: int
     chaos_vow_modifiers: dict[str, list[str]]
     chaos_modifier_values: dict[str, int]
     truth_threads: dict[str, str]
@@ -526,7 +528,7 @@ class RateLimitConfig:
 class RetryConfig:
     """Provider retry policy."""
 
-    max_retries: int
+    constraint_check_max_retries: int
     retryable_http_codes: list[int]
     backoff_base: int
 
@@ -590,11 +592,14 @@ class DescriptionDedupConfig:
 
 @dataclass
 class RuleValidatorConfig:
-    """Rule validator NPC-monologue thresholds."""
+    """Rule validator NPC-monologue thresholds and violation-message templates."""
 
     min_quote_count: int
     max_gap_chars: int
     max_consecutive_short_gaps: int
+    violation_dedup_key_length: int
+    consequence_sentence_preview: int
+    violation_templates: dict[str, str]
 
 
 @dataclass
@@ -661,6 +666,27 @@ class RandomEventsConfig:
 
 
 @dataclass
+class StatusDescriptionsConfig:
+    """Narrative status descriptors keyed by threshold or state.
+
+    Numeric thresholds (health/spirit/supply/bond/track/legacy/xp/menace) map
+    filled-box counts to prose. Clock state and combat_position are keyed by
+    string enum.
+    """
+
+    health: dict[int, str]
+    spirit: dict[int, str]
+    supply: dict[int, str]
+    bond: dict[int, str]
+    clock: dict[str, str]
+    track: dict[int, str]
+    legacy: dict[int, str]
+    xp: dict[int, str]
+    combat_position: dict[str, str]
+    menace: dict[int, str]
+
+
+@dataclass
 class AiTextConfig:
     """All hardcoded English strings that flow into AI prompts, json_schema
     descriptions, narrator-facing consequence labels, and validator correction
@@ -678,7 +704,7 @@ class AiTextConfig:
 
 @dataclass
 class ArchitectLimitsConfig:
-    """Truncation lengths and history windows used by architect.py and recap."""
+    """History windows used by architect.py and recap."""
 
     recap_log_window: int
     recap_narration_window: int
@@ -687,11 +713,31 @@ class ArchitectLimitsConfig:
     recap_campaign_summary_truncate: int
     architect_campaign_window: int
     chapter_summary_log_window: int
-    log_truncate_short: int
-    log_truncate_medium: int
-    log_truncate_long: int
-    log_truncate_xlong: int
     drift_words_log_window: int
+
+
+@dataclass
+class TruncationsConfig:
+    """Named string-truncation limits used in logs and prompts.
+
+    Centralised so every `[:N]` slice in the codebase reads from a named key
+    instead of a magic number. log_* sizes are for log lines (short one-line
+    summaries), prompt_* sizes for substrings fed to AI prompts.
+    """
+
+    log_xshort: int
+    log_short: int
+    log_medium: int
+    log_long: int
+    log_xlong: int
+    prompt_xshort: int
+    prompt_short: int
+    prompt_medium: int
+    prompt_long: int
+    prompt_xlong: int
+    prompt_xxlong: int
+    narration_preview: int
+    narration_max: int
 
 
 @dataclass
@@ -753,6 +799,8 @@ class EngineSettings:
     random_events: RandomEventsConfig
     ai_text: AiTextConfig
     architect_limits: ArchitectLimitsConfig
+    status_descriptions: StatusDescriptionsConfig
+    truncations: TruncationsConfig
 
     # Scalar top-level fields
     scene_range_default: list[int]
@@ -780,7 +828,6 @@ class EngineSettings:
         Patterns are compiled once per EngineSettings instance with re.IGNORECASE.
         Raises KeyError if the section or key is missing — no silent fallback.
         """
-        import re
 
         cache_key = f"patterns:{section}.{key}"
         if cache_key in self._compiled_patterns:
@@ -796,7 +843,6 @@ class EngineSettings:
         Each entry produces (compiled_regex, label). Supported flags: 'multiline'.
         Raises KeyError if section or key is missing.
         """
-        import re
 
         cache_key = f"labeled:{section}.{key}"
         if cache_key in self._compiled_patterns:
@@ -817,7 +863,6 @@ class EngineSettings:
 
         Raises KeyError if the path is missing.
         """
-        import re
 
         cache_key = f"single:{section}.{key}.{subkey}"
         if cache_key in self._compiled_patterns:
@@ -831,7 +876,6 @@ class EngineSettings:
 def _build_strict(cls: type, data: dict[str, Any]) -> Any:
     """Build a dataclass from a dict. Raises KeyError on missing required fields
     and ValueError on unknown keys."""
-    import dataclasses
 
     known = {f.name for f in dataclasses.fields(cls)}
     unknown = set(data.keys()) - known
@@ -876,6 +920,8 @@ _SIMPLE_SECTIONS: dict[str, type] = {
     "random_events": RandomEventsConfig,
     "ai_text": AiTextConfig,
     "architect_limits": ArchitectLimitsConfig,
+    "status_descriptions": StatusDescriptionsConfig,
+    "truncations": TruncationsConfig,
 }
 
 
@@ -1084,6 +1130,8 @@ def parse_engine_yaml(data: dict[str, Any]) -> EngineSettings:
         random_events=simple_parsed["random_events"],
         ai_text=simple_parsed["ai_text"],
         architect_limits=simple_parsed["architect_limits"],
+        status_descriptions=simple_parsed["status_descriptions"],
+        truncations=simple_parsed["truncations"],
         scene_range_default=list(data["scene_range_default"]),
         death_emotions=list(data["death_emotions"]),
         creativity_seeds=list(data["creativity_seeds"]),

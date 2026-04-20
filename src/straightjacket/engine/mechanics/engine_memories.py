@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Engine-side memory generation: emotion derivation, observation memories, scene context."""
 
 from __future__ import annotations
@@ -86,7 +85,7 @@ def generate_engine_memories(
             scene=scene,
             player=game.player_name,
             npc=npc.name,
-            intent=intent[:80] if intent else "general",
+            intent=intent[: eng().truncations.log_medium] if intent else "general",
             move_verb=move_verb,
             result_text=result_text,
             move=move,

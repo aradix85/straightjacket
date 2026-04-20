@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Tool registry: Python functions → OpenAI tool definitions.
 
 Tools are registered with @register("brain"), @register("director"), or
@@ -59,8 +58,6 @@ def clear_registry() -> None:
     """Clear all registrations. Used in tests."""
     _registry.clear()
 
-
-# ── Schema builder ────────────────────────────────────────────
 
 _TYPE_MAP: dict[type, str] = {
     str: "string",

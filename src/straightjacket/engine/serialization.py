@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Generic dataclass serialization using type annotations.
 
 Replaces per-class to_dict/from_dict boilerplate. Handles nested dataclasses,

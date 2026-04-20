@@ -1,15 +1,20 @@
-#!/usr/bin/env python3
 """Chapter management: epilogue generation, new chapter orchestration."""
 
 import copy
 import re
+from concurrent.futures import ThreadPoolExecutor
 
 from ..ai.architect import call_chapter_summary, call_story_architect
+from ..ai.architect_validator import validate_architect
+from ..ai.metadata import process_deceased_npcs
 from ..ai.narrator import call_narrator, call_opening_setup
 from ..ai.provider_base import AIProvider
+from ..ai.validator import validate_and_retry
+from ..datasworn.settings import active_package
+from ..db import sync as _db_sync
+from ..db.connection import reset_db
 from ..engine_loader import eng
 from ..logging_util import log
-from ..user_management import load_user_config, save_user_config
 from ..mechanics import (
     choose_story_structure,
     record_scene_intensity,
@@ -22,6 +27,7 @@ from ..models import (
     NarrationEntry,
     NpcData,
     SceneLogEntry,
+    StoryBlueprint,
 )
 from ..npc import (
     consolidate_memory,
@@ -30,6 +36,9 @@ from ..npc import (
 )
 from ..parser import parse_narrator_response
 from ..prompt_builders import build_epilogue_prompt, build_new_chapter_prompt
+from ..user_management import load_user_config, save_user_config
+
+from .setup_common import apply_opening_setup
 
 
 def generate_epilogue(
@@ -85,8 +94,6 @@ def start_new_chapter(
     _merge_returning_npcs(game, returning_npcs)
 
     if setup_data.get("deceased_npcs"):
-        from ..ai.metadata import process_deceased_npcs
-
         process_deceased_npcs(game, setup_data["deceased_npcs"])
 
     _record_chapter_opening(game, narration, val_report)
@@ -97,16 +104,11 @@ def start_new_chapter(
         save_user_config(username, user_cfg)
 
     # Sync new chapter state to database
-    from ..db import sync as _db_sync
-    from ..db.connection import reset_db
 
     reset_db()
     _db_sync(game)
 
     return game, narration
-
-
-# ── Phase 1: Close previous chapter ─────────────────────────
 
 
 def _close_previous_chapter(provider: AIProvider, game: GameState, config: EngineConfig | None) -> ChapterSummary:
@@ -121,9 +123,6 @@ def _close_previous_chapter(provider: AIProvider, game: GameState, config: Engin
 
     game.campaign.chapter_number += 1
     return chapter_summary
-
-
-# ── Phase 2: Reset mechanics ────────────────────────────────
 
 
 def _reset_chapter_mechanics(game: GameState) -> None:
@@ -150,9 +149,6 @@ def _reset_chapter_mechanics(game: GameState) -> None:
     game.narrative.director_guidance = DirectorGuidance()
 
 
-# ── Phase 3: NPC pruning and consolidation ───────────────────
-
-
 def _prepare_npcs_for_new_chapter(game: GameState) -> None:
     """Retire filler NPCs to background and consolidate memories."""
     for npc in game.npcs:
@@ -173,15 +169,11 @@ def _prepare_npcs_for_new_chapter(game: GameState) -> None:
         consolidate_memory(npc)
 
 
-# ── Phase 4: Generate opening ────────────────────────────────
-
-
 def _generate_chapter_opening(
     provider: AIProvider, game: GameState, config: EngineConfig | None, returning_npcs: list[NpcData]
 ) -> tuple[str, dict, dict]:
     """Run narrator + architect in parallel, validate, extract setup.
     Returns (narration, val_report, setup_data)."""
-    from concurrent.futures import ThreadPoolExecutor
 
     structure = choose_story_structure(game.setting_tone)
     chapter_prompt = build_new_chapter_prompt(game)
@@ -196,8 +188,6 @@ def _generate_chapter_opening(
         blueprint = fut_architect.result()
 
     narration = parse_narrator_response(game, raw)
-
-    from ..ai.validator import validate_and_retry
 
     narration, val_report = validate_and_retry(provider, narration, chapter_prompt, "opening", game, config=config)
 
@@ -217,9 +207,6 @@ def _generate_chapter_opening(
 
 def _apply_blueprint(game: GameState, provider: AIProvider, blueprint: dict | None) -> None:
     """Validate and apply story architect blueprint."""
-    from ..ai.architect_validator import validate_architect
-    from ..datasworn.settings import active_package
-    from ..models import StoryBlueprint
 
     gc = None
     pkg = active_package(game)
@@ -231,9 +218,6 @@ def _apply_blueprint(game: GameState, provider: AIProvider, blueprint: dict | No
         game.narrative.story_blueprint = StoryBlueprint.from_dict(blueprint)
     else:
         game.narrative.story_blueprint = None
-
-
-# ── Phase 5: Merge returning NPCs ───────────────────────────
 
 
 def _merge_returning_npcs(game: GameState, returning_npcs: list[NpcData]) -> None:
@@ -262,9 +246,6 @@ def _merge_returning_npcs(game: GameState, returning_npcs: list[NpcData]) -> Non
         game.world.location_history.append(game.world.current_location)
 
 
-# ── Record opening ───────────────────────────────────────────
-
-
 def _record_chapter_opening(game: GameState, narration: str, val_report: dict) -> None:
     """Record opening scene in narration history and session log."""
     record_scene_intensity(game, "action")
@@ -284,11 +265,7 @@ def _record_chapter_opening(game: GameState, narration: str, val_report: dict) -
     )
 
 
-# ── Chapter opening setup ────────────────────────────────────
-
-
 def _apply_chapter_opening_setup(game: GameState, data: dict, returning_npcs: list[NpcData]) -> None:
     """Apply opening setup extraction to a new chapter."""
-    from .setup_common import apply_opening_setup
 
     apply_opening_setup(game, data, returning_npcs=returning_npcs, clocks_mode="extend", label="ChapterSetup")

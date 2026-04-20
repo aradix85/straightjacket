@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Straightjacket config loader: yaml-driven configuration.
 
 config.yaml is the single source of truth for all engine settings.
@@ -43,9 +42,6 @@ VERSION = _read_version()
 USERS_DIR = PROJECT_ROOT / "users"
 USERS_DIR.mkdir(exist_ok=True)
 GLOBAL_CONFIG_FILE = _CONFIG_PATH
-
-
-# ── Typed config dataclasses ─────────────────────────────────
 
 
 @dataclass
@@ -149,9 +145,6 @@ def _parse_config(data: dict) -> AppConfig:
     )
 
     return AppConfig(server=server, ai=ai, language=language)
-
-
-# ── Singleton ────────────────────────────────────────────────
 
 
 def _load_config_file() -> dict:

@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """XML escaping helpers. Single source of truth for prompt safety."""
 
 import html as _html

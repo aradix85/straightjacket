@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Read-only query functions. Each returns dataclass instances."""
 
 from __future__ import annotations

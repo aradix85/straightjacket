@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Emotions loader: reads and merges emotions/*.yaml.
 
 Provides importance scoring data, DE→EN normalization, and disposition

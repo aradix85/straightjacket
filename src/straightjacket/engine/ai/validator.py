@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Constraint validator: lightweight post-narrator check.
 
 After the narrator produces prose, the validator checks whether
@@ -14,12 +13,15 @@ import json
 import re
 
 from ..config_loader import model_for_role, sampling_params
+from ..datasworn.settings import active_package
 from ..engine_loader import eng
 from ..logging_util import log
 from ..models import EngineConfig, GameState
+from ..parser import parse_narrator_response
 from ..prompt_loader import get_prompt
+from .narrator import call_narrator
 from .provider_base import AIProvider, create_with_retry
-from .rule_validator import ValidationContext
+from .rule_validator import ValidationContext, run_rule_checks
 from .schemas import get_validator_schema
 
 
@@ -34,20 +36,22 @@ def _strip_prompt_for_retry(prompt: str, violations: list[str]) -> str:
     if not has_pacing:
         return prompt
 
+    retry_strip = eng().get_raw("validator")["retry_strip"]
+
     stripped = prompt
     # Remove secrets from target_npc blocks. Match the structural shape
     # `secrets(<any label>):[<json array>]` so the regex survives any edit
     # to the `secrets_label` yaml value.
     stripped = re.sub(
         r"secrets\([^)]*\):\[.*?\]",
-        "secrets:[]",
+        retry_strip["empty_secrets"],
         stripped,
         flags=re.DOTALL,
     )
     # Remove memory lines (recent: ... and insight: ...)
     stripped = re.sub(r"^(?:recent|insight):.*$", "", stripped, flags=re.MULTILINE)
     # Remove agenda lines (NPCs with less agenda = less monologue fuel)
-    stripped = re.sub(r"^agenda:.*$", "agenda:(follow the scene)", stripped, flags=re.MULTILINE)
+    stripped = re.sub(r"^agenda:.*$", retry_strip["agenda_placeholder"], stripped, flags=re.MULTILINE)
 
     if stripped != prompt:
         log("[Validator] Stripped NPC secrets/memories/agenda from retry prompt")
@@ -71,7 +75,6 @@ def validate_narration(
     Returns:
         Dict with "pass" (bool), "violations" (list[str]), "correction" (str).
     """
-    from .rule_validator import run_rule_checks
 
     # Layer 1: rule-based (instant, free)
     rule_result = run_rule_checks(narration, ctx)
@@ -102,14 +105,15 @@ def validate_narration(
         consequence_compliance_block=cons_sentence_text,
     )
 
-    prompt = f"""<narration>{narration[:4000]}</narration>
+    _trunc = eng().truncations
+    prompt = f"""<narration>{narration[: _trunc.narration_max]}</narration>
 <context result_type="{ctx.result_type}" genre="{ctx.game.setting_genre}" consequences="{cons_text}"/>
-<player_words>{ctx.player_words[:500]}</player_words>
+<player_words>{ctx.player_words[: _trunc.prompt_long]}</player_words>
 Check constraints."""
 
     try:
         _vp = dict(sampling_params("validator"))
-        _vp["max_retries"] = 1  # Single attempt for LLM constraint check
+        _vp["max_retries"] = eng().retry.constraint_check_max_retries
         response = create_with_retry(
             provider,
             model=model_for_role("validator"),
@@ -185,10 +189,6 @@ def validate_and_retry(
             violations: list[str] — violations from the last failed check (empty if passed)
             checks: list[dict] — full trail of every validation check
     """
-    from ..ai.narrator import call_narrator
-    from ..datasworn.settings import active_package
-    from ..parser import parse_narrator_response
-
     # Resolve max_retries from cluster config if not explicitly passed.
     # sampling_params always returns a dict with max_retries (required field).
     if max_retries is None:

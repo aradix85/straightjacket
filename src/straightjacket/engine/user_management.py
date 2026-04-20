@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """User and save directory management, config load/save.
 
 Split from logging_util.py — these are filesystem operations for user data,
@@ -6,12 +5,15 @@ not logging concerns. logging_util.py retains only log(), setup_file_logging(),
 and get_logger().
 """
 
-import contextlib
 import json
+import shutil
+from dataclasses import asdict
 from datetime import datetime
 from pathlib import Path
 
-from .config_loader import GLOBAL_CONFIG_FILE, USERS_DIR
+import yaml
+
+from .config_loader import GLOBAL_CONFIG_FILE, USERS_DIR, cfg as _cfg
 from .logging_util import log
 
 
@@ -50,21 +52,18 @@ def load_global_config() -> dict:
     Delegates to cfg() — single source of truth for config.yaml.
     Returns the 'server' section as a flat dict.
     """
+
     try:
-        from dataclasses import asdict
-
-        from .config_loader import cfg as _cfg
-
         return asdict(_cfg().server)
-    except Exception:
+    except (OSError, ValueError, KeyError) as e:
+        log(f"[UserMgmt] load_global_config failed: {e}", level="warning")
         return {}
 
 
 def save_global_config(cfg: dict) -> None:
     """Merge and save server config section to the global config yaml."""
-    try:
-        import yaml
 
+    try:
         full_cfg: dict = {}
         if GLOBAL_CONFIG_FILE.exists():
             full_cfg = yaml.safe_load(GLOBAL_CONFIG_FILE.read_text(encoding="utf-8")) or {}
@@ -74,32 +73,36 @@ def save_global_config(cfg: dict) -> None:
         GLOBAL_CONFIG_FILE.write_text(
             yaml.dump(full_cfg, default_flow_style=False, allow_unicode=True), encoding="utf-8"
         )
-        try:
-            import stat
+    except OSError as e:
+        log(f"[UserMgmt] save_global_config write failed: {e}", level="warning")
+        return
+    try:
+        import stat
 
-            GLOBAL_CONFIG_FILE.chmod(stat.S_IRUSR | stat.S_IWUSR)
-        except OSError:
-            pass
-    except OSError:
-        pass
+        GLOBAL_CONFIG_FILE.chmod(stat.S_IRUSR | stat.S_IWUSR)
+    except OSError as e:
+        log(f"[UserMgmt] chmod on {GLOBAL_CONFIG_FILE.name} failed: {e}", level="warning")
 
 
 def load_user_config(username: str) -> dict:
     """Load per-user settings."""
     cfg_file = _get_user_config_file(username)
-    if cfg_file.exists():
-        try:
-            return json.loads(cfg_file.read_text(encoding="utf-8"))
-        except (json.JSONDecodeError, OSError):
-            pass
-    return {}
+    if not cfg_file.exists():
+        return {}
+    try:
+        return json.loads(cfg_file.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, OSError) as e:
+        log(f"[UserMgmt] load_user_config('{username}') failed: {e}", level="warning")
+        return {}
 
 
 def save_user_config(username: str, cfg: dict) -> None:
     """Save per-user settings to settings.json."""
     cfg_file = _get_user_config_file(username)
-    with contextlib.suppress(OSError):
+    try:
         cfg_file.write_text(json.dumps(cfg, indent=2, ensure_ascii=False), encoding="utf-8")
+    except OSError as e:
+        log(f"[UserMgmt] save_user_config('{username}') failed: {e}", level="warning")
 
 
 def list_users() -> list[dict]:
@@ -130,7 +133,6 @@ def delete_user(name: str) -> bool:
     user_dir = _get_user_dir(name)
     if not user_dir.exists():
         return False
-    import shutil
 
     shutil.rmtree(user_dir)
     log(f"[User] Deleted user: {name}")

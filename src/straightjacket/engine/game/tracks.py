@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Progress track mechanics: find, complete, sync, oracle rolls.
 
 Extracted from turn.py. These are game mechanics, not turn pipeline logic.
@@ -6,6 +5,7 @@ Extracted from turn.py. These are game mechanics, not turn pipeline logic.
 
 from __future__ import annotations
 
+from ..datasworn.settings import active_package
 from ..logging_util import log
 from ..models import GameState, ProgressTrack
 
@@ -101,7 +101,6 @@ def sync_combat_tracks(game: GameState) -> None:
 
 def roll_oracle_answer(game: GameState) -> str:
     """Roll an oracle answer for ask_the_oracle moves. Returns a meaning pair string."""
-    from ..datasworn.settings import active_package
 
     pkg = active_package(game)
     if not pkg:

@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Anthropic AI provider implementation."""
 
 from typing import Any

@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Story state queries: act tracking, revelations, story completion."""
 
 from __future__ import annotations

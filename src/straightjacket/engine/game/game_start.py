@@ -1,28 +1,39 @@
-#!/usr/bin/env python3
 """Game start: character creation and opening scene generation."""
 
+from concurrent.futures import ThreadPoolExecutor
+
 from ..ai.architect import call_story_architect
+from ..ai.architect_validator import validate_architect
+from ..ai.metadata import process_deceased_npcs
 from ..ai.narrator import call_narrator, call_opening_setup
 from ..ai.provider_base import AIProvider
+from ..ai.validator import validate_and_retry
 from ..config_loader import default_player_name
+from ..datasworn.loader import extract_title
+from ..datasworn.settings import SettingPackage, active_package, load_package
+from ..db import sync as _db_sync
 from ..engine_loader import eng
 from ..logging_util import log
-from ..user_management import load_user_config, save_user_config
 from ..mechanics import (
     choose_story_structure,
     record_scene_intensity,
 )
 from ..models import (
     CharacterListEntry,
+    ClockData,
     EngineConfig,
     GameState,
     NarrationEntry,
     ProgressTrack,
     SceneLogEntry,
+    StoryBlueprint,
     ThreadEntry,
 )
 from ..parser import parse_narrator_response
 from ..prompt_builders import build_new_game_prompt
+from ..user_management import load_user_config, save_user_config
+
+from .setup_common import apply_opening_setup
 
 
 def _valid_ranks() -> set[str]:
@@ -51,7 +62,6 @@ def validate_stats(stats: dict[str, int]) -> None:
 def validate_creation(creation_data: dict, pkg: object) -> None:
     """Validate creation data against engine.yaml and setting constraints."""
     _e = eng()
-    from ..datasworn.settings import SettingPackage
 
     if not isinstance(pkg, SettingPackage):
         return
@@ -210,9 +220,6 @@ def start_new_game(
     setting_id = creation_data["setting_id"]
     log(f"[NewGame] Starting: setting={setting_id}")
 
-    from ..datasworn.loader import extract_title
-    from ..datasworn.settings import active_package, load_package
-
     pkg = load_package(setting_id)
 
     if "stats" not in creation_data:
@@ -266,7 +273,6 @@ def start_new_game(
     # Engine-determined opening state (no AI needed)
     _opening = _e.opening
     game.world.time_of_day = _opening.time_of_day
-    from ..models import ClockData
 
     _trigger = _opening.clock_trigger_template.format(player=game.player_name)
     if not game.background_vow:
@@ -296,8 +302,6 @@ def start_new_game(
     structure = choose_story_structure(pkg.id)
     narrator_prompt = build_new_game_prompt(game)
 
-    from concurrent.futures import ThreadPoolExecutor
-
     def _run_narrator() -> str:
         return call_narrator(provider, narrator_prompt, game, config)
 
@@ -312,15 +316,10 @@ def start_new_game(
 
     narration = parse_narrator_response(game, raw)
 
-    from ..ai.architect_validator import validate_architect
-    from ..ai.validator import validate_and_retry
-
     narration, val_report = validate_and_retry(provider, narration, narrator_prompt, "opening", game, config=config)
 
     _pkg = active_package(game)
     _gc = _pkg.genre_constraints if _pkg else None
-
-    from ..models import StoryBlueprint
 
     if blueprint is not None:
         blueprint = validate_architect(
@@ -350,8 +349,6 @@ def start_new_game(
     # NPCs are extracted with full schema first, so data is preserved.
     # No scene_present_ids guard — everything in the opening is witnessed.
     if setup_data.get("deceased_npcs"):
-        from ..ai.metadata import process_deceased_npcs
-
         process_deceased_npcs(game, setup_data["deceased_npcs"])
 
     record_scene_intensity(game, "action")
@@ -372,7 +369,6 @@ def start_new_game(
     )
 
     # Sync initial game state to database
-    from ..db import sync as _db_sync
 
     _db_sync(game)
 
@@ -381,6 +377,5 @@ def start_new_game(
 
 def _apply_opening_setup(game: GameState, data: dict) -> None:
     """Apply structured opening setup data to game state."""
-    from .setup_common import apply_opening_setup
 
     apply_opening_setup(game, data, clocks_mode="replace", label="OpeningSetup")

@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """NPC memory system: importance scoring, memory retrieval, consolidation."""
 
 import re

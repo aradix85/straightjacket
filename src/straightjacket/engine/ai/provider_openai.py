@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """OpenAI-compatible AI provider implementation.
 
 Wraps the openai SDK to implement the AIProvider protocol.

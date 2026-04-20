@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Straightjacket response parser: narration processing, memory updates, game data.
 
 parse_narrator_response is a linear pipeline of regex cleanup steps. Each step
@@ -9,6 +8,7 @@ which steps fire per response — check this before adding steps.
 
 import re
 
+from .engine_loader import eng
 from .logging_util import log
 from .models import GameState
 from .npc import (
@@ -62,9 +62,7 @@ def salvage_truncated_narration(raw: str) -> str:
     if stripped.endswith(('."', '!"', '?"')):
         last_sentence = max(last_sentence, len(stripped))
 
-    from .engine_loader import eng as _eng
-
-    if last_sentence > _eng().parser.max_label_length and last_sentence < len(prose):
+    if last_sentence > eng().parser.max_label_length and last_sentence < len(prose):
         trimmed = prose[:last_sentence].rstrip()
         log(f"[Narrator] Trimmed truncated prose: {len(prose)} → {len(trimmed)} chars")
         prose = trimmed
@@ -83,13 +81,11 @@ def parse_narrator_response(game: GameState, raw: str) -> str:
     narration = raw
     _hits = []  # Track which cleanup steps actually changed content
 
-    # --- 0) Strip accidental role-label prefix (e.g. "Narrator:" in English) ---
     _before = narration
     narration = re.sub(r"^\s*Narrator:\s*", "", narration, flags=re.IGNORECASE)
     if narration != _before:
         _hits.append("0:role_prefix")
 
-    # --- 1) Strip all XML metadata tags ---
     _before = narration
     narration = re.sub(
         r"<(?:npc_rename|new_npcs|npc_details|memory_updates|scene_context|"
@@ -110,21 +106,18 @@ def parse_narrator_response(game: GameState, raw: str) -> str:
     if narration != _before:
         _hits.append("2:xml_tags")
 
-    # --- 3) Strip code fences ---
     _before = narration
     narration = re.sub(r"```(?:\w+)?\s*[\s\S]*?```", "", narration).strip()
     narration = re.sub(r"^\s*```(?:\w+)?\s*$", "", narration, flags=re.MULTILINE).strip()
     if narration != _before:
         _hits.append("3:code_fences")
 
-    # --- 4) Strip JSON arrays/objects that leaked into prose ---
     _before = narration
     narration = re.sub(r'\[[\s]*\{[^[\]]*"(?:npc_id|event|emotional_weight)"[\s\S]*$', "", narration).strip()
     narration = re.sub(r'\{[^{}]*"(?:scene_context|location|npc_id)"[^{}]*\}', "", narration).strip()
     if narration != _before:
         _hits.append("4:leaked_json")
 
-    # --- 5) Strip bracket-format metadata labels ---
     _before = narration
     narration = re.sub(
         r"^\[(?:memory[_\s-]*updates?|scene[_\s-]*context|new[_\s-]*npcs?|npc[_\s-]*renames?|"
@@ -136,7 +129,6 @@ def parse_narrator_response(game: GameState, raw: str) -> str:
     if narration != _before:
         _hits.append("5:bracket_labels")
 
-    # --- 6) Strip markdown metadata labels (Scene Context:, etc.) ---
     meta_match = re.search(
         r"^[*_#\s]*(scene[\s_-]*context|memory[\s_-]*updates?|location)\s*[*_#]*\s*[:=]\s*",
         narration,
@@ -146,7 +138,6 @@ def parse_narrator_response(game: GameState, raw: str) -> str:
         narration = narration[: meta_match.start()].rstrip()
         _hits.append("6:md_metadata")
 
-    # --- 7) Strip trailing JSON lines ---
     _before = narration
     lines = narration.rstrip().split("\n")
     while lines:
@@ -166,14 +157,12 @@ def parse_narrator_response(game: GameState, raw: str) -> str:
     if narration != _before:
         _hits.append("7:trailing_json")
 
-    # --- 7.5) Strip bold-bracket game mechanic annotations ---
     _before = narration
     narration = re.sub(r"\*{1,3}\[[^\]]+\]\*{1,3}", "", narration).strip()
     narration = re.sub(r"^\s*\[[A-Z][A-Z0-9 _\-]*:?[^\]]*\]\s*$", "", narration, flags=re.MULTILINE).strip()
     if narration != _before:
         _hits.append("7.5:mechanic_annotations")
 
-    # --- 8) Strip markdown artifacts ---
     _before = narration
     narration = re.sub(r"^\s*[-*_]{3,}\s*$", "", narration, flags=re.MULTILINE).strip()
     narration = re.sub(r"\s*\*{1,3}\s*$", "", narration, flags=re.MULTILINE).rstrip()
@@ -187,10 +176,8 @@ def parse_narrator_response(game: GameState, raw: str) -> str:
     if _hits:
         log(f"[Parser] Cleanup steps triggered: {', '.join(_hits)}")
 
-    # --- 9) Normalize NPC dispositions ---
     normalize_npc_dispositions(game.npcs)
 
-    # --- 10) Mark NPCs as introduced if their name appears in visible text ---
     narration_lower = narration.lower()
     for npc in game.npcs:
         if not npc.introduced and npc.name:

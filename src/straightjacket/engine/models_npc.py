@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """NPC model types: MemoryEntry, NpcData."""
 
 from __future__ import annotations

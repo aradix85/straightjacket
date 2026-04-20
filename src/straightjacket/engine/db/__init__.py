@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Straightjacket database package — SQLite read model.
 
 Public API:

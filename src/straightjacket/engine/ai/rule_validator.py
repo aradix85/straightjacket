@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Rule-based narrator constraint checks.
 
 Instant, zero-cost checks that catch common violations without an LLM call.
@@ -12,7 +11,9 @@ import re
 from dataclasses import dataclass, field
 
 from ..datasworn.settings import GenreConstraints
+from ..engine_loader import eng
 from ..logging_util import log
+from ..mechanics.impacts import impact_label
 from ..models import GameState
 
 
@@ -46,8 +47,6 @@ class ValidationContext:
         if snap is not None:
             old = set(snap.impacts)
             new = set(game.impacts)
-            from ..mechanics.impacts import impact_label
-
             changes = [impact_label(k) for k in (old ^ new)]
 
         return cls(
@@ -62,7 +61,6 @@ class ValidationContext:
         )
 
 
-# ── PLAYER AGENCY ────────────────────────────────────────────
 # Regex patterns live in engine.yaml validator.agency_patterns.
 # English-only, tuned for Qwen 3 narrator drift.
 
@@ -73,73 +71,59 @@ def check_player_agency(narration: str) -> list[str]:
     Strips quoted NPC speech first — "You think X?" from an NPC is not
     a player agency violation.
     """
-    from ..engine_loader import eng
-
     # Remove quoted speech to avoid false positives on NPC dialog
     prose_only = eng().compiled_pattern("validator", "quote_patterns", "strip").sub("", narration)
+    templates = eng().rule_validator.violation_templates
     violations = []
     for pattern in eng().compiled_patterns("validator", "agency_patterns"):
         matches = pattern.findall(prose_only)
         for match in matches:
-            violations.append(
-                f"PLAYER AGENCY: narrator wrote '{match.strip()}' — player owns their thoughts and feelings"
-            )
+            violations.append(templates["player_agency"].format(match=match.strip()))
+
     # Deduplicate similar violations
+    _rv = eng().rule_validator
     seen = set()
     unique = []
     for v in violations:
-        key = v[:60]
+        key = v[: _rv.violation_dedup_key_length]
         if key not in seen:
             seen.add(key)
             unique.append(v)
     return unique[:3]  # Cap at 3 to avoid noise
 
 
-# ── RESULT INTEGRITY ─────────────────────────────────────────
 # Patterns in engine.yaml validator.miss_silver_lining_patterns / .miss_annihilation_patterns
 
 
 def check_result_integrity(narration: str, result_type: str) -> list[str]:
     """Check that narration matches the mechanical result type."""
-    from ..engine_loader import eng
-
+    templates = eng().rule_validator.violation_templates
     violations = []
     if result_type == "MISS":
         for pattern in eng().compiled_patterns("validator", "miss_silver_lining_patterns"):
             m = pattern.search(narration)
             if m:
-                violations.append(
-                    f"RESULT INTEGRITY: MISS contains silver lining '{m.group()}' — "
-                    f"a MISS must show concrete failure with no upside"
-                )
+                violations.append(templates["miss_silver_lining"].format(match=m.group()))
                 break  # One is enough
         for pattern in eng().compiled_patterns("validator", "miss_annihilation_patterns"):
             m = pattern.search(narration)
             if m:
-                violations.append(
-                    f"RESULT INTEGRITY: MISS is annihilation '{m.group()}' — "
-                    f"a MISS is a setback, not death or total defeat"
-                )
+                violations.append(templates["miss_annihilation"].format(match=m.group()))
                 break
     return violations
-
-
-# ── GENRE FIDELITY ───────────────────────────────────────────
 
 
 def check_genre_fidelity(narration: str, genre_constraints: GenreConstraints | None) -> list[str]:
     """Check for forbidden terms in narration."""
     if not genre_constraints:
         return []
+    template = eng().rule_validator.violation_templates["genre_forbidden_term"]
     violations = []
     narration_lower = narration.lower()
     for term in genre_constraints.forbidden_terms:
         if term.lower() in narration_lower:
-            violations.append(f"GENRE FIDELITY: forbidden term '{term}' found in narration")
+            violations.append(template.format(term=term))
     return violations
-
-
-# ── ATMOSPHERIC REGISTER ────────────────────────────────────
 
 
 def check_atmospheric_register(narration: str, genre_constraints: GenreConstraints | None) -> list[str]:
@@ -170,27 +154,23 @@ def check_atmospheric_register(narration: str, genre_constraints: GenreConstrain
         return []
     unique = sorted(set(matches))
     return [
-        f"ATMOSPHERIC REGISTER: {len(matches)} drift markers in one scene "
-        f"({', '.join(unique[:5])}). Ground the prose in physical sensation from <sensory_palette>"
+        eng()
+        .rule_validator.violation_templates["atmospheric_register"]
+        .format(count=len(matches), examples=", ".join(unique[:5]))
     ]
 
 
-# ── OUTPUT FORMAT ────────────────────────────────────────────
 # Patterns in engine.yaml validator.format_patterns
 
 
 def check_output_format(narration: str) -> list[str]:
     """Check for metadata/formatting leaking into prose."""
-    from ..engine_loader import eng
-
+    template = eng().rule_validator.violation_templates["output_format"]
     violations = []
     for pattern, label in eng().compiled_labeled_patterns("validator", "format_patterns"):
         if pattern.search(narration):
-            violations.append(f"OUTPUT FORMAT: narration contains {label}")
+            violations.append(template.format(label=label))
     return violations
-
-
-# ── NPC MONOLOGUE HEURISTIC ──────────────────────────────────
 
 
 def check_npc_monologue(narration: str) -> list[str]:
@@ -202,8 +182,6 @@ def check_npc_monologue(narration: str) -> list[str]:
     Flags when 4+ quoted segments appear with minimal narrative between them,
     indicating an NPC monologue that crowds out player action and scene detail.
     """
-    from ..engine_loader import eng
-
     _rv = eng().rule_validator
     quote_re = eng().compiled_pattern("validator", "quote_patterns", "match")
     quotes = quote_re.findall(narration)
@@ -219,12 +197,9 @@ def check_npc_monologue(narration: str) -> list[str]:
         else:
             consecutive_short_gaps = 0
         if consecutive_short_gaps >= _rv.max_consecutive_short_gaps:
-            return ["RESOLUTION PACING: NPC delivers an extended monologue (4+ quoted segments with minimal breaks)"]
+            return [_rv.violation_templates["npc_monologue"]]
 
     return []
-
-
-# ── CONSEQUENCE VERIFICATION ────────────────────────────────
 
 
 def check_consequence_keywords(narration: str, consequence_sentences: list[str], player_name: str = "") -> list[str]:
@@ -236,8 +211,6 @@ def check_consequence_keywords(narration: str, consequence_sentences: list[str],
     """
     if not consequence_sentences:
         return []
-    from ..engine_loader import eng
-
     stopwords = eng().stopwords.consequence
     narration_lower = narration.lower()
     # Player name words to exclude — narrator writes "you", not "Wanderer-369"
@@ -269,9 +242,12 @@ def check_consequence_keywords(narration: str, consequence_sentences: list[str],
                 break
         if stems_found:
             continue
+        _rv = eng().rule_validator
         violations.append(
-            f"CONSEQUENCE MISSING: narrator did not reflect '{sentence[:60]}' — "
-            f"none of {sorted(keywords)[:4]} found in narration"
+            _rv.violation_templates["consequence_missing"].format(
+                sentence=sentence[: _rv.consequence_sentence_preview],
+                keywords=sorted(keywords)[:4],
+            )
         )
     return violations[:2]
 
@@ -281,13 +257,8 @@ def _consequence_stems() -> dict[str, tuple[str, ...]]:
 
     Raises KeyError if the section is missing — no silent fallback.
     """
-    from ..engine_loader import eng
-
     raw = eng().get_raw("validator")["consequence_stems"]
     return {k: tuple(v) for k, v in raw.items()}
-
-
-# ── THREAT ADVANCE VERIFICATION ─────────────────────────────
 
 
 def check_threat_advance(narration: str, threat_names: list[str]) -> list[str]:
@@ -298,8 +269,6 @@ def check_threat_advance(narration: str, threat_names: list[str]) -> list[str]:
     """
     if not threat_names:
         return []
-    from ..engine_loader import eng
-
     stopwords = eng().stopwords.consequence
     narration_lower = narration.lower()
     for name in threat_names:
@@ -307,10 +276,7 @@ def check_threat_advance(narration: str, threat_names: list[str]) -> list[str]:
         words -= stopwords
         if any(w in narration_lower for w in words):
             continue
-        return [
-            f"THREAT ADVANCE: narrator did not reflect threat '{name}' advancing — "
-            f"the growing menace must be felt in the scene"
-        ]
+        return [eng().rule_validator.violation_templates["threat_advance"].format(name=name)]
     return []
 
 
@@ -330,14 +296,8 @@ def check_impact_acknowledgment(narration: str, impact_changes: list[str]) -> li
         words = [w.lower() for w in label.split() if len(w) >= 4]
         if any(w in narration_lower for w in words):
             continue
-        return [
-            f"IMPACT CHANGE: narrator did not reflect impact '{label}' — "
-            f"the character's condition shifted and must be felt in the prose"
-        ]
+        return [eng().rule_validator.violation_templates["impact_change"].format(label=label)]
     return []
-
-
-# ── PUBLIC API ───────────────────────────────────────────────
 
 
 def run_rule_checks(narration: str, ctx: ValidationContext) -> dict:

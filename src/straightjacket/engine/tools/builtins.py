@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Built-in tools for Brain and Director roles.
 
 Query tools are read-only: they inspect GameState and database but never mutate.
@@ -9,10 +8,14 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from ..datasworn.moves import get_moves
+from ..datasworn.settings import load_package
 from ..db.queries import query_clocks, query_memories, query_npcs, query_threads
+from ..engine_config import CombatPosCondition, FlagCondition, NotFlagCondition
 from ..engine_loader import eng
+from ..mechanics.fate import resolve_fate, resolve_likelihood
 from ..models import GameState
-from ..npc import get_npc_bond
+from ..npc import find_npc, get_npc_bond
 from .registry import register
 
 if TYPE_CHECKING:
@@ -25,7 +28,6 @@ def query_npc(game: GameState, npc_id: str) -> dict:
 
     npc_id: NPC identifier (e.g. 'npc_1')
     """
-    from ..npc import find_npc
 
     npc = find_npc(game, npc_id)
     if not npc:
@@ -99,7 +101,6 @@ def roll_oracle(game: GameState, table_path: str) -> dict:
     handle them in-band rather than via exception propagation — this is the
     tool contract for all built-ins.
     """
-    from ..datasworn.settings import load_package
 
     if not game.setting_id:
         return {"error": "No setting loaded"}
@@ -142,7 +143,6 @@ def fate_question(game: GameState, question: str, context_hint: str = "") -> dic
     question: the yes/no question to ask (e.g. 'Is the door locked?')
     context_hint: situational context for odds (e.g. 'hostile NPC', 'safe area')
     """
-    from ..mechanics.fate import resolve_fate, resolve_likelihood
 
     odds = resolve_likelihood(game, context_hint)
     result = resolve_fate(
@@ -195,7 +195,6 @@ def list_tracks(game: GameState, track_type: str = "") -> dict:
 
 def available_moves(game: GameState) -> dict:
     """Get the list of moves available in the current game state. Call this to see what moves the player can make."""
-    from ..datasworn.moves import get_moves
 
     if not game.setting_id:
         return {"error": "No setting loaded"}
@@ -268,7 +267,6 @@ def _is_move_available(
     keys raise KeyError — every rollable move across supported settings must
     be listed there.
     """
-    from ..engine_config import CombatPosCondition, FlagCondition, NotFlagCondition
 
     rule = eng().move_availability[key]
     if rule.never:

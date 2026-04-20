@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """NPC activation: TF-IDF relevance scoring and prompt context selection."""
 
 import math
