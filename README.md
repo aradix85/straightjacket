@@ -90,9 +90,9 @@ Screen reader accessible: semantic HTML, ARIA live regions for automatic narrati
 
 ## Origins
 
-Straightjacket is the implementation of the [Narrative RPG Engine](docs/narrative_rpg_engine_v2_4.pdf) design document ([also on itch.io](https://blindgamer85.itch.io/narrative-rpg-engine-accessible-solo-tabletop-with-ai-as-narrator-and-systems-u)). The core argument: don't make AI smarter at telling stories — strip it down to prose and let structured systems handle everything else.
+Straightjacket implements the [Narrative RPG Engine](docs/narrative_rpg_engine_v2_4.pdf) design document ([also on itch.io](https://blindgamer85.itch.io/narrative-rpg-engine-accessible-solo-tabletop-with-ai-as-narrator-and-systems-u)). The core argument: don't make AI smarter at telling stories — strip it down to prose and let structured systems handle everything else.
 
-The initial prototype was built on top of [EdgeTales](https://github.com/edgetales/edgetales) by Lars, which was itself based on the same design document. Straightjacket ran as a long-maintained fork of EdgeTales before gradual refactoring turned into a full reimplementation and the project was split off. The current codebase differs from EdgeTales in architecture, type system, AI pipeline, and testing approach, but EdgeTales was the starting point and the foundation for much of this project's early development. See [ORIGINS.md](ORIGINS.md) for the full history.
+The first working implementation of the document was [EdgeTales](https://github.com/edgetales/edgetales) by Lars. Straightjacket began as a fork of EdgeTales in March 2026, maintained with intensive same-day backporting from upstream, then carried forward as a standalone project from 6 April 2026 onwards when the two projects' directions diverged too far to stay synchronised. The current codebase has been standalone for fourteen days and still contains code and design decisions that trace back to EdgeTales. This is not a clean-room reimplementation — it is a refactor-plus-extension of Lars' implementation, done with his permission. See [ORIGINS.md](ORIGINS.md) for the full history and the upstream cross-references.
 
 ---
 

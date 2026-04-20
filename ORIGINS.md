@@ -1,49 +1,54 @@
 # Origins
 
-Straightjacket implements the [Narrative RPG Engine](docs/narrative_rpg_engine_v2_4.pdf) design document ([itch.io](https://blindgamer85.itch.io/narrative-rpg-engine-accessible-solo-tabletop-with-ai-as-narrator-and-systems-u), January 2026). The document's core thesis: AI storytelling fails because projects ask AI to do everything — decide outcomes, track memory, manage pacing, generate narrative. The solution is less AI, with more structure around it. The AI narrates. It does not decide.
+Straightjacket implements the [Narrative RPG Engine](docs/narrative_rpg_engine_v2_4.pdf) design document ([itch.io](https://blindgamer85.itch.io/narrative-rpg-engine-accessible-solo-tabletop-with-ai-as-narrator-and-systems-u)). The document's core thesis: AI storytelling fails because projects ask AI to do everything — decide outcomes, track memory, manage pacing, generate narrative. The solution is less AI, with more structure around it. The AI narrates. It does not decide.
 
-The document came out of eighteen months of working with AI as a co-author on experimental chatbots and RPG scenarios, then frustration with what AI cannot do by default (memory, consequences, pacing), then exploration of tabletop and solo-RPG systems where those problems are already solved. It synthesises two tracks: use AI for what it is good at (prose generation within tight constraints), use tabletop design patterns for everything else.
+The document grew out of five months of intensive work with AI as a co-author and thinking partner, starting August 2025. Experimental chatbots, RPG scenarios, then frustration with what AI cannot do by default (memory, consequences, pacing), then exploration of tabletop and solo-RPG systems where those problems are already solved. The resulting synthesis: use AI for what it is good at (prose generation within tight constraints), use tabletop design patterns for everything else. Version 2.4 of the document was published on itch.io in January 2026, with accompanying posts on r/Solo_Roleplaying, r/RPGdesign, r/Ironsworn, and one other subreddit.
 
-The initial prototype was built on [EdgeTales](https://github.com/edgetales/edgetales) by Lars, which was itself based on the same design document. Straightjacket was maintained as a long-running fork of EdgeTales for a substantial period, tracking Lars's work while adding local improvements. Over time the fork accumulated changes that made merging upstream increasingly costly, and work shifted from keeping pace with EdgeTales to refactoring its foundations. What began as refactoring eventually became a reimplementation — different architecture, different type system, different AI pipeline, different testing approach — and the project was spun out as a standalone codebase. The two codebases no longer share meaningful code, but EdgeTales was the starting point for much of this project's development, not a brief predecessor.
+In February 2026, Lars reached out about his in-progress implementation of the document and asked for beta testing. That implementation is [EdgeTales](https://github.com/edgetales/edgetales) — the first working code that turned the design document into a running engine. Ironsworn mechanics, NiceGUI interface, chaos factor, momentum burn, scene-by-scene loop, NPC/clock/memory tracking, prompt assembly — the bones of a working narrative RPG engine, built by Lars on the architecture the document proposes.
 
-## What came from EdgeTales
+Straightjacket began shortly afterwards as a fork of EdgeTales. The fork ran through March 2026, with intensive same-day backporting from upstream whenever Lars pushed changes. The cross-references are verifiable against Lars' repository: Straightjacket v0.10.0 is a modular refactor of EdgeTales v0.9.44 (committed to EdgeTales on 9 March 2026); Straightjacket v0.13.0 "Upstream sync v0.9.61" (22 March 2026) matches EdgeTales v0.9.61 committed the same day; Straightjacket v0.17.0 "Upstream UI sync" (28 March 2026) matches EdgeTales v0.9.66 from the day before. Backporting was costly work but worth doing as long as both projects moved in the same direction. After late March the two projects diverged enough that staying synchronised was no longer feasible, and the fork was carried forward as an independent codebase.
 
-The original prototype, the NiceGUI web interface approach, and the idea of combining Ironsworn mechanics with AI narration. The initial chaos factor implementation, the basic momentum burn flow, and the scene-by-scene game loop structure.
+The fork's git history prior to the split is not preserved in the current Straightjacket repository — the early commits were lost, likely through a force push during the transition. What does remain are the CHANGELOG entries (versions 0.10 through 0.30) and the cross-referenced upstream versions in EdgeTales' repository, which together establish the fork period. The current Straightjacket repository was initialised on 6 April 2026 with v0.31.0 ("Project independence. Renamed to Straightjacket"). At the time of writing (20 April 2026) Straightjacket has been standalone for fourteen days.
 
-## What Straightjacket built independently
+The codebase still contains code and design decisions that trace back to EdgeTales, both from the initial fork and from the backport period. This is not a clean-room reimplementation, and it would be wrong to describe it as one. What Straightjacket is, is a refactor-plus-extension of Lars' implementation, done with his permission — refactored toward a different architecture, type system, AI pipeline, and testing approach, and extended with new subsystems that were not present upstream.
 
-- Config-driven game logic (engine.yaml, emotions.yaml, prompts.yaml, strings.yaml)
-- Typed dataclass model layer with snapshot/restore
-- Provider abstraction (AIProvider protocol, any OpenAI-compatible API)
-- Two-call pattern (narrator prose + metadata extraction)
-- NPC memory system (importance scoring, TF-IDF activation, reflection thresholds, presence guards)
-- Constraint validator with retry logic
-- Story architect (3-act and Kishōtenketsu structures)
-- Director agent (pacing, NPC reflections, act transitions)
-- Datasworn integration (setting packages, oracle tables, deterministic character creation)
-- Correction pipeline (## undo with full state restore)
-- Chapter system (campaign continuity, epilogues, NPC ID remapping)
-- Elvira test bot (headless integration testing with invariant checking)
-- Accessibility architecture (ARIA, screen reader support)
-- 786-test suite
+## How the codebase has evolved
 
-## Structural differences from EdgeTales
+The table below describes the shape of the current codebase relative to EdgeTales. Many of these differences are the result of refactoring work on the original implementation, not parallel development from scratch.
 
 | EdgeTales | Straightjacket |
 |---|---|
 | Single-file engine (engine.py) | Multi-package engine (~80 modules across mechanics, ai, npc, game, datasworn, db, tools) |
-| Single-file app (app.py) | Starlette/uvicorn server + single-page HTML client (web/ package: server, handlers, session, serializers, static) |
-| Hardcoded constants | YAML-driven configuration |
-| NPC/clock/memory as dicts | Typed dataclasses throughout |
-| Hardcoded move list | Config-driven (engine.yaml) |
+| Single-file app (app.py) | Starlette/uvicorn server + single-page HTML client (web/ package) |
+| Hardcoded constants | YAML-driven configuration (engine/, emotions/, prompts/, strings/) |
+| NPC/clock/memory as dicts | Typed dataclasses with snapshot/restore |
+| Hardcoded move list | Config-driven (engine.yaml + Datasworn JSON per setting) |
 | German + English hardcoded | English default, YAML-extensible i18n |
-| Claude-only | Provider-agnostic (Protocol-based) |
+| Claude-only | Provider-agnostic (AIProvider Protocol, any OpenAI-compatible API) |
 | Voice I/O | Browser-native assistive tech |
 | AI-generated character creation | Datasworn-driven deterministic creation |
 
+## Extensions beyond the original fork
+
+Subsystems built on top of the refactored base, not inherited from EdgeTales:
+
+- Typed dataclass model layer with snapshot/restore for atomic undo
+- Provider abstraction with cluster-based model assignment
+- Two-call pattern (narrator prose + metadata extraction)
+- NPC memory system (importance scoring, TF-IDF activation, reflection thresholds, presence guards)
+- Constraint validator with retry logic and prompt stripping
+- Story architect (3-act and Kishōtenketsu structures)
+- Director agent (NPC reflections, AIMS generation, act transitions)
+- Datasworn integration (setting packages, oracle tables, deterministic character creation)
+- Correction pipeline (## undo with full state restore)
+- Chapter system (campaign continuity, epilogues, NPC ID remapping)
+- Elvira test bot (headless integration testing with invariant checking)
+- Accessibility architecture (ARIA, screen reader support, narrative-only status output)
+- 786-test suite plus ten AST/regex project rules
+
 ## Credits
 
-- **Lars** ([EdgeTales](https://github.com/edgetales/edgetales)) — original prototype, foundational ideas, and the base that Straightjacket forked from and built on for much of its early development
+- **Lars** ([EdgeTales](https://github.com/edgetales/edgetales)) — first working implementation of the design document, the fork point for Straightjacket, and the source of code and design decisions that persist in the current codebase. Straightjacket exists because Lars built the first version and permitted the refactor that followed.
 - **Shawn Tomkin** — Ironsworn/Starforged (CC BY-NC-SA 4.0)
 - **rsek** — [Datasworn](https://github.com/rsek/datasworn) data format
 - **Tana Pigeon** — Mythic Game Master Emulator Second Edition (fate system, scene structure, random events, meaning tables, thread/character list mechanics)
