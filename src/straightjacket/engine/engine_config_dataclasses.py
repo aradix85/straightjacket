@@ -19,7 +19,6 @@ class NpcConfig:
 
     max_active: int
     max_memory_entries: int
-    max_observations: int
     max_reflections: int
     activation_threshold: float
     mention_threshold: float
@@ -104,22 +103,27 @@ class ResourcesConfig:
 
 
 @dataclass
-class MomentumGain:
-    """Momentum gain values per result."""
+class SufferRecoveryGain:
+    """Momentum awarded by suffer-move handlers.
 
-    weak_hit: int
-    strong_hit: dict[str, int]
+    strong_hit_gain: momentum gained on strong hit when track recovery is
+        unavailable (track at max, blocking impact, or non-standard track).
+    weak_hit_exchange_cost: momentum spent on weak hit to exchange for
+        +recovery on the affected track.
+    """
+
+    strong_hit_gain: int
+    weak_hit_exchange_cost: int
 
 
 @dataclass
 class MomentumConfig:
-    """Momentum bounds and gain/loss tables."""
+    """Momentum bounds and suffer-recovery gain table."""
 
     floor: int
     max: int
     start: int
-    gain: MomentumGain
-    loss: dict[str, int]
+    suffer_recovery: SufferRecoveryGain
 
 
 @dataclass
@@ -463,14 +467,6 @@ class MemoryRetrievalWeights:
     recency: float
     importance: float
     relevance: float
-
-
-@dataclass
-class RecoveryConfig:
-    """Recovery move healing amounts."""
-
-    weak_hit: int
-    strong_hit: dict[str, int]
 
 
 @dataclass

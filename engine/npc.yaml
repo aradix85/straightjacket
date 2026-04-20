@@ -1,7 +1,6 @@
 npc:
   max_active: 12
   max_memory_entries: 25
-  max_observations: 15
   max_reflections: 8
   activation_threshold: 0.7
   mention_threshold: 0.3

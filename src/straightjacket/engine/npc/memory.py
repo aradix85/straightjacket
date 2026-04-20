@@ -131,8 +131,9 @@ def retrieve_memories(
 
 def consolidate_memory(npc: NpcData) -> None:
     """Intelligent memory consolidation replacing simple FIFO.
-    Keeps: all reflections (max eng().npc.max_reflections, newest) +
-           observations sorted by importance then recency (max eng().npc.max_observations).
+    Keeps: most recent reflections (max eng().npc.max_reflections) +
+           observations split between recency and importance, governed by
+           eng().npc.consolidation_recency_ratio.
     Total never exceeds eng().npc.max_memory_entries."""
     memories = npc.memory
     _e = eng()

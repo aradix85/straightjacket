@@ -274,6 +274,8 @@ def apply_suffer_handler(game: GameState, roll_result: str, params: dict) -> Out
     miss_extra_momentum = params["miss_extra_momentum"]
 
     has_blocking_impact = bool(blocks_recovery(game, track))
+    strong_gain = _e.momentum.suffer_recovery.strong_hit_gain
+    weak_exchange = _e.momentum.suffer_recovery.weak_hit_exchange_cost
 
     if roll_result == "STRONG_HIT":
         if track in ("health", "spirit", "supply") and not has_blocking_impact:
@@ -283,20 +285,20 @@ def apply_suffer_handler(game: GameState, roll_result: str, params: dict) -> Out
                 result.consequences.append(_labels["track_gain"].format(track=track, n=gained))
             else:
                 # Track already at max, take momentum instead
-                res.adjust_momentum(1, floor=_e.momentum.floor, ceiling=_e.momentum.max)
-                result.consequences.append(_labels["momentum_change"].format(value="+1"))
+                res.adjust_momentum(strong_gain, floor=_e.momentum.floor, ceiling=_e.momentum.max)
+                result.consequences.append(_labels["momentum_change"].format(value=f"+{strong_gain}"))
         else:
             # Blocking impact or non-standard track: take momentum
-            res.adjust_momentum(1, floor=_e.momentum.floor, ceiling=_e.momentum.max)
-            result.consequences.append(_labels["momentum_change"].format(value="+1"))
+            res.adjust_momentum(strong_gain, floor=_e.momentum.floor, ceiling=_e.momentum.max)
+            result.consequences.append(_labels["momentum_change"].format(value=f"+{strong_gain}"))
 
     elif roll_result == "WEAK_HIT":
         if track in ("health", "spirit", "supply") and not has_blocking_impact:
-            # Exchange: momentum -1 for track +1
-            res.adjust_momentum(-1, floor=_e.momentum.floor, ceiling=_e.momentum.max)
+            # Exchange: momentum -weak_exchange for track +recovery
+            res.adjust_momentum(-weak_exchange, floor=_e.momentum.floor, ceiling=_e.momentum.max)
             cap = getattr(_e.resources, f"{track}_max")
             gained = res.heal(track, recovery, cap=cap)
-            result.consequences.append(_labels["momentum_change"].format(value="-1"))
+            result.consequences.append(_labels["momentum_change"].format(value=f"-{weak_exchange}"))
             if gained:
                 result.consequences.append(_labels["track_gain"].format(track=track, n=gained))
 

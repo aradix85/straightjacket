@@ -2,11 +2,6 @@ momentum:
   floor: -6
   max: 10
   start: 2
-  gain:
-    weak_hit: 1
-    strong_hit:
-      standard: 2
-      great: 3
-  loss:
-    risky: 2
-    desperate: 3
+  suffer_recovery:
+    strong_hit_gain: 1
+    weak_hit_exchange_cost: 1

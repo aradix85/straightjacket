@@ -41,7 +41,6 @@ from .engine_config_dataclasses import (
     MemoryRetrievalWeights,
     MetadataVotingConfig,
     MomentumConfig,
-    MomentumGain,
     MoveAvailabilityCondition,
     MoveAvailabilityRule,
     NamingConfig,
@@ -63,7 +62,6 @@ from .engine_config_dataclasses import (
     PromptDisplayConfig,
     RandomEventsConfig,
     RateLimitConfig,
-    RecoveryConfig,
     ResourcesConfig,
     RetryConfig,
     RuleValidatorConfig,
@@ -73,6 +71,7 @@ from .engine_config_dataclasses import (
     StopwordsConfig,
     StoryConfig,
     StoryStateConfig,
+    SufferRecoveryGain,
     TfIdfConfig,
     ThreatConfig,
     TruncationsConfig,
@@ -117,7 +116,6 @@ class EngineSettings:
     story: StoryConfig
     enums: EnumsConfig
     memory_retrieval_weights: MemoryRetrievalWeights
-    recovery: RecoveryConfig
     fuzzy_match: FuzzyMatchConfig
     npc_matching: NpcMatchingConfig
     act_progress: ActProgressConfig
@@ -317,11 +315,10 @@ def parse_engine_yaml(data: dict[str, Any]) -> EngineSettings:
     stats_data["valid_arrays"] = [list(a) for a in stats_data["valid_arrays"]]
     stats = _build_strict(StatsConfig, stats_data)
 
-    # momentum: nested MomentumGain
+    # momentum: nested SufferRecoveryGain
     m_data = dict(data["momentum"])
-    gain = _build_strict(MomentumGain, dict(m_data.pop("gain")))
-    loss = dict(m_data.pop("loss"))
-    momentum = MomentumConfig(**m_data, gain=gain, loss=loss)
+    suffer = _build_strict(SufferRecoveryGain, dict(m_data.pop("suffer_recovery")))
+    momentum = MomentumConfig(**m_data, suffer_recovery=suffer)
 
     # fate: nested FateLikelihoodRules, plus modifier tables with int-keyed chaos
     f_data = dict(data["fate"])
@@ -334,10 +331,6 @@ def parse_engine_yaml(data: dict[str, Any]) -> EngineSettings:
         chaos_modifiers=chaos_modifiers,
         likelihood_rules=lr,
     )
-
-    # recovery: nested dict for strong_hit
-    r_data = dict(data["recovery"])
-    recovery = RecoveryConfig(weak_hit=r_data["weak_hit"], strong_hit=dict(r_data["strong_hit"]))
 
     # impacts: keyed dict of ImpactConfig, key injected from outer key
     impacts = {
@@ -448,7 +441,6 @@ def parse_engine_yaml(data: dict[str, Any]) -> EngineSettings:
         story=simple_parsed["story"],
         enums=simple_parsed["enums"],
         memory_retrieval_weights=simple_parsed["memory_retrieval_weights"],
-        recovery=recovery,
         fuzzy_match=simple_parsed["fuzzy_match"],
         npc_matching=simple_parsed["npc_matching"],
         act_progress=simple_parsed["act_progress"],
