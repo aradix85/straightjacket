@@ -2,6 +2,8 @@
 
 Straightjacket implements the [Narrative RPG Engine](docs/narrative_rpg_engine_v2_4.pdf) design document ([itch.io](https://blindgamer85.itch.io/narrative-rpg-engine-accessible-solo-tabletop-with-ai-as-narrator-and-systems-u), January 2026). The document's core thesis: AI storytelling fails because projects ask AI to do everything — decide outcomes, track memory, manage pacing, generate narrative. The solution is less AI, with more structure around it. The AI narrates. It does not decide.
 
+The document came out of eighteen months of working with AI as a co-author on experimental chatbots and RPG scenarios, then frustration with what AI cannot do by default (memory, consequences, pacing), then exploration of tabletop and solo-RPG systems where those problems are already solved. It synthesises two tracks: use AI for what it is good at (prose generation within tight constraints), use tabletop design patterns for everything else.
+
 The initial prototype was built on [EdgeTales](https://github.com/edgetales/edgetales) by Lars, which was itself based on the same design document. The fork diverged structurally from the first week. What started as refactoring became a reimplementation: different architecture, different type system, different AI pipeline, different testing approach. The codebases no longer share meaningful code.
 
 ## What came from EdgeTales
