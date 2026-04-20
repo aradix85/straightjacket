@@ -4,7 +4,7 @@ Straightjacket implements the [Narrative RPG Engine](docs/narrative_rpg_engine_v
 
 The document came out of eighteen months of working with AI as a co-author on experimental chatbots and RPG scenarios, then frustration with what AI cannot do by default (memory, consequences, pacing), then exploration of tabletop and solo-RPG systems where those problems are already solved. It synthesises two tracks: use AI for what it is good at (prose generation within tight constraints), use tabletop design patterns for everything else.
 
-The initial prototype was built on [EdgeTales](https://github.com/edgetales/edgetales) by Lars, which was itself based on the same design document. The fork diverged structurally from the first week. What started as refactoring became a reimplementation: different architecture, different type system, different AI pipeline, different testing approach. The codebases no longer share meaningful code.
+The initial prototype was built on [EdgeTales](https://github.com/edgetales/edgetales) by Lars, which was itself based on the same design document. Straightjacket was maintained as a long-running fork of EdgeTales for a substantial period, tracking Lars's work while adding local improvements. Over time the fork accumulated changes that made merging upstream increasingly costly, and work shifted from keeping pace with EdgeTales to refactoring its foundations. What began as refactoring eventually became a reimplementation — different architecture, different type system, different AI pipeline, different testing approach — and the project was spun out as a standalone codebase. The two codebases no longer share meaningful code, but EdgeTales was the starting point for much of this project's development, not a brief predecessor.
 
 ## What came from EdgeTales
 
@@ -43,7 +43,7 @@ The original prototype, the NiceGUI web interface approach, and the idea of comb
 
 ## Credits
 
-- **Lars** ([EdgeTales](https://github.com/edgetales/edgetales)) — original prototype and foundational ideas
+- **Lars** ([EdgeTales](https://github.com/edgetales/edgetales)) — original prototype, foundational ideas, and the base that Straightjacket forked from and built on for much of its early development
 - **Shawn Tomkin** — Ironsworn/Starforged (CC BY-NC-SA 4.0)
 - **rsek** — [Datasworn](https://github.com/rsek/datasworn) data format
 - **Tana Pigeon** — Mythic Game Master Emulator Second Edition (fate system, scene structure, random events, meaning tables, thread/character list mechanics)
