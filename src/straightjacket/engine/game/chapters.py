@@ -35,7 +35,7 @@ from ..npc import (
     next_npc_id,
 )
 from ..parser import parse_narrator_response
-from ..prompt_builders import build_epilogue_prompt, build_new_chapter_prompt
+from ..prompt_boundary import build_epilogue_prompt, build_new_chapter_prompt
 from ..user_management import load_user_config, save_user_config
 
 from .setup_common import apply_opening_setup
@@ -82,10 +82,13 @@ def start_new_chapter(
     _prepare_npcs_for_new_chapter(game)
 
     threads = chapter_summary.unresolved_threads
+    _chap = eng().chapter
+    _defaults = eng().ai_text.narrator_defaults
     if threads:
-        game.world.current_scene_context = f"New chapter. Open threads: {'; '.join(threads[:3])}"
+        threads_text = "; ".join(threads[: _chap.scene_context_threads_max])
+        game.world.current_scene_context = _defaults["new_chapter_threads_template"].format(threads=threads_text)
     else:
-        game.world.current_scene_context = "A new chapter begins."
+        game.world.current_scene_context = _defaults["new_chapter_blank"]
 
     returning_npcs = [copy.deepcopy(n) for n in game.npcs if n.status in ("active", "background", "deceased")]
 
@@ -155,7 +158,9 @@ def _prepare_npcs_for_new_chapter(game: GameState) -> None:
         if npc.status == "deceased" or npc.status != "active":
             continue
         is_filler = (
-            get_npc_bond(game, npc.id) == 0 and len(npc.memory) <= eng().chapter.filler_max and not npc.agenda.strip()
+            get_npc_bond(game, npc.id) <= eng().chapter.filler_bond_max
+            and len(npc.memory) <= eng().chapter.filler_max
+            and not npc.agenda.strip()
         )
         if is_filler:
             npc.status = "background"

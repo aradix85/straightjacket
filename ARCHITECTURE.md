@@ -19,7 +19,7 @@ Consequences (game/finalization.py) → move outcome, combat position, clock tic
   ↓
 NPC Activation (npc/activation.py) → TF-IDF scores decide which NPCs get full context
   ↓
-Prompt Builder (prompt_builders.py) → assembles XML prompt with world, NPCs, result, scene type
+Prompt Builder (prompt_action/prompt_dialog) → assembles XML prompt with world, NPCs, result, scene type
   ↓
 Narrate (game/finalization.py → narrate_scene)
   → narrator call (ai/narrator.py) → prose with conversation memory
@@ -57,12 +57,12 @@ Where to find things. If you want to change X, edit Y.
 | A new setting (genre + constraints) | `data/settings/your_setting.yaml` + Datasworn JSON |
 | How dice rolls work | `mechanics/consequences.py` → `roll_action`, `roll_progress` |
 | Move outcome effects | `engine.yaml` → `move_outcomes` (no Python for simple moves) |
-| Move outcome handlers (suffer, threshold, recovery) | `mechanics/move_outcome.py` |
+| Move outcome handlers (suffer, threshold, recovery) | `mechanics/move_handlers.py` |
 | Move outcome resolution + crisis check | `game/finalization.py` → `resolve_action_consequences`, `ActionOutcome` |
 | Narrator call + parse + validate | `game/finalization.py` → `narrate_scene` (all four narration paths) |
 | Move data model and loading | `datasworn/moves.py` → `Move`, `get_moves` |
 | Combat position (in_control / bad_spot) | `models_base.py` → `WorldState.combat_position`, set by move outcomes |
-| How the narrator is prompted | `prompts/*.yaml` → task templates; `prompt_builders.py` → XML assembly |
+| How the narrator is prompted | `prompts/*.yaml` → task templates; `prompt_action.py` / `prompt_dialog.py` / `prompt_boundary.py` → XML assembly; `prompt_shared.py` → shared helpers |
 | NPC memory / activation logic | `npc/memory.py`, `npc/activation.py` |
 | Story structure / act tracking | `story_state.py` → `get_current_act`, `check_story_completion`; `ai/architect.py` |
 | Correction (## undo) flow | `correction/` (package: `analysis.py` brain call, `ops.py` atomic state patches, `orchestrator.py` snapshot restore + re-narrate) |
@@ -104,7 +104,7 @@ Where to find things. If you want to change X, edit Y.
 | NPC stance resolution | `mechanics/stance_gate.py` → `resolve_npc_stance`, `NpcStance` |
 | Information gate levels | `engine.yaml` → `information_gate` (typed `InformationGateConfig`) |
 | Information gate computation | `mechanics/stance_gate.py` → `compute_npc_gate` |
-| Gate-filtered NPC prompt data | `prompt_builders.py` → `_npc_block` (gate 0–4 filtering) |
+| Gate-filtered NPC prompt data | `prompt_shared.py` → `_npc_block` (gate 0–4 filtering) |
 | Threat menace track, Forsake Your Vow | `engine.yaml` → `threats`; `mechanics/threats.py` → `advance_menace_on_miss`, `tick_autonomous_threats`, `resolve_full_menace` |
 | Threat-vow coupling | `models_base.py` → `ThreatData.linked_vow_id`; `game/tracks.py` → `complete_track` resolves linked threat |
 | Impacts (wounded, shaken, etc.) | `engine.yaml` → `impacts` (typed `ImpactConfig`); `mechanics/impacts.py` → `apply_impact`, `clear_impact`, `blocks_recovery`, `recalc_max_momentum` |
@@ -174,7 +174,9 @@ src/straightjacket/
 │   │   ├── world.py            # Location matching, chaos adjustment, time, pacing, story structure
 │   │   ├── resolvers.py        # Position, effect, time progression, move category
 │   │   ├── consequences.py     # Dice rolls (action + progress), clocks, momentum burn, consequence sentences
-│   │   ├── move_outcome.py     # Data-driven move outcome resolution, effect parser, handlers
+│   │   ├── move_outcome.py     # Top-level move-outcome resolver (resolve_move_outcome) and handler dispatch
+│   │   ├── move_effects.py     # Effect parser, 13 effect handlers, dispatch dict (apply_effects)
+│   │   ├── move_handlers.py    # Complex move handlers: suffer, threshold, recovery
 │   │   ├── stance_gate.py      # NPC stance resolution, information gating
 │   │   ├── engine_memories.py  # Memory emotion derivation, engine memories, scene context
 │   │   ├── fate.py             # Mythic GME 2e fate chart, fate check, likelihood resolver
@@ -192,7 +194,10 @@ src/straightjacket/
 │   ├── director.py          # Story steering, NPC reflections, act transitions
 │   ├── persistence.py       # Save/load
 │   ├── story_state.py       # Act tracking, revelation timing, story completion check
-│   ├── prompt_builders.py   # Narrator prompt XML assembly (task text from prompts/)
+│   ├── prompt_shared.py     # Shared prompt helpers (scene header, NPC blocks, pacing, director, random events)
+│   ├── prompt_action.py     # Action-turn narrator prompt: build_action_prompt, result constraint
+│   ├── prompt_dialog.py     # Dialog- and oracle-turn narrator prompt: build_dialog_prompt
+│   ├── prompt_boundary.py   # Scene-boundary prompts: build_new_game_prompt, build_epilogue_prompt, build_new_chapter_prompt
 │   ├── prompt_blocks.py     # Reusable XML blocks (content boundaries, backstory, etc.)
 │   ├── prompt_loader.py     # Merges prompts/*.yaml (directory from config.yaml ai.prompts_dir)
 │   ├── config_loader.py     # Reads config.yaml, provides cfg() singleton
@@ -222,7 +227,10 @@ src/straightjacket/
 │   │   ├── naming.py        # Oracle-based NPC name generation
 │   │   └── processing.py    # Narrator metadata → NPC state changes
 │   ├── game/
-│   │   ├── turn.py          # Main turn pipeline (process_turn)
+│   │   ├── turn.py          # Main turn pipeline orchestration (process_turn, phase helpers)
+│   │   ├── turn_types.py    # Shared turn-pipeline dataclasses (SceneContext, RollOutcome, ActionResolution)
+│   │   ├── action_resolution.py  # Action-roll consequence resolution (resolve_action_phase)
+│   │   ├── scene_finalization.py # Post-narration finalize_scene + scene-list maintenance
 │   │   ├── tracks.py        # Progress track mechanics (find, complete, sync, oracle rolls)
 │   │   ├── momentum_burn.py # Momentum burn re-narration pipeline
 │   │   ├── game_start.py    # Character creation → opening scene

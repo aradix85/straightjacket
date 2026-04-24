@@ -2,6 +2,7 @@ memory:
   min_token_length: 3
   consolidation_floor: 3
   unknown_emotion_importance: 4
+  overlap_scale: 2
 memory_emotions:
   base:
     combat_MISS: fear_pain

@@ -76,10 +76,9 @@ def truths_block(game: GameState | None = None) -> str:
     """Build world truths block from player's truth selections at creation."""
     if not game or not game.truths:
         return ""
+    header = get_prompt("block_world_truths_header")
     lines = [f"  {truth_id}: {summary}" for truth_id, summary in game.truths.items()]
-    return (
-        "<world_truths>\nEstablished facts about this world. Treat as canon.\n" + "\n".join(lines) + "\n</world_truths>"
-    )
+    return f"<world_truths>\n{header}\n" + "\n".join(lines) + "\n</world_truths>"
 
 
 def tone_authority_block(game: GameState | None = None) -> str:
@@ -87,14 +86,8 @@ def tone_authority_block(game: GameState | None = None) -> str:
     Injected before <rules> so it outranks generic style defaults."""
     if not game or not game.setting_tone:
         return ""
-    return (
-        f'\n<tone_authority tone="{_xa(game.setting_tone)}">'
-        f"This is the player's chosen creative register for the entire story. "
-        f"It governs sentence rhythm, scene energy, what details get highlighted, "
-        f"how NPCs behave, and what makes a moment land. Every scene must feel it. "
-        f"Follow <director_guidance> for narrative direction, but never let it "
-        f"override or dilute the tone.</tone_authority>"
-    )
+    body = get_prompt("block_tone_authority")
+    return f'\n<tone_authority tone="{_xa(game.setting_tone)}">{body}</tone_authority>'
 
 
 def narrative_direction_block(game: GameState, roll_result: str = "", is_player_caused: bool = True) -> str:
@@ -132,60 +125,36 @@ def narrative_direction_block(game: GameState, roll_result: str = "", is_player_
     return f"<narrative_direction>{' '.join(parts)}</narrative_direction>"
 
 
+def _describe_narrator_resource(value: int, descriptions: dict[int, str]) -> str:
+    """Pick the description for the highest threshold at or below value."""
+    for threshold in sorted(descriptions.keys(), reverse=True):
+        if value >= threshold:
+            return descriptions[threshold]
+    return descriptions[min(descriptions.keys())]
+
+
 def status_context_block(game: GameState | None = None) -> str:
     """Narrative status context mapping resource values to physical/mental states."""
     if not game:
         return ""
+    descriptions = eng().get_raw("narrator_status_descriptions")
     h, sp, su = game.resources.health, game.resources.spirit, game.resources.supply
 
-    health_desc = (
-        "uninjured"
-        if h >= 5
-        else "bruised — minor aches, nothing that slows them down"
-        if h == 4
-        else "injured — clearly hurting, moving with effort"
-        if h == 3
-        else "seriously wounded — every motion costs something"
-        if h == 2
-        else "critically injured — barely holding together, on the edge of collapse"
-        if h == 1
-        else "at the physical limit — collapse is imminent (see <flags>)"
-    )
-    spirit_desc = (
-        "steady and composed"
-        if sp >= 5
-        else "mildly unsettled — small cracks under the surface"
-        if sp == 4
-        else "shaken — stress is showing, focus is harder to maintain"
-        if sp == 3
-        else "deeply troubled — holding on by a thread, doubt and fear are present"
-        if sp == 2
-        else "near breaking — barely functioning, the weight is crushing"
-        if sp == 1
-        else "at the mental limit — breakdown is imminent (see <flags>)"
-    )
-    supply_desc = (
-        "well-equipped"
-        if su >= 5
-        else "adequate — supplies are fine for now"
-        if su == 4
-        else "running low — rationing has begun, choices are being made"
-        if su == 3
-        else "critically short — scarcity is a real pressure"
-        if su == 2
-        else "nearly nothing — desperation is setting in"
-        if su == 1
-        else "out of resources entirely (see <flags>)"
-    )
+    health_desc = _describe_narrator_resource(h, descriptions["health"])
+    spirit_desc = _describe_narrator_resource(sp, descriptions["spirit"])
+    supply_desc = _describe_narrator_resource(su, descriptions["supply"])
+
+    instruction = get_prompt("block_character_state_instruction")
+    physical_label = get_prompt("label_character_state_physical")
+    mental_label = get_prompt("label_character_state_mental")
+    resources_label = get_prompt("label_character_state_resources")
 
     return (
         "<character_state>\n"
-        "Reflect these states through sensory detail, body language, and atmosphere. "
-        "NEVER state numbers or game terms. Maintain consistency across scenes — "
-        "do NOT describe the character as healthy if they are injured, or calm if they are shaken.\n"
-        f"Physical: {health_desc}\n"
-        f"Mental/Emotional: {spirit_desc}\n"
-        f"Resources/Equipment: {supply_desc}\n"
+        f"{instruction}\n"
+        f"{physical_label}: {health_desc}\n"
+        f"{mental_label}: {spirit_desc}\n"
+        f"{resources_label}: {supply_desc}\n"
         "</character_state>"
     )
 
@@ -205,18 +174,15 @@ def story_context_block(game: GameState) -> str:
 
     ending_hint = ""
     if bp.story_complete and game.campaign.epilogue_dismissed:
-        ending_hint = (
-            f"\n<story_ending>The planned arc is complete and the player chose to continue "
-            f"beyond it (scene {game.narrative.scene_count}). Do NOT push toward a conclusion. "
-            f"Follow the player's organic lead — new threads, consequences, and character "
-            f"moments are all valid. Treat this as open-ended play.</story_ending>"
-        )
+        ending_hint = "\n" + get_prompt("block_story_ending_exceeded_continuing", scene=str(game.narrative.scene_count))
     elif bp.story_complete:
-        endings = bp.possible_endings
-        ending_hint = f"\n<story_ending>Story has EXCEEDED its planned arc (scene {game.narrative.scene_count}). Guide toward a satisfying conclusion in the next 1-2 scenes. Possible endings: {', '.join(e.type for e in endings)}. Let player actions determine which ending, but actively weave toward closure.</story_ending>"
+        endings_text = ", ".join(e.type for e in bp.possible_endings)
+        ending_hint = "\n" + get_prompt(
+            "block_story_ending_exceeded", scene=str(game.narrative.scene_count), endings=endings_text
+        )
     elif act.approaching_end:
-        endings = bp.possible_endings
-        ending_hint = f"\n<story_ending>Story nearing conclusion. Possible endings: {', '.join(e.type for e in endings)}. Let player actions determine which.</story_ending>"
+        endings_text = ", ".join(e.type for e in bp.possible_endings)
+        ending_hint = "\n" + get_prompt("block_story_ending_approaching", endings=endings_text)
 
     structure = bp.structure_type
     thematic = bp.thematic_thread

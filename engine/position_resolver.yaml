@@ -1,6 +1,8 @@
 position_resolver:
   desperate_below: -3
   controlled_above: 3
+  npc_bond_high_min: 3
+  npc_bond_low_max: 0
   weights:
     resource_critical_below: 2
     resource_low_below: 3

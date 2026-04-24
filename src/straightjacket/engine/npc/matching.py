@@ -309,12 +309,14 @@ def _check_edit_distance_variant(
     if not ext_words or not new_words_sorted or len(ext_words) != len(new_words_sorted):
         return
 
+    _fm = eng().fuzzy_match
+    _desc_word_min = _fm.description_word_min_length
     exact = 0
     near = 0
     for nw, ew in zip(new_words_sorted, ext_words, strict=True):
         if nw == ew:
             exact += 1
-        elif len(nw) >= 3 and len(ew) >= 3 and edit_distance_le1(nw, ew):
+        elif len(nw) >= _desc_word_min and len(ew) >= _desc_word_min and edit_distance_le1(nw, ew):
             near += 1
         else:
             return  # any non-matching word kills the variant check
@@ -342,7 +344,7 @@ def fuzzy_match_existing_npc(game: "GameState", new_name: str) -> tuple[NpcData 
     Returns (matching_npc, match_type) or (None, None).
     match_type is 'identity' for normal matches or 'stt_variant' for edit-distance-1 matches.
     """
-    if not new_name or len(new_name.strip()) < 3:
+    if not new_name or len(new_name.strip()) < eng().fuzzy_match.npc_name_min_length:
         return None, None
 
     new_norm = normalize_for_match(new_name)

@@ -16,7 +16,8 @@ from straightjacket.engine.models import (
     NpcData,
     RollResult,
 )
-from straightjacket.engine.prompt_builders import build_action_prompt, build_dialog_prompt
+from straightjacket.engine.prompt_action import build_action_prompt
+from straightjacket.engine.prompt_dialog import build_dialog_prompt
 from tests._helpers import make_brain_result, make_game_state, make_memory, make_npc, make_progress_track
 
 # Use real engine.yaml for stance matrix tests

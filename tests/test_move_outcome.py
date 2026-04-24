@@ -6,15 +6,17 @@ config-driven outcome resolution, combat position, and edge cases.
 
 import pytest
 
-from straightjacket.engine.mechanics.move_outcome import (
+from straightjacket.engine.mechanics.move_effects import (
     apply_effects,
+    parse_effect,
+    parse_effects,
+)
+from straightjacket.engine.mechanics.move_handlers import (
     apply_recovery_handler,
     apply_suffer_handler,
     apply_threshold_handler,
-    parse_effect,
-    parse_effects,
-    resolve_move_outcome,
 )
+from straightjacket.engine.mechanics.move_outcome import resolve_move_outcome
 from straightjacket.engine.models import GameState, Resources
 from tests._helpers import make_game_state, make_progress_track
 

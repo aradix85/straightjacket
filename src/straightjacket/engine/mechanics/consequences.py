@@ -85,11 +85,12 @@ def check_npc_agency(game: GameState) -> tuple[list[str], list[ClockEvent]]:
     """Advance NPC-owned clocks at configured interval. Returns (actions, clock_events)."""
     if game.narrative.scene_count % eng().pacing.npc_agency_interval != 0:
         return [], []
+    _defaults = eng().ai_text.narrator_defaults
     actions: list[str] = []
     clock_events: list[ClockEvent] = []
     for npc in game.npcs:
         if npc.status == "active" and npc.agenda:
-            actions.append(f'NPC "{npc.name}" pursues agenda "{npc.agenda}" — concrete offscreen action.')
+            actions.append(_defaults["npc_agency_action_template"].format(npc_name=npc.name, agenda=npc.agenda))
             npc_norms = {normalize_for_match(npc.name)}
             npc_norms.update(normalize_for_match(a) for a in npc.aliases)
             for clock in game.world.clocks:
@@ -104,7 +105,11 @@ def check_npc_agency(game: GameState) -> tuple[list[str], list[ClockEvent]]:
                     if triggered:
                         clock.fired = True
                         clock.fired_at_scene = game.narrative.scene_count
-                        actions.append(f'CLOCK FILLED "{clock.name}": {clock.trigger_description}')
+                        actions.append(
+                            _defaults["clock_filled_template"].format(
+                                clock_name=clock.name, trigger=clock.trigger_description
+                            )
+                        )
                     event = ClockEvent(
                         clock=clock.name,
                         trigger=clock.trigger_description,

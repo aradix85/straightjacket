@@ -116,7 +116,7 @@ def merge_npc_identity(existing: NpcData, new_name: str, new_desc: str = "", gam
 
 def is_complete_description(desc: str) -> bool:
     """Check if a description looks complete (not truncated mid-sentence)."""
-    if not desc or len(desc) < 10:
+    if not desc or len(desc) < eng().fuzzy_match.description_match_min_length:
         return False
     return desc.rstrip().endswith((".", "!", "?", '"', "»", "«", "…", ")", "–", "—"))
 

@@ -70,6 +70,10 @@ ai_text:
     recap_fallback: ({player_name} recalls the recent events...)
     chapter_summary_fallback_title: Chapter {chapter}
     chapter_summary_fallback_text: '{player_name} had an adventure in {location}.'
+    new_chapter_threads_template: 'New chapter. Open threads: {threads}'
+    new_chapter_blank: A new chapter begins.
+    npc_agency_action_template: 'NPC "{npc_name}" pursues agenda "{agenda}" — concrete offscreen action.'
+    clock_filled_template: 'CLOCK FILLED "{clock_name}": {trigger}'
   architect_labels:
     forbidden_terms_prefix: Forbidden terms
     forbidden_concepts_prefix: Forbidden concepts

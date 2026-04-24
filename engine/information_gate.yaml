@@ -7,6 +7,13 @@ information_gate:
     bond_1: 0
     bond_2_3: 1
     bond_4_plus: 2
+  buckets:
+    scenes_known_mid_min: 1
+    scenes_known_high_min: 4
+    bond_mid_min: 2
+    bond_high_min: 4
+  gate_min: 0
+  gate_max: 4
   stance_caps:
     aggressive: 1
     hostile: 1

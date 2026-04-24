@@ -6,3 +6,5 @@ prompt_display:
   epilogue_log_scenes: 15
   recent_events_window: 7
   campaign_history_chapters: 3
+  memory_consequences_max: 3
+  memory_npcs_max: 3

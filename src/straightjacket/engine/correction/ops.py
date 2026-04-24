@@ -11,15 +11,14 @@ from ..models import NPC_STATUSES, GameState, NpcData
 from ..npc import consolidate_memory, find_npc
 from ..npc.lifecycle import sanitize_aliases
 
-_NPC_EDIT_ALLOWED = {"name", "description", "disposition", "agenda", "instinct", "aliases", "status"}
-
 
 def _op_npc_edit(game: GameState, op_dict: dict) -> None:
     """Edit whitelisted fields on an existing NPC. Engine owns alias bookkeeping on rename."""
     npc = find_npc(game, op_dict.get("npc_id", ""))
     if not npc or not op_dict.get("fields"):
         return
-    edits = {k: v for k, v in op_dict["fields"].items() if k in _NPC_EDIT_ALLOWED and v is not None}
+    _allowed = set(eng().get_raw("correction")["npc_edit_allowed_fields"])
+    edits = {k: v for k, v in op_dict["fields"].items() if k in _allowed and v is not None}
 
     # Rename detection: pop aliases so the model can't overwrite the engine-maintained list.
     old_name = npc.name

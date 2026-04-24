@@ -89,7 +89,7 @@ def check_player_agency(narration: str) -> list[str]:
         if key not in seen:
             seen.add(key)
             unique.append(v)
-    return unique[:3]  # Cap at 3 to avoid noise
+    return unique[: _rv.agency_violations_cap]
 
 
 # Patterns in engine.yaml validator.miss_silver_lining_patterns / .miss_annihilation_patterns
@@ -153,10 +153,11 @@ def check_atmospheric_register(narration: str, genre_constraints: GenreConstrain
     if len(matches) < threshold:
         return []
     unique = sorted(set(matches))
+    _rv = eng().rule_validator
     return [
-        eng()
-        .rule_validator.violation_templates["atmospheric_register"]
-        .format(count=len(matches), examples=", ".join(unique[:5]))
+        _rv.violation_templates["atmospheric_register"].format(
+            count=len(matches), examples=", ".join(unique[: _rv.atmospheric_examples_cap])
+        )
     ]
 
 
@@ -210,14 +211,15 @@ def check_threat_advance(narration: str, threat_names: list[str]) -> list[str]:
     """
     if not threat_names:
         return []
+    _rv = eng().rule_validator
     stopwords = eng().stopwords.consequence
     narration_lower = narration.lower()
     for name in threat_names:
-        words = {w.strip(".,;:!?\"'()-").lower() for w in name.split() if len(w) >= 3}
+        words = {w.strip(".,;:!?\"'()-").lower() for w in name.split() if len(w) >= _rv.threat_name_min_word_length}
         words -= stopwords
         if any(w in narration_lower for w in words):
             continue
-        return [eng().rule_validator.violation_templates["threat_advance"].format(name=name)]
+        return [_rv.violation_templates["threat_advance"].format(name=name)]
     return []
 
 
@@ -229,15 +231,16 @@ def check_impact_acknowledgment(narration: str, impact_changes: list[str]) -> li
     """
     if not impact_changes:
         return []
+    _rv = eng().rule_validator
     narration_lower = narration.lower()
     for label in impact_changes:
         if label.lower() in narration_lower:
             continue
         # Allow first word of multi-word labels ("permanently harmed" → "permanently" or "harmed")
-        words = [w.lower() for w in label.split() if len(w) >= 4]
+        words = [w.lower() for w in label.split() if len(w) >= _rv.impact_label_min_word_length]
         if any(w in narration_lower for w in words):
             continue
-        return [eng().rule_validator.violation_templates["impact_change"].format(label=label)]
+        return [_rv.violation_templates["impact_change"].format(label=label)]
     return []
 
 
@@ -256,7 +259,10 @@ def run_rule_checks(narration: str, ctx: ValidationContext) -> dict:
     violations.extend(check_impact_acknowledgment(narration, ctx.impact_changes))
 
     if violations:
-        correction = "; ".join(v.split(": ", 1)[1] if ": " in v else v for v in violations[:3])
+        _rv = eng().rule_validator
+        correction = "; ".join(
+            v.split(": ", 1)[1] if ": " in v else v for v in violations[: _rv.correction_violations_cap]
+        )
         log(f"[RuleValidator] FAILED: {violations}")
         return {"pass": False, "violations": violations, "correction": f"Fix: {correction}"}
 

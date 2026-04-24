@@ -12,21 +12,12 @@ from __future__ import annotations
 import random
 from dataclasses import dataclass, field
 
+from ..engine_loader import eng
 from ..logging_util import log
 from ..models import GameState, RandomEvent
 from ..serialization import SerializableMixin
 from .fate import _load_mythic
 from .random_events import generate_random_event
-
-# Scene adjustment descriptions for narrator prompt injection.
-_ADJUSTMENT_DESCRIPTIONS: dict[str, str] = {
-    "remove_character": "The most logical NPC is absent from the scene",
-    "add_character": "An unexpected character appears in the scene",
-    "reduce_activity": "The expected activity is diminished or absent",
-    "increase_activity": "The expected activity is more intense than anticipated",
-    "remove_object": "Something expected is missing from the scene",
-    "add_object": "Something unexpected is present in the scene",
-}
 
 
 @dataclass
@@ -127,5 +118,6 @@ def _roll_single_adjustment(table: list[dict]) -> str:
 
 
 def adjustment_descriptions(adjustments: list[str]) -> list[str]:
-    """Map adjustment types to narrator-facing descriptions."""
-    return [_ADJUSTMENT_DESCRIPTIONS.get(a, a) for a in adjustments]
+    """Map adjustment types to narrator-facing descriptions from yaml."""
+    mapping = eng().get_raw("scene_adjustments")
+    return [mapping[a] for a in adjustments]

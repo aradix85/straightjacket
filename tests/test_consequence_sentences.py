@@ -19,7 +19,7 @@ from straightjacket.engine.models import (
     GameState,
     RollResult,
 )
-from straightjacket.engine.prompt_builders import build_action_prompt
+from straightjacket.engine.prompt_action import build_action_prompt
 from tests._helpers import make_brain_result, make_game_state, make_npc
 
 

@@ -5,6 +5,12 @@ rule_validator:
   # Dedup-window used to collapse near-duplicate violations before they reach
   # the narrator. First N chars of the message are the dedup key.
   violation_dedup_key_length: 60
+  # Caps on how many violations/examples/word-length minima appear in output.
+  agency_violations_cap: 3
+  atmospheric_examples_cap: 5
+  correction_violations_cap: 3
+  threat_name_min_word_length: 3
+  impact_label_min_word_length: 4
   # Violation correction templates used by rule_validator.py checks.
   # Prefixes ("PLAYER AGENCY: ", "IMPACT CHANGE: " etc.) are the stable category
   # labels that downstream code and tests match on via substring — keep them.

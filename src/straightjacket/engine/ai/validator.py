@@ -82,8 +82,9 @@ def validate_narration(
 
     # Fast path: rule violations found → skip LLM, retry immediately
     if rule_violations:
+        _cap = eng().rule_validator.correction_violations_cap
         all_violations = [f"[rule] {v}" for v in rule_violations]
-        correction = "; ".join(v.split(": ", 1)[1] if ": " in v else v for v in all_violations[:3])
+        correction = "; ".join(v.split(": ", 1)[1] if ": " in v else v for v in all_violations[:_cap])
         log(f"[Validator] FAILED (rule fast path, {len(rule_violations)} violations): {all_violations}")
         return {"pass": False, "violations": all_violations, "correction": f"Fix: {correction}"}
 
@@ -151,8 +152,9 @@ Check constraints."""
         log(f"[Validator] LLM check failed ({e}), using rule results only", level="warning")
 
     if llm_violations:
+        _cap = eng().rule_validator.correction_violations_cap
         all_violations = [f"[llm] {v}" for v in llm_violations]
-        correction = "; ".join(v.split(": ", 1)[1] if ": " in v else v for v in all_violations[:3])
+        correction = "; ".join(v.split(": ", 1)[1] if ": " in v else v for v in all_violations[:_cap])
         log(f"[Validator] FAILED ({len(llm_violations)} llm): {all_violations}")
         return {"pass": False, "violations": all_violations, "correction": f"Fix: {correction}"}
 

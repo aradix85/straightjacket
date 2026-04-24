@@ -8,3 +8,38 @@
   MUST NOT reveal directly,weave across 3+ scenes
 "vocabulary_instruction": |-
   You MUST use these terms instead of their generic equivalents. These substitutions define how this world describes itself. NEVER use the generic term when the substitution exists.
+"block_correction_instruction": |-
+  <correction_instruction>Rewrite the scene incorporating the correction above. Same events and outcome — only adjust what the correction requires.</correction_instruction>
+"block_world_truths_header": |-
+  Established facts about this world. Treat as canon.
+"block_tone_authority": |-
+  This is the player's chosen creative register for the entire story. It governs sentence rhythm, scene energy, what details get highlighted, how NPCs behave, and what makes a moment land. Every scene must feel it. Follow <director_guidance> for narrative direction, but never let it override or dilute the tone.
+"block_character_state_instruction": |-
+  Reflect these states through sensory detail, body language, and atmosphere. NEVER state numbers or game terms. Maintain consistency across scenes — do NOT describe the character as healthy if they are injured, or calm if they are shaken.
+"block_story_ending_exceeded_continuing": |-
+  <story_ending>The planned arc is complete and the player chose to continue beyond it (scene {scene}). Do NOT push toward a conclusion. Follow the player's organic lead — new threads, consequences, and character moments are all valid. Treat this as open-ended play.</story_ending>
+"block_story_ending_exceeded": |-
+  <story_ending>Story has EXCEEDED its planned arc (scene {scene}). Guide toward a satisfying conclusion in the next 1-2 scenes. Possible endings: {endings}. Let player actions determine which ending, but actively weave toward closure.</story_ending>
+"block_story_ending_approaching": |-
+  <story_ending>Story nearing conclusion. Possible endings: {endings}. Let player actions determine which.</story_ending>
+"label_character_state_physical": Physical
+"label_character_state_mental": Mental/Emotional
+"label_character_state_resources": Resources/Equipment
+# Narrator-facing status flags, assembled into <flags>...</flags>.
+"flag_wounded": WOUNDED
+"flag_broken": BROKEN
+"flag_depleted": DEPLETED
+"flag_final_scene": "FINAL_SCENE:dramatic ending,character falls,make it meaningful"
+"flag_crisis": "CRISIS:desperate,world closing in"
+
+# Result constraint bodies used by _build_result_constraint (narrator prompt <result> tag).
+"result_miss_body": Concrete failure. No silver linings. Make it hurt.
+"result_weak_hit_body": Success with tangible cost or complication.
+"result_strong_hit_body": Clean success.
+"result_match_hint_miss": " A MATCH — the situation escalates dramatically, a fateful twist makes everything worse."
+"result_match_hint_weak_hit": " A MATCH — despite the cost, something unexpected and significant happens, a twist of fate."
+"result_match_hint_strong_hit": " A MATCH — an unexpected boon, a fateful revelation, or a dramatic advantage beyond the clean success."
+"block_crisis": |-
+  <crisis>Character at breaking point.</crisis>
+"block_background_npcs_prefix": "Known but not recently active: "
+"block_npc_evolutions_hint": These are PROJECTIONS of how NPCs may have changed during the time skip. Use as inspiration, not as hard facts.

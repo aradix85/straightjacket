@@ -30,7 +30,7 @@ from ..models import (
     ThreadEntry,
 )
 from ..parser import parse_narrator_response
-from ..prompt_builders import build_new_game_prompt
+from ..prompt_boundary import build_new_game_prompt
 from ..user_management import load_user_config, save_user_config
 
 from .setup_common import apply_opening_setup

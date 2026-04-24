@@ -1,3 +1,5 @@
 chapter:
   filler_max: 1
+  filler_bond_max: 0
   open_threads_max: 5
+  scene_context_threads_max: 3

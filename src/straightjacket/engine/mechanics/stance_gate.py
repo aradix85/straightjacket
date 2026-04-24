@@ -27,13 +27,14 @@ def resolve_npc_stance(game: GameState, npc: NpcData, move_category: str) -> Npc
     not a runtime fallback. Unknown move_category is normalised to 'other'.
     """
     matrix = eng().get_raw("stance_matrix")
+    buckets = eng().get_raw("stance_bond_buckets")
 
     disposition = npc.disposition
     bond = get_npc_bond(game, npc.id)
 
-    if bond <= 1:
+    if bond <= buckets["low_max"]:
         bond_range = "low"
-    elif bond <= 3:
+    elif bond <= buckets["mid_max"]:
         bond_range = "mid"
     else:
         bond_range = "high"
@@ -54,14 +55,15 @@ def compute_npc_gate(game: GameState, npc: NpcData, current_scene: int, stance: 
     _e = eng()
     cfg = _e.information_gate
     p = cfg.points
+    b = cfg.buckets
 
     first_scene = min((m.scene for m in npc.memory), default=current_scene)
     scenes_known = current_scene - first_scene
 
     points = 0
-    if scenes_known >= 4:
+    if scenes_known >= b.scenes_known_high_min:
         points += p.scenes_known_4_plus
-    elif scenes_known >= 1:
+    elif scenes_known >= b.scenes_known_mid_min:
         points += p.scenes_known_2_3
     else:
         points += p.scenes_known_1
@@ -69,14 +71,14 @@ def compute_npc_gate(game: GameState, npc: NpcData, current_scene: int, stance: 
     points += npc.gather_count * p.gather_success
 
     bond = get_npc_bond(game, npc.id)
-    if bond >= 4:
+    if bond >= b.bond_high_min:
         points += p.bond_4_plus
-    elif bond >= 2:
+    elif bond >= b.bond_mid_min:
         points += p.bond_2_3
     else:
         points += p.bond_1
 
-    gate = min(4, max(0, points))
+    gate = min(cfg.gate_max, max(cfg.gate_min, points))
 
     # Stance cap
     cap = cfg.stance_caps.get(stance, cfg.default_cap)

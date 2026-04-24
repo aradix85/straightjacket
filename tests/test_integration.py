@@ -357,7 +357,7 @@ def test_scene_test_produces_three_types(load_engine: None) -> None:
 
 def test_dialog_prompt_contains_world_and_character(stub_engine: None) -> None:
     """Dialog prompt must include world genre and character name."""
-    from straightjacket.engine.prompt_builders import build_dialog_prompt
+    from straightjacket.engine.prompt_dialog import build_dialog_prompt
 
     game = _make_game()
     brain = make_brain_result(
@@ -375,7 +375,7 @@ def test_dialog_prompt_contains_world_and_character(stub_engine: None) -> None:
 
 def test_action_prompt_contains_result_and_position(stub_engine: None) -> None:
     """Action prompt must include roll result and position."""
-    from straightjacket.engine.prompt_builders import build_action_prompt
+    from straightjacket.engine.prompt_action import build_action_prompt
     from straightjacket.engine.models import RollResult
 
     game = _make_game()

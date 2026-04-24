@@ -1,264 +1,50 @@
-"""Turn processing: the core gameplay loop."""
+"""Turn processing: the core gameplay loop orchestration.
 
-from dataclasses import dataclass, field
+process_turn is the single entry point. It orchestrates ten phases,
+delegating to helpers in this module for phases that are orchestration-only
+(brain, scene context, track creation, roll, burn detection), and to
+sibling modules for substantial sub-pipelines:
 
-import random
+  - Action-roll consequences → game.action_resolution.resolve_action_phase
+  - Post-narration finalization → game.scene_finalization.finalize_scene
+"""
 
-from ..ai.brain import call_brain, call_revelation_check
+from ..ai.brain import call_brain
 from ..ai.provider_base import AIProvider, drain_token_log
-from ..datasworn.moves import Move, get_moves
+from ..datasworn.moves import get_moves
 from ..datasworn.settings import active_package
-from ..db import sync as _db_sync
-from ..director import should_call_director
 from ..engine_loader import eng
 from ..logging_util import log
 from ..mechanics import (
     apply_brain_location_time,
     can_burn_momentum,
-    check_npc_agency,
     generate_consequence_sentences,
     purge_old_fired_clocks,
-    record_scene_intensity,
-    resolve_effect,
-    resolve_position,
     roll_action,
     roll_progress,
-    tick_autonomous_clocks,
-    update_chaos_factor,
 )
-from ..mechanics.consequences import tick_threat_clock
 from ..mechanics.fate import resolve_fate, resolve_likelihood
-from ..mechanics.random_events import (
-    add_character_weight,
-    add_thread_weight,
-    consolidate_characters,
-    consolidate_threads,
-    drain_pending_events,
-)
+from ..mechanics.random_events import drain_pending_events
 from ..mechanics.scene import SceneSetup, check_scene
-from ..mechanics.threats import (
-    advance_menace_on_miss,
-    advance_threat_by_id,
-    resolve_full_menace,
-    tick_autonomous_threats,
-)
+from ..mechanics.threats import advance_threat_by_id
 from ..models import (
     BrainResult,
-    CharacterListEntry,
-    ClockEvent,
     EngineConfig,
     GameState,
-    NarrationEntry,
-    NpcData,
     ProgressTrack,
     RandomEvent,
     RollResult,
-    SceneLogEntry,
     ThreadEntry,
-    ThreatEvent,
 )
 from ..npc import activate_npcs_for_prompt, find_npc, reactivate_npc
-from ..prompt_builders import build_action_prompt, build_dialog_prompt
-from ..story_state import check_story_completion, get_pending_revelations, mark_revelation_used
-
-from .finalization import (
-    apply_post_narration,
-    apply_progress_and_legacy,
-    narrate_scene,
-    resolve_action_consequences,
-)
-from .tracks import complete_track, find_progress_track, roll_oracle_answer, sync_combat_tracks
-
-
-@dataclass
-class SceneContext:
-    """Shared context built once per turn, passed to both dialog and action paths."""
-
-    provider: AIProvider
-    game: GameState
-    brain: BrainResult
-    config: EngineConfig | None
-    player_message: str
-    scene_setup: SceneSetup
-    scene_present_ids: set[str]
-    pending_revs: list
-    npc_activation_debug: dict
-    activated_npcs: list[NpcData] = field(default_factory=list)
-    mentioned_npcs: list[NpcData] = field(default_factory=list)
-    pending_random_events: list[RandomEvent] = field(default_factory=list)
-
-
-@dataclass
-class RollOutcome:
-    """Result of the roll phase: roll plus the move/track context it came from."""
-
-    roll: RollResult
-    ds_move: Move | None
-    track: ProgressTrack | None
-    is_progress_roll: bool
-
-
-@dataclass
-class ActionResolution:
-    """Everything produced by the consequences phase of an action turn."""
-
-    position: str
-    effect: str
-    consequences: list[str]
-    clock_events: list[ClockEvent]
-    npc_agency: list[str]
-    agency_clock_events: list[ClockEvent]
-    threat_events: list[ThreatEvent]
-
-
-def _update_scene_lists(game: GameState, brain: BrainResult, metadata: dict, scene_present_ids: set) -> None:
-    """Update Mythic thread/character lists after a scene.
-
-    - NPCs present in the scene get weight bumped in characters list.
-    - New NPCs from metadata get added to characters list.
-    - Target NPC's thread (if any) gets weight bumped.
-    """
-    # Weight bump for present NPCs
-    for npc in game.npcs:
-        if npc.id in scene_present_ids:
-            for c in game.narrative.characters_list:
-                if c.id == npc.id or c.name == npc.name:
-                    add_character_weight(game, c.id)
-                    break
-
-    # Add new NPCs to characters list
-    new_npcs = metadata.get("new_npcs", [])
-    for new_npc in new_npcs:
-        name = new_npc.get("name", "")
-        if not name:
-            continue
-        npc_obj = next((n for n in game.npcs if n.name == name), None)
-        entry_id = npc_obj.id if npc_obj else f"char_{len(game.narrative.characters_list) + 1}"
-        existing = any(c.name == name or c.id == entry_id for c in game.narrative.characters_list)
-        if not existing:
-            game.narrative.characters_list.append(
-                CharacterListEntry(id=entry_id, name=name, entry_type="npc", weight=1, active=True)
-            )
-
-    # Weight bump for target NPC's linked thread
-    if brain.target_npc:
-        for t in game.narrative.threads:
-            if brain.target_npc in t.id or brain.target_npc in t.name.lower():
-                add_thread_weight(game, t.id)
-                break
-
-
-# POST-NARRATION: shared logic for both dialog and action paths
-
-
-def _finalize_scene(
-    ctx: SceneContext,
-    narration: str,
-    log_entry: dict,
-    prompt_summary: str,
-    roll_result_str: str,
-    roll: RollResult | None = None,
-    consequences: list[str] | None = None,
-    agency_clock_events: list[ClockEvent] | None = None,
-) -> tuple[bool, dict | None]:
-    """Shared post-narration processing for dialog and action scenes."""
-    game = ctx.game
-    brain = ctx.brain
-    scene_present_ids = ctx.scene_present_ids
-    activated_npc_names = [n.name for n in game.npcs if n.id in scene_present_ids]
-
-    metadata = apply_post_narration(
-        ctx.provider,
-        game,
-        narration,
-        brain,
-        roll,
-        scene_present_ids,
-        activated_npc_names,
-        config=ctx.config,
-        consequences=consequences,
-        world_addition=brain.world_addition or "",
-    )
-
-    # Combat track ↔ combat_position sync (step 10.1)
-    sync_combat_tracks(game)
-
-    revelation_confirmed = False
-    if ctx.pending_revs:
-        revelation_confirmed = call_revelation_check(ctx.provider, narration, ctx.pending_revs[0], ctx.config)
-        if revelation_confirmed:
-            mark_revelation_used(game, ctx.pending_revs[0].id)
-
-    scene_type = ctx.scene_setup.scene_type if ctx.scene_setup.scene_type != "expected" else log_entry["_pacing_type"]
-    record_scene_intensity(game, scene_type)
-
-    nar = game.narrative
-    nar.narration_history.append(
-        NarrationEntry(
-            scene=nar.scene_count,
-            prompt_summary=prompt_summary,
-            narration=narration,
-        )
-    )
-    if len(nar.narration_history) > eng().pacing.max_narration_history:
-        nar.narration_history = nar.narration_history[-eng().pacing.max_narration_history :]
-
-    log_entry.pop("_pacing_type", None)
-    nar.session_log.append(SceneLogEntry(**log_entry))
-    if len(nar.session_log) > eng().pacing.max_session_log:
-        nar.session_log = nar.session_log[-eng().pacing.max_session_log :]
-
-    # Log revelation check result (only when a revelation was pending)
-    if ctx.pending_revs and nar.session_log:
-        nar.session_log[-1].revelation_check = {
-            "id": ctx.pending_revs[0].id,
-            "confirmed": revelation_confirmed,
-        }
-
-    auto_clock_events = tick_autonomous_clocks(game)
-    if agency_clock_events and nar.session_log:
-        nar.session_log[-1].clock_events.extend(agency_clock_events)
-    if auto_clock_events and nar.session_log:
-        nar.session_log[-1].clock_events.extend(auto_clock_events)
-
-    # Autonomous threat menace ticks (step 11a)
-    tick_autonomous_threats(game)
-    resolve_full_menace(game)
-
-    check_story_completion(game)
-
-    # Scene-end bookkeeping (step 4.6)
-    # 1. Chaos adjustment — applies to all scene types
-    update_chaos_factor(game, roll_result_str, target_npc_id=brain.target_npc)
-
-    # 2. List maintenance — invoked NPCs/threads get weight bump
-    _update_scene_lists(game, brain, metadata, scene_present_ids)
-    consolidate_threads(game)
-    consolidate_characters(game)
-
-    director_ctx = None
-    director_reason = should_call_director(
-        game,
-        roll_result=roll_result_str,
-        chaos_used=ctx.scene_setup.scene_type != "expected",
-        new_npcs_found=bool(metadata.get("new_npcs")),
-        revelation_used=revelation_confirmed,
-    )
-    if director_reason:
-        director_ctx = {"narration": narration, "config": ctx.config}
-        if nar.session_log:
-            nar.session_log[-1].director_trigger = director_reason
-        # Mark phase trigger used so it doesn't re-fire every subsequent turn
-        bp = game.narrative.story_blueprint
-        if director_reason.startswith("phase:") and bp is not None:
-            bp.triggered_director_phases.append(director_reason[len("phase:") :])
-    else:
-        log(f"[Director] Skipped (no trigger at scene {nar.scene_count})")
-
-    # Sync game state to database for query access
-    _db_sync(game)
-
-    return revelation_confirmed, director_ctx
+from ..prompt_action import build_action_prompt
+from ..prompt_dialog import build_dialog_prompt
+from ..story_state import get_pending_revelations
+from .action_resolution import resolve_action_phase
+from .finalization import narrate_scene
+from .scene_finalization import finalize_scene
+from .tracks import find_progress_track, roll_oracle_answer
+from .turn_types import ActionResolution, RollOutcome, SceneContext
 
 
 # MAIN TURN ENTRY POINT
@@ -301,12 +87,15 @@ def process_turn(
     burn_info = _check_burn_possibility(game, brain, roll_outcome, player_message, scene_setup)
 
     # Phase 9: resolve all mechanical consequences
-    action_res = _resolve_action_phase(game, brain, roll_outcome)
+    action_res = resolve_action_phase(game, brain, roll_outcome)
 
     # Phase 10: narrator prompt + narrate + post-narration finalize
     narration, director_ctx = _narrate_action_and_finalize(ctx, roll_outcome, action_res, player_message)
 
     return game, narration, roll, burn_info, director_ctx
+
+
+# PHASE HELPERS
 
 
 def _begin_turn(game: GameState, player_message: str) -> None:
@@ -446,7 +235,7 @@ def _process_dialog_turn(ctx: SceneContext) -> tuple[str, dict | None]:
     if is_oracle:
         log_entry["oracle_answer"] = oracle_answer
 
-    _, director_ctx = _finalize_scene(
+    _, director_ctx = finalize_scene(
         ctx,
         narration,
         log_entry=log_entry,
@@ -569,126 +358,6 @@ def _check_burn_possibility(
     }
 
 
-def _apply_track_completion(game: GameState, roll: RollResult, track: ProgressTrack) -> None:
-    """Complete or fail the progress track based on the progress-roll result."""
-    if roll.result == "STRONG_HIT":
-        complete_track(game, track.id, "completed")
-    elif roll.result == "MISS":
-        complete_track(game, track.id, "failed")
-
-
-def _maybe_mark_scene_challenge(game: GameState, brain: BrainResult, roll: RollResult) -> None:
-    """Step 10.2: if the move is in scene_challenge_progress_moves and the roll
-    hit, tick the active scene_challenge progress track.
-    """
-    sc_progress_moves = eng().get_raw("scene_challenge_progress_moves")
-    if brain.move not in sc_progress_moves or roll.result not in ("STRONG_HIT", "WEAK_HIT"):
-        return
-    sc_track = find_progress_track(game, "scene_challenge")
-    if not sc_track:
-        return
-    added = sc_track.mark_progress()
-    if added:
-        log(f"[Track] Scene challenge '{sc_track.name}': +{added} ticks ({sc_track.filled_boxes}/10 boxes)")
-
-
-def _maybe_tick_weak_hit_clock(
-    game: GameState, roll: RollResult, position: str, clock_events: list[ClockEvent]
-) -> None:
-    """WEAK_HIT clock tick — turn-only (correction/burn re-narration skips this).
-    Always ticks on desperate; otherwise rolls weak_hit_clock_tick_chance.
-    """
-    if roll.result != "WEAK_HIT" or position == "controlled":
-        return
-    should_tick = (position == "desperate") or (random.random() < eng().pacing.weak_hit_clock_tick_chance)
-    if should_tick:
-        tick_threat_clock(game, 1, clock_events)
-
-
-def _collect_threat_events(game: GameState, roll: RollResult) -> list[ThreatEvent]:
-    """Assemble the threat events for the prompt: menace-on-miss + Forsake Your Vow
-    + overcome-under-pressure acknowledgments.
-    """
-    events: list[ThreatEvent] = advance_menace_on_miss(game) if roll.result == "MISS" else []
-    events.extend(resolve_full_menace(game))
-
-    high_threshold = eng().threats.menace_high_threshold
-    for threat in game.threats:
-        if threat.status == "overcome" and threat.menace_filled_boxes / 10 >= high_threshold:
-            events.append(
-                ThreatEvent(
-                    threat_id=threat.id,
-                    threat_name=threat.name,
-                    ticks_added=0,
-                    menace_full=False,
-                    source="overcome_under_pressure",
-                )
-            )
-    return events
-
-
-def _track_gather_information_success(game: GameState, brain: BrainResult, roll: RollResult) -> None:
-    """Increment gather_count on a successful gather_information move.
-    Feeds into the information-gating subsystem (step 6).
-    """
-    if brain.move != "adventure/gather_information" or roll.result not in ("STRONG_HIT", "WEAK_HIT"):
-        return
-    if not brain.target_npc:
-        return
-    target = find_npc(game, brain.target_npc)
-    if target:
-        target.gather_count += 1
-
-
-def _resolve_action_phase(game: GameState, brain: BrainResult, roll_outcome: RollOutcome) -> ActionResolution:
-    """Phase 9: resolve every mechanical consequence of the roll. Sub-steps:
-    position/effect, move outcome + clocks + crisis, progress marks and legacy,
-    track completion, scene challenge routing, WEAK_HIT clocks, NPC agency,
-    threat events, gather_information tracking.
-    """
-    roll = roll_outcome.roll
-    ds_move = roll_outcome.ds_move
-    track = roll_outcome.track
-    is_progress_roll = roll_outcome.is_progress_roll
-
-    # Position and effect (deterministic from game state)
-    position = resolve_position(game, brain)
-    effect = resolve_effect(game, brain, position)
-
-    # Move outcome + MISS clocks + crisis (shared with correction/burn)
-    action = resolve_action_consequences(game, brain, roll, position)
-    consequences = action.consequences
-    clock_events = action.clock_events
-
-    # Progress marks and legacy tracks (shared with correction/burn)
-    if action.outcome:
-        source_category = ds_move.track_category if ds_move else "vow"
-        source_rank = track.rank if is_progress_roll and track else "dangerous"
-        apply_progress_and_legacy(game, action.outcome, brain, source_category, source_rank)
-
-    if is_progress_roll and track:
-        _apply_track_completion(game, roll, track)
-
-    _maybe_mark_scene_challenge(game, brain, roll)
-    _maybe_tick_weak_hit_clock(game, roll, position, clock_events)
-
-    npc_agency, agency_clock_events = check_npc_agency(game)
-
-    threat_events = _collect_threat_events(game, roll)
-
-    _track_gather_information_success(game, brain, roll)
-
-    return ActionResolution(
-        position=position,
-        effect=effect,
-        consequences=consequences,
-        clock_events=clock_events,
-        npc_agency=npc_agency,
-        agency_clock_events=agency_clock_events,
-        threat_events=threat_events,
-    )
-
-
 def _narrate_action_and_finalize(
     ctx: SceneContext,
     roll_outcome: RollOutcome,
@@ -735,7 +404,7 @@ def _narrate_action_and_finalize(
     if game.last_turn_snapshot is not None:
         game.last_turn_snapshot.narration = narration
 
-    _, director_ctx = _finalize_scene(
+    _, director_ctx = finalize_scene(
         ctx,
         narration,
         log_entry={

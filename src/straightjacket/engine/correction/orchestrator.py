@@ -29,7 +29,9 @@ from ..mechanics import (
 )
 from ..models import EngineConfig, GameState, NarrationEntry, SceneLogEntry, TurnSnapshot
 from ..npc import activate_npcs_for_prompt
-from ..prompt_builders import build_action_prompt, build_dialog_prompt
+from ..prompt_action import build_action_prompt
+from ..prompt_dialog import build_dialog_prompt
+from ..prompt_loader import get_prompt
 from .analysis import call_correction_brain
 from .ops import _apply_correction_ops
 
@@ -265,8 +267,7 @@ def process_correction(
     # Step 3: Narrator rewrite
     correction_tag = (
         f"\n<correction_context>{analysis['narrator_guidance']}</correction_context>"
-        f"\n<correction_instruction>Rewrite the scene incorporating the correction above. "
-        f"Same events and outcome — only adjust what the correction requires.</correction_instruction>"
+        f"\n{get_prompt('block_correction_instruction')}"
     )
     prompt = prompt + correction_tag
     narration, _ = narrate_scene(provider, game, prompt, config=_cfg)

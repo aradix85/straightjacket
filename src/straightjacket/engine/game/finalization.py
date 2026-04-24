@@ -20,7 +20,8 @@ from ..mechanics import (
 )
 from ..mechanics.consequences import tick_threat_clock
 from ..mechanics.legacy import mark_legacy
-from ..mechanics.move_outcome import OutcomeResult, resolve_move_outcome
+from ..mechanics.move_effects import OutcomeResult
+from ..mechanics.move_outcome import resolve_move_outcome
 from ..models import BrainResult, ClockEvent, EngineConfig, GameState, MemoryEntry, RollResult
 from ..npc import find_npc
 from ..npc.memory import consolidate_memory

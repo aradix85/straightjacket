@@ -35,6 +35,7 @@ from .engine_config_dataclasses import (
     ImpactConfig,
     InformationGateConfig,
     InformationGatePoints,
+    InformationGateBuckets,
     LegacyConfig,
     LocationConfig,
     MemoryConfig,
@@ -379,6 +380,8 @@ def parse_engine_yaml(data: dict[str, Any]) -> EngineSettings:
     position_resolver = PositionResolverConfig(
         desperate_below=pr["desperate_below"],
         controlled_above=pr["controlled_above"],
+        npc_bond_high_min=pr["npc_bond_high_min"],
+        npc_bond_low_max=pr["npc_bond_low_max"],
         weights=pr_weights,
         move_baselines=dict(pr["move_baselines"]),
         overrides=pr_overrides,
@@ -390,15 +393,21 @@ def parse_engine_yaml(data: dict[str, Any]) -> EngineSettings:
     effect_resolver = EffectResolverConfig(
         limited_below=er["limited_below"],
         great_above=er["great_above"],
+        bond_high_min=er["bond_high_min"],
+        bond_low_max=er["bond_low_max"],
         weights=er_weights,
         move_baselines=dict(er["move_baselines"]),
     )
 
-    # information_gate: nested points
+    # information_gate: nested points + buckets
     ig = dict(data["information_gate"])
     ig_points = _build_strict(InformationGatePoints, dict(ig.pop("points")))
+    ig_buckets = _build_strict(InformationGateBuckets, dict(ig.pop("buckets")))
     information_gate = InformationGateConfig(
         points=ig_points,
+        buckets=ig_buckets,
+        gate_min=ig["gate_min"],
+        gate_max=ig["gate_max"],
         stance_caps=dict(ig["stance_caps"]),
         default_cap=ig["default_cap"],
     )

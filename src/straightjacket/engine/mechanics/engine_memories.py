@@ -60,8 +60,11 @@ def generate_engine_memories(
     result_text = result_text_map[result_key]
     move_verb = verb_map[move] if move in verb_map else verb_map["_catchall"]
 
+    _pd = eng().prompt_display
+    _cons_max = _pd.memory_consequences_max
+
     if consequences:
-        result_text += f" ({', '.join(consequences[:3])})"
+        result_text += f" ({', '.join(consequences[:_cons_max])})"
 
     memories = []
     for npc in game.npcs:
@@ -90,7 +93,7 @@ def generate_engine_memories(
             move_verb=move_verb,
             result_text=result_text,
             move=move,
-            consequences=", ".join(consequences[:3]) if consequences else "",
+            consequences=", ".join(consequences[:_cons_max]) if consequences else "",
         )
 
         emotional = derive_memory_emotion(move, result, npc.disposition)
@@ -119,9 +122,10 @@ def generate_scene_context(
     """Engine-generated scene_context from mechanical context. Replaces AI-generated version."""
     _e = eng()
     _defaults = _e.ai_text.narrator_defaults
+    _npc_max = _e.prompt_display.memory_npcs_max
     move = brain.move
     location = game.world.current_location or _defaults["unknown_location"]
-    npc_summary = ", ".join(activated_npc_names[:3]) if activated_npc_names else _defaults["no_npcs_nearby"]
+    npc_summary = ", ".join(activated_npc_names[:_npc_max]) if activated_npc_names else _defaults["no_npcs_nearby"]
 
     if move == "dialog" or roll is None:
         template = _e.get_raw("scene_context_dialog")

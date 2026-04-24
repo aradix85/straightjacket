@@ -167,7 +167,7 @@ class TestImpactsSnapshotRestore:
 
 class TestSufferHandlerMarksImpact:
     def test_miss_at_zero_health_marks_wounded(self, stub_engine: None) -> None:
-        from straightjacket.engine.mechanics.move_outcome import apply_suffer_handler
+        from straightjacket.engine.mechanics.move_handlers import apply_suffer_handler
 
         game = _game()
         game.resources.health = 0
@@ -185,7 +185,7 @@ class TestSufferHandlerMarksImpact:
 
     def test_second_hit_marks_worse_impact(self, stub_engine: None) -> None:
         from straightjacket.engine.mechanics.impacts import apply_impact
-        from straightjacket.engine.mechanics.move_outcome import apply_suffer_handler
+        from straightjacket.engine.mechanics.move_handlers import apply_suffer_handler
 
         game = _game()
         game.resources.health = 0
@@ -205,7 +205,7 @@ class TestSufferHandlerMarksImpact:
 class TestRecoveryHandlerClearsImpact:
     def test_heal_clears_wounded(self, stub_engine: None) -> None:
         from straightjacket.engine.mechanics.impacts import apply_impact
-        from straightjacket.engine.mechanics.move_outcome import apply_recovery_handler
+        from straightjacket.engine.mechanics.move_handlers import apply_recovery_handler
 
         game = _game()
         apply_impact(game, "wounded")
@@ -222,7 +222,7 @@ class TestRecoveryHandlerClearsImpact:
         assert any("wounded" in c for c in result.consequences)
 
     def test_no_impact_no_clear(self, stub_engine: None) -> None:
-        from straightjacket.engine.mechanics.move_outcome import apply_recovery_handler
+        from straightjacket.engine.mechanics.move_handlers import apply_recovery_handler
 
         game = _game()
         params = {
@@ -239,7 +239,7 @@ class TestRecoveryHandlerClearsImpact:
 
 class TestThresholdHandlerMarksImpact:
     def test_face_death_weak_hit_marks_doomed(self, stub_engine: None) -> None:
-        from straightjacket.engine.mechanics.move_outcome import apply_threshold_handler
+        from straightjacket.engine.mechanics.move_handlers import apply_threshold_handler
 
         game = _game()
         result = apply_threshold_handler(game, "WEAK_HIT", {"impact": "doomed"})
@@ -315,7 +315,7 @@ class TestImpactAcknowledgmentValidator:
 
 class TestCharacterStatePromptTag:
     def test_no_impacts_no_tag(self, load_engine: None) -> None:
-        from straightjacket.engine.prompt_builders import _scene_header
+        from straightjacket.engine.prompt_shared import _scene_header
 
         game = _game()
         header = _scene_header(game)
@@ -323,7 +323,7 @@ class TestCharacterStatePromptTag:
 
     def test_impacts_in_character_state(self, load_engine: None) -> None:
         from straightjacket.engine.mechanics.impacts import apply_impact
-        from straightjacket.engine.prompt_builders import _scene_header
+        from straightjacket.engine.prompt_shared import _scene_header
 
         game = _game()
         game.setting_id = "starforged"

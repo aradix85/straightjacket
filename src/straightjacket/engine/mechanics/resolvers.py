@@ -37,9 +37,10 @@ def _score_npc_relationship(game: GameState, brain: BrainResult) -> int:
     }
     score = disp_weights.get(target.disposition, 0)
     bond = get_npc_bond(game, target.id)
-    if bond >= 3:
+    cfg = eng().position_resolver
+    if bond >= cfg.npc_bond_high_min:
         score += w.npc_bond_high
-    elif bond <= 0:
+    elif bond <= cfg.npc_bond_low_max:
         score += w.npc_bond_low
     return score
 
@@ -205,9 +206,10 @@ def resolve_effect(game: GameState, brain: BrainResult, position: str) -> str:
     if brain.target_npc:
         target = find_npc(game, brain.target_npc)
         if target:
-            if get_npc_bond(game, target.id) >= 3:
+            bond = get_npc_bond(game, target.id)
+            if bond >= cfg.bond_high_min:
                 score += w.bond_high
-            elif get_npc_bond(game, target.id) <= 0:
+            elif bond <= cfg.bond_low_max:
                 score += w.bond_low
 
     # Secured advantage
@@ -250,7 +252,7 @@ def move_category(move: str) -> str:
     entry.
     """
     mc = eng().get_raw("move_categories")
-    for cat in ("combat", "social", "endure", "recovery"):
+    for cat in mc:
         if move in mc[cat]:
             return cat
     return "other"

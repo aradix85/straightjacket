@@ -2,6 +2,10 @@ chaos:
   min: 1
   max: 9
   start: 5
+  adjust_miss: 1
+  adjust_strong: -1
+  adjust_dialog_hostile: 1
+  adjust_dialog_friendly: -1
 chaos_resolver:
   high_threshold: 7
   low_threshold: 3

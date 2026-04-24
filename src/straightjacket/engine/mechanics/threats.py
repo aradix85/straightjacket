@@ -46,7 +46,9 @@ def advance_menace_on_miss(game: GameState) -> list[ThreatEvent]:
 
 def tick_autonomous_threats(game: GameState) -> list[ThreatEvent]:
     """Autonomously advance threat menace by chance each scene."""
-    tick_chance = eng().threats.autonomous_tick_chance
+    _cfg = eng().threats
+    tick_chance = _cfg.autonomous_tick_chance
+    marks = _cfg.autonomous_tick_marks
     events: list[ThreatEvent] = []
     for threat in game.threats:
         if threat.status != "active":
@@ -55,7 +57,7 @@ def tick_autonomous_threats(game: GameState) -> list[ThreatEvent]:
             continue
         if random.random() >= tick_chance:
             continue
-        ticks = threat.advance_menace(1)
+        ticks = threat.advance_menace(marks)
         if ticks > 0:
             events.append(
                 ThreatEvent(

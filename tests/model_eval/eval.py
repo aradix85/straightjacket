@@ -443,7 +443,7 @@ def eval_narrator(provider: AIProvider, case: dict, model: str, params: dict) ->
     """Evaluate narrator output for mechanical constraint compliance."""
     from straightjacket.engine.models import EngineConfig, GameState, RollResult
     from straightjacket.engine.prompt_blocks import get_narrator_system
-    from straightjacket.engine.prompt_builders import build_action_prompt
+    from straightjacket.engine.prompt_action import build_action_prompt
 
     result = CaseResult(case_id=case["id"], role="narrator")
 

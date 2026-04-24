@@ -1,3 +1,7 @@
 fuzzy_match:
   min_word_length: 5
   exact_dedup_threshold: 0.4
+  description_match_min_length: 10
+  description_word_min_length: 3
+  label_word_min_length: 4
+  npc_name_min_length: 3

@@ -1,6 +1,8 @@
 effect_resolver:
   limited_below: -2
   great_above: 2
+  bond_high_min: 3
+  bond_low_max: 0
   weights:
     desperate: -1
     controlled: 1

@@ -47,3 +47,5 @@
   - Only a very superficial or incidental reference appears that a reader would not recognise as the revelation.
 
   The narration is in {lang}. Reason in {lang} if helpful, but the JSON fields must always be populated.
+"revelation_check_question": |-
+  Was this revelation meaningfully present in the narration above?

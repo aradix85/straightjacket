@@ -159,7 +159,7 @@ def call_revelation_check(
     prompt = (
         f'<revelation weight="{html.escape(rev_weight, quote=True)}">{html.escape(rev_content)}</revelation>\n\n'
         f"<narration>{narration}</narration>\n\n"
-        f"Was this revelation meaningfully present in the narration above?"
+        f"{get_prompt('revelation_check_question')}"
     )
 
     try:

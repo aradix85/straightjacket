@@ -1,0 +1,26 @@
+narrator_status_descriptions:
+  # Narrator-facing resource-level descriptions, injected into the narrator
+  # prompt via <character_state>. Longer and more evocative than the
+  # player-facing status_descriptions in status_descriptions.yaml. The engine
+  # picks the entry matching (or just below) the current resource value.
+  health:
+    5: uninjured
+    4: bruised — minor aches, nothing that slows them down
+    3: injured — clearly hurting, moving with effort
+    2: seriously wounded — every motion costs something
+    1: critically injured — barely holding together, on the edge of collapse
+    0: at the physical limit — collapse is imminent (see <flags>)
+  spirit:
+    5: steady and composed
+    4: mildly unsettled — small cracks under the surface
+    3: shaken — stress is showing, focus is harder to maintain
+    2: deeply troubled — holding on by a thread, doubt and fear are present
+    1: near breaking — barely functioning, the weight is crushing
+    0: at the mental limit — breakdown is imminent (see <flags>)
+  supply:
+    5: well-equipped
+    4: adequate — supplies are fine for now
+    3: running low — rationing has begun, choices are being made
+    2: critically short — scarcity is a real pressure
+    1: nearly nothing — desperation is setting in
+    0: out of resources entirely (see <flags>)

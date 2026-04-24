@@ -38,11 +38,15 @@ class NpcConfig:
 
 @dataclass
 class ChaosConfig:
-    """Chaos factor bounds."""
+    """Chaos factor bounds and per-outcome adjustments."""
 
     min: int
     max: int
     start: int
+    adjust_miss: int
+    adjust_strong: int
+    adjust_dialog_hostile: int
+    adjust_dialog_friendly: int
 
 
 @dataclass
@@ -166,6 +170,8 @@ class PromptDisplayConfig:
     epilogue_log_scenes: int
     recent_events_window: int
     campaign_history_chapters: int
+    memory_consequences_max: int
+    memory_npcs_max: int
 
 
 @dataclass
@@ -191,6 +197,7 @@ class ThreatConfig:
 
     menace_on_miss: int
     autonomous_tick_chance: float
+    autonomous_tick_marks: int
     menace_high_threshold: float
     forsake_spirit_cost: int
 
@@ -339,6 +346,8 @@ class PositionResolverConfig:
 
     desperate_below: int
     controlled_above: int
+    npc_bond_high_min: int
+    npc_bond_low_max: int
     weights: PositionResolverWeights
     move_baselines: dict[str, int]
     overrides: list[PositionOverride]
@@ -361,6 +370,8 @@ class EffectResolverConfig:
 
     limited_below: int
     great_above: int
+    bond_high_min: int
+    bond_low_max: int
     weights: EffectResolverWeights
     move_baselines: dict[str, int]
 
@@ -379,10 +390,24 @@ class InformationGatePoints:
 
 
 @dataclass
+class InformationGateBuckets:
+    """Boundaries for bucketing scenes_known and bond into low/mid/high. A
+    value `>= *_mid_min` goes into mid; `>= *_high_min` goes into high; else low."""
+
+    scenes_known_mid_min: int
+    scenes_known_high_min: int
+    bond_mid_min: int
+    bond_high_min: int
+
+
+@dataclass
 class InformationGateConfig:
     """Information gate: how much NPCs reveal based on scenes/bond/stance."""
 
     points: InformationGatePoints
+    buckets: InformationGateBuckets
+    gate_min: int
+    gate_max: int
     stance_caps: dict[str, int]
     default_cap: int
 
@@ -475,6 +500,10 @@ class FuzzyMatchConfig:
 
     min_word_length: int
     exact_dedup_threshold: float
+    description_match_min_length: int
+    description_word_min_length: int
+    label_word_min_length: int
+    npc_name_min_length: int
 
 
 @dataclass
@@ -531,6 +560,7 @@ class MemoryConfig:
     min_token_length: int
     consolidation_floor: int
     unknown_emotion_importance: int
+    overlap_scale: int
 
 
 @dataclass
@@ -573,6 +603,11 @@ class RuleValidatorConfig:
     max_gap_chars: int
     max_consecutive_short_gaps: int
     violation_dedup_key_length: int
+    agency_violations_cap: int
+    atmospheric_examples_cap: int
+    correction_violations_cap: int
+    threat_name_min_word_length: int
+    impact_label_min_word_length: int
     violation_templates: dict[str, str]
 
 
@@ -598,7 +633,9 @@ class ChapterConfig:
     """Chapter transition thresholds."""
 
     filler_max: int
+    filler_bond_max: int
     open_threads_max: int
+    scene_context_threads_max: int
 
 
 @dataclass

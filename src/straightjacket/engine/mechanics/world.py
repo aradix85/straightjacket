@@ -46,10 +46,11 @@ def update_chaos_factor(game: GameState, result: str, target_npc_id: str | None 
     Friendly/loyal → −1 (in control). Neutral/no target → no change.
     """
     _e = eng()
+    _c = _e.chaos
     if result == "MISS":
-        game.world.tick_chaos(+1, floor=_e.chaos.min, ceiling=_e.chaos.max)
+        game.world.tick_chaos(_c.adjust_miss, floor=_c.min, ceiling=_c.max)
     elif result == "STRONG_HIT":
-        game.world.tick_chaos(-1, floor=_e.chaos.min, ceiling=_e.chaos.max)
+        game.world.tick_chaos(_c.adjust_strong, floor=_c.min, ceiling=_c.max)
     elif result == "dialog" and target_npc_id:
         # circular: npc package ↔ mechanics via prompt_blocks/processing
         from ..npc import find_npc
@@ -57,9 +58,9 @@ def update_chaos_factor(game: GameState, result: str, target_npc_id: str | None 
         npc = find_npc(game, target_npc_id)
         if npc:
             if npc.disposition in ("hostile", "distrustful"):
-                game.world.tick_chaos(+1, floor=_e.chaos.min, ceiling=_e.chaos.max)
+                game.world.tick_chaos(_c.adjust_dialog_hostile, floor=_c.min, ceiling=_c.max)
             elif npc.disposition in ("friendly", "loyal"):
-                game.world.tick_chaos(-1, floor=_e.chaos.min, ceiling=_e.chaos.max)
+                game.world.tick_chaos(_c.adjust_dialog_friendly, floor=_c.min, ceiling=_c.max)
 
 
 # TEMPORAL & SPATIAL CONSISTENCY
@@ -79,7 +80,8 @@ def advance_time(game: GameState, progression: str) -> None:
         idx = phases.index(game.world.time_of_day)
     except ValueError:
         return
-    steps = {"moderate": 1, "long": 2}.get(progression, 0)
+    steps_map = eng().get_raw("time_progression_steps")
+    steps = steps_map[progression]
     if steps:
         new_idx = (idx + steps) % len(phases)
         game.world.time_of_day = phases[new_idx]

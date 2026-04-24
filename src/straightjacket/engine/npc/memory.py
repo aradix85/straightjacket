@@ -101,7 +101,9 @@ def retrieve_memories(
             event_words = {w.lower() for w in mem.event.split() if len(w) >= _mem_cfg.min_token_length}
             overlap = context_words & event_words
             if overlap:
-                relevance = min(1.0, len(overlap) / max(_mem_cfg.min_token_length, len(context_words)) * 2)
+                relevance = min(
+                    1.0, len(overlap) / max(_mem_cfg.min_token_length, len(context_words)) * _mem_cfg.overlap_scale
+                )
 
         if _present and mem.about_npc in _present:
             relevance = min(1.0, relevance + about_boost)
