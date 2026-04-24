@@ -66,7 +66,7 @@ The architecture implements the [Narrative RPG Engine](docs/narrative_rpg_engine
 
 Four complementary layers:
 
-**Unit/integration tests** (`python -m pytest tests/ -v`, ~794 tests, no API key needed): mock providers with canned responses test engine logic, NPC processing, serialization, correction flow, prompt assembly, WebSocket handlers, database sync/queries, tool registry/dispatch. Every commit must pass.
+**Unit/integration tests** (`python -m pytest tests/ -v`, ~816 tests, no API key needed): mock providers with canned responses test engine logic, NPC processing, serialization, correction flow, prompt assembly, WebSocket handlers, database sync/queries, tool registry/dispatch. Every commit must pass.
 
 **Project rules** (`tests/test_project_rules.py`, no API key needed): 11 AST/regex scans that enforce the absolute rules mechanically — no silent domain defaults in `.get()`, no `X or "literal"` fallbacks on lookups, no broad `except Exception` without a policy marker, no dataclass defaults on config binding fields, no untagged TODOs, no banner comments, inline imports carry reason comments, every `@dataclass` in `models*.py` inherits `SerializableMixin`, no direct provider SDK imports outside the adapters, no hardcoded model names in engine code, no function above cyclomatic complexity 20. Failures are deterministic measurements of residual debt; they are not blocking for feature work.
 

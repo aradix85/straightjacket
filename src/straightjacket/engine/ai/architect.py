@@ -5,7 +5,7 @@ import json
 from ..config_loader import model_for_role, sampling_params
 from ..engine_loader import eng
 from ..logging_util import log
-from ..models import ChapterSummary, EngineConfig, GameState
+from ..models import EngineConfig, GameState
 from ..npc import get_npc_bond
 from ..prompt_blocks import (
     content_boundaries_block,
@@ -215,8 +215,18 @@ def call_story_architect(
 
 def call_chapter_summary(
     provider: AIProvider, game: GameState, config: EngineConfig | None = None, epilogue_text: str = ""
-) -> ChapterSummary:
-    """Generate a summary of the completed chapter for campaign history."""
+) -> dict:
+    """Generate the narrative summary of a completed chapter.
+
+    Returns a dict with the AI-written narrative fields only (title, summary,
+    unresolved_threads, character_growth, npc_evolutions, thematic_question,
+    post_story_location). The caller (`_close_previous_chapter` in
+    `game/chapters.py`) combines this with engine-captured mechanical state
+    (chapter, scenes, progress_tracks, threats, impacts, assets, threads) to
+    construct the final ChapterSummary. This keeps narrative interpretation
+    (AI-side) and mechanical snapshot (engine-side) cleanly separated — the
+    AI never sees nor writes the canonical chapter-end state.
+    """
     _cfg = config or EngineConfig()
     lang = get_narration_lang(_cfg)
     _e = eng()
@@ -259,19 +269,18 @@ def call_chapter_summary(
             **sampling_params("chapter_summary"),
             log_role="chapter_summary",
         )
-        data = json.loads(response.content)
-        data["chapter"] = game.campaign.chapter_number
-        data["scenes"] = game.narrative.scene_count
-        return ChapterSummary.from_dict(data)
+        return json.loads(response.content)
     except Exception as e:
         # Intentional graceful degradation — see AI-CALL SUPPRESSION POLICY in provider_base.py.
         log(f"[ChapterSummary] Structured output failed ({type(e).__name__}: {e}), using fallback", level="warning")
-        return ChapterSummary(
-            chapter=game.campaign.chapter_number,
-            title=_defaults["chapter_summary_fallback_title"].format(chapter=game.campaign.chapter_number),
-            summary=_defaults["chapter_summary_fallback_text"].format(
+        return {
+            "title": _defaults["chapter_summary_fallback_title"].format(chapter=game.campaign.chapter_number),
+            "summary": _defaults["chapter_summary_fallback_text"].format(
                 player_name=game.player_name, location=game.world.current_location
             ),
-            post_story_location=game.world.current_location,
-            scenes=game.narrative.scene_count,
-        )
+            "unresolved_threads": list(_defaults["chapter_summary_fallback_unresolved_threads"]),
+            "character_growth": _defaults["chapter_summary_fallback_character_growth"],
+            "npc_evolutions": list(_defaults["chapter_summary_fallback_npc_evolutions"]),
+            "thematic_question": _defaults["chapter_summary_fallback_thematic_question"],
+            "post_story_location": game.world.current_location,
+        }

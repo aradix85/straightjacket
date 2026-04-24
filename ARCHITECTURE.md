@@ -67,6 +67,7 @@ Where to find things. If you want to change X, edit Y.
 | Story structure / act tracking | `story_state.py` → `get_current_act`, `check_story_completion`; `ai/architect.py` |
 | Correction (## undo) flow | `correction/` (package: `analysis.py` brain call, `ops.py` atomic state patches, `orchestrator.py` snapshot restore + re-narrate) |
 | Momentum burn re-narration | `game/momentum_burn.py` → `process_momentum_burn` |
+| Chapter transition (close, reset, restore) | `game/chapters.py` → `_close_previous_chapter`, `_reset_chapter_mechanics`, `_restore_chapter_mechanics`; narrative summary via `ai/architect.py` → `call_chapter_summary` |
 | Save format | `models.py` → SerializableMixin on each dataclass (no manual `to_dict`/`from_dict`) |
 | User/save directory management | `user_management.py` → `create_user`, `get_save_dir`, `_safe_name` |
 | WebSocket protocol / UI | `web/handlers.py`, `web/static/index.html` |
@@ -275,6 +276,8 @@ src/straightjacket/
 **Two-call pattern.** Narrator writes pure prose. A second call on the analytical cluster model extracts NPC-related metadata (new NPCs, renames, details, deaths). Same pattern for opening_setup, revelation_check, recap, and chapter_summary. The analytical cluster typically uses a cheaper/faster model for these structured output calls.
 
 **Snapshot/restore.** `GameState.snapshot()` captures all mutable state before a turn. `restore()` reverts everything atomically. Used by correction (##) and momentum burn.
+
+**Chapter transitions are explicit snapshot+restore.** `_close_previous_chapter` builds a `ChapterSummary` containing both AI-written narrative fields and an engine-captured mechanical snapshot (progress_tracks, threats, impacts, assets, narrative.threads). `_reset_chapter_mechanics` zeros every chapter-spanning field, then `_restore_chapter_mechanics` replays the snapshot onto the live game state. Net effect on the running game is unchanged from the previous implicit carry-over, but the chapter-end state is now an auditable record in `campaign_history`, and adding a new chapter-spanning field requires touching three named places (capture, reset, restore) instead of "remember not to add it to the reset list". xp and legacy live on `CampaignState` and carry over campaign-wide; they are not in `ChapterSummary`. NPC list and NPC connection tracks carry via `game.npcs` (not reset by `_reset_chapter_mechanics`) and are handled separately by `_prepare_npcs_for_new_chapter`.
 
 **Provider abstraction.** `AIProvider` protocol with two implementations (Anthropic, OpenAI-compatible). The engine never imports provider SDKs directly. `create_with_retry` handles transient errors with exponential backoff. Multi-model: config.yaml assigns models via four clusters — narrator (Qwen 3 for prose), creative (GPT-OSS for architect, director), classification (GPT-OSS for brain, correction), analytical (GPT-OSS for validator, metadata, recap, and other structured output roles). Clusters are the single source of truth for all call parameters. `model_for_role(role)` resolves the model; `sampling_params(role)` resolves temperature, top_p, max_tokens, max_retries, and extra_body. The provider stores no model state.
 

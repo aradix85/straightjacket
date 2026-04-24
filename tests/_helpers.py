@@ -109,3 +109,23 @@ def make_world_state(**kwargs: Any) -> Any:
 
     kwargs.setdefault("chaos_factor", 5)
     return WorldState(**kwargs)
+
+
+def make_chapter_summary(**kwargs: Any) -> Any:
+    from straightjacket.engine.models import ChapterSummary
+
+    kwargs.setdefault("chapter", 1)
+    kwargs.setdefault("title", "")
+    kwargs.setdefault("summary", "")
+    kwargs.setdefault("unresolved_threads", [])
+    kwargs.setdefault("character_growth", "")
+    kwargs.setdefault("npc_evolutions", [])
+    kwargs.setdefault("thematic_question", "")
+    kwargs.setdefault("post_story_location", "")
+    kwargs.setdefault("scenes", 0)
+    kwargs.setdefault("progress_tracks", [])
+    kwargs.setdefault("threats", [])
+    kwargs.setdefault("impacts", [])
+    kwargs.setdefault("assets", [])
+    kwargs.setdefault("threads", [])
+    return ChapterSummary(**kwargs)

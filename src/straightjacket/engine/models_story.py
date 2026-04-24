@@ -7,7 +7,7 @@ from dataclasses import dataclass, field
 
 from ..i18n import t
 from .engine_loader import eng
-from .models_base import ClockEvent, ProgressTrack
+from .models_base import ClockEvent, ProgressTrack, ThreatData
 from .serialization import SerializableMixin
 
 
@@ -200,23 +200,41 @@ class NarrativeState(SerializableMixin):
 class NpcEvolution(SerializableMixin):
     """Projected NPC change from chapter summary."""
 
-    name: str = ""
-    projection: str = ""
+    name: str
+    projection: str
 
 
 @dataclass
 class ChapterSummary(SerializableMixin):
-    """Summary of a completed chapter for campaign continuity."""
+    """Snapshot of a completed chapter for campaign continuity.
 
-    chapter: int = 0
-    title: str = ""
-    summary: str = ""
-    unresolved_threads: list[str] = field(default_factory=list)
-    character_growth: str = ""
-    npc_evolutions: list[NpcEvolution] = field(default_factory=list)
-    thematic_question: str = ""
-    post_story_location: str = ""
-    scenes: int = 0
+    Two kinds of fields. Narrative fields (title, summary, unresolved_threads,
+    character_growth, npc_evolutions, thematic_question, post_story_location)
+    are AI-written: interpretation of what the chapter meant. Mechanical fields
+    (chapter, scenes, progress_tracks, threats, impacts, assets, threads) are
+    engine-written: a hard snapshot of game state at chapter-end. The narrative
+    is colour; the mechanical state is canon. Step 2 (chapter_validator) checks
+    that the AI text does not contradict the snapshot.
+
+    All fields required. The mechanical fields make chapter transitions auditable
+    and allow the chapter-end state to be restored after _reset_chapter_mechanics
+    instead of relying on which fields the reset happens not to touch.
+    """
+
+    chapter: int
+    title: str
+    summary: str
+    unresolved_threads: list[str]
+    character_growth: str
+    npc_evolutions: list[NpcEvolution]
+    thematic_question: str
+    post_story_location: str
+    scenes: int
+    progress_tracks: list[ProgressTrack]
+    threats: list[ThreatData]
+    impacts: list[str]
+    assets: list[str]
+    threads: list[ThreadEntry]
 
 
 def _legacy_quests_factory() -> ProgressTrack:

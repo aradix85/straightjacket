@@ -7,6 +7,16 @@ Originally forked from [EdgeTales](https://github.com/edgetales/edgetales). See 
 
 ---
 
+## [0.74.0] — 2026-04-25
+
+Chapter transitions made explicit. `ChapterSummary` now carries both the AI-written narrative fields and a deterministic engine-captured mechanical snapshot (progress_tracks, threats, impacts, assets, narrative.threads). All fourteen fields required — no defaults. `call_chapter_summary` returns the narrative dict only; `_close_previous_chapter` combines it with the engine snapshot. AI writes colour, engine writes canon; step 2 (chapter_validator) will check the AI text against the snapshot.
+
+`_reset_chapter_mechanics` now zeros every chapter-spanning field instead of leaving some implicit; new `_restore_chapter_mechanics` replays the snapshot. Net behaviour identical to prior implicit carry-over, but adding a chapter-spanning field means touching three named places (capture, reset, restore) — no more "remember not to add it to the reset list". xp and legacy stay on CampaignState; NPC list and connection tracks carry via `game.npcs` unchanged. The AI-call fallback dict previously relied on dataclass defaults; the four empty narrative values now live in `engine/ai_text.yaml` alongside the existing fallback title/text keys.
+
+Twenty-two new tests in `tests/test_chapter_summary.py` covering round-trip, required-field enforcement, reset+restore symmetry, snapshot immutability after live mutation, and fallback-path integrity. `tests/_helpers.py` gains `make_chapter_summary`. ARCHITECTURE.md updated with a Key Design Decision and module-table row. Saves from prior versions are not loadable. Delivery gate: 816 tests green (+22), ruff + ruff format + mypy clean on 100 source files, all 11 project-rule tests green.
+
+---
+
 ## [0.73.0] — 2026-04-24
 
 File splits and config-driven audit. Three oversized modules decomposed along intent lines: `turn.py` (761 lines) into `turn.py` (orchestration, 430 lines) + `action_resolution.py` (roll-consequence pipeline) + `scene_finalization.py` (post-narration) + `turn_types.py` (shared dataclasses); `prompt_builders.py` (629 lines) into `prompt_shared.py` (helpers reused by multiple builders) + `prompt_action.py` + `prompt_dialog.py` + `prompt_boundary.py` (new_game / epilogue / new_chapter); `move_outcome.py` (529 lines) into `move_outcome.py` (top-level resolver and dispatch) + `move_effects.py` (parser, 13 effect handlers, dispatch dict) + `move_handlers.py` (suffer / threshold / recovery). Every caller updated in the same commit; no re-export compatibility layers. Radon confirms average complexity stays A (4.15) over 765 blocks, no F/E/D-grade functions introduced, highest new C is `finalize_scene` at 19 (under the 20 ceiling).

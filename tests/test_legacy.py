@@ -188,12 +188,12 @@ class TestCampaignSnapshot:
 
     def test_campaign_history_preserved_across_snapshot(self, stub_engine: None) -> None:
         """campaign_history is not in snapshot — it persists across turn undo."""
-        from straightjacket.engine.models_story import ChapterSummary
+        from tests._helpers import make_chapter_summary
 
         game = _game()
-        game.campaign.campaign_history.append(ChapterSummary(summary="Chapter 1"))
+        game.campaign.campaign_history.append(make_chapter_summary(summary="Chapter 1"))
         snap = game.campaign.snapshot()
-        game.campaign.campaign_history.append(ChapterSummary(summary="Chapter 2"))
+        game.campaign.campaign_history.append(make_chapter_summary(summary="Chapter 2"))
         game.campaign.restore(snap)
         # History was not in snapshot, so restore doesn't touch it
         assert len(game.campaign.campaign_history) == 2

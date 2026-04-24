@@ -26,8 +26,12 @@ from ..models import (
     GameState,
     NarrationEntry,
     NpcData,
+    NpcEvolution,
+    ProgressTrack,
     SceneLogEntry,
     StoryBlueprint,
+    ThreadEntry,
+    ThreatData,
 )
 from ..npc import (
     consolidate_memory,
@@ -79,6 +83,7 @@ def start_new_chapter(
 
     chapter_summary = _close_previous_chapter(provider, game, config)
     _reset_chapter_mechanics(game)
+    _restore_chapter_mechanics(game, chapter_summary)
     _prepare_npcs_for_new_chapter(game)
 
     threads = chapter_summary.unresolved_threads
@@ -115,9 +120,31 @@ def start_new_chapter(
 
 
 def _close_previous_chapter(provider: AIProvider, game: GameState, config: EngineConfig | None) -> ChapterSummary:
-    """Generate chapter summary and advance chapter number."""
+    """Generate chapter summary, snapshot mechanical state, advance chapter number.
+
+    The AI writes the narrative fields. The engine snapshots mechanical state
+    deterministically. Both go into the same ChapterSummary, with the
+    mechanical snapshot as canonical record (step 2 will validate the AI text
+    against it).
+    """
     epilogue = game.campaign.epilogue_text or ""
-    chapter_summary = call_chapter_summary(provider, game, config, epilogue_text=epilogue)
+    narrative = call_chapter_summary(provider, game, config, epilogue_text=epilogue)
+    chapter_summary = ChapterSummary(
+        chapter=game.campaign.chapter_number,
+        title=narrative["title"],
+        summary=narrative["summary"],
+        unresolved_threads=list(narrative["unresolved_threads"]),
+        character_growth=narrative["character_growth"],
+        npc_evolutions=[NpcEvolution(**e) for e in narrative["npc_evolutions"]],
+        thematic_question=narrative["thematic_question"],
+        post_story_location=narrative["post_story_location"],
+        scenes=game.narrative.scene_count,
+        progress_tracks=[ProgressTrack.from_dict(p.to_dict()) for p in game.progress_tracks],
+        threats=[ThreatData.from_dict(t.to_dict()) for t in game.threats],
+        impacts=list(game.impacts),
+        assets=list(game.assets),
+        threads=[ThreadEntry.from_dict(th.to_dict()) for th in game.narrative.threads],
+    )
     game.campaign.campaign_history.append(chapter_summary)
 
     post_loc = chapter_summary.post_story_location
@@ -129,7 +156,15 @@ def _close_previous_chapter(provider: AIProvider, game: GameState, config: Engin
 
 
 def _reset_chapter_mechanics(game: GameState) -> None:
-    """Reset all per-chapter mechanical state to starting values."""
+    """Reset all per-chapter mechanical state to starting values.
+
+    Resets every field that should not implicitly carry over. Carry-over
+    happens explicitly via _restore_chapter_mechanics from the just-captured
+    ChapterSummary, not by skipping fields here. Adding a new chapter-spanning
+    field means: add it to ChapterSummary (capture), reset it here, restore it
+    in _restore_chapter_mechanics. No more 'this field carries over because we
+    don't reset it'.
+    """
     _e = eng()
     game.resources.health = _e.resources.health_start
     game.resources.spirit = _e.resources.spirit_start
@@ -150,6 +185,28 @@ def _reset_chapter_mechanics(game: GameState) -> None:
     game.world.time_of_day = ""
     game.world.location_history = []
     game.narrative.director_guidance = DirectorGuidance()
+    # Mechanical state previously implicit-carryover, now explicit via snapshot+restore.
+    game.progress_tracks = []
+    game.threats = []
+    game.impacts = []
+    game.assets = []
+    game.narrative.threads = []
+
+
+def _restore_chapter_mechanics(game: GameState, summary: ChapterSummary) -> None:
+    """Restore mechanical state from the just-captured ChapterSummary.
+
+    Called immediately after _reset_chapter_mechanics. Net effect on the live
+    game state is identical to the previous implicit carry-over, but the
+    chapter-end snapshot is now the authoritative source. NPCs are not in
+    scope here — they live on game.npcs, which is not reset, so their state
+    (including connection tracks) carries over directly via _prepare_npcs_for_new_chapter.
+    """
+    game.progress_tracks = [ProgressTrack.from_dict(p.to_dict()) for p in summary.progress_tracks]
+    game.threats = [ThreatData.from_dict(t.to_dict()) for t in summary.threats]
+    game.impacts = list(summary.impacts)
+    game.assets = list(summary.assets)
+    game.narrative.threads = [ThreadEntry.from_dict(th.to_dict()) for th in summary.threads]
 
 
 def _prepare_npcs_for_new_chapter(game: GameState) -> None:
