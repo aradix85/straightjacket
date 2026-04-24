@@ -32,6 +32,7 @@ __all__ = [
 ]
 
 
+from ..emotions_loader import normalize_disposition
 from .activation import (
     activate_npcs_for_prompt,
     compute_npc_tfidf_scores,
@@ -42,7 +43,6 @@ from .lifecycle import (
     description_match_existing_npc,
     is_complete_description,
     merge_npc_identity,
-    normalize_disposition,
     normalize_npc_dispositions,
     reactivate_npc,
     retire_distant_npcs,

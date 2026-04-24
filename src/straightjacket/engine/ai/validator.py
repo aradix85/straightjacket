@@ -63,7 +63,6 @@ def validate_narration(
     provider: AIProvider,
     narration: str,
     ctx: ValidationContext,
-    config: EngineConfig | None = None,
 ) -> dict:
     """Check narrator output against engine constraints.
 
@@ -215,7 +214,7 @@ def validate_and_retry(
     attempts: list[tuple[str, int, dict]] = []
 
     for attempt in range(max_retries):
-        check = validate_narration(provider, narration, val_ctx, config=config)
+        check = validate_narration(provider, narration, val_ctx)
         report["checks"].append(check)
         violations = check.get("violations", [])
         attempts.append((narration, len(violations), check))
@@ -282,7 +281,7 @@ def validate_and_retry(
         narration = parse_narrator_response(game, raw)
 
     # Final validation of last attempt
-    final_check = validate_narration(provider, narration, val_ctx, config=config)
+    final_check = validate_narration(provider, narration, val_ctx)
     report["checks"].append(final_check)
     final_violations = final_check.get("violations", [])
     attempts.append((narration, len(final_violations), final_check))

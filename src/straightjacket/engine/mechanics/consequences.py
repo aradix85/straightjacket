@@ -207,58 +207,79 @@ def generate_consequence_sentences(
     return sentences
 
 
-def resolve_consequence_sentence(cons: str, player: str, npc_name: str, location: str) -> str:
-    """Resolve a single mechanical consequence string to a narrative sentence."""
-    fmt = {"player": player, "npc": npc_name, "location": location, "amount": ""}
-
-    # Impact marking: "mark wounded" / "clear wounded"
+def _resolve_impact_marker(cons: str, fmt: dict) -> str | None:
+    """Handle 'mark <impact>' and 'clear <impact>'. Returns None if not an impact marker."""
     if cons.startswith("mark "):
-        impact_key = cons[5:].strip()
-        fmt["impact"] = impact_label(impact_key)
+        fmt["impact"] = impact_label(cons[5:].strip())
         return pick_template("impact_mark").format(**fmt)
     if cons.startswith("clear "):
-        impact_key = cons[6:].strip()
-        fmt["impact"] = impact_label(impact_key)
+        fmt["impact"] = impact_label(cons[6:].strip())
         return pick_template("impact_clear").format(**fmt)
+    return None
 
-    # Parse "track -N" or "track +N" pattern
+
+def _resolve_bond_delta(cons: str, fmt: dict) -> str:
+    """'<Name> bond +N' / '<Name> bond -N' → bond_gain/bond_loss template."""
+    bond_npc = cons.split("bond")[0].strip()
+    if bond_npc:
+        fmt["npc"] = bond_npc
+    tpl_key = "bond_loss" if "-" in cons.split()[-1] else "bond_gain"
+    return pick_template(tpl_key).format(**fmt)
+
+
+def _resolve_resource_loss(track: str, cons: str, delta: str, fmt: dict) -> str:
+    """Resource reduction: health/spirit (severity-scaled), supply, momentum."""
+    try:
+        amount = int(delta.replace("-", ""))
+    except ValueError:
+        amount = 1
+    fmt["amount"] = str(amount)
+    severity = "heavy" if amount >= 2 else "light"
+
+    if track in ("health", "spirit"):
+        return pick_template(f"{track}_{severity}").format(**fmt)
+    if track == "supply" or "supply" in cons:
+        return pick_template("supply_any").format(**fmt)
+    if track == "momentum":
+        return pick_template("momentum_loss").format(**fmt)
+    return ""
+
+
+def _resolve_resource_gain(track: str, cons: str, fmt: dict) -> str:
+    """Resource increase: health/spirit, supply, momentum."""
+    if track in ("health", "spirit"):
+        return pick_template(f"{track}_gain").format(**fmt)
+    if track == "supply" or "supply" in cons:
+        return pick_template("supply_gain").format(**fmt)
+    if track == "momentum":
+        return pick_template("momentum_gain").format(**fmt)
+    return ""
+
+
+def resolve_consequence_sentence(cons: str, player: str, npc_name: str, location: str) -> str:
+    """Resolve a single mechanical consequence string to a narrative sentence.
+
+    Recognises impact markers ('mark wounded' / 'clear wounded'), bond deltas
+    ('Kira bond +1'), resource changes ('health -2', 'momentum +1'), and
+    compound consequences ('supply -1, health -1').
+    """
+    fmt: dict = {"player": player, "npc": npc_name, "location": location, "amount": ""}
+
+    impact_sentence = _resolve_impact_marker(cons, fmt)
+    if impact_sentence is not None:
+        return impact_sentence
+
     parts = cons.split()
     if len(parts) >= 2:
         track = parts[0].lower()
         delta = parts[-1]
 
-        # "Kira bond -1" → track=bond, npc=Kira
         if "bond" in cons.lower():
-            bond_npc = cons.split("bond")[0].strip()
-            if bond_npc:
-                fmt["npc"] = bond_npc
-            tpl_key = "bond_loss" if "-" in delta else "bond_gain"
-            return pick_template(tpl_key).format(**fmt)
-
+            return _resolve_bond_delta(cons, fmt)
         if "-" in delta:
-            try:
-                amount = int(delta.replace("-", ""))
-            except ValueError:
-                amount = 1
-            fmt["amount"] = str(amount)
-            severity = "heavy" if amount >= 2 else "light"
-
-            if track in ("health", "spirit"):
-                return pick_template(f"{track}_{severity}").format(**fmt)
-            if track == "supply" or "supply" in cons:
-                return pick_template("supply_any").format(**fmt)
-            if track == "momentum":
-                return pick_template("momentum_loss").format(**fmt)
-            return ""
-
+            return _resolve_resource_loss(track, cons, delta, fmt)
         if "+" in delta:
-            if track in ("health", "spirit"):
-                return pick_template(f"{track}_gain").format(**fmt)
-            if track == "supply" or "supply" in cons:
-                return pick_template("supply_gain").format(**fmt)
-            if track == "momentum":
-                return pick_template("momentum_gain").format(**fmt)
-            return ""
+            return _resolve_resource_gain(track, cons, fmt)
 
     # Compound: "supply -1, health -1"
     if "," in cons:

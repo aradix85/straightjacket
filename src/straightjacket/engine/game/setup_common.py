@@ -28,7 +28,6 @@ def register_extracted_npcs(
     *,
     skip_names: set[str] | None = None,
     start_id: int = 0,
-    label: str = "OpeningSetup",
 ) -> int:
     """Register NPCs from extraction data into game state.
 
@@ -37,7 +36,6 @@ def register_extracted_npcs(
         npc_dicts: Raw NPC dicts from the extractor.
         skip_names: Lowercased names to skip (player character, returning NPCs).
         start_id: Starting NPC ID counter. 0 means auto-detect from game.npcs.
-        label: Log label for context.
 
     Returns:
         The highest NPC ID number assigned (for further ID generation).
@@ -165,7 +163,6 @@ def apply_opening_setup(
             data["npcs"],
             skip_names=skip_names,
             start_id=start_id,
-            label=label,
         )
         if returning_npcs:
             returning_ids = {r.id for r in returning_npcs}

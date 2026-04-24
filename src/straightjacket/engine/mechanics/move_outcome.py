@@ -36,11 +36,12 @@ from __future__ import annotations
 
 import random
 import re
+from collections.abc import Callable
 from dataclasses import dataclass, field
 
 from ..engine_loader import eng
 from ..logging_util import log
-from ..models import GameState
+from ..models import GameState, NpcData
 from ..npc import find_npc
 
 from .impacts import apply_impact, blocks_recovery, clear_impact
@@ -128,97 +129,154 @@ def _roll_pay_the_price(game: GameState) -> str:
     return random.choice(pay_lines).format(player=game.player_name)
 
 
-def apply_effects(game: GameState, effects: list[MoveEffect], target_npc_id: str | None = None) -> OutcomeResult:
-    """Apply a list of parsed effects to game state. Returns result summary."""
+def _apply_momentum_effect(game: GameState, effect: MoveEffect, result: OutcomeResult, target: NpcData | None) -> None:
+    _e = eng()
+    game.resources.adjust_momentum(effect.value, floor=_e.momentum.floor, ceiling=_e.momentum.max)
+    sign = "+" if effect.value > 0 else ""
+    result.consequences.append(_e.ai_text.consequence_labels["momentum_change"].format(value=f"{sign}{effect.value}"))
 
-    result = OutcomeResult()
+
+def _apply_resource_effect(game: GameState, effect: MoveEffect, result: OutcomeResult, target: NpcData | None) -> None:
     _e = eng()
     _labels = _e.ai_text.consequence_labels
-    res = game.resources
+    if effect.value > 0:
+        cap = getattr(_e.resources, f"{effect.type}_max")
+        gained = game.resources.heal(effect.type, effect.value, cap=cap)
+        if gained:
+            result.consequences.append(_labels["track_gain"].format(track=effect.type, n=gained))
+    else:
+        lost = game.resources.damage(effect.type, abs(effect.value))
+        if lost:
+            result.consequences.append(_labels["track_loss"].format(track=effect.type, n=lost))
+
+
+def _apply_integrity_effect(game: GameState, effect: MoveEffect, result: OutcomeResult, target: NpcData | None) -> None:
+    # Future: asset condition tracks (step 10). Log and skip for now.
+    sign = "+" if effect.value > 0 else ""
+    result.consequences.append(
+        eng().ai_text.consequence_labels["integrity_change"].format(value=f"{sign}{effect.value}")
+    )
+
+
+def _apply_mark_progress_effect(
+    game: GameState, effect: MoveEffect, result: OutcomeResult, target: NpcData | None
+) -> None:
+    result.progress_marks += effect.value
+    result.consequences.append(eng().ai_text.consequence_labels["mark_progress"].format(n=effect.value))
+
+
+def _apply_pay_the_price_effect(
+    game: GameState, effect: MoveEffect, result: OutcomeResult, target: NpcData | None
+) -> None:
+    result.pay_the_price = True
+    result.consequences.append(_roll_pay_the_price(game))
+
+
+def _apply_next_move_bonus_effect(
+    game: GameState, effect: MoveEffect, result: OutcomeResult, target: NpcData | None
+) -> None:
+    result.next_move_bonus = effect.value
+    result.consequences.append(eng().ai_text.consequence_labels["next_move_bonus"].format(n=effect.value))
+
+
+def _apply_position_effect(game: GameState, effect: MoveEffect, result: OutcomeResult, target: NpcData | None) -> None:
+    result.combat_position = effect.target
+
+
+def _apply_suffer_move_effect(
+    game: GameState, effect: MoveEffect, result: OutcomeResult, target: NpcData | None
+) -> None:
+    _apply_generic_suffer(game, abs(effect.value), result)
+
+
+def _apply_legacy_reward_effect(
+    game: GameState, effect: MoveEffect, result: OutcomeResult, target: NpcData | None
+) -> None:
+    result.legacy_track = effect.target
+    result.consequences.append(eng().ai_text.consequence_labels["legacy_reward"].format(track=effect.target))
+
+
+def _apply_fill_clock_effect(
+    game: GameState, effect: MoveEffect, result: OutcomeResult, target: NpcData | None
+) -> None:
+    result.clock_fills += effect.value
+    result.consequences.append(eng().ai_text.consequence_labels["clock_fill"].format(n=effect.value))
+
+
+def _apply_bond_effect(game: GameState, effect: MoveEffect, result: OutcomeResult, target: NpcData | None) -> None:
+    if not target:
+        return
+    conn_track = next(
+        (
+            t
+            for t in game.progress_tracks
+            if t.track_type == "connection" and t.id == f"connection_{target.id}" and t.status == "active"
+        ),
+        None,
+    )
+    if not conn_track:
+        log(f"[MoveOutcome] bond effect but no connection track for {target.name}")
+        return
+    _labels = eng().ai_text.consequence_labels
+    for _ in range(abs(effect.value)):
+        added = conn_track.mark_progress()
+        if added:
+            result.consequences.append(_labels["bond_progress"].format(name=target.name, n=added))
+
+
+def _apply_disposition_shift_effect(
+    game: GameState, effect: MoveEffect, result: OutcomeResult, target: NpcData | None
+) -> None:
+    if not target:
+        return
+    _e = eng()
+    shifts = _e.get_raw("disposition_shifts")
+    old_disp = target.disposition
+    # Top of the ladder (loyal) has no further shift; yaml only lists dispositions
+    # that advance. Unchanged when no entry exists.
+    if old_disp in shifts:
+        target.disposition = shifts[old_disp]
+        result.consequences.append(
+            _e.ai_text.consequence_labels["disposition_shift"].format(
+                name=target.name, old=old_disp, new=target.disposition
+            )
+        )
+
+
+def _apply_narrative_effect(game: GameState, effect: MoveEffect, result: OutcomeResult, target: NpcData | None) -> None:
+    result.narrative_only = True
+
+
+_EFFECT_HANDLERS: dict[str, Callable[[GameState, MoveEffect, OutcomeResult, NpcData | None], None]] = {
+    "momentum": _apply_momentum_effect,
+    "health": _apply_resource_effect,
+    "spirit": _apply_resource_effect,
+    "supply": _apply_resource_effect,
+    "integrity": _apply_integrity_effect,
+    "mark_progress": _apply_mark_progress_effect,
+    "pay_the_price": _apply_pay_the_price_effect,
+    "next_move_bonus": _apply_next_move_bonus_effect,
+    "position": _apply_position_effect,
+    "suffer_move": _apply_suffer_move_effect,
+    "legacy_reward": _apply_legacy_reward_effect,
+    "fill_clock": _apply_fill_clock_effect,
+    "bond": _apply_bond_effect,
+    "disposition_shift": _apply_disposition_shift_effect,
+    "narrative": _apply_narrative_effect,
+}
+
+
+def apply_effects(game: GameState, effects: list[MoveEffect], target_npc_id: str | None = None) -> OutcomeResult:
+    """Apply a list of parsed effects to game state. Dispatches each effect
+    to its handler. Unknown effect types log a warning. Returns result summary.
+    """
+    result = OutcomeResult()
     target = find_npc(game, target_npc_id) if target_npc_id else None
 
     for effect in effects:
-        if effect.type == "momentum":
-            res.adjust_momentum(effect.value, floor=_e.momentum.floor, ceiling=_e.momentum.max)
-            sign = "+" if effect.value > 0 else ""
-            result.consequences.append(_labels["momentum_change"].format(value=f"{sign}{effect.value}"))
-
-        elif effect.type in ("health", "spirit", "supply"):
-            if effect.value > 0:
-                cap = getattr(_e.resources, f"{effect.type}_max")
-                gained = res.heal(effect.type, effect.value, cap=cap)
-                if gained:
-                    result.consequences.append(_labels["track_gain"].format(track=effect.type, n=gained))
-            else:
-                lost = res.damage(effect.type, abs(effect.value))
-                if lost:
-                    result.consequences.append(_labels["track_loss"].format(track=effect.type, n=lost))
-
-        elif effect.type == "integrity":
-            # Future: asset condition tracks (step 10). Log and skip for now.
-            sign = "+" if effect.value > 0 else ""
-            result.consequences.append(_labels["integrity_change"].format(value=f"{sign}{effect.value}"))
-
-        elif effect.type == "mark_progress":
-            result.progress_marks += effect.value
-            result.consequences.append(_labels["mark_progress"].format(n=effect.value))
-
-        elif effect.type == "pay_the_price":
-            result.pay_the_price = True
-            result.consequences.append(_roll_pay_the_price(game))
-
-        elif effect.type == "next_move_bonus":
-            result.next_move_bonus = effect.value
-            result.consequences.append(_labels["next_move_bonus"].format(n=effect.value))
-
-        elif effect.type == "position":
-            result.combat_position = effect.target
-
-        elif effect.type == "suffer_move":
-            _apply_generic_suffer(game, abs(effect.value), result)
-
-        elif effect.type == "legacy_reward":
-            result.legacy_track = effect.target
-            result.consequences.append(_labels["legacy_reward"].format(track=effect.target))
-
-        elif effect.type == "fill_clock":
-            result.clock_fills += effect.value
-            result.consequences.append(_labels["clock_fill"].format(n=effect.value))
-
-        elif effect.type == "bond":
-            if target:
-                # Find connection track for this NPC
-                conn_track = next(
-                    (
-                        t
-                        for t in game.progress_tracks
-                        if t.track_type == "connection" and t.id == f"connection_{target.id}" and t.status == "active"
-                    ),
-                    None,
-                )
-                if conn_track:
-                    for _ in range(abs(effect.value)):
-                        added = conn_track.mark_progress()
-                        if added:
-                            result.consequences.append(_labels["bond_progress"].format(name=target.name, n=added))
-                else:
-                    log(f"[MoveOutcome] bond effect but no connection track for {target.name}")
-
-        elif effect.type == "disposition_shift":
-            if target:
-                shifts = _e.get_raw("disposition_shifts")
-                old_disp = target.disposition
-                # Top of the ladder (loyal) has no further shift; yaml only lists
-                # dispositions that advance. Unchanged when no entry exists.
-                if old_disp in shifts:
-                    target.disposition = shifts[old_disp]
-                    result.consequences.append(
-                        _labels["disposition_shift"].format(name=target.name, old=old_disp, new=target.disposition)
-                    )
-
-        elif effect.type == "narrative":
-            result.narrative_only = True
-
+        handler = _EFFECT_HANDLERS.get(effect.type)
+        if handler:
+            handler(game, effect, result, target)
         elif effect.type != "unknown":
             log(f"[MoveOutcome] Unhandled effect type: {effect.type}", level="warning")
 

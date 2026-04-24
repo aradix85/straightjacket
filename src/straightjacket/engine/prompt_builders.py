@@ -15,7 +15,7 @@ from .mechanics import (
 )
 from .mechanics.scene import SceneSetup, adjustment_descriptions
 from .mechanics.impacts import impact_label
-from .models import BrainResult, EngineConfig, GameState, NpcData, RandomEvent, RollResult, ThreatEvent
+from .models import BrainResult, GameState, NpcData, RandomEvent, RollResult, ThreatEvent
 from .npc import find_npc, get_npc_bond, retrieve_memories
 from .prompt_blocks import (
     campaign_history_block,
@@ -103,9 +103,44 @@ def build_new_game_prompt(game: GameState) -> str:
 </task>"""
 
 
-def _npc_block(game: GameState, target_id: str | None, context_text: str = "", move_category: str = "other") -> str:
-    """Build context block for the target NPC, filtered by information gate level."""
+def _format_memories(
+    target: NpcData, context_text: str, gate: int, current_scene: int, include_reflections: bool
+) -> str:
+    """Retrieve and format memories for a gate ≥ 2 NPC block. At gate ≥ 3
+    include reflections as 'insight:' prefix. Returns the memory text block
+    (without leading newline).
+    """
+    gate_mem_counts = eng().npc.gate_memory_counts
+    mem_count = gate_mem_counts.get(gate, gate_mem_counts.get(min(gate, 4), 5))
+    memories = retrieve_memories(target, context_text=context_text, max_count=mem_count, current_scene=current_scene)
+    observations = [m for m in memories if m.type != "reflection"]
 
+    if not include_reflections:
+        if observations:
+            obs_text = " | ".join(f"{m.event}({m.emotional_weight})" for m in observations)
+            return f"\nrecent: {obs_text}"
+        return ""
+
+    reflections = [m for m in memories if m.type == "reflection"]
+    parts: list[str] = []
+    if reflections:
+        parts.append(f"insight: {' | '.join(m.event for m in reflections)}")
+    if observations:
+        parts.append(f"recent: {' | '.join(f'{m.event}({m.emotional_weight})' for m in observations)}")
+    return "\n" + "\n".join(parts) if parts else ""
+
+
+def _build_gate0_target(target: NpcData, aliases_attr: str) -> str:
+    """Gate 0: name, aliases, description only. The stranger treatment."""
+    return f'<target_npc name="{_xa(target.name)}" gate="0"{aliases_attr}>{_xe(target.description)}</target_npc>'
+
+
+def _npc_block(game: GameState, target_id: str | None, context_text: str = "", move_category: str = "other") -> str:
+    """Build context block for the target NPC, filtered by information gate level.
+
+    Gates progressively add: 1+ stance/constraint; 2+ agenda + observation memories;
+    3+ instinct + arc + reflection memories; 4+ secrets.
+    """
     target = find_npc(game, target_id) if target_id else None
     if not target:
         return ""
@@ -116,49 +151,29 @@ def _npc_block(game: GameState, target_id: str | None, context_text: str = "", m
 
     aliases_attr = f' aliases="{_xa(",".join(target.aliases))}"' if target.aliases else ""
 
-    # Gate 0: name + description only
     if gate == 0:
-        return f'<target_npc name="{_xa(target.name)}" gate="0"{aliases_attr}>{_xe(target.description)}</target_npc>'
+        return _build_gate0_target(target, aliases_attr)
 
-    # Gate 1+: add stance + constraint
+    # Gate 1+: stance + constraint attributes
     stance_attr = f' stance="{_xa(stance.stance)}" constraint="{_xa(stance.constraint)}"'
 
-    # Gate 2+: add agenda + recent memories
+    # Gate 2+: agenda + observation memories
     agenda_line = ""
     mem_str = ""
-    gate_mem_counts = eng().npc.gate_memory_counts
     if gate >= 2:
         agenda_line = f"agenda:{_xe(target.agenda)}"
-        mem_count = gate_mem_counts.get(gate, gate_mem_counts.get(min(gate, 4), 5))
-        memories = retrieve_memories(
-            target, context_text=context_text, max_count=mem_count, current_scene=game.narrative.scene_count
-        )
-        observations = [m for m in memories if m.type != "reflection"]
-        if observations:
-            obs_text = " | ".join(f"{m.event}({m.emotional_weight})" for m in observations)
-            mem_str = f"\nrecent: {obs_text}"
+        mem_str = _format_memories(target, context_text, gate, game.narrative.scene_count, include_reflections=False)
 
-    # Gate 3+: add instinct + arc + reflections
+    # Gate 3+: instinct + arc + reflections (replaces gate-2 memory string)
     instinct_line = ""
     arc_attr = ""
     if gate >= 3:
         instinct_line = f" instinct:{_xe(target.instinct)}"
         if target.arc.strip():
             arc_attr = f' arc="{_xa(target.arc)}"'
-        mem_count_3 = gate_mem_counts.get(gate, gate_mem_counts.get(min(gate, 4), 5))
-        memories = retrieve_memories(
-            target, context_text=context_text, max_count=mem_count_3, current_scene=game.narrative.scene_count
-        )
-        reflections = [m for m in memories if m.type == "reflection"]
-        observations = [m for m in memories if m.type != "reflection"]
-        mem_parts = []
-        if reflections:
-            mem_parts.append(f"insight: {' | '.join(m.event for m in reflections)}")
-        if observations:
-            mem_parts.append(f"recent: {' | '.join(f'{m.event}({m.emotional_weight})' for m in observations)}")
-        mem_str = "\n" + "\n".join(mem_parts) if mem_parts else ""
+        mem_str = _format_memories(target, context_text, gate, game.narrative.scene_count, include_reflections=True)
 
-    # Gate 4: add secrets
+    # Gate 4: secrets
     secrets_line = ""
     if gate >= 4 and target.secrets:
         secs = json.dumps(target.secrets, ensure_ascii=False)
@@ -358,7 +373,6 @@ def build_dialog_prompt(
     scene_setup: SceneSetup | None = None,
     activated_npcs: Sequence[NpcData] = (),
     mentioned_npcs: Sequence[NpcData] = (),
-    config: EngineConfig | None = None,
     oracle_answer: str = "",
     random_events: Sequence[RandomEvent] = (),
 ) -> str:
@@ -391,6 +405,85 @@ def build_dialog_prompt(
 <task>{task}</task>"""
 
 
+def _resolve_stance_category(move: str) -> str:
+    """Map engine move category to stance matrix category.
+    gather_information gets its own bucket because stance differs from generic social.
+    """
+    move_cat = move_category(move)
+    if move == "adventure/gather_information":
+        return "gather_information"
+    return {"combat": "combat", "social": "social"}.get(move_cat, "other")
+
+
+def _build_result_constraint(roll: RollResult, consequences: list[str], clock_events: list) -> str:
+    """Build the <result> XML tag with outcome-specific constraint text and
+    optional match-twist hint. MISS includes clock-triggered attributes;
+    WEAK_HIT and STRONG_HIT include consequences when non-empty.
+    """
+    match_tag = ' match="true"' if roll.match else ""
+    cons_attr = f' consequences="{_xa(",".join(consequences))}"' if consequences else ""
+
+    if roll.result == "MISS":
+        clk = "".join(f' clock_triggered="{_xa(e.clock)}:{_xa(e.trigger)}"' for e in clock_events)
+        match_hint = (
+            " A MATCH \u2014 the situation escalates dramatically, a fateful twist makes everything worse."
+            if roll.match
+            else ""
+        )
+        return (
+            f'<result type="MISS"{match_tag} consequences="{_xa(",".join(consequences))}"{clk}>'
+            f"Concrete failure. No silver linings. Make it hurt.{match_hint}</r>"
+        )
+
+    if roll.result == "WEAK_HIT":
+        match_hint = (
+            " A MATCH \u2014 despite the cost, something unexpected and significant happens, a twist of fate."
+            if roll.match
+            else ""
+        )
+        return (
+            f'<result type="WEAK_HIT"{match_tag}{cons_attr}>Success with tangible cost or complication.{match_hint}</r>'
+        )
+
+    match_hint = (
+        " A MATCH \u2014 an unexpected boon, a fateful revelation, or a dramatic advantage beyond the clean success."
+        if roll.match
+        else ""
+    )
+    return f'<result type="STRONG_HIT"{match_tag}{cons_attr}>Clean success.{match_hint}</r>'
+
+
+def _build_status_flags(game: GameState) -> list[str]:
+    """Collect narrator-facing status flags: resource exhaustion, crisis, final scene."""
+    flags: list[str] = []
+    if game.resources.health <= 0:
+        flags.append("WOUNDED")
+    if game.resources.spirit <= 0:
+        flags.append("BROKEN")
+    if game.resources.supply <= 0:
+        flags.append("DEPLETED")
+    if game.game_over:
+        flags.append("FINAL_SCENE:dramatic ending,character falls,make it meaningful")
+    elif game.crisis_mode:
+        flags.append("CRISIS:desperate,world closing in")
+    return flags
+
+
+def _build_threat_event_tags(threat_events: Sequence[ThreatEvent]) -> str:
+    """Build the XML tag block for threat events: vow_forsaken, threat_overcome,
+    or generic threat_advance. Returns empty string if no events.
+    """
+    parts: list[str] = []
+    for te in threat_events:
+        if te.source == "forsake_vow":
+            parts.append(f'<vow_forsaken threat="{_xa(te.threat_name)}"/>')
+        elif te.source == "overcome_under_pressure":
+            parts.append(f'<threat_overcome name="{_xa(te.threat_name)}"/>')
+        else:
+            parts.append(f'<threat_advance name="{_xa(te.threat_name)}" menace_full="{te.menace_full}"/>')
+    return "\n" + "\n".join(parts) if parts else ""
+
+
 def build_action_prompt(
     game: GameState,
     brain: BrainResult,
@@ -404,7 +497,6 @@ def build_action_prompt(
     scene_setup: SceneSetup | None = None,
     activated_npcs: Sequence[NpcData] = (),
     mentioned_npcs: Sequence[NpcData] = (),
-    config: EngineConfig | None = None,
     position: str = "risky",
     effect: str = "standard",
     random_events: Sequence[RandomEvent] = (),
@@ -412,11 +504,7 @@ def build_action_prompt(
 ) -> str:
     context_text = f"{player_words} {brain.player_intent or ''} {game.world.current_scene_context or ''}"
 
-    move_cat = move_category(brain.move)
-    # Map engine categories to stance matrix categories
-    stance_cat = {"combat": "combat", "social": "social"}.get(move_cat, "other")
-    if brain.move == "adventure/gather_information":
-        stance_cat = "gather_information"
+    stance_cat = _resolve_stance_category(brain.move)
     npc = _npc_block(game, brain.target_npc, context_text=context_text, move_category=stance_cat)
     npcs_sect = _npcs_section(game, brain, context_text, activated_npcs, mentioned_npcs, move_category=stance_cat)
 
@@ -424,48 +512,10 @@ def build_action_prompt(
     wl = f"\n<world_add>{_xe(wa)}</world_add>" if wa else ""
     pw = f"\n<player_words>{_xe(player_words)}</player_words>" if player_words else ""
 
-    match_tag = ' match="true"' if roll.match else ""
-    if roll.result == "MISS":
-        clk = "".join(f' clock_triggered="{_xa(e.clock)}:{_xa(e.trigger)}"' for e in clock_events)
-        match_hint = (
-            " A MATCH \u2014 the situation escalates dramatically, a fateful twist makes everything worse."
-            if roll.match
-            else ""
-        )
-        constraint = f'<result type="MISS"{match_tag} consequences="{_xa(",".join(consequences))}"{clk}>Concrete failure. No silver linings. Make it hurt.{match_hint}</r>'
-    elif roll.result == "WEAK_HIT":
-        match_hint = (
-            " A MATCH \u2014 despite the cost, something unexpected and significant happens, a twist of fate."
-            if roll.match
-            else ""
-        )
-        cons_attr = f' consequences="{_xa(",".join(consequences))}"' if consequences else ""
-        constraint = (
-            f'<result type="WEAK_HIT"{match_tag}{cons_attr}>Success with tangible cost or complication.{match_hint}</r>'
-        )
-    else:
-        match_hint = (
-            " A MATCH \u2014 an unexpected boon, a fateful revelation, or a dramatic advantage beyond the clean success."
-            if roll.match
-            else ""
-        )
-        cons_attr = f' consequences="{_xa(",".join(consequences))}"' if consequences else ""
-        constraint = f'<result type="STRONG_HIT"{match_tag}{cons_attr}>Clean success.{match_hint}</r>'
-
+    constraint = _build_result_constraint(roll, consequences, clock_events)
     position_tag = f'<position level="{_xa(position)}" effect="{_xa(effect)}"/>'
 
-    status_flags = []
-    if game.resources.health <= 0:
-        status_flags.append("WOUNDED")
-    if game.resources.spirit <= 0:
-        status_flags.append("BROKEN")
-    if game.resources.supply <= 0:
-        status_flags.append("DEPLETED")
-    if game.game_over:
-        status_flags.append("FINAL_SCENE:dramatic ending,character falls,make it meaningful")
-    elif game.crisis_mode:
-        status_flags.append("CRISIS:desperate,world closing in")
-
+    status_flags = _build_status_flags(game)
     flags = f"\n<flags>{','.join(status_flags)}</flags>" if status_flags else ""
     agency = f"\n<npc_agency>{_xe('| '.join(npc_agency))}</npc_agency>" if npc_agency else ""
     pacing = _pacing_block(game, scene_setup)
@@ -476,17 +526,7 @@ def build_action_prompt(
     if cons_tags:
         cons_tags = f"\n{cons_tags}"
 
-    threat_tag_parts = []
-    for te in threat_events:
-        if te.source == "forsake_vow":
-            threat_tag_parts.append(f'<vow_forsaken threat="{_xa(te.threat_name)}"/>')
-        elif te.source == "overcome_under_pressure":
-            threat_tag_parts.append(f'<threat_overcome name="{_xa(te.threat_name)}"/>')
-        else:
-            threat_tag_parts.append(f'<threat_advance name="{_xa(te.threat_name)}" menace_full="{te.menace_full}"/>')
-    threat_tags = "\n".join(threat_tag_parts)
-    if threat_tags:
-        threat_tags = f"\n{threat_tags}"
+    threat_tags = _build_threat_event_tags(threat_events)
 
     return f"""<scene type="action" n="{game.narrative.scene_count}">
 {_scene_header(game)}

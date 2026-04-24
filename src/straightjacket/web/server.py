@@ -48,7 +48,8 @@ from .handlers import (
     handle_threats_query,
     handle_tracks_query,
 )
-from .serializers import build_creation_options, build_ui_strings
+from ..strings_loader import all_strings
+from .serializers import build_creation_options
 from .session import Session
 
 
@@ -130,7 +131,7 @@ async def websocket_endpoint(ws: WebSocket) -> None:
 
     # Initial state
     try:
-        await _send(ws, {"type": "ui_strings", "strings": build_ui_strings()})
+        await _send(ws, {"type": "ui_strings", "strings": all_strings()})
         await handle_list_players(_session, ws, {})
 
         # Orphan input recovery

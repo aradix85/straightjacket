@@ -7,6 +7,16 @@ Originally forked from [EdgeTales](https://github.com/edgetales/edgetales). See 
 
 ---
 
+## [0.72.0] — 2026-04-24
+
+Complexity refactor. Six F-grade functions (41+ branches) and eleven E/D-grade functions (21–40 branches) decomposed into named phase-helpers. `process_turn` drops from F(69) and 344 lines to a thin orchestrator over ten phase functions; `fuzzy_match_existing_npc`, `resolve_position`, `activate_npcs_for_prompt`, `_apply_correction_ops`, and `process_correction` all out of F-grade. Eight D-grade functions — including `build_action_prompt`, `build_narrative_status`, `resolve_consequence_sentence`, `find_npc`, `call_story_architect` — decomposed the same way. Zero F/E/D-grade functions remain in the codebase; average complexity is A (4.17) over 765 blocks.
+
+Unused parameters removed. Eleven function signatures carried arguments that no body read: `config` on four prompt/validator/director functions, `label` on `register_extracted_npcs`, `move` on `advance_menace_on_miss` and `_is_move_available`, plus dead `EngineConfig` and `Move` imports that existed only to type those removed arguments. Two web-handler parameters (`_session`, `_ws`) underscored to signal dispatch-contract conformance; `create_message(extra_body=...)` in `provider_anthropic.py` gets an inline comment explaining why it stays in the Protocol signature despite an unused body.
+
+Orphan yaml deleted. `engine/monologue_detection.yaml` and `engine/recovery.yaml` — both documented as removed in 0.70/0.71 but still on disk — deleted. Two pure pass-through wrappers inlined: `normalize_disposition` in `npc/lifecycle.py` now re-exports directly from `emotions_loader`; `build_ui_strings` in `web/serializers.py` inlined into its single call site.
+
+What did not get touched in this pass: file-level splits (turn.py at 761 lines, prompt_builders.py at 629, move_outcome.py at 529 are next), a genuine config-driven audit for hardcoded strings and legacy fallback paths in Python that belong in yaml, and the remaining C-grade functions (11–20 branches, acceptable but decomposable). New project-rule added to protect the refactor: `test_no_function_exceeds_complexity_ceiling` fails on any function with cyclomatic complexity above 20 (D-rank or worse), mechanically preventing a future session from reintroducing F/E/D-grade mammoths. Delivery gate: 794 tests green, ruff + ruff format + mypy clean on 92 source files.
+
 ## [0.71.0] — 2026-04-20
 
 Third dead-code pass. The `momentum:` and `recovery:` yaml blocks claimed to drive momentum gain and recovery healing via per-tier tables, but nothing read them — action-move momentum lives in per-move outcome text parsed at runtime, and recovery amounts are per-move parameters in `move_routing.yaml`. Meanwhile `apply_suffer_handler` in `mechanics/move_outcome.py` hardcoded `+1` and `-1` momentum plus their label strings, exactly the values the abandoned yaml pretended to govern. The yaml lied, the code drifted, neither side knew.

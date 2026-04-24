@@ -107,7 +107,7 @@ class TestMenaceOnMiss:
         from straightjacket.engine.mechanics.threats import advance_menace_on_miss
 
         game = _game_with_threat()
-        events = advance_menace_on_miss(game, "combat/clash")
+        events = advance_menace_on_miss(game)
         assert len(events) == 1
         assert events[0].threat_name == "The Beast Awakens"
         assert events[0].ticks_added == 8
@@ -118,7 +118,7 @@ class TestMenaceOnMiss:
 
         game = _game_with_threat()
         game.progress_tracks[0].status = "completed"
-        events = advance_menace_on_miss(game, "combat/clash")
+        events = advance_menace_on_miss(game)
         assert events == []
         assert game.threats[0].menace_ticks == 0
 
@@ -127,7 +127,7 @@ class TestMenaceOnMiss:
 
         game = _game_with_threat()
         game.threats[0].status = "resolved"
-        events = advance_menace_on_miss(game, "combat/clash")
+        events = advance_menace_on_miss(game)
         assert events == []
 
     def test_menace_full_event(self, stub_engine: None) -> None:
@@ -135,7 +135,7 @@ class TestMenaceOnMiss:
 
         game = _game_with_threat()
         game.threats[0].menace_ticks = 36  # 4 ticks from full
-        events = advance_menace_on_miss(game, "combat/clash")
+        events = advance_menace_on_miss(game)
         assert len(events) == 1
         assert events[0].menace_full
         assert game.threats[0].menace_full

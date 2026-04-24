@@ -1,6 +1,6 @@
 [project]
 name = "straightjacket"
-version = "0.71.0"
+version = "0.72.0"
 requires-python = ">=3.11"
 dependencies = [
     "starlette>=1.0,<2",
@@ -11,7 +11,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-test = ["pytest", "pytest-asyncio", "pytest-cov", "httpx", "types-PyYAML"]
+test = ["pytest", "pytest-asyncio", "pytest-cov", "httpx", "types-PyYAML", "radon"]
 elvira = ["websockets>=13.0,<15"]
 
 [tool.ruff]

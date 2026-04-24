@@ -47,7 +47,7 @@ async def _send(ws: WebSocket, msg: dict) -> None:
         log(f"[Web] _send on dead ws ({msg.get('type', '?')}): {e}", level="debug")
 
 
-async def handle_list_players(session: Session, ws: WebSocket, _msg: dict) -> None:
+async def handle_list_players(_session: Session, ws: WebSocket, _msg: dict) -> None:
     players = [u["name"] for u in list_users()]
     await _send(ws, {"type": "players_list", "players": players})
 
@@ -454,7 +454,7 @@ async def handle_generate_epilogue(session: Session, ws: WebSocket, _msg: dict) 
         session.processing = False
 
 
-async def handle_dismiss_epilogue(session: Session, ws: WebSocket, _msg: dict) -> None:
+async def handle_dismiss_epilogue(session: Session, _ws: WebSocket, _msg: dict) -> None:
     if not session.game:
         return
     session.game.campaign.epilogue_dismissed = True

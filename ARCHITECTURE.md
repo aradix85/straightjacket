@@ -333,7 +333,7 @@ Two places where Straightjacket departs from the design document's architectural
 ## Testing
 
 ```bash
-python -m pytest tests/ -v          # ~15 seconds, ~786 tests
+python -m pytest tests/ -v          # ~15 seconds, ~794 tests
 python tests/elvira/elvira.py --auto --turns 5   # direct engine (needs API key)
 python tests/elvira/elvira.py --ws --auto --turns 5  # via WebSocket server
 ```

@@ -6,8 +6,6 @@ Results are returned as dicts; the engine decides what to do with them.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
 from ..datasworn.moves import get_moves
 from ..datasworn.settings import load_package
 from ..db.queries import query_clocks, query_memories, query_npcs, query_threads
@@ -17,9 +15,6 @@ from ..mechanics.fate import resolve_fate, resolve_likelihood
 from ..models import GameState
 from ..npc import find_npc, get_npc_bond
 from .registry import register
-
-if TYPE_CHECKING:
-    from ..datasworn.moves import Move
 
 
 @register("director")
@@ -216,7 +211,6 @@ def available_moves(game: GameState) -> dict:
             continue
         if not _is_move_available(
             key,
-            move,
             in_combat,
             combat_pos,
             has_vow,
@@ -252,7 +246,6 @@ def available_moves(game: GameState) -> dict:
 
 def _is_move_available(
     key: str,
-    move: Move,
     in_combat: bool,
     combat_pos: str,
     has_vow: bool,

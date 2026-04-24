@@ -85,24 +85,15 @@ def call_recap(provider: AIProvider, game: GameState, config: EngineConfig | Non
         return _defaults["recap_fallback"].format(player_name=game.player_name)
 
 
-def call_story_architect(
-    provider: AIProvider, game: GameState, structure_type: str = "3act", config: EngineConfig | None = None
-) -> dict | None:
-    """Generate a story blueprint. Supports 3-act and Kishōtenketsu (4-act)."""
-    _cfg = config or EngineConfig()
-    lang = get_narration_lang(_cfg)
-    cb = content_boundaries_block(game)
-    _e = eng()
-    _defaults = _e.ai_text.narrator_defaults
-    _limits = _e.architect_limits
-
-    prompt_vars = dict(lang=lang, content_boundaries_block=cb)
-    if structure_type == "kishotenketsu":
-        system = get_prompt("architect_kishotenketsu", **prompt_vars)
-    else:
-        system = get_prompt("architect_3act", **prompt_vars)
+def _build_architect_user_msg(game: GameState) -> str:
+    """Construct the architect's user message: genre, tone, world, character,
+    location, situation, NPCs, campaign history, backstory.
+    """
+    _defaults = eng().ai_text.narrator_defaults
+    _limits = eng().architect_limits
 
     npc_text = ", ".join(n.name for n in game.npcs) if game.npcs else _defaults["no_npcs_yet"]
+
     campaign_ctx = ""
     if game.campaign.campaign_history:
         campaign_ctx = f"\ncampaign_chapter:{game.campaign.chapter_number}"
@@ -114,15 +105,80 @@ def call_story_architect(
                 campaign_ctx += f" [growth: {ch.character_growth}]"
             if ch.thematic_question:
                 campaign_ctx += f" [thematic_question: {ch.thematic_question}]"
-    backstory_text = ""
-    if game.backstory:
-        backstory_text = f"\nbackstory(canon past):{game.backstory}"
-    user_msg = f"""genre:{game.setting_genre} tone:{game.setting_tone}
-world:{game.setting_description}
-character:{game.player_name} — {game.character_concept}
-location:{game.world.current_location}
-situation:{game.world.current_scene_context}
-npcs:{npc_text}{campaign_ctx}{backstory_text}"""
+
+    backstory_text = f"\nbackstory(canon past):{game.backstory}" if game.backstory else ""
+
+    return (
+        f"genre:{game.setting_genre} tone:{game.setting_tone}\n"
+        f"world:{game.setting_description}\n"
+        f"character:{game.player_name} — {game.character_concept}\n"
+        f"location:{game.world.current_location}\n"
+        f"situation:{game.world.current_scene_context}\n"
+        f"npcs:{npc_text}{campaign_ctx}{backstory_text}"
+    )
+
+
+def _clean_act_moods(blueprint: dict) -> None:
+    """Strip forbidden mood terms from each act. If all terms are stripped,
+    fall back to the default_act_mood list. Mutates blueprint in place.
+    """
+    _e = eng()
+    forbidden = set(_e.architect.forbidden_moods)
+    fallback = list(_e.ai_text.narrator_defaults["default_act_mood"])
+
+    for act in blueprint.get("acts", []):
+        mood = act.get("mood", "")
+        if not mood:
+            continue
+        mood_words = [w.strip() for w in mood.split(",")]
+        cleaned = [w for w in mood_words if w.lower() not in forbidden]
+        if len(cleaned) == len(mood_words):
+            continue
+        stripped_words = [w for w in mood_words if w.lower() in forbidden]
+        if not cleaned:
+            cleaned = list(fallback)
+        act["mood"] = ", ".join(cleaned)
+        log(
+            f"[Story] Stripped forbidden mood(s) {stripped_words} from act "
+            f"'{act.get('phase', '?')}', now: '{act['mood']}'"
+        )
+
+
+def _validate_scene_ranges(blueprint: dict) -> None:
+    """Ensure every act's scene_range is exactly [start, end]. Replace malformed
+    ranges with engine-default. Mutates blueprint in place.
+    """
+    default_range = list(eng().scene_range_default)
+    for act in blueprint.get("acts", []):
+        sr = act.get("scene_range", [])
+        if not isinstance(sr, list) or len(sr) != 2:
+            log(
+                f"[Story] Invalid scene_range {sr!r} in act '{act.get('phase', '?')}', "
+                f"replacing with default {default_range}",
+                level="warning",
+            )
+            act["scene_range"] = list(default_range)
+
+
+def call_story_architect(
+    provider: AIProvider, game: GameState, structure_type: str = "3act", config: EngineConfig | None = None
+) -> dict | None:
+    """Generate a story blueprint. Supports 3-act and Kishōtenketsu (4-act).
+
+    Builds the user message from game state, calls the architect model with the
+    structure-appropriate system prompt, then post-processes the blueprint:
+    initialize tracking fields, strip forbidden-mood terms from acts, validate
+    scene ranges.
+    """
+    _cfg = config or EngineConfig()
+    lang = get_narration_lang(_cfg)
+    cb = content_boundaries_block(game)
+
+    prompt_vars = dict(lang=lang, content_boundaries_block=cb)
+    system = get_prompt(
+        "architect_kishotenketsu" if structure_type == "kishotenketsu" else "architect_3act", **prompt_vars
+    )
+    user_msg = _build_architect_user_msg(game)
 
     try:
         response = create_with_retry(
@@ -135,44 +191,17 @@ npcs:{npc_text}{campaign_ctx}{backstory_text}"""
             log_role="architect",
         )
         blueprint = json.loads(response.content)
-        blueprint["revealed"] = []  # Track which revelations have fired
-        blueprint["triggered_transitions"] = []  # Track act transitions
+        blueprint["revealed"] = []
+        blueprint["triggered_transitions"] = []
         blueprint["story_complete"] = False
         blueprint["structure_type"] = structure_type
 
-        # Validate act moods: strip forbidden mood terms that cause genre drift
-        _forbidden_moods = set(_e.architect.forbidden_moods)
-        _mood_fallback = list(_defaults["default_act_mood"])
-        for act in blueprint.get("acts", []):
-            mood = act.get("mood", "")
-            if mood:
-                mood_words = [w.strip() for w in mood.split(",")]
-                cleaned = [w for w in mood_words if w.lower() not in _forbidden_moods]
-                if len(cleaned) < len(mood_words):
-                    stripped_words = [w for w in mood_words if w.lower() in _forbidden_moods]
-                    if not cleaned:
-                        cleaned = list(_mood_fallback)
-                    act["mood"] = ", ".join(cleaned)
-                    log(
-                        f"[Story] Stripped forbidden mood(s) {stripped_words} from act "
-                        f"'{act.get('phase', '?')}', now: '{act['mood']}'",
-                    )
-
-        # Validate scene_range: must be exactly [start, end]
-        default_range = list(_e.scene_range_default)
-        for act in blueprint.get("acts", []):
-            sr = act.get("scene_range", [])
-            if not isinstance(sr, list) or len(sr) != 2:
-                log(
-                    f"[Story] Invalid scene_range {sr!r} in act '{act.get('phase', '?')}', "
-                    f"replacing with default {default_range}",
-                    level="warning",
-                )
-                act["scene_range"] = list(default_range)
+        _clean_act_moods(blueprint)
+        _validate_scene_ranges(blueprint)
 
         log(
             f"[Story] Architect succeeded: "
-            f"conflict={blueprint['central_conflict'][: _e.truncations.log_medium]}, "
+            f"conflict={blueprint['central_conflict'][: eng().truncations.log_medium]}, "
             f"acts={len(blueprint['acts'])}, "
             f"revelations={len(blueprint.get('revelations', []))}"
         )

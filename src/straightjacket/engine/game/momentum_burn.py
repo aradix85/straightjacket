@@ -98,7 +98,6 @@ def process_momentum_burn(
         mentioned_npcs=mentioned_npcs,
         position=position,
         effect=effect,
-        config=config,
         consequence_sentences=consequence_sentences,
     )
     injection = eng().ai_text.validator_blocks["momentum_burn_injection"]

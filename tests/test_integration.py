@@ -358,7 +358,6 @@ def test_scene_test_produces_three_types(load_engine: None) -> None:
 def test_dialog_prompt_contains_world_and_character(stub_engine: None) -> None:
     """Dialog prompt must include world genre and character name."""
     from straightjacket.engine.prompt_builders import build_dialog_prompt
-    from straightjacket.engine.models import EngineConfig
 
     game = _make_game()
     brain = make_brain_result(
@@ -366,9 +365,7 @@ def test_dialog_prompt_contains_world_and_character(stub_engine: None) -> None:
         target_npc="npc_1",
         player_intent="Ask about the archives",
     )
-    prompt = build_dialog_prompt(
-        game, brain, player_words="I ask Mira about the archives", config=EngineConfig(narration_lang="English")
-    )
+    prompt = build_dialog_prompt(game, brain, player_words="I ask Mira about the archives")
 
     assert "dark_fantasy" in prompt
     assert "Kael" in prompt
@@ -379,7 +376,7 @@ def test_dialog_prompt_contains_world_and_character(stub_engine: None) -> None:
 def test_action_prompt_contains_result_and_position(stub_engine: None) -> None:
     """Action prompt must include roll result and position."""
     from straightjacket.engine.prompt_builders import build_action_prompt
-    from straightjacket.engine.models import EngineConfig, RollResult
+    from straightjacket.engine.models import RollResult
 
     game = _make_game()
     brain = make_brain_result(
@@ -410,7 +407,6 @@ def test_action_prompt_contains_result_and_position(stub_engine: None) -> None:
         npc_agency=[],
         consequence_sentences=["The tide shifts. Hero can feel it."],
         player_words="I search for hidden compartments",
-        config=EngineConfig(narration_lang="English"),
     )
 
     assert "STRONG_HIT" in prompt

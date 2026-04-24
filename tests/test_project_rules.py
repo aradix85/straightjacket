@@ -589,3 +589,34 @@ def test_no_hardcoded_model_names_in_engine() -> None:
             violations.append(Violation(rel, node.lineno, snippet))
 
     assert not violations, "\n" + _format_report("HARDCODED MODEL NAME in engine code", violations)
+
+
+# ── Cyclomatic complexity ceiling ──────────────────────────────────
+# No function may have cyclomatic complexity above 20 (radon C-rank
+# upper bound). D-rank and worse (21+) mean too many branches in one
+# function — the fix is decomposition into named phase-helpers, not
+# a higher threshold. A hit here is a signal that the function has
+# grown a new responsibility that deserves its own sub-function.
+_COMPLEXITY_CEILING = 20
+
+
+def test_no_function_exceeds_complexity_ceiling() -> None:
+    # inline import: radon is a test-only dependency, not needed at runtime
+    from radon.complexity import cc_visit
+
+    violations: list[Violation] = []
+    for path in _iter_source_files():
+        try:
+            code = path.read_text(encoding="utf-8")
+            blocks = cc_visit(code)
+        except SyntaxError:
+            continue
+        rel = _rel(path)
+        for block in blocks:
+            if block.complexity > _COMPLEXITY_CEILING:
+                snippet = f"{block.name} — complexity {block.complexity}"
+                violations.append(Violation(rel, block.lineno, snippet))
+
+    assert not violations, "\n" + _format_report(
+        f"CYCLOMATIC COMPLEXITY above {_COMPLEXITY_CEILING} (decompose into sub-functions)", violations
+    )

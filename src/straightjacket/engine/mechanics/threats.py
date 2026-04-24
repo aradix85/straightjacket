@@ -14,7 +14,7 @@ from ..logging_util import log
 from ..models import GameState, ThreatEvent
 
 
-def advance_menace_on_miss(game: GameState, move: str) -> list[ThreatEvent]:
+def advance_menace_on_miss(game: GameState) -> list[ThreatEvent]:
     """Advance menace on active threats after a MISS. Returns events for narrator prompt."""
     marks = eng().threats.menace_on_miss
     if marks <= 0:

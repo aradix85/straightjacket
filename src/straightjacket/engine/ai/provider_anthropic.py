@@ -37,7 +37,7 @@ class AnthropicProvider:
         temperature: float | None = None,
         top_p: float | None = None,
         top_k: int | None = None,
-        extra_body: dict | None = None,
+        extra_body: dict | None = None,  # Protocol-required; Anthropic SDK has no equivalent so ignored here.
     ) -> AIResponse:
         """Send a message via the Anthropic SDK."""
         create_kwargs: dict[str, Any] = {

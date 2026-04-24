@@ -3,7 +3,6 @@
 build_narrative_status: plain-text narrative summary for /status command.
 build_creation_options: JSON for character creation form.
 highlight_dialog: wrap quoted speech in HTML spans.
-build_ui_strings: all strings.yaml entries for the client.
 """
 
 import re
@@ -22,7 +21,6 @@ from ..i18n import (
     get_time_labels,
     t,
 )
-from ..strings_loader import all_strings
 
 
 def _describe_resource(value: int, descriptions: dict[int, str]) -> str:
@@ -33,84 +31,94 @@ def _describe_resource(value: int, descriptions: dict[int, str]) -> str:
     return descriptions[min(descriptions.keys())]
 
 
-def build_narrative_status(game: GameState) -> str:
-    """Narrative status for /status and /score commands. No mechanical numbers."""
-    dl = get_disposition_labels()
+def _status_resources_line(game: GameState) -> str:
+    """Opening line: name, location, time, health/spirit/supply descriptors."""
     tl = get_time_labels()
-    pl = get_story_phase_labels()
-
+    _defaults = eng().ai_text.narrator_defaults
     r = game.resources
     time_label = tl.get(game.world.time_of_day, "") if game.world.time_of_day else ""
-    health_desc = _describe_resource(r.health, eng().status_descriptions.health)
-    spirit_desc = _describe_resource(r.spirit, eng().status_descriptions.spirit)
-    supply_desc = _describe_resource(r.supply, eng().status_descriptions.supply)
+    return t(
+        "status.resources",
+        name=game.player_name,
+        location=game.world.current_location or _defaults["unknown_location"],
+        time=time_label or _defaults["unknown_time"],
+        health=_describe_resource(r.health, eng().status_descriptions.health),
+        spirit=_describe_resource(r.spirit, eng().status_descriptions.spirit),
+        supply=_describe_resource(r.supply, eng().status_descriptions.supply),
+    )
 
-    _defaults = eng().ai_text.narrator_defaults
-    lines = [
-        t(
-            "status.resources",
-            name=game.player_name,
-            location=game.world.current_location or _defaults["unknown_location"],
-            time=time_label or _defaults["unknown_time"],
-            health=health_desc,
-            spirit=spirit_desc,
-            supply=supply_desc,
-        )
+
+def _status_impact_lines(game: GameState) -> list[str]:
+    if not game.impacts:
+        return []
+    return [t("status.impacts", impacts=", ".join(impact_label(k) for k in game.impacts))]
+
+
+def _status_track_lines(game: GameState) -> list[str]:
+    """Active progress tracks, each with a narrative progress descriptor."""
+    track_desc = eng().status_descriptions.track
+    return [
+        t("status.tracks", name=tr.name, progress=_describe_resource(tr.filled_boxes, track_desc))
+        for tr in game.progress_tracks
+        if tr.status == "active"
     ]
 
-    # Active impacts
-    if game.impacts:
-        labels = [impact_label(k) for k in game.impacts]
-        lines.append(t("status.impacts", impacts=", ".join(labels)))
 
-    # Progress tracks
-    for tr in game.progress_tracks:
-        if tr.status != "active":
-            continue
-        track_desc = _describe_resource(tr.filled_boxes, eng().status_descriptions.track)
-        lines.append(t("status.tracks", name=tr.name, progress=track_desc))
-
-    # NPCs
+def _status_npc_lines(game: GameState) -> list[str]:
+    """One line per known NPC: deceased, background, or active with disposition + bond."""
+    dl = get_disposition_labels()
+    bond_desc = eng().status_descriptions.bond
+    lines: list[str] = []
     for n in game.npcs:
         disp_label = dl.get(n.disposition, n.disposition)
-        bond = get_npc_bond(game, n.id)
-        bond_desc = _describe_resource(bond, eng().status_descriptions.bond)
+        bond = _describe_resource(get_npc_bond(game, n.id), bond_desc)
         if n.status == "deceased":
             lines.append(t("status.npc_deceased", name=n.name))
         elif n.status == "background":
-            lines.append(t("status.npc_background", name=n.name, disposition=disp_label, bond=bond_desc))
+            lines.append(t("status.npc_background", name=n.name, disposition=disp_label, bond=bond))
         elif n.status == "active":
-            lines.append(t("status.npc", name=n.name, disposition=disp_label, bond=bond_desc))
+            lines.append(t("status.npc", name=n.name, disposition=disp_label, bond=bond))
+    return lines
 
-    # Clocks
+
+def _status_clock_lines(game: GameState) -> list[str]:
+    """Clocks rendered with urgency bucket (early / mid / late) or fired."""
+    lines: list[str] = []
+    clock_desc = eng().status_descriptions.clock
     for c in game.world.clocks:
         if c.fired:
             lines.append(t("status.clock_fired", name=c.name))
+            continue
+        ratio = c.filled / c.segments if c.segments > 0 else 0
+        if ratio >= 0.75:
+            urgency = clock_desc["late"]
+        elif ratio >= 0.35:
+            urgency = clock_desc["mid"]
         else:
-            ratio = c.filled / c.segments if c.segments > 0 else 0
-            clock_desc = eng().status_descriptions.clock
-            if ratio >= 0.75:
-                urgency = clock_desc["late"]
-            elif ratio >= 0.35:
-                urgency = clock_desc["mid"]
-            else:
-                urgency = clock_desc["early"]
-            lines.append(t("status.clock", name=c.name, urgency=urgency))
+            urgency = clock_desc["early"]
+        lines.append(t("status.clock", name=c.name, urgency=urgency))
+    return lines
 
-    # Story arc
+
+def _status_story_arc_lines(game: GameState) -> list[str]:
     bp = game.narrative.story_blueprint
-    if bp and bp.acts:
-        act = get_current_act(game)
-        lines.append(
-            t(
-                "status.act",
-                title=act.title,
-                phase=pl.get(act.phase, act.phase),
-                progress=act.progress,
-            )
+    if not (bp and bp.acts):
+        return []
+    pl = get_story_phase_labels()
+    act = get_current_act(game)
+    return [
+        t(
+            "status.act",
+            title=act.title,
+            phase=pl.get(act.phase, act.phase),
+            progress=act.progress,
         )
+    ]
 
-    # Experience and legacy (step 12)
+
+def _status_xp_and_legacy_lines(game: GameState) -> list[str]:
+    """XP status and legacy tracks (quests / bonds / discoveries), if any have progress."""
+    lines: list[str] = []
     camp = game.campaign
     if camp.xp_available > 0 or camp.xp_spent > 0:
         lines.append(t("status.xp", xp=_describe_resource(camp.xp_available, eng().status_descriptions.xp)))
@@ -136,7 +144,23 @@ def build_narrative_status(game: GameState) -> str:
                 ),
             )
         )
+    return lines
 
+
+def build_narrative_status(game: GameState) -> str:
+    """Narrative status for /status and /score commands. No mechanical numbers.
+
+    Concatenates sections: resources, impacts, tracks, NPCs, clocks, story arc,
+    XP/legacy. Each section contributes zero or more lines; empty sections
+    emit nothing.
+    """
+    lines: list[str] = [_status_resources_line(game)]
+    lines.extend(_status_impact_lines(game))
+    lines.extend(_status_track_lines(game))
+    lines.extend(_status_npc_lines(game))
+    lines.extend(_status_clock_lines(game))
+    lines.extend(_status_story_arc_lines(game))
+    lines.extend(_status_xp_and_legacy_lines(game))
     return "\n".join(lines)
 
 
@@ -309,9 +333,3 @@ def highlight_dialog(text: str) -> str:
         r"(\u2018)([^\u2018\u2019\n]{1,600}?)(\u2019)", lambda m: _wrap(m.group(1), m.group(2), m.group(3)), text
     )
     return text
-
-
-def build_ui_strings() -> dict[str, str]:
-    """All strings.yaml entries for the client. Sent once at connect."""
-
-    return all_strings()

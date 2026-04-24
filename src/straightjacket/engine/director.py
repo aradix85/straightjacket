@@ -9,7 +9,7 @@ from .ai.schemas import get_director_output_schema
 from .config_loader import model_for_role, sampling_params
 from .engine_loader import eng
 from .logging_util import log
-from .models import DirectorGuidance, EngineConfig, GameState, MemoryEntry
+from .models import DirectorGuidance, EngineConfig, GameState, MemoryEntry, NpcData
 from .prompt_blocks import content_boundaries_block
 from .tools import get_tools, run_tool_loop
 from .xml_utils import xa as _xa
@@ -34,7 +34,7 @@ def _get_director_system_base() -> str:
     return get_prompt("director_system")
 
 
-def _director_system(game: GameState, config: EngineConfig | None = None) -> str:
+def _director_system(game: GameState) -> str:
     """Build Director system prompt with content_boundaries."""
 
     cb = content_boundaries_block(game)
@@ -89,6 +89,86 @@ def should_call_director(
     return None
 
 
+def _build_reflection_block(game: GameState, npc: NpcData) -> str:
+    """Build one <reflect> XML block for an NPC that needs reflection or a profile completion."""
+    recent_obs = [m for m in npc.memory if m.type == "observation"][-8:]
+    mem_text = "; ".join(f"{m.event}({m.emotional_weight})" for m in recent_obs)
+
+    # Include last reflection so Director can build on it, not repeat it
+    prev_reflections = [m for m in npc.memory if m.type == "reflection"]
+    prev_ref_text = ""
+    prev_tone_text = ""
+    if prev_reflections:
+        prev_ref_text = (
+            f' last_reflection="'
+            f"{html.escape(prev_reflections[-1].event[: eng().truncations.prompt_short], quote=True)}"
+            f'"'
+        )
+        prev_tone_compound = prev_reflections[-1].tone or prev_reflections[-1].emotional_weight
+        prev_tone_key_val = prev_reflections[-1].tone_key
+        if prev_tone_compound:
+            prev_tone_text += f' last_tone="{html.escape(prev_tone_compound, quote=True)}"'
+        if prev_tone_key_val:
+            prev_tone_text += f' last_tone_key="{html.escape(prev_tone_key_val, quote=True)}"'
+
+    npc_desc = html.escape(npc.description, quote=True)
+    instinct_attr = f' instinct="{_xa(npc.instinct)}"' if npc.instinct.strip() else ""
+    arc_attr = f' arc="{_xa(npc.arc)}"' if npc.arc.strip() else ""
+    needs_profile_attr = ""
+    if not npc.agenda.strip() or not npc.instinct.strip():
+        needs_profile_attr = ' needs_profile="true"'
+
+    return (
+        f'<reflect npc_id="{html.escape(npc.id, quote=True)}" name="{html.escape(npc.name, quote=True)}" '
+        f'disposition="{html.escape(npc.disposition, quote=True)}" bond="{get_npc_bond(game, npc.id)}" '
+        f'description="{npc_desc}"{instinct_attr}{arc_attr}{prev_ref_text}{prev_tone_text}{needs_profile_attr}>'
+        f"{html.escape(mem_text)}</reflect>"
+    )
+
+
+def _collect_reflection_blocks(game: GameState) -> str:
+    """Gather <reflect> blocks for every NPC that needs reflection or profile completion."""
+    blocks = []
+    for npc in game.npcs:
+        needs_profile = not npc.agenda.strip() or not npc.instinct.strip()
+        if not npc.needs_reflection and not needs_profile:
+            continue
+        if npc.status not in ("active", "background"):
+            continue
+        blocks.append(_build_reflection_block(game, npc))
+    return "\n".join(blocks)
+
+
+def _build_story_arc_block(game: GameState) -> str:
+    """Build <story_arc> and optional <transition_trigger> XML for the director prompt."""
+    if not game.narrative.story_blueprint or not game.narrative.story_blueprint.acts:
+        return ""
+
+    act = get_current_act(game)
+    bp = game.narrative.story_blueprint
+    thematic = bp.thematic_thread
+    scene_range = act.scene_range or default_scene_range()
+    past_range = game.narrative.scene_count > scene_range[1]
+    past_range_attr = ' PAST_RANGE="true"' if past_range else ""
+
+    info = (
+        f'\n<story_arc structure="{html.escape(bp.structure_type, quote=True)}" '
+        f'act="{act.act_number}/{act.total_acts}" phase="{html.escape(act.phase, quote=True)}" '
+        f'progress="{act.progress}" '
+        f'current_scene="{game.narrative.scene_count}" scene_range="{scene_range[0]}-{scene_range[1]}"'
+        f"{past_range_attr} "
+        f'conflict="{html.escape(bp.central_conflict, quote=True)}"'
+    )
+    if thematic:
+        info += f' thematic_thread="{html.escape(thematic, quote=True)}"'
+    info += "/>"
+    if act.transition_trigger:
+        info += (
+            f'\n<transition_trigger act="{act.act_number}">{html.escape(act.transition_trigger)}</transition_trigger>'
+        )
+    return info
+
+
 def build_director_prompt(game: GameState, latest_narration: str, config: EngineConfig | None = None) -> str:
     """Build the Director analysis prompt.
 
@@ -98,72 +178,8 @@ def build_director_prompt(game: GameState, latest_narration: str, config: Engine
     _cfg = config or EngineConfig()
     lang = get_narration_lang(_cfg)
 
-    # NPCs needing reflection or profile completion (empty agenda/instinct)
-    reflection_blocks = []
-    for n in game.npcs:
-        needs_profile = not n.agenda.strip() or not n.instinct.strip()
-        if not n.needs_reflection and not needs_profile:
-            continue
-        if n.status not in ("active", "background"):
-            continue
-        recent_obs = [m for m in n.memory if m.type == "observation"][-8:]
-        mem_text = "; ".join(f"{m.event}({m.emotional_weight})" for m in recent_obs)
-        # Include last reflection so Director can build on it, not repeat it
-        prev_reflections = [m for m in n.memory if m.type == "reflection"]
-        prev_ref_text = ""
-        prev_tone_text = ""
-        if prev_reflections:
-            prev_ref_text = (
-                f' last_reflection="'
-                f"{html.escape(prev_reflections[-1].event[: eng().truncations.prompt_short], quote=True)}"
-                f'"'
-            )
-            prev_tone_compound = prev_reflections[-1].tone or prev_reflections[-1].emotional_weight
-            prev_tone_key_val = prev_reflections[-1].tone_key
-            if prev_tone_compound:
-                prev_tone_text += f' last_tone="{html.escape(prev_tone_compound, quote=True)}"'
-            if prev_tone_key_val:
-                prev_tone_text += f' last_tone_key="{html.escape(prev_tone_key_val, quote=True)}"'
-        npc_desc = html.escape(n.description, quote=True)
-        instinct_attr = f' instinct="{_xa(n.instinct)}"' if n.instinct.strip() else ""
-        arc_attr = f' arc="{_xa(n.arc)}"' if n.arc.strip() else ""
-        needs_profile_attr = ""
-        if not n.agenda.strip() or not n.instinct.strip():
-            needs_profile_attr = ' needs_profile="true"'
-        reflection_blocks.append(
-            f'<reflect npc_id="{html.escape(n.id, quote=True)}" name="{html.escape(n.name, quote=True)}" '
-            f'disposition="{html.escape(n.disposition, quote=True)}" bond="{get_npc_bond(game, n.id)}" '
-            f'description="{npc_desc}"{instinct_attr}{arc_attr}{prev_ref_text}{prev_tone_text}{needs_profile_attr}>'
-            f"{html.escape(mem_text)}</reflect>"
-        )
-    reflection_section = "\n".join(reflection_blocks)
-
-    # Story arc info
-    story_info = ""
-    transition_trigger = ""
-    if game.narrative.story_blueprint and game.narrative.story_blueprint.acts:
-        act = get_current_act(game)
-        bp = game.narrative.story_blueprint
-        transition_trigger = act.transition_trigger
-        thematic = bp.thematic_thread
-        scene_range = act.scene_range or default_scene_range()
-        past_range = game.narrative.scene_count > scene_range[1]
-        past_range_attr = ' PAST_RANGE="true"' if past_range else ""
-        story_info = (
-            f'\n<story_arc structure="{html.escape(bp.structure_type, quote=True)}" '
-            f'act="{act.act_number}/{act.total_acts}" phase="{html.escape(act.phase, quote=True)}" '
-            f'progress="{act.progress}" '
-            f'current_scene="{game.narrative.scene_count}" scene_range="{scene_range[0]}-{scene_range[1]}"'
-            f"{past_range_attr} "
-            f'conflict="{html.escape(bp.central_conflict, quote=True)}"'
-        )
-        if thematic:
-            story_info += f' thematic_thread="{html.escape(thematic, quote=True)}"'
-        story_info += "/>"
-        if transition_trigger:
-            story_info += (
-                f'\n<transition_trigger act="{act.act_number}">{html.escape(transition_trigger)}</transition_trigger>'
-            )
+    reflection_section = _collect_reflection_blocks(game)
+    story_info = _build_story_arc_block(game)
 
     task = get_prompt("director_task", lang=lang)
     return f"""<latest_scene>
@@ -190,7 +206,7 @@ def call_director(
 
     prompt = build_director_prompt(game, latest_narration, config)
     tools = get_tools("director")
-    system = _director_system(game, config)
+    system = _director_system(game)
 
     try:
         _dp = sampling_params("director")
@@ -305,19 +321,149 @@ def _check_engine_act_transition(game: GameState) -> None:
     )
 
 
+def _reset_all_reflection_flags(game: GameState, reason: str) -> None:
+    """Clear pending reflection flags. Used on API failure and at the end of
+    apply_director_guidance for NPCs the director didn't address.
+    """
+    for npc in game.npcs:
+        if npc.needs_reflection:
+            npc.needs_reflection = False
+            npc.importance_accumulator = 0
+            log(f"[Director] Reset reflection for {npc.name} ({reason})")
+
+
+def _reflection_is_truncated(text: str) -> bool:
+    """A reflection without terminal punctuation is almost always a max_tokens cutoff."""
+    return not text.rstrip().endswith((".", "!", "?", '"', "»", "…", ")", "–", "—"))
+
+
+def _append_reflection_memory(npc: NpcData, ref: dict, game: GameState) -> None:
+    """Add the reflection as a MemoryEntry on the NPC and reset reflection state."""
+    npc.memory.append(
+        MemoryEntry(
+            scene=game.narrative.scene_count,
+            event=ref.get("reflection", ""),
+            emotional_weight=ref.get("tone_key") or eng().ai_text.narrator_defaults["reflection_tone_fallback"],
+            tone=ref.get("tone", ""),
+            tone_key=ref.get("tone_key", ""),
+            importance=eng().npc.reflection_importance,
+            type="reflection",
+            about_npc=resolve_about_npc(game, ref.get("about_npc"), owner_id=npc.id),
+        )
+    )
+    npc.needs_reflection = False
+    npc.importance_accumulator = 0
+    npc.last_reflection_scene = game.narrative.scene_count
+
+
+def _apply_agenda_and_instinct_updates(npc: NpcData, ref: dict) -> None:
+    """Fill empty agenda/instinct from Director suggestions; update stale agenda/arc
+    if Director supplied new versions.
+    """
+    suggested_agenda = (ref.get("agenda") or "").strip()
+    suggested_instinct = (ref.get("instinct") or "").strip()
+    if suggested_agenda and not npc.agenda.strip():
+        npc.agenda = suggested_agenda
+        log(f"[Director] Agenda set for {npc.name}: '{suggested_agenda}'")
+    if suggested_instinct and not npc.instinct.strip():
+        npc.instinct = suggested_instinct
+        log(f"[Director] Instinct set for {npc.name}: '{suggested_instinct}'")
+
+    updated_agenda = (ref.get("updated_agenda") or "").strip()
+    updated_arc = (ref.get("updated_arc") or "").strip()
+    if updated_agenda and npc.agenda.strip():
+        old_agenda = npc.agenda
+        npc.agenda = updated_agenda
+        _trunc = eng().truncations
+        log(
+            f"[Director] Agenda updated for {npc.name}: "
+            f"'{old_agenda[: _trunc.log_xshort]}' → '{updated_agenda[: _trunc.log_xshort]}'"
+        )
+    if updated_arc:
+        old_arc = npc.arc
+        npc.arc = updated_arc
+        _trunc = eng().truncations
+        log(
+            f"[Director] Arc updated for {npc.name}: "
+            f"'{old_arc[: _trunc.log_short]}' → '{updated_arc[: _trunc.log_short]}'"
+        )
+
+
+def _clean_director_description(new_desc: str, npc_name: str) -> str:
+    """Strip prompt-leak prefixes (SIDEBAR:) and redundant NPC-name prefixes
+    ("Sarah Vance —", "Detective:") that the director sometimes copies literally.
+    """
+    new_desc = re.sub(r"^(?:SIDEBAR\s*(?:LABEL)?[:\-—]\s*)", "", new_desc, flags=re.IGNORECASE).strip()
+    if npc_name:
+        name_parts = [re.escape(npc_name)] + [re.escape(p) for p in npc_name.split() if len(p) > 2]
+        name_pattern = "|".join(name_parts)
+        new_desc = re.sub(
+            rf"^(?:{name_pattern})(?:\s+(?:{name_pattern}))*\s*[:\-—]\s*",
+            "",
+            new_desc,
+            count=1,
+            flags=re.IGNORECASE,
+        ).strip()
+    return new_desc
+
+
+def _apply_description_update(npc: NpcData, ref: dict) -> None:
+    """Apply updated_description if it's meaningful, not truncated, and cleanable."""
+    new_desc = _clean_director_description((ref.get("updated_description") or "").strip(), npc.name)
+    if not new_desc or len(new_desc) <= 10:
+        return
+    _trunc = eng().truncations
+    if not is_complete_description(new_desc) and npc.description:
+        log(
+            f"[Director] Rejected truncated description for {npc.name}: "
+            f"'{new_desc[: _trunc.log_short]}' — keeping existing"
+        )
+        return
+    old_desc = npc.description
+    npc.description = new_desc
+    log(
+        f"[Director] Description updated for {npc.name}: "
+        f"'{old_desc[: _trunc.log_short]}' → '{new_desc[: _trunc.log_short]}'"
+    )
+
+
+def _process_npc_reflection(game: GameState, ref: dict) -> str | None:
+    """Process a single NPC reflection from Director guidance. Returns the NPC's
+    id if reflection succeeded, None on skip (NPC missing, empty text, truncated).
+    """
+    npc_id = ref.get("npc_id", "")
+    npc = find_npc(game, npc_id)
+    if not npc:
+        return None
+
+    reflection_text = ref.get("reflection", "")
+    if not reflection_text:
+        return None
+    if _reflection_is_truncated(reflection_text):
+        log(
+            f"[Director] Rejected truncated reflection for {npc.name}: "
+            f"'{reflection_text[: eng().truncations.log_short]}'",
+            level="warning",
+        )
+        return None
+
+    _append_reflection_memory(npc, ref, game)
+    _apply_agenda_and_instinct_updates(npc, ref)
+    _apply_description_update(npc, ref)
+    consolidate_memory(npc)
+
+    log(f"[Director] Reflection for {npc.name}: {reflection_text[: eng().truncations.log_medium]}")
+    return npc_id
+
+
 def apply_director_guidance(game: GameState, guidance: dict) -> None:
     """Apply Director guidance to game state: store guidance, apply reflections,
-    update session log with rich summary."""
+    update session log with rich summary.
+    """
     if not guidance:
-        # API failure — reset all pending reflection flags to prevent zombie loop
-        for npc in game.npcs:
-            if npc.needs_reflection:
-                npc.needs_reflection = False
-                npc.importance_accumulator = 0
-                log(f"[Director] Reset reflection for {npc.name} (empty guidance)")
+        # API failure — clear all pending reflection flags to prevent zombie loop
+        _reset_all_reflection_flags(game, reason="empty guidance")
         return
-
-    # Store guidance for next narrator call
 
     game.narrative.director_guidance = DirectorGuidance(
         narrator_guidance=guidance.get("narrator_guidance", ""),
@@ -325,125 +471,28 @@ def apply_director_guidance(game: GameState, guidance: dict) -> None:
         arc_notes=guidance.get("arc_notes", ""),
     )
 
-    # Handle act transition: engine checks scene count vs act range.
-    # Director's act_transition signal is advisory — engine verifies.
+    # Act transition: engine verifies based on scene count vs act range.
+    # Director's act_transition signal is advisory — engine owns the call.
     _check_engine_act_transition(game)
 
-    # Enrich the latest session log entry with Director's summary
     if guidance.get("scene_summary") and game.narrative.session_log:
         game.narrative.session_log[-1].rich_summary = guidance["scene_summary"]
 
-    successfully_reflected_ids = set()  # Only NPCs whose reflections passed all checks
+    successfully_reflected: set[str] = set()
     for ref in guidance.get("npc_reflections", []):
-        npc_id = ref.get("npc_id", "")
-        ref_npc = find_npc(game, npc_id)
-        if not ref_npc:
-            continue
+        reflected_id = _process_npc_reflection(game, ref)
+        if reflected_id is not None:
+            successfully_reflected.add(reflected_id)
 
-        reflection_text = ref.get("reflection", "")
-        if not reflection_text:
-            continue
-        # Reject truncated reflections (max_tokens cutoff)
-        if not reflection_text.rstrip().endswith((".", "!", "?", '"', "»", "…", ")", "–", "—")):
-            log(
-                f"[Director] Rejected truncated reflection for {ref_npc.name}: "
-                f"'{reflection_text[: eng().truncations.log_short]}'",
-                level="warning",
-            )
-            continue
-
-        ref_npc.memory.append(
-            MemoryEntry(
-                scene=game.narrative.scene_count,
-                event=reflection_text,
-                emotional_weight=ref.get("tone_key") or eng().ai_text.narrator_defaults["reflection_tone_fallback"],
-                tone=ref.get("tone", ""),
-                tone_key=ref.get("tone_key", ""),
-                importance=eng().npc.reflection_importance,
-                type="reflection",
-                about_npc=resolve_about_npc(game, ref.get("about_npc"), owner_id=ref_npc.id),
-            )
-        )
-        ref_npc.needs_reflection = False
-        ref_npc.importance_accumulator = 0
-        ref_npc.last_reflection_scene = game.narrative.scene_count
-
-        # Fill empty agenda/instinct if Director suggested them
-        suggested_agenda = (ref.get("agenda") or "").strip()
-        suggested_instinct = (ref.get("instinct") or "").strip()
-        if suggested_agenda and not ref_npc.agenda.strip():
-            ref_npc.agenda = suggested_agenda
-            log(f"[Director] Agenda set for {ref_npc.name}: '{suggested_agenda}'")
-        if suggested_instinct and not ref_npc.instinct.strip():
-            ref_npc.instinct = suggested_instinct
-            log(f"[Director] Instinct set for {ref_npc.name}: '{suggested_instinct}'")
-
-        # Update stale agenda if Director provided new version; apply arc evolution
-        updated_agenda = (ref.get("updated_agenda") or "").strip()
-        updated_arc = (ref.get("updated_arc") or "").strip()
-        if updated_agenda and ref_npc.agenda.strip():
-            old_agenda = ref_npc.agenda
-            ref_npc.agenda = updated_agenda
-            _trunc = eng().truncations
-            log(
-                f"[Director] Agenda updated for {ref_npc.name}: "
-                f"'{old_agenda[: _trunc.log_xshort]}' → '{updated_agenda[: _trunc.log_xshort]}'"
-            )
-        if updated_arc:
-            old_arc = ref_npc.arc
-            ref_npc.arc = updated_arc
-            _trunc = eng().truncations
-            log(
-                f"[Director] Arc updated for {ref_npc.name}: "
-                f"'{old_arc[: _trunc.log_short]}' → '{updated_arc[: _trunc.log_short]}'"
-            )
-
-        # Update description if Director provided a meaningful character description
-        new_desc = (ref.get("updated_description") or "").strip()
-        # Safety net: strip prompt-leak prefixes the AI may copy literally
-        new_desc = re.sub(r"^(?:SIDEBAR\s*(?:LABEL)?[:\-—]\s*)", "", new_desc, flags=re.IGNORECASE).strip()
-        # Strip redundant NPC name prefix ("Detective Vance:", "Sarah Vance –", etc.)
-        npc_name = ref_npc.name
-        if npc_name:
-            # Match full name or any single word from the name, followed by : or – or -
-            name_parts = [re.escape(npc_name)] + [re.escape(p) for p in npc_name.split() if len(p) > 2]
-            name_pattern = "|".join(name_parts)
-            new_desc = re.sub(
-                rf"^(?:{name_pattern})(?:\s+(?:{name_pattern}))*\s*[:\-—]\s*",
-                "",
-                new_desc,
-                count=1,
-                flags=re.IGNORECASE,
-            ).strip()
-        if new_desc and len(new_desc) > 10:
-            _trunc = eng().truncations
-            if not is_complete_description(new_desc) and ref_npc.description:
-                log(
-                    f"[Director] Rejected truncated description for {ref_npc.name}: "
-                    f"'{new_desc[: _trunc.log_short]}' — keeping existing"
-                )
-            else:
-                old_desc = ref_npc.description
-                ref_npc.description = new_desc
-                log(
-                    f"[Director] Description updated for {ref_npc.name}: "
-                    f"'{old_desc[: _trunc.log_short]}' → '{new_desc[: _trunc.log_short]}'"
-                )
-
-        # Consolidate after adding reflection
-        consolidate_memory(ref_npc)
-        successfully_reflected_ids.add(npc_id)
-
-        log(f"[Director] Reflection for {ref_npc.name}: {reflection_text[: eng().truncations.log_medium]}")
-
-    # Fallback: reset needs_reflection flag for any NPCs the Director
-    # didn't successfully address. Preserve accumulator so it can reach
-    # threshold again on the next Director call.
+    # Fallback: reset needs_reflection flag for any NPCs the Director didn't
+    # successfully address. Preserve accumulator so they can reach threshold
+    # again on the next Director call.
     for npc in game.npcs:
-        if npc.needs_reflection and npc.id not in successfully_reflected_ids:
+        if npc.needs_reflection and npc.id not in successfully_reflected:
             npc.needs_reflection = False
             log(
-                f"[Director] Reset stale reflection flag for {npc.name} (accumulator preserved at {npc.importance_accumulator})"
+                f"[Director] Reset stale reflection flag for {npc.name} "
+                f"(accumulator preserved at {npc.importance_accumulator})"
             )
 
     log("[Director] Guidance applied")
