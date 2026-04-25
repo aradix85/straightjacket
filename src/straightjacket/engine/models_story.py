@@ -144,6 +144,36 @@ class DirectorGuidance(SerializableMixin):
 
 
 @dataclass
+class KeyedScene(SerializableMixin):
+    """Director-pre-defined narrative beat that overrides chaos at scene start.
+
+    A keyed scene fires when its trigger evaluates true at the next scene
+    boundary. Priority order in check_scene is keyed > interrupt > altered >
+    expected. The matched scene is removed from narrative.keyed_scenes once
+    it fires — keyed scenes are one-shot.
+
+    trigger_type is validated against engine/keyed_scenes.yaml's registered
+    triggers map at construction time; an unknown trigger_type raises
+    ValueError so a buggy spawner cannot silently install a dead scene.
+    Spawning is out of scope for step 4 — the Adventure Crafter (step 7)
+    is the engine's keyed-scene spawner.
+
+    All fields required.
+    """
+
+    id: str
+    trigger_type: str
+    trigger_value: str
+    priority: int
+    narrative_hint: str
+
+    def __post_init__(self) -> None:
+        triggers = eng().keyed_scenes.triggers
+        if self.trigger_type not in triggers:
+            raise ValueError(f"Unknown KeyedScene trigger_type {self.trigger_type!r}; registered: {sorted(triggers)}")
+
+
+@dataclass
 class NarrativeState(SerializableMixin):
     """Scene tracking, history, story arc, director guidance."""
 
@@ -155,15 +185,21 @@ class NarrativeState(SerializableMixin):
     scene_intensity_history: list[str] = field(default_factory=list)
     threads: list[ThreadEntry] = field(default_factory=list)
     characters_list: list[CharacterListEntry] = field(default_factory=list)
+    keyed_scenes: list[KeyedScene] = field(default_factory=list)
 
     def snapshot(self) -> dict:
-        """Lightweight snapshot for undo. Captures lengths (not full lists) and mutable sub-state."""
+        """Lightweight snapshot for undo. Captures lengths (not full lists) and mutable sub-state.
+
+        keyed_scenes captured in full because consumption can shrink the list
+        mid-turn — length-only would not restore a fired scene on undo.
+        """
         return {
             "scene_count": self.scene_count,
             "session_log_len": len(self.session_log),
             "narration_history_len": len(self.narration_history),
             "threads_len": len(self.threads),
             "characters_list_len": len(self.characters_list),
+            "keyed_scenes": [k.to_dict() for k in self.keyed_scenes],
             "director_guidance": self.director_guidance.to_dict(),
             "scene_intensity_history": list(self.scene_intensity_history),
             "story_blueprint_snapshot": {
@@ -185,6 +221,7 @@ class NarrativeState(SerializableMixin):
         self.narration_history = self.narration_history[: snap["narration_history_len"]]
         self.threads = self.threads[: snap["threads_len"]]
         self.characters_list = self.characters_list[: snap["characters_list_len"]]
+        self.keyed_scenes = [KeyedScene.from_dict(k) for k in snap["keyed_scenes"]]
         bp_snap = snap["story_blueprint_snapshot"]
         if bp_snap is not None and self.story_blueprint is not None:
             self.story_blueprint.revealed = list(bp_snap["revealed"])

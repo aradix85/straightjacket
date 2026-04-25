@@ -8,7 +8,7 @@ Implementation split across:
 - models_base.py: EngineConfig, Resources, ClockData, ProgressTrack, WorldState, ClockEvent, PlayerPreferences
 - models_npc.py: MemoryEntry, NpcData
 - models_story.py: ThreadEntry, CharacterListEntry, SceneLogEntry, NarrationEntry, StoryAct, CurrentAct,
-                    Revelation, PossibleEnding, StoryBlueprint, DirectorGuidance, NarrativeState,
+                    Revelation, PossibleEnding, StoryBlueprint, DirectorGuidance, KeyedScene, NarrativeState,
                     NpcEvolution, ChapterSummary, InheritanceRollResult, PredecessorRecord, CampaignState
 
 This file defines: RollResult, BrainResult, TurnSnapshot, GameState (top-level composites).
@@ -45,6 +45,7 @@ from .models_story import (  # noqa: F401
     CurrentAct,
     DirectorGuidance,
     InheritanceRollResult,
+    KeyedScene,
     NarrationEntry,
     NarrativeState,
     NpcEvolution,

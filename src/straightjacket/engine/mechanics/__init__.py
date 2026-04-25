@@ -10,6 +10,7 @@ Implementation split across:
 - stance_gate.py: NPC stance resolution, information gating
 - engine_memories.py: memory emotion derivation, engine memories, scene context
 - fate.py: Mythic GME 2e fate chart, fate check, likelihood resolver
+- keyed_scenes.py: director-pre-defined scene-start beats that override chaos
 - random_events.py: event focus, meaning tables, random event pipeline, list maintenance
 """
 
@@ -34,6 +35,7 @@ __all__ = [
     "deactivate_thread",
     "derive_memory_emotion",
     "drain_pending_events",
+    "evaluate_keyed_scenes",
     "generate_consequence_sentences",
     "generate_engine_memories",
     "generate_random_event",
@@ -87,6 +89,9 @@ from .fate import (
     resolve_fate_chart,
     resolve_fate_check,
     resolve_likelihood,
+)
+from .keyed_scenes import (
+    evaluate_keyed_scenes,
 )
 from .legacy import (
     LEGACY_TRACKS,

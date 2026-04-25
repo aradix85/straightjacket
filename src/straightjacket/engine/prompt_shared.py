@@ -249,7 +249,10 @@ def _pacing_block(game: GameState, scene_setup: SceneSetup | None = None) -> str
     if pacing != "neutral":
         parts.append(f'<pacing type="{pacing}"/>')
 
-    if scene_setup and scene_setup.scene_type == "altered":
+    if scene_setup and scene_setup.scene_type == "keyed":
+        wrapper = eng().keyed_scenes.prompt_wrapper
+        parts.append(wrapper.format(hint=_xe(scene_setup.narrative_hint)))
+    elif scene_setup and scene_setup.scene_type == "altered":
         descs = adjustment_descriptions(scene_setup.adjustments)
         adj_text = "; ".join(descs)
         parts.append(f"<altered_scene>{adj_text}</altered_scene>")

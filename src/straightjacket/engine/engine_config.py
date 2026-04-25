@@ -38,6 +38,8 @@ from .engine_config_dataclasses import (
     InformationGateConfig,
     InformationGatePoints,
     InformationGateBuckets,
+    KeyedScenesConfig,
+    KeyedSceneTrigger,
     LegacyConfig,
     LocationConfig,
     MemoryConfig,
@@ -167,6 +169,7 @@ class EngineSettings:
     correction: CorrectionConfig
     chapter_validator: ChapterValidatorConfig
     succession: SuccessionConfig
+    keyed_scenes: KeyedScenesConfig
 
     # Scalar top-level fields
     scene_range_default: list[int]
@@ -204,10 +207,13 @@ class EngineSettings:
         return compiled
 
     def compiled_labeled_patterns(self, section: str, key: str) -> list[tuple[Any, str]]:
-        """Compile and cache a list of {pattern, label, flags?} dicts.
+        """Compile and cache a list of {pattern, label, flags} dicts.
 
-        Each entry produces (compiled_regex, label). Supported flags: 'multiline'.
-        Raises KeyError if section or key is missing.
+        Each entry produces (compiled_regex, label). flags is a space-separated
+        string of flag names (currently only 'multiline'); empty string means
+        no flags. flags is required on every entry — the yaml author opts out
+        of flags by writing `flags: ""`, not by omitting the key.
+        Raises KeyError if section, key, or any per-entry field is missing.
         """
 
         cache_key = f"labeled:{section}.{key}"
@@ -218,10 +224,7 @@ class EngineSettings:
         compiled: list[tuple[Any, str]] = []
         for entry in entries:
             flags = 0
-            # Yaml-shape probing: `flags` is intrinsically optional in the
-            # {pattern, label, flags?} schema documented above. External-
-            # boundary exception under defaults_and_fallbacks rule.
-            for flag_name in entry.get("flags", "").split():
+            for flag_name in entry["flags"].split():
                 flags |= flag_map[flag_name]
             compiled.append((re.compile(entry["pattern"], flags), entry["label"]))
         self._compiled_patterns[cache_key] = compiled
@@ -485,6 +488,14 @@ def parse_engine_yaml(data: dict[str, Any]) -> EngineSettings:
         retire_command=succession_raw["retire_command"],
     )
 
+    # keyed_scenes: nested dict[str, KeyedSceneTrigger] + scalar prompt_wrapper.
+    keyed_raw = dict(data["keyed_scenes"])
+    triggers = {name: _build_strict(KeyedSceneTrigger, dict(entry)) for name, entry in keyed_raw["triggers"].items()}
+    keyed_scenes = KeyedScenesConfig(
+        triggers=triggers,
+        prompt_wrapper=keyed_raw["prompt_wrapper"],
+    )
+
     return EngineSettings(
         npc=npc,
         chaos=simple_parsed["chaos"],
@@ -550,6 +561,7 @@ def parse_engine_yaml(data: dict[str, Any]) -> EngineSettings:
         correction=simple_parsed["correction"],
         chapter_validator=simple_parsed["chapter_validator"],
         succession=succession,
+        keyed_scenes=keyed_scenes,
         scene_range_default=list(data["scene_range_default"]),
         death_emotions=list(data["death_emotions"]),
         creativity_seeds=list(data["creativity_seeds"]),

@@ -62,13 +62,16 @@ validator:
     flags: multiline
     label: role label prefix
   - pattern: \[(?:CLOCK|THREAT|SCENE|NPC|CONTEXT|NOTE)[^\]]*\]
+    flags: ""
     label: bracketed annotation
   - pattern: '```'
+    flags: ""
     label: code block
   - pattern: ^\s*#{1,6}\s
     flags: multiline
     label: markdown heading
   - pattern: \*\*[^*]+\*\*
+    flags: ""
     label: bold markdown
   quote_patterns:
     strip: “[^”]*”

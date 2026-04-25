@@ -9,7 +9,7 @@ Player types "I search the room" → engine returns narration + updated game sta
 ```
 player input
   ↓
-Scene Test (mechanics/scene.py) → d10 vs chaos factor: expected / altered / interrupt
+Scene Test (mechanics/scene.py) → keyed > interrupt > altered > expected (keyed branch overrides chaos)
   ↓
 Brain (ai/brain.py)           → single-call classification with injected game state (no tool calling)
   ↓
@@ -97,7 +97,8 @@ Where to find things. If you want to change X, edit Y.
 | Status command /tracks | `web/handlers.py` → `handle_tracks_query`; `web/serializers.py` → `build_tracks_status` |
 | Status command /threats | `web/handlers.py` → `handle_threats_query`; `web/serializers.py` → `build_threats_status` |
 | Fate questions (yes/no) | `mechanics/fate.py` → `resolve_fate`, `resolve_likelihood`; `engine.yaml` → `fate` |
-| Scene structure (expected/altered/interrupt) | `mechanics/scene.py` → `check_scene`, `SceneSetup` |
+| Scene structure (keyed/expected/altered/interrupt) | `mechanics/scene.py` → `check_scene`, `SceneSetup`; `mechanics/keyed_scenes.py` → `evaluate_keyed_scenes` |
+| Keyed scene triggers and dispatch | `mechanics/keyed_scenes.py` → `_EVALUATORS`; trigger registry in `engine/keyed_scenes.yaml` |
 | Random events and meaning tables | `mechanics/random_events.py` → `generate_random_event`, `roll_event_focus`, `roll_meaning_table` |
 | Mythic list maintenance (weight, consolidation) | `mechanics/random_events.py` → `add_thread_weight`, `add_character_weight`, `consolidate_threads` |
 | Consequence sentence templates | `engine.yaml` → `consequence_templates`, `pay_the_price` (no Python) |
@@ -184,7 +185,8 @@ src/straightjacket/
 │   │   ├── engine_memories.py  # Memory emotion derivation, engine memories, scene context
 │   │   ├── fate.py             # Mythic GME 2e fate chart, fate check, likelihood resolver
 │   │   ├── random_events.py    # Event focus, meaning tables, random event pipeline, list maintenance
-│   │   ├── scene.py            # Scene structure: chaos check, altered/interrupt scenes
+│   │   ├── scene.py            # Scene structure: keyed/chaos branch, altered/interrupt scenes
+│   │   ├── keyed_scenes.py     # Keyed scene evaluator + per-trigger dispatch table
 │   │   ├── threats.py          # Threat menace advancement, autonomous ticks, Forsake Your Vow
 │   │   ├── impacts.py          # Impact apply/clear, max_momentum recalc, recovery blocking
 │   │   ├── legacy.py           # Legacy tracks (quests/bonds/discoveries), XP, asset advancement
@@ -316,7 +318,9 @@ src/straightjacket/
 
 **Fate system (Mythic GME 2e).** Probabilistic yes/no questions about the fiction. Two methods: fate chart (9×9 odds/chaos matrix, d100) and fate check (2d10 + modifiers). Both produce four outcomes (yes, no, exceptional yes, exceptional no) and can trigger random events via the doublet rule. Likelihood resolver maps game state (NPC disposition, chaos, resources) to odds level via engine.yaml lookup table. Brain sets `fate_question` field; engine resolves after classification.
 
-**Scene structure (Mythic GME 2e).** Every turn starts with a scene test: d10 vs chaos factor. Expected (roll > CF), altered (roll ≤ CF, odd), or interrupt (roll ≤ CF, even). Altered scenes roll on the Scene Adjustment Table. Interrupt scenes generate a random event via the pipeline. Scene test runs before Brain call. Replaces the old chaos interrupt system.
+**Scene structure (Mythic GME 2e).** Every turn starts with a scene test. Priority order: keyed > interrupt > altered > expected. The keyed branch (`mechanics/keyed_scenes.py::evaluate_keyed_scenes`) runs first: if any `KeyedScene` on `narrative.keyed_scenes` has its trigger fire (`clock_fills`, `threat_menace_phase`, `bond_threshold`, `chaos_extreme`, or `scene_count`), the highest-priority match consumes itself from the list and replaces the chaos-driven outcome with `scene_type="keyed"` plus the spawner's `narrative_hint` carried into the narrator prompt as `<keyed_scene>`. Otherwise the d10 vs chaos factor fires: expected (roll > CF), altered (roll ≤ CF, odd), or interrupt (roll ≤ CF, even). Altered scenes roll on the Scene Adjustment Table; interrupt scenes generate a random event via the pipeline. Scene test runs before Brain call. Replaces the old chaos interrupt system.
+
+**Keyed scenes are the engine's pre-scheduled beat channel.** Triggers are registered in `engine/keyed_scenes.yaml`; each registered name maps to an evaluator in `mechanics/keyed_scenes.py::_EVALUATORS`. `KeyedScene.__post_init__` validates `trigger_type` against the registered set so a buggy spawner cannot install a dead scene that fails silently at evaluation. The matched scene is consumed (one-shot) by `check_scene`. Spawning is not yet wired: the Adventure Crafter (planned) will be the spawner, writing keyed scenes onto `narrative.keyed_scenes` when its turning points and plot beats map deterministically onto an engine trigger. Until then `narrative.keyed_scenes` stays empty in normal play and the keyed branch is dormant.
 
 **Random events.** Four-step pipeline: event focus (d100, 12 categories) → target selection from weighted Mythic lists → meaning table roll (actions or descriptions) → structured `RandomEvent` assembly. Events fire on fate doublets and interrupt scenes. `<random_event>` and `<interrupt_scene>` tags injected into narrator prompt. List maintenance: present NPCs/threads get weight bumps, new NPCs added to characters list, consolidation at 25 entries.
 

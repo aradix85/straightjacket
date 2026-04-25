@@ -937,3 +937,31 @@ class SuccessionConfig:
     inheritance: InheritanceConfig
     npc_carryover: dict[str, NpcCarryoverEntry]
     retire_command: str
+
+
+@dataclass
+class KeyedSceneTrigger:
+    """Metadata for one registered keyed-scene trigger type.
+
+    The evaluator function name is implicit: mechanics/keyed_scenes.py owns
+    the dispatch table that maps trigger_type names to evaluator functions.
+    This config carries only the spec a spawner or a constructor needs to
+    validate trigger_value at write time.
+    """
+
+    value_format: str
+    description: str
+
+
+@dataclass
+class KeyedScenesConfig:
+    """Director-pre-defined narrative beats that override chaos at scene start.
+
+    See engine/keyed_scenes.yaml for full prose. The triggers map drives
+    KeyedScene.trigger_type validation (unknown type raises on construction)
+    and the evaluator dispatch in mechanics/keyed_scenes.py. prompt_wrapper
+    is the AI-facing template for the narrative_hint when a keyed scene fires.
+    """
+
+    triggers: dict[str, KeyedSceneTrigger]
+    prompt_wrapper: str
