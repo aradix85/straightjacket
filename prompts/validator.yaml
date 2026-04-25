@@ -42,3 +42,33 @@
 
 
   Respond with ONLY a JSON object: {{"pass": true/false, "violations": [...], "correction": "..."}}
+"chapter_validator_system": |-
+  You check a chapter-summary narrative for direct contradictions with the engine's mechanical state. The engine's record is canonical; the narrative must not contradict it.
+
+  CONTRADICTIONS to flag:
+  - The narrative says a named NPC died, was killed, or is dead — but that NPC's state is alive, background, or in lore.
+  - The narrative says a named track or quest was completed, finished, or fulfilled — but that track's state is active or failed.
+  - The narrative says a named threat was resolved, defeated, or destroyed — but that threat's state is active.
+
+  ALLOWED — pass these:
+  - Invented colour: details, atmosphere, emotions, secondary characters not in state. The engine does not constrain everything; only what it tracks.
+  - Eufemism for an event the state confirms: if state says NPC is deceased, the narrative may say "she fell", "he is gone", "we lost her" — those describe a true death.
+  - Vague or partial outcomes: "the threat receded for now" while threat is still active is fine — that describes ongoing struggle, not resolution.
+  - Past tense about prior chapters: events from earlier chapters that match the historical record.
+
+  Compare narrative claims against the supplied state snapshot. When in doubt, pass — the engine's worry is direct contradictions, not stylistic interpretation.
+
+  For each contradiction, write a short correction instruction the next attempt can act on (e.g. "Marcus is alive, not dead — rewrite without claiming he died").
+"chapter_validator_user": |2-
+  STATE SNAPSHOT
+  {state_block}
+
+  NARRATIVE TO CHECK
+  Title: {title}
+  Summary: {summary}
+  Character growth: {character_growth}
+  NPC evolutions: {npc_evolutions_block}
+  Unresolved threads: {unresolved_threads_block}
+  Thematic question: {thematic_question}
+"chapter_validator_correction_intro": |2-
+  Your previous chapter-summary contradicted the engine's record. Rewrite, fixing the following:

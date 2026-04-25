@@ -3,7 +3,21 @@
 Straightjacket — AI-powered narrative solo RPG engine.
 Originally forked from [EdgeTales](https://github.com/edgetales/edgetales). See [ORIGINS.md](ORIGINS.md).
 
+## Versioning
+
+Straightjacket uses calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day. The first CalVer release is `2026.04.25.0`. Earlier `0.x.y` releases keep their original version numbers and are not renumbered. The switch was made because the project has no public API to version semantically against — the `0.x.y` numbers were running counters with no meaning, and dates carry the meaning the numbers didn't.
+
 ---
+
+## [2026.04.25.0] — 2026-04-25
+
+First CalVer release, and roadmap step 2: chapter-summary contradiction validator. After `call_chapter_summary` writes the AI narrative, the new `ai/chapter_validator.py` checks its claims against the engine's mechanical state snapshot. Two passes: a deterministic rule pass scans named NPCs/tracks/threats paired with status-shift keywords (death, completion, resolution); an LLM pass on the new `chapter_validator` AI role catches euphemisms the rule pass cannot interpret. Both passes feed one retry loop that re-invokes `call_chapter_summary` with the correction passed through `epilogue_text` — the only free-text channel the call already accepts. Exhausted retries keep the last narrative with a warning logged. AI-invented colour (entities not in state) is unconstrained by design.
+
+New surfaces: `ai/chapter_validator.py`, `engine/chapter_validator.yaml` (max_retries plus three keyword sets), `ChapterValidatorConfig` dataclass, three `chapter_*_contradiction` violation templates added to `engine/rule_validator.yaml`, three new prompt entries in `prompts/validator.yaml` (system, user, correction_intro), and the `chapter_validator` role registered on the analytical cluster in `config.yaml`. `_close_previous_chapter` in `game/chapters.py` wires the validator between AI call and snapshot fusion. The carve-out whitelist in `tests/test_project_rules.py` gains `engine/ai/chapter_validator.py`.
+
+Documentation cleanup also shipped this release. Four feature-claims in the md-files were factually wrong against the codebase or the upstream licenses, and have been corrected: SECURITY.md pointed at `prompt_builders.py` which has not existed since 0.73 (replaced with the actual prompt-assembly modules); ARCHITECTURE.md hardcoded "63 subsystem dataclasses" which had drifted (now unspecified, lifecycle-stable); README.md mis-stated three license terms (Datasworn rulesets are CC BY 4.0 except sundered_isles which is CC BY-NC-SA 4.0; Mythic GME 2e and Adventure Crafter are CC BY-NC 4.0 via the formal Word Mill Games non-commercial license at wordmillgames.com/license.html, not "no license"; Blades in the Dark / Forged in the Dark SRD is CC BY 3.0). README also gains an explicit note that the AGPL on the engine code does not override the NC clauses on the bundled NC data — the project as a whole can only be redistributed non-commercially while those data files ship together. CONTRIBUTING.md gains a Project rules section that documents the absolute rules (raise-on-miss, errors propagate, no backwards compatibility, two-sided removal) explicitly rather than leaving them implicit in `tests/test_project_rules.py`. CHANGELOG gains a Versioning section explaining the move from running-counter `0.x.y` to CalVer.
+
+Test suite: 842 tests green (+26 new in `tests/test_chapter_validator.py`, covering each rule-pass detector, invented-colour false-positives that must NOT trigger, deceased-NPC-with-death-keyword pass-through, word-boundary safety, LLM-pass via mock provider, retry-loop convergence and exhaustion). Eleven project-rule tests green. Ruff, ruff format, mypy clean across 101 source files. No saves break — `chapter_validator` config is purely additive, no existing dataclasses changed shape.
 
 ---
 

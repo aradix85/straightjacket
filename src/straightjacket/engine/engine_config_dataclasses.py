@@ -874,3 +874,21 @@ class PersistenceConfig:
     """Save-game filesystem behaviour."""
 
     default_save_name: str
+
+
+@dataclass
+class ChapterValidatorConfig:
+    """Chapter-summary contradiction validator.
+
+    Hybrid check that runs over the AI-written narrative dict before it is
+    fused with the engine snapshot. The rule pass scans for named entities
+    (NPCs, tracks, threats) paired with status-shift keywords; the LLM pass
+    catches euphemisms the keyword pass misses. Both feed the same retry
+    loop: violations trigger a re-call of `call_chapter_summary` with a
+    correction instruction, up to `max_retries`.
+    """
+
+    max_retries: int
+    death_keywords: list[str]
+    completion_keywords: list[str]
+    resolution_keywords: list[str]

@@ -88,6 +88,8 @@ ai_text:
     new_chapter_blank: A new chapter begins.
     npc_agency_action_template: 'NPC "{npc_name}" pursues agenda "{agenda}" — concrete offscreen action.'
     clock_filled_template: 'CLOCK FILLED "{clock_name}": {trigger}'
+    chapter_validator_empty_block: '  (none)'
+    chapter_validator_no_state: '(no tracked entities)'
   architect_labels:
     forbidden_terms_prefix: Forbidden terms
     forbidden_concepts_prefix: Forbidden concepts

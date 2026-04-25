@@ -113,6 +113,7 @@ Where to find things. If you want to change X, edit Y.
 | NPC name generation | `npc/naming.py` → `roll_oracle_name`; `data/settings/*.yaml` → `oracle_paths.names` |
 | Validator context bundling | `ai/rule_validator.py` → `ValidationContext` (adding new check = 1 field + 1 build line + 1 check call) |
 | Architect blueprint validation | `ai/architect_validator.py` → `validate_architect`, `_check_blueprint_text_fields` |
+| Chapter summary contradiction validation | `ai/chapter_validator.py` → `validate_chapter_summary` (rule pass + LLM pass), `validate_and_retry` (orchestrates retry of `call_chapter_summary`); config in `engine/chapter_validator.yaml`; templates in `engine/rule_validator.yaml` `violation_templates` |
 
 ## AI Model Assignment
 
@@ -126,7 +127,7 @@ creative         architect, director                                genre-aware 
 classification   brain, correction                                  input parsing, json_schema
 analytical       validator, validator_architect, narrator_metadata,  constraint checking, data extraction
                  opening_setup, revelation_check, chapter_summary,
-                 recap
+                 chapter_validator, recap
 ```
 
 Config structure in `config.yaml`:
@@ -169,7 +170,7 @@ src/straightjacket/
 │   ├── models_npc.py        # NpcData, MemoryEntry
 │   ├── models_story.py      # ThreadEntry, CharacterListEntry, NarrativeState, StoryBlueprint, etc.
 │   ├── engine_config.py     # EngineSettings composition + _build_strict / load_strict yaml parse; re-exports dataclasses
-│   ├── engine_config_dataclasses.py  # 63 subsystem dataclasses that bind engine.yaml sections
+│   ├── engine_config_dataclasses.py  # subsystem dataclasses that bind engine.yaml sections
 │   ├── format_utils.py      # PartialFormatDict (shared by prompt_loader, strings_loader)
 │   ├── mechanics/
 │   │   ├── world.py            # Location matching, chaos adjustment, time, pacing, story structure
@@ -216,6 +217,7 @@ src/straightjacket/
 │   │   ├── architect.py     # Story blueprint, recap, chapter summary
 │   │   ├── architect_validator.py # Blueprint genre fidelity check (rule-based + LLM)
 │   │   ├── validator.py     # Narrator constraint checking (rule-based + LLM) and retry loop
+│   │   ├── chapter_validator.py # Chapter-summary contradiction check (rule pass + LLM pass) with retry
 │   │   ├── rule_validator.py # Instant rule-based checks (player agency, result integrity, genre, format)
 │   │   ├── json_utils.py    # Shared JSON extraction from text responses
 │   │   └── schemas.py       # JSON output schemas (config-driven)
@@ -280,6 +282,8 @@ src/straightjacket/
 **Snapshot/restore.** `GameState.snapshot()` captures all mutable state before a turn. `restore()` reverts everything atomically. Used by correction (##) and momentum burn.
 
 **Chapter transitions are explicit snapshot+restore.** `_close_previous_chapter` builds a `ChapterSummary` containing both AI-written narrative fields and an engine-captured mechanical snapshot (progress_tracks, threats, impacts, assets, narrative.threads). `_reset_chapter_mechanics` zeros every chapter-spanning field, then `_restore_chapter_mechanics` replays the snapshot onto the live game state. Net effect on the running game is unchanged from the previous implicit carry-over, but the chapter-end state is now an auditable record in `campaign_history`, and adding a new chapter-spanning field requires touching three named places (capture, reset, restore) instead of "remember not to add it to the reset list". xp and legacy live on `CampaignState` and carry over campaign-wide; they are not in `ChapterSummary`. NPC list and NPC connection tracks carry via `game.npcs` (not reset by `_reset_chapter_mechanics`) and are handled separately by `_prepare_npcs_for_new_chapter`.
+
+**Chapter summary contradiction validator.** Between `call_chapter_summary` and the snapshot fusion, the AI-written narrative dict passes through `validate_chapter_summary` in `ai/chapter_validator.py`. Two passes: a deterministic rule pass scans named entities (NPCs, tracks, threats) paired with status-shift keywords (death, completion, resolution) — a contradiction is logged when an entity's narrative claim disagrees with its engine status. An LLM pass on the analytical cluster catches euphemisms the keyword pass misses. Both passes feed one retry loop: violation → re-call `call_chapter_summary` with the correction passed through `epilogue_text` (the only free-text channel the call already accepts) up to `chapter_validator.max_retries`. Exhausted retries keep the last narrative with a warning logged — graceful degradation, the chapter still closes. Invented colour (entities not in state) is unconstrained by design: the engine only owns what it tracks. The validator runs against the AI dict before fusion so a cleaned narrative is what enters `campaign_history`.
 
 **Provider abstraction.** `AIProvider` protocol with two implementations (Anthropic, OpenAI-compatible). The engine never imports provider SDKs directly. `create_with_retry` handles transient errors with exponential backoff. Multi-model: config.yaml assigns models via four clusters — narrator (Qwen 3 for prose), creative (GPT-OSS for architect, director), classification (GPT-OSS for brain, correction), analytical (GPT-OSS for validator, metadata, recap, and other structured output roles). Clusters are the single source of truth for all call parameters. `model_for_role(role)` resolves the model; `sampling_params(role)` resolves temperature, top_p, max_tokens, max_retries, and extra_body. The provider stores no model state.
 

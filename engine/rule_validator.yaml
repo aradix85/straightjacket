@@ -24,3 +24,6 @@ rule_validator:
     npc_monologue: "RESOLUTION PACING: NPC delivers an extended monologue (4+ quoted segments with minimal breaks)"
     threat_advance: "THREAT ADVANCE: narrator did not reflect threat '{name}' advancing — the growing menace must be felt in the scene"
     impact_change: "IMPACT CHANGE: narrator did not reflect impact '{label}' — the character's condition shifted and must be felt in the prose"
+    chapter_npc_contradiction: "CHAPTER CONTRADICTION: narrative claims NPC '{name}' is dead/killed but engine state is '{status}' — rewrite without claiming death"
+    chapter_track_contradiction: "CHAPTER CONTRADICTION: narrative claims track '{name}' is completed but engine state is '{status}' — rewrite without claiming completion"
+    chapter_threat_contradiction: "CHAPTER CONTRADICTION: narrative claims threat '{name}' is resolved/defeated but engine state is '{status}' — rewrite without claiming resolution"

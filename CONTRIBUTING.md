@@ -14,6 +14,24 @@ Python 3.11+. Dataclasses with type hints. f-strings. pathlib. snake_case. No mu
 
 Read `pyproject.toml` for the full ruff/mypy config. The linter rules are the spec — if ruff passes, you're fine.
 
+## Project rules
+
+These rules apply across the codebase. They are enforced mechanically by `tests/test_project_rules.py` and consciously upheld in review. They exist because every shortcut Python's defaulting and exception-swallowing make tempting eventually hides a real bug.
+
+**Domain config keys raise on miss.** Engine config is read by direct subscript (`config["key"]`). No `dict.get` with a literal fallback. No `x or "fallback"`. No dataclass defaults on fields that bind to a config value. If a key is missing, the engine should fail loudly, not silently substitute a value the rest of the code wasn't designed for.
+
+Three exceptions survive: language-mandated empty collections (`field(default_factory=list)`), parsing of variable external structures (Datasworn JSON, AI-returned JSON, WebSocket client input), and the AI-call carve-out below. Each non-language case carries a one-line policy comment at the callsite.
+
+**User-, narrator-, and AI-readable strings live in config or prompt files.** Not hardcoded in Python. `engine/*.yaml`, `prompts/*.yaml`, `strings/*.yaml`, and `emotions/*.yaml` are the homes. Adding a constant to Python should be a last resort with a written reason.
+
+**Errors propagate.** No broad `except Exception: pass`, no `contextlib.suppress` over domain logic. The carve-out is AI-call sites and tool-boundary functions returning structured error dicts to an AI caller — those carry a one-line policy comment pointing back to `provider_base.py`'s module docstring, and the broad catch is logged at warning level.
+
+**No backwards compatibility.** Saves break when the code requires it. No migration layers, no default-on-old-fields, no ignore-unknown-fields. This is by design for an alpha project with no production users; if it changes, it changes deliberately, not silently.
+
+**Update every caller in the same commit.** When a function signature, dataclass field, or yaml key changes, fix the callers immediately. Delete legacy code rather than retire it. Two-sided removal: a symbol is removed only when both code-side and config-side are dead — no readers, no writers beyond the definition.
+
+When you touch a file that already has violations, fix them in the same commit. The project-rule tests measure residual debt; their failures aren't blocking, but they aren't ignorable either.
+
 ## What goes where
 
 See [ARCHITECTURE.md](ARCHITECTURE.md) for the module ownership table. The short version: if you want to change game rules, edit YAML, not Python. If you want to change AI behavior, edit prompts.yaml. If you need to touch Python, the architecture doc tells you which file owns what.
@@ -28,7 +46,7 @@ Four layers of testing, complementary:
 
 The **unit/integration test suite** (`python -m pytest tests/ -v`) runs without an API key. It uses mock providers that return canned responses. Tests verify the engine's internal logic: consequences, NPC processing, serialization, correction flow, prompt assembly, WebSocket handlers. Every PR must pass this suite.
 
-**Project rules** (`tests/test_project_rules.py`) are eleven AST/regex scans that enforce the absolute rules mechanically: no silent domain defaults, no `X or "literal"` fallbacks, no broad `except Exception` without a policy marker, no dataclass defaults on config binding fields, no untagged TODOs, no banner comments, inline imports carry reason comments, every `@dataclass` in `models*.py` inherits `SerializableMixin`, no direct provider SDK imports outside the adapters, no hardcoded model names in engine code, no function above cyclomatic complexity 20. Failures are deterministic measurements — the tests fail on residual debt without blocking feature work. When you touch a file that already has violations, fix them in the same commit.
+**Project rules** (`tests/test_project_rules.py`) are eleven AST/regex scans that enforce the rules described in the Project rules section above. Failures are deterministic measurements — the tests fail on residual debt without blocking feature work. When you touch a file that already has violations, fix them in the same commit.
 
 **Elvira** (`tests/elvira/elvira.py`) is a headless AI-driven test player that plays the game with real API calls. It checks state invariants after every turn (including NPC-DB sync and combat-track sync), validates narration quality (leaked mechanics, spatial consistency), stress-tests the correction pipeline, runs post-run drift checks (validator balance, blueprint drift), and logs everything to a single `elvira_session.json`. Two modes:
 

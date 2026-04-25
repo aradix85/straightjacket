@@ -6,6 +6,7 @@ from concurrent.futures import ThreadPoolExecutor
 
 from ..ai.architect import call_chapter_summary, call_story_architect
 from ..ai.architect_validator import validate_architect
+from ..ai.chapter_validator import validate_and_retry as validate_chapter_and_retry
 from ..ai.metadata import process_deceased_npcs
 from ..ai.narrator import call_narrator, call_opening_setup
 from ..ai.provider_base import AIProvider
@@ -123,12 +124,23 @@ def _close_previous_chapter(provider: AIProvider, game: GameState, config: Engin
     """Generate chapter summary, snapshot mechanical state, advance chapter number.
 
     The AI writes the narrative fields. The engine snapshots mechanical state
-    deterministically. Both go into the same ChapterSummary, with the
-    mechanical snapshot as canonical record (step 2 will validate the AI text
-    against it).
+    deterministically. The chapter-summary contradiction validator catches AI
+    claims that contradict the snapshot (named NPCs declared dead while alive
+    in state, tracks declared completed while still active, threats declared
+    resolved while still active) and re-prompts up to `chapter_validator.max_retries`.
+    On exhaustion the last narrative is kept with a warning — graceful
+    degradation, the chapter still closes.
     """
     epilogue = game.campaign.epilogue_text or ""
     narrative = call_chapter_summary(provider, game, config, epilogue_text=epilogue)
+    narrative = validate_chapter_and_retry(
+        provider,
+        narrative,
+        game,
+        config,
+        call_summary=call_chapter_summary,
+        epilogue_text=epilogue,
+    )
     chapter_summary = ChapterSummary(
         chapter=game.campaign.chapter_number,
         title=narrative["title"],

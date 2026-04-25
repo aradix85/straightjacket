@@ -1,0 +1,42 @@
+chapter_validator:
+  # Number of times the chapter-summary call is retried with a correction
+  # instruction when the validator finds a contradiction. After max_retries
+  # the original narrative is kept with a warning logged.
+  max_retries: 2
+
+  # Keywords paired with named NPCs whose engine status is NOT "deceased"
+  # produce a contradiction violation. Single tokens, lowercase. The
+  # rule pass matches whole-word boundaries; the LLM pass catches the
+  # rest (euphemisms, indirect phrasings).
+  death_keywords:
+  - died
+  - dies
+  - killed
+  - kills
+  - slain
+  - dead
+  - perished
+  - murdered
+  - executed
+  - lost
+  - fell
+
+  # Keywords paired with named tracks whose engine status is NOT "completed"
+  # produce a contradiction violation.
+  completion_keywords:
+  - completed
+  - finished
+  - fulfilled
+  - achieved
+  - accomplished
+
+  # Keywords paired with named threats whose engine status is NOT "resolved"
+  # or "overcome" produce a contradiction violation.
+  resolution_keywords:
+  - resolved
+  - overcome
+  - defeated
+  - vanquished
+  - banished
+  - destroyed
+  - ended

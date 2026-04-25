@@ -21,6 +21,7 @@ from .engine_config_dataclasses import (
     ChaosConfig,
     ChaosResolverConfig,
     ChapterConfig,
+    ChapterValidatorConfig,
     CombatPosCondition,
     CorrectionConfig,
     CreationConfig,
@@ -161,6 +162,7 @@ class EngineSettings:
     persistence: PersistenceConfig
     validator: ValidatorConfig
     correction: CorrectionConfig
+    chapter_validator: ChapterValidatorConfig
 
     # Scalar top-level fields
     scene_range_default: list[int]
@@ -284,6 +286,7 @@ _SIMPLE_SECTIONS: dict[str, type] = {
     "persistence": PersistenceConfig,
     "validator": ValidatorConfig,
     "correction": CorrectionConfig,
+    "chapter_validator": ChapterValidatorConfig,
 }
 
 
@@ -525,6 +528,7 @@ def parse_engine_yaml(data: dict[str, Any]) -> EngineSettings:
         persistence=simple_parsed["persistence"],
         validator=simple_parsed["validator"],
         correction=simple_parsed["correction"],
+        chapter_validator=simple_parsed["chapter_validator"],
         scene_range_default=list(data["scene_range_default"]),
         death_emotions=list(data["death_emotions"]),
         creativity_seeds=list(data["creativity_seeds"]),

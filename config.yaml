@@ -51,6 +51,7 @@ ai:
     correction: classification
     validator: analytical
     validator_architect: analytical
+    chapter_validator: analytical
     narrator_metadata: analytical
     opening_setup: analytical
     revelation_check: analytical
