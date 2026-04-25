@@ -157,6 +157,7 @@ def _build_prompt(npc: NpcData, scene: int = 5, bond: int = 0) -> str:
         action_score=9,
         result="WEAK_HIT",
         move="adventure/face_danger",
+        match=False,
     )
     return build_action_prompt(
         game,

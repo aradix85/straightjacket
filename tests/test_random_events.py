@@ -82,7 +82,7 @@ def test_target_npc_focus_selects_from_characters(load_engine: None) -> None:
     """NPC-focus categories select from characters list."""
     game = make_game_state()
     game.narrative.characters_list = [
-        CharacterListEntry(id="c1", name="Kira", weight=1, active=True),
+        CharacterListEntry(id="c1", name="Kira", weight=1, active=True, entry_type="npc"),
     ]
     name, target_id = _select_target("npc_action", game)
     assert name == "Kira"
@@ -93,7 +93,7 @@ def test_target_thread_focus_selects_from_threads(load_engine: None) -> None:
     """Thread-focus categories select from threads list."""
     game = make_game_state()
     game.narrative.threads = [
-        ThreadEntry(id="t1", name="Find the vault", weight=1, active=True),
+        ThreadEntry(id="t1", name="Find the vault", weight=1, active=True, source="creation", thread_type="vow"),
     ]
     name, target_id = _select_target("move_toward_thread", game)
     assert name == "Find the vault"
@@ -112,7 +112,7 @@ def test_target_pc_focus_no_target() -> None:
     """PC-focus and current_context don't select targets."""
     game = make_game_state()
     game.narrative.characters_list = [
-        CharacterListEntry(id="c1", name="Kira", weight=1, active=True),
+        CharacterListEntry(id="c1", name="Kira", weight=1, active=True, entry_type="npc"),
     ]
     name, _ = _select_target("pc_negative", game)
     assert name == ""
@@ -124,8 +124,8 @@ def test_target_respects_weight() -> None:
     """Higher-weight entries are more likely to be selected."""
     game = make_game_state()
     game.narrative.characters_list = [
-        CharacterListEntry(id="c1", name="Rare", weight=1, active=True),
-        CharacterListEntry(id="c2", name="Common", weight=3, active=True),
+        CharacterListEntry(id="c1", name="Rare", weight=1, active=True, entry_type="npc"),
+        CharacterListEntry(id="c2", name="Common", weight=3, active=True, entry_type="npc"),
     ]
     counts: dict[str, int] = {"Rare": 0, "Common": 0}
     for _ in range(200):
@@ -140,8 +140,8 @@ def test_target_skips_inactive() -> None:
     """Inactive entries are not selected."""
     game = make_game_state()
     game.narrative.threads = [
-        ThreadEntry(id="t1", name="Closed", weight=3, active=False),
-        ThreadEntry(id="t2", name="Open", weight=1, active=True),
+        ThreadEntry(id="t1", name="Closed", weight=3, active=False, source="creation", thread_type="vow"),
+        ThreadEntry(id="t2", name="Open", weight=1, active=True, source="creation", thread_type="vow"),
     ]
     name, _ = _select_target("move_toward_thread", game)
     assert name == "Open"
@@ -154,10 +154,10 @@ def test_generate_random_event_produces_complete_event() -> None:
     """Pipeline produces a RandomEvent with all fields populated."""
     game = make_game_state()
     game.narrative.threads = [
-        ThreadEntry(id="t1", name="Main quest", weight=2, active=True),
+        ThreadEntry(id="t1", name="Main quest", weight=2, active=True, source="creation", thread_type="vow"),
     ]
     game.narrative.characters_list = [
-        CharacterListEntry(id="c1", name="Kira", weight=1, active=True),
+        CharacterListEntry(id="c1", name="Kira", weight=1, active=True, entry_type="npc"),
     ]
     event = generate_random_event(game, source="test")
     assert isinstance(event, RandomEvent)
@@ -186,11 +186,11 @@ def test_fate_doublet_generates_random_event(load_engine: None) -> None:
     game = make_game_state()
     game.world.chaos_factor = 5
     game.narrative.characters_list = [
-        CharacterListEntry(id="c1", name="Kira", weight=1, active=True),
+        CharacterListEntry(id="c1", name="Kira", weight=1, active=True, entry_type="npc"),
     ]
 
     # Verify doublet detection works
-    chart_result = resolve_fate_chart("fifty_fifty", chaos_factor=5, roll=33)
+    chart_result = resolve_fate_chart("fifty_fifty", chaos_factor=5, roll=33, question="")
     assert chart_result.random_event_triggered is True
 
     # Verify pipeline produces event from game state
@@ -203,7 +203,7 @@ def test_fate_no_doublet_no_event(load_engine: None) -> None:
     """Non-doublet fate roll produces no random event."""
     from straightjacket.engine.mechanics.fate import resolve_fate_chart
 
-    result = resolve_fate_chart("fifty_fifty", chaos_factor=5, roll=34)
+    result = resolve_fate_chart("fifty_fifty", chaos_factor=5, roll=34, question="")
     assert result.random_event_triggered is False
     assert result.random_event is None
 
@@ -214,7 +214,9 @@ def test_fate_no_doublet_no_event(load_engine: None) -> None:
 def test_add_thread_weight_increments() -> None:
     """Thread weight increases by 1 when invoked."""
     game = make_game_state()
-    game.narrative.threads = [ThreadEntry(id="t1", name="Quest", weight=1, active=True)]
+    game.narrative.threads = [
+        ThreadEntry(id="t1", name="Quest", weight=1, active=True, source="creation", thread_type="vow")
+    ]
     add_thread_weight(game, "t1")
     assert game.narrative.threads[0].weight == 2
 
@@ -222,7 +224,9 @@ def test_add_thread_weight_increments() -> None:
 def test_add_thread_weight_caps_at_3() -> None:
     """Thread weight cannot exceed 3."""
     game = make_game_state()
-    game.narrative.threads = [ThreadEntry(id="t1", name="Quest", weight=3, active=True)]
+    game.narrative.threads = [
+        ThreadEntry(id="t1", name="Quest", weight=3, active=True, source="creation", thread_type="vow")
+    ]
     add_thread_weight(game, "t1")
     assert game.narrative.threads[0].weight == 3
 
@@ -230,7 +234,7 @@ def test_add_thread_weight_caps_at_3() -> None:
 def test_add_character_weight_increments() -> None:
     """Character weight increases by 1 when invoked."""
     game = make_game_state()
-    game.narrative.characters_list = [CharacterListEntry(id="c1", name="Kira", weight=1, active=True)]
+    game.narrative.characters_list = [CharacterListEntry(id="c1", name="Kira", weight=1, active=True, entry_type="npc")]
     add_character_weight(game, "c1")
     assert game.narrative.characters_list[0].weight == 2
 
@@ -240,7 +244,9 @@ def test_consolidate_threads_at_threshold() -> None:
     game = make_game_state()
     for i in range(25):
         w = 3 if i < 5 else 1
-        game.narrative.threads.append(ThreadEntry(id=f"t{i}", name=f"Thread {i}", weight=w, active=True))
+        game.narrative.threads.append(
+            ThreadEntry(id=f"t{i}", name=f"Thread {i}", weight=w, active=True, source="creation", thread_type="vow")
+        )
     consolidate_threads(game)
     heavy = [t for t in game.narrative.threads if t.weight == 2]
     light = [t for t in game.narrative.threads if t.weight == 1]
@@ -251,7 +257,9 @@ def test_consolidate_threads_at_threshold() -> None:
 def test_consolidate_threads_under_threshold_noop() -> None:
     """Consolidation does nothing below 25 entries."""
     game = make_game_state()
-    game.narrative.threads = [ThreadEntry(id="t1", name="Quest", weight=3, active=True)]
+    game.narrative.threads = [
+        ThreadEntry(id="t1", name="Quest", weight=3, active=True, source="creation", thread_type="vow")
+    ]
     consolidate_threads(game)
     assert game.narrative.threads[0].weight == 3
 
@@ -259,7 +267,9 @@ def test_consolidate_threads_under_threshold_noop() -> None:
 def test_deactivate_thread() -> None:
     """Deactivated thread is marked inactive."""
     game = make_game_state()
-    game.narrative.threads = [ThreadEntry(id="t1", name="Quest", weight=2, active=True)]
+    game.narrative.threads = [
+        ThreadEntry(id="t1", name="Quest", weight=2, active=True, source="creation", thread_type="vow")
+    ]
     deactivate_thread(game, "t1")
     assert game.narrative.threads[0].active is False
 

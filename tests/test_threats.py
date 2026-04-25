@@ -250,7 +250,14 @@ class TestResolveForsakeVow:
 
         game = _game_with_threat()
         game.narrative.threads.append(
-            ThreadEntry(id="thread_hunt", name="Hunt the beast", linked_track_id="vow_hunt", active=True)
+            ThreadEntry(
+                id="thread_hunt",
+                name="Hunt the beast",
+                linked_track_id="vow_hunt",
+                active=True,
+                source="creation",
+                thread_type="vow",
+            )
         )
         game.threats[0].menace_ticks = 40
         resolve_full_menace(game)

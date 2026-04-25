@@ -64,10 +64,10 @@ def _game_with_npcs() -> GameState:
         ),
     ]
     game.narrative.threads.append(
-        ThreadEntry(id="thread_1", name="Find the vault", thread_type="vow", weight=2, active=True)
+        ThreadEntry(id="thread_1", name="Find the vault", thread_type="vow", weight=2, active=True, source="creation")
     )
     game.narrative.threads.append(
-        ThreadEntry(id="thread_2", name="Old grudge", thread_type="tension", weight=1, active=False)
+        ThreadEntry(id="thread_2", name="Old grudge", thread_type="tension", weight=1, active=False, source="creation")
     )
     game.narrative.characters_list.append(CharacterListEntry(id="npc_1", name="Kira", entry_type="npc", weight=2))
     game.world.clocks.append(make_clock(name="Vault heist", clock_type="scheme", segments=6, filled=2, owner="Kira"))
@@ -76,7 +76,9 @@ def _game_with_npcs() -> GameState:
     )
     game.narrative.scene_count = 5
     game.narrative.session_log.append(
-        SceneLogEntry(scene=1, summary="Arrived at docks", move="adventure/face_danger", result="WEAK_HIT")
+        SceneLogEntry(
+            scene=1, summary="Arrived at docks", move="adventure/face_danger", result="WEAK_HIT", scene_type="expected"
+        )
     )
     game.narrative.narration_history.append(
         NarrationEntry(scene=1, prompt_summary="Opening", narration="The salt air bit at your skin.")

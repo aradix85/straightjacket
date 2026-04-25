@@ -178,6 +178,7 @@ def _game() -> "GameState":
             move="adventure/face_danger",
             result="MISS",
             consequences=["health -2"],
+            scene_type="expected",
         )
     )
     game.narrative.narration_history.append(
@@ -189,7 +190,16 @@ def _game() -> "GameState":
         move="combat/strike", stat="iron", player_intent="Attack the guard"
     )
     game.last_turn_snapshot.roll = RollResult(
-        d1=2, d2=3, c1=7, c2=8, stat_name="iron", stat_value=1, action_score=6, result="MISS", move="combat/strike"
+        d1=2,
+        d2=3,
+        c1=7,
+        c2=8,
+        stat_name="iron",
+        stat_value=1,
+        action_score=6,
+        result="MISS",
+        move="combat/strike",
+        match=False,
     )
     game.last_turn_snapshot.narration = "You swung wildly and missed."
     # Damage state after snapshot to verify restore
@@ -262,7 +272,9 @@ def test_momentum_burn_full_flow(load_engine: None, stub_emotions: None) -> None
     pre_snap = game.last_turn_snapshot
     assert pre_snap is not None
     snap_health = pre_snap.resources["health"]
-    game.narrative.session_log.append(SceneLogEntry(scene=4, summary="Attack", move="combat/strike", result="MISS"))
+    game.narrative.session_log.append(
+        SceneLogEntry(scene=4, summary="Attack", move="combat/strike", result="MISS", scene_type="expected")
+    )
 
     provider = MockProvider()
     game, narration = process_momentum_burn(

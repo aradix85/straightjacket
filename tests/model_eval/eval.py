@@ -479,6 +479,7 @@ def eval_narrator(provider: AIProvider, case: dict, model: str, params: dict) ->
         action_score=5,
         result=result_type,
         move="adventure/face_danger",
+        match=False,
     )
 
     prompt = build_action_prompt(
@@ -616,12 +617,12 @@ def _build_director_game() -> GameState:
         make_clock(name="Pirate Fleet Approaching", clock_type="threat", segments=8, filled=5),
     ]
     game.narrative.threads = [
-        ThreadEntry(id="t1", name="Missing Shipment", thread_type="tension", active=True, weight=3),
-        ThreadEntry(id="t2", name="Kira's Secret", thread_type="personal", active=True, weight=2),
+        ThreadEntry(id="t1", name="Missing Shipment", thread_type="tension", active=True, weight=3, source="creation"),
+        ThreadEntry(id="t2", name="Kira's Secret", thread_type="personal", active=True, weight=2, source="creation"),
     ]
     game.narrative.session_log = [
-        SceneLogEntry(scene=7, summary="Found tampered manifest in cargo bay"),
-        SceneLogEntry(scene=8, summary="Confronted Borin, he denied involvement"),
+        SceneLogEntry(scene=7, summary="Found tampered manifest in cargo bay", scene_type="expected"),
+        SceneLogEntry(scene=8, summary="Confronted Borin, he denied involvement", scene_type="expected"),
     ]
     return game
 

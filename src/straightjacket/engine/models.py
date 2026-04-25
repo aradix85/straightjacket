@@ -71,7 +71,7 @@ class RollResult(SerializableMixin):
     action_score: int
     result: str
     move: str
-    match: bool = False
+    match: bool
 
 
 # BRAIN RESULT

@@ -13,7 +13,7 @@ from tests._helpers import make_game_state, make_memory, make_npc
 def _game() -> GameState:
     game = make_game_state(player_name="Hero")
     game.narrative.scene_count = 6
-    game.narrative.session_log.append(SceneLogEntry(scene=6, summary="Last scene"))
+    game.narrative.session_log.append(SceneLogEntry(scene=6, summary="Last scene", scene_type="expected"))
     game.npcs = [
         make_npc(
             id="npc_1",

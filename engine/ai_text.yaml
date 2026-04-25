@@ -74,6 +74,16 @@ ai_text:
     chapter_summary_fallback_character_growth: ''
     chapter_summary_fallback_npc_evolutions: []
     chapter_summary_fallback_thematic_question: ''
+    opening_setup_fallback_npcs: []
+    opening_setup_fallback_clocks: []
+    opening_setup_fallback_location: ''
+    opening_setup_fallback_scene_context: ''
+    opening_setup_fallback_memory_updates: []
+    narrator_metadata_fallback_new_npcs: []
+    narrator_metadata_fallback_npc_renames: []
+    narrator_metadata_fallback_npc_details: []
+    narrator_metadata_fallback_deceased_npcs: []
+    narrator_metadata_fallback_lore_npcs: []
     new_chapter_threads_template: 'New chapter. Open threads: {threads}'
     new_chapter_blank: A new chapter begins.
     npc_agency_action_template: 'NPC "{npc_name}" pursues agenda "{agenda}" — concrete offscreen action.'

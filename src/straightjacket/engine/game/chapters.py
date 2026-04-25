@@ -313,6 +313,7 @@ def _record_chapter_opening(game: GameState, narration: str, val_report: dict) -
     record_scene_intensity(game, "action")
     game.narrative.narration_history.append(
         NarrationEntry(
+            scene=1,
             prompt_summary=f"Chapter {game.campaign.chapter_number} opening: {game.player_name} in {game.world.current_location}",
             narration=narration,
         )
@@ -320,6 +321,7 @@ def _record_chapter_opening(game: GameState, narration: str, val_report: dict) -
     game.narrative.session_log.append(
         SceneLogEntry(
             scene=1,
+            scene_type="expected",
             summary=f"Chapter {game.campaign.chapter_number} begins",
             result="opening",
             validator=val_report,

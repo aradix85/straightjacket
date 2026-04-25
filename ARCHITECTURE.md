@@ -273,6 +273,8 @@ src/straightjacket/
 
 **Typed dataclasses everywhere.** GameState has sub-objects (Resources, WorldState, NarrativeState, CampaignState). NpcData has 17 fields. MemoryEntry has 10. Move has 15 fields with typed trigger conditions and roll options. Attribute access, never dict-style. `SerializableMixin` handles serialization; complex classes override `to_dict`/`from_dict` manually.
 
+**Yaml access: dataclass by default, `get_raw` only when keys are domain-data.** Every yaml block is parsed into a typed dataclass at load time; callsites use `eng().subsystem.field` with mypy coverage. The single exception is yaml whose keys are themselves the domain content (move-names, NPC dispositions parallel to an enum) and must extend without Python changes — those are read via `eng().get_raw("section")` with a one-line comment at the callsite. A dataclass with a single `mapping: dict[str, X]` field is no typing win; use `get_raw`. A dataclass with multiple fixed fields is a typing win; use the dataclass.
+
 **Two-call pattern.** Narrator writes pure prose. A second call on the analytical cluster model extracts NPC-related metadata (new NPCs, renames, details, deaths). Same pattern for opening_setup, revelation_check, recap, and chapter_summary. The analytical cluster typically uses a cheaper/faster model for these structured output calls.
 
 **Snapshot/restore.** `GameState.snapshot()` captures all mutable state before a turn. `restore()` reverts everything atomically. Used by correction (##) and momentum burn.
@@ -344,7 +346,7 @@ Two places where Straightjacket departs from the design document's architectural
 ## Testing
 
 ```bash
-python -m pytest tests/ -v          # ~15 seconds, ~794 tests
+python -m pytest tests/ -v          # ~7 seconds, ~816 tests
 python tests/elvira/elvira.py --auto --turns 5   # direct engine (needs API key)
 python tests/elvira/elvira.py --ws --auto --turns 5  # via WebSocket server
 ```

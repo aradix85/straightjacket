@@ -1,2 +1,3 @@
-scene_context_template: '{result} on {move_label} at {location} — {npc_summary}'
-scene_context_dialog: conversation at {location} with {npc_summary}
+scene_context:
+  template: '{result} on {move_label} at {location} — {npc_summary}'
+  dialog: conversation at {location} with {npc_summary}

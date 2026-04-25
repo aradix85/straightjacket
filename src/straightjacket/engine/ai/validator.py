@@ -37,7 +37,7 @@ def _strip_prompt_for_retry(prompt: str, violations: list[str]) -> str:
     if not has_pacing:
         return prompt
 
-    retry_strip = eng().get_raw("validator")["retry_strip"]
+    retry_strip = eng().validator.retry_strip
 
     stripped = prompt
     # Remove secrets from target_npc blocks. Match the structural shape
@@ -234,7 +234,7 @@ def validate_and_retry(
         # parts to be substrings of the violation; plain keys are single-substring.
         # A violation that matches no rule falls through as "Fix: <raw>" — that
         # is intentional LLM behavior, not a config fallback.
-        rules = eng().get_raw("validator")["rewrite_instructions"]
+        rules = eng().validator.rewrite_instructions
         _vblocks = eng().ai_text.validator_blocks
         rewrite_instructions = []
         for v in violations:

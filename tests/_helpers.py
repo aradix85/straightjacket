@@ -35,6 +35,7 @@ def make_clock(**kwargs: Any) -> Any:
 
     kwargs.setdefault("clock_type", "threat")
     kwargs.setdefault("segments", 6)
+    kwargs.setdefault("trigger_description", "")
     return ClockData(**kwargs)
 
 
@@ -58,6 +59,7 @@ def make_threat(**kwargs: Any) -> Any:
     kwargs.setdefault("linked_vow_id", "")
     kwargs.setdefault("rank", "dangerous")
     kwargs.setdefault("max_menace_ticks", 40)
+    kwargs.setdefault("description", "")
     return ThreatData(**kwargs)
 
 
@@ -80,6 +82,7 @@ def make_fate_result(**kwargs: Any) -> Any:
     kwargs.setdefault("chaos_factor", 5)
     kwargs.setdefault("method", "fate_chart")
     kwargs.setdefault("roll", 50)
+    kwargs.setdefault("question", "")
     return FateResult(**kwargs)
 
 
@@ -109,6 +112,13 @@ def make_world_state(**kwargs: Any) -> Any:
 
     kwargs.setdefault("chaos_factor", 5)
     return WorldState(**kwargs)
+
+
+def make_scene_log_entry(**kwargs: Any) -> Any:
+    from straightjacket.engine.models import SceneLogEntry
+
+    kwargs.setdefault("scene_type", "expected")
+    return SceneLogEntry(**kwargs)
 
 
 def make_chapter_summary(**kwargs: Any) -> Any:

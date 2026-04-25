@@ -6,8 +6,6 @@ AI-powered narrative solo RPG engine. You write the action. Dice determine outco
 
 The AI is the narrator — constrained by mechanics, validated by the engine, never in control. Config-driven, provider-independent, screen reader accessible.
 
-Runs on open source models. ~2 seconds per turn on Cerebras. Where open models fall short on constraint compliance, the engine compensates: hybrid rule-based + LLM validator, retry with prompt stripping, best-of selection across attempts.
-
 ---
 
 ## Quick Start
@@ -24,55 +22,9 @@ Creates a venv, installs dependencies, downloads game data, starts the server at
 
 ## How It Works
 
-You type what your character does. The engine classifies the action, rolls dice, applies mechanical consequences. An AI narrator writes the scene within those constraints. A validator checks the output. A director handles NPC reflections and story arc tracking.
+You type what your character does. The engine classifies the action, rolls dice, applies mechanical consequences. An AI narrator writes the scene within those constraints. A validator checks the output. The AI never decides outcomes, moves resources, or controls the player character. That's the straightjacket.
 
-Four AI agents per turn: **Brain** (parses input into mechanics), **Narrator** (writes prose), **Validator** (rule-based + LLM constraint checking, retries with prompt stripping), **Director** (NPC reflections, AIMS generation). A fifth agent, **Architect**, runs at game start and chapter transitions to build the story blueprint.
-
-The AI never decides outcomes, moves resources, or controls the player character. That's the straightjacket.
-
-Mechanics drawn from Ironsworn/Starforged (action rolls, momentum, bonds), Mythic GME 2e (fate questions, scene structure, random events, meaning tables), and Blades in the Dark (position & effect, clocks).
-
----
-
-## Configuration
-
-Five YAML files, each with a clear owner:
-
-| File | What | Who edits it |
-|---|---|---|
-| `config.yaml` | Server port, AI provider, language | Players |
-| `engine/*.yaml` | Game rules, move outcomes, damage, chaos, NPC limits, pacing — one file per subsystem | Game designers |
-| `emotions/*.yaml` | Emotion scoring, keyword boosts, dispositions — one file per subsystem | Game designers |
-| `prompts/*.yaml` | AI system prompts, task templates, instruction fragments — one file per cluster (brain, narrator, architect, validator, director, tasks, blocks) | Prompt engineers |
-| `strings/*.yaml` | UI text (English default) — one file per key prefix | Translators |
-
-Four settings ship via [Datasworn](https://github.com/rsek/datasworn): Ironsworn Classic (dark fantasy), Starforged (sci-fi), Sundered Isles (seafaring), and Delve (dungeon-crawling expansion for Classic). Each defines vocabulary, sensory palette, genre constraints, and oracle paths in `data/settings/*.yaml`. Adding a setting means adding one YAML file and a Datasworn JSON — no Python. See [ARCHITECTURE.md](ARCHITECTURE.md) for the settings YAML format.
-
-Default AI: Qwen 3 235B via Cerebras for narrator (high temperature prose), GPT-OSS-120B for everything else (architect, director, brain, correction, validator, metadata extraction, recap, opening setup, revelation check, chapter summary). Two models, four clusters in `config.yaml` — switch a cluster's model to move all its roles at once, or remap individual roles via `role_cluster`.
-
----
-
-## Architecture
-
-See [ARCHITECTURE.md](ARCHITECTURE.md) for the full turn pipeline, module ownership table, file map, and extension guides (new providers, new settings).
-
-All mutable game state is typed dataclasses with snapshot/restore for atomic undo. Zero hardcoded game logic — move outcomes, damage tables, disposition shifts, and NPC seed emotions all read from the engine config (one yaml per subsystem under `engine/`). Move definitions load from Datasworn JSON per setting. Zero hardcoded prompt text — all AI-facing text lives under `prompts/` (one yaml per cluster), Python only assembles.
-
-The architecture implements the [Narrative RPG Engine](docs/narrative_rpg_engine_v2_4.pdf) design document: AI narrates, structured systems decide. The six functions from the design document (action resolution, fiction generation, timing, relationships, agency, world state) map to engine modules. The constraint enforcement strategy (engine-dictated consequences, vocabulary control, narrative direction derived from game state) follows the document's recommendations.
-
----
-
-## Tests
-
-Four complementary layers:
-
-**Unit/integration tests** (`python -m pytest tests/ -v`, ~816 tests, no API key needed): mock providers with canned responses test engine logic, NPC processing, serialization, correction flow, prompt assembly, WebSocket handlers, database sync/queries, tool registry/dispatch. Every commit must pass.
-
-**Project rules** (`tests/test_project_rules.py`, no API key needed): 11 AST/regex scans that enforce the absolute rules mechanically — no silent domain defaults in `.get()`, no `X or "literal"` fallbacks on lookups, no broad `except Exception` without a policy marker, no dataclass defaults on config binding fields, no untagged TODOs, no banner comments, inline imports carry reason comments, every `@dataclass` in `models*.py` inherits `SerializableMixin`, no direct provider SDK imports outside the adapters, no hardcoded model names in engine code, no function above cyclomatic complexity 20. Failures are deterministic measurements of residual debt; they are not blocking for feature work.
-
-**[Elvira](tests/elvira/)** (`python tests/elvira/elvira.py --auto --turns 5`, needs API key): headless AI-driven test player that plays the game with real model output. Checks state invariants after every turn (including NPC-DB sync and combat-track sync), validates narration quality (leaked mechanics, NPC spatial consistency), stress-tests the correction pipeline, runs post-run drift checks (validator balance, blueprint drift), and logs everything to a single `elvira_session.json`. Two modes: direct (engine only) and WebSocket (full server stack). See [CONTRIBUTING.md](CONTRIBUTING.md) for when to use which.
-
-**[Model eval](tests/model_eval/)** (`python tests/model_eval/eval.py`, needs API key): per-role model evaluation. Tests each AI role in isolation with fixed inputs and expected outputs. Use to evaluate whether a model can handle a specific role before switching config. Supports `--role brain` for single-role testing, `--model gpt-oss-120b` to override the configured model, and `--verbose` for full model output. Test cases live in `tests/model_eval/cases.yaml`.
+Mechanics drawn from Ironsworn/Starforged (action rolls, momentum, bonds), Mythic GME 2e (fate questions, scene structure, random events), and Blades in the Dark (position & effect, clocks).
 
 ---
 
@@ -82,17 +34,13 @@ Screen reader accessible: semantic HTML, ARIA live regions for automatic narrati
 
 ---
 
-## Cost
+## Further reading
 
-~$0.012 per turn for real player input. ~$0.055 per 10-turn Elvira bot session (bot input is terse, so per-turn cost is lower than real play). Qwen 3 narrator + GPT-OSS-120B for everything else, via Cerebras (~2s/turn).
-
----
-
-## Origins
-
-Straightjacket implements the [Narrative RPG Engine](docs/narrative_rpg_engine_v2_4.pdf) design document ([also on itch.io](https://blindgamer85.itch.io/narrative-rpg-engine-accessible-solo-tabletop-with-ai-as-narrator-and-systems-u)). The core argument: don't make AI smarter at telling stories — strip it down to prose and let structured systems handle everything else.
-
-The first working implementation of the document was [EdgeTales](https://github.com/edgetales/edgetales) by Lars. Straightjacket began as a fork of EdgeTales in March 2026, maintained with intensive same-day backporting from upstream, then carried forward as a standalone project from 6 April 2026 onwards when the two projects' directions diverged too far to stay synchronised. The current codebase has been standalone for fourteen days and still contains code and design decisions that trace back to EdgeTales. This is not a clean-room reimplementation — it is a refactor-plus-extension of Lars' implementation, done with his permission. See [ORIGINS.md](ORIGINS.md) for the full history and the upstream cross-references.
+- [ARCHITECTURE.md](ARCHITECTURE.md) — turn pipeline, module layout, design decisions, configuration, extension guides
+- [CONTRIBUTING.md](CONTRIBUTING.md) — code standards, test layers, how to run them
+- [ORIGINS.md](ORIGINS.md) — project history, fork from EdgeTales, credits
+- [SECURITY.md](SECURITY.md) — API key handling, input sanitization, session model
+- [Narrative RPG Engine design document](docs/narrative_rpg_engine_v2_4.pdf) — the design this implements
 
 ---
 

@@ -3,9 +3,11 @@ effect_resolver:
   great_above: 2
   bond_high_min: 3
   bond_low_max: 0
-  weights:
+  position_weights:
     desperate: -1
+    risky: 0
     controlled: 1
+  weights:
     bond_high: 1
     bond_low: -1
     secured_advantage: 1

@@ -137,12 +137,12 @@ def status_context_block(game: GameState | None = None) -> str:
     """Narrative status context mapping resource values to physical/mental states."""
     if not game:
         return ""
-    descriptions = eng().get_raw("narrator_status_descriptions")
+    descriptions = eng().narrator_status_descriptions
     h, sp, su = game.resources.health, game.resources.spirit, game.resources.supply
 
-    health_desc = _describe_narrator_resource(h, descriptions["health"])
-    spirit_desc = _describe_narrator_resource(sp, descriptions["spirit"])
-    supply_desc = _describe_narrator_resource(su, descriptions["supply"])
+    health_desc = _describe_narrator_resource(h, descriptions.health)
+    spirit_desc = _describe_narrator_resource(sp, descriptions.spirit)
+    supply_desc = _describe_narrator_resource(su, descriptions.supply)
 
     instruction = get_prompt("block_character_state_instruction")
     physical_label = get_prompt("label_character_state_physical")

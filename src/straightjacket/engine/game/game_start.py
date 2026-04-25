@@ -355,6 +355,7 @@ def start_new_game(
 
     game.narrative.narration_history.append(
         NarrationEntry(
+            scene=1,
             prompt_summary=f"Opening scene: {game.player_name} in {game.world.current_location}",
             narration=narration,
         )
@@ -362,6 +363,7 @@ def start_new_game(
     game.narrative.session_log.append(
         SceneLogEntry(
             scene=1,
+            scene_type="expected",
             summary="Game start",
             result="opening",
             validator=val_report,

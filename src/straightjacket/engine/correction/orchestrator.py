@@ -184,6 +184,7 @@ def _update_correction_logs(
         nar.session_log.append(
             SceneLogEntry(
                 scene=nar.scene_count,
+                scene_type="expected",
                 summary=f"[corrected] {intent}",
                 move=brain.move,
                 result=roll.result if roll else "dialog",  # type: ignore[attr-defined]
@@ -204,6 +205,7 @@ def _update_correction_logs(
         nar.session_log.append(
             SceneLogEntry(
                 scene=nar.scene_count,
+                scene_type="expected",
                 summary=f"[corrected] {intent}",
                 move=brain.move,
                 result=roll.result if roll else "dialog",  # type: ignore[attr-defined]

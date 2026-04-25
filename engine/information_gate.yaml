@@ -39,4 +39,35 @@ information_gate:
     frank: 3
     forthcoming: 3
     cooperative_guarded: 3
-  default_cap: 4
+    bonded_warrior: 4
+    confiding: 4
+    dependable: 4
+    devoted: 4
+    devoted_fighter: 4
+    eager_to_help: 4
+    encouraging: 4
+    engaged: 4
+    fierce_ally: 4
+    generous: 4
+    helpful: 4
+    indifferent: 4
+    informative: 4
+    intimate: 4
+    open: 4
+    oracle: 4
+    polite: 4
+    proactive: 4
+    professional: 4
+    reliable: 4
+    ride_or_die: 4
+    selfless: 4
+    solid_partner: 4
+    soul_bound: 4
+    supportive: 4
+    sworn_blade: 4
+    transparent: 4
+    trusted_counsel: 4
+    unreserved: 4
+    unwavering: 4
+    warm: 4
+    willing: 4

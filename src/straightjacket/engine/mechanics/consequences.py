@@ -63,7 +63,14 @@ def tick_threat_clock(game: GameState, ticks: int, clock_events: list[ClockEvent
             if clock.filled >= clock.segments:
                 clock.fired = True
                 clock.fired_at_scene = game.narrative.scene_count
-                clock_events.append(ClockEvent(clock=clock.name, trigger=clock.trigger_description))
+                clock_events.append(
+                    ClockEvent(
+                        clock=clock.name,
+                        trigger=clock.trigger_description,
+                        autonomous=False,
+                        triggered=True,
+                    )
+                )
             break
 
 

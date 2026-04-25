@@ -17,7 +17,7 @@ def _op_npc_edit(game: GameState, op_dict: dict) -> None:
     npc = find_npc(game, op_dict.get("npc_id", ""))
     if not npc or not op_dict.get("fields"):
         return
-    _allowed = set(eng().get_raw("correction")["npc_edit_allowed_fields"])
+    _allowed = set(eng().correction.npc_edit_allowed_fields)
     edits = {k: v for k, v in op_dict["fields"].items() if k in _allowed and v is not None}
 
     # Rename detection: pop aliases so the model can't overwrite the engine-maintained list.

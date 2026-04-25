@@ -119,5 +119,5 @@ def _roll_single_adjustment(table: list[dict]) -> str:
 
 def adjustment_descriptions(adjustments: list[str]) -> list[str]:
     """Map adjustment types to narrator-facing descriptions from yaml."""
-    mapping = eng().get_raw("scene_adjustments")
+    mapping = eng().scene_adjustments.mapping
     return [mapping[a] for a in adjustments]

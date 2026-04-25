@@ -41,7 +41,7 @@ def get_odds_levels() -> tuple[str, ...]:
     return tuple(eng().enums.odds_levels)
 
 
-def resolve_fate_chart(odds: str, chaos_factor: int, roll: int | None = None) -> FateResult:
+def resolve_fate_chart(odds: str, chaos_factor: int, question: str, roll: int | None = None) -> FateResult:
     """Resolve a fate question using the fate chart method.
 
     Looks up (odds, chaos_factor) in the fate chart. Rolls d100 and compares
@@ -50,6 +50,7 @@ def resolve_fate_chart(odds: str, chaos_factor: int, roll: int | None = None) ->
     Args:
         odds: one of get_odds_levels()
         chaos_factor: 1–9
+        question: the question being asked (stored in result for logging)
         roll: override d100 roll (for testing), None = random
     """
     data = _load_mythic()
@@ -85,6 +86,7 @@ def resolve_fate_chart(odds: str, chaos_factor: int, roll: int | None = None) ->
         chaos_factor=chaos_factor,
         method="fate_chart",
         roll=roll,
+        question=question,
         random_event_triggered=event_triggered,
     )
     log(f"[Fate] Chart: {odds} CF{chaos_factor} roll={roll} → {answer}{' +EVENT' if event_triggered else ''}")
@@ -110,7 +112,7 @@ def _check_chart_random_event(roll: int, chaos_factor: int) -> bool:
     return ones <= chaos_factor
 
 
-def resolve_fate_check(odds: str, chaos_factor: int, dice: tuple[int, int] | None = None) -> FateResult:
+def resolve_fate_check(odds: str, chaos_factor: int, question: str, dice: tuple[int, int] | None = None) -> FateResult:
     """Resolve a fate question using the fate check method.
 
     Rolls 2d10, adds odds modifier + chaos modifier. Total determines outcome.
@@ -119,6 +121,7 @@ def resolve_fate_check(odds: str, chaos_factor: int, dice: tuple[int, int] | Non
     Args:
         odds: one of get_odds_levels()
         chaos_factor: 1–9
+        question: the question being asked (stored in result for logging)
         dice: override (d1, d2) tuple (for testing), None = random
     """
     cfg = eng().fate
@@ -155,6 +158,7 @@ def resolve_fate_check(odds: str, chaos_factor: int, dice: tuple[int, int] | Non
         chaos_factor=chaos_factor,
         method="fate_check",
         roll=d1 + d2,
+        question=question,
         random_event_triggered=event_triggered,
     )
     log(
@@ -178,8 +182,8 @@ def resolve_fate(
     game: GameState,
     odds: str,
     chaos_factor: int,
+    question: str,
     method: str | None = None,
-    question: str = "",
 ) -> FateResult:
     """Resolve a fate question using the configured method.
 
@@ -189,18 +193,16 @@ def resolve_fate(
         game: GameState for random event generation and context
         odds: one of get_odds_levels()
         chaos_factor: 1–9
-        method: "fate_chart" or "fate_check", None = read from engine.yaml
         question: the question being asked (stored in result for logging)
+        method: "fate_chart" or "fate_check", None = read from engine.yaml
     """
     if method is None:
         method = eng().fate.default_method
 
     if method == "fate_check":
-        result = resolve_fate_check(odds, chaos_factor)
+        result = resolve_fate_check(odds, chaos_factor, question)
     else:
-        result = resolve_fate_chart(odds, chaos_factor)
-
-    result.question = question
+        result = resolve_fate_chart(odds, chaos_factor, question)
 
     if result.random_event_triggered:
         # circular: random_events imports from fate

@@ -87,7 +87,7 @@ def _format_memories(
     (without leading newline).
     """
     gate_mem_counts = eng().npc.gate_memory_counts
-    mem_count = gate_mem_counts.get(gate, gate_mem_counts.get(min(gate, 4), 5))
+    mem_count = gate_mem_counts[gate]
     memories = retrieve_memories(target, context_text=context_text, max_count=mem_count, current_scene=current_scene)
     observations = [m for m in memories if m.type != "reflection"]
 
@@ -346,7 +346,7 @@ def _resolve_stance_category(move: str) -> str:
     """Map engine move category to stance matrix category.
     gather_information gets its own bucket because stance differs from generic social.
     """
-    move_cat = move_category(move)
     if move == "adventure/gather_information":
         return "gather_information"
-    return {"combat": "combat", "social": "social"}.get(move_cat, "other")
+    move_cat = move_category(move)
+    return eng().stance_move_buckets.mapping[move_cat]

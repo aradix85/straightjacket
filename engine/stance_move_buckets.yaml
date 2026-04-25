@@ -1,0 +1,11 @@
+stance_move_buckets:
+  # Maps engine move-category (from move_categories.yaml) to the stance-matrix
+  # bucket key used in stance_matrix.yaml. Read by _resolve_stance_category in
+  # prompt_shared.py. gather_information is handled as a special case in code
+  # because it splits off from the generic social bucket.
+  mapping:
+    combat: combat
+    social: social
+    endure: other
+    recovery: other
+    other: other

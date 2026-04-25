@@ -3,15 +3,17 @@ position_resolver:
   controlled_above: 3
   npc_bond_high_min: 3
   npc_bond_low_max: 0
+  disposition_weights:
+    hostile: -2
+    distrustful: -1
+    neutral: 0
+    friendly: 1
+    loyal: 2
   weights:
     resource_critical_below: 2
     resource_low_below: 3
     resource_critical: -2
     resource_low: -1
-    npc_hostile: -2
-    npc_distrustful: -1
-    npc_friendly: 1
-    npc_loyal: 2
     npc_bond_high: 1
     npc_bond_low: -1
     chaos_high: -1

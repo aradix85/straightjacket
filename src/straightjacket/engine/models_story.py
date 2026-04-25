@@ -15,11 +15,11 @@ from .serialization import SerializableMixin
 class ThreadEntry(SerializableMixin):
     """Active thread in the Mythic threads list."""
 
-    id: str = ""
-    name: str = ""
-    thread_type: str = "vow"  # vow, goal, tension, subplot
+    id: str
+    name: str
+    thread_type: str  # vow, goal, tension, subplot
+    source: str  # creation, vow, director, event
     weight: int = 1
-    source: str = "creation"  # creation, vow, director, event
     linked_track_id: str = ""  # ProgressTrack id if this thread is a vow
     active: bool = True
 
@@ -28,9 +28,9 @@ class ThreadEntry(SerializableMixin):
 class CharacterListEntry(SerializableMixin):
     """Entry in the Mythic characters list."""
 
-    id: str = ""
-    name: str = ""
-    entry_type: str = "npc"  # npc, entity, abstract
+    id: str
+    name: str
+    entry_type: str  # npc, entity, abstract
     weight: int = 1
     active: bool = True
 
@@ -46,6 +46,7 @@ class SceneLogEntry(SerializableMixin):
     """
 
     scene: int = 0
+    scene_type: str = field(kw_only=True)  # expected, altered, interrupt
     summary: str = ""
     move: str = ""
     result: str = ""
@@ -53,7 +54,6 @@ class SceneLogEntry(SerializableMixin):
     clock_events: list[ClockEvent] = field(default_factory=list)
     position: str = "risky"
     effect: str = "standard"
-    scene_type: str = "expected"  # expected, altered, interrupt
     npc_activation: dict = field(default_factory=dict)  # diagnostic: {npc_name: {score, reasons, status}}
     validator: dict = field(default_factory=dict)  # diagnostic: {passed, retries, violations, checks}
     rich_summary: str = ""
@@ -66,9 +66,9 @@ class SceneLogEntry(SerializableMixin):
 class NarrationEntry(SerializableMixin):
     """One entry in narration history. Used for narrator conversation context."""
 
-    scene: int = 0
-    prompt_summary: str = ""
-    narration: str = ""
+    scene: int
+    prompt_summary: str
+    narration: str
 
 
 @dataclass

@@ -26,15 +26,15 @@ def resolve_npc_stance(game: GameState, npc: NpcData, move_category: str) -> Npc
     disposition × bond_range × category. Missing entries are a yaml error,
     not a runtime fallback. Unknown move_category is normalised to 'other'.
     """
-    matrix = eng().get_raw("stance_matrix")
-    buckets = eng().get_raw("stance_bond_buckets")
+    matrix = eng().stance_matrix
+    buckets = eng().stance_bond_buckets
 
     disposition = npc.disposition
     bond = get_npc_bond(game, npc.id)
 
-    if bond <= buckets["low_max"]:
+    if bond <= buckets.low_max:
         bond_range = "low"
-    elif bond <= buckets["mid_max"]:
+    elif bond <= buckets.mid_max:
         bond_range = "mid"
     else:
         bond_range = "high"
@@ -45,8 +45,8 @@ def resolve_npc_stance(game: GameState, npc: NpcData, move_category: str) -> Npc
     return NpcStance(
         npc_id=npc.id,
         npc_name=npc.name,
-        stance=entry["stance"],
-        constraint=entry["constraint"],
+        stance=entry.stance,
+        constraint=entry.constraint,
     )
 
 
@@ -81,7 +81,7 @@ def compute_npc_gate(game: GameState, npc: NpcData, current_scene: int, stance: 
     gate = min(cfg.gate_max, max(cfg.gate_min, points))
 
     # Stance cap
-    cap = cfg.stance_caps.get(stance, cfg.default_cap)
+    cap = cfg.stance_caps[stance]
     gate = min(gate, cap)
 
     return gate

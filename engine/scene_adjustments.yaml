@@ -2,9 +2,10 @@ scene_adjustments:
   # AI-facing descriptions for Mythic 2e altered-scene adjustments, injected
   # into narrator prompts via <altered_scene> tags. Each key matches an
   # adjustment type from data/mythic_gme_2e.json scene_adjustment table.
-  remove_character: The most logical NPC is absent from the scene
-  add_character: An unexpected character appears in the scene
-  reduce_activity: The expected activity is diminished or absent
-  increase_activity: The expected activity is more intense than anticipated
-  remove_object: Something expected is missing from the scene
-  add_object: Something unexpected is present in the scene
+  mapping:
+    remove_character: The most logical NPC is absent from the scene
+    add_character: An unexpected character appears in the scene
+    reduce_activity: The expected activity is diminished or absent
+    increase_activity: The expected activity is more intense than anticipated
+    remove_object: Something expected is missing from the scene
+    add_object: Something unexpected is present in the scene

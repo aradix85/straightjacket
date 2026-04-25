@@ -94,16 +94,17 @@ class Resources(SerializableMixin):
 class ClockData(SerializableMixin):
     """Single clock (threat, scheme, or progress).
 
-    clock_type and segments have no domain-safe default — clocks are always
-    constructed by game mechanics that know both. fired_at_scene defaults to 0
-    because it is legitimate runtime state ("not yet fired").
+    clock_type, segments, and trigger_description have no domain-safe default —
+    clocks are always constructed by game mechanics that know all three. A clock
+    without a trigger description is meaningless to the narrator. fired_at_scene
+    defaults to 0 because it is legitimate runtime state ("not yet fired").
     """
 
     name: str
     clock_type: str  # threat, scheme, progress
     segments: int
+    trigger_description: str
     filled: int = 0
-    trigger_description: str = ""
     owner: str = ""
     fired: bool = False
     fired_at_scene: int = 0
@@ -208,8 +209,9 @@ THREAT_CATEGORIES: tuple[str, ...] = (
 class ThreatData(SerializableMixin):
     """Active threat with menace track competing against a vow's progress.
 
-    All structural fields required — rank and max_menace_ticks have no
-    universal default.
+    All structural fields required — rank, max_menace_ticks, and description
+    have no universal default. A threat without a description is meaningless
+    to the narrator.
     """
 
     id: str
@@ -218,14 +220,12 @@ class ThreatData(SerializableMixin):
     linked_vow_id: str  # ProgressTrack id of the associated vow
     rank: str  # matches linked vow rank; determines menace tick size
     max_menace_ticks: int
-    description: str = ""
+    description: str
     menace_ticks: int = 0
     status: str = "active"  # active, resolved, overcome
 
     @classmethod
-    def new(
-        cls, *, id: str, name: str, category: str, linked_vow_id: str, rank: str, description: str = ""
-    ) -> ThreatData:
+    def new(cls, *, id: str, name: str, category: str, linked_vow_id: str, rank: str, description: str) -> ThreatData:
         """Fresh threat with max_menace_ticks from progress.yaml."""
 
         return cls(
@@ -266,21 +266,21 @@ class ThreatData(SerializableMixin):
 class ThreatEvent(SerializableMixin):
     """A menace advancement event, parallel to ClockEvent."""
 
-    threat_id: str = ""
-    threat_name: str = ""
-    ticks_added: int = 0
-    menace_full: bool = False
-    source: str = ""  # "miss", "random_event", "autonomous"
+    threat_id: str
+    threat_name: str
+    ticks_added: int
+    menace_full: bool
+    source: str  # "miss", "random_event", "autonomous"
 
 
 @dataclass
 class ClockEvent(SerializableMixin):
     """A clock tick event from resolve_move_outcome or tick_autonomous_clocks."""
 
-    clock: str = ""
-    trigger: str = ""
-    autonomous: bool = False
-    triggered: bool = False
+    clock: str
+    trigger: str
+    autonomous: bool
+    triggered: bool
 
 
 @dataclass
@@ -310,9 +310,9 @@ class FateResult(SerializableMixin):
     chaos_factor: int
     method: str  # fate_chart, fate_check
     roll: int  # d100 for chart, 2d10 sum for check
+    question: str
     random_event_triggered: bool = False
     random_event: RandomEvent | None = None
-    question: str = ""
 
 
 @dataclass

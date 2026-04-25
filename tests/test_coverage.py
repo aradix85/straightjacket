@@ -256,7 +256,15 @@ def test_apply_world_setup_replace_vs_extend(stub_all: None) -> None:
     apply_world_setup(
         game,
         {
-            "clocks": [{"name": "New", "clock_type": "threat", "segments": 4, "filled": 1}],
+            "clocks": [
+                {
+                    "name": "New",
+                    "clock_type": "threat",
+                    "segments": 4,
+                    "filled": 1,
+                    "trigger_description": "Storm breaks",
+                }
+            ],
             "location": "Market",
             "scene_context": "Busy.",
             "time_of_day": "midday",
@@ -270,7 +278,15 @@ def test_apply_world_setup_replace_vs_extend(stub_all: None) -> None:
     apply_world_setup(
         game,
         {
-            "clocks": [{"name": "New2", "clock_type": "threat", "segments": 4, "filled": 0}],
+            "clocks": [
+                {
+                    "name": "New2",
+                    "clock_type": "threat",
+                    "segments": 4,
+                    "filled": 0,
+                    "trigger_description": "Door opens",
+                }
+            ],
         },
         clocks_mode="extend",
     )
@@ -351,7 +367,7 @@ def test_run_deferred_director_applies_guidance(stub_all: None) -> None:
         )
     )
     game = _game()
-    game.narrative.session_log.append(SceneLogEntry(scene=5, summary="Last"))
+    game.narrative.session_log.append(SceneLogEntry(scene=5, summary="Last", scene_type="expected"))
     run_deferred_director(
         provider,  # type: ignore[arg-type]
         game,

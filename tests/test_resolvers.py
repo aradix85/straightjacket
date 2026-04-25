@@ -41,7 +41,9 @@ def test_position_controlled_on_high_resources_low_chaos(stub_engine: None) -> N
     game.resources.supply = 5
     game.world.chaos_factor = 3
     # Add a secured advantage from previous turn
-    game.narrative.session_log.append(SceneLogEntry(scene=1, move="secure_advantage", result="STRONG_HIT"))
+    game.narrative.session_log.append(
+        SceneLogEntry(scene=1, move="secure_advantage", result="STRONG_HIT", scene_type="expected")
+    )
     brain = make_brain_result(move="adventure/gather_information", stat="wits")
     assert resolve_position(game, brain) == "controlled"
 
@@ -83,8 +85,8 @@ def test_position_consecutive_misses(stub_engine: None) -> None:
     game = make_game_state(player_name="Test")
     game.world.chaos_factor = 5
     game.narrative.session_log = [
-        SceneLogEntry(scene=1, move="adventure/face_danger", result="MISS"),
-        SceneLogEntry(scene=2, move="combat/clash", result="MISS"),
+        SceneLogEntry(scene=1, move="adventure/face_danger", result="MISS", scene_type="expected"),
+        SceneLogEntry(scene=2, move="combat/clash", result="MISS", scene_type="expected"),
     ]
     brain = make_brain_result(move="adventure/face_danger", stat="wits")
     pos = resolve_position(game, brain)
@@ -146,7 +148,9 @@ def test_effect_controlled_pushes_great(stub_engine: None) -> None:
         make_progress_track(id="connection_npc_1", name="Ally", track_type="connection", rank="dangerous", ticks=12)
     )
     # Add secured advantage
-    game.narrative.session_log.append(SceneLogEntry(scene=1, move="secure_advantage", result="STRONG_HIT"))
+    game.narrative.session_log.append(
+        SceneLogEntry(scene=1, move="secure_advantage", result="STRONG_HIT", scene_type="expected")
+    )
     brain = make_brain_result(move="combat/strike", stat="iron", target_npc="npc_1")
     effect = resolve_effect(game, brain, "controlled")
     assert effect == "great"

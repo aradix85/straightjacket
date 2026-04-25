@@ -56,7 +56,7 @@ def _game_with_data() -> GameState:
         ),
     ]
     game.narrative.threads.append(
-        ThreadEntry(id="thread_1", name="Find the vault", thread_type="vow", weight=2, active=True)
+        ThreadEntry(id="thread_1", name="Find the vault", thread_type="vow", weight=2, active=True, source="creation")
     )
     game.world.clocks.append(make_clock(name="Vault heist", clock_type="scheme", segments=6, filled=2, owner="Kira"))
     game.world.clocks.append(

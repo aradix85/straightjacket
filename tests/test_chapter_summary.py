@@ -60,7 +60,7 @@ def _populated_summary() -> ChapterSummary:
         threats=[make_threat(id="th1", name="Boss")],
         impacts=["wounded", "shaken"],
         assets=["asset_compass", "asset_companion"],
-        threads=[ThreadEntry(id="thr1", name="Find the truth", thread_type="vow", weight=2)],
+        threads=[ThreadEntry(id="thr1", name="Find the truth", thread_type="vow", weight=2, source="creation")],
     )
 
 
@@ -149,7 +149,9 @@ class TestResetChapterMechanics:
         game.threats = [make_threat(id="th1", name="Boss")]
         game.impacts = ["wounded"]
         game.assets = ["asset_compass"]
-        game.narrative.threads = [ThreadEntry(id="thr1", name="The truth", thread_type="vow", weight=2)]
+        game.narrative.threads = [
+            ThreadEntry(id="thr1", name="The truth", thread_type="vow", weight=2, source="creation")
+        ]
         return game
 
     def test_reset_clears_progress_tracks(self, stub_engine: None) -> None:
@@ -257,7 +259,7 @@ class TestChapterTransitionPreservesState:
         game.impacts = ["wounded"]
         game.assets = ["asset_compass"]
         game.narrative.threads = [
-            ThreadEntry(id="thr1", name="Truth", thread_type="vow", weight=2),
+            ThreadEntry(id="thr1", name="Truth", thread_type="vow", weight=2, source="creation"),
         ]
 
         # Capture what must survive

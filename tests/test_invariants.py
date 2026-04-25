@@ -43,7 +43,7 @@ def _clean_game() -> GameState:
     from straightjacket.engine.models import SceneLogEntry
 
     game.narrative.session_log = [
-        SceneLogEntry(scene=3, summary="Last scene"),
+        SceneLogEntry(scene=3, summary="Last scene", scene_type="expected"),
     ]
     return game
 

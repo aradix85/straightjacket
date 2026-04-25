@@ -22,6 +22,7 @@ from .engine_config_dataclasses import (
     ChaosResolverConfig,
     ChapterConfig,
     CombatPosCondition,
+    CorrectionConfig,
     CreationConfig,
     DescriptionDedupConfig,
     EffectResolverConfig,
@@ -39,7 +40,9 @@ from .engine_config_dataclasses import (
     LegacyConfig,
     LocationConfig,
     MemoryConfig,
+    MemoryEmotions,
     MemoryRetrievalWeights,
+    MemoryTemplates,
     MetadataVotingConfig,
     MomentumConfig,
     MoveAvailabilityCondition,
@@ -48,6 +51,7 @@ from .engine_config_dataclasses import (
     NarrativeDirectionConfig,
     NarrativeDirectionEntry,
     NarrativeIntensityThresholds,
+    NarratorStatusDescriptions,
     NotFlagCondition,
     NpcConfig,
     NpcMatchingConfig,
@@ -66,7 +70,12 @@ from .engine_config_dataclasses import (
     ResourcesConfig,
     RetryConfig,
     RuleValidatorConfig,
+    SceneAdjustments,
+    SceneContextTemplates,
     SetupCommonConfig,
+    StanceBondBuckets,
+    StanceMatrixEntry,
+    StanceMoveBuckets,
     StatsConfig,
     StatusDescriptionsConfig,
     StopwordsConfig,
@@ -75,7 +84,9 @@ from .engine_config_dataclasses import (
     SufferRecoveryGain,
     TfIdfConfig,
     ThreatConfig,
+    TimeProgressionSteps,
     TruncationsConfig,
+    ValidatorConfig,
 )
 
 
@@ -112,6 +123,15 @@ class EngineSettings:
     position_resolver: PositionResolverConfig
     effect_resolver: EffectResolverConfig
     information_gate: InformationGateConfig
+    stance_bond_buckets: StanceBondBuckets
+    stance_move_buckets: StanceMoveBuckets
+    stance_matrix: dict[str, dict[str, dict[str, StanceMatrixEntry]]]
+    time_progression_steps: TimeProgressionSteps
+    narrator_status_descriptions: NarratorStatusDescriptions
+    scene_adjustments: SceneAdjustments
+    scene_context: SceneContextTemplates
+    memory_emotions: MemoryEmotions
+    memory_templates: MemoryTemplates
     narrative_direction: NarrativeDirectionConfig
     fate: FateConfig
     story: StoryConfig
@@ -139,6 +159,8 @@ class EngineSettings:
     status_descriptions: StatusDescriptionsConfig
     truncations: TruncationsConfig
     persistence: PersistenceConfig
+    validator: ValidatorConfig
+    correction: CorrectionConfig
 
     # Scalar top-level fields
     scene_range_default: list[int]
@@ -260,6 +282,8 @@ _SIMPLE_SECTIONS: dict[str, type] = {
     "status_descriptions": StatusDescriptionsConfig,
     "truncations": TruncationsConfig,
     "persistence": PersistenceConfig,
+    "validator": ValidatorConfig,
+    "correction": CorrectionConfig,
 }
 
 
@@ -382,6 +406,7 @@ def parse_engine_yaml(data: dict[str, Any]) -> EngineSettings:
         controlled_above=pr["controlled_above"],
         npc_bond_high_min=pr["npc_bond_high_min"],
         npc_bond_low_max=pr["npc_bond_low_max"],
+        disposition_weights=dict(pr["disposition_weights"]),
         weights=pr_weights,
         move_baselines=dict(pr["move_baselines"]),
         overrides=pr_overrides,
@@ -395,6 +420,7 @@ def parse_engine_yaml(data: dict[str, Any]) -> EngineSettings:
         great_above=er["great_above"],
         bond_high_min=er["bond_high_min"],
         bond_low_max=er["bond_low_max"],
+        position_weights=dict(er["position_weights"]),
         weights=er_weights,
         move_baselines=dict(er["move_baselines"]),
     )
@@ -409,8 +435,24 @@ def parse_engine_yaml(data: dict[str, Any]) -> EngineSettings:
         gate_min=ig["gate_min"],
         gate_max=ig["gate_max"],
         stance_caps=dict(ig["stance_caps"]),
-        default_cap=ig["default_cap"],
     )
+
+    # stance_bond_buckets and stance_move_buckets: flat dicts
+    stance_bond_buckets = _build_strict(StanceBondBuckets, dict(data["stance_bond_buckets"]))
+    stance_move_buckets = _build_strict(StanceMoveBuckets, dict(data["stance_move_buckets"]))
+    stance_matrix: dict[str, dict[str, dict[str, StanceMatrixEntry]]] = {
+        disp: {
+            bond: {cat: _build_strict(StanceMatrixEntry, dict(entry)) for cat, entry in cats.items()}
+            for bond, cats in bonds.items()
+        }
+        for disp, bonds in data["stance_matrix"].items()
+    }
+    time_progression_steps = _build_strict(TimeProgressionSteps, dict(data["time_progression_steps"]))
+    narrator_status_descriptions = _build_strict(NarratorStatusDescriptions, dict(data["narrator_status_descriptions"]))
+    scene_adjustments = _build_strict(SceneAdjustments, dict(data["scene_adjustments"]))
+    scene_context = _build_strict(SceneContextTemplates, dict(data["scene_context"]))
+    memory_emotions = _build_strict(MemoryEmotions, dict(data["memory_emotions"]))
+    memory_templates = _build_strict(MemoryTemplates, dict(data["memory_templates"]))
 
     # narrative_direction: nested intensity + result_map of NarrativeDirectionEntry
     nd = dict(data["narrative_direction"])
@@ -445,6 +487,15 @@ def parse_engine_yaml(data: dict[str, Any]) -> EngineSettings:
         position_resolver=position_resolver,
         effect_resolver=effect_resolver,
         information_gate=information_gate,
+        stance_bond_buckets=stance_bond_buckets,
+        stance_move_buckets=stance_move_buckets,
+        stance_matrix=stance_matrix,
+        time_progression_steps=time_progression_steps,
+        narrator_status_descriptions=narrator_status_descriptions,
+        scene_adjustments=scene_adjustments,
+        scene_context=scene_context,
+        memory_emotions=memory_emotions,
+        memory_templates=memory_templates,
         narrative_direction=narrative_direction,
         fate=fate,
         story=simple_parsed["story"],
@@ -472,6 +523,8 @@ def parse_engine_yaml(data: dict[str, Any]) -> EngineSettings:
         status_descriptions=simple_parsed["status_descriptions"],
         truncations=simple_parsed["truncations"],
         persistence=simple_parsed["persistence"],
+        validator=simple_parsed["validator"],
+        correction=simple_parsed["correction"],
         scene_range_default=list(data["scene_range_default"]),
         death_emotions=list(data["death_emotions"]),
         creativity_seeds=list(data["creativity_seeds"]),

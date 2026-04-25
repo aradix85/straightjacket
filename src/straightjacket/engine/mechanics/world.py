@@ -80,7 +80,7 @@ def advance_time(game: GameState, progression: str) -> None:
         idx = phases.index(game.world.time_of_day)
     except ValueError:
         return
-    steps_map = eng().get_raw("time_progression_steps")
+    steps_map = eng().time_progression_steps.mapping
     steps = steps_map[progression]
     if steps:
         new_idx = (idx + steps) % len(phases)

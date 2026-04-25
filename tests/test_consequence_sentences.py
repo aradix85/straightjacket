@@ -47,6 +47,7 @@ def _roll(result: str = "MISS") -> RollResult:
         action_score=7,
         result=result,
         move="adventure/face_danger",
+        match=False,
     )
 
 
@@ -101,12 +102,12 @@ def test_generate_sentences_from_consequences() -> None:
 
 
 def test_generate_sentences_with_clock_events() -> None:
-    clock_events = [ClockEvent(clock="Looming storm", trigger="The storm breaks", triggered=False)]
+    clock_events = [ClockEvent(clock="Looming storm", trigger="The storm breaks", autonomous=False, triggered=False)]
     assert len(generate_consequence_sentences([], clock_events, _game(), _brain())) >= 1
 
 
 def test_generate_sentences_with_triggered_clock() -> None:
-    clock_events = [ClockEvent(clock="Vault heist", trigger="The vault opens", triggered=True)]
+    clock_events = [ClockEvent(clock="Vault heist", trigger="The vault opens", autonomous=False, triggered=True)]
     sentences = generate_consequence_sentences([], clock_events, _game(), _brain())
     assert any("Vault heist" in s or "vault" in s.lower() for s in sentences)
 

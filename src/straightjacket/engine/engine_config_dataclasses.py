@@ -317,10 +317,6 @@ class PositionResolverWeights:
     resource_low_below: int
     resource_critical: int
     resource_low: int
-    npc_hostile: int
-    npc_distrustful: int
-    npc_friendly: int
-    npc_loyal: int
     npc_bond_high: int
     npc_bond_low: int
     chaos_high: int
@@ -348,6 +344,7 @@ class PositionResolverConfig:
     controlled_above: int
     npc_bond_high_min: int
     npc_bond_low_max: int
+    disposition_weights: dict[str, int]
     weights: PositionResolverWeights
     move_baselines: dict[str, int]
     overrides: list[PositionOverride]
@@ -355,10 +352,8 @@ class PositionResolverConfig:
 
 @dataclass
 class EffectResolverWeights:
-    """Weights applied to position correlation + bond + secured advantage."""
+    """Weights applied to bond + secured advantage."""
 
-    desperate: int
-    controlled: int
     bond_high: int
     bond_low: int
     secured_advantage: int
@@ -372,6 +367,7 @@ class EffectResolverConfig:
     great_above: int
     bond_high_min: int
     bond_low_max: int
+    position_weights: dict[str, int]
     weights: EffectResolverWeights
     move_baselines: dict[str, int]
 
@@ -401,6 +397,128 @@ class InformationGateBuckets:
 
 
 @dataclass
+class StanceBondBuckets:
+    """Bond-range buckets used by resolve_npc_stance to look up entries in
+    stance_matrix. Bond at or below low_max → "low"; at or below mid_max → "mid";
+    else "high".
+    """
+
+    low_max: int
+    mid_max: int
+
+
+@dataclass
+class StanceMoveBuckets:
+    """Maps engine move-category (from move_categories.yaml) to the stance-matrix
+    bucket key used in stance_matrix.yaml. gather_information is handled as a
+    special case in code because it splits off from the generic social bucket.
+    Direct subscript on `mapping`; unknown move-category raises KeyError.
+    """
+
+    mapping: dict[str, str]
+
+
+@dataclass
+class TimeProgressionSteps:
+    """Number of time-phase steps taken per time-progression label. Callers look
+    up by the label resolved from time_progression_map. Direct subscript on
+    `mapping`; unknown label raises KeyError.
+    """
+
+    mapping: dict[str, int]
+
+
+@dataclass
+class NarratorStatusDescriptions:
+    """Narrator-facing resource-level descriptions, injected into the narrator
+    prompt via <character_state>. Three fixed resources; each maps an integer
+    threshold to a description string.
+    """
+
+    health: dict[int, str]
+    spirit: dict[int, str]
+    supply: dict[int, str]
+
+
+@dataclass
+class ValidatorConfig:
+    """Validator yaml block. The regex-pattern fields are still accessed via
+    EngineSettings.compiled_patterns / compiled_pattern / compiled_labeled_patterns
+    helpers (which read raw yaml and cache compiled regex). They are listed here
+    so _build_strict accepts the yaml as-is. The string-template fields
+    (rewrite_instructions, retry_strip) are read directly through this dataclass.
+    """
+
+    rewrite_instructions: dict[str, str]
+    retry_strip: dict[str, str]
+    agency_patterns: list[str]
+    miss_silver_lining_patterns: list[str]
+    miss_annihilation_patterns: list[str]
+    format_patterns: list[dict[str, str]]
+    quote_patterns: dict[str, str]
+
+
+@dataclass
+class CorrectionConfig:
+    """Correction-flow constraints."""
+
+    npc_edit_allowed_fields: list[str]
+
+
+@dataclass
+class StanceMatrixEntry:
+    """One leaf in stance_matrix: the (stance, constraint) pair for a given
+    disposition × bond-range × move-category combination.
+    """
+
+    stance: str
+    constraint: str
+
+
+@dataclass
+class MemoryEmotions:
+    """Emotion derivation for engine-generated memories. `base` maps move-category
+    × roll-result pairs to base emotion keys; `disposition_suffix` adds an NPC-
+    disposition-specific suffix when the memory has an associated NPC.
+    """
+
+    base: dict[str, str]
+    disposition_suffix: dict[str, str]
+
+
+@dataclass
+class MemoryTemplates:
+    """Format templates for engine-generated memory text. Four fixed shapes
+    cover targeted/untargeted action and dialog turns.
+    """
+
+    action: str
+    action_targeted: str
+    dialog: str
+    dialog_no_target: str
+
+
+@dataclass
+class SceneContextTemplates:
+    """Format templates for scene-context lines included in narrator prompts.
+    Two fixed templates: one for action turns, one for dialog turns.
+    """
+
+    template: str
+    dialog: str
+
+
+@dataclass
+class SceneAdjustments:
+    """AI-facing descriptions for Mythic 2e altered-scene adjustments, injected
+    into narrator prompts via <altered_scene> tags. Direct subscript on
+    `mapping`; unknown adjustment raises KeyError.
+    """
+
+    mapping: dict[str, str]
+
+
+@dataclass
 class InformationGateConfig:
     """Information gate: how much NPCs reveal based on scenes/bond/stance."""
 
@@ -409,7 +527,6 @@ class InformationGateConfig:
     gate_min: int
     gate_max: int
     stance_caps: dict[str, int]
-    default_cap: int
 
 
 @dataclass

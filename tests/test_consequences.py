@@ -110,7 +110,9 @@ def test_can_burn_momentum_miss_to_strong() -> None:
     from straightjacket.engine.mechanics.consequences import can_burn_momentum
 
     game = _game(momentum=8)
-    roll = RollResult(d1=1, d2=1, c1=5, c2=7, stat_name="wits", stat_value=2, action_score=4, result="MISS", move="x")
+    roll = RollResult(
+        d1=1, d2=1, c1=5, c2=7, stat_name="wits", stat_value=2, action_score=4, result="MISS", move="x", match=False
+    )
     assert can_burn_momentum(game, roll) == "STRONG_HIT"
 
 
@@ -118,7 +120,9 @@ def test_can_burn_momentum_miss_to_weak() -> None:
     from straightjacket.engine.mechanics.consequences import can_burn_momentum
 
     game = _game(momentum=6)
-    roll = RollResult(d1=1, d2=1, c1=5, c2=7, stat_name="wits", stat_value=2, action_score=4, result="MISS", move="x")
+    roll = RollResult(
+        d1=1, d2=1, c1=5, c2=7, stat_name="wits", stat_value=2, action_score=4, result="MISS", move="x", match=False
+    )
     assert can_burn_momentum(game, roll) == "WEAK_HIT"
 
 
@@ -127,7 +131,7 @@ def test_can_burn_momentum_weak_to_strong() -> None:
 
     game = _game(momentum=8)
     roll = RollResult(
-        d1=3, d2=3, c1=5, c2=7, stat_name="wits", stat_value=2, action_score=8, result="WEAK_HIT", move="x"
+        d1=3, d2=3, c1=5, c2=7, stat_name="wits", stat_value=2, action_score=8, result="WEAK_HIT", move="x", match=False
     )
     assert can_burn_momentum(game, roll) == "STRONG_HIT"
 
@@ -136,7 +140,9 @@ def test_can_burn_momentum_no_burn_possible() -> None:
     from straightjacket.engine.mechanics.consequences import can_burn_momentum
 
     game = _game(momentum=2)
-    roll = RollResult(d1=1, d2=1, c1=5, c2=7, stat_name="wits", stat_value=2, action_score=4, result="MISS", move="x")
+    roll = RollResult(
+        d1=1, d2=1, c1=5, c2=7, stat_name="wits", stat_value=2, action_score=4, result="MISS", move="x", match=False
+    )
     assert can_burn_momentum(game, roll) is None
 
 
@@ -144,7 +150,9 @@ def test_can_burn_momentum_zero_momentum() -> None:
     from straightjacket.engine.mechanics.consequences import can_burn_momentum
 
     game = _game(momentum=0)
-    roll = RollResult(d1=1, d2=1, c1=5, c2=7, stat_name="wits", stat_value=2, action_score=4, result="MISS", move="x")
+    roll = RollResult(
+        d1=1, d2=1, c1=5, c2=7, stat_name="wits", stat_value=2, action_score=4, result="MISS", move="x", match=False
+    )
     assert can_burn_momentum(game, roll) is None
 
 

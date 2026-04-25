@@ -155,6 +155,7 @@ def test_stance_in_target_npc_block() -> None:
         action_score=9,
         result="WEAK_HIT",
         move="adventure/gather_information",
+        match=False,
     )
     prompt = build_action_prompt(
         game,
@@ -192,6 +193,7 @@ def test_stance_in_activated_npc_block() -> None:
         action_score=10,
         result="STRONG_HIT",
         move="adventure/face_danger",
+        match=False,
     )
     prompt = build_action_prompt(
         game,

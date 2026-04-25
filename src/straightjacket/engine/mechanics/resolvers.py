@@ -28,16 +28,10 @@ def _score_npc_relationship(game: GameState, brain: BrainResult) -> int:
     target = find_npc(game, brain.target_npc)
     if not target:
         return 0
-    w = eng().position_resolver.weights
-    disp_weights = {
-        "hostile": w.npc_hostile,
-        "distrustful": w.npc_distrustful,
-        "friendly": w.npc_friendly,
-        "loyal": w.npc_loyal,
-    }
-    score = disp_weights.get(target.disposition, 0)
-    bond = get_npc_bond(game, target.id)
     cfg = eng().position_resolver
+    score = cfg.disposition_weights[target.disposition]
+    bond = get_npc_bond(game, target.id)
+    w = cfg.weights
     if bond >= cfg.npc_bond_high_min:
         score += w.npc_bond_high
     elif bond <= cfg.npc_bond_low_max:
@@ -161,7 +155,7 @@ def _apply_position_overrides(position: str, game: GameState, brain: BrainResult
                 recent and brain.target_npc and getattr(recent[-1], "target_npc", None) == brain.target_npc
             ),
         }
-        match = all(_cond_checks.get(cond, False) for cond in override.conditions)
+        match = all(_cond_checks[cond] for cond in override.conditions)
 
         if match and override.conditions:
             if override.effect == "cap_at_risky" and position == "controlled":  # noqa: SIM114
@@ -199,8 +193,7 @@ def resolve_effect(game: GameState, brain: BrainResult, position: str) -> str:
     score = 0
 
     # Position correlation
-    pos_weights = {"desperate": w.desperate, "controlled": w.controlled}
-    score += pos_weights.get(position, 0)
+    score += cfg.position_weights[position]
 
     # NPC bond (social moves)
     if brain.target_npc:

@@ -135,12 +135,12 @@ IMPORTANT: {game.player_name} is the PLAYER CHARACTER — do NOT include them as
         log(f"[OpeningSetup] Extraction failed: {e}", level="warning")
         defaults = eng().ai_text.narrator_defaults
         return {
-            "npcs": [],
-            "clocks": [],
-            "location": "",
-            "scene_context": "",
+            "npcs": defaults["opening_setup_fallback_npcs"],
+            "clocks": defaults["opening_setup_fallback_clocks"],
+            "location": defaults["opening_setup_fallback_location"],
+            "scene_context": defaults["opening_setup_fallback_scene_context"],
             "time_of_day": defaults["unknown_time"],
-            "memory_updates": [],
+            "memory_updates": defaults["opening_setup_fallback_memory_updates"],
         }
 
 
@@ -237,10 +237,11 @@ Extract all metadata from the narration above. Remember: {game.player_name} is t
     except Exception as e:
         # Intentional graceful degradation — see AI-CALL SUPPRESSION POLICY in provider_base.py.
         log(f"[Metadata] Extraction failed: {e}", level="warning")
+        defaults = eng().ai_text.narrator_defaults
         return {
-            "new_npcs": [],
-            "npc_renames": [],
-            "npc_details": [],
-            "deceased_npcs": [],
-            "lore_npcs": [],
+            "new_npcs": defaults["narrator_metadata_fallback_new_npcs"],
+            "npc_renames": defaults["narrator_metadata_fallback_npc_renames"],
+            "npc_details": defaults["narrator_metadata_fallback_npc_details"],
+            "deceased_npcs": defaults["narrator_metadata_fallback_deceased_npcs"],
+            "lore_npcs": defaults["narrator_metadata_fallback_lore_npcs"],
         }

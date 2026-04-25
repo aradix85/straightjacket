@@ -15,9 +15,9 @@ def derive_memory_emotion(move: str, result: str, disposition: str) -> str:
     every move/result/disposition Brain produces must be mapped in yaml.
     """
     _e = eng()
-    memory_emotions = _e.get_raw("memory_emotions")
-    base_map = memory_emotions["base"]
-    suffix_map = memory_emotions["disposition_suffix"]
+    memory_emotions = _e.memory_emotions
+    base_map = memory_emotions.base
+    suffix_map = memory_emotions.disposition_suffix
 
     category = move_category(move)
     key = "dialog" if move == "dialog" or result == "dialog" else f"{category}_{result}"
@@ -45,7 +45,7 @@ def generate_engine_memories(
     from ..npc.memory import score_importance
 
     _e = eng()
-    templates = _e.get_raw("memory_templates")
+    templates = _e.memory_templates
     result_text_map = _e.get_raw("memory_result_text")
     verb_map = _e.get_raw("memory_move_verbs")
     scene = game.narrative.scene_count
@@ -83,7 +83,7 @@ def generate_engine_memories(
         else:
             template_key = "action"
 
-        template = templates[template_key]
+        template: str = getattr(templates, template_key)
 
         event_text = template.format(
             scene=scene,
@@ -128,14 +128,12 @@ def generate_scene_context(
     npc_summary = ", ".join(activated_npc_names[:_npc_max]) if activated_npc_names else _defaults["no_npcs_nearby"]
 
     if move == "dialog" or roll is None:
-        template = _e.get_raw("scene_context_dialog")
-        return template.format(location=location, npc_summary=npc_summary)
+        return _e.scene_context.dialog.format(location=location, npc_summary=npc_summary)
 
     result = roll.result if roll else "MISS"
     verb_map = _e.get_raw("memory_move_verbs")
     move_label = verb_map[move] if move in verb_map else move
-    template = _e.get_raw("scene_context_template")
-    return template.format(
+    return _e.scene_context.template.format(
         result=result,
         move_label=move_label,
         location=location,
