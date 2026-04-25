@@ -85,6 +85,7 @@ main { max-width: 48rem; width: 100%; margin: 0 auto; padding: 0 1rem; flex: 1; 
     <div id="input-bar">
       <div id="action-bar">
         <button id="btn-saves"></button>
+        <button id="btn-retire"></button>
       </div>
       <form id="input-form">
         <input type="text" id="player-input" autocomplete="off">
@@ -117,13 +118,30 @@ main { max-width: 48rem; width: 100%; margin: 0 auto; padding: 0 1rem; flex: 1; 
     </div>
   </div>
 
-  <!-- Game over -->
-  <div id="gameover-overlay" class="overlay hidden" role="alertdialog">
+  <!-- Succession (character death / despair / retire) -->
+  <div id="succession-overlay" class="overlay hidden" role="alertdialog" aria-modal="true">
     <div class="overlay-card">
-      <h2 id="gameover-title"></h2>
+      <h2 id="succession-title"></h2>
+      <p id="succession-headline"></p>
+      <h3 id="succession-predecessor-label"></h3>
+      <p id="succession-predecessor-history"></p>
+      <h3 id="succession-inheritance-label"></h3>
+      <ul id="succession-inheritance-list"></ul>
       <div class="actions">
-        <button id="gameover-chapter"></button>
-        <button id="gameover-restart"></button>
+        <button id="succession-continue" class="primary"></button>
+        <button id="succession-restart"></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Retire confirmation -->
+  <div id="retire-overlay" class="overlay hidden" role="alertdialog" aria-modal="true">
+    <div class="overlay-card">
+      <h2 id="retire-title"></h2>
+      <p id="retire-text"></p>
+      <div class="actions">
+        <button id="retire-yes" class="primary"></button>
+        <button id="retire-no"></button>
       </div>
     </div>
   </div>
@@ -135,6 +153,11 @@ let ws = null;
 let retries = 0;
 let sessionTaken = false;
 let currentPlayer = "";
+// "new_game" or "succession" — drives whether the creation form submits
+// start_game (fresh campaign) or start_succession (existing campaign whose
+// previous protagonist died/retired). Set by onGameOver, cleared after
+// successful submission.
+let creationMode = "new_game";
 
 // UI strings from server (strings.yaml)
 let S = {};
@@ -162,6 +185,10 @@ function showPhase(phase) {
   phaseCreation.classList.toggle("hidden", phase !== "creation");
   phaseGame.classList.toggle("hidden", phase !== "game");
   if (phase === "game") phaseGame.style.display = "flex";
+  if (phase === "creation") {
+    const headingKey = creationMode === "succession" ? "ui.create_successor" : "ui.create_character";
+    $("creation-heading").textContent = s(headingKey);
+  }
 }
 
 // Apply strings to static HTML elements
@@ -187,10 +214,19 @@ function applyStrings() {
   $("complete-overlay").setAttribute("aria-label", s("ui.complete_title"));
   $("complete-continue").textContent = s("ui.keep_playing");
   $("complete-epilogue").textContent = s("ui.generate_epilogue");
-  $("gameover-title").textContent = s("ui.gameover_title");
-  $("gameover-overlay").setAttribute("aria-label", s("ui.gameover_title"));
-  $("gameover-chapter").textContent = s("ui.new_chapter");
-  $("gameover-restart").textContent = s("ui.start_over");
+  // Succession (character death / despair / retire). The dynamic title,
+  // headline, and inheritance lines come from the server payload at
+  // game_over time; the static labels are set here.
+  $("succession-predecessor-label").textContent = s("ui.predecessor_label");
+  $("succession-inheritance-label").textContent = s("ui.inheritance_label");
+  $("succession-continue").textContent = s("ui.continue_legacy");
+  $("succession-restart").textContent = s("ui.start_over");
+  // Retire confirmation overlay (shown when btn-retire pressed).
+  $("retire-title").textContent = s("ui.retire");
+  $("retire-text").textContent = s("ui.retire_confirm");
+  $("retire-yes").textContent = s("ui.retire");
+  $("retire-no").textContent = s("ui.burn_no");
+  $("btn-retire").textContent = s("ui.retire");
   $("btn-saves").onclick = () => showSaves();
 }
 
@@ -229,8 +265,10 @@ function connect() {
       case "scene_marker": appendSceneHeading(msg.scene, msg.location); break;
       case "burn_offer": showBurnOffer(msg); break;
       case "story_complete": $("complete-overlay").classList.remove("hidden"); raf(() => $("complete-epilogue").focus()); break;
-      case "game_over": $("gameover-overlay").classList.remove("hidden"); raf(() => $("gameover-chapter").focus()); break;
+      case "game_over": onGameOver(msg); break;
       case "chapter_started": onChapterStarted(msg); break;
+      case "succession_started": onSuccessionStarted(msg); break;
+      case "succession_creation_options": onSuccessionCreationOptions(msg); break;
       case "retry_available": showRetryOffer(msg.text); break;
       case "session_taken": onSessionTaken(); break;
       case "turn_complete": break;
@@ -457,7 +495,7 @@ $("burn-no").onclick = () => {
   playerInput.focus();
 };
 
-// ── Story complete / game over ──────────────────────────────
+// ── Story complete / game over / succession ────────────────
 $("complete-continue").onclick = () => {
   $("complete-overlay").classList.add("hidden");
   send({type: "dismiss_epilogue"});
@@ -468,13 +506,72 @@ $("complete-epilogue").onclick = () => {
   send({type: "generate_epilogue"});
   playerInput.focus();
 };
-$("gameover-chapter").onclick = () => {
-  $("gameover-overlay").classList.add("hidden");
-  send({type: "new_chapter"});
+
+// onGameOver shows the succession overlay (predecessor + inheritance text).
+// The server always includes a pending succession payload — game_over and
+// succession are now coupled by the engine (auto-prepare on game_over flag).
+// If succession.pending is false the engine state is corrupt; surface it
+// rather than masking with a fallback.
+function onGameOver(msg) {
+  const succ = msg.succession;
+  if (!succ || !succ.pending) {
+    showError("game_over received without pending succession — engine state is inconsistent.");
+    return;
+  }
+  $("succession-title").textContent = succ.title;
+  $("succession-headline").textContent = succ.headline;
+  $("succession-predecessor-history").textContent = succ.predecessor.history;
+  const list = $("succession-inheritance-list");
+  list.innerHTML = "";
+  succ.inheritance.forEach(line => {
+    const li = document.createElement("li");
+    li.textContent = line.text;
+    list.appendChild(li);
+  });
+  $("succession-overlay").classList.remove("hidden");
+  raf(() => $("succession-continue").focus());
+}
+
+$("succession-continue").onclick = () => {
+  $("succession-overlay").classList.add("hidden");
+  creationMode = "succession";
+  send({type: "request_succession_creation"});
 };
-$("gameover-restart").onclick = () => {
-  $("gameover-overlay").classList.add("hidden");
+
+$("succession-restart").onclick = () => {
+  $("succession-overlay").classList.add("hidden");
+  creationMode = "new_game";
   send({type: "list_players"});
+};
+
+function onSuccessionStarted(msg) {
+  clearStatus();
+  chatLog.innerHTML = "";
+  appendSceneHeading(1, "");
+  appendHTML("msg msg-narrator", msg.narration);
+  scroll();
+  showPhase("game");
+  playerInput.focus();
+}
+
+function onSuccessionCreationOptions(msg) {
+  showPhase("creation");
+  renderCreationForm(msg.creation_options, msg.current_setting_id);
+}
+
+// Retire — explicit player-initiated retirement. Confirmation overlay
+// because the action is destructive (irreversible, replaces the character).
+$("btn-retire").onclick = () => {
+  $("retire-overlay").classList.remove("hidden");
+  raf(() => $("retire-no").focus());
+};
+$("retire-no").onclick = () => {
+  $("retire-overlay").classList.add("hidden");
+  playerInput.focus();
+};
+$("retire-yes").onclick = () => {
+  $("retire-overlay").classList.add("hidden");
+  send({type: "retire"});
 };
 
 // ── Chapter started ─────────────────────────────────────────
@@ -520,12 +617,23 @@ function showError(text) {
 // All data comes from our own server (build_creation_options), not user input.
 // The esc() function escapes all interpolated values. If setting descriptions
 // ever include user-generated content, this must be audited for XSS.
-function renderCreationForm(options) {
+function renderCreationForm(options, forcedSettingId) {
   const form = $("creation-form");
   const settings = options.settings || [];
   const sc = options.stat_constraints || {target_sum: 9, min: 0, max: 3};
   const cd = options.creation_defaults || {max_paths: 2, background_vow_default_rank: "extreme", vow_ranks: ["troublesome","dangerous","formidable","extreme","epic"]};
   if (settings.length === 0) { form.innerHTML = `<p>${s("ui.no_settings")}</p>`; return; }
+
+  // Resolve which setting to pre-select. In succession mode the campaign's
+  // setting is fixed (the world doesn't change between protagonists), so
+  // we lock the radios to forcedSettingId. Falls through to the first
+  // setting in new-game mode.
+  let initialIdx = 0;
+  if (forcedSettingId) {
+    const found = settings.findIndex(st => st.id === forcedSettingId);
+    if (found >= 0) initialIdx = found;
+  }
+  const settingsLocked = !!forcedSettingId;
 
   let html = "";
 
@@ -533,7 +641,7 @@ function renderCreationForm(options) {
   html += `<div class="field"><label>${s("ui.setting")}</label>`;
   settings.forEach((st, i) => {
     html += `<label style="display:block;margin-bottom:0.5rem;cursor:pointer">`;
-    html += `<input type="radio" name="setting" value="${esc(st.id)}" ${i===0?"checked":""}> `;
+    html += `<input type="radio" name="setting" value="${esc(st.id)}" ${i===initialIdx?"checked":""} ${settingsLocked?"disabled":""}> `;
     html += `<strong>${esc(st.title)}</strong> — ${esc(st.description)}</label>`;
   });
   html += `</div>`;
@@ -697,7 +805,7 @@ function renderCreationForm(options) {
     const assetSel = $("c-asset");
     if (assetSel && assetSel.value) assets.push(assetSel.value);
 
-    send({type: "start_game", creation_data: {
+    const creationData = {
       setting_id: document.querySelector('input[name="setting"]:checked')?.value,
       player_name: $("c-name").value.trim() || currentPlayer,
       pronouns: $("c-pronouns").value,
@@ -711,7 +819,10 @@ function renderCreationForm(options) {
       truths,
       wishes: $("c-wishes").value.trim(),
       content_lines: $("c-boundaries").value.trim(),
-    }});
+    };
+    const msgType = creationMode === "succession" ? "start_succession" : "start_game";
+    send({type: msgType, creation_data: creationData});
+    creationMode = "new_game";  // reset for any future creation flow
     showPhase("game");
   };
 }

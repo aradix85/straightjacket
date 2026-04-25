@@ -21,6 +21,8 @@ from .bootstrap_log import bootstrap_log as _log
 PROJECT_ROOT = (
     Path(__file__).resolve().parent.parent.parent.parent
 )  # engine/ -> straightjacket/ -> src/ -> project root
+# STRAIGHTJACKET_CONFIG env var overrides the default config path. Fallback
+# is a deployment-time mechanism, not a domain-rule fallback.
 _CONFIG_PATH = Path(os.environ.get("STRAIGHTJACKET_CONFIG", str(PROJECT_ROOT / "config.yaml")))
 
 
@@ -90,7 +92,6 @@ class LanguageConfig:
     """Language and naming defaults."""
 
     narration_language: str
-    default_player_name: str
 
 
 @dataclass
@@ -126,6 +127,8 @@ def _parse_config(data: dict) -> AppConfig:
             top_p=float(cdata["top_p"]),
             max_tokens=int(cdata["max_tokens"]),
             max_retries=int(cdata["max_retries"]),
+            # extra_body holds provider-specific options (e.g. Cerebras
+            # response_format hints). Genuinely optional per cluster.
             extra_body=cdata.get("extra_body", {}),
         )
 
@@ -141,7 +144,6 @@ def _parse_config(data: dict) -> AppConfig:
     ld = data["language"]
     language = LanguageConfig(
         narration_language=ld["narration_language"],
-        default_player_name=ld["default_player_name"],
     )
 
     return AppConfig(server=server, ai=ai, language=language)
@@ -190,11 +192,6 @@ def reload_config() -> AppConfig:
 def narration_language() -> str:
     """Narration language for AI prompts (English name, e.g. 'English', 'German')."""
     return cfg().language.narration_language
-
-
-def default_player_name() -> str:
-    """Default player name when none is provided."""
-    return cfg().language.default_player_name
 
 
 def _cluster_for_role(role: str) -> ClusterConfig:

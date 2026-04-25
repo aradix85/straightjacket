@@ -41,9 +41,12 @@ from .handlers import (
     handle_new_chapter,
     handle_player_input,
     handle_recap,
+    handle_request_succession_creation,
+    handle_retire,
     handle_save,
     handle_select_player,
     handle_start_game,
+    handle_start_succession,
     handle_status_query,
     handle_threats_query,
     handle_tracks_query,
@@ -80,6 +83,9 @@ _HANDLERS: dict[str, Callable] = {
     "generate_epilogue": handle_generate_epilogue,
     "dismiss_epilogue": handle_dismiss_epilogue,
     "new_chapter": handle_new_chapter,
+    "retire": handle_retire,
+    "request_succession_creation": handle_request_succession_creation,
+    "start_succession": handle_start_succession,
     "debug_state": handle_debug_state,
 }
 
@@ -102,16 +108,14 @@ def _check_origin(ws: WebSocket) -> bool:
         return False
 
 
-async def websocket_endpoint(ws: WebSocket) -> None:
-    """WebSocket lifecycle: origin check, accept, takeover, state resend, message loop."""
-    if not _check_origin(ws):
-        log(f"[Web] Rejected WebSocket from origin: {ws.headers.get('origin')}", level="warning")
-        await ws.close(code=1008)
-        return
+async def _takeover_existing_session(ws: WebSocket) -> None:
+    """Notify any existing connection of session takeover and wait for in-flight turn.
 
-    await ws.accept()
-
-    # Session takeover: notify old connection and wait for any in-flight turn
+    The existing connection (if any) is sent {"type": "session_taken"} and
+    closed. Then we poll _session.processing until it clears or we exhaust
+    the configured probe budget — this prevents the new connection from
+    reading partially-mutated game state mid-turn.
+    """
     if _session.active_ws is not None:
         try:
             await _session.active_ws.send_json({"type": "session_taken"})
@@ -120,8 +124,6 @@ async def websocket_endpoint(ws: WebSocket) -> None:
             # Old socket already dead (disconnect) or in an invalid state —
             # takeover still proceeds; nothing else to clean up here.
             log(f"[Web] takeover notify on old ws failed: {e}", level="debug")
-    # Wait for in-flight processing to finish before accepting new commands.
-    # Prevents the new connection from reading partially-mutated game state.
     _rl = eng().rate_limit
     for _ in range(_rl.warn_probe_max_tries):
         if not _session.processing:
@@ -129,65 +131,96 @@ async def websocket_endpoint(ws: WebSocket) -> None:
         await asyncio.sleep(_rl.warn_probe_poll_seconds)
     _session.active_ws = ws
 
-    # Initial state
-    try:
-        await _send(ws, {"type": "ui_strings", "strings": all_strings()})
-        await handle_list_players(_session, ws, {})
 
-        # Orphan input recovery
-        orphan = _session.orphan_input()
-        if orphan:
-            await _send(ws, {"type": "retry_available", "text": orphan})
+async def _send_initial_state(ws: WebSocket) -> None:
+    """Send the initial UI strings + player list + per-player resume state.
 
-        # Resend current player state on reconnect
-        if _session.player and _session.game is not None:
-            await _send(
-                ws,
-                {
-                    "type": "player_selected",
-                    "name": _session.player,
-                    "has_game": True,
-                    "messages": _session.filtered_messages(),
-                },
-            )
-        elif _session.player:
-            await _send(
-                ws,
-                {
-                    "type": "player_selected",
-                    "name": _session.player,
-                    "has_game": False,
-                    "creation_options": build_creation_options(),
-                },
-            )
-    except (WebSocketDisconnect, RuntimeError, OSError) as e:
-        # Client closed before we finished sending initial state. Nothing to
-        # recover; message loop below will exit on the same disconnect.
-        log(f"[Web] initial state send failed: {e}", level="warning")
+    Resends the current player's game (or creation options) on reconnect so
+    the client doesn't have to re-issue select_player after a takeover.
+    Surfaces orphan input as a retry_available message.
+    """
+    await _send(ws, {"type": "ui_strings", "strings": all_strings()})
+    await handle_list_players(_session, ws, {})
+
+    orphan = _session.orphan_input()
+    if orphan:
+        await _send(ws, {"type": "retry_available", "text": orphan})
+
+    if _session.player and _session.game is not None:
+        await _send(
+            ws,
+            {
+                "type": "player_selected",
+                "name": _session.player,
+                "has_game": True,
+                "messages": _session.filtered_messages(),
+            },
+        )
+    elif _session.player:
+        await _send(
+            ws,
+            {
+                "type": "player_selected",
+                "name": _session.player,
+                "has_game": False,
+                "creation_options": build_creation_options(),
+            },
+        )
+
+
+async def _dispatch_one_message(ws: WebSocket, data: dict) -> None:
+    """Validate the incoming message's type field and route to the handler."""
+    msg_type = data.get("type")
+    if not isinstance(msg_type, str) or not msg_type:
+        await _send(ws, {"type": "error", "text": t("error.malformed_message")})
         return
+    handler = _HANDLERS.get(msg_type)
+    if handler:
+        await handler(_session, ws, data)
+    else:
+        await _send(ws, {"type": "error", "text": t("error.unknown_msg_type", msg_type=msg_type)})
 
-    # Message loop with rate limiting — parameters from engine.yaml rate_limit.
+
+async def _message_loop(ws: WebSocket) -> None:
+    """Receive-rate-limit-dispatch loop until the WebSocket disconnects."""
+    _rl = eng().rate_limit
     _msg_times: list[float] = []
     _RATE_WINDOW = _rl.window_seconds
     _RATE_MAX = _rl.max_requests
 
+    while True:
+        data = await ws.receive_json()
+
+        now = asyncio.get_event_loop().time()
+        _msg_times = [tm for tm in _msg_times if now - tm < _RATE_WINDOW]
+        if len(_msg_times) >= _RATE_MAX:
+            await _send(ws, {"type": "error", "text": t("error.rate_limited")})
+            continue
+        _msg_times.append(now)
+
+        await _dispatch_one_message(ws, data)
+
+
+async def websocket_endpoint(ws: WebSocket) -> None:
+    """WebSocket lifecycle: origin check, accept, takeover, state resend, message loop."""
+    if not _check_origin(ws):
+        log(f"[Web] Rejected WebSocket from origin: {ws.headers.get('origin')}", level="warning")
+        await ws.close(code=1008)
+        return
+
+    await ws.accept()
+    await _takeover_existing_session(ws)
+
     try:
-        while True:
-            data = await ws.receive_json()
+        await _send_initial_state(ws)
+    except (WebSocketDisconnect, RuntimeError, OSError) as e:
+        # Client closed before we finished sending initial state. Nothing to
+        # recover; message loop below will not run.
+        log(f"[Web] initial state send failed: {e}", level="warning")
+        return
 
-            now = asyncio.get_event_loop().time()
-            _msg_times = [t for t in _msg_times if now - t < _RATE_WINDOW]
-            if len(_msg_times) >= _RATE_MAX:
-                await _send(ws, {"type": "error", "text": t("error.rate_limited")})
-                continue
-            _msg_times.append(now)
-
-            msg_type = data.get("type", "")
-            handler = _HANDLERS.get(msg_type)
-            if handler:
-                await handler(_session, ws, data)
-            else:
-                await _send(ws, {"type": "error", "text": t("error.unknown_msg_type", msg_type=msg_type)})
+    try:
+        await _message_loop(ws)
     except WebSocketDisconnect:
         pass
     except Exception as e:

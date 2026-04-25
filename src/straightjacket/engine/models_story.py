@@ -205,6 +205,48 @@ class NpcEvolution(SerializableMixin):
 
 
 @dataclass
+class InheritanceRollResult(SerializableMixin):
+    """Outcome of one inheritance roll on a single legacy track at succession.
+
+    track_name is one of LEGACY_TRACKS ("quests", "bonds", "discoveries").
+    predecessor_filled_boxes is what the predecessor's track held going in.
+    new_filled_boxes is what the successor's track is seeded with — the
+    fraction applied to predecessor_filled_boxes, rounded.
+    """
+
+    track_name: str
+    predecessor_filled_boxes: int
+    result: str  # STRONG_HIT / WEAK_HIT / MISS
+    fraction: float
+    new_filled_boxes: int
+
+
+@dataclass
+class PredecessorRecord(SerializableMixin):
+    """Archive entry for a previous protagonist after a character succession.
+
+    Captured at start_succession() before the new character is constructed.
+    The fields hold what the new character's player needs to see of the
+    predecessor as context, plus a frozen snapshot of the legacy state at
+    the moment of death/retirement so a later session can audit what was
+    passed forward.
+    """
+
+    player_name: str
+    pronouns: str
+    character_concept: str
+    background_vow: str
+    setting_id: str
+    chapters_played: int
+    scenes_played: int
+    end_reason: str  # death, despair, retire
+    legacy_quests_filled_boxes: int
+    legacy_bonds_filled_boxes: int
+    legacy_discoveries_filled_boxes: int
+    inheritance_rolls: list[InheritanceRollResult]
+
+
+@dataclass
 class ChapterSummary(SerializableMixin):
     """Snapshot of a completed chapter for campaign continuity.
 
@@ -275,10 +317,17 @@ class CampaignState(SerializableMixin):
     """Chapter progression, epilogue, campaign-persistent XP and legacy tracks."""
 
     campaign_history: list[ChapterSummary] = field(default_factory=list)
+    predecessors: list[PredecessorRecord] = field(default_factory=list)
     chapter_number: int = 1
     epilogue_shown: bool = False
     epilogue_dismissed: bool = False
     epilogue_text: str = ""
+    # Set by prepare_succession when the predecessor is archived and inheritance
+    # has been rolled, but the new character has not yet been created. Cleared
+    # by start_succession_with_character. Distinguishes "post-death awaiting
+    # successor" from normal play; the UI and turn pipeline check this to gate
+    # actions while creation is open.
+    pending_succession: bool = False
 
     # Campaign-persistent progression
     xp: int = 0  # Total XP earned across campaign
@@ -300,6 +349,7 @@ class CampaignState(SerializableMixin):
         return {
             "epilogue_shown": self.epilogue_shown,
             "epilogue_dismissed": self.epilogue_dismissed,
+            "pending_succession": self.pending_succession,
             "xp": self.xp,
             "xp_spent": self.xp_spent,
             "legacy_quests": self.legacy_quests.to_dict(),
@@ -310,6 +360,7 @@ class CampaignState(SerializableMixin):
     def restore(self, snap: dict) -> None:
         self.epilogue_shown = snap["epilogue_shown"]
         self.epilogue_dismissed = snap["epilogue_dismissed"]
+        self.pending_succession = snap["pending_succession"]
         self.xp = snap["xp"]
         self.xp_spent = snap["xp_spent"]
         self.legacy_quests = ProgressTrack.from_dict(snap["legacy_quests"])

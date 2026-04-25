@@ -21,7 +21,9 @@ __all__ = [
     "advance_asset",
     "advance_time",
     "apply_brain_location_time",
+    "apply_npc_carryover",
     "apply_threat_overcome_bonus",
+    "build_predecessor_record",
     "can_burn_momentum",
     "check_npc_agency",
     "check_scene",
@@ -56,6 +58,8 @@ __all__ = [
     "roll_action",
     "roll_event_focus",
     "roll_meaning_table",
+    "run_inheritance_rolls",
+    "seed_successor_legacy",
     "tick_autonomous_clocks",
     "time_phases",
     "update_chaos_factor",
@@ -115,6 +119,12 @@ from .stance_gate import (
     NpcStance,
     compute_npc_gate,
     resolve_npc_stance,
+)
+from .succession import (
+    apply_npc_carryover,
+    build_predecessor_record,
+    run_inheritance_rolls,
+    seed_successor_legacy,
 )
 from .world import (
     advance_time,

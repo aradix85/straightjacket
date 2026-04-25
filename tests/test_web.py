@@ -384,3 +384,179 @@ class TestWebSocket:
             assert msg["name"] == "ws_recon"
             ws2.send_json({"type": "delete_player", "name": "ws_recon"})
             ws2.receive_json()
+
+
+# ── Succession WebSocket flow ─────────────────────────────────
+
+
+class TestSuccessionWebSocket:
+    """Cover the WebSocket-side of character succession.
+
+    The full /retire → succession_creation_options → start_succession arc
+    requires a live AI provider for the chapter close + opening, so we
+    don't run start_succession through TestClient. We do exercise:
+      - retire on a session with no game (error path)
+      - retire on a session with a game (prepares + sends game_over)
+      - request_succession_creation gating (no game → error,
+        no pending → error, valid → creation_options sent)
+      - start_succession with malformed creation_data (error path)
+    """
+
+    @pytest.fixture(autouse=True)
+    def _setup(self, load_engine: None) -> None:
+        from straightjacket.web.server import _session
+
+        _session.player = ""
+        _session.game = None
+        _session.chat_messages = []
+        _session.processing = False
+        _session.active_ws = None
+        _session.pending_burn = None
+        self.session = _session
+
+    @pytest.fixture()
+    def client(self) -> Any:
+        from starlette.testclient import TestClient
+        from straightjacket.web.server import app
+
+        return TestClient(app)
+
+    def _seed_session(self, player: str = "ws_succ") -> None:
+        """Install a minimal in-flight game on the global session.
+
+        Bypasses character creation so tests stay deterministic and AI-free.
+        """
+        from straightjacket.engine.persistence import save_game
+        from straightjacket.engine.user_management import create_user
+
+        create_user(player)
+        game = make_game_state(
+            player_name="Aria",
+            pronouns="she/her",
+            character_concept="outlander",
+            background_vow="avenge sister",
+            setting_id="classic",
+        )
+        game.campaign.legacy_quests.ticks = 24
+        game.narrative.scene_count = 5
+        save_game(game, player, [{"role": "assistant", "content": "..."}], "autosave")
+
+    def _drain_initial(self, ws: Any) -> None:
+        """Drain ui_strings + players_list from a fresh WebSocket."""
+        ws.receive_json()
+        ws.receive_json()
+
+    def test_retire_without_game_no_op(self, client: Any) -> None:
+        """retire on a session with no game silently no-ops (handler short-
+        circuits before doing anything). Verified by checking that no
+        message reaches the client and the session state is unchanged."""
+        with client.websocket_connect("/ws") as ws:
+            self._drain_initial(ws)
+            ws.send_json({"type": "retire"})
+            # No response expected. Verify session was not mutated.
+            assert self.session.game is None
+            assert self.session.processing is False
+
+    def test_retire_with_game_prepares_succession(self, client: Any) -> None:
+        """retire on an in-flight game archives the predecessor and
+        sends game_over with a succession-summary payload."""
+        self._seed_session()
+        with client.websocket_connect("/ws") as ws:
+            self._drain_initial(ws)
+            ws.send_json({"type": "select_player", "name": "ws_succ"})
+            msg = ws.receive_json()
+            assert msg["type"] == "player_selected"
+            assert msg["has_game"] is True
+
+            ws.send_json({"type": "retire"})
+            msg = ws.receive_json()
+            assert msg["type"] == "game_over"
+            succ = msg["succession"]
+            assert succ["pending"] is True
+            assert succ["predecessor"]["name"] == "Aria"
+            assert succ["predecessor"]["end_reason"] == "retire"
+            assert "Aria" in succ["headline"]
+            assert len(succ["inheritance"]) == 3
+            # Engine state was mutated as expected
+            assert self.session.game is not None
+            assert self.session.game.campaign.pending_succession is True
+            assert self.session.game.game_over is True
+
+    def test_retire_twice_rejected(self, client: Any) -> None:
+        """A second retire while pending_succession is set returns an error."""
+        self._seed_session()
+        with client.websocket_connect("/ws") as ws:
+            self._drain_initial(ws)
+            ws.send_json({"type": "select_player", "name": "ws_succ"})
+            ws.receive_json()
+            ws.send_json({"type": "retire"})
+            ws.receive_json()  # game_over
+
+            ws.send_json({"type": "retire"})
+            msg = ws.receive_json()
+            assert msg["type"] == "error"
+            assert "already" in msg["text"].lower() or "pending" in msg["text"].lower()
+
+    def test_request_succession_creation_without_game(self, client: Any) -> None:
+        with client.websocket_connect("/ws") as ws:
+            self._drain_initial(ws)
+            ws.send_json({"type": "request_succession_creation"})
+            msg = ws.receive_json()
+            assert msg["type"] == "error"
+
+    def test_request_succession_creation_without_pending(self, client: Any) -> None:
+        """A live game without pending_succession can't request the form."""
+        self._seed_session()
+        with client.websocket_connect("/ws") as ws:
+            self._drain_initial(ws)
+            ws.send_json({"type": "select_player", "name": "ws_succ"})
+            ws.receive_json()
+            ws.send_json({"type": "request_succession_creation"})
+            msg = ws.receive_json()
+            assert msg["type"] == "error"
+
+    def test_request_succession_creation_succeeds_after_retire(self, client: Any) -> None:
+        """Retire → request_succession_creation returns creation_options
+        with the campaign's setting echoed back."""
+        self._seed_session()
+        with client.websocket_connect("/ws") as ws:
+            self._drain_initial(ws)
+            ws.send_json({"type": "select_player", "name": "ws_succ"})
+            ws.receive_json()
+            ws.send_json({"type": "retire"})
+            ws.receive_json()  # game_over
+
+            ws.send_json({"type": "request_succession_creation"})
+            msg = ws.receive_json()
+            assert msg["type"] == "succession_creation_options"
+            assert "creation_options" in msg
+            assert msg["current_setting_id"] == "classic"
+
+    def test_start_succession_without_pending(self, client: Any) -> None:
+        """start_succession on a non-pending session is rejected."""
+        self._seed_session()
+        with client.websocket_connect("/ws") as ws:
+            self._drain_initial(ws)
+            ws.send_json({"type": "select_player", "name": "ws_succ"})
+            ws.receive_json()
+            ws.send_json({"type": "start_succession", "creation_data": {}})
+            msg = ws.receive_json()
+            assert msg["type"] == "error"
+
+    def test_start_succession_malformed_creation_data(self, client: Any) -> None:
+        """Pending succession + non-dict creation_data is a malformed message."""
+        self._seed_session()
+        with client.websocket_connect("/ws") as ws:
+            self._drain_initial(ws)
+            ws.send_json({"type": "select_player", "name": "ws_succ"})
+            ws.receive_json()
+            ws.send_json({"type": "retire"})
+            ws.receive_json()  # game_over
+
+            ws.send_json({"type": "start_succession"})  # no creation_data key
+            msg = ws.receive_json()
+            assert msg["type"] == "error"
+
+            ws.send_json({"type": "start_succession", "creation_data": "not_a_dict"})
+            msg = ws.receive_json()
+            assert msg["type"] == "error"

@@ -220,7 +220,9 @@ def build_creation_options() -> dict:
             # Paths
             paths = []
             for asset in pkg.data.paths():
-                asset_id = asset.get("_id", "").rsplit("/", 1)[-1]
+                # Datasworn schema: every asset has `_id`. Direct subscript;
+                # absence indicates malformed Datasworn JSON.
+                asset_id = asset["_id"].rsplit("/", 1)[-1]
                 paths.append({"id": asset_id, "title": extract_title(asset, asset_id)})
 
             # Truths (if setting has them)
@@ -231,14 +233,24 @@ def build_creation_options() -> dict:
                 _trunc = eng().truncations
                 for truth_id, truth_data in raw_truths.items():
                     options = []
-                    for opt in truth_data.get("options", []):
+                    # Datasworn schema: truth.options is always present.
+                    for opt in truth_data["options"]:
+                        # `description` and `quest_starter` are in every
+                        # truth-option across all three shipped settings —
+                        # required per Datasworn truth schema.
+                        # `summary` is starforged/sundered_isles-only, absent
+                        # in classic.json — external-boundary parsing of an
+                        # intrinsically per-setting field.
                         options.append(
                             {
                                 "summary": opt.get("summary", ""),
-                                "description": str(opt.get("description", ""))[: _trunc.prompt_medium],
-                                "quest_starter": str(opt.get("quest_starter", ""))[: _trunc.prompt_short],
+                                "description": str(opt["description"])[: _trunc.prompt_medium],
+                                "quest_starter": str(opt["quest_starter"])[: _trunc.prompt_short],
                             }
                         )
+                    # Truth name falls back to id when the localized display
+                    # name is absent — legitimate display-fallback (the id is
+                    # always present and human-readable enough to distinguish).
                     truths.append(
                         {
                             "id": truth_id,
@@ -264,7 +276,8 @@ def build_creation_options() -> dict:
             starting_assets = []
             for cat in flow.starting_asset_categories:
                 for asset in pkg.data.assets(cat):
-                    asset_id = asset.get("_id", "").rsplit("/", 1)[-1]
+                    # Datasworn schema: every asset has `_id`. Direct subscript.
+                    asset_id = asset["_id"].rsplit("/", 1)[-1]
                     starting_assets.append(
                         {
                             "id": asset_id,
@@ -310,6 +323,60 @@ def build_creation_options() -> dict:
             "background_vow_default_rank": _e.creation.background_vow_default_rank,
             "vow_ranks": list(_e.legacy.ticks_by_rank.keys()),
         },
+    }
+
+
+def build_succession_summary(game: GameState) -> dict:
+    """Serialise the pending succession state to a JSON-friendly dict.
+
+    Called when the client requests details on a pending character succession
+    (predecessor death/retire screen). The returned dict carries narrative
+    text only — no raw box counts, no roll dice values. The client renders
+    these strings as-is. If no succession is pending the dict has
+    pending=False and other fields blank.
+    """
+    if not game.campaign.pending_succession or not game.campaign.predecessors:
+        return {"pending": False}
+
+    record = game.campaign.predecessors[-1]
+    end_reason = record.end_reason
+    title_key = f"succession.title_{end_reason}"
+    headline_key = f"succession.headline_{end_reason}"
+
+    # Per-track narrative text. Translate roll outcome to one of three
+    # i18n keys: full / partial / lost.
+    track_lines: list[dict] = []
+    for roll in record.inheritance_rolls:
+        if roll.result == "STRONG_HIT":
+            text_key = "succession.legacy_full"
+        elif roll.result == "WEAK_HIT":
+            text_key = "succession.legacy_partial"
+        else:
+            text_key = "succession.legacy_lost"
+        track_label = t(f"succession.legacy_track_{roll.track_name}")
+        track_lines.append(
+            {
+                "track": roll.track_name,
+                "text": t(text_key, track=track_label),
+            }
+        )
+
+    return {
+        "pending": True,
+        "title": t(title_key),
+        "headline": t(headline_key, predecessor=record.player_name),
+        "predecessor": {
+            "name": record.player_name,
+            "concept": record.character_concept,
+            "history": t(
+                "succession.predecessor_history",
+                name=record.player_name,
+                chapters=record.chapters_played,
+                scenes=record.scenes_played,
+            ),
+            "end_reason": end_reason,
+        },
+        "inheritance": track_lines,
     }
 
 

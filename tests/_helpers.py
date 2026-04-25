@@ -139,3 +139,32 @@ def make_chapter_summary(**kwargs: Any) -> Any:
     kwargs.setdefault("assets", [])
     kwargs.setdefault("threads", [])
     return ChapterSummary(**kwargs)
+
+
+def make_inheritance_roll(**kwargs: Any) -> Any:
+    from straightjacket.engine.models import InheritanceRollResult
+
+    kwargs.setdefault("track_name", "quests")
+    kwargs.setdefault("predecessor_filled_boxes", 0)
+    kwargs.setdefault("result", "MISS")
+    kwargs.setdefault("fraction", 0.0)
+    kwargs.setdefault("new_filled_boxes", 0)
+    return InheritanceRollResult(**kwargs)
+
+
+def make_predecessor(**kwargs: Any) -> Any:
+    from straightjacket.engine.models import PredecessorRecord
+
+    kwargs.setdefault("player_name", "Aria")
+    kwargs.setdefault("pronouns", "she/her")
+    kwargs.setdefault("character_concept", "")
+    kwargs.setdefault("background_vow", "")
+    kwargs.setdefault("setting_id", "classic")
+    kwargs.setdefault("chapters_played", 1)
+    kwargs.setdefault("scenes_played", 1)
+    kwargs.setdefault("end_reason", "death")
+    kwargs.setdefault("legacy_quests_filled_boxes", 0)
+    kwargs.setdefault("legacy_bonds_filled_boxes", 0)
+    kwargs.setdefault("legacy_discoveries_filled_boxes", 0)
+    kwargs.setdefault("inheritance_rolls", [])
+    return PredecessorRecord(**kwargs)

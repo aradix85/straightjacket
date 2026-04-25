@@ -14,7 +14,7 @@ def _full_config_data(**overrides: object) -> dict:
     """Build a complete config-dict with sensible defaults that tests can override."""
     base = {
         "server": {"host": "127.0.0.1", "port": 8081},
-        "language": {"narration_language": "English", "default_player_name": "Unnamed"},
+        "language": {"narration_language": "English"},
         "ai": {
             "provider": "openai_compatible",
             "api_base": "",

@@ -8,7 +8,6 @@ from ..ai.metadata import process_deceased_npcs
 from ..ai.narrator import call_narrator, call_opening_setup
 from ..ai.provider_base import AIProvider
 from ..ai.validator import validate_and_retry
-from ..config_loader import default_player_name
 from ..datasworn.loader import extract_title
 from ..datasworn.settings import SettingPackage, active_package, load_package
 from ..db import sync as _db_sync
@@ -60,7 +59,14 @@ def validate_stats(stats: dict[str, int]) -> None:
 
 
 def validate_creation(creation_data: dict, pkg: object) -> None:
-    """Validate creation data against engine.yaml and setting constraints."""
+    """Validate creation data against engine.yaml and setting constraints.
+
+    Each .get(..., default) below is the validator's "field absent → skip
+    the check that depends on this field" semantics. The caller is
+    responsible for required-field presence; this function only validates
+    counts and ranges on whatever fields are present. External-boundary
+    parsing exception applies to all .get calls in this function.
+    """
     _e = eng()
 
     if not isinstance(pkg, SettingPackage):
@@ -214,21 +220,32 @@ def start_new_game(
         truths: dict[str, str]   — {truth_id: chosen_summary}
         wishes: str              — story wishes
         content_lines: str       — content exclusions
+
+    creation_data is WebSocket protocol input. Required fields are direct-
+    subscripted; absence is a client-side UI bug and raises. The fields that
+    depend on per-setting flow flags (truths, vow_subject, ranks) or are
+    always-optional preferences (wishes, content_lines) tolerate absence
+    via .get and carry the external-boundary policy comment.
     """
-    if "setting_id" not in creation_data:
-        raise ValueError("creation_data missing required key 'setting_id'")
+    # Required: setting_id, stats, player_name, pronouns, background_vow,
+    # paths, backstory. Direct-subscript; KeyError on absence is correct.
     setting_id = creation_data["setting_id"]
-    log(f"[NewGame] Starting: setting={setting_id}")
-
-    pkg = load_package(setting_id)
-
-    if "stats" not in creation_data:
-        raise ValueError("creation_data missing required key 'stats'")
     stats = creation_data["stats"]
+    player_name = creation_data["player_name"]
+    pronouns = creation_data["pronouns"]
+    background_vow = creation_data["background_vow"]
+    paths = list(creation_data["paths"])
+    backstory = creation_data["backstory"]
+
+    if not background_vow:
+        raise ValueError("creation_data['background_vow'] is empty. Opening clock requires a background vow.")
+    if not player_name:
+        raise ValueError("creation_data['player_name'] is empty.")
+
+    log(f"[NewGame] Starting: setting={setting_id}")
+    pkg = load_package(setting_id)
     validate_stats(stats)
     validate_creation(creation_data, pkg)
-
-    paths = creation_data.get("paths", [])
 
     # Build character concept from paths
     path_names = []
@@ -239,14 +256,24 @@ def start_new_game(
     concept = ", ".join(path_names) if path_names else ""
 
     _e = eng()
-    background_vow = creation_data.get("background_vow", "")
     stat_names = [n for n in _e.stats.names if n != "none"]
     stat_dict = {n: stats[n] for n in stat_names}
 
+    # Genuinely optional per setting / UI flow. External-boundary parsing
+    # exception: absent → empty/default. assets and truths depend on the
+    # setting flow flags; player_wishes/content_lines/vow subject/vow rank
+    # are UI surfaces a setting may not present.
+    assets = list(creation_data.get("assets", []))
+    truths = dict(creation_data.get("truths", {}))
+    wishes = creation_data.get("wishes", "")
+    content_lines = creation_data.get("content_lines", "")
+    vow_subject = creation_data.get("vow_subject", "")
+    background_vow_rank = creation_data.get("background_vow_rank", "")
+
     game = GameState(
-        player_name=creation_data.get("player_name", default_player_name()),
+        player_name=player_name,
         character_concept=concept,
-        pronouns=creation_data.get("pronouns", ""),
+        pronouns=pronouns,
         paths=paths,
         background_vow=background_vow,
         setting_id=setting_id,
@@ -254,32 +281,27 @@ def start_new_game(
         setting_tone="",
         setting_archetype="",
         setting_description=pkg.description,
-        backstory=creation_data.get("backstory", ""),
-        assets=creation_data.get("assets", []),
-        truths=creation_data.get("truths", {}),
+        backstory=backstory,
+        assets=assets,
+        truths=truths,
         stats=stat_dict,
     )
     # Resources seeded via Resources.from_config on GameState; chaos overridden here
     # with vow-keyword-modified start rather than the base config value.
     game.narrative.scene_count = 1
     game.world.chaos_factor = _compute_chaos_start(background_vow)
-    game.preferences.player_wishes = creation_data.get("wishes", "")
-    game.preferences.content_lines = creation_data.get("content_lines", "")
+    game.preferences.player_wishes = wishes
+    game.preferences.content_lines = content_lines
 
-    _seed_background_vow(game, background_vow, creation_data.get("background_vow_rank", ""))
+    _seed_background_vow(game, background_vow, background_vow_rank)
     _seed_truth_threads(game)
-    _seed_vow_subject(game, creation_data.get("vow_subject", ""))
+    _seed_vow_subject(game, vow_subject)
 
     # Engine-determined opening state (no AI needed)
     _opening = _e.opening
     game.world.time_of_day = _opening.time_of_day
 
     _trigger = _opening.clock_trigger_template.format(player=game.player_name)
-    if not game.background_vow:
-        raise ValueError(
-            "Opening clock requires a background vow. "
-            "Character creation must populate game.background_vow before calling new-game setup."
-        )
     game.world.clocks.append(
         ClockData(
             name=game.background_vow,

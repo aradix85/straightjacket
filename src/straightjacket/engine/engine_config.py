@@ -83,6 +83,9 @@ from .engine_config_dataclasses import (
     StoryConfig,
     StoryStateConfig,
     SufferRecoveryGain,
+    SuccessionConfig,
+    InheritanceConfig,
+    NpcCarryoverEntry,
     TfIdfConfig,
     ThreatConfig,
     TimeProgressionSteps,
@@ -163,6 +166,7 @@ class EngineSettings:
     validator: ValidatorConfig
     correction: CorrectionConfig
     chapter_validator: ChapterValidatorConfig
+    succession: SuccessionConfig
 
     # Scalar top-level fields
     scene_range_default: list[int]
@@ -214,6 +218,9 @@ class EngineSettings:
         compiled: list[tuple[Any, str]] = []
         for entry in entries:
             flags = 0
+            # Yaml-shape probing: `flags` is intrinsically optional in the
+            # {pattern, label, flags?} schema documented above. External-
+            # boundary exception under defaults_and_fallbacks rule.
             for flag_name in entry.get("flags", "").split():
                 flags |= flag_map[flag_name]
             compiled.append((re.compile(entry["pattern"], flags), entry["label"]))
@@ -465,6 +472,19 @@ def parse_engine_yaml(data: dict[str, Any]) -> EngineSettings:
     }
     narrative_direction = NarrativeDirectionConfig(intensity=nd_intensity, result_map=nd_result_map)
 
+    # succession: nested InheritanceConfig + dict of NpcCarryoverEntry per status
+    succession_raw = dict(data["succession"])
+    inheritance = _build_strict(InheritanceConfig, dict(succession_raw["inheritance"]))
+    npc_carryover = {
+        status: _build_strict(NpcCarryoverEntry, dict(entry))
+        for status, entry in succession_raw["npc_carryover"].items()
+    }
+    succession = SuccessionConfig(
+        inheritance=inheritance,
+        npc_carryover=npc_carryover,
+        retire_command=succession_raw["retire_command"],
+    )
+
     return EngineSettings(
         npc=npc,
         chaos=simple_parsed["chaos"],
@@ -529,6 +549,7 @@ def parse_engine_yaml(data: dict[str, Any]) -> EngineSettings:
         validator=simple_parsed["validator"],
         correction=simple_parsed["correction"],
         chapter_validator=simple_parsed["chapter_validator"],
+        succession=succession,
         scene_range_default=list(data["scene_range_default"]),
         death_emotions=list(data["death_emotions"]),
         creativity_seeds=list(data["creativity_seeds"]),

@@ -892,3 +892,48 @@ class ChapterValidatorConfig:
     death_keywords: list[str]
     completion_keywords: list[str]
     resolution_keywords: list[str]
+
+
+@dataclass
+class InheritanceConfig:
+    """Inheritance roll outcome fractions for character succession.
+
+    A roll_progress against each legacy track (Quests/Bonds/Discoveries) on
+    the predecessor produces STRONG_HIT / WEAK_HIT / MISS; the matching
+    fraction below is applied to the predecessor's filled_boxes to seed the
+    new character's track.
+    """
+
+    move_name: str
+    strong_hit_fraction: float
+    weak_hit_fraction: float
+    miss_fraction: float
+
+
+@dataclass
+class NpcCarryoverEntry:
+    """How a single NPC status class carries over a character succession.
+
+    keep=False prunes the NPC entirely from the new character's roster.
+    track_fraction multiplies the connection track's filled_boxes; the result
+    becomes the new track's filled_boxes (converted to ticks via the track's
+    ticks_per_mark).
+    """
+
+    keep: bool
+    track_fraction: float
+
+
+@dataclass
+class SuccessionConfig:
+    """Character succession (Continue a Legacy).
+
+    Triggered when game.game_over is True or when the player issues the
+    retire command. Both routes feed start_succession(). The predecessor is
+    archived; a new character inherits legacy progress per the inheritance
+    roll and NPCs carry over per their status.
+    """
+
+    inheritance: InheritanceConfig
+    npc_carryover: dict[str, NpcCarryoverEntry]
+    retire_command: str

@@ -6,6 +6,7 @@ EngineConfig, Resources, ClockData, ProgressTrack, WorldState, ClockEvent, Playe
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from typing import ClassVar
 
 from .engine_loader import eng
 from .logging_util import log
@@ -163,6 +164,12 @@ class ProgressTrack(SerializableMixin):
     engine.progress.max_ticks config.
     """
 
+    # Ticks per filled box. Hardcoded in the Ironsworn track design (a track is
+    # 10 boxes wide, 4 ticks fill one box). Used by filled_boxes and the
+    # ticks_for_filled_boxes inverse helper. Not configurable: the box-tick
+    # ratio defines the track shape itself, not a tunable value.
+    TICKS_PER_BOX: ClassVar[int] = 4
+
     id: str
     name: str
     track_type: str  # vow, connection, expedition, combat, custom, legacy, scene_challenge
@@ -183,7 +190,11 @@ class ProgressTrack(SerializableMixin):
 
     @property
     def filled_boxes(self) -> int:
-        return self.ticks // 4
+        return self.ticks // ProgressTrack.TICKS_PER_BOX
+
+    def ticks_for_filled_boxes(self, filled_boxes: int) -> int:
+        """Inverse of filled_boxes: clamp to max_ticks, return tick count for box count."""
+        return min(self.max_ticks, filled_boxes * ProgressTrack.TICKS_PER_BOX)
 
     def mark_progress(self) -> int:
         """Mark progress: add ticks_per_mark, clamped to max. Returns ticks added."""
@@ -249,7 +260,7 @@ class ThreatData(SerializableMixin):
 
     @property
     def menace_filled_boxes(self) -> int:
-        return self.menace_ticks // 4
+        return self.menace_ticks // ProgressTrack.TICKS_PER_BOX
 
     def advance_menace(self, marks: int = 1) -> int:
         """Advance menace track. Returns ticks added."""

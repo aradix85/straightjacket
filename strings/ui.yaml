@@ -43,9 +43,13 @@ ui.complete_title: The story has reached its conclusion
 ui.complete_text: You can keep playing or wrap up this chapter with an epilogue.
 ui.keep_playing: Keep Playing
 ui.generate_epilogue: Generate Epilogue
-ui.gameover_title: Adventure Over.
-ui.new_chapter: New Chapter
 ui.start_over: Start Over
+ui.retire: Retire Character
+ui.retire_confirm: Are you sure? Your character steps out of the story and a new protagonist takes over. This cannot be undone.
+ui.continue_legacy: Continue the Legacy
+ui.predecessor_label: 'Previous protagonist:'
+ui.inheritance_label: 'What carries forward:'
+ui.create_successor: Create your successor
 ui.retry: Retry
 ui.retry_text: Last input wasn't processed
 ui.session_taken: Session taken over in another window.

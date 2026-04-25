@@ -9,7 +9,7 @@ Implementation split across:
 - models_npc.py: MemoryEntry, NpcData
 - models_story.py: ThreadEntry, CharacterListEntry, SceneLogEntry, NarrationEntry, StoryAct, CurrentAct,
                     Revelation, PossibleEnding, StoryBlueprint, DirectorGuidance, NarrativeState,
-                    NpcEvolution, ChapterSummary, CampaignState
+                    NpcEvolution, ChapterSummary, InheritanceRollResult, PredecessorRecord, CampaignState
 
 This file defines: RollResult, BrainResult, TurnSnapshot, GameState (top-level composites).
 """
@@ -44,10 +44,12 @@ from .models_story import (  # noqa: F401
     ChapterSummary,
     CurrentAct,
     DirectorGuidance,
+    InheritanceRollResult,
     NarrationEntry,
     NarrativeState,
     NpcEvolution,
     PossibleEnding,
+    PredecessorRecord,
     Revelation,
     SceneLogEntry,
     StoryAct,

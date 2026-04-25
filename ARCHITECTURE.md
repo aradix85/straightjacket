@@ -68,6 +68,7 @@ Where to find things. If you want to change X, edit Y.
 | Correction (## undo) flow | `correction/` (package: `analysis.py` brain call, `ops.py` atomic state patches, `orchestrator.py` snapshot restore + re-narrate) |
 | Momentum burn re-narration | `game/momentum_burn.py` → `process_momentum_burn` |
 | Chapter transition (close, reset, restore) | `game/chapters.py` → `_close_previous_chapter`, `_reset_chapter_mechanics`, `_restore_chapter_mechanics`; narrative summary via `ai/architect.py` → `call_chapter_summary` |
+| Character succession (death/despair/retire → new protagonist) | `game/succession.py` → `prepare_succession`, `start_succession_with_character`, `determine_end_reason`; `mechanics/succession.py` → `build_predecessor_record`, `run_inheritance_rolls`, `seed_successor_legacy`, `apply_npc_carryover`; config in `engine/succession.yaml`; `CampaignState.predecessors`, `pending_succession` |
 | Save format | `models.py` → SerializableMixin on each dataclass (no manual `to_dict`/`from_dict`) |
 | User/save directory management | `user_management.py` → `create_user`, `get_save_dir`, `_safe_name` |
 | WebSocket protocol / UI | `web/handlers.py`, `web/static/index.html` |
@@ -186,7 +187,8 @@ src/straightjacket/
 │   │   ├── scene.py            # Scene structure: chaos check, altered/interrupt scenes
 │   │   ├── threats.py          # Threat menace advancement, autonomous ticks, Forsake Your Vow
 │   │   ├── impacts.py          # Impact apply/clear, max_momentum recalc, recovery blocking
-│   │   └── legacy.py           # Legacy tracks (quests/bonds/discoveries), XP, asset advancement
+│   │   ├── legacy.py           # Legacy tracks (quests/bonds/discoveries), XP, asset advancement
+│   │   └── succession.py       # Inheritance rolls, NPC carryover (per status), legacy seeding
 │   ├── parser.py            # Narrator output cleanup (10 regex steps)
 │   ├── correction/          # ## correction subpackage
 │   │   ├── __init__.py      # Re-exports process_correction, call_correction_brain, _apply_correction_ops
@@ -238,6 +240,7 @@ src/straightjacket/
 │   │   ├── momentum_burn.py # Momentum burn re-narration pipeline
 │   │   ├── game_start.py    # Character creation → opening scene
 │   │   ├── chapters.py      # Epilogue, new chapter orchestration
+│   │   ├── succession.py    # Continue a Legacy: prepare/start succession, predecessor archive, character replacement
 │   │   ├── setup_common.py  # Shared opening setup logic
 │   │   ├── finalization.py  # Shared pre- and post-narration: outcome resolution, crisis, memories, metadata
 │   │   └── director_runner.py # Deferred Director call
@@ -284,6 +287,8 @@ src/straightjacket/
 **Chapter transitions are explicit snapshot+restore.** `_close_previous_chapter` builds a `ChapterSummary` containing both AI-written narrative fields and an engine-captured mechanical snapshot (progress_tracks, threats, impacts, assets, narrative.threads). `_reset_chapter_mechanics` zeros every chapter-spanning field, then `_restore_chapter_mechanics` replays the snapshot onto the live game state. Net effect on the running game is unchanged from the previous implicit carry-over, but the chapter-end state is now an auditable record in `campaign_history`, and adding a new chapter-spanning field requires touching three named places (capture, reset, restore) instead of "remember not to add it to the reset list". xp and legacy live on `CampaignState` and carry over campaign-wide; they are not in `ChapterSummary`. NPC list and NPC connection tracks carry via `game.npcs` (not reset by `_reset_chapter_mechanics`) and are handled separately by `_prepare_npcs_for_new_chapter`.
 
 **Chapter summary contradiction validator.** Between `call_chapter_summary` and the snapshot fusion, the AI-written narrative dict passes through `validate_chapter_summary` in `ai/chapter_validator.py`. Two passes: a deterministic rule pass scans named entities (NPCs, tracks, threats) paired with status-shift keywords (death, completion, resolution) — a contradiction is logged when an entity's narrative claim disagrees with its engine status. An LLM pass on the analytical cluster catches euphemisms the keyword pass misses. Both passes feed one retry loop: violation → re-call `call_chapter_summary` with the correction passed through `epilogue_text` (the only free-text channel the call already accepts) up to `chapter_validator.max_retries`. Exhausted retries keep the last narrative with a warning logged — graceful degradation, the chapter still closes. Invented colour (entities not in state) is unconstrained by design: the engine only owns what it tracks. The validator runs against the AI dict before fusion so a cleaned narrative is what enters `campaign_history`.
+
+**Character succession.** When the protagonist dies (face_death MISS, or both health and spirit reach zero) or is explicitly retired by the player, the campaign continues with a new protagonist in the same world. Two-step lifecycle gated by `CampaignState.pending_succession`: `prepare_succession` archives the predecessor into `campaign.predecessors` and locks in the inheritance rolls onto that record (so reload can't reroll); `start_succession_with_character` reads the locked-in rolls, closes the predecessor's chapter via the same `_close_previous_chapter` used for chapter transitions, applies NPC carryover (active full / background half / lore half / deceased pruned per `succession.yaml`), wipes PC-specific state via `_reset_for_successor` while keeping world-level threats and unresolved threads (vow-typed and creation-sourced threads drop), seeds the successor's legacy from the rolls, replaces character identity, generates an opening narration, and clears the pending flag. The two-step shape is mandatory for save-resilience: locking the rolls at archive time rather than at character-replacement time is what makes the inheritance deterministic across reload. Unknown roll outcomes and unknown NPC statuses both raise — there is no carryover for state the engine doesn't recognise.
 
 **Provider abstraction.** `AIProvider` protocol with two implementations (Anthropic, OpenAI-compatible). The engine never imports provider SDKs directly. `create_with_retry` handles transient errors with exponential backoff. Multi-model: config.yaml assigns models via four clusters — narrator (Qwen 3 for prose), creative (GPT-OSS for architect, director), classification (GPT-OSS for brain, correction), analytical (GPT-OSS for validator, metadata, recap, and other structured output roles). Clusters are the single source of truth for all call parameters. `model_for_role(role)` resolves the model; `sampling_params(role)` resolves temperature, top_p, max_tokens, max_retries, and extra_body. The provider stores no model state.
 
