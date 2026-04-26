@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import random
 from typing import Any
 
@@ -92,79 +93,44 @@ def test_run_inheritance_rolls_uses_predecessor_filled_boxes(aria: GameState) ->
     assert by_name["discoveries"].predecessor_filled_boxes == 4
 
 
-def test_run_inheritance_rolls_strong_hit_keeps_full_value() -> None:
+@pytest.mark.parametrize(
+    "ticks, dice_values, expected_result, expected_fraction, expected_new_filled",
+    [
+        (32, [1], "STRONG_HIT", 1.0, 8),
+        (8, [10], "MISS", 0.0, 0),
+        (24, [4, 8], "WEAK_HIT", 0.5, 3),
+    ],
+)
+def test_run_inheritance_rolls_outcomes(
+    ticks: int,
+    dice_values: list[int],
+    expected_result: str,
+    expected_fraction: float,
+    expected_new_filled: int,
+) -> None:
     g = make_game_state()
-    g.campaign.legacy_quests.ticks = 32
+    g.campaign.legacy_quests.ticks = ticks
     random.seed(0)
 
     import straightjacket.engine.mechanics.consequences as cons_mod
 
     class _Dice:
-        def __init__(self) -> None:
-            self.calls = 0
-
-        def randint(self, a: int, b: int) -> int:
-            self.calls += 1
-            return 1
-
-    dice = _Dice()
-    real = cons_mod.random
-    cons_mod.random = dice
-    try:
-        rolls = run_inheritance_rolls(g)
-    finally:
-        cons_mod.random = real
-    quests = next(r for r in rolls if r.track_name == "quests")
-    assert quests.result == "STRONG_HIT"
-    assert quests.fraction == 1.0
-    assert quests.new_filled_boxes == 8
-
-
-def test_run_inheritance_rolls_miss_loses_everything() -> None:
-    g = make_game_state()
-    g.campaign.legacy_quests.ticks = 8
-
-    import straightjacket.engine.mechanics.consequences as cons_mod
-
-    class _Dice:
-        def randint(self, a: int, b: int) -> int:
-            return 10
-
-    real = cons_mod.random
-    cons_mod.random = _Dice()
-    try:
-        rolls = run_inheritance_rolls(g)
-    finally:
-        cons_mod.random = real
-    quests = next(r for r in rolls if r.track_name == "quests")
-    assert quests.result == "MISS"
-    assert quests.fraction == 0.0
-    assert quests.new_filled_boxes == 0
-
-
-def test_run_inheritance_rolls_weak_hit_halves() -> None:
-    g = make_game_state()
-    g.campaign.legacy_quests.ticks = 24
-
-    import straightjacket.engine.mechanics.consequences as cons_mod
-
-    class _Dice:
-        def __init__(self) -> None:
-            self.values = iter([4, 8] * 10)
+        def __init__(self, values: list[int]) -> None:
+            self.values = iter(values * 20)
 
         def randint(self, a: int, b: int) -> int:
             return next(self.values)
 
     real = cons_mod.random
-    cons_mod.random = _Dice()
+    cons_mod.random = _Dice(dice_values)
     try:
         rolls = run_inheritance_rolls(g)
     finally:
         cons_mod.random = real
     quests = next(r for r in rolls if r.track_name == "quests")
-    assert quests.result == "WEAK_HIT"
-    assert quests.fraction == 0.5
-    assert quests.new_filled_boxes == 3
+    assert quests.result == expected_result
+    assert quests.fraction == expected_fraction
+    assert quests.new_filled_boxes == expected_new_filled
 
 
 def test_seed_successor_legacy_overwrites_tracks(aria: GameState) -> None:
@@ -203,31 +169,22 @@ def test_seed_successor_legacy_preserves_xp(aria: GameState) -> None:
     assert aria.campaign.xp_spent == 4
 
 
-def test_carryover_active_npc_full_track() -> None:
-    npc = make_npc(id="npc_1", name="Mira", status="active")
-    track = make_progress_track(id="connection_npc_1", name="Mira", track_type="connection", rank="dangerous", ticks=24)
-    kept_npcs, kept_tracks = apply_npc_carryover([npc], [track])
-    assert len(kept_npcs) == 1 and kept_npcs[0].id == "npc_1"
-    assert len(kept_tracks) == 1
-    assert kept_tracks[0].filled_boxes == 6
-
-
-def test_carryover_background_npc_halves_track() -> None:
-    npc = make_npc(id="npc_2", name="Talo", status="background")
-    track = make_progress_track(id="connection_npc_2", name="Talo", track_type="connection", rank="dangerous", ticks=24)
-    kept_npcs, kept_tracks = apply_npc_carryover([npc], [track])
-    assert len(kept_npcs) == 1
-    assert kept_tracks[0].filled_boxes == 3
-
-
-def test_carryover_lore_npc_halves_track() -> None:
-    npc = make_npc(id="npc_3", name="Arenmar the Lost", status="lore")
+@pytest.mark.parametrize(
+    "status, ticks, expected_filled_boxes",
+    [
+        ("active", 24, 6),
+        ("background", 24, 3),
+        ("lore", 20, 2),
+    ],
+)
+def test_carryover_track_filled_boxes_per_status(status: str, ticks: int, expected_filled_boxes: int) -> None:
+    npc = make_npc(id="npc_1", name="NPC", status=status)
     track = make_progress_track(
-        id="connection_npc_3", name="Arenmar", track_type="connection", rank="dangerous", ticks=20
+        id="connection_npc_1", name="NPC", track_type="connection", rank="dangerous", ticks=ticks
     )
     kept_npcs, kept_tracks = apply_npc_carryover([npc], [track])
     assert len(kept_npcs) == 1
-    assert kept_tracks[0].filled_boxes == 2
+    assert kept_tracks[0].filled_boxes == expected_filled_boxes
 
 
 def test_carryover_deceased_npc_pruned_entirely() -> None:
@@ -309,32 +266,20 @@ def test_prepare_succession_accepts_each_known_reason(aria: GameState) -> None:
         assert record.end_reason == reason
 
 
-def test_determine_end_reason_health_zero_only() -> None:
+@pytest.mark.parametrize(
+    "health, spirit, expected_reason",
+    [
+        (0, 3, "death"),
+        (3, 0, "despair"),
+        (0, 0, "death"),
+        (3, 3, "death"),
+    ],
+)
+def test_determine_end_reason(health: int, spirit: int, expected_reason: str) -> None:
     g = make_game_state()
-    g.resources.health = 0
-    g.resources.spirit = 3
-    assert determine_end_reason(g) == "death"
-
-
-def test_determine_end_reason_spirit_zero_only() -> None:
-    g = make_game_state()
-    g.resources.health = 3
-    g.resources.spirit = 0
-    assert determine_end_reason(g) == "despair"
-
-
-def test_determine_end_reason_both_zero() -> None:
-    g = make_game_state()
-    g.resources.health = 0
-    g.resources.spirit = 0
-    assert determine_end_reason(g) == "death"
-
-
-def test_determine_end_reason_face_death_path() -> None:
-    g = make_game_state()
-    g.resources.health = 3
-    g.resources.spirit = 3
-    assert determine_end_reason(g) == "death"
+    g.resources.health = health
+    g.resources.spirit = spirit
+    assert determine_end_reason(g) == expected_reason
 
 
 def test_pending_succession_round_trips_through_campaign_snapshot(aria: GameState) -> None:
@@ -417,31 +362,19 @@ def test_replace_character_identity_strict_required_fields(aria: GameState) -> N
             _replace_character_identity(aria, creation_data)
 
 
-def test_replace_character_identity_empty_background_vow_raises(aria: GameState) -> None:
+@pytest.mark.parametrize("empty_field", ["background_vow", "player_name"])
+def test_replace_character_identity_empty_field_raises(aria: GameState, empty_field: str) -> None:
     creation_data = {
         "setting_id": "classic",
         "stats": {"edge": 3, "heart": 2, "iron": 2, "shadow": 1, "wits": 1},
         "player_name": "Bryn",
         "pronouns": "they/them",
-        "background_vow": "",
-        "paths": [],
-        "backstory": "",
-    }
-    with pytest.raises(ValueError, match="background_vow"):
-        _replace_character_identity(aria, creation_data)
-
-
-def test_replace_character_identity_empty_player_name_raises(aria: GameState) -> None:
-    creation_data = {
-        "setting_id": "classic",
-        "stats": {"edge": 3, "heart": 2, "iron": 2, "shadow": 1, "wits": 1},
-        "player_name": "",
-        "pronouns": "they/them",
         "background_vow": "find truth",
         "paths": [],
         "backstory": "",
     }
-    with pytest.raises(ValueError, match="player_name"):
+    creation_data[empty_field] = ""
+    with pytest.raises(ValueError, match=empty_field):
         _replace_character_identity(aria, creation_data)
 
 
@@ -502,3 +435,168 @@ def test_succession_summary_renders_narrative_text(aria: GameState) -> None:
     assert "live on in full" in inh["quests"]
     assert "carry forward in part" in inh["bonds"]
     assert "fade" in inh["discoveries"]
+
+
+class _SuccessionMockProvider:
+    def __init__(self, narration: str = "Successor's first scene.") -> None:
+        self.narration = narration
+
+    def create_message(self, **kwargs: object) -> object:
+        from tests._mocks import MockResponse
+
+        json_schema = kwargs.get("json_schema")
+        if not json_schema:
+            return MockResponse(self.narration)
+
+        props = set(json_schema.get("properties", {}).keys())
+
+        if "central_conflict" in props:
+            return MockResponse(
+                json.dumps(
+                    {
+                        "central_conflict": "Continue the legacy",
+                        "antagonist_force": "Old foe",
+                        "thematic_thread": "inheritance",
+                        "acts": [
+                            {"phase": "setup", "title": "Begin", "goal": "g", "mood": "tense", "scene_range": [1, 5]}
+                        ],
+                        "revelations": [],
+                        "possible_endings": [],
+                    }
+                )
+            )
+        if "fixed_conflict" in props:
+            return MockResponse(
+                json.dumps({"pass": True, "violations": [], "fixed_conflict": "", "fixed_antagonist": ""})
+            )
+        if "pass" in props and "violations" in props:
+            return MockResponse(json.dumps({"pass": True, "violations": [], "correction": ""}))
+        if "title" in props and "summary" in props and "unresolved_threads" in props:
+            return MockResponse(
+                json.dumps(
+                    {
+                        "title": "Last Chapter",
+                        "summary": "End of Aria's journey",
+                        "unresolved_threads": ["the relic"],
+                        "character_growth": "endured",
+                        "npc_evolutions": [],
+                        "thematic_question": "?",
+                        "post_story_location": "Memorial",
+                    }
+                )
+            )
+        if "npcs" in props and "clocks" in props:
+            return MockResponse(
+                json.dumps(
+                    {
+                        "npcs": [],
+                        "clocks": [],
+                        "location": "Memorial",
+                        "scene_context": "A new dawn",
+                        "time_of_day": "morning",
+                        "memory_updates": [],
+                        "deceased_npcs": [],
+                    }
+                )
+            )
+        if "new_npcs" in props:
+            return MockResponse(
+                json.dumps(
+                    {
+                        "new_npcs": [],
+                        "npc_renames": [],
+                        "npc_details": [],
+                        "deceased_npcs": [],
+                        "lore_npcs": [],
+                    }
+                )
+            )
+        return MockResponse("{}")
+
+
+def _successor_creation_data() -> dict:
+    return {
+        "setting_id": "classic",
+        "stats": {"edge": 3, "heart": 2, "iron": 2, "shadow": 1, "wits": 1},
+        "player_name": "Bryn",
+        "pronouns": "they/them",
+        "background_vow": "carry on the work",
+        "paths": [],
+        "backstory": "",
+    }
+
+
+def test_start_succession_with_character_happy_path(aria: GameState) -> None:
+    from straightjacket.engine.db.connection import close_db, reset_db
+
+    aria.world.current_location = "Tavern"
+    prepare_succession(aria, "death")
+
+    reset_db()
+    provider = _SuccessionMockProvider("The successor steps forward.")
+    try:
+        game, narration = start_succession_with_character(provider, aria, _successor_creation_data())
+    finally:
+        close_db()
+
+    assert game.player_name == "Bryn"
+    assert "successor" in narration.lower()
+    assert game.campaign.pending_succession is False
+
+
+def test_start_succession_resets_resources(aria: GameState) -> None:
+    from straightjacket.engine.db.connection import close_db, reset_db
+    from straightjacket.engine.engine_loader import eng
+
+    aria.resources.health = 0
+    aria.resources.spirit = 0
+    aria.world.current_location = "Tavern"
+    prepare_succession(aria, "death")
+
+    reset_db()
+    provider = _SuccessionMockProvider()
+    try:
+        game, _ = start_succession_with_character(provider, aria, _successor_creation_data())
+    finally:
+        close_db()
+
+    assert game.resources.health == eng().resources.health_start
+    assert game.resources.spirit == eng().resources.spirit_start
+
+
+def test_start_succession_seeds_legacy_from_predecessor(aria: GameState) -> None:
+    from straightjacket.engine.db.connection import close_db, reset_db
+
+    aria.world.current_location = "Tavern"
+    prepare_succession(aria, "death")
+
+    reset_db()
+    provider = _SuccessionMockProvider()
+    try:
+        game, _ = start_succession_with_character(provider, aria, _successor_creation_data())
+    finally:
+        close_db()
+
+    quest_filled = game.campaign.legacy_quests.filled_boxes
+    bond_filled = game.campaign.legacy_bonds.filled_boxes
+    disc_filled = game.campaign.legacy_discoveries.filled_boxes
+    assert quest_filled >= 0
+    assert bond_filled >= 0
+    assert disc_filled >= 0
+
+
+def test_start_succession_records_session_log(aria: GameState) -> None:
+    from straightjacket.engine.db.connection import close_db, reset_db
+
+    aria.world.current_location = "Tavern"
+    prepare_succession(aria, "death")
+
+    reset_db()
+    provider = _SuccessionMockProvider()
+    try:
+        game, _ = start_succession_with_character(provider, aria, _successor_creation_data())
+    finally:
+        close_db()
+
+    assert len(game.narrative.session_log) == 1
+    assert game.narrative.session_log[0].result == "opening"

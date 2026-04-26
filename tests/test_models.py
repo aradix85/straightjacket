@@ -245,3 +245,27 @@ def test_progress_tracks_snapshot_restore() -> None:
     assert game.progress_tracks[0].name == "Vow"
     assert game.progress_tracks[1].status == "active"
     assert game.progress_tracks[1].ticks == 0
+
+
+def test_combat_position_default_empty() -> None:
+    assert make_game_state().world.combat_position == ""
+
+
+def test_combat_position_serializes() -> None:
+    g = make_game_state()
+    g.world.combat_position = "in_control"
+    assert g.world.to_dict()["combat_position"] == "in_control"
+
+
+def test_combat_position_deserializes() -> None:
+    from straightjacket.engine.models_base import WorldState
+
+    assert WorldState.from_dict({"combat_position": "bad_spot", "chaos_factor": 5}).combat_position == "bad_spot"
+
+
+def test_combat_position_snapshot_restore() -> None:
+    g = make_game_state()
+    g.world.combat_position = "in_control"
+    snap = g.snapshot()
+    g.world.combat_position = "bad_spot"
+    assert snap.world["combat_position"] == "in_control"

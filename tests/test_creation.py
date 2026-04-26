@@ -1,43 +1,7 @@
 import pytest
 
 
-from straightjacket.engine.engine_loader import eng
-from tests._helpers import make_game_state, make_progress_track
-
-
-def test_progress_track_ticks_per_mark() -> None:
-    expected_table = eng().progress.track_types["default"].ticks_per_mark
-    for rank, expected in expected_table.items():
-        t = make_progress_track(rank=rank)
-        assert t.ticks_per_mark == expected
-
-
-def test_progress_track_mark_progress_troublesome() -> None:
-    t = make_progress_track(rank="troublesome", ticks=0)
-    added = t.mark_progress()
-    assert added == 12
-    assert t.ticks == 12
-    assert t.filled_boxes == 3
-
-
-def test_progress_track_mark_progress_epic() -> None:
-    t = make_progress_track(rank="epic", ticks=0)
-    added = t.mark_progress()
-    assert added == 1
-    assert t.ticks == 1
-    assert t.filled_boxes == 0
-
-
-def test_progress_track_mark_progress_clamps_at_max() -> None:
-    t = make_progress_track(rank="troublesome", ticks=36)
-    added = t.mark_progress()
-    assert t.ticks == 40
-    assert added == 4
-
-
-def test_progress_track_filled_boxes() -> None:
-    t = make_progress_track(ticks=17)
-    assert t.filled_boxes == 4
+from tests._helpers import make_game_state
 
 
 @pytest.mark.parametrize(
@@ -116,35 +80,25 @@ def test_seed_background_vow_empty_skips(load_engine: None) -> None:
     assert len(game.narrative.threads) == 0
 
 
-def test_setting_creation_flow_starforged() -> None:
+@pytest.mark.parametrize(
+    "setting, expected_flags",
+    [
+        (
+            "starforged",
+            {"has_truths": True, "has_backstory_oracle": True, "has_name_tables": True, "has_ship_creation": False},
+        ),
+        ("classic", {"has_truths": True, "has_backstory_oracle": False}),
+        ("sundered_isles", {"has_ship_creation": True}),
+    ],
+)
+def test_setting_creation_flow(setting: str, expected_flags: dict) -> None:
     from straightjacket.engine.datasworn.settings import clear_cache, load_package
 
     clear_cache()
-    pkg = load_package("starforged")
+    pkg = load_package(setting)
     flow = pkg.creation_flow
-    assert flow.has_truths is True
-    assert flow.has_backstory_oracle is True
-    assert flow.has_name_tables is True
-    assert flow.has_ship_creation is False
-
-
-def test_setting_creation_flow_classic() -> None:
-    from straightjacket.engine.datasworn.settings import clear_cache, load_package
-
-    clear_cache()
-    pkg = load_package("classic")
-    flow = pkg.creation_flow
-    assert flow.has_truths is True
-    assert flow.has_backstory_oracle is False
-
-
-def test_setting_creation_flow_sundered_isles() -> None:
-    from straightjacket.engine.datasworn.settings import clear_cache, load_package
-
-    clear_cache()
-    pkg = load_package("sundered_isles")
-    flow = pkg.creation_flow
-    assert flow.has_ship_creation is True
+    for flag, expected in expected_flags.items():
+        assert getattr(flow, flag) is expected
 
 
 def test_build_creation_options_has_stat_constraints(load_engine: None) -> None:
@@ -284,34 +238,24 @@ def test_truths_block_empty() -> None:
     assert truths_block(game) == ""
 
 
-def test_validate_creation_too_many_paths(load_engine: None) -> None:
+@pytest.mark.parametrize(
+    "setting, payload, error_match",
+    [
+        ("starforged", {"paths": ["a", "b", "c"]}, "Too many paths"),
+        ("starforged", {"assets": ["a", "b"]}, "Too many starting assets"),
+        ("delve", {"truths": {"x": "y"}}, "does not support truths"),
+        ("starforged", {"paths": ["alchemist"]}, "not found in setting"),
+        ("starforged", {"background_vow_rank": "legendary"}, "Invalid vow rank"),
+    ],
+)
+def test_validate_creation_rejects_invalid(load_engine: None, setting: str, payload: dict, error_match: str) -> None:
     from straightjacket.engine.datasworn.settings import clear_cache, load_package
     from straightjacket.engine.game.game_start import validate_creation
 
     clear_cache()
-    pkg = load_package("starforged")
-    with pytest.raises(ValueError, match="Too many paths"):
-        validate_creation({"paths": ["a", "b", "c"]}, pkg)
-
-
-def test_validate_creation_too_many_assets(load_engine: None) -> None:
-    from straightjacket.engine.datasworn.settings import clear_cache, load_package
-    from straightjacket.engine.game.game_start import validate_creation
-
-    clear_cache()
-    pkg = load_package("starforged")
-    with pytest.raises(ValueError, match="Too many starting assets"):
-        validate_creation({"assets": ["a", "b"]}, pkg)
-
-
-def test_validate_creation_truths_wrong_setting(load_engine: None) -> None:
-    from straightjacket.engine.datasworn.settings import clear_cache, load_package
-    from straightjacket.engine.game.game_start import validate_creation
-
-    clear_cache()
-    pkg = load_package("delve")
-    with pytest.raises(ValueError, match="does not support truths"):
-        validate_creation({"truths": {"x": "y"}}, pkg)
+    pkg = load_package(setting)
+    with pytest.raises(ValueError, match=error_match):
+        validate_creation(payload, pkg)
 
 
 def test_validate_creation_valid_passes(load_engine: None) -> None:
@@ -321,26 +265,6 @@ def test_validate_creation_valid_passes(load_engine: None) -> None:
     clear_cache()
     pkg = load_package("starforged")
     validate_creation({"paths": ["ace", "explorer"], "assets": [], "truths": {"x": "y"}}, pkg)
-
-
-def test_validate_creation_path_not_in_setting(load_engine: None) -> None:
-    from straightjacket.engine.datasworn.settings import clear_cache, load_package
-    from straightjacket.engine.game.game_start import validate_creation
-
-    clear_cache()
-    pkg = load_package("starforged")
-    with pytest.raises(ValueError, match="not found in setting"):
-        validate_creation({"paths": ["alchemist"]}, pkg)
-
-
-def test_validate_creation_invalid_vow_rank(load_engine: None) -> None:
-    from straightjacket.engine.datasworn.settings import clear_cache, load_package
-    from straightjacket.engine.game.game_start import validate_creation
-
-    clear_cache()
-    pkg = load_package("starforged")
-    with pytest.raises(ValueError, match="Invalid vow rank"):
-        validate_creation({"background_vow_rank": "legendary"}, pkg)
 
 
 def test_validate_creation_valid_vow_rank_passes(load_engine: None) -> None:

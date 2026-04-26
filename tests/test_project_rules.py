@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 SRC_ROOT = Path(__file__).resolve().parent.parent / "src" / "straightjacket"
+TESTS_ROOT = Path(__file__).resolve().parent
 
 
 _AI_CALL_CARVE_OUT_FILES = {
@@ -28,6 +29,35 @@ _AI_CALL_CARVE_OUT_FILES = {
 }
 
 
+_AI_CALL_CARVE_OUT_TESTS = {
+    "test_integration.py",
+    "model_eval/eval.py",
+    "elvira/elvira_batch.py",
+    "elvira/elvira_bot/creation.py",
+    "elvira/elvira_bot/runner.py",
+    "elvira/elvira_bot/drift_checks.py",
+    "elvira/elvira_bot/invariants.py",
+    "elvira/elvira_bot/ws_runner.py",
+}
+
+
+_HARDCODED_MODEL_NAME_TEST_WHITELIST = {
+    "test_config_loader.py",
+    "test_project_rules.py",
+    "model_eval/eval.py",
+}
+
+
+_COMPLEXITY_TEST_WHITELIST = {
+    ("model_eval/eval.py", "eval_narrator"),
+    ("model_eval/eval.py", "run_role"),
+    ("elvira/elvira_batch.py", "build_report"),
+    ("elvira/elvira_bot/runner.py", "run_session"),
+    ("elvira/elvira_bot/models.py", "to_compact_dict"),
+    ("elvira/elvira_bot/ws_runner.py", "run_ws_session"),
+}
+
+
 @dataclass(frozen=True)
 class Violation:
     file: str
@@ -42,12 +72,35 @@ def _iter_source_files() -> Iterator[Path]:
     yield from SRC_ROOT.rglob("*.py")
 
 
+def _iter_test_files() -> Iterator[Path]:
+    for p in TESTS_ROOT.rglob("*.py"):
+        if p.name == "__init__.py":
+            continue
+        yield p
+
+
 def _rel(path: Path) -> str:
     return path.relative_to(SRC_ROOT).as_posix()
 
 
-def _read_lines(path: Path) -> list[str]:
-    return path.read_text(encoding="utf-8").splitlines()
+def _rel_test(path: Path) -> str:
+    return path.relative_to(TESTS_ROOT).as_posix()
+
+
+_FILE_CACHE: dict[Path, tuple[str, list[str], ast.AST, dict[int, ast.AST]]] = {}
+
+
+def _load(path: Path) -> tuple[str, list[str], ast.AST, dict[int, ast.AST]]:
+    cached = _FILE_CACHE.get(path)
+    if cached is not None:
+        return cached
+    text = path.read_text(encoding="utf-8")
+    lines = text.splitlines()
+    tree = ast.parse(text, filename=str(path))
+    parents = _build_parent_map(tree)
+    cached = (text, lines, tree, parents)
+    _FILE_CACHE[path] = cached
+    return cached
 
 
 def _format_report(category: str, violations: list[Violation]) -> str:
@@ -147,65 +200,74 @@ def _is_neutral_default(node: ast.expr) -> bool:
     return bool(isinstance(node, ast.Set) and not node.elts)
 
 
-def test_no_domain_default_in_dict_get() -> None:
+def _run_scan_src_and_tests(scan_fn, *args) -> list[Violation]:
     violations: list[Violation] = []
     for path in _iter_source_files():
-        tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
-        parents = _build_parent_map(tree)
-        lines = _read_lines(path)
-
-        for node in ast.walk(tree):
-            if not isinstance(node, ast.Call):
-                continue
-            func = node.func
-            if not (isinstance(func, ast.Attribute) and func.attr == "get"):
-                continue
-            if len(node.args) != 2:
-                continue
-            key_arg = node.args[0]
-            if not (isinstance(key_arg, ast.Constant) and isinstance(key_arg.value, str)):
-                continue
-            default_arg = node.args[1]
-            if _is_neutral_default(default_arg):
-                continue
-            if not isinstance(default_arg, ast.Constant):
-                continue
-            if _inside_fstring_or_logcall(node, parents):
-                continue
-            snippet = lines[node.lineno - 1].strip() if node.lineno <= len(lines) else ""
-            violations.append(Violation(_rel(path), node.lineno, snippet))
-
-    assert not violations, "\n" + _format_report("DOMAIN DEFAULT in .get()", violations)
+        violations.extend(scan_fn(path, _rel(path), *args))
+    for path in _iter_test_files():
+        violations.extend(scan_fn(path, _rel_test(path), *args))
+    return violations
 
 
-def test_no_or_literal_fallback_on_lookups() -> None:
+def _check_no_domain_default_in_dict_get() -> tuple[str, list[Violation]]:
+    return "DOMAIN DEFAULT in .get()", _run_scan_src_and_tests(_scan_dict_get)
+
+
+def _scan_dict_get(path: Path, rel: str) -> list[Violation]:
     violations: list[Violation] = []
-    for path in _iter_source_files():
-        tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
-        parents = _build_parent_map(tree)
-        lines = _read_lines(path)
+    _, lines, tree, parents = _load(path)
 
-        for node in ast.walk(tree):
-            if not (isinstance(node, ast.BoolOp) and isinstance(node.op, ast.Or)):
-                continue
-            if len(node.values) != 2:
-                continue
-            left, right = node.values
-            if not isinstance(left, ast.Call | ast.Subscript | ast.Attribute):
-                continue
-            if not isinstance(right, ast.Constant):
-                continue
-            val = right.value
-            if val in _NEUTRAL_CONSTANTS:
-                continue
-            if isinstance(val, int | float) and _inside_arithmetic(node, parents):
-                continue
-            if _inside_fstring_or_logcall(node, parents):
-                continue
-            snippet = lines[node.lineno - 1].strip() if node.lineno <= len(lines) else ""
-            violations.append(Violation(_rel(path), node.lineno, snippet))
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Call):
+            continue
+        func = node.func
+        if not (isinstance(func, ast.Attribute) and func.attr == "get"):
+            continue
+        if len(node.args) != 2:
+            continue
+        key_arg = node.args[0]
+        if not (isinstance(key_arg, ast.Constant) and isinstance(key_arg.value, str)):
+            continue
+        default_arg = node.args[1]
+        if _is_neutral_default(default_arg):
+            continue
+        if not isinstance(default_arg, ast.Constant):
+            continue
+        if _inside_fstring_or_logcall(node, parents):
+            continue
+        snippet = lines[node.lineno - 1].strip() if node.lineno <= len(lines) else ""
+        violations.append(Violation(rel, node.lineno, snippet))
+    return violations
 
-    assert not violations, "\n" + _format_report("`X or literal` FALLBACK on lookup", violations)
+
+def _check_no_or_literal_fallback_on_lookups() -> tuple[str, list[Violation]]:
+    return "`X or literal` FALLBACK on lookup", _run_scan_src_and_tests(_scan_or_fallback)
+
+
+def _scan_or_fallback(path: Path, rel: str) -> list[Violation]:
+    violations: list[Violation] = []
+    _, lines, tree, parents = _load(path)
+
+    for node in ast.walk(tree):
+        if not (isinstance(node, ast.BoolOp) and isinstance(node.op, ast.Or)):
+            continue
+        if len(node.values) != 2:
+            continue
+        left, right = node.values
+        if not isinstance(left, ast.Call | ast.Subscript | ast.Attribute):
+            continue
+        if not isinstance(right, ast.Constant):
+            continue
+        val = right.value
+        if val in _NEUTRAL_CONSTANTS:
+            continue
+        if isinstance(val, int | float) and _inside_arithmetic(node, parents):
+            continue
+        if _inside_fstring_or_logcall(node, parents):
+            continue
+        snippet = lines[node.lineno - 1].strip() if node.lineno <= len(lines) else ""
+        violations.append(Violation(rel, node.lineno, snippet))
+    return violations
 
 
 def _is_dataclass_decorator(decorator: ast.expr) -> bool:
@@ -222,14 +284,13 @@ def _has_default(stmt: ast.AnnAssign) -> bool:
     return stmt.value is not None
 
 
-def test_no_dataclass_defaults_in_config_binding() -> None:
+def _check_no_dataclass_defaults_in_config_binding() -> tuple[str, list[Violation]]:
     path = SRC_ROOT / "engine" / "engine_config.py"
     if not path.exists():
         raise AssertionError(f"expected config binding at {path}")
 
-    tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
+    _, lines, tree, _ = _load(path)
     violations: list[Violation] = []
-    lines = _read_lines(path)
 
     for node in ast.walk(tree):
         if not isinstance(node, ast.ClassDef):
@@ -247,36 +308,41 @@ def test_no_dataclass_defaults_in_config_binding() -> None:
             snippet = lines[stmt.lineno - 1].strip() if stmt.lineno <= len(lines) else ""
             violations.append(Violation(_rel(path), stmt.lineno, f"{node.name}.{field_name}: {snippet}"))
 
-    assert not violations, "\n" + _format_report("DATACLASS DEFAULT in config binding", violations)
+    return "DATACLASS DEFAULT in config binding", violations
 
 
-def test_broad_except_inside_carve_out_only() -> None:
+def _check_broad_except_inside_carve_out_only() -> tuple[str, list[Violation]]:
     violations: list[Violation] = []
     for path in _iter_source_files():
-        rel = _rel(path)
-        tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
-        lines = _read_lines(path)
-        for node in ast.walk(tree):
-            if not isinstance(node, ast.ExceptHandler):
-                continue
-            if node.type is None:
-                snippet = lines[node.lineno - 1].strip() if node.lineno <= len(lines) else ""
-                violations.append(Violation(rel, node.lineno, f"bare except: {snippet}"))
-                continue
-            caught = node.type
-            name = None
-            if isinstance(caught, ast.Name):
-                name = caught.id
-            elif isinstance(caught, ast.Attribute):
-                name = caught.attr
-            if name != "Exception":
-                continue
+        violations.extend(_scan_broad_except(path, _rel(path), _AI_CALL_CARVE_OUT_FILES))
+    for path in _iter_test_files():
+        violations.extend(_scan_broad_except(path, _rel_test(path), _AI_CALL_CARVE_OUT_TESTS))
+    return "BROAD except/catch", violations
 
+
+def _scan_broad_except(path: Path, rel: str, carve_out: set[str]) -> list[Violation]:
+    violations: list[Violation] = []
+    _, lines, tree, _ = _load(path)
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.ExceptHandler):
+            continue
+        if node.type is None:
             snippet = lines[node.lineno - 1].strip() if node.lineno <= len(lines) else ""
-            if rel not in _AI_CALL_CARVE_OUT_FILES:
-                violations.append(Violation(rel, node.lineno, f"except Exception outside carve-out: {snippet}"))
-
-    assert not violations, "\n" + _format_report("BROAD except/catch", violations)
+            violations.append(Violation(rel, node.lineno, f"bare except: {snippet}"))
+            continue
+        caught = node.type
+        name = None
+        if isinstance(caught, ast.Name):
+            name = caught.id
+        elif isinstance(caught, ast.Attribute):
+            name = caught.attr
+        if name != "Exception":
+            continue
+        if rel in carve_out:
+            continue
+        snippet = lines[node.lineno - 1].strip() if node.lineno <= len(lines) else ""
+        violations.append(Violation(rel, node.lineno, f"except Exception outside carve-out: {snippet}"))
+    return violations
 
 
 _COMMENT_LINE = re.compile(r"^\s*#")
@@ -309,23 +375,23 @@ def _docstring_lines(tree: ast.AST) -> list[int]:
     return out
 
 
-def test_no_python_comments_or_docstrings() -> None:
+def _check_no_python_comments_or_docstrings() -> tuple[str, list[Violation]]:
+    return "PYTHON COMMENT or DOCSTRING", _run_scan_src_and_tests(_scan_comments_docstrings)
+
+
+def _scan_comments_docstrings(path: Path, rel: str) -> list[Violation]:
     violations: list[Violation] = []
-    for path in _iter_source_files():
-        rel = _rel(path)
-        text = path.read_text(encoding="utf-8")
-        lines = text.splitlines()
-        for i, line in enumerate(lines, start=1):
-            if _COMMENT_LINE.match(line):
-                violations.append(Violation(rel, i, f"# comment: {line.strip()}"))
-        tree = ast.parse(text, filename=str(path))
-        for lineno in _docstring_lines(tree):
-            snippet = lines[lineno - 1].strip() if 0 < lineno <= len(lines) else ""
-            violations.append(Violation(rel, lineno, f"docstring: {snippet[:60]}"))
-    assert not violations, "\n" + _format_report("PYTHON COMMENT or DOCSTRING", violations)
+    _, lines, tree, _ = _load(path)
+    for i, line in enumerate(lines, start=1):
+        if _COMMENT_LINE.match(line):
+            violations.append(Violation(rel, i, f"# comment: {line.strip()}"))
+    for lineno in _docstring_lines(tree):
+        snippet = lines[lineno - 1].strip() if 0 < lineno <= len(lines) else ""
+        violations.append(Violation(rel, lineno, f"docstring: {snippet[:60]}"))
+    return violations
 
 
-def test_no_yaml_comments() -> None:
+def _check_no_yaml_comments() -> tuple[str, list[Violation]]:
     yaml_root = SRC_ROOT.parent.parent
     violations: list[Violation] = []
     for path in yaml_root.rglob("*.yaml"):
@@ -339,7 +405,7 @@ def test_no_yaml_comments() -> None:
         for i, line in enumerate(text.splitlines(), start=1):
             if _COMMENT_LINE.match(line):
                 violations.append(Violation(rel, i, line.strip()))
-    assert not violations, "\n" + _format_report("YAML COMMENT", violations)
+    return "YAML COMMENT", violations
 
 
 _INLINE_IMPORT_WHITELIST: set[tuple[str, str]] = {
@@ -356,12 +422,11 @@ _INLINE_IMPORT_WHITELIST: set[tuple[str, str]] = {
 }
 
 
-def test_inline_imports_only_in_whitelist() -> None:
+def _check_inline_imports_only_in_whitelist() -> tuple[str, list[Violation]]:
     violations: list[Violation] = []
     for path in _iter_source_files():
         rel = _rel(path)
-        tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
-        lines = _read_lines(path)
+        _, lines, tree, _ = _load(path)
 
         for func in ast.walk(tree):
             if not isinstance(func, ast.FunctionDef | ast.AsyncFunctionDef):
@@ -375,7 +440,7 @@ def test_inline_imports_only_in_whitelist() -> None:
                     continue
                 snippet = lines[node.lineno - 1].strip() if node.lineno <= len(lines) else ""
                 violations.append(Violation(rel, node.lineno, f"{snippet}  [in {func.name}]"))
-    assert not violations, "\n" + _format_report("INLINE IMPORT outside whitelist", violations)
+    return "INLINE IMPORT outside whitelist", violations
 
 
 _MODELS_FILES = ("models.py", "models_base.py", "models_npc.py", "models_story.py")
@@ -413,14 +478,13 @@ def _class_opts_out_serialization(node: ast.ClassDef) -> bool:
     return False
 
 
-def test_dataclasses_in_models_inherit_serializablemixin() -> None:
+def _check_dataclasses_in_models_inherit_serializablemixin() -> tuple[str, list[Violation]]:
     violations: list[Violation] = []
     for fname in _MODELS_FILES:
         path = SRC_ROOT / "engine" / fname
         if not path.exists():
             continue
-        tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
-        lines = _read_lines(path)
+        _, lines, tree, _ = _load(path)
         for node in ast.walk(tree):
             if not isinstance(node, ast.ClassDef):
                 continue
@@ -433,7 +497,7 @@ def test_dataclasses_in_models_inherit_serializablemixin() -> None:
             snippet = lines[node.lineno - 1].strip() if node.lineno <= len(lines) else ""
             violations.append(Violation(_rel(path), node.lineno, f"{node.name}: {snippet}"))
 
-    assert not violations, "\n" + _format_report("DATACLASS without SerializableMixin", violations)
+    return "DATACLASS without SerializableMixin", violations
 
 
 _PROVIDER_IMPORT_ALLOWED = {
@@ -445,26 +509,31 @@ _PROVIDER_IMPORT_ALLOWED = {
 _FORBIDDEN_SDK_MODULES = ("anthropic", "openai")
 
 
-def test_no_direct_provider_sdk_imports() -> None:
+def _check_no_direct_provider_sdk_imports() -> tuple[str, list[Violation]]:
     violations: list[Violation] = []
     for path in _iter_source_files():
         rel = _rel(path)
         if rel in _PROVIDER_IMPORT_ALLOWED:
             continue
-        tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
-        lines = _read_lines(path)
-        for node in ast.walk(tree):
-            if isinstance(node, ast.Import):
-                for alias in node.names:
-                    if alias.name.split(".")[0] in _FORBIDDEN_SDK_MODULES:
-                        snippet = lines[node.lineno - 1].strip() if node.lineno <= len(lines) else ""
-                        violations.append(Violation(rel, node.lineno, snippet))
-            elif (
-                isinstance(node, ast.ImportFrom) and node.module and node.module.split(".")[0] in _FORBIDDEN_SDK_MODULES
-            ):
-                snippet = lines[node.lineno - 1].strip() if node.lineno <= len(lines) else ""
-                violations.append(Violation(rel, node.lineno, snippet))
-    assert not violations, "\n" + _format_report("DIRECT PROVIDER SDK IMPORT outside adapter", violations)
+        violations.extend(_scan_provider_sdk(path, rel))
+    for path in _iter_test_files():
+        violations.extend(_scan_provider_sdk(path, _rel_test(path)))
+    return "DIRECT PROVIDER SDK IMPORT outside adapter", violations
+
+
+def _scan_provider_sdk(path: Path, rel: str) -> list[Violation]:
+    violations: list[Violation] = []
+    _, lines, tree, _ = _load(path)
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            for alias in node.names:
+                if alias.name.split(".")[0] in _FORBIDDEN_SDK_MODULES:
+                    snippet = lines[node.lineno - 1].strip() if node.lineno <= len(lines) else ""
+                    violations.append(Violation(rel, node.lineno, snippet))
+        elif isinstance(node, ast.ImportFrom) and node.module and node.module.split(".")[0] in _FORBIDDEN_SDK_MODULES:
+            snippet = lines[node.lineno - 1].strip() if node.lineno <= len(lines) else ""
+            violations.append(Violation(rel, node.lineno, snippet))
+    return violations
 
 
 _MODEL_NAME_PATTERNS = re.compile(
@@ -473,49 +542,95 @@ _MODEL_NAME_PATTERNS = re.compile(
 )
 
 
-def test_no_hardcoded_model_names_in_engine() -> None:
+def _check_no_hardcoded_model_names_in_engine() -> tuple[str, list[Violation]]:
     violations: list[Violation] = []
     for path in _iter_source_files():
         rel = _rel(path)
         if rel in {"engine/config_loader.py"}:
             continue
-        tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
-        parents = _build_parent_map(tree)
-        lines = _read_lines(path)
-        for node in ast.walk(tree):
-            if not isinstance(node, ast.Constant):
-                continue
-            if not isinstance(node.value, str):
-                continue
-            if not _MODEL_NAME_PATTERNS.search(node.value):
-                continue
-            if _inside_docstring(node, parents):
-                continue
-            snippet = lines[node.lineno - 1].strip() if node.lineno <= len(lines) else ""
-            violations.append(Violation(rel, node.lineno, snippet))
+        violations.extend(_scan_model_names(path, rel))
+    for path in _iter_test_files():
+        rel = _rel_test(path)
+        if rel in _HARDCODED_MODEL_NAME_TEST_WHITELIST:
+            continue
+        violations.extend(_scan_model_names(path, rel))
 
-    assert not violations, "\n" + _format_report("HARDCODED MODEL NAME in engine code", violations)
+    return "HARDCODED MODEL NAME in engine code", violations
+
+
+def _scan_model_names(path: Path, rel: str) -> list[Violation]:
+    violations: list[Violation] = []
+    _, lines, tree, parents = _load(path)
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Constant):
+            continue
+        if not isinstance(node.value, str):
+            continue
+        if not _MODEL_NAME_PATTERNS.search(node.value):
+            continue
+        if _inside_docstring(node, parents):
+            continue
+        snippet = lines[node.lineno - 1].strip() if node.lineno <= len(lines) else ""
+        violations.append(Violation(rel, node.lineno, snippet))
+    return violations
 
 
 _COMPLEXITY_CEILING = 20
 
 
-def test_no_function_exceeds_complexity_ceiling() -> None:
+def _check_no_function_exceeds_complexity_ceiling() -> tuple[str, list[Violation]]:
     from radon.complexity import cc_visit
 
     violations: list[Violation] = []
     for path in _iter_source_files():
-        try:
-            code = path.read_text(encoding="utf-8")
-            blocks = cc_visit(code)
-        except SyntaxError:
-            continue
         rel = _rel(path)
-        for block in blocks:
-            if block.complexity > _COMPLEXITY_CEILING:
-                snippet = f"{block.name} — complexity {block.complexity}"
-                violations.append(Violation(rel, block.lineno, snippet))
+        violations.extend(_scan_complexity(path, rel, cc_visit, set()))
+    for path in _iter_test_files():
+        rel = _rel_test(path)
+        violations.extend(_scan_complexity(path, rel, cc_visit, _COMPLEXITY_TEST_WHITELIST))
 
-    assert not violations, "\n" + _format_report(
-        f"CYCLOMATIC COMPLEXITY above {_COMPLEXITY_CEILING} (decompose into sub-functions)", violations
-    )
+    return f"CYCLOMATIC COMPLEXITY above {_COMPLEXITY_CEILING} (decompose into sub-functions)", violations
+
+
+def _scan_complexity(path: Path, rel: str, cc_visit, whitelist: set[tuple[str, str]]) -> list[Violation]:
+    violations: list[Violation] = []
+    try:
+        text, _, _, _ = _load(path)
+        blocks = cc_visit(text)
+    except SyntaxError:
+        return violations
+    for block in blocks:
+        if block.complexity <= _COMPLEXITY_CEILING:
+            continue
+        if (rel, block.name) in whitelist:
+            continue
+        snippet = f"{block.name} — complexity {block.complexity}"
+        violations.append(Violation(rel, block.lineno, snippet))
+    return violations
+
+
+_ALL_CHECKS = (
+    _check_no_domain_default_in_dict_get,
+    _check_no_or_literal_fallback_on_lookups,
+    _check_no_dataclass_defaults_in_config_binding,
+    _check_broad_except_inside_carve_out_only,
+    _check_no_python_comments_or_docstrings,
+    _check_no_yaml_comments,
+    _check_inline_imports_only_in_whitelist,
+    _check_dataclasses_in_models_inherit_serializablemixin,
+    _check_no_direct_provider_sdk_imports,
+    _check_no_hardcoded_model_names_in_engine,
+    _check_no_function_exceeds_complexity_ceiling,
+)
+
+
+def test_project_rules() -> None:
+    failed: list[tuple[str, list[Violation]]] = []
+    for check in _ALL_CHECKS:
+        category, violations = check()
+        if violations:
+            failed.append((category, violations))
+
+    if failed:
+        report = "\n\n".join(_format_report(cat, vs) for cat, vs in failed)
+        raise AssertionError("\n" + report)

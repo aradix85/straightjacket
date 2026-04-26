@@ -174,7 +174,7 @@ class TurnRecord:
         if self.engine_log and self.engine_log.consequences:
             d["consequences"] = self.engine_log.consequences
         if self.engine_log and self.engine_log.clock_events:
-            d["clock_events"] = [e.get("clock", "?") for e in self.engine_log.clock_events]
+            d["clock_events"] = [e["clock"] for e in self.engine_log.clock_events]
         if self.story_arc:
             d["phase"] = self.story_arc.phase
             if self.story_arc.story_complete:

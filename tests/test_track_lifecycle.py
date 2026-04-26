@@ -177,3 +177,72 @@ class TestTracksStatus:
         )
         result = build_tracks_status(game)
         assert "Done Vow" not in result
+
+
+def test_progress_track_ticks_per_mark() -> None:
+    from straightjacket.engine.engine_loader import eng
+
+    expected_table = eng().progress.track_types["default"].ticks_per_mark
+    for rank, expected in expected_table.items():
+        t = make_progress_track(rank=rank)
+        assert t.ticks_per_mark == expected
+
+
+def test_progress_track_mark_progress_troublesome() -> None:
+    t = make_progress_track(rank="troublesome", ticks=0)
+    added = t.mark_progress()
+    assert added == 12
+    assert t.ticks == 12
+    assert t.filled_boxes == 3
+
+
+def test_progress_track_mark_progress_epic() -> None:
+    t = make_progress_track(rank="epic", ticks=0)
+    added = t.mark_progress()
+    assert added == 1
+    assert t.ticks == 1
+    assert t.filled_boxes == 0
+
+
+def test_progress_track_mark_progress_clamps_at_max() -> None:
+    t = make_progress_track(rank="troublesome", ticks=36)
+    added = t.mark_progress()
+    assert t.ticks == 40
+    assert added == 4
+
+
+def test_progress_track_filled_boxes() -> None:
+    t = make_progress_track(ticks=17)
+    assert t.filled_boxes == 4
+
+
+def test_progress_roll_uses_track_boxes(load_engine: None) -> None:
+    from straightjacket.engine.mechanics.consequences import roll_progress
+
+    track = make_progress_track(id="v1", name="Find the artifact", track_type="vow", rank="dangerous", ticks=24)
+    assert track.filled_boxes == 6
+    roll = roll_progress(track.name, track.filled_boxes, "quest/fulfill_your_vow")
+    assert roll.stat_value == 6 and roll.action_score == 6 and roll.d1 == 0 and roll.d2 == 0
+
+
+def test_find_progress_track(load_engine: None) -> None:
+    import pytest
+
+    from straightjacket.engine.game.tracks import find_progress_track as _find_progress_track
+
+    game = _game()
+    game.progress_tracks = [
+        make_progress_track(id="v1", name="Old vow", track_type="vow", ticks=8),
+        make_progress_track(id="c1", name="Fight", track_type="combat", ticks=12),
+        make_progress_track(id="v2", name="New vow", track_type="vow", ticks=20),
+    ]
+    with pytest.raises(ValueError, match="Multiple active vow tracks"):
+        _find_progress_track(game, "Vow")
+
+    assert _find_progress_track(game, "Vow", target_track="New").name == "New vow"
+    assert _find_progress_track(game, "Vow", target_track="Old").name == "Old vow"
+    assert _find_progress_track(game, "Combat").name == "Fight"
+    assert _find_progress_track(game, "Expedition") is None
+
+    game.progress_tracks[0].status = "completed"
+    assert _find_progress_track(game, "Vow").name == "New vow"

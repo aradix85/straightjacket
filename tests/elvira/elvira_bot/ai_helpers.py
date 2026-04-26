@@ -71,20 +71,18 @@ def build_turn_context(game: GameState, narration: str, turn: int, prev_action: 
     res = game.resources
     world = game.world
 
-    active_npcs = "\n".join(f"  - {n.name} [{n.disposition}]" for n in game.npcs if n.status == "active") or "  (none)"
+    npc_lines = [f"  - {n.name} [{n.disposition}]" for n in game.npcs if n.status == "active"]
+    active_npcs = "\n".join(npc_lines) if npc_lines else "  (none)"
 
-    active_clocks = (
-        "\n".join(f"  - {c.name}: {c.filled}/{c.segments}" for c in world.clocks if not c.fired) or "  (none)"
-    )
+    clock_lines = [f"  - {c.name}: {c.filled}/{c.segments}" for c in world.clocks if not c.fired]
+    active_clocks = "\n".join(clock_lines) if clock_lines else "  (none)"
 
-    active_tracks = (
-        "\n".join(
-            f"  - {t.name} ({t.track_type}, {t.rank}): {t.filled_boxes}/10"
-            for t in game.progress_tracks
-            if t.status == "active"
-        )
-        or "  (none)"
-    )
+    track_lines = [
+        f"  - {t.name} ({t.track_type}, {t.rank}): {t.filled_boxes}/10"
+        for t in game.progress_tracks
+        if t.status == "active"
+    ]
+    active_tracks = "\n".join(track_lines) if track_lines else "  (none)"
 
     story_block = ""
     bp = game.narrative.story_blueprint

@@ -182,3 +182,46 @@ def test_time_progression_unknown_move_uses_default(stub_engine: None) -> None:
     from straightjacket.engine.mechanics import resolve_time_progression
 
     assert resolve_time_progression("unknown_move") == "short"
+
+
+def test_locations_match_identical() -> None:
+    from straightjacket.engine.mechanics import locations_match
+
+    assert locations_match("Tavern", "Tavern")
+
+
+def test_locations_match_case_insensitive() -> None:
+    from straightjacket.engine.mechanics import locations_match
+
+    assert locations_match("Old Tavern", "old tavern")
+
+
+def test_locations_match_stopwords() -> None:
+    from straightjacket.engine.mechanics import locations_match
+
+    assert locations_match("the dark forest", "dark forest")
+
+
+def test_locations_match_subset() -> None:
+    from straightjacket.engine.mechanics import locations_match
+
+    assert locations_match("market square", "the old market square")
+
+
+def test_locations_match_different() -> None:
+    from straightjacket.engine.mechanics import locations_match
+
+    assert not locations_match("tavern", "castle")
+
+
+def test_locations_match_empty() -> None:
+    from straightjacket.engine.mechanics import locations_match
+
+    assert locations_match("", "anywhere")
+    assert locations_match("anywhere", "")
+
+
+def test_locations_match_underscore() -> None:
+    from straightjacket.engine.mechanics import locations_match
+
+    assert locations_match("dark_forest", "dark forest")

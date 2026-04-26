@@ -12,7 +12,7 @@ from straightjacket.engine.mechanics.move_handlers import (
 )
 from straightjacket.engine.mechanics.move_outcome import resolve_move_outcome
 from straightjacket.engine.models import GameState, Resources
-from tests._helpers import make_game_state, make_progress_track
+from tests._helpers import make_game_state
 
 
 @pytest.fixture()
@@ -372,54 +372,3 @@ class TestResolveOutcome:
     def test_unknown_move_raises(self, game_real: GameState) -> None:
         with pytest.raises(ValueError, match="No outcome config"):
             resolve_move_outcome(game_real, "nonexistent/move", "STRONG_HIT")
-
-
-class TestCombatPosition:
-    def test_default_empty(self) -> None:
-        assert make_game_state().world.combat_position == ""
-
-    def test_serializes(self) -> None:
-        g = make_game_state()
-        g.world.combat_position = "in_control"
-        assert g.world.to_dict()["combat_position"] == "in_control"
-
-    def test_deserializes(self) -> None:
-        from straightjacket.engine.models_base import WorldState
-
-        assert WorldState.from_dict({"combat_position": "bad_spot", "chaos_factor": 5}).combat_position == "bad_spot"
-
-    def test_snapshot_restore(self) -> None:
-        g = make_game_state()
-        g.world.combat_position = "in_control"
-        snap = g.snapshot()
-        g.world.combat_position = "bad_spot"
-        assert snap.world["combat_position"] == "in_control"
-
-
-class TestProgressRollPipeline:
-    def test_progress_roll_uses_track_boxes(self, game_real: GameState) -> None:
-        from straightjacket.engine.mechanics.consequences import roll_progress
-
-        track = make_progress_track(id="v1", name="Find the artifact", track_type="vow", rank="dangerous", ticks=24)
-        assert track.filled_boxes == 6
-        roll = roll_progress(track.name, track.filled_boxes, "quest/fulfill_your_vow")
-        assert roll.stat_value == 6 and roll.action_score == 6 and roll.d1 == 0 and roll.d2 == 0
-
-    def test_find_progress_track(self, game_real: GameState) -> None:
-        from straightjacket.engine.game.tracks import find_progress_track as _find_progress_track
-
-        game_real.progress_tracks = [
-            make_progress_track(id="v1", name="Old vow", track_type="vow", ticks=8),
-            make_progress_track(id="c1", name="Fight", track_type="combat", ticks=12),
-            make_progress_track(id="v2", name="New vow", track_type="vow", ticks=20),
-        ]
-        with pytest.raises(ValueError, match="Multiple active vow tracks"):
-            _find_progress_track(game_real, "Vow")
-
-        assert _find_progress_track(game_real, "Vow", target_track="New").name == "New vow"
-        assert _find_progress_track(game_real, "Vow", target_track="Old").name == "Old vow"
-        assert _find_progress_track(game_real, "Combat").name == "Fight"
-        assert _find_progress_track(game_real, "Expedition") is None
-
-        game_real.progress_tracks[0].status = "completed"
-        assert _find_progress_track(game_real, "Vow").name == "New vow"

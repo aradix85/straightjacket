@@ -107,7 +107,7 @@ class WsClient:
             elif t == "turn_complete":
                 break
             elif t == "error":
-                result["error"] = msg.get("text", "Unknown error")
+                result["error"] = msg["text"]
                 break
             elif t == "game_over":
                 result["game_over"] = True
@@ -153,25 +153,25 @@ async def _start_server(port: int) -> Any:
 
 
 async def run_ws_session(bot_cfg: dict, auto_override: bool = False, turns_override: int | None = None) -> SessionLog:
-    auto_mode = auto_override or bot_cfg.get("auto_mode", False)
+    auto_mode = auto_override or bot_cfg["auto_mode"]
     username = bot_cfg["username"]
-    game_cfg = bot_cfg.get("game", {})
-    session_cfg = bot_cfg.get("session", {})
-    behavior = bot_cfg.get("bot_behavior", {})
-    log_cfg = bot_cfg.get("logging", {})
+    game_cfg = bot_cfg["game"]
+    session_cfg = bot_cfg["session"]
+    behavior = bot_cfg["bot_behavior"]
+    log_cfg = bot_cfg["logging"]
 
-    max_chapters = session_cfg.get("max_chapters", 1)
-    max_turns = turns_override or session_cfg.get("max_turns", 20)
-    save_every = session_cfg.get("save_every_n_turns", 5)
-    save_out = session_cfg.get("save_name_output", "elvira")
-    style = behavior.get("style", "balanced")
-    burn_setting = behavior.get("burn_momentum", "auto")
-    log_file_base = Path(log_cfg.get("log_file", "elvira_session.json"))
+    max_chapters = session_cfg["max_chapters"]
+    max_turns = turns_override or session_cfg["max_turns"]
+    save_every = session_cfg["save_every_n_turns"]
+    save_out = session_cfg["save_name_output"]
+    style = behavior["style"]
+    burn_setting = behavior["burn_momentum"]
+    log_file_base = Path(log_cfg["log_file"])
     timestamp = datetime.now().strftime("%Y%m%d_%H%M")
     log_file = log_file_base.with_stem(f"{log_file_base.stem}_{timestamp}")
-    print_full = log_cfg.get("print_full_narration", False)
-    do_invariants = log_cfg.get("assert_state_invariants", True)
-    full_debug = log_cfg.get("full_debug_log", False)
+    print_full = log_cfg["print_full_narration"]
+    do_invariants = log_cfg["assert_state_invariants"]
+    full_debug = log_cfg["full_debug_log"]
 
     from straightjacket.engine.ai.api_client import get_provider
 
@@ -208,7 +208,7 @@ async def run_ws_session(bot_cfg: dict, auto_override: bool = False, turns_overr
 
     await client.drain(timeout=3)
 
-    clean_before = session_cfg.get("clean_before_run", True)
+    clean_before = session_cfg["clean_before_run"]
     await client.send({"type": "create_player", "name": username})
     msg = await client.recv_until("player_selected", timeout=10)
     print(f"[SETUP] Player: {username}, has_game: {msg.get('has_game')}")
@@ -225,7 +225,7 @@ async def run_ws_session(bot_cfg: dict, auto_override: bool = False, turns_overr
         print(f"[CLEAN] Deleted previous saves, has_game: {msg.get('has_game')}")
 
     if not msg.get("has_game"):
-        setting_id = game_cfg.get("setting_id", "starforged")
+        setting_id = game_cfg["setting_id"]
         if auto_mode:
             from straightjacket.engine.datasworn.settings import list_packages
 
@@ -477,9 +477,9 @@ async def _handle_burn(
     style: str,
     rec: TurnRecord,
 ) -> dict:
-    current = burn_offer.get("current", "MISS")
-    upgrade = burn_offer.get("upgrade", "WEAK_HIT")
-    cost = burn_offer.get("cost", 0)
+    current = burn_offer["current"]
+    upgrade = burn_offer["upgrade"]
+    cost = burn_offer["cost"]
 
     should_burn = False
     if burn_setting == "always":

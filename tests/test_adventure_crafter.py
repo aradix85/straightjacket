@@ -79,24 +79,6 @@ def test_assign_themes_deterministic_with_seed():
     assert a != c or len(a) == 0
 
 
-def test_assign_themes_uses_d10_table():
-    class _SequentialRng:
-        def __init__(self):
-            self.next = 1
-
-        def randint(self, a: int, b: int) -> int:
-            v = self.next
-            self.next += 1
-            return v
-
-    cfg = eng().adventure_crafter
-
-    full = [cfg.theme_die_table[face] for face in range(1, 11)]
-    assert sorted(full) == sorted(
-        ["action"] * 2 + ["tension"] * 2 + ["mystery"] * 2 + ["social"] * 2 + ["personal"] * 2
-    )
-
-
 @pytest.mark.parametrize("theme", ["action", "tension", "mystery", "social", "personal"])
 @pytest.mark.parametrize("roll,expected_special", _SPECIAL_BOUNDARIES)
 def test_plot_point_lookup_at_boundaries(theme: str, roll: int, expected_special: str | None):
@@ -134,10 +116,6 @@ def test_meta_handlers_match_json_names():
     json_names = {entry["name"] for entry in data["meta_plot_points"]}
     handler_names = set(get_meta_handler_names())
     assert json_names == handler_names, f"drift between JSON {json_names} and handlers {handler_names}"
-
-
-def test_meta_handlers_count_is_seven():
-    assert len(_META_HANDLERS) == 7
 
 
 def test_meta_lookup_covers_full_d100():

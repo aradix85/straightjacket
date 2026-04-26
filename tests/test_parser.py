@@ -239,3 +239,35 @@ def test_strips_trailing_metadata_label_lines(load_engine: None, stub_emotions: 
     result = parse_narrator_response(game, raw)
     assert "Scene Context:" not in result
     assert "wind howled" in result
+
+
+def test_salvage_clean_text() -> None:
+    from straightjacket.engine.parser import salvage_truncated_narration
+
+    text = "The door opened. She stepped inside."
+    assert salvage_truncated_narration(text) == text
+
+
+def test_salvage_strips_incomplete_game_data() -> None:
+    from straightjacket.engine.parser import salvage_truncated_narration
+
+    text = 'The door opened. She stepped inside.<game_data>{"npcs": ['
+    result = salvage_truncated_narration(text)
+    assert "<game_data>" not in result
+    assert "stepped inside." in result
+
+
+def test_salvage_trims_mid_word() -> None:
+    from straightjacket.engine.parser import salvage_truncated_narration
+
+    text = "The door opened. She stepped inside. The light was fadi"
+    result = salvage_truncated_narration(text)
+    assert result.endswith("inside.")
+
+
+def test_salvage_preserves_complete_game_data() -> None:
+    from straightjacket.engine.parser import salvage_truncated_narration
+
+    text = 'Story text here.<game_data>{"npcs": []}</game_data>'
+    result = salvage_truncated_narration(text)
+    assert "<game_data>" in result

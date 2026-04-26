@@ -207,7 +207,7 @@ def eval_validator(provider: AIProvider, case: dict, model: str, params: dict) -
 
     result = CaseResult(case_id=case["id"], role="validator")
     narration = case["narration"]
-    result_type = case.get("result_type", "STRONG_HIT")
+    result_type = case["result_type"]
 
     ctx = ValidationContext.build(GameState(), result_type=result_type)
     rule_result = run_rule_checks(narration, ctx)
@@ -239,8 +239,8 @@ Check constraints."""
         )
         data = json.loads(response.content)
         result.raw_output = json.dumps(data, indent=2)
-        if not data.get("pass", True):
-            llm_violations = data.get("violations", [])
+        if not data["pass"]:
+            llm_violations = data["violations"]
     except Exception as e:
         result.error = f"{type(e).__name__}: {e}"
         result.passed = False
@@ -325,7 +325,7 @@ Extract all metadata from the narration above. Remember: {case["player_name"]} i
         if len(new_npcs) == expect["new_npc_count"]:
             result.checks.append(f"new_npc_count={expect['new_npc_count']}")
         else:
-            names = [n.get("name", "?") for n in new_npcs]
+            names = [n["name"] for n in new_npcs]
             result.failures.append(f"new_npc_count: expected {expect['new_npc_count']}, got {len(new_npcs)} ({names})")
             result.passed = False
 

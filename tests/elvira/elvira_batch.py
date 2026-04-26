@@ -224,7 +224,7 @@ def main() -> None:
     base_cfg = load_config(args.config)
     if args.turns is not None:
         base_cfg.setdefault("session", {})["max_turns"] = args.turns
-    max_turns = base_cfg.get("session", {}).get("max_turns", 25)
+    max_turns = base_cfg["session"]["max_turns"]
 
     available_settings = [s for s in list_packages() if s != "delve"]
     settings = args.settings or available_settings

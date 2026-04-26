@@ -421,7 +421,84 @@ def test_normalize_disposition(stub_emotions: None) -> None:
     assert normalize_disposition("unknown_value") == "neutral"
 
 
-if __name__ == "__main__":
-    import pytest
+def test_process_new_npcs_adds_npc(stub_engine: None) -> None:
+    from straightjacket.engine.npc.processing import process_new_npcs
 
-    pytest.main([__file__, "-v"])
+    game = _make_game()
+    assert len(game.npcs) == 2
+
+    process_new_npcs(game, [{"name": "Maren", "description": "Young scout", "disposition": "curious"}])
+
+    assert len(game.npcs) == 3
+    maren = next(n for n in game.npcs if n.name == "Maren")
+    assert maren.description == "Young scout"
+    assert maren.id == "npc_3"
+    assert len(maren.memory) == 1
+
+
+def test_process_new_npcs_skips_player_character(stub_engine: None) -> None:
+    from straightjacket.engine.npc.processing import process_new_npcs
+
+    game = _make_game()
+
+    process_new_npcs(game, [{"name": "Hero", "description": "The protagonist", "disposition": "neutral"}])
+
+    assert len(game.npcs) == 2
+
+
+def test_process_new_npcs_skips_existing(stub_engine: None) -> None:
+    from straightjacket.engine.npc.processing import process_new_npcs
+
+    game = _make_game()
+
+    process_new_npcs(game, [{"name": "Kira Voss", "description": "Same person", "disposition": "friendly"}])
+
+    assert len(game.npcs) == 2
+
+
+def test_process_npc_renames_updates_name(stub_engine: None) -> None:
+    from straightjacket.engine.npc.processing import process_npc_renames
+
+    game = _make_game()
+
+    process_npc_renames(game, [{"npc_id": "npc_1", "new_name": "Kira von Asten"}])
+
+    npc = next(n for n in game.npcs if n.id == "npc_1")
+    assert npc.name == "Kira von Asten"
+    assert "Kira Voss" in npc.aliases
+
+
+def test_process_npc_renames_rejects_player_name(stub_engine: None) -> None:
+    from straightjacket.engine.npc.processing import process_npc_renames
+
+    game = _make_game()
+
+    process_npc_renames(game, [{"npc_id": "npc_1", "new_name": "Hero"}])
+
+    npc = next(n for n in game.npcs if n.id == "npc_1")
+    assert npc.name == "Kira Voss"
+
+
+def test_process_npc_details_extends_surname(stub_engine: None) -> None:
+    from straightjacket.engine.npc.processing import process_npc_details
+
+    game = _make_game()
+
+    process_npc_details(game, [{"npc_id": "npc_2", "full_name": "Old Borin Ironhand"}])
+
+    npc = next(n for n in game.npcs if n.id == "npc_2")
+    assert npc.name == "Old Borin Ironhand"
+    assert "Old Borin" in npc.aliases
+
+
+def test_process_npc_details_updates_description(stub_engine: None) -> None:
+    from straightjacket.engine.npc.processing import process_npc_details
+
+    game = _make_game()
+
+    process_npc_details(
+        game, [{"npc_id": "npc_2", "description": "Grumpy dwarf blacksmith with burn scars, secretly loyal."}]
+    )
+
+    npc = next(n for n in game.npcs if n.id == "npc_2")
+    assert "burn scars" in npc.description

@@ -155,15 +155,15 @@ def _snapshot_validator(game: GameState) -> ValidatorRecord | None:
     attempt_violation_text = [c.get("violations", []) for c in checks]
 
     picked = -1
-    if not val.get("passed", True) and len(attempt_violations) >= 2:
+    if not val["passed"] and len(attempt_violations) >= 2:
         final_v = attempt_violations[-1]
         best_v = min(attempt_violations)
         if best_v < final_v:
             picked = attempt_violations.index(best_v)
     return ValidatorRecord(
-        passed=val.get("passed", True),
-        retries=val.get("retries", 0),
-        violations=val.get("violations", []),
+        passed=val["passed"],
+        retries=val["retries"],
+        violations=val["violations"],
         attempt_violations=attempt_violations,
         attempt_violation_text=attempt_violation_text,
         picked_attempt=picked,

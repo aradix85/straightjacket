@@ -57,28 +57,28 @@ def load_config(path: Path) -> dict:
 
 
 def run_session(bot_cfg: dict, auto_override: bool = False, turns_override: int | None = None) -> SessionLog:
-    auto_mode = auto_override or bot_cfg.get("auto_mode", False)
+    auto_mode = auto_override or bot_cfg["auto_mode"]
     username = bot_cfg["username"]
-    game_cfg = bot_cfg.get("game", {})
-    session_cfg = bot_cfg.get("session", {})
-    behavior = bot_cfg.get("bot_behavior", {})
-    log_cfg = bot_cfg.get("logging", {})
+    game_cfg = bot_cfg["game"]
+    session_cfg = bot_cfg["session"]
+    behavior = bot_cfg["bot_behavior"]
+    log_cfg = bot_cfg["logging"]
 
-    max_chapters = session_cfg.get("max_chapters", 1)
-    max_turns = turns_override or session_cfg.get("max_turns", 20)
-    narration_lang = session_cfg.get("narration_lang", "English")
-    save_every = session_cfg.get("save_every_n_turns", 5)
-    save_out = session_cfg.get("save_name_output", "elvira")
-    clean_before = session_cfg.get("clean_before_run", True)
-    style = behavior.get("style", "balanced")
-    burn_setting = behavior.get("burn_momentum", "auto")
-    log_file_base = Path(log_cfg.get("log_file", "elvira_session.json"))
+    max_chapters = session_cfg["max_chapters"]
+    max_turns = turns_override or session_cfg["max_turns"]
+    narration_lang = session_cfg["narration_lang"]
+    save_every = session_cfg["save_every_n_turns"]
+    save_out = session_cfg["save_name_output"]
+    clean_before = session_cfg["clean_before_run"]
+    style = behavior["style"]
+    burn_setting = behavior["burn_momentum"]
+    log_file_base = Path(log_cfg["log_file"])
     timestamp = datetime.now().strftime("%Y%m%d_%H%M")
     log_file = log_file_base.with_stem(f"{log_file_base.stem}_{timestamp}")
-    print_full = log_cfg.get("print_full_narration", False)
-    print_rolls = log_cfg.get("print_roll_details", True)
-    do_invariants = log_cfg.get("assert_state_invariants", True)
-    full_debug = log_cfg.get("full_debug_log", False)
+    print_full = log_cfg["print_full_narration"]
+    print_rolls = log_cfg["print_roll_details"]
+    do_invariants = log_cfg["assert_state_invariants"]
+    full_debug = log_cfg["full_debug_log"]
 
     provider = get_provider()
     config = EngineConfig(narration_lang=narration_lang)
@@ -269,7 +269,7 @@ def _setup_game(
     provider: AIProvider, config: EngineConfig, username: str, game_cfg: dict, auto_mode: bool, slog: SessionLog
 ) -> tuple[GameState, str, list[dict]]:
     if not auto_mode and game_cfg.get("load_existing"):
-        save_name = game_cfg.get("save_name", "autosave")
+        save_name = game_cfg["save_name"]
         game, chat_messages = load_game(username, save_name)
         if not game:
             raise SystemExit(f"Save '{save_name}' not found for user '{username}'")
@@ -595,9 +595,9 @@ def _log_opening_validator(game: GameState, slog: SessionLog) -> None:
     if not val:
         return
     slog.opening_validator = ValidatorRecord(
-        passed=val.get("passed", True),
-        retries=val.get("retries", 0),
-        violations=val.get("violations", []),
+        passed=val["passed"],
+        retries=val["retries"],
+        violations=val["violations"],
     )
 
 
@@ -663,9 +663,9 @@ def _aggregate_token_stats(slog: SessionLog) -> dict:
     total_output = 0
     for t in slog.turns:
         for entry in t.token_usage:
-            role = str(entry.get("role", "unknown"))
-            inp = int(entry.get("input", 0))
-            out = int(entry.get("output", 0))
+            role = str(entry["role"])
+            inp = int(entry["input"])
+            out = int(entry["output"])
             if role not in by_role:
                 by_role[role] = {"calls": 0, "input": 0, "output": 0}
             by_role[role]["calls"] += 1

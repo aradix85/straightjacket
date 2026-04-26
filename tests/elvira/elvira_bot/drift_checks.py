@@ -86,7 +86,7 @@ def check_blueprint_drift(slog: SessionLog) -> dict[str, Any]:
         ("antagonist_force", str(bp.get("antagonist_force", ""))),
     ]
     for act in bp.get("acts", []):
-        phase = act.get("phase", "?")
+        phase = act["phase"]
         fields_to_scan.append((f"act[{phase}].goal", str(act.get("goal", ""))))
         fields_to_scan.append((f"act[{phase}].mood", str(act.get("mood", ""))))
         fields_to_scan.append((f"act[{phase}].transition_trigger", str(act.get("transition_trigger", ""))))

@@ -247,3 +247,108 @@ def test_builtin_query_npc_director_only() -> None:
     _reload_builtins()
     assert get_handler("brain", "query_npc") is None
     assert get_handler("director", "query_npc") is not None
+
+
+def test_run_tool_loop_completes_after_tool_use(load_engine: None) -> None:
+    from straightjacket.engine.ai.provider_base import AIResponse
+    from straightjacket.engine.tools.handler import run_tool_loop
+
+    clear_registry()
+
+    @register("test", description="echo a message", params={"message": "the message"})
+    def echo(game: GameState, message: str = "x") -> dict:
+        return {"echo": message}
+
+    initial = AIResponse(
+        content="thinking",
+        stop_reason="tool_use",
+        tool_calls=[{"id": "c1", "name": "echo", "arguments": {"message": "hi"}}],
+    )
+
+    class _Provider:
+        def __init__(self) -> None:
+            self.calls = 0
+
+        def create_message(self, **kwargs: object) -> AIResponse:
+            self.calls += 1
+            return AIResponse(content="final answer", stop_reason="complete")
+
+    game = make_game_state(player_name="Test")
+    final, log = run_tool_loop(
+        _Provider(),
+        initial,
+        role="test",
+        game=game,
+        model="m",
+        system="s",
+        messages=[{"role": "user", "content": "do thing"}],
+        max_tokens=100,
+    )
+    assert final == "final answer"
+    assert len(log) == 1
+    assert log[0]["name"] == "echo"
+    assert "hi" in log[0]["result"]
+
+
+def test_run_tool_loop_no_tool_calls_returns_immediately(load_engine: None) -> None:
+    from straightjacket.engine.ai.provider_base import AIResponse
+    from straightjacket.engine.tools.handler import run_tool_loop
+
+    initial = AIResponse(content="just text", stop_reason="complete")
+
+    class _Provider:
+        def create_message(self, **kwargs: object) -> AIResponse:
+            raise AssertionError("should not be called")
+
+    game = make_game_state(player_name="Test")
+    final, log = run_tool_loop(
+        _Provider(),
+        initial,
+        role="test",
+        game=game,
+        model="m",
+        system="s",
+        messages=[{"role": "user", "content": "x"}],
+        max_tokens=100,
+    )
+    assert final == "just text"
+    assert log == []
+
+
+def test_run_tool_loop_hits_max_rounds(load_engine: None) -> None:
+    from straightjacket.engine.ai.provider_base import AIResponse
+    from straightjacket.engine.tools.handler import run_tool_loop
+
+    clear_registry()
+
+    @register("test", description="loop forever")
+    def loop(game: GameState) -> dict:
+        return {"ok": True}
+
+    initial = AIResponse(
+        content="",
+        stop_reason="tool_use",
+        tool_calls=[{"id": "c0", "name": "loop", "arguments": {}}],
+    )
+
+    class _Provider:
+        def create_message(self, **kwargs: object) -> AIResponse:
+            return AIResponse(
+                content="",
+                stop_reason="tool_use",
+                tool_calls=[{"id": "cN", "name": "loop", "arguments": {}}],
+            )
+
+    game = make_game_state(player_name="Test")
+    final, log = run_tool_loop(
+        _Provider(),
+        initial,
+        role="test",
+        game=game,
+        model="m",
+        system="s",
+        messages=[{"role": "user", "content": "x"}],
+        max_tokens=100,
+        max_tool_rounds=2,
+    )
+    assert len(log) == 2

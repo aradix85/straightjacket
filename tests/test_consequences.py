@@ -1,3 +1,5 @@
+import pytest
+
 from straightjacket.engine.models import (
     ClockEvent,
     GameState,
@@ -92,54 +94,35 @@ def test_tick_threat_clock_skips_full() -> None:
     assert len(events) == 0
 
 
-def test_can_burn_momentum_miss_to_strong() -> None:
+@pytest.mark.parametrize(
+    "momentum, d_value, action_score, roll_result, expected_burn",
+    [
+        (8, 1, 4, "MISS", "STRONG_HIT"),
+        (6, 1, 4, "MISS", "WEAK_HIT"),
+        (8, 3, 8, "WEAK_HIT", "STRONG_HIT"),
+        (2, 1, 4, "MISS", None),
+        (0, 1, 4, "MISS", None),
+    ],
+)
+def test_can_burn_momentum(
+    momentum: int, d_value: int, action_score: int, roll_result: str, expected_burn: str | None
+) -> None:
     from straightjacket.engine.mechanics.consequences import can_burn_momentum
 
-    game = _game(momentum=8)
+    game = _game(momentum=momentum)
     roll = RollResult(
-        d1=1, d2=1, c1=5, c2=7, stat_name="wits", stat_value=2, action_score=4, result="MISS", move="x", match=False
+        d1=d_value,
+        d2=d_value,
+        c1=5,
+        c2=7,
+        stat_name="wits",
+        stat_value=2,
+        action_score=action_score,
+        result=roll_result,
+        move="x",
+        match=False,
     )
-    assert can_burn_momentum(game, roll) == "STRONG_HIT"
-
-
-def test_can_burn_momentum_miss_to_weak() -> None:
-    from straightjacket.engine.mechanics.consequences import can_burn_momentum
-
-    game = _game(momentum=6)
-    roll = RollResult(
-        d1=1, d2=1, c1=5, c2=7, stat_name="wits", stat_value=2, action_score=4, result="MISS", move="x", match=False
-    )
-    assert can_burn_momentum(game, roll) == "WEAK_HIT"
-
-
-def test_can_burn_momentum_weak_to_strong() -> None:
-    from straightjacket.engine.mechanics.consequences import can_burn_momentum
-
-    game = _game(momentum=8)
-    roll = RollResult(
-        d1=3, d2=3, c1=5, c2=7, stat_name="wits", stat_value=2, action_score=8, result="WEAK_HIT", move="x", match=False
-    )
-    assert can_burn_momentum(game, roll) == "STRONG_HIT"
-
-
-def test_can_burn_momentum_no_burn_possible() -> None:
-    from straightjacket.engine.mechanics.consequences import can_burn_momentum
-
-    game = _game(momentum=2)
-    roll = RollResult(
-        d1=1, d2=1, c1=5, c2=7, stat_name="wits", stat_value=2, action_score=4, result="MISS", move="x", match=False
-    )
-    assert can_burn_momentum(game, roll) is None
-
-
-def test_can_burn_momentum_zero_momentum() -> None:
-    from straightjacket.engine.mechanics.consequences import can_burn_momentum
-
-    game = _game(momentum=0)
-    roll = RollResult(
-        d1=1, d2=1, c1=5, c2=7, stat_name="wits", stat_value=2, action_score=4, result="MISS", move="x", match=False
-    )
-    assert can_burn_momentum(game, roll) is None
+    assert can_burn_momentum(game, roll) == expected_burn
 
 
 def test_npc_agency_fires_on_scene_5(load_engine: None) -> None:

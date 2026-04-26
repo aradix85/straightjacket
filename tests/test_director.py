@@ -425,3 +425,49 @@ def test_reset_stale_reflection_flags(stub_all: None) -> None:
     for npc in game.npcs:
         assert npc.needs_reflection is False
         assert npc.importance_accumulator == acc_before[npc.id]
+
+
+def test_run_deferred_director_applies_guidance(stub_all: None) -> None:
+    import json
+
+    from straightjacket.engine.game.director_runner import run_deferred_director
+    from straightjacket.engine import prompt_loader
+    from tests._mocks import MockProvider, make_test_game
+
+    prompt_loader._prompts = None
+    prompt_loader._ensure_loaded()
+
+    provider = MockProvider(
+        json.dumps(
+            {
+                "scene_summary": "Tense.",
+                "narrator_guidance": "Build tension.",
+                "npc_guidance": [],
+                "pacing": "building",
+                "npc_reflections": [],
+                "arc_notes": "Progressing.",
+                "act_transition": False,
+            }
+        )
+    )
+    game = make_test_game()
+    game.narrative.session_log.append(SceneLogEntry(scene=5, summary="Last", scene_type="expected"))
+    run_deferred_director(
+        provider,
+        game,
+        {"narration": "Text.", "config": None},
+    )
+    assert game.narrative.director_guidance.narrator_guidance == "Build tension."
+
+
+def test_run_deferred_director_survives_api_error(stub_all: None) -> None:
+    from straightjacket.engine.game.director_runner import run_deferred_director
+    from tests._mocks import MockProvider, make_test_game
+
+    provider = MockProvider(fail=True)
+    game = make_test_game()
+    run_deferred_director(
+        provider,
+        game,
+        {"narration": "text", "config": None},
+    )
