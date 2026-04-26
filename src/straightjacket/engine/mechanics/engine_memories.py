@@ -1,5 +1,3 @@
-"""Engine-side memory generation: emotion derivation, observation memories, scene context."""
-
 from __future__ import annotations
 
 from ..engine_loader import eng
@@ -8,12 +6,6 @@ from .resolvers import move_category
 
 
 def derive_memory_emotion(move: str, result: str, disposition: str) -> str:
-    """Derive emotional_weight for an NPC memory from mechanical context.
-
-    Uses engine.yaml memory_emotions table: (move_category, result) → base emotion,
-    then appends disposition suffix. Raises KeyError on unknown combinations —
-    every move/result/disposition Brain produces must be mapped in yaml.
-    """
     _e = eng()
     memory_emotions = _e.memory_emotions
     base_map = memory_emotions.base
@@ -34,14 +26,6 @@ def generate_engine_memories(
     activated_npc_ids: set[str],
     consequences: list[str] | None = None,
 ) -> list[dict]:
-    """Generate observation memories for activated NPCs from mechanical context.
-
-    Replaces AI-generated memory_updates for known events. Engine knows:
-    which NPCs were present, what move occurred, what the result was,
-    what consequences applied. Templates from engine.yaml produce
-    narrative-flavored memories the narrator can build on.
-    """
-    # circular: npc package ↔ mechanics
     from ..npc.memory import score_importance
 
     _e = eng()
@@ -55,7 +39,6 @@ def generate_engine_memories(
     category = move_category(move)
     intent = brain.player_intent or ""
 
-    # Resolve template variables — every key must be present in yaml.
     result_key = "dialog" if move == "dialog" else f"{category}_{result}"
     result_text = result_text_map[result_key]
     move_verb = verb_map[move] if move in verb_map else verb_map["_catchall"]
@@ -119,7 +102,6 @@ def generate_scene_context(
     roll: RollResult | None,
     activated_npc_names: list[str],
 ) -> str:
-    """Engine-generated scene_context from mechanical context. Replaces AI-generated version."""
     _e = eng()
     _defaults = _e.ai_text.narrator_defaults
     _npc_max = _e.prompt_display.memory_npcs_max

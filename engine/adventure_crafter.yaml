@@ -1,23 +1,5 @@
 adventure_crafter:
-  # Adventure Crafter primitives: themes, theme assignment, special ranges.
-  #
-  # AC provides plot-level structure complementing Mythic GME 2e's scene-level
-  # chaos. Step 5 lands data-loading and theme/plot-point primitives; step 6
-  # builds turning points and supporting tables on top; step 7 makes AC the
-  # plot-structure source replacing the AI-generated architect blueprint.
-  #
-  # The slot count and theme names are engine-level configuration. The lookup
-  # tables (plot_points list, character_special_trait, character_descriptors,
-  # etc) live in data/adventure_crafter.json — that JSON is the data source,
-  # this yaml is the engine source of truth.
-  #
-  # On load, themes and theme_die_table are validated against
-  # data/adventure_crafter.json -> random_themes (the canonical d10 -> theme
-  # mapping). Mismatches raise at parse time so the engine never silently
-  # diverges from the AC data file.
 
-  # Five canonical themes, ordered. Used as priority slots at adventure
-  # start: each slot gets one theme, rolled via theme_die_table.
   themes:
     - action
     - tension
@@ -25,14 +7,8 @@ adventure_crafter:
     - social
     - personal
 
-  # Number of priority slots assigned per adventure. AC spec calls for
-  # five — one per theme — but kept config-driven so a future setting can
-  # use fewer (e.g. mystery-only).
   theme_slots: 5
 
-  # d10 -> theme name. Matches data/adventure_crafter.json random_themes
-  # exactly; load-time validation enforces this. Each theme covers two
-  # adjacent faces of the d10.
   theme_die_table:
     1: action
     2: action
@@ -45,14 +21,6 @@ adventure_crafter:
     9: personal
     10: personal
 
-  # Special d100 ranges on plot-point lookup. The plot_points list in AC
-  # data carries themed d100 ranges per entry; on lookup, hits inside one
-  # of the three special ranges below get flagged so the caller can route
-  # accordingly. Bounds are inclusive on both ends.
-  #
-  # Conclusion (1-8): closes the active plotline.
-  # None (9-24):     no plot point this turn.
-  # Meta (96-100):   route to meta-handler (mechanics/adventure_crafter.py).
   special_ranges:
     conclusion_min: 1
     conclusion_max: 8

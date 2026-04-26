@@ -1,23 +1,3 @@
-#!/usr/bin/env python3
-"""Per-role model evaluation.
-
-Tests individual AI roles with fixed inputs and expected outputs.
-Uses the same provider and config infrastructure as the engine.
-
-Usage:
-    python tests/model_eval/eval.py                          # all roles, configured models
-    python tests/model_eval/eval.py --role brain             # brain only
-    python tests/model_eval/eval.py --role brain --model gpt-oss-120b  # override model
-    python tests/model_eval/eval.py --verbose                # show full model output
-    python tests/model_eval/eval.py --compare                # all 3 Cerebras models × all roles → JSON
-    python tests/model_eval/eval.py --compare --runs 3       # 3 runs per case for variance
-    python tests/model_eval/eval.py --compare --output r.json  # custom output path
-
-The --model flag overrides only the model, not the cluster parameters.
-The --compare flag runs GLM-4.7, GPT-OSS-120B, and Qwen3-235B over all roles
-and writes a JSON report with per-case results and a comparison matrix.
-"""
-
 from __future__ import annotations
 
 import argparse
@@ -32,7 +12,7 @@ import yaml
 if TYPE_CHECKING:
     from straightjacket.engine.models import GameState
 
-# Engine imports — uses real config, real provider, real schemas
+
 from straightjacket.engine.ai.api_client import get_provider
 from straightjacket.engine.ai.provider_base import AIProvider, create_with_retry
 from straightjacket.engine.ai.schemas import (
@@ -51,13 +31,8 @@ _HERE = Path(__file__).resolve().parent
 _CASES_PATH = _HERE / "cases.yaml"
 
 
-# ── Result tracking ──────────────────────────────────────────
-
-
 @dataclass
 class CaseResult:
-    """Outcome of one test case."""
-
     case_id: str
     role: str
     passed: bool = True
@@ -69,8 +44,6 @@ class CaseResult:
 
 @dataclass
 class RoleReport:
-    """Aggregate results for one role."""
-
     role: str
     model: str
     results: list[CaseResult] = field(default_factory=list)
@@ -88,11 +61,7 @@ class RoleReport:
         return len(self.results)
 
 
-# ── Brain evaluator ──────────────────────────────────────────
-
-
 def _build_brain_context() -> tuple[str, str]:
-    """Build minimal but realistic Brain prompt context."""
     from straightjacket.engine.models import GameState
 
     game = GameState(
@@ -140,7 +109,6 @@ time:{game.world.time_of_day}
 
 
 def eval_brain(provider: AIProvider, case: dict, model: str, params: dict) -> CaseResult:
-    """Evaluate one Brain test case."""
     system, user_template = _build_brain_context()
     user_msg = user_template.format(input=case["input"])
     result = CaseResult(case_id=case["id"], role="brain")
@@ -232,11 +200,7 @@ def eval_brain(provider: AIProvider, case: dict, model: str, params: dict) -> Ca
     return result
 
 
-# ── Validator evaluator ──────────────────────────────────────
-
-
 def eval_validator(provider: AIProvider, case: dict, model: str, params: dict) -> CaseResult:
-    """Evaluate one Validator test case."""
     from straightjacket.engine.ai.rule_validator import ValidationContext, run_rule_checks
     from straightjacket.engine.ai.schemas import VALIDATOR_SCHEMA
     from straightjacket.engine.models import GameState
@@ -245,12 +209,10 @@ def eval_validator(provider: AIProvider, case: dict, model: str, params: dict) -
     narration = case["narration"]
     result_type = case.get("result_type", "STRONG_HIT")
 
-    # Layer 1: rule-based checks (always the same, model-independent)
     ctx = ValidationContext.build(GameState(), result_type=result_type)
     rule_result = run_rule_checks(narration, ctx)
     rule_violations: list[str] = rule_result.get("violations", [])
 
-    # Layer 2: LLM check
     system = """Constraint checker for RPG narration. Be STRICT and PRECISE.
 GENRE PHYSICS: Materials MUST NOT exhibit consciousness or transformation. No magic in grounded settings.
 PLAYER AGENCY: MUST NOT impose thoughts, feelings, or interpretations on the player character.
@@ -322,11 +284,7 @@ Check constraints."""
     return result
 
 
-# ── Extraction evaluator ─────────────────────────────────────
-
-
 def eval_extraction(provider: AIProvider, case: dict, model: str, params: dict) -> CaseResult:
-    """Evaluate one extraction (narrator_metadata) test case."""
     result = CaseResult(case_id=case["id"], role="extraction")
 
     system = get_prompt("narrator_metadata", lang="English")
@@ -390,9 +348,6 @@ Extract all metadata from the narration above. Remember: {case["player_name"]} i
     return result
 
 
-# ── Narrator constraint evaluator ────────────────────────────
-
-
 _SILVER_LINING_MARKERS = [
     "but at least",
     "on the bright side",
@@ -440,7 +395,6 @@ _AGENCY_MARKERS = [
 
 
 def eval_narrator(provider: AIProvider, case: dict, model: str, params: dict) -> CaseResult:
-    """Evaluate narrator output for mechanical constraint compliance."""
     from straightjacket.engine.models import EngineConfig, GameState, RollResult
     from straightjacket.engine.prompt_blocks import get_narrator_system
     from straightjacket.engine.prompt_action import build_action_prompt
@@ -550,8 +504,6 @@ def eval_narrator(provider: AIProvider, case: dict, model: str, params: dict) ->
     if expect.get("consequence_reflected"):
         sentences = case.get("consequence_sentences", [])
         if sentences:
-            # Check that the narration echoes at least the spirit of the consequences
-            # Rough heuristic: at least one keyword from each sentence appears
             for sent in sentences:
                 words = {w.lower() for w in sent.split() if len(w) > 4}
                 if not any(w in narration_lower for w in words):
@@ -563,11 +515,7 @@ def eval_narrator(provider: AIProvider, case: dict, model: str, params: dict) ->
     return result
 
 
-# ── Director tool calling evaluator ──────────────────────────
-
-
 def _build_director_game() -> GameState:
-    """Build a realistic game state for Director evaluation."""
     from straightjacket.engine.models import (
         GameState,
         SceneLogEntry,
@@ -628,7 +576,6 @@ def _build_director_game() -> GameState:
 
 
 def eval_director(provider: AIProvider, case: dict, model: str, params: dict) -> CaseResult:
-    """Evaluate Director's tool calling and structured output."""
     from straightjacket.engine.ai.schemas import DIRECTOR_OUTPUT_SCHEMA
     from straightjacket.engine.director import _director_system, build_director_prompt
     from straightjacket.engine.tools.registry import get_tools
@@ -641,7 +588,6 @@ def eval_director(provider: AIProvider, case: dict, model: str, params: dict) ->
     tools = get_tools("director")
     system = _director_system(game)
 
-    # Phase 1: tool calling
     tool_called = False
     tool_context = ""
     try:
@@ -656,7 +602,7 @@ def eval_director(provider: AIProvider, case: dict, model: str, params: dict) ->
         )
         if response.tool_calls:
             tool_called = True
-            # Execute first tool call to test the loop
+
             from straightjacket.engine.tools.handler import run_tool_loop
 
             max_rounds = 3
@@ -683,7 +629,6 @@ def eval_director(provider: AIProvider, case: dict, model: str, params: dict) ->
         result.passed = False
         return result
 
-    # Phase 2: structured output
     phase2_prompt = prompt + tool_context if tool_context else prompt
     try:
         response2 = create_with_retry(
@@ -746,9 +691,6 @@ def eval_director(provider: AIProvider, case: dict, model: str, params: dict) ->
     return result
 
 
-# ── Runner ───────────────────────────────────────────────────
-
-
 _ROLE_EVALUATORS = {
     "brain": eval_brain,
     "validator": eval_validator,
@@ -757,8 +699,7 @@ _ROLE_EVALUATORS = {
     "director": eval_director,
 }
 
-# Eval roles map to engine roles for model/params resolution.
-# "extraction" tests narrator_metadata capability.
+
 _EVAL_TO_ENGINE_ROLE: dict[str, str] = {
     "brain": "brain",
     "validator": "validator",
@@ -769,23 +710,16 @@ _EVAL_TO_ENGINE_ROLE: dict[str, str] = {
 
 
 def load_cases() -> dict[str, list[dict]]:
-    """Load test cases from YAML."""
     with open(_CASES_PATH, encoding="utf-8") as f:
         return yaml.safe_load(f)
 
 
 def _clean_params_for_model(params: dict, model: str) -> dict:
-    """Adjust extra_body for model compatibility.
-
-    GLM: supports reasoning_effort (including "none").
-    GPT-OSS: requires reasoning_effort in {low, medium, high}, "none" → "low".
-    Qwen: does not support reasoning_effort at all.
-    """
     extra = params.get("extra_body")
     if not extra or "reasoning_effort" not in extra:
         return params
 
-    params = dict(params)  # shallow copy
+    params = dict(params)
     extra = dict(extra)
 
     if "qwen" in model.lower() or "gpt-oss" in model.lower():
@@ -805,7 +739,6 @@ def run_role(
     verbose: bool = False,
     runs: int = 1,
 ) -> RoleReport:
-    """Run all cases for one role, optionally multiple times for variance measurement."""
     evaluator = _ROLE_EVALUATORS[role]
     engine_role = _EVAL_TO_ENGINE_ROLE[role]
     model = model_override or model_for_role(engine_role)
@@ -855,7 +788,6 @@ def run_role(
                     for f in last_result.failures:
                         print(f"    last failure: {f}")
 
-            # For aggregation, mark as passed only if all runs passed
             assert last_result is not None
             last_result.passed = passed_count == runs
             last_result.checks.insert(0, f"pass_rate={passed_count}/{runs}")
@@ -869,7 +801,6 @@ def run_role(
 
 
 def print_report(reports: list[RoleReport]) -> None:
-    """Print summary across all roles."""
     print("\n" + "=" * 60)
     print("SUMMARY")
     print("=" * 60)
@@ -889,13 +820,10 @@ def print_report(reports: list[RoleReport]) -> None:
         print(f"  {total_failed} failures")
 
 
-# ── Compare mode ─────────────────────────────────────────────
-
 _CEREBRAS_MODELS = ["zai-glm-4.7", "gpt-oss-120b", "qwen-3-235b-a22b-instruct-2507"]
 
 
 def _report_to_dict(report: RoleReport) -> dict:
-    """Serialize a RoleReport for JSON output."""
     return {
         "role": report.role,
         "model": report.model,
@@ -917,7 +845,6 @@ def _report_to_dict(report: RoleReport) -> dict:
 
 
 def run_compare(provider: AIProvider, all_cases: dict[str, list[dict]], verbose: bool = False, runs: int = 1) -> dict:
-    """Run all models over all roles and produce comparison data."""
     from datetime import UTC, datetime
 
     comparison: dict = {
@@ -946,7 +873,6 @@ def run_compare(provider: AIProvider, all_cases: dict[str, list[dict]], verbose:
             report = run_role(provider, role, cases, model_override=model, verbose=verbose, runs=runs)
             comparison["results"][model][role] = _report_to_dict(report)
 
-            # Build matrix entry: model × role → pass_rate
             key = f"{model}:{role}"
             comparison["matrix"][key] = {
                 "model": model,
@@ -956,7 +882,6 @@ def run_compare(provider: AIProvider, all_cases: dict[str, list[dict]], verbose:
                 "pass_rate": round(report.passed / report.total, 2) if report.total else 0,
             }
 
-    # Summary table
     print(f"\n{'=' * 60}")
     print("COMPARISON MATRIX")
     print(f"{'=' * 60}")
@@ -997,7 +922,6 @@ def main() -> None:
     parser.add_argument("--runs", type=int, default=1, help="Run each case N times to measure variance (default: 1)")
     args = parser.parse_args()
 
-    # Load engine config (needed for schemas, prompts, provider)
     reload_config()
     from straightjacket.engine import engine_loader
 
@@ -1034,7 +958,6 @@ def main() -> None:
 
     print_report(reports)
 
-    # Exit code: 1 if any failures
     if any(r.failed > 0 for r in reports):
         sys.exit(1)
 

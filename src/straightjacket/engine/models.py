@@ -1,26 +1,10 @@
-"""Straightjacket data models.
-
-All model types are importable from here:
-    from .models import GameState, NpcData, RollResult, ...
-
-Implementation split across:
-- serialization.py: generic serialize/deserialize
-- models_base.py: EngineConfig, Resources, ClockData, ProgressTrack, WorldState, ClockEvent, PlayerPreferences
-- models_npc.py: MemoryEntry, NpcData
-- models_story.py: ThreadEntry, CharacterListEntry, SceneLogEntry, NarrationEntry, StoryAct, CurrentAct,
-                    Revelation, PossibleEnding, StoryBlueprint, DirectorGuidance, KeyedScene, NarrativeState,
-                    NpcEvolution, ChapterSummary, InheritanceRollResult, PredecessorRecord, CampaignState
-
-This file defines: RollResult, BrainResult, TurnSnapshot, GameState (top-level composites).
-"""
-
 from __future__ import annotations
 
 from dataclasses import dataclass, field
 
 from .engine_loader import eng
 from .logging_util import log
-from .models_base import (  # noqa: F401
+from .models_base import (
     ClockData,
     ClockEvent,
     EngineConfig,
@@ -33,12 +17,12 @@ from .models_base import (  # noqa: F401
     ThreatEvent,
     WorldState,
 )
-from .models_npc import (  # noqa: F401
+from .models_npc import (
     NPC_STATUSES,
     MemoryEntry,
     NpcData,
 )
-from .models_story import (  # noqa: F401
+from .models_story import (
     CampaignState,
     CharacterListEntry,
     ChapterSummary,
@@ -60,9 +44,6 @@ from .models_story import (  # noqa: F401
 from .serialization import SerializableMixin
 
 
-# ROLL RESULT
-
-
 @dataclass
 class RollResult(SerializableMixin):
     d1: int
@@ -77,18 +58,8 @@ class RollResult(SerializableMixin):
     match: bool
 
 
-# BRAIN RESULT
-
-
 @dataclass
 class BrainResult(SerializableMixin):
-    """Structured output from call_brain.
-
-    type/move/stat required — brain classification never produces a silent
-    default. The AI-call carve-out graceful-degradation path in brain.py
-    supplies them explicitly on exception.
-    """
-
     type: str = field(kw_only=True)
     move: str = field(kw_only=True)
     stat: str = field(kw_only=True)
@@ -101,21 +72,12 @@ class BrainResult(SerializableMixin):
     track_name: str | None = None
     track_rank: str | None = None
     target_track: str | None = None
-    fate_question: str | None = None  # Yes/no question about the fiction; engine resolves after classification
-    oracle_table: str | None = None  # Datasworn oracle path; engine rolls after classification
-
-
-# TURN SNAPSHOT
+    fate_question: str | None = None
+    oracle_table: str | None = None
 
 
 @dataclass
 class TurnSnapshot(SerializableMixin):
-    """Snapshot of game state plus turn context for correction/burn.
-
-    State fields (resources, world, etc.) are stored as dicts for restore().
-    Turn context (player_input, brain, roll, narration) is set during turn processing.
-    """
-
     resources: dict = field(default_factory=dict)
     world: dict = field(default_factory=dict)
     narrative: dict = field(default_factory=dict)
@@ -132,13 +94,8 @@ class TurnSnapshot(SerializableMixin):
     narration: str | None = None
 
 
-# GAME STATE
-
-
 @dataclass
 class GameState(SerializableMixin):
-    """Complete game state. Sub-objects own logically grouped fields."""
-
     player_name: str = ""
     character_concept: str = ""
     pronouns: str = ""
@@ -149,10 +106,7 @@ class GameState(SerializableMixin):
     setting_tone: str = ""
     setting_archetype: str = ""
     setting_description: str = ""
-    # Stats are required at construction. Keys and valid values come from
-    # engine.yaml stats (names, min, max, valid_arrays). No default here —
-    # a default would duplicate domain config and silently substitute an
-    # invalid character-creation state for a missing one.
+
     stats: dict[str, int] = field(kw_only=True)
     backstory: str = ""
     assets: list[str] = field(default_factory=list)
@@ -175,8 +129,6 @@ class GameState(SerializableMixin):
     post_epilogue_director_done: bool = field(default=False, repr=False)
 
     def get_stat(self, name: str) -> int:
-        """Get a character stat by name. Valid names come from engine.yaml stats.names."""
-
         valid = {n for n in eng().stats.names if n != "none"}
         if name not in valid:
             raise ValueError(f"Unknown stat: {name!r} (valid: {sorted(valid)})")
@@ -185,7 +137,6 @@ class GameState(SerializableMixin):
         return self.stats[name]
 
     def snapshot(self) -> TurnSnapshot:
-        """Complete snapshot of all mutable state. Called once at turn start."""
         return TurnSnapshot(
             resources=self.resources.snapshot(),
             world=self.world.snapshot(),
@@ -200,7 +151,6 @@ class GameState(SerializableMixin):
         )
 
     def restore(self, snap: TurnSnapshot) -> None:
-        """Restore all mutable state from a snapshot."""
         self.resources.restore(snap.resources)
         self.world.restore(snap.world)
         self.narrative.restore(snap.narrative)
@@ -216,11 +166,9 @@ class GameState(SerializableMixin):
             f"H{self.resources.health} Sp{self.resources.spirit} "
             f"Su{self.resources.supply} Chaos{self.world.chaos_factor}"
         )
-        # Rebuild database from restored state.
-        # circular: db/queries.py imports from .models, deferred until restore() runs
+
         from .db import sync as _db_sync
 
-        # circular: same reason
         from .db.connection import reset_db
 
         reset_db()

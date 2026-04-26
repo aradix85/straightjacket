@@ -1,8 +1,3 @@
-"""
-Straightjacket NPC Package — public API.
-  from engine.npc import score_importance, find_npc, ...
-"""
-
 __all__ = [
     "absorb_duplicate_npc",
     "activate_npcs_for_prompt",

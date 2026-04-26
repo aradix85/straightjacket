@@ -1,13 +1,3 @@
-"""OpenAI-compatible AI provider implementation.
-
-Wraps the openai SDK to implement the AIProvider protocol.
-Works with any OpenAI-compatible API: OpenAI, OpenRouter, Cerebras,
-Together, local vLLM/Ollama endpoints, etc.
-
-Structured output uses response_format with json_schema (strict: true),
-which is supported by all target providers.
-"""
-
 import json as _json
 
 from typing import Any
@@ -19,17 +9,6 @@ from .provider_base import AIResponse, extract_usage, normalize_stop_reason
 
 
 class OpenAICompatibleProvider:
-    """AIProvider implementation for OpenAI-compatible APIs.
-
-    Structured output: uses response_format with json_schema and strict: true.
-    Confirmed working on Cerebras (GLM-4.7, Qwen 3 235B), OpenRouter, and OpenAI.
-
-    Stop reason mapping:
-        "stop" -> "complete"
-        "length" -> "truncated"
-        anything else -> "complete" (safe default)
-    """
-
     def __init__(self, api_key: str, api_base: str | None = None):
         if api_base:
             self._client = openai.OpenAI(api_key=api_key, base_url=api_base)
@@ -50,8 +29,6 @@ class OpenAICompatibleProvider:
         top_k: int | None = None,
         extra_body: dict | None = None,
     ) -> AIResponse:
-        """Send a message via the OpenAI-compatible SDK."""
-
         full_messages = [{"role": "system", "content": system}] + messages
 
         create_kwargs: dict[str, Any] = {
@@ -65,7 +42,6 @@ class OpenAICompatibleProvider:
         if top_p is not None:
             create_kwargs["top_p"] = top_p
 
-        # Provider-specific params (top_k, per-role extra_body from config)
         extra: dict[str, Any] = dict(extra_body) if extra_body else {}
         if top_k is not None:
             extra["top_k"] = top_k

@@ -1,9 +1,3 @@
-#!/usr/bin/env python3
-"""Tests for Elvira bot modules: snapshots, invariants, display.
-
-Catches attribute errors and structural issues when engine dataclasses change.
-"""
-
 import pytest
 
 from straightjacket.engine.models import (
@@ -14,7 +8,6 @@ from tests._helpers import make_clock, make_game_state, make_memory, make_npc, m
 
 @pytest.fixture()
 def game(load_engine: None) -> GameState:
-    """Minimal game state with NPCs, clocks, tracks — exercises all snapshot fields."""
     g = make_game_state(
         player_name="Elvira",
         setting_id="starforged",
@@ -66,7 +59,7 @@ class TestFinalStateDict:
         npcs = result["npcs"]
         kira = next(n for n in npcs if n["name"] == "Kira")
         assert "bond" in kira
-        assert kira["bond"] == 2  # ticks=8, filled_boxes=2
+        assert kira["bond"] == 2
 
     def test_clocks_present(self, game: GameState) -> None:
         from tests.elvira.elvira_bot.display import final_state_dict
@@ -101,7 +94,7 @@ class TestSnapshotNpcs:
         snaps = _snapshot_npcs(game)
         names = [s.name for s in snaps]
         assert "Kira" in names
-        assert "Ghost" not in names  # deceased filtered out
+        assert "Ghost" not in names
 
     def test_npc_fields(self, game: GameState) -> None:
         from tests.elvira.elvira_bot.recorder import _snapshot_npcs

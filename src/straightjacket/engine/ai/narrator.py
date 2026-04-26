@@ -1,5 +1,3 @@
-"""AI Narrator calls: prose generation and metadata extraction."""
-
 import json
 
 from ..config_loader import model_for_role, sampling_params
@@ -22,31 +20,16 @@ def call_narrator(
     skip_history: bool = False,
     extra_messages: list[dict] | None = None,
 ) -> str:
-    """Narrator call with conversation memory for style consistency.
-
-    system_suffix: appended to the system prompt. Used by the validator
-    to inject correction instructions directly into the system context
-    on retries, where they carry more weight than user-message corrections.
-    skip_history: if True, do not include narration_history as conversation
-    context. Used on retries to prevent poisoned few-shot examples.
-    extra_messages: if provided, appended after the main prompt message.
-    Used by retry to include the failed narration as assistant turn +
-    correction instruction as user turn.
-
-    """
     log(f"[Narrator] Calling narrator (prompt: {len(prompt)} chars{', skip_history' if skip_history else ''})")
     messages = []
 
-    # Include narration history as conversation context — unless this is a retry
     if not skip_history and game and game.narrative.narration_history:
         for entry in game.narrative.narration_history[-eng().pacing.max_narration_history :]:
             messages.append({"role": "user", "content": entry.prompt_summary})
             messages.append({"role": "assistant", "content": entry.narration})
 
-    # Current prompt
     messages.append({"role": "user", "content": prompt})
 
-    # Extra messages for retry context (failed narration + correction)
     if extra_messages:
         messages.extend(extra_messages)
 
@@ -65,13 +48,10 @@ def call_narrator(
     raw = response.content
     stop = response.stop_reason
 
-    # Handle truncation: clean up to last complete sentence
     if stop == "truncated":
         log(f"[Narrator] WARNING: Response truncated at max_tokens ({len(raw)} chars)", level="warning")
         raw = salvage_truncated_narration(raw)
     else:
-        # Detect mid-sentence/mid-word cutoff despite "complete" stop reason
-        # (observed across providers — not model-specific)
         _prose = raw[: raw.find("<game_data>")] if "<game_data>" in raw else raw
         _stripped = _prose.rstrip()
         if _stripped and _stripped[-1] not in '.!?"\u201c\u201d\u00bb\u00ab\u2026)\u2013\u2014*':
@@ -91,16 +71,6 @@ def call_narrator(
 def call_opening_setup(
     provider: AIProvider, narration: str, game: GameState, config: EngineConfig | None = None
 ) -> dict:
-    """Extract structured opening scene data from narrator prose via fast model.
-
-    This is the two-call pattern applied to the opening scene:
-    the Narrator writes prose only, then this call extracts NPCs (with full
-    agenda/instinct/secrets), clocks, location, scene context, and time of day
-    from that prose using structured output on the fast model.
-
-    This replaces the old approach of embedding game_data JSON inside the
-    narrator response, which was unreliable across providers.
-    """
     lang = get_narration_lang(config or EngineConfig())
 
     system = get_prompt("opening_setup_extractor", role="opening_setup", lang=lang)
@@ -131,7 +101,6 @@ IMPORTANT: {game.player_name} is the PLAYER CHARACTER — do NOT include them as
         )
         return data
     except Exception as e:
-        # Intentional graceful degradation — see AI-CALL SUPPRESSION POLICY in provider_base.py.
         log(f"[OpeningSetup] Extraction failed: {e}", level="warning")
         defaults = eng().ai_text.narrator_defaults
         return {
@@ -152,19 +121,9 @@ def call_narrator_metadata(
     brain: BrainResult | None = None,
     consequences: list | None = None,
 ) -> dict:
-    """Extract structured metadata from narrator prose via Haiku (Two-Call pattern).
-
-    Args:
-        brain: Brain output dict for this turn (move, target_npc, result context).
-               Gives the extractor mechanical ground truth so it validates
-               interpretations against known facts instead of inferring from prose.
-        consequences: List of consequence strings from resolve_move_outcome.
-    """
     _cfg = config or EngineConfig()
     lang = get_narration_lang(_cfg)
 
-    # Build compact NPC reference list for the extractor
-    # Include location + short description to help disambiguate similar names
     npc_refs = []
     for n in game.npcs:
         if n.status not in ("active", "background", "deceased", "lore"):
@@ -176,18 +135,16 @@ def call_narrator_metadata(
             entry += " [DECEASED]"
         elif n.status == "lore":
             entry += " [LORE]"
-        # Location hint for spatial disambiguation
+
         npc_loc = n.last_location
         if npc_loc:
             entry += f" [at:{npc_loc}]"
-        # Short description for identity disambiguation
+
         desc = n.description
         if desc:
             entry += f" — {desc[: eng().truncations.prompt_xshort]}"
         npc_refs.append(entry)
 
-    # Mechanical context: what the engine decided this turn
-    # Gives the extractor ground truth so it doesn't have to guess from prose
     mechanical_ctx = ""
     if brain:
         parts = [f"move:{brain.move}"]
@@ -201,8 +158,6 @@ def call_narrator_metadata(
         mechanical_ctx += "</engine_context>"
 
     system_base = get_prompt("narrator_metadata", role="narrator_metadata", lang=lang)
-    # Add content boundaries so metadata extractor respects them
-    # when creating new NPCs or writing memory events
 
     cb = content_boundaries_block(game)
     system = f"{system_base}\n{cb}" if cb else system_base
@@ -235,7 +190,6 @@ Extract all metadata from the narration above. Remember: {game.player_name} is t
         )
         return metadata
     except Exception as e:
-        # Intentional graceful degradation — see AI-CALL SUPPRESSION POLICY in provider_base.py.
         log(f"[Metadata] Extraction failed: {e}", level="warning")
         defaults = eng().ai_text.narrator_defaults
         return {

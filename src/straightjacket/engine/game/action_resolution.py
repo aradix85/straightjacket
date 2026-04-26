@@ -1,22 +1,3 @@
-"""Action-roll consequence resolution.
-
-Phase 9 of the turn pipeline: given a RollOutcome, produce an ActionResolution.
-Sub-steps:
-  - position/effect (deterministic from game state)
-  - move outcome resolution + MISS clocks + crisis check
-  - progress marks and legacy-track rewards
-  - track completion on progress rolls
-  - scene-challenge progress routing
-  - WEAK_HIT threat-clock tick (turn-only; correction and burn skip this)
-  - NPC agency checks
-  - threat-event collection (menace on miss, Forsake Your Vow, overcome acks)
-  - gather_information success counter
-
-The scene-challenge and WEAK_HIT clock paths are intentionally turn-only:
-they are mechanical turn boundaries, not re-narration events, so correction
-and momentum-burn re-runs do not replay them.
-"""
-
 import random
 
 from ..engine_loader import eng
@@ -36,7 +17,6 @@ from .turn_types import ActionResolution, RollOutcome
 
 
 def _apply_track_completion(game: GameState, roll: RollResult, track: ProgressTrack) -> None:
-    """Complete or fail the progress track based on the progress-roll result."""
     if roll.result == "STRONG_HIT":
         complete_track(game, track.id, "completed")
     elif roll.result == "MISS":
@@ -44,9 +24,6 @@ def _apply_track_completion(game: GameState, roll: RollResult, track: ProgressTr
 
 
 def _maybe_mark_scene_challenge(game: GameState, brain: BrainResult, roll: RollResult) -> None:
-    """Step 10.2: if the move is in scene_challenge_progress_moves and the roll
-    hit, tick the active scene_challenge progress track.
-    """
     sc_progress_moves = eng().get_raw("scene_challenge_progress_moves")
     if brain.move not in sc_progress_moves or roll.result not in ("STRONG_HIT", "WEAK_HIT"):
         return
@@ -61,9 +38,6 @@ def _maybe_mark_scene_challenge(game: GameState, brain: BrainResult, roll: RollR
 def _maybe_tick_weak_hit_clock(
     game: GameState, roll: RollResult, position: str, clock_events: list[ClockEvent]
 ) -> None:
-    """WEAK_HIT clock tick — turn-only (correction/burn re-narration skips this).
-    Always ticks on desperate; otherwise rolls weak_hit_clock_tick_chance.
-    """
     if roll.result != "WEAK_HIT" or position == "controlled":
         return
     should_tick = (position == "desperate") or (random.random() < eng().pacing.weak_hit_clock_tick_chance)
@@ -72,9 +46,6 @@ def _maybe_tick_weak_hit_clock(
 
 
 def _collect_threat_events(game: GameState, roll: RollResult) -> list[ThreatEvent]:
-    """Assemble the threat events for the prompt: menace-on-miss + Forsake Your Vow
-    + overcome-under-pressure acknowledgments.
-    """
     events: list[ThreatEvent] = advance_menace_on_miss(game) if roll.result == "MISS" else []
     events.extend(resolve_full_menace(game))
 
@@ -94,9 +65,6 @@ def _collect_threat_events(game: GameState, roll: RollResult) -> list[ThreatEven
 
 
 def _track_gather_information_success(game: GameState, brain: BrainResult, roll: RollResult) -> None:
-    """Increment gather_count on a successful gather_information move.
-    Feeds into the information-gating subsystem (step 6).
-    """
     if brain.move != "adventure/gather_information" or roll.result not in ("STRONG_HIT", "WEAK_HIT"):
         return
     if not brain.target_npc:
@@ -107,26 +75,18 @@ def _track_gather_information_success(game: GameState, brain: BrainResult, roll:
 
 
 def resolve_action_phase(game: GameState, brain: BrainResult, roll_outcome: RollOutcome) -> ActionResolution:
-    """Phase 9: resolve every mechanical consequence of the roll. Sub-steps:
-    position/effect, move outcome + clocks + crisis, progress marks and legacy,
-    track completion, scene challenge routing, WEAK_HIT clocks, NPC agency,
-    threat events, gather_information tracking.
-    """
     roll = roll_outcome.roll
     ds_move = roll_outcome.ds_move
     track = roll_outcome.track
     is_progress_roll = roll_outcome.is_progress_roll
 
-    # Position and effect (deterministic from game state)
     position = resolve_position(game, brain)
     effect = resolve_effect(game, brain, position)
 
-    # Move outcome + MISS clocks + crisis (shared with correction/burn)
     action = resolve_action_consequences(game, brain, roll, position)
     consequences = action.consequences
     clock_events = action.clock_events
 
-    # Progress marks and legacy tracks (shared with correction/burn)
     if action.outcome:
         source_category = ds_move.track_category if ds_move else "vow"
         source_rank = track.rank if is_progress_roll and track else "dangerous"

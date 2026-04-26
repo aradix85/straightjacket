@@ -1,6 +1,4 @@
 correction:
-  # NPC fields that the correction brain may edit via an npc_edit op.
-  # Anything outside this list is silently dropped.
   npc_edit_allowed_fields:
     - name
     - description

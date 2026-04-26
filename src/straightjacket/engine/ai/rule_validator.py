@@ -1,10 +1,3 @@
-"""Rule-based narrator constraint checks.
-
-Instant, zero-cost checks that catch common violations without an LLM call.
-Used as first pass before the LLM validator (which handles semantic checks
-like RESOLUTION PACING that require understanding context).
-"""
-
 from __future__ import annotations
 
 import re
@@ -20,8 +13,6 @@ from ..models import GameState
 
 @dataclass
 class ValidationContext:
-    """Turn-specific context for validation. Built once per validation cycle."""
-
     game: GameState
     result_type: str = ""
     player_words: str = ""
@@ -29,7 +20,7 @@ class ValidationContext:
     consequence_sentences: list[str] = field(default_factory=list)
     genre_constraints: GenreConstraints | None = None
     threat_names: list[str] = field(default_factory=list)
-    impact_changes: list[str] = field(default_factory=list)  # Impact labels added/cleared this turn
+    impact_changes: list[str] = field(default_factory=list)
 
     @classmethod
     def build(
@@ -41,8 +32,6 @@ class ValidationContext:
         consequence_sentences: list[str] | None = None,
         genre_constraints: GenreConstraints | None = None,
     ) -> ValidationContext:
-        """Build context, deriving threat_names and impact_changes from game state."""
-        # Detect impacts changed this turn by comparing to snapshot
         changes: list[str] = []
         snap = game.last_turn_snapshot
         if snap is not None:
@@ -62,19 +51,7 @@ class ValidationContext:
         )
 
 
-# Regex patterns live in engine.yaml under validator.agency_patterns_universal
-# and validator.agency_patterns_<family>. The family that gets applied is the
-# narrator's model family, since these patterns score narrator output.
-# narrator_model_family() resolves cluster -> model -> family.
-
-
 def check_player_agency(narration: str) -> list[str]:
-    """Check for narrator deciding player character's thoughts/feelings.
-
-    Strips quoted NPC speech first — "You think X?" from an NPC is not
-    a player agency violation.
-    """
-    # Remove quoted speech to avoid false positives on NPC dialog
     prose_only = eng().compiled_pattern("validator", "quote_patterns", "strip").sub("", narration)
     templates = eng().rule_validator.violation_templates
     violations = []
@@ -84,7 +61,6 @@ def check_player_agency(narration: str) -> list[str]:
         for match in matches:
             violations.append(templates["player_agency"].format(match=match.strip()))
 
-    # Deduplicate similar violations
     _rv = eng().rule_validator
     seen = set()
     unique = []
@@ -96,12 +72,7 @@ def check_player_agency(narration: str) -> list[str]:
     return unique[: _rv.agency_violations_cap]
 
 
-# Patterns in engine.yaml under validator.miss_silver_lining_patterns_universal /
-# .miss_annihilation_patterns_universal plus optional family-specific overlays.
-
-
 def check_result_integrity(narration: str, result_type: str) -> list[str]:
-    """Check that narration matches the mechanical result type."""
     templates = eng().rule_validator.violation_templates
     violations = []
     if result_type == "MISS":
@@ -110,7 +81,7 @@ def check_result_integrity(narration: str, result_type: str) -> list[str]:
             m = pattern.search(narration)
             if m:
                 violations.append(templates["miss_silver_lining"].format(match=m.group()))
-                break  # One is enough
+                break
         for pattern in eng().compiled_patterns_for_family("validator", "miss_annihilation_patterns", family):
             m = pattern.search(narration)
             if m:
@@ -120,7 +91,6 @@ def check_result_integrity(narration: str, result_type: str) -> list[str]:
 
 
 def check_genre_fidelity(narration: str, genre_constraints: GenreConstraints | None) -> list[str]:
-    """Check for forbidden terms in narration."""
     if not genre_constraints:
         return []
     template = eng().rule_validator.violation_templates["genre_forbidden_term"]
@@ -133,12 +103,6 @@ def check_genre_fidelity(narration: str, genre_constraints: GenreConstraints | N
 
 
 def check_atmospheric_register(narration: str, genre_constraints: GenreConstraints | None) -> list[str]:
-    """Flag atmospheric register drift when setting-specific markers pile up.
-
-    Reads atmospheric_drift_universal + atmospheric_drift_<narrator_family>
-    (combined via atmospheric_drift_for) and atmospheric_drift_threshold from
-    genre_constraints. No config = no check.
-    """
     if not genre_constraints:
         return []
     drift_words = genre_constraints.atmospheric_drift_for(narrator_model_family())
@@ -168,11 +132,7 @@ def check_atmospheric_register(narration: str, genre_constraints: GenreConstrain
     ]
 
 
-# Patterns in engine.yaml validator.format_patterns
-
-
 def check_output_format(narration: str) -> list[str]:
-    """Check for metadata/formatting leaking into prose."""
     template = eng().rule_validator.violation_templates["output_format"]
     violations = []
     for pattern, label in eng().compiled_labeled_patterns("validator", "format_patterns"):
@@ -182,14 +142,6 @@ def check_output_format(narration: str) -> list[str]:
 
 
 def check_npc_monologue(narration: str) -> list[str]:
-    """Heuristic: flag NPC speech that dominates the scene.
-
-    Only checks structural dominance — content quality (unsolicited info)
-    is left to the LLM validator. Speech length alone is not a violation.
-
-    Flags when 4+ quoted segments appear with minimal narrative between them,
-    indicating an NPC monologue that crowds out player action and scene detail.
-    """
     _rv = eng().rule_validator
     quote_re = eng().compiled_pattern("validator", "quote_patterns", "match")
     quotes = quote_re.findall(narration)
@@ -211,11 +163,6 @@ def check_npc_monologue(narration: str) -> list[str]:
 
 
 def check_threat_advance(narration: str, threat_names: list[str]) -> list[str]:
-    """Check that narrator acknowledges threat menace advancement.
-
-    When a <threat_advance> tag was in the prompt, the narration should
-    reflect the threat's growing pressure — by name or by implication.
-    """
     if not threat_names:
         return []
     _rv = eng().rule_validator
@@ -231,11 +178,6 @@ def check_threat_advance(narration: str, threat_names: list[str]) -> list[str]:
 
 
 def check_impact_acknowledgment(narration: str, impact_changes: list[str]) -> list[str]:
-    """Check that narrator acknowledges impact changes (mark/clear) this turn.
-
-    When game.impacts changed since last snapshot, the narration must mention
-    the impact label (or a clear synonym) — the character's condition changed.
-    """
     if not impact_changes:
         return []
     _rv = eng().rule_validator
@@ -243,7 +185,7 @@ def check_impact_acknowledgment(narration: str, impact_changes: list[str]) -> li
     for label in impact_changes:
         if label.lower() in narration_lower:
             continue
-        # Allow first word of multi-word labels ("permanently harmed" → "permanently" or "harmed")
+
         words = [w.lower() for w in label.split() if len(w) >= _rv.impact_label_min_word_length]
         if any(w in narration_lower for w in words):
             continue
@@ -252,7 +194,6 @@ def check_impact_acknowledgment(narration: str, impact_changes: list[str]) -> li
 
 
 def run_rule_checks(narration: str, ctx: ValidationContext) -> dict:
-    """Run all rule-based checks. Returns same format as LLM validator."""
     violations = []
 
     violations.extend(check_player_agency(narration))

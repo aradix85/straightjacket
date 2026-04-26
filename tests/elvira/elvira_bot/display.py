@@ -1,5 +1,3 @@
-"""Shared display and summary helpers for runner and ws_runner."""
-
 from __future__ import annotations
 
 from straightjacket.engine.models import GameState

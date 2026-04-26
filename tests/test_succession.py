@@ -1,12 +1,3 @@
-"""Tests for character succession (Continue a Legacy).
-
-Covers the deterministic engine layer: inheritance rolls, NPC carryover,
-thread filtering, predecessor archive, and the prepare/start lifecycle
-pre- and post-AI. The full AI-coupled start_succession_with_character flow
-is exercised by Elvira; here we mock the chapter-close + opening AI calls
-to cover the orchestration surface.
-"""
-
 from __future__ import annotations
 
 import random
@@ -45,12 +36,8 @@ from tests._helpers import (
 )
 
 
-# ── Fixtures ────────────────────────────────────────────────
-
-
 @pytest.fixture
 def aria(load_engine: None) -> GameState:
-    """A predecessor character with some accumulated legacy and NPCs."""
     g = make_game_state(
         player_name="Aria",
         pronouns="she/her",
@@ -58,15 +45,12 @@ def aria(load_engine: None) -> GameState:
         background_vow="avenge sister",
         setting_id="classic",
     )
-    g.campaign.legacy_quests.ticks = 24  # 6 boxes
-    g.campaign.legacy_bonds.ticks = 8  # 2 boxes
-    g.campaign.legacy_discoveries.ticks = 16  # 4 boxes
+    g.campaign.legacy_quests.ticks = 24
+    g.campaign.legacy_bonds.ticks = 8
+    g.campaign.legacy_discoveries.ticks = 16
     g.narrative.scene_count = 42
     g.campaign.chapter_number = 2
     return g
-
-
-# ── Predecessor record ─────────────────────────────────────
 
 
 def test_build_predecessor_captures_pre_roll_state(aria: GameState) -> None:
@@ -81,10 +65,7 @@ def test_build_predecessor_captures_pre_roll_state(aria: GameState) -> None:
     assert record.legacy_quests_filled_boxes == 6
     assert record.legacy_bonds_filled_boxes == 2
     assert record.legacy_discoveries_filled_boxes == 4
-    assert record.inheritance_rolls == []  # filled in by caller
-
-
-# ── Inheritance rolls ──────────────────────────────────────
+    assert record.inheritance_rolls == []
 
 
 def test_run_inheritance_rolls_returns_one_per_legacy_track(aria: GameState) -> None:
@@ -112,11 +93,10 @@ def test_run_inheritance_rolls_uses_predecessor_filled_boxes(aria: GameState) ->
 
 
 def test_run_inheritance_rolls_strong_hit_keeps_full_value() -> None:
-    # A track at 8 filled boxes vs two low challenge dice forces STRONG_HIT.
     g = make_game_state()
-    g.campaign.legacy_quests.ticks = 32  # 8 boxes
-    random.seed(0)  # 0 → c1=4, c2=2 typically; keep low
-    # Force outcome: monkeypatch random in the consequences module to return low rolls.
+    g.campaign.legacy_quests.ticks = 32
+    random.seed(0)
+
     import straightjacket.engine.mechanics.consequences as cons_mod
 
     class _Dice:
@@ -125,15 +105,15 @@ def test_run_inheritance_rolls_strong_hit_keeps_full_value() -> None:
 
         def randint(self, a: int, b: int) -> int:
             self.calls += 1
-            return 1  # always 1 → both challenge dice = 1, score=8 > 1+1 = STRONG
+            return 1
 
     dice = _Dice()
     real = cons_mod.random
-    cons_mod.random = dice  # type: ignore[assignment]
+    cons_mod.random = dice
     try:
         rolls = run_inheritance_rolls(g)
     finally:
-        cons_mod.random = real  # type: ignore[assignment]
+        cons_mod.random = real
     quests = next(r for r in rolls if r.track_name == "quests")
     assert quests.result == "STRONG_HIT"
     assert quests.fraction == 1.0
@@ -141,22 +121,21 @@ def test_run_inheritance_rolls_strong_hit_keeps_full_value() -> None:
 
 
 def test_run_inheritance_rolls_miss_loses_everything() -> None:
-    # Force MISS: high challenge dice vs low filled_boxes.
     g = make_game_state()
-    g.campaign.legacy_quests.ticks = 8  # 2 boxes — very low
+    g.campaign.legacy_quests.ticks = 8
 
     import straightjacket.engine.mechanics.consequences as cons_mod
 
     class _Dice:
         def randint(self, a: int, b: int) -> int:
-            return 10  # both challenge dice = 10 → MISS
+            return 10
 
     real = cons_mod.random
-    cons_mod.random = _Dice()  # type: ignore[assignment]
+    cons_mod.random = _Dice()
     try:
         rolls = run_inheritance_rolls(g)
     finally:
-        cons_mod.random = real  # type: ignore[assignment]
+        cons_mod.random = real
     quests = next(r for r in rolls if r.track_name == "quests")
     assert quests.result == "MISS"
     assert quests.fraction == 0.0
@@ -164,32 +143,28 @@ def test_run_inheritance_rolls_miss_loses_everything() -> None:
 
 
 def test_run_inheritance_rolls_weak_hit_halves() -> None:
-    # 6 filled boxes, c1=4 c2=8 → score 6 > 4 but not > 8 → WEAK_HIT
     g = make_game_state()
-    g.campaign.legacy_quests.ticks = 24  # 6 boxes
+    g.campaign.legacy_quests.ticks = 24
 
     import straightjacket.engine.mechanics.consequences as cons_mod
 
     class _Dice:
         def __init__(self) -> None:
-            self.values = iter([4, 8] * 10)  # alternating
+            self.values = iter([4, 8] * 10)
 
         def randint(self, a: int, b: int) -> int:
             return next(self.values)
 
     real = cons_mod.random
-    cons_mod.random = _Dice()  # type: ignore[assignment]
+    cons_mod.random = _Dice()
     try:
         rolls = run_inheritance_rolls(g)
     finally:
-        cons_mod.random = real  # type: ignore[assignment]
+        cons_mod.random = real
     quests = next(r for r in rolls if r.track_name == "quests")
     assert quests.result == "WEAK_HIT"
     assert quests.fraction == 0.5
     assert quests.new_filled_boxes == 3
-
-
-# ── Seed successor legacy ──────────────────────────────────
 
 
 def test_seed_successor_legacy_overwrites_tracks(aria: GameState) -> None:
@@ -205,7 +180,7 @@ def test_seed_successor_legacy_overwrites_tracks(aria: GameState) -> None:
 
 
 def test_seed_successor_legacy_resets_status(aria: GameState) -> None:
-    aria.campaign.legacy_quests.status = "completed"  # nonsense but possible
+    aria.campaign.legacy_quests.status = "completed"
     rolls = [
         make_inheritance_roll(track_name="quests", new_filled_boxes=3),
         make_inheritance_roll(track_name="bonds", new_filled_boxes=0),
@@ -228,14 +203,9 @@ def test_seed_successor_legacy_preserves_xp(aria: GameState) -> None:
     assert aria.campaign.xp_spent == 4
 
 
-# ── NPC carryover ──────────────────────────────────────────
-
-
 def test_carryover_active_npc_full_track() -> None:
     npc = make_npc(id="npc_1", name="Mira", status="active")
-    track = make_progress_track(
-        id="connection_npc_1", name="Mira", track_type="connection", rank="dangerous", ticks=24
-    )  # 6 boxes
+    track = make_progress_track(id="connection_npc_1", name="Mira", track_type="connection", rank="dangerous", ticks=24)
     kept_npcs, kept_tracks = apply_npc_carryover([npc], [track])
     assert len(kept_npcs) == 1 and kept_npcs[0].id == "npc_1"
     assert len(kept_tracks) == 1
@@ -244,22 +214,20 @@ def test_carryover_active_npc_full_track() -> None:
 
 def test_carryover_background_npc_halves_track() -> None:
     npc = make_npc(id="npc_2", name="Talo", status="background")
-    track = make_progress_track(
-        id="connection_npc_2", name="Talo", track_type="connection", rank="dangerous", ticks=24
-    )  # 6 boxes
+    track = make_progress_track(id="connection_npc_2", name="Talo", track_type="connection", rank="dangerous", ticks=24)
     kept_npcs, kept_tracks = apply_npc_carryover([npc], [track])
     assert len(kept_npcs) == 1
-    assert kept_tracks[0].filled_boxes == 3  # halved
+    assert kept_tracks[0].filled_boxes == 3
 
 
 def test_carryover_lore_npc_halves_track() -> None:
     npc = make_npc(id="npc_3", name="Arenmar the Lost", status="lore")
     track = make_progress_track(
         id="connection_npc_3", name="Arenmar", track_type="connection", rank="dangerous", ticks=20
-    )  # 5 boxes
+    )
     kept_npcs, kept_tracks = apply_npc_carryover([npc], [track])
     assert len(kept_npcs) == 1
-    assert kept_tracks[0].filled_boxes == 2  # round(5*0.5) = 2 (banker's rounding to even)
+    assert kept_tracks[0].filled_boxes == 2
 
 
 def test_carryover_deceased_npc_pruned_entirely() -> None:
@@ -280,7 +248,7 @@ def test_carryover_deceased_npc_pruned_entirely() -> None:
 
 def test_carryover_unknown_status_raises() -> None:
     npc = make_npc(id="npc_x", name="Strange", status="active")
-    npc.status = "weird"  # bypass enum
+    npc.status = "weird"
     with pytest.raises(ValueError, match="no succession.npc_carryover rule"):
         apply_npc_carryover([npc], [])
 
@@ -293,9 +261,6 @@ def test_carryover_preserves_track_name_and_rank() -> None:
     _, kept_tracks = apply_npc_carryover([npc], [track])
     assert kept_tracks[0].name == "Mira Whisperer"
     assert kept_tracks[0].rank == "formidable"
-
-
-# ── Thread filtering ───────────────────────────────────────
 
 
 def test_filter_drops_vow_threads() -> None:
@@ -316,9 +281,6 @@ def test_filter_drops_creation_threads_regardless_of_type() -> None:
     kept = _filter_threads_for_successor(threads)
     kept_ids = {t.id for t in kept}
     assert kept_ids == {"t2", "t3"}
-
-
-# ── prepare_succession ─────────────────────────────────────
 
 
 def test_prepare_succession_archives_and_sets_flag(aria: GameState) -> None:
@@ -347,9 +309,6 @@ def test_prepare_succession_accepts_each_known_reason(aria: GameState) -> None:
         assert record.end_reason == reason
 
 
-# ── determine_end_reason ───────────────────────────────────
-
-
 def test_determine_end_reason_health_zero_only() -> None:
     g = make_game_state()
     g.resources.health = 0
@@ -372,14 +331,10 @@ def test_determine_end_reason_both_zero() -> None:
 
 
 def test_determine_end_reason_face_death_path() -> None:
-    # face_death MISS sets game_over=True without zeroing resources.
     g = make_game_state()
     g.resources.health = 3
     g.resources.spirit = 3
     assert determine_end_reason(g) == "death"
-
-
-# ── Pending succession survives snapshot/restore ───────────
 
 
 def test_pending_succession_round_trips_through_campaign_snapshot(aria: GameState) -> None:
@@ -397,11 +352,7 @@ def test_pending_succession_serialises_through_to_dict(aria: GameState) -> None:
     assert fresh.pending_succession is True
 
 
-# ── _reset_for_successor ───────────────────────────────────
-
-
 def test_reset_for_successor_clears_pc_state_keeps_world(aria: GameState) -> None:
-    # Populate predecessor-specific PC state
     aria.impacts = ["wounded", "shaken"]
     aria.assets = ["asset_a"]
     aria.resources.health = 1
@@ -426,7 +377,7 @@ def test_reset_for_successor_clears_pc_state_keeps_world(aria: GameState) -> Non
     assert aria.narrative.scene_count == 1
     assert aria.crisis_mode is False
     assert aria.game_over is False
-    assert len(aria.threats) == 1  # surviving threat preserved
+    assert len(aria.threats) == 1
     assert aria.threats[0].id == "thr_1"
 
 
@@ -450,12 +401,7 @@ def test_reset_for_successor_filters_characters_list(aria: GameState) -> None:
     assert kept_ids == {"npc_keep"}
 
 
-# ── _replace_character_identity ────────────────────────────
-
-
 def test_replace_character_identity_strict_required_fields(aria: GameState) -> None:
-    # All-strict subscript order: setting_id, stats, player_name, pronouns,
-    # background_vow, paths, backstory. Missing any one raises KeyError.
     base = {
         "setting_id": "classic",
         "stats": {"edge": 3, "heart": 2, "iron": 2, "shadow": 1, "wits": 1},
@@ -477,7 +423,7 @@ def test_replace_character_identity_empty_background_vow_raises(aria: GameState)
         "stats": {"edge": 3, "heart": 2, "iron": 2, "shadow": 1, "wits": 1},
         "player_name": "Bryn",
         "pronouns": "they/them",
-        "background_vow": "",  # empty
+        "background_vow": "",
         "paths": [],
         "backstory": "",
     }
@@ -499,13 +445,9 @@ def test_replace_character_identity_empty_player_name_raises(aria: GameState) ->
         _replace_character_identity(aria, creation_data)
 
 
-# ── start_succession_with_character requires pending_succession ────
-
-
 def test_start_succession_without_pending_raises(aria: GameState) -> None:
-    # Use a stub provider — should never be called on this path
     class _FailingProvider:
-        def create_message(self, **_: Any) -> Any:  # noqa: ANN001
+        def create_message(self, **_: Any) -> Any:
             raise AssertionError("AI must not be invoked when pending_succession is False")
 
     with pytest.raises(ValueError, match="pending_succession"):
@@ -513,19 +455,15 @@ def test_start_succession_without_pending_raises(aria: GameState) -> None:
 
 
 def test_start_succession_pending_without_predecessor_raises(aria: GameState) -> None:
-    # Forge a corrupt state: pending=True but no predecessors archived
     aria.campaign.pending_succession = True
     aria.campaign.predecessors = []
 
     class _FailingProvider:
-        def create_message(self, **_: Any) -> Any:  # noqa: ANN001
+        def create_message(self, **_: Any) -> Any:
             raise AssertionError("AI must not be invoked when archive is empty")
 
     with pytest.raises(ValueError, match="predecessors"):
         start_succession_with_character(_FailingProvider(), aria, {}, None)
-
-
-# ── Succession serializer ──────────────────────────────────
 
 
 def test_succession_summary_when_no_pending() -> None:
@@ -556,7 +494,7 @@ def test_succession_summary_renders_narrative_text(aria: GameState) -> None:
 
     summary = build_succession_summary(aria)
     assert summary["pending"] is True
-    assert summary["title"]  # i18n filled
+    assert summary["title"]
     assert "Aria" in summary["headline"]
     assert summary["predecessor"]["name"] == "Aria"
     assert "Aria" in summary["predecessor"]["history"]

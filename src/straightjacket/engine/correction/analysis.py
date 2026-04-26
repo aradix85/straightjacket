@@ -1,5 +1,3 @@
-"""Correction brain call: analyse a ## correction against the last turn."""
-
 from __future__ import annotations
 
 import json
@@ -18,7 +16,6 @@ from ..prompt_loader import get_prompt
 def call_correction_brain(
     provider: AIProvider, game: GameState, correction_text: str, config: EngineConfig | None = None
 ) -> dict:
-    """Analyse a ## correction request against the last turn snapshot."""
     snap = game.last_turn_snapshot
     if not snap:
         raise ValueError("No last_turn_snapshot available for correction")
@@ -37,9 +34,6 @@ def call_correction_brain(
 
     npc_lines = "\n".join(_npc_line(n) for n in game.npcs) or _defaults["no_npcs"]
 
-    # Sentinel BrainResult for turns with no brain classification (pre-brain
-    # correction or dialog-only). "none" on type/move/stat makes this visible
-    # in the correction prompt rather than looking like a real classification.
     brain = snap.brain or BrainResult(type="none", move="none", stat="none")
     roll = snap.roll
     roll_summary = (
@@ -86,7 +80,6 @@ npcs:
         )
         return result
     except Exception as e:
-        # Intentional graceful degradation — see AI-CALL SUPPRESSION POLICY in provider_base.py.
         log(f"[Correction] Brain failed ({type(e).__name__}: {e}), falling back to no-op state_error", level="warning")
         return {
             "correction_source": "state_error",

@@ -1,5 +1,3 @@
-"""Chapter management: epilogue generation, new chapter orchestration."""
-
 import copy
 import re
 from concurrent.futures import ThreadPoolExecutor
@@ -49,7 +47,6 @@ from .setup_common import apply_opening_setup
 def generate_epilogue(
     provider: AIProvider, game: GameState, config: EngineConfig | None = None
 ) -> tuple[GameState, str]:
-    """Generate an epilogue for the completed story. Returns (game, epilogue_text)."""
     log(
         f"[Epilogue] Generating epilogue for {game.player_name} (chapter {game.campaign.chapter_number}, scene {game.narrative.scene_count})"
     )
@@ -57,7 +54,6 @@ def generate_epilogue(
     raw = call_narrator(provider, build_epilogue_prompt(game), game, config)
     narration = parse_narrator_response(game, raw)
 
-    # Epilogue-specific: strip "Epilogue" heading the model sometimes prepends
     narration = re.sub(
         r"^\s*#*\s*\*{0,3}\s*Epilog(?:ue)?\s*\*{0,3}\s*\n+",
         "",
@@ -79,7 +75,6 @@ def generate_epilogue(
 def start_new_chapter(
     provider: AIProvider, game: GameState, config: EngineConfig | None = None, username: str = ""
 ) -> tuple[GameState, str]:
-    """Start a new chapter: keep character/world/NPCs, reset mechanics, new story arc."""
     log(f"[Campaign] Starting chapter {game.campaign.chapter_number + 1} for {game.player_name}")
 
     chapter_summary = _close_previous_chapter(provider, game, config)
@@ -112,8 +107,6 @@ def start_new_chapter(
         user_cfg["content_lines"] = game.preferences.content_lines
         save_user_config(username, user_cfg)
 
-    # Sync new chapter state to database
-
     reset_db()
     _db_sync(game)
 
@@ -121,16 +114,6 @@ def start_new_chapter(
 
 
 def _close_previous_chapter(provider: AIProvider, game: GameState, config: EngineConfig | None) -> ChapterSummary:
-    """Generate chapter summary, snapshot mechanical state, advance chapter number.
-
-    The AI writes the narrative fields. The engine snapshots mechanical state
-    deterministically. The chapter-summary contradiction validator catches AI
-    claims that contradict the snapshot (named NPCs declared dead while alive
-    in state, tracks declared completed while still active, threats declared
-    resolved while still active) and re-prompts up to `chapter_validator.max_retries`.
-    On exhaustion the last narrative is kept with a warning — graceful
-    degradation, the chapter still closes.
-    """
     epilogue = game.campaign.epilogue_text or ""
     narrative = call_chapter_summary(provider, game, config, epilogue_text=epilogue)
     narrative = validate_chapter_and_retry(
@@ -168,15 +151,6 @@ def _close_previous_chapter(provider: AIProvider, game: GameState, config: Engin
 
 
 def _reset_chapter_mechanics(game: GameState) -> None:
-    """Reset all per-chapter mechanical state to starting values.
-
-    Resets every field that should not implicitly carry over. Carry-over
-    happens explicitly via _restore_chapter_mechanics from the just-captured
-    ChapterSummary, not by skipping fields here. Adding a new chapter-spanning
-    field means: add it to ChapterSummary (capture), reset it here, restore it
-    in _restore_chapter_mechanics. No more 'this field carries over because we
-    don't reset it'.
-    """
     _e = eng()
     game.resources.health = _e.resources.health_start
     game.resources.spirit = _e.resources.spirit_start
@@ -197,7 +171,7 @@ def _reset_chapter_mechanics(game: GameState) -> None:
     game.world.time_of_day = ""
     game.world.location_history = []
     game.narrative.director_guidance = DirectorGuidance()
-    # Mechanical state previously implicit-carryover, now explicit via snapshot+restore.
+
     game.progress_tracks = []
     game.threats = []
     game.impacts = []
@@ -206,14 +180,6 @@ def _reset_chapter_mechanics(game: GameState) -> None:
 
 
 def _restore_chapter_mechanics(game: GameState, summary: ChapterSummary) -> None:
-    """Restore mechanical state from the just-captured ChapterSummary.
-
-    Called immediately after _reset_chapter_mechanics. Net effect on the live
-    game state is identical to the previous implicit carry-over, but the
-    chapter-end snapshot is now the authoritative source. NPCs are not in
-    scope here — they live on game.npcs, which is not reset, so their state
-    (including connection tracks) carries over directly via _prepare_npcs_for_new_chapter.
-    """
     game.progress_tracks = [ProgressTrack.from_dict(p.to_dict()) for p in summary.progress_tracks]
     game.threats = [ThreatData.from_dict(t.to_dict()) for t in summary.threats]
     game.impacts = list(summary.impacts)
@@ -222,7 +188,6 @@ def _restore_chapter_mechanics(game: GameState, summary: ChapterSummary) -> None
 
 
 def _prepare_npcs_for_new_chapter(game: GameState) -> None:
-    """Retire filler NPCs to background and consolidate memories."""
     for npc in game.npcs:
         if npc.status == "deceased" or npc.status != "active":
             continue
@@ -246,9 +211,6 @@ def _prepare_npcs_for_new_chapter(game: GameState) -> None:
 def _generate_chapter_opening(
     provider: AIProvider, game: GameState, config: EngineConfig | None, returning_npcs: list[NpcData]
 ) -> tuple[str, dict, dict]:
-    """Run narrator + architect in parallel, validate, extract setup.
-    Returns (narration, val_report, setup_data)."""
-
     structure = choose_story_structure(game.setting_tone)
     chapter_prompt = build_new_chapter_prompt(game)
     architect_game = copy.copy(game)
@@ -280,8 +242,6 @@ def _generate_chapter_opening(
 
 
 def _apply_blueprint(game: GameState, provider: AIProvider, blueprint: dict | None) -> None:
-    """Validate and apply story architect blueprint."""
-
     gc = None
     pkg = active_package(game)
     if pkg:
@@ -295,7 +255,6 @@ def _apply_blueprint(game: GameState, provider: AIProvider, blueprint: dict | No
 
 
 def _merge_returning_npcs(game: GameState, returning_npcs: list[NpcData]) -> None:
-    """Re-add returning NPCs not re-introduced by the extractor, fix ID references."""
     new_npc_names = {n.name.lower().strip() for n in game.npcs}
     id_remap: dict[str, str] = {}
 
@@ -321,7 +280,6 @@ def _merge_returning_npcs(game: GameState, returning_npcs: list[NpcData]) -> Non
 
 
 def _record_chapter_opening(game: GameState, narration: str, val_report: dict) -> None:
-    """Record opening scene in narration history and session log."""
     record_scene_intensity(game, "action")
     game.narrative.narration_history.append(
         NarrationEntry(
@@ -342,6 +300,4 @@ def _record_chapter_opening(game: GameState, narration: str, val_report: dict) -
 
 
 def _apply_chapter_opening_setup(game: GameState, data: dict, returning_npcs: list[NpcData]) -> None:
-    """Apply opening setup extraction to a new chapter."""
-
     apply_opening_setup(game, data, returning_npcs=returning_npcs, clocks_mode="extend", label="ChapterSetup")

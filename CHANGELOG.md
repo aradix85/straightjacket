@@ -7,6 +7,18 @@ Originally forked from [EdgeTales](https://github.com/edgetales/edgetales). See 
 
 Straightjacket uses calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day. The first CalVer release is `2026.04.25.0`. Earlier `0.x.y` releases keep their original version numbers and are not renumbered. The switch was made because the project has no public API to version semantically against — the `0.x.y` numbers were running counters with no meaning, and dates carry the meaning the numbers didn't.
 
+## [2026.04.26.2] — 2026-04-26
+
+Comment- en docstring-sweep. Alle `#`-comments en alle docstrings weg uit `src/`, `tests/`, en uit elke yaml in `config.yaml`, `engine/`, `prompts/`, `emotions/`, `strings/`, `data/` en `tests/`. 195 files aangeraakt, 6966 deletions tegenover 799 insertions. Configbloat in `config.yaml` daalde van 40% comment-regels naar nul; ongeveer 47.000 tokens aan docstring-tekst die elke keer mee-streamde bij het lezen van een file is verwijderd. ARCHITECTURE.md en CONTRIBUTING.md namen de inhoud over die in de codebase context-droeg — een nieuwe alinea "AI-call exception carve-out" in ARCHITECTURE bevat de policy die voorheen als module-docstring in `provider_base.py` stond.
+
+Nieuw `engine/tool_descriptions.yaml` waar de drie director-tools hun description-strings hebben; `tools/registry.py` leest die uit yaml in plaats van uit `__doc__`. Tests gebruiken een nieuwe `description=` override-parameter op `register()` om ad-hoc fixtures te kunnen registreren zonder yaml-aanpassing — productie blijft strikt yaml-gedreven. `CurrentAct` in `models_story.py` heeft een class-level `_NOT_SERIALIZED = True` opt-out gekregen ter vervanging van de docstring-escape die de SerializableMixin-projectregel gebruikte.
+
+117 `# type: ignore` en `# noqa` directives zijn weggewerkt door echte typing-fixes. `_require()` in `datasworn/settings.py` is gesplitst in typed `_require_dict` en `_require_str`; de drie `pick()`-helpers daar zijn vervangen door typed varianten (`pick_str`, `pick_int`, `pick_str_list`, `pick_bool`). `correction/orchestrator.py` heeft nu correcte `RollResult | None`-annotations in plaats van `object`. `serialization.py` gebruikt `TypeGuard[type]` voor narrowing op de dataclass-detector. Geen verborgen typing-issues meer onder ignore-tape.
+
+`tests/test_project_rules.py` herzien: de obsoleet geworden `test_no_banner_comments` en `test_no_untagged_todo_comments` zijn vervangen door `test_no_python_comments_or_docstrings` en `test_no_yaml_comments` die regression mechanisch tegenhouden. `test_broad_except` verloor de marker-eis (carve-out lijst is voldoende). `test_inline_imports_only_in_whitelist` is een whitelist geworden van tien legitieme circular-break imports. Dode helpers `_CARVE_OUT_MARKERS`, `_class_docstring`, `_except_has_marker` geschrapt. Save format ongewijzigd. 1019 tests groen, ruff format clean, ruff check clean, mypy clean op 105 source files, elf project-rule scans clean.
+
+---
+
 ## [2026.04.26.1] — 2026-04-26
 
 Config-driven `(role, model_family)` resolution layer. Three model-specific layers — prompts, validator-regex pattern lists, and atmospheric-drift wordlists — now resolve via `cluster → model → family` from `config.yaml`. New `ai.model_family` mapping, three new helpers in `config_loader.py` (`model_family_for_model`, `model_family_for_role`, `narrator_model_family`), and a role-aware `get_prompt(name, role=...)` that prefers `{name}_{family}` and falls back to bare `{name}`. Twenty-five primary system/task/suffix prompts in seventeen call-sites pass `role=`; sub-blocks stay bare until a variant ships.

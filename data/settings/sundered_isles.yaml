@@ -1,10 +1,8 @@
-# Sundered Isles setting package
-# Science-fantasy seafaring. Pirates, cursed waters, ancient ruins.
 
 id: sundered_isles
 title: "Sundered Isles"
 datasworn_id: sundered_isles
-parent: starforged  # Expansion — shares Starforged moves; vocabulary/constraints override in full
+parent: starforged
 description: >
   Vast uncharted seas dotted with strange islands. Ancient ruins hold
   forgotten power. Cursed waters swallow the unwary. You captain a
@@ -14,7 +12,7 @@ description: >
 oracle_paths:
   action_theme: ["core/action", "core/theme"]
   names: ["character/name/given_name", "character/name/family_name"]
-  backstory: ""  # Sundered Isles uses character/backstory if available
+  backstory: ""
   factions: "faction"
 
 vocabulary:
@@ -31,11 +29,10 @@ vocabulary:
     storm light. The seas are vast, the ships are small.
 
 genre_constraints:
-  forbidden_terms: []  # Science-fantasy permits most things
+  forbidden_terms: []
   forbidden_concepts: []
-  genre_test: ""  # No strict genre test — cursed waters and ancient ruins are on-genre
+  genre_test: ""
   atmospheric_drift_universal:
-    # Sci-fi bleed
     - "spaceship"
     - "computer"
     - "laser"
@@ -44,7 +41,6 @@ genre_constraints:
     - "cybernetic"
     - "elven"
     - "dwarven"
-    # GLM patterns (gothic material animation — out of place even in science-fantasy)
     - "weep"
     - "weeping"
     - "writhe"
@@ -59,7 +55,6 @@ genre_constraints:
     - "unnaturally"
     - "apparition"
     - "phantasm"
-    # Qwen patterns (poetic material agency)
     - "sighs"
     - "exhales"
     - "exhaling"
@@ -73,7 +68,7 @@ creation_flow:
   has_truths: true
   has_backstory_oracle: false
   has_name_tables: true
-  has_ship_creation: true       # Sundered Isles: ship is part of character
+  has_ship_creation: true
   starting_asset_categories:
     - companion
     - module

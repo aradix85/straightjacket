@@ -1,5 +1,3 @@
-"""Tests for available_moves tool (step 7 combat/exploration routing)."""
-
 from straightjacket.engine.models import GameState, Resources
 from tests._helpers import make_game_state, make_progress_track
 

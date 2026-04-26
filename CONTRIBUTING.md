@@ -18,13 +18,15 @@ Read `pyproject.toml` for the full ruff/mypy config. The linter rules are the sp
 
 These rules apply across the codebase. They are enforced mechanically by `tests/test_project_rules.py` and consciously upheld in review. They exist because every shortcut Python's defaulting and exception-swallowing make tempting eventually hides a real bug.
 
+**No `#` comments and no docstrings in Python or yaml.** Code explains itself through names, types, and tests. Context, motivation, and architecture live in the md-files at the repo root, not in the code. Three narrow exceptions where a single short trailing comment is permitted at the callsite: external-boundary defaults, the AI-call carved exception, and inline imports for circular-break or lazy-load. The exception buys a half-line, not a paragraph.
+
 **Domain config keys raise on miss.** Engine config is read by direct subscript (`config["key"]`). No `dict.get` with a literal fallback. No `x or "fallback"`. No dataclass defaults on fields that bind to a config value. If a key is missing, the engine should fail loudly, not silently substitute a value the rest of the code wasn't designed for.
 
-Three exceptions survive: language-mandated empty collections (`field(default_factory=list)`), parsing of variable external structures (Datasworn JSON, AI-returned JSON, WebSocket client input), and the AI-call carve-out below. Each non-language case carries a one-line policy comment at the callsite.
+Three exceptions survive: language-mandated empty collections (`field(default_factory=list)`), parsing of variable external structures (Datasworn JSON, AI-returned JSON, WebSocket client input), and the AI-call carve-out below.
 
 **User-, narrator-, and AI-readable strings live in config or prompt files.** Not hardcoded in Python. `engine/*.yaml`, `prompts/*.yaml`, `strings/*.yaml`, and `emotions/*.yaml` are the homes. Adding a constant to Python should be a last resort with a written reason.
 
-**Errors propagate.** No broad `except Exception: pass`, no `contextlib.suppress` over domain logic. The carve-out is AI-call sites and tool-boundary functions returning structured error dicts to an AI caller — those carry a one-line policy comment pointing back to `provider_base.py`'s module docstring, and the broad catch is logged at warning level.
+**Errors propagate.** No broad `except Exception: pass`, no `contextlib.suppress` over domain logic. The carve-out is AI-call sites and tool-boundary functions returning structured error dicts to an AI caller — the broad catch is logged at warning level. See ARCHITECTURE.md `Provider abstraction` for why the carve-out exists.
 
 **No backwards compatibility.** Saves break when the code requires it. No migration layers, no default-on-old-fields, no ignore-unknown-fields. This is by design for an alpha project with no production users; if it changes, it changes deliberately, not silently.
 

@@ -1,10 +1,3 @@
-#!/usr/bin/env python3
-"""Targeted tests for modules not covered by domain-specific test files.
-
-Every test here exists because it catches a real bug or verifies a non-obvious behavior.
-Coverage-padding tests (empty-input returns empty, pass-through returns same object) removed.
-"""
-
 import json
 
 from straightjacket.engine.models import (
@@ -68,9 +61,6 @@ class _MockProvider:
         return _MockResponse(self._content)
 
 
-# ── validator.py ─────────────────────────────────────────────
-
-
 def test_validate_narration_returns_violations(stub_all: None) -> None:
     from straightjacket.engine.ai.rule_validator import ValidationContext
     from straightjacket.engine.ai.validator import validate_narration
@@ -80,7 +70,7 @@ def test_validate_narration_returns_violations(stub_all: None) -> None:
     )
     ctx = ValidationContext.build(make_game_state(), result_type="MISS")
     result = validate_narration(
-        provider,  # type: ignore[arg-type]
+        provider,
         "Bad narration.",
         ctx,
     )
@@ -95,7 +85,7 @@ def test_validate_narration_fail_open_on_api_error(stub_all: None) -> None:
     provider = _MockProvider(fail=True)
     ctx = ValidationContext.build(make_game_state(), result_type="MISS")
     result = validate_narration(
-        provider,  # type: ignore[arg-type]
+        provider,
         "Text.",
         ctx,
     )
@@ -111,7 +101,7 @@ def test_validate_narration_catches_genre_violation_rule_based(stub_all: None) -
     gc = make_genre_constraints(forbidden_terms=["magic"])
     ctx = ValidationContext.build(make_game_state(), result_type="MISS", genre_constraints=gc)
     result = validate_narration(
-        provider,  # type: ignore[arg-type]
+        provider,
         "She cast a magic spell.",
         ctx,
     )
@@ -125,7 +115,7 @@ def test_validate_and_retry_actually_retries(stub_all: None) -> None:
     call_count = [0]
 
     class RetryProvider:
-        def create_message(  # type: ignore[override, no-untyped-def]
+        def create_message(
             self,
             model: str,
             system: str,
@@ -168,7 +158,7 @@ def test_validate_architect_fixes_violations(stub_all: None) -> None:
     bp = {"central_conflict": "Magic war", "antagonist_force": "Evil wizard"}
     gc = make_genre_constraints(forbidden_terms=["magic"])
     result = validate_architect(
-        provider,  # type: ignore[arg-type]
+        provider,
         bp,
         "realistic",
         "serious",
@@ -186,16 +176,13 @@ def test_validate_architect_fail_open_on_api_error(stub_all: None) -> None:
     bp = {"central_conflict": "Original", "antagonist_force": "Original"}
     gc = make_genre_constraints(forbidden_terms=["x"])
     result = validate_architect(
-        provider,  # type: ignore[arg-type]
+        provider,
         bp,
         "genre",
         "tone",
         genre_constraints=gc,
     )
     assert result["central_conflict"] == "Original"
-
-
-# ── setup_common.py ──────────────────────────────────────────
 
 
 def test_register_extracted_npcs_skips_player(stub_all: None) -> None:
@@ -293,9 +280,6 @@ def test_apply_world_setup_replace_vs_extend(stub_all: None) -> None:
     assert len(game.world.clocks) == 2
 
 
-# ── prompt_blocks.py ─────────────────────────────────────────
-
-
 def _load_prompts() -> None:
     from straightjacket.engine import prompt_loader
 
@@ -309,14 +293,14 @@ def test_create_with_retry_retries_on_connection_error() -> None:
     call_count = [0]
 
     class FlakeyProvider:
-        def create_message(self, **kwargs: object) -> _MockResponse:  # type: ignore[override]
+        def create_message(self, **kwargs: object) -> _MockResponse:
             call_count[0] += 1
             if call_count[0] <= 1:
                 raise ConnectionError("reset")
             return _MockResponse("OK")
 
     resp = create_with_retry(
-        FlakeyProvider(),  # type: ignore[arg-type]  # type: ignore[arg-type]
+        FlakeyProvider(),
         max_retries=2,
         model="m",
         system="s",
@@ -332,21 +316,18 @@ def test_create_with_retry_raises_on_exhaustion() -> None:
     import pytest
 
     class AlwaysFail:
-        def create_message(self, **kwargs: object) -> None:  # type: ignore[override]
+        def create_message(self, **kwargs: object) -> None:
             raise ConnectionError("permanent")
 
     with pytest.raises(ConnectionError):
         create_with_retry(
-            AlwaysFail(),  # type: ignore[arg-type]  # type: ignore[arg-type]
+            AlwaysFail(),
             max_retries=1,
             model="m",
             system="s",
             messages=[{"role": "user", "content": "hi"}],
             max_tokens=100,
         )
-
-
-# ── strings_loader.py ────────────────────────────────────────
 
 
 def test_run_deferred_director_applies_guidance(stub_all: None) -> None:
@@ -369,7 +350,7 @@ def test_run_deferred_director_applies_guidance(stub_all: None) -> None:
     game = _game()
     game.narrative.session_log.append(SceneLogEntry(scene=5, summary="Last", scene_type="expected"))
     run_deferred_director(
-        provider,  # type: ignore[arg-type]
+        provider,
         game,
         {"narration": "Text.", "config": None},
     )
@@ -382,13 +363,10 @@ def test_run_deferred_director_survives_api_error(stub_all: None) -> None:
     provider = _MockProvider(fail=True)
     game = _game()
     run_deferred_director(
-        provider,  # type: ignore[arg-type]
+        provider,
         game,
         {"narration": "text", "config": None},
     )
-
-
-# ── brain.py ─────────────────────────────────────────────────
 
 
 def test_revelation_check_returns_false_when_not_confirmed(stub_all: None) -> None:
@@ -399,7 +377,7 @@ def test_revelation_check_returns_false_when_not_confirmed(stub_all: None) -> No
     rev = Revelation(id="rev_1", content="The shadow is sentient", dramatic_weight="high")
     assert (
         call_revelation_check(
-            provider,  # type: ignore[arg-type]
+            provider,
             "The door opened.",
             rev,
         )
@@ -414,7 +392,7 @@ def test_revelation_check_defaults_true_on_api_error(stub_all: None) -> None:
     provider = _MockProvider(fail=True)
     assert (
         call_revelation_check(
-            provider,  # type: ignore[arg-type]
+            provider,
             "Text.",
             Revelation(id="r", content="X"),
         )

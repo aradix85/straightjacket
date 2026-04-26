@@ -1,5 +1,3 @@
-"""Game start: character creation and opening scene generation."""
-
 from concurrent.futures import ThreadPoolExecutor
 
 from ..ai.architect import call_story_architect
@@ -36,12 +34,10 @@ from .setup_common import apply_opening_setup
 
 
 def _valid_ranks() -> set[str]:
-    """Valid progress-track ranks from engine.yaml."""
     return set(eng().progress.track_types["default"].ticks_per_mark.keys())
 
 
 def validate_stats(stats: dict[str, int]) -> None:
-    """Validate stat distribution against engine.yaml constraints."""
     _e = eng()
     stat_names = [n for n in _e.stats.names if n != "none"]
     for name in stat_names:
@@ -59,32 +55,21 @@ def validate_stats(stats: dict[str, int]) -> None:
 
 
 def validate_creation(creation_data: dict, pkg: object) -> None:
-    """Validate creation data against engine.yaml and setting constraints.
-
-    Each .get(..., default) below is the validator's "field absent → skip
-    the check that depends on this field" semantics. The caller is
-    responsible for required-field presence; this function only validates
-    counts and ranges on whatever fields are present. External-boundary
-    parsing exception applies to all .get calls in this function.
-    """
     _e = eng()
 
     if not isinstance(pkg, SettingPackage):
         return
     flow = pkg.creation_flow
 
-    # Path count
     paths = creation_data.get("paths", [])
     max_paths = _e.creation.max_paths
     if len(paths) > max_paths:
         raise ValueError(f"Too many paths: {len(paths)} (max {max_paths})")
 
-    # Paths must exist in this setting
     for pid in paths:
         if not pkg.data.asset("path", pid):
             raise ValueError(f"Path '{pid}' not found in setting '{pkg.id}'")
 
-    # Asset count and categories
     assets = creation_data.get("assets", [])
     max_assets = _e.creation.max_starting_assets
     if len(assets) > max_assets:
@@ -100,12 +85,10 @@ def validate_creation(creation_data: dict, pkg: object) -> None:
             if not found:
                 raise ValueError(f"Asset '{asset_id}' not in allowed categories: {allowed_cats}")
 
-    # Truths: only allowed if setting has them
     truths = creation_data.get("truths", {})
     if truths and not flow.has_truths:
         raise ValueError(f"Setting '{pkg.id}' does not support truths")
 
-    # Background vow rank must be valid
     vow_rank = creation_data.get("background_vow_rank", "")
     valid = _valid_ranks()
     if vow_rank and vow_rank not in valid:
@@ -113,7 +96,6 @@ def validate_creation(creation_data: dict, pkg: object) -> None:
 
 
 def _compute_chaos_start(vow_text: str) -> int:
-    """Derive starting chaos factor from background vow keywords."""
     _e = eng()
     base = _e.chaos.start
     if not vow_text:
@@ -131,7 +113,6 @@ def _compute_chaos_start(vow_text: str) -> int:
 
 
 def _seed_background_vow(game: GameState, vow_text: str, rank: str = "") -> None:
-    """Create a ProgressTrack and ThreadEntry for the background vow."""
     if not vow_text:
         return
     _e = eng()
@@ -162,7 +143,6 @@ def _seed_background_vow(game: GameState, vow_text: str, rank: str = "") -> None
 
 
 def _seed_truth_threads(game: GameState) -> None:
-    """Derive initial tension threads from truth selections."""
     if not game.truths:
         return
     _e = eng()
@@ -183,11 +163,10 @@ def _seed_truth_threads(game: GameState) -> None:
                     )
                 )
                 log(f"[NewGame] Truth thread seeded: {thread_name}")
-                break  # One thread per truth
+                break
 
 
 def _seed_vow_subject(game: GameState, vow_subject: str) -> None:
-    """Add the vow's implied subject to the Mythic characters list."""
     if not vow_subject:
         return
     game.narrative.characters_list.append(
@@ -204,31 +183,6 @@ def _seed_vow_subject(game: GameState, vow_subject: str) -> None:
 def start_new_game(
     provider: AIProvider, creation_data: dict, config: EngineConfig | None = None, username: str = ""
 ) -> tuple[GameState, str]:
-    """Create character from structured creation data, generate opening scene.
-
-    creation_data keys:
-        setting_id: str          — package ID (e.g. "starforged")
-        player_name: str         — character name
-        pronouns: str            — "he/him", "she/her", "they/them", or custom
-        paths: list[str]         — 2 Datasworn path IDs
-        backstory: str           — backstory text
-        background_vow: str      — what drives this character
-        background_vow_rank: str — vow rank (default from engine.yaml)
-        vow_subject: str         — implied person/entity in the vow (for Mythic characters list)
-        stats: dict              — {edge, heart, iron, shadow, wits}
-        assets: list[str]        — additional asset IDs (non-path)
-        truths: dict[str, str]   — {truth_id: chosen_summary}
-        wishes: str              — story wishes
-        content_lines: str       — content exclusions
-
-    creation_data is WebSocket protocol input. Required fields are direct-
-    subscripted; absence is a client-side UI bug and raises. The fields that
-    depend on per-setting flow flags (truths, vow_subject, ranks) or are
-    always-optional preferences (wishes, content_lines) tolerate absence
-    via .get and carry the external-boundary policy comment.
-    """
-    # Required: setting_id, stats, player_name, pronouns, background_vow,
-    # paths, backstory. Direct-subscript; KeyError on absence is correct.
     setting_id = creation_data["setting_id"]
     stats = creation_data["stats"]
     player_name = creation_data["player_name"]
@@ -247,7 +201,6 @@ def start_new_game(
     validate_stats(stats)
     validate_creation(creation_data, pkg)
 
-    # Build character concept from paths
     path_names = []
     for pid in paths:
         asset = pkg.data.asset("path", pid)
@@ -259,10 +212,6 @@ def start_new_game(
     stat_names = [n for n in _e.stats.names if n != "none"]
     stat_dict = {n: stats[n] for n in stat_names}
 
-    # Genuinely optional per setting / UI flow. External-boundary parsing
-    # exception: absent → empty/default. assets and truths depend on the
-    # setting flow flags; player_wishes/content_lines/vow subject/vow rank
-    # are UI surfaces a setting may not present.
     assets = list(creation_data.get("assets", []))
     truths = dict(creation_data.get("truths", {}))
     wishes = creation_data.get("wishes", "")
@@ -286,8 +235,7 @@ def start_new_game(
         truths=truths,
         stats=stat_dict,
     )
-    # Resources seeded via Resources.from_config on GameState; chaos overridden here
-    # with vow-keyword-modified start rather than the base config value.
+
     game.narrative.scene_count = 1
     game.world.chaos_factor = _compute_chaos_start(background_vow)
     game.preferences.player_wishes = wishes
@@ -297,7 +245,6 @@ def start_new_game(
     _seed_truth_threads(game)
     _seed_vow_subject(game, vow_subject)
 
-    # Engine-determined opening state (no AI needed)
     _opening = _e.opening
     game.world.time_of_day = _opening.time_of_day
 
@@ -356,20 +303,15 @@ def start_new_game(
         setup_data = call_opening_setup(provider, narration, game, config)
         _apply_opening_setup(game, setup_data)
 
-    # Opening-scene NPCs are extracted FROM the narration — introduced by definition
     for npc in game.npcs:
         npc.introduced = True
 
-    # Seed Mythic characters list from opening NPCs
     for npc in game.npcs:
         if npc.status == "active":
             game.narrative.characters_list.append(
                 CharacterListEntry(id=npc.id, name=npc.name, entry_type="npc", weight=1)
             )
 
-    # Deceased NPCs in the opening scene (e.g. dramatic opener with a death).
-    # NPCs are extracted with full schema first, so data is preserved.
-    # No scene_present_ids guard — everything in the opening is witnessed.
     if setup_data.get("deceased_npcs"):
         process_deceased_npcs(game, setup_data["deceased_npcs"])
 
@@ -392,14 +334,10 @@ def start_new_game(
         )
     )
 
-    # Sync initial game state to database
-
     _db_sync(game)
 
     return game, narration
 
 
 def _apply_opening_setup(game: GameState, data: dict) -> None:
-    """Apply structured opening setup data to game state."""
-
     apply_opening_setup(game, data, clocks_mode="replace", label="OpeningSetup")

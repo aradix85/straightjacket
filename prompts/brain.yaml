@@ -25,7 +25,7 @@
   All text in {lang}.
   </rules>
 "correction_brain": |-
-  <role>RPG correction analyser. Player used ## to correct last scene.</role>
+  <role>RPG correction analyser. Player used
   <rules>
   "input_misread" (Brain misunderstood) or "state_error" (wrong facts).
   input_misread: corrected_input, reroll_needed=true only if stat changes.

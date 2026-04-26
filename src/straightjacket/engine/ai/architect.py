@@ -1,5 +1,3 @@
-"""AI Story Architect, Recap, and Chapter Summary calls."""
-
 import json
 
 from ..config_loader import model_for_role, sampling_params
@@ -18,7 +16,6 @@ from .schemas import get_chapter_summary_schema, get_story_architect_output_sche
 
 
 def call_recap(provider: AIProvider, game: GameState, config: EngineConfig | None = None) -> str:
-    """Generate a 'previously on...' recap from the PLAYER'S perspective only."""
     _cfg = config or EngineConfig()
     lang = get_narration_lang(_cfg)
     _e = eng()
@@ -28,7 +25,7 @@ def call_recap(provider: AIProvider, game: GameState, config: EngineConfig | Non
         f"S{s.scene}:{s.rich_summary or s.summary}({s.result})"
         for s in game.narrative.session_log[-_limits.recap_log_window :]
     )
-    # NPC text: Only player-visible info (no agenda, no secrets) and only introduced NPCs
+
     npc_text = (
         ", ".join(
             f"{n.name}({n.disposition},B{get_npc_bond(game, n.id)})"
@@ -37,12 +34,12 @@ def call_recap(provider: AIProvider, game: GameState, config: EngineConfig | Non
         )
         or _defaults["no_npcs"]
     )
-    # Last narrations for tone/content reference -- these ARE what the player saw
+
     recent_narrations = "\n---\n".join(
         entry.narration[: _limits.recap_narration_truncate]
         for entry in game.narrative.narration_history[-_limits.recap_narration_window :]
     )
-    # Story arc info: only act/phase, no central_conflict (that's director-level meta)
+
     arc_info = ""
     if game.narrative.story_blueprint and game.narrative.story_blueprint.acts:
         act = get_current_act(game)
@@ -82,15 +79,11 @@ def call_recap(provider: AIProvider, game: GameState, config: EngineConfig | Non
         )
         return response.content
     except Exception as e:
-        # Intentional graceful degradation — see AI-CALL SUPPRESSION POLICY in provider_base.py.
         log(f"[Recap] Failed: {e}", level="warning")
         return _defaults["recap_fallback"].format(player_name=game.player_name)
 
 
 def _build_architect_user_msg(game: GameState) -> str:
-    """Construct the architect's user message: genre, tone, world, character,
-    location, situation, NPCs, campaign history, backstory.
-    """
     _defaults = eng().ai_text.narrator_defaults
     _limits = eng().architect_limits
 
@@ -121,9 +114,6 @@ def _build_architect_user_msg(game: GameState) -> str:
 
 
 def _clean_act_moods(blueprint: dict) -> None:
-    """Strip forbidden mood terms from each act. If all terms are stripped,
-    fall back to the default_act_mood list. Mutates blueprint in place.
-    """
     _e = eng()
     forbidden = set(_e.architect.forbidden_moods)
     fallback = list(_e.ai_text.narrator_defaults["default_act_mood"])
@@ -147,9 +137,6 @@ def _clean_act_moods(blueprint: dict) -> None:
 
 
 def _validate_scene_ranges(blueprint: dict) -> None:
-    """Ensure every act's scene_range is exactly [start, end]. Replace malformed
-    ranges with engine-default. Mutates blueprint in place.
-    """
     default_range = list(eng().scene_range_default)
     for act in blueprint.get("acts", []):
         sr = act.get("scene_range", [])
@@ -165,13 +152,6 @@ def _validate_scene_ranges(blueprint: dict) -> None:
 def call_story_architect(
     provider: AIProvider, game: GameState, structure_type: str = "3act", config: EngineConfig | None = None
 ) -> dict | None:
-    """Generate a story blueprint. Supports 3-act and Kishōtenketsu (4-act).
-
-    Builds the user message from game state, calls the architect model with the
-    structure-appropriate system prompt, then post-processes the blueprint:
-    initialize tracking fields, strip forbidden-mood terms from acts, validate
-    scene ranges.
-    """
     _cfg = config or EngineConfig()
     lang = get_narration_lang(_cfg)
     cb = content_boundaries_block(game)
@@ -212,7 +192,6 @@ def call_story_architect(
         return blueprint
 
     except Exception as e:
-        # Intentional graceful degradation — see AI-CALL SUPPRESSION POLICY in provider_base.py.
         log(f"[Story] Architect failed ({type(e).__name__}: {e}), continuing without story blueprint", level="warning")
         return None
 
@@ -220,17 +199,6 @@ def call_story_architect(
 def call_chapter_summary(
     provider: AIProvider, game: GameState, config: EngineConfig | None = None, epilogue_text: str = ""
 ) -> dict:
-    """Generate the narrative summary of a completed chapter.
-
-    Returns a dict with the AI-written narrative fields only (title, summary,
-    unresolved_threads, character_growth, npc_evolutions, thematic_question,
-    post_story_location). The caller (`_close_previous_chapter` in
-    `game/chapters.py`) combines this with engine-captured mechanical state
-    (chapter, scenes, progress_tracks, threats, impacts, assets, threads) to
-    construct the final ChapterSummary. This keeps narrative interpretation
-    (AI-side) and mechanical snapshot (engine-side) cleanly separated — the
-    AI never sees nor writes the canonical chapter-end state.
-    """
     _cfg = config or EngineConfig()
     lang = get_narration_lang(_cfg)
     _e = eng()
@@ -280,7 +248,6 @@ def call_chapter_summary(
         )
         return json.loads(response.content)
     except Exception as e:
-        # Intentional graceful degradation — see AI-CALL SUPPRESSION POLICY in provider_base.py.
         log(f"[ChapterSummary] Structured output failed ({type(e).__name__}: {e}), using fallback", level="warning")
         return {
             "title": _defaults["chapter_summary_fallback_title"].format(chapter=game.campaign.chapter_number),

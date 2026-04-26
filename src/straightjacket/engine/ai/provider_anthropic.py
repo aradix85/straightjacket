@@ -1,5 +1,3 @@
-"""Anthropic AI provider implementation."""
-
 from typing import Any
 
 import anthropic
@@ -9,16 +7,6 @@ from .provider_base import AIResponse, extract_usage, normalize_stop_reason
 
 
 class AnthropicProvider:
-    """AIProvider implementation for the Anthropic API (Claude models).
-
-    Structured output: uses Anthropic's native output_config with json_schema.
-
-    Stop reason mapping:
-        "end_turn" -> "complete"
-        "max_tokens" -> "truncated"
-        anything else -> "complete" (safe default)
-    """
-
     def __init__(self, api_key: str, api_base: str | None = None):
         if api_base:
             self._client = anthropic.Anthropic(api_key=api_key, base_url=api_base)
@@ -37,9 +25,8 @@ class AnthropicProvider:
         temperature: float | None = None,
         top_p: float | None = None,
         top_k: int | None = None,
-        extra_body: dict | None = None,  # Protocol-required; Anthropic SDK has no equivalent so ignored here.
+        extra_body: dict | None = None,
     ) -> AIResponse:
-        """Send a message via the Anthropic SDK."""
         create_kwargs: dict[str, Any] = {
             "model": model,
             "max_tokens": max_tokens,

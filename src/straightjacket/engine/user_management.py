@@ -1,9 +1,3 @@
-"""User and save directory management, config load/save.
-
-Split from logging_util.py — these are filesystem operations for user data,
-not logging concerns. logging_util.py retains only log() and setup_file_logging().
-"""
-
 import json
 import shutil
 from datetime import datetime
@@ -14,12 +8,6 @@ from .logging_util import log
 
 
 def _safe_name(name: str) -> str:
-    """Sanitize a user/save name to prevent path traversal and filesystem issues.
-
-    Strips path separators, parent references, null bytes, and leading dots.
-    Rejects empty results and names that are filesystem-special (., ..).
-    Max 100 characters to prevent filesystem edge cases.
-    """
     clean = name.replace("/", "").replace("\\", "").replace("\0", "").replace("..", "").strip()
     clean = clean.lstrip(".")
     clean = " ".join(clean.split())
@@ -43,7 +31,6 @@ def _get_user_config_file(username: str) -> Path:
 
 
 def load_user_config(username: str) -> dict:
-    """Load per-user settings."""
     cfg_file = _get_user_config_file(username)
     if not cfg_file.exists():
         return {}
@@ -55,7 +42,6 @@ def load_user_config(username: str) -> dict:
 
 
 def save_user_config(username: str, cfg: dict) -> None:
-    """Save per-user settings to settings.json."""
     cfg_file = _get_user_config_file(username)
     try:
         cfg_file.write_text(json.dumps(cfg, indent=2, ensure_ascii=False), encoding="utf-8")
@@ -64,7 +50,6 @@ def save_user_config(username: str, cfg: dict) -> None:
 
 
 def list_users() -> list[dict]:
-    """List all users. Returns list of dicts with 'name'."""
     users = []
     if USERS_DIR.exists():
         for p in sorted(USERS_DIR.iterdir()):
@@ -74,7 +59,6 @@ def list_users() -> list[dict]:
 
 
 def create_user(name: str) -> bool:
-    """Create a new user directory with metadata."""
     user_dir = _get_user_dir(name)
     if user_dir.exists():
         return False
@@ -87,7 +71,6 @@ def create_user(name: str) -> bool:
 
 
 def delete_user(name: str) -> bool:
-    """Delete a user and all their data."""
     user_dir = _get_user_dir(name)
     if not user_dir.exists():
         return False

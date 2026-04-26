@@ -1,4 +1,2 @@
 persistence:
-  # Default save-slot name when the web client or persistence function omits
-  # an explicit name. Used for autosave slot selection.
   default_save_name: autosave

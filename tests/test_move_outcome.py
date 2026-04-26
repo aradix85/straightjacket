@@ -1,9 +1,3 @@
-"""Tests for move outcome resolver (step 7b).
-
-Covers: effect parsing, effect application, handler-based moves,
-config-driven outcome resolution, combat position, and edge cases.
-"""
-
 import pytest
 
 from straightjacket.engine.mechanics.move_effects import (
@@ -21,12 +15,8 @@ from straightjacket.engine.models import GameState, Resources
 from tests._helpers import make_game_state, make_progress_track
 
 
-# ── Fixtures ─────────────────────────────────────────────────
-
-
 @pytest.fixture()
 def game(stub_engine: None) -> GameState:
-    """Fresh game state with known resource values (stubbed engine config)."""
     g = make_game_state()
     g.resources = Resources(health=5, spirit=5, supply=5, momentum=2, max_momentum=10)
     g.setting_id = "starforged"
@@ -35,14 +25,10 @@ def game(stub_engine: None) -> GameState:
 
 @pytest.fixture()
 def game_real(load_engine: None) -> GameState:
-    """Fresh game state with real engine.yaml (for config-driven resolution tests)."""
     g = make_game_state()
     g.resources = Resources(health=5, spirit=5, supply=5, momentum=2, max_momentum=10)
     g.setting_id = "starforged"
     return g
-
-
-# ── Effect parsing ───────────────────────────────────────────
 
 
 class TestParseEffect:
@@ -79,9 +65,6 @@ class TestParseEffect:
         assert len(effects) == 2
         assert effects[0].type == "momentum"
         assert effects[1].type == "position"
-
-
-# ── Effect application ───────────────────────────────────────
 
 
 class TestApplyEffects:
@@ -142,31 +125,25 @@ class TestApplyEffects:
         assert result.combat_position == "in_control"
 
     def test_pay_the_price_appends_oracle_line(self, game: GameState) -> None:
-        """pay_the_price rolls the oracle table and adds the chosen line to consequences."""
         from straightjacket.engine.engine_loader import eng
 
         pay_lines = eng().get_raw("pay_the_price")
         result = apply_effects(game, parse_effects(["pay_the_price"]))
         assert result.pay_the_price is True
         assert len(result.consequences) == 1
-        # The appended consequence must be one of the oracle lines (with
-        # {player} substituted where applicable).
+
         rendered = {line.format(player=game.player_name) for line in pay_lines}
         assert result.consequences[0] in rendered
 
     def test_pay_the_price_substitutes_player_name(self, game: GameState) -> None:
-        """Lines containing {player} are rendered with the current player name."""
         import random as _random
 
-        # Force selection of the line that contains {player}: index 6 in the yaml
-        # ("Someone saw what {player} did. They won't forget.")
         _random.seed(12345)
         from straightjacket.engine.engine_loader import eng
 
         pay_lines = eng().get_raw("pay_the_price")
         player_line_idx = next(i for i, line in enumerate(pay_lines) if "{player}" in line)
 
-        # Seed-search for a seed that picks the player line.
         for seed in range(200):
             _random.seed(seed)
             if _random.randrange(len(pay_lines)) == player_line_idx:
@@ -199,9 +176,8 @@ _SUFFER_DEFAULTS = {
 
 
 def _suffer_params(**overrides: object) -> dict:
-    """Build a complete suffer-handler params dict for tests."""
     merged = dict(_SUFFER_DEFAULTS)
-    merged.update(overrides)  # type: ignore[arg-type]
+    merged.update(overrides)
     return merged
 
 
@@ -216,13 +192,9 @@ _RECOVERY_DEFAULTS = {
 
 
 def _recovery_params(**overrides: object) -> dict:
-    """Build a complete recovery-handler params dict for tests."""
     merged = dict(_RECOVERY_DEFAULTS)
-    merged.update(overrides)  # type: ignore[arg-type]
+    merged.update(overrides)
     return merged
-
-
-# ── Suffer handler ───────────────────────────────────────────
 
 
 class TestSufferHandler:
@@ -280,9 +252,6 @@ class TestSufferHandler:
         assert "wounded" in game.impacts
 
 
-# ── Threshold handler ────────────────────────────────────────
-
-
 class TestThresholdHandler:
     @pytest.mark.parametrize(
         "result_type, game_over, has_impact, narrative_only",
@@ -303,9 +272,6 @@ class TestThresholdHandler:
             assert "mark doomed" in result.consequences
         if game_over:
             assert "you are dead" in result.consequences
-
-
-# ── Recovery handler ─────────────────────────────────────────
 
 
 class TestRecoveryHandler:
@@ -345,9 +311,6 @@ class TestRecoveryHandler:
         assert result.pay_the_price is True
 
 
-# ── Config-driven resolution ─────────────────────────────────
-
-
 class TestResolveOutcome:
     @pytest.mark.parametrize(
         "move, result_type, check_fn",
@@ -365,7 +328,7 @@ class TestResolveOutcome:
     )
     def test_simple_outcomes(self, game_real: GameState, move: str, result_type: str, check_fn: object) -> None:
         result = resolve_move_outcome(game_real, move, result_type)
-        assert check_fn(game_real, result)  # type: ignore[operator]
+        assert check_fn(game_real, result)
 
     def test_strike_strong_hit_position(self, game_real: GameState) -> None:
         result = resolve_move_outcome(game_real, "combat/strike", "STRONG_HIT")
@@ -411,9 +374,6 @@ class TestResolveOutcome:
             resolve_move_outcome(game_real, "nonexistent/move", "STRONG_HIT")
 
 
-# ── Combat position in WorldState ────────────────────────────
-
-
 class TestCombatPosition:
     def test_default_empty(self) -> None:
         assert make_game_state().world.combat_position == ""
@@ -436,9 +396,6 @@ class TestCombatPosition:
         assert snap.world["combat_position"] == "in_control"
 
 
-# ── Progress roll through turn pipeline ──────────────────────
-
-
 class TestProgressRollPipeline:
     def test_progress_roll_uses_track_boxes(self, game_real: GameState) -> None:
         from straightjacket.engine.mechanics.consequences import roll_progress
@@ -459,10 +416,10 @@ class TestProgressRollPipeline:
         with pytest.raises(ValueError, match="Multiple active vow tracks"):
             _find_progress_track(game_real, "Vow")
 
-        assert _find_progress_track(game_real, "Vow", target_track="New").name == "New vow"  # type: ignore[union-attr]
-        assert _find_progress_track(game_real, "Vow", target_track="Old").name == "Old vow"  # type: ignore[union-attr]
-        assert _find_progress_track(game_real, "Combat").name == "Fight"  # type: ignore[union-attr]
+        assert _find_progress_track(game_real, "Vow", target_track="New").name == "New vow"
+        assert _find_progress_track(game_real, "Vow", target_track="Old").name == "Old vow"
+        assert _find_progress_track(game_real, "Combat").name == "Fight"
         assert _find_progress_track(game_real, "Expedition") is None
 
         game_real.progress_tracks[0].status = "completed"
-        assert _find_progress_track(game_real, "Vow").name == "New vow"  # type: ignore[union-attr]
+        assert _find_progress_track(game_real, "Vow").name == "New vow"

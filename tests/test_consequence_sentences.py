@@ -1,11 +1,3 @@
-#!/usr/bin/env python3
-"""Tests for consequence sentence generation (step 4).
-
-Verifies that mechanical consequences produce narrative sentences
-from engine.yaml templates, and that those sentences appear in
-the narrator prompt as <consequence> tags.
-"""
-
 import pytest
 
 from straightjacket.engine.mechanics import (
@@ -51,9 +43,6 @@ def _roll(result: str = "MISS") -> RollResult:
     )
 
 
-# ── Template picking ──────────────────────────────────────────
-
-
 def test_pick_template_returns_string() -> None:
     result = pick_template("health_light")
     assert isinstance(result, str) and len(result) > 0
@@ -62,9 +51,6 @@ def test_pick_template_returns_string() -> None:
 def test_pick_template_unknown_key_raises() -> None:
     with pytest.raises(KeyError):
         pick_template("nonexistent_key")
-
-
-# ── Single consequence resolution ─────────────────────────────
 
 
 @pytest.mark.parametrize(
@@ -90,9 +76,6 @@ def test_resolve_consequence_produces_sentence(cons: str, player: str, npc: str,
 
 def test_resolve_unknown_returns_empty() -> None:
     assert resolve_consequence_sentence("gibberish", "Ash", "", "") == ""
-
-
-# ── Full sentence generation ──────────────────────────────────
 
 
 def test_generate_sentences_from_consequences() -> None:
@@ -121,9 +104,6 @@ def test_generate_sentences_with_npc_target() -> None:
     game.npcs.append(make_npc(id="npc_1", name="Kira", disposition="distrustful"))
     sentences = generate_consequence_sentences(["Kira bond -1"], [], game, _brain(target="npc_1"))
     assert len(sentences) >= 1 and any("Kira" in s for s in sentences)
-
-
-# ── Prompt integration ────────────────────────────────────────
 
 
 def test_consequence_tags_in_prompt() -> None:

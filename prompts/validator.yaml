@@ -33,13 +33,11 @@
   - correction: one sentence naming the exact problem and what to do instead
 "validator_consequence_compliance": |2-
 
-
   CONSEQUENCE COMPLIANCE: Each consequence below MUST be reflected in the narration. The narrator may use different words but the event described MUST visibly occur. If a consequence is completely absent from the prose, flag it.
   {consequence_list}
 "validator_pc_hint": |2-
    The player character is "{player_name}" (the "you").
 "validator_json_suffix": |2-
-
 
   Respond with ONLY a JSON object: {{"pass": true/false, "violations": [...], "correction": "..."}}
 "chapter_validator_system": |-

@@ -1,9 +1,3 @@
-"""Architect blueprint genre validation.
-
-Extracted from validator.py. Checks story blueprints for genre fidelity
-using rule-based drift detection and LLM semantic checking.
-"""
-
 import json
 
 from ..config_loader import model_for_role, narrator_model_family, sampling_params
@@ -22,25 +16,14 @@ def validate_architect(
     tone: str,
     genre_constraints: GenreConstraints | None = None,
 ) -> dict:
-    """Check story architect blueprint for genre fidelity.
-
-    Two layers:
-    1. Rule-based: check all text fields against atmospheric_drift words.
-    2. LLM: check central_conflict and antagonist_force semantically.
-
-    Returns the blueprint, possibly with corrected fields.
-    On API failure, returns the blueprint with only rule-based fixes applied.
-    """
     if genre_constraints is None:
         return blueprint
 
-    # Layer 1: rule-based drift check on all blueprint text fields
     drift_words = genre_constraints.atmospheric_drift_for(narrator_model_family())
     if drift_words:
         drift_lower = {w.lower() for w in drift_words}
         _check_blueprint_text_fields(blueprint, drift_lower)
 
-    # No LLM constraints = skip LLM check
     if (
         not genre_constraints.forbidden_terms
         and not genre_constraints.forbidden_concepts
@@ -102,13 +85,11 @@ def validate_architect(
         return blueprint
 
     except Exception as e:
-        # Intentional graceful degradation — see AI-CALL SUPPRESSION POLICY in provider_base.py.
         log(f"[ArchitectValidator] Check failed ({e}), blueprint unchanged", level="warning")
         return blueprint
 
 
 def _check_blueprint_text_fields(blueprint: dict, drift_words: set[str]) -> None:
-    """Rule-based drift check on blueprint text fields."""
     fields_to_check = [
         ("central_conflict", blueprint.get("central_conflict", "")),
         ("antagonist_force", blueprint.get("antagonist_force", "")),

@@ -1,5 +1,3 @@
-"""Shared setup logic for opening scenes (new game and new chapter)."""
-
 import re
 
 from ..engine_loader import eng
@@ -10,7 +8,6 @@ from ..npc import apply_name_sanitization, normalize_npc_dispositions, score_imp
 
 
 def _find_npc_by_name(npcs: list[NpcData], npc_name: str) -> NpcData | None:
-    """Find an NPC by name or partial name match. Used for memory seeding."""
     name_lower = npc_name.lower().strip()
     min_part = eng().setup_common.part_name_min_length
     for n in npcs:
@@ -29,17 +26,6 @@ def register_extracted_npcs(
     skip_names: set[str] | None = None,
     start_id: int = 0,
 ) -> int:
-    """Register NPCs from extraction data into game state.
-
-    Args:
-        game: Game state to modify.
-        npc_dicts: Raw NPC dicts from the extractor.
-        skip_names: Lowercased names to skip (player character, returning NPCs).
-        start_id: Starting NPC ID counter. 0 means auto-detect from game.npcs.
-
-    Returns:
-        The highest NPC ID number assigned (for further ID generation).
-    """
     player_lower = game.player_name.lower().strip()
     skip = skip_names or set()
     skip.add(player_lower)
@@ -59,18 +45,15 @@ def register_extracted_npcs(
         nd["id"] = f"npc_{max_num}"
         nd.setdefault("introduced", False)
         nd.setdefault("last_location", game.world.current_location or "")
-        # Extracted NPCs are present in narration — active by definition. Not a silent
-        # default: status is not part of the AI extractor's output contract, it's set here
-        # because all paths through register_extracted_npcs imply "NPC is active".
+
         nd["status"] = "active"
-        # Remove bond/bond_max from AI output — bond lives in connection tracks
+
         nd.pop("bond", None)
         nd.pop("bond_max", None)
         npc = NpcData.from_dict(nd)
         apply_name_sanitization(npc)
         game.npcs.append(npc)
 
-    # Remove any player character that slipped through
     game.npcs = [n for n in game.npcs if n.name.lower().strip() != player_lower]
     normalize_npc_dispositions(game.npcs)
     return max_num
@@ -81,7 +64,6 @@ def seed_opening_memories(
     memory_updates: list[dict],
     label: str = "opening_setup",
 ) -> None:
-    """Apply initial memory entries from extraction data."""
     for mu in memory_updates:
         npc_name = mu.get("npc_name", "")
         if not npc_name:
@@ -110,10 +92,6 @@ def seed_opening_memories(
 
 
 def apply_world_setup(game: GameState, data: dict, *, clocks_mode: str = "replace") -> None:
-    """Apply clocks, location, scene_context, time_of_day from extraction data.
-
-    clocks_mode: "replace" (new game) or "extend" (new chapter).
-    """
     if data.get("clocks"):
         clocks = [ClockData.from_dict(c) for c in data["clocks"]]
         if clocks_mode == "replace":
@@ -141,12 +119,6 @@ def apply_opening_setup(
     clocks_mode: str = "replace",
     label: str = "OpeningSetup",
 ) -> None:
-    """Unified opening setup: register NPCs, seed memories, apply world state.
-
-    Used by both new game and new chapter. The returning_npcs parameter
-    controls chapter-specific behavior (skip returning NPC names, compute
-    start_id across both lists).
-    """
     skip_names: set[str] | None = None
     start_id = 0
 

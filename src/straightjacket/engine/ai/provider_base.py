@@ -1,37 +1,3 @@
-"""AI provider abstraction: base protocol and response dataclass.
-
-Every AI provider (Anthropic, OpenAI-compatible, etc.) implements the
-AIProvider protocol. The engine never talks to provider SDKs directly —
-it goes through this interface.
-
-AIResponse normalizes the response format across providers so call sites
-don't need to know which provider produced the response.
-
-── AI-CALL EXCEPTION SUPPRESSION POLICY ──────────────────────────────────
-The straightjacket absolute_rules forbid `try/except Exception` suppression
-by default. AI-call sites are an explicit carve-out, documented here so
-future Claude sessions do not mistake them for bugs.
-
-Why exceptions are swallowed at AI-call sites (brain.py, narrator.py,
-validator.py, director.py, correction/analysis.py, architect*.py, tools/handler.py):
-
-1. AI calls fail transiently (rate limits, network blips, provider outages,
-   429/500/502/503/529). These are not bugs in the engine — they are the
-   weather the engine lives in.
-2. The retry wrapper (create_with_retry) already handles retryable HTTP
-   status codes with exponential backoff. What remains after retries
-   exhaust is unrecoverable for this call.
-3. Strict-raise would crash the player's session on any transient fault.
-   Graceful degradation — Brain → "dialog", revelation → confirmed=True,
-   narrator retry → empty string, etc. — is worse only in that it hides
-   the fault; the warning log preserves debuggability.
-4. Every suppression site logs the exception at warning or error level
-   with the type name. Faults are observable, just non-fatal.
-
-When this policy does NOT apply: config loading, yaml parsing, file
-persistence, input validation, domain-rule enforcement. Those must raise.
-"""
-
 import re
 import time as _time
 from dataclasses import dataclass, field
@@ -40,65 +6,37 @@ from collections.abc import Callable
 
 from ..logging_util import log
 
-# Backoff sleep — replaceable for tests to skip waits.
+
 _backoff_sleep: Callable[[float], Any] = _time.sleep
 
 
 def set_backoff_sleep(fn: Callable[[float], Any]) -> None:
-    """Replace the backoff sleep function. Used by tests/conftest.py."""
     global _backoff_sleep
     _backoff_sleep = fn
 
 
-# TOKEN TRACKING — per-call accumulator for session logging
 _token_log: list[dict[str, str | int]] = []
 
 
 def log_tokens(role: str, input_tokens: int, output_tokens: int) -> None:
-    """Record token usage for one AI call."""
     _token_log.append({"role": role, "input": input_tokens, "output": output_tokens})
 
 
 def drain_token_log() -> list[dict[str, str | int]]:
-    """Return and clear accumulated token records. Call after each turn."""
     records = list(_token_log)
     _token_log.clear()
     return records
 
 
-# NORMALIZED RESPONSE
-
-
 @dataclass
 class AIResponse:
-    """Provider-agnostic AI response.
-
-    Attributes:
-        content: The response text (prose or JSON string). Empty when
-                 the model responds only with tool calls.
-        stop_reason: Normalized to "complete", "truncated", or "tool_use".
-                     "complete" = model finished naturally.
-                     "truncated" = hit max_tokens limit.
-                     "tool_use" = model is requesting tool calls.
-        tool_calls: List of tool call requests from the model. Each dict has
-                    "id" (str), "name" (str), "arguments" (dict).
-                    Empty list when no tools are called.
-        usage: Optional token counts {"input_tokens": int, "output_tokens": int}.
-    """
-
     content: str
-    stop_reason: str = "complete"  # "complete" | "truncated" | "tool_use"
+    stop_reason: str = "complete"
     tool_calls: list[dict[str, str | dict]] = field(default_factory=list)
     usage: dict[str, int] | None = field(default=None, repr=False)
 
 
 def normalize_stop_reason(raw: str, truncated_value: str, tool_use_value: str) -> str:
-    """Map provider-specific stop-reason strings to the normalized enum.
-
-    Providers use different vocabularies: Anthropic says "max_tokens"/"tool_use",
-    OpenAI says "length"/"tool_calls". Caller passes its two non-complete values;
-    anything else is treated as "complete".
-    """
     if raw == truncated_value:
         return "truncated"
     if raw == tool_use_value:
@@ -107,12 +45,6 @@ def normalize_stop_reason(raw: str, truncated_value: str, tool_use_value: str) -
 
 
 def extract_usage(raw_usage: Any, input_key: str, output_key: str) -> dict[str, int] | None:
-    """Pull a usage object's input/output token counts into normalized form.
-
-    Anthropic attrs: `input_tokens` / `output_tokens`.
-    OpenAI attrs:    `prompt_tokens` / `completion_tokens`.
-    Returns None when the provider returned no usage object.
-    """
     if not raw_usage:
         return None
     return {
@@ -121,23 +53,7 @@ def extract_usage(raw_usage: Any, input_key: str, output_key: str) -> dict[str, 
     }
 
 
-# PROVIDER PROTOCOL
-
-
 class AIProvider(Protocol):
-    """Contract that every AI provider must implement.
-
-    Providers handle:
-    - SDK/HTTP client setup
-    - Translating create_message args to their native API format
-    - Structured output (json_schema) in their provider-specific way
-    - Normalizing the response into AIResponse
-
-    Providers do NOT handle:
-    - Retry logic (that's in create_with_retry wrapper)
-    - Post-processing (think tag stripping, etc. — that's in post_process_response)
-    """
-
     def create_message(
         self,
         model: str,
@@ -150,49 +66,18 @@ class AIProvider(Protocol):
         top_p: float | None = None,
         top_k: int | None = None,
         extra_body: dict | None = None,
-    ) -> AIResponse:
-        """Send a message to the AI model and return a normalized response.
+    ) -> AIResponse: ...
 
-        Args:
-            model: Model identifier (e.g. "claude-haiku-4-5-20251001", "qwen3-30b").
-            system: System prompt text.
-            messages: Conversation history as [{"role": "user"|"assistant", "content": "..."}].
-            max_tokens: Maximum tokens in the response.
-            json_schema: If provided, request structured JSON output matching this schema.
-                         Mutually exclusive with tools.
-            tools: If provided, list of tool definitions in OpenAI function calling format:
-                   [{"type": "function", "function": {"name": ..., "description": ...,
-                     "parameters": ..., "strict": True}}].
-                   The model may respond with tool_calls instead of content.
-            temperature: Sampling temperature (0.0-1.0). None = provider default.
-            top_p: Nucleus sampling cutoff (0.0-1.0). None = provider default.
-            top_k: Top-k sampling limit. None = provider default.
-
-        Returns:
-            AIResponse with normalized content, stop_reason, tool_calls, and optional usage.
-        """
-        ...
-
-
-# RESPONSE POST-PROCESSING
 
 _THINK_TAG_RE = re.compile(r"<think>.*?</think>\s*", re.DOTALL)
 
 
 def post_process_response(response: AIResponse) -> AIResponse:
-    """Apply model-agnostic post-processing to an AI response.
-
-    Currently handles:
-    - Stripping <think>...</think> tags (Qwen 3 thinking mode)
-
-    Skips post-processing for tool_use responses (no prose to clean).
-    """
     if response.stop_reason == "tool_use":
         return response
 
     content = response.content
 
-    # Strip Qwen-style think tags if present
     if "<think>" in content:
         content = _THINK_TAG_RE.sub("", content).lstrip()
         if content != response.content:
@@ -206,9 +91,6 @@ def post_process_response(response: AIResponse) -> AIResponse:
             usage=response.usage,
         )
     return response
-
-
-# RETRY WRAPPER
 
 
 def create_with_retry(
@@ -227,23 +109,6 @@ def create_with_retry(
     extra_body: dict | None = None,
     log_role: str = "",
 ) -> AIResponse:
-    """Call provider.create_message with retry on transient errors.
-
-    Retries on:
-    - HTTP 429 (rate limit)
-    - HTTP 500, 502, 503, 529 (server errors)
-    - Connection errors
-
-    Uses exponential backoff: 1s, 2s, 4s, ...
-
-    IMPORTANT: This function uses blocking time.sleep() for backoff.
-    All callers MUST run this via asyncio.to_thread() to avoid blocking
-    the server event loop.
-
-    If log_role is set, logs token usage per call for budget tracking.
-
-    Returns the post-processed AIResponse.
-    """
     for attempt in range(max_retries + 1):
         try:
             response = provider.create_message(
@@ -270,8 +135,6 @@ def create_with_retry(
             return result
 
         except Exception as e:
-            # carve-out: retry policy on AI provider call
-            # circular: engine_loader → ai.schemas → provider_base
             from ..engine_loader import eng as _eng
 
             _retry_cfg = _eng().retry

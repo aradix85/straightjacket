@@ -1,5 +1,3 @@
-# Starforged setting package
-# Sci-fi frontier. Human-centric, scavenged future.
 
 id: starforged
 title: "Ironsworn: Starforged"
@@ -10,16 +8,12 @@ description: >
   dangers constant. You are a sworn adventurer, bound to dangerous
   quests in this perilous frontier.
 
-# Oracle paths differ per setting. These tell the loader where to
-# find character creation data in the Datasworn JSON.
 oracle_paths:
   action_theme: ["core/action", "core/theme"]
   names: ["characters/name/given", "characters/name/family_name", "characters/name/callsign"]
   backstory: "campaign_launch/backstory_prompts"
   factions: "factions"
 
-# Vocabulary: how this world describes its concepts.
-# Substitutions feed into the narrator prompt as a <vocabulary> block.
 vocabulary:
   substitutions:
     spaceship: "starship — worn, patched, held together by stubbornness"
@@ -36,8 +30,6 @@ vocabulary:
     glow, starlight through ports. The Forge is industrial, cramped,
     and always slightly broken.
 
-# Genre constraints for the validator.
-# Starforged is sci-fi but grounded — no magic, no fantasy races.
 genre_constraints:
   forbidden_terms:
     - "magic"
@@ -49,9 +41,8 @@ genre_constraints:
   forbidden_concepts:
     - "fantasy races (elves, dwarves, orcs)"
     - "magic systems or spellcasting"
-  genre_test: ""  # Sci-fi permits most things — no strict conceptual test
+  genre_test: ""
   atmospheric_drift_universal:
-    # Fantasy/horror bleed
     - "eldritch"
     - "otherworldly"
     - "spectral"
@@ -64,7 +55,6 @@ genre_constraints:
     - "ritual"
     - "sorcery"
     - "arcane"
-    # Material animation (objects acting alive)
     - "weep"
     - "weeps"
     - "weeping"
@@ -86,9 +76,6 @@ genre_constraints:
     - "phantom"
     - "beckons"
     - "beckoning"
-    # Qwen patterns (poetic material agency — only words that give
-    # consciousness to inert matter. hums/pulses/exhales/thrums are
-    # legitimate for machines and reactors in sci-fi.)
     - "sighs"
     - "awakens"
     - "waking"
@@ -96,14 +83,12 @@ genre_constraints:
     - "shimmering"
   atmospheric_drift_threshold: 2
 
-# Character creation flow flags.
-# Controls which UI steps the client presents.
 creation_flow:
   has_truths: true
   has_backstory_oracle: true
   has_name_tables: true
   has_ship_creation: false
-  starting_asset_categories:   # Override engine.yaml for this setting
+  starting_asset_categories:
     - companion
     - module
     - command_vehicle

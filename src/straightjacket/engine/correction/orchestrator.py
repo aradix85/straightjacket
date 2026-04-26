@@ -1,5 +1,3 @@
-"""Correction orchestration: snapshot restore, re-roll, re-narration, post-narration state."""
-
 from __future__ import annotations
 
 from ...i18n import t
@@ -27,7 +25,7 @@ from ..mechanics import (
     roll_action,
     update_chaos_factor,
 )
-from ..models import EngineConfig, GameState, NarrationEntry, SceneLogEntry, TurnSnapshot
+from ..models import EngineConfig, GameState, NarrationEntry, RollResult, SceneLogEntry, TurnSnapshot
 from ..npc import activate_npcs_for_prompt
 from ..prompt_action import build_action_prompt
 from ..prompt_dialog import build_dialog_prompt
@@ -37,17 +35,13 @@ from .ops import _apply_correction_ops
 
 
 def _restore_from_snapshot(game: GameState, snap: TurnSnapshot) -> None:
-    """Fully restore all turn-mutable GameState fields from a snapshot."""
     game.restore(snap)
     log("[Correction] State fully restored from snapshot")
 
 
 def _handle_input_misread(
     provider: AIProvider, game: GameState, snap: TurnSnapshot, analysis: dict, _cfg: EngineConfig
-) -> tuple[BrainResult, object, str, list[str]]:
-    """Step 2a: input_misread → restore state, re-run Brain, optionally re-roll,
-    and build the corrected prompt. Returns (brain, roll_or_none, prompt, consequences).
-    """
+) -> tuple[BrainResult, RollResult | None, str, list[str]]:
     _restore_from_snapshot(game, snap)
     corrected_input = analysis.get("corrected_input") or (snap.player_input or "")
 
@@ -69,8 +63,6 @@ def _handle_input_misread(
         consequences = action.consequences
         clock_events = action.clock_events
 
-        # Re-apply progress and legacy marks from the re-resolved outcome
-        # (snapshot restored the original state, so we need to re-consume)
         if action.outcome:
             ds_moves = get_moves(game.setting_id) if game.setting_id else {}
             ds_move = ds_moves.get(brain.move)
@@ -100,7 +92,6 @@ def _handle_input_misread(
         )
         return brain, roll, prompt, consequences
 
-    # Dialog path: no reroll
     nar.scene_count += 1
     activated_npcs, mentioned_npcs, _ = activate_npcs_for_prompt(game, brain, corrected_input)
     prompt = build_dialog_prompt(
@@ -115,14 +106,9 @@ def _handle_input_misread(
 
 def _handle_state_error(
     game: GameState, snap: TurnSnapshot, analysis: dict
-) -> tuple[BrainResult, object, str, list[str]]:
-    """Step 2b: state_error → patch state in-place, no re-roll, re-narrate with
-    the same brain+roll context the previous turn had. Returns (brain, roll_or_none,
-    prompt, consequences).
-    """
+) -> tuple[BrainResult, RollResult | None, str, list[str]]:
     roll = snap.roll
-    # Sentinel brain when the snapshot has none — the field is optional on TurnSnapshot
-    # but resolve_* and prompt builders expect a real BrainResult.
+
     brain = snap.brain or BrainResult(type="none", move="none", stat="none")
     _apply_correction_ops(game, analysis.get("state_ops", []))
 
@@ -159,11 +145,8 @@ def _handle_state_error(
 
 
 def _update_correction_logs(
-    game: GameState, brain: BrainResult, roll: object, narration: str, intent: str, source: str
+    game: GameState, brain: BrainResult, roll: RollResult | None, narration: str, intent: str, source: str
 ) -> None:
-    """Step 5: update session_log and narration_history. input_misread appends
-    a fresh entry; state_error overwrites the last entry in place.
-    """
     nar = game.narrative
     narration_entry = NarrationEntry(
         scene=nar.scene_count,
@@ -173,7 +156,7 @@ def _update_correction_logs(
 
     if source == "input_misread":
         if roll:
-            update_chaos_factor(game, roll.result)  # type: ignore[attr-defined]
+            update_chaos_factor(game, roll.result)
             scene_type = "action"
         else:
             scene_type = "breather"
@@ -187,14 +170,13 @@ def _update_correction_logs(
                 scene_type="expected",
                 summary=f"[corrected] {intent}",
                 move=brain.move,
-                result=roll.result if roll else "dialog",  # type: ignore[attr-defined]
+                result=roll.result if roll else "dialog",
             )
         )
         if len(nar.session_log) > eng().pacing.max_session_log:
             nar.session_log = nar.session_log[-eng().pacing.max_session_log :]
         return
 
-    # state_error: overwrite last entry
     if nar.narration_history:
         nar.narration_history[-1] = narration_entry
     else:
@@ -208,23 +190,19 @@ def _update_correction_logs(
                 scene_type="expected",
                 summary=f"[corrected] {intent}",
                 move=brain.move,
-                result=roll.result if roll else "dialog",  # type: ignore[attr-defined]
+                result=roll.result if roll else "dialog",
             )
         )
 
 
 def _maybe_queue_director(
-    game: GameState, analysis: dict, roll: object, narration: str, metadata: dict, _cfg: EngineConfig
+    game: GameState, analysis: dict, roll: RollResult | None, narration: str, metadata: dict, _cfg: EngineConfig
 ) -> dict | None:
-    """Step 6: if the correction analysis flagged director-useful and the usual
-    should_call_director triggers fire, return the director context to be run
-    by the caller; else return None.
-    """
     if not analysis.get("director_useful"):
         return None
     director_reason = should_call_director(
         game,
-        roll_result=roll.result if roll else "dialog",  # type: ignore[attr-defined]
+        roll_result=roll.result if roll else "dialog",
         chaos_used=False,
         new_npcs_found=bool(metadata.get("new_npcs")),
         revelation_used=False,
@@ -241,14 +219,6 @@ def _maybe_queue_director(
 def process_correction(
     provider: AIProvider, game: GameState, correction_text: str, config: EngineConfig | None = None
 ) -> tuple[GameState, str, dict | None]:
-    """Handle a ## correction request. Six steps, each delegated to a helper:
-    1. Analyse the correction (input_misread vs state_error).
-    2. Rebuild brain/roll/prompt via the path-specific handler.
-    3. Narrator rewrite with correction tag appended.
-    4. Engine-side post-narration state mutations.
-    5. Update session_log / narration_history per source type.
-    6. Optionally queue the director.
-    """
     snap = game.last_turn_snapshot
     if not snap:
         log("[Correction] No snapshot available — cannot correct", level="warning")
@@ -256,17 +226,14 @@ def process_correction(
 
     _cfg = config or EngineConfig()
 
-    # Step 1: Analyse
     analysis = call_correction_brain(provider, game, correction_text, _cfg)
     source = analysis["correction_source"]
 
-    # Step 2: Dispatch to path-specific handler
     if source == "input_misread":
         brain, roll, prompt, consequences = _handle_input_misread(provider, game, snap, analysis, _cfg)
     else:
         brain, roll, prompt, consequences = _handle_state_error(game, snap, analysis)
 
-    # Step 3: Narrator rewrite
     correction_tag = (
         f"\n<correction_context>{analysis['narrator_guidance']}</correction_context>"
         f"\n{get_prompt('block_correction_instruction', role='narrator')}"
@@ -278,9 +245,8 @@ def process_correction(
         game.last_turn_snapshot.narration = narration
         if source == "input_misread":
             game.last_turn_snapshot.brain = brain
-            game.last_turn_snapshot.roll = roll  # type: ignore[assignment]
+            game.last_turn_snapshot.roll = roll
 
-    # Step 4: Post-narration state mutations
     activated_npcs, mentioned_npcs, _ = activate_npcs_for_prompt(game, brain, (snap.player_input or ""))
     _scene_present_ids = {n.id for n in activated_npcs} | {n.id for n in mentioned_npcs}
     metadata = apply_post_narration(
@@ -288,18 +254,16 @@ def process_correction(
         game,
         narration,
         brain,
-        roll,  # type: ignore[arg-type]
+        roll,
         _scene_present_ids,
         [n.name for n in game.npcs if n.id in _scene_present_ids],
         config=_cfg,
         consequences=consequences if roll else [],
     )
 
-    # Step 5: Update logs
     intent = (brain.player_intent or snap.player_input or "")[: eng().truncations.log_medium]
     _update_correction_logs(game, brain, roll, narration, intent, source)
 
-    # Step 6: Director
     director_ctx = _maybe_queue_director(game, analysis, roll, narration, metadata, _cfg)
 
     log(f"[Correction] Complete: source={source}, rewrite done")

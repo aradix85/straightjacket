@@ -1,5 +1,3 @@
-"""Straightjacket persistence: save/load games."""
-
 import json
 import shutil
 from datetime import datetime
@@ -18,11 +16,8 @@ from .npc import (
     normalize_npc_dispositions,
 )
 
-# SAVE / LOAD
-
 
 def save_game(game: GameState, username: str, chat_messages: list | None, name: str) -> Path:
-    """Save game state and chat history."""
     name = _safe_name(name)
     save_dir = get_save_dir(username)
     save_dir.mkdir(parents=True, exist_ok=True)
@@ -32,7 +27,6 @@ def save_game(game: GameState, username: str, chat_messages: list | None, name: 
     data["engine_version"] = VERSION
     data["game_state"] = game.to_dict()
 
-    # Chat history (exclude transient recaps)
     raw_messages = chat_messages or []
     data["chat_messages"] = [msg for msg in raw_messages if not msg.get("recap")]
     path.write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
@@ -43,7 +37,6 @@ def save_game(game: GameState, username: str, chat_messages: list | None, name: 
 
 
 def load_game(username: str, name: str) -> tuple[GameState | None, list]:
-    """Load game state and chat history. Returns (game, chat_messages)."""
     name = _safe_name(name)
     save_dir = get_save_dir(username)
     path = save_dir / f"{name}.json"
@@ -55,7 +48,6 @@ def load_game(username: str, name: str) -> tuple[GameState | None, list]:
     game_data = data["game_state"]
     game = GameState.from_dict(game_data)
 
-    # NPC data integrity
     normalize_npc_dispositions(game.npcs)
     for npc in game.npcs:
         name_lower = npc.name.lower()
@@ -68,8 +60,6 @@ def load_game(username: str, name: str) -> tuple[GameState | None, list]:
         f"[Load] Game loaded: {username}/{name} ({game.player_name}, Scene {game.narrative.scene_count}, {len(chat_messages)} chat msgs)"
     )
 
-    # Rebuild database from loaded state
-
     reset_db()
     _db_sync(game)
 
@@ -77,11 +67,6 @@ def load_game(username: str, name: str) -> tuple[GameState | None, list]:
 
 
 def list_saves_with_info(username: str) -> list[dict]:
-    """List all saves with metadata, sorted newest first.
-
-    Corrupt save files (unreadable JSON or missing required fields) are skipped
-    with a warning — a single bad file must not crash the whole list.
-    """
     save_dir = get_save_dir(username)
     if not save_dir.exists():
         return []
@@ -107,14 +92,13 @@ def list_saves_with_info(username: str) -> list[dict]:
 
 
 def delete_save(username: str, name: str) -> bool:
-    """Delete a save file. Returns True if deleted, False if not found."""
     name = _safe_name(name)
     save_dir = get_save_dir(username)
     path = save_dir / f"{name}.json"
     if not path.exists():
         return False
     path.unlink()
-    # Clean up any orphaned chapter archive directory
+
     chapter_dir = save_dir / "chapters" / name
     if chapter_dir.exists():
         shutil.rmtree(chapter_dir, ignore_errors=True)

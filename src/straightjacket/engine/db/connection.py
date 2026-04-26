@@ -1,5 +1,3 @@
-"""Database connection management. In-memory SQLite, singleton."""
-
 from __future__ import annotations
 
 import sqlite3
@@ -13,7 +11,6 @@ _conn: sqlite3.Connection | None = None
 
 
 def init_db() -> sqlite3.Connection:
-    """Create in-memory database and apply schema. Idempotent."""
     global _conn
     if _conn is not None:
         return _conn
@@ -28,14 +25,12 @@ def init_db() -> sqlite3.Connection:
 
 
 def get_db() -> sqlite3.Connection:
-    """Get the active connection. Initializes if needed."""
     if _conn is None:
         return init_db()
     return _conn
 
 
 def reset_db() -> sqlite3.Connection:
-    """Drop all data and re-apply schema. Used after restore/load."""
     global _conn
     if _conn is not None:
         _conn.close()
@@ -44,7 +39,6 @@ def reset_db() -> sqlite3.Connection:
 
 
 def close_db() -> None:
-    """Close the active connection."""
     global _conn
     if _conn is not None:
         _conn.close()

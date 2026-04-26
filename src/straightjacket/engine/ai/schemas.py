@@ -1,12 +1,3 @@
-"""Engine JSON output schemas built from compact specs.
-
-Move and stat enums are config-driven from engine.yaml.
-Schema builder helpers eliminate repeated boilerplate.
-Field-level `description=` strings sent to AI as part of the
-structured-output JSON schema live in `engine.yaml ai_text.schema_descriptions`,
-keyed by schema name.
-"""
-
 from ..datasworn.moves import get_moves
 from ..datasworn.settings import list_packages
 from ..engine_loader import eng
@@ -53,12 +44,6 @@ def _str_arr() -> dict:
 
 
 def _obj(props: dict, extra_required: list[str] | None = None, title: str | None = None) -> dict:
-    """Build a strict JSON object schema. All keys are required by default.
-
-    `title` is the JSON Schema `title` keyword. OpenAI's structured-output API
-    requires a schema name; `provider_openai` reads this field. Anthropic
-    ignores it.
-    """
     required = extra_required or list(props.keys())
     out: dict = {
         "type": "object",
@@ -83,16 +68,13 @@ def get_brain_output_schema() -> dict:
         _e = eng()
         stat_names = list(_e.stats.names)
 
-        # Build move enum: all Datasworn moves across every discovered setting + engine-specific
         all_move_keys: set[str] = set()
         for setting_id in list_packages():
             moves = get_moves(setting_id)
             all_move_keys.update(k for k, m in moves.items() if m.roll_type not in ("no_roll", "special_track"))
 
-        # Engine-specific moves — from engine.yaml, single source of truth
         all_move_keys.update(_e.engine_moves.keys())
 
-        # Progress ranks from engine.yaml
         rank_enum = sorted(_e.progress.track_types["default"].ticks_per_mark.keys())
 
         _brain_cache = _obj(
@@ -231,7 +213,6 @@ _metadata_cache: dict | None = None
 
 
 def get_narrator_metadata_schema() -> dict:
-    """Build narrator metadata schema with config-driven disposition enum."""
     global _metadata_cache
     if _metadata_cache is None:
         _e = eng()
@@ -285,13 +266,12 @@ _opening_cache: dict | None = None
 
 
 def get_opening_setup_schema() -> dict:
-    """Build opening setup schema with config-driven enums."""
     global _opening_cache
     if _opening_cache is None:
         _e = eng()
         dispositions = list(_e.enums.dispositions)
         time_phases = list(_e.enums.time_phases)
-        clock_types = [ct for ct in _e.enums.clock_types if ct != "scheme"]  # Opening only gets threat/progress
+        clock_types = [ct for ct in _e.enums.clock_types if ct != "scheme"]
         _opening_cache = _obj(
             {
                 "npcs": _arr(

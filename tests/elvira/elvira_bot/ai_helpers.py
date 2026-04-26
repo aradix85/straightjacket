@@ -1,5 +1,3 @@
-"""Bot player AI helpers: action generation and tactical decisions."""
-
 from __future__ import annotations
 
 import yaml
@@ -30,7 +28,6 @@ def _load_prompts() -> dict[str, str]:
 
 
 def _load_bot_config() -> None:
-    """Load bot AI config from elvira_config.yaml once."""
     global _bot_model, _bot_temperature, _bot_config_loaded
     if _bot_config_loaded:
         return
@@ -50,13 +47,11 @@ def _load_bot_config() -> None:
 
 
 def get_persona(style: str) -> str:
-    """Get the system prompt for a play style."""
     prompts = _load_prompts()
     return prompts.get(f"style_{style}", prompts.get("style_balanced", ""))
 
 
 def ask_bot(provider: AIProvider, system: str, user: str, max_tokens: int = 300, model: str = "") -> str:
-    """Single-shot call to the bot player model."""
     _load_bot_config()
     from straightjacket.engine.config_loader import model_for_role
 
@@ -73,7 +68,6 @@ def ask_bot(provider: AIProvider, system: str, user: str, max_tokens: int = 300,
 
 
 def build_turn_context(game: GameState, narration: str, turn: int, prev_action: str = "") -> str:
-    """Build what the bot sees each turn. Includes prev action for variety enforcement."""
     res = game.resources
     world = game.world
 
@@ -103,7 +97,6 @@ def build_turn_context(game: GameState, narration: str, turn: int, prev_action: 
         if conflict:
             story_block += f"\nCENTRAL CONFLICT: {conflict[:120]}"
 
-    # Turn-type schedule — explicit directive at the TOP of context
     turn_types = [
         "DIALOG — talk to an NPC, ask a question, no pressure",
         "INVESTIGATE — examine, search, study something in the environment",
@@ -151,7 +144,6 @@ What does {game.player_name} do next? Write only the player action."""
 
 
 def decide_burn_momentum(provider: AIProvider, game: GameState, burn_info: dict, style: str) -> bool:
-    """Decide whether to burn momentum. Aggressor always burns."""
     if style == "aggressor":
         return True
     prompts = _load_prompts()

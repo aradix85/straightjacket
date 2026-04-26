@@ -1,19 +1,3 @@
-"""Shared prompt-building helpers used by multiple narrator prompt builders.
-
-Contains:
-- Scene-header fragments (world, character, impacts, time, location).
-- NPC blocks (target NPC gated by information-gate level, activated NPCs,
-  known-NPCs line, lore figures).
-- Pacing and scene-modifier block.
-- Random-events block.
-- Director guidance block.
-- Stance-category resolver used by both action and dialog prompts.
-- Creativity seed picker (new-game and chapter-opening prompts).
-
-Kept separate from the concrete builder entry points (action / dialog /
-boundary) so the builders read as a tree of small helper calls.
-"""
-
 import json
 import random
 from collections.abc import Sequence
@@ -37,15 +21,12 @@ from .xml_utils import xe as _xe
 
 
 def creativity_seed(n: int = 3, rng: random.Random | None = None) -> str:
-    """Pick random seed words from engine.yaml for narrator inspiration.
-    Pass rng for deterministic output in tests."""
     words = list(eng().creativity_seeds)
     _rng = rng or random
     return " ".join(_rng.sample(words, min(n, len(words))))
 
 
 def _scene_header(game: GameState) -> str:
-    """Single source of truth for <world>/<character> opening lines in all narrator prompts."""
     impacts_tag = ""
     if game.impacts:
         labels = ", ".join(impact_label(k) for k in game.impacts)
@@ -71,7 +52,6 @@ def _loc_hist(game: GameState) -> str:
 
 
 def _scene_enrichment(game: GameState) -> str:
-    """Build scene enrichment context: top-weight active thread."""
     threads = [t for t in game.narrative.threads if t.active]
     if not threads:
         return ""
@@ -82,10 +62,6 @@ def _scene_enrichment(game: GameState) -> str:
 def _format_memories(
     target: NpcData, context_text: str, gate: int, current_scene: int, include_reflections: bool
 ) -> str:
-    """Retrieve and format memories for a gate ≥ 2 NPC block. At gate ≥ 3
-    include reflections as 'insight:' prefix. Returns the memory text block
-    (without leading newline).
-    """
     gate_mem_counts = eng().npc.gate_memory_counts
     mem_count = gate_mem_counts[gate]
     memories = retrieve_memories(target, context_text=context_text, max_count=mem_count, current_scene=current_scene)
@@ -107,16 +83,10 @@ def _format_memories(
 
 
 def _build_gate0_target(target: NpcData, aliases_attr: str) -> str:
-    """Gate 0: name, aliases, description only. The stranger treatment."""
     return f'<target_npc name="{_xa(target.name)}" gate="0"{aliases_attr}>{_xe(target.description)}</target_npc>'
 
 
 def _npc_block(game: GameState, target_id: str | None, context_text: str = "", move_category: str = "other") -> str:
-    """Build context block for the target NPC, filtered by information gate level.
-
-    Gates progressively add: 1+ stance/constraint; 2+ agenda + observation memories;
-    3+ instinct + arc + reflection memories; 4+ secrets.
-    """
     target = find_npc(game, target_id) if target_id else None
     if not target:
         return ""
@@ -130,17 +100,14 @@ def _npc_block(game: GameState, target_id: str | None, context_text: str = "", m
     if gate == 0:
         return _build_gate0_target(target, aliases_attr)
 
-    # Gate 1+: stance + constraint attributes
     stance_attr = f' stance="{_xa(stance.stance)}" constraint="{_xa(stance.constraint)}"'
 
-    # Gate 2+: agenda + observation memories
     agenda_line = ""
     mem_str = ""
     if gate >= 2:
         agenda_line = f"agenda:{_xe(target.agenda)}"
         mem_str = _format_memories(target, context_text, gate, game.narrative.scene_count, include_reflections=False)
 
-    # Gate 3+: instinct + arc + reflections (replaces gate-2 memory string)
     instinct_line = ""
     arc_attr = ""
     if gate >= 3:
@@ -149,7 +116,6 @@ def _npc_block(game: GameState, target_id: str | None, context_text: str = "", m
             arc_attr = f' arc="{_xa(target.arc)}"'
         mem_str = _format_memories(target, context_text, gate, game.narrative.scene_count, include_reflections=True)
 
-    # Gate 4: secrets
     secrets_line = ""
     if gate >= 4 and target.secrets:
         secs = json.dumps(target.secrets, ensure_ascii=False)
@@ -168,12 +134,8 @@ def _activated_npcs_block(
     context_text: str = "",
     move_category: str = "other",
 ) -> str:
-    """Build context blocks for activated NPCs (not the target — those get _npc_block).
-    Lighter context than target: name, stance, and 1-2 key memories."""
-
     parts = []
     for npc in activated:
-        # Skip target NPC (handled by _npc_block)
         if target_id and (npc.id == target_id or npc.name.lower() == str(target_id).lower()):
             continue
         memories = retrieve_memories(
@@ -192,7 +154,6 @@ def _activated_npcs_block(
                 hint_text = f"{memories[0].event[: pd.recent_event_chars]}({memories[0].emotional_weight})"
                 mem_hint = f' recent="{_xa(hint_text)}"'
 
-        # Spatial hint: show last location if different from player's current location
         loc_hint = ""
         loc = _npc_location_hint(npc, game.world.current_location or "")
         if loc:
@@ -208,8 +169,6 @@ def _activated_npcs_block(
 
 
 def _known_npcs_string(mentioned: Sequence[NpcData], game: GameState, exclude_ids: set | None = None) -> str:
-    """Build compact known-NPCs line for name-only mentions.
-    Also includes remaining active/background NPCs not in activated or mentioned."""
     exclude_ids = exclude_ids or set()
     player_loc = game.world.current_location or ""
     parts = []
@@ -223,14 +182,12 @@ def _known_npcs_string(mentioned: Sequence[NpcData], game: GameState, exclude_id
             entry += f"[at:{_xe(loc)}]"
         return entry
 
-    # Mentioned NPCs (scored but below activation threshold)
     for n in mentioned:
         if n.id in exclude_ids:
             continue
         parts.append(_npc_entry(n))
         exclude_ids.add(n.id)
 
-    # Remaining active NPCs not yet included
     for n in game.npcs:
         if n.id in exclude_ids:
             continue
@@ -242,8 +199,6 @@ def _known_npcs_string(mentioned: Sequence[NpcData], game: GameState, exclude_id
 
 
 def _pacing_block(game: GameState, scene_setup: SceneSetup | None = None) -> str:
-    """Build pacing and scene modification block for prompts."""
-
     parts = []
     pacing = get_pacing_hint(game)
     if pacing != "neutral":
@@ -269,7 +224,6 @@ def _pacing_block(game: GameState, scene_setup: SceneSetup | None = None) -> str
 
 
 def _random_events_block(events: Sequence[RandomEvent]) -> str:
-    """Build <random_event> tags for narrator prompt injection."""
     if not events:
         return ""
     parts = []
@@ -284,8 +238,6 @@ def _random_events_block(events: Sequence[RandomEvent]) -> str:
 
 
 def _lore_figures_block(game: GameState) -> str:
-    """Build a slim context block for lore figures — named persons who are narratively
-    significant but never physically present."""
     lore = [n for n in game.npcs if n.status == "lore"]
     if not lore:
         return ""
@@ -302,7 +254,6 @@ def _lore_figures_block(game: GameState) -> str:
 
 
 def _npc_location_hint(npc: NpcData, player_loc: str) -> str:
-    """Spatial hint attribute when NPC is at a different location than the player."""
     npc_loc = npc.last_location
     if npc_loc and player_loc and not locations_match(npc_loc, player_loc):
         return npc_loc
@@ -317,7 +268,6 @@ def _npcs_section(
     mentioned_npcs: Sequence[NpcData] = (),
     move_category: str = "other",
 ) -> str:
-    """Build the three-tier NPC section used by both dialog and action prompts."""
     target_id = brain.target_npc
     activated_block = _activated_npcs_block(activated_npcs, target_id, game, context_text, move_category)
     exclude_ids = {n.id for n in activated_npcs}
@@ -335,7 +285,6 @@ def _npcs_section(
 
 
 def _director_block(game: GameState) -> str:
-    """Build director guidance injection block for narrator prompts."""
     dg = game.narrative.director_guidance
     if not dg or not dg.narrator_guidance:
         return ""
@@ -346,9 +295,6 @@ def _director_block(game: GameState) -> str:
 
 
 def _resolve_stance_category(move: str) -> str:
-    """Map engine move category to stance matrix category.
-    gather_information gets its own bucket because stance differs from generic social.
-    """
     if move == "adventure/gather_information":
         return "gather_information"
     move_cat = move_category(move)

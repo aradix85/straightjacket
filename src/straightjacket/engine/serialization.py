@@ -1,35 +1,15 @@
-"""Generic dataclass serialization using type annotations.
-
-Replaces per-class to_dict/from_dict boilerplate. Handles nested dataclasses,
-lists of dataclasses, and optional fields automatically.
-
-Usage:
-    @dataclass
-    class Clock(SerializableMixin):
-        name: str = ""
-        filled: int = 0
-
-    clock.to_dict()          # → {"name": "...", "filled": 0}
-    Clock.from_dict(data)    # → Clock(name="...", filled=0)
-
-Classes that need custom serialization (e.g. MemoryEntry strips _score_debug)
-override to_dict and call serialize() directly.
-"""
-
 from __future__ import annotations
 
 import dataclasses
 import types
-from typing import Any, Union, get_args, get_origin, get_type_hints
+from typing import Any, TypeGuard, Union, get_args, get_origin, get_type_hints
 
 
-def _is_dataclass_type(tp: Any) -> bool:
-    """Check if tp is a dataclass class (not instance)."""
+def _is_dataclass_type(tp: Any) -> TypeGuard[type]:
     return isinstance(tp, type) and dataclasses.is_dataclass(tp)
 
 
 def _resolve_item_type(tp: Any) -> type | None:
-    """For list[X], return X if X is a dataclass. Else None."""
     origin = get_origin(tp)
     if origin is list:
         args = get_args(tp)
@@ -39,7 +19,6 @@ def _resolve_item_type(tp: Any) -> type | None:
 
 
 def _unwrap_optional(tp: Any) -> tuple[type | None, bool]:
-    """Unwrap Optional[X] / X | None → (X, True). Non-optional → (tp, False)."""
     origin = get_origin(tp)
     if origin is Union or isinstance(tp, types.UnionType):
         args = get_args(tp)
@@ -50,7 +29,6 @@ def _unwrap_optional(tp: Any) -> tuple[type | None, bool]:
 
 
 def serialize(obj: Any) -> dict:
-    """Serialize a dataclass to a dict, recursing into nested dataclasses."""
     if not dataclasses.is_dataclass(obj):
         raise TypeError(f"Expected dataclass instance, got {type(obj).__name__}")
     result = {}
@@ -61,7 +39,6 @@ def serialize(obj: Any) -> dict:
 
 
 def _serialize_value(val: Any) -> Any:
-    """Serialize a single value, recursing into dataclasses and lists."""
     if val is None:
         return None
     if dataclasses.is_dataclass(val) and not isinstance(val, type):
@@ -74,7 +51,6 @@ def _serialize_value(val: Any) -> Any:
 
 
 def deserialize(cls: type, data: dict) -> Any:
-    """Deserialize a dict into a dataclass, recursing into nested types."""
     if not _is_dataclass_type(cls):
         raise TypeError(f"Expected dataclass type, got {cls}")
     if not isinstance(data, dict):
@@ -97,31 +73,25 @@ def deserialize(cls: type, data: dict) -> Any:
 
 
 def _deserialize_value(hint: Any, val: Any) -> Any:
-    """Deserialize a single value based on its type hint."""
     if val is None:
         return None
 
-    # Unwrap Optional[X]
     inner, is_optional = _unwrap_optional(hint)
     if is_optional and inner is not None:
         return _deserialize_value(inner, val)
 
-    # Direct dataclass
     if _is_dataclass_type(inner):
         if isinstance(val, dict):
-            return deserialize(inner, val)  # type: ignore[arg-type]
-        return val  # Already deserialized
+            return deserialize(inner, val)
+        return val
 
-    # list[Dataclass]
     item_type = _resolve_item_type(inner)
     if item_type is not None and isinstance(val, list):
         return [deserialize(item_type, item) if isinstance(item, dict) else item for item in val]
 
-    # list[non-dataclass] — preserve as-is but copy
     if get_origin(inner) is list and isinstance(val, list):
         return list(val)
 
-    # dict — preserve as-is but copy
     if isinstance(val, dict):
         return dict(val)
 
@@ -129,8 +99,6 @@ def _deserialize_value(hint: Any, val: Any) -> Any:
 
 
 class SerializableMixin:
-    """Mixin that adds to_dict/from_dict to any dataclass via serialize/deserialize."""
-
     def to_dict(self) -> dict:
         return serialize(self)
 

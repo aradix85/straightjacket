@@ -1,0 +1,14 @@
+tool_descriptions:
+  query_npc:
+    description: "Query an NPC's current state: disposition, bond, recent memories, agenda."
+    params:
+      npc_id: "NPC identifier (e.g. 'npc_1')"
+  query_active_threads:
+    description: "List story threads with their types and weights."
+    params:
+      active_only: "if true, return only active threads"
+  query_active_clocks:
+    description: "List clocks filtered by type or status."
+    params:
+      clock_type: "filter by type ('threat', 'scheme', 'progress'), empty for all"
+      unfired_only: "if true, return only unfired clocks"

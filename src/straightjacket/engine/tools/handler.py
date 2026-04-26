@@ -1,14 +1,3 @@
-"""Tool call handler: dispatch and iterative tool-call loop.
-
-The handler receives an AIResponse with tool_calls, executes each tool,
-appends results to the message chain, and calls the model again until
-it produces a final text response or hits the rate limit.
-
-Tool functions receive (game, **arguments). They return a dict or string
-that becomes the tool result. They must not mutate GameState — the engine
-applies state changes from the returned results.
-"""
-
 from __future__ import annotations
 
 import json
@@ -21,7 +10,6 @@ from .registry import get_handler, get_tools
 
 
 def execute_tool_call(role: str, tool_call: dict, game: GameState) -> str:
-    """Execute a single tool call. Returns serialized result string."""
     name = tool_call.get("name", "")
     arguments = tool_call.get("arguments", {})
 
@@ -36,7 +24,6 @@ def execute_tool_call(role: str, tool_call: dict, game: GameState) -> str:
             return json.dumps(result, ensure_ascii=False)
         return str(result)
     except Exception as e:
-        # Intentional graceful degradation — see AI-CALL SUPPRESSION POLICY in provider_base.py.
         log(f"[Tools] {name} failed: {e}", level="warning")
         return json.dumps({"error": f"{name} failed: {e}"})
 
@@ -57,14 +44,6 @@ def run_tool_loop(
     extra_body: dict | None = None,
     log_role: str = "",
 ) -> tuple[str, list[dict]]:
-    """Iterative tool-call loop.
-
-    Starting from an initial AIResponse, executes tool calls and re-prompts
-    until the model returns a text response or the round limit is reached.
-
-    Returns (final_content, tool_log) where tool_log is a list of
-    {name, arguments, result} dicts for diagnostics.
-    """
     tool_log: list[dict] = []
     current = response
     conversation = list(messages)
@@ -75,7 +54,6 @@ def run_tool_loop(
 
         log(f"[Tools] Round {round_num + 1}: {len(current.tool_calls)} tool call(s)")
 
-        # Append assistant message with tool calls (provider expects this)
         assistant_msg: dict = {"role": "assistant", "content": current.content or ""}
         assistant_msg["tool_calls"] = [
             {
@@ -90,7 +68,6 @@ def run_tool_loop(
         ]
         conversation.append(assistant_msg)
 
-        # Execute each tool call and append results
         _trunc = eng().truncations
         for tc in current.tool_calls:
             result_str = execute_tool_call(role, tc, game)
@@ -110,7 +87,6 @@ def run_tool_loop(
             )
             log(f"[Tools] {tc['name']}({tc.get('arguments', {})}) → {result_str[: _trunc.log_medium]}")
 
-        # Re-prompt with tool results
         current = create_with_retry(
             provider,
             max_retries=eng().retry.constraint_check_max_retries,

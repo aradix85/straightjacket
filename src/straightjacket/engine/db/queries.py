@@ -1,5 +1,3 @@
-"""Read-only query functions. Each returns dataclass instances."""
-
 from __future__ import annotations
 
 import json
@@ -10,7 +8,6 @@ from .connection import get_db
 
 
 def _row_to_npc(row: sqlite3.Row) -> NpcData:
-    """Convert a database row to NpcData."""
     return NpcData(
         id=row["id"],
         name=row["name"],
@@ -38,7 +35,6 @@ def query_npcs(
     location: str | None = None,
     introduced: bool | None = None,
 ) -> list[NpcData]:
-    """Query NPCs with optional filters. Returns NpcData instances without memories."""
     conn = get_db()
     clauses: list[str] = []
     params: list[str | int] = []
@@ -69,7 +65,6 @@ def query_memories(
     memory_type: str | None = None,
     limit: int | None = None,
 ) -> list[MemoryEntry]:
-    """Query memories with optional filters. Returns MemoryEntry instances."""
     conn = get_db()
     clauses: list[str] = []
     params: list[str | int] = []
@@ -114,7 +109,6 @@ def query_threads(
     active: bool | None = None,
     thread_type: str | None = None,
 ) -> list[ThreadEntry]:
-    """Query threads with optional filters."""
     conn = get_db()
     clauses: list[str] = []
     params: list[str | int] = []
@@ -148,7 +142,6 @@ def query_clocks(
     fired: bool | None = None,
     owner: str | None = None,
 ) -> list[ClockData]:
-    """Query clocks with optional filters."""
     conn = get_db()
     clauses: list[str] = []
     params: list[str | int] = []

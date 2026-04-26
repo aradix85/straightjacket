@@ -1,11 +1,3 @@
-#!/usr/bin/env python3
-"""Tests for Mythic GME 2e scene structure: chaos check, altered, interrupt.
-
-Run: python -m pytest tests/test_scene.py -v
-"""
-
-# Stubs are set up in conftest.py
-
 from straightjacket.engine.mechanics.scene import (
     SceneSetup,
     _roll_adjustments,
@@ -15,11 +7,7 @@ from straightjacket.engine.mechanics.scene import (
 from tests._helpers import make_game_state, make_random_event
 
 
-# ── Scene test (chaos check) ────────────────────────────────
-
-
 def test_expected_when_roll_above_cf() -> None:
-    """Roll > CF → expected scene."""
     game = make_game_state()
     game.world.chaos_factor = 5
     setup = check_scene(game, roll=6)
@@ -27,7 +15,6 @@ def test_expected_when_roll_above_cf() -> None:
 
 
 def test_expected_when_roll_is_10() -> None:
-    """Roll 10 is always expected regardless of CF."""
     game = make_game_state()
     game.world.chaos_factor = 9
     setup = check_scene(game, roll=10)
@@ -35,7 +22,6 @@ def test_expected_when_roll_is_10() -> None:
 
 
 def test_altered_when_roll_le_cf_odd() -> None:
-    """Roll ≤ CF and odd → altered scene."""
     game = make_game_state()
     game.world.chaos_factor = 5
     setup = check_scene(game, roll=3)
@@ -44,7 +30,6 @@ def test_altered_when_roll_le_cf_odd() -> None:
 
 
 def test_interrupt_when_roll_le_cf_even() -> None:
-    """Roll ≤ CF and even → interrupt scene with random event."""
     game = make_game_state()
     game.world.chaos_factor = 5
     setup = check_scene(game, roll=4)
@@ -55,7 +40,6 @@ def test_interrupt_when_roll_le_cf_even() -> None:
 
 
 def test_cf1_only_roll1_triggers() -> None:
-    """At CF1, only roll=1 (odd, ≤1) triggers altered. Roll 2+ is expected."""
     game = make_game_state()
     game.world.chaos_factor = 1
     assert check_scene(game, roll=1).scene_type == "altered"
@@ -63,27 +47,21 @@ def test_cf1_only_roll1_triggers() -> None:
 
 
 def test_cf9_most_rolls_trigger() -> None:
-    """At CF9, rolls 1-9 trigger altered/interrupt. Only 10 is expected."""
     game = make_game_state()
     game.world.chaos_factor = 9
     assert check_scene(game, roll=10).scene_type == "expected"
-    assert check_scene(game, roll=9).scene_type == "altered"  # 9 odd
-    assert check_scene(game, roll=8).scene_type == "interrupt"  # 8 even
+    assert check_scene(game, roll=9).scene_type == "altered"
+    assert check_scene(game, roll=8).scene_type == "interrupt"
 
 
 def test_chaos_roll_stored() -> None:
-    """SceneSetup records the chaos roll."""
     game = make_game_state()
     game.world.chaos_factor = 5
     setup = check_scene(game, roll=7)
     assert setup.chaos_roll == 7
 
 
-# ── Scene adjustments ────────────────────────────────────────
-
-
 def test_single_adjustment() -> None:
-    """Rolls 1-6 produce a single adjustment."""
     for roll in range(1, 7):
         adjs = _roll_adjustments(roll)
         assert len(adjs) == 1
@@ -91,7 +69,6 @@ def test_single_adjustment() -> None:
 
 
 def test_double_adjustment() -> None:
-    """Rolls 7-10 produce two adjustments, each from 1-6 range."""
     adjs = _roll_adjustments(7)
     assert len(adjs) == 2
     for a in adjs:
@@ -99,7 +76,6 @@ def test_double_adjustment() -> None:
 
 
 def test_adjustment_types() -> None:
-    """All six single adjustment types map to d10 values 1-6."""
     expected = {
         "remove_character",
         "add_character",
@@ -116,19 +92,14 @@ def test_adjustment_types() -> None:
 
 
 def test_adjustment_descriptions_maps_all() -> None:
-    """Every adjustment type has a narrator description."""
     types = ["remove_character", "add_character", "reduce_activity", "increase_activity", "remove_object", "add_object"]
     descs = adjustment_descriptions(types)
     assert len(descs) == 6
     for d in descs:
-        assert len(d) > 10  # non-trivial description
-
-
-# ── SceneSetup serialization ─────────────────────────────────
+        assert len(d) > 10
 
 
 def test_scene_setup_roundtrip() -> None:
-    """SceneSetup with adjustments round-trips through to_dict/from_dict."""
     setup = SceneSetup(scene_type="altered", chaos_roll=3, adjustments=["add_character", "remove_object"])
     d = setup.to_dict()
     restored = SceneSetup.from_dict(d)
@@ -138,8 +109,6 @@ def test_scene_setup_roundtrip() -> None:
 
 
 def test_scene_setup_interrupt_roundtrip() -> None:
-    """SceneSetup with interrupt event round-trips."""
-
     event = make_random_event(focus="npc_action", meaning_action="Betray", meaning_subject="Trust")
     setup = SceneSetup(scene_type="interrupt", chaos_roll=4, interrupt_event=event)
     d = setup.to_dict()

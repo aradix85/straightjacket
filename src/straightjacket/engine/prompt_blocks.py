@@ -1,9 +1,3 @@
-"""Prompt block builders: XML context blocks for narrator and other AI prompts.
-
-Each function builds one self-contained XML block. The narrator system prompt
-assembler (get_narrator_system) composes them. All blocks return empty string
-when not applicable — callers never need to check."""
-
 from .config_loader import narration_language
 from .datasworn.settings import active_package
 from .engine_loader import eng
@@ -16,12 +10,10 @@ from .xml_utils import xe as _xe
 
 
 def get_narration_lang(config: EngineConfig) -> str:
-    """Get the narration language (English name, e.g. 'English', 'German')."""
     return config.narration_lang or narration_language()
 
 
 def content_boundaries_block(game: GameState | None = None, creation_data: dict | None = None) -> str:
-    """Return content boundaries prompt block if any lines/wishes are set."""
     lines = ""
     wishes = ""
     if game:
@@ -42,7 +34,6 @@ def content_boundaries_block(game: GameState | None = None, creation_data: dict 
 
 
 def backstory_block(game: GameState | None = None) -> str:
-    """Return backstory prompt block if player provided backstory text."""
     if not game:
         return ""
     backstory = game.backstory or ""
@@ -52,7 +43,6 @@ def backstory_block(game: GameState | None = None) -> str:
 
 
 def vocabulary_block(game: GameState | None = None) -> str:
-    """Build vocabulary control block from the active setting package."""
     if not game:
         return ""
 
@@ -73,7 +63,6 @@ def vocabulary_block(game: GameState | None = None) -> str:
 
 
 def truths_block(game: GameState | None = None) -> str:
-    """Build world truths block from player's truth selections at creation."""
     if not game or not game.truths:
         return ""
     header = get_prompt("block_world_truths_header")
@@ -82,8 +71,6 @@ def truths_block(game: GameState | None = None) -> str:
 
 
 def tone_authority_block(game: GameState | None = None) -> str:
-    """Build tone authority block from the player's chosen tone.
-    Injected before <rules> so it outranks generic style defaults."""
     if not game or not game.setting_tone:
         return ""
     body = get_prompt("block_tone_authority")
@@ -91,8 +78,6 @@ def tone_authority_block(game: GameState | None = None) -> str:
 
 
 def narrative_direction_block(game: GameState, roll_result: str = "", is_player_caused: bool = True) -> str:
-    """Derive narrative writing instructions from current game state.
-    All thresholds and mappings read from engine.yaml narrative_direction."""
     nd = eng().narrative_direction
     parts = []
 
@@ -126,7 +111,6 @@ def narrative_direction_block(game: GameState, roll_result: str = "", is_player_
 
 
 def _describe_narrator_resource(value: int, descriptions: dict[int, str]) -> str:
-    """Pick the description for the highest threshold at or below value."""
     for threshold in sorted(descriptions.keys(), reverse=True):
         if value >= threshold:
             return descriptions[threshold]
@@ -134,7 +118,6 @@ def _describe_narrator_resource(value: int, descriptions: dict[int, str]) -> str
 
 
 def status_context_block(game: GameState | None = None) -> str:
-    """Narrative status context mapping resource values to physical/mental states."""
     if not game:
         return ""
     descriptions = eng().narrator_status_descriptions
@@ -160,7 +143,6 @@ def status_context_block(game: GameState | None = None) -> str:
 
 
 def story_context_block(game: GameState) -> str:
-    """Build compact story direction block for prompts."""
     bp = game.narrative.story_blueprint
     if not bp or not bp.acts:
         return ""
@@ -198,7 +180,6 @@ def story_context_block(game: GameState) -> str:
 
 
 def recent_events_block(game: GameState) -> str:
-    """Build compact factual timeline from session_log for narrator consistency."""
     if not game.narrative.session_log or len(game.narrative.session_log) < 2:
         return ""
     window = eng().prompt_display.recent_events_window
@@ -216,7 +197,6 @@ def recent_events_block(game: GameState) -> str:
 
 
 def campaign_history_block(game: GameState) -> str:
-    """Build campaign history context for prompts."""
     cam = game.campaign
     if not cam.campaign_history:
         return ""
@@ -229,7 +209,6 @@ def campaign_history_block(game: GameState) -> str:
 
 
 def get_narrator_system(config: EngineConfig, game: GameState | None = None) -> str:
-    """Build narrator system prompt with configured language."""
     lang = get_narration_lang(config)
     cb = content_boundaries_block(game)
     bs = backstory_block(game)

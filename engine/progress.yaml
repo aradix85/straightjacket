@@ -1,5 +1,5 @@
 progress:
-  max_ticks: 40  # 10 boxes × 4 ticks per box — Ironsworn progress track convention
+  max_ticks: 40
   track_types:
     default:
       ticks_per_mark:

@@ -1,28 +1,16 @@
-#!/usr/bin/env python3
-"""Tests for the web module: session state, serializers, WebSocket handlers.
-
-Unit tests for Session and serializers need no server.
-Integration tests use Starlette's TestClient with websocket_connect().
-
-The web module imports the real engine (not the conftest stub), so we
-use a local load_engine fixture that loads real engine.yaml.
-
-Run: python -m pytest tests/test_web.py -v
-"""
-
 from typing import Any
 
 import pytest
 
-from straightjacket.engine import engine_loader  # type: ignore[import-not-found]
-from straightjacket.engine.models import (  # type: ignore[import-not-found]
+from straightjacket.engine import engine_loader
+from straightjacket.engine.models import (
     GameState,
     RollResult,
     TurnSnapshot,
 )
 from tests._helpers import make_brain_result, make_clock, make_game_state, make_npc
-from straightjacket.web.session import BurnOffer, Session  # type: ignore[import-not-found]
-from straightjacket.web.serializers import (  # type: ignore[import-not-found]
+from straightjacket.web.session import BurnOffer, Session
+from straightjacket.web.serializers import (
     build_creation_options,
     build_narrative_status,
     highlight_dialog,
@@ -30,12 +18,8 @@ from straightjacket.web.serializers import (  # type: ignore[import-not-found]
 
 
 @pytest.fixture()
-def load_engine(_real_engine) -> None:  # type: ignore[no-untyped-def]
-    """Install real engine.yaml into engine_loader._eng."""
+def load_engine(_real_engine) -> None:
     engine_loader._eng = _real_engine
-
-
-# ── Session dataclass ─────────────────────────────────────────
 
 
 class TestSession:
@@ -143,9 +127,6 @@ class TestSession:
         assert all(not m.get("recap") for m in filtered)
 
 
-# ── BurnOffer dataclass ───────────────────────────────────────
-
-
 class TestBurnOffer:
     def test_fields(self) -> None:
         from straightjacket.engine.mechanics.scene import SceneSetup
@@ -174,9 +155,6 @@ class TestBurnOffer:
             pre_snapshot=TurnSnapshot(),
         )
         assert bo.scene_setup is None
-
-
-# ── Serializers ───────────────────────────────────────────────
 
 
 class TestHighlightDialog:
@@ -228,9 +206,9 @@ class TestBuildNarrativeStatus:
 
     def test_contains_resources(self, load_engine: None) -> None:
         text = build_narrative_status(self._game())
-        assert "bruised" in text  # health 4
-        assert "shaken" in text  # spirit 3
-        assert "well-equipped" in text  # supply 5
+        assert "bruised" in text
+        assert "shaken" in text
+        assert "well-equipped" in text
 
     def test_contains_location(self, load_engine: None) -> None:
         text = build_narrative_status(self._game())
@@ -269,7 +247,7 @@ class TestBuildCreationOptions:
     def test_returns_settings(self, load_engine: None) -> None:
         opts = build_creation_options()
         assert "settings" in opts
-        from straightjacket.engine.datasworn.loader import list_available  # type: ignore[import-not-found]
+        from straightjacket.engine.datasworn.loader import list_available
 
         if not list_available():
             pytest.skip("No Datasworn JSON files in data/ — run download_datasworn.py")
@@ -296,13 +274,9 @@ class TestBuildCreationOptions:
                 assert "title" in p
 
 
-# ── WebSocket integration (via Starlette TestClient) ──────────
-
-
 class TestWebSocket:
     @pytest.fixture(autouse=True)
     def _setup(self, load_engine: None) -> None:
-        """Reset session state before each test."""
         from straightjacket.web.server import _session
 
         _session.player = ""
@@ -316,14 +290,12 @@ class TestWebSocket:
     @pytest.fixture()
     def client(self) -> Any:
         from starlette.testclient import TestClient
-        from straightjacket.web.server import app  # type: ignore[import-not-found]
+        from straightjacket.web.server import app
 
         return TestClient(app)
 
     def test_full_connection_flow(self, client: Any) -> None:
-        """Full WebSocket flow: connect, create player, error handling, saves, cleanup."""
         with client.websocket_connect("/ws") as ws:
-            # 1. Connect: receive ui_strings then players_list
             msg = ws.receive_json()
             assert msg["type"] == "ui_strings"
             assert "ui.title" in msg["strings"]
@@ -331,7 +303,6 @@ class TestWebSocket:
             msg = ws.receive_json()
             assert msg["type"] == "players_list"
 
-            # 2. Create player → player_selected with creation options
             ws.send_json({"type": "create_player", "name": "ws_flow"})
             msg = ws.receive_json()
             assert msg["type"] == "player_selected"
@@ -339,44 +310,38 @@ class TestWebSocket:
             assert msg["has_game"] is False
             assert "creation_options" in msg
 
-            # 3. Empty name → error
             ws.send_json({"type": "create_player", "name": ""})
             msg = ws.receive_json()
             assert msg["type"] == "error"
 
-            # 4. Unknown message type → error
             ws.send_json({"type": "nonexistent_type"})
             msg = ws.receive_json()
             assert msg["type"] == "error"
             assert "nonexistent_type" in msg["text"]
 
-            # 5. Player input without game → error
             ws.send_json({"type": "player_input", "text": "I search"})
             msg = ws.receive_json()
             assert msg["type"] == "error"
 
-            # 6. Empty saves list
             ws.send_json({"type": "list_saves"})
             msg = ws.receive_json()
             assert msg["type"] == "saves_list"
             assert msg["saves"] == []
 
-            # 7. Delete player and verify gone
             ws.send_json({"type": "delete_player", "name": "ws_flow"})
             msg = ws.receive_json()
             assert msg["type"] == "players_list"
             assert "ws_flow" not in msg["players"]
 
     def test_reconnect_resends_player_state(self, client: Any) -> None:
-        """Reconnect after player selection resends full state."""
         with client.websocket_connect("/ws") as ws1:
-            ws1.receive_json()  # ui_strings
-            ws1.receive_json()  # players_list
+            ws1.receive_json()
+            ws1.receive_json()
             ws1.send_json({"type": "create_player", "name": "ws_recon"})
-            ws1.receive_json()  # player_selected
+            ws1.receive_json()
 
         with client.websocket_connect("/ws") as ws2:
-            ws2.receive_json()  # ui_strings
+            ws2.receive_json()
             msg = ws2.receive_json()
             assert msg["type"] == "players_list"
             msg = ws2.receive_json()
@@ -386,22 +351,7 @@ class TestWebSocket:
             ws2.receive_json()
 
 
-# ── Succession WebSocket flow ─────────────────────────────────
-
-
 class TestSuccessionWebSocket:
-    """Cover the WebSocket-side of character succession.
-
-    The full /retire → succession_creation_options → start_succession arc
-    requires a live AI provider for the chapter close + opening, so we
-    don't run start_succession through TestClient. We do exercise:
-      - retire on a session with no game (error path)
-      - retire on a session with a game (prepares + sends game_over)
-      - request_succession_creation gating (no game → error,
-        no pending → error, valid → creation_options sent)
-      - start_succession with malformed creation_data (error path)
-    """
-
     @pytest.fixture(autouse=True)
     def _setup(self, load_engine: None) -> None:
         from straightjacket.web.server import _session
@@ -422,10 +372,6 @@ class TestSuccessionWebSocket:
         return TestClient(app)
 
     def _seed_session(self, player: str = "ws_succ") -> None:
-        """Install a minimal in-flight game on the global session.
-
-        Bypasses character creation so tests stay deterministic and AI-free.
-        """
         from straightjacket.engine.persistence import save_game
         from straightjacket.engine.user_management import create_user
 
@@ -442,24 +388,18 @@ class TestSuccessionWebSocket:
         save_game(game, player, [{"role": "assistant", "content": "..."}], "autosave")
 
     def _drain_initial(self, ws: Any) -> None:
-        """Drain ui_strings + players_list from a fresh WebSocket."""
         ws.receive_json()
         ws.receive_json()
 
     def test_retire_without_game_no_op(self, client: Any) -> None:
-        """retire on a session with no game silently no-ops (handler short-
-        circuits before doing anything). Verified by checking that no
-        message reaches the client and the session state is unchanged."""
         with client.websocket_connect("/ws") as ws:
             self._drain_initial(ws)
             ws.send_json({"type": "retire"})
-            # No response expected. Verify session was not mutated.
+
             assert self.session.game is None
             assert self.session.processing is False
 
     def test_retire_with_game_prepares_succession(self, client: Any) -> None:
-        """retire on an in-flight game archives the predecessor and
-        sends game_over with a succession-summary payload."""
         self._seed_session()
         with client.websocket_connect("/ws") as ws:
             self._drain_initial(ws)
@@ -477,20 +417,19 @@ class TestSuccessionWebSocket:
             assert succ["predecessor"]["end_reason"] == "retire"
             assert "Aria" in succ["headline"]
             assert len(succ["inheritance"]) == 3
-            # Engine state was mutated as expected
+
             assert self.session.game is not None
             assert self.session.game.campaign.pending_succession is True
             assert self.session.game.game_over is True
 
     def test_retire_twice_rejected(self, client: Any) -> None:
-        """A second retire while pending_succession is set returns an error."""
         self._seed_session()
         with client.websocket_connect("/ws") as ws:
             self._drain_initial(ws)
             ws.send_json({"type": "select_player", "name": "ws_succ"})
             ws.receive_json()
             ws.send_json({"type": "retire"})
-            ws.receive_json()  # game_over
+            ws.receive_json()
 
             ws.send_json({"type": "retire"})
             msg = ws.receive_json()
@@ -505,7 +444,6 @@ class TestSuccessionWebSocket:
             assert msg["type"] == "error"
 
     def test_request_succession_creation_without_pending(self, client: Any) -> None:
-        """A live game without pending_succession can't request the form."""
         self._seed_session()
         with client.websocket_connect("/ws") as ws:
             self._drain_initial(ws)
@@ -516,15 +454,13 @@ class TestSuccessionWebSocket:
             assert msg["type"] == "error"
 
     def test_request_succession_creation_succeeds_after_retire(self, client: Any) -> None:
-        """Retire → request_succession_creation returns creation_options
-        with the campaign's setting echoed back."""
         self._seed_session()
         with client.websocket_connect("/ws") as ws:
             self._drain_initial(ws)
             ws.send_json({"type": "select_player", "name": "ws_succ"})
             ws.receive_json()
             ws.send_json({"type": "retire"})
-            ws.receive_json()  # game_over
+            ws.receive_json()
 
             ws.send_json({"type": "request_succession_creation"})
             msg = ws.receive_json()
@@ -533,7 +469,6 @@ class TestSuccessionWebSocket:
             assert msg["current_setting_id"] == "classic"
 
     def test_start_succession_without_pending(self, client: Any) -> None:
-        """start_succession on a non-pending session is rejected."""
         self._seed_session()
         with client.websocket_connect("/ws") as ws:
             self._drain_initial(ws)
@@ -544,16 +479,15 @@ class TestSuccessionWebSocket:
             assert msg["type"] == "error"
 
     def test_start_succession_malformed_creation_data(self, client: Any) -> None:
-        """Pending succession + non-dict creation_data is a malformed message."""
         self._seed_session()
         with client.websocket_connect("/ws") as ws:
             self._drain_initial(ws)
             ws.send_json({"type": "select_player", "name": "ws_succ"})
             ws.receive_json()
             ws.send_json({"type": "retire"})
-            ws.receive_json()  # game_over
+            ws.receive_json()
 
-            ws.send_json({"type": "start_succession"})  # no creation_data key
+            ws.send_json({"type": "start_succession"})
             msg = ws.receive_json()
             assert msg["type"] == "error"
 

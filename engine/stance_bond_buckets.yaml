@@ -1,5 +1,3 @@
 stance_bond_buckets:
-  # Bond-range buckets used by resolve_npc_stance to look up entries in stance_matrix.
-  # Bond at or below low_max → "low"; at or below mid_max → "mid"; else "high".
   low_max: 1
   mid_max: 3

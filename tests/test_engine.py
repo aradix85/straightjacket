@@ -1,17 +1,7 @@
-"""Tests for engine logic: utilities, config, NPC processing.
-
-Run: python -m pytest tests/test_engine.py -v
-"""
-
 from tests._helpers import make_game_state, make_npc
-
-# Stubs are set up in conftest.py
-
-# ── AppConfig tests ──────────────────────────────────────────
 
 
 def _full_config_data(**overrides: object) -> dict:
-    """Build a complete config-dict with sensible defaults that tests can override."""
     base = {
         "server": {"host": "127.0.0.1", "port": 8081},
         "language": {"narration_language": "English"},
@@ -33,7 +23,7 @@ def _full_config_data(**overrides: object) -> dict:
             "model_family": {"qwen": "qwen", "gpt-oss": "gpt_oss"},
         },
     }
-    base.update(overrides)  # type: ignore[arg-type]
+    base.update(overrides)
     return base
 
 
@@ -47,7 +37,6 @@ def test_appconfig_typed_access() -> None:
 
 
 def test_appconfig_strict_on_empty() -> None:
-    """Empty config is an error — every section is required."""
     import pytest
 
     from straightjacket.engine.config_loader import _parse_config
@@ -60,7 +49,7 @@ def test_cluster_all_fields_accessible() -> None:
     from straightjacket.engine.config_loader import _parse_config
 
     data = _full_config_data()
-    data["ai"]["clusters"] = {  # type: ignore[index]
+    data["ai"]["clusters"] = {
         "analytical": {
             "model": "gpt-oss",
             "temperature": 0.3,
@@ -70,7 +59,7 @@ def test_cluster_all_fields_accessible() -> None:
             "extra_body": {"foo": "bar"},
         }
     }
-    data["ai"]["role_cluster"] = {"recap": "analytical"}  # type: ignore[index]
+    data["ai"]["role_cluster"] = {"recap": "analytical"}
     config = _parse_config(data)
     c = config.ai.clusters["analytical"]
     assert c.model == "gpt-oss"
@@ -87,8 +76,8 @@ def test_cluster_requires_all_fields() -> None:
     from straightjacket.engine.config_loader import _parse_config
 
     data = _full_config_data()
-    data["ai"]["clusters"] = {"creative": {"temperature": 0.9}}  # type: ignore[index]
-    data["ai"]["role_cluster"] = {"recap": "creative"}  # type: ignore[index]
+    data["ai"]["clusters"] = {"creative": {"temperature": 0.9}}
+    data["ai"]["role_cluster"] = {"recap": "creative"}
     with pytest.raises(ValueError, match="missing required fields"):
         _parse_config(data)
 
@@ -101,19 +90,17 @@ def test_role_cluster_override() -> None:
 
 
 def test_model_family_field_required() -> None:
-    """ai.model_family is a required top-level field on AIConfig."""
     import pytest
 
     from straightjacket.engine.config_loader import _parse_config
 
     data = _full_config_data()
-    del data["ai"]["model_family"]  # type: ignore[index]
+    del data["ai"]["model_family"]
     with pytest.raises(KeyError):
         _parse_config(data)
 
 
 def test_model_family_for_model_resolves(monkeypatch) -> None:
-    """model_family_for_model looks up the family suffix from config.yaml."""
     from straightjacket.engine import config_loader
     from straightjacket.engine.config_loader import _parse_config, model_family_for_model
 
@@ -124,7 +111,6 @@ def test_model_family_for_model_resolves(monkeypatch) -> None:
 
 
 def test_model_family_for_model_raises_on_unknown(monkeypatch) -> None:
-    """Unknown model raises ValueError — no silent fallback."""
     import pytest
 
     from straightjacket.engine import config_loader
@@ -137,39 +123,34 @@ def test_model_family_for_model_raises_on_unknown(monkeypatch) -> None:
 
 
 def test_model_family_for_role_chains(monkeypatch) -> None:
-    """model_family_for_role composes cluster -> model -> family."""
     from straightjacket.engine import config_loader
     from straightjacket.engine.config_loader import _parse_config, model_family_for_role
 
     config = _parse_config(_full_config_data())
     monkeypatch.setattr(config_loader, "_cfg", config)
-    # recap -> classification cluster -> qwen model -> qwen family
+
     assert model_family_for_role("recap") == "qwen"
 
 
 def test_narrator_model_family_convenience(monkeypatch) -> None:
-    """narrator_model_family() returns the family of whichever model
-    backs the narrator role — used by validators that score narrator
-    output."""
     from straightjacket.engine import config_loader
     from straightjacket.engine.config_loader import _parse_config, narrator_model_family
 
     data = _full_config_data()
-    data["ai"]["clusters"]["narrator"] = {  # type: ignore[index]
+    data["ai"]["clusters"]["narrator"] = {
         "model": "gpt-oss",
         "temperature": 1.0,
         "top_p": 0.95,
         "max_tokens": 8192,
         "max_retries": 3,
     }
-    data["ai"]["role_cluster"]["narrator"] = "narrator"  # type: ignore[index]
+    data["ai"]["role_cluster"]["narrator"] = "narrator"
     config = _parse_config(data)
     monkeypatch.setattr(config_loader, "_cfg", config)
     assert narrator_model_family() == "gpt_oss"
 
 
 def test_model_family_for_role_raises_on_unmapped_role(monkeypatch) -> None:
-    """An unmapped role raises ValueError before family-resolution."""
     import pytest
 
     from straightjacket.engine import config_loader
@@ -179,9 +160,6 @@ def test_model_family_for_role_raises_on_unmapped_role(monkeypatch) -> None:
     monkeypatch.setattr(config_loader, "_cfg", config)
     with pytest.raises(ValueError, match="no cluster assignment"):
         model_family_for_role("nonexistent_role")
-
-
-# ── locations_match tests ─────────────────────────────────────
 
 
 def test_locations_match_identical() -> None:
@@ -227,9 +205,6 @@ def test_locations_match_underscore() -> None:
     assert locations_match("dark_forest", "dark forest")
 
 
-# ── salvage_truncated_narration tests ─────────────────────────
-
-
 def test_salvage_clean_text() -> None:
     from straightjacket.engine.parser import salvage_truncated_narration
 
@@ -262,12 +237,7 @@ def test_salvage_preserves_complete_game_data() -> None:
     assert "<game_data>" in result
 
 
-# ── NPC processing tests ──────────────────────────────────────
-
-
-def _make_game_with_npcs():  # type: ignore[no-untyped-def]
-    """Create a minimal GameState with some NPCs for processing tests."""
-
+def _make_game_with_npcs():
     game = make_game_state(player_name="Hero")
     game.narrative.scene_count = 5
     game.world.current_location = "Tavern"
@@ -290,7 +260,7 @@ def test_process_new_npcs_adds_npc(stub_engine: None) -> None:
     maren = next(n for n in game.npcs if n.name == "Maren")
     assert maren.description == "Young scout"
     assert maren.id == "npc_3"
-    assert len(maren.memory) == 1  # seed memory
+    assert len(maren.memory) == 1
 
 
 def test_process_new_npcs_skips_player_character(stub_engine: None) -> None:
@@ -300,7 +270,7 @@ def test_process_new_npcs_skips_player_character(stub_engine: None) -> None:
 
     process_new_npcs(game, [{"name": "Hero", "description": "The protagonist", "disposition": "neutral"}])
 
-    assert len(game.npcs) == 2  # unchanged
+    assert len(game.npcs) == 2
 
 
 def test_process_new_npcs_skips_existing(stub_engine: None) -> None:
@@ -310,7 +280,7 @@ def test_process_new_npcs_skips_existing(stub_engine: None) -> None:
 
     process_new_npcs(game, [{"name": "Kira Voss", "description": "Same person", "disposition": "friendly"}])
 
-    assert len(game.npcs) == 2  # no duplicate
+    assert len(game.npcs) == 2
 
 
 def test_process_npc_renames_updates_name(stub_engine: None) -> None:
@@ -333,7 +303,7 @@ def test_process_npc_renames_rejects_player_name(stub_engine: None) -> None:
     process_npc_renames(game, [{"npc_id": "npc_1", "new_name": "Hero"}])
 
     npc = next(n for n in game.npcs if n.id == "npc_1")
-    assert npc.name == "Kira Voss"  # unchanged
+    assert npc.name == "Kira Voss"
 
 
 def test_process_npc_details_extends_surname(stub_engine: None) -> None:
@@ -341,7 +311,6 @@ def test_process_npc_details_extends_surname(stub_engine: None) -> None:
 
     game = _make_game_with_npcs()
 
-    # "Old Borin" gets a surname: "Old Borin Ironhand"
     process_npc_details(game, [{"npc_id": "npc_2", "full_name": "Old Borin Ironhand"}])
 
     npc = next(n for n in game.npcs if n.id == "npc_2")

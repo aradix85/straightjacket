@@ -1,5 +1,3 @@
-"""Tests for step 10: track type lifecycle, combat sync, scene challenge routing."""
-
 from straightjacket.engine.models import GameState, Resources
 from tests._helpers import make_game_state, make_progress_track, make_world_state
 
@@ -9,9 +7,6 @@ def _game(setting: str = "starforged", combat_position: str = "") -> GameState:
     g.resources = Resources(health=5, spirit=5, supply=5, momentum=2, max_momentum=10)
     g.world = make_world_state(current_location="Iron Hold", combat_position=combat_position)
     return g
-
-
-# ── 10.1 Combat track ↔ combat_position sync ────────────────
 
 
 class TestCombatTrackSync:
@@ -76,9 +71,6 @@ class TestCombatTrackSync:
         assert game.progress_tracks[0].status == "active"
 
 
-# ── 10.2 Scene challenge progress routing ────────────────────
-
-
 class TestSceneChallengeRouting:
     def test_face_danger_marks_scene_challenge(self, load_engine: None) -> None:
         from straightjacket.engine.engine_loader import eng
@@ -88,16 +80,12 @@ class TestSceneChallengeRouting:
         assert "adventure/secure_an_advantage" in sc_moves
 
     def test_scene_challenge_progress_on_hit(self, load_engine: None) -> None:
-        """Scene challenge track gets progress when adventure move succeeds."""
         game = _game()
         sc = make_progress_track(id="sc1", name="Escape", track_type="scene_challenge", rank="dangerous")
         game.progress_tracks.append(sc)
         old_ticks = sc.ticks
         sc.mark_progress()
         assert sc.ticks > old_ticks
-
-
-# ── 10.3 available_moves status filter ───────────────────────
 
 
 class TestAvailableMovesStatusFilter:
@@ -153,9 +141,6 @@ class TestAvailableMovesStatusFilter:
         result = available_moves(game)
         move_keys = {m["move"] for m in result["moves"]}
         assert "scene_challenge/finish_the_scene" not in move_keys
-
-
-# ── 10.4 /tracks status command ──────────────────────────────
 
 
 class TestTracksStatus:

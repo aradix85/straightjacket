@@ -1,11 +1,3 @@
-#!/usr/bin/env python3
-"""Tests for database layer: schema, sync, queries, restore rebuild.
-
-Run: python -m pytest tests/test_db.py -v
-"""
-
-# Stubs are set up in conftest.py
-
 import sqlite3
 
 from straightjacket.engine.db.connection import close_db, get_db, init_db, reset_db
@@ -25,12 +17,10 @@ from tests._helpers import make_clock, make_game_state, make_memory, make_npc, m
 
 
 def _fresh_db() -> sqlite3.Connection:
-    """Reset and return a fresh database connection."""
     return reset_db()
 
 
 def _game_with_npcs() -> GameState:
-    """GameState with two NPCs, memories, a thread, a clock, and a scene log entry."""
     game = make_game_state(player_name="Ash", setting_id="starforged")
     game.npcs = [
         make_npc(
@@ -89,9 +79,6 @@ def _game_with_npcs() -> GameState:
     return game
 
 
-# ── Schema ────────────────────────────────────────────────────
-
-
 def test_init_creates_tables() -> None:
     conn = _fresh_db()
     tables = [
@@ -119,9 +106,6 @@ def test_init_idempotent() -> None:
     conn2 = init_db()
     assert conn2 is get_db()
     close_db()
-
-
-# ── Sync ──────────────────────────────────────────────────────
 
 
 def test_sync_npcs() -> None:
@@ -227,9 +211,6 @@ def test_sync_empty_game() -> None:
     close_db()
 
 
-# ── Queries ───────────────────────────────────────────────────
-
-
 def test_query_npcs_all() -> None:
     _fresh_db()
     sync(_game_with_npcs())
@@ -290,7 +271,6 @@ def test_query_npcs_preserves_json_fields() -> None:
 
 
 def test_query_npcs_no_memories() -> None:
-    """query_npcs returns NpcData without memories (lightweight query)."""
     _fresh_db()
     sync(_game_with_npcs())
     kira = query_npcs(status="active")[0]
@@ -415,9 +395,6 @@ def test_query_clocks_by_owner() -> None:
     assert len(kira_clocks) == 1
     assert kira_clocks[0].name == "Vault heist"
     close_db()
-
-
-# ── Reset/restore ─────────────────────────────────────────────
 
 
 def test_reset_clears_data() -> None:

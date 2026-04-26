@@ -1,9 +1,3 @@
-"""Typed data models for session logging.
-
-Replaces the handcrafted dicts with dataclasses. Every field has a type,
-every default is explicit, serialization is one call.
-"""
-
 from __future__ import annotations
 
 from dataclasses import dataclass, field
@@ -11,8 +5,6 @@ from dataclasses import dataclass, field
 
 @dataclass
 class RollRecord:
-    """Dice roll outcome for a single turn."""
-
     stat: str = ""
     d1: int = 0
     d2: int = 0
@@ -25,8 +17,6 @@ class RollRecord:
 
 @dataclass
 class StateSnapshot:
-    """Resource/world state after a turn."""
-
     health: int = 0
     spirit: int = 0
     supply: int = 0
@@ -44,8 +34,6 @@ class StateSnapshot:
 
 @dataclass
 class NpcSnapshot:
-    """Lightweight NPC state for session log."""
-
     id: str = ""
     name: str = ""
     status: str = ""
@@ -63,8 +51,6 @@ class NpcSnapshot:
 
 @dataclass
 class ClockSnapshot:
-    """Clock state for session log."""
-
     name: str = ""
     clock_type: str = ""
     filled: int = 0
@@ -75,20 +61,16 @@ class ClockSnapshot:
 
 @dataclass
 class ValidatorRecord:
-    """Constraint validator outcome."""
-
     passed: bool = True
     retries: int = 0
     violations: list[str] = field(default_factory=list)
-    attempt_violations: list[int] = field(default_factory=list)  # violation count per attempt
-    attempt_violation_text: list[list[str]] = field(default_factory=list)  # full text per attempt
-    picked_attempt: int = -1  # -1 = last attempt, 0+ = picked an earlier one
+    attempt_violations: list[int] = field(default_factory=list)
+    attempt_violation_text: list[list[str]] = field(default_factory=list)
+    picked_attempt: int = -1
 
 
 @dataclass
 class BrainRecord:
-    """Brain classification result."""
-
     move: str = ""
     stat: str = ""
     target_npc: str = ""
@@ -99,8 +81,6 @@ class BrainRecord:
 
 @dataclass
 class EngineLogRecord:
-    """Engine session_log entry snapshot."""
-
     summary: str = ""
     move: str = ""
     result: str = ""
@@ -115,8 +95,6 @@ class EngineLogRecord:
 
 @dataclass
 class StoryArcRecord:
-    """Current story arc position."""
-
     phase: str = ""
     title: str = ""
     goal: str = ""
@@ -126,8 +104,6 @@ class StoryArcRecord:
 
 @dataclass
 class TurnRecord:
-    """Complete record of one turn."""
-
     turn: int = 0
     chapter: int = 0
     scene: int = 0
@@ -157,16 +133,14 @@ class TurnRecord:
     error: str = ""
 
     def to_dict(self) -> dict:
-        """Serialize for JSON output. Strips None values and empty defaults."""
         from dataclasses import asdict
 
         d = asdict(self)
-        # Remove empty/None fields for compact JSON
+
         return {k: v for k, v in d.items() if v is not None and v != "" and v != [] and v != {}}
 
     @property
     def has_issues(self) -> bool:
-        """True if this turn had any diagnostic-relevant problems."""
         return bool(
             self.error
             or self.violations
@@ -178,8 +152,6 @@ class TurnRecord:
         )
 
     def to_compact_dict(self) -> dict:
-        """Compact turn summary for diagnostic logs. ~300 bytes vs ~6KB full.
-        Includes narration excerpt only when this turn had issues."""
         d: dict = {"turn": self.turn, "scene": self.scene}
         if self.roll:
             d["result"] = self.roll.result
@@ -230,8 +202,6 @@ class TurnRecord:
 
 @dataclass
 class ChapterRecord:
-    """Summary of one chapter."""
-
     chapter: int = 0
     started_at_turn: int = 0
     turns_played: int = 0
@@ -240,8 +210,6 @@ class ChapterRecord:
 
 @dataclass
 class SessionLog:
-    """Complete session log. Serializable to JSON."""
-
     started_at: str = ""
     ended_at: str = ""
     config: dict = field(default_factory=dict)
@@ -273,7 +241,6 @@ class SessionLog:
     final_state: dict = field(default_factory=dict)
 
     def to_dict(self) -> dict:
-        """Full serialization — debug mode. ~160KB for 24 turns."""
         from dataclasses import asdict
 
         d = asdict(self)
@@ -281,11 +248,6 @@ class SessionLog:
         return d
 
     def to_diagnostic_dict(self) -> dict:
-        """Compact diagnostic format. ~15-20KB for 24 turns.
-        Keeps full session metadata + compact turn summaries.
-        Narration included only for turns with issues (validator fail,
-        invariant violations, quality issues, errors).
-        NPC snapshots only at session end, not per-turn."""
         d: dict = {
             "engine_version": self.engine_version,
             "style": self.style,
@@ -297,7 +259,7 @@ class SessionLog:
                 {"chapter": ch.chapter, "turns": ch.turns_played, "ended": ch.ended_reason} for ch in self.chapters
             ],
         }
-        # Story blueprint — conflict and structure only
+
         if self.story_blueprint:
             bp = self.story_blueprint
             d["story"] = {
@@ -306,9 +268,9 @@ class SessionLog:
                 "thematic": bp.get("thematic_thread", "")[:200],
                 "acts": [f"{a.get('phase', '?')}: {a.get('title', '?')}" for a in bp.get("acts", [])],
             }
-        # Compact turns
+
         d["turns"] = [t.to_compact_dict() if isinstance(t, TurnRecord) else t for t in self.turns]
-        # Aggregated stats — truncate violation strings for readability
+
         vs = dict(self.validator_summary) if self.validator_summary else {}
         if vs.get("top_violations"):
             vs["top_violations"] = [[v[:120], count] for v, count in vs["top_violations"]]
@@ -320,7 +282,7 @@ class SessionLog:
             d["token_summary"] = self.token_summary
         if self.drift_summary:
             d["drift_summary"] = self.drift_summary
-        # Final NPC state (once, not per-turn)
+
         if self.turns:
             last = self.turns[-1]
             if isinstance(last, TurnRecord) and last.npcs:
@@ -334,7 +296,7 @@ class SessionLog:
                     for n in last.npcs
                 ]
         d["final_state"] = self.final_state
-        # Session-level issues
+
         if self.violations:
             d["invariant_violations"] = self.violations
         if self.chapter_continuity_issues:

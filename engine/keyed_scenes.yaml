@@ -1,31 +1,5 @@
 keyed_scenes:
-  # Director-pre-defined narrative beats that override the chaos check at
-  # scene start. When a keyed scene matches its trigger, it replaces the
-  # normal expected/altered/interrupt outcome for that turn. The matched
-  # scene is removed from narrative.keyed_scenes after firing — keyed
-  # scenes are one-shot, never repeated.
-  #
-  # Spawning is out of scope for step 4. The Adventure Crafter (step 7)
-  # is the engine's keyed-scene spawner: AC turning points and plot beats
-  # that map deterministically onto an engine trigger get written into
-  # narrative.keyed_scenes by AC. Until step 7 lands the list stays empty
-  # in normal play, the keyed-priority branch in check_scene is dormant,
-  # and tests seed the list directly to exercise the evaluator.
-  #
-  # Priority order in check_scene: keyed > interrupt > altered > expected.
 
-  # Registered trigger types. Each entry binds:
-  #   value_format:  human-readable description of trigger_value's shape, used
-  #                  when constructing a KeyedScene to validate the value
-  #                  parses cleanly. The evaluator function is the source of
-  #                  truth for parse semantics.
-  #   description:   what state the trigger watches for.
-  #
-  # Adding a trigger type means: add an entry here, add a matching
-  # evaluator function in mechanics/keyed_scenes.py, register it in
-  # _EVALUATORS in that module. trigger_type validation in
-  # KeyedScene.__post_init__ reads the keys of this map — unknown
-  # trigger types raise on construction.
   triggers:
     clock_fills:
       value_format: "<clock_name>:<segments_filled>"
@@ -42,11 +16,5 @@ keyed_scenes:
     scene_count:
       value_format: "<n>"
       description: "Narrative scene_count has reached at least n."
-    # NOTE: thread_phase is deferred to step 31 (thread progress tracks).
-    # Registering it here without an evaluator would create a half-wired
-    # trigger that raises on use; step 31 adds it cleanly.
 
-  # AI-facing wrapper for the narrative_hint when a keyed scene fires.
-  # Engine-internal template; the {hint} placeholder is the KeyedScene's
-  # narrative_hint field as written by the spawner.
   prompt_wrapper: "<keyed_scene>{hint}</keyed_scene>"

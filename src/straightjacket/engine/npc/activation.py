@@ -1,5 +1,3 @@
-"""NPC activation: TF-IDF relevance scoring and prompt context selection."""
-
 import math
 from typing import TYPE_CHECKING
 
@@ -13,26 +11,18 @@ from .bond import get_npc_bond
 if TYPE_CHECKING:
     from ..models import BrainResult
 
-# TF-IDF NPC RELEVANCE SCORING (zero-dependency implementation)
-# Replaces keyword-based activation. TF-IDF automatically weights rare/distinctive
-# words higher (proper nouns > common words), works across all languages.
-
 
 def compute_npc_tfidf_scores(npcs: list[NpcData], query_text: str) -> dict[str, float]:
-    """Compute TF-IDF cosine similarity between query_text and each NPC's profile.
-    Returns {npc_id: similarity_score}. Zero-dependency implementation."""
     if not query_text or not npcs:
         return {}
 
     _tf = eng().tf_idf
     min_tok = _tf.token_min_length
 
-    # Tokenize: lowercase, split on non-alpha, filter short tokens
     def _tokenize(text: str) -> list[str]:
         return [w for w in text.lower().split() if len(w) >= min_tok and w.isalpha()]
 
-    # Build NPC documents: combine name, description, agenda, aliases, memory events
-    docs = {}  # npc_id → token list
+    docs = {}
     for npc in npcs:
         if npc.status not in ("active", "background"):
             continue
@@ -43,7 +33,7 @@ def compute_npc_tfidf_scores(npcs: list[NpcData], query_text: str) -> dict[str, 
             npc.agenda,
             " ".join(npc.aliases),
         ]
-        # Include recent memory events
+
         for m in npc.memory[-_tf.memory_window :]:
             parts.append(m.event)
         docs[npc_id] = _tokenize(" ".join(parts))
@@ -55,7 +45,6 @@ def compute_npc_tfidf_scores(npcs: list[NpcData], query_text: str) -> dict[str, 
     if not query_tokens:
         return {}
 
-    # Document frequency: how many docs contain each term
     all_docs = list(docs.values()) + [query_tokens]
     n_docs = len(all_docs)
     df: dict[str, int] = {}
@@ -64,18 +53,15 @@ def compute_npc_tfidf_scores(npcs: list[NpcData], query_text: str) -> dict[str, 
         for term in seen:
             df[term] = df.get(term, 0) + 1
 
-    # IDF: log(N / df) — standard formulation
     idf = {}
     for term, count in df.items():
         idf[term] = math.log(n_docs / count) if count > 0 else 0
 
-    # TF-IDF vectors
     def _tfidf_vector(tokens: list[str]) -> dict[str, float]:
         tf: dict[str, int] = {}
         for t in tokens:
             tf[t] = tf.get(t, 0) + 1
-        # Normalize TF by document length. Empty token lists never reach here
-        # (caller short-circuits on `if not tokens`) but guard anyway.
+
         if not tokens:
             return {}
         doc_len = len(tokens)
@@ -85,7 +71,6 @@ def compute_npc_tfidf_scores(npcs: list[NpcData], query_text: str) -> dict[str, 
     _q_sumsq = sum(v * v for v in query_vec.values())
     query_norm = math.sqrt(_q_sumsq) if _q_sumsq > 0 else 1.0
 
-    # Cosine similarity for each NPC
     scores = {}
     for npc_id, tokens in docs.items():
         if not tokens:
@@ -95,18 +80,13 @@ def compute_npc_tfidf_scores(npcs: list[NpcData], query_text: str) -> dict[str, 
         _d_sumsq = sum(v * v for v in doc_vec.values())
         doc_norm = math.sqrt(_d_sumsq) if _d_sumsq > 0 else 1.0
 
-        # Dot product
         dot = sum(query_vec.get(t, 0) * doc_vec.get(t, 0) for t in set(query_vec) | set(doc_vec))
         scores[npc_id] = dot / (query_norm * doc_norm)
 
     return scores
 
 
-# NPC ACTIVATION FOR PROMPT
-
-
 def _build_scan_text(brain: "BrainResult", game: "GameState", player_input: str) -> str:
-    """Collect all text that might signal which NPCs are relevant this turn."""
     _tf = eng().tf_idf
     scan_parts = [
         player_input,
@@ -127,10 +107,6 @@ def _score_npc(
     tfidf: float,
     game: "GameState",
 ) -> tuple[float, list[str]]:
-    """Return (score, reasons) for a single NPC. Six signals:
-    direct target, name match, alias match, TF-IDF similarity, location match,
-    recent interaction.
-    """
     _scores = eng().activation_scores
     _tf = eng().tf_idf
     score = 0.0
@@ -178,9 +154,6 @@ def _score_npc(
 def _cap_activated_overflow(
     activated: list[NpcData], mentioned: list[NpcData], target_id: str | None, game: "GameState"
 ) -> tuple[list[NpcData], list[NpcData]]:
-    """Enforce the max_activated hard limit. Overflow (lowest-bond non-target
-    NPCs) drops from activated to mentioned.
-    """
     _max_activated = eng().npc.max_activated
     if len(activated) <= _max_activated:
         return activated, mentioned
@@ -195,10 +168,6 @@ def _cap_activated_overflow(
 
 
 def _recursive_activation(activated: list[NpcData], mentioned: list[NpcData], game: "GameState") -> list[NpcData]:
-    """If an activated NPC's secrets/agenda references another NPC by name,
-    surface that NPC as 'mentioned'. Stops at max_recursive, and after the
-    first activated NPC that produces any references.
-    """
     secondary: list[NpcData] = []
     for npc in activated:
         ref_text = " ".join(npc.secrets) + " " + npc.agenda
@@ -222,16 +191,6 @@ def _recursive_activation(activated: list[NpcData], mentioned: list[NpcData], ga
 def activate_npcs_for_prompt(
     game: "GameState", brain: "BrainResult", player_input: str
 ) -> tuple[list[NpcData], list[NpcData], dict]:
-    """Decide which NPCs get full context vs name-only mention in narrator prompt.
-
-    Four phases: build scan text, score each active/background NPC, enforce
-    max_activated overflow, then recursively surface NPCs referenced in secrets/agenda.
-
-    Returns (activated_npcs, mentioned_npcs, activation_debug).
-    activated = full context (memories, secrets, agenda)
-    mentioned = name + disposition only
-    activation_debug = {npc_name: {score, reasons, status}} for diagnostics
-    """
     target_id = brain.target_npc
     scan_text = _build_scan_text(brain, game, player_input)
     tfidf_scores = compute_npc_tfidf_scores(game.npcs, scan_text)

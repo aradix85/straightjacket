@@ -1,18 +1,3 @@
-#!/usr/bin/env python3
-"""Tests for NPC subsystem: matching, memory, lifecycle, activation.
-
-Covers the fragile edge cases documented in code comments:
-- Fuzzy matching with edit distance, STT variants, title filtering
-- Memory importance scoring, consolidation, retrieval
-- Lifecycle: absorb duplicates, description-based dedup, reactivation
-- Activation: TF-IDF scoring, threshold filtering
-
-Run: python -m pytest tests/test_npc.py -v
-"""
-
-
-# Stubs set up in conftest.py
-
 from straightjacket.engine.models import GameState
 from tests._helpers import make_brain_result, make_game_state, make_memory, make_npc
 
@@ -41,9 +26,6 @@ def _make_game() -> "GameState":
         ),
     ]
     return game
-
-
-# ── matching.py tests ─────────────────────────────────────────
 
 
 def test_find_npc_by_id(stub_engine: None) -> None:
@@ -77,8 +59,7 @@ def test_find_npc_substring(stub_engine: None) -> None:
     from straightjacket.engine.npc.matching import find_npc
 
     game = _make_game()
-    # "Old Borin" is contained in the ref if we search by a longer name
-    # that contains the existing name
+
     result = find_npc(game, "Old Borin Ironhand")
     assert result is not None
     assert result.id == "npc_2"
@@ -88,11 +69,9 @@ def test_find_npc_substring_short_no_match(stub_engine: None) -> None:
     from straightjacket.engine.npc.matching import find_npc
 
     game = _make_game()
-    # "Borin Ironhand" doesn't contain "Old Borin" and vice versa
-    # (only partial overlap) — find_npc is conservative here
+
     result = find_npc(game, "Borin Ironhand")
-    # This goes through fuzzy_match, not direct find_npc substring
-    # find_npc requires 5+ char substring containment
+
     assert result is None or result.id == "npc_2"
 
 
@@ -102,18 +81,18 @@ def test_find_npc_returns_none(stub_engine: None) -> None:
     game = _make_game()
     assert find_npc(game, "Nobody") is None
     assert find_npc(game, "") is None
-    assert find_npc(game, None) is None  # type: ignore[arg-type]
+    assert find_npc(game, None) is None
 
 
 def test_edit_distance_le1() -> None:
     from straightjacket.engine.npc.matching import edit_distance_le1
 
     assert edit_distance_le1("kira", "kira") is True
-    assert edit_distance_le1("kira", "kirra") is True  # insertion
-    assert edit_distance_le1("kira", "kia") is True  # deletion
-    assert edit_distance_le1("kira", "kora") is True  # substitution
-    assert edit_distance_le1("kira", "korr") is False  # distance 2
-    assert edit_distance_le1("ab", "abcd") is False  # length diff > 1
+    assert edit_distance_le1("kira", "kirra") is True
+    assert edit_distance_le1("kira", "kia") is True
+    assert edit_distance_le1("kira", "kora") is True
+    assert edit_distance_le1("kira", "korr") is False
+    assert edit_distance_le1("ab", "abcd") is False
 
 
 def test_fuzzy_match_stt_variant(stub_engine: None) -> None:
@@ -123,8 +102,7 @@ def test_fuzzy_match_stt_variant(stub_engine: None) -> None:
     game.npcs = [
         make_npc(id="npc_1", name="Eisenberg", disposition="neutral"),
     ]
-    # Single-word name: "Eisenborg" is edit-distance-1 from "Eisenberg"
-    # (no significant-word-overlap continue-skip because there's no shared word)
+
     match, match_type = fuzzy_match_existing_npc(game, "Eisenborg")
     assert match is not None
     assert match.name == "Eisenberg"
@@ -132,9 +110,6 @@ def test_fuzzy_match_stt_variant(stub_engine: None) -> None:
 
 
 def test_fuzzy_match_stt_variant_multiword(stub_engine: None) -> None:
-    """Multi-word names: one word matches exactly, another is edit-distance-1.
-    Previously a known limitation (significant_overlap continue skipped edit-distance).
-    Fixed: overlap ratio rejection no longer skips the edit-distance check."""
     from straightjacket.engine.npc.matching import fuzzy_match_existing_npc
 
     game = make_game_state(player_name="Hero")
@@ -151,11 +126,9 @@ def test_fuzzy_match_stt_variant_sorted_mismatch(stub_engine: None) -> None:
     from straightjacket.engine.npc.matching import fuzzy_match_existing_npc
 
     game = _make_game()
-    # "Kira Foss" vs "Kira Voss" — sorted() puts foss before kira,
-    # breaking positional edit-distance check. This is a known limitation.
-    # The word-overlap path catches it instead via "Kira" significant overlap.
+
     match, match_type = fuzzy_match_existing_npc(game, "Kira Foss")
-    # Matches via significant word overlap (Kira >= 4 chars), not edit distance
+
     if match is not None:
         assert match.name == "Kira Voss"
 
@@ -164,7 +137,7 @@ def test_fuzzy_match_title_only_rejected(stub_engine: None) -> None:
     from straightjacket.engine.npc.matching import fuzzy_match_existing_npc
 
     game = _make_game()
-    # "Mrs." alone shouldn't match anything
+
     match, _ = fuzzy_match_existing_npc(game, "Mrs.")
     assert match is None
 
@@ -206,7 +179,7 @@ def test_resolve_about_npc_self_reference(stub_engine: None) -> None:
     from straightjacket.engine.npc.matching import resolve_about_npc
 
     game = _make_game()
-    # Should return None when about_npc resolves to the owner
+
     result = resolve_about_npc(game, "Kira Voss", owner_id="npc_1")
     assert result is None
 
@@ -217,9 +190,6 @@ def test_resolve_about_npc_valid(stub_engine: None) -> None:
     game = _make_game()
     result = resolve_about_npc(game, "Old Borin", owner_id="npc_1")
     assert result == "npc_2"
-
-
-# ── memory.py tests ──────────────────────────────────────────
 
 
 def test_score_importance_direct(stub_engine: None, stub_emotions: None) -> None:
@@ -233,15 +203,13 @@ def test_score_importance_direct(stub_engine: None, stub_emotions: None) -> None
 def test_score_importance_compound(stub_engine: None, stub_emotions: None) -> None:
     from straightjacket.engine.npc.memory import score_importance
 
-    # Compound emotions: take the highest
     score = score_importance("angry_terrified")
-    assert score >= 7  # terrified = 7
+    assert score >= 7
 
 
 def test_score_importance_keyword_boost(stub_engine: None, stub_emotions: None) -> None:
     from straightjacket.engine.npc.memory import score_importance
 
-    # "neutral" = 2, but "death" keyword boost = 7
     score = score_importance("neutral", "witnessed a death")
     assert score >= 7
 
@@ -260,19 +228,19 @@ def test_consolidate_memory_under_limit(stub_engine: None, stub_emotions: None) 
     npc = make_npc(id="npc_1", name="Test")
     npc.memory = [make_memory(scene=i, event=f"event {i}", type="observation", importance=3) for i in range(5)]
     consolidate_memory(npc)
-    assert len(npc.memory) == 5  # under limit, no change
+    assert len(npc.memory) == 5
 
 
 def test_consolidate_memory_over_limit(stub_engine: None, stub_emotions: None) -> None:
     from straightjacket.engine.npc.memory import consolidate_memory
 
     npc = make_npc(id="npc_1", name="Test")
-    # Create 30 memories (over the 25 limit)
+
     npc.memory = [make_memory(scene=i, event=f"event {i}", type="observation", importance=i % 10) for i in range(30)]
     npc.memory.append(make_memory(scene=31, event="reflection", type="reflection", importance=8))
     consolidate_memory(npc)
     assert len(npc.memory) <= 25
-    # Reflection should be kept
+
     assert any(m.type == "reflection" for m in npc.memory)
 
 
@@ -308,12 +276,9 @@ def test_retrieve_memories_about_npc_boost(stub_engine: None) -> None:
         make_memory(scene=1, event="old boring event", type="observation", importance=2, about_npc="npc_3"),
         make_memory(scene=5, event="recent event", type="observation", importance=3, about_npc=None),
     ]
-    # When npc_3 is present, memory about npc_3 gets boosted
+
     result = retrieve_memories(npc, max_count=1, current_scene=6, present_npc_ids={"npc_3"})
     assert result[0].about_npc == "npc_3"
-
-
-# ── lifecycle.py tests ───────────────────────────────────────
 
 
 def test_reactivate_background_npc(stub_engine: None) -> None:
@@ -329,7 +294,7 @@ def test_reactivate_deceased_refused(stub_engine: None) -> None:
 
     npc = make_npc(id="npc_1", name="Test", status="deceased")
     reactivate_npc(npc, reason="test")
-    assert npc.status == "deceased"  # no force = stays dead
+    assert npc.status == "deceased"
 
 
 def test_reactivate_deceased_forced(stub_engine: None) -> None:
@@ -369,15 +334,15 @@ def test_sanitize_aliases(stub_engine: None) -> None:
     sanitize_aliases(npc)
     assert "Kira" in npc.aliases
     assert npc.aliases.count("Kira") == 1
-    assert "Kira Voss" not in npc.aliases  # same as name
-    assert len(npc.aliases) == 1  # long description stripped
+    assert "Kira Voss" not in npc.aliases
+    assert len(npc.aliases) == 1
 
 
 def test_absorb_duplicate_npc(stub_engine: None, stub_emotions: None) -> None:
     from straightjacket.engine.npc.lifecycle import absorb_duplicate_npc
 
     game = _make_game()
-    # Add a duplicate NPC with the same name
+
     dup = make_npc(
         id="npc_3",
         name="Kira Voss",
@@ -386,10 +351,10 @@ def test_absorb_duplicate_npc(stub_engine: None, stub_emotions: None) -> None:
     )
     game.npcs.append(dup)
 
-    original = game.npcs[0]  # npc_1 = Kira Voss
+    original = game.npcs[0]
     absorb_duplicate_npc(game, original, "Kira Voss")
 
-    assert len(game.npcs) == 2  # dup removed
+    assert len(game.npcs) == 2
     assert any(m.event == "dup memory" for m in original.memory)
 
 
@@ -398,7 +363,7 @@ def test_is_complete_description() -> None:
 
     assert is_complete_description("Tall woman with red hair.") is True
     assert is_complete_description("Tall woman with red") is False
-    assert is_complete_description("Short.") is False  # too short
+    assert is_complete_description("Short.") is False
     assert is_complete_description("") is False
 
 
@@ -406,15 +371,12 @@ def test_retire_distant_npcs(stub_engine: None) -> None:
     from straightjacket.engine.npc.lifecycle import retire_distant_npcs
 
     game = _make_game()
-    # Add many NPCs to exceed max_active=12
+
     for i in range(15):
         game.npcs.append(make_npc(id=f"npc_{i + 10}", name=f"NPC {i}", status="active", memory=[]))
     retire_distant_npcs(game)
     active = [n for n in game.npcs if n.status == "active"]
     assert len(active) <= 12
-
-
-# ── activation.py tests ──────────────────────────────────────
 
 
 def test_tfidf_scores_basic(stub_engine: None) -> None:
@@ -450,16 +412,13 @@ def test_activate_npcs_name_mention(stub_engine: None) -> None:
     assert "npc_1" in all_npcs
 
 
-# ── normalize_disposition ─────────────────────────────────────
-
-
 def test_normalize_disposition(stub_emotions: None) -> None:
     from straightjacket.engine.npc.lifecycle import normalize_disposition
 
     assert normalize_disposition("hostile") == "hostile"
     assert normalize_disposition("wary") == "distrustful"
     assert normalize_disposition("curious") == "neutral"
-    assert normalize_disposition("unknown_value") == "neutral"  # fallback
+    assert normalize_disposition("unknown_value") == "neutral"
 
 
 if __name__ == "__main__":

@@ -1,5 +1,3 @@
-"""Tests for step 11b: impacts (persistent conditions that reduce max_momentum)."""
-
 from straightjacket.engine.models import GameState, Resources
 from tests._helpers import make_game_state
 
@@ -8,9 +6,6 @@ def _game() -> GameState:
     g = make_game_state(player_name="Hero", setting_id="starforged")
     g.resources = Resources(health=3, spirit=3, supply=3, momentum=5, max_momentum=10)
     return g
-
-
-# ── Core mechanics ───────────────────────────────────────────
 
 
 class TestApplyImpact:
@@ -82,9 +77,9 @@ class TestRecalcMaxMomentum:
         from straightjacket.engine.mechanics.impacts import apply_impact
 
         game = _game()
-        game.resources.momentum = 10  # at current max
+        game.resources.momentum = 10
         apply_impact(game, "wounded")
-        assert game.resources.momentum == 9  # clamped
+        assert game.resources.momentum == 9
 
     def test_clear_restores_momentum_max(self, stub_engine: None) -> None:
         from straightjacket.engine.mechanics.impacts import apply_impact, clear_impact
@@ -132,9 +127,6 @@ class TestBlocksRecovery:
         assert blocks_recovery(game, "health") == ""
 
 
-# ── Snapshot/restore ─────────────────────────────────────────
-
-
 class TestImpactsSnapshotRestore:
     def test_impacts_restored(self, stub_engine: None) -> None:
         from straightjacket.engine.mechanics.impacts import apply_impact
@@ -160,9 +152,6 @@ class TestImpactsSnapshotRestore:
         d = game.to_dict()
         game2 = GameState.from_dict(d)
         assert sorted(game2.impacts) == ["doomed", "tormented"]
-
-
-# ── Move outcome integration ─────────────────────────────────
 
 
 class TestSufferHandlerMarksImpact:
@@ -247,9 +236,6 @@ class TestThresholdHandlerMarksImpact:
         assert any("doomed" in c for c in result.consequences)
 
 
-# ── Status command ──────────────────────────────────────────
-
-
 class TestImpactsStatus:
     def test_impacts_shown_in_status(self, load_engine: None) -> None:
         from straightjacket.engine.mechanics.impacts import apply_impact
@@ -269,9 +255,6 @@ class TestImpactsStatus:
         game = _game()
         text = build_narrative_status(game)
         assert "Impacts:" not in text
-
-
-# ── Validator integration ───────────────────────────────────
 
 
 class TestImpactAcknowledgmentValidator:
@@ -308,9 +291,6 @@ class TestImpactAcknowledgmentValidator:
             ["permanently harmed"],
         )
         assert result == []
-
-
-# ── Prompt integration ──────────────────────────────────────
 
 
 class TestCharacterStatePromptTag:

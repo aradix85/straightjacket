@@ -1,5 +1,3 @@
-"""World-state mechanics: location matching, chaos factor, time progression, pacing."""
-
 from __future__ import annotations
 
 import random
@@ -7,15 +5,8 @@ import random
 from ..engine_loader import eng
 from ..models import BrainResult, GameState
 
-# LOCATION MATCHING
-
 
 def locations_match(loc_a: str, loc_b: str) -> bool:
-    """Fuzzy location comparison for deduplication and spatial guards.
-
-    Empty/blank input is treated as 'unspecified' and matches anything — this
-    prevents false negatives when the engine hasn't established a location yet.
-    """
     if not loc_a or not loc_b:
         return True
 
@@ -35,16 +26,7 @@ def locations_match(loc_a: str, loc_b: str) -> bool:
     return shorter[0] == longer[0]
 
 
-# CHAOS FACTOR SYSTEM
-
-
 def update_chaos_factor(game: GameState, result: str, target_npc_id: str | None = None) -> None:
-    """Adjust chaos factor based on roll result or dialog outcome.
-
-    Action scenes: STRONG_HIT −1, MISS +1, WEAK_HIT no change.
-    Dialog scenes: derive from target NPC stance. Hostile/distrustful → +1 (not in control).
-    Friendly/loyal → −1 (in control). Neutral/no target → no change.
-    """
     _e = eng()
     _c = _e.chaos
     if result == "MISS":
@@ -52,7 +34,6 @@ def update_chaos_factor(game: GameState, result: str, target_npc_id: str | None 
     elif result == "STRONG_HIT":
         game.world.tick_chaos(_c.adjust_strong, floor=_c.min, ceiling=_c.max)
     elif result == "dialog" and target_npc_id:
-        # circular: npc package ↔ mechanics via prompt_blocks/processing
         from ..npc import find_npc
 
         npc = find_npc(game, target_npc_id)
@@ -63,16 +44,11 @@ def update_chaos_factor(game: GameState, result: str, target_npc_id: str | None 
                 game.world.tick_chaos(_c.adjust_dialog_friendly, floor=_c.min, ceiling=_c.max)
 
 
-# TEMPORAL & SPATIAL CONSISTENCY
-
-
 def time_phases() -> list[str]:
-    """Read time phases from engine.yaml."""
     return list(eng().enums.time_phases)
 
 
 def advance_time(game: GameState, progression: str) -> None:
-    """Advance time_of_day based on Brain's time_progression assessment."""
     phases = time_phases()
     if not game.world.time_of_day or progression in ("none", "short"):
         return
@@ -88,14 +64,13 @@ def advance_time(game: GameState, progression: str) -> None:
 
 
 def update_location(game: GameState, new_location: str) -> None:
-    """Update current location and maintain location history."""
     if not new_location:
         return
     new_location = new_location.replace("_", " ").strip()
     if not new_location:
         return
     w = game.world
-    # First location ever: just set it, no comparison needed
+
     if not w.current_location:
         w.current_location = new_location
         return
@@ -113,8 +88,6 @@ def update_location(game: GameState, new_location: str) -> None:
 
 
 def apply_brain_location_time(game: GameState, brain: BrainResult) -> None:
-    """Apply location change and engine-resolved time progression."""
-    # circular: resolvers → npc → mechanics package
     from .resolvers import resolve_time_progression
 
     loc = brain.location_change
@@ -125,11 +98,7 @@ def apply_brain_location_time(game: GameState, brain: BrainResult) -> None:
     advance_time(game, time_prog)
 
 
-# SCENE / SEQUEL PACING SYSTEM
-
-
 def get_pacing_hint(game: GameState) -> str:
-    """Analyze recent scene intensity and suggest pacing."""
     _e = eng()
     history = game.narrative.scene_intensity_history[-_e.pacing.window_size :]
     if not history:
@@ -156,18 +125,13 @@ def get_pacing_hint(game: GameState) -> str:
 
 
 def record_scene_intensity(game: GameState, scene_type: str) -> None:
-    """Record a scene's intensity type for pacing analysis."""
     window = eng().pacing.window_size
     game.narrative.scene_intensity_history.append(scene_type)
     if len(game.narrative.scene_intensity_history) > window:
         game.narrative.scene_intensity_history = game.narrative.scene_intensity_history[-window:]
 
 
-# KISHŌTENKETSU STRUCTURE SELECTION
-
-
 def choose_story_structure(tone: str) -> str:
-    """Choose between '3act' and 'kishotenketsu' based on tone probability."""
     _e = eng()
     kprob = _e.story.kishotenketsu_probability
     probability = kprob[tone] if tone in kprob else _e.story.kishotenketsu_fallback_probability

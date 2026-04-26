@@ -1,16 +1,3 @@
-"""Mechanical enforcement of the project's absolute rules.
-
-These tests scan src/straightjacket/ with AST and regex and fail on any
-violation of the patterns the handwritten audits were supposed to catch.
-The tests are the arbiter; no audit report is trusted on faith.
-
-Each test emits a full list of offending (file, line, snippet) tuples so
-a failure points straight at the offending code.
-
-Carve-outs are expressed by allowlisted modules or by a comment marker
-near the offending line — never by skipping the test.
-"""
-
 from __future__ import annotations
 
 import ast
@@ -21,11 +8,7 @@ from pathlib import Path
 
 SRC_ROOT = Path(__file__).resolve().parent.parent / "src" / "straightjacket"
 
-# Modules where try/except Exception is a documented carve-out.
-# Policy lives in engine/ai/provider_base.py module docstring.
-#  - AI-call sites: transient API faults must degrade gracefully.
-#  - Tool-boundary: handler returns structured error dicts to AI caller.
-#  - Web handlers: WebSocket boundary — dead sockets, stale clients.
+
 _AI_CALL_CARVE_OUT_FILES = {
     "engine/ai/brain.py",
     "engine/ai/narrator.py",
@@ -44,31 +27,6 @@ _AI_CALL_CARVE_OUT_FILES = {
     "web/serializers.py",
 }
 
-# Policy-marker tokens that sanction a broad except or an inline import.
-# Presence of any of these in a comment on or near the offending line
-# tells the test the carve-out is acknowledged and intentional.
-_CARVE_OUT_MARKERS = (
-    "policy",
-    "carve-out",
-    "carve out",
-    "provider_base",
-    "ai-call",
-    "ai call",
-    "graceful degradation",
-    "transient",
-    "tool_boundary",
-    "tool boundary",
-    "cycle",
-    "circular",
-    "lazy",
-    "lazy-load",
-    "lazy load",
-    "optional dep",
-    "heavy",
-    "deferred",
-    "avoid import",
-)
-
 
 @dataclass(frozen=True)
 class Violation:
@@ -81,12 +39,10 @@ class Violation:
 
 
 def _iter_source_files() -> Iterator[Path]:
-    """Yield every .py file under src/straightjacket/."""
     yield from SRC_ROOT.rglob("*.py")
 
 
 def _rel(path: Path) -> str:
-    """Path relative to SRC_ROOT, posix-style, for readable reports."""
     return path.relative_to(SRC_ROOT).as_posix()
 
 
@@ -101,7 +57,6 @@ def _format_report(category: str, violations: list[Violation]) -> str:
 
 
 def _build_parent_map(tree: ast.AST) -> dict[int, ast.AST]:
-    """Map id(child_node) → parent_node for every node in the tree."""
     parents: dict[int, ast.AST] = {}
     for parent in ast.walk(tree):
         for child in ast.iter_child_nodes(parent):
@@ -117,7 +72,6 @@ def _ancestors(node: ast.AST, parents: dict[int, ast.AST]) -> Iterator[ast.AST]:
 
 
 def _inside_fstring_or_logcall(node: ast.AST, parents: dict[int, ast.AST]) -> bool:
-    """True if node is lexically inside an f-string or a log/logger call."""
     for anc in _ancestors(node, parents):
         if isinstance(anc, ast.JoinedStr):
             return True
@@ -139,7 +93,6 @@ def _inside_fstring_or_logcall(node: ast.AST, parents: dict[int, ast.AST]) -> bo
 
 
 def _inside_docstring(node: ast.AST, parents: dict[int, ast.AST]) -> bool:
-    """True if node is a string literal in docstring position."""
     for anc in _ancestors(node, parents):
         if isinstance(anc, ast.Expr):
             doc_parent = parents.get(id(anc))
@@ -159,11 +112,6 @@ def _inside_docstring(node: ast.AST, parents: dict[int, ast.AST]) -> bool:
 
 
 def _inside_arithmetic(node: ast.AST, parents: dict[int, ast.AST]) -> bool:
-    """True if node is an operand of arithmetic or a numeric function.
-
-    Used to let `len(x) or 1` and `norm or 1.0` through — those are
-    divide-by-zero guards, not silent domain defaults.
-    """
     parent = parents.get(id(node))
     if isinstance(parent, ast.BinOp):
         return True
@@ -184,10 +132,6 @@ def _inside_arithmetic(node: ast.AST, parents: dict[int, ast.AST]) -> bool:
     return False
 
 
-# ---------------------------------------------------------------------------
-# Check 1: dict.get(key, literal) with a non-neutral literal fallback.
-# ---------------------------------------------------------------------------
-
 _NEUTRAL_CONSTANTS: tuple[object, ...] = (None, 0, "", False)
 
 
@@ -204,7 +148,6 @@ def _is_neutral_default(node: ast.expr) -> bool:
 
 
 def test_no_domain_default_in_dict_get() -> None:
-    """`.get("key", <domain literal>)` smuggles a silent default into code."""
     violations: list[Violation] = []
     for path in _iter_source_files():
         tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
@@ -233,11 +176,6 @@ def test_no_domain_default_in_dict_get() -> None:
             violations.append(Violation(_rel(path), node.lineno, snippet))
 
     assert not violations, "\n" + _format_report("DOMAIN DEFAULT in .get()", violations)
-
-
-# ---------------------------------------------------------------------------
-# Check 2: `X or "literal"` fallback pattern on config/domain lookups.
-# ---------------------------------------------------------------------------
 
 
 def test_no_or_literal_fallback_on_lookups() -> None:
@@ -270,11 +208,6 @@ def test_no_or_literal_fallback_on_lookups() -> None:
     assert not violations, "\n" + _format_report("`X or literal` FALLBACK on lookup", violations)
 
 
-# ---------------------------------------------------------------------------
-# Check 3: dataclass field defaults in the config-binding module.
-# ---------------------------------------------------------------------------
-
-
 def _is_dataclass_decorator(decorator: ast.expr) -> bool:
     if isinstance(decorator, ast.Name) and decorator.id == "dataclass":
         return True
@@ -290,11 +223,6 @@ def _has_default(stmt: ast.AnnAssign) -> bool:
 
 
 def test_no_dataclass_defaults_in_config_binding() -> None:
-    """engine_config.py is the yaml binding. Every public field must be required.
-
-    Underscore-prefixed fields (`_raw`, `_compiled_patterns`) are internal
-    caches, not yaml-loaded config — defaults on those are allowed.
-    """
     path = SRC_ROOT / "engine" / "engine_config.py"
     if not path.exists():
         raise AssertionError(f"expected config binding at {path}")
@@ -322,25 +250,7 @@ def test_no_dataclass_defaults_in_config_binding() -> None:
     assert not violations, "\n" + _format_report("DATACLASS DEFAULT in config binding", violations)
 
 
-# ---------------------------------------------------------------------------
-# Check 4: broad try/except Exception outside the AI-call carve-out.
-# ---------------------------------------------------------------------------
-
-
-def _except_has_marker(lines: list[str], except_lineno: int) -> bool:
-    start = except_lineno
-    end = min(len(lines), except_lineno + 5)
-    for i in range(start, end):
-        line_lower = lines[i].lower()
-        if "#" not in line_lower:
-            continue
-        comment = line_lower[line_lower.index("#") :]
-        if any(marker in comment for marker in _CARVE_OUT_MARKERS):
-            return True
-    return False
-
-
-def test_broad_except_requires_policy_marker() -> None:
+def test_broad_except_inside_carve_out_only() -> None:
     violations: list[Violation] = []
     for path in _iter_source_files():
         rel = _rel(path)
@@ -365,83 +275,91 @@ def test_broad_except_requires_policy_marker() -> None:
             snippet = lines[node.lineno - 1].strip() if node.lineno <= len(lines) else ""
             if rel not in _AI_CALL_CARVE_OUT_FILES:
                 violations.append(Violation(rel, node.lineno, f"except Exception outside carve-out: {snippet}"))
-                continue
-            if not _except_has_marker(lines, node.lineno):
-                violations.append(Violation(rel, node.lineno, f"except Exception missing policy marker: {snippet}"))
 
     assert not violations, "\n" + _format_report("BROAD except/catch", violations)
 
 
-# ---------------------------------------------------------------------------
-# Check 5: TODO comments without a concrete trigger tag.
-# ---------------------------------------------------------------------------
-
-_TODO_OK = re.compile(r"#\s*(TODO|FIXME)\(\S[^)]*\)\s*:")
-_TODO_ANY = re.compile(r"#\s*(TODO|FIXME)\b")
+_COMMENT_LINE = re.compile(r"^\s*#")
 
 
-def test_no_untagged_todo_comments() -> None:
+def _module_has_docstring(tree: ast.AST) -> int:
+    if not isinstance(tree, ast.Module) or not tree.body:
+        return 0
+    first = tree.body[0]
+    if isinstance(first, ast.Expr) and isinstance(first.value, ast.Constant) and isinstance(first.value.value, str):
+        return first.lineno
+    return 0
+
+
+def _docstring_lines(tree: ast.AST) -> list[int]:
+    out: list[int] = []
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Module | ast.FunctionDef | ast.AsyncFunctionDef | ast.ClassDef):
+            continue
+        body = getattr(node, "body", None)
+        if not body:
+            continue
+        first = body[0]
+        if not isinstance(first, ast.Expr):
+            continue
+        v = first.value
+        if not isinstance(v, ast.Constant) or not isinstance(v.value, str):
+            continue
+        out.append(first.lineno)
+    return out
+
+
+def test_no_python_comments_or_docstrings() -> None:
     violations: list[Violation] = []
     for path in _iter_source_files():
-        for lineno, line in enumerate(_read_lines(path), start=1):
-            if not _TODO_ANY.search(line):
-                continue
-            if _TODO_OK.search(line):
-                continue
-            violations.append(Violation(_rel(path), lineno, line.strip()))
-    assert not violations, "\n" + _format_report("UNTAGGED TODO", violations)
+        rel = _rel(path)
+        text = path.read_text(encoding="utf-8")
+        lines = text.splitlines()
+        for i, line in enumerate(lines, start=1):
+            if _COMMENT_LINE.match(line):
+                violations.append(Violation(rel, i, f"# comment: {line.strip()}"))
+        tree = ast.parse(text, filename=str(path))
+        for lineno in _docstring_lines(tree):
+            snippet = lines[lineno - 1].strip() if 0 < lineno <= len(lines) else ""
+            violations.append(Violation(rel, lineno, f"docstring: {snippet[:60]}"))
+    assert not violations, "\n" + _format_report("PYTHON COMMENT or DOCSTRING", violations)
 
 
-# ---------------------------------------------------------------------------
-# Check 6: ceremonial banner comments.
-# ---------------------------------------------------------------------------
+def test_no_yaml_comments() -> None:
+    yaml_root = SRC_ROOT.parent.parent
+    violations: list[Violation] = []
+    for path in yaml_root.rglob("*.yaml"):
+        rel_parts = path.relative_to(yaml_root)
+        if rel_parts.parts and rel_parts.parts[0] in {".github", ".pre-commit-config.yaml"}:
+            continue
+        if path.name == ".pre-commit-config.yaml":
+            continue
+        rel = rel_parts.as_posix()
+        text = path.read_text(encoding="utf-8")
+        for i, line in enumerate(text.splitlines(), start=1):
+            if _COMMENT_LINE.match(line):
+                violations.append(Violation(rel, i, line.strip()))
+    assert not violations, "\n" + _format_report("YAML COMMENT", violations)
 
 
-def _is_banner_comment(stripped: str) -> bool:
-    if not stripped.startswith("#"):
-        return False
-    body = stripped.lstrip("#").strip()
-    if not body:
-        return False
-    decorative = sum(1 for ch in body if not ch.isalnum() and not ch.isspace())
-    total = len(body)
-    if total < 6:
-        return False
-    if decorative / total < 0.6:
-        return False
-    return re.search(r"(─{3,}|━{3,}|═{3,}|-{3,}|={3,}|#{3,}|\*{3,}|_{3,})", body) is not None
+_INLINE_IMPORT_WHITELIST: set[tuple[str, str]] = {
+    ("engine/models.py", "restore"),
+    ("engine/npc/lifecycle.py", "_npc_eligible_for_desc_match"),
+    ("engine/ai/api_client.py", "get_provider"),
+    ("engine/ai/provider_base.py", "create_with_retry"),
+    ("engine/mechanics/threats.py", "resolve_full_menace"),
+    ("engine/mechanics/fate.py", "resolve_fate"),
+    ("engine/mechanics/engine_memories.py", "generate_engine_memories"),
+    ("engine/mechanics/world.py", "update_chaos_factor"),
+    ("engine/mechanics/world.py", "apply_brain_location_time"),
+    ("engine/datasworn/loader.py", "list_available"),
+}
 
 
-def test_no_banner_comments() -> None:
+def test_inline_imports_only_in_whitelist() -> None:
     violations: list[Violation] = []
     for path in _iter_source_files():
-        for lineno, line in enumerate(_read_lines(path), start=1):
-            if _is_banner_comment(line.strip()):
-                violations.append(Violation(_rel(path), lineno, line.strip()))
-    assert not violations, "\n" + _format_report("BANNER COMMENT", violations)
-
-
-# ---------------------------------------------------------------------------
-# Check 7: inline imports without a carve-out marker comment.
-# ---------------------------------------------------------------------------
-
-
-def _line_has_marker(lines: list[str], lineno: int) -> bool:
-    same = lines[lineno - 1] if 0 < lineno <= len(lines) else ""
-    if "#" in same:
-        comment = same[same.index("#") :].lower()
-        if any(m in comment for m in _CARVE_OUT_MARKERS):
-            return True
-    if lineno >= 2:
-        above = lines[lineno - 2].strip().lower()
-        if above.startswith("#") and any(m in above for m in _CARVE_OUT_MARKERS):
-            return True
-    return False
-
-
-def test_inline_imports_have_marker_comment() -> None:
-    violations: list[Violation] = []
-    for path in _iter_source_files():
+        rel = _rel(path)
         tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
         lines = _read_lines(path)
 
@@ -453,23 +371,11 @@ def test_inline_imports_have_marker_comment() -> None:
                     continue
                 if not isinstance(node, ast.Import | ast.ImportFrom):
                     continue
-                if _line_has_marker(lines, node.lineno):
+                if (rel, func.name) in _INLINE_IMPORT_WHITELIST:
                     continue
                 snippet = lines[node.lineno - 1].strip() if node.lineno <= len(lines) else ""
-                violations.append(Violation(_rel(path), node.lineno, snippet))
-    assert not violations, "\n" + _format_report("INLINE IMPORT without marker", violations)
-
-
-# ---------------------------------------------------------------------------
-# Check 8: every @dataclass in models*.py inherits SerializableMixin.
-# ---------------------------------------------------------------------------
-#
-# Save-format coverage. The `SceneLogEntry.oracle_answer` bug from 0.64
-# was this class of problem: a field in the dataclass and savefile but
-# not in the DB. A stricter variant: adding a @dataclass to models*.py
-# without SerializableMixin means the type silently doesn't persist.
-#
-# Exempt: classes whose docstring says "not serialized" / "not persisted".
+                violations.append(Violation(rel, node.lineno, f"{snippet}  [in {func.name}]"))
+    assert not violations, "\n" + _format_report("INLINE IMPORT outside whitelist", violations)
 
 
 _MODELS_FILES = ("models.py", "models_base.py", "models_npc.py", "models_story.py")
@@ -484,13 +390,27 @@ def _class_inherits_mixin(node: ast.ClassDef) -> bool:
     return False
 
 
-def _class_docstring(node: ast.ClassDef) -> str:
-    if not node.body:
-        return ""
-    first = node.body[0]
-    if isinstance(first, ast.Expr) and isinstance(first.value, ast.Constant) and isinstance(first.value.value, str):
-        return first.value.value
-    return ""
+def _class_opts_out_serialization(node: ast.ClassDef) -> bool:
+    for stmt in node.body:
+        if isinstance(stmt, ast.Assign):
+            for target in stmt.targets:
+                if (
+                    isinstance(target, ast.Name)
+                    and target.id == "_NOT_SERIALIZED"
+                    and isinstance(stmt.value, ast.Constant)
+                    and stmt.value.value is True
+                ):
+                    return True
+        elif (
+            isinstance(stmt, ast.AnnAssign)
+            and isinstance(stmt.target, ast.Name)
+            and stmt.target.id == "_NOT_SERIALIZED"
+            and stmt.value is not None
+            and isinstance(stmt.value, ast.Constant)
+            and stmt.value.value is True
+        ):
+            return True
+    return False
 
 
 def test_dataclasses_in_models_inherit_serializablemixin() -> None:
@@ -508,18 +428,12 @@ def test_dataclasses_in_models_inherit_serializablemixin() -> None:
                 continue
             if _class_inherits_mixin(node):
                 continue
-            doc = _class_docstring(node).lower()
-            if "not serialized" in doc or "not persisted" in doc:
+            if _class_opts_out_serialization(node):
                 continue
             snippet = lines[node.lineno - 1].strip() if node.lineno <= len(lines) else ""
             violations.append(Violation(_rel(path), node.lineno, f"{node.name}: {snippet}"))
 
     assert not violations, "\n" + _format_report("DATACLASS without SerializableMixin", violations)
-
-
-# ---------------------------------------------------------------------------
-# Check 9: no direct provider SDK imports outside the provider adapters.
-# ---------------------------------------------------------------------------
 
 
 _PROVIDER_IMPORT_ALLOWED = {
@@ -553,15 +467,6 @@ def test_no_direct_provider_sdk_imports() -> None:
     assert not violations, "\n" + _format_report("DIRECT PROVIDER SDK IMPORT outside adapter", violations)
 
 
-# ---------------------------------------------------------------------------
-# Check 10: no hardcoded model-name strings in engine code.
-# ---------------------------------------------------------------------------
-#
-# Models are assigned via clusters in config.yaml; resolved via
-# model_for_role(role). A literal model-name in engine code is a sign
-# the cluster abstraction has been bypassed. Docstrings are exempt.
-
-
 _MODEL_NAME_PATTERNS = re.compile(
     r"(qwen[-\d]|gpt-oss|gpt-\d|gpt-4|claude-\d|claude-opus|claude-sonnet|claude-haiku)",
     re.IGNORECASE,
@@ -592,17 +497,10 @@ def test_no_hardcoded_model_names_in_engine() -> None:
     assert not violations, "\n" + _format_report("HARDCODED MODEL NAME in engine code", violations)
 
 
-# ── Cyclomatic complexity ceiling ──────────────────────────────────
-# No function may have cyclomatic complexity above 20 (radon C-rank
-# upper bound). D-rank and worse (21+) mean too many branches in one
-# function — the fix is decomposition into named phase-helpers, not
-# a higher threshold. A hit here is a signal that the function has
-# grown a new responsibility that deserves its own sub-function.
 _COMPLEXITY_CEILING = 20
 
 
 def test_no_function_exceeds_complexity_ceiling() -> None:
-    # inline import: radon is a test-only dependency, not needed at runtime
     from radon.complexity import cc_visit
 
     violations: list[Violation] = []

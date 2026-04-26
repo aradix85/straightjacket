@@ -1,23 +1,14 @@
 truncations:
-  # Log-line truncations. xshort for very compact labels; short for identifiers
-  # and labels; medium for brief summaries; long/xlong for the occasional
-  # longer snippet.
   log_xshort: 40
   log_short: 60
   log_medium: 80
   log_long: 100
   log_xlong: 120
-  # Prompt-side truncations. These bound substrings fed to AI prompts so
-  # that they don't blow past context budgets and don't drown the model in
-  # one field.
   prompt_xshort: 60
   prompt_short: 200
   prompt_medium: 300
   prompt_long: 500
   prompt_xlong: 1000
   prompt_xxlong: 2000
-  # Narration preview used inside the correction prompt to show the previous
-  # turn's prose. Long enough to matter, short enough to keep the prompt tight.
   narration_preview: 600
-  # Hard ceiling for narration content inside the validator prompt.
   narration_max: 4000

@@ -1,9 +1,3 @@
-"""Tests for Datasworn move loader (step 7a).
-
-Covers: move parsing, all four settings, roll type distribution,
-trigger extraction, expansion merge, cache, lookup, and edge cases.
-"""
-
 import pytest
 
 from straightjacket.engine.datasworn.moves import (
@@ -14,21 +8,14 @@ from straightjacket.engine.datasworn.moves import (
 )
 
 
-# ── Fixtures ─────────────────────────────────────────────────
-
-
 from collections.abc import Generator
 
 
 @pytest.fixture(autouse=True)
 def _clear_moves_cache() -> Generator[None, None, None]:
-    """Clear moves cache before each test."""
     clear_cache()
     yield
     clear_cache()
-
-
-# ── Starforged ───────────────────────────────────────────────
 
 
 class TestStarforgedMoves:
@@ -60,7 +47,6 @@ class TestStarforgedMoves:
         assert fd.trigger_method == "player_choice"
 
     def test_scene_challenge_face_danger_separate(self) -> None:
-        """Scene challenge variant is separate from adventure variant."""
         moves = load_moves("starforged")
         assert "adventure/face_danger" in moves
         assert "scene_challenge/face_danger" in moves
@@ -220,9 +206,6 @@ class TestStarforgedMoves:
                 assert len(move.conditions) > 0, f"{key} has no trigger conditions"
 
 
-# ── Classic ──────────────────────────────────────────────────
-
-
 class TestClassicMoves:
     def test_move_count(self) -> None:
         moves = load_moves("classic")
@@ -261,17 +244,12 @@ class TestClassicMoves:
         assert mc.valid_condition_meters == ["supply"]
 
 
-# ── Delve (expansion on Classic) ─────────────────────────────
-
-
 class TestDelveMoves:
     def test_expansion_move_count(self) -> None:
-        """Delve alone has 13 moves."""
         moves = load_moves("delve")
         assert len(moves) == 13
 
     def test_merged_move_count(self) -> None:
-        """Delve merged with Classic: 35 Classic + 13 Delve."""
         moves = load_moves("delve", parent_id="classic")
         assert len(moves) == 35 + 13
 
@@ -311,22 +289,16 @@ class TestDelveMoves:
         assert len(dtd.oracle_ids) > 0
 
 
-# ── Sundered Isles (expansion on Starforged) ─────────────────
-
-
 class TestSunderedIslesMoves:
     def test_expansion_move_count(self) -> None:
-        """SI alone has 8 moves."""
         moves = load_moves("sundered_isles")
         assert len(moves) == 8
 
     def test_merged_move_count(self) -> None:
-        """SI merged with Starforged: 56 base, 8 SI override same keys."""
         moves = load_moves("sundered_isles", parent_id="starforged")
         assert len(moves) == 56
 
     def test_si_overrides_starforged(self) -> None:
-        """SI moves replace their Starforged counterparts."""
         moves = load_moves("sundered_isles", parent_id="starforged")
         ute = moves["exploration/undertake_an_expedition"]
         assert "sundered_isles" in ute.id
@@ -351,7 +323,6 @@ class TestSunderedIslesMoves:
         assert any("starforged" in r for r in ute.replaces)
 
     def test_si_inline_oracles(self) -> None:
-        """SI has inline oracle tables instead of string references."""
         moves = load_moves("sundered_isles")
         mad = moves["exploration/make_a_discovery"]
         assert len(mad.oracle_ids) > 0
@@ -360,9 +331,6 @@ class TestSunderedIslesMoves:
         moves = load_moves("sundered_isles", parent_id="starforged")
         wd = moves["suffer/withstand_damage"]
         assert "sundered_isles" in wd.id
-
-
-# ── get_moves (cached, auto-parent) ─────────────────────────
 
 
 class TestGetMoves:
@@ -377,13 +345,11 @@ class TestGetMoves:
         assert m1 is m2
 
     def test_delve_auto_parent(self) -> None:
-        """get_moves('delve') auto-resolves parent to classic."""
         moves = get_moves("delve")
         assert "adventure/face_danger" in moves
         assert "delve/delve_the_depths" in moves
 
     def test_sundered_isles_auto_parent(self) -> None:
-        """get_moves('sundered_isles') auto-resolves parent to starforged."""
         moves = get_moves("sundered_isles")
         assert "adventure/face_danger" in moves
         assert "sundered_isles" in moves["exploration/undertake_an_expedition"].id
@@ -393,9 +359,6 @@ class TestGetMoves:
         clear_cache()
         m2 = get_moves("starforged")
         assert m1 is not m2
-
-
-# ── Parse edge cases ─────────────────────────────────────────
 
 
 class TestParsing:
@@ -446,7 +409,6 @@ class TestParsing:
         assert move.trigger_method == "player_choice"
 
     def test_parse_replaces_string(self) -> None:
-        """Delve uses a plain string for replaces."""
         raw = {
             "_id": "test/moves/cat/m",
             "type": "move",
@@ -461,7 +423,6 @@ class TestParsing:
         assert move.replaces == ["other/moves/cat/m"]
 
     def test_parse_replaces_list(self) -> None:
-        """SI uses a list for replaces."""
         raw = {
             "_id": "test/moves/cat/m",
             "type": "move",
@@ -476,7 +437,6 @@ class TestParsing:
         assert move.replaces == ["move:other/cat/m"]
 
     def test_valid_stats_deduplication(self) -> None:
-        """Multiple conditions with same stat should not duplicate."""
         raw = {
             "_id": "test/moves/cat/m",
             "type": "move",

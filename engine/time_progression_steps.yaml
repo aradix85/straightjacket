@@ -1,8 +1,4 @@
 time_progression_steps:
-  # Number of time-phase steps taken per time-progression label.
-  # "none" and "short" do not advance time (0). "moderate" advances one
-  # phase; "long" advances two. Callers look up by the label resolved
-  # from time_progression_map.
   mapping:
     none: 0
     short: 0

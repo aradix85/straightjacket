@@ -1,6 +1,3 @@
-#!/usr/bin/env python3
-"""Tests for persistence.py: save, load, list, delete."""
-
 import json
 from typing import Any
 
@@ -29,8 +26,7 @@ def _game() -> GameState:
 
 
 @pytest.fixture()
-def save_dir(tmp_path: Any, monkeypatch: Any, stub_all: None) -> object:  # type: ignore[override]
-    """Redirect save directory to a temp path."""
+def save_dir(tmp_path: Any, monkeypatch: Any, stub_all: None) -> object:
     from straightjacket.engine import persistence
 
     monkeypatch.setattr(persistence, "get_save_dir", lambda username: tmp_path / username / "saves")
@@ -121,14 +117,13 @@ def test_save_carries_version(save_dir: Any) -> None:
 
 
 def test_list_saves_skips_corrupt_files(save_dir: Any) -> None:
-    """Corrupt JSON and missing-field saves are skipped with a warning, not crashed on."""
     from straightjacket.engine.persistence import save_game, list_saves_with_info, get_save_dir
 
     save_game(_game(), "mixed", [], "good_save")
     save_root = get_save_dir("mixed")
-    # Malformed JSON
+
     (save_root / "broken_json.json").write_text("{not valid json", encoding="utf-8")
-    # Valid JSON, but missing required keys
+
     (save_root / "missing_fields.json").write_text(json.dumps({"engine_version": "0.0.0"}), encoding="utf-8")
 
     result = list_saves_with_info("mixed")
@@ -140,7 +135,7 @@ def test_load_normalizes_npc_dispositions(save_dir: Any) -> None:
     from straightjacket.engine.persistence import save_game, load_game
 
     game = _game()
-    game.npcs[0].disposition = "wary"  # non-canonical, should normalize
+    game.npcs[0].disposition = "wary"
     save_game(game, "tester", [], "disp_test")
     loaded, _ = load_game("tester", "disp_test")
     assert loaded is not None

@@ -1,6 +1,3 @@
-#!/usr/bin/env python3
-"""Tests for rule-based validator checks."""
-
 from straightjacket.engine.ai.rule_validator import (
     check_genre_fidelity,
     check_npc_monologue,
@@ -10,9 +7,6 @@ from straightjacket.engine.ai.rule_validator import (
     run_rule_checks,
 )
 from tests._helpers import make_game_state
-
-
-# ── PLAYER AGENCY ────────────────────────────────────────────
 
 
 def test_agency_catches_you_feel_emotion() -> None:
@@ -50,9 +44,6 @@ def test_agency_clean_narration_passes() -> None:
     assert len(v) == 0
 
 
-# ── RESULT INTEGRITY ─────────────────────────────────────────
-
-
 def test_miss_catches_at_least() -> None:
     v = check_result_integrity("The blade misses, but at least the door is still open.", "MISS")
     assert any("silver lining" in x for x in v)
@@ -78,10 +69,7 @@ def test_miss_clean_failure_passes() -> None:
 
 def test_strong_hit_not_checked_for_silver_lining() -> None:
     v = check_result_integrity("At least the door opened easily.", "STRONG_HIT")
-    assert len(v) == 0  # Silver lining check only on MISS
-
-
-# ── GENRE FIDELITY ───────────────────────────────────────────
+    assert len(v) == 0
 
 
 def test_genre_catches_forbidden_term() -> None:
@@ -105,9 +93,6 @@ def test_genre_no_constraints_passes() -> None:
     assert len(v) == 0
 
 
-# ── OUTPUT FORMAT ────────────────────────────────────────────
-
-
 def test_format_catches_narrator_prefix() -> None:
     v = check_output_format("Narrator: The room was dark.")
     assert any("role label" in x for x in v)
@@ -126,9 +111,6 @@ def test_format_catches_code_block() -> None:
 def test_format_clean_passes() -> None:
     v = check_output_format("\u201cGet back,\u201d she hissed, pulling the door shut.")
     assert len(v) == 0
-
-
-# ── NPC MONOLOGUE ────────────────────────────────────────────
 
 
 def test_monologue_catches_extended_speech() -> None:
@@ -153,9 +135,6 @@ def test_monologue_allows_dialog_exchange() -> None:
     )
     v = check_npc_monologue(narration)
     assert len(v) == 0
-
-
-# ── INTEGRATION ──────────────────────────────────────────────
 
 
 def test_run_rule_checks_combines_violations() -> None:
@@ -183,9 +162,6 @@ def test_run_rule_checks_clean_passes() -> None:
     assert result["pass"]
 
 
-# ── PROMPT STRIPPING ─────────────────────────────────────────
-
-
 def test_strip_prompt_removes_secrets_on_pacing(load_engine: None) -> None:
     from straightjacket.engine.ai.validator import _strip_prompt_for_retry
     from straightjacket.engine.prompt_loader import get_prompt
@@ -201,8 +177,8 @@ def test_strip_prompt_removes_secrets_on_pacing(load_engine: None) -> None:
     )
     result = _strip_prompt_for_retry(prompt, ["RESOLUTION PACING: NPC volunteered too much"])
     assert "she is the spy" not in result
-    assert "Kira" in result  # Name preserved
-    assert "deflects with humor" in result  # Instinct preserved
+    assert "Kira" in result
+    assert "deflects with humor" in result
 
 
 def test_strip_prompt_unchanged_for_agency_violation(load_engine: None) -> None:
@@ -212,14 +188,10 @@ def test_strip_prompt_unchanged_for_agency_violation(load_engine: None) -> None:
     label = get_prompt("secrets_label")
     prompt = f'<target_npc>secrets({label}):["secret"]</target_npc>'
     result = _strip_prompt_for_retry(prompt, ["PLAYER AGENCY: narrator decided feelings"])
-    assert "secret" in result  # Not stripped for non-pacing violations
-
-
-# ── CONSEQUENCE KEYWORD CHECKS ───────────────────────────────
+    assert "secret" in result
 
 
 def test_consequence_in_run_rule_checks() -> None:
-    """Consequence checking moved to LLM validator — rule checker passes these through."""
     from straightjacket.engine.ai.rule_validator import ValidationContext, run_rule_checks
 
     narration = "The sun shines. Nothing happened."
@@ -227,5 +199,5 @@ def test_consequence_in_run_rule_checks() -> None:
         make_game_state(), result_type="MISS", consequence_sentences=["The blade finds the gap in your guard."]
     )
     result = run_rule_checks(narration, ctx)
-    # Rule checker no longer checks consequences — LLM validator handles semantic matching
+
     assert result["pass"]

@@ -1,41 +1,3 @@
-"""Setting package loader.
-
-Combines a settings.yaml (vocabulary, genre constraints, metadata)
-with its Datasworn JSON data (oracles, assets, moves, truths) into
-a single SettingPackage object.
-
-Parse model is strict: every required top-level key in the yaml must
-be present or parsing raises KeyError. Parent-chain inheritance is
-expressed by *omitting* a key in the child yaml; presence of a key
-(even with an empty value) is an explicit override.
-
-Top-level required keys per yaml:
-    id, title, datasworn_id, description,
-    oracle_paths, vocabulary, genre_constraints
-Top-level optional keys (inherit from parent when absent):
-    parent, creation_flow
-
-Within oracle_paths, genre_constraints, and creation_flow, individual
-fields are per-field inheritable: an absent field inherits from parent,
-a present field (even if empty) is an explicit override.
-
-Within vocabulary, inheritance is section-level: if both substitutions
-and sensory_palette are absent or empty, the whole block inherits.
-
-Usage:
-    from straightjacket.engine.datasworn.settings import load_package, list_packages
-
-    packages = list_packages()  # ['classic', 'delve', 'starforged', 'sundered_isles']
-    pkg = load_package("starforged")
-    pkg.title                   # "Ironsworn: Starforged"
-    pkg.vocabulary              # resolved VocabularyConfig
-    pkg.genre_constraints       # resolved GenreConstraints
-    pkg.oracle_paths            # resolved OraclePaths
-    pkg.creation_flow           # resolved CreationFlow
-    pkg.data                    # Datasworn Setting object (oracles, assets, etc.)
-    pkg.roll_action_theme()     # ("Distract", "Path") — meaning pair
-"""
-
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -56,15 +18,6 @@ _SETTINGS_DIR = PROJECT_ROOT / "data" / "settings"
 
 @dataclass
 class GenreConstraints:
-    """Resolved genre constraints. Every field explicit after parent-chain walk.
-
-    The atmospheric-drift wordlist is split into a universal list (required)
-    and an open dict of per-narrator-model-family overlays. Adding a new
-    family is a yaml-only edit: add a key under `atmospheric_drift_overlays`
-    in the relevant setting yaml. Use `atmospheric_drift_for(family)` to
-    retrieve the combined list.
-    """
-
     forbidden_terms: list[str]
     forbidden_concepts: list[str]
     genre_test: str
@@ -73,20 +26,12 @@ class GenreConstraints:
     atmospheric_drift_threshold: int
 
     def atmospheric_drift_for(self, family: str) -> list[str]:
-        """Combine the universal drift wordlist with the family overlay.
-
-        Unknown family returns just the universal list. Used by
-        rule_validator and architect_validator to score narrator-model-
-        specific atmospheric drift.
-        """
         overlay = self.atmospheric_drift_overlays.get(family, [])
         return list(self.atmospheric_drift_universal) + list(overlay)
 
 
 @dataclass
 class VocabularyConfig:
-    """Resolved world-specific vocabulary substitutions and sensory palette."""
-
     substitutions: dict[str, str]
     sensory_palette: str
 
@@ -96,8 +41,6 @@ class VocabularyConfig:
 
 @dataclass
 class OraclePaths:
-    """Resolved oracle path mappings for character creation."""
-
     action_theme: list[str]
     names: list[str]
     backstory: str
@@ -106,8 +49,6 @@ class OraclePaths:
 
 @dataclass
 class CreationFlow:
-    """Resolved character creation flow flags for the client UI."""
-
     has_truths: bool
     has_backstory_oracle: bool
     has_name_tables: bool
@@ -117,13 +58,6 @@ class CreationFlow:
 
 @dataclass
 class _GenreConstraintsPartial:
-    """Parsed genre_constraints block. None per field = key absent in yaml.
-
-    atmospheric_drift_universal is required at the root of the chain; the
-    overlays dict carries optional per-family wordlists keyed by family
-    suffix (the same suffix as ai.model_family in config.yaml).
-    """
-
     forbidden_terms: list[str] | None = None
     forbidden_concepts: list[str] | None = None
     genre_test: str | None = None
@@ -134,8 +68,6 @@ class _GenreConstraintsPartial:
 
 @dataclass
 class _OraclePathsPartial:
-    """Parsed oracle_paths block. None per field = key absent in yaml."""
-
     action_theme: list[str] | None = None
     names: list[str] | None = None
     backstory: str | None = None
@@ -144,11 +76,6 @@ class _OraclePathsPartial:
 
 @dataclass
 class _CreationFlowPartial:
-    """Parsed creation_flow block. None per field = key absent in yaml.
-
-    Used when the whole creation_flow key is absent as well: all fields None.
-    """
-
     has_truths: bool | None = None
     has_backstory_oracle: bool | None = None
     has_name_tables: bool | None = None
@@ -158,12 +85,6 @@ class _CreationFlowPartial:
 
 @dataclass
 class _SettingConfig:
-    """Strictly-parsed settings.yaml. All required fields non-None.
-
-    `parent` is optional (None when absent). Sub-blocks are partial dataclasses
-    that carry per-field None to signal inheritance.
-    """
-
     id: str
     title: str
     datasworn_id: str
@@ -175,15 +96,25 @@ class _SettingConfig:
     parent: str | None
 
 
-def _require(data: dict, key: str, yaml_path: str) -> object:
-    """Read a required yaml key. Raise KeyError with context if missing."""
+def _require_dict(data: dict, key: str, yaml_path: str) -> dict:
     if key not in data:
         raise KeyError(f"Required key '{key}' missing in {yaml_path}")
-    return data[key]
+    value = data[key]
+    if not isinstance(value, dict):
+        raise TypeError(f"Expected dict at '{key}' in {yaml_path}, got {type(value).__name__}")
+    return value
+
+
+def _require_str(data: dict, key: str, yaml_path: str) -> str:
+    if key not in data:
+        raise KeyError(f"Required key '{key}' missing in {yaml_path}")
+    value = data[key]
+    if not isinstance(value, str):
+        raise TypeError(f"Expected str at '{key}' in {yaml_path}, got {type(value).__name__}")
+    return value
 
 
 def _parse_oracle_paths_partial(data: dict) -> _OraclePathsPartial:
-    """Parse oracle_paths block. Each field optional; absence means inherit."""
     partial = _OraclePathsPartial()
     if "action_theme" in data:
         partial.action_theme = list(data["action_theme"])
@@ -197,7 +128,6 @@ def _parse_oracle_paths_partial(data: dict) -> _OraclePathsPartial:
 
 
 def _parse_vocabulary(data: dict) -> VocabularyConfig:
-    """Parse vocabulary block. Uses section-level inheritance via is_empty()."""
     return VocabularyConfig(
         substitutions=dict(data.get("substitutions", {})),
         sensory_palette=data.get("sensory_palette", ""),
@@ -205,7 +135,6 @@ def _parse_vocabulary(data: dict) -> VocabularyConfig:
 
 
 def _parse_genre_constraints_partial(data: dict) -> _GenreConstraintsPartial:
-    """Parse genre_constraints block. Each field optional; absence means inherit."""
     partial = _GenreConstraintsPartial()
     if "forbidden_terms" in data:
         partial.forbidden_terms = list(data["forbidden_terms"])
@@ -216,8 +145,6 @@ def _parse_genre_constraints_partial(data: dict) -> _GenreConstraintsPartial:
     if "atmospheric_drift_universal" in data:
         partial.atmospheric_drift_universal = list(data["atmospheric_drift_universal"])
     if "atmospheric_drift_overlays" in data:
-        # Keys are family suffixes (matching ai.model_family in config.yaml),
-        # values are wordlists. Yaml may render an absent dict as {}.
         partial.atmospheric_drift_overlays = {
             family: list(words) for family, words in data["atmospheric_drift_overlays"].items()
         }
@@ -227,7 +154,6 @@ def _parse_genre_constraints_partial(data: dict) -> _GenreConstraintsPartial:
 
 
 def _parse_creation_flow_partial(data: dict | None) -> _CreationFlowPartial:
-    """Parse creation_flow block. Whole block may be absent (all fields None)."""
     partial = _CreationFlowPartial()
     if data is None:
         return partial
@@ -245,97 +171,107 @@ def _parse_creation_flow_partial(data: dict | None) -> _CreationFlowPartial:
 
 
 def _parse_setting_config(data: dict, yaml_path: str) -> _SettingConfig:
-    """Parse raw settings.yaml dict into strictly-typed _SettingConfig.
-
-    Raises KeyError on missing required top-level keys.
-    """
     parent_raw = data.get("parent")
     return _SettingConfig(
-        id=str(_require(data, "id", yaml_path)),
-        title=str(_require(data, "title", yaml_path)),
-        datasworn_id=str(_require(data, "datasworn_id", yaml_path)),
-        description=str(_require(data, "description", yaml_path)),
-        oracle_paths=_parse_oracle_paths_partial(_require(data, "oracle_paths", yaml_path)),  # type: ignore[arg-type]
-        vocabulary=_parse_vocabulary(_require(data, "vocabulary", yaml_path)),  # type: ignore[arg-type]
-        genre_constraints=_parse_genre_constraints_partial(_require(data, "genre_constraints", yaml_path)),  # type: ignore[arg-type]
+        id=_require_str(data, "id", yaml_path),
+        title=_require_str(data, "title", yaml_path),
+        datasworn_id=_require_str(data, "datasworn_id", yaml_path),
+        description=_require_str(data, "description", yaml_path),
+        oracle_paths=_parse_oracle_paths_partial(_require_dict(data, "oracle_paths", yaml_path)),
+        vocabulary=_parse_vocabulary(_require_dict(data, "vocabulary", yaml_path)),
+        genre_constraints=_parse_genre_constraints_partial(_require_dict(data, "genre_constraints", yaml_path)),
         creation_flow=_parse_creation_flow_partial(data.get("creation_flow")),
         parent=str(parent_raw) if parent_raw else None,
     )
 
 
 def _resolve_genre_constraints(chain: list[_SettingConfig], yaml_path: str) -> GenreConstraints:
-    """Walk chain (child → root) and pick first non-None for each field."""
-
-    def pick(attr: str) -> object:
+    def pick_str(attr: str) -> str:
         for cfg in chain:
             val = getattr(cfg.genre_constraints, attr)
             if val is not None:
-                return val
+                return str(val)
+        raise KeyError(f"genre_constraints.{attr} missing in setting chain ending at {yaml_path}")
+
+    def pick_int(attr: str) -> int:
+        for cfg in chain:
+            val = getattr(cfg.genre_constraints, attr)
+            if val is not None:
+                return int(val)
+        raise KeyError(f"genre_constraints.{attr} missing in setting chain ending at {yaml_path}")
+
+    def pick_str_list(attr: str) -> list[str]:
+        for cfg in chain:
+            val = getattr(cfg.genre_constraints, attr)
+            if val is not None:
+                return [str(item) for item in val]
         raise KeyError(f"genre_constraints.{attr} missing in setting chain ending at {yaml_path}")
 
     def pick_optional_dict(attr: str) -> dict[str, list[str]]:
-        """Optional family-overlays dict. First non-None wins; default empty dict."""
         for cfg in chain:
             val = getattr(cfg.genre_constraints, attr)
             if val is not None:
-                return val  # type: ignore[no-any-return]
+                return {str(k): [str(item) for item in v] for k, v in val.items()}
         return {}
 
     return GenreConstraints(
-        forbidden_terms=pick("forbidden_terms"),  # type: ignore[arg-type]
-        forbidden_concepts=pick("forbidden_concepts"),  # type: ignore[arg-type]
-        genre_test=pick("genre_test"),  # type: ignore[arg-type]
-        atmospheric_drift_universal=pick("atmospheric_drift_universal"),  # type: ignore[arg-type]
+        forbidden_terms=pick_str_list("forbidden_terms"),
+        forbidden_concepts=pick_str_list("forbidden_concepts"),
+        genre_test=pick_str("genre_test"),
+        atmospheric_drift_universal=pick_str_list("atmospheric_drift_universal"),
         atmospheric_drift_overlays=pick_optional_dict("atmospheric_drift_overlays"),
-        atmospheric_drift_threshold=pick("atmospheric_drift_threshold"),  # type: ignore[arg-type]
+        atmospheric_drift_threshold=pick_int("atmospheric_drift_threshold"),
     )
 
 
 def _resolve_oracle_paths(chain: list[_SettingConfig], yaml_path: str) -> OraclePaths:
-    """Walk chain (child → root) and pick first non-None for each field."""
-
-    def pick(attr: str) -> object:
+    def pick_str(attr: str) -> str:
         for cfg in chain:
             val = getattr(cfg.oracle_paths, attr)
             if val is not None:
-                return val
+                return str(val)
+        raise KeyError(f"oracle_paths.{attr} missing in setting chain ending at {yaml_path}")
+
+    def pick_str_list(attr: str) -> list[str]:
+        for cfg in chain:
+            val = getattr(cfg.oracle_paths, attr)
+            if val is not None:
+                return [str(item) for item in val]
         raise KeyError(f"oracle_paths.{attr} missing in setting chain ending at {yaml_path}")
 
     return OraclePaths(
-        action_theme=pick("action_theme"),  # type: ignore[arg-type]
-        names=pick("names"),  # type: ignore[arg-type]
-        backstory=pick("backstory"),  # type: ignore[arg-type]
-        factions=pick("factions"),  # type: ignore[arg-type]
+        action_theme=pick_str_list("action_theme"),
+        names=pick_str_list("names"),
+        backstory=pick_str("backstory"),
+        factions=pick_str("factions"),
     )
 
 
 def _resolve_creation_flow(chain: list[_SettingConfig], yaml_path: str) -> CreationFlow:
-    """Walk chain (child → root) and pick first non-None for each field."""
-
-    def pick(attr: str) -> object:
+    def pick_bool(attr: str) -> bool:
         for cfg in chain:
             val = getattr(cfg.creation_flow, attr)
             if val is not None:
-                return val
+                return bool(val)
+        raise KeyError(f"creation_flow.{attr} missing in setting chain ending at {yaml_path}")
+
+    def pick_str_list(attr: str) -> list[str]:
+        for cfg in chain:
+            val = getattr(cfg.creation_flow, attr)
+            if val is not None:
+                return [str(item) for item in val]
         raise KeyError(f"creation_flow.{attr} missing in setting chain ending at {yaml_path}")
 
     return CreationFlow(
-        has_truths=pick("has_truths"),  # type: ignore[arg-type]
-        has_backstory_oracle=pick("has_backstory_oracle"),  # type: ignore[arg-type]
-        has_name_tables=pick("has_name_tables"),  # type: ignore[arg-type]
-        has_ship_creation=pick("has_ship_creation"),  # type: ignore[arg-type]
-        starting_asset_categories=pick("starting_asset_categories"),  # type: ignore[arg-type]
+        has_truths=pick_bool("has_truths"),
+        has_backstory_oracle=pick_bool("has_backstory_oracle"),
+        has_name_tables=pick_bool("has_name_tables"),
+        has_ship_creation=pick_bool("has_ship_creation"),
+        starting_asset_categories=pick_str_list("starting_asset_categories"),
     )
 
 
 class SettingPackage:
-    """A complete setting: resolved typed config + Datasworn data.
-
-    Inheritance is resolved eagerly at construction time using a chain
-    built from the parent pointer in each setting's yaml. The chain walks
-    child first, root last; the first non-None value wins per field.
-    """
-
     def __init__(
         self,
         config: _SettingConfig,
@@ -357,7 +293,6 @@ class SettingPackage:
         self._genre_constraints = _resolve_genre_constraints(chain, yaml_path)
         self._creation_flow = _resolve_creation_flow(chain, yaml_path)
 
-        # Vocabulary: section-level inheritance. Empty local block → parent's resolved vocab.
         if config.vocabulary.is_empty() and parent is not None:
             self._vocabulary = parent.vocabulary
         else:
@@ -377,12 +312,10 @@ class SettingPackage:
 
     @property
     def data(self) -> Setting:
-        """The Datasworn Setting object (oracles, assets, moves, truths)."""
         return self._data
 
     @property
     def parent(self) -> SettingPackage | None:
-        """Parent package in the inheritance chain, or None for a root setting."""
         return self._parent
 
     @property
@@ -402,7 +335,6 @@ class SettingPackage:
         return self._creation_flow
 
     def roll_action_theme(self) -> tuple[str, str]:
-        """Roll action + theme meaning pair. Empty strings if pair not configured."""
         paths = self._oracle_paths.action_theme
         if len(paths) >= 2:
             action = self._data.roll_oracle(paths[0])
@@ -411,7 +343,6 @@ class SettingPackage:
         return "", ""
 
     def oracle_data_for(self, oracle_path: str) -> Setting | None:
-        """Find the Datasworn data in this chain that contains the given oracle path."""
         pkg: SettingPackage | None = self
         while pkg is not None:
             if pkg._data.oracle(oracle_path) is not None:
@@ -420,12 +351,6 @@ class SettingPackage:
         return None
 
     def backstory_prompts(self) -> OracleTable | None:
-        """Backstory prompts oracle, read from oracle_paths.backstory.
-
-        Walks the parent chain to find the package whose Datasworn data
-        actually holds the oracle (paths may be declared in an expansion
-        while data lives in the parent).
-        """
         path = self._oracle_paths.backstory
         if not path:
             return None
@@ -435,11 +360,6 @@ class SettingPackage:
         return data.oracle(path)
 
     def name_tables(self) -> dict[str, OracleTable]:
-        """Character name oracle tables keyed by the last path segment.
-
-        Reads oracle_paths.names and resolves each path against the chain's
-        Datasworn data.
-        """
         result: dict[str, OracleTable] = {}
         for path in self._oracle_paths.names:
             data = self.oracle_data_for(path)
@@ -457,14 +377,12 @@ _cache: dict[str, SettingPackage] = {}
 
 
 def list_packages() -> list[str]:
-    """List available setting package IDs by scanning the settings directory."""
     if not _SETTINGS_DIR.exists():
         return []
     return sorted(p.stem for p in _SETTINGS_DIR.glob("*.yaml"))
 
 
 def _read_yaml(setting_id: str) -> tuple[dict, Path]:
-    """Load a setting yaml as raw dict. Used by lightweight accessors."""
     yaml_path = _SETTINGS_DIR / f"{setting_id}.yaml"
     if not yaml_path.exists():
         raise FileNotFoundError(f"Setting package not found: {yaml_path}")
@@ -474,14 +392,12 @@ def _read_yaml(setting_id: str) -> tuple[dict, Path]:
 
 
 def parent_of(setting_id: str) -> str | None:
-    """Read the parent setting id from a settings.yaml without loading the full package."""
     raw, _ = _read_yaml(setting_id)
     parent = raw.get("parent")
     return str(parent) if parent else None
 
 
 def datasworn_id_of(setting_id: str) -> str:
-    """Read the datasworn_id from a settings.yaml without loading the full package."""
     raw, yaml_path = _read_yaml(setting_id)
     if "datasworn_id" not in raw:
         raise KeyError(f"Required key 'datasworn_id' missing in {yaml_path}")
@@ -489,16 +405,6 @@ def datasworn_id_of(setting_id: str) -> str:
 
 
 def load_package(setting_id: str) -> SettingPackage:
-    """Load a setting package by ID. Cached after first load.
-
-    Loads settings.yaml and Datasworn JSON. If the setting has a parent,
-    the parent is loaded first and inheritance is resolved per field.
-
-    Raises:
-        FileNotFoundError: if the settings.yaml or Datasworn JSON is missing.
-        KeyError: if required yaml keys are absent or the inheritance chain
-                  does not cover every required field.
-    """
     if setting_id in _cache:
         return _cache[setting_id]
 
@@ -518,17 +424,10 @@ def load_package(setting_id: str) -> SettingPackage:
 
 
 def clear_cache() -> None:
-    """Clear the package cache."""
     _cache.clear()
 
 
 def active_package(game: GameState) -> SettingPackage | None:
-    """Get the active setting package for a game.
-
-    Returns None only when the game has no setting_id set (a legitimate
-    state during setup). An invalid setting_id raises FileNotFoundError —
-    a running game must never point at a nonexistent setting.
-    """
     if not game.setting_id:
         return None
     return load_package(game.setting_id)

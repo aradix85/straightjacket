@@ -1,5 +1,3 @@
-"""Story state queries: act tracking, revelations, story completion."""
-
 from __future__ import annotations
 
 from .engine_loader import eng
@@ -8,12 +6,10 @@ from .models import CurrentAct, GameState, Revelation
 
 
 def default_scene_range() -> list[int]:
-    """Fallback scene range from engine.yaml when an act has no explicit range."""
     return list(eng().scene_range_default)
 
 
 def get_current_act(game: GameState) -> CurrentAct:
-    """Determine which act the story is in based on transition triggers and scene count."""
     bp = game.narrative.story_blueprint
     if not bp or not bp.acts:
         return CurrentAct(phase="setup", title="?", goal="?", mood="mysterious")
@@ -78,7 +74,6 @@ def get_current_act(game: GameState) -> CurrentAct:
 
 
 def get_pending_revelations(game: GameState) -> list[Revelation]:
-    """Get revelations that are ready to be introduced but haven't been yet."""
     bp = game.narrative.story_blueprint
     if not bp or not bp.revelations:
         return []
@@ -89,14 +84,12 @@ def get_pending_revelations(game: GameState) -> list[Revelation]:
 
 
 def mark_revelation_used(game: GameState, rev_id: str) -> None:
-    """Mark a revelation as revealed."""
     bp = game.narrative.story_blueprint
     if bp and rev_id not in bp.revealed:
         bp.revealed.append(rev_id)
 
 
 def check_story_completion(game: GameState) -> None:
-    """Check if the story has reached its natural end point."""
     bp = game.narrative.story_blueprint
     if not bp or not bp.acts:
         return

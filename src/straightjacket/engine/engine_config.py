@@ -1,9 +1,3 @@
-"""Engine configuration: the EngineSettings composition and yaml-parse logic.
-
-The individual subsystem dataclasses live in engine_config_dataclasses.py;
-they are re-exported here so consumers can keep importing from engine_config.
-"""
-
 from __future__ import annotations
 
 import dataclasses
@@ -100,13 +94,6 @@ from .engine_config_dataclasses import (
 
 @dataclass
 class EngineSettings:
-    """Complete typed engine configuration.
-
-    Every domain field is required — missing yaml keys raise KeyError.
-    Flexible sections (stance_matrix, move_outcomes, etc.) are plain dicts
-    accessed via get_raw() which is also strict.
-    """
-
     npc: NpcConfig
     chaos: ChaosConfig
     pacing: PacingConfig
@@ -174,33 +161,18 @@ class EngineSettings:
     keyed_scenes: KeyedScenesConfig
     adventure_crafter: AdventureCrafterConfig
 
-    # Scalar top-level fields
     scene_range_default: list[int]
     death_emotions: list[str]
     creativity_seeds: list[str]
 
-    # Flexible sections — accessed via get_raw() as plain dicts.
     _raw: dict[str, Any] = field(default_factory=dict, repr=False)
 
-    # Lazy cache for compiled regex pattern lists. Lives with the settings
-    # instance: reload_engine() builds a fresh instance, so the cache resets
-    # automatically. No manual invalidation needed.
     _compiled_patterns: dict[str, Any] = field(default_factory=dict, repr=False)
 
     def get_raw(self, key: str) -> Any:
-        """Access a flexible top-level yaml section (stance_matrix, move_outcomes, etc.).
-
-        Strict: raises KeyError if the key is missing. No fallback for domain data.
-        """
         return self._raw[key]
 
     def compiled_patterns(self, section: str, key: str) -> list[Any]:
-        """Compile and cache a regex pattern list from `_raw[section][key]`.
-
-        Patterns are compiled once per EngineSettings instance with re.IGNORECASE.
-        Raises KeyError if the section or key is missing — no silent fallback.
-        """
-
         cache_key = f"patterns:{section}.{key}"
         if cache_key in self._compiled_patterns:
             return self._compiled_patterns[cache_key]
@@ -210,15 +182,6 @@ class EngineSettings:
         return compiled
 
     def compiled_labeled_patterns(self, section: str, key: str) -> list[tuple[Any, str]]:
-        """Compile and cache a list of {pattern, label, flags} dicts.
-
-        Each entry produces (compiled_regex, label). flags is a space-separated
-        string of flag names (currently only 'multiline'); empty string means
-        no flags. flags is required on every entry — the yaml author opts out
-        of flags by writing `flags: ""`, not by omitting the key.
-        Raises KeyError if section, key, or any per-entry field is missing.
-        """
-
         cache_key = f"labeled:{section}.{key}"
         if cache_key in self._compiled_patterns:
             return self._compiled_patterns[cache_key]
@@ -234,11 +197,6 @@ class EngineSettings:
         return compiled
 
     def compiled_pattern(self, section: str, key: str, subkey: str) -> Any:
-        """Compile and cache a single regex from `_raw[section][key][subkey]`.
-
-        Raises KeyError if the path is missing.
-        """
-
         cache_key = f"single:{section}.{key}.{subkey}"
         if cache_key in self._compiled_patterns:
             return self._compiled_patterns[cache_key]
@@ -248,27 +206,12 @@ class EngineSettings:
         return compiled
 
     def compiled_patterns_for_family(self, section: str, base_key: str, family: str) -> list[Any]:
-        """Combine universal + family-specific compiled patterns.
-
-        Reads `{base_key}_universal` (required) plus the entry for `family`
-        in `{base_key}_overlays` (optional dict; empty if family is absent).
-        Compiles each list once, caches them, and returns the concatenated
-        result. Used by the rule-validator to apply narrator-output drift
-        checks where the universal set is always active and the per-family
-        overlay adds narrator-model-specific catches.
-
-        Raises KeyError if `{base_key}_universal` or `{base_key}_overlays`
-        is missing — both must always exist; family entries inside the
-        overlays dict are optional. Adding a new family is a yaml-only
-        edit: register the family in the overlays dict.
-        """
-
         universal = self.compiled_patterns(section, f"{base_key}_universal")
         overlays_key = f"{base_key}_overlays"
         overlays = self._raw[section][overlays_key]
         if family not in overlays or not overlays[family]:
             return list(universal)
-        # Cache compiled overlay per (section, base_key, family).
+
         cache_key = f"overlay:{section}.{base_key}.{family}"
         if cache_key in self._compiled_patterns:
             family_compiled = self._compiled_patterns[cache_key]
@@ -279,9 +222,6 @@ class EngineSettings:
 
 
 def _build_strict(cls: type, data: dict[str, Any]) -> Any:
-    """Build a dataclass from a dict. Raises KeyError on missing required fields
-    and ValueError on unknown keys."""
-
     known = {f.name for f in dataclasses.fields(cls)}
     unknown = set(data.keys()) - known
     if unknown:
@@ -289,7 +229,6 @@ def _build_strict(cls: type, data: dict[str, Any]) -> Any:
     return cls(**data)
 
 
-# Sections that map directly: YAML key → dataclass type.
 _SIMPLE_SECTIONS: dict[str, type] = {
     "chaos": ChaosConfig,
     "pacing": PacingConfig,
@@ -334,10 +273,6 @@ _SIMPLE_SECTIONS: dict[str, type] = {
 
 
 def _parse_move_availability_condition(cond: dict[str, Any]) -> MoveAvailabilityCondition:
-    """Parse a single condition dict into the matching dataclass.
-
-    Exactly one of `flag`, `not_flag`, `combat_pos_in` must be set.
-    """
     keys = set(cond.keys())
     if keys == {"flag"}:
         return FlagCondition(flag=cond["flag"])
@@ -351,10 +286,6 @@ def _parse_move_availability_condition(cond: dict[str, Any]) -> MoveAvailability
 
 
 def _parse_move_availability_rule(rule: dict[str, Any]) -> MoveAvailabilityRule:
-    """Parse a rule dict into a MoveAvailabilityRule.
-
-    Accepts either {"never": true} or {"available": [<conditions>]}.
-    """
     keys = set(rule.keys())
     if keys == {"never"}:
         if not rule["never"]:
@@ -367,31 +298,20 @@ def _parse_move_availability_rule(rule: dict[str, Any]) -> MoveAvailabilityRule:
 
 
 def parse_engine_yaml(data: dict[str, Any]) -> EngineSettings:
-    """Parse raw engine.yaml dict into typed EngineSettings.
-
-    Strict: missing required yaml keys raise KeyError, unknown keys raise ValueError.
-    Pre-processing only happens for sections whose yaml shape differs from the
-    dataclass shape (nested dataclasses, int coercion for int-keyed dicts, etc.).
-    """
-    # Auto-parse simple sections (all required)
     simple_parsed: dict[str, Any] = {key: _build_strict(cls, data[key]) for key, cls in _SIMPLE_SECTIONS.items()}
 
-    # npc: gate_memory_counts has int keys — coerce defensively
     npc_data = dict(data["npc"])
     npc_data["gate_memory_counts"] = {int(k): v for k, v in npc_data["gate_memory_counts"].items()}
     npc = _build_strict(NpcConfig, npc_data)
 
-    # stats: valid_arrays may come as tuples from yaml
     stats_data = dict(data["stats"])
     stats_data["valid_arrays"] = [list(a) for a in stats_data["valid_arrays"]]
     stats = _build_strict(StatsConfig, stats_data)
 
-    # momentum: nested SufferRecoveryGain
     m_data = dict(data["momentum"])
     suffer = _build_strict(SufferRecoveryGain, dict(m_data.pop("suffer_recovery")))
     momentum = MomentumConfig(**m_data, suffer_recovery=suffer)
 
-    # fate: nested FateLikelihoodRules, plus modifier tables with int-keyed chaos
     f_data = dict(data["fate"])
     lr = _build_strict(FateLikelihoodRules, dict(f_data.pop("likelihood_rules")))
     odds_modifiers = dict(f_data["odds_modifiers"])
@@ -403,17 +323,14 @@ def parse_engine_yaml(data: dict[str, Any]) -> EngineSettings:
         likelihood_rules=lr,
     )
 
-    # impacts: keyed dict of ImpactConfig, key injected from outer key
     impacts = {
         key: _build_strict(ImpactConfig, {**impact_data, "key": key}) for key, impact_data in data["impacts"].items()
     }
 
-    # legacy: ticks_by_rank sub-map
     legacy_data = dict(data["legacy"])
     legacy_data["ticks_by_rank"] = dict(legacy_data["ticks_by_rank"])
     legacy = _build_strict(LegacyConfig, legacy_data)
 
-    # progress: track_types keyed by variant, each holding ticks_per_mark
     progress_raw = data["progress"]
     track_types = {
         name: _build_strict(ProgressTrackType, {"ticks_per_mark": dict(tt["ticks_per_mark"])})
@@ -421,18 +338,13 @@ def parse_engine_yaml(data: dict[str, Any]) -> EngineSettings:
     }
     progress = ProgressConfig(max_ticks=progress_raw["max_ticks"], track_types=track_types)
 
-    # engine_moves: keyed by move id, each with name/stats/roll_type
     engine_moves = {
         key: _build_strict(EngineMove, {"name": m["name"], "stats": list(m["stats"]), "roll_type": m["roll_type"]})
         for key, m in data["engine_moves"].items()
     }
 
-    # move_availability: keyed by datasworn move id, each is either
-    # {"never": true} or {"available": [<conditions>]}. Conditions are
-    # dicts with exactly one of: flag, not_flag, combat_pos_in.
     move_availability = {key: _parse_move_availability_rule(rule) for key, rule in data["move_availability"].items()}
 
-    # stopwords: three named frozensets
     sw_raw = data["stopwords"]
     stopwords = StopwordsConfig(
         general=frozenset(sw_raw["general"]),
@@ -440,10 +352,8 @@ def parse_engine_yaml(data: dict[str, Any]) -> EngineSettings:
         location=frozenset(sw_raw["location"]),
     )
 
-    # name_titles: single frozenset of honorifics stripped during fuzzy NPC matching
     name_titles = frozenset(data["name_titles"])
 
-    # position_resolver: nested weights + overrides
     pr = dict(data["position_resolver"])
     pr_weights = _build_strict(PositionResolverWeights, dict(pr.pop("weights")))
     pr_overrides = [_build_strict(PositionOverride, dict(o)) for o in pr.pop("overrides")]
@@ -458,7 +368,6 @@ def parse_engine_yaml(data: dict[str, Any]) -> EngineSettings:
         overrides=pr_overrides,
     )
 
-    # effect_resolver: nested weights
     er = dict(data["effect_resolver"])
     er_weights = _build_strict(EffectResolverWeights, dict(er.pop("weights")))
     effect_resolver = EffectResolverConfig(
@@ -471,7 +380,6 @@ def parse_engine_yaml(data: dict[str, Any]) -> EngineSettings:
         move_baselines=dict(er["move_baselines"]),
     )
 
-    # information_gate: nested points + buckets
     ig = dict(data["information_gate"])
     ig_points = _build_strict(InformationGatePoints, dict(ig.pop("points")))
     ig_buckets = _build_strict(InformationGateBuckets, dict(ig.pop("buckets")))
@@ -483,7 +391,6 @@ def parse_engine_yaml(data: dict[str, Any]) -> EngineSettings:
         stance_caps=dict(ig["stance_caps"]),
     )
 
-    # stance_bond_buckets and stance_move_buckets: flat dicts
     stance_bond_buckets = _build_strict(StanceBondBuckets, dict(data["stance_bond_buckets"]))
     stance_move_buckets = _build_strict(StanceMoveBuckets, dict(data["stance_move_buckets"]))
     stance_matrix: dict[str, dict[str, dict[str, StanceMatrixEntry]]] = {
@@ -500,7 +407,6 @@ def parse_engine_yaml(data: dict[str, Any]) -> EngineSettings:
     memory_emotions = _build_strict(MemoryEmotions, dict(data["memory_emotions"]))
     memory_templates = _build_strict(MemoryTemplates, dict(data["memory_templates"]))
 
-    # narrative_direction: nested intensity + result_map of NarrativeDirectionEntry
     nd = dict(data["narrative_direction"])
     nd_intensity = _build_strict(NarrativeIntensityThresholds, dict(nd.pop("intensity")))
     nd_result_map = {
@@ -508,7 +414,6 @@ def parse_engine_yaml(data: dict[str, Any]) -> EngineSettings:
     }
     narrative_direction = NarrativeDirectionConfig(intensity=nd_intensity, result_map=nd_result_map)
 
-    # succession: nested InheritanceConfig + dict of NpcCarryoverEntry per status
     succession_raw = dict(data["succession"])
     inheritance = _build_strict(InheritanceConfig, dict(succession_raw["inheritance"]))
     npc_carryover = {
@@ -521,7 +426,6 @@ def parse_engine_yaml(data: dict[str, Any]) -> EngineSettings:
         retire_command=succession_raw["retire_command"],
     )
 
-    # keyed_scenes: nested dict[str, KeyedSceneTrigger] + scalar prompt_wrapper.
     keyed_raw = dict(data["keyed_scenes"])
     triggers = {name: _build_strict(KeyedSceneTrigger, dict(entry)) for name, entry in keyed_raw["triggers"].items()}
     keyed_scenes = KeyedScenesConfig(
@@ -529,12 +433,6 @@ def parse_engine_yaml(data: dict[str, Any]) -> EngineSettings:
         prompt_wrapper=keyed_raw["prompt_wrapper"],
     )
 
-    # adventure_crafter: list of themes, scalar slot count, d10 -> theme map,
-    # nested PlotPointRanges. theme_die_table keys parse from yaml as ints
-    # (yaml numeric keys); preserved as int -> str map. Cross-checked against
-    # data/adventure_crafter.json random_themes at the loader level — that
-    # validation lives in mechanics/adventure_crafter.py to keep the parse
-    # block here purely about yaml shape.
     ac_raw = dict(data["adventure_crafter"])
     ac_special = _build_strict(PlotPointRanges, dict(ac_raw["special_ranges"]))
     adventure_crafter = AdventureCrafterConfig(

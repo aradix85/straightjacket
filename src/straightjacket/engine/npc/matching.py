@@ -1,6 +1,3 @@
-"""NPC name matching: title/honorific filtering, sanitization, fuzzy matching,
-edit-distance."""
-
 import re
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
@@ -12,11 +9,7 @@ from ..engine_loader import eng
 from ..logging_util import log
 from ..models import NpcData
 
-# TITLE / HONORIFIC FILTER
-# Prevents false positive fuzzy matches like "Mrs. Chen" ↔ "Mrs. Kowalski".
-# Data source: engine.yaml name_titles.
 
-# NAME SANITIZATION
 _ALIAS_HINT_RE = re.compile(
     r"\b(?:also\s+known\s+as|aka|called)\s+",
     re.IGNORECASE,
@@ -24,16 +17,10 @@ _ALIAS_HINT_RE = re.compile(
 
 
 def normalize_for_match(s: str) -> str:
-    """Normalize a name string for comparison only — stored names are never modified.
-    Collapses hyphens, underscores, and whitespace variants to a single space,
-    then lowercases and strips. Makes 'Wacholder-im-Schnee', 'Wacholder im Schnee',
-    and 'wacholder_im_schnee' all compare equal."""
     return re.sub(r"[\s\-_]+", " ", s).lower().strip()
 
 
 def sanitize_npc_name(name: str) -> tuple[str, list[str]]:
-    """Strip parenthetical annotations from NPC names.
-    Returns (clean_name, extracted_aliases)."""
     if not name or "(" not in name:
         return name.strip(), []
     m = re.match(r"^(.+?)\s*\((.+)\)\s*$", name)
@@ -51,7 +38,6 @@ def sanitize_npc_name(name: str) -> tuple[str, list[str]]:
 
 
 def apply_name_sanitization(npc: NpcData) -> None:
-    """Sanitize an NPC's name in-place: strip parentheticals, add as aliases."""
     raw = npc.name
     if "(" not in raw:
         return
@@ -70,9 +56,6 @@ def apply_name_sanitization(npc: NpcData) -> None:
     clean_lower = clean.lower()
     npc.aliases = [a for a in npc.aliases if a.lower() != clean_lower]
     log(f"[NPC] Sanitized name: '{raw}' → '{clean}' (aliases: {npc.aliases})")
-
-
-# NPC LOOKUP
 
 
 def _find_by_id(game: "GameState", npc_ref: str) -> NpcData | None:
@@ -98,9 +81,6 @@ def _find_by_exact_alias(game: "GameState", ref_norm: str) -> NpcData | None:
 
 
 def _find_by_substring(game: "GameState", ref_norm: str) -> NpcData | None:
-    """Best-score substring match against names and aliases. Title-only refs
-    (e.g. 'the king' where king is a title) are rejected to avoid false hits.
-    """
     if len(ref_norm) < eng().fuzzy_match.min_word_length:
         return None
     ref_words = set(ref_norm.split())
@@ -131,12 +111,6 @@ def _find_by_substring(game: "GameState", ref_norm: str) -> NpcData | None:
 
 
 def find_npc(game: "GameState", npc_ref: str) -> NpcData | None:
-    """Find an NPC by ID, exact name, exact alias, or best-score substring.
-
-    Cascading lookup: return the first match from each tier before falling
-    through to the next. Substring tier is skipped for refs shorter than
-    the fuzzy-match minimum.
-    """
     if not npc_ref:
         return None
 
@@ -159,9 +133,6 @@ def find_npc(game: "GameState", npc_ref: str) -> NpcData | None:
 
 
 def resolve_about_npc(game: "GameState", raw: str | None, owner_id: str | None = None) -> str | None:
-    """Resolve an about_npc value to a canonical npc_id.
-    If owner_id is provided and the resolved ID matches it, returns None
-    (prevents self-references in NPC memories)."""
     if not raw:
         return None
     npc = find_npc(game, raw)
@@ -177,7 +148,6 @@ def resolve_about_npc(game: "GameState", raw: str | None, owner_id: str | None =
 
 
 def next_npc_id(game: "GameState") -> tuple[str, int]:
-    """Determine the next available NPC ID."""
     max_num = 0
     for n in game.npcs:
         m = re.match(r"npc_(\d+)", n.id)
@@ -187,11 +157,7 @@ def next_npc_id(game: "GameState") -> tuple[str, int]:
     return f"npc_{max_num}", max_num
 
 
-# EDIT DISTANCE & FUZZY MATCHING
-
-
 def edit_distance_le1(a: str, b: str) -> bool:
-    """Check if Levenshtein distance between a and b is ≤ 1."""
     la, lb = len(a), len(b)
     if abs(la - lb) > 1:
         return False
@@ -214,8 +180,6 @@ def edit_distance_le1(a: str, b: str) -> bool:
 
 @dataclass
 class _FuzzyMatch:
-    """Running-best state while scanning existing NPCs for a fuzzy match."""
-
     npc: NpcData | None = None
     score: int = 0
     match_type: str = "identity"
@@ -226,7 +190,6 @@ def _strip_titles(words: set[str] | list[str], titles: "frozenset[str]") -> set[
 
 
 def _check_substring_match(new_norm: str, npc: NpcData, best: _FuzzyMatch, min_word_length: int) -> None:
-    """Check 1: one name is a substring of the other."""
     name_norm = normalize_for_match(npc.name)
     if new_norm in name_norm or name_norm in new_norm:
         shorter_len = min(len(new_norm), len(name_norm))
@@ -239,7 +202,6 @@ def _check_substring_match(new_norm: str, npc: NpcData, best: _FuzzyMatch, min_w
 def _check_alias_match(
     new_norm: str, npc: NpcData, best: _FuzzyMatch, min_word_length: int
 ) -> tuple[NpcData, str] | None:
-    """Check 2: substring match against each alias. Returns early on exact alias match."""
     for alias in npc.aliases:
         alias_norm = normalize_for_match(alias)
         if alias_norm == new_norm:
@@ -262,10 +224,6 @@ def _check_word_overlap(
     min_word_length: int,
     exact_dedup_threshold: float,
 ) -> None:
-    """Check 3: significant word overlap between the two name-word sets,
-    with a single-word dominance guard to avoid "Sarah the Scribe" / "Sarah the Wanderer"
-    collapsing on just "sarah".
-    """
     name_norm = normalize_for_match(npc.name)
     name_words = _strip_titles(set(name_norm.split()), titles)
     alias_words: set[str] = set()
@@ -283,7 +241,7 @@ def _check_word_overlap(
         name_ratio = len(word) / max(len(name_norm), 1)
         new_ratio = len(word) / max(len(new_norm), 1)
         if max(name_ratio, new_ratio) < exact_dedup_threshold:
-            return  # overlap dominated by a single short match — skip
+            return
 
     score = sum(len(w) for w in significant)
     if score > best.score:
@@ -299,9 +257,6 @@ def _check_edit_distance_variant(
     min_word_length: int,
     stt_alias_bonus: int,
 ) -> None:
-    """Check 4: speech-to-text variant detection via edit distance ≤ 1 per word,
-    when both normalized names split into the same number of non-title words.
-    """
     name_norm = normalize_for_match(npc.name)
     ext_words = sorted(_strip_titles(name_norm.split(), titles))
     new_words_sorted = sorted(_strip_titles(new_norm.split(), titles))
@@ -319,7 +274,7 @@ def _check_edit_distance_variant(
         elif len(nw) >= _desc_word_min and len(ew) >= _desc_word_min and edit_distance_le1(nw, ew):
             near += 1
         else:
-            return  # any non-matching word kills the variant check
+            return
 
     if near < 1:
         return
@@ -336,14 +291,6 @@ def _check_edit_distance_variant(
 
 
 def fuzzy_match_existing_npc(game: "GameState", new_name: str) -> tuple[NpcData | None, str | None]:
-    """Check if a 'new' NPC name fuzzy-matches an existing NPC.
-
-    Four sequential checks per candidate: substring, alias substring, word
-    overlap, edit-distance variant. Keeps the highest-scoring match.
-
-    Returns (matching_npc, match_type) or (None, None).
-    match_type is 'identity' for normal matches or 'stt_variant' for edit-distance-1 matches.
-    """
     if not new_name or len(new_name.strip()) < eng().fuzzy_match.npc_name_min_length:
         return None, None
 
@@ -361,23 +308,19 @@ def fuzzy_match_existing_npc(game: "GameState", new_name: str) -> tuple[NpcData 
         if normalize_for_match(npc.name) == new_norm:
             continue
 
-        # Check 1: substring match. `continue` if it hit — the spec below mirrors the original control flow.
         name_norm = normalize_for_match(npc.name)
         if new_norm in name_norm or name_norm in new_norm:
             _check_substring_match(new_norm, npc, best, _fuzzy.min_word_length)
             continue
 
-        # Check 2: alias substring. Exact alias match returns immediately.
         early = _check_alias_match(new_norm, npc, best, _fuzzy.min_word_length)
         if early is not None:
             return early
 
-        # Check 3: word overlap.
         _check_word_overlap(
             new_norm, new_words, npc, best, titles, _fuzzy.min_word_length, _fuzzy.exact_dedup_threshold
         )
 
-        # Check 4: edit-distance variant.
         _check_edit_distance_variant(new_norm, npc, best, titles, _fuzzy.min_word_length, _npc_match.stt_alias_bonus)
 
     if best.npc:

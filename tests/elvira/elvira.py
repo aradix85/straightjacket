@@ -1,33 +1,16 @@
-#!/usr/bin/env python3
-"""Straightjacket — Elvira Test Player Bot.
-
-Headless AI-driven test player. Two modes:
-
-  Direct mode (default): drives the engine directly, bypassing the UI.
-  WebSocket mode (--ws): plays through the WebSocket server, testing
-    the full stack: protocol → handlers → engine → serializers.
-
-Usage:
-    python elvira/elvira.py
-    python elvira/elvira.py --ws
-    python elvira/elvira.py --config my_cfg.yaml
-    python elvira/elvira.py --auto
-    python elvira/elvira.py --turns 50
-"""
-
 import argparse
 import asyncio
 import logging
 import sys
 from pathlib import Path
 
-# Path setup — works regardless of cwd
+
 _HERE = Path(__file__).resolve().parent
-_ROOT = _HERE.parent.parent  # tests/elvira/ → tests/ → repo root
+_ROOT = _HERE.parent.parent
 sys.path.insert(0, str(_ROOT / "src"))
 sys.path.insert(0, str(_ROOT))
 
-# Console logging (no log files)
+
 _logger = logging.getLogger("rpg_engine")
 if not _logger.handlers:
     _ch = logging.StreamHandler(sys.stdout)

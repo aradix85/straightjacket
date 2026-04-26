@@ -1,5 +1,3 @@
-"""Datasworn-driven character creation. Fully deterministic — no AI call."""
-
 from __future__ import annotations
 
 import random as _random
@@ -12,10 +10,6 @@ STAT_NAMES = ["edge", "heart", "iron", "shadow", "wits"]
 
 
 def roll_character(setting_id: str = "starforged", game_cfg: dict | None = None) -> dict:
-    """Build creation_data from Datasworn oracles.
-
-    Returns a dict matching start_new_game's expected creation_data.
-    """
     game_cfg = game_cfg or {}
     pkg = load_package(setting_id)
     _e = eng()
@@ -124,17 +118,15 @@ def _roll_stats(game_cfg: dict) -> dict[str, int]:
 
 
 def _random_stats(target: int, valid_arrays: list[list[int]]) -> dict[str, int]:
-    """Generate a random valid stat allocation from valid_arrays."""
     if not valid_arrays:
         raise RuntimeError("No valid stat arrays configured in engine.yaml")
-    # Pick a random valid array and shuffle it across stat names
+
     array = list(_random.choice(valid_arrays))
     _random.shuffle(array)
     return dict(zip(STAT_NAMES, array, strict=True))
 
 
 def _roll_truths(pkg: SettingPackage, game_cfg: dict) -> dict[str, str]:
-    """Roll truths for this setting. Returns {truth_id: chosen_summary}."""
     if game_cfg.get("truths"):
         return game_cfg["truths"]
     flow = pkg.creation_flow
@@ -153,7 +145,6 @@ def _roll_truths(pkg: SettingPackage, game_cfg: dict) -> dict[str, str]:
 
 
 def _roll_starting_assets(pkg: SettingPackage, game_cfg: dict) -> list[str]:
-    """Roll one starting asset from allowed categories."""
     if game_cfg.get("assets"):
         return game_cfg["assets"]
     _e = eng()

@@ -1,15 +1,3 @@
-"""Shared dataclass types for the turn pipeline.
-
-SceneContext is built once per turn and passed to both the dialog and
-action branches. RollOutcome is the output of the roll phase; it carries
-move/track context through to consequence resolution. ActionResolution
-bundles the output of the consequences phase so the narration phase can
-consume it.
-
-These types live in their own module to keep turn.py, action_resolution.py
-and scene_finalization.py free of each other's implementation details.
-"""
-
 from dataclasses import dataclass, field
 
 from ..ai.provider_base import AIProvider
@@ -30,8 +18,6 @@ from ..models import (
 
 @dataclass
 class SceneContext:
-    """Shared context built once per turn, passed to both dialog and action paths."""
-
     provider: AIProvider
     game: GameState
     brain: BrainResult
@@ -48,8 +34,6 @@ class SceneContext:
 
 @dataclass
 class RollOutcome:
-    """Result of the roll phase: roll plus the move/track context it came from."""
-
     roll: RollResult
     ds_move: Move | None
     track: ProgressTrack | None
@@ -58,8 +42,6 @@ class RollOutcome:
 
 @dataclass
 class ActionResolution:
-    """Everything produced by the consequences phase of an action turn."""
-
     position: str
     effect: str
     consequences: list[str]

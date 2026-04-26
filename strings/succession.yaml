@@ -2,13 +2,10 @@ succession.title_retire: 'Stepping aside'
 succession.title_death: 'The story continues'
 succession.title_despair: 'Beyond the breaking point'
 
-# Headline shown when succession is offered. {predecessor} is the previous PC's name.
 succession.headline_death: '{predecessor} did not survive. Their legacy passes to a new protagonist.'
 succession.headline_despair: '{predecessor} is broken — beyond what one person can carry. Their legacy passes to a new protagonist.'
 succession.headline_retire: '{predecessor} steps out of the story. Their legacy passes to a new protagonist.'
 
-# Inheritance roll outcomes per legacy track. Spoken in inheritance-narrative
-# language: the tracks (Quests / Bonds / Discoveries) carry meaning, not numbers.
 succession.legacy_full: 'Their {track} live on in full — every step they took remains.'
 succession.legacy_partial: 'Their {track} carry forward in part — half of what was achieved survives.'
 succession.legacy_lost: 'Their {track} fade — nothing carries forward.'
@@ -17,14 +14,11 @@ succession.legacy_track_quests: quests
 succession.legacy_track_bonds: bonds
 succession.legacy_track_discoveries: discoveries
 
-# Predecessor summary line — chapters lived, scenes seen.
 succession.predecessor_history: '{name} carried the story for {chapters} chapter(s) and {scenes} scene(s).'
 
-# Errors surfaced to the client.
 succession.error_no_pending: 'No succession is pending. Cannot complete character creation.'
 succession.error_already_pending: 'A succession is already in progress. Complete or cancel it before starting another.'
 succession.error_creation_data_malformed: 'Character data is missing or malformed.'
 
-# Status / progress messages.
 succession.preparing: 'Closing out the previous chapter and rolling inheritance...'
 succession.starting: 'Bringing the new protagonist into the world...'

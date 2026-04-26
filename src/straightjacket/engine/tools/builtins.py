@@ -1,9 +1,3 @@
-"""Built-in tools for Brain and Director roles.
-
-Query tools are read-only: they inspect GameState and database but never mutate.
-Results are returned as dicts; the engine decides what to do with them.
-"""
-
 from __future__ import annotations
 
 from ..datasworn.moves import get_moves
@@ -19,11 +13,6 @@ from .registry import register
 
 @register("director")
 def query_npc(game: GameState, npc_id: str) -> dict:
-    """Query an NPC's current state: disposition, bond, recent memories, agenda.
-
-    npc_id: NPC identifier (e.g. 'npc_1')
-    """
-
     npc = find_npc(game, npc_id)
     if not npc:
         return {"error": f"NPC not found: {npc_id}"}
@@ -49,10 +38,6 @@ def query_npc(game: GameState, npc_id: str) -> dict:
 
 @register("director")
 def query_active_threads(game: GameState, active_only: bool = True) -> dict:
-    """List story threads with their types and weights.
-
-    active_only: if true, return only active threads
-    """
     threads = query_threads(active=True if active_only else None)
     return {
         "threads": [
@@ -63,11 +48,6 @@ def query_active_threads(game: GameState, active_only: bool = True) -> dict:
 
 @register("director")
 def query_active_clocks(game: GameState, clock_type: str = "", unfired_only: bool = True) -> dict:
-    """List clocks filtered by type or status.
-
-    clock_type: filter by type ('threat', 'scheme', 'progress'), empty for all
-    unfired_only: if true, return only unfired clocks
-    """
     clocks = query_clocks(
         clock_type=clock_type if clock_type else None,
         fired=False if unfired_only else None,
@@ -88,15 +68,6 @@ def query_active_clocks(game: GameState, clock_type: str = "", unfired_only: boo
 
 
 def roll_oracle(game: GameState, table_path: str) -> dict:
-    """Roll on a Datasworn oracle table. Returns the rolled value and table info.
-
-    table_path: oracle table path (e.g. 'core/action', 'characters/name/given')
-
-    Errors are returned as structured dicts so the caller (AI tool invoker) can
-    handle them in-band rather than via exception propagation — this is the
-    tool contract for all built-ins.
-    """
-
     if not game.setting_id:
         return {"error": "No setting loaded"}
 
@@ -120,10 +91,6 @@ def roll_oracle(game: GameState, table_path: str) -> dict:
 
 
 def query_npc_list(game: GameState, status: str = "active") -> dict:
-    """List NPCs filtered by status. Lightweight: names and dispositions only.
-
-    status: filter by status ('active', 'background', 'deceased', 'lore')
-    """
     npcs = query_npcs(status=status)
     return {
         "npcs": [
@@ -133,12 +100,6 @@ def query_npc_list(game: GameState, status: str = "active") -> dict:
 
 
 def fate_question(game: GameState, question: str, context_hint: str = "") -> dict:
-    """Ask a yes/no question about the fiction. Returns probabilistic answer.
-
-    question: the yes/no question to ask (e.g. 'Is the door locked?')
-    context_hint: situational context for odds (e.g. 'hostile NPC', 'safe area')
-    """
-
     odds = resolve_likelihood(game, context_hint)
     result = resolve_fate(
         game,
@@ -165,10 +126,6 @@ def fate_question(game: GameState, question: str, context_hint: str = "") -> dic
 
 
 def list_tracks(game: GameState, track_type: str = "") -> dict:
-    """List active progress tracks. Call before progress moves to see available targets.
-
-    track_type: filter by type ('vow', 'connection', 'combat', 'expedition'), empty for all
-    """
     tracks = [t for t in game.progress_tracks if t.status == "active"]
     if track_type:
         tracks = [t for t in tracks if t.track_type == track_type]
@@ -189,8 +146,6 @@ def list_tracks(game: GameState, track_type: str = "") -> dict:
 
 
 def available_moves(game: GameState) -> dict:
-    """Get the list of moves available in the current game state. Call this to see what moves the player can make."""
-
     if not game.setting_id:
         return {"error": "No setting loaded"}
 
@@ -230,7 +185,6 @@ def available_moves(game: GameState) -> dict:
             }
         )
 
-    # Engine-specific moves (always available) — defined in engine.yaml
     for key, em in eng().engine_moves.items():
         result.append(
             {
@@ -254,13 +208,6 @@ def _is_move_available(
     has_combat_track: bool,
     has_connection: bool,
 ) -> bool:
-    """Determine if a move is available in the current game state.
-
-    Yaml-authoritative: reads engine.yaml `move_availability`. Unknown move
-    keys raise KeyError — every rollable move across supported settings must
-    be listed there.
-    """
-
     rule = eng().move_availability[key]
     if rule.never:
         return False

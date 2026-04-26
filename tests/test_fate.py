@@ -1,11 +1,3 @@
-#!/usr/bin/env python3
-"""Tests for Mythic GME 2e fate system: chart, check, likelihood, tool.
-
-Run: python -m pytest tests/test_fate.py -v
-"""
-
-# Stubs are set up in conftest.py
-
 import pytest
 
 from straightjacket.engine.mechanics.fate import (
@@ -20,11 +12,7 @@ from straightjacket.engine.mechanics.fate import (
 from tests._helpers import make_game_state, make_npc
 
 
-# ── Fate chart method ────────────────────────────────────────
-
-
 def test_fate_chart_four_outcomes() -> None:
-    """All four outcome branches at fifty_fifty CF5."""
     assert resolve_fate_chart("fifty_fifty", chaos_factor=5, roll=10, question="").answer == "exceptional_yes"
     assert resolve_fate_chart("fifty_fifty", chaos_factor=5, roll=30, question="").answer == "yes"
     assert resolve_fate_chart("fifty_fifty", chaos_factor=5, roll=60, question="").answer == "no"
@@ -32,100 +20,70 @@ def test_fate_chart_four_outcomes() -> None:
 
 
 def test_fate_chart_certain_high_chaos() -> None:
-    """Certain at CF9: yes threshold 99, no exceptional_no possible."""
     assert resolve_fate_chart("certain", chaos_factor=9, roll=99, question="").answer == "yes"
     assert resolve_fate_chart("certain", chaos_factor=9, roll=20, question="").answer == "exceptional_yes"
     assert resolve_fate_chart("certain", chaos_factor=9, roll=100, question="").answer == "no"
 
 
 def test_fate_chart_impossible_low_chaos() -> None:
-    """Impossible at CF1: yes threshold 1, no exceptional_yes possible."""
     assert resolve_fate_chart("impossible", chaos_factor=1, roll=1, question="").answer == "yes"
     assert resolve_fate_chart("impossible", chaos_factor=1, roll=2, question="").answer == "no"
 
 
 def test_fate_chart_null_thresholds() -> None:
-    """Null exceptional thresholds: cannot produce that outcome."""
-    # Certain CF7+: exceptional_no is None
     assert resolve_fate_chart("certain", chaos_factor=7, roll=100, question="").answer == "no"
-    # Impossible CF1: exceptional_yes is None
+
     assert resolve_fate_chart("impossible", chaos_factor=1, roll=1, question="").answer == "yes"
 
 
 def test_fate_chart_unknown_odds_raises() -> None:
-    """Unknown odds level raises — no silent fallback on domain data."""
     with pytest.raises(KeyError, match="Unknown odds level"):
         resolve_fate_chart("totally_bonkers", chaos_factor=5, roll=50, question="")
 
 
-# ── Fate chart random event trigger ──────────────────────────
-
-
 def test_chart_random_event_doublet_logic() -> None:
-    """Doublet rule: doublet AND digit <= CF triggers event."""
-    assert _check_chart_random_event(33, 5) is True  # 3 <= 5
-    assert _check_chart_random_event(77, 5) is False  # 7 > 5
-    assert _check_chart_random_event(34, 9) is False  # not a doublet
-    assert _check_chart_random_event(100, 1) is True  # 00: digit 0 always <= CF
-    assert _check_chart_random_event(11, 1) is True  # 1 <= 1
-    assert _check_chart_random_event(22, 1) is False  # 2 > 1
-    assert _check_chart_random_event(5, 9) is False  # below 11, not a doublet
-
-
-# ── Fate check method ────────────────────────────────────────
+    assert _check_chart_random_event(33, 5) is True
+    assert _check_chart_random_event(77, 5) is False
+    assert _check_chart_random_event(34, 9) is False
+    assert _check_chart_random_event(100, 1) is True
+    assert _check_chart_random_event(11, 1) is True
+    assert _check_chart_random_event(22, 1) is False
+    assert _check_chart_random_event(5, 9) is False
 
 
 def test_fate_check_four_outcomes() -> None:
-    """All four outcome branches via controlled dice."""
-    # fifty_fifty CF5: mods=0. dice sum determines outcome directly.
     assert resolve_fate_check("fifty_fifty", chaos_factor=5, dice=(10, 10), question="").answer == "exceptional_yes"
     assert resolve_fate_check("fifty_fifty", chaos_factor=5, dice=(6, 5), question="").answer == "yes"
     assert resolve_fate_check("fifty_fifty", chaos_factor=5, dice=(3, 4), question="").answer == "no"
-    # unlikely CF4: odds=-1, cf=-1. dice=(3,3): 3+3-1-1=4 → exceptional_no
+
     assert resolve_fate_check("unlikely", chaos_factor=4, dice=(3, 3), question="").answer == "exceptional_no"
 
 
 def test_fate_check_exceptional_priority() -> None:
-    """Exceptional No (2-4) takes priority over No (<=10)."""
-    # very_unlikely CF4: odds=-2, cf=-1. dice=(3,3): 3+3-2-1=3
     result = resolve_fate_check("very_unlikely", chaos_factor=4, dice=(3, 3), question="")
     assert result.answer == "exceptional_no"
 
 
 def test_fate_check_modifiers_shift_outcome() -> None:
-    """Odds and chaos modifiers shift identical dice to different outcomes."""
-    # Same dice (5,5), different context
-    assert resolve_fate_check("likely", chaos_factor=6, dice=(5, 5), question="").answer == "yes"  # 5+5+1+1=12
-    assert resolve_fate_check("unlikely", chaos_factor=4, dice=(5, 5), question="").answer == "no"  # 5+5-1-1=8
-
-
-# ── Fate check random event trigger ─────────────────────────
+    assert resolve_fate_check("likely", chaos_factor=6, dice=(5, 5), question="").answer == "yes"
+    assert resolve_fate_check("unlikely", chaos_factor=4, dice=(5, 5), question="").answer == "no"
 
 
 def test_check_random_event_doublet_logic() -> None:
-    """Both dice same AND digit <= CF triggers event."""
-    assert _check_check_random_event(3, 3, 5) is True  # 3 <= 5
-    assert _check_check_random_event(7, 7, 5) is False  # 7 > 5
-    assert _check_check_random_event(3, 4, 9) is False  # different dice
-    assert _check_check_random_event(1, 1, 1) is True  # 1 <= 1
-
-
-# ── Random event in FateResult ───────────────────────────────
+    assert _check_check_random_event(3, 3, 5) is True
+    assert _check_check_random_event(7, 7, 5) is False
+    assert _check_check_random_event(3, 4, 9) is False
+    assert _check_check_random_event(1, 1, 1) is True
 
 
 def test_fate_results_carry_random_event_flag() -> None:
-    """FateResult.random_event_triggered reflects doublet detection for both methods."""
     assert resolve_fate_chart("fifty_fifty", chaos_factor=5, roll=33, question="").random_event_triggered is True
     assert resolve_fate_chart("fifty_fifty", chaos_factor=5, roll=34, question="").random_event_triggered is False
     assert resolve_fate_check("fifty_fifty", chaos_factor=5, dice=(3, 3), question="").random_event_triggered is True
     assert resolve_fate_check("fifty_fifty", chaos_factor=5, dice=(3, 4), question="").random_event_triggered is False
 
 
-# ── Unified resolver ─────────────────────────────────────────
-
-
 def test_resolve_fate_method_override(load_engine: None) -> None:
-    """Explicit method parameter overrides engine.yaml default."""
     game = make_game_state()
     game.world.chaos_factor = 5
     chart = resolve_fate(game, "fifty_fifty", chaos_factor=5, method="fate_chart", question="")
@@ -134,11 +92,7 @@ def test_resolve_fate_method_override(load_engine: None) -> None:
     assert check.method == "fate_check"
 
 
-# ── Exhaustive coverage ──────────────────────────────────────
-
-
 def test_fate_chart_all_odds_all_cf(load_engine: None) -> None:
-    """Every (odds, CF) combination resolves without error at boundary rolls."""
     for odds in get_odds_levels():
         for cf in range(1, 10):
             for roll in (1, 50, 100):
@@ -147,7 +101,6 @@ def test_fate_chart_all_odds_all_cf(load_engine: None) -> None:
 
 
 def test_fate_check_all_odds_all_cf(load_engine: None) -> None:
-    """Every (odds, CF) combination resolves without error at edge dice."""
     for odds in get_odds_levels():
         for cf in range(1, 10):
             for dice in ((1, 1), (5, 5), (10, 10), (1, 10)):
@@ -155,18 +108,13 @@ def test_fate_check_all_odds_all_cf(load_engine: None) -> None:
                 assert result.answer in ("yes", "no", "exceptional_yes", "exceptional_no")
 
 
-# ── Likelihood resolver ──────────────────────────────────────
-
-
 def test_likelihood_default_fifty_fifty(load_engine: None) -> None:
-    """No context factors → fifty_fifty."""
     game = make_game_state()
     game.world.chaos_factor = 5
     assert resolve_likelihood(game) == "fifty_fifty"
 
 
 def test_likelihood_npc_disposition_shifts_odds(load_engine: None) -> None:
-    """NPC disposition in context_hint shifts odds in expected direction."""
     game = make_game_state()
     game.world.chaos_factor = 5
 
@@ -182,7 +130,6 @@ def test_likelihood_npc_disposition_shifts_odds(load_engine: None) -> None:
 
 
 def test_likelihood_chaos_shifts_odds(load_engine: None) -> None:
-    """High chaos shifts down, low chaos shifts up."""
     high = make_game_state()
     high.world.chaos_factor = 8
     low = make_game_state()
@@ -194,7 +141,6 @@ def test_likelihood_chaos_shifts_odds(load_engine: None) -> None:
 
 
 def test_likelihood_critical_resources(load_engine: None) -> None:
-    """Critical health contributes negative score (stacks with other factors)."""
     game = make_game_state()
     game.world.chaos_factor = 5
     game.resources.health = 1
@@ -205,12 +151,10 @@ def test_likelihood_critical_resources(load_engine: None) -> None:
     game2.resources.health = 5
     odds_healthy = resolve_likelihood(game2)
 
-    # Critical should be same or worse than healthy
     assert get_odds_levels().index(odds_critical) >= get_odds_levels().index(odds_healthy)
 
 
 def test_likelihood_factors_stack(load_engine: None) -> None:
-    """Multiple negative factors produce strongly unfavorable odds."""
     game = make_game_state()
     game.world.chaos_factor = 8
     game.resources.health = 1
@@ -220,11 +164,7 @@ def test_likelihood_factors_stack(load_engine: None) -> None:
     assert odds in ("very_unlikely", "nearly_impossible", "impossible")
 
 
-# ── Tool integration ─────────────────────────────────────────
-
-
 def test_fate_question_tool_end_to_end(load_engine: None) -> None:
-    """fate_question tool resolves likelihood, rolls fate, returns structured result."""
     from straightjacket.engine.tools.builtins import fate_question
 
     game = make_game_state()

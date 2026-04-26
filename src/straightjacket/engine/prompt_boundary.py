@@ -1,18 +1,3 @@
-"""Scene-boundary narrator prompt builders: new game, epilogue, new chapter.
-
-Three prompts used at story boundaries rather than inside a turn:
-
-- new_game: first scene of a fresh campaign. Uses the player's truths,
-  vow, paths, and pronouns.
-- epilogue: closing scene when a campaign reaches a possible ending.
-  Summarises session log and active NPCs.
-- new_chapter: opening scene of a subsequent chapter after an epilogue.
-  Uses campaign history and NPC evolutions from the previous chapter.
-
-All three use the shared scene header and no result constraint — the
-narrator is setting the stage, not resolving a roll.
-"""
-
 from .engine_loader import eng
 from .logging_util import log
 from .models import GameState
@@ -30,7 +15,6 @@ def build_new_game_prompt(game: GameState) -> str:
     seed = creativity_seed()
     log(f"[Narrator] Opening creativity_seed={seed!r}")
 
-    # Character details
     pronouns_tag = f"\n<pronouns>{_xe(game.pronouns)}</pronouns>" if game.pronouns else ""
     paths_tag = f"\n<paths>{_xe(', '.join(game.paths))}</paths>" if game.paths else ""
     vow_tag = f"\n<vow>{_xe(game.background_vow)}</vow>" if game.background_vow else ""
@@ -55,8 +39,6 @@ def build_new_game_prompt(game: GameState) -> str:
 
 
 def build_epilogue_prompt(game: GameState) -> str:
-    """Build prompt for generating an epilogue that wraps up the story."""
-
     bp = game.narrative.story_blueprint
     endings = bp.possible_endings if bp else []
     endings_text = ", ".join(f"{e.type}: {e.description}" for e in endings) if endings else "open"
@@ -91,8 +73,6 @@ def build_epilogue_prompt(game: GameState) -> str:
 
 
 def build_new_chapter_prompt(game: GameState) -> str:
-    """Build opening prompt for a new chapter in an ongoing campaign."""
-
     npc_block = "\n".join(
         f'<returning_npc id="{_xa(n.id)}" name="{_xa(n.name)}" disposition="{_xa(n.disposition)}" '
         f'bond="{get_npc_bond(game, n.id)}/10"'

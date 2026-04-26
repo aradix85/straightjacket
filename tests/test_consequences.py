@@ -1,8 +1,3 @@
-"""Tests for consequences.py: dice, clocks, NPC agency, momentum burn.
-
-Move-specific consequence tests are in test_move_outcome.py.
-"""
-
 from straightjacket.engine.models import (
     ClockEvent,
     GameState,
@@ -16,9 +11,6 @@ def _game(health: int = 5, spirit: int = 5, supply: int = 5, momentum: int = 3) 
     g = make_game_state(player_name="Hero")
     g.resources = Resources(health=health, spirit=spirit, supply=supply, momentum=momentum, max_momentum=10)
     return g
-
-
-# ── Dice rolling ─────────────────────────────────────────────
 
 
 def test_roll_action_returns_valid_result() -> None:
@@ -54,9 +46,6 @@ def test_roll_action_score_capped_at_10() -> None:
     for _ in range(100):
         r = roll_action("edge", 3, "adventure/face_danger")
         assert r.action_score <= 10
-
-
-# ── Clock ticking ────────────────────────────────────────────
 
 
 def test_tick_threat_clock() -> None:
@@ -101,9 +90,6 @@ def test_tick_threat_clock_skips_full() -> None:
     events: list[ClockEvent] = []
     tick_threat_clock(game, 1, events)
     assert len(events) == 0
-
-
-# ── Momentum burn ────────────────────────────────────────────
 
 
 def test_can_burn_momentum_miss_to_strong() -> None:
@@ -156,9 +142,6 @@ def test_can_burn_momentum_zero_momentum() -> None:
     assert can_burn_momentum(game, roll) is None
 
 
-# ── NPC agency ───────────────────────────────────────────────
-
-
 def test_npc_agency_fires_on_scene_5(load_engine: None) -> None:
     from straightjacket.engine.mechanics.consequences import check_npc_agency
 
@@ -195,9 +178,6 @@ def test_npc_agency_ticks_owned_clock(load_engine: None) -> None:
     assert len(events) == 1
 
 
-# ── Autonomous clocks ────────────────────────────────────────
-
-
 def test_autonomous_clock_tick(load_engine: None) -> None:
     from straightjacket.engine.mechanics.consequences import tick_autonomous_clocks
 
@@ -211,9 +191,6 @@ def test_autonomous_clock_tick(load_engine: None) -> None:
             ticked = True
             break
     assert ticked
-
-
-# ── Purge fired clocks ───────────────────────────────────────
 
 
 def test_purge_old_fired_clocks(load_engine: None) -> None:
@@ -233,9 +210,6 @@ def test_purge_old_fired_clocks(load_engine: None) -> None:
     assert "Active" in names
 
 
-# ── Progress roll ────────────────────────────────────────────
-
-
 def test_roll_progress_returns_valid_result() -> None:
     from straightjacket.engine.mechanics.consequences import roll_progress
 
@@ -245,7 +219,7 @@ def test_roll_progress_returns_valid_result() -> None:
     assert r.stat_name == "Test Vow"
     assert r.stat_value == 6
     assert r.action_score == 6
-    assert r.d1 == 0  # no action dice
+    assert r.d1 == 0
     assert r.d2 == 0
     assert 1 <= r.c1 <= 10
     assert 1 <= r.c2 <= 10
@@ -263,9 +237,7 @@ def test_roll_progress_zero_boxes() -> None:
 
     r = roll_progress("Empty", 0, "quest/fulfill_your_vow")
     assert r.action_score == 0
-    # With score 0, can only beat challenge dice of 0 (impossible), so always MISS
-    # unless both challenge dice are somehow 0 (they can't be, range 1-10)
-    # Actually score 0 can never be > c1 or > c2 since minimum c is 1
+
     assert r.result == "MISS"
 
 

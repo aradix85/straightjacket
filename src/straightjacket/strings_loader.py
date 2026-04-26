@@ -1,12 +1,3 @@
-"""Straightjacket string loader: yaml-driven UI strings.
-
-UI strings live in strings/, one yaml file per key prefix (actions.yaml,
-consequence.yaml, ui.yaml, etc.). Each file contains fully-dotted keys
-under that prefix (e.g. strings/actions.yaml holds `actions.load_failed`).
-The loader globs the directory and merges. Duplicate keys across files raise.
-Missing keys at lookup time raise — strings are domain data, no silent fallback.
-"""
-
 from pathlib import Path
 
 import yaml

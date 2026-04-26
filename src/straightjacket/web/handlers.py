@@ -1,13 +1,3 @@
-"""WebSocket message handlers. One function per protocol message type.
-
-Each handler receives (session, ws, msg) and is fully async.
-Engine calls run via asyncio.to_thread(). Errors are caught per-handler
-and sent to the client as {"type": "error"} messages.
-
-Handlers mutate session state and send JSON to the WebSocket.
-They never access module-level globals.
-"""
-
 import asyncio
 
 from starlette.websockets import WebSocket, WebSocketDisconnect
@@ -46,28 +36,13 @@ from .session import BurnOffer, Session
 
 
 async def _send(ws: WebSocket, msg: dict) -> None:
-    """Send JSON, tolerating a dead/closed connection.
-
-    A send against a closed or mid-disconnect WebSocket raises; there is
-    nothing the caller can do to recover, so we log at debug and continue.
-    """
     try:
         await ws.send_json(msg)
     except (WebSocketDisconnect, RuntimeError, OSError) as e:
-        # Diagnostic display fallback: msg.get("type", "?") for the dead-ws
-        # log only — the type is informational here, not protocol input.
         log(f"[Web] _send on dead ws ({msg.get('type', '?')}): {e}", level="debug")
 
 
 async def _require_str(ws: WebSocket, msg: dict, key: str, error_key: str) -> str | None:
-    """Pull a required, non-empty string from a WebSocket message.
-
-    Returns the trimmed value, or None after sending an error response if
-    the field is absent or empty/whitespace. Treating absence and
-    empty-after-strip the same is correct for protocol-required fields:
-    the client must send a usable value either way. Wrapping the pattern
-    here removes the silent-fallback temptation at every callsite.
-    """
     value = msg.get(key)
     if not isinstance(value, str):
         await _send(ws, {"type": "error", "text": t(error_key)})
@@ -169,7 +144,6 @@ async def handle_start_game(session: Session, ws: WebSocket, msg: dict) -> None:
             },
         )
     except Exception as e:
-        # tool boundary: WebSocket message handler
         log(f"[Web] start_game failed: {e}", level="error")
         await _send(ws, {"type": "error", "text": str(e)})
     finally:
@@ -184,10 +158,6 @@ async def handle_player_input(session: Session, ws: WebSocket, msg: dict) -> Non
         await _send(ws, {"type": "error", "text": t("error.no_active_game")})
         return
 
-    # Player text is protocol-required, but an empty submission is a common
-    # UX accident (Enter pressed on empty input). Silently ignore rather
-    # than surface as a server error — the UI will not let the user see
-    # they bothered the server. External-boundary parsing exception.
     raw = msg.get("text", "")
     text = raw.strip() if isinstance(raw, str) else ""
     if not text:
@@ -223,9 +193,6 @@ async def handle_player_input(session: Session, ws: WebSocket, msg: dict) -> Non
             },
         )
 
-        # Roll data stays engine-internal; player sees only narration
-        # (design doc: "no stats, no dice, no system references")
-
         if burn_info:
             session.pending_burn = BurnOffer(
                 roll=burn_info["roll"],
@@ -247,10 +214,6 @@ async def handle_player_input(session: Session, ws: WebSocket, msg: dict) -> Non
             )
 
         if game.game_over:
-            # Auto-prepare succession: archive the predecessor, lock in the
-            # inheritance rolls, set pending_succession=True. The client gets
-            # the rolled outcomes immediately so the new-character screen can
-            # show what carries forward, with no extra round-trip.
             if not game.campaign.pending_succession:
                 end_reason = determine_end_reason(game)
                 await asyncio.to_thread(prepare_succession, game, end_reason)
@@ -275,7 +238,6 @@ async def handle_player_input(session: Session, ws: WebSocket, msg: dict) -> Non
                 await asyncio.to_thread(run_deferred_director, provider, game, director_ctx)
                 save_game(game, session.player, session.chat_messages, session.save_name)
             except Exception as e:
-                # carve-out: director AI call, graceful degradation
                 log(f"[Web] Director failed: {e}", level="warning")
         elif any(n.needs_reflection for n in game.npcs):
             reset_stale_reflection_flags(game)
@@ -283,7 +245,6 @@ async def handle_player_input(session: Session, ws: WebSocket, msg: dict) -> Non
         await _send(ws, {"type": "turn_complete"})
 
     except Exception as e:
-        # tool boundary: WebSocket message handler
         log(f"[Web] player_input failed: {e}", level="error")
         await _send(ws, {"type": "error", "text": str(e)})
         session.pop_last_user_message()
@@ -298,8 +259,6 @@ async def handle_correction(session: Session, ws: WebSocket, msg: dict) -> None:
     if not session.game:
         return
 
-    # Correction text follows the same rule as player_input — empty submit
-    # is a UX accident; ignore. External-boundary parsing exception.
     raw = msg.get("text", "")
     text = raw.strip() if isinstance(raw, str) else ""
     if not text:
@@ -325,13 +284,9 @@ async def handle_correction(session: Session, ws: WebSocket, msg: dict) -> None:
                 await asyncio.to_thread(run_deferred_director, provider, game, director_ctx)
                 save_game(game, session.player, session.chat_messages, session.save_name)
             except Exception as e:
-                # Correction narration is already applied and saved. A failing
-                # deferred director only updates Act/threat pacing metadata —
-                # skip with a log rather than failing the whole correction flow.
                 log(f"[Web] deferred director after correction failed: {e}", level="warning")
         await _send(ws, {"type": "turn_complete"})
     except Exception as e:
-        # tool boundary: WebSocket message handler
         log(f"[Web] correction failed: {e}", level="error")
         await _send(ws, {"type": "error", "text": str(e)})
     finally:
@@ -342,9 +297,6 @@ async def handle_burn_momentum(session: Session, ws: WebSocket, msg: dict) -> No
     if not session.game:
         return
 
-    # Burn-offer accept flag. The protocol semantics: client sends an explicit
-    # boolean, but legacy clients omitting it are treated as decline. External-
-    # boundary parsing exception.
     accept = bool(msg.get("accept", False))
     burn = session.pending_burn
     session.pending_burn = None
@@ -376,7 +328,6 @@ async def handle_burn_momentum(session: Session, ws: WebSocket, msg: dict) -> No
         save_game(game, session.player, session.chat_messages, session.save_name)
         await _send(ws, {"type": "turn_complete"})
     except Exception as e:
-        # tool boundary: WebSocket message handler
         log(f"[Web] burn failed: {e}", level="error")
         await _send(ws, {"type": "error", "text": str(e)})
     finally:
@@ -393,9 +344,7 @@ async def handle_list_saves(session: Session, ws: WebSocket, _msg: dict) -> None
 async def handle_save(session: Session, ws: WebSocket, msg: dict) -> None:
     if not session.game or not session.player:
         return
-    # Save name is optional in this protocol — falling back to the current
-    # session save_name lets the UI's "save" button operate without a fresh
-    # prompt. External-boundary parsing exception.
+
     raw = msg.get("name", "")
     name = raw.strip() if isinstance(raw, str) else ""
     if not name:
@@ -408,8 +357,7 @@ async def handle_save(session: Session, ws: WebSocket, msg: dict) -> None:
 async def handle_load(session: Session, ws: WebSocket, msg: dict) -> None:
     if not session.player:
         return
-    # Save name is optional — empty falls back to default save name from
-    # config. External-boundary parsing exception.
+
     raw = msg.get("name", "")
     name = raw.strip() if isinstance(raw, str) else ""
     if not name:
@@ -452,7 +400,6 @@ async def handle_recap(session: Session, ws: WebSocket, _msg: dict) -> None:
         recap_text = await asyncio.to_thread(call_recap, provider, session.game, session.config)
         await _send(ws, {"type": "recap", "text": recap_text})
     except Exception as e:
-        # tool boundary: WebSocket message handler
         await _send(ws, {"type": "error", "text": str(e)})
     finally:
         session.processing = False
@@ -483,7 +430,6 @@ async def handle_threats_query(session: Session, ws: WebSocket, _msg: dict) -> N
 
 
 async def handle_advance_asset(session: Session, ws: WebSocket, msg: dict) -> None:
-    """Spend XP on an asset upgrade or acquire a new asset (step 12.2)."""
     if not session.game:
         await _send(ws, {"type": "status", "text": t("status.no_game")})
         return
@@ -501,7 +447,6 @@ async def handle_advance_asset(session: Session, ws: WebSocket, msg: dict) -> No
     if spent == 0:
         await _send(ws, {"type": "status", "text": t("advance.insufficient")})
         return
-    # Persist: XP/legacy/assets all changed
 
     _db_sync(session.game)
     save_game(session.game, session.player, session.chat_messages, session.save_name)
@@ -522,7 +467,6 @@ async def handle_generate_epilogue(session: Session, ws: WebSocket, _msg: dict) 
         save_game(game, session.player, session.chat_messages, session.save_name)
         await _send(ws, {"type": "epilogue", "text": highlight_dialog(epilogue)})
     except Exception as e:
-        # tool boundary: WebSocket message handler
         await _send(ws, {"type": "error", "text": str(e)})
     finally:
         session.processing = False
@@ -559,7 +503,6 @@ async def handle_new_chapter(session: Session, ws: WebSocket, _msg: dict) -> Non
             },
         )
     except Exception as e:
-        # tool boundary: WebSocket message handler
         log(f"[Web] new_chapter failed: {e}", level="error")
         await _send(ws, {"type": "error", "text": str(e)})
     finally:
@@ -567,14 +510,6 @@ async def handle_new_chapter(session: Session, ws: WebSocket, _msg: dict) -> Non
 
 
 async def handle_retire(session: Session, ws: WebSocket, _msg: dict) -> None:
-    """Player explicitly retires the current PC.
-
-    Triggered by the /retire command or the retire button in the UI.
-    Sets game_over+pending_succession, archives the predecessor, locks in
-    the inheritance rolls, and sends back the succession summary so the
-    client can present the new-character screen. No AI call here — this is
-    deterministic engine state.
-    """
     if not session.game or session.processing:
         return
     session.processing = True
@@ -594,7 +529,6 @@ async def handle_retire(session: Session, ws: WebSocket, _msg: dict) -> None:
             },
         )
     except Exception as e:
-        # tool boundary: WebSocket message handler
         log(f"[Web] retire failed: {e}", level="error")
         await _send(ws, {"type": "error", "text": str(e)})
     finally:
@@ -602,13 +536,6 @@ async def handle_retire(session: Session, ws: WebSocket, _msg: dict) -> None:
 
 
 async def handle_start_succession(session: Session, ws: WebSocket, msg: dict) -> None:
-    """Complete the pending succession with the new character's creation_data.
-
-    Mirrors handle_new_chapter for the post-chapter narration flow. Calls
-    start_succession_with_character which closes out the predecessor's
-    chapter, applies inheritance, replaces the character, and generates an
-    opening scene.
-    """
     if not session.game or session.processing:
         return
     if not session.game.campaign.pending_succession:
@@ -638,7 +565,6 @@ async def handle_start_succession(session: Session, ws: WebSocket, msg: dict) ->
             },
         )
     except Exception as e:
-        # tool boundary: WebSocket message handler
         log(f"[Web] start_succession failed: {e}", level="error")
         await _send(ws, {"type": "error", "text": str(e)})
     finally:
@@ -646,14 +572,6 @@ async def handle_start_succession(session: Session, ws: WebSocket, msg: dict) ->
 
 
 async def handle_request_succession_creation(session: Session, ws: WebSocket, _msg: dict) -> None:
-    """Send creation_options when the player is mid-succession.
-
-    Used by the client between the succession-pending overlay and the
-    character-creation form. We keep session.game intact (the predecessor
-    is archived in game.campaign.predecessors and pending_succession is
-    True), only sending the data the form needs to rebuild. start_succession
-    will read the same game state to complete the transition.
-    """
     if not session.game:
         await _send(ws, {"type": "error", "text": t("error.no_active_game")})
         return
@@ -671,12 +589,6 @@ async def handle_request_succession_creation(session: Session, ws: WebSocket, _m
 
 
 async def handle_debug_state(session: Session, ws: WebSocket, _msg: dict) -> None:
-    """Return full serialized GameState for invariant checking.
-
-    Not used by the normal client. Elvira's WebSocket runner sends this
-    after each turn to get the complete game state for quality checks
-    and invariant assertions.
-    """
     if not session.game:
         await _send(ws, {"type": "debug_state", "data": None})
         return

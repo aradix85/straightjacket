@@ -1,8 +1,3 @@
-"""Progress track mechanics: find, complete, sync, oracle rolls.
-
-Extracted from turn.py. These are game mechanics, not turn pipeline logic.
-"""
-
 from __future__ import annotations
 
 from ..datasworn.settings import active_package
@@ -12,12 +7,6 @@ from ..models import GameState, ProgressTrack
 
 
 def find_progress_track(game: GameState, track_category: str, target_track: str | None = None) -> ProgressTrack | None:
-    """Find the active progress track for a progress move.
-
-    If target_track is given, matches by name substring (case-insensitive).
-    If omitted and multiple active tracks of the type exist, raises ValueError.
-    Filters out completed/failed tracks.
-    """
     cat_lower = track_category.lower()
     type_map = {
         "vow": "vow",
@@ -52,15 +41,11 @@ def find_progress_track(game: GameState, track_category: str, target_track: str 
 
 
 def complete_track(game: GameState, track_id: str, outcome: str) -> None:
-    """Mark a track as completed or failed. Handles side effects:
-    - Combat tracks: clear combat_position
-    - Vow tracks: deactivate linked thread, resolve linked threat
-    """
     track = next((t for t in game.progress_tracks if t.id == track_id), None)
     if not track:
         log(f"[Track] complete_track: not found {track_id}")
         return
-    track.status = outcome  # "completed" or "failed"
+    track.status = outcome
     log(f"[Track] {track.name} ({track.track_type}) → {outcome}")
 
     if track.track_type == "combat" and game.world.combat_position:
@@ -73,23 +58,17 @@ def complete_track(game: GameState, track_id: str, outcome: str) -> None:
                 thread.active = False
                 log(f"[Track] Linked thread '{thread.name}' deactivated")
                 break
-        # Resolve linked threat when vow completes or fails
+
         for threat in game.threats:
             if threat.linked_vow_id == track_id and threat.status == "active":
                 threat.status = "overcome" if outcome == "completed" else "resolved"
                 log(f"[Track] Linked threat '{threat.name}' → {threat.status}")
-                # Step 12.2: XP bonus when vow completes with high-menace threat overcome
+
                 if threat.status == "overcome":
                     apply_threat_overcome_bonus(game, threat)
 
 
 def sync_combat_tracks(game: GameState) -> None:
-    """Remove orphaned combat tracks when combat_position has been cleared.
-
-    Called after post-narration processing. If combat ended via narrative
-    (metadata extractor cleared combat_position) but the combat track is
-    still active, the engine removes it.
-    """
     if game.world.combat_position:
         return
     for track in game.progress_tracks:
@@ -99,8 +78,6 @@ def sync_combat_tracks(game: GameState) -> None:
 
 
 def roll_oracle_answer(game: GameState) -> str:
-    """Roll an oracle answer for ask_the_oracle moves. Returns a meaning pair string."""
-
     pkg = active_package(game)
     if not pkg:
         return ""

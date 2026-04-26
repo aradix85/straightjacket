@@ -1,32 +1,11 @@
 succession:
-  # Character succession (Continue a Legacy).
-  #
-  # Triggered when game.game_over is True (face_death MISS or both health and
-  # spirit at zero), or when the player issues /retire. Both routes feed the
-  # same start_succession() entry point. The deceased/retired character is
-  # archived in CampaignState.predecessors; a new character inherits a portion
-  # of legacy progress per the inheritance roll.
 
-  # Inheritance roll per legacy track. roll_progress(track_name, filled_boxes,
-  # move) gives STRONG_HIT / WEAK_HIT / MISS. The fraction below is applied to
-  # the predecessor's filled_boxes; the new character's track starts with
-  # round(filled_boxes * fraction) filled boxes (converted to ticks via
-  # ticks_per_mark on the new character's rank).
   inheritance:
     move_name: "continue_a_legacy"
-    strong_hit_fraction: 1.0  # full carry-over
-    weak_hit_fraction: 0.5    # partial
-    miss_fraction: 0.0        # nothing
+    strong_hit_fraction: 1.0
+    weak_hit_fraction: 0.5
+    miss_fraction: 0.0
 
-  # NPC carry-over per status. Connection track is reset to a fraction of the
-  # original filled_boxes — the new character inherits relationships at a
-  # diminished intensity, reflecting that the bond was forged with a different
-  # person. Status mapping:
-  #   active     — full track (carries with full filled_boxes)
-  #   background — track halved (less intense, secondary figures)
-  #   lore       — track halved (named-only references; no real relationship)
-  #   deceased   — pruned entirely; deceased NPCs do not carry to the new
-  #                character because they were never met by them
   npc_carryover:
     active:
       keep: true
@@ -41,6 +20,4 @@ succession:
       keep: false
       track_fraction: 0.0
 
-  # The /retire command. Recognised at the WebSocket layer, not via Brain.
-  # Single source of truth for the command string; the web handler reads this.
   retire_command: "/retire"

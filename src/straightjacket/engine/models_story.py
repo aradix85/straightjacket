@@ -1,6 +1,3 @@
-"""Story model types: threads, character lists, scene log, narration, story blueprint,
-director guidance, narrative state, campaign state."""
-
 from __future__ import annotations
 
 from dataclasses import dataclass, field
@@ -13,40 +10,28 @@ from .serialization import SerializableMixin
 
 @dataclass
 class ThreadEntry(SerializableMixin):
-    """Active thread in the Mythic threads list."""
-
     id: str
     name: str
-    thread_type: str  # vow, goal, tension, subplot
-    source: str  # creation, vow, director, event
+    thread_type: str
+    source: str
     weight: int = 1
-    linked_track_id: str = ""  # ProgressTrack id if this thread is a vow
+    linked_track_id: str = ""
     active: bool = True
 
 
 @dataclass
 class CharacterListEntry(SerializableMixin):
-    """Entry in the Mythic characters list."""
-
     id: str
     name: str
-    entry_type: str  # npc, entity, abstract
+    entry_type: str
     weight: int = 1
     active: bool = True
 
 
 @dataclass
 class SceneLogEntry(SerializableMixin):
-    """One entry in the session log. Created per turn/correction.
-
-    npc_activation, validator, and revelation_check are intentionally untyped dicts.
-    They carry ephemeral diagnostic data (debug scores, validation reports) that
-    varies per turn and is never read back by game logic — only logged and displayed.
-    Typing them would add dataclasses with no consumers.
-    """
-
     scene: int = 0
-    scene_type: str = field(kw_only=True)  # expected, altered, interrupt
+    scene_type: str = field(kw_only=True)
     summary: str = ""
     move: str = ""
     result: str = ""
@@ -54,18 +39,16 @@ class SceneLogEntry(SerializableMixin):
     clock_events: list[ClockEvent] = field(default_factory=list)
     position: str = "risky"
     effect: str = "standard"
-    npc_activation: dict = field(default_factory=dict)  # diagnostic: {npc_name: {score, reasons, status}}
-    validator: dict = field(default_factory=dict)  # diagnostic: {passed, retries, violations, checks}
+    npc_activation: dict = field(default_factory=dict)
+    validator: dict = field(default_factory=dict)
     rich_summary: str = ""
     director_trigger: str = ""
     oracle_answer: str = ""
-    revelation_check: dict = field(default_factory=dict)  # diagnostic: {id, confirmed}
+    revelation_check: dict = field(default_factory=dict)
 
 
 @dataclass
 class NarrationEntry(SerializableMixin):
-    """One entry in narration history. Used for narrator conversation context."""
-
     scene: int
     prompt_summary: str
     narration: str
@@ -73,8 +56,6 @@ class NarrationEntry(SerializableMixin):
 
 @dataclass
 class StoryAct(SerializableMixin):
-    """Single act in a story blueprint."""
-
     phase: str = ""
     title: str = ""
     goal: str = ""
@@ -85,7 +66,7 @@ class StoryAct(SerializableMixin):
 
 @dataclass
 class CurrentAct:
-    """Computed act info from get_current_act(). Not serialized."""
+    _NOT_SERIALIZED = True
 
     phase: str = ""
     title: str = ""
@@ -101,8 +82,6 @@ class CurrentAct:
 
 @dataclass
 class Revelation(SerializableMixin):
-    """Story revelation with timing and weight."""
-
     id: str = ""
     content: str = ""
     earliest_scene: int = 999
@@ -111,16 +90,12 @@ class Revelation(SerializableMixin):
 
 @dataclass
 class PossibleEnding(SerializableMixin):
-    """Possible story ending."""
-
     type: str = ""
     description: str = ""
 
 
 @dataclass
 class StoryBlueprint(SerializableMixin):
-    """Story architect output. Tracks act structure, revelations, and completion."""
-
     central_conflict: str = ""
     antagonist_force: str = ""
     thematic_thread: str = ""
@@ -136,8 +111,6 @@ class StoryBlueprint(SerializableMixin):
 
 @dataclass
 class DirectorGuidance(SerializableMixin):
-    """Director output stored between turns for narrator context."""
-
     narrator_guidance: str = ""
     npc_guidance: dict[str, str] = field(default_factory=dict)
     arc_notes: str = ""
@@ -145,22 +118,6 @@ class DirectorGuidance(SerializableMixin):
 
 @dataclass
 class KeyedScene(SerializableMixin):
-    """Director-pre-defined narrative beat that overrides chaos at scene start.
-
-    A keyed scene fires when its trigger evaluates true at the next scene
-    boundary. Priority order in check_scene is keyed > interrupt > altered >
-    expected. The matched scene is removed from narrative.keyed_scenes once
-    it fires — keyed scenes are one-shot.
-
-    trigger_type is validated against engine/keyed_scenes.yaml's registered
-    triggers map at construction time; an unknown trigger_type raises
-    ValueError so a buggy spawner cannot silently install a dead scene.
-    Spawning is out of scope for step 4 — the Adventure Crafter (step 7)
-    is the engine's keyed-scene spawner.
-
-    All fields required.
-    """
-
     id: str
     trigger_type: str
     trigger_value: str
@@ -175,8 +132,6 @@ class KeyedScene(SerializableMixin):
 
 @dataclass
 class NarrativeState(SerializableMixin):
-    """Scene tracking, history, story arc, director guidance."""
-
     scene_count: int = 0
     session_log: list[SceneLogEntry] = field(default_factory=list)
     narration_history: list[NarrationEntry] = field(default_factory=list)
@@ -188,11 +143,6 @@ class NarrativeState(SerializableMixin):
     keyed_scenes: list[KeyedScene] = field(default_factory=list)
 
     def snapshot(self) -> dict:
-        """Lightweight snapshot for undo. Captures lengths (not full lists) and mutable sub-state.
-
-        keyed_scenes captured in full because consumption can shrink the list
-        mid-turn — length-only would not restore a fired scene on undo.
-        """
         return {
             "scene_count": self.scene_count,
             "session_log_len": len(self.session_log),
@@ -213,7 +163,6 @@ class NarrativeState(SerializableMixin):
         }
 
     def restore(self, snap: dict) -> None:
-        """Restore from a lightweight snapshot. Truncates lists to snapshotted lengths."""
         self.scene_count = snap["scene_count"]
         self.director_guidance = DirectorGuidance.from_dict(snap["director_guidance"])
         self.scene_intensity_history = list(snap["scene_intensity_history"])
@@ -229,46 +178,26 @@ class NarrativeState(SerializableMixin):
             self.story_blueprint.triggered_director_phases = list(bp_snap["triggered_director_phases"])
             self.story_blueprint.story_complete = bp_snap["story_complete"]
         elif bp_snap is None:
-            # Blueprint was absent at snapshot time — remove any blueprint added since
             self.story_blueprint = None
 
 
 @dataclass
 class NpcEvolution(SerializableMixin):
-    """Projected NPC change from chapter summary."""
-
     name: str
     projection: str
 
 
 @dataclass
 class InheritanceRollResult(SerializableMixin):
-    """Outcome of one inheritance roll on a single legacy track at succession.
-
-    track_name is one of LEGACY_TRACKS ("quests", "bonds", "discoveries").
-    predecessor_filled_boxes is what the predecessor's track held going in.
-    new_filled_boxes is what the successor's track is seeded with — the
-    fraction applied to predecessor_filled_boxes, rounded.
-    """
-
     track_name: str
     predecessor_filled_boxes: int
-    result: str  # STRONG_HIT / WEAK_HIT / MISS
+    result: str
     fraction: float
     new_filled_boxes: int
 
 
 @dataclass
 class PredecessorRecord(SerializableMixin):
-    """Archive entry for a previous protagonist after a character succession.
-
-    Captured at start_succession() before the new character is constructed.
-    The fields hold what the new character's player needs to see of the
-    predecessor as context, plus a frozen snapshot of the legacy state at
-    the moment of death/retirement so a later session can audit what was
-    passed forward.
-    """
-
     player_name: str
     pronouns: str
     character_concept: str
@@ -276,7 +205,7 @@ class PredecessorRecord(SerializableMixin):
     setting_id: str
     chapters_played: int
     scenes_played: int
-    end_reason: str  # death, despair, retire
+    end_reason: str
     legacy_quests_filled_boxes: int
     legacy_bonds_filled_boxes: int
     legacy_discoveries_filled_boxes: int
@@ -285,21 +214,6 @@ class PredecessorRecord(SerializableMixin):
 
 @dataclass
 class ChapterSummary(SerializableMixin):
-    """Snapshot of a completed chapter for campaign continuity.
-
-    Two kinds of fields. Narrative fields (title, summary, unresolved_threads,
-    character_growth, npc_evolutions, thematic_question, post_story_location)
-    are AI-written: interpretation of what the chapter meant. Mechanical fields
-    (chapter, scenes, progress_tracks, threats, impacts, assets, threads) are
-    engine-written: a hard snapshot of game state at chapter-end. The narrative
-    is colour; the mechanical state is canon. Step 2 (chapter_validator) checks
-    that the AI text does not contradict the snapshot.
-
-    All fields required. The mechanical fields make chapter transitions auditable
-    and allow the chapter-end state to be restored after _reset_chapter_mechanics
-    instead of relying on which fields the reset happens not to touch.
-    """
-
     chapter: int
     title: str
     summary: str
@@ -351,24 +265,17 @@ def _legacy_discoveries_factory() -> ProgressTrack:
 
 @dataclass
 class CampaignState(SerializableMixin):
-    """Chapter progression, epilogue, campaign-persistent XP and legacy tracks."""
-
     campaign_history: list[ChapterSummary] = field(default_factory=list)
     predecessors: list[PredecessorRecord] = field(default_factory=list)
     chapter_number: int = 1
     epilogue_shown: bool = False
     epilogue_dismissed: bool = False
     epilogue_text: str = ""
-    # Set by prepare_succession when the predecessor is archived and inheritance
-    # has been rolled, but the new character has not yet been created. Cleared
-    # by start_succession_with_character. Distinguishes "post-death awaiting
-    # successor" from normal play; the UI and turn pipeline check this to gate
-    # actions while creation is open.
+
     pending_succession: bool = False
 
-    # Campaign-persistent progression
-    xp: int = 0  # Total XP earned across campaign
-    xp_spent: int = 0  # Total XP spent on assets/upgrades
+    xp: int = 0
+    xp_spent: int = 0
     legacy_quests: ProgressTrack = field(default_factory=_legacy_quests_factory)
     legacy_bonds: ProgressTrack = field(default_factory=_legacy_bonds_factory)
     legacy_discoveries: ProgressTrack = field(default_factory=_legacy_discoveries_factory)
@@ -378,11 +285,6 @@ class CampaignState(SerializableMixin):
         return self.xp - self.xp_spent
 
     def snapshot(self) -> dict:
-        """Lightweight snapshot for turn undo. Captures fields that can change
-        mid-turn. campaign_history, chapter_number, and epilogue_text are excluded
-        because they only change at chapter boundaries (start_new_chapter), never
-        during normal turn processing or correction. Legacy tracks and XP CAN
-        change mid-turn via legacy_reward effects and threat bonuses."""
         return {
             "epilogue_shown": self.epilogue_shown,
             "epilogue_dismissed": self.epilogue_dismissed,

@@ -1,13 +1,3 @@
-#!/usr/bin/env python3
-"""End-to-end correction flow tests.
-
-One test per path: input_misread, state_error, momentum_burn.
-Each walks the full pipeline — snapshot, restore, re-narrate, metadata,
-session log — instead of testing individual assertions in isolation.
-
-Run: python -m pytest tests/test_correction_flow.py -v
-"""
-
 import json
 
 from straightjacket.engine import engine_loader
@@ -19,8 +9,6 @@ from straightjacket.engine.models import (
     SceneLogEntry,
 )
 from tests._helpers import make_brain_result, make_memory, make_npc
-
-# ── MockProvider ─────────────────────────────────────────────
 
 
 class MockResponse:
@@ -96,7 +84,6 @@ class MockProvider:
             )
 
         if tools and any(t.get("function", {}).get("name") == "roll_oracle" for t in tools):
-            # Brain tool calling mode
             return MockResponse(
                 json.dumps(
                     {
@@ -138,9 +125,6 @@ class MockProvider:
             )
 
         return MockResponse("Mira looked up from the archive, a question forming behind her eyes. You spoke first.")
-
-
-# ── Fixtures ─────────────────────────────────────────────────
 
 
 def _game() -> "GameState":
@@ -202,16 +186,12 @@ def _game() -> "GameState":
         match=False,
     )
     game.last_turn_snapshot.narration = "You swung wildly and missed."
-    # Damage state after snapshot to verify restore
+
     game.resources.health = 1
     return game
 
 
-# ── input_misread: full flow ─────────────────────────────────
-
-
 def test_correction_input_misread_full_flow(load_engine: None, stub_emotions: None) -> None:
-    """input_misread: restore snapshot, re-brain, re-narrate, metadata, log."""
     from straightjacket.engine.correction import process_correction
 
     game = _game()
@@ -222,7 +202,7 @@ def test_correction_input_misread_full_flow(load_engine: None, stub_emotions: No
 
     provider = MockProvider(correction_source="input_misread")
     game, narration, director_ctx = process_correction(
-        provider,  # type: ignore[arg-type]
+        provider,
         game,
         "I didn't want to attack",
         config=EngineConfig(narration_lang="English"),
@@ -236,11 +216,7 @@ def test_correction_input_misread_full_flow(load_engine: None, stub_emotions: No
     assert game.narrative.session_log[-1].summary.startswith("[corrected]")
 
 
-# ── state_error: full flow ───────────────────────────────────
-
-
 def test_correction_state_error_full_flow(load_engine: None, stub_emotions: None) -> None:
-    """state_error: patch NPC, re-narrate, metadata, replace last log entry."""
     from straightjacket.engine.correction import process_correction
 
     game = _game()
@@ -249,7 +225,7 @@ def test_correction_state_error_full_flow(load_engine: None, stub_emotions: None
 
     provider = MockProvider(correction_source="state_error")
     game, narration, director_ctx = process_correction(
-        provider,  # type: ignore[arg-type]
+        provider,
         game,
         "Mira should be loyal",
         config=EngineConfig(narration_lang="English"),
@@ -261,11 +237,7 @@ def test_correction_state_error_full_flow(load_engine: None, stub_emotions: None
     assert game.narrative.session_log[-1].summary.startswith("[corrected]")
 
 
-# ── momentum burn: full flow ─────────────────────────────────
-
-
 def test_momentum_burn_full_flow(load_engine: None, stub_emotions: None) -> None:
-    """Burn: restore, reset momentum, STRONG_HIT consequences, re-narrate, update log."""
     from straightjacket.engine.game.momentum_burn import process_momentum_burn
 
     game = _game()
@@ -278,9 +250,9 @@ def test_momentum_burn_full_flow(load_engine: None, stub_emotions: None) -> None
 
     provider = MockProvider()
     game, narration = process_momentum_burn(
-        provider,  # type: ignore[arg-type]
+        provider,
         game,
-        pre_snap.roll,  # type: ignore[arg-type]
+        pre_snap.roll,
         "STRONG_HIT",
         make_brain_result(move="combat/strike", stat="iron", player_intent="Attack"),
         config=EngineConfig(narration_lang="English"),
@@ -289,18 +261,13 @@ def test_momentum_burn_full_flow(load_engine: None, stub_emotions: None) -> None
 
     assert game.resources.health == snap_health
     _e = engine_loader.eng()
-    # Strike STRONG_HIT gives mark_progress + position, no momentum change.
-    # Momentum was reset to start value by burn.
+
     assert game.resources.momentum == _e.momentum.start
     assert len(narration) > 10
     assert game.narrative.session_log[-1].result == "STRONG_HIT"
 
 
-# ── no snapshot: graceful error ──────────────────────────────
-
-
 def test_correction_no_snapshot(load_engine: None, stub_emotions: None) -> None:
-    """No snapshot available: returns error string, no crash."""
     from straightjacket.engine.correction import process_correction
 
     game = _game()
@@ -308,7 +275,7 @@ def test_correction_no_snapshot(load_engine: None, stub_emotions: None) -> None:
 
     provider = MockProvider()
     game, narration, director_ctx = process_correction(
-        provider,  # type: ignore[arg-type]
+        provider,
         game,
         "Fix something",
         config=EngineConfig(narration_lang="English"),

@@ -1,5 +1,3 @@
-"""NPC memory system: importance scoring, memory retrieval, consolidation."""
-
 import re
 from typing import Literal, overload
 
@@ -18,16 +16,11 @@ def score_importance(emotional_weight: str, event_text: str = "", debug: Literal
 
 
 def score_importance(emotional_weight: str, event_text: str = "", debug: bool = False) -> int | tuple[int, str]:
-    """Score the importance of a memory entry (1-10).
-    Uses emotional_weight as primary signal, with keyword boosts from event text.
-    Handles compound phrases and snake_case.
-    If debug=True, returns (score, explanation_string) instead of just score."""
     raw = emotional_weight.lower().strip()
     debug_info = ""
     _imp = importance_map()
     _mem_cfg = eng().memory
 
-    # Direct hit — fast path
     if raw in _imp:
         base = _imp[raw]
         debug_info = f"direct:{raw}={base}"
@@ -44,7 +37,6 @@ def score_importance(emotional_weight: str, event_text: str = "", debug: bool = 
         base = best
         debug_info = best_token
 
-    # Keyword boost from event text
     if event_text:
         event_lower = event_text.lower()
         for min_score, keywords in keyword_boosts().items():
@@ -64,10 +56,6 @@ def score_importance(emotional_weight: str, event_text: str = "", debug: bool = 
 def retrieve_memories(
     npc: NpcData, context_text: str = "", max_count: int = 5, current_scene: int = 0, present_npc_ids: set | None = None
 ) -> list[MemoryEntry]:
-    """Retrieve the most relevant memories for an NPC using weighted scoring.
-    Weights from engine.yaml memory_retrieval_weights.
-    Memories with about_npc matching a present NPC get a relevance boost.
-    Always includes at least 1 reflection if available."""
     memories = npc.memory
     if not memories:
         return []
@@ -132,11 +120,6 @@ def retrieve_memories(
 
 
 def consolidate_memory(npc: NpcData) -> None:
-    """Intelligent memory consolidation replacing simple FIFO.
-    Keeps: most recent reflections (max eng().npc.max_reflections) +
-           observations split between recency and importance, governed by
-           eng().npc.consolidation_recency_ratio.
-    Total never exceeds eng().npc.max_memory_entries."""
     memories = npc.memory
     _e = eng()
     if len(memories) <= _e.npc.max_memory_entries:

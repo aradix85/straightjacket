@@ -20,8 +20,6 @@ npc:
     3: 5
     4: 5
   activated_memory_count: 2
-  # Applied when narrator-supplied new_npcs entries omit disposition. One of
-  # the keys in disposition_shifts (engine/disposition.yaml).
   default_new_npc_disposition: neutral
 name_titles:
 - mr

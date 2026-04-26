@@ -1,29 +1,3 @@
-"""Move effect parsing and effect-level handlers.
-
-Effect vocabulary (parsed from engine.yaml move_outcomes → <result_key>: [...]):
-    momentum +N / -N        Resource change (clamped to floor/ceiling)
-    health +N / -N          Resource change
-    spirit +N / -N          Resource change
-    supply +N / -N          Resource change
-    integrity +N / -N       Asset control change (future: step 10)
-    mark_progress N         Mark N times on the active progress track
-    pay_the_price           Generic miss consequence via pay_the_price table
-    next_move_bonus +N      Temporary bonus on next move (decays after one turn)
-    suffer_move -N          Trigger a generic suffer move at -N
-    position in_control     Set combat position to in_control
-    position bad_spot       Set combat position to bad_spot
-    legacy_reward TRACK     Mark legacy track reward per completed track rank
-    fill_clock N            Fill N segments on scene challenge clock
-    bond +N                 Mark N on the target NPC's connection track
-    disposition_shift       Advance target NPC's disposition one rung
-    narrative               No mechanical effect, pure narrative
-
-Narrator-facing consequence labels are templates from engine.yaml
-ai_text.consequence_labels, keyed by effect type. Each template uses
-str.format with named placeholders (value, n, track, name, old, new, impact).
-The resulting strings end up in the <consequences> block read by the narrator.
-"""
-
 from __future__ import annotations
 
 import random
@@ -39,19 +13,15 @@ from ..npc import find_npc
 
 @dataclass
 class MoveEffect:
-    """Single parsed mechanical effect."""
-
-    type: str = ""  # momentum, health, spirit, supply, integrity, mark_progress, etc.
-    value: int = 0  # numeric value (positive or negative)
-    target: str = ""  # for legacy_reward: track name; for position: in_control/bad_spot
+    type: str = ""
+    value: int = 0
+    target: str = ""
 
 
 @dataclass
 class OutcomeResult:
-    """Result of applying a move outcome. Fed to consequence sentence generation and narrator prompt."""
-
-    consequences: list[str] = field(default_factory=list)  # human-readable, e.g. "momentum +2"
-    combat_position: str = ""  # "in_control" or "bad_spot" or "" (unchanged)
+    consequences: list[str] = field(default_factory=list)
+    combat_position: str = ""
     pay_the_price: bool = False
     next_move_bonus: int = 0
     progress_marks: int = 0
@@ -67,34 +37,27 @@ _FILL_CLOCK_RE = re.compile(r"^fill_clock\s+(\d+)$")
 
 
 def parse_effect(effect_str: str) -> MoveEffect:
-    """Parse a single effect string from engine.yaml."""
     effect_str = effect_str.strip()
 
-    # Simple resource/track changes: "momentum +1", "health -2", "mark_progress 2"
     m = _EFFECT_RE.match(effect_str)
     if m:
         return MoveEffect(type=m.group(1), value=int(m.group(2)))
 
-    # Position: "position in_control"
     m = _POSITION_RE.match(effect_str)
     if m:
         return MoveEffect(type="position", target=m.group(1))
 
-    # Legacy reward: "legacy_reward quests"
     m = _LEGACY_RE.match(effect_str)
     if m:
         return MoveEffect(type="legacy_reward", target=m.group(1))
 
-    # Fill clock: "fill_clock 2"
     m = _FILL_CLOCK_RE.match(effect_str)
     if m:
         return MoveEffect(type="fill_clock", value=int(m.group(1)))
 
-    # No-arg effects: "pay_the_price", "narrative"
     if effect_str in ("pay_the_price", "narrative", "suffer_move", "disposition_shift"):
         return MoveEffect(type=effect_str)
 
-    # Suffer move with value: "suffer_move -1"
     if effect_str.startswith("suffer_move"):
         parts = effect_str.split()
         if len(parts) == 2:
@@ -105,16 +68,10 @@ def parse_effect(effect_str: str) -> MoveEffect:
 
 
 def parse_effects(effect_list: list[str]) -> list[MoveEffect]:
-    """Parse a list of effect strings."""
     return [parse_effect(e) for e in effect_list]
 
 
 def _roll_pay_the_price(game: GameState) -> str:
-    """Pick one of the pay_the_price oracle outcomes and return the formatted line.
-
-    The lines are in engine/pay_the_price.yaml. Some contain a {player}
-    placeholder; all other tokens pass through unchanged.
-    """
     pay_lines = eng().get_raw("pay_the_price")
     return random.choice(pay_lines).format(player=game.player_name)
 
@@ -141,7 +98,6 @@ def _apply_resource_effect(game: GameState, effect: MoveEffect, result: OutcomeR
 
 
 def _apply_integrity_effect(game: GameState, effect: MoveEffect, result: OutcomeResult, target: NpcData | None) -> None:
-    # Future: asset condition tracks (step 10). Log and skip for now.
     sign = "+" if effect.value > 0 else ""
     result.consequences.append(
         eng().ai_text.consequence_labels["integrity_change"].format(value=f"{sign}{effect.value}")
@@ -222,8 +178,7 @@ def _apply_disposition_shift_effect(
     _e = eng()
     shifts = _e.get_raw("disposition_shifts")
     old_disp = target.disposition
-    # Top of the ladder (loyal) has no further shift; yaml only lists dispositions
-    # that advance. Unchanged when no entry exists.
+
     if old_disp in shifts:
         target.disposition = shifts[old_disp]
         result.consequences.append(
@@ -257,9 +212,6 @@ _EFFECT_HANDLERS: dict[str, Callable[[GameState, MoveEffect, OutcomeResult, NpcD
 
 
 def apply_effects(game: GameState, effects: list[MoveEffect], target_npc_id: str | None = None) -> OutcomeResult:
-    """Apply a list of parsed effects to game state. Dispatches each effect
-    to its handler. Unknown effect types log a warning. Returns result summary.
-    """
     result = OutcomeResult()
     target = find_npc(game, target_npc_id) if target_npc_id else None
 
@@ -274,17 +226,16 @@ def apply_effects(game: GameState, effects: list[MoveEffect], target_npc_id: str
 
 
 def _apply_generic_suffer(game: GameState, amount: int, result: OutcomeResult) -> None:
-    """Apply generic suffer move: pick the most appropriate track based on game state."""
     _e = eng()
     _labels = _e.ai_text.consequence_labels
     res = game.resources
-    # Pick the track with the most room to lose
+
     tracks = [
         ("health", res.health),
         ("spirit", res.spirit),
         ("supply", res.supply),
     ]
-    # Pick highest-value track (most room to absorb damage)
+
     tracks.sort(key=lambda t: t[1], reverse=True)
     track = tracks[0][0]
     lost = res.damage(track, amount)

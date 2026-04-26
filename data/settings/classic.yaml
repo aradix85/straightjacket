@@ -1,5 +1,3 @@
-# Ironsworn Classic setting package
-# Dark fantasy. Low magic, harsh wilderness, iron vows.
 
 id: classic
 title: "Ironsworn"
@@ -13,7 +11,7 @@ description: >
 oracle_paths:
   action_theme: ["action_and_theme/action", "action_and_theme/theme"]
   names: ["name/ironlander/a", "name/ironlander/b"]
-  backstory: ""  # Classic has no dedicated backstory oracle
+  backstory: ""
   factions: ""
 
 vocabulary:
@@ -46,7 +44,6 @@ genre_constraints:
     - "high magic or easy spellcasting"
   genre_test: "Could this exist in a dark, low-magic Iron Age frontier?"
   atmospheric_drift_universal:
-    # Qwen patterns (energy/vibration words)
     - "pulse"
     - "pulsing"
     - "pulses"
@@ -73,7 +70,6 @@ genre_constraints:
     - "otherworldly"
     - "spectral"
     - "ethereal"
-    # GLM patterns (gothic body horror, material animation)
     - "weep"
     - "weeps"
     - "weeping"
@@ -98,7 +94,6 @@ genre_constraints:
     - "apparition"
     - "phantasm"
     - "phantom"
-    # Qwen patterns (poetic material agency)
     - "sighs"
     - "exhales"
     - "exhaling"
@@ -109,7 +104,7 @@ genre_constraints:
 creation_flow:
   has_truths: true
   has_backstory_oracle: false
-  has_name_tables: false       # Classic name oracle exists but is minimal
+  has_name_tables: false
   has_ship_creation: false
   starting_asset_categories:
     - companion

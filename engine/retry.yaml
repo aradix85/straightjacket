@@ -1,7 +1,4 @@
 retry:
-  # Constraint-check / tool-loop / re-prompt sites that must not retry on
-  # failure — a single attempt, then give up. Shared across LLM validator,
-  # architect validator, and the tool-use handler.
   constraint_check_max_retries: 1
   retryable_http_codes:
   - 429

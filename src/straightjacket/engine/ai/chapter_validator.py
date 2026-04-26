@@ -1,27 +1,3 @@
-"""Chapter-summary contradiction validator.
-
-After the AI writes the chapter-summary narrative, this validator checks
-its claims against the engine's mechanical state snapshot. The engine's
-record is canonical; the narrative must not contradict it.
-
-Hybrid design — rule pass plus LLM pass:
-
-The rule pass scans named-entity status-shifts: NPCs declared dead while
-engine status is alive, tracks declared completed while still active,
-threats declared resolved while still active. Cheap, deterministic,
-catches the obvious cases.
-
-The LLM pass catches what keyword matching misses — euphemisms ("she is
-gone now", "her body lay still"), indirect phrasings, semantic shifts
-the rule pass cannot interpret. Runs on the analytical cluster (cheap,
-structured output).
-
-Violations from either pass trigger a re-call of `call_chapter_summary`
-with a correction instruction. Up to `max_retries` attempts, then the
-original narrative is kept with a warning. Graceful degradation: the
-chapter still closes even when the validator gives up.
-"""
-
 import json
 import re
 from typing import Any
@@ -36,13 +12,10 @@ from .provider_base import AIProvider, create_with_retry
 
 
 def _word_boundary_pattern(name: str) -> re.Pattern[str]:
-    """Compile a case-insensitive whole-word regex for `name`. Multi-word names
-    are matched as a unit, single-word names with \\b boundaries."""
     return re.compile(r"\b" + re.escape(name) + r"\b", re.IGNORECASE)
 
 
 def _narrative_text(narrative: dict[str, Any]) -> str:
-    """Concatenate all AI-written narrative fields into one searchable string."""
     parts: list[str] = [
         str(narrative.get("title", "")),
         str(narrative.get("summary", "")),
@@ -59,8 +32,6 @@ def _narrative_text(narrative: dict[str, Any]) -> str:
 
 
 def _keyword_near_match(text: str, name_pat: re.Pattern[str], keywords: list[str]) -> bool:
-    """True if any keyword in `keywords` appears within ~80 chars of a `name_pat`
-    match. Whole-word match for keywords, case-insensitive."""
     for m in name_pat.finditer(text):
         start = max(0, m.start() - eng().truncations.log_short)
         end = min(len(text), m.end() + eng().truncations.log_short)
@@ -72,9 +43,6 @@ def _keyword_near_match(text: str, name_pat: re.Pattern[str], keywords: list[str
 
 
 def _rule_check(narrative: dict[str, Any], game: GameState) -> list[str]:
-    """Rule-based contradiction scan. Returns a list of violation strings
-    using `rule_validator.violation_templates` keys. Empty list = no
-    rule-level contradictions found."""
     text = _narrative_text(narrative)
     if not text.strip():
         return []
@@ -114,8 +82,6 @@ def _rule_check(narrative: dict[str, Any], game: GameState) -> list[str]:
 
 
 def _build_state_block(game: GameState) -> str:
-    """Compact state representation for the LLM pass. Names + statuses only —
-    no descriptions, no flavour. The point is the canonical record."""
     lines: list[str] = []
     if game.npcs:
         lines.append("NPCs:")
@@ -135,9 +101,6 @@ def _build_state_block(game: GameState) -> str:
 
 
 def _llm_check(provider: AIProvider, narrative: dict[str, Any], game: GameState) -> list[str]:
-    """LLM contradiction pass. Returns violations as written by the validator
-    model, prefixed with [llm]. Empty list = no LLM-level contradictions
-    found, or the call failed (graceful degradation)."""
     state_block = _build_state_block(game)
     empty_block = eng().ai_text.narrator_defaults["chapter_validator_empty_block"]
 
@@ -176,8 +139,7 @@ def _llm_check(provider: AIProvider, narrative: dict[str, Any], game: GameState)
         if not content:
             log("[ChapterValidator] LLM returned empty content")
             return []
-        # Try direct parse, then extract from fenced blocks. The validator
-        # prompt requests {"pass": bool, "violations": [...], "correction": "..."}
+
         try:
             result = json.loads(content)
         except json.JSONDecodeError:
@@ -189,7 +151,6 @@ def _llm_check(provider: AIProvider, narrative: dict[str, Any], game: GameState)
             return []
         return [f"[llm] {v}" for v in result.get("violations", [])]
     except Exception as e:
-        # Intentional graceful degradation — see AI-CALL SUPPRESSION POLICY in provider_base.py.
         log(f"[ChapterValidator] LLM check failed ({type(e).__name__}: {e}), using rule results only", level="warning")
         return []
 
@@ -197,15 +158,6 @@ def _llm_check(provider: AIProvider, narrative: dict[str, Any], game: GameState)
 def validate_chapter_summary(
     provider: AIProvider, narrative: dict[str, Any], game: GameState
 ) -> tuple[bool, list[str], str]:
-    """Run rule + LLM contradiction checks against `narrative`.
-
-    Returns:
-        (passed, violations, correction):
-            passed: True if no contradictions found by either pass.
-            violations: combined rule + llm violation strings.
-            correction: short instruction for the next call_chapter_summary
-                attempt; empty string if passed.
-    """
     rule_violations = _rule_check(narrative, game)
     llm_violations = _llm_check(provider, narrative, game)
     all_violations = rule_violations + llm_violations
@@ -225,17 +177,6 @@ def validate_and_retry(
     call_summary: Any,
     epilogue_text: str = "",
 ) -> dict[str, Any]:
-    """Validate `narrative` against state; retry the chapter-summary call on
-    contradiction up to `chapter_validator.max_retries`.
-
-    Args:
-        call_summary: callable matching `call_chapter_summary` — passed in
-            so this module does not import the architect file directly
-            (which is scheduled for split per roadmap step 8).
-
-    Returns the final accepted narrative dict. After max_retries the
-    original narrative is kept with a warning logged.
-    """
     cv = eng().chapter_validator
     current = narrative
 
@@ -246,12 +187,10 @@ def validate_and_retry(
                 log(f"[ChapterValidator] Passed on retry {attempt}")
             return current
         log(f"[ChapterValidator] Attempt {attempt}: {len(violations)} violations: {violations}")
-        # Retry by appending correction to the epilogue_text channel — that
-        # is the only free-text input call_chapter_summary already accepts.
+
         retry_epilogue = (epilogue_text + "\n\n" + correction).strip()
         current = call_summary(provider, game, config, epilogue_text=retry_epilogue)
 
-    # Final check after the last retry.
     passed, violations, _ = validate_chapter_summary(provider, current, game)
     if passed:
         return current

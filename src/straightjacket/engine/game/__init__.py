@@ -1,9 +1,3 @@
-"""
-Straightjacket Game Package
-======================
-Re-exports public symbols.
-"""
-
 __all__ = [
     "determine_end_reason",
     "generate_epilogue",

@@ -1,28 +1,3 @@
-"""Post-run drift checks: validator balance and blueprint genre drift.
-
-Runs once at the end of an Elvira session, not per turn. Output is a
-`drift_summary` dict that sits alongside `validator_summary` and
-`quality_summary` in the session log.
-
-These checks detect pathologies that per-turn checks can't see:
-
-- validator_balance: rule-validator and LLM-validator should each flag
-  roughly their own category of violations across a run. A run where
-  one flags ~nothing while the other flags much is a sign that check
-  has drifted (as happened in v0.63 when a hardcoded label in the
-  secret-stripping regex drifted from its yaml source and silently
-  stopped matching).
-
-- blueprint_drift: the story architect produces a blueprint at game
-  start. The architect_validator checks it once, at creation. But
-  drift words can also sneak in through the narrator's later use,
-  and we can sanity-check the blueprint itself retrospectively
-  against the active setting's genre_constraints — independent of
-  whatever the architect_validator decided at the time.
-
-Pure in-process reads: no AI calls, no extra provider cost.
-"""
-
 from __future__ import annotations
 
 from typing import Any
@@ -31,20 +6,6 @@ from .models import SessionLog
 
 
 def compute_validator_balance(slog: SessionLog) -> dict[str, Any]:
-    """Count violation attributions across all turns and retries.
-
-    Looks at `attempt_violation_text` on each TurnRecord.validator, which
-    contains every violation string from every retry attempt. Each
-    string is prefixed by the engine with '[rule]' or '[llm]' at its
-    source in ai/validator.py.
-
-    Balance diagnostic:
-      - total_rule / total_llm counts
-      - ratio (rule / total), 0.5 being neutral
-      - flagged "suspected_drift" when one side produces <10% of the
-        violations across 20+ total violations (thresholds conservative
-        to avoid noise on short runs)
-    """
     rule_count = 0
     llm_count = 0
     unknown_count = 0
@@ -88,25 +49,15 @@ def compute_validator_balance(slog: SessionLog) -> dict[str, Any]:
 
 
 def check_blueprint_drift(slog: SessionLog) -> dict[str, Any]:
-    """Scan the stored blueprint text against the active setting's
-    atmospheric_drift wordlist. Architect_validator runs this check once
-    at game start; we run it again post-run as an independent second opinion.
-
-    Returns a summary with counts and the actual offending words + fields,
-    so a human can see which part of the blueprint produced them.
-    """
     bp = slog.story_blueprint
     if not bp:
         return {"checked": False, "reason": "no blueprint in session log"}
 
-    # Reconstruct the setting from the session config so we don't depend
-    # on engine module-level state persisting past the run.
     setting_id = slog.config.get("game", {}).get("setting_id", "")
     if not setting_id:
         return {"checked": False, "reason": "no setting_id in session config"}
 
     try:
-        # lazy: settings loader reads files on first call
         from straightjacket.engine.datasworn.settings import load_package
 
         pkg = load_package(setting_id)
@@ -120,11 +71,7 @@ def check_blueprint_drift(slog: SessionLog) -> dict[str, Any]:
     if not gc:
         return {"checked": False, "reason": "setting has no genre_constraints"}
 
-    # Use the narrator's model family — drift wordlists are tuned for the
-    # narrator's output, not the architect that produced the blueprint.
-    # lazy: import here to avoid a top-level config_loader dependency
-    # that would force engine init at module import time.
-    from straightjacket.engine.config_loader import narrator_model_family  # noqa: PLC0415
+    from straightjacket.engine.config_loader import narrator_model_family
 
     drift_list = gc.atmospheric_drift_for(narrator_model_family())
     if not drift_list:
@@ -133,7 +80,6 @@ def check_blueprint_drift(slog: SessionLog) -> dict[str, Any]:
     drift_words = {w.lower() for w in drift_list}
     forbidden = {w.lower() for w in (gc.forbidden_terms or [])}
 
-    # Fields to scan. Same set the architect_validator checks.
     fields_to_scan: list[tuple[str, str]] = [
         ("central_conflict", str(bp.get("central_conflict", ""))),
         ("thematic_thread", str(bp.get("thematic_thread", ""))),
@@ -163,14 +109,13 @@ def check_blueprint_drift(slog: SessionLog) -> dict[str, Any]:
         "drift_threshold": threshold,
         "drift_hits_total": len(drift_hits),
         "drift_hits_exceeds_threshold": len(drift_hits) > threshold,
-        "drift_hits": drift_hits[:20],  # cap output for readability
+        "drift_hits": drift_hits[:20],
         "forbidden_hits_total": len(forbidden_hits),
         "forbidden_hits": forbidden_hits[:20],
     }
 
 
 def compute_drift_summary(slog: SessionLog) -> dict[str, Any]:
-    """Top-level entry point: run all post-run drift checks."""
     return {
         "validator_balance": compute_validator_balance(slog),
         "blueprint_drift": check_blueprint_drift(slog),

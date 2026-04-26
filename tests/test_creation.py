@@ -1,18 +1,8 @@
-#!/usr/bin/env python3
-"""Tests for character creation enhancements: progress tracks, threads, stat validation, chaos modifier.
-
-Run: python -m pytest tests/test_creation.py -v
-"""
-
 import pytest
 
-# Stubs are set up in conftest.py
 
 from straightjacket.engine.engine_loader import eng
 from tests._helpers import make_game_state, make_progress_track
-
-
-# ── ProgressTrack ─────────────────────────────────────────────
 
 
 def test_progress_track_ticks_per_mark() -> None:
@@ -47,10 +37,7 @@ def test_progress_track_mark_progress_clamps_at_max() -> None:
 
 def test_progress_track_filled_boxes() -> None:
     t = make_progress_track(ticks=17)
-    assert t.filled_boxes == 4  # 17 // 4
-
-
-# ── ThreadEntry ───────────────────────────────────────────────
+    assert t.filled_boxes == 4
 
 
 @pytest.mark.parametrize(
@@ -75,9 +62,6 @@ def test_validate_stats_accepts_valid(load_engine: None) -> None:
     validate_stats({"edge": 3, "heart": 2, "iron": 2, "shadow": 1, "wits": 1})
 
 
-# ── Chaos vow modifier ───────────────────────────────────────
-
-
 @pytest.mark.parametrize(
     "vow, expected",
     [
@@ -92,9 +76,6 @@ def test_chaos_start_from_vow(load_engine: None, vow: str, expected: int) -> Non
     from straightjacket.engine.game.game_start import _compute_chaos_start
 
     assert _compute_chaos_start(vow) == expected
-
-
-# ── Vow seeding ──────────────────────────────────────────────
 
 
 def test_seed_background_vow(load_engine: None) -> None:
@@ -135,9 +116,6 @@ def test_seed_background_vow_empty_skips(load_engine: None) -> None:
     assert len(game.narrative.threads) == 0
 
 
-# ── Creation flow on settings ────────────────────────────────
-
-
 def test_setting_creation_flow_starforged() -> None:
     from straightjacket.engine.datasworn.settings import clear_cache, load_package
 
@@ -167,9 +145,6 @@ def test_setting_creation_flow_sundered_isles() -> None:
     pkg = load_package("sundered_isles")
     flow = pkg.creation_flow
     assert flow.has_ship_creation is True
-
-
-# ── build_creation_options ────────────────────────────────────
 
 
 def test_build_creation_options_has_stat_constraints(load_engine: None) -> None:
@@ -247,9 +222,6 @@ def test_build_creation_options_has_creation_flow(load_engine: None) -> None:
     assert sf["creation_flow"]["has_truths"] is True
 
 
-# ── Truth thread seeding ──────────────────────────────────────
-
-
 def test_seed_truth_threads_matches(load_engine: None) -> None:
     from straightjacket.engine.game.game_start import _seed_truth_threads
 
@@ -276,9 +248,6 @@ def test_seed_truth_threads_empty_truths(load_engine: None) -> None:
     assert len(game.narrative.threads) == 0
 
 
-# ── Vow subject seeding ──────────────────────────────────────
-
-
 def test_seed_vow_subject(load_engine: None) -> None:
     from straightjacket.engine.game.game_start import _seed_vow_subject
 
@@ -298,9 +267,6 @@ def test_seed_vow_subject_empty_skips(load_engine: None) -> None:
     assert len(game.narrative.characters_list) == 0
 
 
-# ── Truths block in narrator prompt ───────────────────────────
-
-
 def test_truths_block_with_truths() -> None:
     from straightjacket.engine.prompt_blocks import truths_block
 
@@ -316,9 +282,6 @@ def test_truths_block_empty() -> None:
 
     game = make_game_state(player_name="Test")
     assert truths_block(game) == ""
-
-
-# ── Creation enforcement ──────────────────────────────────────
 
 
 def test_validate_creation_too_many_paths(load_engine: None) -> None:
@@ -367,7 +330,7 @@ def test_validate_creation_path_not_in_setting(load_engine: None) -> None:
     clear_cache()
     pkg = load_package("starforged")
     with pytest.raises(ValueError, match="not found in setting"):
-        validate_creation({"paths": ["alchemist"]}, pkg)  # Classic path, not Starforged
+        validate_creation({"paths": ["alchemist"]}, pkg)
 
 
 def test_validate_creation_invalid_vow_rank(load_engine: None) -> None:
@@ -387,9 +350,6 @@ def test_validate_creation_valid_vow_rank_passes(load_engine: None) -> None:
     clear_cache()
     pkg = load_package("starforged")
     validate_creation({"background_vow_rank": "epic"}, pkg)
-
-
-# ── Memory emotional weight derivation ────────────────────────
 
 
 @pytest.mark.parametrize(

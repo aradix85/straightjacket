@@ -1,22 +1,3 @@
-"""Tests for step 1: ChapterSummary as full mechanical-state snapshot.
-
-Chapter transitions used to leak: some fields were reset, others carried over
-implicitly because nobody listed them in the reset. This step makes the
-boundary explicit. The ChapterSummary captures everything that should survive
-a chapter; _reset_chapter_mechanics resets everything that should not;
-_restore_chapter_mechanics replays the snapshot. Net effect equivalent to the
-old implicit carry-over, but auditable and extensible.
-
-Coverage:
-- ChapterSummary round-trip via SerializableMixin (every field survives
-  to_dict/from_dict).
-- _reset_chapter_mechanics zeroes the snapshot fields.
-- _restore_chapter_mechanics replays the snapshot.
-- close + reset + restore = state identical to pre-close (no silent loss).
-- AI fallback path also produces a valid ChapterSummary with mechanical
-  state captured.
-"""
-
 from __future__ import annotations
 
 from typing import Any
@@ -44,8 +25,6 @@ from tests._helpers import (
 
 
 def _populated_summary() -> ChapterSummary:
-    """Build a ChapterSummary with every field non-empty so round-trip tests
-    can detect any silent dropping."""
     return ChapterSummary(
         chapter=3,
         title="Title 3",
@@ -65,9 +44,6 @@ def _populated_summary() -> ChapterSummary:
 
 
 class TestChapterSummaryRoundTrip:
-    """Every field must survive to_dict / from_dict. Nested dataclasses are
-    handled by SerializableMixin without per-field serializers."""
-
     def test_round_trip_preserves_scalar_fields(self, stub_engine: None) -> None:
         original = _populated_summary()
         restored = ChapterSummary.from_dict(original.to_dict())
@@ -121,28 +97,20 @@ class TestChapterSummaryRoundTrip:
 
 
 class TestChapterSummaryRequiredFields:
-    """All fields are required. No defaults. Constructing without a field
-    must raise — silent defaults would drift back into the carry-over hole
-    this step closes."""
-
     def test_missing_field_raises(self, stub_engine: None) -> None:
         with pytest.raises(TypeError):
-            ChapterSummary(  # type: ignore[call-arg]
+            ChapterSummary(
                 chapter=1,
                 title="t",
                 summary="s",
-                # remaining required fields omitted
             )
 
     def test_npc_evolution_missing_field_raises(self, stub_engine: None) -> None:
         with pytest.raises(TypeError):
-            NpcEvolution(name="Alice")  # type: ignore[call-arg]
+            NpcEvolution(name="Alice")
 
 
 class TestResetChapterMechanics:
-    """Reset must zero every field that the snapshot captures. If reset and
-    snapshot disagree on what is per-chapter state, carry-over leaks again."""
-
     def _populated_game(self) -> GameState:
         game = make_game_state(player_name="Hero", setting_id="starforged")
         game.progress_tracks = [make_progress_track(id="t1", name="Vow", track_type="vow")]
@@ -181,10 +149,6 @@ class TestResetChapterMechanics:
 
 
 class TestRestoreChapterMechanics:
-    """After reset, restore must replay the snapshot onto the game state.
-    Lists are deep-copied through to_dict/from_dict so mutating the live
-    state does not corrupt the historical snapshot."""
-
     def test_restore_replays_progress_tracks(self, stub_engine: None) -> None:
         game = make_game_state(player_name="Hero", setting_id="starforged")
         summary = _populated_summary()
@@ -224,31 +188,20 @@ class TestRestoreChapterMechanics:
         assert game.narrative.threads[0].id == "thr1"
 
     def test_mutating_live_state_does_not_corrupt_snapshot(self, stub_engine: None) -> None:
-        """If restore did a shallow copy, the snapshot's progress_tracks would
-        point at the same list as game.progress_tracks; appending would leak
-        into the historical record."""
         game = make_game_state(player_name="Hero", setting_id="starforged")
         summary = _populated_summary()
         _reset_chapter_mechanics(game)
         _restore_chapter_mechanics(game, summary)
-        # Mutate the live state
+
         game.progress_tracks.append(make_progress_track(id="leaked"))
         game.impacts.append("leaked_impact")
-        # Snapshot must remain pristine
+
         assert len(summary.progress_tracks) == 1
         assert summary.progress_tracks[0].id == "t1"
         assert summary.impacts == ["wounded", "shaken"]
 
 
 class TestChapterTransitionPreservesState:
-    """End-to-end: a populated game state, run reset+restore, must end with
-    the same lists as before. This is what the user sees as carry-over.
-
-    NPC list is not touched here — _prepare_npcs_for_new_chapter handles
-    NPCs separately (filler retire, memory consolidation), and connection
-    tracks live on NPCs themselves which are not reset by
-    _reset_chapter_mechanics. NPC handling is tested elsewhere."""
-
     def test_no_silent_loss_after_close_reset_restore(self, stub_engine: None) -> None:
         game = make_game_state(player_name="Hero", setting_id="starforged")
         game.progress_tracks = [
@@ -262,14 +215,12 @@ class TestChapterTransitionPreservesState:
             ThreadEntry(id="thr1", name="Truth", thread_type="vow", weight=2, source="creation"),
         ]
 
-        # Capture what must survive
         track_ids_before = {t.id for t in game.progress_tracks}
         threat_ids_before = {t.id for t in game.threats}
         impacts_before = list(game.impacts)
         assets_before = list(game.assets)
         thread_ids_before = {t.id for t in game.narrative.threads}
 
-        # Build the snapshot the way _close_previous_chapter does
         summary = make_chapter_summary(
             chapter=game.campaign.chapter_number,
             scenes=game.narrative.scene_count,
@@ -283,7 +234,6 @@ class TestChapterTransitionPreservesState:
         _reset_chapter_mechanics(game)
         _restore_chapter_mechanics(game, summary)
 
-        # Every id and every value must survive the round trip
         assert {t.id for t in game.progress_tracks} == track_ids_before
         assert {t.id for t in game.threats} == threat_ids_before
         assert list(game.impacts) == impacts_before
@@ -292,11 +242,6 @@ class TestChapterTransitionPreservesState:
 
 
 class TestCallChapterSummaryFallback:
-    """The AI call can fail (network, malformed JSON). The fallback path must
-    still produce a valid narrative dict that the engine can complete with
-    mechanical fields. No defaults on required ChapterSummary fields means
-    the fallback dict must contain every narrative key."""
-
     def test_fallback_returns_complete_narrative_dict(self, stub_engine: None) -> None:
         from straightjacket.engine.ai.architect import call_chapter_summary
 
@@ -307,9 +252,8 @@ class TestCallChapterSummaryFallback:
             def create_message(self, **kwargs: Any) -> Any:
                 raise RuntimeError("simulated AI failure")
 
-        narrative = call_chapter_summary(_FailingProvider(), game, config=None)  # type: ignore[arg-type]
+        narrative = call_chapter_summary(_FailingProvider(), game, config=None)
 
-        # Every narrative key required by ChapterSummary present, even on fallback
         for key in (
             "title",
             "summary",
@@ -321,15 +265,12 @@ class TestCallChapterSummaryFallback:
         ):
             assert key in narrative, f"fallback missing {key!r}"
 
-        # Types match what ChapterSummary expects
         assert isinstance(narrative["title"], str)
         assert isinstance(narrative["unresolved_threads"], list)
         assert isinstance(narrative["npc_evolutions"], list)
         assert narrative["post_story_location"] == "TestLocation"
 
     def test_fallback_dict_constructs_chaptersummary(self, stub_engine: None) -> None:
-        """The fallback narrative dict combined with engine mechanical fields
-        must produce a valid ChapterSummary instance."""
         from straightjacket.engine.ai.architect import call_chapter_summary
 
         game = make_game_state(player_name="Hero", setting_id="starforged")
@@ -338,8 +279,8 @@ class TestCallChapterSummaryFallback:
             def create_message(self, **kwargs: Any) -> Any:
                 raise RuntimeError("simulated AI failure")
 
-        narrative = call_chapter_summary(_FailingProvider(), game, config=None)  # type: ignore[arg-type]
-        # This is what _close_previous_chapter does
+        narrative = call_chapter_summary(_FailingProvider(), game, config=None)
+
         summary = ChapterSummary(
             chapter=game.campaign.chapter_number,
             title=narrative["title"],
@@ -356,5 +297,5 @@ class TestCallChapterSummaryFallback:
             assets=list(game.assets),
             threads=list(game.narrative.threads),
         )
-        # Constructed cleanly — round-trip still works
+
         ChapterSummary.from_dict(summary.to_dict())

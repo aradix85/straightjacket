@@ -1,14 +1,5 @@
-#!/usr/bin/env python3
-"""Tests for step 2 resolvers: position, effect, time progression.
-
-Verifies engine-computed values match expected game state conditions.
-"""
-
 from straightjacket.engine.models import SceneLogEntry
 from tests._helpers import make_brain_result, make_clock, make_game_state, make_npc, make_progress_track
-
-
-# ── Position resolver ────────────────────────────────────────
 
 
 def test_position_default_risky(stub_engine: None) -> None:
@@ -40,7 +31,7 @@ def test_position_controlled_on_high_resources_low_chaos(stub_engine: None) -> N
     game.resources.spirit = 5
     game.resources.supply = 5
     game.world.chaos_factor = 3
-    # Add a secured advantage from previous turn
+
     game.narrative.session_log.append(
         SceneLogEntry(scene=1, move="secure_advantage", result="STRONG_HIT", scene_type="expected")
     )
@@ -76,7 +67,7 @@ def test_position_friendly_npc_helps(stub_engine: None) -> None:
     )
     brain = make_brain_result(move="adventure/compel", stat="heart", target_npc="npc_1")
     pos = resolve_position(game, brain)
-    assert pos in ("risky", "controlled")  # friendly + high bond pushes up
+    assert pos in ("risky", "controlled")
 
 
 def test_position_consecutive_misses(stub_engine: None) -> None:
@@ -90,8 +81,8 @@ def test_position_consecutive_misses(stub_engine: None) -> None:
     ]
     brain = make_brain_result(move="adventure/face_danger", stat="wits")
     pos = resolve_position(game, brain)
-    # Consecutive misses should push toward desperate
-    assert pos in ("desperate", "risky")  # depends on other factors
+
+    assert pos in ("desperate", "risky")
 
 
 def test_position_threat_clock_pressure(stub_engine: None) -> None:
@@ -99,7 +90,7 @@ def test_position_threat_clock_pressure(stub_engine: None) -> None:
 
     game = make_game_state(player_name="Test")
     game.world.chaos_factor = 5
-    game.world.clocks = [make_clock(name="Doom", segments=4, filled=3)]  # 75%
+    game.world.clocks = [make_clock(name="Doom", segments=4, filled=3)]
     brain = make_brain_result(move="adventure/face_danger", stat="wits")
     pos = resolve_position(game, brain)
     assert pos in ("desperate", "risky")
@@ -114,11 +105,8 @@ def test_position_combat_baseline(stub_engine: None) -> None:
     brain_recovery = make_brain_result(move="recover/resupply", stat="wits")
     pos_combat = resolve_position(game, brain_combat)
     pos_recovery = resolve_position(game, brain_recovery)
-    # Combat baseline is negative, recovery is positive
+
     assert pos_combat != "controlled" or pos_recovery == "controlled"
-
-
-# ── Effect resolver ──────────────────────────────────────────
 
 
 def test_effect_default_standard(stub_engine: None) -> None:
@@ -147,7 +135,7 @@ def test_effect_controlled_pushes_great(stub_engine: None) -> None:
     game.progress_tracks.append(
         make_progress_track(id="connection_npc_1", name="Ally", track_type="connection", rank="dangerous", ticks=12)
     )
-    # Add secured advantage
+
     game.narrative.session_log.append(
         SceneLogEntry(scene=1, move="secure_advantage", result="STRONG_HIT", scene_type="expected")
     )
@@ -162,11 +150,8 @@ def test_effect_strike_baseline(stub_engine: None) -> None:
     game = make_game_state(player_name="Test")
     brain = make_brain_result(move="combat/strike", stat="iron")
     effect = resolve_effect(game, brain, "risky")
-    # Strike has +1 baseline, should push toward great or stay standard
+
     assert effect in ("standard", "great")
-
-
-# ── Time progression resolver ────────────────────────────────
 
 
 def test_time_progression_dialog_is_none(stub_engine: None) -> None:

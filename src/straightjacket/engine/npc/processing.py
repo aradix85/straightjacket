@@ -1,5 +1,3 @@
-"""NPC metadata processing: create, rename, and update NPCs from narrator output."""
-
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -29,7 +27,6 @@ from .naming import roll_oracle_name
 
 
 def process_npc_renames(game: "GameState", renames: list) -> None:
-    """Process NPC rename/identity-reveal metadata."""
     for r in renames:
         if not isinstance(r, dict) or not r.get("new_name"):
             continue
@@ -56,10 +53,6 @@ def process_npc_renames(game: "GameState", renames: list) -> None:
 
 
 def _apply_surname_update(npc: NpcData, new_name: str, paren_aliases: list[str]) -> None:
-    """Name-update path where old and new name share a substring (surname reveal,
-    honorific change). The old name moves to aliases; parenthetical aliases
-    merge in.
-    """
     old_name = npc.name
     new_norm = normalize_for_match(new_name)
     existing_norms = {normalize_for_match(a) for a in npc.aliases}
@@ -75,10 +68,6 @@ def _apply_surname_update(npc: NpcData, new_name: str, paren_aliases: list[str])
 
 
 def _should_reject_identity_reveal(npc: NpcData, new_name: str) -> bool:
-    """Memory guard: an NPC with memories is an established character. If the
-    proposed new name shares zero words with old name/aliases, it's almost
-    certainly a Brain confusion between two distinct characters.
-    """
     if not npc.memory:
         return False
     known_words: set[str] = set(normalize_for_match(npc.name).split())
@@ -91,10 +80,6 @@ def _should_reject_identity_reveal(npc: NpcData, new_name: str) -> bool:
 def _create_stub_for_rejected_reveal(
     game: "GameState", new_name: str, d: dict, world_addition: str, paren_aliases: list[str]
 ) -> None:
-    """Create a neutral NPC stub for a rejected identity reveal. introduced=False:
-    this stub wasn't actually shown on-screen as a distinct character — it's a
-    placeholder until further narration clarifies whether the name is new.
-    """
     if find_npc(game, new_name):
         return
     stub_desc = d.get("description", "").strip() or world_addition.strip()
@@ -114,13 +99,6 @@ def _create_stub_for_rejected_reveal(
 
 
 def _apply_name_update(game: "GameState", npc: NpcData, d: dict, world_addition: str) -> bool:
-    """Handle a proposed rename from narrator metadata: surname reveal,
-    identity reveal, or rejected reveal (stub).
-
-    Returns True if a stub was created for a rejected identity reveal — in that
-    case the caller should skip description updates on the original NPC, because
-    the narrator's description belongs to the stub, not this character.
-    """
     raw_name = d.get("full_name", "").strip()
     if not raw_name:
         return False
@@ -131,12 +109,10 @@ def _apply_name_update(game: "GameState", npc: NpcData, d: dict, world_addition:
     old_norm = normalize_for_match(npc.name)
     new_norm = normalize_for_match(new_name)
 
-    # Substring match → surname/honorific reveal
     if old_norm in new_norm or new_norm in old_norm:
         _apply_surname_update(npc, new_name, paren_aliases)
         return False
 
-    # Different name entirely: memory guard
     if _should_reject_identity_reveal(npc, new_name):
         log(
             f"[NPC] npc_details: REJECTED identity reveal "
@@ -145,7 +121,7 @@ def _apply_name_update(game: "GameState", npc: NpcData, d: dict, world_addition:
             level="warning",
         )
         _create_stub_for_rejected_reveal(game, new_name, d, world_addition, paren_aliases)
-        return True  # Skip description updates on original NPC
+        return True
 
     log(f"[NPC] npc_details: treating '{npc.name}' -> '{new_name}' as identity reveal")
     merge_npc_identity(npc, new_name, game=game)
@@ -154,7 +130,6 @@ def _apply_name_update(game: "GameState", npc: NpcData, d: dict, world_addition:
 
 
 def _apply_description_updates(npc: NpcData, d: dict) -> None:
-    """Apply description replacement (if complete) and details enrichment."""
     new_desc = d.get("description", "").strip()
     if new_desc:
         old_desc = npc.description
@@ -175,11 +150,6 @@ def _apply_description_updates(npc: NpcData, d: dict) -> None:
 
 
 def _process_one_npc_detail(game: "GameState", d: dict, world_addition: str) -> None:
-    """Process a single npc_details entry. Runs the name-update path and the
-    description/details update path independently — either or both may apply.
-    A rejected identity reveal creates a stub and skips description updates on
-    the original NPC (description belongs to the stub).
-    """
     npc = find_npc(game, d.get("npc_id", ""))
     if not npc:
         log(f"[NPC] npc_details: could not find NPC '{d.get('npc_id', '')}'", level="warning")
@@ -191,22 +161,12 @@ def _process_one_npc_detail(game: "GameState", d: dict, world_addition: str) -> 
 
 
 def process_npc_details(game: "GameState", details: list, world_addition: str = "") -> None:
-    """Process NPC detail updates from narrator metadata.
-
-    Captures invented surnames, description changes, or other facts the narrator
-    established for known NPCs. world_addition is Brain's world_addition text,
-    used as description fallback when the guard rejects an identity reveal and
-    creates a stub with no description.
-    """
     for d in details:
         if isinstance(d, dict):
             _process_one_npc_detail(game, d, world_addition)
 
 
 def _normalize_new_npc_input(raw_nd: dict, default_disp: str) -> dict | None:
-    """Narrator-output sanitization: missing description/disposition fall back to config defaults.
-    Returns None if the record is unusable (no name).
-    """
     if not isinstance(raw_nd, dict) or not raw_nd.get("name"):
         return None
     return {
@@ -217,14 +177,10 @@ def _normalize_new_npc_input(raw_nd: dict, default_disp: str) -> dict | None:
 
 
 def _is_player_collision(name_norm: str, player_norm: str, player_parts: set[str]) -> bool:
-    """True if the proposed NPC name is the player or shares any word with the player's name."""
     return name_norm == player_norm or bool(set(name_norm.split()) & player_parts)
 
 
 def _handle_exact_name_match(game: "GameState", name_norm: str) -> bool:
-    """If the name exactly matches an existing NPC, possibly reactivate and skip.
-    Returns True if the loop should continue (handled), False if no exact match.
-    """
     existing = next((n for n in game.npcs if normalize_for_match(n.name) == name_norm), None)
     if not existing:
         return False
@@ -236,9 +192,6 @@ def _handle_exact_name_match(game: "GameState", name_norm: str) -> bool:
 
 
 def _handle_fuzzy_match(game: "GameState", nd: dict) -> bool:
-    """Fuzzy match path: STT-variant adds alias; identity-fuzzy merges. Returns
-    True if the NPC was handled (loop should continue), False otherwise.
-    """
     fuzzy_hit, match_type = fuzzy_match_existing_npc(game, nd["name"])
     if not fuzzy_hit:
         return False
@@ -259,9 +212,6 @@ def _handle_fuzzy_match(game: "GameState", nd: dict) -> bool:
 
 
 def _handle_description_match(game: "GameState", nd: dict, name_norm: str) -> bool:
-    """Description-based dedup: if the new description matches an existing NPC,
-    treat it as an identity reveal. Returns True if handled.
-    """
     new_desc = nd["description"]
     if not new_desc or len(new_desc) < 10:
         return False
@@ -277,14 +227,9 @@ def _handle_description_match(game: "GameState", nd: dict, name_norm: str) -> bo
 
 
 def _create_new_npc(game: "GameState", nd: dict) -> NpcData:
-    """Create and register a genuinely new NPC. Applies oracle name override
-    where available, preserves AI name as alias.
-    """
     npc_id, _ = next_npc_id(game)
     clean_name, paren_aliases = sanitize_npc_name(nd["name"].strip())
 
-    # Oracle-rolled name override: if the active setting has name tables, replace
-    # the AI name with an oracle roll. Preserve AI name as alias for back-ref matching.
     oracle_name = roll_oracle_name(game)
     if oracle_name:
         ai_name = clean_name
@@ -301,7 +246,7 @@ def _create_new_npc(game: "GameState", nd: dict) -> NpcData:
         status="active",
         aliases=paren_aliases,
         last_location=game.world.current_location or "",
-        introduced=True,  # Extracted from current scene narration — NPC is on-screen now.
+        introduced=True,
     )
     game.npcs.append(npc)
     log(f"[NPC] New mid-game NPC: {npc.name} ({npc_id}, {npc.disposition})")
@@ -309,7 +254,6 @@ def _create_new_npc(game: "GameState", nd: dict) -> NpcData:
 
 
 def _seed_initial_memory(game: "GameState", npc: NpcData, nd: dict) -> None:
-    """Add the seed observation memory for a newly created NPC, weighted by disposition."""
     seed_event = nd["description"] or eng().ai_text.narrator_defaults["npc_appeared_event"].format(npc_name=npc.name)
     seed_disposition = normalize_disposition(nd["disposition"])
     disp_to_emotion = eng().get_raw("disposition_to_seed_emotion")
@@ -331,12 +275,6 @@ def _seed_initial_memory(game: "GameState", npc: NpcData, nd: dict) -> None:
 
 
 def process_new_npcs(game: "GameState", new_npcs: list) -> None:
-    """Add newly discovered NPCs from narrator metadata.
-
-    For each candidate: normalize input, skip player collisions, check exact
-    name match → reactivate, fuzzy match → alias or merge, description match
-    → merge; otherwise create a new NPC and seed its first memory.
-    """
     player_norm = normalize_for_match(game.player_name)
     player_parts = set(player_norm.split())
     existing_names = {normalize_for_match(n.name) for n in game.npcs}

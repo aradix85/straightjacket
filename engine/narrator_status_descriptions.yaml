@@ -1,8 +1,4 @@
 narrator_status_descriptions:
-  # Narrator-facing resource-level descriptions, injected into the narrator
-  # prompt via <character_state>. Longer and more evocative than the
-  # player-facing status_descriptions in status_descriptions.yaml. The engine
-  # picks the entry matching (or just below) the current resource value.
   health:
     5: uninjured
     4: bruised — minor aches, nothing that slows them down

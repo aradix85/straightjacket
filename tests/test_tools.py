@@ -1,11 +1,3 @@
-#!/usr/bin/env python3
-"""Tests for tool calling infrastructure: registry, handler, builtins.
-
-Run: python -m pytest tests/test_tools.py -v
-"""
-
-# Stubs are set up in conftest.py
-
 import sqlite3
 
 from straightjacket.engine.db.connection import close_db, reset_db
@@ -30,7 +22,6 @@ def _fresh_db() -> sqlite3.Connection:
 
 
 def _game_with_data() -> GameState:
-    """GameState with NPCs, threads, clocks for tool testing."""
     game = make_game_state(player_name="Ash", setting_id="starforged")
     game.npcs = [
         make_npc(
@@ -65,18 +56,11 @@ def _game_with_data() -> GameState:
     return game
 
 
-# ── Registry ──────────────────────────────────────────────────
-
-
 def test_register_decorator() -> None:
     clear_registry()
 
-    @register("test_role")
+    @register("test_role", description="my tool")
     def my_tool(game: GameState, query: str) -> dict:
-        """Search for something.
-
-        query: what to search for
-        """
         return {"result": query}
 
     assert "my_tool" in list_tools("test_role")
@@ -87,9 +71,8 @@ def test_register_decorator() -> None:
 def test_register_multiple_roles() -> None:
     clear_registry()
 
-    @register("brain", "director")
+    @register("brain", "director", description="shared between roles")
     def shared_tool(game: GameState, x: int) -> dict:
-        """A shared tool."""
         return {"x": x}
 
     assert "shared_tool" in list_tools("brain")
@@ -100,13 +83,8 @@ def test_register_multiple_roles() -> None:
 def test_get_tools_format() -> None:
     clear_registry()
 
-    @register("test")
+    @register("test", description="Look up something by name.")
     def example(game: GameState, name: str, count: int = 5) -> dict:
-        """Look up something by name.
-
-        name: the name to look up
-        count: how many results
-        """
         return {}
 
     tools = get_tools("test")
@@ -121,8 +99,8 @@ def test_get_tools_format() -> None:
     assert params["properties"]["name"]["type"] == "string"
     assert params["properties"]["count"]["type"] == "integer"
     assert "name" in params["required"]
-    assert "count" not in params["required"]  # has default
-    assert "game" not in params["properties"]  # injected, not exposed
+    assert "count" not in params["required"]
+    assert "game" not in params["properties"]
     clear_registry()
 
 
@@ -140,10 +118,9 @@ def test_get_handler_unknown() -> None:
 
 def test_build_definition_types() -> None:
     def typed_func(game: GameState, name: str, count: int, ratio: float, flag: bool) -> dict:
-        """A typed function."""
         return {}
 
-    defn = _build_definition(typed_func)
+    defn = _build_definition(typed_func, override_description="typed test")
     props = defn["function"]["parameters"]["properties"]
     assert props["name"]["type"] == "string"
     assert props["count"]["type"] == "integer"
@@ -151,15 +128,11 @@ def test_build_definition_types() -> None:
     assert props["flag"]["type"] == "boolean"
 
 
-# ── Handler ───────────────────────────────────────────────────
-
-
 def test_execute_tool_call_success() -> None:
     clear_registry()
 
-    @register("test")
+    @register("test", description="echo")
     def echo(game: GameState, message: str) -> dict:
-        """Echo a message."""
         return {"echo": message}
 
     game = make_game_state()
@@ -179,9 +152,8 @@ def test_execute_tool_call_unknown() -> None:
 def test_execute_tool_call_error() -> None:
     clear_registry()
 
-    @register("test")
+    @register("test", description="raises")
     def broken(game: GameState) -> dict:
-        """Always fails."""
         raise ValueError("boom")
 
     game = make_game_state()
@@ -191,17 +163,12 @@ def test_execute_tool_call_error() -> None:
     clear_registry()
 
 
-# ── Builtins ──────────────────────────────────────────────────
-# Import builtins module-level to trigger @register decorators once.
-# Tests that call clear_registry() must re-import to re-register.
-
 import importlib
 import straightjacket.engine.tools.builtins as _builtins_mod
 from tests._helpers import make_clock, make_game_state, make_memory, make_npc
 
 
 def _reload_builtins() -> None:
-    """Force re-execution of @register decorators after clear_registry()."""
     importlib.reload(_builtins_mod)
 
 
@@ -277,7 +244,6 @@ def test_builtin_query_npc_list() -> None:
 
 
 def test_builtin_query_npc_director_only() -> None:
-    """query_npc is registered for director only (Brain uses prompt injection)."""
     _reload_builtins()
     assert get_handler("brain", "query_npc") is None
     assert get_handler("director", "query_npc") is not None

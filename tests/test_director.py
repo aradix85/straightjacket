@@ -1,6 +1,3 @@
-#!/usr/bin/env python3
-"""Tests for director.py: guidance application, reflection processing, act transitions."""
-
 from straightjacket.engine.models import (
     GameState,
     SceneLogEntry,
@@ -67,9 +64,6 @@ def _blueprint() -> StoryBlueprint:
     )
 
 
-# ── apply_director_guidance: empty guidance resets flags ─────
-
-
 def test_empty_guidance_resets_reflection_flags(stub_all: None) -> None:
     from straightjacket.engine.director import apply_director_guidance
 
@@ -78,9 +72,6 @@ def test_empty_guidance_resets_reflection_flags(stub_all: None) -> None:
     apply_director_guidance(game, {})
     assert game.npcs[0].needs_reflection is False
     assert game.npcs[0].importance_accumulator == 0
-
-
-# ── apply_director_guidance: stores guidance ─────────────────
 
 
 def test_stores_narrator_guidance(stub_all: None) -> None:
@@ -100,18 +91,12 @@ def test_stores_narrator_guidance(stub_all: None) -> None:
     assert dg.npc_guidance == {"npc_1": "Kira should test loyalty."}
 
 
-# ── apply_director_guidance: scene summary ───────────────────
-
-
 def test_enriches_session_log_with_summary(stub_all: None) -> None:
     from straightjacket.engine.director import apply_director_guidance
 
     game = _game()
     apply_director_guidance(game, {"scene_summary": "A tense exchange."})
     assert game.narrative.session_log[-1].rich_summary == "A tense exchange."
-
-
-# ── apply_director_guidance: reflections ─────────────────────
 
 
 def test_reflection_adds_memory_and_resets_flag(stub_all: None) -> None:
@@ -153,15 +138,15 @@ def test_reflection_rejects_truncated(stub_all: None) -> None:
             "npc_reflections": [
                 {
                     "npc_id": "npc_1",
-                    "reflection": "Kira is beginning to tru",  # truncated, no sentence-ending punctuation
+                    "reflection": "Kira is beginning to tru",
                     "tone_key": "conflicted",
                 }
             ],
         },
     )
-    # Truncated reflection rejected — no new memory
+
     assert len(game.npcs[0].memory) == mem_before
-    # But flag still gets reset via fallback
+
     assert game.npcs[0].needs_reflection is False
 
 
@@ -200,7 +185,7 @@ def test_reflection_does_not_overwrite_existing_agenda(stub_all: None) -> None:
                     "npc_id": "npc_1",
                     "reflection": "Kira reconsiders her goals.",
                     "tone_key": "conflicted",
-                    "agenda": "new agenda",  # Should NOT overwrite — Kira already has one
+                    "agenda": "new agenda",
                 }
             ],
         },
@@ -323,7 +308,7 @@ def test_reflection_rejects_truncated_description(stub_all: None) -> None:
                     "npc_id": "npc_1",
                     "reflection": "Kira evolves.",
                     "tone_key": "conflicted",
-                    "updated_description": "Incomplete desc without",  # no sentence-ending punctuation
+                    "updated_description": "Incomplete desc without",
                 }
             ],
         },
@@ -331,14 +316,11 @@ def test_reflection_rejects_truncated_description(stub_all: None) -> None:
     assert game.npcs[0].description == "Original description here."
 
 
-# ── apply_director_guidance: act transitions ─────────────────
-
-
 def test_act_transition_marks_blueprint(stub_all: None) -> None:
     from straightjacket.engine.director import apply_director_guidance
 
     game = _game()
-    game.narrative.scene_count = 7  # At end of act 0 scene_range [1, 7]
+    game.narrative.scene_count = 7
     game.narrative.story_blueprint = _blueprint()
     apply_director_guidance(game, {"narrator_guidance": "proceed"})
     assert "act_0" in game.narrative.story_blueprint.triggered_transitions
@@ -348,9 +330,9 @@ def test_act_transition_backfills_skipped_acts(stub_all: None) -> None:
     from straightjacket.engine.director import apply_director_guidance
 
     game = _game()
-    game.narrative.scene_count = 14  # At end of act 1 scene_range [8, 14]
+    game.narrative.scene_count = 14
     bp = _blueprint()
-    bp.triggered_transitions = []  # Nothing triggered yet
+    bp.triggered_transitions = []
     game.narrative.story_blueprint = bp
     apply_director_guidance(game, {"narrator_guidance": "proceed"})
     assert "act_0" in bp.triggered_transitions
@@ -361,23 +343,20 @@ def test_act_transition_ignores_final_act(stub_all: None) -> None:
     from straightjacket.engine.director import apply_director_guidance
 
     game = _game()
-    game.narrative.scene_count = 20  # At end of final act scene_range [15, 20]
+    game.narrative.scene_count = 20
     bp = _blueprint()
     bp.triggered_transitions = ["act_0", "act_1"]
     game.narrative.story_blueprint = bp
     apply_director_guidance(game, {})
-    # Final act (act_2) should NOT be added
+
     assert "act_2" not in bp.triggered_transitions
-
-
-# ── apply_director_guidance: stale reflection reset ──────────
 
 
 def test_unreflected_npcs_get_reset(stub_all: None) -> None:
     from straightjacket.engine.director import apply_director_guidance
 
     game = _game()
-    # Only reflect Kira, not Borin
+
     apply_director_guidance(
         game,
         {
@@ -390,12 +369,9 @@ def test_unreflected_npcs_get_reset(stub_all: None) -> None:
             ],
         },
     )
-    # Borin was not reflected — flag reset but accumulator preserved
+
     assert game.npcs[1].needs_reflection is False
     assert game.npcs[1].importance_accumulator == 31
-
-
-# ── should_call_director ─────────────────────────────────────
 
 
 def test_should_call_on_miss(stub_all: None) -> None:
@@ -425,8 +401,8 @@ def test_should_call_on_interval(stub_all: None) -> None:
     from straightjacket.engine.director import should_call_director
 
     game = _game()
-    game.npcs = []  # No reflection triggers
-    game.narrative.scene_count = 9  # divisible by director_interval=3
+    game.npcs = []
+    game.narrative.scene_count = 9
     assert should_call_director(game) == "interval"
 
 
@@ -435,18 +411,15 @@ def test_should_call_returns_none_when_no_trigger(stub_all: None) -> None:
 
     game = _game()
     game.npcs = []
-    game.narrative.scene_count = 7  # not divisible by 3
+    game.narrative.scene_count = 7
     assert should_call_director(game) is None
-
-
-# ── reset_stale_reflection_flags ─────────────────────────────
 
 
 def test_reset_stale_reflection_flags(stub_all: None) -> None:
     from straightjacket.engine.director import reset_stale_reflection_flags
 
     game = _game()
-    # Save accumulators before reset
+
     acc_before = {npc.id: npc.importance_accumulator for npc in game.npcs}
     reset_stale_reflection_flags(game)
     for npc in game.npcs:

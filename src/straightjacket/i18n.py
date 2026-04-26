@@ -1,11 +1,3 @@
-"""
-Straightjacket i18n — UI string access layer.
-
-All user-facing text lives in strings.yaml (loaded by strings_loader.py).
-Language is set in config.yaml (language.ui_language). To add a language,
-create strings_{code}.yaml with translated keys.
-"""
-
 from .strings_loader import get_string, get_strings_by_prefix
 
 

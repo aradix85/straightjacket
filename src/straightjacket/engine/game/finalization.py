@@ -1,9 +1,3 @@
-"""Shared finalization: outcome resolution, crisis check, engine memories, metadata.
-
-Used by turn processing, correction, and momentum burn. Each caller handles
-history/log updates differently, but the engine-side state mutations are identical.
-"""
-
 from __future__ import annotations
 
 from dataclasses import dataclass, field
@@ -32,8 +26,6 @@ from ..game.tracks import find_progress_track
 
 @dataclass
 class ActionOutcome:
-    """Result of resolve_action_consequences. Groups everything the prompt builder needs."""
-
     consequences: list[str] = field(default_factory=list)
     clock_events: list[ClockEvent] = field(default_factory=list)
     outcome: OutcomeResult | None = None
@@ -47,11 +39,6 @@ def resolve_action_consequences(
     roll: RollResult,
     position: str,
 ) -> ActionOutcome:
-    """Resolve move outcome, apply combat position, tick clocks on MISS, check crisis.
-
-    Shared by turn.py, correction/ (input_misread), and momentum burn.
-    Turn.py adds WEAK_HIT clock ticking separately (intentionally turn-only).
-    """
     outcome = resolve_move_outcome(game, brain.move, roll.result, target_npc_id=brain.target_npc)
 
     if outcome.combat_position:
@@ -80,17 +67,6 @@ def apply_progress_and_legacy(
     source_track_category: str = "vow",
     source_track_rank: str = "dangerous",
 ) -> None:
-    """Consume progress_marks and legacy_track from a resolved outcome.
-
-    Shared by turn, correction (input_misread), and momentum burn — these paths
-    all produce a fresh outcome from resolve_move_outcome after the snapshot is
-    restored. Without this, progress and legacy gains from the re-resolved roll
-    would be silently dropped.
-
-    Track completion on progress roll result and scene_challenge routing remain
-    turn-only — correction and burn re-narrate an already-resolved scene.
-    """
-
     if outcome.progress_marks > 0:
         track = find_progress_track(game, source_track_category, target_track=brain.target_track)
         if track:
@@ -104,7 +80,6 @@ def apply_progress_and_legacy(
 
 
 def _update_crisis(game: GameState) -> None:
-    """Set crisis_mode and game_over from resource state."""
     res = game.resources
     if res.health <= 0 and res.spirit <= 0:
         game.game_over = True
@@ -116,11 +91,6 @@ def _update_crisis(game: GameState) -> None:
 
 
 def apply_engine_memories(game: GameState, memories: list[dict]) -> None:
-    """Apply engine-generated memories to NPCs.
-
-    Adds observation memories, updates importance accumulators, sets location,
-    triggers reflection flags, and consolidates. Shared by all post-narration paths.
-    """
     _e = eng()
     for mem in memories:
         npc = find_npc(game, mem["npc_id"])
@@ -158,21 +128,13 @@ def apply_post_narration(
     consequences: list[str] | None = None,
     world_addition: str = "",
 ) -> dict:
-    """Shared post-narration state mutations: scene context, engine memories, AI metadata.
-
-    Returns the metadata dict from the AI extractor (callers may need it for
-    director decisions or new_npcs detection).
-    """
-    # 1. Engine-generated scene context
     ctx = generate_scene_context(game, brain, roll, activated_npc_names)
     game.world.current_scene_context = ctx
 
-    # 2. Engine-generated memories for activated NPCs
     engine_mems = generate_engine_memories(game, brain, roll, scene_present_ids, consequences=consequences)
     if engine_mems:
         apply_engine_memories(game, engine_mems)
 
-    # 3. AI metadata: NPC detection (new_npcs, renames, details, deaths, lore)
     metadata = call_narrator_metadata(provider, narration, game, config, brain=brain, consequences=consequences or [])
     apply_narrator_metadata(game, metadata, scene_present_ids=scene_present_ids, world_addition=world_addition)
 
@@ -189,16 +151,6 @@ def narrate_scene(
     consequences: list[str] | None = None,
     consequence_sentences: list[str] | None = None,
 ) -> tuple[str, dict]:
-    """Call narrator, parse, optionally validate. Returns (narration, val_report).
-
-    Used by all four narration paths: turn dialog, turn action, correction, momentum burn.
-    Post-narration state mutations are the caller's responsibility (turn uses _finalize_scene,
-    correction and burn call apply_post_narration directly).
-
-    If validate_result_type is set (e.g. "MISS", "dialog"), runs validate_and_retry.
-    Otherwise skips validation. val_report is empty dict when validation skipped.
-    """
-
     raw = call_narrator(provider, prompt, game, config)
     narration = parse_narrator_response(game, raw)
 

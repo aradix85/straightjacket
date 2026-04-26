@@ -1,5 +1,3 @@
-"""NPC stance resolution and information gating."""
-
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -11,8 +9,6 @@ from ..npc import get_npc_bond
 
 @dataclass
 class NpcStance:
-    """Computed stance for one NPC in a specific scene context."""
-
     npc_id: str
     npc_name: str
     stance: str
@@ -20,12 +16,6 @@ class NpcStance:
 
 
 def resolve_npc_stance(game: GameState, npc: NpcData, move_category: str) -> NpcStance:
-    """Compute behavioral stance from disposition, bond (connection track), and move category.
-
-    The stance_matrix in engine.yaml must contain every combination of
-    disposition × bond_range × category. Missing entries are a yaml error,
-    not a runtime fallback. Unknown move_category is normalised to 'other'.
-    """
     matrix = eng().stance_matrix
     buckets = eng().stance_bond_buckets
 
@@ -51,7 +41,6 @@ def resolve_npc_stance(game: GameState, npc: NpcData, move_category: str) -> Npc
 
 
 def compute_npc_gate(game: GameState, npc: NpcData, current_scene: int, stance: str) -> int:
-    """Compute information gate level (0-4) for an NPC."""
     _e = eng()
     cfg = _e.information_gate
     p = cfg.points
@@ -80,7 +69,6 @@ def compute_npc_gate(game: GameState, npc: NpcData, current_scene: int, stance: 
 
     gate = min(cfg.gate_max, max(cfg.gate_min, points))
 
-    # Stance cap
     cap = cfg.stance_caps[stance]
     gate = min(gate, cap)
 

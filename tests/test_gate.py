@@ -1,12 +1,3 @@
-#!/usr/bin/env python3
-"""Tests for NPC information gating (step 6).
-
-Verifies that gate levels are computed correctly and that the narrator
-prompt contains only the information allowed by the gate.
-
-Run: python -m pytest tests/test_gate.py -v
-"""
-
 import pytest
 
 from straightjacket.engine.mechanics import compute_npc_gate, resolve_npc_stance
@@ -18,7 +9,7 @@ from straightjacket.engine.models import (
 from straightjacket.engine.prompt_action import build_action_prompt
 from tests._helpers import make_brain_result, make_game_state, make_memory, make_npc, make_progress_track
 
-# Use real engine.yaml
+
 pytestmark = pytest.mark.usefixtures("load_engine")
 
 
@@ -65,11 +56,7 @@ def _game(npc: NpcData, scene: int = 5, bond: int = 0) -> GameState:
     return game
 
 
-# ── Gate computation ──────────────────────────────────────────
-
-
 def test_gate_0_stranger() -> None:
-    """No memories, no bond, no gathers → gate 0."""
     npc = _npc(memories=0)
     game = _game(npc, bond=0)
     gate = compute_npc_gate(game, npc, current_scene=1, stance="indifferent")
@@ -77,7 +64,6 @@ def test_gate_0_stranger() -> None:
 
 
 def test_gate_1_brief_contact() -> None:
-    """Known for 2 scenes, low bond → gate 1."""
     npc = _npc(memories=1, first_scene=1)
     game = _game(npc, bond=0)
     gate = compute_npc_gate(game, npc, current_scene=3, stance="polite")
@@ -85,7 +71,6 @@ def test_gate_1_brief_contact() -> None:
 
 
 def test_gate_2_some_interaction() -> None:
-    """Known for a few scenes + bond 2 or gather success → gate 2."""
     npc = _npc(memories=2, first_scene=1)
     game = _game(npc, bond=2)
     gate = compute_npc_gate(game, npc, current_scene=4, stance="engaged")
@@ -93,7 +78,6 @@ def test_gate_2_some_interaction() -> None:
 
 
 def test_gate_3_trust_building() -> None:
-    """Long acquaintance + mid bond, no gathers → gate 3."""
     npc = _npc(memories=5, first_scene=1, gather_count=0)
     game = _game(npc, bond=2)
     gate = compute_npc_gate(game, npc, current_scene=8, stance="open")
@@ -101,7 +85,6 @@ def test_gate_3_trust_building() -> None:
 
 
 def test_gate_4_fully_open() -> None:
-    """High bond + many gathers + long history → gate 4."""
     npc = _npc(memories=8, first_scene=1, gather_count=2)
     game = _game(npc, bond=4)
     gate = compute_npc_gate(game, npc, current_scene=10, stance="unreserved")
@@ -109,7 +92,6 @@ def test_gate_4_fully_open() -> None:
 
 
 def test_gate_capped_by_hostile_stance() -> None:
-    """Hostile stance caps gate at 1 regardless of bond/history."""
     npc = _npc(disposition="hostile", memories=8, first_scene=1, gather_count=3)
     game = _game(npc, bond=4)
     stance = resolve_npc_stance(game, npc, "combat")
@@ -118,7 +100,6 @@ def test_gate_capped_by_hostile_stance() -> None:
 
 
 def test_gate_capped_by_evasive_stance() -> None:
-    """Evasive stance caps gate at 1."""
     npc = _npc(disposition="distrustful", memories=5, first_scene=1, gather_count=2)
     game = _game(npc, bond=0)
     gate = compute_npc_gate(game, npc, current_scene=8, stance="evasive")
@@ -137,9 +118,6 @@ def test_gate_never_above_4() -> None:
     game = _game(npc, bond=4)
     gate = compute_npc_gate(game, npc, current_scene=100, stance="unreserved")
     assert gate == 4
-
-
-# ── Prompt filtering ──────────────────────────────────────────
 
 
 def _build_prompt(npc: NpcData, scene: int = 5, bond: int = 0) -> str:
@@ -172,33 +150,29 @@ def _build_prompt(npc: NpcData, scene: int = 5, bond: int = 0) -> str:
 
 
 def test_gate_0_shows_only_name_and_description() -> None:
-    """Gate 0: no agenda, no memories, no secrets in prompt."""
     npc = _npc(memories=0)
     prompt = _build_prompt(npc, scene=1)
     assert "Kira" in prompt
     assert "wary trader" in prompt
-    assert "Protect her cargo" not in prompt  # agenda hidden
-    assert "smuggling" not in prompt  # secret hidden
-    assert "Counts exits" not in prompt  # instinct hidden
+    assert "Protect her cargo" not in prompt
+    assert "smuggling" not in prompt
+    assert "Counts exits" not in prompt
 
 
 def test_gate_2_shows_agenda_and_memories() -> None:
-    """Gate 2: agenda visible, memories visible, no secrets."""
     npc = _npc(memories=3, first_scene=1)
     prompt = _build_prompt(npc, scene=5)
     assert "Protect her cargo" in prompt or "agenda:" in prompt
-    assert "smuggling" not in prompt  # secrets still hidden
+    assert "smuggling" not in prompt
 
 
 def test_gate_4_shows_secrets() -> None:
-    """Gate 4: everything visible including secrets."""
     npc = _npc(memories=8, first_scene=1, gather_count=2)
     prompt = _build_prompt(npc, scene=10)
     assert "smuggling" in prompt
 
 
 def test_gate_attribute_in_prompt() -> None:
-    """Gate level should appear as attribute for debugging."""
     npc = _npc(memories=1, first_scene=1)
     prompt = _build_prompt(npc, scene=3)
     assert 'gate="' in prompt

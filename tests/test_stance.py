@@ -1,13 +1,3 @@
-#!/usr/bin/env python3
-"""Tests for NPC stance resolution (step 5).
-
-Verifies that the stance matrix lookup produces correct stance labels
-and behavioral constraints for different (disposition, bond, move_category)
-combinations, and that stances appear in narrator prompts.
-
-Run: python -m pytest tests/test_stance.py -v
-"""
-
 import pytest
 
 from straightjacket.engine.mechanics import resolve_npc_stance
@@ -20,7 +10,7 @@ from straightjacket.engine.prompt_action import build_action_prompt
 from straightjacket.engine.prompt_dialog import build_dialog_prompt
 from tests._helpers import make_brain_result, make_game_state, make_memory, make_npc, make_progress_track
 
-# Use real engine.yaml for stance matrix tests
+
 pytestmark = pytest.mark.usefixtures("load_engine")
 
 
@@ -53,9 +43,6 @@ def _game(npc: NpcData | None = None, bond: int = 0) -> GameState:
                 )
             )
     return game
-
-
-# ── Stance resolver ───────────────────────────────────────────
 
 
 def test_hostile_low_combat() -> None:
@@ -125,7 +112,6 @@ def test_stance_has_npc_metadata() -> None:
 
 
 def test_stance_constraint_not_empty() -> None:
-    """Every matrix entry should have a non-empty constraint."""
     for disp in ("hostile", "distrustful", "neutral", "friendly", "loyal"):
         for bond in (0, 2, 4):
             for cat in ("combat", "social", "gather_information", "other"):
@@ -134,9 +120,6 @@ def test_stance_constraint_not_empty() -> None:
                 stance = resolve_npc_stance(game, npc, cat)
                 assert stance.constraint, f"Empty constraint for {disp}/{bond}/{cat}"
                 assert stance.stance, f"Empty stance for {disp}/{bond}/{cat}"
-
-
-# ── Prompt integration ────────────────────────────────────────
 
 
 def test_stance_in_target_npc_block() -> None:
@@ -169,7 +152,7 @@ def test_stance_in_target_npc_block() -> None:
     )
     assert 'stance="evasive"' in prompt
     assert "constraint=" in prompt
-    # Raw disposition/bond should NOT appear in target_npc tag
+
     assert 'disposition="distrustful"' not in prompt
     assert 'bond="1/4"' not in prompt
 
@@ -206,7 +189,7 @@ def test_stance_in_activated_npc_block() -> None:
         player_words="dodge",
         activated_npcs=[npc1, npc2],
     )
-    # Rowan (activated, not target) should have stance, not raw disposition
+
     assert "stance=" in prompt
     assert 'disposition="hostile"' not in prompt
 

@@ -1,10 +1,3 @@
-"""Threat menace mechanics: advancement, autonomous ticks, resolution.
-
-Threats have menace tracks that compete against linked vow progress.
-Menace advances on misses, random events, and autonomous ticks.
-When menace fills before the vow completes, Forsake Your Vow is forced.
-"""
-
 from __future__ import annotations
 
 import random
@@ -15,7 +8,6 @@ from ..models import GameState, ThreatEvent
 
 
 def advance_menace_on_miss(game: GameState) -> list[ThreatEvent]:
-    """Advance menace on active threats after a MISS. Returns events for narrator prompt."""
     marks = eng().threats.menace_on_miss
     if marks <= 0:
         return []
@@ -24,7 +16,7 @@ def advance_menace_on_miss(game: GameState) -> list[ThreatEvent]:
     for threat in game.threats:
         if threat.status != "active":
             continue
-        # Only advance threats linked to vows that are still active
+
         vow = next((t for t in game.progress_tracks if t.id == threat.linked_vow_id and t.status == "active"), None)
         if not vow:
             continue
@@ -45,7 +37,6 @@ def advance_menace_on_miss(game: GameState) -> list[ThreatEvent]:
 
 
 def tick_autonomous_threats(game: GameState) -> list[ThreatEvent]:
-    """Autonomously advance threat menace by chance each scene."""
     _cfg = eng().threats
     tick_chance = _cfg.autonomous_tick_chance
     marks = _cfg.autonomous_tick_marks
@@ -74,7 +65,6 @@ def tick_autonomous_threats(game: GameState) -> list[ThreatEvent]:
 
 
 def advance_threat_by_id(game: GameState, threat_id: str, marks: int = 1, source: str = "") -> ThreatEvent | None:
-    """Advance a specific threat's menace. Used by random event integration."""
     threat = next((t for t in game.threats if t.id == threat_id and t.status == "active"), None)
     if not threat:
         return None
@@ -94,17 +84,6 @@ def advance_threat_by_id(game: GameState, threat_id: str, marks: int = 1, source
 
 
 def resolve_full_menace(game: GameState) -> list[ThreatEvent]:
-    """Resolve all threats with full menace: Forsake Your Vow.
-
-    For each active threat where menace is full:
-    1. Fail the linked vow track (+ deactivate linked thread via complete_track)
-    2. Mark threat as resolved
-    3. Apply spirit damage
-    4. Return events for narrator prompt injection
-
-    Called once per turn after all menace advances.
-    """
-    # circular: game.turn imports from mechanics.threats
     from ..game.tracks import complete_track
 
     spirit_cost = eng().threats.forsake_spirit_cost
@@ -115,12 +94,10 @@ def resolve_full_menace(game: GameState) -> list[ThreatEvent]:
             continue
         vow = next((t for t in game.progress_tracks if t.id == threat.linked_vow_id and t.status == "active"), None)
         if not vow:
-            # Vow already completed/failed — just resolve the threat
             threat.status = "resolved"
             log(f"[Threat] '{threat.name}' menace full but vow already gone — resolved")
             continue
 
-        # Forsake Your Vow: fail the vow, resolve the threat, damage spirit
         complete_track(game, vow.id, "failed")
         threat.status = "resolved"
         game.resources.damage("spirit", spirit_cost)

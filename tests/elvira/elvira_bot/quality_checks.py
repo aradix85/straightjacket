@@ -1,9 +1,3 @@
-"""Post-narration quality checks: leaked mechanics, NPC spatial consistency.
-
-These run after every turn and produce structured findings for the session log.
-No AI calls — pure regex and state comparison.
-"""
-
 from __future__ import annotations
 
 import re
@@ -13,9 +7,6 @@ from straightjacket.engine.models import GameState
 from .models import NpcSnapshot
 
 
-# ── Narration quality checks ─────────────────────────────────
-
-# Patterns that should never appear in player-facing narration
 _LEAKED_MECHANICS = [
     (re.compile(r"\b(?:MISS|WEAK_HIT|STRONG_HIT)\b"), "result type leaked"),
     (re.compile(r"\b(?:health|spirit|supply|momentum)\s*[=:]\s*\d", re.IGNORECASE), "raw stat value leaked"),
@@ -30,7 +21,6 @@ _LEAKED_MECHANICS = [
 
 
 def check_narration_quality(narration: str) -> list[str]:
-    """Check narration for leaked game mechanics. Returns list of findings."""
     findings: list[str] = []
     for pattern, description in _LEAKED_MECHANICS:
         match = pattern.search(narration)
@@ -40,20 +30,11 @@ def check_narration_quality(narration: str) -> list[str]:
     return findings
 
 
-# ── NPC spatial consistency ──────────────────────────────────
-
-
 def check_npc_spatial_consistency(
     game: GameState,
     prev_npcs: list[NpcSnapshot] | None,
     narration: str,
 ) -> list[str]:
-    """Check if NPCs teleported between turns without narrative justification.
-
-    Compares current NPC locations against the previous turn's snapshot.
-    Flags NPCs whose last_location changed without their name appearing
-    in the narration (which would indicate they arrived or traveled).
-    """
     if not prev_npcs:
         return []
 
@@ -66,24 +47,21 @@ def check_npc_spatial_consistency(
             continue
         prev = prev_by_id.get(npc.id)
         if not prev:
-            continue  # new NPC, no previous location to compare
+            continue
         if not prev.last_location:
-            continue  # no previous location data
+            continue
 
         old_loc = prev.last_location
         new_loc = npc.last_location
 
-        # If we don't have location data on the snapshot, skip
         if not old_loc or not new_loc:
             continue
         if old_loc.lower().strip() == new_loc.lower().strip():
             continue
 
-        # Location changed — check if NPC is mentioned in narration
         name_lower = npc.name.lower()
         mentioned = name_lower in narration_lower
         if not mentioned:
-            # Check name parts (e.g. "Voss" from "Kira Voss")
             for part in npc.name.split():
                 if len(part) >= 4 and part.lower() in narration_lower:
                     mentioned = True
@@ -97,18 +75,10 @@ def check_npc_spatial_consistency(
     return findings
 
 
-# ── Chapter continuity checks ────────────────────────────────
-
-
 def check_chapter_continuity(
     game: GameState,
     pre_chapter_npcs: list[NpcSnapshot] | None,
 ) -> list[str]:
-    """Verify NPC continuity after a chapter transition.
-
-    Checks that returning NPCs survived the transition with their
-    identity intact: name still exists, bond preserved, memories not lost.
-    """
     if not pre_chapter_npcs:
         return []
 
@@ -122,7 +92,6 @@ def check_chapter_continuity(
         name_lower = prev.name.lower().strip()
 
         if name_lower not in current_names:
-            # Check aliases
             found = False
             for n in game.npcs:
                 if any(a.lower().strip() == name_lower for a in n.aliases):
@@ -134,7 +103,6 @@ def check_chapter_continuity(
 
         current = current_by_name[name_lower]
 
-        # Memories should not be completely wiped
         if prev.memory_count > 3 and len(current.memory) == 0:
             findings.append(f"NPC '{prev.name}' lost all {prev.memory_count} memories across chapter")
 

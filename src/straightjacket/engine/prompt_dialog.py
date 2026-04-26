@@ -1,11 +1,3 @@
-"""Dialog- and oracle-turn narrator prompt builder.
-
-Dialog and oracle turns skip the roll and consequences pipeline. The prompt
-is the same up to the result constraint: intent, NPC blocks, pacing,
-random events, director guidance. Oracle turns add an <oracle_answer> tag
-and swap in the oracle task template.
-"""
-
 from collections.abc import Sequence
 
 from .mechanics.scene import SceneSetup
@@ -37,7 +29,7 @@ def build_dialog_prompt(
     random_events: Sequence[RandomEvent] = (),
 ) -> str:
     context_text = f"{player_words} {brain.player_intent or ''} {game.world.current_scene_context or ''}"
-    move_cat = "social"  # Dialog is always social context
+    move_cat = "social"
     npc = _npc_block(game, brain.target_npc, context_text=context_text, move_category=move_cat)
     npcs_sect = _npcs_section(game, brain, context_text, activated_npcs, mentioned_npcs, move_category=move_cat)
 

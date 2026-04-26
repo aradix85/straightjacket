@@ -1,5 +1,3 @@
-"""Tests for step 12: legacy tracks and XP."""
-
 from __future__ import annotations
 
 from straightjacket.engine.models import GameState
@@ -47,7 +45,7 @@ class TestMarkLegacy:
         from straightjacket.engine.mechanics.legacy import mark_legacy
 
         game = _game()
-        xp = mark_legacy(game, "quests", "dangerous")  # 2 ticks, box not crossed
+        xp = mark_legacy(game, "quests", "dangerous")
         assert xp == 0
         assert game.campaign.xp == 0
 
@@ -55,8 +53,8 @@ class TestMarkLegacy:
         from straightjacket.engine.mechanics.legacy import mark_legacy
 
         game = _game()
-        mark_legacy(game, "quests", "dangerous")  # 2 ticks
-        xp = mark_legacy(game, "quests", "dangerous")  # 4 ticks → 1 box filled
+        mark_legacy(game, "quests", "dangerous")
+        xp = mark_legacy(game, "quests", "dangerous")
         assert xp == 2
         assert game.campaign.xp == 2
         assert game.campaign.legacy_quests.filled_boxes == 1
@@ -65,26 +63,26 @@ class TestMarkLegacy:
         from straightjacket.engine.mechanics.legacy import mark_legacy
 
         game = _game()
-        xp = mark_legacy(game, "quests", "epic")  # 12 ticks → 3 boxes
-        assert xp == 6  # 3 boxes × 2 xp
+        xp = mark_legacy(game, "quests", "epic")
+        assert xp == 6
         assert game.campaign.legacy_quests.filled_boxes == 3
 
     def test_mark_caps_at_max(self, stub_engine: None) -> None:
         from straightjacket.engine.mechanics.legacy import mark_legacy
 
         game = _game()
-        game.campaign.legacy_quests.ticks = 38  # 9 boxes, 2 ticks into 10th
-        xp = mark_legacy(game, "quests", "epic")  # would add 12 ticks but caps at 40
+        game.campaign.legacy_quests.ticks = 38
+        xp = mark_legacy(game, "quests", "epic")
         assert game.campaign.legacy_quests.ticks == 40
         assert game.campaign.legacy_quests.filled_boxes == 10
-        assert xp == 2  # one more box crossed (9→10)
+        assert xp == 2
 
     def test_separate_tracks_independent(self, stub_engine: None) -> None:
         from straightjacket.engine.mechanics.legacy import mark_legacy
 
         game = _game()
-        mark_legacy(game, "quests", "formidable")  # 4 ticks = 1 box
-        mark_legacy(game, "bonds", "dangerous")  # 2 ticks = 0 boxes
+        mark_legacy(game, "quests", "formidable")
+        mark_legacy(game, "bonds", "dangerous")
         assert game.campaign.legacy_quests.filled_boxes == 1
         assert game.campaign.legacy_bonds.filled_boxes == 0
         assert game.campaign.legacy_discoveries.filled_boxes == 0
@@ -114,7 +112,7 @@ class TestAdvanceAsset:
         from straightjacket.engine.mechanics.legacy import advance_asset
 
         game = _game()
-        game.campaign.xp = 1  # below any cost
+        game.campaign.xp = 1
         spent = advance_asset(game, "path/empath", "upgrade")
         assert spent == 0
         assert game.campaign.xp_spent == 0
@@ -144,7 +142,7 @@ class TestThreatOvercomeBonus:
         from straightjacket.engine.mechanics.legacy import apply_threat_overcome_bonus
 
         game = _game()
-        threat = make_threat(id="t1", name="Foo", menace_ticks=10, max_menace_ticks=40)  # 25%
+        threat = make_threat(id="t1", name="Foo", menace_ticks=10, max_menace_ticks=40)
         bonus = apply_threat_overcome_bonus(game, threat)
         assert bonus == 0
         assert game.campaign.xp == 0
@@ -153,7 +151,7 @@ class TestThreatOvercomeBonus:
         from straightjacket.engine.mechanics.legacy import apply_threat_overcome_bonus
 
         game = _game()
-        threat = make_threat(id="t1", name="Foo", menace_ticks=20, max_menace_ticks=40)  # 50%
+        threat = make_threat(id="t1", name="Foo", menace_ticks=20, max_menace_ticks=40)
         bonus = apply_threat_overcome_bonus(game, threat)
         assert bonus == 2
 
@@ -187,7 +185,6 @@ class TestCampaignSnapshot:
         assert game.campaign.xp == 0
 
     def test_campaign_history_preserved_across_snapshot(self, stub_engine: None) -> None:
-        """campaign_history is not in snapshot — it persists across turn undo."""
         from tests._helpers import make_chapter_summary
 
         game = _game()
@@ -195,7 +192,7 @@ class TestCampaignSnapshot:
         snap = game.campaign.snapshot()
         game.campaign.campaign_history.append(make_chapter_summary(summary="Chapter 2"))
         game.campaign.restore(snap)
-        # History was not in snapshot, so restore doesn't touch it
+
         assert len(game.campaign.campaign_history) == 2
 
 
@@ -221,10 +218,6 @@ class TestLegacyTrackType:
 
 
 class TestSharedProgressAndLegacyHelper:
-    """apply_progress_and_legacy must consume both progress_marks and legacy_track
-    from a resolved outcome. Shared by turn/correction/momentum burn to keep
-    re-resolved scenes from silently dropping progress."""
-
     def test_helper_consumes_legacy_track(self, stub_engine: None) -> None:
         from straightjacket.engine.game.finalization import apply_progress_and_legacy
         from straightjacket.engine.mechanics.move_effects import OutcomeResult
@@ -246,7 +239,7 @@ class TestSharedProgressAndLegacyHelper:
         outcome = OutcomeResult(progress_marks=1)
         brain = make_brain_result(move="exploration/undertake_an_expedition")
         apply_progress_and_legacy(game, outcome, brain, "vow", "dangerous")
-        assert game.progress_tracks[0].ticks == 8  # dangerous = 8 ticks per mark
+        assert game.progress_tracks[0].ticks == 8
 
     def test_helper_handles_both_in_one_outcome(self, stub_engine: None) -> None:
         from straightjacket.engine.game.finalization import apply_progress_and_legacy
@@ -256,7 +249,7 @@ class TestSharedProgressAndLegacyHelper:
         outcome = OutcomeResult(progress_marks=0, legacy_track="bonds")
         brain = make_brain_result(move="connection/develop_your_relationship")
         apply_progress_and_legacy(game, outcome, brain, "vow", "formidable")
-        assert game.campaign.legacy_bonds.ticks == 4  # formidable = 4 ticks
+        assert game.campaign.legacy_bonds.ticks == 4
 
     def test_helper_noop_on_empty_outcome(self, stub_engine: None) -> None:
         from straightjacket.engine.game.finalization import apply_progress_and_legacy
@@ -271,8 +264,6 @@ class TestSharedProgressAndLegacyHelper:
 
 
 class TestChapterPersistence:
-    """Legacy tracks and XP must survive chapter transitions (step 12 ↔ step 13)."""
-
     def test_reset_chapter_preserves_xp(self, stub_engine: None) -> None:
         from straightjacket.engine.game.chapters import _reset_chapter_mechanics
 
@@ -289,8 +280,8 @@ class TestChapterPersistence:
         from straightjacket.engine.mechanics.legacy import mark_legacy
 
         game = _game()
-        mark_legacy(game, "quests", "epic")  # 12 ticks = 3 boxes
-        mark_legacy(game, "bonds", "formidable")  # 4 ticks = 1 box
+        mark_legacy(game, "quests", "epic")
+        mark_legacy(game, "bonds", "formidable")
         _reset_chapter_mechanics(game)
         assert game.campaign.legacy_quests.filled_boxes == 3
         assert game.campaign.legacy_bonds.filled_boxes == 1

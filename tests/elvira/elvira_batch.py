@@ -1,18 +1,3 @@
-#!/usr/bin/env python3
-"""Elvira batch runner — compliance validation across all settings and playstyles.
-
-Runs Elvira for every combination of setting × playstyle (or a configured subset),
-aggregates the results, and writes a single compliance report.
-
-Covers roadmap step 1: compliance baseline, violation patterns, token budgets.
-
-Usage:
-    python elvira/elvira_batch.py
-    python elvira/elvira_batch.py --turns 15 --repeats 2
-    python elvira/elvira_batch.py --settings starforged classic --styles explorer aggressor
-    python elvira/elvira_batch.py --turns 10 --repeats 1 --styles explorer
-"""
-
 import argparse
 import copy
 import json
@@ -22,11 +7,11 @@ from datetime import datetime
 from pathlib import Path
 
 _HERE = Path(__file__).resolve().parent
-_ROOT = _HERE.parent.parent  # tests/elvira/ → tests/ → repo root
+_ROOT = _HERE.parent.parent
 sys.path.insert(0, str(_ROOT / "src"))
 sys.path.insert(0, str(_ROOT))
 
-# Console logging (same as elvira.py)
+
 import logging
 
 _logger = logging.getLogger("rpg_engine")
@@ -53,7 +38,6 @@ def run_batch(
     styles: list[str],
     repeats: int,
 ) -> list[dict]:
-    """Run all combinations and return per-session result dicts."""
     results: list[dict] = []
     total = len(settings) * len(styles) * repeats
     run_num = 0
@@ -97,7 +81,6 @@ def run_batch(
 
 
 def _extract_session_stats(slog: SessionLog) -> dict:
-    """Extract the numbers that matter for compliance reporting."""
     vs = slog.validator_summary or {}
     qs = slog.quality_summary or {}
 
@@ -127,7 +110,6 @@ def _extract_session_stats(slog: SessionLog) -> dict:
 
 
 def build_report(results: list[dict], settings: list[str], styles: list[str], turns: int, repeats: int) -> str:
-    """Build a human-readable compliance report."""
     lines: list[str] = []
     lines.append(f"Elvira Batch Compliance Report — {datetime.now().strftime('%Y-%m-%d %H:%M')}")
     lines.append(f"Settings: {', '.join(settings)}")
@@ -136,7 +118,6 @@ def build_report(results: list[dict], settings: list[str], styles: list[str], tu
     lines.append(f"Total sessions: {len(results)}")
     lines.append("")
 
-    # Per-session results
     lines.append("Per-session results:")
     lines.append("")
     for r in results:
@@ -158,7 +139,6 @@ def build_report(results: list[dict], settings: list[str], styles: list[str], tu
         if r["spatial_issues"]:
             lines.append(f"    spatial issues: {r['spatial_issues']}")
 
-    # Aggregated stats
     valid = [r for r in results if not r.get("crashed")]
     if valid:
         lines.append("")
@@ -172,7 +152,6 @@ def build_report(results: list[dict], settings: list[str], styles: list[str], tu
         lines.append(f"  quality issues: {total_qual}")
         lines.append(f"  spatial issues: {total_spatial}")
 
-        # Aggregate violation patterns across all sessions
         violation_totals: dict[str, int] = {}
         for r in valid:
             for v, count in r.get("top_violations", []):
@@ -190,7 +169,6 @@ def build_report(results: list[dict], settings: list[str], styles: list[str], tu
         for r in crashed:
             lines.append(f"  {r['setting']}/{r['style']}: {r.get('error', '?')}")
 
-    # Pass/fail verdict
     lines.append("")
     if valid:
         avg_rate = sum(rates) / len(rates)
@@ -201,7 +179,6 @@ def build_report(results: list[dict], settings: list[str], styles: list[str], tu
         else:
             lines.append(f"VERDICT: FAIL — average compliance {avg_rate:.1f}% < 60% threshold")
 
-    # Token budget summary
     token_sessions = [r for r in valid if r.get("token_summary", {}).get("total", 0) > 0]
     if token_sessions:
         lines.append("")
@@ -253,7 +230,6 @@ def main() -> None:
     settings = args.settings or available_settings
     styles = args.styles or DEFAULT_STYLES
 
-    # Validate inputs
     for s in settings:
         if s not in available_settings:
             print(f"[ERROR] Unknown setting: {s} (available: {', '.join(available_settings)})")
@@ -277,7 +253,6 @@ def main() -> None:
     print(report)
     print(SEPARATOR)
 
-    # Write raw JSON for programmatic analysis
     json_path = args.output or (_HERE / "batch_report.json")
     json_path.write_text(json.dumps(results, indent=2, ensure_ascii=False), encoding="utf-8")
     print(f"\n[BATCH] Results written to: {json_path}")

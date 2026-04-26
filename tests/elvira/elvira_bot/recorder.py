@@ -1,5 +1,3 @@
-"""Turn recording: extracts game state into typed TurnRecord after each turn."""
-
 from __future__ import annotations
 
 from straightjacket.engine.ai.provider_base import drain_token_log
@@ -26,7 +24,6 @@ def record_turn(
     narration: str,
     roll: RollResult | None,
 ) -> TurnRecord:
-    """Snapshot the current game state into a TurnRecord."""
     rec = TurnRecord(
         turn=turn,
         chapter=game.campaign.chapter_number,
@@ -49,7 +46,6 @@ def record_turn(
             match=roll.match,
         )
 
-    # Brain classification
     snap = game.last_turn_snapshot
     if snap and snap.brain:
         b = snap.brain
@@ -153,11 +149,11 @@ def _snapshot_validator(game: GameState) -> ValidatorRecord | None:
     val = game.narrative.session_log[-1].validator
     if not val:
         return None
-    # Extract per-attempt violation counts and text from checks trail
+
     checks = val.get("checks", [])
     attempt_violations = [len(c.get("violations", [])) for c in checks]
     attempt_violation_text = [c.get("violations", []) for c in checks]
-    # Detect if best-of selection picked an earlier attempt
+
     picked = -1
     if not val.get("passed", True) and len(attempt_violations) >= 2:
         final_v = attempt_violations[-1]
@@ -198,12 +194,12 @@ def _snapshot_director_guidance(game: GameState) -> dict:
     }
     if dg.npc_guidance:
         d["npc_guidance"] = dg.npc_guidance
-    # scene_summary lives in session_log as rich_summary (set by apply_director_guidance)
+
     if game.narrative.session_log:
         rs = game.narrative.session_log[-1].rich_summary
         if rs:
             d["scene_summary"] = rs
-    # Count reflections applied this scene
+
     scene = game.narrative.scene_count
     reflections = []
     for n in game.npcs:

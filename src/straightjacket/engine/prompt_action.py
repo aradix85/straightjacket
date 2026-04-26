@@ -1,15 +1,3 @@
-"""Action-turn narrator prompt builder.
-
-Assembles the XML prompt for an action scene: scene header, brain intent,
-result constraint, position/effect, NPC blocks, pacing, random events,
-director guidance, narrative direction, story context, recent events.
-
-The result constraint tag encodes the roll result (MISS/WEAK_HIT/STRONG_HIT)
-plus consequences, clock triggers, and match-twist hints. This is the
-single strongest signal the narrator receives about what must happen
-in the scene.
-"""
-
 from collections.abc import Sequence
 
 from .mechanics.scene import SceneSetup
@@ -33,7 +21,6 @@ from .xml_utils import xe as _xe
 
 
 def _build_status_flags(game: GameState) -> list[str]:
-    """Collect narrator-facing status flags: resource exhaustion, crisis, final scene."""
     flags: list[str] = []
     if game.resources.health <= 0:
         flags.append(get_prompt("flag_wounded"))
@@ -49,9 +36,6 @@ def _build_status_flags(game: GameState) -> list[str]:
 
 
 def _build_threat_event_tags(threat_events: Sequence[ThreatEvent]) -> str:
-    """Build the XML tag block for threat events: vow_forsaken, threat_overcome,
-    or generic threat_advance. Returns empty string if no events.
-    """
     parts: list[str] = []
     for te in threat_events:
         if te.source == "forsake_vow":
@@ -64,10 +48,6 @@ def _build_threat_event_tags(threat_events: Sequence[ThreatEvent]) -> str:
 
 
 def _build_result_constraint(roll: RollResult, consequences: list[str], clock_events: list) -> str:
-    """Build the <r> XML tag with outcome-specific constraint text and
-    optional match-twist hint. MISS includes clock-triggered attributes;
-    WEAK_HIT and STRONG_HIT include consequences when non-empty.
-    """
     match_tag = ' match="true"' if roll.match else ""
     cons_attr = f' consequences="{_xa(",".join(consequences))}"' if consequences else ""
 

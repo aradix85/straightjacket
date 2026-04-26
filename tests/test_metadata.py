@@ -1,10 +1,3 @@
-#!/usr/bin/env python3
-"""Tests for ai/metadata.py: narrator metadata application.
-
-Covers: apply_narrator_metadata pipeline, process_deceased_npcs guards,
-lore NPC creation, death corroboration voting, slug reference resolution.
-"""
-
 from straightjacket.engine.models import GameState
 from tests._helpers import make_game_state, make_memory, make_npc
 
@@ -26,12 +19,6 @@ def _game() -> GameState:
         make_npc(id="npc_2", name="Borin", disposition="neutral", status="active", last_location="Tavern"),
     ]
     return game
-
-
-# ── apply_narrator_metadata: scene context ───────────────────
-
-
-# ── process_deceased_npcs ────────────────────────────────────
 
 
 def test_deceased_marks_present_npc(stub_all: None) -> None:
@@ -84,9 +71,6 @@ def test_deceased_unknown_npc_ignored(stub_all: None) -> None:
     assert all(n.status == "active" for n in game.npcs)
 
 
-# ── lore NPCs ────────────────────────────────────────────────
-
-
 def test_lore_npc_created(stub_all: None) -> None:
     from straightjacket.engine.ai.metadata import _process_lore_npcs
 
@@ -115,14 +99,11 @@ def test_lore_npc_skips_empty_name(stub_all: None) -> None:
     assert len(game.npcs) == count_before
 
 
-# ── death corroboration ──────────────────────────────────────
-
-
 def test_death_corroboration_triggers(stub_all: None) -> None:
     from straightjacket.engine.ai.metadata import _check_death_corroboration
 
     game = _game()
-    # npc_2 has cross-vote from npc_1 + self-vote → should die
+
     game.npcs[0].memory.append(
         make_memory(scene=5, event="Borin was killed", importance=9, emotional_weight="devastated", about_npc="npc_2")
     )
@@ -135,7 +116,7 @@ def test_death_corroboration_needs_cross_vote(stub_all: None) -> None:
     from straightjacket.engine.ai.metadata import _check_death_corroboration
 
     game = _game()
-    # Only self-vote, no cross-vote → should NOT die
+
     game.npcs[1].memory.append(make_memory(scene=5, event="I am dying", importance=9, emotional_weight="devastated"))
     game.npcs[1].memory.append(make_memory(scene=5, event="Still dying", importance=9, emotional_weight="devastated"))
     _check_death_corroboration(game)
@@ -146,7 +127,7 @@ def test_death_corroboration_ignores_reflections(stub_all: None) -> None:
     from straightjacket.engine.ai.metadata import _check_death_corroboration
 
     game = _game()
-    # Cross-vote is a reflection (Director-generated) → should not count
+
     game.npcs[0].memory.append(
         make_memory(
             scene=5,
@@ -166,19 +147,13 @@ def test_death_corroboration_ignores_old_scenes(stub_all: None) -> None:
     from straightjacket.engine.ai.metadata import _check_death_corroboration
 
     game = _game()
-    # Memories from scene 3, not current scene 5 → should not count
+
     game.npcs[0].memory.append(
         make_memory(scene=3, event="Borin was killed", importance=9, emotional_weight="devastated", about_npc="npc_2")
     )
     game.npcs[1].memory.append(make_memory(scene=3, event="I am dying", importance=9, emotional_weight="devastated"))
     _check_death_corroboration(game)
     assert game.npcs[1].status == "active"
-
-
-# ── slug reference resolution ────────────────────────────────
-
-
-# ── full pipeline ────────────────────────────────────────────
 
 
 def test_metadata_full_pipeline(stub_all: None) -> None:

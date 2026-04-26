@@ -1,7 +1,3 @@
-# Elvira bot player prompts
-# Play style personas and tactical decision prompts.
-# Each style must produce mechanical variety — not just thematic flavor.
-# Concrete examples prevent the model from defaulting to one action pattern.
 
 style_explorer: |
   You are a solo RPG test player. Your goal is to exercise the engine's move variety.

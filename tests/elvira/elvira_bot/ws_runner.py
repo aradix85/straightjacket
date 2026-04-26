@@ -1,19 +1,3 @@
-#!/usr/bin/env python3
-"""Elvira WebSocket runner: plays the game through the WebSocket server.
-
-Same AI behavior as runner.py (personas, action generation, burn decisions),
-but communicates via the WebSocket protocol instead of calling the engine
-directly. This tests the full stack: WebSocket → handlers → engine → serializers.
-
-Starts the Starlette server in-process, no separate terminal needed.
-After each turn, requests debug_state to get the full GameState for
-invariant checks, quality checks, and session recording.
-
-Usage:
-    python elvira/elvira.py --ws
-    python elvira/elvira.py --ws --auto --turns 10
-"""
-
 from __future__ import annotations
 
 import asyncio
@@ -48,12 +32,7 @@ SEPARATOR = "=" * 62
 CORRECTION_TEST_INTERVAL = 8
 
 
-# ── WebSocket client ──────────────────────────────────────────
-
-
 class WsClient:
-    """Typed WebSocket client with message buffering."""
-
     def __init__(self, url: str):
         self.url = url
         self.ws: Any = None
@@ -70,14 +49,12 @@ class WsClient:
         await self.ws.send(json.dumps(msg))
 
     async def recv(self, timeout: float = 120) -> dict:
-        """Receive one JSON message."""
         if self._buffer:
             return self._buffer.pop(0)
         raw = await asyncio.wait_for(self.ws.recv(), timeout=timeout)
         return json.loads(raw)
 
     async def recv_until(self, msg_type: str, timeout: float = 120) -> dict:
-        """Receive until a message of the given type arrives. Buffer others."""
         deadline = asyncio.get_event_loop().time() + timeout
         while True:
             remaining = deadline - asyncio.get_event_loop().time()
@@ -89,7 +66,6 @@ class WsClient:
             self._buffer.append(msg)
 
     async def drain(self, timeout: float = 2.0) -> list[dict]:
-        """Drain all pending messages."""
         msgs = list(self._buffer)
         self._buffer.clear()
         try:
@@ -101,12 +77,6 @@ class WsClient:
         return msgs
 
     async def collect_turn(self, timeout: float = 180) -> dict[str, Any]:
-        """Collect all messages from a turn into a typed dict.
-
-        Reads until 'state' message arrives (the server always sends state last).
-        Returns a dict with keys for each message type seen, making downstream
-        code explicit about what it reads instead of searching a list.
-        """
         result: dict[str, Any] = {
             "narration": None,
             "replace_narration": None,
@@ -135,7 +105,7 @@ class WsClient:
             elif t == "burn_offer":
                 result["burn_offer"] = msg
             elif t == "turn_complete":
-                break  # turn_complete is always last in the turn sequence
+                break
             elif t == "error":
                 result["error"] = msg.get("text", "Unknown error")
                 break
@@ -147,16 +117,13 @@ class WsClient:
                 result["epilogue"] = msg
             elif t == "chapter_started":
                 result["chapter_started"] = msg
-            elif t == "status":
-                pass  # progress indicator, ignore
-            elif t == "scene_marker":
+            elif t == "status" or t == "scene_marker":
                 pass
             else:
                 result["other"].append(msg)
         return result
 
     async def get_debug_state(self) -> GameState | None:
-        """Request and deserialize full GameState from server."""
         await self.send({"type": "debug_state"})
         msg = await self.recv_until("debug_state", timeout=10)
         data = msg.get("data")
@@ -165,21 +132,17 @@ class WsClient:
         return GameState.from_dict(data)
 
 
-# ── Embedded server ───────────────────────────────────────────
-
-
 async def _start_server(port: int) -> Any:
-    """Start the Starlette server as a background task. Returns the server."""
     import uvicorn
     from straightjacket.web.server import app
 
     config = uvicorn.Config(app, host="127.0.0.1", port=port, log_level="warning")
     server = uvicorn.Server(config)
     asyncio.create_task(server.serve())
-    # Poll /health endpoint until the server is ready
+
     import urllib.request
 
-    for _ in range(50):  # 5s max
+    for _ in range(50):
         await asyncio.sleep(0.1)
         try:
             urllib.request.urlopen(f"http://127.0.0.1:{port}/health", timeout=0.5)
@@ -189,11 +152,7 @@ async def _start_server(port: int) -> Any:
     raise RuntimeError(f"Server failed to start on port {port} within 5s")
 
 
-# ── Main session ──────────────────────────────────────────────
-
-
 async def run_ws_session(bot_cfg: dict, auto_override: bool = False, turns_override: int | None = None) -> SessionLog:
-    """Main session loop over WebSocket. Starts server in-process."""
     auto_mode = auto_override or bot_cfg.get("auto_mode", False)
     username = bot_cfg["username"]
     game_cfg = bot_cfg.get("game", {})
@@ -237,7 +196,6 @@ async def run_ws_session(bot_cfg: dict, auto_override: bool = False, turns_overr
     print(f"  Engine: v{VERSION} | Server: {url}")
     print(SEPARATOR)
 
-    # Start embedded server
     server = await _start_server(port)
     print(f"[SETUP] Server started on port {port}")
 
@@ -250,25 +208,22 @@ async def run_ws_session(bot_cfg: dict, auto_override: bool = False, turns_overr
 
     await client.drain(timeout=3)
 
-    # ── Create/select player ──────────────────────────────────
     clean_before = session_cfg.get("clean_before_run", True)
     await client.send({"type": "create_player", "name": username})
     msg = await client.recv_until("player_selected", timeout=10)
     print(f"[SETUP] Player: {username}, has_game: {msg.get('has_game')}")
 
-    # Clean old saves if starting fresh
     if clean_before and not game_cfg.get("load_existing"):
         if msg.get("has_game"):
             await client.send({"type": "delete_save", "name": "autosave"})
             await client.drain(timeout=2)
         await client.send({"type": "delete_save", "name": save_out})
         await client.drain(timeout=2)
-        # Re-select player to get creation_options instead of stale game
+
         await client.send({"type": "select_player", "name": username})
         msg = await client.recv_until("player_selected", timeout=10)
         print(f"[CLEAN] Deleted previous saves, has_game: {msg.get('has_game')}")
 
-    # ── Start game ────────────────────────────────────────────
     if not msg.get("has_game"):
         setting_id = game_cfg.get("setting_id", "starforged")
         if auto_mode:
@@ -313,7 +268,6 @@ async def run_ws_session(bot_cfg: dict, auto_override: bool = False, turns_overr
     total_turns = 0
     session_ended = False
 
-    # ── Chapter loop ──────────────────────────────────────────
     for chapter_idx in range(max_chapters):
         chapter_start = total_turns
         ch_rec = ChapterRecord(chapter=game.campaign.chapter_number, started_at_turn=total_turns + 1)
@@ -345,7 +299,6 @@ async def run_ws_session(bot_cfg: dict, auto_override: bool = False, turns_overr
                 slog.turns.append(rec)
                 break
 
-            # Refresh full state for checks
             game = await client.get_debug_state()
             if not game:
                 print("[ERROR] Lost game state")
@@ -354,14 +307,12 @@ async def run_ws_session(bot_cfg: dict, auto_override: bool = False, turns_overr
                 slog.turns.append(rec)
                 break
 
-            # Re-record with full state (roll data not available in ws mode)
             full_rec = record_turn(game, total_turns, rec.action, narration, None)
             full_rec.is_correction = rec.is_correction
             full_rec.burn_offered = rec.burn_offered
             full_rec.burn_taken = rec.burn_taken
             full_rec.burn_error = rec.burn_error
 
-            # Quality checks
             quality = check_narration_quality(narration)
             if quality:
                 full_rec.narration_quality = quality
@@ -408,7 +359,6 @@ async def run_ws_session(bot_cfg: dict, auto_override: bool = False, turns_overr
         if session_ended:
             break
 
-        # ── Chapter transition ────────────────────────────────
         if game is None:
             break
         bp = game.narrative.story_blueprint
@@ -421,7 +371,6 @@ async def run_ws_session(bot_cfg: dict, auto_override: bool = False, turns_overr
         else:
             break
 
-    # ── Wrap up ───────────────────────────────────────────────
     slog.total_turns = total_turns
     if slog.ended_reason == "unknown":
         slog.ended_reason = ch_rec.ended_reason if slog.chapters else "complete"
@@ -451,9 +400,6 @@ async def run_ws_session(bot_cfg: dict, auto_override: bool = False, turns_overr
     return slog
 
 
-# ── Turn handlers ─────────────────────────────────────────────
-
-
 async def _play_turn(
     client: WsClient,
     provider: AIProvider,
@@ -465,7 +411,6 @@ async def _play_turn(
     burn_setting: str,
     print_full: bool,
 ) -> tuple[str, TurnRecord, dict | None]:
-    """Play one turn. Returns (narration, partial_record, burn_data)."""
     context = build_turn_context(game, narration, turn)
     try:
         action = ask_bot(provider, persona, context, max_tokens=500)
@@ -496,7 +441,6 @@ async def _play_turn(
 async def _play_correction(
     client: WsClient, provider: AIProvider, game: GameState, turn: int, slog: SessionLog
 ) -> tuple[str, TurnRecord]:
-    """Send a correction. Returns (narration, partial_record)."""
     corrections = [
         "I didn't mean to do that — I wanted to just observe, not act",
         "That's not what I said — I was asking a question, not making a statement",
@@ -533,9 +477,6 @@ async def _handle_burn(
     style: str,
     rec: TurnRecord,
 ) -> dict:
-    """Decide and execute momentum burn."""
-    # Build a burn_info-compatible dict for decide_burn_momentum.
-    # The prompt only reads current_result, new_result, momentum — all available.
     current = burn_offer.get("current", "MISS")
     upgrade = burn_offer.get("upgrade", "WEAK_HIT")
     cost = burn_offer.get("cost", 0)
@@ -574,7 +515,6 @@ async def _handle_burn(
 async def _chapter_transition(
     client: WsClient, game: GameState, chapter_idx: int, max_chapters: int, print_full: bool, slog: SessionLog
 ) -> tuple[str, GameState | None, bool]:
-    """Epilogue + new chapter. Returns (narration, game, should_break)."""
     print(f"\n{SEPARATOR}\n  GENERATING EPILOGUE\n{SEPARATOR}")
     await client.send({"type": "generate_epilogue"})
     td = await client.collect_turn(timeout=180)
@@ -603,6 +543,3 @@ async def _chapter_transition(
 
     new_game = await client.get_debug_state()
     return narration, new_game, False
-
-
-# ── Helpers ───────────────────────────────────────────────────

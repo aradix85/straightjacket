@@ -1,5 +1,3 @@
-"""Sync GameState to database. Full replace, not diff."""
-
 from __future__ import annotations
 
 import json
@@ -11,10 +9,8 @@ from .connection import get_db
 
 
 def sync(game: GameState) -> None:
-    """Write full GameState to database. Deletes all rows first, then inserts."""
     conn = get_db()
     with conn:
-        # Delete: children before parents (memories references npcs)
         conn.execute("DELETE FROM memories")
         conn.execute("DELETE FROM npcs")
         conn.execute("DELETE FROM threads")
@@ -24,7 +20,7 @@ def sync(game: GameState) -> None:
         conn.execute("DELETE FROM narration_history")
         conn.execute("DELETE FROM progress_tracks")
         conn.execute("DELETE FROM threats")
-        # Insert: parents before children
+
         _insert_npcs(conn, game)
         _insert_memories(conn, game)
         _insert_threads(conn, game)

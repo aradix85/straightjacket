@@ -1,5 +1,3 @@
-"""Tests for step 11a: threats and menace tracks."""
-
 from straightjacket.engine.models import GameState, Resources, ThreatData
 from tests._helpers import make_game_state, make_progress_track, make_threat, make_world_state
 
@@ -22,9 +20,6 @@ def _game_with_threat() -> GameState:
     return g
 
 
-# ── ThreatData unit tests ───────────────────────────────────
-
-
 class TestThreatData:
     def test_menace_per_mark_dangerous(self) -> None:
         t = make_threat(rank="dangerous")
@@ -44,7 +39,7 @@ class TestThreatData:
     def test_advance_menace_clamped(self) -> None:
         t = make_threat(rank="dangerous", menace_ticks=36)
         added = t.advance_menace(1)
-        assert added == 4  # clamped to 40
+        assert added == 4
         assert t.menace_ticks == 40
         assert t.menace_full
 
@@ -71,9 +66,6 @@ class TestThreatData:
         assert t2.menace_per_mark == 4
 
 
-# ── Snapshot/restore ─────────────────────────────────────────
-
-
 class TestThreatSnapshotRestore:
     def test_threats_restored_on_snapshot(self) -> None:
         game = _game_with_threat()
@@ -97,9 +89,6 @@ class TestThreatSnapshotRestore:
         assert len(game2.threats) == 1
         assert game2.threats[0].menace_ticks == 8
         assert game2.threats[0].linked_vow_id == "vow_hunt"
-
-
-# ── Menace advancement on MISS ───────────────────────────────
 
 
 class TestMenaceOnMiss:
@@ -134,14 +123,11 @@ class TestMenaceOnMiss:
         from straightjacket.engine.mechanics.threats import advance_menace_on_miss
 
         game = _game_with_threat()
-        game.threats[0].menace_ticks = 36  # 4 ticks from full
+        game.threats[0].menace_ticks = 36
         events = advance_menace_on_miss(game)
         assert len(events) == 1
         assert events[0].menace_full
         assert game.threats[0].menace_full
-
-
-# ── Advance by ID (random event integration) ────────────────
 
 
 class TestAdvanceById:
@@ -160,9 +146,6 @@ class TestAdvanceById:
         game = _game_with_threat()
         event = advance_threat_by_id(game, "nonexistent", marks=1, source="test")
         assert event is None
-
-
-# ── Validator: threat advance check ──────────────────────────
 
 
 class TestThreatAdvanceValidator:
@@ -192,9 +175,6 @@ class TestThreatAdvanceValidator:
         assert result == []
 
 
-# ── Status command ───────────────────────────────────────────
-
-
 class TestThreatsStatus:
     def test_active_threats_shown(self, load_engine: None) -> None:
         from straightjacket.web.serializers import build_threats_status
@@ -208,7 +188,7 @@ class TestThreatsStatus:
         from straightjacket.web.serializers import build_threats_status
 
         game = _game_with_threat()
-        game.threats[0].menace_ticks = 36  # 9/10 boxes
+        game.threats[0].menace_ticks = 36
         text = build_threats_status(game)
         assert "tipping point" in text
 
@@ -220,15 +200,12 @@ class TestThreatsStatus:
         assert "No active threats" in text
 
 
-# ── Forsake Your Vow (menace full resolution) ────────────────
-
-
 class TestResolveForsakeVow:
     def test_menace_full_fails_vow(self, stub_engine: None) -> None:
         from straightjacket.engine.mechanics.threats import resolve_full_menace
 
         game = _game_with_threat()
-        game.threats[0].menace_ticks = 40  # full
+        game.threats[0].menace_ticks = 40
         events = resolve_full_menace(game)
         assert len(events) == 1
         assert events[0].source == "forsake_vow"
@@ -267,7 +244,7 @@ class TestResolveForsakeVow:
         from straightjacket.engine.mechanics.threats import resolve_full_menace
 
         game = _game_with_threat()
-        game.threats[0].menace_ticks = 30  # not full
+        game.threats[0].menace_ticks = 30
         events = resolve_full_menace(game)
         assert events == []
         assert game.progress_tracks[0].status == "active"
@@ -287,14 +264,11 @@ class TestResolveForsakeVow:
 
         game = _game_with_threat()
         game.threats[0].menace_ticks = 40
-        game.progress_tracks[0].status = "completed"  # vow already done
+        game.progress_tracks[0].status = "completed"
         resolve_full_menace(game)
         assert game.threats[0].status == "resolved"
-        # No spirit damage when vow was already gone
+
         assert game.resources.spirit == 5
-
-
-# ── Vow completion resolves linked threat ─────────────────────
 
 
 class TestVowCompletionResolveThreat:

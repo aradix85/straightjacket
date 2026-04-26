@@ -1,7 +1,3 @@
-# Model evaluation test cases.
-# Each role has a set of cases with input and expected output checks.
-# The eval runner sends the input through the same pipeline the engine uses
-# and checks the output against the expectations.
 
 brain:
   - id: "dialog_simple"

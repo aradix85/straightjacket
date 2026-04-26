@@ -1,8 +1,3 @@
-"""Shared JSON extraction utility.
-
-Used by brain.py (Director JSON parsing) and validator.py (fallback JSON parsing).
-"""
-
 import json
 import re
 
@@ -10,7 +5,6 @@ _JSON_BLOCK_RE = re.compile(r"```(?:json)?\s*(\{.*?\})\s*```", re.DOTALL)
 
 
 def extract_json(text: str) -> dict | None:
-    """Extract JSON from text response. Handles bare JSON and fenced blocks."""
     text = text.strip()
     if text.startswith("{"):
         try:

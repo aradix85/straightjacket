@@ -36,14 +36,12 @@ status_descriptions:
     4: making progress
     2: early stages
     0: just begun
-  # Legacy tracks are 0-10 boxes; narrative descriptions at progress thresholds.
   legacy:
     10: a storied legacy
     8: a substantial legacy
     5: a growing legacy
     2: the first marks of a legacy
     0: a blank slate
-  # XP availability in narrative terms.
   xp:
     10: rich with hard-won lessons
     6: a substantial store of experience

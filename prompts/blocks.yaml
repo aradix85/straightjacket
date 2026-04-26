@@ -25,14 +25,12 @@
 "label_character_state_physical": Physical
 "label_character_state_mental": Mental/Emotional
 "label_character_state_resources": Resources/Equipment
-# Narrator-facing status flags, assembled into <flags>...</flags>.
 "flag_wounded": WOUNDED
 "flag_broken": BROKEN
 "flag_depleted": DEPLETED
 "flag_final_scene": "FINAL_SCENE:dramatic ending,character falls,make it meaningful"
 "flag_crisis": "CRISIS:desperate,world closing in"
 
-# Result constraint bodies used by _build_result_constraint (narrator prompt <result> tag).
 "result_miss_body": Concrete failure. No silver linings. Make it hurt.
 "result_weak_hit_body": Success with tangible cost or complication.
 "result_strong_hit_body": Clean success.

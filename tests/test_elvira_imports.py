@@ -1,11 +1,3 @@
-"""Smoke test: import all Elvira modules to catch interface breakages.
-
-Elvira runs as an integration test with API keys, so its code is not
-exercised by the normal pytest suite. This test ensures that Elvira's
-imports resolve and its key functions are callable — catching issues
-like removed fields (e.g. NpcData.bond) that would crash at runtime.
-"""
-
 from tests._helpers import make_npc
 
 
@@ -41,8 +33,6 @@ def test_import_invariants() -> None:
 
 
 def test_final_state_dict_runs(load_engine: None) -> None:
-    """Verify final_state_dict doesn't crash on a minimal game state."""
-
     from tests._helpers import make_game_state
     from tests.elvira.elvira_bot.display import final_state_dict
 

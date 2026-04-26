@@ -1,11 +1,3 @@
-"""Straightjacket response parser: narration processing, memory updates, game data.
-
-parse_narrator_response is a linear pipeline of regex cleanup steps. Each step
-targets a specific model artifact (leaked JSON, XML tags, markdown, etc.).
-New steps should have a matching test in test_parser.py. The _hits log tracks
-which steps fire per response — check this before adding steps.
-"""
-
 import re
 from collections.abc import Callable
 
@@ -18,7 +10,6 @@ from .npc import (
 
 
 def salvage_truncated_narration(raw: str) -> str:
-    """Clean up a truncated narrator response so it ends at a natural break."""
     last_open = raw.rfind("<game_data>")
     if last_open != -1 and raw.find("</game_data>", last_open) == -1:
         raw = raw[:last_open].rstrip()
@@ -71,16 +62,11 @@ def salvage_truncated_narration(raw: str) -> str:
     return prose + metadata
 
 
-# RESPONSE PARSER
-
-
 def _strip_role_prefix(text: str) -> str:
-    """Step 0: strip leading 'Narrator:' role prefix."""
     return re.sub(r"^\s*Narrator:\s*", "", text, flags=re.IGNORECASE)
 
 
 def _strip_metadata_and_prompt_tags(text: str) -> str:
-    """Step 2: remove leaked <game_data>, <memory_updates>, etc., plus prompt-echo XML tags."""
     text = re.sub(
         r"<(?:npc_rename|new_npcs|npc_details|memory_updates|scene_context|"
         r"location_update|time_update|game_data)>[\s\S]*?</(?:npc_rename|new_npcs|"
@@ -89,7 +75,7 @@ def _strip_metadata_and_prompt_tags(text: str) -> str:
         "",
         text,
     ).strip()
-    # Prompt-echo: narrator sometimes echoes input XML verbatim
+
     return re.sub(
         r"</?(?:task|scene|world|character|situation|conflict|possible_endings|"
         r"session_log|npc|returning_npc|campaign_history|chapter|story_arc|"
@@ -100,19 +86,16 @@ def _strip_metadata_and_prompt_tags(text: str) -> str:
 
 
 def _strip_code_fences(text: str) -> str:
-    """Step 3: fenced code blocks and dangling triple-backticks."""
     text = re.sub(r"```(?:\w+)?\s*[\s\S]*?```", "", text).strip()
     return re.sub(r"^\s*```(?:\w+)?\s*$", "", text, flags=re.MULTILINE).strip()
 
 
 def _strip_leaked_json(text: str) -> str:
-    """Step 4: JSON blobs that leaked out of the metadata path."""
     text = re.sub(r'\[[\s]*\{[^[\]]*"(?:npc_id|event|emotional_weight)"[\s\S]*$', "", text).strip()
     return re.sub(r'\{[^{}]*"(?:scene_context|location|npc_id)"[^{}]*\}', "", text).strip()
 
 
 def _strip_bracket_labels(text: str) -> str:
-    """Step 5: bracketed section labels on their own lines."""
     return re.sub(
         r"^\[(?:memory[_\s-]*updates?|scene[_\s-]*context|new[_\s-]*npcs?|npc[_\s-]*renames?|"
         r"npc[_\s-]*details?|location[_\s-]*update?|time[_\s-]*update?|game[_\s-]*data)\].*$",
@@ -123,7 +106,6 @@ def _strip_bracket_labels(text: str) -> str:
 
 
 def _strip_markdown_metadata_header(text: str) -> tuple[str, bool]:
-    """Step 6: markdown-style 'Scene Context:' / 'Memory Updates:' headers — cut from there on."""
     meta_match = re.search(
         r"^[*_#\s]*(scene[\s_-]*context|memory[\s_-]*updates?|location)\s*[*_#]*\s*[:=]\s*",
         text,
@@ -135,7 +117,6 @@ def _strip_markdown_metadata_header(text: str) -> tuple[str, bool]:
 
 
 def _strip_trailing_json_and_labels(text: str) -> str:
-    """Step 7: peel off trailing lines that are JSON artifacts or metadata labels."""
     lines = text.rstrip().split("\n")
     while lines:
         last = lines[-1].strip()
@@ -154,13 +135,11 @@ def _strip_trailing_json_and_labels(text: str) -> str:
 
 
 def _strip_mechanic_annotations(text: str) -> str:
-    """Step 7.5: *[STRONG HIT]*-style annotations and [CAPS_LABEL] lines."""
     text = re.sub(r"\*{1,3}\[[^\]]+\]\*{1,3}", "", text).strip()
     return re.sub(r"^\s*\[[A-Z][A-Z0-9 _\-]*:?[^\]]*\]\s*$", "", text, flags=re.MULTILINE).strip()
 
 
 def _strip_markdown_formatting(text: str) -> str:
-    """Step 8: horizontal rules, trailing asterisks, bold/italic emphasis marks, stray stars."""
     text = re.sub(r"^\s*[-*_]{3,}\s*$", "", text, flags=re.MULTILINE).strip()
     text = re.sub(r"\s*\*{1,3}\s*$", "", text, flags=re.MULTILINE).rstrip()
     text = re.sub(r"\*{3}(.+?)\*{3}", r"\1", text)
@@ -170,9 +149,6 @@ def _strip_markdown_formatting(text: str) -> str:
 
 
 def _mark_introduced_npcs(game: GameState, narration: str) -> None:
-    """After cleanup, mark any NPC as introduced if their name (or a significant part)
-    appears in the narration.
-    """
     narration_lower = narration.lower()
     _e = eng()
     min_part = _e.parser.min_line_length
@@ -187,8 +163,7 @@ def _mark_introduced_npcs(game: GameState, narration: str) -> None:
         if name.lower() in narration_lower:
             npc.introduced = True
             continue
-        # Individual-part match (e.g. "Totewald" from "Director Clemens Totewald")
-        # Min length avoids matching generic short words; titles excluded.
+
         for part in name.split():
             part_clean = part.strip(".,;:!?\"'()-").lower()
             if len(part_clean) >= min_part and part_clean not in titles and part_clean in narration_lower:
@@ -197,9 +172,6 @@ def _mark_introduced_npcs(game: GameState, narration: str) -> None:
 
 
 def _salvage_empty_narration(raw: str) -> str:
-    """Fallback when cleanup stripped everything: pick the first paragraph that
-    isn't an obvious metadata block.
-    """
     for para in raw.split("\n\n"):
         clean_para = para.strip()
         if clean_para and not clean_para.startswith(("<", "{", "[", "```")):
@@ -208,19 +180,9 @@ def _salvage_empty_narration(raw: str) -> str:
 
 
 def parse_narrator_response(game: GameState, raw: str) -> str:
-    """Parse narrator response: strip leaked metadata from prose.
-
-    Metadata extraction (memory_updates, scene_context, NPCs, etc.) is handled
-    separately by call_narrator_metadata() — this function only cleans prose
-    to keep it player-facing.
-
-    Pipeline of labeled cleanup steps. The _hits log tracks which fired.
-    """
     narration = raw
     hits: list[str] = []
 
-    # Each step: (label, cleanup_fn). Single-return steps; step 6 needs its own branch
-    # because it returns a flag alongside the string.
     steps: list[tuple[str, Callable[[str], str]]] = [
         ("0:role_prefix", _strip_role_prefix),
         ("2:xml_tags", _strip_metadata_and_prompt_tags),
@@ -234,7 +196,6 @@ def parse_narrator_response(game: GameState, raw: str) -> str:
         if narration != before:
             hits.append(label)
 
-    # Step 6 has a different signature (returns a bool too)
     narration, md_hit = _strip_markdown_metadata_header(narration)
     if md_hit:
         hits.append("6:md_metadata")

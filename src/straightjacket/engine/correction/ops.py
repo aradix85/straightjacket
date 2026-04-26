@@ -1,5 +1,3 @@
-"""Atomic state operations for corrections: npc edit/split/merge, location, time, backstory."""
-
 from __future__ import annotations
 
 import re
@@ -13,14 +11,12 @@ from ..npc.lifecycle import sanitize_aliases
 
 
 def _op_npc_edit(game: GameState, op_dict: dict) -> None:
-    """Edit whitelisted fields on an existing NPC. Engine owns alias bookkeeping on rename."""
     npc = find_npc(game, op_dict.get("npc_id", ""))
     if not npc or not op_dict.get("fields"):
         return
     _allowed = set(eng().correction.npc_edit_allowed_fields)
     edits = {k: v for k, v in op_dict["fields"].items() if k in _allowed and v is not None}
 
-    # Rename detection: pop aliases so the model can't overwrite the engine-maintained list.
     old_name = npc.name
     is_rename = "name" in edits and edits["name"] != old_name
     if is_rename:
@@ -48,10 +44,6 @@ def _op_npc_edit(game: GameState, op_dict: dict) -> None:
 
 
 def _op_npc_split(game: GameState, op_dict: dict) -> None:
-    """Split a conflated NPC into two. The new sibling inherits disposition and status —
-    the split is a clarification, not a stance change. introduced=True because the split
-    is happening *because* both appeared on screen in the same scene.
-    """
     existing = find_npc(game, op_dict.get("npc_id", ""))
     if not existing:
         return
@@ -71,7 +63,6 @@ def _op_npc_split(game: GameState, op_dict: dict) -> None:
 
 
 def _op_npc_merge(game: GameState, op_dict: dict) -> None:
-    """Absorb source NPC into target. Memories and aliases merge; source name becomes alias."""
     target = find_npc(game, op_dict.get("npc_id", ""))
     source = find_npc(game, op_dict.get("merge_source_id", ""))
     if not target or not source or target is source:
@@ -125,10 +116,6 @@ _OP_HANDLERS = {
 
 
 def _apply_correction_ops(game: GameState, ops: list) -> None:
-    """Apply the atomic state_ops returned by call_correction_brain. Dispatches
-    each op to its handler; unknown ops are silently ignored (the brain may
-    emit op types we don't implement yet).
-    """
     for op_dict in ops:
         handler = _OP_HANDLERS.get(op_dict.get("op", ""))
         if handler:

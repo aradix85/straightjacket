@@ -1,12 +1,3 @@
-#!/usr/bin/env python3
-"""Tests for the Elvira invariant checker.
-
-Feeds assert_game_state deliberately broken game states and verifies
-it catches every violation. Also verifies it passes clean states.
-
-Run: python -m pytest tests/test_invariants.py -v
-"""
-
 from straightjacket.engine.models import GameState
 from tests._helpers import make_clock, make_game_state, make_memory, make_npc
 
@@ -15,8 +6,8 @@ from pathlib import Path as _Path
 
 _sys.path.insert(0, str(_Path(__file__).resolve().parent / "elvira"))
 
-from elvira_bot.invariants import assert_game_state  # type: ignore[import-not-found]
-from elvira_bot.quality_checks import check_narration_quality  # type: ignore[import-not-found]
+from elvira_bot.invariants import assert_game_state
+from elvira_bot.quality_checks import check_narration_quality
 
 
 def _clean_game() -> GameState:
@@ -48,17 +39,10 @@ def _clean_game() -> GameState:
     return game
 
 
-# ── Clean state passes ────────────────────────────────────────
-
-
 def test_clean_state_no_violations(load_engine: None) -> None:
-    # Import from the package, not the bot — needs engine loaded
     game = _clean_game()
     violations = assert_game_state(game, turn=1)
     assert violations == []
-
-
-# ── Resource violations ───────────────────────────────────────
 
 
 def test_catches_health_out_of_range(load_engine: None) -> None:
@@ -83,9 +67,6 @@ def test_catches_momentum_exceeds_max(load_engine: None) -> None:
     assert any("momentum" in v for v in violations)
 
 
-# ── Chaos violations ─────────────────────────────────────────
-
-
 def test_catches_chaos_below_min(load_engine: None) -> None:
     game = _clean_game()
     game.world.chaos_factor = 0
@@ -100,12 +81,9 @@ def test_catches_chaos_above_max(load_engine: None) -> None:
     assert any("chaos" in v.lower() for v in violations)
 
 
-# ── Crisis consistency ────────────────────────────────────────
-
-
 def test_catches_crisis_mode_when_both_positive(load_engine: None) -> None:
     game = _clean_game()
-    game.crisis_mode = True  # but health=5 spirit=5
+    game.crisis_mode = True
     violations = assert_game_state(game, turn=1)
     assert any("crisis" in v.lower() for v in violations)
 
@@ -114,13 +92,10 @@ def test_catches_game_over_missing(load_engine: None) -> None:
     game = _clean_game()
     game.resources.health = 0
     game.resources.spirit = 0
-    game.game_over = False  # should be True
+    game.game_over = False
     game.crisis_mode = True
     violations = assert_game_state(game, turn=1)
     assert any("game_over" in v.lower() for v in violations)
-
-
-# ── NPC violations ────────────────────────────────────────────
 
 
 def test_catches_npc_empty_id(load_engine: None) -> None:
@@ -132,7 +107,7 @@ def test_catches_npc_empty_id(load_engine: None) -> None:
 
 def test_catches_npc_invalid_disposition(load_engine: None) -> None:
     game = _clean_game()
-    game.npcs[0].disposition = "angry"  # not in canonical 5
+    game.npcs[0].disposition = "angry"
     violations = assert_game_state(game, turn=1)
     assert any("disposition" in v for v in violations)
 
@@ -148,17 +123,14 @@ def test_catches_npc_memory_missing_fields(load_engine: None) -> None:
 
 def test_catches_alias_duplicates_name(load_engine: None) -> None:
     game = _clean_game()
-    game.npcs[0].aliases = ["Kira"]  # same as name
+    game.npcs[0].aliases = ["Kira"]
     violations = assert_game_state(game, turn=1)
     assert any("alias" in v.lower() and "duplicate" in v.lower() for v in violations)
 
 
-# ── Clock violations ─────────────────────────────────────────
-
-
 def test_catches_clock_overfilled(load_engine: None) -> None:
     game = _clean_game()
-    game.world.clocks[0].filled = 8  # segments is 6
+    game.world.clocks[0].filled = 8
     violations = assert_game_state(game, turn=1)
     assert any("filled" in v for v in violations)
 
@@ -166,14 +138,14 @@ def test_catches_clock_overfilled(load_engine: None) -> None:
 def test_catches_fired_but_not_full(load_engine: None) -> None:
     game = _clean_game()
     game.world.clocks[0].fired = True
-    game.world.clocks[0].filled = 3  # not full yet
+    game.world.clocks[0].filled = 3
     violations = assert_game_state(game, turn=1)
     assert any("fired" in v.lower() for v in violations)
 
 
 def test_catches_invalid_clock_type(load_engine: None) -> None:
     game = _clean_game()
-    game.world.clocks[0].clock_type = "timer"  # not valid
+    game.world.clocks[0].clock_type = "timer"
     violations = assert_game_state(game, turn=1)
     assert any("clock_type" in v for v in violations)
 
@@ -182,9 +154,6 @@ if __name__ == "__main__":
     import pytest
 
     pytest.main([__file__, "-v"])
-
-
-# ── Narration quality check tests ─────────────────────────────
 
 
 def test_quality_catches_leaked_result_type() -> None:

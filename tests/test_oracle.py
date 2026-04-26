@@ -1,9 +1,3 @@
-#!/usr/bin/env python3
-"""Tests for oracle roller: loading, rolling, tool registration, setting isolation.
-
-Run: python -m pytest tests/test_oracle.py -v
-"""
-
 import importlib
 
 import straightjacket.engine.tools.builtins as _builtins_mod
@@ -13,15 +7,10 @@ from tests._helpers import make_game_state
 
 
 def _reload_builtins() -> None:
-    """Force re-execution of @register decorators after clear_registry()."""
     importlib.reload(_builtins_mod)
 
 
-# ── Oracle loading per setting ───────────────────────────────────
-
-
 def test_all_settings_load_oracles() -> None:
-    """Every available setting loads with at least one oracle table."""
     for setting_id in list_available():
         s = load_setting(setting_id)
         assert len(s.oracle_ids()) > 0, f"{setting_id} has no oracle tables"
@@ -51,9 +40,6 @@ def test_delve_loads() -> None:
     assert len(de.oracle_ids()) > 10
 
 
-# ── Roll distribution ────────────────────────────────────────────
-
-
 def test_roll_returns_valid_row() -> None:
     sf = load_setting("starforged")
     table = sf.oracle("core/action")
@@ -66,15 +52,11 @@ def test_roll_returns_valid_row() -> None:
 
 
 def test_roll_distribution_covers_range() -> None:
-    """100 rolls on a 100-row table should hit multiple distinct values."""
     sf = load_setting("starforged")
     table = sf.oracle("core/action")
     assert table is not None
     results = {table.roll().value for _ in range(100)}
     assert len(results) > 20, f"Only {len(results)} distinct values in 100 rolls"
-
-
-# ── Unknown path handling ────────────────────────────────────────
 
 
 def test_oracle_unknown_path_returns_none() -> None:
@@ -91,26 +73,18 @@ def test_roll_oracle_unknown_path_raises() -> None:
         pass
 
 
-# ── Setting isolation ────────────────────────────────────────────
-
-
 def test_setting_isolation() -> None:
-    """Starforged tables are not in Classic and vice versa."""
     sf = load_setting("starforged")
     cl = load_setting("classic")
-    # core/action is Starforged-specific
+
     assert sf.oracle("core/action") is not None
     assert cl.oracle("core/action") is None
-    # action_and_theme/action is Classic-specific
+
     assert cl.oracle("action_and_theme/action") is not None
     assert sf.oracle("action_and_theme/action") is None
 
 
-# ── Tool registration ───────────────────────────────────────────
-
-
 def test_roll_oracle_not_registered_for_brain() -> None:
-    """roll_oracle is no longer a Brain tool (9b: Brain uses prompt injection)."""
     _reload_builtins()
     handler = get_handler("brain", "roll_oracle")
     assert handler is None
@@ -120,9 +94,6 @@ def test_roll_oracle_not_registered_for_director() -> None:
     _reload_builtins()
     handler = get_handler("director", "roll_oracle")
     assert handler is None
-
-
-# ── Direct function execution ────────────────────────────────
 
 
 def test_roll_oracle_success() -> None:
@@ -162,7 +133,6 @@ def test_roll_oracle_invalid_setting() -> None:
 
 
 def test_roll_oracle_per_setting() -> None:
-    """Function uses game.setting_id to select the correct setting."""
     from straightjacket.engine.tools.builtins import roll_oracle
 
     game_sf = make_game_state(setting_id="starforged")
@@ -173,6 +143,5 @@ def test_roll_oracle_per_setting() -> None:
     result_cl = roll_oracle(game=game_cl, table_path="core/action")
     assert "error" in result_cl
 
-    # Classic has action_and_theme/action
     result_cl2 = roll_oracle(game=game_cl, table_path="action_and_theme/action")
     assert "value" in result_cl2

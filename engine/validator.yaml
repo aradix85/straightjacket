@@ -44,10 +44,6 @@ validator:
   - \b(?:sticks|lodges|burns|stays|lingers|registers) in your (?:mind|memory|thoughts|head)\b
   - \byou (?:can tell|can sense|can feel|just know|already know|know enough)\b
   - \byou (?:notice|catch|spot|see) (?:yourself|your own)\s+(?:thinking|feeling|hoping|wanting)\b
-  # Family overlays. Add a key per family that needs extra patterns:
-  #   agency_patterns_overlays:
-  #     glm: [\byour fingers know\b, ...]
-  # Empty dict = no family adds extra patterns; universal list applies to all.
   agency_patterns_overlays: {}
   miss_silver_lining_patterns_universal:
   - \bat least\b
@@ -83,8 +79,6 @@ validator:
   quote_patterns:
     strip: “[^”]*”
     match: “([^”]+)”
-  # Replacement strings used by _strip_prompt_for_retry when a RESOLUTION PACING
-  # violation fires. Prompt-structural text — the narrator sees these on retry.
   retry_strip:
     empty_secrets: "secrets:[]"
     agenda_placeholder: "agenda:(follow the scene)"

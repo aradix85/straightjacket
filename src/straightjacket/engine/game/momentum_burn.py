@@ -1,9 +1,3 @@
-"""Momentum burn: re-narrate a scene after burning momentum to upgrade the result.
-
-Extracted from the original correction.py flow. Shares snapshot/restore pattern with correction
-but is a separate game flow with its own pipeline.
-"""
-
 from ..ai.provider_base import AIProvider
 from ..datasworn.moves import get_moves
 from ..db import sync as _db_sync
@@ -42,12 +36,10 @@ def process_momentum_burn(
     pre_snapshot: TurnSnapshot | None = None,
     scene_setup: SceneSetup | None = None,
 ) -> tuple[GameState, str]:
-    """Re-narrate a scene after momentum burn upgrades the result."""
     if not pre_snapshot:
         log("[Burn] No pre_snapshot — cannot restore state", level="warning")
         return game, "(Momentum burn failed — no snapshot available.)"
 
-    # Full state restore (NPCs revert to pre-turn state), then burn momentum
     game.restore(pre_snapshot)
     _e = eng()
     game.resources.reset_momentum(floor=_e.momentum.floor, reset_value=_e.momentum.start, max_cap=_e.momentum.max)
@@ -72,7 +64,6 @@ def process_momentum_burn(
     consequences = action.consequences
     clock_events = action.clock_events
 
-    # Re-apply progress and legacy marks from re-resolved outcome after upgrade
     if action.outcome:
         ds_moves = get_moves(game.setting_id) if game.setting_id else {}
         ds_move = ds_moves.get(brain_data.move)

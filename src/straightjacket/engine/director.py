@@ -1,5 +1,3 @@
-"""Straightjacket Director agent: story steering, NPC reflections, pacing."""
-
 import html
 import json
 import re
@@ -24,19 +22,12 @@ from .prompt_blocks import get_narration_lang
 from .prompt_loader import get_prompt
 from .story_state import get_current_act, default_scene_range
 
-# DIRECTOR AGENT — Lazy story steering, summaries, reflections
-
 
 def _get_director_system_base() -> str:
-    """Load director system prompt fresh from prompt_loader each time.
-    prompt_loader caches internally; reload_prompts() clears that cache.
-    No module-level cache here — avoids stale prompts after reload."""
     return get_prompt("director_system", role="director")
 
 
 def _director_system(game: GameState) -> str:
-    """Build Director system prompt with content_boundaries."""
-
     cb = content_boundaries_block(game)
     base = _get_director_system_base()
     return f"{base}\n{cb}" if cb else base
@@ -49,15 +40,10 @@ def should_call_director(
     new_npcs_found: bool = False,
     revelation_used: bool = False,
 ) -> str | None:
-    """Decide whether to call the Director after this scene.
-    Director runs lazily — not every turn, only when valuable.
-    Returns a reason string if Director should run, None otherwise."""
-    # 1. Post-epilogue aftermath: first scene after dismissal always triggers Director
     if game.campaign.epilogue_dismissed and not game.post_epilogue_director_done:
         game.post_epilogue_director_done = True
         return "post_epilogue_aftermath"
 
-    # 2. Significant game events → always
     if roll_result == "MISS":
         return "miss"
     if chaos_used:
@@ -67,12 +53,10 @@ def should_call_director(
     if revelation_used:
         return "revelation"
 
-    # 2. Any NPC needs reflection
     for npc in game.npcs:
         if npc.needs_reflection and npc.status in ("active", "background"):
             return f"reflection:{npc.name}"
 
-    # 3. Act phase change — fire at most once per phase per chapter
     bp = game.narrative.story_blueprint
     if bp and bp.acts:
         act = get_current_act(game)
@@ -82,7 +66,6 @@ def should_call_director(
         ):
             return f"phase:{act.phase}"
 
-    # 4. Regular interval
     if game.narrative.scene_count > 0 and game.narrative.scene_count % eng().pacing.director_interval == 0:
         return "interval"
 
@@ -90,11 +73,9 @@ def should_call_director(
 
 
 def _build_reflection_block(game: GameState, npc: NpcData) -> str:
-    """Build one <reflect> XML block for an NPC that needs reflection or a profile completion."""
     recent_obs = [m for m in npc.memory if m.type == "observation"][-8:]
     mem_text = "; ".join(f"{m.event}({m.emotional_weight})" for m in recent_obs)
 
-    # Include last reflection so Director can build on it, not repeat it
     prev_reflections = [m for m in npc.memory if m.type == "reflection"]
     prev_ref_text = ""
     prev_tone_text = ""
@@ -127,7 +108,6 @@ def _build_reflection_block(game: GameState, npc: NpcData) -> str:
 
 
 def _collect_reflection_blocks(game: GameState) -> str:
-    """Gather <reflect> blocks for every NPC that needs reflection or profile completion."""
     blocks = []
     for npc in game.npcs:
         needs_profile = not npc.agenda.strip() or not npc.instinct.strip()
@@ -140,7 +120,6 @@ def _collect_reflection_blocks(game: GameState) -> str:
 
 
 def _build_story_arc_block(game: GameState) -> str:
-    """Build <story_arc> and optional <transition_trigger> XML for the director prompt."""
     if not game.narrative.story_blueprint or not game.narrative.story_blueprint.acts:
         return ""
 
@@ -170,11 +149,6 @@ def _build_story_arc_block(game: GameState) -> str:
 
 
 def build_director_prompt(game: GameState, latest_narration: str, config: EngineConfig | None = None) -> str:
-    """Build the Director analysis prompt.
-
-    Slim prompt: reflection blocks, story arc, latest narration, task.
-    NPC overview, clocks, and session history available via tools.
-    """
     _cfg = config or EngineConfig()
     lang = get_narration_lang(_cfg)
 
@@ -194,14 +168,6 @@ def build_director_prompt(game: GameState, latest_narration: str, config: Engine
 def call_director(
     provider: AIProvider, game: GameState, latest_narration: str, config: EngineConfig | None = None
 ) -> dict:
-    """Call the Director agent for scene analysis and story guidance.
-
-    Two-phase call:
-    1. Tool loop: Director queries NPCs, threads, clocks as needed.
-    2. json_schema call: Director produces structured guidance with full schema enforcement.
-
-    Phase 1 is skipped if no tools are available or the model doesn't call any.
-    """
     log(f"[Director] Analyzing scene {game.narrative.scene_count}")
 
     prompt = build_director_prompt(game, latest_narration, config)
@@ -212,11 +178,10 @@ def call_director(
         _dp = sampling_params("director")
         _director_model = model_for_role("director")
 
-        # Phase 1: tool loop for context gathering
         tool_context = ""
         if tools:
             _dp1 = dict(_dp)
-            _dp1["max_retries"] = 1  # Single attempt for tool phase
+            _dp1["max_retries"] = 1
             response = create_with_retry(
                 provider,
                 model=_director_model,
@@ -251,7 +216,6 @@ def call_director(
             else:
                 log("[Director] Phase 1: no tools called")
 
-        # Phase 2: json_schema call for structured output
         phase2_prompt = prompt
         if tool_context:
             phase2_prompt = prompt + tool_context
@@ -268,7 +232,6 @@ def call_director(
 
         guidance = json.loads(response2.content)
 
-        # Convert npc_guidance from array (schema) to dict (internal format)
         if isinstance(guidance.get("npc_guidance"), list):
             guidance["npc_guidance"] = {
                 item["npc_id"]: item["guidance"]
@@ -283,7 +246,6 @@ def call_director(
         )
         return guidance
     except Exception as e:
-        # Intentional graceful degradation — see AI-CALL SUPPRESSION POLICY in provider_base.py.
         log(
             f"[Director] Failed ({type(e).__name__}: {e}), continuing without guidance",
             level="warning",
@@ -292,7 +254,6 @@ def call_director(
 
 
 def _check_engine_act_transition(game: GameState) -> None:
-    """Engine-deterministic act transition: fires when scene count exceeds act range."""
     bp = game.narrative.story_blueprint
     if not bp or not bp.acts:
         return
@@ -322,9 +283,6 @@ def _check_engine_act_transition(game: GameState) -> None:
 
 
 def _reset_all_reflection_flags(game: GameState, reason: str) -> None:
-    """Clear pending reflection flags. Used on API failure and at the end of
-    apply_director_guidance for NPCs the director didn't address.
-    """
     for npc in game.npcs:
         if npc.needs_reflection:
             npc.needs_reflection = False
@@ -333,12 +291,10 @@ def _reset_all_reflection_flags(game: GameState, reason: str) -> None:
 
 
 def _reflection_is_truncated(text: str) -> bool:
-    """A reflection without terminal punctuation is almost always a max_tokens cutoff."""
     return not text.rstrip().endswith((".", "!", "?", '"', "»", "…", ")", "–", "—"))
 
 
 def _append_reflection_memory(npc: NpcData, ref: dict, game: GameState) -> None:
-    """Add the reflection as a MemoryEntry on the NPC and reset reflection state."""
     npc.memory.append(
         MemoryEntry(
             scene=game.narrative.scene_count,
@@ -357,9 +313,6 @@ def _append_reflection_memory(npc: NpcData, ref: dict, game: GameState) -> None:
 
 
 def _apply_agenda_and_instinct_updates(npc: NpcData, ref: dict) -> None:
-    """Fill empty agenda/instinct from Director suggestions; update stale agenda/arc
-    if Director supplied new versions.
-    """
     suggested_agenda = (ref.get("agenda") or "").strip()
     suggested_instinct = (ref.get("instinct") or "").strip()
     if suggested_agenda and not npc.agenda.strip():
@@ -390,9 +343,6 @@ def _apply_agenda_and_instinct_updates(npc: NpcData, ref: dict) -> None:
 
 
 def _clean_director_description(new_desc: str, npc_name: str) -> str:
-    """Strip prompt-leak prefixes (SIDEBAR:) and redundant NPC-name prefixes
-    ("Sarah Vance —", "Detective:") that the director sometimes copies literally.
-    """
     new_desc = re.sub(r"^(?:SIDEBAR\s*(?:LABEL)?[:\-—]\s*)", "", new_desc, flags=re.IGNORECASE).strip()
     if npc_name:
         name_parts = [re.escape(npc_name)] + [re.escape(p) for p in npc_name.split() if len(p) > 2]
@@ -408,7 +358,6 @@ def _clean_director_description(new_desc: str, npc_name: str) -> str:
 
 
 def _apply_description_update(npc: NpcData, ref: dict) -> None:
-    """Apply updated_description if it's meaningful, not truncated, and cleanable."""
     new_desc = _clean_director_description((ref.get("updated_description") or "").strip(), npc.name)
     if not new_desc or len(new_desc) <= 10:
         return
@@ -428,9 +377,6 @@ def _apply_description_update(npc: NpcData, ref: dict) -> None:
 
 
 def _process_npc_reflection(game: GameState, ref: dict) -> str | None:
-    """Process a single NPC reflection from Director guidance. Returns the NPC's
-    id if reflection succeeded, None on skip (NPC missing, empty text, truncated).
-    """
     npc_id = ref.get("npc_id", "")
     npc = find_npc(game, npc_id)
     if not npc:
@@ -457,11 +403,7 @@ def _process_npc_reflection(game: GameState, ref: dict) -> str | None:
 
 
 def apply_director_guidance(game: GameState, guidance: dict) -> None:
-    """Apply Director guidance to game state: store guidance, apply reflections,
-    update session log with rich summary.
-    """
     if not guidance:
-        # API failure — clear all pending reflection flags to prevent zombie loop
         _reset_all_reflection_flags(game, reason="empty guidance")
         return
 
@@ -471,8 +413,6 @@ def apply_director_guidance(game: GameState, guidance: dict) -> None:
         arc_notes=guidance.get("arc_notes", ""),
     )
 
-    # Act transition: engine verifies based on scene count vs act range.
-    # Director's act_transition signal is advisory — engine owns the call.
     _check_engine_act_transition(game)
 
     if guidance.get("scene_summary") and game.narrative.session_log:
@@ -484,9 +424,6 @@ def apply_director_guidance(game: GameState, guidance: dict) -> None:
         if reflected_id is not None:
             successfully_reflected.add(reflected_id)
 
-    # Fallback: reset needs_reflection flag for any NPCs the Director didn't
-    # successfully address. Preserve accumulator so they can reach threshold
-    # again on the next Director call.
     for npc in game.npcs:
         if npc.needs_reflection and npc.id not in successfully_reflected:
             npc.needs_reflection = False
@@ -499,9 +436,6 @@ def apply_director_guidance(game: GameState, guidance: dict) -> None:
 
 
 def reset_stale_reflection_flags(game: GameState) -> None:
-    """Reset needs_reflection for all pending NPCs.
-    Called by the UI layer when a Director turn is skipped (e.g. burn pending,
-    or superseded by a new turn). Preserves accumulator."""
     for npc in game.npcs:
         if npc.needs_reflection and npc.status in ("active", "background"):
             npc.needs_reflection = False

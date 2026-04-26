@@ -1,10 +1,3 @@
-"""NPC name generation via Datasworn oracle tables.
-
-When a setting provides name oracles (oracle_paths.names), engine rolls
-names instead of accepting AI-generated ones. No AI call, no generator
-framework. Fallback to AI-provided name when setting has no name oracles.
-"""
-
 from __future__ import annotations
 
 import random
@@ -16,18 +9,6 @@ from ..models import GameState
 
 
 def roll_oracle_name(game: GameState) -> str:
-    """Roll an NPC name from the active setting's name oracles.
-
-    Rules by number of configured name paths:
-    - 0 paths: return "" (caller uses AI-provided name)
-    - 1 path: single roll
-    - 2 paths: join both with a space (given + family)
-    - 3+ paths: 50% chance last-only (callsign), else first two joined
-
-    `oracle_paths.names` is already parent-chain resolved by SettingPackage.
-    Oracle data may live in a parent setting's Datasworn JSON; the package
-    walks its chain when resolving a path.
-    """
     pkg = active_package(game)
     if pkg is None:
         return ""

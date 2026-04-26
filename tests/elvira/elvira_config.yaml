@@ -1,53 +1,39 @@
-# Straightjacket Test Player Bot — Elvira Configuration
-# Uses the same AI provider as the engine (config.yaml) unless overridden below.
-# Set your API key via config.yaml or the env var configured there.
 
 username: "elvira"
 
 auto_mode: true
 
-# Bot AI model. Elvira's player bot uses this model for action generation
-# and tactical decisions. Defaults to classification cluster model if omitted.
 ai:
   bot_model: "gpt-oss-120b"
-  temperature: 0.7                    # Higher = more varied test inputs
+  temperature: 0.7
 
 game:
   load_existing: false
   save_name: "autosave"
-  # Datasworn creation fields. Leave blank to roll randomly.
-  setting_id: "starforged"            # Fixed for reproducible test runs
-  player_name: ""                   # blank = roll from oracle
-  pronouns: ""                      # blank = random
-  # paths: set in code (random 2)
-  backstory: ""                     # blank = roll from oracle
-  background_vow: ""                # blank = roll meaning pair
-  # stats: leave empty for random valid allocation (from engine.yaml valid_arrays, default [3,2,2,1,1])
+  setting_id: "starforged"
+  player_name: ""
+  pronouns: ""
+  backstory: ""
+  background_vow: ""
   stats: {}
   wishes: ""
   content_lines: ""
 
 session:
-  max_chapters: 1                  # 1 = single story, 2+ = campaign with chapter transitions
-  max_turns: 5                    # per chapter (not total)
+  max_chapters: 1
+  max_turns: 5
   narration_lang: "English"
   save_every_n_turns: 5
-  save_name_output: "elvira"       # save slot name (clean_before_run deletes this before starting)
-  clean_before_run: true           # delete previous save + archives before starting a new run
+  save_name_output: "elvira"
+  clean_before_run: true
 
 bot_behavior:
   burn_momentum: "auto"
   style: "explorer"
-  # Options:
-  #   explorer   — tries every location, questions every NPC
-  #   aggressor  — picks the riskiest action every turn
-  #   dialogist  — prefers conversation over action
-  #   chaosagent — deliberately unusual, short, or boundary-testing inputs
-  #   balanced   — natural mixed playstyle (good for regression testing)
 
 logging:
   log_file: "elvira_session.json"
-  full_debug_log: false             # true = also write elvira_session_full.json with complete turn data
+  full_debug_log: false
   print_full_narration: true
   print_roll_details: true
   assert_state_invariants: true

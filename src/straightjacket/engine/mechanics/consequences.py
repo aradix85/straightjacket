@@ -1,5 +1,3 @@
-"""Dice rolls, mechanical consequences, clocks, momentum burn, consequence sentences."""
-
 from __future__ import annotations
 
 import random
@@ -10,9 +8,6 @@ from ..models import BrainResult, ClockEvent, GameState, RollResult
 from ..npc import find_npc, normalize_for_match
 
 from .impacts import impact_label
-
-
-# DICE
 
 
 def roll_action(stat_name: str, stat_value: int, move: str) -> RollResult:
@@ -29,7 +24,6 @@ def roll_action(stat_name: str, stat_value: int, move: str) -> RollResult:
 
 
 def roll_progress(track_name: str, filled_boxes: int, move: str) -> RollResult:
-    """Progress roll: filled_boxes (0–10) vs 2d10 challenge dice. No action dice."""
     c1, c2 = random.randint(1, 10), random.randint(1, 10)
     score = min(filled_boxes, 10)
     if score > c1 and score > c2:
@@ -52,11 +46,7 @@ def roll_progress(track_name: str, filled_boxes: int, move: str) -> RollResult:
     )
 
 
-# CLOCKS
-
-
 def tick_threat_clock(game: GameState, ticks: int, clock_events: list[ClockEvent]) -> None:
-    """Advance the first unfilled threat clock by ticks. Fire if full."""
     for clock in game.world.clocks:
         if clock.clock_type == "threat" and clock.filled < clock.segments:
             clock.filled = min(clock.segments, clock.filled + ticks)
@@ -75,7 +65,6 @@ def tick_threat_clock(game: GameState, ticks: int, clock_events: list[ClockEvent
 
 
 def can_burn_momentum(game: GameState, roll: RollResult) -> str | None:
-    """Check if momentum burn can upgrade the result. Returns new result or None."""
     mom = game.resources.momentum
     if mom <= 0:
         return None
@@ -89,7 +78,6 @@ def can_burn_momentum(game: GameState, roll: RollResult) -> str | None:
 
 
 def check_npc_agency(game: GameState) -> tuple[list[str], list[ClockEvent]]:
-    """Advance NPC-owned clocks at configured interval. Returns (actions, clock_events)."""
     if game.narrative.scene_count % eng().pacing.npc_agency_interval != 0:
         return [], []
     _defaults = eng().ai_text.narrator_defaults
@@ -130,7 +118,6 @@ def check_npc_agency(game: GameState) -> tuple[list[str], list[ClockEvent]]:
 
 
 def tick_autonomous_clocks(game: GameState) -> list[ClockEvent]:
-    """Autonomously advance threat clocks by chance each scene."""
     tick_chance = eng().pacing.autonomous_clock_tick_chance
     ticked: list[ClockEvent] = []
     for clock in game.world.clocks:
@@ -159,7 +146,6 @@ def tick_autonomous_clocks(game: GameState) -> list[ClockEvent]:
 
 
 def purge_old_fired_clocks(game: GameState, keep_scenes: int | None = None) -> None:
-    """Remove fired clocks that triggered more than keep_scenes scenes ago."""
     if keep_scenes is None:
         keep_scenes = eng().pacing.fired_clock_keep_scenes
     before = len(game.world.clocks)
@@ -172,11 +158,6 @@ def purge_old_fired_clocks(game: GameState, keep_scenes: int | None = None) -> N
 
 
 def pick_template(key: str) -> str:
-    """Pick a random template string from engine.yaml consequence_templates.
-
-    Strict: raises KeyError if the key is missing from yaml. Every template key
-    the engine ever references must be present under `consequence_templates`.
-    """
     templates = eng().get_raw("consequence_templates")
     options = templates[key]
     if isinstance(options, str):
@@ -190,12 +171,6 @@ def generate_consequence_sentences(
     game: GameState,
     brain: BrainResult,
 ) -> list[str]:
-    """Generate narrative sentences for mechanical consequences.
-
-    Each mechanical consequence (e.g. "health -2") gets a concrete sentence
-    from engine.yaml templates. The narrator receives these as <consequence>
-    tags and must weave them into prose.
-    """
     target = find_npc(game, brain.target_npc) if brain.target_npc else None
     player = game.player_name
     npc_name = target.name if target else ""
@@ -220,7 +195,6 @@ def generate_consequence_sentences(
 
 
 def _resolve_impact_marker(cons: str, fmt: dict) -> str | None:
-    """Handle 'mark <impact>' and 'clear <impact>'. Returns None if not an impact marker."""
     if cons.startswith("mark "):
         fmt["impact"] = impact_label(cons[5:].strip())
         return pick_template("impact_mark").format(**fmt)
@@ -231,7 +205,6 @@ def _resolve_impact_marker(cons: str, fmt: dict) -> str | None:
 
 
 def _resolve_bond_delta(cons: str, fmt: dict) -> str:
-    """'<Name> bond +N' / '<Name> bond -N' → bond_gain/bond_loss template."""
     bond_npc = cons.split("bond")[0].strip()
     if bond_npc:
         fmt["npc"] = bond_npc
@@ -240,7 +213,6 @@ def _resolve_bond_delta(cons: str, fmt: dict) -> str:
 
 
 def _resolve_resource_loss(track: str, cons: str, delta: str, fmt: dict) -> str:
-    """Resource reduction: health/spirit (severity-scaled), supply, momentum."""
     try:
         amount = int(delta.replace("-", ""))
     except ValueError:
@@ -258,7 +230,6 @@ def _resolve_resource_loss(track: str, cons: str, delta: str, fmt: dict) -> str:
 
 
 def _resolve_resource_gain(track: str, cons: str, fmt: dict) -> str:
-    """Resource increase: health/spirit, supply, momentum."""
     if track in ("health", "spirit"):
         return pick_template(f"{track}_gain").format(**fmt)
     if track == "supply" or "supply" in cons:
@@ -269,12 +240,6 @@ def _resolve_resource_gain(track: str, cons: str, fmt: dict) -> str:
 
 
 def resolve_consequence_sentence(cons: str, player: str, npc_name: str, location: str) -> str:
-    """Resolve a single mechanical consequence string to a narrative sentence.
-
-    Recognises impact markers ('mark wounded' / 'clear wounded'), bond deltas
-    ('Kira bond +1'), resource changes ('health -2', 'momentum +1'), and
-    compound consequences ('supply -1, health -1').
-    """
     fmt: dict = {"player": player, "npc": npc_name, "location": location, "amount": ""}
 
     impact_sentence = _resolve_impact_marker(cons, fmt)
@@ -293,7 +258,6 @@ def resolve_consequence_sentence(cons: str, player: str, npc_name: str, location
         if "+" in delta:
             return _resolve_resource_gain(track, cons, fmt)
 
-    # Compound: "supply -1, health -1"
     if "," in cons:
         sub_sentences = []
         for sub in cons.split(","):

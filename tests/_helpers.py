@@ -1,15 +1,3 @@
-"""Shared test helpers.
-
-Production dataclasses (GameState, NpcData, ClockData, ProgressTrack, ThreatData,
-MemoryEntry, FateResult) have most structural fields required — there is no
-universal default for domain enums. Tests that don't care about those values
-use these helpers; tests that DO care pass their own kwargs, which override
-the helper defaults via setdefault.
-
-The helpers exist in the test layer only. Production code still constructs
-these dataclasses with all fields explicit.
-"""
-
 from __future__ import annotations
 
 from typing import Any

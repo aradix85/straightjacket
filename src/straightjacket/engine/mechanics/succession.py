@@ -1,18 +1,3 @@
-"""Character succession mechanics (Continue a Legacy).
-
-When the predecessor's character ends — through face_death MISS, double-zero
-crisis, or manual /retire — succession seeds a new character from a fraction
-of the predecessor's legacy progress and a curated carry-over of NPCs and
-their connection tracks.
-
-This module owns three concerns: archiving the predecessor (build_predecessor_record),
-rolling against each legacy track (run_inheritance_rolls), and reseeding NPCs
-plus their connection tracks for the new character (apply_npc_carryover).
-
-Orchestration — clearing the per-character mechanical state, accepting new
-creation_data, threading through the WebSocket — lives in game/succession.py.
-"""
-
 from __future__ import annotations
 
 from ..engine_loader import eng
@@ -29,11 +14,6 @@ from .legacy import LEGACY_TRACKS, get_legacy_track
 
 
 def build_predecessor_record(game: GameState, end_reason: str) -> PredecessorRecord:
-    """Capture predecessor identity + pre-roll legacy state at succession time.
-
-    Called before run_inheritance_rolls so the record reflects the boxes the
-    rolls roll *against*. inheritance_rolls is filled in afterwards.
-    """
     return PredecessorRecord(
         player_name=game.player_name,
         pronouns=game.pronouns,
@@ -51,7 +31,6 @@ def build_predecessor_record(game: GameState, end_reason: str) -> PredecessorRec
 
 
 def _fraction_for_result(result: str) -> float:
-    """Map roll result to the configured carry-over fraction."""
     inh = eng().succession.inheritance
     if result == "STRONG_HIT":
         return inh.strong_hit_fraction
@@ -63,13 +42,6 @@ def _fraction_for_result(result: str) -> float:
 
 
 def run_inheritance_rolls(game: GameState) -> list[InheritanceRollResult]:
-    """Roll against each legacy track and return the per-track outcome.
-
-    The roll uses progress dice (2d10 vs filled_boxes) on the predecessor's
-    track. The new character's track will be seeded with
-    round(predecessor_filled_boxes * fraction) filled boxes by the caller —
-    this function does not mutate the predecessor's tracks.
-    """
     move_name = eng().succession.inheritance.move_name
     rolls: list[InheritanceRollResult] = []
     for name in LEGACY_TRACKS:
@@ -95,13 +67,6 @@ def run_inheritance_rolls(game: GameState) -> list[InheritanceRollResult]:
 
 
 def seed_successor_legacy(game: GameState, rolls: list[InheritanceRollResult]) -> None:
-    """Apply inheritance rolls onto the campaign's legacy tracks in-place.
-
-    Each track's filled_boxes is set to the roll's new_filled_boxes, expressed
-    in ticks via ProgressTrack.ticks_for_filled_boxes (which clamps at
-    max_ticks). Status returns to active. XP carries through CampaignState
-    unchanged — XP is a campaign-wide accumulator, not a per-character resource.
-    """
     by_name = {r.track_name: r for r in rolls}
     for name in LEGACY_TRACKS:
         track = get_legacy_track(game, name)
@@ -119,16 +84,6 @@ def seed_successor_legacy(game: GameState, rolls: list[InheritanceRollResult]) -
 def apply_npc_carryover(
     npcs: list[NpcData], connection_tracks: list[ProgressTrack]
 ) -> tuple[list[NpcData], list[ProgressTrack]]:
-    """Filter NPCs and rescale their connection tracks per succession.yaml.
-
-    Returns (kept_npcs, kept_tracks). NPCs whose status maps to keep=False
-    are pruned entirely (and their connection tracks dropped). NPCs that
-    survive carry over with track.ticks scaled by the configured fraction;
-    rank, max_ticks, name, id are preserved so existing narrative references
-    stay intact. Status, memory, secrets, agenda, instinct on the NpcData
-    itself are NOT modified — those are the predecessor's history with that
-    person and remain part of who the NPC is.
-    """
     rules = eng().succession.npc_carryover
     kept_npcs: list[NpcData] = []
     kept_track_ids: set[str] = set()

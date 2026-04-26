@@ -1,20 +1,3 @@
-"""Straightjacket game mechanics.
-
-Re-exports all public symbols from submodules. Existing imports
-(``from .mechanics import X``) continue to work unchanged.
-
-Implementation split across:
-- world.py: location matching, chaos, time, pacing, story structure
-- resolvers.py: position, effect, time progression, move category
-- consequences.py: dice, consequences, clocks, momentum, consequence sentences
-- stance_gate.py: NPC stance resolution, information gating
-- engine_memories.py: memory emotion derivation, engine memories, scene context
-- fate.py: Mythic GME 2e fate chart, fate check, likelihood resolver
-- keyed_scenes.py: director-pre-defined scene-start beats that override chaos
-- adventure_crafter.py: AC themes, plot-point lookup, meta-plot-point dispatch
-- random_events.py: event focus, meaning tables, random event pipeline, list maintenance
-"""
-
 __all__ = [
     "LEGACY_TRACKS",
     "NpcStance",
