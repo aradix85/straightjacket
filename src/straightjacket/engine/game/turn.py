@@ -51,6 +51,7 @@ def process_turn(
     scene_setup = check_scene(game)
 
     brain = _run_brain_phase(provider, game, player_message, config)
+    _sanitize_brain_output(game, brain)
     pending_random_events = _resolve_brain_requests(game, brain)
 
     _apply_brain_state_mutations(game, brain)
@@ -74,6 +75,26 @@ def process_turn(
     narration, director_ctx = _narrate_action_and_finalize(ctx, roll_outcome, action_res, player_message)
 
     return game, narration, roll, burn_info, director_ctx
+
+
+def _sanitize_brain_output(game: GameState, brain: BrainResult) -> None:
+    if brain.dialog_only:
+        return
+    if brain.move == "dialog" or brain.move == "ask_the_oracle":
+        return
+
+    ds_moves = get_moves(game.setting_id) if game.setting_id else {}
+    ds_move = ds_moves.get(brain.move)
+    if ds_move is None or ds_move.roll_type != "action_roll":
+        return
+
+    if brain.stat == "none":
+        log(
+            f"[Brain] Sanitize: move={brain.move!r} requires action_roll but stat='none'. "
+            f"Routing as dialog. Brain output likely invalid.",
+            level="warning",
+        )
+        brain.dialog_only = True
 
 
 def _begin_turn(game: GameState, player_message: str) -> None:

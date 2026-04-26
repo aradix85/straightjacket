@@ -2,6 +2,7 @@ stance_move_buckets:
   mapping:
     combat: combat
     social: social
+    gather_information: gather_information
     endure: other
     recovery: other
     other: other

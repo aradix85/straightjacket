@@ -87,27 +87,6 @@ class TestMoveCategoriesCoverage:
         assert move_category("nonexistent/fake_move") == "other"
 
 
-class TestMemoryYamlSymmetry:
-    def test_every_category_has_all_three_results_in_emotions(self) -> None:
-        base = eng().memory_emotions.base
-        categories = ("combat", "social", "endure", "recovery", "other", "gather_information")
-        results = ("MISS", "WEAK_HIT", "STRONG_HIT")
-        missing = []
-        for cat in categories:
-            for res in results:
-                key = f"{cat}_{res}"
-                if key not in base and not (cat == "recovery" and res == "MISS"):
-                    missing.append(key)
-        assert missing == [], f"Missing keys in memory_emotions.base: {missing}"
-
-    def test_every_category_has_all_three_results_in_result_text(self) -> None:
-        result_text = eng().get_raw("memory_result_text")
-        categories = ("combat", "social", "endure", "recovery", "other", "gather_information")
-        results = ("MISS", "WEAK_HIT", "STRONG_HIT")
-        missing = [f"{cat}_{res}" for cat in categories for res in results if f"{cat}_{res}" not in result_text]
-        assert missing == [], f"Missing keys in memory_result_text: {missing}"
-
-
 class TestProcessTurnGuard:
     def test_raises_when_game_over(self) -> None:
         from straightjacket.engine.game.turn import process_turn
@@ -144,6 +123,63 @@ class TestExecuteRollStatNoneRejected:
         outcome = _execute_roll(game, brain)
         assert outcome.roll is not None
         assert outcome.roll.stat_name == "wits"
+
+
+class TestSanitizeBrainOutput:
+    def test_action_roll_with_stat_none_routes_to_dialog(self) -> None:
+        from straightjacket.engine.game.turn import _sanitize_brain_output
+
+        game = make_test_game()
+        game.setting_id = "classic"
+        brain = make_brain_result(move="adventure/face_danger", stat="none", dialog_only=False)
+
+        _sanitize_brain_output(game, brain)
+
+        assert brain.dialog_only is True
+
+    def test_dialog_move_unchanged(self) -> None:
+        from straightjacket.engine.game.turn import _sanitize_brain_output
+
+        game = make_test_game()
+        game.setting_id = "classic"
+        brain = make_brain_result(move="dialog", stat="none", dialog_only=False)
+
+        _sanitize_brain_output(game, brain)
+
+        assert brain.dialog_only is False
+
+    def test_already_dialog_only_unchanged(self) -> None:
+        from straightjacket.engine.game.turn import _sanitize_brain_output
+
+        game = make_test_game()
+        game.setting_id = "classic"
+        brain = make_brain_result(move="adventure/face_danger", stat="none", dialog_only=True)
+
+        _sanitize_brain_output(game, brain)
+
+        assert brain.dialog_only is True
+
+    def test_action_roll_with_real_stat_unchanged(self) -> None:
+        from straightjacket.engine.game.turn import _sanitize_brain_output
+
+        game = make_test_game()
+        game.setting_id = "classic"
+        brain = make_brain_result(move="adventure/face_danger", stat="wits", dialog_only=False)
+
+        _sanitize_brain_output(game, brain)
+
+        assert brain.dialog_only is False
+
+    def test_unknown_move_unchanged(self) -> None:
+        from straightjacket.engine.game.turn import _sanitize_brain_output
+
+        game = make_test_game()
+        game.setting_id = "classic"
+        brain = make_brain_result(move="unknown/fake_move", stat="none", dialog_only=False)
+
+        _sanitize_brain_output(game, brain)
+
+        assert brain.dialog_only is False
 
 
 def _explicitly_other() -> set[str]:

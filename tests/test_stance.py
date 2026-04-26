@@ -96,11 +96,11 @@ def test_bond_range_high() -> None:
     assert stance.stance == "open"
 
 
-def test_unknown_move_category_defaults_to_other() -> None:
+def test_unknown_move_category_raises() -> None:
     npc = _npc("neutral")
     game = _game(npc, bond=1)
-    stance = resolve_npc_stance(game, npc, "unknown_category")
-    assert stance.stance == resolve_npc_stance(game, npc, "other").stance
+    with pytest.raises(KeyError):
+        resolve_npc_stance(game, npc, "unknown_category")
 
 
 def test_stance_has_npc_metadata() -> None:

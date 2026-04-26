@@ -29,9 +29,7 @@ def resolve_npc_stance(game: GameState, npc: NpcData, move_category: str) -> Npc
     else:
         bond_range = "high"
 
-    cat = move_category if move_category in ("combat", "social", "gather_information", "other") else "other"
-
-    entry = matrix[disposition][bond_range][cat]
+    entry = matrix[disposition][bond_range][move_category]
     return NpcStance(
         npc_id=npc.id,
         npc_name=npc.name,

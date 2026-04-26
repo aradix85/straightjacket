@@ -295,7 +295,5 @@ def _director_block(game: GameState) -> str:
 
 
 def _resolve_stance_category(move: str) -> str:
-    if move == "adventure/gather_information":
-        return "gather_information"
     move_cat = move_category(move)
     return eng().stance_move_buckets.mapping[move_cat]

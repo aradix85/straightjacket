@@ -25,6 +25,7 @@ position_resolver:
   move_baselines:
     combat: -1
     social: 0
+    gather_information: 0
     endure: 0
     recovery: 1
     other: 0
