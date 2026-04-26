@@ -60,7 +60,7 @@ def validate_narration(
     player_name = ctx.game.player_name
     pc_hint = get_prompt("validator_pc_hint", player_name=player_name) if player_name else ""
     cons_sentence_text = ""
-    if ctx.consequence_sentences:
+    if ctx.consequence_sentences and ctx.result_type in ("MISS", "WEAK_HIT"):
         cons_sentence_text = get_prompt(
             "validator_consequence_compliance",
             consequence_list="\n".join(f"- {s}" for s in ctx.consequence_sentences),

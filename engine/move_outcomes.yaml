@@ -440,3 +440,10 @@ move_outcomes:
     - narrative
     miss:
     - pay_the_price
+  world_shaping:
+    strong_hit:
+    - momentum +1
+    weak_hit:
+    - narrative
+    miss:
+    - pay_the_price

@@ -113,3 +113,53 @@ def test_revelation_check_defaults_true_on_api_error(stub_all: None) -> None:
         )
         is True
     )
+
+
+def test_consequence_compliance_block_skipped_on_strong_hit(stub_all: None) -> None:
+    from straightjacket.engine.ai.rule_validator import ValidationContext
+    from straightjacket.engine.ai.validator import validate_narration
+
+    provider = MockProvider(json.dumps({"pass": True, "violations": [], "correction": ""}))
+    ctx = ValidationContext.build(
+        make_game_state(),
+        result_type="STRONG_HIT",
+        consequence_sentences=["Player finds an opening. The advantage shifts."],
+    )
+    validate_narration(provider, "Some narration.", ctx)
+    sent_system = provider.calls[-1]["system"]
+    assert "CONSEQUENCE COMPLIANCE" not in sent_system, (
+        "CONSEQUENCE COMPLIANCE block must NOT be injected on STRONG_HIT — "
+        "STRONG_HIT is clean success and demanding specific consequence phrasing produces false positives."
+    )
+
+
+def test_consequence_compliance_block_present_on_weak_hit(stub_all: None) -> None:
+    from straightjacket.engine.ai.rule_validator import ValidationContext
+    from straightjacket.engine.ai.validator import validate_narration
+
+    provider = MockProvider(json.dumps({"pass": True, "violations": [], "correction": ""}))
+    ctx = ValidationContext.build(
+        make_game_state(),
+        result_type="WEAK_HIT",
+        consequence_sentences=["A specific cost is paid: equipment damaged."],
+    )
+    validate_narration(provider, "Some narration.", ctx)
+    sent_system = provider.calls[-1]["system"]
+    assert (
+        "CONSEQUENCE COMPLIANCE" in sent_system
+    ), "WEAK_HIT must keep the CONSEQUENCE COMPLIANCE block — costs/losses need to land in prose."
+
+
+def test_consequence_compliance_block_present_on_miss(stub_all: None) -> None:
+    from straightjacket.engine.ai.rule_validator import ValidationContext
+    from straightjacket.engine.ai.validator import validate_narration
+
+    provider = MockProvider(json.dumps({"pass": True, "violations": [], "correction": ""}))
+    ctx = ValidationContext.build(
+        make_game_state(),
+        result_type="MISS",
+        consequence_sentences=["Pay the price: lose 1 supply."],
+    )
+    validate_narration(provider, "Some narration.", ctx)
+    sent_system = provider.calls[-1]["system"]
+    assert "CONSEQUENCE COMPLIANCE" in sent_system

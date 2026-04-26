@@ -140,7 +140,8 @@ def _roll_truths(pkg: SettingPackage, game_cfg: dict) -> dict[str, str]:
         options = truth_data.get("options", [])
         if options:
             chosen = _random.choice(options)
-            result[truth_id] = chosen.get("summary", "")
+            text = chosen["summary"] if "summary" in chosen else chosen["description"]
+            result[truth_id] = text
     return result
 
 

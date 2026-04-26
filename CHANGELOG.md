@@ -7,6 +7,18 @@ Originally forked from [EdgeTales](https://github.com/edgetales/edgetales). See 
 
 Straightjacket uses calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day. The first CalVer release is `2026.04.25.0`. Earlier `0.x.y` releases keep their original version numbers and are not renumbered. The switch was made because the project has no public API to version semantically against — the `0.x.y` numbers were running counters with no meaning, and dates carry the meaning the numbers didn't.
 
+## [2026.04.27.3] — 2026-04-27
+
+Drie problemen uit de v0.27.1 batch-meting opgelost. v0.27.2 (niet vrijgegeven) bevatte de twee `world_shaping`-fixes; deze release bundelt die met de RESULT INTEGRITY false-positive fix en de Elvira truth-summary fix uit de invariant-violations.
+
+`world_shaping` toegevoegd aan `engine/move_outcomes.yaml` met passende mechanic: `momentum +1` op STRONG_HIT, `narrative` op WEAK_HIT, `pay_the_price` op MISS — past bij de move-mechaniek (speler verklaart een nieuw feit, dobbelt of de wereld accepteert). Brain-output sanitizer in `_sanitize_brain_output` consulteert nu zowel Datasworn-moves als engine-moves via een nieuwe `_move_roll_type` helper. Eerder werd `world_shaping` (een engine-move) door de sanitizer overgeslagen waarna de strict-raise in `_execute_roll` alsnog crashte.
+
+Belangrijkste tuning-fix: het `CONSEQUENCE COMPLIANCE`-block in `validate_narration` werd onvoorwaardelijk geïnjecteerd, waardoor de LLM-validator op STRONG_HIT-turns letterlijk woordmatching ging doen op consequence-sentences als *"finds an opening. The advantage shifts."* — terwijl narrator de mechanische uitkomst in soepelere proza beschreef ("een doorgang gaapt open"). Resultaat: 76 RESULT INTEGRITY false positives in de v0.27.1 batch. Het block wordt nu alleen geïnjecteerd op MISS en WEAK_HIT, consistent met de bestaande prompt-instructie *"STRONG_HIT or dialog — skip RESULT INTEGRITY entirely"*. STRONG_HIT-turns krijgen nog wél de overige drie checks (PLAYER AGENCY, RESOLUTION PACING, GENRE PHYSICS) — alleen de cost/event-verplichting is af.
+
+Elvira `creation.py` regel 143 deed `chosen.get("summary", "")` op truth-options. Classic-setting Datasworn-truths hebben echter alleen `description`, geen `summary` — wat resulteerde in 110 invariant-violations per classic-sessie (`truth has empty summary` × 11 truths × 10 turns). Vervangen door directe access met format-tolerantie: `summary` als aanwezig, anders `description`. Beide zijn echte Datasworn-velden, geen silent fallback. Drie validator-tests, één sanitizer-test, twee move_outcome-symmetrie-tests in `test_yaml_symmetry.py` om deze klasse bug definitief te vangen. 1224 tests groen, ruff clean, ruff format clean, mypy clean op 105 source files. Save format ongewijzigd.
+
+---
+
 ## [2026.04.27.1] — 2026-04-27
 
 Hotfix op de v0 release: 16 van 18 Elvira-sessies eindigden met `engine_error`. 15× door een KeyError op `gather_information` in `prompt_shared._resolve_stance_category`; 1× door de strict-raise op Brain `stat='none'` voor `adventure/secure_an_advantage` na een lege player-input. Het Elvira-rapport was niet bruikbaar voor tuning-vergelijking met de v6 baseline.

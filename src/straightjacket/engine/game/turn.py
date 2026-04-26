@@ -83,9 +83,8 @@ def _sanitize_brain_output(game: GameState, brain: BrainResult) -> None:
     if brain.move == "dialog" or brain.move == "ask_the_oracle":
         return
 
-    ds_moves = get_moves(game.setting_id) if game.setting_id else {}
-    ds_move = ds_moves.get(brain.move)
-    if ds_move is None or ds_move.roll_type != "action_roll":
+    roll_type = _move_roll_type(game, brain.move)
+    if roll_type != "action_roll":
         return
 
     if brain.stat == "none":
@@ -95,6 +94,17 @@ def _sanitize_brain_output(game: GameState, brain: BrainResult) -> None:
             level="warning",
         )
         brain.dialog_only = True
+
+
+def _move_roll_type(game: GameState, move: str) -> str | None:
+    ds_moves = get_moves(game.setting_id) if game.setting_id else {}
+    ds_move = ds_moves.get(move)
+    if ds_move is not None:
+        return ds_move.roll_type
+    engine_move = eng().engine_moves.get(move)
+    if engine_move is not None:
+        return engine_move.roll_type
+    return None
 
 
 def _begin_turn(game: GameState, player_message: str) -> None:

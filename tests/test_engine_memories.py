@@ -181,6 +181,17 @@ class TestSanitizeBrainOutput:
 
         assert brain.dialog_only is False
 
+    def test_engine_move_action_roll_with_stat_none_routes_to_dialog(self) -> None:
+        from straightjacket.engine.game.turn import _sanitize_brain_output
+
+        game = make_test_game()
+        game.setting_id = "classic"
+        brain = make_brain_result(move="world_shaping", stat="none", dialog_only=False)
+
+        _sanitize_brain_output(game, brain)
+
+        assert brain.dialog_only is True
+
 
 def _explicitly_other() -> set[str]:
     mc = eng().get_raw("move_categories")

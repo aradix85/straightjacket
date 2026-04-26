@@ -121,3 +121,41 @@ class TestEveryMoveResolvesEndToEnd:
         baselines = eng().position_resolver.move_baselines
         unmapped = [m for m in sorted(all_moves) if move_category(m) not in baselines]
         assert unmapped == [], f"Moves whose category has no baseline in position_resolver.move_baselines: {unmapped}."
+
+
+class TestMoveOutcomesCoverage:
+    def test_every_action_roll_move_has_outcome_config(self) -> None:
+        from straightjacket.engine.datasworn.moves import get_moves
+        from straightjacket.engine.datasworn.settings import list_packages
+
+        action_roll_moves: set[str] = set()
+        for sid in list_packages():
+            for move_id, move in get_moves(sid).items():
+                if move.roll_type == "action_roll":
+                    action_roll_moves.add(move_id)
+        for move_id, em in eng().engine_moves.items():
+            if em.roll_type == "action_roll":
+                action_roll_moves.add(move_id)
+
+        outcomes = eng().get_raw("move_outcomes")
+        missing = sorted(action_roll_moves - set(outcomes.keys()))
+        assert missing == [], (
+            f"Action_roll moves without an entry in engine/move_outcomes.yaml: {missing}. "
+            "Every action_roll move must have outcomes defined per result, otherwise resolve_move_outcome crashes mid-turn."
+        )
+
+    def test_no_orphan_outcome_entries(self) -> None:
+        from straightjacket.engine.datasworn.moves import get_moves
+        from straightjacket.engine.datasworn.settings import list_packages
+
+        all_known_moves: set[str] = set()
+        for sid in list_packages():
+            all_known_moves.update(get_moves(sid).keys())
+        all_known_moves.update(eng().engine_moves.keys())
+
+        outcomes = eng().get_raw("move_outcomes")
+        orphan = sorted(set(outcomes.keys()) - all_known_moves)
+        assert orphan == [], (
+            f"engine/move_outcomes.yaml has entries for moves that don't exist: {orphan}. "
+            "Either remove the outcome entry or restore the move."
+        )
