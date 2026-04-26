@@ -12,28 +12,50 @@ ai:
   prompts_dir: "prompts"
 
   # ── Model clusters ──────────────────────────────────────────
-  # Two models across four clusters: GLM 4.7 for narrator (prose), GPT-OSS for everything else.
-  # GLM 4.7 (zai-glm-4.7 on Cerebras): top open-weight model on Artificial Analysis Intelligence
-  # Index, Z.ai positions it for chat, creative writing, and role-play with "more natural and
-  # stable interactions, fewer abrupt shifts in tone or intent". Replaces Qwen 3 (deprecated on
-  # Cerebras 2026-05-27). Reasoning is disabled via extra_body — narrator wants prose, not
-  # internal think-blocks. GLM 4.7 has a strong primacy bias: hard constraints (engine-dictated
-  # consequences, genre constraints, no-silver-lining directives) belong at the absolute start
-  # of the system prompt, not the end. Migration tuning baseline: validator drift wordlists,
-  # pacing thresholds, and prompt ordering were tuned for Qwen — re-baseline via Elvira after
-  # the switch.
-  # GPT-OSS: fast, cheap, strong on structured output and classification.
+  # Two models across five clusters. GLM 4.7 for narrator prose. GPT-OSS for
+  # everything else, with reasoning_effort tuned per workload type.
+  #
+  # GLM 4.7 (zai-glm-4.7 on Cerebras): top open-weight model on Artificial Analysis
+  # Intelligence Index. Z.ai positions it for chat, creative writing, and role-play
+  # with "more natural and stable interactions, fewer abrupt shifts in tone or intent".
+  # Replaces Qwen 3 (deprecated on Cerebras 2026-05-27). Reasoning is disabled via
+  # extra_body — prose generation gets no benefit from think-blocks, just slower output
+  # and inflated token cost. GLM 4.7 has a strong primacy bias: hard constraints
+  # (engine-dictated consequences, genre constraints, no-silver-lining directives)
+  # belong at the absolute start of the system prompt. Migration tuning baseline:
+  # validator drift wordlists, pacing thresholds, and prompt ordering were tuned for
+  # Qwen — re-baseline via Elvira after the switch.
+  #
+  # GPT-OSS clusters use Cerebras' reasoning_effort parameter to scale internal CoT
+  # to the workload. Reasoning text is returned in a separate field and never appears
+  # in response.content with default reasoning_format, so lower effort means less
+  # latency and tokens, not visible behaviour change.
+  #
+  #   creative      — open-ended generation needing real reasoning
+  #                   (architect blueprints, director strategic guidance, chapter
+  #                    summaries, recaps). Medium effort. Higher temperature for
+  #                    prose variation.
+  #   classification — single-shot structured-output decisions on player input
+  #                   (brain move parser, correction analyser). Low effort,
+  #                   moderate temperature.
+  #   judgment      — interpretive yes/no checks where the answer requires nuance
+  #                   that cannot be pattern-matched (per-turn validator distinguishing
+  #                   cognitive vs sensory player-agency violations, chapter validator
+  #                   reading "she fell" as a true death, revelation_check separating
+  #                   "strongly foreshadowed" from "vaguely hinted"). Medium effort,
+  #                   strict temperature.
+  #   extraction    — pure data extraction from prose to JSON, no interpretation
+  #                   (NPC detection from narration, opening-scene parser pulling
+  #                   threat clocks and locations, blueprint genre-fidelity pattern-
+  #                   match against forbidden-mood-term list). Low effort, very
+  #                   strict temperature.
   clusters:
     narrator:
       model: "zai-glm-4.7"
-      temperature: 0.7
-      top_p: 0.8
+      temperature: 1.0
+      top_p: 0.95
       max_tokens: 8192
       max_retries: 3
-      # Cerebras-specific: disable GLM 4.7's internal reasoning for narrator calls.
-      # Prose generation gets no benefit from <think> blocks and they slow output and inflate
-      # token cost. Keep enabled for the analytical and creative clusters if a future migration
-      # of those clusters to GLM happens.
       extra_body:
         reasoning_effort: "none"
     creative:
@@ -42,18 +64,32 @@ ai:
       top_p: 0.95
       max_tokens: 8192
       max_retries: 3
+      extra_body:
+        reasoning_effort: "medium"
     classification:
       model: "gpt-oss-120b"
       temperature: 0.5
       top_p: 0.95
       max_tokens: 8192
       max_retries: 3
-    analytical:
+      extra_body:
+        reasoning_effort: "low"
+    judgment:
       model: "gpt-oss-120b"
       temperature: 0.5
       top_p: 0.95
       max_tokens: 8192
       max_retries: 3
+      extra_body:
+        reasoning_effort: "medium"
+    extraction:
+      model: "gpt-oss-120b"
+      temperature: 0.3
+      top_p: 0.95
+      max_tokens: 8192
+      max_retries: 3
+      extra_body:
+        reasoning_effort: "low"
 
   # ── Role → cluster mapping ──────────────────────────────────
   # Every AI role must appear here. Unlisted roles raise at runtime.
@@ -61,16 +97,16 @@ ai:
     narrator: narrator
     architect: creative
     director: creative
+    chapter_summary: creative
+    recap: creative
     brain: classification
     correction: classification
-    validator: analytical
-    validator_architect: analytical
-    chapter_validator: analytical
-    narrator_metadata: analytical
-    opening_setup: analytical
-    revelation_check: analytical
-    chapter_summary: analytical
-    recap: analytical
+    validator: judgment
+    chapter_validator: judgment
+    revelation_check: judgment
+    validator_architect: extraction
+    narrator_metadata: extraction
+    opening_setup: extraction
 
 language:
   narration_language: "English"
