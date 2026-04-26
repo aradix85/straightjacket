@@ -153,6 +153,7 @@ def _llm_check(provider: AIProvider, narrative: dict[str, Any], game: GameState)
 
     user_prompt = get_prompt(
         "chapter_validator_user",
+        role="chapter_validator",
         state_block=state_block,
         title=str(narrative.get("title", "")),
         summary=str(narrative.get("summary", "")),
@@ -166,7 +167,7 @@ def _llm_check(provider: AIProvider, narrative: dict[str, Any], game: GameState)
         response = create_with_retry(
             provider,
             model=model_for_role("chapter_validator"),
-            system=get_prompt("chapter_validator_system"),
+            system=get_prompt("chapter_validator_system", role="chapter_validator"),
             messages=[{"role": "user", "content": user_prompt}],
             log_role="chapter_validator",
             **sampling_params("chapter_validator"),
@@ -211,7 +212,7 @@ def validate_chapter_summary(
     if not all_violations:
         return True, [], ""
 
-    correction_intro = get_prompt("chapter_validator_correction_intro")
+    correction_intro = get_prompt("chapter_validator_correction_intro", role="chapter_validator")
     correction = correction_intro + "\n".join(f"- {v}" for v in all_violations)
     return False, all_violations, correction
 

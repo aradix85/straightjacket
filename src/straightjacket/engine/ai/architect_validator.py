@@ -6,7 +6,7 @@ using rule-based drift detection and LLM semantic checking.
 
 import json
 
-from ..config_loader import model_for_role, sampling_params
+from ..config_loader import model_for_role, narrator_model_family, sampling_params
 from ..datasworn.settings import GenreConstraints
 from ..engine_loader import eng
 from ..logging_util import log
@@ -35,8 +35,9 @@ def validate_architect(
         return blueprint
 
     # Layer 1: rule-based drift check on all blueprint text fields
-    if genre_constraints.atmospheric_drift:
-        drift_lower = {w.lower() for w in genre_constraints.atmospheric_drift}
+    drift_words = genre_constraints.atmospheric_drift_for(narrator_model_family())
+    if drift_words:
+        drift_lower = {w.lower() for w in drift_words}
         _check_blueprint_text_fields(blueprint, drift_lower)
 
     # No LLM constraints = skip LLM check
@@ -61,9 +62,10 @@ def validate_architect(
     if genre_constraints.genre_test:
         constraint_text += f"{labels['genre_test_prefix']}: {genre_constraints.genre_test}"
 
-    system = get_prompt("architect_validator_system", constraint_text=constraint_text)
+    system = get_prompt("architect_validator_system", role="validator_architect", constraint_text=constraint_text)
     prompt = get_prompt(
         "architect_validator_user",
+        role="validator_architect",
         genre=genre,
         tone=tone,
         conflict=conflict,

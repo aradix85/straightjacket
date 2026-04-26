@@ -77,6 +77,7 @@ class AIConfig:
     prompts_dir: str
     clusters: dict[str, ClusterConfig]
     role_cluster: dict[str, str]
+    model_family: dict[str, str]
 
 
 @dataclass
@@ -139,6 +140,7 @@ def _parse_config(data: dict) -> AppConfig:
         prompts_dir=ad["prompts_dir"],
         clusters=clusters,
         role_cluster=ad["role_cluster"],
+        model_family=ad["model_family"],
     )
 
     ld = data["language"]
@@ -243,3 +245,40 @@ def sampling_params(role: str) -> dict:
         params["extra_body"] = cluster.extra_body
 
     return params
+
+
+def model_family_for_model(model_id: str) -> str:
+    """Resolve the family suffix for a model id (e.g. 'zai-glm-4.7' -> 'glm').
+
+    Family suffixes are used by the (role, model_family) prompt-resolution
+    layer to pick model-specific prompt variants and pattern lists.
+    Raises ValueError if the model id is not mapped under
+    ai.model_family in config.yaml.
+    """
+    families = cfg().ai.model_family
+    if model_id not in families:
+        raise ValueError(
+            f"Model '{model_id}' has no family mapping in config.yaml. "
+            f"Add '{model_id}: <family_name>' under ai.model_family."
+        )
+    return families[model_id]
+
+
+def model_family_for_role(role: str) -> str:
+    """Resolve the family suffix for an AI role (cluster -> model -> family).
+
+    Composes _cluster_for_role + model_family_for_model. Raises if the
+    role is unmapped, the cluster's model is empty, or the model has
+    no family mapping.
+    """
+    return model_family_for_model(model_for_role(role))
+
+
+def narrator_model_family() -> str:
+    """Convenience: family of the narrator role's model.
+
+    Used by validators that score narrator output (rule_validator,
+    architect_validator) and need to pick narrator-model-specific
+    pattern lists or drift wordlists.
+    """
+    return model_family_for_role("narrator")

@@ -447,13 +447,24 @@ class ValidatorConfig:
     helpers (which read raw yaml and cache compiled regex). They are listed here
     so _build_strict accepts the yaml as-is. The string-template fields
     (rewrite_instructions, retry_strip) are read directly through this dataclass.
+
+    Pattern lists are split into a universal list and a per-family overlay
+    dict. The narrator-output drift checks read both via
+    EngineSettings.compiled_patterns_for_family, which combines the universal
+    list with the overlay matching the narrator's model family. Adding a new
+    family is a yaml-only edit: register the model under config.yaml's
+    ai.model_family, then add an entry under the relevant *_overlays dict.
+    No Python change required.
     """
 
     rewrite_instructions: dict[str, str]
     retry_strip: dict[str, str]
-    agency_patterns: list[str]
-    miss_silver_lining_patterns: list[str]
-    miss_annihilation_patterns: list[str]
+    agency_patterns_universal: list[str]
+    agency_patterns_overlays: dict[str, list[str]]
+    miss_silver_lining_patterns_universal: list[str]
+    miss_silver_lining_patterns_overlays: dict[str, list[str]]
+    miss_annihilation_patterns_universal: list[str]
+    miss_annihilation_patterns_overlays: dict[str, list[str]]
     format_patterns: list[dict[str, str]]
     quote_patterns: dict[str, str]
 

@@ -7,6 +7,18 @@ Originally forked from [EdgeTales](https://github.com/edgetales/edgetales). See 
 
 Straightjacket uses calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day. The first CalVer release is `2026.04.25.0`. Earlier `0.x.y` releases keep their original version numbers and are not renumbered. The switch was made because the project has no public API to version semantically against — the `0.x.y` numbers were running counters with no meaning, and dates carry the meaning the numbers didn't.
 
+## [2026.04.26.1] — 2026-04-26
+
+Config-driven `(role, model_family)` resolution layer. Three model-specific layers — prompts, validator-regex pattern lists, and atmospheric-drift wordlists — now resolve via `cluster → model → family` from `config.yaml`. New `ai.model_family` mapping, three new helpers in `config_loader.py` (`model_family_for_model`, `model_family_for_role`, `narrator_model_family`), and a role-aware `get_prompt(name, role=...)` that prefers `{name}_{family}` and falls back to bare `{name}`. Twenty-five primary system/task/suffix prompts in seventeen call-sites pass `role=`; sub-blocks stay bare until a variant ships.
+
+Validator-regex and atmospheric-drift adopt a uniform shape: a required `*_universal` list plus a required `*_overlays` dict keyed by family suffix. `EngineSettings.compiled_patterns_for_family` combines universal + overlay; `GenreConstraints.atmospheric_drift_for(family)` does the same for setting-yaml drift wordlists. No Python code carries a list of valid families — adding a new family (DeepSeek, Kimi, anything) is one row in `ai.model_family` plus optional yaml overlays. Qwen removed from the family mapping; only active models stay registered.
+
+No content changes — every existing prompt, regex, and wordlist now sits under its `_universal` key, all tests still green. Save format unchanged. Test suite +23 (1019 total): 7 new family-helper tests in `test_engine.py`, 8 new prompt-loader tests, 9 new pattern-resolution tests including a yaml-only-new-family contract test. Ruff clean, mypy clean on 105 source files. ARCHITECTURE.md and CONTRIBUTING.md updated to document the resolution layer and the overlays-dict shape; the `What goes where` table in ARCHITECTURE gained the `model_family` row.
+
+---
+
+
+
 ## [2026.04.26.0] — 2026-04-26
 
 Roadmap step 5: Adventure Crafter primitives — themes, plot points, meta dispatch. New `engine/adventure_crafter.yaml` registers themes (action, tension, mystery, social, personal), theme_slots, theme_die_table, and special_ranges (Conclusion 1-8, None 9-24, Meta 96-100); `AdventureCrafterConfig` and `PlotPointRanges` dataclasses parse via the keyed_scenes-style nested block in `engine_config.py`. New `mechanics/adventure_crafter.py` ships `assign_themes`, `lookup_plot_point(theme, roll) → PlotPointResult(name, special_range)`, `lookup_meta_plot_point`, and `dispatch_meta` over a seven-handler dispatch table. `_load_ac_data` cross-validates the yaml `theme_die_table` against `data/adventure_crafter.json random_themes` on first load and raises ValueError on mismatch. The seven meta handlers stub with `NotImplementedError("wired in step 6")` to keep the dispatch shape testable without committing to step-6 signatures.

@@ -50,7 +50,7 @@ genre_constraints:
     - "fantasy races (elves, dwarves, orcs)"
     - "magic systems or spellcasting"
   genre_test: ""  # Sci-fi permits most things — no strict conceptual test
-  atmospheric_drift:
+  atmospheric_drift_universal:
     # Fantasy/horror bleed
     - "eldritch"
     - "otherworldly"

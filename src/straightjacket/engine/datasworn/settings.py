@@ -56,13 +56,31 @@ _SETTINGS_DIR = PROJECT_ROOT / "data" / "settings"
 
 @dataclass
 class GenreConstraints:
-    """Resolved genre constraints. Every field explicit after parent-chain walk."""
+    """Resolved genre constraints. Every field explicit after parent-chain walk.
+
+    The atmospheric-drift wordlist is split into a universal list (required)
+    and an open dict of per-narrator-model-family overlays. Adding a new
+    family is a yaml-only edit: add a key under `atmospheric_drift_overlays`
+    in the relevant setting yaml. Use `atmospheric_drift_for(family)` to
+    retrieve the combined list.
+    """
 
     forbidden_terms: list[str]
     forbidden_concepts: list[str]
     genre_test: str
-    atmospheric_drift: list[str]
+    atmospheric_drift_universal: list[str]
+    atmospheric_drift_overlays: dict[str, list[str]]
     atmospheric_drift_threshold: int
+
+    def atmospheric_drift_for(self, family: str) -> list[str]:
+        """Combine the universal drift wordlist with the family overlay.
+
+        Unknown family returns just the universal list. Used by
+        rule_validator and architect_validator to score narrator-model-
+        specific atmospheric drift.
+        """
+        overlay = self.atmospheric_drift_overlays.get(family, [])
+        return list(self.atmospheric_drift_universal) + list(overlay)
 
 
 @dataclass
@@ -99,12 +117,18 @@ class CreationFlow:
 
 @dataclass
 class _GenreConstraintsPartial:
-    """Parsed genre_constraints block. None per field = key absent in yaml."""
+    """Parsed genre_constraints block. None per field = key absent in yaml.
+
+    atmospheric_drift_universal is required at the root of the chain; the
+    overlays dict carries optional per-family wordlists keyed by family
+    suffix (the same suffix as ai.model_family in config.yaml).
+    """
 
     forbidden_terms: list[str] | None = None
     forbidden_concepts: list[str] | None = None
     genre_test: str | None = None
-    atmospheric_drift: list[str] | None = None
+    atmospheric_drift_universal: list[str] | None = None
+    atmospheric_drift_overlays: dict[str, list[str]] | None = None
     atmospheric_drift_threshold: int | None = None
 
 
@@ -189,8 +213,14 @@ def _parse_genre_constraints_partial(data: dict) -> _GenreConstraintsPartial:
         partial.forbidden_concepts = list(data["forbidden_concepts"])
     if "genre_test" in data:
         partial.genre_test = data["genre_test"]
-    if "atmospheric_drift" in data:
-        partial.atmospheric_drift = list(data["atmospheric_drift"])
+    if "atmospheric_drift_universal" in data:
+        partial.atmospheric_drift_universal = list(data["atmospheric_drift_universal"])
+    if "atmospheric_drift_overlays" in data:
+        # Keys are family suffixes (matching ai.model_family in config.yaml),
+        # values are wordlists. Yaml may render an absent dict as {}.
+        partial.atmospheric_drift_overlays = {
+            family: list(words) for family, words in data["atmospheric_drift_overlays"].items()
+        }
     if "atmospheric_drift_threshold" in data:
         partial.atmospheric_drift_threshold = int(data["atmospheric_drift_threshold"])
     return partial
@@ -243,11 +273,20 @@ def _resolve_genre_constraints(chain: list[_SettingConfig], yaml_path: str) -> G
                 return val
         raise KeyError(f"genre_constraints.{attr} missing in setting chain ending at {yaml_path}")
 
+    def pick_optional_dict(attr: str) -> dict[str, list[str]]:
+        """Optional family-overlays dict. First non-None wins; default empty dict."""
+        for cfg in chain:
+            val = getattr(cfg.genre_constraints, attr)
+            if val is not None:
+                return val  # type: ignore[no-any-return]
+        return {}
+
     return GenreConstraints(
         forbidden_terms=pick("forbidden_terms"),  # type: ignore[arg-type]
         forbidden_concepts=pick("forbidden_concepts"),  # type: ignore[arg-type]
         genre_test=pick("genre_test"),  # type: ignore[arg-type]
-        atmospheric_drift=pick("atmospheric_drift"),  # type: ignore[arg-type]
+        atmospheric_drift_universal=pick("atmospheric_drift_universal"),  # type: ignore[arg-type]
+        atmospheric_drift_overlays=pick_optional_dict("atmospheric_drift_overlays"),
         atmospheric_drift_threshold=pick("atmospheric_drift_threshold"),  # type: ignore[arg-type]
     )
 

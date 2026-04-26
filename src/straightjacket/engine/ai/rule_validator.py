@@ -10,6 +10,7 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass, field
 
+from ..config_loader import narrator_model_family
 from ..datasworn.settings import GenreConstraints
 from ..engine_loader import eng
 from ..logging_util import log
@@ -61,8 +62,10 @@ class ValidationContext:
         )
 
 
-# Regex patterns live in engine.yaml validator.agency_patterns.
-# English-only, tuned for Qwen 3 narrator drift.
+# Regex patterns live in engine.yaml under validator.agency_patterns_universal
+# and validator.agency_patterns_<family>. The family that gets applied is the
+# narrator's model family, since these patterns score narrator output.
+# narrator_model_family() resolves cluster -> model -> family.
 
 
 def check_player_agency(narration: str) -> list[str]:
@@ -75,7 +78,8 @@ def check_player_agency(narration: str) -> list[str]:
     prose_only = eng().compiled_pattern("validator", "quote_patterns", "strip").sub("", narration)
     templates = eng().rule_validator.violation_templates
     violations = []
-    for pattern in eng().compiled_patterns("validator", "agency_patterns"):
+    family = narrator_model_family()
+    for pattern in eng().compiled_patterns_for_family("validator", "agency_patterns", family):
         matches = pattern.findall(prose_only)
         for match in matches:
             violations.append(templates["player_agency"].format(match=match.strip()))
@@ -92,7 +96,8 @@ def check_player_agency(narration: str) -> list[str]:
     return unique[: _rv.agency_violations_cap]
 
 
-# Patterns in engine.yaml validator.miss_silver_lining_patterns / .miss_annihilation_patterns
+# Patterns in engine.yaml under validator.miss_silver_lining_patterns_universal /
+# .miss_annihilation_patterns_universal plus optional family-specific overlays.
 
 
 def check_result_integrity(narration: str, result_type: str) -> list[str]:
@@ -100,12 +105,13 @@ def check_result_integrity(narration: str, result_type: str) -> list[str]:
     templates = eng().rule_validator.violation_templates
     violations = []
     if result_type == "MISS":
-        for pattern in eng().compiled_patterns("validator", "miss_silver_lining_patterns"):
+        family = narrator_model_family()
+        for pattern in eng().compiled_patterns_for_family("validator", "miss_silver_lining_patterns", family):
             m = pattern.search(narration)
             if m:
                 violations.append(templates["miss_silver_lining"].format(match=m.group()))
                 break  # One is enough
-        for pattern in eng().compiled_patterns("validator", "miss_annihilation_patterns"):
+        for pattern in eng().compiled_patterns_for_family("validator", "miss_annihilation_patterns", family):
             m = pattern.search(narration)
             if m:
                 violations.append(templates["miss_annihilation"].format(match=m.group()))
@@ -129,12 +135,13 @@ def check_genre_fidelity(narration: str, genre_constraints: GenreConstraints | N
 def check_atmospheric_register(narration: str, genre_constraints: GenreConstraints | None) -> list[str]:
     """Flag atmospheric register drift when setting-specific markers pile up.
 
-    Reads atmospheric_drift (word list) and atmospheric_drift_threshold (int)
-    from genre_constraints. No config = no check.
+    Reads atmospheric_drift_universal + atmospheric_drift_<narrator_family>
+    (combined via atmospheric_drift_for) and atmospheric_drift_threshold from
+    genre_constraints. No config = no check.
     """
     if not genre_constraints:
         return []
-    drift_words = genre_constraints.atmospheric_drift
+    drift_words = genre_constraints.atmospheric_drift_for(narrator_model_family())
     threshold = genre_constraints.atmospheric_drift_threshold
     if not drift_words or threshold < 1:
         return []

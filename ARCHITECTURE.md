@@ -51,7 +51,7 @@ Where to find things. If you want to change X, edit Y.
 | Emotion scoring, keyword boosts | `emotions/*.yaml` (no Python) |
 | UI text | `strings/*.yaml` (no Python) |
 | Server port | `config.yaml` (no Python) |
-| AI model assignment per role | `config.yaml` → `clusters` (per-cluster model + parameters), `role_cluster` (remap role to cluster) |
+| AI model assignment per role | `config.yaml` → `clusters` (per-cluster model + parameters), `role_cluster` (remap role to cluster), `model_family` (model id → family suffix used for prompt/pattern variants) |
 | Provider-specific params per role | `config.yaml` → `extra_body` (per-cluster) |
 | Move types or stat assignments | Datasworn JSON (moves loaded automatically per setting) |
 | A new setting (genre + constraints) | `data/settings/your_setting.yaml` + Datasworn JSON |
@@ -120,17 +120,17 @@ Where to find things. If you want to change X, edit Y.
 
 ## AI Model Assignment
 
-The engine assigns models to AI roles via clusters. Each cluster groups roles that share a model and default parameters. Resolution order: per-role model override → cluster model. `model_for_role(role)` is the single entry point — no module ever hardcodes a model string.
+The engine assigns models to AI roles via clusters. Each cluster groups roles that share a model and default parameters. `model_for_role(role)` is the single entry point — no module ever hardcodes a model string.
 
 ```
 Cluster          Roles                                              Needs
 ─────────────────────────────────────────────────────────────────────────────
 narrator         narrator                                           prose generation (creative writing)
-creative         architect, director                                genre-aware structured output + tool calling
-classification   brain, correction                                  input parsing, json_schema
-analytical       validator, validator_architect, narrator_metadata,  constraint checking, data extraction
-                 opening_setup, revelation_check, chapter_summary,
-                 chapter_validator, recap
+creative         architect, director, chapter_summary, recap        open-ended generation needing real reasoning
+classification   brain, correction                                  single-shot structured-output decisions
+judgment         validator, chapter_validator, revelation_check     interpretive yes/no with nuance
+extraction       validator_architect, narrator_metadata,            pure data extraction, no interpretation
+                 opening_setup
 ```
 
 Config structure in `config.yaml`:
@@ -139,25 +139,41 @@ Config structure in `config.yaml`:
 ai:
   clusters:
     narrator:
-      model: "qwen-3-235b-a22b-instruct-2507"
-      temperature: 0.7
-      top_p: 0.8
+      model: "zai-glm-4.7"
+      temperature: 1.0
+      top_p: 0.95
       max_tokens: 8192
       max_retries: 3
+      extra_body:
+        reasoning_effort: "none"  # GLM 4.7 reasoning disabled for prose
     creative:
       model: "gpt-oss-120b"
       temperature: 0.7
       ...
-    analytical:
-      model: "gpt-oss-120b"
-      temperature: 0.5
-      ...
+      extra_body:
+        reasoning_effort: "medium"
+    # ...classification, judgment, extraction follow the same shape
   # Remap a role to a different cluster:
   role_cluster:
-    architect: "analytical"
+    architect: "creative"
+  # Map model id to a family suffix used by the (role, model_family) resolution layer:
+  model_family:
+    zai-glm-4.7: glm
+    gpt-oss-120b: gpt_oss
+    qwen-3-235b-a22b-instruct-2507: qwen
 ```
 
 Clusters are the single source of truth. `sampling_params(role)` resolves all call parameters from the role's cluster. `model_for_role(role)` resolves the model. No per-role overrides — to change a role's parameters, change the cluster or remap the role via `role_cluster`.
+
+### (Role, model_family) resolution layer
+
+Three layers carry model-specific content: prompts, validator-regex pattern lists, and atmospheric-drift wordlists. Each is addressed by `(role, model_family)` rather than role alone, with the family resolved through `cluster → model → family` from `config.yaml`. The system is fully config-driven: adding a new model family is a yaml-only edit. No Python code carries a list of valid families.
+
+- **Prompts.** `get_prompt(name, role="...")` tries `{name}_{family}` first, falls back to bare `{name}` when the variant is absent. Both absent raises. Sub-blocks (labels, flags, content-boundaries, result strings) stay bare and only get `role=` when a variant becomes necessary.
+- **Validator regex patterns.** `engine/validator.yaml` ships a required `*_universal` list plus a required `*_overlays` dict (may be empty) for each pattern set: `agency_patterns`, `miss_silver_lining_patterns`, `miss_annihilation_patterns`. Family overlays go under the dict keyed by family suffix. `EngineSettings.compiled_patterns_for_family(section, base_key, family)` combines universal + overlay; unknown family returns just universal. The narrator's family (`narrator_model_family()`) is used because the patterns score narrator output.
+- **Atmospheric drift wordlists.** `data/settings/*.yaml` has `atmospheric_drift_universal` (required) plus `atmospheric_drift_overlays` (a dict, may be empty). `GenreConstraints.atmospheric_drift_for(family)` combines universal + overlay.
+
+Adding a new model: add one row in `config.yaml` under `ai.model_family` (model id → family suffix), set the model on a cluster, and optionally add overlays under whatever family suffix you chose. Unmapped models raise.
 
 `max_tool_rounds` is an engine mechanical limit, configured in `engine.yaml` under `pacing.max_tool_rounds`.
 
@@ -294,7 +310,7 @@ src/straightjacket/
 
 **Character succession.** When the protagonist dies (face_death MISS, or both health and spirit reach zero) or is explicitly retired by the player, the campaign continues with a new protagonist in the same world. Two-step lifecycle gated by `CampaignState.pending_succession`: `prepare_succession` archives the predecessor into `campaign.predecessors` and locks in the inheritance rolls onto that record (so reload can't reroll); `start_succession_with_character` reads the locked-in rolls, closes the predecessor's chapter via the same `_close_previous_chapter` used for chapter transitions, applies NPC carryover (active full / background half / lore half / deceased pruned per `succession.yaml`), wipes PC-specific state via `_reset_for_successor` while keeping world-level threats and unresolved threads (vow-typed and creation-sourced threads drop), seeds the successor's legacy from the rolls, replaces character identity, generates an opening narration, and clears the pending flag. The two-step shape is mandatory for save-resilience: locking the rolls at archive time rather than at character-replacement time is what makes the inheritance deterministic across reload. Unknown roll outcomes and unknown NPC statuses both raise — there is no carryover for state the engine doesn't recognise.
 
-**Provider abstraction.** `AIProvider` protocol with two implementations (Anthropic, OpenAI-compatible). The engine never imports provider SDKs directly. `create_with_retry` handles transient errors with exponential backoff. Multi-model: config.yaml assigns models via four clusters — narrator (Qwen 3 for prose), creative (GPT-OSS for architect, director), classification (GPT-OSS for brain, correction), analytical (GPT-OSS for validator, metadata, recap, and other structured output roles). Clusters are the single source of truth for all call parameters. `model_for_role(role)` resolves the model; `sampling_params(role)` resolves temperature, top_p, max_tokens, max_retries, and extra_body. The provider stores no model state.
+**Provider abstraction.** `AIProvider` protocol with two implementations (Anthropic, OpenAI-compatible). The engine never imports provider SDKs directly. `create_with_retry` handles transient errors with exponential backoff. Multi-model: config.yaml assigns models via five clusters — narrator (GLM 4.7 for prose), creative (GPT-OSS for architect, director, chapter_summary, recap), classification (GPT-OSS for brain, correction), judgment (GPT-OSS for validator, chapter_validator, revelation_check), extraction (GPT-OSS for validator_architect, narrator_metadata, opening_setup). Clusters are the single source of truth for all call parameters. `model_for_role(role)` resolves the model; `sampling_params(role)` resolves temperature, top_p, max_tokens, max_retries, and extra_body. `model_family_for_role(role)` resolves the family suffix used by the prompt / validator-pattern / atmospheric-drift resolution layers. The provider stores no model state.
 
 **Minimal UI.** Single HTML page, no build step, no npm. Server sends JSON, client renders. Scene headings for screen reader navigation, aria-live for automatic narration readout. One button (Save/Load), one text input. Status via `/status` and `/score` text commands — engine answers directly, no AI call. Status output is narrative, not mechanical: "seriously wounded" instead of "health 2", "growing trust" instead of "bond 4/10". The player never sees numbers, dice, or system terms.
 

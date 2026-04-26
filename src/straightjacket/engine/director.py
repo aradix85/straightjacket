@@ -31,7 +31,7 @@ def _get_director_system_base() -> str:
     """Load director system prompt fresh from prompt_loader each time.
     prompt_loader caches internally; reload_prompts() clears that cache.
     No module-level cache here — avoids stale prompts after reload."""
-    return get_prompt("director_system")
+    return get_prompt("director_system", role="director")
 
 
 def _director_system(game: GameState) -> str:
@@ -181,7 +181,7 @@ def build_director_prompt(game: GameState, latest_narration: str, config: Engine
     reflection_section = _collect_reflection_blocks(game)
     story_info = _build_story_arc_block(game)
 
-    task = get_prompt("director_task", lang=lang)
+    task = get_prompt("director_task", role="director", lang=lang)
     return f"""<latest_scene>
 {latest_narration[: eng().truncations.prompt_xlong]}
 </latest_scene>

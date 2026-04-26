@@ -269,7 +269,7 @@ def process_correction(
     # Step 3: Narrator rewrite
     correction_tag = (
         f"\n<correction_context>{analysis['narrator_guidance']}</correction_context>"
-        f"\n{get_prompt('block_correction_instruction')}"
+        f"\n{get_prompt('block_correction_instruction', role='narrator')}"
     )
     prompt = prompt + correction_tag
     narration, _ = narrate_scene(provider, game, prompt, config=_cfg)

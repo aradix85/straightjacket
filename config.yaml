@@ -108,5 +108,18 @@ ai:
     narrator_metadata: extraction
     opening_setup: extraction
 
+  # ── Model → family mapping ──────────────────────────────────
+  # Maps cluster.model values to the family name used by the
+  # (role, model_family) prompt-resolution layer. Family names are
+  # used as suffixes on prompt keys (`narrator_system_glm`) and as
+  # keys in overlay dicts (`agency_patterns_overlays.glm`,
+  # `atmospheric_drift_overlays.glm`).
+  # Every model that appears under ai.clusters must have an entry here.
+  # Adding a new model: add one row here AND set it on a cluster.
+  # Unknown model raises at runtime.
+  model_family:
+    zai-glm-4.7: glm
+    gpt-oss-120b: gpt_oss
+
 language:
   narration_language: "English"

@@ -102,6 +102,7 @@ def validate_narration(
 
     system = get_prompt(
         "validator_system",
+        role="validator",
         pc_hint=pc_hint,
         consequence_compliance_block=cons_sentence_text,
     )
@@ -133,7 +134,7 @@ Check constraints."""
             response = create_with_retry(
                 provider,
                 model=model_for_role("validator"),
-                system=system + get_prompt("validator_json_suffix"),
+                system=system + get_prompt("validator_json_suffix", role="validator"),
                 messages=[{"role": "user", "content": prompt}],
                 log_role="validator",
                 **_vp2,

@@ -117,10 +117,20 @@ def check_blueprint_drift(slog: SessionLog) -> dict[str, Any]:
         return {"checked": False, "reason": f"setting '{setting_id}' not found"}
 
     gc = pkg.genre_constraints
-    if not gc or not gc.atmospheric_drift:
+    if not gc:
+        return {"checked": False, "reason": "setting has no genre_constraints"}
+
+    # Use the narrator's model family — drift wordlists are tuned for the
+    # narrator's output, not the architect that produced the blueprint.
+    # lazy: import here to avoid a top-level config_loader dependency
+    # that would force engine init at module import time.
+    from straightjacket.engine.config_loader import narrator_model_family  # noqa: PLC0415
+
+    drift_list = gc.atmospheric_drift_for(narrator_model_family())
+    if not drift_list:
         return {"checked": False, "reason": "setting has no atmospheric_drift list"}
 
-    drift_words = {w.lower() for w in gc.atmospheric_drift}
+    drift_words = {w.lower() for w in drift_list}
     forbidden = {w.lower() for w in (gc.forbidden_terms or [])}
 
     # Fields to scan. Same set the architect_validator checks.

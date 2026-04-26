@@ -51,7 +51,7 @@ def build_dialog_prompt(
     oracle_tag = f"\n<oracle_answer>{_xe(oracle_answer)}</oracle_answer>" if oracle_answer else ""
 
     scene_type = "oracle" if oracle_answer else "dialog"
-    task = get_prompt("task_oracle") if oracle_answer else get_prompt("task_dialog")
+    task = get_prompt("task_oracle", role="narrator") if oracle_answer else get_prompt("task_dialog", role="narrator")
 
     return f"""<scene type="{scene_type}" n="{game.narrative.scene_count}">
 {_scene_header(game)}

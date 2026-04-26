@@ -22,7 +22,7 @@ validator:
       visage, reshape). Replace with physical sensations from the <sensory_palette>: mud, iron, cold, woodsmoke, wind, creaking
       wood, weight, texture, temperature.'
     output format: Remove all metadata, brackets, markdown, role labels. Begin with narrative prose.
-  agency_patterns:
+  agency_patterns_universal:
   - \byou feel\b(?!\s+(?:the|a|an|your|its|it|his|her|their|cold|hot|warm|cool|wet|dry|rough|smooth|sharp|dull|soft|hard|heavy|light|damp|slick|gritty|sticky))\s+\w+
   - \byou (?:realize|understand|sense that|suspect|conclude|decide|believe|assume|recognize that|grasp)\b
   - \byou think\b(?!\s+(?:about|of|through|over|back))
@@ -44,7 +44,12 @@ validator:
   - \b(?:sticks|lodges|burns|stays|lingers|registers) in your (?:mind|memory|thoughts|head)\b
   - \byou (?:can tell|can sense|can feel|just know|already know|know enough)\b
   - \byou (?:notice|catch|spot|see) (?:yourself|your own)\s+(?:thinking|feeling|hoping|wanting)\b
-  miss_silver_lining_patterns:
+  # Family overlays. Add a key per family that needs extra patterns:
+  #   agency_patterns_overlays:
+  #     glm: [\byour fingers know\b, ...]
+  # Empty dict = no family adds extra patterns; universal list applies to all.
+  agency_patterns_overlays: {}
+  miss_silver_lining_patterns_universal:
   - \bat least\b
   - \bfortunately\b
   - \bluckily\b
@@ -53,10 +58,12 @@ validator:
   - \bsilver lining\b
   - \bblessing in disguise\b
   - \bbright side\b
-  miss_annihilation_patterns:
+  miss_silver_lining_patterns_overlays: {}
+  miss_annihilation_patterns_universal:
   - \byou (?:die|are dead|collapse.{0,20}lifeless|stop breathing)\b
   - \beverything (?:goes black|fades to nothing|ends)\b
   - \byour (?:vision|world|consciousness) (?:fades|dims|goes|ends)\b
+  miss_annihilation_patterns_overlays: {}
   format_patterns:
   - pattern: '^\s*(?:Narrator|Assistant|System)\s*:'
     flags: multiline

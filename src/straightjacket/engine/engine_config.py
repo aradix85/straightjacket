@@ -247,6 +247,36 @@ class EngineSettings:
         self._compiled_patterns[cache_key] = compiled
         return compiled
 
+    def compiled_patterns_for_family(self, section: str, base_key: str, family: str) -> list[Any]:
+        """Combine universal + family-specific compiled patterns.
+
+        Reads `{base_key}_universal` (required) plus the entry for `family`
+        in `{base_key}_overlays` (optional dict; empty if family is absent).
+        Compiles each list once, caches them, and returns the concatenated
+        result. Used by the rule-validator to apply narrator-output drift
+        checks where the universal set is always active and the per-family
+        overlay adds narrator-model-specific catches.
+
+        Raises KeyError if `{base_key}_universal` or `{base_key}_overlays`
+        is missing — both must always exist; family entries inside the
+        overlays dict are optional. Adding a new family is a yaml-only
+        edit: register the family in the overlays dict.
+        """
+
+        universal = self.compiled_patterns(section, f"{base_key}_universal")
+        overlays_key = f"{base_key}_overlays"
+        overlays = self._raw[section][overlays_key]
+        if family not in overlays or not overlays[family]:
+            return list(universal)
+        # Cache compiled overlay per (section, base_key, family).
+        cache_key = f"overlay:{section}.{base_key}.{family}"
+        if cache_key in self._compiled_patterns:
+            family_compiled = self._compiled_patterns[cache_key]
+        else:
+            family_compiled = [re.compile(p, re.IGNORECASE) for p in overlays[family]]
+            self._compiled_patterns[cache_key] = family_compiled
+        return list(universal) + list(family_compiled)
+
 
 def _build_strict(cls: type, data: dict[str, Any]) -> Any:
     """Build a dataclass from a dict. Raises KeyError on missing required fields

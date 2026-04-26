@@ -63,7 +63,9 @@ def call_recap(provider: AIProvider, game: GameState, config: EngineConfig | Non
         response = create_with_retry(
             provider,
             model=model_for_role("recap"),
-            system=get_prompt("recap", lang=lang, content_boundaries_block=content_boundaries_block(game)),
+            system=get_prompt(
+                "recap", role="recap", lang=lang, content_boundaries_block=content_boundaries_block(game)
+            ),
             messages=[
                 {
                     "role": "user",
@@ -176,7 +178,9 @@ def call_story_architect(
 
     prompt_vars = dict(lang=lang, content_boundaries_block=cb)
     system = get_prompt(
-        "architect_kishotenketsu" if structure_type == "kishotenketsu" else "architect_3act", **prompt_vars
+        "architect_kishotenketsu" if structure_type == "kishotenketsu" else "architect_3act",
+        role="architect",
+        **prompt_vars,
     )
     user_msg = _build_architect_user_msg(game)
 
@@ -251,7 +255,12 @@ def call_chapter_summary(
         response = create_with_retry(
             provider,
             model=model_for_role("chapter_summary"),
-            system=get_prompt("chapter_summary", lang=lang, content_boundaries_block=content_boundaries_block(game)),
+            system=get_prompt(
+                "chapter_summary",
+                role="chapter_summary",
+                lang=lang,
+                content_boundaries_block=content_boundaries_block(game),
+            ),
             messages=[
                 {
                     "role": "user",

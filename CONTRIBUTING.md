@@ -36,6 +36,14 @@ When you touch a file that already has violations, fix them in the same commit. 
 
 See [ARCHITECTURE.md](ARCHITECTURE.md) for the module ownership table. The short version: if you want to change game rules, edit YAML, not Python. If you want to change AI behavior, edit prompts.yaml. If you need to touch Python, the architecture doc tells you which file owns what.
 
+Three places carry model-specific content, all addressed by a `(role, model_family)` lookup with a universal fallback. The system is config-driven: adding a new model family is a yaml-only edit.
+
+- **Prompts.** `prompts/{file}.yaml`. A bare key (`narrator_system`) is the universal variant; `narrator_system_glm` overrides for narrator runs on a GLM-family model. The loader prefers the family-specific key, falls back to bare when absent.
+- **Validator regex.** `engine/validator.yaml`. Each pattern set has a required `*_universal` list and a required `*_overlays` dict (may be empty). Family wordlists go under the dict keyed by family suffix.
+- **Atmospheric drift wordlists.** `data/settings/{setting}.yaml` under `genre_constraints`. Same shape: `atmospheric_drift_universal` + `atmospheric_drift_overlays`.
+
+When adding a new model: register it in `config.yaml` under both `ai.clusters.<cluster>.model` and `ai.model_family`. Unmapped models raise — no silent fallback. To ship a model-specific variant, add the variant under the relevant overlays dict; no Python edit needed.
+
 ## Config-driven design
 
 Game mechanics, emotion scoring, move types, damage tables, disposition shifts — all in YAML. The Python code reads config at runtime. Before adding a constant to Python, check if it belongs in the engine config (one yaml per subsystem under `engine/`) or emotions.yaml instead.

@@ -45,7 +45,7 @@ genre_constraints:
     - "modern or futuristic technology"
     - "high magic or easy spellcasting"
   genre_test: "Could this exist in a dark, low-magic Iron Age frontier?"
-  atmospheric_drift:
+  atmospheric_drift_universal:
     # Qwen patterns (energy/vibration words)
     - "pulse"
     - "pulsing"

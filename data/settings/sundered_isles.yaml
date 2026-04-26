@@ -34,7 +34,7 @@ genre_constraints:
   forbidden_terms: []  # Science-fantasy permits most things
   forbidden_concepts: []
   genre_test: ""  # No strict genre test — cursed waters and ancient ruins are on-genre
-  atmospheric_drift:
+  atmospheric_drift_universal:
     # Sci-fi bleed
     - "spaceship"
     - "computer"

@@ -240,6 +240,7 @@ def get_narrator_system(config: EngineConfig, game: GameState | None = None) -> 
     return (
         get_prompt(
             "narrator_system",
+            role="narrator",
             lang=lang,
             content_boundaries_block=cb,
             backstory_block=bs,

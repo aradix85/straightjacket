@@ -30,6 +30,7 @@ def _full_config_data(**overrides: object) -> dict:
                 }
             },
             "role_cluster": {"recap": "classification"},
+            "model_family": {"qwen": "qwen", "gpt-oss": "gpt_oss"},
         },
     }
     base.update(overrides)  # type: ignore[arg-type]
@@ -97,6 +98,87 @@ def test_role_cluster_override() -> None:
 
     config = _parse_config(_full_config_data())
     assert config.ai.role_cluster["recap"] == "classification"
+
+
+def test_model_family_field_required() -> None:
+    """ai.model_family is a required top-level field on AIConfig."""
+    import pytest
+
+    from straightjacket.engine.config_loader import _parse_config
+
+    data = _full_config_data()
+    del data["ai"]["model_family"]  # type: ignore[index]
+    with pytest.raises(KeyError):
+        _parse_config(data)
+
+
+def test_model_family_for_model_resolves(monkeypatch) -> None:
+    """model_family_for_model looks up the family suffix from config.yaml."""
+    from straightjacket.engine import config_loader
+    from straightjacket.engine.config_loader import _parse_config, model_family_for_model
+
+    config = _parse_config(_full_config_data())
+    monkeypatch.setattr(config_loader, "_cfg", config)
+    assert model_family_for_model("qwen") == "qwen"
+    assert model_family_for_model("gpt-oss") == "gpt_oss"
+
+
+def test_model_family_for_model_raises_on_unknown(monkeypatch) -> None:
+    """Unknown model raises ValueError — no silent fallback."""
+    import pytest
+
+    from straightjacket.engine import config_loader
+    from straightjacket.engine.config_loader import _parse_config, model_family_for_model
+
+    config = _parse_config(_full_config_data())
+    monkeypatch.setattr(config_loader, "_cfg", config)
+    with pytest.raises(ValueError, match="no family mapping"):
+        model_family_for_model("some-other-model")
+
+
+def test_model_family_for_role_chains(monkeypatch) -> None:
+    """model_family_for_role composes cluster -> model -> family."""
+    from straightjacket.engine import config_loader
+    from straightjacket.engine.config_loader import _parse_config, model_family_for_role
+
+    config = _parse_config(_full_config_data())
+    monkeypatch.setattr(config_loader, "_cfg", config)
+    # recap -> classification cluster -> qwen model -> qwen family
+    assert model_family_for_role("recap") == "qwen"
+
+
+def test_narrator_model_family_convenience(monkeypatch) -> None:
+    """narrator_model_family() returns the family of whichever model
+    backs the narrator role — used by validators that score narrator
+    output."""
+    from straightjacket.engine import config_loader
+    from straightjacket.engine.config_loader import _parse_config, narrator_model_family
+
+    data = _full_config_data()
+    data["ai"]["clusters"]["narrator"] = {  # type: ignore[index]
+        "model": "gpt-oss",
+        "temperature": 1.0,
+        "top_p": 0.95,
+        "max_tokens": 8192,
+        "max_retries": 3,
+    }
+    data["ai"]["role_cluster"]["narrator"] = "narrator"  # type: ignore[index]
+    config = _parse_config(data)
+    monkeypatch.setattr(config_loader, "_cfg", config)
+    assert narrator_model_family() == "gpt_oss"
+
+
+def test_model_family_for_role_raises_on_unmapped_role(monkeypatch) -> None:
+    """An unmapped role raises ValueError before family-resolution."""
+    import pytest
+
+    from straightjacket.engine import config_loader
+    from straightjacket.engine.config_loader import _parse_config, model_family_for_role
+
+    config = _parse_config(_full_config_data())
+    monkeypatch.setattr(config_loader, "_cfg", config)
+    with pytest.raises(ValueError, match="no cluster assignment"):
+        model_family_for_role("nonexistent_role")
 
 
 # ── locations_match tests ─────────────────────────────────────
