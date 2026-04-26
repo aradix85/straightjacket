@@ -965,3 +965,39 @@ class KeyedScenesConfig:
 
     triggers: dict[str, KeyedSceneTrigger]
     prompt_wrapper: str
+
+
+@dataclass
+class PlotPointRanges:
+    """Special d100 ranges on Adventure Crafter plot points.
+
+    Each plot point covers a min-max d100 range per theme. Three named ranges
+    receive special handling at the engine level: Conclusion (closes the
+    plotline), None (no plot point this turn), Meta (route to meta-handler).
+    Bounds are inclusive on both ends.
+    """
+
+    conclusion_min: int
+    conclusion_max: int
+    none_min: int
+    none_max: int
+    meta_min: int
+    meta_max: int
+
+
+@dataclass
+class AdventureCrafterConfig:
+    """Adventure Crafter primitives: themes, theme assignment, special ranges.
+
+    themes is the canonical ordered list of theme names; theme_slots is the
+    number of priority slots assigned at adventure start (one theme per slot,
+    rolled via theme_die_table). theme_die_table is the d10 -> theme mapping
+    consumed by the theme assigner. special_ranges flags Conclusion / None /
+    Meta on plot-point lookup. All four blocks are loaded strict; mismatches
+    against data/adventure_crafter.json raise at parse time.
+    """
+
+    themes: list[str]
+    theme_slots: int
+    theme_die_table: dict[int, str]
+    special_ranges: PlotPointRanges

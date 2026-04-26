@@ -14,6 +14,7 @@ from typing import Any
 from .engine_config_dataclasses import (
     ActProgressConfig,
     ActivationScores,
+    AdventureCrafterConfig,
     AiTextConfig,
     ArchitectConfig,
     ArchitectLimitsConfig,
@@ -62,6 +63,7 @@ from .engine_config_dataclasses import (
     PacingConfig,
     ParserConfig,
     PersistenceConfig,
+    PlotPointRanges,
     PositionOverride,
     PositionResolverConfig,
     PositionResolverWeights,
@@ -170,6 +172,7 @@ class EngineSettings:
     chapter_validator: ChapterValidatorConfig
     succession: SuccessionConfig
     keyed_scenes: KeyedScenesConfig
+    adventure_crafter: AdventureCrafterConfig
 
     # Scalar top-level fields
     scene_range_default: list[int]
@@ -496,6 +499,21 @@ def parse_engine_yaml(data: dict[str, Any]) -> EngineSettings:
         prompt_wrapper=keyed_raw["prompt_wrapper"],
     )
 
+    # adventure_crafter: list of themes, scalar slot count, d10 -> theme map,
+    # nested PlotPointRanges. theme_die_table keys parse from yaml as ints
+    # (yaml numeric keys); preserved as int -> str map. Cross-checked against
+    # data/adventure_crafter.json random_themes at the loader level — that
+    # validation lives in mechanics/adventure_crafter.py to keep the parse
+    # block here purely about yaml shape.
+    ac_raw = dict(data["adventure_crafter"])
+    ac_special = _build_strict(PlotPointRanges, dict(ac_raw["special_ranges"]))
+    adventure_crafter = AdventureCrafterConfig(
+        themes=list(ac_raw["themes"]),
+        theme_slots=ac_raw["theme_slots"],
+        theme_die_table={int(k): v for k, v in ac_raw["theme_die_table"].items()},
+        special_ranges=ac_special,
+    )
+
     return EngineSettings(
         npc=npc,
         chaos=simple_parsed["chaos"],
@@ -562,6 +580,7 @@ def parse_engine_yaml(data: dict[str, Any]) -> EngineSettings:
         chapter_validator=simple_parsed["chapter_validator"],
         succession=succession,
         keyed_scenes=keyed_scenes,
+        adventure_crafter=adventure_crafter,
         scene_range_default=list(data["scene_range_default"]),
         death_emotions=list(data["death_emotions"]),
         creativity_seeds=list(data["creativity_seeds"]),

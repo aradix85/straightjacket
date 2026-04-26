@@ -11,12 +11,14 @@ Implementation split across:
 - engine_memories.py: memory emotion derivation, engine memories, scene context
 - fate.py: Mythic GME 2e fate chart, fate check, likelihood resolver
 - keyed_scenes.py: director-pre-defined scene-start beats that override chaos
+- adventure_crafter.py: AC themes, plot-point lookup, meta-plot-point dispatch
 - random_events.py: event focus, meaning tables, random event pipeline, list maintenance
 """
 
 __all__ = [
     "LEGACY_TRACKS",
     "NpcStance",
+    "PlotPointResult",
     "add_character_weight",
     "add_thread_weight",
     "advance_asset",
@@ -24,6 +26,7 @@ __all__ = [
     "apply_brain_location_time",
     "apply_npc_carryover",
     "apply_threat_overcome_bonus",
+    "assign_themes",
     "build_predecessor_record",
     "can_burn_momentum",
     "check_npc_agency",
@@ -34,6 +37,7 @@ __all__ = [
     "consolidate_threads",
     "deactivate_thread",
     "derive_memory_emotion",
+    "dispatch_meta",
     "drain_pending_events",
     "evaluate_keyed_scenes",
     "generate_consequence_sentences",
@@ -41,8 +45,11 @@ __all__ = [
     "generate_random_event",
     "generate_scene_context",
     "get_legacy_track",
+    "get_meta_handler_names",
     "get_pacing_hint",
     "locations_match",
+    "lookup_meta_plot_point",
+    "lookup_plot_point",
     "mark_legacy",
     "move_category",
     "pick_template",
@@ -68,6 +75,14 @@ __all__ = [
     "update_location",
 ]
 
+from .adventure_crafter import (
+    PlotPointResult,
+    assign_themes,
+    dispatch_meta,
+    get_meta_handler_names,
+    lookup_meta_plot_point,
+    lookup_plot_point,
+)
 from .consequences import (
     can_burn_momentum,
     check_npc_agency,

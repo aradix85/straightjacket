@@ -12,16 +12,30 @@ ai:
   prompts_dir: "prompts"
 
   # ── Model clusters ──────────────────────────────────────────
-  # Two models across four clusters: Qwen 3 for narrator (prose), GPT-OSS for everything else.
-  # Qwen 3: best narrator quality (100% eval), optimized for creative writing.
+  # Two models across four clusters: GLM 4.7 for narrator (prose), GPT-OSS for everything else.
+  # GLM 4.7 (zai-glm-4.7 on Cerebras): top open-weight model on Artificial Analysis Intelligence
+  # Index, Z.ai positions it for chat, creative writing, and role-play with "more natural and
+  # stable interactions, fewer abrupt shifts in tone or intent". Replaces Qwen 3 (deprecated on
+  # Cerebras 2026-05-27). Reasoning is disabled via extra_body — narrator wants prose, not
+  # internal think-blocks. GLM 4.7 has a strong primacy bias: hard constraints (engine-dictated
+  # consequences, genre constraints, no-silver-lining directives) belong at the absolute start
+  # of the system prompt, not the end. Migration tuning baseline: validator drift wordlists,
+  # pacing thresholds, and prompt ordering were tuned for Qwen — re-baseline via Elvira after
+  # the switch.
   # GPT-OSS: fast, cheap, strong on structured output and classification.
   clusters:
     narrator:
-      model: "qwen-3-235b-a22b-instruct-2507"
+      model: "zai-glm-4.7"
       temperature: 0.7
       top_p: 0.8
       max_tokens: 8192
       max_retries: 3
+      # Cerebras-specific: disable GLM 4.7's internal reasoning for narrator calls.
+      # Prose generation gets no benefit from <think> blocks and they slow output and inflate
+      # token cost. Keep enabled for the analytical and creative clusters if a future migration
+      # of those clusters to GLM happens.
+      extra_body:
+        reasoning_effort: "none"
     creative:
       model: "gpt-oss-120b"
       temperature: 0.7

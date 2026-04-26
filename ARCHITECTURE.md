@@ -116,6 +116,7 @@ Where to find things. If you want to change X, edit Y.
 | Validator context bundling | `ai/rule_validator.py` → `ValidationContext` (adding new check = 1 field + 1 build line + 1 check call) |
 | Architect blueprint validation | `ai/architect_validator.py` → `validate_architect`, `_check_blueprint_text_fields` |
 | Chapter summary contradiction validation | `ai/chapter_validator.py` → `validate_chapter_summary` (rule pass + LLM pass), `validate_and_retry` (orchestrates retry of `call_chapter_summary`); config in `engine/chapter_validator.yaml`; templates in `engine/rule_validator.yaml` `violation_templates` |
+| Adventure Crafter primitives (themes, plot points, meta dispatch) | `mechanics/adventure_crafter.py` → `assign_themes`, `lookup_plot_point`, `lookup_meta_plot_point`, `dispatch_meta`; `engine/adventure_crafter.yaml` (themes, theme_die_table, special_ranges); `data/adventure_crafter.json` (lookup tables) |
 
 ## AI Model Assignment
 
@@ -187,6 +188,7 @@ src/straightjacket/
 │   │   ├── random_events.py    # Event focus, meaning tables, random event pipeline, list maintenance
 │   │   ├── scene.py            # Scene structure: keyed/chaos branch, altered/interrupt scenes
 │   │   ├── keyed_scenes.py     # Keyed scene evaluator + per-trigger dispatch table
+│   │   ├── adventure_crafter.py # AC themes, plot-point lookup, meta-plot-point dispatch
 │   │   ├── threats.py          # Threat menace advancement, autonomous ticks, Forsake Your Vow
 │   │   ├── impacts.py          # Impact apply/clear, max_momentum recalc, recovery blocking
 │   │   ├── legacy.py           # Legacy tracks (quests/bonds/discoveries), XP, asset advancement
@@ -322,6 +324,8 @@ src/straightjacket/
 
 **Keyed scenes are the engine's pre-scheduled beat channel.** Triggers are registered in `engine/keyed_scenes.yaml`; each registered name maps to an evaluator in `mechanics/keyed_scenes.py::_EVALUATORS`. `KeyedScene.__post_init__` validates `trigger_type` against the registered set so a buggy spawner cannot install a dead scene that fails silently at evaluation. The matched scene is consumed (one-shot) by `check_scene`. Spawning is not yet wired: the Adventure Crafter (planned) will be the spawner, writing keyed scenes onto `narrative.keyed_scenes` when its turning points and plot beats map deterministically onto an engine trigger. Until then `narrative.keyed_scenes` stays empty in normal play and the keyed branch is dormant.
 
+**Adventure Crafter primitives.** AC (Pigeon, Word Mill Games) provides plot-level structure that complements Mythic GME 2e's scene-level chaos. The primitives live in `mechanics/adventure_crafter.py`: theme assignment over five canonical themes (action, tension, mystery, social, personal) via a d10 table, plot-point lookup keyed by `(theme, roll)` because the 186 entries in `data/adventure_crafter.json` carry sparse theme coverage (most entries declare ranges on only a subset of themes), special-range flagging on `Conclusion (1-8)`, `None (9-24)`, and `Meta (96-100)`, and a meta-handler dispatch table covering the seven meta-plot-point types. Engine-level configuration lives in `engine/adventure_crafter.yaml` (themes, theme_slots, theme_die_table, special_ranges); the lookup data lives in `data/adventure_crafter.json`. The yaml `theme_die_table` is cross-validated against the JSON `random_themes` block on first load — mismatches raise at parse time so the engine never silently diverges from the AC data file. The seven meta handlers are stubbed with `NotImplementedError` until step 6 wires them through characters and plotlines lists. AC's role expands across subsequent steps: turning points and supporting tables (step 6), AC as the plot-structure source replacing the AI architect blueprint plus keyed-scene spawning (step 7), and thread-phase coupling (step 31).
+
 **Random events.** Four-step pipeline: event focus (d100, 12 categories) → target selection from weighted Mythic lists → meaning table roll (actions or descriptions) → structured `RandomEvent` assembly. Events fire on fate doublets and interrupt scenes. `<random_event>` and `<interrupt_scene>` tags injected into narrator prompt. List maintenance: present NPCs/threads get weight bumps, new NPCs added to characters list, consolidation at 25 entries.
 
 **Director reduction.** Director no longer advises on pacing — that is fully engine-computed from scene structure and narrative direction. Director retains NPC reflections (AIMS, arc updates, description updates) and optional chapter summaries. Act transitions are engine-computed from scene count vs act range.
@@ -359,7 +363,7 @@ Two places where Straightjacket departs from the design document's architectural
 ## Testing
 
 ```bash
-python -m pytest tests/ -v          # ~7 seconds, ~816 tests
+python -m pytest tests/ -v          # ~7 seconds, ~996 tests
 python tests/elvira/elvira.py --auto --turns 5   # direct engine (needs API key)
 python tests/elvira/elvira.py --ws --auto --turns 5  # via WebSocket server
 ```
