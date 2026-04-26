@@ -70,6 +70,11 @@ class AIProvider(Protocol):
 
 
 _THINK_TAG_RE = re.compile(r"<think>.*?</think>\s*", re.DOTALL)
+_UNICODE_ESCAPE_RE = re.compile(r"\\u([0-9a-fA-F]{4})")
+
+
+def _decode_literal_unicode_escapes(text: str) -> str:
+    return _UNICODE_ESCAPE_RE.sub(lambda m: chr(int(m.group(1), 16)), text)
 
 
 def post_process_response(response: AIResponse) -> AIResponse:
@@ -82,6 +87,12 @@ def post_process_response(response: AIResponse) -> AIResponse:
         content = _THINK_TAG_RE.sub("", content).lstrip()
         if content != response.content:
             log("[AI] Stripped <think> tags from response")
+
+    if "\\u" in content:
+        decoded = _decode_literal_unicode_escapes(content)
+        if decoded != content:
+            log("[AI] Decoded literal \\uXXXX escape sequences in response")
+            content = decoded
 
     if content != response.content:
         return AIResponse(

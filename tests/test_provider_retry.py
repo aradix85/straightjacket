@@ -43,3 +43,40 @@ def test_create_with_retry_raises_on_exhaustion() -> None:
             messages=[{"role": "user", "content": "hi"}],
             max_tokens=100,
         )
+
+
+def test_post_process_decodes_literal_unicode_escapes() -> None:
+    from straightjacket.engine.ai.provider_base import post_process_response, AIResponse
+
+    raw = AIResponse(content="She said \\u201chello\\u201d.", stop_reason="complete", tool_calls=[], usage={})
+    result = post_process_response(raw)
+    assert result.content == "She said \u201chello\u201d."
+
+
+def test_post_process_leaves_real_unicode_alone() -> None:
+    from straightjacket.engine.ai.provider_base import post_process_response, AIResponse
+
+    raw = AIResponse(content="She said \u201chello\u201d.", stop_reason="complete", tool_calls=[], usage={})
+    result = post_process_response(raw)
+    assert result.content == "She said \u201chello\u201d."
+
+
+def test_post_process_handles_mixed_real_and_literal_escapes() -> None:
+    from straightjacket.engine.ai.provider_base import post_process_response, AIResponse
+
+    raw = AIResponse(
+        content="real \u201cquote\u201d and literal \\u201cquote\\u201d",
+        stop_reason="complete",
+        tool_calls=[],
+        usage={},
+    )
+    result = post_process_response(raw)
+    assert result.content == "real \u201cquote\u201d and literal \u201cquote\u201d"
+
+
+def test_post_process_does_not_alter_response_without_escapes() -> None:
+    from straightjacket.engine.ai.provider_base import post_process_response, AIResponse
+
+    raw = AIResponse(content="Plain ASCII content.", stop_reason="complete", tool_calls=[], usage={})
+    result = post_process_response(raw)
+    assert result is raw

@@ -207,19 +207,19 @@ def _resolve_genre_constraints(chain: list[_SettingConfig], yaml_path: str) -> G
                 return [str(item) for item in val]
         raise KeyError(f"genre_constraints.{attr} missing in setting chain ending at {yaml_path}")
 
-    def pick_optional_dict(attr: str) -> dict[str, list[str]]:
+    def pick_dict(attr: str) -> dict[str, list[str]]:
         for cfg in chain:
             val = getattr(cfg.genre_constraints, attr)
             if val is not None:
                 return {str(k): [str(item) for item in v] for k, v in val.items()}
-        return {}
+        raise KeyError(f"genre_constraints.{attr} missing in setting chain ending at {yaml_path}")
 
     return GenreConstraints(
         forbidden_terms=pick_str_list("forbidden_terms"),
         forbidden_concepts=pick_str_list("forbidden_concepts"),
         genre_test=pick_str("genre_test"),
         atmospheric_drift_universal=pick_str_list("atmospheric_drift_universal"),
-        atmospheric_drift_overlays=pick_optional_dict("atmospheric_drift_overlays"),
+        atmospheric_drift_overlays=pick_dict("atmospheric_drift_overlays"),
         atmospheric_drift_threshold=pick_int("atmospheric_drift_threshold"),
     )
 

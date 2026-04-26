@@ -168,7 +168,7 @@ class TurnRecord:
                 d["validator"] = f"FAIL({self.validator.retries}r, {len(self.validator.violations)}v)"
                 d["validator_violations"] = self.validator.violations[:5]
                 if self.narration:
-                    d["narration_excerpt"] = self.narration[:500]
+                    d["narration_excerpt"] = self.narration
             elif self.validator.retries > 0:
                 d["validator"] = f"pass({self.validator.retries}r)"
         if self.engine_log and self.engine_log.consequences:
@@ -192,7 +192,7 @@ class TurnRecord:
         if self.burn_offered:
             d["burn"] = f"{self.burn_offered}->{'taken' if self.burn_taken else 'skip'}"
         if self.has_issues:
-            d["narration"] = self.narration[:500]
+            d["narration"] = self.narration
         if self.is_correction:
             d["correction"] = True
         if self.token_usage:

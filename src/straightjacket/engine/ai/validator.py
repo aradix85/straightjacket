@@ -40,6 +40,33 @@ def _strip_prompt_for_retry(prompt: str, violations: list[str]) -> str:
     return stripped
 
 
+def _build_validator_system(ctx: ValidationContext) -> str:
+    player_name = ctx.game.player_name
+    pc_hint = get_prompt("validator_pc_hint", player_name=player_name) if player_name else ""
+
+    active_npc_names = [n.name for n in ctx.game.npcs if n.name and n.status == "active" and n.introduced]
+    npc_names_hint = (
+        get_prompt("validator_npc_names_hint", npc_names=", ".join(sorted(active_npc_names)))
+        if active_npc_names
+        else ""
+    )
+
+    cons_sentence_text = ""
+    if ctx.consequence_sentences and ctx.result_type in ("MISS", "WEAK_HIT"):
+        cons_sentence_text = get_prompt(
+            "validator_consequence_compliance",
+            consequence_list="\n".join(f"- {s}" for s in ctx.consequence_sentences),
+        )
+
+    return get_prompt(
+        "validator_system",
+        role="validator",
+        pc_hint=pc_hint,
+        npc_names_hint=npc_names_hint,
+        consequence_compliance_block=cons_sentence_text,
+    )
+
+
 def validate_narration(
     provider: AIProvider,
     narration: str,
@@ -57,21 +84,7 @@ def validate_narration(
 
     llm_violations = []
     cons_text = ", ".join(ctx.consequences) if ctx.consequences else "none"
-    player_name = ctx.game.player_name
-    pc_hint = get_prompt("validator_pc_hint", player_name=player_name) if player_name else ""
-    cons_sentence_text = ""
-    if ctx.consequence_sentences and ctx.result_type in ("MISS", "WEAK_HIT"):
-        cons_sentence_text = get_prompt(
-            "validator_consequence_compliance",
-            consequence_list="\n".join(f"- {s}" for s in ctx.consequence_sentences),
-        )
-
-    system = get_prompt(
-        "validator_system",
-        role="validator",
-        pc_hint=pc_hint,
-        consequence_compliance_block=cons_sentence_text,
-    )
+    system = _build_validator_system(ctx)
 
     _trunc = eng().truncations
     prompt = f"""<narration>{narration[: _trunc.narration_max]}</narration>

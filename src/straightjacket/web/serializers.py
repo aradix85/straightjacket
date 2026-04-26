@@ -206,9 +206,10 @@ def build_creation_options() -> dict:
                     options = []
 
                     for opt in truth_data["options"]:
+                        summary_text = opt["summary"] if "summary" in opt else opt["description"]
                         options.append(
                             {
-                                "summary": opt.get("summary", ""),
+                                "summary": str(summary_text)[: _trunc.prompt_medium],
                                 "description": str(opt["description"])[: _trunc.prompt_medium],
                                 "quest_starter": str(opt["quest_starter"])[: _trunc.prompt_short],
                             }

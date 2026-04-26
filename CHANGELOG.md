@@ -7,6 +7,18 @@ Originally forked from [EdgeTales](https://github.com/edgetales/edgetales). See 
 
 Straightjacket uses calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day. The first CalVer release is `2026.04.25.0`. Earlier `0.x.y` releases keep their original version numbers and are not renumbered. The switch was made because the project has no public API to version semantically against — the `0.x.y` numbers were running counters with no meaning, and dates carry the meaning the numbers didn't.
 
+## [2026.04.27.4] — 2026-04-27
+
+Bundeling van bug-investigatie-resultaten, truncation-diagnose en tuning op het hardnekkig RESULT INTEGRITY/RESOLUTION PACING/GENRE PHYSICS-front. Productie-bug in `web/serializers.py:211`: had `opt.get("summary", "")` op truth-options. Voor classic-setting (Datasworn-truths zonder `summary`-veld) leverde dit lege options aan de UI én lege `game.truths` in de narrator-prompt — narrator kreeg geen world-context op classic. Gefixt met format-tolerantie: `summary` als aanwezig, anders `description`. Beide zijn echte Datasworn-velden, geen silent fallback.
+
+Architectuur-doc-drift hersteld: ARCHITECTURE.md zegt `atmospheric_drift_overlays` is required (may be empty), code accepteerde absentie en defaultete naar `{}`. Loader strict gemaakt (`pick_dict` ipv `pick_optional_dict`); classic.yaml en starforged.yaml kregen `atmospheric_drift_overlays: {}` toegevoegd zoals sundered_isles al had.
+
+Truncation-mysterie ontrafeld. De "appears truncated despite complete" warnings bleken niet over narrator-truncatie te gaan maar over GLM-4.7 op Cerebras die soms responses returnt met letterlijke `\u201c`/`\u201d`-escape-sequences (6 ASCII-tekens) in plaats van echte Unicode-karakters. Player zag `\u201c` in narratie in plaats van `"`. Decoder toegevoegd in `post_process_response` die alleen letterlijke `\uXXXX`-patronen vervangt — idempotent op al-correcte tekst, veilig voor JSON-content (verbreekt geen bestaande Unicode). Vier nieuwe tests in `test_provider_retry.py`. Bonus: 500-char hard truncation in Elvira's `models.py` (knipte narrations mid-woord in session-files) verwijderd zodat batch-analyse op volledige narrations werkt.
+
+Tuning op de hardnekkige RESULT INTEGRITY/RESOLUTION PACING/GENRE PHYSICS-violations. RESOLUTION PACING SAFE-clausule in `validator.yaml` uitgebreid met expliciete compelled-NPC vrijwaring plus label-0 voorbeeld waar speler een NPC fysiek dwingt — meting toonde dat dergelijke turns onterecht als "multiple unsolicited facts" werden geflagd. GENRE PHYSICS WRONG-voorbeelden uit beide narrator-prompts (`narrator_system_glm` en `narrator_system`) verwijderd, vervangen door een abstractere regel: "Materials are described by what they ARE or what someone does TO them, never by what they do on their own. No active verbs of will, sound, motion, sense, or thought attached to inanimate subjects." RIGHT-voorbeelden behouden. Hypothese: WRONG-voorbeelden activeerden het patroon bij narrator. Effect alleen door volgende batch te valideren. NPC-whitelist gate-laag voor RESOLUTION PACING-architectuur blijft openstaand voor latere sessie. 1228 tests groen, ruff clean, ruff format clean, mypy clean op 105 source files. Save format ongewijzigd.
+
+---
+
 ## [2026.04.27.3] — 2026-04-27
 
 Drie problemen uit de v0.27.1 batch-meting opgelost. v0.27.2 (niet vrijgegeven) bevatte de twee `world_shaping`-fixes; deze release bundelt die met de RESULT INTEGRITY false-positive fix en de Elvira truth-summary fix uit de invariant-violations.

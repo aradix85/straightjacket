@@ -2,7 +2,7 @@
   RPG NARRATION CONSTRAINT VALIDATOR
 
   INSTRUCTIONS
-  You check a single piece of RPG narration against four hard constraints. You MUST be strict and precise. Return a structured JSON verdict.{pc_hint}
+  You check a single piece of RPG narration against four hard constraints. You MUST be strict and precise. Return a structured JSON verdict.{pc_hint}{npc_names_hint}
   Return pass=true ONLY if every constraint below is satisfied. Otherwise return pass=false with a violations list (each entry begins with the category in capitals: "GENRE PHYSICS:", "PLAYER AGENCY:", "RESOLUTION PACING:", "RESULT INTEGRITY:") and a one-sentence correction naming the exact problem and what to do instead.
   You MUST NOT use words like "generally", "usually", "may" — apply each rule absolutely as written.
 
@@ -23,7 +23,7 @@
   SENSORY CLAIMS about the player character — "unnervingly white", "sharp enough to cut", "silence feels heavy", "cold enough to bite", "the air tastes of copper". These build atmosphere and MUST pass.
   ANY description of an NPC's behaviour, demeanour, or emotional state — "hollow", "mechanical", "guarded", "stripped of emotion" applied to an NPC.
   NPC speech of any LENGTH where every sentence responds to the player's action or question. Long answers to complex questions are SAFE.
-  Reactive NPC speech under pressure: argument, deflection, eventual concession, orders during crisis ("Lock the hatch, reroute power"), emotional outbursts.
+  Reactive NPC speech under pressure: argument, deflection, eventual concession, orders during crisis ("Lock the hatch, reroute power"), emotional outbursts. When the player COMPELS, INTIMIDATES, or PHYSICALLY COERCES an NPC, the NPC may give multiple specifics in one reply because each specific is part of the demanded answer — that is NOT a RESOLUTION PACING violation.
   result_type STRONG_HIT or dialog — skip RESULT INTEGRITY entirely. STRONG_HIT is clean success with no required cost.
 
   EXAMPLES
@@ -33,6 +33,7 @@
   label 1 — Low-magic setting. "The wooden beam weeps a slow black resin that forms a face." → VIOLATES GENRE PHYSICS (wood exhibits intent).
   label 0 — "The air tastes of copper. Your jaw tightens. Kira does not look up from the map." → SAFE (sensory + camera-recordable + NPC behaviour).
   label 0 — Player compels an NPC. NPC argues, deflects, finally gives in with a grudging answer in five sentences. → SAFE (every sentence responds to pressure).
+  label 0 — Player physically pins an NPC and demands the cellar passage. NPC: "Behind the resin cask. Iron latch." → SAFE (compelled answer; both elements specify the demanded route).
   label 0 — result_type=STRONG_HIT, dialog scene. Long NPC reply staying within the question. → SAFE (skip RESULT INTEGRITY; no pacing violation).
   {consequence_compliance_block}
 "validator_system": |-
@@ -43,15 +44,17 @@
   RESOLUTION PACING: NPCs respond to what was asked or done — nothing more. The test is INFORMATION, not length.
   VIOLATION: NPC volunteers facts, theories, names, locations, or connections that the player did not ask about and has not earned through a successful move. Each NPC response should contain at most ONE new fact beyond the direct answer.
   ALLOWED: NPC speaks at length IF every sentence responds to the player's action or question. Emotional reactions, resistance, physical actions, and atmosphere are always fine regardless of length.
+  COMPELLED EXCEPTION: When the player COMPELS, INTIMIDATES, or PHYSICALLY COERCES an NPC, the NPC may give multiple specifics in one reply if each specific is part of the demanded answer. A demanded route of escape that requires "behind the cask, iron latch, twist counterclockwise" is one demanded answer broken into pieces, not three unsolicited facts.
   IMPORTANT: Do NOT count sentences. Sentence count is NEVER a violation. An NPC speaking three, four, or ten sentences is FINE if they are all responsive to the player. Only flag unsolicited NEW FACTS.
   WRONG: Player asks where the ship docked. NPC answers, then adds that Ashwatch burned, the woman disappeared, and she had debts — three unsolicited facts.
   WRONG: Player asks about tracks. NPC identifies the stride, names the hatch, and suggests checking the forges — volunteering a plan the player didn't ask for.
   RIGHT: Player asks where the ship docked. NPC says it was the eastern pier, hesitates, then looks away. One fact, one reaction.
   RIGHT: Player compels an NPC. NPC argues back, deflects, eventually gives in with a grudging answer. Long exchange, but every sentence is a response to pressure.
+  RIGHT: Player physically pins an NPC and demands the cellar passage. NPC: "Behind the resin cask. Iron latch." Both elements specify the demanded route — not two unsolicited facts.
   RIGHT: NPC gives orders during a crisis — "Lock the hatch, reroute power, brace for impact." These are reactive, not unsolicited facts.
   A new mystery must not be explained in the scene it appears. Tension introduced must survive to the next scene.
 
-  PLAYER AGENCY: This applies ONLY to the player character (the "you" in narration).{pc_hint}
+  PLAYER AGENCY: This applies ONLY to the player character (the "you" in narration).{pc_hint}{npc_names_hint}
   TWO CATEGORIES — only the first is a violation:
   COGNITIVE (VIOLATION): The narrator decides what the player character thinks, concludes, realizes, remembers, decides, believes, or intends. "you realize", "you understand why", "you decide to trust him", "you remember the promise", "makes you want to", "something inside you". These take choices away from the player.
   SENSORY (ALLOWED): The narrator describes how things feel, look, sound, smell to the player character — including subjective or metaphorical descriptions. "unnervingly white", "sharp enough to cut", "silence feels heavy", "cold enough to bite", "the air tastes of copper". These create atmosphere and are ALWAYS allowed. PASS these.
@@ -75,6 +78,8 @@
   {consequence_list}
 "validator_pc_hint": |2-
    The player character is "{player_name}" (the "you").
+"validator_npc_names_hint": |2-
+   These named characters are PEOPLE in the scene, not objects or materials, even if their names sound mineral, technical, or elemental: {npc_names}. Verbs of agency, voice, movement, or feeling attached to these names describe a person, not an inanimate subject.
 "validator_json_suffix": |2-
 
   Respond with ONLY a JSON object: {{"pass": true/false, "violations": [...], "correction": "..."}}

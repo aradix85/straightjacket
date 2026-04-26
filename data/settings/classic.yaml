@@ -99,6 +99,7 @@ genre_constraints:
     - "exhaling"
     - "awakens"
     - "waking"
+  atmospheric_drift_overlays: {}
   atmospheric_drift_threshold: 2
 
 creation_flow:
