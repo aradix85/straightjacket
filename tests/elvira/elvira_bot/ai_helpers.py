@@ -1,7 +1,9 @@
 from __future__ import annotations
 
-import yaml
 from pathlib import Path
+from typing import Any
+
+import yaml
 
 from straightjacket.engine.ai.provider_base import AIProvider, post_process_response
 from straightjacket.engine.models import GameState
@@ -11,13 +13,13 @@ _HERE = Path(__file__).resolve().parent.parent
 _PROMPTS_PATH = _HERE / "elvira_prompts.yaml"
 _CONFIG_PATH = _HERE / "elvira_config.yaml"
 
-_prompts: dict[str, str] | None = None
+_prompts: dict[str, Any] | None = None
 _bot_model: str | None = None
 _bot_temperature: float | None = None
 _bot_config_loaded: bool = False
 
 
-def _load_prompts() -> dict[str, str]:
+def _load_prompts() -> dict[str, Any]:
     global _prompts
     if _prompts is None:
         if not _PROMPTS_PATH.exists():
@@ -25,6 +27,14 @@ def _load_prompts() -> dict[str, str]:
         with open(_PROMPTS_PATH, encoding="utf-8") as f:
             _prompts = yaml.safe_load(f)
     return _prompts
+
+
+def _p(key: str, **kwargs: Any) -> str:
+    prompts = _load_prompts()
+    template = prompts[key]
+    if not isinstance(template, str):
+        raise TypeError(f"Elvira prompt '{key}' is not a string (got {type(template).__name__})")
+    return template.format(**kwargs) if kwargs else template
 
 
 def _load_bot_config() -> None:
@@ -67,88 +77,99 @@ def ask_bot(provider: AIProvider, system: str, user: str, max_tokens: int = 300,
     return response.content.strip()
 
 
+def _resolve_turn_directive(turn: int) -> tuple[str, str]:
+    prompts = _load_prompts()
+    rotation = prompts["bot_turn_rotation"]
+    if not isinstance(rotation, list) or not rotation:
+        raise ValueError("Elvira prompt 'bot_turn_rotation' must be a non-empty list")
+    directive_key = rotation[(turn - 1) % len(rotation)]
+    full = _p(directive_key)
+    short = full.split(" — ")[0]
+    return full, short
+
+
 def build_turn_context(game: GameState, narration: str, turn: int, prev_action: str = "") -> str:
     res = game.resources
     world = game.world
+    unknown = _p("bot_unknown_label")
+    none_label = _p("bot_active_none_label")
 
-    npc_lines = [f"  - {n.name} [{n.disposition}]" for n in game.npcs if n.status == "active"]
-    active_npcs = "\n".join(npc_lines) if npc_lines else "  (none)"
+    npc_lines = [_p("bot_npc_line", name=n.name, disposition=n.disposition) for n in game.npcs if n.status == "active"]
+    active_npcs = "\n".join(npc_lines) if npc_lines else none_label
 
-    clock_lines = [f"  - {c.name}: {c.filled}/{c.segments}" for c in world.clocks if not c.fired]
-    active_clocks = "\n".join(clock_lines) if clock_lines else "  (none)"
+    clock_lines = [
+        _p("bot_clock_line", name=c.name, filled=c.filled, segments=c.segments) for c in world.clocks if not c.fired
+    ]
+    active_clocks = "\n".join(clock_lines) if clock_lines else none_label
 
     track_lines = [
-        f"  - {t.name} ({t.track_type}, {t.rank}): {t.filled_boxes}/10"
+        _p(
+            "bot_track_line",
+            name=t.name,
+            track_type=t.track_type,
+            rank=t.rank,
+            filled_boxes=t.filled_boxes,
+        )
         for t in game.progress_tracks
         if t.status == "active"
     ]
-    active_tracks = "\n".join(track_lines) if track_lines else "  (none)"
+    active_tracks = "\n".join(track_lines) if track_lines else none_label
 
     story_block = ""
     bp = game.narrative.story_blueprint
     if bp and bp.acts:
         act = get_current_act(game)
         sr = act.scene_range
-        r_str = f"Scene {sr[0]}-{sr[1]}" if len(sr) == 2 else "?"
-        story_block = f"\nSTORY PHASE : Act {act.act_number}/{act.total_acts} - {act.title} ({r_str})"
+        scene_range = _p("bot_scene_range", start=sr[0], end=sr[1]) if len(sr) == 2 else _p("bot_scene_range_unknown")
+        story_block = _p(
+            "bot_story_block",
+            act_number=act.act_number,
+            total_acts=act.total_acts,
+            title=act.title,
+            scene_range=scene_range,
+        )
         conflict = bp.central_conflict
         if conflict:
-            story_block += f"\nCENTRAL CONFLICT: {conflict[:120]}"
+            story_block += _p("bot_story_conflict", conflict=conflict[:120])
 
-    turn_types = [
-        "DIALOG — talk to an NPC, ask a question, no pressure",
-        "INVESTIGATE — examine, search, study something in the environment",
-        "PHYSICAL RISK — face danger, fight, climb, force something",
-        "DIALOG or INVESTIGATE — follow up on what you learned",
-        "SOCIAL PRESSURE — compel, threaten, persuade, negotiate",
-        "TRAVEL — move to a new location, explore a new area",
-        "INVESTIGATE — study what you find in the new location",
-        "PHYSICAL RISK — take a dangerous action based on what you know",
-        "DIALOG — talk to someone about what happened",
-        "ACT ON YOUR VOW — whatever move fits best",
-    ]
-    turn_idx = (turn - 1) % len(turn_types)
-    turn_directive = turn_types[turn_idx]
+    turn_directive_full, turn_directive_short = _resolve_turn_directive(turn)
+    mandatory_action_block = _p(
+        "bot_mandatory_action_block",
+        turn_directive=turn_directive_full,
+        turn_directive_short=turn_directive_short,
+    )
+    prev_action_block = "\n" + _p("bot_prev_action_block", prev_action=prev_action[:80]) if prev_action else ""
 
-    prev_block = ""
-    if prev_action:
-        prev_block = f"\nYour previous action was: {prev_action[:80]}\nDo NOT repeat that type of action."
-
-    return f"""=== MANDATORY ACTION TYPE: {turn_directive} ===
-You MUST write a {turn_directive.split(" — ")[0]} action this turn.
-Only deviate if you are wounded, under attack, or in immediate danger.
-{prev_block}
-
-TURN {turn} - Scene {game.narrative.scene_count}
-
---- LATEST NARRATION ---
-{narration.strip()}
---- END NARRATION ---
-
-CHARACTER : {game.player_name}
-Location  : {world.current_location or "(unknown)"}
-Time      : {world.time_of_day or "(unknown)"}
-
-RESOURCES : Health {res.health}/5 | Spirit {res.spirit}/5 | Supply {res.supply}/5 | Momentum {res.momentum}/{res.max_momentum}
-{story_block}
-ACTIVE NPCs:
-{active_npcs}
-ACTIVE TRACKS (vows, connections, combat):
-{active_tracks}
-ACTIVE CLOCKS:
-{active_clocks}
-
-What does {game.player_name} do next? Write only the player action."""
+    return _p(
+        "bot_turn_context",
+        mandatory_action_block=mandatory_action_block,
+        prev_action_block=prev_action_block,
+        turn=turn,
+        scene_count=game.narrative.scene_count,
+        narration=narration.strip(),
+        player_name=game.player_name,
+        location=world.current_location or unknown,
+        time_of_day=world.time_of_day or unknown,
+        health=res.health,
+        spirit=res.spirit,
+        supply=res.supply,
+        momentum=res.momentum,
+        max_momentum=res.max_momentum,
+        story_block=story_block,
+        active_npcs=active_npcs,
+        active_tracks=active_tracks,
+        active_clocks=active_clocks,
+    )
 
 
 def decide_burn_momentum(provider: AIProvider, game: GameState, burn_info: dict, style: str) -> bool:
     if style == "aggressor":
         return True
-    prompts = _load_prompts()
-    prompt = prompts["burn_decision"].format(
+    prompt = _p(
+        "burn_decision",
         current_result=burn_info["roll"].result,
         new_result=burn_info["new_result"],
         momentum=game.resources.momentum,
     )
-    answer = ask_bot(provider, "You are a solo RPG player making a tactical decision.", prompt, max_tokens=10)
+    answer = ask_bot(provider, _p("burn_decision_system"), prompt, max_tokens=10)
     return answer.lower().startswith("y")

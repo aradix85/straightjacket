@@ -160,7 +160,6 @@ ai:
   model_family:
     zai-glm-4.7: glm
     gpt-oss-120b: gpt_oss
-    qwen-3-235b-a22b-instruct-2507: qwen
 ```
 
 Clusters are the single source of truth. `sampling_params(role)` resolves all call parameters from the role's cluster. `model_for_role(role)` resolves the model. No per-role overrides — to change a role's parameters, change the cluster or remap the role via `role_cluster`.
@@ -222,7 +221,7 @@ src/straightjacket/
 │   ├── prompt_action.py     # Action-turn narrator prompt: build_action_prompt, result constraint
 │   ├── prompt_dialog.py     # Dialog- and oracle-turn narrator prompt: build_dialog_prompt
 │   ├── prompt_boundary.py   # Scene-boundary prompts: build_new_game_prompt, build_epilogue_prompt, build_new_chapter_prompt
-│   ├── prompt_blocks.py     # Reusable XML blocks (content boundaries, backstory, etc.)
+│   ├── prompt_blocks.py     # Reusable XML blocks: content boundaries, backstory, status, tone authority, vocabulary, world truths, narrative direction, story arc, recent events, campaign history. All templates yaml-driven via prompts/blocks.yaml.
 │   ├── prompt_loader.py     # Merges prompts/*.yaml (directory from config.yaml ai.prompts_dir)
 │   ├── config_loader.py     # Reads config.yaml, provides cfg() singleton
 │   ├── engine_loader.py     # Merges engine/*.yaml, provides eng() singleton
@@ -356,7 +355,7 @@ src/straightjacket/
 
 ## Known Limitations
 
-**Validator is model-specific.** The hybrid validator (rule-based + LLM) is tuned for Qwen 3 patterns on Cerebras. The rule validator catches common violations (player agency regex patterns, atmospheric drift wordlists, split-monologue detection). The LLM validator catches the rest — resolution pacing (NPC speech content), genre physics, consequence compliance. Resolution pacing remains the hardest violation to correct: Qwen's creative writing training biases it toward information-rich NPC dialog. Retry success rate is ~60% for pacing violations. Switching narrator model will require re-tuning: new agency patterns, different drift words, different pacing tendencies.
+**Validator is model-specific.** The hybrid validator (rule-based + LLM) carries content addressed by `(role, model_family)` via universal lists plus per-family overlays in `engine/validator.yaml` and per-setting overlays in `data/settings/*.yaml`. The rule validator catches common violations (player agency regex patterns, atmospheric drift wordlists, split-monologue detection); the LLM validator catches the rest — resolution pacing (NPC speech content), genre physics, consequence compliance. Resolution pacing remains the hardest violation to correct: language models trained on creative writing bias toward information-rich NPC dialog regardless of family. Retry success rate is roughly 60% for pacing violations. Family overlays are introduced as Elvira data exposes model-specific patterns — universal content is the safe default, overlays are added only where measurement justifies them.
 
 **Single session.** One player at a time. The module-level accumulators (`_pending_events`, `_token_log`) and the in-memory SQLite database assume single-threaded access. Multi-session would require per-session state isolation.
 
@@ -368,7 +367,7 @@ src/straightjacket/
 
 **No asset mechanics.** Assets are stored as ID strings but have no mechanical effect. The modifier pipeline (stat bonuses, rerolls, companion health, vehicle condition) is not implemented.
 
-**Blueprint is AI-generated at game start.** The story architect produces a 3-act or Kishōtenketsu blueprint via a single AI call. Quality varies by model — Qwen trends toward supernatural horror patterns. The engine compensates with mood sanitization and genre validation, but blueprint quality directly affects Director guidance and narrative direction. Replacing the AI-generated blueprint with a table-driven plot structure (Adventure Crafter) is planned; doing so would be consistent with the design document principle that the engine decides, the AI narrates.
+**Blueprint is AI-generated at game start.** The story architect produces a 3-act or Kishōtenketsu blueprint via a single AI call. Quality varies by model — different models trend toward different default patterns (supernatural horror, romance, action set-pieces) regardless of the setting's genre. The engine compensates with mood sanitization and genre validation, but blueprint quality directly affects Director guidance and narrative direction. Replacing the AI-generated blueprint with a table-driven plot structure (Adventure Crafter) is planned; doing so would be consistent with the design document principle that the engine decides, the AI narrates.
 
 ## Deliberate divergences from the design document
 

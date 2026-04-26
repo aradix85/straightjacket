@@ -2,12 +2,64 @@
   <lines>These topics do not exist in this world: {content_lines}</lines>
 "block_content_boundaries_wishes": |-
   <player_wishes>Story seeds to weave over time. Max one per scene. Opening = world and mood. {wishes}</player_wishes>
+"block_content_boundaries_wrapper": |-
+  <content_boundaries>
+  {body}
+  </content_boundaries>
+"block_character_state_wrapper": |-
+  <character_state>
+  {instruction}
+  {physical_label}: {health_desc}
+  {mental_label}: {spirit_desc}
+  {resources_label}: {supply_desc}
+  </character_state>
+"block_tone_authority_wrapper": '<tone_authority tone="{tone}">{body}</tone_authority>'
 "block_backstory": |-
   <backstory>Established canon. These people know the player. These events happened. {backstory_text}</backstory>
+"block_narrative_direction_wrapper": |-
+  <narrative_direction>{tokens}</narrative_direction>
+"block_story_arc": |-
+  <story_arc structure="{structure}" act="{act_pos}" phase="{phase}" progress="{progress}" mood="{mood}" conflict="{conflict}" act_goal="{act_goal}"{thematic_attr}/>
+"block_story_arc_thematic_attr": ' thematic_thread="{thematic}"'
+"block_revelation_ready": |-
+  <revelation_ready weight="{weight}">{content}</revelation_ready>
+"block_recent_events_wrapper": |-
+  <recent_events>
+  {lines}
+  </recent_events>
+"block_recent_events_line": "Scene {scene}: {summary}"
+"block_campaign_history_wrapper": |-
+  <campaign_history chapters="{count}">
+  {chapters}
+  </campaign_history>
+"block_campaign_history_chapter": '  <chapter n="{n}" title="{title}">{summary}</chapter>'
+"narrative_direction_intensity_critical": "intensity:critical"
+"narrative_direction_intensity_high": "intensity:high"
+"narrative_direction_intensity_moderate": "intensity:moderate"
+"narrative_direction_intensity_low": "intensity:low"
+"narrative_direction_tempo_label": "tempo:{tempo}"
+"narrative_direction_perspective_label": "perspective:{perspective}"
+"narrative_direction_player_caused": "player:caused_this"
+"narrative_direction_player_witnessing": "player:witnessing"
+"narrative_direction_position_aftermath": "position:aftermath"
+"narrative_direction_position_building": "position:building"
+"narrative_direction_position_steady": "position:steady"
 "secrets_label": |-
   MUST NOT reveal directly,weave across 3+ scenes
 "vocabulary_instruction": |-
   You MUST use these terms instead of their generic equivalents. These substitutions define how this world describes itself. NEVER use the generic term when the substitution exists.
+"block_vocabulary_substitution_line": "  {term} → {replacement}"
+"block_vocabulary_sensory_palette": "<sensory_palette>{palette}</sensory_palette>"
+"block_vocabulary_wrapper": |-
+  <vocabulary>
+  {body}
+  </vocabulary>
+"block_world_truths_line": "  {truth_id}: {summary}"
+"block_world_truths_wrapper": |-
+  <world_truths>
+  {header}
+  {lines}
+  </world_truths>
 "block_correction_instruction": |-
   <correction_instruction>Rewrite the scene incorporating the correction above. Same events and outcome — only adjust what the correction requires.</correction_instruction>
 "block_world_truths_header": |-
