@@ -7,7 +7,13 @@ Originally forked from [EdgeTales](https://github.com/edgetales/edgetales). See 
 
 Straightjacket uses calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day. The first CalVer release is `2026.04.25.0`. Earlier `0.x.y` releases keep their original version numbers and are not renumbered. The switch was made because the project has no public API to version semantically against — the `0.x.y` numbers were running counters with no meaning, and dates carry the meaning the numbers didn't.
 
-## [2026.04.26.5] — 2026-04-26
+## [2026.04.26.6] — 2026-04-26
+
+Drift-hotfix in Elvira character creation. `tests/elvira/elvira_bot/creation.py` regel 68 benaderde `pkg.oracle_paths` als dict (`.get("names", [])`), maar `OraclePaths` is sinds v0.50 een dataclass. Elke batch-sessie crashte direct in `_roll_name` op een AttributeError. Fix: directe attribute-access (`pkg.oracle_paths.names`); het veld is required op de dataclass dus de fallback-semantiek was sowieso onjuist. Smoke-getest tegen alle drie de settings (classic, starforged, sundered_isles), geen unit-test toegevoegd — het rolt willekeurig, en de echte regressie-test is Elvira zelf.
+
+---
+
+
 
 Elvira-styles `chaosagent` en `balanced` geschrapt. Chaosagent simuleerde geen echte speler maar fuzz-input (single-word actions, wrong NPC names, claims about events that didn't happen) — die input-distributie ziet de productie-engine nooit, en zijn hoge violation-counts vertekenden compliance-rapporten zonder unieke informatie toe te voegen. Balanced overlapte met de gecombineerde dekking van `explorer`, `aggressor` en `dialogist` zonder unieke meting. Drie styles over die elk een echt speler-archetype representeren.
 

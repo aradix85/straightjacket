@@ -1,0 +1,128 @@
+[
+  {
+    "setting": "classic",
+    "style": "explorer",
+    "repeat": 1,
+    "crashed": true,
+    "error": "AttributeError: 'OraclePaths' object has no attribute 'get'"
+  },
+  {
+    "setting": "classic",
+    "style": "explorer",
+    "repeat": 2,
+    "crashed": true,
+    "error": "AttributeError: 'OraclePaths' object has no attribute 'get'"
+  },
+  {
+    "setting": "classic",
+    "style": "aggressor",
+    "repeat": 1,
+    "crashed": true,
+    "error": "AttributeError: 'OraclePaths' object has no attribute 'get'"
+  },
+  {
+    "setting": "classic",
+    "style": "aggressor",
+    "repeat": 2,
+    "crashed": true,
+    "error": "AttributeError: 'OraclePaths' object has no attribute 'get'"
+  },
+  {
+    "setting": "classic",
+    "style": "dialogist",
+    "repeat": 1,
+    "crashed": true,
+    "error": "AttributeError: 'OraclePaths' object has no attribute 'get'"
+  },
+  {
+    "setting": "classic",
+    "style": "dialogist",
+    "repeat": 2,
+    "crashed": true,
+    "error": "AttributeError: 'OraclePaths' object has no attribute 'get'"
+  },
+  {
+    "setting": "starforged",
+    "style": "explorer",
+    "repeat": 1,
+    "crashed": true,
+    "error": "AttributeError: 'OraclePaths' object has no attribute 'get'"
+  },
+  {
+    "setting": "starforged",
+    "style": "explorer",
+    "repeat": 2,
+    "crashed": true,
+    "error": "AttributeError: 'OraclePaths' object has no attribute 'get'"
+  },
+  {
+    "setting": "starforged",
+    "style": "aggressor",
+    "repeat": 1,
+    "crashed": true,
+    "error": "AttributeError: 'OraclePaths' object has no attribute 'get'"
+  },
+  {
+    "setting": "starforged",
+    "style": "aggressor",
+    "repeat": 2,
+    "crashed": true,
+    "error": "AttributeError: 'OraclePaths' object has no attribute 'get'"
+  },
+  {
+    "setting": "starforged",
+    "style": "dialogist",
+    "repeat": 1,
+    "crashed": true,
+    "error": "AttributeError: 'OraclePaths' object has no attribute 'get'"
+  },
+  {
+    "setting": "starforged",
+    "style": "dialogist",
+    "repeat": 2,
+    "crashed": true,
+    "error": "AttributeError: 'OraclePaths' object has no attribute 'get'"
+  },
+  {
+    "setting": "sundered_isles",
+    "style": "explorer",
+    "repeat": 1,
+    "crashed": true,
+    "error": "AttributeError: 'OraclePaths' object has no attribute 'get'"
+  },
+  {
+    "setting": "sundered_isles",
+    "style": "explorer",
+    "repeat": 2,
+    "crashed": true,
+    "error": "AttributeError: 'OraclePaths' object has no attribute 'get'"
+  },
+  {
+    "setting": "sundered_isles",
+    "style": "aggressor",
+    "repeat": 1,
+    "crashed": true,
+    "error": "AttributeError: 'OraclePaths' object has no attribute 'get'"
+  },
+  {
+    "setting": "sundered_isles",
+    "style": "aggressor",
+    "repeat": 2,
+    "crashed": true,
+    "error": "AttributeError: 'OraclePaths' object has no attribute 'get'"
+  },
+  {
+    "setting": "sundered_isles",
+    "style": "dialogist",
+    "repeat": 1,
+    "crashed": true,
+    "error": "AttributeError: 'OraclePaths' object has no attribute 'get'"
+  },
+  {
+    "setting": "sundered_isles",
+    "style": "dialogist",
+    "repeat": 2,
+    "crashed": true,
+    "error": "AttributeError: 'OraclePaths' object has no attribute 'get'"
+  }
+]

@@ -65,7 +65,7 @@ def roll_character(setting_id: str = "starforged", game_cfg: dict | None = None)
 def _roll_name(pkg: SettingPackage, game_cfg: dict) -> str:
     if game_cfg.get("player_name"):
         return game_cfg["player_name"]
-    name_paths = pkg.oracle_paths.get("names", [])
+    name_paths = pkg.oracle_paths.names
     import contextlib
 
     parts = []
