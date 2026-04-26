@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from ..engine_loader import eng
 from ..models import BrainResult, GameState, RollResult
-from .resolvers import move_category
+from .resolvers import is_dialog_memory, move_category
 
 
 def derive_memory_emotion(move: str, result: str, disposition: str) -> str:
@@ -12,7 +12,8 @@ def derive_memory_emotion(move: str, result: str, disposition: str) -> str:
     suffix_map = memory_emotions.disposition_suffix
 
     category = move_category(move)
-    key = "dialog" if move == "dialog" or result == "dialog" else f"{category}_{result}"
+    is_dialog = move == "dialog" or result == "dialog"
+    key = "dialog" if is_dialog else f"{category}_{result}"
 
     base = base_map[key]
     suffix = suffix_map[disposition]
@@ -35,11 +36,12 @@ def generate_engine_memories(
     scene = game.narrative.scene_count
 
     move = brain.move
+    is_dialog = is_dialog_memory(brain, roll_present=roll is not None)
     result = roll.result if roll else "dialog"
     category = move_category(move)
     intent = brain.player_intent or ""
 
-    result_key = "dialog" if move == "dialog" else f"{category}_{result}"
+    result_key = "dialog" if is_dialog else f"{category}_{result}"
     result_text = result_text_map[result_key]
     move_verb = verb_map[move] if move in verb_map else verb_map["_catchall"]
 
@@ -56,7 +58,6 @@ def generate_engine_memories(
         if npc.status not in ("active", "background"):
             continue
 
-        is_dialog = move == "dialog" or (roll is None)
         is_targeted = brain.target_npc and brain.target_npc == npc.id
 
         if is_dialog:
@@ -109,7 +110,7 @@ def generate_scene_context(
     location = game.world.current_location or _defaults["unknown_location"]
     npc_summary = ", ".join(activated_npc_names[:_npc_max]) if activated_npc_names else _defaults["no_npcs_nearby"]
 
-    if move == "dialog" or roll is None:
+    if is_dialog_memory(brain, roll_present=roll is not None):
         return _e.scene_context.dialog.format(location=location, npc_summary=npc_summary)
 
     result = roll.result if roll else "MISS"

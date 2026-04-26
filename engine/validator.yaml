@@ -33,7 +33,6 @@ validator:
   - \bmakes you (?:want|need|wish|long|ache) to\b
   - \b(?:the |a )?(?:silence|darkness|cold|emptiness|room|air|wind) (?:offers|invites|urges|compels|forces|demands|asks|tells)
     you\b
-  - \b(?:press(?:es|ing)|settl(?:es|ing)|weigh(?:s|ing)|hang(?:s|ing)|bears? down) (?:against |on |upon )?your (?:chest|shoulders|ears|back|spine|ribs)\b
   - \bdragging your (?:posture|shoulders|head|body|gaze)\b
   - \b(?:crushing|suffocating) (?:pressure|weight|silence|darkness|realization)\b
   - \b(?:sound|voice|world|noise)s? feels? (?:distant|muffled|far away|underwater)\b
@@ -50,7 +49,7 @@ validator:
   - \bfortunately\b
   - \bluckily\b
   - \bmanage[sd]? to\b
-  - \bbut (?:you|the|it|she|he|they)\b.*\b(?:safe|survive|escape|learn|gain|find|discover)\b
+  - \bbut (?:you|the|it|she|he|they)\b.*\b(?:safe|survive|escape|learn|gain|find|discover)(?!\s+(?:nothing|no\b|none|without))\b
   - \bsilver lining\b
   - \bblessing in disguise\b
   - \bbright side\b

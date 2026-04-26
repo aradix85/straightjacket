@@ -19,6 +19,9 @@ memory_emotions:
     other_MISS: frustrated_setback
     other_WEAK_HIT: wary_uncertain
     other_STRONG_HIT: confident
+    gather_information_MISS: confused_misled
+    gather_information_WEAK_HIT: cautiously_informed
+    gather_information_STRONG_HIT: enlightened
     dialog: neutral
   disposition_suffix:
     hostile: _hostile
@@ -47,6 +50,9 @@ memory_result_text:
   other_MISS: failed and the situation deteriorated
   other_WEAK_HIT: partial success with complications
   other_STRONG_HIT: succeeded cleanly
+  gather_information_MISS: learned nothing useful, or worse, was misled
+  gather_information_WEAK_HIT: pieced together partial information
+  gather_information_STRONG_HIT: uncovered what was needed
   dialog: exchanged words
 memory_move_verbs:
   adventure/face_danger: faced danger

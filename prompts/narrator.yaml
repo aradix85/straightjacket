@@ -11,7 +11,7 @@
 
   CONSEQUENCE COMPLIANCE: Each <consequence> tag in the user prompt names something that happens this scene. You MUST weave every consequence into the prose so the player sees it occur. You may change wording but not what happens. Lost supplies are shown lost. A ticking clock is shown advancing. A named NPC reacts visibly. Missing a consequence = rewrite.
 
-  RESULT INTEGRITY: You MUST follow <result type="..."> exactly. MISS = concrete failure, the situation is worse, no silver linings, no learning, no progress, no discoveries. WEAK_HIT = success with a specific tangible cost visible in prose: name the thing broken, lost, spent, damaged, or worsened. Atmospheric tension alone is not a cost. STRONG_HIT = clean success. A MISS is a setback, not annihilation.
+  RESULT INTEGRITY: You MUST follow <result type="..."> exactly. MISS = concrete failure, the situation is worse, no silver linings, no learning, no progress, no discoveries. WEAK_HIT = success with a specific tangible cost visible in prose: name the thing broken, lost, spent, damaged, or worsened. Atmospheric tension alone is not a cost. STRONG_HIT = clean success. A MISS is a setback, not annihilation. On WEAK_HIT and STRONG_HIT the player character is the grammatical subject of the successful action — the world does not yield by itself. RIGHT: "You drive the blade past his guard."
 
   NPC SPEECH CONTENT: NPCs MUST answer what was asked and say nothing that was not asked. Length does not matter — a long answer to a complex question is fine. What matters is scope: stay within the question. NPCs do not volunteer theories, names, locations, plans, warnings, or context beyond the direct answer. After answering, they act physically: turn away, pick something up, go back to work, leave. A mystery introduced this scene survives to the next scene. This rule applies every scene, even for NPCs the player has spoken to before. Familiarity does not unlock more information.
   {vocabulary_block}{world_truths_block}
@@ -78,7 +78,7 @@
 
   CONSEQUENCE COMPLIANCE: Each <consequence> tag describes something that happens in this scene. Weave every consequence into the prose — the player sees each one occur. You may change wording but not what happens. Lost supplies are shown lost. A ticking clock is shown advancing. If a consequence names an NPC, that NPC visibly reacts. Missing a consequence requires a rewrite.
 
-  RESULT INTEGRITY: Follow <result type="..."> exactly. MISS = concrete failure, the situation is worse, no silver linings, no learning, no progress, no discoveries. WEAK_HIT = success with a specific tangible cost visible in prose: something broken, lost, spent, damaged, or worsened — name the thing. Atmospheric tension alone is not a cost. STRONG_HIT = clean success. A MISS is a setback, not annihilation.
+  RESULT INTEGRITY: Follow <result type="..."> exactly. MISS = concrete failure, the situation is worse, no silver linings, no learning, no progress, no discoveries. WEAK_HIT = success with a specific tangible cost visible in prose: something broken, lost, spent, damaged, or worsened — name the thing. Atmospheric tension alone is not a cost. STRONG_HIT = clean success. A MISS is a setback, not annihilation. On WEAK_HIT and STRONG_HIT the player character is the grammatical subject of the successful action — the world does not yield by itself. RIGHT: "You drive the blade past his guard."
 
   {content_boundaries_block}{backstory_block}{status_context_block}{tone_authority_block}
 

@@ -8,6 +8,7 @@ from ..mechanics import (
     apply_brain_location_time,
     can_burn_momentum,
     generate_consequence_sentences,
+    is_dialog_branch,
     purge_old_fired_clocks,
     roll_action,
     roll_progress,
@@ -39,6 +40,12 @@ from .turn_types import ActionResolution, RollOutcome, SceneContext
 def process_turn(
     provider: AIProvider, game: GameState, player_message: str, config: EngineConfig | None = None
 ) -> tuple[GameState, str, RollResult | None, dict | None, dict | None]:
+    if game.game_over:
+        raise RuntimeError(
+            "process_turn called on a game with game_over=True. "
+            "Caller must handle game_over (succession or new chapter) before requesting another turn."
+        )
+
     _begin_turn(game, player_message)
 
     scene_setup = check_scene(game)
@@ -49,7 +56,7 @@ def process_turn(
     _apply_brain_state_mutations(game, brain)
     ctx = _build_scene_context(provider, game, brain, config, player_message, scene_setup, pending_random_events)
 
-    if brain.dialog_only or brain.move == "dialog" or brain.move == "ask_the_oracle":
+    if is_dialog_branch(brain):
         narration, director_ctx = _process_dialog_turn(ctx)
         return game, narration, None, None, director_ctx
 
@@ -265,6 +272,12 @@ def _execute_roll(game: GameState, brain: BrainResult) -> RollOutcome:
         )
     else:
         stat_name = brain.stat
+        if stat_name == "none":
+            raise ValueError(
+                f"Brain returned stat='none' for action_roll move '{brain.move}'. "
+                f"This is a Brain output error: action_roll moves require a real stat. "
+                f"Brain should have either picked a valid stat or routed this as dialog/oracle."
+            )
         roll = roll_action(stat_name, game.get_stat(stat_name), brain.move)
         _raw = roll.d1 + roll.d2 + roll.stat_value
         _score_str = f"{_raw}→{roll.action_score}(cap)" if _raw > roll.action_score else str(roll.action_score)

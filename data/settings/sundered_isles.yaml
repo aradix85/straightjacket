@@ -41,8 +41,6 @@ genre_constraints:
     - "cybernetic"
     - "elven"
     - "dwarven"
-    - "weep"
-    - "weeping"
     - "writhe"
     - "writhing"
     - "visage"
@@ -60,8 +58,7 @@ genre_constraints:
     - "exhaling"
     - "awakens"
     - "waking"
-    - "shimmers"
-    - "shimmering"
+  atmospheric_drift_overlays: {}
   atmospheric_drift_threshold: 2
 
 creation_flow:

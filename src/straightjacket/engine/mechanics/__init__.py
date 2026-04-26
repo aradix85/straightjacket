@@ -30,6 +30,8 @@ __all__ = [
     "get_legacy_track",
     "get_meta_handler_names",
     "get_pacing_hint",
+    "is_dialog_branch",
+    "is_dialog_memory",
     "locations_match",
     "lookup_meta_plot_point",
     "lookup_plot_point",
@@ -110,6 +112,8 @@ from .random_events import (
     roll_meaning_table,
 )
 from .resolvers import (
+    is_dialog_branch,
+    is_dialog_memory,
     move_category,
     resolve_effect,
     resolve_position,

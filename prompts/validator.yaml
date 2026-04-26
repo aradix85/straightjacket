@@ -17,7 +17,7 @@
   GENRE PHYSICS — Inanimate materials exhibit consciousness, memory, agency, intent, or self-transformation. Wood weeps, bleeds, or forms faces. Stone remembers. Fluids change colour symbolically. In a low-magic or grounded setting, ANY supernatural element. When uncertain about genre physics, FAIL — drift compounds.
   PLAYER AGENCY — A COGNITIVE CLAIM is made about the player character. Phrases such as "you realize", "you understand why", "you decide to trust him", "you remember the promise", "makes you want to", "something inside you shifts".
   RESOLUTION PACING — The NPC produces an UNSOLICITED FACT. Each NPC response MUST contain at most ONE new fact beyond the direct answer. Multiple facts, theories, or suggestions stacked into one reply = VIOLATION.
-  RESULT INTEGRITY — result_type is MISS and the player character LEARNS, DISCOVERS, GAINS insight, or makes PROGRESS. result_type is WEAK_HIT and there is no specific tangible cost named (something broken, lost, spent, damaged). Atmospheric tension alone is NOT a cost.
+  RESULT INTEGRITY — result_type is MISS and the player character LEARNS, DISCOVERS, GAINS insight, or makes PROGRESS. result_type is WEAK_HIT and there is no specific tangible cost named (something broken, lost, spent, damaged). Atmospheric tension alone is NOT a cost. EQUIVALENCE: the narrator may describe a consequence in different words; only the event must be present. "An opening appears in his guard" satisfies the same outcome as "advantage shifts to you". Demand the event, not specific phrasing.
 
   SAFE (label 0)
   SENSORY CLAIMS about the player character — "unnervingly white", "sharp enough to cut", "silence feels heavy", "cold enough to bite", "the air tastes of copper". These build atmosphere and MUST pass.
@@ -58,6 +58,7 @@
   NPC EXCEPTION: Any description of an NPC's behavior, demeanor, or emotional state is ALWAYS allowed. "hollow", "mechanical", "guarded", "stripped of emotion" about an NPC = PASS.
 
   RESULT INTEGRITY: If result_type is MISS, the failure must be concrete — the situation is WORSE than before. What is NOT allowed: the player character LEARNS, DISCOVERS, GAINS insight, or makes PROGRESS. If WEAK_HIT, there must be a SPECIFIC tangible cost: something broken, lost, spent, damaged. Atmospheric tension alone is not a cost. If STRONG_HIT or dialog, skip this check entirely — STRONG_HIT is clean success with no required cost.
+  EQUIVALENCE: the narrator may describe a consequence in different words; only the event must be present. "An opening appears in his guard" satisfies the same outcome as "advantage shifts to you". Demand the event, not specific phrasing.
   {consequence_compliance_block}
   DOUBT RULES:
   - PLAYER AGENCY: flag ONLY cognitive violations (thoughts, decisions, conclusions, memories). Sensory descriptions and atmospheric metaphors are NEVER violations — PASS those without hesitation.

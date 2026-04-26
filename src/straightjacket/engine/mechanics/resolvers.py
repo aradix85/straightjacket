@@ -211,3 +211,13 @@ def move_category(move: str) -> str:
         if move in mc[cat]:
             return cat
     return "other"
+
+
+def is_dialog_branch(brain: BrainResult) -> bool:
+    if brain.dialog_only:
+        return True
+    return brain.move == "dialog" or brain.move == "ask_the_oracle"
+
+
+def is_dialog_memory(brain: BrainResult, roll_present: bool) -> bool:
+    return is_dialog_branch(brain) or not roll_present
