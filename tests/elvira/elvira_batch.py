@@ -27,8 +27,7 @@ from tests.elvira.elvira_bot.models import SessionLog
 from tests.elvira.elvira_bot.runner import load_config, run_session
 
 DEFAULT_CONFIG = _HERE / "elvira_config.yaml"
-ALL_STYLES = ["explorer", "aggressor", "dialogist", "chaosagent", "balanced"]
-DEFAULT_STYLES = ["explorer", "aggressor", "dialogist"]
+ALL_STYLES = ["explorer", "aggressor", "dialogist"]
 SEPARATOR = "=" * 62
 
 
@@ -215,7 +214,7 @@ def main() -> None:
     parser.add_argument("--turns", type=int, default=None, help="Turns per session (overrides config)")
     parser.add_argument("--repeats", type=int, default=1, help="Repeat each combination N times (default: 1)")
     parser.add_argument("--settings", nargs="+", default=None, help="Settings to test (default: all except delve)")
-    parser.add_argument("--styles", nargs="+", default=None, help="Styles to test (default: all 5)")
+    parser.add_argument("--styles", nargs="+", default=None, help=f"Styles to test (default: {', '.join(ALL_STYLES)})")
     parser.add_argument(
         "--output", type=Path, default=None, help="JSON output path (default: elvira/batch_report.json)"
     )
@@ -228,7 +227,7 @@ def main() -> None:
 
     available_settings = [s for s in list_packages() if s != "delve"]
     settings = args.settings or available_settings
-    styles = args.styles or DEFAULT_STYLES
+    styles = args.styles or ALL_STYLES
 
     for s in settings:
         if s not in available_settings:

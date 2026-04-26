@@ -58,7 +58,11 @@ def _load_bot_config() -> None:
 
 def get_persona(style: str) -> str:
     prompts = _load_prompts()
-    return prompts.get(f"style_{style}", prompts.get("style_balanced", ""))
+    key = f"style_{style}"
+    if key not in prompts:
+        valid = sorted(k.removeprefix("style_") for k in prompts if k.startswith("style_"))
+        raise KeyError(f"Unknown Elvira style '{style}'. Valid styles: {', '.join(valid)}")
+    return prompts[key]
 
 
 def ask_bot(provider: AIProvider, system: str, user: str, max_tokens: int = 300, model: str = "") -> str:

@@ -7,7 +7,15 @@ Originally forked from [EdgeTales](https://github.com/edgetales/edgetales). See 
 
 Straightjacket uses calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day. The first CalVer release is `2026.04.25.0`. Earlier `0.x.y` releases keep their original version numbers and are not renumbered. The switch was made because the project has no public API to version semantically against — the `0.x.y` numbers were running counters with no meaning, and dates carry the meaning the numbers didn't.
 
-## [2026.04.26.4] — 2026-04-26
+## [2026.04.26.5] — 2026-04-26
+
+Elvira-styles `chaosagent` en `balanced` geschrapt. Chaosagent simuleerde geen echte speler maar fuzz-input (single-word actions, wrong NPC names, claims about events that didn't happen) — die input-distributie ziet de productie-engine nooit, en zijn hoge violation-counts vertekenden compliance-rapporten zonder unieke informatie toe te voegen. Balanced overlapte met de gecombineerde dekking van `explorer`, `aggressor` en `dialogist` zonder unieke meting. Drie styles over die elk een echt speler-archetype representeren.
+
+`tests/elvira/elvira_prompts.yaml` houdt nu nog drie style-blokken. `tests/elvira/elvira_batch.py` verloor de redundante `DEFAULT_STYLES` constant — `ALL_STYLES` is nu de enige bron, helptext afgeleid van de constant zodat de eerdere drift ("default: all 5") niet kan terugkeren. `tests/elvira/elvira.py` `--style` helptext bijgewerkt. `tests/elvira/elvira_bot/ai_helpers.py` `get_persona` raised nu `KeyError` met een lijst van geldige styles in plaats van stilletjes terug te vallen op `style_balanced` — strict-rules conform, geen silent substitution. Save format ongewijzigd, geen Python-edits buiten Elvira. 1187 tests groen, ruff clean, ruff format clean, mypy clean op 105 source files.
+
+---
+
+
 
 Model-specifieke prompt-variants ingevuld waar de architectuur ze ondersteunt. `narrator_system_glm` toegevoegd aan `prompts/narrator.yaml`: language-directief eerst, persona-vat ("senior RPG narrator producing tight, physical second-person prose for a fictional creative-writing roleplay"), front-loaded MUST-constraints (genre physics → player agency → consequence compliance → result integrity → npc speech), WRONG/RIGHT patterns onderaan als ondersteuning. `validator_system_gpt_oss` toegevoegd aan `prompts/validator.yaml` in een sectie-gestructureerd patroon (INSTRUCTIONS / DEFINITIONS / VIOLATES (label 1) / SAFE (label 0) / EXAMPLES) met uppercase labels in plaats van markdown headers wegens project-rule conflict. Soft language ("generally", "usually", "may") expliciet verboden in validator-tekst. De universele varianten blijven staan als fallback voor andere narrator- en judgment-modellen.
 

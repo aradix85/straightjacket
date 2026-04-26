@@ -39,7 +39,7 @@ def main() -> None:
         "--style",
         type=str,
         default=None,
-        help="Override: play style (explorer, aggressor, dialogist, chaosagent, balanced)",
+        help="Override: play style (explorer, aggressor, dialogist)",
     )
     args = parser.parse_args()
 
