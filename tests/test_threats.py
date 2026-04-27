@@ -148,33 +148,6 @@ class TestAdvanceById:
         assert event is None
 
 
-class TestThreatAdvanceValidator:
-    def test_threat_name_in_narration_passes(self) -> None:
-        from straightjacket.engine.ai.rule_validator import check_threat_advance
-
-        result = check_threat_advance(
-            "The Beast stirs in the distance, its presence growing heavier.",
-            ["The Beast Awakens"],
-        )
-        assert result == []
-
-    def test_threat_name_missing_fails(self) -> None:
-        from straightjacket.engine.ai.rule_validator import check_threat_advance
-
-        result = check_threat_advance(
-            "You pick up your sword and continue walking.",
-            ["The Beast Awakens"],
-        )
-        assert len(result) == 1
-        assert "THREAT ADVANCE" in result[0]
-
-    def test_empty_threat_names_passes(self) -> None:
-        from straightjacket.engine.ai.rule_validator import check_threat_advance
-
-        result = check_threat_advance("Anything here.", [])
-        assert result == []
-
-
 class TestThreatsStatus:
     def test_active_threats_shown(self, load_engine: None) -> None:
         from straightjacket.web.serializers import build_threats_status

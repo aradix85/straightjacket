@@ -5,7 +5,6 @@ from ..ai.architect_validator import validate_architect
 from ..ai.metadata import process_deceased_npcs
 from ..ai.narrator import call_narrator, call_opening_setup
 from ..ai.provider_base import AIProvider
-from ..ai.validator import validate_and_retry
 from ..datasworn.loader import extract_title
 from ..datasworn.settings import SettingPackage, active_package, load_package
 from ..db import sync as _db_sync
@@ -285,8 +284,6 @@ def start_new_game(
 
     narration = parse_narrator_response(game, raw)
 
-    narration, val_report = validate_and_retry(provider, narration, narrator_prompt, "opening", game, config=config)
-
     _pkg = active_package(game)
     _gc = _pkg.genre_constraints if _pkg else None
 
@@ -330,7 +327,6 @@ def start_new_game(
             scene_type="expected",
             summary="Game start",
             result="opening",
-            validator=val_report,
         )
     )
 

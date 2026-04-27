@@ -81,7 +81,6 @@ CREATE TABLE IF NOT EXISTS scene_log (
     effect      TEXT NOT NULL,
     scene_type  TEXT NOT NULL,
     npc_activation TEXT NOT NULL,                -- JSON dict
-    validator   TEXT NOT NULL,                   -- JSON dict
     rich_summary TEXT NOT NULL,
     director_trigger TEXT NOT NULL,
     oracle_answer TEXT NOT NULL,

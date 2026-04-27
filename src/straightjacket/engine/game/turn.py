@@ -16,7 +16,6 @@ from ..mechanics import (
 from ..mechanics.fate import resolve_fate, resolve_likelihood
 from ..mechanics.random_events import drain_pending_events
 from ..mechanics.scene import SceneSetup, check_scene
-from ..mechanics.stance_gate import compute_npc_gate, resolve_npc_stance
 from ..mechanics.threats import advance_threat_by_id
 from ..models import (
     BrainResult,
@@ -30,7 +29,6 @@ from ..models import (
 from ..npc import activate_npcs_for_prompt, find_npc, reactivate_npc
 from ..prompt_action import build_action_prompt
 from ..prompt_dialog import build_dialog_prompt
-from ..prompt_shared import _resolve_stance_category
 from ..story_state import get_pending_revelations
 from .action_resolution import resolve_action_phase
 from .finalization import narrate_scene
@@ -107,17 +105,6 @@ def _move_roll_type(game: GameState, move: str) -> str | None:
     if engine_move is not None:
         return engine_move.roll_type
     return None
-
-
-def _resolve_target_fact_budget(game: GameState, target_id: str | None, move_category: str) -> tuple[str, int]:
-    if not target_id:
-        return "", -1
-    npc = find_npc(game, target_id)
-    if npc is None:
-        return "", -1
-    stance = resolve_npc_stance(game, npc, move_category)
-    gate = compute_npc_gate(game, npc, game.narrative.scene_count, stance.stance)
-    return npc.name, eng().information_gate.fact_budget_by_gate[gate]
 
 
 def _begin_turn(game: GameState, player_message: str) -> None:
@@ -217,16 +204,11 @@ def _process_dialog_turn(ctx: SceneContext) -> tuple[str, dict | None]:
         oracle_answer=oracle_answer,
         random_events=ctx.pending_random_events,
     )
-    target_name, target_budget = _resolve_target_fact_budget(game, brain.target_npc, "social")
-    narration, val_report = narrate_scene(
+    narration = narrate_scene(
         ctx.provider,
         game,
         prompt,
         config=ctx.config,
-        validate_result_type="dialog",
-        player_words=ctx.player_message,
-        target_npc_name=target_name,
-        fact_budget=target_budget,
     )
 
     if game.last_turn_snapshot is not None:
@@ -242,7 +224,6 @@ def _process_dialog_turn(ctx: SceneContext) -> tuple[str, dict | None]:
         "clock_events": [],
         "scene_type": ctx.scene_setup.scene_type,
         "npc_activation": ctx.npc_activation_debug,
-        "validator": val_report,
         "_pacing_type": "breather",
     }
     if is_oracle:
@@ -374,7 +355,7 @@ def _narrate_action_and_finalize(
     brain = ctx.brain
     roll = roll_outcome.roll
 
-    consequence_sentences, consequence_events = generate_consequence_sentences(
+    consequence_sentences = generate_consequence_sentences(
         action_res.consequences, action_res.clock_events, game, brain
     )
 
@@ -395,19 +376,11 @@ def _narrate_action_and_finalize(
         random_events=ctx.pending_random_events,
         threat_events=action_res.threat_events,
     )
-    stance_cat = _resolve_stance_category(brain.move)
-    target_name, target_budget = _resolve_target_fact_budget(game, brain.target_npc, stance_cat)
-    narration, val_report = narrate_scene(
+    narration = narrate_scene(
         ctx.provider,
         game,
         prompt,
         config=ctx.config,
-        validate_result_type=roll.result,
-        player_words=player_message,
-        consequences=action_res.consequences,
-        consequence_events=consequence_events,
-        target_npc_name=target_name,
-        fact_budget=target_budget,
     )
 
     if game.last_turn_snapshot is not None:
@@ -427,7 +400,6 @@ def _narrate_action_and_finalize(
             "effect": action_res.effect,
             "scene_type": ctx.scene_setup.scene_type,
             "npc_activation": ctx.npc_activation_debug,
-            "validator": val_report,
             "_pacing_type": "action",
         },
         prompt_summary=f"Action ({roll.result}): {(brain.player_intent or player_message)[: eng().truncations.log_medium]}",

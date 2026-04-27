@@ -24,7 +24,6 @@ Prompt Builder (prompt_action/prompt_dialog) → assembles XML prompt with world
 Narrate (game/finalization.py → narrate_scene)
   → narrator call (ai/narrator.py) → prose with conversation memory
   → parser (parser.py) → strips leaked metadata (10-step cleanup)
-  → validator (ai/validator.py) → hybrid rule-based + LLM check, retries with prompt stripping
   ↓
 Post-Narration (game/finalization.py → apply_post_narration)
   → engine memories, scene context, AI metadata extraction (ai/metadata.py)
@@ -113,9 +112,8 @@ Where to find things. If you want to change X, edit Y.
 | Impacts (wounded, shaken, etc.) | `engine.yaml` → `impacts` (typed `ImpactConfig`); `mechanics/impacts.py` → `apply_impact`, `clear_impact`, `blocks_recovery`, `recalc_max_momentum` |
 | Legacy tracks, XP, asset advancement | `engine.yaml` → `legacy` (typed `LegacyConfig`); `mechanics/legacy.py` → `mark_legacy`, `apply_threat_overcome_bonus`, `advance_asset`; `CampaignState.legacy_quests/bonds/discoveries` |
 | NPC name generation | `npc/naming.py` → `roll_oracle_name`; `data/settings/*.yaml` → `oracle_paths.names` |
-| Validator context bundling | `ai/rule_validator.py` → `ValidationContext` (adding new check = 1 field + 1 build line + 1 check call) |
 | Architect blueprint validation | `ai/architect_validator.py` → `validate_architect`, `_check_blueprint_text_fields` |
-| Chapter summary contradiction validation | `ai/chapter_validator.py` → `validate_chapter_summary` (rule pass + LLM pass), `validate_and_retry` (orchestrates retry of `call_chapter_summary`); config in `engine/chapter_validator.yaml`; templates in `engine/rule_validator.yaml` `violation_templates` |
+| Chapter summary contradiction validation | `ai/chapter_validator.py` → `validate_chapter_summary` (rule pass + LLM pass), `validate_and_retry` (orchestrates retry of `call_chapter_summary`); config in `engine/chapter_validator.yaml` (`violation_templates`, `death_keywords`, `completion_keywords`, `resolution_keywords`); prompts in `prompts/chapter_validator.yaml` |
 | Adventure Crafter primitives (themes, plot points, meta dispatch) | `mechanics/adventure_crafter.py` → `assign_themes`, `lookup_plot_point`, `lookup_meta_plot_point`, `dispatch_meta`; `engine/adventure_crafter.yaml` (themes, theme_die_table, special_ranges); `data/adventure_crafter.json` (lookup tables) |
 
 ## AI Model Assignment
@@ -128,7 +126,7 @@ Cluster          Roles                                              Needs
 narrator         narrator                                           prose generation (creative writing)
 creative         architect, director, chapter_summary, recap        open-ended generation needing real reasoning
 classification   brain, correction                                  single-shot structured-output decisions
-judgment         validator, chapter_validator, revelation_check     interpretive yes/no with nuance
+judgment         chapter_validator, revelation_check                interpretive yes/no with nuance
 extraction       validator_architect, narrator_metadata,            pure data extraction, no interpretation
                  opening_setup
 ```
@@ -223,9 +221,7 @@ src/straightjacket/
 │   │   ├── metadata.py      # Apply extracted metadata to game state
 │   │   ├── architect.py     # Story blueprint, recap, chapter summary
 │   │   ├── architect_validator.py # Blueprint genre fidelity check (rule-based + LLM)
-│   │   ├── validator.py     # Narrator constraint checking (rule-based + LLM) and retry loop
 │   │   ├── chapter_validator.py # Chapter-summary contradiction check (rule pass + LLM pass) with retry
-│   │   ├── rule_validator.py # Instant rule-based checks (player agency, result integrity, genre, format)
 │   │   ├── json_utils.py    # Shared JSON extraction from text responses
 │   │   └── schemas.py       # JSON output schemas (config-driven)
 │   ├── npc/
@@ -297,7 +293,7 @@ src/straightjacket/
 
 **Provider abstraction.** `AIProvider` protocol with two implementations (Anthropic, OpenAI-compatible). The engine never imports provider SDKs directly. `create_with_retry` handles transient errors with exponential backoff. Multi-model: config.yaml assigns models via five clusters — narrator (GLM 4.7 for prose), creative (GPT-OSS for architect, director, chapter_summary, recap), classification (GPT-OSS for brain, correction), judgment (GPT-OSS for validator, chapter_validator, revelation_check), extraction (GPT-OSS for validator_architect, narrator_metadata, opening_setup). Clusters are the single source of truth for all call parameters. `model_for_role(role)` resolves the model; `sampling_params(role)` resolves temperature, top_p, max_tokens, max_retries, and extra_body. The provider stores no model state.
 
-**AI-call exception carve-out.** The strict-rules forbid broad `try/except Exception` suppression. AI call sites are an explicit carve-out — `brain.py`, `narrator.py`, `validator.py`, `director.py`, `correction/analysis.py`, `architect*.py`, `tools/handler.py`. AI calls fail transiently (rate limits, network blips, provider outages, 429/500/502/503/529); the retry wrapper handles retryable status codes with exponential backoff, and what remains after retries is unrecoverable for that call. Strict-raise would crash the player's session on any transient fault. Graceful degradation — Brain falling through to `dialog`, revelation_check defaulting to confirmed, narrator retry returning empty string — hides the fault but preserves the session; every suppression site logs at warning or error level with the exception type so faults stay observable. This carve-out does not extend to config loading, yaml parsing, file persistence, input validation, or domain-rule enforcement: those must raise.
+**AI-call exception carve-out.** The strict-rules forbid broad `try/except Exception` suppression. AI call sites are an explicit carve-out — `brain.py`, `narrator.py`, `chapter_validator.py`, `director.py`, `correction/analysis.py`, `architect*.py`, `tools/handler.py`. AI calls fail transiently (rate limits, network blips, provider outages, 429/500/502/503/529); the retry wrapper handles retryable status codes with exponential backoff, and what remains after retries is unrecoverable for that call. Strict-raise would crash the player's session on any transient fault. Graceful degradation — Brain falling through to `dialog`, revelation_check defaulting to confirmed, narrator retry returning empty string — hides the fault but preserves the session; every suppression site logs at warning or error level with the exception type so faults stay observable. This carve-out does not extend to config loading, yaml parsing, file persistence, input validation, or domain-rule enforcement: those must raise.
 
 **Minimal UI.** Single HTML page, no build step, no npm. Server sends JSON, client renders. Scene headings for screen reader navigation, aria-live for automatic narration readout. One button (Save/Load), one text input. Status via `/status` and `/score` text commands — engine answers directly, no AI call. Status output is narrative, not mechanical: "seriously wounded" instead of "health 2", "growing trust" instead of "bond 4/10". The player never sees numbers, dice, or system terms.
 
@@ -311,7 +307,7 @@ src/straightjacket/
 
 **Data-driven move outcomes.** `resolve_move_outcome` reads structured effect lists from engine.yaml per move per result. Simple moves (momentum, resources, progress, position) are pure data — no Python. Complex moves (suffer, threshold, recovery) use named handlers that share patterns across moves. Engine-specific moves (`dialog`, `ask_the_oracle`, `world_shaping`) live alongside Datasworn moves in `engine.yaml engine_moves:` — single source of truth read by `available_moves`, the brain-output schema, and the narrator. The `available_moves` function filters moves by game state (combat position, active tracks); Brain receives the filtered list in its prompt. Consequence sentences generated from outcome strings via engine.yaml templates.
 
-**Shared outcome resolution.** Three codepaths produce action narration: normal turns, corrections (input_misread), and momentum burns. All three share `resolve_action_consequences` in `game/finalization.py` — move outcome, combat position, MISS clock ticking, crisis check. They also share `apply_progress_and_legacy` — consumes `outcome.progress_marks` on the active track and `outcome.legacy_track` on campaign legacy tracks. Without this shared step, correction and burn would silently drop progress and legacy rewards from the re-resolved outcome after the snapshot restore. Turn.py adds WEAK_HIT clock ticking, track completion on progress rolls, and scene_challenge routing (intentionally turn-only — these are mechanical turn boundaries, not re-narration events). All four narration paths (turn dialog, turn action, correction, burn) share `narrate_scene` — narrator call, parse, optional validation — in one call. Post-narration state mutations share `apply_post_narration` from the same module.
+**Shared outcome resolution.** Three codepaths produce action narration: normal turns, corrections (input_misread), and momentum burns. All three share `resolve_action_consequences` in `game/finalization.py` — move outcome, combat position, MISS clock ticking, crisis check. They also share `apply_progress_and_legacy` — consumes `outcome.progress_marks` on the active track and `outcome.legacy_track` on campaign legacy tracks. Without this shared step, correction and burn would silently drop progress and legacy rewards from the re-resolved outcome after the snapshot restore. Turn.py adds WEAK_HIT clock ticking, track completion on progress rolls, and scene_challenge routing (intentionally turn-only — these are mechanical turn boundaries, not re-narration events). All four narration paths (turn dialog, turn action, correction, burn) share `narrate_scene` — narrator call plus parser — in one call. Post-narration state mutations share `apply_post_narration` from the same module.
 
 **NPC behavioral stance.** Engine computes per-NPC stance from disposition, bond (via connection track), and move category via engine.yaml stance matrix (60 entries). The narrator receives `stance="evasive" constraint="One fact, then silence."` instead of raw disposition values. The engine tells the narrator how the NPC behaves, not just how they feel.
 
@@ -335,13 +331,11 @@ src/straightjacket/
 
 **No save compatibility.** Saves break whenever the code requires it. No migration layer, no default-on-old fields, no ignore-unknown-fields. Every dataclass field is required; adding a field breaks existing saves. Backwards compatibility requires an explicit request per change, otherwise it is not considered. This is by design for an alpha project with no production users.
 
-**Drift strategy is architectural, not tuning.** Atmospheric and genre drift in narrator output are mitigated by reducing the AI surface, not by tuning detection sensitivity or prompt context. The rule validator catches known drift words and agency patterns; the LLM validator catches the semantic rest. Beyond that, drift tolerances and vocabulary-context sizing are not tuned against the current model configuration — they are recalibrated after each AI-surface reduction (AC-driven blueprint, fiction generators, oracle-driven NPC generation). Tuning the current configuration would be tuning against the wrong target.
+**Drift strategy is architectural, not tuning.** Atmospheric and genre drift in narrator output are mitigated by reducing the AI surface, not by tuning detection sensitivity. Beyond that, drift tolerances and vocabulary-context sizing are recalibrated after each AI-surface reduction (AC-driven blueprint, fiction generators, oracle-driven NPC generation), not against the current model configuration.
 
 **Scope of the dynamic relationship layer.** The individual scale — emotional requests, refusals, concessions, relationship events between NPC and player — is in scope. NPC-NPC triangles that involve the player are in scope. The faction scale operates through schemes and their interactions: factions have independent goal-clocks, schemes that progress, reputation with the player, and scheme-interactions that surface as narrative consequences. Inter-faction emotional dynamics (faction-to-faction emotional requests, refusals, debts as a separate layer) are out of scope. The narrative effect the design document calls for — factions acting in the world independent of the player, consequences surfacing when the player encounters them — is achieved through scheme-interaction, not through a simulated faction-emotion network. This is a deliberate scope boundary, not a deferred feature.
 
 ## Known Limitations
-
-**Validator is model-tuned.** The hybrid validator (rule-based + LLM) carries patterns in `engine/validator.yaml` and atmospheric-drift wordlists in `data/settings/*.yaml`. The rule validator catches common violations (player agency regex patterns, atmospheric drift wordlists, split-monologue detection, genre physics regex patterns); the LLM validator catches the rest — resolution pacing (NPC speech content), consequence compliance, equivalence checks. Resolution pacing remains the hardest violation to correct: language models trained on creative writing bias toward information-rich NPC dialog. Retry success rate is roughly 60% for pacing violations. Patterns and prompts are tuned for the active narrator and validator models — switching to a different model means re-tuning the prompts and pattern lists, not adding parallel variants.
 
 **Single session.** One player at a time. The module-level accumulators (`_pending_events`, `_token_log`) and the in-memory SQLite database assume single-threaded access. Multi-session would require per-session state isolation.
 
@@ -426,7 +420,7 @@ creation_flow:
   starting_asset_categories: [companion, module]
 ```
 
-`vocabulary` keeps AI in-setting. `genre_constraints` feeds rule and architect validators. `oracle_paths.names` drives engine NPC name rolls. `creation_flow` controls client UI steps.
+`vocabulary` keeps AI in-setting. `genre_constraints` feeds the architect validator. `oracle_paths.names` drives engine NPC name rolls. `creation_flow` controls client UI steps.
 
 ### Inheritance
 

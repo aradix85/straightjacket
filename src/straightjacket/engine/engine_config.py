@@ -68,7 +68,6 @@ from .engine_config_dataclasses import (
     RateLimitConfig,
     ResourcesConfig,
     RetryConfig,
-    RuleValidatorConfig,
     SceneAdjustments,
     SceneContextTemplates,
     SetupCommonConfig,
@@ -88,7 +87,6 @@ from .engine_config_dataclasses import (
     ThreatConfig,
     TimeProgressionSteps,
     TruncationsConfig,
-    ValidatorConfig,
 )
 
 
@@ -141,7 +139,6 @@ class EngineSettings:
     memory: MemoryConfig
     chaos_resolver: ChaosResolverConfig
     description_dedup: DescriptionDedupConfig
-    rule_validator: RuleValidatorConfig
     parser: ParserConfig
     story_state: StoryStateConfig
     chapter: ChapterConfig
@@ -154,7 +151,6 @@ class EngineSettings:
     status_descriptions: StatusDescriptionsConfig
     truncations: TruncationsConfig
     persistence: PersistenceConfig
-    validator: ValidatorConfig
     correction: CorrectionConfig
     chapter_validator: ChapterValidatorConfig
     succession: SuccessionConfig
@@ -238,7 +234,6 @@ _SIMPLE_SECTIONS: dict[str, type] = {
     "memory": MemoryConfig,
     "chaos_resolver": ChaosResolverConfig,
     "description_dedup": DescriptionDedupConfig,
-    "rule_validator": RuleValidatorConfig,
     "parser": ParserConfig,
     "story_state": StoryStateConfig,
     "chapter": ChapterConfig,
@@ -251,7 +246,6 @@ _SIMPLE_SECTIONS: dict[str, type] = {
     "status_descriptions": StatusDescriptionsConfig,
     "truncations": TruncationsConfig,
     "persistence": PersistenceConfig,
-    "validator": ValidatorConfig,
     "correction": CorrectionConfig,
     "chapter_validator": ChapterValidatorConfig,
 }
@@ -476,7 +470,6 @@ def parse_engine_yaml(data: dict[str, Any]) -> EngineSettings:
         memory=simple_parsed["memory"],
         chaos_resolver=simple_parsed["chaos_resolver"],
         description_dedup=simple_parsed["description_dedup"],
-        rule_validator=simple_parsed["rule_validator"],
         parser=simple_parsed["parser"],
         story_state=simple_parsed["story_state"],
         chapter=simple_parsed["chapter"],
@@ -489,7 +482,6 @@ def parse_engine_yaml(data: dict[str, Any]) -> EngineSettings:
         status_descriptions=simple_parsed["status_descriptions"],
         truncations=simple_parsed["truncations"],
         persistence=simple_parsed["persistence"],
-        validator=simple_parsed["validator"],
         correction=simple_parsed["correction"],
         chapter_validator=simple_parsed["chapter_validator"],
         succession=succession,

@@ -48,7 +48,7 @@ def _rule_check(narrative: dict[str, Any], game: GameState) -> list[str]:
         return []
 
     cv = eng().chapter_validator
-    templates = eng().rule_validator.violation_templates
+    templates = cv.violation_templates
     violations: list[str] = []
 
     for npc in game.npcs:

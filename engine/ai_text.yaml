@@ -8,7 +8,6 @@ ai_text:
     opening_setup: opening_setup
     correction_output: correction_output
     revelation_check: revelation_check
-    validator: validator
     architect_validator: architect_validator
   brain_trigger_hints:
     dialog: pure conversation with an NPC, no risk, no action, no world declarations
@@ -25,9 +24,6 @@ ai_text:
     revelation_check:
       revelation_confirmed: True if the narration clearly contains or foreshadows the revelation.
       reasoning: One sentence explaining why.
-    validator:
-      pass: true if narration respects all constraints
-      correction: One-sentence fix instruction. Empty if pass=true.
     architect_validator:
       pass: true if blueprint respects genre constraints
       fixed_conflict: Rewritten central_conflict for genre. Empty if pass=true.
@@ -46,12 +42,6 @@ ai_text:
     mark_impact: mark {impact}
     clear_impact: clear {impact}
     threshold_vow: swear a deathbound vow
-  validator_blocks:
-    correction_mode_open: 'Your previous narration was rejected. Rewrite following these instructions:'
-    rewrite_user_prefix: 'Your narration above violated constraints:'
-    rewrite_user_suffix: Rewrite the COMPLETE scene following the original prompt below. Keep what worked, fix what was flagged.
-    unmatched_violation_template: 'Fix: {violation}'
-    momentum_burn_injection: <momentum_burn>Character digs deep, turns the tide.</momentum_burn>
   narrator_defaults:
     unknown_location: unknown
     unknown_time: unspecified
@@ -90,6 +80,7 @@ ai_text:
     clock_filled_template: 'CLOCK FILLED "{clock_name}": {trigger}'
     chapter_validator_empty_block: '  (none)'
     chapter_validator_no_state: '(no tracked entities)'
+    momentum_burn_injection: <momentum_burn>Character digs deep, turns the tide.</momentum_burn>
   architect_labels:
     forbidden_terms_prefix: Forbidden terms
     forbidden_concepts_prefix: Forbidden concepts

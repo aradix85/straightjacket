@@ -40,7 +40,6 @@ class SceneLogEntry(SerializableMixin):
     position: str = "risky"
     effect: str = "standard"
     npc_activation: dict = field(default_factory=dict)
-    validator: dict = field(default_factory=dict)
     rich_summary: str = ""
     director_trigger: str = ""
     oracle_answer: str = ""

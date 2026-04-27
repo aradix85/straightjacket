@@ -74,7 +74,7 @@ def _handle_input_misread(
         npc_agency, _ = check_npc_agency(game)
         activated_npcs, mentioned_npcs, _ = activate_npcs_for_prompt(game, brain, corrected_input)
 
-        consequence_sentences, _ = generate_consequence_sentences(consequences, clock_events, game, brain)
+        consequence_sentences = generate_consequence_sentences(consequences, clock_events, game, brain)
 
         prompt = build_action_prompt(
             game,
@@ -119,7 +119,7 @@ def _handle_state_error(
         consequences = _last_entry.consequences if _last_entry else []
         clock_events = _last_entry.clock_events if _last_entry else []
         npc_agency, _ = check_npc_agency(game)
-        consequence_sentences, _ = generate_consequence_sentences(consequences, clock_events, game, brain)
+        consequence_sentences = generate_consequence_sentences(consequences, clock_events, game, brain)
         prompt = build_action_prompt(
             game,
             brain,
@@ -239,7 +239,7 @@ def process_correction(
         f"\n{get_prompt('block_correction_instruction', role='narrator')}"
     )
     prompt = prompt + correction_tag
-    narration, _ = narrate_scene(provider, game, prompt, config=_cfg)
+    narration = narrate_scene(provider, game, prompt, config=_cfg)
 
     if game.last_turn_snapshot is not None:
         game.last_turn_snapshot.narration = narration

@@ -217,13 +217,6 @@ class ClockEvent(SerializableMixin):
 
 
 @dataclass
-class ConsequenceEvent(SerializableMixin):
-    event_code: str
-    subject: str
-    acceptable_phrasings: list[str] = field(default_factory=list)
-
-
-@dataclass
 class RandomEvent(SerializableMixin):
     focus: str
     focus_roll: int

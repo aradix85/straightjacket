@@ -257,42 +257,6 @@ class TestImpactsStatus:
         assert "Impacts:" not in text
 
 
-class TestImpactAcknowledgmentValidator:
-    def test_impact_label_in_narration_passes(self) -> None:
-        from straightjacket.engine.ai.rule_validator import check_impact_acknowledgment
-
-        result = check_impact_acknowledgment(
-            "The wound will not heal quickly. You are wounded, deeply.",
-            ["wounded"],
-        )
-        assert result == []
-
-    def test_missing_impact_fails(self) -> None:
-        from straightjacket.engine.ai.rule_validator import check_impact_acknowledgment
-
-        result = check_impact_acknowledgment(
-            "The fight ends. You walk away, unaffected.",
-            ["wounded"],
-        )
-        assert len(result) == 1
-        assert "IMPACT CHANGE" in result[0]
-
-    def test_no_changes_passes(self) -> None:
-        from straightjacket.engine.ai.rule_validator import check_impact_acknowledgment
-
-        result = check_impact_acknowledgment("Anything.", [])
-        assert result == []
-
-    def test_multiword_label_matches_on_first_word(self) -> None:
-        from straightjacket.engine.ai.rule_validator import check_impact_acknowledgment
-
-        result = check_impact_acknowledgment(
-            "The damage is permanently etched in your flesh.",
-            ["permanently harmed"],
-        )
-        assert result == []
-
-
 class TestCharacterStatePromptTag:
     def test_no_impacts_no_tag(self, load_engine: None) -> None:
         from straightjacket.engine.prompt_shared import _scene_header

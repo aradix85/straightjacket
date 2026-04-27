@@ -5,7 +5,6 @@ from concurrent.futures import ThreadPoolExecutor
 from ..ai.architect import call_story_architect
 from ..ai.narrator import call_narrator, call_opening_setup
 from ..ai.provider_base import AIProvider
-from ..ai.validator import validate_and_retry
 from ..datasworn.loader import extract_title
 from ..datasworn.settings import load_package
 from ..db import sync as _db_sync
@@ -250,9 +249,9 @@ def start_succession_with_character(
 
     _prepare_npcs_for_new_chapter(game)
 
-    narration, val_report = _generate_succession_opening(provider, game, config)
+    narration = _generate_succession_opening(provider, game, config)
 
-    _record_succession_opening(game, narration, val_report, record)
+    _record_succession_opening(game, narration, record)
 
     game.campaign.pending_succession = False
 
@@ -262,9 +261,7 @@ def start_succession_with_character(
     return game, narration
 
 
-def _generate_succession_opening(
-    provider: AIProvider, game: GameState, config: EngineConfig | None
-) -> tuple[str, dict]:
+def _generate_succession_opening(provider: AIProvider, game: GameState, config: EngineConfig | None) -> str:
     structure = choose_story_structure(game.setting_genre)
     narrator_prompt = build_new_game_prompt(game)
 
@@ -281,19 +278,16 @@ def _generate_succession_opening(
         blueprint = fut_architect.result()
 
     narration = parse_narrator_response(game, raw)
-    narration, val_report = validate_and_retry(provider, narration, narrator_prompt, "opening", game, config=config)
 
     _apply_blueprint(game, provider, blueprint)
 
     if not [n for n in game.npcs if n.introduced]:
         _ = call_opening_setup(provider, narration, game, config)
 
-    return narration, val_report
+    return narration
 
 
-def _record_succession_opening(
-    game: GameState, narration: str, val_report: dict, predecessor: PredecessorRecord
-) -> None:
+def _record_succession_opening(game: GameState, narration: str, predecessor: PredecessorRecord) -> None:
     record_scene_intensity(game, "action")
     summary = (
         f"Succession opening: {game.player_name} continues after {predecessor.player_name} "
@@ -313,7 +307,6 @@ def _record_succession_opening(
             scene_type="expected",
             summary=f"Succession from {predecessor.player_name}",
             result="opening",
-            validator=val_report,
         )
     )
 

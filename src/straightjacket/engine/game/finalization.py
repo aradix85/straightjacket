@@ -6,7 +6,6 @@ from dataclasses import dataclass, field
 from ..ai.metadata import apply_narrator_metadata
 from ..ai.narrator import call_narrator, call_narrator_metadata
 from ..ai.provider_base import AIProvider
-from ..ai.validator import validate_and_retry
 from ..engine_loader import damage, eng
 from ..logging_util import log
 from ..mechanics import (
@@ -17,7 +16,7 @@ from ..mechanics.consequences import tick_threat_clock
 from ..mechanics.legacy import mark_legacy
 from ..mechanics.move_effects import OutcomeResult
 from ..mechanics.move_outcome import resolve_move_outcome
-from ..models import BrainResult, ClockEvent, ConsequenceEvent, EngineConfig, GameState, MemoryEntry, RollResult
+from ..models import BrainResult, ClockEvent, EngineConfig, GameState, MemoryEntry, RollResult
 from ..npc import find_npc
 from ..npc.memory import consolidate_memory
 from ..parser import parse_narrator_response
@@ -148,30 +147,6 @@ def narrate_scene(
     game: GameState,
     prompt: str,
     config: EngineConfig | None = None,
-    validate_result_type: str = "",
-    player_words: str = "",
-    consequences: Sequence[str] = (),
-    consequence_events: Sequence[ConsequenceEvent] = (),
-    target_npc_name: str = "",
-    fact_budget: int = -1,
-) -> tuple[str, dict]:
+) -> str:
     raw = call_narrator(provider, prompt, game, config)
-    narration = parse_narrator_response(game, raw)
-
-    val_report: dict = {}
-    if validate_result_type:
-        narration, val_report = validate_and_retry(
-            provider,
-            narration,
-            prompt,
-            validate_result_type,
-            game,
-            player_words=player_words,
-            consequences=consequences,
-            config=config,
-            consequence_events=consequence_events,
-            target_npc_name=target_npc_name,
-            fact_budget=fact_budget,
-        )
-
-    return narration, val_report
+    return parse_narrator_response(game, raw)

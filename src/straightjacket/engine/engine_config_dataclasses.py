@@ -325,18 +325,6 @@ class NarratorStatusDescriptions:
 
 
 @dataclass
-class ValidatorConfig:
-    rewrite_instructions: dict[str, str]
-    retry_strip: dict[str, str]
-    agency_patterns: list[str]
-    miss_silver_lining_patterns: list[str]
-    miss_annihilation_patterns: list[str]
-    genre_physics_patterns: list[str]
-    format_patterns: list[dict[str, str]]
-    quote_patterns: dict[str, str]
-
-
-@dataclass
 class CorrectionConfig:
     npc_edit_allowed_fields: list[str]
 
@@ -531,20 +519,6 @@ class DescriptionDedupConfig:
 
 
 @dataclass
-class RuleValidatorConfig:
-    min_quote_count: int
-    max_gap_chars: int
-    max_consecutive_short_gaps: int
-    violation_dedup_key_length: int
-    agency_violations_cap: int
-    atmospheric_examples_cap: int
-    correction_violations_cap: int
-    threat_name_min_word_length: int
-    impact_label_min_word_length: int
-    violation_templates: dict[str, str]
-
-
-@dataclass
 class ParserConfig:
     max_label_length: int
     min_line_length: int
@@ -615,7 +589,6 @@ class AiTextConfig:
     brain_trigger_hints: dict[str, str]
     schema_descriptions: dict[str, dict[str, str]]
     consequence_labels: dict[str, str]
-    validator_blocks: dict[str, str]
     narrator_defaults: dict[str, Any]
     architect_labels: dict[str, str]
 
@@ -657,6 +630,7 @@ class PersistenceConfig:
 @dataclass
 class ChapterValidatorConfig:
     max_retries: int
+    violation_templates: dict[str, str]
     death_keywords: list[str]
     completion_keywords: list[str]
     resolution_keywords: list[str]

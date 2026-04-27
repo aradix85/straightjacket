@@ -269,8 +269,7 @@ def test_record_chapter_opening_appends_log(load_engine: None) -> None:
     g = make_game_state(player_name="Aria", setting_id="starforged")
     g.world.current_location = "Tavern"
     g.campaign.chapter_number = 2
-    val_report = {"passed": True, "retries": 0, "violations": [], "checks": []}
-    _record_chapter_opening(g, "Opening narration", val_report)
+    _record_chapter_opening(g, "Opening narration")
     assert len(g.narrative.narration_history) == 1
     assert g.narrative.narration_history[0].narration == "Opening narration"
     assert len(g.narrative.session_log) == 1

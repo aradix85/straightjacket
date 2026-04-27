@@ -8,7 +8,6 @@ from ..ai.chapter_validator import validate_and_retry as validate_chapter_and_re
 from ..ai.metadata import process_deceased_npcs
 from ..ai.narrator import call_narrator, call_opening_setup
 from ..ai.provider_base import AIProvider
-from ..ai.validator import validate_and_retry
 from ..datasworn.settings import active_package
 from ..db import sync as _db_sync
 from ..db.connection import reset_db
@@ -93,14 +92,14 @@ def start_new_chapter(
 
     returning_npcs = [copy.deepcopy(n) for n in game.npcs if n.status in ("active", "background", "deceased")]
 
-    narration, val_report, setup_data = _generate_chapter_opening(provider, game, config, returning_npcs)
+    narration, setup_data = _generate_chapter_opening(provider, game, config, returning_npcs)
 
     _merge_returning_npcs(game, returning_npcs)
 
     if setup_data.get("deceased_npcs"):
         process_deceased_npcs(game, setup_data["deceased_npcs"])
 
-    _record_chapter_opening(game, narration, val_report)
+    _record_chapter_opening(game, narration)
 
     if username and game.preferences.content_lines:
         user_cfg = load_user_config(username)
@@ -210,7 +209,7 @@ def _prepare_npcs_for_new_chapter(game: GameState) -> None:
 
 def _generate_chapter_opening(
     provider: AIProvider, game: GameState, config: EngineConfig | None, returning_npcs: list[NpcData]
-) -> tuple[str, dict, dict]:
+) -> tuple[str, dict]:
     structure = choose_story_structure(game.setting_tone)
     chapter_prompt = build_new_chapter_prompt(game)
     architect_game = copy.copy(game)
@@ -225,8 +224,6 @@ def _generate_chapter_opening(
 
     narration = parse_narrator_response(game, raw)
 
-    narration, val_report = validate_and_retry(provider, narration, chapter_prompt, "opening", game, config=config)
-
     _apply_blueprint(game, provider, blueprint)
 
     returning_ids = {n.id for n in returning_npcs}
@@ -238,7 +235,7 @@ def _generate_chapter_opening(
     else:
         log(f"[Campaign] New NPCs already extracted by parser ({len(new_parser_npcs)}), skipping opening_setup call")
 
-    return narration, val_report, setup_data
+    return narration, setup_data
 
 
 def _apply_blueprint(game: GameState, provider: AIProvider, blueprint: dict | None) -> None:
@@ -279,7 +276,7 @@ def _merge_returning_npcs(game: GameState, returning_npcs: list[NpcData]) -> Non
         game.world.location_history.append(game.world.current_location)
 
 
-def _record_chapter_opening(game: GameState, narration: str, val_report: dict) -> None:
+def _record_chapter_opening(game: GameState, narration: str) -> None:
     record_scene_intensity(game, "action")
     game.narrative.narration_history.append(
         NarrationEntry(
@@ -294,7 +291,6 @@ def _record_chapter_opening(game: GameState, narration: str, val_report: dict) -
             scene_type="expected",
             summary=f"Chapter {game.campaign.chapter_number} begins",
             result="opening",
-            validator=val_report,
         )
     )
 

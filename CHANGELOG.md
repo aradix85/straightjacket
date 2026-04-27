@@ -7,6 +7,16 @@ Originally forked from [EdgeTales](https://github.com/edgetales/edgetales). See 
 
 Straightjacket uses calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day. The first CalVer release is `2026.04.25.0`. Earlier `0.x.y` releases keep their original version numbers and are not renumbered. The switch was made because the project has no public API to version semantically against — the `0.x.y` numbers were running counters with no meaning, and dates carry the meaning the numbers didn't.
 
+## [2026.04.27.8] — 2026-04-27
+
+Narration-validator volledig verwijderd. `ai/validator.py` (LLM-validator + retry-loop) en `ai/rule_validator.py` (regex-laag) plus alle bijbehorende yaml (`engine/validator.yaml`, `engine/rule_validator.yaml`, `prompts/validator.yaml`), tests (`tests/test_validator.py`, `tests/test_rule_validator.py`), en de model-eval-tool (`tests/model_eval/`) zijn weg. Reden: de LLM-validator beoordeelde schrijfregels die zelfs voor mensen ambigu zijn (fact_budget-telling, RESULT INTEGRITY equivalence) en de retry-loop produceerde voorspelbare proza-afvlakking. Rule-validator zou alleen bestaan om diagnostisch te rapporteren — zonder consument is dat dood gewicht. Hele tak weggesneden.
+
+Cascade: `ConsequenceEvent`-dataclass plus `consequence_event_phrasings`-yaml-section weg (deze sessie nog gebouwd voor de RESULT INTEGRITY-event-architectuur), `generate_consequence_sentences` retourneert weer enkel `list[str]`, `narrate_scene`-signature versimpeld (geen `validate_result_type`/`player_words`/`consequences`/`consequence_events`/`target_npc_name`/`fact_budget`-parameters meer), `SceneLogEntry.validator`-veld plus bijbehorende `validator`-kolom in `scene_log`-DDL en sync-writer weg, `_resolve_target_fact_budget` in `turn.py` dood en geschrapt, `validator_blocks` ai_text-section weg (alleen `momentum_burn_injection` blijft over en is verhuisd naar `narrator_defaults`), `RuleValidatorConfig` en `ValidatorConfig` dataclasses + `_SIMPLE_SECTIONS`-entries weg. Chapter-validator behoudt zijn eigen `violation_templates` (gemigreerd uit `rule_validator.yaml` naar `chapter_validator.yaml`); chapter-validator-prompts hebben nu een eigen `prompts/chapter_validator.yaml` (waren mee in de verwijderde `prompts/validator.yaml`).
+
+Architect-validator blijft tot stap 8 (roadmap). Save-format breekt — geen migratie. ARCHITECTURE.md bijgewerkt: validator-flow en file-map en module-table en AI-call carve-out en drift-strategy en model-assignment-tabel allemaal aangepast voor wegvallen narration-validator.
+
+---
+
 ## [2026.04.27.7] — 2026-04-27
 
 `test_project_rules.py` uitgebreid met vier strict-rule checks: `.setdefault()`-fallbacks, `eng().get_raw(key, fallback)`-misbruik, warning-suppression-comments (`# noqa`, `# type: ignore`, `# pragma: no cover`), en versioned filename-suffixes (`_v2.py`, `_old.py`). De laatste drie zijn nu schoon, `.setdefault()` rapporteert twee violations in `engine/game/setup_common.py`.

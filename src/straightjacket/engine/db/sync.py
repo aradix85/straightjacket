@@ -112,9 +112,9 @@ def _insert_scene_log(conn: sqlite3.Connection, game: GameState) -> None:
     for s in game.narrative.session_log:
         conn.execute(
             "INSERT INTO scene_log (scene, summary, move, result, consequences, clock_events, "
-            "position, effect, scene_type, npc_activation, validator, rich_summary, "
+            "position, effect, scene_type, npc_activation, rich_summary, "
             "director_trigger, oracle_answer, revelation_check) "
-            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             (
                 s.scene,
                 s.summary,
@@ -126,7 +126,6 @@ def _insert_scene_log(conn: sqlite3.Connection, game: GameState) -> None:
                 s.effect,
                 s.scene_type,
                 json.dumps(s.npc_activation, ensure_ascii=False),
-                json.dumps(s.validator, ensure_ascii=False),
                 s.rich_summary,
                 s.director_trigger,
                 s.oracle_answer,
