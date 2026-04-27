@@ -13,10 +13,7 @@ TESTS_ROOT = Path(__file__).resolve().parent
 _AI_CALL_CARVE_OUT_FILES = {
     "engine/ai/brain.py",
     "engine/ai/narrator.py",
-    "engine/ai/validator.py",
-    "engine/ai/chapter_validator.py",
     "engine/ai/architect.py",
-    "engine/ai/architect_validator.py",
     "engine/ai/metadata.py",
     "engine/ai/provider_base.py",
     "engine/correction/analysis.py",

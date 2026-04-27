@@ -60,16 +60,6 @@ class ClockSnapshot:
 
 
 @dataclass
-class ValidatorRecord:
-    passed: bool = True
-    retries: int = 0
-    violations: list[str] = field(default_factory=list)
-    attempt_violations: list[int] = field(default_factory=list)
-    attempt_violation_text: list[list[str]] = field(default_factory=list)
-    picked_attempt: int = -1
-
-
-@dataclass
 class BrainRecord:
     move: str = ""
     stat: str = ""
@@ -122,7 +112,6 @@ class TurnRecord:
     state_after: StateSnapshot = field(default_factory=StateSnapshot)
     npcs: list[NpcSnapshot] = field(default_factory=list)
     clocks: list[ClockSnapshot] = field(default_factory=list)
-    validator: ValidatorRecord | None = None
     engine_log: EngineLogRecord | None = None
     story_arc: StoryArcRecord | None = None
     violations: list[str] = field(default_factory=list)
@@ -146,7 +135,6 @@ class TurnRecord:
             or self.violations
             or self.narration_quality
             or self.spatial_issues
-            or (self.validator and not self.validator.passed)
             or self.burn_error
             or self.director_error
         )
@@ -163,14 +151,6 @@ class TurnRecord:
         d["action"] = self.action[:80]
         sa = self.state_after
         d["state"] = f"H{sa.health} Sp{sa.spirit} Su{sa.supply} M{sa.momentum} C{sa.chaos}"
-        if self.validator:
-            if not self.validator.passed:
-                d["validator"] = f"FAIL({self.validator.retries}r, {len(self.validator.violations)}v)"
-                d["validator_violations"] = self.validator.violations[:5]
-                if self.narration:
-                    d["narration_excerpt"] = self.narration
-            elif self.validator.retries > 0:
-                d["validator"] = f"pass({self.validator.retries}r)"
         if self.engine_log and self.engine_log.consequences:
             d["consequences"] = self.engine_log.consequences
         if self.engine_log and self.engine_log.clock_events:
@@ -222,7 +202,6 @@ class SessionLog:
     game_context: dict = field(default_factory=dict)
     creation_data: dict = field(default_factory=dict)
     opening_narration: str = ""
-    opening_validator: ValidatorRecord | None = None
     story_blueprint: dict = field(default_factory=dict)
     chapters: list[ChapterRecord] = field(default_factory=list)
     turns: list[TurnRecord] = field(default_factory=list)
@@ -230,7 +209,6 @@ class SessionLog:
     narration_quality_issues: list[str] = field(default_factory=list)
     spatial_issues: list[str] = field(default_factory=list)
     chapter_continuity_issues: list[str] = field(default_factory=list)
-    validator_summary: dict = field(default_factory=dict)
     quality_summary: dict = field(default_factory=dict)
     token_summary: dict = field(default_factory=dict)
     correction_tests: list[dict] = field(default_factory=list)
@@ -271,10 +249,6 @@ class SessionLog:
 
         d["turns"] = [t.to_compact_dict() if isinstance(t, TurnRecord) else t for t in self.turns]
 
-        vs = dict(self.validator_summary) if self.validator_summary else {}
-        if vs.get("top_violations"):
-            vs["top_violations"] = [[v[:120], count] for v, count in vs["top_violations"]]
-        d["validator_summary"] = vs
         if self.quality_summary:
             d["quality_summary"] = self.quality_summary
         d["burn_stats"] = self.burn_stats

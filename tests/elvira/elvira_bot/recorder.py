@@ -13,7 +13,6 @@ from .models import (
     StateSnapshot,
     StoryArcRecord,
     TurnRecord,
-    ValidatorRecord,
 )
 
 
@@ -62,7 +61,6 @@ def record_turn(
     rec.npcs = _snapshot_npcs(game)
     rec.clocks = _snapshot_clocks(game)
     rec.engine_log = _snapshot_engine_log(game)
-    rec.validator = _snapshot_validator(game)
     rec.story_arc = _snapshot_story_arc(game)
     rec.director_guidance = _snapshot_director_guidance(game)
     rec.token_usage = drain_token_log()
@@ -140,33 +138,6 @@ def _snapshot_engine_log(game: GameState) -> EngineLogRecord | None:
         position=sl.position,
         effect=sl.effect,
         npc_activation=dict(sl.npc_activation),
-    )
-
-
-def _snapshot_validator(game: GameState) -> ValidatorRecord | None:
-    if not game.narrative.session_log:
-        return None
-    val = game.narrative.session_log[-1].validator
-    if not val:
-        return None
-
-    checks = val.get("checks", [])
-    attempt_violations = [len(c.get("violations", [])) for c in checks]
-    attempt_violation_text = [c.get("violations", []) for c in checks]
-
-    picked = -1
-    if not val["passed"] and len(attempt_violations) >= 2:
-        final_v = attempt_violations[-1]
-        best_v = min(attempt_violations)
-        if best_v < final_v:
-            picked = attempt_violations.index(best_v)
-    return ValidatorRecord(
-        passed=val["passed"],
-        retries=val["retries"],
-        violations=val["violations"],
-        attempt_violations=attempt_violations,
-        attempt_violation_text=attempt_violation_text,
-        picked_attempt=picked,
     )
 
 

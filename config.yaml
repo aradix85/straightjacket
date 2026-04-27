@@ -59,10 +59,7 @@ ai:
     recap: creative
     brain: classification
     correction: classification
-    validator: judgment
-    chapter_validator: judgment
     revelation_check: judgment
-    validator_architect: extraction
     narrator_metadata: extraction
     opening_setup: extraction
 

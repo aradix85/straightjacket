@@ -36,7 +36,6 @@ Subsystems built on top of the refactored base, not inherited from EdgeTales:
 - Provider abstraction with cluster-based model assignment
 - Two-call pattern (narrator prose + metadata extraction)
 - NPC memory system (importance scoring, TF-IDF activation, reflection thresholds, presence guards)
-- Constraint validator with retry logic and prompt stripping
 - Story architect (3-act and Kishōtenketsu structures)
 - Director agent (NPC reflections, AIMS generation, act transitions)
 - Datasworn integration (setting packages, oracle tables, deterministic character creation)
@@ -44,7 +43,7 @@ Subsystems built on top of the refactored base, not inherited from EdgeTales:
 - Chapter system (campaign continuity, epilogues, NPC ID remapping)
 - Elvira test bot (headless integration testing with invariant checking)
 - Accessibility architecture (ARIA, screen reader support, narrative-only status output)
-- 996-test suite plus eleven AST/regex project rules
+- 1137-test suite plus eleven AST/regex project rules
 
 ## Credits
 

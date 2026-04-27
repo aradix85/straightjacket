@@ -19,8 +19,6 @@ _SETTINGS_DIR = PROJECT_ROOT / "data" / "settings"
 @dataclass
 class GenreConstraints:
     forbidden_terms: list[str]
-    forbidden_concepts: list[str]
-    genre_test: str
     atmospheric_drift: list[str]
     atmospheric_drift_threshold: int
 
@@ -39,7 +37,6 @@ class OraclePaths:
     action_theme: list[str]
     names: list[str]
     backstory: str
-    factions: str
 
 
 @dataclass
@@ -54,8 +51,6 @@ class CreationFlow:
 @dataclass
 class _GenreConstraintsPartial:
     forbidden_terms: list[str] | None = None
-    forbidden_concepts: list[str] | None = None
-    genre_test: str | None = None
     atmospheric_drift: list[str] | None = None
     atmospheric_drift_threshold: int | None = None
 
@@ -65,7 +60,6 @@ class _OraclePathsPartial:
     action_theme: list[str] | None = None
     names: list[str] | None = None
     backstory: str | None = None
-    factions: str | None = None
 
 
 @dataclass
@@ -116,8 +110,6 @@ def _parse_oracle_paths_partial(data: dict) -> _OraclePathsPartial:
         partial.names = list(data["names"])
     if "backstory" in data:
         partial.backstory = data["backstory"]
-    if "factions" in data:
-        partial.factions = data["factions"]
     return partial
 
 
@@ -132,10 +124,6 @@ def _parse_genre_constraints_partial(data: dict) -> _GenreConstraintsPartial:
     partial = _GenreConstraintsPartial()
     if "forbidden_terms" in data:
         partial.forbidden_terms = list(data["forbidden_terms"])
-    if "forbidden_concepts" in data:
-        partial.forbidden_concepts = list(data["forbidden_concepts"])
-    if "genre_test" in data:
-        partial.genre_test = data["genre_test"]
     if "atmospheric_drift" in data:
         partial.atmospheric_drift = list(data["atmospheric_drift"])
     if "atmospheric_drift_threshold" in data:
@@ -176,13 +164,6 @@ def _parse_setting_config(data: dict, yaml_path: str) -> _SettingConfig:
 
 
 def _resolve_genre_constraints(chain: list[_SettingConfig], yaml_path: str) -> GenreConstraints:
-    def pick_str(attr: str) -> str:
-        for cfg in chain:
-            val = getattr(cfg.genre_constraints, attr)
-            if val is not None:
-                return str(val)
-        raise KeyError(f"genre_constraints.{attr} missing in setting chain ending at {yaml_path}")
-
     def pick_int(attr: str) -> int:
         for cfg in chain:
             val = getattr(cfg.genre_constraints, attr)
@@ -199,8 +180,6 @@ def _resolve_genre_constraints(chain: list[_SettingConfig], yaml_path: str) -> G
 
     return GenreConstraints(
         forbidden_terms=pick_str_list("forbidden_terms"),
-        forbidden_concepts=pick_str_list("forbidden_concepts"),
-        genre_test=pick_str("genre_test"),
         atmospheric_drift=pick_str_list("atmospheric_drift"),
         atmospheric_drift_threshold=pick_int("atmospheric_drift_threshold"),
     )
@@ -225,7 +204,6 @@ def _resolve_oracle_paths(chain: list[_SettingConfig], yaml_path: str) -> Oracle
         action_theme=pick_str_list("action_theme"),
         names=pick_str_list("names"),
         backstory=pick_str("backstory"),
-        factions=pick_str("factions"),
     )
 
 

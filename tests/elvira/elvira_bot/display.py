@@ -85,14 +85,6 @@ def print_summary(slog: SessionLog, game: GameState | None) -> None:
     if slog.correction_tests:
         failed = sum(1 for c in slog.correction_tests if not c.get("success"))
         print(f"  Corrections     : {len(slog.correction_tests)} tested, {failed} failed")
-    vs = slog.validator_summary
-    if vs.get("turns_checked", 0) > 0:
-        print(
-            f"  Validator       : {vs['turns_checked']} checked, {vs['turns_retried']} retried "
-            f"({vs['total_retries']} total), {vs['turns_failed']} still failed"
-        )
-        for violation, count in vs.get("top_violations", [])[:5]:
-            print(f"    {count}x: {violation[:100]}")
     qs = slog.quality_summary
     if qs.get("narration_quality_total", 0) > 0:
         print(f"  Narration leaks : {qs['narration_quality_total']}")

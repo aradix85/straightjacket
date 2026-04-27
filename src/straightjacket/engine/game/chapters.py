@@ -3,12 +3,9 @@ import re
 from concurrent.futures import ThreadPoolExecutor
 
 from ..ai.architect import call_chapter_summary, call_story_architect
-from ..ai.architect_validator import validate_architect
-from ..ai.chapter_validator import validate_and_retry as validate_chapter_and_retry
 from ..ai.metadata import process_deceased_npcs
 from ..ai.narrator import call_narrator, call_opening_setup
 from ..ai.provider_base import AIProvider
-from ..datasworn.settings import active_package
 from ..db import sync as _db_sync
 from ..db.connection import reset_db
 from ..engine_loader import eng
@@ -115,14 +112,6 @@ def start_new_chapter(
 def _close_previous_chapter(provider: AIProvider, game: GameState, config: EngineConfig | None) -> ChapterSummary:
     epilogue = game.campaign.epilogue_text or ""
     narrative = call_chapter_summary(provider, game, config, epilogue_text=epilogue)
-    narrative = validate_chapter_and_retry(
-        provider,
-        narrative,
-        game,
-        config,
-        call_summary=call_chapter_summary,
-        epilogue_text=epilogue,
-    )
     chapter_summary = ChapterSummary(
         chapter=game.campaign.chapter_number,
         title=narrative["title"],
@@ -239,13 +228,7 @@ def _generate_chapter_opening(
 
 
 def _apply_blueprint(game: GameState, provider: AIProvider, blueprint: dict | None) -> None:
-    gc = None
-    pkg = active_package(game)
-    if pkg:
-        gc = pkg.genre_constraints
-
     if blueprint is not None:
-        blueprint = validate_architect(provider, blueprint, game.setting_genre, game.setting_tone, genre_constraints=gc)
         game.narrative.story_blueprint = StoryBlueprint.from_dict(blueprint)
     else:
         game.narrative.story_blueprint = None

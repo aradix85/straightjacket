@@ -39,10 +39,6 @@ genre_constraints:
     - "technology"
     - "laser"
     - "robot"
-  forbidden_concepts:
-    - "modern or futuristic technology"
-    - "high magic or easy spellcasting"
-  genre_test: "Could this exist in a dark, low-magic Iron Age frontier?"
   atmospheric_drift:
     - "pulse"
     - "pulsing"

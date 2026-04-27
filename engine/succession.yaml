@@ -19,5 +19,3 @@ succession:
     deceased:
       keep: false
       track_fraction: 0.0
-
-  retire_command: "/retire"

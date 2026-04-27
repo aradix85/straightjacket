@@ -38,7 +38,7 @@ When you touch a file that already has violations, fix them in the same commit. 
 
 See [ARCHITECTURE.md](ARCHITECTURE.md) for the module ownership table. The short version: if you want to change game rules, edit YAML, not Python. If you want to change AI behavior, edit prompts.yaml. If you need to touch Python, the architecture doc tells you which file owns what.
 
-Prompts and patterns are tuned for the active models — narrator on `narrator_system`, validator on `validator_system`, regex patterns in `engine/validator.yaml`, atmospheric drift wordlists per setting. Switching to a different model means re-tuning the prompts and pattern lists in place, not adding parallel variants.
+Prompts and patterns are tuned for the active models — narrator on `narrator_system`, brain on `brain_system`. Switching to a different model means re-tuning the prompts in place, not adding parallel variants.
 
 ## Config-driven design
 
@@ -52,7 +52,7 @@ The **unit/integration test suite** (`python -m pytest tests/ -v`) runs without 
 
 **Project rules** (`tests/test_project_rules.py`) is one consolidated test running eleven AST/regex scans that enforce the rules described in the Project rules section above. Failures are deterministic measurements — the test fails on residual debt without blocking feature work. When you touch a file that already has violations, fix them in the same commit.
 
-**Elvira** (`tests/elvira/elvira.py`) is a headless AI-driven test player that plays the game with real API calls. It checks state invariants after every turn (including NPC-DB sync and combat-track sync), validates narration quality (leaked mechanics, spatial consistency), stress-tests the correction pipeline, runs post-run drift checks (validator balance, blueprint drift), and logs everything to a single `elvira_session.json`. Two modes:
+**Elvira** (`tests/elvira/elvira.py`) is a headless AI-driven test player that plays the game with real API calls. It checks state invariants after every turn (including NPC-DB sync and combat-track sync), validates narration quality (leaked mechanics, spatial consistency), stress-tests the correction pipeline, runs blueprint-drift checks against the setting's atmospheric_drift wordlist, and logs everything to a single `elvira_session.json`. Two modes:
 
 - Direct mode: `python tests/elvira/elvira.py --auto --turns 5` — drives the engine directly, bypasses the UI. Fastest way to test engine changes.
 - WebSocket mode: `python tests/elvira/elvira.py --ws --auto --turns 5` — plays through the full server stack. Tests the complete pipeline: WebSocket protocol, handlers, engine, serializers.

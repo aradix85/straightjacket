@@ -8,7 +8,6 @@ ai_text:
     opening_setup: opening_setup
     correction_output: correction_output
     revelation_check: revelation_check
-    architect_validator: architect_validator
   brain_trigger_hints:
     dialog: pure conversation with an NPC, no risk, no action, no world declarations
     ask_the_oracle: yes/no or open question about the fiction, not an action
@@ -24,10 +23,6 @@ ai_text:
     revelation_check:
       revelation_confirmed: True if the narration clearly contains or foreshadows the revelation.
       reasoning: One sentence explaining why.
-    architect_validator:
-      pass: true if blueprint respects genre constraints
-      fixed_conflict: Rewritten central_conflict for genre. Empty if pass=true.
-      fixed_antagonist: Rewritten antagonist_force for genre. Empty if pass=true.
   consequence_labels:
     momentum_change: momentum {value}
     track_gain: '{track} +{n}'
@@ -78,10 +73,4 @@ ai_text:
     new_chapter_blank: A new chapter begins.
     npc_agency_action_template: 'NPC "{npc_name}" pursues agenda "{agenda}" — concrete offscreen action.'
     clock_filled_template: 'CLOCK FILLED "{clock_name}": {trigger}'
-    chapter_validator_empty_block: '  (none)'
-    chapter_validator_no_state: '(no tracked entities)'
     momentum_burn_injection: <momentum_burn>Character digs deep, turns the tide.</momentum_burn>
-  architect_labels:
-    forbidden_terms_prefix: Forbidden terms
-    forbidden_concepts_prefix: Forbidden concepts
-    genre_test_prefix: Test

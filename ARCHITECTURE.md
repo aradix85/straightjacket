@@ -112,8 +112,6 @@ Where to find things. If you want to change X, edit Y.
 | Impacts (wounded, shaken, etc.) | `engine.yaml` → `impacts` (typed `ImpactConfig`); `mechanics/impacts.py` → `apply_impact`, `clear_impact`, `blocks_recovery`, `recalc_max_momentum` |
 | Legacy tracks, XP, asset advancement | `engine.yaml` → `legacy` (typed `LegacyConfig`); `mechanics/legacy.py` → `mark_legacy`, `apply_threat_overcome_bonus`, `advance_asset`; `CampaignState.legacy_quests/bonds/discoveries` |
 | NPC name generation | `npc/naming.py` → `roll_oracle_name`; `data/settings/*.yaml` → `oracle_paths.names` |
-| Architect blueprint validation | `ai/architect_validator.py` → `validate_architect`, `_check_blueprint_text_fields` |
-| Chapter summary contradiction validation | `ai/chapter_validator.py` → `validate_chapter_summary` (rule pass + LLM pass), `validate_and_retry` (orchestrates retry of `call_chapter_summary`); config in `engine/chapter_validator.yaml` (`violation_templates`, `death_keywords`, `completion_keywords`, `resolution_keywords`); prompts in `prompts/chapter_validator.yaml` |
 | Adventure Crafter primitives (themes, plot points, meta dispatch) | `mechanics/adventure_crafter.py` → `assign_themes`, `lookup_plot_point`, `lookup_meta_plot_point`, `dispatch_meta`; `engine/adventure_crafter.yaml` (themes, theme_die_table, special_ranges); `data/adventure_crafter.json` (lookup tables) |
 
 ## AI Model Assignment
@@ -126,9 +124,8 @@ Cluster          Roles                                              Needs
 narrator         narrator                                           prose generation (creative writing)
 creative         architect, director, chapter_summary, recap        open-ended generation needing real reasoning
 classification   brain, correction                                  single-shot structured-output decisions
-judgment         chapter_validator, revelation_check                interpretive yes/no with nuance
-extraction       validator_architect, narrator_metadata,            pure data extraction, no interpretation
-                 opening_setup
+judgment         revelation_check                                   interpretive yes/no with nuance
+extraction       narrator_metadata, opening_setup                   pure data extraction, no interpretation
 ```
 
 Config structure in `config.yaml`:
@@ -220,8 +217,6 @@ src/straightjacket/
 │   │   ├── narrator.py      # Prose generation + metadata extraction calls
 │   │   ├── metadata.py      # Apply extracted metadata to game state
 │   │   ├── architect.py     # Story blueprint, recap, chapter summary
-│   │   ├── architect_validator.py # Blueprint genre fidelity check (rule-based + LLM)
-│   │   ├── chapter_validator.py # Chapter-summary contradiction check (rule pass + LLM pass) with retry
 │   │   ├── json_utils.py    # Shared JSON extraction from text responses
 │   │   └── schemas.py       # JSON output schemas (config-driven)
 │   ├── npc/
@@ -287,13 +282,11 @@ src/straightjacket/
 
 **Chapter transitions are explicit snapshot+restore.** `_close_previous_chapter` builds a `ChapterSummary` containing both AI-written narrative fields and an engine-captured mechanical snapshot (progress_tracks, threats, impacts, assets, narrative.threads). `_reset_chapter_mechanics` zeros every chapter-spanning field, then `_restore_chapter_mechanics` replays the snapshot onto the live game state. Net effect on the running game is unchanged from the previous implicit carry-over, but the chapter-end state is now an auditable record in `campaign_history`, and adding a new chapter-spanning field requires touching three named places (capture, reset, restore) instead of "remember not to add it to the reset list". xp and legacy live on `CampaignState` and carry over campaign-wide; they are not in `ChapterSummary`. NPC list and NPC connection tracks carry via `game.npcs` (not reset by `_reset_chapter_mechanics`) and are handled separately by `_prepare_npcs_for_new_chapter`.
 
-**Chapter summary contradiction validator.** Between `call_chapter_summary` and the snapshot fusion, the AI-written narrative dict passes through `validate_chapter_summary` in `ai/chapter_validator.py`. Two passes: a deterministic rule pass scans named entities (NPCs, tracks, threats) paired with status-shift keywords (death, completion, resolution) — a contradiction is logged when an entity's narrative claim disagrees with its engine status. An LLM pass on the analytical cluster catches euphemisms the keyword pass misses. Both passes feed one retry loop: violation → re-call `call_chapter_summary` with the correction passed through `epilogue_text` (the only free-text channel the call already accepts) up to `chapter_validator.max_retries`. Exhausted retries keep the last narrative with a warning logged — graceful degradation, the chapter still closes. Invented colour (entities not in state) is unconstrained by design: the engine only owns what it tracks. The validator runs against the AI dict before fusion so a cleaned narrative is what enters `campaign_history`.
-
 **Character succession.** When the protagonist dies (face_death MISS, or both health and spirit reach zero) or is explicitly retired by the player, the campaign continues with a new protagonist in the same world. Two-step lifecycle gated by `CampaignState.pending_succession`: `prepare_succession` archives the predecessor into `campaign.predecessors` and locks in the inheritance rolls onto that record (so reload can't reroll); `start_succession_with_character` reads the locked-in rolls, closes the predecessor's chapter via the same `_close_previous_chapter` used for chapter transitions, applies NPC carryover (active full / background half / lore half / deceased pruned per `succession.yaml`), wipes PC-specific state via `_reset_for_successor` while keeping world-level threats and unresolved threads (vow-typed and creation-sourced threads drop), seeds the successor's legacy from the rolls, replaces character identity, generates an opening narration, and clears the pending flag. The two-step shape is mandatory for save-resilience: locking the rolls at archive time rather than at character-replacement time is what makes the inheritance deterministic across reload. Unknown roll outcomes and unknown NPC statuses both raise — there is no carryover for state the engine doesn't recognise.
 
-**Provider abstraction.** `AIProvider` protocol with two implementations (Anthropic, OpenAI-compatible). The engine never imports provider SDKs directly. `create_with_retry` handles transient errors with exponential backoff. Multi-model: config.yaml assigns models via five clusters — narrator (GLM 4.7 for prose), creative (GPT-OSS for architect, director, chapter_summary, recap), classification (GPT-OSS for brain, correction), judgment (GPT-OSS for validator, chapter_validator, revelation_check), extraction (GPT-OSS for validator_architect, narrator_metadata, opening_setup). Clusters are the single source of truth for all call parameters. `model_for_role(role)` resolves the model; `sampling_params(role)` resolves temperature, top_p, max_tokens, max_retries, and extra_body. The provider stores no model state.
+**Provider abstraction.** `AIProvider` protocol with two implementations (Anthropic, OpenAI-compatible). The engine never imports provider SDKs directly. `create_with_retry` handles transient errors with exponential backoff. Multi-model: config.yaml assigns models via five clusters — narrator (GLM 4.7 for prose), creative (GPT-OSS for architect, director, chapter_summary, recap), classification (GPT-OSS for brain, correction), judgment (GPT-OSS for revelation_check), extraction (GPT-OSS for narrator_metadata, opening_setup). Clusters are the single source of truth for all call parameters. `model_for_role(role)` resolves the model; `sampling_params(role)` resolves temperature, top_p, max_tokens, max_retries, and extra_body. The provider stores no model state.
 
-**AI-call exception carve-out.** The strict-rules forbid broad `try/except Exception` suppression. AI call sites are an explicit carve-out — `brain.py`, `narrator.py`, `chapter_validator.py`, `director.py`, `correction/analysis.py`, `architect*.py`, `tools/handler.py`. AI calls fail transiently (rate limits, network blips, provider outages, 429/500/502/503/529); the retry wrapper handles retryable status codes with exponential backoff, and what remains after retries is unrecoverable for that call. Strict-raise would crash the player's session on any transient fault. Graceful degradation — Brain falling through to `dialog`, revelation_check defaulting to confirmed, narrator retry returning empty string — hides the fault but preserves the session; every suppression site logs at warning or error level with the exception type so faults stay observable. This carve-out does not extend to config loading, yaml parsing, file persistence, input validation, or domain-rule enforcement: those must raise.
+**AI-call exception carve-out.** The strict-rules forbid broad `try/except Exception` suppression. AI call sites are an explicit carve-out — `brain.py`, `narrator.py`, `architect.py`, `director.py`, `correction/analysis.py`, `metadata.py`, `tools/handler.py`. AI calls fail transiently (rate limits, network blips, provider outages, 429/500/502/503/529); the retry wrapper handles retryable status codes with exponential backoff, and what remains after retries is unrecoverable for that call. Strict-raise would crash the player's session on any transient fault. Graceful degradation — Brain falling through to `dialog`, revelation_check defaulting to confirmed, narrator retry returning empty string — hides the fault but preserves the session; every suppression site logs at warning or error level with the exception type so faults stay observable. This carve-out does not extend to config loading, yaml parsing, file persistence, input validation, or domain-rule enforcement: those must raise.
 
 **Minimal UI.** Single HTML page, no build step, no npm. Server sends JSON, client renders. Scene headings for screen reader navigation, aria-live for automatic narration readout. One button (Save/Load), one text input. Status via `/status` and `/score` text commands — engine answers directly, no AI call. Status output is narrative, not mechanical: "seriously wounded" instead of "health 2", "growing trust" instead of "bond 4/10". The player never sees numbers, dice, or system terms.
 
@@ -400,8 +393,6 @@ vocabulary:
 
 genre_constraints:
   forbidden_terms: [magic, spell]
-  forbidden_concepts: ["supernatural powers beyond tech level"]
-  genre_test: "Could this exist without magic?"
   atmospheric_drift: [eldritch, otherworldly]
   atmospheric_drift_threshold: 2
 
@@ -410,7 +401,6 @@ oracle_paths:
   descriptor_focus: ["core/descriptor", "core/focus"]
   names: ["characters/name/given", "characters/name/family_name"]
   backstory: "campaign_launch/backstory_prompts"
-  factions: "factions"
 
 creation_flow:
   has_truths: true
@@ -420,7 +410,7 @@ creation_flow:
   starting_asset_categories: [companion, module]
 ```
 
-`vocabulary` keeps AI in-setting. `genre_constraints` feeds the architect validator. `oracle_paths.names` drives engine NPC name rolls. `creation_flow` controls client UI steps.
+`vocabulary` keeps AI in-setting. `genre_constraints` feeds Elvira's blueprint-drift check. `oracle_paths.names` drives engine NPC name rolls. `creation_flow` controls client UI steps.
 
 ### Inheritance
 

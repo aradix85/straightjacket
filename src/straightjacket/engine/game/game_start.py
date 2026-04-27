@@ -1,12 +1,11 @@
 from concurrent.futures import ThreadPoolExecutor
 
 from ..ai.architect import call_story_architect
-from ..ai.architect_validator import validate_architect
 from ..ai.metadata import process_deceased_npcs
 from ..ai.narrator import call_narrator, call_opening_setup
 from ..ai.provider_base import AIProvider
 from ..datasworn.loader import extract_title
-from ..datasworn.settings import SettingPackage, active_package, load_package
+from ..datasworn.settings import SettingPackage, load_package
 from ..db import sync as _db_sync
 from ..engine_loader import eng
 from ..logging_util import log
@@ -284,13 +283,7 @@ def start_new_game(
 
     narration = parse_narrator_response(game, raw)
 
-    _pkg = active_package(game)
-    _gc = _pkg.genre_constraints if _pkg else None
-
     if blueprint is not None:
-        blueprint = validate_architect(
-            provider, blueprint, game.setting_genre, game.setting_tone, genre_constraints=_gc
-        )
         game.narrative.story_blueprint = StoryBlueprint.from_dict(blueprint)
     else:
         game.narrative.story_blueprint = None

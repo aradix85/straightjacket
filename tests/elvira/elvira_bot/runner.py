@@ -32,7 +32,7 @@ from .ai_helpers import ask_bot, build_turn_context, decide_burn_momentum, get_p
 from .creation import roll_character
 from .drift_checks import compute_drift_summary
 from .invariants import assert_game_state
-from .models import ChapterRecord, NpcSnapshot, SessionLog, TurnRecord, ValidatorRecord
+from .models import ChapterRecord, NpcSnapshot, SessionLog, TurnRecord
 from .quality_checks import (
     check_chapter_continuity,
     check_narration_quality,
@@ -114,7 +114,6 @@ def run_session(bot_cfg: dict, auto_override: bool = False, turns_override: int 
     slog.location_start = game.world.current_location
     slog.game_context = _game_context_dict(game)
     slog.opening_narration = narration
-    _log_opening_validator(game, slog)
     _log_story_blueprint(game, slog)
 
     prev_npcs: list[NpcSnapshot] | None = None
@@ -239,7 +238,6 @@ def run_session(bot_cfg: dict, auto_override: bool = False, turns_override: int 
     slog.ended_reason = (
         slog.ended_reason if slog.ended_reason != "unknown" else (ch_rec.ended_reason if slog.chapters else "complete")
     )
-    slog.validator_summary = _aggregate_validator_stats(slog)
     slog.quality_summary = _aggregate_quality_stats(slog)
     slog.token_summary = _aggregate_token_stats(slog)
     slog.drift_summary = compute_drift_summary(slog)
@@ -383,11 +381,6 @@ def _play_turn(
             print(f"  !!  {v}")
             slog.violations.append(v)
         rec.violations = violations
-
-    val = rec.validator
-    if val and (val.retries > 0 or not val.passed):
-        status = "PASS" if val.passed else "FAIL"
-        print(f"  [VALIDATOR] {status} after {val.retries} retries")
 
     return game, narration, rec, False
 
@@ -590,19 +583,6 @@ def _game_context_dict(game: GameState) -> dict:
     }
 
 
-def _log_opening_validator(game: GameState, slog: SessionLog) -> None:
-    if not game.narrative.session_log:
-        return
-    val = game.narrative.session_log[-1].validator
-    if not val:
-        return
-    slog.opening_validator = ValidatorRecord(
-        passed=val["passed"],
-        retries=val["retries"],
-        violations=val["violations"],
-    )
-
-
 def _log_story_blueprint(game: GameState, slog: SessionLog) -> None:
     bp = game.narrative.story_blueprint
     if not bp:
@@ -612,34 +592,6 @@ def _log_story_blueprint(game: GameState, slog: SessionLog) -> None:
         "central_conflict": bp.central_conflict,
         "thematic_thread": bp.thematic_thread,
         "acts": [a.to_dict() for a in bp.acts],
-    }
-
-
-def _aggregate_validator_stats(slog: SessionLog) -> dict:
-    total = failed = retried = total_retries = 0
-    rule_fast_path = 0
-    violation_counts: dict[str, int] = {}
-    for t in slog.turns:
-        if t.validator:
-            total += 1
-            if t.validator.retries > 0:
-                retried += 1
-                total_retries += t.validator.retries
-            if not t.validator.passed:
-                failed += 1
-
-            for attempt_violations in t.validator.attempt_violation_text:
-                for v in attempt_violations:
-                    violation_counts[v] = violation_counts.get(v, 0) + 1
-                    if v.startswith("[rule]"):
-                        rule_fast_path += 1
-    return {
-        "turns_checked": total,
-        "turns_retried": retried,
-        "turns_failed": failed,
-        "total_retries": total_retries,
-        "rule_fast_path_violations": rule_fast_path,
-        "top_violations": sorted(violation_counts.items(), key=lambda x: -x[1])[:10],
     }
 
 

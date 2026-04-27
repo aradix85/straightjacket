@@ -22,7 +22,7 @@ Creates a venv, installs dependencies, downloads game data, starts the server at
 
 ## How It Works
 
-You type what your character does. The engine classifies the action, rolls dice, applies mechanical consequences. An AI narrator writes the scene within those constraints. A validator checks the output. The AI never decides outcomes, moves resources, or controls the player character. That's the straightjacket.
+You type what your character does. The engine classifies the action, rolls dice, applies mechanical consequences. An AI narrator writes the scene within those constraints. The AI never decides outcomes, moves resources, or controls the player character. That's the straightjacket.
 
 Mechanics drawn from Ironsworn/Starforged (action rolls, momentum, bonds), Mythic GME 2e (fate questions, scene structure, random events), and Blades in the Dark (position & effect, clocks).
 

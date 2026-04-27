@@ -112,21 +112,3 @@ def stub_emotions() -> None:
 @pytest.fixture()
 def stub_all(stub_engine: None, stub_emotions: None) -> None:
     pass
-
-
-def make_genre_constraints(
-    forbidden_terms: list[str] | None = None,
-    forbidden_concepts: list[str] | None = None,
-    genre_test: str = "",
-    atmospheric_drift: list[str] | None = None,
-    atmospheric_drift_threshold: int = 3,
-):
-    from straightjacket.engine.datasworn.settings import GenreConstraints
-
-    return GenreConstraints(
-        forbidden_terms=forbidden_terms if forbidden_terms is not None else [],
-        forbidden_concepts=forbidden_concepts if forbidden_concepts is not None else [],
-        genre_test=genre_test,
-        atmospheric_drift=atmospheric_drift if atmospheric_drift is not None else [],
-        atmospheric_drift_threshold=atmospheric_drift_threshold,
-    )

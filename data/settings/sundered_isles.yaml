@@ -30,8 +30,6 @@ vocabulary:
 
 genre_constraints:
   forbidden_terms: []
-  forbidden_concepts: []
-  genre_test: ""
   atmospheric_drift:
     - "spaceship"
     - "computer"

@@ -22,19 +22,6 @@
   Blueprint = compass, player overrides. GENRE FIDELITY: <world> defines what exists. Mood terms MUST stay within physical reality. FORBIDDEN mood terms: surreal, disorienting, revelatory, haunted, spectral, ethereal, otherworldly, eldritch, supernatural, dreamlike.
   All text in {lang}. Phases: ki_introduction, sho_development, ten_twist, ketsu_resolution.
   </rules>
-"architect_validator_system": |-
-  Genre fidelity checker for an RPG story blueprint. You receive the central_conflict and antagonist_force from a story architect.
-
-  Check for genre violations. {constraint_text}
-
-  If the blueprint passes, return pass=true with empty fields.
-  If it violates, return pass=false with the violations listed, and provide rewritten versions that preserve the dramatic intent but stay within genre. Keep the same scale and stakes.
-"architect_validator_user": |-
-  <genre>{genre}</genre>
-  <tone>{tone}</tone>
-  <central_conflict>{conflict}</central_conflict>
-  <antagonist_force>{antagonist}</antagonist_force>
-  Check genre fidelity. Be strict — if it implies anything beyond physical reality, flag it.
 "chapter_summary": |-
   Chapter summary for campaign continuity in {lang}.
   title (3-6 words), summary (3-4 sentences), unresolved_threads (1-3), character_growth (1 sentence), npc_evolutions, thematic_question, post_story_location.

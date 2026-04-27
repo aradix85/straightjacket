@@ -11,4 +11,3 @@ truncations:
   prompt_xlong: 1000
   prompt_xxlong: 2000
   narration_preview: 600
-  narration_max: 4000

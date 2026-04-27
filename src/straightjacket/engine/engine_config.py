@@ -16,7 +16,6 @@ from .engine_config_dataclasses import (
     ChaosConfig,
     ChaosResolverConfig,
     ChapterConfig,
-    ChapterValidatorConfig,
     CombatPosCondition,
     CorrectionConfig,
     CreationConfig,
@@ -34,7 +33,6 @@ from .engine_config_dataclasses import (
     InformationGatePoints,
     InformationGateBuckets,
     KeyedScenesConfig,
-    KeyedSceneTrigger,
     LegacyConfig,
     LocationConfig,
     MemoryConfig,
@@ -152,7 +150,6 @@ class EngineSettings:
     truncations: TruncationsConfig
     persistence: PersistenceConfig
     correction: CorrectionConfig
-    chapter_validator: ChapterValidatorConfig
     succession: SuccessionConfig
     keyed_scenes: KeyedScenesConfig
     adventure_crafter: AdventureCrafterConfig
@@ -247,7 +244,6 @@ _SIMPLE_SECTIONS: dict[str, type] = {
     "truncations": TruncationsConfig,
     "persistence": PersistenceConfig,
     "correction": CorrectionConfig,
-    "chapter_validator": ChapterValidatorConfig,
 }
 
 
@@ -327,7 +323,6 @@ def parse_engine_yaml(data: dict[str, Any]) -> EngineSettings:
     sw_raw = data["stopwords"]
     stopwords = StopwordsConfig(
         general=frozenset(sw_raw["general"]),
-        consequence=frozenset(sw_raw["consequence"]),
         location=frozenset(sw_raw["location"]),
     )
 
@@ -403,13 +398,11 @@ def parse_engine_yaml(data: dict[str, Any]) -> EngineSettings:
     succession = SuccessionConfig(
         inheritance=inheritance,
         npc_carryover=npc_carryover,
-        retire_command=succession_raw["retire_command"],
     )
 
     keyed_raw = dict(data["keyed_scenes"])
-    triggers = {name: _build_strict(KeyedSceneTrigger, dict(entry)) for name, entry in keyed_raw["triggers"].items()}
     keyed_scenes = KeyedScenesConfig(
-        triggers=triggers,
+        triggers=frozenset(keyed_raw["triggers"]),
         prompt_wrapper=keyed_raw["prompt_wrapper"],
     )
 
@@ -483,7 +476,6 @@ def parse_engine_yaml(data: dict[str, Any]) -> EngineSettings:
         truncations=simple_parsed["truncations"],
         persistence=simple_parsed["persistence"],
         correction=simple_parsed["correction"],
-        chapter_validator=simple_parsed["chapter_validator"],
         succession=succession,
         keyed_scenes=keyed_scenes,
         adventure_crafter=adventure_crafter,

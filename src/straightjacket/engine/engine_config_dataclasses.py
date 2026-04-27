@@ -225,7 +225,6 @@ class MoveAvailabilityRule:
 @dataclass
 class StopwordsConfig:
     general: frozenset[str]
-    consequence: frozenset[str]
     location: frozenset[str]
 
 
@@ -441,7 +440,6 @@ class FuzzyMatchConfig:
     exact_dedup_threshold: float
     description_match_min_length: int
     description_word_min_length: int
-    label_word_min_length: int
     npc_name_min_length: int
 
 
@@ -590,7 +588,6 @@ class AiTextConfig:
     schema_descriptions: dict[str, dict[str, str]]
     consequence_labels: dict[str, str]
     narrator_defaults: dict[str, Any]
-    architect_labels: dict[str, str]
 
 
 @dataclass
@@ -602,7 +599,6 @@ class ArchitectLimitsConfig:
     recap_campaign_summary_truncate: int
     architect_campaign_window: int
     chapter_summary_log_window: int
-    drift_words_log_window: int
 
 
 @dataclass
@@ -619,21 +615,11 @@ class TruncationsConfig:
     prompt_xlong: int
     prompt_xxlong: int
     narration_preview: int
-    narration_max: int
 
 
 @dataclass
 class PersistenceConfig:
     default_save_name: str
-
-
-@dataclass
-class ChapterValidatorConfig:
-    max_retries: int
-    violation_templates: dict[str, str]
-    death_keywords: list[str]
-    completion_keywords: list[str]
-    resolution_keywords: list[str]
 
 
 @dataclass
@@ -654,18 +640,11 @@ class NpcCarryoverEntry:
 class SuccessionConfig:
     inheritance: InheritanceConfig
     npc_carryover: dict[str, NpcCarryoverEntry]
-    retire_command: str
-
-
-@dataclass
-class KeyedSceneTrigger:
-    value_format: str
-    description: str
 
 
 @dataclass
 class KeyedScenesConfig:
-    triggers: dict[str, KeyedSceneTrigger]
+    triggers: frozenset[str]
     prompt_wrapper: str
 
 

@@ -7,6 +7,18 @@ Originally forked from [EdgeTales](https://github.com/edgetales/edgetales). See 
 
 Straightjacket uses calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day. The first CalVer release is `2026.04.25.0`. Earlier `0.x.y` releases keep their original version numbers and are not renumbered. The switch was made because the project has no public API to version semantically against — the `0.x.y` numbers were running counters with no meaning, and dates carry the meaning the numbers didn't.
 
+## [2026.04.27.9] — 2026-04-27
+
+Architect-validator en chapter-validator weg. `ai/architect_validator.py` plus `ai/chapter_validator.py`, hun yaml en prompts, en hun tests verwijderd. Reden: validators op AI-output zijn AI-werk dat engine-werk hoort te zijn. Architect-blueprint kan tabel-gedreven worden; chapter-summary bewaakt de mechanische snapshot canon, prose blijft colour zonder retry-gate.
+
+Achtergebleven 27.8-residue meegenomen: `_validator_cache`/`get_validator_schema` in `ai/schemas.py`, `validator: judgment` en `validator_architect: extraction` in `config.yaml`, `engine/ai/validator.py` en `engine/ai/chapter_validator.py` in de carve-out van `test_project_rules.py`. Plus de hele Elvira-validator-stack: `ValidatorRecord`, `TurnRecord.validator`, `SessionLog.opening_validator`, `SessionLog.validator_summary`, `_snapshot_validator` in recorder, `_log_opening_validator` en `_aggregate_validator_stats` in runner, `compute_validator_balance` in drift_checks, het validator-printblok in display, en `tests/elvira/elvira_batch.py` (compliance-meter zonder validator). Plus `tests/test_pattern_family_resolution.py` dat sinds 27.6 een verwijderde API testte.
+
+Dode config-velden in dezelfde sweep weggehaald: `GenreConstraints.forbidden_concepts` en `genre_test`; `OraclePaths.factions`; `StopwordsConfig.consequence` (plus 45-regel yaml-blok); `FuzzyMatchConfig.label_word_min_length`; `TruncationsConfig.narration_max`; `SuccessionConfig.retire_command`. `KeyedSceneTrigger`-dataclass weg, `triggers` is nu `frozenset[str]` in plaats van een dict-met-twee-dode-velden. CHANGELOG-headers van 25 en 26 april die ontbraken zijn hersteld.
+
+Niet gedaan: Elvira's tien rapportage-velden in `ChapterRecord`, `SessionLog` en `TurnRecord` die alleen via `asdict` in JSON belanden zijn niet aangeraakt — geen code-config, alleen log-payload, beslissing voor een aparte sessie. Drie keys in `genre_constraints` (`forbidden_terms`, `atmospheric_drift`, `atmospheric_drift_threshold`) hebben alleen Elvira's `check_blueprint_drift` als reader; weg te halen wanneer die check ook gaat. Test count: 1187 → 1137 (50 tests weg met de gesloopte modules en test_pattern_family_resolution).
+
+---
+
 ## [2026.04.27.8] — 2026-04-27
 
 Narration-validator volledig verwijderd. `ai/validator.py` (LLM-validator + retry-loop) en `ai/rule_validator.py` (regex-laag) plus alle bijbehorende yaml (`engine/validator.yaml`, `engine/rule_validator.yaml`, `prompts/validator.yaml`), tests (`tests/test_validator.py`, `tests/test_rule_validator.py`), en de model-eval-tool (`tests/model_eval/`) zijn weg. Reden: de LLM-validator beoordeelde schrijfregels die zelfs voor mensen ambigu zijn (fact_budget-telling, RESULT INTEGRITY equivalence) en de retry-loop produceerde voorspelbare proza-afvlakking. Rule-validator zou alleen bestaan om diagnostisch te rapporteren — zonder consument is dat dood gewicht. Hele tak weggesneden.
@@ -105,7 +117,7 @@ Drift-hotfix in Elvira character creation. `tests/elvira/elvira_bot/creation.py`
 
 ---
 
-
+## [2026.04.26.5] — 2026-04-26
 
 Elvira-styles `chaosagent` en `balanced` geschrapt. Chaosagent simuleerde geen echte speler maar fuzz-input (single-word actions, wrong NPC names, claims about events that didn't happen) — die input-distributie ziet de productie-engine nooit, en zijn hoge violation-counts vertekenden compliance-rapporten zonder unieke informatie toe te voegen. Balanced overlapte met de gecombineerde dekking van `explorer`, `aggressor` en `dialogist` zonder unieke meting. Drie styles over die elk een echt speler-archetype representeren.
 
@@ -113,7 +125,7 @@ Elvira-styles `chaosagent` en `balanced` geschrapt. Chaosagent simuleerde geen e
 
 ---
 
-
+## [2026.04.26.4] — 2026-04-26
 
 Model-specifieke prompt-variants ingevuld waar de architectuur ze ondersteunt. `narrator_system_glm` toegevoegd aan `prompts/narrator.yaml`: language-directief eerst, persona-vat ("senior RPG narrator producing tight, physical second-person prose for a fictional creative-writing roleplay"), front-loaded MUST-constraints (genre physics → player agency → consequence compliance → result integrity → npc speech), WRONG/RIGHT patterns onderaan als ondersteuning. `validator_system_gpt_oss` toegevoegd aan `prompts/validator.yaml` in een sectie-gestructureerd patroon (INSTRUCTIONS / DEFINITIONS / VIOLATES (label 1) / SAFE (label 0) / EXAMPLES) met uppercase labels in plaats van markdown headers wegens project-rule conflict. Soft language ("generally", "usually", "may") expliciet verboden in validator-tekst. De universele varianten blijven staan als fallback voor andere narrator- en judgment-modellen.
 
@@ -123,7 +135,7 @@ Elvira-bot dezelfde behandeling. Vijf style-personas (`explorer`, `aggressor`, `
 
 ---
 
-
+## [2026.04.26.3] — 2026-04-26
 
 Testsuite-onderhoud: scope-uitbreiding, herorganisatie, coverage-uitbreiding, performance. De elf project-rule scans in `tests/test_project_rules.py` werken nu ook over `tests/` met carve-outs voor pytest-patronen (alle inline imports toegestaan in tests, dataclass-default-scan blijft `engine_config.py`-only). 35 `dict.get` domain-default violations en 3 `or`-fallback patronen in test-files gefixt naar direct-subscript of expliciete if-else.
 
@@ -187,6 +199,7 @@ Save format breaks: `CampaignState` gains `predecessors` and `pending_succession
 
 ---
 
+## [2026.04.25.0] — 2026-04-25
 
 First CalVer release, and roadmap step 2: chapter-summary contradiction validator. After `call_chapter_summary` writes the AI narrative, the new `ai/chapter_validator.py` checks its claims against the engine's mechanical state snapshot. Two passes: a deterministic rule pass scans named NPCs/tracks/threats paired with status-shift keywords (death, completion, resolution); an LLM pass on the new `chapter_validator` AI role catches euphemisms the rule pass cannot interpret. Both passes feed one retry loop that re-invokes `call_chapter_summary` with the correction passed through `epilogue_text` — the only free-text channel the call already accepts. Exhausted retries keep the last narrative with a warning logged. AI-invented colour (entities not in state) is unconstrained by design.
 

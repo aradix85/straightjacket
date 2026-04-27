@@ -38,10 +38,6 @@ genre_constraints:
     - "elven"
     - "dwarven"
     - "dragon"
-  forbidden_concepts:
-    - "fantasy races (elves, dwarves, orcs)"
-    - "magic systems or spellcasting"
-  genre_test: ""
   atmospheric_drift:
     - "eldritch"
     - "otherworldly"

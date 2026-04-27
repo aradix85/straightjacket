@@ -5,49 +5,6 @@ from typing import Any
 from .models import SessionLog
 
 
-def compute_validator_balance(slog: SessionLog) -> dict[str, Any]:
-    rule_count = 0
-    llm_count = 0
-    unknown_count = 0
-    for turn in slog.turns:
-        if not turn.validator:
-            continue
-        for attempt in turn.validator.attempt_violation_text:
-            for v in attempt:
-                if v.startswith("[rule]"):
-                    rule_count += 1
-                elif v.startswith("[llm]"):
-                    llm_count += 1
-                else:
-                    unknown_count += 1
-
-    total = rule_count + llm_count + unknown_count
-    suspected_drift = ""
-    if total >= 20:
-        rule_share = rule_count / total
-        llm_share = llm_count / total
-        if rule_share < 0.1:
-            suspected_drift = (
-                f"rule-validator share {rule_share:.0%} of {total} violations — "
-                f"may have drifted (rule patterns stopped matching actual narration)"
-            )
-        elif llm_share < 0.1:
-            suspected_drift = (
-                f"llm-validator share {llm_share:.0%} of {total} violations — "
-                f"may have drifted (llm prompt stopped catching its category)"
-            )
-
-    return {
-        "rule_violations": rule_count,
-        "llm_violations": llm_count,
-        "unknown_violations": unknown_count,
-        "total_violations_across_attempts": total,
-        "rule_share": round(rule_count / total, 3) if total else None,
-        "llm_share": round(llm_count / total, 3) if total else None,
-        "suspected_drift": suspected_drift,
-    }
-
-
 def check_blueprint_drift(slog: SessionLog) -> dict[str, Any]:
     bp = slog.story_blueprint
     if not bp:
@@ -115,6 +72,5 @@ def check_blueprint_drift(slog: SessionLog) -> dict[str, Any]:
 
 def compute_drift_summary(slog: SessionLog) -> dict[str, Any]:
     return {
-        "validator_balance": compute_validator_balance(slog),
         "blueprint_drift": check_blueprint_drift(slog),
     }

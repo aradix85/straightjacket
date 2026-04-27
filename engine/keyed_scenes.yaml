@@ -1,20 +1,10 @@
 keyed_scenes:
 
   triggers:
-    clock_fills:
-      value_format: "<clock_name>:<segments_filled>"
-      description: "A clock with the given name has at least the given number of segments filled."
-    threat_menace_phase:
-      value_format: "<threat_name>:<filled_boxes>"
-      description: "A threat's menace track has at least the given filled_boxes (0..10)."
-    bond_threshold:
-      value_format: "<npc_id>:<filled_boxes>"
-      description: "An NPC's connection track has at least the given filled_boxes (0..10)."
-    chaos_extreme:
-      value_format: "min | max"
-      description: "Chaos factor is at its configured minimum or maximum."
-    scene_count:
-      value_format: "<n>"
-      description: "Narrative scene_count has reached at least n."
+  - clock_fills
+  - threat_menace_phase
+  - bond_threshold
+  - chaos_extreme
+  - scene_count
 
   prompt_wrapper: "<keyed_scene>{hint}</keyed_scene>"
