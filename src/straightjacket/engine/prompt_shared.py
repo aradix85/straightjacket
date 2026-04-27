@@ -93,7 +93,8 @@ def _npc_block(game: GameState, target_id: str | None, context_text: str = "", m
 
     stance = resolve_npc_stance(game, target, move_category)
     gate = compute_npc_gate(game, target, game.narrative.scene_count, stance.stance)
-    log(f"[Gate] {target.name}: gate={gate} (stance={stance.stance})")
+    fact_budget = eng().information_gate.fact_budget_by_gate[gate]
+    log(f"[Gate] {target.name}: gate={gate} (stance={stance.stance}) fact_budget={fact_budget}")
 
     aliases_attr = f' aliases="{_xa(",".join(target.aliases))}"' if target.aliases else ""
 
@@ -101,6 +102,7 @@ def _npc_block(game: GameState, target_id: str | None, context_text: str = "", m
         return _build_gate0_target(target, aliases_attr)
 
     stance_attr = f' stance="{_xa(stance.stance)}" constraint="{_xa(stance.constraint)}"'
+    fact_budget_attr = f' fact_budget="{fact_budget}"'
 
     agenda_line = ""
     mem_str = ""
@@ -124,7 +126,7 @@ def _npc_block(game: GameState, target_id: str | None, context_text: str = "", m
 
     body = f"{agenda_line}{instinct_line}{mem_str}{secrets_line}" if gate >= 2 else _xe(target.description)
 
-    return f'<target_npc name="{_xa(target.name)}"{stance_attr}{aliases_attr}{arc_attr} gate="{gate}">\n{body}\n</target_npc>'
+    return f'<target_npc name="{_xa(target.name)}"{stance_attr}{aliases_attr}{arc_attr}{fact_budget_attr} gate="{gate}">\n{body}\n</target_npc>'
 
 
 def _activated_npcs_block(

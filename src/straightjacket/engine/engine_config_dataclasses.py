@@ -381,6 +381,7 @@ class InformationGateConfig:
     gate_min: int
     gate_max: int
     stance_caps: dict[str, int]
+    fact_budget_by_gate: dict[int, int]
 
 
 @dataclass

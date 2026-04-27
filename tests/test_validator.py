@@ -163,3 +163,93 @@ def test_consequence_compliance_block_present_on_miss(stub_all: None) -> None:
     validate_narration(provider, "Some narration.", ctx)
     sent_system = provider.calls[-1]["system"]
     assert "CONSEQUENCE COMPLIANCE" in sent_system
+
+
+def test_npc_names_hint_injected_when_introduced_active_npcs_exist(stub_all: None) -> None:
+    from straightjacket.engine.ai.rule_validator import ValidationContext
+    from straightjacket.engine.ai.validator import validate_narration
+    from tests._helpers import make_npc
+
+    provider = MockProvider(json.dumps({"pass": True, "violations": [], "correction": ""}))
+    game = make_game_state()
+    game.npcs = [
+        make_npc(id="npc_obs", name="Obsidian", disposition="neutral", status="active", introduced=True),
+        make_npc(id="npc_kira", name="Kira", disposition="friendly", status="active", introduced=True),
+    ]
+    ctx = ValidationContext.build(game, result_type="STRONG_HIT")
+    validate_narration(provider, "Obsidian stiffens at the threshold.", ctx)
+    sent_system = provider.calls[-1]["system"]
+    assert "Obsidian" in sent_system
+    assert "Kira" in sent_system
+
+
+def test_npc_names_hint_omitted_when_no_active_npcs(stub_all: None) -> None:
+    from straightjacket.engine.ai.rule_validator import ValidationContext
+    from straightjacket.engine.ai.validator import validate_narration
+
+    provider = MockProvider(json.dumps({"pass": True, "violations": [], "correction": ""}))
+    game = make_game_state()
+    game.npcs = []
+    ctx = ValidationContext.build(game, result_type="STRONG_HIT")
+    validate_narration(provider, "Plain narration.", ctx)
+    sent_system = provider.calls[-1]["system"]
+    assert "PEOPLE in the scene" not in sent_system
+
+
+def test_npc_names_hint_omitted_for_uninxtroduced_npcs(stub_all: None) -> None:
+    from straightjacket.engine.ai.rule_validator import ValidationContext
+    from straightjacket.engine.ai.validator import validate_narration
+    from tests._helpers import make_npc
+
+    provider = MockProvider(json.dumps({"pass": True, "violations": [], "correction": ""}))
+    game = make_game_state()
+    game.npcs = [make_npc(id="hidden", name="Cryptic", disposition="neutral", status="active", introduced=False)]
+    ctx = ValidationContext.build(game, result_type="STRONG_HIT")
+    validate_narration(provider, "Narration.", ctx)
+    sent_system = provider.calls[-1]["system"]
+    assert "Cryptic" not in sent_system
+
+
+def test_fact_budget_appears_in_context_tag_when_provided(stub_all: None) -> None:
+    from straightjacket.engine.ai.rule_validator import ValidationContext
+    from straightjacket.engine.ai.validator import validate_narration
+
+    provider = MockProvider(json.dumps({"pass": True, "violations": [], "correction": ""}))
+    ctx = ValidationContext.build(
+        make_game_state(),
+        result_type="dialog",
+        target_npc_name="Saffron",
+        fact_budget=1,
+    )
+    validate_narration(provider, "Some narration.", ctx)
+    sent_user = provider.calls[-1]["messages"][0]["content"]
+    assert 'target_npc="Saffron"' in sent_user
+    assert 'fact_budget="1"' in sent_user
+
+
+def test_fact_budget_omitted_from_context_when_not_provided(stub_all: None) -> None:
+    from straightjacket.engine.ai.rule_validator import ValidationContext
+    from straightjacket.engine.ai.validator import validate_narration
+
+    provider = MockProvider(json.dumps({"pass": True, "violations": [], "correction": ""}))
+    ctx = ValidationContext.build(make_game_state(), result_type="dialog")
+    validate_narration(provider, "Some narration.", ctx)
+    sent_user = provider.calls[-1]["messages"][0]["content"]
+    assert "fact_budget" not in sent_user
+    assert "target_npc=" not in sent_user
+
+
+def test_fact_budget_zero_appears_in_context_tag(stub_all: None) -> None:
+    from straightjacket.engine.ai.rule_validator import ValidationContext
+    from straightjacket.engine.ai.validator import validate_narration
+
+    provider = MockProvider(json.dumps({"pass": True, "violations": [], "correction": ""}))
+    ctx = ValidationContext.build(
+        make_game_state(),
+        result_type="dialog",
+        target_npc_name="Hostile",
+        fact_budget=0,
+    )
+    validate_narration(provider, "Some narration.", ctx)
+    sent_user = provider.calls[-1]["messages"][0]["content"]
+    assert 'fact_budget="0"' in sent_user

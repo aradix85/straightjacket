@@ -150,6 +150,8 @@ def narrate_scene(
     player_words: str = "",
     consequences: list[str] | None = None,
     consequence_sentences: list[str] | None = None,
+    target_npc_name: str = "",
+    fact_budget: int = -1,
 ) -> tuple[str, dict]:
     raw = call_narrator(provider, prompt, game, config)
     narration = parse_narrator_response(game, raw)
@@ -166,6 +168,8 @@ def narrate_scene(
             consequences=consequences,
             config=config,
             consequence_sentences=consequence_sentences,
+            target_npc_name=target_npc_name,
+            fact_budget=fact_budget,
         )
 
     return narration, val_report

@@ -14,6 +14,12 @@ information_gate:
     bond_high_min: 4
   gate_min: 0
   gate_max: 4
+  fact_budget_by_gate:
+    0: 0
+    1: 1
+    2: 1
+    3: 2
+    4: 2
   stance_caps:
     aggressive: 1
     hostile: 1

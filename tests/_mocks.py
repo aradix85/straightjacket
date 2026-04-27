@@ -30,7 +30,7 @@ class MockProvider:
         top_k: int | None = None,
         extra_body: dict | None = None,
     ) -> MockResponse:
-        self.calls.append({"system": system, "json_schema": json_schema})
+        self.calls.append({"system": system, "json_schema": json_schema, "messages": messages})
         if self._fail:
             raise ConnectionError("mock fail")
         return MockResponse(self._content)

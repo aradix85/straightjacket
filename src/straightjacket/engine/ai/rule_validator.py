@@ -21,6 +21,8 @@ class ValidationContext:
     genre_constraints: GenreConstraints | None = None
     threat_names: list[str] = field(default_factory=list)
     impact_changes: list[str] = field(default_factory=list)
+    target_npc_name: str = ""
+    fact_budget: int = -1
 
     @classmethod
     def build(
@@ -31,6 +33,8 @@ class ValidationContext:
         consequences: list[str] | None = None,
         consequence_sentences: list[str] | None = None,
         genre_constraints: GenreConstraints | None = None,
+        target_npc_name: str = "",
+        fact_budget: int = -1,
     ) -> ValidationContext:
         changes: list[str] = []
         snap = game.last_turn_snapshot
@@ -48,6 +52,8 @@ class ValidationContext:
             genre_constraints=genre_constraints,
             threat_names=[t.name for t in game.threats if t.status == "active"],
             impact_changes=changes,
+            target_npc_name=target_npc_name,
+            fact_budget=fact_budget,
         )
 
 

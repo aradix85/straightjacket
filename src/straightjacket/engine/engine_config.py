@@ -389,6 +389,7 @@ def parse_engine_yaml(data: dict[str, Any]) -> EngineSettings:
         gate_min=ig["gate_min"],
         gate_max=ig["gate_max"],
         stance_caps=dict(ig["stance_caps"]),
+        fact_budget_by_gate={int(k): int(v) for k, v in ig["fact_budget_by_gate"].items()},
     )
 
     stance_bond_buckets = _build_strict(StanceBondBuckets, dict(data["stance_bond_buckets"]))

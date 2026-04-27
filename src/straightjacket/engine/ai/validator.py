@@ -87,8 +87,11 @@ def validate_narration(
     system = _build_validator_system(ctx)
 
     _trunc = eng().truncations
+    fact_budget_attr = ""
+    if ctx.fact_budget >= 0 and ctx.target_npc_name:
+        fact_budget_attr = f' target_npc="{ctx.target_npc_name}" fact_budget="{ctx.fact_budget}"'
     prompt = f"""<narration>{narration[: _trunc.narration_max]}</narration>
-<context result_type="{ctx.result_type}" genre="{ctx.game.setting_genre}" consequences="{cons_text}"/>
+<context result_type="{ctx.result_type}" genre="{ctx.game.setting_genre}" consequences="{cons_text}"{fact_budget_attr}/>
 <player_words>{ctx.player_words[: _trunc.prompt_long]}</player_words>
 Check constraints."""
 
@@ -150,6 +153,8 @@ def validate_and_retry(
     config: EngineConfig | None = None,
     max_retries: int | None = None,
     consequence_sentences: list[str] | None = None,
+    target_npc_name: str = "",
+    fact_budget: int = -1,
 ) -> tuple[str, dict]:
     if max_retries is None:
         max_retries = sampling_params("narrator")["max_retries"]
@@ -166,6 +171,8 @@ def validate_and_retry(
         consequences=consequences,
         consequence_sentences=consequence_sentences,
         genre_constraints=gc,
+        target_npc_name=target_npc_name,
+        fact_budget=fact_budget,
     )
 
     report: dict = {"passed": True, "retries": 0, "violations": [], "checks": []}
