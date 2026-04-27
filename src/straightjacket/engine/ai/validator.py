@@ -1,11 +1,12 @@
 import json
 import re
+from collections.abc import Sequence
 
 from ..config_loader import model_for_role, sampling_params
 from ..datasworn.settings import active_package
 from ..engine_loader import eng
 from ..logging_util import log
-from ..models import EngineConfig, GameState
+from ..models import ConsequenceEvent, EngineConfig, GameState
 from ..parser import parse_narrator_response
 from .json_utils import extract_json
 from ..prompt_loader import get_prompt
@@ -40,6 +41,13 @@ def _strip_prompt_for_retry(prompt: str, violations: list[str]) -> str:
     return stripped
 
 
+def _format_event_for_prompt(event: ConsequenceEvent) -> str:
+    phrasings = ", ".join(event.acceptable_phrasings)
+    if event.subject:
+        return f"- {event.event_code} (subject: {event.subject}): the narration must show one of: {phrasings}"
+    return f"- {event.event_code}: the narration must show one of: {phrasings}"
+
+
 def _build_validator_system(ctx: ValidationContext) -> str:
     player_name = ctx.game.player_name
     pc_hint = get_prompt("validator_pc_hint", player_name=player_name) if player_name else ""
@@ -52,15 +60,15 @@ def _build_validator_system(ctx: ValidationContext) -> str:
     )
 
     cons_sentence_text = ""
-    if ctx.consequence_sentences and ctx.result_type in ("MISS", "WEAK_HIT"):
+    if ctx.consequence_events and ctx.result_type in ("MISS", "WEAK_HIT"):
+        event_lines = "\n".join(_format_event_for_prompt(e) for e in ctx.consequence_events)
         cons_sentence_text = get_prompt(
             "validator_consequence_compliance",
-            consequence_list="\n".join(f"- {s}" for s in ctx.consequence_sentences),
+            consequence_list=event_lines,
         )
 
     return get_prompt(
         "validator_system",
-        role="validator",
         pc_hint=pc_hint,
         npc_names_hint=npc_names_hint,
         consequence_compliance_block=cons_sentence_text,
@@ -115,7 +123,7 @@ Check constraints."""
             response = create_with_retry(
                 provider,
                 model=model_for_role("validator"),
-                system=system + get_prompt("validator_json_suffix", role="validator"),
+                system=system + get_prompt("validator_json_suffix"),
                 messages=[{"role": "user", "content": prompt}],
                 log_role="validator",
                 **_vp2,
@@ -149,10 +157,10 @@ def validate_and_retry(
     result_type: str,
     game: GameState,
     player_words: str = "",
-    consequences: list | None = None,
+    consequences: Sequence[str] = (),
     config: EngineConfig | None = None,
     max_retries: int | None = None,
-    consequence_sentences: list[str] | None = None,
+    consequence_events: Sequence[ConsequenceEvent] = (),
     target_npc_name: str = "",
     fact_budget: int = -1,
 ) -> tuple[str, dict]:
@@ -169,7 +177,7 @@ def validate_and_retry(
         result_type=result_type,
         player_words=player_words,
         consequences=consequences,
-        consequence_sentences=consequence_sentences,
+        consequence_events=consequence_events,
         genre_constraints=gc,
         target_npc_name=target_npc_name,
         fact_budget=fact_budget,

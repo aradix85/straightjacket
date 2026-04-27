@@ -205,21 +205,6 @@ class EngineSettings:
         self._compiled_patterns[cache_key] = compiled
         return compiled
 
-    def compiled_patterns_for_family(self, section: str, base_key: str, family: str) -> list[Any]:
-        universal = self.compiled_patterns(section, f"{base_key}_universal")
-        overlays_key = f"{base_key}_overlays"
-        overlays = self._raw[section][overlays_key]
-        if family not in overlays or not overlays[family]:
-            return list(universal)
-
-        cache_key = f"overlay:{section}.{base_key}.{family}"
-        if cache_key in self._compiled_patterns:
-            family_compiled = self._compiled_patterns[cache_key]
-        else:
-            family_compiled = [re.compile(p, re.IGNORECASE) for p in overlays[family]]
-            self._compiled_patterns[cache_key] = family_compiled
-        return list(universal) + list(family_compiled)
-
 
 def _build_strict(cls: type, data: dict[str, Any]) -> Any:
     known = {f.name for f in dataclasses.fields(cls)}

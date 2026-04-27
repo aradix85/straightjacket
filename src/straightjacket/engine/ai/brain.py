@@ -61,7 +61,6 @@ def call_brain(
 
     system = get_prompt(
         "brain_parser",
-        role="brain",
         lang=_brain_lang,
         content_boundaries_block=content_boundaries_block(game),
         moves_block=_build_moves_block(game),
@@ -128,7 +127,7 @@ def call_revelation_check(
     rev_content = revelation.content
     rev_weight = revelation.dramatic_weight
 
-    system = get_prompt("revelation_check_system", role="revelation_check", lang=lang)
+    system = get_prompt("revelation_check_system", lang=lang)
 
     prompt = (
         f'<revelation weight="{html.escape(rev_weight, quote=True)}">{html.escape(rev_content)}</revelation>\n\n'

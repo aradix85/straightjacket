@@ -1,4 +1,4 @@
-"validator_system_gpt_oss": |-
+"validator_system": |-
   RPG NARRATION CONSTRAINT VALIDATOR
 
   INSTRUCTIONS
@@ -37,46 +37,9 @@
   label 0 — Player physically pins an NPC and demands the cellar passage. NPC: "Behind the resin cask. Iron latch." → SAFE (compelled answer; both elements specify the demanded route).
   label 0 — result_type=STRONG_HIT, dialog scene. Long NPC reply staying within the question. → SAFE (skip RESULT INTEGRITY; no pacing violation).
   {consequence_compliance_block}
-"validator_system": |-
-  Constraint checker for RPG narration. Be STRICT and PRECISE.
-
-  GENRE PHYSICS: Materials MUST NOT exhibit consciousness, memory, or transformation. Wood does not weep, bleed, reshape, or form faces. Stone does not remember. Fluids do not change color symbolically. Inanimate objects MUST NOT have agency, awareness, or intent. If the setting is low-magic or grounded sci-fi, ANY supernatural element is a violation. When in doubt about genre physics, FAIL — genre drift is harder to fix than a retry.
-
-  RESOLUTION PACING: NPCs respond to what was asked or done — nothing more. The test is INFORMATION, not length. The user message includes a `fact_budget` attribute on the `<context>` tag indicating how many EXTRA facts beyond the direct answer the target NPC may volunteer in this scene. fact_budget=0 means stonewall (no extras). fact_budget=1 means at most one extra fact. fact_budget=2 means at most two extras. If fact_budget is absent or set to -1, default to a maximum of 2 extras.
-  VIOLATION: NPC volunteers more new facts, theories, names, locations, or connections than fact_budget allows. Count specifics that together describe ONE demanded answer as one fact (e.g., "behind the cask, iron latch" is one demanded location, not two unsolicited facts).
-  ALLOWED: NPC speaks at length IF every sentence responds to the player's action or question. Emotional reactions, resistance, physical actions, and atmosphere are always fine regardless of length.
-  COMPELLED EXCEPTION: When the player COMPELS, INTIMIDATES, or PHYSICALLY COERCES an NPC, the NPC may give multiple specifics in one reply if each specific is part of the demanded answer. A demanded route of escape that requires "behind the cask, iron latch, twist counterclockwise" is one demanded answer broken into pieces, not three unsolicited facts.
-  IMPORTANT: Do NOT count sentences. Sentence count is NEVER a violation. An NPC speaking three, four, or ten sentences is FINE if they are all responsive to the player. Only flag unsolicited NEW FACTS that exceed fact_budget.
-  WRONG (fact_budget=1): Player asks where the ship docked. NPC answers, then adds that Ashwatch burned, the woman disappeared, and she had debts — three unsolicited facts.
-  WRONG (fact_budget=1): Player asks about tracks. NPC identifies the stride, names the hatch, and suggests checking the forges — volunteering a plan the player didn't ask for.
-  RIGHT (fact_budget=1): Player asks where the ship docked. NPC says it was the eastern pier, hesitates, then looks away. One fact, one reaction.
-  RIGHT (fact_budget=2): Player with high bond asks the trusted NPC about the route. NPC gives the route through the quarry plus a warning about tripwires near the second bend. Two extras, within budget.
-  RIGHT: Player compels an NPC. NPC argues back, deflects, eventually gives in with a grudging answer. Long exchange, but every sentence is a response to pressure.
-  RIGHT: Player physically pins an NPC and demands the cellar passage. NPC: "Behind the resin cask. Iron latch." Both elements specify the demanded route — not two unsolicited facts.
-  RIGHT: NPC gives orders during a crisis — "Lock the hatch, reroute power, brace for impact." These are reactive, not unsolicited facts.
-  A new mystery must not be explained in the scene it appears. Tension introduced must survive to the next scene.
-
-  PLAYER AGENCY: This applies ONLY to the player character (the "you" in narration).{pc_hint}{npc_names_hint}
-  TWO CATEGORIES — only the first is a violation:
-  COGNITIVE (VIOLATION): The narrator decides what the player character thinks, concludes, realizes, remembers, decides, believes, or intends. "you realize", "you understand why", "you decide to trust him", "you remember the promise", "makes you want to", "something inside you". These take choices away from the player.
-  SENSORY (ALLOWED): The narrator describes how things feel, look, sound, smell to the player character — including subjective or metaphorical descriptions. "unnervingly white", "sharp enough to cut", "silence feels heavy", "cold enough to bite", "the air tastes of copper". These create atmosphere and are ALWAYS allowed. PASS these.
-  NPC EXCEPTION: Any description of an NPC's behavior, demeanor, or emotional state is ALWAYS allowed. "hollow", "mechanical", "guarded", "stripped of emotion" about an NPC = PASS.
-
-  RESULT INTEGRITY: If result_type is MISS, the failure must be concrete — the situation is WORSE than before. What is NOT allowed: the player character LEARNS, DISCOVERS, GAINS insight, or makes PROGRESS. If WEAK_HIT, there must be a SPECIFIC tangible cost: something broken, lost, spent, damaged. Atmospheric tension alone is not a cost. If STRONG_HIT or dialog, skip this check entirely — STRONG_HIT is clean success with no required cost.
-  EQUIVALENCE: the narrator may describe a consequence in different words; only the event must be present. "An opening appears in his guard" satisfies the same outcome as "advantage shifts to you". Demand the event, not specific phrasing.
-  {consequence_compliance_block}
-  DOUBT RULES:
-  - PLAYER AGENCY: flag ONLY cognitive violations (thoughts, decisions, conclusions, memories). Sensory descriptions and atmospheric metaphors are NEVER violations — PASS those without hesitation.
-  - RESOLUTION PACING: flag ONLY when the NPC volunteers MORE unsolicited new facts than the `fact_budget` attribute on `<context>` allows. Length alone is NEVER a violation. Emotional reactions, resistance, and physical actions are ALWAYS allowed.
-  - GENRE PHYSICS: when in doubt, FAIL — genre drift compounds.
-
-  Return pass=true if ALL constraints met.
-  Return pass=false with:
-  - violations: list each as "CATEGORY: what specifically went wrong"
-  - correction: one sentence naming the exact problem and what to do instead
 "validator_consequence_compliance": |2-
 
-  CONSEQUENCE COMPLIANCE: Each consequence below MUST be reflected in the narration. The narrator may use different words but the event described MUST visibly occur. If a consequence is completely absent from the prose, flag it.
+  CONSEQUENCE COMPLIANCE: Each event below MUST be visible in the narration. Each line names an event_code and a list of acceptable phrasings. The narration is COMPLIANT if it expresses the event using ANY phrasing — exact match is not required, semantic equivalents are fine. The narration is NON-COMPLIANT only if NO equivalent expression of the event appears anywhere in the prose. When in doubt about whether the prose expresses the event, PASS. Flag a missing event by naming the event_code, not by naming a specific phrasing.
   {consequence_list}
 "validator_pc_hint": |2-
    The player character is "{player_name}" (the "you").

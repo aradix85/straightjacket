@@ -1,14 +1,14 @@
 from __future__ import annotations
 
 import re
+from collections.abc import Sequence
 from dataclasses import dataclass, field
 
-from ..config_loader import narrator_model_family
 from ..datasworn.settings import GenreConstraints
 from ..engine_loader import eng
 from ..logging_util import log
 from ..mechanics.impacts import impact_label
-from ..models import GameState
+from ..models import ConsequenceEvent, GameState
 
 
 @dataclass
@@ -17,7 +17,7 @@ class ValidationContext:
     result_type: str = ""
     player_words: str = ""
     consequences: list[str] = field(default_factory=list)
-    consequence_sentences: list[str] = field(default_factory=list)
+    consequence_events: list[ConsequenceEvent] = field(default_factory=list)
     genre_constraints: GenreConstraints | None = None
     threat_names: list[str] = field(default_factory=list)
     impact_changes: list[str] = field(default_factory=list)
@@ -30,8 +30,8 @@ class ValidationContext:
         game: GameState,
         result_type: str = "",
         player_words: str = "",
-        consequences: list[str] | None = None,
-        consequence_sentences: list[str] | None = None,
+        consequences: Sequence[str] = (),
+        consequence_events: Sequence[ConsequenceEvent] = (),
         genre_constraints: GenreConstraints | None = None,
         target_npc_name: str = "",
         fact_budget: int = -1,
@@ -47,8 +47,8 @@ class ValidationContext:
             game=game,
             result_type=result_type,
             player_words=player_words,
-            consequences=consequences or [],
-            consequence_sentences=consequence_sentences or [],
+            consequences=list(consequences),
+            consequence_events=list(consequence_events),
             genre_constraints=genre_constraints,
             threat_names=[t.name for t in game.threats if t.status == "active"],
             impact_changes=changes,
@@ -61,8 +61,7 @@ def check_player_agency(narration: str) -> list[str]:
     prose_only = eng().compiled_pattern("validator", "quote_patterns", "strip").sub("", narration)
     templates = eng().rule_validator.violation_templates
     violations = []
-    family = narrator_model_family()
-    for pattern in eng().compiled_patterns_for_family("validator", "agency_patterns", family):
+    for pattern in eng().compiled_patterns("validator", "agency_patterns"):
         matches = pattern.findall(prose_only)
         for match in matches:
             violations.append(templates["player_agency"].format(match=match.strip()))
@@ -82,13 +81,12 @@ def check_result_integrity(narration: str, result_type: str) -> list[str]:
     templates = eng().rule_validator.violation_templates
     violations = []
     if result_type == "MISS":
-        family = narrator_model_family()
-        for pattern in eng().compiled_patterns_for_family("validator", "miss_silver_lining_patterns", family):
+        for pattern in eng().compiled_patterns("validator", "miss_silver_lining_patterns"):
             m = pattern.search(narration)
             if m:
                 violations.append(templates["miss_silver_lining"].format(match=m.group()))
                 break
-        for pattern in eng().compiled_patterns_for_family("validator", "miss_annihilation_patterns", family):
+        for pattern in eng().compiled_patterns("validator", "miss_annihilation_patterns"):
             m = pattern.search(narration)
             if m:
                 violations.append(templates["miss_annihilation"].format(match=m.group()))
@@ -111,7 +109,7 @@ def check_genre_fidelity(narration: str, genre_constraints: GenreConstraints | N
 def check_atmospheric_register(narration: str, genre_constraints: GenreConstraints | None) -> list[str]:
     if not genre_constraints:
         return []
-    drift_words = genre_constraints.atmospheric_drift_for(narrator_model_family())
+    drift_words = genre_constraints.atmospheric_drift
     threshold = genre_constraints.atmospheric_drift_threshold
     if not drift_words or threshold < 1:
         return []
@@ -199,6 +197,24 @@ def check_impact_acknowledgment(narration: str, impact_changes: list[str]) -> li
     return []
 
 
+def check_genre_physics(narration: str) -> list[str]:
+    prose_only = eng().compiled_pattern("validator", "quote_patterns", "strip").sub("", narration)
+    templates = eng().rule_validator.violation_templates
+    violations = []
+    for pattern in eng().compiled_patterns("validator", "genre_physics_patterns"):
+        for m in pattern.finditer(prose_only):
+            violations.append(templates["genre_physics"].format(match=m.group().strip()))
+    _rv = eng().rule_validator
+    seen = set()
+    unique = []
+    for v in violations:
+        key = v[: _rv.violation_dedup_key_length]
+        if key not in seen:
+            seen.add(key)
+            unique.append(v)
+    return unique[: _rv.agency_violations_cap]
+
+
 def run_rule_checks(narration: str, ctx: ValidationContext) -> dict:
     violations = []
 
@@ -206,6 +222,7 @@ def run_rule_checks(narration: str, ctx: ValidationContext) -> dict:
     if ctx.result_type in ("MISS", "WEAK_HIT", "STRONG_HIT"):
         violations.extend(check_result_integrity(narration, ctx.result_type))
     violations.extend(check_genre_fidelity(narration, ctx.genre_constraints))
+    violations.extend(check_genre_physics(narration))
     violations.extend(check_atmospheric_register(narration, ctx.genre_constraints))
     violations.extend(check_output_format(narration))
     violations.extend(check_npc_monologue(narration))

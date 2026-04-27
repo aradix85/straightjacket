@@ -111,7 +111,7 @@ time:{game.world.time_of_day}
 def eval_brain(provider: AIProvider, case: dict, model: str, params: dict) -> CaseResult:
     system, user_template = _build_brain_context()
     user_msg = user_template.format(input=case["input"])
-    result = CaseResult(case_id=case["id"], role="brain")
+    result = CaseResult(case_id=case["id"])
 
     try:
         response = create_with_retry(
@@ -205,7 +205,7 @@ def eval_validator(provider: AIProvider, case: dict, model: str, params: dict) -
     from straightjacket.engine.ai.schemas import VALIDATOR_SCHEMA
     from straightjacket.engine.models import GameState
 
-    result = CaseResult(case_id=case["id"], role="validator")
+    result = CaseResult(case_id=case["id"])
     narration = case["narration"]
     result_type = case["result_type"]
 
@@ -285,7 +285,7 @@ Check constraints."""
 
 
 def eval_extraction(provider: AIProvider, case: dict, model: str, params: dict) -> CaseResult:
-    result = CaseResult(case_id=case["id"], role="extraction")
+    result = CaseResult(case_id=case["id"])
 
     system = get_prompt("narrator_metadata", lang="English")
     known = case.get("known_npcs", [])
@@ -399,7 +399,7 @@ def eval_narrator(provider: AIProvider, case: dict, model: str, params: dict) ->
     from straightjacket.engine.prompt_blocks import get_narrator_system
     from straightjacket.engine.prompt_action import build_action_prompt
 
-    result = CaseResult(case_id=case["id"], role="narrator")
+    result = CaseResult(case_id=case["id"])
 
     game = GameState(
         player_name="Ash",
@@ -580,7 +580,7 @@ def eval_director(provider: AIProvider, case: dict, model: str, params: dict) ->
     from straightjacket.engine.director import _director_system, build_director_prompt
     from straightjacket.engine.tools.registry import get_tools
 
-    result = CaseResult(case_id=case["id"], role="director")
+    result = CaseResult(case_id=case["id"])
     game = _build_director_game()
 
     narration = "Borin turns away without a word. The cargo bay feels colder now."
@@ -609,7 +609,6 @@ def eval_director(provider: AIProvider, case: dict, model: str, params: dict) ->
             final_content, tool_log = run_tool_loop(
                 provider,
                 response,
-                role="director",
                 game=game,
                 model=model,
                 system=system,

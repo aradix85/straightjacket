@@ -13,6 +13,7 @@ rule_validator:
     miss_silver_lining: "RESULT INTEGRITY: MISS contains silver lining '{match}' — a MISS must show concrete failure with no upside"
     miss_annihilation: "RESULT INTEGRITY: MISS is annihilation '{match}' — a MISS is a setback, not death or total defeat"
     genre_forbidden_term: "GENRE FIDELITY: forbidden term '{term}' found in narration"
+    genre_physics: "GENRE PHYSICS: narrator wrote '{match}' — inanimate subject given an active verb of voice, will, breath, or awareness; rewrite with a person or environment as the agent"
     atmospheric_register: "ATMOSPHERIC REGISTER: {count} drift markers in one scene ({examples}). Ground the prose in physical sensation from <sensory_palette>"
     output_format: "OUTPUT FORMAT: narration contains {label}"
     npc_monologue: "RESOLUTION PACING: NPC delivers an extended monologue (4+ quoted segments with minimal breaks)"

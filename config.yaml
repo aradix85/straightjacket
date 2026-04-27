@@ -66,9 +66,5 @@ ai:
     narrator_metadata: extraction
     opening_setup: extraction
 
-  model_family:
-    zai-glm-4.7: glm
-    gpt-oss-120b: gpt_oss
-
 language:
   narration_language: "English"

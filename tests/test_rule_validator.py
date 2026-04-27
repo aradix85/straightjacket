@@ -195,9 +195,63 @@ def test_consequence_in_run_rule_checks() -> None:
     from straightjacket.engine.ai.rule_validator import ValidationContext, run_rule_checks
 
     narration = "The sun shines. Nothing happened."
-    ctx = ValidationContext.build(
-        make_game_state(), result_type="MISS", consequence_sentences=["The blade finds the gap in your guard."]
-    )
+    ctx = ValidationContext.build(make_game_state(), result_type="MISS")
     result = run_rule_checks(narration, ctx)
 
     assert result["pass"]
+
+
+def test_genre_physics_catches_iron_rungs_bite() -> None:
+    from straightjacket.engine.ai.rule_validator import check_genre_physics
+
+    v = check_genre_physics("Iron rungs bite into your palms as you climb.")
+    assert any("GENRE PHYSICS" in x for x in v)
+
+
+def test_genre_physics_catches_hole_yawns() -> None:
+    from straightjacket.engine.ai.rule_validator import check_genre_physics
+
+    v = check_genre_physics("The hole yawns black before you.")
+    assert any("GENRE PHYSICS" in x for x in v)
+
+
+def test_genre_physics_catches_lock_whines() -> None:
+    from straightjacket.engine.ai.rule_validator import check_genre_physics
+
+    v = check_genre_physics("The magnetic lock whines in protest.")
+    assert any("GENRE PHYSICS" in x for x in v)
+
+
+def test_genre_physics_catches_iron_screams() -> None:
+    from straightjacket.engine.ai.rule_validator import check_genre_physics
+
+    v = check_genre_physics("Iron screams against iron under your weight.")
+    assert any("GENRE PHYSICS" in x for x in v)
+
+
+def test_genre_physics_catches_wind_moans() -> None:
+    from straightjacket.engine.ai.rule_validator import check_genre_physics
+
+    v = check_genre_physics("The wind moans through the broken windows.")
+    assert any("GENRE PHYSICS" in x for x in v)
+
+
+def test_genre_physics_allows_player_as_agent() -> None:
+    from straightjacket.engine.ai.rule_validator import check_genre_physics
+
+    v = check_genre_physics("You press your palms against the iron rungs and climb.")
+    assert v == []
+
+
+def test_genre_physics_allows_passive_descriptions() -> None:
+    from straightjacket.engine.ai.rule_validator import check_genre_physics
+
+    v = check_genre_physics("Rust flakes off the iron. The walls are damp and cold.")
+    assert v == []
+
+
+def test_genre_physics_skips_quoted_dialogue() -> None:
+    from straightjacket.engine.ai.rule_validator import check_genre_physics
+
+    v = check_genre_physics("She mutters, \u201cThe iron screams when it bends.\u201d")
+    assert v == []

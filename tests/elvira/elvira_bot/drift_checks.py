@@ -71,9 +71,7 @@ def check_blueprint_drift(slog: SessionLog) -> dict[str, Any]:
     if not gc:
         return {"checked": False, "reason": "setting has no genre_constraints"}
 
-    from straightjacket.engine.config_loader import narrator_model_family
-
-    drift_list = gc.atmospheric_drift_for(narrator_model_family())
+    drift_list = gc.atmospheric_drift
     if not drift_list:
         return {"checked": False, "reason": "setting has no atmospheric_drift list"}
 

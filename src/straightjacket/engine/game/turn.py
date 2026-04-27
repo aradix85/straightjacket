@@ -374,7 +374,7 @@ def _narrate_action_and_finalize(
     brain = ctx.brain
     roll = roll_outcome.roll
 
-    consequence_sentences = generate_consequence_sentences(
+    consequence_sentences, consequence_events = generate_consequence_sentences(
         action_res.consequences, action_res.clock_events, game, brain
     )
 
@@ -405,7 +405,7 @@ def _narrate_action_and_finalize(
         validate_result_type=roll.result,
         player_words=player_message,
         consequences=action_res.consequences,
-        consequence_sentences=consequence_sentences,
+        consequence_events=consequence_events,
         target_npc_name=target_name,
         fact_budget=target_budget,
     )

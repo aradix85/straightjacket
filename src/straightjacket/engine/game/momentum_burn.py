@@ -74,7 +74,7 @@ def process_momentum_burn(
 
     activated_npcs, mentioned_npcs, _ = activate_npcs_for_prompt(game, brain_data, player_words)
 
-    consequence_sentences = generate_consequence_sentences(consequences, clock_events, game, brain_data)
+    consequence_sentences, _ = generate_consequence_sentences(consequences, clock_events, game, brain_data)
 
     prompt = build_action_prompt(
         game,

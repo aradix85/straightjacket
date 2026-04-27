@@ -1,7 +1,7 @@
 from pathlib import Path
 
 from .bootstrap_log import bootstrap_log as _log
-from .config_loader import PROJECT_ROOT, cfg, model_family_for_role
+from .config_loader import PROJECT_ROOT, cfg
 from .format_utils import PartialFormatDict
 from .yaml_merge import load_yaml_dir
 
@@ -28,25 +28,11 @@ def _ensure_loaded() -> dict:
     return _prompts
 
 
-def get_prompt(name: str, role: str | None = None, **variables: str) -> str:
+def get_prompt(name: str, **variables: str) -> str:
     prompts = _ensure_loaded()
-
-    if role is not None:
-        family = model_family_for_role(role)
-        variant_key = f"{name}_{family}"
-        template = prompts.get(variant_key)
-        if template is None:
-            template = prompts.get(name)
-            if template is None:
-                raise KeyError(
-                    f"Unknown prompt: tried '{variant_key}' (role={role}, family={family}) "
-                    f"and bare '{name}', neither defined."
-                )
-    else:
-        template = prompts.get(name)
-        if template is None:
-            raise KeyError(f"Unknown prompt: '{name}'")
-
+    template = prompts.get(name)
+    if template is None:
+        raise KeyError(f"Unknown prompt: '{name}'")
     if variables:
         return template.format_map(PartialFormatDict(variables))
     return template

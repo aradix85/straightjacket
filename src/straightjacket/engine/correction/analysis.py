@@ -43,7 +43,7 @@ def call_correction_brain(
         else _defaults["no_roll"]
     )
 
-    system = get_prompt("correction_brain", role="correction", lang=lang)
+    system = get_prompt("correction_brain", lang=lang)
     w = game.world
 
     user_msg = f"""## correction from player: {correction_text}

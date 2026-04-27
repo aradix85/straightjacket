@@ -42,7 +42,7 @@ genre_constraints:
     - "fantasy races (elves, dwarves, orcs)"
     - "magic systems or spellcasting"
   genre_test: ""
-  atmospheric_drift_universal:
+  atmospheric_drift:
     - "eldritch"
     - "otherworldly"
     - "spectral"
@@ -81,7 +81,6 @@ genre_constraints:
     - "waking"
     - "shimmers"
     - "shimmering"
-  atmospheric_drift_overlays: {}
   atmospheric_drift_threshold: 2
 
 creation_flow:

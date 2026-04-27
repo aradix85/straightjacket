@@ -21,13 +21,8 @@ class GenreConstraints:
     forbidden_terms: list[str]
     forbidden_concepts: list[str]
     genre_test: str
-    atmospheric_drift_universal: list[str]
-    atmospheric_drift_overlays: dict[str, list[str]]
+    atmospheric_drift: list[str]
     atmospheric_drift_threshold: int
-
-    def atmospheric_drift_for(self, family: str) -> list[str]:
-        overlay = self.atmospheric_drift_overlays.get(family, [])
-        return list(self.atmospheric_drift_universal) + list(overlay)
 
 
 @dataclass
@@ -61,8 +56,7 @@ class _GenreConstraintsPartial:
     forbidden_terms: list[str] | None = None
     forbidden_concepts: list[str] | None = None
     genre_test: str | None = None
-    atmospheric_drift_universal: list[str] | None = None
-    atmospheric_drift_overlays: dict[str, list[str]] | None = None
+    atmospheric_drift: list[str] | None = None
     atmospheric_drift_threshold: int | None = None
 
 
@@ -142,12 +136,8 @@ def _parse_genre_constraints_partial(data: dict) -> _GenreConstraintsPartial:
         partial.forbidden_concepts = list(data["forbidden_concepts"])
     if "genre_test" in data:
         partial.genre_test = data["genre_test"]
-    if "atmospheric_drift_universal" in data:
-        partial.atmospheric_drift_universal = list(data["atmospheric_drift_universal"])
-    if "atmospheric_drift_overlays" in data:
-        partial.atmospheric_drift_overlays = {
-            family: list(words) for family, words in data["atmospheric_drift_overlays"].items()
-        }
+    if "atmospheric_drift" in data:
+        partial.atmospheric_drift = list(data["atmospheric_drift"])
     if "atmospheric_drift_threshold" in data:
         partial.atmospheric_drift_threshold = int(data["atmospheric_drift_threshold"])
     return partial
@@ -207,19 +197,11 @@ def _resolve_genre_constraints(chain: list[_SettingConfig], yaml_path: str) -> G
                 return [str(item) for item in val]
         raise KeyError(f"genre_constraints.{attr} missing in setting chain ending at {yaml_path}")
 
-    def pick_dict(attr: str) -> dict[str, list[str]]:
-        for cfg in chain:
-            val = getattr(cfg.genre_constraints, attr)
-            if val is not None:
-                return {str(k): [str(item) for item in v] for k, v in val.items()}
-        raise KeyError(f"genre_constraints.{attr} missing in setting chain ending at {yaml_path}")
-
     return GenreConstraints(
         forbidden_terms=pick_str_list("forbidden_terms"),
         forbidden_concepts=pick_str_list("forbidden_concepts"),
         genre_test=pick_str("genre_test"),
-        atmospheric_drift_universal=pick_str_list("atmospheric_drift_universal"),
-        atmospheric_drift_overlays=pick_dict("atmospheric_drift_overlays"),
+        atmospheric_drift=pick_str_list("atmospheric_drift"),
         atmospheric_drift_threshold=pick_int("atmospheric_drift_threshold"),
     )
 

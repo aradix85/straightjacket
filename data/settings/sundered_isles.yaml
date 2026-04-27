@@ -32,7 +32,7 @@ genre_constraints:
   forbidden_terms: []
   forbidden_concepts: []
   genre_test: ""
-  atmospheric_drift_universal:
+  atmospheric_drift:
     - "spaceship"
     - "computer"
     - "laser"
@@ -58,7 +58,6 @@ genre_constraints:
     - "exhaling"
     - "awakens"
     - "waking"
-  atmospheric_drift_overlays: {}
   atmospheric_drift_threshold: 2
 
 creation_flow:

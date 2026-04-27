@@ -51,7 +51,7 @@ Where to find things. If you want to change X, edit Y.
 | Emotion scoring, keyword boosts | `emotions/*.yaml` (no Python) |
 | UI text | `strings/*.yaml` (no Python) |
 | Server port | `config.yaml` (no Python) |
-| AI model assignment per role | `config.yaml` → `clusters` (per-cluster model + parameters), `role_cluster` (remap role to cluster), `model_family` (model id → family suffix used for prompt/pattern variants) |
+| AI model assignment per role | `config.yaml` → `clusters` (per-cluster model + parameters), `role_cluster` (remap role to cluster) |
 | Provider-specific params per role | `config.yaml` → `extra_body` (per-cluster) |
 | Move types or stat assignments | Datasworn JSON (moves loaded automatically per setting) |
 | A new setting (genre + constraints) | `data/settings/your_setting.yaml` + Datasworn JSON |
@@ -156,23 +156,9 @@ ai:
   # Remap a role to a different cluster:
   role_cluster:
     architect: "creative"
-  # Map model id to a family suffix used by the (role, model_family) resolution layer:
-  model_family:
-    zai-glm-4.7: glm
-    gpt-oss-120b: gpt_oss
 ```
 
 Clusters are the single source of truth. `sampling_params(role)` resolves all call parameters from the role's cluster. `model_for_role(role)` resolves the model. No per-role overrides — to change a role's parameters, change the cluster or remap the role via `role_cluster`.
-
-### (Role, model_family) resolution layer
-
-Three layers carry model-specific content: prompts, validator-regex pattern lists, and atmospheric-drift wordlists. Each is addressed by `(role, model_family)` rather than role alone, with the family resolved through `cluster → model → family` from `config.yaml`. The system is fully config-driven: adding a new model family is a yaml-only edit. No Python code carries a list of valid families.
-
-- **Prompts.** `get_prompt(name, role="...")` tries `{name}_{family}` first, falls back to bare `{name}` when the variant is absent. Both absent raises. Sub-blocks (labels, flags, content-boundaries, result strings) stay bare and only get `role=` when a variant becomes necessary.
-- **Validator regex patterns.** `engine/validator.yaml` ships a required `*_universal` list plus a required `*_overlays` dict (may be empty) for each pattern set: `agency_patterns`, `miss_silver_lining_patterns`, `miss_annihilation_patterns`. Family overlays go under the dict keyed by family suffix. `EngineSettings.compiled_patterns_for_family(section, base_key, family)` combines universal + overlay; unknown family returns just universal. The narrator's family (`narrator_model_family()`) is used because the patterns score narrator output.
-- **Atmospheric drift wordlists.** `data/settings/*.yaml` has `atmospheric_drift_universal` (required) plus `atmospheric_drift_overlays` (a dict, may be empty). `GenreConstraints.atmospheric_drift_for(family)` combines universal + overlay.
-
-Adding a new model: add one row in `config.yaml` under `ai.model_family` (model id → family suffix), set the model on a cluster, and optionally add overlays under whatever family suffix you chose. Unmapped models raise.
 
 `max_tool_rounds` is an engine mechanical limit, configured in `engine.yaml` under `pacing.max_tool_rounds`.
 
@@ -309,7 +295,7 @@ src/straightjacket/
 
 **Character succession.** When the protagonist dies (face_death MISS, or both health and spirit reach zero) or is explicitly retired by the player, the campaign continues with a new protagonist in the same world. Two-step lifecycle gated by `CampaignState.pending_succession`: `prepare_succession` archives the predecessor into `campaign.predecessors` and locks in the inheritance rolls onto that record (so reload can't reroll); `start_succession_with_character` reads the locked-in rolls, closes the predecessor's chapter via the same `_close_previous_chapter` used for chapter transitions, applies NPC carryover (active full / background half / lore half / deceased pruned per `succession.yaml`), wipes PC-specific state via `_reset_for_successor` while keeping world-level threats and unresolved threads (vow-typed and creation-sourced threads drop), seeds the successor's legacy from the rolls, replaces character identity, generates an opening narration, and clears the pending flag. The two-step shape is mandatory for save-resilience: locking the rolls at archive time rather than at character-replacement time is what makes the inheritance deterministic across reload. Unknown roll outcomes and unknown NPC statuses both raise — there is no carryover for state the engine doesn't recognise.
 
-**Provider abstraction.** `AIProvider` protocol with two implementations (Anthropic, OpenAI-compatible). The engine never imports provider SDKs directly. `create_with_retry` handles transient errors with exponential backoff. Multi-model: config.yaml assigns models via five clusters — narrator (GLM 4.7 for prose), creative (GPT-OSS for architect, director, chapter_summary, recap), classification (GPT-OSS for brain, correction), judgment (GPT-OSS for validator, chapter_validator, revelation_check), extraction (GPT-OSS for validator_architect, narrator_metadata, opening_setup). Clusters are the single source of truth for all call parameters. `model_for_role(role)` resolves the model; `sampling_params(role)` resolves temperature, top_p, max_tokens, max_retries, and extra_body. `model_family_for_role(role)` resolves the family suffix used by the prompt / validator-pattern / atmospheric-drift resolution layers. The provider stores no model state.
+**Provider abstraction.** `AIProvider` protocol with two implementations (Anthropic, OpenAI-compatible). The engine never imports provider SDKs directly. `create_with_retry` handles transient errors with exponential backoff. Multi-model: config.yaml assigns models via five clusters — narrator (GLM 4.7 for prose), creative (GPT-OSS for architect, director, chapter_summary, recap), classification (GPT-OSS for brain, correction), judgment (GPT-OSS for validator, chapter_validator, revelation_check), extraction (GPT-OSS for validator_architect, narrator_metadata, opening_setup). Clusters are the single source of truth for all call parameters. `model_for_role(role)` resolves the model; `sampling_params(role)` resolves temperature, top_p, max_tokens, max_retries, and extra_body. The provider stores no model state.
 
 **AI-call exception carve-out.** The strict-rules forbid broad `try/except Exception` suppression. AI call sites are an explicit carve-out — `brain.py`, `narrator.py`, `validator.py`, `director.py`, `correction/analysis.py`, `architect*.py`, `tools/handler.py`. AI calls fail transiently (rate limits, network blips, provider outages, 429/500/502/503/529); the retry wrapper handles retryable status codes with exponential backoff, and what remains after retries is unrecoverable for that call. Strict-raise would crash the player's session on any transient fault. Graceful degradation — Brain falling through to `dialog`, revelation_check defaulting to confirmed, narrator retry returning empty string — hides the fault but preserves the session; every suppression site logs at warning or error level with the exception type so faults stay observable. This carve-out does not extend to config loading, yaml parsing, file persistence, input validation, or domain-rule enforcement: those must raise.
 
@@ -355,7 +341,7 @@ src/straightjacket/
 
 ## Known Limitations
 
-**Validator is model-specific.** The hybrid validator (rule-based + LLM) carries content addressed by `(role, model_family)` via universal lists plus per-family overlays in `engine/validator.yaml` and per-setting overlays in `data/settings/*.yaml`. The rule validator catches common violations (player agency regex patterns, atmospheric drift wordlists, split-monologue detection); the LLM validator catches the rest — resolution pacing (NPC speech content), genre physics, consequence compliance. Resolution pacing remains the hardest violation to correct: language models trained on creative writing bias toward information-rich NPC dialog regardless of family. Retry success rate is roughly 60% for pacing violations. Family overlays are introduced as Elvira data exposes model-specific patterns — universal content is the safe default, overlays are added only where measurement justifies them.
+**Validator is model-tuned.** The hybrid validator (rule-based + LLM) carries patterns in `engine/validator.yaml` and atmospheric-drift wordlists in `data/settings/*.yaml`. The rule validator catches common violations (player agency regex patterns, atmospheric drift wordlists, split-monologue detection, genre physics regex patterns); the LLM validator catches the rest — resolution pacing (NPC speech content), consequence compliance, equivalence checks. Resolution pacing remains the hardest violation to correct: language models trained on creative writing bias toward information-rich NPC dialog. Retry success rate is roughly 60% for pacing violations. Patterns and prompts are tuned for the active narrator and validator models — switching to a different model means re-tuning the prompts and pattern lists, not adding parallel variants.
 
 **Single session.** One player at a time. The module-level accumulators (`_pending_events`, `_token_log`) and the in-memory SQLite database assume single-threaded access. Multi-session would require per-session state isolation.
 

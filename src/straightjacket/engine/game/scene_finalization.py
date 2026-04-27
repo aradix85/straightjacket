@@ -1,3 +1,5 @@
+from collections.abc import Sequence
+
 from ..ai.brain import call_revelation_check
 from ..db import sync as _db_sync
 from ..director import should_call_director
@@ -65,8 +67,8 @@ def finalize_scene(
     prompt_summary: str,
     roll_result_str: str,
     roll: RollResult | None = None,
-    consequences: list[str] | None = None,
-    agency_clock_events: list[ClockEvent] | None = None,
+    consequences: Sequence[str] = (),
+    agency_clock_events: Sequence[ClockEvent] = (),
 ) -> tuple[bool, dict | None]:
     game = ctx.game
     brain = ctx.brain

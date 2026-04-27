@@ -328,12 +328,10 @@ class NarratorStatusDescriptions:
 class ValidatorConfig:
     rewrite_instructions: dict[str, str]
     retry_strip: dict[str, str]
-    agency_patterns_universal: list[str]
-    agency_patterns_overlays: dict[str, list[str]]
-    miss_silver_lining_patterns_universal: list[str]
-    miss_silver_lining_patterns_overlays: dict[str, list[str]]
-    miss_annihilation_patterns_universal: list[str]
-    miss_annihilation_patterns_overlays: dict[str, list[str]]
+    agency_patterns: list[str]
+    miss_silver_lining_patterns: list[str]
+    miss_annihilation_patterns: list[str]
+    genre_physics_patterns: list[str]
     format_patterns: list[dict[str, str]]
     quote_patterns: dict[str, str]
 

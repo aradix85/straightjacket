@@ -79,31 +79,50 @@ def test_resolve_unknown_returns_empty() -> None:
 
 
 def test_generate_sentences_from_consequences() -> None:
-    sentences = generate_consequence_sentences(["health -2", "momentum -3"], [], _game(), _brain())
+    sentences, events = generate_consequence_sentences(["health -2", "momentum -3"], [], _game(), _brain())
     assert len(sentences) == 2
     assert all(isinstance(s, str) and len(s) > 0 for s in sentences)
+    assert len(events) == 2
+    assert events[0].event_code == "health_heavy"
+    assert events[1].event_code == "momentum_loss"
 
 
 def test_generate_sentences_with_clock_events() -> None:
     clock_events = [ClockEvent(clock="Looming storm", trigger="The storm breaks", autonomous=False, triggered=False)]
-    assert len(generate_consequence_sentences([], clock_events, _game(), _brain())) >= 1
+    sentences, events = generate_consequence_sentences([], clock_events, _game(), _brain())
+    assert len(sentences) >= 1
+    assert any(e.event_code == "clock_tick" for e in events)
 
 
 def test_generate_sentences_with_triggered_clock() -> None:
     clock_events = [ClockEvent(clock="Vault heist", trigger="The vault opens", autonomous=False, triggered=True)]
-    sentences = generate_consequence_sentences([], clock_events, _game(), _brain())
+    sentences, events = generate_consequence_sentences([], clock_events, _game(), _brain())
     assert any("Vault heist" in s or "vault" in s.lower() for s in sentences)
+    assert any(e.event_code == "clock_triggered" for e in events)
 
 
 def test_generate_sentences_empty_returns_empty() -> None:
-    assert generate_consequence_sentences([], [], _game(), _brain()) == []
+    sentences, events = generate_consequence_sentences([], [], _game(), _brain())
+    assert sentences == []
+    assert events == []
 
 
 def test_generate_sentences_with_npc_target() -> None:
     game = _game()
     game.npcs.append(make_npc(id="npc_1", name="Kira", disposition="distrustful"))
-    sentences = generate_consequence_sentences(["Kira bond -1"], [], game, _brain(target="npc_1"))
+    sentences, events = generate_consequence_sentences(["Kira bond -1"], [], game, _brain(target="npc_1"))
     assert len(sentences) >= 1 and any("Kira" in s for s in sentences)
+    assert any(e.event_code == "bond_loss" and e.subject == "Kira" for e in events)
+
+
+def test_generate_sentences_returns_event_phrasings() -> None:
+    sentences, events = generate_consequence_sentences(["momentum +1"], [], _game(), _brain())
+    assert len(events) == 1
+    ev = events[0]
+    assert ev.event_code == "momentum_gain"
+    assert ev.subject == "Ash"
+    assert "opening" in ev.acceptable_phrasings
+    assert any("advantage" in p for p in ev.acceptable_phrasings)
 
 
 def test_consequence_tags_in_prompt() -> None:

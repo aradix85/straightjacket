@@ -118,8 +118,7 @@ def make_genre_constraints(
     forbidden_terms: list[str] | None = None,
     forbidden_concepts: list[str] | None = None,
     genre_test: str = "",
-    atmospheric_drift_universal: list[str] | None = None,
-    atmospheric_drift_overlays: dict[str, list[str]] | None = None,
+    atmospheric_drift: list[str] | None = None,
     atmospheric_drift_threshold: int = 3,
 ):
     from straightjacket.engine.datasworn.settings import GenreConstraints
@@ -128,7 +127,6 @@ def make_genre_constraints(
         forbidden_terms=forbidden_terms if forbidden_terms is not None else [],
         forbidden_concepts=forbidden_concepts if forbidden_concepts is not None else [],
         genre_test=genre_test,
-        atmospheric_drift_universal=atmospheric_drift_universal if atmospheric_drift_universal is not None else [],
-        atmospheric_drift_overlays=atmospheric_drift_overlays if atmospheric_drift_overlays is not None else {},
+        atmospheric_drift=atmospheric_drift if atmospheric_drift is not None else [],
         atmospheric_drift_threshold=atmospheric_drift_threshold,
     )

@@ -12,74 +12,18 @@ def _install_prompts(monkeypatch: pytest.MonkeyPatch, prompts: dict[str, str]) -
     monkeypatch.setattr(prompt_loader, "_prompts", dict(prompts))
 
 
-def _stub_family(monkeypatch: pytest.MonkeyPatch, family: str) -> None:
-    monkeypatch.setattr(prompt_loader, "model_family_for_role", lambda role: family)
-
-
-def test_get_prompt_no_role_resolves_bare_name(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_get_prompt_resolves_bare_name(monkeypatch: pytest.MonkeyPatch) -> None:
     _install_prompts(monkeypatch, {"narrator_system": "BASE"})
     assert prompt_loader.get_prompt("narrator_system") == "BASE"
 
 
-def test_get_prompt_no_role_unknown_name_raises(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_get_prompt_unknown_name_raises(monkeypatch: pytest.MonkeyPatch) -> None:
     _install_prompts(monkeypatch, {})
     with pytest.raises(KeyError, match="Unknown prompt"):
         prompt_loader.get_prompt("does_not_exist")
 
 
-def test_get_prompt_with_role_prefers_variant(monkeypatch: pytest.MonkeyPatch) -> None:
-    _install_prompts(monkeypatch, {"narrator_system": "BASE", "narrator_system_glm": "GLM_VARIANT"})
-    _stub_family(monkeypatch, "glm")
-    assert prompt_loader.get_prompt("narrator_system", role="narrator") == "GLM_VARIANT"
-
-
-def test_get_prompt_with_role_falls_back_to_bare(monkeypatch: pytest.MonkeyPatch) -> None:
-    _install_prompts(monkeypatch, {"narrator_system": "BASE"})
-    _stub_family(monkeypatch, "glm")
-    assert prompt_loader.get_prompt("narrator_system", role="narrator") == "BASE"
-
-
-def test_get_prompt_with_role_both_absent_raises(monkeypatch: pytest.MonkeyPatch) -> None:
-    _install_prompts(monkeypatch, {"unrelated": "x"})
-    _stub_family(monkeypatch, "glm")
-    with pytest.raises(KeyError, match="narrator_system_glm.*narrator_system"):
-        prompt_loader.get_prompt("narrator_system", role="narrator")
-
-
-def test_get_prompt_with_role_template_variables_fill(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_get_prompt_template_variables_fill(monkeypatch: pytest.MonkeyPatch) -> None:
     _install_prompts(monkeypatch, {"task_action": "Write {n} paragraphs."})
-    _stub_family(monkeypatch, "glm")
-    out = prompt_loader.get_prompt("task_action", role="narrator", n="3")
+    out = prompt_loader.get_prompt("task_action", n="3")
     assert out == "Write 3 paragraphs."
-
-
-def test_get_prompt_with_role_variant_takes_its_own_template(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    _install_prompts(
-        monkeypatch,
-        {"task_action": "BASE: {n} paragraphs.", "task_action_glm": "GLM: {n} paragraphs."},
-    )
-    _stub_family(monkeypatch, "glm")
-    out = prompt_loader.get_prompt("task_action", role="narrator", n="2")
-    assert out == "GLM: 2 paragraphs."
-
-
-def test_get_prompt_role_resolves_per_role_independently(monkeypatch: pytest.MonkeyPatch) -> None:
-    _install_prompts(
-        monkeypatch,
-        {
-            "validator_system": "BASE",
-            "validator_system_gpt_oss": "GPTOSS",
-        },
-    )
-
-    monkeypatch.setattr(
-        prompt_loader,
-        "model_family_for_role",
-        lambda role: {"narrator": "glm", "validator": "gpt_oss"}[role],
-    )
-
-    assert prompt_loader.get_prompt("validator_system", role="narrator") == "BASE"
-
-    assert prompt_loader.get_prompt("validator_system", role="validator") == "GPTOSS"

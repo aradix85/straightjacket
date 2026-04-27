@@ -52,7 +52,6 @@ class AIConfig:
     prompts_dir: str
     clusters: dict[str, ClusterConfig]
     role_cluster: dict[str, str]
-    model_family: dict[str, str]
 
 
 @dataclass
@@ -106,7 +105,6 @@ def _parse_config(data: dict) -> AppConfig:
         prompts_dir=ad["prompts_dir"],
         clusters=clusters,
         role_cluster=ad["role_cluster"],
-        model_family=ad["model_family"],
     )
 
     ld = data["language"]
@@ -190,21 +188,3 @@ def sampling_params(role: str) -> dict:
         params["extra_body"] = cluster.extra_body
 
     return params
-
-
-def model_family_for_model(model_id: str) -> str:
-    families = cfg().ai.model_family
-    if model_id not in families:
-        raise ValueError(
-            f"Model '{model_id}' has no family mapping in config.yaml. "
-            f"Add '{model_id}: <family_name>' under ai.model_family."
-        )
-    return families[model_id]
-
-
-def model_family_for_role(role: str) -> str:
-    return model_family_for_model(model_for_role(role))
-
-
-def narrator_model_family() -> str:
-    return model_family_for_role("narrator")

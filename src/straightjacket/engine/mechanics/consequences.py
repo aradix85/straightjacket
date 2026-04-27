@@ -4,7 +4,7 @@ import random
 
 from ..engine_loader import eng
 from ..logging_util import log
-from ..models import BrainResult, ClockEvent, GameState, RollResult
+from ..models import BrainResult, ClockEvent, ConsequenceEvent, GameState, RollResult
 from ..npc import find_npc, normalize_for_match
 
 from .impacts import impact_label
@@ -165,107 +165,134 @@ def pick_template(key: str) -> str:
     return random.choice(options)
 
 
+def _phrasings_for(event_code: str, impact_label_text: str) -> list[str]:
+    phrasings_map = eng().get_raw("consequence_event_phrasings")
+    raw = phrasings_map[event_code]
+    if impact_label_text:
+        return [p.replace("{impact}", impact_label_text) for p in raw]
+    return list(raw)
+
+
+def _classify(cons: str, default_npc: str) -> tuple[str, str, str] | None:
+    if cons.startswith("mark "):
+        return "impact_mark", "", impact_label(cons[5:].strip())
+    if cons.startswith("clear "):
+        return "impact_clear", "", impact_label(cons[6:].strip())
+
+    parts = cons.split()
+    if len(parts) >= 2 and "bond" in cons.lower():
+        bond_npc = cons.split("bond")[0].strip()
+        subject = bond_npc or default_npc
+        delta = parts[-1]
+        return ("bond_loss" if "-" in delta else "bond_gain", subject, "")
+
+    if len(parts) >= 2:
+        track = parts[0].lower()
+        delta = parts[-1]
+        if "-" in delta:
+            try:
+                amount = int(delta.replace("-", ""))
+            except ValueError:
+                amount = 1
+            severity = "heavy" if amount >= 2 else "light"
+            if track in ("health", "spirit"):
+                return f"{track}_{severity}", "", ""
+            if track == "supply" or "supply" in cons:
+                return "supply_any", "", ""
+            if track == "momentum":
+                return "momentum_loss", "", ""
+            return None
+        if "+" in delta:
+            if track in ("health", "spirit"):
+                return f"{track}_gain", "", ""
+            if track == "supply" or "supply" in cons:
+                return "supply_gain", "", ""
+            if track == "momentum":
+                return "momentum_gain", "", ""
+            return None
+    return None
+
+
 def generate_consequence_sentences(
     consequences: list[str],
     clock_events: list[ClockEvent],
     game: GameState,
     brain: BrainResult,
-) -> list[str]:
+) -> tuple[list[str], list[ConsequenceEvent]]:
     target = find_npc(game, brain.target_npc) if brain.target_npc else None
     player = game.player_name
     npc_name = target.name if target else ""
     location = game.world.current_location or ""
 
     sentences: list[str] = []
+    events: list[ConsequenceEvent] = []
 
     for cons in consequences:
-        sentence = resolve_consequence_sentence(cons, player, npc_name, location)
+        sentence, sub_events = _resolve_with_events(cons, player, npc_name, location)
         if sentence:
             sentences.append(sentence)
+        events.extend(sub_events)
 
-    for event in clock_events:
-        tpl = pick_template("clock_triggered" if event.triggered else "clock_tick")
+    for ev in clock_events:
+        key = "clock_triggered" if ev.triggered else "clock_tick"
+        tpl = pick_template(key)
         sentences.append(
-            tpl.format(
-                player=player, npc=npc_name, location=location, clock=event.clock, trigger=event.trigger, amount=""
+            tpl.format(player=player, npc=npc_name, location=location, clock=ev.clock, trigger=ev.trigger, amount="")
+        )
+        events.append(
+            ConsequenceEvent(
+                event_code=key,
+                subject=ev.clock,
+                acceptable_phrasings=_phrasings_for(key, ""),
             )
         )
 
-    return sentences
+    return sentences, events
 
 
-def _resolve_impact_marker(cons: str, fmt: dict) -> str | None:
-    if cons.startswith("mark "):
-        fmt["impact"] = impact_label(cons[5:].strip())
-        return pick_template("impact_mark").format(**fmt)
-    if cons.startswith("clear "):
-        fmt["impact"] = impact_label(cons[6:].strip())
-        return pick_template("impact_clear").format(**fmt)
-    return None
+def _resolve_with_events(
+    cons: str,
+    player: str,
+    npc_name: str,
+    location: str,
+) -> tuple[str, list[ConsequenceEvent]]:
+    if "," in cons:
+        sub_sentences: list[str] = []
+        sub_events: list[ConsequenceEvent] = []
+        for sub in cons.split(","):
+            sub = sub.strip()
+            if not sub:
+                continue
+            s, e = _resolve_with_events(sub, player, npc_name, location)
+            if s:
+                sub_sentences.append(s)
+            sub_events.extend(e)
+        return " ".join(sub_sentences), sub_events
 
+    classified = _classify(cons, npc_name)
+    if classified is None:
+        return "", []
 
-def _resolve_bond_delta(cons: str, fmt: dict) -> str:
-    bond_npc = cons.split("bond")[0].strip()
-    if bond_npc:
-        fmt["npc"] = bond_npc
-    tpl_key = "bond_loss" if "-" in cons.split()[-1] else "bond_gain"
-    return pick_template(tpl_key).format(**fmt)
-
-
-def _resolve_resource_loss(track: str, cons: str, delta: str, fmt: dict) -> str:
-    try:
-        amount = int(delta.replace("-", ""))
-    except ValueError:
-        amount = 1
-    fmt["amount"] = str(amount)
-    severity = "heavy" if amount >= 2 else "light"
-
-    if track in ("health", "spirit"):
-        return pick_template(f"{track}_{severity}").format(**fmt)
-    if track == "supply" or "supply" in cons:
-        return pick_template("supply_any").format(**fmt)
-    if track == "momentum":
-        return pick_template("momentum_loss").format(**fmt)
-    return ""
-
-
-def _resolve_resource_gain(track: str, cons: str, fmt: dict) -> str:
-    if track in ("health", "spirit"):
-        return pick_template(f"{track}_gain").format(**fmt)
-    if track == "supply" or "supply" in cons:
-        return pick_template("supply_gain").format(**fmt)
-    if track == "momentum":
-        return pick_template("momentum_gain").format(**fmt)
-    return ""
+    event_code, subject_override, impact_text = classified
+    fmt: dict = {
+        "player": player,
+        "npc": subject_override or npc_name,
+        "location": location,
+        "amount": "",
+        "impact": impact_text,
+    }
+    sentence = pick_template(event_code).format(**fmt)
+    subject = subject_override if event_code in ("bond_loss", "bond_gain") else player
+    if event_code in ("impact_mark", "impact_clear"):
+        subject = player
+    event = ConsequenceEvent(
+        event_code=event_code,
+        subject=subject,
+        acceptable_phrasings=_phrasings_for(event_code, impact_text),
+    )
+    return sentence, [event]
 
 
 def resolve_consequence_sentence(cons: str, player: str, npc_name: str, location: str) -> str:
-    fmt: dict = {"player": player, "npc": npc_name, "location": location, "amount": ""}
-
-    impact_sentence = _resolve_impact_marker(cons, fmt)
-    if impact_sentence is not None:
-        return impact_sentence
-
-    parts = cons.split()
-    if len(parts) >= 2:
-        track = parts[0].lower()
-        delta = parts[-1]
-
-        if "bond" in cons.lower():
-            return _resolve_bond_delta(cons, fmt)
-        if "-" in delta:
-            return _resolve_resource_loss(track, cons, delta, fmt)
-        if "+" in delta:
-            return _resolve_resource_gain(track, cons, fmt)
-
-    if "," in cons:
-        sub_sentences = []
-        for sub in cons.split(","):
-            sub = sub.strip()
-            if sub:
-                s = resolve_consequence_sentence(sub, player, npc_name, location)
-                if s:
-                    sub_sentences.append(s)
-        return " ".join(sub_sentences)
-
-    return ""
+    sentence, _ = _resolve_with_events(cons, player, npc_name, location)
+    return sentence

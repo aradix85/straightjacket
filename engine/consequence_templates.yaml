@@ -22,6 +22,7 @@ consequence_templates:
   momentum_loss:
   - '{player} loses momentum. The advantage is gone.'
   - The momentum shifts against {player}. Ground lost.
+  - The footing slips out from under {player}. Whatever edge there was, it's gone.
   bond_loss:
   - '{npc} steps back and crosses their arms. Trust broken.'
   - '{npc} turns away from {player}. The conversation is over.'
@@ -29,17 +30,28 @@ consequence_templates:
   health_gain:
   - '{player} catches breath. The worst pain recedes.'
   - '{player} steadies. Wounded, but functional.'
+  - The pain ebbs to something {player} can carry.
   spirit_gain:
   - Clarity returns to {player}. Enough to keep moving.
   - '{player} steadies. The fog lifts, if only slightly.'
+  - Something settles in {player}. The ground feels firmer.
   supply_gain:
   - '{player} restocks the essentials.'
+  - '{player}''s pack is heavier now — useful weight, the kind that buys time.'
+  - The kit is whole again. {player} packs it tight.
   bond_gain:
   - '{npc} meets {player}''s gaze and holds it. Trust, earned.'
+  - '{npc} settles closer to {player} — the small distance that says belief.'
+  - Something in {npc}''s posture eases toward {player}. The wall is lower now.
   momentum_gain:
   - '{player} finds an opening. The advantage shifts.'
+  - The opportunity opens. {player} reads it before it closes.
+  - Ground tilts toward {player}. The fight, the room, the moment — leaning their way now.
+  - '{player} catches the rhythm. The edge is theirs.'
   disposition_shift:
   - '{npc}''s attitude toward {player} shifts — visible in posture, tone, or gaze.'
+  - Something changes in how {npc} regards {player}. Read it in the eyes.
+  - The temperature between {npc} and {player} moves. {npc} is not the same toward them.
   clock_tick:
   - Time passes. The threat advances.
   - The deadline moves closer whether {player} is ready or not.
@@ -53,3 +65,133 @@ consequence_templates:
   - The weight of being {impact} lifts from {player}.
   - '{player} sheds the hold of {impact} — no longer what they were.'
   - '{impact} no longer defines {player}. Something has healed.'
+
+consequence_event_phrasings:
+  health_light:
+  - hit
+  - struck
+  - wounded
+  - cut
+  - bruised
+  - bleeding
+  - hurt
+  - pain
+  - injured
+  - staggered
+  health_heavy:
+  - broken
+  - down
+  - serious wound
+  - heavy bleeding
+  - crumpled
+  - collapsed
+  - badly hurt
+  - critically injured
+  spirit_light:
+  - doubt
+  - faltering
+  - exhaustion
+  - resolve thinning
+  - focus slipping
+  - tired
+  - shaken
+  spirit_heavy:
+  - composure cracks
+  - hands shaking
+  - purpose hollow
+  - focus scattered
+  - breaking
+  - falling apart
+  supply_any:
+  - lost gear
+  - supplies low
+  - dropped
+  - broken
+  - spent
+  - missing equipment
+  - kit damaged
+  momentum_loss:
+  - lost momentum
+  - advantage gone
+  - ground lost
+  - edge gone
+  - footing slipped
+  - rhythm broken
+  bond_loss:
+  - trust broken
+  - withdrew
+  - turned away
+  - distance
+  - cold
+  - shut down
+  - walled off
+  health_gain:
+  - steadies
+  - catches breath
+  - pain recedes
+  - stabilises
+  - wound dressed
+  - recovering
+  spirit_gain:
+  - clarity
+  - steadies
+  - fog lifts
+  - settles
+  - composure returns
+  - calmer
+  supply_gain:
+  - restocked
+  - resupplied
+  - pack heavier
+  - kit whole
+  - gear replenished
+  bond_gain:
+  - trust earned
+  - closeness
+  - belief
+  - wall lower
+  - eases closer
+  - warming
+  momentum_gain:
+  - opening
+  - advantage shift
+  - opportunity
+  - edge
+  - ground tilts
+  - rhythm caught
+  - upper hand
+  - leverage
+  - opening appears
+  - opening found
+  disposition_shift:
+  - attitude shifts
+  - posture changes
+  - tone changes
+  - gaze changes
+  - temperature shifts
+  - regard changes
+  clock_tick:
+  - time passes
+  - threat advances
+  - deadline closer
+  - clock ticks
+  - getting worse
+  clock_triggered:
+  - clock fills
+  - deadline hit
+  - threat triggers
+  - time's up
+  - clock triggered
+  impact_mark:
+  - carries the mark
+  - lasting wound
+  - cost stays
+  - now wounded
+  - now shaken
+  - now {impact}
+  impact_clear:
+  - weight lifts
+  - sheds the hold
+  - healed
+  - no longer wounded
+  - no longer shaken

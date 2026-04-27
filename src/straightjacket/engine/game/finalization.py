@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass, field
 
 from ..ai.metadata import apply_narrator_metadata
@@ -16,7 +17,7 @@ from ..mechanics.consequences import tick_threat_clock
 from ..mechanics.legacy import mark_legacy
 from ..mechanics.move_effects import OutcomeResult
 from ..mechanics.move_outcome import resolve_move_outcome
-from ..models import BrainResult, ClockEvent, EngineConfig, GameState, MemoryEntry, RollResult
+from ..models import BrainResult, ClockEvent, ConsequenceEvent, EngineConfig, GameState, MemoryEntry, RollResult
 from ..npc import find_npc
 from ..npc.memory import consolidate_memory
 from ..parser import parse_narrator_response
@@ -125,17 +126,18 @@ def apply_post_narration(
     scene_present_ids: set[str],
     activated_npc_names: list[str],
     config: EngineConfig | None = None,
-    consequences: list[str] | None = None,
+    consequences: Sequence[str] = (),
     world_addition: str = "",
 ) -> dict:
+    cons_list = list(consequences)
     ctx = generate_scene_context(game, brain, roll, activated_npc_names)
     game.world.current_scene_context = ctx
 
-    engine_mems = generate_engine_memories(game, brain, roll, scene_present_ids, consequences=consequences)
+    engine_mems = generate_engine_memories(game, brain, roll, scene_present_ids, consequences=cons_list)
     if engine_mems:
         apply_engine_memories(game, engine_mems)
 
-    metadata = call_narrator_metadata(provider, narration, game, config, brain=brain, consequences=consequences or [])
+    metadata = call_narrator_metadata(provider, narration, game, config, brain=brain, consequences=cons_list)
     apply_narrator_metadata(game, metadata, scene_present_ids=scene_present_ids, world_addition=world_addition)
 
     return metadata
@@ -148,8 +150,8 @@ def narrate_scene(
     config: EngineConfig | None = None,
     validate_result_type: str = "",
     player_words: str = "",
-    consequences: list[str] | None = None,
-    consequence_sentences: list[str] | None = None,
+    consequences: Sequence[str] = (),
+    consequence_events: Sequence[ConsequenceEvent] = (),
     target_npc_name: str = "",
     fact_budget: int = -1,
 ) -> tuple[str, dict]:
@@ -167,7 +169,7 @@ def narrate_scene(
             player_words=player_words,
             consequences=consequences,
             config=config,
-            consequence_sentences=consequence_sentences,
+            consequence_events=consequence_events,
             target_npc_name=target_npc_name,
             fact_budget=fact_budget,
         )

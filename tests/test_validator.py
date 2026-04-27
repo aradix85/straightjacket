@@ -118,12 +118,15 @@ def test_revelation_check_defaults_true_on_api_error(stub_all: None) -> None:
 def test_consequence_compliance_block_skipped_on_strong_hit(stub_all: None) -> None:
     from straightjacket.engine.ai.rule_validator import ValidationContext
     from straightjacket.engine.ai.validator import validate_narration
+    from straightjacket.engine.models import ConsequenceEvent
 
     provider = MockProvider(json.dumps({"pass": True, "violations": [], "correction": ""}))
     ctx = ValidationContext.build(
         make_game_state(),
         result_type="STRONG_HIT",
-        consequence_sentences=["Player finds an opening. The advantage shifts."],
+        consequence_events=[
+            ConsequenceEvent(event_code="momentum_gain", subject="Ash", acceptable_phrasings=["opening"])
+        ],
     )
     validate_narration(provider, "Some narration.", ctx)
     sent_system = provider.calls[-1]["system"]
@@ -136,12 +139,15 @@ def test_consequence_compliance_block_skipped_on_strong_hit(stub_all: None) -> N
 def test_consequence_compliance_block_present_on_weak_hit(stub_all: None) -> None:
     from straightjacket.engine.ai.rule_validator import ValidationContext
     from straightjacket.engine.ai.validator import validate_narration
+    from straightjacket.engine.models import ConsequenceEvent
 
     provider = MockProvider(json.dumps({"pass": True, "violations": [], "correction": ""}))
     ctx = ValidationContext.build(
         make_game_state(),
         result_type="WEAK_HIT",
-        consequence_sentences=["A specific cost is paid: equipment damaged."],
+        consequence_events=[
+            ConsequenceEvent(event_code="supply_any", subject="Ash", acceptable_phrasings=["lost gear"])
+        ],
     )
     validate_narration(provider, "Some narration.", ctx)
     sent_system = provider.calls[-1]["system"]
@@ -153,12 +159,15 @@ def test_consequence_compliance_block_present_on_weak_hit(stub_all: None) -> Non
 def test_consequence_compliance_block_present_on_miss(stub_all: None) -> None:
     from straightjacket.engine.ai.rule_validator import ValidationContext
     from straightjacket.engine.ai.validator import validate_narration
+    from straightjacket.engine.models import ConsequenceEvent
 
     provider = MockProvider(json.dumps({"pass": True, "violations": [], "correction": ""}))
     ctx = ValidationContext.build(
         make_game_state(),
         result_type="MISS",
-        consequence_sentences=["Pay the price: lose 1 supply."],
+        consequence_events=[
+            ConsequenceEvent(event_code="supply_any", subject="Ash", acceptable_phrasings=["lost gear"])
+        ],
     )
     validate_narration(provider, "Some narration.", ctx)
     sent_system = provider.calls[-1]["system"]

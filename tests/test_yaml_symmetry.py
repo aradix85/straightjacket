@@ -159,3 +159,23 @@ class TestMoveOutcomesCoverage:
             f"engine/move_outcomes.yaml has entries for moves that don't exist: {orphan}. "
             "Either remove the outcome entry or restore the move."
         )
+
+
+class TestConsequenceTemplatesSymmetry:
+    def test_phrasings_cover_every_template(self) -> None:
+        templates = set(eng().get_raw("consequence_templates").keys())
+        phrasings = set(eng().get_raw("consequence_event_phrasings").keys())
+        missing = templates - phrasings
+        assert missing == set(), (
+            f"consequence_templates keys without consequence_event_phrasings entries: {sorted(missing)}. "
+            "Every event_code that produces narrator-facing prose must also expose validator-facing phrasings."
+        )
+
+    def test_no_orphan_phrasing_entries(self) -> None:
+        templates = set(eng().get_raw("consequence_templates").keys())
+        phrasings = set(eng().get_raw("consequence_event_phrasings").keys())
+        orphan = phrasings - templates
+        assert orphan == set(), (
+            f"consequence_event_phrasings has keys not in consequence_templates: {sorted(orphan)}. "
+            "Either remove the phrasings entry or add a matching template."
+        )

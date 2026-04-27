@@ -124,4 +124,4 @@ def build_action_prompt(
 {events_block}{director}
 {narrative_direction_block(game, roll.result)}
 {story_context_block(game)}{recent_events_block(game)}</scene>
-<task>{get_prompt("task_action", role="narrator")}</task>"""
+<task>{get_prompt("task_action")}</task>"""

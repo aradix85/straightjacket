@@ -22,7 +22,6 @@ def build_new_game_prompt(game: GameState) -> str:
     pronouns_hint = f" Use {game.pronouns} pronouns for the player character." if game.pronouns else ""
     task = get_prompt(
         "task_opening",
-        role="narrator",
         player_name=game.player_name,
         pronouns_hint=pronouns_hint,
         seed=seed,
@@ -68,7 +67,7 @@ def build_epilogue_prompt(game: GameState) -> str:
 <session_log>{log_text}</session_log>
 </scene>
 <task>
-{get_prompt("task_epilogue", role="narrator")}
+{get_prompt("task_epilogue")}
 </task>"""
 
 
@@ -115,5 +114,5 @@ def build_new_chapter_prompt(game: GameState) -> str:
 {npc_block}{evolutions_block}
 {story_context_block(game)}</scene>
 <task>
-{get_prompt("task_chapter_opening", role="narrator", chapter_number=str(game.campaign.chapter_number), seed=seed)}
+{get_prompt("task_chapter_opening", chapter_number=str(game.campaign.chapter_number), seed=seed)}
 </task>"""

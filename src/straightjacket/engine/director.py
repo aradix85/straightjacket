@@ -24,7 +24,7 @@ from .story_state import get_current_act, default_scene_range
 
 
 def _get_director_system_base() -> str:
-    return get_prompt("director_system", role="director")
+    return get_prompt("director_system")
 
 
 def _director_system(game: GameState) -> str:
@@ -155,7 +155,7 @@ def build_director_prompt(game: GameState, latest_narration: str, config: Engine
     reflection_section = _collect_reflection_blocks(game)
     story_info = _build_story_arc_block(game)
 
-    task = get_prompt("director_task", role="director", lang=lang)
+    task = get_prompt("director_task", lang=lang)
     return f"""<latest_scene>
 {latest_narration[: eng().truncations.prompt_xlong]}
 </latest_scene>
