@@ -75,9 +75,9 @@ class TestMoveCategoriesSymmetry:
         assert missing == [], f"memory_result_text missing keys: {missing}."
 
     def test_memory_emotions_has_dialog_key(self) -> None:
-        assert (
-            "dialog" in eng().memory_emotions.base
-        ), "memory_emotions.base must contain 'dialog' key for dialog turns."
+        assert "dialog" in eng().memory_emotions.base, (
+            "memory_emotions.base must contain 'dialog' key for dialog turns."
+        )
 
     def test_memory_result_text_has_dialog_key(self) -> None:
         assert "dialog" in eng().get_raw("memory_result_text"), "memory_result_text must contain 'dialog' key."

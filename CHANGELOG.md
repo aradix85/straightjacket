@@ -7,7 +7,17 @@ Originally forked from [EdgeTales](https://github.com/edgetales/edgetales). See 
 
 Straightjacket uses calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day. The first CalVer release is `2026.04.25.0`. Earlier `0.x.y` releases keep their original version numbers and are not renumbered. The switch was made because the project has no public API to version semantically against — the `0.x.y` numbers were running counters with no meaning, and dates carry the meaning the numbers didn't.
 
-## [2026.04.27.11] — 2026-04-27
+## [2026.04.28.0] — 2026-04-28
+
+27.11-residue daadwerkelijk afgemaakt. De vorige sessie claimde drie schoonmaakacties uitgevoerd te hebben — `tests/elvira/elvira_bot/drift_checks.py` verwijderen, `engine/move_routing.yaml` verwijderen, format-fix op `tests/test_yaml_symmetry.py` — maar de twee deletes haalden de commit niet omdat zip-over-lokale-tree geen impliciete deletes meeneemt; de format-fix eveneens niet. Gevolg: `test_project_rules.py` was bij de 27.11-commit feitelijk drie scans rood (broad-except in drift_checks, orphan engine yaml-key voor move_routing, ruff format drift in test_yaml_symmetry), niet "twintig project-rule scans clean" zoals 27.11 schreef. Deze release haalt het residu alsnog weg en herstelt het delivery-gate-precedent: claims in CHANGELOG corresponderen weer met de werkelijke staat van de tree.
+
+ARCHITECTURE.md test-count drift hersteld: 1187 → 1138, in lijn met ORIGINS.md en CONTRIBUTING.md die in 27.11 al waren bijgewerkt. De doc-debt rond `engine.yaml` als shorthand voor het `engine/<naam>.yaml`-pakket blijft staan per beslissing in roadmap Current state — die wordt in een aparte md-only sessie opgeruimd, niet versluierd door een feature-stap.
+
+Geen Python-edits buiten de twee deletes. Save format ongewijzigd. Test count 1138, twintig project-rule scans clean, ruff check clean, ruff format clean, mypy clean op 101 source files.
+
+---
+
+
 
 Cleanup-pass plus drie nieuwe project-rule scans. 27.10-residue alsnog opgeruimd: `tests/elvira/elvira_bot/drift_checks.py` was achtergebleven en las weg-gerefactorde GenreConstraints-attributen op een type dat niet meer bestaat — verwijderd, plus carve-out-entry uit `test_project_rules.py`. `data/settings/delve.yaml` had nog een leeg `genre_constraints: {}`-blok zonder consument, weg. `engine/move_routing.yaml` was een regression na zijn eerdere verwijdering in 0.46.5 — niemand las hem, alle data al vertegenwoordigd in `move_outcomes.yaml` per-move parameters, weg. Twee dode publieke functies weggehaald: `reload_config` in `config_loader.py` (geen consument anywhere) en `list_tracks` in `tools/builtins.py` (geschreven als engine-query helper analoog aan `available_moves`, nooit ingezet); `list_tracks` ook uit ARCHITECTURE-tabel gestript. Format-residue van een eerdere commit in `tests/test_yaml_symmetry.py` meegenomen.
 
