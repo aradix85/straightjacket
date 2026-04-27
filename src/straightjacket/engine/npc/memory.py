@@ -54,13 +54,17 @@ def score_importance(emotional_weight: str, event_text: str = "", debug: bool = 
 
 
 def retrieve_memories(
-    npc: NpcData, context_text: str = "", max_count: int = 5, current_scene: int = 0, present_npc_ids: set | None = None
+    npc: NpcData,
+    *,
+    context_text: str,
+    max_count: int,
+    current_scene: int,
+    present_npc_ids: frozenset[str] = frozenset(),
 ) -> list[MemoryEntry]:
     memories = npc.memory
     if not memories:
         return []
 
-    _present = present_npc_ids or set()
     reflections = [m for m in memories if m.type == "reflection"]
     _e = eng()
     _w = _e.memory_retrieval_weights
@@ -93,7 +97,7 @@ def retrieve_memories(
                     1.0, len(overlap) / max(_mem_cfg.min_token_length, len(context_words)) * _mem_cfg.overlap_scale
                 )
 
-        if _present and mem.about_npc in _present:
+        if present_npc_ids and mem.about_npc in present_npc_ids:
             relevance = min(1.0, relevance + about_boost)
 
         return w_recency * recency + w_importance * importance + w_relevance * relevance

@@ -91,7 +91,7 @@ def _create_stub_for_rejected_reveal(
         disposition=normalize_disposition("neutral"),
         status="active",
         aliases=paren_aliases,
-        last_location=game.world.current_location or "",
+        last_location=game.world.current_location,
         introduced=False,
     )
     game.npcs.append(stub)
@@ -143,7 +143,7 @@ def _apply_description_updates(npc: NpcData, d: dict) -> None:
             )
 
     extra = d.get("details", "").strip()
-    if extra and extra not in (npc.description or ""):
+    if extra and extra not in npc.description:
         existing = npc.description
         npc.description = f"{existing}. {extra}" if existing else extra
         log(f"[NPC] Details enriched for {npc.name}: {extra[: eng().truncations.log_medium]}")
@@ -169,10 +169,11 @@ def process_npc_details(game: "GameState", details: list, world_addition: str = 
 def _normalize_new_npc_input(raw_nd: dict, default_disp: str) -> dict | None:
     if not isinstance(raw_nd, dict) or not raw_nd.get("name"):
         return None
+    disposition = raw_nd["disposition"]
     return {
         "name": raw_nd["name"],
-        "description": (raw_nd.get("description") or "").strip(),
-        "disposition": raw_nd.get("disposition") or default_disp,
+        "description": raw_nd["description"].strip(),
+        "disposition": disposition if disposition else default_disp,
     }
 
 
@@ -245,7 +246,7 @@ def _create_new_npc(game: "GameState", nd: dict) -> NpcData:
         disposition=normalize_disposition(nd["disposition"]),
         status="active",
         aliases=paren_aliases,
-        last_location=game.world.current_location or "",
+        last_location=game.world.current_location,
         introduced=True,
     )
     game.npcs.append(npc)

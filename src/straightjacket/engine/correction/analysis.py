@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 
 from ..ai.brain import BrainResult
-from ..ai.provider_base import AIProvider, create_with_retry
+from ..ai.provider_base import AICallSpec, AIProvider, create_with_retry
 from ..ai.schemas import get_correction_output_schema
 from ..config_loader import model_for_role, sampling_params
 from ..engine_loader import eng
@@ -65,14 +65,14 @@ npcs:
 
     log(f"[Correction] Analysing: {correction_text[: _trunc.log_long]}")
     try:
-        response = create_with_retry(
-            provider,
+        spec = AICallSpec(
             model=model_for_role("correction"),
             system=system,
             messages=[{"role": "user", "content": user_msg}],
             json_schema=get_correction_output_schema(),
             **sampling_params("correction"),
         )
+        response = create_with_retry(provider, spec)
         result = json.loads(response.content)
         log(
             f"[Correction] source={result['correction_source']} "

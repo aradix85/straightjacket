@@ -13,15 +13,9 @@ def get_narration_lang(config: EngineConfig) -> str:
     return config.narration_lang or narration_language()
 
 
-def content_boundaries_block(game: GameState | None = None, creation_data: dict | None = None) -> str:
-    lines = ""
-    wishes = ""
-    if game:
-        lines = game.preferences.content_lines or ""
-        wishes = game.preferences.player_wishes or ""
-    if not lines and not wishes and creation_data:
-        lines = creation_data.get("content_lines", "")
-        wishes = creation_data.get("wishes", "")
+def content_boundaries_block(game: GameState) -> str:
+    lines = game.preferences.content_lines
+    wishes = game.preferences.player_wishes
     if not lines and not wishes:
         return ""
     body_parts: list[str] = []
@@ -32,19 +26,14 @@ def content_boundaries_block(game: GameState | None = None, creation_data: dict 
     return get_prompt("block_content_boundaries_wrapper", body="\n".join(body_parts))
 
 
-def backstory_block(game: GameState | None = None) -> str:
-    if not game:
-        return ""
-    backstory = game.backstory or ""
+def backstory_block(game: GameState) -> str:
+    backstory = game.backstory
     if not backstory.strip():
         return ""
     return get_prompt("block_backstory", backstory_text=_xe(backstory))
 
 
-def vocabulary_block(game: GameState | None = None) -> str:
-    if not game:
-        return ""
-
+def vocabulary_block(game: GameState) -> str:
     pkg = active_package(game)
     if not pkg:
         return ""
@@ -63,8 +52,8 @@ def vocabulary_block(game: GameState | None = None) -> str:
     return "\n" + get_prompt("block_vocabulary_wrapper", body="\n".join(body_parts))
 
 
-def truths_block(game: GameState | None = None) -> str:
-    if not game or not game.truths:
+def truths_block(game: GameState) -> str:
+    if not game.truths:
         return ""
     header = get_prompt("block_world_truths_header")
     lines = [
@@ -74,8 +63,8 @@ def truths_block(game: GameState | None = None) -> str:
     return "\n" + get_prompt("block_world_truths_wrapper", header=header, lines="\n".join(lines))
 
 
-def tone_authority_block(game: GameState | None = None) -> str:
-    if not game or not game.setting_tone:
+def tone_authority_block(game: GameState) -> str:
+    if not game.setting_tone:
         return ""
     body = get_prompt("block_tone_authority")
     return "\n" + get_prompt("block_tone_authority_wrapper", tone=_xa(game.setting_tone), body=body)
@@ -125,9 +114,7 @@ def _describe_narrator_resource(value: int, descriptions: dict[int, str]) -> str
     return descriptions[min(descriptions.keys())]
 
 
-def status_context_block(game: GameState | None = None) -> str:
-    if not game:
-        return ""
+def status_context_block(game: GameState) -> str:
     descriptions = eng().narrator_status_descriptions
     h, sp, su = game.resources.health, game.resources.spirit, game.resources.supply
 
@@ -219,7 +206,7 @@ def campaign_history_block(game: GameState) -> str:
     )
 
 
-def get_narrator_system(config: EngineConfig, game: GameState | None = None) -> str:
+def get_narrator_system(config: EngineConfig, game: GameState) -> str:
     lang = get_narration_lang(config)
     cb = content_boundaries_block(game)
     bs = backstory_block(game)

@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 import inspect
+from collections.abc import Callable, Mapping
+from types import MappingProxyType
 from typing import Any, get_type_hints
-from collections.abc import Callable
 
 from ..engine_loader import eng
 from ..logging_util import log
@@ -11,14 +12,26 @@ from ..logging_util import log
 _registry: dict[str, dict[str, tuple[Callable, dict]]] = {}
 
 
-def register(*roles: str, description: str | None = None, params: dict[str, str] | None = None) -> Callable:
+def register(*roles: str) -> Callable:
     def decorator(func: Callable) -> Callable:
-        definition = _build_definition(func, override_description=description, override_params=params)
+        definition = _build_definition_from_yaml(func)
         for role in roles:
             if role not in _registry:
                 _registry[role] = {}
             _registry[role][definition["function"]["name"]] = (func, definition)
         log(f"[Tools] Registered {func.__name__} for {', '.join(roles)}")
+        return func
+
+    return decorator
+
+
+def register_test_tool(*roles: str, description: str, params: Mapping[str, str] = MappingProxyType({})) -> Callable:
+    def decorator(func: Callable) -> Callable:
+        definition = _build_definition_from_overrides(func, description=description, param_docs=params)
+        for role in roles:
+            if role not in _registry:
+                _registry[role] = {}
+            _registry[role][definition["function"]["name"]] = (func, definition)
         return func
 
     return decorator
@@ -51,22 +64,18 @@ _TYPE_MAP: dict[type, str] = {
 }
 
 
-def _build_definition(
-    func: Callable,
-    *,
-    override_description: str | None = None,
-    override_params: dict[str, str] | None = None,
-) -> dict:
-    name = func.__name__
-    if override_description is not None:
-        description = override_description
-        param_docs = override_params or {}
-    else:
-        descriptions = eng().get_raw("tool_descriptions")
-        entry = descriptions[name]
-        description = entry["description"]
-        param_docs = entry.get("params", {})
+def _build_definition_from_yaml(func: Callable) -> dict:
+    descriptions = eng().get_raw("tool_descriptions")
+    entry = descriptions[func.__name__]
+    return _assemble_definition(func, description=entry["description"], param_docs=entry["params"])
 
+
+def _build_definition_from_overrides(func: Callable, *, description: str, param_docs: Mapping[str, str]) -> dict:
+    return _assemble_definition(func, description=description, param_docs=param_docs)
+
+
+def _assemble_definition(func: Callable, *, description: str, param_docs: Mapping[str, str]) -> dict:
+    name = func.__name__
     hints = get_type_hints(func)
     sig = inspect.signature(func)
 
@@ -77,8 +86,12 @@ def _build_definition(
         if param_name in ("game", "conn", "db"):
             continue
 
-        param_type = hints.get(param_name, str)
-        json_type = _TYPE_MAP.get(param_type, "string")
+        if param_name not in hints:
+            raise TypeError(f"Tool {name!r} parameter {param_name!r} has no type hint")
+        param_type = hints[param_name]
+        if param_type not in _TYPE_MAP:
+            raise TypeError(f"Tool {name!r} parameter {param_name!r} has unsupported type {param_type!r}")
+        json_type = _TYPE_MAP[param_type]
 
         prop: dict[str, Any] = {"type": json_type}
         if param_name in param_docs:

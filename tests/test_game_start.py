@@ -2,9 +2,9 @@ import json
 
 import pytest
 
+from straightjacket.engine.ai.provider_base import AICallSpec, AIResponse
 from straightjacket.engine.models import GameState
 from tests._helpers import make_game_state
-from tests._mocks import MockResponse
 
 
 class _SmartMockProvider:
@@ -12,30 +12,22 @@ class _SmartMockProvider:
         self.narration = narration
         self.calls: list[dict] = []
 
-    def create_message(
-        self,
-        model: str = "",
-        system: str = "",
-        messages: list | None = None,
-        max_tokens: int = 1000,
-        json_schema: dict | None = None,
-        tools: list | None = None,
-        temperature: float | None = None,
-        top_p: float | None = None,
-        top_k: int | None = None,
-        extra_body: dict | None = None,
-    ) -> MockResponse:
+    def create_message(self, spec: AICallSpec) -> AIResponse:
+        json_schema = spec.json_schema
         self.calls.append(
-            {"system": system[:80], "json_schema_keys": list((json_schema or {}).get("properties", {}).keys())}
+            {
+                "system": spec.system[:80],
+                "json_schema_keys": list(json_schema["properties"].keys()) if json_schema else [],
+            }
         )
         if not json_schema:
-            return MockResponse(self.narration)
+            return AIResponse(content=self.narration, usage={"input_tokens": 10, "output_tokens": 10})
 
         props = set(json_schema.get("properties", {}).keys())
 
         if "central_conflict" in props:
-            return MockResponse(
-                json.dumps(
+            return AIResponse(
+                content=json.dumps(
                     {
                         "central_conflict": "Find the relic",
                         "antagonist_force": "The cult",
@@ -52,24 +44,29 @@ class _SmartMockProvider:
                         "revelations": [],
                         "possible_endings": [],
                     }
-                )
+                ),
+                usage={"input_tokens": 10, "output_tokens": 10},
             )
         if "fixed_conflict" in props:
-            return MockResponse(
-                json.dumps(
+            return AIResponse(
+                content=json.dumps(
                     {
                         "pass": True,
                         "violations": [],
                         "fixed_conflict": "",
                         "fixed_antagonist": "",
                     }
-                )
+                ),
+                usage={"input_tokens": 10, "output_tokens": 10},
             )
         if "pass" in props and "violations" in props:
-            return MockResponse(json.dumps({"pass": True, "violations": [], "correction": ""}))
+            return AIResponse(
+                content=json.dumps({"pass": True, "violations": [], "correction": ""}),
+                usage={"input_tokens": 10, "output_tokens": 10},
+            )
         if "npcs" in props and "clocks" in props:
-            return MockResponse(
-                json.dumps(
+            return AIResponse(
+                content=json.dumps(
                     {
                         "npcs": [],
                         "clocks": [],
@@ -79,11 +76,12 @@ class _SmartMockProvider:
                         "memory_updates": [],
                         "deceased_npcs": [],
                     }
-                )
+                ),
+                usage={"input_tokens": 10, "output_tokens": 10},
             )
         if "new_npcs" in props:
-            return MockResponse(
-                json.dumps(
+            return AIResponse(
+                content=json.dumps(
                     {
                         "new_npcs": [],
                         "npc_renames": [],
@@ -91,10 +89,11 @@ class _SmartMockProvider:
                         "deceased_npcs": [],
                         "lore_npcs": [],
                     }
-                )
+                ),
+                usage={"input_tokens": 10, "output_tokens": 10},
             )
 
-        return MockResponse(json.dumps({}))
+        return AIResponse(content=json.dumps({}), usage={"input_tokens": 10, "output_tokens": 10})
 
 
 def _valid_creation_data() -> dict:

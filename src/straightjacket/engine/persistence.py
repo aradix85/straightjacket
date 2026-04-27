@@ -17,7 +17,7 @@ from .npc import (
 )
 
 
-def save_game(game: GameState, username: str, chat_messages: list | None, name: str) -> Path:
+def save_game(game: GameState, username: str, chat_messages: list[dict], name: str) -> Path:
     name = _safe_name(name)
     save_dir = get_save_dir(username)
     save_dir.mkdir(parents=True, exist_ok=True)
@@ -27,8 +27,7 @@ def save_game(game: GameState, username: str, chat_messages: list | None, name: 
     data["engine_version"] = VERSION
     data["game_state"] = game.to_dict()
 
-    raw_messages = chat_messages or []
-    data["chat_messages"] = [msg for msg in raw_messages if not msg.get("recap")]
+    data["chat_messages"] = [msg for msg in chat_messages if not msg.get("recap")]
     path.write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
     log(
         f"[Save] Game saved: {username}/{name} (Scene {game.narrative.scene_count}, {len(data['chat_messages'])} chat msgs)"

@@ -3,7 +3,7 @@ from typing import Any
 import anthropic
 
 from ..logging_util import log
-from .provider_base import AIResponse, extract_usage, normalize_stop_reason
+from .provider_base import AICallSpec, AIResponse, extract_usage, normalize_stop_reason
 
 
 class AnthropicProvider:
@@ -14,49 +14,37 @@ class AnthropicProvider:
             self._client = anthropic.Anthropic(api_key=api_key)
         log(f"[AnthropicProvider] Initialized{f' (base: {api_base})' if api_base else ''}")
 
-    def create_message(
-        self,
-        model: str,
-        system: str,
-        messages: list[dict],
-        max_tokens: int,
-        json_schema: dict | None = None,
-        tools: list[dict] | None = None,
-        temperature: float | None = None,
-        top_p: float | None = None,
-        top_k: int | None = None,
-        extra_body: dict | None = None,
-    ) -> AIResponse:
+    def create_message(self, spec: AICallSpec) -> AIResponse:
         create_kwargs: dict[str, Any] = {
-            "model": model,
-            "max_tokens": max_tokens,
-            "system": system,
-            "messages": messages,
+            "model": spec.model,
+            "max_tokens": spec.max_tokens,
+            "system": spec.system,
+            "messages": spec.messages,
         }
 
-        if temperature is not None:
-            create_kwargs["temperature"] = temperature
-        if top_p is not None:
-            create_kwargs["top_p"] = top_p
-        if top_k is not None:
-            create_kwargs["top_k"] = top_k
+        if spec.temperature is not None:
+            create_kwargs["temperature"] = spec.temperature
+        if spec.top_p is not None:
+            create_kwargs["top_p"] = spec.top_p
+        if spec.top_k is not None:
+            create_kwargs["top_k"] = spec.top_k
 
-        if json_schema is not None:
+        if spec.json_schema is not None:
             create_kwargs["output_config"] = {
                 "format": {
                     "type": "json_schema",
-                    "schema": json_schema,
+                    "schema": spec.json_schema,
                 }
             }
 
-        if tools is not None:
+        if spec.tools is not None:
             create_kwargs["tools"] = [
                 {
                     "name": t.get("function", {}).get("name", ""),
                     "description": t.get("function", {}).get("description", ""),
                     "input_schema": t.get("function", {}).get("parameters", {}),
                 }
-                for t in tools
+                for t in spec.tools
             ]
 
         response = self._client.messages.create(**create_kwargs)

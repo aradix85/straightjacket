@@ -133,6 +133,7 @@ class PromptDisplayConfig:
     campaign_history_chapters: int
     memory_consequences_max: int
     memory_npcs_max: int
+    creativity_seed_count: int
 
 
 @dataclass

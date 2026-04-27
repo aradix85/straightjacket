@@ -28,7 +28,7 @@ def build_dialog_prompt(
     oracle_answer: str = "",
     random_events: Sequence[RandomEvent] = (),
 ) -> str:
-    context_text = f"{player_words} {brain.player_intent or ''} {game.world.current_scene_context or ''}"
+    context_text = f"{player_words} {brain.player_intent} {game.world.current_scene_context}"
     move_cat = "social"
     npc = _npc_block(game, brain.target_npc, context_text=context_text, move_category=move_cat)
     npcs_sect = _npcs_section(game, brain, context_text, activated_npcs, mentioned_npcs, move_category=move_cat)

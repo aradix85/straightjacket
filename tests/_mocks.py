@@ -2,13 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-
-class MockResponse:
-    def __init__(self, content: str, stop_reason: str = "complete") -> None:
-        self.content = content
-        self.stop_reason = stop_reason
-        self.tool_calls: list = []
-        self.usage = {"input_tokens": 10, "output_tokens": 10}
+from straightjacket.engine.ai.provider_base import AICallSpec, AIResponse
 
 
 class MockProvider:
@@ -17,23 +11,11 @@ class MockProvider:
         self._fail = fail
         self.calls: list = []
 
-    def create_message(
-        self,
-        model: str,
-        system: str,
-        messages: list,
-        max_tokens: int,
-        json_schema: dict | None = None,
-        tools: list | None = None,
-        temperature: float | None = None,
-        top_p: float | None = None,
-        top_k: int | None = None,
-        extra_body: dict | None = None,
-    ) -> MockResponse:
-        self.calls.append({"system": system, "json_schema": json_schema, "messages": messages})
+    def create_message(self, spec: AICallSpec) -> AIResponse:
+        self.calls.append({"system": spec.system, "json_schema": spec.json_schema, "messages": spec.messages})
         if self._fail:
             raise ConnectionError("mock fail")
-        return MockResponse(self._content)
+        return AIResponse(content=self._content, usage={"input_tokens": 10, "output_tokens": 10})
 
 
 def make_test_game() -> Any:

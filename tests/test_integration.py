@@ -3,44 +3,28 @@ from tests._helpers import make_brain_result, make_clock, make_memory, make_npc
 import sys
 import json
 
-
-class MockResponse:
-    def __init__(self, content: str, stop_reason: str = "complete") -> None:
-        self.content = content
-        self.stop_reason = stop_reason
-        self.tool_calls: list = []
-        self.usage = {"input_tokens": 100, "output_tokens": 50}
+from straightjacket.engine.ai.provider_base import AICallSpec, AIResponse
 
 
 class MockProvider:
     def __init__(self) -> None:
         self.calls: list = []
 
-    def create_message(
-        self,
-        model: str,
-        system: str,
-        messages: list,
-        max_tokens: int,
-        json_schema: dict | None = None,
-        tools: list | None = None,
-        temperature: float | None = None,
-        top_p: float | None = None,
-        top_k: int | None = None,
-        extra_body: dict | None = None,
-    ) -> MockResponse:
+    def create_message(self, spec: AICallSpec) -> AIResponse:
+        json_schema = spec.json_schema
+        tools = spec.tools
         self.calls.append(
             {
-                "model": model,
-                "system_len": len(system),
-                "messages": messages,
+                "model": spec.model,
+                "system_len": len(spec.system),
+                "messages": spec.messages,
                 "json_schema": json_schema,
             }
         )
 
         if json_schema and "move" in json_schema.get("properties", {}):
-            return MockResponse(
-                json.dumps(
+            return AIResponse(
+                content=json.dumps(
                     {
                         "type": "action",
                         "move": "adventure/face_danger",
@@ -52,12 +36,13 @@ class MockProvider:
                         "world_addition": None,
                         "location_change": None,
                     }
-                )
+                ),
+                usage={"input_tokens": 100, "output_tokens": 50},
             )
 
         if tools and any(t.get("function", {}).get("name") == "roll_oracle" for t in tools):
-            return MockResponse(
-                json.dumps(
+            return AIResponse(
+                content=json.dumps(
                     {
                         "type": "action",
                         "move": "adventure/face_danger",
@@ -69,12 +54,13 @@ class MockProvider:
                         "world_addition": None,
                         "location_change": None,
                     }
-                )
+                ),
+                usage={"input_tokens": 100, "output_tokens": 50},
             )
 
         if json_schema and "new_npcs" in json_schema.get("properties", {}):
-            return MockResponse(
-                json.dumps(
+            return AIResponse(
+                content=json.dumps(
                     {
                         "new_npcs": [],
                         "npc_renames": [],
@@ -82,33 +68,36 @@ class MockProvider:
                         "deceased_npcs": [],
                         "lore_npcs": [],
                     }
-                )
+                ),
+                usage={"input_tokens": 100, "output_tokens": 50},
             )
 
         if json_schema and "pass" in json_schema.get("properties", {}):
-            return MockResponse(
-                json.dumps(
+            return AIResponse(
+                content=json.dumps(
                     {
                         "pass": True,
                         "violations": [],
                         "correction": "",
                     }
-                )
+                ),
+                usage={"input_tokens": 100, "output_tokens": 50},
             )
 
         if json_schema and "revelation_confirmed" in json_schema.get("properties", {}):
-            return MockResponse(
-                json.dumps(
+            return AIResponse(
+                content=json.dumps(
                     {
                         "revelation_confirmed": False,
                         "reasoning": "Not present in narration.",
                     }
-                )
+                ),
+                usage={"input_tokens": 100, "output_tokens": 50},
             )
 
         if json_schema and "scene_summary" in json_schema.get("properties", {}):
-            return MockResponse(
-                json.dumps(
+            return AIResponse(
+                content=json.dumps(
                     {
                         "scene_summary": "The player searched the room.",
                         "narrator_guidance": "Build tension slowly.",
@@ -118,12 +107,13 @@ class MockProvider:
                         "arc_notes": "Story is progressing.",
                         "act_transition": False,
                     }
-                )
+                ),
+                usage={"input_tokens": 100, "output_tokens": 50},
             )
 
         if json_schema and "correction_source" in json_schema.get("properties", {}):
-            return MockResponse(
-                json.dumps(
+            return AIResponse(
+                content=json.dumps(
                     {
                         "correction_source": "input_misread",
                         "corrected_input": "I talk to the guard instead",
@@ -133,14 +123,16 @@ class MockProvider:
                         "director_useful": False,
                         "state_ops": [],
                     }
-                )
+                ),
+                usage={"input_tokens": 100, "output_tokens": 50},
             )
 
-        return MockResponse(
-            "\u201cThe dust hung thick in the air. Your fingers traced the "
+        return AIResponse(
+            content="\u201cThe dust hung thick in the air. Your fingers traced the "
             "edge of the desk, finding nothing but splinters and silence. "
             "From the hallway, a floorboard groaned under weight that "
-            "wasn\u2019t yours.\u201d"
+            "wasn\u2019t yours.\u201d",
+            usage={"input_tokens": 100, "output_tokens": 50},
         )
 
 
@@ -234,16 +226,16 @@ def test_turn_dialog_skips_roll(load_engine: None) -> None:
     original_create = provider.create_message
     call_count = [0]
 
-    def dialog_brain(*args, **kwargs):
+    def dialog_brain(spec):
         call_count[0] += 1
-        schema = kwargs.get("json_schema") or (args[5] if len(args) > 5 else None)
-        tools = kwargs.get("tools")
+        schema = spec.json_schema
+        tools = spec.tools
         is_brain = (schema and "move" in schema.get("properties", {})) or (
             tools and any(t.get("function", {}).get("name") == "roll_oracle" for t in tools)
         )
         if is_brain:
-            return MockResponse(
-                json.dumps(
+            return AIResponse(
+                content=json.dumps(
                     {
                         "type": "action",
                         "move": "dialog",
@@ -255,9 +247,10 @@ def test_turn_dialog_skips_roll(load_engine: None) -> None:
                         "world_addition": None,
                         "location_change": None,
                     }
-                )
+                ),
+                usage={"input_tokens": 100, "output_tokens": 50},
             )
-        return original_create(*args, **kwargs)
+        return original_create(spec)
 
     provider.create_message = dialog_brain
 

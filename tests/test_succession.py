@@ -441,18 +441,18 @@ class _SuccessionMockProvider:
     def __init__(self, narration: str = "Successor's first scene.") -> None:
         self.narration = narration
 
-    def create_message(self, **kwargs: object) -> object:
-        from tests._mocks import MockResponse
+    def create_message(self, spec: object) -> object:
+        from straightjacket.engine.ai.provider_base import AIResponse
 
-        json_schema = kwargs.get("json_schema")
+        json_schema = spec.json_schema
         if not json_schema:
-            return MockResponse(self.narration)
+            return AIResponse(content=self.narration, usage={"input_tokens": 10, "output_tokens": 10})
 
         props = set(json_schema.get("properties", {}).keys())
 
         if "central_conflict" in props:
-            return MockResponse(
-                json.dumps(
+            return AIResponse(
+                content=json.dumps(
                     {
                         "central_conflict": "Continue the legacy",
                         "antagonist_force": "Old foe",
@@ -463,17 +463,22 @@ class _SuccessionMockProvider:
                         "revelations": [],
                         "possible_endings": [],
                     }
-                )
+                ),
+                usage={"input_tokens": 10, "output_tokens": 10},
             )
         if "fixed_conflict" in props:
-            return MockResponse(
-                json.dumps({"pass": True, "violations": [], "fixed_conflict": "", "fixed_antagonist": ""})
+            return AIResponse(
+                content=json.dumps({"pass": True, "violations": [], "fixed_conflict": "", "fixed_antagonist": ""}),
+                usage={"input_tokens": 10, "output_tokens": 10},
             )
         if "pass" in props and "violations" in props:
-            return MockResponse(json.dumps({"pass": True, "violations": [], "correction": ""}))
+            return AIResponse(
+                content=json.dumps({"pass": True, "violations": [], "correction": ""}),
+                usage={"input_tokens": 10, "output_tokens": 10},
+            )
         if "title" in props and "summary" in props and "unresolved_threads" in props:
-            return MockResponse(
-                json.dumps(
+            return AIResponse(
+                content=json.dumps(
                     {
                         "title": "Last Chapter",
                         "summary": "End of Aria's journey",
@@ -483,11 +488,12 @@ class _SuccessionMockProvider:
                         "thematic_question": "?",
                         "post_story_location": "Memorial",
                     }
-                )
+                ),
+                usage={"input_tokens": 10, "output_tokens": 10},
             )
         if "npcs" in props and "clocks" in props:
-            return MockResponse(
-                json.dumps(
+            return AIResponse(
+                content=json.dumps(
                     {
                         "npcs": [],
                         "clocks": [],
@@ -497,11 +503,12 @@ class _SuccessionMockProvider:
                         "memory_updates": [],
                         "deceased_npcs": [],
                     }
-                )
+                ),
+                usage={"input_tokens": 10, "output_tokens": 10},
             )
         if "new_npcs" in props:
-            return MockResponse(
-                json.dumps(
+            return AIResponse(
+                content=json.dumps(
                     {
                         "new_npcs": [],
                         "npc_renames": [],
@@ -509,9 +516,10 @@ class _SuccessionMockProvider:
                         "deceased_npcs": [],
                         "lore_npcs": [],
                     }
-                )
+                ),
+                usage={"input_tokens": 10, "output_tokens": 10},
             )
-        return MockResponse("{}")
+        return AIResponse(content="{}", usage={"input_tokens": 10, "output_tokens": 10})
 
 
 def _successor_creation_data() -> dict:

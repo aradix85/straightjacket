@@ -30,7 +30,6 @@ from straightjacket.engine.game import (
 
 from .ai_helpers import ask_bot, build_turn_context, decide_burn_momentum, get_persona
 from .creation import roll_character
-from .drift_checks import compute_drift_summary
 from .invariants import assert_game_state
 from .models import ChapterRecord, NpcSnapshot, SessionLog, TurnRecord
 from .quality_checks import (
@@ -39,7 +38,7 @@ from .quality_checks import (
     check_npc_spatial_consistency,
 )
 from .recorder import record_turn
-from .display import print_narration, print_state, final_state_dict, print_summary
+from .display import print_narration, print_state, print_summary
 
 RUNS_DIR = Path(__file__).resolve().parent.parent / "runs"
 SEPARATOR = "=" * 62
@@ -91,12 +90,9 @@ def run_session(bot_cfg: dict, auto_override: bool = False, turns_override: int 
     persona = get_persona(style)
 
     slog = SessionLog(
-        started_at=datetime.now().isoformat(),
         config=bot_cfg,
         engine_version=VERSION,
-        auto_mode=auto_mode,
         style=style,
-        max_chapters=max_chapters,
     )
 
     print(f"\n{SEPARATOR}")
@@ -110,10 +106,6 @@ def run_session(bot_cfg: dict, auto_override: bool = False, turns_override: int 
 
     game, narration, chat_messages = _setup_game(provider, config, username, game_cfg, auto_mode, slog)
 
-    slog.character = game.player_name
-    slog.location_start = game.world.current_location
-    slog.game_context = _game_context_dict(game)
-    slog.opening_narration = narration
     _log_story_blueprint(game, slog)
 
     prev_npcs: list[NpcSnapshot] | None = None
@@ -130,7 +122,7 @@ def run_session(bot_cfg: dict, auto_override: bool = False, turns_override: int 
     for chapter_idx in range(max_chapters):
         chapter_num = game.campaign.chapter_number
         chapter_start = total_turns
-        ch_rec = ChapterRecord(chapter=chapter_num, started_at_turn=total_turns + 1)
+        ch_rec = ChapterRecord(chapter=chapter_num)
 
         if chapter_idx > 0:
             print(f"\n{SEPARATOR}")
@@ -240,14 +232,11 @@ def run_session(bot_cfg: dict, auto_override: bool = False, turns_override: int 
     )
     slog.quality_summary = _aggregate_quality_stats(slog)
     slog.token_summary = _aggregate_token_stats(slog)
-    slog.drift_summary = compute_drift_summary(slog)
     slog.burn_stats = {
         "offered": burns_offered,
         "taken": burns_taken,
         "failed": burns_failed,
     }
-    slog.final_state = final_state_dict(game)
-    slog.ended_at = datetime.now().isoformat()
 
     print_summary(slog, game)
     _try_save(game, username, chat_messages, save_out)
@@ -289,7 +278,6 @@ def _setup_game(
         setting_id = _random.choice(available)
 
     creation_data = roll_character(setting_id, game_cfg)
-    slog.creation_data = creation_data
 
     try:
         game, narration = start_new_game(provider, creation_data, config, username)
@@ -567,20 +555,6 @@ def _try_save(game: GameState, username: str, chat_messages: list[dict], save_ou
         print(f"  [SAVE] Saved to '{save_out}'")
     except Exception as e:
         print(f"  [SAVE] Failed: {e}")
-
-
-def _game_context_dict(game: GameState) -> dict:
-    return {
-        "setting_id": game.setting_id,
-        "setting_genre": game.setting_genre,
-        "setting_tone": game.setting_tone,
-        "character_concept": game.character_concept,
-        "pronouns": game.pronouns,
-        "paths": game.paths,
-        "backstory": game.backstory,
-        "background_vow": game.background_vow,
-        "stats": dict(game.stats),
-    }
 
 
 def _log_story_blueprint(game: GameState, slog: SessionLog) -> None:

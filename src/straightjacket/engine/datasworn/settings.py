@@ -17,13 +17,6 @@ _SETTINGS_DIR = PROJECT_ROOT / "data" / "settings"
 
 
 @dataclass
-class GenreConstraints:
-    forbidden_terms: list[str]
-    atmospheric_drift: list[str]
-    atmospheric_drift_threshold: int
-
-
-@dataclass
 class VocabularyConfig:
     substitutions: dict[str, str]
     sensory_palette: str
@@ -46,13 +39,6 @@ class CreationFlow:
     has_name_tables: bool
     has_ship_creation: bool
     starting_asset_categories: list[str]
-
-
-@dataclass
-class _GenreConstraintsPartial:
-    forbidden_terms: list[str] | None = None
-    atmospheric_drift: list[str] | None = None
-    atmospheric_drift_threshold: int | None = None
 
 
 @dataclass
@@ -79,7 +65,6 @@ class _SettingConfig:
     description: str
     oracle_paths: _OraclePathsPartial
     vocabulary: VocabularyConfig
-    genre_constraints: _GenreConstraintsPartial
     creation_flow: _CreationFlowPartial
     parent: str | None
 
@@ -120,17 +105,6 @@ def _parse_vocabulary(data: dict) -> VocabularyConfig:
     )
 
 
-def _parse_genre_constraints_partial(data: dict) -> _GenreConstraintsPartial:
-    partial = _GenreConstraintsPartial()
-    if "forbidden_terms" in data:
-        partial.forbidden_terms = list(data["forbidden_terms"])
-    if "atmospheric_drift" in data:
-        partial.atmospheric_drift = list(data["atmospheric_drift"])
-    if "atmospheric_drift_threshold" in data:
-        partial.atmospheric_drift_threshold = int(data["atmospheric_drift_threshold"])
-    return partial
-
-
 def _parse_creation_flow_partial(data: dict | None) -> _CreationFlowPartial:
     partial = _CreationFlowPartial()
     if data is None:
@@ -157,31 +131,8 @@ def _parse_setting_config(data: dict, yaml_path: str) -> _SettingConfig:
         description=_require_str(data, "description", yaml_path),
         oracle_paths=_parse_oracle_paths_partial(_require_dict(data, "oracle_paths", yaml_path)),
         vocabulary=_parse_vocabulary(_require_dict(data, "vocabulary", yaml_path)),
-        genre_constraints=_parse_genre_constraints_partial(_require_dict(data, "genre_constraints", yaml_path)),
         creation_flow=_parse_creation_flow_partial(data.get("creation_flow")),
         parent=str(parent_raw) if parent_raw else None,
-    )
-
-
-def _resolve_genre_constraints(chain: list[_SettingConfig], yaml_path: str) -> GenreConstraints:
-    def pick_int(attr: str) -> int:
-        for cfg in chain:
-            val = getattr(cfg.genre_constraints, attr)
-            if val is not None:
-                return int(val)
-        raise KeyError(f"genre_constraints.{attr} missing in setting chain ending at {yaml_path}")
-
-    def pick_str_list(attr: str) -> list[str]:
-        for cfg in chain:
-            val = getattr(cfg.genre_constraints, attr)
-            if val is not None:
-                return [str(item) for item in val]
-        raise KeyError(f"genre_constraints.{attr} missing in setting chain ending at {yaml_path}")
-
-    return GenreConstraints(
-        forbidden_terms=pick_str_list("forbidden_terms"),
-        atmospheric_drift=pick_str_list("atmospheric_drift"),
-        atmospheric_drift_threshold=pick_int("atmospheric_drift_threshold"),
     )
 
 
@@ -250,7 +201,6 @@ class SettingPackage:
             ancestor = ancestor._parent
 
         self._oracle_paths = _resolve_oracle_paths(chain, yaml_path)
-        self._genre_constraints = _resolve_genre_constraints(chain, yaml_path)
         self._creation_flow = _resolve_creation_flow(chain, yaml_path)
 
         if config.vocabulary.is_empty() and parent is not None:
@@ -281,10 +231,6 @@ class SettingPackage:
     @property
     def vocabulary(self) -> VocabularyConfig:
         return self._vocabulary
-
-    @property
-    def genre_constraints(self) -> GenreConstraints:
-        return self._genre_constraints
 
     @property
     def oracle_paths(self) -> OraclePaths:

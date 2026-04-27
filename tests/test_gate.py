@@ -13,12 +13,15 @@ from tests._helpers import make_brain_result, make_game_state, make_memory, make
 pytestmark = pytest.mark.usefixtures("load_engine")
 
 
+_DEFAULT_SECRETS: tuple[str, ...] = ("Kira is smuggling forbidden tech",)
+
+
 def _npc(
     disposition: str = "neutral",
     memories: int = 0,
     first_scene: int = 1,
     gather_count: int = 0,
-    secrets: list[str] | None = None,
+    secrets: tuple[str, ...] = _DEFAULT_SECRETS,
 ) -> NpcData:
     mems = [
         make_memory(scene=first_scene + i, event=f"Event {i}", emotional_weight="neutral", importance=3)
@@ -33,7 +36,7 @@ def _npc(
         arc="Growing more suspicious",
         disposition=disposition,
         memory=mems,
-        secrets=secrets or ["Kira is smuggling forbidden tech"],
+        secrets=list(secrets),
         gather_count=gather_count,
     )
 

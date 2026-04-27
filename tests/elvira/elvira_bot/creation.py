@@ -9,8 +9,7 @@ from straightjacket.engine.engine_loader import eng
 STAT_NAMES = ["edge", "heart", "iron", "shadow", "wits"]
 
 
-def roll_character(setting_id: str = "starforged", game_cfg: dict | None = None) -> dict:
-    game_cfg = game_cfg or {}
+def roll_character(setting_id: str, game_cfg: dict) -> dict:
     pkg = load_package(setting_id)
     _e = eng()
 

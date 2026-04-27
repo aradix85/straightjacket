@@ -1,6 +1,7 @@
 import json
 
 from straightjacket.engine import engine_loader
+from straightjacket.engine.ai.provider_base import AICallSpec, AIResponse
 from straightjacket.engine.models import (
     EngineConfig,
     GameState,
@@ -11,37 +12,19 @@ from straightjacket.engine.models import (
 from tests._helpers import make_brain_result, make_memory, make_npc
 
 
-class MockResponse:
-    def __init__(self, content: str, stop_reason: str = "complete") -> None:
-        self.content = content
-        self.stop_reason = stop_reason
-        self.tool_calls: list = []
-        self.usage = {"input_tokens": 100, "output_tokens": 50}
-
-
 class MockProvider:
     def __init__(self, correction_source: str = "input_misread") -> None:
         self.calls: list = []
         self._correction_source = correction_source
 
-    def create_message(
-        self,
-        model: str,
-        system: str,
-        messages: list,
-        max_tokens: int,
-        json_schema: dict | None = None,
-        tools: list | None = None,
-        temperature: float | None = None,
-        top_p: float | None = None,
-        top_k: int | None = None,
-        extra_body: dict | None = None,
-    ) -> MockResponse:
+    def create_message(self, spec: AICallSpec) -> AIResponse:
+        json_schema = spec.json_schema
+        tools = spec.tools
         self.calls.append({"json_schema": json_schema})
 
         if json_schema and "correction_source" in json_schema.get("properties", {}):
-            return MockResponse(
-                json.dumps(
+            return AIResponse(
+                content=json.dumps(
                     {
                         "correction_source": self._correction_source,
                         "corrected_input": "I talk to Mira instead",
@@ -63,12 +46,13 @@ class MockProvider:
                         if self._correction_source == "state_error"
                         else [],
                     }
-                )
+                ),
+                usage={"input_tokens": 100, "output_tokens": 50},
             )
 
         if json_schema and "move" in json_schema.get("properties", {}):
-            return MockResponse(
-                json.dumps(
+            return AIResponse(
+                content=json.dumps(
                     {
                         "type": "action",
                         "move": "dialog",
@@ -80,12 +64,13 @@ class MockProvider:
                         "world_addition": None,
                         "location_change": None,
                     }
-                )
+                ),
+                usage={"input_tokens": 100, "output_tokens": 50},
             )
 
         if tools and any(t.get("function", {}).get("name") == "roll_oracle" for t in tools):
-            return MockResponse(
-                json.dumps(
+            return AIResponse(
+                content=json.dumps(
                     {
                         "type": "action",
                         "move": "dialog",
@@ -97,12 +82,13 @@ class MockProvider:
                         "world_addition": None,
                         "location_change": None,
                     }
-                )
+                ),
+                usage={"input_tokens": 100, "output_tokens": 50},
             )
 
         if json_schema and "new_npcs" in json_schema.get("properties", {}):
-            return MockResponse(
-                json.dumps(
+            return AIResponse(
+                content=json.dumps(
                     {
                         "new_npcs": [],
                         "npc_renames": [],
@@ -110,21 +96,26 @@ class MockProvider:
                         "deceased_npcs": [],
                         "lore_npcs": [],
                     }
-                )
+                ),
+                usage={"input_tokens": 100, "output_tokens": 50},
             )
 
         if json_schema and "pass" in json_schema.get("properties", {}):
-            return MockResponse(
-                json.dumps(
+            return AIResponse(
+                content=json.dumps(
                     {
                         "pass": True,
                         "violations": [],
                         "correction": "",
                     }
-                )
+                ),
+                usage={"input_tokens": 100, "output_tokens": 50},
             )
 
-        return MockResponse("Mira looked up from the archive, a question forming behind her eyes. You spoke first.")
+        return AIResponse(
+            content="Mira looked up from the archive, a question forming behind her eyes. You spoke first.",
+            usage={"input_tokens": 100, "output_tokens": 50},
+        )
 
 
 def _game() -> "GameState":

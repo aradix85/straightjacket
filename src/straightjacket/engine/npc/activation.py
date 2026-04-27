@@ -90,10 +90,10 @@ def _build_scan_text(brain: "BrainResult", game: "GameState", player_input: str)
     _tf = eng().tf_idf
     scan_parts = [
         player_input,
-        brain.player_intent or "",
-        brain.approach or "",
-        game.world.current_scene_context or "",
-        game.world.current_location or "",
+        brain.player_intent,
+        brain.approach,
+        game.world.current_scene_context,
+        game.world.current_location,
     ]
     for s in game.narrative.session_log[-_tf.session_window :]:
         scan_parts.append(s.summary)

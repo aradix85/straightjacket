@@ -87,7 +87,7 @@ def build_action_prompt(
     random_events: Sequence[RandomEvent] = (),
     threat_events: Sequence[ThreatEvent] = (),
 ) -> str:
-    context_text = f"{player_words} {brain.player_intent or ''} {game.world.current_scene_context or ''}"
+    context_text = f"{player_words} {brain.player_intent} {game.world.current_scene_context}"
 
     stance_cat = _resolve_stance_category(brain.move)
     npc = _npc_block(game, brain.target_npc, context_text=context_text, move_category=stance_cat)

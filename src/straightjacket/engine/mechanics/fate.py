@@ -82,18 +82,18 @@ def _check_chart_random_event(roll: int, chaos_factor: int) -> bool:
     return ones <= chaos_factor
 
 
-def resolve_fate_check(odds: str, chaos_factor: int, question: str, dice: tuple[int, int] | None = None) -> FateResult:
+def resolve_fate_check(odds: str, chaos_factor: int, question: str) -> FateResult:
+    return resolve_fate_check_with_dice(odds, chaos_factor, question, (random.randint(1, 10), random.randint(1, 10)))
+
+
+def resolve_fate_check_with_dice(odds: str, chaos_factor: int, question: str, dice: tuple[int, int]) -> FateResult:
     cfg = eng().fate
     if odds not in cfg.odds_modifiers:
         raise KeyError(f"Unknown odds level '{odds}' (valid: {sorted(cfg.odds_modifiers.keys())})")
     if chaos_factor not in cfg.chaos_modifiers:
         raise KeyError(f"Unknown chaos_factor {chaos_factor} (valid: {sorted(cfg.chaos_modifiers.keys())})")
 
-    if dice is None:
-        d1 = random.randint(1, 10)
-        d2 = random.randint(1, 10)
-    else:
-        d1, d2 = dice
+    d1, d2 = dice
 
     odds_mod = cfg.odds_modifiers[odds]
     cf_mod = cfg.chaos_modifiers[chaos_factor]

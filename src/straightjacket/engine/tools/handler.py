@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 import json
+from dataclasses import replace
 
-from ..ai.provider_base import AIProvider, AIResponse, create_with_retry
+from ..ai.provider_base import AICallSpec, AIProvider, AIResponse, create_with_retry
 from ..engine_loader import eng
 from ..logging_util import log
 from ..models import GameState
@@ -34,19 +35,12 @@ def run_tool_loop(
     *,
     role: str,
     game: GameState,
-    model: str,
-    system: str,
-    messages: list[dict],
-    max_tokens: int,
-    max_tool_rounds: int = 5,
-    temperature: float | None = None,
-    top_p: float | None = None,
-    extra_body: dict | None = None,
-    log_role: str = "",
+    initial_spec: AICallSpec,
 ) -> tuple[str, list[dict]]:
     tool_log: list[dict] = []
     current = response
-    conversation = list(messages)
+    conversation = list(initial_spec.messages)
+    max_tool_rounds = eng().pacing.max_tool_rounds
 
     for round_num in range(max_tool_rounds):
         if current.stop_reason != "tool_use" or not current.tool_calls:
@@ -87,19 +81,14 @@ def run_tool_loop(
             )
             log(f"[Tools] {tc['name']}({tc.get('arguments', {})}) → {result_str[: _trunc.log_medium]}")
 
-        current = create_with_retry(
-            provider,
-            max_retries=eng().retry.constraint_check_max_retries,
-            model=model,
-            system=system,
+        next_spec = replace(
+            initial_spec,
             messages=conversation,
-            max_tokens=max_tokens,
+            max_retries=eng().retry.constraint_check_max_retries,
             tools=get_tools(role),
-            temperature=temperature,
-            top_p=top_p,
-            extra_body=extra_body,
-            log_role=log_role,
+            json_schema=None,
         )
+        current = create_with_retry(provider, next_spec)
 
     if current.stop_reason == "tool_use":
         log(f"[Tools] Hit max rounds ({max_tool_rounds}), forcing text from last response", level="warning")

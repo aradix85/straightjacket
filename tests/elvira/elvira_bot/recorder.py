@@ -30,7 +30,6 @@ def record_turn(
         location=game.world.current_location,
         action=action,
         narration=narration,
-        narration_excerpt=narration.replace("\n", " ")[:300],
     )
 
     if roll:

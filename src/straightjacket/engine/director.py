@@ -2,7 +2,7 @@ import html
 import json
 import re
 
-from .ai.provider_base import AIProvider, create_with_retry
+from .ai.provider_base import AICallSpec, AIProvider, create_with_retry
 from .ai.schemas import get_director_output_schema
 from .config_loader import model_for_role, sampling_params
 from .engine_loader import eng
@@ -182,8 +182,7 @@ def call_director(
         if tools:
             _dp1 = dict(_dp)
             _dp1["max_retries"] = 1
-            response = create_with_retry(
-                provider,
+            spec = AICallSpec(
                 model=_director_model,
                 system=system,
                 messages=[{"role": "user", "content": prompt}],
@@ -191,6 +190,7 @@ def call_director(
                 log_role="director",
                 **_dp1,
             )
+            response = create_with_retry(provider, spec)
 
             if response.stop_reason == "tool_use":
                 final_content, tool_log = run_tool_loop(
@@ -198,15 +198,7 @@ def call_director(
                     response,
                     role="director",
                     game=game,
-                    model=_director_model,
-                    system=system,
-                    messages=[{"role": "user", "content": prompt}],
-                    max_tokens=_dp["max_tokens"],
-                    max_tool_rounds=eng().pacing.max_tool_rounds,
-                    temperature=_dp.get("temperature"),
-                    top_p=_dp.get("top_p"),
-                    extra_body=_dp.get("extra_body"),
-                    log_role="director",
+                    initial_spec=spec,
                 )
                 if final_content.strip():
                     tool_context = (
@@ -220,8 +212,7 @@ def call_director(
         if tool_context:
             phase2_prompt = prompt + tool_context
 
-        response2 = create_with_retry(
-            provider,
+        spec2 = AICallSpec(
             model=_director_model,
             system=system,
             messages=[{"role": "user", "content": phase2_prompt}],
@@ -229,6 +220,7 @@ def call_director(
             log_role="director",
             **_dp,
         )
+        response2 = create_with_retry(provider, spec2)
 
         guidance = json.loads(response2.content)
 

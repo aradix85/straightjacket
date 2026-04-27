@@ -28,35 +28,6 @@ vocabulary:
     Light: tropical sun, lantern sway below decks, phosphorescence,
     storm light. The seas are vast, the ships are small.
 
-genre_constraints:
-  forbidden_terms: []
-  atmospheric_drift:
-    - "spaceship"
-    - "computer"
-    - "laser"
-    - "robot"
-    - "android"
-    - "cybernetic"
-    - "elven"
-    - "dwarven"
-    - "writhe"
-    - "writhing"
-    - "visage"
-    - "visages"
-    - "ooze"
-    - "oozing"
-    - "reshape"
-    - "reshaping"
-    - "unnatural"
-    - "unnaturally"
-    - "apparition"
-    - "phantasm"
-    - "sighs"
-    - "exhales"
-    - "exhaling"
-    - "awakens"
-    - "waking"
-  atmospheric_drift_threshold: 2
 
 creation_flow:
   has_truths: true

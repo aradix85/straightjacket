@@ -17,7 +17,6 @@ from straightjacket.engine.models import GameState
 
 from .ai_helpers import ask_bot, build_turn_context, decide_burn_momentum, get_persona
 from .creation import roll_character
-from .drift_checks import compute_drift_summary
 from .invariants import assert_game_state
 from .models import ChapterRecord, NpcSnapshot, SessionLog, TurnRecord
 from .quality_checks import (
@@ -26,7 +25,7 @@ from .quality_checks import (
 )
 from .recorder import record_turn
 from .runner import RUNS_DIR
-from .display import print_narration, print_state, final_state_dict, print_summary
+from .display import print_narration, print_state, print_summary
 
 SEPARATOR = "=" * 62
 CORRECTION_TEST_INTERVAL = 8
@@ -183,12 +182,9 @@ async def run_ws_session(bot_cfg: dict, auto_override: bool = False, turns_overr
     url = f"ws://127.0.0.1:{port}/ws"
 
     slog = SessionLog(
-        started_at=datetime.now().isoformat(),
         config=bot_cfg,
         engine_version=VERSION,
-        auto_mode=auto_mode,
         style=style,
-        max_chapters=max_chapters,
     )
 
     print(f"\n{SEPARATOR}")
@@ -234,7 +230,6 @@ async def run_ws_session(bot_cfg: dict, auto_override: bool = False, turns_overr
             setting_id = _random.choice(available)
 
         creation_data = roll_character(setting_id, game_cfg)
-        slog.creation_data = creation_data
 
         await client.send({"type": "start_game", "creation_data": creation_data})
         turn_data = await client.collect_turn(timeout=180)
@@ -260,10 +255,6 @@ async def run_ws_session(bot_cfg: dict, auto_override: bool = False, turns_overr
         print("[ERROR] Could not get game state")
         raise SystemExit(1)
 
-    slog.character = game.player_name
-    slog.location_start = game.world.current_location
-    slog.opening_narration = narration
-
     prev_npcs: list[NpcSnapshot] | None = None
     burns_offered = burns_taken = burns_failed = 0
     total_turns = 0
@@ -271,7 +262,7 @@ async def run_ws_session(bot_cfg: dict, auto_override: bool = False, turns_overr
 
     for chapter_idx in range(max_chapters):
         chapter_start = total_turns
-        ch_rec = ChapterRecord(chapter=game.campaign.chapter_number, started_at_turn=total_turns + 1)
+        ch_rec = ChapterRecord(chapter=game.campaign.chapter_number)
 
         if chapter_idx > 0:
             print(f"\n{SEPARATOR}\n  CHAPTER {game.campaign.chapter_number}\n{SEPARATOR}")
@@ -376,10 +367,6 @@ async def run_ws_session(bot_cfg: dict, auto_override: bool = False, turns_overr
     if slog.ended_reason == "unknown":
         slog.ended_reason = ch_rec.ended_reason if slog.chapters else "complete"
     slog.burn_stats = {"offered": burns_offered, "taken": burns_taken, "failed": burns_failed}
-    if game:
-        slog.final_state = final_state_dict(game)
-    slog.ended_at = datetime.now().isoformat()
-    slog.drift_summary = compute_drift_summary(slog)
 
     print_summary(slog, game)
 

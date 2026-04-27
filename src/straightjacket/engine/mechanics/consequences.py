@@ -214,7 +214,7 @@ def generate_consequence_sentences(
     target = find_npc(game, brain.target_npc) if brain.target_npc else None
     player = game.player_name
     npc_name = target.name if target else ""
-    location = game.world.current_location or ""
+    location = game.world.current_location
 
     sentences: list[str] = []
 

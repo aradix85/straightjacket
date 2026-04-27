@@ -12,6 +12,7 @@ def test_register_extracted_npcs_skips_player(stub_all: None) -> None:
             {"name": "Mira", "description": "Scout", "disposition": "friendly"},
             {"name": "Hero", "description": "Player", "disposition": "neutral"},
         ],
+        skip_names=set(),
     )
     assert len(game.npcs) == 1
     assert game.npcs[0].name == "Mira"

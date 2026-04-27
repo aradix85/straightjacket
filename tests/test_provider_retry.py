@@ -1,6 +1,16 @@
 import pytest
 
-from tests._mocks import MockResponse
+from straightjacket.engine.ai.provider_base import AICallSpec, AIResponse
+
+
+def _spec(max_retries: int = 0) -> AICallSpec:
+    return AICallSpec(
+        model="m",
+        system="s",
+        messages=[{"role": "user", "content": "hi"}],
+        max_tokens=100,
+        max_retries=max_retries,
+    )
 
 
 def test_create_with_retry_retries_on_connection_error() -> None:
@@ -9,20 +19,13 @@ def test_create_with_retry_retries_on_connection_error() -> None:
     call_count = [0]
 
     class FlakeyProvider:
-        def create_message(self, **kwargs: object) -> MockResponse:
+        def create_message(self, spec: AICallSpec) -> AIResponse:
             call_count[0] += 1
             if call_count[0] <= 1:
                 raise ConnectionError("reset")
-            return MockResponse("OK")
+            return AIResponse(content="OK", usage={"input_tokens": 10, "output_tokens": 10})
 
-    resp = create_with_retry(
-        FlakeyProvider(),
-        max_retries=2,
-        model="m",
-        system="s",
-        messages=[{"role": "user", "content": "hi"}],
-        max_tokens=100,
-    )
+    resp = create_with_retry(FlakeyProvider(), _spec(max_retries=2))
     assert resp.content == "OK"
     assert call_count[0] == 2
 
@@ -31,18 +34,11 @@ def test_create_with_retry_raises_on_exhaustion() -> None:
     from straightjacket.engine.ai.provider_base import create_with_retry
 
     class AlwaysFail:
-        def create_message(self, **kwargs: object) -> None:
+        def create_message(self, spec: AICallSpec) -> AIResponse:
             raise ConnectionError("permanent")
 
     with pytest.raises(ConnectionError):
-        create_with_retry(
-            AlwaysFail(),
-            max_retries=1,
-            model="m",
-            system="s",
-            messages=[{"role": "user", "content": "hi"}],
-            max_tokens=100,
-        )
+        create_with_retry(AlwaysFail(), _spec(max_retries=1))
 
 
 def test_post_process_decodes_literal_unicode_escapes() -> None:

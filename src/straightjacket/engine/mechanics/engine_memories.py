@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from collections.abc import Sequence
+
 from ..engine_loader import eng
 from ..models import BrainResult, GameState, RollResult
 from .resolvers import is_dialog_memory, move_category
@@ -25,7 +27,7 @@ def generate_engine_memories(
     brain: BrainResult,
     roll: RollResult | None,
     activated_npc_ids: set[str],
-    consequences: list[str] | None = None,
+    consequences: Sequence[str] = (),
 ) -> list[dict]:
     from ..npc.memory import score_importance
 
@@ -39,7 +41,7 @@ def generate_engine_memories(
     is_dialog = is_dialog_memory(brain, roll_present=roll is not None)
     result = roll.result if roll else "dialog"
     category = move_category(move)
-    intent = brain.player_intent or ""
+    intent = brain.player_intent
 
     result_key = "dialog" if is_dialog else f"{category}_{result}"
     result_text = result_text_map[result_key]

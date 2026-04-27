@@ -28,8 +28,6 @@ _AI_CALL_CARVE_OUT_FILES = {
 
 _AI_CALL_CARVE_OUT_TESTS = {
     "test_integration.py",
-    "model_eval/eval.py",
-    "elvira/elvira_batch.py",
     "elvira/elvira_bot/creation.py",
     "elvira/elvira_bot/runner.py",
     "elvira/elvira_bot/drift_checks.py",
@@ -41,14 +39,10 @@ _AI_CALL_CARVE_OUT_TESTS = {
 _HARDCODED_MODEL_NAME_TEST_WHITELIST = {
     "test_config_loader.py",
     "test_project_rules.py",
-    "model_eval/eval.py",
 }
 
 
 _COMPLEXITY_TEST_WHITELIST = {
-    ("model_eval/eval.py", "eval_narrator"),
-    ("model_eval/eval.py", "run_role"),
-    ("elvira/elvira_batch.py", "build_report"),
     ("elvira/elvira_bot/runner.py", "run_session"),
     ("elvira/elvira_bot/models.py", "to_compact_dict"),
     ("elvira/elvira_bot/ws_runner.py", "run_ws_session"),

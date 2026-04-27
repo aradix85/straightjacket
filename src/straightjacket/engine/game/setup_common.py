@@ -1,4 +1,5 @@
 import re
+from collections.abc import Sequence
 
 from ..engine_loader import eng
 from ..logging_util import log
@@ -23,11 +24,11 @@ def register_extracted_npcs(
     game: GameState,
     npc_dicts: list[dict],
     *,
-    skip_names: set[str] | None = None,
+    skip_names: set[str],
     start_id: int = 0,
 ) -> int:
     player_lower = game.player_name.lower().strip()
-    skip = skip_names or set()
+    skip = set(skip_names)
     skip.add(player_lower)
 
     max_num = start_id
@@ -43,8 +44,8 @@ def register_extracted_npcs(
             continue
         max_num += 1
         nd["id"] = f"npc_{max_num}"
-        nd.setdefault("introduced", False)
-        nd.setdefault("last_location", game.world.current_location or "")
+        nd["introduced"] = False
+        nd["last_location"] = game.world.current_location
 
         nd["status"] = "active"
 
@@ -115,16 +116,15 @@ def apply_opening_setup(
     game: GameState,
     data: dict,
     *,
-    returning_npcs: list[NpcData] | None = None,
+    returning_npcs: Sequence[NpcData] = (),
     clocks_mode: str = "replace",
     label: str = "OpeningSetup",
 ) -> None:
-    skip_names: set[str] | None = None
+    skip_names: set[str] = {n.name.lower().strip() for n in returning_npcs}
     start_id = 0
 
     if returning_npcs:
-        skip_names = {n.name.lower().strip() for n in returning_npcs}
-        for n in game.npcs + returning_npcs:
+        for n in list(game.npcs) + list(returning_npcs):
             m = re.match(r"npc_(\d+)", str(n.id))
             if m:
                 start_id = max(start_id, int(m.group(1)))

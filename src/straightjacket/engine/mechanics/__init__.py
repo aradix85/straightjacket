@@ -45,6 +45,7 @@ __all__ = [
     "resolve_fate",
     "resolve_fate_chart",
     "resolve_fate_check",
+    "resolve_fate_check_with_dice",
     "resolve_likelihood",
     "resolve_npc_stance",
     "resolve_position",
@@ -88,6 +89,7 @@ from .fate import (
     resolve_fate,
     resolve_fate_chart,
     resolve_fate_check,
+    resolve_fate_check_with_dice,
     resolve_likelihood,
 )
 from .keyed_scenes import (

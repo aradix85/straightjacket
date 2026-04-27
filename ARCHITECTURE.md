@@ -324,7 +324,7 @@ src/straightjacket/
 
 **No save compatibility.** Saves break whenever the code requires it. No migration layer, no default-on-old fields, no ignore-unknown-fields. Every dataclass field is required; adding a field breaks existing saves. Backwards compatibility requires an explicit request per change, otherwise it is not considered. This is by design for an alpha project with no production users.
 
-**Drift strategy is architectural, not tuning.** Atmospheric and genre drift in narrator output are mitigated by reducing the AI surface, not by tuning detection sensitivity. Beyond that, drift tolerances and vocabulary-context sizing are recalibrated after each AI-surface reduction (AC-driven blueprint, fiction generators, oracle-driven NPC generation), not against the current model configuration.
+**AI-surface reduction over post-hoc validation.** Atmospheric and genre drift in narrator output are mitigated by reducing the AI surface (AC-driven blueprint, fiction generators, oracle-driven NPC generation, and engine-computed pacing), not by post-hoc detection or AI-judgment validation. The narration-validator and architect-validator and chapter-validator have all been removed because AI-judgment over writing rules is unreliable; the principle is that the engine narrows what the AI can produce rather than checking what it produced.
 
 **Scope of the dynamic relationship layer.** The individual scale — emotional requests, refusals, concessions, relationship events between NPC and player — is in scope. NPC-NPC triangles that involve the player are in scope. The faction scale operates through schemes and their interactions: factions have independent goal-clocks, schemes that progress, reputation with the player, and scheme-interactions that surface as narrative consequences. Inter-faction emotional dynamics (faction-to-faction emotional requests, refusals, debts as a separate layer) are out of scope. The narrative effect the design document calls for — factions acting in the world independent of the player, consequences surfacing when the player encounters them — is achieved through scheme-interaction, not through a simulated faction-emotion network. This is a deliberate scope boundary, not a deferred feature.
 
@@ -378,7 +378,7 @@ Settings are data packages that combine a Datasworn JSON file (game content: mov
 
 ### Settings YAML format
 
-Parsed strictly at load. Required top-level keys: `id`, `title`, `datasworn_id`, `description`, `oracle_paths`, `vocabulary`, `genre_constraints`. Optional: `parent`, `creation_flow`. Missing required keys raise `KeyError`.
+Parsed strictly at load. Required top-level keys: `id`, `title`, `datasworn_id`, `description`, `oracle_paths`, `vocabulary`. Optional: `parent`, `creation_flow`. Missing required keys raise `KeyError`.
 
 ```yaml
 id: your_setting                    # yaml stem
@@ -390,11 +390,6 @@ parent: classic                     # Optional: inherits from this setting
 vocabulary:
   substitutions: { spaceship: "starship — worn, patched" }
   sensory_palette: "Metal, recycled air, ozone."
-
-genre_constraints:
-  forbidden_terms: [magic, spell]
-  atmospheric_drift: [eldritch, otherworldly]
-  atmospheric_drift_threshold: 2
 
 oracle_paths:
   action_theme: ["core/action", "core/theme"]
@@ -410,13 +405,13 @@ creation_flow:
   starting_asset_categories: [companion, module]
 ```
 
-`vocabulary` keeps AI in-setting. `genre_constraints` feeds Elvira's blueprint-drift check. `oracle_paths.names` drives engine NPC name rolls. `creation_flow` controls client UI steps.
+`vocabulary` keeps AI in-setting. `oracle_paths.names` drives engine NPC name rolls. `creation_flow` controls client UI steps.
 
 ### Inheritance
 
 With `parent:`, blocks inherit from the parent yaml, resolved at load.
 
-`oracle_paths`, `genre_constraints`, `creation_flow`: per-field. Omitted field → parent's value. Present field (even empty) → explicit override. Root settings must specify every field.
+`oracle_paths`, `creation_flow`: per-field. Omitted field → parent's value. Present field (even empty) → explicit override. Root settings must specify every field.
 
 `vocabulary`: section-level. Both sub-fields empty → whole block from parent.
 

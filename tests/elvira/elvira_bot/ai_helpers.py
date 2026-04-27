@@ -67,16 +67,18 @@ def get_persona(style: str) -> str:
 
 def ask_bot(provider: AIProvider, system: str, user: str, max_tokens: int = 300, model: str = "") -> str:
     _load_bot_config()
+    from straightjacket.engine.ai.provider_base import AICallSpec
     from straightjacket.engine.config_loader import model_for_role
 
     _model = model or _bot_model or model_for_role("brain")
-    response = provider.create_message(
+    spec = AICallSpec(
         model=_model,
         system=system,
         messages=[{"role": "user", "content": user}],
         max_tokens=max_tokens,
         temperature=_bot_temperature,
     )
+    response = provider.create_message(spec)
     response = post_process_response(response)
     return response.content.strip()
 

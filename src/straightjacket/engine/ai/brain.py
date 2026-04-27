@@ -11,7 +11,7 @@ from ..prompt_blocks import (
 )
 from ..prompt_loader import get_prompt
 from ..tools.builtins import available_moves
-from .provider_base import AIProvider, create_with_retry
+from .provider_base import AICallSpec, AIProvider, create_with_retry
 from .schemas import get_brain_output_schema, get_revelation_check_schema
 
 
@@ -90,15 +90,15 @@ time:{w.time_of_day or _ai_text["unknown_time"]}
 <input>{player_message}</input>"""
 
     try:
-        response = create_with_retry(
-            provider,
+        spec = AICallSpec(
             model=model_for_role("brain"),
             system=system,
             messages=[{"role": "user", "content": user_msg}],
             json_schema=get_brain_output_schema(),
-            **sampling_params("brain"),
             log_role="brain",
+            **sampling_params("brain"),
         )
+        response = create_with_retry(provider, spec)
 
         result = BrainResult.from_dict(json.loads(response.content))
         log(
@@ -136,15 +136,15 @@ def call_revelation_check(
     )
 
     try:
-        response = create_with_retry(
-            provider,
+        spec = AICallSpec(
             model=model_for_role("revelation_check"),
             system=system,
             messages=[{"role": "user", "content": prompt}],
             json_schema=get_revelation_check_schema(),
-            **sampling_params("revelation_check"),
             log_role="revelation_check",
+            **sampling_params("revelation_check"),
         )
+        response = create_with_retry(provider, spec)
         result = json.loads(response.content)
         confirmed = result["revelation_confirmed"]
         reasoning = result.get("reasoning", "")

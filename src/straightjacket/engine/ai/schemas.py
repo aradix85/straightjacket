@@ -3,24 +3,28 @@ from ..datasworn.settings import list_packages
 from ..engine_loader import eng
 
 
-def _str(enum: list[str] | None = None, desc: str | None = None) -> dict:
-    d: dict = {"type": "string"}
-    if enum:
-        d["enum"] = enum
-    if desc:
-        d["description"] = desc
-    return d
+def _str() -> dict:
+    return {"type": "string"}
+
+
+def _str_enum(enum: list[str]) -> dict:
+    return {"type": "string", "enum": enum}
+
+
+def _str_with_desc(desc: str) -> dict:
+    return {"type": "string", "description": desc}
 
 
 def _int() -> dict:
     return {"type": "integer"}
 
 
-def _bool(desc: str | None = None) -> dict:
-    d: dict = {"type": "boolean"}
-    if desc:
-        d["description"] = desc
-    return d
+def _bool() -> dict:
+    return {"type": "boolean"}
+
+
+def _bool_with_desc(desc: str) -> dict:
+    return {"type": "boolean", "description": desc}
 
 
 def _nullable(typ: str) -> dict:
@@ -43,17 +47,23 @@ def _str_arr() -> dict:
     return _arr({"type": "string"})
 
 
-def _obj(props: dict, extra_required: list[str] | None = None, title: str | None = None) -> dict:
-    required = extra_required or list(props.keys())
-    out: dict = {
+def _obj(props: dict) -> dict:
+    return {
         "type": "object",
         "properties": props,
-        "required": required,
+        "required": list(props.keys()),
         "additionalProperties": False,
     }
-    if title is not None:
-        out["title"] = title
-    return out
+
+
+def _obj_root(props: dict, title: str) -> dict:
+    return {
+        "type": "object",
+        "properties": props,
+        "required": list(props.keys()),
+        "additionalProperties": False,
+        "title": title,
+    }
 
 
 _brain_cache = None
@@ -77,11 +87,11 @@ def get_brain_output_schema() -> dict:
 
         rank_enum = sorted(_e.progress.track_types["default"].ticks_per_mark.keys())
 
-        _brain_cache = _obj(
+        _brain_cache = _obj_root(
             {
-                "type": _str(["action"]),
-                "move": _str(sorted(all_move_keys)),
-                "stat": _str(stat_names),
+                "type": _str_enum(["action"]),
+                "move": _str_enum(sorted(all_move_keys)),
+                "stat": _str_enum(stat_names),
                 "approach": _str(),
                 "target_npc": _nullable_str(),
                 "dialog_only": _bool(),
@@ -99,7 +109,7 @@ def get_brain_output_schema() -> dict:
                 "fate_question": _nullable_str(),
                 "oracle_table": _nullable_str(),
             },
-            title=_e.ai_text.schema_titles["brain_output"],
+            _e.ai_text.schema_titles["brain_output"],
         )
     return _brain_cache
 
@@ -108,7 +118,7 @@ def get_director_output_schema() -> dict:
     global _director_cache
     if _director_cache is None:
         _e = eng()
-        _director_cache = _obj(
+        _director_cache = _obj_root(
             {
                 "scene_summary": _str(),
                 "narrator_guidance": _str(),
@@ -126,7 +136,7 @@ def get_director_output_schema() -> dict:
                             "npc_id": _str(),
                             "reflection": _str(),
                             "tone": _str(),
-                            "tone_key": _str(list(_e.enums.tone_keys)),
+                            "tone_key": _str_enum(list(_e.enums.tone_keys)),
                             "updated_description": _nullable_str(),
                             "about_npc": _nullable_str(),
                             "agenda": _nullable_str(),
@@ -138,7 +148,7 @@ def get_director_output_schema() -> dict:
                 ),
                 "arc_notes": _str(),
             },
-            title=_e.ai_text.schema_titles["director_output"],
+            _e.ai_text.schema_titles["director_output"],
         )
     return _director_cache
 
@@ -147,7 +157,7 @@ def get_story_architect_output_schema() -> dict:
     global _story_architect_cache
     if _story_architect_cache is None:
         _e = eng()
-        _story_architect_cache = _obj(
+        _story_architect_cache = _obj_root(
             {
                 "central_conflict": _str(),
                 "antagonist_force": _str(),
@@ -170,7 +180,7 @@ def get_story_architect_output_schema() -> dict:
                             "id": _str(),
                             "content": _str(),
                             "earliest_scene": _int(),
-                            "dramatic_weight": _str(list(_e.enums.dramatic_weights)),
+                            "dramatic_weight": _str_enum(list(_e.enums.dramatic_weights)),
                         }
                     )
                 ),
@@ -183,7 +193,7 @@ def get_story_architect_output_schema() -> dict:
                     )
                 ),
             },
-            title=_e.ai_text.schema_titles["story_architect_output"],
+            _e.ai_text.schema_titles["story_architect_output"],
         )
     return _story_architect_cache
 
@@ -194,7 +204,7 @@ _chapter_summary_cache: dict | None = None
 def get_chapter_summary_schema() -> dict:
     global _chapter_summary_cache
     if _chapter_summary_cache is None:
-        _chapter_summary_cache = _obj(
+        _chapter_summary_cache = _obj_root(
             {
                 "title": _str(),
                 "summary": _str(),
@@ -204,7 +214,7 @@ def get_chapter_summary_schema() -> dict:
                 "thematic_question": _str(),
                 "post_story_location": _str(),
             },
-            title=eng().ai_text.schema_titles["chapter_summary_output"],
+            eng().ai_text.schema_titles["chapter_summary_output"],
         )
     return _chapter_summary_cache
 
@@ -217,14 +227,14 @@ def get_narrator_metadata_schema() -> dict:
     if _metadata_cache is None:
         _e = eng()
         dispositions = list(_e.enums.dispositions)
-        _metadata_cache = _obj(
+        _metadata_cache = _obj_root(
             {
                 "new_npcs": _arr(
                     _obj(
                         {
                             "name": _str(),
                             "description": _str(),
-                            "disposition": _str(dispositions),
+                            "disposition": _str_enum(dispositions),
                         }
                     )
                 ),
@@ -257,7 +267,7 @@ def get_narrator_metadata_schema() -> dict:
                     )
                 ),
             },
-            title=_e.ai_text.schema_titles["narrator_metadata"],
+            _e.ai_text.schema_titles["narrator_metadata"],
         )
     return _metadata_cache
 
@@ -272,7 +282,7 @@ def get_opening_setup_schema() -> dict:
         dispositions = list(_e.enums.dispositions)
         time_phases = list(_e.enums.time_phases)
         clock_types = [ct for ct in _e.enums.clock_types if ct != "scheme"]
-        _opening_cache = _obj(
+        _opening_cache = _obj_root(
             {
                 "npcs": _arr(
                     _obj(
@@ -282,7 +292,7 @@ def get_opening_setup_schema() -> dict:
                             "agenda": _str(),
                             "instinct": _str(),
                             "secrets": _str_arr(),
-                            "disposition": _str(dispositions),
+                            "disposition": _str_enum(dispositions),
                         }
                     )
                 ),
@@ -291,7 +301,7 @@ def get_opening_setup_schema() -> dict:
                         {
                             "id": _str(),
                             "name": _str(),
-                            "clock_type": _str(clock_types),
+                            "clock_type": _str_enum(clock_types),
                             "segments": _int(),
                             "filled": _int(),
                             "trigger_description": _str(),
@@ -301,7 +311,7 @@ def get_opening_setup_schema() -> dict:
                 ),
                 "location": _str(),
                 "scene_context": _str(),
-                "time_of_day": _str(time_phases),
+                "time_of_day": _str_enum(time_phases),
                 "memory_updates": _arr(
                     _obj(
                         {
@@ -313,7 +323,7 @@ def get_opening_setup_schema() -> dict:
                 ),
                 "deceased_npcs": _arr(_obj({"npc_id": _str()})),
             },
-            title=_e.ai_text.schema_titles["opening_setup"],
+            _e.ai_text.schema_titles["opening_setup"],
         )
     return _opening_cache
 
@@ -329,18 +339,18 @@ def get_correction_output_schema() -> dict:
                 field_props[fname] = {"anyOf": [_str_arr(), {"type": "null"}]}
             else:
                 field_props[fname] = _nullable_str()
-        _correction_cache = _obj(
+        _correction_cache = _obj_root(
             {
-                "correction_source": _str(["input_misread", "state_error"]),
+                "correction_source": _str_enum(["input_misread", "state_error"]),
                 "corrected_input": _str(),
                 "reroll_needed": _bool(),
-                "corrected_stat": _str(stat_names),
+                "corrected_stat": _str_enum(stat_names),
                 "narrator_guidance": _str(),
                 "director_useful": _bool(),
                 "state_ops": _arr(
                     _obj(
                         {
-                            "op": _str(list(_e.enums.correction_ops)),
+                            "op": _str_enum(list(_e.enums.correction_ops)),
                             "npc_id": _nullable_str(),
                             "split_name": _nullable_str(),
                             "split_description": _nullable_str(),
@@ -351,7 +361,7 @@ def get_correction_output_schema() -> dict:
                     )
                 ),
             },
-            title=_e.ai_text.schema_titles["correction_output"],
+            _e.ai_text.schema_titles["correction_output"],
         )
     return _correction_cache
 
@@ -364,11 +374,11 @@ def get_revelation_check_schema() -> dict:
     if _revelation_check_cache is None:
         _e = eng()
         descs = _e.ai_text.schema_descriptions["revelation_check"]
-        _revelation_check_cache = _obj(
+        _revelation_check_cache = _obj_root(
             {
-                "revelation_confirmed": _bool(descs["revelation_confirmed"]),
-                "reasoning": _str(desc=descs["reasoning"]),
+                "revelation_confirmed": _bool_with_desc(descs["revelation_confirmed"]),
+                "reasoning": _str_with_desc(descs["reasoning"]),
             },
-            title=_e.ai_text.schema_titles["revelation_check"],
+            _e.ai_text.schema_titles["revelation_check"],
         )
     return _revelation_check_cache

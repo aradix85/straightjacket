@@ -50,16 +50,14 @@ Four layers of testing, complementary:
 
 The **unit/integration test suite** (`python -m pytest tests/ -v`) runs without an API key. It uses mock providers that return canned responses. Tests verify the engine's internal logic: consequences, NPC processing, serialization, correction flow, prompt assembly, WebSocket handlers. Every PR must pass this suite.
 
-**Project rules** (`tests/test_project_rules.py`) is one consolidated test running eleven AST/regex scans that enforce the rules described in the Project rules section above. Failures are deterministic measurements — the test fails on residual debt without blocking feature work. When you touch a file that already has violations, fix them in the same commit.
+**Project rules** (`tests/test_project_rules.py`) is one consolidated test running seventeen AST/regex scans that enforce the rules described in the Project rules section above. Failures are deterministic measurements — the test fails on residual debt without blocking feature work. When you touch a file that already has violations, fix them in the same commit.
 
-**Elvira** (`tests/elvira/elvira.py`) is a headless AI-driven test player that plays the game with real API calls. It checks state invariants after every turn (including NPC-DB sync and combat-track sync), validates narration quality (leaked mechanics, spatial consistency), stress-tests the correction pipeline, runs blueprint-drift checks against the setting's atmospheric_drift wordlist, and logs everything to a single `elvira_session.json`. Two modes:
+**Elvira** (`tests/elvira/elvira.py`) is a headless AI-driven test player that plays the game with real API calls. It checks state invariants after every turn (including NPC-DB sync and combat-track sync), validates narration quality through deterministic regex checks (leaked mechanics like result-types or stat values, NPC spatial consistency, chapter continuity), stress-tests the correction pipeline, and logs everything to a single `elvira_session.json`. Two modes:
 
 - Direct mode: `python tests/elvira/elvira.py --auto --turns 5` — drives the engine directly, bypasses the UI. Fastest way to test engine changes.
 - WebSocket mode: `python tests/elvira/elvira.py --ws --auto --turns 5` — plays through the full server stack. Tests the complete pipeline: WebSocket protocol, handlers, engine, serializers.
 
-If your change affects the turn pipeline, NPC processing, or prompt assembly, run Elvira. The unit tests catch logic bugs; Elvira catches constraint violations, narrator drift, and integration failures that only surface with real model output.
-
-**Model eval** (`tests/model_eval/eval.py`) evaluates whether a model can handle a specific AI role. Tests each role in isolation with fixed inputs and expected outputs. Use before switching a cluster's model or overriding a role. Add `--role brain --model gpt-oss-120b` to test one role on one model. Test cases are in `tests/model_eval/cases.yaml` — add cases when you encounter a role-specific failure pattern.
+If your change affects the turn pipeline, NPC processing, or prompt assembly, run Elvira. The unit tests catch logic bugs; Elvira catches constraint violations and integration failures that only surface with real model output.
 
 Elvira configuration is in `tests/elvira/elvira_config.yaml`. Session logs go to `tests/elvira/elvira_session.json`. Add `--turns N` to control session length.
 

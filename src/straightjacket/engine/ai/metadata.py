@@ -13,17 +13,17 @@ from ..npc import (
 
 
 def apply_narrator_metadata(
-    game: GameState, metadata: dict, scene_present_ids: set | None = None, world_addition: str = ""
+    game: GameState, metadata: dict, *, scene_present_ids: set[str], world_addition: str
 ) -> None:
-    renames = metadata.get("npc_renames", [])
+    renames = metadata["npc_renames"]
     if renames:
         process_npc_renames(game, renames)
 
-    new_npcs = metadata.get("new_npcs", [])
+    new_npcs = metadata["new_npcs"]
     if new_npcs:
         process_new_npcs(game, new_npcs)
 
-    details = metadata.get("npc_details", [])
+    details = metadata["npc_details"]
     if details:
         for d in details:
             if d.get("full_name") is None:
@@ -32,18 +32,18 @@ def apply_narrator_metadata(
                 d["description"] = ""
         process_npc_details(game, details, world_addition=world_addition)
 
-    deceased = metadata.get("deceased_npcs", [])
+    deceased = metadata["deceased_npcs"]
     if deceased:
-        process_deceased_npcs(game, deceased, scene_present_ids=scene_present_ids)
+        process_deceased_npcs_with_presence_check(game, deceased, scene_present_ids=scene_present_ids)
 
-    lore_npcs = metadata.get("lore_npcs", [])
+    lore_npcs = metadata["lore_npcs"]
     if lore_npcs:
         _process_lore_npcs(game, lore_npcs)
 
     _check_death_corroboration(game)
 
 
-def process_deceased_npcs(game: GameState, deceased_list: list, scene_present_ids: set | None = None) -> None:
+def process_deceased_npcs(game: GameState, deceased_list: list) -> None:
     for entry in deceased_list:
         npc_id = entry.get("npc_id", "")
         if not npc_id:
@@ -54,8 +54,25 @@ def process_deceased_npcs(game: GameState, deceased_list: list, scene_present_id
             continue
         if npc.status == "deceased":
             continue
+        old_status = npc.status
+        npc.status = "deceased"
+        log(f"[NPC] Marked as deceased: {npc.name} ({npc.id}, was {old_status})")
 
-        if scene_present_ids is not None and npc.id not in scene_present_ids:
+
+def process_deceased_npcs_with_presence_check(
+    game: GameState, deceased_list: list, scene_present_ids: set[str]
+) -> None:
+    for entry in deceased_list:
+        npc_id = entry.get("npc_id", "")
+        if not npc_id:
+            continue
+        npc = find_npc(game, npc_id)
+        if not npc:
+            log(f"[NPC] Deceased report for unknown NPC: '{npc_id}'", level="warning")
+            continue
+        if npc.status == "deceased":
+            continue
+        if npc.id not in scene_present_ids:
             has_current_scene_memory = any(m.scene == game.narrative.scene_count for m in npc.memory)
             if not has_current_scene_memory:
                 log(

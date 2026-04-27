@@ -7,12 +7,12 @@ from straightjacket.engine.models import (
     ThreadEntry,
 )
 from straightjacket.engine.tools.registry import (
-    _build_definition,
+    _build_definition_from_overrides,
     clear_registry,
     get_handler,
     get_tools,
     list_tools,
-    register,
+    register_test_tool,
 )
 from straightjacket.engine.tools.handler import execute_tool_call
 
@@ -59,7 +59,7 @@ def _game_with_data() -> GameState:
 def test_register_decorator() -> None:
     clear_registry()
 
-    @register("test_role", description="my tool")
+    @register_test_tool("test_role", description="my tool")
     def my_tool(game: GameState, query: str) -> dict:
         return {"result": query}
 
@@ -71,7 +71,7 @@ def test_register_decorator() -> None:
 def test_register_multiple_roles() -> None:
     clear_registry()
 
-    @register("brain", "director", description="shared between roles")
+    @register_test_tool("brain", "director", description="shared between roles")
     def shared_tool(game: GameState, x: int) -> dict:
         return {"x": x}
 
@@ -83,7 +83,7 @@ def test_register_multiple_roles() -> None:
 def test_get_tools_format() -> None:
     clear_registry()
 
-    @register("test", description="Look up something by name.")
+    @register_test_tool("test", description="Look up something by name.")
     def example(game: GameState, name: str, count: int = 5) -> dict:
         return {}
 
@@ -120,7 +120,7 @@ def test_build_definition_types() -> None:
     def typed_func(game: GameState, name: str, count: int, ratio: float, flag: bool) -> dict:
         return {}
 
-    defn = _build_definition(typed_func, override_description="typed test")
+    defn = _build_definition_from_overrides(typed_func, description="typed test", param_docs={})
     props = defn["function"]["parameters"]["properties"]
     assert props["name"]["type"] == "string"
     assert props["count"]["type"] == "integer"
@@ -131,7 +131,7 @@ def test_build_definition_types() -> None:
 def test_execute_tool_call_success() -> None:
     clear_registry()
 
-    @register("test", description="echo")
+    @register_test_tool("test", description="echo")
     def echo(game: GameState, message: str) -> dict:
         return {"echo": message}
 
@@ -152,7 +152,7 @@ def test_execute_tool_call_unknown() -> None:
 def test_execute_tool_call_error() -> None:
     clear_registry()
 
-    @register("test", description="raises")
+    @register_test_tool("test", description="raises")
     def broken(game: GameState) -> dict:
         raise ValueError("boom")
 
@@ -250,12 +250,12 @@ def test_builtin_query_npc_director_only() -> None:
 
 
 def test_run_tool_loop_completes_after_tool_use(load_engine: None) -> None:
-    from straightjacket.engine.ai.provider_base import AIResponse
+    from straightjacket.engine.ai.provider_base import AICallSpec, AIResponse
     from straightjacket.engine.tools.handler import run_tool_loop
 
     clear_registry()
 
-    @register("test", description="echo a message", params={"message": "the message"})
+    @register_test_tool("test", description="echo a message", params={"message": "the message"})
     def echo(game: GameState, message: str = "x") -> dict:
         return {"echo": message}
 
@@ -269,21 +269,13 @@ def test_run_tool_loop_completes_after_tool_use(load_engine: None) -> None:
         def __init__(self) -> None:
             self.calls = 0
 
-        def create_message(self, **kwargs: object) -> AIResponse:
+        def create_message(self, spec: AICallSpec) -> AIResponse:
             self.calls += 1
             return AIResponse(content="final answer", stop_reason="complete")
 
     game = make_game_state(player_name="Test")
-    final, log = run_tool_loop(
-        _Provider(),
-        initial,
-        role="test",
-        game=game,
-        model="m",
-        system="s",
-        messages=[{"role": "user", "content": "do thing"}],
-        max_tokens=100,
-    )
+    initial_spec = AICallSpec(model="m", system="s", messages=[{"role": "user", "content": "do thing"}], max_tokens=100)
+    final, log = run_tool_loop(_Provider(), initial, role="test", game=game, initial_spec=initial_spec)
     assert final == "final answer"
     assert len(log) == 1
     assert log[0]["name"] == "echo"
@@ -291,37 +283,36 @@ def test_run_tool_loop_completes_after_tool_use(load_engine: None) -> None:
 
 
 def test_run_tool_loop_no_tool_calls_returns_immediately(load_engine: None) -> None:
-    from straightjacket.engine.ai.provider_base import AIResponse
+    from straightjacket.engine.ai.provider_base import AICallSpec, AIResponse
     from straightjacket.engine.tools.handler import run_tool_loop
 
     initial = AIResponse(content="just text", stop_reason="complete")
 
     class _Provider:
-        def create_message(self, **kwargs: object) -> AIResponse:
+        def create_message(self, spec: AICallSpec) -> AIResponse:
             raise AssertionError("should not be called")
 
     game = make_game_state(player_name="Test")
-    final, log = run_tool_loop(
-        _Provider(),
-        initial,
-        role="test",
-        game=game,
-        model="m",
-        system="s",
-        messages=[{"role": "user", "content": "x"}],
-        max_tokens=100,
-    )
+    initial_spec = AICallSpec(model="m", system="s", messages=[{"role": "user", "content": "x"}], max_tokens=100)
+    final, log = run_tool_loop(_Provider(), initial, role="test", game=game, initial_spec=initial_spec)
     assert final == "just text"
     assert log == []
 
 
-def test_run_tool_loop_hits_max_rounds(load_engine: None) -> None:
-    from straightjacket.engine.ai.provider_base import AIResponse
+def test_run_tool_loop_hits_max_rounds(load_engine: None, monkeypatch) -> None:
+    from dataclasses import replace
+
+    from straightjacket.engine import engine_loader
+    from straightjacket.engine.ai.provider_base import AICallSpec, AIResponse
     from straightjacket.engine.tools.handler import run_tool_loop
+
+    real = engine_loader._eng
+    patched = replace(real, pacing=replace(real.pacing, max_tool_rounds=2))
+    monkeypatch.setattr(engine_loader, "_eng", patched)
 
     clear_registry()
 
-    @register("test", description="loop forever")
+    @register_test_tool("test", description="loop forever")
     def loop(game: GameState) -> dict:
         return {"ok": True}
 
@@ -332,7 +323,7 @@ def test_run_tool_loop_hits_max_rounds(load_engine: None) -> None:
     )
 
     class _Provider:
-        def create_message(self, **kwargs: object) -> AIResponse:
+        def create_message(self, spec: AICallSpec) -> AIResponse:
             return AIResponse(
                 content="",
                 stop_reason="tool_use",
@@ -340,15 +331,6 @@ def test_run_tool_loop_hits_max_rounds(load_engine: None) -> None:
             )
 
     game = make_game_state(player_name="Test")
-    final, log = run_tool_loop(
-        _Provider(),
-        initial,
-        role="test",
-        game=game,
-        model="m",
-        system="s",
-        messages=[{"role": "user", "content": "x"}],
-        max_tokens=100,
-        max_tool_rounds=2,
-    )
+    initial_spec = AICallSpec(model="m", system="s", messages=[{"role": "user", "content": "x"}], max_tokens=100)
+    final, log = run_tool_loop(_Provider(), initial, role="test", game=game, initial_spec=initial_spec)
     assert len(log) == 2

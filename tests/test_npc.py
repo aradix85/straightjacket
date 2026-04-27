@@ -248,7 +248,7 @@ def test_retrieve_memories_empty(stub_engine: None) -> None:
     from straightjacket.engine.npc.memory import retrieve_memories
 
     npc = make_npc(id="npc_1", name="Test")
-    result = retrieve_memories(npc, current_scene=5)
+    result = retrieve_memories(npc, context_text="", max_count=5, current_scene=5)
     assert result == []
 
 
@@ -263,7 +263,7 @@ def test_retrieve_memories_includes_reflection(stub_engine: None) -> None:
         make_memory(scene=4, event="fought together", type="observation", importance=5),
         make_memory(scene=5, event="shared a meal", type="observation", importance=3),
     ]
-    result = retrieve_memories(npc, max_count=3, current_scene=6)
+    result = retrieve_memories(npc, context_text="", max_count=3, current_scene=6)
     assert len(result) == 3
     assert any(m.type == "reflection" for m in result)
 
@@ -277,7 +277,7 @@ def test_retrieve_memories_about_npc_boost(stub_engine: None) -> None:
         make_memory(scene=5, event="recent event", type="observation", importance=3, about_npc=None),
     ]
 
-    result = retrieve_memories(npc, max_count=1, current_scene=6, present_npc_ids={"npc_3"})
+    result = retrieve_memories(npc, context_text="", max_count=1, current_scene=6, present_npc_ids=frozenset({"npc_3"}))
     assert result[0].about_npc == "npc_3"
 
 

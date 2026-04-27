@@ -11,7 +11,7 @@ from ..prompt_blocks import (
 )
 from ..prompt_loader import get_prompt
 from ..story_state import get_current_act
-from .provider_base import AIProvider, create_with_retry
+from .provider_base import AICallSpec, AIProvider, create_with_retry
 from .schemas import get_chapter_summary_schema, get_story_architect_output_schema
 
 
@@ -57,8 +57,7 @@ def call_recap(provider: AIProvider, game: GameState, config: EngineConfig | Non
             campaign_info += f"\n  prev: {ch.title}: {ch.summary[: _limits.recap_campaign_summary_truncate]}"
 
     try:
-        response = create_with_retry(
-            provider,
+        spec = AICallSpec(
             model=model_for_role("recap"),
             system=get_prompt("recap", lang=lang, content_boundaries_block=content_boundaries_block(game)),
             messages=[
@@ -72,9 +71,10 @@ def call_recap(provider: AIProvider, game: GameState, config: EngineConfig | Non
                     f"recent_scenes:\n{recent_narrations}",
                 }
             ],
-            **sampling_params("recap"),
             log_role="recap",
+            **sampling_params("recap"),
         )
+        response = create_with_retry(provider, spec)
         return response.content
     except Exception as e:
         log(f"[Recap] Failed: {e}", level="warning")
@@ -162,15 +162,15 @@ def call_story_architect(
     user_msg = _build_architect_user_msg(game)
 
     try:
-        response = create_with_retry(
-            provider,
+        spec = AICallSpec(
             model=model_for_role("architect"),
             system=system,
             messages=[{"role": "user", "content": user_msg}],
             json_schema=get_story_architect_output_schema(),
-            **sampling_params("architect"),
             log_role="architect",
+            **sampling_params("architect"),
         )
+        response = create_with_retry(provider, spec)
         blueprint = json.loads(response.content)
         blueprint["revealed"] = []
         blueprint["triggered_transitions"] = []
@@ -217,8 +217,7 @@ def call_chapter_summary(
         epilogue_block = f"\n<epilogue>\n{epilogue_text}\n</epilogue>"
 
     try:
-        response = create_with_retry(
-            provider,
+        spec = AICallSpec(
             model=model_for_role("chapter_summary"),
             system=get_prompt(
                 "chapter_summary",
@@ -239,9 +238,10 @@ def call_chapter_summary(
                 }
             ],
             json_schema=get_chapter_summary_schema(),
-            **sampling_params("chapter_summary"),
             log_role="chapter_summary",
+            **sampling_params("chapter_summary"),
         )
+        response = create_with_retry(provider, spec)
         return json.loads(response.content)
     except Exception as e:
         log(f"[ChapterSummary] Structured output failed ({type(e).__name__}: {e}), using fallback", level="warning")

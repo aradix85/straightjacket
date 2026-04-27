@@ -20,10 +20,10 @@ from .xml_utils import xa as _xa
 from .xml_utils import xe as _xe
 
 
-def creativity_seed(n: int = 3, rng: random.Random | None = None) -> str:
+def creativity_seed() -> str:
     words = list(eng().creativity_seeds)
-    _rng = rng or random
-    return " ".join(_rng.sample(words, min(n, len(words))))
+    n = eng().prompt_display.creativity_seed_count
+    return " ".join(random.sample(words, min(n, len(words))))
 
 
 def _scene_header(game: GameState) -> str:
@@ -86,7 +86,7 @@ def _build_gate0_target(target: NpcData, aliases_attr: str) -> str:
     return f'<target_npc name="{_xa(target.name)}" gate="0"{aliases_attr}>{_xe(target.description)}</target_npc>'
 
 
-def _npc_block(game: GameState, target_id: str | None, context_text: str = "", move_category: str = "other") -> str:
+def _npc_block(game: GameState, target_id: str | None, context_text: str, move_category: str) -> str:
     target = find_npc(game, target_id) if target_id else None
     if not target:
         return ""
@@ -133,8 +133,8 @@ def _activated_npcs_block(
     activated: Sequence[NpcData],
     target_id: str | None,
     game: GameState,
-    context_text: str = "",
-    move_category: str = "other",
+    context_text: str,
+    move_category: str,
 ) -> str:
     parts = []
     for npc in activated:
@@ -157,7 +157,7 @@ def _activated_npcs_block(
                 mem_hint = f' recent="{_xa(hint_text)}"'
 
         loc_hint = ""
-        loc = _npc_location_hint(npc, game.world.current_location or "")
+        loc = _npc_location_hint(npc, game.world.current_location)
         if loc:
             loc_hint = f' last_seen="{_xa(loc)}"'
 
@@ -170,9 +170,8 @@ def _activated_npcs_block(
     return "\n".join(parts)
 
 
-def _known_npcs_string(mentioned: Sequence[NpcData], game: GameState, exclude_ids: set | None = None) -> str:
-    exclude_ids = exclude_ids or set()
-    player_loc = game.world.current_location or ""
+def _known_npcs_string(mentioned: Sequence[NpcData], game: GameState, exclude_ids: set[str]) -> str:
+    player_loc = game.world.current_location
     parts = []
 
     def _npc_entry(n: NpcData) -> str:
@@ -266,9 +265,9 @@ def _npcs_section(
     game: GameState,
     brain: BrainResult,
     context_text: str,
-    activated_npcs: Sequence[NpcData] = (),
-    mentioned_npcs: Sequence[NpcData] = (),
-    move_category: str = "other",
+    activated_npcs: Sequence[NpcData],
+    mentioned_npcs: Sequence[NpcData],
+    move_category: str,
 ) -> str:
     target_id = brain.target_npc
     activated_block = _activated_npcs_block(activated_npcs, target_id, game, context_text, move_category)

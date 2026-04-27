@@ -1,4 +1,5 @@
 import json
+from collections.abc import Sequence
 
 from ..config_loader import model_for_role, sampling_params
 from ..engine_loader import eng
@@ -7,23 +8,23 @@ from ..models import BrainResult, EngineConfig, GameState
 from ..parser import salvage_truncated_narration
 from ..prompt_blocks import content_boundaries_block, get_narration_lang, get_narrator_system
 from ..prompt_loader import get_prompt
-from .provider_base import AIProvider, create_with_retry
+from .provider_base import AICallSpec, AIProvider, create_with_retry
 from .schemas import get_narrator_metadata_schema, get_opening_setup_schema
 
 
 def call_narrator(
     provider: AIProvider,
     prompt: str,
-    game: GameState | None = None,
+    game: GameState,
     config: EngineConfig | None = None,
     system_suffix: str = "",
     skip_history: bool = False,
-    extra_messages: list[dict] | None = None,
+    extra_messages: Sequence[dict] = (),
 ) -> str:
     log(f"[Narrator] Calling narrator (prompt: {len(prompt)} chars{', skip_history' if skip_history else ''})")
     messages = []
 
-    if not skip_history and game and game.narrative.narration_history:
+    if not skip_history and game.narrative.narration_history:
         for entry in game.narrative.narration_history[-eng().pacing.max_narration_history :]:
             messages.append({"role": "user", "content": entry.prompt_summary})
             messages.append({"role": "assistant", "content": entry.narration})
@@ -37,14 +38,14 @@ def call_narrator(
     if system_suffix:
         system = system + "\n" + system_suffix
 
-    response = create_with_retry(
-        provider,
+    spec = AICallSpec(
         model=model_for_role("narrator"),
         system=system,
         messages=messages,
-        **sampling_params("narrator"),
         log_role="narrator",
+        **sampling_params("narrator"),
     )
+    response = create_with_retry(provider, spec)
     raw = response.content
     stop = response.stop_reason
 
@@ -84,15 +85,15 @@ Extract all NPCs, clocks, location, scene context, time of day, and initial NPC 
 IMPORTANT: {game.player_name} is the PLAYER CHARACTER — do NOT include them as an NPC. NPCs are OTHER characters the player meets."""
 
     try:
-        response = create_with_retry(
-            provider,
+        spec = AICallSpec(
             model=model_for_role("opening_setup"),
             system=system,
             messages=[{"role": "user", "content": prompt}],
             json_schema=get_opening_setup_schema(),
-            **sampling_params("opening_setup"),
             log_role="narrator_retry",
+            **sampling_params("opening_setup"),
         )
+        response = create_with_retry(provider, spec)
         data = json.loads(response.content)
         log(
             f"[OpeningSetup] Extracted: {len(data.get('npcs', []))} NPCs, "
@@ -119,7 +120,7 @@ def call_narrator_metadata(
     game: GameState,
     config: EngineConfig | None = None,
     brain: BrainResult | None = None,
-    consequences: list | None = None,
+    consequences: Sequence[str] = (),
 ) -> dict:
     _cfg = config or EngineConfig()
     lang = get_narration_lang(_cfg)
@@ -171,15 +172,15 @@ def call_narrator_metadata(
 Extract all metadata from the narration above. Remember: {game.player_name} is the PLAYER CHARACTER, not an NPC."""
 
     try:
-        response = create_with_retry(
-            provider,
+        spec = AICallSpec(
             model=model_for_role("narrator_metadata"),
             system=system,
             messages=[{"role": "user", "content": prompt}],
             json_schema=get_narrator_metadata_schema(),
-            **sampling_params("narrator_metadata"),
             log_role="metadata",
+            **sampling_params("narrator_metadata"),
         )
+        response = create_with_retry(provider, spec)
         metadata = json.loads(response.content)
         log(
             f"[Metadata] Extracted: "

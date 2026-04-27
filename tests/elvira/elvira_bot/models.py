@@ -100,7 +100,6 @@ class TurnRecord:
     location: str = ""
     action: str = ""
     narration: str = ""
-    narration_excerpt: str = ""
     roll: RollRecord | None = None
     brain: BrainRecord | None = None
     burn_offered: str = ""
@@ -183,25 +182,15 @@ class TurnRecord:
 @dataclass
 class ChapterRecord:
     chapter: int = 0
-    started_at_turn: int = 0
     turns_played: int = 0
     ended_reason: str = "unknown"
 
 
 @dataclass
 class SessionLog:
-    started_at: str = ""
-    ended_at: str = ""
     config: dict = field(default_factory=dict)
-    engine_version: str = ""
-    auto_mode: bool = False
     style: str = ""
-    max_chapters: int = 1
-    character: str = ""
-    location_start: str = ""
-    game_context: dict = field(default_factory=dict)
-    creation_data: dict = field(default_factory=dict)
-    opening_narration: str = ""
+    engine_version: str = ""
     story_blueprint: dict = field(default_factory=dict)
     chapters: list[ChapterRecord] = field(default_factory=list)
     turns: list[TurnRecord] = field(default_factory=list)
@@ -213,10 +202,8 @@ class SessionLog:
     token_summary: dict = field(default_factory=dict)
     correction_tests: list[dict] = field(default_factory=list)
     burn_stats: dict = field(default_factory=dict)
-    drift_summary: dict = field(default_factory=dict)
     ended_reason: str = "unknown"
     total_turns: int = 0
-    final_state: dict = field(default_factory=dict)
 
     def to_dict(self) -> dict:
         from dataclasses import asdict
@@ -254,8 +241,6 @@ class SessionLog:
         d["burn_stats"] = self.burn_stats
         if self.token_summary:
             d["token_summary"] = self.token_summary
-        if self.drift_summary:
-            d["drift_summary"] = self.drift_summary
 
         if self.turns:
             last = self.turns[-1]
@@ -269,7 +254,6 @@ class SessionLog:
                     }
                     for n in last.npcs
                 ]
-        d["final_state"] = self.final_state
 
         if self.violations:
             d["invariant_violations"] = self.violations

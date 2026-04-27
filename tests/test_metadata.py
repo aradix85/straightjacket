@@ -22,36 +22,36 @@ def _game() -> GameState:
 
 
 def test_deceased_marks_present_npc(stub_all: None) -> None:
-    from straightjacket.engine.ai.metadata import process_deceased_npcs
+    from straightjacket.engine.ai.metadata import process_deceased_npcs_with_presence_check
 
     game = _game()
-    process_deceased_npcs(game, [{"npc_id": "npc_1"}], scene_present_ids={"npc_1"})
+    process_deceased_npcs_with_presence_check(game, [{"npc_id": "npc_1"}], scene_present_ids={"npc_1"})
     assert game.npcs[0].status == "deceased"
 
 
 def test_deceased_rejects_absent_npc(stub_all: None) -> None:
-    from straightjacket.engine.ai.metadata import process_deceased_npcs
+    from straightjacket.engine.ai.metadata import process_deceased_npcs_with_presence_check
 
     game = _game()
-    process_deceased_npcs(game, [{"npc_id": "npc_1"}], scene_present_ids={"npc_2"})
+    process_deceased_npcs_with_presence_check(game, [{"npc_id": "npc_1"}], scene_present_ids={"npc_2"})
     assert game.npcs[0].status == "active"
 
 
 def test_deceased_allows_absent_npc_with_current_scene_memory(stub_all: None) -> None:
-    from straightjacket.engine.ai.metadata import process_deceased_npcs
+    from straightjacket.engine.ai.metadata import process_deceased_npcs_with_presence_check
 
     game = _game()
     game.npcs[0].memory.append(make_memory(scene=5, event="Just arrived", importance=5))
-    process_deceased_npcs(game, [{"npc_id": "npc_1"}], scene_present_ids={"npc_2"})
+    process_deceased_npcs_with_presence_check(game, [{"npc_id": "npc_1"}], scene_present_ids={"npc_2"})
     assert game.npcs[0].status == "deceased"
 
 
 def test_deceased_skips_already_dead(stub_all: None) -> None:
-    from straightjacket.engine.ai.metadata import process_deceased_npcs
+    from straightjacket.engine.ai.metadata import process_deceased_npcs_with_presence_check
 
     game = _game()
     game.npcs[0].status = "deceased"
-    process_deceased_npcs(game, [{"npc_id": "npc_1"}], scene_present_ids={"npc_1"})
+    process_deceased_npcs_with_presence_check(game, [{"npc_id": "npc_1"}], scene_present_ids={"npc_1"})
     assert game.npcs[0].status == "deceased"
 
 
@@ -59,7 +59,7 @@ def test_deceased_no_guard_without_present_ids(stub_all: None) -> None:
     from straightjacket.engine.ai.metadata import process_deceased_npcs
 
     game = _game()
-    process_deceased_npcs(game, [{"npc_id": "npc_1"}], scene_present_ids=None)
+    process_deceased_npcs(game, [{"npc_id": "npc_1"}])
     assert game.npcs[0].status == "deceased"
 
 
@@ -67,7 +67,7 @@ def test_deceased_unknown_npc_ignored(stub_all: None) -> None:
     from straightjacket.engine.ai.metadata import process_deceased_npcs
 
     game = _game()
-    process_deceased_npcs(game, [{"npc_id": "nobody"}], scene_present_ids=None)
+    process_deceased_npcs(game, [{"npc_id": "nobody"}])
     assert all(n.status == "active" for n in game.npcs)
 
 
@@ -167,7 +167,7 @@ def test_metadata_full_pipeline(stub_all: None) -> None:
         "deceased_npcs": [],
         "lore_npcs": [{"name": "The Founder", "description": "Built the arena"}],
     }
-    apply_narrator_metadata(game, metadata, scene_present_ids={"npc_1", "npc_2"})
+    apply_narrator_metadata(game, metadata, scene_present_ids={"npc_1", "npc_2"}, world_addition="")
     assert any(n.status == "lore" for n in game.npcs)
     founder = next(n for n in game.npcs if n.name == "The Founder")
     assert founder.status == "lore"

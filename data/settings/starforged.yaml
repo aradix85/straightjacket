@@ -30,54 +30,6 @@ vocabulary:
     glow, starlight through ports. The Forge is industrial, cramped,
     and always slightly broken.
 
-genre_constraints:
-  forbidden_terms:
-    - "magic"
-    - "spell"
-    - "enchanted"
-    - "elven"
-    - "dwarven"
-    - "dragon"
-  atmospheric_drift:
-    - "eldritch"
-    - "otherworldly"
-    - "spectral"
-    - "ethereal"
-    - "supernatural"
-    - "portent"
-    - "prophecy"
-    - "curse"
-    - "cursed"
-    - "ritual"
-    - "sorcery"
-    - "arcane"
-    - "weep"
-    - "weeps"
-    - "weeping"
-    - "writhe"
-    - "writhes"
-    - "writhing"
-    - "visage"
-    - "visages"
-    - "ooze"
-    - "oozes"
-    - "oozing"
-    - "reshape"
-    - "reshapes"
-    - "reshaping"
-    - "unnatural"
-    - "unnaturally"
-    - "apparition"
-    - "phantasm"
-    - "phantom"
-    - "beckons"
-    - "beckoning"
-    - "sighs"
-    - "awakens"
-    - "waking"
-    - "shimmers"
-    - "shimmering"
-  atmospheric_drift_threshold: 2
 
 creation_flow:
   has_truths: true
