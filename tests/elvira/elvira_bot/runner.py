@@ -41,7 +41,7 @@ from .quality_checks import (
 from .recorder import record_turn
 from .display import print_narration, print_state, final_state_dict, print_summary
 
-_HERE = Path(__file__).resolve().parent.parent
+RUNS_DIR = Path(__file__).resolve().parent.parent / "runs"
 SEPARATOR = "=" * 62
 
 
@@ -72,9 +72,10 @@ def run_session(bot_cfg: dict, auto_override: bool = False, turns_override: int 
     clean_before = session_cfg["clean_before_run"]
     style = behavior["style"]
     burn_setting = behavior["burn_momentum"]
+    setting_id = game_cfg["setting_id"]
     log_file_base = Path(log_cfg["log_file"])
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M")
-    log_file = log_file_base.with_stem(f"{log_file_base.stem}_{timestamp}")
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    log_file = log_file_base.with_stem(f"{log_file_base.stem}_{setting_id}_{style}_{timestamp}")
     print_full = log_cfg["print_full_narration"]
     print_rolls = log_cfg["print_roll_details"]
     do_invariants = log_cfg["assert_state_invariants"]
@@ -84,7 +85,7 @@ def run_session(bot_cfg: dict, auto_override: bool = False, turns_override: int 
     config = EngineConfig(narration_lang=narration_lang)
     create_user(username)
 
-    if clean_before and not game_cfg.get("load_existing") and delete_save(username, save_out):
+    if clean_before and not game_cfg["load_existing"] and delete_save(username, save_out):
         print(f"[CLEAN] Deleted previous save '{save_out}'")
 
     persona = get_persona(style)
@@ -253,7 +254,8 @@ def run_session(bot_cfg: dict, auto_override: bool = False, turns_override: int 
     print_summary(slog, game)
     _try_save(game, username, chat_messages, save_out)
 
-    log_path = _HERE / log_file
+    RUNS_DIR.mkdir(parents=True, exist_ok=True)
+    log_path = RUNS_DIR / log_file
     log_path.write_text(json.dumps(slog.to_diagnostic_dict(), indent=2, ensure_ascii=False), encoding="utf-8")
     print(f"  [LOG] Session log written to: {log_path}")
 
@@ -268,7 +270,7 @@ def run_session(bot_cfg: dict, auto_override: bool = False, turns_override: int 
 def _setup_game(
     provider: AIProvider, config: EngineConfig, username: str, game_cfg: dict, auto_mode: bool, slog: SessionLog
 ) -> tuple[GameState, str, list[dict]]:
-    if not auto_mode and game_cfg.get("load_existing"):
+    if not auto_mode and game_cfg["load_existing"]:
         save_name = game_cfg["save_name"]
         game, chat_messages = load_game(username, save_name)
         if not game:
@@ -283,9 +285,9 @@ def _setup_game(
         )
         return game, narration, chat_messages
 
-    setting_id = game_cfg.get("setting_id", "")
-    if not setting_id:
-        available = [s for s in list_packages() if s != "delve"] or ["starforged"]
+    setting_id = game_cfg["setting_id"]
+    if setting_id == "":
+        available = [s for s in list_packages() if s != "delve"]
         setting_id = _random.choice(available)
 
     creation_data = roll_character(setting_id, game_cfg)

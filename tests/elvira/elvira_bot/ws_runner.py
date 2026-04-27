@@ -25,9 +25,9 @@ from .quality_checks import (
     check_npc_spatial_consistency,
 )
 from .recorder import record_turn
+from .runner import RUNS_DIR
 from .display import print_narration, print_state, final_state_dict, print_summary
 
-_HERE = Path(__file__).resolve().parent.parent
 SEPARATOR = "=" * 62
 CORRECTION_TEST_INTERVAL = 8
 
@@ -166,9 +166,10 @@ async def run_ws_session(bot_cfg: dict, auto_override: bool = False, turns_overr
     save_out = session_cfg["save_name_output"]
     style = behavior["style"]
     burn_setting = behavior["burn_momentum"]
+    setting_id = game_cfg["setting_id"]
     log_file_base = Path(log_cfg["log_file"])
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M")
-    log_file = log_file_base.with_stem(f"{log_file_base.stem}_{timestamp}")
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    log_file = log_file_base.with_stem(f"{log_file_base.stem}_{setting_id}_{style}_{timestamp}")
     print_full = log_cfg["print_full_narration"]
     do_invariants = log_cfg["assert_state_invariants"]
     full_debug = log_cfg["full_debug_log"]
@@ -213,7 +214,7 @@ async def run_ws_session(bot_cfg: dict, auto_override: bool = False, turns_overr
     msg = await client.recv_until("player_selected", timeout=10)
     print(f"[SETUP] Player: {username}, has_game: {msg.get('has_game')}")
 
-    if clean_before and not game_cfg.get("load_existing"):
+    if clean_before and not game_cfg["load_existing"]:
         if msg.get("has_game"):
             await client.send({"type": "delete_save", "name": "autosave"})
             await client.drain(timeout=2)
@@ -229,7 +230,7 @@ async def run_ws_session(bot_cfg: dict, auto_override: bool = False, turns_overr
         if auto_mode:
             from straightjacket.engine.datasworn.settings import list_packages
 
-            available = [s for s in list_packages() if s != "delve"] or ["starforged"]
+            available = [s for s in list_packages() if s != "delve"]
             setting_id = _random.choice(available)
 
         creation_data = roll_character(setting_id, game_cfg)
@@ -385,7 +386,8 @@ async def run_ws_session(bot_cfg: dict, auto_override: bool = False, turns_overr
     await client.send({"type": "save", "name": save_out})
     await client.drain(timeout=2)
 
-    log_path = _HERE / log_file
+    RUNS_DIR.mkdir(parents=True, exist_ok=True)
+    log_path = RUNS_DIR / log_file
     log_path.write_text(json.dumps(slog.to_diagnostic_dict(), indent=2, ensure_ascii=False), encoding="utf-8")
     print(f"  [LOG] Session log: {log_path}")
 

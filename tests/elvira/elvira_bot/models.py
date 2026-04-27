@@ -252,7 +252,7 @@ class SessionLog:
             "engine_version": self.engine_version,
             "style": self.style,
             "character": self.character,
-            "setting": self.config.get("game", {}).get("setting_id", ""),
+            "setting": self.config["game"]["setting_id"],
             "total_turns": self.total_turns,
             "ended_reason": self.ended_reason,
             "chapters": [

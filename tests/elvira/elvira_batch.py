@@ -1,6 +1,7 @@
 import argparse
 import copy
 import json
+import shutil
 import sys
 import traceback
 from datetime import datetime
@@ -24,7 +25,7 @@ if not _logger.handlers:
 from straightjacket.engine.datasworn.settings import list_packages
 
 from tests.elvira.elvira_bot.models import SessionLog
-from tests.elvira.elvira_bot.runner import load_config, run_session
+from tests.elvira.elvira_bot.runner import RUNS_DIR, load_config, run_session
 
 DEFAULT_CONFIG = _HERE / "elvira_config.yaml"
 ALL_STYLES = ["explorer", "aggressor", "dialogist"]
@@ -53,10 +54,10 @@ def run_batch(
                 print(f"{'#' * 62}\n")
 
                 cfg = copy.deepcopy(base_cfg)
-                cfg.setdefault("game", {})["setting_id"] = setting_id
-                cfg.setdefault("game", {})["load_existing"] = False
-                cfg.setdefault("bot_behavior", {})["style"] = style
-                cfg.setdefault("session", {})["clean_before_run"] = True
+                cfg["game"]["setting_id"] = setting_id
+                cfg["game"]["load_existing"] = False
+                cfg["bot_behavior"]["style"] = style
+                cfg["session"]["clean_before_run"] = True
 
                 result: dict = {
                     "setting": setting_id,
@@ -215,19 +216,16 @@ def main() -> None:
     parser.add_argument("--repeats", type=int, default=1, help="Repeat each combination N times (default: 1)")
     parser.add_argument("--settings", nargs="+", default=None, help="Settings to test (default: all except delve)")
     parser.add_argument("--styles", nargs="+", default=None, help=f"Styles to test (default: {', '.join(ALL_STYLES)})")
-    parser.add_argument(
-        "--output", type=Path, default=None, help="JSON output path (default: elvira/batch_report.json)"
-    )
     args = parser.parse_args()
 
     base_cfg = load_config(args.config)
     if args.turns is not None:
-        base_cfg.setdefault("session", {})["max_turns"] = args.turns
+        base_cfg["session"]["max_turns"] = args.turns
     max_turns = base_cfg["session"]["max_turns"]
 
     available_settings = [s for s in list_packages() if s != "delve"]
-    settings = args.settings or available_settings
-    styles = args.styles or ALL_STYLES
+    settings = args.settings if args.settings is not None else available_settings
+    styles = args.styles if args.styles is not None else ALL_STYLES
 
     for s in settings:
         if s not in available_settings:
@@ -243,7 +241,12 @@ def main() -> None:
     print("  Elvira Batch Runner")
     print(f"  {len(settings)} settings × {len(styles)} styles × {args.repeats} repeats = {total} sessions")
     print(f"  {max_turns} turns per session (from config)")
+    print(f"  Output directory: {RUNS_DIR}")
     print(SEPARATOR)
+
+    if RUNS_DIR.exists():
+        shutil.rmtree(RUNS_DIR)
+    RUNS_DIR.mkdir(parents=True)
 
     results = run_batch(base_cfg, settings, styles, args.repeats)
 
@@ -252,7 +255,7 @@ def main() -> None:
     print(report)
     print(SEPARATOR)
 
-    json_path = args.output or (_HERE / "batch_report.json")
+    json_path = RUNS_DIR / "batch_report.json"
     json_path.write_text(json.dumps(results, indent=2, ensure_ascii=False), encoding="utf-8")
     print(f"\n[BATCH] Results written to: {json_path}")
 
