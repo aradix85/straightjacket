@@ -609,9 +609,151 @@ def _scan_complexity(path: Path, rel: str, cc_visit, whitelist: set[tuple[str, s
     return violations
 
 
+def _is_empty_collection(node: ast.expr) -> bool:
+    if isinstance(node, ast.List) and not node.elts:
+        return True
+    if isinstance(node, ast.Dict) and not node.keys:
+        return True
+    if isinstance(node, ast.Tuple) and not node.elts:
+        return True
+    if isinstance(node, ast.Set) and not node.elts:
+        return True
+    return bool(
+        isinstance(node, ast.Call)
+        and isinstance(node.func, ast.Name)
+        and node.func.id in ("list", "dict", "set", "tuple")
+        and not node.args
+        and not node.keywords
+    )
+
+
+def _check_no_name_or_empty_collection_fallback() -> tuple[str, list[Violation]]:
+    return "`name or empty-collection` FALLBACK", _run_scan_src_and_tests(_scan_name_or_empty_collection)
+
+
+def _scan_name_or_empty_collection(path: Path, rel: str) -> list[Violation]:
+    violations: list[Violation] = []
+    _, lines, tree, parents = _load(path)
+
+    for node in ast.walk(tree):
+        if not (isinstance(node, ast.BoolOp) and isinstance(node.op, ast.Or)):
+            continue
+        if len(node.values) != 2:
+            continue
+        left, right = node.values
+        if not isinstance(left, ast.Name):
+            continue
+        if not _is_empty_collection(right):
+            continue
+        if _inside_fstring_or_logcall(node, parents):
+            continue
+        snippet = lines[node.lineno - 1].strip() if node.lineno <= len(lines) else ""
+        violations.append(Violation(rel, node.lineno, snippet))
+    return violations
+
+
+def _is_optional_collection_annotation(node: ast.expr) -> bool:
+    if isinstance(node, ast.BinOp) and isinstance(node.op, ast.BitOr):
+        left, right = node.left, node.right
+        none_on_right = isinstance(right, ast.Constant) and right.value is None
+        none_on_left = isinstance(left, ast.Constant) and left.value is None
+        other = left if none_on_right else right if none_on_left else None
+        if other is None:
+            return False
+        return _is_collection_annotation(other)
+    if isinstance(node, ast.Subscript) and isinstance(node.value, ast.Name) and node.value.id == "Optional":
+        return _is_collection_annotation(node.slice)
+    return False
+
+
+def _is_collection_annotation(node: ast.expr) -> bool:
+    if isinstance(node, ast.Name) and node.id in ("list", "dict", "set", "tuple", "List", "Dict", "Set", "Tuple"):
+        return True
+    if isinstance(node, ast.Subscript) and isinstance(node.value, ast.Name):
+        return node.value.id in ("list", "dict", "set", "tuple", "List", "Dict", "Set", "Tuple", "Sequence", "Mapping")
+    return False
+
+
+def _check_no_optional_collection_param_default_none() -> tuple[str, list[Violation]]:
+    return "OPTIONAL COLLECTION param with `= None` default", _run_scan_src_and_tests(_scan_optional_collection_params)
+
+
+def _scan_optional_collection_params(path: Path, rel: str) -> list[Violation]:
+    violations: list[Violation] = []
+    _, lines, tree, _ = _load(path)
+
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.FunctionDef | ast.AsyncFunctionDef):
+            continue
+        positional_args = list(node.args.posonlyargs) + list(node.args.args)
+        kw_args = list(node.args.kwonlyargs)
+
+        positional_with_defaults = list(
+            zip(positional_args[-len(node.args.defaults) :], node.args.defaults, strict=False)
+        )
+        kw_with_defaults = list(zip(kw_args, node.args.kw_defaults, strict=False))
+
+        for arg, default in positional_with_defaults + kw_with_defaults:
+            if default is None:
+                continue
+            if not (isinstance(default, ast.Constant) and default.value is None):
+                continue
+            if arg.annotation is None:
+                continue
+            if not _is_optional_collection_annotation(arg.annotation):
+                continue
+            snippet = lines[arg.lineno - 1].strip() if arg.lineno <= len(lines) else ""
+            violations.append(Violation(rel, arg.lineno, f"{node.name}({arg.arg}): {snippet}"))
+    return violations
+
+
+def _check_no_setdefault_calls() -> tuple[str, list[Violation]]:
+    pattern = re.compile(r"\.setdefault\(")
+    violations: list[Violation] = []
+    for path in _iter_source_files():
+        rel = _rel(path)
+        for i, line in enumerate(path.read_text().splitlines(), 1):
+            if pattern.search(line):
+                violations.append(Violation(rel, i, line.strip()))
+    return ".setdefault() fallback (use direct subscript)", violations
+
+
+def _check_no_get_raw_with_fallback() -> tuple[str, list[Violation]]:
+    pattern = re.compile(r"\.get_raw\(\s*[^,)]+,\s*[^)]+\)")
+    violations: list[Violation] = []
+    for path in _iter_source_files():
+        rel = _rel(path)
+        for i, line in enumerate(path.read_text().splitlines(), 1):
+            if pattern.search(line):
+                violations.append(Violation(rel, i, line.strip()))
+    return "eng().get_raw(key, fallback) — domain config raises on miss", violations
+
+
+def _check_no_warning_suppression() -> tuple[str, list[Violation]]:
+    pattern = re.compile(r"#\s*(noqa|type:\s*ignore|pragma:\s*no\s*cover)")
+    violations: list[Violation] = []
+    for path in _iter_source_files():
+        rel = _rel(path)
+        for i, line in enumerate(path.read_text().splitlines(), 1):
+            if pattern.search(line):
+                violations.append(Violation(rel, i, line.strip()))
+    return "warning-suppression comment (noqa / type: ignore / pragma)", violations
+
+
+def _check_no_versioned_filenames() -> tuple[str, list[Violation]]:
+    versioned = re.compile(r"_(v\d+|old|deprecated|new|backup|copy)\.py$")
+    violations: list[Violation] = []
+    for path in _iter_source_files():
+        if versioned.search(path.name):
+            violations.append(Violation(_rel(path), 0, path.name))
+    return "versioned filename suffix (edit in place, no _v2.py / _old.py)", violations
+
+
 _ALL_CHECKS = (
     _check_no_domain_default_in_dict_get,
     _check_no_or_literal_fallback_on_lookups,
+    _check_no_name_or_empty_collection_fallback,
+    _check_no_optional_collection_param_default_none,
     _check_no_dataclass_defaults_in_config_binding,
     _check_broad_except_inside_carve_out_only,
     _check_no_python_comments_or_docstrings,
@@ -621,6 +763,10 @@ _ALL_CHECKS = (
     _check_no_direct_provider_sdk_imports,
     _check_no_hardcoded_model_names_in_engine,
     _check_no_function_exceeds_complexity_ceiling,
+    _check_no_setdefault_calls,
+    _check_no_get_raw_with_fallback,
+    _check_no_warning_suppression,
+    _check_no_versioned_filenames,
 )
 
 

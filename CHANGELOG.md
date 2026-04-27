@@ -7,6 +7,14 @@ Originally forked from [EdgeTales](https://github.com/edgetales/edgetales). See 
 
 Straightjacket uses calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day. The first CalVer release is `2026.04.25.0`. Earlier `0.x.y` releases keep their original version numbers and are not renumbered. The switch was made because the project has no public API to version semantically against — the `0.x.y` numbers were running counters with no meaning, and dates carry the meaning the numbers didn't.
 
+## [2026.04.27.7] — 2026-04-27
+
+`test_project_rules.py` uitgebreid met vier strict-rule checks: `.setdefault()`-fallbacks, `eng().get_raw(key, fallback)`-misbruik, warning-suppression-comments (`# noqa`, `# type: ignore`, `# pragma: no cover`), en versioned filename-suffixes (`_v2.py`, `_old.py`). De laatste drie zijn nu schoon, `.setdefault()` rapporteert twee violations in `engine/game/setup_common.py`.
+
+Test was deze sessie ontdekt rood op pre-existing violations die ik over het hoofd had gezien. Volledige stand nu: 62 violations in drie categorieën (`name or empty-collection` fallback 9, optional-collection-default 51, setdefault 2). Test is rood; rapporteert per violation file plus regelnummer plus snippet voor een latere fix-sessie.
+
+---
+
 ## [2026.04.27.6] — 2026-04-27
 
 Drie samenhangende stukken: een nieuwe RESULT INTEGRITY-validator-architectuur, GENRE PHYSICS- plus RESOLUTION PACING-tuning op de actieve narrator-prompt, en grootschalige opruiming van de `(role, model_family)` resolution layer. De RESULT INTEGRITY-architectuur eerst. De validator kreeg vroeger letterlijke consequence-zinnen plus instructie "demand the event, not the phrasing" — een tegenstrijdigheid die in de batch leidde tot 31 RESULT INTEGRITY-violations (52 procent van het totaal), gedomineerd door letterlijke "advantage shift"- en "opening"-string-matching. Nieuwe `ConsequenceEvent`-dataclass in `models_base.py` met `event_code`, `subject`, `acceptable_phrasings`. Nieuwe yaml-sectie `consequence_event_phrasings` in `engine/consequence_templates.yaml` met 5-10 phrasings per event-code; `momentum_gain` heeft bijvoorbeeld "opening", "advantage shift", "edge", "ground tilts", "rhythm caught", "upper hand". Vier singleton-templates uitgebreid naar drie of meer varianten. `generate_consequence_sentences` retourneert nu `tuple[list[str], list[ConsequenceEvent]]`; resolver-laag samengetrokken in één `_classify`-functie. Validator ontvangt events via `ValidationContext.consequence_events`; narrator blijft proza-seeds krijgen via `<consequence>`-XML-tags. Validator-prompt-block herschreven naar "Each line names an event_code and acceptable phrasings; the narration is COMPLIANT if it expresses the event using ANY phrasing — exact match is not required." Twee nieuwe symmetrie-tests in `test_yaml_symmetry.py` dwingen af dat templates en phrasings dezelfde keys hebben.
