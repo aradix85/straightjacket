@@ -7,6 +7,14 @@ Originally forked from [EdgeTales](https://github.com/edgetales/edgetales). See 
 
 Straightjacket uses calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day. The first CalVer release is `2026.04.25.0`. Earlier `0.x.y` releases keep their original version numbers and are not renumbered. The switch was made because the project has no public API to version semantically against — the `0.x.y` numbers were running counters with no meaning, and dates carry the meaning the numbers didn't.
 
+## [2026.04.27.11] — 2026-04-27
+
+Cleanup-pass plus drie nieuwe project-rule scans. 27.10-residue alsnog opgeruimd: `tests/elvira/elvira_bot/drift_checks.py` was achtergebleven en las weg-gerefactorde GenreConstraints-attributen op een type dat niet meer bestaat — verwijderd, plus carve-out-entry uit `test_project_rules.py`. `data/settings/delve.yaml` had nog een leeg `genre_constraints: {}`-blok zonder consument, weg. `engine/move_routing.yaml` was een regression na zijn eerdere verwijdering in 0.46.5 — niemand las hem, alle data al vertegenwoordigd in `move_outcomes.yaml` per-move parameters, weg. Twee dode publieke functies weggehaald: `reload_config` in `config_loader.py` (geen consument anywhere) en `list_tracks` in `tools/builtins.py` (geschreven als engine-query helper analoog aan `available_moves`, nooit ingezet); `list_tracks` ook uit ARCHITECTURE-tabel gestript. Format-residue van een eerdere commit in `tests/test_yaml_symmetry.py` meegenomen.
+
+Drie nieuwe scans in `test_project_rules.py`, totaal nu twintig. `_check_ruff_format_clean` draait `ruff format --check` als delivery-gate vanuit pytest — vangt format-drift ook op machines zonder pre-commit-install. `_check_no_orphan_public_symbols` controleert elke publieke `def`/`class` in src op tenminste één externe consument, met carve-out-set voor terecht-niet-aangeroepen gevallen (web-route handlers, sub-attribuut-dataclasses, AICallSpec-velden); zou de `move_routing`-style regression hebben tegengehouden. `_check_no_orphan_yaml_keys` checkt elke top-level yaml-key in `engine/` op aanwezigheid in Python via string-literal of `get_raw("...")` met dotted-path, exact de scan die 0.46.5 introduceerde maar in 27.10 niet werd gerund. Initiële naïeve implementatie zat 32 sec; één-pass-corpus rewrite plus complexity-decompositie naar 6.7 sec, totale suite van 42 sec naar 12 sec. md-files gesynced: ORIGINS van 1137/elf naar 1138/twintig, CONTRIBUTING van zeventien naar twintig scans. Save format ongewijzigd. Test count 1138.
+
+---
+
 ## [2026.04.27.10] — 2026-04-27
 
 Strict-rule cleanup-passes en de afronding van de validator-cascade die in 27.8 en 27.9 begon. Het scan-resultaat van `tests/test_project_rules.py` ging van tweeënvijftig violations bij sessiebegin naar nul bij commit-tijd. Vier opeenvolgende passes plus md-audit, allemaal save-format-compatible.

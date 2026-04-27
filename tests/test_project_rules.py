@@ -2,12 +2,17 @@ from __future__ import annotations
 
 import ast
 import re
+import subprocess
 from collections.abc import Iterator
 from dataclasses import dataclass
 from pathlib import Path
 
-SRC_ROOT = Path(__file__).resolve().parent.parent / "src" / "straightjacket"
+import yaml
+
+REPO_ROOT = Path(__file__).resolve().parent.parent
+SRC_ROOT = REPO_ROOT / "src" / "straightjacket"
 TESTS_ROOT = Path(__file__).resolve().parent
+ENGINE_YAML_ROOT = REPO_ROOT / "engine"
 
 
 _AI_CALL_CARVE_OUT_FILES = {
@@ -30,7 +35,6 @@ _AI_CALL_CARVE_OUT_TESTS = {
     "test_integration.py",
     "elvira/elvira_bot/creation.py",
     "elvira/elvira_bot/runner.py",
-    "elvira/elvira_bot/drift_checks.py",
     "elvira/elvira_bot/invariants.py",
     "elvira/elvira_bot/ws_runner.py",
 }
@@ -740,6 +744,156 @@ def _check_no_versioned_filenames() -> tuple[str, list[Violation]]:
     return "versioned filename suffix (edit in place, no _v2.py / _old.py)", violations
 
 
+def _check_ruff_format_clean() -> tuple[str, list[Violation]]:
+    result = subprocess.run(
+        ["ruff", "format", "--check", str(SRC_ROOT), str(TESTS_ROOT)],
+        capture_output=True,
+        text=True,
+        cwd=REPO_ROOT,
+    )
+    if result.returncode == 0:
+        return "ruff format drift (delivery gate)", []
+    violations: list[Violation] = []
+    for line in result.stdout.splitlines():
+        match = re.match(r"^Would reformat:\s+(.+)$", line)
+        if match:
+            file_path = Path(match.group(1))
+            try:
+                rel = file_path.relative_to(REPO_ROOT).as_posix()
+            except ValueError:
+                rel = str(file_path)
+            violations.append(Violation(rel, 0, "would reformat"))
+    if not violations:
+        violations.append(Violation("<ruff>", 0, result.stdout.strip() or result.stderr.strip()))
+    return "ruff format drift (delivery gate)", violations
+
+
+_ORPHAN_SYMBOL_CARVE_OUT = {
+    "AppConfig",
+    "AIConfig",
+    "ServerConfig",
+    "ClusterConfig",
+    "LanguageConfig",
+    "OraclePaths",
+    "CreationFlow",
+    "VocabularyConfig",
+    "OracleResult",
+    "OracleRow",
+    "RollOption",
+    "TriggerCondition",
+    "MoveEffect",
+    "ActionOutcome",
+    "homepage",
+    "websocket_endpoint",
+    "log_tokens",
+    "build_director_prompt",
+    "build_stats_line",
+    "apply_engine_memories",
+    "impact_config",
+}
+
+
+def _collect_public_symbols() -> dict[str, list[Path]]:
+    defs: dict[str, list[Path]] = {}
+    for path in _iter_source_files():
+        try:
+            tree = ast.parse(path.read_text())
+        except SyntaxError:
+            continue
+        for node in tree.body:
+            if not isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+                continue
+            if node.name.startswith("_"):
+                continue
+            if node.name in _ORPHAN_SYMBOL_CARVE_OUT:
+                continue
+            defs.setdefault(node.name, []).append(path)
+    return defs
+
+
+def _orphan_scan_corpus() -> dict[Path, str]:
+    scan_roots = [SRC_ROOT, TESTS_ROOT, ENGINE_YAML_ROOT]
+    for sub in ("data", "prompts", "strings", "emotions"):
+        candidate = REPO_ROOT / sub
+        if candidate.exists():
+            scan_roots.append(candidate)
+    corpus: dict[Path, str] = {}
+    for root in scan_roots:
+        for ext in ("*.py", "*.yaml", "*.json"):
+            for f in root.rglob(ext):
+                if "__pycache__" in str(f):
+                    continue
+                try:
+                    corpus[f] = f.read_text()
+                except (OSError, UnicodeDecodeError):
+                    continue
+    return corpus
+
+
+def _has_external_use(pattern: re.Pattern[str], corpus: dict[Path, str], own: set[Path]) -> bool:
+    for f, text in corpus.items():
+        if f in own:
+            continue
+        if pattern.search(text):
+            return True
+    return False
+
+
+def _has_intra_use(pattern: re.Pattern[str], corpus: dict[Path, str], own: set[Path]) -> bool:
+    for f in own:
+        text = corpus.get(f, "")
+        if len(pattern.findall(text)) > 1:
+            return True
+    return False
+
+
+def _check_no_orphan_public_symbols() -> tuple[str, list[Violation]]:
+    defs = _collect_public_symbols()
+    corpus = _orphan_scan_corpus()
+    violations: list[Violation] = []
+    for name, defining_files in defs.items():
+        pattern = re.compile(rf"\b{re.escape(name)}\b")
+        own = set(defining_files)
+        if _has_external_use(pattern, corpus, own):
+            continue
+        if _has_intra_use(pattern, corpus, own):
+            continue
+        rel = _rel(defining_files[0])
+        violations.append(Violation(rel, 0, f"public symbol {name!r} has no consumer"))
+    return "orphan public symbol (defined but never used)", violations
+
+
+_ORPHAN_YAML_KEY_CARVE_OUT: set[tuple[str, str]] = set()
+
+
+def _check_no_orphan_yaml_keys() -> tuple[str, list[Violation]]:
+    if not ENGINE_YAML_ROOT.exists():
+        return "orphan engine yaml top-level key", []
+    py_text = "\n".join(p.read_text() for p in (*_iter_source_files(), *_iter_test_files()))
+    violations: list[Violation] = []
+    for yfile in sorted(ENGINE_YAML_ROOT.glob("*.yaml")):
+        try:
+            data = yaml.safe_load(yfile.read_text())
+        except yaml.YAMLError:
+            continue
+        if not isinstance(data, dict):
+            continue
+        for key in data:
+            if not isinstance(key, str):
+                continue
+            if (yfile.name, key) in _ORPHAN_YAML_KEY_CARVE_OUT:
+                continue
+            literal_patterns = [f'"{key}"', f"'{key}'", f".{key}", f"['{key}']", f'["{key}"]']
+            if any(p in py_text for p in literal_patterns):
+                continue
+            dotted_pattern = f'get_raw("{key}'
+            dotted_pattern_alt = f"get_raw('{key}"
+            if dotted_pattern in py_text or dotted_pattern_alt in py_text:
+                continue
+            violations.append(Violation(yfile.name, 0, f"top-level key {key!r} has no Python reader"))
+    return "orphan engine yaml top-level key", violations
+
+
 _ALL_CHECKS = (
     _check_no_domain_default_in_dict_get,
     _check_no_or_literal_fallback_on_lookups,
@@ -758,6 +912,9 @@ _ALL_CHECKS = (
     _check_no_get_raw_with_fallback,
     _check_no_warning_suppression,
     _check_no_versioned_filenames,
+    _check_ruff_format_clean,
+    _check_no_orphan_public_symbols,
+    _check_no_orphan_yaml_keys,
 )
 
 

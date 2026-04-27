@@ -125,26 +125,6 @@ def fate_question(game: GameState, question: str, context_hint: str = "") -> dic
     return response
 
 
-def list_tracks(game: GameState, track_type: str = "") -> dict:
-    tracks = [t for t in game.progress_tracks if t.status == "active"]
-    if track_type:
-        tracks = [t for t in tracks if t.track_type == track_type]
-    return {
-        "tracks": [
-            {
-                "id": t.id,
-                "name": t.name,
-                "type": t.track_type,
-                "rank": t.rank,
-                "filled_boxes": t.filled_boxes,
-                "ticks": t.ticks,
-                "max_ticks": t.max_ticks,
-            }
-            for t in tracks
-        ]
-    }
-
-
 def available_moves(game: GameState) -> dict:
     if not game.setting_id:
         return {"error": "No setting loaded"}

@@ -19,8 +19,6 @@ vocabulary:
     Light: torchlight, bioluminescence, absolute darkness.
     Underground is claustrophobic, cold, and indifferent.
 
-genre_constraints: {}
-
 creation_flow:
   has_truths: false
   has_backstory_oracle: false

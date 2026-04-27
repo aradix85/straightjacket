@@ -43,7 +43,7 @@ Subsystems built on top of the refactored base, not inherited from EdgeTales:
 - Chapter system (campaign continuity, epilogues, NPC ID remapping)
 - Elvira test bot (headless integration testing with invariant checking)
 - Accessibility architecture (ARIA, screen reader support, narrative-only status output)
-- 1137-test suite plus eleven AST/regex project rules
+- 1138-test suite plus twenty AST/regex project rules
 
 ## Credits
 

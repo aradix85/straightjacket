@@ -141,12 +141,6 @@ def cfg() -> AppConfig:
     return _cfg
 
 
-def reload_config() -> AppConfig:
-    global _cfg
-    _cfg = None
-    return cfg()
-
-
 def narration_language() -> str:
     return cfg().language.narration_language
 
