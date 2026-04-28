@@ -7,6 +7,38 @@ Originally forked from [EdgeTales](https://github.com/edgetales/edgetales). See 
 
 Straightjacket uses calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day. The first CalVer release is `2026.04.25.0`. Earlier `0.x.y` releases keep their original version numbers and are not renumbered. The switch was made because the project has no public API to version semantically against — the `0.x.y` numbers were running counters with no meaning, and dates carry the meaning the numbers didn't.
 
+## [2026.04.28.3] — 2026-04-28
+
+`engine/move_categories.yaml` van 99 naar 66 regels — 33 niet-geïmplementeerde Datasworn-moves weggehaald uit de zes categorie-buckets. Aanleiding: onderzoek naar `session/begin_a_session` legde bloot dat alle vijf session-moves plus 28 andere Datasworn-moves in `move_categories.yaml` stonden zonder backing-implementatie in `move_outcomes.yaml` of `engine_moves.yaml`. Verificatie via `available_moves`: alle 33 hebben een `roll_type` van `no_roll` of `special_track` en worden uit Brain's moves-lijst gefilterd voordat Brain ze kan kiezen. Hun aanwezigheid in `move_categories.yaml` was niet door enig runtime-pad afdwingbaar, alleen door een test-invariant die elke Datasworn-move een bewuste categorisatie eiste.
+
+`tests/test_engine_memories.py::TestMoveCategoriesCoverage::test_every_implemented_move_has_real_category` herschreven (was `test_every_datasworn_and_engine_move_has_category`). Het oude contract eiste dat élke Datasworn-move plus elke `engine_move` een echte categorie had in `move_categories.yaml`, anders dan de fallback `other`. Het nieuwe contract eist dat élke move uit `move_outcomes.yaml` plus `engine_moves.yaml` een echte categorie heeft. Het oude contract dwong placeholder-categorisaties af voor moves die `move_category()` via geen enkele bestaande code-route kunnen bereiken, omdat alle vijf callsites Brain-output als bron hebben en Brain de `no_roll`/`special_track`-moves niet ziet. De silent-fallback-bescherming die het oude contract beoogde wordt al harder afgedwongen door `resolve_move_outcome` regel 19 (`raise ValueError(f"No outcome config for {move_key}")`) — een ongeïmplementeerde move die toch via Brain binnenkomt raised luid, niet stilletjes. Het nieuwe contract is functioneel-equivalent zonder vooruitlopend onderhoudswerk.
+
+CHANGELOG-cleanup in dezelfde sessie. Twee entries toegevoegd voor 28.1 (doc-only `engine.yaml`-shorthand cleanup) en 28.2 (twee paragrafen, expliciet onderscheid tussen onafhankelijke cleanup en de halve fate-flow-migratie inclusief de aantekening dat Brain niet wordt geinstrueerd om `fate_question` te vullen waardoor de hele doorpas dood-bij-runtime is). Plus zeven historische ontbrekende headers ingevuld op basis van paragraaf-inhoud en positie tussen omringende headers: 27.11 (op basis van expliciete verwijzing in 28.0), 0.69, 0.68, 0.67 (positionele afleiding tussen 0.66 en 0.70 plus inhoud-volgorde dead-code-sweep → debt-checks → file-splits), 0.62 (op basis van "Batch E from v0.61.0 audit"-tekst), 0.61 (op basis van "Batch F from v0.60.0 audit"-tekst), 0.58 (op basis van "Tranche 6"-tekst). Plus dubbele `---` tussen 0.73 en 0.72 weggehaald. Herstelt het delivery-gate-precedent uit 28.0 dat in 28.1 plus 28.2 weer was gebroken.
+
+Begin a Session — niet langer een open ontwerpvraag. De Datasworn-spec heeft `roll_type: no_roll` en is in tabletop een tafel-procedure met groep-aannames die zich niet natuurlijk laat mappen op een browser-tab-context. De huidige load-flow herstelt GameState volledig en zet de speler precies daar waar hij voor save was; recap is beschikbaar via expliciete knop. Geen functioneel gat. De vijf session-moves staan na deze cleanup niet meer in `move_categories.yaml`. Wanneer ze ooit geïmplementeerd worden, komen ze in dezelfde commit terug — in `move_outcomes.yaml` of `engine_moves.yaml` plus in `move_categories.yaml` onder de juiste bucket, conform strict-rule "update every caller in the same commit."
+
+Pyproject-versie eindelijk bijgewerkt — stond sinds 28.0 op 2026.04.28.0 terwijl git-tags 28.1 en 28.2 waren. Bestaande drift, hier rechtgezet naar 2026.04.28.3. Save format ongewijzigd. Test count 1119 (één test herschreven, geen netto-toevoeging of verwijdering). Ruff clean, ruff format clean, mypy clean op 100 source files.
+
+---
+
+## [2026.04.28.2] — 2026-04-28
+
+Twee soorten werk in één commit, hier expliciet uit elkaar getrokken.
+
+Onafhankelijke cleanup, los van de fate/oracle-design-vraag. `prompts/brain.yaml` `brain_setup`-prompt verwijderd — pre-0.36-residue uit toen character-creation nog AI-driven was; sinds 0.36 deterministisch via Datasworn, geen consument. `src/straightjacket/engine/ai/json_utils.py` plus bijbehorende test verwijderd — `extract_json` had geen consumers in src; de twee callsites die het ooit hadden gebruikt werken al lang via gestructureerde provider-output. `src/straightjacket/engine/datasworn/loader.py` `list_available()` plus `clear_cache()` weg — `list_packages()` in `datasworn/settings.py` is de canonieke discovery-route, de loader-versies waren dood. `src/straightjacket/engine/mechanics/fate.py` `get_odds_levels()` weg, was een wrapper rond `eng().enums.odds_levels` zonder eigen logica. `src/straightjacket/engine/tools/builtins.py` `query_npc_list`, `roll_oracle`, `fate_question` als tool-wrappers weg — restanten uit de v0.41-v0.45 tool-call-architectuur, niet meer aangesloten sinds 0.46.50 toen Brain naar prompt-injection ging. `tests/test_project_rules.py::_collect_src_uses` herkent nu `getattr(obj, "name")` als use van `name` — sluit één blinde vlek in de orphan-scan. ARCHITECTURE.md, ORIGINS.md, CONTRIBUTING.md drift-prone meta-getallen verwijderd (test-counts, source-file-counts, dataclass-veld-counts), Deliberate-divergences-paragrafen uitgebreid van twee naar vijf met two-call narrator pattern, no narration validator, en faction layer scope, hub-paragraaf herschreven.
+
+Halve fate-flow-migratie, hangt aan de fate/oracle-design-vraag die in dezelfde sessie werd opengelegd. `BrainResult.oracle_table` plus de Brain-output-schema-entry verwijderd omdat `ask_the_oracle`-move datzelfde domein dekt. `BrainResult.fate_question` blijft staan; de doorpas-flow tussen Brain-classificatie en narrator-prompt is gebouwd: `_resolve_brain_requests` retourneert nu `tuple[list[RandomEvent], FateResult | None]`, `SceneContext` kreeg `fate_result`-veld, `prompt_shared.py` kreeg een nieuwe `_fate_answer_block` helper die `<fate_answer question="..." odds="..." answer="..."/>` rendert, `prompt_action.py` plus `prompt_dialog.py` injecteren het blok naast `events_block`. ARCHITECTURE-paragrafen over Tool calling en Fate system herschreven om de nieuwe flow te beschrijven.
+
+Niet gedaan op deze flow: Brain wordt nergens geinstrueerd om `fate_question` te vullen. De prompt heeft geen veld-uitleg, het schema returned standaard `null`, en daarmee fired de hele doorpas-pipeline in de praktijk nooit. Dit is dood-bij-runtime gewicht in tree, niet werkende functionaliteit. Volgende sessie beslist of de halve flow wordt teruggedraaid voordat het echte fate/oracle-ontwerp landt of dat hij blijft staan als werkende-maar-niet-finale steiger. Tests die wegvielen met deze cleanup zijn voor verwijderde functies, geen dekking verloren — `tests/test_oracle.py`, `test_fate.py`, `test_tools.py`, `test_web.py`, `test_correction_flow.py`, `test_integration.py`, plus de hele `test_json_utils.py`. Test count -19. Save format ongewijzigd. Ruff clean, ruff format clean, mypy clean.
+
+---
+
+## [2026.04.28.1] — 2026-04-28
+
+Doc-only cleanup van de `engine.yaml`-shorthand-drift die 28.0 expliciet als bewust uitgesteld noemde. ARCHITECTURE.md Module-Ownership-tabel plus Key-Design-Decisions-paragrafen verwijzen nu consequent naar `engine/<naam>.yaml` (de feitelijke per-subsysteem-files) in plaats van het verzamelpad `engine.yaml` dat sinds de modulaire yaml-split in v0.60.00 niet meer bestaat. De drift-strategy-paragraaf kreeg de tail-zin terug die in een eerdere edit verloren was gegaan over de diagnostic measurement layer als open optie. Geen Python, geen tests, geen save-format. Eén file aangeraakt, 24 substituties.
+
+---
+
 ## [2026.04.28.0] — 2026-04-28
 
 27.11-residue daadwerkelijk afgemaakt. De vorige sessie claimde drie schoonmaakacties uitgevoerd te hebben — `tests/elvira/elvira_bot/drift_checks.py` verwijderen, `engine/move_routing.yaml` verwijderen, format-fix op `tests/test_yaml_symmetry.py` — maar de twee deletes haalden de commit niet omdat zip-over-lokale-tree geen impliciete deletes meeneemt; de format-fix eveneens niet. Gevolg: `test_project_rules.py` was bij de 27.11-commit feitelijk drie scans rood (broad-except in drift_checks, orphan engine yaml-key voor move_routing, ruff format drift in test_yaml_symmetry), niet "twintig project-rule scans clean" zoals 27.11 schreef. Deze release haalt het residu alsnog weg en herstelt het delivery-gate-precedent: claims in CHANGELOG corresponderen weer met de werkelijke staat van de tree.
@@ -17,7 +49,7 @@ Geen Python-edits buiten de twee deletes. Save format ongewijzigd. Test count 11
 
 ---
 
-
+## [2026.04.27.11] — 2026-04-27
 
 Cleanup-pass plus drie nieuwe project-rule scans. 27.10-residue alsnog opgeruimd: `tests/elvira/elvira_bot/drift_checks.py` was achtergebleven en las weg-gerefactorde GenreConstraints-attributen op een type dat niet meer bestaat — verwijderd, plus carve-out-entry uit `test_project_rules.py`. `data/settings/delve.yaml` had nog een leeg `genre_constraints: {}`-blok zonder consument, weg. `engine/move_routing.yaml` was een regression na zijn eerdere verwijdering in 0.46.5 — niemand las hem, alle data al vertegenwoordigd in `move_outcomes.yaml` per-move parameters, weg. Twee dode publieke functies weggehaald: `reload_config` in `config_loader.py` (geen consument anywhere) en `list_tracks` in `tools/builtins.py` (geschreven als engine-query helper analoog aan `available_moves`, nooit ingezet); `list_tracks` ook uit ARCHITECTURE-tabel gestript. Format-residue van een eerdere commit in `tests/test_yaml_symmetry.py` meegenomen.
 
@@ -275,8 +307,6 @@ What did not get touched in this pass: the C-grade functions that sit at or near
 
 ---
 
----
-
 ## [0.72.0] — 2026-04-24
 
 Complexity refactor. Six F-grade functions (41+ branches) and eleven E/D-grade functions (21–40 branches) decomposed into named phase-helpers. `process_turn` drops from F(69) and 344 lines to a thin orchestrator over ten phase functions; `fuzzy_match_existing_npc`, `resolve_position`, `activate_npcs_for_prompt`, `_apply_correction_ops`, and `process_correction` all out of F-grade. Eight D-grade functions — including `build_action_prompt`, `build_narrative_status`, `resolve_consequence_sentence`, `find_npc`, `call_story_architect` — decomposed the same way. Zero F/E/D-grade functions remain in the codebase; average complexity is A (4.17) over 765 blocks.
@@ -309,6 +339,8 @@ Delivery gate: 793 tests green (−3 from 0.69 for the removed consequence-keywo
 
 ---
 
+## [0.69.0] — 2026-04-20
+
 Dead-code sweep. Vulture + manual verification found 23 callables, one full data path, one yaml file and 92 source files' worth of small trims that had no runtime readers.
 
 Removed callables: `clear_provider_cache`, `_nullable_int`, `clear_brain_cache` (only caller was the also-removed `reload_engine`), five `DataswornData` methods (`setting_type`, `license`, `oracle_collections`, `move_categories`, `condition_meters`, `faction_oracles`, `oracle_ids_in`), `reload_engine`, `_reset_mythic_cache`, `find_threat_for_vow`, the `has_acts` property, `reload_prompts`, `reload_strings`, `load_global_config` + `save_global_config` (and with them the now-unused `stat`, `asdict`, `yaml`, `GLOBAL_CONFIG_FILE`, `_cfg` imports), `get_stat_labels`, `get_logger`.
@@ -331,6 +363,8 @@ Delivery gate: 796 tests green, ruff + ruff format + mypy clean on 92 source fil
 
 ---
 
+## [0.68.0] — 2026-04-20
+
 All four `test_project_rules.py` debt checks pass: the rule file had been right, the code needed to catch up.
 
 Twelve `.get("key", <domain literal>)` sites and eight `X or "<literal>"` fallbacks removed. AI-response parsers (`result.get("pass", True)` in `validator.py` × 3 and `architect_validator.py`, `result.get("revelation_confirmed", True)` in `brain.py`, `act.get("phase", "?")`) now read keys strictly; the existing `except Exception` graceful-degradation handlers own the "what if the response is malformed" policy instead of hiding it in a `.get` default. Schemas in `ai/schemas.py` now carry a JSON-Schema-standard `title` seeded from a new `ai_text.schema_titles` block; `provider_openai.py` reads it strictly, and `provider_openai.py`'s fallback on `"response"` turned out to be 100% dead code. `CHAPTER_SUMMARY_OUTPUT_SCHEMA` became `get_chapter_summary_schema()` because titles resolve through `eng()`. Narrator-facing fallbacks (`transition_trigger or "?"`, `current_location or "?"`, `split_name or "Unknown"`, `disposition or "neutral"`, `time_label or "?"`) read from `ai_text.narrator_defaults` and a new `npc.default_new_npc_disposition`. Three TF-IDF divide-by-zero guards rewritten as explicit `if ... else` so the rule-test's arithmetic carve-out recognises them.
@@ -344,6 +378,8 @@ Off-scope bugs caught in passing. `config_loader.py::_read_version` silently ret
 Delivery gate: 796 tests green (+4 from 0.67), ruff + ruff format + mypy clean on 91 source files.
 
 ---
+
+## [0.67.0] — 2026-04-20
 
 Two file splits triggered by a codebase-size audit. `correction.py` (461 lines) became a package: `orchestrator.py` (process_correction, snapshot restore), `ops.py` (atomic NPC/location/time/backstory patches), `analysis.py` (the correction brain call), and `__init__.py` that re-exports the three public names. The three-file layout is internal; consumers still import from `straightjacket.engine.correction`.
 
@@ -417,7 +453,7 @@ Delivery gate: 783 tests green in 4.3s, ruff + ruff format + mypy clean on 87 so
 
 ---
 
-
+## [0.62.0] — 2026-04-19
 
 Batch E from the v0.61.0 audit. Five domain enums that were hardcoded inside `src/straightjacket/engine/ai/schemas.py` and `src/straightjacket/engine/mechanics/fate.py` now live in `engine/enums.yaml` alongside the existing enum lists. `EnumsConfig` grew five fields: `tone_keys`, `correction_ops`, `correction_fields`, `dramatic_weights`, `odds_levels`. The schema builders read them via `eng().enums.<name>`.
 
@@ -431,7 +467,7 @@ Delivery gate: 783 tests green in 4.2s, ruff + ruff format + mypy clean on 87 so
 
 ---
 
-
+## [0.61.0] — 2026-04-19
 
 Batch F from the v0.60.0 audit. Dataclass-field defaults that duplicated yaml or hardcoded a domain enum are gone. `Resources` and `WorldState` got `from_config()` classmethods used as `GameState`'s default factories. `ProgressTrack` and `ThreatData` got `.new()` factories that read `max_ticks` from the new `progress.yaml max_ticks` key. `ClockData`, `FateResult`, `MemoryEntry`, `RandomEvent`, and the structural fields on `NpcData` are now required. `NpcData.introduced` flipped from True to False — fresh NPCs haven't been shown on screen. `CampaignState` legacy tracks read display names from `strings/status.yaml` and rank from `legacy.yaml`. `BrainResult.type/move/stat` became kw_only required; the brain-exception fallback and the correction null-brain sentinel supply them explicitly.
 
@@ -469,7 +505,7 @@ Delivery gate: 783 tests green in under 5 seconds, ruff + ruff format + mypy cle
 
 ---
 
-
+## [0.58.0] — 2026-04-19
 
 Tranche 6: every hardcoded English string that ends up in an AI prompt, narrator output, or json_schema description now lives in `engine.yaml` under a new `ai_text:` section. Eight `TODO tranche 6` markers across the codebase are gone, plus roughly fifteen unmarked sites discovered along the way.
 

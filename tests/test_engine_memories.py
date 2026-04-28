@@ -68,18 +68,15 @@ class TestEngineMemoriesNoKeyError:
 
 
 class TestMoveCategoriesCoverage:
-    def test_every_datasworn_and_engine_move_has_category(self) -> None:
-        from straightjacket.engine.datasworn.moves import get_moves
-        from straightjacket.engine.datasworn.settings import list_packages
+    def test_every_implemented_move_has_real_category(self) -> None:
+        outcomes = eng().get_raw("move_outcomes")
+        engine_moves = eng().engine_moves
 
-        all_moves: set[str] = set()
-        for sid in list_packages():
-            all_moves.update(get_moves(sid).keys())
-        all_moves.update(eng().engine_moves.keys())
+        implemented = set(outcomes.keys()) | set(engine_moves.keys())
 
-        uncategorized = [m for m in sorted(all_moves) if move_category(m) == "other" and m not in _explicitly_other()]
+        uncategorized = [m for m in sorted(implemented) if move_category(m) == "other" and m not in _explicitly_other()]
         assert uncategorized == [], (
-            f"Moves without a real category (will fall through to 'other'): {uncategorized}. "
+            f"Implemented moves without a real category (will fall through to 'other'): {uncategorized}. "
             "Add them to engine/move_categories.yaml under the appropriate bucket."
         )
 
