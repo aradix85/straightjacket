@@ -107,7 +107,6 @@ def get_brain_output_schema() -> dict:
                 },
                 "target_track": _nullable_str(),
                 "fate_question": _nullable_str(),
-                "oracle_table": _nullable_str(),
             },
             _e.ai_text.schema_titles["brain_output"],
         )

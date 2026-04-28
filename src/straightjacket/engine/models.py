@@ -73,7 +73,6 @@ class BrainResult(SerializableMixin):
     track_rank: str | None = None
     target_track: str | None = None
     fate_question: str | None = None
-    oracle_table: str | None = None
 
 
 @dataclass

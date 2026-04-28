@@ -1,11 +1,9 @@
 from __future__ import annotations
 
 from ..datasworn.moves import get_moves
-from ..datasworn.settings import load_package
-from ..db.queries import query_clocks, query_memories, query_npcs, query_threads
+from ..db.queries import query_clocks, query_memories, query_threads
 from ..engine_config import CombatPosCondition, FlagCondition, NotFlagCondition
 from ..engine_loader import eng
-from ..mechanics.fate import resolve_fate, resolve_likelihood
 from ..models import GameState
 from ..npc import find_npc, get_npc_bond
 from .registry import register
@@ -65,64 +63,6 @@ def query_active_clocks(game: GameState, clock_type: str = "", unfired_only: boo
             for c in clocks
         ]
     }
-
-
-def roll_oracle(game: GameState, table_path: str) -> dict:
-    if not game.setting_id:
-        return {"error": "No setting loaded"}
-
-    try:
-        pkg = load_package(game.setting_id)
-    except (KeyError, FileNotFoundError) as e:
-        return {"error": str(e)}
-
-    table = pkg.data.oracle(table_path)
-    if table is None:
-        return {"error": f"Oracle table not found: {table_path}", "setting": game.setting_id}
-
-    result = table.roll()
-    return {
-        "value": result.value,
-        "roll": result.roll,
-        "table_path": result.table_path,
-        "table_title": result.table_title,
-        "setting": game.setting_id,
-    }
-
-
-def query_npc_list(game: GameState, status: str = "active") -> dict:
-    npcs = query_npcs(status=status)
-    return {
-        "npcs": [
-            {"id": n.id, "name": n.name, "disposition": n.disposition, "bond": get_npc_bond(game, n.id)} for n in npcs
-        ]
-    }
-
-
-def fate_question(game: GameState, question: str, context_hint: str = "") -> dict:
-    odds = resolve_likelihood(game, context_hint)
-    result = resolve_fate(
-        game,
-        odds=odds,
-        chaos_factor=game.world.chaos_factor,
-        question=question,
-    )
-    response: dict = {
-        "answer": result.answer,
-        "odds": result.odds,
-        "chaos_factor": result.chaos_factor,
-        "roll": result.roll,
-        "random_event_triggered": result.random_event_triggered,
-        "question": question,
-    }
-    if result.random_event is not None:
-        ev = result.random_event
-        response["random_event"] = {
-            "focus": ev.focus,
-            "target": ev.target,
-            "meaning": f"{ev.meaning_action} / {ev.meaning_subject}",
-        }
-    return response
 
 
 def available_moves(game: GameState) -> dict:

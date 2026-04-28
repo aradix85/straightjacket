@@ -13,7 +13,7 @@ from .mechanics import (
 )
 from .mechanics.impacts import impact_label
 from .mechanics.scene import SceneSetup, adjustment_descriptions
-from .models import BrainResult, GameState, NpcData, RandomEvent
+from .models import BrainResult, FateResult, GameState, NpcData, RandomEvent
 from .npc import find_npc, retrieve_memories
 from .prompt_loader import get_prompt
 from .xml_utils import xa as _xa
@@ -236,6 +236,12 @@ def _random_events_block(events: Sequence[RandomEvent]) -> str:
             f"</random_event>"
         )
     return "\n".join(parts)
+
+
+def _fate_answer_block(fate: FateResult | None) -> str:
+    if fate is None:
+        return ""
+    return f'<fate_answer question="{_xa(fate.question)}" odds="{_xa(fate.odds)}" answer="{_xa(fate.answer)}"/>'
 
 
 def _lore_figures_block(game: GameState) -> str:

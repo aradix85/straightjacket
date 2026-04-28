@@ -20,20 +20,6 @@ def extract_title(obj: dict, fallback: str = "") -> str:
     return fallback
 
 
-def list_available() -> list[str]:
-    from .settings import datasworn_id_of, list_packages
-
-    result = []
-    for setting_id in list_packages():
-        try:
-            ds_id = datasworn_id_of(setting_id)
-        except (FileNotFoundError, KeyError):
-            continue
-        if (_DATA_DIR / f"{ds_id}.json").exists():
-            result.append(setting_id)
-    return result
-
-
 @dataclass
 class OracleRow:
     min: int
@@ -192,7 +178,3 @@ def load_setting(datasworn_id: str) -> Setting:
     )
 
     return setting
-
-
-def clear_cache() -> None:
-    _cache.clear()

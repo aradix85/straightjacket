@@ -19,7 +19,6 @@ class MockProvider:
 
     def create_message(self, spec: AICallSpec) -> AIResponse:
         json_schema = spec.json_schema
-        tools = spec.tools
         self.calls.append({"json_schema": json_schema})
 
         if json_schema and "correction_source" in json_schema.get("properties", {}):
@@ -51,24 +50,6 @@ class MockProvider:
             )
 
         if json_schema and "move" in json_schema.get("properties", {}):
-            return AIResponse(
-                content=json.dumps(
-                    {
-                        "type": "action",
-                        "move": "dialog",
-                        "stat": "none",
-                        "approach": "speaking gently",
-                        "target_npc": "npc_1",
-                        "dialog_only": True,
-                        "player_intent": "Talk to Mira",
-                        "world_addition": None,
-                        "location_change": None,
-                    }
-                ),
-                usage={"input_tokens": 100, "output_tokens": 50},
-            )
-
-        if tools and any(t.get("function", {}).get("name") == "roll_oracle" for t in tools):
             return AIResponse(
                 content=json.dumps(
                     {

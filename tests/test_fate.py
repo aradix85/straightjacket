@@ -1,9 +1,9 @@
 import pytest
 
+from straightjacket.engine.engine_loader import eng
 from straightjacket.engine.mechanics.fate import (
     _check_chart_random_event,
     _check_check_random_event,
-    get_odds_levels,
     resolve_fate,
     resolve_fate_chart,
     resolve_fate_check_with_dice,
@@ -102,7 +102,7 @@ def test_resolve_fate_method_override(load_engine: None) -> None:
 
 
 def test_fate_chart_all_odds_all_cf(load_engine: None) -> None:
-    for odds in get_odds_levels():
+    for odds in eng().enums.odds_levels:
         for cf in range(1, 10):
             for roll in (1, 50, 100):
                 result = resolve_fate_chart(odds, cf, roll=roll, question="")
@@ -110,7 +110,7 @@ def test_fate_chart_all_odds_all_cf(load_engine: None) -> None:
 
 
 def test_fate_check_all_odds_all_cf(load_engine: None) -> None:
-    for odds in get_odds_levels():
+    for odds in eng().enums.odds_levels:
         for cf in range(1, 10):
             for dice in ((1, 1), (5, 5), (10, 10), (1, 10)):
                 result = resolve_fate_check_with_dice(odds, cf, dice=dice, question="")
@@ -135,7 +135,7 @@ def test_likelihood_npc_disposition_shifts_odds(load_engine: None) -> None:
     game.npcs = [hostile]
     hostile_odds = resolve_likelihood(game, context_hint="Kira")
 
-    assert get_odds_levels().index(friendly_odds) < get_odds_levels().index(hostile_odds)
+    assert eng().enums.odds_levels.index(friendly_odds) < eng().enums.odds_levels.index(hostile_odds)
 
 
 def test_likelihood_chaos_shifts_odds(load_engine: None) -> None:
@@ -146,7 +146,7 @@ def test_likelihood_chaos_shifts_odds(load_engine: None) -> None:
 
     high_odds = resolve_likelihood(high)
     low_odds = resolve_likelihood(low)
-    assert get_odds_levels().index(low_odds) < get_odds_levels().index(high_odds)
+    assert eng().enums.odds_levels.index(low_odds) < eng().enums.odds_levels.index(high_odds)
 
 
 def test_likelihood_critical_resources(load_engine: None) -> None:
@@ -160,7 +160,7 @@ def test_likelihood_critical_resources(load_engine: None) -> None:
     game2.resources.health = 5
     odds_healthy = resolve_likelihood(game2)
 
-    assert get_odds_levels().index(odds_critical) >= get_odds_levels().index(odds_healthy)
+    assert eng().enums.odds_levels.index(odds_critical) >= eng().enums.odds_levels.index(odds_healthy)
 
 
 def test_likelihood_factors_stack(load_engine: None) -> None:
@@ -171,17 +171,3 @@ def test_likelihood_factors_stack(load_engine: None) -> None:
     game.npcs.append(npc)
     odds = resolve_likelihood(game, context_hint="Kira")
     assert odds in ("very_unlikely", "nearly_impossible", "impossible")
-
-
-def test_fate_question_tool_end_to_end(load_engine: None) -> None:
-    from straightjacket.engine.tools.builtins import fate_question
-
-    game = make_game_state()
-    game.world.chaos_factor = 5
-    npc = make_npc(id="npc_1", name="Kira", status="active", disposition="loyal")
-    game.npcs.append(npc)
-
-    result = fate_question(game, question="Does Kira help?", context_hint="Kira")
-    assert result["answer"] in ("yes", "no", "exceptional_yes", "exceptional_no")
-    assert result["question"] == "Does Kira help?"
-    assert result["odds"] in ("likely", "very_likely", "nearly_certain", "certain")

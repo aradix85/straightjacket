@@ -25,10 +25,6 @@ def _load_mythic() -> dict:
     return _mythic
 
 
-def get_odds_levels() -> tuple[str, ...]:
-    return tuple(eng().enums.odds_levels)
-
-
 def resolve_fate_chart(odds: str, chaos_factor: int, question: str, roll: int | None = None) -> FateResult:
     data = _load_mythic()
     chart = data["fate_chart"]

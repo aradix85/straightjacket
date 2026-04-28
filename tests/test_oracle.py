@@ -1,17 +1,9 @@
-import importlib
-
-import straightjacket.engine.tools.builtins as _builtins_mod
-from straightjacket.engine.datasworn.loader import load_setting, list_available
-from straightjacket.engine.tools.registry import get_handler
-from tests._helpers import make_game_state
-
-
-def _reload_builtins() -> None:
-    importlib.reload(_builtins_mod)
+from straightjacket.engine.datasworn.loader import load_setting
+from straightjacket.engine.datasworn.settings import list_packages
 
 
 def test_all_settings_load_oracles() -> None:
-    for setting_id in list_available():
+    for setting_id in list_packages():
         s = load_setting(setting_id)
         assert len(s.oracle_ids()) > 0, f"{setting_id} has no oracle tables"
 
@@ -82,66 +74,3 @@ def test_setting_isolation() -> None:
 
     assert cl.oracle("action_and_theme/action") is not None
     assert sf.oracle("action_and_theme/action") is None
-
-
-def test_roll_oracle_not_registered_for_brain() -> None:
-    _reload_builtins()
-    handler = get_handler("brain", "roll_oracle")
-    assert handler is None
-
-
-def test_roll_oracle_not_registered_for_director() -> None:
-    _reload_builtins()
-    handler = get_handler("director", "roll_oracle")
-    assert handler is None
-
-
-def test_roll_oracle_success() -> None:
-    from straightjacket.engine.tools.builtins import roll_oracle
-
-    game = make_game_state(setting_id="starforged")
-    result = roll_oracle(game=game, table_path="core/action")
-    assert "value" in result
-    assert result["table_path"] == "core/action"
-    assert result["setting"] == "starforged"
-    assert result["value"]
-
-
-def test_roll_oracle_unknown_table() -> None:
-    from straightjacket.engine.tools.builtins import roll_oracle
-
-    game = make_game_state(setting_id="starforged")
-    result = roll_oracle(game=game, table_path="nonexistent/table")
-    assert "error" in result
-    assert "not found" in result["error"]
-
-
-def test_roll_oracle_no_setting() -> None:
-    from straightjacket.engine.tools.builtins import roll_oracle
-
-    game = make_game_state()
-    result = roll_oracle(game=game, table_path="core/action")
-    assert "error" in result
-
-
-def test_roll_oracle_invalid_setting() -> None:
-    from straightjacket.engine.tools.builtins import roll_oracle
-
-    game = make_game_state(setting_id="nonexistent_setting")
-    result = roll_oracle(game=game, table_path="core/action")
-    assert "error" in result
-
-
-def test_roll_oracle_per_setting() -> None:
-    from straightjacket.engine.tools.builtins import roll_oracle
-
-    game_sf = make_game_state(setting_id="starforged")
-    result_sf = roll_oracle(game=game_sf, table_path="core/action")
-    assert "value" in result_sf
-
-    game_cl = make_game_state(setting_id="classic")
-    result_cl = roll_oracle(game=game_cl, table_path="core/action")
-    assert "error" in result_cl
-
-    result_cl2 = roll_oracle(game=game_cl, table_path="action_and_theme/action")
-    assert "value" in result_cl2

@@ -413,7 +413,6 @@ _INLINE_IMPORT_WHITELIST: set[tuple[str, str]] = {
     ("engine/mechanics/engine_memories.py", "generate_engine_memories"),
     ("engine/mechanics/world.py", "update_chaos_factor"),
     ("engine/mechanics/world.py", "apply_brain_location_time"),
-    ("engine/datasworn/loader.py", "list_available"),
 }
 
 
@@ -768,99 +767,109 @@ def _check_ruff_format_clean() -> tuple[str, list[Violation]]:
     return "ruff format drift (delivery gate)", violations
 
 
-_ORPHAN_SYMBOL_CARVE_OUT = {
-    "AppConfig",
-    "AIConfig",
-    "ServerConfig",
-    "ClusterConfig",
-    "LanguageConfig",
-    "OraclePaths",
-    "CreationFlow",
-    "VocabularyConfig",
-    "OracleResult",
-    "OracleRow",
-    "RollOption",
-    "TriggerCondition",
-    "MoveEffect",
-    "ActionOutcome",
-    "homepage",
-    "websocket_endpoint",
-    "log_tokens",
-    "build_director_prompt",
-    "build_stats_line",
-    "apply_engine_memories",
-    "impact_config",
+_ORPHAN_SYMBOL_CARVE_OUT: set[tuple[str, str]] = {
+    ("AppConfig", "engine/config_loader.py"),
+    ("AIConfig", "engine/config_loader.py"),
+    ("ServerConfig", "engine/config_loader.py"),
+    ("ClusterConfig", "engine/config_loader.py"),
+    ("LanguageConfig", "engine/config_loader.py"),
+    ("OraclePaths", "engine/datasworn/settings.py"),
+    ("CreationFlow", "engine/datasworn/settings.py"),
+    ("VocabularyConfig", "engine/datasworn/settings.py"),
+    ("OracleResult", "engine/datasworn/loader.py"),
+    ("OracleRow", "engine/datasworn/loader.py"),
+    ("RollOption", "engine/datasworn/moves.py"),
+    ("TriggerCondition", "engine/datasworn/moves.py"),
+    ("MoveEffect", "engine/mechanics/move_effects.py"),
+    ("ActionOutcome", "engine/game/finalization.py"),
+    ("homepage", "web/server.py"),
+    ("websocket_endpoint", "web/server.py"),
+    ("log_tokens", "engine/logging_util.py"),
+    ("build_director_prompt", "engine/director.py"),
+    ("build_stats_line", "engine/ai/brain.py"),
+    ("apply_engine_memories", "engine/game/finalization.py"),
+    ("impact_config", "engine/engine_loader.py"),
+    ("set_backoff_sleep", "engine/ai/provider_base.py"),
+    ("register_test_tool", "engine/tools/registry.py"),
+    ("clear_cache", "engine/datasworn/moves.py"),
+    ("clear_cache", "engine/datasworn/settings.py"),
+    ("query_npc", "engine/tools/builtins.py"),
+    ("query_active_threads", "engine/tools/builtins.py"),
+    ("query_active_clocks", "engine/tools/builtins.py"),
 }
 
 
-def _collect_public_symbols() -> dict[str, list[Path]]:
-    defs: dict[str, list[Path]] = {}
+def _collect_public_symbols() -> dict[tuple[str, Path], None]:
+    defs: dict[tuple[str, Path], None] = {}
     for path in _iter_source_files():
         try:
             tree = ast.parse(path.read_text())
         except SyntaxError:
             continue
+        rel = _rel(path)
         for node in tree.body:
             if not isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
                 continue
             if node.name.startswith("_"):
                 continue
-            if node.name in _ORPHAN_SYMBOL_CARVE_OUT:
+            if (node.name, rel) in _ORPHAN_SYMBOL_CARVE_OUT:
                 continue
-            defs.setdefault(node.name, []).append(path)
+            defs[(node.name, path)] = None
     return defs
 
 
-def _orphan_scan_corpus() -> dict[Path, str]:
-    scan_roots = [SRC_ROOT, TESTS_ROOT, ENGINE_YAML_ROOT]
-    for sub in ("data", "prompts", "strings", "emotions"):
-        candidate = REPO_ROOT / sub
-        if candidate.exists():
-            scan_roots.append(candidate)
-    corpus: dict[Path, str] = {}
-    for root in scan_roots:
-        for ext in ("*.py", "*.yaml", "*.json"):
-            for f in root.rglob(ext):
-                if "__pycache__" in str(f):
-                    continue
-                try:
-                    corpus[f] = f.read_text()
-                except (OSError, UnicodeDecodeError):
-                    continue
-    return corpus
-
-
-def _has_external_use(pattern: re.Pattern[str], corpus: dict[Path, str], own: set[Path]) -> bool:
-    for f, text in corpus.items():
-        if f in own:
+def _collect_src_uses() -> dict[Path, set[str]]:
+    uses: dict[Path, set[str]] = {}
+    for path in _iter_source_files():
+        try:
+            tree = ast.parse(path.read_text())
+        except SyntaxError:
             continue
-        if pattern.search(text):
-            return True
-    return False
-
-
-def _has_intra_use(pattern: re.Pattern[str], corpus: dict[Path, str], own: set[Path]) -> bool:
-    for f in own:
-        text = corpus.get(f, "")
-        if len(pattern.findall(text)) > 1:
-            return True
-    return False
+        names: set[str] = set()
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Name) and isinstance(node.ctx, ast.Load):
+                names.add(node.id)
+            elif isinstance(node, ast.ImportFrom):
+                for alias in node.names:
+                    names.add(alias.name)
+            elif isinstance(node, ast.Import):
+                for alias in node.names:
+                    names.add(alias.name.split(".")[0])
+            elif (
+                isinstance(node, ast.Call)
+                and isinstance(node.func, ast.Name)
+                and node.func.id == "getattr"
+                and len(node.args) >= 2
+                and isinstance(node.args[1], ast.Constant)
+                and isinstance(node.args[1].value, str)
+            ):
+                names.add(node.args[1].value)
+        uses[path] = names
+    return uses
 
 
 def _check_no_orphan_public_symbols() -> tuple[str, list[Violation]]:
     defs = _collect_public_symbols()
-    corpus = _orphan_scan_corpus()
+    uses = _collect_src_uses()
     violations: list[Violation] = []
-    for name, defining_files in defs.items():
-        pattern = re.compile(rf"\b{re.escape(name)}\b")
-        own = set(defining_files)
-        if _has_external_use(pattern, corpus, own):
+    for name, defining_file in defs:
+        external_use = any(name in refs for f, refs in uses.items() if f != defining_file)
+        if external_use:
             continue
-        if _has_intra_use(pattern, corpus, own):
+        intra_uses = sum(1 for n in ast.walk(ast.parse(defining_file.read_text())) if _is_load_ref(n, name))
+        if intra_uses > 0:
             continue
-        rel = _rel(defining_files[0])
+        rel = _rel(defining_file)
         violations.append(Violation(rel, 0, f"public symbol {name!r} has no consumer"))
     return "orphan public symbol (defined but never used)", violations
+
+
+def _is_load_ref(node: ast.AST, name: str) -> bool:
+    if isinstance(node, ast.Name) and isinstance(node.ctx, ast.Load) and node.id == name:
+        return True
+    if isinstance(node, ast.ImportFrom):
+        return any(alias.name == name for alias in node.names)
+    return False
 
 
 _ORPHAN_YAML_KEY_CARVE_OUT: set[tuple[str, str]] = set()

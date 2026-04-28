@@ -8,7 +8,7 @@ In February 2026, Lars reached out about his in-progress implementation of the d
 
 Straightjacket began shortly afterwards as a fork of EdgeTales. The fork ran through March 2026, with intensive same-day backporting from upstream whenever Lars pushed changes. The cross-references are verifiable against Lars' repository: Straightjacket v0.10.0 is a modular refactor of EdgeTales v0.9.44 (committed to EdgeTales on 9 March 2026); Straightjacket v0.13.0 "Upstream sync v0.9.61" (22 March 2026) matches EdgeTales v0.9.61 committed the same day; Straightjacket v0.17.0 "Upstream UI sync" (28 March 2026) matches EdgeTales v0.9.66 from the day before. Backporting was costly work but worth doing as long as both projects moved in the same direction. After late March the two projects diverged enough that staying synchronised was no longer feasible, and the fork was carried forward as an independent codebase.
 
-The fork's git history prior to the split is not preserved in the current Straightjacket repository — the early commits were lost, likely through a force push during the transition. What does remain are the CHANGELOG entries (versions 0.10 through 0.30) and the cross-referenced upstream versions in EdgeTales' repository, which together establish the fork period. The current Straightjacket repository was initialised on 6 April 2026 with v0.31.0 ("Project independence. Renamed to Straightjacket"). At the time of writing (20 April 2026) Straightjacket has been standalone for fourteen days.
+The fork's git history prior to the split is not preserved in the current Straightjacket repository — the early commits were lost, likely through a force push during the transition. What does remain are the CHANGELOG entries (versions 0.10 through 0.30) and the cross-referenced upstream versions in EdgeTales' repository, which together establish the fork period. The current Straightjacket repository was initialised on 6 April 2026 with v0.31.0 ("Project independence. Renamed to Straightjacket") and has been standalone since.
 
 The codebase still contains code and design decisions that trace back to EdgeTales, both from the initial fork and from the backport period. This is not a clean-room reimplementation, and it would be wrong to describe it as one. What Straightjacket is, is a refactor-plus-extension of Lars' implementation, done with his permission — refactored toward a different architecture, type system, AI pipeline, and testing approach, and extended with new subsystems that were not present upstream.
 
@@ -18,11 +18,11 @@ The table below describes the shape of the current codebase relative to EdgeTale
 
 | EdgeTales | Straightjacket |
 |---|---|
-| Single-file engine (engine.py) | Multi-package engine (~80 modules across mechanics, ai, npc, game, datasworn, db, tools) |
+| Single-file engine (engine.py) | Multi-package engine (mechanics, ai, npc, game, datasworn, db, tools) |
 | Single-file app (app.py) | Starlette/uvicorn server + single-page HTML client (web/ package) |
 | Hardcoded constants | YAML-driven configuration (engine/, emotions/, prompts/, strings/) |
 | NPC/clock/memory as dicts | Typed dataclasses with snapshot/restore |
-| Hardcoded move list | Config-driven (engine.yaml + Datasworn JSON per setting) |
+| Hardcoded move list | Config-driven (`engine/<name>.yaml` per subsystem + Datasworn JSON per setting) |
 | German + English hardcoded | English default, YAML-extensible i18n |
 | Claude-only | Provider-agnostic (AIProvider Protocol, any OpenAI-compatible API) |
 | Voice I/O | Browser-native assistive tech |
@@ -43,7 +43,7 @@ Subsystems built on top of the refactored base, not inherited from EdgeTales:
 - Chapter system (campaign continuity, epilogues, NPC ID remapping)
 - Elvira test bot (headless integration testing with invariant checking)
 - Accessibility architecture (ARIA, screen reader support, narrative-only status output)
-- 1138-test suite plus twenty AST/regex project rules
+- Test suite plus AST/regex project rules
 
 ## Credits
 

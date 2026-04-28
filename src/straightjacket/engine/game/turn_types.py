@@ -7,6 +7,7 @@ from ..models import (
     BrainResult,
     ClockEvent,
     EngineConfig,
+    FateResult,
     GameState,
     NpcData,
     ProgressTrack,
@@ -30,6 +31,7 @@ class SceneContext:
     activated_npcs: list[NpcData] = field(default_factory=list)
     mentioned_npcs: list[NpcData] = field(default_factory=list)
     pending_random_events: list[RandomEvent] = field(default_factory=list)
+    fate_result: FateResult | None = None
 
 
 @dataclass

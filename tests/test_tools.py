@@ -228,21 +228,6 @@ def test_builtin_query_active_clocks() -> None:
     close_db()
 
 
-def test_builtin_query_npc_list() -> None:
-    from straightjacket.engine.tools.builtins import query_npc_list
-
-    _fresh_db()
-    game = _game_with_data()
-    sync(game)
-
-    result = query_npc_list(game=game, status="active")
-    assert len(result["npcs"]) == 2
-    names = {n["name"] for n in result["npcs"]}
-    assert "Kira" in names
-    assert "Rowan" in names
-    close_db()
-
-
 def test_builtin_query_npc_director_only() -> None:
     _reload_builtins()
     assert get_handler("brain", "query_npc") is None

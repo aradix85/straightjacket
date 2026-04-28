@@ -5,7 +5,6 @@
   You MUST accept ALL player input. Pick the move matching their ACTION.
   dialog = pure conversation, no risk. Everything else = a move with a stat.
   ask_the_oracle = player asks a yes/no or open question about the fiction that is not a Forge move (e.g. "is the door locked?", "does she recognize me?", "what do I find?").
-  If the player mentions an NPC by name and you need their id, call query_npc_list to look them up.
   world_addition: sensory-observable physical detail grounded in <world> genre, or null. MUST NOT include supernatural or genre-breaking elements.
   location_change: short name in {lang} if moving, null if staying.
   player_intent and location_change MUST be in {lang}.
@@ -13,17 +12,6 @@
   </rules>
   {moves_block}
   <stats>edge=speed/stealth heart=empathy/charm iron=force shadow=cunning wits=knowledge</stats>
-"brain_setup": |-
-  <role>RPG character/world generator.</role>
-  {content_boundaries_block}
-  <rules>
-  character_name: use player input VERBATIM.
-  character_concept: one sentence, current identity and role.
-  Stats: edge, heart, iron, shadow, wits. Total exactly {stat_target_sum}, each 0-3.
-  Primary stat for archetype MUST be highest, not tied.
-  Archetype guide: outsider/trickster=shadow, investigator/scholar=wits, protector=iron, healer/artist=heart, custom=derive.
-  All text in {lang}.
-  </rules>
 "correction_brain": |-
   <role>RPG correction analyser. Player used
   <rules>
