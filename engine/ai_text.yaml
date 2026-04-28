@@ -48,7 +48,6 @@ ai_text:
     no_roll: dialog (no roll)
     npc_appeared_event: '{npc_name} appeared'
     unnamed_track: Unnamed conflict
-    reflection_tone_fallback: reflective
     default_act_mood:
     - tense
     - grounded
@@ -69,6 +68,12 @@ ai_text:
     narrator_metadata_fallback_npc_details: []
     narrator_metadata_fallback_deceased_npcs: []
     narrator_metadata_fallback_lore_npcs: []
+    correction_brain_fallback_source: state_error
+    correction_brain_fallback_corrected_input: ''
+    correction_brain_fallback_reroll_needed: false
+    correction_brain_fallback_corrected_stat: none
+    correction_brain_fallback_director_useful: false
+    correction_brain_fallback_state_ops: []
     new_chapter_threads_template: 'New chapter. Open threads: {threads}'
     new_chapter_blank: A new chapter begins.
     npc_agency_action_template: 'NPC "{npc_name}" pursues agenda "{agenda}" — concrete offscreen action.'

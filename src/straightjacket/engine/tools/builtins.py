@@ -15,7 +15,7 @@ def query_npc(game: GameState, npc_id: str) -> dict:
     if not npc:
         return {"error": f"NPC not found: {npc_id}"}
 
-    recent_mems = query_memories(npc_id=npc.id, limit=5)
+    recent_mems = query_memories(npc_id=npc.id, limit=eng().npc.reflection_observation_window)
     return {
         "id": npc.id,
         "name": npc.name,
@@ -67,7 +67,7 @@ def query_active_clocks(game: GameState, clock_type: str = "", unfired_only: boo
 
 def available_moves(game: GameState) -> dict:
     if not game.setting_id:
-        return {"error": "No setting loaded"}
+        raise ValueError("No setting loaded")
 
     ds_moves = get_moves(game.setting_id)
     combat_pos = game.world.combat_position

@@ -40,9 +40,9 @@ class AnthropicProvider:
         if spec.tools is not None:
             create_kwargs["tools"] = [
                 {
-                    "name": t.get("function", {}).get("name", ""),
-                    "description": t.get("function", {}).get("description", ""),
-                    "input_schema": t.get("function", {}).get("parameters", {}),
+                    "name": t["function"]["name"],
+                    "description": t["function"]["description"],
+                    "input_schema": t["function"]["parameters"],
                 }
                 for t in spec.tools
             ]

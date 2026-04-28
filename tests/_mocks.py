@@ -25,6 +25,7 @@ def make_test_game() -> Any:
 
     g = GameState(
         player_name="Hero",
+        setting_id="classic",
         setting_genre="dark_fantasy",
         setting_tone="serious",
         setting_description="A dark world.",

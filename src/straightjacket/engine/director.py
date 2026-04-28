@@ -73,7 +73,8 @@ def should_call_director(
 
 
 def _build_reflection_block(game: GameState, npc: NpcData) -> str:
-    recent_obs = [m for m in npc.memory if m.type == "observation"][-8:]
+    window = eng().npc.reflection_observation_window
+    recent_obs = [m for m in npc.memory if m.type == "observation"][-window:]
     mem_text = "; ".join(f"{m.event}({m.emotional_weight})" for m in recent_obs)
 
     prev_reflections = [m for m in npc.memory if m.type == "reflection"]
@@ -224,17 +225,17 @@ def call_director(
 
         guidance = json.loads(response2.content)
 
-        if isinstance(guidance.get("npc_guidance"), list):
+        if isinstance(guidance["npc_guidance"], list):
             guidance["npc_guidance"] = {
                 item["npc_id"]: item["guidance"]
                 for item in guidance["npc_guidance"]
-                if item.get("npc_id") and item.get("guidance")
+                if item["npc_id"] and item["guidance"]
             }
 
         log(
             f"[Director] Guidance: "
-            f"reflections={len(guidance.get('npc_reflections', []))}, "
-            f"summary={guidance.get('scene_summary', '')[: eng().truncations.log_medium]}"
+            f"reflections={len(guidance['npc_reflections'])}, "
+            f"summary={guidance['scene_summary'][: eng().truncations.log_medium]}"
         )
         return guidance
     except Exception as e:
@@ -290,13 +291,13 @@ def _append_reflection_memory(npc: NpcData, ref: dict, game: GameState) -> None:
     npc.memory.append(
         MemoryEntry(
             scene=game.narrative.scene_count,
-            event=ref.get("reflection", ""),
-            emotional_weight=ref.get("tone_key") or eng().ai_text.narrator_defaults["reflection_tone_fallback"],
-            tone=ref.get("tone", ""),
-            tone_key=ref.get("tone_key", ""),
+            event=ref["reflection"],
+            emotional_weight=ref["tone_key"],
+            tone=ref["tone"],
+            tone_key=ref["tone_key"],
             importance=eng().npc.reflection_importance,
             type="reflection",
-            about_npc=resolve_about_npc(game, ref.get("about_npc"), owner_id=npc.id),
+            about_npc=resolve_about_npc(game, ref["about_npc"], owner_id=npc.id),
         )
     )
     npc.needs_reflection = False
@@ -305,8 +306,8 @@ def _append_reflection_memory(npc: NpcData, ref: dict, game: GameState) -> None:
 
 
 def _apply_agenda_and_instinct_updates(npc: NpcData, ref: dict) -> None:
-    suggested_agenda = (ref.get("agenda") or "").strip()
-    suggested_instinct = (ref.get("instinct") or "").strip()
+    suggested_agenda = (ref["agenda"] or "").strip()
+    suggested_instinct = (ref["instinct"] or "").strip()
     if suggested_agenda and not npc.agenda.strip():
         npc.agenda = suggested_agenda
         log(f"[Director] Agenda set for {npc.name}: '{suggested_agenda}'")
@@ -314,8 +315,8 @@ def _apply_agenda_and_instinct_updates(npc: NpcData, ref: dict) -> None:
         npc.instinct = suggested_instinct
         log(f"[Director] Instinct set for {npc.name}: '{suggested_instinct}'")
 
-    updated_agenda = (ref.get("updated_agenda") or "").strip()
-    updated_arc = (ref.get("updated_arc") or "").strip()
+    updated_agenda = (ref["updated_agenda"] or "").strip()
+    updated_arc = (ref["updated_arc"] or "").strip()
     if updated_agenda and npc.agenda.strip():
         old_agenda = npc.agenda
         npc.agenda = updated_agenda
@@ -350,7 +351,7 @@ def _clean_director_description(new_desc: str, npc_name: str) -> str:
 
 
 def _apply_description_update(npc: NpcData, ref: dict) -> None:
-    new_desc = _clean_director_description((ref.get("updated_description") or "").strip(), npc.name)
+    new_desc = _clean_director_description((ref["updated_description"] or "").strip(), npc.name)
     if not new_desc or len(new_desc) <= 10:
         return
     _trunc = eng().truncations
@@ -369,12 +370,12 @@ def _apply_description_update(npc: NpcData, ref: dict) -> None:
 
 
 def _process_npc_reflection(game: GameState, ref: dict) -> str | None:
-    npc_id = ref.get("npc_id", "")
+    npc_id = ref["npc_id"]
     npc = find_npc(game, npc_id)
     if not npc:
         return None
 
-    reflection_text = ref.get("reflection", "")
+    reflection_text = ref["reflection"]
     if not reflection_text:
         return None
     if _reflection_is_truncated(reflection_text):
@@ -400,18 +401,18 @@ def apply_director_guidance(game: GameState, guidance: dict) -> None:
         return
 
     game.narrative.director_guidance = DirectorGuidance(
-        narrator_guidance=guidance.get("narrator_guidance", ""),
-        npc_guidance=guidance.get("npc_guidance", {}),
-        arc_notes=guidance.get("arc_notes", ""),
+        narrator_guidance=guidance["narrator_guidance"],
+        npc_guidance=guidance["npc_guidance"],
+        arc_notes=guidance["arc_notes"],
     )
 
     _check_engine_act_transition(game)
 
-    if guidance.get("scene_summary") and game.narrative.session_log:
+    if guidance["scene_summary"] and game.narrative.session_log:
         game.narrative.session_log[-1].rich_summary = guidance["scene_summary"]
 
     successfully_reflected: set[str] = set()
-    for ref in guidance.get("npc_reflections", []):
+    for ref in guidance["npc_reflections"]:
         reflected_id = _process_npc_reflection(game, ref)
         if reflected_id is not None:
             successfully_reflected.add(reflected_id)

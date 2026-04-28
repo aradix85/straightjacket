@@ -11,8 +11,8 @@ from ..npc.lifecycle import sanitize_aliases
 
 
 def _op_npc_edit(game: GameState, op_dict: dict) -> None:
-    npc = find_npc(game, op_dict.get("npc_id", ""))
-    if not npc or not op_dict.get("fields"):
+    npc = find_npc(game, op_dict["npc_id"])
+    if not npc or not op_dict["fields"]:
         return
     _allowed = set(eng().correction.npc_edit_allowed_fields)
     edits = {k: v for k, v in op_dict["fields"].items() if k in _allowed and v is not None}
@@ -44,11 +44,11 @@ def _op_npc_edit(game: GameState, op_dict: dict) -> None:
 
 
 def _op_npc_split(game: GameState, op_dict: dict) -> None:
-    existing = find_npc(game, op_dict.get("npc_id", ""))
+    existing = find_npc(game, op_dict["npc_id"])
     if not existing:
         return
-    new_name = op_dict.get("split_name") or eng().ai_text.narrator_defaults["split_default_name"]
-    new_desc = op_dict.get("split_description") or ""
+    new_name = op_dict["split_name"] or eng().ai_text.narrator_defaults["split_default_name"]
+    new_desc = op_dict["split_description"] or ""
     new_id = f"npc_{uuid.uuid4().hex[:8]}"
     new_npc = NpcData(
         id=new_id,
@@ -63,8 +63,8 @@ def _op_npc_split(game: GameState, op_dict: dict) -> None:
 
 
 def _op_npc_merge(game: GameState, op_dict: dict) -> None:
-    target = find_npc(game, op_dict.get("npc_id", ""))
-    source = find_npc(game, op_dict.get("merge_source_id", ""))
+    target = find_npc(game, op_dict["npc_id"])
+    source = find_npc(game, op_dict["merge_source_id"])
     if not target or not source or target is source:
         return
     target.memory.extend(source.memory)
@@ -80,25 +80,25 @@ def _op_npc_merge(game: GameState, op_dict: dict) -> None:
 
 
 def _op_location_edit(game: GameState, op_dict: dict) -> None:
-    if op_dict.get("value"):
+    if op_dict["value"]:
         game.world.current_location = op_dict["value"]
         log(f"[Correction] location → {game.world.current_location}")
 
 
 def _op_scene_context(game: GameState, op_dict: dict) -> None:
-    if op_dict.get("value"):
+    if op_dict["value"]:
         game.world.current_scene_context = op_dict["value"]
         log("[Correction] scene_context updated")
 
 
 def _op_time_edit(game: GameState, op_dict: dict) -> None:
-    if op_dict.get("value"):
+    if op_dict["value"]:
         game.world.time_of_day = op_dict["value"]
         log(f"[Correction] time_of_day → {game.world.time_of_day}")
 
 
 def _op_backstory_append(game: GameState, op_dict: dict) -> None:
-    if op_dict.get("value"):
+    if op_dict["value"]:
         sep = "\n" if game.backstory else ""
         game.backstory += sep + op_dict["value"]
         log("[Correction] backstory appended")
@@ -117,6 +117,6 @@ _OP_HANDLERS = {
 
 def _apply_correction_ops(game: GameState, ops: list) -> None:
     for op_dict in ops:
-        handler = _OP_HANDLERS.get(op_dict.get("op", ""))
+        handler = _OP_HANDLERS.get(op_dict["op"])
         if handler:
             handler(game, op_dict)

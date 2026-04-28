@@ -28,14 +28,12 @@ from .naming import roll_oracle_name
 
 def process_npc_renames(game: "GameState", renames: list) -> None:
     for r in renames:
-        if not isinstance(r, dict) or not r.get("new_name"):
+        if not r["new_name"]:
             continue
-        npc = find_npc(game, r.get("npc_id", ""))
-        if not npc and r.get("old_name"):
-            npc = find_npc(game, r["old_name"])
+        npc = find_npc(game, r["npc_id"])
         if not npc:
             log(
-                f"[NPC] Rename failed: could not find NPC '{r.get('npc_id', '')}' / '{r.get('old_name', '')}'",
+                f"[NPC] Rename failed: could not find NPC '{r['npc_id']}'",
                 level="warning",
             )
             continue
@@ -48,7 +46,7 @@ def process_npc_renames(game: "GameState", renames: list) -> None:
         if new_norm == player_norm or (set(new_norm.split()) & set(player_norm.split())):
             log(f"[NPC] Rename rejected: '{new_name}' matches player character")
             continue
-        merge_npc_identity(npc, new_name, r.get("description", ""), game=game)
+        merge_npc_identity(npc, new_name, "", game=game)
         absorb_duplicate_npc(game, npc, new_name)
 
 
@@ -82,7 +80,7 @@ def _create_stub_for_rejected_reveal(
 ) -> None:
     if find_npc(game, new_name):
         return
-    stub_desc = d.get("description", "").strip() or world_addition.strip()
+    stub_desc = (d["description"] or "").strip() or world_addition.strip()
     npc_id, _ = next_npc_id(game)
     stub = NpcData(
         id=npc_id,
@@ -99,7 +97,7 @@ def _create_stub_for_rejected_reveal(
 
 
 def _apply_name_update(game: "GameState", npc: NpcData, d: dict, world_addition: str) -> bool:
-    raw_name = d.get("full_name", "").strip()
+    raw_name = (d["full_name"] or "").strip()
     if not raw_name:
         return False
     new_name, paren_aliases = sanitize_npc_name(raw_name)
@@ -130,7 +128,7 @@ def _apply_name_update(game: "GameState", npc: NpcData, d: dict, world_addition:
 
 
 def _apply_description_updates(npc: NpcData, d: dict) -> None:
-    new_desc = d.get("description", "").strip()
+    new_desc = (d["description"] or "").strip()
     if new_desc:
         old_desc = npc.description
         if is_complete_description(new_desc) or not old_desc:
@@ -142,17 +140,11 @@ def _apply_description_updates(npc: NpcData, d: dict) -> None:
                 f"'{new_desc[: eng().truncations.log_short]}' -- keeping existing"
             )
 
-    extra = d.get("details", "").strip()
-    if extra and extra not in npc.description:
-        existing = npc.description
-        npc.description = f"{existing}. {extra}" if existing else extra
-        log(f"[NPC] Details enriched for {npc.name}: {extra[: eng().truncations.log_medium]}")
-
 
 def _process_one_npc_detail(game: "GameState", d: dict, world_addition: str) -> None:
-    npc = find_npc(game, d.get("npc_id", ""))
+    npc = find_npc(game, d["npc_id"])
     if not npc:
-        log(f"[NPC] npc_details: could not find NPC '{d.get('npc_id', '')}'", level="warning")
+        log(f"[NPC] npc_details: could not find NPC '{d['npc_id']}'", level="warning")
         return
 
     skip_desc = _apply_name_update(game, npc, d, world_addition)
@@ -162,12 +154,11 @@ def _process_one_npc_detail(game: "GameState", d: dict, world_addition: str) -> 
 
 def process_npc_details(game: "GameState", details: list, world_addition: str = "") -> None:
     for d in details:
-        if isinstance(d, dict):
-            _process_one_npc_detail(game, d, world_addition)
+        _process_one_npc_detail(game, d, world_addition)
 
 
 def _normalize_new_npc_input(raw_nd: dict, default_disp: str) -> dict | None:
-    if not isinstance(raw_nd, dict) or not raw_nd.get("name"):
+    if not raw_nd["name"]:
         return None
     disposition = raw_nd["disposition"]
     return {

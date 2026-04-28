@@ -103,6 +103,7 @@ def _game() -> "GameState":
     game = GameState(
         player_name="Kael",
         character_concept="Wandering scholar",
+        setting_id="classic",
         setting_genre="dark_fantasy",
         setting_tone="serious_balanced",
         setting_description="A world of fading magic.",

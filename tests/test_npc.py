@@ -1,5 +1,12 @@
 from straightjacket.engine.models import GameState
-from tests._helpers import make_brain_result, make_game_state, make_memory, make_npc
+from tests._helpers import (
+    make_brain_result,
+    make_game_state,
+    make_memory,
+    make_npc,
+    make_npc_detail,
+    make_npc_rename,
+)
 
 
 def _make_game() -> "GameState":
@@ -461,7 +468,7 @@ def test_process_npc_renames_updates_name(stub_engine: None) -> None:
 
     game = _make_game()
 
-    process_npc_renames(game, [{"npc_id": "npc_1", "new_name": "Kira von Asten"}])
+    process_npc_renames(game, [make_npc_rename(npc_id="npc_1", new_name="Kira von Asten")])
 
     npc = next(n for n in game.npcs if n.id == "npc_1")
     assert npc.name == "Kira von Asten"
@@ -473,7 +480,7 @@ def test_process_npc_renames_rejects_player_name(stub_engine: None) -> None:
 
     game = _make_game()
 
-    process_npc_renames(game, [{"npc_id": "npc_1", "new_name": "Hero"}])
+    process_npc_renames(game, [make_npc_rename(npc_id="npc_1", new_name="Hero")])
 
     npc = next(n for n in game.npcs if n.id == "npc_1")
     assert npc.name == "Kira Voss"
@@ -484,7 +491,7 @@ def test_process_npc_details_extends_surname(stub_engine: None) -> None:
 
     game = _make_game()
 
-    process_npc_details(game, [{"npc_id": "npc_2", "full_name": "Old Borin Ironhand"}])
+    process_npc_details(game, [make_npc_detail(npc_id="npc_2", full_name="Old Borin Ironhand")])
 
     npc = next(n for n in game.npcs if n.id == "npc_2")
     assert npc.name == "Old Borin Ironhand"
@@ -497,7 +504,8 @@ def test_process_npc_details_updates_description(stub_engine: None) -> None:
     game = _make_game()
 
     process_npc_details(
-        game, [{"npc_id": "npc_2", "description": "Grumpy dwarf blacksmith with burn scars, secretly loyal."}]
+        game,
+        [make_npc_detail(npc_id="npc_2", description="Grumpy dwarf blacksmith with burn scars, secretly loyal.")],
     )
 
     npc = next(n for n in game.npcs if n.id == "npc_2")

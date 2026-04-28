@@ -64,14 +64,6 @@ def test_clean_act_moods_skips_empty_mood(load_engine: None) -> None:
     assert blueprint["acts"][0]["mood"] == ""
 
 
-def test_clean_act_moods_no_acts_noop(load_engine: None) -> None:
-    from straightjacket.engine.ai.architect import _clean_act_moods
-
-    blueprint: dict = {}
-    _clean_act_moods(blueprint)
-    assert blueprint == {}
-
-
 def test_validate_scene_ranges_replaces_invalid(load_engine: None) -> None:
     from straightjacket.engine.ai.architect import _validate_scene_ranges
     from straightjacket.engine.engine_loader import eng
@@ -95,14 +87,6 @@ def test_validate_scene_ranges_keeps_valid(load_engine: None) -> None:
     blueprint = {"acts": [{"phase": "setup", "scene_range": [1, 5]}]}
     _validate_scene_ranges(blueprint)
     assert blueprint["acts"][0]["scene_range"] == [1, 5]
-
-
-def test_validate_scene_ranges_empty_acts_noop(load_engine: None) -> None:
-    from straightjacket.engine.ai.architect import _validate_scene_ranges
-
-    blueprint: dict = {}
-    _validate_scene_ranges(blueprint)
-    assert blueprint == {}
 
 
 def test_build_architect_user_msg_basic(load_engine: None) -> None:

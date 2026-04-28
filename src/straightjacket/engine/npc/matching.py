@@ -110,7 +110,7 @@ def _find_by_substring(game: "GameState", ref_norm: str) -> NpcData | None:
     return best_match
 
 
-def find_npc(game: "GameState", npc_ref: str) -> NpcData | None:
+def find_npc(game: "GameState", npc_ref: str | None) -> NpcData | None:
     if not npc_ref:
         return None
 

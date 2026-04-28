@@ -83,10 +83,8 @@ class MockProvider:
                         "scene_summary": "The player searched the room.",
                         "narrator_guidance": "Build tension slowly.",
                         "npc_guidance": [],
-                        "pacing": "building",
                         "npc_reflections": [],
                         "arc_notes": "Story is progressing.",
-                        "act_transition": False,
                     }
                 ),
                 usage={"input_tokens": 100, "output_tokens": 50},
@@ -123,6 +121,7 @@ def _make_game():
     game = GameState(
         player_name="Kael",
         character_concept="A wandering scholar",
+        setting_id="classic",
         setting_genre="dark_fantasy",
         setting_tone="serious_balanced",
         setting_description="A world of fading magic and creeping shadow.",

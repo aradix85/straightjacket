@@ -156,3 +156,40 @@ def make_predecessor(**kwargs: Any) -> Any:
     kwargs.setdefault("legacy_discoveries_filled_boxes", 0)
     kwargs.setdefault("inheritance_rolls", [])
     return PredecessorRecord(**kwargs)
+
+
+def make_npc_reflection(**kwargs: Any) -> dict:
+    kwargs.setdefault("npc_id", "npc_1")
+    kwargs.setdefault("reflection", "Reflection text.")
+    kwargs.setdefault("tone", "")
+    kwargs.setdefault("tone_key", "neutral")
+    kwargs.setdefault("updated_description", None)
+    kwargs.setdefault("about_npc", None)
+    kwargs.setdefault("agenda", None)
+    kwargs.setdefault("instinct", None)
+    kwargs.setdefault("updated_agenda", None)
+    kwargs.setdefault("updated_arc", None)
+    return kwargs
+
+
+def make_npc_detail(**kwargs: Any) -> dict:
+    kwargs.setdefault("npc_id", "npc_1")
+    kwargs.setdefault("full_name", None)
+    kwargs.setdefault("description", None)
+    return kwargs
+
+
+def make_npc_rename(**kwargs: Any) -> dict:
+    kwargs.setdefault("npc_id", "npc_1")
+    kwargs.setdefault("new_name", "")
+    kwargs.setdefault("reason", "")
+    return kwargs
+
+
+def make_director_guidance(**kwargs: Any) -> dict:
+    kwargs.setdefault("scene_summary", "")
+    kwargs.setdefault("narrator_guidance", "")
+    kwargs.setdefault("npc_guidance", {})
+    kwargs.setdefault("npc_reflections", [])
+    kwargs.setdefault("arc_notes", "")
+    return kwargs

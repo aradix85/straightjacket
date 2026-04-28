@@ -23,6 +23,7 @@ class NpcConfig:
     gate_memory_counts: dict[int, int]
     activated_memory_count: int
     default_new_npc_disposition: str
+    reflection_observation_window: int
 
 
 @dataclass
@@ -464,7 +465,7 @@ class RateLimitConfig:
 
 @dataclass
 class RetryConfig:
-    constraint_check_max_retries: int
+    tool_loop_round_max_retries: int
     retryable_http_codes: list[int]
     backoff_base: int
 

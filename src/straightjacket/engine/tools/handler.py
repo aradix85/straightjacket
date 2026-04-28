@@ -84,7 +84,7 @@ def run_tool_loop(
         next_spec = replace(
             initial_spec,
             messages=conversation,
-            max_retries=eng().retry.constraint_check_max_retries,
+            max_retries=eng().retry.tool_loop_round_max_retries,
             tools=get_tools(role),
             json_schema=None,
         )

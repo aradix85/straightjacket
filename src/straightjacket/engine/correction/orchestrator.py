@@ -43,7 +43,7 @@ def _handle_input_misread(
     provider: AIProvider, game: GameState, snap: TurnSnapshot, analysis: dict, _cfg: EngineConfig
 ) -> tuple[BrainResult, RollResult | None, str, list[str]]:
     _restore_from_snapshot(game, snap)
-    corrected_input = analysis.get("corrected_input") or (snap.player_input or "")
+    corrected_input = analysis["corrected_input"] or snap.player_input
 
     brain = call_brain(provider, game, corrected_input, _cfg)
     apply_brain_location_time(game, brain)
@@ -51,7 +51,7 @@ def _handle_input_misread(
     nar = game.narrative
     consequences: list[str] = []
 
-    if analysis.get("reroll_needed") and brain.stat != "none":
+    if analysis["reroll_needed"] and brain.stat != "none":
         nar.scene_count += 1
         stat_name = brain.stat
         roll = roll_action(stat_name, game.get_stat(stat_name), brain.move)
@@ -110,9 +110,9 @@ def _handle_state_error(
     roll = snap.roll
 
     brain = snap.brain or BrainResult(type="none", move="none", stat="none")
-    _apply_correction_ops(game, analysis.get("state_ops", []))
+    _apply_correction_ops(game, analysis["state_ops"])
 
-    activated_npcs, mentioned_npcs, _ = activate_npcs_for_prompt(game, brain, (snap.player_input or ""))
+    activated_npcs, mentioned_npcs, _ = activate_npcs_for_prompt(game, brain, snap.player_input)
     _last_entry = game.narrative.session_log[-1] if game.narrative.session_log else None
 
     if roll:
@@ -127,7 +127,7 @@ def _handle_state_error(
             consequences,
             clock_events,
             npc_agency,
-            player_words=(snap.player_input or ""),
+            player_words=snap.player_input,
             activated_npcs=activated_npcs,
             mentioned_npcs=mentioned_npcs,
             consequence_sentences=consequence_sentences,
@@ -137,7 +137,7 @@ def _handle_state_error(
     prompt = build_dialog_prompt(
         game,
         brain,
-        player_words=(snap.player_input or ""),
+        player_words=snap.player_input,
         activated_npcs=activated_npcs,
         mentioned_npcs=mentioned_npcs,
     )
@@ -198,13 +198,13 @@ def _update_correction_logs(
 def _maybe_queue_director(
     game: GameState, analysis: dict, roll: RollResult | None, narration: str, metadata: dict, _cfg: EngineConfig
 ) -> dict | None:
-    if not analysis.get("director_useful"):
+    if not analysis["director_useful"]:
         return None
     director_reason = should_call_director(
         game,
         roll_result=roll.result if roll else "dialog",
         chaos_used=False,
-        new_npcs_found=bool(metadata.get("new_npcs")),
+        new_npcs_found=bool(metadata["new_npcs"]),
         revelation_used=False,
     )
     if not director_reason:
@@ -247,7 +247,7 @@ def process_correction(
             game.last_turn_snapshot.brain = brain
             game.last_turn_snapshot.roll = roll
 
-    activated_npcs, mentioned_npcs, _ = activate_npcs_for_prompt(game, brain, (snap.player_input or ""))
+    activated_npcs, mentioned_npcs, _ = activate_npcs_for_prompt(game, brain, snap.player_input)
     _scene_present_ids = {n.id for n in activated_npcs} | {n.id for n in mentioned_npcs}
     metadata = apply_post_narration(
         provider,
@@ -261,7 +261,7 @@ def process_correction(
         consequences=consequences if roll else [],
     )
 
-    intent = (brain.player_intent or snap.player_input or "")[: eng().truncations.log_medium]
+    intent = (brain.player_intent or snap.player_input)[: eng().truncations.log_medium]
     _update_correction_logs(game, brain, roll, narration, intent, source)
 
     director_ctx = _maybe_queue_director(game, analysis, roll, narration, metadata, _cfg)

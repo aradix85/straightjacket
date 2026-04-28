@@ -1,5 +1,5 @@
 retry:
-  constraint_check_max_retries: 1
+  tool_loop_round_max_retries: 1
   retryable_http_codes:
   - 429
   - 500

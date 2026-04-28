@@ -33,7 +33,6 @@
     - updated_arc: NPC's current narrative trajectory (1-2 sentences in {lang}). null only if zero meaningful interaction.
     - about_npc: if the reflection is primarily about the relationship with another NPC, that NPC's id. null otherwise.
   - arc_notes: Brief story arc progress observation
-  - act_transition: true if current act's <transition_trigger> has been fulfilled. false if clearly unmet.
 
   If a <reflect> tag has a last_reflection attribute, write a NEW insight that builds on, deepens, or contradicts it. Do NOT repeat the same theme or emotional tone.
   </task>

@@ -17,8 +17,8 @@ from .schemas import get_brain_output_schema, get_revelation_check_schema
 
 def _build_moves_block(game: GameState) -> str:
     data = available_moves(game)
-    moves = data.get("moves", [])
-    combat_pos = data.get("combat_position", "")
+    moves = data["moves"]
+    combat_pos = data["combat_position"]
 
     trigger_hints = eng().ai_text.brain_trigger_hints
 
@@ -147,7 +147,7 @@ def call_revelation_check(
         response = create_with_retry(provider, spec)
         result = json.loads(response.content)
         confirmed = result["revelation_confirmed"]
-        reasoning = result.get("reasoning", "")
+        reasoning = result["reasoning"]
         log(f"[Revelation] Check for '{revelation.id}': confirmed={confirmed} — {reasoning}")
         return confirmed
     except Exception as e:

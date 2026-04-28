@@ -49,7 +49,7 @@ def call_correction_brain(
     user_msg = f"""## correction from player: {correction_text}
 
 <last_turn>
-player_input: {(snap.player_input or "")}
+player_input: {snap.player_input}
 brain_interpretation: move={brain.move} stat={brain.stat} intent={brain.player_intent[: _trunc.prompt_short]}
 roll: {roll_summary}
 narration (first {_trunc.narration_preview} chars): {(snap.narration or "")[: _trunc.narration_preview]}
@@ -81,12 +81,13 @@ npcs:
         return result
     except Exception as e:
         log(f"[Correction] Brain failed ({type(e).__name__}: {e}), falling back to no-op state_error", level="warning")
+        _defaults = eng().ai_text.narrator_defaults
         return {
-            "correction_source": "state_error",
-            "corrected_input": "",
-            "reroll_needed": False,
-            "corrected_stat": "none",
+            "correction_source": _defaults["correction_brain_fallback_source"],
+            "corrected_input": _defaults["correction_brain_fallback_corrected_input"],
+            "reroll_needed": _defaults["correction_brain_fallback_reroll_needed"],
+            "corrected_stat": _defaults["correction_brain_fallback_corrected_stat"],
             "narrator_guidance": correction_text,
-            "director_useful": False,
-            "state_ops": [],
+            "director_useful": _defaults["correction_brain_fallback_director_useful"],
+            "state_ops": list(_defaults["correction_brain_fallback_state_ops"]),
         }

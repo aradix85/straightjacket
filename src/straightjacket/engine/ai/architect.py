@@ -116,8 +116,8 @@ def _clean_act_moods(blueprint: dict) -> None:
     forbidden = set(_e.architect.forbidden_moods)
     fallback = list(_e.ai_text.narrator_defaults["default_act_mood"])
 
-    for act in blueprint.get("acts", []):
-        mood = act.get("mood", "")
+    for act in blueprint["acts"]:
+        mood = act["mood"]
         if not mood:
             continue
         mood_words = [w.strip() for w in mood.split(",")]
@@ -128,20 +128,16 @@ def _clean_act_moods(blueprint: dict) -> None:
         if not cleaned:
             cleaned = list(fallback)
         act["mood"] = ", ".join(cleaned)
-        log(
-            f"[Story] Stripped forbidden mood(s) {stripped_words} from act "
-            f"'{act.get('phase', '?')}', now: '{act['mood']}'"
-        )
+        log(f"[Story] Stripped forbidden mood(s) {stripped_words} from act '{act['phase']}', now: '{act['mood']}'")
 
 
 def _validate_scene_ranges(blueprint: dict) -> None:
     default_range = list(eng().scene_range_default)
-    for act in blueprint.get("acts", []):
-        sr = act.get("scene_range", [])
+    for act in blueprint["acts"]:
+        sr = act["scene_range"]
         if not isinstance(sr, list) or len(sr) != 2:
             log(
-                f"[Story] Invalid scene_range {sr!r} in act '{act.get('phase', '?')}', "
-                f"replacing with default {default_range}",
+                f"[Story] Invalid scene_range {sr!r} in act '{act['phase']}', replacing with default {default_range}",
                 level="warning",
             )
             act["scene_range"] = list(default_range)

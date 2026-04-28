@@ -21,6 +21,7 @@ npc:
     4: 5
   activated_memory_count: 2
   default_new_npc_disposition: neutral
+  reflection_observation_window: 8
 name_titles:
 - mr
 - mr.

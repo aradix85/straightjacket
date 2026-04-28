@@ -4,7 +4,13 @@ from straightjacket.engine.models import (
     StoryAct,
     StoryBlueprint,
 )
-from tests._helpers import make_game_state, make_memory, make_npc
+from tests._helpers import (
+    make_director_guidance,
+    make_game_state,
+    make_memory,
+    make_npc,
+    make_npc_reflection,
+)
 
 
 def _game() -> GameState:
@@ -80,11 +86,11 @@ def test_stores_narrator_guidance(stub_all: None) -> None:
     game = _game()
     apply_director_guidance(
         game,
-        {
-            "narrator_guidance": "Build tension slowly.",
-            "npc_guidance": {"npc_1": "Kira should test loyalty."},
-            "arc_notes": "Story progressing.",
-        },
+        make_director_guidance(
+            narrator_guidance="Build tension slowly.",
+            npc_guidance={"npc_1": "Kira should test loyalty."},
+            arc_notes="Story progressing.",
+        ),
     )
     dg = game.narrative.director_guidance
     assert dg.narrator_guidance == "Build tension slowly."
@@ -95,7 +101,7 @@ def test_enriches_session_log_with_summary(stub_all: None) -> None:
     from straightjacket.engine.director import apply_director_guidance
 
     game = _game()
-    apply_director_guidance(game, {"scene_summary": "A tense exchange."})
+    apply_director_guidance(game, make_director_guidance(scene_summary="A tense exchange."))
     assert game.narrative.session_log[-1].rich_summary == "A tense exchange."
 
 
@@ -105,16 +111,16 @@ def test_reflection_adds_memory_and_resets_flag(stub_all: None) -> None:
     game = _game()
     apply_director_guidance(
         game,
-        {
-            "npc_reflections": [
-                {
-                    "npc_id": "npc_1",
-                    "reflection": "Kira is beginning to trust the player.",
-                    "tone": "reluctant_trust",
-                    "tone_key": "conflicted",
-                }
+        make_director_guidance(
+            npc_reflections=[
+                make_npc_reflection(
+                    npc_id="npc_1",
+                    reflection="Kira is beginning to trust the player.",
+                    tone="reluctant_trust",
+                    tone_key="conflicted",
+                )
             ],
-        },
+        ),
     )
     kira = game.npcs[0]
     assert kira.needs_reflection is False
@@ -134,15 +140,15 @@ def test_reflection_rejects_truncated(stub_all: None) -> None:
     mem_before = len(game.npcs[0].memory)
     apply_director_guidance(
         game,
-        {
-            "npc_reflections": [
-                {
-                    "npc_id": "npc_1",
-                    "reflection": "Kira is beginning to tru",
-                    "tone_key": "conflicted",
-                }
+        make_director_guidance(
+            npc_reflections=[
+                make_npc_reflection(
+                    npc_id="npc_1",
+                    reflection="Kira is beginning to tru",
+                    tone_key="conflicted",
+                )
             ],
-        },
+        ),
     )
 
     assert len(game.npcs[0].memory) == mem_before
@@ -156,17 +162,17 @@ def test_reflection_fills_empty_agenda_instinct(stub_all: None) -> None:
     game = _game()
     apply_director_guidance(
         game,
-        {
-            "npc_reflections": [
-                {
-                    "npc_id": "npc_2",
-                    "reflection": "Borin is watching carefully.",
-                    "tone_key": "neutral",
-                    "agenda": "survive at any cost",
-                    "instinct": "goes quiet when cornered",
-                }
+        make_director_guidance(
+            npc_reflections=[
+                make_npc_reflection(
+                    npc_id="npc_2",
+                    reflection="Borin is watching carefully.",
+                    tone_key="neutral",
+                    agenda="survive at any cost",
+                    instinct="goes quiet when cornered",
+                )
             ],
-        },
+        ),
     )
     borin = game.npcs[1]
     assert borin.agenda == "survive at any cost"
@@ -179,16 +185,16 @@ def test_reflection_does_not_overwrite_existing_agenda(stub_all: None) -> None:
     game = _game()
     apply_director_guidance(
         game,
-        {
-            "npc_reflections": [
-                {
-                    "npc_id": "npc_1",
-                    "reflection": "Kira reconsiders her goals.",
-                    "tone_key": "conflicted",
-                    "agenda": "new agenda",
-                }
+        make_director_guidance(
+            npc_reflections=[
+                make_npc_reflection(
+                    npc_id="npc_1",
+                    reflection="Kira reconsiders her goals.",
+                    tone_key="conflicted",
+                    agenda="new agenda",
+                )
             ],
-        },
+        ),
     )
     assert game.npcs[0].agenda == "protect archives"
 
@@ -199,16 +205,16 @@ def test_reflection_updates_stale_agenda(stub_all: None) -> None:
     game = _game()
     apply_director_guidance(
         game,
-        {
-            "npc_reflections": [
-                {
-                    "npc_id": "npc_1",
-                    "reflection": "Kira shifts her priorities.",
-                    "tone_key": "conflicted",
-                    "updated_agenda": "find the truth",
-                }
+        make_director_guidance(
+            npc_reflections=[
+                make_npc_reflection(
+                    npc_id="npc_1",
+                    reflection="Kira shifts her priorities.",
+                    tone_key="conflicted",
+                    updated_agenda="find the truth",
+                )
             ],
-        },
+        ),
     )
     assert game.npcs[0].agenda == "find the truth"
 
@@ -219,16 +225,16 @@ def test_reflection_updates_arc(stub_all: None) -> None:
     game = _game()
     apply_director_guidance(
         game,
-        {
-            "npc_reflections": [
-                {
-                    "npc_id": "npc_1",
-                    "reflection": "Kira is conflicted.",
-                    "tone_key": "conflicted",
-                    "updated_arc": "Torn between loyalty and self-preservation.",
-                }
+        make_director_guidance(
+            npc_reflections=[
+                make_npc_reflection(
+                    npc_id="npc_1",
+                    reflection="Kira is conflicted.",
+                    tone_key="conflicted",
+                    updated_arc="Torn between loyalty and self-preservation.",
+                )
             ],
-        },
+        ),
     )
     assert game.npcs[0].arc == "Torn between loyalty and self-preservation."
 
@@ -239,16 +245,16 @@ def test_reflection_updates_description(stub_all: None) -> None:
     game = _game()
     apply_director_guidance(
         game,
-        {
-            "npc_reflections": [
-                {
-                    "npc_id": "npc_1",
-                    "reflection": "Kira has changed.",
-                    "tone_key": "conflicted",
-                    "updated_description": "Battle-scarred archivist with haunted eyes.",
-                }
+        make_director_guidance(
+            npc_reflections=[
+                make_npc_reflection(
+                    npc_id="npc_1",
+                    reflection="Kira has changed.",
+                    tone_key="conflicted",
+                    updated_description="Battle-scarred archivist with haunted eyes.",
+                )
             ],
-        },
+        ),
     )
     assert "Battle-scarred" in game.npcs[0].description
 
@@ -259,16 +265,16 @@ def test_reflection_strips_name_prefix_from_description(stub_all: None) -> None:
     game = _game()
     apply_director_guidance(
         game,
-        {
-            "npc_reflections": [
-                {
-                    "npc_id": "npc_1",
-                    "reflection": "Kira has changed.",
-                    "tone_key": "conflicted",
-                    "updated_description": "Kira: Battle-scarred archivist with haunted eyes.",
-                }
+        make_director_guidance(
+            npc_reflections=[
+                make_npc_reflection(
+                    npc_id="npc_1",
+                    reflection="Kira has changed.",
+                    tone_key="conflicted",
+                    updated_description="Kira: Battle-scarred archivist with haunted eyes.",
+                )
             ],
-        },
+        ),
     )
     assert not game.npcs[0].description.startswith("Kira:")
     assert "Battle-scarred" in game.npcs[0].description
@@ -281,16 +287,16 @@ def test_reflection_rejects_too_long_description(stub_all: None) -> None:
     game.npcs[0].description = "Original."
     apply_director_guidance(
         game,
-        {
-            "npc_reflections": [
-                {
-                    "npc_id": "npc_1",
-                    "reflection": "Kira evolves.",
-                    "tone_key": "conflicted",
-                    "updated_description": "x" * 201,
-                }
+        make_director_guidance(
+            npc_reflections=[
+                make_npc_reflection(
+                    npc_id="npc_1",
+                    reflection="Kira evolves.",
+                    tone_key="conflicted",
+                    updated_description="x" * 201,
+                )
             ],
-        },
+        ),
     )
     assert game.npcs[0].description == "Original."
 
@@ -302,16 +308,16 @@ def test_reflection_rejects_truncated_description(stub_all: None) -> None:
     game.npcs[0].description = "Original description here."
     apply_director_guidance(
         game,
-        {
-            "npc_reflections": [
-                {
-                    "npc_id": "npc_1",
-                    "reflection": "Kira evolves.",
-                    "tone_key": "conflicted",
-                    "updated_description": "Incomplete desc without",
-                }
+        make_director_guidance(
+            npc_reflections=[
+                make_npc_reflection(
+                    npc_id="npc_1",
+                    reflection="Kira evolves.",
+                    tone_key="conflicted",
+                    updated_description="Incomplete desc without",
+                )
             ],
-        },
+        ),
     )
     assert game.npcs[0].description == "Original description here."
 
@@ -322,7 +328,7 @@ def test_act_transition_marks_blueprint(stub_all: None) -> None:
     game = _game()
     game.narrative.scene_count = 7
     game.narrative.story_blueprint = _blueprint()
-    apply_director_guidance(game, {"narrator_guidance": "proceed"})
+    apply_director_guidance(game, make_director_guidance(narrator_guidance="proceed"))
     assert "act_0" in game.narrative.story_blueprint.triggered_transitions
 
 
@@ -334,7 +340,7 @@ def test_act_transition_backfills_skipped_acts(stub_all: None) -> None:
     bp = _blueprint()
     bp.triggered_transitions = []
     game.narrative.story_blueprint = bp
-    apply_director_guidance(game, {"narrator_guidance": "proceed"})
+    apply_director_guidance(game, make_director_guidance(narrator_guidance="proceed"))
     assert "act_0" in bp.triggered_transitions
     assert "act_1" in bp.triggered_transitions
 
@@ -359,15 +365,15 @@ def test_unreflected_npcs_get_reset(stub_all: None) -> None:
 
     apply_director_guidance(
         game,
-        {
-            "npc_reflections": [
-                {
-                    "npc_id": "npc_1",
-                    "reflection": "Kira is evolving.",
-                    "tone_key": "conflicted",
-                }
+        make_director_guidance(
+            npc_reflections=[
+                make_npc_reflection(
+                    npc_id="npc_1",
+                    reflection="Kira is evolving.",
+                    tone_key="conflicted",
+                )
             ],
-        },
+        ),
     )
 
     assert game.npcs[1].needs_reflection is False
@@ -443,10 +449,8 @@ def test_run_deferred_director_applies_guidance(stub_all: None) -> None:
                 "scene_summary": "Tense.",
                 "narrator_guidance": "Build tension.",
                 "npc_guidance": [],
-                "pacing": "building",
                 "npc_reflections": [],
                 "arc_notes": "Progressing.",
-                "act_transition": False,
             }
         )
     )

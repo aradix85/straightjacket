@@ -3,7 +3,7 @@ from straightjacket.engine.models import (
     StoryBlueprint,
     StoryAct,
 )
-from tests._helpers import make_clock, make_game_state, make_memory, make_npc, make_progress_track
+from tests._helpers import make_clock, make_game_state, make_memory, make_npc, make_npc_detail, make_progress_track
 
 
 def test_roll_action_cap() -> None:
@@ -193,7 +193,7 @@ def test_memory_guard_rejects_zero_overlap() -> None:
     )
     game.npcs.append(npc)
 
-    process_npc_details(game, [{"npc_id": "npc_1", "full_name": "Klaus Kinski"}])
+    process_npc_details(game, [make_npc_detail(npc_id="npc_1", full_name="Klaus Kinski")])
     assert npc.name == "Theo"
 
     stub = next((n for n in game.npcs if n.name == "Klaus Kinski"), None)
@@ -207,7 +207,7 @@ def test_memory_guard_allows_no_memories() -> None:
     game = make_game_state()
     npc = make_npc(id="npc_1", name="Der Fremde", status="active")
     game.npcs.append(npc)
-    process_npc_details(game, [{"npc_id": "npc_1", "full_name": "Heinrich Blum"}])
+    process_npc_details(game, [make_npc_detail(npc_id="npc_1", full_name="Heinrich Blum")])
     assert npc.name == "Heinrich Blum"
 
 

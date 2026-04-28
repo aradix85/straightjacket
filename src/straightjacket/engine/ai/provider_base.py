@@ -115,8 +115,8 @@ def create_with_retry(provider: AIProvider, spec: AICallSpec) -> AIResponse:
             result = post_process_response(response)
             if spec.log_role:
                 if result.usage:
-                    inp = result.usage.get("input_tokens", 0)
-                    out = result.usage.get("output_tokens", 0)
+                    inp = result.usage["input_tokens"]
+                    out = result.usage["output_tokens"]
                     log(f"[TOKENS] {spec.log_role}: {inp} in + {out} out = {inp + out} total")
                     log_tokens(spec.log_role, inp, out)
                 else:

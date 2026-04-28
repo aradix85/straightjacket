@@ -96,9 +96,9 @@ IMPORTANT: {game.player_name} is the PLAYER CHARACTER — do NOT include them as
         response = create_with_retry(provider, spec)
         data = json.loads(response.content)
         log(
-            f"[OpeningSetup] Extracted: {len(data.get('npcs', []))} NPCs, "
-            f"{len(data.get('clocks', []))} clocks, "
-            f"loc={data.get('location')}, time={data.get('time_of_day')}"
+            f"[OpeningSetup] Extracted: {len(data['npcs'])} NPCs, "
+            f"{len(data['clocks'])} clocks, "
+            f"loc={data['location']}, time={data['time_of_day']}"
         )
         return data
     except Exception as e:
@@ -184,10 +184,10 @@ Extract all metadata from the narration above. Remember: {game.player_name} is t
         metadata = json.loads(response.content)
         log(
             f"[Metadata] Extracted: "
-            f"{len(metadata.get('new_npcs', []))} new NPCs, "
-            f"{len(metadata.get('npc_renames', []))} renames, "
-            f"{len(metadata.get('deceased_npcs', []))} deceased, "
-            f"{len(metadata.get('lore_npcs', []))} lore"
+            f"{len(metadata['new_npcs'])} new NPCs, "
+            f"{len(metadata['npc_renames'])} renames, "
+            f"{len(metadata['deceased_npcs'])} deceased, "
+            f"{len(metadata['lore_npcs'])} lore"
         )
         return metadata
     except Exception as e:

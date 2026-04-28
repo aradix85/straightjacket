@@ -251,7 +251,6 @@ def get_narrator_metadata_schema() -> dict:
                             "npc_id": _str(),
                             "full_name": _nullable_str(),
                             "description": _nullable_str(),
-                            "extra": _nullable_str(),
                         }
                     )
                 ),

@@ -26,9 +26,9 @@ def apply_narrator_metadata(
     details = metadata["npc_details"]
     if details:
         for d in details:
-            if d.get("full_name") is None:
+            if d["full_name"] is None:
                 d["full_name"] = ""
-            if d.get("description") is None:
+            if d["description"] is None:
                 d["description"] = ""
         process_npc_details(game, details, world_addition=world_addition)
 
@@ -45,7 +45,7 @@ def apply_narrator_metadata(
 
 def process_deceased_npcs(game: GameState, deceased_list: list) -> None:
     for entry in deceased_list:
-        npc_id = entry.get("npc_id", "")
+        npc_id = entry["npc_id"]
         if not npc_id:
             continue
         npc = find_npc(game, npc_id)
@@ -63,7 +63,7 @@ def process_deceased_npcs_with_presence_check(
     game: GameState, deceased_list: list, scene_present_ids: set[str]
 ) -> None:
     for entry in deceased_list:
-        npc_id = entry.get("npc_id", "")
+        npc_id = entry["npc_id"]
         if not npc_id:
             continue
         npc = find_npc(game, npc_id)
@@ -88,7 +88,7 @@ def process_deceased_npcs_with_presence_check(
 
 def _process_lore_npcs(game: GameState, lore_list: list) -> None:
     for entry in lore_list:
-        name = entry.get("name", "").strip()
+        name = entry["name"].strip()
         if not name:
             continue
 
@@ -104,7 +104,7 @@ def _process_lore_npcs(game: GameState, lore_list: list) -> None:
         npc = NpcData(
             id=npc_id,
             name=name,
-            description=entry.get("description", ""),
+            description=entry["description"],
             disposition="neutral",
             status="lore",
             introduced=False,
