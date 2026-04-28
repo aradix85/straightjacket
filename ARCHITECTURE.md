@@ -45,7 +45,7 @@ Where to find things. If you want to change X, edit Y.
 
 | I want to change... | Edit this |
 |---|---|
-| Game rules, damage, NPC limits | `engine.yaml` (no Python) |
+| Game rules, damage, NPC limits | `engine/damage.yaml`, `engine/npc.yaml` (no Python) |
 | AI prompts (narrator, brain, director) | `prompts/*.yaml` (directory set in `config.yaml` → `ai.prompts_dir`) |
 | Emotion scoring, keyword boosts | `emotions/*.yaml` (no Python) |
 | UI text | `strings/*.yaml` (no Python) |
@@ -55,7 +55,7 @@ Where to find things. If you want to change X, edit Y.
 | Move types or stat assignments | Datasworn JSON (moves loaded automatically per setting) |
 | A new setting (genre + constraints) | `data/settings/your_setting.yaml` + Datasworn JSON |
 | How dice rolls work | `mechanics/consequences.py` → `roll_action`, `roll_progress` |
-| Move outcome effects | `engine.yaml` → `move_outcomes` (no Python for simple moves) |
+| Move outcome effects | `engine/move_outcomes.yaml` (no Python for simple moves) |
 | Move outcome handlers (suffer, threshold, recovery) | `mechanics/move_handlers.py` |
 | Move outcome resolution + crisis check | `game/finalization.py` → `resolve_action_consequences`, `ActionOutcome` |
 | Narrator call + parse + validate | `game/finalization.py` → `narrate_scene` (all four narration paths) |
@@ -71,7 +71,7 @@ Where to find things. If you want to change X, edit Y.
 | Save format | `models.py` → SerializableMixin on each dataclass (no manual `to_dict`/`from_dict`) |
 | User/save directory management | `user_management.py` → `create_user`, `get_save_dir`, `_safe_name` |
 | WebSocket protocol / UI | `web/handlers.py`, `web/static/index.html` |
-| Character creation validation | `game/game_start.py` → `validate_stats`, stat arrays in `engine.yaml` |
+| Character creation validation | `game/game_start.py` → `validate_stats`, stat arrays in `engine/stats.yaml` |
 | Creation data for client | `web/serializers.py` → `build_creation_options` |
 | Setting-specific creation flow | `data/settings/*.yaml` → `creation_flow` block |
 | Progress track mechanics | `models_base.py` → `ProgressTrack`, `PROGRESS_RANKS` |
@@ -79,38 +79,38 @@ Where to find things. If you want to change X, edit Y.
 | Truths in narrator prompt | `prompt_blocks.py` → `truths_block` |
 | Pacing (engine-computed) | `mechanics/world.py` → `get_pacing_hint`; scene structure via `mechanics/scene.py` |
 | Act transitions (engine-computed) | `director.py` → `_check_engine_act_transition` |
-| Memory emotional weight (engine-computed) | `mechanics/engine_memories.py` → `derive_memory_emotion`, table in `engine.yaml` |
+| Memory emotional weight (engine-computed) | `mechanics/engine_memories.py` → `derive_memory_emotion`, table in `engine/memory.yaml` |
 | Database queries (NPCs, memories, threads, clocks, threats) | `db/queries.py` → `query_npcs`, `query_memories`, `query_threads`, `query_clocks` |
 | Database sync after state changes | `db/sync.py` → `sync(game)`, called by turn, creation, correction, restore, load |
 | Tool definitions for AI agents | `tools/registry.py` → `@register("director")`, `get_tools(role)` |
 | Tool execution and iterative loop | `tools/handler.py` → `execute_tool_call`, `run_tool_loop` |
 | Built-in Director tools | `tools/builtins.py` → `query_npc`, `query_active_threads`, `query_active_clocks` |
 | Engine query functions (no tool registration) | `tools/builtins.py` → `available_moves`, `fate_question`, `roll_oracle`, `query_npc_list` |
-| Track-creating moves | `engine.yaml` → `track_creating_moves` (no Python) |
+| Track-creating moves | `engine/track_moves.yaml` → `track_creating_moves` (no Python) |
 | Track lifecycle (creation, completion) | `game/tracks.py` → `find_progress_track`, `complete_track`, `sync_combat_tracks` |
 | Combat track ↔ combat_position sync | `game/tracks.py` → `complete_track` (clears position), `sync_combat_tracks` (orphan cleanup) |
-| Scene challenge progress routing | `engine.yaml` → `scene_challenge_progress_moves`; `game/turn.py` action path |
+| Scene challenge progress routing | `engine/track_moves.yaml` → `scene_challenge_progress_moves`; `game/turn.py` action path |
 | Which moves are available in a game state | `tools/builtins.py` → `available_moves`, `_is_move_available` (filters by `status == "active"`) |
 | NPC bond level | `npc/bond.py` → `get_npc_bond` (reads connection track, not NpcData) |
 | Status commands (/status, /score) | `web/handlers.py` → `handle_status_query`; `web/serializers.py` → `build_narrative_status` |
 | Status command /tracks | `web/handlers.py` → `handle_tracks_query`; `web/serializers.py` → `build_tracks_status` |
 | Status command /threats | `web/handlers.py` → `handle_threats_query`; `web/serializers.py` → `build_threats_status` |
-| Fate questions (yes/no) | `mechanics/fate.py` → `resolve_fate`, `resolve_likelihood`; `engine.yaml` → `fate` |
+| Fate questions (yes/no) | `mechanics/fate.py` → `resolve_fate`, `resolve_likelihood`; `engine/fate.yaml` |
 | Scene structure (keyed/expected/altered/interrupt) | `mechanics/scene.py` → `check_scene`, `SceneSetup`; `mechanics/keyed_scenes.py` → `evaluate_keyed_scenes` |
 | Keyed scene triggers and dispatch | `mechanics/keyed_scenes.py` → `_EVALUATORS`; trigger registry in `engine/keyed_scenes.yaml` |
 | Random events and meaning tables | `mechanics/random_events.py` → `generate_random_event`, `roll_event_focus`, `roll_meaning_table` |
 | Mythic list maintenance (weight, consolidation) | `mechanics/random_events.py` → `add_thread_weight`, `add_character_weight`, `consolidate_threads` |
-| Consequence sentence templates | `engine.yaml` → `consequence_templates`, `pay_the_price` (no Python) |
+| Consequence sentence templates | `engine/consequence_templates.yaml`, `engine/pay_the_price.yaml` (no Python) |
 | Consequence sentence generation | `mechanics/consequences.py` → `generate_consequence_sentences` |
-| NPC stance matrix | `engine.yaml` → `stance_matrix` (no Python) |
+| NPC stance matrix | `engine/stance_matrix.yaml` (no Python) |
 | NPC stance resolution | `mechanics/stance_gate.py` → `resolve_npc_stance`, `NpcStance` |
-| Information gate levels | `engine.yaml` → `information_gate` (typed `InformationGateConfig`) |
+| Information gate levels | `engine/information_gate.yaml` (typed `InformationGateConfig`) |
 | Information gate computation | `mechanics/stance_gate.py` → `compute_npc_gate` |
 | Gate-filtered NPC prompt data | `prompt_shared.py` → `_npc_block` (gate 0–4 filtering) |
-| Threat menace track, Forsake Your Vow | `engine.yaml` → `threats`; `mechanics/threats.py` → `advance_menace_on_miss`, `tick_autonomous_threats`, `resolve_full_menace` |
+| Threat menace track, Forsake Your Vow | `engine/threats.yaml`; `mechanics/threats.py` → `advance_menace_on_miss`, `tick_autonomous_threats`, `resolve_full_menace` |
 | Threat-vow coupling | `models_base.py` → `ThreatData.linked_vow_id`; `game/tracks.py` → `complete_track` resolves linked threat |
-| Impacts (wounded, shaken, etc.) | `engine.yaml` → `impacts` (typed `ImpactConfig`); `mechanics/impacts.py` → `apply_impact`, `clear_impact`, `blocks_recovery`, `recalc_max_momentum` |
-| Legacy tracks, XP, asset advancement | `engine.yaml` → `legacy` (typed `LegacyConfig`); `mechanics/legacy.py` → `mark_legacy`, `apply_threat_overcome_bonus`, `advance_asset`; `CampaignState.legacy_quests/bonds/discoveries` |
+| Impacts (wounded, shaken, etc.) | `engine/impacts.yaml` (typed `ImpactConfig`); `mechanics/impacts.py` → `apply_impact`, `clear_impact`, `blocks_recovery`, `recalc_max_momentum` |
+| Legacy tracks, XP, asset advancement | `engine/legacy.yaml` (typed `LegacyConfig`); `mechanics/legacy.py` → `mark_legacy`, `apply_threat_overcome_bonus`, `advance_asset`; `CampaignState.legacy_quests/bonds/discoveries` |
 | NPC name generation | `npc/naming.py` → `roll_oracle_name`; `data/settings/*.yaml` → `oracle_paths.names` |
 | Adventure Crafter primitives (themes, plot points, meta dispatch) | `mechanics/adventure_crafter.py` → `assign_themes`, `lookup_plot_point`, `lookup_meta_plot_point`, `dispatch_meta`; `engine/adventure_crafter.yaml` (themes, theme_die_table, special_ranges); `data/adventure_crafter.json` (lookup tables) |
 
@@ -155,7 +155,7 @@ ai:
 
 Clusters are the single source of truth. `sampling_params(role)` resolves all call parameters from the role's cluster. `model_for_role(role)` resolves the model. No per-role overrides — to change a role's parameters, change the cluster or remap the role via `role_cluster`.
 
-`max_tool_rounds` is an engine mechanical limit, configured in `engine.yaml` under `pacing.max_tool_rounds`.
+`max_tool_rounds` is an engine mechanical limit, configured in `engine/pacing.yaml` under `max_tool_rounds`.
 
 Elvira test bot model is configured separately in `tests/elvira/elvira_config.yaml` → `ai.bot_model`.
 
@@ -169,7 +169,7 @@ src/straightjacket/
 │   ├── models_npc.py        # NpcData, MemoryEntry
 │   ├── models_story.py      # ThreadEntry, CharacterListEntry, NarrativeState, StoryBlueprint, etc.
 │   ├── engine_config.py     # EngineSettings composition + _build_strict / load_strict yaml parse; re-exports dataclasses
-│   ├── engine_config_dataclasses.py  # subsystem dataclasses that bind engine.yaml sections
+│   ├── engine_config_dataclasses.py  # subsystem dataclasses that bind engine/*.yaml sections
 │   ├── format_utils.py      # PartialFormatDict (shared by prompt_loader, strings_loader)
 │   ├── mechanics/
 │   │   ├── world.py            # Location matching, chaos adjustment, time, pacing, story structure
@@ -266,7 +266,7 @@ src/straightjacket/
 
 ## Key Design Decisions
 
-**Config-driven game logic.** Move outcomes, NPC limits, disposition shifts, damage tables — all in engine.yaml or Datasworn JSON. Adding a move means adding one YAML entry to `move_outcomes`. No Python change. Move definitions (stats, roll types, trigger conditions) load directly from Datasworn JSON per setting.
+**Config-driven game logic.** Move outcomes, NPC limits, disposition shifts, damage tables — all in `engine/*.yaml` or Datasworn JSON. Adding a move means adding one YAML entry to `engine/move_outcomes.yaml`. No Python change. Move definitions (stats, roll types, trigger conditions) load directly from Datasworn JSON per setting.
 
 **Modular yaml stores.** Every yaml store in the repo is a directory of files, not a single file: `engine/` (58 files, one per subsystem), `emotions/` (3), `prompts/` (7 cluster-files), `strings/` (18, one per dotted-key prefix). Each loader globs its directory, merges top-level keys, raises on duplicates. Callsites only talk to `eng()` / `get_prompt()` / `t()` / `importance_map()` — filesystem layout is invisible to the rest of the codebase. `config.yaml` stays single (small, user-edited). `data/settings/*.yaml` was already one file per setting.
 
@@ -290,19 +290,19 @@ src/straightjacket/
 
 **Minimal UI.** Single HTML page, no build step, no npm. Server sends JSON, client renders. Scene headings for screen reader navigation, aria-live for automatic narration readout. One button (Save/Load), one text input. Status via `/status` and `/score` text commands — engine answers directly, no AI call. Status output is narrative, not mechanical: "seriously wounded" instead of "health 2", "growing trust" instead of "bond 4/10". The player never sees numbers, dice, or system terms.
 
-**Progress tracks as dataclass.** ProgressTrack has rank and ticks; ticks-per-mark by rank lives in `engine.yaml` under `progress.track_types.default.ticks_per_mark` (troublesome=12, epic=1 on the default track), with the `track_types` map extensible for future variants. Status (active/completed/failed) on the track. Background vow becomes a track at creation. Track-creating moves defined in engine.yaml `track_creating_moves` — engine creates tracks from Brain output. Connection tracks replace NpcData.bond: `get_npc_bond(game, npc_id)` reads connection track filled_boxes.
+**Progress tracks as dataclass.** ProgressTrack has rank and ticks; ticks-per-mark by rank lives in `engine/progress.yaml` under `track_types.default.ticks_per_mark` (troublesome=12, epic=1 on the default track), with the `track_types` map extensible for future variants. Status (active/completed/failed) on the track. Background vow becomes a track at creation. Track-creating moves defined in `engine/track_moves.yaml` — engine creates tracks from Brain output. Connection tracks replace NpcData.bond: `get_npc_bond(game, npc_id)` reads connection track filled_boxes.
 
-**Mythic lists seeded at creation.** Threads list starts with the background vow (weight 2) plus any tensions derived from truth selections via engine.yaml templates. Characters list starts with the vow subject (if provided) and opening scene NPCs. Both lists are in NarrativeState for snapshot/restore.
+**Mythic lists seeded at creation.** Threads list starts with the background vow (weight 2) plus any tensions derived from truth selections via `engine/creation.yaml` templates. Characters list starts with the vow subject (if provided) and opening scene NPCs. Both lists are in NarrativeState for snapshot/restore.
 
-**Truths as world context.** Player truth selections stored in GameState.truths and injected into every narrator prompt as a `<world_truths>` block. The narrator treats them as established canon. Truths that match engine.yaml patterns automatically seed tension threads.
+**Truths as world context.** Player truth selections stored in GameState.truths and injected into every narrator prompt as a `<world_truths>` block. The narrator treats them as established canon. Truths that match `engine/creation.yaml` patterns automatically seed tension threads.
 
-**AI surface minimization.** Every value derivable from game state is computed by the engine. Director pacing is computed from scene_intensity_history, not requested from the AI. Act transitions fire when scene_count exceeds act range — deterministic, no AI flag. Memory emotional_weight is derived from (move_category, result, disposition) via engine.yaml lookup. Opening scene clock and time_of_day are engine-determined before any AI call. The AI receives results, not choices.
+**AI surface minimization.** Every value derivable from game state is computed by the engine. Director pacing is computed from scene_intensity_history, not requested from the AI. Act transitions fire when scene_count exceeds act range — deterministic, no AI flag. Memory emotional_weight is derived from (move_category, result, disposition) via `engine/memory.yaml` lookup. Opening scene clock and time_of_day are engine-determined before any AI call. The AI receives results, not choices.
 
-**Data-driven move outcomes.** `resolve_move_outcome` reads structured effect lists from engine.yaml per move per result. Simple moves (momentum, resources, progress, position) are pure data — no Python. Complex moves (suffer, threshold, recovery) use named handlers that share patterns across moves. Engine-specific moves (`dialog`, `ask_the_oracle`, `world_shaping`) live alongside Datasworn moves in `engine.yaml engine_moves:` — single source of truth read by `available_moves`, the brain-output schema, and the narrator. The `available_moves` function filters moves by game state (combat position, active tracks); Brain receives the filtered list in its prompt. Consequence sentences generated from outcome strings via engine.yaml templates.
+**Data-driven move outcomes.** `resolve_move_outcome` reads structured effect lists from `engine/move_outcomes.yaml` per move per result. Simple moves (momentum, resources, progress, position) are pure data — no Python. Complex moves (suffer, threshold, recovery) use named handlers that share patterns across moves. Engine-specific moves (`dialog`, `ask_the_oracle`, `world_shaping`) live alongside Datasworn moves in `engine/engine_moves.yaml` — single source of truth read by `available_moves`, the brain-output schema, and the narrator. The `available_moves` function filters moves by game state (combat position, active tracks); Brain receives the filtered list in its prompt. Consequence sentences generated from outcome strings via `engine/consequence_templates.yaml`.
 
 **Shared outcome resolution.** Three codepaths produce action narration: normal turns, corrections (input_misread), and momentum burns. All three share `resolve_action_consequences` in `game/finalization.py` — move outcome, combat position, MISS clock ticking, crisis check. They also share `apply_progress_and_legacy` — consumes `outcome.progress_marks` on the active track and `outcome.legacy_track` on campaign legacy tracks. Without this shared step, correction and burn would silently drop progress and legacy rewards from the re-resolved outcome after the snapshot restore. Turn.py adds WEAK_HIT clock ticking, track completion on progress rolls, and scene_challenge routing (intentionally turn-only — these are mechanical turn boundaries, not re-narration events). All four narration paths (turn dialog, turn action, correction, burn) share `narrate_scene` — narrator call plus parser — in one call. Post-narration state mutations share `apply_post_narration` from the same module.
 
-**NPC behavioral stance.** Engine computes per-NPC stance from disposition, bond (via connection track), and move category via engine.yaml stance matrix (60 entries). The narrator receives `stance="evasive" constraint="One fact, then silence."` instead of raw disposition values. The engine tells the narrator how the NPC behaves, not just how they feel.
+**NPC behavioral stance.** Engine computes per-NPC stance from disposition, bond (via connection track), and move category via `engine/stance_matrix.yaml` (60 entries). The narrator receives `stance="evasive" constraint="One fact, then silence."` instead of raw disposition values. The engine tells the narrator how the NPC behaves, not just how they feel.
 
 **Information gating.** Per-NPC gate level (0–4) controls what enters the narrator prompt. Gate 0 = name + description (stranger). Gate 4 = full secrets. Computed from scenes known, gather_information successes, bond level, and stance cap. The narrator cannot reveal what it doesn't have. Stance caps prevent hostile NPCs from being too transparent regardless of bond.
 
@@ -310,7 +310,7 @@ src/straightjacket/
 
 **Tool calling.** Director uses decorator-based registry (`@register("director")`) producing OpenAI function calling schemas from Python type hints. Iterative handler loop: AI calls tool → engine executes → result appended → AI continues, with configurable round limit. Tools are read-only: they query GameState and database but never mutate. Director uses two-phase: tool loop for context, then json_schema for structured output. Brain does not use tool calling — all game state is injected via prompt (moves, NPCs, tracks). Brain's fate_question and oracle_table fields are resolved by the engine after classification. The core principle ("tools determine results, AI narrates") is preserved across both roles: the engine produces all mechanical outcomes. Only the mechanism (prompt injection for Brain vs tool calls for Director) differs — see "Deliberate divergences from the design document" below.
 
-**Fate system (Mythic GME 2e).** Probabilistic yes/no questions about the fiction. Two methods: fate chart (9×9 odds/chaos matrix, d100) and fate check (2d10 + modifiers). Both produce four outcomes (yes, no, exceptional yes, exceptional no) and can trigger random events via the doublet rule. Likelihood resolver maps game state (NPC disposition, chaos, resources) to odds level via engine.yaml lookup table. Brain sets `fate_question` field; engine resolves after classification.
+**Fate system (Mythic GME 2e).** Probabilistic yes/no questions about the fiction. Two methods: fate chart (9×9 odds/chaos matrix, d100) and fate check (2d10 + modifiers). Both produce four outcomes (yes, no, exceptional yes, exceptional no) and can trigger random events via the doublet rule. Likelihood resolver maps game state (NPC disposition, chaos, resources) to odds level via `engine/fate.yaml` lookup table. Brain sets `fate_question` field; engine resolves after classification.
 
 **Scene structure (Mythic GME 2e).** Every turn starts with a scene test. Priority order: keyed > interrupt > altered > expected. The keyed branch (`mechanics/keyed_scenes.py::evaluate_keyed_scenes`) runs first: if any `KeyedScene` on `narrative.keyed_scenes` has its trigger fire (`clock_fills`, `threat_menace_phase`, `bond_threshold`, `chaos_extreme`, or `scene_count`), the highest-priority match consumes itself from the list and replaces the chaos-driven outcome with `scene_type="keyed"` plus the spawner's `narrative_hint` carried into the narrator prompt as `<keyed_scene>`. Otherwise the d10 vs chaos factor fires: expected (roll > CF), altered (roll ≤ CF, odd), or interrupt (roll ≤ CF, even). Altered scenes roll on the Scene Adjustment Table; interrupt scenes generate a random event via the pipeline. Scene test runs before Brain call. Replaces the old chaos interrupt system.
 
@@ -324,7 +324,7 @@ src/straightjacket/
 
 **No save compatibility.** Saves break whenever the code requires it. No migration layer, no default-on-old fields, no ignore-unknown-fields. Every dataclass field is required; adding a field breaks existing saves. Backwards compatibility requires an explicit request per change, otherwise it is not considered. This is by design for an alpha project with no production users.
 
-**AI-surface reduction over post-hoc validation.** Atmospheric and genre drift in narrator output are mitigated by reducing the AI surface (AC-driven blueprint, fiction generators, oracle-driven NPC generation, and engine-computed pacing), not by post-hoc detection or AI-judgment validation. The narration-validator and architect-validator and chapter-validator have all been removed because AI-judgment over writing rules is unreliable; the principle is that the engine narrows what the AI can produce rather than checking what it produced.
+**AI-surface reduction over post-hoc validation.** Atmospheric and genre drift in narrator output are mitigated by reducing the AI surface (AC-driven blueprint, fiction generators, oracle-driven NPC generation, and engine-computed pacing), not by post-hoc detection or AI-judgment validation. The narration-validator and architect-validator and chapter-validator have all been removed because AI-judgment over writing rules is unreliable; the principle is that the engine narrows what the AI can produce rather than checking what it produced. A diagnostic measurement layer — tag-and-count without retry or prompt injection — remains an open option for after the roadmap is fully implemented and concept-scope is fixed; this is a different design from the deleted retry-validators and is not a closed door.
 
 **Scope of the dynamic relationship layer.** The individual scale — emotional requests, refusals, concessions, relationship events between NPC and player — is in scope. NPC-NPC triangles that involve the player are in scope. The faction scale operates through schemes and their interactions: factions have independent goal-clocks, schemes that progress, reputation with the player, and scheme-interactions that surface as narrative consequences. Inter-faction emotional dynamics (faction-to-faction emotional requests, refusals, debts as a separate layer) are out of scope. The narrative effect the design document calls for — factions acting in the world independent of the player, consequences surfacing when the player encounters them — is achieved through scheme-interaction, not through a simulated faction-emotion network. This is a deliberate scope boundary, not a deferred feature.
 
