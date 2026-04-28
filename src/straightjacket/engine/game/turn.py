@@ -12,14 +12,12 @@ from ..mechanics import (
     roll_action,
     roll_progress,
 )
-from ..mechanics.fate import resolve_fate, resolve_likelihood
 from ..mechanics.random_events import drain_pending_events
 from ..mechanics.scene import SceneSetup, check_scene
 from ..mechanics.threats import advance_threat_by_id
 from ..models import (
     BrainResult,
     EngineConfig,
-    FateResult,
     GameState,
     ProgressTrack,
     RandomEvent,
@@ -52,12 +50,10 @@ def process_turn(
 
     brain = _run_brain_phase(provider, game, player_message, config)
     _sanitize_brain_output(game, brain)
-    pending_random_events, fate_result = _resolve_brain_requests(game, brain)
+    pending_random_events = _resolve_brain_requests(game, brain)
 
     _apply_brain_state_mutations(game, brain)
-    ctx = _build_scene_context(
-        provider, game, brain, config, player_message, scene_setup, pending_random_events, fate_result
-    )
+    ctx = _build_scene_context(provider, game, brain, config, player_message, scene_setup, pending_random_events)
 
     if is_dialog_branch(brain):
         narration, director_ctx = _process_dialog_turn(ctx)
@@ -127,20 +123,14 @@ def _run_brain_phase(
     return brain
 
 
-def _resolve_brain_requests(game: GameState, brain: BrainResult) -> tuple[list[RandomEvent], FateResult | None]:
-    fate_result: FateResult | None = None
-    if brain.fate_question:
-        odds = resolve_likelihood(game, brain.fate_question)
-        fate_result = resolve_fate(game, odds=odds, chaos_factor=game.world.chaos_factor, question=brain.fate_question)
-        log(f"[Brain] Fate question resolved: '{brain.fate_question}' → {fate_result.answer}")
-
+def _resolve_brain_requests(game: GameState, brain: BrainResult) -> list[RandomEvent]:
     pending_random_events = drain_pending_events()
 
     for event in pending_random_events:
         if event.target_id and any(t.id == event.target_id for t in game.threats):
             advance_threat_by_id(game, event.target_id, marks=1, source="random_event")
 
-    return pending_random_events, fate_result
+    return pending_random_events
 
 
 def _apply_brain_state_mutations(game: GameState, brain: BrainResult) -> None:
@@ -160,7 +150,6 @@ def _build_scene_context(
     player_message: str,
     scene_setup: SceneSetup,
     pending_random_events: list[RandomEvent],
-    fate_result: FateResult | None,
 ) -> SceneContext:
     activated_npcs, mentioned_npcs, npc_activation_debug = activate_npcs_for_prompt(game, brain, player_message)
     scene_present_ids = {n.id for n in activated_npcs} | {n.id for n in mentioned_npcs}
@@ -179,7 +168,6 @@ def _build_scene_context(
         activated_npcs=activated_npcs,
         mentioned_npcs=mentioned_npcs,
         pending_random_events=pending_random_events,
-        fate_result=fate_result,
     )
 
 
@@ -199,7 +187,6 @@ def _process_dialog_turn(ctx: SceneContext) -> tuple[str, dict | None]:
         mentioned_npcs=ctx.mentioned_npcs,
         oracle_answer=oracle_answer,
         random_events=ctx.pending_random_events,
-        fate_result=ctx.fate_result,
     )
     narration = narrate_scene(
         ctx.provider,
@@ -372,7 +359,6 @@ def _narrate_action_and_finalize(
         consequence_sentences=consequence_sentences,
         random_events=ctx.pending_random_events,
         threat_events=action_res.threat_events,
-        fate_result=ctx.fate_result,
     )
     narration = narrate_scene(
         ctx.provider,

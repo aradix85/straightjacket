@@ -1,12 +1,11 @@
 from collections.abc import Sequence
 
 from .mechanics.scene import SceneSetup
-from .models import BrainResult, FateResult, GameState, NpcData, RandomEvent, RollResult, ThreatEvent
+from .models import BrainResult, GameState, NpcData, RandomEvent, RollResult, ThreatEvent
 from .prompt_blocks import narrative_direction_block, recent_events_block, story_context_block
 from .prompt_loader import get_prompt
 from .prompt_shared import (
     _director_block,
-    _fate_answer_block,
     _loc_hist,
     _npc_block,
     _npcs_section,
@@ -87,7 +86,6 @@ def build_action_prompt(
     effect: str = "standard",
     random_events: Sequence[RandomEvent] = (),
     threat_events: Sequence[ThreatEvent] = (),
-    fate_result: FateResult | None = None,
 ) -> str:
     context_text = f"{player_words} {brain.player_intent} {game.world.current_scene_context}"
 
@@ -107,7 +105,6 @@ def build_action_prompt(
     agency = f"\n<npc_agency>{_xe('| '.join(npc_agency))}</npc_agency>" if npc_agency else ""
     pacing = _pacing_block(game, scene_setup)
     events_block = _random_events_block(random_events)
-    fate_block = _fate_answer_block(fate_result)
     director = _director_block(game)
 
     cons_tags = "\n".join(f"<consequence>{_xe(s)}</consequence>" for s in consequence_sentences)
@@ -124,7 +121,7 @@ def build_action_prompt(
 <location>{_xe(game.world.current_location)}</location>{_loc_hist(game)}{_time_ctx(game)}{_scene_enrichment(game)}
 {npc}{npcs_sect}{wl}{flags}{agency}
 {pacing}
-{events_block}{fate_block}{director}
+{events_block}{director}
 {narrative_direction_block(game, roll.result)}
 {story_context_block(game)}{recent_events_block(game)}</scene>
 <task>{get_prompt("task_action")}</task>"""

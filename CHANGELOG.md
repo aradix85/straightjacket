@@ -7,7 +7,17 @@ Originally forked from [EdgeTales](https://github.com/edgetales/edgetales). See 
 
 Straightjacket uses calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day. The first CalVer release is `2026.04.25.0`. Earlier `0.x.y` releases keep their original version numbers and are not renumbered. The switch was made because the project has no public API to version semantically against — the `0.x.y` numbers were running counters with no meaning, and dates carry the meaning the numbers didn't.
 
-## [2026.04.28.3] — 2026-04-28
+## [2026.04.28.4] — 2026-04-28
+
+Halve fate-flow van 28.2 teruggedraaid op basis van een principe-helderheid die in 28.2 ontbrak: de speler typt acties, niet vragen. De engine raadpleegt fate onder de motorkap wanneer de fictie een feit nodig heeft, niet via een door Brain gedetecteerde speler-fate-vraag. `BrainResult.fate_question` weg, `fate_question` weg uit Brain output-schema, `_resolve_brain_requests` retourneert weer alleen `list[RandomEvent]`, `SceneContext.fate_result` weg, `_fate_answer_block` plus de `<fate_answer>`-injectie weg uit `prompt_action.py` en `prompt_dialog.py`. Dode imports (`FateResult`, `resolve_fate`, `resolve_likelihood`) opgeschoond in vijf bestanden. Test-aantal ongewijzigd (1119) — er waren geen tests die deze pad-specifieke flow toetsten; bestaande fate-tests gaan over de random-event-pad-fate-functionaliteit die intact blijft.
+
+ARCHITECTURE.md aangepast op drie plekken. Tool calling-paragraaf en Fate system-paragraaf herschreven om de halve flow niet meer te beschrijven. Nieuwe Engine-resolved fiction-paragraaf bij Key Design Decisions die het principe vastlegt: engine produceert alle feiten voordat narrator schrijft, fate-en-oracle-raadpleging vindt op veel concrete callsites plaats verspreid over de turn-pipeline, geen centrale fate-router (per "duplication is cheaper than wrong abstraction"). Nieuwe Datasworn mechanic naming-paragraaf die een `no_roll`/`special_track`-move toelaat als engine-trigger met directe naam (zoals `advance_menace_on_miss`) wanneer hij een gevolg is, en als formele move in `move_outcomes.yaml` wanneer hij een speler-keuze is. Beide principes maken expliciet wat impliciet was, zodat een toekomstige Claude-sessie of een codebase-lezer ze niet hoeft te reconstrueren.
+
+Save format ongewijzigd. 1119 tests groen, ruff clean, ruff format clean op 167 files, mypy clean op 100 source files, project-rule scans clean.
+
+---
+
+
 
 `engine/move_categories.yaml` van 99 naar 66 regels — 33 niet-geïmplementeerde Datasworn-moves weggehaald uit de zes categorie-buckets. Aanleiding: onderzoek naar `session/begin_a_session` legde bloot dat alle vijf session-moves plus 28 andere Datasworn-moves in `move_categories.yaml` stonden zonder backing-implementatie in `move_outcomes.yaml` of `engine_moves.yaml`. Verificatie via `available_moves`: alle 33 hebben een `roll_type` van `no_roll` of `special_track` en worden uit Brain's moves-lijst gefilterd voordat Brain ze kan kiezen. Hun aanwezigheid in `move_categories.yaml` was niet door enig runtime-pad afdwingbaar, alleen door een test-invariant die elke Datasworn-move een bewuste categorisatie eiste.
 
