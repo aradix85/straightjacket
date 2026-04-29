@@ -7,7 +7,19 @@ Originally forked from [EdgeTales](https://github.com/edgetales/edgetales). See 
 
 Straightjacket uses calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day. The first CalVer release is `2026.04.25.0`. Earlier `0.x.y` releases keep their original version numbers and are not renumbered. The switch was made because the project has no public API to version semantically against — the `0.x.y` numbers were running counters with no meaning, and dates carry the meaning the numbers didn't.
 
-## [2026.04.28.5] — 2026-04-28
+## [2026.04.29.0] — 2026-04-29
+
+Stap 6b (AC turning points and supporting tables) afgerond. Turning-point-assembly via `roll_turning_point` combineert 2-5 plot points tot één plot beat: d100 op `plotlines_list_template` voor plotline-keuze met `choose_most_logical`-fallback wanneer de lijst leeg is, dan 3d10 per plot point (theme-priority via `plot_point_theme_priority` met 4e/5e-alternation in een per-assembly `ThemeAlternation`-dataclass, plus 2d10 als d100 voor de plot-point-lookup). Conclusion (1-8) op één van de hits flipt de actieve plotline van `advancement` naar `conclusion`. Drie nieuwe lookup-helpers (`lookup_theme_priority`, `lookup_characters_template`, `lookup_plotlines_template`). Zeven `NotImplementedError`-stubs uit stap 5 vervangen door echte handler-bodies die `narrative.characters_list` en `narrative.plotlines_list` muteren; `dispatch_meta`-signature gewijzigd naar `(roll, narrative, active_plotline_id)`.
+
+Spec-drift gerepareerd in dezelfde commit. Roadmap-substep 6b.3 schreef twee nieuwe NarrativeState-velden voor (`ac_characters_list` plus `ac_plotlines_list`); de implementatie heeft één gedeelde `characters_list` met AC-velden (`ac_status`, `ac_turning_point_count`) plus een nieuwe `plotlines_list`. Reden: dezelfde NPC twee keer in NarrativeState met verschillende ID-schema's zou in stap 11 (NPC-tiers) en stap 24 (NPC-NPC-triangles) een join-probleem worden dat nu niet hoeft te ontstaan. Tweede correctie: roadmap-substep 6b.3 noemde 25 als slot-cap op de runtime-lijst; 25 is feitelijk de template-roll-omvang (25 d100-ranges), geen lengte-limiet. De Mythic-`consolidation_threshold` in `engine/random_events.yaml` is de echte lengte-controle en werkt vanzelf voor AC-toevoegingen mee. ChapterSummary kreeg twee nieuwe velden voor de drie-plaats-chapter-pattern; save format breekt zonder migratie.
+
+Meta-handler-getallen via yaml. `engine/adventure_crafter.yaml` kreeg een `meta_handlers`-blok met `weight_delta_step_up: 1`, `weight_delta_step_down: -1`, `weight_delta_upgrade: 2`, `weight_delta_downgrade: -2`, `weight_floor: 1`. Dataclass `MetaHandlerConfig` bound. De vier weight-rakende handlers (steps_up/down, upgrade/downgrade) lezen via één gedeelde `_apply_weight_delta`-helper die de floor afdwingt. Upgrade is daardoor zwaarder dan Steps Up (categorie-sprong vs gradueel) en blijft tunbaar zonder code-edit wanneer playtest-feedback in stap 7a landt.
+
+ARCHITECTURE.md "Adventure Crafter primitives"-paragraaf herschreven met turning-point-semantiek en de gedeelde-lijst-keuze; module-ownership-tabel kreeg een AC-lists-regel; file-map-comment voor `adventure_crafter.py` aangevuld. Doc-only bycatch in dezelfde sessie: telfout in regel 316 ("two existing Director tools" → "three existing Director tools") gerepareerd. Tests 1117 → 1144 (+27, één extra config-loader-test plus 26 voor 6b-gedrag inclusief twee herschreven NotImplementedError-tests). Save format breekt. Quality gate: pytest, ruff check, ruff format, mypy alle vier groen.
+
+---
+
+
 
 Step 6 (AI-data-aanvoer audit en migratie) afgerond, plus extra hygiëne over schema-validated AI-output downstream van de eerste AI-call sites. Audit op veertien AI-call sites bevestigde dat het "tool-call vs prompt-inject"-principe overal correct staat — geen migraties nodig. Wat wel weg moest: hardcoded fallbacks, schaduwboksende `dict.get`-met-default op velden waar het schema strikter is, dood code dat een feature beloofde maar nooit werd geconsumeerd, plus stale config-namen.
 

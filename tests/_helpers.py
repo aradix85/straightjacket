@@ -126,6 +126,8 @@ def make_chapter_summary(**kwargs: Any) -> Any:
     kwargs.setdefault("impacts", [])
     kwargs.setdefault("assets", [])
     kwargs.setdefault("threads", [])
+    kwargs.setdefault("characters_list", [])
+    kwargs.setdefault("plotlines_list", [])
     return ChapterSummary(**kwargs)
 
 

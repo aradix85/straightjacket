@@ -54,7 +54,16 @@ CREATE TABLE IF NOT EXISTS characters_list (
     name        TEXT NOT NULL,
     entry_type  TEXT NOT NULL,
     weight      INTEGER NOT NULL,
-    active      INTEGER NOT NULL                 -- boolean
+    active      INTEGER NOT NULL,                -- boolean
+    ac_status   TEXT NOT NULL,
+    ac_turning_point_count INTEGER NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS plotlines_list (
+    id          TEXT PRIMARY KEY,
+    name        TEXT NOT NULL,
+    status      TEXT NOT NULL,
+    turning_point_count INTEGER NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS clocks (

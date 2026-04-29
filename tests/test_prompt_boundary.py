@@ -144,6 +144,8 @@ def test_build_new_chapter_prompt_includes_npc_evolutions(load_engine: None) -> 
             impacts=[],
             assets=[],
             threads=[],
+            characters_list=[],
+            plotlines_list=[],
         )
     ]
     out = build_new_chapter_prompt(g)

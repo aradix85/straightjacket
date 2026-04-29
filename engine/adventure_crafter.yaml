@@ -28,3 +28,10 @@ adventure_crafter:
     none_max: 24
     meta_min: 96
     meta_max: 100
+
+  meta_handlers:
+    weight_delta_step_up: 1
+    weight_delta_step_down: -1
+    weight_delta_upgrade: 2
+    weight_delta_downgrade: -2
+    weight_floor: 1

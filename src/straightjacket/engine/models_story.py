@@ -26,6 +26,16 @@ class CharacterListEntry(SerializableMixin):
     entry_type: str
     weight: int = 1
     active: bool = True
+    ac_status: str = ""
+    ac_turning_point_count: int = 0
+
+
+@dataclass
+class PlotlineEntry(SerializableMixin):
+    id: str
+    name: str
+    status: str
+    turning_point_count: int = 0
 
 
 @dataclass
@@ -139,6 +149,7 @@ class NarrativeState(SerializableMixin):
     scene_intensity_history: list[str] = field(default_factory=list)
     threads: list[ThreadEntry] = field(default_factory=list)
     characters_list: list[CharacterListEntry] = field(default_factory=list)
+    plotlines_list: list[PlotlineEntry] = field(default_factory=list)
     keyed_scenes: list[KeyedScene] = field(default_factory=list)
 
     def snapshot(self) -> dict:
@@ -148,6 +159,7 @@ class NarrativeState(SerializableMixin):
             "narration_history_len": len(self.narration_history),
             "threads_len": len(self.threads),
             "characters_list_len": len(self.characters_list),
+            "plotlines_list_len": len(self.plotlines_list),
             "keyed_scenes": [k.to_dict() for k in self.keyed_scenes],
             "director_guidance": self.director_guidance.to_dict(),
             "scene_intensity_history": list(self.scene_intensity_history),
@@ -169,6 +181,7 @@ class NarrativeState(SerializableMixin):
         self.narration_history = self.narration_history[: snap["narration_history_len"]]
         self.threads = self.threads[: snap["threads_len"]]
         self.characters_list = self.characters_list[: snap["characters_list_len"]]
+        self.plotlines_list = self.plotlines_list[: snap["plotlines_list_len"]]
         self.keyed_scenes = [KeyedScene.from_dict(k) for k in snap["keyed_scenes"]]
         bp_snap = snap["story_blueprint_snapshot"]
         if bp_snap is not None and self.story_blueprint is not None:
@@ -227,6 +240,8 @@ class ChapterSummary(SerializableMixin):
     impacts: list[str]
     assets: list[str]
     threads: list[ThreadEntry]
+    characters_list: list[CharacterListEntry]
+    plotlines_list: list[PlotlineEntry]
 
 
 def _legacy_quests_factory() -> ProgressTrack:

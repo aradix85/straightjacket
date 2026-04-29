@@ -56,6 +56,7 @@ from .engine_config_dataclasses import (
     ParserConfig,
     PersistenceConfig,
     PlotPointRanges,
+    MetaHandlerConfig,
     PositionOverride,
     PositionResolverConfig,
     PositionResolverWeights,
@@ -408,11 +409,13 @@ def parse_engine_yaml(data: dict[str, Any]) -> EngineSettings:
 
     ac_raw = dict(data["adventure_crafter"])
     ac_special = _build_strict(PlotPointRanges, dict(ac_raw["special_ranges"]))
+    ac_meta_handlers = _build_strict(MetaHandlerConfig, dict(ac_raw["meta_handlers"]))
     adventure_crafter = AdventureCrafterConfig(
         themes=list(ac_raw["themes"]),
         theme_slots=ac_raw["theme_slots"],
         theme_die_table={int(k): v for k, v in ac_raw["theme_die_table"].items()},
         special_ranges=ac_special,
+        meta_handlers=ac_meta_handlers,
     )
 
     return EngineSettings(

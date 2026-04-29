@@ -16,12 +16,14 @@ from ..mechanics import (
 )
 from ..models import (
     ChapterSummary,
+    CharacterListEntry,
     DirectorGuidance,
     EngineConfig,
     GameState,
     NarrationEntry,
     NpcData,
     NpcEvolution,
+    PlotlineEntry,
     ProgressTrack,
     SceneLogEntry,
     StoryBlueprint,
@@ -127,6 +129,8 @@ def _close_previous_chapter(provider: AIProvider, game: GameState, config: Engin
         impacts=list(game.impacts),
         assets=list(game.assets),
         threads=[ThreadEntry.from_dict(th.to_dict()) for th in game.narrative.threads],
+        characters_list=[CharacterListEntry.from_dict(c.to_dict()) for c in game.narrative.characters_list],
+        plotlines_list=[PlotlineEntry.from_dict(p.to_dict()) for p in game.narrative.plotlines_list],
     )
     game.campaign.campaign_history.append(chapter_summary)
 
@@ -165,6 +169,8 @@ def _reset_chapter_mechanics(game: GameState) -> None:
     game.impacts = []
     game.assets = []
     game.narrative.threads = []
+    game.narrative.characters_list = []
+    game.narrative.plotlines_list = []
 
 
 def _restore_chapter_mechanics(game: GameState, summary: ChapterSummary) -> None:
@@ -173,6 +179,8 @@ def _restore_chapter_mechanics(game: GameState, summary: ChapterSummary) -> None
     game.impacts = list(summary.impacts)
     game.assets = list(summary.assets)
     game.narrative.threads = [ThreadEntry.from_dict(th.to_dict()) for th in summary.threads]
+    game.narrative.characters_list = [CharacterListEntry.from_dict(c.to_dict()) for c in summary.characters_list]
+    game.narrative.plotlines_list = [PlotlineEntry.from_dict(p.to_dict()) for p in summary.plotlines_list]
 
 
 def _prepare_npcs_for_new_chapter(game: GameState) -> None:

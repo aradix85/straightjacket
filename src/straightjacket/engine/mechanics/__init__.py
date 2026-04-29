@@ -1,7 +1,10 @@
 __all__ = [
     "LEGACY_TRACKS",
     "NpcStance",
+    "PlotPointHit",
     "PlotPointResult",
+    "ThemeAlternation",
+    "TurningPoint",
     "add_character_weight",
     "add_thread_weight",
     "advance_asset",
@@ -33,8 +36,11 @@ __all__ = [
     "is_dialog_branch",
     "is_dialog_memory",
     "locations_match",
+    "lookup_characters_template",
     "lookup_meta_plot_point",
     "lookup_plot_point",
+    "lookup_plotlines_template",
+    "lookup_theme_priority",
     "mark_legacy",
     "move_category",
     "pick_template",
@@ -53,6 +59,7 @@ __all__ = [
     "roll_action",
     "roll_event_focus",
     "roll_meaning_table",
+    "roll_turning_point",
     "run_inheritance_rolls",
     "seed_successor_legacy",
     "tick_autonomous_clocks",
@@ -62,12 +69,19 @@ __all__ = [
 ]
 
 from .adventure_crafter import (
+    PlotPointHit,
     PlotPointResult,
+    ThemeAlternation,
+    TurningPoint,
     assign_themes,
     dispatch_meta,
     get_meta_handler_names,
+    lookup_characters_template,
     lookup_meta_plot_point,
     lookup_plot_point,
+    lookup_plotlines_template,
+    lookup_theme_priority,
+    roll_turning_point,
 )
 from .consequences import (
     can_burn_momentum,

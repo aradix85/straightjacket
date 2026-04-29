@@ -15,6 +15,7 @@ def sync(game: GameState) -> None:
         conn.execute("DELETE FROM npcs")
         conn.execute("DELETE FROM threads")
         conn.execute("DELETE FROM characters_list")
+        conn.execute("DELETE FROM plotlines_list")
         conn.execute("DELETE FROM clocks")
         conn.execute("DELETE FROM scene_log")
         conn.execute("DELETE FROM narration_history")
@@ -25,6 +26,7 @@ def sync(game: GameState) -> None:
         _insert_memories(conn, game)
         _insert_threads(conn, game)
         _insert_characters_list(conn, game)
+        _insert_plotlines_list(conn, game)
         _insert_clocks(conn, game)
         _insert_scene_log(conn, game)
         _insert_narration_history(conn, game)
@@ -85,8 +87,18 @@ def _insert_threads(conn: sqlite3.Connection, game: GameState) -> None:
 def _insert_characters_list(conn: sqlite3.Connection, game: GameState) -> None:
     for c in game.narrative.characters_list:
         conn.execute(
-            "INSERT OR IGNORE INTO characters_list (id, name, entry_type, weight, active) VALUES (?, ?, ?, ?, ?)",
-            (c.id, c.name, c.entry_type, c.weight, int(c.active)),
+            "INSERT OR IGNORE INTO characters_list "
+            "(id, name, entry_type, weight, active, ac_status, ac_turning_point_count) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?)",
+            (c.id, c.name, c.entry_type, c.weight, int(c.active), c.ac_status, c.ac_turning_point_count),
+        )
+
+
+def _insert_plotlines_list(conn: sqlite3.Connection, game: GameState) -> None:
+    for p in game.narrative.plotlines_list:
+        conn.execute(
+            "INSERT OR IGNORE INTO plotlines_list (id, name, status, turning_point_count) VALUES (?, ?, ?, ?)",
+            (p.id, p.name, p.status, p.turning_point_count),
         )
 
 

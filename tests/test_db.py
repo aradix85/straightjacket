@@ -92,6 +92,7 @@ def test_init_creates_tables() -> None:
         "memories",
         "narration_history",
         "npcs",
+        "plotlines_list",
         "progress_tracks",
         "scene_log",
         "threads",

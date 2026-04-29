@@ -119,6 +119,8 @@ def _make_chapter_summary(load_engine: None) -> ChapterSummary:
         impacts=["wounded"],
         assets=["asset_a"],
         threads=[ThreadEntry(id="th1", name="Thread", thread_type="vow", source="creation")],
+        characters_list=[],
+        plotlines_list=[],
     )
 
 

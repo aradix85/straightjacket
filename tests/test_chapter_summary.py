@@ -40,6 +40,8 @@ def _populated_summary() -> ChapterSummary:
         impacts=["wounded", "shaken"],
         assets=["asset_compass", "asset_companion"],
         threads=[ThreadEntry(id="thr1", name="Find the truth", thread_type="vow", weight=2, source="creation")],
+        characters_list=[],
+        plotlines_list=[],
     )
 
 
@@ -296,6 +298,8 @@ class TestCallChapterSummaryFallback:
             impacts=list(game.impacts),
             assets=list(game.assets),
             threads=list(game.narrative.threads),
+            characters_list=list(game.narrative.characters_list),
+            plotlines_list=list(game.narrative.plotlines_list),
         )
 
         ChapterSummary.from_dict(summary.to_dict())

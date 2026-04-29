@@ -33,6 +33,7 @@ from .models_story import (
     NarrationEntry,
     NarrativeState,
     NpcEvolution,
+    PlotlineEntry,
     PossibleEnding,
     PredecessorRecord,
     Revelation,

@@ -143,6 +143,8 @@ def test_build_architect_user_msg_includes_campaign(load_engine: None) -> None:
             impacts=[],
             assets=[],
             threads=[],
+            characters_list=[],
+            plotlines_list=[],
         )
     ]
     msg = _build_architect_user_msg(g)

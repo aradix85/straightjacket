@@ -661,8 +661,18 @@ class PlotPointRanges:
 
 
 @dataclass
+class MetaHandlerConfig:
+    weight_delta_step_up: int
+    weight_delta_step_down: int
+    weight_delta_upgrade: int
+    weight_delta_downgrade: int
+    weight_floor: int
+
+
+@dataclass
 class AdventureCrafterConfig:
     themes: list[str]
     theme_slots: int
     theme_die_table: dict[int, str]
     special_ranges: PlotPointRanges
+    meta_handlers: MetaHandlerConfig
