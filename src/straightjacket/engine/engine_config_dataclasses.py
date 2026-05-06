@@ -551,6 +551,14 @@ class NamingConfig:
 
 
 @dataclass
+class RandomEventKeyedSceneMappingEntry:
+    trigger_type: str
+    threshold: int
+    priority: int
+    narrative_hint: str
+
+
+@dataclass
 class RandomEventsConfig:
     threat_target_probability: float
     description_focus_categories: list[str]
@@ -562,6 +570,7 @@ class RandomEventsConfig:
     consolidation_weight_high: int
     consolidation_weight_low: int
     consolidation_weight_default: int
+    keyed_scene_mapping: dict[str, RandomEventKeyedSceneMappingEntry]
 
 
 @dataclass
@@ -640,9 +649,28 @@ class SuccessionConfig:
 
 
 @dataclass
+class PatternGrammar:
+    pattern_prefixes: list[str]
+    matcher_strategy: str
+
+
+@dataclass
+class ClockKeyedSceneEntry:
+    fractions: list[float]
+    priority: int
+    narrative_hint_template: str
+
+
+@dataclass
+class ClockKeyedScenesConfig:
+    by_clock_type: dict[str, ClockKeyedSceneEntry]
+
+
+@dataclass
 class KeyedScenesConfig:
     triggers: frozenset[str]
     prompt_wrapper: str
+    pattern_grammars: dict[str, PatternGrammar]
 
 
 @dataclass
@@ -676,6 +704,14 @@ class BlueprintConfig:
 
 
 @dataclass
+class KeyedSceneMappingEntry:
+    trigger_type: str
+    trigger_value: str
+    priority: int
+    narrative_hint: str
+
+
+@dataclass
 class AdventureCrafterConfig:
     themes: list[str]
     theme_slots: int
@@ -683,3 +719,5 @@ class AdventureCrafterConfig:
     special_ranges: PlotPointRanges
     meta_handlers: MetaHandlerConfig
     blueprint: BlueprintConfig
+    max_keyed_scenes_per_chapter: int
+    keyed_scene_mapping: dict[str, KeyedSceneMappingEntry]

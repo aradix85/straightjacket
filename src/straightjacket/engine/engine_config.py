@@ -16,6 +16,8 @@ from .engine_config_dataclasses import (
     ChaosConfig,
     ChaosResolverConfig,
     ChapterConfig,
+    ClockKeyedSceneEntry,
+    ClockKeyedScenesConfig,
     CombatPosCondition,
     CorrectionConfig,
     CreationConfig,
@@ -33,6 +35,7 @@ from .engine_config_dataclasses import (
     InformationGatePoints,
     InformationGateBuckets,
     KeyedScenesConfig,
+    KeyedSceneMappingEntry,
     LegacyConfig,
     LocationConfig,
     MemoryConfig,
@@ -54,6 +57,7 @@ from .engine_config_dataclasses import (
     OpeningConfig,
     PacingConfig,
     ParserConfig,
+    PatternGrammar,
     PersistenceConfig,
     PlotPointRanges,
     MetaHandlerConfig,
@@ -64,6 +68,7 @@ from .engine_config_dataclasses import (
     ProgressTrackType,
     PromptDisplayConfig,
     RandomEventsConfig,
+    RandomEventKeyedSceneMappingEntry,
     RateLimitConfig,
     ResourcesConfig,
     RetryConfig,
@@ -153,6 +158,7 @@ class EngineSettings:
     succession: SuccessionConfig
     keyed_scenes: KeyedScenesConfig
     adventure_crafter: AdventureCrafterConfig
+    clock_keyed_scenes: ClockKeyedScenesConfig
 
     scene_range_default: list[int]
     death_emotions: list[str]
@@ -236,7 +242,6 @@ _SIMPLE_SECTIONS: dict[str, type] = {
     "setup_common": SetupCommonConfig,
     "metadata_voting": MetadataVotingConfig,
     "naming": NamingConfig,
-    "random_events": RandomEventsConfig,
     "ai_text": AiTextConfig,
     "recap_limits": RecapLimitsConfig,
     "status_descriptions": StatusDescriptionsConfig,
@@ -269,6 +274,93 @@ def _parse_move_availability_rule(rule: dict[str, Any]) -> MoveAvailabilityRule:
         conds = [_parse_move_availability_condition(dict(c)) for c in rule["available"]]
         return MoveAvailabilityRule(never=False, available=conds)
     raise ValueError(f"Invalid move_availability rule: {rule!r}. Expected exactly one of: never, available.")
+
+
+def _build_keyed_scenes(keyed_raw: dict[str, Any]) -> KeyedScenesConfig:
+    pattern_grammars_raw = dict(keyed_raw["pattern_grammars"])
+    pattern_grammars = {
+        trigger_name: PatternGrammar(
+            pattern_prefixes=list(spec["pattern_prefixes"]),
+            matcher_strategy=spec["matcher_strategy"],
+        )
+        for trigger_name, spec in pattern_grammars_raw.items()
+    }
+    return KeyedScenesConfig(
+        triggers=frozenset(keyed_raw["triggers"]),
+        prompt_wrapper=keyed_raw["prompt_wrapper"],
+        pattern_grammars=pattern_grammars,
+    )
+
+
+def _build_adventure_crafter(ac_raw: dict[str, Any]) -> AdventureCrafterConfig:
+    ac_special = _build_strict(PlotPointRanges, dict(ac_raw["special_ranges"]))
+    ac_meta_handlers = _build_strict(MetaHandlerConfig, dict(ac_raw["meta_handlers"]))
+    ac_blueprint_raw = dict(ac_raw["blueprint"])
+    ac_blueprint = BlueprintConfig(
+        turning_points_pre_rolled=ac_blueprint_raw["turning_points_pre_rolled"],
+        acts_three_act=ac_blueprint_raw["acts_three_act"],
+        acts_kishotenketsu=ac_blueprint_raw["acts_kishotenketsu"],
+        revelations_per_blueprint=ac_blueprint_raw["revelations_per_blueprint"],
+        possible_endings_per_blueprint=ac_blueprint_raw["possible_endings_per_blueprint"],
+        three_act_phases=list(ac_blueprint_raw["three_act_phases"]),
+        kishotenketsu_phases=list(ac_blueprint_raw["kishotenketsu_phases"]),
+    )
+    ac_keyed_mapping = {
+        name: KeyedSceneMappingEntry(
+            trigger_type=entry["trigger_type"],
+            trigger_value=entry["trigger_value"],
+            priority=entry["priority"],
+            narrative_hint=entry["narrative_hint"],
+        )
+        for name, entry in dict(ac_raw["keyed_scene_mapping"]).items()
+    }
+    return AdventureCrafterConfig(
+        themes=list(ac_raw["themes"]),
+        theme_slots=ac_raw["theme_slots"],
+        theme_die_table={int(k): v for k, v in ac_raw["theme_die_table"].items()},
+        special_ranges=ac_special,
+        meta_handlers=ac_meta_handlers,
+        blueprint=ac_blueprint,
+        max_keyed_scenes_per_chapter=ac_raw["max_keyed_scenes_per_chapter"],
+        keyed_scene_mapping=ac_keyed_mapping,
+    )
+
+
+def _build_clock_keyed_scenes(cks_raw: dict[str, Any]) -> ClockKeyedScenesConfig:
+    by_type = {
+        clock_type: ClockKeyedSceneEntry(
+            fractions=[float(f) for f in spec["fractions"]],
+            priority=spec["priority"],
+            narrative_hint_template=spec["narrative_hint_template"],
+        )
+        for clock_type, spec in cks_raw.items()
+    }
+    return ClockKeyedScenesConfig(by_clock_type=by_type)
+
+
+def _build_random_events(re_raw: dict[str, Any]) -> RandomEventsConfig:
+    re_keyed_mapping = {
+        focus: RandomEventKeyedSceneMappingEntry(
+            trigger_type=entry["trigger_type"],
+            threshold=entry["threshold"],
+            priority=entry["priority"],
+            narrative_hint=entry["narrative_hint"],
+        )
+        for focus, entry in dict(re_raw["keyed_scene_mapping"]).items()
+    }
+    return RandomEventsConfig(
+        threat_target_probability=re_raw["threat_target_probability"],
+        description_focus_categories=list(re_raw["description_focus_categories"]),
+        npc_focus_categories=list(re_raw["npc_focus_categories"]),
+        thread_focus_categories=list(re_raw["thread_focus_categories"]),
+        threat_eligible_focus_categories=list(re_raw["threat_eligible_focus_categories"]),
+        list_weight_max=re_raw["list_weight_max"],
+        consolidation_threshold=re_raw["consolidation_threshold"],
+        consolidation_weight_high=re_raw["consolidation_weight_high"],
+        consolidation_weight_low=re_raw["consolidation_weight_low"],
+        consolidation_weight_default=re_raw["consolidation_weight_default"],
+        keyed_scene_mapping=re_keyed_mapping,
+    )
 
 
 def parse_engine_yaml(data: dict[str, Any]) -> EngineSettings:
@@ -399,33 +491,10 @@ def parse_engine_yaml(data: dict[str, Any]) -> EngineSettings:
         npc_carryover=npc_carryover,
     )
 
-    keyed_raw = dict(data["keyed_scenes"])
-    keyed_scenes = KeyedScenesConfig(
-        triggers=frozenset(keyed_raw["triggers"]),
-        prompt_wrapper=keyed_raw["prompt_wrapper"],
-    )
-
-    ac_raw = dict(data["adventure_crafter"])
-    ac_special = _build_strict(PlotPointRanges, dict(ac_raw["special_ranges"]))
-    ac_meta_handlers = _build_strict(MetaHandlerConfig, dict(ac_raw["meta_handlers"]))
-    ac_blueprint_raw = dict(ac_raw["blueprint"])
-    ac_blueprint = BlueprintConfig(
-        turning_points_pre_rolled=ac_blueprint_raw["turning_points_pre_rolled"],
-        acts_three_act=ac_blueprint_raw["acts_three_act"],
-        acts_kishotenketsu=ac_blueprint_raw["acts_kishotenketsu"],
-        revelations_per_blueprint=ac_blueprint_raw["revelations_per_blueprint"],
-        possible_endings_per_blueprint=ac_blueprint_raw["possible_endings_per_blueprint"],
-        three_act_phases=list(ac_blueprint_raw["three_act_phases"]),
-        kishotenketsu_phases=list(ac_blueprint_raw["kishotenketsu_phases"]),
-    )
-    adventure_crafter = AdventureCrafterConfig(
-        themes=list(ac_raw["themes"]),
-        theme_slots=ac_raw["theme_slots"],
-        theme_die_table={int(k): v for k, v in ac_raw["theme_die_table"].items()},
-        special_ranges=ac_special,
-        meta_handlers=ac_meta_handlers,
-        blueprint=ac_blueprint,
-    )
+    keyed_scenes = _build_keyed_scenes(dict(data["keyed_scenes"]))
+    adventure_crafter = _build_adventure_crafter(dict(data["adventure_crafter"]))
+    clock_keyed_scenes = _build_clock_keyed_scenes(dict(data["clock_keyed_scenes"]))
+    random_events = _build_random_events(dict(data["random_events"]))
 
     return EngineSettings(
         npc=npc,
@@ -480,7 +549,7 @@ def parse_engine_yaml(data: dict[str, Any]) -> EngineSettings:
         setup_common=simple_parsed["setup_common"],
         metadata_voting=simple_parsed["metadata_voting"],
         naming=simple_parsed["naming"],
-        random_events=simple_parsed["random_events"],
+        random_events=random_events,
         ai_text=simple_parsed["ai_text"],
         recap_limits=simple_parsed["recap_limits"],
         status_descriptions=simple_parsed["status_descriptions"],
@@ -490,6 +559,7 @@ def parse_engine_yaml(data: dict[str, Any]) -> EngineSettings:
         succession=succession,
         keyed_scenes=keyed_scenes,
         adventure_crafter=adventure_crafter,
+        clock_keyed_scenes=clock_keyed_scenes,
         scene_range_default=list(data["scene_range_default"]),
         death_emotions=list(data["death_emotions"]),
         creativity_seeds=list(data["creativity_seeds"]),

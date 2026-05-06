@@ -19,3 +19,25 @@ random_events:
   consolidation_weight_high: 3
   consolidation_weight_low: 2
   consolidation_weight_default: 1
+
+  keyed_scene_mapping:
+    npc_action:
+      trigger_type: bond_threshold
+      threshold: 4
+      priority: 5
+      narrative_hint: "An NPC acts on their own initiative, in a way the player will need to react to."
+    npc_positive:
+      trigger_type: bond_threshold
+      threshold: 5
+      priority: 4
+      narrative_hint: "An NPC's actions land in the player's favour at a moment when it matters."
+    npc_negative:
+      trigger_type: bond_threshold
+      threshold: 4
+      priority: 6
+      narrative_hint: "An NPC turns against the player or their interests."
+    pc_negative:
+      trigger_type: threat_menace_phase
+      threshold: 3
+      priority: 7
+      narrative_hint: "Pressure on the player from an active threat sharpens into a confrontation."

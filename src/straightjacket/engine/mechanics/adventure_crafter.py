@@ -12,6 +12,7 @@ from ..engine_loader import eng
 from ..logging_util import log
 from ..models_story import (
     CharacterListEntry,
+    KeyedScene,
     NarrativeState,
     PlotlineEntry,
     PossibleEnding,
@@ -401,6 +402,139 @@ def get_meta_handler_names() -> tuple[str, ...]:
 
 
 @dataclass(frozen=True)
+class CharacterTraits:
+    special_trait: str
+    identities: list[str]
+    descriptors: list[str]
+
+
+_IDENTITY_FLAG_MAX = 33
+_DESCRIPTOR_FLAG_MAX = 21
+
+
+def lookup_character_special_trait(roll: int) -> str:
+    if not 1 <= roll <= 100:
+        raise ValueError(f"character-special-trait roll {roll} outside 1..100")
+    data = _load_ac_data()
+    for entry in data["character_special_trait"]:
+        if entry["min"] <= roll <= entry["max"]:
+            return str(entry["trait"])
+    raise LookupError(
+        f"no character_special_trait entry covers roll={roll}; "
+        f"data/adventure_crafter.json character_special_trait may be incomplete"
+    )
+
+
+def lookup_character_identity(roll: int) -> str:
+    if not 1 <= roll <= 100:
+        raise ValueError(f"character-identity roll {roll} outside 1..100")
+    data = _load_ac_data()
+    for entry in data["character_identity"]:
+        if entry["min"] <= roll <= entry["max"]:
+            return str(entry["identity"])
+    raise LookupError(
+        f"no character_identity entry covers roll={roll}; "
+        f"data/adventure_crafter.json character_identity may be incomplete"
+    )
+
+
+def lookup_character_descriptor(roll: int) -> str:
+    if not 1 <= roll <= 100:
+        raise ValueError(f"character-descriptor roll {roll} outside 1..100")
+    data = _load_ac_data()
+    for entry in data["character_descriptors"]:
+        if entry["min"] <= roll <= entry["max"]:
+            return str(entry["descriptor"])
+    raise LookupError(
+        f"no character_descriptors entry covers roll={roll}; "
+        f"data/adventure_crafter.json character_descriptors may be incomplete"
+    )
+
+
+def roll_character_traits(rng: random.Random) -> CharacterTraits:
+    special_trait = lookup_character_special_trait(rng.randint(1, 100))
+
+    identity_roll = rng.randint(1, 100)
+    if identity_roll <= _IDENTITY_FLAG_MAX:
+        identities = [
+            lookup_character_identity(rng.randint(_IDENTITY_FLAG_MAX + 1, 100)),
+            lookup_character_identity(rng.randint(_IDENTITY_FLAG_MAX + 1, 100)),
+        ]
+    else:
+        identities = [lookup_character_identity(identity_roll)]
+
+    descriptor_roll = rng.randint(1, 100)
+    if descriptor_roll <= _DESCRIPTOR_FLAG_MAX:
+        descriptors = [
+            lookup_character_descriptor(rng.randint(_DESCRIPTOR_FLAG_MAX + 1, 100)),
+            lookup_character_descriptor(rng.randint(_DESCRIPTOR_FLAG_MAX + 1, 100)),
+        ]
+    else:
+        descriptors = [lookup_character_descriptor(descriptor_roll)]
+
+    return CharacterTraits(
+        special_trait=special_trait,
+        identities=identities,
+        descriptors=descriptors,
+    )
+
+
+_AC_SOURCE_PREFIX = "ac:"
+
+
+def _ac_keyed_scene_count(narrative: NarrativeState) -> int:
+    return sum(1 for ks in narrative.keyed_scenes if ks.source.startswith(_AC_SOURCE_PREFIX))
+
+
+def _ac_already_spawned(narrative: NarrativeState, plot_point_name: str) -> bool:
+    target = f"{_AC_SOURCE_PREFIX}{plot_point_name}"
+    return any(ks.source == target for ks in narrative.keyed_scenes)
+
+
+def _next_keyed_scene_id(narrative: NarrativeState) -> str:
+    n = 1
+    while any(ks.id == f"ks_ac_{n}" for ks in narrative.keyed_scenes):
+        n += 1
+    return f"ks_ac_{n}"
+
+
+def spawn_keyed_scenes_for_turning_point(narrative: NarrativeState, turning_point: TurningPoint) -> int:
+    cfg = eng().adventure_crafter
+    mapping = cfg.keyed_scene_mapping
+    cap = cfg.max_keyed_scenes_per_chapter
+
+    spawned = 0
+    for hit in turning_point.plot_points:
+        if hit.special_range is not None:
+            continue
+        if hit.name not in mapping:
+            continue
+        if _ac_already_spawned(narrative, hit.name):
+            continue
+        if _ac_keyed_scene_count(narrative) >= cap:
+            log(f"[AdventureCrafter] keyed-scene cap {cap} reached, skipping '{hit.name}'")
+            break
+
+        entry = mapping[hit.name]
+        scene_id = _next_keyed_scene_id(narrative)
+        scene = KeyedScene(
+            id=scene_id,
+            trigger_type=entry.trigger_type,
+            trigger_value=entry.trigger_value,
+            priority=entry.priority,
+            narrative_hint=entry.narrative_hint,
+            source=f"{_AC_SOURCE_PREFIX}{hit.name}",
+        )
+        narrative.keyed_scenes.append(scene)
+        spawned += 1
+        log(
+            f"[AdventureCrafter] spawned keyed-scene '{scene_id}' from plot-point '{hit.name}' "
+            f"(trigger {entry.trigger_type}={entry.trigger_value!r}, priority={entry.priority})"
+        )
+    return spawned
+
+
+@dataclass(frozen=True)
 class ActSeed:
     phase: str
     scene_range: list[int]
@@ -459,7 +593,9 @@ def assemble_blueprint_seed_from_ac(
     pre_rolled_count = bp_cfg.turning_points_pre_rolled
     turning_points: list[TurningPoint] = []
     for _ in range(pre_rolled_count):
-        turning_points.append(roll_turning_point(rng, themes, narrative))
+        tp = roll_turning_point(rng, themes, narrative)
+        turning_points.append(tp)
+        spawn_keyed_scenes_for_turning_point(narrative, tp)
 
     act_count = bp_cfg.acts_three_act
     phases = bp_cfg.three_act_phases
@@ -468,8 +604,8 @@ def assemble_blueprint_seed_from_ac(
     scene_ranges = _scene_ranges_evenly_split(list(eng().scene_range_default), act_count)
     acts: list[ActSeed] = []
     for i in range(act_count):
-        tp = turning_points[i] if i < len(turning_points) else None
-        acts.append(ActSeed(phase=phases[i], scene_range=scene_ranges[i], turning_point=tp))
+        tp_for_act = turning_points[i] if i < len(turning_points) else None
+        acts.append(ActSeed(phase=phases[i], scene_range=scene_ranges[i], turning_point=tp_for_act))
 
     revelation_seeds = _flatten_revelation_seeds(turning_points, bp_cfg.revelations_per_blueprint)
     ending_seeds = _ending_seeds(narrative, bp_cfg.possible_endings_per_blueprint)

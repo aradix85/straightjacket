@@ -4,7 +4,7 @@ import random
 
 from ..engine_loader import eng
 from ..logging_util import log
-from ..models import GameState, RandomEvent
+from ..models import GameState, KeyedScene, RandomEvent
 from .fate import _load_mythic
 
 
@@ -116,7 +116,64 @@ def generate_random_event(game: GameState, source: str = "") -> RandomEvent:
     target_str = f" target='{target_name}'" if target_name else ""
     log(f"[RandomEvent] {focus}{target_str} → {word1} / {word2} (source={source})")
     _pending_events.append(event)
+
+    spawn_keyed_scene_from_random_event(game, event)
+
     return event
+
+
+_RE_SOURCE_PREFIX = "random_event:"
+
+
+def _re_already_spawned_for_target(game: GameState, focus: str, target_id: str) -> bool:
+    target = f"{_RE_SOURCE_PREFIX}{focus}:{target_id}"
+    return any(ks.source == target for ks in game.narrative.keyed_scenes)
+
+
+def _re_next_keyed_scene_id(game: GameState) -> str:
+    n = 1
+    while any(ks.id == f"ks_re_{n}" for ks in game.narrative.keyed_scenes):
+        n += 1
+    return f"ks_re_{n}"
+
+
+def spawn_keyed_scene_from_random_event(game: GameState, event: RandomEvent) -> bool:
+    cfg = eng().random_events
+    if event.focus not in cfg.keyed_scene_mapping:
+        return False
+    if not event.target_id:
+        return False
+    if _re_already_spawned_for_target(game, event.focus, event.target_id):
+        return False
+
+    entry = cfg.keyed_scene_mapping[event.focus]
+    if entry.trigger_type == "bond_threshold":
+        pool = event.target_id
+    elif entry.trigger_type == "threat_menace_phase":
+        pool = event.target
+    else:
+        raise ValueError(
+            f"random_events.keyed_scene_mapping for focus {event.focus!r} uses unsupported "
+            f"trigger_type {entry.trigger_type!r}"
+        )
+    trigger_value = f"{pool}:{entry.threshold}"
+
+    scene_id = _re_next_keyed_scene_id(game)
+    scene = KeyedScene(
+        id=scene_id,
+        trigger_type=entry.trigger_type,
+        trigger_value=trigger_value,
+        priority=entry.priority,
+        narrative_hint=entry.narrative_hint,
+        source=f"{_RE_SOURCE_PREFIX}{event.focus}:{event.target_id}",
+    )
+    game.narrative.keyed_scenes.append(scene)
+    log(
+        f"[RandomEvent] spawned keyed-scene '{scene_id}' from focus '{event.focus}' "
+        f"target_id='{event.target_id}' (trigger {entry.trigger_type}={trigger_value!r}, "
+        f"priority={entry.priority})"
+    )
+    return True
 
 
 def add_thread_weight(game: GameState, thread_id: str) -> None:

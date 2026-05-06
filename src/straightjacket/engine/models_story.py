@@ -132,11 +132,44 @@ class KeyedScene(SerializableMixin):
     trigger_value: str
     priority: int
     narrative_hint: str
+    bound_entity_id: str | None = None
+    source: str = ""
 
     def __post_init__(self) -> None:
-        triggers = eng().keyed_scenes.triggers
-        if self.trigger_type not in triggers:
-            raise ValueError(f"Unknown KeyedScene trigger_type {self.trigger_type!r}; registered: {sorted(triggers)}")
+        cfg = eng().keyed_scenes
+        if self.trigger_type not in cfg.triggers:
+            raise ValueError(
+                f"Unknown KeyedScene trigger_type {self.trigger_type!r}; registered: {sorted(cfg.triggers)}"
+            )
+        if self.trigger_type in cfg.pattern_grammars:
+            _validate_pattern_trigger_value(self.trigger_type, self.trigger_value)
+
+
+def _validate_pattern_trigger_value(trigger_type: str, value: str) -> None:
+    parts = value.split(":", 1)
+    if len(parts) != 2 or not parts[0] or not parts[1]:
+        raise ValueError(f"{trigger_type} trigger_value must be '<pool>:<threshold>', got {value!r}")
+    pool, threshold_str = parts
+    try:
+        int(threshold_str)
+    except ValueError as exc:
+        raise ValueError(f"{trigger_type} threshold must be an integer, got {threshold_str!r}") from exc
+
+    grammar = eng().keyed_scenes.pattern_grammars[trigger_type]
+    for prefix in grammar.pattern_prefixes:
+        if prefix.endswith("_"):
+            if pool.startswith(prefix):
+                suffix = pool[len(prefix) :]
+                if prefix == "disposition_":
+                    valid = eng().enums.dispositions
+                    if suffix not in valid:
+                        raise ValueError(
+                            f"{trigger_type} disposition pattern {pool!r} uses unknown disposition "
+                            f"{suffix!r}; valid: {sorted(valid)}"
+                        )
+                return
+        elif pool == prefix:
+            return
 
 
 @dataclass

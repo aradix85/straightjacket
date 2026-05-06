@@ -1,0 +1,18 @@
+clock_keyed_scenes:
+  threat:
+    fractions:
+    - 0.5
+    - 1.0
+    priority: 6
+    narrative_hint_template: "{clock_name}: time is running short. The shape of the danger is no longer abstract."
+  scheme:
+    fractions:
+    - 0.5
+    - 1.0
+    priority: 5
+    narrative_hint_template: "{clock_name}: the plan that has been quietly running comes into the light."
+  progress:
+    fractions:
+    - 1.0
+    priority: 4
+    narrative_hint_template: "{clock_name}: the work is done. What was being built has been built."

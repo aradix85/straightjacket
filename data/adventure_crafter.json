@@ -2385,6 +2385,11 @@
       "identity": "Soldier"
     },
     {
+      "min": 99,
+      "max": 99,
+      "identity": "Spy"
+    },
+    {
       "min": 100,
       "max": 100,
       "identity": "Exotic"

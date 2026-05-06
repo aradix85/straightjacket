@@ -4,6 +4,7 @@ from collections.abc import Sequence
 from ..engine_loader import eng
 from ..logging_util import log
 from ..mechanics import time_phases, update_location
+from ..mechanics.keyed_scenes import spawn_keyed_scenes_for_clock
 from ..models import ClockData, GameState, MemoryEntry, NpcData
 from ..npc import apply_name_sanitization, normalize_npc_dispositions, score_importance
 
@@ -100,6 +101,8 @@ def apply_world_setup(game: GameState, data: dict, *, clocks_mode: str = "replac
         else:
             game.world.clocks.extend(clocks)
         log(f"[Setup] Created {len(clocks)} clocks")
+        for clock in clocks:
+            spawn_keyed_scenes_for_clock(game.narrative, clock)
 
     if data.get("location"):
         update_location(game, data["location"])

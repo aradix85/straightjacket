@@ -8,3 +8,18 @@ keyed_scenes:
   - scene_count
 
   prompt_wrapper: "<keyed_scene>{hint}</keyed_scene>"
+
+  pattern_grammars:
+    bond_threshold:
+      pattern_prefixes:
+      - any
+      - disposition_
+      matcher_strategy: highest_bond
+    threat_menace_phase:
+      pattern_prefixes:
+      - any
+      matcher_strategy: highest_menace
+    clock_fills:
+      pattern_prefixes:
+      - any
+      matcher_strategy: highest_filled

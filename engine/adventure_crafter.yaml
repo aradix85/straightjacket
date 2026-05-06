@@ -51,3 +51,172 @@ adventure_crafter:
       - sho_development
       - ten_twist
       - ketsu_resolution
+
+  max_keyed_scenes_per_chapter: 4
+
+  keyed_scene_mapping:
+    "Betrayal!":
+      trigger_type: bond_threshold
+      trigger_value: "any:7"
+      priority: 9
+      narrative_hint: "A betrayal lands. The bond was real; the breaking of it is too."
+    "Liar!":
+      trigger_type: bond_threshold
+      trigger_value: "any:5"
+      priority: 6
+      narrative_hint: "A lie surfaces from someone the player trusted enough to believe."
+    "Lie Discovered":
+      trigger_type: bond_threshold
+      trigger_value: "any:6"
+      priority: 7
+      narrative_hint: "A lie that has been quietly running comes apart, with the speaker present."
+    "Hidden Agenda":
+      trigger_type: bond_threshold
+      trigger_value: "disposition_friendly:5"
+      priority: 6
+      narrative_hint: "The friendly face has been working an angle the player did not see."
+    "It's A Secret":
+      trigger_type: bond_threshold
+      trigger_value: "any:6"
+      priority: 6
+      narrative_hint: "Something kept hidden until now becomes impossible to keep."
+    "An Old Deal":
+      trigger_type: bond_threshold
+      trigger_value: "any:7"
+      priority: 7
+      narrative_hint: "An older arrangement, made before the player's involvement, comes due."
+    "A Figure From The Past":
+      trigger_type: bond_threshold
+      trigger_value: "any:5"
+      priority: 5
+      narrative_hint: "Someone from the player's past or this NPC's past steps back into view."
+    "A Character Acts Out Of Character":
+      trigger_type: bond_threshold
+      trigger_value: "any:4"
+      priority: 4
+      narrative_hint: "A familiar NPC behaves in a way that does not match what the player has come to expect."
+    "Character Connection Severed":
+      trigger_type: bond_threshold
+      trigger_value: "any:6"
+      priority: 8
+      narrative_hint: "A relationship breaks. The break is final, not a misunderstanding to repair."
+    "Suspicion":
+      trigger_type: bond_threshold
+      trigger_value: "disposition_neutral:3"
+      priority: 3
+      narrative_hint: "A neutral acquaintance begins to doubt the player or their cause."
+    "An Opposing Story":
+      trigger_type: bond_threshold
+      trigger_value: "any:5"
+      priority: 5
+      narrative_hint: "An NPC's account of events contradicts the player's understanding."
+    "Friend Focus":
+      trigger_type: bond_threshold
+      trigger_value: "disposition_friendly:6"
+      priority: 4
+      narrative_hint: "Friendship deepens into something the player can lean on."
+    "Character Connection":
+      trigger_type: bond_threshold
+      trigger_value: "any:4"
+      priority: 3
+      narrative_hint: "Two people grow closer in a way that begins to matter to the story."
+    "Asking For Help":
+      trigger_type: bond_threshold
+      trigger_value: "any:4"
+      priority: 4
+      narrative_hint: "An NPC turns to the player for help they cannot easily refuse."
+    "Help Is Offered, For A Price":
+      trigger_type: bond_threshold
+      trigger_value: "disposition_neutral:4"
+      priority: 5
+      narrative_hint: "A neutral party offers aid that comes with strings attached."
+    "The Plot Thickens":
+      trigger_type: scene_count
+      trigger_value: "8"
+      priority: 5
+      narrative_hint: "What seemed straightforward shows a layer underneath."
+    "Crescendo":
+      trigger_type: scene_count
+      trigger_value: "14"
+      priority: 7
+      narrative_hint: "Tensions that have been building reach a near-breaking pitch."
+    "All Is Revealed!":
+      trigger_type: scene_count
+      trigger_value: "18"
+      priority: 8
+      narrative_hint: "What was hidden across this chapter is now plainly known."
+    "Welcome To The Plot":
+      trigger_type: scene_count
+      trigger_value: "3"
+      priority: 4
+      narrative_hint: "An unsuspecting party is pulled into events they did not choose."
+    "Frenetic Activity":
+      trigger_type: chaos_extreme
+      trigger_value: "max"
+      priority: 5
+      narrative_hint: "Everything is happening at once and the player is in the middle of it."
+    "A Moment Of Peace":
+      trigger_type: chaos_extreme
+      trigger_value: "min"
+      priority: 4
+      narrative_hint: "A pause. The world goes quiet enough for thought, however briefly."
+    "Sudden Cessation":
+      trigger_type: chaos_extreme
+      trigger_value: "min"
+      priority: 5
+      narrative_hint: "Activity stops abruptly, and the silence is louder than the noise was."
+    "Quiet Catastrophe":
+      trigger_type: chaos_extreme
+      trigger_value: "min"
+      priority: 6
+      narrative_hint: "Something terrible happens without ceremony, almost as a footnote."
+    "Catastrophe":
+      trigger_type: chaos_extreme
+      trigger_value: "max"
+      priority: 8
+      narrative_hint: "Disaster strikes large. Plans burn, time is short, choices are bad."
+    "Mass Battle":
+      trigger_type: threat_menace_phase
+      trigger_value: "any:4"
+      priority: 8
+      narrative_hint: "Forces clash openly. The fight is no longer private; everyone is in it."
+    "Impending Doom":
+      trigger_type: threat_menace_phase
+      trigger_value: "any:5"
+      priority: 9
+      narrative_hint: "What was distant approaches. The end of something is no longer abstract."
+    "A New Enemy":
+      trigger_type: threat_menace_phase
+      trigger_value: "any:2"
+      priority: 4
+      narrative_hint: "An adversary the player has not yet faced steps into the open."
+    "Hidden Threat":
+      trigger_type: threat_menace_phase
+      trigger_value: "any:3"
+      priority: 5
+      narrative_hint: "A danger that has been quietly growing reveals its shape."
+    "A Problem Returns":
+      trigger_type: threat_menace_phase
+      trigger_value: "any:4"
+      priority: 6
+      narrative_hint: "An old danger, thought handled, reasserts itself."
+    "Time Limit":
+      trigger_type: clock_fills
+      trigger_value: "any:4"
+      priority: 7
+      narrative_hint: "A countdown reaches the point where waiting is no longer an option."
+    "A Crucial Life Support System Begins To Fail":
+      trigger_type: clock_fills
+      trigger_value: "any:3"
+      priority: 7
+      narrative_hint: "Something the player relies on is breaking down, visibly."
+    "A Needed Resource Runs Out":
+      trigger_type: clock_fills
+      trigger_value: "any:6"
+      priority: 6
+      narrative_hint: "What the player needed has run out, and the gap matters now."
+    "Nowhere To Run":
+      trigger_type: threat_menace_phase
+      trigger_value: "any:5"
+      priority: 7
+      narrative_hint: "Routes of escape close. The confrontation cannot be deferred any further."

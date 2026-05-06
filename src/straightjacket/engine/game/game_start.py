@@ -20,6 +20,7 @@ from ..mechanics.adventure_crafter import (
     assemble_blueprint_seed_kishotenketsu,
     materialize_blueprint,
 )
+from ..mechanics.keyed_scenes import spawn_keyed_scenes_for_clock
 from ..models import (
     CharacterListEntry,
     ClockData,
@@ -253,16 +254,16 @@ def start_new_game(
     game.world.time_of_day = _opening.time_of_day
 
     _trigger = _opening.clock_trigger_template.format(player=game.player_name)
-    game.world.clocks.append(
-        ClockData(
-            name=game.background_vow,
-            clock_type="threat",
-            segments=_opening.clock_segments,
-            filled=_opening.clock_filled,
-            trigger_description=_trigger,
-            owner="",
-        )
+    background_clock = ClockData(
+        name=game.background_vow,
+        clock_type="threat",
+        segments=_opening.clock_segments,
+        filled=_opening.clock_filled,
+        trigger_description=_trigger,
+        owner="",
     )
+    game.world.clocks.append(background_clock)
+    spawn_keyed_scenes_for_clock(game.narrative, background_clock)
     log(f"[NewGame] Engine-created opening clock and time_of_day={_opening.time_of_day}")
 
     log(f"[NewGame] Character: {game.player_name}, paths={paths}, assets={game.assets}")

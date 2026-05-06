@@ -798,6 +798,11 @@ _ORPHAN_SYMBOL_CARVE_OUT: set[tuple[str, str]] = {
     ("query_npc", "engine/tools/builtins.py"),
     ("query_active_threads", "engine/tools/builtins.py"),
     ("query_active_clocks", "engine/tools/builtins.py"),
+    ("CharacterTraits", "engine/mechanics/adventure_crafter.py"),
+    ("roll_character_traits", "engine/mechanics/adventure_crafter.py"),
+    ("lookup_character_special_trait", "engine/mechanics/adventure_crafter.py"),
+    ("lookup_character_identity", "engine/mechanics/adventure_crafter.py"),
+    ("lookup_character_descriptor", "engine/mechanics/adventure_crafter.py"),
 }
 
 
