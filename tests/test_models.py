@@ -166,9 +166,9 @@ def test_phase_trigger_dedup(load_engine: None) -> None:
         story_complete=False,
     )
     bp.acts = [
-        StoryAct(phase="setup", title="Setup", scene_range=[1, 5]),
-        StoryAct(phase="climax", title="Climax", scene_range=[6, 10]),
-        StoryAct(phase="resolution", title="Resolution", scene_range=[11, 15]),
+        StoryAct(phase="setup", title="Setup", goal="", scene_range=[1, 5], mood="", transition_trigger=""),
+        StoryAct(phase="climax", title="Climax", goal="", scene_range=[6, 10], mood="", transition_trigger=""),
+        StoryAct(phase="resolution", title="Resolution", goal="", scene_range=[11, 15], mood="", transition_trigger=""),
     ]
     game.narrative.story_blueprint = bp
 

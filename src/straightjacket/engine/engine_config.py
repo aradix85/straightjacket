@@ -10,8 +10,8 @@ from .engine_config_dataclasses import (
     ActivationScores,
     AdventureCrafterConfig,
     AiTextConfig,
-    ArchitectConfig,
-    ArchitectLimitsConfig,
+    RecapLimitsConfig,
+    BlueprintConfig,
     BondsConfig,
     ChaosConfig,
     ChaosResolverConfig,
@@ -103,7 +103,6 @@ class EngineSettings:
     location: LocationConfig
     prompt_display: PromptDisplayConfig
     opening: OpeningConfig
-    architect: ArchitectConfig
     threats: ThreatConfig
     impacts: dict[str, ImpactConfig]
     legacy: LegacyConfig
@@ -146,7 +145,7 @@ class EngineSettings:
     naming: NamingConfig
     random_events: RandomEventsConfig
     ai_text: AiTextConfig
-    architect_limits: ArchitectLimitsConfig
+    recap_limits: RecapLimitsConfig
     status_descriptions: StatusDescriptionsConfig
     truncations: TruncationsConfig
     persistence: PersistenceConfig
@@ -218,7 +217,6 @@ _SIMPLE_SECTIONS: dict[str, type] = {
     "location": LocationConfig,
     "prompt_display": PromptDisplayConfig,
     "opening": OpeningConfig,
-    "architect": ArchitectConfig,
     "threats": ThreatConfig,
     "story": StoryConfig,
     "enums": EnumsConfig,
@@ -240,7 +238,7 @@ _SIMPLE_SECTIONS: dict[str, type] = {
     "naming": NamingConfig,
     "random_events": RandomEventsConfig,
     "ai_text": AiTextConfig,
-    "architect_limits": ArchitectLimitsConfig,
+    "recap_limits": RecapLimitsConfig,
     "status_descriptions": StatusDescriptionsConfig,
     "truncations": TruncationsConfig,
     "persistence": PersistenceConfig,
@@ -410,12 +408,23 @@ def parse_engine_yaml(data: dict[str, Any]) -> EngineSettings:
     ac_raw = dict(data["adventure_crafter"])
     ac_special = _build_strict(PlotPointRanges, dict(ac_raw["special_ranges"]))
     ac_meta_handlers = _build_strict(MetaHandlerConfig, dict(ac_raw["meta_handlers"]))
+    ac_blueprint_raw = dict(ac_raw["blueprint"])
+    ac_blueprint = BlueprintConfig(
+        turning_points_pre_rolled=ac_blueprint_raw["turning_points_pre_rolled"],
+        acts_three_act=ac_blueprint_raw["acts_three_act"],
+        acts_kishotenketsu=ac_blueprint_raw["acts_kishotenketsu"],
+        revelations_per_blueprint=ac_blueprint_raw["revelations_per_blueprint"],
+        possible_endings_per_blueprint=ac_blueprint_raw["possible_endings_per_blueprint"],
+        three_act_phases=list(ac_blueprint_raw["three_act_phases"]),
+        kishotenketsu_phases=list(ac_blueprint_raw["kishotenketsu_phases"]),
+    )
     adventure_crafter = AdventureCrafterConfig(
         themes=list(ac_raw["themes"]),
         theme_slots=ac_raw["theme_slots"],
         theme_die_table={int(k): v for k, v in ac_raw["theme_die_table"].items()},
         special_ranges=ac_special,
         meta_handlers=ac_meta_handlers,
+        blueprint=ac_blueprint,
     )
 
     return EngineSettings(
@@ -431,7 +440,6 @@ def parse_engine_yaml(data: dict[str, Any]) -> EngineSettings:
         location=simple_parsed["location"],
         prompt_display=simple_parsed["prompt_display"],
         opening=simple_parsed["opening"],
-        architect=simple_parsed["architect"],
         threats=simple_parsed["threats"],
         impacts=impacts,
         legacy=legacy,
@@ -474,7 +482,7 @@ def parse_engine_yaml(data: dict[str, Any]) -> EngineSettings:
         naming=simple_parsed["naming"],
         random_events=simple_parsed["random_events"],
         ai_text=simple_parsed["ai_text"],
-        architect_limits=simple_parsed["architect_limits"],
+        recap_limits=simple_parsed["recap_limits"],
         status_descriptions=simple_parsed["status_descriptions"],
         truncations=simple_parsed["truncations"],
         persistence=simple_parsed["persistence"],

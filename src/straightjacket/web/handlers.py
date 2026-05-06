@@ -3,7 +3,7 @@ import asyncio
 from starlette.websockets import WebSocket, WebSocketDisconnect
 
 from ..engine.ai.api_client import get_provider
-from ..engine.ai.architect import call_recap
+from ..engine.ai.recap import call_recap
 from ..engine.correction import process_correction
 from ..engine.db.sync import sync as _db_sync
 from ..engine.director import reset_stale_reflection_flags

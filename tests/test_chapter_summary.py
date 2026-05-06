@@ -245,7 +245,7 @@ class TestChapterTransitionPreservesState:
 
 class TestCallChapterSummaryFallback:
     def test_fallback_returns_complete_narrative_dict(self, stub_engine: None) -> None:
-        from straightjacket.engine.ai.architect import call_chapter_summary
+        from straightjacket.engine.ai.chapter_summary import call_chapter_summary
 
         game = make_game_state(player_name="Hero", setting_id="starforged")
         game.world.current_location = "TestLocation"
@@ -273,7 +273,7 @@ class TestCallChapterSummaryFallback:
         assert narrative["post_story_location"] == "TestLocation"
 
     def test_fallback_dict_constructs_chaptersummary(self, stub_engine: None) -> None:
-        from straightjacket.engine.ai.architect import call_chapter_summary
+        from straightjacket.engine.ai.chapter_summary import call_chapter_summary
 
         game = make_game_state(player_name="Hero", setting_id="starforged")
 
@@ -303,3 +303,102 @@ class TestCallChapterSummaryFallback:
         )
 
         ChapterSummary.from_dict(summary.to_dict())
+
+
+def _full_game_for_summary(load_engine: None) -> Any:
+    from tests._helpers import make_game_state
+
+    g = make_game_state(
+        player_name="Aria",
+        character_concept="exiled archivist",
+        setting_genre="dark_fantasy",
+        setting_tone="serious",
+        setting_description="A grim world.",
+        backstory="She fled the temple.",
+    )
+    g.world.current_location = "Tavern"
+    g.world.current_scene_context = "Quiet morning."
+    return g
+
+
+def test_call_chapter_summary_returns_parsed_json(load_engine: None) -> None:
+    import json
+
+    from straightjacket.engine.ai.chapter_summary import call_chapter_summary
+    from tests._mocks import MockProvider
+
+    fake_summary = {
+        "title": "Chapter Title",
+        "summary": "What happened",
+        "unresolved_threads": ["thread1"],
+        "character_growth": "grew",
+        "npc_evolutions": [],
+        "thematic_question": "?",
+        "post_story_location": "Tavern",
+    }
+    provider = MockProvider(json.dumps(fake_summary))
+    g = _full_game_for_summary(None)
+    result = call_chapter_summary(provider, g)
+    assert result["title"] == "Chapter Title"
+
+
+def test_call_chapter_summary_falls_back_on_api_error(load_engine: None) -> None:
+    from straightjacket.engine.ai.chapter_summary import call_chapter_summary
+    from tests._mocks import MockProvider
+
+    provider = MockProvider(fail=True)
+    g = _full_game_for_summary(None)
+    g.campaign.chapter_number = 3
+    result = call_chapter_summary(provider, g)
+    assert "title" in result
+    assert "summary" in result
+    assert "unresolved_threads" in result
+
+
+def test_call_chapter_summary_with_blueprint(load_engine: None) -> None:
+    import json
+
+    from straightjacket.engine.ai.chapter_summary import call_chapter_summary
+    from straightjacket.engine.models_story import StoryBlueprint
+    from tests._mocks import MockProvider
+
+    fake_summary = {
+        "title": "T",
+        "summary": "S",
+        "unresolved_threads": [],
+        "character_growth": "",
+        "npc_evolutions": [],
+        "thematic_question": "?",
+        "post_story_location": "X",
+    }
+    provider = MockProvider(json.dumps(fake_summary))
+    g = _full_game_for_summary(None)
+    g.narrative.story_blueprint = StoryBlueprint(
+        central_conflict="The conflict",
+        antagonist_force="",
+        thematic_thread="",
+        structure_type="3act",
+    )
+    result = call_chapter_summary(provider, g)
+    assert result["title"] == "T"
+
+
+def test_call_chapter_summary_with_epilogue(load_engine: None) -> None:
+    import json
+
+    from straightjacket.engine.ai.chapter_summary import call_chapter_summary
+    from tests._mocks import MockProvider
+
+    fake_summary = {
+        "title": "T",
+        "summary": "S",
+        "unresolved_threads": [],
+        "character_growth": "",
+        "npc_evolutions": [],
+        "thematic_question": "?",
+        "post_story_location": "X",
+    }
+    provider = MockProvider(json.dumps(fake_summary))
+    g = _full_game_for_summary(None)
+    result = call_chapter_summary(provider, g, epilogue_text="The end was bittersweet.")
+    assert result["title"] == "T"

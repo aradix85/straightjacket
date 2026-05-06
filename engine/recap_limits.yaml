@@ -1,0 +1,8 @@
+recap_limits:
+  recap_log_window: 15
+  recap_narration_window: 5
+  recap_narration_truncate: 800
+  recap_campaign_history_window: 2
+  recap_campaign_summary_truncate: 200
+  recap_campaign_window: 3
+  chapter_summary_log_window: 20

@@ -52,6 +52,7 @@ def _blueprint() -> StoryBlueprint:
             StoryAct(
                 phase="setup",
                 title="Gathering",
+                goal="",
                 scene_range=[1, 7],
                 mood="mysterious",
                 transition_trigger="Allies gathered",
@@ -59,12 +60,18 @@ def _blueprint() -> StoryBlueprint:
             StoryAct(
                 phase="confrontation",
                 title="Darkness",
+                goal="",
                 scene_range=[8, 14],
                 mood="tense",
                 transition_trigger="Shadow revealed",
             ),
             StoryAct(
-                phase="climax", title="Final", scene_range=[15, 20], mood="desperate", transition_trigger="Resolution"
+                phase="climax",
+                title="Final",
+                goal="",
+                scene_range=[15, 20],
+                mood="desperate",
+                transition_trigger="Resolution",
             ),
         ],
     )

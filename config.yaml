@@ -53,7 +53,7 @@ ai:
 
   role_cluster:
     narrator: narrator
-    architect: creative
+    blueprint_voicing: creative
     director: creative
     chapter_summary: creative
     recap: creative

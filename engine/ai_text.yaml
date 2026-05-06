@@ -2,7 +2,7 @@ ai_text:
   schema_titles:
     brain_output: brain_output
     director_output: director_output
-    story_architect_output: story_architect_output
+    blueprint_voicing_output: blueprint_voicing_output
     chapter_summary_output: chapter_summary_output
     narrator_metadata: narrator_metadata
     opening_setup: opening_setup
@@ -48,9 +48,6 @@ ai_text:
     no_roll: dialog (no roll)
     npc_appeared_event: '{npc_name} appeared'
     unnamed_track: Unnamed conflict
-    default_act_mood:
-    - tense
-    - grounded
     recap_fallback: ({player_name} recalls the recent events...)
     chapter_summary_fallback_title: Chapter {chapter}
     chapter_summary_fallback_text: '{player_name} had an adventure in {location}.'

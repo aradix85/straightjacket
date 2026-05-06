@@ -65,12 +65,12 @@ class NarrationEntry(SerializableMixin):
 
 @dataclass
 class StoryAct(SerializableMixin):
-    phase: str = ""
-    title: str = ""
-    goal: str = ""
-    scene_range: list[int] = field(default_factory=list)
-    mood: str = ""
-    transition_trigger: str = ""
+    phase: str
+    title: str
+    goal: str
+    scene_range: list[int]
+    mood: str
+    transition_trigger: str
 
 
 @dataclass
@@ -91,24 +91,24 @@ class CurrentAct:
 
 @dataclass
 class Revelation(SerializableMixin):
-    id: str = ""
-    content: str = ""
-    earliest_scene: int = 999
-    dramatic_weight: str = "medium"
+    id: str
+    content: str
+    earliest_scene: int
+    dramatic_weight: str
 
 
 @dataclass
 class PossibleEnding(SerializableMixin):
-    type: str = ""
-    description: str = ""
+    type: str
+    description: str
 
 
 @dataclass
 class StoryBlueprint(SerializableMixin):
-    central_conflict: str = ""
-    antagonist_force: str = ""
-    thematic_thread: str = ""
-    structure_type: str = "3act"
+    central_conflict: str
+    antagonist_force: str
+    thematic_thread: str
+    structure_type: str
     acts: list[StoryAct] = field(default_factory=list)
     revelations: list[Revelation] = field(default_factory=list)
     possible_endings: list[PossibleEnding] = field(default_factory=list)

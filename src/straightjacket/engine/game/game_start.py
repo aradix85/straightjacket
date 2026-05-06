@@ -1,6 +1,8 @@
 from concurrent.futures import ThreadPoolExecutor
 
-from ..ai.architect import call_story_architect
+import random as _random_module
+
+from ..ai.blueprint_voicing import call_blueprint_voicing
 from ..ai.metadata import process_deceased_npcs
 from ..ai.narrator import call_narrator, call_opening_setup
 from ..ai.provider_base import AIProvider
@@ -13,6 +15,11 @@ from ..mechanics import (
     choose_story_structure,
     record_scene_intensity,
 )
+from ..mechanics.adventure_crafter import (
+    assemble_blueprint_seed_from_ac,
+    assemble_blueprint_seed_kishotenketsu,
+    materialize_blueprint,
+)
 from ..models import (
     CharacterListEntry,
     ClockData,
@@ -21,7 +28,6 @@ from ..models import (
     NarrationEntry,
     ProgressTrack,
     SceneLogEntry,
-    StoryBlueprint,
     ThreadEntry,
 )
 from ..parser import parse_narrator_response
@@ -267,24 +273,31 @@ def start_new_game(
         save_user_config(username, user_cfg)
 
     structure = choose_story_structure(pkg.id)
+    rng = _random_module.Random()
+    if structure == "kishotenketsu":
+        seed = assemble_blueprint_seed_kishotenketsu(rng, game.narrative)
+    else:
+        seed = assemble_blueprint_seed_from_ac(rng, game.narrative)
+    log(f"[NewGame] Blueprint seed assembled: structure={seed.structure_type}, themes={seed.themes}")
+
     narrator_prompt = build_new_game_prompt(game)
 
     def _run_narrator() -> str:
         return call_narrator(provider, narrator_prompt, game, config)
 
-    def _run_architect() -> dict | None:
-        return call_story_architect(provider, game, structure_type=structure, config=config)
+    def _run_voicing() -> dict | None:
+        return call_blueprint_voicing(provider, game, seed, config)
 
     with ThreadPoolExecutor(max_workers=2) as pool:
         fut_narrator = pool.submit(_run_narrator)
-        fut_architect = pool.submit(_run_architect)
+        fut_voicing = pool.submit(_run_voicing)
         raw = fut_narrator.result()
-        blueprint = fut_architect.result()
+        voicing = fut_voicing.result()
 
     narration = parse_narrator_response(game, raw)
 
-    if blueprint is not None:
-        game.narrative.story_blueprint = StoryBlueprint.from_dict(blueprint)
+    if voicing is not None:
+        game.narrative.story_blueprint = materialize_blueprint(seed, voicing)
     else:
         game.narrative.story_blueprint = None
 

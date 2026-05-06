@@ -1,8 +1,10 @@
 import copy
+import random as _random_module
 import re
 from concurrent.futures import ThreadPoolExecutor
 
-from ..ai.architect import call_chapter_summary, call_story_architect
+from ..ai.chapter_summary import call_chapter_summary
+from ..ai.blueprint_voicing import call_blueprint_voicing
 from ..ai.metadata import process_deceased_npcs
 from ..ai.narrator import call_narrator, call_opening_setup
 from ..ai.provider_base import AIProvider
@@ -13,6 +15,12 @@ from ..logging_util import log
 from ..mechanics import (
     choose_story_structure,
     record_scene_intensity,
+)
+from ..mechanics.adventure_crafter import (
+    BlueprintSeed,
+    assemble_blueprint_seed_from_ac,
+    assemble_blueprint_seed_kishotenketsu,
+    materialize_blueprint,
 )
 from ..models import (
     ChapterSummary,
@@ -26,7 +34,6 @@ from ..models import (
     PlotlineEntry,
     ProgressTrack,
     SceneLogEntry,
-    StoryBlueprint,
     ThreadEntry,
     ThreatData,
 )
@@ -208,20 +215,27 @@ def _generate_chapter_opening(
     provider: AIProvider, game: GameState, config: EngineConfig | None, returning_npcs: list[NpcData]
 ) -> tuple[str, dict]:
     structure = choose_story_structure(game.setting_tone)
+    rng = _random_module.Random()
+    if structure == "kishotenketsu":
+        seed = assemble_blueprint_seed_kishotenketsu(rng, game.narrative)
+    else:
+        seed = assemble_blueprint_seed_from_ac(rng, game.narrative)
+    log(
+        f"[Campaign] Blueprint seed assembled for chapter {game.campaign.chapter_number}: structure={seed.structure_type}"
+    )
+
     chapter_prompt = build_new_chapter_prompt(game)
-    architect_game = copy.copy(game)
+    voicing_game = copy.copy(game)
 
     with ThreadPoolExecutor(max_workers=2) as pool:
         fut_narrator = pool.submit(call_narrator, provider, chapter_prompt, game, config)
-        fut_architect = pool.submit(
-            call_story_architect, provider, architect_game, structure_type=structure, config=config
-        )
+        fut_voicing = pool.submit(call_blueprint_voicing, provider, voicing_game, seed, config)
         raw = fut_narrator.result()
-        blueprint = fut_architect.result()
+        voicing = fut_voicing.result()
 
     narration = parse_narrator_response(game, raw)
 
-    _apply_blueprint(game, provider, blueprint)
+    _apply_blueprint(game, seed, voicing)
 
     returning_ids = {n.id for n in returning_npcs}
     new_parser_npcs = [n for n in game.npcs if n.id not in returning_ids]
@@ -235,9 +249,9 @@ def _generate_chapter_opening(
     return narration, setup_data
 
 
-def _apply_blueprint(game: GameState, provider: AIProvider, blueprint: dict | None) -> None:
-    if blueprint is not None:
-        game.narrative.story_blueprint = StoryBlueprint.from_dict(blueprint)
+def _apply_blueprint(game: GameState, seed: BlueprintSeed, voicing: dict | None) -> None:
+    if voicing is not None:
+        game.narrative.story_blueprint = materialize_blueprint(seed, voicing)
     else:
         game.narrative.story_blueprint = None
 

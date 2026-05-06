@@ -146,11 +146,6 @@ class OpeningConfig:
 
 
 @dataclass
-class ArchitectConfig:
-    forbidden_moods: list[str]
-
-
-@dataclass
 class ThreatConfig:
     menace_on_miss: int
     autonomous_tick_chance: float
@@ -593,13 +588,13 @@ class AiTextConfig:
 
 
 @dataclass
-class ArchitectLimitsConfig:
+class RecapLimitsConfig:
     recap_log_window: int
     recap_narration_window: int
     recap_narration_truncate: int
     recap_campaign_history_window: int
     recap_campaign_summary_truncate: int
-    architect_campaign_window: int
+    recap_campaign_window: int
     chapter_summary_log_window: int
 
 
@@ -670,9 +665,21 @@ class MetaHandlerConfig:
 
 
 @dataclass
+class BlueprintConfig:
+    turning_points_pre_rolled: int
+    acts_three_act: int
+    acts_kishotenketsu: int
+    revelations_per_blueprint: int
+    possible_endings_per_blueprint: int
+    three_act_phases: list[str]
+    kishotenketsu_phases: list[str]
+
+
+@dataclass
 class AdventureCrafterConfig:
     themes: list[str]
     theme_slots: int
     theme_die_table: dict[int, str]
     special_ranges: PlotPointRanges
     meta_handlers: MetaHandlerConfig
+    blueprint: BlueprintConfig

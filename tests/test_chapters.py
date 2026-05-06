@@ -232,36 +232,47 @@ def test_merge_returning_npcs_seeds_location_history(load_engine: None) -> None:
     assert "Tavern" in g.world.location_history
 
 
-def test_apply_blueprint_with_blueprint_dict(load_engine: None) -> None:
+def test_apply_blueprint_with_voicing_materializes(load_engine: None) -> None:
+    import random
+
     from straightjacket.engine.game.chapters import _apply_blueprint
+    from straightjacket.engine.mechanics.adventure_crafter import (
+        assemble_blueprint_seed_from_ac,
+    )
 
     g = make_game_state(player_name="X", setting_id="starforged")
-    provider = MockProvider(json.dumps({"pass": True, "violations": [], "fixed_conflict": "", "fixed_antagonist": ""}))
-    blueprint = {
+    rng = random.Random(7)
+    seed = assemble_blueprint_seed_from_ac(rng, g.narrative)
+    voicing = {
         "central_conflict": "Find the relic",
         "antagonist_force": "The cult",
         "thematic_thread": "trust",
-        "structure_type": "3act",
-        "acts": [],
-        "revelations": [],
-        "possible_endings": [],
-        "revealed": [],
-        "triggered_transitions": [],
-        "story_complete": False,
+        "acts": [
+            {"title": f"Act {i + 1}", "goal": "g", "mood": "tense", "transition_trigger": "t"}
+            for i in range(len(seed.acts))
+        ],
+        "revelations": [{"content": f"reveal {i}"} for i in range(3)],
+        "possible_endings": [{"type": "earned", "description": "win"} for _ in range(3)],
     }
-    _apply_blueprint(g, provider, blueprint)
+    _apply_blueprint(g, seed, voicing)
     assert g.narrative.story_blueprint is not None
     assert g.narrative.story_blueprint.central_conflict == "Find the relic"
 
 
 def test_apply_blueprint_with_none_clears(load_engine: None) -> None:
+    import random
+
     from straightjacket.engine.game.chapters import _apply_blueprint
-    from straightjacket.engine.models_story import StoryBlueprint
+    from straightjacket.engine.mechanics.adventure_crafter import (
+        assemble_blueprint_seed_from_ac,
+    )
+    from tests._helpers import make_blueprint
 
     g = make_game_state(player_name="X", setting_id="starforged")
-    g.narrative.story_blueprint = StoryBlueprint(central_conflict="old")
-    provider = MockProvider("")
-    _apply_blueprint(g, provider, None)
+    g.narrative.story_blueprint = make_blueprint(central_conflict="old")
+    rng = random.Random(7)
+    seed = assemble_blueprint_seed_from_ac(rng, g.narrative)
+    _apply_blueprint(g, seed, None)
     assert g.narrative.story_blueprint is None
 
 

@@ -1,5 +1,5 @@
 from straightjacket.engine.models_story import Revelation, StoryAct, StoryBlueprint
-from tests._helpers import make_game_state
+from tests._helpers import make_blueprint, make_game_state
 
 
 def _bp_with_acts(scene_ranges: list[tuple[int, int]]) -> StoryBlueprint:
@@ -14,7 +14,7 @@ def _bp_with_acts(scene_ranges: list[tuple[int, int]]) -> StoryBlueprint:
         )
         for i, r in enumerate(scene_ranges)
     ]
-    return StoryBlueprint(central_conflict="x", acts=acts)
+    return make_blueprint(central_conflict="x", acts=acts)
 
 
 def test_get_current_act_no_blueprint(load_engine: None) -> None:
@@ -31,7 +31,7 @@ def test_get_current_act_empty_acts(load_engine: None) -> None:
     from straightjacket.engine.story_state import get_current_act
 
     g = make_game_state()
-    g.narrative.story_blueprint = StoryBlueprint(acts=[])
+    g.narrative.story_blueprint = make_blueprint(acts=[])
     act = get_current_act(g)
     assert act.phase == "setup"
 
@@ -124,7 +124,7 @@ def test_get_pending_revelations_no_revelations(load_engine: None) -> None:
     from straightjacket.engine.story_state import get_pending_revelations
 
     g = make_game_state()
-    g.narrative.story_blueprint = StoryBlueprint(acts=[])
+    g.narrative.story_blueprint = make_blueprint(acts=[])
     assert get_pending_revelations(g) == []
 
 
@@ -132,10 +132,10 @@ def test_get_pending_revelations_excludes_used(load_engine: None) -> None:
     from straightjacket.engine.story_state import get_pending_revelations
 
     g = make_game_state()
-    g.narrative.story_blueprint = StoryBlueprint(
+    g.narrative.story_blueprint = make_blueprint(
         revelations=[
-            Revelation(id="r1", content="A", earliest_scene=1),
-            Revelation(id="r2", content="B", earliest_scene=1),
+            Revelation(id="r1", content="A", earliest_scene=1, dramatic_weight="medium"),
+            Revelation(id="r2", content="B", earliest_scene=1, dramatic_weight="medium"),
         ],
         revealed=["r1"],
     )
@@ -149,8 +149,8 @@ def test_get_pending_revelations_excludes_too_early(load_engine: None) -> None:
     from straightjacket.engine.story_state import get_pending_revelations
 
     g = make_game_state()
-    g.narrative.story_blueprint = StoryBlueprint(
-        revelations=[Revelation(id="r1", content="A", earliest_scene=10)],
+    g.narrative.story_blueprint = make_blueprint(
+        revelations=[Revelation(id="r1", content="A", earliest_scene=10, dramatic_weight="medium")],
     )
     g.narrative.scene_count = 5
     assert get_pending_revelations(g) == []
@@ -160,7 +160,7 @@ def test_mark_revelation_used_appends(load_engine: None) -> None:
     from straightjacket.engine.story_state import mark_revelation_used
 
     g = make_game_state()
-    g.narrative.story_blueprint = StoryBlueprint()
+    g.narrative.story_blueprint = make_blueprint()
     mark_revelation_used(g, "r1")
     assert "r1" in g.narrative.story_blueprint.revealed
 
@@ -169,7 +169,7 @@ def test_mark_revelation_used_dedup(load_engine: None) -> None:
     from straightjacket.engine.story_state import mark_revelation_used
 
     g = make_game_state()
-    g.narrative.story_blueprint = StoryBlueprint(revealed=["r1"])
+    g.narrative.story_blueprint = make_blueprint(revealed=["r1"])
     mark_revelation_used(g, "r1")
     assert g.narrative.story_blueprint.revealed.count("r1") == 1
 

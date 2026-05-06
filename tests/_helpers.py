@@ -195,3 +195,43 @@ def make_director_guidance(**kwargs: Any) -> dict:
     kwargs.setdefault("npc_reflections", [])
     kwargs.setdefault("arc_notes", "")
     return kwargs
+
+
+def make_act(**kwargs: Any) -> Any:
+    from straightjacket.engine.models_story import StoryAct
+
+    kwargs.setdefault("phase", "setup")
+    kwargs.setdefault("title", "")
+    kwargs.setdefault("goal", "")
+    kwargs.setdefault("scene_range", [1, 5])
+    kwargs.setdefault("mood", "")
+    kwargs.setdefault("transition_trigger", "")
+    return StoryAct(**kwargs)
+
+
+def make_revelation(**kwargs: Any) -> Any:
+    from straightjacket.engine.models_story import Revelation
+
+    kwargs.setdefault("id", "r1")
+    kwargs.setdefault("content", "")
+    kwargs.setdefault("earliest_scene", 1)
+    kwargs.setdefault("dramatic_weight", "medium")
+    return Revelation(**kwargs)
+
+
+def make_ending(**kwargs: Any) -> Any:
+    from straightjacket.engine.models_story import PossibleEnding
+
+    kwargs.setdefault("type", "")
+    kwargs.setdefault("description", "")
+    return PossibleEnding(**kwargs)
+
+
+def make_blueprint(**kwargs: Any) -> Any:
+    from straightjacket.engine.models_story import StoryBlueprint
+
+    kwargs.setdefault("central_conflict", "")
+    kwargs.setdefault("antagonist_force", "")
+    kwargs.setdefault("thematic_thread", "")
+    kwargs.setdefault("structure_type", "3act")
+    return StoryBlueprint(**kwargs)

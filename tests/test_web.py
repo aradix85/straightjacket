@@ -237,7 +237,16 @@ class TestBuildNarrativeStatus:
             antagonist_force="villain",
             thematic_thread="theme",
             structure_type="3act",
-            acts=[StoryAct(phase="setup", title="Begin", scene_range=[1, 10], mood="dark")],
+            acts=[
+                StoryAct(
+                    phase="setup",
+                    title="Begin",
+                    goal="",
+                    scene_range=[1, 10],
+                    mood="dark",
+                    transition_trigger="",
+                )
+            ],
         )
         text = build_narrative_status(game)
         assert "Begin" in text

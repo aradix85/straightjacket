@@ -69,7 +69,7 @@ def _obj_root(props: dict, title: str) -> dict:
 _brain_cache = None
 _correction_cache: dict | None = None
 _director_cache: dict | None = None
-_story_architect_cache: dict | None = None
+_blueprint_voicing_cache: dict | None = None
 
 
 def get_brain_output_schema() -> dict:
@@ -151,11 +151,11 @@ def get_director_output_schema() -> dict:
     return _director_cache
 
 
-def get_story_architect_output_schema() -> dict:
-    global _story_architect_cache
-    if _story_architect_cache is None:
+def get_blueprint_voicing_schema() -> dict:
+    global _blueprint_voicing_cache
+    if _blueprint_voicing_cache is None:
         _e = eng()
-        _story_architect_cache = _obj_root(
+        _blueprint_voicing_cache = _obj_root(
             {
                 "central_conflict": _str(),
                 "antagonist_force": _str(),
@@ -163,10 +163,8 @@ def get_story_architect_output_schema() -> dict:
                 "acts": _arr(
                     _obj(
                         {
-                            "phase": _str(),
                             "title": _str(),
                             "goal": _str(),
-                            "scene_range": _arr(_int()),
                             "mood": _str(),
                             "transition_trigger": _str(),
                         }
@@ -175,10 +173,7 @@ def get_story_architect_output_schema() -> dict:
                 "revelations": _arr(
                     _obj(
                         {
-                            "id": _str(),
                             "content": _str(),
-                            "earliest_scene": _int(),
-                            "dramatic_weight": _str_enum(list(_e.enums.dramatic_weights)),
                         }
                     )
                 ),
@@ -191,9 +186,9 @@ def get_story_architect_output_schema() -> dict:
                     )
                 ),
             },
-            _e.ai_text.schema_titles["story_architect_output"],
+            _e.ai_text.schema_titles["blueprint_voicing_output"],
         )
-    return _story_architect_cache
+    return _blueprint_voicing_cache
 
 
 _chapter_summary_cache: dict | None = None

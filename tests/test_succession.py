@@ -451,6 +451,10 @@ class _SuccessionMockProvider:
         props = set(json_schema.get("properties", {}).keys())
 
         if "central_conflict" in props:
+            user_msg = "\n".join(m.get("content", "") for m in spec.messages)
+            act_count = sum(1 for line in user_msg.splitlines() if line.startswith("act "))
+            if act_count == 0:
+                act_count = 3
             return AIResponse(
                 content=json.dumps(
                     {
@@ -458,10 +462,11 @@ class _SuccessionMockProvider:
                         "antagonist_force": "Old foe",
                         "thematic_thread": "inheritance",
                         "acts": [
-                            {"phase": "setup", "title": "Begin", "goal": "g", "mood": "tense", "scene_range": [1, 5]}
+                            {"title": f"Act {i + 1}", "goal": "g", "mood": "tense", "transition_trigger": "t"}
+                            for i in range(act_count)
                         ],
-                        "revelations": [],
-                        "possible_endings": [],
+                        "revelations": [{"content": f"reveal {i + 1}"} for i in range(3)],
+                        "possible_endings": [{"type": "earned", "description": f"end {i + 1}"} for i in range(3)],
                     }
                 ),
                 usage={"input_tokens": 10, "output_tokens": 10},

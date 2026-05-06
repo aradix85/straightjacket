@@ -18,7 +18,9 @@ ENGINE_YAML_ROOT = REPO_ROOT / "engine"
 _AI_CALL_CARVE_OUT_FILES = {
     "engine/ai/brain.py",
     "engine/ai/narrator.py",
-    "engine/ai/architect.py",
+    "engine/ai/recap.py",
+    "engine/ai/chapter_summary.py",
+    "engine/ai/blueprint_voicing.py",
     "engine/ai/metadata.py",
     "engine/ai/provider_base.py",
     "engine/correction/analysis.py",

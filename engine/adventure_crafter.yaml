@@ -35,3 +35,19 @@ adventure_crafter:
     weight_delta_upgrade: 2
     weight_delta_downgrade: -2
     weight_floor: 1
+
+  blueprint:
+    turning_points_pre_rolled: 3
+    acts_three_act: 3
+    acts_kishotenketsu: 4
+    revelations_per_blueprint: 3
+    possible_endings_per_blueprint: 3
+    three_act_phases:
+      - setup
+      - confrontation
+      - climax
+    kishotenketsu_phases:
+      - ki_introduction
+      - sho_development
+      - ten_twist
+      - ketsu_resolution

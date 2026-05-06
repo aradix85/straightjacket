@@ -1,8 +1,9 @@
 from __future__ import annotations
 
+import random as _random_module
 from concurrent.futures import ThreadPoolExecutor
 
-from ..ai.architect import call_story_architect
+from ..ai.blueprint_voicing import call_blueprint_voicing
 from ..ai.narrator import call_narrator, call_opening_setup
 from ..ai.provider_base import AIProvider
 from ..datasworn.loader import extract_title
@@ -18,6 +19,10 @@ from ..mechanics import (
     record_scene_intensity,
     run_inheritance_rolls,
     seed_successor_legacy,
+)
+from ..mechanics.adventure_crafter import (
+    assemble_blueprint_seed_from_ac,
+    assemble_blueprint_seed_kishotenketsu,
 )
 from ..models import (
     DirectorGuidance,
@@ -263,23 +268,30 @@ def start_succession_with_character(
 
 def _generate_succession_opening(provider: AIProvider, game: GameState, config: EngineConfig | None) -> str:
     structure = choose_story_structure(game.setting_genre)
+    rng = _random_module.Random()
+    if structure == "kishotenketsu":
+        seed = assemble_blueprint_seed_kishotenketsu(rng, game.narrative)
+    else:
+        seed = assemble_blueprint_seed_from_ac(rng, game.narrative)
+    log(f"[Succession] Blueprint seed assembled: structure={seed.structure_type}")
+
     narrator_prompt = build_new_game_prompt(game)
 
     def _run_narrator() -> str:
         return call_narrator(provider, narrator_prompt, game, config)
 
-    def _run_architect() -> dict | None:
-        return call_story_architect(provider, game, structure_type=structure, config=config)
+    def _run_voicing() -> dict | None:
+        return call_blueprint_voicing(provider, game, seed, config)
 
     with ThreadPoolExecutor(max_workers=2) as pool:
         fut_narrator = pool.submit(_run_narrator)
-        fut_architect = pool.submit(_run_architect)
+        fut_voicing = pool.submit(_run_voicing)
         raw = fut_narrator.result()
-        blueprint = fut_architect.result()
+        voicing = fut_voicing.result()
 
     narration = parse_narrator_response(game, raw)
 
-    _apply_blueprint(game, provider, blueprint)
+    _apply_blueprint(game, seed, voicing)
 
     if not [n for n in game.npcs if n.introduced]:
         _ = call_opening_setup(provider, narration, game, config)
