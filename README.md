@@ -36,8 +36,7 @@ Screen reader accessible: semantic HTML, ARIA live regions for automatic narrati
 
 ## Further reading
 
-- [ARCHITECTURE.md](ARCHITECTURE.md) — turn pipeline, module layout, design decisions, configuration, extension guides
-- [CONTRIBUTING.md](CONTRIBUTING.md) — code standards, test layers, how to run them
+- [ARCHITECTURE.md](ARCHITECTURE.md) — turn pipeline, module layout, design decisions, configuration, extension guides, code standards, project rules, testing, contributing
 - [ORIGINS.md](ORIGINS.md) — project history, fork from EdgeTales, credits
 - [SECURITY.md](SECURITY.md) — API key handling, input sanitization, session model
 - [Narrative RPG Engine design document](docs/narrative_rpg_engine_v2_4.pdf) — the design this implements

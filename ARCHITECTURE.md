@@ -376,7 +376,20 @@ python tests/elvira/elvira.py --auto --turns 5         # direct engine (needs AP
 python tests/elvira/elvira.py --ws --auto --turns 5    # via WebSocket server
 ```
 
-Elvira is the real integration test. Direct mode drives the engine with an AI player bot, checks state invariants after every turn, runs narration quality checks, tests the correction pipeline, and verifies NPC spatial consistency. WebSocket mode does the same but through the full server stack.
+Four layers of testing, complementary:
+
+The **unit/integration test suite** (`python -m pytest tests/ -v`) runs without an API key. It uses mock providers that return canned responses. Tests verify the engine's internal logic: consequences, NPC processing, serialization, correction flow, prompt assembly, WebSocket handlers. Every PR must pass this suite.
+
+**Project rules** (`tests/test_project_rules.py`) is one consolidated test running AST and regex scans that enforce the rules described in the Project rules section. Failures are deterministic measurements — the test fails on residual debt without blocking feature work. When you touch a file that already has violations, fix them in the same commit.
+
+**Elvira** (`tests/elvira/elvira.py`) is a headless AI-driven test player that plays the game with real API calls. It checks state invariants after every turn (including NPC-DB sync and combat-track sync), validates narration quality through deterministic regex checks (leaked mechanics like result-types or stat values, NPC spatial consistency, chapter continuity), stress-tests the correction pipeline, and logs everything to a single `elvira_session.json`. Two modes:
+
+- Direct mode drives the engine directly, bypasses the UI. Fastest way to test engine changes.
+- WebSocket mode plays through the full server stack. Tests the complete pipeline: WebSocket protocol, handlers, engine, serializers.
+
+If your change affects the turn pipeline, NPC processing, or prompt assembly, run Elvira. The unit tests catch logic bugs; Elvira catches constraint violations and integration failures that only surface with real model output.
+
+Elvira configuration is in `tests/elvira/elvira_config.yaml`. Session logs go to `tests/elvira/elvira_session.json`. Add `--turns N` to control session length.
 
 ## Adding a New AI Provider
 
@@ -434,3 +447,49 @@ With `parent:`, blocks inherit from the parent yaml, resolved at load.
 `vocabulary`: section-level. Both sub-fields empty → whole block from parent.
 
 Discovery is yaml-only: `list_packages()` scans `data/settings/*.yaml`, `get_moves()` reads `parent:` from the child yaml. No Python mapping tables.
+
+## Code standards
+
+Python 3.11+. Dataclasses with type hints. f-strings. pathlib. snake_case. No mutable defaults. Imports sorted, top of file. Max line length 120 (ruff handles this).
+
+Read `pyproject.toml` for the full ruff/mypy config. The linter rules are the spec — if ruff passes, you're fine.
+
+## Project rules
+
+These rules apply across the codebase. They are enforced mechanically by `tests/test_project_rules.py` and consciously upheld in review. They exist because every shortcut Python's defaulting and exception-swallowing make tempting eventually hides a real bug.
+
+**No `#` comments and no docstrings in Python or yaml.** Code explains itself through names, types, and tests. Context, motivation, and architecture live in the md-files at the repo root, not in the code. Three narrow exceptions where a single short trailing comment is permitted at the callsite: external-boundary defaults, the AI-call carved exception, and inline imports for circular-break or lazy-load. The exception buys a half-line, not a paragraph.
+
+**Domain config keys raise on miss.** Engine config is read by direct subscript (`config["key"]`). No `dict.get` with a literal fallback. No `x or "fallback"`. No dataclass defaults on fields that bind to a config value. If a key is missing, the engine should fail loudly, not silently substitute a value the rest of the code wasn't designed for.
+
+Three exceptions survive: language-mandated empty collections (`field(default_factory=list)`), parsing of variable external structures, and the AI-call carve-out below. External structures means: a Datasworn field absent in at least one of three shipped settings (verifiable by grep) or marked optional in schema; a WebSocket field defined as optional in protocol spec; an AI-call field part of a documented retry-fallback dict, not happy-path response. Required-per-spec fields do not qualify even at external boundary. When in doubt, treat as required.
+
+**Yaml content boundary.** Yaml holds values whose source can be named — a Datasworn table, an AC table, a Mythic table, a mechanical computation, or a value present elsewhere in the codebase. Values without a nameable source go in AI-call output (with setting context in the prompt), in an oracle roll, or stay absent until decided. Prose-shaped values (mood words, descriptive phrases, narrative templates) do not belong in yaml.
+
+**User-, narrator-, and AI-readable strings live in config or prompt files.** Not hardcoded in Python. `engine/*.yaml`, `prompts/*.yaml`, `strings/*.yaml`, and `emotions/*.yaml` are the homes. Adding a constant to Python should be a last resort with a written reason.
+
+**Errors propagate.** No broad `except Exception: pass`, no `contextlib.suppress` over domain logic. The carve-out is AI-call sites and tool-boundary functions returning structured error dicts to an AI caller — the broad catch is logged at warning level. See `Provider abstraction` for why the carve-out exists.
+
+**No backwards compatibility.** Saves break when the code requires it. No migration layers, no default-on-old-fields, no ignore-unknown-fields. This is by design for an alpha project with no production users; if it changes, it changes deliberately, not silently.
+
+**Update every caller in the same commit.** When a function signature, dataclass field, or yaml key changes, fix the callers immediately. Delete legacy code rather than retire it. Two-sided removal: a symbol is removed only when both code-side and config-side are dead — no readers, no writers beyond the definition.
+
+When you touch a file that already has violations, fix them in the same commit. The project-rule tests measure residual debt; their failures aren't blocking, but they aren't ignorable either.
+
+## Config-driven design
+
+Game mechanics, emotion scoring, move types, damage tables, disposition shifts — all in YAML. The Python code reads config at runtime. Before adding a constant to Python, check if it belongs in the engine config (one yaml per subsystem under `engine/`) or emotions.yaml instead.
+
+Prompts and patterns are tuned for the active models — narrator on `narrator_system`, brain on `brain_system`. Switching to a different model means re-tuning the prompts in place, not adding parallel variants.
+
+## Contributing
+
+1. Fork, branch, make your change
+2. `ruff check --fix src/ tests/` and `ruff format src/` — must be clean
+3. `python -m pytest tests/ -q` — all tests must pass
+4. `mypy src/ --config-file pyproject.toml` — must be clean
+5. PR with a clear description of what and why
+
+## Accessibility
+
+This project is built by a blind developer. Screen reader accessibility is not optional. If you add UI elements: semantic HTML, ARIA live regions, heading structure, native form controls. No div-buttons, no spatial-only references.
