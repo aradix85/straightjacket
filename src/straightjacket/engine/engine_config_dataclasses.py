@@ -559,6 +559,12 @@ class RandomEventKeyedSceneMappingEntry:
 
 
 @dataclass
+class ThreatCreationMappingEntry:
+    rank: str
+    category: str
+
+
+@dataclass
 class RandomEventsConfig:
     threat_target_probability: float
     description_focus_categories: list[str]
@@ -571,6 +577,7 @@ class RandomEventsConfig:
     consolidation_weight_low: int
     consolidation_weight_default: int
     keyed_scene_mapping: dict[str, RandomEventKeyedSceneMappingEntry]
+    threat_creation_mapping: dict[str, ThreatCreationMappingEntry]
 
 
 @dataclass
@@ -721,3 +728,5 @@ class AdventureCrafterConfig:
     blueprint: BlueprintConfig
     max_keyed_scenes_per_chapter: int
     keyed_scene_mapping: dict[str, KeyedSceneMappingEntry]
+    max_threats_per_chapter: int
+    threat_creation_mapping: dict[str, ThreatCreationMappingEntry]

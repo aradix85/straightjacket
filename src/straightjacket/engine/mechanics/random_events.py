@@ -4,7 +4,7 @@ import random
 
 from ..engine_loader import eng
 from ..logging_util import log
-from ..models import GameState, KeyedScene, RandomEvent
+from ..models import GameState, KeyedScene, RandomEvent, ThreatData
 from .fate import _load_mythic
 
 
@@ -118,6 +118,7 @@ def generate_random_event(game: GameState, source: str = "") -> RandomEvent:
     _pending_events.append(event)
 
     spawn_keyed_scene_from_random_event(game, event)
+    spawn_threat_from_random_event(game, event)
 
     return event
 
@@ -174,6 +175,64 @@ def spawn_keyed_scene_from_random_event(game: GameState, event: RandomEvent) -> 
         f"priority={entry.priority})"
     )
     return True
+
+
+def _re_threat_already_spawned(game: GameState, focus: str, target_id: str) -> bool:
+    target = f"{_RE_SOURCE_PREFIX}{focus}:{target_id}"
+    return any(t.creation_source == target for t in game.threats)
+
+
+def _next_threat_id(game: GameState, prefix: str) -> str:
+    n = 1
+    while any(t.id == f"{prefix}{n}" for t in game.threats):
+        n += 1
+    return f"{prefix}{n}"
+
+
+def spawn_threat_from_random_event(game: GameState, event: RandomEvent) -> ThreatData | None:
+    cfg = eng().random_events
+    if event.focus not in cfg.threat_creation_mapping:
+        return None
+
+    dedup_key = event.target_id or event.focus
+    if _re_threat_already_spawned(game, event.focus, dedup_key):
+        return None
+
+    max_threats = eng().adventure_crafter.max_threats_per_chapter
+    if _count_emergent_threats(game) >= max_threats:
+        log(f"[Threat] emergent threat cap {max_threats} reached, skipping focus '{event.focus}'")
+        return None
+
+    entry = cfg.threat_creation_mapping[event.focus]
+    name = _name_from_mythic_pair(event.meaning_action, event.meaning_subject)
+    description = f"{event.meaning_action} / {event.meaning_subject}"
+    threat_id = _next_threat_id(game, "threat_re_")
+    creation_source = f"{_RE_SOURCE_PREFIX}{event.focus}:{dedup_key}"
+
+    threat = ThreatData.new(
+        id=threat_id,
+        name=name,
+        category=entry.category,
+        linked_vow_id=None,
+        rank=entry.rank,
+        description=description,
+        creation_source=creation_source,
+    )
+    game.threats.append(threat)
+    log(
+        f"[Threat] spawned '{name}' (id={threat_id}, rank={entry.rank}, category={entry.category}) "
+        f"from random-event focus '{event.focus}'"
+    )
+    return threat
+
+
+def _name_from_mythic_pair(action: str, subject: str) -> str:
+    parts = [p for p in (action, subject) if p]
+    return " ".join(parts) if parts else "Unnamed threat"
+
+
+def _count_emergent_threats(game: GameState) -> int:
+    return sum(1 for t in game.threats if t.creation_source.startswith(("random_event:", "ac:")))
 
 
 def add_thread_weight(game: GameState, thread_id: str) -> None:

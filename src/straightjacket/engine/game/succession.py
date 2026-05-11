@@ -270,9 +270,9 @@ def _generate_succession_opening(provider: AIProvider, game: GameState, config: 
     structure = choose_story_structure(game.setting_genre)
     rng = _random_module.Random()
     if structure == "kishotenketsu":
-        seed = assemble_blueprint_seed_kishotenketsu(rng, game.narrative)
+        seed = assemble_blueprint_seed_kishotenketsu(rng, game)
     else:
-        seed = assemble_blueprint_seed_from_ac(rng, game.narrative)
+        seed = assemble_blueprint_seed_from_ac(rng, game)
     log(f"[Succession] Blueprint seed assembled: structure={seed.structure_type}")
 
     narrator_prompt = build_new_game_prompt(game)

@@ -30,6 +30,7 @@ class OraclePaths:
     action_theme: list[str]
     names: list[str]
     backstory: str
+    threats: str
 
 
 @dataclass
@@ -46,6 +47,7 @@ class _OraclePathsPartial:
     action_theme: list[str] | None = None
     names: list[str] | None = None
     backstory: str | None = None
+    threats: str | None = None
 
 
 @dataclass
@@ -95,6 +97,8 @@ def _parse_oracle_paths_partial(data: dict) -> _OraclePathsPartial:
         partial.names = list(data["names"])
     if "backstory" in data:
         partial.backstory = data["backstory"]
+    if "threats" in data:
+        partial.threats = data["threats"]
     return partial
 
 
@@ -155,6 +159,7 @@ def _resolve_oracle_paths(chain: list[_SettingConfig], yaml_path: str) -> Oracle
         action_theme=pick_str_list("action_theme"),
         names=pick_str_list("names"),
         backstory=pick_str("backstory"),
+        threats=pick_str("threats"),
     )
 
 

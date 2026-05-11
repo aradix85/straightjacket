@@ -118,11 +118,12 @@ CREATE TABLE IF NOT EXISTS threats (
     name            TEXT NOT NULL,
     category        TEXT NOT NULL,
     description     TEXT NOT NULL,
-    linked_vow_id   TEXT NOT NULL,
+    linked_vow_id   TEXT,
     rank            TEXT NOT NULL,
     menace_ticks    INTEGER NOT NULL,
     max_menace_ticks INTEGER NOT NULL,
-    status          TEXT NOT NULL
+    status          TEXT NOT NULL,
+    creation_source TEXT NOT NULL
 );
 
 -- Indexes for common query patterns.

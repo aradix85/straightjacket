@@ -16,6 +16,8 @@ def advance_menace_on_miss(game: GameState) -> list[ThreatEvent]:
     for threat in game.threats:
         if threat.status != "active":
             continue
+        if threat.linked_vow_id is None:
+            continue
 
         vow = next((t for t in game.progress_tracks if t.id == threat.linked_vow_id and t.status == "active"), None)
         if not vow:
@@ -91,6 +93,10 @@ def resolve_full_menace(game: GameState) -> list[ThreatEvent]:
 
     for threat in game.threats:
         if threat.status != "active" or not threat.menace_full:
+            continue
+        if threat.linked_vow_id is None:
+            threat.status = "resolved"
+            log(f"[Threat] '{threat.name}' menace full, no linked vow — resolved")
             continue
         vow = next((t for t in game.progress_tracks if t.id == threat.linked_vow_id and t.status == "active"), None)
         if not vow:

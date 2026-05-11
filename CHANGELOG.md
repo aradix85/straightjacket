@@ -7,6 +7,24 @@ Originally forked from [EdgeTales](https://github.com/edgetales/edgetales). See 
 
 Straightjacket uses calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day. The first CalVer release is `2026.04.25.0`. Earlier `0.x.y` releases keep their original version numbers and are not renumbered. The switch was made because the project has no public API to version semantically against — the `0.x.y` numbers were running counters with no meaning, and dates carry the meaning the numbers didn't.
 
+## [2026.05.11.0] — 2026-05-11
+
+Threat creation from random events and AC plot-points afgerond. Twee spawn-bronnen, twee naming-bronnen. Random-event-foci `pc_negative` en `npc_negative` (mappings in `engine/random_events.yaml::threat_creation_mapping`) spawnen via `mechanics/random_events.py::spawn_threat_from_random_event`, met de Mythic action+subject pair van het event als naam — het random-event mechanisme produceerde die pair al. AC plot-points `A New Enemy`, `Hidden Threat`, `Enemies`, `Hunted`, `A Problem Returns` (mappings in `engine/adventure_crafter.yaml::threat_creation_mapping`) spawnen via `mechanics/adventure_crafter.py::spawn_threats_for_turning_point`, met een Datasworn-cascade-roll als naam-bron — Delve cascade van `threat/category` naar negen sub-tabellen, andere settings single-table (starforged `campaign_launch/sector_trouble`, classic `settlement/trouble`, sundered_isles `seafaring/peril`). Bestaande 7c-keyed-scenes `threat_menace_phase any:N` van AC plot-points kunnen nu daadwerkelijk firen want mid-game threats bestaan.
+
+Nieuwe gedeelde cascade-helper `datasworn/cascade.py::roll_oracle_cascade` volgt markdown-link IDs (`[Label](id:setting/oracles/path)`) in oracle-row text, depth-limit 4 met raise-op-overschrijding. `oracle_paths.threats` veld toegevoegd aan `OraclePaths` plus alle vier settings-yaml-files.
+
+`ThreatData` krijgt twee veld-wijzigingen. `creation_source: str` vereist — waarden `"setup"`, `"random_event:<focus>:<dedup_key>"`, `"ac:<plot_point_name>"` — dedup-logica leest dit veld, geen aparte dedup-sets op NarrativeState. `linked_vow_id: str | None` (was `str`): het tot nu toe impliciete "lege string betekent geen vow" patroon wordt expliciet, drie src-readers krijgen None-skip ervoor. Mid-game threats zonder vow ticken niet via `advance_menace_on_miss` (vow-driven) maar wel via `tick_autonomous_threats`.
+
+Per-chapter cap `max_threats_per_chapter: 3` (in adventure_crafter.yaml) gedeeld over beide spawn-bronnen; setup-threats tellen niet mee.
+
+Signatuur-aanpassing van `assemble_blueprint_seed_from_ac` en `assemble_blueprint_seed_kishotenketsu` van `narrative: NarrativeState` naar `game: GameState` (AC-spawner heeft setting-package nodig voor cascade-roll). Drie callsites bijgewerkt; vijftien blueprint-tests omgezet. Save format breekt door beide ThreatData-veld-wijzigingen plus DB-schema-update; geen migratie.
+
+Spec-drift-fix in dezelfde commit: het settings-yaml-format-voorbeeld in ARCHITECTURE.md noemde `oracle_paths.descriptor_focus`, een veld dat niet bestaat op `OraclePaths` en op geen settings-yaml-file — vermoedelijk een leftover uit een eerder design. Vervangen door `oracle_paths.threats`.
+
+12 nieuwe tests in `tests/test_threat_creation.py`. Quality gate: 1236 groen (was 1224), ruff check + format clean over 175 files, mypy zonder issues over 103 source files.
+
+Niet gedaan: cascade-helper voor diepere recursie (depth-4 ruim voor huidige data); per-source threat-rank variatie; naam-uniqueness binnen één chapter. Volgende stap: Clock expansion (vol-consequenties wanneer geen keyed-scene gekoppeld, clock-creation vanuit random events en AC plot-points).
+
 ## [2026.05.06.3] — 2026-05-06
 
 Stap 7c afgerond. Drie spawners samen ingebouwd plus generieke patroon-laag. AC-spawner via `spawn_keyed_scenes_for_turning_point` aangeroepen vanuit `assemble_blueprint_seed_from_ac` na elke gerolde turning-point; 33 plot-point-mappings in `engine/adventure_crafter.yaml::keyed_scene_mapping` verspreid over alle vijf trigger-types met variërende thresholds en priorities; dedup-A op plot-point-naam plus dedup-B via `max_keyed_scenes_per_chapter: 4`. Random-event-spawner via `spawn_keyed_scene_from_random_event` aangeroepen vanuit `generate_random_event` zodra het event geconstrueerd is; vier mappings in `engine/random_events.yaml::keyed_scene_mapping` (npc_action, npc_positive, npc_negative, pc_negative); concrete trigger-value uit `event.target_id` (bond) of `event.target` (threat-naam); dedup op `(focus, target_id)`. Klok-spawner via `spawn_keyed_scenes_for_clock` aangeroepen vanuit `apply_world_setup` plus de hardcoded background-vow-klok in `game_start.py`; per klok-type fracties in nieuw `engine/clock_keyed_scenes.yaml` (threat en scheme: 0.5 plus 1.0; progress: 1.0 only); narrative-hint-template substitueert clock_name; dedup op `(clock_name, threshold)`.

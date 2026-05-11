@@ -217,9 +217,9 @@ def _generate_chapter_opening(
     structure = choose_story_structure(game.setting_tone)
     rng = _random_module.Random()
     if structure == "kishotenketsu":
-        seed = assemble_blueprint_seed_kishotenketsu(rng, game.narrative)
+        seed = assemble_blueprint_seed_kishotenketsu(rng, game)
     else:
-        seed = assemble_blueprint_seed_from_ac(rng, game.narrative)
+        seed = assemble_blueprint_seed_from_ac(rng, game)
     log(
         f"[Campaign] Blueprint seed assembled for chapter {game.campaign.chapter_number}: structure={seed.structure_type}"
     )

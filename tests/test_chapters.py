@@ -110,10 +110,11 @@ def _make_chapter_summary(load_engine: None) -> ChapterSummary:
                 id="t1",
                 name="Threat",
                 category="rampaging_creature",
-                linked_vow_id="",
+                linked_vow_id=None,
                 rank="dangerous",
                 max_menace_ticks=40,
                 description="",
+                creation_source="setup",
             )
         ],
         impacts=["wounded"],
@@ -242,7 +243,7 @@ def test_apply_blueprint_with_voicing_materializes(load_engine: None) -> None:
 
     g = make_game_state(player_name="X", setting_id="starforged")
     rng = random.Random(7)
-    seed = assemble_blueprint_seed_from_ac(rng, g.narrative)
+    seed = assemble_blueprint_seed_from_ac(rng, g)
     voicing = {
         "central_conflict": "Find the relic",
         "antagonist_force": "The cult",
@@ -271,7 +272,7 @@ def test_apply_blueprint_with_none_clears(load_engine: None) -> None:
     g = make_game_state(player_name="X", setting_id="starforged")
     g.narrative.story_blueprint = make_blueprint(central_conflict="old")
     rng = random.Random(7)
-    seed = assemble_blueprint_seed_from_ac(rng, g.narrative)
+    seed = assemble_blueprint_seed_from_ac(rng, g)
     _apply_blueprint(g, seed, None)
     assert g.narrative.story_blueprint is None
 

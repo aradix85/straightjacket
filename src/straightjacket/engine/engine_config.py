@@ -89,6 +89,7 @@ from .engine_config_dataclasses import (
     NpcCarryoverEntry,
     TfIdfConfig,
     ThreatConfig,
+    ThreatCreationMappingEntry,
     TimeProgressionSteps,
     TruncationsConfig,
 )
@@ -314,6 +315,13 @@ def _build_adventure_crafter(ac_raw: dict[str, Any]) -> AdventureCrafterConfig:
         )
         for name, entry in dict(ac_raw["keyed_scene_mapping"]).items()
     }
+    ac_threat_creation = {
+        name: ThreatCreationMappingEntry(
+            rank=entry["rank"],
+            category=entry["category"],
+        )
+        for name, entry in dict(ac_raw["threat_creation_mapping"]).items()
+    }
     return AdventureCrafterConfig(
         themes=list(ac_raw["themes"]),
         theme_slots=ac_raw["theme_slots"],
@@ -323,6 +331,8 @@ def _build_adventure_crafter(ac_raw: dict[str, Any]) -> AdventureCrafterConfig:
         blueprint=ac_blueprint,
         max_keyed_scenes_per_chapter=ac_raw["max_keyed_scenes_per_chapter"],
         keyed_scene_mapping=ac_keyed_mapping,
+        max_threats_per_chapter=ac_raw["max_threats_per_chapter"],
+        threat_creation_mapping=ac_threat_creation,
     )
 
 
@@ -348,6 +358,13 @@ def _build_random_events(re_raw: dict[str, Any]) -> RandomEventsConfig:
         )
         for focus, entry in dict(re_raw["keyed_scene_mapping"]).items()
     }
+    re_threat_creation = {
+        focus: ThreatCreationMappingEntry(
+            rank=entry["rank"],
+            category=entry["category"],
+        )
+        for focus, entry in dict(re_raw["threat_creation_mapping"]).items()
+    }
     return RandomEventsConfig(
         threat_target_probability=re_raw["threat_target_probability"],
         description_focus_categories=list(re_raw["description_focus_categories"]),
@@ -360,6 +377,7 @@ def _build_random_events(re_raw: dict[str, Any]) -> RandomEventsConfig:
         consolidation_weight_low=re_raw["consolidation_weight_low"],
         consolidation_weight_default=re_raw["consolidation_weight_default"],
         keyed_scene_mapping=re_keyed_mapping,
+        threat_creation_mapping=re_threat_creation,
     )
 
 

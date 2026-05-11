@@ -7,9 +7,12 @@ from dataclasses import dataclass
 from typing import Any
 
 from ..config_loader import PROJECT_ROOT
+from ..datasworn.cascade import roll_oracle_cascade
+from ..datasworn.settings import active_package
 from ..engine_config_dataclasses import PlotPointRanges
 from ..engine_loader import eng
 from ..logging_util import log
+from ..models import GameState, ThreatData
 from ..models_story import (
     CharacterListEntry,
     KeyedScene,
@@ -534,6 +537,68 @@ def spawn_keyed_scenes_for_turning_point(narrative: NarrativeState, turning_poin
     return spawned
 
 
+def _ac_threat_already_spawned(game: GameState, plot_point_name: str) -> bool:
+    target = f"{_AC_SOURCE_PREFIX}{plot_point_name}"
+    return any(t.creation_source == target for t in game.threats)
+
+
+def _count_emergent_threats(game: GameState) -> int:
+    return sum(1 for t in game.threats if t.creation_source.startswith(("random_event:", _AC_SOURCE_PREFIX)))
+
+
+def _next_threat_id(game: GameState, prefix: str) -> str:
+    n = 1
+    while any(t.id == f"{prefix}{n}" for t in game.threats):
+        n += 1
+    return f"{prefix}{n}"
+
+
+def spawn_threats_for_turning_point(game: GameState, turning_point: TurningPoint) -> int:
+    cfg = eng().adventure_crafter
+    mapping = cfg.threat_creation_mapping
+    cap = cfg.max_threats_per_chapter
+
+    pkg = active_package(game)
+    if pkg is None:
+        return 0
+
+    spawned = 0
+    for hit in turning_point.plot_points:
+        if hit.special_range is not None:
+            continue
+        if hit.name not in mapping:
+            continue
+        if _ac_threat_already_spawned(game, hit.name):
+            continue
+        if _count_emergent_threats(game) >= cap:
+            log(f"[AdventureCrafter] threat cap {cap} reached, skipping plot-point '{hit.name}'")
+            break
+
+        entry = mapping[hit.name]
+        cascade = roll_oracle_cascade(pkg, pkg.oracle_paths.threats)
+        name = cascade[-1].label
+        description = " — ".join(step.text for step in cascade)
+        threat_id = _next_threat_id(game, "threat_ac_")
+        creation_source = f"{_AC_SOURCE_PREFIX}{hit.name}"
+
+        threat = ThreatData.new(
+            id=threat_id,
+            name=name,
+            category=entry.category,
+            linked_vow_id=None,
+            rank=entry.rank,
+            description=description,
+            creation_source=creation_source,
+        )
+        game.threats.append(threat)
+        spawned += 1
+        log(
+            f"[AdventureCrafter] spawned threat '{name}' (id={threat_id}, rank={entry.rank}, "
+            f"category={entry.category}) from plot-point '{hit.name}'"
+        )
+    return spawned
+
+
 @dataclass(frozen=True)
 class ActSeed:
     phase: str
@@ -586,8 +651,9 @@ def _ending_seeds(narrative: NarrativeState, limit: int) -> list[PlotlineEntry]:
 
 def assemble_blueprint_seed_from_ac(
     rng: random.Random,
-    narrative: NarrativeState,
+    game: GameState,
 ) -> BlueprintSeed:
+    narrative = game.narrative
     bp_cfg = eng().adventure_crafter.blueprint
     themes = assign_themes(rng)
     pre_rolled_count = bp_cfg.turning_points_pre_rolled
@@ -596,6 +662,7 @@ def assemble_blueprint_seed_from_ac(
         tp = roll_turning_point(rng, themes, narrative)
         turning_points.append(tp)
         spawn_keyed_scenes_for_turning_point(narrative, tp)
+        spawn_threats_for_turning_point(game, tp)
 
     act_count = bp_cfg.acts_three_act
     phases = bp_cfg.three_act_phases
@@ -621,8 +688,9 @@ def assemble_blueprint_seed_from_ac(
 
 def assemble_blueprint_seed_kishotenketsu(
     rng: random.Random,
-    narrative: NarrativeState,
+    game: GameState,
 ) -> BlueprintSeed:
+    narrative = game.narrative
     bp_cfg = eng().adventure_crafter.blueprint
     themes = assign_themes(rng)
 

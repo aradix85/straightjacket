@@ -162,15 +162,26 @@ class ThreatData(SerializableMixin):
     id: str
     name: str
     category: str
-    linked_vow_id: str
+    linked_vow_id: str | None
     rank: str
     max_menace_ticks: int
     description: str
+    creation_source: str
     menace_ticks: int = 0
     status: str = "active"
 
     @classmethod
-    def new(cls, *, id: str, name: str, category: str, linked_vow_id: str, rank: str, description: str) -> ThreatData:
+    def new(
+        cls,
+        *,
+        id: str,
+        name: str,
+        category: str,
+        linked_vow_id: str | None,
+        rank: str,
+        description: str,
+        creation_source: str,
+    ) -> ThreatData:
         return cls(
             id=id,
             name=name,
@@ -179,6 +190,7 @@ class ThreatData(SerializableMixin):
             rank=rank,
             max_menace_ticks=eng().progress.max_ticks,
             description=description,
+            creation_source=creation_source,
         )
 
     @property

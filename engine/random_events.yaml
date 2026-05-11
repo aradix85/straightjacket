@@ -41,3 +41,11 @@ random_events:
       threshold: 3
       priority: 7
       narrative_hint: "Pressure on the player from an active threat sharpens into a confrontation."
+
+  threat_creation_mapping:
+    pc_negative:
+      rank: dangerous
+      category: emergent
+    npc_negative:
+      rank: troublesome
+      category: emergent

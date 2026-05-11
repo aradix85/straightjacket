@@ -13,6 +13,7 @@ oracle_paths:
   names: ["name/ironlander/a", "name/ironlander/b"]
   backstory: ""
   factions: ""
+  threats: "settlement/trouble"
 
 vocabulary:
   substitutions:

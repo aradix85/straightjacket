@@ -276,9 +276,9 @@ def start_new_game(
     structure = choose_story_structure(pkg.id)
     rng = _random_module.Random()
     if structure == "kishotenketsu":
-        seed = assemble_blueprint_seed_kishotenketsu(rng, game.narrative)
+        seed = assemble_blueprint_seed_kishotenketsu(rng, game)
     else:
-        seed = assemble_blueprint_seed_from_ac(rng, game.narrative)
+        seed = assemble_blueprint_seed_from_ac(rng, game)
     log(f"[NewGame] Blueprint seed assembled: structure={seed.structure_type}, themes={seed.themes}")
 
     narrator_prompt = build_new_game_prompt(game)

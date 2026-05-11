@@ -220,3 +220,22 @@ adventure_crafter:
       trigger_value: "any:5"
       priority: 7
       narrative_hint: "Routes of escape close. The confrontation cannot be deferred any further."
+
+  max_threats_per_chapter: 3
+
+  threat_creation_mapping:
+    "A New Enemy":
+      rank: dangerous
+      category: scheming_leader
+    "Hidden Threat":
+      rank: dangerous
+      category: cursed_site
+    "Enemies":
+      rank: troublesome
+      category: ravaging_horde
+    "Hunted":
+      rank: dangerous
+      category: rampaging_creature
+    "A Problem Returns":
+      rank: dangerous
+      category: burgeoning_conflict

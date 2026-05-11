@@ -167,8 +167,8 @@ def _insert_threats(conn: sqlite3.Connection, game: GameState) -> None:
     for t in game.threats:
         conn.execute(
             "INSERT INTO threats (id, name, category, description, linked_vow_id, "
-            "rank, menace_ticks, max_menace_ticks, status) "
-            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            "rank, menace_ticks, max_menace_ticks, status, creation_source) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             (
                 t.id,
                 t.name,
@@ -179,5 +179,6 @@ def _insert_threats(conn: sqlite3.Connection, game: GameState) -> None:
                 t.menace_ticks,
                 t.max_menace_ticks,
                 t.status,
+                t.creation_source,
             ),
         )

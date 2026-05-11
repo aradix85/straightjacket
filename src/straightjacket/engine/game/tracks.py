@@ -60,6 +60,8 @@ def complete_track(game: GameState, track_id: str, outcome: str) -> None:
                 break
 
         for threat in game.threats:
+            if threat.linked_vow_id is None:
+                continue
             if threat.linked_vow_id == track_id and threat.status == "active":
                 threat.status = "overcome" if outcome == "completed" else "resolved"
                 log(f"[Track] Linked threat '{threat.name}' → {threat.status}")

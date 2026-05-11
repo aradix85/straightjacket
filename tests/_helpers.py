@@ -44,10 +44,11 @@ def make_threat(**kwargs: Any) -> Any:
     kwargs.setdefault("id", "threat_test")
     kwargs.setdefault("name", "Test Threat")
     kwargs.setdefault("category", "scheming_leader")
-    kwargs.setdefault("linked_vow_id", "")
+    kwargs.setdefault("linked_vow_id", None)
     kwargs.setdefault("rank", "dangerous")
     kwargs.setdefault("max_menace_ticks", 40)
     kwargs.setdefault("description", "")
+    kwargs.setdefault("creation_source", "setup")
     return ThreatData(**kwargs)
 
 
