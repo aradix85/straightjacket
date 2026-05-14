@@ -146,7 +146,6 @@ def test_stance_in_target_npc_block() -> None:
         roll,
         ["momentum +1"],
         [],
-        [],
         consequence_sentences=["The tide shifts."],
         player_words="I ask about the cargo",
     )
@@ -182,7 +181,6 @@ def test_stance_in_activated_npc_block() -> None:
         game,
         brain,
         roll,
-        [],
         [],
         [],
         consequence_sentences=["The tide shifts."],

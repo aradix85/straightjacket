@@ -60,7 +60,9 @@ def _game_with_npcs() -> GameState:
         ThreadEntry(id="thread_2", name="Old grudge", thread_type="tension", weight=1, active=False, source="creation")
     )
     game.narrative.characters_list.append(CharacterListEntry(id="npc_1", name="Kira", entry_type="npc", weight=2))
-    game.world.clocks.append(make_clock(name="Vault heist", clock_type="scheme", segments=6, filled=2, owner="Kira"))
+    game.world.clocks.append(
+        make_clock(name="Vault heist", clock_type="scheme", segments=6, filled=2, owner_kind="npc", owner_id="Kira")
+    )
     game.world.clocks.append(
         make_clock(name="Storm", clock_type="threat", segments=4, filled=4, fired=True, fired_at_scene=5)
     )
@@ -392,7 +394,7 @@ def test_query_clocks_by_fired() -> None:
 def test_query_clocks_by_owner() -> None:
     _fresh_db()
     sync(_game_with_npcs())
-    kira_clocks = query_clocks(owner="Kira")
+    kira_clocks = query_clocks(owner_kind="npc", owner_id="Kira")
     assert len(kira_clocks) == 1
     assert kira_clocks[0].name == "Vault heist"
     close_db()

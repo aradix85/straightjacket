@@ -1,10 +1,11 @@
 from collections.abc import Sequence
 
 from .mechanics.scene import SceneSetup
-from .models import BrainResult, GameState, NpcData, RandomEvent
+from .models import BrainResult, ClockFillResult, GameState, NpcData, RandomEvent
 from .prompt_blocks import narrative_direction_block, recent_events_block, story_context_block
 from .prompt_loader import get_prompt
 from .prompt_shared import (
+    _clock_filled_block,
     _director_block,
     _loc_hist,
     _npc_block,
@@ -27,6 +28,7 @@ def build_dialog_prompt(
     mentioned_npcs: Sequence[NpcData] = (),
     oracle_answer: str = "",
     random_events: Sequence[RandomEvent] = (),
+    clock_fill_results: Sequence[ClockFillResult] = (),
 ) -> str:
     context_text = f"{player_words} {brain.player_intent} {game.world.current_scene_context}"
     move_cat = "social"
@@ -39,15 +41,18 @@ def build_dialog_prompt(
     pw = f"\n<player_words>{_xe(player_words)}</player_words>" if player_words else ""
     pacing = _pacing_block(game, scene_setup)
     events_block = _random_events_block(random_events)
+    clock_block = _clock_filled_block(clock_fill_results)
     director = _director_block(game)
     oracle_tag = f"\n<oracle_answer>{_xe(oracle_answer)}</oracle_answer>" if oracle_answer else ""
 
     scene_type = "oracle" if oracle_answer else "dialog"
     task = get_prompt("task_oracle") if oracle_answer else get_prompt("task_dialog")
 
+    clock_section = f"\n{clock_block}" if clock_block else ""
+
     return f"""<scene type="{scene_type}" n="{game.narrative.scene_count}">
 {_scene_header(game)}
-<intent>{_xe(brain.player_intent)}</intent>{pw}{oracle_tag}
+<intent>{_xe(brain.player_intent)}</intent>{pw}{oracle_tag}{clock_section}
 <location>{_xe(game.world.current_location)}</location>{_loc_hist(game)}{_time_ctx(game)}{_scene_enrichment(game)}
 {npc}{npcs_sect}{wl}{crisis}
 {pacing}

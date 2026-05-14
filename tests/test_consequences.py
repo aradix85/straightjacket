@@ -56,7 +56,7 @@ def test_tick_threat_clock() -> None:
     game = _game()
     game.world.clocks = [make_clock(name="Storm", clock_type="threat", segments=4, filled=2)]
     events: list[ClockEvent] = []
-    tick_threat_clock(game, 1, events)
+    tick_threat_clock(game, 1, events, [])
     assert game.world.clocks[0].filled == 3
     assert len(events) == 0
 
@@ -67,7 +67,7 @@ def test_tick_threat_clock_fires_when_full() -> None:
     game = _game()
     game.world.clocks = [make_clock(name="Storm", clock_type="threat", segments=4, filled=3)]
     events: list[ClockEvent] = []
-    tick_threat_clock(game, 1, events)
+    tick_threat_clock(game, 1, events, [])
     assert game.world.clocks[0].filled == 4
     assert game.world.clocks[0].fired is True
     assert len(events) == 1
@@ -80,7 +80,7 @@ def test_tick_threat_clock_skips_non_threat() -> None:
     game = _game()
     game.world.clocks = [make_clock(name="Progress", clock_type="progress", segments=4, filled=2)]
     events: list[ClockEvent] = []
-    tick_threat_clock(game, 1, events)
+    tick_threat_clock(game, 1, events, [])
     assert game.world.clocks[0].filled == 2
 
 
@@ -90,7 +90,7 @@ def test_tick_threat_clock_skips_full() -> None:
     game = _game()
     game.world.clocks = [make_clock(name="Done", clock_type="threat", segments=4, filled=4, fired=True)]
     events: list[ClockEvent] = []
-    tick_threat_clock(game, 1, events)
+    tick_threat_clock(game, 1, events, [])
     assert len(events) == 0
 
 
@@ -132,7 +132,7 @@ def test_npc_agency_fires_on_scene_5(load_engine: None) -> None:
     game.narrative.scene_count = 5
     npc = make_npc(id="npc_1", name="Kira", status="active", agenda="find the vault")
     game.npcs.append(npc)
-    actions, _ = check_npc_agency(game)
+    actions, _, _ = check_npc_agency(game)
     assert len(actions) == 1
     assert "Kira" in actions[0]
 
@@ -144,7 +144,7 @@ def test_npc_agency_skips_non_multiple_of_5(load_engine: None) -> None:
     game.narrative.scene_count = 3
     npc = make_npc(id="npc_1", name="Kira", status="active", agenda="find the vault")
     game.npcs.append(npc)
-    actions, _ = check_npc_agency(game)
+    actions, _, _ = check_npc_agency(game)
     assert len(actions) == 0
 
 
@@ -155,8 +155,10 @@ def test_npc_agency_ticks_owned_clock(load_engine: None) -> None:
     game.narrative.scene_count = 5
     npc = make_npc(id="npc_1", name="Kira", status="active", agenda="find the vault")
     game.npcs.append(npc)
-    game.world.clocks = [make_clock(name="Kira's scheme", clock_type="scheme", segments=4, filled=1, owner="Kira")]
-    actions, events = check_npc_agency(game)
+    game.world.clocks = [
+        make_clock(name="Kira's scheme", clock_type="scheme", segments=4, filled=1, owner_kind="npc", owner_id="Kira")
+    ]
+    actions, events, _ = check_npc_agency(game)
     assert game.world.clocks[0].filled == 2
     assert len(events) == 1
 
@@ -165,7 +167,7 @@ def test_autonomous_clock_tick(load_engine: None) -> None:
     from straightjacket.engine.mechanics.consequences import tick_autonomous_clocks
 
     game = _game()
-    game.world.clocks = [make_clock(name="Plague", clock_type="threat", segments=6, filled=2, owner="world")]
+    game.world.clocks = [make_clock(name="Plague", clock_type="threat", segments=6, filled=2, owner_kind="world")]
     ticked = False
     for _ in range(100):
         game.world.clocks[0].filled = 2

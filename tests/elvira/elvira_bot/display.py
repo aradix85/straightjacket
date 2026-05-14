@@ -57,7 +57,8 @@ def final_state_dict(game: GameState) -> dict:
                 "clock_type": c.clock_type,
                 "filled": c.filled,
                 "segments": c.segments,
-                "owner": c.owner,
+                "owner_kind": c.owner_kind,
+                "owner_id": c.owner_id,
             }
             for c in game.world.clocks
             if not c.fired

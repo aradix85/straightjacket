@@ -146,7 +146,6 @@ def _build_prompt(npc: NpcData, scene: int = 5, bond: int = 0) -> str:
         roll,
         ["momentum +1"],
         [],
-        [],
         consequence_sentences=["The tide shifts."],
         player_words="approach carefully",
     )

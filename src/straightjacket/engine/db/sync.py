@@ -106,14 +106,17 @@ def _insert_clocks(conn: sqlite3.Connection, game: GameState) -> None:
     for c in game.world.clocks:
         conn.execute(
             "INSERT INTO clocks (name, clock_type, segments, filled, trigger_description, "
-            "owner, fired, fired_at_scene) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+            "owner_kind, owner_id, creation_source, fired, fired_at_scene) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             (
                 c.name,
                 c.clock_type,
                 c.segments,
                 c.filled,
                 c.trigger_description,
-                c.owner,
+                c.owner_kind,
+                c.owner_id,
+                c.creation_source,
                 int(c.fired),
                 c.fired_at_scene,
             ),

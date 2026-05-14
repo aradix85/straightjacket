@@ -178,6 +178,10 @@ def _process_dialog_turn(ctx: SceneContext) -> tuple[str, dict | None]:
     game.narrative.scene_count += 1
 
     oracle_answer = roll_oracle_answer(game) if is_oracle else ""
+
+    pending_fills = list(game.world.pending_clock_fills)
+    game.world.pending_clock_fills.clear()
+
     prompt = build_dialog_prompt(
         game,
         brain,
@@ -187,6 +191,7 @@ def _process_dialog_turn(ctx: SceneContext) -> tuple[str, dict | None]:
         mentioned_npcs=ctx.mentioned_npcs,
         oracle_answer=oracle_answer,
         random_events=ctx.pending_random_events,
+        clock_fill_results=pending_fills,
     )
     narration = narrate_scene(
         ctx.provider,
@@ -348,7 +353,6 @@ def _narrate_action_and_finalize(
         brain,
         roll,
         action_res.consequences,
-        action_res.clock_events,
         action_res.npc_agency,
         player_words=player_message,
         scene_setup=ctx.scene_setup,
@@ -359,6 +363,7 @@ def _narrate_action_and_finalize(
         consequence_sentences=consequence_sentences,
         random_events=ctx.pending_random_events,
         threat_events=action_res.threat_events,
+        clock_fill_results=action_res.clock_fill_results,
     )
     narration = narrate_scene(
         ctx.provider,

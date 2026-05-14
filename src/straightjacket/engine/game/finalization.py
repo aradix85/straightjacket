@@ -9,6 +9,7 @@ from ..ai.provider_base import AIProvider
 from ..engine_loader import damage, eng
 from ..logging_util import log
 from ..mechanics import (
+    ClockFillResult,
     generate_engine_memories,
     generate_scene_context,
 )
@@ -28,6 +29,7 @@ from ..game.tracks import find_progress_track
 class ActionOutcome:
     consequences: list[str] = field(default_factory=list)
     clock_events: list[ClockEvent] = field(default_factory=list)
+    clock_fill_results: list[ClockFillResult] = field(default_factory=list)
     outcome: OutcomeResult | None = None
     position: str = "risky"
     effect: str = "standard"
@@ -45,16 +47,18 @@ def resolve_action_consequences(
         game.world.combat_position = outcome.combat_position
 
     clock_events: list[ClockEvent] = []
+    fill_results: list[ClockFillResult] = []
     if roll.result == "MISS":
         clock_ticks = damage("damage.miss.clock_ticks", position)
         if clock_ticks > 0:
-            tick_threat_clock(game, clock_ticks, clock_events)
+            tick_threat_clock(game, clock_ticks, clock_events, fill_results)
 
     _update_crisis(game)
 
     return ActionOutcome(
         consequences=outcome.consequences,
         clock_events=clock_events,
+        clock_fill_results=fill_results,
         outcome=outcome,
         position=position,
     )

@@ -15,7 +15,7 @@ class ThreadEntry(SerializableMixin):
     thread_type: str
     source: str
     weight: int = 1
-    linked_track_id: str = ""
+    linked_track_id: str | None = None
     active: bool = True
 
 

@@ -12,7 +12,7 @@ from ..datasworn.settings import active_package
 from ..engine_config_dataclasses import PlotPointRanges
 from ..engine_loader import eng
 from ..logging_util import log
-from ..models import GameState, ThreatData
+from ..models import ClockData, GameState, ThreatData
 from ..models_story import (
     CharacterListEntry,
     KeyedScene,
@@ -23,6 +23,8 @@ from ..models_story import (
     StoryAct,
     StoryBlueprint,
 )
+from .keyed_scenes import spawn_keyed_scenes_for_clock
+from .spawn_sources import AC_SOURCE_PREFIX, EMERGENT_SOURCE_PREFIXES
 
 
 _AC_DATA_PATH = PROJECT_ROOT / "data" / "adventure_crafter.json"
@@ -482,15 +484,12 @@ def roll_character_traits(rng: random.Random) -> CharacterTraits:
     )
 
 
-_AC_SOURCE_PREFIX = "ac:"
-
-
 def _ac_keyed_scene_count(narrative: NarrativeState) -> int:
-    return sum(1 for ks in narrative.keyed_scenes if ks.source.startswith(_AC_SOURCE_PREFIX))
+    return sum(1 for ks in narrative.keyed_scenes if ks.source.startswith(AC_SOURCE_PREFIX))
 
 
 def _ac_already_spawned(narrative: NarrativeState, plot_point_name: str) -> bool:
-    target = f"{_AC_SOURCE_PREFIX}{plot_point_name}"
+    target = f"{AC_SOURCE_PREFIX}{plot_point_name}"
     return any(ks.source == target for ks in narrative.keyed_scenes)
 
 
@@ -526,7 +525,7 @@ def spawn_keyed_scenes_for_turning_point(narrative: NarrativeState, turning_poin
             trigger_value=entry.trigger_value,
             priority=entry.priority,
             narrative_hint=entry.narrative_hint,
-            source=f"{_AC_SOURCE_PREFIX}{hit.name}",
+            source=f"{AC_SOURCE_PREFIX}{hit.name}",
         )
         narrative.keyed_scenes.append(scene)
         spawned += 1
@@ -538,12 +537,12 @@ def spawn_keyed_scenes_for_turning_point(narrative: NarrativeState, turning_poin
 
 
 def _ac_threat_already_spawned(game: GameState, plot_point_name: str) -> bool:
-    target = f"{_AC_SOURCE_PREFIX}{plot_point_name}"
+    target = f"{AC_SOURCE_PREFIX}{plot_point_name}"
     return any(t.creation_source == target for t in game.threats)
 
 
 def _count_emergent_threats(game: GameState) -> int:
-    return sum(1 for t in game.threats if t.creation_source.startswith(("random_event:", _AC_SOURCE_PREFIX)))
+    return sum(1 for t in game.threats if t.creation_source.startswith(EMERGENT_SOURCE_PREFIXES))
 
 
 def _next_threat_id(game: GameState, prefix: str) -> str:
@@ -579,7 +578,7 @@ def spawn_threats_for_turning_point(game: GameState, turning_point: TurningPoint
         name = cascade[-1].label
         description = " — ".join(step.text for step in cascade)
         threat_id = _next_threat_id(game, "threat_ac_")
-        creation_source = f"{_AC_SOURCE_PREFIX}{hit.name}"
+        creation_source = f"{AC_SOURCE_PREFIX}{hit.name}"
 
         threat = ThreatData.new(
             id=threat_id,
@@ -595,6 +594,66 @@ def spawn_threats_for_turning_point(game: GameState, turning_point: TurningPoint
         log(
             f"[AdventureCrafter] spawned threat '{name}' (id={threat_id}, rank={entry.rank}, "
             f"category={entry.category}) from plot-point '{hit.name}'"
+        )
+    return spawned
+
+
+def _ac_clock_already_spawned(game: GameState, plot_point_name: str) -> bool:
+    target = f"{AC_SOURCE_PREFIX}{plot_point_name}"
+    return any(c.creation_source == target for c in game.world.clocks)
+
+
+def _count_emergent_clocks(game: GameState) -> int:
+    return sum(1 for c in game.world.clocks if c.creation_source.startswith(EMERGENT_SOURCE_PREFIXES))
+
+
+def _next_ac_clock_name(game: GameState, base_name: str) -> str:
+    existing = {c.name for c in game.world.clocks}
+    if base_name not in existing:
+        return base_name
+    n = 2
+    while f"{base_name} ({n})" in existing:
+        n += 1
+    return f"{base_name} ({n})"
+
+
+def spawn_clocks_for_turning_point(game: GameState, turning_point: TurningPoint) -> int:
+    cfg = eng().adventure_crafter
+    clocks_cfg = eng().clocks
+    mapping = cfg.clock_creation_mapping
+    cap = clocks_cfg.max_clocks_per_chapter
+
+    spawned = 0
+    for hit in turning_point.plot_points:
+        if hit.special_range is not None:
+            continue
+        if hit.name not in mapping:
+            continue
+        if _ac_clock_already_spawned(game, hit.name):
+            continue
+        if _count_emergent_clocks(game) >= cap:
+            log(f"[AdventureCrafter] clock cap {cap} reached, skipping plot-point '{hit.name}'")
+            break
+
+        entry = mapping[hit.name]
+        base_name = hit.name
+        clock_name = _next_ac_clock_name(game, base_name)
+        creation_source = f"{AC_SOURCE_PREFIX}{hit.name}"
+
+        clock = ClockData(
+            name=clock_name,
+            clock_type=entry.clock_type,
+            segments=clocks_cfg.default_segments,
+            trigger_description=hit.name,
+            owner_kind=clocks_cfg.default_owner_kind,
+            creation_source=creation_source,
+        )
+        game.world.clocks.append(clock)
+        spawn_keyed_scenes_for_clock(game.narrative, clock)
+        spawned += 1
+        log(
+            f"[AdventureCrafter] spawned clock '{clock_name}' (type={entry.clock_type}, "
+            f"segments={clocks_cfg.default_segments}) from plot-point '{hit.name}'"
         )
     return spawned
 
@@ -663,6 +722,7 @@ def assemble_blueprint_seed_from_ac(
         turning_points.append(tp)
         spawn_keyed_scenes_for_turning_point(narrative, tp)
         spawn_threats_for_turning_point(game, tp)
+        spawn_clocks_for_turning_point(game, tp)
 
     act_count = bp_cfg.acts_three_act
     phases = bp_cfg.three_act_phases

@@ -7,6 +7,7 @@ from .logging_util import log
 from .models_base import (
     ClockData,
     ClockEvent,
+    ClockFillResult,
     EngineConfig,
     FateResult,
     PlayerPreferences,

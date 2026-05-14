@@ -24,6 +24,8 @@ def make_clock(**kwargs: Any) -> Any:
     kwargs.setdefault("clock_type", "threat")
     kwargs.setdefault("segments", 6)
     kwargs.setdefault("trigger_description", "")
+    kwargs.setdefault("owner_kind", "world")
+    kwargs.setdefault("creation_source", "setup")
     return ClockData(**kwargs)
 
 

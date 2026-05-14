@@ -140,7 +140,7 @@ def _make_game():
             clock_type="threat",
             segments=6,
             filled=2,
-            owner="world",
+            owner_kind="world",
             trigger_description="Darkness engulfs the library",
         ),
     ]
@@ -320,7 +320,6 @@ def test_action_prompt_contains_result_and_position(stub_engine: None) -> None:
         brain,
         roll,
         consequences=[],
-        clock_events=[],
         npc_agency=[],
         consequence_sentences=["The tide shifts. Hero can feel it."],
         player_words="I search for hidden compartments",
@@ -608,11 +607,11 @@ def test_merge_npc_identity_updates_clock_owner(stub_engine: None) -> None:
 
     game = _make_game()
     game.world.clocks = [
-        make_clock(name="Mira's scheme", clock_type="scheme", owner="Mira"),
+        make_clock(name="Mira's scheme", clock_type="scheme", owner_kind="npc", owner_id="Mira"),
     ]
     npc = game.npcs[0]
     merge_npc_identity(npc, "Captain Voss", game=game)
-    assert game.world.clocks[0].owner == "Captain Voss"
+    assert game.world.clocks[0].owner_id == "Captain Voss"
 
 
 def test_correction_state_ops_npc_merge(stub_engine: None) -> None:

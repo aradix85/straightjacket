@@ -57,7 +57,8 @@ def query_active_clocks(game: GameState, clock_type: str = "", unfired_only: boo
                 "type": c.clock_type,
                 "filled": c.filled,
                 "segments": c.segments,
-                "owner": c.owner,
+                "owner_kind": c.owner_kind,
+                "owner_id": c.owner_id,
                 "fired": c.fired,
             }
             for c in clocks

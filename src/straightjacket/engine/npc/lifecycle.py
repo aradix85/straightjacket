@@ -87,9 +87,11 @@ def merge_npc_identity(existing: NpcData, new_name: str, new_desc: str = "", gam
     if game is not None:
         old_name_norm = normalize_for_match(old_name)
         for clock in game.world.clocks:
-            if normalize_for_match(clock.owner) == old_name_norm:
-                old_owner = clock.owner
-                clock.owner = new_name
+            if clock.owner_kind != "npc" or clock.owner_id is None:
+                continue
+            if normalize_for_match(clock.owner_id) == old_name_norm:
+                old_owner = clock.owner_id
+                clock.owner_id = new_name
                 log(f"[Clock] Owner updated on NPC rename: '{clock.name}' '{old_owner}' → '{new_name}'")
     log(f"[NPC] Identity merged: '{old_name}' → '{new_name}' (aliases: {existing.aliases})")
 

@@ -1,5 +1,6 @@
 __all__ = [
     "LEGACY_TRACKS",
+    "ClockFillResult",
     "NpcStance",
     "PlotPointHit",
     "PlotPointResult",
@@ -47,6 +48,7 @@ __all__ = [
     "purge_old_fired_clocks",
     "record_scene_intensity",
     "resolve_consequence_sentence",
+    "resolve_clock_fill",
     "resolve_effect",
     "resolve_fate",
     "resolve_fate_chart",
@@ -82,6 +84,10 @@ from .adventure_crafter import (
     lookup_plotlines_template,
     lookup_theme_priority,
     roll_turning_point,
+)
+from .clock_consequences import (
+    ClockFillResult,
+    resolve_clock_fill,
 )
 from .consequences import (
     can_burn_momentum,

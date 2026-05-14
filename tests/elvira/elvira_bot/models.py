@@ -55,7 +55,8 @@ class ClockSnapshot:
     clock_type: str = ""
     filled: int = 0
     segments: int = 0
-    owner: str = ""
+    owner_kind: str = ""
+    owner_id: str | None = None
     fired: bool = False
 
 

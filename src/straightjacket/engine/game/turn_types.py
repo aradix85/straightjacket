@@ -2,6 +2,7 @@ from dataclasses import dataclass, field
 
 from ..ai.provider_base import AIProvider
 from ..datasworn.moves import Move
+from ..mechanics.clock_consequences import ClockFillResult
 from ..mechanics.scene import SceneSetup
 from ..models import (
     BrainResult,
@@ -49,3 +50,4 @@ class ActionResolution:
     npc_agency: list[str]
     agency_clock_events: list[ClockEvent]
     threat_events: list[ThreatEvent]
+    clock_fill_results: list[ClockFillResult]

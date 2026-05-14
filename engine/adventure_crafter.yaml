@@ -239,3 +239,13 @@ adventure_crafter:
     "A Problem Returns":
       rank: dangerous
       category: burgeoning_conflict
+
+  clock_creation_mapping:
+    "Time Limit":
+      clock_type: threat
+    "A Crucial Life Support System Begins To Fail":
+      clock_type: threat
+    "A Needed Resource Runs Out":
+      clock_type: threat
+    "Impending Doom":
+      clock_type: threat

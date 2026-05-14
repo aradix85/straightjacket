@@ -140,7 +140,8 @@ def query_threads(
 def query_clocks(
     clock_type: str | None = None,
     fired: bool | None = None,
-    owner: str | None = None,
+    owner_kind: str | None = None,
+    owner_id: str | None = None,
 ) -> list[ClockData]:
     conn = get_db()
     clauses: list[str] = []
@@ -152,9 +153,12 @@ def query_clocks(
     if fired is not None:
         clauses.append("fired = ?")
         params.append(int(fired))
-    if owner is not None:
-        clauses.append("owner = ?")
-        params.append(owner)
+    if owner_kind is not None:
+        clauses.append("owner_kind = ?")
+        params.append(owner_kind)
+    if owner_id is not None:
+        clauses.append("owner_id = ?")
+        params.append(owner_id)
 
     where = (" WHERE " + " AND ".join(clauses)) if clauses else ""
     rows = conn.execute(f"SELECT * FROM clocks{where}", params).fetchall()
@@ -166,7 +170,9 @@ def query_clocks(
             segments=row["segments"],
             filled=row["filled"],
             trigger_description=row["trigger_description"],
-            owner=row["owner"],
+            owner_kind=row["owner_kind"],
+            owner_id=row["owner_id"],
+            creation_source=row["creation_source"],
             fired=bool(row["fired"]),
             fired_at_scene=row["fired_at_scene"],
         )

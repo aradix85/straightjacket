@@ -49,3 +49,11 @@ random_events:
     npc_negative:
       rank: troublesome
       category: emergent
+
+  clock_creation_mapping:
+    pc_negative:
+      clock_type: threat
+    move_toward_thread:
+      clock_type: progress
+    move_away_from_thread:
+      clock_type: threat

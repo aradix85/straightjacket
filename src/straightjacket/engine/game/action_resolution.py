@@ -3,6 +3,7 @@ import random
 from ..engine_loader import eng
 from ..logging_util import log
 from ..mechanics import (
+    ClockFillResult,
     check_npc_agency,
     resolve_effect,
     resolve_position,
@@ -36,13 +37,17 @@ def _maybe_mark_scene_challenge(game: GameState, brain: BrainResult, roll: RollR
 
 
 def _maybe_tick_weak_hit_clock(
-    game: GameState, roll: RollResult, position: str, clock_events: list[ClockEvent]
+    game: GameState,
+    roll: RollResult,
+    position: str,
+    clock_events: list[ClockEvent],
+    fill_results: list[ClockFillResult],
 ) -> None:
     if roll.result != "WEAK_HIT" or position == "controlled":
         return
     should_tick = (position == "desperate") or (random.random() < eng().pacing.weak_hit_clock_tick_chance)
     if should_tick:
-        tick_threat_clock(game, 1, clock_events)
+        tick_threat_clock(game, 1, clock_events, fill_results)
 
 
 def _collect_threat_events(game: GameState, roll: RollResult) -> list[ThreatEvent]:
@@ -83,9 +88,13 @@ def resolve_action_phase(game: GameState, brain: BrainResult, roll_outcome: Roll
     position = resolve_position(game, brain)
     effect = resolve_effect(game, brain, position)
 
+    pending_from_prior_turn = list(game.world.pending_clock_fills)
+    game.world.pending_clock_fills.clear()
+
     action = resolve_action_consequences(game, brain, roll, position)
     consequences = action.consequences
     clock_events = action.clock_events
+    fill_results = pending_from_prior_turn + action.clock_fill_results
 
     if action.outcome:
         source_category = ds_move.track_category if ds_move else "vow"
@@ -96,9 +105,10 @@ def resolve_action_phase(game: GameState, brain: BrainResult, roll_outcome: Roll
         _apply_track_completion(game, roll, track)
 
     _maybe_mark_scene_challenge(game, brain, roll)
-    _maybe_tick_weak_hit_clock(game, roll, position, clock_events)
+    _maybe_tick_weak_hit_clock(game, roll, position, clock_events, fill_results)
 
-    npc_agency, agency_clock_events = check_npc_agency(game)
+    npc_agency, agency_clock_events, agency_fill_results = check_npc_agency(game)
+    fill_results.extend(agency_fill_results)
 
     threat_events = _collect_threat_events(game, roll)
 
@@ -112,4 +122,5 @@ def resolve_action_phase(game: GameState, brain: BrainResult, roll_outcome: Roll
         npc_agency=npc_agency,
         agency_clock_events=agency_clock_events,
         threat_events=threat_events,
+        clock_fill_results=fill_results,
     )

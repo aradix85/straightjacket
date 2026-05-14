@@ -7,6 +7,7 @@ from ..logging_util import log
 from ..models import ClockData, GameState, KeyedScene, NarrativeState
 from ..models_npc import NpcData
 from ..npc import find_npc, get_npc_bond
+from .spawn_sources import CLOCK_KEYED_SOURCE_PREFIX
 
 
 def _eval_clock_fills(game: GameState, value: str) -> bool:
@@ -240,11 +241,8 @@ def _bound_entity_meets_threshold(game: GameState, trigger_type: str, value: str
     raise ValueError(f"trigger_type {trigger_type!r} not pattern-supporting")
 
 
-_CLOCK_SOURCE_PREFIX = "clock:"
-
-
 def _clock_already_spawned(narrative: NarrativeState, clock_name: str, threshold: int) -> bool:
-    target = f"{_CLOCK_SOURCE_PREFIX}{clock_name}:{threshold}"
+    target = f"{CLOCK_KEYED_SOURCE_PREFIX}{clock_name}:{threshold}"
     return any(ks.source == target for ks in narrative.keyed_scenes)
 
 
@@ -274,7 +272,7 @@ def spawn_keyed_scenes_for_clock(narrative: NarrativeState, clock: ClockData) ->
             trigger_value=f"{clock.name}:{threshold}",
             priority=entry.priority,
             narrative_hint=narrative_hint,
-            source=f"{_CLOCK_SOURCE_PREFIX}{clock.name}:{threshold}",
+            source=f"{CLOCK_KEYED_SOURCE_PREFIX}{clock.name}:{threshold}",
         )
         narrative.keyed_scenes.append(scene)
         spawned += 1

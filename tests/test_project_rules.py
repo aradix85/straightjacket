@@ -415,6 +415,7 @@ _INLINE_IMPORT_WHITELIST: set[tuple[str, str]] = {
     ("engine/mechanics/engine_memories.py", "generate_engine_memories"),
     ("engine/mechanics/world.py", "update_chaos_factor"),
     ("engine/mechanics/world.py", "apply_brain_location_time"),
+    ("engine/mechanics/clock_consequences.py", "_try_complete_linked_track"),
 }
 
 

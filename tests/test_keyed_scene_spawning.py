@@ -371,7 +371,8 @@ def test_clock_spawner_emits_keyed_scenes_per_fraction_for_threat_clock():
         segments=6,
         filled=0,
         trigger_description="",
-        owner="",
+        owner_kind="world",
+        creation_source="setup",
     )
     spawned = spawn_keyed_scenes_for_clock(narrative, clock)
     assert spawned == 2
@@ -390,7 +391,8 @@ def test_clock_spawner_progress_clock_only_emits_full():
         segments=8,
         filled=0,
         trigger_description="",
-        owner="",
+        owner_kind="world",
+        creation_source="setup",
     )
     spawned = spawn_keyed_scenes_for_clock(narrative, clock)
     assert spawned == 1
@@ -405,7 +407,8 @@ def test_clock_spawner_renders_clock_name_into_narrative_hint():
         segments=4,
         filled=0,
         trigger_description="",
-        owner="",
+        owner_kind="world",
+        creation_source="setup",
     )
     spawn_keyed_scenes_for_clock(narrative, clock)
     for ks in narrative.keyed_scenes:
@@ -420,7 +423,8 @@ def test_clock_spawner_dedups_same_clock_threshold_on_repeat_calls():
         segments=6,
         filled=0,
         trigger_description="",
-        owner="",
+        owner_kind="world",
+        creation_source="setup",
     )
     spawn_keyed_scenes_for_clock(narrative, clock)
     spawn_keyed_scenes_for_clock(narrative, clock)
@@ -446,7 +450,8 @@ def test_clock_spawned_scene_fires_when_clock_fills():
         segments=6,
         filled=6,
         trigger_description="",
-        owner="",
+        owner_kind="world",
+        creation_source="setup",
     )
     game.world.clocks.append(clock)
     spawn_keyed_scenes_for_clock(game.narrative, clock)

@@ -118,7 +118,6 @@ def test_consequence_tags_in_prompt() -> None:
         _roll("MISS"),
         ["health -2", "momentum -3"],
         [],
-        [],
         player_words="climb the wall",
         consequence_sentences=sentences,
     )
@@ -136,7 +135,6 @@ def test_no_consequence_tags_when_empty() -> None:
         _roll("STRONG_HIT"),
         [],
         [],
-        [],
         player_words="climb the wall",
         consequence_sentences=[],
     )
@@ -151,7 +149,6 @@ def test_task_mentions_consequence_weaving() -> None:
         _brain(),
         _roll("MISS"),
         ["health -1"],
-        [],
         [],
         player_words="climb",
         consequence_sentences=["Pain flares."],

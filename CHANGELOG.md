@@ -7,6 +7,22 @@ Originally forked from [EdgeTales](https://github.com/edgetales/edgetales). See 
 
 Straightjacket uses calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day. The first CalVer release is `2026.04.25.0`. Earlier `0.x.y` releases keep their original version numbers and are not renumbered. The switch was made because the project has no public API to version semantically against — the `0.x.y` numbers were running counters with no meaning, and dates carry the meaning the numbers didn't.
 
+## [2026.05.14.0] — 2026-05-14
+
+Clock expansion afgerond. Drie spawn-bronnen plus vol-handler plus owner-refactor in één commit.
+
+`ClockData` shape herzien: `owner: str = ""` (drie semantische rollen in twee sentinels) → `owner_kind: str` plus `owner_id: str | None`. Nieuw verplicht `creation_source: str`. Owner-kinds in `engine/clocks.yaml`. Save format breekt.
+
+Vol-handler `mechanics/clock_consequences.py::resolve_clock_fill`. Per clock-type tag-template uit `engine/clocks.yaml::fill_consequences`. Progress-clock-vol completeert linked track. Onderdrukt wanneer een attached keyed-scene nog pending is. Vol-events flowen via `ActionResolution.clock_fill_results` naar nieuw `<clock_filled>`-block in action- en dialog-prompts. Autonome-tick vol-events queuen op `WorldState.pending_clock_fills` en worden drained-and-prepended bij de volgende turn.
+
+Random-event spawner `spawn_clock_from_random_event` en AC spawner `spawn_clocks_for_turning_point` volgen het threat-spawner-patroon. Gedeelde cap `max_clocks_per_chapter`. Naming: Mythic action+subject (RE) of plot-point-naam (AC, geen cascade — deadlines hebben hun eigen karakter).
+
+Spawn-source-prefixes geconsolideerd in nieuw `mechanics/spawn_sources.py` — vier hardcoded-tuple-duplicaties plus drie module-locals samen op één plek.
+
+In-scope-fixes: `ThreadEntry.linked_track_id` `str | None`; DB-schema comments weg en `threads.linked_track_id` NOT NULL afgehaald; oude `clock_triggered`-attribuut op `<result>` weg; ongebruikt `clock_filled_template` uit `ai_text.yaml` weg.
+
+Tests 1236 → 1249 groen. Ruff plus mypy clean.
+
 ## [2026.05.11.0] — 2026-05-11
 
 Threat creation from random events and AC plot-points afgerond. Twee spawn-bronnen, twee naming-bronnen. Random-event-foci `pc_negative` en `npc_negative` (mappings in `engine/random_events.yaml::threat_creation_mapping`) spawnen via `mechanics/random_events.py::spawn_threat_from_random_event`, met de Mythic action+subject pair van het event als naam — het random-event mechanisme produceerde die pair al. AC plot-points `A New Enemy`, `Hidden Threat`, `Enemies`, `Hunted`, `A Problem Returns` (mappings in `engine/adventure_crafter.yaml::threat_creation_mapping`) spawnen via `mechanics/adventure_crafter.py::spawn_threats_for_turning_point`, met een Datasworn-cascade-roll als naam-bron — Delve cascade van `threat/category` naar negen sub-tabellen, andere settings single-table (starforged `campaign_launch/sector_trouble`, classic `settlement/trouble`, sundered_isles `seafaring/peril`). Bestaande 7c-keyed-scenes `threat_menace_phase any:N` van AC plot-points kunnen nu daadwerkelijk firen want mid-game threats bestaan.

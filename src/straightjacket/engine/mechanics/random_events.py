@@ -4,8 +4,10 @@ import random
 
 from ..engine_loader import eng
 from ..logging_util import log
-from ..models import GameState, KeyedScene, RandomEvent, ThreatData
+from ..models import ClockData, GameState, KeyedScene, RandomEvent, ThreatData
 from .fate import _load_mythic
+from .keyed_scenes import spawn_keyed_scenes_for_clock
+from .spawn_sources import EMERGENT_SOURCE_PREFIXES, RANDOM_EVENT_SOURCE_PREFIX
 
 
 _pending_events: list[RandomEvent] = []
@@ -119,15 +121,13 @@ def generate_random_event(game: GameState, source: str = "") -> RandomEvent:
 
     spawn_keyed_scene_from_random_event(game, event)
     spawn_threat_from_random_event(game, event)
+    spawn_clock_from_random_event(game, event)
 
     return event
 
 
-_RE_SOURCE_PREFIX = "random_event:"
-
-
 def _re_already_spawned_for_target(game: GameState, focus: str, target_id: str) -> bool:
-    target = f"{_RE_SOURCE_PREFIX}{focus}:{target_id}"
+    target = f"{RANDOM_EVENT_SOURCE_PREFIX}{focus}:{target_id}"
     return any(ks.source == target for ks in game.narrative.keyed_scenes)
 
 
@@ -166,7 +166,7 @@ def spawn_keyed_scene_from_random_event(game: GameState, event: RandomEvent) -> 
         trigger_value=trigger_value,
         priority=entry.priority,
         narrative_hint=entry.narrative_hint,
-        source=f"{_RE_SOURCE_PREFIX}{event.focus}:{event.target_id}",
+        source=f"{RANDOM_EVENT_SOURCE_PREFIX}{event.focus}:{event.target_id}",
     )
     game.narrative.keyed_scenes.append(scene)
     log(
@@ -178,7 +178,7 @@ def spawn_keyed_scene_from_random_event(game: GameState, event: RandomEvent) -> 
 
 
 def _re_threat_already_spawned(game: GameState, focus: str, target_id: str) -> bool:
-    target = f"{_RE_SOURCE_PREFIX}{focus}:{target_id}"
+    target = f"{RANDOM_EVENT_SOURCE_PREFIX}{focus}:{target_id}"
     return any(t.creation_source == target for t in game.threats)
 
 
@@ -207,7 +207,7 @@ def spawn_threat_from_random_event(game: GameState, event: RandomEvent) -> Threa
     name = _name_from_mythic_pair(event.meaning_action, event.meaning_subject)
     description = f"{event.meaning_action} / {event.meaning_subject}"
     threat_id = _next_threat_id(game, "threat_re_")
-    creation_source = f"{_RE_SOURCE_PREFIX}{event.focus}:{dedup_key}"
+    creation_source = f"{RANDOM_EVENT_SOURCE_PREFIX}{event.focus}:{dedup_key}"
 
     threat = ThreatData.new(
         id=threat_id,
@@ -226,13 +226,68 @@ def spawn_threat_from_random_event(game: GameState, event: RandomEvent) -> Threa
     return threat
 
 
+def _re_clock_already_spawned(game: GameState, focus: str, dedup_key: str) -> bool:
+    target = f"{RANDOM_EVENT_SOURCE_PREFIX}{focus}:{dedup_key}"
+    return any(c.creation_source == target for c in game.world.clocks)
+
+
+def _count_emergent_clocks(game: GameState) -> int:
+    return sum(1 for c in game.world.clocks if c.creation_source.startswith(EMERGENT_SOURCE_PREFIXES))
+
+
+def _next_clock_name(game: GameState, base_name: str) -> str:
+    existing = {c.name for c in game.world.clocks}
+    if base_name not in existing:
+        return base_name
+    n = 2
+    while f"{base_name} ({n})" in existing:
+        n += 1
+    return f"{base_name} ({n})"
+
+
+def spawn_clock_from_random_event(game: GameState, event: RandomEvent) -> ClockData | None:
+    cfg = eng().random_events
+    if event.focus not in cfg.clock_creation_mapping:
+        return None
+
+    dedup_key = event.target_id or event.focus
+    if _re_clock_already_spawned(game, event.focus, dedup_key):
+        return None
+
+    clocks_cfg = eng().clocks
+    if _count_emergent_clocks(game) >= clocks_cfg.max_clocks_per_chapter:
+        log(f"[Clock] emergent clock cap {clocks_cfg.max_clocks_per_chapter} reached, skipping focus '{event.focus}'")
+        return None
+
+    entry = cfg.clock_creation_mapping[event.focus]
+    base_name = _name_from_mythic_pair(event.meaning_action, event.meaning_subject)
+    clock_name = _next_clock_name(game, base_name)
+    creation_source = f"{RANDOM_EVENT_SOURCE_PREFIX}{event.focus}:{dedup_key}"
+
+    clock = ClockData(
+        name=clock_name,
+        clock_type=entry.clock_type,
+        segments=clocks_cfg.default_segments,
+        trigger_description=f"{event.meaning_action} / {event.meaning_subject}",
+        owner_kind=clocks_cfg.default_owner_kind,
+        creation_source=creation_source,
+    )
+    game.world.clocks.append(clock)
+    spawn_keyed_scenes_for_clock(game.narrative, clock)
+    log(
+        f"[Clock] spawned '{clock_name}' (type={entry.clock_type}, segments={clocks_cfg.default_segments}) "
+        f"from random-event focus '{event.focus}'"
+    )
+    return clock
+
+
 def _name_from_mythic_pair(action: str, subject: str) -> str:
     parts = [p for p in (action, subject) if p]
     return " ".join(parts) if parts else "Unnamed threat"
 
 
 def _count_emergent_threats(game: GameState) -> int:
-    return sum(1 for t in game.threats if t.creation_source.startswith(("random_event:", "ac:")))
+    return sum(1 for t in game.threats if t.creation_source.startswith(EMERGENT_SOURCE_PREFIXES))
 
 
 def add_thread_weight(game: GameState, thread_id: str) -> None:

@@ -7,6 +7,7 @@ from ..logging_util import log
 from ..models import BrainResult, ClockEvent, GameState, RollResult
 from ..npc import find_npc, normalize_for_match
 
+from .clock_consequences import ClockFillResult, resolve_clock_fill
 from .impacts import impact_label
 
 
@@ -46,7 +47,12 @@ def roll_progress(track_name: str, filled_boxes: int, move: str) -> RollResult:
     )
 
 
-def tick_threat_clock(game: GameState, ticks: int, clock_events: list[ClockEvent]) -> None:
+def tick_threat_clock(
+    game: GameState,
+    ticks: int,
+    clock_events: list[ClockEvent],
+    fill_results: list[ClockFillResult],
+) -> None:
     for clock in game.world.clocks:
         if clock.clock_type == "threat" and clock.filled < clock.segments:
             clock.filled = min(clock.segments, clock.filled + ticks)
@@ -61,6 +67,9 @@ def tick_threat_clock(game: GameState, ticks: int, clock_events: list[ClockEvent
                         triggered=True,
                     )
                 )
+                fill = resolve_clock_fill(game, clock)
+                if fill is not None:
+                    fill_results.append(fill)
             break
 
 
@@ -77,44 +86,45 @@ def can_burn_momentum(game: GameState, roll: RollResult) -> str | None:
     return None
 
 
-def check_npc_agency(game: GameState) -> tuple[list[str], list[ClockEvent]]:
+def check_npc_agency(game: GameState) -> tuple[list[str], list[ClockEvent], list[ClockFillResult]]:
     if game.narrative.scene_count % eng().pacing.npc_agency_interval != 0:
-        return [], []
+        return [], [], []
     _defaults = eng().ai_text.narrator_defaults
     actions: list[str] = []
     clock_events: list[ClockEvent] = []
+    fill_results: list[ClockFillResult] = []
     for npc in game.npcs:
         if npc.status == "active" and npc.agenda:
             actions.append(_defaults["npc_agency_action_template"].format(npc_name=npc.name, agenda=npc.agenda))
             npc_norms = {normalize_for_match(npc.name)}
             npc_norms.update(normalize_for_match(a) for a in npc.aliases)
             for clock in game.world.clocks:
-                if (
-                    clock.clock_type in ("scheme", "threat")
-                    and clock.owner not in ("", "world")
-                    and normalize_for_match(clock.owner) in npc_norms
-                    and clock.filled < clock.segments
-                ):
-                    clock.filled += 1
-                    triggered = clock.filled >= clock.segments
-                    if triggered:
-                        clock.fired = True
-                        clock.fired_at_scene = game.narrative.scene_count
-                        actions.append(
-                            _defaults["clock_filled_template"].format(
-                                clock_name=clock.name, trigger=clock.trigger_description
-                            )
-                        )
-                    event = ClockEvent(
-                        clock=clock.name,
-                        trigger=clock.trigger_description,
-                        autonomous=False,
-                        triggered=triggered,
-                    )
-                    clock_events.append(event)
-                    status = "TRIGGERED" if triggered else f"{clock.filled}/{clock.segments}"
-                    log(f"[Clock] NPC agency tick: '{clock.name}' by '{npc.name}' → {status}")
-    return actions, clock_events
+                if clock.clock_type not in ("scheme", "threat"):
+                    continue
+                if clock.owner_kind != "npc" or clock.owner_id is None:
+                    continue
+                if normalize_for_match(clock.owner_id) not in npc_norms:
+                    continue
+                if clock.filled >= clock.segments:
+                    continue
+                clock.filled += 1
+                triggered = clock.filled >= clock.segments
+                if triggered:
+                    clock.fired = True
+                    clock.fired_at_scene = game.narrative.scene_count
+                    fill = resolve_clock_fill(game, clock)
+                    if fill is not None:
+                        fill_results.append(fill)
+                event = ClockEvent(
+                    clock=clock.name,
+                    trigger=clock.trigger_description,
+                    autonomous=False,
+                    triggered=triggered,
+                )
+                clock_events.append(event)
+                status = "TRIGGERED" if triggered else f"{clock.filled}/{clock.segments}"
+                log(f"[Clock] NPC agency tick: '{clock.name}' by '{npc.name}' → {status}")
+    return actions, clock_events, fill_results
 
 
 def tick_autonomous_clocks(game: GameState) -> list[ClockEvent]:
@@ -125,7 +135,7 @@ def tick_autonomous_clocks(game: GameState) -> list[ClockEvent]:
             continue
         if clock.filled >= clock.segments:
             continue
-        if clock.owner not in ("", "world"):
+        if clock.owner_kind != "world":
             continue
         if random.random() < tick_chance:
             clock.filled = min(clock.segments, clock.filled + 1)
@@ -133,6 +143,9 @@ def tick_autonomous_clocks(game: GameState) -> list[ClockEvent]:
             if triggered:
                 clock.fired = True
                 clock.fired_at_scene = game.narrative.scene_count
+                fill = resolve_clock_fill(game, clock)
+                if fill is not None:
+                    game.world.pending_clock_fills.append(fill)
             event = ClockEvent(
                 clock=clock.name,
                 trigger=clock.trigger_description,

@@ -1,0 +1,18 @@
+clocks:
+  owner_kinds:
+  - npc
+  - world
+
+  default_owner_kind: world
+
+  default_segments: 6
+
+  max_clocks_per_chapter: 4
+
+  fill_consequences:
+    threat:
+      tag_template: "{clock_name}: the danger has arrived. The shape of the threat is concrete now."
+    scheme:
+      tag_template: "{clock_name}: the scheme has matured. What was being built is built."
+    progress:
+      tag_template: "{clock_name}: the work is complete. The track resolves."

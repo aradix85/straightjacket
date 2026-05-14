@@ -578,6 +578,7 @@ class RandomEventsConfig:
     consolidation_weight_default: int
     keyed_scene_mapping: dict[str, RandomEventKeyedSceneMappingEntry]
     threat_creation_mapping: dict[str, ThreatCreationMappingEntry]
+    clock_creation_mapping: dict[str, ClockCreationMappingEntry]
 
 
 @dataclass
@@ -730,3 +731,23 @@ class AdventureCrafterConfig:
     keyed_scene_mapping: dict[str, KeyedSceneMappingEntry]
     max_threats_per_chapter: int
     threat_creation_mapping: dict[str, ThreatCreationMappingEntry]
+    clock_creation_mapping: dict[str, ClockCreationMappingEntry]
+
+
+@dataclass
+class ClockCreationMappingEntry:
+    clock_type: str
+
+
+@dataclass
+class ClockFillConsequenceEntry:
+    tag_template: str
+
+
+@dataclass
+class ClocksConfig:
+    owner_kinds: frozenset[str]
+    default_owner_kind: str
+    default_segments: int
+    max_clocks_per_chapter: int
+    fill_consequences: dict[str, ClockFillConsequenceEntry]

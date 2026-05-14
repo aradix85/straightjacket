@@ -74,5 +74,4 @@ ai_text:
     new_chapter_threads_template: 'New chapter. Open threads: {threads}'
     new_chapter_blank: A new chapter begins.
     npc_agency_action_template: 'NPC "{npc_name}" pursues agenda "{agenda}" — concrete offscreen action.'
-    clock_filled_template: 'CLOCK FILLED "{clock_name}": {trigger}'
     momentum_burn_injection: <momentum_burn>Character digs deep, turns the tide.</momentum_burn>

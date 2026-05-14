@@ -1,11 +1,3 @@
--- Straightjacket database schema.
--- Tables mirror engine dataclasses. Columns match field names.
--- Ephemeral: rebuilt from GameState on every load/restore.
---
--- INSERT contract: sync.py is the sole writer and always provides every
--- column. No DEFAULT clauses on data columns — a missing value from a
--- caller is a bug to surface, not to paper over.
-
 CREATE TABLE IF NOT EXISTS npcs (
     id          TEXT PRIMARY KEY,
     name        TEXT NOT NULL,
@@ -13,16 +5,16 @@ CREATE TABLE IF NOT EXISTS npcs (
     agenda      TEXT NOT NULL,
     instinct    TEXT NOT NULL,
     arc         TEXT NOT NULL,
-    secrets     TEXT NOT NULL,                  -- JSON array
+    secrets     TEXT NOT NULL,
     disposition TEXT NOT NULL,
     status      TEXT NOT NULL,
-    introduced  INTEGER NOT NULL,                -- boolean; fresh NPCs not yet shown on-screen
-    aliases     TEXT NOT NULL,                   -- JSON array
-    keywords    TEXT NOT NULL,                   -- JSON array
+    introduced  INTEGER NOT NULL,
+    aliases     TEXT NOT NULL,
+    keywords    TEXT NOT NULL,
     importance_accumulator INTEGER NOT NULL,
     last_reflection_scene  INTEGER NOT NULL,
     last_location TEXT NOT NULL,
-    needs_reflection INTEGER NOT NULL,           -- boolean
+    needs_reflection INTEGER NOT NULL,
     gather_count INTEGER NOT NULL
 );
 
@@ -45,8 +37,8 @@ CREATE TABLE IF NOT EXISTS threads (
     thread_type TEXT NOT NULL,
     weight      INTEGER NOT NULL,
     source      TEXT NOT NULL,
-    linked_track_id TEXT NOT NULL,
-    active      INTEGER NOT NULL                 -- boolean
+    linked_track_id TEXT,
+    active      INTEGER NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS characters_list (
@@ -54,7 +46,7 @@ CREATE TABLE IF NOT EXISTS characters_list (
     name        TEXT NOT NULL,
     entry_type  TEXT NOT NULL,
     weight      INTEGER NOT NULL,
-    active      INTEGER NOT NULL,                -- boolean
+    active      INTEGER NOT NULL,
     ac_status   TEXT NOT NULL,
     ac_turning_point_count INTEGER NOT NULL
 );
@@ -73,9 +65,11 @@ CREATE TABLE IF NOT EXISTS clocks (
     segments    INTEGER NOT NULL,
     filled      INTEGER NOT NULL,
     trigger_description TEXT NOT NULL,
-    owner       TEXT NOT NULL,
-    fired       INTEGER NOT NULL,                -- boolean
-    fired_at_scene INTEGER NOT NULL              -- 0 = not yet fired (runtime state)
+    owner_kind  TEXT NOT NULL,
+    owner_id    TEXT,
+    creation_source TEXT NOT NULL,
+    fired       INTEGER NOT NULL,
+    fired_at_scene INTEGER NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS scene_log (
@@ -84,16 +78,16 @@ CREATE TABLE IF NOT EXISTS scene_log (
     summary     TEXT NOT NULL,
     move        TEXT NOT NULL,
     result      TEXT NOT NULL,
-    consequences TEXT NOT NULL,                  -- JSON array
-    clock_events TEXT NOT NULL,                  -- JSON array of ClockEvent dicts
+    consequences TEXT NOT NULL,
+    clock_events TEXT NOT NULL,
     position    TEXT NOT NULL,
     effect      TEXT NOT NULL,
     scene_type  TEXT NOT NULL,
-    npc_activation TEXT NOT NULL,                -- JSON dict
+    npc_activation TEXT NOT NULL,
     rich_summary TEXT NOT NULL,
     director_trigger TEXT NOT NULL,
     oracle_answer TEXT NOT NULL,
-    revelation_check TEXT NOT NULL               -- JSON dict
+    revelation_check TEXT NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS narration_history (
@@ -126,7 +120,6 @@ CREATE TABLE IF NOT EXISTS threats (
     creation_source TEXT NOT NULL
 );
 
--- Indexes for common query patterns.
 CREATE INDEX IF NOT EXISTS idx_npcs_status ON npcs(status);
 CREATE INDEX IF NOT EXISTS idx_npcs_disposition ON npcs(disposition);
 CREATE INDEX IF NOT EXISTS idx_npcs_last_location ON npcs(last_location);

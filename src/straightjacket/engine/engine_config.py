@@ -16,8 +16,11 @@ from .engine_config_dataclasses import (
     ChaosConfig,
     ChaosResolverConfig,
     ChapterConfig,
+    ClockCreationMappingEntry,
+    ClockFillConsequenceEntry,
     ClockKeyedSceneEntry,
     ClockKeyedScenesConfig,
+    ClocksConfig,
     CombatPosCondition,
     CorrectionConfig,
     CreationConfig,
@@ -160,6 +163,7 @@ class EngineSettings:
     keyed_scenes: KeyedScenesConfig
     adventure_crafter: AdventureCrafterConfig
     clock_keyed_scenes: ClockKeyedScenesConfig
+    clocks: ClocksConfig
 
     scene_range_default: list[int]
     death_emotions: list[str]
@@ -322,6 +326,10 @@ def _build_adventure_crafter(ac_raw: dict[str, Any]) -> AdventureCrafterConfig:
         )
         for name, entry in dict(ac_raw["threat_creation_mapping"]).items()
     }
+    ac_clock_creation = {
+        name: ClockCreationMappingEntry(clock_type=entry["clock_type"])
+        for name, entry in dict(ac_raw["clock_creation_mapping"]).items()
+    }
     return AdventureCrafterConfig(
         themes=list(ac_raw["themes"]),
         theme_slots=ac_raw["theme_slots"],
@@ -333,6 +341,7 @@ def _build_adventure_crafter(ac_raw: dict[str, Any]) -> AdventureCrafterConfig:
         keyed_scene_mapping=ac_keyed_mapping,
         max_threats_per_chapter=ac_raw["max_threats_per_chapter"],
         threat_creation_mapping=ac_threat_creation,
+        clock_creation_mapping=ac_clock_creation,
     )
 
 
@@ -365,6 +374,10 @@ def _build_random_events(re_raw: dict[str, Any]) -> RandomEventsConfig:
         )
         for focus, entry in dict(re_raw["threat_creation_mapping"]).items()
     }
+    re_clock_creation = {
+        focus: ClockCreationMappingEntry(clock_type=entry["clock_type"])
+        for focus, entry in dict(re_raw["clock_creation_mapping"]).items()
+    }
     return RandomEventsConfig(
         threat_target_probability=re_raw["threat_target_probability"],
         description_focus_categories=list(re_raw["description_focus_categories"]),
@@ -378,6 +391,21 @@ def _build_random_events(re_raw: dict[str, Any]) -> RandomEventsConfig:
         consolidation_weight_default=re_raw["consolidation_weight_default"],
         keyed_scene_mapping=re_keyed_mapping,
         threat_creation_mapping=re_threat_creation,
+        clock_creation_mapping=re_clock_creation,
+    )
+
+
+def _build_clocks(c_raw: dict[str, Any]) -> ClocksConfig:
+    fill = {
+        clock_type: ClockFillConsequenceEntry(tag_template=entry["tag_template"])
+        for clock_type, entry in dict(c_raw["fill_consequences"]).items()
+    }
+    return ClocksConfig(
+        owner_kinds=frozenset(c_raw["owner_kinds"]),
+        default_owner_kind=c_raw["default_owner_kind"],
+        default_segments=c_raw["default_segments"],
+        max_clocks_per_chapter=c_raw["max_clocks_per_chapter"],
+        fill_consequences=fill,
     )
 
 
@@ -512,6 +540,7 @@ def parse_engine_yaml(data: dict[str, Any]) -> EngineSettings:
     keyed_scenes = _build_keyed_scenes(dict(data["keyed_scenes"]))
     adventure_crafter = _build_adventure_crafter(dict(data["adventure_crafter"]))
     clock_keyed_scenes = _build_clock_keyed_scenes(dict(data["clock_keyed_scenes"]))
+    clocks = _build_clocks(dict(data["clocks"]))
     random_events = _build_random_events(dict(data["random_events"]))
 
     return EngineSettings(
@@ -578,6 +607,7 @@ def parse_engine_yaml(data: dict[str, Any]) -> EngineSettings:
         keyed_scenes=keyed_scenes,
         adventure_crafter=adventure_crafter,
         clock_keyed_scenes=clock_keyed_scenes,
+        clocks=clocks,
         scene_range_default=list(data["scene_range_default"]),
         death_emotions=list(data["death_emotions"]),
         creativity_seeds=list(data["creativity_seeds"]),

@@ -76,8 +76,10 @@ class ClockData(SerializableMixin):
     clock_type: str
     segments: int
     trigger_description: str
+    owner_kind: str
+    creation_source: str
     filled: int = 0
-    owner: str = ""
+    owner_id: str | None = None
     fired: bool = False
     fired_at_scene: int = 0
 
@@ -90,6 +92,7 @@ class WorldState(SerializableMixin):
     time_of_day: str = ""
     location_history: list[str] = field(default_factory=list)
     clocks: list[ClockData] = field(default_factory=list)
+    pending_clock_fills: list[ClockFillResult] = field(default_factory=list)
     combat_position: str = ""
 
     @classmethod
@@ -226,6 +229,14 @@ class ClockEvent(SerializableMixin):
     trigger: str
     autonomous: bool
     triggered: bool
+
+
+@dataclass
+class ClockFillResult(SerializableMixin):
+    clock_name: str
+    clock_type: str
+    tag_text: str
+    track_completed: bool = False
 
 
 @dataclass

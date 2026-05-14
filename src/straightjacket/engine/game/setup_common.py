@@ -5,8 +5,29 @@ from ..engine_loader import eng
 from ..logging_util import log
 from ..mechanics import time_phases, update_location
 from ..mechanics.keyed_scenes import spawn_keyed_scenes_for_clock
+from ..mechanics.spawn_sources import SETUP_SOURCE
 from ..models import ClockData, GameState, MemoryEntry, NpcData
 from ..npc import apply_name_sanitization, normalize_npc_dispositions, score_importance
+
+
+def _clock_from_setup_dict(c: dict) -> ClockData:
+    raw_owner = c["owner"]
+    if raw_owner in ("", "world"):
+        owner_kind = "world"
+        owner_id: str | None = None
+    else:
+        owner_kind = "npc"
+        owner_id = raw_owner
+    return ClockData(
+        name=c["name"],
+        clock_type=c["clock_type"],
+        segments=c["segments"],
+        trigger_description=c["trigger_description"],
+        owner_kind=owner_kind,
+        owner_id=owner_id,
+        creation_source=SETUP_SOURCE,
+        filled=c["filled"],
+    )
 
 
 def _find_npc_by_name(npcs: list[NpcData], npc_name: str) -> NpcData | None:
@@ -95,7 +116,7 @@ def seed_opening_memories(
 
 def apply_world_setup(game: GameState, data: dict, *, clocks_mode: str = "replace") -> None:
     if data.get("clocks"):
-        clocks = [ClockData.from_dict(c) for c in data["clocks"]]
+        clocks = [_clock_from_setup_dict(c) for c in data["clocks"]]
         if clocks_mode == "replace":
             game.world.clocks = clocks
         else:

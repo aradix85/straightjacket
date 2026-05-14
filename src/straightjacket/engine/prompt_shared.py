@@ -5,6 +5,7 @@ from collections.abc import Sequence
 from .engine_loader import eng
 from .logging_util import log
 from .mechanics import (
+    ClockFillResult,
     compute_npc_gate,
     get_pacing_hint,
     locations_match,
@@ -234,6 +235,19 @@ def _random_events_block(events: Sequence[RandomEvent]) -> str:
             f'<random_event focus="{_xa(ev.focus)}"{target_attr}>'
             f"{_xe(ev.meaning_action)} / {_xe(ev.meaning_subject)}"
             f"</random_event>"
+        )
+    return "\n".join(parts)
+
+
+def _clock_filled_block(fill_results: Sequence[ClockFillResult]) -> str:
+    if not fill_results:
+        return ""
+    parts = []
+    for fr in fill_results:
+        parts.append(
+            f'<clock_filled name="{_xa(fr.clock_name)}" clock_type="{_xa(fr.clock_type)}">'
+            f"{_xe(fr.tag_text)}"
+            f"</clock_filled>"
         )
     return "\n".join(parts)
 

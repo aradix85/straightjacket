@@ -115,7 +115,8 @@ def _snapshot_clocks(game: GameState) -> list[ClockSnapshot]:
             clock_type=c.clock_type,
             filled=c.filled,
             segments=c.segments,
-            owner=c.owner,
+            owner_kind=c.owner_kind,
+            owner_id=c.owner_id,
             fired=c.fired,
         )
         for c in game.world.clocks

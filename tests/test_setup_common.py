@@ -67,6 +67,7 @@ def test_apply_world_setup_replace_vs_extend(stub_all: None) -> None:
                     "segments": 4,
                     "filled": 1,
                     "trigger_description": "Storm breaks",
+                    "owner": "world",
                 }
             ],
             "location": "Market",
@@ -89,6 +90,7 @@ def test_apply_world_setup_replace_vs_extend(stub_all: None) -> None:
                     "segments": 4,
                     "filled": 0,
                     "trigger_description": "Door opens",
+                    "owner": "world",
                 }
             ],
         },

@@ -1,10 +1,12 @@
 from collections.abc import Sequence
 
+from .mechanics import ClockFillResult
 from .mechanics.scene import SceneSetup
 from .models import BrainResult, GameState, NpcData, RandomEvent, RollResult, ThreatEvent
 from .prompt_blocks import narrative_direction_block, recent_events_block, story_context_block
 from .prompt_loader import get_prompt
 from .prompt_shared import (
+    _clock_filled_block,
     _director_block,
     _loc_hist,
     _npc_block,
@@ -47,17 +49,14 @@ def _build_threat_event_tags(threat_events: Sequence[ThreatEvent]) -> str:
     return "\n" + "\n".join(parts) if parts else ""
 
 
-def _build_result_constraint(roll: RollResult, consequences: list[str], clock_events: list) -> str:
+def _build_result_constraint(roll: RollResult, consequences: list[str]) -> str:
     match_tag = ' match="true"' if roll.match else ""
     cons_attr = f' consequences="{_xa(",".join(consequences))}"' if consequences else ""
 
     if roll.result == "MISS":
-        clk = "".join(f' clock_triggered="{_xa(e.clock)}:{_xa(e.trigger)}"' for e in clock_events)
         match_hint = get_prompt("result_match_hint_miss") if roll.match else ""
         body = get_prompt("result_miss_body")
-        return (
-            f'<result type="MISS"{match_tag} consequences="{_xa(",".join(consequences))}"{clk}>{body}{match_hint}</r>'
-        )
+        return f'<result type="MISS"{match_tag}{cons_attr}>{body}{match_hint}</r>'
 
     if roll.result == "WEAK_HIT":
         match_hint = get_prompt("result_match_hint_weak_hit") if roll.match else ""
@@ -74,7 +73,6 @@ def build_action_prompt(
     brain: BrainResult,
     roll: RollResult,
     consequences: list[str],
-    clock_events: list,
     npc_agency: list[str],
     *,
     consequence_sentences: Sequence[str],
@@ -86,6 +84,7 @@ def build_action_prompt(
     effect: str = "standard",
     random_events: Sequence[RandomEvent] = (),
     threat_events: Sequence[ThreatEvent] = (),
+    clock_fill_results: Sequence[ClockFillResult] = (),
 ) -> str:
     context_text = f"{player_words} {brain.player_intent} {game.world.current_scene_context}"
 
@@ -97,7 +96,7 @@ def build_action_prompt(
     wl = f"\n<world_add>{_xe(wa)}</world_add>" if wa else ""
     pw = f"\n<player_words>{_xe(player_words)}</player_words>" if player_words else ""
 
-    constraint = _build_result_constraint(roll, consequences, clock_events)
+    constraint = _build_result_constraint(roll, consequences)
     position_tag = f'<position level="{_xa(position)}" effect="{_xa(effect)}"/>'
 
     status_flags = _build_status_flags(game)
@@ -105,6 +104,7 @@ def build_action_prompt(
     agency = f"\n<npc_agency>{_xe('| '.join(npc_agency))}</npc_agency>" if npc_agency else ""
     pacing = _pacing_block(game, scene_setup)
     events_block = _random_events_block(random_events)
+    clock_block = _clock_filled_block(clock_fill_results)
     director = _director_block(game)
 
     cons_tags = "\n".join(f"<consequence>{_xe(s)}</consequence>" for s in consequence_sentences)
@@ -113,10 +113,12 @@ def build_action_prompt(
 
     threat_tags = _build_threat_event_tags(threat_events)
 
+    clock_section = f"\n{clock_block}" if clock_block else ""
+
     return f"""<scene type="action" n="{game.narrative.scene_count}">
 {_scene_header(game)}
 <intent>{_xe(brain.player_intent)} ({_xe(brain.approach)})</intent>{pw}
-{constraint}{cons_tags}{threat_tags}
+{constraint}{cons_tags}{threat_tags}{clock_section}
 {position_tag}
 <location>{_xe(game.world.current_location)}</location>{_loc_hist(game)}{_time_ctx(game)}{_scene_enrichment(game)}
 {npc}{npcs_sect}{wl}{flags}{agency}

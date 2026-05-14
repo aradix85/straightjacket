@@ -81,7 +81,6 @@ def process_momentum_burn(
         brain_data,
         upgraded,
         consequences,
-        clock_events,
         [],
         player_words=player_words,
         scene_setup=scene_setup,
@@ -90,6 +89,7 @@ def process_momentum_burn(
         position=position,
         effect=effect,
         consequence_sentences=consequence_sentences,
+        clock_fill_results=action.clock_fill_results,
     )
     injection = eng().ai_text.narrator_defaults["momentum_burn_injection"]
     prompt = prompt.replace("<task>", f"{injection}\n<task>")

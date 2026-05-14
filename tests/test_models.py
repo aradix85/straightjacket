@@ -53,9 +53,11 @@ def test_npc_owned_threat_clock_ticks_in_agency() -> None:
     game.narrative.scene_count = 5
     npc = make_npc(id="npc_1", name="Villain", agenda="Take over", status="active")
     game.npcs.append(npc)
-    clock = make_clock(name="Villain Plan", clock_type="threat", segments=6, filled=3, owner="Villain")
+    clock = make_clock(
+        name="Villain Plan", clock_type="threat", segments=6, filled=3, owner_kind="npc", owner_id="Villain"
+    )
     game.world.clocks.append(clock)
-    actions, clock_events = check_npc_agency(game)
+    actions, clock_events, _ = check_npc_agency(game)
     assert clock.filled == 4
     assert len(actions) >= 1
     assert len(clock_events) == 1
@@ -70,14 +72,16 @@ def test_npc_agency_clock_fires_on_full() -> None:
     game.narrative.scene_count = 10
     npc = make_npc(id="npc_1", name="Villain", agenda="Take over", status="active")
     game.npcs.append(npc)
-    clock = make_clock(name="Villain Plan", clock_type="threat", segments=4, filled=3, owner="Villain")
+    clock = make_clock(
+        name="Villain Plan", clock_type="threat", segments=4, filled=3, owner_kind="npc", owner_id="Villain"
+    )
     game.world.clocks.append(clock)
-    actions, clock_events = check_npc_agency(game)
+    actions, clock_events, fill_results = check_npc_agency(game)
     assert clock.filled == 4
     assert clock.fired
     assert len(clock_events) == 1
     assert clock_events[0].triggered
-    assert any("CLOCK FILLED" in a for a in actions)
+    assert any(fr.clock_name == "Villain Plan" for fr in fill_results)
 
 
 def test_npc_agency_empty_on_wrong_scene() -> None:
@@ -87,7 +91,7 @@ def test_npc_agency_empty_on_wrong_scene() -> None:
     game.narrative.scene_count = 3
     npc = make_npc(id="npc_1", name="Villain", agenda="Take over", status="active")
     game.npcs.append(npc)
-    actions, clock_events = check_npc_agency(game)
+    actions, clock_events, _ = check_npc_agency(game)
     assert actions == []
     assert clock_events == []
 
@@ -98,7 +102,9 @@ def test_autonomous_clocks_skip_npc_owned(load_engine: None) -> None:
 
     random.seed(0)
     game = make_game_state()
-    clock = make_clock(name="NPC Clock", clock_type="threat", segments=6, filled=2, owner="Villain")
+    clock = make_clock(
+        name="NPC Clock", clock_type="threat", segments=6, filled=2, owner_kind="npc", owner_id="Villain"
+    )
     game.world.clocks.append(clock)
     for _ in range(20):
         tick_autonomous_clocks(game)

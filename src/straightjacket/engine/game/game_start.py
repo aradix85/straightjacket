@@ -21,6 +21,7 @@ from ..mechanics.adventure_crafter import (
     materialize_blueprint,
 )
 from ..mechanics.keyed_scenes import spawn_keyed_scenes_for_clock
+from ..mechanics.spawn_sources import SETUP_SOURCE
 from ..models import (
     CharacterListEntry,
     ClockData,
@@ -260,7 +261,9 @@ def start_new_game(
         segments=_opening.clock_segments,
         filled=_opening.clock_filled,
         trigger_description=_trigger,
-        owner="",
+        owner_kind="world",
+        owner_id=None,
+        creation_source=SETUP_SOURCE,
     )
     game.world.clocks.append(background_clock)
     spawn_keyed_scenes_for_clock(game.narrative, background_clock)
