@@ -7,6 +7,20 @@ Originally forked from [EdgeTales](https://github.com/edgetales/edgetales). See 
 
 Straightjacket uses calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day. The first CalVer release is `2026.04.25.0`. Earlier `0.x.y` releases keep their original version numbers and are not renumbered. The switch was made because the project has no public API to version semantically against — the `0.x.y` numbers were running counters with no meaning, and dates carry the meaning the numbers didn't.
 
+## [2026.09.24.24] — 2026-09-24
+
+Move outcomes can differ per setting, and Endure Harm and Endure Stress follow each rulebook (roadmap R.1 and R.3).
+
+Per-setting overrides. `engine/move_outcomes.yaml` gains `move_outcome_overrides`, keyed by setting; `mechanics/move_outcome.py` → `resolve_move_outcome` uses a move's override for the current setting before the shared table. The shared table follows Starforged; classic Ironsworn now gets its own Secure an Advantage (strong hit +2 momentum as a fixed choice, weak hit +1, which Ironsworn gives instead of Starforged's +2), Endure Harm, and Endure Stress.
+
+Endure Harm and Endure Stress. The suffer handler takes three new required parameters: what shaking it off costs in momentum, whether a weak hit offers the momentum-for-recovery exchange, and whether recovery is allowed from 0. Starforged: free recovery on a strong hit, the exchange on a weak hit, an additional -1 or -2 momentum on a miss, all as before, except that the weak-hit exchange no longer charges momentum at full health, where it recovered nothing. Classic Ironsworn: shaking it off costs 1 momentum and needs the track above 0, a weak hit presses on, and a miss costs 1 momentum without extra harm, as the Datasworn texts say. The handler is split into small functions (`_can_recover`, `_recover`, `_suffer_strong_hit`, `_suffer_weak_hit`).
+
+Still borrowed from Starforged in the classic setting, recorded in ARCHITECTURE.md: the lasting-harm names (permanently harmed and traumatized for maimed and corrupted) and wounded or shaken blocking recovery.
+
+Tests: nine Endure Harm cases across both rulebooks and all three results, including full health and 0 health; Secure an Advantage per setting; the momentum comparison now reads the outcome that applies per setting, leaving Draw the Circle's boast as the only recorded momentum divergence. Two handler tests built parameter dicts for the old contract and gain the three new keys.
+
+Quality gate: 1348 tests green, twenty-nine project-rule scans clean, coverage 89.63%, ruff check and ruff format clean, mypy --strict clean on 106 source files. Save format unchanged.
+
 ## [2026.09.24.23] — 2026-09-24
 
 "Add +1 on your next move" now happens. The move effect `next_move_bonus` (Starforged's Secure an Advantage on a strong hit or as a weak-hit choice, and similar outcomes) was announced to the narrator as a consequence but never reached a roll: `mechanics/move_effects.py` stored it on a result object nobody read.

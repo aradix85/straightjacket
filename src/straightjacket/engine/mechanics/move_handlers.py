@@ -7,42 +7,59 @@ from .impacts import apply_impact, blocks_recovery, clear_impact
 from .move_effects import OutcomeResult, _roll_pay_the_price
 
 
+def _can_recover(game: GameState, params: dict[str, Any], blocked: bool) -> bool:
+    track = params["track"]
+    if track not in ("health", "spirit", "supply") or blocked:
+        return False
+    value = int(getattr(game.resources, track))
+    if value <= 0 and not params["recover_from_zero"]:
+        return False
+    return value < int(getattr(eng().resources, f"{track}_max"))
+
+
+def _recover(game: GameState, params: dict[str, Any], cost: int, result: OutcomeResult) -> None:
+    _e = eng()
+    labels = _e.ai_text.consequence_labels
+    track = params["track"]
+    if cost:
+        game.resources.adjust_momentum(-cost, floor=_e.momentum.floor, ceiling=_e.momentum.max)
+        result.consequences.append(labels["momentum_change"].format(value=f"-{cost}"))
+    gained = game.resources.heal(track, params["recovery"], cap=getattr(_e.resources, f"{track}_max"))
+    result.consequences.append(labels["track_gain"].format(track=track, n=gained))
+
+
+def _suffer_strong_hit(game: GameState, params: dict[str, Any], blocked: bool, result: OutcomeResult) -> None:
+    if _can_recover(game, params, blocked):
+        _recover(game, params, params["strong_hit_exchange_cost"], result)
+        return
+    _e = eng()
+    gain = _e.momentum.suffer_recovery.strong_hit_gain
+    game.resources.adjust_momentum(gain, floor=_e.momentum.floor, ceiling=_e.momentum.max)
+    result.consequences.append(_e.ai_text.consequence_labels["momentum_change"].format(value=f"+{gain}"))
+
+
+def _suffer_weak_hit(game: GameState, params: dict[str, Any], blocked: bool, result: OutcomeResult) -> None:
+    if _can_recover(game, params, blocked):
+        _recover(game, params, eng().momentum.suffer_recovery.weak_hit_exchange_cost, result)
+
+
 def apply_suffer_handler(game: GameState, roll_result: str, params: dict[str, Any]) -> OutcomeResult:
     result = OutcomeResult()
     _e = eng()
     _labels = _e.ai_text.consequence_labels
     res = game.resources
     track = params["track"]
-    recovery = params["recovery"]
     miss_extra_track = params["miss_extra_track"]
     miss_extra_momentum = params["miss_extra_momentum"]
 
     has_blocking_impact = bool(blocks_recovery(game, track))
-    strong_gain = _e.momentum.suffer_recovery.strong_hit_gain
-    weak_exchange = _e.momentum.suffer_recovery.weak_hit_exchange_cost
 
     if roll_result == "STRONG_HIT":
-        if track in ("health", "spirit", "supply") and not has_blocking_impact:
-            cap = getattr(_e.resources, f"{track}_max")
-            gained = res.heal(track, recovery, cap=cap)
-            if gained:
-                result.consequences.append(_labels["track_gain"].format(track=track, n=gained))
-            else:
-                res.adjust_momentum(strong_gain, floor=_e.momentum.floor, ceiling=_e.momentum.max)
-                result.consequences.append(_labels["momentum_change"].format(value=f"+{strong_gain}"))
-        else:
-            res.adjust_momentum(strong_gain, floor=_e.momentum.floor, ceiling=_e.momentum.max)
-            result.consequences.append(_labels["momentum_change"].format(value=f"+{strong_gain}"))
-
+        _suffer_strong_hit(game, params, has_blocking_impact, result)
+    elif roll_result == "WEAK_HIT" and params["weak_hit_exchange"]:
+        _suffer_weak_hit(game, params, has_blocking_impact, result)
     elif roll_result == "WEAK_HIT":
-        if track in ("health", "spirit", "supply") and not has_blocking_impact:
-            res.adjust_momentum(-weak_exchange, floor=_e.momentum.floor, ceiling=_e.momentum.max)
-            cap = getattr(_e.resources, f"{track}_max")
-            gained = res.heal(track, recovery, cap=cap)
-            result.consequences.append(_labels["momentum_change"].format(value=f"-{weak_exchange}"))
-            if gained:
-                result.consequences.append(_labels["track_gain"].format(track=track, n=gained))
-
+        pass
     else:
         if track in ("health", "spirit", "supply"):
             lost = res.damage(track, abs(miss_extra_track))

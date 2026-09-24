@@ -10,7 +10,6 @@ REPO = Path(__file__).resolve().parent.parent
 GAIN = re.compile(r"take \+(\d) momentum", re.I)
 LOSS = re.compile(r"(?:suffer|lose) -(\d) momentum", re.I)
 KNOWN_DIVERGENCES = {
-    ("classic", "adventure/secure_an_advantage", "weak_hit"),
     ("classic", "relationship/draw_the_circle", "weak_hit"),
 }
 MYTHIC_2E_EVENT_FOCUS = [
@@ -41,9 +40,11 @@ def _yaml_momentum(effects: list[str]) -> int | None:
 def test_unconditional_momentum_matches_the_rulebooks(load_engine: None) -> None:
     from straightjacket.engine.datasworn.moves import get_moves
 
-    outcomes = yaml.safe_load((REPO / "engine" / "move_outcomes.yaml").read_text(encoding="utf-8"))["move_outcomes"]
+    table = yaml.safe_load((REPO / "engine" / "move_outcomes.yaml").read_text(encoding="utf-8"))
     found = set()
     for setting in ("starforged", "classic"):
+        overrides = table["move_outcome_overrides"][setting] if setting in table["move_outcome_overrides"] else {}
+        outcomes = {**table["move_outcomes"], **overrides}
         for key, move in get_moves(setting).items():
             if key not in outcomes:
                 continue
@@ -113,3 +114,42 @@ def test_scene_test_follows_mythic_2e(load_engine: None, roll: int, expected: st
     game.world.chaos_factor = 5
     game.narrative.keyed_scenes = []
     assert check_scene(game, roll=roll).scene_type.startswith(expected)
+
+
+@pytest.mark.parametrize(("setting", "expected"), [("classic", 1), ("starforged", 2)])
+def test_secure_an_advantage_weak_hit_follows_each_rulebook(load_engine: None, setting: str, expected: int) -> None:
+    from straightjacket.engine.mechanics.move_outcome import resolve_move_outcome
+    from tests._helpers import make_game_state
+
+    game = make_game_state(setting_id=setting)
+    game.resources.momentum = 0
+    resolve_move_outcome(game, "adventure/secure_an_advantage", "WEAK_HIT")
+    assert game.resources.momentum == expected
+
+
+@pytest.mark.parametrize(
+    ("setting", "health", "result", "expected"),
+    [
+        ("starforged", 3, "STRONG_HIT", (4, 2)),
+        ("starforged", 5, "STRONG_HIT", (5, 3)),
+        ("starforged", 3, "WEAK_HIT", (4, 1)),
+        ("starforged", 5, "WEAK_HIT", (5, 2)),
+        ("starforged", 3, "MISS", (2, 2)),
+        ("classic", 3, "STRONG_HIT", (4, 1)),
+        ("classic", 0, "STRONG_HIT", (0, 3)),
+        ("classic", 3, "WEAK_HIT", (3, 2)),
+        ("classic", 3, "MISS", (3, 1)),
+    ],
+)
+def test_endure_harm_follows_each_rulebook(
+    load_engine: None, setting: str, health: int, result: str, expected: tuple[int, int]
+) -> None:
+    from straightjacket.engine.mechanics.move_outcome import resolve_move_outcome
+    from tests._helpers import make_game_state
+
+    game = make_game_state(setting_id=setting)
+    game.resources.health = health
+    game.resources.momentum = 2
+    game.impacts = []
+    resolve_move_outcome(game, "suffer/endure_harm", result)
+    assert (game.resources.health, game.resources.momentum) == expected

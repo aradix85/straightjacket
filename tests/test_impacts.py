@@ -165,6 +165,9 @@ class TestSufferHandlerMarksImpact:
             "recovery": 1,
             "miss_extra_track": -1,
             "miss_extra_momentum": -2,
+            "strong_hit_exchange_cost": 0,
+            "weak_hit_exchange": True,
+            "recover_from_zero": True,
             "impact_pair": ["wounded", "permanently_harmed"],
             "blocking_impact": "wounded",
         }
@@ -184,6 +187,9 @@ class TestSufferHandlerMarksImpact:
             "recovery": 1,
             "miss_extra_track": -1,
             "miss_extra_momentum": -2,
+            "strong_hit_exchange_cost": 0,
+            "weak_hit_exchange": True,
+            "recover_from_zero": True,
             "impact_pair": ["wounded", "permanently_harmed"],
             "blocking_impact": "wounded",
         }

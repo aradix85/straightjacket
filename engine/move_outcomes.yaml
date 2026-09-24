@@ -227,6 +227,9 @@ move_outcomes:
       - wounded
       - permanently_harmed
       blocking_impact: wounded
+      strong_hit_exchange_cost: 0
+      weak_hit_exchange: true
+      recover_from_zero: true
   suffer/endure_stress:
     handler: suffer
     params:
@@ -238,6 +241,9 @@ move_outcomes:
       - shaken
       - traumatized
       blocking_impact: shaken
+      strong_hit_exchange_cost: 0
+      weak_hit_exchange: true
+      recover_from_zero: true
   suffer/withstand_damage:
     handler: suffer
     params:
@@ -249,6 +255,9 @@ move_outcomes:
       - battered
       - cursed
       blocking_impact: battered
+      strong_hit_exchange_cost: 0
+      weak_hit_exchange: true
+      recover_from_zero: true
   suffer/companion_takes_a_hit:
     handler: suffer
     params:
@@ -258,6 +267,9 @@ move_outcomes:
       miss_extra_momentum: -2
       impact_pair: []
       blocking_impact: ''
+      strong_hit_exchange_cost: 0
+      weak_hit_exchange: true
+      recover_from_zero: true
   suffer/lose_momentum:
     strong_hit:
     - narrative
@@ -399,6 +411,9 @@ move_outcomes:
       miss_extra_momentum: -1
       impact_pair: []
       blocking_impact: ''
+      strong_hit_exchange_cost: 0
+      weak_hit_exchange: true
+      recover_from_zero: true
   suffer/face_death:
     handler: threshold
     params:
@@ -445,3 +460,41 @@ move_outcomes:
     - narrative
     miss:
     - pay_the_price
+
+move_outcome_overrides:
+  classic:
+    suffer/endure_harm:
+      handler: suffer
+      params:
+        track: health
+        recovery: 1
+        miss_extra_track: 0
+        miss_extra_momentum: -1
+        impact_pair:
+        - wounded
+        - permanently_harmed
+        blocking_impact: wounded
+        strong_hit_exchange_cost: 1
+        weak_hit_exchange: false
+        recover_from_zero: false
+    suffer/endure_stress:
+      handler: suffer
+      params:
+        track: spirit
+        recovery: 1
+        miss_extra_track: 0
+        miss_extra_momentum: -1
+        impact_pair:
+        - shaken
+        - traumatized
+        blocking_impact: shaken
+        strong_hit_exchange_cost: 1
+        weak_hit_exchange: false
+        recover_from_zero: false
+    adventure/secure_an_advantage:
+      strong_hit:
+      - momentum +2
+      weak_hit:
+      - momentum +1
+      miss:
+      - pay_the_price

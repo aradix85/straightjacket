@@ -15,7 +15,9 @@ def resolve_move_outcome(
 
     result_key = roll_result.lower()
 
-    move_cfg = outcomes_cfg.get(move_key)
+    overrides = _e.get_raw("move_outcome_overrides")
+    setting_overrides = overrides[game.setting_id] if game.setting_id in overrides else {}
+    move_cfg = setting_overrides[move_key] if move_key in setting_overrides else outcomes_cfg.get(move_key)
     if move_cfg is None:
         raise ValueError(f"No outcome config for {move_key}. Add it to engine.yaml move_outcomes.")
 
