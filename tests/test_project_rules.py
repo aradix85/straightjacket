@@ -1176,7 +1176,44 @@ def _check_import_layers() -> tuple[str, list[Violation]]:
     return "IMPORT LAYER violated (dependencies point downward)", violations
 
 
+def _check_ai_calls_route_by_their_role() -> tuple[str, list[Violation]]:
+    config = yaml.safe_load((Path(__file__).resolve().parent.parent / "config.yaml").read_text(encoding="utf-8"))
+    roles = set(config["ai"]["role_cluster"])
+    violations: list[Violation] = []
+    for path in _iter_source_files():
+        for node in ast.walk(ast.parse(path.read_text(encoding="utf-8"))):
+            if (
+                not isinstance(node, ast.Call)
+                or getattr(node.func, "id", getattr(node.func, "attr", "")) != "AICallSpec"
+            ):
+                continue
+            keywords = {k.arg: k.value for k in node.keywords}
+            role = keywords.get("log_role")
+            if not (isinstance(role, ast.Constant) and role.value in roles):
+                shown = ast.unparse(role) if role is not None else "missing"
+                violations.append(Violation(_rel(path), node.lineno, f"log_role {shown} is not a role in role_cluster"))
+                continue
+            model = keywords.get("model")
+            if (
+                isinstance(model, ast.Call)
+                and getattr(model.func, "id", "") == "model_for_role"
+                and model.args
+                and isinstance(model.args[0], ast.Constant)
+                and model.args[0].value != role.value
+            ):
+                violations.append(
+                    Violation(
+                        _rel(path), node.lineno, f"model_for_role('{model.args[0].value}') with log_role '{role.value}'"
+                    )
+                )
+    return (
+        "AI CALL ROUTING: log_role must be the call's own role (the routing provider picks the provider by it)",
+        violations,
+    )
+
+
 _ALL_CHECKS = (
+    _check_ai_calls_route_by_their_role,
     _check_no_domain_default_in_dict_get,
     _check_no_or_literal_fallback_on_lookups,
     _check_no_name_or_empty_collection_fallback,

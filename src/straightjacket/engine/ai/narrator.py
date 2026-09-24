@@ -92,7 +92,7 @@ IMPORTANT: {game.player_name} is the PLAYER CHARACTER — do NOT include them as
             system=system,
             messages=[{"role": "user", "content": prompt}],
             json_schema=get_opening_setup_schema(),
-            log_role="narrator_retry",
+            log_role="opening_setup",
             **sampling_params("opening_setup"),
         )
         response = create_with_retry(provider, spec)
@@ -179,7 +179,7 @@ Extract all metadata from the narration above. Remember: {game.player_name} is t
             system=system,
             messages=[{"role": "user", "content": prompt}],
             json_schema=get_narrator_metadata_schema(),
-            log_role="metadata",
+            log_role="narrator_metadata",
             **sampling_params("narrator_metadata"),
         )
         response = create_with_retry(provider, spec)

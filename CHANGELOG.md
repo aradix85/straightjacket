@@ -7,6 +7,16 @@ Originally forked from [EdgeTales](https://github.com/edgetales/edgetales). See 
 
 Straightjacket uses calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day. The first CalVer release is `2026.04.25.0`. Earlier `0.x.y` releases keep their original version numbers and are not renumbered. The switch was made because the project has no public API to version semantically against — the `0.x.y` numbers were running counters with no meaning, and dates carry the meaning the numbers didn't.
 
+## [2026.09.24.20] — 2026-09-24
+
+Fixes a regression introduced in 2026.09.24.9: two AI calls could not be routed, so since that release the narrator-metadata extraction failed after every narration and the opening-setup extraction failed at the start of every new game, both silently.
+
+The routing provider picks the provider by `AICallSpec.log_role`, on the assumption that the label is the call's role name. Two calls used a different label: the metadata extraction was labelled `metadata` (role `narrator_metadata`) and the opening setup `narrator_retry` (role `opening_setup`). Routing raised "Role 'metadata' has no cluster assignment", and both calls catch AI failures by design (AI-call carve-out), so the game went on without them: new NPCs were never registered, and renames, details, deaths, and lore updates from narration were lost, as was the structured opening setup. The mock-provider tests could not see it, because they hand the pipeline a provider directly and never go through routing. Elvira found it: with its judge no longer a Claude model, it flagged a narration that introduced an NPC the game did not know, and the coverage report showed no NPC introductions.
+
+Both labels now carry their role names. New project-rule scan (twenty-nine): every `AICallSpec` must set `log_role` to a role in `config.yaml` → `ai.role_cluster`, and where the model comes from `model_for_role(X)`, X must be that same role. On the previous `ai/narrator.py` the scan reports exactly the two broken calls.
+
+Quality gate: 1316 tests green, twenty-nine project-rule scans clean, ruff check and ruff format clean, mypy --strict clean on 106 source files. Save format unchanged; saves from since 2026.09.24.9 simply lack the NPCs those turns should have registered.
+
 ## [2026.09.24.19] — 2026-09-24
 
 The narrator stays on Claude Opus 5.5; every other role moves to OpenAI's GPT-6 Luna, a second provider next to Anthropic.
