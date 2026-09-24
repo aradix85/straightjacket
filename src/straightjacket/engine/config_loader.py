@@ -39,6 +39,7 @@ class ProviderConfig:
     type: str
     api_base: str
     api_key_env: str
+    timeout_seconds: float
 
 
 @dataclass
@@ -86,7 +87,12 @@ def _parse_config(data: dict[str, Any]) -> AppConfig:
     ad = data["ai"]
 
     providers = {
-        name: ProviderConfig(type=pd["type"], api_base=pd["api_base"], api_key_env=pd["api_key_env"])
+        name: ProviderConfig(
+            type=pd["type"],
+            api_base=pd["api_base"],
+            api_key_env=pd["api_key_env"],
+            timeout_seconds=float(pd["timeout_seconds"]),
+        )
         for name, pd in ad["providers"].items()
     }
 

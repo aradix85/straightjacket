@@ -14,7 +14,9 @@ def _build_adapter(name: str, pc: ProviderConfig) -> ModelListingProvider:
     if not resolved_key:
         raise ValueError(f"No API key for provider '{name}'. Set the ${pc.api_key_env} environment variable.")
 
-    cache_key = f"{name}:{pc.type}:{pc.api_base}:{hashlib.sha256(resolved_key.encode()).hexdigest()[:16]}"
+    cache_key = (
+        f"{name}:{pc.type}:{pc.api_base}:{pc.timeout_seconds}:{hashlib.sha256(resolved_key.encode()).hexdigest()[:16]}"
+    )
     if cache_key in _adapter_cache:
         return _adapter_cache[cache_key]
 
@@ -23,11 +25,11 @@ def _build_adapter(name: str, pc: ProviderConfig) -> ModelListingProvider:
     if pc.type == "anthropic":
         from .provider_anthropic import AnthropicProvider
 
-        adapter = AnthropicProvider(api_key=resolved_key, api_base=api_base)
+        adapter = AnthropicProvider(api_key=resolved_key, timeout_seconds=pc.timeout_seconds, api_base=api_base)
     elif pc.type == "openai_compatible":
         from .provider_openai import OpenAICompatibleProvider
 
-        adapter = OpenAICompatibleProvider(api_key=resolved_key, api_base=api_base)
+        adapter = OpenAICompatibleProvider(api_key=resolved_key, timeout_seconds=pc.timeout_seconds, api_base=api_base)
     else:
         raise ValueError(f"Unknown type {pc.type!r} for provider '{name}'. Valid types: anthropic, openai_compatible.")
 

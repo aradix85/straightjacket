@@ -10,11 +10,11 @@ from .provider_base import AICallSpec, AIResponse, extract_usage, normalize_stop
 
 
 class OpenAICompatibleProvider:
-    def __init__(self, api_key: str, api_base: str | None = None):
+    def __init__(self, api_key: str, timeout_seconds: float, api_base: str | None = None):
+        client_kwargs: dict[str, Any] = {"api_key": api_key, "max_retries": 0, "timeout": timeout_seconds}
         if api_base:
-            self._client = openai.OpenAI(api_key=api_key, base_url=api_base)
-        else:
-            self._client = openai.OpenAI(api_key=api_key)
+            client_kwargs["base_url"] = api_base
+        self._client = openai.OpenAI(**client_kwargs)
         log(f"[OpenAICompatibleProvider] Initialized{f' (base: {api_base})' if api_base else ''}")
 
     def list_models(self) -> list[str]:
@@ -42,7 +42,7 @@ class OpenAICompatibleProvider:
                 raw_usage = chunk.usage
         return AIResponse(
             content=content,
-            stop_reason=normalize_stop_reason(finish_reason, "length", "tool_calls"),
+            stop_reason=normalize_stop_reason(finish_reason, ("length",), "tool_calls", "content_filter"),
             tool_calls=[],
             usage=extract_usage(raw_usage, "prompt_tokens", "completion_tokens"),
         )
@@ -52,7 +52,7 @@ class OpenAICompatibleProvider:
 
         create_kwargs: dict[str, Any] = {
             "model": spec.model,
-            "max_tokens": spec.max_tokens,
+            "max_completion_tokens": spec.max_tokens,
             "messages": full_messages,
         }
 
@@ -98,7 +98,7 @@ class OpenAICompatibleProvider:
                     }
                 )
 
-        stop_reason = normalize_stop_reason(choice.finish_reason, "length", "tool_calls")
+        stop_reason = normalize_stop_reason(choice.finish_reason, ("length",), "tool_calls", "content_filter")
 
         usage = extract_usage(getattr(response, "usage", None), "prompt_tokens", "completion_tokens")
 

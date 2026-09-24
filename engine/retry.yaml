@@ -7,3 +7,4 @@ retry:
   - 503
   - 529
   backoff_base: 2
+  max_retry_after_seconds: 60

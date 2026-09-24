@@ -12,6 +12,7 @@ ai:
       type: "anthropic"
       api_base: ""
       api_key_env: "ANTHROPIC_API_KEY"
+      timeout_seconds: 120
 
   clusters:
     narrator:
@@ -24,6 +25,7 @@ ai:
       extra_body:
         cache_control:
           type: "ephemeral"
+          ttl: "1h"
         output_config:
           effort: "low"
     creative:

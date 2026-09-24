@@ -38,11 +38,11 @@ def _to_anthropic_messages(messages: list[dict[str, Any]]) -> list[dict[str, Any
 
 
 class AnthropicProvider:
-    def __init__(self, api_key: str, api_base: str | None = None):
+    def __init__(self, api_key: str, timeout_seconds: float, api_base: str | None = None):
+        client_kwargs: dict[str, Any] = {"api_key": api_key, "max_retries": 0, "timeout": timeout_seconds}
         if api_base:
-            self._client = anthropic.Anthropic(api_key=api_key, base_url=api_base)
-        else:
-            self._client = anthropic.Anthropic(api_key=api_key)
+            client_kwargs["base_url"] = api_base
+        self._client = anthropic.Anthropic(**client_kwargs)
         log(f"[AnthropicProvider] Initialized{f' (base: {api_base})' if api_base else ''}")
 
     def list_models(self) -> list[str]:
@@ -117,7 +117,9 @@ class AnthropicProvider:
                     }
                 )
 
-        stop_reason = normalize_stop_reason(response.stop_reason, "max_tokens", "tool_use")
+        stop_reason = normalize_stop_reason(
+            response.stop_reason, ("max_tokens", "model_context_window_exceeded"), "tool_use", "refusal"
+        )
 
         usage = extract_usage(getattr(response, "usage", None), "input_tokens", "output_tokens")
         if usage is not None:

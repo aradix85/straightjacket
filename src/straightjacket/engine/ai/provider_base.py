@@ -52,11 +52,13 @@ class AICallSpec:
     log_role: str = ""
 
 
-def normalize_stop_reason(raw: str, truncated_value: str, tool_use_value: str) -> str:
-    if raw == truncated_value:
+def normalize_stop_reason(raw: str, truncated_values: tuple[str, ...], tool_use_value: str, refusal_value: str) -> str:
+    if raw in truncated_values:
         return "truncated"
     if raw == tool_use_value:
         return "tool_use"
+    if raw == refusal_value:
+        return "refusal"
     return "complete"
 
 
@@ -127,19 +129,42 @@ def post_process_response(response: AIResponse) -> AIResponse:
     return response
 
 
+def _log_usage(spec: AICallSpec, result: AIResponse) -> None:
+    if not spec.log_role:
+        return
+    if result.usage:
+        inp = result.usage["input_tokens"]
+        out = result.usage["output_tokens"]
+        log(f"[TOKENS] {spec.log_role}: {inp} in + {out} out = {inp + out} total")
+        log_tokens(spec.log_role, inp, out)
+    else:
+        log(f"[TOKENS] {spec.log_role}: usage not returned by provider", level="warning")
+
+
+def _retry_after_seconds(error: Exception) -> float | None:
+    headers = getattr(getattr(error, "response", None), "headers", None)
+    if not headers:
+        return None
+    value = headers.get("retry-after")
+    if value is None:
+        return None
+    try:
+        return float(value)
+    except ValueError:
+        return None
+
+
 def create_with_retry(provider: AIProvider, spec: AICallSpec) -> AIResponse:
     for attempt in range(spec.max_retries + 1):
         try:
             response = provider.create_message(spec)
             result = post_process_response(response)
-            if spec.log_role:
-                if result.usage:
-                    inp = result.usage["input_tokens"]
-                    out = result.usage["output_tokens"]
-                    log(f"[TOKENS] {spec.log_role}: {inp} in + {out} out = {inp + out} total")
-                    log_tokens(spec.log_role, inp, out)
-                else:
-                    log(f"[TOKENS] {spec.log_role}: usage not returned by provider", level="warning")
+            _log_usage(spec, result)
+            if result.stop_reason == "refusal":
+                if attempt < spec.max_retries:
+                    log(f"[AI] {spec.log_role}: model refused, retry {attempt + 1}/{spec.max_retries}", level="warning")
+                    continue
+                log(f"[AI] {spec.log_role}: model refused on every attempt", level="error")
             return result
 
         except Exception as e:
@@ -151,12 +176,18 @@ def create_with_retry(provider: AIProvider, spec: AICallSpec) -> AIResponse:
             is_retryable_status = status_code in _retry_cfg.retryable_http_codes
 
             if attempt < spec.max_retries and (is_retryable_status or is_connection_error):
-                wait = _retry_cfg.backoff_base**attempt
+                retry_after = _retry_after_seconds(e)
+                wait = (
+                    min(retry_after, _retry_cfg.max_retry_after_seconds)
+                    if retry_after is not None
+                    else _retry_cfg.backoff_base**attempt
+                )
                 error_desc = f"HTTP {status_code}" if status_code else str(e)[: _eng().truncations.log_medium]
                 log(f"[AI] {error_desc}, retry {attempt + 1}/{spec.max_retries} in {wait}s", level="warning")
                 _backoff_sleep(wait)
                 continue
             raise
+    raise RuntimeError(f"{spec.log_role}: no attempts made")
 
 
 def stream_with_retry(provider: AIProvider, spec: AICallSpec, sink: NarrationSink) -> AIResponse:
@@ -174,5 +205,11 @@ def stream_with_retry(provider: AIProvider, spec: AICallSpec, sink: NarrationSin
         )
         sink.fail()
         return create_with_retry(provider, spec)
+    result = post_process_response(response)
+    _log_usage(spec, result)
+    if result.stop_reason == "refusal":
+        log(f"[AI] {spec.log_role}: model refused while streaming; retrying without streaming", level="warning")
+        sink.fail()
+        return create_with_retry(provider, spec)
     sink.finish()
-    return response
+    return result

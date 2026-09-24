@@ -5,7 +5,12 @@ def _full_config_data(**overrides: object) -> dict:
         "ai": {
             "prompts_dir": "prompts",
             "providers": {
-                "local": {"type": "openai_compatible", "api_base": "http://localhost:9/v1", "api_key_env": "LOCAL_KEY"},
+                "local": {
+                    "type": "openai_compatible",
+                    "api_base": "http://localhost:9/v1",
+                    "api_key_env": "LOCAL_KEY",
+                    "timeout_seconds": 30,
+                },
             },
             "clusters": {
                 "classification": {

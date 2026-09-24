@@ -35,8 +35,13 @@ def two_providers(monkeypatch: pytest.MonkeyPatch) -> dict[str, _FakeAdapter]:
         "ai": {
             "prompts_dir": "prompts",
             "providers": {
-                "fast": {"type": "openai_compatible", "api_base": "http://fast.invalid/v1", "api_key_env": "FAST_KEY"},
-                "prose": {"type": "anthropic", "api_base": "", "api_key_env": "PROSE_KEY"},
+                "fast": {
+                    "type": "openai_compatible",
+                    "api_base": "http://fast.invalid/v1",
+                    "api_key_env": "FAST_KEY",
+                    "timeout_seconds": 30,
+                },
+                "prose": {"type": "anthropic", "api_base": "", "api_key_env": "PROSE_KEY", "timeout_seconds": 30},
             },
             "clusters": {"narrator": _cluster("prose", "model-b"), "classification": _cluster("fast", "model-a")},
             "role_cluster": {"narrator": "narrator", "brain": "classification"},
@@ -80,13 +85,15 @@ def test_startup_check_names_the_missing_model_and_what_is_available(two_provide
 
 def test_missing_api_key_names_the_environment_variable(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.delenv("SJ_TEST_MISSING_KEY", raising=False)
-    pc = config_loader.ProviderConfig(type="openai_compatible", api_base="", api_key_env="SJ_TEST_MISSING_KEY")
+    pc = config_loader.ProviderConfig(
+        type="openai_compatible", api_base="", api_key_env="SJ_TEST_MISSING_KEY", timeout_seconds=30
+    )
     with pytest.raises(ValueError, match="SJ_TEST_MISSING_KEY"):
         api_client._build_adapter("somewhere", pc)
 
 
 def test_unknown_provider_type_raises(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("SJ_TEST_KEY", "k")
-    pc = config_loader.ProviderConfig(type="carrier_pigeon", api_base="", api_key_env="SJ_TEST_KEY")
+    pc = config_loader.ProviderConfig(type="carrier_pigeon", api_base="", api_key_env="SJ_TEST_KEY", timeout_seconds=30)
     with pytest.raises(ValueError, match="Unknown type 'carrier_pigeon'"):
         api_client._build_adapter("somewhere", pc)

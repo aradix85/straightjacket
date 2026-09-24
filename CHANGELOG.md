@@ -7,6 +7,28 @@ Originally forked from [EdgeTales](https://github.com/edgetales/edgetales). See 
 
 Straightjacket uses calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day. The first CalVer release is `2026.04.25.0`. Earlier `0.x.y` releases keep their original version numbers and are not renumbered. The switch was made because the project has no public API to version semantically against — the `0.x.y` numbers were running counters with no meaning, and dates carry the meaning the numbers didn't.
 
+## [2026.09.24.14] — 2026-09-24
+
+The two provider SDKs are now used as intended, and OpenAI's own models work.
+
+Double retries. Both SDKs retry failed requests twice on their own, and `create_with_retry` retried on top of that (three attempts in the current config), so a persistent overload could take up to twelve attempts, and Straightjacket's own loop ignored the server's `Retry-After`. Both adapters now create their SDK client with `max_retries=0`; `create_with_retry` is the only retry layer and honours `Retry-After`, capped by the new `retry.max_retry_after_seconds: 60` in `engine/retry.yaml`.
+
+Timeouts. The SDKs wait up to ten minutes per attempt by default. Each provider in `config.yaml` now has a required `timeout_seconds` (120 for Anthropic), passed to the SDK client.
+
+Refusals. `normalize_stop_reason` mapped every unknown stop reason to `complete`, so a refusal passed silently as ordinary narration. It now takes the truncation values as a tuple (Anthropic adds `model_context_window_exceeded`) and a refusal value (Anthropic `refusal`, OpenAI `content_filter`). `create_with_retry` retries a refusal like a transient error and logs an error when it persists; `stream_with_retry` falls back to a normal call when a stream ends in a refusal.
+
+OpenAI's own models. The OpenAI-compatible adapter sent `max_tokens`, which GPT-6 Luna and GPT-5.6 Luna reject ("Use 'max_completion_tokens' instead"), so the adapter only worked with third-party services. It now sends `max_completion_tokens`; verified live that Fireworks (GLM 5.2, Kimi K2.6) accepts it too.
+
+Streaming bookkeeping. The streaming path added in 2026.09.24.12 skipped `post_process_response` and token logging, so streamed narrator calls were missing from the token log and from Elvira's cost figures. `stream_with_retry` now runs both, through a helper shared with `create_with_retry`.
+
+Prompt caching. The narrator cluster caches for an hour (`cache_control: {type: ephemeral, ttl: "1h"}`): with a screen reader, hearing a narration, thinking, and typing often takes longer than the default five minutes. Verified live: 3970 tokens of the real narrator prompt written to the one-hour cache and read back. Also measured: Claude Haiku 4.5 caches a 9,000-token prompt but not the Brain's roughly 2,300 tokens, which is below its minimum, so `cache_control` on the Haiku clusters has no effect and costs nothing.
+
+Considered and left out: strict tool definitions (two of the three Director tools have optional parameters with defaults, which strict mode forbids), token counting before sending, and the batch API (half price, but not for interactive play; useful for comparison runs).
+
+Verified live through Straightjacket's own adapters: OpenAI GPT-6 Luna and Fireworks GLM 5.2 each pass plain text, the Brain schema, a Director tool call, and streaming. New `tests/test_retry_and_refusal.py` (refusal retried, persistent refusal returned, `Retry-After` honoured and capped, streaming refusal falls back) and refusal-mapping tests for both adapters; existing tests updated for the client arguments and `max_completion_tokens`.
+
+Quality gate: 1310 tests green, twenty-eight project-rule scans clean, coverage 88.55%, ruff check and ruff format clean, mypy --strict clean on 106 source files. Save format unchanged; `config.yaml` gains the required key `timeout_seconds` per provider.
+
 ## [2026.09.24.13] — 2026-09-24
 
 The narrator runs Claude Opus 5.5 at reasoning effort `low`: the narrator cluster's `extra_body` gains `output_config: {effort: low}`, which the Anthropic adapter merges into the request since 2026.09.24.11.

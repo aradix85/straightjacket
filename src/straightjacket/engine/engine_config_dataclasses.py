@@ -464,6 +464,7 @@ class RetryConfig:
     tool_loop_round_max_retries: int
     retryable_http_codes: list[int]
     backoff_base: int
+    max_retry_after_seconds: float
 
 
 @dataclass
