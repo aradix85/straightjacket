@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import random
 import re
 from pathlib import Path
 
@@ -270,7 +271,8 @@ def test_adventure_crafter_tables_are_complete(load_engine: None) -> None:
     assert _covers_one_to_hundred([(m["min"], m["max"]) for m in data["meta_plot_points"]])
     for name in ("characters_list_template", "plotlines_list_template"):
         rows = data[name]
-        assert len(rows) == 25 and all(r["max"] - r["min"] == 3 for r in rows)
+        assert len(rows) == 25
+        assert all(r["max"] - r["min"] == 3 for r in rows)
         assert _covers_one_to_hundred([(r["min"], r["max"]) for r in rows])
 
 
@@ -280,3 +282,48 @@ def test_adventure_crafter_conclusion_and_none_ranges(load_engine: None) -> None
     points = {p["name"]: p["themes"] for p in _load_ac_data()["plot_points"]}
     assert all((r["min"], r["max"]) == (1, 8) for r in points["Conclusion"].values())
     assert all((r["min"], r["max"]) == (9, 24) for r in points["None"].values())
+
+
+class _ScriptedRng(random.Random):
+    def __init__(self, *values: int) -> None:
+        super().__init__(0)
+        self.values = list(values)
+
+    def randint(self, low: int, high: int) -> int:
+        return self.values.pop(0)
+
+
+THEMES = ["action", "tension", "mystery", "social", "personal"]
+
+
+def test_turning_point_always_has_five_slots_and_at_most_three_none(load_engine: None) -> None:
+    from straightjacket.engine.mechanics.adventure_crafter import roll_turning_point
+    from tests._helpers import make_game_state
+
+    for seed in range(200):
+        narrative = make_game_state().narrative
+        points = roll_turning_point(random.Random(seed), THEMES, narrative).plot_points
+        assert len(points) == 5
+        assert sum(1 for p in points if p.special_range == "none") <= 3
+
+
+def test_a_fourth_none_is_rerolled(load_engine: None) -> None:
+    from straightjacket.engine.mechanics.adventure_crafter import roll_turning_point
+    from tests._helpers import make_game_state
+
+    rolls = [5] + [1, 10] * 4 + [1, 50, 1, 60]
+    points = roll_turning_point(_ScriptedRng(*rolls), THEMES, make_game_state().narrative).plot_points
+    assert [p.special_range for p in points].count("none") == 3
+    assert [p.roll for p in points[-2:]] == [50, 60]
+
+
+def test_conclusion_on_a_new_plotline_counts_as_none(load_engine: None) -> None:
+    from straightjacket.engine.mechanics.adventure_crafter import roll_turning_point
+    from tests._helpers import make_game_state
+
+    rolls = [5, 1, 1] + [1, 50] * 4
+    narrative = make_game_state().narrative
+    turning_point = roll_turning_point(_ScriptedRng(*rolls), THEMES, narrative)
+    assert turning_point.plotline_was_new
+    assert turning_point.plot_points[0].special_range == "none"
+    assert all(p.status != "conclusion" for p in narrative.plotlines_list)

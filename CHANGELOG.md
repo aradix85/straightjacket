@@ -7,6 +7,18 @@ Originally forked from [EdgeTales](https://github.com/edgetales/edgetales). See 
 
 Straightjacket uses calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day. The first CalVer release is `2026.04.25.0`. Earlier `0.x.y` releases keep their original version numbers and are not renumbered. The switch was made because the project has no public API to version semantically against — the `0.x.y` numbers were running counters with no meaning, and dates carry the meaning the numbers didn't.
 
+## [2026.09.24.28] — 2026-09-24
+
+Turning points follow the Adventure Crafter (roadmap R.8, now complete).
+
+The rulebook text, found in a public copy and in a published roller, settles the open question from 2026.09.24.27: every turning point rolls five times on the plot point table; a None leaves that slot empty, at most three None results are allowed, and a fourth is disregarded and rolled again, so every turning point has 2 to 5 real plot points. And a Conclusion on a new plotline, or on one already concluding, counts as None.
+
+`mechanics/adventure_crafter.py` → `roll_turning_point` drew a random count of 2 to 5 plot points and counted None as one of them, so a turning point could end with no real plot point at all, and a Conclusion on a brand-new plotline flipped it to its conclusion immediately. It now fills five slots with at most three None, and rolling one plot point moves into `_roll_plot_point`, which turns such a Conclusion into None. The limits come from `turning_point_rules` in `data/adventure_crafter.json`. `ai/blueprint_voicing.py` no longer passes None slots to the voicing model as turning-point beats.
+
+Tests: five slots with at most three None over 200 seeds, a scripted fourth None that is rerolled, and a Conclusion on a new plotline counted as None. `tests/test_adventure_crafter.py` asserted that a Conclusion flips a brand-new plotline, which the rulebook forbids; it now flips an advancing plotline.
+
+Quality gate: 1374 tests green, twenty-nine project-rule scans clean, coverage 89.68%, ruff check and ruff format clean, mypy --strict clean on 106 source files. Save format unchanged.
+
 ## [2026.09.24.27] — 2026-09-24
 
 The Adventure Crafter's tables are checked and pinned (roadmap R.8).

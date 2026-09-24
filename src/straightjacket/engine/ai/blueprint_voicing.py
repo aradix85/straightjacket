@@ -39,7 +39,7 @@ def _build_voicing_user_msg(game: GameState, seed: BlueprintSeed) -> str:
         line = f"act {i} phase={act_seed.phase} scene_range={act_seed.scene_range[0]}-{act_seed.scene_range[1]}"
         if act_seed.turning_point is not None:
             tp = act_seed.turning_point
-            beat_names = "; ".join(h.name for h in tp.plot_points)
+            beat_names = "; ".join(h.name for h in tp.plot_points if h.special_range != "none")
             line += f" turning_point_beats=[{beat_names}]"
         parts.append(line)
     parts.append("</acts>")

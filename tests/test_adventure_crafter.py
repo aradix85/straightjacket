@@ -305,18 +305,20 @@ def test_roll_turning_point_reuses_advancing_plotline():
         assert tp.plotline_id == "ac_plot_1"
 
 
-def test_conclusion_plot_point_flips_plotline_to_conclusion(monkeypatch):
+def test_conclusion_plot_point_flips_an_advancing_plotline_to_conclusion(monkeypatch):
     narrative = NarrativeState()
+    _create_plotline(narrative, "First")
     rng = random.Random(0)
     themes = ["action", "tension", "mystery", "social", "personal"]
 
-    rolls = iter([10, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1])
+    rolls = iter([1] + [1, 1] * 5)
 
     def fake_randint(a: int, b: int) -> int:
         return next(rolls)
 
     monkeypatch.setattr(rng, "randint", fake_randint)
     tp = roll_turning_point(rng, themes, narrative)
+    assert tp.plotline_was_new is False
     assert tp.flips_to_conclusion is True
     plotline = narrative.plotlines_list[0]
     assert plotline.status == "conclusion"

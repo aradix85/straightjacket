@@ -225,6 +225,31 @@ def _create_plotline(narrative: NarrativeState, name: str) -> PlotlineEntry:
     return entry
 
 
+def _roll_plot_point(
+    rng: random.Random, themes: list[str], alternation: ThemeAlternation, conclusion_counts_as_none: bool
+) -> PlotPointHit:
+    priority = lookup_theme_priority(rng.randint(1, 10), alternation)
+    theme_index = priority - 1
+    if not 0 <= theme_index < len(themes):
+        raise LookupError(f"theme priority {priority} outside themes list of length {len(themes)}")
+    theme = themes[theme_index]
+    plot_roll = rng.randint(1, 100)
+    result = lookup_plot_point(theme, plot_roll)
+    if result.special_range == "conclusion" and conclusion_counts_as_none:
+        special_ranges = eng().adventure_crafter.special_ranges
+        none_roll = next(r for r in range(1, 101) if _special_range_for(r, special_ranges) == "none")
+        return PlotPointHit(
+            theme=theme,
+            priority=priority,
+            roll=plot_roll,
+            name=lookup_plot_point(theme, none_roll).name,
+            special_range="none",
+        )
+    return PlotPointHit(
+        theme=theme, priority=priority, roll=plot_roll, name=result.name, special_range=result.special_range
+    )
+
+
 def roll_turning_point(
     rng: random.Random,
     themes: list[str],
@@ -246,35 +271,21 @@ def roll_turning_point(
         plotline_was_new = False
 
     rules = _load_ac_data()["turning_point_rules"]
-    pp_min = rules["plot_points_per_turning_point"]["min"]
-    pp_max = rules["plot_points_per_turning_point"]["max"]
-    plot_point_count = rng.randint(pp_min, pp_max)
+    slots = rules["plot_points_per_turning_point"]["max"]
+    none_limit = slots - rules["plot_points_per_turning_point"]["min"]
+    conclusion_counts_as_none = plotline_was_new or plotline.status == "conclusion"
 
     alternation = ThemeAlternation()
     hits: list[PlotPointHit] = []
-    flips_to_conclusion = False
-
-    for _ in range(plot_point_count):
-        priority_roll = rng.randint(1, 10)
-        priority = lookup_theme_priority(priority_roll, alternation)
-        theme_index = priority - 1
-        if not 0 <= theme_index < len(themes):
-            raise LookupError(f"theme priority {priority} outside themes list of length {len(themes)}")
-        theme = themes[theme_index]
-
-        plot_roll = rng.randint(1, 100)
-        result = lookup_plot_point(theme, plot_roll)
-        hits.append(
-            PlotPointHit(
-                theme=theme,
-                priority=priority,
-                roll=plot_roll,
-                name=result.name,
-                special_range=result.special_range,
-            )
-        )
-        if result.special_range == "conclusion":
-            flips_to_conclusion = True
+    none_count = 0
+    while len(hits) < slots:
+        hit = _roll_plot_point(rng, themes, alternation, conclusion_counts_as_none)
+        if hit.special_range == "none":
+            if none_count == none_limit:
+                continue
+            none_count += 1
+        hits.append(hit)
+    flips_to_conclusion = any(h.special_range == "conclusion" for h in hits)
 
     plotline.turning_point_count += 1
     if flips_to_conclusion and plotline.status == "advancement":
