@@ -493,7 +493,13 @@ def _save_and_verify(
     game: GameState, username: str, chat_messages: list[dict], save_out: str, slog: SessionLog, coverage: Coverage
 ) -> None:
     _try_save(game, username, chat_messages, save_out)
-    loaded, _messages = load_game(username, save_out)
+    try:
+        loaded, _messages = load_game(username, save_out)
+    except Exception as e:
+        slog.save_roundtrip_issues.append(
+            f"scene {game.narrative.scene_count}: save '{save_out}' failed to load: {type(e).__name__}: {e}"
+        )
+        return
     if loaded is None:
         slog.save_roundtrip_issues.append(
             f"scene {game.narrative.scene_count}: save '{save_out}' could not be loaded back"

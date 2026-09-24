@@ -223,6 +223,7 @@ src/straightjacket/
 │   │   └── orchestrator.py  # Snapshot restore, optional re-roll, re-narrate, post-narration flow
 │   ├── director.py          # Story steering, NPC reflections, act transitions
 │   ├── persistence.py       # Save/load
+│   ├── ids.py              # unique_id: a free id from a base and the ids already taken
 │   ├── story_state.py       # Act tracking, revelation timing, story completion check
 │   ├── prompt_shared.py     # Shared prompt helpers (scene header, NPC blocks, pacing, director, random events)
 │   ├── prompt_action.py     # Action-turn narrator prompt: build_action_prompt, result constraint

@@ -4,6 +4,7 @@ from ..ai.provider_base import AIProvider, drain_token_log, NarrationSink
 from ..datasworn.moves import get_moves
 from ..engine_loader import eng
 from ..logging_util import log
+from ..ids import unique_id
 from ..mechanics import (
     apply_brain_location_time,
     can_burn_momentum,
@@ -259,7 +260,11 @@ def _maybe_create_track(game: GameState, brain: BrainResult) -> None:
         log(f"[Track] Brain omitted track_rank, defaulting to {brain.track_rank}", level="warning")
 
     slug = brain.track_name.lower().replace(" ", "_")
-    track_id = f"{track_category}_{slug}"
+    base_id = f"{track_category}_{slug}"
+    if any(t.id == base_id and t.status == "active" for t in game.progress_tracks):
+        log(f"[Track] {track_category} '{brain.track_name}' is already active; not created again")
+        return
+    track_id = unique_id(base_id, {t.id for t in game.progress_tracks})
     new_track = ProgressTrack.new(
         id=track_id,
         name=brain.track_name,
@@ -272,7 +277,7 @@ def _maybe_create_track(game: GameState, brain: BrainResult) -> None:
     if track_category == "vow":
         game.narrative.threads.append(
             ThreadEntry(
-                id=f"thread_{slug}",
+                id=unique_id(f"thread_{slug}", {t.id for t in game.narrative.threads}),
                 name=brain.track_name,
                 thread_type="vow",
                 weight=2,

@@ -7,6 +7,18 @@ Originally forked from [EdgeTales](https://github.com/edgetales/edgetales). See 
 
 Straightjacket uses calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day. The first CalVer release is `2026.04.25.0`. Earlier `0.x.y` releases keep their original version numbers and are not renumbered. The switch was made because the project has no public API to version semantically against — the `0.x.y` numbers were running counters with no meaning, and dates carry the meaning the numbers didn't.
 
+## [2026.09.24.38] — 2026-09-24
+
+A vow sworn twice no longer breaks the save.
+
+Found by Elvira's long run with GPT-6 Luna: in turn twenty the Brain had the character swear a vow whose name matched an earlier one word for word. `game/turn.py` → `_maybe_create_track` builds the track id and the linked thread id straight from the vow name, so it created a second track and a second thread with the same ids. The turn failed on "UNIQUE constraint failed: threads.id" when the database synced, the game was saved anyway, and loading that save failed at the same sync, leaving it unusable. The bug predates this day.
+
+Prevented: swearing a vow whose name matches an active vow creates nothing and logs it; a vow sworn again after the earlier one is completed or forsaken gets unique ids with a numeric suffix, via the new `ids.py` → `unique_id`. Repaired: `persistence.py` → `load_game` renames duplicate thread ids before syncing the database, with a warning, so a save already hit by the bug loads again; the damaged save from the run now loads with unique thread ids. Elvira: a load-back that raises is reported as a save/load problem instead of ending the run without a report.
+
+Tests: new `tests/test_track_ids.py` (an active vow sworn again is not duplicated, a vow sworn again after completion gets unique ids, a save with duplicate thread ids loads with repaired ids) and an Elvira test for a failed load-back.
+
+Quality gate: 1409 tests green, twenty-nine project-rule scans clean, coverage 89.79%, ruff check and ruff format clean, mypy --strict clean on 109 source files. Save format unchanged.
+
 ## [2026.09.24.37] — 2026-09-24
 
 Elvira records what the engine did in each turn.

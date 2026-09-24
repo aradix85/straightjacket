@@ -8,6 +8,7 @@ from .config_loader import VERSION
 from .db import sync as _db_sync
 from .db.connection import reset_db
 from .engine_loader import eng
+from .ids import unique_id
 from .logging_util import log
 from .user_management import _safe_name, get_save_dir
 from .models import GameState
@@ -59,10 +60,23 @@ def load_game(username: str, name: str) -> tuple[GameState | None, list[Any]]:
         f"[Load] Game loaded: {username}/{name} ({game.player_name}, Scene {game.narrative.scene_count}, {len(chat_messages)} chat msgs)"
     )
 
+    _repair_duplicate_thread_ids(game)
     reset_db()
     _db_sync(game)
 
     return game, chat_messages
+
+
+def _repair_duplicate_thread_ids(game: GameState) -> None:
+    taken = {thread.id for thread in game.narrative.threads}
+    seen: set[str] = set()
+    for thread in game.narrative.threads:
+        if thread.id in seen:
+            new_id = unique_id(thread.id, taken)
+            log(f"[Load] Duplicate thread id '{thread.id}' renamed to '{new_id}'", level="warning")
+            thread.id = new_id
+            taken.add(new_id)
+        seen.add(thread.id)
 
 
 def list_saves_with_info(username: str) -> list[dict[str, Any]]:
