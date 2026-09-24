@@ -85,7 +85,7 @@ class TestAnthropicProvider:
         assert result.content == "Hello world"
         assert result.tool_calls == [{"id": "t1", "name": "query_npc", "arguments": {"npc_id": "npc_1"}}]
         assert result.stop_reason == "tool_use"
-        assert result.usage == {"input_tokens": 11, "output_tokens": 7}
+        assert result.usage == {"input_tokens": 11, "output_tokens": 7, "cache_read_tokens": 0}
 
     def test_request_carries_system_sampling_schema_and_converted_tools(
         self, anthropic_endpoint: _FakeEndpoint
@@ -225,3 +225,81 @@ def test_anthropic_list_models_returns_ids(anthropic_endpoint: _FakeEndpoint) ->
 def test_openai_list_models_returns_ids(openai_endpoint: _FakeEndpoint) -> None:
     openai_endpoint.models = [SimpleNamespace(id="model-c")]
     assert provider_openai.OpenAICompatibleProvider(api_key="k").list_models() == ["model-c"]
+
+
+def _anthropic_reply(*blocks: SimpleNamespace) -> SimpleNamespace:
+    return SimpleNamespace(
+        content=list(blocks), stop_reason="end_turn", usage=SimpleNamespace(input_tokens=5, output_tokens=7)
+    )
+
+
+def test_anthropic_thinking_blocks_never_reach_the_content(anthropic_endpoint: _FakeEndpoint) -> None:
+    anthropic_endpoint.response = _anthropic_reply(
+        SimpleNamespace(type="thinking", thinking="plan the scene", signature="sig"),
+        SimpleNamespace(type="redacted_thinking", data="opaque"),
+        SimpleNamespace(type="text", text="The door holds."),
+    )
+    result = provider_anthropic.AnthropicProvider(api_key="k").create_message(_spec())
+    assert result.content == "The door holds."
+
+
+def test_anthropic_converts_the_tool_loop_conversation(anthropic_endpoint: _FakeEndpoint) -> None:
+    anthropic_endpoint.response = _anthropic_reply(SimpleNamespace(type="text", text="done"))
+    messages = [
+        {"role": "user", "content": "Who is Mira?"},
+        {
+            "role": "assistant",
+            "content": "",
+            "tool_calls": [
+                {"id": "t1", "type": "function", "function": {"name": "query_npc", "arguments": '{"npc_id": "npc_1"}'}},
+                {"id": "t2", "type": "function", "function": {"name": "query_npc", "arguments": '{"npc_id": "npc_2"}'}},
+            ],
+        },
+        {"role": "tool", "tool_call_id": "t1", "content": "Mira: archivist"},
+        {"role": "tool", "tool_call_id": "t2", "content": "Oren: warden"},
+    ]
+    provider_anthropic.AnthropicProvider(api_key="k").create_message(_spec(messages=messages, tools=[_tool()]))
+    sent = anthropic_endpoint.calls[0]["messages"]
+    assert sent[0] == {"role": "user", "content": "Who is Mira?"}
+    assert sent[1] == {
+        "role": "assistant",
+        "content": [
+            {"type": "tool_use", "id": "t1", "name": "query_npc", "input": {"npc_id": "npc_1"}},
+            {"type": "tool_use", "id": "t2", "name": "query_npc", "input": {"npc_id": "npc_2"}},
+        ],
+    }
+    assert sent[2] == {
+        "role": "user",
+        "content": [
+            {"type": "tool_result", "tool_use_id": "t1", "content": "Mira: archivist"},
+            {"type": "tool_result", "tool_use_id": "t2", "content": "Oren: warden"},
+        ],
+    }
+    assert len(sent) == 3
+
+
+def test_anthropic_passes_cluster_extra_body_to_the_right_parameters(anthropic_endpoint: _FakeEndpoint) -> None:
+    anthropic_endpoint.response = _anthropic_reply(SimpleNamespace(type="text", text="{}"))
+    extra = {"output_config": {"effort": "low"}, "cache_control": {"type": "ephemeral"}, "metadata_flag": True}
+    spec = _spec(json_schema={"title": "t", "type": "object"}, extra_body=extra, temperature=0.5)
+    provider_anthropic.AnthropicProvider(api_key="k").create_message(spec)
+    sent = anthropic_endpoint.calls[0]
+    assert sent["output_config"] == {
+        "effort": "low",
+        "format": {"type": "json_schema", "schema": {"title": "t", "type": "object"}},
+    }
+    assert sent["cache_control"] == {"type": "ephemeral"}
+    assert sent["extra_body"] == {"temperature": 0.5, "metadata_flag": True}
+    assert extra == {"output_config": {"effort": "low"}, "cache_control": {"type": "ephemeral"}, "metadata_flag": True}
+
+
+def test_anthropic_usage_counts_cached_input_and_reports_the_cached_share(anthropic_endpoint: _FakeEndpoint) -> None:
+    anthropic_endpoint.response = SimpleNamespace(
+        content=[SimpleNamespace(type="text", text="ok")],
+        stop_reason="end_turn",
+        usage=SimpleNamespace(
+            input_tokens=4, output_tokens=9, cache_read_input_tokens=3970, cache_creation_input_tokens=0
+        ),
+    )
+    result = provider_anthropic.AnthropicProvider(api_key="k").create_message(_spec())
+    assert result.usage == {"input_tokens": 3974, "output_tokens": 9, "cache_read_tokens": 3970}

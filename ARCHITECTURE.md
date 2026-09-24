@@ -138,27 +138,27 @@ Config structure in `config.yaml`:
 ```yaml
 ai:
   providers:
-    cerebras:
-      type: "openai_compatible"
-      api_base: "https://api.cerebras.ai/v1"
-      api_key_env: "CEREBRAS_API_KEY"
+    anthropic:
+      type: "anthropic"
+      api_base: ""
+      api_key_env: "ANTHROPIC_API_KEY"
   clusters:
     narrator:
-      provider: cerebras
-      model: "zai-glm-4.7"
-      temperature: 1.0
-      top_p: 0.95
+      provider: anthropic
+      model: "claude-opus-5-5"
+      temperature: null        # Opus 5.5 rejects temperature and top_p
+      top_p: null
       max_tokens: 8192
       max_retries: 3
       extra_body:
-        reasoning_effort: "none"  # GLM 4.7 reasoning disabled for prose
-    creative:
-      provider: cerebras
-      model: "gpt-oss-120b"
-      temperature: 0.7
+        cache_control:
+          type: "ephemeral"    # prompt caching
+    classification:
+      provider: anthropic
+      model: "claude-haiku-4-5-20251001"
+      temperature: 0.5
+      top_p: null              # Haiku 4.5 accepts only one of the two
       ...
-      extra_body:
-        reasoning_effort: "medium"
     # ...classification, judgment, extraction follow the same shape
   # Every AI role maps to exactly one cluster; remap a role by editing its entry:
   role_cluster:
@@ -168,7 +168,7 @@ ai:
     # ...one entry per role (ten roles, see the table above)
 ```
 
-Clusters are the single source of truth. `sampling_params(role)` resolves all call parameters from the role's cluster. `model_for_role(role)` resolves the model and `provider_for_role(role)` the provider. Each cluster names its own provider, so providers mix freely per role: `ai/api_client.py` → `get_provider` returns a routing provider that sends each call to the provider of its role's cluster, keyed on `AICallSpec.log_role`, which every AI call therefore sets. An `api_base` of `""` means the SDK's default endpoint. No per-role overrides — to change a role's parameters, change the cluster or remap the role via `role_cluster`.
+Clusters are the single source of truth. `sampling_params(role)` resolves all call parameters from the role's cluster. `model_for_role(role)` resolves the model and `provider_for_role(role)` the provider. Each cluster names its own provider, so providers mix freely per role: `ai/api_client.py` → `get_provider` returns a routing provider that sends each call to the provider of its role's cluster, keyed on `AICallSpec.log_role`, which every AI call therefore sets. An `api_base` of `""` means the SDK's default endpoint. `temperature` and `top_p` are required keys but may be `null`, which means the parameter is not sent; Claude Opus 5.5 and Sonnet 5 reject both, and Haiku 4.5 accepts only one of the two. No per-role overrides — to change a role's parameters, change the cluster or remap the role via `role_cluster`.
 
 `max_tool_rounds` is an engine mechanical limit, configured in `engine/pacing.yaml` under `max_tool_rounds`.
 
@@ -310,7 +310,7 @@ src/straightjacket/
 
 **Character succession.** When the protagonist dies (face_death MISS, or both health and spirit reach zero) or is explicitly retired, the campaign continues with a new protagonist in the same world. Two-step lifecycle gated by `CampaignState.pending_succession`: `prepare_succession` archives the predecessor into `campaign.predecessors` and locks in the inheritance rolls onto that record; `start_succession_with_character` reads the locked-in rolls, closes the predecessor's chapter via `_close_previous_chapter`, applies NPC carryover per `succession.yaml`, wipes PC-specific state while keeping world-level threats and unresolved non-vow non-creation-sourced threads, seeds the successor's legacy, replaces character identity, generates opening narration, clears the flag. Locking rolls at archive time rather than at replacement time is what makes inheritance deterministic across reload. Unknown roll outcomes and unknown NPC statuses raise.
 
-**Provider abstraction.** `AIProvider` protocol with two implementations (Anthropic, OpenAI-compatible). The engine never imports provider SDKs directly. `create_with_retry` handles transient errors with exponential backoff. Multi-model: config.yaml assigns models via five clusters — narrator (GLM 4.7 for prose), creative (GPT-OSS for blueprint_voicing, director, chapter_summary, recap), classification (GPT-OSS for brain, correction), judgment (GPT-OSS for revelation_check), extraction (GPT-OSS for narrator_metadata, opening_setup). Clusters are the single source of truth for all call parameters. `model_for_role(role)` resolves the model; `sampling_params(role)` resolves temperature, top_p, max_tokens, max_retries, and extra_body. The provider stores no model state. `python run.py` and Elvira call `check_configured_models` before anything else: every cluster's model must appear in its provider's model list, or startup stops with a message naming the missing model and what that provider does offer. Cerebras retired the narrator model `zai-glm-4.7` on 2026-08-17; a replacement is pending, and until then the startup check reports it. The Anthropic adapter sends `temperature`, `top_p`, and `top_k` through `extra_body`: anthropic SDK 1.x removed them from the typed `messages.create` signature, while the Messages API still accepts them.
+**Provider abstraction.** `AIProvider` protocol with two implementations (Anthropic, OpenAI-compatible). The engine never imports provider SDKs directly. `create_with_retry` handles transient errors with exponential backoff. Multi-model: config.yaml assigns models via five clusters — narrator (Claude Opus 5.5 for prose), creative (Claude Sonnet 5 for blueprint_voicing, director, chapter_summary, recap), classification (Claude Haiku 4.5 for brain, correction), judgment (Haiku 4.5 for revelation_check), extraction (Haiku 4.5 for narrator_metadata, opening_setup). Clusters are the single source of truth for all call parameters. `model_for_role(role)` resolves the model; `sampling_params(role)` resolves temperature, top_p, max_tokens, max_retries, and extra_body. The provider stores no model state. `python run.py` and Elvira call `check_configured_models` before anything else: every cluster's model must appear in its provider's model list, or startup stops with a message naming the missing model and what that provider does offer. The Anthropic adapter sends `temperature`, `top_p`, and `top_k` through `extra_body` (anthropic SDK 1.x removed them from the typed `messages.create` signature) and only when the cluster sets them. It routes the cluster's `extra_body` by key: `cache_control` and `thinking` become typed parameters, `output_config` merges with the JSON-schema format (so a cluster can set Opus's `effort`), and everything else goes into `extra_body`. It converts the tool loop's OpenAI-style messages (assistant `tool_calls`, role `tool`) into Anthropic `tool_use` and `tool_result` blocks, merging consecutive tool results into one user message. Only text blocks reach `AIResponse.content`; thinking and redacted-thinking blocks never do.
 
 **AI-call exception carve-out.** The strict-rules forbid broad `try/except Exception` suppression. AI call sites are an explicit carve-out: AI calls fail transiently (rate limits, network blips, provider outages, 429/500/502/503/529); the retry wrapper handles retryable status codes with exponential backoff, and what remains after retries is unrecoverable. Strict-raise would crash the session on any transient fault. Graceful degradation (Brain falling through to `dialog`, revelation_check defaulting to confirmed, narrator retry returning empty string, blueprint_voicing returning None) hides the fault but preserves the session; every suppression site logs at warning or error level so faults stay observable. This carve-out does not extend to config loading, yaml parsing, file persistence, input validation, or domain-rule enforcement: those must raise. The files covered by the carve-out are listed in `_AI_CALL_CARVE_OUT_FILES` in `tests/test_project_rules.py`; that set is the authoritative carve-out file list, including for audits.
 

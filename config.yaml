@@ -7,57 +7,62 @@ ai:
   prompts_dir: "prompts"
 
   providers:
-    cerebras:
-      type: "openai_compatible"
-      api_base: "https://api.cerebras.ai/v1"
-      api_key_env: "CEREBRAS_API_KEY"
+    anthropic:
+      type: "anthropic"
+      api_base: ""
+      api_key_env: "ANTHROPIC_API_KEY"
 
   clusters:
     narrator:
-      provider: cerebras
-      model: "zai-glm-4.7"
-      temperature: 1.0
-      top_p: 0.95
+      provider: anthropic
+      model: "claude-opus-5-5"
+      temperature: null
+      top_p: null
       max_tokens: 8192
       max_retries: 3
       extra_body:
-        reasoning_effort: "none"
+        cache_control:
+          type: "ephemeral"
     creative:
-      provider: cerebras
-      model: "gpt-oss-120b"
-      temperature: 0.7
-      top_p: 0.95
+      provider: anthropic
+      model: "claude-sonnet-5"
+      temperature: null
+      top_p: null
       max_tokens: 8192
       max_retries: 3
       extra_body:
-        reasoning_effort: "medium"
+        cache_control:
+          type: "ephemeral"
     classification:
-      provider: cerebras
-      model: "gpt-oss-120b"
+      provider: anthropic
+      model: "claude-haiku-4-5-20251001"
       temperature: 0.5
-      top_p: 0.95
+      top_p: null
       max_tokens: 8192
       max_retries: 3
       extra_body:
-        reasoning_effort: "low"
+        cache_control:
+          type: "ephemeral"
     judgment:
-      provider: cerebras
-      model: "gpt-oss-120b"
+      provider: anthropic
+      model: "claude-haiku-4-5-20251001"
       temperature: 0.5
-      top_p: 0.95
+      top_p: null
       max_tokens: 8192
       max_retries: 3
       extra_body:
-        reasoning_effort: "medium"
+        cache_control:
+          type: "ephemeral"
     extraction:
-      provider: cerebras
-      model: "gpt-oss-120b"
+      provider: anthropic
+      model: "claude-haiku-4-5-20251001"
       temperature: 0.3
-      top_p: 0.95
+      top_p: null
       max_tokens: 8192
       max_retries: 3
       extra_body:
-        reasoning_effort: "low"
+        cache_control:
+          type: "ephemeral"
 
   role_cluster:
     narrator: narrator

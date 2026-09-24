@@ -109,3 +109,14 @@ def test_cluster_without_provider_raises() -> None:
     del data["ai"]["clusters"]["classification"]["provider"]
     with pytest.raises(ValueError, match="missing required fields"):
         _parse_config(data)
+
+
+def test_cluster_sampling_can_be_explicitly_unset() -> None:
+    from straightjacket.engine import config_loader
+
+    data = _full_config_data()
+    data["ai"]["clusters"]["classification"]["temperature"] = None
+    data["ai"]["clusters"]["classification"]["top_p"] = None
+    config = config_loader._parse_config(data)
+    cluster = config.ai.clusters["classification"]
+    assert (cluster.temperature, cluster.top_p) == (None, None)

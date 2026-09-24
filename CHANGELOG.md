@@ -7,6 +7,28 @@ Originally forked from [EdgeTales](https://github.com/edgetales/edgetales). See 
 
 Straightjacket uses calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day. The first CalVer release is `2026.04.25.0`. Earlier `0.x.y` releases keep their original version numbers and are not renumbered. The switch was made because the project has no public API to version semantically against — the `0.x.y` numbers were running counters with no meaning, and dates carry the meaning the numbers didn't.
 
+## [2026.09.24.11] — 2026-09-24
+
+All roles run on Claude, and the Anthropic adapter is fixed for the current Claude models. Before this release the adapter could not run them at all.
+
+Decision: narrator Claude Opus 5.5, creative roles Claude Sonnet 5, classification, judgment, and extraction Claude Haiku 4.5, every cluster with prompt caching. Chosen after comparing twelve model configurations on real Straightjacket narrator prompts (ten situations, several attempts each, two blind judges from different model families, measured speed and cost). Recorded in roadmap Current state.
+
+Sampling. Claude Opus 5.5 and Sonnet 5 reject `temperature` and `top_p` outright; Haiku 4.5 accepts only one of the two. Every cluster sent both, so every Claude call failed. `temperature` and `top_p` stay required cluster keys but may now be `null`, which means the parameter is not sent; `sampling_params` omits them.
+
+Tool loop. `tools/handler.py::run_tool_loop` appends OpenAI-style messages (an assistant message with `tool_calls`, then role `tool` results), and the Anthropic adapter passed them through unchanged, which the Messages API rejects ("Unexpected role tool"). The Director's tool loop had therefore never worked on Anthropic. The adapter now converts them into `tool_use` and `tool_result` blocks, merging consecutive tool results into one user message. Verified live: a Director run on Sonnet 5 made four tool calls in two rounds and applied its guidance.
+
+Cluster `extra_body` on Anthropic. It was ignored; the adapter now routes it by key: `cache_control` and `thinking` become typed parameters, `output_config` merges with the JSON-schema format (so a cluster can set Opus's `effort`), everything else goes into `extra_body` beside the sampling values. Prompt caching is on for every cluster through `cache_control: {type: ephemeral}`; verified live with the real narrator prompt: 3970 tokens written on the first call, read from cache on the second.
+
+Usage. Anthropic reports cached input separately, so the token log showed a Director call as "2 in". Input tokens now include cache reads and writes, and `cache_read_tokens` reports the cached share. One existing test asserted the old two-key usage dict and is updated.
+
+Thinking blocks (Opus 5.5 always reasons; `thinking.type: disabled` is refused) never reach the narration: only text blocks become `AIResponse.content`. That was already the case; a test now pins it.
+
+Elvira's bot model moves to Claude Haiku 4.5, because the bot uses the brain role's provider.
+
+Verified live against Anthropic: the startup check passes, a full turn through `process_turn` (Brain on Haiku, narrator on Opus, extraction on Haiku) takes about 30 seconds and produces clean narration without reasoning text, and the deferred Director completes with tools. New tests: thinking blocks excluded, tool-loop conversion, `extra_body` routing, cached usage, and `null` sampling in the config loader.
+
+Quality gate: 1293 tests green, twenty-eight project-rule scans clean, coverage 88.48%, ruff check and ruff format clean, mypy --strict clean on 105 source files. Save format unchanged; config.yaml changes shape only in allowing null sampling.
+
 ## [2026.09.24.10] — 2026-09-24
 
 The `<result>` tag in every action-turn narrator prompt was closed with `</r>`. `prompt_action.py::_build_result_constraint` built all three variants (MISS, WEAK_HIT, STRONG_HIT) as `<result ...>...</r>`, so the one tag that tells the narrator what happened was malformed XML on every action turn. Models coped, but the prompt was not what it claimed to be. Found while capturing a real narrator prompt for model comparisons; all three now close with `</result>`.

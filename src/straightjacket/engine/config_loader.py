@@ -45,8 +45,8 @@ class ProviderConfig:
 class ClusterConfig:
     provider: str
     model: str
-    temperature: float
-    top_p: float
+    temperature: float | None
+    top_p: float | None
     max_tokens: int
     max_retries: int
     extra_body: dict[str, Any] = field(default_factory=dict)
@@ -108,8 +108,8 @@ def _parse_config(data: dict[str, Any]) -> AppConfig:
         clusters[cname] = ClusterConfig(
             provider=cdata["provider"],
             model=cdata["model"],
-            temperature=float(cdata["temperature"]),
-            top_p=float(cdata["top_p"]),
+            temperature=None if cdata["temperature"] is None else float(cdata["temperature"]),
+            top_p=None if cdata["top_p"] is None else float(cdata["top_p"]),
             max_tokens=int(cdata["max_tokens"]),
             max_retries=int(cdata["max_retries"]),
             extra_body=cdata.get("extra_body", {}),
@@ -194,9 +194,11 @@ def sampling_params(role: str) -> dict[str, Any]:
     params: dict[str, Any] = {
         "max_tokens": cluster.max_tokens,
         "max_retries": cluster.max_retries,
-        "temperature": cluster.temperature,
-        "top_p": cluster.top_p,
     }
+    if cluster.temperature is not None:
+        params["temperature"] = cluster.temperature
+    if cluster.top_p is not None:
+        params["top_p"] = cluster.top_p
     if cluster.extra_body:
         params["extra_body"] = cluster.extra_body
 
