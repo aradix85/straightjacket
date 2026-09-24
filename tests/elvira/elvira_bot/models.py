@@ -126,6 +126,7 @@ class TurnRecord:
     stream_complete: bool | None = None
     stream_matches: bool | None = None
     judge: dict = field(default_factory=dict)
+    engine_events: list[str] = field(default_factory=list)
 
     def to_dict(self) -> dict:
         from dataclasses import asdict
@@ -177,8 +178,20 @@ class TurnRecord:
             d["error"] = self.error
         if self.burn_offered:
             d["burn"] = f"{self.burn_offered}->{'taken' if self.burn_taken else 'skip'}"
-        if self.has_issues:
-            d["narration"] = self.narration
+        d["narration"] = self.narration
+        if self.npcs:
+            d["npcs"] = [f"{n.name} ({n.status}, {n.disposition})" for n in self.npcs]
+        if self.judge:
+            d["judge"] = self.judge
+        if self.stream_complete is not None:
+            d["stream"] = {
+                "first_sentence_secs": self.stream_first_sentence_secs,
+                "sentences": self.stream_sentences,
+                "complete": self.stream_complete,
+                "matches": self.stream_matches,
+            }
+        if self.engine_events:
+            d["events"] = self.engine_events
         if self.is_correction:
             d["correction"] = True
         if self.token_usage:

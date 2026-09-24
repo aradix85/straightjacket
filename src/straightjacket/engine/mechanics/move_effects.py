@@ -124,6 +124,7 @@ def _roll_pay_the_price_rows(game: GameState, depth: int) -> list[str]:
 
 def pay_the_price(game: GameState, result: OutcomeResult) -> None:
     rows = _roll_pay_the_price_rows(game, 0)
+    log(f"[PayThePrice] {'; '.join(rows)}")
     result.pay_the_price = True
     result.consequences.append("; ".join(rows))
     for row in rows:

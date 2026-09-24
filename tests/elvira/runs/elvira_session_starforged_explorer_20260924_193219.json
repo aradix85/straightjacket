@@ -1,0 +1,796 @@
+{
+  "engine_version": "2026.09.24.35",
+  "style": "explorer",
+  "character": {
+    "name": "Roland Archer",
+    "concept": "Tech, Artist",
+    "setting": "starforged"
+  },
+  "setting": "starforged",
+  "total_turns": 20,
+  "ended_reason": "max_turns_reached",
+  "chapters": [
+    {
+      "chapter": 1,
+      "turns": 20,
+      "ended": "max_turns_reached"
+    }
+  ],
+  "story": {
+    "structure": "kishotenketsu",
+    "conflict": "As a sworn adventurer, Roland must use his technical skill and art to meet the Forge’s demands without surrendering to the duty he once rejected.",
+    "thematic": "Whether survival’s obligations leave room to choose your own purpose",
+    "acts": [
+      "ki_introduction: A Life Chosen Anew",
+      "sho_development: Work Against the Void",
+      "ten_twist: The Duty Reframed",
+      "ketsu_resolution: A Frontier Answer"
+    ]
+  },
+  "turns": [
+    {
+      "turn": 1,
+      "scene": 2,
+      "result": "dialog",
+      "action": "I turn toward the woman with the wrench and ask her what’s causing the pressure-",
+      "state": "H5 Sp5 Su5 M2 C5",
+      "phase": "ki_introduction",
+      "tokens": [
+        {
+          "role": "brain",
+          "input": 1747,
+          "output": 88
+        },
+        {
+          "role": "narrator",
+          "input": 3167,
+          "output": 120
+        },
+        {
+          "role": "narrator_metadata",
+          "input": 667,
+          "output": 37
+        },
+        {
+          "role": "revelation_check",
+          "input": 416,
+          "output": 56
+        }
+      ]
+    },
+    {
+      "turn": 2,
+      "scene": 3,
+      "result": "WEAK_HIT",
+      "move": "adventure/gather_information",
+      "action": "I inspect the hatch’s pressure seal, tracing the leak’s edge and checking for cr",
+      "state": "H5 Sp5 Su5 M3 C5",
+      "consequences": [
+        "momentum +1"
+      ],
+      "phase": "ki_introduction",
+      "director": true,
+      "tokens": [
+        {
+          "role": "brain",
+          "input": 1707,
+          "output": 107
+        },
+        {
+          "role": "narrator",
+          "input": 3372,
+          "output": 180
+        },
+        {
+          "role": "narrator_metadata",
+          "input": 735,
+          "output": 37
+        },
+        {
+          "role": "revelation_check",
+          "input": 476,
+          "output": 47
+        }
+      ]
+    },
+    {
+      "turn": 3,
+      "scene": 4,
+      "result": "WEAK_HIT",
+      "move": "adventure/face_danger",
+      "action": "I brace my shoulder against the hatch and wrench the damaged lower edge inward, ",
+      "state": "H4 Sp5 Su5 M3 C5",
+      "consequences": [
+        "health -1"
+      ],
+      "phase": "ki_introduction",
+      "tokens": [
+        {
+          "role": "brain",
+          "input": 1739,
+          "output": 114
+        },
+        {
+          "role": "narrator",
+          "input": 3635,
+          "output": 172
+        },
+        {
+          "role": "narrator_metadata",
+          "input": 728,
+          "output": 37
+        },
+        {
+          "role": "revelation_check",
+          "input": 468,
+          "output": 48
+        }
+      ]
+    },
+    {
+      "turn": 4,
+      "scene": 5,
+      "result": "dialog",
+      "action": "I ask the woman, “Did you hear anything about who’s outside the hatch, or why th",
+      "state": "H4 Sp5 Su5 M3 C5",
+      "phase": "ki_introduction",
+      "tokens": [
+        {
+          "role": "brain",
+          "input": 1720,
+          "output": 111
+        },
+        {
+          "role": "narrator",
+          "input": 3642,
+          "output": 115
+        },
+        {
+          "role": "narrator_metadata",
+          "input": 661,
+          "output": 37
+        },
+        {
+          "role": "revelation_check",
+          "input": 411,
+          "output": 53
+        }
+      ]
+    },
+    {
+      "turn": 5,
+      "scene": 6,
+      "result": "STRONG_HIT",
+      "move": "adventure/compel",
+      "action": "I meet the woman’s eyes and tell her, “I’m bleeding, and someone is testing that",
+      "state": "H4 Sp5 Su5 M4 C4",
+      "consequences": [
+        "momentum +1"
+      ],
+      "phase": "sho_development",
+      "director": true,
+      "tokens": [
+        {
+          "role": "brain",
+          "input": 1719,
+          "output": 117
+        },
+        {
+          "role": "narrator",
+          "input": 3681,
+          "output": 167
+        },
+        {
+          "role": "narrator_metadata",
+          "input": 727,
+          "output": 37
+        },
+        {
+          "role": "revelation_check",
+          "input": 463,
+          "output": 47
+        }
+      ]
+    },
+    {
+      "turn": 6,
+      "scene": 7,
+      "result": "MISS",
+      "move": "adventure/face_danger",
+      "action": "I ease the hatch shut against the woman’s bracing hands, then follow the corrido",
+      "state": "H4 Sp4 Su5 M4 C5",
+      "consequences": [
+        "You are stressed",
+        "spirit -1"
+      ],
+      "phase": "sho_development",
+      "director": true,
+      "tokens": [
+        {
+          "role": "brain",
+          "input": 1721,
+          "output": 126
+        },
+        {
+          "role": "narrator",
+          "input": 3730,
+          "output": 181
+        },
+        {
+          "role": "narrator_metadata",
+          "input": 728,
+          "output": 37
+        },
+        {
+          "role": "revelation_check",
+          "input": 477,
+          "output": 59
+        }
+      ]
+    },
+    {
+      "turn": 7,
+      "scene": 8,
+      "result": "WEAK_HIT",
+      "move": "adventure/gather_information",
+      "action": "I examine the narrow service door’s latch and the scraped frame, looking for a r",
+      "state": "H4 Sp4 Su5 M5 C5",
+      "consequences": [
+        "momentum +1"
+      ],
+      "phase": "sho_development",
+      "director": true,
+      "tokens": [
+        {
+          "role": "brain",
+          "input": 1703,
+          "output": 124
+        },
+        {
+          "role": "narrator",
+          "input": 3709,
+          "output": 196
+        },
+        {
+          "role": "narrator_metadata",
+          "input": 733,
+          "output": 37
+        },
+        {
+          "role": "revelation_check",
+          "input": 492,
+          "output": 52
+        }
+      ]
+    },
+    {
+      "turn": 8,
+      "scene": 8,
+      "result": "dialog",
+      "action": "## That's not what I said — I was asking a question, not making a statement",
+      "state": "H4 Sp4 Su5 M4 C5",
+      "phase": "sho_development",
+      "correction": true,
+      "tokens": [
+        {
+          "role": "correction",
+          "input": 887,
+          "output": 111
+        },
+        {
+          "role": "brain",
+          "input": 1697,
+          "output": 98
+        },
+        {
+          "role": "narrator",
+          "input": 3760,
+          "output": 124
+        },
+        {
+          "role": "narrator_metadata",
+          "input": 650,
+          "output": 37
+        }
+      ]
+    },
+    {
+      "turn": 9,
+      "scene": 9,
+      "result": "dialog",
+      "action": "I turn to the woman at the hatch and ask, “What happened before the pressure-sea",
+      "state": "H4 Sp4 Su5 M4 C5",
+      "phase": "sho_development",
+      "director": true,
+      "tokens": [
+        {
+          "role": "brain",
+          "input": 1690,
+          "output": 109
+        },
+        {
+          "role": "narrator",
+          "input": 3779,
+          "output": 122
+        },
+        {
+          "role": "narrator_metadata",
+          "input": 651,
+          "output": 37
+        },
+        {
+          "role": "revelation_check",
+          "input": 418,
+          "output": 54
+        }
+      ]
+    },
+    {
+      "turn": 10,
+      "scene": 10,
+      "result": "STRONG_HIT",
+      "move": "adventure/compel",
+      "action": "I set aside my pride and ask the woman to show me the pressure-seal panel, offer",
+      "state": "H4 Sp4 Su5 M5 C4",
+      "consequences": [
+        "momentum +1"
+      ],
+      "phase": "sho_development",
+      "director": true,
+      "tokens": [
+        {
+          "role": "brain",
+          "input": 1687,
+          "output": 116
+        },
+        {
+          "role": "narrator",
+          "input": 3820,
+          "output": 142
+        },
+        {
+          "role": "narrator_metadata",
+          "input": 685,
+          "output": 37
+        },
+        {
+          "role": "revelation_check",
+          "input": 438,
+          "output": 48
+        }
+      ]
+    },
+    {
+      "turn": 11,
+      "scene": 11,
+      "result": "WEAK_HIT",
+      "move": "adventure/face_danger",
+      "action": "I brace one boot against the corridor bulkhead and force the pressure-seal coupl",
+      "state": "H4 Sp4 Su4 M5 C4",
+      "consequences": [
+        "supply -1"
+      ],
+      "phase": "ten_twist",
+      "director": true,
+      "tokens": [
+        {
+          "role": "brain",
+          "input": 1701,
+          "output": 107
+        },
+        {
+          "role": "narrator",
+          "input": 3632,
+          "output": 151
+        },
+        {
+          "role": "narrator_metadata",
+          "input": 689,
+          "output": 37
+        },
+        {
+          "role": "revelation_check",
+          "input": 447,
+          "output": 52
+        }
+      ]
+    },
+    {
+      "turn": 12,
+      "scene": 12,
+      "result": "STRONG_HIT",
+      "move": "adventure/face_danger",
+      "action": "I vault over the loose service conduit and scramble up the corridor ladder to re",
+      "state": "H4 Sp4 Su4 M6 C3",
+      "consequences": [
+        "momentum +1"
+      ],
+      "phase": "ten_twist",
+      "director": true,
+      "tokens": [
+        {
+          "role": "brain",
+          "input": 1689,
+          "output": 115
+        },
+        {
+          "role": "narrator",
+          "input": 3691,
+          "output": 156
+        },
+        {
+          "role": "narrator_metadata",
+          "input": 694,
+          "output": 37
+        },
+        {
+          "role": "revelation_check",
+          "input": 452,
+          "output": 54
+        }
+      ]
+    },
+    {
+      "turn": 13,
+      "scene": 13,
+      "result": "WEAK_HIT",
+      "move": "adventure/face_danger",
+      "action": "I brace my shoulder against the maintenance plate and wrench at its edge, trying",
+      "state": "H3 Sp4 Su4 M6 C3",
+      "consequences": [
+        "health -1"
+      ],
+      "phase": "ten_twist",
+      "burn": "STRONG_HIT->taken",
+      "tokens": [
+        {
+          "role": "brain",
+          "input": 1690,
+          "output": 108
+        },
+        {
+          "role": "narrator",
+          "input": 3701,
+          "output": 148
+        },
+        {
+          "role": "narrator_metadata",
+          "input": 686,
+          "output": 37
+        },
+        {
+          "role": "revelation_check",
+          "input": 444,
+          "output": 53
+        }
+      ]
+    },
+    {
+      "turn": 14,
+      "scene": 13,
+      "result": "STRONG_HIT",
+      "move": "adventure/face_danger",
+      "action": "I wedge myself against the exposed gap and reach into the dark, bracing my injur",
+      "state": "H4 Sp4 Su4 M4 C1",
+      "consequences": [
+        "momentum +1"
+      ],
+      "phase": "ten_twist",
+      "director": true,
+      "tokens": [
+        {
+          "role": "brain",
+          "input": 1698,
+          "output": 118
+        },
+        {
+          "role": "narrator",
+          "input": 3742,
+          "output": 143
+        },
+        {
+          "role": "narrator_metadata",
+          "input": 681,
+          "output": 37
+        },
+        {
+          "role": "revelation_check",
+          "input": 439,
+          "output": 51
+        }
+      ]
+    },
+    {
+      "turn": 15,
+      "scene": 14,
+      "result": "WEAK_HIT",
+      "move": "adventure/face_danger",
+      "action": "I take the wrench from the woman and wrench open the pressure-seal panel, follow",
+      "state": "H3 Sp4 Su4 M4 C1",
+      "consequences": [
+        "health -1"
+      ],
+      "phase": "ten_twist",
+      "tokens": [
+        {
+          "role": "brain",
+          "input": 1692,
+          "output": 119
+        },
+        {
+          "role": "narrator",
+          "input": 3779,
+          "output": 156
+        },
+        {
+          "role": "narrator_metadata",
+          "input": 699,
+          "output": 37
+        },
+        {
+          "role": "revelation_check",
+          "input": 452,
+          "output": 46
+        }
+      ]
+    },
+    {
+      "turn": 16,
+      "scene": 14,
+      "result": "dialog",
+      "action": "## I was being cautious, not aggressive",
+      "state": "H4 Sp4 Su4 M4 C1",
+      "phase": "ten_twist",
+      "correction": true,
+      "tokens": [
+        {
+          "role": "correction",
+          "input": 872,
+          "output": 103
+        },
+        {
+          "role": "brain",
+          "input": 1693,
+          "output": 118
+        },
+        {
+          "role": "narrator",
+          "input": 3767,
+          "output": 158
+        },
+        {
+          "role": "narrator_metadata",
+          "input": 695,
+          "output": 37
+        }
+      ]
+    },
+    {
+      "turn": 17,
+      "scene": 15,
+      "result": "WEAK_HIT",
+      "move": "adventure/face_danger",
+      "action": "I snatch up the wrench and brace the pressure-seal panel with my bruised hand, f",
+      "state": "H3 Sp4 Su4 M4 C1",
+      "consequences": [
+        "health -1"
+      ],
+      "phase": "ten_twist",
+      "director": true,
+      "tokens": [
+        {
+          "role": "brain",
+          "input": 1708,
+          "output": 126
+        },
+        {
+          "role": "narrator",
+          "input": 3870,
+          "output": 147
+        },
+        {
+          "role": "narrator_metadata",
+          "input": 691,
+          "output": 37
+        },
+        {
+          "role": "revelation_check",
+          "input": 443,
+          "output": 49
+        }
+      ]
+    },
+    {
+      "turn": 18,
+      "scene": 16,
+      "result": "MISS",
+      "move": "adventure/face_danger",
+      "action": "I stagger back from the frame, then drive my shoulder into the hull beside the f",
+      "state": "H3 Sp4 Su3 M4 C2",
+      "consequences": [
+        "You waste resources",
+        "supply -1"
+      ],
+      "phase": "ketsu_resolution",
+      "director": true,
+      "burn": "WEAK_HIT->taken",
+      "tokens": [
+        {
+          "role": "brain",
+          "input": 1698,
+          "output": 105
+        },
+        {
+          "role": "narrator",
+          "input": 3713,
+          "output": 142
+        },
+        {
+          "role": "narrator_metadata",
+          "input": 684,
+          "output": 37
+        },
+        {
+          "role": "revelation_check",
+          "input": 438,
+          "output": 46
+        },
+        {
+          "role": "narrator",
+          "input": 3710,
+          "output": 141
+        },
+        {
+          "role": "narrator_metadata",
+          "input": 679,
+          "output": 37
+        }
+      ]
+    },
+    {
+      "turn": 19,
+      "scene": 16,
+      "result": "WEAK_HIT",
+      "move": "adventure/face_danger",
+      "action": "I roll clear of the buckling panel, then lunge across the grating and wrench the",
+      "state": "H3 Sp3 Su3 M2 C1",
+      "consequences": [
+        "supply -1"
+      ],
+      "phase": "ketsu_resolution",
+      "director": true,
+      "tokens": [
+        {
+          "role": "brain",
+          "input": 1696,
+          "output": 121
+        },
+        {
+          "role": "narrator",
+          "input": 3714,
+          "output": 150
+        },
+        {
+          "role": "narrator_metadata",
+          "input": 688,
+          "output": 37
+        },
+        {
+          "role": "revelation_check",
+          "input": 446,
+          "output": 49
+        }
+      ]
+    },
+    {
+      "turn": 20,
+      "scene": 17,
+      "result": "WEAK_HIT",
+      "move": "adventure/face_danger",
+      "action": "I brace my shoulder against the pressure-seal panel and drive the fastener deepe",
+      "state": "H2 Sp3 Su3 M2 C1",
+      "consequences": [
+        "health -1"
+      ],
+      "phase": "ketsu_resolution",
+      "director": true,
+      "tokens": [
+        {
+          "role": "brain",
+          "input": 1695,
+          "output": 111
+        },
+        {
+          "role": "narrator",
+          "input": 3726,
+          "output": 130
+        },
+        {
+          "role": "narrator_metadata",
+          "input": 668,
+          "output": 37
+        },
+        {
+          "role": "revelation_check",
+          "input": 426,
+          "output": 54
+        }
+      ]
+    }
+  ],
+  "quality_summary": {
+    "narration_quality_total": 0,
+    "spatial_issues_total": 0,
+    "chapter_continuity_total": 0,
+    "correction_tests_total": 2,
+    "correction_tests_failed": 0,
+    "top_quality_issues": []
+  },
+  "burn_stats": {
+    "offered": 2,
+    "taken": 2,
+    "failed": 0
+  },
+  "token_summary": {
+    "total_input": 135754,
+    "total_output": 7308,
+    "total": 143062,
+    "by_role": {
+      "brain": {
+        "calls": 20,
+        "input": 34090,
+        "output": 2258
+      },
+      "narrator": {
+        "calls": 21,
+        "input": 77340,
+        "output": 3141
+      },
+      "narrator_metadata": {
+        "calls": 21,
+        "input": 14519,
+        "output": 777
+      },
+      "revelation_check": {
+        "calls": 18,
+        "input": 8046,
+        "output": 918
+      },
+      "correction": {
+        "calls": 2,
+        "input": 1759,
+        "output": 214
+      }
+    }
+  },
+  "final_npcs": [
+    {
+      "name": "Unnamed woman",
+      "status": "active",
+      "disposition": "neutral",
+      "memories": 19
+    },
+    {
+      "name": "Unidentified passerby",
+      "status": "active",
+      "disposition": "neutral",
+      "memories": 1
+    }
+  ],
+  "correction_tests": [
+    {
+      "turn": 8,
+      "correction": "## That's not what I said — I was asking a question, not making a statement",
+      "success": true,
+      "violations": [],
+      "quality_issues": []
+    },
+    {
+      "turn": 16,
+      "correction": "## I was being cautious, not aggressive",
+      "success": true,
+      "violations": [],
+      "quality_issues": []
+    }
+  ]
+}

@@ -53,3 +53,15 @@ logging:
   print_full_narration: true
   print_roll_details: true
   assert_state_invariants: true
+  event_prefixes:
+  - "[Bonus]"
+  - "[Chain]"
+  - "[PayThePrice]"
+  - "[Metadata]"
+  - "[OpeningSetup]"
+  - "[Director]"
+  - "[Tools]"
+  - "[Legacy]"
+  - "[Clock]"
+  - "[AdventureCrafter]"
+  - "[MoveOutcome]"

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import logging
 import time
 import random as _random
 import traceback
@@ -91,6 +92,8 @@ def run_session(bot_cfg: dict, auto_override: bool = False, turns_override: int 
     prices = bot_cfg["prices"]
     succession_enabled = session_cfg["succession_on_game_over"]
     coverage = Coverage()
+    events = _EventCapture(log_cfg["event_prefixes"])
+    logging.getLogger("rpg_engine").addHandler(events)
     full_debug = log_cfg["full_debug_log"]
 
     check_configured_models()
@@ -175,6 +178,7 @@ def run_session(bot_cfg: dict, auto_override: bool = False, turns_override: int 
                     slog,
                     prev_npcs,
                     coverage=coverage,
+                    events=events,
                     judge_cfg=judge_cfg,
                     max_turns=max_chapters * max_turns,
                     prev_action=prev_action,
@@ -275,6 +279,7 @@ def run_session(bot_cfg: dict, auto_override: bool = False, turns_override: int 
     if any(ch.ended_reason == "game_over" for ch in slog.chapters):
         coverage.hit("game_over")
     slog.coverage = coverage.summary()
+    logging.getLogger("rpg_engine").removeHandler(events)
     report_path = write_report(slog, coverage, RUNS_DIR / f"{log_file.stem}.md", prices)
     print(f"  [REPORT] {report_path}")
 
@@ -342,6 +347,7 @@ def _play_turn(
     slog: SessionLog,
     prev_npcs: list[NpcSnapshot] | None,
     coverage: Coverage,
+    events: _EventCapture,
     judge_cfg: dict | None,
     max_turns: int,
     prev_action: str = "",
@@ -358,6 +364,7 @@ def _play_turn(
 
     print(f"\n  [PLAYER] {action}")
 
+    events.lines.clear()
     before = world_view(game)
     sentences: list[str] = []
     first_at: list[float] = []
@@ -430,6 +437,9 @@ def _play_turn(
             slog.violations.append(v)
         rec.violations = violations
 
+    rec.engine_events = list(events.lines)
+    coverage.observe_events(rec.engine_events)
+
     if judge_cfg:
         rec.judge = judge_turn(provider, judge_cfg, game, action, narration, result, match)
         _print_audit(rec.judge)
@@ -461,6 +471,18 @@ def _print_audit(verdict: dict) -> None:
         print(f"  [AUDIT] {verdict['overall']}/10: {verdict['weakness']}")
     else:
         print(f"  [AUDIT] no verdict: {verdict['error']}")
+
+
+class _EventCapture(logging.Handler):
+    def __init__(self, prefixes: list[str]) -> None:
+        super().__init__()
+        self.prefixes = tuple(prefixes)
+        self.lines: list[str] = []
+
+    def emit(self, record: logging.LogRecord) -> None:
+        message = record.getMessage()
+        if message.startswith(self.prefixes):
+            self.lines.append(message)
 
 
 def _norm(text: str) -> str:

@@ -7,6 +7,22 @@ Originally forked from [EdgeTales](https://github.com/edgetales/edgetales). See 
 
 Straightjacket uses calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day. The first CalVer release is `2026.04.25.0`. Earlier `0.x.y` releases keep their original version numbers and are not renumbered. The switch was made because the project has no public API to version semantically against — the `0.x.y` numbers were running counters with no meaning, and dates carry the meaning the numbers didn't.
 
+## [2026.09.24.37] — 2026-09-24
+
+Elvira records what the engine did in each turn.
+
+A long run could not show the day's new rules at work: Elvira's session log was a compact diagnostic without the narration, and nothing recorded whether the Brain chose a bonus, a move chained, a price was paid, or the Director used its tools.
+
+Engine events. During a run Elvira attaches a handler to the engine logger and keeps, per turn, the lines whose prefix is listed under `logging.event_prefixes` in `tests/elvira/elvira_config.yaml` (bonuses, chains, Pay the Price, metadata extraction, opening setup, Director, tools, legacy, clocks, Adventure Crafter, move outcomes). They land in `TurnRecord.engine_events`. The engine gains the log line they needed: `pay_the_price` now logs the rows it rolled as `[PayThePrice]`.
+
+Session log. The compact turn record now always carries the full narration, and when present the NPCs with status and disposition, the judge's verdict, the streaming figures, and the engine events.
+
+Coverage and report. The coverage tracker gains `bonus_used`, `chained_move`, and `pay_the_price`, observed from the events; the Markdown report gains an "Engine events" section with new NPCs extracted from narration, the bonuses, chained moves, and prices paid with their rows, and the Director's tool rounds.
+
+Tests: the capture keeps only the configured prefixes (with a real logger, since the test suite stubs the engine's logging module), and the smoke test checks that the narration is in the session log.
+
+Quality gate: 1405 tests green, twenty-nine project-rule scans clean, coverage 89.69%, ruff check and ruff format clean, mypy --strict clean on 108 source files. Save format unchanged.
+
 ## [2026.09.24.36] — 2026-09-24
 
 Every role runs on OpenAI's GPT-6 Luna, the narrator included.

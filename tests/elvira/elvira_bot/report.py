@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 import statistics
 from pathlib import Path
 from straightjacket.engine.config_loader import model_for_role
@@ -101,6 +102,20 @@ def _coverage_lines(coverage: Coverage) -> list[str]:
     ]
 
 
+def _event_lines(slog: SessionLog) -> list[str]:
+    events = [e for t in slog.turns for e in t.engine_events]
+    if not events:
+        return ["No engine events captured."]
+    new_npcs = sum(int(m.group(1)) for e in events if (m := re.match(r"\[Metadata\] Extracted: (\d+) new NPCs", e)))
+    lines = [f"New NPCs extracted from narration: {new_npcs}."]
+    for label, prefix in (("Bonuses", "[Bonus]"), ("Chained moves", "[Chain]"), ("Pay the Price", "[PayThePrice]")):
+        found = [e for e in events if e.startswith(prefix)]
+        lines.append(f"{label}: {len(found)}.")
+        lines += [f"- {e[len(prefix) :].strip()}" for e in found[:8]]
+    lines.append(f"Director tool rounds: {sum(1 for e in events if e.startswith('[Tools]'))}.")
+    return lines
+
+
 def write_report(slog: SessionLog, coverage: Coverage, path: Path, prices: dict[str, list[float]]) -> Path:
     problems = collect_problems(slog)
     verdict = "no problems found" if not problems else f"{len(problems)} problem(s) found"
@@ -115,6 +130,7 @@ def write_report(slog: SessionLog, coverage: Coverage, path: Path, prices: dict[
         ("Coverage", _coverage_lines(coverage)),
         ("Narration audit", _audit_lines(slog)),
         ("Streaming", _stream_lines(slog)),
+        ("Engine events", _event_lines(slog)),
         ("Speed", _speed_lines(slog)),
         ("Cost", _cost_lines(slog, prices)),
     ):

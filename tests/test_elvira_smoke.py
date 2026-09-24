@@ -38,6 +38,8 @@ def test_elvira_plays_a_short_session_end_to_end(
     assert "## Coverage" in report
     assert session.coverage["counts"]["save_roundtrip"] >= 1
     assert session.save_roundtrip_issues == []
+    compact = session.turns[0].to_compact_dict()
+    assert compact["narration"]
     assert all(t.stream_complete for t in session.turns if not t.is_correction and not t.error)
 
 
@@ -77,3 +79,18 @@ def test_elvira_websocket_mode_plays_through_the_real_server(
     assert session.query_issues == []
     assert session.stream_issues == []
     assert list((tmp_path / "runs").glob("*.md"))
+
+
+def test_event_capture_keeps_only_the_configured_prefixes() -> None:
+    import logging
+
+    from tests.elvira.elvira_bot.runner import _EventCapture
+
+    capture = _EventCapture(["[Bonus]", "[Chain]"])
+    logger = logging.getLogger("elvira-capture-test")
+    logger.setLevel(logging.DEBUG)
+    logger.addHandler(capture)
+    for message in ("[Bonus] Ace: +1", "[Roll] not kept", "[Chain] Develop Your Relationship"):
+        logger.info(message)
+    logger.removeHandler(capture)
+    assert capture.lines == ["[Bonus] Ace: +1", "[Chain] Develop Your Relationship"]

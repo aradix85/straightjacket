@@ -24,6 +24,9 @@ TARGETS = (
     "succession",
     "save_roundtrip",
     "stream_complete",
+    "bonus_used",
+    "chained_move",
+    "pay_the_price",
 )
 
 STEERING = (
@@ -71,6 +74,13 @@ class Coverage:
         self.hit("clock_fired", len(after.fired_clocks - before.fired_clocks))
         if after.location and after.location != before.location:
             self.hit("location_change")
+
+    def observe_events(self, events: list[str]) -> None:
+        if any(e.startswith("[Bonus]") and "ignored" not in e for e in events):
+            self.hit("bonus_used")
+        if any(e.startswith("[Chain]") and "skipped" not in e for e in events):
+            self.hit("chained_move")
+        self.hit("pay_the_price", sum(1 for e in events if e.startswith("[PayThePrice]")))
 
     def steer(self, turn: int, max_turns: int) -> str | None:
         if turn <= max_turns // 2:
