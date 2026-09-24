@@ -123,6 +123,9 @@ move_outcomes:
   connection/develop_your_relationship:
     strong_hit:
     - legacy_ticks bonds 2
+    strong_hit_match:
+    - legacy_ticks bonds 2
+    - raise_connection_rank
     weak_hit:
     - momentum +2
     miss:
@@ -153,10 +156,14 @@ move_outcomes:
   exploration/explore_a_waypoint:
     strong_hit:
     - momentum +2
+    strong_hit_match:
+    - chain_move exploration/make_a_discovery
     weak_hit:
     - momentum +1
     miss:
     - pay_the_price
+    miss_match:
+    - chain_move exploration/confront_chaos
   exploration/set_a_course:
     strong_hit:
     - momentum +1
@@ -516,3 +523,15 @@ move_outcome_overrides:
       - momentum +1
       miss:
       - pay_the_price
+
+oracle_moves:
+  exploration/make_a_discovery:
+    oracle: moves/make_a_discovery
+    rolls: 1
+    legacy_track: discoveries
+    ticks_per_roll: 2
+  exploration/confront_chaos:
+    oracle: moves/confront_chaos
+    rolls: 1
+    legacy_track: discoveries
+    ticks_per_roll: 1

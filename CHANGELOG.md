@@ -7,6 +7,18 @@ Originally forked from [EdgeTales](https://github.com/edgetales/edgetales). See 
 
 Straightjacket uses calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day. The first CalVer release is `2026.04.25.0`. Earlier `0.x.y` releases keep their original version numbers and are not renumbered. The switch was made because the project has no public API to version semantically against — the `0.x.y` numbers were running counters with no meaning, and dates carry the meaning the numbers didn't.
 
+## [2026.09.24.32] — 2026-09-24
+
+Every "with a match" clause in the rules is now modelled, including oracle moves as chained moves and a connection's rank raise.
+
+Oracle moves as chained moves. Explore a Waypoint on a strong hit with a match now makes Make a Discovery, and on a miss with a match makes Confront Chaos instead of paying the price, as the rules offer. Both are moves without a roll: they roll on their own table. `engine/move_outcomes.yaml` gains `oracle_moves`, naming each oracle move's table, number of rolls, and legacy reward; `game/finalization.py` → `_chain_oracle_move` rolls the table, gives the result to the narrator on the "follow-up move" line, and marks the legacy ticks (Make a Discovery 2 discoveries ticks, Confront Chaos 1 per aspect). Two fixed choices, recorded in ARCHITECTURE.md: the ticks are marked at once, where the rules mark them when the discovery or aspect is first engaged, and Confront Chaos takes one aspect where the player may choose up to three.
+
+Rank raise. Develop Your Relationship on a strong hit with a match may raise the connection's rank; a new move effect `raise_connection_rank` raises it one step, up to epic. The connection lookup shared with the bond effect moves into `mechanics/move_effects.py` → `_connection_track`, and stripping Datasworn link markup into `strip_datasworn_links`, used by Pay the Price and the oracle chain.
+
+The known-gap list for match clauses in `tests/test_rules_conformance.py` is now empty. New tests: both Explore a Waypoint chains with their legacy ticks and without the price on the miss, and the rank raise including epic as the ceiling.
+
+Quality gate: 1392 tests green, twenty-nine project-rule scans clean, coverage 89.66%, ruff check and ruff format clean, mypy --strict clean on 106 source files. Save format unchanged.
+
 ## [2026.09.24.31] — 2026-09-24
 
 Moves that say "make another move" now make it, in the same turn.

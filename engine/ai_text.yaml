@@ -31,6 +31,7 @@ ai_text:
     mark_progress: mark progress ×{n}
     next_move_bonus: next move +{n}
     chained_move: 'follow-up move {move}: {result}'
+    connection_rank: '{name} connection rank now {rank}'
     legacy_reward: legacy reward ({track})
     clock_fill: clock +{n}
     bond_progress: '{name} bond progress +{n} ticks'

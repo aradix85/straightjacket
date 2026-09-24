@@ -6,8 +6,9 @@ from dataclasses import dataclass, field
 
 from ..datasworn.settings import load_package
 from ..engine_loader import eng
+from .legacy import shifted_rank
 from ..logging_util import log
-from ..models import GameState, NpcData
+from ..models import GameState, NpcData, ProgressTrack
 from ..npc import find_npc
 
 
@@ -73,7 +74,7 @@ def parse_effect(effect_str: str) -> MoveEffect:
     if m:
         return MoveEffect(type="fill_clock", value=int(m.group(1)))
 
-    if effect_str in ("pay_the_price", "narrative", "suffer_move", "disposition_shift"):
+    if effect_str in ("pay_the_price", "narrative", "suffer_move", "disposition_shift", "raise_connection_rank"):
         return MoveEffect(type=effect_str)
 
     if effect_str.startswith("suffer_move"):
@@ -89,6 +90,21 @@ def parse_effects(effect_list: list[str]) -> list[MoveEffect]:
     return [parse_effect(e) for e in effect_list]
 
 
+def strip_datasworn_links(text: str) -> str:
+    return re.sub(r"\[([^\]]+)\]\([^)]*\)", r"\1", text).strip()
+
+
+def _connection_track(game: GameState, npc: NpcData) -> ProgressTrack | None:
+    return next(
+        (
+            t
+            for t in game.progress_tracks
+            if t.track_type == "connection" and t.id == f"connection_{npc.id}" and t.status == "active"
+        ),
+        None,
+    )
+
+
 def _roll_pay_the_price_rows(game: GameState, depth: int) -> list[str]:
     cfg = eng().get_raw("pay_the_price")
     path = cfg["oracle_path"]
@@ -96,7 +112,7 @@ def _roll_pay_the_price_rows(game: GameState, depth: int) -> list[str]:
     table = data.oracle(path) if data is not None else None
     if table is None:
         raise KeyError(f"Pay the Price table '{path}' missing for setting {game.setting_id!r}")
-    text = re.sub(r"\[([^\]]+)\]\([^)]*\)", r"\1", str(table.roll().value)).strip()
+    text = strip_datasworn_links(str(table.roll().value))
     for rule in cfg["reroll_rows"]:
         if text.startswith(rule["prefix"]) and depth < cfg["max_rerolls"]:
             rows = [text]
@@ -176,6 +192,24 @@ def _apply_suffer_move_effect(
     _apply_generic_suffer(game, abs(effect.value), result)
 
 
+def _apply_raise_connection_rank_effect(
+    game: GameState, effect: MoveEffect, result: OutcomeResult, target: NpcData | None
+) -> None:
+    if not target:
+        return
+    track = _connection_track(game, target)
+    if track is None:
+        log(f"[MoveOutcome] rank raise but no connection track for {target.name}")
+        return
+    higher = shifted_rank(track.rank, 1)
+    if higher is None:
+        return
+    track.rank = higher
+    result.consequences.append(
+        eng().ai_text.consequence_labels["connection_rank"].format(name=target.name, rank=higher)
+    )
+
+
 def _apply_chain_move_effect(
     game: GameState, effect: MoveEffect, result: OutcomeResult, target: NpcData | None
 ) -> None:
@@ -215,14 +249,7 @@ def _apply_fill_clock_effect(
 def _apply_bond_effect(game: GameState, effect: MoveEffect, result: OutcomeResult, target: NpcData | None) -> None:
     if not target:
         return
-    conn_track = next(
-        (
-            t
-            for t in game.progress_tracks
-            if t.track_type == "connection" and t.id == f"connection_{target.id}" and t.status == "active"
-        ),
-        None,
-    )
+    conn_track = _connection_track(game, target)
     if not conn_track:
         log(f"[MoveOutcome] bond effect but no connection track for {target.name}")
         return
@@ -269,6 +296,7 @@ _EFFECT_HANDLERS: dict[str, Callable[[GameState, MoveEffect, OutcomeResult, NpcD
     "legacy_reward": _apply_legacy_reward_effect,
     "legacy_reward_lower": _apply_legacy_reward_lower_effect,
     "chain_move": _apply_chain_move_effect,
+    "raise_connection_rank": _apply_raise_connection_rank_effect,
     "legacy_ticks": _apply_legacy_ticks_effect,
     "fill_clock": _apply_fill_clock_effect,
     "bond": _apply_bond_effect,

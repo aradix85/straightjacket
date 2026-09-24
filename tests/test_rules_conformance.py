@@ -398,11 +398,7 @@ def test_enter_the_fray_miss_pays_the_price_only_in_classic(load_engine: None, s
     assert outcome.pay_the_price is pays
 
 
-KNOWN_MATCH_GAPS = {
-    ("starforged", "connection/develop_your_relationship", "strong_hit"),
-    ("starforged", "exploration/explore_a_waypoint", "strong_hit"),
-    ("starforged", "exploration/explore_a_waypoint", "miss"),
-}
+KNOWN_MATCH_GAPS: set[tuple[str, str, str]] = set()
 
 
 def test_every_match_clause_is_modelled_or_known(load_engine: None) -> None:
@@ -477,3 +473,39 @@ def test_a_chain_without_a_connection_is_skipped(load_engine: None) -> None:
     brain = make_brain_result(move="connection/test_your_relationship", target_npc="npc_1")
     action = resolve_action_consequences(game, brain, roll, "risky")
     assert not any(c.startswith("follow-up move") for c in action.consequences)
+
+
+@pytest.mark.parametrize(
+    ("result", "move_name", "ticks", "pays"),
+    [("STRONG_HIT", "Make a Discovery", 2, False), ("MISS", "Confront Chaos", 1, False)],
+)
+def test_explore_a_waypoint_match_chains_an_oracle_move(
+    load_engine: None, result: str, move_name: str, ticks: int, pays: bool
+) -> None:
+    from straightjacket.engine.game.finalization import resolve_action_consequences
+    from straightjacket.engine.mechanics.legacy import get_legacy_track
+    from straightjacket.engine.models import RollResult
+    from tests._helpers import make_brain_result, make_game_state
+
+    game = make_game_state(setting_id="starforged")
+    roll = RollResult(3, 0, 3, 3, "wits", 2, 5, result, "exploration/explore_a_waypoint", match=True)
+    action = resolve_action_consequences(game, make_brain_result(move="exploration/explore_a_waypoint"), roll, "risky")
+    assert any(c.startswith(f"follow-up move {move_name}: ") for c in action.consequences)
+    assert get_legacy_track(game, "discoveries").ticks == ticks
+    assert action.outcome is not None
+    assert action.outcome.pay_the_price is pays
+
+
+@pytest.mark.parametrize(("rank", "expected"), [("dangerous", "formidable"), ("epic", "epic")])
+def test_develop_your_relationship_match_raises_the_connection_rank(
+    load_engine: None, rank: str, expected: str
+) -> None:
+    from straightjacket.engine.mechanics.move_outcome import resolve_move_outcome
+    from tests._helpers import make_game_state, make_npc, make_progress_track
+
+    game = make_game_state(setting_id="starforged")
+    game.npcs = [make_npc(id="npc_1", name="Mira", status="active")]
+    track = make_progress_track(id="connection_npc_1", name="Mira", track_type="connection", rank=rank, ticks=0)
+    game.progress_tracks.append(track)
+    resolve_move_outcome(game, "connection/develop_your_relationship", "STRONG_HIT", target_npc_id="npc_1", match=True)
+    assert track.rank == expected

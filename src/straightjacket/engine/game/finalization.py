@@ -16,7 +16,7 @@ from ..mechanics import (
 )
 from ..mechanics.consequences import tick_threat_clock
 from ..mechanics.legacy import mark_legacy, mark_legacy_ticks, shifted_rank
-from ..mechanics.move_effects import OutcomeResult
+from ..mechanics.move_effects import OutcomeResult, strip_datasworn_links
 from ..mechanics.move_outcome import resolve_move_outcome
 from ..models import BrainResult, ClockEvent, EngineConfig, GameState, MemoryEntry, RollResult
 from ..npc import find_npc
@@ -25,6 +25,7 @@ from ..parser import parse_narrator_response
 
 from ..mechanics import find_progress_track
 from ..datasworn.moves import Move, get_moves
+from ..datasworn.settings import load_package
 from ..mechanics.consequences import roll_action
 
 
@@ -58,8 +59,26 @@ def _chained_roll_value(game: GameState, brain: BrainResult, move: Move) -> tupl
     return track.rank, int(ranked[track.rank])
 
 
+def _chain_oracle_move(game: GameState, move: Move, cfg: dict[str, Any], outcome: OutcomeResult) -> None:
+    path = cfg["oracle"]
+    data = load_package(game.setting_id).oracle_data_for(path)
+    table = data.oracle(path) if data is not None else None
+    if table is None:
+        raise KeyError(f"Oracle '{path}' for chained move {move.name} missing in setting {game.setting_id!r}")
+    results = [strip_datasworn_links(str(table.roll().value)) for _ in range(cfg["rolls"])]
+    outcome.consequences.append(
+        eng().ai_text.consequence_labels["chained_move"].format(move=move.name, result="; ".join(results))
+    )
+    mark_legacy_ticks(game, cfg["legacy_track"], cfg["ticks_per_roll"] * cfg["rolls"])
+    log(f"[Chain] {move.name}: {'; '.join(results)}")
+
+
 def _chain_move(game: GameState, brain: BrainResult, outcome: OutcomeResult) -> None:
     move = get_moves(game.setting_id)[outcome.chained_move]
+    oracle_moves = eng().get_raw("oracle_moves")
+    if move.roll_type == "no_roll" and outcome.chained_move in oracle_moves:
+        _chain_oracle_move(game, move, oracle_moves[outcome.chained_move], outcome)
+        return
     value = _chained_roll_value(game, brain, move)
     if value is None:
         log(f"[Chain] {outcome.chained_move}: nothing to roll with, follow-up skipped", level="warning")
