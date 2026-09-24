@@ -7,6 +7,18 @@ Originally forked from [EdgeTales](https://github.com/edgetales/edgetales). See 
 
 Straightjacket uses calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day. The first CalVer release is `2026.04.25.0`. Earlier `0.x.y` releases keep their original version numbers and are not renumbered. The switch was made because the project has no public API to version semantically against — the `0.x.y` numbers were running counters with no meaning, and dates carry the meaning the numbers didn't.
 
+## [2026.09.24.46] — 2026-09-24
+
+Documentation only: the open ends of the audit round in 2026.09.24.45. No code changed.
+
+Step 13b's move counts, recounted from the Datasworn data: the move categories of the four settings hold 89 unique move stems, 56 of which are formal moves in `engine/move_outcomes.yaml`, the same 56 as before; the other 33 are all `no_roll` (29) or `special_track` (4), which matches the step's groups of 6 and roughly 27. Assets define further moves inside their abilities (48 across the four files, counted per setting). The earlier 122 apparently counted some of those with the core moves; the roadmap now states the verified figures.
+
+The narrator prompts, checked against the design document's constraint-writing principles and recorded under priority 3 in the roadmap rather than changed, since prompt changes are measured first: `prompts/narrator.yaml` tells the model that violations "require a rewrite", a retry loop removed in 2026.04.27.8; it names what it wants to avoid (silver linings on a miss, the forbidden verbs word for word, seven WRONG examples of player agency), which the principles and the lesson of 2026.04.27.4 advise against; and `opening_setup_extractor` asks for `bond` and `bond_max`, which the schema has not had since 0.46.0.
+
+ORIGINS.md notes that the copy of the design document in `docs/` carries a creation date of 14 February 2026, next to the January publication it describes. Version 0.56.0 has no entry because it never existed: git shows 0.55.0 on 18 April followed directly by the 0.57 commit on 19 April.
+
+Quality gate: 1412 tests green, twenty-nine project-rule scans clean, coverage 89.89%, ruff check and ruff format clean, mypy --strict clean on 109 source files. Save format unchanged since 2026.09.24.45.
+
 ## [2026.09.24.45] — 2026-09-24
 
 Audit round against the project rules, after a full read of the md files and the design document. The save format breaks: saves made before this release no longer load.
