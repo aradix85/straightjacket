@@ -39,7 +39,7 @@ def call_correction_brain(
     roll = snap.roll
     roll_summary = (
         f"{roll.result} ({roll.move}, {roll.stat_name}={roll.stat_value}, "
-        f"d1={roll.d1}+d2={roll.d2} vs c1={roll.c1}/c2={roll.c2})"
+        f"action die {roll.d1}, score {roll.action_score} vs c1={roll.c1}/c2={roll.c2})"
         if roll
         else _defaults["no_roll"]
     )

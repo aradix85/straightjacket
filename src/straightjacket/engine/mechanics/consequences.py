@@ -14,16 +14,16 @@ from .impacts import impact_label
 
 
 def roll_action(stat_name: str, stat_value: int, move: str) -> RollResult:
-    d1, d2 = random.randint(1, 6), random.randint(1, 6)
+    d1 = random.randint(1, 6)
     c1, c2 = random.randint(1, 10), random.randint(1, 10)
-    score = min(d1 + d2 + stat_value, 10)
+    score = min(d1 + stat_value, 10)
     if score > c1 and score > c2:
         result = "STRONG_HIT"
     elif score > c1 or score > c2:
         result = "WEAK_HIT"
     else:
         result = "MISS"
-    return RollResult(d1, d2, c1, c2, stat_name, stat_value, score, result, move, match=(c1 == c2))
+    return RollResult(d1, 0, c1, c2, stat_name, stat_value, score, result, move, match=(c1 == c2))
 
 
 def roll_progress(track_name: str, filled_boxes: int, move: str) -> RollResult:

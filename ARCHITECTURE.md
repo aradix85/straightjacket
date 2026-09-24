@@ -15,7 +15,7 @@ Brain (ai/brain.py)           → single-call classification with injected game 
   ↓
 NPC Activation (npc/activation.py) → TF-IDF scores decide which NPCs get full context
   ↓
-Roll (mechanics/consequences.py) → 2d6+stat vs 2d10, result: STRONG_HIT / WEAK_HIT / MISS
+Roll (mechanics/consequences.py) → d6+stat (max 10) vs 2d10, the Ironsworn action roll, result: STRONG_HIT / WEAK_HIT / MISS
   ↓
 Consequences (game/action_resolution.py → resolve_action_phase) → move outcome, combat position, clock ticks, crisis check (shared core: game/finalization.py → resolve_action_consequences)
   ↓

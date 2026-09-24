@@ -185,6 +185,30 @@ EdgeTales 0.9.67–0.9.96 (Lars) was read in full on 2026-09-24. Its bug fixes t
 
 **E6 — Narrator rule on NPC backstory.** NPCs draw on their description, agenda, arc, and earlier scenes; when their past is not established, they keep it vague rather than invent family or history. Phrase it as direction, not prohibition (see the constraint-writing principles in the design document), and measure with an Elvira batch before and after, because prompt wording has caused regressions before (2026.04.27.4).
 
+### R — Rules conformance with the source systems
+
+Decision 2026-09-24: where Straightjacket takes a rule from Ironsworn/Starforged, Mythic GME 2e, the Adventure Crafter, or Blades in the Dark, the rule works as the source describes it. A divergence is allowed only as a deliberate choice, recorded under deliberate divergences in ARCHITECTURE.md. Prompted by Elvira exposing, the same day, that the action roll was 2d6 plus stat, inherited without any recorded decision (fixed in 2026.09.24.17). Each item: read the rule in the source, compare it with the engine, then either fix it with a test or record the divergence.
+
+**R.1 Action roll details.** Adds from assets and moves (does the engine support adds at all?), negative momentum cancelling a matching action die, and momentum burn replacing the action score.
+
+**R.2 Momentum.** Start, maximum, floor, reset (the reset floor was fixed in 2026.09.24.6), and the gain and loss per move outcome.
+
+**R.3 Suffer moves and impacts.** Endure Harm, Endure Stress, Sacrifice Resources, Lose Momentum, the impacts, and what a miss costs by default.
+
+**R.4 Progress.** Ticks per rank, progress rolls, legacy tracks and experience (Starforged), bonds and connections.
+
+**R.5 Mythic fate check.** 2d10 plus odds and chaos modifiers, the answer thresholds, exceptional answers, and the random event on doubles.
+
+**R.6 Mythic scene test and chaos factor.** d10 against the chaos factor (odd altered, even interrupted), the chaos adjustment at scene end, and its range.
+
+**R.7 Mythic random events.** The event focus table, the meaning tables, and the weighting of the thread and character lists.
+
+**R.8 Adventure Crafter.** Turning points, plot point tables per theme, theme priority, and the character and plotline lists.
+
+**R.9 Blades clocks.** Segment counts and fill rules.
+
+Done: every item checked, each either conformant and pinned by a test or recorded as a deliberate divergence.
+
 ### S — Sentence-level streaming of narration
 
 Status 2026-09-24 (2026.09.24.12): S.1, S.2, S.4, and the S.5 decision are built; S.3 is solved with a sentence-safe cleaning subset plus hold markers, with the full parser still producing the final text; S.6 covers the splitter, the fallback, and both adapters, not yet the WebSocket message order. Open: the NVDA test by the user (does the log region read each sentence once, and does the silent replacement stay silent), and an Elvira WebSocket-mode check. Switch it off with `server.stream_narration: false` if the screen reader misbehaves.

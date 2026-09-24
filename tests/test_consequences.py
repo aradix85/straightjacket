@@ -25,7 +25,8 @@ def test_roll_action_returns_valid_result() -> None:
     assert r.stat_value == 3
     assert r.action_score <= 10
     assert 1 <= r.d1 <= 6
-    assert 1 <= r.d2 <= 6
+    assert r.d2 == 0
+    assert r.action_score == min(r.d1 + 3, 10)
     assert 1 <= r.c1 <= 10
     assert 1 <= r.c2 <= 10
 
@@ -236,3 +237,12 @@ def test_roll_progress_match_detection() -> None:
             matches += 1
             assert r.c1 == r.c2
     assert matches > 0
+
+
+def test_action_roll_is_one_d6_plus_stat_like_ironsworn(load_engine: None) -> None:
+    from straightjacket.engine.mechanics.consequences import roll_action
+
+    rolls = [roll_action("wits", 2, "adventure/face_danger") for _ in range(500)]
+    assert all(r.action_score == r.d1 + 2 for r in rolls)
+    assert max(r.action_score for r in rolls) == 8
+    assert {r.d2 for r in rolls} == {0}

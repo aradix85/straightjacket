@@ -7,6 +7,18 @@ Originally forked from [EdgeTales](https://github.com/edgetales/edgetales). See 
 
 Straightjacket uses calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day. The first CalVer release is `2026.04.25.0`. Earlier `0.x.y` releases keep their original version numbers and are not renumbered. The switch was made because the project has no public API to version semantically against — the `0.x.y` numbers were running counters with no meaning, and dates carry the meaning the numbers didn't.
 
+## [2026.09.24.17] — 2026-09-24
+
+The action roll follows Ironsworn: one d6 plus the stat, capped at 10, against two d10s. `mechanics/consequences.py` → `roll_action` rolled two d6 plus the stat. ARCHITECTURE.md described it as "2d6+stat", but it was never recorded as a deliberate divergence and appears to have been inherited; Elvira's roll display ("Action 1+3=7") exposed it. The difference is large. At stat 2 the chance of a strong hit falls from 58% to 23%, a weak hit rises from 32% to 44%, and a miss rises from 10% to 33%, exactly the Ironsworn odds. Expect more misses, more consequences, and more momentum burns; engine values tuned under the old odds may deserve a second look, which Elvira's coverage and audit now make visible.
+
+`RollResult` keeps its `d2` field so existing saves still load; it is now 0 for every roll, as it already was for progress rolls, and can go with the next deliberate save-format break. The roll log line and the correction analysis show the action die only. Mythic's fate check in `mechanics/fate.py` keeps its two d10s, which is correct for Mythic 2e.
+
+Decision recorded as a principle with a checklist in roadmap section R: every rule taken from Ironsworn/Starforged, Mythic 2e, the Adventure Crafter, or Blades in the Dark works as its source describes, or is listed as a deliberate divergence.
+
+Tests: the existing action-roll test now asserts `action_score == min(d1 + stat, 10)` and `d2 == 0`; a new test rolls 500 times at stat 2 and checks that the score is always the die plus the stat, peaking at 8. No seeded test depended on the old second die.
+
+Quality gate: 1315 tests green, twenty-eight project-rule scans clean, ruff check and ruff format clean, mypy --strict clean on 106 source files. Save format unchanged.
+
 ## [2026.09.24.16] — 2026-09-24
 
 Elvira tests far more of the game on her own, and in doing so found two bugs in the game itself.

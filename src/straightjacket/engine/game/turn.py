@@ -308,11 +308,11 @@ def _execute_roll(game: GameState, brain: BrainResult) -> RollOutcome:
                 f"Brain should have either picked a valid stat or routed this as dialog/oracle."
             )
         roll = roll_action(stat_name, game.get_stat(stat_name), brain.move)
-        _raw = roll.d1 + roll.d2 + roll.stat_value
+        _raw = roll.d1 + roll.stat_value
         _score_str = f"{_raw}→{roll.action_score}(cap)" if _raw > roll.action_score else str(roll.action_score)
         log(
             f"[Roll] {roll.move} ({roll.stat_name}={roll.stat_value}): "
-            f"{roll.d1}+{roll.d2}+{roll.stat_value}={_score_str} vs [{roll.c1},{roll.c2}] "
+            f"{roll.d1}+{roll.stat_value}={_score_str} vs [{roll.c1},{roll.c2}] "
             f"→ {roll.result}{' MATCH!' if roll.match else ''}"
         )
 
