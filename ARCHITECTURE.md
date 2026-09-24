@@ -121,16 +121,17 @@ Where to find things. If you want to change X, edit Y.
 
 ## AI Model Assignment
 
-The engine assigns models to AI roles via clusters. Each cluster groups roles that share a model and default parameters. `model_for_role(role)` is the single entry point — no module ever hardcodes a model string.
+The engine assigns models to AI roles via clusters. Each cluster names a provider, a model, and the call parameters its roles share. `model_for_role(role)`, `provider_for_role(role)`, and `sampling_params(role)` are the only way to reach them; no module hardcodes a model string.
 
 ```
-Cluster          Roles                                              Needs
-─────────────────────────────────────────────────────────────────────────────
-narrator         narrator                                           prose generation (creative writing)
-creative         blueprint_voicing, director, chapter_summary, recap   open-ended generation needing real reasoning
-classification   brain, correction                                  single-shot structured-output decisions
-judgment         revelation_check                                   interpretive yes/no with nuance
-extraction       narrator_metadata, opening_setup                   pure data extraction, no interpretation
+Cluster          Roles                                       Model and reasoning effort (2026.09.24.42)
+─────────────────────────────────────────────────────────────────────────────────────────────────────
+narrator         narrator                                    GPT-6 Luna, none
+creative         blueprint_voicing, chapter_summary, recap   GPT-6 Luna, low
+director         director                                    GPT-6 Luna, none (tools reject an effort)
+classification   brain, correction                           GPT-6 Luna, none
+judgment         revelation_check                            GPT-6 Luna, none
+extraction       narrator_metadata, opening_setup            GPT-6 Luna, none
 ```
 
 Config structure in `config.yaml`:
@@ -138,43 +139,29 @@ Config structure in `config.yaml`:
 ```yaml
 ai:
   providers:
-    anthropic:
-      type: "anthropic"
+    openai:
+      type: "openai_compatible"
       api_base: ""
-      api_key_env: "ANTHROPIC_API_KEY"
+      api_key_env: "OPENAI_API_KEY"
+      timeout_seconds: 120
   clusters:
     narrator:
-      provider: anthropic
-      model: "claude-opus-5-5"
-      temperature: null        # Opus 5.5 rejects temperature and top_p
+      provider: openai
+      model: "gpt-6-luna"
+      temperature: null
       top_p: null
       max_tokens: 8192
       max_retries: 3
       extra_body:
-        cache_control:
-          type: "ephemeral"    # prompt caching
-    classification:
-      provider: anthropic
-      model: "claude-haiku-4-5-20251001"
-      temperature: 0.5
-      top_p: null              # Haiku 4.5 accepts only one of the two
-      ...
-    # ...classification, judgment, extraction follow the same shape
-  # Every AI role maps to exactly one cluster; remap a role by editing its entry:
+        reasoning_effort: "none"
   role_cluster:
     narrator: narrator
-    blueprint_voicing: creative
-    brain: classification
-    # ...one entry per role (ten roles, see the table above)
+    director: director
 ```
 
-Clusters are the single source of truth. `sampling_params(role)` resolves all call parameters from the role's cluster. `model_for_role(role)` resolves the model and `provider_for_role(role)` the provider. Each cluster names its own provider, so providers mix freely per role: `ai/api_client.py` → `get_provider` returns a routing provider that sends each call to the provider of its role's cluster, keyed on `AICallSpec.log_role`, which every AI call therefore sets to its own role name from `role_cluster`; the project-rule scan `_check_ai_calls_route_by_their_role` enforces this, and that `model_for_role(X)` in the same call uses the same X. An `api_base` of `""` means the SDK's default endpoint. `temperature` and `top_p` are required keys but may be `null`, which means the parameter is not sent; Claude Opus 5.5 and Sonnet 5 reject both, and Haiku 4.5 accepts only one of the two. No per-role overrides — to change a role's parameters, change the cluster or remap the role via `role_cluster`.
+Every cluster has the same keys; every role maps to exactly one cluster in `role_cluster`. An `api_base` of `""` means the SDK's default endpoint; a `null` temperature or top_p is not sent. The Anthropic provider (`type: "anthropic"`) stays configured but unused, so any cluster can move by naming it; Anthropic prompt caching then needs `cache_control` in the cluster's `extra_body`, while OpenAI caches automatically. The measurements behind the current choice (ten test situations, two blind judges, speed and cost) are in CHANGELOG 2026.09.24.11 to .36.
 
-`max_tool_rounds` is an engine mechanical limit, configured in `engine/pacing.yaml` under `max_tool_rounds`.
-
-Elvira test bot model is configured separately in `tests/elvira/elvira_config.yaml` → `ai.bot_model`. The bot's calls go through the brain role's provider, so `bot_model` must be a model that provider offers.
-
-Elvira plays the real game with the production models from `config.yaml`; only its own player and its judge run on the models in `tests/elvira/elvira_config.yaml`. Every turn it checks state invariants, leaked mechanics, NPC spatial consistency, and streaming (time to first sentence, and whether the streamed text equals the final text); a blind judge scores each narration on result integrity, prompt elements, NPC voice, player agency, restraint, and prose. After every save it loads the game back and compares the whole state. On game over it continues through succession with a new character. A coverage tracker records which parts of the game a run touched (results, match, dialog, combat, NPC introductions and deaths, clocks, travel, Director, burns, corrections, chapters, succession, save round trips, streaming) and, in the second half of a run, steers the bot towards dialog, combat, or travel if those are still missing. WebSocket mode (`--ws`) plays through the real server and additionally probes the status, tracks, threats, and recap messages. During a run Elvira also captures, per turn, the engine log lines whose prefixes `logging.event_prefixes` lists (bonuses, chained moves, Pay the Price, metadata extraction, Director and tools, legacy, clocks). Each run writes a JSON session log, with the full narration, NPCs, verdict, streaming figures, and events per turn, and a Markdown report to `tests/elvira/runs/`: verdict first, then problems, coverage, audit, streaming, engine events, speed, and an estimated cost per role. `tests/test_elvira_smoke.py` runs both modes against the mock provider in the normal test gate.
+Routing: `ai/api_client.py` → `get_provider` returns a routing provider that sends each call to the provider of its role's cluster, keyed on `AICallSpec.log_role`, which every AI call sets to its own role name; the project-rule scan `_check_ai_calls_route_by_their_role` enforces this. `python run.py` and Elvira call `check_configured_models` first: every cluster's model must appear in its provider's model list, or startup stops naming the missing model. `max_tool_rounds` is an engine limit in `engine/pacing.yaml`.
 
 ## File Map
 
@@ -316,7 +303,7 @@ src/straightjacket/
 
 **Character succession.** When the protagonist dies (face_death MISS, or both health and spirit reach zero) or is explicitly retired, the campaign continues with a new protagonist in the same world. Two-step lifecycle gated by `CampaignState.pending_succession`: `prepare_succession` archives the predecessor into `campaign.predecessors` and locks in the inheritance rolls onto that record; `start_succession_with_character` reads the locked-in rolls, closes the predecessor's chapter via `_close_previous_chapter`, applies NPC carryover per `succession.yaml`, wipes PC-specific state while keeping world-level threats and unresolved non-vow non-creation-sourced threads, seeds the successor's legacy, replaces character identity, generates opening narration, clears the flag. Locking rolls at archive time rather than at replacement time is what makes inheritance deterministic across reload. Unknown roll outcomes and unknown NPC statuses raise.
 
-**Provider abstraction.** `AIProvider` protocol with two implementations (Anthropic, OpenAI-compatible). The engine never imports provider SDKs directly. `create_with_retry` handles transient errors with exponential backoff. Multi-model: config.yaml assigns models via five clusters, each naming its provider. Since 2026.09.24.36 every cluster runs OpenAI's GPT-6 Luna: the narrator, classification (brain, correction), judgment (revelation_check), and extraction (narrator_metadata, opening_setup) at reasoning effort none, the creative cluster (blueprint_voicing, chapter_summary, recap) at reasoning effort low, and the director in its own cluster at reasoning effort none, because GPT-6 Luna rejects function tools combined with a reasoning effort in Chat Completions. OpenAI caches prompts automatically, so no cluster carries `cache_control`. The Anthropic provider stays configured, unused, so a cluster can move back by naming it. Clusters are the single source of truth for all call parameters. `model_for_role(role)` resolves the model; `sampling_params(role)` resolves temperature, top_p, max_tokens, max_retries, and extra_body. The provider stores no model state. `python run.py` and Elvira call `check_configured_models` before anything else: every cluster's model must appear in its provider's model list, or startup stops with a message naming the missing model and what that provider does offer. The Anthropic adapter sends `temperature`, `top_p`, and `top_k` through `extra_body` (anthropic SDK 1.x removed them from the typed `messages.create` signature) and only when the cluster sets them. It routes the cluster's `extra_body` by key: `cache_control` and `thinking` become typed parameters, `output_config` merges with the JSON-schema format (so a cluster can set Opus's `effort`), and everything else goes into `extra_body`. It converts the tool loop's OpenAI-style messages (assistant `tool_calls`, role `tool`) into Anthropic `tool_use` and `tool_result` blocks, merging consecutive tool results into one user message. Only text blocks reach `AIResponse.content`; thinking and redacted-thinking blocks never do. Both adapters create their SDK client with `max_retries=0` and the provider's `timeout_seconds`, so `create_with_retry` is the only retry layer; it honours a `Retry-After` header, capped by `retry.max_retry_after_seconds` in `engine/retry.yaml`, and otherwise backs off exponentially. A refusal (Anthropic `refusal`, OpenAI `content_filter`) normalizes to the stop reason `refusal`, which `create_with_retry` retries like a transient error and logs as an error when it persists; a refusal during streaming falls back to a normal call. The OpenAI-compatible adapter sends `max_completion_tokens`, which OpenAI's own current models require and the other OpenAI-compatible services accept. Anthropic only caches prompts above a model-specific minimum: the narrator's prompt qualifies, Haiku's shorter classification prompts do not, and there `cache_control` simply has no effect.
+**Provider abstraction.** `AIProvider` protocol with two implementations, `ai/provider_anthropic.py` and `ai/provider_openai.py` (any OpenAI-compatible endpoint); nothing else imports a provider SDK. Model assignment is described under AI Model Assignment. Both adapters create their SDK client with `max_retries=0` and the provider's `timeout_seconds`, so `create_with_retry` is the only retry layer: it honours a `Retry-After` header, capped by `retry.max_retry_after_seconds` in `engine/retry.yaml`, and otherwise backs off exponentially. A refusal (Anthropic `refusal`, OpenAI `content_filter`) normalizes to the stop reason `refusal`, which is retried like a transient error and logged as an error when it persists. Only text reaches `AIResponse.content`; reasoning never does. The OpenAI-compatible adapter sends `max_completion_tokens`, which OpenAI's own models require. The Anthropic adapter sends `temperature`, `top_p`, and `top_k` through `extra_body` and only when set, routes `cache_control`, `thinking`, and `output_config` from the cluster's `extra_body` to their typed parameters, and converts the tool loop's OpenAI-style messages into `tool_use` and `tool_result` blocks.
 
 **Sentence-level narration streaming.** With `server.stream_narration: true` in `config.yaml`, a player turn streams the narrator's output. `web/handlers.py` hands `process_turn` a `SentenceStream`, which travels through `SceneContext` and `narrate_scene` into `call_narrator`; `ai/provider_base.py` → `stream_with_retry` calls the provider's `stream_message` (both adapters implement it, and only text deltas ever reach the stream, never reasoning). The stream buffers text until a sentence is complete (abbreviations and hold markers live in `engine/parser.yaml`), cleans it with `parser.py` → `clean_sentence`, and the handler sends it as a `narration_sentence` WebSocket message that the client appends to the log region, so the screen reader starts reading after the first sentence. The existing `narration` message still carries the authoritative, fully parsed text and a `stream_complete` flag: when the streamed text matches, the client leaves it as it is; otherwise it replaces it and announces only the part the player has not heard. A hold marker (tag, code fence, JSON) stops the stream and leaves the rest to the final message; a failed stream falls back to a normal call. Openings, corrections, and momentum burns do not stream.
 
@@ -433,14 +420,12 @@ The **unit/integration test suite** (`python -m pytest tests/ -v`) runs without 
 
 **Project rules** (`tests/test_project_rules.py`) is one consolidated test running AST and regex scans that enforce the rules described in the Project rules section. A meta-scan fails on carve-out or whitelist entries that no longer match a file or symbol, so an exception cannot outlive the code it excuses. Four documentation-drift scans keep the md files honest: every path they name exists, the file map below is complete, every `file.py → symbol` reference resolves, and the CHANGELOG matches the `pyproject.toml` version. Failures are deterministic measurements — the test fails on residual debt without blocking feature work. When you touch a file that already has violations, fix them in the same commit.
 
-**Elvira** (`tests/elvira/elvira.py`) is a headless AI-driven test player that plays the game with real API calls. It checks state invariants after every turn (including NPC-DB sync and combat-track sync), validates narration quality through deterministic regex checks (leaked mechanics like result-types or stat values, NPC spatial consistency, chapter continuity), stress-tests the correction pipeline, and logs everything to a single `elvira_session.json`. Two modes:
+**Elvira** (`tests/elvira/elvira.py`) is a headless test player that plays the real game with the production models from `config.yaml`; only its own player and its judge use the models in `tests/elvira/elvira_config.yaml`, routed through the brain role's provider. Every turn it checks state invariants (including NPC-DB and combat-track sync), leaked mechanics, NPC spatial consistency, and streaming (time to first sentence; streamed text equal to the final text), and a blind judge scores the narration on result integrity, prompt elements, NPC voice, player agency, restraint, and prose. After every save it loads the game back and compares the whole state; on game over it continues through succession. It captures the engine log per turn: lines with the prefixes in `logging.event_prefixes` become events (bonuses, chained moves, Pay the Price, extraction, Director and tools), and every warning or error, whatever its prefix, becomes a problem in the report, because the engine catches AI-call failures by design and would otherwise play on silently. A coverage tracker records which parts of the game a run touched and steers the bot towards what is missing. Each run writes a JSON session log (full narration, NPCs, verdict, streaming figures, events, and warnings per turn) and a Markdown report to `tests/elvira/runs/`: verdict first, then problems, coverage, audit, streaming, engine events, speed, and estimated cost. `tests/test_elvira_smoke.py` runs both modes against the mock provider in the normal test gate.
 
-- Direct mode drives the engine directly, bypasses the UI. Fastest way to test engine changes.
-- WebSocket mode plays through the full server stack. Tests the complete pipeline: WebSocket protocol, handlers, engine, serializers.
+- Direct mode drives the engine directly; the fastest way to test engine changes.
+- WebSocket mode (`--ws`) plays through the real server stack and also probes the status, tracks, threats, and recap messages.
 
-If your change affects the turn pipeline, NPC processing, or prompt assembly, run Elvira. The unit tests catch logic bugs; Elvira catches constraint violations and integration failures that only surface with real model output.
-
-Elvira configuration is in `tests/elvira/elvira_config.yaml`. Session logs go to `tests/elvira/elvira_session.json`. Add `--turns N` to control session length.
+Run Elvira before a release that touches the turn pipeline, AI calls, prompts, or configuration: the unit tests catch logic bugs, Elvira catches what only real model output and real data reveal.
 
 ## Adding a New AI Provider
 

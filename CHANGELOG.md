@@ -7,6 +7,20 @@ Originally forked from [EdgeTales](https://github.com/edgetales/edgetales). See 
 
 Straightjacket uses calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day. The first CalVer release is `2026.04.25.0`. Earlier `0.x.y` releases keep their original version numbers and are not renumbered. The switch was made because the project has no public API to version semantically against — the `0.x.y` numbers were running counters with no meaning, and dates carry the meaning the numbers didn't.
 
+## [2026.09.24.43] — 2026-09-24
+
+Documentation pruned and brought in line with the code, before a new working session.
+
+`roadmap.md` (9,461 to about 7,050 words): the Current state paragraph, which had grown into the day's chronicle of model decisions (Claude, then Haiku, then GPT-6 Luna), is now a short statement of the current setup with a pointer to CHANGELOG 2026.09.24.11 to .36; section R is a concise status of what is checked and what is open; section S (streaming) moved to DONE along with the provider work, the Elvira rebuild, and the rules pass; steps 18a-i, 18a-ii, and 18b, which planned a typed `AssetState` with a modifier pipeline and still said assets had no mechanical effect, are replaced by one step 18 built on the ability tracking and roll bonuses that now exist.
+
+`ARCHITECTURE.md`: AI Model Assignment shows the six current clusters (the Director has its own) and a config example matching `config.yaml`, instead of Opus and Haiku with per-model sampling notes; the Provider abstraction paragraph keeps the adapter facts and no longer repeats the model assignment or the outdated remark on Anthropic caching and Haiku; Elvira is described once, under Testing, instead of twice with one version still naming a single `elvira_session.json`. Two whitelist entries for that old path in the documentation-drift scan are removed with it.
+
+`AUDIT.md` gains two pre-findings from this day: silent failures through AI-call carve-outs, and fixtures that differ from production data.
+
+`CHANGELOG.md` stays as the complete history.
+
+Quality gate: 1413 tests green, twenty-nine project-rule scans clean, coverage 89.81%, ruff check and ruff format clean, mypy --strict clean on 109 source files. No code changed.
+
 ## [2026.09.24.42] — 2026-09-24
 
 Engine warnings and errors are problems in Elvira's report, and the first run with that check found the Director failing on every call.

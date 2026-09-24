@@ -1015,8 +1015,6 @@ _DOC_FILES = ("README.md", "ARCHITECTURE.md", "SECURITY.md", "ORIGINS.md", "AUDI
 _DOC_PATH_PLACEHOLDERS = {
     "data/settings/your_setting.yaml",
     "ai/provider_yourname.py",
-    "elvira_session.json",
-    "tests/elvira/elvira_session.json",
 }
 _DOC_PATH = re.compile(r"`([A-Za-z0-9_./-]+\.(?:py|yaml|sql|json|html|toml|md))(?:::[A-Za-z_]\w*)?`")
 _OWNERSHIP_REF = re.compile(r"`([\w/]+\.py)` → ((?:`\w+`(?:, )?)+)")
