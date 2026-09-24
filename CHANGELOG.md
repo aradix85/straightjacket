@@ -7,6 +7,24 @@ Originally forked from [EdgeTales](https://github.com/edgetales/edgetales). See 
 
 Straightjacket uses calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day. The first CalVer release is `2026.04.25.0`. Earlier `0.x.y` releases keep their original version numbers and are not renumbered. The switch was made because the project has no public API to version semantically against — the `0.x.y` numbers were running counters with no meaning, and dates carry the meaning the numbers didn't.
 
+## [2026.09.24.16] — 2026-09-24
+
+Elvira tests far more of the game on her own, and in doing so found two bugs in the game itself.
+
+Found in the game. `web/serializers.py` → `highlight_dialog` ran three passes over the narration, and the straight-quote pass matched the `class="dialog"` attribute the curly-quote pass had just inserted, so every narration with curly-quoted dialog reached the browser as broken markup, showing text such as `dialog">` that NVDA read aloud. It now runs one combined pass over all three quote styles, so no pass ever sees inserted markup; a new test in `tests/test_web.py` fails on the previous code. And the Director's `query_npc` tool answered an unknown id with a bare "not found", so the Director kept guessing ids (`npc_2`, `npc_3`); the error now lists the known active and background NPCs, so the next tool round can correct itself (test in `tests/test_tools.py`).
+
+Found in Elvira. WebSocket mode could never start: `_start_server` waited for the server with a blocking `urllib` request inside the event loop that runs the server, so the server could not answer and every attempt timed out. It now waits on uvicorn's own `started` flag.
+
+New in both modes: streaming checks per turn (time to first sentence, sentence count, and whether the streamed text equals the final text; a complete stream that differs is reported as a problem), and a Markdown report per run next to the JSON log, verdict first, with a heading per section for screen-reader navigation.
+
+New in direct mode: a blind narration audit per turn by Claude Haiku 4.5 (`judge` in `elvira_config.yaml`, rubric in `elvira_prompts.yaml`; a failed audit is recorded, never fatal), a save/load round trip after every save that compares the whole game state, succession on game over (`session.succession_on_game_over`), a coverage tracker with steering towards dialog, combat, and travel in the second half of a run, and an estimated cost per role from a price table in `elvira_config.yaml`.
+
+New in WebSocket mode: narration sentences are recorded as they arrive, and after the first turn Elvira sends the status, tracks, threats, and recap queries and reports empty answers or errors.
+
+Tests: `tests/test_elvira_smoke.py` now also checks the report, the coverage, a clean save round trip, and complete streams, and gains a WebSocket test that starts the real server on a free port against the mock provider. In direct mode the save round trip found no differences.
+
+Quality gate: 1314 tests green, twenty-eight project-rule scans clean, coverage 89.65%, ruff check and ruff format clean, mypy --strict clean on 106 source files. Save format unchanged.
+
 ## [2026.09.24.15] — 2026-09-24
 
 Elvira runs again, and the normal test gate now notices when it stops running.

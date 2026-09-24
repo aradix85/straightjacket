@@ -326,20 +326,21 @@ def build_succession_summary(game: GameState) -> dict[str, Any]:
     }
 
 
+_DIALOG_QUOTES = re.compile(
+    r"(\u201c)([^\u201c\u201d\n]{1,600}?)(\u201d)"
+    r'|(")([^"\n]{1,600}?)(")'
+    r"|(\u2018)([^\u2018\u2019\n]{1,600}?)(\u2019)"
+)
+
+
 def highlight_dialog(text: str) -> str:
-    def _wrap(open_q: str, content: str, close_q: str) -> str:
+    def _wrap(match: re.Match[str]) -> str:
+        groups = match.groups()
+        start = next(i for i in (0, 3, 6) if groups[i] is not None)
+        open_q, content, close_q = groups[start], groups[start + 1], groups[start + 2]
         inner = content.strip()
         if not inner:
             return open_q + content + close_q
         return f'{open_q}<span class="dialog">{inner}</span>{close_q}'
 
-    text = re.sub(
-        r"(\u201c)([^\u201c\u201d\n]{1,600}?)(\u201d)", lambda m: _wrap(m.group(1), m.group(2), m.group(3)), text
-    )
-
-    text = re.sub(r'(?<!<span class="dialog">)"([^"\n]{1,600}?)"', lambda m: _wrap('"', m.group(1), '"'), text)
-
-    text = re.sub(
-        r"(\u2018)([^\u2018\u2019\n]{1,600}?)(\u2019)", lambda m: _wrap(m.group(1), m.group(2), m.group(3)), text
-    )
-    return text
+    return _DIALOG_QUOTES.sub(_wrap, text)

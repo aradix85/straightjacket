@@ -84,18 +84,20 @@ def ask_bot(provider: AIProvider, system: str, user: str, max_tokens: int = 300,
     return response.content.strip()
 
 
-def _resolve_turn_directive(turn: int) -> tuple[str, str]:
+def _resolve_turn_directive(turn: int, directive_key: str | None = None) -> tuple[str, str]:
     prompts = _load_prompts()
     rotation = prompts["bot_turn_rotation"]
     if not isinstance(rotation, list) or not rotation:
         raise ValueError("Elvira prompt 'bot_turn_rotation' must be a non-empty list")
-    directive_key = rotation[(turn - 1) % len(rotation)]
+    directive_key = directive_key or rotation[(turn - 1) % len(rotation)]
     full = _p(directive_key)
     short = full.split(" — ")[0]
     return full, short
 
 
-def build_turn_context(game: GameState, narration: str, turn: int, prev_action: str = "") -> str:
+def build_turn_context(
+    game: GameState, narration: str, turn: int, prev_action: str = "", directive_key: str | None = None
+) -> str:
     res = game.resources
     world = game.world
     unknown = _p("bot_unknown_label")
@@ -139,7 +141,7 @@ def build_turn_context(game: GameState, narration: str, turn: int, prev_action: 
         if conflict:
             story_block += _p("bot_story_conflict", conflict=conflict[:120])
 
-    turn_directive_full, turn_directive_short = _resolve_turn_directive(turn)
+    turn_directive_full, turn_directive_short = _resolve_turn_directive(turn, directive_key)
     mandatory_action_block = _p(
         "bot_mandatory_action_block",
         turn_directive=turn_directive_full,

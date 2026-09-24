@@ -41,6 +41,7 @@ _AI_CALL_CARVE_OUT_TESTS = {
     "elvira/elvira_bot/runner.py",
     "elvira/elvira_bot/invariants.py",
     "elvira/elvira_bot/ws_runner.py",
+    "elvira/elvira_bot/judge.py",
 }
 
 

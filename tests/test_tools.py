@@ -321,3 +321,17 @@ def test_run_tool_loop_hits_max_rounds(load_engine: None, monkeypatch) -> None:
     initial_spec = AICallSpec(model="m", system="s", messages=[{"role": "user", "content": "x"}], max_tokens=100)
     _final, log = run_tool_loop(_Provider(), initial, role="test", game=game, initial_spec=initial_spec)
     assert len(log) == 2
+
+
+def test_query_npc_for_an_unknown_id_lists_the_known_npcs(load_engine: None) -> None:
+    from straightjacket.engine.tools.builtins import query_npc
+    from tests._helpers import make_game_state, make_npc
+
+    game = make_game_state()
+    game.npcs = [
+        make_npc(id="npc_1", name="Mira", status="active"),
+        make_npc(id="npc_9", name="Old Vess", status="deceased"),
+    ]
+    result = query_npc(game, "npc_2")
+    assert result["error"] == "NPC not found: npc_2"
+    assert result["known_npcs"] == [{"id": "npc_1", "name": "Mira"}]

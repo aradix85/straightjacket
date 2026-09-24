@@ -499,3 +499,14 @@ class TestSuccessionWebSocket:
             ws.send_json({"type": "start_succession", "creation_data": "not_a_dict"})
             msg = ws.receive_json()
             assert msg["type"] == "error"
+
+
+def test_highlight_dialog_never_touches_the_markup_it_inserts() -> None:
+    from straightjacket.web.serializers import highlight_dialog
+
+    text = '\u201cRun,\u201d she says. He answers, "Not yet." \u2018Fine.\u2019'
+    assert highlight_dialog(text) == (
+        '\u201c<span class="dialog">Run,</span>\u201d she says. '
+        'He answers, "<span class="dialog">Not yet.</span>" '
+        '\u2018<span class="dialog">Fine.</span>\u2019'
+    )

@@ -14,7 +14,8 @@ from .registry import register
 def query_npc(game: GameState, npc_id: str) -> dict[str, Any]:
     npc = find_npc(game, npc_id)
     if not npc:
-        return {"error": f"NPC not found: {npc_id}"}
+        known = [{"id": n.id, "name": n.name} for n in game.npcs if n.status in ("active", "background")]
+        return {"error": f"NPC not found: {npc_id}", "known_npcs": known}
 
     recent_mems = query_memories(npc_id=npc.id, limit=eng().npc.reflection_observation_window)
     return {

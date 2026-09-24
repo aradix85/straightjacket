@@ -120,6 +120,12 @@ class TurnRecord:
     token_usage: list[dict] = field(default_factory=list)
     is_correction: bool = False
     error: str = ""
+    turn_secs: float = 0.0
+    stream_first_sentence_secs: float | None = None
+    stream_sentences: int = 0
+    stream_complete: bool | None = None
+    stream_matches: bool | None = None
+    judge: dict = field(default_factory=dict)
 
     def to_dict(self) -> dict:
         from dataclasses import asdict
@@ -206,6 +212,11 @@ class SessionLog:
     burn_stats: dict = field(default_factory=dict)
     ended_reason: str = "unknown"
     total_turns: int = 0
+    coverage: dict = field(default_factory=dict)
+    save_roundtrip_issues: list[str] = field(default_factory=list)
+    stream_issues: list[str] = field(default_factory=list)
+    succession: dict = field(default_factory=dict)
+    query_issues: list[str] = field(default_factory=list)
 
     def to_dict(self) -> dict:
         from dataclasses import asdict

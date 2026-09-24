@@ -26,10 +26,20 @@ session:
   save_every_n_turns: 5
   save_name_output: "elvira"
   clean_before_run: true
+  succession_on_game_over: true
 
 bot_behavior:
   burn_momentum: "auto"
   style: "explorer"
+
+judge:
+  enabled: true
+  model: "claude-haiku-4-5-20251001"
+
+prices:
+  claude-opus-5-5: [4.00, 20.00]
+  claude-sonnet-5: [2.00, 10.00]
+  claude-haiku-4-5-20251001: [1.00, 5.00]
 
 logging:
   log_file: "elvira_session.json"

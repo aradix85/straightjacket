@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import time
 import random as _random
 import traceback
 from datetime import datetime
@@ -13,6 +14,7 @@ if TYPE_CHECKING:
     from straightjacket.engine.ai.provider_base import AIProvider
 
 from straightjacket.engine.ai.api_client import check_configured_models, get_provider
+from straightjacket.engine.ai.sentence_stream import SentenceStream
 from straightjacket.engine.models import EngineConfig, GameState
 from straightjacket.engine.persistence import delete_save, load_game, save_game
 from straightjacket.engine.user_management import create_user
@@ -21,6 +23,9 @@ from straightjacket.engine.correction import process_correction
 from straightjacket.engine.game.momentum_burn import process_momentum_burn
 from straightjacket.engine.datasworn.settings import list_packages
 from straightjacket.engine.game import (
+    determine_end_reason,
+    prepare_succession,
+    start_succession_with_character,
     generate_epilogue,
     process_turn,
     run_deferred_director,
@@ -28,6 +33,9 @@ from straightjacket.engine.game import (
     start_new_game,
 )
 
+from .coverage import Coverage, world_view
+from .judge import judge_turn
+from .report import write_report
 from .ai_helpers import ask_bot, build_turn_context, decide_burn_momentum, get_persona
 from .creation import roll_character
 from .invariants import assert_game_state
@@ -78,6 +86,10 @@ def run_session(bot_cfg: dict, auto_override: bool = False, turns_override: int 
     print_full = log_cfg["print_full_narration"]
     print_rolls = log_cfg["print_roll_details"]
     do_invariants = log_cfg["assert_state_invariants"]
+    judge_model = bot_cfg["judge"]["model"] if bot_cfg["judge"]["enabled"] else None
+    prices = bot_cfg["prices"]
+    succession_enabled = session_cfg["succession_on_game_over"]
+    coverage = Coverage()
     full_debug = log_cfg["full_debug_log"]
 
     check_configured_models()
@@ -161,6 +173,9 @@ def run_session(bot_cfg: dict, auto_override: bool = False, turns_override: int 
                     do_invariants,
                     slog,
                     prev_npcs,
+                    coverage=coverage,
+                    judge_model=judge_model,
+                    max_turns=max_chapters * max_turns,
                     prev_action=prev_action,
                 )
 
@@ -180,7 +195,14 @@ def run_session(bot_cfg: dict, auto_override: bool = False, turns_override: int 
             chat_messages.append({"role": "assistant", "content": narration})
 
             if total_turns % save_every == 0:
-                _try_save(game, username, chat_messages, save_out)
+                _save_and_verify(game, username, chat_messages, save_out, slog, coverage)
+
+            if game.game_over and not session_ended and succession_enabled and not slog.succession:
+                game, succession_narration = _play_succession(provider, config, game, game_cfg, slog, coverage)
+                if "error" not in slog.succession:
+                    narration = succession_narration
+                    chat_messages.append({"role": "assistant", "content": narration})
+                    continue
 
             if session_ended or game.game_over:
                 ch_rec.ended_reason = "game_over" if game.game_over else "engine_error"
@@ -244,7 +266,16 @@ def run_session(bot_cfg: dict, auto_override: bool = False, turns_override: int 
     }
 
     print_summary(slog, game)
-    _try_save(game, username, chat_messages, save_out)
+    _save_and_verify(game, username, chat_messages, save_out, slog, coverage)
+    coverage.hit("burn_offered", burns_offered)
+    coverage.hit("burn_taken", burns_taken)
+    coverage.hit("correction", len(slog.correction_tests))
+    coverage.hit("chapter_transition", max(0, len(slog.chapters) - 1))
+    if any(ch.ended_reason == "game_over" for ch in slog.chapters):
+        coverage.hit("game_over")
+    slog.coverage = coverage.summary()
+    report_path = write_report(slog, coverage, RUNS_DIR / f"{log_file.stem}.md", prices)
+    print(f"  [REPORT] {report_path}")
 
     RUNS_DIR.mkdir(parents=True, exist_ok=True)
     log_path = RUNS_DIR / log_file
@@ -309,9 +340,14 @@ def _play_turn(
     do_invariants: bool,
     slog: SessionLog,
     prev_npcs: list[NpcSnapshot] | None,
+    coverage: Coverage,
+    judge_model: str | None,
+    max_turns: int,
     prev_action: str = "",
 ) -> tuple[GameState, str, TurnRecord, bool]:
-    context = build_turn_context(game, narration, turn, prev_action=prev_action)
+    context = build_turn_context(
+        game, narration, turn, prev_action=prev_action, directive_key=coverage.steer(turn, max_turns)
+    )
     try:
         action = ask_bot(provider, persona, context, max_tokens=500)
     except Exception as e:
@@ -321,8 +357,19 @@ def _play_turn(
 
     print(f"\n  [PLAYER] {action}")
 
+    before = world_view(game)
+    sentences: list[str] = []
+    first_at: list[float] = []
+    started = time.monotonic()
+
+    def on_sentence(text: str) -> None:
+        if not first_at:
+            first_at.append(time.monotonic() - started)
+        sentences.append(text)
+
+    stream = SentenceStream(on_sentence)
     try:
-        game, narration, roll, burn_info, director_ctx = process_turn(provider, game, action, config)
+        game, narration, roll, burn_info, director_ctx = process_turn(provider, game, action, config, stream)
     except Exception as e:
         print(f"[ERROR] process_turn failed: {e}")
         traceback.print_exc()
@@ -338,6 +385,11 @@ def _play_turn(
         )
 
     rec = record_turn(game, turn, action, narration, roll)
+    rec.turn_secs = round(time.monotonic() - started, 1)
+    _record_stream(rec, stream, sentences, first_at, narration, slog, coverage)
+    result = roll.result if roll else None
+    match = bool(roll and roll.match)
+    coverage.observe_turn(before, world_view(game), result, match, roll.move if roll else "")
 
     if burn_info:
         _handle_burn(provider, config, game, burn_info, burn_setting, style, rec)
@@ -346,6 +398,7 @@ def _play_turn(
         try:
             run_deferred_director(provider, game, director_ctx)
             rec.director_ran = True
+            coverage.hit("director")
             sl = game.narrative.session_log
             trigger = sl[-1].director_trigger if sl else "?"
             print(f"  [DIRECTOR] Ran — trigger: {trigger}")
@@ -375,7 +428,76 @@ def _play_turn(
             slog.violations.append(v)
         rec.violations = violations
 
+    if judge_model:
+        rec.judge = judge_turn(provider, judge_model, game, action, narration, result, match)
+        _print_audit(rec.judge)
+
     return game, narration, rec, False
+
+
+def _record_stream(
+    rec: TurnRecord,
+    stream: SentenceStream,
+    sentences: list[str],
+    first_at: list[float],
+    narration: str,
+    slog: SessionLog,
+    coverage: Coverage,
+) -> None:
+    rec.stream_first_sentence_secs = round(first_at[0], 1) if first_at else None
+    rec.stream_sentences = len(sentences)
+    rec.stream_complete = stream.complete
+    rec.stream_matches = _norm(" ".join(sentences)) == _norm(narration)
+    if stream.complete:
+        coverage.hit("stream_complete")
+        if not rec.stream_matches:
+            slog.stream_issues.append(f"Turn {rec.turn}: streamed text differs from the final narration")
+
+
+def _print_audit(verdict: dict) -> None:
+    if "overall" in verdict:
+        print(f"  [AUDIT] {verdict['overall']}/10: {verdict['weakness']}")
+    else:
+        print(f"  [AUDIT] no verdict: {verdict['error']}")
+
+
+def _norm(text: str) -> str:
+    return " ".join(text.split())
+
+
+def _save_and_verify(
+    game: GameState, username: str, chat_messages: list[dict], save_out: str, slog: SessionLog, coverage: Coverage
+) -> None:
+    _try_save(game, username, chat_messages, save_out)
+    loaded, _messages = load_game(username, save_out)
+    if loaded is None:
+        slog.save_roundtrip_issues.append(
+            f"scene {game.narrative.scene_count}: save '{save_out}' could not be loaded back"
+        )
+        return
+    before, after = game.to_dict(), loaded.to_dict()
+    changed = sorted(key for key in set(before) | set(after) if before.get(key) != after.get(key))
+    coverage.hit("save_roundtrip")
+    if changed:
+        slog.save_roundtrip_issues.append(f"scene {game.narrative.scene_count}: save/load changed {', '.join(changed)}")
+
+
+def _play_succession(
+    provider: AIProvider, config: EngineConfig, game: GameState, game_cfg: dict, slog: SessionLog, coverage: Coverage
+) -> tuple[GameState, str]:
+    coverage.hit("game_over")
+    try:
+        prepare_succession(game, determine_end_reason(game))
+        creation_data = roll_character(game.setting_id, game_cfg)
+        game, narration = start_succession_with_character(provider, game, creation_data, config)
+    except Exception as e:
+        slog.succession = {"error": f"{type(e).__name__}: {e}"[:300]}
+        print(f"  [SUCCESSION] Failed: {e}")
+        return game, ""
+    slog.succession = {"new_character": game.player_name}
+    coverage.hit("succession")
+    print(f"  [SUCCESSION] Continuing as {game.player_name}")
+    return game, narration
 
 
 def _play_correction_turn(

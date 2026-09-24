@@ -1,7 +1,10 @@
 from __future__ import annotations
 
 import asyncio
+import html
 import json
+import re
+import time
 import random as _random
 from datetime import datetime
 from pathlib import Path
@@ -15,6 +18,8 @@ import websockets
 from straightjacket.engine.config_loader import VERSION, cfg
 from straightjacket.engine.models import GameState
 
+from .coverage import Coverage
+from .report import write_report
 from .ai_helpers import ask_bot, build_turn_context, decide_burn_momentum, get_persona
 from .creation import roll_character
 from .invariants import assert_game_state
@@ -85,8 +90,10 @@ class WsClient:
             "story_complete": False,
             "epilogue": None,
             "chapter_started": None,
+            "sentences": [],
             "other": [],
         }
+        started = time.monotonic()
         deadline = asyncio.get_event_loop().time() + timeout
         while True:
             remaining = deadline - asyncio.get_event_loop().time()
@@ -97,7 +104,9 @@ class WsClient:
             except TimeoutError:
                 break
             t = msg.get("type", "")
-            if t == "narration":
+            if t == "narration_sentence":
+                result["sentences"].append((time.monotonic() - started, msg["text"]))
+            elif t == "narration":
                 result["narration"] = msg
             elif t == "replace_narration":
                 result["replace_narration"] = msg
@@ -144,15 +153,12 @@ async def _start_server(port: int) -> Any:
     _BACKGROUND_TASKS.add(serve_task)
     serve_task.add_done_callback(_BACKGROUND_TASKS.discard)
 
-    import urllib.request
-
-    for _ in range(50):
-        await asyncio.sleep(0.1)
-        try:
-            urllib.request.urlopen(f"http://127.0.0.1:{port}/health", timeout=0.5)
+    for _ in range(100):
+        await asyncio.sleep(0.05)
+        if server.started:
             return server
-        except Exception:
-            continue
+        if serve_task.done():
+            raise RuntimeError(f"Server on port {port} stopped during startup: {serve_task.exception()}")
     raise RuntimeError(f"Server failed to start on port {port} within 5s")
 
 
@@ -192,6 +198,7 @@ async def run_ws_session(bot_cfg: dict, auto_override: bool = False, turns_overr
         engine_version=VERSION,
         style=style,
     )
+    coverage = Coverage()
 
     print(f"\n{SEPARATOR}")
     print(f"  Straightjacket — Elvira WebSocket Bot — {style.upper()} mode")
@@ -292,6 +299,13 @@ async def run_ws_session(bot_cfg: dict, auto_override: bool = False, turns_overr
                     if burn.get("error"):
                         burns_failed += 1
 
+            if rec.stream_complete:
+                coverage.hit("stream_complete")
+                if not rec.stream_matches:
+                    slog.stream_issues.append(f"Turn {total_turns}: streamed text differs from the final narration")
+            if total_turns == 1 and not rec.error:
+                await _probe_queries(client, slog)
+
             if rec.error:
                 session_ended = True
                 slog.turns.append(rec)
@@ -310,6 +324,11 @@ async def run_ws_session(bot_cfg: dict, auto_override: bool = False, turns_overr
             full_rec.burn_offered = rec.burn_offered
             full_rec.burn_taken = rec.burn_taken
             full_rec.burn_error = rec.burn_error
+            full_rec.turn_secs = rec.turn_secs
+            full_rec.stream_sentences = rec.stream_sentences
+            full_rec.stream_first_sentence_secs = rec.stream_first_sentence_secs
+            full_rec.stream_complete = rec.stream_complete
+            full_rec.stream_matches = rec.stream_matches
 
             quality = check_narration_quality(narration)
             if quality:
@@ -379,6 +398,13 @@ async def run_ws_session(bot_cfg: dict, auto_override: bool = False, turns_overr
     await client.send({"type": "save", "name": save_out})
     await client.drain(timeout=2)
 
+    coverage.hit("burn_offered", burns_offered)
+    coverage.hit("burn_taken", burns_taken)
+    coverage.hit("correction", len(slog.correction_tests))
+    slog.coverage = coverage.summary()
+    report_path = write_report(slog, coverage, RUNS_DIR / f"{log_file.stem}.md", bot_cfg["prices"])
+    print(f"  [REPORT] {report_path}")
+
     RUNS_DIR.mkdir(parents=True, exist_ok=True)
     log_path = RUNS_DIR / log_file
     log_path.write_text(json.dumps(slog.to_diagnostic_dict(), indent=2, ensure_ascii=False), encoding="utf-8")
@@ -414,6 +440,7 @@ async def _play_turn(
         return narration, TurnRecord(turn=turn, error=str(e)), None
 
     print(f"\n  [PLAYER] {action}")
+    started = time.monotonic()
     await client.send({"type": "player_input", "text": action})
     td = await client.collect_turn()
 
@@ -425,6 +452,12 @@ async def _play_turn(
     print_narration(new_narration, print_full)
 
     rec = TurnRecord(turn=turn, chapter=game.campaign.chapter_number, action=action)
+    rec.turn_secs = round(time.monotonic() - started, 1)
+    sentences = td["sentences"]
+    rec.stream_sentences = len(sentences)
+    rec.stream_first_sentence_secs = round(sentences[0][0], 1) if sentences else None
+    rec.stream_complete = bool((td["narration"] or {}).get("stream_complete"))
+    rec.stream_matches = _norm(" ".join(text for _, text in sentences)) == _norm(_plain(new_narration))
 
     burn_data = None
     if td["burn_offer"]:
@@ -538,3 +571,29 @@ async def _chapter_transition(
 
     new_game = await client.get_debug_state()
     return narration, new_game, False
+
+
+def _norm(text: str) -> str:
+    return " ".join(text.split())
+
+
+def _plain(fragment: str) -> str:
+    return html.unescape(re.sub(r"<[^>]*>", "", fragment))
+
+
+async def _probe_queries(client: WsClient, slog: SessionLog) -> None:
+    for query in ("status_query", "tracks_query", "threats_query"):
+        await client.send({"type": query})
+        answer = await client.recv_until("status", timeout=30)
+        if not str(answer.get("text", "")).strip():
+            slog.query_issues.append(f"{query}: empty answer")
+    await client.send({"type": "recap"})
+    while True:
+        msg = await client.recv(timeout=180)
+        if msg.get("type") == "recap":
+            if not str(msg.get("text", "")).strip():
+                slog.query_issues.append("recap: empty answer")
+            return
+        if msg.get("type") == "error":
+            slog.query_issues.append(f"recap: {msg.get('text')}")
+            return
