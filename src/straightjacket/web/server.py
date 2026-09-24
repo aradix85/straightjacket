@@ -149,7 +149,13 @@ async def _dispatch_one_message(ws: WebSocket, data: dict[str, Any]) -> None:
         return
     handler = _HANDLERS.get(msg_type)
     if handler:
-        await handler(_session, ws, data)
+        try:
+            await handler(_session, ws, data)
+        except WebSocketDisconnect:
+            raise
+        except Exception as e:
+            log(f"[Web] {msg_type} failed: {type(e).__name__}: {e}", level="error")
+            await _send(ws, {"type": "error", "text": t("error.unexpected")})
     else:
         await _send(ws, {"type": "error", "text": t("error.unknown_msg_type", msg_type=msg_type)})
 

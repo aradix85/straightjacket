@@ -131,12 +131,13 @@ def test_list_saves_skips_corrupt_files(save_dir: Any) -> None:
     assert names == {"good_save"}
 
 
-def test_load_normalizes_npc_dispositions(save_dir: Any) -> None:
+def test_load_returns_exactly_what_was_saved(save_dir: Any) -> None:
     from straightjacket.engine.persistence import save_game, load_game
 
     game = _game()
     game.npcs[0].disposition = "wary"
-    save_game(game, "tester", [], "disp_test")
-    loaded, _ = load_game("tester", "disp_test")
+    game.npcs[0].aliases = [game.npcs[0].name]
+    save_game(game, "tester", [], "exact_test")
+    loaded, _ = load_game("tester", "exact_test")
     assert loaded is not None
-    assert loaded.npcs[0].disposition == "distrustful"
+    assert loaded.to_dict() == game.to_dict()

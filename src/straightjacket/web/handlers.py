@@ -5,6 +5,7 @@ from concurrent.futures import Future
 from starlette.websockets import WebSocket, WebSocketDisconnect
 
 from ..engine.ai.api_client import get_provider
+from ..engine.ai.provider_base import AIUnavailableError
 from ..engine.ai.recap import call_recap
 from ..engine.ai.sentence_stream import SentenceStream
 from ..engine.config_loader import cfg
@@ -25,7 +26,7 @@ from ..engine.game import (
 from ..engine.game.momentum_burn import process_momentum_burn
 from ..engine.logging_util import log
 from ..engine.mechanics.legacy import advance_asset
-from ..engine.models import GameState
+from ..engine.models import GameState, TurnSnapshot
 from ..engine.persistence import IncompatibleSaveError, delete_save, list_saves_with_info, load_game, save_game
 from ..engine.user_management import create_user, delete_user, list_users
 from ..i18n import t
@@ -171,9 +172,21 @@ async def handle_start_game(session: Session, ws: WebSocket, msg: dict[str, Any]
         )
     except Exception as e:
         log(f"[Web] start_game failed: {e}", level="error")
-        await _send(ws, {"type": "error", "text": str(e)})
+        await _send(ws, {"type": "error", "text": _error_text(e)})
     finally:
         session.processing = False
+
+
+def _error_text(e: Exception) -> str:
+    return t("error.ai_unavailable") if isinstance(e, AIUnavailableError) else t("error.unexpected")
+
+
+def _restore_after_failed_turn(
+    game: GameState, snapshot: TurnSnapshot, last_turn_snapshot: TurnSnapshot | None
+) -> None:
+    game.restore(snapshot)
+    game.last_turn_snapshot = last_turn_snapshot
+    _db_sync(game)
 
 
 async def handle_player_input(session: Session, ws: WebSocket, msg: dict[str, Any]) -> None:
@@ -196,9 +209,17 @@ async def handle_player_input(session: Session, ws: WebSocket, msg: dict[str, An
 
         provider = get_provider()
         stream, pending_sentences = _narration_stream(ws, session.game) if cfg().server.stream_narration else (None, [])
-        game, narration, _roll, burn_info, director_ctx = await asyncio.to_thread(
-            process_turn, provider, session.game, text, session.config, stream
-        )
+        before, last_before = session.game.snapshot(), session.game.last_turn_snapshot
+        try:
+            game, narration, _roll, burn_info, director_ctx = await asyncio.to_thread(
+                process_turn, provider, session.game, text, session.config, stream
+            )
+        except Exception as e:
+            _restore_after_failed_turn(session.game, before, last_before)
+            log(f"[Web] turn not applied: {type(e).__name__}: {e}", level="error")
+            await _send(ws, {"type": "error", "text": f"{_error_text(e)} {t('error.nothing_changed')}"})
+            session.pop_last_user_message()
+            return
         for sent in pending_sentences:
             await asyncio.wrap_future(sent)
         session.game = game
@@ -276,7 +297,7 @@ async def handle_player_input(session: Session, ws: WebSocket, msg: dict[str, An
 
     except Exception as e:
         log(f"[Web] player_input failed: {e}", level="error")
-        await _send(ws, {"type": "error", "text": str(e)})
+        await _send(ws, {"type": "error", "text": _error_text(e)})
         session.pop_last_user_message()
     finally:
         session.processing = False
@@ -298,9 +319,16 @@ async def handle_correction(session: Session, ws: WebSocket, msg: dict[str, Any]
     try:
         await _send(ws, {"type": "status", "text": "..."})
         provider = get_provider()
-        game, narration, director_ctx = await asyncio.to_thread(
-            process_correction, provider, session.game, text, session.config
-        )
+        before, last_before = session.game.snapshot(), session.game.last_turn_snapshot
+        try:
+            game, narration, director_ctx = await asyncio.to_thread(
+                process_correction, provider, session.game, text, session.config
+            )
+        except Exception as e:
+            _restore_after_failed_turn(session.game, before, last_before)
+            log(f"[Web] correction not applied: {type(e).__name__}: {e}", level="error")
+            await _send(ws, {"type": "error", "text": f"{_error_text(e)} {t('error.nothing_changed')}"})
+            return
         session.game = game
 
         await _send(ws, {"type": "replace_narration", "text": highlight_dialog(narration)})
@@ -318,7 +346,7 @@ async def handle_correction(session: Session, ws: WebSocket, msg: dict[str, Any]
         await _send(ws, {"type": "turn_complete"})
     except Exception as e:
         log(f"[Web] correction failed: {e}", level="error")
-        await _send(ws, {"type": "error", "text": str(e)})
+        await _send(ws, {"type": "error", "text": _error_text(e)})
     finally:
         session.processing = False
 
@@ -338,18 +366,25 @@ async def handle_burn_momentum(session: Session, ws: WebSocket, msg: dict[str, A
     try:
         await _send(ws, {"type": "status", "text": t("momentum.gathering")})
         provider = get_provider()
-        game, narration = await asyncio.to_thread(
-            process_momentum_burn,
-            provider=provider,
-            game=session.game,
-            old_roll=burn.roll,
-            new_result=burn.new_result,
-            brain_data=burn.brain,
-            player_words=burn.player_words,
-            config=session.config,
-            pre_snapshot=burn.pre_snapshot,
-            scene_setup=burn.scene_setup,
-        )
+        before, last_before = session.game.snapshot(), session.game.last_turn_snapshot
+        try:
+            game, narration = await asyncio.to_thread(
+                process_momentum_burn,
+                provider=provider,
+                game=session.game,
+                old_roll=burn.roll,
+                new_result=burn.new_result,
+                brain_data=burn.brain,
+                player_words=burn.player_words,
+                config=session.config,
+                pre_snapshot=burn.pre_snapshot,
+                scene_setup=burn.scene_setup,
+            )
+        except Exception as e:
+            _restore_after_failed_turn(session.game, before, last_before)
+            log(f"[Web] momentum burn not applied: {type(e).__name__}: {e}", level="error")
+            await _send(ws, {"type": "error", "text": f"{_error_text(e)} {t('error.nothing_changed')}"})
+            return
         session.game = game
 
         await _send(ws, {"type": "replace_narration", "text": highlight_dialog(narration)})
@@ -359,7 +394,7 @@ async def handle_burn_momentum(session: Session, ws: WebSocket, msg: dict[str, A
         await _send(ws, {"type": "turn_complete"})
     except Exception as e:
         log(f"[Web] burn failed: {e}", level="error")
-        await _send(ws, {"type": "error", "text": str(e)})
+        await _send(ws, {"type": "error", "text": _error_text(e)})
     finally:
         session.processing = False
 
@@ -435,7 +470,7 @@ async def handle_recap(session: Session, ws: WebSocket, _msg: dict[str, Any]) ->
         recap_text = await asyncio.to_thread(call_recap, provider, session.game, session.config)
         await _send(ws, {"type": "recap", "text": recap_text})
     except Exception as e:
-        await _send(ws, {"type": "error", "text": str(e)})
+        await _send(ws, {"type": "error", "text": _error_text(e)})
     finally:
         session.processing = False
 
@@ -502,7 +537,7 @@ async def handle_generate_epilogue(session: Session, ws: WebSocket, _msg: dict[s
         save_game(game, session.player, session.chat_messages, session.save_name)
         await _send(ws, {"type": "epilogue", "text": highlight_dialog(epilogue)})
     except Exception as e:
-        await _send(ws, {"type": "error", "text": str(e)})
+        await _send(ws, {"type": "error", "text": _error_text(e)})
     finally:
         session.processing = False
 
@@ -539,7 +574,7 @@ async def handle_new_chapter(session: Session, ws: WebSocket, _msg: dict[str, An
         )
     except Exception as e:
         log(f"[Web] new_chapter failed: {e}", level="error")
-        await _send(ws, {"type": "error", "text": str(e)})
+        await _send(ws, {"type": "error", "text": _error_text(e)})
     finally:
         session.processing = False
 
@@ -565,7 +600,7 @@ async def handle_retire(session: Session, ws: WebSocket, _msg: dict[str, Any]) -
         )
     except Exception as e:
         log(f"[Web] retire failed: {e}", level="error")
-        await _send(ws, {"type": "error", "text": str(e)})
+        await _send(ws, {"type": "error", "text": _error_text(e)})
     finally:
         session.processing = False
 
@@ -601,7 +636,7 @@ async def handle_start_succession(session: Session, ws: WebSocket, msg: dict[str
         )
     except Exception as e:
         log(f"[Web] start_succession failed: {e}", level="error")
-        await _send(ws, {"type": "error", "text": str(e)})
+        await _send(ws, {"type": "error", "text": _error_text(e)})
     finally:
         session.processing = False
 

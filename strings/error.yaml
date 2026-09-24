@@ -4,3 +4,6 @@ error.no_active_game: No active game.
 error.rate_limited: Rate limited. Please slow down.
 error.unknown_msg_type: "Unknown message type: {msg_type}"
 error.malformed_message: "Malformed message: missing or invalid 'type' field."
+error.ai_unavailable: The narrator could not be reached.
+error.unexpected: Something went wrong in the engine.
+error.nothing_changed: Nothing in the story changed. Please try again.

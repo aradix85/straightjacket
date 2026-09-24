@@ -171,13 +171,12 @@ def test_does_not_mark_introduced_by_title_alone(load_engine: None, stub_emotion
     assert game.npcs[0].introduced is False
 
 
-def test_empty_narration_returns_fallback(load_engine: None, stub_emotions: None) -> None:
+def test_narration_without_prose_parses_to_empty(load_engine: None, stub_emotions: None) -> None:
     from straightjacket.engine.parser import parse_narrator_response
 
     game = _game()
     raw = '<game_data>{"npcs": []}</game_data>'
-    result = parse_narrator_response(game, raw)
-    assert len(result) > 0
+    assert parse_narrator_response(game, raw) == ""
 
 
 def test_combined_cleanup(load_engine: None, stub_emotions: None) -> None:

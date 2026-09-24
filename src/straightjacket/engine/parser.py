@@ -176,7 +176,7 @@ def _salvage_empty_narration(raw: str) -> str:
         clean_para = para.strip()
         if clean_para and not clean_para.startswith(("<", "{", "[", "```")):
             return clean_para
-    return "(The narrator pauses, gathering thoughts...)"
+    return ""
 
 
 def parse_narrator_response(game: GameState, raw: str) -> str:

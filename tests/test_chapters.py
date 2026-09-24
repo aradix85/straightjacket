@@ -1,5 +1,7 @@
 import json
 
+import pytest
+
 from straightjacket.engine.models import GameState, ProgressTrack, ThreadEntry, ThreatData
 from straightjacket.engine.models_story import ChapterSummary
 from tests._helpers import (
@@ -336,13 +338,14 @@ def test_generate_epilogue_strips_epilogue_header(load_engine: None, stub_all: N
     assert "Epilogue" not in narration.split("\n")[0]
 
 
-def test_generate_epilogue_fallback_on_empty(load_engine: None, stub_all: None) -> None:
+def test_generate_epilogue_raises_on_empty_narration(load_engine: None, stub_all: None) -> None:
+    from straightjacket.engine.ai.provider_base import AIUnavailableError
     from straightjacket.engine.game.chapters import generate_epilogue
 
     provider = MockProvider("")
     g = make_game_state(player_name="Aria", setting_id="starforged")
-    _, narration = generate_epilogue(provider, g)
-    assert narration != ""
+    with pytest.raises(AIUnavailableError, match="empty narration"):
+        generate_epilogue(provider, g)
 
 
 def test_apply_chapter_opening_setup_routes_to_apply(load_engine: None, stub_all: None) -> None:

@@ -11,7 +11,7 @@ from ..prompt_blocks import (
 )
 from ..prompt_loader import get_prompt
 from ..tools.builtins import available_moves
-from .provider_base import AICallSpec, AIProvider, create_with_retry
+from .provider_base import AIUnavailableError, AICallSpec, AIProvider, create_with_retry
 from .schemas import get_brain_output_schema, get_revelation_check_schema
 from ..mechanics.bonuses import bonus_block
 
@@ -111,15 +111,8 @@ time:{w.time_of_day or _ai_text["unknown_time"]}
         return result
 
     except Exception as e:
-        log(f"[Brain] Failed ({type(e).__name__}: {e}), treating as dialog", level="warning")
-        return BrainResult(
-            type="action",
-            move="dialog",
-            stat="none",
-            dialog_only=True,
-            player_intent=player_message,
-            approach="error",
-        )
+        log(f"[Brain] Failed ({type(e).__name__}: {e})", level="warning")
+        raise AIUnavailableError(f"brain: {type(e).__name__}: {e}") from e
 
 
 def call_revelation_check(
@@ -154,8 +147,5 @@ def call_revelation_check(
         log(f"[Revelation] Check for '{revelation.id}': confirmed={confirmed} — {reasoning}")
         return confirmed
     except Exception as e:
-        log(
-            f"[Revelation] Check failed ({type(e).__name__}: {e}), defaulting to confirmed=True to avoid pending loop",
-            level="warning",
-        )
-        return True
+        log(f"[Revelation] Check failed ({type(e).__name__}: {e}), counting as not yet confirmed", level="warning")
+        return False

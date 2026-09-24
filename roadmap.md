@@ -86,10 +86,7 @@ Running things: API keys live in the Windows user environment (ANTHROPIC_API_KEY
 
 Clock expansion landed in 2026.05.14.0.
 
-Open architectural questions (recorded in 2026.09.24.45, for the user to decide):
-
-- Step 9's return shape and category registration. 9.1 returns `dict` and wants new categories to need yaml only, while "Typed dataclasses everywhere" rules out dict-shaped results and the Definition of Done makes per-category oracle paths required fields on `OraclePaths`, which means a Python change per category. Settle both at the start of step 9: a typed result per category, and either a yaml mapping of oracle paths keyed by category or a dataclass field per category.
-- Whether the "Yaml content boundary" applies to setting yaml under `data/settings/`. Step 17 would put authored names, descriptors, and sensory text there, which the rule as written forbids.
+Open architectural questions: none. The two recorded in 2026.09.24.45 were decided by the user in 2026.09.24.47: step 9 returns two typed results and registers categories and their oracle paths in yaml (see step 9), and the Yaml content boundary covers setting yaml too (see step 17).
 
 Decision 2026-09-24, fact-resolution trigger (step 9): the Brain detects, the engine decides. The Brain output gains a field listing the undetermined facts the player's action depends on, each as an entity reference plus a fact type chosen from a fixed yaml list (start with four or five, for example locked or blocked, present, alert, contains something useful). The engine derives the odds from game state, resolves through fate, stores the answer, and passes it to the narrator as a `<fact>` tag. Three conditions. First, the fact-type list lives in yaml and an unknown type raises. Second, a resolved fact persists on the entity it describes and is reused rather than re-rolled until the fiction changes it; the save format breaks when this lands. Third, the Brain prompt explains the new field with examples in the same commit, because the `fate_question` field added in 2026.04.28.2 died unused for lack of exactly that. Considered and rejected: fixed engine rules per move and target (cannot cover free player input), the narrator requesting facts (an extra call, and the narrator would decide what is uncertain), and only pre-generating facts when an entity is created (cannot anticipate everything; it complements this decision once step 10 lands). This is not a return of the player fate question removed in 2026.04.28.4: the player still types actions, and the Brain recognises the uncertainty inside an action.
 
@@ -139,15 +136,15 @@ Dependency: parent-chain settings resolver exists in `datasworn/settings.py` —
 
 The generator framework is the single engine entry-point for content the fiction needs but the game-state does not yet hold. Two consumption shapes the framework must handle, called out explicitly so step 10 plus 11 plus 25 plus 26 can build on a stable contract: entity-creation (a new settlement, location, NPC, or encounter is brought into being from a category and context — what the design document calls "fiction generation") and fact-resolution (a player action references an attribute of an existing entity that has not yet been determined — door is locked or not, NPC is alert or not, a room holds an item or not — what the "Engine-resolved fiction" Key Design Decision calls for). Both flow through the same callable surface so that the consumer code never needs to choose between "generate" and "resolve" at the callsite — the framework determines from category+context whether to roll on a structure-table or a fate-question.
 
-**9.1** Entry point `generate(game, category, context) -> dict`. Starting categories: settlement, location, npc, encounter (entity-creation), plus fact (fact-resolution: takes a fact_type + entity_ref, returns boolean or enum value). Extensible — step 25 adds waypoint, step 26 adds site, step 11 adds npc tiers. Registry or yaml-lookup, not closed Python enum. The fact category routes through `mechanics/fate.py::resolve_fate` with odds derived from context per `engine/fate.yaml::likelihood_rules`; entity categories route through Datasworn oracle rolls per category-specific paths.
+**9.1** Entry point `generate(game, category, context)`, returning one of two typed results (decided in 2026.09.24.47): `GeneratedEntity` for entity creation (the category plus the rolled table results, keyed by the role each table plays in that category) and `ResolvedFact` for fact resolution (entity reference, fact type, answer, odds). Starting categories: settlement, location, npc, encounter (entity-creation), plus fact (fact-resolution: takes a fact_type + entity_ref, returns boolean or enum value). Extensible — step 25 adds waypoint, step 26 adds site, step 11 adds npc tiers. Registry or yaml-lookup, not closed Python enum. The fact category routes through `mechanics/fate.py::resolve_fate` with odds derived from context per `engine/fate.yaml::likelihood_rules`; entity categories route through Datasworn oracle rolls per category-specific paths.
 
 **9.2** Oracle accessor handles Delve theme+domain, Sundered Isles cursed/non-cursed variants, Starforged flat d100. Format detection from setting yaml, not Python branching on setting name.
 
-**9.3** Per-category oracle paths in setting YAML. Missing path = KeyError. The `fact` category does not need oracle paths — it consults fate, not Datasworn — but its odds-derivation rules live in `engine/fact_resolution.yaml` (new) keyed by fact_type, with explicit raise-on-unknown-fact-type.
+**9.3** Per-category oracle paths in setting YAML, as a mapping keyed by category name: the keys are domain data, so a new category needs no dataclass field (decided in 2026.09.24.47). A registered category without a path in the active setting's parent chain raises KeyError. The `fact` category does not need oracle paths — it consults fate, not Datasworn — but its odds-derivation rules live in `engine/fact_resolution.yaml` (new) keyed by fact_type, with explicit raise-on-unknown-fact-type.
 
 **9.4** Generated content rendered through the setting's `vocabulary.substitutions` in the narrator prompt. No post-hoc validator (see Validator policy). The substitution is the constraint: if the oracle returns "spaceship", the prompt receives the setting's substitution (e.g. "starship — worn, patched") before reaching the narrator.
 
-**9.5** AI data supply: generated entity dicts and resolved facts are injected into the narrator prompt as structured `<generated>` and `<fact>` tags, not surfaced via tool-call. Rationale: this data is always relevant for the call that triggered it (the narrator is about to describe the entity or react to the resolved fact in this turn) and the payload is bounded (one entity dict, one fact result). Tool-calling here would add a roundtrip without the AI making a meaningful selection — engine has already determined what is relevant. Per the "When tool-call vs when prompt-inject" Key Design Decision in ARCHITECTURE.md.
+**9.5** AI data supply: generated entities and resolved facts are injected into the narrator prompt as structured `<generated>` and `<fact>` tags, not surfaced via tool-call. Rationale: this data is always relevant for the call that triggered it (the narrator is about to describe the entity or react to the resolved fact in this turn) and the payload is bounded (one entity dict, one fact result). Tool-calling here would add a roundtrip without the AI making a meaningful selection — engine has already determined what is relevant. Per the "When tool-call vs when prompt-inject" Key Design Decision in ARCHITECTURE.md.
 
 **9.6** Tests: smoke with stub oracle data, category registry accepts additions, fact-resolution returns deterministic value for fixed-seed RNG, unknown fact_type raises.
 
@@ -158,10 +155,10 @@ Settled 2026-09-24, see Current state: the Brain detects undetermined facts from
 
 ### Definition of Done
 
-- `generate(game, category, context)` exists as the single entry point, exported through the `mechanics` package `__init__.py` (or the subpackage chosen during implementation).
+- `generate(game, category, context)` exists as the single entry point, returns `GeneratedEntity` or `ResolvedFact`, exported through the `mechanics` package `__init__.py` (or the subpackage chosen during implementation).
 - Categories `settlement`, `location`, `npc`, `encounter`, and `fact` are registered via yaml; an unknown category raises; an unknown `fact_type` raises.
 - The oracle accessor handles Delve theme+domain, Sundered Isles cursed/non-cursed variants, and Starforged flat d100 via setting-yaml data, with no Python branching on setting names.
-- Per-category oracle paths are required fields on `OraclePaths`; a missing path raises `KeyError`.
+- Per-category oracle paths live in setting yaml as a mapping keyed by category; a registered category without a path in the setting chain raises `KeyError`.
 - `engine/fact_resolution.yaml` is bound to a dataclass; fact resolution goes through `mechanics/fate.py::resolve_fate` with odds from `engine/fate.yaml::fate.likelihood_rules`.
 - The Brain output schema gains the undetermined-facts field, with its fact types as an enum from yaml; `prompts/brain.yaml` explains the field with examples in the same commit.
 - Resolved facts persist on the entity they describe and are reused on later turns instead of re-rolled; the save format breaks, no migration.
@@ -332,19 +329,11 @@ Done: factions tick independently, persisted through snapshot+save+chapter.
 
 **16.3** Reputation field added to FactionData (extension point reserved in 14a.1).
 
-### 17 — Setting enrichment — ONGOING
+### 17 — Setting enrichment from sourced tables
 
-Data work, no architecture. Non-blocking.
+Decided in 2026.09.24.47: the Yaml content boundary in ARCHITECTURE.md covers setting yaml too, so settings gain no hand-written lists of names, descriptors, or descriptions; written in practice by an AI, those are exactly what the boundary rules out. Variety comes from tables with a source: the Datasworn oracles each setting already ships (names, locations, characters, creatures) through the step 9 generator framework and the step 10 generators, and Mythic's element meaning tables through steps 33 and 34. What remains of this step is wiring inside those steps: each setting's oracle-path mapping gains the Datasworn tables its generator categories need.
 
-**17.1** Per setting per category: 200+ names in setting YAML `extended_oracles.names`.
-
-**17.2** Per setting: location descriptors in `extended_oracles.locations`.
-
-**17.3** Per setting: NPC descriptors in `extended_oracles.npcs`.
-
-**17.4** Per setting: extended sensory in `vocabulary.descriptions`.
-
-Done: all four settings enriched. (17.5 — atmospheric drift detection update via rule validator drift wordlists — was deleted; the rule validator no longer exists. New vocab additions land in `vocabulary.substitutions` and `vocabulary.descriptions`, which feed the narrator prompt per turn.)
+Vocabulary control is the one exception: the design document assigns it to the setting as a constraint on the narrator's word choice, not as fiction, and it has no table source. The existing `vocabulary` blocks stay. A new entry is added only when an Elvira finding shows drift that a substitution fixes.
 
 ### 18 — Asset mechanics beyond adds
 

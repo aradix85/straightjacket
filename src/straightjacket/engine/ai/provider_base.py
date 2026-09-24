@@ -154,6 +154,10 @@ def _retry_after_seconds(error: Exception) -> float | None:
         return None
 
 
+class AIUnavailableError(Exception):
+    pass
+
+
 def create_with_retry(provider: AIProvider, spec: AICallSpec) -> AIResponse:
     for attempt in range(spec.max_retries + 1):
         try:
@@ -165,6 +169,7 @@ def create_with_retry(provider: AIProvider, spec: AICallSpec) -> AIResponse:
                     log(f"[AI] {spec.log_role}: model refused, retry {attempt + 1}/{spec.max_retries}", level="warning")
                     continue
                 log(f"[AI] {spec.log_role}: model refused on every attempt", level="error")
+                raise AIUnavailableError(f"{spec.log_role}: model refused on every attempt")
             return result
 
         except Exception as e:
@@ -186,7 +191,9 @@ def create_with_retry(provider: AIProvider, spec: AICallSpec) -> AIResponse:
                 log(f"[AI] {error_desc}, retry {attempt + 1}/{spec.max_retries} in {wait}s", level="warning")
                 _backoff_sleep(wait)
                 continue
-            raise
+            if isinstance(e, AIUnavailableError):
+                raise
+            raise AIUnavailableError(f"{spec.log_role}: {type(e).__name__}: {e}") from e
     raise RuntimeError(f"{spec.log_role}: no attempts made")
 
 

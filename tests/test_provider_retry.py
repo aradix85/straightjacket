@@ -31,14 +31,15 @@ def test_create_with_retry_retries_on_connection_error() -> None:
 
 
 def test_create_with_retry_raises_on_exhaustion() -> None:
-    from straightjacket.engine.ai.provider_base import create_with_retry
+    from straightjacket.engine.ai.provider_base import AIUnavailableError, create_with_retry
 
     class AlwaysFail:
         def create_message(self, spec: AICallSpec) -> AIResponse:
             raise ConnectionError("permanent")
 
-    with pytest.raises(ConnectionError):
+    with pytest.raises(AIUnavailableError) as raised:
         create_with_retry(AlwaysFail(), _spec(max_retries=1))
+    assert isinstance(raised.value.__cause__, ConnectionError)
 
 
 def test_post_process_decodes_literal_unicode_escapes() -> None:

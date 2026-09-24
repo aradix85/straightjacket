@@ -1,0 +1,750 @@
+{
+  "engine_version": "2026.09.24.47",
+  "style": "explorer",
+  "character": {
+    "name": "Vesper Sutton",
+    "concept": "Bannersworn, Augmented",
+    "setting": "starforged"
+  },
+  "setting": "starforged",
+  "total_turns": 8,
+  "ended_reason": "max_turns_reached",
+  "chapters": [
+    {
+      "chapter": 1,
+      "turns": 8,
+      "ended": "max_turns_reached"
+    }
+  ],
+  "story": {
+    "structure": "3act",
+    "conflict": "Vesper must solve an improbable crime before its hidden danger closes in, while deciding whether a sworn banner binds them to a destiny they already rejected.",
+    "thematic": "Whether an oath can guide you without owning your future",
+    "acts": [
+      "setup: The Fractured Clue",
+      "confrontation: The Threat Closes In",
+      "climax: No Room to Flee"
+    ]
+  },
+  "turns": [
+    {
+      "turn": 1,
+      "scene": 2,
+      "result": "dialog",
+      "action": "I approach the woman at the workbench and ask her name, then ask if she knows wh",
+      "state": "H5 Sp5 Su5 M2 C6",
+      "phase": "setup",
+      "narration": "You cross the grating to the workbench, boots ringing softly under the strip lights. The woman sets her wrench down and turns, brass-rimmed ports catching the instrument glow. “Mara Venn,” she says. Her gaze shifts to the orchid beneath the clear mat as you ask who left it there.\n\n“I don’t know.” She draws the frayed scarf tighter at her throat, then picks up the wrench and returns to the coupling. A bead of hydraulic fluid runs from the joint onto the bench; beyond the bay door, the irregular tapping stops.",
+      "npcs": [
+        "Mara Venn (active, neutral)"
+      ],
+      "judge": {
+        "result_integrity": 5,
+        "prompt_elements": 5,
+        "npc_voice": 5,
+        "player_agency": 5,
+        "restraint": 5,
+        "prose": 5,
+        "overall": 10,
+        "weakness": "none"
+      },
+      "stream": {
+        "first_sentence_secs": 3.3,
+        "sentences": 7,
+        "complete": true,
+        "matches": true
+      },
+      "events": [
+        "[Metadata] Extracted: 0 new NPCs, 1 renames, 0 deceased, 0 lore",
+        "[Director] Skipped (no trigger at scene 2)"
+      ],
+      "tokens": [
+        {
+          "role": "brain",
+          "input": 1849,
+          "output": 116
+        },
+        {
+          "role": "narrator",
+          "input": 3175,
+          "output": 117
+        },
+        {
+          "role": "narrator_metadata",
+          "input": 632,
+          "output": 62
+        },
+        {
+          "role": "revelation_check",
+          "input": 417,
+          "output": 49
+        }
+      ]
+    },
+    {
+      "turn": 2,
+      "scene": 3,
+      "result": "WEAK_HIT",
+      "move": "adventure/gather_information",
+      "action": "I examine the orchid beneath the clear mat, looking for fingerprints, residue, o",
+      "state": "H5 Sp5 Su5 M3 C6",
+      "consequences": [
+        "momentum +1"
+      ],
+      "phase": "setup",
+      "director": true,
+      "narration": "You lift the clear mat’s edge and turn the orchid beneath the strip lights. Its brittle stem leaves a faint smear of dark oil on your glove; along one petal, a clean crescent of adhesive clings to the surface. Your thumb catches the mat’s sharp edge, splitting the glove at the seam.\n\nYou follow the hydraulic bead across the cold workbench to the coupling Mara tightened. Fluid wells from a hairline split beneath its collar. Mara stops with the wrench in hand as another person steps out from behind the cargo crates: a narrow-shouldered dockhand with a strip of matching adhesive stuck to one cuff. They glance at the orchid, then at the split coupling. “That joint was sound before she touched it,” Mara says, and lowers the wrench without looking away from the newcomer.\n\nThe dockhand backs toward the sealed bay door. Your torn glove shines with hydraulic fluid, and the orchid’s dark smear marks the torn seam; behind you, Mara’s coupling continues to leak onto the workbench.",
+      "npcs": [
+        "Mara Venn (active, neutral)",
+        "Slack (active, distrustful)"
+      ],
+      "judge": {
+        "result_integrity": 5,
+        "prompt_elements": 4,
+        "npc_voice": 3,
+        "player_agency": 5,
+        "restraint": 5,
+        "prose": 5,
+        "overall": 8,
+        "weakness": "Slack is omitted while an unnamed dockhand takes the scene’s role."
+      },
+      "stream": {
+        "first_sentence_secs": 2.8,
+        "sentences": 10,
+        "complete": true,
+        "matches": true
+      },
+      "events": [
+        "[Metadata] Extracted: 1 new NPCs, 0 renames, 0 deceased, 0 lore",
+        "[Director] Analyzing scene 3",
+        "[Tools] Round 1: 3 tool call(s)",
+        "[Tools] query_active_threads({'active_only': True}) → {\"threads\": [{\"id\": \"thread_background_vow\", \"name\": \"Hunt Relationship\", \"type\"",
+        "[Tools] query_active_clocks({'unfired_only': True}) → {\"clocks\": [{\"name\": \"Unknown activity at the sealed bay door\", \"type\": \"threat\"",
+        "[Tools] query_npc({'npc_id': 'npc_2'}) → {\"id\": \"npc_2\", \"name\": \"Slack\", \"disposition\": \"distrustful\", \"bond\": 0, \"statu",
+        "[Tools] Loop done: 3 tool call(s), 2413 chars response",
+        "[Director] Phase 1: 3 tool calls",
+        "[Director] Guidance: reflections=1, summary=A hydraulic leak, the orchid’s oil-and-adhesive traces, and the matching strip o",
+        "[Director] Agenda set for Slack: 'Escape scrutiny without exposing their employer'",
+        "[Director] Instinct set for Slack: 'Protect self first; bargain when cornered'",
+        "[Director] Arc updated for Slack: '' → 'Slack is a compromised witness whose flight could expose eit'",
+        "[Director] Description updated for Slack: 'A narrow-shouldered dockhand with a strip of adhesive matchi' → 'Narrow-shouldered dockhand with adhesive on one cuff; guarde'",
+        "[Director] Reflection for Slack: Slack’s impulse is to escape scrutiny rather than account for the adhesive, whic",
+        "[Director] Guidance applied"
+      ],
+      "tokens": [
+        {
+          "role": "brain",
+          "input": 1824,
+          "output": 120
+        },
+        {
+          "role": "narrator",
+          "input": 3419,
+          "output": 208
+        },
+        {
+          "role": "narrator_metadata",
+          "input": 738,
+          "output": 74
+        },
+        {
+          "role": "revelation_check",
+          "input": 508,
+          "output": 61
+        },
+        {
+          "role": "director",
+          "input": 1368,
+          "output": 72
+        },
+        {
+          "role": "director",
+          "input": 1688,
+          "output": 526
+        },
+        {
+          "role": "director",
+          "input": 1874,
+          "output": 512
+        }
+      ]
+    },
+    {
+      "turn": 3,
+      "scene": 4,
+      "result": "STRONG_HIT",
+      "move": "adventure/face_danger",
+      "action": "I lunge across the workbench and clamp my torn, fluid-slick glove over the split",
+      "state": "H5 Sp5 Su5 M4 C5",
+      "consequences": [
+        "momentum +1"
+      ],
+      "phase": "setup",
+      "director": true,
+      "narration": "You lunge across the workbench and clamp your torn, fluid-slick glove over the split coupling, bracing your other hand against the metal. The leak dwindles to a thin seep beneath your palm. Slack darts for the sealed bay door, but you plant your shoulder across the narrow gap and stop him short. His adhesive-marked cuff snags on a bench bracket; a slim access badge slips free and skids across the grating.\n\nA magnetic shudder runs through the docking bay. The strip lights flicker, and comms crackle into static before cutting out. Slack freezes with one hand raised, eyes fixed on your grip over the damaged line. Mara sets down her wrench and keeps clear of the leaking joint. “Hold that,” she says. “I’ll isolate the feed.” She turns to the control panel while the badge lies near Slack’s boot, its marked edge turned toward you.\n\nThe coupling remains damaged, and your split glove darkens with fluid, but the bay door stays sealed and the leak is under your hand. Slack’s gaze shifts from the badge to the door controls; Mara reaches for the isolation switch, leaving you the choice between the dockhand and the failing line.",
+      "npcs": [
+        "Mara Venn (active, neutral)",
+        "Slack (active, distrustful)"
+      ],
+      "judge": {
+        "result_integrity": 2,
+        "prompt_elements": 5,
+        "npc_voice": 4,
+        "player_agency": 5,
+        "restraint": 5,
+        "prose": 4,
+        "overall": 4,
+        "weakness": "The magnetic shudder and comms failure add a serious complication despite the strong hit."
+      },
+      "stream": {
+        "first_sentence_secs": 3.5,
+        "sentences": 13,
+        "complete": true,
+        "matches": true
+      },
+      "events": [
+        "[Clock] spawned keyed-scene 'ks_clock_5' for clock 'Move Personal' (type=threat, fraction=0.5, threshold=3, priority=6)",
+        "[Clock] spawned keyed-scene 'ks_clock_6' for clock 'Move Personal' (type=threat, fraction=1.0, threshold=6, priority=6)",
+        "[Clock] spawned 'Move Personal' (type=threat, segments=6) from random-event focus 'pc_negative'",
+        "[Metadata] Extracted: 0 new NPCs, 0 renames, 0 deceased, 0 lore",
+        "[Director] Analyzing scene 4",
+        "[Tools] Round 1: 4 tool call(s)",
+        "[Tools] query_active_threads({'active_only': True}) → {\"threads\": [{\"id\": \"thread_background_vow\", \"name\": \"Hunt Relationship\", \"type\"",
+        "[Tools] query_active_clocks({'unfired_only': True}) → {\"clocks\": [{\"name\": \"Unknown activity at the sealed bay door\", \"type\": \"threat\"",
+        "[Tools] query_npc({'npc_id': 'Slack'}) → {\"id\": \"npc_2\", \"name\": \"Slack\", \"disposition\": \"distrustful\", \"bond\": 0, \"statu",
+        "[Tools] query_npc({'npc_id': 'Mara'}) → {\"error\": \"NPC not found: Mara\", \"known_npcs\": [{\"id\": \"npc_1\", \"name\": \"Mara Ve",
+        "[Tools] Round 2: 1 tool call(s)",
+        "[Tools] query_npc({'npc_id': 'npc_1'}) → {\"id\": \"npc_1\", \"name\": \"Mara Venn\", \"disposition\": \"neutral\", \"bond\": 0, \"statu",
+        "[Tools] Loop done: 5 tool call(s), 2184 chars response",
+        "[Director] Phase 1: 5 tool calls",
+        "[Director] Guidance: reflections=0, summary=Vesper has temporarily contained the leaking coupling and blocked Slack from rea",
+        "[Director] Guidance applied"
+      ],
+      "tokens": [
+        {
+          "role": "brain",
+          "input": 1840,
+          "output": 112
+        },
+        {
+          "role": "narrator",
+          "input": 3957,
+          "output": 246
+        },
+        {
+          "role": "narrator_metadata",
+          "input": 815,
+          "output": 37
+        },
+        {
+          "role": "revelation_check",
+          "input": 546,
+          "output": 63
+        },
+        {
+          "role": "director",
+          "input": 1302,
+          "output": 87
+        },
+        {
+          "role": "director",
+          "input": 1896,
+          "output": 21
+        },
+        {
+          "role": "director",
+          "input": 2231,
+          "output": 451
+        },
+        {
+          "role": "director",
+          "input": 1787,
+          "output": 393
+        }
+      ]
+    },
+    {
+      "turn": 4,
+      "scene": 5,
+      "result": "dialog",
+      "action": "I keep pressure on the split coupling and ask Mara Venn whether the isolation sw",
+      "state": "H5 Sp5 Su5 M4 C5",
+      "phase": "setup",
+      "director": true,
+      "narration": "Your palm stays clamped over the split coupling. Hydraulic fluid slicks the torn glove, and the metal presses hard into the heel of your hand. You ask Mara whether the isolation switch will stop the leak without venting the bay. She reaches the panel and throws the switch; the line bucks against your grip, then the flow dwindles to a seep. “It should stop the leak without venting the bay,” she says. “Keep your hand there. That collar can cut through the glove.” The pressure eases, but the glove’s torn seam widens beneath the coupling.\n\nYou ask Slack why he reached for the sealed bay door and what his badge opens, keeping your eyes on him. He glances at the badge near his boot, then tests the gap beside your shoulder. “It opens the maintenance lock. I was trying to get out before you searched me.” He nudges the badge toward you with his toe. “Take it, and don’t look in the badge log.” Mara keeps one hand on the isolation switch; behind Slack, the sealed door’s status strip flickers twice, and the magnetic vibration returns through the grating.",
+      "npcs": [
+        "Mara Venn (active, neutral)",
+        "Slack (active, distrustful)"
+      ],
+      "judge": {
+        "result_integrity": 4,
+        "prompt_elements": 4,
+        "npc_voice": 4,
+        "player_agency": 5,
+        "restraint": 4,
+        "prose": 4,
+        "overall": 8,
+        "weakness": "Mara operates the switch and changes the leak’s state without the player asking her to do so."
+      },
+      "stream": {
+        "first_sentence_secs": 4.0,
+        "sentences": 15,
+        "complete": true,
+        "matches": true
+      },
+      "events": [
+        "[Metadata] Extracted: 0 new NPCs, 0 renames, 0 deceased, 0 lore",
+        "[Director] Analyzing scene 5",
+        "[Tools] Round 1: 4 tool call(s)",
+        "[Tools] query_active_threads({'active_only': True}) → {\"threads\": [{\"id\": \"thread_background_vow\", \"name\": \"Hunt Relationship\", \"type\"",
+        "[Tools] query_active_clocks({'unfired_only': True}) → {\"clocks\": [{\"name\": \"Unknown activity at the sealed bay door\", \"type\": \"threat\"",
+        "[Tools] query_npc({'npc_id': 'Mara'}) → {\"error\": \"NPC not found: Mara\", \"known_npcs\": [{\"id\": \"npc_1\", \"name\": \"Mara Ve",
+        "[Tools] query_npc({'npc_id': 'Slack'}) → {\"id\": \"npc_2\", \"name\": \"Slack\", \"disposition\": \"distrustful\", \"bond\": 0, \"statu",
+        "[Tools] Round 2: 2 tool call(s)",
+        "[Tools] query_npc({'npc_id': 'npc_1'}) → {\"id\": \"npc_1\", \"name\": \"Mara Venn\", \"disposition\": \"neutral\", \"bond\": 0, \"statu",
+        "[Tools] query_active_clocks({'unfired_only': False}) → {\"clocks\": [{\"name\": \"Unknown activity at the sealed bay door\", \"type\": \"threat\"",
+        "[Tools] Loop done: 6 tool call(s), 1979 chars response",
+        "[Director] Phase 1: 6 tool calls",
+        "[Director] Guidance: reflections=0, summary=Mara isolates the leaking line, preventing the bay from venting, but the couplin",
+        "[Director] Guidance applied"
+      ],
+      "tokens": [
+        {
+          "role": "brain",
+          "input": 1851,
+          "output": 118
+        },
+        {
+          "role": "narrator",
+          "input": 4291,
+          "output": 236
+        },
+        {
+          "role": "narrator_metadata",
+          "input": 794,
+          "output": 37
+        },
+        {
+          "role": "revelation_check",
+          "input": 536,
+          "output": 50
+        },
+        {
+          "role": "director",
+          "input": 1308,
+          "output": 87
+        },
+        {
+          "role": "director",
+          "input": 1955,
+          "output": 56
+        },
+        {
+          "role": "director",
+          "input": 2482,
+          "output": 421
+        },
+        {
+          "role": "director",
+          "input": 1794,
+          "output": 366
+        }
+      ]
+    },
+    {
+      "turn": 5,
+      "scene": 6,
+      "result": "WEAK_HIT",
+      "move": "adventure/face_danger",
+      "action": "I snatch Slack’s badge from the grating and lunge for the sealed bay door, braci",
+      "state": "H4 Sp5 Su5 M4 C5",
+      "consequences": [
+        "health -1"
+      ],
+      "phase": "setup",
+      "director": true,
+      "narration": "You release the coupling only after Mara slides a clamp over the split and cinches it tight; the hydraulic seep stops. “Isolation’s still engaged,” she says, keeping her hand on the switch. “That glove won’t hold pressure much longer.” The badge lies within reach beside Slack’s boot.\n\nYou snatch it and drive your shoulder into the sealed bay door as the magnetic vibration surges through the grating. The door shudders against you but stays shut. Its status strip flickers through a repeating sequence: access granted, then lock retained. The impact catches you in the side; blood wells through torn fabric and darkens your shirt. Slack keeps his hands raised. “Don’t check the log. I came here because the door’s maintenance lock showed an open-cycle warning.” Mara watches the badge in your hand, then the strip. “The log will show which credential triggered that cycle,” she says, and turns back to the panel. The vibration continues beneath your braced shoulder while the badge’s display wakes in your palm.",
+      "npcs": [
+        "Mara Venn (active, neutral)",
+        "Slack (active, distrustful)"
+      ],
+      "judge": {
+        "result_integrity": 5,
+        "prompt_elements": 3,
+        "npc_voice": 4,
+        "player_agency": 3,
+        "restraint": 4,
+        "prose": 5,
+        "overall": 7,
+        "weakness": "The badge is moved from the grating to Slack’s boot, and the narration adds an unprompted coupling-release action."
+      },
+      "stream": {
+        "first_sentence_secs": 2.9,
+        "sentences": 14,
+        "complete": true,
+        "matches": true
+      },
+      "events": [
+        "[Metadata] Extracted: 0 new NPCs, 0 renames, 0 deceased, 0 lore",
+        "[Director] Analyzing scene 6",
+        "[Tools] Round 1: 4 tool call(s)",
+        "[Tools] query_active_threads({'active_only': True}) → {\"threads\": [{\"id\": \"thread_background_vow\", \"name\": \"Hunt Relationship\", \"type\"",
+        "[Tools] query_active_clocks({'unfired_only': True}) → {\"clocks\": [{\"name\": \"Unknown activity at the sealed bay door\", \"type\": \"threat\"",
+        "[Tools] query_npc({'npc_id': 'Mara'}) → {\"error\": \"NPC not found: Mara\", \"known_npcs\": [{\"id\": \"npc_1\", \"name\": \"Mara Ve",
+        "[Tools] query_npc({'npc_id': 'Slack'}) → {\"id\": \"npc_2\", \"name\": \"Slack\", \"disposition\": \"distrustful\", \"bond\": 0, \"statu",
+        "[Tools] Round 2: 1 tool call(s)",
+        "[Tools] query_npc({'npc_id': 'npc_1'}) → {\"id\": \"npc_1\", \"name\": \"Mara Venn\", \"disposition\": \"neutral\", \"bond\": 0, \"statu",
+        "[Tools] Round 3: 1 tool call(s)",
+        "[Tools] query_active_clocks({'clock_type': '', 'unfired_only': False}) → {\"clocks\": [{\"name\": \"Unknown activity at the sealed bay door\", \"type\": \"threat\"",
+        "[Tools] Loop done: 6 tool call(s), 1918 chars response",
+        "[Director] Phase 1: 6 tool calls",
+        "[Director] Guidance: reflections=0, summary=Vesper and Mara stopped the hydraulic seep, but the bay door remains sealed desp",
+        "[Director] Guidance applied"
+      ],
+      "tokens": [
+        {
+          "role": "brain",
+          "input": 1830,
+          "output": 117
+        },
+        {
+          "role": "narrator",
+          "input": 4259,
+          "output": 213
+        },
+        {
+          "role": "narrator_metadata",
+          "input": 782,
+          "output": 37
+        },
+        {
+          "role": "revelation_check",
+          "input": 513,
+          "output": 58
+        },
+        {
+          "role": "director",
+          "input": 1291,
+          "output": 87
+        },
+        {
+          "role": "director",
+          "input": 1987,
+          "output": 21
+        },
+        {
+          "role": "director",
+          "input": 2422,
+          "output": 25
+        },
+        {
+          "role": "director",
+          "input": 2561,
+          "output": 399
+        },
+        {
+          "role": "director",
+          "input": 1755,
+          "output": 382
+        }
+      ]
+    },
+    {
+      "turn": 6,
+      "scene": 7,
+      "result": "MISS",
+      "move": "adventure/face_danger",
+      "action": "I brace my injured side against the grating and wrench the sealed bay door’s man",
+      "state": "H4 Sp5 Su5 M4 C6",
+      "consequences": [
+        "A new enemy is revealed"
+      ],
+      "phase": "setup",
+      "director": true,
+      "narration": "You brace your injured side against the grating and wrench Slack’s badge into the manual release as the vibration surges. Pain cuts across your ribs. The badge bends between your fingers; the lock stays engaged. The door does not move. A hard pressure pulse hits the sealed bay, and the panel flashes red as its status strip drops dark. The vibration deepens beneath your boots, steady enough to rattle the tools on Mara’s bench.\n\nMara keeps the pressure controls stable, one hand firm on the isolation panel. Slack watches the badge in your grip. “The warning named service credential K-17,” he says. “Check the hatch-cycle entry.” Mara pulls the access log onto the panel. “K-17 logged a manual purge-valve test six minutes before the orchid was found. That proves the credential was used, not who used it.” She turns toward your bloodied side and holds out a compression wrap. “I can bind that while the pressure holds. Your call.” The door remains sealed; a fresh pulse makes the panel’s dead display shiver against its frame.\n\nFor a moment, the bay holds only the reactor hum and the rasp of your breathing. The wrap stays in Mara’s open hand, and Slack stands between you and the locked door, eyes fixed on the badge.",
+      "npcs": [
+        "Mara Venn (active, neutral)",
+        "Slack (active, distrustful)"
+      ],
+      "judge": {
+        "result_integrity": 2,
+        "prompt_elements": 5,
+        "npc_voice": 5,
+        "player_agency": 4,
+        "restraint": 4,
+        "prose": 4,
+        "overall": 4,
+        "weakness": "The failed attempt still yields a useful access-log clue, giving the MISS a silver lining."
+      },
+      "stream": {
+        "first_sentence_secs": 2.7,
+        "sentences": 19,
+        "complete": true,
+        "matches": true
+      },
+      "events": [
+        "[PayThePrice] A new enemy is revealed",
+        "[Metadata] Extracted: 0 new NPCs, 0 renames, 0 deceased, 0 lore",
+        "[Director] Analyzing scene 7",
+        "[Tools] Round 1: 4 tool call(s)",
+        "[Tools] query_active_threads({'active_only': True}) → {\"threads\": [{\"id\": \"thread_background_vow\", \"name\": \"Hunt Relationship\", \"type\"",
+        "[Tools] query_active_clocks({'unfired_only': True}) → {\"clocks\": [{\"name\": \"Unknown activity at the sealed bay door\", \"type\": \"threat\"",
+        "[Tools] query_npc({'npc_id': 'Mara'}) → {\"error\": \"NPC not found: Mara\", \"known_npcs\": [{\"id\": \"npc_1\", \"name\": \"Mara Ve",
+        "[Tools] query_npc({'npc_id': 'Slack'}) → {\"id\": \"npc_2\", \"name\": \"Slack\", \"disposition\": \"distrustful\", \"bond\": 0, \"statu",
+        "[Tools] Round 2: 1 tool call(s)",
+        "[Tools] query_npc({'npc_id': 'npc_1'}) → {\"id\": \"npc_1\", \"name\": \"Mara Venn\", \"disposition\": \"neutral\", \"bond\": 0, \"statu",
+        "[Tools] Loop done: 5 tool call(s), 1933 chars response",
+        "[Director] Phase 1: 5 tool calls",
+        "[Director] Guidance: reflections=0, summary=Vesper’s attempt to force the manual release fails, leaving the bay sealed as pr",
+        "[Director] Engine act transition: act 1 'setup' scene 7 ≥ range end 7: 'The mystery yields to evidence of a hidden threat'",
+        "[Director] Guidance applied"
+      ],
+      "tokens": [
+        {
+          "role": "brain",
+          "input": 1833,
+          "output": 109
+        },
+        {
+          "role": "narrator",
+          "input": 4385,
+          "output": 266
+        },
+        {
+          "role": "narrator_metadata",
+          "input": 837,
+          "output": 37
+        },
+        {
+          "role": "revelation_check",
+          "input": 566,
+          "output": 58
+        },
+        {
+          "role": "director",
+          "input": 1299,
+          "output": 87
+        },
+        {
+          "role": "director",
+          "input": 2049,
+          "output": 21
+        },
+        {
+          "role": "director",
+          "input": 2536,
+          "output": 421
+        },
+        {
+          "role": "director",
+          "input": 1785,
+          "output": 391
+        }
+      ]
+    },
+    {
+      "turn": 7,
+      "scene": 8,
+      "result": "MISS",
+      "move": "adventure/face_danger",
+      "action": "I snatch the compression wrap from Mara Venn and cinch it hard around my ribs, t",
+      "state": "H4 Sp5 Su5 M4 C7",
+      "consequences": [
+        "Roll twice; A trusted individual or community acts against you; A surprising development complicates your quest"
+      ],
+      "phase": "confrontation",
+      "director": true,
+      "narration": "You snatch the compression wrap from Mara and cinch it hard around your ribs. The pressure bites through the bruising; your breath catches against the tight band. Mara keeps one hand on the control panel, jaw clenched as she holds the isolation feed. “I can’t hold this and help you at the door,” she says.\n\nYou drive your shoulder into the manual release. The panel gives a blunt jolt through your collarbone, but the mechanism stays locked. Before you can strike again, the next pressure pulse hits. The sealed door bows inward a fraction; a seam spits hydraulic mist across the grating, and the panel’s dark display rattles loose at one corner. Mara’s control hand slips. She catches the switch before it moves, then stares at you, anger tight in her face. “You’ve made the seal worse.” Slack bolts for the far service passage, snatching up a loose tool roll as he goes; his flight leaves the K-17 access trail untouched and out of reach. Beyond the door, metal grinds under the rising pressure, and the next pulse is already building through the deck.",
+      "npcs": [
+        "Mara Venn (active, neutral)",
+        "Slack (active, distrustful)"
+      ],
+      "judge": {
+        "result_integrity": 5,
+        "prompt_elements": 5,
+        "npc_voice": 4,
+        "player_agency": 4,
+        "restraint": 4,
+        "prose": 4,
+        "overall": 8,
+        "weakness": "“Before you can strike again” presumes the player would make another attempt."
+      },
+      "stream": {
+        "first_sentence_secs": 3.1,
+        "sentences": 13,
+        "complete": true,
+        "matches": true
+      },
+      "events": [
+        "[PayThePrice] Roll twice; A trusted individual or community acts against you; A surprising development complicates your quest",
+        "[Metadata] Extracted: 0 new NPCs, 0 renames, 0 deceased, 0 lore",
+        "[Director] Analyzing scene 8",
+        "[Tools] Round 1: 3 tool call(s)",
+        "[Tools] query_active_threads({'active_only': True}) → {\"threads\": [{\"id\": \"thread_background_vow\", \"name\": \"Hunt Relationship\", \"type\"",
+        "[Tools] query_active_clocks({'unfired_only': True}) → {\"clocks\": [{\"name\": \"Unknown activity at the sealed bay door\", \"type\": \"threat\"",
+        "[Tools] query_npc({'npc_id': 'npc_1'}) → {\"id\": \"npc_1\", \"name\": \"Mara Venn\", \"disposition\": \"neutral\", \"bond\": 0, \"statu",
+        "[Tools] Round 2: 3 tool call(s)",
+        "[Tools] query_active_threads({'active_only': True}) → {\"threads\": [{\"id\": \"thread_background_vow\", \"name\": \"Hunt Relationship\", \"type\"",
+        "[Tools] query_active_clocks({'unfired_only': True}) → {\"clocks\": [{\"name\": \"Unknown activity at the sealed bay door\", \"type\": \"threat\"",
+        "[Tools] query_npc({'npc_id': 'npc_1'}) → {\"id\": \"npc_1\", \"name\": \"Mara Venn\", \"disposition\": \"neutral\", \"bond\": 0, \"statu",
+        "[Tools] Loop done: 6 tool call(s), 2488 chars response",
+        "[Director] Phase 1: 6 tool calls",
+        "[Director] Guidance: reflections=1, summary=Vesper’s attempt to force the manual release fails and worsens the seal while Ma",
+        "[Director] Arc updated for Mara Venn: '' → 'Mara’s neutrality is under pressure as Vesper’s actions thre'",
+        "[Director] Reflection for Mara Venn: For Mara, competence is a form of care: Vesper’s forced solution reads less like",
+        "[Director] Guidance applied"
+      ],
+      "tokens": [
+        {
+          "role": "brain",
+          "input": 1838,
+          "output": 122
+        },
+        {
+          "role": "narrator",
+          "input": 4464,
+          "output": 232
+        },
+        {
+          "role": "narrator_metadata",
+          "input": 813,
+          "output": 37
+        },
+        {
+          "role": "revelation_check",
+          "input": 532,
+          "output": 52
+        },
+        {
+          "role": "director",
+          "input": 1599,
+          "output": 72
+        },
+        {
+          "role": "director",
+          "input": 2346,
+          "output": 72
+        },
+        {
+          "role": "director",
+          "input": 3093,
+          "output": 533
+        },
+        {
+          "role": "director",
+          "input": 2101,
+          "output": 478
+        }
+      ]
+    },
+    {
+      "turn": 8,
+      "scene": 8,
+      "result": "dialog",
+      "action": "## I wanted to talk to them, not confront them",
+      "state": "H4 Sp5 Su5 M4 C6",
+      "phase": "confrontation",
+      "narration": "Night presses cold beyond the docking bay’s narrow ports. You keep your hands away from the dead panel and the sealed door, the compression wrap tight around your ribs. “I wanted to talk to Mara Venn, not confront her.” Your voice carries over the reactor hum and the faint hiss of the damaged seal.\n\nMara holds the isolation control, shoulders tense from keeping pressure steady. She looks from your face to the wrap. “Understood. I can bind that injury while I maintain the controls.” She offers the wrap again, practical and brief. Slack stays near the service passage, guarded eyes flicking toward the K-17 log. “I can show you who had access to that credential,” he says. “That won’t prove who used it.” A thin shiver passes through the grating; the dark panel rattles against its frame, and Mara’s fingers tighten on the control. The wrap remains in her hand, the log open, and Slack waits by the passage.",
+      "npcs": [
+        "Mara Venn (active, neutral)",
+        "Slack (active, distrustful)"
+      ],
+      "correction": true,
+      "tokens": [
+        {
+          "role": "correction",
+          "input": 906,
+          "output": 91
+        },
+        {
+          "role": "brain",
+          "input": 1809,
+          "output": 89
+        },
+        {
+          "role": "narrator",
+          "input": 4503,
+          "output": 202
+        },
+        {
+          "role": "narrator_metadata",
+          "input": 759,
+          "output": 37
+        }
+      ]
+    }
+  ],
+  "quality_summary": {
+    "narration_quality_total": 0,
+    "spatial_issues_total": 0,
+    "chapter_continuity_total": 0,
+    "correction_tests_total": 1,
+    "correction_tests_failed": 0,
+    "top_quality_issues": []
+  },
+  "burn_stats": {
+    "offered": 0,
+    "taken": 0,
+    "failed": 0
+  },
+  "token_summary": {
+    "total_input": 104330,
+    "total_output": 9444,
+    "total": 113774,
+    "by_role": {
+      "brain": {
+        "calls": 8,
+        "input": 14674,
+        "output": 903
+      },
+      "narrator": {
+        "calls": 8,
+        "input": 32453,
+        "output": 1720
+      },
+      "narrator_metadata": {
+        "calls": 8,
+        "input": 6170,
+        "output": 358
+      },
+      "revelation_check": {
+        "calls": 7,
+        "input": 3618,
+        "output": 391
+      },
+      "director": {
+        "calls": 24,
+        "input": 46509,
+        "output": 5981
+      },
+      "correction": {
+        "calls": 1,
+        "input": 906,
+        "output": 91
+      }
+    }
+  },
+  "final_npcs": [
+    {
+      "name": "Mara Venn",
+      "status": "active",
+      "disposition": "neutral",
+      "memories": 8
+    },
+    {
+      "name": "Slack",
+      "status": "active",
+      "disposition": "distrustful",
+      "memories": 7
+    }
+  ],
+  "correction_tests": [
+    {
+      "turn": 8,
+      "correction": "## I wanted to talk to them, not confront them",
+      "success": true,
+      "violations": [],
+      "quality_issues": []
+    }
+  ]
+}

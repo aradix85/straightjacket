@@ -9,7 +9,14 @@ from ..models import BrainResult, EngineConfig, GameState
 from ..parser import salvage_truncated_narration
 from ..prompt_blocks import content_boundaries_block, get_narration_lang, get_narrator_system
 from ..prompt_loader import get_prompt
-from .provider_base import AICallSpec, AIProvider, NarrationSink, create_with_retry, stream_with_retry
+from .provider_base import (
+    AICallSpec,
+    AIProvider,
+    AIUnavailableError,
+    NarrationSink,
+    create_with_retry,
+    stream_with_retry,
+)
 from .schemas import get_narrator_metadata_schema, get_opening_setup_schema
 
 
@@ -50,6 +57,8 @@ def call_narrator(
     response = stream_with_retry(provider, spec, stream) if stream is not None else create_with_retry(provider, spec)
     raw = response.content
     stop = response.stop_reason
+    if not raw.strip():
+        raise AIUnavailableError("narrator: empty narration")
 
     if stop == "truncated":
         log(f"[Narrator] WARNING: Response truncated at max_tokens ({len(raw)} chars)", level="warning")

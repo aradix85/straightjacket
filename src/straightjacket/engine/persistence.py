@@ -7,14 +7,9 @@ from typing import Any
 from .config_loader import VERSION
 from .db import sync as _db_sync
 from .db.connection import reset_db
-from .engine_loader import eng
 from .logging_util import log
 from .user_management import _safe_name, get_save_dir
 from .models import GameState
-from .npc import (
-    apply_name_sanitization,
-    normalize_npc_dispositions,
-)
 
 
 class IncompatibleSaveError(Exception):
@@ -53,13 +48,6 @@ def load_game(username: str, name: str) -> tuple[GameState | None, list[Any]]:
         game = GameState.from_dict(game_data)
     except ValueError as e:
         raise IncompatibleSaveError(f"{username}/{name}: {e}") from e
-
-    normalize_npc_dispositions(game.npcs)
-    for npc in game.npcs:
-        name_lower = npc.name.lower()
-        npc.aliases = [a for a in npc.aliases if a.lower() != name_lower]
-        npc.needs_reflection = npc.importance_accumulator >= eng().npc.reflection_threshold
-        apply_name_sanitization(npc)
 
     chat_messages = data["chat_messages"]
     log(

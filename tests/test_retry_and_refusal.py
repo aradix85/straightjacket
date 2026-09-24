@@ -49,10 +49,13 @@ def test_a_refusal_is_retried(load_engine: None) -> None:
     assert (result.content, provider.calls) == ("The door holds.", 2)
 
 
-def test_a_persistent_refusal_is_returned_after_the_last_attempt(load_engine: None) -> None:
+def test_a_persistent_refusal_raises_after_the_last_attempt(load_engine: None) -> None:
+    from straightjacket.engine.ai.provider_base import AIUnavailableError
+
     provider = _Scripted(*(AIResponse(content="", stop_reason="refusal") for _ in range(3)))
-    result = create_with_retry(provider, _spec(max_retries=2))
-    assert (result.stop_reason, provider.calls) == ("refusal", 3)
+    with pytest.raises(AIUnavailableError, match="model refused on every attempt"):
+        create_with_retry(provider, _spec(max_retries=2))
+    assert provider.calls == 3
 
 
 def test_retry_after_is_honoured_and_capped(load_engine: None, waits: list[float]) -> None:
