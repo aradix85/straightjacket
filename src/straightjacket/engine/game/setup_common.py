@@ -11,7 +11,16 @@ from ..models import ClockData, GameState, MemoryEntry, NpcData
 from ..npc import apply_name_sanitization, normalize_npc_dispositions, score_importance
 
 
+def conform_clock_segments(requested: int) -> int:
+    allowed = eng().clocks.allowed_segments
+    chosen = min(allowed, key=lambda size: (abs(size - requested), -size))
+    if chosen != requested:
+        log(f"[Clock] {requested} segments is not a clock size; using {chosen}")
+    return chosen
+
+
 def _clock_from_setup_dict(c: dict[str, Any]) -> ClockData:
+    segments = conform_clock_segments(int(c["segments"]))
     raw_owner = c["owner"]
     if raw_owner in ("", "world"):
         owner_kind = "world"
@@ -22,12 +31,12 @@ def _clock_from_setup_dict(c: dict[str, Any]) -> ClockData:
     return ClockData(
         name=c["name"],
         clock_type=c["clock_type"],
-        segments=c["segments"],
+        segments=segments,
         trigger_description=c["trigger_description"],
         owner_kind=owner_kind,
         owner_id=owner_id,
         creation_source=SETUP_SOURCE,
-        filled=c["filled"],
+        filled=min(int(c["filled"]), segments),
     )
 
 

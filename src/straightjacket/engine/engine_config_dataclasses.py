@@ -754,5 +754,6 @@ class ClocksConfig:
     owner_kinds: frozenset[str]
     default_owner_kind: str
     default_segments: int
+    allowed_segments: list[int]
     max_clocks_per_chapter: int
     fill_consequences: dict[str, ClockFillConsequenceEntry]

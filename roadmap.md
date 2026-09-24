@@ -201,11 +201,11 @@ Decision 2026-09-24: where Straightjacket takes a rule from Ironsworn/Starforged
 
 **R.6 Mythic scene test and chaos factor.** Checked 2026-09-24: the scene test conforms (d10 above the chaos factor or a 10 is expected, otherwise odd altered and even interrupted), start 5 and range 1 to 9 conform. The adjustment happens per turn from the roll rather than per scene from control, recorded as a deliberate divergence in ARCHITECTURE.md.
 
-**R.7 Mythic random events.** The event focus table checked 2026-09-24 and conforms to Mythic 2e exactly. Still open: the meaning tables and the weighting of the thread and character lists.
+**R.7 Mythic random events.** Checked 2026-09-24 and conform: the event focus table, the meaning tables' shape (verbs and subjects, adverbs and adjectives, 100 each; 45 element tables of 100), a list entry held at most three times, and an empty list falling back to current context. The individual words were not checked against the book.
 
-**R.8 Adventure Crafter.** Turning points, plot point tables per theme, theme priority, and the character and plotline lists.
+**R.8 Adventure Crafter.** Theme priority checked 2026-09-24 and conforms (d10: 1 to 4 first theme, 5 to 7 second, 8 and 9 third, 10 alternating fourth and fifth). Still open: turning point assembly (plot points per turning point, conclusion and none), the plot point tables per theme, and the character and plotline lists.
 
-**R.9 Blades clocks.** Segment counts and fill rules.
+**R.9 Blades clocks.** Segment counts fixed 2026-09-24 (2026.09.24.26): engine-made clocks already used 6, but clocks from the opening setup took whatever segment count the model named; they now snap to `clocks.allowed_segments` (4, 6, 8). How clocks fill is Straightjacket's own design, not a Blades number.
 
 Done: every item checked, each either conformant and pinned by a test or recorded as a deliberate divergence.
 

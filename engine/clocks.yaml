@@ -7,6 +7,11 @@ clocks:
 
   default_segments: 6
 
+  allowed_segments:
+  - 4
+  - 6
+  - 8
+
   max_clocks_per_chapter: 4
 
   fill_consequences:

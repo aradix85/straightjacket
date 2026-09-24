@@ -7,6 +7,18 @@ Originally forked from [EdgeTales](https://github.com/edgetales/edgetales). See 
 
 Straightjacket uses calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day. The first CalVer release is `2026.04.25.0`. Earlier `0.x.y` releases keep their original version numbers and are not renumbered. The switch was made because the project has no public API to version semantically against — the `0.x.y` numbers were running counters with no meaning, and dates carry the meaning the numbers didn't.
 
+## [2026.09.24.26] — 2026-09-24
+
+Rules conformance for Mythic's lists and meaning tables, the Adventure Crafter's theme priority, and Blades clock sizes (roadmap R.7, R.8, R.9).
+
+Clock sizes. Blades in the Dark clocks have 4, 6, or 8 segments. Clocks the engine makes itself already used 6, but clocks from the opening setup took whatever segment count the model named. `engine/clocks.yaml` gains `allowed_segments` (4, 6, 8), and `game/setup_common.py` → `conform_clock_segments` snaps a requested count to the nearest allowed size, the larger on a tie, logs the change, and caps the filled segments at the new size.
+
+Checked and conform, now pinned in `tests/test_rules_conformance.py`: Mythic's meaning tables have the 2e shape (verbs and subjects, adverbs and adjectives, 100 each, and 45 element tables of 100), a thread or character is held on a list at most three times, and an empty list falls back to current context; the Adventure Crafter's theme priority maps a d10 to the first theme on 1 to 4, the second on 5 to 7, the third on 8 and 9, and alternates the fourth and fifth on a 10. The individual table words were not checked against the books.
+
+Still open under R.8: turning-point assembly, the plot point tables per theme, and the character and plotline lists.
+
+Quality gate: 1369 tests green, twenty-nine project-rule scans clean, coverage 89.69%, ruff check and ruff format clean, mypy --strict clean on 106 source files. Save format unchanged; `engine/clocks.yaml` gains the required key `allowed_segments`.
+
 ## [2026.09.24.25] — 2026-09-24
 
 Legacy tracks, experience, and connections follow Starforged (roadmap R.4).

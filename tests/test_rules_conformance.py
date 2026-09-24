@@ -207,3 +207,45 @@ def test_a_full_legacy_track_clears_and_then_earns_one_experience_per_box(load_e
     assert (track.ticks, track.completions) == (2, 1)
     assert mark_legacy_ticks(game, "quests", 2) == 1
     assert game.campaign.xp == 3
+
+
+@pytest.mark.parametrize(("requested", "expected"), [(3, 4), (4, 4), (5, 6), (6, 6), (7, 8), (10, 8)])
+def test_clocks_use_blades_sizes(load_engine: None, requested: int, expected: int) -> None:
+    from straightjacket.engine.game.setup_common import conform_clock_segments
+
+    assert conform_clock_segments(requested) == expected
+
+
+def test_mythic_lists_hold_an_entry_at_most_three_times(load_engine: None) -> None:
+    from straightjacket.engine.engine_loader import eng
+
+    assert eng().random_events.list_weight_max == 3
+
+
+def test_meaning_tables_have_the_mythic_2e_shape(load_engine: None) -> None:
+    from straightjacket.engine.mechanics.fate import _load_mythic
+
+    tables = _load_mythic()["meaning_tables"]
+    pairs = [
+        tables["actions"]["verbs"],
+        tables["actions"]["subjects"],
+        tables["descriptions"]["adverbs"],
+        tables["descriptions"]["adjectives"],
+    ]
+    assert all(len(words) == 100 for words in pairs)
+    assert len(tables["elements"]) == 45
+    assert all(len(words) == 100 for words in tables["elements"].values())
+
+
+@pytest.mark.parametrize(("roll", "expected"), [(1, 1), (4, 1), (5, 2), (7, 2), (8, 3), (9, 3)])
+def test_adventure_crafter_theme_priority(load_engine: None, roll: int, expected: int) -> None:
+    from straightjacket.engine.mechanics.adventure_crafter import ThemeAlternation, lookup_theme_priority
+
+    assert lookup_theme_priority(roll, ThemeAlternation()) == expected
+
+
+def test_adventure_crafter_theme_priority_ten_alternates_between_four_and_five(load_engine: None) -> None:
+    from straightjacket.engine.mechanics.adventure_crafter import ThemeAlternation, lookup_theme_priority
+
+    alternation = ThemeAlternation()
+    assert {lookup_theme_priority(10, alternation) for _ in range(2)} == {4, 5}
