@@ -7,6 +7,12 @@ Originally forked from [EdgeTales](https://github.com/edgetales/edgetales). See 
 
 Straightjacket uses calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day. The first CalVer release is `2026.04.25.0`. Earlier `0.x.y` releases keep their original version numbers and are not renumbered. The switch was made because the project has no public API to version semantically against — the `0.x.y` numbers were running counters with no meaning, and dates carry the meaning the numbers didn't.
 
+## [2026.09.24.44] — 2026-09-24
+
+The roadmap's Current state now opens with what a new working session needs: the priorities in order (the open findings from the Elvira runs, narrator-prompt tuning for GPT-6 Luna, fixtures through the real creation path, then step 9), the working agreements set this day (commit only on a fully green gate, no CHANGELOG claim before its check is read, a short Elvira run before releases that touch the pipeline, AI calls, prompts, or configuration, fewer and larger releases), and how to run Elvira and the model-comparison harness. The Test infrastructure section counts twenty-nine project-rule scans. No code changed.
+
+Quality gate: project-rule scans green; ruff, mypy, and the test suite unchanged since 2026.09.24.43.
+
 ## [2026.09.24.43] — 2026-09-24
 
 Documentation pruned and brought in line with the code, before a new working session.
