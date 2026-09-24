@@ -7,6 +7,20 @@ Originally forked from [EdgeTales](https://github.com/edgetales/edgetales). See 
 
 Straightjacket uses calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day. The first CalVer release is `2026.04.25.0`. Earlier `0.x.y` releases keep their original version numbers and are not renumbered. The switch was made because the project has no public API to version semantically against — the `0.x.y` numbers were running counters with no meaning, and dates carry the meaning the numbers didn't.
 
+## [2026.09.24.21] — 2026-09-24
+
+Rules conformance, first pass over Ironsworn (roadmap section R), plus two Elvira fixes.
+
+Negative momentum. Ironsworn and Starforged cancel the action die when momentum is negative and its absolute value equals the die: at momentum -3 a rolled 3 counts as 0, and the action score is the stat alone. The engine never did this. `mechanics/consequences.py` → `roll_action` now takes the current momentum (required argument; the turn and the correction re-roll pass it), and the roll log line notes a cancelled die. Three new tests fix the dice and check a matching negative momentum, a non-matching one, and positive momentum.
+
+Checked and conform: momentum values (start +2, maximum +10, floor -6, reset never below 0), momentum burn (miss or weak hit only, positive momentum only, never on progress rolls, reset afterwards, a match stays a match), and progress ticks per rank on 40-tick tracks. Recorded as open in roadmap R: adds from assets and moves are not applied at all, the gain and loss per move outcome, suffer moves and impacts, legacy tracks, and bonds.
+
+Elvira: Director tokens now count. The engine drains the token log at the start of each turn and Elvira records a turn's tokens before the Director runs, so Director calls were drained unseen; Elvira now adds them right after the Director run. Metadata-extraction tokens were missing for a different reason, fixed in 2026.09.24.20: the extraction itself was failing.
+
+Elvira: calibrated judge. With Haiku as judge nearly every turn scored 10; with GPT-6 Luna ordinary scene texture was marked as unprompted invention. The rubric now anchors each score (5 no fault, 4 one minor fault, 3 one clear fault, 2 several or one serious, 1 violated outright), states that sensory detail and minor characters a scene naturally introduces are not faults, reserves 9 and 10 overall for turns with every criterion at 4 or 5, and caps overall at 4 when result integrity is 1 or 2.
+
+Quality gate: 1319 tests green, twenty-nine project-rule scans clean, coverage 89.63%, ruff check and ruff format clean, mypy --strict clean on 106 source files. Save format unchanged.
+
 ## [2026.09.24.20] — 2026-09-24
 
 Fixes a regression introduced in 2026.09.24.9: two AI calls could not be routed, so since that release the narrator-metadata extraction failed after every narration and the opening-setup extraction failed at the start of every new game, both silently.

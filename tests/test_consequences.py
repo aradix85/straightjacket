@@ -18,7 +18,7 @@ def _game(health: int = 5, spirit: int = 5, supply: int = 5, momentum: int = 3) 
 def test_roll_action_returns_valid_result() -> None:
     from straightjacket.engine.mechanics.consequences import roll_action
 
-    r = roll_action("edge", 3, "adventure/face_danger")
+    r = roll_action("edge", 3, "adventure/face_danger", 0)
     assert r.result in ("STRONG_HIT", "WEAK_HIT", "MISS")
     assert r.move == "adventure/face_danger"
     assert r.stat_name == "edge"
@@ -36,7 +36,7 @@ def test_roll_action_match_detection() -> None:
 
     matches = 0
     for _ in range(1000):
-        r = roll_action("iron", 2, "combat/strike")
+        r = roll_action("iron", 2, "combat/strike", 0)
         if r.match:
             matches += 1
             assert r.c1 == r.c2
@@ -47,7 +47,7 @@ def test_roll_action_score_capped_at_10() -> None:
     from straightjacket.engine.mechanics.consequences import roll_action
 
     for _ in range(100):
-        r = roll_action("edge", 3, "adventure/face_danger")
+        r = roll_action("edge", 3, "adventure/face_danger", 0)
         assert r.action_score <= 10
 
 
@@ -242,7 +242,39 @@ def test_roll_progress_match_detection() -> None:
 def test_action_roll_is_one_d6_plus_stat_like_ironsworn(load_engine: None) -> None:
     from straightjacket.engine.mechanics.consequences import roll_action
 
-    rolls = [roll_action("wits", 2, "adventure/face_danger") for _ in range(500)]
+    rolls = [roll_action("wits", 2, "adventure/face_danger", 0) for _ in range(500)]
     assert all(r.action_score == r.d1 + 2 for r in rolls)
     assert max(r.action_score for r in rolls) == 8
     assert {r.d2 for r in rolls} == {0}
+
+
+def _fixed_dice(monkeypatch: pytest.MonkeyPatch, *values: int) -> None:
+    from straightjacket.engine.mechanics import consequences
+
+    sequence = list(values)
+    monkeypatch.setattr(consequences.random, "randint", lambda low, high: sequence.pop(0))
+
+
+def test_negative_momentum_cancels_a_matching_action_die(load_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:
+    from straightjacket.engine.mechanics.consequences import roll_action
+
+    _fixed_dice(monkeypatch, 3, 5, 8)
+    roll = roll_action("wits", 2, "adventure/face_danger", -3)
+    assert (roll.d1, roll.action_score, roll.result) == (3, 2, "MISS")
+
+
+def test_negative_momentum_that_does_not_match_leaves_the_die(
+    load_engine: None, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from straightjacket.engine.mechanics.consequences import roll_action
+
+    _fixed_dice(monkeypatch, 3, 4, 8)
+    roll = roll_action("wits", 2, "adventure/face_danger", -2)
+    assert (roll.action_score, roll.result) == (5, "WEAK_HIT")
+
+
+def test_positive_momentum_never_cancels_the_die(load_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:
+    from straightjacket.engine.mechanics.consequences import roll_action
+
+    _fixed_dice(monkeypatch, 3, 4, 8)
+    assert roll_action("wits", 2, "adventure/face_danger", 3).action_score == 5

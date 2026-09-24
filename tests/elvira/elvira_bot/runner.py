@@ -14,6 +14,7 @@ if TYPE_CHECKING:
     from straightjacket.engine.ai.provider_base import AIProvider
 
 from straightjacket.engine.ai.api_client import check_configured_models, get_provider
+from straightjacket.engine.ai.provider_base import drain_token_log
 from straightjacket.engine.ai.sentence_stream import SentenceStream
 from straightjacket.engine.models import EngineConfig, GameState
 from straightjacket.engine.persistence import delete_save, load_game, save_game
@@ -398,6 +399,7 @@ def _play_turn(
         try:
             run_deferred_director(provider, game, director_ctx)
             rec.director_ran = True
+            rec.token_usage.extend(drain_token_log())
             coverage.hit("director")
             sl = game.narrative.session_log
             trigger = sl[-1].director_trigger if sl else "?"

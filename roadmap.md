@@ -189,13 +189,13 @@ EdgeTales 0.9.67–0.9.96 (Lars) was read in full on 2026-09-24. Its bug fixes t
 
 Decision 2026-09-24: where Straightjacket takes a rule from Ironsworn/Starforged, Mythic GME 2e, the Adventure Crafter, or Blades in the Dark, the rule works as the source describes it. A divergence is allowed only as a deliberate choice, recorded under deliberate divergences in ARCHITECTURE.md. Prompted by Elvira exposing, the same day, that the action roll was 2d6 plus stat, inherited without any recorded decision (fixed in 2026.09.24.17). Each item: read the rule in the source, compare it with the engine, then either fix it with a test or record the divergence.
 
-**R.1 Action roll details.** Adds from assets and moves (does the engine support adds at all?), negative momentum cancelling a matching action die, and momentum burn replacing the action score.
+**R.1 Action roll details.** Checked 2026-09-24 (2026.09.24.21). Momentum burn conforms: only on a miss or weak hit, only with positive momentum, never on progress rolls, momentum resets afterwards, and a match stays a match. Negative momentum cancelling a matching action die was missing and is now implemented with tests. Still open: adds from assets and moves (+1 or +2 under asset-specific conditions) are not applied at all; this needs the Brain or the engine to decide when an asset's condition holds, so it is a feature, not a fix.
 
-**R.2 Momentum.** Start, maximum, floor, reset (the reset floor was fixed in 2026.09.24.6), and the gain and loss per move outcome.
+**R.2 Momentum.** Checked 2026-09-24: start +2, maximum +10, floor -6, reset +2 minus one per impact and never below 0 (fixed in 2026.09.24.6) all conform. Still open: the gain and loss per move outcome, which sits in `engine/move_outcomes.yaml` and belongs with R.3.
 
 **R.3 Suffer moves and impacts.** Endure Harm, Endure Stress, Sacrifice Resources, Lose Momentum, the impacts, and what a miss costs by default.
 
-**R.4 Progress.** Ticks per rank, progress rolls, legacy tracks and experience (Starforged), bonds and connections.
+**R.4 Progress.** Ticks per rank checked 2026-09-24 and conform (troublesome 12, dangerous 8, formidable 4, extreme 2, epic 1, on 40-tick tracks); progress rolls use filled boxes against two d10s without momentum. Still open: legacy tracks and experience (Starforged), bonds and connections.
 
 **R.5 Mythic fate check.** 2d10 plus odds and chaos modifiers, the answer thresholds, exceptional answers, and the random event on doubles.
 

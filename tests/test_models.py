@@ -12,7 +12,7 @@ def test_roll_action_cap() -> None:
 
     random.seed(42)
     for _ in range(50):
-        r = roll_action("edge", 3, "adventure/face_danger")
+        r = roll_action("edge", 3, "adventure/face_danger", 0)
         assert r.action_score <= 10
 
 
