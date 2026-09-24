@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import random
 import statistics
 import time
 from concurrent.futures import ThreadPoolExecutor
@@ -208,13 +209,83 @@ def summarize(generations: list[dict[str, Any]], miss_scenarios: set[str]) -> di
     return {model: _model_summary(items, miss_scenarios) for model, items in by_model.items()}
 
 
+BOOTSTRAP_ROUNDS = 2000
+
+
+def _narration_score(generation: dict[str, Any]) -> float | None:
+    scores = [v["overall"] for v in generation.get("verdicts", []) if "overall" in v]
+    return statistics.mean(scores) if scores else None
+
+
+def _interval(values: list[float]) -> tuple[float, float] | None:
+    if len(values) < 2:
+        return None
+    rng = random.Random(0)
+    means = sorted(statistics.mean(rng.choices(values, k=len(values))) for _ in range(BOOTSTRAP_ROUNDS))
+    return round(means[int(0.025 * BOOTSTRAP_ROUNDS)], 2), round(means[int(0.975 * BOOTSTRAP_ROUNDS) - 1], 2)
+
+
+def intervals(generations: list[dict[str, Any]]) -> dict[str, tuple[float, float] | None]:
+    by_model: dict[str, list[float]] = {}
+    for generation in generations:
+        score = _narration_score(generation)
+        if score is not None:
+            if generation["model"] not in by_model:
+                by_model[generation["model"]] = []
+            by_model[generation["model"]].append(score)
+    return {model: _interval(values) for model, values in by_model.items()}
+
+
+def compare(generations: list[dict[str, Any]], reference: str) -> dict[str, dict[str, Any]]:
+    scores: dict[tuple[str, str, int], float] = {}
+    for generation in generations:
+        score = _narration_score(generation)
+        if score is not None:
+            scores[(generation["model"], generation["scenario"], generation["attempt"])] = score
+    models = sorted({model for model, _, _ in scores if model != reference})
+    result = {}
+    for model in models:
+        diffs = [
+            score - scores[(reference, scene, attempt)]
+            for (name, scene, attempt), score in scores.items()
+            if name == model and (reference, scene, attempt) in scores
+        ]
+        if diffs:
+            result[model] = {
+                "diff": round(statistics.mean(diffs), 2),
+                "interval": _interval(diffs),
+                "pairs": len(diffs),
+            }
+    return result
+
+
+def _verdict(entry: dict[str, Any]) -> str:
+    low_high = entry["interval"]
+    if low_high is None:
+        return "too few pairs to tell"
+    if low_high[0] > 0:
+        return "better"
+    if low_high[1] < 0:
+        return "worse"
+    return "not distinguishable"
+
+
+def _comparison_lines(comparison: dict[str, dict[str, Any]], reference: str) -> list[str]:
+    lines = [f"# Compared with {reference}, scene by scene", ""]
+    for model, entry in comparison.items():
+        lines.append(
+            f"- {model}: {entry['diff']:+} (95% interval {entry['interval']}, {entry['pairs']} pairs): {_verdict(entry)}"
+        )
+    return [*lines, ""]
+
+
 def _summary_lines(summary: dict[str, dict[str, Any]]) -> list[str]:
     lines = []
     for model, s in summary.items():
         lines += [
             f"## {model}",
             "",
-            f"Overall: {s['overall']} out of 10, over {s['generations']} narrations ({s['errors']} errors).",
+            f"Overall: {s['overall']} out of 10, over {s['generations']} narrations ({s['errors']} errors); 95% interval {s.get('interval')}.",
             f"Result integrity on a miss: {s['integrity_on_miss']} out of 5.",
             *[f"- {criterion}: {s[criterion]} out of 5" for criterion in CRITERIA],
             f"Speed: first text after {s['first_text']} seconds, whole narration {s['secs']} seconds, {s['words']} words.",
@@ -224,6 +295,15 @@ def _summary_lines(summary: dict[str, dict[str, Any]]) -> list[str]:
     return lines
 
 
-def report(summary: dict[str, dict[str, Any]], baseline: dict[str, dict[str, Any]], stamp: str) -> str:
-    lines = [f"# Model test {stamp}", "", *_summary_lines(summary), "# Baseline", "", *_summary_lines(baseline)]
+def report(
+    summary: dict[str, dict[str, Any]],
+    baseline: dict[str, dict[str, Any]],
+    stamp: str,
+    comparison: dict[str, dict[str, Any]],
+    reference: str,
+) -> str:
+    lines = [f"# Model test {stamp}", "", *_summary_lines(summary)]
+    if comparison:
+        lines += _comparison_lines(comparison, reference)
+    lines += ["# Baseline", "", *_summary_lines(baseline)]
     return "\n".join(lines)

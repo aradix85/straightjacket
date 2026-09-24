@@ -119,6 +119,25 @@ contestants:
       provider:
         data_collection: "deny"
 
+  glm-5.3-fw:
+    label: "GLM 5.3 (Fireworks)"
+    provider: "fireworks"
+    model: "accounts/fireworks/models/glm-5p3"
+    extra_body:
+      reasoning_effort: "low"
+  kimi-k3-fw:
+    label: "Kimi K3 (Fireworks)"
+    provider: "fireworks"
+    model: "accounts/fireworks/models/kimi-k3"
+    extra_body:
+      reasoning_effort: "low"
+  kimi-k2.6-fw:
+    label: "Kimi K2.6 (Fireworks)"
+    provider: "fireworks"
+    model: "accounts/fireworks/models/kimi-k2p6"
+    extra_body:
+      reasoning_effort: "none"
+
 prices:
   gpt-6-luna: [0.10, 0.50]
   gpt-6-sol: [2.00, 10.00]
@@ -131,3 +150,6 @@ prices:
   moonshotai/kimi-k3: [3.00, 15.00]
   google/gemini-3.8-flash: [0.75, 3.75]
   meta/muse-spark-1.3: [1.25, 4.25]
+  accounts/fireworks/models/glm-5p3: [1.40, 4.40]
+  accounts/fireworks/models/kimi-k3: [3.00, 15.00]
+  accounts/fireworks/models/kimi-k2p6: [0.95, 4.00]

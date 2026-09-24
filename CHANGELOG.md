@@ -7,6 +7,22 @@ Originally forked from [EdgeTales](https://github.com/edgetales/edgetales). See 
 
 Straightjacket uses calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day. The first CalVer release is `2026.04.25.0`. Earlier `0.x.y` releases keep their original version numbers and are not renumbered. The switch was made because the project has no public API to version semantically against — the `0.x.y` numbers were running counters with no meaning, and dates carry the meaning the numbers didn't.
 
+## [2026.09.24.53] — 2026-09-25
+
+A deeper narrator test, at the user's request: the first comparison left differences of a few tenths that could be chance. This release builds the test; the next one records its results.
+
+Harder scenes. `tests/modeltest/modeltest_scenarios.yaml` gains ten scenes that each press on one known weakness, captured through the engine like the first ten, which stayed identical: a miss with a friendly NPC at hand who could rescue the player, a clever plan that misses, a strong hit that must stay clean, a weak hit whose cost must be concrete, a dialog with three NPCs whose agendas collide, a hostile NPC asked point-blank about her secret, a four-word player input, a bare scene that invites invented names, a miss that fills a threat clock with two NPCs present, and a Starforged strike in an open fight. `capture.py` can open a combat track with the position in control for a scene, which the last one needs. The ten drift tests became twenty.
+
+Honest statistics. The report gives each model a 95% interval for its overall score (bootstrap over narrations, fixed seed, 2000 rounds) and compares every model with the first one named, scene by scene and attempt by attempt, saying better, worse, or not distinguishable from the interval of the paired differences. A new test feeds a clearly better and an equal model and checks both verdicts.
+
+Fireworks contestants. GLM 5.3, Kimi K3, and Kimi K2.6 through Fireworks, each at the reasoning setting that makes it fast, found by probing: without a setting all three thought for 9 to 15 seconds before the first word; GLM 5.3 at `low` answered after 0.7 seconds and refuses `none` (it is thinking-only); Kimi K3 at `low` after 0.8 seconds; Kimi K2.6 ignores `low` (15.5 seconds, 890 reasoning tokens) and is fast only at `none` (0.6 seconds).
+
+Elvira can narrate with another model. `--narrator <name>` takes a contestant from `tests/modeltest/modeltest_config.yaml`; `tests/elvira/elvira_bot/narrator_swap.py` sends only the calls with the narrator role to that model, with its own settings, and leaves Brain, Director, extraction, and the rest on the configured models, so the engine's `config.yaml` is untouched. Elvira checks at start that the provider offers the model, and the report names the narrator and prices its calls at that model's price. `tests/test_narrator_swap.py` checks that only narration moves, streamed or not.
+
+Checked live: a three-turn Elvira session in Starforged with Gemini 3.8 Flash as narrator through OpenRouter. The report named the narrator and priced its two calls at Gemini's price (about $0.008), while Brain, Director, metadata extraction, and revelation checks ran on GPT-6 Luna; the injected outage on turn 3 rolled back cleanly. One audit finding: the narration invented backstory for an NPC (restraint 3.5 out of 5).
+
+Quality gate: 1450 tests green, twenty-nine project-rule scans clean, coverage 90.09%, ruff check and ruff format clean, mypy --strict clean on 109 source files. Engine, prompts, and configuration are unchanged; the live session above ran the new narrator choice end to end. Save format unchanged.
+
 ## [2026.09.24.52] — 2026-09-25
 
 Two more narrator candidates measured with the harness, and what it took to reach them.

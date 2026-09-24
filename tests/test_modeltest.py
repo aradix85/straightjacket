@@ -81,7 +81,7 @@ def test_every_narration_is_judged_and_summarized(load_engine: None, monkeypatch
     assert summary["judge_cost"] == 0.024
     assert summary["cost_per_100"] == pytest.approx(0.0225, abs=0.001)
     assert summary["first_text"] is not None
-    assert f"## {label}" in m.report({label: summary}, {}, "test")
+    assert f"## {label}" in m.report({label: summary}, {}, "test", {}, "")
 
 
 def test_a_failed_narration_is_recorded_not_judged(load_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -101,3 +101,32 @@ def test_a_failed_narration_is_recorded_not_judged(load_engine: None, monkeypatc
     assert "provider down" in generations[0]["error"]
     summary = m.summarize(generations, set())[label]
     assert (summary["errors"], summary["overall"]) == (1, None)
+
+
+def test_the_comparison_tells_a_real_difference_from_chance() -> None:
+    from tests.modeltest.measure import compare, intervals, report
+
+    def narration(model: str, scene: str, overall: int) -> dict[str, Any]:
+        return {
+            "model": model,
+            "scenario": scene,
+            "attempt": 1,
+            "verdicts": [{"overall": overall}, {"overall": overall}],
+        }
+
+    generations = []
+    for index in range(20):
+        generations.append(narration("Reference", f"s{index}", 6))
+        generations.append(narration("Better", f"s{index}", 8))
+        generations.append(narration("Same", f"s{index}", 7 if index % 2 else 5))
+    comparison = compare(generations, "Reference")
+    assert comparison["Better"]["diff"] == 2
+    assert comparison["Better"]["interval"][0] > 0
+    assert comparison["Same"]["diff"] == 0
+    assert comparison["Same"]["interval"][0] < 0 < comparison["Same"]["interval"][1]
+    assert intervals(generations)["Reference"] == (6, 6)
+    text = report({}, {}, "test", comparison, "Reference")
+    assert "Better: +2" in text
+    assert ": better" in text
+    assert "Same: +0" in text
+    assert "not distinguishable" in text

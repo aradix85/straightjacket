@@ -60,6 +60,9 @@ def main() -> None:
     )
     parser.add_argument("--matrix", action="store_true", help="Play one session for every setting and style in turn")
     parser.add_argument(
+        "--narrator", type=str, default=None, help="Narrator from tests/modeltest/modeltest_config.yaml"
+    )
+    parser.add_argument(
         "--scenario", type=str, default=None, help="Play a prepared situation from the config, or 'all'"
     )
     args = parser.parse_args()
@@ -70,6 +73,8 @@ def main() -> None:
         bot_cfg.setdefault("game", {})["setting_id"] = args.setting
     if args.style:
         bot_cfg.setdefault("bot_behavior", {})["style"] = args.style
+    if args.narrator:
+        bot_cfg["session"]["narrator"] = args.narrator
 
     if args.scenario:
         names = list(bot_cfg["scenarios"]) if args.scenario == "all" else [args.scenario]

@@ -9,7 +9,7 @@ from typing import Any
 
 from straightjacket.engine.ai.provider_base import AICallSpec, AIResponse, AIUnavailableError
 from straightjacket.engine.game.turn import process_turn
-from straightjacket.engine.models import EngineConfig, GameState
+from straightjacket.engine.models import EngineConfig, GameState, ProgressTrack
 from tests._helpers import make_clock, make_memory, make_npc
 
 RESULT_TAG = re.compile(r'<result type="(\w+)"')
@@ -77,6 +77,11 @@ def build_game(definition: dict[str, Any], common: dict[str, Any]) -> GameState:
         )
         for npc in definition["npcs"]
     ]
+    if "combat" in definition:
+        game.progress_tracks.append(
+            ProgressTrack.new(id="combat_scene", name=definition["combat"], track_type="combat", rank="dangerous")
+        )
+        game.world.combat_position = "in_control"
     game.narrative.scene_count = common["scene_count"]
     return game
 

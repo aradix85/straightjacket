@@ -42,6 +42,7 @@ from .report import write_report
 from .ai_helpers import ask_bot, available_styles, build_turn_context, decide_burn_momentum, get_persona
 from .creation import roll_character
 from .faults import NarratorOutage
+from .narrator_swap import NarratorSwap
 from .scenarios import prepare_scenario
 from .invariants import assert_game_state
 from .models import ChapterRecord, NpcSnapshot, SessionLog, TurnRecord
@@ -70,6 +71,25 @@ def load_config(path: Path) -> dict:
 
 def selectable_settings() -> list[str]:
     return [s for s in list_packages() if s != "delve"]
+
+
+MODELTEST_CONFIG = Path(__file__).resolve().parents[2] / "modeltest" / "modeltest_config.yaml"
+
+
+def _with_narrator(provider: AIProvider, bot_cfg: dict) -> tuple[AIProvider, str]:
+    name = bot_cfg["session"]["narrator"]
+    if not name:
+        return provider, ""
+    from tests.modeltest.measure import adapter_for, voice_from
+
+    settings = load_config(MODELTEST_CONFIG)
+    voice = voice_from(settings["contestants"][name])
+    adapter = adapter_for(voice.provider, settings)
+    if voice.model not in set(adapter.list_models()):
+        raise SystemExit(f"Narrator {voice.provider}/{voice.model} is not offered by its provider")
+    bot_cfg["prices"][voice.model] = settings["prices"][voice.model]
+    print(f"  [NARRATOR] {voice.label} ({voice.provider}/{voice.model})")
+    return NarratorSwap(provider, adapter, voice.model, voice.extra_body), voice.model
 
 
 def _judge_provider(judge_cfg: dict) -> AIProvider:
@@ -114,7 +134,7 @@ def run_session(bot_cfg: dict, auto_override: bool = False, turns_override: int 
     full_debug = log_cfg["full_debug_log"]
 
     check_configured_models()
-    provider = get_provider()
+    provider, narrator_model = _with_narrator(get_provider(), bot_cfg)
     judge_provider = _judge_provider(judge_cfg) if judge_cfg else None
     config = EngineConfig(narration_lang=narration_lang)
     create_user(username)
@@ -129,6 +149,7 @@ def run_session(bot_cfg: dict, auto_override: bool = False, turns_override: int 
         engine_version=VERSION,
         style=style,
     )
+    slog.narrator_model = narrator_model
 
     print(f"\n{SEPARATOR}")
     print(f"  Straightjacket — Elvira Test Bot — {setting_id}, {style}")

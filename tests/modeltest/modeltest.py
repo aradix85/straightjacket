@@ -12,7 +12,16 @@ sys.path.insert(0, str(_ROOT / "src"))
 sys.path.insert(0, str(_ROOT))
 
 from tests.modeltest.capture import capture_all
-from tests.modeltest.measure import check_models, contestants, judges_from, measure, report, summarize
+from tests.modeltest.measure import (
+    check_models,
+    compare,
+    contestants,
+    intervals,
+    judges_from,
+    measure,
+    report,
+    summarize,
+)
 
 
 def _load(name: str) -> dict:
@@ -62,7 +71,11 @@ def main() -> None:
     )
     miss = {name for name, scenario in scenarios.items() if scenario["result"] == "MISS"}
     baseline = json.loads((_HERE / settings["baseline"]).read_text(encoding="utf-8"))
-    text = report(summarize(generations, miss), summarize(baseline, miss), stamp)
+    summary = summarize(generations, miss)
+    for model, interval in intervals(generations).items():
+        summary[model]["interval"] = interval
+    reference = voices[0].label
+    text = report(summary, summarize(baseline, miss), stamp, compare(generations, reference), reference)
     (runs / f"modeltest_{stamp}.md").write_text(text, encoding="utf-8")
     print(text)
     print(f"\nSaved to {runs / f'modeltest_{stamp}.json'}")

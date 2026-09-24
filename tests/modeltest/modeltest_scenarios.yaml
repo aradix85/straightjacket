@@ -131,3 +131,117 @@ scenarios:
     - {id: "npc_1", name: "Quartermaster Hale", disposition: "neutral", agenda: "Fill the hold before the storm season", instinct: "Counts everything twice", description: "Stout quartermaster with a ledger chained to his belt", memory: *crossed}
     brain: {move: "adventure/compel", stat: "heart", target_npc: "npc_1", player_intent: "Convince Hale to sell passage on credit"}
     text: "I tell Hale I can read the Maelstrom currents better than anyone aboard, and ask him to give me passage now and take payment at the next port."
+  hard_miss_ally_present:
+    <<: *wanderer
+    want: "MISS"
+    setting: *dark_fantasy
+    player: *kael
+    location: "Foot of the crumbling bell tower"
+    time: "dusk"
+    npcs:
+    - {id: "npc_1", name: "Brannoc", disposition: "friendly", agenda: "See the scholar safely out of the ruins", instinct: "Steps in before thinking", description: "Old ferryman with rope-scarred hands", memory: *crossed}
+    brain: {move: "adventure/face_danger", stat: "edge", target_npc: null, player_intent: "Climb the tower wall to the belfry window while Brannoc holds the rope"}
+    text: "I climb the crumbling wall toward the belfry window while Brannoc holds the rope below."
+  hard_miss_clever_plan:
+    <<: *wanderer
+    want: "MISS"
+    setting: ["starforged", "science_fiction", "Scattered humanity clings to life among the hostile stars of the Forge."]
+    player: ["Rook", "A salvager drowning in debt"]
+    location: "Cargo bay of the derelict freighter Ashfall"
+    time: "ship night"
+    npcs:
+    - {id: "npc_1", name: "Vex", disposition: "hostile", agenda: "Strip the freighter before rival crews arrive", instinct: "Shoots first", description: "Raider in scorched armor with a cutting torch", memory: *crossed}
+    brain: {move: "adventure/secure_an_advantage", stat: "wits", target_npc: "npc_1", player_intent: "Rig the airlock to vent the bay when Vex enters"}
+    text: "I splice the bay lighting into the airlock cycle so the outer door blows the moment Vex steps past the crates, and I time it to my own countdown."
+  hard_strong_hit_clean:
+    <<: *wanderer
+    want: "STRONG_HIT"
+    setting: ["sundered_isles", "seafaring_fantasy", "Scattered isles, cursed seas, and the ships that dare them."]
+    player: ["Tamsin", "A disgraced navigator"]
+    location: "Harbourmaster's office in Saltmarrow"
+    time: "morning"
+    npcs:
+    - {id: "npc_1", name: "Harbourmaster Quill", disposition: "neutral", agenda: "Keep the harbour fees flowing", instinct: "Trusts paperwork over people", description: "Thin official with ink on every finger", memory: *crossed}
+    brain: {move: "adventure/compel", stat: "heart", target_npc: "npc_1", player_intent: "Persuade Quill to grant a berth without the usual fee"}
+    text: "I show Quill the storm charts I drew myself and offer them for his archive in exchange for a berth, fee waived."
+  hard_weak_hit_cost:
+    <<: *wanderer
+    want: "WEAK_HIT"
+    setting: *dark_fantasy
+    player: *kael
+    location: "Ditch beside the king's road"
+    time: "night"
+    npcs:
+    - {id: "npc_1", name: "Sergeant Holt", disposition: "hostile", agenda: "Find whoever killed the royal messenger", instinct: "Arrests first, asks later", description: "Broad patrol sergeant with a lantern and a crossbow", memory: *crossed}
+    brain: {move: "adventure/gather_information", stat: "wits", target_npc: null, player_intent: "Search the dead messenger's satchel before the patrol arrives"}
+    text: "I kneel by the dead messenger and search his satchel for the letter before the patrol's lantern reaches the ditch."
+  hard_three_npc_dialog:
+    <<: *wanderer
+    want: "dialog"
+    setting: *dark_fantasy
+    player: *kael
+    location: "Burned-out caravan camp"
+    time: "morning"
+    npcs:
+    - {id: "npc_1", name: "Mira", disposition: "hostile", agenda: "Keep her part in the ambush hidden", instinct: "Lies first, strikes second", description: "Young archivist with ink-stained hands", memory: *crossed}
+    - {id: "npc_2", name: "Captain Oren", disposition: "neutral", agenda: "Hang someone for the ambush before nightfall", instinct: "Weighs every word", description: "Grey-bearded warden with a scar through one eyebrow", memory: *crossed}
+    - {id: "npc_3", name: "Brannoc", disposition: "friendly", agenda: "Protect the scholar from the warden's temper", instinct: "Trusts quickly, regrets slowly", description: "Old ferryman with rope-scarred hands", memory: *crossed}
+    brain: {move: "dialog", stat: "none", target_npc: "npc_2", player_intent: "Ask all three, in front of each other, who knew the caravan's route", dialog_only: true}
+    text: "I stand between the three of them and ask who among them knew the caravan's route before it left."
+  hard_hostile_secret:
+    <<: *wanderer
+    want: "dialog"
+    setting: *dark_fantasy
+    player: *kael
+    location: "Village well at Greywater"
+    time: "noon"
+    npcs:
+    - {id: "npc_1", name: "Widow Sarn", disposition: "hostile", agenda: "Hide that she poisoned the well", instinct: "Smiles while she lies", description: "Stooped woman with a basket of herbs", memory: *crossed}
+    brain: {move: "dialog", stat: "none", target_npc: "npc_1", player_intent: "Ask Widow Sarn directly whether she poisoned the well", dialog_only: true}
+    text: "I look Widow Sarn in the eye and ask her plainly whether she put something in the well."
+  hard_terse_input:
+    <<: *wanderer
+    want: "WEAK_HIT"
+    setting: *dark_fantasy
+    player: *kael
+    location: "Sealed door of the old crypt"
+    time: "midnight"
+    npcs: []
+    brain: {move: "adventure/face_danger", stat: "iron", target_npc: null, player_intent: "Force the crypt door open"}
+    text: "I open the door."
+  hard_sparse_restraint:
+    <<: *wanderer
+    want: "STRONG_HIT"
+    setting: *dark_fantasy
+    player: *kael
+    location: "An empty stretch of road"
+    time: "noon"
+    npcs: []
+    brain: {move: "adventure/gather_information", stat: "wits", target_npc: null, player_intent: "Look around while walking"}
+    text: "I keep walking and look around."
+  hard_many_elements:
+    <<: *wanderer
+    want: "MISS"
+    setting: *dark_fantasy
+    player: *kael
+    location: "Flooded crypt beneath the chapel"
+    time: "midnight"
+    clocks:
+    - {name: "The Drowned Rise", clock_type: "threat", segments: 6, filled: 5, owner_kind: "world", trigger_description: "The drowned dead climb out of the water"}
+    npcs:
+    - {id: "npc_1", name: "The Hound-Master", disposition: "hostile", agenda: "Drag the scholar back to the abbey", instinct: "Patient, never alone", description: "Hooded tracker with three grey dogs", memory: *crossed}
+    - {id: "npc_2", name: "Brother Aldo", disposition: "neutral", agenda: "Keep the crypt sealed at any cost", instinct: "Prays before he acts", description: "Young monk clutching a bronze key", memory: *crossed}
+    brain: {move: "adventure/face_danger", stat: "edge", target_npc: null, player_intent: "Wade across the flooded crypt to the far stair before the water rises"}
+    text: "I wade across the flooded crypt toward the far stair before the water rises any higher."
+  hard_starforged_combat:
+    <<: *wanderer
+    want: "WEAK_HIT"
+    setting: ["starforged", "science_fiction", "Scattered humanity clings to life among the hostile stars of the Forge."]
+    player: ["Rook", "A salvager drowning in debt"]
+    location: "Cargo deck of the derelict freighter Ashfall"
+    time: "ship night"
+    combat: "Fight with Vex"
+    npcs:
+    - {id: "npc_1", name: "Vex", disposition: "hostile", agenda: "Strip the freighter before rival crews arrive", instinct: "Shoots first", description: "Raider in scorched armor with a cutting torch", memory: *crossed}
+    brain: {move: "combat/strike", stat: "iron", target_npc: "npc_1", player_intent: "Drive Vex back with a pry bar before she can relight the torch"}
+    text: "I close the distance and swing the pry bar at Vex before she can relight her torch."

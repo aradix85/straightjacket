@@ -31,6 +31,7 @@ session:
   succession_on_game_over: true
   inject_ai_failure_turn: 3
   scenario: ""
+  narrator: ""
 
 bot_behavior:
   burn_momentum: "auto"
