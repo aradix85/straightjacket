@@ -78,7 +78,9 @@ def test_every_narration_is_judged_and_summarized(load_engine: None, monkeypatch
     assert all(len(g["verdicts"]) == 2 for g in generations)
     summary = m.summarize(generations, {"danger_miss"})[label]
     assert (summary["overall"], summary["integrity_on_miss"], summary["errors"]) == (8, 4, 0)
-    assert summary["cost"] == 0.025
+    assert summary["judge_cost"] == 0.024
+    assert summary["cost_per_100"] == pytest.approx(0.0225, abs=0.001)
+    assert summary["first_text"] is not None
     assert f"## {label}" in m.report({label: summary}, {}, "test")
 
 

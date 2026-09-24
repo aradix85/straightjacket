@@ -56,6 +56,7 @@ burn_decision: |-
 bot_turn_directive_dialog: "DIALOG — talk to an NPC, ask a question, no pressure"
 bot_turn_directive_investigate: "INVESTIGATE — examine, search, study something in the environment"
 bot_turn_directive_physical_risk: "PHYSICAL RISK — face danger, fight, climb, force something"
+bot_turn_directive_attack: "ATTACK — strike directly at an enemy in the scene, with a weapon or bare hands"
 bot_turn_directive_dialog_or_investigate: "DIALOG or INVESTIGATE — follow up on what you learned"
 bot_turn_directive_social_pressure: "SOCIAL PRESSURE — compel, threaten, persuade, negotiate"
 bot_turn_directive_travel: "TRAVEL — move to a new location, explore a new area"

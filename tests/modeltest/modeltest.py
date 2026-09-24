@@ -43,7 +43,7 @@ def main() -> None:
     scenarios = _scenarios()
     voices = contestants(args.models, settings)
     judges = judges_from(settings)
-    check_models([*voices, *judges])
+    check_models([*voices, *judges], settings)
     attempts = args.attempts if args.attempts is not None else settings["attempts"]
     print(f"Measuring {', '.join(v.label for v in voices)}: {len(scenarios)} scenes, {attempts} attempts each")
     generations = measure(voices, scenarios, judges, settings, _load("modeltest_prompts.yaml"), attempts)

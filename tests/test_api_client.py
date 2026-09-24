@@ -49,7 +49,7 @@ def two_providers(monkeypatch: pytest.MonkeyPatch) -> dict[str, _FakeAdapter]:
     }
     monkeypatch.setattr(config_loader, "_cfg", config_loader._parse_config(data))
     adapters = {"fast": _FakeAdapter("fast", ["model-a"]), "prose": _FakeAdapter("prose", ["model-b"])}
-    monkeypatch.setattr(api_client, "_build_adapter", lambda name, pc: adapters[name])
+    monkeypatch.setattr(api_client, "build_adapter", lambda name, pc: adapters[name])
     return adapters
 
 
@@ -89,11 +89,11 @@ def test_missing_api_key_names_the_environment_variable(monkeypatch: pytest.Monk
         type="openai_compatible", api_base="", api_key_env="SJ_TEST_MISSING_KEY", timeout_seconds=30
     )
     with pytest.raises(ValueError, match="SJ_TEST_MISSING_KEY"):
-        api_client._build_adapter("somewhere", pc)
+        api_client.build_adapter("somewhere", pc)
 
 
 def test_unknown_provider_type_raises(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("SJ_TEST_KEY", "k")
     pc = config_loader.ProviderConfig(type="carrier_pigeon", api_base="", api_key_env="SJ_TEST_KEY", timeout_seconds=30)
     with pytest.raises(ValueError, match="Unknown type 'carrier_pigeon'"):
-        api_client._build_adapter("somewhere", pc)
+        api_client.build_adapter("somewhere", pc)

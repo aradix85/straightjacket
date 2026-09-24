@@ -32,7 +32,7 @@ TARGETS = (
 
 STEERING = (
     ("dialog", "bot_turn_directive_dialog"),
-    ("combat", "bot_turn_directive_physical_risk"),
+    ("combat", "bot_turn_directive_attack"),
     ("location_change", "bot_turn_directive_travel"),
 )
 

@@ -7,9 +7,9 @@ from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from typing import Any
 
-from straightjacket.engine.ai.api_client import provider_named
-from straightjacket.engine.ai.provider_base import AICallSpec, AIUnavailableError, create_with_retry
-from straightjacket.engine.config_loader import cfg
+from straightjacket.engine.ai.api_client import build_adapter, provider_named
+from straightjacket.engine.ai.provider_base import AICallSpec, AIUnavailableError, create_with_retry, stream_with_retry
+from straightjacket.engine.config_loader import ProviderConfig, cfg
 from tests.elvira.elvira_bot.judge import CRITERIA, JUDGE_SCHEMA
 from tests.modeltest.capture import scene_text
 
@@ -43,14 +43,36 @@ def judges_from(settings: dict[str, Any]) -> list[Voice]:
     return [voice_from(entry) for entry in settings["judges"]]
 
 
-def check_models(voices: list[Voice]) -> None:
+def adapter_for(provider: str, settings: dict[str, Any]) -> Any:
+    if provider in settings["providers"]:
+        return build_adapter(provider, ProviderConfig(**settings["providers"][provider]))
+    return provider_named(provider)
+
+
+def check_models(voices: list[Voice], settings: dict[str, Any]) -> None:
     offered: dict[str, set[str]] = {}
     for voice in voices:
         if voice.provider not in offered:
-            offered[voice.provider] = set(provider_named(voice.provider).list_models())
+            offered[voice.provider] = set(adapter_for(voice.provider, settings).list_models())
     missing = [f"{v.provider}/{v.model}" for v in voices if v.model not in offered[v.provider]]
     if missing:
         raise SystemExit(f"Not offered by their provider: {', '.join(missing)}")
+
+
+class _FirstText:
+    def __init__(self, started: float) -> None:
+        self.started = started
+        self.first: float | None = None
+
+    def feed(self, delta: str) -> None:
+        if self.first is None and delta.strip():
+            self.first = round(time.monotonic() - self.started, 2)
+
+    def finish(self) -> None:
+        return None
+
+    def fail(self) -> None:
+        self.first = None
 
 
 def _cost(usage: dict[str, int], model: str, prices: dict[str, list[float]]) -> float:
@@ -58,8 +80,8 @@ def _cost(usage: dict[str, int], model: str, prices: dict[str, list[float]]) -> 
     return (usage["input_tokens"] * price_in + usage["output_tokens"] * price_out) / 1_000_000
 
 
-def _generate(job: tuple[Voice, str, dict[str, Any], int, dict[str, Any]]) -> dict[str, Any]:
-    voice, name, scenario, attempt, settings = job
+def _generate(job: tuple[Voice, Any, str, dict[str, Any], int, dict[str, Any]]) -> dict[str, Any]:
+    voice, adapter, name, scenario, attempt, settings = job
     spec = AICallSpec(
         model=voice.model,
         system=scenario["system"],
@@ -71,22 +93,24 @@ def _generate(job: tuple[Voice, str, dict[str, Any], int, dict[str, Any]]) -> di
     )
     head = {"model": voice.label, "scenario": name, "attempt": attempt}
     started = time.monotonic()
+    sink = _FirstText(started)
     try:
-        response = create_with_retry(provider_named(voice.provider), spec)
+        response = stream_with_retry(adapter, spec, sink)
     except AIUnavailableError as e:
         return {**head, "error": str(e)[:200]}
     text = response.content.strip()
     return {
         **head,
         "text": text,
+        "first_text": sink.first,
         "secs": round(time.monotonic() - started, 1),
         "cost": _cost(response.usage, voice.model, settings["prices"]),
         "words": len(text.split()),
     }
 
 
-def _judge(job: tuple[Voice, dict[str, Any], dict[str, Any], dict[str, Any], dict[str, Any]]) -> dict[str, Any]:
-    judge, generation, scenario, settings, prompts = job
+def _judge(job: tuple[Voice, Any, dict[str, Any], dict[str, Any], dict[str, Any], dict[str, Any]]) -> dict[str, Any]:
+    judge, adapter, generation, scenario, settings, prompts = job
     user = prompts["judge_user"].format(scene=scene_text(scenario["messages"]), narration=generation["text"])
     spec = AICallSpec(
         model=judge.model,
@@ -99,7 +123,7 @@ def _judge(job: tuple[Voice, dict[str, Any], dict[str, Any], dict[str, Any], dic
         log_role="brain",
     )
     try:
-        response = create_with_retry(provider_named(judge.provider), spec)
+        response = create_with_retry(adapter, spec)
         verdict = json.loads(response.content)
     except (AIUnavailableError, json.JSONDecodeError) as e:
         return {"judge": judge.label, "error": f"{type(e).__name__}: {e}"[:200]}
@@ -114,8 +138,9 @@ def measure(
     prompts: dict[str, Any],
     attempts: int,
 ) -> list[dict[str, Any]]:
+    adapters = {voice.provider: adapter_for(voice.provider, settings) for voice in [*voices, *judges]}
     jobs = [
-        (voice, name, scenario, attempt, settings)
+        (voice, adapters[voice.provider], name, scenario, attempt, settings)
         for voice in voices
         for name, scenario in scenarios.items()
         for attempt in range(1, attempts + 1)
@@ -123,7 +148,11 @@ def measure(
     with ThreadPoolExecutor(max_workers=settings["workers"]) as pool:
         generations = list(pool.map(_generate, jobs))
     done = [g for g in generations if g.get("text")]
-    judge_jobs = [(judge, g, scenarios[g["scenario"]], settings, prompts) for g in done for judge in judges]
+    judge_jobs = [
+        (judge, adapters[judge.provider], g, scenarios[g["scenario"]], settings, prompts)
+        for g in done
+        for judge in judges
+    ]
     with ThreadPoolExecutor(max_workers=settings["workers"]) as pool:
         verdicts = list(pool.map(_judge, judge_jobs))
     for index, generation in enumerate(done):
@@ -143,10 +172,13 @@ def _errors(generations: list[dict[str, Any]], judged: list[dict[str, Any]]) -> 
     return sum("error" in g for g in generations) + sum("error" in v for g in judged for v in g["verdicts"])
 
 
-def _total_cost(generations: list[dict[str, Any]], judged: list[dict[str, Any]]) -> float:
-    narration = sum(g["cost"] for g in generations if "cost" in g)
-    judging = sum(v["cost"] for g in judged for v in g["verdicts"] if "cost" in v)
-    return round(narration + judging, 3)
+def _cost_per_100(generations: list[dict[str, Any]]) -> float | None:
+    costs = [g["cost"] for g in generations if "cost" in g]
+    return round(statistics.mean(costs) * 100, 3) if costs else None
+
+
+def _judge_cost(judged: list[dict[str, Any]]) -> float:
+    return round(sum(v["cost"] for g in judged for v in g["verdicts"] if "cost" in v), 3)
 
 
 def _model_summary(generations: list[dict[str, Any]], miss_scenarios: set[str]) -> dict[str, Any]:
@@ -159,9 +191,11 @@ def _model_summary(generations: list[dict[str, Any]], miss_scenarios: set[str]) 
         "overall": _mean([v["overall"] for v in scores]),
         **{criterion: _mean([v[criterion] for v in scores]) for criterion in CRITERIA},
         "integrity_on_miss": _mean([v["result_integrity"] for v in on_miss]),
+        "first_text": _mean([g["first_text"] for g in judged if g.get("first_text") is not None]),
         "secs": _mean([g["secs"] for g in judged]),
         "words": _mean([g["words"] for g in judged]),
-        "cost": _total_cost(generations, judged),
+        "cost_per_100": _cost_per_100(generations),
+        "judge_cost": _judge_cost(judged),
     }
 
 
@@ -183,7 +217,8 @@ def _summary_lines(summary: dict[str, dict[str, Any]]) -> list[str]:
             f"Overall: {s['overall']} out of 10, over {s['generations']} narrations ({s['errors']} errors).",
             f"Result integrity on a miss: {s['integrity_on_miss']} out of 5.",
             *[f"- {criterion}: {s[criterion]} out of 5" for criterion in CRITERIA],
-            f"Speed: {s['secs']} seconds per narration, {s['words']} words. Cost: about ${s['cost']}.",
+            f"Speed: first text after {s['first_text']} seconds, whole narration {s['secs']} seconds, {s['words']} words.",
+            f"Price: about ${s['cost_per_100']} per 100 narrations; judging this run cost ${s['judge_cost']}.",
             "",
         ]
     return lines

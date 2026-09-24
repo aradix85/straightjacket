@@ -437,7 +437,7 @@ def _check_no_yaml_comments() -> tuple[str, list[Violation]]:
 _INLINE_IMPORT_WHITELIST: set[tuple[str, str]] = {
     ("engine/models.py", "restore"),
     ("engine/npc/lifecycle.py", "_npc_eligible_for_desc_match"),
-    ("engine/ai/api_client.py", "_build_adapter"),
+    ("engine/ai/api_client.py", "build_adapter"),
     ("engine/ai/provider_base.py", "create_with_retry"),
     ("engine/mechanics/fate.py", "resolve_fate"),
     ("engine/mechanics/engine_memories.py", "generate_engine_memories"),

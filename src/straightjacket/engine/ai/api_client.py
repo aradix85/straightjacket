@@ -9,7 +9,7 @@ from .provider_base import AICallSpec, AIProvider, AIResponse, ModelListingProvi
 _adapter_cache: dict[str, ModelListingProvider] = {}
 
 
-def _build_adapter(name: str, pc: ProviderConfig) -> ModelListingProvider:
+def build_adapter(name: str, pc: ProviderConfig) -> ModelListingProvider:
     resolved_key = os.environ.get(pc.api_key_env, "")
     if not resolved_key:
         raise ValueError(f"No API key for provider '{name}'. Set the ${pc.api_key_env} environment variable.")
@@ -59,7 +59,7 @@ def get_provider() -> AIProvider:
 
 
 def provider_named(name: str) -> ModelListingProvider:
-    return _build_adapter(name, cfg().ai.providers[name])
+    return build_adapter(name, cfg().ai.providers[name])
 
 
 def check_configured_models() -> None:

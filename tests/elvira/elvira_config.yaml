@@ -30,6 +30,7 @@ session:
   clean_before_run: true
   succession_on_game_over: true
   inject_ai_failure_turn: 3
+  scenario: ""
 
 bot_behavior:
   burn_momentum: "auto"
@@ -66,3 +67,31 @@ logging:
   - "[Clock]"
   - "[AdventureCrafter]"
   - "[MoveOutcome]"
+
+scenarios:
+  near_death:
+    turns: 8
+    style: "aggressor"
+    directive: "bot_turn_directive_physical_risk"
+    expect: ["game_over", "succession"]
+    resources: {health: 0, spirit: 0}
+  chapter_end:
+    turns: 4
+    max_chapters: 2
+    expect: ["chapter_transition"]
+    story_end: true
+  momentum_burn:
+    turns: 6
+    burn_momentum: "always"
+    expect: ["burn_offered", "burn_taken"]
+    resources: {momentum: "max"}
+  combat:
+    turns: 6
+    style: "aggressor"
+    directive: "bot_turn_directive_attack"
+    expect: ["combat"]
+    combat: true
+  clock:
+    turns: 6
+    expect: ["clock_fired"]
+    clock_nearly_full: true

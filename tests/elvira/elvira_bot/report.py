@@ -130,6 +130,15 @@ def _event_lines(slog: SessionLog) -> list[str]:
     return lines
 
 
+def _scenario_lines(scenario: dict) -> list[str]:
+    return [
+        f"{scenario['name']}.",
+        f"Prepared: {'; '.join(scenario['prepared']) or 'nothing'}.",
+        f"Reached: {', '.join(scenario['reached']) or 'none'}.",
+        f"Not reached: {', '.join(scenario['missed']) or 'none'}.",
+    ]
+
+
 def write_report(slog: SessionLog, coverage: Coverage, path: Path, prices: dict[str, list[float]]) -> Path:
     problems = collect_problems(slog)
     verdict = "no problems found" if not problems else f"{len(problems)} problem(s) found"
@@ -140,6 +149,8 @@ def write_report(slog: SessionLog, coverage: Coverage, path: Path, prices: dict[
     out += [f"Verdict: {verdict}.", ""]
     if problems:
         out += ["## Problems", "", *[f"- {p}" for p in problems], ""]
+    if slog.scenario:
+        out += ["## Scenario", "", *_scenario_lines(slog.scenario), ""]
     for title, lines in (
         ("Coverage", _coverage_lines(coverage)),
         ("Narration audit", _audit_lines(slog)),

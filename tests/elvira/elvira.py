@@ -25,6 +25,19 @@ from tests.elvira.elvira_bot.runner import load_config, run_session, selectable_
 DEFAULT_CONFIG = _HERE / "elvira_config.yaml"
 
 
+def _scenario_cfg(bot_cfg: dict, name: str) -> dict:
+    spec = bot_cfg["scenarios"][name]
+    run_cfg = copy.deepcopy(bot_cfg)
+    run_cfg["session"]["scenario"] = name
+    run_cfg["session"]["max_turns"] = spec["turns"]
+    if "max_chapters" in spec:
+        run_cfg["session"]["max_chapters"] = spec["max_chapters"]
+    for key in ("style", "burn_momentum"):
+        if key in spec:
+            run_cfg["bot_behavior"][key] = spec[key]
+    return run_cfg
+
+
 def main() -> None:
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
     sys.stderr.reconfigure(encoding="utf-8", errors="replace")
@@ -46,6 +59,9 @@ def main() -> None:
         help="Override: play style; random per run when empty in the config",
     )
     parser.add_argument("--matrix", action="store_true", help="Play one session for every setting and style in turn")
+    parser.add_argument(
+        "--scenario", type=str, default=None, help="Play a prepared situation from the config, or 'all'"
+    )
     args = parser.parse_args()
 
     bot_cfg = load_config(args.config)
@@ -54,6 +70,12 @@ def main() -> None:
         bot_cfg.setdefault("game", {})["setting_id"] = args.setting
     if args.style:
         bot_cfg.setdefault("bot_behavior", {})["style"] = args.style
+
+    if args.scenario:
+        names = list(bot_cfg["scenarios"]) if args.scenario == "all" else [args.scenario]
+        for name in names:
+            run_session(_scenario_cfg(bot_cfg, name), auto_override=args.auto, turns_override=args.turns)
+        return
 
     if args.matrix:
         for setting_id in selectable_settings():

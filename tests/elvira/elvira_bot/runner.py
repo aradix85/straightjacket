@@ -42,6 +42,7 @@ from .report import write_report
 from .ai_helpers import ask_bot, available_styles, build_turn_context, decide_burn_momentum, get_persona
 from .creation import roll_character
 from .faults import NarratorOutage
+from .scenarios import prepare_scenario
 from .invariants import assert_game_state
 from .models import ChapterRecord, NpcSnapshot, SessionLog, TurnRecord
 from .quality_checks import (
@@ -97,9 +98,10 @@ def run_session(bot_cfg: dict, auto_override: bool = False, turns_override: int 
     setting_id = game_cfg["setting_id"] or _random.choice(selectable_settings())
     game_cfg = {**game_cfg, "setting_id": setting_id}
     inject_turn = session_cfg["inject_ai_failure_turn"]
+    scenario_name, scenario = _scenario_spec(bot_cfg)
     log_file_base = Path(log_cfg["log_file"])
     timestamp = datetime.now().astimezone().strftime("%Y%m%d_%H%M%S")
-    log_file = log_file_base.with_stem(f"{log_file_base.stem}_{setting_id}_{style}_{timestamp}")
+    log_file = _log_stem(log_file_base, setting_id, style, scenario_name, timestamp)
     print_full = log_cfg["print_full_narration"]
     print_rolls = log_cfg["print_roll_details"]
     do_invariants = log_cfg["assert_state_invariants"]
@@ -145,6 +147,7 @@ def run_session(bot_cfg: dict, auto_override: bool = False, turns_override: int 
     game, narration, chat_messages = _setup_game(provider, config, username, game_cfg, auto_mode, slog)
 
     _log_story_blueprint(game, slog)
+    _apply_scenario(game, scenario_name, scenario, slog)
 
     prev_npcs: list[NpcSnapshot] | None = None
 
@@ -200,7 +203,7 @@ def run_session(bot_cfg: dict, auto_override: bool = False, turns_override: int 
                     judge_cfg=judge_cfg,
                     judge_provider=judge_provider,
                     inject_failure=total_turns == inject_turn,
-                    max_turns=max_chapters * max_turns,
+                    directive_key=_directive(scenario, coverage, total_turns, max_chapters * max_turns),
                     prev_action=prev_action,
                 )
 
@@ -299,6 +302,7 @@ def run_session(bot_cfg: dict, auto_override: bool = False, turns_override: int 
     if any(ch.ended_reason == "game_over" for ch in slog.chapters):
         coverage.hit("game_over")
     slog.coverage = coverage.summary()
+    _finish_scenario(slog, coverage)
     logging.getLogger("rpg_engine").removeHandler(events)
     slog.engine_warnings = list(events.warnings)
     report_path = write_report(slog, coverage, RUNS_DIR / f"{log_file.stem}.md", prices)
@@ -365,14 +369,12 @@ def _play_turn(
     coverage: Coverage,
     events: _EventCapture,
     judge_cfg: dict | None,
-    max_turns: int,
     prev_action: str = "",
     judge_provider: AIProvider | None = None,
     inject_failure: bool = False,
+    directive_key: str | None = None,
 ) -> tuple[GameState, str, TurnRecord, bool]:
-    context = build_turn_context(
-        game, narration, turn, prev_action=prev_action, directive_key=coverage.steer(turn, max_turns)
-    )
+    context = build_turn_context(game, narration, turn, prev_action=prev_action, directive_key=directive_key)
     try:
         action = ask_bot(provider, persona, context, max_tokens=500)
     except Exception as e:
@@ -485,6 +487,39 @@ def _check_turn(
             print(f"  !!  {v}")
             slog.violations.append(v)
         rec.violations = violations
+
+
+def _scenario_spec(bot_cfg: dict) -> tuple[str, dict | None]:
+    name = bot_cfg["session"]["scenario"]
+    return name, (bot_cfg["scenarios"][name] if name else None)
+
+
+def _log_stem(base: Path, setting_id: str, style: str, scenario_name: str, timestamp: str) -> Path:
+    parts = [base.stem, setting_id, style, *([scenario_name] if scenario_name else []), timestamp]
+    return base.with_stem("_".join(parts))
+
+
+def _apply_scenario(game: GameState, name: str, spec: dict | None, slog: SessionLog) -> None:
+    if spec is None:
+        return
+    notes = prepare_scenario(game, spec)
+    db_sync(game)
+    slog.scenario = {"name": name, "prepared": notes, "expect": list(spec["expect"])}
+    print(f"  [SCENARIO] {name}: {'; '.join(notes) or 'nothing to prepare'}")
+
+
+def _directive(spec: dict | None, coverage: Coverage, turn: int, max_turns: int) -> str | None:
+    if spec is not None and "directive" in spec:
+        return str(spec["directive"])
+    return coverage.steer(turn, max_turns)
+
+
+def _finish_scenario(slog: SessionLog, coverage: Coverage) -> None:
+    if not slog.scenario:
+        return
+    exercised = set(coverage.exercised())
+    slog.scenario["reached"] = [t for t in slog.scenario["expect"] if t in exercised]
+    slog.scenario["missed"] = [t for t in slog.scenario["expect"] if t not in exercised]
 
 
 def _restore(game: GameState, snapshot: TurnSnapshot, last_snapshot: TurnSnapshot | None) -> None:
