@@ -7,6 +7,14 @@ Originally forked from [EdgeTales](https://github.com/edgetales/edgetales). See 
 
 Straightjacket uses calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day. The first CalVer release is `2026.04.25.0`. Earlier `0.x.y` releases keep their original version numbers and are not renumbered. The switch was made because the project has no public API to version semantically against — the `0.x.y` numbers were running counters with no meaning, and dates carry the meaning the numbers didn't.
 
+## [2026.09.24.10] — 2026-09-24
+
+The `<result>` tag in every action-turn narrator prompt was closed with `</r>`. `prompt_action.py::_build_result_constraint` built all three variants (MISS, WEAK_HIT, STRONG_HIT) as `<result ...>...</r>`, so the one tag that tells the narrator what happened was malformed XML on every action turn. Models coped, but the prompt was not what it claimed to be. Found while capturing a real narrator prompt for model comparisons; all three now close with `</result>`.
+
+New `tests/test_prompt_xml.py` runs real turns through `process_turn` with the mock provider, captures the narrator prompt, and parses the engine-built `<scene>` block as XML: for MISS, WEAK_HIT, and STRONG_HIT, and for a dialog turn. The action test fails on the previous code; the dialog scene was already well-formed. The check covers the structure the engine builds, not the `<task>` text after it, which deliberately names other tags in angle brackets (`<story_arc>`, `<director_guidance>`) as pointers for the model; rewriting those is a prompt change and would need an Elvira measurement first.
+
+Quality gate: 1288 tests green, twenty-eight project-rule scans clean, coverage 88.42%, ruff check and ruff format clean, mypy --strict clean on 105 source files. Save format unchanged.
+
 ## [2026.09.24.9] — 2026-09-24
 
 Providers can be mixed per role, and startup now checks that every configured model still exists.

@@ -57,16 +57,16 @@ def _build_result_constraint(roll: RollResult, consequences: list[str]) -> str:
     if roll.result == "MISS":
         match_hint = get_prompt("result_match_hint_miss") if roll.match else ""
         body = get_prompt("result_miss_body")
-        return f'<result type="MISS"{match_tag}{cons_attr}>{body}{match_hint}</r>'
+        return f'<result type="MISS"{match_tag}{cons_attr}>{body}{match_hint}</result>'
 
     if roll.result == "WEAK_HIT":
         match_hint = get_prompt("result_match_hint_weak_hit") if roll.match else ""
         body = get_prompt("result_weak_hit_body")
-        return f'<result type="WEAK_HIT"{match_tag}{cons_attr}>{body}{match_hint}</r>'
+        return f'<result type="WEAK_HIT"{match_tag}{cons_attr}>{body}{match_hint}</result>'
 
     match_hint = get_prompt("result_match_hint_strong_hit") if roll.match else ""
     body = get_prompt("result_strong_hit_body")
-    return f'<result type="STRONG_HIT"{match_tag}{cons_attr}>{body}{match_hint}</r>'
+    return f'<result type="STRONG_HIT"{match_tag}{cons_attr}>{body}{match_hint}</result>'
 
 
 def build_action_prompt(
