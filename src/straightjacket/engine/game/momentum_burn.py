@@ -42,7 +42,9 @@ def process_momentum_burn(
 
     game.restore(pre_snapshot)
     _e = eng()
-    game.resources.reset_momentum(floor=_e.momentum.floor, reset_value=_e.momentum.start, max_cap=_e.momentum.max)
+    game.resources.reset_momentum(
+        reset_floor=_e.momentum.reset_floor, reset_value=_e.momentum.start, max_cap=_e.momentum.max
+    )
 
     upgraded = RollResult(
         old_roll.d1,

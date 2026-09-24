@@ -239,6 +239,10 @@ def _random_events_block(events: Sequence[RandomEvent]) -> str:
     return "\n".join(parts)
 
 
+def _npc_agency_block(npc_agency: Sequence[str]) -> str:
+    return f"\n<npc_agency>{_xe('| '.join(npc_agency))}</npc_agency>" if npc_agency else ""
+
+
 def _clock_filled_block(fill_results: Sequence[ClockFillResult]) -> str:
     if not fill_results:
         return ""

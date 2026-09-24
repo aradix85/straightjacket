@@ -16,7 +16,7 @@ def test_roll_action_cap() -> None:
         assert r.action_score <= 10
 
 
-def test_compel_no_disposition_shift(load_engine: None) -> None:
+def test_compel_strong_hit_marks_no_bond_and_no_disposition_shift(load_engine: None) -> None:
     from straightjacket.engine.mechanics.move_outcome import resolve_move_outcome
 
     game = make_game_state()
@@ -27,7 +27,7 @@ def test_compel_no_disposition_shift(load_engine: None) -> None:
     )
     resolve_move_outcome(game, "adventure/compel", "STRONG_HIT", target_npc_id="npc_1")
     conn = next(t for t in game.progress_tracks if t.id == "connection_npc_1")
-    assert conn.ticks > 0
+    assert conn.ticks == 0
     assert npc.disposition == "neutral"
 
 

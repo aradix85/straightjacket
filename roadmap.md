@@ -162,6 +162,22 @@ What triggers fact resolution? Per 2026.04.28.4 the player types actions, never 
 
 Sketches and drafts. Order indicative, not fixed. Each entry needs substeps + definition of done + patterns before scheduling — that work happens during post-flight of the step that promotes this one to NEXT, not pre-emptively. Some entries below already have substeps drafted; those promote with less work, but Definition of Done and Reference patterns still get filled in at promotion time.
 
+### E — Ideas from the EdgeTales comparison (2026-09-24)
+
+EdgeTales 0.9.67–0.9.96 (Lars) was read in full on 2026-09-24. Its bug fixes that applied here landed in 2026.09.24.6. The ideas below fit Straightjacket's architecture but need a design decision, a save-format change, or an Elvira measurement, so they are sketched here rather than built. Reimplement the idea; do not port code (different architecture), and credit EdgeTales in the CHANGELOG entry that lands each one.
+
+**E1 — Clock and threat pressure in narrative direction.** The narrator only learns about a clock when it fills. The design document names clock states and threat levels as sources for narrative-direction intensity; today intensity comes only from resources, crisis, and scene history. Engine computes a pressure tier from the fullest active threat or scheme clock and the highest threat menace (thresholds in engine yaml) and feeds it into the existing intensity derivation. No numbers or clock names reach the prompt. Measure the effect with an Elvira batch before and after.
+
+**E2 — NPC exit tracking.** NPCs who walk out of a scene can be pulled back by the activation bonus next scene without narrative reason. The narrator_metadata extractor reports `exited_npc_ids` (the same two-call pattern as `deceased_npcs`); the engine sets an absent-until-scene value on `NpcData` (save format breaks), activation scores the NPC zero while absent unless the player names them or Brain targets them, and chapter start clears the value. Tests for exit, suppression, the player-name override, and the chapter reset.
+
+**E3 — NPC-to-NPC dynamics in the prompt.** `MemoryEntry.about_npc` already records what NPCs remember about each other, but the narrator never sees it. Engine selects `about_npc` memories between NPCs present in the scene (one per pair, most recent first, cap in yaml) and injects them as a block whose template lives in `prompts/blocks.yaml`. Stepping stone for step 24 (NPC-NPC triangles).
+
+**E4 — Stale NPC retirement.** Active NPCs accumulate even when the story has left them. An active NPC with an empty connection track and no new memory for N scenes (yaml) moves to background; reactivation already exists. Guard against retiring an NPC in the scene they reappear.
+
+**E5 — Brain `target_npc` limited to known NPCs.** `target_npc` is a free string, so a compound answer such as `npc_3,npc_4` silently drops the target and with it bond and disposition effects. Build the Brain schema with an enum of known NPC ids plus null. Decide first whether per-game schemas fit the current schema caching; the fallback is a sanitizer that logs and clears unknown targets.
+
+**E6 — Narrator rule on NPC backstory.** NPCs draw on their description, agenda, arc, and earlier scenes; when their past is not established, they keep it vague rather than invent family or history. Phrase it as direction, not prohibition (see the constraint-writing principles in the design document), and measure with an Elvira batch before and after, because prompt wording has caused regressions before (2026.04.27.4).
+
 ### 10 — Location and encounter generators
 
 **10.1** Location generator via step 9 framework. Datasworn oracles → structured location. AI for description constrained by oracle output.

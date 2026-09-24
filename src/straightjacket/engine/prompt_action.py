@@ -6,6 +6,7 @@ from .models import BrainResult, GameState, NpcData, RandomEvent, RollResult, Th
 from .prompt_blocks import narrative_direction_block, recent_events_block, story_context_block
 from .prompt_loader import get_prompt
 from .prompt_shared import (
+    _npc_agency_block,
     _clock_filled_block,
     _director_block,
     _loc_hist,
@@ -101,7 +102,7 @@ def build_action_prompt(
 
     status_flags = _build_status_flags(game)
     flags = f"\n<flags>{','.join(status_flags)}</flags>" if status_flags else ""
-    agency = f"\n<npc_agency>{_xe('| '.join(npc_agency))}</npc_agency>" if npc_agency else ""
+    agency = _npc_agency_block(npc_agency)
     pacing = _pacing_block(game, scene_setup)
     events_block = _random_events_block(random_events)
     clock_block = _clock_filled_block(clock_fill_results)

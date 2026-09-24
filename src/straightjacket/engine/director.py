@@ -109,13 +109,15 @@ def _build_reflection_block(game: GameState, npc: NpcData) -> str:
     )
 
 
+def _reflection_eligible(npc: NpcData) -> bool:
+    needs_profile = not npc.agenda.strip() or not npc.instinct.strip()
+    return (npc.needs_reflection or needs_profile) and npc.status in ("active", "background")
+
+
 def _collect_reflection_blocks(game: GameState) -> str:
     blocks = []
     for npc in game.npcs:
-        needs_profile = not npc.agenda.strip() or not npc.instinct.strip()
-        if not npc.needs_reflection and not needs_profile:
-            continue
-        if npc.status not in ("active", "background"):
+        if not _reflection_eligible(npc):
             continue
         blocks.append(_build_reflection_block(game, npc))
     return "\n".join(blocks)
@@ -370,10 +372,19 @@ def _apply_description_update(npc: NpcData, ref: dict[str, Any]) -> None:
     )
 
 
-def _process_npc_reflection(game: GameState, ref: dict[str, Any]) -> str | None:
+def _process_npc_reflection(game: GameState, ref: dict[str, Any], done: set[str]) -> str | None:
     npc_id: str | None = ref["npc_id"]
     npc = find_npc(game, npc_id)
     if not npc:
+        return None
+    if npc.id in done:
+        log(f"[Director] Skipped duplicate reflection for {npc.name}", level="warning")
+        return None
+    if not _reflection_eligible(npc):
+        log(
+            f"[Director] Rejected reflection for {npc.name}: not selected for reflection (status {npc.status})",
+            level="warning",
+        )
         return None
 
     reflection_text = ref["reflection"]
@@ -393,7 +404,7 @@ def _process_npc_reflection(game: GameState, ref: dict[str, Any]) -> str | None:
     consolidate_memory(npc)
 
     log(f"[Director] Reflection for {npc.name}: {reflection_text[: eng().truncations.log_medium]}")
-    return npc_id
+    return npc.id
 
 
 def apply_director_guidance(game: GameState, guidance: dict[str, Any]) -> None:
@@ -414,7 +425,7 @@ def apply_director_guidance(game: GameState, guidance: dict[str, Any]) -> None:
 
     successfully_reflected: set[str] = set()
     for ref in guidance["npc_reflections"]:
-        reflected_id = _process_npc_reflection(game, ref)
+        reflected_id = _process_npc_reflection(game, ref, successfully_reflected)
         if reflected_id is not None:
             successfully_reflected.add(reflected_id)
 

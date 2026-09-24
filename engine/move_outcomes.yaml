@@ -24,7 +24,6 @@ move_outcomes:
   adventure/compel:
     strong_hit:
     - momentum +1
-    - bond +1
     weak_hit:
     - momentum +1
     miss:
@@ -358,7 +357,6 @@ move_outcomes:
   relationship/compel:
     strong_hit:
     - momentum +1
-    - bond +1
     weak_hit:
     - momentum +1
     miss:

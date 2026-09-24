@@ -97,6 +97,7 @@ class MomentumConfig:
     floor: int
     max: int
     start: int
+    reset_floor: int
     suffer_recovery: SufferRecoveryGain
 
 

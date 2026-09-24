@@ -683,3 +683,49 @@ if __name__ == "__main__":
             failed += 1
     print(f"\n{passed} passed, {failed} failed out of {passed + failed}")
     sys.exit(1 if failed else 0)
+
+
+def test_dialog_turn_runs_npc_agency_on_interval_scene(load_engine: None) -> None:
+    from straightjacket.engine.engine_loader import eng
+    from straightjacket.engine.game.turn import process_turn
+    from straightjacket.engine.models import EngineConfig
+
+    provider = MockProvider()
+    original_create = provider.create_message
+
+    def dialog_brain(spec: AICallSpec) -> AIResponse:
+        schema = spec.json_schema
+        if schema and "move" in schema["properties"]:
+            return AIResponse(
+                content=json.dumps(
+                    {
+                        "type": "action",
+                        "move": "dialog",
+                        "stat": "none",
+                        "approach": "",
+                        "target_npc": "npc_1",
+                        "dialog_only": True,
+                        "player_intent": "I talk to Mira",
+                        "world_addition": None,
+                        "location_change": None,
+                    }
+                ),
+                usage={"input_tokens": 100, "output_tokens": 50},
+            )
+        return original_create(spec)
+
+    provider.create_message = dialog_brain
+    game = _make_game()
+    for npc in game.npcs:
+        npc.status = "active"
+        npc.agenda = "Keep the archive sealed"
+    game.narrative.scene_count = eng().pacing.npc_agency_interval - 1
+    process_turn(provider, game, "I talk to Mira", config=EngineConfig(narration_lang="English"))
+    prompts = [
+        message["content"]
+        for call in provider.calls
+        if not call["json_schema"]
+        for message in call["messages"]
+        if isinstance(message["content"], str)
+    ]
+    assert any("<npc_agency>" in prompt for prompt in prompts)

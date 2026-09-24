@@ -5,6 +5,7 @@ from .models import BrainResult, ClockFillResult, GameState, NpcData, RandomEven
 from .prompt_blocks import narrative_direction_block, recent_events_block, story_context_block
 from .prompt_loader import get_prompt
 from .prompt_shared import (
+    _npc_agency_block,
     _clock_filled_block,
     _director_block,
     _loc_hist,
@@ -29,11 +30,13 @@ def build_dialog_prompt(
     oracle_answer: str = "",
     random_events: Sequence[RandomEvent] = (),
     clock_fill_results: Sequence[ClockFillResult] = (),
+    npc_agency: Sequence[str] = (),
 ) -> str:
     context_text = f"{player_words} {brain.player_intent} {game.world.current_scene_context}"
     move_cat = "social"
     npc = _npc_block(game, brain.target_npc, context_text=context_text, move_category=move_cat)
     npcs_sect = _npcs_section(game, brain, context_text, activated_npcs, mentioned_npcs, move_category=move_cat)
+    agency = _npc_agency_block(npc_agency)
 
     wa = brain.world_addition
     wl = f"\n<world_add>{_xe(wa)}</world_add>" if wa else ""
@@ -54,7 +57,7 @@ def build_dialog_prompt(
 {_scene_header(game)}
 <intent>{_xe(brain.player_intent)}</intent>{pw}{oracle_tag}{clock_section}
 <location>{_xe(game.world.current_location)}</location>{_loc_hist(game)}{_time_ctx(game)}{_scene_enrichment(game)}
-{npc}{npcs_sect}{wl}{crisis}
+{npc}{npcs_sect}{wl}{agency}{crisis}
 {pacing}
 {events_block}{director}
 {narrative_direction_block(game, "dialog")}

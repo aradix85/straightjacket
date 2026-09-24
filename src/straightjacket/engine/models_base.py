@@ -56,9 +56,9 @@ class Resources(SerializableMixin):
         if self.momentum != old:
             log(f"[Resources] momentum {'+' if delta > 0 else ''}{delta} ({old}→{self.momentum})")
 
-    def reset_momentum(self, floor: int, reset_value: int, max_cap: int) -> None:
+    def reset_momentum(self, reset_floor: int, reset_value: int, max_cap: int) -> None:
         old = self.momentum
-        self.momentum = max(floor, reset_value - (max_cap - self.max_momentum))
+        self.momentum = max(reset_floor, reset_value - (max_cap - self.max_momentum))
         log(f"[Resources] momentum burned ({old}→{self.momentum})")
 
     def snapshot(self) -> dict[str, Any]:

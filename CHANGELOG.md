@@ -7,6 +7,26 @@ Originally forked from [EdgeTales](https://github.com/edgetales/edgetales). See 
 
 Straightjacket uses calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day. The first CalVer release is `2026.04.25.0`. Earlier `0.x.y` releases keep their original version numbers and are not renumbered. The switch was made because the project has no public API to version semantically against — the `0.x.y` numbers were running counters with no meaning, and dates carry the meaning the numbers didn't.
 
+## [2026.09.24.6] — 2026-09-24
+
+Rules and robustness fixes found by comparing with EdgeTales 0.9.67–0.9.96 (Lars). Ideas reimplemented, no code copied. Each fix comes with a test that fails on the previous code; for the momentum and Director fixes the old code already fails on the new signatures, the compel and dialog-agency tests fail on behaviour.
+
+NPC agency ran only on action turns. `check_npc_agency` fires on scenes that are a multiple of `pacing.npc_agency_interval`, but only the action path called it, so whenever that scene was a dialog or oracle turn, agency was skipped for the whole interval. The dialog path now calls it too: agency actions reach the dialog prompt as `<npc_agency>` (the block moved into a shared `prompt_shared.py::_npc_agency_block` used by both prompts), fill results join the same-turn clock fills, and clock events reach scene finalization.
+
+Director reflections were applied without checking the engine's selection. The prompt only offers NPCs that need a reflection or a profile and are active or background, but the answer was applied for any NPC id the AI returned, including deceased and lore NPCs, and a duplicate entry for the same NPC was applied twice (two reflection memories, two sets of updates). One shared `_reflection_eligible` now decides both sides, duplicates within one response are skipped, and `_process_npc_reflection` returns the resolved NPC id.
+
+`compel` marked bond progress on a strong hit. Neither Ironsworn nor Starforged does that; a successful compel is transactional. `bond +1` removed from `adventure/compel` and `relationship/compel`.
+
+Momentum reset could fall below zero. After a burn the reset is +2, reduced by one per impact; the rules put its minimum at 0, but the code floored it at the momentum floor (-6), so three or more impacts reset momentum to -1 or lower. New `momentum.reset_floor: 0` in `engine/momentum.yaml`, and `Resources.reset_momentum` takes `reset_floor`.
+
+Checked and not a bug here: an NPC introduced and killed in the same scene. EdgeTales could not mark such an NPC dead because its extractor had no id to report; in Straightjacket a new NPC gets a seed memory for the current scene and `find_npc` resolves names, so the presence check accepts the death. The test stays as a regression guard.
+
+Six larger ideas from the comparison are sketched in roadmap.md under "E — Ideas from the EdgeTales comparison": clock and threat pressure in narrative direction, NPC exit tracking, NPC-to-NPC dynamics, stale NPC retirement, a constrained Brain `target_npc`, and a narrator rule on NPC backstory.
+
+One existing test, `test_compel_no_disposition_shift`, asserted that compel marks connection progress, which is exactly the behaviour this release removes. Per "Tests are not the spec" it is rewritten as `test_compel_strong_hit_marks_no_bond_and_no_disposition_shift`.
+
+Quality gate: 1274 tests green, twenty-eight project-rule scans clean, coverage 88.05%, ruff check and ruff format clean, mypy --strict clean on 105 source files. Save format unchanged.
+
 ## [2026.09.24.5] — 2026-09-24
 
 mypy runs in strict mode. `mypy --strict` reported 398 errors; it now reports none, and `[tool.mypy]` in `pyproject.toml` says `strict = true` instead of listing six individual flags.
