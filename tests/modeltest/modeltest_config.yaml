@@ -62,6 +62,8 @@ contestants:
     extra_body:
       reasoning:
         effort: "low"
+      provider:
+        data_collection: "deny"
   muse-spark-1.3:
     label: "Muse Spark 1.3 Contributor"
     provider: "openrouter"
@@ -76,6 +78,8 @@ contestants:
     extra_body:
       reasoning:
         effort: "low"
+      provider:
+        data_collection: "deny"
   kimi-k3:
     label: "Kimi K3"
     provider: "openrouter"
@@ -83,6 +87,8 @@ contestants:
     extra_body:
       reasoning:
         effort: "low"
+      provider:
+        data_collection: "deny"
   gemini-3.8-flash:
     label: "Gemini 3.8 Flash"
     provider: "openrouter"
@@ -90,6 +96,28 @@ contestants:
     extra_body:
       reasoning:
         effort: "low"
+      provider:
+        data_collection: "deny"
+
+  muse-spark-1.3-standard:
+    label: "Muse Spark 1.3 (standard)"
+    provider: "openrouter"
+    model: "meta/muse-spark-1.3"
+    extra_body:
+      reasoning:
+        effort: "minimal"
+      provider:
+        data_collection: "deny"
+
+  qwen3.8-flash-nothink:
+    label: "Qwen3.8 Flash (no thinking)"
+    provider: "openrouter"
+    model: "qwen/qwen3.8-flash"
+    extra_body:
+      reasoning:
+        enabled: false
+      provider:
+        data_collection: "deny"
 
 prices:
   gpt-6-luna: [0.10, 0.50]
@@ -102,3 +130,4 @@ prices:
   qwen/qwen3.8-flash: [0.15, 0.47]
   moonshotai/kimi-k3: [3.00, 15.00]
   google/gemini-3.8-flash: [0.75, 3.75]
+  meta/muse-spark-1.3: [1.25, 4.25]

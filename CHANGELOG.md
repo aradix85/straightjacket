@@ -7,6 +7,18 @@ Originally forked from [EdgeTales](https://github.com/edgetales/edgetales). See 
 
 Straightjacket uses calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day. The first CalVer release is `2026.04.25.0`. Earlier `0.x.y` releases keep their original version numbers and are not renumbered. The switch was made because the project has no public API to version semantically against — the `0.x.y` numbers were running counters with no meaning, and dates carry the meaning the numbers didn't.
 
+## [2026.09.24.52] — 2026-09-25
+
+Two more narrator candidates measured with the harness, and what it took to reach them.
+
+Harness. `tests/modeltest/modeltest.py` gains `--workers` (requests at the same time) and `--retries` (retries per request), which override `modeltest_config.yaml` for one run. Every contestant reached through OpenRouter now sends `provider.data_collection: deny` with each request, except Muse Spark Contributor, whose terms are that Meta trains on the traffic. The user allowed training providers on the OpenRouter account so that Contributor can be reached at all; a request-level `allow` cannot loosen an account-level `deny` (checked: OpenRouter still excluded the endpoint), but a request-level `deny` does tighten an account that allows, so the other contestants stay private.
+
+Muse Spark 1.3 Contributor was not measured. OpenRouter first required an 18+ age confirmation on the account, then the privacy setting above, and then Meta's shared pool for the Contributor tier answered 429 with a 60-second Retry-After on three probes in a row and on the first requests of a run, which was stopped. The standard tier, `meta/muse-spark-1.3` at $1.25 and $4.25 per million tokens, is the same model and was measured instead, at reasoning effort minimal: Muse cannot switch reasoning off, and in probes minimal gave the first text after 2 to 4 seconds against about 4 at low. Result over 30 narrations: overall 6.92 out of 10, result integrity on a miss 4.50, player agency 3.45 (the lowest of all contestants), first text after 4.2 seconds, whole narration 7.2 seconds, 176 words, about $0.54 per 100 narrations; the Contributor tier would cost about a fifteenth of that. Signing up for Meta's own Model API from the Netherlands ends on a waiting list.
+
+Qwen3.8 Flash without thinking (`reasoning.enabled: false`, which gave zero reasoning tokens and a first text after 0.8 seconds in a probe): overall 6.67, result integrity on a miss 3.83, first text after 1.2 seconds, 280 words, about $0.05 per 100 narrations. Switching thinking off fixed its speed (54 to 89 seconds with effort low in the previous measurement) but not its quality, which is below GPT-6 Luna's 7.00 and 4.08.
+
+Quality gate: 1438 tests green, twenty-nine project-rule scans clean, coverage 90.01%, ruff check and ruff format clean, mypy --strict clean on 109 source files. No Elvira run: engine, prompts, and configuration are unchanged; only the harness and its configuration changed, and the two measurements above ran them end to end. Save format unchanged.
+
 ## [2026.09.24.51] — 2026-09-24
 
 Elvira plays prepared rare situations, the second of two steps the user asked for; the schema check from the old harness becomes a test, and the old harness folder goes.

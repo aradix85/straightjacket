@@ -32,9 +32,15 @@ def main() -> None:
         "--models", nargs="+", default=["current"], help="Contestants from modeltest_config.yaml, or 'current'"
     )
     parser.add_argument("--attempts", type=int, default=None, help="Narrations per model and scene")
+    parser.add_argument("--workers", type=int, default=None, help="Requests at the same time")
+    parser.add_argument("--retries", type=int, default=None, help="Retries per request")
     args = parser.parse_args()
 
     settings = _load("modeltest_config.yaml")
+    if args.workers is not None:
+        settings["workers"] = args.workers
+    if args.retries is not None:
+        settings["max_retries"] = args.retries
     if args.capture:
         for line in capture_all(_load("modeltest_scenarios.yaml"), _HERE / "scenarios", settings):
             print(line)
