@@ -17,7 +17,7 @@ The sanitization is in `user_management.py._safe_name()` and is applied in all p
 
 ## Prompt injection via player input
 
-Player input is included in AI prompts as XML element content. All player-supplied text (input, names, backstory, vow text) is escaped via `xml_utils.xe()` (HTML entity escaping) before insertion into prompt XML. This prevents players from injecting XML tags that could alter AI behavior — e.g. closing a `<scene>` tag and injecting a fake `<result type="STRONG_HIT">`.
+Player input is included in AI prompts as XML element content. All player-supplied text (input, names, backstory, vow text) is escaped before insertion into prompt XML: `xml_utils.xe()` for element content and `xml_utils.xa()` for attribute values, both HTML entity escaping. This prevents players from injecting XML tags that could alter AI behavior — e.g. closing a `<scene>` tag and injecting a fake `<result type="STRONG_HIT">`.
 
 The escaping is applied in every prompt-assembly module (`prompt_action.py`, `prompt_dialog.py`, `prompt_boundary.py`, `prompt_shared.py`, `prompt_blocks.py`, `director.py`) and in `ai/brain.py` (which uses `html.escape` directly for the same effect). The Brain's `player_intent` field is AI-generated from player input, not raw player text, which provides a secondary layer of isolation.
 
@@ -27,7 +27,7 @@ Single-session server: one active player at a time. Opening a second browser tab
 
 ## Reporting vulnerabilities
 
-If you find a security issue, email the maintainer directly instead of opening a public issue. Include steps to reproduce.
+If you find a security issue, contact the maintainer privately through the project page at blindgamer85.itch.io instead of opening a public issue. Include steps to reproduce.
 
 ## Scope
 

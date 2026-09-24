@@ -2,9 +2,9 @@
 
 ## Purpose
 
-Internal working doc. Read after system prompt, ARCHITECTURE.md, codebase. What to build, in what order, with codebase-specific guardrails. Style and hard prohibitions live in system prompt.
+Internal working doc. Read after ARCHITECTURE.md and the codebase. What to build, in what order, with codebase-specific guardrails. The absolute rules live in ARCHITECTURE.md (Project rules) and are enforced by `tests/test_project_rules.py`; a separate system prompt may add working-style rules, but it is not part of the repository and this document does not depend on it.
 
-Not committed to the repository. Lives locally.
+Committed to the repository since 2026.05.15.0.
 
 Step sizing: one step = one session. Read codebase, implement, test, quality gate, delete obsoleted code, update roadmap. Reality diverges from roadmap during a step: update in the same commit. Never leave roadmap claiming something the code disagrees with.
 
@@ -45,7 +45,7 @@ These checks run before declaring a step done. Never duplicated inside individua
 1. Quality gate: `pytest tests/ -q && ruff check && ruff format --check && mypy src`. Four passes. `test_project_rules.py` failures that measure residual debt are acceptable-red; every other failure is blocking.
 2. Violation grep on touched files: `.get("..", ` on non-neutral literal; `or "..` on domain value; `except Exception` without policy marker. New hits not present pre-step = new violations, fix.
 3. Legacy deletion confirmed in `git status`.
-4. Roadmap updated: completed step moves to DONE with one-line summary; first next-steps entry promoted to NEXT and expanded (substeps, definition of done, patterns); Current state reflects any architectural decision taken during the step. md-files check: scan README, ARCHITECTURE, CHANGELOG, CONTRIBUTING, ORIGINS, SECURITY for claims invalidated by this step. Update what drifted, keep updates concise.
+4. Roadmap updated: completed step moves to DONE with one-line summary; first next-steps entry promoted to NEXT and expanded (substeps, definition of done, patterns); Current state reflects any architectural decision taken during the step. md-files check: scan README, ARCHITECTURE (which includes the former CONTRIBUTING content), CHANGELOG, ORIGINS, SECURITY, AUDIT for claims invalidated by this step. Update what drifted, keep updates concise.
 
 ## Reference patterns (this codebase)
 
@@ -60,7 +60,11 @@ Templates for similar work. The validator stack (`ai/architect_validator.py`, `a
 - New subpackage layout: `engine/correction/` — `__init__.py` re-exports public names, internal files split by responsibility.
 - Large container split: `engine_config.py` + `engine_config_dataclasses.py` — orchestrator file re-exports from dataclasses file via explicit import list.
 
-When adding a public `def`/`class` or a new `engine/*.yaml` top-level key, wire the consumer in the same commit. The orphan scans run as part of `test_project_rules.py` and reject definitions without callers as well as yaml keys without readers. Carve-outs exist for the legitimate exceptions (FastAPI route handlers, dataclasses bound only via parent-attribute, AICallSpec sub-fields) but the default expectation is that new code is consumed before merge.
+When adding a public `def`/`class` or a new `engine/*.yaml` top-level key, wire the consumer in the same commit. The orphan scans run as part of `test_project_rules.py` and reject definitions without callers as well as yaml keys without readers. Carve-outs exist for the legitimate exceptions (Starlette web route handlers such as `homepage` and `websocket_endpoint`, dataclasses bound only via parent-attribute, AICallSpec sub-fields) but the default expectation is that new code is consumed before merge.
+
+## Validator policy
+
+No post-hoc AI validators and no retry loops that judge AI output against writing rules. The narration validator, the architect validator, and the chapter-summary validator were built, measured, and removed in 2026.04.27.8 and 2026.04.27.9; see "No narration validator" under Deliberate divergences in ARCHITECTURE.md. Constraints are enforced upstream instead: the engine decides the facts, puts them in the prompt, and narrows what the AI can produce. Roadmap substeps that originally carried a validator were rewritten on this basis. A diagnostic measurement layer without retry and without prompt injection stays an open option once the roadmap is complete.
 
 ## Test infrastructure
 
@@ -69,7 +73,7 @@ When adding a public `def`/`class` or a new `engine/*.yaml` top-level key, wire 
 
 ## Current state
 
-Next feature step: Clock expansion (see below) — vol-consequenties plus creation from random events plus creation from AC plot-points.
+Next feature step: Generator framework (step 9, see NEXT STEP below). Clock expansion landed in 2026.05.14.0.
 
 Open architectural questions: none currently pending.
 
@@ -81,58 +85,36 @@ Coverage-test precedent (28.3, referenced by step 13b): when a runtime filter ex
 
 Datasworn oracle cascade (introduced in 2026.05.11.0 threat creation step, referenced by future generator-framework callsites): `datasworn/cascade.py::roll_oracle_cascade` follows markdown-link IDs in oracle-row text (`[Label](id:setting/oracles/path)` syntax). Used by AC threat-naming to follow Delve's `threat/category` → sub-table chain. Generic helper, shared across future cascade-using callsites (step 9 generator framework, step 10 location/encounter generators).
 
-Threat creation source-vs-naming pattern (introduced in 2026.05.11.0): two spawn-bronnen, twee naming-bronnen — random-event threats are named from the event's Mythic action+subject pair (the event already produced it); AC plot-point threats are named from a Datasworn cascade-roll on `oracle_paths.threats`. The principle: each source-system provides its own naming-input, not a forced single mechanism over both. Future spawners that introduce new entity-types follow the same axis — let the source provide what it naturally has.
+Threat creation source-vs-naming pattern (introduced in 2026.05.11.0): two spawn sources, two naming sources — random-event threats are named from the event's Mythic action+subject pair (the event already produced it); AC plot-point threats are named from a Datasworn cascade-roll on `oracle_paths.threats`. The principle: each source-system provides its own naming-input, not a forced single mechanism over both. Future spawners that introduce new entity-types follow the same axis — let the source provide what it naturally has.
 
 ---
 
 
-## NEXT STEP — Clock expansion: vol-consequenties plus creation from random events plus creation from AC plot-points
+## DONE
 
-Three concerns about clocks bundled in one step. After this step, clocks are a fully autonomous mechanic: ze ontstaan uit meerdere bronnen, evolueren via tikken, eindigen met betekenis ook zonder gekoppelde keyed-scene. Combined with the threat-creation step that landed in 2026.05.11.0, both `threat_menace_phase any:N` and `clock_fills any:N` patterns get real entities to bind to.
+One line per completed step, newest last. Details in CHANGELOG.
 
-Concern one — vol-consequenties when no keyed-scene attached. Currently a clock that fills only does something if a keyed-scene happens to be tied to it via the 7c clock-spawner; without that link, the clock fills silently. Per clock-type a default consequence fires. Fallback path: when keyed-scene attached, the keyed-scene wins and the default is suppressed.
-
-Concern two — clock creation from random events. Mythic event-focus categories that imply approaching pressure (selected `pc_negative`, `move_toward_thread`, `move_away_from_thread`) can create a fresh `ClockData` with rank-derived segments, naming from the event's Mythic action+subject pair (mirrors threat-creation precedent). Once created, the clock automatically gets per-fraction keyed-scenes via the 7c clock-spawner.
-
-Concern three — clock creation from AC plot-points. AC plot-points whose name implies a deadline (`Time Limit`, `A Crucial Life Support System Begins To Fail`, `A Needed Resource Runs Out`, `Impending Doom`) create a fresh `ClockData` at chapter-start. Naming via Datasworn oracle cascade (mirrors threat-creation precedent — reuse `oracle_paths.threats` or add `oracle_paths.deadlines` per setting if cascade-content differs; resolve during implementation).
-
-### Substeps
-
-**Clock-spawn-1** Vol-consequenties. Yaml-mapping per clock-type in new `engine/clock_consequences.yaml`: `threat` → menace-escalation tag plus narrative-hint, `scheme` → faction-action tag (couples with step 14b/15; for now no-op or stub), `progress` → quest/expedition resolution (couples with `complete_track` already in `game/tracks.py`). Dataclass binding in `engine_config_dataclasses.py`. Vol-check fires when `clock.fired` transitions to True. Fallback: skip default-consequence when an attached keyed-scene has source-prefix matching this clock's id (clock-spawned keyed-scenes from 7c). Implementation in `mechanics/consequences.py` or new `mechanics/clock_consequences.py` — decide during implementation per file-size.
-
-**Clock-spawn-2** Random-event clock spawner. New mapping in `engine/random_events.yaml::clock_creation_mapping` per event-focus: `pc_negative`, `move_toward_thread`, `move_away_from_thread` get rank-config entries. Spawner `spawn_clock_from_random_event(game, event) -> ClockData | None` in `mechanics/random_events.py`. Wired into `generate_random_event` after the keyed-scene-spawner and after `spawn_threat_from_random_event` (a random event can produce up to three entities — keyed-scene, threat, clock — depending on mapping coverage). Dedup via `clock.creation_source` field (new — `ClockData` veld toevoegen, mirror van `ThreatData.creation_source` patroon). Cap via `engine/clocks.yaml::max_clocks_per_chapter` (new key).
-
-**Clock-spawn-3** AC plot-point clock spawner. New mapping in `engine/adventure_crafter.yaml::clock_creation_mapping`. Spawner `spawn_clocks_for_turning_point(game, turning_point) -> int` in `mechanics/adventure_crafter.py`. Wired into `assemble_blueprint_seed_from_ac` after `spawn_threats_for_turning_point`. Same dedup pattern via `clock.creation_source`. Same cap field shared across both spawn-bronnen, mirroring the threat-creation pattern.
-
-**Clock-spawn-4** Tests: each spawner produces valid `ClockData` for mapped sources; unmapped sources skip silently; dedup holds; cap respected across both bronnen; vol-consequences fire per clock-type when no keyed-scene attached; vol-consequences suppressed when an attached keyed-scene matches the clock; `clock_fills any:N` keyed-scene fires after spawn when clock reaches the fraction.
-
-### Definition of Done
-
-- Clock creation from random events and AC plot-points works end-to-end: a random-event of mapped focus or an AC turning-point with a mapped plot-point places a `ClockData` on `game.clocks` (or wherever clocks live — verify during implementation).
-- Vol-consequenties fire per clock-type when no keyed-scene attached; suppressed when one is.
-- Existing 7c-spawned `clock_fills any:N` keyed-scenes can now actually fire because clocks exist mid-game.
-- Quality gate green (pytest, ruff check, ruff format, mypy).
-- Save format breekt door `ClockData.creation_source` veld; geen migratie per project-policy.
-- ARCHITECTURE.md: extension of the threat-creation Key Design paragraph to include clock-creation in the same spawn-source-vs-naming-source pattern; module-ownership-rij voor clock creation; mention of `clock_consequences.yaml` if it lands.
-- CHANGELOG entry.
-
-### Reference patterns
-
-- Threat creation step (2026.05.11.0): mapping-block in yaml, dataclass-binding, spawner-function, dedup via `creation_source` veld, cap shared across spawn-bronnen, wired in same callsites as keyed-scene-spawner. Clock creation follows the same shape — extend the existing precedent, do not invent a new pattern.
-- Naming via cascade: `datasworn/cascade.py::roll_oracle_cascade` already exists from threat-creation. Reuse for AC clock-naming if cascade-content fits, else add new `oracle_paths.deadlines` field.
-- Vol-consequenties suppression: pattern is "engine-emitted tag unless engine-emitted keyed-scene takes over". Source-prefix-check on attached keyed-scenes against the firing clock's id; same dedup-via-source mechanism as 7c keyed-scene-spawning.
+- Step 1 — Explicit chapter transitions: `ChapterSummary` carries a mechanical snapshot; three-place capture/reset/restore pattern (0.74.0).
+- Step 2 — Chapter-summary contradiction validator (2026.04.25.0). Removed again in 2026.04.27.9 per Validator policy.
+- Step 3 — Continue a Legacy: character succession with locked-in inheritance rolls (2026.04.25.1).
+- Step 4 — Keyed scenes, consumer side: `keyed > interrupt > altered > expected` (2026.04.25.2).
+- Step 5 — Adventure Crafter primitives: themes, plot points, meta dispatch (2026.04.26.0).
+- Step 6 — AI data supply audit: tool-call vs prompt-inject verified at fourteen AI call sites, no migrations needed (2026.04.28.5).
+- Step 6b — AC turning points and supporting tables; shared `characters_list` plus `plotlines_list` (2026.04.29.0).
+- Step 7a — AI architect replaced by AC blueprint seed plus `call_blueprint_voicing` (2026.05.06.0).
+- Step 8 — `ai/architect.py` split into `ai/recap.py` and `ai/chapter_summary.py` (2026.05.06.1).
+- Step 7b — AC character-crafting tables as pure helpers; `CharacterTraits` under orphan carve-out until step 11 (2026.05.06.2).
+- Step 7c — Keyed-scene spawners from AC, random events, and clocks, plus pattern grammar (2026.05.06.3).
+- Threat creation from random events and AC plot-points; `datasworn/cascade.py` (2026.05.11.0).
+- Clock expansion — fill consequences, clock creation from random events and AC plot-points, `owner_kind`/`owner_id` refactor (2026.05.14.0). Two deviations from the plan: fill consequences live in `engine/clocks.yaml::fill_consequences` instead of a separate `clock_consequences.yaml`, and AC clocks are named after the plot point instead of a cascade roll.
 
 ---
 
-## Next steps
-
-Sketches and drafts. Order indicative, not fixed. Each entry needs substeps + definition of done + patterns before scheduling — that work happens during post-flight of the step that promotes this one to NEXT, not pre-emptively. Some entries below already have substeps drafted; those promote with less work, but Definition of Done and Reference patterns still get filled in at promotion time.
-
-### 9 — Generator framework
+## NEXT STEP — 9: Generator framework
 
 Dependency: parent-chain settings resolver exists in `datasworn/settings.py` — `_resolve_oracle_paths`, `_resolve_creation_flow` plus `SettingPackage.oracle_data_for` walk the chain. (`_resolve_genre_constraints` was removed in 27.10 along with the GenreConstraints dataclass.)
 
-The generator framework is the single engine entry-point for content the fiction needs but the game-state does not yet hold. Two consumption shapes the framework must handle, called out explicitly so step 10 plus 11 plus 25 plus 26 can build on a stable contract: entity-creation (a new settlement, location, NPC, or encounter is brought into being from a category and context — what the design document calls "fiction generation") and fact-resolution (a player action references an attribute of an existing entity that has not yet been determined — door is locked or not, NPC is alert or not, kamer holds an item or not — what the "Engine-resolved fiction" Key Design Decision calls for). Both flow through the same callable surface so that the consumer code never needs to choose between "generate" and "resolve" at the callsite — the framework determines from category+context whether to roll on a structure-table or a fate-question.
+The generator framework is the single engine entry-point for content the fiction needs but the game-state does not yet hold. Two consumption shapes the framework must handle, called out explicitly so step 10 plus 11 plus 25 plus 26 can build on a stable contract: entity-creation (a new settlement, location, NPC, or encounter is brought into being from a category and context — what the design document calls "fiction generation") and fact-resolution (a player action references an attribute of an existing entity that has not yet been determined — door is locked or not, NPC is alert or not, a room holds an item or not — what the "Engine-resolved fiction" Key Design Decision calls for). Both flow through the same callable surface so that the consumer code never needs to choose between "generate" and "resolve" at the callsite — the framework determines from category+context whether to roll on a structure-table or a fate-question.
 
 **9.1** Entry point `generate(game, category, context) -> dict`. Starting categories: settlement, location, npc, encounter (entity-creation), plus fact (fact-resolution: takes a fact_type + entity_ref, returns boolean or enum value). Extensible — step 25 adds waypoint, step 26 adds site, step 11 adds npc tiers. Registry or yaml-lookup, not closed Python enum. The fact category routes through `mechanics/fate.py::resolve_fate` with odds derived from context per `engine/fate.yaml::likelihood_rules`; entity categories route through Datasworn oracle rolls per category-specific paths.
 
@@ -142,11 +124,43 @@ The generator framework is the single engine entry-point for content the fiction
 
 **9.4** Generated content rendered through the setting's `vocabulary.substitutions` in the narrator prompt. No post-hoc validator (see Validator policy). The substitution is the constraint: if the oracle returns "spaceship", the prompt receives the setting's substitution (e.g. "starship — worn, patched") before reaching the narrator.
 
-**9.5** AI-data-aanvoer: generated entity dicts and resolved facts are injected into the narrator prompt as structured `<generated>` and `<fact>` tags, not surfaced via tool-call. Rationale: this data is always relevant for the call that triggered it (the narrator is about to describe the entity or react to the resolved fact in this turn) and the payload is bounded (one entity dict, one fact result). Tool-calling here would add a roundtrip without the AI making a meaningful selection — engine has already determined what is relevant. Per the "When tool-call vs when prompt-inject" Key Design Decision in ARCHITECTURE.md.
+**9.5** AI data supply: generated entity dicts and resolved facts are injected into the narrator prompt as structured `<generated>` and `<fact>` tags, not surfaced via tool-call. Rationale: this data is always relevant for the call that triggered it (the narrator is about to describe the entity or react to the resolved fact in this turn) and the payload is bounded (one entity dict, one fact result). Tool-calling here would add a roundtrip without the AI making a meaningful selection — engine has already determined what is relevant. Per the "When tool-call vs when prompt-inject" Key Design Decision in ARCHITECTURE.md.
 
 **9.6** Tests: smoke with stub oracle data, category registry accepts additions, fact-resolution returns deterministic value for fixed-seed RNG, unknown fact_type raises.
 
-Done: callable framework, returns structured output, both entity-creation and fact-resolution paths working. New category = yaml + minimal registration only.
+
+### Open question to settle first
+
+What triggers fact resolution? Per 2026.04.28.4 the player types actions, never questions, so the trigger cannot be a player-typed fate question. Candidates: a structured Brain output field naming an undetermined attribute of an entity the action touches, or engine rules keyed on move and target. Decide before 9.1 lands and record the decision in Current state and CHANGELOG.
+
+### Definition of Done
+
+- `generate(game, category, context)` exists as the single entry point, exported through the `mechanics` package `__init__.py` (or the subpackage chosen during implementation).
+- Categories `settlement`, `location`, `npc`, `encounter`, and `fact` are registered via yaml; an unknown category raises; an unknown `fact_type` raises.
+- The oracle accessor handles Delve theme+domain, Sundered Isles cursed/non-cursed variants, and Starforged flat d100 via setting-yaml data, with no Python branching on setting names.
+- Per-category oracle paths are required fields on `OraclePaths`; a missing path raises `KeyError`.
+- `engine/fact_resolution.yaml` is bound to a dataclass; fact resolution goes through `mechanics/fate.py::resolve_fate` with odds from `engine/fate.yaml::fate.likelihood_rules`.
+- `<generated>` and `<fact>` tags render through a `prompt_shared.py` helper with templates in `prompts/blocks.yaml`; vocabulary substitutions are applied before the narrator sees generated content.
+- At least one real callsite consumes the framework in this step (candidate: route `npc/naming.py::roll_oracle_name` through the `npc` category). If none fits, add a documented orphan-symbol carve-out that step 10 removes, following the `CharacterTraits` precedent.
+- Quality gate green (pytest, ruff check, ruff format, mypy); no new `test_project_rules.py` violations.
+- If generated entities are persisted, the save format breaks; no migration per project policy.
+- ARCHITECTURE.md: module-ownership rows, file-map entry, "Engine-resolved fiction" implemented-today sentence, and Known Limitations updated. CHANGELOG entry.
+
+### Reference patterns
+
+- Registry with yaml-registered names and a Python dispatch dict validated at load: `engine/keyed_scenes.yaml` plus `mechanics/keyed_scenes.py::_EVALUATORS`.
+- Existing oracle-roll consumer: `npc/naming.py::roll_oracle_name` via `data/settings/*.yaml::oracle_paths.names`.
+- Parent-chain oracle lookup: `datasworn/settings.py` → `SettingPackage.oracle_data_for`, `_resolve_oracle_paths`.
+- Cascading oracle rolls: `datasworn/cascade.py::roll_oracle_cascade`.
+- Fate with engine-derived odds: `mechanics/fate.py` → `resolve_fate`, `resolve_likelihood`; `engine/fate.yaml::fate.likelihood_rules`.
+- Engine fact as prompt tag: `prompt_shared.py::_clock_filled_block` (`<clock_filled>`) and the `<oracle_answer>` tag from `ask_the_oracle`.
+- New config section: `engine_config_dataclasses.py` (required fields, no defaults) plus an entry in `engine_config.py` `_SIMPLE_SECTIONS`.
+
+---
+
+## Next steps
+
+Sketches and drafts. Order indicative, not fixed. Each entry needs substeps + definition of done + patterns before scheduling — that work happens during post-flight of the step that promotes this one to NEXT, not pre-emptively. Some entries below already have substeps drafted; those promote with less work, but Definition of Done and Reference patterns still get filled in at promotion time.
 
 ### 10 — Location and encounter generators
 
@@ -188,7 +202,7 @@ Builds on step 11. Extends existing `check_npc_agency` (config-driven `pacing.np
 
 **12.4** Director sets goal-clock on NPC promotion to recurring. Decision at this step's callsite: either `engine/clock_keyed_scenes.yaml` gains a `goal` clock-type (small priority, full-fill only) and the callsite invokes `spawn_keyed_scenes_for_clock(narrative, clock)` from 7c, or NPC goal-clocks are deliberately exempted from per-fraction keyed-scenes because the goal-clock-fill itself is already the `<npc_action>` event. Pick one in the implementation commit; if exempt, document why in CHANGELOG so the pattern stays consistent across all other clock-creation sites.
 
-**12.5** Prompt budget: 1 `<npc_action>` per scene cap, config-driven. AI-data-aanvoer: the engine-rolled action descriptor lives in the narrator prompt as a structured `<npc_action>` tag (always relevant when present, bounded payload, no AI selection needed) — not surfaced via tool. Per the "When tool-call vs when prompt-inject" Key Design Decision. (Originally a validator substep; dropped per Validator policy. Engine sets the tag, narrator is asked to reflect it; no retry-validator on output.)
+**12.5** Prompt budget: 1 `<npc_action>` per scene cap, config-driven. AI data supply: the engine-rolled action descriptor lives in the narrator prompt as a structured `<npc_action>` tag (always relevant when present, bounded payload, no AI selection needed) — not surfaced via tool. Per the "When tool-call vs when prompt-inject" Key Design Decision. (Originally a validator substep; dropped per Validator policy. Engine sets the tag, narrator is asked to reflect it; no retry-validator on output.)
 
 Done: goal-clocks tick on triggers, filled → action tags, abstraction survives step 13 swap.
 
@@ -206,7 +220,7 @@ Group A — formal moves (player choice, structured outcome). Add to `engine/mov
 
 Group B — engine-triggers (consequence, automatic). Direct names that say what the code does, no formal move-shape. `mark_failure_on_miss` (Datasworn `failure/mark_your_failure`, fires on MISS, marks a failure-track segment), `face_setback_at_min_momentum` (Datasworn `suffer/face_a_setback`, fires when momentum would drop below -6, redirects loss), `mark_supply_depletion` (Datasworn `suffer/out_of_supply`, fires when supply hits 0, queues Wounded plus Shaken on next opportunity), `face_defeat_on_objective_loss` (Datasworn `combat/face_defeat`, fires on objective abandonment — uses existing combat-state). The existing `advance_menace_on_miss` already exemplifies the pattern and stays as-is; Datasworn `threat/advance_a_threat` is conceptually that mechanic. The existing `pay_the_price` engine-trigger stays as-is; Datasworn `fate/pay_the_price` is conceptually that.
 
-Group C — covered elsewhere or deliberately not wired. `legacy/continue_a_legacy` is fully covered by step 3 succession under a different name; not added. `fate/ask_the_oracle` overlaps with the engine-eigen `ask_the_oracle` in `engine_moves.yaml` which is the working dialog-shape; not duplicated. `threshold/overcome_destruction` is Sundered-Isles-ship and lands in step 28. The five session moves are deliberately not on the roadmap (see Current state).
+Group C — covered elsewhere or deliberately not wired. `legacy/continue_a_legacy` is fully covered by step 3 succession under a different name; not added. `fate/ask_the_oracle` overlaps with the engine's own `ask_the_oracle` in `engine_moves.yaml` which is the working dialog-shape; not duplicated. `threshold/overcome_destruction` is Sundered-Isles-ship and lands in step 28. The five session moves are deliberately not on the roadmap (decision recorded in CHANGELOG 2026.04.28.3).
 
 **13b.1** Group A formal moves added to `engine/move_outcomes.yaml`, with appropriate categorisation in `engine/move_categories.yaml`. Outcome handlers reuse existing patterns (progress-mark, momentum-shift, special-track) — no new handler type unless one move's spec genuinely demands it.
 
@@ -214,7 +228,7 @@ Group C — covered elsewhere or deliberately not wired. `legacy/continue_a_lega
 
 **13b.3** Per-trigger config in the relevant `engine/*.yaml` files (failure-track length, setback-redirect rules, supply-depletion impacts) — no domain values hardcoded in Python.
 
-**13b.4** AI-data-aanvoer: all triggered events surface as structured tags in the narrator prompt (`<consequence>`, `<failure_marked>`, `<setback>`, `<supply_depletion>`, `<defeat_faced>`); always relevant when present, bounded payload, no tool-calling needed. Per the "When tool-call vs when prompt-inject" Key Design Decision.
+**13b.4** AI data supply: all triggered events surface as structured tags in the narrator prompt (`<consequence>`, `<failure_marked>`, `<setback>`, `<supply_depletion>`, `<defeat_faced>`); always relevant when present, bounded payload, no tool-calling needed. Per the "When tool-call vs when prompt-inject" Key Design Decision.
 
 **13b.5** Tests: each formal move resolves through the existing move-outcome pipeline; each engine-trigger fires under its precise condition; existing `advance_menace_on_miss` regression-tested to confirm the broader pattern stays consistent; ARCHITECTURE.md's Datasworn-naming paragraph cited in the relevant test docstrings is not required (no docstrings rule), but commit message references the principle.
 
@@ -242,7 +256,7 @@ Dependency: 14a complete (FactionData persists).
 
 **14b.3** Datasworn faction oracles for generation: pull faction archetypes per setting from `data/settings/*.yaml::oracle_paths.factions` (the yaml-keys are already present in classic, starforged, and sundered_isles settings; the corresponding Python field was removed in 27.9 because no consumer existed yet, and step 14b is the consumer that justifies its return). Add `factions: str` back to `OraclePaths` dataclass in this step's commit; missing path on a setting that has factions = KeyError per strict-rules. The yaml-keys stop being orphans the moment 14b lands.
 
-**14b.4** AI-data-aanvoer: faction-event tags in the narrator prompt are prompt-injected (always relevant when fired, bounded payload). Director gains a new `query_faction(faction_id)` tool for use during NPC-reflection generation when the NPC's faction context is selectively relevant — Director decides whether to call. Per the "When tool-call vs when prompt-inject" Key Design Decision: prompt-injection for narrator, tool-call for Director where Director-side selection makes sense.
+**14b.4** AI data supply: faction-event tags in the narrator prompt are prompt-injected (always relevant when fired, bounded payload). Director gains a new `query_faction(faction_id)` tool for use during NPC-reflection generation when the NPC's faction context is selectively relevant — Director decides whether to call. Per the "When tool-call vs when prompt-inject" Key Design Decision: prompt-injection for narrator, tool-call for Director where Director-side selection makes sense.
 
 **14b.5** Tests: scheme-clock ticks, faction event queues, snapshot+restore through a chapter boundary.
 
@@ -256,7 +270,7 @@ Done: factions tick independently, persisted through snapshot+save+chapter.
 
 **15.3** `/factions` status command. Narrative form. Strings in strings/*.yaml.
 
-**15.4** AI-data-aanvoer: faction context for activated NPCs and `<faction_event>` tags are prompt-injected (always relevant when present, bounded payload). The `query_faction(faction_id)` Director tool from step 14b stays available for selective access during reflection-generation. Per the "When tool-call vs when prompt-inject" Key Design Decision.
+**15.4** AI data supply: faction context for activated NPCs and `<faction_event>` tags are prompt-injected (always relevant when present, bounded payload). The `query_faction(faction_id)` Director tool from step 14b stays available for selective access during reflection-generation. Per the "When tool-call vs when prompt-inject" Key Design Decision.
 
 **15.5** Tests. (Originally a validator substep on `<faction_event>` reflection; dropped per Validator policy. Engine sets the event, narrator prompt asks for it, no post-hoc check.)
 
@@ -394,7 +408,7 @@ Uses Option C from the track-type decision in Current state: ExpeditionData data
 
 **25.4** Scene structure: each waypoint = scene boundary, chaos check.
 
-**25.5** Prompt budget: ~30 tok when expedition active. AI-data-aanvoer: expedition state (destination, current waypoint, dangers seen so far) is prompt-injected into the narrator prompt — always relevant for any scene during an active expedition. Director gains a new `query_expedition()` tool for use during chapter-summary or recap generation when expedition history is selectively relevant. Per the "When tool-call vs when prompt-inject" Key Design Decision.
+**25.5** Prompt budget: ~30 tok when expedition active. AI data supply: expedition state (destination, current waypoint, dangers seen so far) is prompt-injected into the narrator prompt — always relevant for any scene during an active expedition. Director gains a new `query_expedition()` tool for use during chapter-summary or recap generation when expedition history is selectively relevant. Per the "When tool-call vs when prompt-inject" Key Design Decision.
 
 **25.6** Tests.
 
@@ -412,7 +426,7 @@ Uses Option C from the track-type decision: SiteData dataclass with `progress: P
 
 **26.4** Delve moves: Discover a Site, Delve the Depths, Find an Opportunity, Reveal a Danger, Locate Your Objective, Escape the Depths. Routing config-driven.
 
-**26.5** Prompt budget: ~60 tok. Cap discovered features to 3 most recent. AI-data-aanvoer: active site state (theme, domain, current depth, recent discoveries) is prompt-injected. Director gains a `query_site_features(site_id)` tool for selective access to the full discovered-features list during NPC-reflection or chapter-summary generation. Per the "When tool-call vs when prompt-inject" Key Design Decision.
+**26.5** Prompt budget: ~60 tok. Cap discovered features to 3 most recent. AI data supply: active site state (theme, domain, current depth, recent discoveries) is prompt-injected. Director gains a `query_site_features(site_id)` tool for selective access to the full discovered-features list during NPC-reflection or chapter-summary generation. Per the "When tool-call vs when prompt-inject" Key Design Decision.
 
 **26.6** Tests.
 
@@ -478,7 +492,7 @@ Data: `data/mythic_gme_2e.json` → `meaning_tables.elements` (already present).
 
 **33.2** 6 high-use themed tables selected for initial rollout. Selection mapping in `engine/themed_tables.yaml` (new) from (event_focus, scene_type, location_type) → chosen elements-table. Doubling rule: same word → greater intensity.
 
-**33.3** Integration with random event pipeline. Event focus routes to themed table when one matches context; falls through to actions/descriptions otherwise. AI-data-aanvoer: rolled themed-table results are injected into the narrator prompt as part of the existing `<random_event>` tag — engine-triggered, no tool-call. The 45-table payload-set is large but only one table is rolled per event, so prompt-injection of the result remains bounded. Per the "When tool-call vs when prompt-inject" Key Design Decision.
+**33.3** Integration with random event pipeline. Event focus routes to themed table when one matches context; falls through to actions/descriptions otherwise. AI data supply: rolled themed-table results are injected into the narrator prompt as part of the existing `<random_event>` tag — engine-triggered, no tool-call. The 45-table payload-set is large but only one table is rolled per event, so prompt-injection of the result remains bounded. Per the "When tool-call vs when prompt-inject" Key Design Decision.
 
 **33.4** Tests.
 

@@ -56,7 +56,7 @@ The audit interface is a list of hits, never a verdict. The following rules appl
 
 ## Output
 
-Each audit chat produces three artifacts:
+Each audit chat produces the following. Items 1, 2, and 4 are outputs; item 3 is the rule for how the fix-file grows across chats.
 
 1. **Fix-file** for the audited principle, named `fix_principle<N>.md` where `<N>` is the principle number (1 through 5). This file contains every violation found, with file path, line number, one-sentence classification, and (for clear violations) a brief note on what the fix should be. Carve-outs are not listed in the fix-file. `needs human judgment` items are listed with a separate marker so the user can review before the fix-round runs. When a violation also fails a different principle, both principles are named in the entry.
 
@@ -94,9 +94,9 @@ This principle is highly grep-able. Audit in the following passes:
 
 **Pass 2c — Hardcoded mappings.** Grep for dict literals or set literals in domain modules that contain domain-data keys (move names, NPC dispositions, status names). A hit is a violation if the mapping should be in YAML for extensibility.
 
-**Pass 2d — Dataclass defaults outside the three carve-outs.** Grep for `field(default=`, `field(default_factory=`, and direct `=` defaults on dataclass fields in `src/straightjacket/engine/`. A hit is a violation unless it matches one of the three documented carve-outs in ARCHITECTURE.md "Project rules": empty collections via `field(default_factory=list/dict)`, external-boundary parsing where the field is intrinsically optional per contract, or AI-call exception handlers per `provider_base.py`.
+**Pass 2d — Dataclass defaults outside the three carve-outs.** Grep for `field(default=`, `field(default_factory=`, and direct `=` defaults on dataclass fields in `src/straightjacket/engine/`. A hit is a violation unless it matches one of the three documented carve-outs in ARCHITECTURE.md "Project rules": empty collections via `field(default_factory=list/dict)`, external-boundary parsing where the field is intrinsically optional per contract, or AI-call fields that are part of a documented retry-fallback dict. The optional fields of `AICallSpec` in `ai/provider_base.py` model the external AI API shape and fall under external-boundary parsing (CHANGELOG 2026.04.27.10). Note that the mechanical scan `_check_no_dataclass_defaults_in_config_binding` does not cover this pass; see Notes.
 
-Carve-outs anchored in ARCHITECTURE.md: the `get_raw` pattern for yaml whose keys are domain-data, the AI-call exception carve-out for the named files, the `theme_die_table` cross-validation pattern.
+Carve-outs anchored in ARCHITECTURE.md: the `get_raw` pattern for yaml whose keys are domain-data, the AI-call exception carve-out for the files in `_AI_CALL_CARVE_OUT_FILES`, the `theme_die_table` cross-validation pattern.
 
 ### Principle 3 — No defensive programming, no boilerplate, no dead structure
 
@@ -104,7 +104,7 @@ Errors propagate. Guards against impossible states are violations. Try/except cl
 
 This principle has both grep-able and reasoning components.
 
-**Pass 3a — Broad except clauses outside the AI-call carve-out.** Grep for `except Exception`, `except:`, `except BaseException`. Cross-reference against the files named in ARCHITECTURE.md "Project rules" as AI-call carve-out files. A hit is a violation if it appears in any file outside that list, or inside one of those files but around a non-AI-call operation (config loading, yaml parsing, file persistence, input validation, domain-rule enforcement — these must raise even within carve-out files).
+**Pass 3a — Broad except clauses outside the AI-call carve-out.** Grep for `except Exception`, `except:`, `except BaseException`. Cross-reference against `_AI_CALL_CARVE_OUT_FILES` in `tests/test_project_rules.py`, which ARCHITECTURE.md ("AI-call exception carve-out") names as the authoritative carve-out file list. A hit is a violation if it appears in any file outside that list, or inside one of those files but around a non-AI-call operation (config loading, yaml parsing, file persistence, input validation, domain-rule enforcement — these must raise even within carve-out files).
 
 **Pass 3b — Defensive None checks on values that cannot be None per spec.** This is non-mechanical. Per submodule, list every `if x is None:` check on a value where the type signature does not include `None`. Per hit, classify as violation (the check guards against an impossibility) or legitimate (the check exists because the value can be None per a documented protocol).
 
@@ -116,7 +116,7 @@ Carve-outs: the AI-call exception carve-out for broad except clauses (ARCHITECTU
 
 ### Principle 4 — No backwards compatibility
 
-Save format breaks whenever the code requires it. No migration layer. No default-on-old-fields. No `ignore_unknown_fields`. Every dataclass field is required.
+Save format breaks whenever the code requires it. No migration layer. No default-on-old-fields. No `ignore_unknown_fields`. Every dataclass field is required, apart from the carve-outs documented in ARCHITECTURE.md "Project rules" (empty collections via `default_factory`, external-boundary structures, AI-call fallback fields).
 
 This principle is fully grep-able.
 
@@ -199,4 +199,12 @@ Principle 5, clean codebase and YAML-Python alignment (per submodule):
 
 ### Notes for the next chat
 
-Empty. Add observations here that the next audit chat should know — patterns that emerged, scope adjustments made, ambiguities encountered, hand-off notes when a chat ended mid-principle.
+Add observations here that the next audit chat should know — patterns that emerged, scope adjustments made, ambiguities encountered, hand-off notes when a chat ended mid-principle.
+
+2026-09-24 (documentation re-sync, not an audit chat). Pre-findings for later passes, not yet classified:
+
+- `_check_no_dataclass_defaults_in_config_binding` in `tests/test_project_rules.py` scans `engine/engine_config.py`, which holds one dataclass, instead of `engine/engine_config_dataclasses.py`, which holds the 88 config dataclasses (currently without defaults). The mechanical scan therefore guards nothing today, and Pass 2d is the only check. Retargeting the scan is a test change for a code session.
+- Outside the config binding, dataclasses in `src/` carry about 245 annotated fields with a default, concentrated in `models_story.py`, `models.py`, `models_base.py`, `datasworn/moves.py`, and `models_npc.py`. Many are `default_factory` empty collections (carve-out); the rest is Pass 2d / 4a material. Known example: `KeyedScene.source: str = ""` and `KeyedScene.bound_entity_id: str | None = None` (CHANGELOG 2026.05.06.3).
+- `_ORPHAN_SYMBOL_CARVE_OUT` still lists `("log_tokens", "engine/logging_util.py")`, but that symbol no longer exists. Dead carve-out entry, Principle 5.
+- `run.py` at the repository root contains docstrings but falls outside the comment/docstring scan, which covers `src/` and `tests/` only. Decide whether root scripts are in scope.
+- Working mode: audits can now run against a local clone with direct file access instead of a fresh clone per claude.ai chat. The Reading order still applies.

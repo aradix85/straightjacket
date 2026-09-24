@@ -39,6 +39,9 @@ Screen reader accessible: semantic HTML, ARIA live regions for automatic narrati
 - [ARCHITECTURE.md](ARCHITECTURE.md) — turn pipeline, module layout, design decisions, configuration, extension guides, code standards, project rules, testing, contributing
 - [ORIGINS.md](ORIGINS.md) — project history, fork from EdgeTales, credits
 - [SECURITY.md](SECURITY.md) — API key handling, input sanitization, session model
+- [CHANGELOG.md](CHANGELOG.md) — release history, including the fork period
+- [roadmap.md](roadmap.md) — internal working doc: what gets built next, and in what order
+- [AUDIT.md](AUDIT.md) — internal working doc: how the codebase is audited against its principles
 - [Narrative RPG Engine design document](docs/narrative_rpg_engine_v2_4.pdf) — the design this implements
 
 ---

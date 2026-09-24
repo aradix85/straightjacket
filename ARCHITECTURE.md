@@ -13,11 +13,11 @@ Scene Test (mechanics/scene.py) → keyed > interrupt > altered > expected (keye
   ↓
 Brain (ai/brain.py)           → single-call classification with injected game state (no tool calling)
   ↓
+NPC Activation (npc/activation.py) → TF-IDF scores decide which NPCs get full context
+  ↓
 Roll (mechanics/consequences.py) → 2d6+stat vs 2d10, result: STRONG_HIT / WEAK_HIT / MISS
   ↓
-Consequences (game/finalization.py) → move outcome, combat position, clock ticks, crisis check
-  ↓
-NPC Activation (npc/activation.py) → TF-IDF scores decide which NPCs get full context
+Consequences (game/action_resolution.py → resolve_action_phase) → move outcome, combat position, clock ticks, crisis check (shared core: game/finalization.py → resolve_action_consequences)
   ↓
 Prompt Builder (prompt_action/prompt_dialog) → assembles XML prompt with world, NPCs, result, scene type
   ↓
@@ -28,16 +28,16 @@ Narrate (game/finalization.py → narrate_scene)
 Post-Narration (game/finalization.py → apply_post_narration)
   → engine memories, scene context, AI metadata extraction (ai/metadata.py)
   ↓
-Scene-End Bookkeeping         → chaos adjustment, list weight updates, consolidation
-  ↓
-Director (director.py)        → NPC reflections, AIMS generation, act transitions
+Scene-End Bookkeeping (game/scene_finalization.py → finalize_scene) → autonomous clock/threat ticks, chaos adjustment, list weight updates, consolidation
   ↓
 DB Sync (db/sync.py)          → full GameState → SQLite for query access
   ↓
 Save (persistence.py)         → JSON to users/{name}/saves/
+  ↓
+Director (game/director_runner.py → director.py) → deferred after the turn is returned: NPC reflections, AIMS generation; saved again afterwards
 ```
 
-Dialog turns skip Roll and Consequences. The rest is the same.
+Dialog turns skip Roll and Consequences. The rest is the same. Act transitions are engine-computed (`director.py` → `_check_engine_act_transition`), not a Director decision.
 
 ## Module Ownership
 
@@ -50,7 +50,7 @@ Where to find things. If you want to change X, edit Y.
 | Emotion scoring, keyword boosts | `emotions/*.yaml` (no Python) |
 | UI text | `strings/*.yaml` (no Python) |
 | Server port | `config.yaml` (no Python) |
-| AI model assignment per role | `config.yaml` → `clusters` (per-cluster model + parameters), `role_cluster` (remap role to cluster) |
+| AI model assignment per role | `config.yaml` → `clusters` (per-cluster model + parameters), `role_cluster` (maps every AI role to its cluster) |
 | Provider-specific params per role | `config.yaml` → `extra_body` (per-cluster) |
 | Move types or stat assignments | Datasworn JSON (moves loaded automatically per setting) |
 | A new setting (genre + constraints) | `data/settings/your_setting.yaml` + Datasworn JSON |
@@ -68,7 +68,7 @@ Where to find things. If you want to change X, edit Y.
 | Momentum burn re-narration | `game/momentum_burn.py` → `process_momentum_burn` |
 | Chapter transition (close, reset, restore) | `game/chapters.py` → `_close_previous_chapter`, `_reset_chapter_mechanics`, `_restore_chapter_mechanics`; narrative summary via `ai/chapter_summary.py` → `call_chapter_summary` |
 | Character succession (death/despair/retire → new protagonist) | `game/succession.py` → `prepare_succession`, `start_succession_with_character`, `determine_end_reason`; `mechanics/succession.py` → `build_predecessor_record`, `run_inheritance_rolls`, `seed_successor_legacy`, `apply_npc_carryover`; config in `engine/succession.yaml`; `CampaignState.predecessors`, `pending_succession` |
-| Save format | `models.py` → SerializableMixin on each dataclass (no manual `to_dict`/`from_dict`) |
+| Save format | `serialization.py` → `SerializableMixin`, inherited by each dataclass in `models*.py`; `MemoryEntry` is the one manual `to_dict`/`from_dict` override |
 | User/save directory management | `user_management.py` → `create_user`, `get_save_dir`, `_safe_name` |
 | WebSocket protocol / UI | `web/handlers.py`, `web/static/index.html` |
 | Character creation validation | `game/game_start.py` → `validate_stats`, stat arrays in `engine/stats.yaml` |
@@ -110,7 +110,7 @@ Where to find things. If you want to change X, edit Y.
 | Threat menace track, Forsake Your Vow | `engine/threats.yaml`; `mechanics/threats.py` → `advance_menace_on_miss`, `tick_autonomous_threats`, `resolve_full_menace` |
 | Threat creation (random events, AC plot-points) | `engine/random_events.yaml::threat_creation_mapping` + `engine/adventure_crafter.yaml::threat_creation_mapping`; `mechanics/random_events.py::spawn_threat_from_random_event`; `mechanics/adventure_crafter.py::spawn_threats_for_turning_point`; cascade-naming via `datasworn/cascade.py::roll_oracle_cascade` plus `oracle_paths.threats` per setting |
 | Clock creation (random events, AC plot-points) | `engine/random_events.yaml::clock_creation_mapping` + `engine/adventure_crafter.yaml::clock_creation_mapping`; `mechanics/random_events.py::spawn_clock_from_random_event`; `mechanics/adventure_crafter.py::spawn_clocks_for_turning_point`; segments/cap config in `engine/clocks.yaml` |
-| Clock fill-consequences (vol-handler) | `engine/clocks.yaml::fill_consequences`; `mechanics/clock_consequences.py::resolve_clock_fill`; emits `<clock_filled>` tag via `prompt_shared.py::_clock_filled_block`; suppressed when an attached keyed-scene with source-prefix `clock:` is still pending |
+| Clock fill-consequences (fill handler) | `engine/clocks.yaml::fill_consequences`; `mechanics/clock_consequences.py::resolve_clock_fill`; emits `<clock_filled>` tag via `prompt_shared.py::_clock_filled_block`; suppressed when an attached keyed-scene with source-prefix `clock:` is still pending |
 | Spawn-source prefixes (shared constants) | `mechanics/spawn_sources.py` → `RANDOM_EVENT_SOURCE_PREFIX`, `AC_SOURCE_PREFIX`, `CLOCK_KEYED_SOURCE_PREFIX`, `SETUP_SOURCE`, `EMERGENT_SOURCE_PREFIXES` |
 | Threat-vow coupling | `models_base.py` → `ThreatData.linked_vow_id`; `game/tracks.py` → `complete_track` resolves linked threat |
 | Impacts (wounded, shaken, etc.) | `engine/impacts.yaml` (typed `ImpactConfig`); `mechanics/impacts.py` → `apply_impact`, `clear_impact`, `blocks_recovery`, `recalc_max_momentum` |
@@ -153,9 +153,12 @@ ai:
       extra_body:
         reasoning_effort: "medium"
     # ...classification, judgment, extraction follow the same shape
-  # Remap a role to a different cluster:
+  # Every AI role maps to exactly one cluster; remap a role by editing its entry:
   role_cluster:
-    blueprint_voicing: "creative"
+    narrator: narrator
+    blueprint_voicing: creative
+    brain: classification
+    # ...one entry per role (ten roles, see the table above)
 ```
 
 Clusters are the single source of truth. `sampling_params(role)` resolves all call parameters from the role's cluster. `model_for_role(role)` resolves the model. No per-role overrides — to change a role's parameters, change the cluster or remap the role via `role_cluster`.
@@ -176,11 +179,15 @@ src/straightjacket/
 │   ├── engine_config.py     # EngineSettings composition + _build_strict / load_strict yaml parse; re-exports dataclasses
 │   ├── engine_config_dataclasses.py  # subsystem dataclasses that bind engine/*.yaml sections
 │   ├── format_utils.py      # PartialFormatDict (shared by prompt_loader, strings_loader)
+│   ├── serialization.py     # SerializableMixin, serialize/deserialize for all save-format dataclasses
+│   ├── yaml_merge.py        # load_yaml_dir: shared "merge every *.yaml in a directory, raise on duplicate keys"
+│   ├── xml_utils.py         # xe() / xa(): XML escaping for prompt content and attributes (see SECURITY.md)
+│   ├── bootstrap_log.py     # bootstrap_log(): logging for modules that load before file logging is set up
 │   ├── mechanics/
 │   │   ├── world.py            # Location matching, chaos adjustment, time, pacing, story structure
 │   │   ├── resolvers.py        # Position, effect, time progression, move category
 │   │   ├── consequences.py     # Dice rolls (action + progress), clocks, momentum burn, consequence sentences
-│   │   ├── clock_consequences.py  # Clock vol-handler (resolve_clock_fill) → `<clock_filled>` tag, progress-track completion
+│   │   ├── clock_consequences.py  # Clock fill handler (resolve_clock_fill) → `<clock_filled>` tag, progress-track completion
 │   │   ├── spawn_sources.py    # Shared spawn-source prefixes (random_event:, ac:, clock:, setup)
 │   │   ├── move_outcome.py     # Top-level move-outcome resolver (resolve_move_outcome) and handler dispatch
 │   │   ├── move_effects.py     # Effect parser, 13 effect handlers, dispatch dict (apply_effects)
@@ -214,9 +221,10 @@ src/straightjacket/
 │   ├── config_loader.py     # Reads config.yaml, provides cfg() singleton
 │   ├── engine_loader.py     # Merges engine/*.yaml, provides eng() singleton
 │   ├── emotions_loader.py   # Merges emotions/*.yaml
-│   ├── logging_util.py      # log(), setup_file_logging(), get_logger()
+│   ├── logging_util.py      # log(), setup_file_logging()
 │   ├── user_management.py   # User CRUD, save directories, _safe_name, config load/save
 │   ├── ai/
+│   │   ├── api_client.py    # get_provider(): picks the provider from config.yaml, lazy SDK import, provider cache
 │   │   ├── provider_base.py # AIProvider protocol + retry wrapper
 │   │   ├── provider_anthropic.py
 │   │   ├── provider_openai.py  # Any OpenAI-compatible API
@@ -225,7 +233,7 @@ src/straightjacket/
 │   │   ├── metadata.py      # Apply extracted metadata to game state
 │   │   ├── recap.py         # Player-facing recap (call_recap)
 │   │   ├── chapter_summary.py  # Chapter summary for campaign history (call_chapter_summary)
-│   │   ├── blueprint_voicing.py  # Setting-vertaling van AC-blueprint-seed naar StoryBlueprint
+│   │   ├── blueprint_voicing.py  # Voices an AC blueprint seed in the active setting → StoryBlueprint (call_blueprint_voicing)
 │   │   └── schemas.py       # JSON output schemas (config-driven)
 │   ├── npc/
 │   │   ├── bond.py          # get_npc_bond: bond from connection track
@@ -251,6 +259,7 @@ src/straightjacket/
 │   ├── datasworn/
 │   │   ├── loader.py        # Reads Datasworn JSON (oracles, assets, moves)
 │   │   ├── moves.py         # Move dataclass, loader, expansion merge, cached accessor
+│   │   ├── cascade.py       # roll_oracle_cascade: follows markdown-link IDs across oracle tables (depth-limited)
 │   │   └── settings.py      # Setting packages (vocabulary, genre constraints)
 │   ├── db/
 │   │   ├── schema.sql       # Table definitions (mirrors dataclasses)
@@ -280,11 +289,11 @@ src/straightjacket/
 
 **Subpackage public API via `__init__.py`.** Subpackages `mechanics`, `npc`, `game`, `db`, and `tools` each expose their public API by re-exporting from their submodules in `__init__.py`. Callers import `from straightjacket.engine.mechanics import roll_action`, not `from straightjacket.engine.mechanics.consequences import roll_action` — internal module layout stays free to change. The top-level `engine/__init__.py` and the `ai/` package are package markers only, no re-exports. `models.py` is a separate re-export hub for every dataclass across `models_base.py`, `models_npc.py`, and `models_story.py`. The F401 ignore list in `pyproject.toml` covers exactly these intentional public-API hub files.
 
-**Typed dataclasses everywhere.** GameState has sub-objects (Resources, WorldState, NarrativeState, CampaignState). NpcData, MemoryEntry, Move, ProgressTrack, ThreadEntry, ChapterSummary, ClockData, ThreatData and the rest are all typed dataclasses with fixed fields. Move uses typed trigger conditions and roll options. Attribute access, never dict-style. `SerializableMixin` handles serialization; complex classes override `to_dict`/`from_dict` manually.
+**Typed dataclasses everywhere.** GameState has sub-objects (Resources, WorldState, NarrativeState, CampaignState). NpcData, MemoryEntry, Move, ProgressTrack, ThreadEntry, ChapterSummary, ClockData, ThreatData and the rest are all typed dataclasses with fixed fields. Move uses typed trigger conditions and roll options. Attribute access, never dict-style. `SerializableMixin` (in `serialization.py`) handles serialization; `MemoryEntry` is currently the only class that overrides `to_dict`/`from_dict` manually.
 
 **Yaml access: dataclass by default, `get_raw` only when keys are domain-data.** Every yaml block is parsed into a typed dataclass at load time; callsites use `eng().subsystem.field` with mypy coverage. The single exception is yaml whose keys are themselves the domain content (move-names, NPC dispositions parallel to an enum) and must extend without Python changes — those are read via `eng().get_raw("section")` with a one-line comment at the callsite. A dataclass with a single `mapping: dict[str, X]` field is no typing win; use `get_raw`. A dataclass with multiple fixed fields is a typing win; use the dataclass.
 
-**Two-call pattern.** Narrator writes pure prose. A second call on the analytical cluster model extracts NPC-related metadata (new NPCs, renames, details, deaths). Same pattern for opening_setup, revelation_check, recap, and chapter_summary. The analytical cluster typically uses a cheaper/faster model for these structured output calls.
+**Two-call pattern.** Narrator writes pure prose. A second call, `narrator_metadata` on the extraction cluster, extracts NPC-related metadata (new NPCs, renames, details, deaths). Opening_setup, revelation_check, recap, and chapter_summary are likewise separate calls rather than extra duties for the narrator, each on the cluster that fits its task (see AI Model Assignment). The extraction cluster is the natural place for a cheaper/faster model: pure data extraction, no interpretation.
 
 **Snapshot/restore.** `GameState.snapshot()` captures all mutable state before a turn. `restore()` reverts everything atomically. Used by correction (##) and momentum burn.
 
@@ -294,9 +303,9 @@ src/straightjacket/
 
 **Provider abstraction.** `AIProvider` protocol with two implementations (Anthropic, OpenAI-compatible). The engine never imports provider SDKs directly. `create_with_retry` handles transient errors with exponential backoff. Multi-model: config.yaml assigns models via five clusters — narrator (GLM 4.7 for prose), creative (GPT-OSS for blueprint_voicing, director, chapter_summary, recap), classification (GPT-OSS for brain, correction), judgment (GPT-OSS for revelation_check), extraction (GPT-OSS for narrator_metadata, opening_setup). Clusters are the single source of truth for all call parameters. `model_for_role(role)` resolves the model; `sampling_params(role)` resolves temperature, top_p, max_tokens, max_retries, and extra_body. The provider stores no model state.
 
-**AI-call exception carve-out.** The strict-rules forbid broad `try/except Exception` suppression. AI call sites are an explicit carve-out: AI calls fail transiently (rate limits, network blips, provider outages, 429/500/502/503/529); the retry wrapper handles retryable status codes with exponential backoff, and what remains after retries is unrecoverable. Strict-raise would crash the session on any transient fault. Graceful degradation (Brain falling through to `dialog`, revelation_check defaulting to confirmed, narrator retry returning empty string, blueprint_voicing returning None) hides the fault but preserves the session; every suppression site logs at warning or error level so faults stay observable. This carve-out does not extend to config loading, yaml parsing, file persistence, input validation, or domain-rule enforcement: those must raise.
+**AI-call exception carve-out.** The strict-rules forbid broad `try/except Exception` suppression. AI call sites are an explicit carve-out: AI calls fail transiently (rate limits, network blips, provider outages, 429/500/502/503/529); the retry wrapper handles retryable status codes with exponential backoff, and what remains after retries is unrecoverable. Strict-raise would crash the session on any transient fault. Graceful degradation (Brain falling through to `dialog`, revelation_check defaulting to confirmed, narrator retry returning empty string, blueprint_voicing returning None) hides the fault but preserves the session; every suppression site logs at warning or error level so faults stay observable. This carve-out does not extend to config loading, yaml parsing, file persistence, input validation, or domain-rule enforcement: those must raise. The files covered by the carve-out are listed in `_AI_CALL_CARVE_OUT_FILES` in `tests/test_project_rules.py`; that set is the authoritative carve-out file list, including for audits.
 
-**Minimal UI.** Single HTML page, no build step, no npm. Server sends JSON, client renders. Scene headings for screen reader navigation, aria-live for automatic narration readout. One button (Save/Load), one text input. Status via `/status` and `/score` text commands — engine answers directly, no AI call. Status output is narrative, not mechanical: "seriously wounded" instead of "health 2", "growing trust" instead of "bond 4/10". The player never sees numbers, dice, or system terms.
+**Minimal UI.** Single HTML page, no build step, no npm. Server sends JSON, client renders. Scene headings for screen reader navigation, aria-live for automatic narration readout. During play: one text input plus the Save/Load and Retire buttons. Everything else appears only when needed, as overlays and forms with native controls: character creation, the momentum-burn offer, story completion, succession, and the retire confirmation. Status via `/status`, `/score`, `/tracks`, and `/threats` text commands — engine answers directly, no AI call. Status output is narrative, not mechanical: "seriously wounded" instead of "health 2", "growing trust" instead of "bond 4/10". The player never sees numbers, dice, or system terms.
 
 **Progress tracks as dataclass.** ProgressTrack has rank and ticks; ticks-per-mark by rank lives in `engine/progress.yaml` under `track_types.default.ticks_per_mark` (rank-graduated, fewer ticks for higher ranks), with the `track_types` map extensible for future variants. Status (active/completed/failed) on the track. Background vow becomes a track at creation. Track-creating moves defined in `engine/track_moves.yaml` — engine creates tracks from Brain output. Connection tracks replace NpcData.bond: `get_npc_bond(game, npc_id)` reads connection track filled_boxes.
 
@@ -306,13 +315,13 @@ src/straightjacket/
 
 **AI surface minimization.** Every value derivable from game state is computed by the engine. Director pacing is computed from scene_intensity_history, not requested from the AI. Act transitions fire when scene_count exceeds act range — deterministic, no AI flag. Memory emotional_weight is derived from (move_category, result, disposition) via `engine/memory.yaml` lookup. Opening scene clock and time_of_day are engine-determined before any AI call. The AI receives results, not choices.
 
-**Engine-resolved fiction.** The player types actions, never questions. The engine produces every fact the fiction requires before the narrator writes — NPC names and dispositions from oracle rolls, location structure from generators, plot beats from Adventure Crafter, NPC behavior under uncertainty from fate, encounter contents from weighted tables, scene structure from chaos rolls, content elements from the 45 Mythic element-meaning tables. The narrator receives resolved facts and writes prose around them. Fate and oracles are consulted on many moments across a turn (scene setup, NPC agency, thread phase boundaries, content generation when entities first appear, doublet-triggered random events, MISS-triggered consequences) as concrete callsites in the modules that need them; a shared layer extracts only when callsite count and pattern overlap force it (per "duplication is cheaper than wrong abstraction"). Player-typed fate questions are not part of the model.
+**Engine-resolved fiction.** The player types actions, never questions. The target model: the engine produces every fact the fiction requires before the narrator writes — NPC names and dispositions from oracle rolls, location structure from generators, plot beats from Adventure Crafter, NPC behavior under uncertainty from fate, encounter contents from weighted tables, scene structure from chaos rolls, content elements from the 45 Mythic element-meaning tables. The narrator receives resolved facts and writes prose around them. Implemented today: NPC names from oracle rolls, plot beats from Adventure Crafter, scene structure from chaos rolls, fate and meaning-table rolls (actions and descriptions only) inside the random-event pipeline, and threat and clock naming from Mythic pairs and Datasworn cascades. Location and encounter generators, fact resolution, oracle-rolled NPC dispositions, fate-driven NPC behavior, and the themed element tables are roadmap steps 9–13 and 33–34 (see Known Limitations). Fate and oracles are consulted on many moments across a turn (scene setup, NPC agency, thread phase boundaries, content generation when entities first appear, doublet-triggered random events, MISS-triggered consequences) as concrete callsites in the modules that need them; a shared layer extracts only when callsite count and pattern overlap force it (per "duplication is cheaper than wrong abstraction"). Player-typed fate questions are not part of the model.
 
-**Threat creation from random events and AC plot-points.** Threats spawn mid-game from two sources, each with its own naming bron: random events whose `focus` is in `random_events.yaml::threat_creation_mapping` (currently `pc_negative` plus `npc_negative`) use the event's Mythic action+subject pair as the threat name, since the random-event mechanism already produced that pair; AC plot-points whose name is in `adventure_crafter.yaml::threat_creation_mapping` (`A New Enemy`, `Hidden Threat`, `Enemies`, `Hunted`, `A Problem Returns`) use a Datasworn cascade-roll on `oracle_paths.threats` per setting via `datasworn/cascade.py::roll_oracle_cascade`. The cascade follows markdown-link IDs in oracle-row text — Delve's `threat/category` cascades into nine sub-tables; Starforged's `campaign_launch/sector_trouble`, Classic's `settlement/trouble`, and Sundered Isles's `seafaring/peril` are single-table rolls. Each spawner dedups via `ThreatData.creation_source` (prefix `random_event:` or `ac:`); the shared per-chapter cap `max_threats_per_chapter` covers both spawners. `linked_vow_id` is `None` for mid-game threats; setup-vow-linked threats keep their string ID. Threats without a linked vow do not advance via `advance_menace_on_miss` (which is vow-driven) but do tick via `tick_autonomous_threats` and can fire `threat_menace_phase` keyed-scenes once their menace reaches the configured phase threshold.
+**Threat creation from random events and AC plot-points.** Threats spawn mid-game from two sources, each with its own naming source: random events whose `focus` is in `random_events.yaml::threat_creation_mapping` (currently `pc_negative` plus `npc_negative`) use the event's Mythic action+subject pair as the threat name, since the random-event mechanism already produced that pair; AC plot-points whose name is in `adventure_crafter.yaml::threat_creation_mapping` (`A New Enemy`, `Hidden Threat`, `Enemies`, `Hunted`, `A Problem Returns`) use a Datasworn cascade-roll on `oracle_paths.threats` per setting via `datasworn/cascade.py::roll_oracle_cascade`. The cascade follows markdown-link IDs in oracle-row text — Delve's `threat/category` cascades into nine sub-tables; Starforged's `campaign_launch/sector_trouble`, Classic's `settlement/trouble`, and Sundered Isles's `seafaring/peril` are single-table rolls. Each spawner dedups via `ThreatData.creation_source` (prefix `random_event:` or `ac:`); the shared per-chapter cap `max_threats_per_chapter` covers both spawners. `linked_vow_id` is `None` for mid-game threats; setup-vow-linked threats keep their string ID. Threats without a linked vow do not advance via `advance_menace_on_miss` (which is vow-driven) but do tick via `tick_autonomous_threats` and can fire `threat_menace_phase` keyed-scenes once their menace reaches the configured phase threshold.
 
-**Clock creation from random events and AC plot-points.** Same source-vs-naming pattern as threat creation. Random events with `focus` in `random_events.yaml::clock_creation_mapping` (currently `pc_negative` → threat-clock, `move_toward_thread` → progress-clock, `move_away_from_thread` → threat-clock) use the event's Mythic action+subject pair as the clock name. AC plot-points in `adventure_crafter.yaml::clock_creation_mapping` (`Time Limit`, `A Crucial Life Support System Begins To Fail`, `A Needed Resource Runs Out`, `Impending Doom`) use the plot-point name itself as the clock name — deadlines have their own already-named character, no cascade needed. Both spawners read `engine/clocks.yaml::default_segments` for size and `default_owner_kind` for owner-kind (currently `world`). Shared per-chapter cap `max_clocks_per_chapter` covers both bronnen. Dedup via `ClockData.creation_source` (prefix `random_event:` or `ac:`). Each spawned clock immediately gets per-fraction keyed-scenes attached via `spawn_keyed_scenes_for_clock`. The shared spawn-source prefixes live as constants in `mechanics/spawn_sources.py` so no module repeats the literals.
+**Clock creation from random events and AC plot-points.** Same source-vs-naming pattern as threat creation. Random events with `focus` in `random_events.yaml::clock_creation_mapping` (currently `pc_negative` → threat-clock, `move_toward_thread` → progress-clock, `move_away_from_thread` → threat-clock) use the event's Mythic action+subject pair as the clock name. AC plot-points in `adventure_crafter.yaml::clock_creation_mapping` (`Time Limit`, `A Crucial Life Support System Begins To Fail`, `A Needed Resource Runs Out`, `Impending Doom`) use the plot-point name itself as the clock name — deadlines have their own already-named character, no cascade needed. Both spawners read `engine/clocks.yaml::default_segments` for size and `default_owner_kind` for owner-kind (currently `world`). Shared per-chapter cap `max_clocks_per_chapter` covers both sources. Dedup via `ClockData.creation_source` (prefix `random_event:` or `ac:`). Each spawned clock immediately gets per-fraction keyed-scenes attached via `spawn_keyed_scenes_for_clock`. The shared spawn-source prefixes live as constants in `mechanics/spawn_sources.py` so no module repeats the literals.
 
-**Clock fill-consequences.** When a clock fills, the engine emits a `<clock_filled>` tag to the narrator prompt — unless a keyed-scene with source-prefix `clock:<clock_name>:` is still pending on `narrative.keyed_scenes`, in which case the keyed-scene wins and the default tag is suppressed. Per-type tag templates live in `engine/clocks.yaml::fill_consequences` (one entry per clock_type: `threat`, `scheme`, `progress`). The fill-handler is `mechanics/clock_consequences.py::resolve_clock_fill`. Progress-clock vol additionally completes the linked `ProgressTrack` (matched by name == clock-name) via `complete_track` with outcome `completed`. Scheme- and threat-clock vol-events do not advance menace tracks — those mechanics stay on their own paths (`advance_menace_on_miss`, `tick_autonomous_threats`). Fill-events from MISS-driven and NPC-agency-driven ticks flow through `ActionResolution.clock_fill_results` into the same-turn narrator prompt. Fill-events from `tick_autonomous_clocks` (which fires after narration in `scene_finalization`) cannot land in their own turn's prompt, so they queue on `WorldState.pending_clock_fills` and are drained-and-prepended at the start of the next turn's action or dialog prompt assembly.
+**Clock fill-consequences.** When a clock fills, the engine emits a `<clock_filled>` tag to the narrator prompt — unless a keyed-scene with source-prefix `clock:<clock_name>:` is still pending on `narrative.keyed_scenes`, in which case the keyed-scene wins and the default tag is suppressed. Per-type tag templates live in `engine/clocks.yaml::fill_consequences` (one entry per clock_type: `threat`, `scheme`, `progress`). The fill-handler is `mechanics/clock_consequences.py::resolve_clock_fill`. A filled progress clock additionally completes the linked `ProgressTrack` (matched by name == clock-name) via `complete_track` with outcome `completed`. Filled scheme and threat clocks do not advance menace tracks — those mechanics stay on their own paths (`advance_menace_on_miss`, `tick_autonomous_threats`). Fill-events from MISS-driven and NPC-agency-driven ticks flow through `ActionResolution.clock_fill_results` into the same-turn narrator prompt. Fill-events from `tick_autonomous_clocks` (which fires after narration in `scene_finalization`) cannot land in their own turn's prompt, so they queue on `WorldState.pending_clock_fills` and are drained-and-prepended at the start of the next turn's action or dialog prompt assembly.
 
 **Data-driven move outcomes.** `resolve_move_outcome` reads structured effect lists from `engine/move_outcomes.yaml` per move per result. Simple moves (momentum, resources, progress, position) are pure data — no Python. Complex moves (suffer, threshold, recovery) use named handlers that share patterns across moves. Engine-specific moves (`dialog`, `ask_the_oracle`, `world_shaping`) live alongside Datasworn moves in `engine/engine_moves.yaml` — single source of truth read by `available_moves`, the brain-output schema, and the narrator. The `available_moves` function filters moves by game state (combat position, active tracks); Brain receives the filtered list in its prompt. Consequence sentences generated from outcome strings via `engine/consequence_templates.yaml`.
 
@@ -330,7 +339,7 @@ src/straightjacket/
 
 **When tool-call vs when prompt-inject.** Prompt-injection fits when the data is always or near-always relevant for the call and the payload is bounded — adding a tool-roundtrip there spends tokens on overhead the prompt would carry anyway. Tool-calling fits when the data is selective and the AI is best-positioned to choose what is relevant (Director picking which NPC memories matter, which threads to weave into a chapter summary), when the payload set is too large to inject by default (the 600-plus Datasworn oracle tables, full per-NPC memory histories), or when the call is conditional on AI judgment that prompt-injection cannot pre-decide. Tool-calling is wrong when the AI must not be allowed to choose: Brain cannot pick which moves are available (engine filters) or which NPCs are present (engine activates), so Brain stays prompt-injection-only. New AI-consumable data evaluates on the same axis per data type.
 
-**Concrete callsite mapping.** Brain, Narrator, Revelation_check, Opening_setup, Narrator_metadata, Recap, Chapter_summary, Correction, and Architect are prompt-only — engine pre-selects all inputs, no AI-side selection of what enters the call. Director is the only mixed site: scene plus story_arc plus reflection-blocks injected (engine pre-selects which NPCs need reflection), and `query_npc`+`query_active_threads`+`query_active_clocks` available as tools for selective deeper inspection. The reflection-block memory window and `query_npc`'s memory limit both read `engine/npc.yaml::npc.reflection_observation_window`, so the same NPC's recent memory looks identical across paths.
+**Concrete callsite mapping.** Brain, Narrator, Revelation_check, Opening_setup, Narrator_metadata, Recap, Chapter_summary, Correction, and Blueprint_voicing are prompt-only — engine pre-selects all inputs, no AI-side selection of what enters the call. Director is the only mixed site: scene plus story_arc plus reflection-blocks injected (engine pre-selects which NPCs need reflection), and `query_npc`+`query_active_threads`+`query_active_clocks` available as tools for selective deeper inspection. The reflection-block memory window and `query_npc`'s memory limit both read `engine/npc.yaml::npc.reflection_observation_window`, so the same NPC's recent memory looks identical across paths.
 
 **Fate system (Mythic GME 2e).** Probabilistic yes/no questions about the fiction. Two methods: fate chart (9×9 odds/chaos matrix, d100) and fate check (2d10 + modifiers). Both produce four outcomes (yes, no, exceptional yes, exceptional no) and can trigger random events via the doublet rule. Likelihood resolver maps game state (NPC disposition, chaos, resources) to odds level via `engine/fate.yaml` lookup. Currently engine-consumed via the random-event pipeline (`mechanics/random_events.py` triggers fate doublets and interrupt scenes). Player-visible fate questions are not part of the model — the engine consults fate under the hood when the fiction requires a fact (see "Engine-resolved fiction" above). The `ask_the_oracle` move covers Mythic meaning-table rolls (action/subject pairs) — a separate mechanism with its own `<oracle_answer>` tag.
 
@@ -348,7 +357,7 @@ AC's role is bounded to plot-skeleton at chapter boundaries plus keyed-scene-spa
 
 **Random events.** Four-step pipeline: event focus (d100 over event-focus categories) → target selection from weighted Mythic lists → meaning table roll (actions or descriptions) → structured `RandomEvent` assembly. Events fire on fate doublets and interrupt scenes. `<random_event>` and `<interrupt_scene>` tags injected into narrator prompt. List maintenance: present NPCs/threads get weight bumps, new NPCs added to characters list, automatic consolidation past the configured cap.
 
-**Director reduction.** Director no longer advises on pacing — that is fully engine-computed from scene structure and narrative direction. Director retains NPC reflections (AIMS, arc updates, description updates) and optional chapter summaries. Act transitions are engine-computed from scene count vs act range.
+**Director reduction.** Director no longer advises on pacing — that is fully engine-computed from scene structure and narrative direction. Director retains NPC reflections (AIMS, arc updates, description updates). Chapter summaries are a separate AI role (`ai/chapter_summary.py`). Act transitions are engine-computed from scene count vs act range.
 
 **No save compatibility.** Saves break whenever the code requires it. No migration layer, no default-on-old fields, no ignore-unknown-fields. By design for an alpha project. See "No backwards compatibility" in Project rules for the policy.
 
@@ -358,25 +367,25 @@ AC's role is bounded to plot-skeleton at chapter boundaries plus keyed-scene-spa
 
 **No faction layer yet.** Within the in-scope scheme-and-individual-relationships boundary defined under Deliberate divergences below: faction-level schemes, faction-player reputation, and faction-NPC loyalty thresholds are not implemented. NPCs act individually via agenda and goal-clocks. The "world moves independently" principle is partially realized through autonomous clock ticks and NPC agency checks, not through the scheme-interaction layer that the scope boundary calls for.
 
-**No fiction generators yet.** NPCs, locations, and encounters are generated by the AI from context, not from structured oracle table rolls. The design document specifies hybrid generators (oracle tables produce structure, AI writes description within that structure). This means the engine currently relies on AI invention where it should rely on oracle-constrained generation.
+**No fiction generators yet.** Apart from oracle-rolled NPC names (`npc/naming.py`), NPCs, locations, and encounters are generated by the AI from context, not from structured oracle table rolls. The design document specifies hybrid generators (oracle tables produce structure, AI writes description within that structure). This means the engine currently relies on AI invention where it should rely on oracle-constrained generation.
 
 **No NPC-player emotional dynamics yet.** The engine tracks NPC disposition and bond but not relationship-altering events (broken promises, betrayals, sacrifices), emotional requests, or refusal/concession history. NPCs react to standing relationship state, not to the dynamic history of the relationship. Planned within the in-scope boundary defined under Deliberate divergences — individual scale and player-involving triangles only.
 
-**No asset mechanics.** Assets are stored as ID strings but have no mechanical effect. The modifier pipeline (stat bonuses, rerolls, companion health, vehicle condition) is not implemented.
+**No asset mechanics.** Assets are stored as ID strings but have no mechanical effect. XP can be spent to acquire or upgrade an asset (`mechanics/legacy.py` → `advance_asset`), but that is bookkeeping only. The modifier pipeline (stat bonuses, rerolls, companion health, vehicle condition) is not implemented.
 
 ## Deliberate divergences from the design document
 
-Five places where Straightjacket departs from the design document's architectural recommendations. Each was an explicit decision, taken on empirical grounds or as a deliberate scope boundary, not a discard from the document.
+Five places where Straightjacket departs from the design document's architectural recommendations or settles one of its open questions. Each was an explicit decision, taken on empirical grounds or as a deliberate scope boundary, not a discard from the document.
 
-**Input parsing as a separate call.** The design document specifies that input parsing is integrated into the single narrator call — the AI classifies the action type and narrates the result in one response. Straightjacket uses a separate Brain call that classifies input before the narrator writes prose. This split was already present in EdgeTales, where the integrated approach did not produce reliable classification. Straightjacket preserved the split on the same empirical grounds. Two independent implementations reaching the same conclusion is stronger evidence than a single project running into the issue.
+**Input parsing as a separate call.** The design document specifies that input parsing is integrated into the single narrator call — the AI classifies the action type and narrates the result in one response. Straightjacket uses a separate Brain call that classifies input before the narrator writes prose. This split was already present in EdgeTales, where the integrated approach did not produce reliable classification. Straightjacket, which began as a fork of EdgeTales, preserved the split on the same empirical grounds. Because the two codebases share a lineage (see ORIGINS.md), this is one line of evidence carried forward, not two independent confirmations.
 
 **Tool calling scoped per data type, not as a universal mechanism.** The design document proposes tool calling as the central engine-AI communication mechanism. Straightjacket diverges by treating tool-calling and prompt-injection as complementary: each callsite picks the gear that matches its data shape and role boundary (see "When tool-call vs when prompt-inject" above). The most visible consequence is that Brain receives all game state via prompt injection — the deeper principle being that Brain must not be allowed to pick which moves are available or which NPCs are present (engine decides). The core principle ("tools determine results, AI narrates") is preserved across all roles.
 
-**Two-call narrator pattern.** The design document treats narration as a single AI call — one prose response per turn within hard constraints. Straightjacket runs a second call on the analytical cluster after the prose is written: the narrator_metadata extractor reads the rendered narration and returns structured NPC-related data (new NPCs, renames, details, deaths) for the engine to apply to game state. Same pattern for opening_setup, revelation_check, recap, and chapter_summary. The split exists because asking the narrator model to also emit structured metadata in the same response degraded prose quality; the analytical cluster is configured for cheaper, faster structured output and does not have to balance two output contracts at once.
+**Two-call narrator pattern.** The design document treats narration as a single AI call — one prose response per turn within hard constraints. Straightjacket runs a second call on the extraction cluster after the prose is written: the narrator_metadata extractor reads the rendered narration and returns structured NPC-related data (new NPCs, renames, details, deaths) for the engine to apply to game state. Opening_setup, revelation_check, recap, and chapter_summary are likewise separate calls. The split exists because asking the narrator model to also emit structured metadata in the same response degraded prose quality; the extraction cluster is configured for pure data extraction and does not have to balance two output contracts at once.
 
-**No narration validator.** The design document proposes constraint verification as a second AI call — a cheaper model that checks output against the narrator's constraints, with retry on violation. Straightjacket built that validator (LLM-pass plus regex-pass plus retry-loop) and ran it for many versions, then removed it in 2026.04.27.8. The verdict: verifying writing rules with an AI judge is unreliable on rules ambiguous even for humans, and the retry-loop produced predictable prose flattening as the narrator was steered away from anything the validator might flag. The principle now is AI-surface reduction: the engine narrows what the AI can produce (engine-dictated consequences, oracle-driven generation, engine-computed pacing, vocabulary control) rather than checking what it produced. A diagnostic measurement layer without retry or prompt injection remains an open option after the roadmap is fully implemented.
+**No narration validator.** The design document leaves constraint verification as an open question with three candidate answers: a second, cheaper AI call that checks output against the constraints; predefined severity markers the engine checks programmatically; or leaning harder on engine-dictated consequences so there is less to verify. Straightjacket built the first option as a validator (LLM-pass plus regex-pass plus retry-loop) and ran it for many versions, then removed it in 2026.04.27.8. The verdict: verifying writing rules with an AI judge is unreliable on rules ambiguous even for humans, and the retry-loop produced predictable prose flattening as the narrator was steered away from anything the validator might flag. The principle now is AI-surface reduction, which is the document's third option: the engine narrows what the AI can produce (engine-dictated consequences, oracle-driven generation, engine-computed pacing, vocabulary control) rather than checking what it produced. A diagnostic measurement layer without retry or prompt injection remains an open option after the roadmap is fully implemented.
 
-**Faction layer scoped to schemes and individual relationships.** The design document devotes its Relationships/Memory and Agency/Motivation chapters to factions with goal-clocks, faction-level reputation, faction-NPC loyalty thresholds, and inter-faction emotional dynamics. Straightjacket scopes the dynamic relationship layer differently: in scope are the individual scale (emotional requests, refusals, concessions, relationship events between NPC and player) plus NPC-NPC triangles that involve the player. Factions operate through schemes with independent goal-clocks, faction-player reputation, and scheme-interactions that surface as narrative consequences on encounter. Inter-faction emotional dynamics (faction-to-faction emotional requests, refusals, debts as a separate layer) are out of scope. The narrative effect the document calls for is achieved through scheme-interaction, not through a simulated faction-emotion network. This is a deliberate scope boundary, not a deferred feature.
+**Faction layer scoped to schemes and individual relationships.** The design document's Relationships/Memory and Agency/Motivation chapters describe faction schemes with goal-clocks, faction-level reputation, NPC loyalty thresholds toward their faction, and a dynamic scale of emotional requests, refusals, and concessions, without settling whether that dynamic scale also runs between factions. Straightjacket scopes the dynamic relationship layer differently: in scope are the individual scale (emotional requests, refusals, concessions, relationship events between NPC and player) plus NPC-NPC triangles that involve the player. Factions operate through schemes with independent goal-clocks, faction-player reputation, and scheme-interactions that surface as narrative consequences on encounter. Inter-faction emotional dynamics (faction-to-faction emotional requests, refusals, debts as a separate layer) are out of scope. The narrative effect the document calls for is achieved through scheme-interaction, not through a simulated faction-emotion network. This is a deliberate scope boundary, not a deferred feature.
 
 ## Testing
 
@@ -386,7 +395,7 @@ python tests/elvira/elvira.py --auto --turns 5         # direct engine (needs AP
 python tests/elvira/elvira.py --ws --auto --turns 5    # via WebSocket server
 ```
 
-Four layers of testing, complementary:
+Three layers of testing, complementary, plus the static checks (ruff, mypy) listed under Contributing:
 
 The **unit/integration test suite** (`python -m pytest tests/ -v`) runs without an API key. It uses mock providers that return canned responses. Tests verify the engine's internal logic: consequences, NPC processing, serialization, correction flow, prompt assembly, WebSocket handlers. Every PR must pass this suite.
 
@@ -472,13 +481,13 @@ These rules apply across the codebase. They are enforced mechanically by `tests/
 
 **Domain config keys raise on miss.** Engine config is read by direct subscript (`config["key"]`). No `dict.get` with a literal fallback. No `x or "fallback"`. No dataclass defaults on fields that bind to a config value. If a key is missing, the engine should fail loudly, not silently substitute a value the rest of the code wasn't designed for.
 
-Three exceptions survive: language-mandated empty collections (`field(default_factory=list)`), parsing of variable external structures, and the AI-call carve-out below. External structures means: a Datasworn field absent in at least one of three shipped settings (verifiable by grep) or marked optional in schema; a WebSocket field defined as optional in protocol spec; an AI-call field part of a documented retry-fallback dict, not happy-path response. Required-per-spec fields do not qualify even at external boundary. When in doubt, treat as required.
+Three exceptions survive: language-mandated empty collections (`field(default_factory=list)`), parsing of variable external structures, and the AI-call carve-out below. External structures means: a Datasworn field absent in at least one of the four shipped Datasworn rulesets (verifiable by grep) or marked optional in schema; a WebSocket field defined as optional in protocol spec; an AI-call field part of a documented retry-fallback dict, not happy-path response. Required-per-spec fields do not qualify even at external boundary. When in doubt, treat as required.
 
 **Yaml content boundary.** Yaml holds values whose source can be named — a Datasworn table, an AC table, a Mythic table, a mechanical computation, or a value present elsewhere in the codebase. Values without a nameable source go in AI-call output (with setting context in the prompt), in an oracle roll, or stay absent until decided. Prose-shaped values (mood words, descriptive phrases, narrative templates) do not belong in yaml.
 
 **User-, narrator-, and AI-readable strings live in config or prompt files.** Not hardcoded in Python. `engine/*.yaml`, `prompts/*.yaml`, `strings/*.yaml`, and `emotions/*.yaml` are the homes. Adding a constant to Python should be a last resort with a written reason.
 
-**Errors propagate.** No broad `except Exception: pass`, no `contextlib.suppress` over domain logic. The carve-out is AI-call sites and tool-boundary functions returning structured error dicts to an AI caller — the broad catch is logged at warning level. See `Provider abstraction` for why the carve-out exists.
+**Errors propagate.** No broad `except Exception: pass`, no `contextlib.suppress` over domain logic. The carve-out is AI-call sites and tool-boundary functions returning structured error dicts to an AI caller — the broad catch is logged at warning level. See "AI-call exception carve-out" under Key Design Decisions for why the carve-out exists.
 
 **No backwards compatibility.** Saves break when the code requires it. No migration layers, no default-on-old-fields, no ignore-unknown-fields. This is by design for an alpha project with no production users; if it changes, it changes deliberately, not silently.
 
@@ -494,7 +503,7 @@ Game mechanics, emotion scoring, move types, damage tables, disposition shifts �
 
 1. Fork, branch, make your change
 2. `ruff check --fix src/ tests/` and `ruff format src/` — must be clean
-3. `python -m pytest tests/ -q` — all tests must pass
+3. `python -m pytest tests/ -q` — all tests must pass. The one exception is `test_project_rules.py` reporting residual debt in files you did not touch (see Project rules); any new violation is blocking
 4. `mypy src/ --config-file pyproject.toml` — must be clean
 5. PR with a clear description of what and why
 
