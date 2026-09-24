@@ -1,6 +1,6 @@
 [project]
 name = "straightjacket"
-version = "2026.09.24.1"
+version = "2026.09.24.2"
 requires-python = ">=3.11"
 dependencies = [
     "starlette>=1.0,<2",
@@ -52,3 +52,9 @@ ignore_missing_imports = true
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 asyncio_mode = "strict"
+
+[tool.coverage.run]
+source = ["straightjacket"]
+
+[tool.coverage.report]
+fail_under = 88

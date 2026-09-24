@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import ast
+import os
 import re
 import subprocess
 import sys
@@ -1009,6 +1010,119 @@ def _check_no_orphan_prompt_keys() -> tuple[str, list[Violation]]:
     return "orphan prompt key", violations
 
 
+_DOC_FILES = ("README.md", "ARCHITECTURE.md", "SECURITY.md", "ORIGINS.md", "AUDIT.md")
+_DOC_PATH_PLACEHOLDERS = {
+    "data/settings/your_setting.yaml",
+    "ai/provider_yourname.py",
+    "elvira_session.json",
+    "tests/elvira/elvira_session.json",
+}
+_DOC_PATH = re.compile(r"`([A-Za-z0-9_./-]+\.(?:py|yaml|sql|json|html|toml|md))(?:::[A-Za-z_]\w*)?`")
+_OWNERSHIP_REF = re.compile(r"`([\w/]+\.py)` → ((?:`\w+`(?:, )?)+)")
+_OWNERSHIP_REF_COLON = re.compile(r"`([\w/]+\.py)::(\w+)`")
+_CHANGELOG_HEADER = re.compile(r"^## \[(\d+(?:\.\d+)+)\]")
+_NON_PROJECT_WALK_DIRS = frozenset(
+    {".git", "venv", ".venv", "node_modules", "__pycache__", ".mypy_cache", ".ruff_cache"}
+)
+
+
+def _repo_files() -> list[str]:
+    out: list[str] = []
+    for dirpath, dirnames, filenames in os.walk(REPO_ROOT):
+        dirnames[:] = [d for d in dirnames if d not in _NON_PROJECT_WALK_DIRS and not d.endswith(".egg-info")]
+        rel_dir = Path(dirpath).relative_to(REPO_ROOT).as_posix()
+        out.extend(f if rel_dir == "." else f"{rel_dir}/{f}" for f in filenames)
+    return out
+
+
+def _check_doc_paths_exist() -> tuple[str, list[Violation]]:
+    files = _repo_files()
+    violations: list[Violation] = []
+    used_placeholders: set[str] = set()
+    for doc in _DOC_FILES:
+        for lineno, line in enumerate((REPO_ROOT / doc).read_text(encoding="utf-8").splitlines(), 1):
+            for match in _DOC_PATH.finditer(line):
+                path = match.group(1)
+                if path in _DOC_PATH_PLACEHOLDERS:
+                    used_placeholders.add(path)
+                    continue
+                if not any(f == path or f.endswith("/" + path) for f in files):
+                    violations.append(Violation(doc, lineno, f"`{path}` does not exist"))
+    for placeholder in sorted(_DOC_PATH_PLACEHOLDERS - used_placeholders):
+        violations.append(Violation("<placeholders>", 0, f"`{placeholder}` is no longer used in any md file"))
+    return "DOC DRIFT: path named in an md file does not exist", violations
+
+
+def _file_map_section() -> str:
+    text = (REPO_ROOT / "ARCHITECTURE.md").read_text(encoding="utf-8")
+    start = text.index("## File Map")
+    return text[start : text.index("\n## ", start + 1)]
+
+
+def _check_file_map_complete() -> tuple[str, list[Violation]]:
+    listed = set(re.findall(r"([A-Za-z_]\w*\.(?:py|sql|html))", _file_map_section()))
+    existing = {p.name for p in SRC_ROOT.rglob("*") if p.suffix in (".py", ".sql", ".html")}
+    violations: list[Violation] = []
+    for path in sorted(_iter_source_files()):
+        if path.name != "__init__.py" and path.name not in listed:
+            violations.append(Violation(_rel(path), 0, "missing from the ARCHITECTURE.md file map"))
+    for name in sorted(listed - existing):
+        violations.append(Violation("ARCHITECTURE.md", 0, f"file map lists {name!r}, which does not exist"))
+    return "DOC DRIFT: ARCHITECTURE.md file map", violations
+
+
+def _defines_top_level(path: Path, name: str) -> bool:
+    tree = _load(path)[2]
+    for node in ast.walk(tree):
+        if isinstance(node, ast.FunctionDef | ast.AsyncFunctionDef | ast.ClassDef) and node.name == name:
+            return True
+        if isinstance(node, ast.Assign) and any(isinstance(t, ast.Name) and t.id == name for t in node.targets):
+            return True
+        if isinstance(node, ast.AnnAssign) and isinstance(node.target, ast.Name) and node.target.id == name:
+            return True
+    return False
+
+
+def _resolve_src_path(rel: str) -> Path | None:
+    matches = [p for p in _iter_source_files() if p.as_posix().endswith("/" + rel)]
+    return matches[0] if len(matches) == 1 else None
+
+
+def _check_ownership_symbols_exist() -> tuple[str, list[Violation]]:
+    text = (REPO_ROOT / "ARCHITECTURE.md").read_text(encoding="utf-8")
+    violations: list[Violation] = []
+    for lineno, line in enumerate(text.splitlines(), 1):
+        refs = [(m.group(1), n) for m in _OWNERSHIP_REF.finditer(line) for n in re.findall(r"`(\w+)`", m.group(2))]
+        refs += [(m.group(1), m.group(2)) for m in _OWNERSHIP_REF_COLON.finditer(line)]
+        for rel, name in refs:
+            path = _resolve_src_path(rel)
+            if path is None:
+                violations.append(Violation("ARCHITECTURE.md", lineno, f"`{rel}` does not resolve to one source file"))
+            elif not _defines_top_level(path, name):
+                violations.append(Violation("ARCHITECTURE.md", lineno, f"`{rel}` does not define {name!r}"))
+    return "DOC DRIFT: ARCHITECTURE.md names a symbol that does not exist", violations
+
+
+def _check_changelog_consistent() -> tuple[str, list[Violation]]:
+    lines = (REPO_ROOT / "CHANGELOG.md").read_text(encoding="utf-8").splitlines()
+    pyproject = (REPO_ROOT / "pyproject.toml").read_text(encoding="utf-8")
+    project_version = re.search(r'^version = "([^"]+)"', pyproject, re.M)
+    violations: list[Violation] = []
+    headers = [(i, m.group(1)) for i, line in enumerate(lines, 1) if (m := _CHANGELOG_HEADER.match(line))]
+    if project_version is None or not headers or headers[0][1] != project_version.group(1):
+        violations.append(Violation("CHANGELOG.md", 0, "newest entry does not match the pyproject.toml version"))
+    for (_, newer), (lineno, older) in zip(headers, headers[1:], strict=False):
+        if tuple(int(x) for x in older.split(".")) >= tuple(int(x) for x in newer.split(".")):
+            violations.append(Violation("CHANGELOG.md", lineno, f"{older} is not older than {newer}"))
+    for i, line in enumerate(lines):
+        if line.strip() != "---":
+            continue
+        following = next((nxt for nxt in lines[i + 1 :] if nxt.strip()), None)
+        if following is not None and not following.startswith("## "):
+            violations.append(Violation("CHANGELOG.md", i + 1, "entry after a separator has no version header"))
+    return "DOC DRIFT: CHANGELOG versions and headers", violations
+
+
 _ALL_CHECKS = (
     _check_no_domain_default_in_dict_get,
     _check_no_or_literal_fallback_on_lookups,
@@ -1033,6 +1147,10 @@ _ALL_CHECKS = (
     _check_no_stale_carve_out_entries,
     _check_no_skip_or_xfail_in_tests,
     _check_no_orphan_prompt_keys,
+    _check_doc_paths_exist,
+    _check_file_map_complete,
+    _check_ownership_symbols_exist,
+    _check_changelog_consistent,
 )
 
 

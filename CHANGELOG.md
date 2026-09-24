@@ -7,6 +7,20 @@ Originally forked from [EdgeTales](https://github.com/edgetales/edgetales). See 
 
 Straightjacket uses calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day. The first CalVer release is `2026.04.25.0`. Earlier `0.x.y` releases keep their original version numbers and are not renumbered. The switch was made because the project has no public API to version semantically against — the `0.x.y` numbers were running counters with no meaning, and dates carry the meaning the numbers didn't.
 
+## [2026.09.24.2] — 2026-09-24
+
+Documentation drift becomes a test, the provider adapters get tests, and coverage gets a floor.
+
+Four new project-rule scans (twenty-three → twenty-seven) turn the manual re-sync of 2026.09.24.0 into a mechanical check. `_check_doc_paths_exist`: every backticked path in README, ARCHITECTURE, SECURITY, ORIGINS, and AUDIT must exist in the repository; a small placeholder set covers the documented examples (`your_setting.yaml`, `provider_yourname.py`, Elvira's generated session files) and fails itself when a placeholder is no longer used. `_check_file_map_complete`: every source file appears in the ARCHITECTURE.md file map, and every file the map lists exists. `_check_ownership_symbols_exist`: every `file.py → symbol` and `file.py::symbol` reference in ARCHITECTURE.md names a symbol defined in that file. `_check_changelog_consistent`: the newest CHANGELOG entry matches the `pyproject.toml` version, versions strictly decrease, and no entry after a separator lacks its header.
+
+The new scans found two real errors on their first run. ARCHITECTURE.md named `PROGRESS_RANKS` in `models_base.py`, which no longer exists; valid ranks are the keys of `engine/progress.yaml::track_types.default.ticks_per_mark`. And the 2026.05.08.0 entry added in 2026.09.24.0 sat above 2026.05.14.0 instead of between 2026.05.11.0 and 2026.05.06.3. Both fixed.
+
+New `tests/test_providers.py`: the Anthropic and OpenAI-compatible adapters, at 0% coverage until now because every other test uses a mock provider, are tested against fake SDK clients. Eleven tests cover response mapping (text blocks, tool calls, stop reasons, token usage), request building (system-prompt placement, sampling parameters, JSON-schema format, tool conversion, `top_k` merged into `extra_body` without mutating the spec), omission of unset options, and `base_url` handling. Both adapters are now at 100%.
+
+Coverage floor: `[tool.coverage.report] fail_under = 88` in `pyproject.toml` (current total 88.0%). The quality gate in ARCHITECTURE.md (Contributing) and roadmap.md (post-flight) now runs `pytest tests/ -q --cov`; the floor is raised when coverage rises and never lowered.
+
+Quality gate: 1260 tests green, twenty-seven project-rule scans clean, coverage 88%, ruff check and ruff format clean, mypy clean on 105 source files. Save format unchanged.
+
 ## [2026.09.24.1] — 2026-09-24
 
 Project-rule scans hardened: blind spots closed, three new scans (twenty → twenty-three), and the one real violation they exposed fixed.
@@ -45,10 +59,6 @@ Quality gate: 1249 tests green (including the twenty project-rule scans), ruff c
 
 Documentation only. `AUDIT.md` added: an operational document for auditing the codebase against five principles (high modularity, config-driven, no defensive programming, no backwards compatibility, clean codebase) as exhaustive hit-lists rather than yes/no verdicts, with a status section tracked per principle and per submodule. `roadmap.md`, until then kept locally, committed to the repository. No CHANGELOG entry was written at the time; this one was added in 2026.09.24.0. The committed roadmap still listed Clock expansion as the next step, although it had landed in 2026.05.14.0.
 
-## [2026.05.08.0] — 2026-05-08
-
-Documentation only. `CONTRIBUTING.md` folded into ARCHITECTURE.md as the sections Code standards, Project rules, Config-driven design, Contributing, and Accessibility; the Testing section in ARCHITECTURE gained the Elvira commands. README's further-reading list updated accordingly. No CHANGELOG entry was written at the time; this one was added in 2026.09.24.0.
-
 ## [2026.05.14.0] — 2026-05-14
 
 Clock expansion completed. Three spawn sources plus a fill handler plus an owner refactor in one commit.
@@ -82,6 +92,10 @@ Spec-drift fix in the same commit: the settings-yaml format example in ARCHITECT
 12 new tests in `tests/test_threat_creation.py`. Quality gate: 1236 green (was 1224), ruff check + format clean over 175 files, mypy without issues over 103 source files.
 
 Not done: cascade helper for deeper recursion (depth 4 is ample for the current data); per-source threat-rank variation; name uniqueness within one chapter. Next step: Clock expansion (fill consequences when no keyed scene is attached, clock creation from random events and AC plot-points).
+
+## [2026.05.08.0] — 2026-05-08
+
+Documentation only. `CONTRIBUTING.md` folded into ARCHITECTURE.md as the sections Code standards, Project rules, Config-driven design, Contributing, and Accessibility; the Testing section in ARCHITECTURE gained the Elvira commands. README's further-reading list updated accordingly. No CHANGELOG entry was written at the time; this one was added in 2026.09.24.0.
 
 ## [2026.05.06.3] — 2026-05-06
 

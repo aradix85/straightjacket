@@ -74,7 +74,7 @@ Where to find things. If you want to change X, edit Y.
 | Character creation validation | `game/game_start.py` → `validate_stats`, stat arrays in `engine/stats.yaml` |
 | Creation data for client | `web/serializers.py` → `build_creation_options` |
 | Setting-specific creation flow | `data/settings/*.yaml` → `creation_flow` block |
-| Progress track mechanics | `models_base.py` → `ProgressTrack`, `PROGRESS_RANKS` |
+| Progress track mechanics | `models_base.py` → `ProgressTrack`; valid ranks and ticks per mark in `engine/progress.yaml` (`track_types.default.ticks_per_mark`) |
 | Mythic threads/characters lists | `models_story.py` → `ThreadEntry`, `CharacterListEntry` |
 | Truths in narrator prompt | `prompt_blocks.py` → `truths_block` |
 | Pacing (engine-computed) | `mechanics/world.py` → `get_pacing_hint`; scene structure via `mechanics/scene.py` |
@@ -399,7 +399,7 @@ Three layers of testing, complementary, plus the static checks (ruff, mypy) list
 
 The **unit/integration test suite** (`python -m pytest tests/ -v`) runs without an API key. It uses mock providers that return canned responses. Tests verify the engine's internal logic: consequences, NPC processing, serialization, correction flow, prompt assembly, WebSocket handlers. Every PR must pass this suite.
 
-**Project rules** (`tests/test_project_rules.py`) is one consolidated test running AST and regex scans that enforce the rules described in the Project rules section. A meta-scan fails on carve-out or whitelist entries that no longer match a file or symbol, so an exception cannot outlive the code it excuses. Failures are deterministic measurements — the test fails on residual debt without blocking feature work. When you touch a file that already has violations, fix them in the same commit.
+**Project rules** (`tests/test_project_rules.py`) is one consolidated test running AST and regex scans that enforce the rules described in the Project rules section. A meta-scan fails on carve-out or whitelist entries that no longer match a file or symbol, so an exception cannot outlive the code it excuses. Four documentation-drift scans keep the md files honest: every path they name exists, the file map below is complete, every `file.py → symbol` reference resolves, and the CHANGELOG matches the `pyproject.toml` version. Failures are deterministic measurements — the test fails on residual debt without blocking feature work. When you touch a file that already has violations, fix them in the same commit.
 
 **Elvira** (`tests/elvira/elvira.py`) is a headless AI-driven test player that plays the game with real API calls. It checks state invariants after every turn (including NPC-DB sync and combat-track sync), validates narration quality through deterministic regex checks (leaked mechanics like result-types or stat values, NPC spatial consistency, chapter continuity), stress-tests the correction pipeline, and logs everything to a single `elvira_session.json`. Two modes:
 
@@ -503,7 +503,7 @@ Game mechanics, emotion scoring, move types, damage tables, disposition shifts �
 
 1. Fork, branch, make your change
 2. `ruff check --fix src/ tests/` and `ruff format src/` — must be clean
-3. `python -m pytest tests/ -q` — all tests must pass. The one exception is `test_project_rules.py` reporting residual debt in files you did not touch (see Project rules); any new violation is blocking
+3. `python -m pytest tests/ -q --cov` — all tests must pass, and total coverage must stay at or above `fail_under` in `pyproject.toml` (`[tool.coverage.report]`); raise the floor when coverage rises, never lower it. The one exception is `test_project_rules.py` reporting residual debt in files you did not touch (see Project rules); any new violation is blocking
 4. `mypy src/ --config-file pyproject.toml` — must be clean
 5. PR with a clear description of what and why
 
