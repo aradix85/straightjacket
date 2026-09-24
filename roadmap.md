@@ -189,19 +189,19 @@ EdgeTales 0.9.67–0.9.96 (Lars) was read in full on 2026-09-24. Its bug fixes t
 
 Decision 2026-09-24: where Straightjacket takes a rule from Ironsworn/Starforged, Mythic GME 2e, the Adventure Crafter, or Blades in the Dark, the rule works as the source describes it. A divergence is allowed only as a deliberate choice, recorded under deliberate divergences in ARCHITECTURE.md. Prompted by Elvira exposing, the same day, that the action roll was 2d6 plus stat, inherited without any recorded decision (fixed in 2026.09.24.17). Each item: read the rule in the source, compare it with the engine, then either fix it with a test or record the divergence.
 
-**R.1 Action roll details.** Checked 2026-09-24 (2026.09.24.21). Momentum burn conforms: only on a miss or weak hit, only with positive momentum, never on progress rolls, momentum resets afterwards, and a match stays a match. Negative momentum cancelling a matching action die was missing and is now implemented with tests. Still open: adds from assets and moves (+1 or +2 under asset-specific conditions) are not applied at all; this needs the Brain or the engine to decide when an asset's condition holds, so it is a feature, not a fix.
+**R.1 Action roll details.** Checked 2026-09-24 (2026.09.24.21). Momentum burn conforms: only on a miss or weak hit, only with positive momentum, never on progress rolls, momentum resets afterwards, and a match stays a match. Negative momentum cancelling a matching action die was missing and is now implemented with tests. Still open: adds from assets and moves (+1 or +2 under asset-specific conditions) are not applied at all; this needs the Brain or the engine to decide when an asset's condition holds, so it is a feature, not a fix. The move effect `next_move_bonus` (for example Starforged's Secure an Advantage strong hit, "add +1 on your next move") is recorded and announced to the narrator but never added to the next roll, which belongs to the same feature. Also open: `engine/move_outcomes.yaml` is shared by Ironsworn and Starforged and follows Starforged where they differ; the classic setting needs per-setting overrides (the one known case is Secure an Advantage, weak hit +1 in Ironsworn).
 
-**R.2 Momentum.** Checked 2026-09-24: start +2, maximum +10, floor -6, reset +2 minus one per impact and never below 0 (fixed in 2026.09.24.6) all conform. Still open: the gain and loss per move outcome, which sits in `engine/move_outcomes.yaml` and belongs with R.3.
+**R.2 Momentum.** Checked 2026-09-24: start +2, maximum +10, floor -6, reset +2 minus one per impact and never below 0 (fixed in 2026.09.24.6) all conform. Momentum per move outcome checked automatically 2026-09-24 against the Datasworn move texts for Starforged and classic: every unconditional gain matches except the two recorded divergences (shared table, boasts); `tests/test_rules_conformance.py` keeps it that way. Still open: outcomes where the player chooses, which the automated check skips, and belong with R.3.
 
 **R.3 Suffer moves and impacts.** Endure Harm, Endure Stress, Sacrifice Resources, Lose Momentum, the impacts, and what a miss costs by default.
 
 **R.4 Progress.** Ticks per rank checked 2026-09-24 and conform (troublesome 12, dangerous 8, formidable 4, extreme 2, epic 1, on 40-tick tracks); progress rolls use filled boxes against two d10s without momentum. Still open: legacy tracks and experience (Starforged), bonds and connections.
 
-**R.5 Mythic fate check.** 2d10 plus odds and chaos modifiers, the answer thresholds, exceptional answers, and the random event on doubles.
+**R.5 Mythic fate check.** Checked 2026-09-24 and conform: odds modifiers -5 to +5, chaos modifiers -5 to +5, yes on 11 or more, exceptional yes 18 to 20, exceptional no 2 to 4, random event on doubles within the chaos factor; the fate chart has the Mythic 2e values and exceptional thresholds in all 81 cells. A chart roll of 100 counting as doubles is recorded as an interpretation.
 
-**R.6 Mythic scene test and chaos factor.** d10 against the chaos factor (odd altered, even interrupted), the chaos adjustment at scene end, and its range.
+**R.6 Mythic scene test and chaos factor.** Checked 2026-09-24: the scene test conforms (d10 above the chaos factor or a 10 is expected, otherwise odd altered and even interrupted), start 5 and range 1 to 9 conform. The adjustment happens per turn from the roll rather than per scene from control, recorded as a deliberate divergence in ARCHITECTURE.md.
 
-**R.7 Mythic random events.** The event focus table, the meaning tables, and the weighting of the thread and character lists.
+**R.7 Mythic random events.** The event focus table checked 2026-09-24 and conforms to Mythic 2e exactly. Still open: the meaning tables and the weighting of the thread and character lists.
 
 **R.8 Adventure Crafter.** Turning points, plot point tables per theme, theme priority, and the character and plotline lists.
 

@@ -7,6 +7,20 @@ Originally forked from [EdgeTales](https://github.com/edgetales/edgetales). See 
 
 Straightjacket uses calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day. The first CalVer release is `2026.04.25.0`. Earlier `0.x.y` releases keep their original version numbers and are not renumbered. The switch was made because the project has no public API to version semantically against — the `0.x.y` numbers were running counters with no meaning, and dates carry the meaning the numbers didn't.
 
+## [2026.09.24.22] — 2026-09-24
+
+Rules conformance, second pass: momentum per move outcome and Mythic (roadmap section R), with a new conformance test file and a documented list of deliberate divergences.
+
+Momentum per outcome. An automated comparison reads every move outcome text in the Datasworn data for Starforged and classic Ironsworn and compares each unconditional momentum gain ("take +2 momentum") with `engine/move_outcomes.yaml`. Of 183 outcomes checked, every one matches except two, both now recorded: the table is shared by Ironsworn and Starforged and follows Starforged where they differ (classic Secure an Advantage, weak hit, gives +2 instead of Ironsworn's +1), and Draw the Circle grants its weak-hit momentum without modelling the boast. Outcomes where the player chooses are not covered by the automated check and stay open under R.3. Also recorded under R.1: the move effect `next_move_bonus` ("add +1 on your next move") is announced to the narrator but never added to the next roll.
+
+Mythic. Checked and conform: the fate check (odds and chaos modifiers, yes at 11 or more, exceptional yes 18 to 20, exceptional no 2 to 4, random event on doubles within the chaos factor), the fate chart (Mythic 2e values and exceptional thresholds in all 81 cells), the scene test (expected above the chaos factor or on a 10, otherwise odd altered and even interrupted), the chaos factor's start and range, and the event focus table. The chaos factor moves per turn from the roll instead of per scene from control, recorded as a deliberate divergence.
+
+New `tests/test_rules_conformance.py` (14 tests) pins all of this: the momentum comparison fails on any divergence beyond the two recorded ones. New ARCHITECTURE.md section "Deliberate divergences from the source rulebooks" lists the four known exceptions (chaos per turn, shared outcome table, boasts, a fate-chart 100 counting as doubles).
+
+No engine code changed in this pass.
+
+Quality gate: 1333 tests green, twenty-nine project-rule scans clean, coverage 89.66%, ruff check and ruff format clean, mypy --strict clean on 106 source files. Save format unchanged.
+
 ## [2026.09.24.21] — 2026-09-24
 
 Rules conformance, first pass over Ironsworn (roadmap section R), plus two Elvira fixes.

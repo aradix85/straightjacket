@@ -387,6 +387,15 @@ AC's role is bounded to plot-skeleton at chapter boundaries plus keyed-scene-spa
 
 **No asset mechanics.** Assets are stored as ID strings but have no mechanical effect. XP can be spent to acquire or upgrade an asset (`mechanics/legacy.py` → `advance_asset`), but that is bookkeeping only. The modifier pipeline (stat bonuses, rerolls, companion health, vehicle condition) is not implemented.
 
+## Deliberate divergences from the source rulebooks
+
+Where a rule comes from Ironsworn/Starforged, Mythic GME 2e, or the Adventure Crafter, the engine follows the source; `tests/test_rules_conformance.py` pins the checked rules, including an automated comparison of every unconditional momentum gain in the Datasworn move texts with `engine/move_outcomes.yaml`. These are the known, deliberate exceptions:
+
+- **Chaos factor per turn.** Mythic adjusts the chaos factor once per scene, by whether the player characters were in control. Straightjacket treats each turn as a scene and reads control from the roll: a miss raises the chaos factor by one, a strong hit lowers it by one, a weak hit leaves it, and dialog moves it by the NPC's disposition (`engine/chaos.yaml`). Start 5 and range 1 to 9 follow Mythic.
+- **One move-outcome table for Ironsworn and Starforged.** `engine/move_outcomes.yaml` is keyed by move and follows Starforged where the two rulebooks differ. In the classic setting a weak hit on Secure an Advantage therefore gives +2 momentum instead of Ironsworn's +1. Per-setting overrides are a roadmap item (R.1).
+- **Boasts are not modelled.** Draw the Circle grants its weak-hit momentum without the boast the player would choose.
+- **A fate-chart roll of 100 counts as doubles** and triggers a random event; Mythic 2e does not settle this edge case.
+
 ## Deliberate divergences from the design document
 
 Five places where Straightjacket departs from the design document's architectural recommendations or settles one of its open questions. Each was an explicit decision, taken on empirical grounds or as a deliberate scope boundary, not a discard from the document.
