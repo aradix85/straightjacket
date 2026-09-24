@@ -123,6 +123,7 @@ def _apply_next_move_bonus_effect(
     game: GameState, effect: MoveEffect, result: OutcomeResult, target: NpcData | None
 ) -> None:
     result.next_move_bonus = effect.value
+    game.resources.next_move_bonus += effect.value
     result.consequences.append(eng().ai_text.consequence_labels["next_move_bonus"].format(n=effect.value))
 
 

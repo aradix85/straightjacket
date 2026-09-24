@@ -7,6 +7,18 @@ Originally forked from [EdgeTales](https://github.com/edgetales/edgetales). See 
 
 Straightjacket uses calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day. The first CalVer release is `2026.04.25.0`. Earlier `0.x.y` releases keep their original version numbers and are not renumbered. The switch was made because the project has no public API to version semantically against — the `0.x.y` numbers were running counters with no meaning, and dates carry the meaning the numbers didn't.
 
+## [2026.09.24.23] — 2026-09-24
+
+"Add +1 on your next move" now happens. The move effect `next_move_bonus` (Starforged's Secure an Advantage on a strong hit or as a weak-hit choice, and similar outcomes) was announced to the narrator as a consequence but never reached a roll: `mechanics/move_effects.py` stored it on a result object nobody read.
+
+The bonus is now banked on the character as `Resources.next_move_bonus` (default 0, so existing saves load unchanged) and added to the next action roll, which spends it; progress rolls neither use nor spend it, as the rules say ("not a progress move"). `mechanics/consequences.py` → `roll_action` takes the adds as a required argument, and they still count when negative momentum cancels the action die. The correction re-roll uses and spends the bonus the same way. This gives the action roll the adds mechanism that asset bonuses will need (roadmap R.1).
+
+The roll log line moves into `game/turn.py` → `_log_action_roll`; it shows the adds, and it no longer labels a die cancelled by negative momentum as a cap, which the log line from 2026.09.24.21 did.
+
+Tests: adds raise the action score, adds still count with a cancelled die, the effect is banked and spent by the next action roll, and a save without the new field still loads.
+
+Quality gate: 1337 tests green, twenty-nine project-rule scans clean, ruff check and ruff format clean, mypy --strict clean on 106 source files. Save format: one new field with a default; older saves load.
+
 ## [2026.09.24.22] — 2026-09-24
 
 Rules conformance, second pass: momentum per move outcome and Mythic (roadmap section R), with a new conformance test file and a documented list of deliberate divergences.

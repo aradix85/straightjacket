@@ -56,7 +56,10 @@ def _handle_input_misread(
     if analysis["reroll_needed"] and brain.stat != "none":
         nar.scene_count += 1
         stat_name = brain.stat
-        roll = roll_action(stat_name, game.get_stat(stat_name), brain.move, game.resources.momentum)
+        roll = roll_action(
+            stat_name, game.get_stat(stat_name), brain.move, game.resources.momentum, game.resources.next_move_bonus
+        )
+        game.resources.next_move_bonus = 0
         log(f"[Correction] Re-rolled: {roll.result} ({stat_name})")
         position = resolve_position(game, brain)
         effect = resolve_effect(game, brain, position)

@@ -20,6 +20,7 @@ class Resources(SerializableMixin):
     supply: int
     momentum: int
     max_momentum: int
+    next_move_bonus: int = 0
 
     @classmethod
     def from_config(cls) -> Resources:

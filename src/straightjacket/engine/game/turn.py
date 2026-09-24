@@ -307,20 +307,26 @@ def _execute_roll(game: GameState, brain: BrainResult) -> RollOutcome:
                 f"This is a Brain output error: action_roll moves require a real stat. "
                 f"Brain should have either picked a valid stat or routed this as dialog/oracle."
             )
-        roll = roll_action(stat_name, game.get_stat(stat_name), brain.move, game.resources.momentum)
-        _raw = roll.d1 + roll.stat_value
-        _score_str = f"{_raw}→{roll.action_score}(cap)" if _raw > roll.action_score else str(roll.action_score)
-        log(
-            f"[Roll] {roll.move} ({roll.stat_name}={roll.stat_value}): "
-            f"{roll.d1}+{roll.stat_value}={_score_str} vs [{roll.c1},{roll.c2}] "
-            f"→ {roll.result}{' MATCH!' if roll.match else ''}"
-            f"{' (action die cancelled by negative momentum)' if roll.action_score < min(_raw, 10) else ''}"
-        )
+        adds = game.resources.next_move_bonus
+        roll = roll_action(stat_name, game.get_stat(stat_name), brain.move, game.resources.momentum, adds)
+        game.resources.next_move_bonus = 0
+        _log_action_roll(roll, adds, cancelled=game.resources.momentum < 0 and -game.resources.momentum == roll.d1)
 
     if game.last_turn_snapshot is not None:
         game.last_turn_snapshot.roll = roll
 
     return RollOutcome(roll=roll, ds_move=ds_move, track=track, is_progress_roll=is_progress_roll)
+
+
+def _log_action_roll(roll: RollResult, adds: int, cancelled: bool) -> None:
+    raw = (0 if cancelled else roll.d1) + roll.stat_value + adds
+    score = f"{raw}→{roll.action_score}(cap)" if raw > roll.action_score else str(roll.action_score)
+    log(
+        f"[Roll] {roll.move} ({roll.stat_name}={roll.stat_value}): "
+        f"{roll.d1}+{roll.stat_value}{f'+{adds}' if adds else ''}={score} vs [{roll.c1},{roll.c2}] "
+        f"→ {roll.result}{' MATCH!' if roll.match else ''}"
+        f"{' (action die cancelled by negative momentum)' if cancelled else ''}"
+    )
 
 
 def _check_burn_possibility(

@@ -18,7 +18,7 @@ def _game(health: int = 5, spirit: int = 5, supply: int = 5, momentum: int = 3) 
 def test_roll_action_returns_valid_result() -> None:
     from straightjacket.engine.mechanics.consequences import roll_action
 
-    r = roll_action("edge", 3, "adventure/face_danger", 0)
+    r = roll_action("edge", 3, "adventure/face_danger", 0, 0)
     assert r.result in ("STRONG_HIT", "WEAK_HIT", "MISS")
     assert r.move == "adventure/face_danger"
     assert r.stat_name == "edge"
@@ -36,7 +36,7 @@ def test_roll_action_match_detection() -> None:
 
     matches = 0
     for _ in range(1000):
-        r = roll_action("iron", 2, "combat/strike", 0)
+        r = roll_action("iron", 2, "combat/strike", 0, 0)
         if r.match:
             matches += 1
             assert r.c1 == r.c2
@@ -47,7 +47,7 @@ def test_roll_action_score_capped_at_10() -> None:
     from straightjacket.engine.mechanics.consequences import roll_action
 
     for _ in range(100):
-        r = roll_action("edge", 3, "adventure/face_danger", 0)
+        r = roll_action("edge", 3, "adventure/face_danger", 0, 0)
         assert r.action_score <= 10
 
 
@@ -242,7 +242,7 @@ def test_roll_progress_match_detection() -> None:
 def test_action_roll_is_one_d6_plus_stat_like_ironsworn(load_engine: None) -> None:
     from straightjacket.engine.mechanics.consequences import roll_action
 
-    rolls = [roll_action("wits", 2, "adventure/face_danger", 0) for _ in range(500)]
+    rolls = [roll_action("wits", 2, "adventure/face_danger", 0, 0) for _ in range(500)]
     assert all(r.action_score == r.d1 + 2 for r in rolls)
     assert max(r.action_score for r in rolls) == 8
     assert {r.d2 for r in rolls} == {0}
@@ -259,7 +259,7 @@ def test_negative_momentum_cancels_a_matching_action_die(load_engine: None, monk
     from straightjacket.engine.mechanics.consequences import roll_action
 
     _fixed_dice(monkeypatch, 3, 5, 8)
-    roll = roll_action("wits", 2, "adventure/face_danger", -3)
+    roll = roll_action("wits", 2, "adventure/face_danger", -3, 0)
     assert (roll.d1, roll.action_score, roll.result) == (3, 2, "MISS")
 
 
@@ -269,7 +269,7 @@ def test_negative_momentum_that_does_not_match_leaves_the_die(
     from straightjacket.engine.mechanics.consequences import roll_action
 
     _fixed_dice(monkeypatch, 3, 4, 8)
-    roll = roll_action("wits", 2, "adventure/face_danger", -2)
+    roll = roll_action("wits", 2, "adventure/face_danger", -2, 0)
     assert (roll.action_score, roll.result) == (5, "WEAK_HIT")
 
 
@@ -277,4 +277,44 @@ def test_positive_momentum_never_cancels_the_die(load_engine: None, monkeypatch:
     from straightjacket.engine.mechanics.consequences import roll_action
 
     _fixed_dice(monkeypatch, 3, 4, 8)
-    assert roll_action("wits", 2, "adventure/face_danger", 3).action_score == 5
+    assert roll_action("wits", 2, "adventure/face_danger", 3, 0).action_score == 5
+
+
+def test_adds_raise_the_action_score(load_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:
+    from straightjacket.engine.mechanics.consequences import roll_action
+
+    _fixed_dice(monkeypatch, 3, 5, 8)
+    assert roll_action("wits", 2, "adventure/face_danger", 0, 1).action_score == 6
+
+
+def test_adds_still_count_when_negative_momentum_cancels_the_die(
+    load_engine: None, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from straightjacket.engine.mechanics.consequences import roll_action
+
+    _fixed_dice(monkeypatch, 3, 5, 8)
+    assert roll_action("wits", 2, "adventure/face_danger", -3, 1).action_score == 3
+
+
+def test_next_move_bonus_effect_is_banked_and_spent_on_the_next_action_roll(
+    load_engine: None, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from straightjacket.engine.game.turn import _execute_roll
+    from straightjacket.engine.mechanics.move_effects import MoveEffect, apply_effects
+    from tests._helpers import make_brain_result, make_game_state
+
+    game = make_game_state()
+    apply_effects(game, [MoveEffect(type="next_move_bonus", value=1)])
+    assert game.resources.next_move_bonus == 1
+    game.resources.momentum = 2
+    _fixed_dice(monkeypatch, 3, 9, 9)
+    outcome = _execute_roll(game, make_brain_result(move="adventure/face_danger", stat="wits"))
+    assert outcome.roll.action_score == 3 + game.get_stat("wits") + 1
+    assert game.resources.next_move_bonus == 0
+
+
+def test_saves_without_a_banked_bonus_still_load(load_engine: None) -> None:
+    from straightjacket.engine.models import Resources
+
+    resources = Resources.from_dict({"health": 5, "spirit": 5, "supply": 5, "momentum": 2, "max_momentum": 10})
+    assert resources.next_move_bonus == 0

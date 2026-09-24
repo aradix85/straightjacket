@@ -13,11 +13,11 @@ from .clock_consequences import resolve_clock_fill
 from .impacts import impact_label
 
 
-def roll_action(stat_name: str, stat_value: int, move: str, momentum: int) -> RollResult:
+def roll_action(stat_name: str, stat_value: int, move: str, momentum: int, adds: int) -> RollResult:
     d1 = random.randint(1, 6)
     c1, c2 = random.randint(1, 10), random.randint(1, 10)
     action_die = 0 if momentum < 0 and -momentum == d1 else d1
-    score = min(action_die + stat_value, 10)
+    score = min(action_die + stat_value + adds, 10)
     if score > c1 and score > c2:
         result = "STRONG_HIT"
     elif score > c1 or score > c2:
