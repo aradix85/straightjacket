@@ -7,6 +7,12 @@ Originally forked from [EdgeTales](https://github.com/edgetales/edgetales). See 
 
 Straightjacket uses calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day. The first CalVer release is `2026.04.25.0`. Earlier `0.x.y` releases keep their original version numbers and are not renumbered. The switch was made because the project has no public API to version semantically against — the `0.x.y` numbers were running counters with no meaning, and dates carry the meaning the numbers didn't.
 
+## [2026.09.24.40] — 2026-09-24
+
+Corrects the quality gate of 2026.09.24.39, which stated mypy was clean while it reported two errors: ruff's automatic fix had turned the new link check into `renamed_tracks.get(thread.linked_track_id)`, and the thread's link can be None. The link is now checked for None before the lookup. The release script also only committed after the tests, not after ruff and mypy; from here each of the three must pass before a commit.
+
+Quality gate: 1410 tests green, twenty-nine project-rule scans clean, coverage 89.80%, ruff check and ruff format clean, mypy --strict clean on 109 source files. Save format unchanged.
+
 ## [2026.09.24.39] — 2026-09-24
 
 Corrects 2026.09.24.38, which claimed the damaged save from the run loads again. It did not: the duplicated vow had also produced a second progress track with the same id, and loading then failed on "UNIQUE constraint failed: progress_tracks.id" after the thread ids were repaired. That claim was written before the check's output was read.

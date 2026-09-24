@@ -89,8 +89,9 @@ def _repair_duplicate_ids(game: GameState) -> None:
             log(f"[Load] Duplicate thread id '{thread.id}' renamed to '{new_id}'", level="warning")
             thread.id = new_id
             taken.add(new_id)
-            if renamed_tracks.get(thread.linked_track_id):
-                thread.linked_track_id = renamed_tracks[thread.linked_track_id].pop(0)
+            linked = thread.linked_track_id
+            if linked is not None and renamed_tracks.get(linked):
+                thread.linked_track_id = renamed_tracks[linked].pop(0)
         seen.add(thread.id)
 
 
