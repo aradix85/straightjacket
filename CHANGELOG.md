@@ -7,6 +7,12 @@ Originally forked from [EdgeTales](https://github.com/edgetales/edgetales). See 
 
 Straightjacket uses calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day. The first CalVer release is `2026.04.25.0`. Earlier `0.x.y` releases keep their original version numbers and are not renumbered. The switch was made because the project has no public API to version semantically against — the `0.x.y` numbers were running counters with no meaning, and dates carry the meaning the numbers didn't.
 
+## [2026.09.24.48] — 2026-09-24
+
+Elvira's run reports leave the repository, at the user's request: they are of little use to others and clutter the history. `tests/elvira/runs/` is in `.gitignore`, and the 22 files committed since 2026.09.24.17 (eleven runs, a JSON session log and a Markdown report each) are removed from git; they stay on disk, and every run still writes there. ARCHITECTURE.md says so, and its Elvira paragraph no longer says the engine catches every AI-call failure by design: since 2026.09.24.47 only failed side calls degrade, while a failed Brain or narrator call pauses the turn. The documentation-drift scan checks only paths with a file extension, so the directory reference stays valid in a fresh clone. No code changed.
+
+Quality gate: 1417 tests green, twenty-nine project-rule scans clean, coverage 89.94%, ruff check and ruff format clean, mypy --strict clean on 109 source files. Ruff's file count drops from 206 to 196: it had been counting the Markdown reports in the now ignored directory. No Elvira run, since no code, prompt, or configuration changed.
+
 ## [2026.09.24.47] — 2026-09-24
 
 The four decisions left open by the audit round, taken by the user on the recommendations given, and carried out. The save format is unchanged since 2026.09.24.45.

@@ -45,3 +45,4 @@ key.pem
 # Coverage output
 .coverage
 htmlcov/
+tests/elvira/runs/
