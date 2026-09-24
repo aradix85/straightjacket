@@ -7,6 +7,16 @@ Originally forked from [EdgeTales](https://github.com/edgetales/edgetales). See 
 
 Straightjacket uses calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day. The first CalVer release is `2026.04.25.0`. Earlier `0.x.y` releases keep their original version numbers and are not renumbered. The switch was made because the project has no public API to version semantically against — the `0.x.y` numbers were running counters with no meaning, and dates carry the meaning the numbers didn't.
 
+## [2026.09.24.34] — 2026-09-24
+
+Classic Ironsworn marks its own lasting harm.
+
+Classic Endure Harm and Endure Stress marked Starforged's lasting impacts, permanently harmed and traumatized, where Ironsworn names maimed and corrupted. `engine/impacts.yaml` gains `maimed` and `corrupted` (permanent) and `encumbered` (a classic condition, not blocking recovery), and the classic overrides in `engine/move_outcomes.yaml` pair wounded with maimed and shaken with corrupted. The shared description of `cursed`, which only spoke of a vessel, now fits a character too. Still borrowed from Starforged, recorded in ARCHITECTURE.md: wounded and shaken block recovery.
+
+Tests: at 0 health or spirit with the first impact already marked, a miss marks the lasting harm of each rulebook, four cases.
+
+Quality gate: 1404 tests green, twenty-nine project-rule scans clean, coverage 89.69%, ruff check and ruff format clean, mypy --strict clean on 108 source files. Save format unchanged.
+
 ## [2026.09.24.33] — 2026-09-24
 
 Assets and connections give their bonuses on rolls (roadmap R.1).

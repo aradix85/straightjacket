@@ -509,3 +509,26 @@ def test_develop_your_relationship_match_raises_the_connection_rank(
     game.progress_tracks.append(track)
     resolve_move_outcome(game, "connection/develop_your_relationship", "STRONG_HIT", target_npc_id="npc_1", match=True)
     assert track.rank == expected
+
+
+@pytest.mark.parametrize(
+    ("setting", "move", "first", "lasting"),
+    [
+        ("classic", "suffer/endure_harm", "wounded", "maimed"),
+        ("classic", "suffer/endure_stress", "shaken", "corrupted"),
+        ("starforged", "suffer/endure_harm", "wounded", "permanently_harmed"),
+        ("starforged", "suffer/endure_stress", "shaken", "traumatized"),
+    ],
+)
+def test_lasting_harm_uses_each_rulebooks_names(
+    load_engine: None, setting: str, move: str, first: str, lasting: str
+) -> None:
+    from straightjacket.engine.mechanics.move_outcome import resolve_move_outcome
+    from tests._helpers import make_game_state
+
+    game = make_game_state(setting_id=setting)
+    track = "health" if move.endswith("harm") else "spirit"
+    setattr(game.resources, track, 0)
+    game.impacts = [first]
+    resolve_move_outcome(game, move, "MISS")
+    assert lasting in game.impacts

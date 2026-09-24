@@ -36,7 +36,7 @@ impacts:
     permanent: false
   cursed:
     label: cursed
-    description: Vessel bears an ill omen
+    description: Bears a curse or ill omen
     blocks_recovery: ''
     permanent: false
   permanently_harmed:
@@ -47,5 +47,20 @@ impacts:
   traumatized:
     label: traumatized
     description: A mental scar that will never fully fade
+    blocks_recovery: ''
+    permanent: true
+  encumbered:
+    label: encumbered
+    description: Weighed down by too much to carry
+    blocks_recovery: ''
+    permanent: false
+  maimed:
+    label: maimed
+    description: A lasting injury that changes the body for good
+    blocks_recovery: ''
+    permanent: true
+  corrupted:
+    label: corrupted
+    description: A lasting darkness in the spirit
     blocks_recovery: ''
     permanent: true
