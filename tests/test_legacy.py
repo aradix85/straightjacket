@@ -67,15 +67,15 @@ class TestMarkLegacy:
         assert xp == 6
         assert game.campaign.legacy_quests.filled_boxes == 3
 
-    def test_mark_caps_at_max(self, stub_engine: None) -> None:
+    def test_full_track_clears_and_continues_at_one_xp_per_box(self, stub_engine: None) -> None:
         from straightjacket.engine.mechanics.legacy import mark_legacy
 
         game = _game()
         game.campaign.legacy_quests.ticks = 38
         xp = mark_legacy(game, "quests", "epic")
-        assert game.campaign.legacy_quests.ticks == 40
-        assert game.campaign.legacy_quests.filled_boxes == 10
-        assert xp == 2
+        assert game.campaign.legacy_quests.ticks == 10
+        assert game.campaign.legacy_quests.completions == 1
+        assert xp == 2 + 1 + 1
 
     def test_separate_tracks_independent(self, stub_engine: None) -> None:
         from straightjacket.engine.mechanics.legacy import mark_legacy

@@ -1,5 +1,6 @@
 legacy:
   xp_per_box: 2
+  xp_per_box_after_clear: 1
   starting_rank: epic
   threat_overcome_bonus: 2
   threat_overcome_threshold: 0.5

@@ -18,25 +18,35 @@ def get_legacy_track(game: GameState, name: str) -> ProgressTrack:
     raise ValueError(f"Unknown legacy track: {name!r}. Valid: {LEGACY_TRACKS}")
 
 
+def shifted_rank(rank: str, shift: int) -> str | None:
+    ranks = list(eng().legacy.ticks_by_rank)
+    index = ranks.index(rank) + shift
+    return ranks[index] if 0 <= index < len(ranks) else None
+
+
 def mark_legacy(game: GameState, track_name: str, source_rank: str = "dangerous") -> int:
+    return mark_legacy_ticks(game, track_name, eng().legacy.ticks_by_rank[source_rank])
+
+
+def mark_legacy_ticks(game: GameState, track_name: str, ticks: int) -> int:
     track = get_legacy_track(game, track_name)
-    ticks_by_rank = eng().legacy.ticks_by_rank
-    ticks = ticks_by_rank[source_rank]
-
-    old_boxes = track.filled_boxes
-    track.ticks = min(track.max_ticks, track.ticks + ticks)
-    new_boxes = track.filled_boxes
-    boxes_gained = new_boxes - old_boxes
-
-    xp_gained = boxes_gained * eng().legacy.xp_per_box
+    cfg = eng().legacy
+    xp_gained = 0
+    for _ in range(ticks):
+        boxes_before = track.filled_boxes
+        track.ticks += 1
+        if track.filled_boxes > boxes_before:
+            xp_gained += cfg.xp_per_box if track.completions == 0 else cfg.xp_per_box_after_clear
+        if track.ticks >= track.max_ticks:
+            track.ticks = 0
+            track.completions += 1
+            log(f"[Legacy] {track_name} filled and cleared (completion {track.completions})")
     if xp_gained > 0:
         game.campaign.xp += xp_gained
-        log(
-            f"[Legacy] {track_name} +{ticks} ticks ({old_boxes}→{new_boxes} boxes), "
-            f"+{xp_gained} XP (total {game.campaign.xp})"
-        )
-    else:
-        log(f"[Legacy] {track_name} +{ticks} ticks (no box crossed)")
+    log(
+        f"[Legacy] {track_name} +{ticks} ticks ({track.filled_boxes} boxes, completions {track.completions}), "
+        f"+{xp_gained} XP (total {game.campaign.xp})"
+    )
     return xp_gained
 
 

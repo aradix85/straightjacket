@@ -126,6 +126,7 @@ class ProgressTrack(SerializableMixin):
     max_ticks: int
     ticks: int = 0
     status: str = "active"
+    completions: int = 0
 
     @classmethod
     def new(cls, *, id: str, name: str, track_type: str, rank: str, ticks: int = 0) -> ProgressTrack:

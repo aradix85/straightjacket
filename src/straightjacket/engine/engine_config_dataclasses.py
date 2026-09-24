@@ -167,6 +167,7 @@ class ImpactConfig:
 @dataclass
 class LegacyConfig:
     xp_per_box: int
+    xp_per_box_after_clear: int
     starting_rank: str
     threat_overcome_bonus: int
     threat_overcome_threshold: float

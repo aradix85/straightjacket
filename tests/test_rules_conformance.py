@@ -55,7 +55,10 @@ def test_unconditional_momentum_matches_the_rulebooks(load_engine: None) -> None
                 gains = [int(x) for x in GAIN.findall(text)]
                 losses = LOSS.findall(text)
                 engine = _yaml_momentum(outcomes[key][result]) if result in outcomes[key] else None
-                single = len(gains) == 1 and "choose" not in text.lower() and " or " not in text.lower()
+                lowered = text.lower()
+                single = (
+                    len(gains) == 1 and "choose" not in lowered and " or " not in lowered and "whenever" not in lowered
+                )
                 if (single and engine != gains[0]) or (not gains and not losses and engine not in (None, 0)):
                     found.add((setting, key, result))
     assert found == KNOWN_DIVERGENCES
@@ -153,3 +156,54 @@ def test_endure_harm_follows_each_rulebook(
     game.impacts = []
     resolve_move_outcome(game, "suffer/endure_harm", result)
     assert (game.resources.health, game.resources.momentum) == expected
+
+
+@pytest.mark.parametrize(("vow_rank", "expected_ticks"), [("formidable", 2), ("dangerous", 1), ("troublesome", 0)])
+def test_fulfill_your_vow_weak_hit_rewards_one_rank_lower(
+    load_engine: None, vow_rank: str, expected_ticks: int
+) -> None:
+    from straightjacket.engine.game.finalization import apply_progress_and_legacy
+    from straightjacket.engine.mechanics.legacy import get_legacy_track
+    from straightjacket.engine.mechanics.move_outcome import resolve_move_outcome
+    from tests._helpers import make_brain_result, make_game_state
+
+    game = make_game_state(setting_id="starforged")
+    outcome = resolve_move_outcome(game, "quest/fulfill_your_vow", "WEAK_HIT")
+    apply_progress_and_legacy(game, outcome, make_brain_result(), source_track_rank=vow_rank)
+    assert get_legacy_track(game, "quests").ticks == expected_ticks
+
+
+def test_develop_your_relationship_marks_two_bonds_ticks(load_engine: None) -> None:
+    from straightjacket.engine.game.finalization import apply_progress_and_legacy
+    from straightjacket.engine.mechanics.legacy import get_legacy_track
+    from straightjacket.engine.mechanics.move_outcome import resolve_move_outcome
+    from tests._helpers import make_brain_result, make_game_state
+
+    game = make_game_state(setting_id="starforged")
+    outcome = resolve_move_outcome(game, "connection/develop_your_relationship", "STRONG_HIT")
+    apply_progress_and_legacy(game, outcome, make_brain_result(), source_track_rank="epic")
+    assert get_legacy_track(game, "bonds").ticks == 2
+
+
+def test_make_a_connection_gives_no_momentum(load_engine: None) -> None:
+    from straightjacket.engine.mechanics.move_outcome import resolve_move_outcome
+    from tests._helpers import make_game_state
+
+    game = make_game_state(setting_id="starforged")
+    game.resources.momentum = 2
+    resolve_move_outcome(game, "connection/make_a_connection", "WEAK_HIT")
+    assert game.resources.momentum == 2
+
+
+def test_a_full_legacy_track_clears_and_then_earns_one_experience_per_box(load_engine: None) -> None:
+    from straightjacket.engine.mechanics.legacy import get_legacy_track, mark_legacy_ticks
+    from tests._helpers import make_game_state
+
+    game = make_game_state(setting_id="starforged")
+    game.campaign.xp = 0
+    track = get_legacy_track(game, "quests")
+    track.ticks = track.max_ticks - 2
+    assert mark_legacy_ticks(game, "quests", 4) == 2
+    assert (track.ticks, track.completions) == (2, 1)
+    assert mark_legacy_ticks(game, "quests", 2) == 1
+    assert game.campaign.xp == 3

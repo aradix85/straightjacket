@@ -7,6 +7,23 @@ Originally forked from [EdgeTales](https://github.com/edgetales/edgetales). See 
 
 Straightjacket uses calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day. The first CalVer release is `2026.04.25.0`. Earlier `0.x.y` releases keep their original version numbers and are not renumbered. The switch was made because the project has no public API to version semantically against — the `0.x.y` numbers were running counters with no meaning, and dates carry the meaning the numbers didn't.
 
+## [2026.09.24.25] — 2026-09-24
+
+Legacy tracks, experience, and connections follow Starforged (roadmap R.4).
+
+Checked against the Starforged Datasworn texts. Legacy rewards per rank (1 tick to 3 boxes) and 2 experience per filled box already conformed. Four divergences are fixed:
+
+- Make a Connection gave +1 momentum and a mark of connection progress on a hit. The rules create the connection and nothing more; a strong hit keeps the engine's disposition shift, now recorded as an engine addition.
+- Develop Your Relationship rewarded the bonds legacy track by the connection's rank on a strong hit. The rules mark a fixed 2 ticks, via a new effect `legacy_ticks <track> <ticks>`.
+- Fulfill Your Vow gave the full legacy reward on a weak hit. The full reward requires swearing a new vow, which the engine cannot know at that point, so a weak hit now rewards one rank lower (a troublesome vow earns nothing), via a new effect `legacy_reward_lower <track>` and `mechanics/legacy.py` → `shifted_rank`.
+- A full legacy track stopped at 40 ticks and earned nothing more. It now clears and keeps counting, at `legacy.xp_per_box_after_clear` (1) experience per box, and remembers its clears in `ProgressTrack.completions` (default 0; saves load unchanged). `mark_legacy` now delegates to `mark_legacy_ticks`.
+
+The automated momentum comparison no longer counts a conditional future bonus ("whenever your connection aids you... take +1 momentum") as an immediate gain; that loophole had let Make a Connection pass. `tests/test_legacy.py` asserted the old cap and now asserts the clear. New tests: Fulfill Your Vow per rank, Develop Your Relationship's 2 ticks, Make a Connection without momentum, and a full track clearing into single-experience boxes.
+
+Recorded as open in roadmap R.4: Test Your Relationship (its hits say "Develop Your Relationship", a second move the engine does not chain) and a connection's aid bonus. Recorded in ARCHITECTURE.md: classic Ironsworn earns experience through legacy tracks rather than directly.
+
+Quality gate: 1354 tests green, twenty-nine project-rule scans clean, coverage 89.67%, ruff check and ruff format clean, mypy --strict clean on 106 source files. Save format: one new field with a default; older saves load.
+
 ## [2026.09.24.24] — 2026-09-24
 
 Move outcomes can differ per setting, and Endure Harm and Endure Stress follow each rulebook (roadmap R.1 and R.3).

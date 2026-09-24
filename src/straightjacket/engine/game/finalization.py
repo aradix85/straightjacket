@@ -15,7 +15,7 @@ from ..mechanics import (
     generate_scene_context,
 )
 from ..mechanics.consequences import tick_threat_clock
-from ..mechanics.legacy import mark_legacy
+from ..mechanics.legacy import mark_legacy, mark_legacy_ticks, shifted_rank
 from ..mechanics.move_effects import OutcomeResult
 from ..mechanics.move_outcome import resolve_move_outcome
 from ..models import BrainResult, ClockEvent, EngineConfig, GameState, MemoryEntry, RollResult
@@ -80,8 +80,12 @@ def apply_progress_and_legacy(
                 if added:
                     log(f"[Track] {track.name}: +{added} ticks ({track.filled_boxes}/10 boxes)")
 
-    if outcome.legacy_track:
-        mark_legacy(game, outcome.legacy_track, source_rank=source_track_rank)
+    if outcome.legacy_track and outcome.legacy_fixed_ticks:
+        mark_legacy_ticks(game, outcome.legacy_track, outcome.legacy_fixed_ticks)
+    elif outcome.legacy_track:
+        rank = shifted_rank(source_track_rank, outcome.legacy_rank_shift)
+        if rank is not None:
+            mark_legacy(game, outcome.legacy_track, source_rank=rank)
 
 
 def _update_crisis(game: GameState) -> None:

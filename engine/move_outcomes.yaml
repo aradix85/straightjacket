@@ -110,22 +110,19 @@ move_outcomes:
     strong_hit:
     - legacy_reward quests
     weak_hit:
-    - legacy_reward quests
+    - legacy_reward_lower quests
     miss:
     - narrative
   connection/make_a_connection:
     strong_hit:
-    - momentum +1
-    - bond +1
     - disposition_shift
     weak_hit:
-    - momentum +1
-    - bond +1
+    - narrative
     miss:
     - pay_the_price
   connection/develop_your_relationship:
     strong_hit:
-    - legacy_reward bonds
+    - legacy_ticks bonds 2
     weak_hit:
     - momentum +2
     miss:

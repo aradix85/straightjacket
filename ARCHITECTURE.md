@@ -393,6 +393,8 @@ Where a rule comes from Ironsworn/Starforged, Mythic GME 2e, or the Adventure Cr
 
 - **Chaos factor per turn.** Mythic adjusts the chaos factor once per scene, by whether the player characters were in control. Straightjacket treats each turn as a scene and reads control from the roll: a miss raises the chaos factor by one, a strong hit lowers it by one, a weak hit leaves it, and dialog moves it by the NPC's disposition (`engine/chaos.yaml`). Start 5 and range 1 to 9 follow Mythic.
 - **Classic Ironsworn uses Starforged's impact model.** `engine/move_outcomes.yaml` follows Starforged and `move_outcome_overrides` holds the classic Ironsworn differences (Secure an Advantage, Endure Harm, Endure Stress), so the numbers follow each rulebook. What classic still borrows from Starforged is the lasting-harm model: Endure Harm and Endure Stress mark `permanently_harmed` and `traumatized` where Ironsworn says maimed and corrupted, and wounded or shaken blocks recovery where Ironsworn only asks for health or spirit above 0.
+- **Classic Ironsworn earns experience through Starforged's legacy tracks.** Ironsworn marks experience directly when a vow is fulfilled; Straightjacket marks the quests, bonds, and discoveries legacy tracks in every setting and earns experience per filled box.
+- **Make a Connection shifts the NPC's disposition** on a strong hit, an engine addition with no rulebook number behind it; the move itself gives no momentum and no progress.
 - **Boasts are not modelled.** Draw the Circle grants its weak-hit momentum without the boast the player would choose.
 - **A fate-chart roll of 100 counts as doubles** and triggers a random event; Mythic 2e does not settle this edge case.
 
