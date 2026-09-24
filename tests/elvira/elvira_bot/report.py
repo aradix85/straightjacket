@@ -2,12 +2,28 @@ from __future__ import annotations
 
 import re
 import statistics
+from collections import Counter
 from pathlib import Path
 from straightjacket.engine.config_loader import model_for_role
 
 from .coverage import Coverage
 from .judge import CRITERIA
 from .models import SessionLog
+
+
+def _warning_problems(slog: SessionLog) -> list[str]:
+    return [
+        f"Engine {message}" + (f" ({count} times)" if count > 1 else "")
+        for message, count in Counter(w[:200] for w in slog.engine_warnings).most_common()
+    ]
+
+
+def _audit_problems(slog: SessionLog) -> list[str]:
+    return [
+        f"Turn {t.turn}: narration audit scored {t.judge['overall']}/10: {t.judge['weakness']}"
+        for t in slog.turns
+        if "overall" in t.judge and t.judge["overall"] <= 4
+    ]
 
 
 def collect_problems(slog: SessionLog) -> list[str]:
@@ -19,17 +35,14 @@ def collect_problems(slog: SessionLog) -> list[str]:
     problems += [f"Save/load: {i}" for i in slog.save_roundtrip_issues]
     problems += [f"Streaming: {i}" for i in slog.stream_issues]
     problems += [f"Status query: {i}" for i in slog.query_issues]
+    problems += _warning_problems(slog)
     problems += [f"Narration leak: {i}" for i in slog.narration_quality_issues]
     problems += [f"Spatial: {i}" for i in slog.spatial_issues]
     problems += [f"Chapter continuity: {i}" for i in slog.chapter_continuity_issues]
     problems += [f"Correction: {c}" for c in slog.correction_tests if not c["success"]]
     if "error" in slog.succession:
         problems.append(f"Succession: {slog.succession['error']}")
-    problems += [
-        f"Turn {t.turn}: narration audit scored {t.judge['overall']}/10: {t.judge['weakness']}"
-        for t in slog.turns
-        if "overall" in t.judge and t.judge["overall"] <= 4
-    ]
+    problems += _audit_problems(slog)
     return problems
 
 

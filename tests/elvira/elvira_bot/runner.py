@@ -280,6 +280,7 @@ def run_session(bot_cfg: dict, auto_override: bool = False, turns_override: int 
         coverage.hit("game_over")
     slog.coverage = coverage.summary()
     logging.getLogger("rpg_engine").removeHandler(events)
+    slog.engine_warnings = list(events.warnings)
     report_path = write_report(slog, coverage, RUNS_DIR / f"{log_file.stem}.md", prices)
     print(f"  [REPORT] {report_path}")
 
@@ -365,6 +366,7 @@ def _play_turn(
     print(f"\n  [PLAYER] {action}")
 
     events.lines.clear()
+    warnings_before = len(events.warnings)
     before = world_view(game)
     sentences: list[str] = []
     first_at: list[float] = []
@@ -438,6 +440,7 @@ def _play_turn(
         rec.violations = violations
 
     rec.engine_events = list(events.lines)
+    rec.engine_warnings = events.warnings[warnings_before:]
     coverage.observe_events(rec.engine_events)
 
     if judge_cfg:
@@ -478,11 +481,14 @@ class _EventCapture(logging.Handler):
         super().__init__()
         self.prefixes = tuple(prefixes)
         self.lines: list[str] = []
+        self.warnings: list[str] = []
 
     def emit(self, record: logging.LogRecord) -> None:
         message = record.getMessage()
         if message.startswith(self.prefixes):
             self.lines.append(message)
+        if record.levelno >= logging.WARNING:
+            self.warnings.append(f"{record.levelname}: {message}")
 
 
 def _norm(text: str) -> str:

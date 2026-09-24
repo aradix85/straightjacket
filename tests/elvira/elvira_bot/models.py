@@ -127,6 +127,7 @@ class TurnRecord:
     stream_matches: bool | None = None
     judge: dict = field(default_factory=dict)
     engine_events: list[str] = field(default_factory=list)
+    engine_warnings: list[str] = field(default_factory=list)
 
     def to_dict(self) -> dict:
         from dataclasses import asdict
@@ -192,6 +193,8 @@ class TurnRecord:
             }
         if self.engine_events:
             d["events"] = self.engine_events
+        if self.engine_warnings:
+            d["engine_warnings"] = self.engine_warnings
         if self.is_correction:
             d["correction"] = True
         if self.token_usage:
@@ -230,6 +233,7 @@ class SessionLog:
     stream_issues: list[str] = field(default_factory=list)
     succession: dict = field(default_factory=dict)
     query_issues: list[str] = field(default_factory=list)
+    engine_warnings: list[str] = field(default_factory=list)
 
     def to_dict(self) -> dict:
         from dataclasses import asdict

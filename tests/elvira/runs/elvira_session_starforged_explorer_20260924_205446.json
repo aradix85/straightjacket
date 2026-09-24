@@ -1,0 +1,561 @@
+{
+  "engine_version": "2026.09.24.41",
+  "style": "explorer",
+  "character": {
+    "name": "Kayla O'Niel",
+    "concept": "Gearhead, Ace",
+    "setting": "starforged"
+  },
+  "setting": "starforged",
+  "total_turns": 8,
+  "ended_reason": "max_turns_reached",
+  "chapters": [
+    {
+      "chapter": 1,
+      "turns": 8,
+      "ended": "max_turns_reached"
+    }
+  ],
+  "story": {
+    "structure": "kishotenketsu",
+    "conflict": "Kayla must carry a dangerous quest through the Forge’s scarcity and hazards, while confronting whether surviving alone is still worth the cost of never relying on anyone.",
+    "thematic": "The price of independence in a frontier where survival may depend on trust",
+    "acts": [
+      "ki_introduction: A Lone Hand",
+      "sho_development: Pressure Builds",
+      "ten_twist: A Different Angle",
+      "ketsu_resolution: The Way Forward"
+    ]
+  },
+  "turns": [
+    {
+      "turn": 1,
+      "scene": 2,
+      "result": "dialog",
+      "action": "I turn to Saffron and ask, “Have you heard that comms static before, or seen any",
+      "state": "H5 Sp5 Su5 M2 C5",
+      "phase": "ki_introduction",
+      "director": true,
+      "narration": "You turn toward Saffron and ask whether she has heard the comms static before or seen anyone in a yellow scarf pass through the corridor. She pauses with the wrench against the clamp, then slides out from beneath the fuel manifold and gets to her feet. Grease darkens one cheek; the hangar’s reactor hum fills the beat before she answers.\n\n“Not before today. I saw the scarf pass, but I didn’t get a look at the person.” She wipes her fingers on a rag and returns to the clamp, tightening it with two short turns. The comms speaker gives a dry crackle behind you, while morning light lies in thin bars across the grating.",
+      "npcs": [
+        "Saffron (active, neutral)"
+      ],
+      "judge": {
+        "result_integrity": 5,
+        "prompt_elements": 5,
+        "npc_voice": 5,
+        "player_agency": 5,
+        "restraint": 5,
+        "prose": 5,
+        "overall": 10,
+        "weakness": "none"
+      },
+      "stream": {
+        "first_sentence_secs": 2.8,
+        "sentences": 7,
+        "complete": true,
+        "matches": true
+      },
+      "events": [
+        "[Metadata] Extracted: 0 new NPCs, 0 renames, 0 deceased, 0 lore",
+        "[Director] Analyzing scene 2",
+        "[Director] Failed (BadRequestError: Error code: 400 - {'error': {'message': \"Function tools with reasoning_effort are not supported for gpt-6-luna in /v1/chat/completions. To use function tools, use /v1/responses or set reasoning_effort to 'none'.\", 'type': 'invalid_request_error', 'param': 'reasoning_effort', 'code': None}}), continuing without guidance"
+      ],
+      "engine_warnings": [
+        "WARNING: [Director] Failed (BadRequestError: Error code: 400 - {'error': {'message': \"Function tools with reasoning_effort are not supported for gpt-6-luna in /v1/chat/completions. To use function tools, use /v1/responses or set reasoning_effort to 'none'.\", 'type': 'invalid_request_error', 'param': 'reasoning_effort', 'code': None}}), continuing without guidance"
+      ],
+      "tokens": [
+        {
+          "role": "brain",
+          "input": 1859,
+          "output": 96
+        },
+        {
+          "role": "narrator",
+          "input": 3173,
+          "output": 141
+        },
+        {
+          "role": "narrator_metadata",
+          "input": 666,
+          "output": 37
+        },
+        {
+          "role": "revelation_check",
+          "input": 431,
+          "output": 59
+        }
+      ]
+    },
+    {
+      "turn": 2,
+      "scene": 3,
+      "result": "WEAK_HIT",
+      "move": "adventure/gather_information",
+      "action": "I examine the comms speaker and its wiring, looking for signs of tampering or an",
+      "state": "H5 Sp5 Su5 M3 C5",
+      "consequences": [
+        "momentum +1"
+      ],
+      "phase": "ki_introduction",
+      "director": true,
+      "narration": "You crouch beside the comms speaker and trace its cable run along the hangar wall, checking each coupling by touch. The dry crackle cuts in again, rough against the reactor hum. One housing screw sits proud of the others; you loosen it and ease the speaker grille aside.\n\nA thin strand of stripped wire bridges two contacts inside. Its end bears a fresh copper shine, and the insulation around it has started to blacken. You pinch the strand free with your tool. The crackle stops, but the wire snaps in your grip, leaving the short piece useless.\n\nThe exposed terminal gives you a clear opening to inspect the rest of the circuit; the interference came from that improvised bridge, not the speaker itself. Saffron looks up from the fuel manifold as you lay the broken strand on the grating, then returns to her work without comment. Somewhere deeper in the hangar, a pressure seal hisses once, and the bare contacts remain inches from your hand.",
+      "npcs": [
+        "Saffron (active, neutral)"
+      ],
+      "judge": {
+        "result_integrity": 3,
+        "prompt_elements": 5,
+        "npc_voice": 5,
+        "player_agency": 5,
+        "restraint": 5,
+        "prose": 4,
+        "overall": 7,
+        "weakness": "The snapped wire and exposed contacts suggest a complication, but neither creates a clear, meaningful cost."
+      },
+      "stream": {
+        "first_sentence_secs": 3.3,
+        "sentences": 10,
+        "complete": true,
+        "matches": true
+      },
+      "events": [
+        "[Metadata] Extracted: 0 new NPCs, 0 renames, 0 deceased, 0 lore",
+        "[Director] Analyzing scene 3",
+        "[Director] Failed (BadRequestError: Error code: 400 - {'error': {'message': \"Function tools with reasoning_effort are not supported for gpt-6-luna in /v1/chat/completions. To use function tools, use /v1/responses or set reasoning_effort to 'none'.\", 'type': 'invalid_request_error', 'param': 'reasoning_effort', 'code': None}}), continuing without guidance"
+      ],
+      "engine_warnings": [
+        "WARNING: [Director] Failed (BadRequestError: Error code: 400 - {'error': {'message': \"Function tools with reasoning_effort are not supported for gpt-6-luna in /v1/chat/completions. To use function tools, use /v1/responses or set reasoning_effort to 'none'.\", 'type': 'invalid_request_error', 'param': 'reasoning_effort', 'code': None}}), continuing without guidance"
+      ],
+      "tokens": [
+        {
+          "role": "brain",
+          "input": 1817,
+          "output": 122
+        },
+        {
+          "role": "narrator",
+          "input": 3382,
+          "output": 201
+        },
+        {
+          "role": "narrator_metadata",
+          "input": 734,
+          "output": 37
+        },
+        {
+          "role": "revelation_check",
+          "input": 491,
+          "output": 50
+        }
+      ]
+    },
+    {
+      "turn": 3,
+      "scene": 4,
+      "result": "WEAK_HIT",
+      "move": "adventure/face_danger",
+      "action": "I force the pressure-seal hatch open and brace it against the hiss, checking the",
+      "state": "H4 Sp5 Su5 M3 C5",
+      "consequences": [
+        "health -1"
+      ],
+      "phase": "ki_introduction",
+      "director": true,
+      "narration": "You plant a boot against the grating and wrench the pressure-seal hatch open. The seal breaks with a sharp hiss. Cold air drives through the gap, carrying the bite of ozone across your face as you brace your shoulder against the hatch and peer into the narrow service channel.\n\nA loose pressure line shudders inside the gap, its coupling leaking a thin stream of vapor toward the hangar ductwork. You reach in and clamp the valve shut. The hiss drops to a faint leak, but the hatch jerks under the pressure and slams your bruised leg against the frame. Pain flares; you stagger back, favoring one leg, while the hatch swings half-closed and traps the damaged line beyond your reach.\n\nSaffron drops her wrench and crosses the grating, catching the hatch edge with both hands before it seals. Her jaw sets as the pressure pushes against her arms. The leak has slowed, not stopped, and the cold vapor still threads through the opening between you.",
+      "npcs": [
+        "Saffron (active, neutral)"
+      ],
+      "judge": {
+        "result_integrity": 5,
+        "prompt_elements": 5,
+        "npc_voice": 4,
+        "player_agency": 3,
+        "restraint": 5,
+        "prose": 4,
+        "overall": 8,
+        "weakness": "The narration has the player reach in and clamp the valve, an action beyond what they specified."
+      },
+      "stream": {
+        "first_sentence_secs": 2.8,
+        "sentences": 10,
+        "complete": true,
+        "matches": true
+      },
+      "events": [
+        "[Metadata] Extracted: 0 new NPCs, 0 renames, 0 deceased, 0 lore",
+        "[Director] Analyzing scene 4",
+        "[Director] Failed (BadRequestError: Error code: 400 - {'error': {'message': \"Function tools with reasoning_effort are not supported for gpt-6-luna in /v1/chat/completions. To use function tools, use /v1/responses or set reasoning_effort to 'none'.\", 'type': 'invalid_request_error', 'param': 'reasoning_effort', 'code': None}}), continuing without guidance"
+      ],
+      "engine_warnings": [
+        "WARNING: [Director] Failed (BadRequestError: Error code: 400 - {'error': {'message': \"Function tools with reasoning_effort are not supported for gpt-6-luna in /v1/chat/completions. To use function tools, use /v1/responses or set reasoning_effort to 'none'.\", 'type': 'invalid_request_error', 'param': 'reasoning_effort', 'code': None}}), continuing without guidance"
+      ],
+      "tokens": [
+        {
+          "role": "brain",
+          "input": 1829,
+          "output": 123
+        },
+        {
+          "role": "narrator",
+          "input": 3688,
+          "output": 204
+        },
+        {
+          "role": "narrator_metadata",
+          "input": 738,
+          "output": 37
+        },
+        {
+          "role": "revelation_check",
+          "input": 494,
+          "output": 51
+        }
+      ]
+    },
+    {
+      "turn": 4,
+      "scene": 5,
+      "result": "WEAK_HIT",
+      "move": "adventure/gather_information",
+      "action": "I look into the service channel and trace the damaged pressure line from the cla",
+      "state": "H4 Sp5 Su5 M4 C5",
+      "consequences": [
+        "momentum +1"
+      ],
+      "phase": "ki_introduction",
+      "narration": "With Saffron braced against the hatch, you lean into the service channel and follow the damaged pressure line from the clamped valve. The metal edge presses into your ribs; vapor beads cold across your knuckles. You trace the line to a split at the next coupling, just beyond reach from the hatch.\n\nYou wedge your tool into the coupling and crank it shut. The leak dwindles to a thin hiss, then stops. The line gives a sharp metallic pop under the strain, and a length of insulation peels away, exposing the pipe beneath. Saffron keeps the hatch open only long enough for you to pull clear, then lets it settle against its frame and returns to the fuel manifold, checking its fasteners with quick, practiced turns.\n\nFor a moment the hangar’s reactor hum is the only sound. The exposed pipe glistens with cold moisture, and your ribs ache where the hatch edge pressed them. Somewhere above the starship, a strip light flickers twice.",
+      "npcs": [
+        "Saffron (active, neutral)"
+      ],
+      "judge": {
+        "result_integrity": 5,
+        "prompt_elements": 3,
+        "npc_voice": 4,
+        "player_agency": 4,
+        "restraint": 5,
+        "prose": 4,
+        "overall": 7,
+        "weakness": "Saffron is left bracing the hatch alone, contrary to the player’s stated constraint."
+      },
+      "stream": {
+        "first_sentence_secs": 2.7,
+        "sentences": 10,
+        "complete": true,
+        "matches": true
+      },
+      "events": [
+        "[Metadata] Extracted: 0 new NPCs, 0 renames, 0 deceased, 0 lore",
+        "[Director] Skipped (no trigger at scene 5)"
+      ],
+      "tokens": [
+        {
+          "role": "brain",
+          "input": 1834,
+          "output": 124
+        },
+        {
+          "role": "narrator",
+          "input": 3833,
+          "output": 203
+        },
+        {
+          "role": "narrator_metadata",
+          "input": 742,
+          "output": 37
+        },
+        {
+          "role": "revelation_check",
+          "input": 499,
+          "output": 49
+        }
+      ]
+    },
+    {
+      "turn": 5,
+      "scene": 6,
+      "result": "WEAK_HIT",
+      "move": "recover/repair",
+      "action": "I brace one shoulder against the exposed pipe and force the peeled insulation ba",
+      "state": "H4 Sp5 Su5 M5 C5",
+      "phase": "sho_development",
+      "director": true,
+      "narration": "You brace one shoulder against the exposed pipe and press the peeled insulation back around the cold, damp line. Your tool’s rough edge catches as you secure it in place, and the pipe stops trembling against the coupling. Saffron keeps watch from the manifold, eyes moving between your hands and the fuel lines.\n\nYou tighten the nearest manifold fastener until the tool slips with a sharp scrape. The fastener holds, but the tool’s narrow tip bends against its edge, leaving a kink in the metal. Saffron reaches over to test the fastener with two fingers, then returns to her work without comment. The hiss stays gone; your bent tool rests against the grating beside the newly wrapped line.",
+      "npcs": [
+        "Saffron (active, neutral)"
+      ],
+      "judge": {
+        "result_integrity": 5,
+        "prompt_elements": 5,
+        "npc_voice": 5,
+        "player_agency": 5,
+        "restraint": 5,
+        "prose": 5,
+        "overall": 10,
+        "weakness": "none"
+      },
+      "stream": {
+        "first_sentence_secs": 2.5,
+        "sentences": 7,
+        "complete": true,
+        "matches": true
+      },
+      "events": [
+        "[Bonus] Gearhead: +1",
+        "[Bonus] Gearhead: +1 momentum on a hit",
+        "[Metadata] Extracted: 0 new NPCs, 0 renames, 0 deceased, 0 lore",
+        "[Director] Analyzing scene 6",
+        "[Director] Failed (BadRequestError: Error code: 400 - {'error': {'message': \"Function tools with reasoning_effort are not supported for gpt-6-luna in /v1/chat/completions. To use function tools, use /v1/responses or set reasoning_effort to 'none'.\", 'type': 'invalid_request_error', 'param': 'reasoning_effort', 'code': None}}), continuing without guidance"
+      ],
+      "engine_warnings": [
+        "WARNING: [Director] Failed (BadRequestError: Error code: 400 - {'error': {'message': \"Function tools with reasoning_effort are not supported for gpt-6-luna in /v1/chat/completions. To use function tools, use /v1/responses or set reasoning_effort to 'none'.\", 'type': 'invalid_request_error', 'param': 'reasoning_effort', 'code': None}}), continuing without guidance"
+      ],
+      "tokens": [
+        {
+          "role": "brain",
+          "input": 1852,
+          "output": 119
+        },
+        {
+          "role": "narrator",
+          "input": 3895,
+          "output": 145
+        },
+        {
+          "role": "narrator_metadata",
+          "input": 675,
+          "output": 37
+        },
+        {
+          "role": "revelation_check",
+          "input": 440,
+          "output": 49
+        }
+      ]
+    },
+    {
+      "turn": 6,
+      "scene": 7,
+      "result": "STRONG_HIT",
+      "move": "adventure/face_danger",
+      "action": "I snatch up the bent tool and wedge its kinked tip beneath the stubborn coupling",
+      "state": "H4 Sp5 Su5 M6 C4",
+      "consequences": [
+        "momentum +1"
+      ],
+      "phase": "sho_development",
+      "director": true,
+      "narration": "You snatch up the bent tool and wedge its kinked tip beneath the stubborn coupling. With both hands, you lever it into place while your forearm holds the fuel line steady. The coupling turns a fraction at a time; the line shifts against your grip, then settles as you seat the joint flush and tighten it down.\n\nSaffron watches your hands, then matches the short, controlled pressure of your heaves, holding the manifold steady. “There,” she says, and checks the joint with a firm thumb. No vapor escapes; the fuel line stays aligned. The bent tool remains usable, its kink pressed flatter beneath the coupling.\n\nA dry crackle cuts through the reactor hum from the comms speaker. Saffron’s hands stop on the manifold. Beyond the hangar mouth, morning light glances off the starship’s patched hull while the static breaks into another brief burst.",
+      "npcs": [
+        "Saffron (active, neutral)"
+      ],
+      "judge": {
+        "result_integrity": 4,
+        "prompt_elements": 4,
+        "npc_voice": 4,
+        "player_agency": 5,
+        "restraint": 5,
+        "prose": 4,
+        "overall": 8,
+        "weakness": "The unexplained comms crackle introduces a new concern after an otherwise clean success."
+      },
+      "stream": {
+        "first_sentence_secs": 2.3,
+        "sentences": 10,
+        "complete": true,
+        "matches": true
+      },
+      "events": [
+        "[Metadata] Extracted: 0 new NPCs, 0 renames, 0 deceased, 0 lore",
+        "[Director] Analyzing scene 7",
+        "[Director] Failed (BadRequestError: Error code: 400 - {'error': {'message': \"Function tools with reasoning_effort are not supported for gpt-6-luna in /v1/chat/completions. To use function tools, use /v1/responses or set reasoning_effort to 'none'.\", 'type': 'invalid_request_error', 'param': 'reasoning_effort', 'code': None}}), continuing without guidance"
+      ],
+      "engine_warnings": [
+        "WARNING: [Director] Failed (BadRequestError: Error code: 400 - {'error': {'message': \"Function tools with reasoning_effort are not supported for gpt-6-luna in /v1/chat/completions. To use function tools, use /v1/responses or set reasoning_effort to 'none'.\", 'type': 'invalid_request_error', 'param': 'reasoning_effort', 'code': None}}), continuing without guidance"
+      ],
+      "tokens": [
+        {
+          "role": "brain",
+          "input": 1832,
+          "output": 107
+        },
+        {
+          "role": "narrator",
+          "input": 3747,
+          "output": 183
+        },
+        {
+          "role": "narrator_metadata",
+          "input": 717,
+          "output": 37
+        },
+        {
+          "role": "revelation_check",
+          "input": 478,
+          "output": 54
+        }
+      ]
+    },
+    {
+      "turn": 7,
+      "scene": 8,
+      "result": "WEAK_HIT",
+      "move": "adventure/gather_information",
+      "action": "I brace the comms speaker against the hangar wall and rip open its casing, forci",
+      "state": "H4 Sp5 Su5 M7 C4",
+      "consequences": [
+        "momentum +1"
+      ],
+      "phase": "sho_development",
+      "director": true,
+      "narration": "You brace the comms speaker against the hangar wall and rip its casing open. The metal cover bends under your hands, then tears free with a brittle snap. Inside, the wiring hangs in a cramped knot. A loose contact taps the housing in uneven beats, feeding the dry crackle through the speaker; your stripped knuckle leaves a bright smear of blood across the casing.\n\nSaffron’s fingers pause on the manifold fastener. She turns her head toward the speaker, then matches the uneven rhythm with two taps against the pipe. When the contact shifts under your touch, her tapping stops. The crackle cuts out, but one ribbon of wiring dangles loose from the opened unit, and the hangar’s reactor hum fills the sudden silence.\n\nYou hold the torn casing against the wall while Saffron checks the fuel line, neither of you moving far from the other’s work. The exposed contact rests between your bloodied fingers as the comms speaker stays quiet.",
+      "npcs": [
+        "Saffron (active, neutral)"
+      ],
+      "judge": {
+        "result_integrity": 5,
+        "prompt_elements": 5,
+        "npc_voice": 4,
+        "player_agency": 3,
+        "restraint": 5,
+        "prose": 5,
+        "overall": 8,
+        "weakness": "The narration decides the player continues holding the casing and contact after the stated action."
+      },
+      "stream": {
+        "first_sentence_secs": 2.8,
+        "sentences": 10,
+        "complete": true,
+        "matches": true
+      },
+      "events": [
+        "[Metadata] Extracted: 0 new NPCs, 0 renames, 0 deceased, 0 lore",
+        "[Director] Analyzing scene 8",
+        "[Director] Failed (BadRequestError: Error code: 400 - {'error': {'message': \"Function tools with reasoning_effort are not supported for gpt-6-luna in /v1/chat/completions. To use function tools, use /v1/responses or set reasoning_effort to 'none'.\", 'type': 'invalid_request_error', 'param': 'reasoning_effort', 'code': None}}), continuing without guidance",
+        "[Director] Reset reflection for Saffron (empty guidance)"
+      ],
+      "engine_warnings": [
+        "WARNING: [Director] Failed (BadRequestError: Error code: 400 - {'error': {'message': \"Function tools with reasoning_effort are not supported for gpt-6-luna in /v1/chat/completions. To use function tools, use /v1/responses or set reasoning_effort to 'none'.\", 'type': 'invalid_request_error', 'param': 'reasoning_effort', 'code': None}}), continuing without guidance"
+      ],
+      "tokens": [
+        {
+          "role": "brain",
+          "input": 1828,
+          "output": 107
+        },
+        {
+          "role": "narrator",
+          "input": 3710,
+          "output": 199
+        },
+        {
+          "role": "narrator_metadata",
+          "input": 732,
+          "output": 37
+        },
+        {
+          "role": "revelation_check",
+          "input": 494,
+          "output": 58
+        }
+      ]
+    },
+    {
+      "turn": 8,
+      "scene": 8,
+      "result": "dialog",
+      "action": "## I was being cautious, not aggressive",
+      "state": "H4 Sp5 Su5 M6 C4",
+      "phase": "sho_development",
+      "narration": "You brace the already-open comms speaker against the hangar wall and ease the casing wider with two careful fingers. The loose contact sits exposed among the wiring, tapping the housing in uneven beats and feeding the dry crackle through the speaker. You steady the contact; the static thins, then stops. Cold metal presses into your palm, and the speaker’s torn casing hangs crooked from its mount.\n\nSaffron pauses beside the manifold, one hand still resting on the fastener. “Loose contact,” she says. She turns back to the fuel line and resumes checking the joint while you keep the exposed wiring from shifting. Above you, strip lighting hums over the cramped bay; from somewhere behind the starship’s patched hull, three dull knocks carry through the hangar wall.",
+      "npcs": [
+        "Saffron (active, neutral)"
+      ],
+      "correction": true,
+      "tokens": [
+        {
+          "role": "correction",
+          "input": 840,
+          "output": 98
+        },
+        {
+          "role": "brain",
+          "input": 1822,
+          "output": 104
+        },
+        {
+          "role": "narrator",
+          "input": 3699,
+          "output": 160
+        },
+        {
+          "role": "narrator_metadata",
+          "input": 687,
+          "output": 37
+        }
+      ]
+    }
+  ],
+  "quality_summary": {
+    "narration_quality_total": 0,
+    "spatial_issues_total": 0,
+    "chapter_continuity_total": 0,
+    "correction_tests_total": 1,
+    "correction_tests_failed": 0,
+    "top_quality_issues": []
+  },
+  "burn_stats": {
+    "offered": 0,
+    "taken": 0,
+    "failed": 0
+  },
+  "token_summary": {
+    "total_input": 53658,
+    "total_output": 3102,
+    "total": 56760,
+    "by_role": {
+      "brain": {
+        "calls": 8,
+        "input": 14673,
+        "output": 902
+      },
+      "narrator": {
+        "calls": 8,
+        "input": 29127,
+        "output": 1436
+      },
+      "narrator_metadata": {
+        "calls": 8,
+        "input": 5691,
+        "output": 296
+      },
+      "revelation_check": {
+        "calls": 7,
+        "input": 3327,
+        "output": 370
+      },
+      "correction": {
+        "calls": 1,
+        "input": 840,
+        "output": 98
+      }
+    }
+  },
+  "final_npcs": [
+    {
+      "name": "Saffron",
+      "status": "active",
+      "disposition": "neutral",
+      "memories": 8
+    }
+  ],
+  "correction_tests": [
+    {
+      "turn": 8,
+      "correction": "## I was being cautious, not aggressive",
+      "success": true,
+      "violations": [],
+      "quality_issues": []
+    }
+  ]
+}

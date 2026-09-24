@@ -38,6 +38,15 @@ ai:
       max_retries: 3
       extra_body:
         reasoning_effort: "low"
+    director:
+      provider: openai
+      model: "gpt-6-luna"
+      temperature: null
+      top_p: null
+      max_tokens: 8192
+      max_retries: 3
+      extra_body:
+        reasoning_effort: "none"
     classification:
       provider: openai
       model: "gpt-6-luna"
@@ -69,7 +78,7 @@ ai:
   role_cluster:
     narrator: narrator
     blueprint_voicing: creative
-    director: creative
+    director: director
     chapter_summary: creative
     recap: creative
     brain: classification

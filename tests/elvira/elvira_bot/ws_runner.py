@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import html
 import json
+import logging
 import re
 import time
 import random as _random
@@ -29,7 +30,7 @@ from .quality_checks import (
     check_npc_spatial_consistency,
 )
 from .recorder import record_turn
-from .runner import RUNS_DIR
+from .runner import _EventCapture, RUNS_DIR
 from .display import print_narration, print_state, print_summary
 
 SEPARATOR = "=" * 62
@@ -199,6 +200,8 @@ async def run_ws_session(bot_cfg: dict, auto_override: bool = False, turns_overr
         style=style,
     )
     coverage = Coverage()
+    events = _EventCapture(log_cfg["event_prefixes"])
+    logging.getLogger("rpg_engine").addHandler(events)
 
     print(f"\n{SEPARATOR}")
     print(f"  Straightjacket — Elvira WebSocket Bot — {style.upper()} mode")
@@ -401,6 +404,8 @@ async def run_ws_session(bot_cfg: dict, auto_override: bool = False, turns_overr
     coverage.hit("burn_offered", burns_offered)
     coverage.hit("burn_taken", burns_taken)
     coverage.hit("correction", len(slog.correction_tests))
+    logging.getLogger("rpg_engine").removeHandler(events)
+    slog.engine_warnings = list(events.warnings)
     slog.coverage = coverage.summary()
     report_path = write_report(slog, coverage, RUNS_DIR / f"{log_file.stem}.md", bot_cfg["prices"])
     print(f"  [REPORT] {report_path}")

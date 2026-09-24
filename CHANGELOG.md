@@ -7,6 +7,18 @@ Originally forked from [EdgeTales](https://github.com/edgetales/edgetales). See 
 
 Straightjacket uses calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day. The first CalVer release is `2026.04.25.0`. Earlier `0.x.y` releases keep their original version numbers and are not renumbered. The switch was made because the project has no public API to version semantically against — the `0.x.y` numbers were running counters with no meaning, and dates carry the meaning the numbers didn't.
 
+## [2026.09.24.42] — 2026-09-24
+
+Engine warnings and errors are problems in Elvira's report, and the first run with that check found the Director failing on every call.
+
+Silent failures made loud. Several of this day's bugs ran for hours unnoticed because the engine catches AI-call failures by design, logs a warning, and plays on: the metadata extraction failing after every turn, and now the Director. Elvira's capture handler now also keeps every engine log line at warning level or above, whatever its prefix, for the whole run (opening and chapter transitions included) and per turn in `TurnRecord.engine_warnings`. The report lists each distinct warning or error as a problem with a count ("(6 times)"). WebSocket mode captures them too, since the server runs in the same process.
+
+The Director. Since 2026.09.24.19 the Director shared the creative cluster at reasoning effort `low`, and GPT-6 Luna rejects function tools combined with a reasoning effort in Chat Completions ("use /v1/responses or set reasoning_effort to 'none'"). Every Director call failed with a 400 and the game continued without guidance; Elvira counted the Director as having run. `config.yaml` gives the Director its own cluster at reasoning effort `none`; blueprint voicing, chapter summaries, and recaps keep `low`. Verified live: an eight-turn run went from six Director failures to none, with 29 tool rounds. One warning remains, recorded for follow-up: once the Director hit its maximum of three tool rounds and had to use its last response.
+
+Tests: the capture keeps warnings and errors whatever their prefix; repeated warnings become one counted problem.
+
+Quality gate: 1413 tests green, twenty-nine project-rule scans clean, coverage 89.83%, ruff check and ruff format clean, mypy --strict clean on 109 source files. Save format unchanged.
+
 ## [2026.09.24.41] — 2026-09-24
 
 Roll bonuses now reach real games. The bonus system from 2026.09.24.33 never offered a single bonus in an actual game, which Elvira's long run showed: twenty turns, not one bonus.

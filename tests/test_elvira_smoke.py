@@ -112,3 +112,30 @@ def test_a_failed_load_back_is_reported_not_raised(
     slog = SessionLog(config={"game": {"setting_id": "starforged"}})
     runner._save_and_verify(make_game_state(), "elvira", [], "slot", slog, Coverage())
     assert "UNIQUE constraint failed" in slog.save_roundtrip_issues[0]
+
+
+def test_event_capture_keeps_every_warning_and_error() -> None:
+    import logging
+
+    from tests.elvira.elvira_bot.runner import _EventCapture
+
+    capture = _EventCapture(["[Bonus]"])
+    logger = logging.getLogger("elvira-warning-test")
+    logger.setLevel(logging.DEBUG)
+    logger.addHandler(capture)
+    logger.info("[Roll] fine")
+    logger.warning("[Metadata] Extraction failed: no route")
+    logger.error("[DB] sync failed")
+    logger.removeHandler(capture)
+    assert capture.warnings == ["WARNING: [Metadata] Extraction failed: no route", "ERROR: [DB] sync failed"]
+
+
+def test_repeated_engine_warnings_become_one_counted_problem() -> None:
+    from tests.elvira.elvira_bot.models import SessionLog
+    from tests.elvira.elvira_bot.report import collect_problems
+
+    slog = SessionLog(config={"game": {"setting_id": "starforged"}})
+    slog.engine_warnings = ["WARNING: [Metadata] Extraction failed"] * 3 + ["ERROR: [DB] sync failed"]
+    problems = collect_problems(slog)
+    assert "Engine WARNING: [Metadata] Extraction failed (3 times)" in problems
+    assert "Engine ERROR: [DB] sync failed" in problems
