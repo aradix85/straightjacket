@@ -1,5 +1,6 @@
 import json as _json
 
+from collections.abc import Callable
 from typing import Any
 
 import openai
@@ -20,6 +21,33 @@ class OpenAICompatibleProvider:
         return [model.id for model in self._client.models.list()]
 
     def create_message(self, spec: AICallSpec) -> AIResponse:
+        return self._response(self._client.chat.completions.create(**self._request(spec)))
+
+    def stream_message(self, spec: AICallSpec, on_text: Callable[[str], None]) -> AIResponse:
+        content = ""
+        finish_reason = ""
+        raw_usage = None
+        for chunk in self._client.chat.completions.create(
+            **self._request(spec), stream=True, stream_options={"include_usage": True}
+        ):
+            if chunk.choices:
+                choice = chunk.choices[0]
+                text = choice.delta.content
+                if text:
+                    content += text
+                    on_text(text)
+                if choice.finish_reason:
+                    finish_reason = choice.finish_reason
+            if getattr(chunk, "usage", None):
+                raw_usage = chunk.usage
+        return AIResponse(
+            content=content,
+            stop_reason=normalize_stop_reason(finish_reason, "length", "tool_calls"),
+            tool_calls=[],
+            usage=extract_usage(raw_usage, "prompt_tokens", "completion_tokens"),
+        )
+
+    def _request(self, spec: AICallSpec) -> dict[str, Any]:
         full_messages = [{"role": "system", "content": spec.system}, *spec.messages]
 
         create_kwargs: dict[str, Any] = {
@@ -53,8 +81,9 @@ class OpenAICompatibleProvider:
         if spec.tools is not None:
             create_kwargs["tools"] = spec.tools
 
-        response = self._client.chat.completions.create(**create_kwargs)
+        return create_kwargs
 
+    def _response(self, response: Any) -> AIResponse:
         choice = response.choices[0]
         content = choice.message.content or ""
 

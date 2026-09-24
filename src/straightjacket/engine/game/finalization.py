@@ -6,7 +6,7 @@ from dataclasses import dataclass, field
 
 from ..ai.metadata import apply_narrator_metadata
 from ..ai.narrator import call_narrator, call_narrator_metadata
-from ..ai.provider_base import AIProvider
+from ..ai.provider_base import AIProvider, NarrationSink
 from ..engine_loader import damage, eng
 from ..logging_util import log
 from ..mechanics import (
@@ -152,6 +152,7 @@ def narrate_scene(
     game: GameState,
     prompt: str,
     config: EngineConfig | None = None,
+    stream: NarrationSink | None = None,
 ) -> str:
-    raw = call_narrator(provider, prompt, game, config)
+    raw = call_narrator(provider, prompt, game, config, stream=stream)
     return parse_narrator_response(game, raw)

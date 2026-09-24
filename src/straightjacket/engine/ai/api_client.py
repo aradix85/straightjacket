@@ -1,5 +1,6 @@
 import hashlib
 import os
+from collections.abc import Callable
 
 from ..config_loader import ProviderConfig, cfg, provider_for_role
 from .provider_base import AICallSpec, AIProvider, AIResponse, ModelListingProvider
@@ -46,6 +47,9 @@ class RoutingProvider:
 
     def create_message(self, spec: AICallSpec) -> AIResponse:
         return self._adapters[provider_for_role(spec.log_role)].create_message(spec)
+
+    def stream_message(self, spec: AICallSpec, on_text: Callable[[str], None]) -> AIResponse:
+        return self._adapters[provider_for_role(spec.log_role)].stream_message(spec, on_text)
 
 
 def get_provider() -> AIProvider:

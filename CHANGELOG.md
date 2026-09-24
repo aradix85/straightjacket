@@ -7,6 +7,22 @@ Originally forked from [EdgeTales](https://github.com/edgetales/edgetales). See 
 
 Straightjacket uses calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day. The first CalVer release is `2026.04.25.0`. Earlier `0.x.y` releases keep their original version numbers and are not renumbered. The switch was made because the project has no public API to version semantically against — the `0.x.y` numbers were running counters with no meaning, and dates carry the meaning the numbers didn't.
 
+## [2026.09.24.12] — 2026-09-24
+
+Sentence-level streaming of narration (roadmap section S), so the screen reader starts reading after the first sentence instead of after the whole turn.
+
+Both adapters gain `stream_message(spec, on_text)`. Anthropic streams through `messages.stream` and passes on text deltas only, never reasoning; OpenAI-compatible streams with `stream_options.include_usage`. The routing provider forwards it. `ai/provider_base.py` → `stream_with_retry` streams when the provider can and otherwise feeds the whole reply at once; if a stream fails it logs, marks the stream failed, and falls back to a normal call with retries.
+
+New `ai/sentence_stream.py` → `SentenceStream` buffers streamed text until a sentence is complete, respecting closing quotes, paragraph breaks, and abbreviations, and cleans each sentence with the new `parser.py` → `clean_sentence` (the sentence-safe subset of the parser: role prefix on the first sentence, prompt tags, bracket labels, mechanic annotations, markdown). A hold marker (a tag, code fence, JSON, rule, or heading) stops the stream; sentences that end before the marker still go out. Abbreviations and hold markers live in `engine/parser.yaml`.
+
+The stream travels from `web/handlers.py` through `process_turn`, `SceneContext`, and `narrate_scene` into `call_narrator`. The handler sends each sentence as a `narration_sentence` WebSocket message with the scene and location, and waits for all of them before the authoritative `narration` message, which now carries `stream_complete`. The client appends each sentence to the log region, puts the scene heading before the first one, and skips the later scene marker for the same scene. When the final text matches what was streamed it changes nothing; otherwise it replaces the text and announces only the part not yet heard. `server.stream_narration` in `config.yaml` switches it off. Openings, corrections, and momentum burns do not stream.
+
+Tests: new `tests/test_sentence_stream.py` (sentence order across chunks, the last sentence on finish, abbreviations, closing quotes, paragraph breaks, hold markers, failure, the non-streaming path, the fallback), plus stream tests for both adapters that also check the parameters against the installed SDK. The hold-marker test caught a real bug on its first run: a chunk that held both a finished sentence and a marker dropped the sentence.
+
+Not verified: how NVDA reads the streamed sentences and whether the silent replacement stays silent (user test), streaming through the web UI against Anthropic end to end, and Elvira in WebSocket mode.
+
+Quality gate: 1304 tests green, twenty-eight project-rule scans clean, coverage 88.55%, ruff check and ruff format clean, mypy --strict clean on 106 source files. Save format unchanged; `config.yaml` gains the required key `server.stream_narration`.
+
 ## [2026.09.24.11] — 2026-09-24
 
 All roles run on Claude, and the Anthropic adapter is fixed for the current Claude models. Before this release the adapter could not run them at all.

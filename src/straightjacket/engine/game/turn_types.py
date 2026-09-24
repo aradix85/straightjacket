@@ -1,7 +1,7 @@
 from typing import Any
 from dataclasses import dataclass, field
 
-from ..ai.provider_base import AIProvider
+from ..ai.provider_base import AIProvider, NarrationSink
 from ..datasworn.moves import Move
 from ..models import ClockFillResult
 from ..mechanics.scene import SceneSetup
@@ -32,6 +32,7 @@ class SceneContext:
     activated_npcs: list[NpcData] = field(default_factory=list)
     mentioned_npcs: list[NpcData] = field(default_factory=list)
     pending_random_events: list[RandomEvent] = field(default_factory=list)
+    stream: NarrationSink | None = None
 
 
 @dataclass

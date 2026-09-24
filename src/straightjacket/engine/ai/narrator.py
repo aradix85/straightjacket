@@ -9,7 +9,7 @@ from ..models import BrainResult, EngineConfig, GameState
 from ..parser import salvage_truncated_narration
 from ..prompt_blocks import content_boundaries_block, get_narration_lang, get_narrator_system
 from ..prompt_loader import get_prompt
-from .provider_base import AICallSpec, AIProvider, create_with_retry
+from .provider_base import AICallSpec, AIProvider, NarrationSink, create_with_retry, stream_with_retry
 from .schemas import get_narrator_metadata_schema, get_opening_setup_schema
 
 
@@ -21,6 +21,7 @@ def call_narrator(
     system_suffix: str = "",
     skip_history: bool = False,
     extra_messages: Sequence[dict[str, Any]] = (),
+    stream: NarrationSink | None = None,
 ) -> str:
     log(f"[Narrator] Calling narrator (prompt: {len(prompt)} chars{', skip_history' if skip_history else ''})")
     messages = []
@@ -46,7 +47,7 @@ def call_narrator(
         log_role="narrator",
         **sampling_params("narrator"),
     )
-    response = create_with_retry(provider, spec)
+    response = stream_with_retry(provider, spec, stream) if stream is not None else create_with_retry(provider, spec)
     raw = response.content
     stop = response.stop_reason
 

@@ -518,6 +518,8 @@ class DescriptionDedupConfig:
 class ParserConfig:
     max_label_length: int
     min_line_length: int
+    stream_hold_markers: list[str]
+    stream_abbreviations: list[str]
 
 
 @dataclass

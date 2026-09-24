@@ -1,10 +1,13 @@
 from typing import Any
 import asyncio
+from concurrent.futures import Future
 
 from starlette.websockets import WebSocket, WebSocketDisconnect
 
 from ..engine.ai.api_client import get_provider
 from ..engine.ai.recap import call_recap
+from ..engine.ai.sentence_stream import SentenceStream
+from ..engine.config_loader import cfg
 from ..engine.correction import process_correction
 from ..engine.db.sync import sync as _db_sync
 from ..engine.director import reset_stale_reflection_flags
@@ -22,6 +25,7 @@ from ..engine.game import (
 from ..engine.game.momentum_burn import process_momentum_burn
 from ..engine.logging_util import log
 from ..engine.mechanics.legacy import advance_asset
+from ..engine.models import GameState
 from ..engine.persistence import delete_save, list_saves_with_info, load_game, save_game
 from ..engine.user_management import create_user, delete_user, list_users
 from ..i18n import t
@@ -53,6 +57,22 @@ async def _require_str(ws: WebSocket, msg: dict[str, Any], key: str, error_key: 
         await _send(ws, {"type": "error", "text": t(error_key)})
         return None
     return trimmed
+
+
+def _narration_stream(ws: WebSocket, game: GameState) -> tuple[SentenceStream, list[Future[None]]]:
+    loop = asyncio.get_running_loop()
+    pending: list[Future[None]] = []
+
+    def on_sentence(text: str) -> None:
+        msg = {
+            "type": "narration_sentence",
+            "text": text,
+            "scene": game.narrative.scene_count,
+            "location": game.world.current_location,
+        }
+        pending.append(asyncio.run_coroutine_threadsafe(_send(ws, msg), loop))
+
+    return SentenceStream(on_sentence), pending
 
 
 async def handle_list_players(_session: Session, ws: WebSocket, _msg: dict[str, Any]) -> None:
@@ -170,9 +190,12 @@ async def handle_player_input(session: Session, ws: WebSocket, msg: dict[str, An
         await _send(ws, {"type": "status", "text": "..."})
 
         provider = get_provider()
+        stream, pending_sentences = _narration_stream(ws, session.game) if cfg().server.stream_narration else (None, [])
         game, narration, _roll, burn_info, director_ctx = await asyncio.to_thread(
-            process_turn, provider, session.game, text, session.config
+            process_turn, provider, session.game, text, session.config, stream
         )
+        for sent in pending_sentences:
+            await asyncio.wrap_future(sent)
         session.game = game
         session.append_chat("assistant", narration)
 
@@ -191,6 +214,7 @@ async def handle_player_input(session: Session, ws: WebSocket, msg: dict[str, An
                 "text": highlight_dialog(narration),
                 "scene": game.narrative.scene_count,
                 "location": game.world.current_location,
+                "stream_complete": stream is not None and stream.complete,
             },
         )
 

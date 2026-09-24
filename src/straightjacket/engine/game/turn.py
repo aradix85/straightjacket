@@ -1,6 +1,6 @@
 from typing import Any
 from ..ai.brain import call_brain
-from ..ai.provider_base import AIProvider, drain_token_log
+from ..ai.provider_base import AIProvider, drain_token_log, NarrationSink
 from ..datasworn.moves import get_moves
 from ..engine_loader import eng
 from ..logging_util import log
@@ -38,7 +38,11 @@ from .turn_types import ActionResolution, RollOutcome, SceneContext
 
 
 def process_turn(
-    provider: AIProvider, game: GameState, player_message: str, config: EngineConfig | None = None
+    provider: AIProvider,
+    game: GameState,
+    player_message: str,
+    config: EngineConfig | None = None,
+    stream: NarrationSink | None = None,
 ) -> tuple[GameState, str, RollResult | None, dict[str, Any] | None, dict[str, Any] | None]:
     if game.game_over:
         raise RuntimeError(
@@ -56,6 +60,7 @@ def process_turn(
 
     _apply_brain_state_mutations(game, brain)
     ctx = _build_scene_context(provider, game, brain, config, player_message, scene_setup, pending_random_events)
+    ctx.stream = stream
 
     if is_dialog_branch(brain):
         narration, director_ctx = _process_dialog_turn(ctx)
@@ -203,6 +208,7 @@ def _process_dialog_turn(ctx: SceneContext) -> tuple[str, dict[str, Any] | None]
         game,
         prompt,
         config=ctx.config,
+        stream=ctx.stream,
     )
 
     if game.last_turn_snapshot is not None:
@@ -376,6 +382,7 @@ def _narrate_action_and_finalize(
         game,
         prompt,
         config=ctx.config,
+        stream=ctx.stream,
     )
 
     if game.last_turn_snapshot is not None:

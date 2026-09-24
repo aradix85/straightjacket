@@ -230,3 +230,15 @@ def parse_narrator_response(game: GameState, raw: str) -> str:
         narration = _salvage_empty_narration(raw)
 
     return narration
+
+
+def clean_sentence(text: str, first: bool) -> str:
+    cleaned = _strip_role_prefix(text) if first else text
+    for step in (
+        _strip_metadata_and_prompt_tags,
+        _strip_bracket_labels,
+        _strip_mechanic_annotations,
+        _strip_markdown_formatting,
+    ):
+        cleaned = step(cleaned)
+    return cleaned.strip()

@@ -1,7 +1,7 @@
 import re
 import time as _time
 from dataclasses import dataclass, field
-from typing import Any, Protocol
+from typing import Any, Protocol, runtime_checkable
 from collections.abc import Callable
 
 from ..logging_util import log
@@ -73,8 +73,23 @@ class AIProvider(Protocol):
     def create_message(self, spec: AICallSpec) -> AIResponse: ...
 
 
+@runtime_checkable
+class StreamingProvider(Protocol):
+    def stream_message(self, spec: AICallSpec, on_text: Callable[[str], None]) -> AIResponse: ...
+
+
 class ModelListingProvider(AIProvider, Protocol):
     def list_models(self) -> list[str]: ...
+
+    def stream_message(self, spec: AICallSpec, on_text: Callable[[str], None]) -> AIResponse: ...
+
+
+class NarrationSink(Protocol):
+    def feed(self, delta: str) -> None: ...
+
+    def finish(self) -> None: ...
+
+    def fail(self) -> None: ...
 
 
 _THINK_TAG_RE = re.compile(r"<think>.*?</think>\s*", re.DOTALL)
@@ -142,3 +157,22 @@ def create_with_retry(provider: AIProvider, spec: AICallSpec) -> AIResponse:
                 _backoff_sleep(wait)
                 continue
             raise
+
+
+def stream_with_retry(provider: AIProvider, spec: AICallSpec, sink: NarrationSink) -> AIResponse:
+    if not isinstance(provider, StreamingProvider):
+        response = create_with_retry(provider, spec)
+        sink.feed(response.content)
+        sink.finish()
+        return response
+    try:
+        response = provider.stream_message(spec, sink.feed)
+    except Exception as e:
+        log(
+            f"[AI] Streaming failed for {spec.log_role} ({type(e).__name__}: {e}); retrying without streaming",
+            level="warning",
+        )
+        sink.fail()
+        return create_with_retry(provider, spec)
+    sink.finish()
+    return response

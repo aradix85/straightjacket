@@ -257,12 +257,13 @@ function connect() {
       case "players_list": renderPlayerList(msg.players); break;
       case "player_selected": onPlayerSelected(msg); break;
       case "saves_list": renderSavesList(msg.saves); break;
-      case "narration": appendNarration(msg); break;
+      case "narration": if (streamEl) finishStream(msg); else appendNarration(msg); break;
+      case "narration_sentence": appendSentence(msg); break;
       case "replace_narration": replaceLast(msg.text); break;
       case "status": showStatusMsg(msg.text); break;
       case "recap": appendRecap(msg.text); break;
       case "epilogue": appendEpilogue(msg.text); break;
-      case "scene_marker": appendSceneHeading(msg.scene, msg.location); break;
+      case "scene_marker": if (!(streamEl && msg.scene === streamScene)) appendSceneHeading(msg.scene, msg.location); break;
       case "burn_offer": showBurnOffer(msg); break;
       case "story_complete": $("complete-overlay").classList.remove("hidden"); raf(() => $("complete-epilogue").focus()); break;
       case "game_over": onGameOver(msg); break;
@@ -271,9 +272,9 @@ function connect() {
       case "succession_creation_options": onSuccessionCreationOptions(msg); break;
       case "retry_available": showRetryOffer(msg.text); break;
       case "session_taken": onSessionTaken(); break;
-      case "turn_complete": break;
+      case "turn_complete": streamEl = null; streamScene = null; break;
       case "debug_state": break;
-      case "error": showError(msg.text); break;
+      case "error": streamEl = null; streamScene = null; showError(msg.text); break;
     }
   };
 }
@@ -327,6 +328,38 @@ function onPlayerSelected(msg) {
 }
 
 // ── Chat rendering ──────────────────────────────────────────
+let streamEl = null, streamScene = null;
+function appendSentence(msg) {
+  if (!streamEl) {
+    clearStatus();
+    if (msg.scene && msg.location) { appendSceneHeading(msg.scene, msg.location); streamScene = msg.scene; }
+    streamEl = document.createElement("div");
+    streamEl.className = "msg msg-narrator";
+    chatLog.appendChild(streamEl);
+  }
+  const span = document.createElement("span");
+  span.textContent = (streamEl.childNodes.length ? " " : "") + msg.text;
+  streamEl.appendChild(span);
+  scroll();
+}
+function plainText(html) {
+  const d = document.createElement("div");
+  d.innerHTML = html;
+  return d.textContent.replace(/\s+/g, " ").trim();
+}
+function finishStream(msg) {
+  const el = streamEl;
+  const heard = el.textContent.replace(/\s+/g, " ").trim();
+  const finalText = plainText(msg.text);
+  streamEl = null; streamScene = null;
+  if (msg.stream_complete && heard === finalText) return;
+  chatLog.setAttribute("aria-busy", "true");
+  el.innerHTML = msg.text;
+  chatLog.removeAttribute("aria-busy");
+  scroll();
+  const unheard = finalText.startsWith(heard) ? finalText.slice(heard.length).trim() : finalText;
+  if (unheard) announce(unheard.substring(0, 300));
+}
 function appendNarration(msg) {
   clearStatus();
   if (msg.scene && msg.location) appendSceneHeading(msg.scene, msg.location);

@@ -1,4 +1,5 @@
 import json
+from collections.abc import Callable
 from typing import Any
 
 import anthropic
@@ -48,6 +49,17 @@ class AnthropicProvider:
         return [model.id for model in self._client.models.list()]
 
     def create_message(self, spec: AICallSpec) -> AIResponse:
+        return self._response(self._client.messages.create(**self._request(spec)))
+
+    def stream_message(self, spec: AICallSpec, on_text: Callable[[str], None]) -> AIResponse:
+        with self._client.messages.stream(**self._request(spec)) as stream:
+            for event in stream:
+                if event.type == "content_block_delta" and event.delta.type == "text_delta":
+                    on_text(event.delta.text)
+            final = stream.get_final_message()
+        return self._response(final)
+
+    def _request(self, spec: AICallSpec) -> dict[str, Any]:
         create_kwargs: dict[str, Any] = {
             "model": spec.model,
             "max_tokens": spec.max_tokens,
@@ -88,8 +100,9 @@ class AnthropicProvider:
                 for t in spec.tools
             ]
 
-        response = self._client.messages.create(**create_kwargs)
+        return create_kwargs
 
+    def _response(self, response: Any) -> AIResponse:
         content = ""
         parsed_tool_calls = []
         for block in response.content:

@@ -64,6 +64,7 @@ class AIConfig:
 class ServerConfig:
     host: str
     port: int
+    stream_narration: bool
 
 
 @dataclass
@@ -80,7 +81,7 @@ class AppConfig:
 
 def _parse_config(data: dict[str, Any]) -> AppConfig:
     sd = data["server"]
-    server = ServerConfig(host=sd["host"], port=sd["port"])
+    server = ServerConfig(host=sd["host"], port=sd["port"], stream_narration=bool(sd["stream_narration"]))
 
     ad = data["ai"]
 

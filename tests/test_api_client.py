@@ -30,7 +30,7 @@ def _cluster(provider: str, model: str) -> dict[str, Any]:
 @pytest.fixture
 def two_providers(monkeypatch: pytest.MonkeyPatch) -> dict[str, _FakeAdapter]:
     data = {
-        "server": {"host": "127.0.0.1", "port": 8081},
+        "server": {"host": "127.0.0.1", "port": 8081, "stream_narration": True},
         "language": {"narration_language": "English"},
         "ai": {
             "prompts_dir": "prompts",

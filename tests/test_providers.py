@@ -21,6 +21,10 @@ class _FakeEndpoint:
         self.calls.append(kwargs)
         return self.response
 
+    def stream(self, **kwargs: Any) -> Any:
+        self.calls.append(kwargs)
+        return self.response
+
 
 def _spec(**overrides: Any) -> AICallSpec:
     base: dict[str, Any] = {
@@ -303,3 +307,62 @@ def test_anthropic_usage_counts_cached_input_and_reports_the_cached_share(anthro
     )
     result = provider_anthropic.AnthropicProvider(api_key="k").create_message(_spec())
     assert result.usage == {"input_tokens": 3974, "output_tokens": 9, "cache_read_tokens": 3970}
+
+
+class _FakeAnthropicStream:
+    def __init__(self, events: list[SimpleNamespace], final: SimpleNamespace) -> None:
+        self.events = events
+        self.final = final
+
+    def __enter__(self) -> _FakeAnthropicStream:
+        return self
+
+    def __exit__(self, *exc: object) -> None:
+        return None
+
+    def __iter__(self) -> Any:
+        return iter(self.events)
+
+    def get_final_message(self) -> SimpleNamespace:
+        return self.final
+
+
+def _delta(kind: str, **fields: str) -> SimpleNamespace:
+    return SimpleNamespace(type="content_block_delta", delta=SimpleNamespace(type=kind, **fields))
+
+
+def test_anthropic_stream_passes_only_text_deltas(anthropic_endpoint: _FakeEndpoint) -> None:
+    final = _anthropic_reply(
+        SimpleNamespace(type="thinking", thinking="plan"), SimpleNamespace(type="text", text="The door holds.")
+    )
+    events = [
+        _delta("thinking_delta", thinking="plan"),
+        _delta("text_delta", text="The door "),
+        _delta("text_delta", text="holds."),
+    ]
+    anthropic_endpoint.response = _FakeAnthropicStream(events, final)
+    received: list[str] = []
+    result = provider_anthropic.AnthropicProvider(api_key="k").stream_message(_spec(), received.append)
+    assert received == ["The door ", "holds."]
+    assert result.content == "The door holds."
+    accepted = _accepted(provider_anthropic.anthropic.resources.messages.Messages.stream)
+    assert set(anthropic_endpoint.calls[0]) <= accepted
+
+
+def test_openai_stream_collects_text_finish_reason_and_usage(openai_endpoint: _FakeEndpoint) -> None:
+    def chunk(text: str | None, finish: str | None = None) -> SimpleNamespace:
+        return SimpleNamespace(
+            choices=[SimpleNamespace(delta=SimpleNamespace(content=text), finish_reason=finish)], usage=None
+        )
+
+    usage_chunk = SimpleNamespace(choices=[], usage=SimpleNamespace(prompt_tokens=3, completion_tokens=2))
+    openai_endpoint.response = iter([chunk("Rain "), chunk(None), chunk("falls.", "stop"), usage_chunk])
+    received: list[str] = []
+    result = provider_openai.OpenAICompatibleProvider(api_key="k").stream_message(_spec(), received.append)
+    assert received == ["Rain ", "falls."]
+    assert result.content == "Rain falls."
+    assert result.usage == {"input_tokens": 3, "output_tokens": 2}
+    assert openai_endpoint.calls[0]["stream"] is True
+    assert set(openai_endpoint.calls[0]) <= _accepted(
+        provider_openai.openai.resources.chat.completions.Completions.create
+    )

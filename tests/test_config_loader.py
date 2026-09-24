@@ -1,6 +1,6 @@
 def _full_config_data(**overrides: object) -> dict:
     base = {
-        "server": {"host": "127.0.0.1", "port": 8081},
+        "server": {"host": "127.0.0.1", "port": 8081, "stream_narration": True},
         "language": {"narration_language": "English"},
         "ai": {
             "prompts_dir": "prompts",
