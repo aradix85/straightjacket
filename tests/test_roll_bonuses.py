@@ -80,3 +80,15 @@ def test_momentum_tied_to_another_move_is_not_granted_with_the_add(load_engine: 
 
     option = next(o for o in roll_bonuses(_game_with("companion/combat_bot")) if o.id == "companion/combat_bot#0")
     assert (option.add, option.momentum_on_hit) == (1, 0)
+
+
+def test_bare_ids_and_paths_as_the_creation_stores_them_are_found(load_engine: None) -> None:
+    from straightjacket.engine.mechanics.assets import asset_data
+    from straightjacket.engine.mechanics.bonuses import roll_bonuses
+
+    game = make_game_state(setting_id="starforged")
+    game.paths = ["ace"]
+    game.assets = ["combat_bot"]
+    assert asset_data(game, "combat_bot") is not None
+    offered = {o.id for o in roll_bonuses(game)}
+    assert {"ace#0", "combat_bot#0"} <= offered

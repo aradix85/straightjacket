@@ -25,7 +25,7 @@ class RollBonus:
 def roll_bonuses(game: GameState) -> list[RollBonus]:
     cfg = eng().get_raw("roll_bonuses")
     options: list[RollBonus] = []
-    for asset_id in game.assets:
+    for asset_id in [*game.paths, *game.assets]:
         data = asset_data(game, asset_id)
         if data is None:
             continue

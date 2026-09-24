@@ -7,6 +7,16 @@ Originally forked from [EdgeTales](https://github.com/edgetales/edgetales). See 
 
 Straightjacket uses calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day. The first CalVer release is `2026.04.25.0`. Earlier `0.x.y` releases keep their original version numbers and are not renumbered. The switch was made because the project has no public API to version semantically against — the `0.x.y` numbers were running counters with no meaning, and dates carry the meaning the numbers didn't.
 
+## [2026.09.24.41] — 2026-09-24
+
+Roll bonuses now reach real games. The bonus system from 2026.09.24.33 never offered a single bonus in an actual game, which Elvira's long run showed: twenty turns, not one bonus.
+
+Two causes, both in the new code. Character creation stores asset ids bare ("stealth_tech"), but `mechanics/assets.py` → `asset_data` expected "category/key" and found nothing. And paths, which Starforged treats as assets, live in `GameState.paths`, which `mechanics/bonuses.py` → `roll_bonuses` never read. The live check in 2026.09.24.33 had used hand-written ids in the "category/key" form, which hid both. Now `asset_data` searches every asset category of the setting and its parents when the id carries no category, and `roll_bonuses` reads paths and assets alike.
+
+Verified on the save of the Elvira run (paths fugitive and diplomat, asset stealth tech): the Brain now sees Diplomat's add on a vow to resolve a dispute and Stealth Tech's add on a move to avoid detection, and chose Diplomat for "I swear to settle the quarrel between the dock crews", Stealth Tech for "I kill the running lights and let the ship drift past the patrol cutter", and nothing for a question to the cook. New test: bare ids and paths as the creation stores them are found and offered.
+
+Quality gate: 1411 tests green, twenty-nine project-rule scans clean, coverage 89.82%, ruff check and ruff format clean, mypy --strict clean on 109 source files. Save format unchanged.
+
 ## [2026.09.24.40] — 2026-09-24
 
 Corrects the quality gate of 2026.09.24.39, which stated mypy was clean while it reported two errors: ruff's automatic fix had turned the new link check into `renamed_tracks.get(thread.linked_track_id)`, and the thread's link can be None. The link is now checked for None before the lookup. The release script also only committed after the tests, not after ruff and mypy; from here each of the three must pass before a commit.

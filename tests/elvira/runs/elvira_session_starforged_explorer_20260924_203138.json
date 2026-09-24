@@ -1,0 +1,1295 @@
+{
+  "engine_version": "2026.09.24.38",
+  "style": "explorer",
+  "character": {
+    "name": "Nashida Legrand",
+    "concept": "Fugitive, Diplomat",
+    "setting": "starforged"
+  },
+  "setting": "starforged",
+  "total_turns": 20,
+  "ended_reason": "max_turns_reached",
+  "chapters": [
+    {
+      "chapter": 1,
+      "turns": 20,
+      "ended": "max_turns_reached"
+    }
+  ],
+  "story": {
+    "structure": "3act",
+    "conflict": "As a banished diplomat and sworn adventurer, Nashida must unravel a dangerous secret in the scattered settlements before its power deepens the frontier’s peril, while deciding whether trust and duty c",
+    "thematic": "Whether a fugitive can earn belonging through truth and duty",
+    "acts": [
+      "setup: Ambush on the Frontier",
+      "confrontation: Duty Under Pressure",
+      "climax: Truth in the Wreckage"
+    ]
+  },
+  "turns": [
+    {
+      "turn": 1,
+      "scene": 2,
+      "result": "dialog",
+      "action": "I step closer to the woman at the cargo crate and ask, “What should I call you, ",
+      "state": "H5 Sp5 Su5 M2 C5",
+      "phase": "setup",
+      "narration": "You step closer to the crate, boots scraping the dock grating, and ask, “What should I call you, and how did you know my name, Nashida Legrand?” The woman pauses with the hooked tool pressed to the warped seal. A faint line forms between her brows; she keeps her boot braced against the crate.\n\n“Call me Vey. Your name was on the courier’s manifest.” She draws the tool back, sets it on the crate, and turns to the seal again. Behind the fuel canisters, a metal fitting clicks once; the figure stays out of sight. The woman’s black iron ring scrapes against the crate edge as she reaches for the tool.",
+      "npcs": [
+        "Vey (active, neutral)",
+        "Unidentified figure (active, neutral)"
+      ],
+      "judge": {
+        "result_integrity": 5,
+        "prompt_elements": 5,
+        "npc_voice": 5,
+        "player_agency": 5,
+        "restraint": 5,
+        "prose": 4,
+        "overall": 9,
+        "weakness": "The repeated references to the tool and seal make the closing actions slightly redundant."
+      },
+      "stream": {
+        "first_sentence_secs": 3.7,
+        "sentences": 8,
+        "complete": true,
+        "matches": true
+      },
+      "events": [
+        "[Metadata] Extracted: 0 new NPCs, 1 renames, 0 deceased, 0 lore",
+        "[Director] Skipped (no trigger at scene 2)"
+      ],
+      "tokens": [
+        {
+          "role": "brain",
+          "input": 1762,
+          "output": 97
+        },
+        {
+          "role": "narrator",
+          "input": 3223,
+          "output": 143
+        },
+        {
+          "role": "narrator_metadata",
+          "input": 723,
+          "output": 64
+        },
+        {
+          "role": "revelation_check",
+          "input": 434,
+          "output": 58
+        }
+      ]
+    },
+    {
+      "turn": 2,
+      "scene": 3,
+      "result": "STRONG_HIT",
+      "move": "adventure/gather_information",
+      "action": "I inspect the warped seal and the marks left by Vey’s hooked tool, looking for s",
+      "state": "H5 Sp5 Su5 M4 C4",
+      "consequences": [
+        "momentum +2"
+      ],
+      "phase": "setup",
+      "director": true,
+      "narration": "You crouch beside Vey’s crate and examine the warped seal and the hooked tool’s fresh scrape marks. The metal is bent outward at one point, but the scored edges show no matching pry marks; the tool has shaved away old corrosion rather than cut into the seal. Your thumb traces a narrow groove that stops short of the gasket. The pressure-seal indicator remains in the safe band.\n\nVey shifts aside, leaving the damaged section exposed before she turns back to the crate. The gap beneath the seal gives you a clear view of the release pin and the manual shutoff lever—both reachable from the dock side. If pressure drops, the indicator will fall first; the seal will vent through the damaged edge, but the shutoff can still isolate the dock before the hull compartment loses pressure. The reactor hum continues beneath your boots, and a loose strip of packing cloth lies caught behind the neighboring canister.",
+      "npcs": [
+        "Vey (active, neutral)",
+        "Unidentified figure (active, neutral)"
+      ],
+      "judge": {
+        "result_integrity": 5,
+        "prompt_elements": 5,
+        "npc_voice": 5,
+        "player_agency": 4,
+        "restraint": 5,
+        "prose": 5,
+        "overall": 9,
+        "weakness": "The narration adds a specific thumb-tracing action beyond the stated inspection."
+      },
+      "stream": {
+        "first_sentence_secs": 3.6,
+        "sentences": 8,
+        "complete": true,
+        "matches": true
+      },
+      "events": [
+        "[Metadata] Extracted: 0 new NPCs, 0 renames, 0 deceased, 0 lore",
+        "[Director] Analyzing scene 3",
+        "[Director] Failed (BadRequestError: Error code: 400 - {'error': {'message': \"Function tools with reasoning_effort are not supported for gpt-6-luna in /v1/chat/completions. To use function tools, use /v1/responses or set reasoning_effort to 'none'.\", 'type': 'invalid_request_error', 'param': 'reasoning_effort', 'code': None}}), continuing without guidance"
+      ],
+      "tokens": [
+        {
+          "role": "brain",
+          "input": 1731,
+          "output": 128
+        },
+        {
+          "role": "narrator",
+          "input": 3446,
+          "output": 186
+        },
+        {
+          "role": "narrator_metadata",
+          "input": 780,
+          "output": 37
+        },
+        {
+          "role": "revelation_check",
+          "input": 477,
+          "output": 48
+        }
+      ]
+    },
+    {
+      "turn": 3,
+      "scene": 4,
+      "result": "STRONG_HIT",
+      "move": "adventure/face_danger",
+      "action": "I brace one boot against Vey’s crate and wrench the manual shutoff lever through",
+      "state": "H5 Sp5 Su5 M5 C3",
+      "consequences": [
+        "momentum +1"
+      ],
+      "phase": "setup",
+      "director": true,
+      "narration": "You plant one boot against Vey’s crate and wrench the manual shutoff lever through its full travel. It grinds under your grip, then locks into place with a hard clack. The pressure indicator holds steady; the damaged seal does not give way. The dock is isolated.\n\nThe lever’s movement exposes a narrow gap behind its housing. Through it, you spot a fresh cut in the cable sheath, clean-edged against the grime. Vey’s hand stills on the hooked tool. “That cut wasn’t there when I started,” she says, then lifts her tool and steps back from the crate. Behind the fuel canisters, the unidentified figure shifts out of sight as the pressure-seal hiss fades.",
+      "npcs": [
+        "Vey (active, neutral)",
+        "Unidentified figure (active, neutral)"
+      ],
+      "judge": {
+        "result_integrity": 5,
+        "prompt_elements": 5,
+        "npc_voice": 5,
+        "player_agency": 5,
+        "restraint": 5,
+        "prose": 5,
+        "overall": 10,
+        "weakness": "none"
+      },
+      "stream": {
+        "first_sentence_secs": 2.6,
+        "sentences": 9,
+        "complete": true,
+        "matches": true
+      },
+      "events": [
+        "[Metadata] Extracted: 0 new NPCs, 0 renames, 0 deceased, 0 lore",
+        "[Director] Analyzing scene 4",
+        "[Director] Failed (BadRequestError: Error code: 400 - {'error': {'message': \"Function tools with reasoning_effort are not supported for gpt-6-luna in /v1/chat/completions. To use function tools, use /v1/responses or set reasoning_effort to 'none'.\", 'type': 'invalid_request_error', 'param': 'reasoning_effort', 'code': None}}), continuing without guidance"
+      ],
+      "tokens": [
+        {
+          "role": "brain",
+          "input": 1731,
+          "output": 117
+        },
+        {
+          "role": "narrator",
+          "input": 3727,
+          "output": 148
+        },
+        {
+          "role": "narrator_metadata",
+          "input": 748,
+          "output": 37
+        },
+        {
+          "role": "revelation_check",
+          "input": 439,
+          "output": 55
+        }
+      ]
+    },
+    {
+      "turn": 4,
+      "scene": 5,
+      "result": "STRONG_HIT",
+      "move": "adventure/gather_information",
+      "action": "I crouch beside the shutoff housing and examine the fresh cut in the cable sheat",
+      "state": "H5 Sp5 Su5 M7 C2",
+      "consequences": [
+        "momentum +2"
+      ],
+      "phase": "setup",
+      "narration": "You crouch beside the shutoff housing and run a gloved thumb along the cable sheath. The cut’s clean edges hold no settled grime; dust coats the sheath right up to the slice, leaving the exposed inner braid bright. It was made recently, after the last layer of dock dust gathered. Your boots stay planted on the grating as the isolated dock’s low hum carries through your knees.\n\nYou ask Vey what she was doing when she noticed the pressure problem and whether anyone else came near the crate. She sets the hooked tool down. “I was checking the seal when the pressure indicator dipped. A runner came up to the crate before I did—kept to the canisters.” She wipes her palm on her stained apron, then steps around the crate to inspect the indicator. Beyond her, the unidentified figure is gone; a strip of cloth shifts in the draft from the starship’s patched hull.",
+      "npcs": [
+        "Vey (active, neutral)",
+        "Unidentified figure (active, neutral)"
+      ],
+      "judge": {
+        "result_integrity": 4,
+        "prompt_elements": 5,
+        "npc_voice": 5,
+        "player_agency": 4,
+        "restraint": 5,
+        "prose": 4,
+        "overall": 8,
+        "weakness": "The unidentified figure’s disappearance adds an ominous complication to an otherwise clean success."
+      },
+      "stream": {
+        "first_sentence_secs": 3.3,
+        "sentences": 10,
+        "complete": true,
+        "matches": true
+      },
+      "events": [
+        "[Metadata] Extracted: 0 new NPCs, 0 renames, 0 deceased, 0 lore",
+        "[Director] Skipped (no trigger at scene 5)"
+      ],
+      "tokens": [
+        {
+          "role": "brain",
+          "input": 1755,
+          "output": 131
+        },
+        {
+          "role": "narrator",
+          "input": 3852,
+          "output": 187
+        },
+        {
+          "role": "narrator_metadata",
+          "input": 786,
+          "output": 37
+        },
+        {
+          "role": "revelation_check",
+          "input": 478,
+          "output": 51
+        }
+      ]
+    },
+    {
+      "turn": 5,
+      "scene": 6,
+      "result": "WEAK_HIT",
+      "move": "adventure/compel",
+      "action": "I step between Vey and the canisters, keeping my voice low but firm. “Tell me wh",
+      "state": "H5 Sp5 Su5 M8 C2",
+      "consequences": [
+        "momentum +1"
+      ],
+      "phase": "setup",
+      "director": true,
+      "narration": "You step between Vey and the canisters, keeping your voice low and firm. “Tell me who that runner was and what they touched—or I’ll make sure the dock authorities hold you responsible for the seal failure.” Your words carry over the reactor hum. Vey’s fingers tighten around the crate’s edge; her eyes flick past your shoulder toward the canisters.\n\nThe opening lasts only a breath. You catch her glance and turn in time to see the packing cloth caught behind a canister, its edge marked with a fresh smear of grease. Vey lowers her voice. “I didn’t get a name. They touched the canister valve, then reached behind it. I saw a dark sleeve.” She picks up the hooked tool and steps back to the warped seal. The dock authorities’ demand hangs between you, but the grease on the cloth is now smeared beneath the canister’s base.",
+      "npcs": [
+        "Vey (active, neutral)",
+        "Unidentified figure (active, neutral)"
+      ],
+      "judge": {
+        "result_integrity": 4,
+        "prompt_elements": 5,
+        "npc_voice": 4,
+        "player_agency": 4,
+        "restraint": 5,
+        "prose": 4,
+        "overall": 8,
+        "weakness": "The grease smear’s movement is unexplained, so the cost feels unclear."
+      },
+      "stream": {
+        "first_sentence_secs": 2.9,
+        "sentences": 12,
+        "complete": true,
+        "matches": true
+      },
+      "events": [
+        "[Metadata] Extracted: 0 new NPCs, 0 renames, 0 deceased, 0 lore",
+        "[Director] Analyzing scene 6",
+        "[Director] Failed (BadRequestError: Error code: 400 - {'error': {'message': \"Function tools with reasoning_effort are not supported for gpt-6-luna in /v1/chat/completions. To use function tools, use /v1/responses or set reasoning_effort to 'none'.\", 'type': 'invalid_request_error', 'param': 'reasoning_effort', 'code': None}}), continuing without guidance"
+      ],
+      "tokens": [
+        {
+          "role": "brain",
+          "input": 1743,
+          "output": 114
+        },
+        {
+          "role": "narrator",
+          "input": 3861,
+          "output": 185
+        },
+        {
+          "role": "narrator_metadata",
+          "input": 784,
+          "output": 37
+        },
+        {
+          "role": "revelation_check",
+          "input": 476,
+          "output": 58
+        }
+      ]
+    },
+    {
+      "turn": 6,
+      "scene": 7,
+      "result": "STRONG_HIT",
+      "move": "adventure/gather_information",
+      "action": "I leave Vey at the warped seal and follow the grease smear from beneath the cani",
+      "state": "H5 Sp5 Su5 M10 C1",
+      "consequences": [
+        "momentum +2"
+      ],
+      "phase": "setup",
+      "narration": "You leave Vey at the warped seal and crouch beside the canister. The grease smear runs from its base across the dock grating, broken by boot marks and a drag of cloth. You follow it past stacked freight, keeping one hand clear of the patched courier starship’s hull, then enter the narrow passage beyond the dock.\n\nThe trail ends at a pressure hatch. A fresh streak of grease marks the lower latch; the hatch stands unsealed by a finger’s width. You find a dark thread snagged on the latch and a shallow print on the far side, leading down the passage toward the settlement access. Behind you, the shutoff holds and Vey’s hooked tool taps once against the warped seal. The narrow edge is yours, with the runner already ahead.",
+      "npcs": [
+        "Vey (active, neutral)",
+        "Unidentified figure (active, neutral)"
+      ],
+      "judge": {
+        "result_integrity": 5,
+        "prompt_elements": 5,
+        "npc_voice": 4,
+        "player_agency": 5,
+        "restraint": 4,
+        "prose": 3,
+        "overall": 8,
+        "weakness": "“The narrow edge is yours” is abstract and unclear."
+      },
+      "stream": {
+        "first_sentence_secs": 2.9,
+        "sentences": 8,
+        "complete": true,
+        "matches": true
+      },
+      "events": [
+        "[Metadata] Extracted: 0 new NPCs, 0 renames, 0 deceased, 0 lore",
+        "[Director] Skipped (no trigger at scene 7)"
+      ],
+      "tokens": [
+        {
+          "role": "brain",
+          "input": 1735,
+          "output": 110
+        },
+        {
+          "role": "narrator",
+          "input": 3735,
+          "output": 160
+        },
+        {
+          "role": "narrator_metadata",
+          "input": 754,
+          "output": 37
+        },
+        {
+          "role": "revelation_check",
+          "input": 451,
+          "output": 48
+        }
+      ]
+    },
+    {
+      "turn": 7,
+      "scene": 8,
+      "result": "WEAK_HIT",
+      "move": "adventure/gather_information",
+      "action": "I inspect the dark thread snagged on the pressure hatch’s lower latch, comparing",
+      "state": "H5 Sp5 Su5 M10 C1",
+      "consequences": [
+        "momentum +1"
+      ],
+      "phase": "confrontation",
+      "narration": "You pinch the dark thread free from the lower latch and lay it beside the shallow print. Its coarse fibers carry the same fresh grease as the streak across the grating. A few strands remain caught beneath the latch’s edge, flattened against the metal; the drag mark begins directly below them and runs out through the hatch.\n\nYou press the latch inward and test its play. The grease-slick thread could have been looped around it and pulled from the far side, drawing the latch clear without opening the hatch wide. The print points down the passage, toe angled away from the dock. You have a clear route and a way the runner worked the hatch, but the grease smears across your glove and the thread breaks in your grip. Beyond the passage, bootsteps fade under the courier starship’s steady reactor hum.",
+      "npcs": [
+        "Vey (active, neutral)",
+        "Unidentified figure (active, neutral)"
+      ],
+      "judge": {
+        "result_integrity": 5,
+        "prompt_elements": 5,
+        "npc_voice": 5,
+        "player_agency": 4,
+        "restraint": 5,
+        "prose": 5,
+        "overall": 8,
+        "weakness": "It adds pressing and testing the latch beyond the player’s stated inspection."
+      },
+      "stream": {
+        "first_sentence_secs": 3.0,
+        "sentences": 8,
+        "complete": true,
+        "matches": true
+      },
+      "events": [
+        "[Metadata] Extracted: 0 new NPCs, 0 renames, 0 deceased, 0 lore",
+        "[Director] Skipped (no trigger at scene 8)"
+      ],
+      "tokens": [
+        {
+          "role": "brain",
+          "input": 1739,
+          "output": 128
+        },
+        {
+          "role": "narrator",
+          "input": 3793,
+          "output": 167
+        },
+        {
+          "role": "narrator_metadata",
+          "input": 761,
+          "output": 37
+        },
+        {
+          "role": "revelation_check",
+          "input": 458,
+          "output": 48
+        }
+      ]
+    },
+    {
+      "turn": 8,
+      "scene": 8,
+      "result": "dialog",
+      "action": "## I didn't mean to do that — I wanted to just observe, not act",
+      "state": "H5 Sp5 Su5 M10 C1",
+      "phase": "confrontation",
+      "narration": "Morning light from the dock strips leaves the cramped passage in alternating bands of white and shadow. You study the dark thread caught at the pressure hatch’s lower latch, the grease streak beneath it, and the drag mark running away from the dock. The shallow print beyond the hatch points down the passage, its toe turned from the courier starship. You do not touch the clues.\n\nVey stands beside the warped seal with her hooked tool lowered. “The thread’s caught under the latch. Someone could’ve pulled it from the other side.” Her gaze shifts from the thread to the print. “They went down the passage.” She turns back to the seal, leaving the hatch and its narrow gap between you. Farther along, a strip light flickers once above the empty passage.",
+      "npcs": [
+        "Vey (active, neutral)",
+        "Unidentified figure (active, neutral)"
+      ],
+      "correction": true,
+      "tokens": [
+        {
+          "role": "correction",
+          "input": 935,
+          "output": 115
+        },
+        {
+          "role": "brain",
+          "input": 1735,
+          "output": 128
+        },
+        {
+          "role": "narrator",
+          "input": 3758,
+          "output": 159
+        },
+        {
+          "role": "narrator_metadata",
+          "input": 748,
+          "output": 37
+        }
+      ]
+    },
+    {
+      "turn": 9,
+      "scene": 9,
+      "result": "dialog",
+      "action": "I ask Vey what she thinks happened at the pressure hatch, and whether the thread",
+      "state": "H5 Sp5 Su5 M10 C1",
+      "phase": "confrontation",
+      "director": true,
+      "narration": "You stand beside the pressure hatch, the broken thread and grease still visible at the lower latch. The passage carries the hiss of recycled air; underfoot, dock grating vibrates faintly with the courier starship’s reactor hum. Vey wipes her hooked tool on her stained apron and looks over the drag mark.\n\n“Someone worked the latch with the thread; that doesn’t look forced.” She traces the grease streak with one blunt finger. “The drag mark runs clean. They were moving fast, but I can’t say they were fleeing.” She lowers her hand and returns to the warped seal, leaving the hatch between you.",
+      "npcs": [
+        "Vey (active, neutral)",
+        "Unidentified figure (active, neutral)"
+      ],
+      "judge": {
+        "result_integrity": 5,
+        "prompt_elements": 4,
+        "npc_voice": 5,
+        "player_agency": 5,
+        "restraint": 5,
+        "prose": 4,
+        "overall": 9,
+        "weakness": "The thread is newly described as broken without support."
+      },
+      "stream": {
+        "first_sentence_secs": 7.3,
+        "sentences": 8,
+        "complete": true,
+        "matches": true
+      },
+      "events": [
+        "[Metadata] Extracted: 0 new NPCs, 0 renames, 0 deceased, 0 lore",
+        "[Director] Analyzing scene 9",
+        "[Director] Failed (BadRequestError: Error code: 400 - {'error': {'message': \"Function tools with reasoning_effort are not supported for gpt-6-luna in /v1/chat/completions. To use function tools, use /v1/responses or set reasoning_effort to 'none'.\", 'type': 'invalid_request_error', 'param': 'reasoning_effort', 'code': None}}), continuing without guidance"
+      ],
+      "tokens": [
+        {
+          "role": "brain",
+          "input": 1729,
+          "output": 118
+        },
+        {
+          "role": "narrator",
+          "input": 3839,
+          "output": 130
+        },
+        {
+          "role": "narrator_metadata",
+          "input": 715,
+          "output": 37
+        },
+        {
+          "role": "revelation_check",
+          "input": 421,
+          "output": 49
+        }
+      ]
+    },
+    {
+      "turn": 10,
+      "scene": 10,
+      "result": "MISS",
+      "move": "adventure/gather_information",
+      "match": true,
+      "action": "I commit to my vow of revenge by searching the hatch and drag mark for anything ",
+      "state": "H5 Sp5 Su5 M10 C2",
+      "consequences": [
+        "You are delayed or put at a disadvantage"
+      ],
+      "phase": "confrontation",
+      "director": true,
+      "narration": "You brace one palm against the bulkhead and work along the hatch’s lower edge with the other, keeping your weight off the seal. Grease coats your fingertips. Beneath it, your nail catches a fine scoring on the latch plate—but the pressure seal shifts with a short hiss before you can trace it farther.\n\nThe dock’s warning strip changes from amber to red. A pressure alarm cuts through the reactor hum; the hatch seal has lost pressure, and the manual shutoff lever sits beyond the red-marked boundary. Your careful search has left you with no identifying clue, and the dock is now isolated from the courier starship. Vey drops her tool and lunges for the emergency wheel as the first hard tremor passes through the grating.",
+      "npcs": [
+        "Vey (active, neutral)",
+        "Unidentified figure (active, neutral)"
+      ],
+      "judge": {
+        "result_integrity": 5,
+        "prompt_elements": 5,
+        "npc_voice": 5,
+        "player_agency": 5,
+        "restraint": 5,
+        "prose": 5,
+        "overall": 10,
+        "weakness": "none"
+      },
+      "stream": {
+        "first_sentence_secs": 4.0,
+        "sentences": 7,
+        "complete": true,
+        "matches": true
+      },
+      "events": [
+        "[PayThePrice] You are delayed or put at a disadvantage",
+        "[Metadata] Extracted: 0 new NPCs, 0 renames, 0 deceased, 0 lore",
+        "[Director] Analyzing scene 10",
+        "[Director] Failed (BadRequestError: Error code: 400 - {'error': {'message': \"Function tools with reasoning_effort are not supported for gpt-6-luna in /v1/chat/completions. To use function tools, use /v1/responses or set reasoning_effort to 'none'.\", 'type': 'invalid_request_error', 'param': 'reasoning_effort', 'code': None}}), continuing without guidance",
+        "[Director] Reset reflection for Vey (empty guidance)",
+        "[Director] Reset reflection for Unidentified figure (empty guidance)"
+      ],
+      "tokens": [
+        {
+          "role": "brain",
+          "input": 1725,
+          "output": 116
+        },
+        {
+          "role": "narrator",
+          "input": 3781,
+          "output": 154
+        },
+        {
+          "role": "narrator_metadata",
+          "input": 753,
+          "output": 37
+        },
+        {
+          "role": "revelation_check",
+          "input": 445,
+          "output": 54
+        }
+      ]
+    },
+    {
+      "turn": 11,
+      "scene": 11,
+      "result": "WEAK_HIT",
+      "move": "adventure/face_danger",
+      "action": "I lunge past Vey and sprint across the red-marked boundary, throwing my weight a",
+      "state": "H4 Sp5 Su5 M10 C2",
+      "consequences": [
+        "health -1"
+      ],
+      "phase": "confrontation",
+      "director": true,
+      "burn": "STRONG_HIT->taken",
+      "narration": "You lunge past Vey and sprint across the red-marked boundary, boots hammering the grating. You throw your weight against the manual shutoff lever. It jerks down beneath your hands, and the pressure alarm cuts off as the seal holds.\n\nThe lever’s hard edge drives into your ribs. Pain catches your breath; when you pull away, blood beads through a split in your skin, and your next step comes short and guarded. Vey braces herself against the bulkhead, then looks from the locked lever to the hatch. The dock stays sealed, but the red warning strip remains lit above the narrow passage.",
+      "npcs": [
+        "Vey (active, neutral)",
+        "Unidentified figure (active, neutral)"
+      ],
+      "judge": {
+        "result_integrity": 5,
+        "prompt_elements": 5,
+        "npc_voice": 4,
+        "player_agency": 4,
+        "restraint": 5,
+        "prose": 5,
+        "overall": 9,
+        "weakness": "The narration slightly dictates the player character’s guarded next step."
+      },
+      "stream": {
+        "first_sentence_secs": 2.8,
+        "sentences": 7,
+        "complete": true,
+        "matches": true
+      },
+      "events": [
+        "[Metadata] Extracted: 0 new NPCs, 0 renames, 0 deceased, 0 lore",
+        "[Metadata] Extracted: 0 new NPCs, 0 renames, 0 deceased, 0 lore",
+        "[Director] Analyzing scene 10",
+        "[Director] Failed (BadRequestError: Error code: 400 - {'error': {'message': \"Function tools with reasoning_effort are not supported for gpt-6-luna in /v1/chat/completions. To use function tools, use /v1/responses or set reasoning_effort to 'none'.\", 'type': 'invalid_request_error', 'param': 'reasoning_effort', 'code': None}}), continuing without guidance"
+      ],
+      "tokens": [
+        {
+          "role": "brain",
+          "input": 1727,
+          "output": 119
+        },
+        {
+          "role": "narrator",
+          "input": 3768,
+          "output": 129
+        },
+        {
+          "role": "narrator_metadata",
+          "input": 724,
+          "output": 37
+        },
+        {
+          "role": "revelation_check",
+          "input": 420,
+          "output": 52
+        },
+        {
+          "role": "narrator",
+          "input": 3738,
+          "output": 153
+        },
+        {
+          "role": "narrator_metadata",
+          "input": 748,
+          "output": 37
+        }
+      ]
+    },
+    {
+      "turn": 12,
+      "scene": 11,
+      "result": "MISS",
+      "move": "adventure/face_danger",
+      "action": "I brace my wounded ribs against the bulkhead and wrench the hatch’s manual locki",
+      "state": "H5 Sp5 Su5 M3 C2",
+      "consequences": [
+        "The environment or terrain introduces a new hazard"
+      ],
+      "phase": "confrontation",
+      "director": true,
+      "narration": "You brace your wounded ribs against the bulkhead and wrench the hatch’s manual locking wheel. Pain catches hard beneath your side; your grip slips, and the wheel bucks back before the mechanism clears. The hatch stays shut. The red warning strip remains dark, but pressure hisses through the damaged seal, sharper now, while your breath catches against the ache.\n\nA loose section of overhead grating drops across the narrow dock passage and slams onto the deck between you and the service access. The impact shudders through the bulkhead; dust and rust grit scatter over your hands. Vey flinches beside the emergency wheel, then pulls back as the grating blocks the route. Beyond the hatch, the next pressure surge begins as a deep vibration under the deck.",
+      "npcs": [
+        "Vey (active, neutral)",
+        "Unidentified figure (active, neutral)"
+      ],
+      "judge": {
+        "result_integrity": 5,
+        "prompt_elements": 5,
+        "npc_voice": 5,
+        "player_agency": 5,
+        "restraint": 5,
+        "prose": 4,
+        "overall": 9,
+        "weakness": "The pressure and surge effects repeat the same beat."
+      },
+      "stream": {
+        "first_sentence_secs": 3.5,
+        "sentences": 8,
+        "complete": true,
+        "matches": true
+      },
+      "events": [
+        "[PayThePrice] The environment or terrain introduces a new hazard",
+        "[Metadata] Extracted: 0 new NPCs, 0 renames, 0 deceased, 0 lore",
+        "[Director] Analyzing scene 11",
+        "[Director] Failed (BadRequestError: Error code: 400 - {'error': {'message': \"Function tools with reasoning_effort are not supported for gpt-6-luna in /v1/chat/completions. To use function tools, use /v1/responses or set reasoning_effort to 'none'.\", 'type': 'invalid_request_error', 'param': 'reasoning_effort', 'code': None}}), continuing without guidance"
+      ],
+      "tokens": [
+        {
+          "role": "brain",
+          "input": 1731,
+          "output": 100
+        },
+        {
+          "role": "narrator",
+          "input": 3715,
+          "output": 157
+        },
+        {
+          "role": "narrator_metadata",
+          "input": 757,
+          "output": 37
+        },
+        {
+          "role": "revelation_check",
+          "input": 448,
+          "output": 52
+        }
+      ]
+    },
+    {
+      "turn": 13,
+      "scene": 12,
+      "result": "STRONG_HIT",
+      "move": "adventure/face_danger",
+      "action": "I hook my arms beneath the fallen grating and heave it aside before the next pre",
+      "state": "H5 Sp5 Su5 M4 C1",
+      "consequences": [
+        "momentum +1"
+      ],
+      "phase": "confrontation",
+      "director": true,
+      "narration": "You hook both arms beneath the fallen grating and drive up through your legs. Pain tightens beneath your ribs, but you keep lifting until the metal clears the passage. You drag it across the deck and lower it flat over the damaged hatch seal, bracing its weight against the frame before the next pressure surge hits.\n\nThe vibration rolls beneath your boots. The grating shudders under the pressure, but stays wedged over the breach; the hiss dwindles to a thin leak. Vey steps toward the hatch, then checks the dark-sleeved figure at the service passage. Ground tilts toward you, the grating’s weight now holding the seal while both of them wait to see what you do next.",
+      "npcs": [
+        "Vey (active, neutral)",
+        "Unidentified figure (active, neutral)"
+      ],
+      "judge": {
+        "result_integrity": 5,
+        "prompt_elements": 5,
+        "npc_voice": 5,
+        "player_agency": 5,
+        "restraint": 4,
+        "prose": 4,
+        "overall": 9,
+        "weakness": "The unexplained tilt of the ground is a distracting detail."
+      },
+      "stream": {
+        "first_sentence_secs": 3.7,
+        "sentences": 7,
+        "complete": true,
+        "matches": true
+      },
+      "events": [
+        "[Metadata] Extracted: 0 new NPCs, 0 renames, 0 deceased, 0 lore",
+        "[Director] Analyzing scene 12",
+        "[Director] Failed (BadRequestError: Error code: 400 - {'error': {'message': \"Function tools with reasoning_effort are not supported for gpt-6-luna in /v1/chat/completions. To use function tools, use /v1/responses or set reasoning_effort to 'none'.\", 'type': 'invalid_request_error', 'param': 'reasoning_effort', 'code': None}}), continuing without guidance"
+      ],
+      "tokens": [
+        {
+          "role": "brain",
+          "input": 1729,
+          "output": 114
+        },
+        {
+          "role": "narrator",
+          "input": 3745,
+          "output": 148
+        },
+        {
+          "role": "narrator_metadata",
+          "input": 743,
+          "output": 37
+        },
+        {
+          "role": "revelation_check",
+          "input": 439,
+          "output": 54
+        }
+      ]
+    },
+    {
+      "turn": 14,
+      "scene": 13,
+      "result": "STRONG_HIT",
+      "move": "adventure/face_danger",
+      "action": "I plant my boots against the bucking deck and wrench the grating tighter against",
+      "state": "H5 Sp5 Su5 M5 C1",
+      "consequences": [
+        "momentum +1"
+      ],
+      "phase": "confrontation",
+      "director": true,
+      "narration": "You plant your boots against the bucking deck and wrench the grating tighter against the hatch frame. Its edge bites into the gap; you lean your shoulder into the metal as the next pressure surge drives through the cramped dock.\n\nThe grating holds. The hiss dwindles, then stops, and pressure steadies beneath the strip lights. The deck’s tilt shifts under your boots; Vey catches a handhold while the unidentified figure edges back from the hatch. Beyond the courier’s patched hull, the morning remains a cold wash of starlight. Somewhere under the deck, a single hard knock answers the fading reactor hum.",
+      "npcs": [
+        "Vey (active, neutral)",
+        "Unidentified figure (active, neutral)"
+      ],
+      "judge": {
+        "result_integrity": 4,
+        "prompt_elements": 5,
+        "npc_voice": 4,
+        "player_agency": 5,
+        "restraint": 4,
+        "prose": 4,
+        "overall": 8,
+        "weakness": "The hard knock hints at a new complication after an otherwise clean success."
+      },
+      "stream": {
+        "first_sentence_secs": 3.0,
+        "sentences": 7,
+        "complete": true,
+        "matches": true
+      },
+      "events": [
+        "[Metadata] Extracted: 0 new NPCs, 0 renames, 0 deceased, 0 lore",
+        "[Director] Analyzing scene 13",
+        "[Director] Failed (BadRequestError: Error code: 400 - {'error': {'message': \"Function tools with reasoning_effort are not supported for gpt-6-luna in /v1/chat/completions. To use function tools, use /v1/responses or set reasoning_effort to 'none'.\", 'type': 'invalid_request_error', 'param': 'reasoning_effort', 'code': None}}), continuing without guidance"
+      ],
+      "tokens": [
+        {
+          "role": "brain",
+          "input": 1746,
+          "output": 121
+        },
+        {
+          "role": "narrator",
+          "input": 3766,
+          "output": 128
+        },
+        {
+          "role": "narrator_metadata",
+          "input": 723,
+          "output": 37
+        },
+        {
+          "role": "revelation_check",
+          "input": 419,
+          "output": 53
+        }
+      ]
+    },
+    {
+      "turn": 15,
+      "scene": 14,
+      "result": "WEAK_HIT",
+      "move": "adventure/face_danger",
+      "action": "I wrench the hatch open against the pressure-sealed grating and brace myself as ",
+      "state": "H4 Sp5 Su5 M5 C1",
+      "consequences": [
+        "health -1"
+      ],
+      "phase": "confrontation",
+      "narration": "You wrench the hatch against the grating’s weight, muscles tightening as the frame gives way. The grating shifts with a harsh scrape, and the pressure pushes cold air through the widening gap. You brace one hand against the deck and reach beneath it toward the hard knock. Your fingers find a loose panel edge just as a sharp blow lands against your bruised side.\n\nPain flares where the earlier impact struck. Your breath catches; you pull your arm back, and Nashida staggers, favoring one leg. The hatch stands open, but the grating has slipped crooked across the frame, leaving the seal hissing into the cramped dock. Vey keeps one hand on the bulkhead. The unidentified figure stays beyond the hatch, silent, while another hard knock sounds from below your reach.",
+      "npcs": [
+        "Vey (active, neutral)",
+        "Unidentified figure (active, neutral)"
+      ],
+      "judge": {
+        "result_integrity": 4,
+        "prompt_elements": 3,
+        "npc_voice": 4,
+        "player_agency": 2,
+        "restraint": 2,
+        "prose": 3,
+        "overall": 5,
+        "weakness": "It invents an earlier injury and dictates the player character’s reaction, then inexplicably names them Nashida."
+      },
+      "stream": {
+        "first_sentence_secs": 3.2,
+        "sentences": 9,
+        "complete": true,
+        "matches": true
+      },
+      "events": [
+        "[Metadata] Extracted: 0 new NPCs, 0 renames, 0 deceased, 0 lore",
+        "[Director] Skipped (no trigger at scene 14)"
+      ],
+      "tokens": [
+        {
+          "role": "brain",
+          "input": 1729,
+          "output": 114
+        },
+        {
+          "role": "narrator",
+          "input": 3704,
+          "output": 163
+        },
+        {
+          "role": "narrator_metadata",
+          "input": 758,
+          "output": 37
+        },
+        {
+          "role": "revelation_check",
+          "input": 454,
+          "output": 58
+        }
+      ]
+    },
+    {
+      "turn": 16,
+      "scene": 14,
+      "result": "dialog",
+      "action": "## That's not what I said — I was asking a question, not making a statement",
+      "state": "H5 Sp5 Su5 M5 C1",
+      "phase": "confrontation",
+      "narration": "You keep your arm clear of the open hatch, its edge still crooked beneath the grating. The thin hiss of escaping air runs under Vey’s reply as she crouches beside the frame, one hand gripping the bulkhead.\n\n“Something’s striking the underside,” she says. “I can’t tell what it is.” She rises and wipes her palm on her trousers. The unidentified figure remains at the service passage, while another hard knock travels through the deck beneath your boots.",
+      "npcs": [
+        "Vey (active, neutral)",
+        "Unidentified figure (active, neutral)"
+      ],
+      "correction": true,
+      "tokens": [
+        {
+          "role": "correction",
+          "input": 922,
+          "output": 87
+        },
+        {
+          "role": "brain",
+          "input": 1714,
+          "output": 83
+        },
+        {
+          "role": "narrator",
+          "input": 3680,
+          "output": 99
+        },
+        {
+          "role": "narrator_metadata",
+          "input": 682,
+          "output": 37
+        }
+      ]
+    },
+    {
+      "turn": 17,
+      "scene": 15,
+      "result": "MISS",
+      "move": "adventure/face_danger",
+      "action": "I drop to one knee beside the crooked hatch and brace its loose edge with my sho",
+      "state": "H5 Sp5 Su5 M5 C2",
+      "consequences": [
+        "A new enemy is revealed"
+      ],
+      "phase": "climax",
+      "director": true,
+      "burn": "WEAK_HIT->taken",
+      "narration": "You drop to one knee beside the crooked hatch and press your shoulder into its loose edge, forcing it down against the pressure. “Vey, clear the area!” Another blow slams up through the deck. The hatch kicks against your shoulder; the grating skews aside, and the seal tears open with a thin, rising hiss.\n\nVey stumbles back, one hand clamped over her ear. A metal hand punches through the gap from below and catches the hatch rim. You shift your weight to hold it down, but the fingers curl around the edge and wrench it upward. Beneath the deck, a masked figure hauls itself into the dock, one arm wrapped in dark cable and its face hidden behind a scorched filter. Vey retreats toward the passage as the stranger plants a boot on the hatch frame and turns its covered head toward you.",
+      "npcs": [
+        "Vey (active, neutral)",
+        "Masked figure (active, neutral)"
+      ],
+      "judge": {
+        "result_integrity": 5,
+        "prompt_elements": 5,
+        "npc_voice": 5,
+        "player_agency": 4,
+        "restraint": 5,
+        "prose": 4,
+        "overall": 9,
+        "weakness": "The narration adds a small follow-up action for the player character: shifting their weight to hold the hatch down."
+      },
+      "stream": {
+        "first_sentence_secs": 3.6,
+        "sentences": 9,
+        "complete": true,
+        "matches": true
+      },
+      "events": [
+        "[PayThePrice] A new enemy is revealed",
+        "[Metadata] Extracted: 1 new NPCs, 0 renames, 0 deceased, 0 lore",
+        "[Metadata] Extracted: 0 new NPCs, 0 renames, 0 deceased, 0 lore",
+        "[Director] Analyzing scene 14",
+        "[Director] Failed (BadRequestError: Error code: 400 - {'error': {'message': \"Function tools with reasoning_effort are not supported for gpt-6-luna in /v1/chat/completions. To use function tools, use /v1/responses or set reasoning_effort to 'none'.\", 'type': 'invalid_request_error', 'param': 'reasoning_effort', 'code': None}}), continuing without guidance"
+      ],
+      "tokens": [
+        {
+          "role": "brain",
+          "input": 1743,
+          "output": 116
+        },
+        {
+          "role": "narrator",
+          "input": 3856,
+          "output": 176
+        },
+        {
+          "role": "narrator_metadata",
+          "input": 778,
+          "output": 75
+        },
+        {
+          "role": "revelation_check",
+          "input": 467,
+          "output": 51
+        },
+        {
+          "role": "narrator",
+          "input": 3901,
+          "output": 143
+        },
+        {
+          "role": "narrator_metadata",
+          "input": 743,
+          "output": 37
+        }
+      ]
+    },
+    {
+      "turn": 18,
+      "scene": 15,
+      "result": "MISS",
+      "move": "combat/battle",
+      "action": "I lunge at the masked figure as it climbs through the hatch, driving my shoulder",
+      "state": "H4 Sp5 Su5 M2 C2",
+      "consequences": [
+        "You face the consequences of an earlier choice"
+      ],
+      "phase": "climax",
+      "director": true,
+      "narration": "You lunge shoulder-first as the masked figure hauls itself through the hatch. Your impact lands, but its planted boot catches the dock grating; instead of falling below deck, it twists into you and drives a hard elbow beneath your ribs. Your breath vanishes. Your shoulder strikes the hatch frame, and the crooked grating slips with a metallic crash.\n\nVey steps in, then recoils as the impact jolts the dock beneath her boots. The figure gets both feet onto the dock and squares its stance between you and the open hatch, one gloved hand raised. Your ribs burn with each shallow breath; behind the figure, the dark opening yawns above the hard knocks still hammering from below.",
+      "npcs": [
+        "Vey (active, neutral)",
+        "Unidentified figure (active, neutral)"
+      ],
+      "judge": {
+        "result_integrity": 5,
+        "prompt_elements": 5,
+        "npc_voice": 5,
+        "player_agency": 5,
+        "restraint": 5,
+        "prose": 4,
+        "overall": 9,
+        "weakness": "“The dark opening yawns” is a familiar phrase."
+      },
+      "stream": {
+        "first_sentence_secs": 3.1,
+        "sentences": 7,
+        "complete": true,
+        "matches": true
+      },
+      "events": [
+        "[PayThePrice] You face the consequences of an earlier choice",
+        "[Metadata] Extracted: 0 new NPCs, 0 renames, 0 deceased, 0 lore",
+        "[Director] Analyzing scene 15",
+        "[Director] Failed (BadRequestError: Error code: 400 - {'error': {'message': \"Function tools with reasoning_effort are not supported for gpt-6-luna in /v1/chat/completions. To use function tools, use /v1/responses or set reasoning_effort to 'none'.\", 'type': 'invalid_request_error', 'param': 'reasoning_effort', 'code': None}}), continuing without guidance"
+      ],
+      "tokens": [
+        {
+          "role": "brain",
+          "input": 1735,
+          "output": 117
+        },
+        {
+          "role": "narrator",
+          "input": 3793,
+          "output": 146
+        },
+        {
+          "role": "narrator_metadata",
+          "input": 749,
+          "output": 37
+        },
+        {
+          "role": "revelation_check",
+          "input": 437,
+          "output": 50
+        }
+      ]
+    },
+    {
+      "turn": 19,
+      "scene": 16,
+      "result": "STRONG_HIT",
+      "move": "adventure/face_danger",
+      "action": "I stagger away from the hatch and retreat along the cramped dock toward the patc",
+      "state": "H4 Sp5 Su5 M3 C1",
+      "consequences": [
+        "momentum +1"
+      ],
+      "phase": "climax",
+      "director": true,
+      "narration": "You stagger away from the hatch, one arm tight across your ribs, boots scraping over the cramped dock grating. The masked figure stays by the opening rather than pursuing. With the patched courier starship close on your left, you scan its scarred hull and find a narrow maintenance rung beneath a recessed service panel—another way aboard.\n\nVey catches the rhythm of your retreat and moves with you, keeping clear of the hatch. Her jaw remains clenched as she reaches the starship first and braces a hand against the maintenance rung. Behind you, a hard impact shivers through the dock; the figure’s mask turns toward the sound, leaving the route to the service panel open. The rung is slick with hydraulic fluid, and the next knock strikes before either of you climbs.",
+      "npcs": [
+        "Vey (active, neutral)",
+        "Unidentified figure (active, neutral)"
+      ],
+      "judge": {
+        "result_integrity": 3,
+        "prompt_elements": 4,
+        "npc_voice": 4,
+        "player_agency": 5,
+        "restraint": 4,
+        "prose": 4,
+        "overall": 7,
+        "weakness": "The slick rung and renewed impact add a looming complication that softens the clean success of a strong hit."
+      },
+      "stream": {
+        "first_sentence_secs": 3.0,
+        "sentences": 7,
+        "complete": true,
+        "matches": true
+      },
+      "events": [
+        "[Metadata] Extracted: 0 new NPCs, 0 renames, 0 deceased, 0 lore",
+        "[Director] Analyzing scene 16",
+        "[Director] Failed (BadRequestError: Error code: 400 - {'error': {'message': \"Function tools with reasoning_effort are not supported for gpt-6-luna in /v1/chat/completions. To use function tools, use /v1/responses or set reasoning_effort to 'none'.\", 'type': 'invalid_request_error', 'param': 'reasoning_effort', 'code': None}}), continuing without guidance",
+        "[Director] Reset reflection for Vey (empty guidance)",
+        "[Director] Reset reflection for Unidentified figure (empty guidance)"
+      ],
+      "tokens": [
+        {
+          "role": "brain",
+          "input": 1732,
+          "output": 123
+        },
+        {
+          "role": "narrator",
+          "input": 3785,
+          "output": 159
+        },
+        {
+          "role": "narrator_metadata",
+          "input": 760,
+          "output": 37
+        },
+        {
+          "role": "revelation_check",
+          "input": 450,
+          "output": 47
+        }
+      ]
+    },
+    {
+      "turn": 20,
+      "scene": 17,
+      "result": "STRONG_HIT",
+      "move": "adventure/face_danger",
+      "action": "I climb the slick maintenance rung beneath the courier starship’s recessed servi",
+      "state": "H4 Sp5 Su5 M4 C1",
+      "consequences": [
+        "momentum +1"
+      ],
+      "phase": "climax",
+      "director": true,
+      "spatial_issues": [
+        "NPC 'Vey' teleported from 'A cramped dock beside a patched courier starship; the specific location is unknown.' to 'Courier starship interior' without appearing in narration",
+        "NPC 'Unidentified figure' teleported from 'A cramped dock beside a patched courier starship; the specific location is unknown.' to 'Courier starship interior' without appearing in narration"
+      ],
+      "narration": "You climb the slick maintenance rung, your bruised ribs tightening with each pull. The recessed panel gives enough under your hands for you to slip inside, and you drop into the courier starship’s cramped passage without striking the deck. Recycled air carries the sharp smell of hydraulic fluid; behind you, the hatch knocks through the hull.\n\nYou move toward the cockpit, one hand on the passage rail. A strip of instrument glow spills across a junction ahead: a narrow service hatch stands ajar, offering a clear route around the blocked central passage. The opening will not stay clear for long—the courier’s patched frame shudders under another impact, and the opportunity is already narrowing.",
+      "npcs": [
+        "Vey (active, neutral)",
+        "Unidentified figure (active, neutral)"
+      ],
+      "judge": {
+        "result_integrity": 2,
+        "prompt_elements": 4,
+        "npc_voice": 5,
+        "player_agency": 5,
+        "restraint": 3,
+        "prose": 4,
+        "overall": 4,
+        "weakness": "The narrowing route and repeated impacts add pressure to a clean strong hit."
+      },
+      "stream": {
+        "first_sentence_secs": 4.2,
+        "sentences": 6,
+        "complete": true,
+        "matches": true
+      },
+      "events": [
+        "[Metadata] Extracted: 0 new NPCs, 0 renames, 0 deceased, 0 lore",
+        "[Director] Analyzing scene 17",
+        "[Director] Failed (BadRequestError: Error code: 400 - {'error': {'message': \"Function tools with reasoning_effort are not supported for gpt-6-luna in /v1/chat/completions. To use function tools, use /v1/responses or set reasoning_effort to 'none'.\", 'type': 'invalid_request_error', 'param': 'reasoning_effort', 'code': None}}), continuing without guidance"
+      ],
+      "tokens": [
+        {
+          "role": "brain",
+          "input": 1734,
+          "output": 123
+        },
+        {
+          "role": "narrator",
+          "input": 3811,
+          "output": 139
+        },
+        {
+          "role": "narrator_metadata",
+          "input": 704,
+          "output": 37
+        },
+        {
+          "role": "revelation_check",
+          "input": 430,
+          "output": 51
+        }
+      ]
+    }
+  ],
+  "quality_summary": {
+    "narration_quality_total": 0,
+    "spatial_issues_total": 2,
+    "chapter_continuity_total": 0,
+    "correction_tests_total": 2,
+    "correction_tests_failed": 0,
+    "top_quality_issues": []
+  },
+  "burn_stats": {
+    "offered": 2,
+    "taken": 2,
+    "failed": 0
+  },
+  "token_summary": {
+    "total_input": 143303,
+    "total_output": 7694,
+    "total": 150997,
+    "by_role": {
+      "brain": {
+        "calls": 20,
+        "input": 34705,
+        "output": 2317
+      },
+      "narrator": {
+        "calls": 22,
+        "input": 82277,
+        "output": 3359
+      },
+      "narrator_metadata": {
+        "calls": 22,
+        "input": 16421,
+        "output": 879
+      },
+      "revelation_check": {
+        "calls": 18,
+        "input": 8043,
+        "output": 937
+      },
+      "correction": {
+        "calls": 2,
+        "input": 1857,
+        "output": 202
+      }
+    }
+  },
+  "final_npcs": [
+    {
+      "name": "Vey",
+      "status": "active",
+      "disposition": "neutral",
+      "memories": 19
+    },
+    {
+      "name": "Unidentified figure",
+      "status": "active",
+      "disposition": "neutral",
+      "memories": 19
+    }
+  ],
+  "correction_tests": [
+    {
+      "turn": 8,
+      "correction": "## I didn't mean to do that — I wanted to just observe, not act",
+      "success": true,
+      "violations": [],
+      "quality_issues": []
+    },
+    {
+      "turn": 16,
+      "correction": "## That's not what I said — I was asking a question, not making a statement",
+      "success": true,
+      "violations": [],
+      "quality_issues": []
+    }
+  ]
+}

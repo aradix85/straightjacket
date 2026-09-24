@@ -8,14 +8,14 @@ from ..models import GameState
 
 def asset_data(game: GameState, asset_id: str) -> dict[str, Any] | None:
     parts = asset_id.split("/")
-    if len(parts) < 2:
-        return None
-    category, key = parts[-2], parts[-1]
+    key = parts[-1]
     package: SettingPackage | None = load_package(game.setting_id)
     while package is not None:
-        found = package.data.asset(category, key)
-        if found is not None:
-            return found
+        categories = [parts[-2]] if len(parts) >= 2 else package.data.asset_categories()
+        for category in categories:
+            found = package.data.asset(category, key)
+            if found is not None:
+                return found
         package = package.parent
     return None
 
