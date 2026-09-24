@@ -37,6 +37,9 @@ bot_behavior:
 judge:
   enabled: true
   model: "gpt-6-luna"
+  max_tokens: 3000
+  extra_body:
+    reasoning_effort: "low"
 
 prices:
   claude-opus-5-5: [4.00, 20.00]

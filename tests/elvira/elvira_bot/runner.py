@@ -87,7 +87,7 @@ def run_session(bot_cfg: dict, auto_override: bool = False, turns_override: int 
     print_full = log_cfg["print_full_narration"]
     print_rolls = log_cfg["print_roll_details"]
     do_invariants = log_cfg["assert_state_invariants"]
-    judge_model = bot_cfg["judge"]["model"] if bot_cfg["judge"]["enabled"] else None
+    judge_cfg = bot_cfg["judge"] if bot_cfg["judge"]["enabled"] else None
     prices = bot_cfg["prices"]
     succession_enabled = session_cfg["succession_on_game_over"]
     coverage = Coverage()
@@ -175,7 +175,7 @@ def run_session(bot_cfg: dict, auto_override: bool = False, turns_override: int 
                     slog,
                     prev_npcs,
                     coverage=coverage,
-                    judge_model=judge_model,
+                    judge_cfg=judge_cfg,
                     max_turns=max_chapters * max_turns,
                     prev_action=prev_action,
                 )
@@ -342,7 +342,7 @@ def _play_turn(
     slog: SessionLog,
     prev_npcs: list[NpcSnapshot] | None,
     coverage: Coverage,
-    judge_model: str | None,
+    judge_cfg: dict | None,
     max_turns: int,
     prev_action: str = "",
 ) -> tuple[GameState, str, TurnRecord, bool]:
@@ -430,8 +430,8 @@ def _play_turn(
             slog.violations.append(v)
         rec.violations = violations
 
-    if judge_model:
-        rec.judge = judge_turn(provider, judge_model, game, action, narration, result, match)
+    if judge_cfg:
+        rec.judge = judge_turn(provider, judge_cfg, game, action, narration, result, match)
         _print_audit(rec.judge)
 
     return game, narration, rec, False

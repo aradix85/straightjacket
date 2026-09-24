@@ -25,7 +25,7 @@ JUDGE_SCHEMA: dict[str, Any] = {
 
 def judge_turn(
     provider: AIProvider,
-    model: str,
+    judge_cfg: dict[str, Any],
     game: GameState,
     action: str,
     narration: str,
@@ -38,11 +38,12 @@ def judge_turn(
     outcome = _p("judge_result_dialog") if result is None else result + (_p("judge_match_suffix") if match else "")
     user = _p("judge_turn", action=action, result=outcome, npcs=npcs, narration=narration)
     spec = AICallSpec(
-        model=model,
+        model=judge_cfg["model"],
         system=_p("judge_system"),
         messages=[{"role": "user", "content": user}],
-        max_tokens=800,
+        max_tokens=judge_cfg["max_tokens"],
         json_schema=JUDGE_SCHEMA,
+        extra_body=dict(judge_cfg["extra_body"]),
         log_role="brain",
     )
     try:

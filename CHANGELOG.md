@@ -7,6 +7,14 @@ Originally forked from [EdgeTales](https://github.com/edgetales/edgetales). See 
 
 Straightjacket uses calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day. The first CalVer release is `2026.04.25.0`. Earlier `0.x.y` releases keep their original version numbers and are not renumbered. The switch was made because the project has no public API to version semantically against — the `0.x.y` numbers were running counters with no meaning, and dates carry the meaning the numbers didn't.
 
+## [2026.09.24.35] — 2026-09-24
+
+Elvira's judge no longer loses verdicts to reasoning.
+
+The judge called GPT-6 Luna without a reasoning setting, so the model reasoned at its default effort, and on some turns the reasoning used the whole 800-token budget and left an empty answer ("no verdict: JSONDecodeError"), seen in the first turns of a long run. The judge now has its own `max_tokens` (3000) and `extra_body` (`reasoning_effort: low`) in `tests/elvira/elvira_config.yaml`, like the player's `bot_extra_body`, and `judge_turn` takes the judge configuration instead of a bare model name. Verified live: two audits of a failed leap narrated as a success both returned verdicts, result integrity 1, overall capped at 4, naming the contradiction.
+
+Quality gate: Elvira and project-rule tests green, ruff check and ruff format clean; engine unchanged.
+
 ## [2026.09.24.34] — 2026-09-24
 
 Classic Ironsworn marks its own lasting harm.
