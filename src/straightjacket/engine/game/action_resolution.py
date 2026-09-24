@@ -13,7 +13,7 @@ from ..mechanics.threats import advance_menace_on_miss, resolve_full_menace
 from ..models import BrainResult, ClockEvent, GameState, ProgressTrack, RollResult, ThreatEvent
 from ..npc import find_npc
 from .finalization import apply_progress_and_legacy, resolve_action_consequences
-from .tracks import complete_track, find_progress_track
+from ..mechanics import complete_track, find_progress_track
 from .turn_types import ActionResolution, RollOutcome
 
 

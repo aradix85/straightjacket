@@ -19,6 +19,7 @@ __all__ = [
     "check_npc_agency",
     "check_scene",
     "choose_story_structure",
+    "complete_track",
     "compute_npc_gate",
     "consolidate_characters",
     "consolidate_threads",
@@ -27,6 +28,7 @@ __all__ = [
     "dispatch_meta",
     "drain_pending_events",
     "evaluate_keyed_scenes",
+    "find_progress_track",
     "generate_consequence_sentences",
     "generate_engine_memories",
     "generate_random_event",
@@ -61,9 +63,11 @@ __all__ = [
     "roll_action",
     "roll_event_focus",
     "roll_meaning_table",
+    "roll_oracle_answer",
     "roll_turning_point",
     "run_inheritance_rolls",
     "seed_successor_legacy",
+    "sync_combat_tracks",
     "tick_autonomous_clocks",
     "time_phases",
     "update_chaos_factor",
@@ -166,3 +170,4 @@ from .world import (
     update_chaos_factor,
     update_location,
 )
+from .tracks import complete_track, find_progress_track, roll_oracle_answer, sync_combat_tracks

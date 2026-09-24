@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import random
 
+from .tracks import complete_track
 from ..engine_loader import eng
 from ..logging_util import log
 from ..models import GameState, ThreatEvent
@@ -86,7 +87,6 @@ def advance_threat_by_id(game: GameState, threat_id: str, marks: int = 1, source
 
 
 def resolve_full_menace(game: GameState) -> list[ThreatEvent]:
-    from ..game.tracks import complete_track
 
     spirit_cost = eng().threats.forsake_spirit_cost
     events: list[ThreatEvent] = []

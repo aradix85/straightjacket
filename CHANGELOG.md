@@ -7,6 +7,16 @@ Originally forked from [EdgeTales](https://github.com/edgetales/edgetales). See 
 
 Straightjacket uses calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day. The first CalVer release is `2026.04.25.0`. Earlier `0.x.y` releases keep their original version numbers and are not renumbered. The switch was made because the project has no public API to version semantically against — the `0.x.y` numbers were running counters with no meaning, and dates carry the meaning the numbers didn't.
 
+## [2026.09.24.4] — 2026-09-24
+
+Import layers become a rule, and the two dependencies that broke it are fixed at the root.
+
+`game/tracks.py` moved to `mechanics/tracks.py`. `find_progress_track`, `complete_track`, `sync_combat_tracks`, and `roll_oracle_answer` depend only on the engine core, `datasworn/`, and `mechanics/legacy.py`: mechanics living one layer too high. `mechanics/threats.py` and `mechanics/clock_consequences.py` imported `complete_track` from `game/` through inline imports, one of them marked as a circular break; both now import it at module level from `.tracks`, and their two entries in the inline-import whitelist are gone. The four functions are exported through `mechanics/__init__.py`; all callers in `game/` and `correction/` and two test files were updated in the same commit.
+
+New scan `_check_import_layers` (twenty-seven → twenty-eight). `datasworn/` and `db/` import only the engine core; `npc/` and `mechanics/` never import `ai/`, `tools/`, `game/`, `correction/`, or `web/`; `ai/`, `tools/`, and the engine core's top-level files never import `game/`, `correction/`, or `web/`; `game/` never imports `correction/` or `web/`; `correction/` never imports `web/`. Inline imports count. Apart from the two fixed imports, the rule describes the dependency graph exactly as it already was. ARCHITECTURE.md gains an "Import layers" Key Design Decision. The documentation-drift scan caught one stale mention of the old path in AUDIT.md during this change.
+
+Quality gate: 1260 tests green, twenty-eight project-rule scans clean, coverage 88.08%, ruff check and ruff format clean, mypy clean on 105 source files. Save format unchanged.
+
 ## [2026.09.24.3] — 2026-09-24
 
 Five more ruff rule families enabled: RUF, PERF, PT, PTH, and DTZ. The first run reported 104 findings. Ruff fixed 61 automatically (pytest parametrize and fixture style, unused unpacked variables, sorted `__all__`, collection literals); the rest were fixed by hand:

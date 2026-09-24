@@ -31,7 +31,7 @@ from ..story_state import get_pending_revelations
 from .action_resolution import resolve_action_phase
 from .finalization import narrate_scene
 from .scene_finalization import finalize_scene
-from .tracks import find_progress_track, roll_oracle_answer
+from ..mechanics import find_progress_track, roll_oracle_answer
 from .turn_types import ActionResolution, RollOutcome, SceneContext
 
 

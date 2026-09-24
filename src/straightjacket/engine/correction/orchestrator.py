@@ -13,7 +13,7 @@ from ..game.finalization import (
     narrate_scene,
     resolve_action_consequences,
 )
-from ..game.tracks import find_progress_track
+from ..mechanics import find_progress_track
 from ..logging_util import log
 from ..mechanics import (
     apply_brain_location_time,

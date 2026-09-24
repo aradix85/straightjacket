@@ -28,7 +28,7 @@ from ..models import (
 )
 from ..story_state import check_story_completion, mark_revelation_used
 from .finalization import apply_post_narration
-from .tracks import sync_combat_tracks
+from ..mechanics import sync_combat_tracks
 from .turn_types import SceneContext
 
 

@@ -22,7 +22,7 @@ from ..npc import activate_npcs_for_prompt
 from ..prompt_action import build_action_prompt
 
 from .finalization import apply_post_narration, apply_progress_and_legacy, narrate_scene, resolve_action_consequences
-from .tracks import find_progress_track
+from ..mechanics import find_progress_track
 
 
 def process_momentum_burn(

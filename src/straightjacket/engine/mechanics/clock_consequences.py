@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from .tracks import complete_track
 from ..engine_loader import eng
 from ..logging_util import log
 from ..models import ClockData, ClockFillResult, GameState
@@ -38,7 +39,6 @@ def resolve_clock_fill(game: GameState, clock: ClockData) -> ClockFillResult | N
 
 
 def _try_complete_linked_track(game: GameState, clock: ClockData) -> bool:
-    from ..game.tracks import complete_track  # circular-break: game/__init__ → ai → prompt_blocks → mechanics
 
     for track in game.progress_tracks:
         if track.name == clock.name and track.status == "active":

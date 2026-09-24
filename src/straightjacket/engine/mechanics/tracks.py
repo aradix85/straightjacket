@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from ..datasworn.settings import active_package
 from ..logging_util import log
-from ..mechanics.legacy import apply_threat_overcome_bonus
+from .legacy import apply_threat_overcome_bonus
 from ..models import GameState, ProgressTrack
 
 

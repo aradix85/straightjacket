@@ -87,8 +87,8 @@ Where to find things. If you want to change X, edit Y.
 | Built-in Director tools | `tools/builtins.py` → `query_npc`, `query_active_threads`, `query_active_clocks` |
 | Engine query functions (no tool registration) | `tools/builtins.py` → `available_moves` |
 | Track-creating moves | `engine/track_moves.yaml` → `track_creating_moves` (no Python) |
-| Track lifecycle (creation, completion) | `game/tracks.py` → `find_progress_track`, `complete_track`, `sync_combat_tracks` |
-| Combat track ↔ combat_position sync | `game/tracks.py` → `complete_track` (clears position), `sync_combat_tracks` (orphan cleanup) |
+| Track lifecycle (creation, completion) | `mechanics/tracks.py` → `find_progress_track`, `complete_track`, `sync_combat_tracks` |
+| Combat track ↔ combat_position sync | `mechanics/tracks.py` → `complete_track` (clears position), `sync_combat_tracks` (orphan cleanup) |
 | Scene challenge progress routing | `engine/track_moves.yaml` → `scene_challenge_progress_moves`; `game/turn.py` action path |
 | Which moves are available in a game state | `tools/builtins.py` → `available_moves`, `_is_move_available` (filters by `status == "active"`) |
 | NPC bond level | `npc/bond.py` → `get_npc_bond` (reads connection track, not NpcData) |
@@ -112,7 +112,7 @@ Where to find things. If you want to change X, edit Y.
 | Clock creation (random events, AC plot-points) | `engine/random_events.yaml::clock_creation_mapping` + `engine/adventure_crafter.yaml::clock_creation_mapping`; `mechanics/random_events.py::spawn_clock_from_random_event`; `mechanics/adventure_crafter.py::spawn_clocks_for_turning_point`; segments/cap config in `engine/clocks.yaml` |
 | Clock fill-consequences (fill handler) | `engine/clocks.yaml::fill_consequences`; `mechanics/clock_consequences.py::resolve_clock_fill`; emits `<clock_filled>` tag via `prompt_shared.py::_clock_filled_block`; suppressed when an attached keyed-scene with source-prefix `clock:` is still pending |
 | Spawn-source prefixes (shared constants) | `mechanics/spawn_sources.py` → `RANDOM_EVENT_SOURCE_PREFIX`, `AC_SOURCE_PREFIX`, `CLOCK_KEYED_SOURCE_PREFIX`, `SETUP_SOURCE`, `EMERGENT_SOURCE_PREFIXES` |
-| Threat-vow coupling | `models_base.py` → `ThreatData.linked_vow_id`; `game/tracks.py` → `complete_track` resolves linked threat |
+| Threat-vow coupling | `models_base.py` → `ThreatData.linked_vow_id`; `mechanics/tracks.py` → `complete_track` resolves linked threat |
 | Impacts (wounded, shaken, etc.) | `engine/impacts.yaml` (typed `ImpactConfig`); `mechanics/impacts.py` → `apply_impact`, `clear_impact`, `blocks_recovery`, `recalc_max_momentum` |
 | Legacy tracks, XP, asset advancement | `engine/legacy.yaml` (typed `LegacyConfig`); `mechanics/legacy.py` → `mark_legacy`, `apply_threat_overcome_bonus`, `advance_asset`; `CampaignState.legacy_quests/bonds/discoveries` |
 | NPC name generation | `npc/naming.py` → `roll_oracle_name`; `data/settings/*.yaml` → `oracle_paths.names` |
@@ -202,6 +202,7 @@ src/straightjacket/
 │   │   ├── threats.py          # Threat menace advancement, autonomous ticks, Forsake Your Vow
 │   │   ├── impacts.py          # Impact apply/clear, max_momentum recalc, recovery blocking
 │   │   ├── legacy.py           # Legacy tracks (quests/bonds/discoveries), XP, asset advancement
+│   │   ├── tracks.py           # Progress track lifecycle: find, complete (clears combat position, resolves linked threat), sync, oracle answer
 │   │   └── succession.py       # Inheritance rolls, NPC carryover (per status), legacy seeding
 │   ├── parser.py            # Narrator output cleanup (10 regex steps)
 │   ├── correction/          # ## correction subpackage
@@ -248,7 +249,6 @@ src/straightjacket/
 │   │   ├── turn_types.py    # Shared turn-pipeline dataclasses (SceneContext, RollOutcome, ActionResolution)
 │   │   ├── action_resolution.py  # Action-roll consequence resolution (resolve_action_phase)
 │   │   ├── scene_finalization.py # Post-narration finalize_scene + scene-list maintenance
-│   │   ├── tracks.py        # Progress track mechanics (find, complete, sync, oracle rolls)
 │   │   ├── momentum_burn.py # Momentum burn re-narration pipeline
 │   │   ├── game_start.py    # Character creation → opening scene
 │   │   ├── chapters.py      # Epilogue, new chapter orchestration
@@ -288,6 +288,8 @@ src/straightjacket/
 **Modular yaml stores.** Every yaml store in the repo is a directory of files, not a single file: one per subsystem under `engine/`, one per dotted-key prefix under `strings/`, one per cluster under `prompts/`, plus `emotions/`. Each loader globs its directory, merges top-level keys, raises on duplicates. Callsites only talk to `eng()` / `get_prompt()` / `t()` / `importance_map()` — filesystem layout is invisible to the rest of the codebase. `config.yaml` stays single (small, user-edited). `data/settings/*.yaml` was already one file per setting.
 
 **Subpackage public API via `__init__.py`.** Subpackages `mechanics`, `npc`, `game`, `db`, and `tools` each expose their public API by re-exporting from their submodules in `__init__.py`. Callers import `from straightjacket.engine.mechanics import roll_action`, not `from straightjacket.engine.mechanics.consequences import roll_action` — internal module layout stays free to change. The top-level `engine/__init__.py` and the `ai/` package are package markers only, no re-exports. `models.py` is a separate re-export hub for every dataclass across `models_base.py`, `models_npc.py`, and `models_story.py`. The F401 ignore list in `pyproject.toml` covers exactly these intentional public-API hub files.
+
+**Import layers.** Dependencies point downward. `datasworn/` and `db/` import only the engine core (models, config, loaders). `npc/` and `mechanics/` may use those and each other, but never `ai/`, `tools/`, `game/`, `correction/`, or `web/`. `ai/`, `tools/`, and the engine core's top-level files never import `game/`, `correction/`, or `web/`; `game/` orchestrates everything below it; `correction/` builds on `game/`; nothing in the engine imports `web/`. `_check_import_layers` in `tests/test_project_rules.py` enforces this, inline imports included: a circular-break import does not excuse a dependency in the wrong direction.
 
 **Typed dataclasses everywhere.** GameState has sub-objects (Resources, WorldState, NarrativeState, CampaignState). NpcData, MemoryEntry, Move, ProgressTrack, ThreadEntry, ChapterSummary, ClockData, ThreatData and the rest are all typed dataclasses with fixed fields. Move uses typed trigger conditions and roll options. Attribute access, never dict-style. `SerializableMixin` (in `serialization.py`) handles serialization; `MemoryEntry` is currently the only class that overrides `to_dict`/`from_dict` manually.
 

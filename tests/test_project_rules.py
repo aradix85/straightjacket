@@ -438,12 +438,10 @@ _INLINE_IMPORT_WHITELIST: set[tuple[str, str]] = {
     ("engine/npc/lifecycle.py", "_npc_eligible_for_desc_match"),
     ("engine/ai/api_client.py", "get_provider"),
     ("engine/ai/provider_base.py", "create_with_retry"),
-    ("engine/mechanics/threats.py", "resolve_full_menace"),
     ("engine/mechanics/fate.py", "resolve_fate"),
     ("engine/mechanics/engine_memories.py", "generate_engine_memories"),
     ("engine/mechanics/world.py", "update_chaos_factor"),
     ("engine/mechanics/world.py", "apply_brain_location_time"),
-    ("engine/mechanics/clock_consequences.py", "_try_complete_linked_track"),
 }
 
 
@@ -1124,6 +1122,58 @@ def _check_changelog_consistent() -> tuple[str, list[Violation]]:
     return "DOC DRIFT: CHANGELOG versions and headers", violations
 
 
+_ENGINE_SUBPACKAGES = frozenset({"ai", "correction", "datasworn", "db", "game", "mechanics", "npc", "tools"})
+_UPPER = frozenset({"correction", "game", "web"})
+_LAYER_FORBIDDEN: dict[str, frozenset[str]] = {
+    "datasworn": frozenset({"db", "npc", "mechanics", "ai", "tools"}) | _UPPER,
+    "db": frozenset({"datasworn", "npc", "mechanics", "ai", "tools"}) | _UPPER,
+    "npc": frozenset({"ai", "tools"}) | _UPPER,
+    "mechanics": frozenset({"ai", "tools"}) | _UPPER,
+    "ai": _UPPER,
+    "tools": _UPPER,
+    "core": _UPPER,
+    "game": frozenset({"correction", "web"}),
+    "correction": frozenset({"web"}),
+    "web": frozenset(),
+    "top": frozenset(),
+}
+
+
+def _layer(parts: list[str]) -> str:
+    if parts[:1] == ["web"]:
+        return "web"
+    if parts[:1] == ["engine"]:
+        return parts[1] if len(parts) >= 2 and parts[1] in _ENGINE_SUBPACKAGES else "core"
+    return "top"
+
+
+def _import_target(node: ast.ImportFrom, file_parts: tuple[str, ...]) -> list[str] | None:
+    if node.level == 0:
+        module = node.module or ""
+        return module.split(".")[1:] if module.startswith("straightjacket.") else None
+    base = list(file_parts[: len(file_parts) - node.level])
+    return base + (node.module.split(".") if node.module else [])
+
+
+def _check_import_layers() -> tuple[str, list[Violation]]:
+    violations: list[Violation] = []
+    for path in _iter_source_files():
+        parts = path.relative_to(SRC_ROOT).parts
+        own = _layer(list(parts[:-1]))
+        _, lines, tree, _ = _load(path)
+        for node in ast.walk(tree):
+            if not isinstance(node, ast.ImportFrom):
+                continue
+            target = _import_target(node, parts)
+            if target is None:
+                continue
+            other = _layer(target)
+            if other in _LAYER_FORBIDDEN[own]:
+                snippet = lines[node.lineno - 1].strip()
+                violations.append(Violation(_rel(path), node.lineno, f"{own} -> {other}: {snippet}"))
+    return "IMPORT LAYER violated (dependencies point downward)", violations
+
+
 _ALL_CHECKS = (
     _check_no_domain_default_in_dict_get,
     _check_no_or_literal_fallback_on_lookups,
@@ -1152,6 +1202,7 @@ _ALL_CHECKS = (
     _check_file_map_complete,
     _check_ownership_symbols_exist,
     _check_changelog_consistent,
+    _check_import_layers,
 )
 
 

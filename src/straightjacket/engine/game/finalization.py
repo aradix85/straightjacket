@@ -22,7 +22,7 @@ from ..npc import find_npc
 from ..npc.memory import consolidate_memory
 from ..parser import parse_narrator_response
 
-from ..game.tracks import find_progress_track
+from ..mechanics import find_progress_track
 
 
 @dataclass
