@@ -1,5 +1,5 @@
 import math
-from typing import TYPE_CHECKING
+from typing import Any, TYPE_CHECKING
 
 from ..engine_loader import eng
 from ..logging_util import log
@@ -190,7 +190,7 @@ def _recursive_activation(activated: list[NpcData], mentioned: list[NpcData], ga
 
 def activate_npcs_for_prompt(
     game: "GameState", brain: "BrainResult", player_input: str
-) -> tuple[list[NpcData], list[NpcData], dict]:
+) -> tuple[list[NpcData], list[NpcData], dict[str, Any]]:
     target_id = brain.target_npc
     scan_text = _build_scan_text(brain, game, player_input)
     tfidf_scores = compute_npc_tfidf_scores(game.npcs, scan_text)
@@ -198,7 +198,7 @@ def activate_npcs_for_prompt(
     _e = eng()
     activated: list[NpcData] = []
     mentioned: list[NpcData] = []
-    activation_debug: dict = {}
+    activation_debug: dict[str, Any] = {}
 
     for npc in game.npcs:
         if npc.status not in ("active", "background"):

@@ -32,7 +32,7 @@ def drain_token_log() -> list[dict[str, str | int]]:
 class AIResponse:
     content: str
     stop_reason: str = "complete"
-    tool_calls: list[dict[str, str | dict]] = field(default_factory=list)
+    tool_calls: list[dict[str, str | dict[str, Any]]] = field(default_factory=list)
     usage: dict[str, int] | None = field(default=None, repr=False)
 
 
@@ -40,15 +40,15 @@ class AIResponse:
 class AICallSpec:
     model: str
     system: str
-    messages: list[dict]
+    messages: list[dict[str, Any]]
     max_tokens: int
     max_retries: int = 0
     temperature: float | None = None
     top_p: float | None = None
     top_k: int | None = None
-    extra_body: dict | None = None
-    json_schema: dict | None = None
-    tools: list[dict] | None = None
+    extra_body: dict[str, Any] | None = None
+    json_schema: dict[str, Any] | None = None
+    tools: list[dict[str, Any]] | None = None
     log_role: str = ""
 
 

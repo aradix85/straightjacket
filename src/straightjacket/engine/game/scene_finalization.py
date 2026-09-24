@@ -1,3 +1,4 @@
+from typing import Any
 from collections.abc import Sequence
 
 from ..ai.brain import call_revelation_check
@@ -32,7 +33,9 @@ from ..mechanics import sync_combat_tracks
 from .turn_types import SceneContext
 
 
-def _update_scene_lists(game: GameState, brain: BrainResult, metadata: dict, scene_present_ids: set) -> None:
+def _update_scene_lists(
+    game: GameState, brain: BrainResult, metadata: dict[str, Any], scene_present_ids: set[Any]
+) -> None:
     for npc in game.npcs:
         if npc.id in scene_present_ids:
             for c in game.narrative.characters_list:
@@ -63,13 +66,13 @@ def _update_scene_lists(game: GameState, brain: BrainResult, metadata: dict, sce
 def finalize_scene(
     ctx: SceneContext,
     narration: str,
-    log_entry: dict,
+    log_entry: dict[str, Any],
     prompt_summary: str,
     roll_result_str: str,
     roll: RollResult | None = None,
     consequences: Sequence[str] = (),
     agency_clock_events: Sequence[ClockEvent] = (),
-) -> tuple[bool, dict | None]:
+) -> tuple[bool, dict[str, Any] | None]:
     game = ctx.game
     brain = ctx.brain
     scene_present_ids = ctx.scene_present_ids

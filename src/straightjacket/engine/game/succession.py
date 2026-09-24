@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from typing import Any
 import random as _random_module
 from concurrent.futures import ThreadPoolExecutor
 
@@ -106,7 +107,7 @@ def _reset_for_successor(
     game: GameState,
     surviving_threads: list[ThreadEntry],
     surviving_threats: list[ThreatData],
-    surviving_npcs: list,
+    surviving_npcs: list[Any],
     surviving_connection_tracks: list[ProgressTrack],
 ) -> None:
     _e = eng()
@@ -153,7 +154,7 @@ def _reset_for_successor(
     )
 
 
-def _replace_character_identity(game: GameState, creation_data: dict) -> None:
+def _replace_character_identity(game: GameState, creation_data: dict[str, Any]) -> None:
     pkg = load_package(creation_data["setting_id"])
     stats = creation_data["stats"]
     validate_stats(stats)
@@ -211,7 +212,7 @@ def _replace_character_identity(game: GameState, creation_data: dict) -> None:
 def start_succession_with_character(
     provider: AIProvider,
     game: GameState,
-    creation_data: dict,
+    creation_data: dict[str, Any],
     config: EngineConfig | None = None,
 ) -> tuple[GameState, str]:
     if not game.campaign.pending_succession:
@@ -280,7 +281,7 @@ def _generate_succession_opening(provider: AIProvider, game: GameState, config: 
     def _run_narrator() -> str:
         return call_narrator(provider, narrator_prompt, game, config)
 
-    def _run_voicing() -> dict | None:
+    def _run_voicing() -> dict[str, Any] | None:
         return call_blueprint_voicing(provider, game, seed, config)
 
     with ThreadPoolExecutor(max_workers=2) as pool:

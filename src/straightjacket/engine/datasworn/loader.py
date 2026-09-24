@@ -1,3 +1,4 @@
+from typing import Any
 from pathlib import Path
 import json
 import random
@@ -9,7 +10,7 @@ from ..logging_util import log
 _DATA_DIR = PROJECT_ROOT / "data"
 
 
-def extract_title(obj: dict, fallback: str = "") -> str:
+def extract_title(obj: dict[str, Any], fallback: str = "") -> str:
     title_raw = obj.get("title")
     if isinstance(title_raw, dict):
         return str(title_raw.get("canonical") or title_raw.get("standard") or fallback)
@@ -17,7 +18,8 @@ def extract_title(obj: dict, fallback: str = "") -> str:
         return title_raw
     obj_id = obj.get("_id", "")
     if obj_id:
-        return obj_id.rsplit("/", 1)[-1].replace("_", " ").title()
+        result: str = obj_id.rsplit("/", 1)[-1].replace("_", " ").title()
+        return result
     return fallback
 
 
@@ -27,7 +29,7 @@ class OracleRow:
     max: int
     text: str
 
-    oracle_rolls: list | None = None
+    oracle_rolls: list[Any] | None = None
 
     def __str__(self) -> str:
         return self.text
@@ -68,14 +70,15 @@ class OracleTable:
 
 
 class Setting:
-    def __init__(self, raw: dict):
+    def __init__(self, raw: dict[str, Any]):
         self._raw = raw
         self._oracles: dict[str, OracleTable] = {}
         self._load_oracles()
 
     @property
     def id(self) -> str:
-        return self._raw.get("_id", "")
+        result: str = self._raw.get("_id", "")
+        return result
 
     @property
     def title(self) -> str:
@@ -85,14 +88,14 @@ class Setting:
         for coll_id, coll in self._raw.get("oracles", {}).items():
             self._load_oracle_collection(coll_id, coll)
 
-    def _load_oracle_collection(self, path: str, coll: dict) -> None:
+    def _load_oracle_collection(self, path: str, coll: dict[str, Any]) -> None:
         for table_id, table_data in (coll.get("contents") or {}).items():
             full_id = f"{path}/{table_id}"
             self._oracles[full_id] = self._parse_oracle_table(full_id, table_data, path)
         for sub_id, sub_coll in (coll.get("collections") or {}).items():
             self._load_oracle_collection(f"{path}/{sub_id}", sub_coll)
 
-    def _parse_oracle_table(self, full_id: str, data: dict, collection_path: str) -> OracleTable:
+    def _parse_oracle_table(self, full_id: str, data: dict[str, Any], collection_path: str) -> OracleTable:
         title = extract_title(data, full_id)
         rows = []
         for r in data.get("rows", []):
@@ -128,29 +131,30 @@ class Setting:
     def asset_categories(self) -> list[str]:
         return sorted(self._raw.get("assets", {}).keys())
 
-    def assets(self, category: str) -> list[dict]:
+    def assets(self, category: str) -> list[dict[str, Any]]:
         cat = self._raw.get("assets", {}).get(category, {})
         return list(cat.get("contents", {}).values())
 
-    def asset(self, category: str, asset_id: str) -> dict | None:
+    def asset(self, category: str, asset_id: str) -> dict[str, Any] | None:
         cat = self._raw.get("assets", {}).get(category, {})
-        return cat.get("contents", {}).get(asset_id)
+        result: dict[str, Any] | None = cat.get("contents", {}).get(asset_id)
+        return result
 
-    def paths(self) -> list[dict]:
+    def paths(self) -> list[dict[str, Any]]:
         return self.assets("path")
 
-    def moves(self, category: str) -> list[dict]:
+    def moves(self, category: str) -> list[dict[str, Any]]:
         cat = self._raw.get("moves", {}).get(category, {})
         return list(cat.get("contents", {}).values())
 
-    def truths(self) -> dict:
+    def truths(self) -> dict[str, Any]:
         return dict(self._raw.get("truths", {}))
 
-    def stats(self) -> dict:
+    def stats(self) -> dict[str, Any]:
         return dict(self._raw.get("rules", {}).get("stats", {}))
 
     @property
-    def raw(self) -> dict:
+    def raw(self) -> dict[str, Any]:
         return self._raw
 
 

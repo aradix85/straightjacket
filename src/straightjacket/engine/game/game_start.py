@@ -1,3 +1,4 @@
+from typing import Any
 from concurrent.futures import ThreadPoolExecutor
 
 import random as _random_module
@@ -60,7 +61,7 @@ def validate_stats(stats: dict[str, int]) -> None:
         raise ValueError(f"Invalid stat distribution: {sorted(values, reverse=True)}")
 
 
-def validate_creation(creation_data: dict, pkg: object) -> None:
+def validate_creation(creation_data: dict[str, Any], pkg: object) -> None:
     _e = eng()
 
     if not isinstance(pkg, SettingPackage):
@@ -187,7 +188,7 @@ def _seed_vow_subject(game: GameState, vow_subject: str) -> None:
 
 
 def start_new_game(
-    provider: AIProvider, creation_data: dict, config: EngineConfig | None = None, username: str = ""
+    provider: AIProvider, creation_data: dict[str, Any], config: EngineConfig | None = None, username: str = ""
 ) -> tuple[GameState, str]:
     setting_id = creation_data["setting_id"]
     stats = creation_data["stats"]
@@ -289,7 +290,7 @@ def start_new_game(
     def _run_narrator() -> str:
         return call_narrator(provider, narrator_prompt, game, config)
 
-    def _run_voicing() -> dict | None:
+    def _run_voicing() -> dict[str, Any] | None:
         return call_blueprint_voicing(provider, game, seed, config)
 
     with ThreadPoolExecutor(max_workers=2) as pool:
@@ -345,5 +346,5 @@ def start_new_game(
     return game, narration
 
 
-def _apply_opening_setup(game: GameState, data: dict) -> None:
+def _apply_opening_setup(game: GameState, data: dict[str, Any]) -> None:
     apply_opening_setup(game, data, clocks_mode="replace", label="OpeningSetup")

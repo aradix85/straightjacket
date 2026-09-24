@@ -73,7 +73,8 @@ def parse_effects(effect_list: list[str]) -> list[MoveEffect]:
 
 def _roll_pay_the_price(game: GameState) -> str:
     pay_lines = eng().get_raw("pay_the_price")
-    return random.choice(pay_lines).format(player=game.player_name)
+    result: str = random.choice(pay_lines).format(player=game.player_name)
+    return result
 
 
 def _apply_momentum_effect(game: GameState, effect: MoveEffect, result: OutcomeResult, target: NpcData | None) -> None:

@@ -64,6 +64,7 @@ __all__ = [
     "roll_event_focus",
     "roll_meaning_table",
     "roll_oracle_answer",
+    "roll_progress",
     "roll_turning_point",
     "run_inheritance_rolls",
     "seed_successor_legacy",
@@ -89,8 +90,8 @@ from .adventure_crafter import (
     lookup_theme_priority,
     roll_turning_point,
 )
+from ..models import ClockFillResult
 from .clock_consequences import (
-    ClockFillResult,
     resolve_clock_fill,
 )
 from .consequences import (

@@ -1,3 +1,4 @@
+from typing import Any
 import json
 
 from ..config_loader import model_for_role, sampling_params
@@ -16,7 +17,7 @@ from .schemas import get_chapter_summary_schema
 
 def call_chapter_summary(
     provider: AIProvider, game: GameState, config: EngineConfig | None = None, epilogue_text: str = ""
-) -> dict:
+) -> dict[str, Any]:
     _cfg = config or EngineConfig()
     lang = get_narration_lang(_cfg)
     _e = eng()
@@ -63,7 +64,8 @@ def call_chapter_summary(
             **sampling_params("chapter_summary"),
         )
         response = create_with_retry(provider, spec)
-        return json.loads(response.content)
+        result: dict[str, Any] = json.loads(response.content)
+        return result
     except Exception as e:
         log(f"[ChapterSummary] Structured output failed ({type(e).__name__}: {e}), using fallback", level="warning")
         return {

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from typing import Any
 from dataclasses import dataclass, field
 
 from ..i18n import t
@@ -49,11 +50,11 @@ class SceneLogEntry(SerializableMixin):
     clock_events: list[ClockEvent] = field(default_factory=list)
     position: str = "risky"
     effect: str = "standard"
-    npc_activation: dict = field(default_factory=dict)
+    npc_activation: dict[str, Any] = field(default_factory=dict)
     rich_summary: str = ""
     director_trigger: str = ""
     oracle_answer: str = ""
-    revelation_check: dict = field(default_factory=dict)
+    revelation_check: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -185,7 +186,7 @@ class NarrativeState(SerializableMixin):
     plotlines_list: list[PlotlineEntry] = field(default_factory=list)
     keyed_scenes: list[KeyedScene] = field(default_factory=list)
 
-    def snapshot(self) -> dict:
+    def snapshot(self) -> dict[str, Any]:
         return {
             "scene_count": self.scene_count,
             "session_log_len": len(self.session_log),
@@ -206,7 +207,7 @@ class NarrativeState(SerializableMixin):
             else None,
         }
 
-    def restore(self, snap: dict) -> None:
+    def restore(self, snap: dict[str, Any]) -> None:
         self.scene_count = snap["scene_count"]
         self.director_guidance = DirectorGuidance.from_dict(snap["director_guidance"])
         self.scene_intensity_history = list(snap["scene_intensity_history"])
@@ -331,7 +332,7 @@ class CampaignState(SerializableMixin):
     def xp_available(self) -> int:
         return self.xp - self.xp_spent
 
-    def snapshot(self) -> dict:
+    def snapshot(self) -> dict[str, Any]:
         return {
             "epilogue_shown": self.epilogue_shown,
             "epilogue_dismissed": self.epilogue_dismissed,
@@ -343,7 +344,7 @@ class CampaignState(SerializableMixin):
             "legacy_discoveries": self.legacy_discoveries.to_dict(),
         }
 
-    def restore(self, snap: dict) -> None:
+    def restore(self, snap: dict[str, Any]) -> None:
         self.epilogue_shown = snap["epilogue_shown"]
         self.epilogue_dismissed = snap["epilogue_dismissed"]
         self.pending_succession = snap["pending_succession"]

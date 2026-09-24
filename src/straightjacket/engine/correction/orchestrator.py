@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+from typing import Any
 from ...i18n import t
-from ..ai.brain import BrainResult, call_brain
+from ..ai.brain import call_brain
+from ..models import BrainResult
 from ..ai.provider_base import AIProvider
 from ..datasworn.moves import get_moves
 from ..db import sync as _db_sync
@@ -40,7 +42,7 @@ def _restore_from_snapshot(game: GameState, snap: TurnSnapshot) -> None:
 
 
 def _handle_input_misread(
-    provider: AIProvider, game: GameState, snap: TurnSnapshot, analysis: dict, _cfg: EngineConfig
+    provider: AIProvider, game: GameState, snap: TurnSnapshot, analysis: dict[str, Any], _cfg: EngineConfig
 ) -> tuple[BrainResult, RollResult | None, str, list[str]]:
     _restore_from_snapshot(game, snap)
     corrected_input = analysis["corrected_input"] or snap.player_input
@@ -105,7 +107,7 @@ def _handle_input_misread(
 
 
 def _handle_state_error(
-    game: GameState, snap: TurnSnapshot, analysis: dict
+    game: GameState, snap: TurnSnapshot, analysis: dict[str, Any]
 ) -> tuple[BrainResult, RollResult | None, str, list[str]]:
     roll = snap.roll
 
@@ -195,8 +197,13 @@ def _update_correction_logs(
 
 
 def _maybe_queue_director(
-    game: GameState, analysis: dict, roll: RollResult | None, narration: str, metadata: dict, _cfg: EngineConfig
-) -> dict | None:
+    game: GameState,
+    analysis: dict[str, Any],
+    roll: RollResult | None,
+    narration: str,
+    metadata: dict[str, Any],
+    _cfg: EngineConfig,
+) -> dict[str, Any] | None:
     if not analysis["director_useful"]:
         return None
     director_reason = should_call_director(
@@ -217,7 +224,7 @@ def _maybe_queue_director(
 
 def process_correction(
     provider: AIProvider, game: GameState, correction_text: str, config: EngineConfig | None = None
-) -> tuple[GameState, str, dict | None]:
+) -> tuple[GameState, str, dict[str, Any] | None]:
     snap = game.last_turn_snapshot
     if not snap:
         log("[Correction] No snapshot available — cannot correct", level="warning")

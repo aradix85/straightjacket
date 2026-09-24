@@ -1,3 +1,4 @@
+from typing import Any
 import asyncio
 
 from starlette.websockets import WebSocket, WebSocketDisconnect
@@ -35,14 +36,14 @@ from .serializers import (
 from .session import BurnOffer, Session
 
 
-async def _send(ws: WebSocket, msg: dict) -> None:
+async def _send(ws: WebSocket, msg: dict[str, Any]) -> None:
     try:
         await ws.send_json(msg)
     except (WebSocketDisconnect, RuntimeError, OSError) as e:
         log(f"[Web] _send on dead ws ({msg.get('type', '?')}): {e}", level="debug")
 
 
-async def _require_str(ws: WebSocket, msg: dict, key: str, error_key: str) -> str | None:
+async def _require_str(ws: WebSocket, msg: dict[str, Any], key: str, error_key: str) -> str | None:
     value = msg.get(key)
     if not isinstance(value, str):
         await _send(ws, {"type": "error", "text": t(error_key)})
@@ -54,12 +55,12 @@ async def _require_str(ws: WebSocket, msg: dict, key: str, error_key: str) -> st
     return trimmed
 
 
-async def handle_list_players(_session: Session, ws: WebSocket, _msg: dict) -> None:
+async def handle_list_players(_session: Session, ws: WebSocket, _msg: dict[str, Any]) -> None:
     players = [u["name"] for u in list_users()]
     await _send(ws, {"type": "players_list", "players": players})
 
 
-async def handle_create_player(session: Session, ws: WebSocket, msg: dict) -> None:
+async def handle_create_player(session: Session, ws: WebSocket, msg: dict[str, Any]) -> None:
     name = await _require_str(ws, msg, "name", "error.empty_player_name")
     if name is None:
         return
@@ -67,7 +68,7 @@ async def handle_create_player(session: Session, ws: WebSocket, msg: dict) -> No
     await handle_select_player(session, ws, {"name": name})
 
 
-async def handle_select_player(session: Session, ws: WebSocket, msg: dict) -> None:
+async def handle_select_player(session: Session, ws: WebSocket, msg: dict[str, Any]) -> None:
     name = await _require_str(ws, msg, "name", "error.no_player_name")
     if name is None:
         return
@@ -102,7 +103,7 @@ async def handle_select_player(session: Session, ws: WebSocket, msg: dict) -> No
         )
 
 
-async def handle_delete_player(session: Session, ws: WebSocket, msg: dict) -> None:
+async def handle_delete_player(session: Session, ws: WebSocket, msg: dict[str, Any]) -> None:
     name = await _require_str(ws, msg, "name", "error.no_player_name")
     if name is None:
         return
@@ -113,7 +114,7 @@ async def handle_delete_player(session: Session, ws: WebSocket, msg: dict) -> No
     await handle_list_players(session, ws, msg)
 
 
-async def handle_start_game(session: Session, ws: WebSocket, msg: dict) -> None:
+async def handle_start_game(session: Session, ws: WebSocket, msg: dict[str, Any]) -> None:
     if session.processing:
         await _send(ws, {"type": "error", "text": t("game.still_processing")})
         return
@@ -150,7 +151,7 @@ async def handle_start_game(session: Session, ws: WebSocket, msg: dict) -> None:
         session.processing = False
 
 
-async def handle_player_input(session: Session, ws: WebSocket, msg: dict) -> None:
+async def handle_player_input(session: Session, ws: WebSocket, msg: dict[str, Any]) -> None:
     if session.processing:
         await _send(ws, {"type": "error", "text": t("game.still_processing")})
         return
@@ -252,7 +253,7 @@ async def handle_player_input(session: Session, ws: WebSocket, msg: dict) -> Non
         session.processing = False
 
 
-async def handle_correction(session: Session, ws: WebSocket, msg: dict) -> None:
+async def handle_correction(session: Session, ws: WebSocket, msg: dict[str, Any]) -> None:
     if session.processing:
         await _send(ws, {"type": "error", "text": t("game.still_processing")})
         return
@@ -293,7 +294,7 @@ async def handle_correction(session: Session, ws: WebSocket, msg: dict) -> None:
         session.processing = False
 
 
-async def handle_burn_momentum(session: Session, ws: WebSocket, msg: dict) -> None:
+async def handle_burn_momentum(session: Session, ws: WebSocket, msg: dict[str, Any]) -> None:
     if not session.game:
         return
 
@@ -334,14 +335,14 @@ async def handle_burn_momentum(session: Session, ws: WebSocket, msg: dict) -> No
         session.processing = False
 
 
-async def handle_list_saves(session: Session, ws: WebSocket, _msg: dict) -> None:
+async def handle_list_saves(session: Session, ws: WebSocket, _msg: dict[str, Any]) -> None:
     if not session.player:
         return
     saves = list_saves_with_info(session.player)
     await _send(ws, {"type": "saves_list", "saves": saves})
 
 
-async def handle_save(session: Session, ws: WebSocket, msg: dict) -> None:
+async def handle_save(session: Session, ws: WebSocket, msg: dict[str, Any]) -> None:
     if not session.game or not session.player:
         return
 
@@ -354,7 +355,7 @@ async def handle_save(session: Session, ws: WebSocket, msg: dict) -> None:
     await _send(ws, {"type": "status", "text": t("actions.saved")})
 
 
-async def handle_load(session: Session, ws: WebSocket, msg: dict) -> None:
+async def handle_load(session: Session, ws: WebSocket, msg: dict[str, Any]) -> None:
     if not session.player:
         return
 
@@ -380,7 +381,7 @@ async def handle_load(session: Session, ws: WebSocket, msg: dict) -> None:
     )
 
 
-async def handle_delete_save(session: Session, ws: WebSocket, msg: dict) -> None:
+async def handle_delete_save(session: Session, ws: WebSocket, msg: dict[str, Any]) -> None:
     if not session.player:
         return
     name = await _require_str(ws, msg, "name", "error.no_player_name")
@@ -390,7 +391,7 @@ async def handle_delete_save(session: Session, ws: WebSocket, msg: dict) -> None
     await handle_list_saves(session, ws, msg)
 
 
-async def handle_recap(session: Session, ws: WebSocket, _msg: dict) -> None:
+async def handle_recap(session: Session, ws: WebSocket, _msg: dict[str, Any]) -> None:
     if not session.game or session.processing:
         return
     session.processing = True
@@ -405,7 +406,7 @@ async def handle_recap(session: Session, ws: WebSocket, _msg: dict) -> None:
         session.processing = False
 
 
-async def handle_status_query(session: Session, ws: WebSocket, _msg: dict) -> None:
+async def handle_status_query(session: Session, ws: WebSocket, _msg: dict[str, Any]) -> None:
     if not session.game:
         await _send(ws, {"type": "status", "text": t("status.no_game")})
         return
@@ -413,7 +414,7 @@ async def handle_status_query(session: Session, ws: WebSocket, _msg: dict) -> No
     await _send(ws, {"type": "status", "text": text})
 
 
-async def handle_tracks_query(session: Session, ws: WebSocket, _msg: dict) -> None:
+async def handle_tracks_query(session: Session, ws: WebSocket, _msg: dict[str, Any]) -> None:
     if not session.game:
         await _send(ws, {"type": "status", "text": t("status.no_game")})
         return
@@ -421,7 +422,7 @@ async def handle_tracks_query(session: Session, ws: WebSocket, _msg: dict) -> No
     await _send(ws, {"type": "status", "text": text})
 
 
-async def handle_threats_query(session: Session, ws: WebSocket, _msg: dict) -> None:
+async def handle_threats_query(session: Session, ws: WebSocket, _msg: dict[str, Any]) -> None:
     if not session.game:
         await _send(ws, {"type": "status", "text": t("status.no_game")})
         return
@@ -429,7 +430,7 @@ async def handle_threats_query(session: Session, ws: WebSocket, _msg: dict) -> N
     await _send(ws, {"type": "status", "text": text})
 
 
-async def handle_advance_asset(session: Session, ws: WebSocket, msg: dict) -> None:
+async def handle_advance_asset(session: Session, ws: WebSocket, msg: dict[str, Any]) -> None:
     if not session.game:
         await _send(ws, {"type": "status", "text": t("status.no_game")})
         return
@@ -454,7 +455,7 @@ async def handle_advance_asset(session: Session, ws: WebSocket, msg: dict) -> No
     await _send(ws, {"type": "status", "text": t(msg_key, asset=asset_id, cost=spent)})
 
 
-async def handle_generate_epilogue(session: Session, ws: WebSocket, _msg: dict) -> None:
+async def handle_generate_epilogue(session: Session, ws: WebSocket, _msg: dict[str, Any]) -> None:
     if not session.game or session.processing:
         return
     session.processing = True
@@ -472,14 +473,14 @@ async def handle_generate_epilogue(session: Session, ws: WebSocket, _msg: dict) 
         session.processing = False
 
 
-async def handle_dismiss_epilogue(session: Session, _ws: WebSocket, _msg: dict) -> None:
+async def handle_dismiss_epilogue(session: Session, _ws: WebSocket, _msg: dict[str, Any]) -> None:
     if not session.game:
         return
     session.game.campaign.epilogue_dismissed = True
     save_game(session.game, session.player, session.chat_messages, session.save_name)
 
 
-async def handle_new_chapter(session: Session, ws: WebSocket, _msg: dict) -> None:
+async def handle_new_chapter(session: Session, ws: WebSocket, _msg: dict[str, Any]) -> None:
     if not session.game or session.processing:
         return
     session.processing = True
@@ -509,7 +510,7 @@ async def handle_new_chapter(session: Session, ws: WebSocket, _msg: dict) -> Non
         session.processing = False
 
 
-async def handle_retire(session: Session, ws: WebSocket, _msg: dict) -> None:
+async def handle_retire(session: Session, ws: WebSocket, _msg: dict[str, Any]) -> None:
     if not session.game or session.processing:
         return
     session.processing = True
@@ -535,7 +536,7 @@ async def handle_retire(session: Session, ws: WebSocket, _msg: dict) -> None:
         session.processing = False
 
 
-async def handle_start_succession(session: Session, ws: WebSocket, msg: dict) -> None:
+async def handle_start_succession(session: Session, ws: WebSocket, msg: dict[str, Any]) -> None:
     if not session.game or session.processing:
         return
     if not session.game.campaign.pending_succession:
@@ -571,7 +572,7 @@ async def handle_start_succession(session: Session, ws: WebSocket, msg: dict) ->
         session.processing = False
 
 
-async def handle_request_succession_creation(session: Session, ws: WebSocket, _msg: dict) -> None:
+async def handle_request_succession_creation(session: Session, ws: WebSocket, _msg: dict[str, Any]) -> None:
     if not session.game:
         await _send(ws, {"type": "error", "text": t("error.no_active_game")})
         return
@@ -588,7 +589,7 @@ async def handle_request_succession_creation(session: Session, ws: WebSocket, _m
     )
 
 
-async def handle_debug_state(session: Session, ws: WebSocket, _msg: dict) -> None:
+async def handle_debug_state(session: Session, ws: WebSocket, _msg: dict[str, Any]) -> None:
     if not session.game:
         await _send(ws, {"type": "debug_state", "data": None})
         return

@@ -75,4 +75,5 @@ def call_recap(provider: AIProvider, game: GameState, config: EngineConfig | Non
         return response.content
     except Exception as e:
         log(f"[Recap] Failed: {e}", level="warning")
-        return _defaults["recap_fallback"].format(player_name=game.player_name)
+        result: str = _defaults["recap_fallback"].format(player_name=game.player_name)
+        return result

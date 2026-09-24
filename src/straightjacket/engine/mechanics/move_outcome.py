@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from typing import Any
 from ..engine_loader import eng
 from ..models import GameState
 from .move_effects import OutcomeResult, apply_effects, parse_effects
@@ -36,7 +37,7 @@ def resolve_move_outcome(
     return apply_effects(game, effects, target_npc_id=target_npc_id)
 
 
-def _dispatch_handler(game: GameState, handler: str, roll_result: str, params: dict) -> OutcomeResult:
+def _dispatch_handler(game: GameState, handler: str, roll_result: str, params: dict[str, Any]) -> OutcomeResult:
     handlers = {
         "suffer": apply_suffer_handler,
         "threshold": apply_threshold_handler,

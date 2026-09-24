@@ -133,7 +133,8 @@ def lookup_meta_plot_point(roll: int) -> str:
     data = _load_ac_data()
     for entry in data["meta_plot_points"]:
         if entry["min"] <= roll <= entry["max"]:
-            return entry["name"]
+            result: str = entry["name"]
+            return result
     raise LookupError(
         f"no meta_plot_points entry covers roll={roll}; data/adventure_crafter.json meta_plot_points may be incomplete"
     )

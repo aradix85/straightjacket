@@ -1,3 +1,4 @@
+from typing import Any
 import json
 from collections.abc import Sequence
 
@@ -19,7 +20,7 @@ def call_narrator(
     config: EngineConfig | None = None,
     system_suffix: str = "",
     skip_history: bool = False,
-    extra_messages: Sequence[dict] = (),
+    extra_messages: Sequence[dict[str, Any]] = (),
 ) -> str:
     log(f"[Narrator] Calling narrator (prompt: {len(prompt)} chars{', skip_history' if skip_history else ''})")
     messages = []
@@ -71,7 +72,7 @@ def call_narrator(
 
 def call_opening_setup(
     provider: AIProvider, narration: str, game: GameState, config: EngineConfig | None = None
-) -> dict:
+) -> dict[str, Any]:
     lang = get_narration_lang(config or EngineConfig())
 
     system = get_prompt("opening_setup_extractor", lang=lang)
@@ -94,7 +95,7 @@ IMPORTANT: {game.player_name} is the PLAYER CHARACTER — do NOT include them as
             **sampling_params("opening_setup"),
         )
         response = create_with_retry(provider, spec)
-        data = json.loads(response.content)
+        data: dict[str, Any] = json.loads(response.content)
         log(
             f"[OpeningSetup] Extracted: {len(data['npcs'])} NPCs, "
             f"{len(data['clocks'])} clocks, "
@@ -121,7 +122,7 @@ def call_narrator_metadata(
     config: EngineConfig | None = None,
     brain: BrainResult | None = None,
     consequences: Sequence[str] = (),
-) -> dict:
+) -> dict[str, Any]:
     _cfg = config or EngineConfig()
     lang = get_narration_lang(_cfg)
 
@@ -181,7 +182,7 @@ Extract all metadata from the narration above. Remember: {game.player_name} is t
             **sampling_params("narrator_metadata"),
         )
         response = create_with_retry(provider, spec)
-        metadata = json.loads(response.content)
+        metadata: dict[str, Any] = json.loads(response.content)
         log(
             f"[Metadata] Extracted: "
             f"{len(metadata['new_npcs'])} new NPCs, "

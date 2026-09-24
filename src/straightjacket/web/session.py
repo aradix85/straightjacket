@@ -29,7 +29,7 @@ class BurnOffer:
 class Session:
     player: str = ""
     game: GameState | None = None
-    chat_messages: list[dict] = field(default_factory=list)
+    chat_messages: list[dict[str, Any]] = field(default_factory=list)
     config: EngineConfig = field(default_factory=EngineConfig)
     save_name: str = field(default_factory=_default_save_name)
     processing: bool = False
@@ -63,8 +63,9 @@ class Session:
 
     def orphan_input(self) -> str | None:
         if self.chat_messages and self.chat_messages[-1].get("role") == "user":
-            return self.chat_messages[-1].get("content", "")
+            result: str | None = self.chat_messages[-1].get("content", "")
+            return result
         return None
 
-    def filtered_messages(self) -> list[dict]:
+    def filtered_messages(self) -> list[dict[str, Any]]:
         return [m for m in self.chat_messages if not m.get("recap")]

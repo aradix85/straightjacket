@@ -1,12 +1,13 @@
 from __future__ import annotations
 
+from typing import Any
 from ..engine_loader import eng
 from ..models import GameState
 from .impacts import apply_impact, blocks_recovery, clear_impact
 from .move_effects import OutcomeResult, _roll_pay_the_price
 
 
-def apply_suffer_handler(game: GameState, roll_result: str, params: dict) -> OutcomeResult:
+def apply_suffer_handler(game: GameState, roll_result: str, params: dict[str, Any]) -> OutcomeResult:
     result = OutcomeResult()
     _e = eng()
     _labels = _e.ai_text.consequence_labels
@@ -65,7 +66,7 @@ def apply_suffer_handler(game: GameState, roll_result: str, params: dict) -> Out
     return result
 
 
-def apply_threshold_handler(game: GameState, roll_result: str, params: dict) -> OutcomeResult:
+def apply_threshold_handler(game: GameState, roll_result: str, params: dict[str, Any]) -> OutcomeResult:
     result = OutcomeResult()
     _labels = eng().ai_text.consequence_labels
 
@@ -85,7 +86,7 @@ def apply_threshold_handler(game: GameState, roll_result: str, params: dict) -> 
     return result
 
 
-def apply_recovery_handler(game: GameState, roll_result: str, params: dict) -> OutcomeResult:
+def apply_recovery_handler(game: GameState, roll_result: str, params: dict[str, Any]) -> OutcomeResult:
     result = OutcomeResult()
     _e = eng()
     _labels = _e.ai_text.consequence_labels

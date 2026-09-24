@@ -7,6 +7,20 @@ Originally forked from [EdgeTales](https://github.com/edgetales/edgetales). See 
 
 Straightjacket uses calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day. The first CalVer release is `2026.04.25.0`. Earlier `0.x.y` releases keep their original version numbers and are not renumbered. The switch was made because the project has no public API to version semantically against — the `0.x.y` numbers were running counters with no meaning, and dates carry the meaning the numbers didn't.
 
+## [2026.09.24.5] — 2026-09-24
+
+mypy runs in strict mode. `mypy --strict` reported 398 errors; it now reports none, and `[tool.mypy]` in `pyproject.toml` says `strict = true` instead of listing six individual flags.
+
+Explicit re-exports (131 errors). `models.py` and `engine_config.py` declare `__all__`. Seven imports that reached a name through a module that merely imported it now import from the defining module (`BrainResult` and `ClockFillResult` from `models`, `normalize_disposition` from `emotions_loader`), and `roll_progress` joins the `mechanics` public API.
+
+Generic parameters (237 errors). Every bare `dict`, `list`, `set`, and `Callable` in annotations states its parameters: `dict[str, Any]`, `list[Any]`, `set[Any]`, `Callable[..., Any]`. mypy found no conflicts afterwards; every annotated dict does have string keys. Narrowing `Any` to concrete types stays audit work.
+
+Any at the boundary (30 errors). Values that arrive as `Any` from yaml, JSON, `getattr`, or `dict[str, Any]` get their declared type where they enter typed code: an annotated first assignment, a declaration before a loop, or a typed local before the return. Behaviour is unchanged. Three spots needed more than that: `get_prompt` types its template as `str | None` until the unknown-prompt check, `resolve_time_progression` picks one key instead of returning from two annotated branches, and `call_blueprint_voicing` types the parsed voicing as `dict[str, Any]`.
+
+The extra typed locals pushed coverage to 87.99%, and the floor from 2026.09.24.2 failed the gate as intended. Instead of lowering the floor, the new `tests/test_extract_title.py` covers the three untested branches of `datasworn/loader.py::extract_title` (dict title, string title, fallback) in seven cases.
+
+Quality gate: 1267 tests green, twenty-eight project-rule scans clean, coverage 88.16%, ruff check and ruff format clean, mypy --strict clean on 105 source files. Save format unchanged.
+
 ## [2026.09.24.4] — 2026-09-24
 
 Import layers become a rule, and the two dependencies that broke it are fixed at the root.

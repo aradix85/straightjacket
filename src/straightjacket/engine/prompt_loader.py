@@ -1,3 +1,4 @@
+from typing import Any
 from pathlib import Path
 
 from .bootstrap_log import bootstrap_log as _log
@@ -13,7 +14,7 @@ def _prompts_dir() -> Path:
 _prompts: dict[str, str] | None = None
 
 
-def _ensure_loaded() -> dict:
+def _ensure_loaded() -> dict[str, Any]:
     global _prompts
     if _prompts is None:
         directory = _prompts_dir()
@@ -30,9 +31,10 @@ def _ensure_loaded() -> dict:
 
 def get_prompt(name: str, **variables: str) -> str:
     prompts = _ensure_loaded()
-    template = prompts.get(name)
+    template: str | None = prompts.get(name)
     if template is None:
         raise KeyError(f"Unknown prompt: '{name}'")
     if variables:
-        return template.format_map(PartialFormatDict(variables))
+        result: str = template.format_map(PartialFormatDict(variables))
+        return result
     return template

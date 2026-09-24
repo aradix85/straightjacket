@@ -179,7 +179,8 @@ class EngineSettings:
     def compiled_patterns(self, section: str, key: str) -> list[Any]:
         cache_key = f"patterns:{section}.{key}"
         if cache_key in self._compiled_patterns:
-            return self._compiled_patterns[cache_key]
+            result: list[Any] = self._compiled_patterns[cache_key]
+            return result
         raw_patterns = self._raw[section][key]
         compiled = [re.compile(p, re.IGNORECASE) for p in raw_patterns]
         self._compiled_patterns[cache_key] = compiled
@@ -188,7 +189,8 @@ class EngineSettings:
     def compiled_labeled_patterns(self, section: str, key: str) -> list[tuple[Any, str]]:
         cache_key = f"labeled:{section}.{key}"
         if cache_key in self._compiled_patterns:
-            return self._compiled_patterns[cache_key]
+            result: list[tuple[Any, str]] = self._compiled_patterns[cache_key]
+            return result
         entries = self._raw[section][key]
         flag_map = {"multiline": re.MULTILINE}
         compiled: list[tuple[Any, str]] = []
@@ -613,3 +615,98 @@ def parse_engine_yaml(data: dict[str, Any]) -> EngineSettings:
         creativity_seeds=list(data["creativity_seeds"]),
         _raw=data,
     )
+
+
+__all__ = [
+    "ActProgressConfig",
+    "ActivationScores",
+    "AdventureCrafterConfig",
+    "AiTextConfig",
+    "BlueprintConfig",
+    "BondsConfig",
+    "ChaosConfig",
+    "ChaosResolverConfig",
+    "ChapterConfig",
+    "ClockCreationMappingEntry",
+    "ClockFillConsequenceEntry",
+    "ClockKeyedSceneEntry",
+    "ClockKeyedScenesConfig",
+    "ClocksConfig",
+    "CombatPosCondition",
+    "CorrectionConfig",
+    "CreationConfig",
+    "DescriptionDedupConfig",
+    "EffectResolverConfig",
+    "EffectResolverWeights",
+    "EngineMove",
+    "EngineSettings",
+    "EnumsConfig",
+    "FateConfig",
+    "FateLikelihoodRules",
+    "FlagCondition",
+    "FuzzyMatchConfig",
+    "ImpactConfig",
+    "InformationGateBuckets",
+    "InformationGateConfig",
+    "InformationGatePoints",
+    "InheritanceConfig",
+    "KeyedSceneMappingEntry",
+    "KeyedScenesConfig",
+    "LegacyConfig",
+    "LocationConfig",
+    "MemoryConfig",
+    "MemoryEmotions",
+    "MemoryRetrievalWeights",
+    "MemoryTemplates",
+    "MetaHandlerConfig",
+    "MetadataVotingConfig",
+    "MomentumConfig",
+    "MoveAvailabilityCondition",
+    "MoveAvailabilityRule",
+    "NamingConfig",
+    "NarrativeDirectionConfig",
+    "NarrativeDirectionEntry",
+    "NarrativeIntensityThresholds",
+    "NarratorStatusDescriptions",
+    "NotFlagCondition",
+    "NpcCarryoverEntry",
+    "NpcConfig",
+    "NpcMatchingConfig",
+    "OpeningConfig",
+    "PacingConfig",
+    "ParserConfig",
+    "PatternGrammar",
+    "PersistenceConfig",
+    "PlotPointRanges",
+    "PositionOverride",
+    "PositionResolverConfig",
+    "PositionResolverWeights",
+    "ProgressConfig",
+    "ProgressTrackType",
+    "PromptDisplayConfig",
+    "RandomEventKeyedSceneMappingEntry",
+    "RandomEventsConfig",
+    "RateLimitConfig",
+    "RecapLimitsConfig",
+    "ResourcesConfig",
+    "RetryConfig",
+    "SceneAdjustments",
+    "SceneContextTemplates",
+    "SetupCommonConfig",
+    "StanceBondBuckets",
+    "StanceMatrixEntry",
+    "StanceMoveBuckets",
+    "StatsConfig",
+    "StatusDescriptionsConfig",
+    "StopwordsConfig",
+    "StoryConfig",
+    "StoryStateConfig",
+    "SuccessionConfig",
+    "SufferRecoveryGain",
+    "TfIdfConfig",
+    "ThreatConfig",
+    "ThreatCreationMappingEntry",
+    "TimeProgressionSteps",
+    "TruncationsConfig",
+    "parse_engine_yaml",
+]

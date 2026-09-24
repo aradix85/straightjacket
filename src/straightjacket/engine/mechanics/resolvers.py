@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from typing import Any
 from ..engine_loader import eng
 from ..logging_util import log
 from ..models import BrainResult, GameState
@@ -75,7 +76,7 @@ def _score_threat_clocks(game: GameState) -> int:
     return max(penalty, w.threat_clock_critical * chaos_cfg.clock_pressure_cap_multiplier)
 
 
-def _score_secured_advantage(recent_log: list) -> int:
+def _score_secured_advantage(recent_log: list[Any]) -> int:
     w = eng().position_resolver.weights
     if recent_log and recent_log[-1].move == "secure_advantage" and recent_log[-1].result in ("STRONG_HIT", "WEAK_HIT"):
         return w.secured_advantage
@@ -198,12 +199,16 @@ def resolve_effect(game: GameState, brain: BrainResult, position: str) -> str:
 def resolve_time_progression(move: str, has_location_change: bool = False) -> str:
     tmap = eng().get_raw("time_progression_map")
     if has_location_change:
-        return tmap["_with_location_change"]
-    return tmap[move] if move in tmap else tmap["_catchall"]
+        key = "_with_location_change"
+    else:
+        key = move if move in tmap else "_catchall"
+    result: str = tmap[key]
+    return result
 
 
 def move_category(move: str) -> str:
     mc = eng().get_raw("move_categories")
+    cat: str
     for cat in mc:
         if move in mc[cat]:
             return cat

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from typing import Any
 from dataclasses import dataclass, field
 
 from ..logging_util import log
@@ -78,7 +79,7 @@ class Move:
         return ""
 
 
-def _parse_roll_option(raw: dict) -> RollOption:
+def _parse_roll_option(raw: dict[str, Any]) -> RollOption:
     assets_raw = raw.get("assets")
     return RollOption(
         using=raw.get("using", ""),
@@ -91,7 +92,7 @@ def _parse_roll_option(raw: dict) -> RollOption:
     )
 
 
-def _parse_condition(raw: dict) -> TriggerCondition:
+def _parse_condition(raw: dict[str, Any]) -> TriggerCondition:
     roll_options = [_parse_roll_option(ro) for ro in raw.get("roll_options", [])]
     return TriggerCondition(
         method=raw.get("method", ""),
@@ -100,7 +101,7 @@ def _parse_condition(raw: dict) -> TriggerCondition:
     )
 
 
-def _parse_outcomes(raw: dict | None) -> dict[str, MoveOutcome]:
+def _parse_outcomes(raw: dict[str, Any] | None) -> dict[str, MoveOutcome]:
     if not raw:
         return {}
     result: dict[str, MoveOutcome] = {}
@@ -111,7 +112,7 @@ def _parse_outcomes(raw: dict | None) -> dict[str, MoveOutcome]:
     return result
 
 
-def _parse_oracle_ids(raw: list | dict | None) -> list[str]:
+def _parse_oracle_ids(raw: list[Any] | dict[str, Any] | None) -> list[str]:
     if isinstance(raw, list):
         return [o for o in raw if isinstance(o, str)]
     if isinstance(raw, dict):
@@ -123,7 +124,7 @@ def _parse_oracle_ids(raw: list | dict | None) -> list[str]:
     return []
 
 
-def _parse_replaces(raw: list | str | None) -> list[str]:
+def _parse_replaces(raw: list[Any] | str | None) -> list[str]:
     if isinstance(raw, list):
         return [r for r in raw if isinstance(r, str)]
     if isinstance(raw, str):
@@ -131,7 +132,7 @@ def _parse_replaces(raw: list | str | None) -> list[str]:
     return []
 
 
-def _parse_move(raw: dict, category: str) -> Move:
+def _parse_move(raw: dict[str, Any], category: str) -> Move:
     trigger = raw.get("trigger", {})
     conditions_raw = trigger.get("conditions") or []
     tracks = raw.get("tracks", {})

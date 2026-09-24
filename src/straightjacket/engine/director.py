@@ -1,3 +1,4 @@
+from typing import Any
 import html
 import json
 import re
@@ -168,7 +169,7 @@ def build_director_prompt(game: GameState, latest_narration: str, config: Engine
 
 def call_director(
     provider: AIProvider, game: GameState, latest_narration: str, config: EngineConfig | None = None
-) -> dict:
+) -> dict[str, Any]:
     log(f"[Director] Analyzing scene {game.narrative.scene_count}")
 
     prompt = build_director_prompt(game, latest_narration, config)
@@ -223,7 +224,7 @@ def call_director(
         )
         response2 = create_with_retry(provider, spec2)
 
-        guidance = json.loads(response2.content)
+        guidance: dict[str, Any] = json.loads(response2.content)
 
         if isinstance(guidance["npc_guidance"], list):
             guidance["npc_guidance"] = {
@@ -287,7 +288,7 @@ def _reflection_is_truncated(text: str) -> bool:
     return not text.rstrip().endswith((".", "!", "?", '"', "»", "…", ")", "\u2013", "—"))
 
 
-def _append_reflection_memory(npc: NpcData, ref: dict, game: GameState) -> None:
+def _append_reflection_memory(npc: NpcData, ref: dict[str, Any], game: GameState) -> None:
     npc.memory.append(
         MemoryEntry(
             scene=game.narrative.scene_count,
@@ -305,7 +306,7 @@ def _append_reflection_memory(npc: NpcData, ref: dict, game: GameState) -> None:
     npc.last_reflection_scene = game.narrative.scene_count
 
 
-def _apply_agenda_and_instinct_updates(npc: NpcData, ref: dict) -> None:
+def _apply_agenda_and_instinct_updates(npc: NpcData, ref: dict[str, Any]) -> None:
     suggested_agenda = (ref["agenda"] or "").strip()
     suggested_instinct = (ref["instinct"] or "").strip()
     if suggested_agenda and not npc.agenda.strip():
@@ -350,7 +351,7 @@ def _clean_director_description(new_desc: str, npc_name: str) -> str:
     return new_desc
 
 
-def _apply_description_update(npc: NpcData, ref: dict) -> None:
+def _apply_description_update(npc: NpcData, ref: dict[str, Any]) -> None:
     new_desc = _clean_director_description((ref["updated_description"] or "").strip(), npc.name)
     if not new_desc or len(new_desc) <= 10:
         return
@@ -369,8 +370,8 @@ def _apply_description_update(npc: NpcData, ref: dict) -> None:
     )
 
 
-def _process_npc_reflection(game: GameState, ref: dict) -> str | None:
-    npc_id = ref["npc_id"]
+def _process_npc_reflection(game: GameState, ref: dict[str, Any]) -> str | None:
+    npc_id: str | None = ref["npc_id"]
     npc = find_npc(game, npc_id)
     if not npc:
         return None
@@ -395,7 +396,7 @@ def _process_npc_reflection(game: GameState, ref: dict) -> str | None:
     return npc_id
 
 
-def apply_director_guidance(game: GameState, guidance: dict) -> None:
+def apply_director_guidance(game: GameState, guidance: dict[str, Any]) -> None:
     if not guidance:
         _reset_all_reflection_flags(game, reason="empty guidance")
         return

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import Any, TYPE_CHECKING
 
 import yaml
 
@@ -71,7 +71,7 @@ class _SettingConfig:
     parent: str | None
 
 
-def _require_dict(data: dict, key: str, yaml_path: str) -> dict:
+def _require_dict(data: dict[str, Any], key: str, yaml_path: str) -> dict[str, Any]:
     if key not in data:
         raise KeyError(f"Required key '{key}' missing in {yaml_path}")
     value = data[key]
@@ -80,7 +80,7 @@ def _require_dict(data: dict, key: str, yaml_path: str) -> dict:
     return value
 
 
-def _require_str(data: dict, key: str, yaml_path: str) -> str:
+def _require_str(data: dict[str, Any], key: str, yaml_path: str) -> str:
     if key not in data:
         raise KeyError(f"Required key '{key}' missing in {yaml_path}")
     value = data[key]
@@ -89,7 +89,7 @@ def _require_str(data: dict, key: str, yaml_path: str) -> str:
     return value
 
 
-def _parse_oracle_paths_partial(data: dict) -> _OraclePathsPartial:
+def _parse_oracle_paths_partial(data: dict[str, Any]) -> _OraclePathsPartial:
     partial = _OraclePathsPartial()
     if "action_theme" in data:
         partial.action_theme = list(data["action_theme"])
@@ -102,14 +102,14 @@ def _parse_oracle_paths_partial(data: dict) -> _OraclePathsPartial:
     return partial
 
 
-def _parse_vocabulary(data: dict) -> VocabularyConfig:
+def _parse_vocabulary(data: dict[str, Any]) -> VocabularyConfig:
     return VocabularyConfig(
         substitutions=dict(data.get("substitutions", {})),
         sensory_palette=data.get("sensory_palette", ""),
     )
 
 
-def _parse_creation_flow_partial(data: dict | None) -> _CreationFlowPartial:
+def _parse_creation_flow_partial(data: dict[str, Any] | None) -> _CreationFlowPartial:
     partial = _CreationFlowPartial()
     if data is None:
         return partial
@@ -126,7 +126,7 @@ def _parse_creation_flow_partial(data: dict | None) -> _CreationFlowPartial:
     return partial
 
 
-def _parse_setting_config(data: dict, yaml_path: str) -> _SettingConfig:
+def _parse_setting_config(data: dict[str, Any], yaml_path: str) -> _SettingConfig:
     parent_raw = data.get("parent")
     return _SettingConfig(
         id=_require_str(data, "id", yaml_path),
@@ -293,7 +293,7 @@ def list_packages() -> list[str]:
     return sorted(p.stem for p in _SETTINGS_DIR.glob("*.yaml"))
 
 
-def _read_yaml(setting_id: str) -> tuple[dict, Path]:
+def _read_yaml(setting_id: str) -> tuple[dict[str, Any], Path]:
     yaml_path = _SETTINGS_DIR / f"{setting_id}.yaml"
     if not yaml_path.exists():
         raise FileNotFoundError(f"Setting package not found: {yaml_path}")

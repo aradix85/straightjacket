@@ -9,11 +9,11 @@ from ..engine_loader import eng
 from ..logging_util import log
 
 
-_registry: dict[str, dict[str, tuple[Callable, dict]]] = {}
+_registry: dict[str, dict[str, tuple[Callable[..., Any], dict[str, Any]]]] = {}
 
 
-def register(*roles: str) -> Callable:
-    def decorator(func: Callable) -> Callable:
+def register(*roles: str) -> Callable[..., Any]:
+    def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
         definition = _build_definition_from_yaml(func)
         for role in roles:
             if role not in _registry:
@@ -25,8 +25,10 @@ def register(*roles: str) -> Callable:
     return decorator
 
 
-def register_test_tool(*roles: str, description: str, params: Mapping[str, str] = MappingProxyType({})) -> Callable:
-    def decorator(func: Callable) -> Callable:
+def register_test_tool(
+    *roles: str, description: str, params: Mapping[str, str] = MappingProxyType({})
+) -> Callable[..., Any]:
+    def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
         definition = _build_definition_from_overrides(func, description=description, param_docs=params)
         for role in roles:
             if role not in _registry:
@@ -37,12 +39,12 @@ def register_test_tool(*roles: str, description: str, params: Mapping[str, str] 
     return decorator
 
 
-def get_tools(role: str) -> list[dict]:
+def get_tools(role: str) -> list[dict[str, Any]]:
     entries = _registry.get(role, {})
     return [defn for _, defn in entries.values()]
 
 
-def get_handler(role: str, name: str) -> Callable | None:
+def get_handler(role: str, name: str) -> Callable[..., Any] | None:
     entries = _registry.get(role, {})
     entry = entries.get(name)
     return entry[0] if entry else None
@@ -64,17 +66,21 @@ _TYPE_MAP: dict[type, str] = {
 }
 
 
-def _build_definition_from_yaml(func: Callable) -> dict:
+def _build_definition_from_yaml(func: Callable[..., Any]) -> dict[str, Any]:
     descriptions = eng().get_raw("tool_descriptions")
     entry = descriptions[func.__name__]
     return _assemble_definition(func, description=entry["description"], param_docs=entry["params"])
 
 
-def _build_definition_from_overrides(func: Callable, *, description: str, param_docs: Mapping[str, str]) -> dict:
+def _build_definition_from_overrides(
+    func: Callable[..., Any], *, description: str, param_docs: Mapping[str, str]
+) -> dict[str, Any]:
     return _assemble_definition(func, description=description, param_docs=param_docs)
 
 
-def _assemble_definition(func: Callable, *, description: str, param_docs: Mapping[str, str]) -> dict:
+def _assemble_definition(
+    func: Callable[..., Any], *, description: str, param_docs: Mapping[str, str]
+) -> dict[str, Any]:
     name = func.__name__
     hints = get_type_hints(func)
     sig = inspect.signature(func)

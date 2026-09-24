@@ -1,3 +1,4 @@
+from typing import Any
 import copy
 import random as _random_module
 import re
@@ -213,7 +214,7 @@ def _prepare_npcs_for_new_chapter(game: GameState) -> None:
 
 def _generate_chapter_opening(
     provider: AIProvider, game: GameState, config: EngineConfig | None, returning_npcs: list[NpcData]
-) -> tuple[str, dict]:
+) -> tuple[str, dict[str, Any]]:
     structure = choose_story_structure(game.setting_tone)
     rng = _random_module.Random()
     if structure == "kishotenketsu":
@@ -249,7 +250,7 @@ def _generate_chapter_opening(
     return narration, setup_data
 
 
-def _apply_blueprint(game: GameState, seed: BlueprintSeed, voicing: dict | None) -> None:
+def _apply_blueprint(game: GameState, seed: BlueprintSeed, voicing: dict[str, Any] | None) -> None:
     if voicing is not None:
         game.narrative.story_blueprint = materialize_blueprint(seed, voicing)
     else:
@@ -300,5 +301,5 @@ def _record_chapter_opening(game: GameState, narration: str) -> None:
     )
 
 
-def _apply_chapter_opening_setup(game: GameState, data: dict, returning_npcs: list[NpcData]) -> None:
+def _apply_chapter_opening_setup(game: GameState, data: dict[str, Any], returning_npcs: list[NpcData]) -> None:
     apply_opening_setup(game, data, returning_npcs=returning_npcs, clocks_mode="extend", label="ChapterSetup")

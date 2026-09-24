@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import ClassVar
+from typing import Any, ClassVar
 
 from .engine_loader import eng
 from .logging_util import log
@@ -36,7 +36,7 @@ class Resources(SerializableMixin):
         old = getattr(self, track)
         new = max(floor, old - amount)
         setattr(self, track, new)
-        actual = old - new
+        actual: int = old - new
         if actual > 0:
             log(f"[Resources] {track} -{actual} ({old}→{new})")
         return actual
@@ -45,7 +45,7 @@ class Resources(SerializableMixin):
         old = getattr(self, track)
         new = min(cap, old + amount)
         setattr(self, track, new)
-        actual = new - old
+        actual: int = new - old
         if actual > 0:
             log(f"[Resources] {track} +{actual} ({old}→{new})")
         return actual
@@ -61,10 +61,10 @@ class Resources(SerializableMixin):
         self.momentum = max(floor, reset_value - (max_cap - self.max_momentum))
         log(f"[Resources] momentum burned ({old}→{self.momentum})")
 
-    def snapshot(self) -> dict:
+    def snapshot(self) -> dict[str, Any]:
         return serialize(self)
 
-    def restore(self, snap: dict) -> None:
+    def restore(self, snap: dict[str, Any]) -> None:
         for k, v in snap.items():
             if hasattr(self, k):
                 setattr(self, k, v)
@@ -105,10 +105,10 @@ class WorldState(SerializableMixin):
         if self.chaos_factor != old:
             log(f"[World] chaos {old}→{self.chaos_factor}")
 
-    def snapshot(self) -> dict:
+    def snapshot(self) -> dict[str, Any]:
         return serialize(self)
 
-    def restore(self, snap: dict) -> None:
+    def restore(self, snap: dict[str, Any]) -> None:
         restored = deserialize(WorldState, snap)
         for f in self.__dataclass_fields__:
             setattr(self, f, getattr(restored, f))

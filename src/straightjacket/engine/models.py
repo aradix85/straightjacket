@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from typing import Any
 from dataclasses import dataclass, field
 
 from .engine_loader import eng
@@ -78,13 +79,13 @@ class BrainResult(SerializableMixin):
 
 @dataclass
 class TurnSnapshot(SerializableMixin):
-    resources: dict = field(default_factory=dict)
-    world: dict = field(default_factory=dict)
-    narrative: dict = field(default_factory=dict)
-    campaign: dict = field(default_factory=dict)
-    npcs: list[dict] = field(default_factory=list)
-    progress_tracks: list[dict] = field(default_factory=list)
-    threats: list[dict] = field(default_factory=list)
+    resources: dict[str, Any] = field(default_factory=dict)
+    world: dict[str, Any] = field(default_factory=dict)
+    narrative: dict[str, Any] = field(default_factory=dict)
+    campaign: dict[str, Any] = field(default_factory=dict)
+    npcs: list[dict[str, Any]] = field(default_factory=list)
+    progress_tracks: list[dict[str, Any]] = field(default_factory=list)
+    threats: list[dict[str, Any]] = field(default_factory=list)
     impacts: list[str] = field(default_factory=list)
     crisis_mode: bool = False
     game_over: bool = False
@@ -173,3 +174,44 @@ class GameState(SerializableMixin):
 
         reset_db()
         _db_sync(self)
+
+
+__all__ = [
+    "NPC_STATUSES",
+    "BrainResult",
+    "CampaignState",
+    "ChapterSummary",
+    "CharacterListEntry",
+    "ClockData",
+    "ClockEvent",
+    "ClockFillResult",
+    "CurrentAct",
+    "DirectorGuidance",
+    "EngineConfig",
+    "FateResult",
+    "GameState",
+    "InheritanceRollResult",
+    "KeyedScene",
+    "MemoryEntry",
+    "NarrationEntry",
+    "NarrativeState",
+    "NpcData",
+    "NpcEvolution",
+    "PlayerPreferences",
+    "PlotlineEntry",
+    "PossibleEnding",
+    "PredecessorRecord",
+    "ProgressTrack",
+    "RandomEvent",
+    "Resources",
+    "Revelation",
+    "RollResult",
+    "SceneLogEntry",
+    "StoryAct",
+    "StoryBlueprint",
+    "ThreadEntry",
+    "ThreatData",
+    "ThreatEvent",
+    "TurnSnapshot",
+    "WorldState",
+]

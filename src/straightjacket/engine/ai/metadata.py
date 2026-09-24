@@ -1,3 +1,4 @@
+from typing import Any
 from ..engine_loader import eng
 from ..logging_util import log
 from ..models import GameState, NpcData
@@ -13,7 +14,7 @@ from ..npc import (
 
 
 def apply_narrator_metadata(
-    game: GameState, metadata: dict, *, scene_present_ids: set[str], world_addition: str
+    game: GameState, metadata: dict[str, Any], *, scene_present_ids: set[str], world_addition: str
 ) -> None:
     renames = metadata["npc_renames"]
     if renames:
@@ -43,7 +44,7 @@ def apply_narrator_metadata(
     _check_death_corroboration(game)
 
 
-def process_deceased_npcs(game: GameState, deceased_list: list) -> None:
+def process_deceased_npcs(game: GameState, deceased_list: list[Any]) -> None:
     for entry in deceased_list:
         npc_id = entry["npc_id"]
         if not npc_id:
@@ -60,7 +61,7 @@ def process_deceased_npcs(game: GameState, deceased_list: list) -> None:
 
 
 def process_deceased_npcs_with_presence_check(
-    game: GameState, deceased_list: list, scene_present_ids: set[str]
+    game: GameState, deceased_list: list[Any], scene_present_ids: set[str]
 ) -> None:
     for entry in deceased_list:
         npc_id = entry["npc_id"]
@@ -86,7 +87,7 @@ def process_deceased_npcs_with_presence_check(
         log(f"[NPC] Marked as deceased: {npc.name} ({npc.id}, was {old_status})")
 
 
-def _process_lore_npcs(game: GameState, lore_list: list) -> None:
+def _process_lore_npcs(game: GameState, lore_list: list[Any]) -> None:
     for entry in lore_list:
         name = entry["name"].strip()
         if not name:

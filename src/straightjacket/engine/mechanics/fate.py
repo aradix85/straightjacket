@@ -13,10 +13,10 @@ from ..models import FateResult, GameState, NpcData
 
 _MYTHIC_DATA_PATH = PROJECT_ROOT / "data" / "mythic_gme_2e.json"
 
-_mythic: dict | None = None
+_mythic: dict[str, Any] | None = None
 
 
-def _load_mythic() -> dict:
+def _load_mythic() -> dict[str, Any]:
     global _mythic
     if _mythic is None:
         with _MYTHIC_DATA_PATH.open(encoding="utf-8") as f:

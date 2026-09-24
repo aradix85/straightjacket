@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from typing import Any
 import re
 import uuid
 
@@ -10,7 +11,7 @@ from ..npc import consolidate_memory, find_npc
 from ..npc.lifecycle import sanitize_aliases
 
 
-def _op_npc_edit(game: GameState, op_dict: dict) -> None:
+def _op_npc_edit(game: GameState, op_dict: dict[str, Any]) -> None:
     npc = find_npc(game, op_dict["npc_id"])
     if not npc or not op_dict["fields"]:
         return
@@ -43,7 +44,7 @@ def _op_npc_edit(game: GameState, op_dict: dict) -> None:
         log(f"[Correction] npc_edit: {npc.name} fields={list(edits.keys())}{' (RENAME)' if is_rename else ''}")
 
 
-def _op_npc_split(game: GameState, op_dict: dict) -> None:
+def _op_npc_split(game: GameState, op_dict: dict[str, Any]) -> None:
     existing = find_npc(game, op_dict["npc_id"])
     if not existing:
         return
@@ -62,7 +63,7 @@ def _op_npc_split(game: GameState, op_dict: dict) -> None:
     log(f"[Correction] npc_split: '{existing.name}' → also '{new_name}' ({new_id})")
 
 
-def _op_npc_merge(game: GameState, op_dict: dict) -> None:
+def _op_npc_merge(game: GameState, op_dict: dict[str, Any]) -> None:
     target = find_npc(game, op_dict["npc_id"])
     source = find_npc(game, op_dict["merge_source_id"])
     if not target or not source or target is source:
@@ -79,25 +80,25 @@ def _op_npc_merge(game: GameState, op_dict: dict) -> None:
     log(f"[Correction] npc_merge: '{source.name}' absorbed into '{target.name}'")
 
 
-def _op_location_edit(game: GameState, op_dict: dict) -> None:
+def _op_location_edit(game: GameState, op_dict: dict[str, Any]) -> None:
     if op_dict["value"]:
         game.world.current_location = op_dict["value"]
         log(f"[Correction] location → {game.world.current_location}")
 
 
-def _op_scene_context(game: GameState, op_dict: dict) -> None:
+def _op_scene_context(game: GameState, op_dict: dict[str, Any]) -> None:
     if op_dict["value"]:
         game.world.current_scene_context = op_dict["value"]
         log("[Correction] scene_context updated")
 
 
-def _op_time_edit(game: GameState, op_dict: dict) -> None:
+def _op_time_edit(game: GameState, op_dict: dict[str, Any]) -> None:
     if op_dict["value"]:
         game.world.time_of_day = op_dict["value"]
         log(f"[Correction] time_of_day → {game.world.time_of_day}")
 
 
-def _op_backstory_append(game: GameState, op_dict: dict) -> None:
+def _op_backstory_append(game: GameState, op_dict: dict[str, Any]) -> None:
     if op_dict["value"]:
         sep = "\n" if game.backstory else ""
         game.backstory += sep + op_dict["value"]
@@ -115,7 +116,7 @@ _OP_HANDLERS = {
 }
 
 
-def _apply_correction_ops(game: GameState, ops: list) -> None:
+def _apply_correction_ops(game: GameState, ops: list[Any]) -> None:
     for op_dict in ops:
         handler = _OP_HANDLERS.get(op_dict["op"])
         if handler:

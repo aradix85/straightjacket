@@ -1,3 +1,4 @@
+from typing import Any
 import json
 
 from ..config_loader import model_for_role, sampling_params
@@ -63,7 +64,7 @@ def call_blueprint_voicing(
     game: GameState,
     seed: BlueprintSeed,
     config: EngineConfig | None = None,
-) -> dict | None:
+) -> dict[str, Any] | None:
     _cfg = config or EngineConfig()
     lang = get_narration_lang(_cfg)
     cb = content_boundaries_block(game)
@@ -81,7 +82,7 @@ def call_blueprint_voicing(
             **sampling_params("blueprint_voicing"),
         )
         response = create_with_retry(provider, spec)
-        voicing = json.loads(response.content)
+        voicing: dict[str, Any] = json.loads(response.content)
         log(
             f"[BlueprintVoicing] Succeeded: "
             f"conflict={voicing['central_conflict'][: eng().truncations.log_medium]}, "

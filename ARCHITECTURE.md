@@ -473,7 +473,7 @@ Discovery is yaml-only: `list_packages()` scans `data/settings/*.yaml`, `get_mov
 
 Python 3.11+. Dataclasses with type hints. f-strings. pathlib. snake_case. No mutable defaults. Imports sorted, top of file. Max line length 120 (ruff handles this).
 
-Read `pyproject.toml` for the full ruff/mypy config. The linter rules are the spec — if ruff passes, you're fine.
+Read `pyproject.toml` for the full ruff/mypy config. The linter rules are the spec — if ruff passes, you're fine. mypy runs in strict mode (`strict = true`): every function is typed, generics state their parameters, re-exports are explicit through `__all__`, and a value that arrives as `Any` from yaml or JSON gets its type where it enters typed code.
 
 ## Project rules
 

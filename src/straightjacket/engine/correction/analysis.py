@@ -1,8 +1,9 @@
 from __future__ import annotations
 
+from typing import Any
 import json
 
-from ..ai.brain import BrainResult
+from ..models import BrainResult
 from ..ai.provider_base import AICallSpec, AIProvider, create_with_retry
 from ..ai.schemas import get_correction_output_schema
 from ..config_loader import model_for_role, sampling_params
@@ -15,7 +16,7 @@ from ..prompt_loader import get_prompt
 
 def call_correction_brain(
     provider: AIProvider, game: GameState, correction_text: str, config: EngineConfig | None = None
-) -> dict:
+) -> dict[str, Any]:
     snap = game.last_turn_snapshot
     if not snap:
         raise ValueError("No last_turn_snapshot available for correction")
@@ -73,7 +74,7 @@ npcs:
             **sampling_params("correction"),
         )
         response = create_with_retry(provider, spec)
-        result = json.loads(response.content)
+        result: dict[str, Any] = json.loads(response.content)
         log(
             f"[Correction] source={result['correction_source']} "
             f"reroll={result['reroll_needed']} ops={len(result['state_ops'])}"

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from typing import Any
 from collections.abc import Sequence
 
 from ..engine_loader import eng
@@ -28,7 +29,7 @@ def generate_engine_memories(
     roll: RollResult | None,
     activated_npc_ids: set[str],
     consequences: Sequence[str] = (),
-) -> list[dict]:
+) -> list[dict[str, Any]]:
     from ..npc.memory import score_importance
 
     _e = eng()

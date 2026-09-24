@@ -17,7 +17,7 @@ from .npc import (
 )
 
 
-def save_game(game: GameState, username: str, chat_messages: list[dict], name: str) -> Path:
+def save_game(game: GameState, username: str, chat_messages: list[dict[str, Any]], name: str) -> Path:
     name = _safe_name(name)
     save_dir = get_save_dir(username)
     save_dir.mkdir(parents=True, exist_ok=True)
@@ -35,7 +35,7 @@ def save_game(game: GameState, username: str, chat_messages: list[dict], name: s
     return path
 
 
-def load_game(username: str, name: str) -> tuple[GameState | None, list]:
+def load_game(username: str, name: str) -> tuple[GameState | None, list[Any]]:
     name = _safe_name(name)
     save_dir = get_save_dir(username)
     path = save_dir / f"{name}.json"
@@ -65,7 +65,7 @@ def load_game(username: str, name: str) -> tuple[GameState | None, list]:
     return game, chat_messages
 
 
-def list_saves_with_info(username: str) -> list[dict]:
+def list_saves_with_info(username: str) -> list[dict[str, Any]]:
     save_dir = get_save_dir(username)
     if not save_dir.exists():
         return []

@@ -1,3 +1,4 @@
+from typing import Any
 import re
 
 from ..engine.engine_loader import eng
@@ -182,7 +183,7 @@ def build_threats_status(game: GameState) -> str:
     return "\n".join(lines)
 
 
-def build_creation_options() -> dict:
+def build_creation_options() -> dict[str, Any]:
     _e = eng()
     settings = []
     for pkg_id in list_packages():
@@ -281,7 +282,7 @@ def build_creation_options() -> dict:
     }
 
 
-def build_succession_summary(game: GameState) -> dict:
+def build_succession_summary(game: GameState) -> dict[str, Any]:
     if not game.campaign.pending_succession or not game.campaign.predecessors:
         return {"pending": False}
 
@@ -290,7 +291,7 @@ def build_succession_summary(game: GameState) -> dict:
     title_key = f"succession.title_{end_reason}"
     headline_key = f"succession.headline_{end_reason}"
 
-    track_lines: list[dict] = []
+    track_lines: list[dict[str, Any]] = []
     for roll in record.inheritance_rolls:
         if roll.result == "STRONG_HIT":
             text_key = "succession.legacy_full"

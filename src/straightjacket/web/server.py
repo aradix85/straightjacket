@@ -1,3 +1,4 @@
+from typing import Any
 import asyncio
 from collections.abc import Callable
 from pathlib import Path
@@ -51,7 +52,7 @@ _STATIC_DIR = Path(__file__).resolve().parent / "static"
 _session = Session(config=EngineConfig(narration_lang=narration_language()))
 
 
-_HANDLERS: dict[str, Callable] = {
+_HANDLERS: dict[str, Callable[..., Any]] = {
     "list_players": handle_list_players,
     "create_player": handle_create_player,
     "select_player": handle_select_player,
@@ -141,7 +142,7 @@ async def _send_initial_state(ws: WebSocket) -> None:
         )
 
 
-async def _dispatch_one_message(ws: WebSocket, data: dict) -> None:
+async def _dispatch_one_message(ws: WebSocket, data: dict[str, Any]) -> None:
     msg_type = data.get("type")
     if not isinstance(msg_type, str) or not msg_type:
         await _send(ws, {"type": "error", "text": t("error.malformed_message")})

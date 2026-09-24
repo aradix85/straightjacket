@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING
+from typing import Any, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from ..engine_config_dataclasses import DescriptionDedupConfig
@@ -17,7 +17,7 @@ from .matching import (
 from .memory import consolidate_memory
 
 
-def normalize_npc_dispositions(npcs: list) -> None:
+def normalize_npc_dispositions(npcs: list[Any]) -> None:
     for n in npcs:
         if n.disposition:
             n.disposition = normalize_disposition(n.disposition)

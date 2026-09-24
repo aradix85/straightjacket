@@ -1,3 +1,4 @@
+from typing import Any
 import re
 from collections.abc import Sequence
 
@@ -10,7 +11,7 @@ from ..models import ClockData, GameState, MemoryEntry, NpcData
 from ..npc import apply_name_sanitization, normalize_npc_dispositions, score_importance
 
 
-def _clock_from_setup_dict(c: dict) -> ClockData:
+def _clock_from_setup_dict(c: dict[str, Any]) -> ClockData:
     raw_owner = c["owner"]
     if raw_owner in ("", "world"):
         owner_kind = "world"
@@ -44,7 +45,7 @@ def _find_npc_by_name(npcs: list[NpcData], npc_name: str) -> NpcData | None:
 
 def register_extracted_npcs(
     game: GameState,
-    npc_dicts: list[dict],
+    npc_dicts: list[dict[str, Any]],
     *,
     skip_names: set[str],
     start_id: int = 0,
@@ -84,7 +85,7 @@ def register_extracted_npcs(
 
 def seed_opening_memories(
     game: GameState,
-    memory_updates: list[dict],
+    memory_updates: list[dict[str, Any]],
     label: str = "opening_setup",
 ) -> None:
     for mu in memory_updates:
@@ -114,7 +115,7 @@ def seed_opening_memories(
         target.importance_accumulator = target.importance_accumulator + imp
 
 
-def apply_world_setup(game: GameState, data: dict, *, clocks_mode: str = "replace") -> None:
+def apply_world_setup(game: GameState, data: dict[str, Any], *, clocks_mode: str = "replace") -> None:
     if data.get("clocks"):
         clocks = [_clock_from_setup_dict(c) for c in data["clocks"]]
         if clocks_mode == "replace":
@@ -138,7 +139,7 @@ def apply_world_setup(game: GameState, data: dict, *, clocks_mode: str = "replac
 
 def apply_opening_setup(
     game: GameState,
-    data: dict,
+    data: dict[str, Any],
     *,
     returning_npcs: Sequence[NpcData] = (),
     clocks_mode: str = "replace",

@@ -1,53 +1,54 @@
+from typing import Any
 from ..datasworn.moves import get_moves
 from ..datasworn.settings import list_packages
 from ..engine_loader import eng
 
 
-def _str() -> dict:
+def _str() -> dict[str, Any]:
     return {"type": "string"}
 
 
-def _str_enum(enum: list[str]) -> dict:
+def _str_enum(enum: list[str]) -> dict[str, Any]:
     return {"type": "string", "enum": enum}
 
 
-def _str_with_desc(desc: str) -> dict:
+def _str_with_desc(desc: str) -> dict[str, Any]:
     return {"type": "string", "description": desc}
 
 
-def _int() -> dict:
+def _int() -> dict[str, Any]:
     return {"type": "integer"}
 
 
-def _bool() -> dict:
+def _bool() -> dict[str, Any]:
     return {"type": "boolean"}
 
 
-def _bool_with_desc(desc: str) -> dict:
+def _bool_with_desc(desc: str) -> dict[str, Any]:
     return {"type": "boolean", "description": desc}
 
 
-def _nullable(typ: str) -> dict:
+def _nullable(typ: str) -> dict[str, Any]:
     return {"anyOf": [{"type": typ}, {"type": "null"}]}
 
 
-def _nullable_str() -> dict:
+def _nullable_str() -> dict[str, Any]:
     return _nullable("string")
 
 
-def _nullable_obj(props: dict) -> dict:
+def _nullable_obj(props: dict[str, Any]) -> dict[str, Any]:
     return {"anyOf": [_obj(props), {"type": "null"}]}
 
 
-def _arr(item_schema: dict) -> dict:
+def _arr(item_schema: dict[str, Any]) -> dict[str, Any]:
     return {"type": "array", "items": item_schema}
 
 
-def _str_arr() -> dict:
+def _str_arr() -> dict[str, Any]:
     return _arr({"type": "string"})
 
 
-def _obj(props: dict) -> dict:
+def _obj(props: dict[str, Any]) -> dict[str, Any]:
     return {
         "type": "object",
         "properties": props,
@@ -56,7 +57,7 @@ def _obj(props: dict) -> dict:
     }
 
 
-def _obj_root(props: dict, title: str) -> dict:
+def _obj_root(props: dict[str, Any], title: str) -> dict[str, Any]:
     return {
         "type": "object",
         "properties": props,
@@ -67,12 +68,12 @@ def _obj_root(props: dict, title: str) -> dict:
 
 
 _brain_cache = None
-_correction_cache: dict | None = None
-_director_cache: dict | None = None
-_blueprint_voicing_cache: dict | None = None
+_correction_cache: dict[str, Any] | None = None
+_director_cache: dict[str, Any] | None = None
+_blueprint_voicing_cache: dict[str, Any] | None = None
 
 
-def get_brain_output_schema() -> dict:
+def get_brain_output_schema() -> dict[str, Any]:
     global _brain_cache
     if _brain_cache is None:
         _e = eng()
@@ -112,7 +113,7 @@ def get_brain_output_schema() -> dict:
     return _brain_cache
 
 
-def get_director_output_schema() -> dict:
+def get_director_output_schema() -> dict[str, Any]:
     global _director_cache
     if _director_cache is None:
         _e = eng()
@@ -151,7 +152,7 @@ def get_director_output_schema() -> dict:
     return _director_cache
 
 
-def get_blueprint_voicing_schema() -> dict:
+def get_blueprint_voicing_schema() -> dict[str, Any]:
     global _blueprint_voicing_cache
     if _blueprint_voicing_cache is None:
         _e = eng()
@@ -191,10 +192,10 @@ def get_blueprint_voicing_schema() -> dict:
     return _blueprint_voicing_cache
 
 
-_chapter_summary_cache: dict | None = None
+_chapter_summary_cache: dict[str, Any] | None = None
 
 
-def get_chapter_summary_schema() -> dict:
+def get_chapter_summary_schema() -> dict[str, Any]:
     global _chapter_summary_cache
     if _chapter_summary_cache is None:
         _chapter_summary_cache = _obj_root(
@@ -212,10 +213,10 @@ def get_chapter_summary_schema() -> dict:
     return _chapter_summary_cache
 
 
-_metadata_cache: dict | None = None
+_metadata_cache: dict[str, Any] | None = None
 
 
-def get_narrator_metadata_schema() -> dict:
+def get_narrator_metadata_schema() -> dict[str, Any]:
     global _metadata_cache
     if _metadata_cache is None:
         _e = eng()
@@ -264,10 +265,10 @@ def get_narrator_metadata_schema() -> dict:
     return _metadata_cache
 
 
-_opening_cache: dict | None = None
+_opening_cache: dict[str, Any] | None = None
 
 
-def get_opening_setup_schema() -> dict:
+def get_opening_setup_schema() -> dict[str, Any]:
     global _opening_cache
     if _opening_cache is None:
         _e = eng()
@@ -320,12 +321,12 @@ def get_opening_setup_schema() -> dict:
     return _opening_cache
 
 
-def get_correction_output_schema() -> dict:
+def get_correction_output_schema() -> dict[str, Any]:
     global _correction_cache
     if _correction_cache is None:
         _e = eng()
         stat_names = list(_e.stats.names)
-        field_props: dict = {}
+        field_props: dict[str, Any] = {}
         for fname in _e.enums.correction_fields:
             if fname == "aliases":
                 field_props[fname] = {"anyOf": [_str_arr(), {"type": "null"}]}
@@ -358,10 +359,10 @@ def get_correction_output_schema() -> dict:
     return _correction_cache
 
 
-_revelation_check_cache: dict | None = None
+_revelation_check_cache: dict[str, Any] | None = None
 
 
-def get_revelation_check_schema() -> dict:
+def get_revelation_check_schema() -> dict[str, Any]:
     global _revelation_check_cache
     if _revelation_check_cache is None:
         _e = eng()

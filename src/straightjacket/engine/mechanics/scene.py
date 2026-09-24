@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from typing import Any
 import random
 from dataclasses import dataclass, field
 
@@ -70,14 +71,15 @@ def _roll_adjustments(roll: int | None = None) -> list[str]:
     return adjustments
 
 
-def _lookup_adjustment(table: list[dict], roll: int) -> str:
+def _lookup_adjustment(table: list[dict[str, Any]], roll: int) -> str:
     for entry in table:
         if entry["min"] <= roll <= entry["max"]:
-            return entry["result"]
+            result: str = entry["result"]
+            return result
     raise KeyError(f"scene_adjustment table has no entry covering roll={roll}; table={table!r}")
 
 
-def _roll_single_adjustment(table: list[dict]) -> str:
+def _roll_single_adjustment(table: list[dict[str, Any]]) -> str:
     for _ in range(10):
         roll = random.randint(1, 10)
         result = _lookup_adjustment(table, roll)

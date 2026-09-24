@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from typing import Any
 from ..datasworn.moves import get_moves
 from ..db.queries import query_clocks, query_memories, query_threads
 from ..engine_config import CombatPosCondition, FlagCondition, NotFlagCondition
@@ -10,7 +11,7 @@ from .registry import register
 
 
 @register("director")
-def query_npc(game: GameState, npc_id: str) -> dict:
+def query_npc(game: GameState, npc_id: str) -> dict[str, Any]:
     npc = find_npc(game, npc_id)
     if not npc:
         return {"error": f"NPC not found: {npc_id}"}
@@ -35,7 +36,7 @@ def query_npc(game: GameState, npc_id: str) -> dict:
 
 
 @register("director")
-def query_active_threads(game: GameState, active_only: bool = True) -> dict:
+def query_active_threads(game: GameState, active_only: bool = True) -> dict[str, Any]:
     threads = query_threads(active=True if active_only else None)
     return {
         "threads": [
@@ -45,7 +46,7 @@ def query_active_threads(game: GameState, active_only: bool = True) -> dict:
 
 
 @register("director")
-def query_active_clocks(game: GameState, clock_type: str = "", unfired_only: bool = True) -> dict:
+def query_active_clocks(game: GameState, clock_type: str = "", unfired_only: bool = True) -> dict[str, Any]:
     clocks = query_clocks(
         clock_type=clock_type if clock_type else None,
         fired=False if unfired_only else None,
@@ -66,7 +67,7 @@ def query_active_clocks(game: GameState, clock_type: str = "", unfired_only: boo
     }
 
 
-def available_moves(game: GameState) -> dict:
+def available_moves(game: GameState) -> dict[str, Any]:
     if not game.setting_id:
         raise ValueError("No setting loaded")
 
@@ -80,7 +81,7 @@ def available_moves(game: GameState) -> dict:
     has_combat_track = any(t.track_type == "combat" for t in active_tracks)
     has_connection = any(t.track_type == "connection" for t in active_tracks)
 
-    result: list[dict] = []
+    result: list[dict[str, Any]] = []
 
     for key, move in ds_moves.items():
         if move.roll_type in ("no_roll", "special_track"):

@@ -1,3 +1,4 @@
+from typing import Any
 from ..ai.brain import call_brain
 from ..ai.provider_base import AIProvider, drain_token_log
 from ..datasworn.moves import get_moves
@@ -37,7 +38,7 @@ from .turn_types import ActionResolution, RollOutcome, SceneContext
 
 def process_turn(
     provider: AIProvider, game: GameState, player_message: str, config: EngineConfig | None = None
-) -> tuple[GameState, str, RollResult | None, dict | None, dict | None]:
+) -> tuple[GameState, str, RollResult | None, dict[str, Any] | None, dict[str, Any] | None]:
     if game.game_over:
         raise RuntimeError(
             "process_turn called on a game with game_over=True. "
@@ -171,7 +172,7 @@ def _build_scene_context(
     )
 
 
-def _process_dialog_turn(ctx: SceneContext) -> tuple[str, dict | None]:
+def _process_dialog_turn(ctx: SceneContext) -> tuple[str, dict[str, Any] | None]:
     game = ctx.game
     brain = ctx.brain
     is_oracle = brain.move == "ask_the_oracle"
@@ -204,7 +205,7 @@ def _process_dialog_turn(ctx: SceneContext) -> tuple[str, dict | None]:
         game.last_turn_snapshot.narration = narration
 
     result_label = "oracle" if is_oracle else "dialog"
-    log_entry: dict = {
+    log_entry: dict[str, Any] = {
         "scene": game.narrative.scene_count,
         "summary": (brain.player_intent or ctx.player_message),
         "move": brain.move,
@@ -316,7 +317,7 @@ def _check_burn_possibility(
     roll_outcome: RollOutcome,
     player_message: str,
     scene_setup: SceneSetup,
-) -> dict | None:
+) -> dict[str, Any] | None:
     roll = roll_outcome.roll
     if roll_outcome.is_progress_roll or roll.result not in ("MISS", "WEAK_HIT") or game.resources.momentum <= 0:
         return None
@@ -339,7 +340,7 @@ def _narrate_action_and_finalize(
     roll_outcome: RollOutcome,
     action_res: ActionResolution,
     player_message: str,
-) -> tuple[str, dict | None]:
+) -> tuple[str, dict[str, Any] | None]:
     game = ctx.game
     brain = ctx.brain
     roll = roll_outcome.roll

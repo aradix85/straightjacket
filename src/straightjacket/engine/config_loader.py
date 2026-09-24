@@ -72,7 +72,7 @@ class AppConfig:
     language: LanguageConfig
 
 
-def _parse_config(data: dict) -> AppConfig:
+def _parse_config(data: dict[str, Any]) -> AppConfig:
     sd = data["server"]
     server = ServerConfig(host=sd["host"], port=sd["port"])
 
@@ -115,7 +115,7 @@ def _parse_config(data: dict) -> AppConfig:
     return AppConfig(server=server, ai=ai, language=language)
 
 
-def _load_config_file() -> dict:
+def _load_config_file() -> dict[str, Any]:
     if not _CONFIG_PATH.exists():
         raise FileNotFoundError(
             f"Config file not found: {_CONFIG_PATH}\n"
@@ -169,7 +169,7 @@ def model_for_role(role: str) -> str:
     return cluster.model
 
 
-def sampling_params(role: str) -> dict:
+def sampling_params(role: str) -> dict[str, Any]:
     cluster = _cluster_for_role(role)
 
     params: dict[str, Any] = {

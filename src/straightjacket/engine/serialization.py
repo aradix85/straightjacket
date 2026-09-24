@@ -28,7 +28,7 @@ def _unwrap_optional(tp: Any) -> tuple[type | None, bool]:
     return tp, False
 
 
-def serialize(obj: Any) -> dict:
+def serialize(obj: Any) -> dict[str, Any]:
     if not dataclasses.is_dataclass(obj):
         raise TypeError(f"Expected dataclass instance, got {type(obj).__name__}")
     result = {}
@@ -50,7 +50,7 @@ def _serialize_value(val: Any) -> Any:
     return val
 
 
-def deserialize(cls: type, data: dict) -> Any:
+def deserialize(cls: type, data: dict[str, Any]) -> Any:
     if not _is_dataclass_type(cls):
         raise TypeError(f"Expected dataclass type, got {cls}")
     if not isinstance(data, dict):
@@ -99,9 +99,9 @@ def _deserialize_value(hint: Any, val: Any) -> Any:
 
 
 class SerializableMixin:
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         return serialize(self)
 
     @classmethod
-    def from_dict(cls, data: dict) -> Any:
+    def from_dict(cls, data: dict[str, Any]) -> Any:
         return deserialize(cls, data)

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from typing import Any
 import random
 
 from ..engine_loader import eng
@@ -7,7 +8,8 @@ from ..logging_util import log
 from ..models import BrainResult, ClockEvent, GameState, RollResult
 from ..npc import find_npc, normalize_for_match
 
-from .clock_consequences import ClockFillResult, resolve_clock_fill
+from ..models import ClockFillResult
+from .clock_consequences import resolve_clock_fill
 from .impacts import impact_label
 
 
@@ -175,7 +177,8 @@ def pick_template(key: str) -> str:
     options = templates[key]
     if isinstance(options, str):
         return options
-    return random.choice(options)
+    result: str = random.choice(options)
+    return result
 
 
 def _classify(cons: str, default_npc: str) -> tuple[str, str, str] | None:
@@ -263,7 +266,7 @@ def resolve_consequence_sentence(cons: str, player: str, npc_name: str, location
         return ""
 
     event_code, subject_override, impact_text = classified
-    fmt: dict = {
+    fmt: dict[str, Any] = {
         "player": player,
         "npc": subject_override or npc_name,
         "location": location,

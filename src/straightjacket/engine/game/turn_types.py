@@ -1,8 +1,9 @@
+from typing import Any
 from dataclasses import dataclass, field
 
 from ..ai.provider_base import AIProvider
 from ..datasworn.moves import Move
-from ..mechanics.clock_consequences import ClockFillResult
+from ..models import ClockFillResult
 from ..mechanics.scene import SceneSetup
 from ..models import (
     BrainResult,
@@ -26,8 +27,8 @@ class SceneContext:
     player_message: str
     scene_setup: SceneSetup
     scene_present_ids: set[str]
-    pending_revs: list
-    npc_activation_debug: dict
+    pending_revs: list[Any]
+    npc_activation_debug: dict[str, Any]
     activated_npcs: list[NpcData] = field(default_factory=list)
     mentioned_npcs: list[NpcData] = field(default_factory=list)
     pending_random_events: list[RandomEvent] = field(default_factory=list)

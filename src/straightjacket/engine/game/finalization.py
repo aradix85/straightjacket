@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from typing import Any
 from collections.abc import Sequence
 from dataclasses import dataclass, field
 
@@ -94,7 +95,7 @@ def _update_crisis(game: GameState) -> None:
         game.crisis_mode = False
 
 
-def apply_engine_memories(game: GameState, memories: list[dict]) -> None:
+def apply_engine_memories(game: GameState, memories: list[dict[str, Any]]) -> None:
     _e = eng()
     for mem in memories:
         npc = find_npc(game, mem["npc_id"])
@@ -131,7 +132,7 @@ def apply_post_narration(
     config: EngineConfig | None = None,
     consequences: Sequence[str] = (),
     world_addition: str = "",
-) -> dict:
+) -> dict[str, Any]:
     cons_list = list(consequences)
     ctx = generate_scene_context(game, brain, roll, activated_npc_names)
     game.world.current_scene_context = ctx

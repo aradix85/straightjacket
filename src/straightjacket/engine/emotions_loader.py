@@ -1,13 +1,14 @@
+from typing import Any
 from .bootstrap_log import bootstrap_log as _log
 from .config_loader import PROJECT_ROOT
 from .yaml_merge import load_yaml_dir
 
 _EMOTIONS_DIR = PROJECT_ROOT / "emotions"
 
-_data: dict | None = None
+_data: dict[str, Any] | None = None
 
 
-def _ensure_loaded() -> dict:
+def _ensure_loaded() -> dict[str, Any]:
     global _data
     if _data is None:
         _data = load_yaml_dir(
@@ -19,7 +20,8 @@ def _ensure_loaded() -> dict:
 
 
 def importance_map() -> dict[str, int]:
-    return _ensure_loaded()["importance"]
+    result: dict[str, int] = _ensure_loaded()["importance"]
+    return result
 
 
 def keyword_boosts() -> dict[int, list[str]]:
@@ -28,7 +30,8 @@ def keyword_boosts() -> dict[int, list[str]]:
 
 
 def disposition_map() -> dict[str, str]:
-    return _ensure_loaded()["disposition_map"]
+    result: dict[str, str] = _ensure_loaded()["disposition_map"]
+    return result
 
 
 def normalize_disposition(raw: str) -> str:

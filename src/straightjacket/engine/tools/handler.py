@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from typing import Any
 import json
 from dataclasses import replace
 
@@ -10,7 +11,7 @@ from ..models import GameState
 from .registry import get_handler, get_tools
 
 
-def execute_tool_call(role: str, tool_call: dict, game: GameState) -> str:
+def execute_tool_call(role: str, tool_call: dict[str, Any], game: GameState) -> str:
     name = tool_call.get("name", "")
     arguments = tool_call.get("arguments", {})
 
@@ -36,8 +37,8 @@ def run_tool_loop(
     role: str,
     game: GameState,
     initial_spec: AICallSpec,
-) -> tuple[str, list[dict]]:
-    tool_log: list[dict] = []
+) -> tuple[str, list[dict[str, Any]]]:
+    tool_log: list[dict[str, Any]] = []
     current = response
     conversation = list(initial_spec.messages)
     max_tool_rounds = eng().pacing.max_tool_rounds
@@ -48,7 +49,7 @@ def run_tool_loop(
 
         log(f"[Tools] Round {round_num + 1}: {len(current.tool_calls)} tool call(s)")
 
-        assistant_msg: dict = {"role": "assistant", "content": current.content or ""}
+        assistant_msg: dict[str, Any] = {"role": "assistant", "content": current.content or ""}
         assistant_msg["tool_calls"] = [
             {
                 "id": tc.get("id", f"call_{round_num}_{i}"),

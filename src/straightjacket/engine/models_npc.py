@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from typing import Any
 from dataclasses import dataclass, field
 
 from .serialization import SerializableMixin, serialize
@@ -20,7 +21,7 @@ class MemoryEntry(SerializableMixin):
     about_npc: str | None = None
     _score_debug: str = ""
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         d = serialize(self)
         if not d.get("_score_debug"):
             d.pop("_score_debug", None)

@@ -100,7 +100,7 @@ time:{w.time_of_day or _ai_text["unknown_time"]}
         )
         response = create_with_retry(provider, spec)
 
-        result = BrainResult.from_dict(json.loads(response.content))
+        result: BrainResult = BrainResult.from_dict(json.loads(response.content))
         log(
             f"[Brain] move={result.move}, stat={result.stat}, "
             f"intent={result.player_intent[: eng().truncations.log_short]}"
@@ -146,7 +146,7 @@ def call_revelation_check(
         )
         response = create_with_retry(provider, spec)
         result = json.loads(response.content)
-        confirmed = result["revelation_confirmed"]
+        confirmed: bool = result["revelation_confirmed"]
         reasoning = result["reasoning"]
         log(f"[Revelation] Check for '{revelation.id}': confirmed={confirmed} — {reasoning}")
         return confirmed

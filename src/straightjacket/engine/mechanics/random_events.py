@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from typing import Any
 import random
 
 from ..engine_loader import eng
@@ -51,7 +52,7 @@ def roll_meaning_table(table_name: str) -> tuple[str, str]:
     return w1, w2
 
 
-def _select_from_weighted_list(entries: list) -> tuple[str, str]:
+def _select_from_weighted_list(entries: list[Any]) -> tuple[str, str]:
     if not entries:
         return "", ""
 
