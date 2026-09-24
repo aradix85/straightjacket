@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-import random
 import re
 from collections.abc import Callable
 from dataclasses import dataclass, field
 
+from ..datasworn.settings import load_package
 from ..engine_loader import eng
 from ..logging_util import log
 from ..models import GameState, NpcData
@@ -83,10 +83,32 @@ def parse_effects(effect_list: list[str]) -> list[MoveEffect]:
     return [parse_effect(e) for e in effect_list]
 
 
-def _roll_pay_the_price(game: GameState) -> str:
-    pay_lines = eng().get_raw("pay_the_price")
-    result: str = random.choice(pay_lines).format(player=game.player_name)
-    return result
+def _roll_pay_the_price_rows(game: GameState, depth: int) -> list[str]:
+    cfg = eng().get_raw("pay_the_price")
+    path = cfg["oracle_path"]
+    data = load_package(game.setting_id).oracle_data_for(path)
+    table = data.oracle(path) if data is not None else None
+    if table is None:
+        raise KeyError(f"Pay the Price table '{path}' missing for setting {game.setting_id!r}")
+    text = re.sub(r"\[([^\]]+)\]\([^)]*\)", r"\1", str(table.roll().value)).strip()
+    for rule in cfg["reroll_rows"]:
+        if text.startswith(rule["prefix"]) and depth < cfg["max_rerolls"]:
+            rows = [text]
+            for _ in range(rule["extra_rolls"]):
+                rows += _roll_pay_the_price_rows(game, depth + 1)
+            return rows
+    return [text]
+
+
+def pay_the_price(game: GameState, result: OutcomeResult) -> None:
+    rows = _roll_pay_the_price_rows(game, 0)
+    result.pay_the_price = True
+    result.consequences.append("; ".join(rows))
+    for row in rows:
+        for rule in eng().get_raw("pay_the_price")["suffer_rows"]:
+            if row.startswith(rule["prefix"]):
+                effect = parse_effect(rule["effect"])
+                _EFFECT_HANDLERS[effect.type](game, effect, result, None)
 
 
 def _apply_momentum_effect(game: GameState, effect: MoveEffect, result: OutcomeResult, target: NpcData | None) -> None:
@@ -127,8 +149,7 @@ def _apply_mark_progress_effect(
 def _apply_pay_the_price_effect(
     game: GameState, effect: MoveEffect, result: OutcomeResult, target: NpcData | None
 ) -> None:
-    result.pay_the_price = True
-    result.consequences.append(_roll_pay_the_price(game))
+    pay_the_price(game, result)
 
 
 def _apply_next_move_bonus_effect(

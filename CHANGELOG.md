@@ -7,6 +7,18 @@ Originally forked from [EdgeTales](https://github.com/edgetales/edgetales). See 
 
 Straightjacket uses calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day. The first CalVer release is `2026.04.25.0`. Earlier `0.x.y` releases keep their original version numbers and are not renumbered. The switch was made because the project has no public API to version semantically against — the `0.x.y` numbers were running counters with no meaning, and dates carry the meaning the numbers didn't.
 
+## [2026.09.24.29] — 2026-09-24
+
+Pay the Price follows the rulebooks (roadmap R.3).
+
+Pay the Price. The engine answered every Pay the Price with one of eight invented lines inherited from EdgeTales ("Something valuable breaks beyond easy repair", "Someone saw what {player} did") and applied no mechanical cost. It now rolls the setting's own table from the Datasworn data (`moves/pay_the_price`: twenty rows in Starforged, sixteen in classic Ironsworn). `engine/pay_the_price.yaml` becomes its configuration: the table path, the roll-twice and roll-again rows with their extra rolls and a depth limit of two, and the rows with a mechanical cost; a row saying the character is harmed, stressed, or wastes resources costs 1 health, spirit, or supply, the smallest suffer amount, recorded as a fixed choice. `mechanics/move_effects.py` → `pay_the_price` rolls, strips Datasworn link markup for the narrator, and applies those costs; the move effect and the suffer handler both use it.
+
+Automated outcome check. A second pass over the Datasworn outcome texts, for suffer moves, Pay the Price, and progress, found five cases. One is a real divergence, now fixed with a classic override: Ironsworn's Enter the Fray on a miss also pays the price. Three are fixed choices where the player would pick a cost, recorded in ARCHITECTURE.md. One is a bonus on a strong hit with a match, which the engine does not model, recorded as open in roadmap R.3.
+
+Tests: the price comes from the official table in both settings, a harmed row costs health, a roll-twice row adds two results with their costs, and Enter the Fray pays on a miss only in classic. `tests/test_move_outcome.py` checked the invented lines; one test now checks the official table and the other, which checked the player-name substitution in those lines, is removed with them.
+
+Quality gate: 1379 tests green, twenty-nine project-rule scans clean, coverage 89.71%, ruff check and ruff format clean, mypy --strict clean on 106 source files. Save format unchanged; `engine/pay_the_price.yaml` changes from a list of lines to a configuration block.
+
 ## [2026.09.24.28] — 2026-09-24
 
 Turning points follow the Adventure Crafter (roadmap R.8, now complete).

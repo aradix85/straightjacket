@@ -1,9 +1,21 @@
 pay_the_price:
-- Something valuable breaks beyond easy repair.
-- An ally's patience runs out.
-- The environment turns hostile — what was safe, isn't.
-- 'A hidden cost surfaces: this was more expensive than it looked.'
-- An old problem returns at the worst moment.
-- The way back is now closed.
-- Someone saw what {player} did. They won't forget.
-- The easy option disappears. Only hard choices remain.
+  oracle_path: moves/pay_the_price
+  max_rerolls: 2
+  reroll_rows:
+  - prefix: Roll twice
+    extra_rolls: 2
+  - prefix: Roll again
+    extra_rolls: 1
+  suffer_rows:
+  - prefix: You are harmed
+    effect: health -1
+  - prefix: It is harmful
+    effect: health -1
+  - prefix: You are stressed
+    effect: spirit -1
+  - prefix: It is stressful
+    effect: spirit -1
+  - prefix: You waste resources
+    effect: supply -1
+  - prefix: It wastes resources
+    effect: supply -1

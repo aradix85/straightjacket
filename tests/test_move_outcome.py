@@ -124,37 +124,21 @@ class TestApplyEffects:
         assert game.resources.momentum == 4
         assert result.combat_position == "in_control"
 
-    def test_pay_the_price_appends_oracle_line(self, game: GameState) -> None:
-        from straightjacket.engine.engine_loader import eng
+    def test_pay_the_price_appends_a_row_of_the_official_table(self, game: GameState) -> None:
+        import json
+        import re
+        from pathlib import Path
 
-        pay_lines = eng().get_raw("pay_the_price")
+        data = json.loads(
+            (Path(__file__).resolve().parent.parent / "data" / f"{game.setting_id}.json").read_text(encoding="utf-8")
+        )
+        rows = {
+            re.sub(r"\[([^\]]+)\]\([^)]*\)", r"\1", r["text"]).strip()
+            for r in data["oracles"]["moves"]["contents"]["pay_the_price"]["rows"]
+        }
         result = apply_effects(game, parse_effects(["pay_the_price"]))
         assert result.pay_the_price is True
-        assert len(result.consequences) == 1
-
-        rendered = {line.format(player=game.player_name) for line in pay_lines}
-        assert result.consequences[0] in rendered
-
-    def test_pay_the_price_substitutes_player_name(self, game: GameState) -> None:
-        import random as _random
-
-        _random.seed(12345)
-        from straightjacket.engine.engine_loader import eng
-
-        pay_lines = eng().get_raw("pay_the_price")
-        player_line_idx = next(i for i, line in enumerate(pay_lines) if "{player}" in line)
-
-        for seed in range(200):
-            _random.seed(seed)
-            if _random.randrange(len(pay_lines)) == player_line_idx:
-                _random.seed(seed)
-                break
-        else:
-            raise AssertionError("no seed in 0..199 selects the {player} line")
-
-        result = apply_effects(game, parse_effects(["pay_the_price"]))
-        assert game.player_name in result.consequences[0]
-        assert "{player}" not in result.consequences[0]
+        assert all(part in rows for part in result.consequences[0].split("; "))
 
     def test_suffer_move_picks_highest_track(self, game: GameState) -> None:
         game.resources.health = 5

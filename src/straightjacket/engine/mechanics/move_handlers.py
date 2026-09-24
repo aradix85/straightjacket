@@ -4,7 +4,7 @@ from typing import Any
 from ..engine_loader import eng
 from ..models import GameState
 from .impacts import apply_impact, blocks_recovery, clear_impact
-from .move_effects import OutcomeResult, _roll_pay_the_price
+from .move_effects import OutcomeResult, pay_the_price
 
 
 def _can_recover(game: GameState, params: dict[str, Any], blocked: bool) -> bool:
@@ -138,7 +138,6 @@ def apply_recovery_handler(game: GameState, roll_result: str, params: dict[str, 
                     result.consequences.append(_labels["track_loss"].format(track="supply", n=lost))
 
     else:
-        result.pay_the_price = True
-        result.consequences.append(_roll_pay_the_price(game))
+        pay_the_price(game, result)
 
     return result

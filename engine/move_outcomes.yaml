@@ -460,6 +460,15 @@ move_outcomes:
 
 move_outcome_overrides:
   classic:
+    combat/enter_the_fray:
+      strong_hit:
+      - momentum +2
+      - position in_control
+      weak_hit:
+      - momentum +2
+      miss:
+      - position bad_spot
+      - pay_the_price
     suffer/endure_harm:
       handler: suffer
       params:
