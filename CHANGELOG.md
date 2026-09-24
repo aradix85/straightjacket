@@ -7,6 +7,18 @@ Originally forked from [EdgeTales](https://github.com/edgetales/edgetales). See 
 
 Straightjacket uses calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day. The first CalVer release is `2026.04.25.0`. Earlier `0.x.y` releases keep their original version numbers and are not renumbered. The switch was made because the project has no public API to version semantically against — the `0.x.y` numbers were running counters with no meaning, and dates carry the meaning the numbers didn't.
 
+## [2026.09.24.15] — 2026-09-24
+
+Elvira runs again, and the normal test gate now notices when it stops running.
+
+Three breakages, all found by running Elvira for the first time since the provider changes of this day. The session banner read `cfg().ai.provider`, which 2026.09.24.9 replaced with per-role providers, so every run crashed before the first turn; the banner now shows provider and model for the narrator, Brain, and Director. Output redirected to a file used Windows' cp1252 encoding, so any line with a character such as ≤ or → failed; `elvira.py` now switches stdout and stderr to UTF-8. And `SessionLog.to_diagnostic_dict` read a `character` field that `SessionLog` never had, so every run crashed at the end while writing its report; the field exists now and holds the character's name, concept, and setting.
+
+New `tests/test_elvira_smoke.py` runs Elvira's real `run_session` for three turns, including a correction turn, against the mock provider from the integration tests, with users and run logs in a temporary directory. It fails on the previous `runner.py` with the banner crash and caught the missing `character` field on its first run. Elvira's WebSocket mode is not covered yet.
+
+Seen in the live run, not fixed here: the Director calls `query_npc` with guessed ids (`npc_2`, `npc_3`) that do not exist.
+
+Quality gate: 1311 tests green, twenty-eight project-rule scans clean, coverage 88.92%, ruff check and ruff format clean, mypy --strict clean on 106 source files. Save format unchanged.
+
 ## [2026.09.24.14] — 2026-09-24
 
 The two provider SDKs are now used as intended, and OpenAI's own models work.

@@ -16,7 +16,7 @@ from straightjacket.engine.ai.api_client import check_configured_models, get_pro
 from straightjacket.engine.models import EngineConfig, GameState
 from straightjacket.engine.persistence import delete_save, load_game, save_game
 from straightjacket.engine.user_management import create_user
-from straightjacket.engine.config_loader import VERSION, cfg
+from straightjacket.engine.config_loader import VERSION, model_for_role, provider_for_role
 from straightjacket.engine.correction import process_correction
 from straightjacket.engine.game.momentum_burn import process_momentum_burn
 from straightjacket.engine.datasworn.settings import list_packages
@@ -102,7 +102,10 @@ def run_session(bot_cfg: dict, auto_override: bool = False, turns_override: int 
         f"  Auto: {'YES' if auto_mode else 'NO'} | Turns/ch: {max_turns} | "
         f"Chapters: {max_chapters} | Lang: {narration_lang}"
     )
-    print(f"  Engine: v{VERSION} | Provider: {cfg().ai.provider}")
+    roles = ", ".join(
+        f"{role}={provider_for_role(role)}/{model_for_role(role)}" for role in ("narrator", "brain", "director")
+    )
+    print(f"  Engine: v{VERSION} | {roles}")
     print(SEPARATOR)
 
     game, narration, chat_messages = _setup_game(provider, config, username, game_cfg, auto_mode, slog)
@@ -231,6 +234,7 @@ def run_session(bot_cfg: dict, auto_override: bool = False, turns_override: int 
     slog.ended_reason = (
         slog.ended_reason if slog.ended_reason != "unknown" else (ch_rec.ended_reason if slog.chapters else "complete")
     )
+    slog.character = {"name": game.player_name, "concept": game.character_concept, "setting": game.setting_id}
     slog.quality_summary = _aggregate_quality_stats(slog)
     slog.token_summary = _aggregate_token_stats(slog)
     slog.burn_stats = {

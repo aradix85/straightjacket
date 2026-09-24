@@ -192,6 +192,7 @@ class SessionLog:
     config: dict = field(default_factory=dict)
     style: str = ""
     engine_version: str = ""
+    character: dict = field(default_factory=dict)
     story_blueprint: dict = field(default_factory=dict)
     chapters: list[ChapterRecord] = field(default_factory=list)
     turns: list[TurnRecord] = field(default_factory=list)
