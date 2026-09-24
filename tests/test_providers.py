@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from types import SimpleNamespace
+import inspect
 from typing import Any
 
 import pytest
@@ -93,7 +94,8 @@ class TestAnthropicProvider:
         sent = anthropic_endpoint.calls[0]
         assert sent["system"] == "system text"
         assert sent["messages"] == [{"role": "user", "content": "hello"}]
-        assert (sent["temperature"], sent["top_p"], sent["top_k"]) == (0.5, 0.9, 40)
+        assert sent["extra_body"] == {"temperature": 0.5, "top_p": 0.9, "top_k": 40}
+        assert not {"temperature", "top_p", "top_k"} & set(sent)
         assert sent["output_config"] == {"format": {"type": "json_schema", "schema": schema}}
         assert sent["tools"] == [
             {
@@ -183,3 +185,30 @@ class TestOpenAICompatibleProvider:
         assert openai_endpoint.init_args == {"api_key": "k"}
         provider_openai.OpenAICompatibleProvider(api_key="k", api_base="http://localhost:9/v1")
         assert openai_endpoint.init_args == {"api_key": "k", "base_url": "http://localhost:9/v1"}
+
+
+def _accepted(create: Any) -> set[str]:
+    return set(inspect.signature(create).parameters)
+
+
+def test_anthropic_request_uses_only_parameters_the_installed_sdk_accepts(anthropic_endpoint: _FakeEndpoint) -> None:
+    anthropic_endpoint.response = SimpleNamespace(content=[], stop_reason="end_turn")
+    spec = _spec(temperature=0.5, top_p=0.9, top_k=40, json_schema={"title": "t", "type": "object"}, tools=[_tool()])
+    provider_anthropic.AnthropicProvider(api_key="k").create_message(spec)
+    accepted = _accepted(provider_anthropic.anthropic.resources.messages.Messages.create)
+    assert set(anthropic_endpoint.calls[0]) <= accepted
+
+
+def test_openai_request_uses_only_parameters_the_installed_sdk_accepts(openai_endpoint: _FakeEndpoint) -> None:
+    openai_endpoint.response = _openai_response("ok", "stop", None)
+    spec = _spec(
+        temperature=0.5,
+        top_p=0.9,
+        top_k=40,
+        extra_body={"reasoning_effort": "none"},
+        json_schema={"title": "t", "type": "object"},
+        tools=[_tool()],
+    )
+    provider_openai.OpenAICompatibleProvider(api_key="k").create_message(spec)
+    accepted = _accepted(provider_openai.openai.resources.chat.completions.Completions.create)
+    assert set(openai_endpoint.calls[0]) <= accepted

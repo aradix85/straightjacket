@@ -22,12 +22,15 @@ class AnthropicProvider:
             "messages": spec.messages,
         }
 
+        sampling: dict[str, Any] = {}
         if spec.temperature is not None:
-            create_kwargs["temperature"] = spec.temperature
+            sampling["temperature"] = spec.temperature
         if spec.top_p is not None:
-            create_kwargs["top_p"] = spec.top_p
+            sampling["top_p"] = spec.top_p
         if spec.top_k is not None:
-            create_kwargs["top_k"] = spec.top_k
+            sampling["top_k"] = spec.top_k
+        if sampling:
+            create_kwargs["extra_body"] = sampling
 
         if spec.json_schema is not None:
             create_kwargs["output_config"] = {

@@ -7,6 +7,20 @@ Originally forked from [EdgeTales](https://github.com/edgetales/edgetales). See 
 
 Straightjacket uses calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day. The first CalVer release is `2026.04.25.0`. Earlier `0.x.y` releases keep their original version numbers and are not renumbered. The switch was made because the project has no public API to version semantically against — the `0.x.y` numbers were running counters with no meaning, and dates carry the meaning the numbers didn't.
 
+## [2026.09.24.8] — 2026-09-24
+
+Dependencies brought to their current major versions, and the Starlette test-client warning resolved.
+
+`anthropic` 0.125 → 1.8 and `openai` 2.54 → 3.19; the ranges in `pyproject.toml` and `requirements.txt` move from `<1` and `<3` to `>=1.8,<2` and `>=3.19,<4`. Both SDKs moved their HTTP layer from `httpx` to `httpx2` in August 2026; Straightjacket passes no custom HTTP client, so that change needs no code. openai 3.x accepts every parameter the OpenAI-compatible adapter sends, unchanged. anthropic 1.x removed `temperature`, `top_p`, and `top_k` from the typed `messages.create` signature (passing them raises `TypeError`), while the Messages API still accepts them. The Anthropic adapter now sends them through `extra_body`, so cluster sampling settings keep applying, and a model that rejects them fails loudly at the API instead of being silently ignored.
+
+The test extra swaps `httpx` for `httpx2`: Starlette 1.7's `TestClient` deprecates `httpx` in favour of `httpx2`. This removes the one warning the suite has shown since 2026.09.24.0, and `httpx` is no longer installed in the environment at all.
+
+New in `tests/test_providers.py`: two tests check that every parameter each adapter sends appears in the signature of the installed SDK's create method. The adapter tests use fake clients, so without this check an SDK upgrade that removes a parameter would pass the suite and fail only against the real API, which is exactly the break anthropic 1.0 would have caused.
+
+All other direct dependencies were already at their latest versions within their ranges (starlette 1.7.0, uvicorn 0.53.0, PyYAML 6.0.3, pytest 9.1.1, ruff 0.16.8, mypy 2.3.1).
+
+Quality gate: 1276 tests green with no warnings, twenty-eight project-rule scans clean, coverage 88.24%, ruff check and ruff format clean, mypy --strict clean on 105 source files. Not verified: a live call against either provider (needs an API key); the signature tests cover the shape of the request, not the response.
+
 ## [2026.09.24.7] — 2026-09-24
 
 Documentation only: the open question in roadmap step 9 is decided. Fact resolution is triggered by the Brain, which flags the undetermined facts a player action depends on, chosen from a fixed yaml list of fact types; the engine derives the odds, resolves through fate, remembers the answer on the entity, and hands it to the narrator as a `<fact>` tag. The decision, its three conditions (yaml fact-type list that raises on unknown types, persisted facts that are reused rather than re-rolled, Brain prompt instructions with examples in the same commit), and the rejected alternatives are recorded in roadmap.md (Current state and step 9, including three new Definition of Done items). ARCHITECTURE.md "Engine-resolved fiction" gains one sentence on the decided trigger.

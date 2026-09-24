@@ -1,17 +1,17 @@
 [project]
 name = "straightjacket"
-version = "2026.09.24.7"
+version = "2026.09.24.8"
 requires-python = ">=3.11"
 dependencies = [
     "starlette>=1.0,<2",
     "uvicorn[standard]>=0.34,<1",
     "pyyaml>=6.0,<7",
-    "anthropic>=0.40,<1",
-    "openai>=1.50,<3",
+    "anthropic>=1.8,<2",
+    "openai>=3.19,<4",
 ]
 
 [project.optional-dependencies]
-test = ["pytest", "pytest-asyncio", "pytest-cov", "httpx", "types-PyYAML", "radon", "ruff", "mypy"]
+test = ["pytest", "pytest-asyncio", "pytest-cov", "httpx2", "types-PyYAML", "radon", "ruff", "mypy"]
 elvira = ["websockets>=13.0,<15"]
 
 [tool.ruff]
