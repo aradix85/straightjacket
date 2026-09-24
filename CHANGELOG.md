@@ -7,6 +7,16 @@ Originally forked from [EdgeTales](https://github.com/edgetales/edgetales). See 
 
 Straightjacket uses calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day. The first CalVer release is `2026.04.25.0`. Earlier `0.x.y` releases keep their original version numbers and are not renumbered. The switch was made because the project has no public API to version semantically against — the `0.x.y` numbers were running counters with no meaning, and dates carry the meaning the numbers didn't.
 
+## [2026.09.24.18] — 2026-09-24
+
+Every role except the narrator runs on Claude Haiku 4.5: the creative cluster (Director, blueprint voicing, chapter summary, recap) moves from Claude Sonnet 5 to Haiku. The narrator stays on Claude Opus 5.5 at effort low.
+
+Measured on the same ten situations, three attempts each, with the same two blind judges (GPT-6 Sol and Claude Sonnet 5): Opus 5.5 low scored 6.88 out of 10 at 13.2 seconds per narration, Sonnet 5 low 6.42 at 8.7 seconds, Haiku 4.5 6.10 at 5.2 seconds. Overall the gap is modest, but it concentrates in result integrity (Opus 4.5, Sonnet 4.4, Haiku 3.8 out of 5): in all three attempts at a failed leap across a gorge, Haiku narrated the leap as a success. Since the action roll now misses a third of the time, the narrator stays on the model that tells failure honestly.
+
+Verified live before switching: with every cluster on Haiku in memory, a full turn took 9.4 seconds with the first sentence after 4.2, and the deferred Director made four tool calls in two rounds, used the `known_npcs` list from 2026.09.24.16 to correct a guessed NPC id, and applied its guidance. The live Haiku narration of a miss was a genuine failure but invented backstory for the player character.
+
+Quality gate: config and documentation only; the config and project-rule tests pass and the startup check confirms every configured model at Anthropic.
+
 ## [2026.09.24.17] — 2026-09-24
 
 The action roll follows Ironsworn: one d6 plus the stat, capped at 10, against two d10s. `mechanics/consequences.py` → `roll_action` rolled two d6 plus the stat. ARCHITECTURE.md described it as "2d6+stat", but it was never recorded as a deliberate divergence and appears to have been inherited; Elvira's roll display ("Action 1+3=7") exposed it. The difference is large. At stat 2 the chance of a strong hit falls from 58% to 23%, a weak hit rises from 32% to 44%, and a miss rises from 10% to 33%, exactly the Ironsworn odds. Expect more misses, more consequences, and more momentum burns; engine values tuned under the old odds may deserve a second look, which Elvira's coverage and audit now make visible.
