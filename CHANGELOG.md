@@ -7,6 +7,22 @@ Originally forked from [EdgeTales](https://github.com/edgetales/edgetales). See 
 
 Straightjacket uses calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day. The first CalVer release is `2026.04.25.0`. Earlier `0.x.y` releases keep their original version numbers and are not renumbered. The switch was made because the project has no public API to version semantically against — the `0.x.y` numbers were running counters with no meaning, and dates carry the meaning the numbers didn't.
 
+## [2026.09.24.9] — 2026-09-24
+
+Providers can be mixed per role, and startup now checks that every configured model still exists.
+
+Background: Cerebras retired `zai-glm-4.7`, the narrator model, on 2026-08-17, and its public catalogue is down to `gpt-oss-120b` and `qwen-3.8-27b`. Nothing in Straightjacket noticed: the narrator call failed on every turn, and the AI-call carve-out turned that failure into an empty narration.
+
+Per-role providers. `config.yaml` gains `ai.providers` (a name mapped to `type`, `api_base`, and `api_key_env`), every cluster names its `provider`, and the single `ai.provider`, `ai.api_base`, and `ai.api_key_env` keys are gone (the config format breaks; no migration). A cluster that names an undefined provider fails at load. `get_provider` returns a routing provider that sends each call to the provider of its role's cluster, keyed on `AICallSpec.log_role`; a call without a known role raises. `correction/analysis.py` was the one AI call that did not set `log_role`; it does now. Elvira's bot calls use the brain role's provider. Any OpenAI-compatible service works through `type: openai_compatible`, Anthropic through `type: anthropic`.
+
+Startup check. `check_configured_models` asks every provider in use for its model list (new `list_models` on both adapters, behind a `ModelListingProvider` protocol) and raises with the missing model and what that provider does offer. `run.py` runs it before starting the server and exits with the message; Elvira runs it before a session. It replaces the old startup warning that only checked whether the API-key variable was set. With the current config it reports the retired narrator model, which is correct: choosing replacements is the user's pending decision (roadmap Current state).
+
+Sentence-level streaming of narration ("half-streaming": stream from the provider, release whole sentences to the screen reader) is sketched as roadmap section S.
+
+Tests: new `tests/test_api_client.py` (routing per role, unknown role, startup check passing and failing, missing API key, unknown provider type), config-loader tests for the provider fields, and `list_models` tests for both adapters.
+
+Quality gate: 1286 tests green, twenty-eight project-rule scans clean, coverage 88.40%, ruff check and ruff format clean, mypy --strict clean on 105 source files. Not verified against the live APIs.
+
 ## [2026.09.24.8] — 2026-09-24
 
 Dependencies brought to their current major versions, and the Starlette test-client warning resolved.

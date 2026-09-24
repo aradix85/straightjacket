@@ -16,7 +16,7 @@ cd straightjacket
 python run.py
 ```
 
-Creates a venv, installs dependencies, downloads game data, starts the server at **http://localhost:8081**. Set your API key via environment variable (configured in `config.yaml` under `ai.api_key_env`).
+Creates a venv, installs dependencies, downloads game data, starts the server at **http://localhost:8081**. Set your API key(s) as environment variables: each provider under `ai.providers` in `config.yaml` names its variable in `api_key_env`. On startup the server checks that every configured model is offered by its provider and stops with a clear message if one is not.
 
 ---
 

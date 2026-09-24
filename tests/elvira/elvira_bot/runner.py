@@ -12,7 +12,7 @@ import yaml
 if TYPE_CHECKING:
     from straightjacket.engine.ai.provider_base import AIProvider
 
-from straightjacket.engine.ai.api_client import get_provider
+from straightjacket.engine.ai.api_client import check_configured_models, get_provider
 from straightjacket.engine.models import EngineConfig, GameState
 from straightjacket.engine.persistence import delete_save, load_game, save_game
 from straightjacket.engine.user_management import create_user
@@ -80,6 +80,7 @@ def run_session(bot_cfg: dict, auto_override: bool = False, turns_override: int 
     do_invariants = log_cfg["assert_state_invariants"]
     full_debug = log_cfg["full_debug_log"]
 
+    check_configured_models()
     provider = get_provider()
     config = EngineConfig(narration_lang=narration_lang)
     create_user(username)

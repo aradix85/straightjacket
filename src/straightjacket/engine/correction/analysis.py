@@ -68,6 +68,7 @@ npcs:
     try:
         spec = AICallSpec(
             model=model_for_role("correction"),
+            log_role="correction",
             system=system,
             messages=[{"role": "user", "content": user_msg}],
             json_schema=get_correction_output_schema(),

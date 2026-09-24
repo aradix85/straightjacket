@@ -178,8 +178,9 @@ async def run_ws_session(bot_cfg: dict, auto_override: bool = False, turns_overr
     do_invariants = log_cfg["assert_state_invariants"]
     full_debug = log_cfg["full_debug_log"]
 
-    from straightjacket.engine.ai.api_client import get_provider
+    from straightjacket.engine.ai.api_client import check_configured_models, get_provider
 
+    check_configured_models()
     provider = get_provider()
     persona = get_persona(style)
 

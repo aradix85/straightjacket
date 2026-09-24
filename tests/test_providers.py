@@ -15,6 +15,7 @@ class _FakeEndpoint:
         self.response: Any = None
         self.calls: list[dict[str, Any]] = []
         self.init_args: dict[str, Any] = {}
+        self.models: list[SimpleNamespace] = []
 
     def create(self, **kwargs: Any) -> Any:
         self.calls.append(kwargs)
@@ -49,7 +50,7 @@ def anthropic_endpoint(monkeypatch: pytest.MonkeyPatch) -> _FakeEndpoint:
 
     def fake_client(**kwargs: Any) -> SimpleNamespace:
         endpoint.init_args = kwargs
-        return SimpleNamespace(messages=endpoint)
+        return SimpleNamespace(messages=endpoint, models=SimpleNamespace(list=lambda: endpoint.models))
 
     monkeypatch.setattr(provider_anthropic.anthropic, "Anthropic", fake_client)
     return endpoint
@@ -61,7 +62,9 @@ def openai_endpoint(monkeypatch: pytest.MonkeyPatch) -> _FakeEndpoint:
 
     def fake_client(**kwargs: Any) -> SimpleNamespace:
         endpoint.init_args = kwargs
-        return SimpleNamespace(chat=SimpleNamespace(completions=endpoint))
+        return SimpleNamespace(
+            chat=SimpleNamespace(completions=endpoint), models=SimpleNamespace(list=lambda: endpoint.models)
+        )
 
     monkeypatch.setattr(provider_openai.openai, "OpenAI", fake_client)
     return endpoint
@@ -212,3 +215,13 @@ def test_openai_request_uses_only_parameters_the_installed_sdk_accepts(openai_en
     provider_openai.OpenAICompatibleProvider(api_key="k").create_message(spec)
     accepted = _accepted(provider_openai.openai.resources.chat.completions.Completions.create)
     assert set(openai_endpoint.calls[0]) <= accepted
+
+
+def test_anthropic_list_models_returns_ids(anthropic_endpoint: _FakeEndpoint) -> None:
+    anthropic_endpoint.models = [SimpleNamespace(id="model-a"), SimpleNamespace(id="model-b")]
+    assert provider_anthropic.AnthropicProvider(api_key="k").list_models() == ["model-a", "model-b"]
+
+
+def test_openai_list_models_returns_ids(openai_endpoint: _FakeEndpoint) -> None:
+    openai_endpoint.models = [SimpleNamespace(id="model-c")]
+    assert provider_openai.OpenAICompatibleProvider(api_key="k").list_models() == ["model-c"]

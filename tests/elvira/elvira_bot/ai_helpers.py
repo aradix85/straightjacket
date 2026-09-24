@@ -77,6 +77,7 @@ def ask_bot(provider: AIProvider, system: str, user: str, max_tokens: int = 300,
         messages=[{"role": "user", "content": user}],
         max_tokens=max_tokens,
         temperature=_bot_temperature,
+        log_role="brain",
     )
     response = provider.create_message(spec)
     response = post_process_response(response)

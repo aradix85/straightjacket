@@ -4,13 +4,17 @@ server:
   port: 8081
 
 ai:
-  provider: "openai_compatible"
-  api_base: "https://api.cerebras.ai/v1"
-  api_key_env: "CEREBRAS_API_KEY"
   prompts_dir: "prompts"
+
+  providers:
+    cerebras:
+      type: "openai_compatible"
+      api_base: "https://api.cerebras.ai/v1"
+      api_key_env: "CEREBRAS_API_KEY"
 
   clusters:
     narrator:
+      provider: cerebras
       model: "zai-glm-4.7"
       temperature: 1.0
       top_p: 0.95
@@ -19,6 +23,7 @@ ai:
       extra_body:
         reasoning_effort: "none"
     creative:
+      provider: cerebras
       model: "gpt-oss-120b"
       temperature: 0.7
       top_p: 0.95
@@ -27,6 +32,7 @@ ai:
       extra_body:
         reasoning_effort: "medium"
     classification:
+      provider: cerebras
       model: "gpt-oss-120b"
       temperature: 0.5
       top_p: 0.95
@@ -35,6 +41,7 @@ ai:
       extra_body:
         reasoning_effort: "low"
     judgment:
+      provider: cerebras
       model: "gpt-oss-120b"
       temperature: 0.5
       top_p: 0.95
@@ -43,6 +50,7 @@ ai:
       extra_body:
         reasoning_effort: "medium"
     extraction:
+      provider: cerebras
       model: "gpt-oss-120b"
       temperature: 0.3
       top_p: 0.95

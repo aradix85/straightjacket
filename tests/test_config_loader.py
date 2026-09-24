@@ -3,12 +3,13 @@ def _full_config_data(**overrides: object) -> dict:
         "server": {"host": "127.0.0.1", "port": 8081},
         "language": {"narration_language": "English"},
         "ai": {
-            "provider": "openai_compatible",
-            "api_base": "",
-            "api_key_env": "",
             "prompts_dir": "prompts",
+            "providers": {
+                "local": {"type": "openai_compatible", "api_base": "http://localhost:9/v1", "api_key_env": "LOCAL_KEY"},
+            },
             "clusters": {
                 "classification": {
+                    "provider": "local",
                     "model": "qwen",
                     "temperature": 0.5,
                     "top_p": 0.95,
@@ -27,7 +28,9 @@ def test_appconfig_typed_access() -> None:
     from straightjacket.engine.config_loader import _parse_config
 
     config = _parse_config(_full_config_data())
-    assert config.ai.provider == "openai_compatible"
+    assert config.ai.providers["local"].type == "openai_compatible"
+    assert config.ai.providers["local"].api_key_env == "LOCAL_KEY"
+    assert config.ai.clusters["classification"].provider == "local"
     assert config.ai.clusters["classification"].model == "qwen"
     assert config.ai.clusters["classification"].temperature == 0.5
 
@@ -47,6 +50,7 @@ def test_cluster_all_fields_accessible() -> None:
     data = _full_config_data()
     data["ai"]["clusters"] = {
         "analytical": {
+            "provider": "local",
             "model": "gpt-oss",
             "temperature": 0.3,
             "top_p": 0.95,
@@ -83,3 +87,25 @@ def test_role_cluster_override() -> None:
 
     config = _parse_config(_full_config_data())
     assert config.ai.role_cluster["recap"] == "classification"
+
+
+def test_cluster_with_undefined_provider_raises() -> None:
+    import pytest
+
+    from straightjacket.engine.config_loader import _parse_config
+
+    data = _full_config_data()
+    data["ai"]["clusters"]["classification"]["provider"] = "elsewhere"
+    with pytest.raises(ValueError, match=r"not defined under ai\.providers"):
+        _parse_config(data)
+
+
+def test_cluster_without_provider_raises() -> None:
+    import pytest
+
+    from straightjacket.engine.config_loader import _parse_config
+
+    data = _full_config_data()
+    del data["ai"]["clusters"]["classification"]["provider"]
+    with pytest.raises(ValueError, match="missing required fields"):
+        _parse_config(data)

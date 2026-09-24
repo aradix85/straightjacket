@@ -35,7 +35,15 @@ GLOBAL_CONFIG_FILE = _CONFIG_PATH
 
 
 @dataclass
+class ProviderConfig:
+    type: str
+    api_base: str
+    api_key_env: str
+
+
+@dataclass
 class ClusterConfig:
+    provider: str
     model: str
     temperature: float
     top_p: float
@@ -46,9 +54,7 @@ class ClusterConfig:
 
 @dataclass
 class AIConfig:
-    provider: str
-    api_base: str
-    api_key_env: str
+    providers: dict[str, ProviderConfig]
     prompts_dir: str
     clusters: dict[str, ClusterConfig]
     role_cluster: dict[str, str]
@@ -78,7 +84,12 @@ def _parse_config(data: dict[str, Any]) -> AppConfig:
 
     ad = data["ai"]
 
-    _REQUIRED_CLUSTER_FIELDS = ("model", "temperature", "top_p", "max_tokens", "max_retries")
+    providers = {
+        name: ProviderConfig(type=pd["type"], api_base=pd["api_base"], api_key_env=pd["api_key_env"])
+        for name, pd in ad["providers"].items()
+    }
+
+    _REQUIRED_CLUSTER_FIELDS = ("provider", "model", "temperature", "top_p", "max_tokens", "max_retries")
     clusters: dict[str, ClusterConfig] = {}
     for cname, cdata in ad["clusters"].items():
         if not isinstance(cdata, dict):
@@ -89,7 +100,13 @@ def _parse_config(data: dict[str, Any]) -> AppConfig:
                 f"Cluster '{cname}' missing required fields: {missing}. "
                 f"Every cluster must specify: {list(_REQUIRED_CLUSTER_FIELDS)}."
             )
+        if cdata["provider"] not in providers:
+            raise ValueError(
+                f"Cluster '{cname}' uses provider '{cdata['provider']}', which is not defined under ai.providers. "
+                f"Defined providers: {sorted(providers)}."
+            )
         clusters[cname] = ClusterConfig(
+            provider=cdata["provider"],
             model=cdata["model"],
             temperature=float(cdata["temperature"]),
             top_p=float(cdata["top_p"]),
@@ -99,9 +116,7 @@ def _parse_config(data: dict[str, Any]) -> AppConfig:
         )
 
     ai = AIConfig(
-        provider=ad["provider"],
-        api_base=ad["api_base"],
-        api_key_env=ad["api_key_env"],
+        providers=providers,
         prompts_dir=ad["prompts_dir"],
         clusters=clusters,
         role_cluster=ad["role_cluster"],
@@ -159,6 +174,10 @@ def _cluster_for_role(role: str) -> ClusterConfig:
             f"is defined under ai.clusters in config.yaml."
         )
     return _c.ai.clusters[cluster_name]
+
+
+def provider_for_role(role: str) -> str:
+    return _cluster_for_role(role).provider
 
 
 def model_for_role(role: str) -> str:

@@ -436,7 +436,7 @@ def _check_no_yaml_comments() -> tuple[str, list[Violation]]:
 _INLINE_IMPORT_WHITELIST: set[tuple[str, str]] = {
     ("engine/models.py", "restore"),
     ("engine/npc/lifecycle.py", "_npc_eligible_for_desc_match"),
-    ("engine/ai/api_client.py", "get_provider"),
+    ("engine/ai/api_client.py", "_build_adapter"),
     ("engine/ai/provider_base.py", "create_with_retry"),
     ("engine/mechanics/fate.py", "resolve_fate"),
     ("engine/mechanics/engine_memories.py", "generate_engine_memories"),
@@ -829,6 +829,7 @@ _ORPHAN_SYMBOL_CARVE_OUT: set[tuple[str, str]] = {
     ("query_active_threads", "engine/tools/builtins.py"),
     ("query_active_clocks", "engine/tools/builtins.py"),
     ("CharacterTraits", "engine/mechanics/adventure_crafter.py"),
+    ("check_configured_models", "engine/ai/api_client.py"),
     ("roll_character_traits", "engine/mechanics/adventure_crafter.py"),
     ("lookup_character_special_trait", "engine/mechanics/adventure_crafter.py"),
     ("lookup_character_identity", "engine/mechanics/adventure_crafter.py"),

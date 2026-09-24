@@ -1,39 +1,72 @@
 import hashlib
 import os
 
-from ..config_loader import cfg
-from .provider_base import AIProvider
+from ..config_loader import ProviderConfig, cfg, provider_for_role
+from .provider_base import AICallSpec, AIProvider, AIResponse, ModelListingProvider
 
 
-_provider_cache: dict[str, AIProvider] = {}
+_adapter_cache: dict[str, ModelListingProvider] = {}
+
+
+def _build_adapter(name: str, pc: ProviderConfig) -> ModelListingProvider:
+    resolved_key = os.environ.get(pc.api_key_env, "")
+    if not resolved_key:
+        raise ValueError(f"No API key for provider '{name}'. Set the ${pc.api_key_env} environment variable.")
+
+    cache_key = f"{name}:{pc.type}:{pc.api_base}:{hashlib.sha256(resolved_key.encode()).hexdigest()[:16]}"
+    if cache_key in _adapter_cache:
+        return _adapter_cache[cache_key]
+
+    api_base = pc.api_base or None
+    adapter: ModelListingProvider
+    if pc.type == "anthropic":
+        from .provider_anthropic import AnthropicProvider
+
+        adapter = AnthropicProvider(api_key=resolved_key, api_base=api_base)
+    elif pc.type == "openai_compatible":
+        from .provider_openai import OpenAICompatibleProvider
+
+        adapter = OpenAICompatibleProvider(api_key=resolved_key, api_base=api_base)
+    else:
+        raise ValueError(f"Unknown type {pc.type!r} for provider '{name}'. Valid types: anthropic, openai_compatible.")
+
+    _adapter_cache[cache_key] = adapter
+    return adapter
+
+
+def _adapters_in_use() -> dict[str, ModelListingProvider]:
+    ai = cfg().ai
+    names = sorted({cluster.provider for cluster in ai.clusters.values()})
+    return {name: _build_adapter(name, ai.providers[name]) for name in names}
+
+
+class RoutingProvider:
+    def __init__(self, adapters: dict[str, ModelListingProvider]) -> None:
+        self._adapters = adapters
+
+    def create_message(self, spec: AICallSpec) -> AIResponse:
+        return self._adapters[provider_for_role(spec.log_role)].create_message(spec)
 
 
 def get_provider() -> AIProvider:
-    _c = cfg()
-    provider_type = _c.ai.provider
+    return RoutingProvider(_adapters_in_use())
 
-    env_var = _c.ai.api_key_env
-    resolved_key = os.environ.get(env_var, "")
 
-    if not resolved_key:
-        raise ValueError(f"No API key found. Set the ${env_var} environment variable.")
-
-    cache_key = f"{provider_type}:{hashlib.sha256(resolved_key.encode()).hexdigest()[:16]}"
-    if cache_key in _provider_cache:
-        return _provider_cache[cache_key]
-
-    api_base = _c.ai.api_base or None
-
-    if provider_type == "anthropic":
-        from .provider_anthropic import AnthropicProvider
-
-        provider: AIProvider = AnthropicProvider(api_key=resolved_key, api_base=api_base)
-    elif provider_type == "openai_compatible":
-        from .provider_openai import OpenAICompatibleProvider
-
-        provider = OpenAICompatibleProvider(api_key=resolved_key, api_base=api_base)
-    else:
-        raise ValueError(f"Unknown AI provider: {provider_type!r}")
-
-    _provider_cache[cache_key] = provider
-    return provider
+def check_configured_models() -> None:
+    ai = cfg().ai
+    adapters = _adapters_in_use()
+    available = {name: set(adapter.list_models()) for name, adapter in adapters.items()}
+    missing = [
+        (cluster_name, cluster.provider, cluster.model)
+        for cluster_name, cluster in sorted(ai.clusters.items())
+        if cluster.model not in available[cluster.provider]
+    ]
+    if missing:
+        lines = [
+            f"  cluster '{cluster_name}': model '{model}' is not offered by provider '{provider}'. "
+            f"Available there: {', '.join(sorted(available[provider])) or 'none'}."
+            for cluster_name, provider, model in missing
+        ]
+        raise RuntimeError(
+            "Configured models are not available:\n" + "\n".join(lines) + "\nUpdate ai.clusters in config.yaml."
+        )

@@ -16,6 +16,9 @@ class OpenAICompatibleProvider:
             self._client = openai.OpenAI(api_key=api_key)
         log(f"[OpenAICompatibleProvider] Initialized{f' (base: {api_base})' if api_base else ''}")
 
+    def list_models(self) -> list[str]:
+        return [model.id for model in self._client.models.list()]
+
     def create_message(self, spec: AICallSpec) -> AIResponse:
         full_messages = [{"role": "system", "content": spec.system}, *spec.messages]
 

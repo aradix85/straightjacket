@@ -79,6 +79,8 @@ Open architectural questions: none currently pending.
 
 Decision 2026-09-24, fact-resolution trigger (step 9): the Brain detects, the engine decides. The Brain output gains a field listing the undetermined facts the player's action depends on, each as an entity reference plus a fact type chosen from a fixed yaml list (start with four or five, for example locked or blocked, present, alert, contains something useful). The engine derives the odds from game state, resolves through fate, stores the answer, and passes it to the narrator as a `<fact>` tag. Three conditions. First, the fact-type list lives in yaml and an unknown type raises. Second, a resolved fact persists on the entity it describes and is reused rather than re-rolled until the fiction changes it; the save format breaks when this lands. Third, the Brain prompt explains the new field with examples in the same commit, because the `fate_question` field added in 2026.04.28.2 died unused for lack of exactly that. Considered and rejected: fixed engine rules per move and target (cannot cover free player input), the narrator requesting facts (an extra call, and the narrator would decide what is uncertain), and only pre-generating facts when an entity is created (cannot anticipate everything; it complements this decision once step 10 lands). This is not a return of the player fate question removed in 2026.04.28.4: the player still types actions, and the Brain recognises the uncertainty inside an action.
 
+Provider status 2026-09-24. Cerebras retired `zai-glm-4.7`, the narrator model, on 2026-08-17; its public catalogue now offers only `gpt-oss-120b` and `qwen-3.8-27b`, and newer large models (GLM 5, GLM 5.1, Kimi K2.6) are dedicated-endpoint only. The user will not keep `gpt-oss-120b` on Cerebras either. `config.yaml` still names both models until replacements are chosen, and the startup check reports the missing narrator model. Per-role providers (2026.09.24.9) make mixing providers possible; choosing providers and models is the user's pending decision.
+
 Forward-pointing decisions referenced by later steps:
 
 Track-type composition (referenced by steps 25.1, 26.1, 31.1 as "Option C from the track-type decision"). Three options were considered for domain objects that own a progress track. Option A: `class ExpeditionData(ProgressTrack)` inheriting from ProgressTrack. Option B: registry pattern where ProgressTrack carries a `kind` discriminator and domain fields live as a sibling dict. Option C: composition, where the domain object holds a `progress: ProgressTrack` field plus its own fields. C was chosen. Reasons: ProgressTrack stays a single-purpose dataclass (rank, ticks, status); inheritance would push domain concerns onto a primitive used everywhere; registry pattern requires lookup indirection at every callsite. Composition keeps both layers cleanly separable, snapshot/restore works through SerializableMixin on either layer, and adding a fourth track-owning domain object requires zero changes to ProgressTrack itself.
@@ -182,6 +184,24 @@ EdgeTales 0.9.67–0.9.96 (Lars) was read in full on 2026-09-24. Its bug fixes t
 **E5 — Brain `target_npc` limited to known NPCs.** `target_npc` is a free string, so a compound answer such as `npc_3,npc_4` silently drops the target and with it bond and disposition effects. Build the Brain schema with an enum of known NPC ids plus null. Decide first whether per-game schemas fit the current schema caching; the fallback is a sanitizer that logs and clears unknown targets.
 
 **E6 — Narrator rule on NPC backstory.** NPCs draw on their description, agenda, arc, and earlier scenes; when their past is not established, they keep it vague rather than invent family or history. Phrase it as direction, not prohibition (see the constraint-writing principles in the design document), and measure with an Elvira batch before and after, because prompt wording has caused regressions before (2026.04.27.4).
+
+### S — Sentence-level streaming of narration
+
+Today the server sends the narration when the whole turn is finished, so the player waits for Brain, narrator, and metadata extraction in sequence before hearing a word. With sentence-level streaming the narrator's output streams from the provider, the server buffers it until a sentence is complete, and sends each finished sentence to the client, where it is appended to the aria-live region. NVDA starts reading after the first sentence while the rest is still being written; the screen reader never receives half words. This matters more once a slower but stronger provider serves the narrator.
+
+**S.1** Streaming in the adapters: a streaming variant of `create_message` on both adapters (both SDKs support it), exposed through the routing provider. The non-streaming path stays for every structured-output role.
+
+**S.2** Sentence buffering on the server: a sentence splitter that respects dialogue quotes, ellipses, and abbreviations; a new WebSocket message type for a narration sentence; the existing end-of-turn message still closes the turn.
+
+**S.3** Parser per sentence: `parser.py` cleans the whole narration in ten steps. Classify each step as sentence-safe or whole-text-only; whole-text steps (trailing metadata blocks, for example) must either become sentence-safe or run on a held-back tail before its sentences are released.
+
+**S.4** Client: append each sentence to the narration region in the same live region, so NVDA reads additions in order without re-reading earlier text; keep input disabled until the end-of-turn message, because metadata extraction and scene finalization still run after the last sentence. Test with NVDA by the user, not only by assertion.
+
+**S.5** Other narration paths: correction and momentum burn re-narrate and must stream the same way, or deliberately not stream, decided and recorded in the step.
+
+**S.6** Tests: splitter cases, parser steps per sentence against whole-text results, WebSocket message order, and Elvira in WebSocket mode.
+
+Done: the first sentence of a narration reaches the client while the provider is still generating, sentences arrive whole and in order, and the final narration text equals what the non-streaming path produces.
 
 ### 10 — Location and encounter generators
 

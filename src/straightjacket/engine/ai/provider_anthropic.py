@@ -14,6 +14,9 @@ class AnthropicProvider:
             self._client = anthropic.Anthropic(api_key=api_key)
         log(f"[AnthropicProvider] Initialized{f' (base: {api_base})' if api_base else ''}")
 
+    def list_models(self) -> list[str]:
+        return [model.id for model in self._client.models.list()]
+
     def create_message(self, spec: AICallSpec) -> AIResponse:
         create_kwargs: dict[str, Any] = {
             "model": spec.model,

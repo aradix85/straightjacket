@@ -73,6 +73,10 @@ class AIProvider(Protocol):
     def create_message(self, spec: AICallSpec) -> AIResponse: ...
 
 
+class ModelListingProvider(AIProvider, Protocol):
+    def list_models(self) -> list[str]: ...
+
+
 _THINK_TAG_RE = re.compile(r"<think>.*?</think>\s*", re.DOTALL)
 _UNICODE_ESCAPE_RE = re.compile(r"\\u([0-9a-fA-F]{4})")
 

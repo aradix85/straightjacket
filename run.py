@@ -71,11 +71,14 @@ def _start():
 
     setup_file_logging()
 
-    # Early warning: check API key env var exists before starting server
-    env_var = cfg().ai.api_key_env
-    if not os.environ.get(env_var):
-        log(f"[Server] WARNING: ${env_var} is not set. AI calls will fail.", level="warning")
-        print(f"\n  ⚠ No API key: ${env_var} is not set. Set it before playing.\n")
+    from straightjacket.engine.ai.api_client import check_configured_models
+
+    try:
+        check_configured_models()
+    except (RuntimeError, ValueError) as e:
+        log(f"[Server] Startup check failed: {e}", level="error")
+        print(f"\n  Startup check failed:\n{e}\n")
+        sys.exit(1)
 
     port = cfg().server.port
     host = cfg().server.host
