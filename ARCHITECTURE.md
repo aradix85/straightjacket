@@ -414,6 +414,7 @@ python -m pytest tests/                                # unit/integration suite
 python tests/elvira/elvira.py --auto                   # direct engine, 8 turns, random setting and style (needs API keys)
 python tests/elvira/elvira.py --auto --matrix --turns 8 # every setting and style in turn
 python tests/elvira/elvira.py --auto --turns 40        # a long run that reaches rarer situations
+python tests/modeltest/modeltest.py --models current   # narrator model comparison on ten fixed scenes (needs API keys)
 python tests/elvira/elvira.py --ws --auto --turns 5    # via WebSocket server
 ```
 
@@ -427,6 +428,8 @@ The **unit/integration test suite** (`python -m pytest tests/ -v`) runs without 
 
 - Direct mode drives the engine directly; the fastest way to test engine changes.
 - WebSocket mode (`--ws`) plays through the real server stack and also probes the status, tracks, threats, and recap messages.
+
+**Model comparison** (`tests/modeltest/modeltest.py`) measures narrator models on ten fixed scenes: the narrator prompts of real turns, captured through the engine with a scripted Brain (`--capture`). Each contestant narrates every scene three times, GPT-6 Sol and Claude Sonnet 5 score each narration blind on the same six criteria as Elvira's judge, and the report compares with `tests/modeltest/baseline_gpt-6-luna.json`. `tests/test_modeltest.py` captures every scene again and fails when a stored scene no longer matches the engine, so a narrator-prompt change forces a new capture and a new baseline. Measurements are written to `tests/modeltest/runs/`, which git ignores.
 
 Run Elvira before a release that touches the turn pipeline, AI calls, prompts, or configuration: the unit tests catch logic bugs, Elvira catches what only real model output and real data reveal.
 

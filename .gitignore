@@ -46,3 +46,4 @@ key.pem
 .coverage
 htmlcov/
 tests/elvira/runs/
+tests/modeltest/runs/

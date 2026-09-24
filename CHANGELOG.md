@@ -7,6 +7,22 @@ Originally forked from [EdgeTales](https://github.com/edgetales/edgetales). See 
 
 Straightjacket uses calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day. The first CalVer release is `2026.04.25.0`. Earlier `0.x.y` releases keep their original version numbers and are not renumbered. The switch was made because the project has no public API to version semantically against — the `0.x.y` numbers were running counters with no meaning, and dates carry the meaning the numbers didn't.
 
+## [2026.09.24.50] — 2026-09-24
+
+The model-comparison harness moves into the repository as `tests/modeltest/`, at the user's request, rebuilt rather than copied.
+
+Why rebuilt. The 24 September measurements ran from fourteen scripts in `Documents\sj_modeltest`: twelve caught every exception, all fourteen held paths into the user's folder, eleven read API keys from the registry and spoke HTTP to the providers themselves, ruff found forty errors under this repository's rules, and seven `run_` scripts were near copies, one per measuring day. Their scripted Brain also lacked four fields that the strict loader of 2026.09.24.45 now requires, so they could no longer capture a scene.
+
+What it is now. `tests/modeltest/modeltest.py` with `--capture`, `--models`, and `--attempts`; `modeltest_config.yaml` (judges, contestants, prices), `modeltest_prompts.yaml` (the judging rubric, word for word from the old scripts), and `modeltest_scenarios.yaml` (the ten scenes, declared once). Calls go through the engine's adapters via `provider_named`; `current` measures the narrator cluster from `config.yaml` as configured. Capturing stops at the narrator call and reads the result from the prompt's `<result>` tag, so it no longer depends on the integration tests' mock provider. Results go to `tests/modeltest/runs/`, which git ignores.
+
+Checked, not assumed. Capturing the ten scenes with the new code reproduced the three dialog scenes byte for byte, so building the game state and the prompt was ported faithfully. The seven action scenes differed, because the engine changed after they were captured at 12:26 that day (the one-d6 action roll, the official Pay the Price tables); they are captured again. The old baseline then no longer matched the scenes, so GPT-6 Luna was measured again with the new tool: 30 narrations, no errors, overall 6.98 out of 10, result integrity on a miss 4.17 out of 5, 3.3 seconds per narration, about 39 cents, most of it for the two judges. That run is the new `baseline_gpt-6-luna.json`. The report's summary of the old baseline gives 6.40, the figure in 2026.09.24.19 and .36, which confirms the tool computes as the old scripts did. The two numbers are not comparable: the scenes changed, and the judges now answer through a JSON schema.
+
+Tests: new `tests/test_modeltest.py`, including ten drift tests that capture each scene again and fail when a stored scene no longer matches the engine, so a narrator-prompt change forces a new capture and a new baseline in the same commit; plus a captured miss carrying its result tag, a measurement with every narration judged and summarized, and a failed narration recorded without a verdict. On its first run the project-rule scan found model names in the test and a summary function above the complexity ceiling; the test now takes its contestant from the config, and the summary is split.
+
+Documentation: ARCHITECTURE.md describes the harness under Testing and lists its command; the roadmap points to it instead of the old folder. The old folder stays as an archive of that day's measurements, with a note in its README that its scripts no longer work with the current engine.
+
+Quality gate: 1430 tests green, twenty-nine project-rule scans clean, coverage 90.07%, ruff check and ruff format clean, mypy --strict clean on 109 source files. No Elvira run: engine, prompts, and configuration are unchanged, and the live measurement above exercised the new tool end to end. Save format unchanged.
+
 ## [2026.09.24.49] — 2026-09-24
 
 Elvira varies, judges fairly, and survives AI failures, at the user's request. First of two steps; scenarios for rare situations follow.

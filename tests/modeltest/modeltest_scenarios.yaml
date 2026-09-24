@@ -1,0 +1,133 @@
+common:
+  tone: "serious_balanced"
+  chaos_factor: 5
+  scene_count: 3
+
+bases:
+  library: &library
+    setting: ["classic", "dark_fantasy", "A world of fading magic and creeping shadow."]
+    player: ["Kael", "A wandering scholar"]
+    stats: {edge: 1, heart: 2, iron: 1, shadow: 1, wits: 2}
+    resources: {health: 4, spirit: 3, supply: 5, momentum: 3}
+    location: "Abandoned Library"
+    time: "evening"
+    clocks:
+    - name: "Shadow Rising"
+      clock_type: "threat"
+      segments: 6
+      filled: 2
+      owner_kind: "world"
+      trigger_description: "Darkness engulfs the library"
+    npcs:
+    - id: "npc_1"
+      name: "Mira"
+      disposition: "hostile"
+      agenda: "Keep the smuggling ledger out of anyone else's hands, by force if needed"
+      instinct: "Lies first, strikes second"
+      description: "Young archivist with ink-stained hands"
+      memory: {event: "Met the player at the entrance", emotional_weight: "curious"}
+  library_action: &library_action
+    move: "adventure/face_danger"
+    stat: "wits"
+    approach: "carefully examining the area"
+    player_intent: "I search the room for clues"
+  wanderer: &wanderer
+    stats: {edge: 2, heart: 2, iron: 1, shadow: 1, wits: 2}
+    resources: {health: 4, spirit: 3, supply: 4, momentum: 3}
+    clocks: []
+  dark_fantasy: &dark_fantasy ["classic", "dark_fantasy", "A world of fading magic and creeping shadow."]
+  kael: &kael ["Kael", "A wandering scholar"]
+  crossed: &crossed {event: "Crossed paths with the player earlier", emotional_weight: "wary"}
+
+scenarios:
+  miss:
+    <<: *library
+    want: "MISS"
+    brain: *library_action
+    text: "I wait until Mira looks away, then slip behind the counter and try to take the ledger from under her hand."
+  weak_hit:
+    <<: *library
+    want: "WEAK_HIT"
+    brain: *library_action
+    text: "I wait until Mira looks away, then slip behind the counter and try to take the ledger from under her hand."
+  strong_hit:
+    <<: *library
+    want: "STRONG_HIT"
+    brain: *library_action
+    text: "I wait until Mira looks away, then slip behind the counter and try to take the ledger from under her hand."
+  dialog:
+    <<: *library
+    want: "dialog"
+    brain:
+      move: "dialog"
+      stat: "none"
+      target_npc: "npc_1"
+      dialog_only: true
+      player_intent: "Ask Mira who the ledger belongs to"
+    text: "I lean on the counter and ask Mira, quietly, who the ledger really belongs to and what she wants for it."
+  scifi_strong_hit:
+    <<: *wanderer
+    want: "STRONG_HIT"
+    setting: ["starforged", "science_fiction", "Scattered humanity clings to life among the hostile stars of the Forge."]
+    player: ["Rook", "A salvager drowning in debt"]
+    location: "Cargo deck of the derelict freighter Ashfall"
+    time: "ship night"
+    npcs:
+    - {id: "npc_1", name: "Vex", disposition: "hostile", agenda: "Strip the freighter before rival crews arrive", instinct: "Shoots first", description: "Raider in scorched armor with a cutting torch", memory: *crossed}
+    brain: {move: "adventure/face_danger", stat: "edge", target_npc: "npc_1", player_intent: "Reach the cargo controls before Vex does"}
+    text: "I sprint for the cargo controls, keeping the crates between me and Vex's torch."
+  ally_dialog:
+    <<: *wanderer
+    want: "dialog"
+    setting: *dark_fantasy
+    player: *kael
+    location: "Ferry landing on the flooded river"
+    time: "dawn"
+    npcs:
+    - {id: "npc_1", name: "Brannoc", disposition: "friendly", agenda: "Get his granddaughter out of the drowned village", instinct: "Trusts quickly, regrets slowly", description: "Old ferryman with rope-scarred hands", memory: *crossed}
+    brain: {move: "dialog", stat: "none", target_npc: "npc_1", player_intent: "Ask Brannoc what he needs and offer to help", dialog_only: true}
+    text: "I sit on the jetty beside Brannoc and ask him plainly what he needs from me."
+  search_weak_hit:
+    <<: *wanderer
+    want: "WEAK_HIT"
+    setting: *dark_fantasy
+    player: *kael
+    location: "Collapsed watchtower on the moor"
+    time: "late afternoon"
+    npcs: []
+    brain: {move: "adventure/gather_information", stat: "wits", target_npc: null, player_intent: "Search the rubble for signs of who was here"}
+    text: "I search the rubble for signs of who was here before me, and how long ago."
+  danger_miss:
+    <<: *wanderer
+    want: "MISS"
+    setting: *dark_fantasy
+    player: *kael
+    location: "Icy ledge above the Greywater gorge"
+    time: "dusk"
+    npcs:
+    - {id: "npc_1", name: "The Hound-Master", disposition: "hostile", agenda: "Drag the scholar back to the abbey", instinct: "Patient, never alone", description: "Hooded tracker with three grey dogs", memory: *crossed}
+    brain: {move: "adventure/face_danger", stat: "edge", target_npc: null, player_intent: "Leap the gap to the far ledge before the pursuers arrive"}
+    text: "I take a running start and leap the gap to the far ledge before the dogs reach me."
+  two_npc_dialog:
+    <<: *wanderer
+    want: "dialog"
+    setting: *dark_fantasy
+    player: *kael
+    location: "The Drowned Lantern tavern"
+    time: "night"
+    npcs:
+    - {id: "npc_1", name: "Mira", disposition: "hostile", agenda: "Keep the smuggling ledger hidden", instinct: "Lies first, strikes second", description: "Young archivist with ink-stained hands", memory: *crossed}
+    - {id: "npc_2", name: "Captain Oren", disposition: "neutral", agenda: "Keep the peace between the river gangs", instinct: "Weighs every word", description: "Grey-bearded warden with a scar through one eyebrow", memory: *crossed}
+    brain: {move: "dialog", stat: "none", target_npc: "npc_2", player_intent: "Ask Captain Oren, in front of Mira, what he knows about the smuggling ledger", dialog_only: true}
+    text: "I sit down across from Captain Oren, right next to Mira, and ask him what he knows about a certain smuggling ledger."
+  isles_weak_hit:
+    <<: *wanderer
+    want: "WEAK_HIT"
+    setting: ["sundered_isles", "seafaring_fantasy", "Scattered isles, cursed seas, and the ships that dare them."]
+    player: ["Tamsin", "A disgraced navigator"]
+    location: "Saltmarrow docks"
+    time: "noon"
+    npcs:
+    - {id: "npc_1", name: "Quartermaster Hale", disposition: "neutral", agenda: "Fill the hold before the storm season", instinct: "Counts everything twice", description: "Stout quartermaster with a ledger chained to his belt", memory: *crossed}
+    brain: {move: "adventure/compel", stat: "heart", target_npc: "npc_1", player_intent: "Convince Hale to sell passage on credit"}
+    text: "I tell Hale I can read the Maelstrom currents better than anyone aboard, and ask him to give me passage now and take payment at the next port."
