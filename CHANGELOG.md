@@ -7,6 +7,18 @@ Originally forked from [EdgeTales](https://github.com/edgetales/edgetales). See 
 
 Straightjacket uses calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day. The first CalVer release is `2026.04.25.0`. Earlier `0.x.y` releases keep their original version numbers and are not renumbered. The switch was made because the project has no public API to version semantically against — the `0.x.y` numbers were running counters with no meaning, and dates carry the meaning the numbers didn't.
 
+## [2026.09.24.30] — 2026-09-24
+
+Outcomes on a match follow Starforged (roadmap R.3).
+
+The Datasworn move texts hold seven "on a strong hit with a match" or "on a miss with a match" clauses, all in Starforged; classic Ironsworn has none. The engine ignored all of them beyond the narrator's twist. The four mechanical ones are now modelled: `engine/move_outcomes.yaml` accepts optional `strong_hit_match` and `miss_match` entries, which replace the plain outcome on a match because the rule text describes the whole result there, and `mechanics/move_outcome.py` → `resolve_move_outcome` takes `match` from the roll (passed by `game/finalization.py`). Scene challenge Face Danger now marks progress twice on a strong hit with a match and fills two segments and pays the price on a miss with a match; scene challenge Secure an Advantage takes both benefits and marks progress on a strong hit with a match and fills two segments and pays the price on a miss with a match.
+
+The other three are pinned as known gaps in `tests/test_rules_conformance.py`, which fails if a new unmodelled match clause appears: Explore a Waypoint's "you may instead Make a Discovery" and "Confront Chaos" chain a second move, the same open design question as Test Your Relationship, and Develop Your Relationship's optional rank raise has no effect yet.
+
+Tests: the match-clause check, and six scene challenge cases with and without a match.
+
+Quality gate: 1386 tests green, twenty-nine project-rule scans clean, coverage 89.69%, ruff check and ruff format clean, mypy --strict clean on 106 source files. Save format unchanged.
+
 ## [2026.09.24.29] — 2026-09-24
 
 Pay the Price follows the rulebooks (roadmap R.3).

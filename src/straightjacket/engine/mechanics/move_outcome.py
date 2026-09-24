@@ -8,7 +8,7 @@ from .move_handlers import apply_recovery_handler, apply_suffer_handler, apply_t
 
 
 def resolve_move_outcome(
-    game: GameState, move_key: str, roll_result: str, target_npc_id: str | None = None
+    game: GameState, move_key: str, roll_result: str, target_npc_id: str | None = None, match: bool = False
 ) -> OutcomeResult:
     _e = eng()
     outcomes_cfg = _e.get_raw("move_outcomes")
@@ -26,7 +26,8 @@ def resolve_move_outcome(
         params_dict = dict(move_cfg["params"])
         return _dispatch_handler(game, handler, roll_result, params_dict)
 
-    effects_raw = move_cfg.get(result_key)
+    match_key = f"{result_key}_match"
+    effects_raw = move_cfg[match_key] if match and match_key in move_cfg else move_cfg.get(result_key)
     if effects_raw is None:
         raise ValueError(f"No effects for {move_key}/{result_key}. Add it to engine.yaml move_outcomes.")
 

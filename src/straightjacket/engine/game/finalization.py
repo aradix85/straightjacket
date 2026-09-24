@@ -42,7 +42,7 @@ def resolve_action_consequences(
     roll: RollResult,
     position: str,
 ) -> ActionOutcome:
-    outcome = resolve_move_outcome(game, brain.move, roll.result, target_npc_id=brain.target_npc)
+    outcome = resolve_move_outcome(game, brain.move, roll.result, target_npc_id=brain.target_npc, match=roll.match)
 
     if outcome.combat_position:
         game.world.combat_position = outcome.combat_position

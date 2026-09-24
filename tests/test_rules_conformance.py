@@ -396,3 +396,48 @@ def test_enter_the_fray_miss_pays_the_price_only_in_classic(load_engine: None, s
 
     outcome = resolve_move_outcome(make_game_state(setting_id=setting), "combat/enter_the_fray", "MISS")
     assert outcome.pay_the_price is pays
+
+
+KNOWN_MATCH_GAPS = {
+    ("starforged", "connection/develop_your_relationship", "strong_hit"),
+    ("starforged", "exploration/explore_a_waypoint", "strong_hit"),
+    ("starforged", "exploration/explore_a_waypoint", "miss"),
+}
+
+
+def test_every_match_clause_is_modelled_or_known(load_engine: None) -> None:
+    from straightjacket.engine.datasworn.moves import get_moves
+
+    table = yaml.safe_load((REPO / "engine" / "move_outcomes.yaml").read_text(encoding="utf-8"))
+    unmodelled = set()
+    for setting in ("starforged", "classic"):
+        overrides = table["move_outcome_overrides"][setting] if setting in table["move_outcome_overrides"] else {}
+        outcomes = {**table["move_outcomes"], **overrides}
+        for key, move in get_moves(setting).items():
+            for outcome in move.outcomes.values():
+                for kind in re.findall(r"On a __(strong hit|miss) with a match__", outcome.text):
+                    result = kind.replace(" ", "_")
+                    if f"{result}_match" not in outcomes.get(key, {}):
+                        unmodelled.add((setting, key, result))
+    assert unmodelled == KNOWN_MATCH_GAPS
+
+
+@pytest.mark.parametrize(
+    ("move", "result", "match", "progress", "clock"),
+    [
+        ("scene_challenge/face_danger", "STRONG_HIT", False, 1, 0),
+        ("scene_challenge/face_danger", "STRONG_HIT", True, 2, 0),
+        ("scene_challenge/face_danger", "MISS", False, 0, 1),
+        ("scene_challenge/face_danger", "MISS", True, 0, 2),
+        ("scene_challenge/secure_an_advantage", "STRONG_HIT", True, 1, 0),
+        ("scene_challenge/secure_an_advantage", "MISS", True, 0, 2),
+    ],
+)
+def test_scene_challenge_match_outcomes(
+    load_engine: None, move: str, result: str, match: bool, progress: int, clock: int
+) -> None:
+    from straightjacket.engine.mechanics.move_outcome import resolve_move_outcome
+    from tests._helpers import make_game_state
+
+    outcome = resolve_move_outcome(make_game_state(setting_id="starforged"), move, result, match=match)
+    assert (outcome.progress_marks, outcome.clock_fills) == (progress, clock)

@@ -294,20 +294,32 @@ move_outcomes:
   scene_challenge/face_danger:
     strong_hit:
     - mark_progress 1
+    strong_hit_match:
+    - mark_progress 2
     weak_hit:
     - mark_progress 1
     - fill_clock 1
     miss:
     - fill_clock 1
     - pay_the_price
+    miss_match:
+    - fill_clock 2
+    - pay_the_price
   scene_challenge/secure_an_advantage:
     strong_hit:
     - momentum +2
     - next_move_bonus +1
+    strong_hit_match:
+    - momentum +2
+    - next_move_bonus +1
+    - mark_progress 1
     weak_hit:
     - momentum +2
     miss:
     - fill_clock 1
+    - pay_the_price
+    miss_match:
+    - fill_clock 2
     - pay_the_price
   scene_challenge/finish_the_scene:
     strong_hit:
