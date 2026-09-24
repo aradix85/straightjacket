@@ -7,6 +7,18 @@ Originally forked from [EdgeTales](https://github.com/edgetales/edgetales). See 
 
 Straightjacket uses calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day. The first CalVer release is `2026.04.25.0`. Earlier `0.x.y` releases keep their original version numbers and are not renumbered. The switch was made because the project has no public API to version semantically against — the `0.x.y` numbers were running counters with no meaning, and dates carry the meaning the numbers didn't.
 
+## [2026.09.24.31] — 2026-09-24
+
+Moves that say "make another move" now make it, in the same turn.
+
+Where an outcome's rule text sends the player to another move, the engine now rolls that move at once. `engine/move_outcomes.yaml` gains the effect `chain_move <move>`, recorded on the outcome as `chained_move`; `game/finalization.py` → `_chain_move` then rolls the chained move: with the best stat its Datasworn roll options allow, or, for a connection move rolled by rank, with the value of the target NPC's connection rank. A banked next-move bonus is spent on it, as it is the next move. Its outcome is resolved, its consequences join the first move's under a "follow-up move" line for the narrator (`ai_text.yaml` → `consequence_labels.chained_move`), and a legacy reward it grants carries over. Without a value to roll with, for example no connection with the NPC, the chain is skipped with a warning.
+
+Test Your Relationship is the first user: on a strong or weak hit the rules say Develop Your Relationship, which replaces the engine's earlier "+1 bond" and then rolls with the connection's rank, marking 2 bonds legacy ticks on its own strong hit. Explore a Waypoint's match clauses stay open: their targets, Make a Discovery and Confront Chaos, are oracle moves without a roll.
+
+Tests: a chained Develop Your Relationship with fixed dice reaching its 2 legacy ticks, and a chain skipped without a connection. `tests/test_models.py` expected connection progress from Test Your Relationship itself and now expects the chained move instead.
+
+Quality gate: 1388 tests green, twenty-nine project-rule scans clean, coverage 89.63%, ruff check and ruff format clean, mypy --strict clean on 106 source files. Save format unchanged.
+
 ## [2026.09.24.30] — 2026-09-24
 
 Outcomes on a match follow Starforged (roadmap R.3).

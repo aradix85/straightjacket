@@ -129,10 +129,10 @@ move_outcomes:
     - narrative
   connection/test_your_relationship:
     strong_hit:
-    - bond +1
+    - chain_move connection/develop_your_relationship
     - disposition_shift
     weak_hit:
-    - bond +1
+    - chain_move connection/develop_your_relationship
     miss:
     - pay_the_price
   connection/forge_a_bond:

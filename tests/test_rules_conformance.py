@@ -441,3 +441,39 @@ def test_scene_challenge_match_outcomes(
 
     outcome = resolve_move_outcome(make_game_state(setting_id="starforged"), move, result, match=match)
     assert (outcome.progress_marks, outcome.clock_fills) == (progress, clock)
+
+
+def test_test_your_relationship_chains_develop_your_relationship(
+    load_engine: None, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from straightjacket.engine.game.finalization import resolve_action_consequences
+    from straightjacket.engine.mechanics import consequences
+    from straightjacket.engine.models import RollResult
+    from tests._helpers import make_brain_result, make_game_state, make_npc, make_progress_track
+
+    game = make_game_state(setting_id="starforged")
+    game.npcs = [make_npc(id="npc_1", name="Mira", status="active")]
+    game.progress_tracks.append(
+        make_progress_track(id="connection_npc_1", name="Mira", track_type="connection", rank="dangerous", ticks=0)
+    )
+    dice = [6, 1, 2]
+    monkeypatch.setattr(consequences.random, "randint", lambda low, high: dice.pop(0))
+    roll = RollResult(4, 0, 1, 2, "heart", 2, 6, "STRONG_HIT", "connection/test_your_relationship", match=False)
+    brain = make_brain_result(move="connection/test_your_relationship", target_npc="npc_1")
+    action = resolve_action_consequences(game, brain, roll, "risky")
+    assert any(c.startswith("follow-up move") and c.endswith("STRONG_HIT") for c in action.consequences)
+    assert action.outcome is not None
+    assert action.outcome.legacy_fixed_ticks == 2
+
+
+def test_a_chain_without_a_connection_is_skipped(load_engine: None) -> None:
+    from straightjacket.engine.game.finalization import resolve_action_consequences
+    from straightjacket.engine.models import RollResult
+    from tests._helpers import make_brain_result, make_game_state, make_npc
+
+    game = make_game_state(setting_id="starforged")
+    game.npcs = [make_npc(id="npc_1", name="Mira", status="active")]
+    roll = RollResult(4, 0, 1, 2, "heart", 2, 6, "STRONG_HIT", "connection/test_your_relationship", match=False)
+    brain = make_brain_result(move="connection/test_your_relationship", target_npc="npc_1")
+    action = resolve_action_consequences(game, brain, roll, "risky")
+    assert not any(c.startswith("follow-up move") for c in action.consequences)

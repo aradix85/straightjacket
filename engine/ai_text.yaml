@@ -30,6 +30,7 @@ ai_text:
     integrity_change: integrity {value}
     mark_progress: mark progress ×{n}
     next_move_bonus: next move +{n}
+    chained_move: 'follow-up move {move}: {result}'
     legacy_reward: legacy reward ({track})
     clock_fill: clock +{n}
     bond_progress: '{name} bond progress +{n} ticks'

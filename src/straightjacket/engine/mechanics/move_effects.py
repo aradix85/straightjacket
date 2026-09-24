@@ -29,12 +29,14 @@ class OutcomeResult:
     legacy_track: str = ""
     legacy_rank_shift: int = 0
     legacy_fixed_ticks: int = 0
+    chained_move: str = ""
     narrative_only: bool = False
 
 
 _EFFECT_RE = re.compile(r"^(\w+)\s+([+-]?\d+)$")
 _POSITION_RE = re.compile(r"^position\s+(\w+)$")
 _LEGACY_RE = re.compile(r"^legacy_reward\s+(\w+)$")
+_CHAIN_MOVE_RE = re.compile(r"^chain_move\s+(\S+)$")
 _LEGACY_LOWER_RE = re.compile(r"^legacy_reward_lower\s+(\w+)$")
 _LEGACY_TICKS_RE = re.compile(r"^legacy_ticks\s+(\w+)\s+(\d+)$")
 _FILL_CLOCK_RE = re.compile(r"^fill_clock\s+(\d+)$")
@@ -50,6 +52,10 @@ def parse_effect(effect_str: str) -> MoveEffect:
     m = _POSITION_RE.match(effect_str)
     if m:
         return MoveEffect(type="position", target=m.group(1))
+
+    m = _CHAIN_MOVE_RE.match(effect_str)
+    if m:
+        return MoveEffect(type="chain_move", target=m.group(1))
 
     m = _LEGACY_LOWER_RE.match(effect_str)
     if m:
@@ -170,6 +176,12 @@ def _apply_suffer_move_effect(
     _apply_generic_suffer(game, abs(effect.value), result)
 
 
+def _apply_chain_move_effect(
+    game: GameState, effect: MoveEffect, result: OutcomeResult, target: NpcData | None
+) -> None:
+    result.chained_move = effect.target
+
+
 def _apply_legacy_reward_lower_effect(
     game: GameState, effect: MoveEffect, result: OutcomeResult, target: NpcData | None
 ) -> None:
@@ -256,6 +268,7 @@ _EFFECT_HANDLERS: dict[str, Callable[[GameState, MoveEffect, OutcomeResult, NpcD
     "suffer_move": _apply_suffer_move_effect,
     "legacy_reward": _apply_legacy_reward_effect,
     "legacy_reward_lower": _apply_legacy_reward_lower_effect,
+    "chain_move": _apply_chain_move_effect,
     "legacy_ticks": _apply_legacy_ticks_effect,
     "fill_clock": _apply_fill_clock_effect,
     "bond": _apply_bond_effect,

@@ -24,6 +24,8 @@ from ..npc.memory import consolidate_memory
 from ..parser import parse_narrator_response
 
 from ..mechanics import find_progress_track
+from ..datasworn.moves import Move, get_moves
+from ..mechanics.consequences import roll_action
 
 
 @dataclass
@@ -36,6 +38,53 @@ class ActionOutcome:
     effect: str = "standard"
 
 
+def _chained_roll_value(game: GameState, brain: BrainResult, move: Move) -> tuple[str, int] | None:
+    options = [option for condition in move.conditions for option in condition.roll_options]
+    stats = [option.stat for option in options if option.using == "stat" and option.stat]
+    if stats:
+        best = max(stats, key=game.get_stat)
+        return best, game.get_stat(best)
+    track = next(
+        (
+            t
+            for t in game.progress_tracks
+            if t.track_type == "connection" and t.id == f"connection_{brain.target_npc}" and t.status == "active"
+        ),
+        None,
+    )
+    ranked = {option.label: option.value for option in options if option.using == "custom" and option.value is not None}
+    if track is None or track.rank not in ranked:
+        return None
+    return track.rank, int(ranked[track.rank])
+
+
+def _chain_move(game: GameState, brain: BrainResult, outcome: OutcomeResult) -> None:
+    move = get_moves(game.setting_id)[outcome.chained_move]
+    value = _chained_roll_value(game, brain, move)
+    if value is None:
+        log(f"[Chain] {outcome.chained_move}: nothing to roll with, follow-up skipped", level="warning")
+        return
+    label, stat_value = value
+    adds = game.resources.next_move_bonus
+    roll = roll_action(label, stat_value, outcome.chained_move, game.resources.momentum, adds)
+    game.resources.next_move_bonus = 0
+    chained = resolve_move_outcome(
+        game, outcome.chained_move, roll.result, target_npc_id=brain.target_npc, match=roll.match
+    )
+    log(
+        f"[Chain] {outcome.chained_move} ({label}={stat_value}, +{adds}): score {roll.action_score} vs [{roll.c1},{roll.c2}] → {roll.result}"
+    )
+    outcome.consequences.append(
+        eng().ai_text.consequence_labels["chained_move"].format(move=move.name, result=roll.result)
+    )
+    outcome.consequences.extend(chained.consequences)
+    outcome.pay_the_price = outcome.pay_the_price or chained.pay_the_price
+    if chained.legacy_track and not outcome.legacy_track:
+        outcome.legacy_track = chained.legacy_track
+        outcome.legacy_rank_shift = chained.legacy_rank_shift
+        outcome.legacy_fixed_ticks = chained.legacy_fixed_ticks
+
+
 def resolve_action_consequences(
     game: GameState,
     brain: BrainResult,
@@ -43,6 +92,8 @@ def resolve_action_consequences(
     position: str,
 ) -> ActionOutcome:
     outcome = resolve_move_outcome(game, brain.move, roll.result, target_npc_id=brain.target_npc, match=roll.match)
+    if outcome.chained_move:
+        _chain_move(game, brain, outcome)
 
     if outcome.combat_position:
         game.world.combat_position = outcome.combat_position
