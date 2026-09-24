@@ -7,6 +7,10 @@ Originally forked from [EdgeTales](https://github.com/edgetales/edgetales). See 
 
 Straightjacket uses calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day. The first CalVer release is `2026.04.25.0`. Earlier `0.x.y` releases keep their original version numbers and are not renumbered. The switch was made because the project has no public API to version semantically against — the `0.x.y` numbers were running counters with no meaning, and dates carry the meaning the numbers didn't.
 
+## [2026.09.24.7] — 2026-09-24
+
+Documentation only: the open question in roadmap step 9 is decided. Fact resolution is triggered by the Brain, which flags the undetermined facts a player action depends on, chosen from a fixed yaml list of fact types; the engine derives the odds, resolves through fate, remembers the answer on the entity, and hands it to the narrator as a `<fact>` tag. The decision, its three conditions (yaml fact-type list that raises on unknown types, persisted facts that are reused rather than re-rolled, Brain prompt instructions with examples in the same commit), and the rejected alternatives are recorded in roadmap.md (Current state and step 9, including three new Definition of Done items). ARCHITECTURE.md "Engine-resolved fiction" gains one sentence on the decided trigger.
+
 ## [2026.09.24.6] — 2026-09-24
 
 Rules and robustness fixes found by comparing with EdgeTales 0.9.67–0.9.96 (Lars). Ideas reimplemented, no code copied. Each fix comes with a test that fails on the previous code; for the momentum and Director fixes the old code already fails on the new signatures, the compel and dialog-agency tests fail on behaviour.

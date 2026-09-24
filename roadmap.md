@@ -77,6 +77,8 @@ Next feature step: Generator framework (step 9, see NEXT STEP below). Clock expa
 
 Open architectural questions: none currently pending.
 
+Decision 2026-09-24, fact-resolution trigger (step 9): the Brain detects, the engine decides. The Brain output gains a field listing the undetermined facts the player's action depends on, each as an entity reference plus a fact type chosen from a fixed yaml list (start with four or five, for example locked or blocked, present, alert, contains something useful). The engine derives the odds from game state, resolves through fate, stores the answer, and passes it to the narrator as a `<fact>` tag. Three conditions. First, the fact-type list lives in yaml and an unknown type raises. Second, a resolved fact persists on the entity it describes and is reused rather than re-rolled until the fiction changes it; the save format breaks when this lands. Third, the Brain prompt explains the new field with examples in the same commit, because the `fate_question` field added in 2026.04.28.2 died unused for lack of exactly that. Considered and rejected: fixed engine rules per move and target (cannot cover free player input), the narrator requesting facts (an extra call, and the narrator would decide what is uncertain), and only pre-generating facts when an entity is created (cannot anticipate everything; it complements this decision once step 10 lands). This is not a return of the player fate question removed in 2026.04.28.4: the player still types actions, and the Brain recognises the uncertainty inside an action.
+
 Forward-pointing decisions referenced by later steps:
 
 Track-type composition (referenced by steps 25.1, 26.1, 31.1 as "Option C from the track-type decision"). Three options were considered for domain objects that own a progress track. Option A: `class ExpeditionData(ProgressTrack)` inheriting from ProgressTrack. Option B: registry pattern where ProgressTrack carries a `kind` discriminator and domain fields live as a sibling dict. Option C: composition, where the domain object holds a `progress: ProgressTrack` field plus its own fields. C was chosen. Reasons: ProgressTrack stays a single-purpose dataclass (rank, ticks, status); inheritance would push domain concerns onto a primitive used everywhere; registry pattern requires lookup indirection at every callsite. Composition keeps both layers cleanly separable, snapshot/restore works through SerializableMixin on either layer, and adding a fourth track-owning domain object requires zero changes to ProgressTrack itself.
@@ -129,9 +131,9 @@ The generator framework is the single engine entry-point for content the fiction
 **9.6** Tests: smoke with stub oracle data, category registry accepts additions, fact-resolution returns deterministic value for fixed-seed RNG, unknown fact_type raises.
 
 
-### Open question to settle first
+### Decision on the fact-resolution trigger
 
-What triggers fact resolution? Per 2026.04.28.4 the player types actions, never questions, so the trigger cannot be a player-typed fate question. Candidates: a structured Brain output field naming an undetermined attribute of an entity the action touches, or engine rules keyed on move and target. Decide before 9.1 lands and record the decision in Current state and CHANGELOG.
+Settled 2026-09-24, see Current state: the Brain detects undetermined facts from a fixed yaml list of fact types; the engine resolves them through fate and remembers the answer.
 
 ### Definition of Done
 
@@ -140,6 +142,9 @@ What triggers fact resolution? Per 2026.04.28.4 the player types actions, never 
 - The oracle accessor handles Delve theme+domain, Sundered Isles cursed/non-cursed variants, and Starforged flat d100 via setting-yaml data, with no Python branching on setting names.
 - Per-category oracle paths are required fields on `OraclePaths`; a missing path raises `KeyError`.
 - `engine/fact_resolution.yaml` is bound to a dataclass; fact resolution goes through `mechanics/fate.py::resolve_fate` with odds from `engine/fate.yaml::fate.likelihood_rules`.
+- The Brain output schema gains the undetermined-facts field, with its fact types as an enum from yaml; `prompts/brain.yaml` explains the field with examples in the same commit.
+- Resolved facts persist on the entity they describe and are reused on later turns instead of re-rolled; the save format breaks, no migration.
+- A per-turn cap on fact checks, in yaml, keeps the prompt bounded.
 - `<generated>` and `<fact>` tags render through a `prompt_shared.py` helper with templates in `prompts/blocks.yaml`; vocabulary substitutions are applied before the narrator sees generated content.
 - At least one real callsite consumes the framework in this step (candidate: route `npc/naming.py::roll_oracle_name` through the `npc` category). If none fits, add a documented orphan-symbol carve-out that step 10 removes, following the `CharacterTraits` precedent.
 - Quality gate green (pytest, ruff check, ruff format, mypy); no new `test_project_rules.py` violations.
