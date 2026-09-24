@@ -7,6 +7,14 @@ Originally forked from [EdgeTales](https://github.com/edgetales/edgetales). See 
 
 Straightjacket uses calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day. The first CalVer release is `2026.04.25.0`. Earlier `0.x.y` releases keep their original version numbers and are not renumbered. The switch was made because the project has no public API to version semantically against — the `0.x.y` numbers were running counters with no meaning, and dates carry the meaning the numbers didn't.
 
+## [2026.09.24.36] — 2026-09-24
+
+Every role runs on OpenAI's GPT-6 Luna, the narrator included.
+
+The narrator cluster moves from Claude Opus 5.5 at Anthropic to GPT-6 Luna at OpenAI, at reasoning effort `none`, without the Anthropic-only `cache_control` and `output_config`. Opus narrated best and told failure most honestly, but at roughly four times the time and many times the cost per turn it did not fit a setup where everything else runs on GPT-6 Luna. On the ten test situations with two blind judges GPT-6 Luna scored 6.40 against Opus's 6.88, level with Sonnet 5, narrated the failed leap as a failure in two of three attempts where Haiku managed none, and answered in about four seconds; its narrations are shorter and plainer. The Anthropic provider stays configured, unused, so any cluster can move back by naming it. The startup check confirms the single model.
+
+Quality gate: configuration and documentation only; the startup check passes.
+
 ## [2026.09.24.35] — 2026-09-24
 
 Elvira's judge no longer loses verdicts to reasoning.

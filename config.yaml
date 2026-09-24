@@ -21,18 +21,14 @@ ai:
 
   clusters:
     narrator:
-      provider: anthropic
-      model: "claude-opus-5-5"
+      provider: openai
+      model: "gpt-6-luna"
       temperature: null
       top_p: null
       max_tokens: 8192
       max_retries: 3
       extra_body:
-        cache_control:
-          type: "ephemeral"
-          ttl: "1h"
-        output_config:
-          effort: "low"
+        reasoning_effort: "none"
     creative:
       provider: openai
       model: "gpt-6-luna"
