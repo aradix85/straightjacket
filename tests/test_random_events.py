@@ -39,14 +39,16 @@ def test_event_focus_boundary_values() -> None:
 
 def test_meaning_table_actions_returns_pair() -> None:
     w1, w2 = roll_meaning_table("actions")
-    assert w1 and w2
+    assert w1
+    assert w2
     assert isinstance(w1, str)
     assert isinstance(w2, str)
 
 
 def test_meaning_table_descriptions_returns_pair() -> None:
     w1, w2 = roll_meaning_table("descriptions")
-    assert w1 and w2
+    assert w1
+    assert w2
 
 
 def test_meaning_table_requires_table_name() -> None:

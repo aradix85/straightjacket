@@ -99,7 +99,7 @@ def merge_npc_identity(existing: NpcData, new_name: str, new_desc: str = "", gam
 def is_complete_description(desc: str) -> bool:
     if not desc or len(desc) < eng().fuzzy_match.description_match_min_length:
         return False
-    return desc.rstrip().endswith((".", "!", "?", '"', "»", "«", "…", ")", "–", "—"))
+    return desc.rstrip().endswith((".", "!", "?", '"', "»", "«", "…", ")", "\u2013", "—"))
 
 
 def sanitize_aliases(npc: NpcData) -> None:

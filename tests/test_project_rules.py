@@ -10,6 +10,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 import yaml
+import itertools
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 SRC_ROOT = REPO_ROOT / "src" / "straightjacket"
@@ -1111,7 +1112,7 @@ def _check_changelog_consistent() -> tuple[str, list[Violation]]:
     headers = [(i, m.group(1)) for i, line in enumerate(lines, 1) if (m := _CHANGELOG_HEADER.match(line))]
     if project_version is None or not headers or headers[0][1] != project_version.group(1):
         violations.append(Violation("CHANGELOG.md", 0, "newest entry does not match the pyproject.toml version"))
-    for (_, newer), (lineno, older) in zip(headers, headers[1:], strict=False):
+    for (_, newer), (lineno, older) in itertools.pairwise(headers):
         if tuple(int(x) for x in older.split(".")) >= tuple(int(x) for x in newer.split(".")):
             violations.append(Violation("CHANGELOG.md", lineno, f"{older} is not older than {newer}"))
     for i, line in enumerate(lines):

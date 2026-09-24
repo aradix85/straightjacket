@@ -45,7 +45,8 @@ def _roll(result: str = "MISS") -> RollResult:
 
 def test_pick_template_returns_string() -> None:
     result = pick_template("health_light")
-    assert isinstance(result, str) and len(result) > 0
+    assert isinstance(result, str)
+    assert len(result) > 0
 
 
 def test_pick_template_unknown_key_raises() -> None:
@@ -54,7 +55,7 @@ def test_pick_template_unknown_key_raises() -> None:
 
 
 @pytest.mark.parametrize(
-    "cons, player, npc, loc, must_contain",
+    ("cons", "player", "npc", "loc", "must_contain"),
     [
         ("health -1", "Ash", "", "The Docks", "Ash"),
         ("health -2", "Ash", "", "The Docks", "Ash"),
@@ -105,7 +106,8 @@ def test_generate_sentences_with_npc_target() -> None:
     game = _game()
     game.npcs.append(make_npc(id="npc_1", name="Kira", disposition="distrustful"))
     sentences = generate_consequence_sentences(["Kira bond -1"], [], game, _brain(target="npc_1"))
-    assert len(sentences) >= 1 and any("Kira" in s for s in sentences)
+    assert len(sentences) >= 1
+    assert any("Kira" in s for s in sentences)
 
 
 def test_consequence_tags_in_prompt() -> None:

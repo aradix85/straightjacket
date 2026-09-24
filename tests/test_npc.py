@@ -134,7 +134,7 @@ def test_fuzzy_match_stt_variant_sorted_mismatch(stub_engine: None) -> None:
 
     game = _make_game()
 
-    match, match_type = fuzzy_match_existing_npc(game, "Kira Foss")
+    match, _match_type = fuzzy_match_existing_npc(game, "Kira Foss")
 
     if match is not None:
         assert match.name == "Kira Voss"
@@ -153,7 +153,7 @@ def test_fuzzy_match_substring(stub_engine: None) -> None:
     from straightjacket.engine.npc.matching import fuzzy_match_existing_npc
 
     game = _make_game()
-    match, match_type = fuzzy_match_existing_npc(game, "Kira Voss-Eisenstein")
+    match, _match_type = fuzzy_match_existing_npc(game, "Kira Voss-Eisenstein")
     assert match is not None
     assert match.name == "Kira Voss"
 
@@ -403,7 +403,7 @@ def test_activate_npcs_target_always_activated(stub_engine: None) -> None:
     game = _make_game()
 
     brain = make_brain_result(target_npc="npc_2", player_intent="talk to blacksmith")
-    activated, mentioned, debug = activate_npcs_for_prompt(game, brain, "talk to blacksmith")
+    activated, _mentioned, _debug = activate_npcs_for_prompt(game, brain, "talk to blacksmith")
     activated_ids = {n.id for n in activated}
     assert "npc_2" in activated_ids
 
@@ -414,7 +414,7 @@ def test_activate_npcs_name_mention(stub_engine: None) -> None:
     game = _make_game()
 
     brain = make_brain_result(player_intent="I look for Kira")
-    activated, mentioned, debug = activate_npcs_for_prompt(game, brain, "I look for Kira")
+    activated, mentioned, _debug = activate_npcs_for_prompt(game, brain, "I look for Kira")
     all_npcs = {n.id for n in activated} | {n.id for n in mentioned}
     assert "npc_1" in all_npcs
 

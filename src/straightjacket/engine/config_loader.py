@@ -122,7 +122,7 @@ def _load_config_file() -> dict:
             f"The config.yaml file ships with the repo — if you deleted it, restore it from git.\n"
             f"To use a different config file, set the STRAIGHTJACKET_CONFIG environment variable."
         )
-    with open(_CONFIG_PATH, encoding="utf-8") as f:
+    with _CONFIG_PATH.open(encoding="utf-8") as f:
         data = yaml.safe_load(f)
     if not isinstance(data, dict):
         raise ValueError(f"Config file is not a valid YAML dict: {_CONFIG_PATH}")

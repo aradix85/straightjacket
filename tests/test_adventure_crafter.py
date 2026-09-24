@@ -92,7 +92,7 @@ def test_assign_themes_deterministic_with_seed():
 
 
 @pytest.mark.parametrize("theme", ["action", "tension", "mystery", "social", "personal"])
-@pytest.mark.parametrize("roll,expected_special", _SPECIAL_BOUNDARIES)
+@pytest.mark.parametrize(("roll", "expected_special"), _SPECIAL_BOUNDARIES)
 def test_plot_point_lookup_at_boundaries(theme: str, roll: int, expected_special: str | None):
     result = lookup_plot_point(theme, roll)
     assert isinstance(result, PlotPointResult)
@@ -119,7 +119,7 @@ def test_plot_point_lookup_unknown_theme_raises():
 
 @pytest.mark.parametrize("bad_roll", [0, -1, 101, 200])
 def test_plot_point_lookup_out_of_range_roll_raises(bad_roll: int):
-    with pytest.raises(ValueError, match="outside 1..100"):
+    with pytest.raises(ValueError, match=r"outside 1\.\.100"):
         lookup_plot_point("action", bad_roll)
 
 
@@ -137,7 +137,7 @@ def test_meta_lookup_covers_full_d100():
 
 
 @pytest.mark.parametrize(
-    "roll,expected_name",
+    ("roll", "expected_name"),
     [
         (1, "Character Exits The Adventure"),
         (18, "Character Exits The Adventure"),
@@ -161,7 +161,7 @@ def test_meta_lookup_at_boundaries(roll: int, expected_name: str):
 
 @pytest.mark.parametrize("bad_roll", [0, -1, 101, 200])
 def test_meta_lookup_out_of_range_roll_raises(bad_roll: int):
-    with pytest.raises(ValueError, match="outside 1..100"):
+    with pytest.raises(ValueError, match=r"outside 1\.\.100"):
         lookup_meta_plot_point(bad_roll)
 
 
@@ -225,7 +225,7 @@ def test_lookup_theme_priority_alternates_on_ten():
 
 @pytest.mark.parametrize("bad_roll", [0, -1, 11, 100])
 def test_lookup_theme_priority_out_of_range_raises(bad_roll: int):
-    with pytest.raises(ValueError, match="outside 1..10"):
+    with pytest.raises(ValueError, match=r"outside 1\.\.10"):
         lookup_theme_priority(bad_roll, ThemeAlternation())
 
 

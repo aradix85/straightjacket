@@ -18,12 +18,12 @@ def _run(coro):
     return asyncio.run(coro)
 
 
-@pytest.fixture()
+@pytest.fixture
 def fake_ws() -> _FakeWS:
     return _FakeWS()
 
 
-@pytest.fixture()
+@pytest.fixture
 def session(load_engine: None) -> Session:
     return Session()
 

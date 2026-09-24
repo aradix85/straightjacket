@@ -34,7 +34,7 @@ _SPECIAL_TRAIT_BOUNDARIES = [
 ]
 
 
-@pytest.mark.parametrize("roll,expected", _SPECIAL_TRAIT_BOUNDARIES)
+@pytest.mark.parametrize(("roll", "expected"), _SPECIAL_TRAIT_BOUNDARIES)
 def test_lookup_character_special_trait_boundaries(roll: int, expected: str) -> None:
     assert lookup_character_special_trait(roll) == expected
 
@@ -48,7 +48,7 @@ def test_lookup_character_special_trait_full_coverage_1_to_100() -> None:
 
 @pytest.mark.parametrize("roll", [0, -1, 101, 200])
 def test_lookup_character_special_trait_out_of_range_raises(roll: int) -> None:
-    with pytest.raises(ValueError, match="outside 1..100"):
+    with pytest.raises(ValueError, match=r"outside 1\.\.100"):
         lookup_character_special_trait(roll)
 
 
@@ -76,7 +76,7 @@ def test_lookup_character_identity_boundary_examples() -> None:
 
 @pytest.mark.parametrize("roll", [0, -1, 101, 9999])
 def test_lookup_character_identity_out_of_range_raises(roll: int) -> None:
-    with pytest.raises(ValueError, match="outside 1..100"):
+    with pytest.raises(ValueError, match=r"outside 1\.\.100"):
         lookup_character_identity(roll)
 
 
@@ -99,7 +99,7 @@ def test_lookup_character_descriptor_boundary_examples() -> None:
 
 @pytest.mark.parametrize("roll", [0, -1, 101])
 def test_lookup_character_descriptor_out_of_range_raises(roll: int) -> None:
-    with pytest.raises(ValueError, match="outside 1..100"):
+    with pytest.raises(ValueError, match=r"outside 1\.\.100"):
         lookup_character_descriptor(roll)
 
 
@@ -107,7 +107,8 @@ def test_roll_character_traits_returns_struct_with_required_fields() -> None:
     rng = random.Random(42)
     traits = roll_character_traits(rng)
     assert isinstance(traits, CharacterTraits)
-    assert isinstance(traits.special_trait, str) and traits.special_trait != ""
+    assert isinstance(traits.special_trait, str)
+    assert traits.special_trait != ""
     assert isinstance(traits.identities, list)
     assert isinstance(traits.descriptors, list)
 

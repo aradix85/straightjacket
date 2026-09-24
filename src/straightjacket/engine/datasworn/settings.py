@@ -297,7 +297,7 @@ def _read_yaml(setting_id: str) -> tuple[dict, Path]:
     yaml_path = _SETTINGS_DIR / f"{setting_id}.yaml"
     if not yaml_path.exists():
         raise FileNotFoundError(f"Setting package not found: {yaml_path}")
-    with open(yaml_path, encoding="utf-8") as f:
+    with Path(yaml_path).open(encoding="utf-8") as f:
         raw = yaml.safe_load(f)
     return raw, yaml_path
 

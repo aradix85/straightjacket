@@ -19,7 +19,7 @@ _mythic: dict | None = None
 def _load_mythic() -> dict:
     global _mythic
     if _mythic is None:
-        with open(_MYTHIC_DATA_PATH, encoding="utf-8") as f:
+        with _MYTHIC_DATA_PATH.open(encoding="utf-8") as f:
             _mythic = json.load(f)
         log(f"[Fate] Loaded {_MYTHIC_DATA_PATH}")
     return _mythic

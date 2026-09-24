@@ -64,7 +64,7 @@ def create_user(name: str) -> bool:
         return False
     user_dir.mkdir(parents=True, exist_ok=True)
     (user_dir / "saves").mkdir(exist_ok=True)
-    meta = {"created": datetime.now().isoformat()}
+    meta = {"created": datetime.now().astimezone().isoformat()}
     (user_dir / "user.json").write_text(json.dumps(meta, ensure_ascii=False), encoding="utf-8")
     log(f"[User] Created user: {name}")
     return True

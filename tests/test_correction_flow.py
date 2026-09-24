@@ -174,7 +174,7 @@ def test_correction_input_misread_full_flow(load_engine: None, stub_emotions: No
     history_len_before = len(game.narrative.narration_history)
 
     provider = MockProvider(correction_source="input_misread")
-    game, narration, director_ctx = process_correction(
+    game, narration, _director_ctx = process_correction(
         provider,
         game,
         "I didn't want to attack",
@@ -197,7 +197,7 @@ def test_correction_state_error_full_flow(load_engine: None, stub_emotions: None
     history_len_before = len(game.narrative.narration_history)
 
     provider = MockProvider(correction_source="state_error")
-    game, narration, director_ctx = process_correction(
+    game, narration, _director_ctx = process_correction(
         provider,
         game,
         "Mira should be loyal",

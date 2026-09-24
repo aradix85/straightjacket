@@ -261,7 +261,7 @@ def spawn_keyed_scenes_for_clock(narrative: NarrativeState, clock: ClockData) ->
 
     spawned = 0
     for fraction in entry.fractions:
-        threshold = max(1, int(round(clock.segments * fraction)))
+        threshold = max(1, round(clock.segments * fraction))
         if _clock_already_spawned(narrative, clock.name, threshold):
             continue
         scene_id = _next_clock_keyed_scene_id(narrative)

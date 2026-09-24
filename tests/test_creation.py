@@ -5,7 +5,7 @@ from tests._helpers import make_game_state
 
 
 @pytest.mark.parametrize(
-    "stats, error_match",
+    ("stats", "error_match"),
     [
         ({"edge": 3, "heart": 2, "iron": 2, "shadow": 1, "wits": 2}, "must total"),
         ({"edge": 4, "heart": 2, "iron": 2, "shadow": 1, "wits": 0}, "outside"),
@@ -27,7 +27,7 @@ def test_validate_stats_accepts_valid(load_engine: None) -> None:
 
 
 @pytest.mark.parametrize(
-    "vow, expected",
+    ("vow", "expected"),
     [
         ("I must survive the siege at all costs", 7),
         ("I will find my lost sister", 6),
@@ -81,7 +81,7 @@ def test_seed_background_vow_empty_skips(load_engine: None) -> None:
 
 
 @pytest.mark.parametrize(
-    "setting, expected_flags",
+    ("setting", "expected_flags"),
     [
         (
             "starforged",
@@ -239,7 +239,7 @@ def test_truths_block_empty() -> None:
 
 
 @pytest.mark.parametrize(
-    "setting, payload, error_match",
+    ("setting", "payload", "error_match"),
     [
         ("starforged", {"paths": ["a", "b", "c"]}, "Too many paths"),
         ("starforged", {"assets": ["a", "b"]}, "Too many starting assets"),
@@ -277,7 +277,7 @@ def test_validate_creation_valid_vow_rank_passes(load_engine: None) -> None:
 
 
 @pytest.mark.parametrize(
-    "move, result, disposition, expected_fragment",
+    ("move", "result", "disposition", "expected_fragment"),
     [
         ("combat/clash", "MISS", "hostile", "fear_pain_hostile"),
         ("adventure/compel", "STRONG_HIT", "friendly", "trusting_open_warm"),

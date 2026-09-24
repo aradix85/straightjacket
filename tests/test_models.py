@@ -76,7 +76,7 @@ def test_npc_agency_clock_fires_on_full() -> None:
         name="Villain Plan", clock_type="threat", segments=4, filled=3, owner_kind="npc", owner_id="Villain"
     )
     game.world.clocks.append(clock)
-    actions, clock_events, fill_results = check_npc_agency(game)
+    _actions, clock_events, fill_results = check_npc_agency(game)
     assert clock.filled == 4
     assert clock.fired
     assert len(clock_events) == 1

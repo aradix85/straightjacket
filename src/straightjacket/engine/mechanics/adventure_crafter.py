@@ -35,7 +35,7 @@ _ac_data: dict[str, Any] | None = None
 def _load_ac_data() -> dict[str, Any]:
     global _ac_data
     if _ac_data is None:
-        with open(_AC_DATA_PATH, encoding="utf-8") as f:
+        with _AC_DATA_PATH.open(encoding="utf-8") as f:
             _ac_data = json.load(f)
         log(f"[AdventureCrafter] Loaded {_AC_DATA_PATH}")
         _validate_random_themes(_ac_data)

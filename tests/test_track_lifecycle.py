@@ -222,7 +222,10 @@ def test_progress_roll_uses_track_boxes(load_engine: None) -> None:
     track = make_progress_track(id="v1", name="Find the artifact", track_type="vow", rank="dangerous", ticks=24)
     assert track.filled_boxes == 6
     roll = roll_progress(track.name, track.filled_boxes, "quest/fulfill_your_vow")
-    assert roll.stat_value == 6 and roll.action_score == 6 and roll.d1 == 0 and roll.d2 == 0
+    assert roll.stat_value == 6
+    assert roll.action_score == 6
+    assert roll.d1 == 0
+    assert roll.d2 == 0
 
 
 def test_find_progress_track(load_engine: None) -> None:

@@ -17,7 +17,7 @@ from straightjacket.web.serializers import (
 )
 
 
-@pytest.fixture()
+@pytest.fixture
 def load_engine(_real_engine) -> None:
     engine_loader._eng = _real_engine
 
@@ -292,7 +292,7 @@ class TestWebSocket:
         _session.pending_burn = None
         self.session = _session
 
-    @pytest.fixture()
+    @pytest.fixture
     def client(self) -> Any:
         from starlette.testclient import TestClient
         from straightjacket.web.server import app
@@ -369,7 +369,7 @@ class TestSuccessionWebSocket:
         _session.pending_burn = None
         self.session = _session
 
-    @pytest.fixture()
+    @pytest.fixture
     def client(self) -> Any:
         from starlette.testclient import TestClient
         from straightjacket.web.server import app

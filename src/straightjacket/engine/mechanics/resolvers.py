@@ -139,11 +139,8 @@ def _apply_position_overrides(position: str, game: GameState, brain: BrainResult
         match = all(_cond_checks[cond] for cond in override.conditions)
 
         if match and override.conditions:
-            if (
-                override.effect == "cap_at_risky"
-                and position == "controlled"
-                or override.effect == "floor_at_risky"
-                and position == "desperate"
+            if (override.effect == "cap_at_risky" and position == "controlled") or (
+                override.effect == "floor_at_risky" and position == "desperate"
             ):
                 position = "risky"
             elif override.effect == "shift_up_one":

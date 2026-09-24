@@ -23,7 +23,7 @@ def save_game(game: GameState, username: str, chat_messages: list[dict], name: s
     save_dir.mkdir(parents=True, exist_ok=True)
     path = save_dir / f"{name}.json"
 
-    data: dict[str, Any] = {"saved_at": datetime.now().isoformat()}
+    data: dict[str, Any] = {"saved_at": datetime.now().astimezone().isoformat()}
     data["engine_version"] = VERSION
     data["game_state"] = game.to_dict()
 

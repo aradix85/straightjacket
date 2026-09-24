@@ -171,7 +171,7 @@ def test_turn_action_produces_narration(load_engine: None) -> None:
     game = _make_game()
     initial_scene = game.narrative.scene_count
 
-    game, narration, roll, burn_info, director_ctx = process_turn(
+    game, narration, roll, _burn_info, _director_ctx = process_turn(
         provider,
         game,
         "I search the room for clues",
@@ -232,7 +232,7 @@ def test_turn_dialog_skips_roll(load_engine: None) -> None:
     provider.create_message = dialog_brain
 
     game = _make_game()
-    game, narration, roll, burn_info, director_ctx = process_turn(
+    game, narration, roll, _burn_info, _director_ctx = process_turn(
         provider,
         game,
         "I talk to Mira",

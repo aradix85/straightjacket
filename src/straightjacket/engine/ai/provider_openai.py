@@ -17,7 +17,7 @@ class OpenAICompatibleProvider:
         log(f"[OpenAICompatibleProvider] Initialized{f' (base: {api_base})' if api_base else ''}")
 
     def create_message(self, spec: AICallSpec) -> AIResponse:
-        full_messages = [{"role": "system", "content": spec.system}] + spec.messages
+        full_messages = [{"role": "system", "content": spec.system}, *spec.messages]
 
         create_kwargs: dict[str, Any] = {
             "model": spec.model,

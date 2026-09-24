@@ -25,7 +25,7 @@ def _game() -> GameState:
     return game
 
 
-@pytest.fixture()
+@pytest.fixture
 def save_dir(tmp_path: Any, monkeypatch: Any, stub_all: None) -> object:
     from straightjacket.engine import persistence
 

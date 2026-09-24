@@ -24,7 +24,7 @@ def _ensure_loaded() -> dict[str, str]:
         _strings = {}
         origin: dict[str, Path] = {}
         for path in files:
-            with open(path, encoding="utf-8") as f:
+            with Path(path).open(encoding="utf-8") as f:
                 data = yaml.safe_load(f) or {}
             if not isinstance(data, dict):
                 raise ValueError(f"{path} is not a valid YAML dict")

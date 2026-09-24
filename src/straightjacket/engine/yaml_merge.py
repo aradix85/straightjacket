@@ -21,7 +21,7 @@ def load_yaml_dir(
     merged: dict[str, Any] = {}
     origin: dict[str, Path] = {}
     for path in files:
-        with open(path, encoding="utf-8") as f:
+        with Path(path).open(encoding="utf-8") as f:
             data = yaml.safe_load(f)
         if not isinstance(data, dict):
             raise ValueError(f"{path} is not a valid YAML dict")

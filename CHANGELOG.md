@@ -7,6 +7,21 @@ Originally forked from [EdgeTales](https://github.com/edgetales/edgetales). See 
 
 Straightjacket uses calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day. The first CalVer release is `2026.04.25.0`. Earlier `0.x.y` releases keep their original version numbers and are not renumbered. The switch was made because the project has no public API to version semantically against — the `0.x.y` numbers were running counters with no meaning, and dates carry the meaning the numbers didn't.
 
+## [2026.09.24.3] — 2026-09-24
+
+Five more ruff rule families enabled: RUF, PERF, PT, PTH, and DTZ. The first run reported 104 findings. Ruff fixed 61 automatically (pytest parametrize and fixture style, unused unpacked variables, sorted `__all__`, collection literals); the rest were fixed by hand:
+
+- `open()` replaced by `Path.open()` in ten places (PTH123), in line with the pathlib code standard.
+- Timestamps are timezone-aware (DTZ005): the save file's `saved_at`, the user's `created`, and Elvira's session filenames use `datetime.now().astimezone()`. Save metadata now carries a UTC offset; saves stay loadable.
+- Seven `pytest.raises(match=...)` patterns such as `outside 1..100` treated `.` as a regex wildcard (RUF043); they are now raw strings with escaped dots.
+- `test_mark_unknown_track_raises` accepted any `ValueError`; it now matches the actual message (PT011).
+- Two intentional en dashes in sentence-end checks are written as `\u2013`, so the intent is explicit (RUF001).
+- A real bug (RUF006): Elvira's WebSocket runner started the uvicorn server with `asyncio.create_task` without keeping a reference, so the task could be garbage-collected mid-run. The task is now held in a module-level set until it finishes.
+
+PERF401 (manual list comprehension, 18 findings) is deliberately ignored, with the reason in `pyproject.toml`: loops with conditions stay loops when they read clearer.
+
+Quality gate: 1260 tests green, twenty-seven project-rule scans clean, coverage 88.03%, ruff check and ruff format clean, mypy clean on 105 source files.
+
 ## [2026.09.24.2] — 2026-09-24
 
 Documentation drift becomes a test, the provider adapters get tests, and coverage gets a floor.

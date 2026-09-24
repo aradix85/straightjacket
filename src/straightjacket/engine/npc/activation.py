@@ -45,7 +45,7 @@ def compute_npc_tfidf_scores(npcs: list[NpcData], query_text: str) -> dict[str, 
     if not query_tokens:
         return {}
 
-    all_docs = list(docs.values()) + [query_tokens]
+    all_docs = [*list(docs.values()), query_tokens]
     n_docs = len(all_docs)
     df: dict[str, int] = {}
     for doc in all_docs:

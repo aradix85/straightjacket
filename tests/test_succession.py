@@ -94,7 +94,7 @@ def test_run_inheritance_rolls_uses_predecessor_filled_boxes(aria: GameState) ->
 
 
 @pytest.mark.parametrize(
-    "ticks, dice_values, expected_result, expected_fraction, expected_new_filled",
+    ("ticks", "dice_values", "expected_result", "expected_fraction", "expected_new_filled"),
     [
         (32, [1], "STRONG_HIT", 1.0, 8),
         (8, [10], "MISS", 0.0, 0),
@@ -170,7 +170,7 @@ def test_seed_successor_legacy_preserves_xp(aria: GameState) -> None:
 
 
 @pytest.mark.parametrize(
-    "status, ticks, expected_filled_boxes",
+    ("status", "ticks", "expected_filled_boxes"),
     [
         ("active", 24, 6),
         ("background", 24, 3),
@@ -206,7 +206,7 @@ def test_carryover_deceased_npc_pruned_entirely() -> None:
 def test_carryover_unknown_status_raises() -> None:
     npc = make_npc(id="npc_x", name="Strange", status="active")
     npc.status = "weird"
-    with pytest.raises(ValueError, match="no succession.npc_carryover rule"):
+    with pytest.raises(ValueError, match=r"no succession\.npc_carryover rule"):
         apply_npc_carryover([npc], [])
 
 
@@ -267,7 +267,7 @@ def test_prepare_succession_accepts_each_known_reason(aria: GameState) -> None:
 
 
 @pytest.mark.parametrize(
-    "health, spirit, expected_reason",
+    ("health", "spirit", "expected_reason"),
     [
         (0, 3, "death"),
         (3, 0, "despair"),

@@ -59,21 +59,21 @@ def _stub_engine_instance():
     return parse_engine_yaml(data)
 
 
-@pytest.fixture()
+@pytest.fixture
 def load_engine(_real_engine) -> None:
     from straightjacket.engine import engine_loader
 
     engine_loader._eng = _real_engine
 
 
-@pytest.fixture()
+@pytest.fixture
 def stub_engine(_stub_engine_instance) -> None:
     from straightjacket.engine import engine_loader
 
     engine_loader._eng = _stub_engine_instance
 
 
-@pytest.fixture()
+@pytest.fixture
 def stub_emotions() -> None:
     from straightjacket.engine import emotions_loader
 
@@ -109,6 +109,6 @@ def stub_emotions() -> None:
     }
 
 
-@pytest.fixture()
+@pytest.fixture
 def stub_all(stub_engine: None, stub_emotions: None) -> None:
     pass

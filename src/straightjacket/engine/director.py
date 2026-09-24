@@ -284,7 +284,7 @@ def _reset_all_reflection_flags(game: GameState, reason: str) -> None:
 
 
 def _reflection_is_truncated(text: str) -> bool:
-    return not text.rstrip().endswith((".", "!", "?", '"', "»", "…", ")", "–", "—"))
+    return not text.rstrip().endswith((".", "!", "?", '"', "»", "…", ")", "\u2013", "—"))
 
 
 def _append_reflection_memory(npc: NpcData, ref: dict, game: GameState) -> None:

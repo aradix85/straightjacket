@@ -6,7 +6,7 @@ from straightjacket.engine.models import (
 from tests._helpers import make_clock, make_game_state, make_memory, make_npc, make_progress_track
 
 
-@pytest.fixture()
+@pytest.fixture
 def game(load_engine: None) -> GameState:
     g = make_game_state(
         player_name="Elvira",

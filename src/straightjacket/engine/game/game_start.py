@@ -154,7 +154,7 @@ def _seed_truth_threads(game: GameState) -> None:
     _e = eng()
     truth_map = _e.creation.truth_threads
     counter = 0
-    for _truth_id, summary in game.truths.items():
+    for summary in game.truths.values():
         summary_lower = summary.lower()
         for pattern, thread_name in truth_map.items():
             if pattern.lower() in summary_lower:

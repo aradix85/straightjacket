@@ -1,3 +1,4 @@
+from pathlib import Path
 import json
 import random
 from dataclasses import dataclass, field
@@ -165,7 +166,7 @@ def load_setting(datasworn_id: str) -> Setting:
         raise FileNotFoundError(f"Datasworn JSON not found: {path}\nRun: python data/download_datasworn.py")
 
     log(f"[Datasworn] Loading {datasworn_id} from {path.name}")
-    with open(path, encoding="utf-8") as f:
+    with Path(path).open(encoding="utf-8") as f:
         raw = json.load(f)
 
     setting = Setting(raw)

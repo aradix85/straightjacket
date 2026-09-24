@@ -95,7 +95,7 @@ def test_tick_threat_clock_skips_full() -> None:
 
 
 @pytest.mark.parametrize(
-    "momentum, d_value, action_score, roll_result, expected_burn",
+    ("momentum", "d_value", "action_score", "roll_result", "expected_burn"),
     [
         (8, 1, 4, "MISS", "STRONG_HIT"),
         (6, 1, 4, "MISS", "WEAK_HIT"),
@@ -158,7 +158,7 @@ def test_npc_agency_ticks_owned_clock(load_engine: None) -> None:
     game.world.clocks = [
         make_clock(name="Kira's scheme", clock_type="scheme", segments=4, filled=1, owner_kind="npc", owner_id="Kira")
     ]
-    actions, events, _ = check_npc_agency(game)
+    _actions, events, _ = check_npc_agency(game)
     assert game.world.clocks[0].filled == 2
     assert len(events) == 1
 

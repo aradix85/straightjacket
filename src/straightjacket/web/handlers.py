@@ -169,7 +169,7 @@ async def handle_player_input(session: Session, ws: WebSocket, msg: dict) -> Non
         await _send(ws, {"type": "status", "text": "..."})
 
         provider = get_provider()
-        game, narration, roll, burn_info, director_ctx = await asyncio.to_thread(
+        game, narration, _roll, burn_info, director_ctx = await asyncio.to_thread(
             process_turn, provider, session.game, text, session.config
         )
         session.game = game

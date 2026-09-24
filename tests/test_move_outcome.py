@@ -15,7 +15,7 @@ from straightjacket.engine.models import GameState, Resources
 from tests._helpers import make_game_state
 
 
-@pytest.fixture()
+@pytest.fixture
 def game(stub_engine: None) -> GameState:
     g = make_game_state()
     g.resources = Resources(health=5, spirit=5, supply=5, momentum=2, max_momentum=10)
@@ -23,7 +23,7 @@ def game(stub_engine: None) -> GameState:
     return g
 
 
-@pytest.fixture()
+@pytest.fixture
 def game_real(load_engine: None) -> GameState:
     g = make_game_state()
     g.resources = Resources(health=5, spirit=5, supply=5, momentum=2, max_momentum=10)
@@ -33,7 +33,7 @@ def game_real(load_engine: None) -> GameState:
 
 class TestParseEffect:
     @pytest.mark.parametrize(
-        "effect_str, expected_type, expected_value, expected_target",
+        ("effect_str", "expected_type", "expected_value", "expected_target"),
         [
             ("momentum +2", "momentum", 2, ""),
             ("momentum -1", "momentum", -1, ""),
@@ -69,7 +69,7 @@ class TestParseEffect:
 
 class TestApplyEffects:
     @pytest.mark.parametrize(
-        "effect, track, start, expected, cons_fragment",
+        ("effect", "track", "start", "expected", "cons_fragment"),
         [
             ("momentum +2", "momentum", 2, 4, "momentum +2"),
             ("momentum -1", "momentum", 2, 1, "momentum -1"),
@@ -104,7 +104,7 @@ class TestApplyEffects:
         assert not any("health" in c for c in result.consequences)
 
     @pytest.mark.parametrize(
-        "effect, attr, expected",
+        ("effect", "attr", "expected"),
         [
             ("mark_progress 2", "progress_marks", 2),
             ("pay_the_price", "pay_the_price", True),
@@ -254,7 +254,7 @@ class TestSufferHandler:
 
 class TestThresholdHandler:
     @pytest.mark.parametrize(
-        "result_type, game_over, has_impact, narrative_only",
+        ("result_type", "game_over", "has_impact", "narrative_only"),
         [
             ("STRONG_HIT", False, False, True),
             ("WEAK_HIT", False, True, False),
@@ -313,7 +313,7 @@ class TestRecoveryHandler:
 
 class TestResolveOutcome:
     @pytest.mark.parametrize(
-        "move, result_type, check_fn",
+        ("move", "result_type", "check_fn"),
         [
             (
                 "adventure/face_danger",

@@ -38,7 +38,7 @@ class TestMarkLegacy:
         from straightjacket.engine.mechanics.legacy import mark_legacy
 
         game = _game()
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError, match="Unknown legacy track"):
             mark_legacy(game, "bogus", "dangerous")
 
     def test_no_xp_before_box_fills(self, stub_engine: None) -> None:

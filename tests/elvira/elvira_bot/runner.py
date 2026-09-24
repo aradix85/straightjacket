@@ -51,7 +51,7 @@ def load_config(path: Path) -> dict:
     if not path.exists():
         print(f"[ERROR] Config not found: {path}")
         raise SystemExit(1)
-    with open(path, encoding="utf-8") as f:
+    with path.open(encoding="utf-8") as f:
         return yaml.safe_load(f)
 
 
@@ -73,7 +73,7 @@ def run_session(bot_cfg: dict, auto_override: bool = False, turns_override: int 
     burn_setting = behavior["burn_momentum"]
     setting_id = game_cfg["setting_id"]
     log_file_base = Path(log_cfg["log_file"])
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    timestamp = datetime.now().astimezone().strftime("%Y%m%d_%H%M%S")
     log_file = log_file_base.with_stem(f"{log_file_base.stem}_{setting_id}_{style}_{timestamp}")
     print_full = log_cfg["print_full_narration"]
     print_rolls = log_cfg["print_roll_details"]

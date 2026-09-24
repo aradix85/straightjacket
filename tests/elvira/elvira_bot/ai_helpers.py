@@ -24,7 +24,7 @@ def _load_prompts() -> dict[str, Any]:
     if _prompts is None:
         if not _PROMPTS_PATH.exists():
             raise FileNotFoundError(f"Elvira prompts not found: {_PROMPTS_PATH}")
-        with open(_PROMPTS_PATH, encoding="utf-8") as f:
+        with Path(_PROMPTS_PATH).open(encoding="utf-8") as f:
             _prompts = yaml.safe_load(f)
     return _prompts
 
@@ -43,7 +43,7 @@ def _load_bot_config() -> None:
         return
     _bot_config_loaded = True
     if _CONFIG_PATH.exists():
-        with open(_CONFIG_PATH, encoding="utf-8") as f:
+        with Path(_CONFIG_PATH).open(encoding="utf-8") as f:
             ecfg = yaml.safe_load(f) or {}
         ai_cfg = ecfg.get("ai", {})
         _bot_model = ai_cfg.get("bot_model", "") or None

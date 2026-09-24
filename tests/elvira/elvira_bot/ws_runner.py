@@ -131,13 +131,18 @@ class WsClient:
         return GameState.from_dict(data)
 
 
+_BACKGROUND_TASKS: set[asyncio.Task] = set()
+
+
 async def _start_server(port: int) -> Any:
     import uvicorn
     from straightjacket.web.server import app
 
     config = uvicorn.Config(app, host="127.0.0.1", port=port, log_level="warning")
     server = uvicorn.Server(config)
-    asyncio.create_task(server.serve())
+    serve_task = asyncio.create_task(server.serve())
+    _BACKGROUND_TASKS.add(serve_task)
+    serve_task.add_done_callback(_BACKGROUND_TASKS.discard)
 
     import urllib.request
 
@@ -167,7 +172,7 @@ async def run_ws_session(bot_cfg: dict, auto_override: bool = False, turns_overr
     burn_setting = behavior["burn_momentum"]
     setting_id = game_cfg["setting_id"]
     log_file_base = Path(log_cfg["log_file"])
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    timestamp = datetime.now().astimezone().strftime("%Y%m%d_%H%M%S")
     log_file = log_file_base.with_stem(f"{log_file_base.stem}_{setting_id}_{style}_{timestamp}")
     print_full = log_cfg["print_full_narration"]
     do_invariants = log_cfg["assert_state_invariants"]

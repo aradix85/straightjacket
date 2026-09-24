@@ -319,5 +319,5 @@ def test_run_tool_loop_hits_max_rounds(load_engine: None, monkeypatch) -> None:
 
     game = make_game_state(player_name="Test")
     initial_spec = AICallSpec(model="m", system="s", messages=[{"role": "user", "content": "x"}], max_tokens=100)
-    final, log = run_tool_loop(_Provider(), initial, role="test", game=game, initial_spec=initial_spec)
+    _final, log = run_tool_loop(_Provider(), initial, role="test", game=game, initial_spec=initial_spec)
     assert len(log) == 2
