@@ -1,0 +1,6 @@
+roll_bonuses:
+  condition_chars: 220
+  connection_aid:
+    add: 1
+    momentum_on_hit: 1
+    condition: "{name} aids you on a move closely associated with their role"

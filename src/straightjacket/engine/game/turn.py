@@ -34,6 +34,7 @@ from .action_resolution import resolve_action_phase
 from .finalization import narrate_scene
 from .scene_finalization import finalize_scene
 from ..mechanics import find_progress_track, roll_oracle_answer
+from ..mechanics.bonuses import apply_momentum_on_hit, chosen_bonus
 from .turn_types import ActionResolution, RollOutcome, SceneContext
 
 
@@ -307,9 +308,12 @@ def _execute_roll(game: GameState, brain: BrainResult) -> RollOutcome:
                 f"This is a Brain output error: action_roll moves require a real stat. "
                 f"Brain should have either picked a valid stat or routed this as dialog/oracle."
             )
-        adds = game.resources.next_move_bonus
+        bonus = chosen_bonus(game, brain.bonus_id)
+        adds = game.resources.next_move_bonus + (bonus.add if bonus else 0)
         roll = roll_action(stat_name, game.get_stat(stat_name), brain.move, game.resources.momentum, adds)
         game.resources.next_move_bonus = 0
+        if bonus:
+            apply_momentum_on_hit(game, bonus, roll.result)
         _log_action_roll(roll, adds, cancelled=game.resources.momentum < 0 and -game.resources.momentum == roll.d1)
 
     if game.last_turn_snapshot is not None:

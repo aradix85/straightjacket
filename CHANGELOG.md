@@ -7,6 +7,22 @@ Originally forked from [EdgeTales](https://github.com/edgetales/edgetales). See 
 
 Straightjacket uses calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day. The first CalVer release is `2026.04.25.0`. Earlier `0.x.y` releases keep their original version numbers and are not renumbered. The switch was made because the project has no public API to version semantically against — the `0.x.y` numbers were running counters with no meaning, and dates carry the meaning the numbers didn't.
 
+## [2026.09.24.33] — 2026-09-24
+
+Assets and connections give their bonuses on rolls (roadmap R.1).
+
+Until now assets did nothing mechanically: the game stored only their ids, never which abilities were enabled, an upgrade cost experience without enabling anything, and the Brain never saw the assets.
+
+Abilities. `GameState.asset_abilities` records which abilities of each asset are enabled (default empty, filled from the Datasworn defaults on first use, so existing saves load). New `mechanics/assets.py`: asset data lookup through the setting chain, the enabled abilities, and `enable_next_ability`, which `advance_asset` now calls on an upgrade, in order, where the player would choose.
+
+Bonuses. New `mechanics/bonuses.py` collects the roll bonuses: every enabled ability whose text grants an add (95 abilities in Starforged, 137 in classic Ironsworn carry one), and every active connection's aid (add +1 and +1 momentum on a hit, from the Make a Connection rule, configured in the new `engine/roll_bonuses.yaml`). The Brain message gains a `<bonuses>` block listing them by id with their condition, the Brain output schema gains `bonus_id`, and `prompts/brain.yaml` gains one rule: name a bonus only when the action clearly meets its condition, exactly as written, never invented. The engine checks the id against the offered bonuses, ignores an unknown one with a warning, adds the bonus to the action roll with any banked next-move bonus, and grants momentum on a hit where the rule text ties it to the same add. Combat Bot's "add +1 on Strike; if you Clash, take +1 momentum" therefore gives the add without the momentum.
+
+Verified live with GPT-6 Luna as Brain: "I strike the raider with my combat bot fighting at my side" chose the Combat Bot bonus, and "I study the old star chart" chose none.
+
+Tests: new `tests/test_roll_bonuses.py` (an enabled ability becomes an option, a disabled one only after an upgrade, a connection offers its aid, an unknown choice is ignored, a chosen bonus adds to the roll and grants momentum only on a hit, momentum tied to another move is not granted, and saves without ability states load).
+
+Quality gate: 1400 tests green, twenty-nine project-rule scans clean, coverage 89.68%, ruff check and ruff format clean, mypy --strict clean on 108 source files. Save format: one new field with a default; older saves load.
+
 ## [2026.09.24.32] — 2026-09-24
 
 Every "with a match" clause in the rules is now modelled, including oracle moves as chained moves and a connection's rank raise.

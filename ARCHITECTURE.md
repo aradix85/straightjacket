@@ -199,8 +199,10 @@ src/straightjacket/
 │   │   ├── clock_consequences.py  # Clock fill handler (resolve_clock_fill) → `<clock_filled>` tag, progress-track completion
 │   │   ├── spawn_sources.py    # Shared spawn-source prefixes (random_event:, ac:, clock:, setup)
 │   │   ├── move_outcome.py     # Top-level move-outcome resolver (resolve_move_outcome) and handler dispatch
-│   │   ├── move_effects.py     # Effect parser, 13 effect handlers, dispatch dict (apply_effects)
+│   │   ├── move_effects.py     # Effect parser, effect handlers, dispatch dict (apply_effects), Pay the Price
 │   │   ├── move_handlers.py    # Complex move handlers: suffer, threshold, recovery
+│   │   ├── assets.py           # Asset data lookup, enabled abilities per asset, enabling the next ability
+│   │   ├── bonuses.py          # Roll bonuses from enabled asset abilities and connections, the Brain's choice, momentum on a hit
 │   │   ├── stance_gate.py      # NPC stance resolution, information gating
 │   │   ├── engine_memories.py  # Memory emotion derivation, engine memories, scene context
 │   │   ├── fate.py             # Mythic GME 2e fate chart, fate check, likelihood resolver
@@ -398,6 +400,7 @@ Where a rule comes from Ironsworn/Starforged, Mythic GME 2e, or the Adventure Cr
 - **Fixed choices where the player would choose a cost.** Where an outcome lets the player pick a cost from a list (Take Decisive Action and End the Fight on a weak hit, classic Reach Your Destination on a miss), the engine pays the price instead.
 - **Pay the Price rolls the official table and costs 1.** `engine/pay_the_price.yaml` names the setting's Datasworn table; a row that says the character is harmed, stressed, or wastes resources costs 1 health, spirit, or supply, the smallest suffer amount, where the rules leave the size to the player.
 - **A chained move is rolled at once, and only if it has a roll.** Where an outcome says to make another move (Test Your Relationship's hits say Develop Your Relationship), the move effect `chain_move` makes `game/finalization.py` roll that move in the same turn, with the best stat its roll options allow or, for a connection move, the connection's rank, spending a banked next-move bonus; its consequences join the first move's for the narrator. A chained move without a roll is an oracle move configured under `oracle_moves` in `engine/move_outcomes.yaml`: the engine rolls its table and marks its legacy ticks at once, where the rules mark them when the discovery or aspect is first engaged. Confront Chaos lets the player choose one to three aspects; the engine takes one.
+- **Roll bonuses: the Brain judges the condition, the engine owns the number.** `mechanics/bonuses.py` offers every enabled asset ability whose text grants an add ("add +1"), and every active connection's aid (add +1 and +1 momentum on a hit, `engine/roll_bonuses.yaml`), in a `<bonuses>` block of the Brain message; the Brain names at most one by id in `bonus_id` when the action clearly meets its condition, and the engine checks the id and takes the add from the rule text. Momentum on a hit counts only when the text ties it to the same add. One bonus per roll. Upgrading an asset enables its abilities in order (`mechanics/assets.py`), where the player would choose. Ability effects other than adds (rerolls, extra effects, special moves) are not modelled.
 - **Boasts are not modelled.** Draw the Circle grants its weak-hit momentum without the boast the player would choose.
 - **A fate-chart roll of 100 counts as doubles** and triggers a random event; Mythic 2e does not settle this edge case.
 

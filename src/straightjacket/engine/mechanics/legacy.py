@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from ..engine_loader import eng
+from .assets import enable_next_ability
 from ..logging_util import log
 from ..models import GameState, ProgressTrack, ThreatData
 
@@ -71,6 +72,8 @@ def advance_asset(game: GameState, asset_id: str, kind: str = "upgrade") -> int:
         return 0
     if kind == "new" and asset_id not in game.assets:
         game.assets.append(asset_id)
+    if kind == "upgrade":
+        enable_next_ability(game, asset_id)
     game.campaign.xp_spent += cost
     log(f"[Legacy] {kind} '{asset_id}' for {cost} XP (available {game.campaign.xp_available})")
     return cost

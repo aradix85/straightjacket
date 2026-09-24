@@ -9,6 +9,7 @@
   location_change: short name in {lang} if moving, null if staying.
   player_intent and location_change MUST be in {lang}.
   After any tool calls, you MUST respond with a JSON object: {{"type","move","stat","approach","target_npc","dialog_only","player_intent","world_addition","location_change"}}
+  bonus_id: when <bonuses> lists a bonus whose condition this action clearly meets, its id exactly as written; otherwise null. Never invent an id.
   </rules>
   {moves_block}
   <stats>edge=speed/stealth heart=empathy/charm iron=force shadow=cunning wits=knowledge</stats>

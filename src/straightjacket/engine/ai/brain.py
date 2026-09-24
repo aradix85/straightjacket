@@ -13,6 +13,7 @@ from ..prompt_loader import get_prompt
 from ..tools.builtins import available_moves
 from .provider_base import AICallSpec, AIProvider, create_with_retry
 from .schemas import get_brain_output_schema, get_revelation_check_schema
+from ..mechanics.bonuses import bonus_block
 
 
 def _build_moves_block(game: GameState) -> str:
@@ -79,6 +80,7 @@ def call_brain(
     npc_block = "<npcs>\n" + "\n".join(npc_lines) + "\n</npcs>" if npc_lines else f"<npcs>{_ai_text['no_npcs']}</npcs>"
 
     tracks_block = _build_tracks_block(game)
+    bonuses = bonus_block(game)
 
     user_msg = f"""<state>
 loc:{w.current_location} | ctx:{w.current_scene_context}
@@ -87,6 +89,7 @@ time:{w.time_of_day or _ai_text["unknown_time"]}
 </state>
 {npc_block}
 {tracks_block}
+{bonuses}
 <input>{player_message}</input>"""
 
     try:

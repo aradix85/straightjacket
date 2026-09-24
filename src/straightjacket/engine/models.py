@@ -75,6 +75,7 @@ class BrainResult(SerializableMixin):
     track_name: str | None = None
     track_rank: str | None = None
     target_track: str | None = None
+    bonus_id: str | None = None
 
 
 @dataclass
@@ -111,6 +112,7 @@ class GameState(SerializableMixin):
     stats: dict[str, int] = field(kw_only=True)
     backstory: str = ""
     assets: list[str] = field(default_factory=list)
+    asset_abilities: dict[str, list[bool]] = field(default_factory=dict)
     progress_tracks: list[ProgressTrack] = field(default_factory=list)
     threats: list[ThreatData] = field(default_factory=list)
     impacts: list[str] = field(default_factory=list)

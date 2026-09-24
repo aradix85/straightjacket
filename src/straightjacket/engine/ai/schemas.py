@@ -107,6 +107,7 @@ def get_brain_output_schema() -> dict[str, Any]:
                     ]
                 },
                 "target_track": _nullable_str(),
+                "bonus_id": _nullable_str(),
             },
             _e.ai_text.schema_titles["brain_output"],
         )
