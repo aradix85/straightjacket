@@ -7,6 +7,16 @@ Originally forked from [EdgeTales](https://github.com/edgetales/edgetales). See 
 
 Straightjacket uses calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day. The first CalVer release is `2026.04.25.0`. Earlier `0.x.y` releases keep their original version numbers and are not renumbered. The switch was made because the project has no public API to version semantically against — the `0.x.y` numbers were running counters with no meaning, and dates carry the meaning the numbers didn't.
 
+## [2026.09.24.13] — 2026-09-24
+
+The narrator runs Claude Opus 5.5 at reasoning effort `low`: the narrator cluster's `extra_body` gains `output_config: {effort: low}`, which the Anthropic adapter merges into the request since 2026.09.24.11.
+
+Based on the measurement recorded in roadmap Current state: default, `medium`, and `low`, each on ten situations three times with two blind judges, scored 6.85, 6.75, and 6.88 out of 10, no measurable quality difference, while `low` was about five seconds faster per narration and wrote a third fewer output tokens.
+
+Verified live, which is also the first live run of sentence-level streaming against Anthropic: through `stream_with_retry` with the real config, the first sentence arrived after 8.7 seconds and the last after 15.9, all 21 sentences came through, the streamed text matched the final text exactly (so the client changes nothing at the end), and the text held no reasoning. Reasoning never reaches the narration on either path: non-streaming responses keep only text blocks, and streaming passes on only `text_delta` events. Reasoning tokens are still billed as output, which is why `low` saves money.
+
+Quality gate: 1304 tests green, twenty-eight project-rule scans clean, coverage 88.59%, ruff and mypy --strict unaffected (config only). Save format unchanged.
+
 ## [2026.09.24.12] — 2026-09-24
 
 Sentence-level streaming of narration (roadmap section S), so the screen reader starts reading after the first sentence instead of after the whole turn.

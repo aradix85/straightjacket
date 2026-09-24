@@ -24,6 +24,8 @@ ai:
       extra_body:
         cache_control:
           type: "ephemeral"
+        output_config:
+          effort: "low"
     creative:
       provider: anthropic
       model: "claude-sonnet-5"
