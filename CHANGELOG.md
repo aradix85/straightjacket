@@ -7,6 +7,18 @@ Originally forked from [EdgeTales](https://github.com/edgetales/edgetales). See 
 
 Straightjacket uses calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day. The first CalVer release is `2026.04.25.0`. Earlier `0.x.y` releases keep their original version numbers and are not renumbered. The switch was made because the project has no public API to version semantically against — the `0.x.y` numbers were running counters with no meaning, and dates carry the meaning the numbers didn't.
 
+## [2026.09.24.27] — 2026-09-24
+
+The Adventure Crafter's tables are checked and pinned (roadmap R.8).
+
+Checked and conform: for each of the five themes the plot point table covers 1 to 100 without gaps or overlaps, as does the meta plot point table; Conclusion sits at 1 to 8 and None at 9 to 24 on every theme; the character and plotline lists have 25 lines of 4 percent each. Turning-point assembly follows the rules summarised in `data/adventure_crafter.json`. Two new tests in `tests/test_rules_conformance.py` pin the tables.
+
+Recorded as an open question in roadmap R.8, because it needs the rulebook text: the engine draws 2 to 5 plot points and counts a None as an empty slot, so a turning point can end up with no real plot point; whether None is skipped or rerolled is not decided here.
+
+No engine code changed.
+
+Quality gate: 1371 tests green, twenty-nine project-rule scans clean, coverage 89.66%, ruff check and ruff format clean, mypy --strict clean on 106 source files. Save format unchanged.
+
 ## [2026.09.24.26] — 2026-09-24
 
 Rules conformance for Mythic's lists and meaning tables, the Adventure Crafter's theme priority, and Blades clock sizes (roadmap R.7, R.8, R.9).

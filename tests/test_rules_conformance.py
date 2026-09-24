@@ -249,3 +249,34 @@ def test_adventure_crafter_theme_priority_ten_alternates_between_four_and_five(l
 
     alternation = ThemeAlternation()
     assert {lookup_theme_priority(10, alternation) for _ in range(2)} == {4, 5}
+
+
+def _covers_one_to_hundred(ranges: list[tuple[int, int]]) -> bool:
+    cells = sorted(v for low, high in ranges for v in range(low, high + 1))
+    return cells == list(range(1, 101))
+
+
+def test_adventure_crafter_tables_are_complete(load_engine: None) -> None:
+    from straightjacket.engine.mechanics.adventure_crafter import _load_ac_data
+
+    data = _load_ac_data()
+    themes = {theme for point in data["plot_points"] for theme in point["themes"]}
+    assert themes == {"action", "tension", "mystery", "social", "personal"}
+    for theme in themes:
+        ranges = [
+            (p["themes"][theme]["min"], p["themes"][theme]["max"]) for p in data["plot_points"] if theme in p["themes"]
+        ]
+        assert _covers_one_to_hundred(ranges), theme
+    assert _covers_one_to_hundred([(m["min"], m["max"]) for m in data["meta_plot_points"]])
+    for name in ("characters_list_template", "plotlines_list_template"):
+        rows = data[name]
+        assert len(rows) == 25 and all(r["max"] - r["min"] == 3 for r in rows)
+        assert _covers_one_to_hundred([(r["min"], r["max"]) for r in rows])
+
+
+def test_adventure_crafter_conclusion_and_none_ranges(load_engine: None) -> None:
+    from straightjacket.engine.mechanics.adventure_crafter import _load_ac_data
+
+    points = {p["name"]: p["themes"] for p in _load_ac_data()["plot_points"]}
+    assert all((r["min"], r["max"]) == (1, 8) for r in points["Conclusion"].values())
+    assert all((r["min"], r["max"]) == (9, 24) for r in points["None"].values())
