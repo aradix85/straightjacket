@@ -7,6 +7,14 @@ Originally forked from [EdgeTales](https://github.com/edgetales/edgetales). See 
 
 Straightjacket uses calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day. The first CalVer release is `2026.04.25.0`. Earlier `0.x.y` releases keep their original version numbers and are not renumbered. The switch was made because the project has no public API to version semantically against — the `0.x.y` numbers were running counters with no meaning, and dates carry the meaning the numbers didn't.
 
+## [2026.09.24.39] — 2026-09-24
+
+Corrects 2026.09.24.38, which claimed the damaged save from the run loads again. It did not: the duplicated vow had also produced a second progress track with the same id, and loading then failed on "UNIQUE constraint failed: progress_tracks.id" after the thread ids were repaired. That claim was written before the check's output was read.
+
+`persistence.py` → `_repair_duplicate_ids` (replacing `_repair_duplicate_thread_ids`) now renames duplicate progress-track ids as well, and points each renamed duplicate thread at the renamed duplicate track it belongs to, so a vow and its thread stay linked. The damaged save itself could not be retried: the next Elvira run cleans its saves at start and had already removed it. A new test builds the same damage, two vow tracks and two linked threads with equal ids, saves, loads, and checks unique ids with the links intact.
+
+Quality gate: 1410 tests green, twenty-nine project-rule scans clean, coverage 89.78%, ruff check and ruff format clean, mypy --strict clean on 109 source files. Save format unchanged.
+
 ## [2026.09.24.38] — 2026-09-24
 
 A vow sworn twice no longer breaks the save.

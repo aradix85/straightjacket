@@ -60,22 +60,37 @@ def load_game(username: str, name: str) -> tuple[GameState | None, list[Any]]:
         f"[Load] Game loaded: {username}/{name} ({game.player_name}, Scene {game.narrative.scene_count}, {len(chat_messages)} chat msgs)"
     )
 
-    _repair_duplicate_thread_ids(game)
+    _repair_duplicate_ids(game)
     reset_db()
     _db_sync(game)
 
     return game, chat_messages
 
 
-def _repair_duplicate_thread_ids(game: GameState) -> None:
-    taken = {thread.id for thread in game.narrative.threads}
+def _repair_duplicate_ids(game: GameState) -> None:
+    renamed_tracks: dict[str, list[str]] = {}
+    taken = {track.id for track in game.progress_tracks}
     seen: set[str] = set()
+    for track in game.progress_tracks:
+        if track.id in seen:
+            new_id = unique_id(track.id, taken)
+            log(f"[Load] Duplicate track id '{track.id}' renamed to '{new_id}'", level="warning")
+            if track.id not in renamed_tracks:
+                renamed_tracks[track.id] = []
+            renamed_tracks[track.id].append(new_id)
+            track.id = new_id
+            taken.add(new_id)
+        seen.add(track.id)
+    taken = {thread.id for thread in game.narrative.threads}
+    seen = set()
     for thread in game.narrative.threads:
         if thread.id in seen:
             new_id = unique_id(thread.id, taken)
             log(f"[Load] Duplicate thread id '{thread.id}' renamed to '{new_id}'", level="warning")
             thread.id = new_id
             taken.add(new_id)
+            if renamed_tracks.get(thread.linked_track_id):
+                thread.linked_track_id = renamed_tracks[thread.linked_track_id].pop(0)
         seen.add(thread.id)
 
 
