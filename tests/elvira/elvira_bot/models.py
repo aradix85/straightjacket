@@ -119,6 +119,7 @@ class TurnRecord:
     token_usage: list[dict] = field(default_factory=list)
     is_correction: bool = False
     error: str = ""
+    rolled_back: bool = False
     turn_secs: float = 0.0
     stream_first_sentence_secs: float | None = None
     stream_sentences: int = 0
@@ -232,6 +233,7 @@ class SessionLog:
     stream_issues: list[str] = field(default_factory=list)
     succession: dict = field(default_factory=dict)
     query_issues: list[str] = field(default_factory=list)
+    rollback_issues: list[str] = field(default_factory=list)
     engine_warnings: list[str] = field(default_factory=list)
 
     def to_dict(self) -> dict:

@@ -35,6 +35,7 @@ def collect_problems(slog: SessionLog) -> list[str]:
     problems += [f"Save/load: {i}" for i in slog.save_roundtrip_issues]
     problems += [f"Streaming: {i}" for i in slog.stream_issues]
     problems += [f"Status query: {i}" for i in slog.query_issues]
+    problems += [f"Rollback: {i}" for i in slog.rollback_issues]
     problems += _warning_problems(slog)
     problems += [f"Narration leak: {i}" for i in slog.narration_quality_issues]
     problems += [f"Spatial: {i}" for i in slog.spatial_issues]

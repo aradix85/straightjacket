@@ -27,6 +27,10 @@ def test_elvira_plays_a_short_session_end_to_end(
     bot_cfg = runner.load_config(ELVIRA_CONFIG)
     bot_cfg["session"]["max_turns"] = 3
     bot_cfg["logging"]["print_full_narration"] = False
+    monkeypatch.setattr(runner, "selectable_settings", lambda: ["starforged"])
+    monkeypatch.setattr(runner, "available_styles", lambda: ["explorer"])
+    bot_cfg["session"]["inject_ai_failure_turn"] = 3
+    monkeypatch.setattr(runner, "_judge_provider", lambda judge_cfg: MockProvider())
 
     session = runner.run_session(bot_cfg, auto_override=True)
 
@@ -36,11 +40,14 @@ def test_elvira_plays_a_short_session_end_to_end(
     assert list((tmp_path / "runs").glob("*.json"))
     report = next((tmp_path / "runs").glob("*.md")).read_text(encoding="utf-8")
     assert "## Coverage" in report
+    assert report.startswith("# Elvira report: starforged, explorer")
     assert session.coverage["counts"]["save_roundtrip"] >= 1
     assert session.save_roundtrip_issues == []
     compact = session.turns[0].to_compact_dict()
     assert compact["narration"]
-    assert all(t.stream_complete for t in session.turns if not t.is_correction and not t.error)
+    assert all(t.stream_complete for t in session.turns if not t.is_correction and not t.error and not t.rolled_back)
+    assert session.coverage["counts"]["ai_failure_rollback"] == 1
+    assert session.rollback_issues == []
 
 
 def test_elvira_websocket_mode_plays_through_the_real_server(
@@ -68,6 +75,8 @@ def test_elvira_websocket_mode_plays_through_the_real_server(
 
     bot_cfg = runner.load_config(ELVIRA_CONFIG)
     bot_cfg["session"]["max_turns"] = 2
+    bot_cfg["game"]["setting_id"] = "starforged"
+    bot_cfg["bot_behavior"]["style"] = "explorer"
     bot_cfg["logging"]["print_full_narration"] = False
     bot_cfg["ws_port"] = port
 

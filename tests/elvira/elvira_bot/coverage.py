@@ -27,6 +27,7 @@ TARGETS = (
     "bonus_used",
     "chained_move",
     "pay_the_price",
+    "ai_failure_rollback",
 )
 
 STEERING = (

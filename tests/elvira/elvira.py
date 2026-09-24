@@ -1,5 +1,6 @@
 import argparse
 import asyncio
+import copy
 import logging
 import sys
 from pathlib import Path
@@ -18,7 +19,8 @@ if not _logger.handlers:
     _logger.setLevel(logging.DEBUG)
     _logger.addHandler(_ch)
 
-from tests.elvira.elvira_bot.runner import load_config, run_session
+from tests.elvira.elvira_bot.ai_helpers import available_styles
+from tests.elvira.elvira_bot.runner import load_config, run_session, selectable_settings
 
 DEFAULT_CONFIG = _HERE / "elvira_config.yaml"
 
@@ -35,14 +37,15 @@ def main() -> None:
     )
     parser.add_argument("--port", type=int, default=None, help="Server port for --ws mode (default: from config.yaml)")
     parser.add_argument(
-        "--setting", type=str, default=None, help="Override: setting_id (starforged, classic, sundered_isles)"
+        "--setting", type=str, default=None, help="Override: setting_id; random per run when empty in the config"
     )
     parser.add_argument(
         "--style",
         type=str,
         default=None,
-        help="Override: play style (explorer, aggressor, dialogist)",
+        help="Override: play style; random per run when empty in the config",
     )
+    parser.add_argument("--matrix", action="store_true", help="Play one session for every setting and style in turn")
     args = parser.parse_args()
 
     bot_cfg = load_config(args.config)
@@ -51,6 +54,15 @@ def main() -> None:
         bot_cfg.setdefault("game", {})["setting_id"] = args.setting
     if args.style:
         bot_cfg.setdefault("bot_behavior", {})["style"] = args.style
+
+    if args.matrix:
+        for setting_id in selectable_settings():
+            for style in available_styles():
+                run_cfg = copy.deepcopy(bot_cfg)
+                run_cfg["game"]["setting_id"] = setting_id
+                run_cfg["bot_behavior"]["style"] = style
+                run_session(run_cfg, auto_override=args.auto, turns_override=args.turns)
+        return
 
     if args.ws:
         if args.port:

@@ -58,6 +58,10 @@ def _load_bot_config() -> None:
         _bot_model = model_for_role("brain")
 
 
+def available_styles() -> list[str]:
+    return sorted(k.removeprefix("style_") for k in _load_prompts() if k.startswith("style_"))
+
+
 def get_persona(style: str) -> str:
     prompts = _load_prompts()
     key = f"style_{style}"

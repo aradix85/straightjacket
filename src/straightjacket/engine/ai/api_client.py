@@ -40,7 +40,7 @@ def _build_adapter(name: str, pc: ProviderConfig) -> ModelListingProvider:
 def _adapters_in_use() -> dict[str, ModelListingProvider]:
     ai = cfg().ai
     names = sorted({cluster.provider for cluster in ai.clusters.values()})
-    return {name: _build_adapter(name, ai.providers[name]) for name in names}
+    return {name: provider_named(name) for name in names}
 
 
 class RoutingProvider:
@@ -56,6 +56,10 @@ class RoutingProvider:
 
 def get_provider() -> AIProvider:
     return RoutingProvider(_adapters_in_use())
+
+
+def provider_named(name: str) -> ModelListingProvider:
+    return _build_adapter(name, cfg().ai.providers[name])
 
 
 def check_configured_models() -> None:

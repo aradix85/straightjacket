@@ -14,10 +14,11 @@ import yaml
 if TYPE_CHECKING:
     from straightjacket.engine.ai.provider_base import AIProvider
 
-from straightjacket.engine.ai.api_client import check_configured_models, get_provider
-from straightjacket.engine.ai.provider_base import drain_token_log
+from straightjacket.engine.ai.api_client import check_configured_models, get_provider, provider_named
+from straightjacket.engine.ai.provider_base import AIUnavailableError, drain_token_log
 from straightjacket.engine.ai.sentence_stream import SentenceStream
-from straightjacket.engine.models import EngineConfig, GameState
+from straightjacket.engine.db.sync import sync as db_sync
+from straightjacket.engine.models import EngineConfig, GameState, TurnSnapshot
 from straightjacket.engine.persistence import delete_save, load_game, save_game
 from straightjacket.engine.user_management import create_user
 from straightjacket.engine.config_loader import VERSION, model_for_role, provider_for_role
@@ -38,8 +39,9 @@ from straightjacket.engine.game import (
 from .coverage import Coverage, world_view
 from .judge import judge_turn
 from .report import write_report
-from .ai_helpers import ask_bot, build_turn_context, decide_burn_momentum, get_persona
+from .ai_helpers import ask_bot, available_styles, build_turn_context, decide_burn_momentum, get_persona
 from .creation import roll_character
+from .faults import NarratorOutage
 from .invariants import assert_game_state
 from .models import ChapterRecord, NpcSnapshot, SessionLog, TurnRecord
 from .quality_checks import (
@@ -65,6 +67,17 @@ def load_config(path: Path) -> dict:
         return yaml.safe_load(f)
 
 
+def selectable_settings() -> list[str]:
+    return [s for s in list_packages() if s != "delve"]
+
+
+def _judge_provider(judge_cfg: dict) -> AIProvider:
+    judge = provider_named(judge_cfg["provider"])
+    if judge_cfg["model"] not in judge.list_models():
+        raise SystemExit(f"Judge model '{judge_cfg['model']}' is not offered by provider '{judge_cfg['provider']}'")
+    return judge
+
+
 def run_session(bot_cfg: dict, auto_override: bool = False, turns_override: int | None = None) -> SessionLog:
     auto_mode = auto_override or bot_cfg["auto_mode"]
     username = bot_cfg["username"]
@@ -79,9 +92,11 @@ def run_session(bot_cfg: dict, auto_override: bool = False, turns_override: int 
     save_every = session_cfg["save_every_n_turns"]
     save_out = session_cfg["save_name_output"]
     clean_before = session_cfg["clean_before_run"]
-    style = behavior["style"]
+    style = behavior["style"] or _random.choice(available_styles())
     burn_setting = behavior["burn_momentum"]
-    setting_id = game_cfg["setting_id"]
+    setting_id = game_cfg["setting_id"] or _random.choice(selectable_settings())
+    game_cfg = {**game_cfg, "setting_id": setting_id}
+    inject_turn = session_cfg["inject_ai_failure_turn"]
     log_file_base = Path(log_cfg["log_file"])
     timestamp = datetime.now().astimezone().strftime("%Y%m%d_%H%M%S")
     log_file = log_file_base.with_stem(f"{log_file_base.stem}_{setting_id}_{style}_{timestamp}")
@@ -98,6 +113,7 @@ def run_session(bot_cfg: dict, auto_override: bool = False, turns_override: int 
 
     check_configured_models()
     provider = get_provider()
+    judge_provider = _judge_provider(judge_cfg) if judge_cfg else None
     config = EngineConfig(narration_lang=narration_lang)
     create_user(username)
 
@@ -107,13 +123,13 @@ def run_session(bot_cfg: dict, auto_override: bool = False, turns_override: int 
     persona = get_persona(style)
 
     slog = SessionLog(
-        config=bot_cfg,
+        config={**bot_cfg, "game": game_cfg, "bot_behavior": {**behavior, "style": style}},
         engine_version=VERSION,
         style=style,
     )
 
     print(f"\n{SEPARATOR}")
-    print(f"  Straightjacket — Elvira Test Bot — {style.upper()} mode")
+    print(f"  Straightjacket — Elvira Test Bot — {setting_id}, {style}")
     print(
         f"  Auto: {'YES' if auto_mode else 'NO'} | Turns/ch: {max_turns} | "
         f"Chapters: {max_chapters} | Lang: {narration_lang}"
@@ -122,6 +138,8 @@ def run_session(bot_cfg: dict, auto_override: bool = False, turns_override: int 
         f"{role}={provider_for_role(role)}/{model_for_role(role)}" for role in ("narrator", "brain", "director")
     )
     print(f"  Engine: v{VERSION} | {roles}")
+    if judge_cfg:
+        print(f"  Judge: {judge_cfg['provider']}/{judge_cfg['model']} | Injected AI failure on turn {inject_turn}")
     print(SEPARATOR)
 
     game, narration, chat_messages = _setup_game(provider, config, username, game_cfg, auto_mode, slog)
@@ -180,6 +198,8 @@ def run_session(bot_cfg: dict, auto_override: bool = False, turns_override: int 
                     coverage=coverage,
                     events=events,
                     judge_cfg=judge_cfg,
+                    judge_provider=judge_provider,
+                    inject_failure=total_turns == inject_turn,
                     max_turns=max_chapters * max_turns,
                     prev_action=prev_action,
                 )
@@ -315,12 +335,7 @@ def _setup_game(
         )
         return game, narration, chat_messages
 
-    setting_id = game_cfg["setting_id"]
-    if setting_id == "":
-        available = [s for s in list_packages() if s != "delve"]
-        setting_id = _random.choice(available)
-
-    creation_data = roll_character(setting_id, game_cfg)
+    creation_data = roll_character(game_cfg["setting_id"], game_cfg)
 
     try:
         game, narration = start_new_game(provider, creation_data, config, username)
@@ -352,6 +367,8 @@ def _play_turn(
     judge_cfg: dict | None,
     max_turns: int,
     prev_action: str = "",
+    judge_provider: AIProvider | None = None,
+    inject_failure: bool = False,
 ) -> tuple[GameState, str, TurnRecord, bool]:
     context = build_turn_context(
         game, narration, turn, prev_action=prev_action, directive_key=coverage.steer(turn, max_turns)
@@ -378,8 +395,17 @@ def _play_turn(
         sentences.append(text)
 
     stream = SentenceStream(on_sentence)
+    snapshot, last_snapshot, before_state = game.snapshot(), game.last_turn_snapshot, game.to_dict()
+    turn_provider = NarratorOutage(provider) if inject_failure else provider
     try:
-        game, narration, roll, burn_info, director_ctx = process_turn(provider, game, action, config, stream)
+        game, narration, roll, burn_info, director_ctx = process_turn(turn_provider, game, action, config, stream)
+    except AIUnavailableError as e:
+        _restore(game, snapshot, last_snapshot)
+        rec = TurnRecord(turn=turn, chapter=game.campaign.chapter_number, action=action, rolled_back=True)
+        _check_rollback(game, before_state, turn, e, inject_failure, slog, coverage)
+        if inject_failure:
+            del events.warnings[warnings_before:]
+        return game, narration, rec, False
     except Exception as e:
         print(f"[ERROR] process_turn failed: {e}")
         traceback.print_exc()
@@ -417,7 +443,28 @@ def _play_turn(
             rec.director_error = str(e)
 
     print_state(game)
+    _check_turn(game, narration, turn, prev_npcs, do_invariants, slog, rec)
 
+    rec.engine_events = list(events.lines)
+    rec.engine_warnings = events.warnings[warnings_before:]
+    coverage.observe_events(rec.engine_events)
+
+    if judge_cfg and judge_provider:
+        rec.judge = judge_turn(judge_provider, judge_cfg, game, action, narration, result, match)
+        _print_audit(rec.judge)
+
+    return game, narration, rec, False
+
+
+def _check_turn(
+    game: GameState,
+    narration: str,
+    turn: int,
+    prev_npcs: list[NpcSnapshot] | None,
+    do_invariants: bool,
+    slog: SessionLog,
+    rec: TurnRecord,
+) -> None:
     quality_issues = check_narration_quality(narration)
     if quality_issues:
         rec.narration_quality = quality_issues
@@ -439,15 +486,32 @@ def _play_turn(
             slog.violations.append(v)
         rec.violations = violations
 
-    rec.engine_events = list(events.lines)
-    rec.engine_warnings = events.warnings[warnings_before:]
-    coverage.observe_events(rec.engine_events)
 
-    if judge_cfg:
-        rec.judge = judge_turn(provider, judge_cfg, game, action, narration, result, match)
-        _print_audit(rec.judge)
+def _restore(game: GameState, snapshot: TurnSnapshot, last_snapshot: TurnSnapshot | None) -> None:
+    game.restore(snapshot)
+    game.last_turn_snapshot = last_snapshot
+    db_sync(game)
 
-    return game, narration, rec, False
+
+def _check_rollback(
+    game: GameState,
+    before_state: dict,
+    turn: int,
+    error: AIUnavailableError,
+    injected: bool,
+    slog: SessionLog,
+    coverage: Coverage,
+) -> None:
+    after_state = game.to_dict()
+    changed = sorted(key for key in before_state if before_state[key] != after_state[key])
+    if not injected:
+        slog.rollback_issues.append(f"Turn {turn}: AI unavailable ({error}); turn rolled back, play continued")
+    if changed:
+        slog.rollback_issues.append(f"Turn {turn}: rollback left {', '.join(changed)} changed")
+    else:
+        coverage.hit("ai_failure_rollback")
+    kind = "Injected" if injected else "Real"
+    print(f"  [ROLLBACK] {kind} AI failure: {error}; state restored{' with differences' if changed else ''}")
 
 
 def _record_stream(

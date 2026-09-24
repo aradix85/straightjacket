@@ -12,7 +12,7 @@ ai:
 game:
   load_existing: false
   save_name: "autosave"
-  setting_id: "starforged"
+  setting_id: ""
   player_name: ""
   pronouns: ""
   backstory: ""
@@ -23,23 +23,24 @@ game:
 
 session:
   max_chapters: 1
-  max_turns: 5
+  max_turns: 8
   narration_lang: "English"
   save_every_n_turns: 5
   save_name_output: "elvira"
   clean_before_run: true
   succession_on_game_over: true
+  inject_ai_failure_turn: 3
 
 bot_behavior:
   burn_momentum: "auto"
-  style: "explorer"
+  style: ""
 
 judge:
   enabled: true
-  model: "gpt-6-luna"
+  provider: "anthropic"
+  model: "claude-sonnet-5"
   max_tokens: 3000
-  extra_body:
-    reasoning_effort: "low"
+  extra_body: {}
 
 prices:
   claude-opus-5-5: [4.00, 20.00]

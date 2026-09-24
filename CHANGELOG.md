@@ -7,6 +7,24 @@ Originally forked from [EdgeTales](https://github.com/edgetales/edgetales). See 
 
 Straightjacket uses calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day. The first CalVer release is `2026.04.25.0`. Earlier `0.x.y` releases keep their original version numbers and are not renumbered. The switch was made because the project has no public API to version semantically against — the `0.x.y` numbers were running counters with no meaning, and dates carry the meaning the numbers didn't.
 
+## [2026.09.24.49] — 2026-09-24
+
+Elvira varies, judges fairly, and survives AI failures, at the user's request. First of two steps; scenarios for rare situations follow.
+
+Variation. Every run picks its setting (classic, starforged, or sundered_isles; delve is an expansion without a creation of its own) and its play style at random, unless `elvira_config.yaml` or `--setting` and `--style` name one. Until now the config fixed starforged and explorer, so all eleven committed runs played the same corner of the game. `--matrix` plays all nine combinations in turn. The default run is eight turns; `--turns 40` makes a long one.
+
+A judge from another family. The judge ran on GPT-6 Luna, the narrator's own model, scoring its own prose. It now runs on Claude Sonnet 5 through its own provider (`judge.provider` in `elvira_config.yaml`), reached through the new `ai/api_client.py` → `provider_named`, which `_adapters_in_use` now uses as well; Elvira checks at start that the provider offers the judge model. Claude Sonnet 5 is also one of the two judges in the sj_modeltest harness.
+
+AI failures. Since 2026.09.24.47 a failed Brain or narrator call raises instead of degrading, and Elvira's direct mode then ended the whole run. It now does what the web handler does: it restores the snapshot, reports a real failure as a problem, and plays on. Once per run (`session.inject_ai_failure_turn`, turn 3 by default) it makes the narrator unreachable (`tests/elvira/elvira_bot/faults.py`) and checks that the state after the rollback equals the state before the turn exactly. A clean rollback counts as the new coverage target `ai_failure_rollback`; a difference is a problem; warnings from the injected turn are expected and dropped. `_play_turn` grew past the complexity ceiling and hands its post-turn checks to `_check_turn`.
+
+Found by the live run and fixed: the report's title showed an empty setting, because the session log kept the raw config with its empty `setting_id`. It now keeps the resolved setting and style. The smoke test now resolves setting and style through the random choice, with one option each so it stays deterministic, and checks the title; it fails on the previous code. It also checks the injected failure: exactly one clean rollback and no rollback problem.
+
+Elvira, eight turns in Starforged as explorer (a random draw) on GPT-6 Luna, with Claude Sonnet 5 as judge: no problems. The injected narrator outage on turn 3 rolled back to the exact prior state and play continued; both save round trips were clean; six streamed turns matched the final text, first sentence after 2.6 seconds (median); result integrity 4.7 out of 5 over six audited turns. The judge's own calls are not in the report's cost table. Cost about one cent plus the judge.
+
+Documentation: ARCHITECTURE.md describes the judge, the variation, `--matrix`, and the injected outage, and its file map names `provider_named`; the roadmap says how to run Elvira. Outside the repository, the model-comparison harness in `sj_modeltest` was tidied at the user's request (21 one-off scripts and 43 log files to the recycle bin) and gained a README that explains it and warns that scenarios must be captured again after any narrator-prompt change.
+
+Quality gate: 1417 tests green, twenty-nine project-rule scans clean, coverage 89.94%, ruff check and ruff format clean, mypy --strict clean on 109 source files. Save format unchanged.
+
 ## [2026.09.24.48] — 2026-09-24
 
 Elvira's run reports leave the repository, at the user's request: they are of little use to others and clutter the history. `tests/elvira/runs/` is in `.gitignore`, and the 22 files committed since 2026.09.24.17 (eleven runs, a JSON session log and a Markdown report each) are removed from git; they stay on disk, and every run still writes there. ARCHITECTURE.md says so, and its Elvira paragraph no longer says the engine catches every AI-call failure by design: since 2026.09.24.47 only failed side calls degrade, while a failed Brain or narrator call pauses the turn. The documentation-drift scan checks only paths with a file extension, so the directory reference stays valid in a fresh clone. No code changed.
