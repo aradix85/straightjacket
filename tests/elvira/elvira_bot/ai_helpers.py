@@ -16,6 +16,7 @@ _CONFIG_PATH = _HERE / "elvira_config.yaml"
 _prompts: dict[str, Any] | None = None
 _bot_model: str | None = None
 _bot_temperature: float | None = None
+_bot_extra_body: dict[str, Any] = {}
 _bot_config_loaded: bool = False
 
 
@@ -38,7 +39,7 @@ def _p(key: str, **kwargs: Any) -> str:
 
 
 def _load_bot_config() -> None:
-    global _bot_model, _bot_temperature, _bot_config_loaded
+    global _bot_model, _bot_temperature, _bot_extra_body, _bot_config_loaded
     if _bot_config_loaded:
         return
     _bot_config_loaded = True
@@ -47,6 +48,7 @@ def _load_bot_config() -> None:
             ecfg = yaml.safe_load(f) or {}
         ai_cfg = ecfg.get("ai", {})
         _bot_model = ai_cfg.get("bot_model", "") or None
+        _bot_extra_body = dict(ai_cfg["bot_extra_body"])
         temp = ai_cfg.get("temperature")
         if temp is not None:
             _bot_temperature = float(temp)
@@ -77,6 +79,7 @@ def ask_bot(provider: AIProvider, system: str, user: str, max_tokens: int = 300,
         messages=[{"role": "user", "content": user}],
         max_tokens=max_tokens,
         temperature=_bot_temperature,
+        extra_body=_bot_extra_body,
         log_role="brain",
     )
     response = provider.create_message(spec)

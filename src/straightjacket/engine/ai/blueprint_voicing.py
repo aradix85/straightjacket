@@ -29,6 +29,11 @@ def _build_voicing_user_msg(game: GameState, seed: BlueprintSeed) -> str:
     if game.world.current_location:
         parts.append(f"location:{game.world.current_location}")
 
+    blueprint = eng().adventure_crafter.blueprint
+    parts.append(
+        f"required_counts: acts={len(seed.acts)} revelations={blueprint.revelations_per_blueprint} "
+        f"possible_endings={blueprint.possible_endings_per_blueprint}"
+    )
     parts.append("<acts>")
     for i, act_seed in enumerate(seed.acts, start=1):
         line = f"act {i} phase={act_seed.phase} scene_range={act_seed.scene_range[0]}-{act_seed.scene_range[1]}"
@@ -59,6 +64,18 @@ def _build_voicing_user_msg(game: GameState, seed: BlueprintSeed) -> str:
     return "\n".join(parts)
 
 
+def _count_mismatch(voicing: dict[str, Any], seed: BlueprintSeed) -> list[str]:
+    blueprint = eng().adventure_crafter.blueprint
+    expected = {
+        "acts": len(seed.acts),
+        "revelations": blueprint.revelations_per_blueprint,
+        "possible_endings": blueprint.possible_endings_per_blueprint,
+    }
+    return [
+        f"{key} {len(voicing[key])} (expected {count})" for key, count in expected.items() if len(voicing[key]) != count
+    ]
+
+
 def call_blueprint_voicing(
     provider: AIProvider,
     game: GameState,
@@ -81,14 +98,22 @@ def call_blueprint_voicing(
             log_role="blueprint_voicing",
             **sampling_params("blueprint_voicing"),
         )
-        response = create_with_retry(provider, spec)
-        voicing: dict[str, Any] = json.loads(response.content)
-        log(
-            f"[BlueprintVoicing] Succeeded: "
-            f"conflict={voicing['central_conflict'][: eng().truncations.log_medium]}, "
-            f"acts={len(voicing['acts'])}, revelations={len(voicing['revelations'])}"
-        )
-        return voicing
+        for attempt in range(spec.max_retries + 1):
+            response = create_with_retry(provider, spec)
+            voicing: dict[str, Any] = json.loads(response.content)
+            mismatch = _count_mismatch(voicing, seed)
+            if not mismatch:
+                log(
+                    f"[BlueprintVoicing] Succeeded: "
+                    f"conflict={voicing['central_conflict'][: eng().truncations.log_medium]}, "
+                    f"acts={len(voicing['acts'])}, revelations={len(voicing['revelations'])}"
+                )
+                return voicing
+            log(
+                f"[BlueprintVoicing] Wrong counts: {', '.join(mismatch)} (attempt {attempt + 1}/{spec.max_retries + 1})",
+                level="warning",
+            )
+        raise ValueError(f"voicing kept returning wrong counts: {', '.join(mismatch)}")
     except Exception as e:
         log(
             f"[BlueprintVoicing] Failed ({type(e).__name__}: {e}), continuing without blueprint",

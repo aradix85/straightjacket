@@ -1,0 +1,118 @@
+{
+  "engine_version": "2026.09.24.18",
+  "style": "explorer",
+  "character": {
+    "name": "Valda Mital",
+    "concept": "Devotant, Gunner",
+    "setting": "starforged"
+  },
+  "setting": "starforged",
+  "total_turns": 3,
+  "ended_reason": "max_turns_reached",
+  "chapters": [
+    {
+      "chapter": 1,
+      "turns": 3,
+      "ended": "max_turns_reached"
+    }
+  ],
+  "turns": [
+    {
+      "turn": 1,
+      "scene": 2,
+      "result": "dialog",
+      "action": "I look toward Hesper Anvik and ask, “Did you hear those knocks too—and do you kn",
+      "state": "H5 Sp5 Su5 M2 C5",
+      "tokens": [
+        {
+          "role": "brain",
+          "input": 1598,
+          "output": 101
+        },
+        {
+          "role": "narrator",
+          "input": 5160,
+          "output": 706
+        }
+      ]
+    },
+    {
+      "turn": 2,
+      "scene": 3,
+      "result": "STRONG_HIT",
+      "move": "adventure/face_danger",
+      "action": "I wrench the bench away from the plastic curtain and brace it against the corrid",
+      "state": "H5 Sp5 Su5 M3 C4",
+      "consequences": [
+        "momentum +1"
+      ],
+      "director": true,
+      "tokens": [
+        {
+          "role": "brain",
+          "input": 1612,
+          "output": 108
+        },
+        {
+          "role": "narrator",
+          "input": 5772,
+          "output": 840
+        }
+      ]
+    },
+    {
+      "turn": 3,
+      "scene": 4,
+      "result": "WEAK_HIT",
+      "move": "adventure/face_danger",
+      "action": "I grip the exposed cot frame and haul it away from the plastic sheeting, bracing",
+      "state": "H4 Sp5 Su5 M3 C4",
+      "consequences": [
+        "health -1"
+      ],
+      "director": true,
+      "tokens": [
+        {
+          "role": "brain",
+          "input": 1640,
+          "output": 118
+        },
+        {
+          "role": "narrator",
+          "input": 6578,
+          "output": 981
+        }
+      ]
+    }
+  ],
+  "quality_summary": {
+    "narration_quality_total": 0,
+    "spatial_issues_total": 0,
+    "chapter_continuity_total": 0,
+    "correction_tests_total": 0,
+    "correction_tests_failed": 0,
+    "top_quality_issues": []
+  },
+  "burn_stats": {
+    "offered": 0,
+    "taken": 0,
+    "failed": 0
+  },
+  "token_summary": {
+    "total_input": 22360,
+    "total_output": 2854,
+    "total": 25214,
+    "by_role": {
+      "brain": {
+        "calls": 3,
+        "input": 4850,
+        "output": 327
+      },
+      "narrator": {
+        "calls": 3,
+        "input": 17510,
+        "output": 2527
+      }
+    }
+  }
+}

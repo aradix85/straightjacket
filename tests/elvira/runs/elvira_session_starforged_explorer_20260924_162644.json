@@ -1,0 +1,59 @@
+{
+  "engine_version": "2026.09.24.18",
+  "style": "explorer",
+  "character": {
+    "name": "Florian Hawking",
+    "concept": "Fugitive, Armored",
+    "setting": "starforged"
+  },
+  "setting": "starforged",
+  "total_turns": 1,
+  "ended_reason": "engine_error",
+  "chapters": [
+    {
+      "chapter": 1,
+      "turns": 1,
+      "ended": "engine_error"
+    }
+  ],
+  "story": {
+    "structure": "3act",
+    "conflict": "Can fugitive adventurer Florian Hawking outrun the authorities closing in across the Forge, or will his ambitions cost him the freedom he fled for?",
+    "thematic": "What ambition demands from a fugitive who still needs allies",
+    "acts": [
+      "setup: A Narrow Victory",
+      "confrontation: Flight Through the Forge",
+      "climax: Cost of Retaliation"
+    ]
+  },
+  "turns": [
+    {
+      "turn": 1,
+      "scene": 0,
+      "result": "dialog",
+      "action": "",
+      "state": "H0 Sp0 Su0 M0 C0",
+      "error": "Error code: 400 - {'error': {'message': \"Unsupported value: 'temperature' does not support 0.7 with this model. Only the default (1) value is supported.\", 'type': 'invalid_request_error', 'param': 'temperature', 'code': 'unsupported_value'}}",
+      "narration": ""
+    }
+  ],
+  "quality_summary": {
+    "narration_quality_total": 0,
+    "spatial_issues_total": 0,
+    "chapter_continuity_total": 0,
+    "correction_tests_total": 0,
+    "correction_tests_failed": 0,
+    "top_quality_issues": []
+  },
+  "burn_stats": {
+    "offered": 0,
+    "taken": 0,
+    "failed": 0
+  },
+  "token_summary": {
+    "total_input": 0,
+    "total_output": 0,
+    "total": 0,
+    "by_role": {}
+  }
+}

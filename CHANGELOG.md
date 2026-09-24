@@ -7,6 +7,18 @@ Originally forked from [EdgeTales](https://github.com/edgetales/edgetales). See 
 
 Straightjacket uses calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day. The first CalVer release is `2026.04.25.0`. Earlier `0.x.y` releases keep their original version numbers and are not renumbered. The switch was made because the project has no public API to version semantically against — the `0.x.y` numbers were running counters with no meaning, and dates carry the meaning the numbers didn't.
 
+## [2026.09.24.19] — 2026-09-24
+
+The narrator stays on Claude Opus 5.5; every other role moves to OpenAI's GPT-6 Luna, a second provider next to Anthropic.
+
+Configuration. `config.yaml` gains an `openai` provider (`type: openai_compatible`, OpenAI's default endpoint, `OPENAI_API_KEY`, 120-second timeout). The creative cluster (Director, blueprint voicing, chapter summary, recap) runs GPT-6 Luna at reasoning effort `low`; classification, judgment, and extraction run it at `none`. The OpenAI clusters carry no `cache_control`, which is an Anthropic parameter; OpenAI caches automatically. Measured beforehand on the ten test situations with the same two blind judges: GPT-6 Luna 6.40 out of 10 against Haiku's 6.10, the failed leap narrated as a failure in two of three attempts (Haiku in none), 3.6 seconds and about three cents per hundred calls. All eight engine schemas pass OpenAI's strict structured outputs, checked statically (every property required) and live.
+
+Elvira's player and judge move to GPT-6 Luna as well; the player gets a required `bot_extra_body` (`reasoning_effort: none`) in `elvira_config.yaml`, because GPT-6 Luna rejects a temperature other than 1 while it reasons. The judge is no longer a Claude model scoring Claude's narration, and it scores more critically.
+
+Found by switching models, in the game itself. The blueprint voicing prompt said "per ending seed" and "per revelation seed", while the engine requires exactly `possible_endings_per_blueprint` and `revelations_per_blueprint` (three each) and a new game often has a single ending seed. Haiku padded the list on its own; GPT-6 Luna followed the prompt and returned one ending, so every new game failed with "voicing returned 1 endings, expected 3". The voicing user message now states `required_counts` (acts, revelations, possible endings), the prompt asks for exactly those counts, basing entries on the seeds in order and resolving the same central conflict with a different type when seeds run out, and `call_blueprint_voicing` checks the counts after parsing and asks again, up to the cluster's retries, before giving up the way it already did on AI failure. Verified live: the first voicing attempt returned three acts, three revelations, and three endings. New test: a reply with too few endings triggers a second call.
+
+Quality gate: 1316 tests green, twenty-eight project-rule scans clean, ruff check and ruff format clean, mypy --strict clean on 106 source files. Save format unchanged; the startup check confirms both providers.
+
 ## [2026.09.24.18] — 2026-09-24
 
 Every role except the narrator runs on Claude Haiku 4.5: the creative cluster (Director, blueprint voicing, chapter summary, recap) moves from Claude Sonnet 5 to Haiku. The narrator stays on Claude Opus 5.5 at effort low.

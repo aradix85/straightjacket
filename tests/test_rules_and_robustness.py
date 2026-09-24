@@ -83,3 +83,47 @@ def test_npc_introduced_and_killed_in_the_same_scene_is_marked_deceased(load_eng
     apply_narrator_metadata(game, metadata, scene_present_ids=set(), world_addition="")
     mara = next(n for n in game.npcs if n.name == "Mara Voss")
     assert mara.status == "deceased"
+
+
+def test_blueprint_voicing_retries_until_the_counts_match(load_engine: None) -> None:
+    import json
+    import random
+
+    from straightjacket.engine.ai.blueprint_voicing import call_blueprint_voicing
+    from straightjacket.engine.ai.provider_base import AICallSpec, AIResponse
+    from straightjacket.engine.mechanics.adventure_crafter import assemble_blueprint_seed_from_ac
+    from tests.test_integration import _make_game
+
+    game = _make_game()
+    seed = assemble_blueprint_seed_from_ac(random.Random(1), game)
+    blueprint = eng().adventure_crafter.blueprint
+
+    def voicing(endings: int) -> str:
+        return json.dumps(
+            {
+                "central_conflict": "A drowned city wants its name back",
+                "antagonist_force": "The tide-priests",
+                "thematic_thread": "Memory as debt",
+                "acts": [{"title": "t", "goal": "g", "mood": "m", "transition_trigger": "x"} for _ in seed.acts],
+                "revelations": [{"content": "r"} for _ in range(blueprint.revelations_per_blueprint)],
+                "possible_endings": [{"type": "t", "description": "d"} for _ in range(endings)],
+            }
+        )
+
+    class Scripted:
+        def __init__(self) -> None:
+            self.replies = [
+                voicing(blueprint.possible_endings_per_blueprint - 1),
+                voicing(blueprint.possible_endings_per_blueprint),
+            ]
+            self.calls = 0
+
+        def create_message(self, spec: AICallSpec) -> AIResponse:
+            self.calls += 1
+            return AIResponse(content=self.replies.pop(0))
+
+    provider = Scripted()
+    result = call_blueprint_voicing(provider, game, seed)
+    assert result is not None
+    assert len(result["possible_endings"]) == blueprint.possible_endings_per_blueprint
+    assert provider.calls == 2

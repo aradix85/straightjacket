@@ -13,6 +13,11 @@ ai:
       api_base: ""
       api_key_env: "ANTHROPIC_API_KEY"
       timeout_seconds: 120
+    openai:
+      type: "openai_compatible"
+      api_base: ""
+      api_key_env: "OPENAI_API_KEY"
+      timeout_seconds: 120
 
   clusters:
     narrator:
@@ -29,45 +34,41 @@ ai:
         output_config:
           effort: "low"
     creative:
-      provider: anthropic
-      model: "claude-haiku-4-5-20251001"
+      provider: openai
+      model: "gpt-6-luna"
       temperature: null
       top_p: null
       max_tokens: 8192
       max_retries: 3
       extra_body:
-        cache_control:
-          type: "ephemeral"
+        reasoning_effort: "low"
     classification:
-      provider: anthropic
-      model: "claude-haiku-4-5-20251001"
+      provider: openai
+      model: "gpt-6-luna"
       temperature: 0.5
       top_p: null
       max_tokens: 8192
       max_retries: 3
       extra_body:
-        cache_control:
-          type: "ephemeral"
+        reasoning_effort: "none"
     judgment:
-      provider: anthropic
-      model: "claude-haiku-4-5-20251001"
+      provider: openai
+      model: "gpt-6-luna"
       temperature: 0.5
       top_p: null
       max_tokens: 8192
       max_retries: 3
       extra_body:
-        cache_control:
-          type: "ephemeral"
+        reasoning_effort: "none"
     extraction:
-      provider: anthropic
-      model: "claude-haiku-4-5-20251001"
+      provider: openai
+      model: "gpt-6-luna"
       temperature: 0.3
       top_p: null
       max_tokens: 8192
       max_retries: 3
       extra_body:
-        cache_control:
-          type: "ephemeral"
+        reasoning_effort: "none"
 
   role_cluster:
     narrator: narrator
