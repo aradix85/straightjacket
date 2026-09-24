@@ -36,7 +36,6 @@ def record_turn(
         rec.roll = RollRecord(
             stat=roll.stat_name,
             d1=roll.d1,
-            d2=roll.d2,
             total=roll.action_score,
             c1=roll.c1,
             c2=roll.c2,

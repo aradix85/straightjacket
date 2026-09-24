@@ -24,7 +24,7 @@ def roll_action(stat_name: str, stat_value: int, move: str, momentum: int, adds:
         result = "WEAK_HIT"
     else:
         result = "MISS"
-    return RollResult(d1, 0, c1, c2, stat_name, stat_value, score, result, move, match=(c1 == c2))
+    return RollResult(d1, c1, c2, stat_name, stat_value, score, result, move, match=(c1 == c2))
 
 
 def roll_progress(track_name: str, filled_boxes: int, move: str) -> RollResult:
@@ -38,7 +38,6 @@ def roll_progress(track_name: str, filled_boxes: int, move: str) -> RollResult:
         result = "MISS"
     return RollResult(
         d1=0,
-        d2=0,
         c1=c1,
         c2=c2,
         stat_name=track_name,

@@ -130,7 +130,6 @@ def test_stance_in_target_npc_block() -> None:
     )
     roll = RollResult(
         d1=3,
-        d2=4,
         c1=6,
         c2=7,
         stat_name="wits",
@@ -167,7 +166,6 @@ def test_stance_in_activated_npc_block() -> None:
     brain = make_brain_result(move="adventure/face_danger", stat="edge", target_npc="npc_1", player_intent="dodge")
     roll = RollResult(
         d1=4,
-        d2=5,
         c1=3,
         c2=4,
         stat_name="edge",

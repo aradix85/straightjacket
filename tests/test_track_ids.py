@@ -1,9 +1,5 @@
 from __future__ import annotations
 
-from pathlib import Path
-
-import pytest
-
 from tests._helpers import make_brain_result, make_game_state
 
 
@@ -36,53 +32,3 @@ def test_a_vow_sworn_again_after_completion_gets_unique_ids(load_engine: None) -
     ]
     thread_ids = [t.id for t in game.narrative.threads]
     assert len(thread_ids) == len(set(thread_ids))
-
-
-def test_a_save_with_duplicate_thread_ids_loads_again(
-    load_engine: None, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
-) -> None:
-    from straightjacket.engine.models import ThreadEntry
-    from straightjacket.engine.persistence import load_game, save_game
-
-    for target in (
-        "straightjacket.engine.config_loader.USERS_DIR",
-        "straightjacket.engine.user_management.USERS_DIR",
-    ):
-        monkeypatch.setattr(target, tmp_path / "users")
-    game = make_game_state(setting_id="starforged")
-    game.narrative.threads = [
-        ThreadEntry(id="thread_x", name="X", thread_type="vow", source="vow"),
-        ThreadEntry(id="thread_x", name="X", thread_type="vow", source="vow"),
-    ]
-    save_game(game, "tester", [], "slot")
-    loaded, _ = load_game("tester", "slot")
-    assert loaded is not None
-    assert [t.id for t in loaded.narrative.threads] == ["thread_x", "thread_x_2"]
-
-
-def test_a_save_with_a_duplicated_vow_loads_with_linked_unique_ids(
-    load_engine: None, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
-) -> None:
-    from straightjacket.engine.models import ProgressTrack, ThreadEntry
-    from straightjacket.engine.persistence import load_game, save_game
-
-    for target in (
-        "straightjacket.engine.config_loader.USERS_DIR",
-        "straightjacket.engine.user_management.USERS_DIR",
-    ):
-        monkeypatch.setattr(target, tmp_path / "users")
-    game = make_game_state(setting_id="starforged")
-    game.progress_tracks += [
-        ProgressTrack.new(id="vow_x", name="X", track_type="vow", rank="dangerous") for _ in range(2)
-    ]
-    game.narrative.threads = [
-        ThreadEntry(id="thread_x", name="X", thread_type="vow", source="vow", linked_track_id="vow_x") for _ in range(2)
-    ]
-    save_game(game, "tester", [], "slot")
-    loaded, _ = load_game("tester", "slot")
-    assert loaded is not None
-    assert [t.id for t in loaded.progress_tracks if t.id.startswith("vow_x")] == ["vow_x", "vow_x_2"]
-    assert [(t.id, t.linked_track_id) for t in loaded.narrative.threads] == [
-        ("thread_x", "vow_x"),
-        ("thread_x_2", "vow_x_2"),
-    ]

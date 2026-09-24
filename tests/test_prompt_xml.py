@@ -28,6 +28,10 @@ class _NarratorCapture(MockProvider):
                 "player_intent": "Ask who the ledger belongs to",
                 "world_addition": None,
                 "location_change": None,
+                "track_name": None,
+                "track_rank": None,
+                "target_track": None,
+                "bonus_id": None,
             }
             return AIResponse(content=json.dumps(brain), usage={"input_tokens": 1, "output_tokens": 1})
         if spec.log_role == "narrator":

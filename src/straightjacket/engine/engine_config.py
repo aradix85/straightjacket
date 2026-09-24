@@ -22,6 +22,7 @@ from .engine_config_dataclasses import (
     ClockKeyedScenesConfig,
     ClocksConfig,
     CombatPosCondition,
+    ConnectionAidConfig,
     CorrectionConfig,
     CreationConfig,
     DescriptionDedupConfig,
@@ -61,6 +62,9 @@ from .engine_config_dataclasses import (
     PacingConfig,
     ParserConfig,
     PatternGrammar,
+    PayThePriceConfig,
+    PayThePriceRerollRow,
+    PayThePriceSufferRow,
     PersistenceConfig,
     PlotPointRanges,
     MetaHandlerConfig,
@@ -75,6 +79,7 @@ from .engine_config_dataclasses import (
     RateLimitConfig,
     ResourcesConfig,
     RetryConfig,
+    RollBonusesConfig,
     SceneAdjustments,
     SceneContextTemplates,
     SetupCommonConfig,
@@ -164,6 +169,8 @@ class EngineSettings:
     adventure_crafter: AdventureCrafterConfig
     clock_keyed_scenes: ClockKeyedScenesConfig
     clocks: ClocksConfig
+    pay_the_price: PayThePriceConfig
+    roll_bonuses: RollBonusesConfig
 
     scene_range_default: list[int]
     death_emotions: list[str]
@@ -412,6 +419,22 @@ def _build_clocks(c_raw: dict[str, Any]) -> ClocksConfig:
     )
 
 
+def _build_pay_the_price(ptp_raw: dict[str, Any]) -> PayThePriceConfig:
+    return PayThePriceConfig(
+        oracle_path=ptp_raw["oracle_path"],
+        max_rerolls=ptp_raw["max_rerolls"],
+        reroll_rows=[_build_strict(PayThePriceRerollRow, dict(row)) for row in ptp_raw["reroll_rows"]],
+        suffer_rows=[_build_strict(PayThePriceSufferRow, dict(row)) for row in ptp_raw["suffer_rows"]],
+    )
+
+
+def _build_roll_bonuses(rb_raw: dict[str, Any]) -> RollBonusesConfig:
+    return RollBonusesConfig(
+        condition_chars=rb_raw["condition_chars"],
+        connection_aid=_build_strict(ConnectionAidConfig, dict(rb_raw["connection_aid"])),
+    )
+
+
 def parse_engine_yaml(data: dict[str, Any]) -> EngineSettings:
     simple_parsed: dict[str, Any] = {key: _build_strict(cls, data[key]) for key, cls in _SIMPLE_SECTIONS.items()}
 
@@ -611,6 +634,8 @@ def parse_engine_yaml(data: dict[str, Any]) -> EngineSettings:
         adventure_crafter=adventure_crafter,
         clock_keyed_scenes=clock_keyed_scenes,
         clocks=clocks,
+        pay_the_price=_build_pay_the_price(dict(data["pay_the_price"])),
+        roll_bonuses=_build_roll_bonuses(dict(data["roll_bonuses"])),
         scene_range_default=list(data["scene_range_default"]),
         death_emotions=list(data["death_emotions"]),
         creativity_seeds=list(data["creativity_seeds"]),
@@ -634,6 +659,7 @@ __all__ = [
     "ClockKeyedScenesConfig",
     "ClocksConfig",
     "CombatPosCondition",
+    "ConnectionAidConfig",
     "CorrectionConfig",
     "CreationConfig",
     "DescriptionDedupConfig",
@@ -677,6 +703,9 @@ __all__ = [
     "PacingConfig",
     "ParserConfig",
     "PatternGrammar",
+    "PayThePriceConfig",
+    "PayThePriceRerollRow",
+    "PayThePriceSufferRow",
     "PersistenceConfig",
     "PlotPointRanges",
     "PositionOverride",
@@ -691,6 +720,7 @@ __all__ = [
     "RecapLimitsConfig",
     "ResourcesConfig",
     "RetryConfig",
+    "RollBonusesConfig",
     "SceneAdjustments",
     "SceneContextTemplates",
     "SetupCommonConfig",

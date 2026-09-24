@@ -57,19 +57,15 @@ def deserialize(cls: type, data: dict[str, Any]) -> Any:
         raise TypeError(f"Expected dict, got {type(data).__name__}")
 
     hints = get_type_hints(cls)
-    known_fields = {f.name for f in dataclasses.fields(cls)}
-    kwargs: dict[str, Any] = {}
+    field_names = {f.name for f in dataclasses.fields(cls)}
+    unknown = sorted(set(data) - field_names)
+    if unknown:
+        raise ValueError(f"{cls.__name__}: unknown fields {unknown}")
+    missing = sorted(field_names - set(data))
+    if missing:
+        raise ValueError(f"{cls.__name__}: missing fields {missing}")
 
-    for key, val in data.items():
-        if key not in known_fields:
-            continue
-        hint = hints.get(key)
-        if hint is not None:
-            kwargs[key] = _deserialize_value(hint, val)
-        else:
-            kwargs[key] = val
-
-    return cls(**kwargs)
+    return cls(**{key: _deserialize_value(hints[key], val) for key, val in data.items()})
 
 
 def _deserialize_value(hint: Any, val: Any) -> Any:

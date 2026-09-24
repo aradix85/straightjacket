@@ -34,6 +34,10 @@ class MockProvider:
                         "player_intent": "I search the room for clues",
                         "world_addition": None,
                         "location_change": None,
+                        "track_name": None,
+                        "track_rank": None,
+                        "target_track": None,
+                        "bonus_id": None,
                     }
                 ),
                 usage={"input_tokens": 100, "output_tokens": 50},
@@ -223,6 +227,10 @@ def test_turn_dialog_skips_roll(load_engine: None) -> None:
                         "player_intent": "I talk to Mira",
                         "world_addition": None,
                         "location_change": None,
+                        "track_name": None,
+                        "track_rank": None,
+                        "target_track": None,
+                        "bonus_id": None,
                     }
                 ),
                 usage={"input_tokens": 100, "output_tokens": 50},
@@ -304,7 +312,6 @@ def test_action_prompt_contains_result_and_position(stub_engine: None) -> None:
     )
     roll = RollResult(
         d1=4,
-        d2=3,
         c1=5,
         c2=8,
         stat_name="wits",
@@ -379,7 +386,6 @@ def test_momentum_burn_upgrades_result() -> None:
 
     roll = RollResult(
         d1=1,
-        d2=1,
         c1=5,
         c2=6,
         stat_name="wits",
@@ -395,7 +401,6 @@ def test_momentum_burn_upgrades_result() -> None:
 
     roll2 = RollResult(
         d1=1,
-        d2=1,
         c1=5,
         c2=9,
         stat_name="wits",
@@ -451,6 +456,7 @@ def test_story_completion_triggers() -> None:
             "revelations": [],
             "possible_endings": [],
             "triggered_transitions": ["act_0"],
+            "triggered_director_phases": [],
             "revealed": [],
             "story_complete": False,
         }
@@ -708,6 +714,10 @@ def test_dialog_turn_runs_npc_agency_on_interval_scene(load_engine: None) -> Non
                         "player_intent": "I talk to Mira",
                         "world_addition": None,
                         "location_change": None,
+                        "track_name": None,
+                        "track_rank": None,
+                        "target_track": None,
+                        "bonus_id": None,
                     }
                 ),
                 usage={"input_tokens": 100, "output_tokens": 50},

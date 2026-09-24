@@ -2,10 +2,7 @@
 
 ## API keys
 
-Straightjacket handles AI provider API keys. These are stored in:
-
-- `config.yaml` (each provider under `ai.providers` names the environment variable that holds its key in `api_key_env`; the key itself never goes in the file)
-- Environment variables (e.g. `CEREBRAS_API_KEY`)
+Straightjacket reads AI provider API keys from environment variables (for example `OPENAI_API_KEY`). Each provider under `ai.providers` in `config.yaml` names its variable in `api_key_env`; the key itself never goes in the file.
 
 API keys are never logged, never included in save files, and never sent over the WebSocket.
 

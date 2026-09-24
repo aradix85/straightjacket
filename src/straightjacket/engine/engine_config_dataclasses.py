@@ -757,3 +757,36 @@ class ClocksConfig:
     allowed_segments: list[int]
     max_clocks_per_chapter: int
     fill_consequences: dict[str, ClockFillConsequenceEntry]
+
+
+@dataclass
+class PayThePriceRerollRow:
+    prefix: str
+    extra_rolls: int
+
+
+@dataclass
+class PayThePriceSufferRow:
+    prefix: str
+    effect: str
+
+
+@dataclass
+class PayThePriceConfig:
+    oracle_path: str
+    max_rerolls: int
+    reroll_rows: list[PayThePriceRerollRow]
+    suffer_rows: list[PayThePriceSufferRow]
+
+
+@dataclass
+class ConnectionAidConfig:
+    add: int
+    momentum_on_hit: int
+    condition: str
+
+
+@dataclass
+class RollBonusesConfig:
+    condition_chars: int
+    connection_aid: ConnectionAidConfig

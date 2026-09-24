@@ -50,7 +50,6 @@ from .serialization import SerializableMixin
 @dataclass
 class RollResult(SerializableMixin):
     d1: int
-    d2: int
     c1: int
     c2: int
     stat_name: str

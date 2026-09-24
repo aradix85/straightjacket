@@ -62,6 +62,10 @@ class MockProvider:
                         "player_intent": "Talk to Mira",
                         "world_addition": None,
                         "location_change": None,
+                        "track_name": None,
+                        "track_rank": None,
+                        "target_track": None,
+                        "bonus_id": None,
                     }
                 ),
                 usage={"input_tokens": 100, "output_tokens": 50},
@@ -148,7 +152,6 @@ def _game() -> "GameState":
     )
     game.last_turn_snapshot.roll = RollResult(
         d1=2,
-        d2=3,
         c1=7,
         c2=8,
         stat_name="iron",

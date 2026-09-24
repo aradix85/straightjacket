@@ -48,7 +48,6 @@ def process_momentum_burn(
 
     upgraded = RollResult(
         old_roll.d1,
-        old_roll.d2,
         old_roll.c1,
         old_roll.c2,
         old_roll.stat_name,

@@ -1,0 +1,739 @@
+{
+  "engine_version": "2026.09.24.45",
+  "style": "explorer",
+  "character": {
+    "name": "Alexis Legrand",
+    "concept": "Weapon Master, Demolitionist",
+    "setting": "starforged"
+  },
+  "setting": "starforged",
+  "total_turns": 8,
+  "ended_reason": "max_turns_reached",
+  "chapters": [
+    {
+      "chapter": 1,
+      "turns": 8,
+      "ended": "max_turns_reached"
+    }
+  ],
+  "story": {
+    "structure": "kishotenketsu",
+    "conflict": "As the sole survivor of a catastrophe, Alexis must face a resource-starved settlement’s suspicion while asking whether survival makes them responsible—or gives them a duty to speak.",
+    "thematic": "What a community owes its survivors, and what survivors owe the community",
+    "acts": [
+      "ki_introduction: A Survivor Arrives",
+      "sho_development: Under Scarce Skies",
+      "ten_twist: The Survivor’s Place",
+      "ketsu_resolution: What Remains Together"
+    ]
+  },
+  "turns": [
+    {
+      "turn": 1,
+      "scene": 2,
+      "result": "dialog",
+      "action": "I ask the woman in the saffron work scarf what her name is and whether she knows",
+      "state": "H5 Sp5 Su5 M2 C5",
+      "phase": "ki_introduction",
+      "director": true,
+      "narration": "You ask the woman her name and whether she saw who carried the sealed case toward the far lift. Your gear settles against your shoulders as you stand beside the repair bench; the wrench pauses against the coupling, and the bay’s low reactor hum fills the gap.\n\n“Ressa. I saw them take it to the lift.” She gives you a brief, polite glance, then wipes her grease-dark fingers on a rag and returns to the coupling. Beyond the partition, the far lift remains shut, its indicator dark. The dry double knock sounds again from the service corridor.",
+      "npcs": [
+        "Ressa (active, neutral)",
+        "Unidentified figure carrying a sealed case (active, neutral)"
+      ],
+      "judge": {
+        "result_integrity": 4,
+        "prompt_elements": 4,
+        "npc_voice": 4,
+        "player_agency": 3,
+        "restraint": 3,
+        "prose": 4,
+        "overall": 7,
+        "weakness": "It assigns the player gear, a position, and a paused wrench action that the player did not specify."
+      },
+      "stream": {
+        "first_sentence_secs": 3.6,
+        "sentences": 7,
+        "complete": true,
+        "matches": true
+      },
+      "events": [
+        "[Metadata] Extracted: 0 new NPCs, 1 renames, 0 deceased, 0 lore",
+        "[Director] Analyzing scene 2",
+        "[Tools] Round 1: 3 tool call(s)",
+        "[Tools] query_active_threads({'active_only': True}) → {\"threads\": [{\"id\": \"thread_background_vow\", \"name\": \"Escalate Corruption\", \"typ",
+        "[Tools] query_active_clocks({'unfired_only': True}) → {\"clocks\": [{\"name\": \"Unexplained approach from the service corridor\", \"type\": \"",
+        "[Tools] query_npc({'npc_id': 'Ressa'}) → {\"id\": \"npc_1\", \"name\": \"Ressa\", \"disposition\": \"neutral\", \"bond\": 0, \"status\": ",
+        "[Tools] Loop done: 3 tool call(s), 1501 chars response",
+        "[Director] Phase 1: 3 tool calls",
+        "[Director] Guidance: reflections=0, summary=Ressa confirms that the sealed case went toward the far lift, then returns to he",
+        "[Director] Guidance applied"
+      ],
+      "tokens": [
+        {
+          "role": "brain",
+          "input": 1835,
+          "output": 115
+        },
+        {
+          "role": "narrator",
+          "input": 3285,
+          "output": 117
+        },
+        {
+          "role": "narrator_metadata",
+          "input": 702,
+          "output": 61
+        },
+        {
+          "role": "revelation_check",
+          "input": 417,
+          "output": 58
+        },
+        {
+          "role": "director",
+          "input": 1207,
+          "output": 71
+        },
+        {
+          "role": "director",
+          "input": 1605,
+          "output": 305
+        },
+        {
+          "role": "director",
+          "input": 1577,
+          "output": 265
+        }
+      ]
+    },
+    {
+      "turn": 2,
+      "scene": 3,
+      "result": "WEAK_HIT",
+      "move": "adventure/gather_information",
+      "action": "I examine the far lift’s dark indicator and inspect its doors and frame for sign",
+      "state": "H5 Sp5 Su5 M3 C5",
+      "consequences": [
+        "momentum +1"
+      ],
+      "phase": "ki_introduction",
+      "director": true,
+      "narration": "You examine the far lift’s dark indicator, then run your gloved fingers along the doors and frame. Dust coats the seams, but a fresh crescent of grease marks the lower edge; two bright scratches cut through the grime beside the manual release. The double knock sounds again from the service corridor, followed by a pause.\n\nYou search the corridor around its source. Boot prints cross the dusty grating toward a maintenance hatch, and a small brass fastener lies beside the wall—matching the type fitted to the sealed case’s clasp. As you crouch to inspect it, your sleeve catches the hatch’s jagged lip and tears at the cuff. Ressa keeps her attention on the coupling, wrench turning in short, even pulls.\n\nThe prints end at the hatch. A thin line of fresh grease runs beneath its closed edge, and another cautious double knock comes from the other side.",
+      "npcs": [
+        "Ressa (active, neutral)",
+        "Unidentified figure carrying a sealed case (active, neutral)"
+      ],
+      "judge": {
+        "result_integrity": 5,
+        "prompt_elements": 5,
+        "npc_voice": 5,
+        "player_agency": 5,
+        "restraint": 5,
+        "prose": 5,
+        "overall": 10,
+        "weakness": "none"
+      },
+      "stream": {
+        "first_sentence_secs": 3.6,
+        "sentences": 9,
+        "complete": true,
+        "matches": true
+      },
+      "events": [
+        "[Metadata] Extracted: 0 new NPCs, 0 renames, 0 deceased, 0 lore",
+        "[Director] Analyzing scene 3",
+        "[Tools] Round 1: 3 tool call(s)",
+        "[Tools] query_active_threads({'active_only': True}) → {\"threads\": [{\"id\": \"thread_background_vow\", \"name\": \"Escalate Corruption\", \"typ",
+        "[Tools] query_active_clocks({'unfired_only': True}) → {\"clocks\": [{\"name\": \"Unexplained approach from the service corridor\", \"type\": \"",
+        "[Tools] query_npc({'npc_id': 'Ressa'}) → {\"id\": \"npc_1\", \"name\": \"Ressa\", \"disposition\": \"neutral\", \"bond\": 0, \"status\": ",
+        "[Tools] Loop done: 3 tool call(s), 1495 chars response",
+        "[Director] Phase 1: 3 tool calls",
+        "[Director] Guidance: reflections=0, summary=Alexis finds fresh grease, boot prints, tool marks, and a brass fastener that li",
+        "[Director] Guidance applied"
+      ],
+      "tokens": [
+        {
+          "role": "brain",
+          "input": 1824,
+          "output": 127
+        },
+        {
+          "role": "narrator",
+          "input": 3621,
+          "output": 180
+        },
+        {
+          "role": "narrator_metadata",
+          "input": 779,
+          "output": 37
+        },
+        {
+          "role": "revelation_check",
+          "input": 480,
+          "output": 52
+        },
+        {
+          "role": "director",
+          "input": 1270,
+          "output": 71
+        },
+        {
+          "role": "director",
+          "input": 1717,
+          "output": 324
+        },
+        {
+          "role": "director",
+          "input": 1659,
+          "output": 363
+        }
+      ]
+    },
+    {
+      "turn": 3,
+      "scene": 4,
+      "result": "MISS",
+      "move": "adventure/face_danger",
+      "action": "I brace my boot against the wall and wrench the maintenance hatch open, ready to",
+      "state": "H5 Sp4 Su5 M3 C6",
+      "consequences": [
+        "You are stressed",
+        "spirit -1"
+      ],
+      "phase": "ki_introduction",
+      "director": true,
+      "narration": "You brace your boot against the wall and wrench the maintenance hatch open, keeping your weight set to slam it shut. The manual catch gives with a metallic snap. The hatch jerks outward against your hands, wrenching your torn cuff farther up your wrist, and the edge strikes your forearm hard enough to numb your grip. Your boot skids on the grating. You lose the leverage and the hatch drops back into its frame with a bang.\n\nA muffled scrape comes from beyond it, then silence. At the repair bench, Ressa looks from the matching brass fastener in your hand to the torn sleeve. She sets down her wrench. “Before I tell you anything about that passage: keep this hatch shut and the repair bay clear. We can’t spare parts or people for a breach.” Her eyes stay on your face; one grease-blackened thumb presses against the bench edge.\n\nThe reactor hum fills the pause. Dust shifts under your boot, and your forearm throbs where the hatch struck it. Ressa picks up the wrench again but does not turn back to the coupling. Between you, the hatch sits closed, its manual catch exposed.",
+      "npcs": [
+        "Ressa (active, neutral)",
+        "Unidentified figure carrying a sealed case (active, neutral)"
+      ],
+      "judge": {
+        "result_integrity": 4,
+        "prompt_elements": 4,
+        "npc_voice": 4,
+        "player_agency": 5,
+        "restraint": 2,
+        "prose": 4,
+        "overall": 7,
+        "weakness": "The narration invents a brass fastener in the player’s hand and makes it central to Ressa’s reaction."
+      },
+      "stream": {
+        "first_sentence_secs": 2.7,
+        "sentences": 15,
+        "complete": true,
+        "matches": true
+      },
+      "events": [
+        "[PayThePrice] You are stressed",
+        "[Metadata] Extracted: 0 new NPCs, 0 renames, 0 deceased, 0 lore",
+        "[Director] Analyzing scene 4",
+        "[Tools] Round 1: 3 tool call(s)",
+        "[Tools] query_active_threads({'active_only': True}) → {\"threads\": [{\"id\": \"thread_background_vow\", \"name\": \"Escalate Corruption\", \"typ",
+        "[Tools] query_active_clocks({'unfired_only': True}) → {\"clocks\": [{\"name\": \"Unexplained approach from the service corridor\", \"type\": \"",
+        "[Tools] query_npc({'npc_id': 'Ressa'}) → {\"id\": \"npc_1\", \"name\": \"Ressa\", \"disposition\": \"neutral\", \"bond\": 0, \"status\": ",
+        "[Tools] Loop done: 3 tool call(s), 1719 chars response",
+        "[Director] Phase 1: 3 tool calls",
+        "[Director] Guidance: reflections=0, summary=Alexis failed to force the maintenance hatch open, bruising their forearm and he",
+        "[Director] Guidance applied"
+      ],
+      "tokens": [
+        {
+          "role": "brain",
+          "input": 1808,
+          "output": 114
+        },
+        {
+          "role": "narrator",
+          "input": 3987,
+          "output": 236
+        },
+        {
+          "role": "narrator_metadata",
+          "input": 840,
+          "output": 37
+        },
+        {
+          "role": "revelation_check",
+          "input": 536,
+          "output": 57
+        },
+        {
+          "role": "director",
+          "input": 1310,
+          "output": 71
+        },
+        {
+          "role": "director",
+          "input": 1811,
+          "output": 351
+        },
+        {
+          "role": "director",
+          "input": 1726,
+          "output": 315
+        }
+      ]
+    },
+    {
+      "turn": 4,
+      "scene": 5,
+      "result": "dialog",
+      "action": "I meet Ressa’s gaze and ask, “What was the brass fastener doing by this hatch, a",
+      "state": "H5 Sp4 Su5 M3 C6",
+      "phase": "ki_introduction",
+      "director": true,
+      "narration": "You meet Ressa’s gaze and ask, “What was the brass fastener doing by this hatch, and what did you hear moving in the passage?” Your bruised forearm rests close to your side; the split cuff brushes the tender skin as the reactor hum vibrates through the grating.\n\nRessa’s wrench stops. “It came off the sealed case. I heard something scrape beyond the hatch.” She sets the wrench down and points at the exposed manual catch. “Secure this before you ask me about the passage. We can’t spare supplies or people if something gets into the bay.” A fresh scrape sounds from the corridor side of the hatch. Ressa keeps her grease-stained hand on the bench, waiting.",
+      "npcs": [
+        "Ressa (active, neutral)",
+        "Unidentified figure carrying a sealed case (active, neutral)"
+      ],
+      "judge": {
+        "result_integrity": 5,
+        "prompt_elements": 5,
+        "npc_voice": 4,
+        "player_agency": 4,
+        "restraint": 3,
+        "prose": 4,
+        "overall": 8,
+        "weakness": "It invents a bruised forearm and split cuff for the player character."
+      },
+      "stream": {
+        "first_sentence_secs": 2.6,
+        "sentences": 10,
+        "complete": true,
+        "matches": true
+      },
+      "events": [
+        "[Metadata] Extracted: 0 new NPCs, 0 renames, 0 deceased, 0 lore",
+        "[Director] Analyzing scene 5",
+        "[Tools] Round 1: 3 tool call(s)",
+        "[Tools] query_active_threads({'active_only': True}) → {\"threads\": [{\"id\": \"thread_background_vow\", \"name\": \"Escalate Corruption\", \"typ",
+        "[Tools] query_active_clocks({'unfired_only': True}) → {\"clocks\": [{\"name\": \"Unexplained approach from the service corridor\", \"type\": \"",
+        "[Tools] query_npc({'npc_id': 'Ressa'}) → {\"id\": \"npc_1\", \"name\": \"Ressa\", \"disposition\": \"neutral\", \"bond\": 0, \"status\": ",
+        "[Tools] Round 2: 1 tool call(s)",
+        "[Tools] query_active_clocks({'unfired_only': True}) → {\"clocks\": [{\"name\": \"Unexplained approach from the service corridor\", \"type\": \"",
+        "[Tools] Round 3: 1 tool call(s)",
+        "[Tools] query_active_threads({'active_only': True}) → {\"threads\": [{\"id\": \"thread_background_vow\", \"name\": \"Escalate Corruption\", \"typ",
+        "[Tools] Loop done: 5 tool call(s), 1716 chars response",
+        "[Director] Phase 1: 5 tool calls",
+        "[Director] Guidance: reflections=0, summary=Ressa says the brass fastener came from a sealed case and reports scraping beyon",
+        "[Director] Engine act transition: act 1 'ki_introduction' scene 5 ≥ range end 5: 'The settlement’s questions turn personal'",
+        "[Director] Guidance applied"
+      ],
+      "tokens": [
+        {
+          "role": "brain",
+          "input": 1809,
+          "output": 108
+        },
+        {
+          "role": "narrator",
+          "input": 4106,
+          "output": 149
+        },
+        {
+          "role": "narrator_metadata",
+          "input": 738,
+          "output": 37
+        },
+        {
+          "role": "revelation_check",
+          "input": 449,
+          "output": 50
+        },
+        {
+          "role": "director",
+          "input": 1239,
+          "output": 71
+        },
+        {
+          "role": "director",
+          "input": 1797,
+          "output": 22
+        },
+        {
+          "role": "director",
+          "input": 1889,
+          "output": 19
+        },
+        {
+          "role": "director",
+          "input": 1961,
+          "output": 347
+        },
+        {
+          "role": "director",
+          "input": 1651,
+          "output": 298
+        }
+      ]
+    },
+    {
+      "turn": 5,
+      "scene": 6,
+      "result": "MISS",
+      "move": "adventure/face_danger",
+      "action": "I brace my bruised forearm against the hatch frame and wrench the exposed manual",
+      "state": "H5 Sp4 Su5 M3 C7",
+      "consequences": [
+        "You face a tough choice"
+      ],
+      "phase": "sho_development",
+      "director": true,
+      "narration": "You brace your bruised forearm against the frame and wrench the exposed catch toward its locking position, putting your weight into it. The catch grinds halfway, then slips from your fingers. The hatch jumps outward against your shoulder with a hard clang; pain flashes through your forearm, and your grip opens. From the corridor side, scraping stops. The lock remains unseated, and the catch’s bent tip no longer fits cleanly into its bracket.\n\nRessa backs from the hatch, jaw tight. “I need a pry bar and a fresh retaining pin. I’ve got wire, not a pin.” She lifts a short coil from the bench, then holds it out without stepping closer. “The case has a pressure seal. Don’t force it.” The thin wire is the only spare material within reach; the pry bar lies beneath a heap of cargo straps.\n\nThe bay’s recycled air tastes of metal as you ease your arm away from the frame. Ressa returns to the bench and clears a space for the wire. Beyond the skewed catch, the corridor stays quiet, and the choice between securing the hatch with what you have and leaving it exposed remains yours.",
+      "npcs": [
+        "Ressa (active, neutral)",
+        "Unidentified figure carrying a sealed case (active, neutral)"
+      ],
+      "judge": {
+        "result_integrity": 2,
+        "prompt_elements": 4,
+        "npc_voice": 4,
+        "player_agency": 3,
+        "restraint": 3,
+        "prose": 4,
+        "overall": 4,
+        "weakness": "The catch fails and worsens, but the scraping stopping gives the MISS a silver lining."
+      },
+      "stream": {
+        "first_sentence_secs": 3.0,
+        "sentences": 15,
+        "complete": true,
+        "matches": true
+      },
+      "events": [
+        "[PayThePrice] You face a tough choice",
+        "[Metadata] Extracted: 0 new NPCs, 0 renames, 0 deceased, 0 lore",
+        "[Director] Analyzing scene 6",
+        "[Tools] Round 1: 3 tool call(s)",
+        "[Tools] query_active_threads({'active_only': True}) → {\"threads\": [{\"id\": \"thread_background_vow\", \"name\": \"Escalate Corruption\", \"typ",
+        "[Tools] query_active_clocks({'unfired_only': True}) → {\"clocks\": [{\"name\": \"Unexplained approach from the service corridor\", \"type\": \"",
+        "[Tools] query_npc({'npc_id': 'Ressa'}) → {\"id\": \"npc_1\", \"name\": \"Ressa\", \"disposition\": \"neutral\", \"bond\": 0, \"status\": ",
+        "[Tools] Loop done: 3 tool call(s), 1634 chars response",
+        "[Director] Phase 1: 3 tool calls",
+        "[Director] Guidance: reflections=0, summary=Alexis’s attempt to secure the hatch failed, worsening their forearm injury and ",
+        "[Director] Guidance applied"
+      ],
+      "tokens": [
+        {
+          "role": "brain",
+          "input": 1814,
+          "output": 123
+        },
+        {
+          "role": "narrator",
+          "input": 4063,
+          "output": 239
+        },
+        {
+          "role": "narrator_metadata",
+          "input": 841,
+          "output": 37
+        },
+        {
+          "role": "revelation_check",
+          "input": 539,
+          "output": 55
+        },
+        {
+          "role": "director",
+          "input": 1317,
+          "output": 71
+        },
+        {
+          "role": "director",
+          "input": 1927,
+          "output": 343
+        },
+        {
+          "role": "director",
+          "input": 1725,
+          "output": 289
+        }
+      ]
+    },
+    {
+      "turn": 6,
+      "scene": 7,
+      "result": "MISS",
+      "move": "adventure/face_danger",
+      "action": "I haul the cargo straps off the pry bar and drag it free, then wedge its tip ben",
+      "state": "H5 Sp4 Su5 M3 C8",
+      "consequences": [
+        "You are separated from something or someone"
+      ],
+      "phase": "sho_development",
+      "director": true,
+      "narration": "You haul the cargo straps off the pry bar and drag it free, then wedge its tip beneath the bent catch and lean into the lever, keeping clear of the sealed case. The catch twists out of its bracket with a sharp crack. The hatch kicks away from the frame and knocks the pry bar from your hands. It lands beyond the docking bay’s waist-high cargo partition, out of reach; you and Ressa are left on opposite sides as the hatch hangs crooked and unsecured.\n\nA heavy step sounds in the corridor, followed by a demand through the metal: “Open up.” Ressa takes the wire from the bench but stays where she is, watching your hands. “That case stays sealed. I’ll hold the wire ready, but I won’t help you force anything.” She turns toward the narrow gap between stacked crates, leaving the repair bay and the pry bar behind.\n\nThe pressure seal remains untouched. Your forearm throbs, the bay presses close with cargo and recycled air, and the demand comes again from beyond the hatch. The wire lies within reach on Ressa’s abandoned side of the partition.",
+      "npcs": [
+        "Ressa (active, neutral)",
+        "Unidentified figure carrying a sealed case (active, neutral)"
+      ],
+      "judge": {
+        "result_integrity": 5,
+        "prompt_elements": 3,
+        "npc_voice": 4,
+        "player_agency": 5,
+        "restraint": 4,
+        "prose": 4,
+        "overall": 7,
+        "weakness": "The narration leaves the sealed-case figure unexplained while introducing a new voice in the corridor."
+      },
+      "stream": {
+        "first_sentence_secs": 2.7,
+        "sentences": 12,
+        "complete": true,
+        "matches": true
+      },
+      "events": [
+        "[Clock] spawned keyed-scene 'ks_clock_3' for clock 'Reward Peace' (type=threat, fraction=0.5, threshold=3, priority=6)",
+        "[Clock] spawned keyed-scene 'ks_clock_5' for clock 'Reward Peace' (type=threat, fraction=1.0, threshold=6, priority=6)",
+        "[Clock] spawned 'Reward Peace' (type=threat, segments=6) from random-event focus 'move_away_from_thread'",
+        "[PayThePrice] You are separated from something or someone",
+        "[Metadata] Extracted: 0 new NPCs, 0 renames, 0 deceased, 0 lore",
+        "[Director] Analyzing scene 7",
+        "[Tools] Round 1: 3 tool call(s)",
+        "[Tools] query_active_threads({'active_only': True}) → {\"threads\": [{\"id\": \"thread_background_vow\", \"name\": \"Escalate Corruption\", \"typ",
+        "[Tools] query_active_clocks({'unfired_only': True}) → {\"clocks\": [{\"name\": \"Unexplained approach from the service corridor\", \"type\": \"",
+        "[Tools] query_npc({'npc_id': 'Ressa'}) → {\"id\": \"npc_1\", \"name\": \"Ressa\", \"disposition\": \"neutral\", \"bond\": 0, \"status\": ",
+        "[Tools] Loop done: 3 tool call(s), 1582 chars response",
+        "[Director] Phase 1: 3 tool calls",
+        "[Director] Guidance: reflections=0, summary=Alexis forced the hatch, but the pry bar landed beyond the cargo partition, leav",
+        "[Director] Guidance applied"
+      ],
+      "tokens": [
+        {
+          "role": "brain",
+          "input": 1813,
+          "output": 117
+        },
+        {
+          "role": "narrator",
+          "input": 4230,
+          "output": 226
+        },
+        {
+          "role": "narrator_metadata",
+          "input": 830,
+          "output": 37
+        },
+        {
+          "role": "revelation_check",
+          "input": 526,
+          "output": 61
+        },
+        {
+          "role": "director",
+          "input": 1309,
+          "output": 71
+        },
+        {
+          "role": "director",
+          "input": 2018,
+          "output": 337
+        },
+        {
+          "role": "director",
+          "input": 1711,
+          "output": 316
+        }
+      ]
+    },
+    {
+      "turn": 7,
+      "scene": 8,
+      "result": "WEAK_HIT",
+      "move": "adventure/face_danger",
+      "action": "I shove a stack of crates hard against the crooked hatch, bracing them to keep i",
+      "state": "H4 Sp4 Su5 M3 C8",
+      "consequences": [
+        "health -1"
+      ],
+      "clock_events": [
+        "Unexplained approach from the service corridor"
+      ],
+      "phase": "sho_development",
+      "director": true,
+      "narration": "You shove the stack of crates hard against the crooked hatch. They scrape over the grating and jam beneath its lower edge as the figure outside drives the hatch inward. The crates hold; the figure’s shoulder and sealed case remain visible through the narrow gap. Your leg takes the strain, then buckles under the blow. Pain flares where you were struck, and you stagger back, favoring one leg as the hatch settles against the crates.\n\nThe figure stops forcing the gap. “I’m carrying this case through,” it says, keeping one hand on the hatch. Before you can answer, a dry double knock sounds from the service corridor behind you. Ressa looks toward it, then at your uneven stance. She stays beside the bench, her hands clear of the wire. The docking bay’s strip lights buzz over the displaced cargo, and no one moves to clear a path.\n\nThe crates hold for now, the crooked hatch pinned against them, while the figure waits at the gap and the service-corridor knock goes unanswered.",
+      "npcs": [
+        "Ressa (active, neutral)",
+        "Unidentified figure carrying a sealed case (active, neutral)"
+      ],
+      "judge": {
+        "result_integrity": 5,
+        "prompt_elements": 4,
+        "npc_voice": 5,
+        "player_agency": 4,
+        "restraint": 4,
+        "prose": 5,
+        "overall": 9,
+        "weakness": "“Before you can answer” lightly presumes the player is about to respond."
+      },
+      "stream": {
+        "first_sentence_secs": 2.9,
+        "sentences": 12,
+        "complete": true,
+        "matches": true
+      },
+      "events": [
+        "[Metadata] Extracted: 0 new NPCs, 0 renames, 0 deceased, 0 lore",
+        "[Director] Analyzing scene 8",
+        "[Tools] Round 1: 3 tool call(s)",
+        "[Tools] query_active_threads({'active_only': True}) → {\"threads\": [{\"id\": \"thread_background_vow\", \"name\": \"Escalate Corruption\", \"typ",
+        "[Tools] query_active_clocks({'unfired_only': True}) → {\"clocks\": [{\"name\": \"Reward Peace\", \"type\": \"threat\", \"filled\": 0, \"segments\": ",
+        "[Tools] query_npc({'npc_id': 'Ressa'}) → {\"id\": \"npc_1\", \"name\": \"Ressa\", \"disposition\": \"neutral\", \"bond\": 0, \"status\": ",
+        "[Tools] Loop done: 3 tool call(s), 1668 chars response",
+        "[Director] Phase 1: 3 tool calls",
+        "[Director] Guidance: reflections=0, summary=Alexis has wedged the hatch shut with crates, but the figure still holds the sea",
+        "[Director] Guidance applied"
+      ],
+      "tokens": [
+        {
+          "role": "brain",
+          "input": 1807,
+          "output": 117
+        },
+        {
+          "role": "narrator",
+          "input": 4440,
+          "output": 210
+        },
+        {
+          "role": "narrator_metadata",
+          "input": 820,
+          "output": 37
+        },
+        {
+          "role": "revelation_check",
+          "input": 510,
+          "output": 55
+        },
+        {
+          "role": "director",
+          "input": 1302,
+          "output": 71
+        },
+        {
+          "role": "director",
+          "input": 2006,
+          "output": 356
+        },
+        {
+          "role": "director",
+          "input": 1723,
+          "output": 325
+        }
+      ]
+    },
+    {
+      "turn": 8,
+      "scene": 8,
+      "result": "dialog",
+      "action": "## I was being cautious, not aggressive",
+      "state": "H5 Sp4 Su5 M3 C8",
+      "phase": "sho_development",
+      "narration": "You ease a crate across the grating and wedge it beneath the crooked hatch, keeping your bruised forearm clear of the catch. The figure pushes from the corridor side. The crate shudders under the pressure, then holds the hatch a handspan from the frame. A slat splits with a dry crack; the gap stays open, but the hatch no longer swings wider.\n\n“Please let me through with the case,” the figure says, its tone level. Ressa keeps her distance from the sealed case and looks from your braced crate to the figure. “I won’t force it,” she says. “I can hold the hatch while you speak.” She sets the wire down and places both hands against the frame, careful not to touch the case.\n\nThe figure withdraws its shoulder. The hatch rests against the crate while Ressa steadies the frame, and for a few breaths the docking bay holds only reactor hum, recycled-air hiss, and the cramped quiet between you. The visitor waits at the gap for your answer.",
+      "npcs": [
+        "Ressa (active, neutral)",
+        "Unidentified figure carrying a sealed case (active, neutral)"
+      ],
+      "correction": true,
+      "tokens": [
+        {
+          "role": "correction",
+          "input": 916,
+          "output": 91
+        },
+        {
+          "role": "brain",
+          "input": 1800,
+          "output": 114
+        },
+        {
+          "role": "narrator",
+          "input": 4390,
+          "output": 212
+        },
+        {
+          "role": "narrator_metadata",
+          "input": 816,
+          "output": 37
+        }
+      ]
+    }
+  ],
+  "quality_summary": {
+    "narration_quality_total": 0,
+    "spatial_issues_total": 0,
+    "chapter_continuity_total": 0,
+    "correction_tests_total": 1,
+    "correction_tests_failed": 0,
+    "top_quality_issues": []
+  },
+  "burn_stats": {
+    "offered": 0,
+    "taken": 0,
+    "failed": 0
+  },
+  "token_summary": {
+    "total_input": 94828,
+    "total_output": 8375,
+    "total": 103203,
+    "by_role": {
+      "brain": {
+        "calls": 8,
+        "input": 14510,
+        "output": 935
+      },
+      "narrator": {
+        "calls": 8,
+        "input": 32122,
+        "output": 1569
+      },
+      "narrator_metadata": {
+        "calls": 8,
+        "input": 6366,
+        "output": 320
+      },
+      "revelation_check": {
+        "calls": 7,
+        "input": 3457,
+        "output": 388
+      },
+      "director": {
+        "calls": 23,
+        "input": 37457,
+        "output": 5072
+      },
+      "correction": {
+        "calls": 1,
+        "input": 916,
+        "output": 91
+      }
+    }
+  },
+  "final_npcs": [
+    {
+      "name": "Ressa",
+      "status": "active",
+      "disposition": "neutral",
+      "memories": 8
+    },
+    {
+      "name": "Unidentified figure carrying a sealed case",
+      "status": "active",
+      "disposition": "neutral",
+      "memories": 8
+    }
+  ],
+  "correction_tests": [
+    {
+      "turn": 8,
+      "correction": "## I was being cautious, not aggressive",
+      "success": true,
+      "violations": [],
+      "quality_issues": []
+    }
+  ]
+}

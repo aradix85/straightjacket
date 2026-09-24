@@ -1,4 +1,17 @@
+from typing import Any
+
 from tests._helpers import make_clock, make_game_state, make_npc
+
+
+def _npc(name: str, description: str, disposition: str) -> dict[str, Any]:
+    return {
+        "name": name,
+        "description": description,
+        "agenda": "",
+        "instinct": "",
+        "secrets": [],
+        "disposition": disposition,
+    }
 
 
 def test_register_extracted_npcs_skips_player(stub_all: None) -> None:
@@ -9,8 +22,8 @@ def test_register_extracted_npcs_skips_player(stub_all: None) -> None:
     max_id = register_extracted_npcs(
         game,
         [
-            {"name": "Mira", "description": "Scout", "disposition": "friendly"},
-            {"name": "Hero", "description": "Player", "disposition": "neutral"},
+            _npc("Mira", "Scout", "friendly"),
+            _npc("Hero", "Player", "neutral"),
         ],
         skip_names=set(),
     )
@@ -26,8 +39,8 @@ def test_register_extracted_npcs_skips_returning(stub_all: None) -> None:
     register_extracted_npcs(
         game,
         [
-            {"name": "Kira", "description": "Scout", "disposition": "friendly"},
-            {"name": "Borin", "description": "Smith", "disposition": "neutral"},
+            _npc("Kira", "Scout", "friendly"),
+            _npc("Borin", "Smith", "neutral"),
         ],
         skip_names={"kira"},
     )

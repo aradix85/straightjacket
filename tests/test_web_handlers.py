@@ -111,6 +111,30 @@ def test_handle_select_player_no_game_returns_creation_options(
     assert "creation_options" in selected
 
 
+def test_handle_select_player_with_an_incompatible_save_offers_a_new_game(
+    load_engine: None, session: Session, fake_ws: _FakeWS, monkeypatch, tmp_path
+) -> None:
+    import json
+
+    from straightjacket.engine.engine_loader import eng
+    from straightjacket.engine.persistence import save_game
+    from straightjacket.i18n import t
+    from straightjacket.web.handlers import handle_select_player
+
+    monkeypatch.setattr("straightjacket.engine.user_management.USERS_DIR", tmp_path)
+    monkeypatch.setattr("straightjacket.engine.config_loader.USERS_DIR", tmp_path)
+    path = save_game(make_game_state(setting_id="starforged"), "Alice", [], eng().persistence.default_save_name)
+    data = json.loads(path.read_text(encoding="utf-8"))
+    data["game_state"]["resources"].pop("next_move_bonus")
+    path.write_text(json.dumps(data), encoding="utf-8")
+
+    _run(handle_select_player(session, fake_ws, {"name": "Alice"}))
+    assert {"type": "error", "text": t("actions.save_incompatible")} in fake_ws.sent
+    selected = next(m for m in fake_ws.sent if m["type"] == "player_selected")
+    assert selected["has_game"] is False
+    assert "creation_options" in selected
+
+
 def test_handle_start_game_when_processing_errors(load_engine: None, session: Session, fake_ws: _FakeWS) -> None:
     from straightjacket.web.handlers import handle_start_game
 

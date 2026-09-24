@@ -26,7 +26,7 @@ from ..engine.game.momentum_burn import process_momentum_burn
 from ..engine.logging_util import log
 from ..engine.mechanics.legacy import advance_asset
 from ..engine.models import GameState
-from ..engine.persistence import delete_save, list_saves_with_info, load_game, save_game
+from ..engine.persistence import IncompatibleSaveError, delete_save, list_saves_with_info, load_game, save_game
 from ..engine.user_management import create_user, delete_user, list_users
 from ..i18n import t
 from .serializers import (
@@ -97,7 +97,12 @@ async def handle_select_player(session: Session, ws: WebSocket, msg: dict[str, A
     default_save = eng().persistence.default_save_name
     session.save_name = default_save
 
-    game, messages = load_game(name, default_save)
+    try:
+        game, messages = load_game(name, default_save)
+    except IncompatibleSaveError as e:
+        log(f"[Load] {e}", level="warning")
+        await _send(ws, {"type": "error", "text": t("actions.save_incompatible")})
+        game, messages = None, []
     if game:
         session.game = game
         session.chat_messages = messages
@@ -387,7 +392,12 @@ async def handle_load(session: Session, ws: WebSocket, msg: dict[str, Any]) -> N
     name = raw.strip() if isinstance(raw, str) else ""
     if not name:
         name = eng().persistence.default_save_name
-    game, messages = load_game(session.player, name)
+    try:
+        game, messages = load_game(session.player, name)
+    except IncompatibleSaveError as e:
+        log(f"[Load] {e}", level="warning")
+        await _send(ws, {"type": "error", "text": t("actions.save_incompatible")})
+        return
     if not game:
         await _send(ws, {"type": "error", "text": t("actions.load_failed")})
         return

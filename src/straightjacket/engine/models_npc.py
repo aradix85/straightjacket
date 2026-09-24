@@ -1,9 +1,8 @@
 from __future__ import annotations
 
-from typing import Any
 from dataclasses import dataclass, field
 
-from .serialization import SerializableMixin, serialize
+from .serialization import SerializableMixin
 
 
 NPC_STATUSES: frozenset[str] = frozenset({"active", "background", "deceased", "lore"})
@@ -20,12 +19,6 @@ class MemoryEntry(SerializableMixin):
     tone_key: str = ""
     about_npc: str | None = None
     _score_debug: str = ""
-
-    def to_dict(self) -> dict[str, Any]:
-        d = serialize(self)
-        if not d.get("_score_debug"):
-            d.pop("_score_debug", None)
-        return d
 
 
 @dataclass

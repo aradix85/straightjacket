@@ -267,7 +267,9 @@ def test_combat_position_serializes() -> None:
 def test_combat_position_deserializes() -> None:
     from straightjacket.engine.models_base import WorldState
 
-    assert WorldState.from_dict({"combat_position": "bad_spot", "chaos_factor": 5}).combat_position == "bad_spot"
+    g = make_game_state()
+    g.world.combat_position = "bad_spot"
+    assert WorldState.from_dict(g.world.to_dict()).combat_position == "bad_spot"
 
 
 def test_combat_position_snapshot_restore() -> None:

@@ -31,7 +31,6 @@ def _brain(target: str | None = None) -> BrainResult:
 def _roll(result: str = "MISS") -> RollResult:
     return RollResult(
         d1=2,
-        d2=3,
         c1=8,
         c2=9,
         stat_name="edge",

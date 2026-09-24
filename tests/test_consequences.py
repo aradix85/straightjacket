@@ -25,7 +25,6 @@ def test_roll_action_returns_valid_result() -> None:
     assert r.stat_value == 3
     assert r.action_score <= 10
     assert 1 <= r.d1 <= 6
-    assert r.d2 == 0
     assert r.action_score == min(r.d1 + 3, 10)
     assert 1 <= r.c1 <= 10
     assert 1 <= r.c2 <= 10
@@ -113,7 +112,6 @@ def test_can_burn_momentum(
     game = _game(momentum=momentum)
     roll = RollResult(
         d1=d_value,
-        d2=d_value,
         c1=5,
         c2=7,
         stat_name="wits",
@@ -206,7 +204,6 @@ def test_roll_progress_returns_valid_result() -> None:
     assert r.stat_value == 6
     assert r.action_score == 6
     assert r.d1 == 0
-    assert r.d2 == 0
     assert 1 <= r.c1 <= 10
     assert 1 <= r.c2 <= 10
 
@@ -245,7 +242,6 @@ def test_action_roll_is_one_d6_plus_stat_like_ironsworn(load_engine: None) -> No
     rolls = [roll_action("wits", 2, "adventure/face_danger", 0, 0) for _ in range(500)]
     assert all(r.action_score == r.d1 + 2 for r in rolls)
     assert max(r.action_score for r in rolls) == 8
-    assert {r.d2 for r in rolls} == {0}
 
 
 def _fixed_dice(monkeypatch: pytest.MonkeyPatch, *values: int) -> None:
@@ -313,8 +309,10 @@ def test_next_move_bonus_effect_is_banked_and_spent_on_the_next_action_roll(
     assert game.resources.next_move_bonus == 0
 
 
-def test_saves_without_a_banked_bonus_still_load(load_engine: None) -> None:
+def test_a_save_missing_a_field_does_not_load(load_engine: None) -> None:
     from straightjacket.engine.models import Resources
 
-    resources = Resources.from_dict({"health": 5, "spirit": 5, "supply": 5, "momentum": 2, "max_momentum": 10})
-    assert resources.next_move_bonus == 0
+    data = Resources.from_config().to_dict()
+    data.pop("next_move_bonus")
+    with pytest.raises(ValueError, match=r"Resources: missing fields \['next_move_bonus'\]"):
+        Resources.from_dict(data)

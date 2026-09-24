@@ -71,19 +71,21 @@ def register_extracted_npcs(
                 max_num = max(max_num, int(m.group(1)))
 
     for nd in npc_dicts:
-        name = nd.get("name", "").lower().strip()
+        name = nd["name"].lower().strip()
         if not name or name in skip:
             continue
         max_num += 1
-        nd["id"] = f"npc_{max_num}"
-        nd["introduced"] = False
-        nd["last_location"] = game.world.current_location
-
-        nd["status"] = "active"
-
-        nd.pop("bond", None)
-        nd.pop("bond_max", None)
-        npc = NpcData.from_dict(nd)
+        npc = NpcData(
+            id=f"npc_{max_num}",
+            name=nd["name"],
+            disposition=nd["disposition"],
+            status="active",
+            description=nd["description"],
+            agenda=nd["agenda"],
+            instinct=nd["instinct"],
+            secrets=list(nd["secrets"]),
+            last_location=game.world.current_location,
+        )
         apply_name_sanitization(npc)
         game.npcs.append(npc)
 

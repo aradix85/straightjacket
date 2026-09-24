@@ -8,7 +8,6 @@ from .config_loader import VERSION
 from .db import sync as _db_sync
 from .db.connection import reset_db
 from .engine_loader import eng
-from .ids import unique_id
 from .logging_util import log
 from .user_management import _safe_name, get_save_dir
 from .models import GameState
@@ -16,6 +15,10 @@ from .npc import (
     apply_name_sanitization,
     normalize_npc_dispositions,
 )
+
+
+class IncompatibleSaveError(Exception):
+    pass
 
 
 def save_game(game: GameState, username: str, chat_messages: list[dict[str, Any]], name: str) -> Path:
@@ -46,7 +49,10 @@ def load_game(username: str, name: str) -> tuple[GameState | None, list[Any]]:
     data = json.loads(path.read_text(encoding="utf-8"))
 
     game_data = data["game_state"]
-    game = GameState.from_dict(game_data)
+    try:
+        game = GameState.from_dict(game_data)
+    except ValueError as e:
+        raise IncompatibleSaveError(f"{username}/{name}: {e}") from e
 
     normalize_npc_dispositions(game.npcs)
     for npc in game.npcs:
@@ -55,44 +61,15 @@ def load_game(username: str, name: str) -> tuple[GameState | None, list[Any]]:
         npc.needs_reflection = npc.importance_accumulator >= eng().npc.reflection_threshold
         apply_name_sanitization(npc)
 
-    chat_messages = data.get("chat_messages", [])
+    chat_messages = data["chat_messages"]
     log(
         f"[Load] Game loaded: {username}/{name} ({game.player_name}, Scene {game.narrative.scene_count}, {len(chat_messages)} chat msgs)"
     )
 
-    _repair_duplicate_ids(game)
     reset_db()
     _db_sync(game)
 
     return game, chat_messages
-
-
-def _repair_duplicate_ids(game: GameState) -> None:
-    renamed_tracks: dict[str, list[str]] = {}
-    taken = {track.id for track in game.progress_tracks}
-    seen: set[str] = set()
-    for track in game.progress_tracks:
-        if track.id in seen:
-            new_id = unique_id(track.id, taken)
-            log(f"[Load] Duplicate track id '{track.id}' renamed to '{new_id}'", level="warning")
-            if track.id not in renamed_tracks:
-                renamed_tracks[track.id] = []
-            renamed_tracks[track.id].append(new_id)
-            track.id = new_id
-            taken.add(new_id)
-        seen.add(track.id)
-    taken = {thread.id for thread in game.narrative.threads}
-    seen = set()
-    for thread in game.narrative.threads:
-        if thread.id in seen:
-            new_id = unique_id(thread.id, taken)
-            log(f"[Load] Duplicate thread id '{thread.id}' renamed to '{new_id}'", level="warning")
-            thread.id = new_id
-            taken.add(new_id)
-            linked = thread.linked_track_id
-            if linked is not None and renamed_tracks.get(linked):
-                thread.linked_track_id = renamed_tracks[linked].pop(0)
-        seen.add(thread.id)
 
 
 def list_saves_with_info(username: str) -> list[dict[str, Any]]:

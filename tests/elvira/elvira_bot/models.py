@@ -7,7 +7,6 @@ from dataclasses import dataclass, field
 class RollRecord:
     stat: str = ""
     d1: int = 0
-    d2: int = 0
     total: int = 0
     c1: int = 0
     c2: int = 0

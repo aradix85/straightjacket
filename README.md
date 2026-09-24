@@ -2,7 +2,7 @@
 
 > *Forcing AI to narrate, not decide.*
 
-AI-powered narrative solo RPG engine. You write the action. Dice determine outcomes. AI writes the world. NPCs remember you, factions move independently, stories have structure.
+AI-powered narrative solo RPG engine. You write the action. Dice determine outcomes. AI writes the world. NPCs remember you, threats and clocks advance on their own, stories have structure.
 
 The AI is the narrator — constrained by mechanics, validated by the engine, never in control. Config-driven, provider-independent, screen reader accessible.
 
@@ -24,7 +24,7 @@ Creates a venv, installs dependencies, downloads game data, starts the server at
 
 You type what your character does. The engine classifies the action, rolls dice, applies mechanical consequences. An AI narrator writes the scene within those constraints. The AI never decides outcomes, moves resources, or controls the player character. That's the straightjacket.
 
-Mechanics drawn from Ironsworn/Starforged (action rolls, momentum, bonds), Mythic GME 2e (fate questions, scene structure, random events), and Blades in the Dark (position & effect, clocks).
+Mechanics drawn from Ironsworn/Starforged (action rolls, momentum, bonds), Mythic GME 2e (chaos factor, scene structure, random events; its fate questions are implemented but not yet connected to play, see roadmap step 9), the Adventure Crafter (plot structure and turning points), and Blades in the Dark (position & effect, clocks).
 
 ---
 

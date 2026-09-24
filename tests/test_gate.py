@@ -130,7 +130,6 @@ def _build_prompt(npc: NpcData, scene: int = 5, bond: int = 0) -> str:
     )
     roll = RollResult(
         d1=3,
-        d2=4,
         c1=6,
         c2=7,
         stat_name="edge",

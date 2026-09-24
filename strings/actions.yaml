@@ -1,3 +1,4 @@
 actions.load_failed: Failed to load save.
 actions.recap_loading: Narrator is remembering...
+actions.save_incompatible: This save was made by an older version of the game and can no longer be loaded. You can start a new game.
 actions.saved: Saved!

@@ -106,17 +106,17 @@ def _connection_track(game: GameState, npc: NpcData) -> ProgressTrack | None:
 
 
 def _roll_pay_the_price_rows(game: GameState, depth: int) -> list[str]:
-    cfg = eng().get_raw("pay_the_price")
-    path = cfg["oracle_path"]
+    cfg = eng().pay_the_price
+    path = cfg.oracle_path
     data = load_package(game.setting_id).oracle_data_for(path)
     table = data.oracle(path) if data is not None else None
     if table is None:
         raise KeyError(f"Pay the Price table '{path}' missing for setting {game.setting_id!r}")
     text = strip_datasworn_links(str(table.roll().value))
-    for rule in cfg["reroll_rows"]:
-        if text.startswith(rule["prefix"]) and depth < cfg["max_rerolls"]:
+    for rule in cfg.reroll_rows:
+        if text.startswith(rule.prefix) and depth < cfg.max_rerolls:
             rows = [text]
-            for _ in range(rule["extra_rolls"]):
+            for _ in range(rule.extra_rolls):
                 rows += _roll_pay_the_price_rows(game, depth + 1)
             return rows
     return [text]
@@ -128,9 +128,9 @@ def pay_the_price(game: GameState, result: OutcomeResult) -> None:
     result.pay_the_price = True
     result.consequences.append("; ".join(rows))
     for row in rows:
-        for rule in eng().get_raw("pay_the_price")["suffer_rows"]:
-            if row.startswith(rule["prefix"]):
-                effect = parse_effect(rule["effect"])
+        for rule in eng().pay_the_price.suffer_rows:
+            if row.startswith(rule.prefix):
+                effect = parse_effect(rule.effect)
                 _EFFECT_HANDLERS[effect.type](game, effect, result, None)
 
 

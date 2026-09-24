@@ -225,7 +225,6 @@ def test_progress_roll_uses_track_boxes(load_engine: None) -> None:
     assert roll.stat_value == 6
     assert roll.action_score == 6
     assert roll.d1 == 0
-    assert roll.d2 == 0
 
 
 def test_find_progress_track(load_engine: None) -> None:

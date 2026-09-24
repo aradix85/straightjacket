@@ -23,7 +23,7 @@ class RollBonus:
 
 
 def roll_bonuses(game: GameState) -> list[RollBonus]:
-    cfg = eng().get_raw("roll_bonuses")
+    cfg = eng().roll_bonuses
     options: list[RollBonus] = []
     for asset_id in [*game.paths, *game.assets]:
         data = asset_data(game, asset_id)
@@ -40,21 +40,21 @@ def roll_bonuses(game: GameState) -> list[RollBonus]:
                 RollBonus(
                     id=f"{asset_id}#{index}",
                     source=str(data["name"]),
-                    condition=text[: cfg["condition_chars"]],
+                    condition=text[: cfg.condition_chars],
                     add=int(add.group(1)),
                     momentum_on_hit=int(momentum.group(1)) if momentum else 0,
                 )
             )
-    aid = cfg["connection_aid"]
+    aid = cfg.connection_aid
     for track in game.progress_tracks:
         if track.track_type == "connection" and track.status == "active":
             options.append(
                 RollBonus(
                     id=f"connection:{track.id.removeprefix('connection_')}",
                     source=track.name,
-                    condition=aid["condition"].format(name=track.name),
-                    add=aid["add"],
-                    momentum_on_hit=aid["momentum_on_hit"],
+                    condition=aid.condition.format(name=track.name),
+                    add=aid.add,
+                    momentum_on_hit=aid.momentum_on_hit,
                 )
             )
     return options
