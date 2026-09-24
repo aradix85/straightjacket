@@ -7,6 +7,22 @@ Originally forked from [EdgeTales](https://github.com/edgetales/edgetales). See 
 
 Straightjacket uses calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day. The first CalVer release is `2026.04.25.0`. Earlier `0.x.y` releases keep their original version numbers and are not renumbered. The switch was made because the project has no public API to version semantically against — the `0.x.y` numbers were running counters with no meaning, and dates carry the meaning the numbers didn't.
 
+## [2026.09.24.1] — 2026-09-24
+
+Project-rule scans hardened: blind spots closed, three new scans (twenty → twenty-three), and the one real violation they exposed fixed.
+
+Blind spots closed in `tests/test_project_rules.py`. The dataclass-default scan now covers `engine_config_dataclasses.py`, where the 88 config dataclasses have lived since 0.67.0; it used to scan only `engine_config.py`, which holds one, and it now recognises `@dataclasses.dataclass` as well. The broad-except scan also catches `except BaseException`, tuples that include `Exception` or `BaseException`, and `contextlib.suppress(Exception)`. The model-name scan now includes the active narrator model family (`glm`, `zai-`) and other common families; before, only Qwen, GPT, and Claude names were caught. The warning-suppression scan (`# type: ignore`, `# noqa`, `# pragma: no cover`) now covers `tests/` too; five trailing `# type: ignore` comments in tests had slipped through because the comment scan only sees full-line comments. The yaml-comment scan skips virtual environments and other non-project directories instead of walking every yaml file under the repository root. The ruff-format delivery gate runs ruff from the active interpreter (`sys.executable -m ruff`) instead of whichever `ruff` comes first on PATH, and `ruff` plus `mypy` are added to the `test` extras. All file reads specify UTF-8; the Windows default is cp1252.
+
+Three new scans. `_check_no_stale_carve_out_entries`: every carve-out and whitelist entry must still point at an existing file or symbol, and every AI-call carve-out file must actually contain a broad except. It found `log_tokens` and `impact_config` in the orphan-symbol carve-out (neither exists) and `engine/ai/metadata.py` in the AI-call carve-out (nothing to carve out); all three removed. `_check_no_skip_or_xfail_in_tests`: a test that cannot run must fail, not disappear. One hit fixed: `tests/test_web.py` skipped instead of failing when no setting yamls were found. `_check_no_orphan_prompt_keys`: every top-level key in `prompts/*.yaml` must have a reader in `src/`, mirroring the engine-yaml orphan scan; currently clean over 74 keys.
+
+The real violation. `web/serializers.py` sat in the AI-call carve-out although it makes no AI call, and its one broad except wrapped the loading of a setting package in `build_creation_options`: a broken setting yaml or Datasworn file silently disappeared from character creation, with only a warning in the log. Config and data loading must raise per the project rules. The try/except is removed and the file is out of the carve-out.
+
+Test-quality fix: `test_character_traits_is_frozen` used `pytest.raises((AttributeError, Exception))`, which passes on any exception at all; it now expects `dataclasses.FrozenInstanceError`.
+
+Measured but not changed (see AUDIT.md Notes): coverage is 87% overall, with the two provider adapters (`provider_anthropic.py`, `provider_openai.py`) at 0%; `mypy --strict` reports 398 errors (237 `type-arg`, 131 `attr-defined`, 30 `no-any-return`); two upward imports from `mechanics/` into `game/`.
+
+Quality gate: 1249 tests green, twenty-three project-rule scans clean, ruff check and ruff format clean on 186 files, mypy clean on 105 source files. Save format unchanged.
+
 ## [2026.09.24.0] — 2026-09-24
 
 Documentation re-sync after a four-month pause, plus a repository fix for the design document. No Python changes; save format unchanged.

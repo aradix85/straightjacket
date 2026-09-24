@@ -3,6 +3,7 @@ from __future__ import annotations
 import ast
 import re
 import subprocess
+import sys
 from collections.abc import Iterator
 from dataclasses import dataclass
 from pathlib import Path
@@ -13,6 +14,7 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 SRC_ROOT = REPO_ROOT / "src" / "straightjacket"
 TESTS_ROOT = Path(__file__).resolve().parent
 ENGINE_YAML_ROOT = REPO_ROOT / "engine"
+PROMPTS_YAML_ROOT = REPO_ROOT / "prompts"
 
 
 _AI_CALL_CARVE_OUT_FILES = {
@@ -21,7 +23,6 @@ _AI_CALL_CARVE_OUT_FILES = {
     "engine/ai/recap.py",
     "engine/ai/chapter_summary.py",
     "engine/ai/blueprint_voicing.py",
-    "engine/ai/metadata.py",
     "engine/ai/provider_base.py",
     "engine/correction/analysis.py",
     "engine/director.py",
@@ -29,7 +30,6 @@ _AI_CALL_CARVE_OUT_FILES = {
     "engine/tools/handler.py",
     "web/handlers.py",
     "web/server.py",
-    "web/serializers.py",
 }
 
 
@@ -270,10 +270,10 @@ def _scan_or_fallback(path: Path, rel: str) -> list[Violation]:
 def _is_dataclass_decorator(decorator: ast.expr) -> bool:
     if isinstance(decorator, ast.Name) and decorator.id == "dataclass":
         return True
+    if isinstance(decorator, ast.Attribute) and decorator.attr == "dataclass":
+        return True
     if isinstance(decorator, ast.Call):
-        f = decorator.func
-        if isinstance(f, ast.Name) and f.id == "dataclass":
-            return True
+        return _is_dataclass_decorator(decorator.func)
     return False
 
 
@@ -281,14 +281,22 @@ def _has_default(stmt: ast.AnnAssign) -> bool:
     return stmt.value is not None
 
 
-def _check_no_dataclass_defaults_in_config_binding() -> tuple[str, list[Violation]]:
-    path = SRC_ROOT / "engine" / "engine_config.py"
-    if not path.exists():
-        raise AssertionError(f"expected config binding at {path}")
+_CONFIG_BINDING_FILES = ("engine_config.py", "engine_config_dataclasses.py")
 
+
+def _check_no_dataclass_defaults_in_config_binding() -> tuple[str, list[Violation]]:
+    violations: list[Violation] = []
+    for fname in _CONFIG_BINDING_FILES:
+        path = SRC_ROOT / "engine" / fname
+        if not path.exists():
+            raise AssertionError(f"expected config binding at {path}")
+        violations.extend(_scan_dataclass_defaults(path))
+    return "DATACLASS DEFAULT in config binding", violations
+
+
+def _scan_dataclass_defaults(path: Path) -> list[Violation]:
     _, lines, tree, _ = _load(path)
     violations: list[Violation] = []
-
     for node in ast.walk(tree):
         if not isinstance(node, ast.ClassDef):
             continue
@@ -304,8 +312,7 @@ def _check_no_dataclass_defaults_in_config_binding() -> tuple[str, list[Violatio
                 continue
             snippet = lines[stmt.lineno - 1].strip() if stmt.lineno <= len(lines) else ""
             violations.append(Violation(_rel(path), stmt.lineno, f"{node.name}.{field_name}: {snippet}"))
-
-    return "DATACLASS DEFAULT in config binding", violations
+    return violations
 
 
 def _check_broad_except_inside_carve_out_only() -> tuple[str, list[Violation]]:
@@ -317,28 +324,44 @@ def _check_broad_except_inside_carve_out_only() -> tuple[str, list[Violation]]:
     return "BROAD except/catch", violations
 
 
+_BROAD_EXCEPTIONS = frozenset({"Exception", "BaseException"})
+
+
+def _exception_names(node: ast.expr) -> list[str]:
+    elts = node.elts if isinstance(node, ast.Tuple) else [node]
+    names: list[str] = []
+    for elt in elts:
+        if isinstance(elt, ast.Name):
+            names.append(elt.id)
+        elif isinstance(elt, ast.Attribute):
+            names.append(elt.attr)
+    return names
+
+
+def _catches_broad(node: ast.expr) -> bool:
+    return any(name in _BROAD_EXCEPTIONS for name in _exception_names(node))
+
+
+def _is_broad_suppress(node: ast.Call) -> bool:
+    func = node.func
+    name = func.attr if isinstance(func, ast.Attribute) else func.id if isinstance(func, ast.Name) else ""
+    return name == "suppress" and any(_catches_broad(arg) for arg in node.args)
+
+
 def _scan_broad_except(path: Path, rel: str, carve_out: set[str]) -> list[Violation]:
     violations: list[Violation] = []
     _, lines, tree, _ = _load(path)
     for node in ast.walk(tree):
-        if not isinstance(node, ast.ExceptHandler):
+        lineno = getattr(node, "lineno", 0)
+        snippet = lines[lineno - 1].strip() if 0 < lineno <= len(lines) else ""
+        if isinstance(node, ast.ExceptHandler) and node.type is None:
+            violations.append(Violation(rel, lineno, f"bare except: {snippet}"))
+        elif rel in carve_out:
             continue
-        if node.type is None:
-            snippet = lines[node.lineno - 1].strip() if node.lineno <= len(lines) else ""
-            violations.append(Violation(rel, node.lineno, f"bare except: {snippet}"))
-            continue
-        caught = node.type
-        name = None
-        if isinstance(caught, ast.Name):
-            name = caught.id
-        elif isinstance(caught, ast.Attribute):
-            name = caught.attr
-        if name != "Exception":
-            continue
-        if rel in carve_out:
-            continue
-        snippet = lines[node.lineno - 1].strip() if node.lineno <= len(lines) else ""
-        violations.append(Violation(rel, node.lineno, f"except Exception outside carve-out: {snippet}"))
+        elif isinstance(node, ast.ExceptHandler) and _catches_broad(node.type):
+            violations.append(Violation(rel, lineno, f"broad except outside carve-out: {snippet}"))
+        elif isinstance(node, ast.Call) and _is_broad_suppress(node):
+            violations.append(Violation(rel, lineno, f"broad suppress() outside carve-out: {snippet}"))
     return violations
 
 
@@ -388,12 +411,15 @@ def _scan_comments_docstrings(path: Path, rel: str) -> list[Violation]:
     return violations
 
 
+_NON_PROJECT_DIRS = frozenset({".github", ".git", "venv", ".venv", "node_modules", "build", "dist"})
+
+
 def _check_no_yaml_comments() -> tuple[str, list[Violation]]:
     yaml_root = SRC_ROOT.parent.parent
     violations: list[Violation] = []
     for path in yaml_root.rglob("*.yaml"):
         rel_parts = path.relative_to(yaml_root)
-        if rel_parts.parts and rel_parts.parts[0] in {".github", ".pre-commit-config.yaml"}:
+        if rel_parts.parts and rel_parts.parts[0] in _NON_PROJECT_DIRS:
             continue
         if path.name == ".pre-commit-config.yaml":
             continue
@@ -534,7 +560,7 @@ def _scan_provider_sdk(path: Path, rel: str) -> list[Violation]:
 
 
 _MODEL_NAME_PATTERNS = re.compile(
-    r"(qwen[-\d]|gpt-oss|gpt-\d|gpt-4|claude-\d|claude-opus|claude-sonnet|claude-haiku)",
+    r"(qwen[-\d]|gpt-oss|gpt-\d|gpt-4|claude-\d|claude-opus|claude-sonnet|claude-haiku|glm-?\d|zai-|deepseek|kimi-|llama-?\d|mistral-)",
     re.IGNORECASE,
 )
 
@@ -709,7 +735,7 @@ def _check_no_setdefault_calls() -> tuple[str, list[Violation]]:
     violations: list[Violation] = []
     for path in _iter_source_files():
         rel = _rel(path)
-        for i, line in enumerate(path.read_text().splitlines(), 1):
+        for i, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
             if pattern.search(line):
                 violations.append(Violation(rel, i, line.strip()))
     return ".setdefault() fallback (use direct subscript)", violations
@@ -720,7 +746,7 @@ def _check_no_get_raw_with_fallback() -> tuple[str, list[Violation]]:
     violations: list[Violation] = []
     for path in _iter_source_files():
         rel = _rel(path)
-        for i, line in enumerate(path.read_text().splitlines(), 1):
+        for i, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
             if pattern.search(line):
                 violations.append(Violation(rel, i, line.strip()))
     return "eng().get_raw(key, fallback) — domain config raises on miss", violations
@@ -731,7 +757,12 @@ def _check_no_warning_suppression() -> tuple[str, list[Violation]]:
     violations: list[Violation] = []
     for path in _iter_source_files():
         rel = _rel(path)
-        for i, line in enumerate(path.read_text().splitlines(), 1):
+        for i, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
+            if pattern.search(line):
+                violations.append(Violation(rel, i, line.strip()))
+    for path in _iter_test_files():
+        rel = _rel_test(path)
+        for i, line in enumerate(_load(path)[1], 1):
             if pattern.search(line):
                 violations.append(Violation(rel, i, line.strip()))
     return "warning-suppression comment (noqa / type: ignore / pragma)", violations
@@ -748,7 +779,7 @@ def _check_no_versioned_filenames() -> tuple[str, list[Violation]]:
 
 def _check_ruff_format_clean() -> tuple[str, list[Violation]]:
     result = subprocess.run(
-        ["ruff", "format", "--check", str(SRC_ROOT), str(TESTS_ROOT)],
+        [sys.executable, "-m", "ruff", "format", "--check", str(SRC_ROOT), str(TESTS_ROOT)],
         capture_output=True,
         text=True,
         cwd=REPO_ROOT,
@@ -787,11 +818,9 @@ _ORPHAN_SYMBOL_CARVE_OUT: set[tuple[str, str]] = {
     ("ActionOutcome", "engine/game/finalization.py"),
     ("homepage", "web/server.py"),
     ("websocket_endpoint", "web/server.py"),
-    ("log_tokens", "engine/logging_util.py"),
     ("build_director_prompt", "engine/director.py"),
     ("build_stats_line", "engine/ai/brain.py"),
     ("apply_engine_memories", "engine/game/finalization.py"),
-    ("impact_config", "engine/engine_loader.py"),
     ("set_backoff_sleep", "engine/ai/provider_base.py"),
     ("register_test_tool", "engine/tools/registry.py"),
     ("clear_cache", "engine/datasworn/moves.py"),
@@ -811,7 +840,7 @@ def _collect_public_symbols() -> dict[tuple[str, Path], None]:
     defs: dict[tuple[str, Path], None] = {}
     for path in _iter_source_files():
         try:
-            tree = ast.parse(path.read_text())
+            tree = ast.parse(path.read_text(encoding="utf-8"))
         except SyntaxError:
             continue
         rel = _rel(path)
@@ -830,7 +859,7 @@ def _collect_src_uses() -> dict[Path, set[str]]:
     uses: dict[Path, set[str]] = {}
     for path in _iter_source_files():
         try:
-            tree = ast.parse(path.read_text())
+            tree = ast.parse(path.read_text(encoding="utf-8"))
         except SyntaxError:
             continue
         names: set[str] = set()
@@ -864,7 +893,9 @@ def _check_no_orphan_public_symbols() -> tuple[str, list[Violation]]:
         external_use = any(name in refs for f, refs in uses.items() if f != defining_file)
         if external_use:
             continue
-        intra_uses = sum(1 for n in ast.walk(ast.parse(defining_file.read_text())) if _is_load_ref(n, name))
+        intra_uses = sum(
+            1 for n in ast.walk(ast.parse(defining_file.read_text(encoding="utf-8"))) if _is_load_ref(n, name)
+        )
         if intra_uses > 0:
             continue
         rel = _rel(defining_file)
@@ -886,11 +917,11 @@ _ORPHAN_YAML_KEY_CARVE_OUT: set[tuple[str, str]] = set()
 def _check_no_orphan_yaml_keys() -> tuple[str, list[Violation]]:
     if not ENGINE_YAML_ROOT.exists():
         return "orphan engine yaml top-level key", []
-    py_text = "\n".join(p.read_text() for p in (*_iter_source_files(), *_iter_test_files()))
+    py_text = "\n".join(p.read_text(encoding="utf-8") for p in (*_iter_source_files(), *_iter_test_files()))
     violations: list[Violation] = []
     for yfile in sorted(ENGINE_YAML_ROOT.glob("*.yaml")):
         try:
-            data = yaml.safe_load(yfile.read_text())
+            data = yaml.safe_load(yfile.read_text(encoding="utf-8"))
         except yaml.YAMLError:
             continue
         if not isinstance(data, dict):
@@ -909,6 +940,73 @@ def _check_no_orphan_yaml_keys() -> tuple[str, list[Violation]]:
                 continue
             violations.append(Violation(yfile.name, 0, f"top-level key {key!r} has no Python reader"))
     return "orphan engine yaml top-level key", violations
+
+
+def _defines(path: Path, name: str) -> bool:
+    if not path.exists():
+        return False
+    return any(
+        isinstance(n, ast.FunctionDef | ast.AsyncFunctionDef | ast.ClassDef) and n.name == name
+        for n in ast.walk(_load(path)[2])
+    )
+
+
+def _has_broad_except(path: Path) -> bool:
+    return any(
+        isinstance(n, ast.ExceptHandler) and n.type is not None and _catches_broad(n.type)
+        for n in ast.walk(_load(path)[2])
+    )
+
+
+def _check_no_stale_carve_out_entries() -> tuple[str, list[Violation]]:
+    violations: list[Violation] = []
+    for rel in sorted(_AI_CALL_CARVE_OUT_FILES):
+        path = SRC_ROOT / rel
+        if not path.exists():
+            violations.append(Violation(rel, 0, "AI-call carve-out file does not exist"))
+        elif not _has_broad_except(path):
+            violations.append(Violation(rel, 0, "AI-call carve-out file has no broad except to carve out"))
+    for rel in sorted(_AI_CALL_CARVE_OUT_TESTS | _HARDCODED_MODEL_NAME_TEST_WHITELIST):
+        if not (TESTS_ROOT / rel).exists():
+            violations.append(Violation(rel, 0, "test carve-out file does not exist"))
+    for rel in sorted(_PROVIDER_IMPORT_ALLOWED):
+        if not (SRC_ROOT / rel).exists():
+            violations.append(Violation(rel, 0, "provider-import allowance for a file that does not exist"))
+    for name, rel in sorted(_ORPHAN_SYMBOL_CARVE_OUT):
+        if not _defines(SRC_ROOT / rel, name):
+            violations.append(Violation(rel, 0, f"orphan carve-out {name!r} is not defined there"))
+    for rel, name in sorted(_INLINE_IMPORT_WHITELIST):
+        if not _defines(SRC_ROOT / rel, name):
+            violations.append(Violation(rel, 0, f"inline-import whitelist function {name!r} is not defined there"))
+    for rel, name in sorted(_COMPLEXITY_TEST_WHITELIST):
+        if not _defines(TESTS_ROOT / rel, name):
+            violations.append(Violation(rel, 0, f"complexity whitelist function {name!r} is not defined there"))
+    return "STALE carve-out or whitelist entry", violations
+
+
+_SKIP_PATTERN = re.compile(r"pytest\.(mark\.)?(skip|skipif|xfail)\b")
+
+
+def _check_no_skip_or_xfail_in_tests() -> tuple[str, list[Violation]]:
+    violations: list[Violation] = []
+    for path in _iter_test_files():
+        rel = _rel_test(path)
+        for i, line in enumerate(_load(path)[1], 1):
+            if _SKIP_PATTERN.search(line):
+                violations.append(Violation(rel, i, line.strip()))
+    return "pytest skip/xfail (a test that cannot run must fail, not disappear)", violations
+
+
+def _check_no_orphan_prompt_keys() -> tuple[str, list[Violation]]:
+    src_text = "\n".join(_load(p)[0] for p in _iter_source_files())
+    violations: list[Violation] = []
+    for yfile in sorted(PROMPTS_YAML_ROOT.glob("*.yaml")):
+        data = yaml.safe_load(yfile.read_text(encoding="utf-8"))
+        for key in data:
+            if f'"{key}"' in src_text or f"'{key}'" in src_text:
+                continue
+            violations.append(Violation(f"prompts/{yfile.name}", 0, f"prompt key {key!r} has no reader in src"))
+    return "orphan prompt key", violations
 
 
 _ALL_CHECKS = (
@@ -932,6 +1030,9 @@ _ALL_CHECKS = (
     _check_ruff_format_clean,
     _check_no_orphan_public_symbols,
     _check_no_orphan_yaml_keys,
+    _check_no_stale_carve_out_entries,
+    _check_no_skip_or_xfail_in_tests,
+    _check_no_orphan_prompt_keys,
 )
 
 

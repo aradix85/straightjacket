@@ -41,3 +41,7 @@ desktop.ini
 # TLS auto-generated certs
 cert.pem
 key.pem
+
+# Coverage output
+.coverage
+htmlcov/

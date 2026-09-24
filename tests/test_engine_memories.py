@@ -92,7 +92,7 @@ class TestProcessTurnGuard:
         game.game_over = True
 
         with pytest.raises(RuntimeError, match="game_over=True"):
-            process_turn(provider=None, game=game, player_message="anything")  # type: ignore[arg-type]
+            process_turn(provider=None, game=game, player_message="anything")
 
     def test_does_not_raise_when_game_active(self) -> None:
         game = make_test_game()

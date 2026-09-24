@@ -203,8 +203,12 @@ Add observations here that the next audit chat should know — patterns that eme
 
 2026-09-24 (documentation re-sync, not an audit chat). Pre-findings for later passes, not yet classified:
 
-- `_check_no_dataclass_defaults_in_config_binding` in `tests/test_project_rules.py` scans `engine/engine_config.py`, which holds one dataclass, instead of `engine/engine_config_dataclasses.py`, which holds the 88 config dataclasses (currently without defaults). The mechanical scan therefore guards nothing today, and Pass 2d is the only check. Retargeting the scan is a test change for a code session.
+- Resolved in 2026.09.24.1: `_check_no_dataclass_defaults_in_config_binding` now also scans `engine_config_dataclasses.py`. The mechanical scan covers the config binding; Pass 2d covers every other dataclass.
 - Outside the config binding, dataclasses in `src/` carry about 245 annotated fields with a default, concentrated in `models_story.py`, `models.py`, `models_base.py`, `datasworn/moves.py`, and `models_npc.py`. Many are `default_factory` empty collections (carve-out); the rest is Pass 2d / 4a material. Known example: `KeyedScene.source: str = ""` and `KeyedScene.bound_entity_id: str | None = None` (CHANGELOG 2026.05.06.3).
-- `_ORPHAN_SYMBOL_CARVE_OUT` still lists `("log_tokens", "engine/logging_util.py")`, but that symbol no longer exists. Dead carve-out entry, Principle 5.
+- Resolved in 2026.09.24.1: stale carve-out entries (`log_tokens`, `impact_config`, `engine/ai/metadata.py`) removed; `_check_no_stale_carve_out_entries` now catches this class mechanically.
+- Two upward imports from `mechanics/` into `game/`: `mechanics/threats.py` imports `game.tracks.complete_track` at module level, and `mechanics/clock_consequences.py` does the same inline with a circular-break comment. Principle 1 material: the dependency direction suggests `complete_track` belongs below `game/`.
+- `web/serializers.py::build_creation_options` skips the setting `delve` by name (`if pkg_id == "delve"`), a Python branch on a setting id. Principle 2 (Pass 2c) material.
+- The `.get()` scan only flags constant, non-neutral defaults; `.get("key", some_variable)` passes unexamined (example: `truth_data.get("name", truth_id)` in `web/serializers.py`). Pass 4b should grep for these.
+- 64 of 173 `strings/*.yaml` keys have no literal reference in `src/` or `index.html`; most are built dynamically (`move.*`, `disposition.*`, `consequence.*`). A strings orphan scan needs prefix awareness before it can be mechanical.
 - `run.py` at the repository root contains docstrings but falls outside the comment/docstring scan, which covers `src/` and `tests/` only. Decide whether root scripts are in scope.
 - Working mode: audits can now run against a local clone with direct file access instead of a fresh clone per claude.ai chat. The Reading order still applies.

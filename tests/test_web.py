@@ -256,10 +256,6 @@ class TestBuildCreationOptions:
     def test_returns_settings(self, load_engine: None) -> None:
         opts = build_creation_options()
         assert "settings" in opts
-        from straightjacket.engine.datasworn.settings import list_packages
-
-        if not list_packages():
-            pytest.skip("No setting yamls in data/settings/")
         assert len(opts["settings"]) >= 1
 
     def test_settings_have_paths(self, load_engine: None) -> None:

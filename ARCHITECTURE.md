@@ -399,7 +399,7 @@ Three layers of testing, complementary, plus the static checks (ruff, mypy) list
 
 The **unit/integration test suite** (`python -m pytest tests/ -v`) runs without an API key. It uses mock providers that return canned responses. Tests verify the engine's internal logic: consequences, NPC processing, serialization, correction flow, prompt assembly, WebSocket handlers. Every PR must pass this suite.
 
-**Project rules** (`tests/test_project_rules.py`) is one consolidated test running AST and regex scans that enforce the rules described in the Project rules section. Failures are deterministic measurements — the test fails on residual debt without blocking feature work. When you touch a file that already has violations, fix them in the same commit.
+**Project rules** (`tests/test_project_rules.py`) is one consolidated test running AST and regex scans that enforce the rules described in the Project rules section. A meta-scan fails on carve-out or whitelist entries that no longer match a file or symbol, so an exception cannot outlive the code it excuses. Failures are deterministic measurements — the test fails on residual debt without blocking feature work. When you touch a file that already has violations, fix them in the same commit.
 
 **Elvira** (`tests/elvira/elvira.py`) is a headless AI-driven test player that plays the game with real API calls. It checks state invariants after every turn (including NPC-DB sync and combat-track sync), validates narration quality through deterministic regex checks (leaked mechanics like result-types or stat values, NPC spatial consistency, chapter continuity), stress-tests the correction pipeline, and logs everything to a single `elvira_session.json`. Two modes:
 

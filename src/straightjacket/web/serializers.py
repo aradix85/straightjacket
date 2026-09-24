@@ -7,7 +7,6 @@ from ..engine.npc import get_npc_bond
 from ..engine.story_state import get_current_act
 from ..engine.datasworn.loader import extract_title
 from ..engine.datasworn.settings import list_packages, load_package
-from ..engine.logging_util import log
 from ..i18n import (
     get_disposition_labels,
     get_story_phase_labels,
@@ -189,84 +188,81 @@ def build_creation_options() -> dict:
     for pkg_id in list_packages():
         if pkg_id == "delve":
             continue
-        try:
-            pkg = load_package(pkg_id)
+        pkg = load_package(pkg_id)
 
-            paths = []
-            for asset in pkg.data.paths():
+        paths = []
+        for asset in pkg.data.paths():
+            asset_id = asset["_id"].rsplit("/", 1)[-1]
+            paths.append({"id": asset_id, "title": extract_title(asset, asset_id)})
+
+        truths = []
+        flow = pkg.creation_flow
+        if flow.has_truths:
+            raw_truths = pkg.data.truths()
+            _trunc = eng().truncations
+            for truth_id, truth_data in raw_truths.items():
+                options = []
+
+                for opt in truth_data["options"]:
+                    summary_text = opt["summary"] if "summary" in opt else opt["description"]
+                    options.append(
+                        {
+                            "summary": str(summary_text)[: _trunc.prompt_medium],
+                            "description": str(opt["description"])[: _trunc.prompt_medium],
+                            "quest_starter": str(opt["quest_starter"])[: _trunc.prompt_short],
+                        }
+                    )
+
+                truths.append(
+                    {
+                        "id": truth_id,
+                        "name": truth_data.get("name", truth_id),
+                        "options": options,
+                    }
+                )
+
+        name_tables = {}
+        if flow.has_name_tables:
+            for table_id, table in pkg.name_tables().items():
+                name_tables[table_id] = [row.text for row in table.rows]
+
+        backstory_prompts = []
+        if flow.has_backstory_oracle:
+            bs = pkg.backstory_prompts()
+            if bs:
+                backstory_prompts = [row.text for row in bs.rows]
+
+        starting_assets = []
+        for cat in flow.starting_asset_categories:
+            for asset in pkg.data.assets(cat):
                 asset_id = asset["_id"].rsplit("/", 1)[-1]
-                paths.append({"id": asset_id, "title": extract_title(asset, asset_id)})
+                starting_assets.append(
+                    {
+                        "id": asset_id,
+                        "title": extract_title(asset, asset_id),
+                        "category": cat,
+                    }
+                )
 
-            truths = []
-            flow = pkg.creation_flow
-            if flow.has_truths:
-                raw_truths = pkg.data.truths()
-                _trunc = eng().truncations
-                for truth_id, truth_data in raw_truths.items():
-                    options = []
-
-                    for opt in truth_data["options"]:
-                        summary_text = opt["summary"] if "summary" in opt else opt["description"]
-                        options.append(
-                            {
-                                "summary": str(summary_text)[: _trunc.prompt_medium],
-                                "description": str(opt["description"])[: _trunc.prompt_medium],
-                                "quest_starter": str(opt["quest_starter"])[: _trunc.prompt_short],
-                            }
-                        )
-
-                    truths.append(
-                        {
-                            "id": truth_id,
-                            "name": truth_data.get("name", truth_id),
-                            "options": options,
-                        }
-                    )
-
-            name_tables = {}
-            if flow.has_name_tables:
-                for table_id, table in pkg.name_tables().items():
-                    name_tables[table_id] = [row.text for row in table.rows]
-
-            backstory_prompts = []
-            if flow.has_backstory_oracle:
-                bs = pkg.backstory_prompts()
-                if bs:
-                    backstory_prompts = [row.text for row in bs.rows]
-
-            starting_assets = []
-            for cat in flow.starting_asset_categories:
-                for asset in pkg.data.assets(cat):
-                    asset_id = asset["_id"].rsplit("/", 1)[-1]
-                    starting_assets.append(
-                        {
-                            "id": asset_id,
-                            "title": extract_title(asset, asset_id),
-                            "category": cat,
-                        }
-                    )
-
-            settings.append(
-                {
-                    "id": pkg_id,
-                    "title": pkg.title,
-                    "description": pkg.description,
-                    "paths": paths,
-                    "truths": truths,
-                    "name_tables": name_tables,
-                    "backstory_prompts": backstory_prompts,
-                    "starting_assets": starting_assets,
-                    "creation_flow": {
-                        "has_truths": flow.has_truths,
-                        "has_backstory_oracle": flow.has_backstory_oracle,
-                        "has_name_tables": flow.has_name_tables,
-                        "has_ship_creation": flow.has_ship_creation,
-                        "starting_asset_categories": flow.starting_asset_categories,
-                    },
-                }
-            )
-        except Exception as e:
-            log(f"[Web] Failed to load package {pkg_id}: {e}", level="warning")
+        settings.append(
+            {
+                "id": pkg_id,
+                "title": pkg.title,
+                "description": pkg.description,
+                "paths": paths,
+                "truths": truths,
+                "name_tables": name_tables,
+                "backstory_prompts": backstory_prompts,
+                "starting_assets": starting_assets,
+                "creation_flow": {
+                    "has_truths": flow.has_truths,
+                    "has_backstory_oracle": flow.has_backstory_oracle,
+                    "has_name_tables": flow.has_name_tables,
+                    "has_ship_creation": flow.has_ship_creation,
+                    "starting_asset_categories": flow.starting_asset_categories,
+                },
+            }
+        )
 
     return {
         "settings": settings,

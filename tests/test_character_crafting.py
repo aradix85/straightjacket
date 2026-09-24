@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import dataclasses
 import random
 
 import pytest
@@ -138,7 +139,7 @@ def test_roll_character_traits_dual_identity_uses_non_flag_range() -> None:
             return self._seq.pop(0)
 
     rng = StubRNG([100, 5, 50, 75, 100])
-    traits = roll_character_traits(rng)  # type: ignore[arg-type]
+    traits = roll_character_traits(rng)
     assert traits.special_trait == "connected_to_existing_character"
     assert len(traits.identities) == 2
     assert traits.identities[0] == "Mediator"
@@ -156,7 +157,7 @@ def test_roll_character_traits_two_descriptors_uses_non_flag_range() -> None:
             return self._seq.pop(0)
 
     rng = StubRNG([1, 100, 15, 22, 100])
-    traits = roll_character_traits(rng)  # type: ignore[arg-type]
+    traits = roll_character_traits(rng)
     assert traits.special_trait == "individual"
     assert len(traits.identities) == 1
     assert traits.identities[0] == "Exotic"
@@ -174,7 +175,7 @@ def test_roll_character_traits_single_identity_path() -> None:
             return self._seq.pop(0)
 
     rng = StubRNG([50, 99, 50])
-    traits = roll_character_traits(rng)  # type: ignore[arg-type]
+    traits = roll_character_traits(rng)
     assert traits.identities == ["Spy"]
     assert traits.descriptors == ["Colorful"]
 
@@ -189,5 +190,5 @@ def test_roll_character_traits_deterministic_with_fixed_seed() -> None:
 
 def test_character_traits_is_frozen() -> None:
     traits = CharacterTraits(special_trait="individual", identities=["Hero"], descriptors=["Strong"])
-    with pytest.raises((AttributeError, Exception)):
-        traits.special_trait = "object"  # type: ignore[misc]
+    with pytest.raises(dataclasses.FrozenInstanceError):
+        traits.special_trait = "object"
