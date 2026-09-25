@@ -1,3 +1,4 @@
+from typing import Any
 import html
 import json
 
@@ -13,7 +14,7 @@ from ..prompt_loader import get_prompt
 from ..tools.builtins import available_moves
 from .provider_base import AIUnavailableError, AICallSpec, AIProvider, create_with_retry
 from .schemas import get_brain_output_schema, get_revelation_check_schema
-from ..mechanics.bonuses import bonus_block
+from ..mechanics.bonuses import bonus_block, roll_bonuses
 
 
 def _build_moves_block(game: GameState) -> str:
@@ -44,12 +45,29 @@ def build_stats_line(game: GameState) -> str:
     return " ".join(parts)
 
 
+def _listed_npcs(game: GameState) -> list[Any]:
+    return [n for n in game.npcs if n.status in ("active", "background")]
+
+
+def _active_tracks(game: GameState) -> list[Any]:
+    return [t for t in game.progress_tracks if t.status == "active"]
+
+
 def _build_tracks_block(game: GameState) -> str:
-    tracks = [t for t in game.progress_tracks if t.status == "active"]
+    tracks = _active_tracks(game)
     if not tracks:
         return ""
     lines = [f"  {t.name} ({t.track_type}, {t.rank}) {t.filled_boxes}/10" for t in tracks]
     return "<tracks>\n" + "\n".join(lines) + "\n</tracks>"
+
+
+def _check_choices(result: BrainResult, move_keys: list[str], choices: dict[str, list[str]]) -> None:
+    if result.move not in move_keys and result.move not in eng().engine_moves:
+        raise ValueError(f"move {result.move!r} is not available in this situation")
+    for field_name, allowed in choices.items():
+        value = getattr(result, field_name)
+        if value is not None and value not in allowed:
+            raise ValueError(f"{field_name} {value!r} is not one of the choices offered")
 
 
 def call_brain(
@@ -71,12 +89,11 @@ def call_brain(
     _ai_text = eng().ai_text.narrator_defaults
 
     npc_lines = []
-    for n in game.npcs:
-        if n.status in ("active", "background"):
-            entry = f"  {n.name} (id:{n.id}, {n.disposition})"
-            if n.aliases:
-                entry += f" aliases:{','.join(n.aliases)}"
-            npc_lines.append(entry)
+    for n in _listed_npcs(game):
+        entry = f"  {n.name} (id:{n.id}, {n.disposition})"
+        if n.aliases:
+            entry += f" aliases:{','.join(n.aliases)}"
+        npc_lines.append(entry)
     npc_block = "<npcs>\n" + "\n".join(npc_lines) + "\n</npcs>" if npc_lines else f"<npcs>{_ai_text['no_npcs']}</npcs>"
 
     tracks_block = _build_tracks_block(game)
@@ -93,20 +110,26 @@ time:{w.time_of_day or _ai_text["unknown_time"]}
 <input>{player_message}</input>"""
 
     move_keys = [m["move"] for m in available_moves(game)["moves"]]
+    choices = {
+        "bonus_id": [b.id for b in roll_bonuses(game)],
+        "target_npc": [n.id for n in _listed_npcs(game)],
+        "target_track": [tr.name for tr in _active_tracks(game)],
+    }
     try:
         spec = AICallSpec(
             model=model_for_role("brain"),
             system=system,
             messages=[{"role": "user", "content": user_msg}],
-            json_schema=get_brain_output_schema(move_keys),
+            json_schema=get_brain_output_schema(
+                move_keys, choices["bonus_id"], choices["target_npc"], choices["target_track"]
+            ),
             log_role="brain",
             **sampling_params("brain"),
         )
         response = create_with_retry(provider, spec)
 
         result: BrainResult = BrainResult.from_dict(json.loads(response.content))
-        if result.move not in move_keys and result.move not in eng().engine_moves:
-            raise ValueError(f"move {result.move!r} is not available in this situation")
+        _check_choices(result, move_keys, choices)
         log(
             f"[Brain] move={result.move}, stat={result.stat}, "
             f"intent={result.player_intent[: eng().truncations.log_short]}"

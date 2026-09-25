@@ -3,6 +3,7 @@ from collections.abc import Callable
 
 from ..engine_loader import eng
 from ..parser import clean_sentence
+from .provider_base import decode_literal_unicode_escapes
 
 _BOUNDARY = re.compile(r"[.!?\u2026]+[\"'\u201d\u2019)\]]*(?=\s)|\n\s*\n")
 
@@ -23,7 +24,7 @@ class SentenceStream:
     def feed(self, delta: str) -> None:
         if self.held or self.failed:
             return
-        self._pending += delta
+        self._pending = decode_literal_unicode_escapes(self._pending + delta)
         positions = [
             self._pending.find(marker) for marker in eng().parser.stream_hold_markers if marker in self._pending
         ]

@@ -93,3 +93,16 @@ def test_stream_with_retry_falls_back_and_marks_the_stream_incomplete(load_engin
     assert response.content == "Recovered without streaming."
     assert stream.failed
     assert not stream.complete
+
+
+def test_a_literal_unicode_escape_split_across_chunks_streams_as_the_character(load_engine: None) -> None:
+    from straightjacket.engine.ai.sentence_stream import SentenceStream
+
+    sentences: list[str] = []
+    stream = SentenceStream(sentences.append)
+    for delta in ("The raider laughs. \\u20", "1cRun.\\u201d", " Then she is gone.", "\n"):
+        stream.feed(delta)
+    stream.finish()
+    spoken = " ".join(sentences)
+    assert "\\u" not in spoken
+    assert "\u201cRun.\u201d" in spoken

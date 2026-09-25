@@ -70,7 +70,15 @@ _director_cache: dict[str, Any] | None = None
 _blueprint_voicing_cache: dict[str, Any] | None = None
 
 
-def get_brain_output_schema(move_keys: list[str]) -> dict[str, Any]:
+def _nullable_enum(values: list[str]) -> dict[str, Any]:
+    if not values:
+        return {"type": "null"}
+    return {"anyOf": [{"type": "string", "enum": sorted(set(values))}, {"type": "null"}]}
+
+
+def get_brain_output_schema(
+    move_keys: list[str], bonus_ids: list[str], npc_ids: list[str], track_names: list[str]
+) -> dict[str, Any]:
     _e = eng()
     rank_enum = sorted(_e.progress.track_types["default"].ticks_per_mark.keys())
     return _obj_root(
@@ -79,7 +87,7 @@ def get_brain_output_schema(move_keys: list[str]) -> dict[str, Any]:
             "move": _str_enum(sorted({*move_keys, *_e.engine_moves.keys()})),
             "stat": _str_enum(list(_e.stats.names)),
             "approach": _str(),
-            "target_npc": _nullable_str(),
+            "target_npc": _nullable_enum(npc_ids),
             "dialog_only": _bool(),
             "player_intent": _str(),
             "world_addition": _nullable_str(),
@@ -91,8 +99,8 @@ def get_brain_output_schema(move_keys: list[str]) -> dict[str, Any]:
                     {"type": "null"},
                 ]
             },
-            "target_track": _nullable_str(),
-            "bonus_id": _nullable_str(),
+            "target_track": _nullable_enum(track_names),
+            "bonus_id": _nullable_enum(bonus_ids),
         },
         _e.ai_text.schema_titles["brain_output"],
     )

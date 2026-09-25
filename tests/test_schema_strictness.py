@@ -49,5 +49,7 @@ def test_the_brain_schema_requires_all_its_properties(load_engine: None) -> None
     from straightjacket.engine.ai.schemas import get_brain_output_schema
 
     problems: list[str] = []
-    _loose_objects(get_brain_output_schema(["adventure/face_danger"]), "brain", problems)
+    _loose_objects(
+        get_brain_output_schema(["adventure/face_danger"], ["infiltrator#0"], ["npc_1"], []), "brain", problems
+    )
     assert problems == []
