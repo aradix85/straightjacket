@@ -24,43 +24,61 @@ ai:
       api_key_env: "FIREWORKS_API_KEY"
       timeout_seconds: 120
 
-  model:
-    provider: fireworks
-    model: "accounts/fireworks/routers/glm-5p3-fast"
-    extra_body:
-      reasoning_effort: "low"
-
   clusters:
     narrator:
+      provider: fireworks
+      model: "accounts/fireworks/routers/glm-5p3-fast"
       temperature: null
       top_p: null
       max_tokens: 8192
       max_retries: 3
+      extra_body:
+        reasoning_effort: "low"
     creative:
+      provider: fireworks
+      model: "accounts/fireworks/routers/glm-5p3-fast"
       temperature: null
       top_p: null
       max_tokens: 8192
       max_retries: 3
+      extra_body:
+        reasoning_effort: "low"
     director:
+      provider: fireworks
+      model: "accounts/fireworks/routers/glm-5p3-fast"
       temperature: null
       top_p: null
       max_tokens: 8192
       max_retries: 3
+      extra_body:
+        reasoning_effort: "low"
     classification:
+      provider: fireworks
+      model: "accounts/fireworks/routers/glm-5p3-fast"
       temperature: 0.5
       top_p: null
       max_tokens: 8192
       max_retries: 3
+      extra_body:
+        reasoning_effort: "low"
     judgment:
+      provider: fireworks
+      model: "accounts/fireworks/routers/glm-5p3-fast"
       temperature: 0.5
       top_p: null
       max_tokens: 8192
       max_retries: 3
+      extra_body:
+        reasoning_effort: "low"
     extraction:
+      provider: fireworks
+      model: "accounts/fireworks/routers/glm-5p3-fast"
       temperature: 0.3
       top_p: null
       max_tokens: 8192
       max_retries: 3
+      extra_body:
+        reasoning_effort: "low"
 
   role_cluster:
     narrator: narrator

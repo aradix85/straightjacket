@@ -7,6 +7,16 @@ Originally forked from [EdgeTales](https://github.com/edgetales/edgetales). See 
 
 Straightjacket uses calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day. The first CalVer release is `2026.04.25.0`. Earlier `0.x.y` releases keep their original version numbers and are not renumbered. The switch was made because the project has no public API to version semantically against — the `0.x.y` numbers were running counters with no meaning, and dates carry the meaning the numbers didn't.
 
+## [2026.09.24.62] — 2026-09-25
+
+Every cluster names its own provider, model, and extra body again; the shared `ai.model` of 2026.09.24.61 is gone.
+
+The user prefers clusters that each read on their own over a default they inherit from, even where the six clusters now repeat each other. `config_loader.py` is back to its 2026.09.24.60 form, which requires every field in every cluster, and `config.yaml` spells out GLM 5.3 Fast through Fireworks at reasoning effort low in each cluster beside its own temperature. Giving one cluster another provider was possible throughout and stays so; `tests/test_api_client.py` → `test_each_role_is_routed_to_its_clusters_provider` routes two clusters to two providers. ARCHITECTURE.md and the roadmap describe the per-cluster settings again, with the model column back in the cluster table.
+
+Checked live: the startup check finds the model at Fireworks for all six clusters, and a three-turn Elvira session on the per-cluster configuration found no problems, with no real AI failure and the injected outage rolled back cleanly; the first sentence came after a median 3.0 seconds and a turn took 9.3, so the slower session of 2026.09.24.61 was most likely load at Fireworks.
+
+Quality gate: 1468 tests green, twenty-nine project-rule scans clean, coverage 90.09%, ruff check and ruff format clean, mypy --strict clean on 109 source files. Save format unchanged.
+
 ## [2026.09.24.61] — 2026-09-25
 
 Every role on GLM 5.3 Fast through Fireworks, the model set in one place, and everything that no longer serves removed.

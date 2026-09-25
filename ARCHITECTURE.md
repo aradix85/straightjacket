@@ -122,20 +122,20 @@ Where to find things. If you want to change X, edit Y.
 
 ## AI Model Assignment
 
-The engine assigns models to AI roles via clusters. `ai.model` names the provider, model, and extra body that every cluster uses; a cluster that names its own `provider`, `model`, or `extra_body` overrides that for its roles, so one line moves the whole game to another model and a single cluster can still differ. Each cluster holds the sampling its roles share. `model_for_role(role)`, `provider_for_role(role)`, and `sampling_params(role)` are the only way to reach them; no module hardcodes a model string.
+The engine assigns models to AI roles via clusters. Each cluster names a provider, a model, and the call parameters its roles share, in full, even where clusters repeat each other, so every cluster reads on its own. `model_for_role(role)`, `provider_for_role(role)`, and `sampling_params(role)` are the only way to reach them; no module hardcodes a model string.
 
 ```
-Cluster          Roles                                       Temperature
-─────────────────────────────────────────────────────────────────────────
-narrator         narrator                                    not sent
-creative         blueprint_voicing, chapter_summary, recap   not sent
-director         director                                    not sent
-classification   brain, correction                           0.5
-judgment         revelation_check                            0.5
-extraction       narrator_metadata, opening_setup            0.3
+Cluster          Roles                                       Model, reasoning effort, temperature
+────────────────────────────────────────────────────────────────────────────────────────────────────
+narrator         narrator                                    GLM 5.3 Fast, low, not sent
+creative         blueprint_voicing, chapter_summary, recap   GLM 5.3 Fast, low, not sent
+director         director                                    GLM 5.3 Fast, low, not sent
+classification   brain, correction                           GLM 5.3 Fast, low, 0.5
+judgment         revelation_check                            GLM 5.3 Fast, low, 0.5
+extraction       narrator_metadata, opening_setup            GLM 5.3 Fast, low, 0.3
 ```
 
-Every role runs on GLM 5.3 Fast through Fireworks (`accounts/fireworks/routers/glm-5p3-fast`) at reasoning effort low; GLM 5.3 always thinks, and low is its lowest setting. The measurements behind the choice are in CHANGELOG 2026.09.24.56 to .60.
+GLM 5.3 Fast runs through Fireworks (`accounts/fireworks/routers/glm-5p3-fast`) at reasoning effort low; GLM 5.3 always thinks, and low is its lowest setting. The measurements behind the choice are in CHANGELOG 2026.09.24.56 to .60.
 
 Config structure in `config.yaml`:
 
@@ -147,23 +147,22 @@ ai:
       api_base: "https://api.fireworks.ai/inference/v1"
       api_key_env: "FIREWORKS_API_KEY"
       timeout_seconds: 120
-  model:
-    provider: fireworks
-    model: "accounts/fireworks/routers/glm-5p3-fast"
-    extra_body:
-      reasoning_effort: "low"
   clusters:
     narrator:
+      provider: fireworks
+      model: "accounts/fireworks/routers/glm-5p3-fast"
       temperature: null
       top_p: null
       max_tokens: 8192
       max_retries: 3
+      extra_body:
+        reasoning_effort: "low"
   role_cluster:
     narrator: narrator
     director: director
 ```
 
-Every role maps to exactly one cluster in `role_cluster`, and after `ai.model` is merged in, every cluster must have a provider, a model, a temperature, a top_p, a token limit, and a retry count. An `api_base` of `""` means the SDK's default endpoint; a `null` temperature or top_p is not sent. The OpenAI and Anthropic providers stay configured but unused, so the game moves to one of their models by naming it in `ai.model`, and a key is needed only for a provider a cluster uses. Fireworks caches the shared start of prompts on its own and bills cached input below fresh input; Anthropic prompt caching needs `cache_control` in the extra body, while OpenAI caches automatically.
+Every cluster has the same keys; every role maps to exactly one cluster in `role_cluster`. An `api_base` of `""` means the SDK's default endpoint; a `null` temperature or top_p is not sent. The OpenAI and Anthropic providers stay configured but unused, so a cluster moves to one of their models by naming the provider and model, and a key is needed only for a provider a cluster uses. Fireworks caches the shared start of prompts on its own and bills cached input below fresh input; Anthropic prompt caching needs `cache_control` in the extra body, while OpenAI caches automatically.
 
 Routing: `ai/api_client.py` → `get_provider` returns a routing provider that sends each call to the provider of its role's cluster, keyed on `AICallSpec.log_role`, which every AI call sets to its own role name; the project-rule scan `_check_ai_calls_route_by_their_role` enforces this. `python run.py` and Elvira call `check_configured_models` first: every cluster's model must appear in its provider's model list, or startup stops naming the missing model. `max_tool_rounds` is an engine limit in `engine/pacing.yaml`.
 
@@ -428,7 +427,7 @@ The **unit/integration test suite** (`python -m pytest tests/ -v`) runs without 
 
 **Project rules** (`tests/test_project_rules.py`) is one consolidated test running AST and regex scans that enforce the rules described in the Project rules section. A meta-scan fails on carve-out or whitelist entries that no longer match a file or symbol, so an exception cannot outlive the code it excuses. Four documentation-drift scans: every path named in README, ARCHITECTURE, SECURITY, ORIGINS, and AUDIT exists, the file map below is complete, every `file.py → symbol` reference in this document resolves, and the CHANGELOG matches the `pyproject.toml` version. `roadmap.md` is not scanned, and of the CHANGELOG only the version headers are. Failures are deterministic measurements — the test fails on residual debt without blocking feature work. When you touch a file that already has violations, fix them in the same commit.
 
-**Elvira** (`tests/elvira/elvira.py`) is a headless test player that plays the real game on the model `config.yaml` names; her own player and her judge use the Brain role's model and reasoning setting too, so one model plays, narrates, and judges, and her scores compare versions of that model rather than different models. To try another model, change `ai.model` in `config.yaml`. Each run picks its setting (classic, starforged, or sundered_isles; delve is an expansion, not a setting of its own) and its play style at random unless the config or the command line names one, and `--matrix` plays every combination in turn. Every turn it checks state invariants (including NPC-DB and combat-track sync), leaked mechanics, NPC spatial consistency, and streaming (time to first sentence; streamed text equal to the final text), and a blind judge scores the narration on result integrity, prompt elements, NPC voice, player agency, restraint, and prose. After every save it loads the game back and compares the whole state; on game over it continues through succession. Once per run (`session.inject_ai_failure_turn`) it makes the narrator unreachable for one turn and checks that the turn is rolled back to exactly the state before it; a real AI failure is rolled back the same way, reported as a problem, and play continues. `--scenario` prepares a rare situation after character creation and reports whether the run reached what the scenario expects: `near_death` (health and spirit 0, and the player takes physical risks so the first turn is an action: game over at its crisis check, then succession and play on), `chapter_end` (one scene before the story's end: epilogue and new chapter), `momentum_burn` (momentum at its maximum: a burn offered and taken), `combat` (an open fight), and `clock` (a clock one segment from full); `--scenario all` plays them in turn. The scenarios live in `tests/elvira/elvira_config.yaml` and the preparation in `tests/elvira/elvira_bot/scenarios.py`. It captures the engine log per turn: lines with the prefixes in `logging.event_prefixes` become events (bonuses, chained moves, Pay the Price, extraction, Director and tools), and every warning or error, whatever its prefix, becomes a problem in the report, because a failed side call (metadata extraction, Director, revelation check, recap, chapter summary, blueprint voicing) degrades by design and the game would otherwise play on silently. A coverage tracker records which parts of the game a run touched and steers the bot towards what is missing. Each run writes a JSON session log (full narration, NPCs, verdict, streaming figures, events, and warnings per turn) and a Markdown report to `tests/elvira/runs/`, which stays local and is ignored by git: verdict first, then problems, coverage, audit, streaming, engine events, speed, and estimated cost. `tests/test_elvira_smoke.py` runs both modes against the mock provider in the normal test gate.
+**Elvira** (`tests/elvira/elvira.py`) is a headless test player that plays the real game on the model `config.yaml` names; her own player and her judge use the Brain role's model and reasoning setting too, so one model plays, narrates, and judges, and her scores compare versions of that model rather than different models. To try another model, change the clusters in `config.yaml`. Each run picks its setting (classic, starforged, or sundered_isles; delve is an expansion, not a setting of its own) and its play style at random unless the config or the command line names one, and `--matrix` plays every combination in turn. Every turn it checks state invariants (including NPC-DB and combat-track sync), leaked mechanics, NPC spatial consistency, and streaming (time to first sentence; streamed text equal to the final text), and a blind judge scores the narration on result integrity, prompt elements, NPC voice, player agency, restraint, and prose. After every save it loads the game back and compares the whole state; on game over it continues through succession. Once per run (`session.inject_ai_failure_turn`) it makes the narrator unreachable for one turn and checks that the turn is rolled back to exactly the state before it; a real AI failure is rolled back the same way, reported as a problem, and play continues. `--scenario` prepares a rare situation after character creation and reports whether the run reached what the scenario expects: `near_death` (health and spirit 0, and the player takes physical risks so the first turn is an action: game over at its crisis check, then succession and play on), `chapter_end` (one scene before the story's end: epilogue and new chapter), `momentum_burn` (momentum at its maximum: a burn offered and taken), `combat` (an open fight), and `clock` (a clock one segment from full); `--scenario all` plays them in turn. The scenarios live in `tests/elvira/elvira_config.yaml` and the preparation in `tests/elvira/elvira_bot/scenarios.py`. It captures the engine log per turn: lines with the prefixes in `logging.event_prefixes` become events (bonuses, chained moves, Pay the Price, extraction, Director and tools), and every warning or error, whatever its prefix, becomes a problem in the report, because a failed side call (metadata extraction, Director, revelation check, recap, chapter summary, blueprint voicing) degrades by design and the game would otherwise play on silently. A coverage tracker records which parts of the game a run touched and steers the bot towards what is missing. Each run writes a JSON session log (full narration, NPCs, verdict, streaming figures, events, and warnings per turn) and a Markdown report to `tests/elvira/runs/`, which stays local and is ignored by git: verdict first, then problems, coverage, audit, streaming, engine events, speed, and estimated cost. `tests/test_elvira_smoke.py` runs both modes against the mock provider in the normal test gate.
 
 - Direct mode drives the engine directly; the fastest way to test engine changes.
 - WebSocket mode (`--ws`) plays through the real server stack and also probes the status, tracks, threats, and recap messages.
@@ -441,7 +440,7 @@ Run Elvira before a release that touches the turn pipeline, AI calls, prompts, o
 
 1. Create `ai/provider_yourname.py` implementing the `ModelListingProvider` protocol (`create_message` plus `list_models`, see `provider_base.py`)
 2. Add a branch for its type in `ai/api_client.py` → `build_adapter`
-3. Add an entry under `ai.providers` in config.yaml with that `type`, and name it in `ai.model`, or in a cluster that should differ
+3. Add an entry under `ai.providers` in config.yaml with that `type`, and point clusters at it with `provider:`
 
 A service with an OpenAI-compatible endpoint needs only step 3, with `type: openai_compatible`.
 
