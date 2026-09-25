@@ -9,6 +9,15 @@ from ..logging_util import log
 from .provider_base import AICallSpec, AIResponse, extract_usage, normalize_stop_reason
 
 
+def _usage_with_cache(raw_usage: Any) -> dict[str, int] | None:
+    usage = extract_usage(raw_usage, "prompt_tokens", "completion_tokens")
+    details = getattr(raw_usage, "prompt_tokens_details", None)
+    cached = getattr(details, "cached_tokens", None)
+    if usage is not None and isinstance(cached, int):
+        usage["cache_read_tokens"] = cached
+    return usage
+
+
 class OpenAICompatibleProvider:
     def __init__(self, api_key: str, timeout_seconds: float, api_base: str | None = None):
         client_kwargs: dict[str, Any] = {"api_key": api_key, "max_retries": 0, "timeout": timeout_seconds}
@@ -44,7 +53,7 @@ class OpenAICompatibleProvider:
             content=content,
             stop_reason=normalize_stop_reason(finish_reason, ("length",), "tool_calls", "content_filter"),
             tool_calls=[],
-            usage=extract_usage(raw_usage, "prompt_tokens", "completion_tokens"),
+            usage=_usage_with_cache(raw_usage),
         )
 
     def _request(self, spec: AICallSpec) -> dict[str, Any]:
@@ -100,7 +109,7 @@ class OpenAICompatibleProvider:
 
         stop_reason = normalize_stop_reason(choice.finish_reason, ("length",), "tool_calls", "content_filter")
 
-        usage = extract_usage(getattr(response, "usage", None), "prompt_tokens", "completion_tokens")
+        usage = _usage_with_cache(getattr(response, "usage", None))
 
         return AIResponse(
             content=content,

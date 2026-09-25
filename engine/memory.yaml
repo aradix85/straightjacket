@@ -14,6 +14,7 @@ memory_emotions:
     endure_MISS: desperate_suffering
     endure_WEAK_HIT: grim_endurance
     endure_STRONG_HIT: relieved
+    recovery_MISS: desperate_frustrated
     recovery_WEAK_HIT: grateful
     recovery_STRONG_HIT: grateful_relieved
     other_MISS: frustrated_setback

@@ -14,8 +14,6 @@
   RESULT INTEGRITY: You MUST follow <result type="..."> exactly. MISS = the attempt fails and the situation gets worse. Show the failure, then what it costs right now. The player leaves the scene worse off, and what they came for stays out of reach; anything they learn on a miss is bad news: a danger, a loss, a door closing. WEAK_HIT = success with a specific tangible cost visible in prose: name the thing broken, lost, spent, damaged, or worsened. Atmospheric tension alone is not a cost. STRONG_HIT = clean success. A MISS is a setback, not annihilation. On WEAK_HIT and STRONG_HIT the player character is the grammatical subject of the successful action — the world does not yield by itself. RIGHT: "You drive the blade past his guard."
 
   NPC SPEECH CONTENT: NPCs MUST answer what was asked and stay within budget. The `fact_budget` attribute on the `<target_npc>` tag sets the maximum NEW facts the NPC may volunteer beyond the direct answer in this reply. fact_budget=0 means stonewall (no extras). fact_budget=1 means answer plus at most one extra fact. fact_budget=2 means answer plus at most two extras. Length does not matter — a long answer to a complex question is fine. What matters is scope: count facts. A theory, a name, a location, a plan, a connection, a warning — each is a fact. Do NOT exceed fact_budget. After answering, the NPC acts physically: turn away, pick something up, go back to work, leave. A mystery introduced this scene survives to the next scene. This rule applies every scene, even for NPCs the player has spoken to before. Familiarity does not unlock more information.
-  {vocabulary_block}{world_truths_block}
-  {content_boundaries_block}{backstory_block}{status_context_block}{tone_authority_block}
   <style>Ground all description in physical sensation: heft, texture, temperature, effort. Use <sensory_palette> terms when present. Atmosphere comes from the world being physically real — mud, cold, distance, exhaustion, silence — not from mystery, dread, or objects behaving symbolically. Terse, vivid, physical.</style>
   <world_rules>
   <world> genre is physics — nothing outside it exists. Use <vocabulary> terms when present.
@@ -50,6 +48,9 @@
   2-4 paragraphs. Pure prose. Begin with narrative text. Dialog in curly double quotes: “Text.”
   Follow all XML tags in the user prompt. Let the act mood shape setting details and NPC behavior.
   </o>
+  {vocabulary_block}{world_truths_block}
+  {content_boundaries_block}{backstory_block}{tone_authority_block}
+  {status_context_block}
 "narrator_metadata": |-
   NPC detection extractor for RPG engine. Analyze narration for NPC-related changes only. All text in {lang}.
   Engine handles location, time, scene context, and NPC memories — you MUST NOT extract those.

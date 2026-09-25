@@ -60,11 +60,10 @@ class TestMoveCategoriesSymmetry:
         for cat in cats:
             for res in results:
                 key = f"{cat}_{res}"
-                if key not in base and not (cat == "recovery" and res == "MISS"):
+                if key not in base:
                     missing.append(key)
         assert missing == [], (
-            f"memory_emotions.base missing keys: {missing}. "
-            "Every (category, result) combination must be present (recovery_MISS is exempted by design)."
+            f"memory_emotions.base missing keys: {missing}. Every (category, result) combination must be present."
         )
 
     def test_memory_result_text_covers_every_non_dialog_combination(self) -> None:

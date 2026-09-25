@@ -386,6 +386,16 @@ def test_openai_stream_collects_text_finish_reason_and_usage(openai_endpoint: _F
     )
 
 
+def test_openai_usage_reports_cached_prompt_tokens(openai_endpoint: _FakeEndpoint) -> None:
+    response = _openai_response("Narration", "stop", None)
+    response.usage = SimpleNamespace(
+        prompt_tokens=2000, completion_tokens=300, prompt_tokens_details=SimpleNamespace(cached_tokens=1500)
+    )
+    openai_endpoint.response = response
+    result = provider_openai.OpenAICompatibleProvider(api_key="k", timeout_seconds=30).create_message(_spec())
+    assert result.usage == {"input_tokens": 2000, "output_tokens": 300, "cache_read_tokens": 1500}
+
+
 def test_anthropic_refusal_is_reported_as_refusal(anthropic_endpoint: _FakeEndpoint) -> None:
     anthropic_endpoint.response = SimpleNamespace(
         content=[SimpleNamespace(type="text", text="")],

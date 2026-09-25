@@ -7,6 +7,26 @@ Originally forked from [EdgeTales](https://github.com/edgetales/edgetales). See 
 
 Straightjacket uses calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day. The first CalVer release is `2026.04.25.0`. Earlier `0.x.y` releases keep their original version numbers and are not renumbered. The switch was made because the project has no public API to version semantically against — the `0.x.y` numbers were running counters with no meaning, and dates carry the meaning the numbers didn't.
 
+## [2026.09.25.4] — 2026-09-25
+
+The narrator's system prompt is ordered for prompt caching, which also measured better; cached input is reported; a failed recovery move next to an NPC no longer ends the turn.
+
+Prompt caching at Fireworks, checked rather than assumed. Fireworks' documentation: caching is on by default, the cache is per replica and reuses the longest identical prefix, cached input is billed lower, and the cached share is reported in the `fireworks-cached-prompt-tokens` header. A direct probe with a captured narrator request (`glm-5p3-fast`, six calls): the body's `usage.prompt_tokens_details.cached_tokens` equals the header, also in the usage chunk of a streamed call, and identical prompts hit the cache without a session-affinity key (1847 of 1848 tokens); with `user` set, the first call landed on another replica (1437 cached) and the next hit fully. No affinity key is sent.
+
+Cached input is reported. `ai/provider_openai.py` reads `prompt_tokens_details.cached_tokens` into `cache_read_tokens`, as the Anthropic adapter already did, for plain and streamed calls, and the `[TOKENS]` log line shows it. New test in `tests/test_providers.py`. In the Elvira run below the narrator's input was 60 to 70 percent cached per turn (for example 3264 of 4838 tokens).
+
+The narrator's system prompt is ordered for the cache. The blocks fixed for a game (vocabulary, world truths, content boundaries, backstory, tone) moved from the middle of `narrator_system` to its end, and the character state, which changes from turn to turn, comes last; the text itself is unchanged. Measured on the twenty harness scenes against the baseline of 2026.09.25.3: overall 8.26 against 8.01 (GLM 8.52, GPT-6 Sol 8.00 against 7.55), player agency 3.89 against 3.65, restraint 4.52 against 4.36, result integrity on a miss 4.77 against 4.83. This run is the new `tests/modeltest/baseline_glm.json`.
+
+Measured and dropped: the same rules as a numbered list, 40 percent shorter (4710 characters against 7858), with the duplicated passages and the WRONG example lists removed and nothing added: 8.00 (GLM 8.52, Sol 7.48), player agency 3.80, restraint 4.21. Shorter did not help this narrator.
+
+A failed recovery move next to an NPC ended the turn. `engine/memory.yaml` → `memory_emotions.base` had `recovery_WEAK_HIT` and `recovery_STRONG_HIT` but no `recovery_MISS`, so `mechanics/engine_memories.py` → `derive_memory_emotion` raised a KeyError when an NPC was present, which ended an Elvira session after four turns. `tests/test_yaml_symmetry.py` exempted exactly this key "by design", although no code handles it; the key is added (`desperate_frustrated`, both words known to `emotions/importance.yaml`) and the exemption removed, so the test now catches this class of gap.
+
+Elvira, eight turns in Classic as dialogist, everything on GLM 5.3 Fast: four misses, a correction, six NPCs introduced, a clock fired, six streamed turns identical to the final text, the injected narrator outage rolled back cleanly; one known finding, an identity reveal rejected for zero word overlap. The session before it, which found the recovery bug, ended after four turns. The two measurements, the probe, and the two Elvira runs cost about $3.
+
+ARCHITECTURE.md describes the prompt order, the cache reporting, and why no affinity key is sent. Roadmap priority 3 records this round and what remains, including that the harness measures only the narrator, so the other roles' prompts need a measurement before they are tuned.
+
+Quality gate: 1506 tests green, twenty-nine project-rule scans clean, coverage 90.12%, ruff check and ruff format clean on 210 files, mypy --strict clean on 109 source files. Save format unchanged.
+
 ## [2026.09.25.3] — 2026-09-25
 
 The narrator's miss rule describes what happens instead of listing what to avoid, measured with a judge from another family; the Brain always names a new track; a correction to a dialog turn no longer fails.

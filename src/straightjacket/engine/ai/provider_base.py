@@ -135,7 +135,9 @@ def _log_usage(spec: AICallSpec, result: AIResponse) -> None:
     if result.usage:
         inp = result.usage["input_tokens"]
         out = result.usage["output_tokens"]
-        log(f"[TOKENS] {spec.log_role}: {inp} in + {out} out = {inp + out} total")
+        cached = result.usage.get("cache_read_tokens")
+        cached_note = f", {cached} cached" if cached is not None else ""
+        log(f"[TOKENS] {spec.log_role}: {inp} in + {out} out = {inp + out} total{cached_note}")
         log_tokens(spec.log_role, inp, out)
     else:
         log(f"[TOKENS] {spec.log_role}: usage not returned by provider", level="warning")
