@@ -7,6 +7,26 @@ Originally forked from [EdgeTales](https://github.com/edgetales/edgetales). See 
 
 Straightjacket uses calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day. The first CalVer release is `2026.04.25.0`. Earlier `0.x.y` releases keep their original version numbers and are not renumbered. The switch was made because the project has no public API to version semantically against — the `0.x.y` numbers were running counters with no meaning, and dates carry the meaning the numbers didn't.
 
+## [2026.09.25.2] — 2026-09-25
+
+Fix: the outright errors in the prompt files, found by a full read of every prompt, checked against the code, the Datasworn texts, and the git history. Style and the rules behind the known narration weaknesses are left for the measured round of roadmap priority 3.
+
+The correction analyser's role was cut off. `prompts/brain.yaml` → `correction_brain` opened with "RPG correction analyser. Player used" and never closed its `<role>` tag. The comment sweep of 2026.04.26.2 (commit `5e4cebd`) read the "##" in "Player used ## to correct last scene.</role>" as the start of a yaml comment and removed the rest of the line. A diff of that commit over every yaml file shows this line as the only text it cut mid-line. The role is whole again, worded without a hash.
+
+The narrator was shown an escape sequence as its example. `prompts/narrator.yaml` asked for curly quotes with the literal text `\u201cText.\u201d`, which reached the model as a backslash and four hex digits (checked through the prompt loader). Models writing such escapes needed decoders in 2026.04.27.4 and 2026.09.24.58; the prompt now shows real curly quotes.
+
+The Brain's stat guide misrouted stealth. `brain_parser` said edge=speed/stealth and shadow=cunning, where the Face Danger texts of classic Ironsworn and Starforged both give deception, stealth, or trickery to shadow. The guide now uses the words of both rulebooks for all five stats.
+
+Smaller errors. The Brain was told to answer "after any tool calls", though it has had no tools since 0.46.50, and `type`, `approach`, and `dialog_only` were named but never explained; they are now. The Director was asked for `tone` in English and, two lines later, for no English in any field; `tone` is now in the game's language, which is safe because the engine only shows it back to the Director as the previous tone, and the language rule names `tone_key` as its one exception. The narrator's hard constraints still said violations and a missing consequence "require a rewrite", a retry loop removed in 2026.04.27.8. The opening-setup extractor still asked for `bond` and `bond_max`, gone from its schema since 0.46.0. The epilogue and chapter-opening tasks still ruled out "metadata blocks, game_data, memory_updates", output formats of the EdgeTales era. The chapter opening told the narrator to "create one new threat clock"; the opening-setup extraction does turn a threat in that narration into a clock (`game/setup_common.py` → `apply_world_setup`), so the line stays in function but now asks for a building threat, which is what prose can do.
+
+Considered and left: the Brain prompt routes player questions to `ask_the_oracle`, while ARCHITECTURE.md says the player types actions, never questions; that is a design question for step 9, not an error.
+
+Harness: the twenty scenes were captured again, since the narrator prompt changed; the capture stops at the narrator call and makes no API call, and every scene kept its seed and result. `tests/modeltest/baseline_glm.json` was narrated with the earlier prompt; renewing it is left to the start of the measured round, where the baseline is to be judged again anyway (roadmap priority 3).
+
+Elvira, eight turns in Sundered Isles as explorer, everything on GLM 5.3 Fast: the correction turn ran through the repaired analyser; six streamed turns, all identical to the final text; the injected narrator outage rolled back cleanly; overall 8.0 out of 10 over six audited turns, player agency the lowest at 3.7. Two warnings, one known finding: the Brain left a new combat track's name and rank empty, which the engine filled in; it is on the roadmap's list. About $0.28 at list price.
+
+Quality gate: 1503 tests green, twenty-nine project-rule scans clean, coverage 90.15%, ruff check and ruff format clean on 210 files, mypy --strict clean on 109 source files. Save format unchanged.
+
 ## [2026.09.25.1] — 2026-09-25
 
 Fix: player and save names that Windows cannot store are refused with a clear message, and README and ARCHITECTURE say plainly what the AI still decides.

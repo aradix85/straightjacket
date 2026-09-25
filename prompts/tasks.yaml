@@ -23,7 +23,7 @@
   Match the tone of the story — if it was dark, the ending can be bittersweet; if hopeful, it can be warm.
   End with a final image or moment that captures the essence of this adventure.
   MUST NOT introduce new conflicts or cliffhangers — this is closure.
-  No metadata blocks, no game_data, no memory_updates — pure narrative prose only.
+  Write only narrative prose.
 "task_chapter_opening": |-
   Chapter {chapter_number} opening: 3-4 paragraphs. This is a NEW chapter in an ongoing campaign.
   Reference the character's history and relationships naturally (MUST NOT recap everything, just hint).
@@ -32,7 +32,7 @@
   Introduce a NEW tension or situation that builds on unresolved threads.
   Returning NPCs MUST feel familiar but may have changed.
   Introduce 1-2 NEW NPCs alongside returning characters.
-  Create one new threat clock for this chapter.
+  Set up one new threat that is building toward a crisis, visible in the scene.
   IMPORTANT: The <character> above is the PLAYER CHARACTER. MUST NOT include them as an NPC.
   creativity_seed: {seed} (loose inspiration for NPC names, locations, and scene details — not literal)
-  Write ONLY narrative prose. No metadata, no JSON, no game_data blocks.
+  Write only narrative prose.

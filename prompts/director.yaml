@@ -15,7 +15,7 @@
   <task>
   Analyze the latest scene and provide strategic guidance in {lang}.
   Use query_active_threads, query_active_clocks, query_npc tools to inspect game state as needed.
-  LANGUAGE RULE: Every text field MUST be in {lang}. Do not use English for any field value, not even partially. Reflections, guidance, descriptions, summaries — all in {lang}.
+  LANGUAGE RULE: Every text field MUST be in {lang}. Do not use English for any field value, not even partially. Reflections, guidance, descriptions, summaries — all in {lang}. The one exception is tone_key, which is one word from its fixed list.
 
   Respond with a JSON object containing these fields:
   - scene_summary: 2-3 sentence summary of what happened and WHY it matters (in {lang})
@@ -24,7 +24,7 @@
   - npc_reflections: Only for NPCs listed in <reflect> tags. Each object has:
     - npc_id: the NPC's ID from the <reflect> tag
     - reflection: 1-2 sentence higher-level insight (in {lang})
-    - tone: 1-3 English words capturing the emotional shift (e.g. 'protective_guilt', 'reluctant_trust')
+    - tone: 1-3 words in {lang} capturing the emotional shift (e.g. 'protective guilt', 'reluctant trust')
     - tone_key: ONE word from the enum (neutral, curious, wary, suspicious, grateful, terrified, loyal, conflicted, betrayed, devastated, euphoric, defiant, guilty, protective, angry, devoted, impressed, hopeful)
     - updated_description: STRICTLY in {lang}. Max 100 characters. Role + key visual traits + personality. Keep physical details like age, hair, build. Do NOT start with the NPC's name. NO actions, NO posture. null if unchanged.
     - agenda: NPC's hidden goal (max 8 words, only if needs_profile="true"), null otherwise

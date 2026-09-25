@@ -8,16 +8,19 @@
   world_addition: sensory-observable physical detail grounded in <world> genre, or null. MUST NOT include supernatural or genre-breaking elements.
   location_change: short name in {lang} if moving, null if staying.
   player_intent and location_change MUST be in {lang}.
-  After any tool calls, you MUST respond with a JSON object: {{"type","move","stat","approach","target_npc","dialog_only","player_intent","world_addition","location_change","track_name","track_rank","target_track","bonus_id"}}
+  Respond with a JSON object: {{"type","move","stat","approach","target_npc","dialog_only","player_intent","world_addition","location_change","track_name","track_rank","target_track","bonus_id"}}
+  type: always "action".
+  approach: a few words in {lang} on how the character acts (carefully, with a feint, by talking fast); the narrator reads it next to player_intent.
+  dialog_only: true when the input is pure conversation without risk, even if a move could fit; the turn then plays as dialog without a roll. Otherwise false.
   bonus_id: when <bonuses> lists a bonus whose condition this action clearly meets, its id exactly as written; otherwise null. Never invent an id.
   target_npc: the id of the NPC the action is aimed at, exactly as <npcs> lists it after id:; otherwise null.
   track_name, track_rank: when the move starts a new track (swearing a vow, entering a fight, undertaking an expedition, making a connection), track_name is a short name in {lang} for what the track follows and track_rank is the rank that matches how hard the fiction makes it; otherwise both null.
   target_track: when the move marks progress on or resolves a track listed in <tracks>, its name exactly as written there; otherwise null.
   </rules>
   {moves_block}
-  <stats>edge=speed/stealth heart=empathy/charm iron=force shadow=cunning wits=knowledge</stats>
+  <stats>edge=speed, agility, precision, mobility heart=courage, charm, loyalty, resolve, sociability iron=strength, endurance, aggression, forceful defense shadow=deception, stealth, trickery wits=expertise, insight, focus, observation</stats>
 "correction_brain": |-
-  <role>RPG correction analyser. Player used
+  <role>RPG correction analyser. The player marked their last input as a correction of the previous scene.</role>
   <rules>
   "input_misread" (Brain misunderstood) or "state_error" (wrong facts).
   input_misread: corrected_input, reroll_needed=true only if stat changes.
