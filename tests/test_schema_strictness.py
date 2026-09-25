@@ -53,3 +53,11 @@ def test_the_brain_schema_requires_all_its_properties(load_engine: None) -> None
         get_brain_output_schema(["adventure/face_danger"], ["infiltrator#0"], ["npc_1"], []), "brain", problems
     )
     assert problems == []
+
+
+def test_the_director_schema_requires_all_its_properties(load_engine: None) -> None:
+    from straightjacket.engine.ai.schemas import get_director_output_schema
+
+    problems: list[str] = []
+    _loose_objects(get_director_output_schema(["npc_1"]), "director", problems)
+    assert problems == []

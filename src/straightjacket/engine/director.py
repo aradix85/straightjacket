@@ -220,7 +220,7 @@ def call_director(
             model=_director_model,
             system=system,
             messages=[{"role": "user", "content": phase2_prompt}],
-            json_schema=get_director_output_schema(),
+            json_schema=get_director_output_schema([npc.id for npc in game.npcs if _reflection_eligible(npc)]),
             log_role="director",
             **_dp,
         )

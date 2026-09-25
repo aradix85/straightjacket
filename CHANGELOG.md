@@ -7,6 +7,20 @@ Originally forked from [EdgeTales](https://github.com/edgetales/edgetales). See 
 
 Straightjacket uses calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day. The first CalVer release is `2026.04.25.0`. Earlier `0.x.y` releases keep their original version numbers and are not renumbered. The switch was made because the project has no public API to version semantically against — the `0.x.y` numbers were running counters with no meaning, and dates carry the meaning the numbers didn't.
 
+## [2026.09.24.59] — 2026-09-25
+
+The Director may reflect only on the NPCs chosen for reflection, and the day's remaining provider findings.
+
+Director reflections. In the one-model sessions GLM 5.3 Fast's Director six times wrote a reflection for an NPC the engine had not chosen, which `director.py` → `_process_npc_reflection` rejected ("not selected for reflection"); GPT-6 Luna did so never. Tool use itself was clean for both: Luna 74 tool calls in 18 Director analyses and GLM 84 in 30, with no failed call, no invented argument, and no analysis reaching the round limit. As with the Brain in 2026.09.24.58, the choice now lives in the schema: `ai/schemas.py` → `get_director_output_schema` is built per call and takes the ids of the NPCs chosen for reflection, which `director.py` passes from `_reflection_eligible`, the same test that decides which `<reflect>` blocks the prompt shows; an empty list allows only null. The per-item check after parsing stays, for providers that do not enforce the schema. `npc_guidance` keeps a free id, since the Director may look up NPCs through its tools that the prompt does not list. New tests: the Director is offered exactly the NPC chosen for reflection and not another present NPC; with none chosen a reflection can name no one; the per-call schema passes the strictness check for OpenAI.
+
+Checked live, three Elvira sessions of eight turns with the whole game on GLM 5.3 Fast in Classic, Starforged, and Sundered Isles: no rejected reflection in thirteen Director analyses (against six in six sessions before), no unknown bonus, no AI failure. The remaining findings were known ones: the Brain twice left a new track's name and rank empty, and Elvira's spatial check flagged NPCs in a place that is re-described with many details.
+
+GLM 5.3 and thinking. Z.ai's documentation says GLM-5.3 and GLM-5.3-Flash always think; its own API answers a request to disable thinking with an error and points to low, high, or max, of which max is the default. Reports that it can be switched off concern older GLM versions (5.2 honours it, which is why GLM 5.2 Fast answered in half a second) or the template switch `enable_thinking: false`, which with GLM 5.3 leaks the reasoning into the answer or injects stray tokens, as Nebius showed. Reasoning effort low, which Straightjacket's contestants use, is the recommended setting and on Fireworks cost 20 to 45 reasoning tokens.
+
+Gemini 3.8 Flash through Google's own API, with the user's new key (`GEMINI_API_KEY`, Google's OpenAI-compatible endpoint): not faster than through OpenRouter. Direct, with reasoning none (which Google accepts for this model) or low, the first text came after 1.2 to 2.6 seconds and the whole narration after 3.2 to 5.1; through OpenRouter at minimal after 0.9 to 1.0 and 3.2 to 3.7, except one narration that stalled mid-stream for 23.5 seconds. Google rejects `minimal` for 3.8 Flash. The price per token is the same, and direct access adds the free tier and context caching, so Google direct is the better route if Gemini is ever chosen. The user now leans to GLM 5.3 Fast through Fireworks for every role, with Gemini 3.8 Flash as the alternative.
+
+Quality gate: 1466 tests green, twenty-nine project-rule scans clean, coverage 90.10%, ruff check and ruff format clean, mypy --strict clean on 109 source files. Save format unchanged.
+
 ## [2026.09.24.58] — 2026-09-25
 
 Whole sessions on one model, and two engine fixes they led to.

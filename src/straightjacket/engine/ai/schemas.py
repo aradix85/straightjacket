@@ -66,7 +66,6 @@ def _obj_root(props: dict[str, Any], title: str) -> dict[str, Any]:
 
 
 _correction_cache: dict[str, Any] | None = None
-_director_cache: dict[str, Any] | None = None
 _blueprint_voicing_cache: dict[str, Any] | None = None
 
 
@@ -106,43 +105,40 @@ def get_brain_output_schema(
     )
 
 
-def get_director_output_schema() -> dict[str, Any]:
-    global _director_cache
-    if _director_cache is None:
-        _e = eng()
-        _director_cache = _obj_root(
-            {
-                "scene_summary": _str(),
-                "narrator_guidance": _str(),
-                "npc_guidance": _arr(
-                    _obj(
-                        {
-                            "npc_id": _str(),
-                            "guidance": _str(),
-                        }
-                    )
-                ),
-                "npc_reflections": _arr(
-                    _obj(
-                        {
-                            "npc_id": _str(),
-                            "reflection": _str(),
-                            "tone": _str(),
-                            "tone_key": _str_enum(list(_e.enums.tone_keys)),
-                            "updated_description": _nullable_str(),
-                            "about_npc": _nullable_str(),
-                            "agenda": _nullable_str(),
-                            "instinct": _nullable_str(),
-                            "updated_agenda": _nullable_str(),
-                            "updated_arc": _nullable_str(),
-                        }
-                    )
-                ),
-                "arc_notes": _str(),
-            },
-            _e.ai_text.schema_titles["director_output"],
-        )
-    return _director_cache
+def get_director_output_schema(reflection_ids: list[str]) -> dict[str, Any]:
+    _e = eng()
+    return _obj_root(
+        {
+            "scene_summary": _str(),
+            "narrator_guidance": _str(),
+            "npc_guidance": _arr(
+                _obj(
+                    {
+                        "npc_id": _str(),
+                        "guidance": _str(),
+                    }
+                )
+            ),
+            "npc_reflections": _arr(
+                _obj(
+                    {
+                        "npc_id": _nullable_enum(reflection_ids),
+                        "reflection": _str(),
+                        "tone": _str(),
+                        "tone_key": _str_enum(list(_e.enums.tone_keys)),
+                        "updated_description": _nullable_str(),
+                        "about_npc": _nullable_str(),
+                        "agenda": _nullable_str(),
+                        "instinct": _nullable_str(),
+                        "updated_agenda": _nullable_str(),
+                        "updated_arc": _nullable_str(),
+                    }
+                )
+            ),
+            "arc_notes": _str(),
+        },
+        _e.ai_text.schema_titles["director_output"],
+    )
 
 
 def get_blueprint_voicing_schema() -> dict[str, Any]:
