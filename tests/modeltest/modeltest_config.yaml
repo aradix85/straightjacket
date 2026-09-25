@@ -28,6 +28,9 @@ judges:
     reasoning_effort: low
 contestants: {}
 prices:
+  accounts/fireworks/models/glm-5p3:
+  - 1.4
+  - 4.4
   accounts/fireworks/routers/glm-5p3-fast:
   - 2.1
   - 6.6

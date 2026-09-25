@@ -40,6 +40,7 @@ judge:
     reasoning_effort: "low"
 
 prices:
+  accounts/fireworks/models/glm-5p3: [1.40, 4.40]
   accounts/fireworks/routers/glm-5p3-fast: [2.10, 6.60]
 
 logging:

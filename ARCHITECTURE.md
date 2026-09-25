@@ -135,7 +135,7 @@ judgment         revelation_check                            GLM 5.3 Fast, low, 
 extraction       narrator_metadata, opening_setup            GLM 5.3 Fast, low, 0.3
 ```
 
-GLM 5.3 Fast runs through Fireworks (`accounts/fireworks/routers/glm-5p3-fast`) at reasoning effort low; GLM 5.3 always thinks, and low is its lowest setting. The measurements behind the choice are in CHANGELOG 2026.09.24.56 to .60.
+GLM 5.3 Fast runs through Fireworks (`accounts/fireworks/routers/glm-5p3-fast`) at reasoning effort low; GLM 5.3 always thinks, and low is its lowest setting. The measurements behind the choice are in CHANGELOG 2026.09.24.56 to .60. The standard tier (`accounts/fireworks/models/glm-5p3`, a third cheaper, about three times slower) was measured for the narrator, creative, judgment, and extraction clusters in 2026.09.25.5: its narration scored within the noise of Fast on the harness, but in play the first sentence came after 7.8 seconds instead of about 3 and a turn took 29 seconds instead of about 10, for about 7 percent lower cost, because the Director, which stays on Fast, is half of a session's cost. It is not used.
 
 Config structure in `config.yaml`:
 

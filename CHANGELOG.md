@@ -7,6 +7,20 @@ Originally forked from [EdgeTales](https://github.com/edgetales/edgetales). See 
 
 Straightjacket uses calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day. The first CalVer release is `2026.04.25.0`. Earlier `0.x.y` releases keep their original version numbers and are not renumbered. The switch was made because the project has no public API to version semantically against — the `0.x.y` numbers were running counters with no meaning, and dates carry the meaning the numbers didn't.
 
+## [2026.09.25.5] — 2026-09-25
+
+Measured, not adopted: Fireworks' standard tier of GLM 5.3 for the roles the player does not wait on. Every role stays on GLM 5.3 Fast.
+
+The question was whether the standard tier (`accounts/fireworks/models/glm-5p3`, $1.40, $0.26 cached, and $4.40 per million tokens against $2.10, $0.39, and $6.60 for Fast) could narrate as well, since sentence-level streaming hides a slower narrator once its first sentence is out. Fireworks serves both from the same weights, with a per-model mix of precisions and, for Fast, lower precision where its own evals allow plus speculative decoding.
+
+Narration quality, twenty harness scenes, two runs per tier with the same prompt and both judges: Fast 8.26 and 8.22, standard 7.97 and 8.16. The two standard runs differ by almost as much as the tiers do on average (8.07 against 8.24), and result integrity on a miss was equal; the narration itself is within the noise. The repeated Fast run also confirms the gain of 2026.09.25.4 over 2026.09.25.3.
+
+In play it was not. An eight-turn Elvira session in Sundered Isles with the narrator, creative, judgment, and extraction clusters on the standard tier and the Brain and Director on Fast played without problems (five misses honestly narrated, two NPCs extracted, the injected outage rolled back), but the first sentence came after a median 7.8 seconds against about 3 on Fast, and a turn took a median 29.4 seconds against about 10, for a session cost of about $0.26 against $0.28 at list price: about 7 percent. The Director, which the next turn waits for and which therefore stays on Fast, is half of a session's cost (22 calls, 34 tool rounds, $0.136). The configuration went back to Fast before this release; the harness cannot show such delays, since it measures single narrations without the Brain, extraction, and Director around them.
+
+Recorded: ARCHITECTURE.md → AI Model Assignment names the measured standard tier and why it is not used; roadmap priority 3 names the Director as the largest cost and the candidates to lower it, fewer tool rounds or prompt injection instead of its queries, once the Director can be measured, and records that running it less often is not planned. The harness and Elvira price tables list the standard tier. Measurements cost about $3.
+
+Quality gate: 1506 tests green, twenty-nine project-rule scans clean, coverage 90.08%, ruff check and ruff format clean on 210 files, mypy --strict clean on 109 source files. Save format unchanged; `config.yaml` unchanged.
+
 ## [2026.09.25.4] — 2026-09-25
 
 The narrator's system prompt is ordered for prompt caching, which also measured better; cached input is reported; a failed recovery move next to an NPC no longer ends the turn.
