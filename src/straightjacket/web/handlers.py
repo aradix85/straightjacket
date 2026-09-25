@@ -28,7 +28,7 @@ from ..engine.logging_util import log
 from ..engine.mechanics.legacy import advance_asset
 from ..engine.models import GameState, TurnSnapshot
 from ..engine.persistence import IncompatibleSaveError, delete_save, list_saves_with_info, load_game, save_game
-from ..engine.user_management import create_user, delete_user, list_users
+from ..engine.user_management import InvalidNameError, create_user, delete_user, list_users
 from ..i18n import t
 from .serializers import (
     build_creation_options,
@@ -85,7 +85,12 @@ async def handle_create_player(session: Session, ws: WebSocket, msg: dict[str, A
     name = await _require_str(ws, msg, "name", "error.empty_player_name")
     if name is None:
         return
-    create_user(name)
+    try:
+        create_user(name)
+    except InvalidNameError as e:
+        log(f"[User] {e}", level="warning")
+        await _send(ws, {"type": "error", "text": t("error.invalid_name")})
+        return
     await handle_select_player(session, ws, {"name": name})
 
 
@@ -414,8 +419,13 @@ async def handle_save(session: Session, ws: WebSocket, msg: dict[str, Any]) -> N
     name = raw.strip() if isinstance(raw, str) else ""
     if not name:
         name = session.save_name
+    try:
+        save_game(session.game, session.player, session.chat_messages, name)
+    except InvalidNameError as e:
+        log(f"[Save] {e}", level="warning")
+        await _send(ws, {"type": "error", "text": t("error.invalid_name")})
+        return
     session.save_name = name
-    save_game(session.game, session.player, session.chat_messages, name)
     await _send(ws, {"type": "status", "text": t("actions.saved")})
 
 

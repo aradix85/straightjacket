@@ -7,6 +7,18 @@ Originally forked from [EdgeTales](https://github.com/edgetales/edgetales). See 
 
 Straightjacket uses calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day. The first CalVer release is `2026.04.25.0`. Earlier `0.x.y` releases keep their original version numbers and are not renumbered. The switch was made because the project has no public API to version semantically against — the `0.x.y` numbers were running counters with no meaning, and dates carry the meaning the numbers didn't.
 
+## [2026.09.25.1] — 2026-09-25
+
+Fix: player and save names that Windows cannot store are refused with a clear message, and README and ARCHITECTURE say plainly what the AI still decides.
+
+Names. `user_management.py` → `_safe_name` stripped path separators, `..`, and null bytes but let through names that break on Windows, checked live in a temporary folder: `D:` resolved to a path outside the users directory, `NUL` created a device instead of a folder so the save that followed failed, `naam.` and `naam` became the same folder because Windows drops a trailing dot, and a colon or question mark made the folder impossible to create. The function now raises the new `InvalidNameError` (a `ValueError`) for a drive colon or any of the characters Windows forbids in a file name, a control character, a reserved device name with or without an extension, and a trailing dot. `web/handlers.py` catches exactly that error when a player is created and when the game is saved under a new name, and tells the player that the name cannot be used (`error.invalid_name` in `strings/error.yaml`). Saving under a new name used to set the session's save name before saving, so a name that failed stayed in place and every autosave after it failed as well; the save name now changes only once the save succeeds. New tests in `tests/test_user_management.py` (ordinary names pass, forbidden characters, device names, and a trailing dot raise, separators are still stripped) and two handler tests (an invalid player name creates nothing and is reported; an invalid save name is reported and leaves the save name as it was).
+
+Documentation. README said the engine validates the narrator, which it has not done since the validator went in 2026.04.27.8, and that the engine classifies the action, which the Brain does. It now says that an AI classifier picks the move and stat from the moves the engine allows, that the engine rolls and applies every consequence, and that until step 9 the narrator still supplies facts the engine has not settled. ARCHITECTURE.md gains the Key Design Decision "What the AI still decides": the Brain's bounded choices, the narrator's unsettled facts, the metadata extraction that turns narrated NPCs into state, and the Director's NPC profiles, with which of them step 9 shrinks and which belong to the design. SECURITY.md describes the new name checks.
+
+No Elvira run: no turn pipeline, AI call, prompt, or engine configuration changed.
+
+Quality gate: 1503 tests green, twenty-nine project-rule scans clean, coverage 90.09%, ruff check and ruff format clean on 210 files, mypy --strict clean on 109 source files. Save format unchanged; an existing player or save whose name is now refused would no longer load, and none of the current ones is.
+
 ## [2026.09.25.0] — 2026-09-25
 
 The setting-yaml loader refuses unknown keys, the coverage floor follows coverage, and the working documents are brought in line with the code, after a full read of the md files and the design document.

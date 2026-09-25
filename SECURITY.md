@@ -8,7 +8,7 @@ API keys are never logged, never included in save files, and never sent over the
 
 ## Input sanitization
 
-Player names and save names are sanitized before use as filesystem paths. Path separators (`/`, `\`), parent references (`..`), and null bytes are stripped. This prevents path traversal attacks where a crafted name could read or write files outside the intended directory.
+Player names and save names are sanitized before use as filesystem paths. Path separators (`/`, `\`), parent references (`..`), and null bytes are stripped. This prevents path traversal attacks where a crafted name could read or write files outside the intended directory. Names that Windows cannot store safely are refused with `InvalidNameError` rather than altered: names holding a drive colon or any of `< > : " | ? *` or a control character (a name such as `D:` would otherwise point outside the users directory), reserved device names such as `CON`, `NUL`, `COM1`, or `LPT1` (with or without an extension), and names ending in a dot, which Windows would silently drop so that two names shared one folder. The player hears that the name cannot be used, and a rejected save name leaves the current save name in place.
 
 The sanitization is in `user_management.py._safe_name()` and is applied in all persistence functions (save, load, delete) and user management functions (create, delete).
 

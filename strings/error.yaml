@@ -1,5 +1,6 @@
 error.empty_player_name: Player name cannot be empty.
 error.no_player_name: No player name provided.
+error.invalid_name: That name cannot be used as a file name. Try a name with only letters, numbers, and spaces.
 error.no_active_game: No active game.
 error.rate_limited: Rate limited. Please slow down.
 error.unknown_msg_type: "Unknown message type: {msg_type}"

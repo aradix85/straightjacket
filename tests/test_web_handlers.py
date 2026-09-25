@@ -217,6 +217,35 @@ def test_handle_save_no_player_silent(load_engine: None, session: Session, fake_
     assert fake_ws.sent == []
 
 
+def test_handle_create_player_invalid_name_is_reported_and_creates_nothing(
+    load_engine: None, session: Session, fake_ws: _FakeWS, monkeypatch, tmp_path
+) -> None:
+    from straightjacket.i18n import t
+    from straightjacket.web.handlers import handle_create_player
+
+    monkeypatch.setattr("straightjacket.engine.user_management.USERS_DIR", tmp_path)
+    monkeypatch.setattr("straightjacket.engine.config_loader.USERS_DIR", tmp_path)
+    _run(handle_create_player(session, fake_ws, {"name": "D:"}))
+    assert fake_ws.sent == [{"type": "error", "text": t("error.invalid_name")}]
+    assert list(tmp_path.iterdir()) == []
+
+
+def test_handle_save_invalid_name_keeps_the_previous_save_name(
+    load_engine: None, session: Session, fake_ws: _FakeWS, monkeypatch, tmp_path
+) -> None:
+    from straightjacket.i18n import t
+    from straightjacket.web.handlers import handle_save
+
+    monkeypatch.setattr("straightjacket.engine.user_management.USERS_DIR", tmp_path)
+    monkeypatch.setattr("straightjacket.engine.config_loader.USERS_DIR", tmp_path)
+    session.game = make_game_state(player_name="X", setting_id="starforged")
+    session.player = "Alice"
+    session.save_name = "autosave"
+    _run(handle_save(session, fake_ws, {"name": "NUL"}))
+    assert fake_ws.sent == [{"type": "error", "text": t("error.invalid_name")}]
+    assert session.save_name == "autosave"
+
+
 def test_handle_load_no_player_silent(load_engine: None, session: Session, fake_ws: _FakeWS) -> None:
     from straightjacket.web.handlers import handle_load
 
