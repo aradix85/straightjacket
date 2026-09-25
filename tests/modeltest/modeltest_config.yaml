@@ -5,7 +5,7 @@ narration_max_tokens: 6000
 judge_max_tokens: 3000
 seed_limit: 400
 narration_lang: "English"
-baseline: "baseline_gpt-6-luna.json"
+baseline: "baseline_luna_gemini_sol.json"
 
 providers:
   fireworks:
@@ -25,10 +25,6 @@ judges:
   model: "gpt-6-sol"
   extra_body:
     reasoning_effort: "low"
-- label: "Claude Sonnet 5"
-  provider: "anthropic"
-  model: "claude-sonnet-5"
-  extra_body: {}
 
 contestants:
   gpt-6-luna:
@@ -95,8 +91,9 @@ contestants:
     model: "google/gemini-3.8-flash"
     extra_body:
       reasoning:
-        effort: "low"
+        effort: "minimal"
       provider:
+        sort: "latency"
         data_collection: "deny"
 
   muse-spark-1.3-standard:
@@ -138,6 +135,53 @@ contestants:
     extra_body:
       reasoning_effort: "none"
 
+  gpt-6-sol:
+    label: "GPT-6 Sol"
+    provider: "openai"
+    model: "gpt-6-sol"
+    extra_body:
+      reasoning_effort: "none"
+  kimi-k3-fast:
+    label: "Kimi K3 Fast (Fireworks)"
+    provider: "fireworks"
+    model: "accounts/fireworks/routers/kimi-k3-fast"
+    extra_body:
+      reasoning_effort: "none"
+  glm-5.3-fast:
+    label: "GLM 5.3 Fast (Fireworks)"
+    provider: "fireworks"
+    model: "accounts/fireworks/routers/glm-5p3-fast"
+    extra_body:
+      reasoning_effort: "low"
+  glm-5.3-prime:
+    label: "GLM 5.3 Prime"
+    provider: "openrouter"
+    model: "z-ai/glm-5.3-prime"
+    extra_body:
+      reasoning:
+        effort: "minimal"
+      provider:
+        sort: "latency"
+        data_collection: "deny"
+  glm-5.3-flash-fw:
+    label: "GLM 5.3 Flash (Fireworks)"
+    provider: "fireworks"
+    model: "accounts/fireworks/models/glm-5p3-flash"
+    extra_body:
+      reasoning_effort: "low"
+  ember-1:
+    label: "Ember-1 (Fireworks)"
+    provider: "fireworks"
+    model: "accounts/fireworks/models/ember-1"
+    extra_body:
+      reasoning_effort: "none"
+  glm-5.2-fast:
+    label: "GLM 5.2 Fast (Fireworks)"
+    provider: "fireworks"
+    model: "accounts/fireworks/routers/glm-5p2-fast"
+    extra_body:
+      reasoning_effort: "none"
+
 prices:
   gpt-6-luna: [0.10, 0.50]
   gpt-6-sol: [2.00, 10.00]
@@ -153,3 +197,9 @@ prices:
   accounts/fireworks/models/glm-5p3: [1.40, 4.40]
   accounts/fireworks/models/kimi-k3: [3.00, 15.00]
   accounts/fireworks/models/kimi-k2p6: [0.95, 4.00]
+  accounts/fireworks/routers/kimi-k3-fast: [4.50, 22.50]
+  accounts/fireworks/routers/glm-5p3-fast: [2.10, 6.60]
+  z-ai/glm-5.3-prime: [2.80, 8.80]
+  accounts/fireworks/models/glm-5p3-flash: [0.15, 0.50]
+  accounts/fireworks/models/ember-1: [3.00, 15.00]
+  accounts/fireworks/routers/glm-5p2-fast: [2.10, 6.60]

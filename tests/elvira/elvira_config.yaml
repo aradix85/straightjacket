@@ -39,10 +39,11 @@ bot_behavior:
 
 judge:
   enabled: true
-  provider: "anthropic"
-  model: "claude-sonnet-5"
+  provider: "openai"
+  model: "gpt-6-sol"
   max_tokens: 3000
-  extra_body: {}
+  extra_body:
+    reasoning_effort: "low"
 
 prices:
   claude-opus-5-5: [4.00, 20.00]
