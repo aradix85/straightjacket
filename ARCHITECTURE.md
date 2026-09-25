@@ -456,7 +456,7 @@ Settings are data packages that combine a Datasworn JSON file (game content: mov
 
 ### Settings YAML format
 
-Parsed strictly at load. Required top-level keys: `id`, `title`, `datasworn_id`, `description`, `oracle_paths`, `vocabulary`. Optional: `parent`, `creation_flow`. Missing required keys raise `KeyError`.
+Parsed strictly at load. Required top-level keys: `id`, `title`, `datasworn_id`, `description`, `oracle_paths`, `vocabulary`. Optional: `parent`, `creation_flow`. Missing required keys raise `KeyError`, and so does a key the loader does not know, at the top level or inside `oracle_paths`, `vocabulary`, or `creation_flow`.
 
 ```yaml
 id: your_setting                    # yaml stem

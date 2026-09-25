@@ -101,6 +101,36 @@ def test_setting_creation_flow(setting: str, expected_flags: dict) -> None:
         assert getattr(flow, flag) is expected
 
 
+def _minimal_setting_yaml() -> dict:
+    return {
+        "id": "probe",
+        "title": "Probe",
+        "datasworn_id": "probe",
+        "description": "Probe setting.",
+        "oracle_paths": {"threats": "a/b"},
+        "vocabulary": {"substitutions": {}, "sensory_palette": ""},
+        "creation_flow": {"has_truths": False},
+    }
+
+
+def test_setting_yaml_with_known_keys_parses() -> None:
+    from straightjacket.engine.datasworn.settings import _parse_setting_config
+
+    config = _parse_setting_config(_minimal_setting_yaml(), "probe.yaml")
+    assert config.oracle_paths.threats == "a/b"
+
+
+@pytest.mark.parametrize("section", [None, "oracle_paths", "vocabulary", "creation_flow"])
+def test_setting_yaml_unknown_key_raises(section: str | None) -> None:
+    from straightjacket.engine.datasworn.settings import _parse_setting_config
+
+    data = _minimal_setting_yaml()
+    target = data if section is None else data[section]
+    target["factions"] = "factions"
+    with pytest.raises(KeyError, match=r"Unknown key\(s\) \['factions'\]"):
+        _parse_setting_config(data, "probe.yaml")
+
+
 def test_build_creation_options_has_stat_constraints(load_engine: None) -> None:
     from straightjacket.web.serializers import build_creation_options
 

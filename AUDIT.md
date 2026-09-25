@@ -18,7 +18,7 @@ The unit "one chat" in this document means one such conversation, not one user m
 
 Every audit chat must follow this order before producing any output:
 
-1. Clone the repo if not already cloned.
+1. Work in the local clone, or clone the repo if there is none.
 2. Read `ARCHITECTURE.md` in full. This document defines what the codebase is, where things live, and which carve-outs apply to the strict rules. Audits without this context misclassify violations and carve-outs.
 3. Read this document (`AUDIT.md`) in full.
 4. Check the Status section at the bottom of this document. Identify the next open principle to audit, and within that principle the next open submodule (if the principle is being audited per submodule).
@@ -219,4 +219,5 @@ Add observations here that the next audit chat should know — patterns that eme
 
 - Principle 4, Pass 4c largely resolved: `serialization.py` → `deserialize` used to skip unknown keys and let dataclass defaults fill missing ones, which let the save-compatibility defaults of 2026.09.24.17 to .33 work. It now raises on both; `RollResult.d2` and the duplicate-id repair on load are gone. Still open, marked needs human judgment: `persistence.py` → `load_game` still normalises NPC dispositions, filters aliases, recomputes `needs_reflection`, and sanitises names after loading. Whether these repair old data or guard a current write path is not clear from the code.
 - Principle 5 blind spot: the orphan-symbol scan counts a re-export in an `__init__.py` and a use in tests as consumers, so the whole fate system (`mechanics/fate.py` → `resolve_fate`, `resolve_likelihood`) passed as live while nothing in play called it. Pass 5a should count production callers separately.
+- Principle 4, Pass 4c, resolved in 2026.09.25.0: the setting-yaml loader (`datasworn/settings.py`) read only the keys it knew and silently ignored the rest, which kept three orphaned `oracle_paths.factions` keys alive. It now raises on an unknown key at every level. Pass 4c should also grep for parsers that pick known keys with `if "key" in data` without checking for the rest.
 - Principle 3, corrected in 2026.09.24.47: most web handlers already caught their exceptions and kept the connection open. The real faults were that a failed turn, correction, or momentum burn left its half-applied state in place, and that the player heard the raw exception text. Both are fixed in 2026.09.24.47, and `web/server.py` now reports an unexpected error in a handler without its own catch instead of closing the connection.

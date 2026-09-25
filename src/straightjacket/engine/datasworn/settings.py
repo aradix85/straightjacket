@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, fields
 from pathlib import Path
 from typing import Any, TYPE_CHECKING
 
@@ -89,7 +89,14 @@ def _require_str(data: dict[str, Any], key: str, yaml_path: str) -> str:
     return value
 
 
-def _parse_oracle_paths_partial(data: dict[str, Any]) -> _OraclePathsPartial:
+def _reject_unknown_keys(data: dict[str, Any], schema: type, section: str, yaml_path: str) -> None:
+    unknown = sorted(set(data) - {f.name for f in fields(schema)})
+    if unknown:
+        raise KeyError(f"Unknown key(s) {unknown} in {section} of {yaml_path}")
+
+
+def _parse_oracle_paths_partial(data: dict[str, Any], yaml_path: str) -> _OraclePathsPartial:
+    _reject_unknown_keys(data, _OraclePathsPartial, "oracle_paths", yaml_path)
     partial = _OraclePathsPartial()
     if "action_theme" in data:
         partial.action_theme = list(data["action_theme"])
@@ -102,17 +109,19 @@ def _parse_oracle_paths_partial(data: dict[str, Any]) -> _OraclePathsPartial:
     return partial
 
 
-def _parse_vocabulary(data: dict[str, Any]) -> VocabularyConfig:
+def _parse_vocabulary(data: dict[str, Any], yaml_path: str) -> VocabularyConfig:
+    _reject_unknown_keys(data, VocabularyConfig, "vocabulary", yaml_path)
     return VocabularyConfig(
         substitutions=dict(data.get("substitutions", {})),
         sensory_palette=data.get("sensory_palette", ""),
     )
 
 
-def _parse_creation_flow_partial(data: dict[str, Any] | None) -> _CreationFlowPartial:
+def _parse_creation_flow_partial(data: dict[str, Any] | None, yaml_path: str) -> _CreationFlowPartial:
     partial = _CreationFlowPartial()
     if data is None:
         return partial
+    _reject_unknown_keys(data, _CreationFlowPartial, "creation_flow", yaml_path)
     if "has_truths" in data:
         partial.has_truths = bool(data["has_truths"])
     if "has_backstory_oracle" in data:
@@ -127,15 +136,16 @@ def _parse_creation_flow_partial(data: dict[str, Any] | None) -> _CreationFlowPa
 
 
 def _parse_setting_config(data: dict[str, Any], yaml_path: str) -> _SettingConfig:
+    _reject_unknown_keys(data, _SettingConfig, "the setting", yaml_path)
     parent_raw = data.get("parent")
     return _SettingConfig(
         id=_require_str(data, "id", yaml_path),
         title=_require_str(data, "title", yaml_path),
         datasworn_id=_require_str(data, "datasworn_id", yaml_path),
         description=_require_str(data, "description", yaml_path),
-        oracle_paths=_parse_oracle_paths_partial(_require_dict(data, "oracle_paths", yaml_path)),
-        vocabulary=_parse_vocabulary(_require_dict(data, "vocabulary", yaml_path)),
-        creation_flow=_parse_creation_flow_partial(data.get("creation_flow")),
+        oracle_paths=_parse_oracle_paths_partial(_require_dict(data, "oracle_paths", yaml_path), yaml_path),
+        vocabulary=_parse_vocabulary(_require_dict(data, "vocabulary", yaml_path), yaml_path),
+        creation_flow=_parse_creation_flow_partial(data.get("creation_flow"), yaml_path),
         parent=str(parent_raw) if parent_raw else None,
     )
 

@@ -7,6 +7,26 @@ Originally forked from [EdgeTales](https://github.com/edgetales/edgetales). See 
 
 Straightjacket uses calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day. The first CalVer release is `2026.04.25.0`. Earlier `0.x.y` releases keep their original version numbers and are not renumbered. The switch was made because the project has no public API to version semantically against — the `0.x.y` numbers were running counters with no meaning, and dates carry the meaning the numbers didn't.
 
+## [2026.09.25.0] — 2026-09-25
+
+The setting-yaml loader refuses unknown keys, the coverage floor follows coverage, and the working documents are brought in line with the code, after a full read of the md files and the design document.
+
+Setting yaml. `datasworn/settings.py` picked the keys it knew from each block of a setting yaml and silently ignored the rest, which is the ignore-unknown-fields that "No backwards compatibility" rules out. It kept three `oracle_paths.factions` keys alive in classic, starforged, and sundered_isles after their field went in 2026.04.27.9. The loader now raises on an unknown key at the top level and inside `oracle_paths`, `vocabulary`, and `creation_flow`, checking against the fields of the dataclass each block binds to, so no new list of names is needed. The three orphaned keys are removed; roadmap step 14b adds them back together with the field that reads them. New tests: a setting yaml with only known keys parses, and an unknown key at each of the four levels raises.
+
+Coverage floor. `fail_under` stood at 88 while coverage had been above 90 percent since 2026.09.24.49; the rule is to raise the floor when coverage rises. It is now 90.
+
+Roadmap. Priority 2 no longer lists findings fixed in 2026.09.24.55, .59, and .60, and gains the open ones seen in the runs of 2026-09-25: identity reveals rejected for zero word overlap, and an opening-setup extraction failing on unterminated JSON. Priority 3 records a measurement caveat: the harness baseline gives GLM, judged by itself, 5 out of 5 for result integrity on a miss, where the panel of 2026.09.24.57 gave it 4.58, so a gain there cannot show; the choice between failure-reproducing scenes and a judge from another family is left to the user. The working agreement on Elvira runs names GLM 5.3 Fast and its cost instead of GPT-6 Luna. Step 14b.3 no longer says the faction keys are present, and step 22.1 puts narrator-facing templates in `prompts/blocks.yaml`, per the Yaml content boundary.
+
+ARCHITECTURE.md says the setting loader refuses unknown keys. AUDIT.md's reading order no longer asks for a fresh clone, and its notes record the resolved Pass 4c finding with a grep hint for similar parsers.
+
+Versioning. Releases 2026.09.24.52 to .62 were made on 25 September but kept the 24 September date in their number, against the `YYYY.MM.DD.N` scheme; they are not renumbered, and this release starts the 25 September count.
+
+Not changed, though found in the same read: `prompts/narrator.yaml` still tells the model that violations "require a rewrite", and the opening-setup extractor still asks for `bond` and `bond_max`; both are prompt changes, which wait for the measured tuning round of priority 3. `web/serializers.py` still branches on the setting id `delve`.
+
+No Elvira run: no turn pipeline, AI call, prompt, or engine configuration changed, and the setting data the loader now reads is the same as before, minus three keys nothing read.
+
+Quality gate: 1473 tests green, twenty-nine project-rule scans clean, coverage 90.09%, ruff check and ruff format clean on 209 files, mypy --strict clean on 109 source files. Save format unchanged.
+
 ## [2026.09.24.62] — 2026-09-25
 
 Every cluster names its own provider, model, and extra body again; the shared `ai.model` of 2026.09.24.61 is gone.

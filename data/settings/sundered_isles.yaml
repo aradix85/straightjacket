@@ -13,7 +13,6 @@ oracle_paths:
   action_theme: ["core/action", "core/theme"]
   names: ["character/name/given_name", "character/name/family_name"]
   backstory: ""
-  factions: "faction"
   threats: "seafaring/peril"
 
 vocabulary:

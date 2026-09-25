@@ -12,7 +12,6 @@ oracle_paths:
   action_theme: ["action_and_theme/action", "action_and_theme/theme"]
   names: ["name/ironlander/a", "name/ironlander/b"]
   backstory: ""
-  factions: ""
   threats: "settlement/trouble"
 
 vocabulary:

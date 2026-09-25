@@ -1,6 +1,6 @@
 [project]
 name = "straightjacket"
-version = "2026.09.24.62"
+version = "2026.09.25.0"
 requires-python = ">=3.11"
 dependencies = [
     "starlette>=1.0,<2",
@@ -55,4 +55,4 @@ asyncio_mode = "strict"
 source = ["straightjacket"]
 
 [tool.coverage.report]
-fail_under = 88
+fail_under = 90

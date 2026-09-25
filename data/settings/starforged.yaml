@@ -12,7 +12,6 @@ oracle_paths:
   action_theme: ["core/action", "core/theme"]
   names: ["characters/name/given", "characters/name/family_name", "characters/name/callsign"]
   backstory: "campaign_launch/backstory_prompts"
-  factions: "factions"
   threats: "campaign_launch/sector_trouble"
 
 vocabulary:
