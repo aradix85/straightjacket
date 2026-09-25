@@ -235,8 +235,6 @@ class SessionLog:
     query_issues: list[str] = field(default_factory=list)
     rollback_issues: list[str] = field(default_factory=list)
     scenario: dict = field(default_factory=dict)
-    narrator_model: str = ""
-    all_roles: bool = False
     engine_warnings: list[str] = field(default_factory=list)
 
     def to_dict(self) -> dict:

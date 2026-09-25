@@ -4,9 +4,6 @@ username: "elvira"
 auto_mode: true
 
 ai:
-  bot_model: "gpt-6-luna"
-  bot_extra_body:
-    reasoning_effort: "none"
   temperature: 0.7
 
 game:
@@ -31,8 +28,6 @@ session:
   succession_on_game_over: true
   inject_ai_failure_turn: 3
   scenario: ""
-  narrator: ""
-  model: ""
 
 bot_behavior:
   burn_momentum: "auto"
@@ -45,10 +40,7 @@ judge:
     reasoning_effort: "low"
 
 prices:
-  claude-opus-5-5: [4.00, 20.00]
-  claude-sonnet-5: [2.00, 10.00]
-  claude-haiku-4-5-20251001: [1.00, 5.00]
-  gpt-6-luna: [0.10, 0.50]
+  accounts/fireworks/routers/glm-5p3-fast: [2.10, 6.60]
 
 logging:
   log_file: "elvira_session.json"

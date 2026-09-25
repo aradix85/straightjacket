@@ -98,9 +98,11 @@ def _parse_config(data: dict[str, Any]) -> AppConfig:
 
     _REQUIRED_CLUSTER_FIELDS = ("provider", "model", "temperature", "top_p", "max_tokens", "max_retries")
     clusters: dict[str, ClusterConfig] = {}
-    for cname, cdata in ad["clusters"].items():
-        if not isinstance(cdata, dict):
+    main = ad.get("model", {})
+    for cname, own in ad["clusters"].items():
+        if not isinstance(own, dict):
             continue
+        cdata = {**main, **own}
         missing = [f for f in _REQUIRED_CLUSTER_FIELDS if f not in cdata]
         if missing:
             raise ValueError(

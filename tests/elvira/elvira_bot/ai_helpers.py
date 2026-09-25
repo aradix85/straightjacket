@@ -14,9 +14,7 @@ _PROMPTS_PATH = _HERE / "elvira_prompts.yaml"
 _CONFIG_PATH = _HERE / "elvira_config.yaml"
 
 _prompts: dict[str, Any] | None = None
-_bot_model: str | None = None
 _bot_temperature: float | None = None
-_bot_extra_body: dict[str, Any] = {}
 _bot_config_loaded: bool = False
 
 
@@ -39,23 +37,16 @@ def _p(key: str, **kwargs: Any) -> str:
 
 
 def _load_bot_config() -> None:
-    global _bot_model, _bot_temperature, _bot_extra_body, _bot_config_loaded
+    global _bot_temperature, _bot_config_loaded
     if _bot_config_loaded:
         return
     _bot_config_loaded = True
     if _CONFIG_PATH.exists():
         with Path(_CONFIG_PATH).open(encoding="utf-8") as f:
             ecfg = yaml.safe_load(f) or {}
-        ai_cfg = ecfg.get("ai", {})
-        _bot_model = ai_cfg.get("bot_model", "") or None
-        _bot_extra_body = dict(ai_cfg["bot_extra_body"])
-        temp = ai_cfg.get("temperature")
+        temp = ecfg.get("ai", {}).get("temperature")
         if temp is not None:
             _bot_temperature = float(temp)
-    if not _bot_model:
-        from straightjacket.engine.config_loader import model_for_role
-
-        _bot_model = model_for_role("brain")
 
 
 def available_styles() -> list[str]:
@@ -74,16 +65,16 @@ def get_persona(style: str) -> str:
 def ask_bot(provider: AIProvider, system: str, user: str, max_tokens: int = 300, model: str = "") -> str:
     _load_bot_config()
     from straightjacket.engine.ai.provider_base import AICallSpec
-    from straightjacket.engine.config_loader import model_for_role
+    from straightjacket.engine.config_loader import model_for_role, sampling_params
 
-    _model = model or _bot_model or model_for_role("brain")
+    _model = model or model_for_role("brain")
     spec = AICallSpec(
         model=_model,
         system=system,
         messages=[{"role": "user", "content": user}],
         max_tokens=max_tokens,
         temperature=_bot_temperature,
-        extra_body=_bot_extra_body,
+        extra_body=dict(sampling_params("brain")["extra_body"]),
         log_role="brain",
     )
     response = provider.create_message(spec)

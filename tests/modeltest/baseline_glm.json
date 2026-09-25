@@ -1,0 +1,1502 @@
+[
+  {
+    "model": "current narrator (accounts/fireworks/routers/glm-5p3-fast)",
+    "scenario": "ally_dialog",
+    "attempt": 1,
+    "text": "The jetty planks are slick with dew, cold biting through your coat as you settle beside him. Brannoc sits with his boots dangling above the brown floodwater, rope-scarred hands working a half-spliced line in his lap, thumbs pressing the strands over and under. Woodsmoke drifts from the settlement behind you, and somewhere upstream water churns over submerged rocks. He doesn't look at you when you sit, but his shoulders ease a fraction.\n\n“What I need,” he says, and pulls the splice tight with a soft creak of hemp. “Is hands. The flood took my mooring posts overnight—both of them, torn out by the roots. Can't run the ferry without them, and the settlement's got grain waiting on the far bank.” He holds the finished line up, testing the knot against the grey dawn light. “I've got the posts cut already, ash logs stacked above the high-water mark. It's the driving I can't do alone—a man holds, a man swings.”\n\nHe coils the rope over his shoulder and pushes himself up with a grunt, knees cracking. There's warmth in the look he gives you, though he doesn't close the arm's length between you. “If you're offering, I won't refuse. But the current's still high, and a man went in there two springs back and didn't come up till Lowmoor.” He starts along the jetty toward the bank, calling once over his shoulder without slowing. “Bring your coat. The ash is heavy and the mud's worse.” Behind him, the flooded river rolls past, thick and brown, dragging a fence post through the pilings with a heavy knock of wood on wood.",
+    "first_text": 5.0,
+    "secs": 8.3,
+    "cost": 0.008027399999999999,
+    "words": 269,
+    "verdicts": [
+      {
+        "judge": "GLM 5.3 Fast",
+        "cost": 0.0031502999999999995,
+        "result_integrity": 5,
+        "prompt_elements": 4,
+        "npc_voice": 5,
+        "player_agency": 5,
+        "restraint": 5,
+        "atmosphere": 5,
+        "prose": 5,
+        "overall": 9,
+        "weakness": "The invention of the drowned man and grain shipment is fine but the scene prompt's narrative direction (act-phase texture) is only lightly reflected rather than explicitly woven in."
+      }
+    ]
+  },
+  {
+    "model": "current narrator (accounts/fireworks/routers/glm-5p3-fast)",
+    "scenario": "ally_dialog",
+    "attempt": 2,
+    "text": "The jetty's planks are slick with dew and half-sunk at the far end, where the flood has claimed the last three meters. You lower yourself beside Brannoc, the wood groaning under your weight, and the river breathes cold off its surface — silt and drowned grass and somewhere beneath it the iron-taste of the drowned settlement upstream. The old ferryman doesn't turn at first. His rope-scarred hands work a frayed mooring line, rewhipping the end with a smaller cord, each wrap tight and deliberate. His boat sits tethered behind him, gunwales stained dark to the waterline, useless until the current drops.\n\nYou put the question to him plainly, and his hands pause. He looks at you sidelong, the way a man does when he's weighing whether the offer is real, then back at the brown water sliding past.\n\n“Need my crossing back,” he says. “There's a channel marker upstream — iron post, driven into the shoal. Flood bent it under. If it's not pulled straight by the time the water falls, the first keel that runs this reach will hole herself on it.” He tests the rewhipped line with a jerk, satisfied, and coils it over his shoulder. “That's all. I'd do it myself, but I don't swim so good anymore.”\n\nHe stands with a grunt, knees stiff, and nods once toward the flooded treeline where the marker should be — or where it was, before the river took the shape of the land into its own hands. A crow calls somewhere behind you, from the direction of the drowned road, and Brannoc doesn't look at it.",
+    "first_text": 0.84,
+    "secs": 3.8,
+    "cost": 0.0075786000000000004,
+    "words": 267,
+    "verdicts": [
+      {
+        "judge": "GLM 5.3 Fast",
+        "cost": 0.0031572,
+        "result_integrity": 5,
+        "prompt_elements": 4,
+        "npc_voice": 5,
+        "player_agency": 4,
+        "restraint": 5,
+        "atmosphere": 5,
+        "prose": 5,
+        "overall": 9,
+        "weakness": "Slight overreach in narrating the player's physical actions ('You lower yourself beside Brannoc') beyond the stated sitting down, though it stays within the spirit of the player's words."
+      }
+    ]
+  },
+  {
+    "model": "current narrator (accounts/fireworks/routers/glm-5p3-fast)",
+    "scenario": "ally_dialog",
+    "attempt": 3,
+    "text": "The jetty's timbers are slick with overnight rain, and cold seeps through your coat as you settle beside him. Brannoc doesn't look over. He works a knot loose from a coil of frayed rope, his fingers thick and scarred white where the hemp has bitten them over forty years. The flooded river runs high and brown past the landing, dragging broken branches past the pilings. Woodsmoke drifts from his fire a few yards back, and somewhere upstream a crow calls twice and stops.\n\nWhen you put the question to him plainly, he is quiet long enough for the water to slap the posts three times. Then he sets the rope down across his knees and looks at you — really looks, the way a man does when he's measuring whether he has any right to ask.\n\n\"I need someone who can read,\" he says. \"My son took the ferry book upriver before the water rose, and there's a ledger in my hut — old tally marks, my hand, from the year of the drowning. I can't make sense of my own scratches anymore.\" His thumb worries the knot in the rope, back and forth. \"The riders who come asking about crossings — I've nothing to show them but my word. A scholar's eyes on those pages would be worth more than I can pay.\" He stops there, jaw working, and turns back to the river, leaving the asking hanging between you like the mist off the water.",
+    "first_text": 1.27,
+    "secs": 4.4,
+    "cost": 0.0073013999999999996,
+    "words": 247,
+    "verdicts": [
+      {
+        "judge": "GLM 5.3 Fast",
+        "cost": 0.0031359,
+        "result_integrity": 5,
+        "prompt_elements": 5,
+        "npc_voice": 5,
+        "player_agency": 5,
+        "restraint": 5,
+        "atmosphere": 5,
+        "prose": 5,
+        "overall": 9,
+        "weakness": "Minor: the ledger's connection to 'the year of the drowning' and the riders edges slightly toward elaboration beyond the question's scope, though it stays plausible and in character."
+      }
+    ]
+  },
+  {
+    "model": "current narrator (accounts/fireworks/routers/glm-5p3-fast)",
+    "scenario": "danger_miss",
+    "attempt": 1,
+    "text": "The gap is nine feet of empty air over the Greywater, and your body is slow to answer. You back up three strides on the ice-glazed stone, boots scraping for purchase, and drive forward. For a half-second dusk air roars past your ears and the far ledge swings toward you — then your leading foot comes down short, and the edge takes you across the ribs like an iron bar. Your fingers hook bare rock. One holds. Your right boot smashes against the cliff face below the lip, and pain detonates through the leg — a wet, grinding flare where the hound-master's stick caught you earlier — and your grip tears loose.\n\nYou land on a ledge six feet down, shoulder-first, on frost-split stone. Cold water sound fills the gorge below, and for a moment everything goes grey at the edges, the dusk narrowing to a thin frame around your sight. You drag air in through your teeth. The leg will take weight but it screams about it; when you push upright, the ledge tilts in your vision before it steadies.\n\nAbove, gravel shifts under deliberate boots. The hound-master stands at the rim, silhouetted against the last light, whistles slack in his fist. \"Scholar,\" he calls down, voice flat as the river. \"That jump was yours to make, wasn't it.\" The dogs come up beside him, breath steaming, and one of them begins working down a goat-track on the gorge wall, claws ticking on the stone.\n\nYou reach for your pack strap to check the rope — and your hand closes on nothing. The coil is gone, torn loose somewhere in the leap or the fall, hanging in the empty dark above the water somewhere behind you. Above, the second dog finds the track.\n\nThe goat-path is coming down whether you climb toward it or not.",
+    "first_text": 8.38,
+    "secs": 11.8,
+    "cost": 0.0080985,
+    "words": 306,
+    "verdicts": [
+      {
+        "judge": "GLM 5.3 Fast",
+        "cost": 0.0037596000000000005,
+        "result_integrity": 5,
+        "prompt_elements": 4,
+        "npc_voice": 5,
+        "player_agency": 5,
+        "restraint": 5,
+        "atmosphere": 5,
+        "prose": 5,
+        "overall": 9,
+        "weakness": "The altered_scene's 'unexpected character appears' is only faintly covered (the dogs working down the goat-track), leaving one prompt element under-realized."
+      }
+    ]
+  },
+  {
+    "model": "current narrator (accounts/fireworks/routers/glm-5p3-fast)",
+    "scenario": "danger_miss",
+    "attempt": 2,
+    "text": "The gap is wider than it looked. You commit anyway — three strides across black ice, boots skidding, and launch from the lip of the ledge into the grey air. For a moment the gorge yawns beneath you, the Greywater's roar reduced to a muffled rush in your ears, as though your head is wrapped in wet wool. Your fingers strike the far ledge. Your chest strikes it. Your legs do not.\n\nYou hit the rock chest-first and claw at the frost-rimed stone, and the stone gives you nothing — your palms tear through glaze and skin alike before a flint edge catches your sleeve and holds. Below, gravel hisses into the gorge where your trailing boot dislodged it. Somewhere behind, the dogs' baying cuts out all at once, and that silence is worse. Pain blooms across your ribs where the blow landed earlier, sharp enough to shorten your breath, and when you drag yourself up over the lip your left leg buckles. You catch yourself on one knee. The leg takes weight, barely, but each shift of it grinds like a millstone in the joint.\n\nThe far ledge is not empty. The Hound-Master is already there, crouched at the treeline with a coiled rope in one fist, exactly where you were leaping toward — he came down the hunter's path while you chose the desperate one. He does not move. He watches you kneel in the frost, breath ragged, and works his jaw slowly, the way a man does when he has already won and is deciding how long to let it last. “Poor jump,” he says. Where the dogs' voices should be, there is nothing — no baying, no claws on stone — the animals are simply gone from the sound of the world, and your own pulse fills the absence, thick and too fast in your ears.\n\nHe rises. The rope uncoils a loop at a time, falling slack across his boot in the last of the dusk light.\n\n<thoughts>\nWeight: 3\nKael's leap fell short — a hard MISS made worse by the Hound-Master waiting on the far ledge, with the dogs' silence and muffled hearing (sensory loss) deepening the threat. Kael is now injured and cornered. The Hound-Master's intent is undecided — the player determines what happens next.\n</thoughts>",
+    "first_text": 1.47,
+    "secs": 6.4,
+    "cost": 0.0089895,
+    "words": 384,
+    "verdicts": [
+      {
+        "judge": "GLM 5.3 Fast",
+        "cost": 0.0036357,
+        "result_integrity": 5,
+        "prompt_elements": 5,
+        "npc_voice": 4,
+        "player_agency": 5,
+        "restraint": 5,
+        "atmosphere": 5,
+        "prose": 5,
+        "overall": 9,
+        "weakness": "The Hound-Master's single terse line is fitting but thin; a touch more of his voice would sharpen the confrontation."
+      }
+    ]
+  },
+  {
+    "model": "current narrator (accounts/fireworks/routers/glm-5p3-fast)",
+    "scenario": "danger_miss",
+    "attempt": 3,
+    "text": "You run. Your boots skid on the ice-glazed rock at the lip of the gap, and the leap that should have carried you across comes up short. Your hands slap the far ledge, claws of frost tearing at your palms, and for one breath you hang — then your grip tears loose and you drop. You land hard on the lower shelf, one leg folded under you, and pain flares up through the hip where the hound-master's cudgel caught you hours ago. You stagger upright, favoring that leg, breath sawing out of you in ragged white clouds. The far ledge is ten feet above your head now. There is no climbing back to it.\n\nBehind you, across the gap, the dogs arrive — and stop. They stand panting at the edge, and that is wrong. There is no sound. No baying, no clatter of claws, no wind in the gorge. Only a flat, pressure silence, as if your ears are packed with wet wool. You press a hand to the side of your head and your fingertips come away damp.\n\nThe hound-master steps into view between his animals. He had been ahead of you somehow, on this side, on the shelf you fell onto — that is the only way he could be there, lowering a coiled leash, standing not twenty paces from where you struggle to stand. He is calm. He unhooks a lantern from his belt and sets it on the stone, and the gleam of it shows you the rope stretched taut across the gorge where your escape route used to be. The crossing you came looking for. Someone has already cut it. The severed end swings against the far cliff in the wind you can no longer hear.\n\nHe says something. His mouth moves behind the wool wrap, jaw working around words you cannot make out. He points, once, at the ice below the shelf — the Greywater churning dark beneath it — and then he starts walking toward you, unhurried, the dogs fanning wide along the rock. Your leg will barely hold your weight. The ledge runs twenty feet to a rockfall, and past that, only the drop.\n\nYou put your back to the stone and draw your knife with a hand that will not stop shaking.",
+    "first_text": 0.97,
+    "secs": 5.2,
+    "cost": 0.0085275,
+    "words": 382,
+    "verdicts": [
+      {
+        "judge": "GLM 5.3 Fast",
+        "cost": 0.0043011,
+        "result_integrity": 5,
+        "prompt_elements": 5,
+        "npc_voice": 4,
+        "player_agency": 3,
+        "restraint": 5,
+        "atmosphere": 5,
+        "prose": 5,
+        "overall": 9,
+        "weakness": "The narration decides Kael's further actions (drawing the knife, backing against the stone) beyond the player's stated leap."
+      }
+    ]
+  },
+  {
+    "model": "current narrator (accounts/fireworks/routers/glm-5p3-fast)",
+    "scenario": "dialog",
+    "attempt": 1,
+    "text": "The library's cold deepens as the light fails, tallow smoke drifting from a stub of candle on the counter. Your forearms press against damp oak, and your question settles between you and Mira like a coin dropped on stone.\n\nHer ink-stained fingers stop on the ledger's spine. She doesn't look up at first — just wipes her thumb across the leather as though testing for grit. When her eyes finally lift, they're flat, guarded. \"It belongs to whoever pays me.\" She slides the ledger back from the counter's edge, out of your reach, and her knuckles whiten around it. \"Ask again and I call for the watch. There are men in this settlement who'd drag a scholar out to the mud for less.\"\n\nBehind her, somewhere in the stacks, a plank settles with a creak. She turns her shoulder to you, gathering the candle stub and a sheaf of loose pages, and carries both toward the back room. The door's latch drops shut behind her — a plain iron sound, deliberate, final. The ledger goes with her.\n\nYour palms are still flat on the counter, and the wood's chill has worked into them. Whatever she wants for it, she isn't naming it tonight.",
+    "first_text": 0.99,
+    "secs": 2.8,
+    "cost": 0.0070533,
+    "words": 203,
+    "verdicts": [
+      {
+        "judge": "GLM 5.3 Fast",
+        "cost": 0.0031491,
+        "result_integrity": 5,
+        "prompt_elements": 4,
+        "npc_voice": 5,
+        "player_agency": 4,
+        "restraint": 5,
+        "atmosphere": 5,
+        "prose": 5,
+        "overall": 8,
+        "weakness": "The closing line mildly editorializes the player's takeaway ('whatever she wants for it, she isn't naming it tonight'), brushing against the player's own reflection."
+      }
+    ]
+  },
+  {
+    "model": "current narrator (accounts/fireworks/routers/glm-5p3-fast)",
+    "scenario": "dialog",
+    "attempt": 2,
+    "text": "The tallow candle gutters on the counter, throwing your shadow long across the shelves. Mira's hands stop on the ledger. Ink stains her knuckles to the second joint, and her knuckles whiten around the binding before she drags the book beneath her forearm, out of your reach. Somewhere above, wind forces itself through a broken clerestory and drags a fine grit of dust down through the air.\n\n“It belongs to whoever I sell it to.” Her voice is flat, low, the words pushed out between her teeth. “That's not you. Get out before I decide the reward for whatever's wandering these halls is worth more than the sale.” She lifts a hand — not toward you, toward the dark stairwell behind her, where the ironbound door sits ajar and heavy boots could come from.\n\nYour palms rest on the cold oak of the counter. The bruise along your ribs aches where the wood's edge presses it, and your breath comes slower than it should. She holds your gaze a moment longer, then turns away, dragging a cloth across the ledger's cover as if wiping off your touch. The candle's flame stands straight in the still air between you. Outside, crows argue over something in the courtyard, and the door behind her stays open exactly the width of a blade.",
+    "first_text": 1.47,
+    "secs": 3.6,
+    "cost": 0.007092900000000001,
+    "words": 219,
+    "verdicts": [
+      {
+        "judge": "GLM 5.3 Fast",
+        "cost": 0.0032178000000000003,
+        "result_integrity": 4,
+        "prompt_elements": 4,
+        "npc_voice": 5,
+        "player_agency": 2,
+        "restraint": 3,
+        "atmosphere": 5,
+        "prose": 4,
+        "overall": 7,
+        "weakness": "The narration invents a bruised rib and laboured breathing for the player character, deciding bodily state and implied fear beyond the player's words."
+      }
+    ]
+  },
+  {
+    "model": "current narrator (accounts/fireworks/routers/glm-5p3-fast)",
+    "scenario": "dialog",
+    "attempt": 3,
+    "text": "The abandoned library holds its evening cold like a cellar. Rain fingers the broken roof tiles somewhere above, and tallow smoke from Mira's single candle drifts flat across the counter, catching in the ink stains on her knuckles. She has the ledger pressed under one palm, fingers pale from gripping it. Your elbow settles on the scarred wood, and you put the question to her low — who does it really belong to, and what does she want for it.\n\nShe doesn't answer at once. Her thumb rides the ledger's spine, back and forth, a small dry rasp in the quiet. Then her chin lifts, and there's nothing soft in her face. \"It belongs to whoever can carry it out of here alive. That's not you.\" One fact, one door slammed. She slides the ledger off the counter and into the satchel at her hip, buckle clicking shut under her fingers, and steps back until the candle's gleam no longer reaches her eyes.\n\nBehind her, deeper in the stacks, a shelf gives a slow wooden creak — settling timber, or weight shifting, impossible to tell. Her gaze flicks toward it and back to you, and she stands there with her hand resting on the satchel strap, waiting to see if you'll take her meaning or make her repeat it.",
+    "first_text": 1.39,
+    "secs": 3.6,
+    "cost": 0.007106100000000001,
+    "words": 219,
+    "verdicts": [
+      {
+        "judge": "GLM 5.3 Fast",
+        "cost": 0.0031233000000000003,
+        "result_integrity": 5,
+        "prompt_elements": 4,
+        "npc_voice": 5,
+        "player_agency": 5,
+        "restraint": 5,
+        "atmosphere": 5,
+        "prose": 5,
+        "overall": 9,
+        "weakness": "Mira's line edges toward answering rather than pure refusal, slightly softening her hostile gate, and the unexplained creak risks implying more than the prompt established."
+      }
+    ]
+  },
+  {
+    "model": "current narrator (accounts/fireworks/routers/glm-5p3-fast)",
+    "scenario": "hard_hostile_secret",
+    "attempt": 1,
+    "text": "The noon sun sits high and thin over Greywater, doing little against the cold. You stand at the well's lip, one palm resting on the damp stone, and Widow Sarn crouches three paces off with her basket of cut herbs between her knees. The smell of crushed mint and wet earth rises from the woven wicker. Her hands keep working, stripping stems, even as you speak. She does not look up.\n\n\"No.\" The word comes out flat as a slapped door. She snaps a stalk in half and drops both pieces into the basket. Then her chin lifts, and her eyes — pale, rimmed red at the edges — hold yours without blinking. \"Ask me that again and you'll be carrying more than your question out of this settlement.\"\n\nShe rises in stages, one hand pressed to the small of her back, the basket swinging up onto her hip. A bruised stem of yarrow has fallen to the mud; she leaves it there. The crows call somewhere past the palisade, and the rope over the wellhead creaks in a gust that smells of pine resin and tallow smoke from the longhouse fires. She turns her shoulder to you and starts toward the low gate of her yard, her boots printing dark holes in the soft ground.\n\n\"Mind whose water you drink, scholar,\" she says without turning around, her voice carrying only as far as you. The gate's leather hinge groans as she pulls it shut behind her, and the latch drops into place with a sound like a bone breaking.",
+    "first_text": 6.23,
+    "secs": 8.6,
+    "cost": 0.0072372,
+    "words": 260,
+    "verdicts": [
+      {
+        "judge": "GLM 5.3 Fast",
+        "cost": 0.0034151999999999997,
+        "result_integrity": 5,
+        "prompt_elements": 4,
+        "npc_voice": 5,
+        "player_agency": 5,
+        "restraint": 5,
+        "atmosphere": 5,
+        "prose": 5,
+        "overall": 9,
+        "weakness": "The brief's 'refuses to engage' is softened slightly by the flat 'No,' though the denial-plus-threat reading stays well within her hostile stance."
+      }
+    ]
+  },
+  {
+    "model": "current narrator (accounts/fireworks/routers/glm-5p3-fast)",
+    "scenario": "hard_hostile_secret",
+    "attempt": 2,
+    "text": "The noon sun sits high over Greywater, but no warmth reaches the well square. Wind carries woodsmoke down between the houses and flattens the grass around the stone ring. Widow Sarn stands at the well's edge with her basket of herbs hooked over one arm, gray strands pulled across her face, her free hand resting on the wooden cover as though she owns it. Crows call somewhere past the fence line, and a door bangs once in the settlement behind you.\n\nYou stop two paces from her and put the question plainly — did she put something in the well. Her eyes come up and hold yours. There is no flinch in them, only a flat, cold arithmetic, like she is weighing what you are worth.\n\nHer fingers tighten on the basket's woven handle until the willow creaks. She leans toward you, voice low and dry as husks. \"The well is closed by order of the elders. Ask again and I'll have them asking *you*.\" She turns on her heel, boots grinding the gravel, and walks stiff-legged toward her gate without once looking back.\n\nTwo heads appear at shutters along the lane, watching her go, then watching you.",
+    "first_text": 0.75,
+    "secs": 3.0,
+    "cost": 0.00696,
+    "words": 198,
+    "verdicts": [
+      {
+        "judge": "GLM 5.3 Fast",
+        "cost": 0.0028833,
+        "result_integrity": 5,
+        "prompt_elements": 4,
+        "npc_voice": 5,
+        "player_agency": 5,
+        "restraint": 5,
+        "atmosphere": 5,
+        "prose": 5,
+        "overall": 9,
+        "weakness": "The walk-away leaves the scene slightly static, offering no new hook beyond the villagers' watching eyes."
+      }
+    ]
+  },
+  {
+    "model": "current narrator (accounts/fireworks/routers/glm-5p3-fast)",
+    "scenario": "hard_hostile_secret",
+    "attempt": 3,
+    "text": "The well's stone rim is cold under your palm as you lean against it, the murmur of water somewhere below the dark mouth of the shaft. Widow Sarn crouches ten paces off, packing yarrow into her basket with dirt-caked fingers, her back bent like a drawn bow. Noon light lies flat and grey on the settlement's mud lanes; woodsmoke drifts from the nearest hut and somewhere a crow scratches at a fencepost. You push off the stone, cross the distance, and stop close enough to see the grey hairs plastered to her weathered neck.\n\nYou look her in the eye and ask her plainly whether she put something in the well. You keep your voice level, your boots planted in the churned mud.\n\nHer hands stop mid-bundle. She rises slowly, one knuckle pressed to her knee, and the yarrow sags in her grip. \"Say that word again in my hearing and I'll have myson's axe across your door.\" Her voice is dry as old rope, and her eyes hold yours without a flicker. She says nothing more — not denial, not explanation — only spits into the mud between your boots. The herbs rustle as she swings the basket onto her hip. A smell of crushed yarrow and animal musk hangs where she stood.\n\nShe turns and limps up the lane toward the fence line, her stooped silhouette shrinking between the huts, and the settlement's ordinary sounds — a hammer somewhere, water over rocks — fill the space she leaves. Behind you, the well's dark opening waits, its rope stiff with damp.",
+    "first_text": 0.61,
+    "secs": 3.6,
+    "cost": 0.007547399999999999,
+    "words": 262,
+    "verdicts": [
+      {
+        "judge": "GLM 5.3 Fast",
+        "cost": 0.0034181999999999997,
+        "result_integrity": 4,
+        "prompt_elements": 4,
+        "npc_voice": 5,
+        "player_agency": 3,
+        "restraint": 4,
+        "atmosphere": 5,
+        "prose": 4,
+        "overall": 7,
+        "weakness": "The narration adds player manner ('you keep your voice level, boots planted') beyond the player's stated words, and a typo ('myson's') mars the NPC's one line."
+      }
+    ]
+  },
+  {
+    "model": "current narrator (accounts/fireworks/routers/glm-5p3-fast)",
+    "scenario": "hard_many_elements",
+    "attempt": 1,
+    "text": "The cold hits your ribs before you're a third of the way across. Silt churns around your thighs, and the stair on the far wall stays fixed, dark, un reached. Then your boot finds nothing — a sunken slab, a gap in the floor — and your weight drops. Your knee cracks against submerged stone, and pain flares white up the leg where the earlier blow landed. You surface coughing, treading, and the water is warmer than it should be, thick with silt and something older. The stair is still ten strokes away. The water is already at your chin.\n\nBehind you, a rasp of wet rope and leather. The Hound-Master stands on the chapel-side ledge, torch in one fist, and he does not shout. He simply reaches down and hauls a iron grate aside — the sluice gate, the one that kept this water penned — and lets the flood take its course. \"Scholars swim poorly,\" he says, and the water climbs. It swells against your jaw now, your kicked feet finding no purchase on the flooded floor. Where the lantern niche should be — the niche Aldo marked on his cracked map — there is only a raw hole, bricks pried out and gone. Something expected is missing, and the Hound-Master's silence says he took it.\n\nThen the surface breaks around you. Hands — green-black, bloated, ringed fingers trailing silt — grope up from below. A head emerges, hair plastered flat over a face gone soft and eyeless, and behind it another, and a third, the drowned dead climbing out of the black water with the slow patience of things that cannot drown twice. One closes its fist around your ankle and pulls. Your wounded leg drags; the pain tears a sound out of you that echoes off the vaulted stone and comes back wrong, doubled, from somewhere ahead.\n\nYou claw toward the stair, arm over arm, the drowned hand still knotted at your boot, your breath coming in short ragged gasps, torchlight from the ledge shrinking to a smudge above the rising water.",
+    "first_text": 1.26,
+    "secs": 5.6,
+    "cost": 0.008432700000000001,
+    "words": 346,
+    "verdicts": [
+      {
+        "judge": "GLM 5.3 Fast",
+        "cost": 0.0040023,
+        "result_integrity": 5,
+        "prompt_elements": 5,
+        "npc_voice": 4,
+        "player_agency": 4,
+        "restraint": 5,
+        "atmosphere": 5,
+        "prose": 4,
+        "overall": 9,
+        "weakness": "The Hound-Master gets one good line but the 'sensory_loss' direction is only thinly served, and small typos ('un reached', 'a iron grate') roughen the prose."
+      }
+    ]
+  },
+  {
+    "model": "current narrator (accounts/fireworks/routers/glm-5p3-fast)",
+    "scenario": "hard_many_elements",
+    "attempt": 2,
+    "text": "The water reaches your thighs before you're a third of the way across. Cold eats through your wool leggings, and the flooded flagstones underfoot are slick with silt — twice your boot skates off a buried step and you catch yourself on the slick face of a pillar, shoulder wrenching. Then your shin finds something submerged and solid: a fallen lintel, edge-first. Pain flares up the leg, hot against the chill, and you stagger, weight dragging onto the other foot, a hiss of breath grinding through your teeth. You half-swim, half-limp the last stretch, and the far stair is still four body-lengths away when the water level climbs past your waist. Somewhere above, water is pouring through a channel someone has opened.\n\nThe surface breaks around you. Hands come up out of it — swollen, green-white, fingernails split back to the quick. First one, then three more, and behind them the shoulders of the drowned dead heave out of the black water, mouths open, tallow-candles gone from their eye sockets. One grips the pillar you just released. The water throbs against your ribs with the churn of their rising. Your leg will not take your full weight; you lurch toward the stair on one good limb and the drowned are between you and it.\n\nA shape moves in the chapel doorway above — lantern-light catches a hooked iron collar-staff. The Hound-Master. He stands at the top of the stair and does not descend. \"I told you the chapel keeps its own, scholar,\" he calls down, voice flat as slate. He shifts the staff to block the middle of the steps, and his hounds' chains rattle somewhere behind him in the dark. Whatever rope or aid you half-hoped for from above is not coming. The lantern sways as he settles in to watch.\n\nYou tread water against the pull of your soaked coat, shin screaming, the nearest drowned thing three arm-spans off and closing its fingers around the base of the pillar. The stair is behind it, and the man on the stair is not your friend. The water climbs another inch.",
+    "first_text": 0.92,
+    "secs": 4.4,
+    "cost": 0.0085251,
+    "words": 351,
+    "verdicts": [
+      {
+        "judge": "GLM 5.3 Fast",
+        "cost": 0.0043317,
+        "result_integrity": 5,
+        "prompt_elements": 4,
+        "npc_voice": 5,
+        "player_agency": 4,
+        "restraint": 5,
+        "atmosphere": 5,
+        "prose": 5,
+        "overall": 8,
+        "weakness": "The 'something expected is missing' element is only thinly addressed ('whatever aid you half-hoped for'), and the sensory_loss perspective isn't clearly realized."
+      }
+    ]
+  },
+  {
+    "model": "current narrator (accounts/fireworks/routers/glm-5p3-fast)",
+    "scenario": "hard_many_elements",
+    "attempt": 3,
+    "text": "The water reaches your ribs before you're halfway across. Cold eats through your soaked wool, and the black surface hides everything beneath it — no sight of the floor, only the drag of your boots on slick stone and the burn of the wound where something struck you earlier. That blow answers now. Pain flares hot through your hip and down your left leg, and the limb buckles mid-stride. You go under.\n\nYou surface coughing, tallow-smell and mud on your tongue, and the far stair is no closer. Worse — the stair you came down is gone from view, drowned or swallowed by the dark, and where you'd marked a broken column to steer by, there is only water. You clutch at a jutting stone, and it cuts your palm on rusted iron set into the masonry. Somewhere above, water is still rising; you can hear it lapping higher against the chapel foundations, a slow, patient murmur.\n\nThen the water moves. Not current — hands. Pale fingers break the surface near the far wall, then a scalp, then shoulders, a drowned dead hauling itself up the flooded stair in pieces of rusted chain. Another follows, closer, half a body dragging itself across a submerged tomb-slab. Their eyes catch no gleam. There is only wet bone and slack mouth, and they come without hurry, because the water does the hurrying for them.\n\nA lantern gleams from the gallery above — held by the Hound-Master, his hounds' chains rattling taut along the rail. He looks down at you struggling in the flooded nave and does nothing. Then he does worse: he reaches to the wall and pulls the iron lever there, and somewhere below, an old sluice grinds open. The water shudders, and the dead turn their heads toward the sound of you thrashing.",
+    "first_text": 0.95,
+    "secs": 4.6,
+    "cost": 0.008201700000000001,
+    "words": 302,
+    "verdicts": [
+      {
+        "judge": "GLM 5.3 Fast",
+        "cost": 0.0039702,
+        "result_integrity": 5,
+        "prompt_elements": 5,
+        "npc_voice": 4,
+        "player_agency": 4,
+        "restraint": 5,
+        "atmosphere": 5,
+        "prose": 5,
+        "overall": 9,
+        "weakness": "The narration moves Kael's body (going under, clutching the stone) slightly beyond dictated consequences, though within the action-result convention."
+      }
+    ]
+  },
+  {
+    "model": "current narrator (accounts/fireworks/routers/glm-5p3-fast)",
+    "scenario": "hard_miss_ally_present",
+    "attempt": 1,
+    "text": "The wall gives you nothing kind. Old mortar crumbles under your fingers in dry gray crumbs, and the first handhold you trust peels loose from the stone with a soft grinding sound, sending you swinging out over the darkened yard on Brannoc's rope. He curses below you, boots skidding in the mud as he takes the sudden weight. Then the rope slackens — too much, too fast — and you drop half your own height before it snaps taut again, and your shin collides with a jutting quoined stone. Pain flares white up the leg, the same leg that already took the blow at the gate, and your grip tears free.\n\nYou fall the rest of the way. The ground is cold and wet and unyielding, and you land badly, hip then shoulder, breath driven out of you in a hard grunt. When you try to rise, the leg buckles under your weight and you catch yourself on one arm, mud soaking through your sleeve. For a long moment there is only the sound of your own ragged breathing and the drip of rain off the tower's eaves. Somewhere above, in the belfry, the bell does not hang where it should — the tower's mouth is empty, black against the dusk sky, and where the great bell ought to gleam there is only a cut stub of rusted iron stock. Someone took it. Long ago or recently, you cannot tell from here.\n\nBrannoc reaches you first, but he is not the only one. A figure stands at the tower's doorway, framed in the failing light — thin, wrapped in a herder's oilskin, a crook in one hand, watching without moving. Old, by the stoop of the shoulders; a woman, by the breadth of the hips beneath the wool. She does not speak. Rain ticks against her hood.\n\n“Easy — easy, lad.” Brannoc's hands are under your arms, hauling you upright, and your weight settles onto the good leg or doesn't settle at all. His rope lies coiled and mud-caked at his feet, one end frayed where it snagged the parapet. “That's done. Nobody climbs that in this light.” He glances once toward the woman in the doorway, then back to you, jaw tight. The stranger lifts her crook and points — not at the tower, not at you — at the treeline north of the yard, then turns and shuffles inside.",
+    "first_text": 0.86,
+    "secs": 5.8,
+    "cost": 0.0090663,
+    "words": 401,
+    "verdicts": [
+      {
+        "judge": "GLM 5.3 Fast",
+        "cost": 0.0037548,
+        "result_integrity": 5,
+        "prompt_elements": 5,
+        "npc_voice": 4,
+        "player_agency": 5,
+        "restraint": 5,
+        "atmosphere": 5,
+        "prose": 5,
+        "overall": 9,
+        "weakness": "The old woman's pointed gesture toward the treeline slightly edges toward steering the player's next action, though it stays within the scene's mystery."
+      }
+    ]
+  },
+  {
+    "model": "current narrator (accounts/fireworks/routers/glm-5p3-fast)",
+    "scenario": "hard_miss_ally_present",
+    "attempt": 2,
+    "text": "The mortar crumbles under your left boot before you've made it ten feet up the tower. Your hands find the seam between two stones, and the seam gives — a fist-sized chunk of sandstone shears away, drops, and your whole weight swings out from the wall on Brannoc's rope. The rope goes taut around your chest, jerking the breath half out of you, and you slam back against the stone with your knee taking the impact. Pain flares white along your thigh where the old blow landed, and your leg buckles when you try to plant it. The world narrows: the sound of wind goes thin and distant, as if your ears are packed with wool, and the dusk light dims to a grey smear in which you can no longer pick out the belfry window above you.\n\n“Kael! Hold — hold, I've got you!” Brannoc's voice arrives muffled, as though rising through water. The rope shudders against your ribs as he hauls in slack, and the friction drags you another foot down the wall. Stone rasps your cheek. You get one arm hooked over a jutting quoin, and you hang there, breath sawing, leg dangling useless, the muscle above your knee throbbing with every heartbeat. When you glance down, your vision swims — Brannoc is a smeared shape at the tower's foot, boots braced against a fallen lintel, the rope wrapped twice around his forearms. You slide the last six feet anyway, palms burning on the line, and hit the wet grass hard on your good knee.\n\nBrannoc catches your shoulder before you tip sideways. Up close his face comes back into focus, weathered and tight. “The wall's rotten past the second course. You'll not make the window that way.” He steadies you against the lintel and crouches, quick hands checking the rope for fraying. Then he stops. His head comes up, and he stares past you at the tower door — the heavy door you both stepped around minutes ago. It stands open. It was shut. The dark inside is total, and from somewhere above, down through the tower's hollow throat, comes a slow, deliberate creak of timber, like weight settling on the bell frame.\n\nBrannoc rises slowly, one hand still on the rope. Whatever was supposed to be in that doorway — the old iron bell-pull, the lantern you left hanging there — is gone. Only the nails remain, and pale scratches on the wood where something was dragged out. Above you, the belfry window sits black against the last of the dusk, and the creaking in the tower stops.\n\nThe rope hangs slack between you and the open door.",
+    "first_text": 0.97,
+    "secs": 6.8,
+    "cost": 0.0095085,
+    "words": 443,
+    "verdicts": [
+      {
+        "judge": "GLM 5.3 Fast",
+        "cost": 0.0041718,
+        "result_integrity": 5,
+        "prompt_elements": 4,
+        "npc_voice": 4,
+        "player_agency": 4,
+        "restraint": 5,
+        "atmosphere": 5,
+        "prose": 5,
+        "overall": 9,
+        "weakness": "The 'unexpected character appears' altered-scene element is only hinted at indirectly, and a few small actions (sliding down, hooking the quoin) are decided for the player."
+      }
+    ]
+  },
+  {
+    "model": "current narrator (accounts/fireworks/routers/glm-5p3-fast)",
+    "scenario": "hard_miss_ally_present",
+    "attempt": 3,
+    "text": "The wall is worse than it looked. You find the first holds by feel — mortar gone soft as wet bread, stones that shift under your palms the moment you load them. The rope goes taut below where Brannoc braces his heels in the mud, and you climb, breath sawing, fingers numb in the dusk cold. Ten feet up, your left hand finds a crack that is not a crack. It is a seam of rotted mortar, and the whole block tears free when you pull.\n\nYou drop. The rope checks you for half a heartbeat — long enough to swing you into the tower's base — and then your injured leg takes the impact wrong. Pain flares white where the old blow landed, and you stagger, all your weight on the good leg, the wall block thudding into the mud beside you. Something above groans: a length of rotted belfry timber has worked loose and now juts from the window mouth like a broken tooth. No window to reach anymore. The opening is choked with splintered wood.\n\n“Down, get down —” Brannoc is already moving, hauling the rope in, one arm hooked under yours. He is breathing hard, mud to the knee. “Something moved in there. When the stone came out.” He points with his chin, not his hand, at the black mouth of the window. Your hearing is wrong — the fall has left a high ringing, and his voice reaches you as if through wet wool.\n\nAnd he is not alone at the tower's foot. A figure stands at the edge of the treeline where no one stood before: a woman in a rain-dark cloak, a walking staff planted in the mud, watching. She does not come closer. Brannoc's grip tightens on your arm. “That's her,” he says, and says nothing more, because the rope in his other hand has gone slack — the knot has slipped its anchor above, and the loose end now hangs down the tower face, dragging through the ivy. Somewhere past the ringing in your ears, low and unsteady, the bell above gives a single cracked toll.",
+    "first_text": 0.69,
+    "secs": 4.6,
+    "cost": 0.008511900000000001,
+    "words": 355,
+    "verdicts": [
+      {
+        "judge": "GLM 5.3 Fast",
+        "cost": 0.0038124,
+        "result_integrity": 5,
+        "prompt_elements": 5,
+        "npc_voice": 5,
+        "player_agency": 5,
+        "restraint": 4,
+        "atmosphere": 5,
+        "prose": 5,
+        "overall": 9,
+        "weakness": "The cryptic 'That's her' from Brannoc about the cloaked woman lightly implies prior knowledge that no known NPC record supports."
+      }
+    ]
+  },
+  {
+    "model": "current narrator (accounts/fireworks/routers/glm-5p3-fast)",
+    "scenario": "hard_miss_clever_plan",
+    "attempt": 1,
+    "text": "You work by strip-light glow on your knees at the junction box, stripping wire with your teeth when the pliers slip, splicing the bay lighting feed into the airlock cycle relay. The derelict's wiring is rotted — insulation crumbles to powder under your fingers, and twice a strand snaps off in your grip. Sweat runs off your chin onto the contacts. Somewhere in the board a relay chatters on its own, a dry insect sound, and you ignore it because you have to. Your countdown runs in your head against the boots you can hear on the outer grating.\n\nVex steps past the crates — scorched armor, cutting torch slung low, torch hissing on idle — and you slam the contact home.\n\nNothing. Then everything wrong at once. The junction box spits a spray of sparks across your forearm, the splice you built shorting back through the bay lighting instead of tripping it, and the strip lights die entire. Blackness. The relay's chatter climbs to a buzz, and the inner door — the *inner* door — cycles open behind you with a pressure-seal hiss, dumping the bay's air toward it in a howl that flattens loose debris past your ears. Your rig, your whole kit, is on the wrong side of that airflow, tethered by one strap that snaps taut and then tears free of the buckle, the bag skidding away into the dark. Paper and seals and your last coil of copper vanish into the roar. And the countdown on the timer — when you thumb it by feel, palm sweating against the housing — reads dead. The malfunction ate it.\n\nThe wind dies with a wheeze as the emergency bulkhead slams halfway and jams, leaving a gap the width of your fist whistling air into the dark corridor. Your ears ache with the pressure drop. Somewhere in the black, Vex's torch flares, a blue-white bloom that throws the crates into hard relief and lights a figure you did not expect — someone crouched behind the cargo netting on the far wall, slight, suited, motionless, watching both of you through a visor you don't recognize. The expected hiss of Vex's torch cutting through the crates never comes; the torch gutters instead, its fuel indicator blinking red through the gloom. Your hands hang empty at your sides, your kit gone, the door wrong, and two strangers now breathing the same thinning air.\n\nVex's helmet turns toward the crates, toward the sound of your boots on the grating, and the torch's blue arc steadies just enough to matter.",
+    "first_text": 1.03,
+    "secs": 6.9,
+    "cost": 0.0089577,
+    "words": 427,
+    "verdicts": [
+      {
+        "judge": "GLM 5.3 Fast",
+        "cost": 0.0039183,
+        "result_integrity": 5,
+        "prompt_elements": 5,
+        "npc_voice": 3,
+        "player_agency": 3,
+        "restraint": 5,
+        "atmosphere": 5,
+        "prose": 5,
+        "overall": 8,
+        "weakness": "Slight overreach into the player's decisions (thumbing the timer, ignoring the relay) without player input."
+      }
+    ]
+  },
+  {
+    "model": "current narrator (accounts/fireworks/routers/glm-5p3-fast)",
+    "scenario": "hard_miss_clever_plan",
+    "attempt": 2,
+    "text": "You strip two wires from the bay lighting conduit with your teeth, palms slick on the insulated casing, and jumper them into the airlock cycle relay. The splice is ugly — bare copper twisted into a contact plate worn smooth by decades of vacuum cycles — but the relay accepts it, and your handheld tester shows continuity. You duck behind the crates, thumb on the bypass switch, and count down in your head as the outer door seal hisses and Vex's boots ring on the grating.\n\nThe splice fails at the worst moment. Somewhere in the conduit the corroded wire shorts against the hull frame, and the bay lights die all at once — total blackout, nothing but the red standby strip over the airlock and the harsh blue spit of Vex's cutting torch swinging toward the sound of arcing copper. The bypass switch goes dead under your thumb. The airlock doors don't cycle. The countdown you built is worth nothing.\n\nThen the far door — the *inner* door, the one behind you — blows open on its emergency release, and the roar of escaping atmosphere hits you from behind like a hand between the shoulder blades. Loose cargo netting, a drift of frost, your own kit bag torn from its mooring clip — all of it streams past you into the dark of the bay and slams against the crates. Your helmet lamp cracks against a stanchion as you grab for purchase, the beam guttering to a dim, failing glow, and the cold is already crawling into your gloves.\n\nThrough the static on your comm, a second voice — not Vex's. Someone else is on the freighter's channel, breathing hard, saying nothing. And Vex's torchlight doesn't come for you. It sweeps once across the dark bay, past the crates, past you, and stops on the empty airlock where a second figure should be standing and isn't — the silhouette gone, the mounting ring bare, only a cut tether cable swinging where it was anchored. The torch holds there, burning.",
+    "first_text": 1.94,
+    "secs": 5.8,
+    "cost": 0.0084627,
+    "words": 340,
+    "verdicts": [
+      {
+        "judge": "GLM 5.3 Fast",
+        "cost": 0.0037221,
+        "result_integrity": 5,
+        "prompt_elements": 5,
+        "npc_voice": 3,
+        "player_agency": 4,
+        "restraint": 5,
+        "atmosphere": 5,
+        "prose": 5,
+        "overall": 9,
+        "weakness": "Vex is a near-silent presence whose raider disposition is only faintly characterized through the torch-sweep, and the narration slightly over-narrates Rook's physical responses."
+      }
+    ]
+  },
+  {
+    "model": "current narrator (accounts/fireworks/routers/glm-5p3-fast)",
+    "scenario": "hard_miss_clever_plan",
+    "attempt": 3,
+    "text": "Your fingers find the lighting junction behind the crate stack, and you strip the insulation back with your knife, splicing the bay circuit into the airlock cycle feed. The contacts kiss, and the whole board lights up wrong — every strip in the bay flares white, then dies, and the surge kicks back down the line you just built. Your helmet fills with static so thick your own breath sounds distant inside it, and the diagnostics readout on your forearm goes dark. Somewhere behind the panel, the splice you made cooks itself, plastic smell bleeding into the recycled air through your open visor seal.\n\nThe outer door doesn't wait for Vex. It waits for nothing. The miswired cycle triggers on the surge, and the inner hatch slams open ahead of any countdown — which means the bay is already venting when boot-steps ring on the grating behind you, faster than you planned for, closer. Vex comes through the smoke of your burnt splice with the cutting torch live, its blue cone splashing across the dead crates, and the torch is the only light left in the bay. You have maybe thirty seconds of air in the open visor before the pressure drop takes the rest, and your countdown is ash.\n\nThen a second set of boots — heavier, unhurried — and a shape moves past Vex at the far hatch. A woman in a breather mask, coil of cargo strap over one shoulder, hauling Vex back by the pauldron with a grip that says she's done this before. Through the static chewing your comms you catch nothing of what she says, only the flat calm of it, and the crates you'd staged as cover are gone — cut loose and drifted already toward the venting hatch, your rope lines snaking after them into the dark.\n\nVex turns the torch toward the hatch, toward the woman, and the blue light swings across your position. Your lungs drag at thinning air, and your dead forearm unit holds nothing but your own reflection in its cracked glass.",
+    "first_text": 2.97,
+    "secs": 7.9,
+    "cost": 0.008574900000000002,
+    "words": 344,
+    "verdicts": [
+      {
+        "judge": "GLM 5.3 Fast",
+        "cost": 0.0036228000000000002,
+        "result_integrity": 5,
+        "prompt_elements": 5,
+        "npc_voice": 4,
+        "player_agency": 4,
+        "restraint": 5,
+        "atmosphere": 5,
+        "prose": 5,
+        "overall": 9,
+        "weakness": "The new woman's identity and motive are left entirely opaque, which fits the altered scene but gives the player little to act on."
+      }
+    ]
+  },
+  {
+    "model": "current narrator (accounts/fireworks/routers/glm-5p3-fast)",
+    "scenario": "hard_sparse_restraint",
+    "attempt": 1,
+    "text": "The road stretches ahead between low pines, and you find the pace settling into your legs — a long stride, boots striking the packed earth in even time, breath running steady beneath the ache in your ribs. You sweep your eyes as you walk: the drainage ditch on your left, half-choked with wet leaves; the treeline where the ground rises toward a rocky shelf; the wheel-ruts running shallow and old down the road's center. Nothing waits in any of it. A crow lifts off a dead branch somewhere behind you, and the sound of its wings fades into wind through the pines.\n\nThe cold has teeth today, the kind that finds the sweat along your spine and turns it clammy under the wool. But your hands are loose at your sides, your weight rolling heel to toe with every step, and the road answers that rhythm — gravel crunching, gravel crunching, gravel crunching. Somewhere to the east, water runs over rocks, a low steady sound beneath the wind. Pine resin and damp earth fill your nose. For the first time since the settlement gates closed behind you, you are moving instead of reacting, and the difference sits in your shoulders, which have dropped half an inch from where they'd been riding.\n\nYou mark what the road gives you: a fresh horseshoe-print in the mud of the ditch, edges still crisp, hours old at most. A blaze cut into a pine trunk on the right-hand side, sap bleeding black down the bark. A distant thread of woodsmoke riding the wind from somewhere north. All of it small, all of it yours to use, and none of it pressing. The edge is yours right now — the awareness running ahead of your feet, each glance landing before the next stride takes you past it.\n\nYou round a bend where the road dips through a hollow, and the smoke-smell is stronger here, threaded with something sharper underneath — tallow, maybe, or fat burning. The sound of your own boots fills the hollow, and past it, the road climbs again toward the treeline, and whatever sits at the top of that rise stays just out of sight.",
+    "first_text": 0.62,
+    "secs": 4.6,
+    "cost": 0.0079368,
+    "words": 363,
+    "verdicts": [
+      {
+        "judge": "GLM 5.3 Fast",
+        "cost": 0.0034163999999999996,
+        "result_integrity": 5,
+        "prompt_elements": 5,
+        "npc_voice": 5,
+        "player_agency": 4,
+        "restraint": 5,
+        "atmosphere": 5,
+        "prose": 4,
+        "overall": 9,
+        "weakness": "Slight interiority ('you are moving instead of reacting') edges into deciding the player's mindset, and 'gravel crunching' repeated three times feels like deliberate but slightly heavy rhythm-building."
+      }
+    ]
+  },
+  {
+    "model": "current narrator (accounts/fireworks/routers/glm-5p3-fast)",
+    "scenario": "hard_sparse_restraint",
+    "attempt": 2,
+    "text": "The road runs bare between low stone walls, packed dirt cracked under the noon sun, and your boots find the pace without your asking them to. Your eyes move in the same rhythm now — wall base, treeline, the fold of ground where the road bends north. Not searching anymore. Sweeping. Your weight settles low over your steps, shoulders loose, and the bruise along your ribs makes itself known only as a dull ache that keeps time with your stride.\n\nWind moves through the pine stands east of the road, carrying resin and cold stone-smell down across your path. A crow calls somewhere behind you, twice, then quits. You mark it without breaking stride: distance, direction, nothing following. The wet ground south of the walls shows old cart ruts, half-dried, and you read them at a glance now — depth, width, how long since the water sat in them. Two days. Freight, not travelers. The knowledge lands clean, the way it used to before the shaking started, and your hands stay steady on your pack straps.\n\nA half-hour on, you find what the rhythm was for. Where the walls end, the road forks around a leaning waymarker, and the left-hand track is softer ground, boot-printed, fresh enough that the edges haven't crumbled. Three sets, moving south. You crouch over them, palm braced on the cold stone of the marker, and the prints tell you plainly: light loads, unhurried, one walker favoring a leg. Your breath comes slow and even. The ache in your ribs is just an ache. Whatever spent you these past days, you've got the edge of it back.\n\nFarther along the right-hand fork, woodsmoke drifts thin above the treeline — a hearth, maybe a settlement's edge, an hour's walk. You straighten, roll your shoulders once, and stand at the fork with the sun directly overhead, the choice still yours to make.",
+    "first_text": 0.86,
+    "secs": 4.7,
+    "cost": 0.0079764,
+    "words": 314,
+    "verdicts": [
+      {
+        "judge": "GLM 5.3 Fast",
+        "cost": 0.0036132,
+        "result_integrity": 5,
+        "prompt_elements": 4,
+        "npc_voice": 5,
+        "player_agency": 3,
+        "restraint": 4,
+        "atmosphere": 5,
+        "prose": 5,
+        "overall": 7,
+        "weakness": "The narration commits Kael to actions beyond 'walking and looking' — crouching to examine prints and reading them in detail — deciding further activity the player didn't state."
+      }
+    ]
+  },
+  {
+    "model": "current narrator (accounts/fireworks/routers/glm-5p3-fast)",
+    "scenario": "hard_sparse_restraint",
+    "attempt": 3,
+    "text": "The road runs empty in both directions, wheel-rutted and soft with last night's rain. You keep a steady pace, boots printing dark ovals in the mud, and you work your eyes along the treeline as you walk — left verge, right verge, the ditch, the far hedgerow, back to the road ahead. Broken rhythm, no long stares, no fixed point. Wind moves through the pines in a slow drag, carrying woodsmoke from somewhere east and the wet-earth smell of the ditch. Crows argue over something in a far field, three of them, loud, then silent together.\n\nSomewhere in the third mile the pattern settles into your legs and your breathing without you forcing it. The ache in your ribs from the old bruise finds the tempo too, a dull throb on every second stride, and instead of breaking your gait it marks it, like a drum. Your hand rides the strap of your pack. Your weight sits low. When a stick cracks in the brush ahead and left, your body is already angled toward it before the sound finishes — a roe deer bursting through the gap, white rump flashing, gone. Your heart jumps and comes back down within four strides. Nothing follows it.\n\nYou read the ground as you pass: cart tracks two days old, a rider's hoofprints cutting across them fresher, the print of a small boot near the ditch that stops and doubles back the way it came. Smoke thinning to a thread on the eastern wind. Every detail arrives in order, sorted before you consciously reach for it. The road bends north around a granite outcrop slick with green lichen, and beyond it the land opens — a valley, a river's glint far down, a walled settlement's dark rooftops huddled at the crossing.\n\nThe edge stays with you past the bend. Whatever the road brings, you'll meet it walking, hand already where it needs to be. The crows start up again behind you, farther off now, and the settlement's gate is still a good hour distant.",
+    "first_text": 0.61,
+    "secs": 4.3,
+    "cost": 0.0081282,
+    "words": 340,
+    "verdicts": [
+      {
+        "judge": "GLM 5.3 Fast",
+        "cost": 0.003312,
+        "result_integrity": 5,
+        "prompt_elements": 4,
+        "npc_voice": 4,
+        "player_agency": 4,
+        "restraint": 5,
+        "atmosphere": 5,
+        "prose": 5,
+        "overall": 9,
+        "weakness": "The closing paragraph slightly presumes Kael's resolve and readiness ('you'll meet it walking, hand already where it needs to be'), brushing against player agency."
+      }
+    ]
+  },
+  {
+    "model": "current narrator (accounts/fireworks/routers/glm-5p3-fast)",
+    "scenario": "hard_starforged_combat",
+    "attempt": 1,
+    "text": "You lunge across the deck grating and swing the pry bar two-handed. Vex gets the torch up instead of her arm — the bar slams the cylinder, not her ribs, and the impact wrenches something deep in your left shoulder, a hot pull that buckles your grip for half a second. The torch spins out of her hands and skitters under a cargo pallet, still hissing, its pilot flame guttering against the deck plates. She rocks back a full step, boot heels shrieking on the grating, one gauntleted hand pressed to her side where the bar's follow-through caught her.\n\nVex comes up fast — too fast for someone hit that hard — and her free hand goes not to the torch but to the knife sheathed at her thigh. Her scorched visor is fogged from inside, and her breathing comes through the filter in short, flat bursts. \"Should've swung for my head, salvager,\" she says, and rolls the blade once across her knuckles. Behind her, the pallet where the torch landed has begun to smoke, a thin brown thread of it curling up toward the strip lighting — the pilot flame is chewing into the crate's strapping, and neither of you is close enough to smother it without opening your guard.\n\nYour shoulder throbs with every pulse, sweat running down under your collar, the recycled air tasting of ozone and scorched polymer. Vex circles left, keeping the burning pallet between you, knife low, her boots deliberate on the grating. The hiss from under the crate thickens.\n\nThe smoke thread has widened into two.",
+    "first_text": 1.19,
+    "secs": 4.6,
+    "cost": 0.0076545,
+    "words": 263,
+    "verdicts": [
+      {
+        "judge": "GLM 5.3 Fast",
+        "cost": 0.0034653,
+        "result_integrity": 5,
+        "prompt_elements": 4,
+        "npc_voice": 5,
+        "player_agency": 4,
+        "restraint": 5,
+        "atmosphere": 5,
+        "prose": 5,
+        "overall": 9,
+        "weakness": "The progress ×2 consequence is implied only through the shoulder wound and fire, with nothing explicitly tying it to lasting progress."
+      }
+    ]
+  },
+  {
+    "model": "current narrator (accounts/fireworks/routers/glm-5p3-fast)",
+    "scenario": "hard_starforged_combat",
+    "attempt": 2,
+    "text": "You close the gap in three strides, boots hammering the grating, and swing the pry bar two-handed at Vex's arm before the torch sparker can touch the nozzle. The curved steel catches her across the elbow of her torch hand. The sparker spins away into the dark between cargo containers and the torch drops from her grip, clanging off the deck and rolling under a pallet strut. Vex staggers back a step, armor scraping the container wall, and the torch fire dies with it — the hull plating she'd been cutting stays intact, a half-moon of glowing orange cooling to black.\n\nThe cost comes fast. She doesn't hesitate, doesn't reach for the fallen torch. Her boot knife is already out and she lunges inside your swing, and you can't get the bar around in time. The blade drags across your forearm — not deep, but the suit sleeve parts and heat spreads down to your wrist, blood dark on the fabric. You wrench the pry bar back between you and shove it into her chest plate, driving her against the container with a sound like a dropped engine block. Her breath goes out of her in one hard grunt.\n\nYou've gained ground — the torch is dead, the cut in the hull unfinished, and she's pinned back on her heels with a pry bar leveled at her chest. Your arm throbs with every heartbeat and the suit's fabric is already stiffening where the blood dries. Somewhere below the deck, a pressure line ticks as it cools, once, twice, then silence.\n\nVex wipes her mouth with the back of her knife hand and plants her feet, blade low, waiting for your next move.",
+    "first_text": 0.92,
+    "secs": 3.5,
+    "cost": 0.0078789,
+    "words": 282,
+    "verdicts": [
+      {
+        "judge": "GLM 5.3 Fast",
+        "cost": 0.003552,
+        "result_integrity": 5,
+        "prompt_elements": 4,
+        "npc_voice": 5,
+        "player_agency": 3,
+        "restraint": 5,
+        "atmosphere": 4,
+        "prose": 5,
+        "overall": 7,
+        "weakness": "The narration decides further player actions (wrenching the bar back and shoving Vex) well beyond the single swing the player stated."
+      }
+    ]
+  },
+  {
+    "model": "current narrator (accounts/fireworks/routers/glm-5p3-fast)",
+    "scenario": "hard_starforged_combat",
+    "attempt": 3,
+    "text": "The gap closes in three strides. Vex's thumb is still hunting the torch's striker when the pry bar comes around in a flat arc — you put your shoulder behind it, boots skidding on grating slick with hydraulic fluid, and the iron catches her across the forearm and wrist. The impact rings up the bar into your palms. The torch spins out of her grip and skitters under a cargo pallet, striker still hissing gas into the dark.\n\nShe takes the hit without a sound, which is worse than a scream. The bar's follow-through drags you past your balance point — your leading knee comes down hard on the grating, and something in the joint lights up with a grinding heat that won't walk off easy. The pry bar is bent now, a visible kink near the working end, its lever edge rolled over where it met her armor plate. You get it back up anyway, one-handed, weight off the bad knee.\n\nVex retreats two steps, cradling the struck arm, and her helmet lamp pins you against the stacked containers. “Two of you came aboard,” she says, voice flat through the comm static. “Only one's walking out.” She reaches not toward the lost torch but to the tool rack bolted beside the aft hatch — her good hand closes on a shock-wrench, long and heavy in a way that means business.\n\nBehind her, the Ashfall's hull ticks as it cools, and somewhere in the frames above, cargo straps creak against shifting mass. Your knee throbs in time with the reactor hum bleeding through the deck.",
+    "first_text": 0.78,
+    "secs": 2.9,
+    "cost": 0.007713899999999999,
+    "words": 265,
+    "verdicts": [
+      {
+        "judge": "GLM 5.3 Fast",
+        "cost": 0.003237,
+        "result_integrity": 5,
+        "prompt_elements": 4,
+        "npc_voice": 5,
+        "player_agency": 5,
+        "restraint": 5,
+        "atmosphere": 5,
+        "prose": 5,
+        "overall": 9,
+        "weakness": "Progress ×2 is expressed only through injury and bent gear — a small nod to the broader stakes would complete it."
+      }
+    ]
+  },
+  {
+    "model": "current narrator (accounts/fireworks/routers/glm-5p3-fast)",
+    "scenario": "hard_strong_hit_clean",
+    "attempt": 1,
+    "text": "You unroll the storm charts across Quill's ledger-cluttered desk, pinning one curling corner with your thumb before the harbor damp can take it back. The ink lines are steady even if your hands are not — bearings, isobar sketches, the track of the September gale marked in three colors. Quill sets down his pen. His fingers, stained black to the second knuckle, walk across the paper without touching it.\n\nHe leans close enough that you can smell the tar on his coat. \"The gale track,\" he says, tapping the air above the third chart. \"You logged the wind shift at Gibbet Rock yourself?\" When you tell him you did, he pulls a drawer, slides the sheets in with the care of a man handling coin. \"Archived. And the berth — end of the east pier, the ketch *Wren's* slip, third night free.\" He stamps a chit and pushes it across the desk, ink still wet. \"Fair winds are the only currency this port trusts less than paper.\" That's all he gives you; he's already reaching for the next ledger.\n\nYou take the chit. Something in your chest settles that hasn't since the disgrace — the talk went the way you steered it, every line landing where you drew it. The edge of the morning is yours, and your bruises don't argue. Outside, anchor chain rattles down some hull, gulls wheel over the fish stalls, and the east pier runs out long and sun-bleached toward the *Wren*'s berth — with a figure already leaning on her rail, watching your approach.",
+    "first_text": 2.78,
+    "secs": 5.8,
+    "cost": 0.0074385,
+    "words": 259,
+    "verdicts": [
+      {
+        "judge": "GLM 5.3 Fast",
+        "cost": 0.0036747000000000004,
+        "result_integrity": 5,
+        "prompt_elements": 4,
+        "npc_voice": 4,
+        "player_agency": 3,
+        "restraint": 4,
+        "atmosphere": 5,
+        "prose": 5,
+        "overall": 8,
+        "weakness": "The narration decides Tamsin's internal feelings ('something in your chest settles', 'your bruises don't argue'), overstepping player agency and inventing unestablished injuries."
+      }
+    ]
+  },
+  {
+    "model": "current narrator (accounts/fireworks/routers/glm-5p3-fast)",
+    "scenario": "hard_strong_hit_clean",
+    "attempt": 2,
+    "text": "You unroll the storm charts across Quill's desk, pinning the curling edges with two brass weights you find beside his ledger. The paper still smells of the lamp oil you worked by — three nights of isobar lines and wind-veins inked in your own hand, the squall tracks of the Wrackcurrent rendered tighter than any print chart sold in Saltmarrow's chandlers. Morning light through the salt-fogged window catches the wet-ink sheen. Your knuckles are bruised from the yard brawl two days back; they ache as you flatten the last corner, but your hands stay steady on the paper.\n\nQuill sets down his pen. Ink stains every finger to the second knuckle, and he wipes his spectacles with a cloth that only smears them worse before leaning over the desk. He traces the longitude scale with one stained fingertip, follows the September squall-line out past the breakwater mark, and makes a small sound through his teeth — the sound of a man checking another man's arithmetic and finding it sound. “Where did you take the fixings for the Wrackcurrent's northern elbow?” he asks, not looking up.\n\n“Off the Merrow's bow, becalmed, eleven days. Dead reckoning and a backstaff.” You tap the margin where your signature sits under the date. His eyes go there, then to your face, and something in his posture shifts — a thin man straightening from a permanent hunch over his ledgers.\n\nHe pulls a blank berth-slip from the drawer. The nib scratches, quick and even, and he blots it and holds it out. “Waived. The charts stay in my archive, and your name goes in the margin of any copy I sell.” He rolls your work into a tube with the care of a man handling a compass, slots it into the rack behind him between charts worth more than the fee, and turns back to his ledger before you've even taken the slip — though his pen pauses once, hovering, as if he means to say more and decides against it.\n\nThe berth-slip is warm from the drawer, the ink not yet dry when you fold it. Outside, the harbor chain rattles as a trawler warps in, gulls screaming over the fish guts on the pier. Your hand — your steady, deliberate hand — slides the folded slip into your coat, and the bruised ache in your knuckles feels like a debt already half-paid. Somewhere in the harbor a ship is short a navigator, and now you know exactly which berth is yours.",
+    "first_text": 0.88,
+    "secs": 5.6,
+    "cost": 0.0088377,
+    "words": 417,
+    "verdicts": [
+      {
+        "judge": "GLM 5.3 Fast",
+        "cost": 0.0043173000000000005,
+        "result_integrity": 5,
+        "prompt_elements": 4,
+        "npc_voice": 5,
+        "player_agency": 2,
+        "restraint": 4,
+        "atmosphere": 5,
+        "prose": 5,
+        "overall": 7,
+        "weakness": "The narration puts words in Tamsin's mouth (an entire spoken reply to Quill) and narrates her internal feelings, overriding player agency."
+      }
+    ]
+  },
+  {
+    "model": "current narrator (accounts/fireworks/routers/glm-5p3-fast)",
+    "scenario": "hard_strong_hit_clean",
+    "attempt": 3,
+    "text": "You unroll the charts across his desk, weighting the curling corners with his ink pot and a brass letter-opener. The vellum crackles flat, and the storms you sailed through last season spread out in your own hand — barometric spirals, wind arrows in iron-gall ink, the track of the squall line that chewed the Cumberland Shoals. Salt-stiff from the voyage, creased where you hunched over them in a pitching cabin, lantern swinging shadows across the columns. Quill's fingers, black to the second knuckle, stop their shuffling of ledgers.\n\nHe leans in. Reads. His lips move faintly over your annotations. Outside, the office window rattles with harbour noise — gulls, chain, a cooper hammering staves somewhere below — and the morning sun cuts a bar of light across the desk, catching the ink on your knuckles to match his own.\n\n“These are the Paragon squalls.” He taps the September sheet twice with a stained forefinger. “Nobody's charted them right since the old survey. Half the pilots here still give them a two-league berth they don't need.” He straightens, pulls a ledger from the shelf behind him, and licks his thumb. He writes your name into the berth column in a quick, cramped hand, and when he reaches the fee line he rules a stroke clean through it and initials the margin. “Archive copies stay with me. Originals too — I don't trade on promises. Third berth, stone quay, the ketch *Wetherell* taking on water at mid-tide.”\n\nHe slides a stamped chit across the desk. “The fee's waived. The squall line off Paragon last autumn — you were in that?” He doesn't wait long for an answer, already gathering your sheets into a leather folio with the care of a man handling coin, pressing each one flat between his palms before filing it. His eyes flick once to the bruise darkening along your jaw, then back to his ledgers.\n\nYou fold the chit into your coat. Through the window, the stone quay runs bright with morning, and the *Wetherell*'s masts stand where he pointed, her crew a scatter of figures coiling rope on her deck. Somewhere out past the breakwater, thunder grumbles low over open water — too far and too even to be weather.",
+    "first_text": 1.58,
+    "secs": 7.0,
+    "cost": 0.0084879,
+    "words": 373,
+    "verdicts": [
+      {
+        "judge": "GLM 5.3 Fast",
+        "cost": 0.0042243,
+        "result_integrity": 5,
+        "prompt_elements": 4,
+        "npc_voice": 5,
+        "player_agency": 3,
+        "restraint": 4,
+        "atmosphere": 5,
+        "prose": 5,
+        "overall": 8,
+        "weakness": "The narration decides small player actions and invents an unestablished bruise on Tamsin's jaw, slightly overstepping agency."
+      }
+    ]
+  },
+  {
+    "model": "current narrator (accounts/fireworks/routers/glm-5p3-fast)",
+    "scenario": "hard_terse_input",
+    "attempt": 1,
+    "text": "You wedge the iron pry bar into the seam where the crypt door meets its frame and throw your weight against it. Old mortar crumbles and sifts down over your knuckles. The door shifts an inch, then another, iron hinges grinding out a sound like a beast in pain — and then it gives all at once. The stone slab swings inward faster than you braced for, its edge catching you across the ribs as you stumble through the gap. Something tears. Warmth spreads under your torn shirt, and when you press your palm to your side it comes away dark and wet.\n\nYou put your shoulder against the doorframe and breathe through the pain, short and shallow. Cold air rolls out of the passage beyond, carrying damp earth and the stale sweetness of something long sealed. Behind you, the wind drags at the treeline; ahead, your torchlight reaches maybe ten paces before the dark eats it. Stone steps descend, each one slick with condensation, worn hollow at their centers by feet that stopped using them lifetimes ago.\n\nThe blood keeps coming slow but steady through the fabric. You bind it as best you can with a strip torn from your pack — hands fumbling twice on the knot before it holds — and the effort leaves sweat standing on your forehead despite the cold. Below, water drips somewhere out of sight, marking time in the silence.\n\nThe stairwell waits, black and patient.",
+    "first_text": 3.33,
+    "secs": 5.9,
+    "cost": 0.006966,
+    "words": 243,
+    "verdicts": [
+      {
+        "judge": "GLM 5.3 Fast",
+        "cost": 0.0029001000000000005,
+        "result_integrity": 5,
+        "prompt_elements": 4,
+        "npc_voice": 5,
+        "player_agency": 3,
+        "restraint": 5,
+        "atmosphere": 5,
+        "prose": 4,
+        "overall": 8,
+        "weakness": "The narration takes over Kael's actions beyond the prompt, deciding he binds the wound and braces himself rather than leaving his next move to the player."
+      }
+    ]
+  },
+  {
+    "model": "current narrator (accounts/fireworks/routers/glm-5p3-fast)",
+    "scenario": "hard_terse_input",
+    "attempt": 2,
+    "text": "You set your shoulder against the iron and drive. The seal resists — centuries of rust bonding the frame — then something cracks, and the door swings inward all at once, faster than you braced for. Its edge catches you across the ribs, a hard iron blow through your coat, and you stagger into the doorway with the taste of blood in your mouth. Warmth spreads under torn fabric at your side. You press your palm there and it comes away dark.\n\nThe crypt breathes out cold air, damp earth and old stone and something beneath both — tallow, maybe, or fat gone rancid in the dark. Your breath fogs. Beyond the threshold, a worn stair descends into black, each step slick with condensation, and the walls glisten faintly where your torchlight — still lit, still clutched in your other fist — reaches them. Water drips somewhere below, slow and regular, counting out seconds you can't see.\n\nYou lean against the doorframe, ribs throbbing with each breath, shallow now, careful. The blood is a steady line down your hip, soaking into your belt. Not deep enough to stop you. Deep enough that you'll feel every one of those stairs.\n\nFrom below, once, comes a sound — a dry rattle, like loose timber settling. Then nothing. The dark at the bottom of the stair waits, and you're the one standing at the top of it.",
+    "first_text": 3.23,
+    "secs": 6.0,
+    "cost": 0.007104599999999999,
+    "words": 234,
+    "verdicts": [
+      {
+        "judge": "GLM 5.3 Fast",
+        "cost": 0.0028818000000000003,
+        "result_integrity": 5,
+        "prompt_elements": 5,
+        "npc_voice": 5,
+        "player_agency": 4,
+        "restraint": 5,
+        "atmosphere": 5,
+        "prose": 5,
+        "overall": 9,
+        "weakness": "Slight overreach in describing Kael's breathing as 'shallow now, careful,' which edges toward dictating his body's response beyond the stated injury."
+      }
+    ]
+  },
+  {
+    "model": "current narrator (accounts/fireworks/routers/glm-5p3-fast)",
+    "scenario": "hard_terse_input",
+    "attempt": 3,
+    "text": "The door shifts under your shoulder before it gives — a grinding of stone on stone, grit cascading down the frame. Then the iron bar behind it snaps loose all at once, and the whole slab swings inward faster than you braced for. Its edge catches you across the ribs, driving the breath out of you, and you go down on one knee in the wet gravel. Pain arrives a beat later, hot and specific. You press your palm to your side and it comes away dark. The torn fabric of your coat is already soaked through, blood welling steadily from the gash beneath.\n\nCold air rolls out of the crypt mouth — damp earth, tallow, something older underneath, like charcoal long dead. Rain taps the treeline behind you. You force yourself upright with one hand on the doorframe, breath coming shallow now, each inhale shorter than the last. Somewhere below, water drips onto stone in an uneven rhythm. Down in the dark, the stairs are barely visible: worn granite slick with moisture, descending past where moonlight reaches.\n\nYou take the first step anyway. The door hangs open behind you, creaking on its old hinges with each gust of wind. Your free hand stays pressed against your side, and warmth spreads between your fingers as the bleeding keeps on. The descent waits.",
+    "first_text": 0.66,
+    "secs": 3.4,
+    "cost": 0.0068406,
+    "words": 222,
+    "verdicts": [
+      {
+        "judge": "GLM 5.3 Fast",
+        "cost": 0.0027546000000000003,
+        "result_integrity": 5,
+        "prompt_elements": 4,
+        "npc_voice": 5,
+        "player_agency": 2,
+        "restraint": 4,
+        "atmosphere": 5,
+        "prose": 5,
+        "overall": 7,
+        "weakness": "The narration decides Kael descends into the crypt ('You take the first step anyway'), overriding player agency."
+      }
+    ]
+  },
+  {
+    "model": "current narrator (accounts/fireworks/routers/glm-5p3-fast)",
+    "scenario": "hard_three_npc_dialog",
+    "attempt": 1,
+    "text": "The ash of last night's fires is cold under your boots, and the smell of it — char, wet wool, something animal gone sour — hangs in the morning air. You plant yourself in the trampled middle of the camp where the three of them can all see you, and you put the question to them plainly: who knew the caravan's route before it left.\n\nOren answers first, because he is the kind of man who answers first. He scratches the scar through his eyebrow with one knuckle, unhurried. “I did. The warden's office files every route through the pass. That's no secret.” He lets that sit, then adds the one thing more: “So does the toll ledger at Marrow Ford. Anyone who reads it, reads your road.” He pulls his cloak tighter against the morning wind and turns back toward the burned wagon, done with the conversation.\n\nMira's jaw works before she speaks, and when the words come they are flat and bitter. “You stand there like a judge. We buried two of ours in this dirt, and you ask *us*.” She doesn't deny it — she doesn't say yes either. She spits into the ash and shoulders past a charred wheel, putting distance between you and her.\n\nBrannoc stays, crouched by the fire pit, turning a cracked cooking pot in his hands. “I knew part of it,” he says, quieter. “First two legs, no further. Kael — whoever did this knew the ford crossing. The timing was too clean.” He sets the pot down and looks at the treeline, where crows are working at something you can't see from here.",
+    "first_text": 4.7,
+    "secs": 7.7,
+    "cost": 0.007755,
+    "words": 272,
+    "verdicts": [
+      {
+        "judge": "GLM 5.3 Fast",
+        "cost": 0.0034416000000000004,
+        "result_integrity": 4,
+        "prompt_elements": 4,
+        "npc_voice": 5,
+        "player_agency": 5,
+        "restraint": 4,
+        "atmosphere": 5,
+        "prose": 5,
+        "overall": 8,
+        "weakness": "Oren's fact budget of one is arguably exceeded with the extra toll-ledger detail, though it fits his clipped, surface-level manner."
+      }
+    ]
+  },
+  {
+    "model": "current narrator (accounts/fireworks/routers/glm-5p3-fast)",
+    "scenario": "hard_three_npc_dialog",
+    "attempt": 2,
+    "text": "The ash is still warm where you plant your boots. You set yourself in the middle of the triangle they've made of themselves — Oren by the wrecked wagon wheel, Mira across the cold firepit with her arms crossed, Brannoc picking at a charred tent stake — and put the question to all three at once. Cold air moves through the burned camp, carrying woodsmoke and the sourness of wet ash, and a crow calls somewhere back along the treeline.\n\nMira's jaw tightens first. Her eyes cut to Oren before they come back to you, and her voice comes out flat and hard. \"The drovers knew. And anyone who paid for passage, same as you.\" She spits into the firepit and doesn't move from where she stands. Brannoc straightens from the stake, wiping soot on his thigh, and shakes his head slow. \"I knew the road, not the route. We weren't told which tracks we'd take till the morning we rolled.\" He rubs the back of his neck, glancing at the wheel ruts leading north. \"Somebody chose the ford at Grimwash. Wasn't us.\"\n\nOren lets the silence sit a moment, thumb hooked in his belt, the scar through his eyebrow pulling as he frowns. \"The route was mine to set,\" he says. \"I logged it with the wardens at Copperford three days before we marched.\" He lifts his eyes past you, to the far side of the camp where the ground is torn and drag-marked, and his voice drops a degree. \"Which means the record's been read by someone.\" Then he turns away and starts pulling a tarp from the wrecked wagon, done with the talking.\n\nMira is still staring at the back of his head when the crow calls again, closer this time.",
+    "first_text": 0.78,
+    "secs": 3.2,
+    "cost": 0.008078400000000001,
+    "words": 294,
+    "verdicts": [
+      {
+        "judge": "GLM 5.3 Fast",
+        "cost": 0.0035832,
+        "result_integrity": 5,
+        "prompt_elements": 4,
+        "npc_voice": 5,
+        "player_agency": 5,
+        "restraint": 5,
+        "atmosphere": 5,
+        "prose": 5,
+        "overall": 9,
+        "weakness": "Oren's 'record's been read by someone' edges slightly past the question's scope, though it enriches rather than breaks the scene."
+      }
+    ]
+  },
+  {
+    "model": "current narrator (accounts/fireworks/routers/glm-5p3-fast)",
+    "scenario": "hard_three_npc_dialog",
+    "attempt": 3,
+    "text": "The camp is ash and puddle. You plant yourself in the middle of the three of them, cold rain tapping the charred wagon ribs, and ask who knew the caravan's route before it left. Woodsmoke still hangs in the wet air, mixing with the iron smell of the ruined axle lying half-buried beside you. Your shoulders ache from the night's work, and your hands won't quite steady.\n\nCaptain Oren shifts his weight, the scar through his eyebrow pulling as he frowns down at the mud. \"I filed the route with the wardens three days prior. That document sits in my strongbox at Fort Hallow, under seal.\" He folds his arms. \"Sealed documents don't travel, and neither did I.\" He turns his attention back to the burnt harness he'd been poking through, nudging it with his boot.\n\nMira laughs once, flat and ugly. \"You're asking the wrong question, scholar. Ask who *wanted* it known.\" She doesn't move from where she leans against the broken wheel, arms crossed, eyes flat on you. Brannoc rubs the back of his neck, rain dripping off his wool collar. \"I knew it. Every drover knew it — route was posted at the tally-house the morning we loaded. Same as always.\" He looks at the ground, jaw working. \"Same as always,\" he says again, quieter, and kicks a clod of ash loose from his boot. Beyond the burnt ring, a crow drops from the treeline and lands on the axle, and no one moves to scare it off.",
+    "first_text": 7.34,
+    "secs": 10.8,
+    "cost": 0.0075636,
+    "words": 251,
+    "verdicts": [
+      {
+        "judge": "GLM 5.3 Fast",
+        "cost": 0.0032739,
+        "result_integrity": 5,
+        "prompt_elements": 5,
+        "npc_voice": 5,
+        "player_agency": 3,
+        "restraint": 5,
+        "atmosphere": 5,
+        "prose": 5,
+        "overall": 8,
+        "weakness": "The narration imposes physical states on Kael — aching shoulders and unsteady hands — that the player never described."
+      }
+    ]
+  },
+  {
+    "model": "current narrator (accounts/fireworks/routers/glm-5p3-fast)",
+    "scenario": "hard_weak_hit_cost",
+    "attempt": 1,
+    "text": "You drop into the ditch before the lantern light can crest the rise, boots sinking into cold mud, and drag the messenger's satchel open with both hands. The leather is stiff with rain. Inside: a wax-sealed letter, a tin of tinder, three coppers scattered loose. Your fingers find the letter's edge and pull — and the seal cracks in half, the wax splitting crooked, one fragment sticking to your glove while the other stays glued to the paper. Torn seal means tampered seal. Anyone who reads it now will know hands were on it before it arrived.\n\nThe patrol's boots crunch on the road gravel above you, twenty paces off and closing. You flatten into the ditch wall, wet nettles pressed against your cheek, breath shallow through your mouth. The letter goes inside your shirt, paper cold against your sternum. Through the tangle of roots you see the swing of Sergeant Holt's lantern throw a bar of light across the ditch's lip — then past it. He's stopped. Shouting at one of his men about slack pace, his voice cracking with cold irritation, his lantern arm turned away from the ditch and toward the far treeline.\n\nThere it is: his back to you, his men bunched and grumbling behind him, the gap between the patrol and the ditch's downstream end wide and black. The dead man's other satchel strap is still tangled around your knee where you knelt on it, and if you pull free now the body will shift, loose stones rolling, sound carrying on the night air. Behind Holt's lantern, the road curves down toward a ford and dark pasture beyond it.\n\nSomewhere in the trees a crow calls once, wrong-voiced for night, and falls silent.",
+    "first_text": 0.91,
+    "secs": 4.3,
+    "cost": 0.0079611,
+    "words": 288,
+    "verdicts": [
+      {
+        "judge": "GLM 5.3 Fast",
+        "cost": 0.0034374,
+        "result_integrity": 5,
+        "prompt_elements": 5,
+        "npc_voice": 4,
+        "player_agency": 4,
+        "restraint": 5,
+        "atmosphere": 5,
+        "prose": 5,
+        "overall": 9,
+        "weakness": "The narration extends Kael's actions (flattening, hiding the letter) a step beyond the player's stated intent, though plausibly in the spirit of it."
+      }
+    ]
+  },
+  {
+    "model": "current narrator (accounts/fireworks/routers/glm-5p3-fast)",
+    "scenario": "hard_weak_hit_cost",
+    "attempt": 2,
+    "text": "You kneel in the ditch mud, forcing the satchel's flap open with numb fingers. The dead messenger's weight has settled wrong, pinning the strap under his hip, and you haul his shoulder up — the joint cracks loose — to drag the bag free. Inside: a wax block, a stub of tallow candle, a tin of crackers gone to crumbs. The letter is there, rolled in oilcloth, and your hand closes around it just as lantern light sweeps the far hedge.\n\nThe oilcloth is soaked through where his wound bled into it, and the drawstring has fused with the grime of the ditch. You tear it open with your teeth and the wax seal splits. Half the parchment beneath is stiff and dark, the ink of the lower lines run into an unreadable smear — but the upper script holds, and the sigil pressed into the wax is the chancellor's own. Your fingers find the edge of the road-cut behind you, a drainage channel running north under the hedge shadow, deep enough that the lantern's reach stops at its lip. The opening is there. You caused it, and now it sits open at your back.\n\nBoots crunch on gravel up the slope. Sergeant Holt's voice carries down, flat and certain: \"Blood on the verge. He didn't crawl far.\" A second pair of boots swings wide, cutting the line of the hedge, and the lantern beam swings with them.\n\nYou push off your knee and your hand comes away without your belt knife — the sheath hangs empty, torn loose somewhere in the mud when you turned the body. The letter is in your fist. The channel runs north into the dark.",
+    "first_text": 1.3,
+    "secs": 4.1,
+    "cost": 0.0078093,
+    "words": 281,
+    "verdicts": [
+      {
+        "judge": "GLM 5.3 Fast",
+        "cost": 0.0028233000000000004,
+        "result_integrity": 5,
+        "prompt_elements": 5,
+        "npc_voice": 4,
+        "player_agency": 5,
+        "restraint": 5,
+        "atmosphere": 5,
+        "prose": 5,
+        "overall": 9,
+        "weakness": "Holt's single line is effective but the interrupt/random event NPC-action beats are folded into him rather than distinctly voiced."
+      }
+    ]
+  },
+  {
+    "model": "current narrator (accounts/fireworks/routers/glm-5p3-fast)",
+    "scenario": "hard_weak_hit_cost",
+    "attempt": 3,
+    "text": "You drop into the cold muck beside the messenger, hands already working the satchel's buckles. The leather is stiff with rain, and your numb fingers slip twice before the clasp gives. Inside: a wax-sealed bundle, a strip of dried meat, a knife. You tear the sealed letter free and shove it inside your shirt, pressed flat against your ribs where it can't fall. Down the road, lantern light swings through the ditch-grass, close enough now that you can hear boots on gravel and Sergeant Holt's voice cutting the dark — \"Check the culvert.\"\n\nThe cost comes fast. Wrestling the satchel back under the corpse's arm, you knock the messenger's knife loose; it slides off the bank and vanishes into the black water at the ditch's bottom with a soft plok. Your own field kit, unslung in the scramble, tips and spills — two of your flint packets sink into the mud, gone the moment you grope for them, and there's no time to dig. You wipe your hands on your thighs and press flat against the bank as the lantern's reach crawls overhead.\n\nBut the corpse has given you more than the letter. In the spilled light you mark what Holt's men will not: a drainage culvert under the road shoulder, ten paces back, half-hidden by dead bracken — wide enough for a man to crawl through, and it opens on the far side of the ditch. The patrol's own sweep is pushing toward you, which means their backs will be to the road's blind side while they crowd the culvert's mouth. One lantern, four men, and a gap between them already widening as they fan out along the bank.\n\nHolt's lantern stops. “Here,” he says, and a boot scrapes the edge of the ditch not four arm-lengths from your shoulder, mud caking off it in wet clods. You hold your breath, letter stiff against your sternum, the bracken's dead smell thick in your nose — and wait to see which way the light falls.",
+    "first_text": 1.81,
+    "secs": 5.7,
+    "cost": 0.008436299999999999,
+    "words": 335,
+    "verdicts": [
+      {
+        "judge": "GLM 5.3 Fast",
+        "cost": 0.0035913000000000004,
+        "result_integrity": 5,
+        "prompt_elements": 4,
+        "npc_voice": 4,
+        "player_agency": 3,
+        "restraint": 5,
+        "atmosphere": 5,
+        "prose": 5,
+        "overall": 8,
+        "weakness": "The narration dictates several of Kael's small actions and physical state (wiping hands, pressing flat, holding breath) beyond the player's stated intent."
+      }
+    ]
+  },
+  {
+    "model": "current narrator (accounts/fireworks/routers/glm-5p3-fast)",
+    "scenario": "isles_weak_hit",
+    "attempt": 1,
+    "text": "You plant your boots on the salt-slick planking of the Saltmarrow docks and say it plain: you can read the Maelstrom currents better than anyone he has aboard, and he can take his payment at the next port. Midday heat presses on your shoulders; tar smell rises off the heated boards. Your hands stay steady on your belt even though your pulse does not.\n\nHale stops writing in his ledger, the chain at his belt clinking as he turns. He looks you over the way a man appraises rope — one slow pass, checking for rot. \"Maelstrom-readers are worth their weight in silver,\" he says. \"Which is why I don't carry promises.\" He taps the ledger. \"Passage you can have. But your sextant and charts stay with me as surety, in my strongbox, until the debt's cleared at the next port. Refuse, and the deal's off.\"\n\nHe waits, quill poised over the page, a bead of sweat crawling down the side of his thick neck. Somewhere behind you a crew shanty breaks off mid-verse and does not start again. The sextant's brass weight hangs at your hip, warm through the leather case — the last thing you own worth anything, and the one thing you'd need if you had to navigate your own way out of trouble.\n\nYou unbuckle the case and set it on his crate, and the charts beside it. Hale's stubby fingers close over both, and there is something in the ease of it — how quickly he reaches — that says he expected this. He scrawls your name into the ledger and turns the book so you can press your thumb to the ink-stained page. \"We weigh anchor on the morning tide,\" he says. \"Berth's aft, near the pumps. Don't be late.\" He chains the ledger back to his belt and walks off along the pier, your sextant tucked under one thick arm, and the empty spot at your hip feels like a missing tooth.",
+    "first_text": 6.19,
+    "secs": 10.6,
+    "cost": 0.0081171,
+    "words": 329,
+    "verdicts": [
+      {
+        "judge": "GLM 5.3 Fast",
+        "cost": 0.0037335,
+        "result_integrity": 4,
+        "prompt_elements": 4,
+        "npc_voice": 5,
+        "player_agency": 2,
+        "restraint": 4,
+        "atmosphere": 5,
+        "prose": 5,
+        "overall": 7,
+        "weakness": "The narration decides the player's action — surrendering the sextant and signing the ledger — without any input from the player, ending the negotiation unilaterally."
+      }
+    ]
+  },
+  {
+    "model": "current narrator (accounts/fireworks/routers/glm-5p3-fast)",
+    "scenario": "isles_weak_hit",
+    "attempt": 2,
+    "text": "The noon sun hammers the Saltmarrow docks, tar softening between the planks under your boots. You plant yourself in front of Quartermaster Hale at the head of the gangway, rope-burned hands open at your sides, and tell him you can read the Maelstrom currents better than anyone he's got aboard or could hire — that he should take you now and collect at the next port. Sweat crawls down your spine as you talk. Hale's thumb stays parked on the ledger chained to his belt, and his eyes move over you the way a man prices damaged cargo.\n\nHe works his jaw once, then snorts. \"Read currents, can you.\" He flips the ledger open on his forearm, licks the stub of a pencil. \"Fine. Passage on credit — but I'm not a charity. You work it.\" He jabs the pencil at the deck behind him. \"You bunk forward with the line-handlers, not aft. And your kit stays in my hold as surety till the debt's paid — everything but what you carry on your back. I search it before we weigh anchor, and if anything of yours ends up missing, that's the sea's business, not mine.\" That's the whole of his terms; he doesn't ask your name's history, and his face makes it plain he doesn't care to.\n\nWhile he scrawls the entry, a deckhand behind you drops a coil of rope; it slaps the planks and rolls against your heel, and nobody pauses at the sound. Somewhere down the quay a cooper is hammering staves, the rhythm steady as a heartbeat. Your fingers tighten on the strap of your satchel — everything of value you own, about to pass through a stranger's hands into a locked hold.\n\nHale snaps the ledger shut and holds out one broad, calloused palm, waiting for your bag. \"Tide turns within the hour. Hand it over or walk.\"",
+    "first_text": 0.59,
+    "secs": 4.4,
+    "cost": 0.0079323,
+    "words": 314,
+    "verdicts": [
+      {
+        "judge": "GLM 5.3 Fast",
+        "cost": 0.0039219,
+        "result_integrity": 5,
+        "prompt_elements": 3,
+        "npc_voice": 5,
+        "player_agency": 3,
+        "restraint": 5,
+        "atmosphere": 5,
+        "prose": 5,
+        "overall": 8,
+        "weakness": "The interrupt_scene and random_event prompts are barely addressed (only a vague dropped rope coil), and the narration decides small player actions like tightening fingers on the satchel."
+      }
+    ]
+  },
+  {
+    "model": "current narrator (accounts/fireworks/routers/glm-5p3-fast)",
+    "scenario": "isles_weak_hit",
+    "attempt": 3,
+    "text": "The noon sun hammers the Saltmarrow docks, tar softening between the planks under your boots. Hale stands at the foot of the Keressa's gangway, ledger chained to his belt, licking his thumb before he'll even look at you. You lay it out plain: you can read the Maelstrom currents better than anyone he's got, and he can take his coin at the next port. Your voice stays level, though your bruised shoulder aches where the strap of your bag drags across it, and sweat runs down your temple as you wait.\n\nHale's eyes narrow. He flips the ledger open, runs a thick finger down a column of debts. \"Every drowned navigator swore the same,\" he says. Then he stops, and looks at the Keressa's charts stacked on the crate beside him — dog-eared, salt-stained, wrong. He looks back at you. \"Fine. Passage on credit, paid at Port Ulmoor. But I hold your sextant and your knife belt until we make land. Collateral.\" He snaps the ledger shut. One fact, one condition, and the sextant — the one thing that's been yours since the disgrace — goes into his strongbox tonight.\n\nYou unbuckle the belt yourself, because it's better than watching his hands on it. The leather comes away cold from your hip, and the dock feels suddenly wider without the weight. Hale tucks both under his arm and jerks his chin toward the gangway. \"We sail on the evening tide. Berth with the quartermaster's stores, aft. You work your keep besides — currents mean nothing if you won't haul.\"\n\nBehind you, a dockhand drops a crate of salt cod and swears at the gulls that boil down onto it. Hale is already halfway up the gangway, your sextant swinging in his grip, and the tide gauge at the pier's end shows the water creeping in.",
+    "first_text": 0.59,
+    "secs": 4.3,
+    "cost": 0.0079455,
+    "words": 305,
+    "verdicts": [
+      {
+        "judge": "GLM 5.3 Fast",
+        "cost": 0.0037728,
+        "result_integrity": 5,
+        "prompt_elements": 5,
+        "npc_voice": 5,
+        "player_agency": 3,
+        "restraint": 4,
+        "atmosphere": 5,
+        "prose": 5,
+        "overall": 8,
+        "weakness": "The narration decides some of Tamsin's inner state and small actions (voice staying level, unbuckling the belt, feeling the dock grow wider) beyond the player's stated words."
+      }
+    ]
+  },
+  {
+    "model": "current narrator (accounts/fireworks/routers/glm-5p3-fast)",
+    "scenario": "miss",
+    "attempt": 1,
+    "text": "The lamp on the counter throws a small circle of light and everything past its rim is brown darkness, shelves sagging under water-swollen books. Your fingers close on the ledger's edge — and Mira's hand is already there, quicker than the light. She doesn't pull it away. She strikes. A lacquered rod, something she kept under the counter, cracks across your thigh and the pain blooms white and immediate; you stagger back into a shelf, spine bending as old boards groan under your weight, and your leg takes only part of you when you try to stand straight. Dust rises into the back of your throat.\n\nSweat stings your eyes, blurring her outline to a dark shape with a hand still resting flat on the counter where the ledger was. Your hand comes away empty. You blink hard and the blur doesn't fully clear — the room's edges have gone soft, the titles on the nearest spines smeared into gray smudges. Your breath comes shallow, ragged, each one dragging at the bruise deepening under your wool.\n\n\"Scholars,\" Mira says, flat. \"Always reaching.\" She slides the ledger off the counter and drops it through a gap in the floorboards behind her, out of your sight, without looking away from you.\n\nA floorboard shifts somewhere in the dark between the stacks. Not hers — she's still in front of you, rod loose at her side. A shape unfolds itself from the shadows near the eastern shelves, tall, and steps into the lamplight's edge: a man in a road-worn cloak, one hand resting on a long knife's pommel, watching you favor your leg with the patience of someone who has waited a while. Somewhere above, wind works through a broken window and drives a fine cold rain against the glass.\n\nMira backs a step, placing the counter between herself and both of you.",
+    "first_text": 2.88,
+    "secs": 6.5,
+    "cost": 0.008150099999999999,
+    "words": 310,
+    "verdicts": [
+      {
+        "judge": "GLM 5.3 Fast",
+        "cost": 0.0035718,
+        "result_integrity": 5,
+        "prompt_elements": 5,
+        "npc_voice": 4,
+        "player_agency": 5,
+        "restraint": 5,
+        "atmosphere": 5,
+        "prose": 5,
+        "overall": 9,
+        "weakness": "Mira's single line of dialogue is fitting but thin for an actively obstructive NPC, and the stranger is left appropriately but somewhat sparsely characterized."
+      }
+    ]
+  },
+  {
+    "model": "current narrator (accounts/fireworks/routers/glm-5p3-fast)",
+    "scenario": "miss",
+    "attempt": 2,
+    "text": "You reach across the counter while Mira's back is turned toward the cold hearth, fingers closing on the leather corner of the ledger beneath her palm. She is faster than she looks. Her hand comes off the ledger and the iron poker comes off the hearthstone in the same motion, and the blow takes you across the hip, a flat crack of pain that buckles your knee. You stagger sideways into a shelf, and rotting books spill around your boots in a soft rain of paper. Your left leg takes your weight badly; heat spreads through the muscle where the iron landed, and when you try to stand straight the hip will not hold you fully.\n\nThe ledger is gone. Not on the counter, not on the floor — the space where it lay holds only a ring of tallow-grease and a dead fly. Mira keeps the poker low and level, both hands on it, her knuckles white.\n\n“Thief.” She spits the word. Her voice is flat, unafraid, and she plants herself between you and the doorway. “You touched my things with your scholar's hands. Now you'll answer for it.”\n\nBehind her, in the doorway, a second figure stands where no one stood a breath ago — a broad silhouette in wet wool, rain dripping off the hem, saying nothing. The fireless room smells of damp paper and cold iron, and somewhere above, water drips steadily onto stone. Your hand finds the shelf to steady yourself, and the pain answers with every heartbeat.",
+    "first_text": 1.05,
+    "secs": 3.6,
+    "cost": 0.0076485,
+    "words": 253,
+    "verdicts": [
+      {
+        "judge": "GLM 5.3 Fast",
+        "cost": 0.0031046999999999997,
+        "result_integrity": 5,
+        "prompt_elements": 5,
+        "npc_voice": 5,
+        "player_agency": 5,
+        "restraint": 5,
+        "atmosphere": 5,
+        "prose": 5,
+        "overall": 10,
+        "weakness": "None significant; the arriving figure is left appropriately vague, which slightly withholds payoff but fits the MATCH twist."
+      }
+    ]
+  },
+  {
+    "model": "current narrator (accounts/fireworks/routers/glm-5p3-fast)",
+    "scenario": "miss",
+    "attempt": 3,
+    "text": "Mira's hand leaves the ledger for a moment — reaching for the tallow candle to trim the wick — and you move. Your boots are quiet on the flagstones, but the counter's stool scrapes when your hip brushes it, a short dry rattle in the silence, and her arm is already swinging before your fingers close on leather. The candlestick catches you across the temple. It is not a hard blow, but it lands where the bone is thin, and white eats the edges of your vision. You reel back, and your bad leg takes your weight wrong, buckling. Cold stone meets your knee. Somewhere far off, the sound of the room comes back to you in pieces — your own breath, the drip of water down a wall, the candle flame guttering.\n\nWhen your sight clears, the ledger is gone from the counter. Mira stands over it, ledger tucked into the sash at her waist, the candlestick still gripped in her fist, wax running over her knuckles. \"Touch my things again and you'll lose more than your footing.\" Her voice is flat, unhurried. She steps back, putting the counter between you, and does not look away.\n\nYou get a hand on the counter's edge and drag yourself upright. Your leg will not hold straight; you stand crooked, weight on the good side, sweat cold under your collar. The smell of old paper and damp earth is still here, but the reading table beyond the stacks — the one you passed on the way in, piled with loose folios — is bare now. Scraped clean. Nothing but a rectangle of dust where the pages sat. You were in this room minutes ago and no one has passed you.\n\nBoots on gravel outside, unhurried, coming up the library path. A shadow crosses the doorway's broken seam — a figure you have not seen before, tall, lamplight glinting off a wet oilskin cloak. Mira's head turns toward the door and her grip shifts on the candlestick. The footsteps stop just outside.",
+    "first_text": 1.14,
+    "secs": 4.3,
+    "cost": 0.008387700000000001,
+    "words": 339,
+    "verdicts": [
+      {
+        "judge": "GLM 5.3 Fast",
+        "cost": 0.0036081000000000004,
+        "result_integrity": 5,
+        "prompt_elements": 5,
+        "npc_voice": 4,
+        "player_agency": 4,
+        "restraint": 5,
+        "atmosphere": 5,
+        "prose": 5,
+        "overall": 9,
+        "weakness": "The player's physical staggering is slightly puppeted, though it follows directly from the mandated consequence."
+      }
+    ]
+  },
+  {
+    "model": "current narrator (accounts/fireworks/routers/glm-5p3-fast)",
+    "scenario": "scifi_strong_hit",
+    "attempt": 1,
+    "text": "You break from cover as the torch beam swings wide, boots hammering grating that rings with every stride. Sparks from Vex's cutter spray off a crate edge a meter behind you — heat washes across your shoulder blades, close enough to smell the ozone and your own scorched suit liner. Your legs ache from the earlier battering, bruises down your thigh firing with each footfall, but the rhythm is there now: sprint, slide, cover, sprint. The Ashfall's cargo deck rolls under failing strip lights, and you read its broken geometry faster than Vex can drag that torch around.\n\nYou vault a toppled rack, palm slapping wet hydraulic fluid, and land in a crouch beside the primary cargo console. Your fingers find the manual release before you've fully stopped moving — the panel cover hangs by one hinge and you rip it down, slam your palm on the lockdown stud. Somewhere above, mag-clamps shriek closed on the container stacks. Vex bellowed something a second ago; now there's only the torch's hiss cutting off and boots scraping to a halt on the far side of the crates.\n\n“Cute.” Vex's voice carries flat through the recycled air, breathing hard beneath it. The scorched armor plates scrape as she shifts behind the barricade. “Console won't hold pressure on this wreck for long.” A clang — she's prying at something, maybe a secondary panel, maybe a door.\n\nYour hands stay on the console, breath sawing, sweat stinging the cut above your eye. The deck's low vibration changes pitch under your boots — something cycling in the hold's guts, on your command now. Vex pries again, metal groaning somewhere out of sight.",
+    "first_text": 0.64,
+    "secs": 5.0,
+    "cost": 0.0074256,
+    "words": 276,
+    "verdicts": [
+      {
+        "judge": "GLM 5.3 Fast",
+        "cost": 0.0037838999999999998,
+        "result_integrity": 5,
+        "prompt_elements": 4,
+        "npc_voice": 5,
+        "player_agency": 4,
+        "restraint": 4,
+        "atmosphere": 5,
+        "prose": 5,
+        "overall": 9,
+        "weakness": "Vex's 'won't hold pressure for long' hint edges toward adding a complication to what the prompt calls a clean success, slightly softening the strong hit."
+      }
+    ]
+  },
+  {
+    "model": "current narrator (accounts/fireworks/routers/glm-5p3-fast)",
+    "scenario": "scifi_strong_hit",
+    "attempt": 2,
+    "text": "You sprint. The crates blur past on your left, ribbed steel and stenciled manifest codes, and you keep them between you and Vex the whole way. Her torch spits a line of orange across the compartment — the beam chews into a crate two meters behind you, slag dripping onto the grating, and the heat washes against your shoulder blades but never touches you. Your boots hammer the deck plates. A bruise along your hip flares at every stride and you run through it, breath sawing in the recycled air, ozone and burnt metal thick on your tongue.\n\nVex realizes your line a half-second late. You hear her armor scrape as she pivots, hear the torch's hiss climb, but the crates hold and you've already read the spacing — she has to cut through or go around, and around costs her four seconds. She goes around. You reach the cargo control panel first, palm slapping the cold rail, fingers finding the manual release by feel in the strip-lit gloom. The mechanism responds under your hands: a shudder rolls through the deck as the bay clamps cycle, and the edge is yours.\n\n\"Fitch!\" Vex's voice cracks through her helmet speaker, static fringing the edges. \"You touch that release and I swear I'll cut you out of that suit piece by piece.\" She comes around the last crate at a hard angle, torch up, but slower now — the sprint cost her more than it cost you, and her breathing rasps loud over her open channel. She stops six meters out, torch held low, the flame guttering blue at the tip.\n\nYou stand at the panel with the release lever under your hand and the whole cargo deck between her position and yours. Somewhere below the grating, hydraulic fluid drips onto a lower deck in a slow, irregular rhythm.",
+    "first_text": 4.41,
+    "secs": 8.5,
+    "cost": 0.007584,
+    "words": 307,
+    "verdicts": [
+      {
+        "judge": "GLM 5.3 Fast",
+        "cost": 0.0034779,
+        "result_integrity": 5,
+        "prompt_elements": 4,
+        "npc_voice": 4,
+        "player_agency": 4,
+        "restraint": 2,
+        "atmosphere": 5,
+        "prose": 5,
+        "overall": 6,
+        "weakness": "Vex addresses the player as 'Fitch' when the character's name is Rook, contradicting the established state."
+      }
+    ]
+  },
+  {
+    "model": "current narrator (accounts/fireworks/routers/glm-5p3-fast)",
+    "scenario": "scifi_strong_hit",
+    "attempt": 3,
+    "text": "You break from cover before the torch beam finishes its arc, boots hammering the grating, one hand trailing along the crates for balance. The deck is cold through your soles, hydraulic fluid slicking a streak you skid through and correct, thighs burning. Vex pivots behind you, and heat washes across your shoulder as the torch rakes past — close enough that the collar of your suit stiffens and curls at the edge. You don't stop. A bruise from the earlier collision pulses in your hip with every stride and you run through it, vaulting a strapped-down pallet, palm stinging where you slap the cargo bay's master console.\n\nYour fingers find the lockout lever and you haul it down. Somewhere below your feet, mag-clamps engage through the deck with a series of dull, satisfying thuds — the loose crates pin themselves where they sit, and the hold's secondary hatch seals with a pressure-seal hiss that drowns out everything else for two seconds. The edge is yours. You grip the console with both hands, breath sawing, sweat running into your eyes, strip lighting flickering overhead like it always does on a hull this old.\n\nVex rounds the last crate at a walk, torch lowered but lit, the blue-white flame hissing over scorched armor plating. Up close the armor is cratered and half-melted at the pauldron, and the face behind the visor is older than the gear. “Nice run, salvager,” Vex says, voice flattened by the helmet speaker. “But that console won't hold the outer door and your lungs at the same time.” A gloved finger taps twice against the torch's fuel gauge — under a third — and Vex angles toward the far wall, cutting a slow line above the emergency release, sparks bouncing off the deck plating and dying in the dark.\n\nThe reactor hum underfoot shifts pitch, a half-tone lower, and stays there. Behind you, the sealed secondary hatch holds, but something in the hold's deep aft racks shifts and settles with a long metallic groan the clamps didn't catch.",
+    "first_text": 0.84,
+    "secs": 5.8,
+    "cost": 0.0081714,
+    "words": 340,
+    "verdicts": [
+      {
+        "judge": "GLM 5.3 Fast",
+        "cost": 0.003989100000000001,
+        "result_integrity": 4,
+        "prompt_elements": 4,
+        "npc_voice": 4,
+        "player_agency": 4,
+        "restraint": 4,
+        "atmosphere": 5,
+        "prose": 5,
+        "overall": 8,
+        "weakness": "A clean STRONG_HIT is immediately crowded by new invented complications (fuel gauge threat, shifting aft racks), slightly diluting the earned edge."
+      }
+    ]
+  },
+  {
+    "model": "current narrator (accounts/fireworks/routers/glm-5p3-fast)",
+    "scenario": "search_weak_hit",
+    "attempt": 1,
+    "text": "The rubble gives up its evidence slowly. You work a slab of fallen masonry aside with both hands, and beneath it the old fire-pit shows itself — charcoal and blackened bone, rain-washed but not yet scattered to dust. Whoever camped here did it within the season. A boot print in the dried mud beside the hearth is pressed deep, a broad heel, and near it lies a buckle of tarnished brass stamped with a mark you don't recognize: a chevron over three dots. A rolled oilcloth has mostly rotted, but inside it a scrap of vellum survives, ink faded to brown — a crude map of the moor with a line drawn toward the northeast ridge, and a note in a cramped hand: *third night, cache holds.*\n\nThe cost comes as you lever a second stone out of the way. It shifts wrong, drops, and catches the edge of your pack where it hangs at your hip. The strap shears. Oats and dried meat spill across the wet rubble, and you drop to a knee, hauling the pack upright, salvaging what you can before the damp soaks in. Some of the grain is already lost, ground into the mud between the stones. Your fingers come away cold and filthy, and your shoulder aches where the stone knocked it.\n\nBut the disturbance pays. Where the slab slid free, a gap opens in the tower's collapsed flank — a slanted passage down into the intact lower level, wide enough for a body, breathing cold air and the smell of long-stale stone. Below, through the gap, iron rungs are set into the wall, and at their foot something pale rests in the dark, too square-edged to be natural.\n\nYou cinch the ruined strap into a knot that will hold until it doesn't, and the light is already thinning over the moor. The crows have gone quiet somewhere behind you. The gap waits.",
+    "first_text": 3.48,
+    "secs": 7.1,
+    "cost": 0.0081405,
+    "words": 319,
+    "verdicts": [
+      {
+        "judge": "GLM 5.3 Fast",
+        "cost": 0.0031422,
+        "result_integrity": 5,
+        "prompt_elements": 4,
+        "npc_voice": 5,
+        "player_agency": 5,
+        "restraint": 5,
+        "atmosphere": 5,
+        "prose": 5,
+        "overall": 9,
+        "weakness": "The 'advantage shifts' consequence is delivered more as a discovery than a clear shift in Kael's tactical position, a minor prompt-element nuance."
+      }
+    ]
+  },
+  {
+    "model": "current narrator (accounts/fireworks/routers/glm-5p3-fast)",
+    "scenario": "search_weak_hit",
+    "attempt": 2,
+    "text": "The rubble shifts under your boots as you work along the fallen wall, stone grinding against stone. You crouch and pull aside a slab of collapsed roofing, and the effort drags a raw ache through your bruised shoulders. Underneath, half-buried in damp earth and old mortar dust, you find what you came for: a fire pit ringed with blackened stones, and beside it a leather waterskin, cracked and stiff, its seams split with rot. The ash inside the pit is soft — it smears across your fingers rather than crumbling dry. Weeks old, no more. Someone sheltered here recently, and ate well: split hazelnut shells lie in a neat pile, and a strip of dried meat, gnawed to the grain, is wedged beneath a flat rock. A shallow groove pressed into the mud shows where a bedroll was laid, sized for one person, set with its back deliberately against the standing section of wall.\n\nYou dig deeper along the base of the tower, following the bedding-trace, and the pile of dressed stones at the far corner parts under your hands to reveal a narrow opening — a stairwell mouth where the tower's lower level survived the collapse. Cold air pushes up out of it, carrying rust-smell and the mineral damp of wet stone. The dark below is total. The advantage is yours now; whoever camped here left, and left this behind.\n\nThe cost comes as you lean your weight against the lintel stone to widen the gap. Your satchel strap, already frayed from the road, snaps. The bag drops and spills across the rubble — your flint rolls into a crevice and vanishes with a small clatter you hear but cannot follow, and the heel of dark bread you were carrying thumps into the mud, caked with grit. You gather what remains by hand, knees braced on cold stone, the wind combing through the broken arch above you. A crow calls somewhere down the moor, once, and does not call again.\n\nYou kneel at the edge of the dark stairwell with your recovered supplies bundled against your chest, the broken strap knotted roughly around your fist.",
+    "first_text": 1.66,
+    "secs": 7.0,
+    "cost": 0.008397900000000002,
+    "words": 356,
+    "verdicts": [
+      {
+        "judge": "GLM 5.3 Fast",
+        "cost": 0.0031968,
+        "result_integrity": 5,
+        "prompt_elements": 4,
+        "npc_voice": 5,
+        "player_agency": 5,
+        "restraint": 5,
+        "atmosphere": 5,
+        "prose": 5,
+        "overall": 9,
+        "weakness": "The 'advantage shifts' consequence is stated slightly mechanically ('The advantage is yours now') rather than fully dramatised."
+      }
+    ]
+  },
+  {
+    "model": "current narrator (accounts/fireworks/routers/glm-5p3-fast)",
+    "scenario": "search_weak_hit",
+    "attempt": 3,
+    "text": "The rubble is cold under your hands, stone gritted with frost that hasn't burned off despite the hour. You work through the collapsed chamber methodically, lifting slate, turning charred beam-ends. Under a slab of fallen roofing you find a bedroll, rodent-shredded, and beside it a tin cup with a maker's mark from Thornmere — two days' travel south. A boot print in the hearth ash, small, heel-worn on the outside. Someone sheltered here within the last season. Someone who left in a hurry: a whetstone still sits on the window ledge, and nobody abandons a good whetstone.\n\nBut you pay for it. Dragging a beam aside to reach the far corner, your palm comes down on a shard of shattered lantern glass buried in the ash. It opens a line across the base of your thumb, bright and slow to clot. You wrap it in a strip of cloth from your pack, and by the time you've tied the knot the cloth is already spotting through — a small wound, but one you'll feel every time you grip.\n\nThe blood is worth it. Behind the beam, where the tower's inner wall has buckled outward, there's a gap — a stairwell mouth the collapse half-concealed, its lower steps descending into dark. The boot print in the ash points toward it. Whoever sheltered here went down, or came up. Cold air moves out of the opening against your wet hand, carrying damp earth and something faintly metallic beneath it.\n\nThe light is going amber on the moor. Below the threshold of the gap, the darkness holds its shape.",
+    "first_text": 3.56,
+    "secs": 6.6,
+    "cost": 0.0077841,
+    "words": 266,
+    "verdicts": [
+      {
+        "judge": "GLM 5.3 Fast",
+        "cost": 0.0031986000000000002,
+        "result_integrity": 5,
+        "prompt_elements": 4,
+        "npc_voice": 3,
+        "player_agency": 4,
+        "restraint": 5,
+        "atmosphere": 5,
+        "prose": 5,
+        "overall": 8,
+        "weakness": "The narrative direction's 'player:caused_this' positioning is underplayed, and player actions like wrapping the wound in cloth from their pack are slightly assumed rather than left to the player."
+      }
+    ]
+  },
+  {
+    "model": "current narrator (accounts/fireworks/routers/glm-5p3-fast)",
+    "scenario": "strong_hit",
+    "attempt": 1,
+    "text": "Mira turns toward the window when a crow rattles off the eaves outside — one heartbeat, no more — and you are already moving. Your boots find the gaps in the rotten floorboards without a sound, and you slide the ledger out from beneath her slack fingers before the pressure of her hand even fully lifts. The leather cover is cold and slick with damp, and it goes into your satchel between a book and a wrapped heel of bread. You are back on the near side of the counter, examining a shelf of warped almanacs, before she turns around.\n\nThe room holds its shape around you. Water drips somewhere behind the plaster, slow and regular, and the tallow stub you carried in guttering in its tin dish, throwing your shadow long across the mildewed carpet. Dust has settled thick on everything except the counter — except the ledger's place, and a strip of the floor behind it, both worn clean by recent use. Mira sweeps past you with her lamp held high, trailing the smell of wet wool and pine resin, and sets the light down on the counter's far end. She frowns at the space where her hand was resting.\n\n“Something's been moved,” she says, and her thumb drags across the counter grain, finding the faint clean track where the binding scraped. Her jaw sets. She doesn't look at you — she looks at your satchel, then at the door, weighing which.\n\nThrough the gap in the shutter, the last grey light is failing over the drowned road outside. You have it, and she hasn't named it yet, and that narrow ground is yours for as long as you can hold it.",
+    "first_text": 0.94,
+    "secs": 4.2,
+    "cost": 0.0076896,
+    "words": 284,
+    "verdicts": [
+      {
+        "judge": "GLM 5.3 Fast",
+        "cost": 0.0032793,
+        "result_integrity": 3,
+        "prompt_elements": 4,
+        "npc_voice": 4,
+        "player_agency": 5,
+        "restraint": 4,
+        "atmosphere": 5,
+        "prose": 5,
+        "overall": 7,
+        "weakness": "Mira immediately noticing the missing ledger adds a complication that undercuts the clean-success STRONG_HIT."
+      }
+    ]
+  },
+  {
+    "model": "current narrator (accounts/fireworks/routers/glm-5p3-fast)",
+    "scenario": "strong_hit",
+    "attempt": 2,
+    "text": "Mira turns toward the tall window where a crow drops from the ledge outside, wings rattling against the glass, and you move in that half-second of her distraction. Your fingers close on the ledger's spine and you slide it out from beneath her palm before her weight settles back onto the counter. The leather is cold and gritty with dust; a corner of it snags a loose nailhead and you ease it free without a sound. Two steps back and the thing is against your chest, held flat beneath your folded arm, its weight modest but real.\n\nShe catches the movement in the window's reflection. When she turns, her hand comes down on empty wood, and her knuckles press flat against the grain. Her jaw works once, side to side, the way a person grinds down an oath before letting it out.\n\n“Thief,” she says, quiet and flat. She comes around the counter — not rushing, deliberate, her boots deliberate on the rotted boards. “Scholar, thief, same coat. Give it back and I let you walk out of here.”\n\nYou keep the counter between you, the ledger's edge firm under your arm, your breath coming slow and even even as your palms sweat against the leather. Behind her, the crow strikes the glass again and peels away into the darkening pines. Somewhere below the floorboards, water drips onto stone, steady as a slow clock. Mira stops at the far end of the counter, fingers drumming once against the wood, and does not look away from where you hold what she was guarding.",
+    "first_text": 1.3,
+    "secs": 4.9,
+    "cost": 0.0076698,
+    "words": 262,
+    "verdicts": [
+      {
+        "judge": "GLM 5.3 Fast",
+        "cost": 0.0034571999999999997,
+        "result_integrity": 4,
+        "prompt_elements": 3,
+        "npc_voice": 5,
+        "player_agency": 4,
+        "restraint": 4,
+        "atmosphere": 5,
+        "prose": 4,
+        "overall": 7,
+        "weakness": "The stated consequence ('Kael catches the rhythm. The edge is theirs.') is never woven into the narration, and word repetition ('deliberate, her boots deliberate') dulls an otherwise strong finish."
+      }
+    ]
+  },
+  {
+    "model": "current narrator (accounts/fireworks/routers/glm-5p3-fast)",
+    "scenario": "strong_hit",
+    "attempt": 3,
+    "text": "Mira turns toward the cold hearth, reaching for the poker, and you move in the same breath. The floorboard under the counter gives the faintest creak but the wind through the broken shutters covers it — you slide two fingers beneath her palm where it pins the ledger and draw the book free in one slow pull. Leather, water-stained, heavier than it looks. Your pulse thuds against your collar as you ease back a step, then another, the ledger tucked flat against your ribs under your cloak.\n\nShe knows before she turns. Her hand comes down on the counter where the book had been and her fingers close on nothing. When she swings around, her face has gone flat and hard, the curiosity from the entrance burned away. She doesn't shout. She steps out from behind the counter with the poker still in her fist, knuckles white on the haft, and puts herself between you and the door.\n\nYou back toward the far wall instead, giving ground you don't need to give, and the distance buys you seconds. Your eyes run the ledger's cover — a name burned into the leather, half worn away, and a wax seal cracked down the middle. Dusk is thickening through the shattered window; the light will be gone soon, and she is between you and every exit but the one behind the collapsed shelving.\n\nMira lifts the poker to shoulder height and plants her feet. “Put it back,” she says, quiet, the way people speak when they've said it before and meant it. Somewhere above, in the rafters, a crow shuffles and goes still.",
+    "first_text": 1.84,
+    "secs": 5.3,
+    "cost": 0.007584,
+    "words": 270,
+    "verdicts": [
+      {
+        "judge": "GLM 5.3 Fast",
+        "cost": 0.0038724,
+        "result_integrity": 5,
+        "prompt_elements": 4,
+        "npc_voice": 5,
+        "player_agency": 3,
+        "restraint": 5,
+        "atmosphere": 5,
+        "prose": 5,
+        "overall": 8,
+        "weakness": "The narration decides Kael's tactical movement (backing to the far wall, 'giving ground you don't need to give') beyond the player's stated action."
+      }
+    ]
+  },
+  {
+    "model": "current narrator (accounts/fireworks/routers/glm-5p3-fast)",
+    "scenario": "two_npc_dialog",
+    "attempt": 1,
+    "text": "The bench scrapes as you settle onto it, close enough that your knee nearly touches Mira's under the table. She goes still, spoon halfway to her mouth, and sets it down without tasting the stew. Her jaw works once, the way it does before she decides to cut someone, and she turns her face toward the fire and stays there, silent.\n\nCaptain Oren looks up from his cup. Tallow light catches the scar bisecting his eyebrow, and he takes his time, wiping ale from his beard with the back of his hand. \"A ledger,\" he repeats, flat, measuring you the way a man measures a stranger's sword. \"There's a book keeps accounts for the runs out of Saltmarsh Cove. Supposed to have gone in the river two winters back.\" That is all he gives you — the answer, one piece more, nothing behind the eyes. He drinks, sets the cup down, and goes back to studying the grain of the table.\n\nSomewhere behind the bar a tap knocks against a wood pail, and wind drives rain hard against the shutters. Mira's knuckles are white around her spoon. She still hasn't looked at you, but her breathing has gone shallow and quick, and her boot presses solid into the floor as though she's ready to stand.",
+    "first_text": 2.88,
+    "secs": 5.4,
+    "cost": 0.0072324,
+    "words": 215,
+    "verdicts": [
+      {
+        "judge": "GLM 5.3 Fast",
+        "cost": 0.0027378000000000003,
+        "result_integrity": 5,
+        "prompt_elements": 4,
+        "npc_voice": 5,
+        "player_agency": 4,
+        "restraint": 5,
+        "atmosphere": 5,
+        "prose": 4,
+        "overall": 8,
+        "weakness": "Mira's white knuckles and shallow breathing edge toward deciding the player's effect on her mood rather than strictly her own reaction."
+      }
+    ]
+  },
+  {
+    "model": "current narrator (accounts/fireworks/routers/glm-5p3-fast)",
+    "scenario": "two_npc_dialog",
+    "attempt": 2,
+    "text": "The bench scrapes as you settle onto it, close enough to Mira that your elbows nearly touch. She goes still, fingers tightening around her cup, and turns her face toward the fire without a word. Across the scarred table, Captain Oren looks up from his stew — grey beard, the old scar splitting one eyebrow — and sets his spoon down with the unhurried care of a man who decides nothing quickly.\n\n“A ledger,” he repeats, once you've asked. Tallow smoke drifts between you. He wipes his mouth with the back of his hand. “Ledgers come through here the way gulls do. I don't count them.” A pause, the fire snapping in the hearth behind him. “But there was a quartermaster, salt-coughed, paid his tab in old coin three nights back. Left before dawn. That's all I have.” He takes up his spoon again and returns to the stew, chewing steadily, his eyes on the bowl. Whatever else he knows, he keeps it under the same lid as his supper.\n\nBeside you, Mira stands so sharply the bench knocks the table, slopping ale across the boards. She pulls her hood up and pushes toward the door, boots heavy on the wet floorboards, and the cold gust that follows her out rattles the lantern above the bar. Oren keeps eating. Somewhere in the kitchen a pot lid clatters, and the door hangs open a hand's width, letting the night leak in.",
+    "first_text": 4.06,
+    "secs": 7.6,
+    "cost": 0.0075228000000000005,
+    "words": 240,
+    "verdicts": [
+      {
+        "judge": "GLM 5.3 Fast",
+        "cost": 0.0030528,
+        "result_integrity": 5,
+        "prompt_elements": 4,
+        "npc_voice": 5,
+        "player_agency": 5,
+        "restraint": 5,
+        "atmosphere": 5,
+        "prose": 5,
+        "overall": 9,
+        "weakness": "Mira's dramatic exit slightly exceeds a mere refusal to engage, though it stays plausibly in character for her hostility."
+      }
+    ]
+  },
+  {
+    "model": "current narrator (accounts/fireworks/routers/glm-5p3-fast)",
+    "scenario": "two_npc_dialog",
+    "attempt": 3,
+    "text": "The bench scrapes as you settle onto it, close enough that Mira's shoulder is a handspan from yours. Tallow smoke hangs under the low beams of the Drowned Lantern, and the table's wood is sticky with old spill. Mira does not look at you. She shifts her tankard an inch further away, knuckles pale around it, and lets the silence stretch like a held rope. Captain Oren looks up from his bowl of stew, the scar through his eyebrow catching the firelight, a grey beard trimmed short over a weathered throat.\n\n\"The ledger.\" He sets his spoon down and wipes his mouth with the back of his glove. \"I've heard the word. Talk is it went missing from a caravan three nights back, somewhere past the ford.\" He picks the spoon back up and goes to the stew, jaw working slowly, gaze already dropping back into his meal. Nothing further. The fire snaps behind him.\n\nMira finally moves — leans across the table until the tallow gleam touches her teeth. \"Sit somewhere else.\" Each word laid down flat as a coin. Her hand stays wrapped around the tankard but her forearm is rigid, corded, the arm of someone who has used it on people. A murmur of talk rolls on at the far tables, boots shift on gravel-dusted boards near the door, and the wind outside drives rain in a slow rattle against the shutters. Oren keeps eating. Somewhere behind the bar a lid clanks down on a pot, and nobody in the room looks your way — and nobody looks away, either.",
+    "first_text": 0.95,
+    "secs": 4.7,
+    "cost": 0.0077802,
+    "words": 263,
+    "verdicts": [
+      {
+        "judge": "GLM 5.3 Fast",
+        "cost": 0.0031455,
+        "result_integrity": 5,
+        "prompt_elements": 4,
+        "npc_voice": 5,
+        "player_agency": 5,
+        "restraint": 5,
+        "atmosphere": 5,
+        "prose": 5,
+        "overall": 9,
+        "weakness": "Mention of the ledger going missing 'three nights back' is a small factual invention that slightly exceeds the one-fact budget, though it fits naturally."
+      }
+    ]
+  },
+  {
+    "model": "current narrator (accounts/fireworks/routers/glm-5p3-fast)",
+    "scenario": "weak_hit",
+    "attempt": 1,
+    "text": "Mira turns toward a shelf behind her, fingers trailing the spines, and you move. One step, two, and you slide behind the counter. Her hand rests flat on the ledger's leather cover, and you work your fingers under the edge of it, easing it free an inch at a time. The parchment drags against the wood with a dry rasp that sounds louder than it is, and your breath comes shallow through your teeth. The book slides loose. You have it.\n\nThe strap of your pack catches on the corner of the counter as you pull back — a hard yank, and something tears. A canvas pouch at the top of the pack spills open and a coil of cord drops, along with the small clay pot of tallow you keep for sealing wounds. The pot hits the stone floor and cracks, pale fat spreading across the flags in a slow, greasy pool. The cord unwinds off the counter's edge and drops into the mess. You grab for the cord and get it, but the pot is gone, its contents smeared beyond use, and there is no hiding any of it.\n\nMira is already turning. Her boots stop on the far side of the counter, and she looks down at the broken pot, then at the ledger pressed against your chest, and her face goes flat and hard. She plants both hands on the counter and leans in.\n\n\"Give it back.\" Her voice is low, even, the kind of even that costs effort. \"That is mine to keep, not yours to take. Put it on the counter and walk out, or I will call for the men who left me here to watch this place.\" She straightens and steps around the counter's end, placing herself between you and the door, arms folded, her jaw set. Behind her, evening light dies in the tall windows, and somewhere in the rafters a crow shifts and settles.\n\nShe does not move aside. The ledger is under your arm, and the door is behind her.",
+    "first_text": 2.31,
+    "secs": 5.7,
+    "cost": 0.008266200000000001,
+    "words": 341,
+    "verdicts": [
+      {
+        "judge": "GLM 5.3 Fast",
+        "cost": 0.0033483,
+        "result_integrity": 5,
+        "prompt_elements": 5,
+        "npc_voice": 5,
+        "player_agency": 5,
+        "restraint": 5,
+        "atmosphere": 5,
+        "prose": 5,
+        "overall": 9,
+        "weakness": "Nearly flawless; the only quibble is the crow in the rafters of an abandoned library is a touch conventional."
+      }
+    ]
+  },
+  {
+    "model": "current narrator (accounts/fireworks/routers/glm-5p3-fast)",
+    "scenario": "weak_hit",
+    "attempt": 2,
+    "text": "The lamplight slants low across the reading tables when Mira turns toward the stacks, her boots crunching broken glass. You move on the balls of your feet, one hand braced on the counter's split oak, and slide your fingers under the edge of the ledger where her weight pinned it. The leather is cold and grit-crusted. You work it free an inch at a time, your breath held so tight your ribs ache, and the binding clears her palm without a sound.\n\nThen the strap of your pack catches on a nailhead driven through the counter's face. You pull — hard, too hard — and the buckle snaps. The pack swings open and something tumbles out behind you: the clay inkwell you carried wrapped in wool, splitting against the flagstone with a flat crack. Black ink spreads across the stone, soaking into the dust, sharp and tarry in your nose.\n\nMira's head turns at the sound. She is already moving when you get the ledger against your chest, her arm sweeping across the counter to block the gap you slipped through. Her jaw is set, her knuckles white where she grips the wood. “Put it back.” Her voice is flat, cold as the draft moving through the broken clerestory above. She does not reach for it — not yet — but she plants herself in the only walkable path between you and the door, shoulders squared, the tallow smoke drifting between you.\n\nThe ink keeps spreading toward the hem of her boot. Somewhere in the dark rafters, a crow shuffles and falls silent.",
+    "first_text": 3.36,
+    "secs": 6.5,
+    "cost": 0.007837199999999999,
+    "words": 263,
+    "verdicts": [
+      {
+        "judge": "GLM 5.3 Fast",
+        "cost": 0.0030356999999999997,
+        "result_integrity": 5,
+        "prompt_elements": 5,
+        "npc_voice": 5,
+        "player_agency": 5,
+        "restraint": 5,
+        "atmosphere": 5,
+        "prose": 5,
+        "overall": 9,
+        "weakness": "Nearly flawless; only the crow in the rafters is a minor invention, though it fits the mood."
+      }
+    ]
+  },
+  {
+    "model": "current narrator (accounts/fireworks/routers/glm-5p3-fast)",
+    "scenario": "weak_hit",
+    "attempt": 3,
+    "text": "Mira's attention goes to a guttering candle across the hall — she turns to trim the wick — and you slide behind the counter in three quick steps, boots rolling heel-to-toe over the flagstones. Her hand rests flat on the ledger's leather cover. You work two fingers under the spine and draw it free slow as drawing a splinter, the paper rasping faintly beneath her palm. She murmurs something at the candle, still turned away, and the book comes loose into your hands.\n\nThen the edge of her elbow clips your pack as she swings back around. The flap, unbuckled in your haste, yawns open — your clay oil-flask slips out and strikes the counter's stone lip. It bursts. Oil sheets across the ledger's back cover and pools in the mortar cracks, the smell of it sharp over the dust and old tallow. The flask is gone, shards and spreading slick, and the oil soaks dark into the leather in a spreading stain.\n\nMira's eyes drop to the broken flask, then lift to you, ledger-shaped bulge obvious under your arm. Her jaw sets. She plants herself between you and the door, one hand flat on the counter, the other pointing at the ruin of oil and ceramic.\n\n\"That was rationed,\" she says. \"Whole settlement's been short since the last convoy. And you've got what's mine under your arm.\" She doesn't move from the doorway. Her fingers drum once against the wood — short, hard taps. \"Set it back, or we do this the hard way.\"\n\nSomewhere above, wind drives rain against the high windows, and the candle she trimmed gutters anyway.",
+    "first_text": 1.19,
+    "secs": 4.8,
+    "cost": 0.007824,
+    "words": 271,
+    "verdicts": [
+      {
+        "judge": "GLM 5.3 Fast",
+        "cost": 0.003216,
+        "result_integrity": 5,
+        "prompt_elements": 5,
+        "npc_voice": 5,
+        "player_agency": 5,
+        "restraint": 5,
+        "atmosphere": 5,
+        "prose": 5,
+        "overall": 9,
+        "weakness": "The near-flawless execution leaves little to criticise; the oil slick telegraphing the broken flask could feel slightly convenient, but it serves the cost cleanly."
+      }
+    ]
+  }
+]

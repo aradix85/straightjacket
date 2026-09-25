@@ -21,8 +21,9 @@ def _stored(name: str) -> dict[str, Any]:
 
 
 def _first_contestant(settings: dict[str, Any]) -> tuple[str, str]:
-    name = next(iter(settings["contestants"]))
-    return name, settings["contestants"][name]["label"]
+    from tests.modeltest import measure as m
+
+    return "current", m.contestants(["current"], settings)[0].label
 
 
 class _FakeAdapter:
@@ -83,7 +84,10 @@ def test_every_narration_is_judged_and_summarized(load_engine: None, monkeypatch
         1000 * settings["prices"][j["model"]][0] + 100 * settings["prices"][j["model"]][1] for j in settings["judges"]
     )
     assert summary["judge_cost"] == pytest.approx(4 * per_verdict / 1_000_000, abs=0.001)
-    assert summary["cost_per_100"] == pytest.approx(0.0225, abs=0.001)
+    from straightjacket.engine.config_loader import model_for_role
+
+    price_in, price_out = settings["prices"][model_for_role("narrator")]
+    assert summary["cost_per_100"] == pytest.approx(100 * (2000 * price_in + 50 * price_out) / 1_000_000, abs=0.001)
     assert summary["first_text"] is not None
     assert f"## {label}" in m.report(
         {label: summary}, {}, "test", {}, "", settings["criteria"], m.per_judge(generations)

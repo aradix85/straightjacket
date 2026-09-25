@@ -7,6 +7,20 @@ Originally forked from [EdgeTales](https://github.com/edgetales/edgetales). See 
 
 Straightjacket uses calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day. The first CalVer release is `2026.04.25.0`. Earlier `0.x.y` releases keep their original version numbers and are not renumbered. The switch was made because the project has no public API to version semantically against — the `0.x.y` numbers were running counters with no meaning, and dates carry the meaning the numbers didn't.
 
+## [2026.09.24.61] — 2026-09-25
+
+Every role on GLM 5.3 Fast through Fireworks, the model set in one place, and everything that no longer serves removed.
+
+One model. The user chose GLM 5.3 Fast through Fireworks for every role, Elvira's player and judge included. `config.yaml` gains `ai.model` (provider, model, extra body), which every cluster takes unless it names its own; `config_loader.py` merges it into each cluster before the required fields are checked, so switching the whole game is one line and one cluster can still differ. The clusters now hold only their sampling (temperature 0.5 for classification and judgment, 0.3 for extraction). The model runs through Fireworks at reasoning effort low, since GLM 5.3 always thinks. Fireworks caches the shared start of prompts on its own and bills cached input below fresh input (for GLM 5.2 Fast at a tenth of the fresh rate), so the day's cost estimates, which ignore caching, run high.
+
+Removed because nothing uses it any more. The OpenAI and Anthropic providers stay in `config.yaml`, configured but unused, and so does the Anthropic adapter: Straightjacket is not built for one user, and moving to another provider's model is a change of `ai.model`. What went: Elvira's `--narrator` and `--model` with `tests/elvira/elvira_bot/narrator_swap.py` and its test, since trying a model is now a change of `ai.model`; her `bot_model` and `bot_extra_body`, since her player now takes the Brain role's model and reasoning like her judge (a fixed `gpt-6-luna` there would have failed on Fireworks); her price table for Claude and Luna. In the harness, the fifteen contestants and their prices, its own Fireworks, Nebius, and OpenRouter entries (it falls back on the engine's providers), the Sol and Grok panel (GLM judges now), and the Luna, Gemini, and Sol baseline. In the documents, the history of the model comparisons, which the CHANGELOG keeps; ARCHITECTURE.md describes `ai.model`, Elvira on one model, and the harness as it now is, and the roadmap names the Fireworks key that runs the game.
+
+New baseline `tests/modeltest/baseline_glm.json`: GLM 5.3 Fast narrating all twenty scenes three times and judging itself: overall 8.42 (8.20 to 8.62), result integrity on a miss 5.0, atmosphere 4.98, first text after 2.0 seconds, whole narration after 5.6, 299 words, $0.79 per 100 narrations, no errors. It sits above the panel's 7.62 because the model judges its own prose; as the starting point for prompt tuning it compares GLM with GLM. The first run stopped after saving its narrations because the baseline file it reads did not exist yet; the saved run became the baseline.
+
+Checked live on the new configuration with only the Fireworks key in the environment: an eight-turn Elvira session in Classic with the aggressor style, the whole game including Elvira's player and judge on GLM 5.3 Fast. No problems found, no AI failure, no NPC moved unseen, no unknown bonus, no rejected reflection, no empty track field. The first sentence came after a median 5.4 seconds and a turn took 16.6, slower than the one-model sessions of 2026.09.24.58 (4.7 and 11.9); one session is too few to tell load at Fireworks from a real change.
+
+Quality gate: 1468 tests green, twenty-nine project-rule scans clean, coverage 90.14%, ruff check and ruff format clean, mypy --strict clean on 109 source files. Save format unchanged.
+
 ## [2026.09.24.60] — 2026-09-25
 
 Fix: NPCs no longer follow the player to a new place unseen, and the Brain's prompt explains every field it must fill.

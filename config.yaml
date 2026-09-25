@@ -18,62 +18,49 @@ ai:
       api_base: ""
       api_key_env: "OPENAI_API_KEY"
       timeout_seconds: 120
+    fireworks:
+      type: "openai_compatible"
+      api_base: "https://api.fireworks.ai/inference/v1"
+      api_key_env: "FIREWORKS_API_KEY"
+      timeout_seconds: 120
+
+  model:
+    provider: fireworks
+    model: "accounts/fireworks/routers/glm-5p3-fast"
+    extra_body:
+      reasoning_effort: "low"
 
   clusters:
     narrator:
-      provider: openai
-      model: "gpt-6-luna"
       temperature: null
       top_p: null
       max_tokens: 8192
       max_retries: 3
-      extra_body:
-        reasoning_effort: "none"
     creative:
-      provider: openai
-      model: "gpt-6-luna"
       temperature: null
       top_p: null
       max_tokens: 8192
       max_retries: 3
-      extra_body:
-        reasoning_effort: "low"
     director:
-      provider: openai
-      model: "gpt-6-luna"
       temperature: null
       top_p: null
       max_tokens: 8192
       max_retries: 3
-      extra_body:
-        reasoning_effort: "none"
     classification:
-      provider: openai
-      model: "gpt-6-luna"
       temperature: 0.5
       top_p: null
       max_tokens: 8192
       max_retries: 3
-      extra_body:
-        reasoning_effort: "none"
     judgment:
-      provider: openai
-      model: "gpt-6-luna"
       temperature: 0.5
       top_p: null
       max_tokens: 8192
       max_retries: 3
-      extra_body:
-        reasoning_effort: "none"
     extraction:
-      provider: openai
-      model: "gpt-6-luna"
       temperature: 0.3
       top_p: null
       max_tokens: 8192
       max_retries: 3
-      extra_body:
-        reasoning_effort: "none"
 
   role_cluster:
     narrator: narrator
