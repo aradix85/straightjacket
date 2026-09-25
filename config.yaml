@@ -26,17 +26,17 @@ ai:
 
   clusters:
     narrator:
-      provider: fireworks
-      model: "accounts/fireworks/models/glm-5p3"
+      provider: openai
+      model: "gpt-6-luna"
       temperature: null
       top_p: null
       max_tokens: 8192
       max_retries: 3
       extra_body:
-        reasoning_effort: "low"
+        reasoning_effort: "none"
     creative:
-      provider: fireworks
-      model: "accounts/fireworks/models/glm-5p3"
+      provider: openai
+      model: "gpt-6-luna"
       temperature: null
       top_p: null
       max_tokens: 8192
@@ -44,41 +44,41 @@ ai:
       extra_body:
         reasoning_effort: "low"
     director:
-      provider: fireworks
-      model: "accounts/fireworks/models/glm-5p3"
+      provider: openai
+      model: "gpt-6-luna"
       temperature: null
       top_p: null
       max_tokens: 8192
       max_retries: 3
       extra_body:
-        reasoning_effort: "low"
+        reasoning_effort: "none"
     classification:
-      provider: fireworks
-      model: "accounts/fireworks/models/glm-5p3"
+      provider: openai
+      model: "gpt-6-luna"
       temperature: 0.5
       top_p: null
       max_tokens: 8192
       max_retries: 3
       extra_body:
-        reasoning_effort: "low"
+        reasoning_effort: "none"
     judgment:
-      provider: fireworks
-      model: "accounts/fireworks/models/glm-5p3"
+      provider: openai
+      model: "gpt-6-luna"
       temperature: 0.5
       top_p: null
       max_tokens: 8192
       max_retries: 3
       extra_body:
-        reasoning_effort: "low"
+        reasoning_effort: "none"
     extraction:
-      provider: fireworks
-      model: "accounts/fireworks/models/glm-5p3"
+      provider: openai
+      model: "gpt-6-luna"
       temperature: 0.3
       top_p: null
       max_tokens: 8192
       max_retries: 3
       extra_body:
-        reasoning_effort: "low"
+        reasoning_effort: "none"
 
   role_cluster:
     narrator: narrator

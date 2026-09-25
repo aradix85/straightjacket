@@ -37,3 +37,6 @@ prices:
   gpt-6-sol:
   - 2.0
   - 10.0
+  gpt-6-luna:
+  - 0.1
+  - 0.5

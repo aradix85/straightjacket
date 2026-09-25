@@ -7,6 +7,24 @@ Originally forked from [EdgeTales](https://github.com/edgetales/edgetales). See 
 
 Straightjacket uses calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day. The first CalVer release is `2026.04.25.0`. Earlier `0.x.y` releases keep their original version numbers and are not renumbered. The switch was made because the project has no public API to version semantically against — the `0.x.y` numbers were running counters with no meaning, and dates carry the meaning the numbers didn't.
 
+## [2026.09.26.0] — 2026-09-26
+
+Every role runs on OpenAI's GPT-6 Luna again, at the user's choice of speed and cost over GLM 5.3's richer narration; the narrator prompts are to be tuned again for Luna.
+
+`config.yaml`: all six clusters move from `accounts/fireworks/models/glm-5p3` through Fireworks to `gpt-6-luna` through OpenAI ($0.10, $0.01 cached, and $0.50 per million tokens), with the reasoning settings the game ran on from 2026.09.24.42 to .60 (commit `54afe73`): `none` for the narrator, Director, classification, judgment, and extraction clusters, `low` for the creative cluster. Two rules of OpenAI's API for the GPT-6 family force that split, both checked against its documentation: at any reasoning effort other than `none` the model refuses `temperature` and `top_p`, so the clusters that sample at 0.5 or 0.3 run at `none` and the creative cluster sends no temperature; and in Chat Completions function calling works only at `none`, which the Director's tool loop needs (at `low` every Director call failed with a 400 in 2026.09.24.42). The temperatures are unchanged. Fireworks and Anthropic stay configured, unused by the game; only `OPENAI_API_KEY` is needed to play. Elvira's player and judge follow the Brain onto Luna as before, the player at `none` with her own temperature and the judge at its own `low` without one, both valid for Luna.
+
+Prices. Elvira's report and the harness price their calls by model, and 2026.09.24.61 had removed Luna from both tables; the harness looks prices up strictly, so `--models current` would have failed with a KeyError on Luna. `tests/elvira/elvira_config.yaml` and `tests/modeltest/modeltest_config.yaml` list `gpt-6-luna` again.
+
+The harness judges stay GLM 5.3 and GPT-6 Sol, at the user's agreement. With the narrator on Luna, GLM becomes the judge from another family, while Sol is Luna's own family and in 2026.09.24.57 rated both OpenAI models highest; two OpenAI judges would have measured the coming prompt tuning with a biased panel. The GLM judge still needs `FIREWORKS_API_KEY`. `tests/modeltest/baseline_glm.json` stays the reference until a first Luna run replaces it.
+
+What the switch costs and gains, from the measurements in 2026.09.24.56 to .58 and 2026.09.25.6: an eight-turn session about $0.01 against about $0.19, a first sentence after about 2.5 seconds against 11, a turn in about 7 seconds against 28.5; Luna's narration was about half as long and scored lower on atmosphere (4.12 against 4.95 out of 5) and on result integrity on a miss (4.20 against 4.58). The narrator-prompt rounds of 2026.09.25.3 and .4 were measured on GLM; roadmap priority 3 now starts the tuning over on Luna, with those weaknesses on its list.
+
+Checked live: the startup check finds `gpt-6-luna` at OpenAI with only the OpenAI key in the environment. An eight-turn Elvira session in Classic as dialogist, everything on GPT-6 Luna: no problems found, no engine warning or error; 14 Director calls with 24 tool rounds without a failed call; a correction; two Pay the Price rolls; one NPC extracted from narration; six streamed turns identical to the final text, the first sentence after a median 2.5 seconds; a turn took a median 6.5 seconds, the longest 7.4; the injected narrator outage rolled back cleanly. From the second turn OpenAI's cache served 2543 of the narrator's 3300 to 4500 input tokens and about 1515 of the Brain's 1830. Audit 8.2 out of 10 over six turns, from Luna judging its own prose. About one cent at list price.
+
+ARCHITECTURE.md → AI Model Assignment describes Luna, the two API rules behind the reasoning settings, OpenAI's caching, and GLM as the measured alternative; its Testing section names Elvira's judge setting and the harness judges as they now are. The roadmap's model line, priorities 3 and 5, the Elvira cost in the working agreements, and the key that runs the game follow.
+
+Quality gate: 1506 tests green, twenty-nine project-rule scans clean, coverage 90.10% (90.12% on a run before the documentation changes, with no code changed in between), ruff check and ruff format clean on 210 files, mypy --strict clean on 109 source files. Save format unchanged.
+
 ## [2026.09.25.6] — 2026-09-25
 
 Every role runs on Fireworks' standard tier of GLM 5.3, at the user's choice of cost over waiting time.
