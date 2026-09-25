@@ -7,6 +7,18 @@ Originally forked from [EdgeTales](https://github.com/edgetales/edgetales). See 
 
 Straightjacket uses calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day. The first CalVer release is `2026.04.25.0`. Earlier `0.x.y` releases keep their original version numbers and are not renumbered. The switch was made because the project has no public API to version semantically against — the `0.x.y` numbers were running counters with no meaning, and dates carry the meaning the numbers didn't.
 
+## [2026.09.25.6] — 2026-09-25
+
+Every role runs on Fireworks' standard tier of GLM 5.3, at the user's choice of cost over waiting time.
+
+`config.yaml`: all six clusters move from `accounts/fireworks/routers/glm-5p3-fast` to `accounts/fireworks/models/glm-5p3` ($1.40, $0.26 cached, and $4.40 per million tokens against $2.10, $0.39, and $6.60). Elvira's player and judge follow the Brain onto it, and the harness's GLM judge moves too (`tests/modeltest/modeltest_config.yaml`, now labelled GLM 5.3), since the two tiers judged and narrated within the noise of each other in 2026.09.25.5; GPT-6 Sol stays the harness's independent judge. Elvira's own judge is GLM, as it has been since 2026.09.24.57.
+
+Checked live, an eight-turn Elvira session in Classic as dialogist with every role on the standard tier: the Brain's enforced schema and the Director's tool calls worked without a failed call (17 Director calls, 27 tool rounds), the correction ran, six streamed turns matched the final text, and the injected outage rolled back. The session cost about $0.19 at list price against about $0.28 on Fast, a third less; the first sentence came after a median 11.0 seconds against about 3, and a turn took a median 28.5 seconds, the longest 55.3, against about 10. Two findings: the metadata extraction once named an NPC id that does not exist (`npc_5`), now on the roadmap, and one miss narrated with a large revelation, the known narrator weakness of priority 3.
+
+ARCHITECTURE.md → AI Model Assignment describes the standard tier, the measured waiting times, and that a cluster moves back to Fast by changing its `model`; the roadmap's model line and priority 3 name the judges as they now are.
+
+Quality gate: 1506 tests green, twenty-nine project-rule scans clean, coverage 90.09%, ruff check and ruff format clean on 210 files, mypy --strict clean on 109 source files. Save format unchanged.
+
 ## [2026.09.25.5] — 2026-09-25
 
 Measured, not adopted: Fireworks' standard tier of GLM 5.3 for the roles the player does not wait on. Every role stays on GLM 5.3 Fast.

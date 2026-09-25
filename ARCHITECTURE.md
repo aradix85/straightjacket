@@ -127,15 +127,15 @@ The engine assigns models to AI roles via clusters. Each cluster names a provide
 ```
 Cluster          Roles                                       Model, reasoning effort, temperature
 ────────────────────────────────────────────────────────────────────────────────────────────────────
-narrator         narrator                                    GLM 5.3 Fast, low, not sent
-creative         blueprint_voicing, chapter_summary, recap   GLM 5.3 Fast, low, not sent
-director         director                                    GLM 5.3 Fast, low, not sent
-classification   brain, correction                           GLM 5.3 Fast, low, 0.5
-judgment         revelation_check                            GLM 5.3 Fast, low, 0.5
-extraction       narrator_metadata, opening_setup            GLM 5.3 Fast, low, 0.3
+narrator         narrator                                    GLM 5.3, low, not sent
+creative         blueprint_voicing, chapter_summary, recap   GLM 5.3, low, not sent
+director         director                                    GLM 5.3, low, not sent
+classification   brain, correction                           GLM 5.3, low, 0.5
+judgment         revelation_check                            GLM 5.3, low, 0.5
+extraction       narrator_metadata, opening_setup            GLM 5.3, low, 0.3
 ```
 
-GLM 5.3 Fast runs through Fireworks (`accounts/fireworks/routers/glm-5p3-fast`) at reasoning effort low; GLM 5.3 always thinks, and low is its lowest setting. The measurements behind the choice are in CHANGELOG 2026.09.24.56 to .60. The standard tier (`accounts/fireworks/models/glm-5p3`, a third cheaper, about three times slower) was measured for the narrator, creative, judgment, and extraction clusters in 2026.09.25.5: its narration scored within the noise of Fast on the harness, but in play the first sentence came after 7.8 seconds instead of about 3 and a turn took 29 seconds instead of about 10, for about 7 percent lower cost, because the Director, which stays on Fast, is half of a session's cost. It is not used.
+GLM 5.3 runs through Fireworks on the standard tier (`accounts/fireworks/models/glm-5p3`) at reasoning effort low; GLM 5.3 always thinks, and low is its lowest setting. The standard tier costs a third less than GLM 5.3 Fast (`accounts/fireworks/routers/glm-5p3-fast`) and writes about three times slower. Its narration measured within the noise of Fast on the harness (CHANGELOG 2026.09.25.5), but in play the player waits longer: with the Brain and Director still on Fast, the first sentence came after 7.8 seconds instead of about 3 and a turn took 29 seconds instead of about 10. The user chose the lower cost for every role in 2026.09.25.6; moving a cluster back to Fast is a change of its `model`. The measurements behind the model itself are in CHANGELOG 2026.09.24.56 to .60.
 
 Config structure in `config.yaml`:
 
@@ -150,7 +150,7 @@ ai:
   clusters:
     narrator:
       provider: fireworks
-      model: "accounts/fireworks/routers/glm-5p3-fast"
+      model: "accounts/fireworks/models/glm-5p3"
       temperature: null
       top_p: null
       max_tokens: 8192
@@ -434,7 +434,7 @@ The **unit/integration test suite** (`python -m pytest tests/ -v`) runs without 
 - Direct mode drives the engine directly; the fastest way to test engine changes.
 - WebSocket mode (`--ws`) plays through the real server stack and also probes the status, tracks, threats, and recap messages.
 
-**Model comparison** (`tests/modeltest/modeltest.py`) measures narrators on twenty fixed scenes: the narrator prompts of real turns, captured through the engine with a scripted Brain (`--capture`). `--models current` measures the narrator `config.yaml` names; contestants listed in `tests/modeltest/modeltest_config.yaml` (none at present) can run alongside it, through the engine's providers or through providers the harness declares itself, built with `ai/api_client.py` → `build_adapter`. Each narrates every scene a set number of times (`--attempts`), the judges in `judges` score each narration blind on the criteria listed there, GLM 5.3 Fast (the game's own model) and GPT-6 Sol from another model family, because a judge favours its own family (CHANGELOG 2026.09.24.57; in 2026.09.25.3 GLM scored its own narrations about 0.8 higher than GPT-6 Sol did), and the report compares with `tests/modeltest/baseline_glm.json`. `tests/test_modeltest.py` captures every scene again and fails when a stored scene no longer matches the engine, so a narrator-prompt change forces a new capture and a new baseline. It reports quality, speed as the time to the first text (through `stream_with_retry`, the path the game streams through) and to the whole narration, and price per 100 narrations apart from the judging cost. `--rejudge <run files>` scores stored narrations again with the current judges and rubric, and `--report <run files>` puts several runs in one report without any API call; the report also lists each judge's overall score per model. Measurements are written to `tests/modeltest/runs/`, which git ignores.
+**Model comparison** (`tests/modeltest/modeltest.py`) measures narrators on twenty fixed scenes: the narrator prompts of real turns, captured through the engine with a scripted Brain (`--capture`). `--models current` measures the narrator `config.yaml` names; contestants listed in `tests/modeltest/modeltest_config.yaml` (none at present) can run alongside it, through the engine's providers or through providers the harness declares itself, built with `ai/api_client.py` → `build_adapter`. Each narrates every scene a set number of times (`--attempts`), the judges in `judges` score each narration blind on the criteria listed there, GLM 5.3 (the game's own model; Fast until 2026.09.25.6, which the measurements showed to judge and narrate within the noise of the standard tier) and GPT-6 Sol from another model family, because a judge favours its own family (CHANGELOG 2026.09.24.57; in 2026.09.25.3 GLM scored its own narrations about 0.8 higher than GPT-6 Sol did), and the report compares with `tests/modeltest/baseline_glm.json`. `tests/test_modeltest.py` captures every scene again and fails when a stored scene no longer matches the engine, so a narrator-prompt change forces a new capture and a new baseline. It reports quality, speed as the time to the first text (through `stream_with_retry`, the path the game streams through) and to the whole narration, and price per 100 narrations apart from the judging cost. `--rejudge <run files>` scores stored narrations again with the current judges and rubric, and `--report <run files>` puts several runs in one report without any API call; the report also lists each judge's overall score per model. Measurements are written to `tests/modeltest/runs/`, which git ignores.
 
 Run Elvira before a release that touches the turn pipeline, AI calls, prompts, or configuration: the unit tests catch logic bugs, Elvira catches what only real model output and real data reveal.
 

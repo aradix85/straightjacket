@@ -16,9 +16,9 @@ criteria:
 - atmosphere
 - prose
 judges:
-- label: GLM 5.3 Fast
+- label: GLM 5.3
   provider: fireworks
-  model: accounts/fireworks/routers/glm-5p3-fast
+  model: accounts/fireworks/models/glm-5p3
   extra_body:
     reasoning_effort: low
 - label: GPT-6 Sol

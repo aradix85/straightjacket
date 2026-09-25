@@ -27,7 +27,7 @@ ai:
   clusters:
     narrator:
       provider: fireworks
-      model: "accounts/fireworks/routers/glm-5p3-fast"
+      model: "accounts/fireworks/models/glm-5p3"
       temperature: null
       top_p: null
       max_tokens: 8192
@@ -36,7 +36,7 @@ ai:
         reasoning_effort: "low"
     creative:
       provider: fireworks
-      model: "accounts/fireworks/routers/glm-5p3-fast"
+      model: "accounts/fireworks/models/glm-5p3"
       temperature: null
       top_p: null
       max_tokens: 8192
@@ -45,7 +45,7 @@ ai:
         reasoning_effort: "low"
     director:
       provider: fireworks
-      model: "accounts/fireworks/routers/glm-5p3-fast"
+      model: "accounts/fireworks/models/glm-5p3"
       temperature: null
       top_p: null
       max_tokens: 8192
@@ -54,7 +54,7 @@ ai:
         reasoning_effort: "low"
     classification:
       provider: fireworks
-      model: "accounts/fireworks/routers/glm-5p3-fast"
+      model: "accounts/fireworks/models/glm-5p3"
       temperature: 0.5
       top_p: null
       max_tokens: 8192
@@ -63,7 +63,7 @@ ai:
         reasoning_effort: "low"
     judgment:
       provider: fireworks
-      model: "accounts/fireworks/routers/glm-5p3-fast"
+      model: "accounts/fireworks/models/glm-5p3"
       temperature: 0.5
       top_p: null
       max_tokens: 8192
@@ -72,7 +72,7 @@ ai:
         reasoning_effort: "low"
     extraction:
       provider: fireworks
-      model: "accounts/fireworks/routers/glm-5p3-fast"
+      model: "accounts/fireworks/models/glm-5p3"
       temperature: 0.3
       top_p: null
       max_tokens: 8192
