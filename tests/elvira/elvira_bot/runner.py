@@ -72,9 +72,6 @@ def selectable_settings() -> list[str]:
     return [s for s in list_packages() if s != "delve"]
 
 
-MODELTEST_CONFIG = Path(__file__).resolve().parents[2] / "modeltest" / "modeltest_config.yaml"
-
-
 def _role_label(role: str) -> str:
     return f"{role}={provider_for_role(role)}/{model_for_role(role)}"
 

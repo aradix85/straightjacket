@@ -6,7 +6,20 @@ import pytest
 from straightjacket.engine.ai.provider_base import AICallSpec, AIResponse, AIUnavailableError
 from straightjacket.engine.models import ProgressTrack
 from tests._helpers import make_game_state
-from tests.modeltest.capture import BRAIN_FIELDS
+
+BRAIN_FIELDS: dict[str, Any] = {
+    "type": "action",
+    "approach": "",
+    "target_npc": None,
+    "dialog_only": False,
+    "player_intent": "",
+    "world_addition": None,
+    "location_change": None,
+    "track_name": None,
+    "track_rank": None,
+    "target_track": None,
+    "bonus_id": None,
+}
 
 
 def _offered(game: Any) -> list[str]:
