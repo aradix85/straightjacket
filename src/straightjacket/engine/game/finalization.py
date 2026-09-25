@@ -19,7 +19,7 @@ from ..mechanics.legacy import mark_legacy, mark_legacy_ticks, shifted_rank
 from ..mechanics.move_effects import OutcomeResult, strip_datasworn_links
 from ..mechanics.move_outcome import resolve_move_outcome
 from ..models import BrainResult, ClockEvent, EngineConfig, GameState, MemoryEntry, RollResult
-from ..npc import find_npc
+from ..npc import find_npc, named_in
 from ..npc.memory import consolidate_memory
 from ..parser import parse_narrator_response
 
@@ -169,7 +169,7 @@ def _update_crisis(game: GameState) -> None:
         game.crisis_mode = False
 
 
-def apply_engine_memories(game: GameState, memories: list[dict[str, Any]]) -> None:
+def apply_engine_memories(game: GameState, memories: list[dict[str, Any]], narration: str) -> None:
     _e = eng()
     for mem in memories:
         npc = find_npc(game, mem["npc_id"])
@@ -188,7 +188,7 @@ def apply_engine_memories(game: GameState, memories: list[dict[str, Any]]) -> No
         entry._score_debug = mem["_score_debug"] if "_score_debug" in mem else "engine-generated"
         npc.memory.append(entry)
         npc.importance_accumulator += mem["importance"]
-        if game.world.current_location:
+        if game.world.current_location and named_in(npc, narration):
             npc.last_location = game.world.current_location
         if npc.importance_accumulator >= _e.npc.reflection_threshold:
             npc.needs_reflection = True
@@ -213,7 +213,7 @@ def apply_post_narration(
 
     engine_mems = generate_engine_memories(game, brain, roll, scene_present_ids, consequences=cons_list)
     if engine_mems:
-        apply_engine_memories(game, engine_mems)
+        apply_engine_memories(game, engine_mems, narration)
 
     metadata = call_narrator_metadata(provider, narration, game, config, brain=brain, consequences=cons_list)
     apply_narrator_metadata(game, metadata, scene_present_ids=scene_present_ids, world_addition=world_addition)

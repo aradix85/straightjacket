@@ -110,6 +110,18 @@ def _find_by_substring(game: "GameState", ref_norm: str) -> NpcData | None:
     return best_match
 
 
+def named_in(npc: "NpcData", text: str) -> bool:
+    lowered = text.lower()
+    for name in (npc.name, *npc.aliases):
+        whole = name.lower().strip()
+        if whole and whole in lowered:
+            return True
+        for part in name.split():
+            if len(part) >= 4 and re.search(rf"\b{re.escape(part.lower())}\b", lowered):
+                return True
+    return False
+
+
 def find_npc(game: "GameState", npc_ref: str | None) -> NpcData | None:
     if not npc_ref:
         return None

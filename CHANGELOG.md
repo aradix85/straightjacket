@@ -7,6 +7,18 @@ Originally forked from [EdgeTales](https://github.com/edgetales/edgetales). See 
 
 Straightjacket uses calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day. The first CalVer release is `2026.04.25.0`. Earlier `0.x.y` releases keep their original version numbers and are not renumbered. The switch was made because the project has no public API to version semantically against — the `0.x.y` numbers were running counters with no meaning, and dates carry the meaning the numbers didn't.
 
+## [2026.09.24.60] — 2026-09-25
+
+Fix: NPCs no longer follow the player to a new place unseen, and the Brain's prompt explains every field it must fill.
+
+NPCs moving unseen. Elvira's spatial check kept reporting NPCs that "teleported", and the day's sessions showed these were real moves, not reworded place names: when the player left the settlement for the glacier trail, or went outside the palisade, the NPCs of the old scene were put at the new place although the narration left them behind. The only place the engine sets an NPC's location is `game/finalization.py` → `apply_engine_memories`, which gave every NPC that received an engine memory the player's current location, and on a turn with a location change that is already the new place. The memory stays, since the NPC saw or heard what happened; the location now changes only when the narration names the NPC. `npc/matching.py` → `named_in` decides that with the measure Elvira uses (the full name, or a part of at least four letters) plus aliases, and with name parts matched as whole words, so Tomas is not found in tomatoes. New tests: an NPC the narration leaves behind keeps its place and its memory, and failed on the previous code; an NPC the narration names moves along; names count as whole words or aliases.
+
+Empty track fields. GLM 5.3 Fast's Brain now and then left a new track's name and rank empty, which the engine filled with the player's intent and the rank dangerous. `prompts/brain.yaml` never explained `track_name`, `track_rank`, `target_track`, or `target_npc`, and its list of fields stopped at `location_change`; the model had only the schema's field names to go by. It now says when a move starts a track (a vow, a fight, an expedition, a connection) the name is short and in the game's language and the rank matches how hard the fiction makes it; that `target_track` names a listed track exactly as written; and that `target_npc` is the id shown after id:. The ranks themselves stay in the schema's enum. New test: the Brain's prompt names every field of its output schema, so a field added without an explanation fails the suite.
+
+Checked live, Elvira sessions of eight turns with the aggressor style: GPT-6 Luna in Classic, Starforged, and Sundered Isles, and the whole game on GLM 5.3 Fast in Classic. No NPC changed place without the narration naming it (the day's earlier sessions had six such reports), no new track was left without a name or rank (GLM's Classic session opened one with both filled), and no AI failure. GLM's Starforged and Sundered Isles sessions stopped early because the Fireworks account was suspended for its spending limit (HTTP 412), not because of the engine; Luna covered those settings instead.
+
+Quality gate: 1470 tests green, twenty-nine project-rule scans clean, coverage 90.08%, ruff check and ruff format clean, mypy --strict clean on 109 source files. Save format unchanged.
+
 ## [2026.09.24.59] — 2026-09-25
 
 The Director may reflect only on the NPCs chosen for reflection, and the day's remaining provider findings.

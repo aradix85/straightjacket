@@ -38,10 +38,12 @@ class _BrainAnswers:
         self.move = move
         self.fields = fields
         self.schemas: list[dict[str, Any]] = []
+        self.systems: list[str] = []
 
     def create_message(self, spec: AICallSpec) -> AIResponse:
         assert spec.json_schema is not None
         self.schemas.append(spec.json_schema)
+        self.systems.append(spec.system)
         answer = {**BRAIN_FIELDS, "move": self.move, "stat": "iron", "player_intent": "strike", **self.fields}
         return AIResponse(content=json.dumps(answer), usage={"input_tokens": 0, "output_tokens": 0})
 
@@ -97,3 +99,12 @@ def test_a_bonus_the_game_does_not_offer_is_refused(load_engine: None) -> None:
         _BrainAnswers("adventure/face_danger", bonus_id="infiltrator#0"), _infiltrator(), "I slip past the guard."
     )
     assert chosen.bonus_id == "infiltrator#0"
+
+
+def test_the_brain_prompt_explains_every_field_of_its_schema(load_engine: None) -> None:
+    from straightjacket.engine.ai.brain import call_brain
+
+    provider = _BrainAnswers("adventure/face_danger")
+    call_brain(provider, _infiltrator(), "I slip past the guard.")
+    unexplained = [name for name in provider.schemas[0]["properties"] if name not in provider.systems[0]]
+    assert unexplained == []
