@@ -1,6 +1,4 @@
 from typing import Any
-from ..datasworn.moves import get_moves
-from ..datasworn.settings import list_packages
 from ..engine_loader import eng
 
 
@@ -67,51 +65,37 @@ def _obj_root(props: dict[str, Any], title: str) -> dict[str, Any]:
     }
 
 
-_brain_cache = None
 _correction_cache: dict[str, Any] | None = None
 _director_cache: dict[str, Any] | None = None
 _blueprint_voicing_cache: dict[str, Any] | None = None
 
 
-def get_brain_output_schema() -> dict[str, Any]:
-    global _brain_cache
-    if _brain_cache is None:
-        _e = eng()
-        stat_names = list(_e.stats.names)
-
-        all_move_keys: set[str] = set()
-        for setting_id in list_packages():
-            moves = get_moves(setting_id)
-            all_move_keys.update(k for k, m in moves.items() if m.roll_type not in ("no_roll", "special_track"))
-
-        all_move_keys.update(_e.engine_moves.keys())
-
-        rank_enum = sorted(_e.progress.track_types["default"].ticks_per_mark.keys())
-
-        _brain_cache = _obj_root(
-            {
-                "type": _str_enum(["action"]),
-                "move": _str_enum(sorted(all_move_keys)),
-                "stat": _str_enum(stat_names),
-                "approach": _str(),
-                "target_npc": _nullable_str(),
-                "dialog_only": _bool(),
-                "player_intent": _str(),
-                "world_addition": _nullable_str(),
-                "location_change": _nullable_str(),
-                "track_name": _nullable_str(),
-                "track_rank": {
-                    "anyOf": [
-                        {"type": "string", "enum": rank_enum},
-                        {"type": "null"},
-                    ]
-                },
-                "target_track": _nullable_str(),
-                "bonus_id": _nullable_str(),
+def get_brain_output_schema(move_keys: list[str]) -> dict[str, Any]:
+    _e = eng()
+    rank_enum = sorted(_e.progress.track_types["default"].ticks_per_mark.keys())
+    return _obj_root(
+        {
+            "type": _str_enum(["action"]),
+            "move": _str_enum(sorted({*move_keys, *_e.engine_moves.keys()})),
+            "stat": _str_enum(list(_e.stats.names)),
+            "approach": _str(),
+            "target_npc": _nullable_str(),
+            "dialog_only": _bool(),
+            "player_intent": _str(),
+            "world_addition": _nullable_str(),
+            "location_change": _nullable_str(),
+            "track_name": _nullable_str(),
+            "track_rank": {
+                "anyOf": [
+                    {"type": "string", "enum": rank_enum},
+                    {"type": "null"},
+                ]
             },
-            _e.ai_text.schema_titles["brain_output"],
-        )
-    return _brain_cache
+            "target_track": _nullable_str(),
+            "bonus_id": _nullable_str(),
+        },
+        _e.ai_text.schema_titles["brain_output"],
+    )
 
 
 def get_director_output_schema() -> dict[str, Any]:

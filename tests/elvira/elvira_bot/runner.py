@@ -92,6 +92,12 @@ def _with_narrator(provider: AIProvider, bot_cfg: dict) -> tuple[AIProvider, str
     return NarratorSwap(provider, adapter, voice.model, voice.extra_body), voice.model
 
 
+def _role_label(role: str, narrator_model: str) -> str:
+    if role == "narrator" and narrator_model:
+        return f"narrator={narrator_model} (--narrator)"
+    return f"{role}={provider_for_role(role)}/{model_for_role(role)}"
+
+
 def _judge_provider(judge_cfg: dict) -> AIProvider:
     judge = provider_named(judge_cfg["provider"])
     if judge_cfg["model"] not in judge.list_models():
@@ -157,9 +163,7 @@ def run_session(bot_cfg: dict, auto_override: bool = False, turns_override: int 
         f"  Auto: {'YES' if auto_mode else 'NO'} | Turns/ch: {max_turns} | "
         f"Chapters: {max_chapters} | Lang: {narration_lang}"
     )
-    roles = ", ".join(
-        f"{role}={provider_for_role(role)}/{model_for_role(role)}" for role in ("narrator", "brain", "director")
-    )
+    roles = ", ".join(_role_label(role, narrator_model) for role in ("narrator", "brain", "director"))
     print(f"  Engine: v{VERSION} | {roles}")
     if judge_cfg:
         print(f"  Judge: {judge_cfg['provider']}/{judge_cfg['model']} | Injected AI failure on turn {inject_turn}")

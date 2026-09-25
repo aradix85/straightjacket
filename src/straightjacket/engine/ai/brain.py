@@ -92,18 +92,21 @@ time:{w.time_of_day or _ai_text["unknown_time"]}
 {bonuses}
 <input>{player_message}</input>"""
 
+    move_keys = [m["move"] for m in available_moves(game)["moves"]]
     try:
         spec = AICallSpec(
             model=model_for_role("brain"),
             system=system,
             messages=[{"role": "user", "content": user_msg}],
-            json_schema=get_brain_output_schema(),
+            json_schema=get_brain_output_schema(move_keys),
             log_role="brain",
             **sampling_params("brain"),
         )
         response = create_with_retry(provider, spec)
 
         result: BrainResult = BrainResult.from_dict(json.loads(response.content))
+        if result.move not in move_keys and result.move not in eng().engine_moves:
+            raise ValueError(f"move {result.move!r} is not available in this situation")
         log(
             f"[Brain] move={result.move}, stat={result.stat}, "
             f"intent={result.player_intent[: eng().truncations.log_short]}"

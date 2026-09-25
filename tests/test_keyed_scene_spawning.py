@@ -313,6 +313,13 @@ def test_random_event_spawner_creates_concrete_bond_keyed_scene_for_npc_focus():
     assert scene.source == "random_event:npc_action:npc_kira"
 
 
+def test_random_event_spawner_skips_a_bond_scene_for_a_character_without_npc_record():
+    game = _seed_game()
+    event = make_random_event(focus="npc_action", target="The ferryman", target_id="char_1")
+    assert spawn_keyed_scene_from_random_event(game, event) is False
+    assert game.narrative.keyed_scenes == []
+
+
 def test_random_event_spawner_creates_concrete_threat_keyed_scene_for_pc_negative():
     game = _seed_game()
     threat = make_threat(id="t_pirates", name="The Pirates")

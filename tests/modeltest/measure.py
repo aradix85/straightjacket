@@ -98,7 +98,7 @@ def _generate(job: tuple[Voice, Any, str, dict[str, Any], int, dict[str, Any]]) 
     try:
         response = stream_with_retry(adapter, spec, sink)
     except AIUnavailableError as e:
-        return {**head, "error": str(e)[:200]}
+        return {**head, "error": str(e)}
     text = response.content.strip()
     return {
         **head,
@@ -127,7 +127,7 @@ def _judge(job: tuple[Voice, Any, dict[str, Any], dict[str, Any], dict[str, Any]
         response = create_with_retry(adapter, spec)
         verdict = json.loads(response.content)
     except (AIUnavailableError, json.JSONDecodeError) as e:
-        return {"judge": judge.label, "error": f"{type(e).__name__}: {e}"[:200]}
+        return {"judge": judge.label, "error": f"{type(e).__name__}: {e}"}
     return {"judge": judge.label, "cost": _cost(response.usage, judge.model, settings["prices"]), **verdict}
 
 

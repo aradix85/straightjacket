@@ -143,6 +143,21 @@ def test_execute_tool_call_success() -> None:
     clear_registry()
 
 
+def test_execute_tool_call_ignores_arguments_the_tool_does_not_take() -> None:
+    import json
+
+    clear_registry()
+
+    @register_test_tool("test", description="echo")
+    def echo(game: GameState, message: str) -> dict:
+        return {"echo": message}
+
+    game = make_game_state()
+    call = {"name": "echo", "arguments": {"message": "hello", "threads": True}}
+    assert json.loads(execute_tool_call("test", call, game)) == {"echo": "hello", "ignored_arguments": ["threads"]}
+    clear_registry()
+
+
 def test_execute_tool_call_unknown() -> None:
     clear_registry()
     game = make_game_state()

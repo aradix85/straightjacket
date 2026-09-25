@@ -43,3 +43,11 @@ def test_a_property_that_is_not_required_is_reported() -> None:
     problems: list[str] = []
     _loose_objects({"type": "object", "properties": {"a": {}, "b": {}}, "required": ["a"]}, "demo", problems)
     assert problems == ["demo: not required ['b']"]
+
+
+def test_the_brain_schema_requires_all_its_properties(load_engine: None) -> None:
+    from straightjacket.engine.ai.schemas import get_brain_output_schema
+
+    problems: list[str] = []
+    _loose_objects(get_brain_output_schema(["adventure/face_danger"]), "brain", problems)
+    assert problems == []

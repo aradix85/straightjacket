@@ -8,6 +8,7 @@ from ..logging_util import log
 from ..models import ClockData, GameState, KeyedScene, RandomEvent, ThreatData
 from .fate import _load_mythic
 from .keyed_scenes import spawn_keyed_scenes_for_clock
+from ..npc import find_npc
 from .spawn_sources import EMERGENT_SOURCE_PREFIXES, RANDOM_EVENT_SOURCE_PREFIX
 
 
@@ -150,6 +151,12 @@ def spawn_keyed_scene_from_random_event(game: GameState, event: RandomEvent) -> 
 
     entry = cfg.keyed_scene_mapping[event.focus]
     if entry.trigger_type == "bond_threshold":
+        if find_npc(game, event.target_id) is None:
+            log(
+                f"[RandomEvent] focus '{event.focus}' targets '{event.target_id}', a character without an NPC "
+                "record; a bond keyed-scene needs an NPC, so none is spawned"
+            )
+            return False
         pool = event.target_id
     elif entry.trigger_type == "threat_menace_phase":
         pool = event.target

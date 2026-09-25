@@ -20,6 +20,22 @@ _LEAKED_MECHANICS = [
 ]
 
 
+_PLACE_FILLER = frozenset(
+    {"a", "an", "the", "of", "in", "on", "at", "to", "and", "its", "is", "name", "unknown", "unnamed"}
+)
+
+
+def _place_words(location: str) -> set[str]:
+    return {word for word in re.findall(r"[a-z]+", location.lower()) if len(word) > 1 and word not in _PLACE_FILLER}
+
+
+def _same_place(first: str, second: str) -> bool:
+    words_first, words_second = _place_words(first), _place_words(second)
+    if not words_first or not words_second:
+        return first.lower().strip() == second.lower().strip()
+    return len(words_first & words_second) / min(len(words_first), len(words_second)) >= 0.75
+
+
 def check_narration_quality(narration: str) -> list[str]:
     findings: list[str] = []
     for pattern, description in _LEAKED_MECHANICS:
@@ -56,7 +72,7 @@ def check_npc_spatial_consistency(
 
         if not old_loc or not new_loc:
             continue
-        if old_loc.lower().strip() == new_loc.lower().strip():
+        if _same_place(old_loc, new_loc):
             continue
 
         name_lower = npc.name.lower()

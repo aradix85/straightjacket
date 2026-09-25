@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from typing import Any
+import inspect
 import json
 from dataclasses import replace
 
@@ -9,6 +10,13 @@ from ..engine_loader import eng
 from ..logging_util import log
 from ..models import GameState
 from .registry import get_handler, get_tools
+
+
+def _unknown_arguments(handler: Any, arguments: dict[str, Any]) -> list[str]:
+    params = inspect.signature(handler).parameters
+    if any(p.kind is inspect.Parameter.VAR_KEYWORD for p in params.values()):
+        return []
+    return sorted(key for key in arguments if key not in params or key == "game")
 
 
 def execute_tool_call(role: str, tool_call: dict[str, Any], game: GameState) -> str:
@@ -20,9 +28,16 @@ def execute_tool_call(role: str, tool_call: dict[str, Any], game: GameState) -> 
         log(f"[Tools] Unknown tool: {name} (role={role})", level="warning")
         return json.dumps({"error": f"unknown tool: {name}"})
 
+    unknown = _unknown_arguments(handler, arguments)
+    if unknown:
+        log(f"[Tools] {name}: ignored arguments it does not take: {', '.join(unknown)}", level="warning")
+        arguments = {key: value for key, value in arguments.items() if key not in unknown}
+
     try:
         result = handler(game=game, **arguments)
         if isinstance(result, dict):
+            if unknown:
+                result = {**result, "ignored_arguments": unknown}
             return json.dumps(result, ensure_ascii=False)
         return str(result)
     except Exception as e:
