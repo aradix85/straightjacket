@@ -52,7 +52,11 @@ def _cost_lines(slog: SessionLog, prices: dict[str, list[float]]) -> list[str]:
     total = 0.0
     for role, usage in sorted(slog.token_summary.get("by_role", {}).items()):
         try:
-            model = slog.narrator_model if role == "narrator" and slog.narrator_model else model_for_role(role)
+            model = (
+                slog.narrator_model
+                if (role == "narrator" or slog.all_roles) and slog.narrator_model
+                else model_for_role(role)
+            )
         except (KeyError, ValueError):
             model = "unknown"
         price = prices.get(model)
@@ -148,7 +152,7 @@ def write_report(slog: SessionLog, coverage: Coverage, path: Path, prices: dict[
     ]
     out += [f"Verdict: {verdict}.", ""]
     if slog.narrator_model:
-        out += [f"Narrator: {slog.narrator_model}.", ""]
+        out += [f"{'Every engine role' if slog.all_roles else 'Narrator'}: {slog.narrator_model}.", ""]
     if problems:
         out += ["## Problems", "", *[f"- {p}" for p in problems], ""]
     if slog.scenario:

@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 from typing import Any
 
+from straightjacket.engine.config_loader import model_for_role
 from straightjacket.engine.ai.provider_base import AICallSpec, AIProvider
 from straightjacket.engine.models import GameState
 
@@ -38,7 +39,7 @@ def judge_turn(
     outcome = _p("judge_result_dialog") if result is None else result + (_p("judge_match_suffix") if match else "")
     user = _p("judge_turn", action=action, result=outcome, npcs=npcs, narration=narration)
     spec = AICallSpec(
-        model=judge_cfg["model"],
+        model=model_for_role("brain"),
         system=_p("judge_system"),
         messages=[{"role": "user", "content": user}],
         max_tokens=judge_cfg["max_tokens"],

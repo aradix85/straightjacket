@@ -63,6 +63,12 @@ def main() -> None:
         "--narrator", type=str, default=None, help="Narrator from tests/modeltest/modeltest_config.yaml"
     )
     parser.add_argument(
+        "--model",
+        type=str,
+        default=None,
+        help="Every engine role on this contestant from tests/modeltest/modeltest_config.yaml",
+    )
+    parser.add_argument(
         "--scenario", type=str, default=None, help="Play a prepared situation from the config, or 'all'"
     )
     args = parser.parse_args()
@@ -75,6 +81,8 @@ def main() -> None:
         bot_cfg.setdefault("bot_behavior", {})["style"] = args.style
     if args.narrator:
         bot_cfg["session"]["narrator"] = args.narrator
+    if args.model:
+        bot_cfg["session"]["model"] = args.model
 
     if args.scenario:
         names = list(bot_cfg["scenarios"]) if args.scenario == "all" else [args.scenario]

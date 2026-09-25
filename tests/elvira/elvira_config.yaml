@@ -32,6 +32,7 @@ session:
   inject_ai_failure_turn: 3
   scenario: ""
   narrator: ""
+  model: ""
 
 bot_behavior:
   burn_momentum: "auto"
@@ -39,8 +40,6 @@ bot_behavior:
 
 judge:
   enabled: true
-  provider: "openai"
-  model: "gpt-6-sol"
   max_tokens: 3000
   extra_body:
     reasoning_effort: "low"

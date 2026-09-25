@@ -30,7 +30,6 @@ def test_elvira_plays_a_short_session_end_to_end(
     monkeypatch.setattr(runner, "selectable_settings", lambda: ["starforged"])
     monkeypatch.setattr(runner, "available_styles", lambda: ["explorer"])
     bot_cfg["session"]["inject_ai_failure_turn"] = 3
-    monkeypatch.setattr(runner, "_judge_provider", lambda judge_cfg: MockProvider())
 
     session = runner.run_session(bot_cfg, auto_override=True)
 

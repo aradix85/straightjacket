@@ -39,3 +39,14 @@ def test_only_narration_goes_to_the_chosen_narrator() -> None:
     assert all(s.extra_body == {"reasoning_effort": "low"} for s in narrator.seen)
     assert [s.model for s in engine.seen] == ["engine-model", "engine-model"]
     assert all(s.extra_body == {"engine": True} for s in engine.seen)
+
+
+def test_every_role_moves_to_the_chosen_model() -> None:
+    from tests.elvira.elvira_bot.narrator_swap import ALL_ROLES, ModelSwap
+
+    engine, candidate = _Recorder("engine"), _Recorder("candidate")
+    swap = ModelSwap(engine, candidate, "candidate-model", {"reasoning_effort": "low"}, ALL_ROLES)
+    for role in ("brain", "narrator", "director", "narrator_metadata"):
+        assert swap.create_message(_spec(role)).content == "candidate"
+    assert engine.seen == []
+    assert {s.model for s in candidate.seen} == {"candidate-model"}

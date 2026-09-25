@@ -17,8 +17,10 @@ from tests.modeltest.measure import (
     compare,
     contestants,
     intervals,
+    judge_all,
     judges_from,
     measure,
+    per_judge,
     report,
     summarize,
 )
@@ -43,6 +45,8 @@ def main() -> None:
     parser.add_argument("--attempts", type=int, default=None, help="Narrations per model and scene")
     parser.add_argument("--workers", type=int, default=None, help="Requests at the same time")
     parser.add_argument("--retries", type=int, default=None, help="Retries per request")
+    parser.add_argument("--rejudge", nargs="+", default=None, help="Judge the narrations in these run files again")
+    parser.add_argument("--report", nargs="+", default=None, help="Report on these run files together, no API calls")
     args = parser.parse_args()
 
     settings = _load("modeltest_config.yaml")
@@ -56,26 +60,59 @@ def main() -> None:
         return
 
     scenarios = _scenarios()
-    voices = contestants(args.models, settings)
     judges = judges_from(settings)
+    if args.report:
+        _write(_read_runs(args.report), scenarios, settings, "_report")
+        return
+    if args.rejudge:
+        check_models(judges, settings)
+        _write(
+            judge_all(_read_runs(args.rejudge), scenarios, judges, settings, _load("modeltest_prompts.yaml")),
+            scenarios,
+            settings,
+            "_rejudged",
+        )
+        return
+    voices = contestants(args.models, settings)
     check_models([*voices, *judges], settings)
     attempts = args.attempts if args.attempts is not None else settings["attempts"]
     print(f"Measuring {', '.join(v.label for v in voices)}: {len(scenarios)} scenes, {attempts} attempts each")
-    generations = measure(voices, scenarios, judges, settings, _load("modeltest_prompts.yaml"), attempts)
+    _write(
+        measure(voices, scenarios, judges, settings, _load("modeltest_prompts.yaml"), attempts), scenarios, settings, ""
+    )
 
-    stamp = datetime.now().astimezone().strftime("%Y%m%d_%H%M%S")
+
+def _read_runs(paths: list[str]) -> list[dict]:
+    generations: list[dict] = []
+    for path in paths:
+        generations += json.loads(Path(path).read_text(encoding="utf-8"))
+    return generations
+
+
+def _write(generations: list[dict], scenarios: dict[str, dict], settings: dict, suffix: str) -> None:
+    stamp = datetime.now().astimezone().strftime("%Y%m%d_%H%M%S") + suffix
     runs = _HERE / "runs"
     runs.mkdir(exist_ok=True)
     (runs / f"modeltest_{stamp}.json").write_text(
         json.dumps(generations, ensure_ascii=False, indent=2), encoding="utf-8"
     )
     miss = {name for name, scenario in scenarios.items() if scenario["result"] == "MISS"}
-    baseline = json.loads((_HERE / settings["baseline"]).read_text(encoding="utf-8"))
-    summary = summarize(generations, miss)
+    criteria = settings["criteria"]
+    summary = summarize(generations, miss, criteria)
     for model, interval in intervals(generations).items():
         summary[model]["interval"] = interval
-    reference = voices[0].label
-    text = report(summary, summarize(baseline, miss), stamp, compare(generations, reference), reference)
+    models = list(summary)
+    reference = next((m for m in models if m.startswith("current narrator")), models[0])
+    baseline = json.loads((_HERE / settings["baseline"]).read_text(encoding="utf-8"))
+    text = report(
+        summary,
+        summarize(baseline, miss, criteria),
+        stamp,
+        compare(generations, reference),
+        reference,
+        criteria,
+        per_judge(generations),
+    )
     (runs / f"modeltest_{stamp}.md").write_text(text, encoding="utf-8")
     print(text)
     print(f"\nSaved to {runs / f'modeltest_{stamp}.json'}")

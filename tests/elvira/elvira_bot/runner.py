@@ -14,7 +14,7 @@ import yaml
 if TYPE_CHECKING:
     from straightjacket.engine.ai.provider_base import AIProvider
 
-from straightjacket.engine.ai.api_client import check_configured_models, get_provider, provider_named
+from straightjacket.engine.ai.api_client import check_configured_models, get_provider
 from straightjacket.engine.ai.provider_base import AIUnavailableError, drain_token_log
 from straightjacket.engine.ai.sentence_stream import SentenceStream
 from straightjacket.engine.db.sync import sync as db_sync
@@ -42,7 +42,7 @@ from .report import write_report
 from .ai_helpers import ask_bot, available_styles, build_turn_context, decide_burn_momentum, get_persona
 from .creation import roll_character
 from .faults import NarratorOutage
-from .narrator_swap import NarratorSwap
+from .narrator_swap import ALL_ROLES, ModelSwap, NarratorSwap
 from .scenarios import prepare_scenario
 from .invariants import assert_game_state
 from .models import ChapterRecord, NpcSnapshot, SessionLog, TurnRecord
@@ -77,7 +77,8 @@ MODELTEST_CONFIG = Path(__file__).resolve().parents[2] / "modeltest" / "modeltes
 
 
 def _with_narrator(provider: AIProvider, bot_cfg: dict) -> tuple[AIProvider, str]:
-    name = bot_cfg["session"]["narrator"]
+    all_roles = bot_cfg["session"]["model"]
+    name = all_roles or bot_cfg["session"]["narrator"]
     if not name:
         return provider, ""
     from tests.modeltest.measure import adapter_for, voice_from
@@ -89,20 +90,16 @@ def _with_narrator(provider: AIProvider, bot_cfg: dict) -> tuple[AIProvider, str
         raise SystemExit(f"Narrator {voice.provider}/{voice.model} is not offered by its provider")
     bot_cfg["prices"][voice.model] = settings["prices"][voice.model]
     print(f"  [NARRATOR] {voice.label} ({voice.provider}/{voice.model})")
+    if all_roles:
+        print(f"  [MODEL] the whole game on {voice.label}: every engine role, Elvira's player, and her judge")
+        return ModelSwap(provider, adapter, voice.model, voice.extra_body, ALL_ROLES), voice.model
     return NarratorSwap(provider, adapter, voice.model, voice.extra_body), voice.model
 
 
 def _role_label(role: str, narrator_model: str) -> str:
     if role == "narrator" and narrator_model:
-        return f"narrator={narrator_model} (--narrator)"
+        return f"narrator={narrator_model} (--narrator or --model)"
     return f"{role}={provider_for_role(role)}/{model_for_role(role)}"
-
-
-def _judge_provider(judge_cfg: dict) -> AIProvider:
-    judge = provider_named(judge_cfg["provider"])
-    if judge_cfg["model"] not in judge.list_models():
-        raise SystemExit(f"Judge model '{judge_cfg['model']}' is not offered by provider '{judge_cfg['provider']}'")
-    return judge
 
 
 def run_session(bot_cfg: dict, auto_override: bool = False, turns_override: int | None = None) -> SessionLog:
@@ -141,7 +138,7 @@ def run_session(bot_cfg: dict, auto_override: bool = False, turns_override: int 
 
     check_configured_models()
     provider, narrator_model = _with_narrator(get_provider(), bot_cfg)
-    judge_provider = _judge_provider(judge_cfg) if judge_cfg else None
+    judge_provider = provider if judge_cfg else None
     config = EngineConfig(narration_lang=narration_lang)
     create_user(username)
 
@@ -156,6 +153,7 @@ def run_session(bot_cfg: dict, auto_override: bool = False, turns_override: int 
         style=style,
     )
     slog.narrator_model = narrator_model
+    slog.all_roles = bool(bot_cfg["session"]["model"])
 
     print(f"\n{SEPARATOR}")
     print(f"  Straightjacket — Elvira Test Bot — {setting_id}, {style}")
@@ -166,7 +164,7 @@ def run_session(bot_cfg: dict, auto_override: bool = False, turns_override: int 
     roles = ", ".join(_role_label(role, narrator_model) for role in ("narrator", "brain", "director"))
     print(f"  Engine: v{VERSION} | {roles}")
     if judge_cfg:
-        print(f"  Judge: {judge_cfg['provider']}/{judge_cfg['model']} | Injected AI failure on turn {inject_turn}")
+        print(f"  Judge: the game's own model | Injected AI failure on turn {inject_turn}")
     print(SEPARATOR)
 
     game, narration, chat_messages = _setup_game(provider, config, username, game_cfg, auto_mode, slog)

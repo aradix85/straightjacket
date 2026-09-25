@@ -11,7 +11,6 @@ from typing import Any
 from straightjacket.engine.ai.api_client import build_adapter, provider_named
 from straightjacket.engine.ai.provider_base import AICallSpec, AIUnavailableError, create_with_retry, stream_with_retry
 from straightjacket.engine.config_loader import ProviderConfig, cfg
-from tests.elvira.elvira_bot.judge import CRITERIA, JUDGE_SCHEMA
 from tests.modeltest.capture import scene_text
 
 
@@ -76,6 +75,20 @@ class _FirstText:
         self.first = None
 
 
+def judge_schema(criteria: list[str]) -> dict[str, Any]:
+    return {
+        "title": "narration_audit",
+        "type": "object",
+        "additionalProperties": False,
+        "required": [*criteria, "overall", "weakness"],
+        "properties": {
+            **{criterion: {"type": "integer"} for criterion in criteria},
+            "overall": {"type": "integer"},
+            "weakness": {"type": "string"},
+        },
+    }
+
+
 def _cost(usage: dict[str, int], model: str, prices: dict[str, list[float]]) -> float:
     price_in, price_out = prices[model]
     return (usage["input_tokens"] * price_in + usage["output_tokens"] * price_out) / 1_000_000
@@ -119,7 +132,7 @@ def _judge(job: tuple[Voice, Any, dict[str, Any], dict[str, Any], dict[str, Any]
         messages=[{"role": "user", "content": user}],
         max_tokens=settings["judge_max_tokens"],
         max_retries=settings["max_retries"],
-        json_schema=JUDGE_SCHEMA,
+        json_schema=judge_schema(settings["criteria"]),
         extra_body=dict(judge.extra_body),
         log_role="brain",
     )
@@ -131,6 +144,31 @@ def _judge(job: tuple[Voice, Any, dict[str, Any], dict[str, Any], dict[str, Any]
     return {"judge": judge.label, "cost": _cost(response.usage, judge.model, settings["prices"]), **verdict}
 
 
+def judge_all(
+    generations: list[dict[str, Any]],
+    scenarios: dict[str, dict[str, Any]],
+    judges: list[Voice],
+    settings: dict[str, Any],
+    prompts: dict[str, Any],
+) -> list[dict[str, Any]]:
+    adapters = {judge.provider: adapter_for(judge.provider, settings) for judge in judges}
+    done = [g for g in generations if g.get("text")]
+    jobs = [
+        (judge, adapters[judge.provider], g, scenarios[g["scenario"]], settings, prompts)
+        for g in done
+        for judge in judges
+    ]
+    with ThreadPoolExecutor(max_workers=settings["workers"]) as pool:
+        verdicts = list(pool.map(_judge, jobs))
+    judged = []
+    for generation in generations:
+        judged.append({key: value for key, value in generation.items() if key != "verdicts"})
+    by_id = {id(g): index for index, g in enumerate(generations)}
+    for index, generation in enumerate(done):
+        judged[by_id[id(generation)]]["verdicts"] = verdicts[index * len(judges) : (index + 1) * len(judges)]
+    return judged
+
+
 def measure(
     voices: list[Voice],
     scenarios: dict[str, dict[str, Any]],
@@ -139,7 +177,7 @@ def measure(
     prompts: dict[str, Any],
     attempts: int,
 ) -> list[dict[str, Any]]:
-    adapters = {voice.provider: adapter_for(voice.provider, settings) for voice in [*voices, *judges]}
+    adapters = {voice.provider: adapter_for(voice.provider, settings) for voice in voices}
     jobs = [
         (voice, adapters[voice.provider], name, scenario, attempt, settings)
         for voice in voices
@@ -148,17 +186,7 @@ def measure(
     ]
     with ThreadPoolExecutor(max_workers=settings["workers"]) as pool:
         generations = list(pool.map(_generate, jobs))
-    done = [g for g in generations if g.get("text")]
-    judge_jobs = [
-        (judge, adapters[judge.provider], g, scenarios[g["scenario"]], settings, prompts)
-        for g in done
-        for judge in judges
-    ]
-    with ThreadPoolExecutor(max_workers=settings["workers"]) as pool:
-        verdicts = list(pool.map(_judge, judge_jobs))
-    for index, generation in enumerate(done):
-        generation["verdicts"] = verdicts[index * len(judges) : (index + 1) * len(judges)]
-    return generations
+    return judge_all(generations, scenarios, judges, settings, prompts)
 
 
 def _mean(values: list[float]) -> float | None:
@@ -182,7 +210,7 @@ def _judge_cost(judged: list[dict[str, Any]]) -> float:
     return round(sum(v["cost"] for g in judged for v in g["verdicts"] if "cost" in v), 3)
 
 
-def _model_summary(generations: list[dict[str, Any]], miss_scenarios: set[str]) -> dict[str, Any]:
+def _model_summary(generations: list[dict[str, Any]], miss_scenarios: set[str], criteria: list[str]) -> dict[str, Any]:
     judged = [g for g in generations if "verdicts" in g]
     scores = _valid_verdicts(judged)
     on_miss = _valid_verdicts([g for g in judged if g["scenario"] in miss_scenarios])
@@ -190,7 +218,7 @@ def _model_summary(generations: list[dict[str, Any]], miss_scenarios: set[str]) 
         "generations": len(generations),
         "errors": _errors(generations, judged),
         "overall": _mean([v["overall"] for v in scores]),
-        **{criterion: _mean([v[criterion] for v in scores]) for criterion in CRITERIA},
+        **{criterion: _mean([v[criterion] for v in scores if criterion in v]) for criterion in criteria},
         "integrity_on_miss": _mean([v["result_integrity"] for v in on_miss]),
         "first_text": _mean([g["first_text"] for g in judged if g.get("first_text") is not None]),
         "secs": _mean([g["secs"] for g in judged]),
@@ -200,13 +228,15 @@ def _model_summary(generations: list[dict[str, Any]], miss_scenarios: set[str]) 
     }
 
 
-def summarize(generations: list[dict[str, Any]], miss_scenarios: set[str]) -> dict[str, dict[str, Any]]:
+def summarize(
+    generations: list[dict[str, Any]], miss_scenarios: set[str], criteria: list[str]
+) -> dict[str, dict[str, Any]]:
     by_model: dict[str, list[dict[str, Any]]] = {}
     for generation in generations:
         if generation["model"] not in by_model:
             by_model[generation["model"]] = []
         by_model[generation["model"]].append(generation)
-    return {model: _model_summary(items, miss_scenarios) for model, items in by_model.items()}
+    return {model: _model_summary(items, miss_scenarios, criteria) for model, items in by_model.items()}
 
 
 BOOTSTRAP_ROUNDS = 2000
@@ -279,7 +309,26 @@ def _comparison_lines(comparison: dict[str, dict[str, Any]], reference: str) -> 
     return [*lines, ""]
 
 
-def _summary_lines(summary: dict[str, dict[str, Any]]) -> list[str]:
+def per_judge(generations: list[dict[str, Any]]) -> dict[str, dict[str, float]]:
+    scores: dict[str, dict[str, list[float]]] = {}
+    for generation in generations:
+        for verdict in generation.get("verdicts", []):
+            if "overall" in verdict:
+                by_judge = scores.setdefault(generation["model"], {})
+                by_judge.setdefault(verdict["judge"], []).append(verdict["overall"])
+    return {
+        model: {judge: round(statistics.mean(v), 2) for judge, v in judges.items()} for model, judges in scores.items()
+    }
+
+
+def _per_judge_lines(table: dict[str, dict[str, float]]) -> list[str]:
+    lines = ["# Overall per judge", ""]
+    for model, judges in table.items():
+        lines.append(f"- {model}: " + ", ".join(f"{judge} {score}" for judge, score in judges.items()))
+    return [*lines, ""]
+
+
+def _summary_lines(summary: dict[str, dict[str, Any]], criteria: list[str]) -> list[str]:
     lines = []
     for model, s in summary.items():
         lines += [
@@ -287,7 +336,7 @@ def _summary_lines(summary: dict[str, dict[str, Any]]) -> list[str]:
             "",
             f"Overall: {s['overall']} out of 10, over {s['generations']} narrations ({s['errors']} errors); 95% interval {s.get('interval')}.",
             f"Result integrity on a miss: {s['integrity_on_miss']} out of 5.",
-            *[f"- {criterion}: {s[criterion]} out of 5" for criterion in CRITERIA],
+            *[f"- {criterion}: {s[criterion]} out of 5" for criterion in criteria],
             f"Speed: first text after {s['first_text']} seconds, whole narration {s['secs']} seconds, {s['words']} words.",
             f"Price: about ${s['cost_per_100']} per 100 narrations; judging this run cost ${s['judge_cost']}.",
             "",
@@ -301,9 +350,13 @@ def report(
     stamp: str,
     comparison: dict[str, dict[str, Any]],
     reference: str,
+    criteria: list[str],
+    judges_table: dict[str, dict[str, float]],
 ) -> str:
-    lines = [f"# Model test {stamp}", "", *_summary_lines(summary)]
+    lines = [f"# Model test {stamp}", "", *_summary_lines(summary, criteria)]
     if comparison:
         lines += _comparison_lines(comparison, reference)
-    lines += ["# Baseline", "", *_summary_lines(baseline)]
+    if judges_table:
+        lines += _per_judge_lines(judges_table)
+    lines += ["# Baseline", "", *_summary_lines(baseline, criteria)]
     return "\n".join(lines)
