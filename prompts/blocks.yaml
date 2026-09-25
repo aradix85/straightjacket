@@ -83,7 +83,7 @@
 "flag_final_scene": "FINAL_SCENE:dramatic ending,character falls,make it meaningful"
 "flag_crisis": "CRISIS:desperate,world closing in"
 
-"result_miss_body": Concrete failure. No silver linings. Make it hurt.
+"result_miss_body": The attempt fails and the situation gets worse. The player leaves this scene worse off, without what they came for.
 "result_weak_hit_body": Success with tangible cost or complication.
 "result_strong_hit_body": Clean success.
 "result_match_hint_miss": " A MATCH — the situation escalates dramatically, a fateful twist makes everything worse."

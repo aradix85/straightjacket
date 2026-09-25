@@ -13,9 +13,18 @@ from tests._helpers import make_brain_result, make_memory, make_npc
 
 
 class MockProvider:
-    def __init__(self, correction_source: str = "input_misread") -> None:
+    def __init__(
+        self,
+        correction_source: str = "input_misread",
+        reroll_needed: bool = False,
+        brain_stat: str = "none",
+        dialog_only: bool = True,
+    ) -> None:
         self.calls: list = []
         self._correction_source = correction_source
+        self._reroll_needed = reroll_needed
+        self._brain_stat = brain_stat
+        self._dialog_only = dialog_only
 
     def create_message(self, spec: AICallSpec) -> AIResponse:
         json_schema = spec.json_schema
@@ -27,7 +36,7 @@ class MockProvider:
                     {
                         "correction_source": self._correction_source,
                         "corrected_input": "I talk to Mira instead",
-                        "reroll_needed": False,
+                        "reroll_needed": self._reroll_needed,
                         "corrected_stat": "none",
                         "narrator_guidance": "Rewrite as peaceful dialog.",
                         "director_useful": False,
@@ -55,10 +64,10 @@ class MockProvider:
                     {
                         "type": "action",
                         "move": "dialog",
-                        "stat": "none",
+                        "stat": self._brain_stat,
                         "approach": "speaking gently",
                         "target_npc": "npc_1",
-                        "dialog_only": True,
+                        "dialog_only": self._dialog_only,
                         "player_intent": "Talk to Mira",
                         "world_addition": None,
                         "location_change": None,
@@ -190,6 +199,24 @@ def test_correction_input_misread_full_flow(load_engine: None, stub_emotions: No
     assert len(game.narrative.narration_history) > history_len_before
     assert "[corrected]" in game.narrative.narration_history[-1].prompt_summary
     assert game.narrative.session_log[-1].summary.startswith("[corrected]")
+
+
+def test_correction_to_dialog_does_not_roll_even_with_a_stat(load_engine: None, stub_emotions: None) -> None:
+    from straightjacket.engine.correction import process_correction
+
+    game = _game()
+    provider = MockProvider(
+        correction_source="input_misread", reroll_needed=True, brain_stat="heart", dialog_only=False
+    )
+    game, narration, _director_ctx = process_correction(
+        provider,
+        game,
+        "That's not what I said, I was asking a question",
+        config=EngineConfig(narration_lang="English"),
+    )
+
+    assert len(narration) > 10
+    assert game.narrative.session_log[-1].result == "dialog"
 
 
 def test_correction_state_error_full_flow(load_engine: None, stub_emotions: None) -> None:

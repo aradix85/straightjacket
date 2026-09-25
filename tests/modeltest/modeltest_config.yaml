@@ -21,8 +21,16 @@ judges:
   model: accounts/fireworks/routers/glm-5p3-fast
   extra_body:
     reasoning_effort: low
+- label: GPT-6 Sol
+  provider: openai
+  model: gpt-6-sol
+  extra_body:
+    reasoning_effort: low
 contestants: {}
 prices:
   accounts/fireworks/routers/glm-5p3-fast:
   - 2.1
   - 6.6
+  gpt-6-sol:
+  - 2.0
+  - 10.0

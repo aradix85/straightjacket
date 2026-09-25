@@ -14,7 +14,7 @@
   dialog_only: true when the input is pure conversation without risk, even if a move could fit; the turn then plays as dialog without a roll. Otherwise false.
   bonus_id: when <bonuses> lists a bonus whose condition this action clearly meets, its id exactly as written; otherwise null. Never invent an id.
   target_npc: the id of the NPC the action is aimed at, exactly as <npcs> lists it after id:; otherwise null.
-  track_name, track_rank: when the move starts a new track (swearing a vow, entering a fight, undertaking an expedition, making a connection), track_name is a short name in {lang} for what the track follows and track_rank is the rank that matches how hard the fiction makes it; otherwise both null.
+  track_name, track_rank: always filled. The engine uses them only when the move starts a new track (swearing a vow, entering a fight, undertaking an expedition, making a connection): track_name is then a short name in {lang} for what the track follows, and track_rank is the rank that matches how hard the fiction makes it. For any other move, fill them for the action at hand; they are not used.
   target_track: when the move marks progress on or resolves a track listed in <tracks>, its name exactly as written there; otherwise null.
   </rules>
   {moves_block}

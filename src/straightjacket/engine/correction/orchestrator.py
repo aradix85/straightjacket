@@ -21,6 +21,7 @@ from ..mechanics import (
     apply_brain_location_time,
     check_npc_agency,
     generate_consequence_sentences,
+    is_dialog_branch,
     record_scene_intensity,
     resolve_effect,
     resolve_position,
@@ -53,7 +54,7 @@ def _handle_input_misread(
     nar = game.narrative
     consequences: list[str] = []
 
-    if analysis["reroll_needed"] and brain.stat != "none":
+    if analysis["reroll_needed"] and not is_dialog_branch(brain) and brain.stat != "none":
         nar.scene_count += 1
         stat_name = brain.stat
         roll = roll_action(

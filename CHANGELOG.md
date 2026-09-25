@@ -7,6 +7,26 @@ Originally forked from [EdgeTales](https://github.com/edgetales/edgetales). See 
 
 Straightjacket uses calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day. The first CalVer release is `2026.04.25.0`. Earlier `0.x.y` releases keep their original version numbers and are not renumbered. The switch was made because the project has no public API to version semantically against — the `0.x.y` numbers were running counters with no meaning, and dates carry the meaning the numbers didn't.
 
+## [2026.09.25.3] — 2026-09-25
+
+The narrator's miss rule describes what happens instead of listing what to avoid, measured with a judge from another family; the Brain always names a new track; a correction to a dialog turn no longer fails.
+
+Measurement. The harness now judges with GPT-6 Sol beside GLM 5.3 Fast (`tests/modeltest/modeltest_config.yaml`), because a judge favours its own family (2026.09.24.57). Judging the 60 narrations of the old baseline again: GLM 8.50, GPT-6 Sol 7.72, together 8.11, player agency 3.76, result integrity on a miss 4.63, where GLM alone had given 5.0. The prompt of 2026.09.25.2, narrated again: 8.03 (GLM 8.40, Sol 7.65), agency 3.60, miss 4.53. The two runs differ by about 0.1 overall, which is the noise between runs of the same prompt.
+
+What was tried and dropped. A rewrite of the whole narrator system prompt (the miss rule, player agency, NPC speech, style, a shorter rule list, variable blocks moved to the end) scored 7.74, player agency 3.35. The judges' reasons showed why: a new line that let the player character's body answer the scene (breath, sweat, grip, posture, pain) led the narrator to invent the character's bruises, trembling, and feelings. A second version that kept the camera on the world scored 7.91, agency 3.62, miss 4.77: no longer worse on agency, better on a miss, lower overall. The rewrite was reverted; only its miss rule went on.
+
+What stays. The MISS rule in `prompts/narrator.yaml` now says that the attempt fails and the situation gets worse, that the player leaves worse off without what they came for, and that anything learned on a miss is bad news; the per-turn `result_miss_body` in `prompts/blocks.yaml` says the same in one sentence, instead of "Concrete failure. No silver linings. Make it hurt." Measured on the prompt of 2026.09.25.2 with only this change: 8.01 (GLM 8.47, Sol 7.55), player agency 3.65, result integrity on a miss 4.83 against 4.53. This run is the new `tests/modeltest/baseline_glm.json`.
+
+The Brain always names a new track. `ai/schemas.py` → `get_brain_output_schema` let `track_name` and `track_rank` be null on every move, and GLM 5.3 Fast sometimes left them empty when a move opened a fight, so the engine named the track after the first forty characters of the player's intent and gave it the rank dangerous. Both fields are now required; the engine still reads them only when the move starts a track, and `prompts/brain.yaml` says so. The fallback in `game/turn.py` stays for providers that do not enforce the schema. New test in `tests/test_schema_strictness.py`. In the Elvira run below the Brain named the fight "Hold the Drift Meridian hatch" with a rank, and no track warning appeared.
+
+A correction to a dialog turn failed. `correction/orchestrator.py` rolled again whenever the correction asked for it and the Brain named a stat, but a dialog answer carries a stat too, since the schema requires one; the correction then rolled the move `dialog`, which has no outcome, and raised ("No outcome config for dialog"). Found by the Elvira run below, where the player said they had been asking a question. The correction now uses the turn pipeline's own test, `is_dialog_branch`, before rolling. The test `test_correction_to_dialog_does_not_roll_even_with_a_stat` fails on the previous code with that error. The fault predates this release; it became reachable once the correction analyser's role was repaired in 2026.09.25.2.
+
+Elvira, eight turns in Starforged as dialogist, everything on GLM 5.3 Fast, on the prompts of this release before the correction fix: the fight track was named by the Brain; six streamed turns identical to the final text; the injected narrator outage rolled back cleanly; the one engine error was the correction above. Audit 6.0 out of 10 over six turns, restraint 3.0 and player agency 3.2 in this single session. About $0.28 at list price. The measurements above cost about $4.50 in all.
+
+ARCHITECTURE.md names both harness judges; roadmap priority 2 records the two fixes, and priority 3 the result of this round and what stays open, each to be measured on its own.
+
+Quality gate: 1505 tests green, twenty-nine project-rule scans clean, coverage 90.11%, ruff check and ruff format clean on 210 files, mypy --strict clean on 109 source files. Save format unchanged.
+
 ## [2026.09.25.2] — 2026-09-25
 
 Fix: the outright errors in the prompt files, found by a full read of every prompt, checked against the code, the Datasworn texts, and the git history. Style and the rules behind the known narration weaknesses are left for the measured round of roadmap priority 3.

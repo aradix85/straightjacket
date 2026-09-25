@@ -55,6 +55,15 @@ def test_the_brain_schema_requires_all_its_properties(load_engine: None) -> None
     assert problems == []
 
 
+def test_the_brain_schema_always_asks_for_a_track_name_and_rank(load_engine: None) -> None:
+    from straightjacket.engine.ai.schemas import get_brain_output_schema
+
+    props = get_brain_output_schema(["combat/enter_the_fray"], [], [], [])["properties"]
+    assert props["track_name"] == {"type": "string"}
+    assert props["track_rank"]["type"] == "string"
+    assert "dangerous" in props["track_rank"]["enum"]
+
+
 def test_the_director_schema_requires_all_its_properties(load_engine: None) -> None:
     from straightjacket.engine.ai.schemas import get_director_output_schema
 

@@ -91,13 +91,8 @@ def get_brain_output_schema(
             "player_intent": _str(),
             "world_addition": _nullable_str(),
             "location_change": _nullable_str(),
-            "track_name": _nullable_str(),
-            "track_rank": {
-                "anyOf": [
-                    {"type": "string", "enum": rank_enum},
-                    {"type": "null"},
-                ]
-            },
+            "track_name": _str(),
+            "track_rank": _str_enum(rank_enum),
             "target_track": _nullable_enum(track_names),
             "bonus_id": _nullable_enum(bonus_ids),
         },
