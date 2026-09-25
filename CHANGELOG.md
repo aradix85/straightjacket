@@ -7,6 +7,20 @@ Originally forked from [EdgeTales](https://github.com/edgetales/edgetales). See 
 
 Straightjacket uses calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day. The first CalVer release is `2026.04.25.0`. Earlier `0.x.y` releases keep their original version numbers and are not renumbered. The switch was made because the project has no public API to version semantically against — the `0.x.y` numbers were running counters with no meaning, and dates carry the meaning the numbers didn't.
 
+## [2026.09.24.54] — 2026-09-25
+
+Results of the deeper narrator test built in 2026.09.24.53. No code changed.
+
+Twenty scenes, five narrations each, judged blind by GPT-6 Sol and Claude Sonnet 5, compared with GPT-6 Luna scene by scene (95% intervals, 100 pairs per model). Kimi K3 through Fireworks: overall 7.33 (7.13 to 7.52), result integrity on a miss 4.34, first text 2.4 seconds, 231 words, $1.29 per 100 narrations; better than Luna by 0.47 (0.23 to 0.69). Gemini 3.8 Flash through OpenRouter: 7.21 (7.05 to 7.37), 4.64 on a miss (the highest), 1.8 seconds, 248 words, $0.31; better by 0.35 (0.13 to 0.58). GLM 5.3 through Fireworks: 7.06 (6.84 to 7.26), 4.36, 1.5 seconds, 302 words, $0.53; not distinguishable, +0.20 (-0.04 to 0.46). GPT-6 Luna: 6.86 (6.66 to 7.05), 4.26, 0.7 seconds, 136 words, $0.03. Kimi K2.6 through Fireworks at reasoning none: 6.84 (6.66 to 7.02), 4.18, 1.6 seconds, 231 words, $0.36; not distinguishable, -0.01. Within each model, length and score are not related (correlations from -0.21 to +0.01), so the longer narrations of the other models are not what the judges reward. No errors over 500 narrations and 1000 verdicts.
+
+Fifteen Elvira sessions, each model narrating eight turns in Classic, Starforged, and Sundered Isles with the aggressor style, judged per turn by Claude Sonnet 5 on the same six criteria (mean of the criteria, out of 5; about eighteen judged turns per model, so differences of a tenth or two are within chance). GLM 5.3: 4.39, result integrity 4.77, player agency 4.57, prose 4.67, no narration audit findings; first sentence after 5.2 seconds and 14.4 seconds per turn (medians). Kimi K3: 4.17, 5.9 and 18.4 seconds. GPT-6 Luna: 4.12, 2.5 and 7.2 seconds. Gemini 3.8 Flash: 4.05, 3.4 and 10.0 seconds, with three narration audit findings (a miss escalating into a cascade of disasters, the player character's stance decided for them, invented backstory) and one OpenRouter stream that broke mid-way with a JSON error and was retried without streaming. Kimi K2.6: 3.92, restraint 3.17, 2.9 and 13.7 seconds.
+
+What it means. No contestant wins on all three of the user's criteria. Gemini and Kimi K3 narrate single scenes measurably better than Luna, and GLM 5.3 held up best over whole sessions; every one of them is slower to the first sentence and costs ten to forty times more per narration, which is still cents per session. The narrator stays GPT-6 Luna until the user decides.
+
+Found in passing, independent of the narrator, and added to the roadmap: in one Sundered Isles session the combat position stayed at in control on three turns after the combat track was gone (Elvira's combat-sync invariant); in one Classic session a bond-threshold trigger referred to an NPC id `char_1` that does not exist and the error ended the session after six turns; and the Director again called `query_active_threads` with an argument it does not take.
+
+Quality gate: 1450 tests green, twenty-nine project-rule scans clean, coverage 90.03%, ruff check and ruff format clean, mypy --strict clean on 109 source files. Save format unchanged.
+
 ## [2026.09.24.53] — 2026-09-25
 
 A deeper narrator test, at the user's request: the first comparison left differences of a few tenths that could be chance. This release builds the test; the next one records its results.
