@@ -9,6 +9,18 @@ Entries up to 2026.09.26.0 were shortened to their essentials in 2026.09.26.1. T
 
 Calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day. The first CalVer release is 2026.04.25.0; earlier `0.x.y` releases keep their numbers.
 
+## [2026.09.26.10] — 2026-09-26
+
+Blueprint voicing fixes its counts in the schema instead of asking again, and a Director failure shows the end of its reasoning.
+
+Blueprint voicing. Its schema left the number of acts, revelations, and possible endings open, and the engine counted afterwards and asked again up to four times; on GLM 5.3 Flash the first answer had one possible ending of three in both Together sessions. `get_blueprint_voicing_schema` now takes the three counts and fixes each array with `minItems` and `maxItems`, which Together, Fireworks, and OpenAI all enforced in a test that asked for one item against a schema of three. The call is made once; a wrong count despite the schema fails it, and the chapter goes on without a blueprint as before. The retry test is rewritten to check the counts in the schema and a single call; it fails without the change.
+
+Director. `AIResponse` carries the reasoning text a host returns (`reasoning` on Together, `reasoning_content` elsewhere), and a Director failure ends with the reasoning's length and its last characters, so the loop behind a broken answer can be read. GLM 5.3 Flash's reasoning cannot be turned off: Together accepted `reasoning_effort: "none"`, `reasoning: {"enabled": false}`, and two chat-template switches without error and reasoned anyway, as Z.ai documents. Two new tests cover the reasoning text and the failure message.
+
+Checked: an eight-turn Elvira session in Starforged as explorer on the default configuration: blueprint voicing succeeded on its only call with three acts and three revelations; no engine warning or error; 25 Director tool rounds in eight turns; the first sentence after a median 5.7 seconds; three narrations audited at 3 or 4 out of 10 for inventing player actions and history.
+
+Quality gate: 1494 tests green, twenty-nine project-rule scans clean, coverage 90.12%, ruff check and ruff format clean on 206 files, mypy --strict clean on 109 source files. Save format unchanged.
+
 ## [2026.09.26.9] — 2026-09-26
 
 The Director no longer retries a broken final answer; it reports why the answer broke off, and the cause is found.

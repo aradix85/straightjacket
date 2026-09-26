@@ -126,4 +126,7 @@ class OpenAICompatibleProvider:
             stop_reason=stop_reason,
             tool_calls=parsed_tool_calls,
             usage=usage,
+            reasoning=getattr(choice.message, "reasoning", None)
+            or getattr(choice.message, "reasoning_content", None)
+            or "",
         )

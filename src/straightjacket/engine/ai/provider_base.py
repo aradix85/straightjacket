@@ -34,6 +34,7 @@ class AIResponse:
     stop_reason: str = "complete"
     tool_calls: list[dict[str, str | dict[str, Any]]] = field(default_factory=list)
     usage: dict[str, int] | None = field(default=None, repr=False)
+    reasoning: str = field(default="", repr=False)
 
 
 @dataclass(frozen=True)

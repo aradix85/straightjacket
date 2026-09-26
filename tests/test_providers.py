@@ -433,6 +433,20 @@ def test_openai_usage_reports_reasoning_tokens_nested_or_top_level(openai_endpoi
     assert provider.create_message(_spec()).usage == {"input_tokens": 10, "output_tokens": 600, "reasoning_tokens": 40}
 
 
+def test_openai_response_keeps_the_reasoning_text_under_either_name(openai_endpoint: _FakeEndpoint) -> None:
+    provider = provider_openai.OpenAICompatibleProvider(api_key="k", timeout_seconds=30)
+    together_style = _openai_response("{}", "stop", None)
+    together_style.choices[0].message.reasoning = "First, the NPC."
+    openai_endpoint.response = together_style
+    assert provider.create_message(_spec()).reasoning == "First, the NPC."
+    other_style = _openai_response("{}", "stop", None)
+    other_style.choices[0].message.reasoning_content = "Then the clock."
+    openai_endpoint.response = other_style
+    assert provider.create_message(_spec()).reasoning == "Then the clock."
+    openai_endpoint.response = _openai_response("{}", "stop", None)
+    assert provider.create_message(_spec()).reasoning == ""
+
+
 def test_anthropic_refusal_is_reported_as_refusal(anthropic_endpoint: _FakeEndpoint) -> None:
     anthropic_endpoint.response = SimpleNamespace(
         content=[SimpleNamespace(type="text", text="")],

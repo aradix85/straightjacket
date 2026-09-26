@@ -85,7 +85,7 @@ def test_npc_introduced_and_killed_in_the_same_scene_is_marked_deceased(load_eng
     assert mara.status == "deceased"
 
 
-def test_blueprint_voicing_retries_until_the_counts_match(load_engine: None) -> None:
+def test_blueprint_voicing_fixes_the_counts_in_its_schema_and_asks_once(load_engine: None) -> None:
     import json
     import random
 
@@ -111,19 +111,26 @@ def test_blueprint_voicing_retries_until_the_counts_match(load_engine: None) -> 
         )
 
     class Scripted:
-        def __init__(self) -> None:
-            self.replies = [
-                voicing(blueprint.possible_endings_per_blueprint - 1),
-                voicing(blueprint.possible_endings_per_blueprint),
-            ]
-            self.calls = 0
+        def __init__(self, reply: str) -> None:
+            self.reply = reply
+            self.specs: list[AICallSpec] = []
 
         def create_message(self, spec: AICallSpec) -> AIResponse:
-            self.calls += 1
-            return AIResponse(content=self.replies.pop(0))
+            self.specs.append(spec)
+            return AIResponse(content=self.reply)
 
-    provider = Scripted()
-    result = call_blueprint_voicing(provider, game, seed)
+    good = Scripted(voicing(blueprint.possible_endings_per_blueprint))
+    result = call_blueprint_voicing(good, game, seed)
     assert result is not None
-    assert len(result["possible_endings"]) == blueprint.possible_endings_per_blueprint
-    assert provider.calls == 2
+    assert len(good.specs) == 1
+    props = good.specs[0].json_schema["properties"]
+    for key, count in (
+        ("acts", len(seed.acts)),
+        ("revelations", blueprint.revelations_per_blueprint),
+        ("possible_endings", blueprint.possible_endings_per_blueprint),
+    ):
+        assert (props[key]["minItems"], props[key]["maxItems"]) == (count, count)
+
+    short = Scripted(voicing(blueprint.possible_endings_per_blueprint - 1))
+    assert call_blueprint_voicing(short, game, seed) is None
+    assert len(short.specs) == 1

@@ -88,32 +88,29 @@ def call_blueprint_voicing(
 
     system = get_prompt("blueprint_voicing", lang=lang, content_boundaries_block=cb)
     user_msg = _build_voicing_user_msg(game, seed)
+    blueprint = eng().adventure_crafter.blueprint
 
     try:
         spec = AICallSpec(
             model=model_for_role("blueprint_voicing"),
             system=system,
             messages=[{"role": "user", "content": user_msg}],
-            json_schema=get_blueprint_voicing_schema(),
+            json_schema=get_blueprint_voicing_schema(
+                len(seed.acts), blueprint.revelations_per_blueprint, blueprint.possible_endings_per_blueprint
+            ),
             log_role="blueprint_voicing",
             **sampling_params("blueprint_voicing"),
         )
-        for attempt in range(spec.max_retries + 1):
-            response = create_with_retry(provider, spec)
-            voicing: dict[str, Any] = json.loads(response.content)
-            mismatch = _count_mismatch(voicing, seed)
-            if not mismatch:
-                log(
-                    f"[BlueprintVoicing] Succeeded: "
-                    f"conflict={voicing['central_conflict'][: eng().truncations.log_medium]}, "
-                    f"acts={len(voicing['acts'])}, revelations={len(voicing['revelations'])}"
-                )
-                return voicing
-            log(
-                f"[BlueprintVoicing] Wrong counts: {', '.join(mismatch)} (attempt {attempt + 1}/{spec.max_retries + 1})",
-                level="warning",
-            )
-        raise ValueError(f"voicing kept returning wrong counts: {', '.join(mismatch)}")
+        voicing: dict[str, Any] = json.loads(create_with_retry(provider, spec).content)
+        mismatch = _count_mismatch(voicing, seed)
+        if mismatch:
+            raise ValueError(f"voicing returned wrong counts despite its schema: {', '.join(mismatch)}")
+        log(
+            f"[BlueprintVoicing] Succeeded: "
+            f"conflict={voicing['central_conflict'][: eng().truncations.log_medium]}, "
+            f"acts={len(voicing['acts'])}, revelations={len(voicing['revelations'])}"
+        )
+        return voicing
     except Exception as e:
         log(
             f"[BlueprintVoicing] Failed ({type(e).__name__}: {e}), continuing without blueprint",

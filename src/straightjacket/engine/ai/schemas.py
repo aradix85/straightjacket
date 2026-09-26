@@ -66,7 +66,6 @@ def _obj_root(props: dict[str, Any], title: str) -> dict[str, Any]:
 
 
 _correction_cache: dict[str, Any] | None = None
-_blueprint_voicing_cache: dict[str, Any] | None = None
 
 
 def _nullable_enum(values: list[str]) -> dict[str, Any]:
@@ -136,44 +135,32 @@ def get_director_output_schema(reflection_ids: list[str]) -> dict[str, Any]:
     )
 
 
-def get_blueprint_voicing_schema() -> dict[str, Any]:
-    global _blueprint_voicing_cache
-    if _blueprint_voicing_cache is None:
-        _e = eng()
-        _blueprint_voicing_cache = _obj_root(
-            {
-                "central_conflict": _str(),
-                "antagonist_force": _str(),
-                "thematic_thread": _str(),
-                "acts": _arr(
-                    _obj(
-                        {
-                            "title": _str(),
-                            "goal": _str(),
-                            "mood": _str(),
-                            "transition_trigger": _str(),
-                        }
-                    )
+def _counted_arr(item_schema: dict[str, Any], count: int) -> dict[str, Any]:
+    return {"type": "array", "items": item_schema, "minItems": count, "maxItems": count}
+
+
+def get_blueprint_voicing_schema(acts: int, revelations: int, endings: int) -> dict[str, Any]:
+    return _obj_root(
+        {
+            "central_conflict": _str(),
+            "antagonist_force": _str(),
+            "thematic_thread": _str(),
+            "acts": _counted_arr(
+                _obj(
+                    {
+                        "title": _str(),
+                        "goal": _str(),
+                        "mood": _str(),
+                        "transition_trigger": _str(),
+                    }
                 ),
-                "revelations": _arr(
-                    _obj(
-                        {
-                            "content": _str(),
-                        }
-                    )
-                ),
-                "possible_endings": _arr(
-                    _obj(
-                        {
-                            "type": _str(),
-                            "description": _str(),
-                        }
-                    )
-                ),
-            },
-            _e.ai_text.schema_titles["blueprint_voicing_output"],
-        )
-    return _blueprint_voicing_cache
+                acts,
+            ),
+            "revelations": _counted_arr(_obj({"content": _str()}), revelations),
+            "possible_endings": _counted_arr(_obj({"type": _str(), "description": _str()}), endings),
+        },
+        eng().ai_text.schema_titles["blueprint_voicing_output"],
+    )
 
 
 _chapter_summary_cache: dict[str, Any] | None = None

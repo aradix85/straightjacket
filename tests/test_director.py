@@ -105,6 +105,7 @@ class _SequencedDirectorProvider:
             content=self._answers.pop(0),
             stop_reason="truncated",
             usage={"input_tokens": 1, "output_tokens": 8192, "reasoning_tokens": 7800},
+            reasoning="Check npc_1 first. " + "Wait, should npc_2 reflect too? Let me reconsider. " * 40,
         )
 
 
@@ -123,6 +124,8 @@ def test_director_reports_why_its_final_answer_broke_off(stub_all: None, monkeyp
     warning = " ".join(warnings)
     assert "stopped as truncated after 8192 output tokens, 7800 of them reasoning" in warning
     assert f"with {len(broken)} characters of JSON" in warning
+    assert "of reasoning text, which ended: '" in warning
+    assert warning.rstrip().endswith("Let me reconsider.'), continuing without guidance")
 
 
 def test_stores_narrator_guidance(stub_all: None) -> None:
