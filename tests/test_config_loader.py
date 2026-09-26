@@ -1,3 +1,6 @@
+from pathlib import Path
+
+
 def _full_config_data(**overrides: object) -> dict:
     base = {
         "server": {"host": "127.0.0.1", "port": 8081, "stream_narration": True},
@@ -125,3 +128,31 @@ def test_cluster_sampling_can_be_explicitly_unset() -> None:
     config = config_loader._parse_config(data)
     cluster = config.ai.clusters["classification"]
     assert (cluster.temperature, cluster.top_p) == (None, None)
+
+
+def _users_dirs_in_a_fresh_process(env: dict[str, str]) -> list[str]:
+    import subprocess
+    import sys
+
+    code = "from straightjacket.engine import config_loader, user_management; print(config_loader.USERS_DIR); print(user_management.USERS_DIR)"
+    out = subprocess.run([sys.executable, "-c", code], env=env, capture_output=True, text=True, check=True)
+    return out.stdout.split()
+
+
+def test_the_users_folder_follows_the_environment(tmp_path: Path) -> None:
+    import os
+
+    players = tmp_path / "elsewhere" / "players"
+    env = {**os.environ, "STRAIGHTJACKET_USERS_DIR": str(players)}
+    assert _users_dirs_in_a_fresh_process(env) == [str(players), str(players)]
+    assert players.is_dir()
+
+
+def test_the_users_folder_defaults_to_the_project() -> None:
+    import os
+
+    from straightjacket.engine.config_loader import PROJECT_ROOT
+
+    env = {key: value for key, value in os.environ.items() if key != "STRAIGHTJACKET_USERS_DIR"}
+    expected = str(PROJECT_ROOT / "users")
+    assert _users_dirs_in_a_fresh_process(env) == [expected, expected]

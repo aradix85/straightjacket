@@ -9,6 +9,16 @@ Entries up to 2026.09.26.0 were shortened to their essentials in 2026.09.26.1. T
 
 Calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day. The first CalVer release is 2026.04.25.0; earlier `0.x.y` releases keep their numbers.
 
+## [2026.09.26.7] — 2026-09-26
+
+Elvira keeps her players inside her own folder, and the users folder can be moved.
+
+`config_loader.USERS_DIR` follows `STRAIGHTJACKET_USERS_DIR` when it is set, as `STRAIGHTJACKET_CONFIG` does for the configuration, and is the project's `users/` otherwise. `tests/elvira/elvira.py` sets it to tests/elvira/users before the engine loads, unless it is already set, so her saves no longer sit beside real players in `users/`; git ignores the folder, and the old `users/elvira` is gone. In `--ws` mode the server she connects to saves in its own users folder. Two new tests start a fresh process with and without the variable; the first fails without the change.
+
+Checked: after a full test run `users/` is empty. An eight-turn Elvira session in Starforged as aggressor saved to tests/elvira/users/elvira and loaded back twice without a difference, `users/` stayed empty, the first sentence came after a median 3.7 seconds. Two engine warnings that recur on GLM 5.3 Flash through Together and are unrelated to this release: blueprint voicing again returned one possible ending of three on its first attempt, and the Director's final JSON failed to parse once, the third such failure in four Together sessions; the turn went on without its guidance. Two misses were audited at 3 and 4 out of 10.
+
+Quality gate: 1491 tests green, twenty-nine project-rule scans clean, coverage 90.14%, ruff check and ruff format clean on 206 files, mypy --strict clean on 109 source files. Save format unchanged.
+
 ## [2026.09.26.6] — 2026-09-26
 
 Tests no longer leave a player behind in the project's `users/` folder.

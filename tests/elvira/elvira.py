@@ -2,6 +2,7 @@ import argparse
 import asyncio
 import copy
 import logging
+import os
 import sys
 from pathlib import Path
 
@@ -10,6 +11,7 @@ _HERE = Path(__file__).resolve().parent
 _ROOT = _HERE.parent.parent
 sys.path.insert(0, str(_ROOT / "src"))
 sys.path.insert(0, str(_ROOT))
+os.environ.setdefault("STRAIGHTJACKET_USERS_DIR", str(_HERE / "users"))
 
 
 _logger = logging.getLogger("rpg_engine")

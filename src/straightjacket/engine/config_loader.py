@@ -29,8 +29,8 @@ def _read_version() -> str:
 VERSION = _read_version()
 
 
-USERS_DIR = PROJECT_ROOT / "users"
-USERS_DIR.mkdir(exist_ok=True)
+USERS_DIR = Path(os.environ.get("STRAIGHTJACKET_USERS_DIR", str(PROJECT_ROOT / "users")))
+USERS_DIR.mkdir(parents=True, exist_ok=True)
 GLOBAL_CONFIG_FILE = _CONFIG_PATH
 
 
