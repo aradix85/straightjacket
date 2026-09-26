@@ -316,6 +316,8 @@ def get_correction_output_schema() -> dict[str, Any]:
                 field_props[fname] = {"anyOf": [_str_arr(), {"type": "null"}]}
             elif fname == "disposition":
                 field_props[fname] = _nullable_enum(list(_e.enums.dispositions))
+            elif fname == "status":
+                field_props[fname] = _nullable_enum(list(_e.enums.npc_statuses))
             else:
                 field_props[fname] = _nullable_str()
         _correction_cache = _obj_root(

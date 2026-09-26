@@ -9,6 +9,16 @@ Entries up to 2026.09.26.0 were shortened to their essentials in 2026.09.26.1. T
 
 Calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day. The first CalVer release is 2026.04.25.0; earlier `0.x.y` releases keep their numbers.
 
+## [2026.09.26.3] — 2026-09-26
+
+NPC statuses get one central list, and a correction can set only those.
+
+`engine/enums.yaml` lists `npc_statuses` (`active`, `background`, `deceased`, `lore`) beside the dispositions, read through `EnumsConfig`. The correction schema limits an NPC's `status` to that list, as 2026.09.26.2 did for `disposition`: before, a model could write any text there, and a status such as `dead` would have left the NPC outside every category the engine checks, silently gone from the prompts without an error. The new test fails without the change. The engine's own status checks keep their literal values; only the field a model fills is limited. Roadmap priority 5 loses the item.
+
+Checked: an eight-turn Elvira session in Classic as explorer, everything on GPT-6 Luna, with one correction and the injected narrator outage rolled back; no engine warning or error, six streamed turns identical to the final text, the first sentence after a median 2.3 seconds. Its one problem is a narration audit of 3 out of 10 for a miss that gave information.
+
+Quality gate: 1487 tests green, twenty-nine project-rule scans clean, coverage 90.10%, ruff check and ruff format clean on 206 files, mypy --strict clean on 109 source files. Save format unchanged.
+
 ## [2026.09.26.2] — 2026-09-26
 
 Cheap models through OpenRouter measured against GPT-6 Luna, with Elvira on a model of her own; the game stays on Luna.

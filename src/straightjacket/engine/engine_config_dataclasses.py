@@ -418,6 +418,7 @@ class StoryConfig:
 class EnumsConfig:
     time_phases: list[str]
     dispositions: list[str]
+    npc_statuses: list[str]
     clock_types: list[str]
     tone_keys: list[str]
     correction_ops: list[str]

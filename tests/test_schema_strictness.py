@@ -81,3 +81,14 @@ def test_a_correction_can_set_only_a_known_disposition(load_engine: None) -> Non
     choices = next(branch for branch in fields["properties"]["disposition"]["anyOf"] if branch.get("type") == "string")
     assert choices["enum"] == sorted(eng().enums.dispositions)
     assert "guarded" not in choices["enum"]
+
+
+def test_a_correction_can_set_only_a_known_npc_status(load_engine: None) -> None:
+    from straightjacket.engine.ai.schemas import get_correction_output_schema
+    from straightjacket.engine.engine_loader import eng
+
+    op = get_correction_output_schema()["properties"]["state_ops"]["items"]
+    fields = next(branch for branch in op["properties"]["fields"]["anyOf"] if branch.get("type") == "object")
+    choices = next(branch for branch in fields["properties"]["status"]["anyOf"] if branch.get("type") == "string")
+    assert choices["enum"] == sorted(eng().enums.npc_statuses)
+    assert "dead" not in choices["enum"]
