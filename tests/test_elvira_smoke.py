@@ -12,7 +12,7 @@ ELVIRA_CONFIG = Path(__file__).resolve().parent / "elvira" / "elvira_config.yaml
 def test_elvira_plays_a_short_session_end_to_end(
     load_engine: None, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
-    from tests.elvira.elvira_bot import runner
+    from tests.elvira.elvira_bot import ai_helpers, runner
 
     for target in (
         "straightjacket.engine.config_loader.USERS_DIR",
@@ -22,6 +22,7 @@ def test_elvira_plays_a_short_session_end_to_end(
     monkeypatch.setattr(runner, "RUNS_DIR", tmp_path / "runs")
     monkeypatch.setattr(runner, "check_configured_models", lambda: None)
     monkeypatch.setattr(runner, "get_provider", MockProvider)
+    monkeypatch.setattr(ai_helpers, "provider_named", lambda name: MockProvider())
     monkeypatch.setattr(runner, "CORRECTION_TEST_INTERVAL", 2)
 
     bot_cfg = runner.load_config(ELVIRA_CONFIG)
@@ -57,7 +58,7 @@ def test_elvira_websocket_mode_plays_through_the_real_server(
 
     from straightjacket.engine.ai import api_client
     from straightjacket.web import handlers
-    from tests.elvira.elvira_bot import runner, ws_runner
+    from tests.elvira.elvira_bot import ai_helpers, runner, ws_runner
 
     for target in (
         "straightjacket.engine.config_loader.USERS_DIR",
@@ -67,6 +68,7 @@ def test_elvira_websocket_mode_plays_through_the_real_server(
     monkeypatch.setattr(ws_runner, "RUNS_DIR", tmp_path / "runs")
     monkeypatch.setattr(api_client, "check_configured_models", lambda: None)
     monkeypatch.setattr(api_client, "get_provider", MockProvider)
+    monkeypatch.setattr(ai_helpers, "provider_named", lambda name: MockProvider())
     monkeypatch.setattr(handlers, "get_provider", MockProvider)
     with socket.socket() as probe:
         probe.bind(("127.0.0.1", 0))

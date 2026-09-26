@@ -39,7 +39,15 @@ from straightjacket.engine.game import (
 from .coverage import Coverage, world_view
 from .judge import judge_turn
 from .report import write_report
-from .ai_helpers import ask_bot, available_styles, build_turn_context, decide_burn_momentum, get_persona
+from .ai_helpers import (
+    ask_bot,
+    available_styles,
+    bot_label,
+    build_turn_context,
+    configure_bot,
+    decide_burn_momentum,
+    get_persona,
+)
 from .creation import roll_character
 from .faults import NarratorOutage
 from .scenarios import prepare_scenario
@@ -111,8 +119,8 @@ def run_session(bot_cfg: dict, auto_override: bool = False, turns_override: int 
     full_debug = log_cfg["full_debug_log"]
 
     check_configured_models()
+    configure_bot(bot_cfg["ai"])
     provider = get_provider()
-    judge_provider = provider if judge_cfg else None
     config = EngineConfig(narration_lang=narration_lang)
     create_user(username)
 
@@ -135,8 +143,9 @@ def run_session(bot_cfg: dict, auto_override: bool = False, turns_override: int 
     )
     roles = ", ".join(_role_label(role) for role in ("narrator", "brain", "director"))
     print(f"  Engine: v{VERSION} | {roles}")
-    if judge_cfg:
-        print(f"  Judge: the game's own model | Injected AI failure on turn {inject_turn}")
+    print(
+        f"  Elvira: {bot_label()} plays{' and judges' if judge_cfg else ''} | Injected AI failure on turn {inject_turn}"
+    )
     print(SEPARATOR)
 
     game, narration, chat_messages = _setup_game(provider, config, username, game_cfg, auto_mode, slog)
@@ -196,7 +205,6 @@ def run_session(bot_cfg: dict, auto_override: bool = False, turns_override: int 
                     coverage=coverage,
                     events=events,
                     judge_cfg=judge_cfg,
-                    judge_provider=judge_provider,
                     inject_failure=total_turns == inject_turn,
                     directive_key=_directive(scenario, coverage, total_turns, max_chapters * max_turns),
                     prev_action=prev_action,
@@ -365,13 +373,12 @@ def _play_turn(
     events: _EventCapture,
     judge_cfg: dict | None,
     prev_action: str = "",
-    judge_provider: AIProvider | None = None,
     inject_failure: bool = False,
     directive_key: str | None = None,
 ) -> tuple[GameState, str, TurnRecord, bool]:
     context = build_turn_context(game, narration, turn, prev_action=prev_action, directive_key=directive_key)
     try:
-        action = ask_bot(provider, persona, context, max_tokens=500)
+        action = ask_bot(persona, context, max_tokens=500)
     except Exception as e:
         print(f"[ERROR] Bot decision failed: {e}")
         rec = TurnRecord(turn=turn, chapter=game.campaign.chapter_number, error=str(e))
@@ -446,8 +453,8 @@ def _play_turn(
     rec.engine_warnings = events.warnings[warnings_before:]
     coverage.observe_events(rec.engine_events)
 
-    if judge_cfg and judge_provider:
-        rec.judge = judge_turn(judge_provider, judge_cfg, game, action, narration, result, match)
+    if judge_cfg:
+        rec.judge = judge_turn(judge_cfg, game, action, narration, result, match)
         _print_audit(rec.judge)
 
     return game, narration, rec, False
@@ -728,7 +735,7 @@ def _handle_burn(
         should_burn = True
     elif burn_setting != "never":
         try:
-            should_burn = decide_burn_momentum(provider, game, burn_info, style)
+            should_burn = decide_burn_momentum(game, burn_info, style)
         except Exception:
             should_burn = False
 

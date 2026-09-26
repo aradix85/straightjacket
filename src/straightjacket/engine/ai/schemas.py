@@ -314,6 +314,8 @@ def get_correction_output_schema() -> dict[str, Any]:
         for fname in _e.enums.correction_fields:
             if fname == "aliases":
                 field_props[fname] = {"anyOf": [_str_arr(), {"type": "null"}]}
+            elif fname == "disposition":
+                field_props[fname] = _nullable_enum(list(_e.enums.dispositions))
             else:
                 field_props[fname] = _nullable_str()
         _correction_cache = _obj_root(

@@ -6,6 +6,8 @@ from collections import Counter
 from pathlib import Path
 from straightjacket.engine.config_loader import model_for_role
 
+from .ai_helpers import ELVIRA_ROLE, bot_model
+
 from .coverage import Coverage
 from .judge import CRITERIA
 from .models import SessionLog
@@ -51,23 +53,29 @@ def _cost_lines(slog: SessionLog, prices: dict[str, list[float]]) -> list[str]:
     lines: list[str] = []
     total = 0.0
     for role, usage in sorted(slog.token_summary.get("by_role", {}).items()):
-        try:
-            model = model_for_role(role)
-        except (KeyError, ValueError):
-            model = "unknown"
+        elvira = role == ELVIRA_ROLE
+        if elvira:
+            model = bot_model()
+        else:
+            try:
+                model = model_for_role(role)
+            except (KeyError, ValueError):
+                model = "unknown"
+        label = f"{role} ({model}{', her own player and judge, not in the total' if elvira else ''})"
         price = prices.get(model)
         if price is None:
             lines.append(
-                f"- {role} ({model}): {usage['calls']} calls, {usage['input']} in, {usage['output']} out, no price configured"
+                f"- {label}: {usage['calls']} calls, {usage['input']} in, {usage['output']} out, no price configured"
             )
             continue
         cost = usage["input"] * price[0] / 1e6 + usage["output"] * price[1] / 1e6
-        total += cost
+        if not elvira:
+            total += cost
         lines.append(
-            f"- {role} ({model}): {usage['calls']} calls, {usage['input']} in, {usage['output']} out, about ${cost:.3f}"
+            f"- {label}: {usage['calls']} calls, {usage['input']} in, {usage['output']} out, about ${cost:.3f}"
         )
     lines.append(
-        f"- Total: about ${total:.2f}. Input is counted at full price, so prompt caching makes the real cost lower."
+        f"- Total for the game: about ${total:.2f}. Input is counted at full price, so prompt caching makes the real cost lower."
     )
     return lines
 

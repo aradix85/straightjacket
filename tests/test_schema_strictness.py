@@ -70,3 +70,14 @@ def test_the_director_schema_requires_all_its_properties(load_engine: None) -> N
     problems: list[str] = []
     _loose_objects(get_director_output_schema(["npc_1"]), "director", problems)
     assert problems == []
+
+
+def test_a_correction_can_set_only_a_known_disposition(load_engine: None) -> None:
+    from straightjacket.engine.ai.schemas import get_correction_output_schema
+    from straightjacket.engine.engine_loader import eng
+
+    op = get_correction_output_schema()["properties"]["state_ops"]["items"]
+    fields = next(branch for branch in op["properties"]["fields"]["anyOf"] if branch.get("type") == "object")
+    choices = next(branch for branch in fields["properties"]["disposition"]["anyOf"] if branch.get("type") == "string")
+    assert choices["enum"] == sorted(eng().enums.dispositions)
+    assert "guarded" not in choices["enum"]

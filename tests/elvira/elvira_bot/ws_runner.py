@@ -21,7 +21,7 @@ from straightjacket.engine.models import GameState
 
 from .coverage import Coverage
 from .report import write_report
-from .ai_helpers import ask_bot, build_turn_context, decide_burn_momentum, get_persona
+from .ai_helpers import ask_bot, build_turn_context, configure_bot, decide_burn_momentum, get_persona
 from .creation import roll_character
 from .invariants import assert_game_state
 from .models import ChapterRecord, NpcSnapshot, SessionLog, TurnRecord
@@ -188,6 +188,7 @@ async def run_ws_session(bot_cfg: dict, auto_override: bool = False, turns_overr
     from straightjacket.engine.ai.api_client import check_configured_models, get_provider
 
     check_configured_models()
+    configure_bot(bot_cfg["ai"])
     provider = get_provider()
     persona = get_persona(style)
 
@@ -439,7 +440,7 @@ async def _play_turn(
 ) -> tuple[str, TurnRecord, dict | None]:
     context = build_turn_context(game, narration, turn)
     try:
-        action = ask_bot(provider, persona, context, max_tokens=500)
+        action = ask_bot(persona, context, max_tokens=500)
     except Exception as e:
         print(f"[ERROR] Bot decision failed: {e}")
         return narration, TurnRecord(turn=turn, error=str(e)), None
@@ -523,7 +524,7 @@ async def _handle_burn(
                 "roll": type("_R", (), {"result": current})(),
                 "new_result": upgrade,
             }
-            should_burn = decide_burn_momentum(provider, game, compat_info, style)
+            should_burn = decide_burn_momentum(game, compat_info, style)
         except Exception:
             should_burn = False
 

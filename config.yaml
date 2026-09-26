@@ -23,6 +23,11 @@ ai:
       api_base: "https://api.fireworks.ai/inference/v1"
       api_key_env: "FIREWORKS_API_KEY"
       timeout_seconds: 120
+    openrouter:
+      type: "openai_compatible"
+      api_base: "https://openrouter.ai/api/v1"
+      api_key_env: "OPENROUTER_API_KEY"
+      timeout_seconds: 120
 
   clusters:
     narrator:

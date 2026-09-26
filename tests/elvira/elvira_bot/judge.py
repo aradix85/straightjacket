@@ -3,11 +3,10 @@ from __future__ import annotations
 import json
 from typing import Any
 
-from straightjacket.engine.config_loader import model_for_role
-from straightjacket.engine.ai.provider_base import AICallSpec, AIProvider
+from straightjacket.engine.ai.provider_base import AICallSpec
 from straightjacket.engine.models import GameState
 
-from .ai_helpers import _p
+from .ai_helpers import ELVIRA_ROLE, _p, bot_model, bot_provider
 
 CRITERIA = ("result_integrity", "prompt_elements", "npc_voice", "player_agency", "restraint", "prose")
 
@@ -25,7 +24,6 @@ JUDGE_SCHEMA: dict[str, Any] = {
 
 
 def judge_turn(
-    provider: AIProvider,
     judge_cfg: dict[str, Any],
     game: GameState,
     action: str,
@@ -39,16 +37,16 @@ def judge_turn(
     outcome = _p("judge_result_dialog") if result is None else result + (_p("judge_match_suffix") if match else "")
     user = _p("judge_turn", action=action, result=outcome, npcs=npcs, narration=narration)
     spec = AICallSpec(
-        model=model_for_role("brain"),
+        model=bot_model(),
         system=_p("judge_system"),
         messages=[{"role": "user", "content": user}],
         max_tokens=judge_cfg["max_tokens"],
         json_schema=JUDGE_SCHEMA,
         extra_body=dict(judge_cfg["extra_body"]),
-        log_role="brain",
+        log_role=ELVIRA_ROLE,
     )
     try:
-        verdict: dict[str, Any] = json.loads(provider.create_message(spec).content)
+        verdict: dict[str, Any] = json.loads(bot_provider().create_message(spec).content)
     except Exception as e:
         return {"error": f"{type(e).__name__}: {e}"[:200]}
     if not all(isinstance(verdict.get(key), int) for key in (*CRITERIA, "overall")):

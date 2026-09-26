@@ -5,17 +5,18 @@ from typing import Any
 
 import yaml
 
-from straightjacket.engine.ai.provider_base import AIProvider, post_process_response
+from straightjacket.engine.ai.api_client import provider_named
+from straightjacket.engine.ai.provider_base import AICallSpec, AIProvider, post_process_response
 from straightjacket.engine.models import GameState
 from straightjacket.engine.story_state import get_current_act
 
 _HERE = Path(__file__).resolve().parent.parent
 _PROMPTS_PATH = _HERE / "elvira_prompts.yaml"
-_CONFIG_PATH = _HERE / "elvira_config.yaml"
+
+ELVIRA_ROLE = "elvira"
 
 _prompts: dict[str, Any] | None = None
-_bot_temperature: float | None = None
-_bot_config_loaded: bool = False
+_bot: dict[str, Any] = {}
 
 
 def _load_prompts() -> dict[str, Any]:
@@ -36,17 +37,28 @@ def _p(key: str, **kwargs: Any) -> str:
     return template.format(**kwargs) if kwargs else template
 
 
-def _load_bot_config() -> None:
-    global _bot_temperature, _bot_config_loaded
-    if _bot_config_loaded:
-        return
-    _bot_config_loaded = True
-    if _CONFIG_PATH.exists():
-        with Path(_CONFIG_PATH).open(encoding="utf-8") as f:
-            ecfg = yaml.safe_load(f) or {}
-        temp = ecfg.get("ai", {}).get("temperature")
-        if temp is not None:
-            _bot_temperature = float(temp)
+def configure_bot(ai_cfg: dict[str, Any]) -> None:
+    _bot.clear()
+    _bot.update(
+        provider=provider_named(ai_cfg["provider"]),
+        label=f"{ai_cfg['provider']}/{ai_cfg['model']}",
+        model=ai_cfg["model"],
+        temperature=float(ai_cfg["temperature"]),
+        extra_body=dict(ai_cfg["extra_body"]),
+    )
+
+
+def bot_label() -> str:
+    return str(_bot["label"])
+
+
+def bot_model() -> str:
+    return str(_bot["model"])
+
+
+def bot_provider() -> AIProvider:
+    provider: AIProvider = _bot["provider"]
+    return provider
 
 
 def available_styles() -> list[str]:
@@ -62,23 +74,17 @@ def get_persona(style: str) -> str:
     return prompts[key]
 
 
-def ask_bot(provider: AIProvider, system: str, user: str, max_tokens: int = 300, model: str = "") -> str:
-    _load_bot_config()
-    from straightjacket.engine.ai.provider_base import AICallSpec
-    from straightjacket.engine.config_loader import model_for_role, sampling_params
-
-    _model = model or model_for_role("brain")
+def ask_bot(system: str, user: str, max_tokens: int = 300) -> str:
     spec = AICallSpec(
-        model=_model,
+        model=bot_model(),
         system=system,
         messages=[{"role": "user", "content": user}],
         max_tokens=max_tokens,
-        temperature=_bot_temperature,
-        extra_body=dict(sampling_params("brain")["extra_body"]),
-        log_role="brain",
+        temperature=_bot["temperature"],
+        extra_body=dict(_bot["extra_body"]),
+        log_role=ELVIRA_ROLE,
     )
-    response = provider.create_message(spec)
-    response = post_process_response(response)
+    response = post_process_response(bot_provider().create_message(spec))
     return response.content.strip()
 
 
@@ -169,7 +175,7 @@ def build_turn_context(
     )
 
 
-def decide_burn_momentum(provider: AIProvider, game: GameState, burn_info: dict, style: str) -> bool:
+def decide_burn_momentum(game: GameState, burn_info: dict, style: str) -> bool:
     if style == "aggressor":
         return True
     prompt = _p(
@@ -178,5 +184,5 @@ def decide_burn_momentum(provider: AIProvider, game: GameState, burn_info: dict,
         new_result=burn_info["new_result"],
         momentum=game.resources.momentum,
     )
-    answer = ask_bot(provider, _p("burn_decision_system"), prompt, max_tokens=10)
+    answer = ask_bot(_p("burn_decision_system"), prompt, max_tokens=10)
     return answer.lower().startswith("y")

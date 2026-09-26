@@ -9,6 +9,27 @@ Entries up to 2026.09.26.0 were shortened to their essentials in 2026.09.26.1. T
 
 Calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day. The first CalVer release is 2026.04.25.0; earlier `0.x.y` releases keep their numbers.
 
+## [2026.09.26.2] — 2026-09-26
+
+Cheap models through OpenRouter measured against GPT-6 Luna, with Elvira on a model of her own; the game stays on Luna.
+
+Elvira. Her player and judge name their own provider and model under `ai` in `tests/elvira/elvira_config.yaml` (GPT-6 Luna at reasoning `none`; the judge keeps its own `low`) instead of following the Brain, and log as the role `elvira`, which her report prices apart from the game's total. Her temperature now comes from the config she is given rather than always from the default file. With `STRAIGHTJACKET_CONFIG` pointing at another `config.yaml` and a config with its own `username`, several runs play side by side.
+
+OpenRouter. `config.yaml` names OpenRouter as a provider, unused by the game. A cluster on it pins one host and sets thinking in its `extra_body`. OpenRouter's per-host discount field told fixed prices from temporary ones (Mercury 2.5 and Solar Pro 4 were 70 to 80 percent off), and a smoke test per host checked tools and JSON-schema output before any run: Qwen3.7 Flash at Alibaba and Ling 3.0 Flash at DeepInfra accept plain JSON but no schema, so they could only narrate.
+
+Fix. A model wrote the stance `guarded` into an NPC's disposition through a correction, and the stance matrix raised a KeyError on the next turn with that NPC. The correction schema limits `disposition` to the known dispositions; the new test fails without the fix. `status` is still free text there (roadmap priority 5).
+
+Measured, one or two Elvira sessions per model in Classic, twelve turns, first as explorer, then as aggressor without momentum burns; every game role on the candidate except Qwen and Ling, which narrated for Luna; Elvira on Luna; cost counted with caching and without Elvira's own calls:
+- GPT-6 Luna: first sentence after 2.3 and 2.8 seconds, a turn in 6.0 and 6.7, about 150 words, about 1.4 cents a session. Misses honest, prose plain.
+- DeepSeek V4 Flash (July), thinking off: at DeepInfra 3.1 to 3.5 seconds, turns of 15 seconds, about 1.3 cents; at Wafer 2.9 to 3.2 seconds, about 13 seconds, 2.4 cents, its cached input priced at $0.06. About 340 to 390 words of vivid prose, but most failed compels and investigations came out as successes, and it took over the player character and invented backstory. It also found the disposition bug.
+- GLM 5.3 Flash, thinking at `low` (it cannot be turned off): at BaseTen repeated rate limits and 2 percent cache hits, at Together neither; 3.8 seconds, 11 to 12 seconds, about 350 words, 2.4 cents at Together. The strongest atmosphere, and its misses kept to Ironsworn's miss outcomes (an unwelcome truth, a refusal, a costly demand), though it moves the player character unasked and invents history.
+- Qwen3.7 Flash as narrator: 2.8 to 3.1 seconds, about 300 words; misses mostly honest, but it slipped from second to third person, named a clock in the prose, and repeated three sentences word for word from two turns before.
+- Ling 3.0 Flash as narrator: 4.3 seconds, 29-second turns, about 540 words, the weakest prose. Gemma 4 31B at CoreWeave twice wrote repeated JSON up to the 8192-token limit (opening setup, Director), about four minutes each; stopped after five turns.
+
+The Director runs after the narration is shown, but on DeepSeek and GLM it made more and longer calls than on Luna. Elvira's judge marked down information on a miss even where Ironsworn's miss outcome is an unwelcome truth, and called continuity from earlier turns invented; the verdicts above rest on reading every miss.
+
+Quality gate: 1486 tests green, twenty-nine project-rule scans clean, coverage 90.10%, ruff check and ruff format clean on 206 files, mypy --strict clean on 109 source files. Save format unchanged.
+
 ## [2026.09.26.1] — 2026-09-26
 
 The project is the game plus Elvira again, at the user's request: the model-comparison harness is removed and this CHANGELOG is shortened.
