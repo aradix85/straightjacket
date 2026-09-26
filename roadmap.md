@@ -52,7 +52,7 @@ These checks run before declaring a step done. Never duplicated inside individua
 Templates for similar work. The validator stack (`ai/architect_validator.py`, `ai/chapter_validator.py`, `ai/validator.py`, `ai/rule_validator.py`) was removed in 27.8 and 27.9 as part of "AI-surface reduction over post-hoc validation"; do not use those files as patterns because they no longer exist and reintroducing the pattern works against the design decision (see Validator policy below).
 
 - New AI-call wrapper: `ai/brain.py` (call_brain, call_revelation_check).
-- New Director tool: `tools/builtins.py` (the existing `query_npc`, `query_active_threads`, `query_active_clocks` are the patterns — `@register("director")` decorator over a typed function returning a dict; type hints generate the OpenAI tool schema; the function reads from GameState and `db/queries.py`, never mutates).
+- New Director tool: `tools/builtins.py` (the existing `query_game_state` is the pattern — `@register("director")` decorator over a typed function returning a dict; type hints generate the OpenAI tool schema; the function reads from GameState and `db/queries.py`, never mutates).
 - New strict nested domain lookup: `mechanics/stance_gate.py` (resolve_npc_stance).
 - New yaml-backed config section: any entry in `engine_config.py` `_SIMPLE_SECTIONS` dict.
 - New config dataclass: any in `engine_config_dataclasses.py` (required fields, no defaults).

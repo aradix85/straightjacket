@@ -379,13 +379,9 @@ def _apply_description_update(npc: NpcData, ref: dict[str, Any]) -> None:
     )
 
 
-def _process_npc_reflection(game: GameState, ref: dict[str, Any], done: set[str]) -> str | None:
-    npc_id: str | None = ref["npc_id"]
+def _process_npc_reflection(game: GameState, npc_id: str, ref: dict[str, Any]) -> str | None:
     npc = find_npc(game, npc_id)
     if not npc:
-        return None
-    if npc.id in done:
-        log(f"[Director] Skipped duplicate reflection for {npc.name}", level="warning")
         return None
     if not _reflection_eligible(npc):
         log(
@@ -431,8 +427,8 @@ def apply_director_guidance(game: GameState, guidance: dict[str, Any]) -> None:
         game.narrative.session_log[-1].rich_summary = guidance["scene_summary"]
 
     successfully_reflected: set[str] = set()
-    for ref in guidance["npc_reflections"]:
-        reflected_id = _process_npc_reflection(game, ref, successfully_reflected)
+    for npc_id, ref in guidance["npc_reflections"].items():
+        reflected_id = _process_npc_reflection(game, npc_id, ref)
         if reflected_id is not None:
             successfully_reflected.add(reflected_id)
 

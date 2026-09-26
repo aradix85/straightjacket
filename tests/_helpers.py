@@ -177,6 +177,10 @@ def make_npc_reflection(**kwargs: Any) -> dict:
     return kwargs
 
 
+def keyed_reflections(*refs: dict) -> dict:
+    return {ref["npc_id"]: {k: v for k, v in ref.items() if k != "npc_id"} for ref in refs}
+
+
 def make_npc_detail(**kwargs: Any) -> dict:
     kwargs.setdefault("npc_id", "npc_1")
     kwargs.setdefault("full_name", None)
@@ -195,7 +199,7 @@ def make_director_guidance(**kwargs: Any) -> dict:
     kwargs.setdefault("scene_summary", "")
     kwargs.setdefault("narrator_guidance", "")
     kwargs.setdefault("npc_guidance", {})
-    kwargs.setdefault("npc_reflections", [])
+    kwargs.setdefault("npc_reflections", {})
     kwargs.setdefault("arc_notes", "")
     return kwargs
 

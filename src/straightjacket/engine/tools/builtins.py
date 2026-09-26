@@ -5,18 +5,12 @@ from ..datasworn.moves import get_moves
 from ..db.queries import query_clocks, query_memories, query_threads
 from ..engine_config import CombatPosCondition, FlagCondition, NotFlagCondition
 from ..engine_loader import eng
-from ..models import GameState
-from ..npc import find_npc, get_npc_bond
+from ..models import GameState, NpcData
+from ..npc import get_npc_bond
 from .registry import register
 
 
-@register("director")
-def query_npc(game: GameState, npc_id: str) -> dict[str, Any]:
-    npc = find_npc(game, npc_id)
-    if not npc:
-        known = [{"id": n.id, "name": n.name} for n in game.npcs if n.status in ("active", "background")]
-        return {"error": f"NPC not found: {npc_id}", "known_npcs": known}
-
+def _npc_state(game: GameState, npc: NpcData) -> dict[str, Any]:
     recent_mems = query_memories(npc_id=npc.id, limit=eng().npc.reflection_observation_window)
     return {
         "id": npc.id,
@@ -37,22 +31,11 @@ def query_npc(game: GameState, npc_id: str) -> dict[str, Any]:
 
 
 @register("director")
-def query_active_threads(game: GameState, active_only: bool = True) -> dict[str, Any]:
-    threads = query_threads(active=True if active_only else None)
+def query_game_state(game: GameState) -> dict[str, Any]:
     return {
         "threads": [
-            {"id": t.id, "name": t.name, "type": t.thread_type, "weight": t.weight, "active": t.active} for t in threads
-        ]
-    }
-
-
-@register("director")
-def query_active_clocks(game: GameState, clock_type: str = "", unfired_only: bool = True) -> dict[str, Any]:
-    clocks = query_clocks(
-        clock_type=clock_type if clock_type else None,
-        fired=False if unfired_only else None,
-    )
-    return {
+            {"id": t.id, "name": t.name, "type": t.thread_type, "weight": t.weight} for t in query_threads(active=True)
+        ],
         "clocks": [
             {
                 "name": c.name,
@@ -61,10 +44,10 @@ def query_active_clocks(game: GameState, clock_type: str = "", unfired_only: boo
                 "segments": c.segments,
                 "owner_kind": c.owner_kind,
                 "owner_id": c.owner_id,
-                "fired": c.fired,
             }
-            for c in clocks
-        ]
+            for c in query_clocks(clock_type=None, fired=False)
+        ],
+        "npcs": [_npc_state(game, npc) for npc in game.npcs if npc.status in ("active", "background")],
     }
 
 

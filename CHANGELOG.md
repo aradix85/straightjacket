@@ -9,6 +9,22 @@ Entries up to 2026.09.26.0 were shortened to their essentials in 2026.09.26.1. T
 
 Calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day. The first CalVer release is 2026.04.25.0; earlier `0.x.y` releases keep their numbers.
 
+## [2026.09.26.11] — 2026-09-26
+
+The Director gets one reflection slot per selected NPC and one tool for the game state.
+
+Reflections. The Director's answer listed reflections with an `npc_id` that could be any selected NPC or null, so one NPC could be reflected twice, and the engine skipped the second with a warning. `npc_reflections` is now an object with one required entry per NPC selected for reflection, keyed by that NPC's id, so a duplicate cannot be written and the id-or-null choice is gone; an empty reflection still means nothing new for that NPC. The Director prompt describes exactly that shape, the duplicate check is gone because nothing can reach it, and the tests build reflections through a new `keyed_reflections` helper; the duplicate test gives way to a schema test that each selected NPC gets exactly one required slot.
+
+Tool. The Director had `query_npc`, `query_active_threads`, and `query_active_clocks`; on GLM 5.3 Flash it queried them in rounds and sometimes hit the three-round limit, and it asked for the threads and clocks every turn. `query_game_state` replaces all three: without parameters it returns the active threads, the clocks that have not fired, and every active or background NPC with the fields `query_npc` gave, in one answer. The tool description, the Director prompt, the project-rule list, ARCHITECTURE, and the roadmap follow; three tool tests replace six.
+
+Measured against the Elvira session of 2026.09.26.10: Director calls stayed at three a turn (the old tools were mostly asked for in one round too), and input and output per Director turn fell by about 8 and 15 percent over two turns; the round limit can no longer be reached.
+
+Caching on Together, checked for this release: the narrator's system prompt keeps its 1,900 tokens of fixed rules first and every changing block at the end, the Brain's prompt is about three-quarters fixed, and the two extractors have short fixed system prompts ahead of the new narration; only the Director's fixed task text sits after the changing scene, worth about a hundredth of a cent a session. Together hit a repeated prefix five times in five with `user` and with `prompt_cache_key`, and still after 90 seconds, yet a real session hit the narrator's prefix four times in nine, so the remaining misses are on Together's side.
+
+Checked: an eight-turn Elvira session in Sundered Isles as aggressor on the default configuration: no engine warning or error; one tool call in each of the six Director turns, no duplicate reflection and no round limit; the first sentence after a median 4.0 seconds; two misses audited at 4 out of 10 for a useful clue and for deciding the player's moves.
+
+Quality gate: 1490 tests green, twenty-nine project-rule scans clean, coverage 90.15%, ruff check and ruff format clean on 206 files, mypy --strict clean on 109 source files. Save format unchanged.
+
 ## [2026.09.26.10] — 2026-09-26
 
 Blueprint voicing fixes its counts in the schema instead of asking again, and a Director failure shows the end of its reasoning.

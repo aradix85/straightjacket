@@ -14,15 +14,14 @@
 "director_task": |-
   <task>
   Analyze the latest scene and provide strategic guidance in {lang}.
-  Use query_active_threads, query_active_clocks, query_npc tools to inspect game state as needed.
+  If you need the active threads, the clocks that have not fired, or NPCs beyond those in <reflect> tags, call query_game_state once; it returns all of them in one answer.
   LANGUAGE RULE: Every text field MUST be in {lang}. Do not use English for any field value, not even partially. Reflections, guidance, descriptions, summaries — all in {lang}. The one exception is tone_key, which is one word from its fixed list.
 
   Respond with a JSON object containing these fields:
   - scene_summary: 2-3 sentence summary of what happened and WHY it matters (in {lang})
   - narrator_guidance: Specific direction for the next 1-2 scenes (in {lang}). If <story_arc> has a thematic_thread, occasionally anchor the guidance to the aspect of it most alive in the current moment.
   - npc_guidance: Array of {{"npc_id": "npc_1", "guidance": "what this NPC should do/feel next"}} — guidance text in {lang}
-  - npc_reflections: Only for NPCs listed in <reflect> tags. Each object has:
-    - npc_id: the NPC's ID from the <reflect> tag
+  - npc_reflections: An object with one entry for every NPC listed in <reflect> tags, keyed by that NPC's ID from the tag, and no other entries. Leave an entry's reflection empty only if the scene gave that NPC nothing new. Each entry has:
     - reflection: 1-2 sentence higher-level insight (in {lang})
     - tone: 1-3 words in {lang} capturing the emotional shift (e.g. 'protective guilt', 'reluctant trust')
     - tone_key: ONE word from the enum (neutral, curious, wary, suspicious, grateful, terrified, loyal, conflicted, betrayed, devastated, euphoric, defiant, guilty, protective, angry, devoted, impressed, hopeful)

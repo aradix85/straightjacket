@@ -87,7 +87,7 @@ class MockProvider:
                         "scene_summary": "The player searched the room.",
                         "narrator_guidance": "Build tension slowly.",
                         "npc_guidance": [],
-                        "npc_reflections": [],
+                        "npc_reflections": {},
                         "arc_notes": "Story is progressing.",
                     }
                 ),

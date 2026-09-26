@@ -36,8 +36,8 @@ class _Director:
         return AIResponse(content=json.dumps(_minimal(spec.json_schema)), usage={"input_tokens": 0, "output_tokens": 0})
 
 
-def _reflection_ids(schema: dict[str, Any]) -> Any:
-    return schema["properties"]["npc_reflections"]["items"]["properties"]["npc_id"]
+def _reflections(schema: dict[str, Any]) -> Any:
+    return schema["properties"]["npc_reflections"]
 
 
 def test_the_director_may_reflect_only_on_the_npcs_chosen_for_reflection(load_engine: None) -> None:
@@ -50,10 +50,16 @@ def test_the_director_may_reflect_only_on_the_npcs_chosen_for_reflection(load_en
     ]
     provider = _Director()
     call_director(provider, game, "Kira watches the pass while Borin counts coins.")
-    assert _reflection_ids(provider.schemas[-1])["anyOf"][0]["enum"] == ["npc_1"]
+    reflections = _reflections(provider.schemas[-1])
+    assert list(reflections["properties"]) == ["npc_1"]
+    assert reflections["required"] == ["npc_1"]
+    assert reflections["additionalProperties"] is False
+    assert "npc_id" not in reflections["properties"]["npc_1"]["properties"]
 
 
-def test_without_chosen_npcs_a_reflection_can_name_no_one(load_engine: None) -> None:
+def test_without_chosen_npcs_there_is_no_reflection_to_write(load_engine: None) -> None:
     from straightjacket.engine.ai.schemas import get_director_output_schema
 
-    assert _reflection_ids(get_director_output_schema([])) == {"type": "null"}
+    reflections = _reflections(get_director_output_schema([]))
+    assert reflections["properties"] == {}
+    assert reflections["required"] == []

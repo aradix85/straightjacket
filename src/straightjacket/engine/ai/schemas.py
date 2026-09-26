@@ -113,21 +113,23 @@ def get_director_output_schema(reflection_ids: list[str]) -> dict[str, Any]:
                     }
                 )
             ),
-            "npc_reflections": _arr(
-                _obj(
-                    {
-                        "npc_id": _nullable_enum(reflection_ids),
-                        "reflection": _str(),
-                        "tone": _str(),
-                        "tone_key": _str_enum(list(_e.enums.tone_keys)),
-                        "updated_description": _nullable_str(),
-                        "about_npc": _nullable_str(),
-                        "agenda": _nullable_str(),
-                        "instinct": _nullable_str(),
-                        "updated_agenda": _nullable_str(),
-                        "updated_arc": _nullable_str(),
-                    }
-                )
+            "npc_reflections": _obj(
+                {
+                    npc_id: _obj(
+                        {
+                            "reflection": _str(),
+                            "tone": _str(),
+                            "tone_key": _str_enum(list(_e.enums.tone_keys)),
+                            "updated_description": _nullable_str(),
+                            "about_npc": _nullable_str(),
+                            "agenda": _nullable_str(),
+                            "instinct": _nullable_str(),
+                            "updated_agenda": _nullable_str(),
+                            "updated_arc": _nullable_str(),
+                        }
+                    )
+                    for npc_id in reflection_ids
+                }
             ),
             "arc_notes": _str(),
         },

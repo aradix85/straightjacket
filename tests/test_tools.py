@@ -189,66 +189,29 @@ def _reload_builtins() -> None:
     importlib.reload(_builtins_mod)
 
 
-def test_builtin_query_npc() -> None:
+def test_builtin_query_game_state_returns_threads_clocks_and_npcs_at_once() -> None:
     _fresh_db()
     game = _game_with_data()
     sync(game)
     _reload_builtins()
 
-    handler = get_handler("director", "query_npc")
+    handler = get_handler("director", "query_game_state")
     assert handler is not None
-    result = handler(game=game, npc_id="npc_1")
-    assert result["name"] == "Kira"
-    assert result["disposition"] == "distrustful"
-    assert len(result["recent_memories"]) == 2
+    result = handler(game=game)
+    assert [t["name"] for t in result["threads"]] == ["Find the vault"]
+    assert [c["name"] for c in result["clocks"]] == ["Vault heist"]
+    kira = next(n for n in result["npcs"] if n["id"] == "npc_1")
+    assert kira["name"] == "Kira"
+    assert kira["disposition"] == "distrustful"
+    assert len(kira["recent_memories"]) == 2
     close_db()
 
 
-def test_builtin_query_npc_not_found() -> None:
-    _fresh_db()
-    game = _game_with_data()
-    sync(game)
+def test_builtin_query_game_state_is_director_only() -> None:
     _reload_builtins()
-
-    handler = get_handler("director", "query_npc")
-    assert handler is not None
-    result = handler(game=game, npc_id="nonexistent")
-    assert "error" in result
-    close_db()
-
-
-def test_builtin_query_active_threads() -> None:
-    _fresh_db()
-    game = _game_with_data()
-    sync(game)
-    _reload_builtins()
-
-    handler = get_handler("director", "query_active_threads")
-    assert handler is not None
-    result = handler(game=game, active_only=True)
-    assert len(result["threads"]) == 1
-    assert result["threads"][0]["name"] == "Find the vault"
-    close_db()
-
-
-def test_builtin_query_active_clocks() -> None:
-    _fresh_db()
-    game = _game_with_data()
-    sync(game)
-    _reload_builtins()
-
-    handler = get_handler("director", "query_active_clocks")
-    assert handler is not None
-    result = handler(game=game, unfired_only=True)
-    assert len(result["clocks"]) == 1
-    assert result["clocks"][0]["name"] == "Vault heist"
-    close_db()
-
-
-def test_builtin_query_npc_director_only() -> None:
-    _reload_builtins()
-    assert get_handler("brain", "query_npc") is None
-    assert get_handler("director", "query_npc") is not None
+    assert get_handler("brain", "query_game_state") is None
+    assert get_handler("director", "query_game_state") is not None
+    assert get_handler("director", "query_npc") is None
 
 
 def test_run_tool_loop_completes_after_tool_use(load_engine: None) -> None:
@@ -338,15 +301,15 @@ def test_run_tool_loop_hits_max_rounds(load_engine: None, monkeypatch) -> None:
     assert len(log) == 2
 
 
-def test_query_npc_for_an_unknown_id_lists_the_known_npcs(load_engine: None) -> None:
-    from straightjacket.engine.tools.builtins import query_npc
+def test_query_game_state_leaves_out_dead_and_lore_npcs(load_engine: None) -> None:
+    from straightjacket.engine.tools.builtins import query_game_state
     from tests._helpers import make_game_state, make_npc
 
     game = make_game_state()
     game.npcs = [
         make_npc(id="npc_1", name="Mira", status="active"),
+        make_npc(id="npc_2", name="Tobin", status="background"),
         make_npc(id="npc_9", name="Old Vess", status="deceased"),
+        make_npc(id="npc_8", name="The Founder", status="lore"),
     ]
-    result = query_npc(game, "npc_2")
-    assert result["error"] == "NPC not found: npc_2"
-    assert result["known_npcs"] == [{"id": "npc_1", "name": "Mira"}]
+    assert [n["id"] for n in query_game_state(game)["npcs"]] == ["npc_1", "npc_2"]

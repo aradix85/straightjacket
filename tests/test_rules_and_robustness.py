@@ -46,7 +46,7 @@ def test_reflection_for_deceased_npc_is_rejected(load_engine: None) -> None:
     npc = _profiled_npc("deceased", needs_reflection=True)
     game = _game_with(npc)
     before = len(npc.memory)
-    assert _process_npc_reflection(game, make_npc_reflection(npc_id="npc_1"), set()) is None
+    assert _process_npc_reflection(game, "npc_1", make_npc_reflection()) is None
     assert len(npc.memory) == before
 
 
@@ -54,20 +54,8 @@ def test_reflection_for_npc_the_engine_did_not_select_is_rejected(load_engine: N
     npc = _profiled_npc("active", needs_reflection=False)
     game = _game_with(npc)
     before = len(npc.memory)
-    assert _process_npc_reflection(game, make_npc_reflection(npc_id="npc_1"), set()) is None
+    assert _process_npc_reflection(game, "npc_1", make_npc_reflection()) is None
     assert len(npc.memory) == before
-
-
-def test_duplicate_reflection_in_one_response_is_applied_once(load_engine: None) -> None:
-    npc = _profiled_npc("active", needs_reflection=True)
-    game = _game_with(npc)
-    done: set[str] = set()
-    first = _process_npc_reflection(game, make_npc_reflection(npc_id="npc_1"), done)
-    assert first == "npc_1"
-    done.add(first)
-    after_first = len(npc.memory)
-    assert _process_npc_reflection(game, make_npc_reflection(npc_id="npc_1"), done) is None
-    assert len(npc.memory) == after_first
 
 
 def test_npc_introduced_and_killed_in_the_same_scene_is_marked_deceased(load_engine: None) -> None:
