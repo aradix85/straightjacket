@@ -9,6 +9,18 @@ Entries up to 2026.09.26.0 were shortened to their essentials in 2026.09.26.1. T
 
 Calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day. The first CalVer release is 2026.04.25.0; earlier `0.x.y` releases keep their numbers.
 
+## [2026.09.26.9] — 2026-09-26
+
+The Director no longer retries a broken final answer; it reports why the answer broke off, and the cause is found.
+
+Every Director final-step failure on GLM 5.3 Flash ran to the 8192-token output limit: the four recorded in Elvira's logs since 2026.09.26.2 (three on Together, one on BaseTen through OpenRouter) and one caught live in this release's check. On Together the JSON broke off after 1554 to 2328 characters, so most of the 8192 tokens went unseen, most likely a reasoning loop; on BaseTen the answer itself ran to about 250,000 characters of mostly line breaks. Together enforced the Director's JSON schema in every test, even against a prompt asking it not to, and 64 repeats of two recorded Director requests all parsed, so the loop is rare, about 3 percent of Director calls, and not a schema fault. A retry cannot prevent a loop and costs another 8192 tokens, so the retry of 2026.09.26.8 is gone; empty guidance still keeps the NPCs' importance accumulators.
+
+Diagnostics. The OpenAI-compatible adapter reports reasoning tokens as `reasoning_tokens`, nested under `completion_tokens_details` or at the top of `usage`. A Director failure now names the stop reason, the output and reasoning tokens, and the JSON's length; caught live: "stopped as truncated after 8192 output tokens, None of them reasoning, with 2272 characters of JSON", Together reporting no reasoning count for that answer though it did for a short test call. The two retry tests are replaced by one that checks this message and a single final call; a new adapter test covers both places of the reasoning count. Both fail without the change.
+
+Checked: an eight-turn Elvira session in Classic as dialogist on the default configuration: that Director failure, a Director tool loop stopped at its three-round limit, and a skipped duplicate reflection; the first sentence after a median 5.2 seconds; two misses audited at 3 out of 10. Roadmap priority 2 records the open loop and the two fixes weighed.
+
+Quality gate: 1493 tests green, twenty-nine project-rule scans clean, coverage 90.19%, ruff check and ruff format clean on 206 files, mypy --strict clean on 109 source files. Save format unchanged.
+
 ## [2026.09.26.8] — 2026-09-26
 
 The Director asks once more when its final answer is not valid JSON, and a failed Director keeps the NPCs' accumulated importance.

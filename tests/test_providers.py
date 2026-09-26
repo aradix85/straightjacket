@@ -415,6 +415,24 @@ def test_openai_usage_reports_cached_prompt_tokens(openai_endpoint: _FakeEndpoin
     assert result.usage == {"input_tokens": 2000, "output_tokens": 300, "cache_read_tokens": 1500}
 
 
+def test_openai_usage_reports_reasoning_tokens_nested_or_top_level(openai_endpoint: _FakeEndpoint) -> None:
+    provider = provider_openai.OpenAICompatibleProvider(api_key="k", timeout_seconds=30)
+    nested = _openai_response("{}", "length", None)
+    nested.usage = SimpleNamespace(
+        prompt_tokens=10, completion_tokens=8192, completion_tokens_details=SimpleNamespace(reasoning_tokens=7800)
+    )
+    openai_endpoint.response = nested
+    assert provider.create_message(_spec()).usage == {
+        "input_tokens": 10,
+        "output_tokens": 8192,
+        "reasoning_tokens": 7800,
+    }
+    top_level = _openai_response("{}", "stop", None)
+    top_level.usage = SimpleNamespace(prompt_tokens=10, completion_tokens=600, reasoning_tokens=40)
+    openai_endpoint.response = top_level
+    assert provider.create_message(_spec()).usage == {"input_tokens": 10, "output_tokens": 600, "reasoning_tokens": 40}
+
+
 def test_anthropic_refusal_is_reported_as_refusal(anthropic_endpoint: _FakeEndpoint) -> None:
     anthropic_endpoint.response = SimpleNamespace(
         content=[SimpleNamespace(type="text", text="")],

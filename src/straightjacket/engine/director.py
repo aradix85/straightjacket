@@ -228,8 +228,11 @@ def call_director(
         try:
             guidance: dict[str, Any] = json.loads(response2.content)
         except json.JSONDecodeError as e:
-            log(f"[Director] Invalid JSON ({e}), asking once more")
-            guidance = json.loads(create_with_retry(provider, spec2).content)
+            usage = response2.usage or {}
+            raise ValueError(
+                f"{e}; the answer stopped as {response2.stop_reason} after {usage.get('output_tokens')} output tokens, "
+                f"{usage.get('reasoning_tokens')} of them reasoning, with {len(response2.content)} characters of JSON"
+            ) from e
 
         if isinstance(guidance["npc_guidance"], list):
             guidance["npc_guidance"] = {

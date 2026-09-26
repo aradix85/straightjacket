@@ -15,6 +15,11 @@ def _usage_with_cache(raw_usage: Any) -> dict[str, int] | None:
     cached = getattr(details, "cached_tokens", None)
     if usage is not None and isinstance(cached, int):
         usage["cache_read_tokens"] = cached
+    reasoning = getattr(getattr(raw_usage, "completion_tokens_details", None), "reasoning_tokens", None)
+    if reasoning is None:
+        reasoning = getattr(raw_usage, "reasoning_tokens", None)
+    if usage is not None and isinstance(reasoning, int):
+        usage["reasoning_tokens"] = reasoning
     return usage
 
 

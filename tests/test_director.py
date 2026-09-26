@@ -101,46 +101,28 @@ class _SequencedDirectorProvider:
         if spec.json_schema is None:
             return AIResponse(content="", usage={"input_tokens": 1, "output_tokens": 1})
         self.final_calls += 1
-        return AIResponse(content=self._answers.pop(0), usage={"input_tokens": 1, "output_tokens": 1})
+        return AIResponse(
+            content=self._answers.pop(0),
+            stop_reason="truncated",
+            usage={"input_tokens": 1, "output_tokens": 8192, "reasoning_tokens": 7800},
+        )
 
 
-def _valid_director_json() -> str:
-    import json
-
-    return json.dumps(
-        {
-            "scene_summary": "Tense.",
-            "narrator_guidance": "Build tension.",
-            "npc_guidance": [],
-            "npc_reflections": [],
-            "arc_notes": "Progressing.",
-        }
-    )
-
-
-def test_director_asks_once_more_after_invalid_json(stub_all: None) -> None:
-    from straightjacket.engine import prompt_loader
-    from straightjacket.engine.director import call_director
+def test_director_reports_why_its_final_answer_broke_off(stub_all: None, monkeypatch: Any) -> None:
+    from straightjacket.engine import director, prompt_loader
     from tests._mocks import make_test_game
 
     prompt_loader._prompts = None
     prompt_loader._ensure_loaded()
-    provider = _SequencedDirectorProvider('{"scene_summary": "Tense.", "narrator_gui', _valid_director_json())
-    guidance = call_director(provider, make_test_game(), "Text.")
-    assert guidance["narrator_guidance"] == "Build tension."
-    assert provider.final_calls == 2
-
-
-def test_director_gives_up_after_one_more_invalid_answer(stub_all: None) -> None:
-    from straightjacket.engine import prompt_loader
-    from straightjacket.engine.director import call_director
-    from tests._mocks import make_test_game
-
-    prompt_loader._prompts = None
-    prompt_loader._ensure_loaded()
-    provider = _SequencedDirectorProvider("not json", "still not json", _valid_director_json())
-    assert call_director(provider, make_test_game(), "Text.") == {}
-    assert provider.final_calls == 2
+    warnings: list[str] = []
+    monkeypatch.setattr(director, "log", lambda msg, level="info": warnings.append(msg) if level == "warning" else None)
+    broken = '{"scene_summary": "Tense.", "narrator_guidance": '
+    provider = _SequencedDirectorProvider(broken)
+    assert director.call_director(provider, make_test_game(), "Text.") == {}
+    assert provider.final_calls == 1
+    warning = " ".join(warnings)
+    assert "stopped as truncated after 8192 output tokens, 7800 of them reasoning" in warning
+    assert f"with {len(broken)} characters of JSON" in warning
 
 
 def test_stores_narrator_guidance(stub_all: None) -> None:
