@@ -225,8 +225,11 @@ def call_director(
             **_dp,
         )
         response2 = create_with_retry(provider, spec2)
-
-        guidance: dict[str, Any] = json.loads(response2.content)
+        try:
+            guidance: dict[str, Any] = json.loads(response2.content)
+        except json.JSONDecodeError as e:
+            log(f"[Director] Invalid JSON ({e}), asking once more")
+            guidance = json.loads(create_with_retry(provider, spec2).content)
 
         if isinstance(guidance["npc_guidance"], list):
             guidance["npc_guidance"] = {
@@ -282,8 +285,7 @@ def _reset_all_reflection_flags(game: GameState, reason: str) -> None:
     for npc in game.npcs:
         if npc.needs_reflection:
             npc.needs_reflection = False
-            npc.importance_accumulator = 0
-            log(f"[Director] Reset reflection for {npc.name} ({reason})")
+            log(f"[Director] Reset reflection for {npc.name} ({reason}, accumulator preserved)")
 
 
 def _reflection_is_truncated(text: str) -> bool:

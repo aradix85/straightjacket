@@ -9,6 +9,16 @@ Entries up to 2026.09.26.0 were shortened to their essentials in 2026.09.26.1. T
 
 Calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day. The first CalVer release is 2026.04.25.0; earlier `0.x.y` releases keep their numbers.
 
+## [2026.09.26.8] — 2026-09-26
+
+The Director asks once more when its final answer is not valid JSON, and a failed Director keeps the NPCs' accumulated importance.
+
+Together sometimes returned invalid JSON for the Director's final step despite its JSON schema: three times in about 110 Director calls over four sessions (2026.09.26.4 to .7). The Director gave up after one bad answer, and the empty result then reset every pending reflection flag and zeroed each NPC's importance accumulator, so a single bad answer postponed those NPCs' reflections until they had built importance up from nothing. Now the final step is asked once more on invalid JSON (logged as information, since the retry recovers), and only a second bad answer returns no guidance. Empty guidance still clears the reflection flags but keeps the accumulators, as a skipped Director turn already did. Two new tests cover the retry (it succeeds, and it stops after one retry); the empty-guidance test now expects the accumulator kept. All three fail without the change.
+
+Checked: an eight-turn Elvira session in Sundered Isles as explorer on the default configuration found no problems; its 13 Director calls all parsed at once, so the retry was not needed live, and the first sentence came after a median 4.8 seconds.
+
+Quality gate: 1493 tests green, twenty-nine project-rule scans clean, coverage 90.10%, ruff check and ruff format clean on 206 files, mypy --strict clean on 109 source files. Save format unchanged.
+
 ## [2026.09.26.7] — 2026-09-26
 
 Elvira keeps her players inside her own folder, and the users folder can be moved.

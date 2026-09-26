@@ -1,3 +1,5 @@
+from typing import Any
+
 from straightjacket.engine.models import (
     GameState,
     SceneLogEntry,
@@ -77,14 +79,68 @@ def _blueprint() -> StoryBlueprint:
     )
 
 
-def test_empty_guidance_resets_reflection_flags(stub_all: None) -> None:
+def test_empty_guidance_resets_reflection_flags_and_keeps_the_accumulator(stub_all: None) -> None:
     from straightjacket.engine.director import apply_director_guidance
 
     game = _game()
     assert game.npcs[0].needs_reflection is True
+    before = game.npcs[0].importance_accumulator
     apply_director_guidance(game, {})
     assert game.npcs[0].needs_reflection is False
-    assert game.npcs[0].importance_accumulator == 0
+    assert game.npcs[0].importance_accumulator == before
+
+
+class _SequencedDirectorProvider:
+    def __init__(self, *final_answers: str) -> None:
+        self._answers = list(final_answers)
+        self.final_calls = 0
+
+    def create_message(self, spec: Any) -> Any:
+        from straightjacket.engine.ai.provider_base import AIResponse
+
+        if spec.json_schema is None:
+            return AIResponse(content="", usage={"input_tokens": 1, "output_tokens": 1})
+        self.final_calls += 1
+        return AIResponse(content=self._answers.pop(0), usage={"input_tokens": 1, "output_tokens": 1})
+
+
+def _valid_director_json() -> str:
+    import json
+
+    return json.dumps(
+        {
+            "scene_summary": "Tense.",
+            "narrator_guidance": "Build tension.",
+            "npc_guidance": [],
+            "npc_reflections": [],
+            "arc_notes": "Progressing.",
+        }
+    )
+
+
+def test_director_asks_once_more_after_invalid_json(stub_all: None) -> None:
+    from straightjacket.engine import prompt_loader
+    from straightjacket.engine.director import call_director
+    from tests._mocks import make_test_game
+
+    prompt_loader._prompts = None
+    prompt_loader._ensure_loaded()
+    provider = _SequencedDirectorProvider('{"scene_summary": "Tense.", "narrator_gui', _valid_director_json())
+    guidance = call_director(provider, make_test_game(), "Text.")
+    assert guidance["narrator_guidance"] == "Build tension."
+    assert provider.final_calls == 2
+
+
+def test_director_gives_up_after_one_more_invalid_answer(stub_all: None) -> None:
+    from straightjacket.engine import prompt_loader
+    from straightjacket.engine.director import call_director
+    from tests._mocks import make_test_game
+
+    prompt_loader._prompts = None
+    prompt_loader._ensure_loaded()
+    provider = _SequencedDirectorProvider("not json", "still not json", _valid_director_json())
+    assert call_director(provider, make_test_game(), "Text.") == {}
+    assert provider.final_calls == 2
 
 
 def test_stores_narrator_guidance(stub_all: None) -> None:
