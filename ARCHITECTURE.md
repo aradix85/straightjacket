@@ -127,42 +127,43 @@ The engine assigns models to AI roles via clusters. Each cluster names a provide
 ```
 Cluster          Roles                                       Model, reasoning effort, temperature
 ────────────────────────────────────────────────────────────────────────────────────────────────────
-narrator         narrator                                    GPT-6 Luna, none, not sent
-creative         blueprint_voicing, chapter_summary, recap   GPT-6 Luna, low, not sent
-director         director                                    GPT-6 Luna, none, not sent
-classification   brain, correction                           GPT-6 Luna, none, 0.5
-judgment         revelation_check                            GPT-6 Luna, none, 0.5
-extraction       narrator_metadata, opening_setup            GPT-6 Luna, none, 0.3
+narrator         narrator                                    GLM 5.3 Flash, low, not sent
+creative         blueprint_voicing, chapter_summary, recap   GLM 5.3 Flash, low, not sent
+director         director                                    GLM 5.3 Flash, low, not sent
+classification   brain, correction                           GLM 5.3 Flash, low, 0.5
+judgment         revelation_check                            GLM 5.3 Flash, low, 0.5
+extraction       narrator_metadata, opening_setup            GLM 5.3 Flash, low, 0.3
 ```
 
-GPT-6 Luna runs through OpenAI's own API (`gpt-6-luna`, $0.10 per million input tokens, $0.01 cached, $0.50 output), chosen by the user in 2026.09.26.0 for speed and cost over GLM 5.3's richer narration. Two rules of OpenAI's API for the GPT-6 family set the reasoning effort per cluster. At any effort other than `none` the model refuses `temperature` and `top_p`, so the clusters that sample at a temperature run at `none`, and the creative cluster, which reasons at `low`, sends no temperature. And in Chat Completions, which the OpenAI-compatible adapter uses, function calling works only at `none`, so the Director, whose tool loop depends on it, runs at `none` in its own cluster; at `low` every Director call failed with a 400 (CHANGELOG 2026.09.24.42). This is the configuration the game ran on from 2026.09.24.42 to .60. Measured then against GLM 5.3 (CHANGELOG 2026.09.24.56 to .58): an eight-turn session cost about $0.01 against about $0.19 on GLM's standard tier (2026.09.25.6), the first sentence came after about 2.5 seconds against 11, and a turn took about 7.7 seconds against 28.5; Luna's narration was about half as long and scored lower on atmosphere (4.12 against 4.95 out of 5) and on result integrity on a miss (4.20 against 4.58), which the narrator-prompt tuning of roadmap priority 3 now works on. GLM 5.3 through Fireworks stays the measured alternative; moving a cluster back is a change of its `provider`, `model`, and `extra_body`.
+GLM 5.3 Flash runs through Together's own API (`zai-org/GLM-5.3-Flash`, $0.15 per million input tokens, $0.03 cached, $0.50 output), chosen by the user in 2026.09.26.5 for its narration over GPT-6 Luna's speed and cost. It always thinks, `low` is its lowest effort, and every cluster runs at it with the temperatures Luna had; at that effort it honours strict JSON schemas and function calling, so the Brain, the extractors, and the Director's tool loop work unchanged. Measured with every role on it (CHANGELOG 2026.09.26.2 to .5): its misses kept to Ironsworn's miss outcomes where DeepSeek V4 Flash turned them into successes, its narration ran about 350 words against Luna's 150, and a twelve-turn session cost about 3 cents against Luna's 1.4. Of the hosts measured, Together direct brought the first sentence soonest, after 2.9 seconds against 3.8 through OpenRouter and about 4.3 on Fireworks, because it also caches short prompts: Fireworks caches only whole blocks of 2048 tokens and Baseten blocks of 1024, so there the Brain, the Director, and the extractors rarely or never hit the cache. GPT-6 Luna stays the measured alternative for speed and cost; moving a cluster back is a change of its `provider`, `model`, and `extra_body`, and Luna needs reasoning effort `none` wherever a cluster sends a temperature or calls tools (CHANGELOG 2026.09.24.42).
 
 Config structure in `config.yaml`:
 
 ```yaml
 ai:
   providers:
-    openai:
+    together:
       type: "openai_compatible"
-      api_base: ""
-      api_key_env: "OPENAI_API_KEY"
+      api_base: "https://api.together.xyz/v1"
+      api_key_env: "TOGETHER_API_KEY"
       timeout_seconds: 120
   clusters:
     narrator:
-      provider: openai
-      model: "gpt-6-luna"
+      provider: together
+      model: "zai-org/GLM-5.3-Flash"
       temperature: null
       top_p: null
       max_tokens: 8192
       max_retries: 3
       extra_body:
-        reasoning_effort: "none"
+        reasoning_effort: "low"
+        user: "straightjacket"
   role_cluster:
     narrator: narrator
     director: director
 ```
 
-Every cluster has the same keys; every role maps to exactly one cluster in `role_cluster`. An `api_base` of `""` means the SDK's default endpoint; a `null` temperature or top_p is not sent. The Fireworks, OpenRouter, Together, and Anthropic providers stay configured but unused by the game, so a cluster moves to one of their models by naming the provider and model, and a key is needed only for a provider in use: the game and Elvira need only `OPENAI_API_KEY`. The startup check reads each OpenAI-compatible provider's `/models` with a plain request and accepts both an object with `data` and the bare list Together returns, which the OpenAI SDK's model listing cannot parse (CHANGELOG 2026.09.26.4). Through OpenRouter a cluster's `extra_body` pins one host with `provider: {order: [host], allow_fallbacks: false, require_parameters: true}` and sets thinking with `reasoning: {effort, exclude: true}`; without the pin OpenRouter may route to a host with a temporary discount, a 4-bit quantization, or no structured outputs, which the Brain and the extractors need (CHANGELOG 2026.09.26.2). OpenAI caches the shared start of prompts of 1024 tokens or more on its own, bills cached input at a tenth of fresh input, and for the GPT-6 family bills writing to the cache at 1.25 times fresh input; like Fireworks' cache it matches the longest identical prefix, so the narrator system prompt keeps its fixed rules first, the blocks fixed for a game after them, and the character state, which changes from turn to turn, last. Both adapters report the cached share as `cache_read_tokens`, which the `[TOKENS]` log line shows (for Fireworks and OpenAI from `prompt_tokens_details.cached_tokens`, checked against Fireworks' `fireworks-cached-prompt-tokens` header in 2026.09.25.4). A session-affinity key (`user` or `x-session-affinity`) is not sent: in that check, identical prompts hit the cache without one. Anthropic prompt caching needs `cache_control` in the extra body, while OpenAI and Fireworks cache automatically.
+Every cluster has the same keys; every role maps to exactly one cluster in `role_cluster`. An `api_base` of `""` means the SDK's default endpoint; a `null` temperature or top_p is not sent. The OpenAI, Fireworks, OpenRouter, and Anthropic providers stay configured but unused by the game, so a cluster moves to one of their models by naming the provider and model, and a key is needed only for a provider in use: the game needs `TOGETHER_API_KEY`, and Elvira, who plays and judges on GPT-6 Luna, `OPENAI_API_KEY`. The startup check reads each OpenAI-compatible provider's `/models` with a plain request and accepts both an object with `data` and the bare list Together returns, which the OpenAI SDK's model listing cannot parse (CHANGELOG 2026.09.26.4). Through OpenRouter a cluster's `extra_body` pins one host with `provider: {order: [host], allow_fallbacks: false, require_parameters: true}` and sets thinking with `reasoning: {effort, exclude: true}`; without the pin OpenRouter may route to a host with a temporary discount, a 4-bit quantization, or no structured outputs, which the Brain and the extractors need (CHANGELOG 2026.09.26.2). Together caches the shared start of prompts on its own, short prompts included, and bills cached input at a fifth of fresh input; like the other hosts' caches it matches the longest identical prefix, so the narrator system prompt keeps its fixed rules first, the blocks fixed for a game after them, and the character state, which changes from turn to turn, last. Both adapters report the cached share as `cache_read_tokens`, which the `[TOKENS]` log line shows (for the OpenAI-compatible providers from `prompt_tokens_details.cached_tokens`, checked against Fireworks' `fireworks-cached-prompt-tokens` header in 2026.09.25.4). Every cluster sends the same `user` value as a session-affinity key: identical GLM 5.3 prompts hit Fireworks' cache without one in 2026.09.25.4, but for GLM 5.3 Flash on Fireworks it raised the narrator's cached share from 7 to 14 percent to 39 (CHANGELOG 2026.09.26.5), and Together accepts it. Baseten takes the key only as an `x-session-affinity` header, which the adapter does not send. Anthropic prompt caching needs `cache_control` in the extra body, while OpenAI, Fireworks, and Together cache automatically.
 
 Routing: `ai/api_client.py` → `get_provider` returns a routing provider that sends each call to the provider of its role's cluster, keyed on `AICallSpec.log_role`, which every AI call sets to its own role name; the project-rule scan `_check_ai_calls_route_by_their_role` enforces this. `python run.py` and Elvira call `check_configured_models` first: every cluster's model must appear in its provider's model list, or startup stops naming the missing model. `max_tool_rounds` is an engine limit in `engine/pacing.yaml`.
 

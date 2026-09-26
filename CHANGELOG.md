@@ -9,6 +9,18 @@ Entries up to 2026.09.26.0 were shortened to their essentials in 2026.09.26.1. T
 
 Calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day. The first CalVer release is 2026.04.25.0; earlier `0.x.y` releases keep their numbers.
 
+## [2026.09.26.5] — 2026-09-26
+
+Every role runs on GLM 5.3 Flash through Together, the user's choice for its narration; Elvira stays on GPT-6 Luna.
+
+`config.yaml`: all six clusters on `zai-org/GLM-5.3-Flash` through Together at reasoning effort `low`, its lowest (it always thinks), with the temperatures they had and `user: "straightjacket"` as a session key for the cache. The OpenAI provider stays configured for Elvira, whose price table now lists the model.
+
+Why Together. With every role on GLM 5.3 Flash and Elvira on Luna, twelve-turn sessions brought the first sentence after 2.9 seconds on Together direct (two sessions), 3.8 through OpenRouter to Together, and 4.0 to 4.3 on Fireworks direct, with or without Fireworks' Priority tier (1.25 times the price for this model), which changed nothing measurable. The difference is caching: Fireworks served cache hits only in whole blocks of 2048 tokens and Baseten in blocks of 1024, erratically even with its `x-session-affinity` header, so their Brain, Director, and extractor prompts rarely or never hit the cache, while Together cached from 64 tokens up (Brain 62 percent, Director 34). On Fireworks, a `user` key raised the narrator's cached share from 7 to 14 percent to 39 and brought the first sentence a second sooner. Baseten could not be measured fairly: an unverified account allows 15 requests and 100,000 tokens a minute, which gave 13 rate limits in five turns; a verified one allows 120 and 500,000 after a request to Baseten. Z.ai's GLM 5.3 FlashX, the same model served faster for $0.37, $0.09 cached, and $1.25 per million tokens without JSON-schema enforcement, began its text 2.7 to 3.3 seconds after the request against 0.4 to 0.7 on Together, so it was dropped.
+
+Checked: an eight-turn Elvira session in Starforged as aggressor on the new default, the startup check passing with Together; no engine error, six streamed turns identical to the final text, the first sentence after a median 3.8 seconds, a turn in 13.2, about two cents at list price. One engine warning: blueprint voicing returned one possible ending of three on its first attempt and was asked again. The judge scored all four misses 4 out of 10; read, three kept to Ironsworn's miss outcomes and the fourth decoded a route while the player's skiff was sabotaged. The narration still moves the player character and invents lore, which roadmap priority 3 now tunes for.
+
+Quality gate: 1489 tests green, twenty-nine project-rule scans clean, coverage 90.07%, ruff check and ruff format clean on 206 files, mypy --strict clean on 109 source files. Save format unchanged.
+
 ## [2026.09.26.4] — 2026-09-26
 
 The startup check works with Together, which now stands configured beside the other providers; the game stays on GPT-6 Luna.
