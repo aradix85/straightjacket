@@ -9,6 +9,27 @@ Entries up to 2026.09.26.0 were shortened to their essentials in 2026.09.26.1. T
 
 Calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day. The first CalVer release is 2026.04.25.0; earlier `0.x.y` releases keep their numbers.
 
+## [2026.09.26.12] — 2026-09-26
+
+The narrator stops taking over the player character: a word budget, a wider player-agency rule, a Director that keeps off the player character, and a steadier sampling setting.
+
+Cause. Capturing what the narrator received showed the Director writing guidance such as "force the decision: Reginald either sends a hand across or crosses himself" and "Maren and Knight's long history" for a player character with no backstory, while the narrator's task said it MUST follow the Director's guidance; a stricter narrator rule alone therefore changed nothing (two sessions, since reverted).
+
+Changes. `prompts/director.yaml` gets a PLAYER RULE ahead of every field: guidance directs the world and the NPCs, never what the player character does, decides, says, feels, or remembers, and gives the player character no past or ties the story has not established; a choice is put before the player through what the world does. In `prompts/tasks.yaml` the Director's guidance governs the world and the NPCs, and PLAYER AGENCY wins where it would move, speak for, decide for, or give a past to the player character. The narrator writes 150 to 220 words and stops once the world has reacted, in place of "2-4 paragraphs of immersive narration". Its PLAYER AGENCY rule now names three things that belong to the player alone (inner life; actions and words beyond the stated action; past, relationships, injuries, and knowledge), with WRONG/RIGHT pairs taken from the day's judged failures. `config.yaml` sends the narrator temperature 1.0, Z.ai's default for creative text, and top_p 0.8, Z.ai's example for steadier text; the other clusters keep theirs.
+
+Measured, six variants of four eight-turn Elvira sessions each (the same setting and style per slot, Elvira on GPT-6 Luna, player agency and overall as judged by her, "PC complaints" the judged weaknesses about the player character's actions, words, injuries, or past):
+- A, the Director rule only: player agency 2.75, overall 5.71, PC complaints 42%, 358 words, first sentence 3.5 s.
+- B, plus the word budget: 3.54, 6.08, 50%, 214 words.
+- C, plus the wider PLAYER AGENCY rule: 4.25, 6.21, 17%, 206 words, 3.0 s.
+- D, C with the Director and the extractors at reasoning `high`: 3.67, 6.04, 29%, at 2.5 cents a session instead of 1.8.
+- E, C with every role at reasoning `max`: 4.58, 6.38, 8%, but the first sentence after 54.9 s, 11.8 cents a session, four engine errors, and result integrity on a miss at 1.50.
+- F, C with the narrator at top_p 0.8: 4.08, 6.79, 17%, result integrity on a miss 2.83 (the highest), 208 words, 4.1 s. This release is F.
+Reading F's narrations: misses end with the world waiting on the player, but a miss can still leak a useful clue, and a narration now and then still adds a step the player did not take. Z.ai recommends tuning temperature or top_p, not both; min_p and repetition penalties were not needed.
+
+Checked: an eight-turn Elvira session in Starforged as explorer on the new default: no engine warning or error, six streamed turns identical to the final text, the first sentence after a median 3.9 seconds; of four audits, three were misses that still gave a clue or a win, the open item in roadmap priority 3, and one invented a past for the player character.
+
+Quality gate: 1490 tests green, twenty-nine project-rule scans clean, coverage 90.13%, ruff check and ruff format clean on 206 files, mypy --strict clean on 109 source files. Save format unchanged.
+
 ## [2026.09.26.11] — 2026-09-26
 
 The Director gets one reflection slot per selected NPC and one tool for the game state.

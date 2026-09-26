@@ -127,7 +127,7 @@ The engine assigns models to AI roles via clusters. Each cluster names a provide
 ```
 Cluster          Roles                                       Model, reasoning effort, temperature
 ────────────────────────────────────────────────────────────────────────────────────────────────────
-narrator         narrator                                    GLM 5.3 Flash, low, not sent
+narrator         narrator                                    GLM 5.3 Flash, low, 1.0 (top_p 0.8)
 creative         blueprint_voicing, chapter_summary, recap   GLM 5.3 Flash, low, not sent
 director         director                                    GLM 5.3 Flash, low, not sent
 classification   brain, correction                           GLM 5.3 Flash, low, 0.5
@@ -135,7 +135,7 @@ judgment         revelation_check                            GLM 5.3 Flash, low,
 extraction       narrator_metadata, opening_setup            GLM 5.3 Flash, low, 0.3
 ```
 
-GLM 5.3 Flash runs through Together's own API (`zai-org/GLM-5.3-Flash`, $0.15 per million input tokens, $0.03 cached, $0.50 output), chosen by the user in 2026.09.26.5 for its narration over GPT-6 Luna's speed and cost. It always thinks, `low` is its lowest effort, and every cluster runs at it with the temperatures Luna had; at that effort it honours strict JSON schemas and function calling, so the Brain, the extractors, and the Director's tool loop work unchanged. Measured with every role on it (CHANGELOG 2026.09.26.2 to .5): its misses kept to Ironsworn's miss outcomes where DeepSeek V4 Flash turned them into successes, its narration ran about 350 words against Luna's 150, and a twelve-turn session cost about 3 cents against Luna's 1.4. Of the hosts measured, Together direct brought the first sentence soonest, after 2.9 seconds against 3.8 through OpenRouter and about 4.3 on Fireworks, because it also caches short prompts: Fireworks caches only whole blocks of 2048 tokens and Baseten blocks of 1024, so there the Brain, the Director, and the extractors rarely or never hit the cache. GPT-6 Luna stays the measured alternative for speed and cost; moving a cluster back is a change of its `provider`, `model`, and `extra_body`, and Luna needs reasoning effort `none` wherever a cluster sends a temperature or calls tools (CHANGELOG 2026.09.24.42).
+GLM 5.3 Flash runs through Together's own API (`zai-org/GLM-5.3-Flash`, $0.15 per million input tokens, $0.03 cached, $0.50 output), chosen by the user in 2026.09.26.5 for its narration over GPT-6 Luna's speed and cost. It always thinks, `low` is its lowest effort, and every cluster runs at it with the temperatures Luna had, except the narrator at temperature 1.0 and top_p 0.8 (CHANGELOG 2026.09.26.12); at that effort it honours strict JSON schemas and function calling, so the Brain, the extractors, and the Director's tool loop work unchanged. Measured with every role on it (CHANGELOG 2026.09.26.2 to .5): its misses kept to Ironsworn's miss outcomes where DeepSeek V4 Flash turned them into successes, its narration ran about 350 words against Luna's 150, and a twelve-turn session cost about 3 cents against Luna's 1.4. Of the hosts measured, Together direct brought the first sentence soonest, after 2.9 seconds against 3.8 through OpenRouter and about 4.3 on Fireworks, because it also caches short prompts: Fireworks caches only whole blocks of 2048 tokens and Baseten blocks of 1024, so there the Brain, the Director, and the extractors rarely or never hit the cache. GPT-6 Luna stays the measured alternative for speed and cost; moving a cluster back is a change of its `provider`, `model`, and `extra_body`, and Luna needs reasoning effort `none` wherever a cluster sends a temperature or calls tools (CHANGELOG 2026.09.24.42).
 
 Config structure in `config.yaml`:
 
@@ -151,8 +151,8 @@ ai:
     narrator:
       provider: together
       model: "zai-org/GLM-5.3-Flash"
-      temperature: null
-      top_p: null
+      temperature: 1.0
+      top_p: 0.8
       max_tokens: 8192
       max_retries: 3
       extra_body:

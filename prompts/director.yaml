@@ -16,6 +16,7 @@
   Analyze the latest scene and provide strategic guidance in {lang}.
   If you need the active threads, the clocks that have not fired, or NPCs beyond those in <reflect> tags, call query_game_state once; it returns all of them in one answer.
   LANGUAGE RULE: Every text field MUST be in {lang}. Do not use English for any field value, not even partially. Reflections, guidance, descriptions, summaries — all in {lang}. The one exception is tone_key, which is one word from its fixed list.
+  PLAYER RULE: The player alone controls the player character. Every field below directs the world and the NPCs, never the player character: do not say what the player character does, decides, says, feels, or remembers, and do not give the player character a past, relationships, or ties with NPCs that the story has not established. To put a choice before the player, describe what the world or an NPC does; the player makes the choice.
 
   Respond with a JSON object containing these fields:
   - scene_summary: 2-3 sentence summary of what happened and WHY it matters (in {lang})
