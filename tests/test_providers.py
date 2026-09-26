@@ -16,6 +16,8 @@ class _FakeEndpoint:
         self.calls: list[dict[str, Any]] = []
         self.init_args: dict[str, Any] = {}
         self.models: list[SimpleNamespace] = []
+        self.listing: Any = None
+        self.listing_paths: list[str] = []
 
     def create(self, **kwargs: Any) -> Any:
         self.calls.append(kwargs)
@@ -66,9 +68,12 @@ def openai_endpoint(monkeypatch: pytest.MonkeyPatch) -> _FakeEndpoint:
 
     def fake_client(**kwargs: Any) -> SimpleNamespace:
         endpoint.init_args = kwargs
-        return SimpleNamespace(
-            chat=SimpleNamespace(completions=endpoint), models=SimpleNamespace(list=lambda: endpoint.models)
-        )
+
+        def get(path: str, cast_to: Any) -> Any:
+            endpoint.listing_paths.append(path)
+            return endpoint.listing
+
+        return SimpleNamespace(chat=SimpleNamespace(completions=endpoint), get=get)
 
     monkeypatch.setattr(provider_openai.openai, "OpenAI", fake_client)
     return endpoint
@@ -238,9 +243,23 @@ def test_anthropic_list_models_returns_ids(anthropic_endpoint: _FakeEndpoint) ->
     assert provider_anthropic.AnthropicProvider(api_key="k", timeout_seconds=30).list_models() == ["model-a", "model-b"]
 
 
-def test_openai_list_models_returns_ids(openai_endpoint: _FakeEndpoint) -> None:
-    openai_endpoint.models = [SimpleNamespace(id="model-c")]
-    assert provider_openai.OpenAICompatibleProvider(api_key="k", timeout_seconds=30).list_models() == ["model-c"]
+def test_openai_list_models_reads_the_openai_listing(openai_endpoint: _FakeEndpoint) -> None:
+    openai_endpoint.listing = {"object": "list", "data": [{"id": "model-c"}, {"id": "model-d"}]}
+    provider = provider_openai.OpenAICompatibleProvider(api_key="k", timeout_seconds=30)
+    assert provider.list_models() == ["model-c", "model-d"]
+    assert openai_endpoint.listing_paths == ["/models"]
+
+
+def test_openai_list_models_reads_a_bare_list_as_together_returns_it(openai_endpoint: _FakeEndpoint) -> None:
+    openai_endpoint.listing = [{"id": "vendor-org/model-t", "type": "chat"}]
+    provider = provider_openai.OpenAICompatibleProvider(api_key="k", timeout_seconds=30)
+    assert provider.list_models() == ["vendor-org/model-t"]
+
+
+def test_openai_list_models_refuses_an_unknown_listing(openai_endpoint: _FakeEndpoint) -> None:
+    openai_endpoint.listing = "not a listing"
+    with pytest.raises(TypeError, match="Unexpected model listing"):
+        provider_openai.OpenAICompatibleProvider(api_key="k", timeout_seconds=30).list_models()
 
 
 def _anthropic_reply(*blocks: SimpleNamespace) -> SimpleNamespace:

@@ -9,6 +9,18 @@ Entries up to 2026.09.26.0 were shortened to their essentials in 2026.09.26.1. T
 
 Calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day. The first CalVer release is 2026.04.25.0; earlier `0.x.y` releases keep their numbers.
 
+## [2026.09.26.4] — 2026-09-26
+
+The startup check works with Together, which now stands configured beside the other providers; the game stays on GPT-6 Luna.
+
+Fix. The OpenAI-compatible adapter listed a provider's models through the OpenAI SDK, which expects an object with `data`; Together's `/models` returns a bare list, and the SDK raised an AttributeError, so the startup check stopped any game or Elvira run with a Together cluster. `list_models` now reads `/models` with a plain request and takes either shape, raising a TypeError on anything else. Checked live against OpenAI, Fireworks, and Together; three new adapter tests fail without the fix.
+
+Together. `config.yaml` names it as a provider (`https://api.together.xyz/v1`, `TOGETHER_API_KEY`), unused by the game. Measured with every role on GLM 5.3 Flash (`zai-org/GLM-5.3-Flash`, thinking at `low`) and Elvira on Luna, two twelve-turn sessions: the first sentence after 2.9 seconds in both, against 3.8 through OpenRouter to the same host and 4.0 to 4.3 on Fireworks direct; 40 to 43 percent of the game's input cached, because Together caches short prompts too while Fireworks cached only whole blocks of 2048 tokens, so the Brain, the Director, and the extractors never hit its cache. In one of the two sessions the Director's final JSON failed to parse twice out of 23 calls, and the turns went on without its guidance; no other GLM session showed this.
+
+Checked: an eight-turn Elvira session in Starforged as aggressor on the default configuration, with a correction and the injected narrator outage; no problems found, no engine warning or error, six streamed turns identical to the final text.
+
+Quality gate: 1489 tests green, twenty-nine project-rule scans clean, coverage 90.12%, ruff check and ruff format clean on 206 files, mypy --strict clean on 109 source files. Save format unchanged.
+
 ## [2026.09.26.3] — 2026-09-26
 
 NPC statuses get one central list, and a correction can set only those.

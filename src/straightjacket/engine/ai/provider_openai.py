@@ -27,7 +27,12 @@ class OpenAICompatibleProvider:
         log(f"[OpenAICompatibleProvider] Initialized{f' (base: {api_base})' if api_base else ''}")
 
     def list_models(self) -> list[str]:
-        return [model.id for model in self._client.models.list()]
+        listing = self._client.get("/models", cast_to=object)
+        if isinstance(listing, dict):
+            listing = listing["data"]
+        if not isinstance(listing, list):
+            raise TypeError(f"Unexpected model listing from the provider: {type(listing).__name__}")
+        return [str(entry["id"]) for entry in listing]
 
     def create_message(self, spec: AICallSpec) -> AIResponse:
         return self._response(self._client.chat.completions.create(**self._request(spec)))
