@@ -9,6 +9,14 @@ Entries up to 2026.09.26.0 were shortened to their essentials in 2026.09.26.1. T
 
 Calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day. The first CalVer release is 2026.04.25.0; earlier `0.x.y` releases keep their numbers.
 
+## [2026.09.26.6] — 2026-09-26
+
+Tests no longer leave a player behind in the project's `users/` folder.
+
+The succession websocket tests in `tests/test_web.py` created the player `ws_succ` and saved a game in the real `users/` folder on every run; git ignores that folder, but a player of that name would have been overwritten. Their fixture now points the users folder at a temporary directory, as Elvira's smoke tests do, and the stale `users/ws_succ` is gone. After a full test run `users/` holds only `elvira`.
+
+Quality gate: 1489 tests green, twenty-nine project-rule scans clean, coverage 90.10%, ruff check and ruff format clean on 206 files, mypy --strict clean on 109 source files. No engine code, prompt, or configuration changed, so no Elvira run. Save format unchanged.
+
 ## [2026.09.26.5] — 2026-09-26
 
 Every role runs on GLM 5.3 Flash through Together, the user's choice for its narration; Elvira stays on GPT-6 Luna.

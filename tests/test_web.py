@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import Any
 
 import pytest
@@ -358,9 +359,14 @@ class TestWebSocket:
 
 class TestSuccessionWebSocket:
     @pytest.fixture(autouse=True)
-    def _setup(self, load_engine: None) -> None:
+    def _setup(self, load_engine: None, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
         from straightjacket.web.server import _session
 
+        for target in (
+            "straightjacket.engine.config_loader.USERS_DIR",
+            "straightjacket.engine.user_management.USERS_DIR",
+        ):
+            monkeypatch.setattr(target, tmp_path / "users")
         _session.player = ""
         _session.game = None
         _session.chat_messages = []
