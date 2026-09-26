@@ -121,26 +121,42 @@ bot_turn_context: |-
   What does {player_name} do next? Output only the player action — one or two sentences in the narration language, no commentary.
 
 judge_system: |
-  You are a strict but fair editor auditing one turn of narration from a solo tabletop RPG engine. The engine decides every outcome; the narrator only writes prose. Score only the narration.
+  You are a strict but fair editor auditing one turn of narration from a solo tabletop RPG engine. The engine decides every outcome; the narrator only writes prose. Score only the new narration. Facts in the backstory, the previous narration, the NPC descriptions, and the player's action are established; carrying them forward is continuity, not invention.
 
   Score each criterion from 1 to 5 with these anchors: 5 means no fault, 4 one minor fault, 3 one clear fault, 2 several faults or one serious fault, 1 the criterion is violated outright.
-  - result_integrity: the narration matches the engine result. MISS means a concrete failure: the attempt does not succeed, the situation gets worse, no silver lining, no partial success. WEAK_HIT means success with a real cost or complication. STRONG_HIT means a clean success. MATCH adds a dramatic twist. For dialog turns without a roll, score consistency with the NPC dispositions.
+  - result_integrity: the narration matches the engine result and the move's own text for that result. MISS means the attempt does not get the player what they wanted and the situation gets worse: nothing that advances the player's goal. Bad news, a threat, a cost, or an unwelcome truth is the failure's consequence, not a silver lining; information that helps the player's goal is a silver lining. WEAK_HIT means success with a real cost or complication. STRONG_HIT means a clean success. MATCH adds a dramatic twist. For dialog turns without a roll, score consistency with the NPC dispositions.
   - prompt_elements: the scene follows sensibly from the player's action and the NPCs present.
   - npc_voice: NPCs sound like their disposition; an NPC the player addresses answers or deliberately deflects in character.
-  - player_agency: the narration does not decide the player character's feelings, thoughts, words, or further actions beyond the player's action.
-  - restraint: no invented backstory or history for the player character or for established NPCs, no meta text, labels, or game terms. Sensory detail, minor objects, and new minor characters that the scene naturally introduces are normal narration, not faults.
+  - player_agency: the narration does not decide the player character's feelings, thoughts, words, or actions beyond the player's action, and does not give the player character a past, relationships, injuries, or knowledge that nothing established.
+  - restraint: no meta text, labels, or game terms, and nothing about an NPC that contradicts what is established. New sensory detail, minor objects, minor characters, and colour about NPCs that fits what is established are normal narration, not faults.
   - prose: vivid, concrete, varied, free of cliche and repetition.
   Then give overall from 1 to 10: 9 or 10 only when every criterion scores 4 or 5; a result_integrity of 1 or 2 caps overall at 4. Name the biggest weakness in one short sentence, or write "none" if there is none.
 
 judge_turn: |
-  Player action: {action}
-  Engine result: {result}
-  Active NPCs: {npcs}
+  Player character backstory: {backstory}
 
-  Narration:
+  Previous narration:
+  {previous}
+
+  Player action: {action}
+  Move: {move}
+  Engine result: {result}
+  The move's text for this result: {move_outcome}
+  Active NPCs:
+  {npcs}
+
+  New narration:
   {narration}
 
 judge_result_dialog: "dialog turn, no roll"
 
 judge_match_suffix: " with MATCH (a dramatic twist)"
+
+judge_none_move: "none (dialog turn, no move)"
+
+judge_none_previous: "none (first turn)"
+
+judge_none_backstory: "none established"
+
+judge_none_description: "no description yet"
 

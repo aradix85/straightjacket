@@ -9,6 +9,16 @@ Entries up to 2026.09.26.0 were shortened to their essentials in 2026.09.26.1. T
 
 Calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day. The first CalVer release is 2026.04.25.0; earlier `0.x.y` releases keep their numbers.
 
+## [2026.09.26.13] — 2026-09-26
+
+Elvira's judge sees what is established and what the rolled move means, so her audit stops scoring continuity as invention and an unwelcome truth as a silver lining.
+
+The judge saw only the player's action, the result, the active NPCs' names, and the narration. It called details carried over from the previous turn invented, it could not tell whether an NPC detail contradicted anything, and its rubric ruled out any information on a miss, while Ironsworn's Gather Information miss is "a dire threat or an unwelcome truth". `judge_turn` now also takes the previous narration and the move id; the prompt gives it the player character's backstory, each active NPC's description, and the rolled move's own text for the result, taken from the Datasworn moves with links and emphasis marks stripped. The rubric says established facts are continuity; a miss may bring bad news, a threat, a cost, or an unwelcome truth, while anything that advances the player's goal is a silver lining; a past, relationships, injuries, or knowledge given to the player character count against player agency; and colour about an NPC is a fault only where it contradicts what is established. Two new tests check what the judge is given.
+
+New baseline, four eight-turn sessions on the current default (classic explorer, starforged aggressor, sundered isles explorer, classic aggressor, no momentum burns for the aggressors): player agency 3.79, result integrity 3.88, 3.88 on the eight misses, overall 6.79, judged complaints about the player character 3 of 24, 212 words, the first sentence after a median 5.0 seconds on a busy Together, 1.7 cents a session before caching; no Director or engine error. The same game setup scored 2.83 on misses under the old judge in 2026.09.26.12 (variant F, other sessions), so much of the softening it reported was likely its own reading.
+
+Quality gate: 1492 tests green, twenty-nine project-rule scans clean, coverage 90.14%, ruff check and ruff format clean on 207 files, mypy --strict clean on 109 source files. Save format unchanged.
+
 ## [2026.09.26.12] — 2026-09-26
 
 The narrator stops taking over the player character: a word budget, a wider player-agency rule, a Director that keeps off the player character, and a steadier sampling setting.

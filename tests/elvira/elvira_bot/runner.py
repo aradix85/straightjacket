@@ -376,6 +376,7 @@ def _play_turn(
     inject_failure: bool = False,
     directive_key: str | None = None,
 ) -> tuple[GameState, str, TurnRecord, bool]:
+    previous_narration = narration
     context = build_turn_context(game, narration, turn, prev_action=prev_action, directive_key=directive_key)
     try:
         action = ask_bot(persona, context, max_tokens=500)
@@ -454,7 +455,9 @@ def _play_turn(
     coverage.observe_events(rec.engine_events)
 
     if judge_cfg:
-        rec.judge = judge_turn(judge_cfg, game, action, narration, result, match)
+        rec.judge = judge_turn(
+            judge_cfg, game, action, narration, result, match, previous_narration, roll.move if roll else ""
+        )
         _print_audit(rec.judge)
 
     return game, narration, rec, False
