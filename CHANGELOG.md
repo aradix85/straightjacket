@@ -9,6 +9,16 @@ Entries up to 2026.09.26.0 were shortened to their essentials in 2026.09.26.1. T
 
 Calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day. The first CalVer release is 2026.04.25.0; earlier `0.x.y` releases keep their numbers.
 
+## [2026.09.26.19] — 2026-09-26
+
+Why GLM 5.3's structured answers failed, recorded; the model mix of 2026.09.26.17 stays; a stale roadmap item corrected.
+
+A probe ran 220 structured calls on GLM 5.3 through Together with the game's own prompts and schemas (160 Brain calls on twenty player actions, 60 metadata extractions on three narrations) and kept each raw answer. Three failed, 1.4 percent (one Brain call, two extractions), all the same way: the answer stopped at the 8192-token limit after 55 to 200 characters of JSON, so the model had reasoned for about 8,000 tokens first; Together returns no reasoning text for GLM 5.3. It is the runaway already seen in the Director, not an unenforced schema and not a control character, which did not recur. At about 80 tokens a second such a runaway costs roughly 100 seconds, and for the Brain that wait comes before the narration and ends in a fallback turn; GLM 5.3 Flash showed no Brain runaway in the day's sessions, while its Director ran away now and then after the narration, where the player does not wait on it. A higher reasoning effort would lengthen a runaway, and GLM 5.3's reasoning cannot be turned off, so the structured roles stay on Flash; running them on GLM 5.3 would need a lower token limit and one retry for a truncated answer, left undone.
+
+The roadmap listed the Director sometimes reaching its maximum of three tool rounds as open; with one tool since 2026.09.26.11 it cannot happen.
+
+Quality gate: 1492 tests green, twenty-nine project-rule scans clean, coverage 90.13%, ruff check and ruff format clean on 207 files, mypy --strict clean on 109 source files. Save format unchanged.
+
 ## [2026.09.26.18] — 2026-09-26
 
 The prompt review's third group, measured on a forced-miss bench and not adopted; the wording of 2026.09.26.17 corrected.
