@@ -9,6 +9,18 @@ Entries up to 2026.09.26.0 were shortened to their essentials in 2026.09.26.1. T
 
 Calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day. The first CalVer release is 2026.04.25.0; earlier `0.x.y` releases keep their numbers.
 
+## [2026.09.26.15] — 2026-09-26
+
+The prompt review's first group: three contradictions removed and the Director's fixed task moved ahead of the changing scene for the cache.
+
+A full review of every prompt file found three places that contradicted each other or invited the faults being fought. `director_system` told the Director to stay within `<world>` genre physics and also never to introduce supernatural elements, while Sundered Isles opens with cursed waters and Ironsworn has mysticism; it now rules them out only where `<world>` does not contain them, as blueprint voicing already did. `task_chapter_opening` asked for the character's history and relationships "naturally" without saying whose; it now takes them only from `<campaign_history>`, `<backstory>`, and the returning NPCs and gives the player character no new past. `block_tone_authority` still said to follow `<director_guidance>` for narrative direction without the exception the task prompts gained in 2026.09.26.12; it now says the world and the NPCs. The Director's prompt put its fixed task text after the changing scene, story arc, and reflection blocks, so across turns only the system prompt could come from the cache; `director.py` now puts the task first.
+
+Measured, four eight-turn sessions each on GLM 5.3 (the same four settings and styles), the baseline started before the change and the new prompts beside it: the first Director call of a turn took 57 percent of its input from the cache against 10, and all Director input 50 percent against 27; result integrity 3.95 against 3.42 and overall 6.68 against 6.12, with player agency level (3.59 against 3.62) and judged complaints about the player character 9 of 22 against 8 of 24; one Director runaway in the baseline and none after, too few to call; the first sentence after a median 2.3 seconds against 2.1.
+
+The review's other findings wait: word budgets for the opening, chapter opening, and epilogue (the epilogue's reflection on the character's growth also needs an explicit exception to PLAYER AGENCY), the Brain prompt restating the JSON fields the schema already enforces, fixed values in extractor prompts that the engine configuration also holds, the narrator prompt's capitals and MUSTs, and misses on investigations.
+
+Quality gate: 1492 tests green, twenty-nine project-rule scans clean, coverage 90.11%, ruff check and ruff format clean on 207 files, mypy --strict clean on 109 source files. Save format unchanged.
+
 ## [2026.09.26.14] — 2026-09-26
 
 Every role runs on GLM 5.3 through Together, the user's choice; prompts and settings are unchanged.

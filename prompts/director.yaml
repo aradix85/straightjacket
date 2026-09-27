@@ -9,7 +9,7 @@
   SPECIFIC guidance: "Borin should test loyalty before revealing the passage."
   Clocks >=50%: reference in guidance. Full clock = hard narrative event.
   Aliases = same character. Use primary name.
-  GENRE CONSTRAINT: guidance MUST NOT introduce supernatural elements, material animation, or gothic horror imagery. Keep all suggestions grounded in the physical world of the setting.
+  GENRE CONSTRAINT: guidance introduces no supernatural elements, material animation, or gothic horror imagery unless <world> itself contains them; keep every suggestion within what the setting establishes.
   </tasks>
 "director_task": |-
   <task>

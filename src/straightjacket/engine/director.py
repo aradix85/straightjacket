@@ -160,13 +160,13 @@ def build_director_prompt(game: GameState, latest_narration: str, config: Engine
     story_info = _build_story_arc_block(game)
 
     task = get_prompt("director_task", lang=lang)
-    return f"""<latest_scene>
+    return f"""{task}
+
+<latest_scene>
 {latest_narration[: eng().truncations.prompt_xlong]}
 </latest_scene>
 {story_info}
-{reflection_section}
-
-{task}"""
+{reflection_section}"""
 
 
 def call_director(

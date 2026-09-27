@@ -65,7 +65,7 @@
 "block_world_truths_header": |-
   Established facts about this world. Treat as canon.
 "block_tone_authority": |-
-  This is the player's chosen creative register for the entire story. It governs sentence rhythm, scene energy, what details get highlighted, how NPCs behave, and what makes a moment land. Every scene must feel it. Follow <director_guidance> for narrative direction, but never let it override or dilute the tone.
+  This is the player's chosen creative register for the entire story. It governs sentence rhythm, scene energy, what details get highlighted, how NPCs behave, and what makes a moment land. Every scene must feel it. Follow <director_guidance> for the world and the NPCs, but never let it override or dilute the tone.
 "block_character_state_instruction": |-
   Reflect these states through sensory detail, body language, and atmosphere. NEVER state numbers or game terms. Maintain consistency across scenes — do NOT describe the character as healthy if they are injured, or calm if they are shaken.
 "block_story_ending_exceeded_continuing": |-
