@@ -57,7 +57,7 @@ ai:
         user: "straightjacket"
     director:
       provider: together
-      model: "zai-org/GLM-5.3"
+      model: "zai-org/GLM-5.3-Flash"
       temperature: null
       top_p: null
       max_tokens: 8192
@@ -67,7 +67,7 @@ ai:
         user: "straightjacket"
     classification:
       provider: together
-      model: "zai-org/GLM-5.3"
+      model: "zai-org/GLM-5.3-Flash"
       temperature: 0.5
       top_p: null
       max_tokens: 8192
@@ -77,7 +77,7 @@ ai:
         user: "straightjacket"
     judgment:
       provider: together
-      model: "zai-org/GLM-5.3"
+      model: "zai-org/GLM-5.3-Flash"
       temperature: 0.5
       top_p: null
       max_tokens: 8192
@@ -87,7 +87,7 @@ ai:
         user: "straightjacket"
     extraction:
       provider: together
-      model: "zai-org/GLM-5.3"
+      model: "zai-org/GLM-5.3-Flash"
       temperature: 0.3
       top_p: null
       max_tokens: 8192

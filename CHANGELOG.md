@@ -9,6 +9,16 @@ Entries up to 2026.09.26.0 were shortened to their essentials in 2026.09.26.1. T
 
 Calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day. The first CalVer release is 2026.04.25.0; earlier `0.x.y` releases keep their numbers.
 
+## [2026.09.26.17] — 2026-09-26
+
+The narrator and the creative cluster stay on GLM 5.3; the Director, the Brain, judgment, and extraction go back to GLM 5.3 Flash.
+
+Since 2026.09.26.14 GLM 5.3's JSON on Together failed where Flash's had not: the Brain twice, the opening-setup and metadata extractions once each. `config.yaml` now runs the `narrator` and `creative` clusters on `zai-org/GLM-5.3` and the `director`, `classification`, `judgment`, and `extraction` clusters on `zai-org/GLM-5.3-Flash`, both through Together; every other setting stays.
+
+Measured, four eight-turn sessions against 2026.09.26.16's four with every role on GLM 5.3, the same prompts, settings, and styles: player agency 4.21 against 4.17, result integrity 3.86 on seven misses against 2.71 on seven, overall 6.88 against 6.70, judged complaints about the player character 3 of 24 against 5 of 23; over 28 turns each no Brain failure and no failed extraction against one of each, one Director runaway each, and one truncated reflection rejected; the first sentence after a median 3.1 seconds against 2.7, since the Brain ahead of the narration now runs on Flash; about 7.3 cents for eight turns before caching against 16.5 (every role on GLM 5.3 Flash cost about 1.7).
+
+Quality gate: 1492 tests green, twenty-nine project-rule scans clean, coverage 90.16%, ruff check and ruff format clean on 207 files, mypy --strict clean on 109 source files. Save format unchanged.
+
 ## [2026.09.26.16] — 2026-09-26
 
 The prompt review's second group: word budgets for the longer scenes, the Brain's duplicate field list removed, and extractor prompts that take their values from the configuration.
