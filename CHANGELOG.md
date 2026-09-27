@@ -9,6 +9,18 @@ Entries up to 2026.09.26.0 were shortened to their essentials in 2026.09.26.1. T
 
 Calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day. The first CalVer release is 2026.04.25.0; earlier `0.x.y` releases keep their numbers.
 
+## [2026.09.26.20] — 2026-09-26
+
+The structured answers' "runaway" was a carriage-return loop inside the JSON; the tokens are banned, the schema goes into every structured prompt, and every role runs on GLM 5.3 again.
+
+Cause. Streaming the Brain's own request on GLM 5.3 150 times caught one failure whole: after `{"type": "action", "move": "ask_the_oracle"` the model wrote a space and then about 8,180 carriage returns (`\r`) to the 8192-token limit, with no reasoning at all. A JSON grammar allows any whitespace between tokens, so the enforced schema could not stop it, and Together strips trailing whitespace from a non-streamed answer, which is why the failures of 2026.09.26.9 to .19 looked like short broken JSON with an empty reasoning field and were called a reasoning runaway; those entries' "runaway" is this loop. Together returns reasoning text in `reasoning_content` whenever the model reasons.
+
+Changes. GLM 5.3 and GLM 5.3 Flash share one tokenizer of 154,820 tokens, 396 of which contain a carriage return; JSON never needs one, and neither does prose. `config.yaml` bans all 396 in every cluster through `logit_bias`, written once under the YAML anchor `no_carriage_return` and referenced by the others; Together accepted the full list for both models. Together's structured-output guide says to put the schema in the prompt as well as in `response_format`, and Fireworks and OpenAI warn that a model which does not see the schema may emit whitespace until the limit. `RoutingProvider` now appends one line from `prompts/blocks.yaml` with the compact schema to the end of the last user message of every call that has a schema (to the system prompt if the last message is not plain user text), last so that nothing before it changes and every cached prefix stays intact, including the Director's, whose schema changes with the NPCs selected for reflection. Two new tests cover the placement and an unchanged call without a schema. With structured calls safe, every cluster runs on `zai-org/GLM-5.3`.
+
+Measured: before the changes 3 of 220 structured GLM 5.3 calls (160 Brain, 60 metadata) broke off at the limit; after them 0 of 360 (300 Brain calls on ten player actions, 60 metadata extractions), all ending normally, which at the earlier rate would happen by chance less than one time in a hundred. An eight-turn Elvira session in classic as aggressor on the new default: no Brain, Director, or extraction failure and no engine warning or error, six streamed turns identical to the final text, the first sentence after a median 3.1 seconds, the Brain's prompt taking 1,024 of 1,843 tokens from the cache, the narrator's 2,560 of 5,134, and about 16 cents for the session before caching.
+
+Quality gate: 1494 tests green, twenty-nine project-rule scans clean, coverage 90.13%, ruff check and ruff format clean on 208 files, mypy --strict clean on 109 source files. Save format unchanged.
+
 ## [2026.09.26.19] — 2026-09-26
 
 Why GLM 5.3's structured answers failed, recorded; the model mix of 2026.09.26.17 stays; a stale roadmap item corrected.

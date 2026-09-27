@@ -83,6 +83,7 @@
 "flag_final_scene": "FINAL_SCENE:dramatic ending,character falls,make it meaningful"
 "flag_crisis": "CRISIS:desperate,world closing in"
 
+"json_schema_instruction": 'Answer with one JSON object that follows this JSON Schema and nothing else: {schema}'
 "result_miss_body": The attempt fails and the situation gets worse. The player leaves this scene worse off, without what they came for.
 "result_weak_hit_body": Success with tangible cost or complication.
 "result_strong_hit_body": Clean success.

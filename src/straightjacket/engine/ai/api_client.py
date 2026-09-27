@@ -1,8 +1,11 @@
 import hashlib
+import json
 import os
 from collections.abc import Callable
+from dataclasses import replace
 
 from ..config_loader import ProviderConfig, cfg, provider_for_role
+from ..prompt_loader import get_prompt
 from .provider_base import AICallSpec, AIProvider, AIResponse, ModelListingProvider
 
 
@@ -48,10 +51,21 @@ class RoutingProvider:
         self._adapters = adapters
 
     def create_message(self, spec: AICallSpec) -> AIResponse:
-        return self._adapters[provider_for_role(spec.log_role)].create_message(spec)
+        return self._adapters[provider_for_role(spec.log_role)].create_message(_schema_in_prompt(spec))
 
     def stream_message(self, spec: AICallSpec, on_text: Callable[[str], None]) -> AIResponse:
-        return self._adapters[provider_for_role(spec.log_role)].stream_message(spec, on_text)
+        return self._adapters[provider_for_role(spec.log_role)].stream_message(_schema_in_prompt(spec), on_text)
+
+
+def _schema_in_prompt(spec: AICallSpec) -> AICallSpec:
+    if not spec.json_schema:
+        return spec
+    schema = json.dumps(spec.json_schema, ensure_ascii=False, separators=(",", ":"))
+    instruction = get_prompt("json_schema_instruction", schema=schema)
+    last = spec.messages[-1] if spec.messages else None
+    if last is not None and last.get("role") == "user" and isinstance(last.get("content"), str):
+        return replace(spec, messages=[*spec.messages[:-1], {**last, "content": f"{last['content']}\n\n{instruction}"}])
+    return replace(spec, system=f"{spec.system}\n\n{instruction}")
 
 
 def get_provider() -> AIProvider:
