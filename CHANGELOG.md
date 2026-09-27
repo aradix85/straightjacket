@@ -9,6 +9,18 @@ Entries up to 2026.09.26.0 were shortened to their essentials in 2026.09.26.1. T
 
 Calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day. The first CalVer release is 2026.04.25.0; earlier `0.x.y` releases keep their numbers.
 
+## [2026.09.26.16] — 2026-09-26
+
+The prompt review's second group: word budgets for the longer scenes, the Brain's duplicate field list removed, and extractor prompts that take their values from the configuration.
+
+`task_opening` and `task_chapter_opening` ask for 250 to 350 words in their three or four paragraphs, `task_epilogue` for 350 to 500, and the epilogue's reflection on the character's growth is named as the one place where PLAYER AGENCY lets the narrator say what the character has become, drawn only from what the story showed; it drops "beautiful". `brain_parser` no longer lists the JSON fields in its rules, since the schema enforces them and a second list can drift from it. `opening_setup_extractor` took "6 segments, 1 filled" as text and `narrator_metadata` its dispositions as a fixed list; they now read `opening.clock_segments`, `opening.clock_filled`, and `enums.dispositions`, so the prompts cannot contradict the configuration.
+
+Measured, four eight-turn sessions on GLM 5.3 against group A's four: player agency 4.17 against 3.59, judged complaints about the player character 5 of 23 against 9 of 22, overall 6.70 against 6.68, result integrity 3.61 against 3.95 and 2.71 on seven misses against 2.50 on four, the first sentence after a median 2.7 seconds against 2.3; openings ran about 256 words against 226, since GLM 5.3 already wrote short openings and now writes toward the budget's floor. About 16.5 cents a session at GLM 5.3's prices.
+
+GLM 5.3's JSON on Together, collected over the sessions since 2026.09.26.14: the Brain's answer failed to parse twice (a raw control character, an unterminated string), the Director ran away twice and the metadata extraction once, and one opening-setup answer was empty; GLM 5.3 Flash showed no Brain failure in dozens of sessions. The prompt changes here are not the cause: the extractor received the same text before and after, and the Brain failures came before this release.
+
+Quality gate: 1492 tests green, twenty-nine project-rule scans clean, coverage 90.10%, ruff check and ruff format clean on 207 files, mypy --strict clean on 109 source files. Save format unchanged.
+
 ## [2026.09.26.15] — 2026-09-26
 
 The prompt review's first group: three contradictions removed and the Director's fixed task moved ahead of the changing scene for the cache.

@@ -54,7 +54,7 @@
 "narrator_metadata": |-
   NPC detection extractor for RPG engine. Analyze narration for NPC-related changes only. All text in {lang}.
   Engine handles location, time, scene context, and NPC memories — you MUST NOT extract those.
-  disposition: neutral|friendly|distrustful|hostile|loyal
+  disposition: {dispositions}
   npc_renames: identity reveals only.
   npc_details: newly established facts (full_name, description).
   new_npcs: physically present and interacting. TEST: Can they hear the player? If not, MUST NOT be listed as new NPC.
@@ -64,7 +64,7 @@
   <role>Opening scene data extractor.</role>
   <rules>
   Extract named NPCs (not player): agenda, instinct, 1 secret, disposition.
-  1 threat clock (6 segments, 1 filled). Location, scene_context (extract, MUST NOT invent), time_of_day.
+  1 threat clock ({clock_segments} segments, {clock_filled} filled). Location, scene_context (extract, MUST NOT invent), time_of_day.
   memory_updates per NPC (use npc_name). deceased_npcs: on-screen deaths only (full name as id).
   All text in {lang}.
   </rules>

@@ -85,7 +85,13 @@ def call_opening_setup(
 ) -> dict[str, Any]:
     lang = get_narration_lang(config or EngineConfig())
 
-    system = get_prompt("opening_setup_extractor", lang=lang)
+    _opening = eng().opening
+    system = get_prompt(
+        "opening_setup_extractor",
+        lang=lang,
+        clock_segments=str(_opening.clock_segments),
+        clock_filled=str(_opening.clock_filled),
+    )
     _defaults = eng().ai_text.narrator_defaults
 
     prompt = f"""<narration>{narration}</narration>
@@ -169,7 +175,7 @@ def call_narrator_metadata(
             mechanical_ctx += f" | consequences: {', '.join(consequences)}"
         mechanical_ctx += "</engine_context>"
 
-    system_base = get_prompt("narrator_metadata", lang=lang)
+    system_base = get_prompt("narrator_metadata", lang=lang, dispositions="|".join(eng().enums.dispositions))
 
     cb = content_boundaries_block(game)
     system = f"{system_base}\n{cb}" if cb else system_base
