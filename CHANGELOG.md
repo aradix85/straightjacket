@@ -9,6 +9,10 @@ Entries up to 2026.09.26.19 were shortened to their essentials, in 2026.09.26.1 
 
 Calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day. The first CalVer release is 2026.04.25.0; earlier `0.x.y` releases keep their numbers.
 
+## [2026.09.27.2] — 2026-09-27
+
+Documentation only: the user decided the two points step 9a left open. A fact hangs on an NPC, by the id the Brain's prompt offers, or on the current location, with no free-text objects, so the engine can recognise it again. Every fact is cleared when the player moves and at a chapter start, and each fact type says in yaml whether a hit on an action that depended on it clears it. Resolved facts live in one list on the world state. Roadmap step 9a records both decisions and their rejected alternatives.
+
 ## [2026.09.27.1] — 2026-09-27
 
 Openings: the engine owns the opening clock and the time of day, and a succession applies its opening extraction instead of discarding it.
