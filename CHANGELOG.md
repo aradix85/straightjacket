@@ -9,13 +9,23 @@ Entries up to 2026.09.26.0 were shortened to their essentials in 2026.09.26.1. T
 
 Calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day. The first CalVer release is 2026.04.25.0; earlier `0.x.y` releases keep their numbers.
 
+## [2026.09.26.18] — 2026-09-26
+
+The prompt review's third group, measured on a forced-miss bench and not adopted; the wording of 2026.09.26.17 corrected.
+
+The bench plays twelve fixed situations from four saved sessions (an investigation, a compel, and facing danger per save) with the roll forced to a miss, three narrations each on the narrator's model (GLM 5.3), judged by Elvira's judge; only the narrator's prompts differed. Current prompts: result integrity on the misses 2.94 (investigation 2.83, compel 2.42, danger 3.58), player agency 2.50, overall 5.06. A WRONG/RIGHT pair for failed searches and questions after the MISS rule: 2.92 (2.75, 2.25, 3.75), 2.83, 4.94. The narrator system prompt without its eight MUSTs and NEVERs and without "every constraint below is a MUST": 2.81 (2.58, 2.92, 2.92), 2.39, 4.81. Neither helped, so neither is adopted and the emphasis stays. With the move's own miss text, a sentence ruling out leads, and a shorter history earlier in the day, that makes five instruction variants that did not make investigation misses more honest on GLM; the remaining softening looks like the model's, not the prompt's.
+
+2026.09.26.17 and ARCHITECTURE said the model mix matched or beat all-GLM-5.3 on the judged scores; the narrator is GLM 5.3 in both, so those differences are within noise, and both texts now say the mix is kept for its reliability and cost.
+
+Quality gate: 1492 tests green, twenty-nine project-rule scans clean, coverage 90.11%, ruff check and ruff format clean on 207 files, mypy --strict clean on 109 source files. Save format unchanged.
+
 ## [2026.09.26.17] — 2026-09-26
 
 The narrator and the creative cluster stay on GLM 5.3; the Director, the Brain, judgment, and extraction go back to GLM 5.3 Flash.
 
 Since 2026.09.26.14 GLM 5.3's JSON on Together failed where Flash's had not: the Brain twice, the opening-setup and metadata extractions once each. `config.yaml` now runs the `narrator` and `creative` clusters on `zai-org/GLM-5.3` and the `director`, `classification`, `judgment`, and `extraction` clusters on `zai-org/GLM-5.3-Flash`, both through Together; every other setting stays.
 
-Measured, four eight-turn sessions against 2026.09.26.16's four with every role on GLM 5.3, the same prompts, settings, and styles: player agency 4.21 against 4.17, result integrity 3.86 on seven misses against 2.71 on seven, overall 6.88 against 6.70, judged complaints about the player character 3 of 24 against 5 of 23; over 28 turns each no Brain failure and no failed extraction against one of each, one Director runaway each, and one truncated reflection rejected; the first sentence after a median 3.1 seconds against 2.7, since the Brain ahead of the narration now runs on Flash; about 7.3 cents for eight turns before caching against 16.5 (every role on GLM 5.3 Flash cost about 1.7).
+Measured, four eight-turn sessions against 2026.09.26.16's four with every role on GLM 5.3, the same prompts, settings, and styles: player agency 4.21 against 4.17, result integrity 3.86 on seven misses against 2.71 on seven, overall 6.88 against 6.70, judged complaints about the player character 3 of 24 against 5 of 23; over 28 turns each no Brain failure and no failed extraction against one of each, one Director runaway each, and one truncated reflection rejected; the first sentence after a median 3.1 seconds against 2.7, since the Brain ahead of the narration now runs on Flash; about 7.3 cents for eight turns before caching against 16.5 (every role on GLM 5.3 Flash cost about 1.7). The narrator is GLM 5.3 in both setups, so the judged differences are within noise on these small counts (the miss score of this setup has swung between 2.9 and 3.9 across runs of seven to ten misses); the mix is kept because it matched GLM 5.3's scores with no Brain or extraction failure at half the cost, not because it scores higher.
 
 Quality gate: 1492 tests green, twenty-nine project-rule scans clean, coverage 90.16%, ruff check and ruff format clean on 207 files, mypy --strict clean on 109 source files. Save format unchanged.
 
