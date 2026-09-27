@@ -9,6 +9,18 @@ Entries up to 2026.09.26.0 were shortened to their essentials in 2026.09.26.1. T
 
 Calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day. The first CalVer release is 2026.04.25.0; earlier `0.x.y` releases keep their numbers.
 
+## [2026.09.26.14] — 2026-09-26
+
+Every role runs on GLM 5.3 through Together, the user's choice; prompts and settings are unchanged.
+
+`config.yaml` moves all six clusters from `zai-org/GLM-5.3-Flash` to `zai-org/GLM-5.3` ($1.40 per million input tokens, $0.26 cached, $4.40 output, about nine times Flash); reasoning stays at `low`, the narrator at temperature 1.0 and top_p 0.8. Elvira's price table lists the model.
+
+Why. A forced-miss bench gave both models the same twelve situations from four saved sessions (an investigation, a compel, and facing danger per save), three narrations each with the same prompts, judged by Elvira's judge: GLM 5.3 scored 3.00 for result integrity on the misses (investigation 2.58, compel 2.83, danger 3.58), 2.53 for player agency, 4.97 overall; Flash 2.78 (2.67, 2.58, 3.08), 2.81, 5.08. So GLM 5.3 followed the instructions about as well, but finished a narration in a median 2.1 seconds against Flash's 3.3; independent measurements also put it ahead on speed (74 tokens a second against 46), since Flash is built for low cost rather than speed. Three prompt variants for misses tried on the way (the move's own miss text, a sentence ruling out leads, one narration of history instead of three) gave no gain in sessions of 7 to 10 misses and were reverted; the bench replaces those small samples for further tuning.
+
+Checked: an eight-turn Elvira session in Sundered Isles as dialogist on the new default; the Brain, the narrator, the Director with its one tool, and the extractors all ran, the Brain's prompt cached 768 tokens and the narrator's 2048, the first sentence after a median 2.8 seconds. Three engine warnings: the Director's final JSON broke off after 8192 output tokens with 120 characters written, the same runaway GLM 5.3 Flash showed in about 3 percent of Director calls; one metadata extraction broke off at character 75, likely the same; and one reflection field held stray JSON (`:null,`) and was rejected. Together enforced a strict schema for GLM 5.3 in four of four tries, so these are runaways, not an unenforced schema; one session cannot say whether GLM 5.3 runs away more often than Flash. The Director cost about 11 cents over eight turns. Four narrations were audited at 3 or 4 out of 10, three of them for a miss or a hit that still gave or took too much.
+
+Quality gate: 1492 tests green, twenty-nine project-rule scans clean, coverage 90.10%, ruff check and ruff format clean on 207 files, mypy --strict clean on 109 source files. Save format unchanged.
+
 ## [2026.09.26.13] — 2026-09-26
 
 Elvira's judge sees what is established and what the rolled move means, so her audit stops scoring continuity as invention and an unwelcome truth as a silver lining.
