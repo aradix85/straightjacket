@@ -65,48 +65,22 @@ def test_seed_opening_memories_matches_and_skips(stub_all: None) -> None:
     assert len(game.npcs[0].memory) == 1
 
 
-def test_apply_world_setup_replace_vs_extend(stub_all: None) -> None:
-    from straightjacket.engine.game.setup_common import apply_world_setup
+def test_opening_setup_sets_location_and_context_and_keeps_the_engines_clock_and_time(stub_all: None) -> None:
+    from straightjacket.engine.game.setup_common import apply_opening_setup
 
     game = make_game_state(player_name="Hero")
-    game.world.clocks = [make_clock(name="Old")]
-    apply_world_setup(
-        game,
-        {
-            "clocks": [
-                {
-                    "name": "New",
-                    "clock_type": "threat",
-                    "segments": 4,
-                    "filled": 1,
-                    "trigger_description": "Storm breaks",
-                    "owner": "world",
-                }
-            ],
-            "location": "Market",
-            "scene_context": "Busy.",
-            "time_of_day": "midday",
-        },
-        clocks_mode="replace",
-    )
-    assert len(game.world.clocks) == 1
-    assert game.world.clocks[0].name == "New"
+    game.world.clocks = [make_clock(name="Engine clock")]
+    game.world.time_of_day = "morning"
+    apply_opening_setup(game, {"npcs": [], "memory_updates": [], "location": "Market", "scene_context": "Busy."})
+    assert game.world.current_location == "Market"
+    assert game.world.current_scene_context == "Busy."
+    assert [c.name for c in game.world.clocks] == ["Engine clock"]
+    assert game.world.time_of_day == "morning"
 
-    game.world.clocks = [make_clock(name="Old")]
-    apply_world_setup(
-        game,
-        {
-            "clocks": [
-                {
-                    "name": "New2",
-                    "clock_type": "threat",
-                    "segments": 4,
-                    "filled": 0,
-                    "trigger_description": "Door opens",
-                    "owner": "world",
-                }
-            ],
-        },
-        clocks_mode="extend",
-    )
-    assert len(game.world.clocks) == 2
+
+def test_opening_setup_schema_leaves_clocks_and_time_to_the_engine(stub_all: None) -> None:
+    from straightjacket.engine.ai.schemas import get_opening_setup_schema
+
+    properties = get_opening_setup_schema()["properties"]
+    assert "clocks" not in properties
+    assert "time_of_day" not in properties

@@ -4,7 +4,6 @@ import pytest
 
 from straightjacket.engine.ai.provider_base import AICallSpec, AIResponse
 from straightjacket.engine.models import GameState
-from tests._helpers import make_game_state
 
 
 class _SmartMockProvider:
@@ -63,20 +62,13 @@ class _SmartMockProvider:
                 ),
                 usage={"input_tokens": 10, "output_tokens": 10},
             )
-        if "pass" in props and "violations" in props:
-            return AIResponse(
-                content=json.dumps({"pass": True, "violations": [], "correction": ""}),
-                usage={"input_tokens": 10, "output_tokens": 10},
-            )
-        if "npcs" in props and "clocks" in props:
+        if "npcs" in props and "scene_context" in props:
             return AIResponse(
                 content=json.dumps(
                     {
                         "npcs": [],
-                        "clocks": [],
                         "location": "Drift Station",
                         "scene_context": "Quiet morning",
-                        "time_of_day": "morning",
                         "memory_updates": [],
                         "deceased_npcs": [],
                     }
@@ -225,21 +217,6 @@ def test_start_new_game_with_user_persists_content_lines(load_engine: None, tmp_
     finally:
         close_db()
     assert game.preferences.content_lines == "no spiders, no body horror"
-
-
-def test_apply_opening_setup_routes_to_apply(load_engine: None, stub_all: None) -> None:
-    from straightjacket.engine.game.game_start import _apply_opening_setup
-
-    g = make_game_state(player_name="X", setting_id="starforged")
-    g.world.current_location = "Tavern"
-    data = {
-        "clocks": [],
-        "location": "Tavern",
-        "scene_context": "Quiet",
-        "time_of_day": "morning",
-    }
-    _apply_opening_setup(g, data)
-    assert g.world.current_scene_context == "Quiet"
 
 
 def test_valid_ranks_returns_set(load_engine: None) -> None:

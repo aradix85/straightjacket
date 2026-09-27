@@ -85,20 +85,14 @@ def call_opening_setup(
 ) -> dict[str, Any]:
     lang = get_narration_lang(config or EngineConfig())
 
-    _opening = eng().opening
-    system = get_prompt(
-        "opening_setup_extractor",
-        lang=lang,
-        clock_segments=str(_opening.clock_segments),
-        clock_filled=str(_opening.clock_filled),
-    )
+    system = get_prompt("opening_setup_extractor", lang=lang)
     _defaults = eng().ai_text.narrator_defaults
 
     prompt = f"""<narration>{narration}</narration>
 <player_character>{game.player_name}</player_character>
 <world genre="{game.setting_genre}" tone="{game.setting_tone}">{game.setting_description}</world>
 <current_location>{game.world.current_location or _defaults["unknown_location"]}</current_location>
-Extract all NPCs, clocks, location, scene context, time of day, and initial NPC memories from the opening narration above.
+Extract all NPCs, the location, the scene context, and initial NPC memories from the opening narration above.
 IMPORTANT: {game.player_name} is the PLAYER CHARACTER — do NOT include them as an NPC. NPCs are OTHER characters the player meets."""
 
     try:
@@ -112,21 +106,15 @@ IMPORTANT: {game.player_name} is the PLAYER CHARACTER — do NOT include them as
         )
         response = create_with_retry(provider, spec)
         data: dict[str, Any] = json.loads(response.content)
-        log(
-            f"[OpeningSetup] Extracted: {len(data['npcs'])} NPCs, "
-            f"{len(data['clocks'])} clocks, "
-            f"loc={data['location']}, time={data['time_of_day']}"
-        )
+        log(f"[OpeningSetup] Extracted: {len(data['npcs'])} NPCs, loc={data['location']}")
         return data
     except Exception as e:
         log(f"[OpeningSetup] Extraction failed: {e}", level="warning")
         defaults = eng().ai_text.narrator_defaults
         return {
             "npcs": defaults["opening_setup_fallback_npcs"],
-            "clocks": defaults["opening_setup_fallback_clocks"],
             "location": defaults["opening_setup_fallback_location"],
             "scene_context": defaults["opening_setup_fallback_scene_context"],
-            "time_of_day": defaults["unknown_time"],
             "memory_updates": defaults["opening_setup_fallback_memory_updates"],
         }
 

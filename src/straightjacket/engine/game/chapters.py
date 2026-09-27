@@ -168,7 +168,7 @@ def _reset_chapter_mechanics(game: GameState) -> None:
     game.narrative.narration_history = []
     game.narrative.scene_intensity_history = []
     game.narrative.story_blueprint = None
-    game.world.time_of_day = ""
+    game.world.time_of_day = eng().opening.time_of_day
     game.world.location_history = []
     game.narrative.director_guidance = DirectorGuidance()
 
@@ -243,7 +243,7 @@ def _generate_chapter_opening(
     setup_data = {}
     if not new_parser_npcs:
         setup_data = call_opening_setup(provider, narration, game, config)
-        _apply_chapter_opening_setup(game, setup_data, returning_npcs)
+        apply_opening_setup(game, setup_data, returning_npcs=returning_npcs, label="ChapterSetup")
     else:
         log(f"[Campaign] New NPCs already extracted by parser ({len(new_parser_npcs)}), skipping opening_setup call")
 
@@ -299,7 +299,3 @@ def _record_chapter_opening(game: GameState, narration: str) -> None:
             result="opening",
         )
     )
-
-
-def _apply_chapter_opening_setup(game: GameState, data: dict[str, Any], returning_npcs: list[NpcData]) -> None:
-    apply_opening_setup(game, data, returning_npcs=returning_npcs, clocks_mode="extend", label="ChapterSetup")

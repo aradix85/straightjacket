@@ -58,7 +58,6 @@ ai_text:
     chapter_summary_fallback_npc_evolutions: []
     chapter_summary_fallback_thematic_question: ''
     opening_setup_fallback_npcs: []
-    opening_setup_fallback_clocks: []
     opening_setup_fallback_location: ''
     opening_setup_fallback_scene_context: ''
     opening_setup_fallback_memory_updates: []

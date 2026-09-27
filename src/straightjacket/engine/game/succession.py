@@ -5,6 +5,7 @@ import random as _random_module
 from concurrent.futures import ThreadPoolExecutor
 
 from ..ai.blueprint_voicing import call_blueprint_voicing
+from ..ai.metadata import process_deceased_npcs
 from ..ai.narrator import call_narrator, call_opening_setup
 from ..ai.provider_base import AIProvider
 from ..datasworn.loader import extract_title
@@ -39,6 +40,7 @@ from ..models import (
 )
 from ..parser import parse_narrator_response
 from ..prompt_boundary import build_new_game_prompt
+from .setup_common import apply_opening_setup
 from .chapters import (
     _apply_blueprint,
     _close_previous_chapter,
@@ -122,7 +124,7 @@ def _reset_for_successor(
     game.campaign.epilogue_text = ""
 
     game.world.clocks = []
-    game.world.time_of_day = ""
+    game.world.time_of_day = _e.opening.time_of_day
     game.world.location_history = []
 
     game.narrative.session_log = []
@@ -295,7 +297,10 @@ def _generate_succession_opening(provider: AIProvider, game: GameState, config: 
     _apply_blueprint(game, seed, voicing)
 
     if not [n for n in game.npcs if n.introduced]:
-        _ = call_opening_setup(provider, narration, game, config)
+        setup_data = call_opening_setup(provider, narration, game, config)
+        apply_opening_setup(game, setup_data, returning_npcs=list(game.npcs), label="SuccessionSetup")
+        if setup_data.get("deceased_npcs"):
+            process_deceased_npcs(game, setup_data["deceased_npcs"])
 
     return narration
 

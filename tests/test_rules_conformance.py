@@ -210,11 +210,11 @@ def test_a_full_legacy_track_clears_and_then_earns_one_experience_per_box(load_e
     assert game.campaign.xp == 3
 
 
-@pytest.mark.parametrize(("requested", "expected"), [(3, 4), (4, 4), (5, 6), (6, 6), (7, 8), (10, 8)])
-def test_clocks_use_blades_sizes(load_engine: None, requested: int, expected: int) -> None:
-    from straightjacket.engine.game.setup_common import conform_clock_segments
+def test_clocks_use_blades_sizes(load_engine: None) -> None:
+    from straightjacket.engine.engine_loader import eng
 
-    assert conform_clock_segments(requested) == expected
+    assert eng().clocks.default_segments in (4, 6, 8)
+    assert eng().opening.clock_segments in (4, 6, 8)
 
 
 def test_mythic_lists_hold_an_entry_at_most_three_times(load_engine: None) -> None:

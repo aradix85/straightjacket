@@ -9,6 +9,20 @@ Entries up to 2026.09.26.19 were shortened to their essentials, in 2026.09.26.1 
 
 Calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day. The first CalVer release is 2026.04.25.0; earlier `0.x.y` releases keep their numbers.
 
+## [2026.09.27.1] — 2026-09-27
+
+Openings: the engine owns the opening clock and the time of day, and a succession applies its opening extraction instead of discarding it.
+
+Cause. `opening_setup_extractor` asked for a threat clock and a time of day although the engine sets both before the opening narration. At a new game `apply_world_setup` then replaced every clock with the model's, including the engine's clock named after the background vow, with a size the model chose, and overwrote the time. A chapter opening added the model's clock and took its time only from the extraction, which left the time empty for the whole chapter whenever the extraction was skipped. A succession made the extraction call and threw the answer away, so the successor's opening NPCs were never registered.
+
+Changes. The opening extraction returns NPCs, their first memories, deceased NPCs, the location, and the scene context; its prompt, schema, fallback, and log line lose the clock and the time. Every opening (new game, chapter, succession) starts at `opening.time_of_day`; only a new game gets an opening clock, so chapters and successions get their clocks from Adventure Crafter plot points and random events like the rest of play. A succession applies its extraction, deceased NPCs included, and skips NPCs already in play. With no clock left from a model, `conform_clock_segments`, `allowed_segments`, and the parser for setup clocks are gone; the rules-conformance test now checks that the configured clock sizes are Blades sizes. The wrappers `_apply_opening_setup` and `_apply_chapter_opening_setup`, a string replace that changed nothing, and dead validator mocks in two tests are removed. Two new tests (the schema leaves clocks and time to the engine; a succession registers its opening NPCs and keeps the engine's time) fail without the change.
+
+Roadmap. Step 9a's odds are decided by the user: each fact type names its own base odds and the game state that shifts them, the chaos factor stays out of the score because the fate chart already reads it, and the score converts to odds through `score_to_odds`.
+
+Checked: two Elvira sessions in Sundered Isles. `near_death` (aggressor, eight turns) reached game over and succession; `chapter_end` (explorer, five turns) reached the chapter transition, and its final save holds the engine's time of day and one clock from a random event. No engine warning or error in either; the four problems are narration audits of 3 or 4 out of 10 for misses that still give a lead (roadmap priority 3). The successor in `near_death` kept an introduced NPC, so its opening extraction was not called in play; the new unit test covers that path. In `chapter_end` a returning NPC and a new NPC of almost the same name stood side by side in chapter two (roadmap priority 2). About 28 cents for both sessions before caching.
+
+Quality gate: 1489 tests green (five fewer: the clock-size cases and the wrapper tests went with their code), twenty-nine project-rule scans clean, coverage 90.15%, ruff check and ruff format clean on 208 files, mypy --strict clean on 109 source files. Save format unchanged.
+
 ## [2026.09.27.0] — 2026-09-27
 
 Documentation only: the working documents slimmed down and restructured along common practice, with duplicates and claims the code contradicts removed, and roadmap step 9 split so that fate comes back first.

@@ -309,7 +309,7 @@ def start_new_game(
     setup_data = {}
     if not game.npcs:
         setup_data = call_opening_setup(provider, narration, game, config)
-        _apply_opening_setup(game, setup_data)
+        apply_opening_setup(game, setup_data, label="OpeningSetup")
 
     for npc in game.npcs:
         npc.introduced = True
@@ -344,7 +344,3 @@ def start_new_game(
     _db_sync(game)
 
     return game, narration
-
-
-def _apply_opening_setup(game: GameState, data: dict[str, Any]) -> None:
-    apply_opening_setup(game, data, clocks_mode="replace", label="OpeningSetup")

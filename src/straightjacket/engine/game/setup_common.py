@@ -4,40 +4,9 @@ from collections.abc import Sequence
 
 from ..engine_loader import eng
 from ..logging_util import log
-from ..mechanics import time_phases, update_location
-from ..mechanics.keyed_scenes import spawn_keyed_scenes_for_clock
-from ..mechanics.spawn_sources import SETUP_SOURCE
-from ..models import ClockData, GameState, MemoryEntry, NpcData
+from ..mechanics import update_location
+from ..models import GameState, MemoryEntry, NpcData
 from ..npc import apply_name_sanitization, normalize_npc_dispositions, score_importance
-
-
-def conform_clock_segments(requested: int) -> int:
-    allowed = eng().clocks.allowed_segments
-    chosen = min(allowed, key=lambda size: (abs(size - requested), -size))
-    if chosen != requested:
-        log(f"[Clock] {requested} segments is not a clock size; using {chosen}")
-    return chosen
-
-
-def _clock_from_setup_dict(c: dict[str, Any]) -> ClockData:
-    segments = conform_clock_segments(int(c["segments"]))
-    raw_owner = c["owner"]
-    if raw_owner in ("", "world"):
-        owner_kind = "world"
-        owner_id: str | None = None
-    else:
-        owner_kind = "npc"
-        owner_id = raw_owner
-    return ClockData(
-        name=c["name"],
-        clock_type=c["clock_type"],
-        segments=segments,
-        trigger_description=c["trigger_description"],
-        owner_kind=owner_kind,
-        owner_id=owner_id,
-        creation_source=SETUP_SOURCE,
-        filled=min(int(c["filled"]), segments),
-    )
 
 
 def _find_npc_by_name(npcs: list[NpcData], npc_name: str) -> NpcData | None:
@@ -126,34 +95,11 @@ def seed_opening_memories(
         target.importance_accumulator = target.importance_accumulator + imp
 
 
-def apply_world_setup(game: GameState, data: dict[str, Any], *, clocks_mode: str = "replace") -> None:
-    if data.get("clocks"):
-        clocks = [_clock_from_setup_dict(c) for c in data["clocks"]]
-        if clocks_mode == "replace":
-            game.world.clocks = clocks
-        else:
-            game.world.clocks.extend(clocks)
-        log(f"[Setup] Created {len(clocks)} clocks")
-        for clock in clocks:
-            spawn_keyed_scenes_for_clock(game.narrative, clock)
-
-    if data.get("location"):
-        update_location(game, data["location"])
-
-    if data.get("scene_context"):
-        game.world.current_scene_context = data["scene_context"]
-
-    tod = data.get("time_of_day", "")
-    if tod and tod.replace(" ", "_") in time_phases():
-        game.world.time_of_day = tod.replace(" ", "_")
-
-
 def apply_opening_setup(
     game: GameState,
     data: dict[str, Any],
     *,
     returning_npcs: Sequence[NpcData] = (),
-    clocks_mode: str = "replace",
     label: str = "OpeningSetup",
 ) -> None:
     skip_names: set[str] = {n.name.lower().strip() for n in returning_npcs}
@@ -180,6 +126,10 @@ def apply_opening_setup(
             log(f"[{label}] Registered {len(game.npcs)} NPCs: {[n.name for n in game.npcs]}")
 
     if data.get("memory_updates"):
-        seed_opening_memories(game, data["memory_updates"], label=label.lower().replace("setup", "setup"))
+        seed_opening_memories(game, data["memory_updates"], label=label.lower())
 
-    apply_world_setup(game, data, clocks_mode=clocks_mode)
+    if data.get("location"):
+        update_location(game, data["location"])
+
+    if data.get("scene_context"):
+        game.world.current_scene_context = data["scene_context"]

@@ -9,7 +9,7 @@ Every AI call carries its own role name (`AICallSpec.log_role`), and every role 
 - `brain` turns the player's input into a move, a stat, a roll bonus, a target NPC, and a new track's name and rank (`ai/brain.py` → `call_brain`). The game state is injected into its prompt, and its output schema offers only the available moves, the offered bonuses, the listed NPCs, and the active tracks; `call_brain` refuses anything else.
 - `narrator` writes the prose, with conversation memory (`ai/narrator.py`).
 - `narrator_metadata` reads the finished narration and extracts NPC data (new NPCs, renames, details, deaths), which `ai/metadata.py` applies to the game state.
-- `opening_setup` extracts the same kind of data from the opening scene.
+- `opening_setup` extracts the NPCs, their first memories, the location, and the scene context from the opening of a new game, a chapter, or a succession; the opening clock and the time of day are the engine's (`docs/mechanics.md`).
 - `revelation_check` decides whether a planned revelation has happened in the story (`ai/brain.py` → `call_revelation_check`).
 - `recap`, `chapter_summary`, and `blueprint_voicing` write the player-facing recap, the summary kept in campaign history, and a setting-specific story blueprint from an Adventure Crafter seed (`ai/recap.py`, `ai/chapter_summary.py`, `ai/blueprint_voicing.py`).
 - `director` writes NPC reflections after the turn (`director.py`).

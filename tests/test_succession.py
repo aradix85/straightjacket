@@ -476,11 +476,6 @@ class _SuccessionMockProvider:
                 content=json.dumps({"pass": True, "violations": [], "fixed_conflict": "", "fixed_antagonist": ""}),
                 usage={"input_tokens": 10, "output_tokens": 10},
             )
-        if "pass" in props and "violations" in props:
-            return AIResponse(
-                content=json.dumps({"pass": True, "violations": [], "correction": ""}),
-                usage={"input_tokens": 10, "output_tokens": 10},
-            )
         if "title" in props and "summary" in props and "unresolved_threads" in props:
             return AIResponse(
                 content=json.dumps(
@@ -496,15 +491,22 @@ class _SuccessionMockProvider:
                 ),
                 usage={"input_tokens": 10, "output_tokens": 10},
             )
-        if "npcs" in props and "clocks" in props:
+        if "npcs" in props and "scene_context" in props:
             return AIResponse(
                 content=json.dumps(
                     {
-                        "npcs": [],
-                        "clocks": [],
+                        "npcs": [
+                            {
+                                "name": "Mara Voss",
+                                "description": "A ferrywoman",
+                                "agenda": "Keep the crossing open",
+                                "instinct": "Bargain first",
+                                "secrets": ["She owes the toll-keeper"],
+                                "disposition": "neutral",
+                            }
+                        ],
                         "location": "Memorial",
                         "scene_context": "A new dawn",
-                        "time_of_day": "morning",
                         "memory_updates": [],
                         "deceased_npcs": [],
                     }
@@ -613,3 +615,22 @@ def test_start_succession_records_session_log(aria: GameState) -> None:
 
     assert len(game.narrative.session_log) == 1
     assert game.narrative.session_log[0].result == "opening"
+
+
+def test_start_succession_applies_the_opening_setup_and_the_engines_time(aria: GameState) -> None:
+    from straightjacket.engine.db.connection import close_db, reset_db
+    from straightjacket.engine.engine_loader import eng
+
+    aria.npcs = []
+    aria.world.current_location = "Tavern"
+    prepare_succession(aria, "death")
+
+    reset_db()
+    try:
+        game, _ = start_succession_with_character(_SuccessionMockProvider(), aria, _successor_creation_data())
+    finally:
+        close_db()
+
+    assert [n.name for n in game.npcs] == ["Mara Voss"]
+    assert game.world.current_scene_context == "A new dawn"
+    assert game.world.time_of_day == eng().opening.time_of_day

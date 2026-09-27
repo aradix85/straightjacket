@@ -52,12 +52,13 @@ def test_reset_chapter_mechanics_resets_resources(load_engine: None) -> None:
 
 
 def test_reset_chapter_mechanics_clears_world_state(load_engine: None) -> None:
+    from straightjacket.engine.engine_loader import eng
     from straightjacket.engine.game.chapters import _reset_chapter_mechanics
 
     g = _populated_game(None)
     _reset_chapter_mechanics(g)
     assert g.world.clocks == []
-    assert g.world.time_of_day == ""
+    assert g.world.time_of_day == eng().opening.time_of_day
     assert g.world.location_history == []
 
 
@@ -346,18 +347,3 @@ def test_generate_epilogue_raises_on_empty_narration(load_engine: None, stub_all
     g = make_game_state(player_name="Aria", setting_id="starforged")
     with pytest.raises(AIUnavailableError, match="empty narration"):
         generate_epilogue(provider, g)
-
-
-def test_apply_chapter_opening_setup_routes_to_apply(load_engine: None, stub_all: None) -> None:
-    from straightjacket.engine.game.chapters import _apply_chapter_opening_setup
-
-    g = make_game_state(player_name="X", setting_id="starforged")
-    g.world.current_location = "Tavern"
-    data = {
-        "clocks": [],
-        "location": "Tavern",
-        "scene_context": "Quiet morning",
-        "time_of_day": "morning",
-    }
-    _apply_chapter_opening_setup(g, data, returning_npcs=[])
-    assert g.world.current_scene_context == "Quiet morning"

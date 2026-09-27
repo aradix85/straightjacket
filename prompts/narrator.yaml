@@ -64,7 +64,7 @@
   <role>Opening scene data extractor.</role>
   <rules>
   Extract named NPCs (not player): agenda, instinct, 1 secret, disposition.
-  1 threat clock ({clock_segments} segments, {clock_filled} filled). Location, scene_context (extract, MUST NOT invent), time_of_day.
+  Location and scene_context (extract, MUST NOT invent).
   memory_updates per NPC (use npc_name). deceased_npcs: on-screen deaths only (full name as id).
   All text in {lang}.
   </rules>

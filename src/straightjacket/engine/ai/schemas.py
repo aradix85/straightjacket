@@ -246,8 +246,6 @@ def get_opening_setup_schema() -> dict[str, Any]:
     if _opening_cache is None:
         _e = eng()
         dispositions = list(_e.enums.dispositions)
-        time_phases = list(_e.enums.time_phases)
-        clock_types = [ct for ct in _e.enums.clock_types if ct != "scheme"]
         _opening_cache = _obj_root(
             {
                 "npcs": _arr(
@@ -262,22 +260,8 @@ def get_opening_setup_schema() -> dict[str, Any]:
                         }
                     )
                 ),
-                "clocks": _arr(
-                    _obj(
-                        {
-                            "id": _str(),
-                            "name": _str(),
-                            "clock_type": _str_enum(clock_types),
-                            "segments": _int(),
-                            "filled": _int(),
-                            "trigger_description": _str(),
-                            "owner": _str(),
-                        }
-                    )
-                ),
                 "location": _str(),
                 "scene_context": _str(),
-                "time_of_day": _str_enum(time_phases),
                 "memory_updates": _arr(
                     _obj(
                         {
