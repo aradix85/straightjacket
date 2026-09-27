@@ -1,223 +1,127 @@
 # AUDIT
 
-Operational document for Claude. Tells Claude how to audit this codebase against the five principles below. Stateful: the status section at the bottom tracks which principles have been audited and which are next.
+How to audit this codebase against the five principles below. Stateful: the Status section at the bottom records what has been audited.
 
-## Why this document exists
+Earlier audits produced false reassurance: asked "is the codebase config-driven?", Claude answered "yes" while significant parts were still hardcoded. So an audit never gives a verdict. It produces an exhaustive hit-list the user can verify; zero hits and eighty hits are both valid answers, a selective summary is not.
 
-Earlier audit attempts in this codebase produced false reassurances. Claude was asked "is the codebase config-driven?" and answered "yes" while significant parts were still hardcoded. This document exists to prevent that failure mode by removing yes/no questions from the audit interface and replacing them with exhaustive hit-lists that the user can verify.
+## Scope and order
 
-Default behavior is full enumeration, not summary judgment. If a principle's audit produces a hit-list of zero items, that is the answer. If it produces 80 items, that is the answer. Both are valid; selective summary is not.
+1. Work in the local repository.
+2. Read `ARCHITECTURE.md` and `CONTRIBUTING.md` in full: they define where things live and which exceptions to the project rules exist. Without them, violations and carve-outs get misclassified.
+3. Read this document in full, then take the next open item from Status.
 
-## Terms
-
-**Chat.** A single continuous Claude.ai conversation, opened fresh with empty context, ending when the user signals completion. One chat may span multiple tool-budget cutoffs internally, but context, working files, and pending state carry across those cutoffs within the same chat. A new chat starts when the user opens a new conversation; previous chat context does not transfer except through this document and the fix-files it produces.
-
-The unit "one chat" in this document means one such conversation, not one user message and not one tool-budget window. When the document says "one principle per chat" or "one submodule per chat", it means the full conversation, however long it runs, is dedicated to that scope.
-
-## Reading order
-
-Every audit chat must follow this order before producing any output:
-
-1. Work in the local clone, or clone the repo if there is none.
-2. Read `ARCHITECTURE.md` in full. This document defines what the codebase is, where things live, and which carve-outs apply to the strict rules. Audits without this context misclassify violations and carve-outs.
-3. Read this document (`AUDIT.md`) in full.
-4. Check the Status section at the bottom of this document. Identify the next open principle to audit, and within that principle the next open submodule (if the principle is being audited per submodule).
-5. Then begin work on that principle, or that submodule within the principle.
-
-## Chat scope
-
-One audit chat covers exactly one of the following: one full principle, or one submodule within an interpretive principle that requires per-submodule work. Do not attempt to combine principles. If a principle finishes faster than expected, do not opportunistically start the next one — the energy budget for an audit chat belongs to the user, not to the LLM's sense of efficiency.
-
-The mechanical principles (2, 4) are typically one principle per chat — the greps do the heavy lifting and the hit-list is compact. The interpretive principles (1, 3, 5) are typically one submodule per chat — each hit requires a short classification, `needs human judgment` items require explanation the user can act on, and the per-chat cost compounds with each submodule. The Status section tracks submodule-level progress for these.
-
-Halfway is a legitimate stopping point. If a chat ends with three of seven submodules audited for Principle 1, that is a successful chat, not a failed one. Update the Status section to record progress and add a hand-off note in Notes for the next chat.
+One audit session covers one principle, or for the interpretive principles (1, 3, 5) one submodule. The mechanical principles (2, 4) usually fit in one session. Do not combine principles or start the next one because time is left. Stopping halfway is a successful session: record the progress in Status and a hand-off note in Notes.
 
 ## Working method
 
-The audit interface is a list of hits, never a verdict. The following rules apply to every audit, regardless of which principle is being audited.
+**Hit-lists, never verdicts.** "Is principle X satisfied?" becomes "where does the codebase fail principle X?", answered with a list, even an empty one.
 
-**No yes/no questions.** Audit questions are reformulated as "where does the codebase fail principle X?" and the answer is a hit-list. Do not answer "is principle X satisfied" with "yes" or "mostly yes" — answer with the hit-list, even if the hit-list has zero items.
+**Grep first, reason second.** Whatever can be a grep query is run as one before any reading; the result is the candidate list, and reasoning happens per hit. Every query is logged with its exact pattern and result count. Where a principle needs reasoning that no grep captures, say so and read file by file within one submodule.
 
-**Grep first, reason second.** For any pattern that can be expressed as a grep query, the grep is run before any reading or reasoning. The grep result is the candidate hit-list. Reasoning happens per-hit, not before the grep. Every grep query run in a chat is logged with its exact pattern and result count, and that log appears in the chat-summary so the user can verify which passes were executed. If a principle requires reasoning that cannot be reduced to a grep, state explicitly that this part is non-mechanical and proceed with file-by-file reading within a defined scope (typically one submodule at a time).
+**Read context before classifying.** Open each hit and read at least ten lines around it; never classify from the grep line alone.
 
-**Read context before classifying.** For each grep hit, open the file at the line and read at least 10 lines of surrounding context before classifying it as violation or carve-out. Do not classify based on the grep snippet alone.
+**Carve-outs need a documented anchor.** A hit is a carve-out only if an explicit exception covers it: in CONTRIBUTING.md's Project rules (the AI-call carve-out and the default exceptions) or in ARCHITECTURE.md (a named pattern such as `get_raw` or the re-export hubs). A hit that looks legitimate without such an anchor is marked `needs human judgment`.
 
-**Carve-outs require an anchor in ARCHITECTURE.md.** A hit is a carve-out only if it matches an explicit exception documented in `ARCHITECTURE.md` (Project rules, Key Design Decisions, or a named pattern such as `get_raw` or the AI-call exception). Do not classify a hit as carve-out based on inference, plausibility, or "this looks reasonable." If a hit appears legitimate but no documented exception covers it, mark it as `needs human judgment`, not as carve-out.
+**Mark uncertainty, do not resolve it.** Unclear hits are marked `needs human judgment` with one sentence on why. Do not guess.
 
-**Mark uncertainty, do not resolve it.** For any hit where classification is unclear, mark it explicitly as `needs human judgment` with a one-sentence note about why. Do not guess. The user's review of these markers is part of the audit, not a sign of failure.
+**No skipping by file name.** Exclusions are encoded in the grep query, never applied afterwards.
 
-**No skipping based on file names.** The grep determines coverage. Do not skip files because they look uninteresting, deprecated, or out-of-scope. If a file should be excluded, the exclusion is encoded in the grep query, not in post-grep filtering.
+**Dynamic access defaults to `needs human judgment`.** Symbols reached through `getattr` with a variable name, runtime-built dict keys, fixture injection, schema generation, or serialization are invisible to grep; never declare them dead on grep alone.
 
-**Dynamic access defaults to `needs human judgment`.** Symbols accessed via `getattr(obj, name)` where `name` is a variable, dict-keys constructed at runtime, fixture-injection, schema generation, or serialization are invisible to grep. Any symbol whose only writers or readers exist via these patterns is marked `needs human judgment`, not as dead. Do not declare a symbol dead based on grep alone if dynamic-access patterns exist anywhere in its module.
+**List before counting.** Every hit is listed before any count or summary.
 
-**No premature summary.** List every hit before producing any count or summary. The list is the audit. Counts and patterns come after the list, not instead of it.
-
-**Cross-pass dedupe.** Several principles share grep-passes (Pass 2d and Pass 4a both examine dataclass defaults; Pass 3c and Pass 5e both examine single-use functions). Each violation is assigned to exactly one principle in the fix-file — the principle whose pass first surfaced it. When auditing a later principle that reuses an earlier pass, reference the earlier fix-file entry rather than re-listing the hit. If a violation legitimately fails two principles, name both principles in the single fix-file entry and assign it to the lower-numbered principle.
+**Each violation belongs to one principle.** Several passes overlap (2d and 4a on dataclass defaults, 3c and 5e on single-use functions). A violation is listed once, under the principle whose pass found it first; a later principle references that entry. A violation that fails two principles names both and sits under the lower number.
 
 ## Output
 
-Each audit chat produces the following. Items 1, 2, and 4 are outputs; item 3 is the rule for how the fix-file grows across chats.
-
-1. **Fix-file** for the audited principle, named `fix_principle<N>.md` where `<N>` is the principle number (1 through 5). This file contains every violation found, with file path, line number, one-sentence classification, and (for clear violations) a brief note on what the fix should be. Carve-outs are not listed in the fix-file. `needs human judgment` items are listed with a separate marker so the user can review before the fix-round runs. When a violation also fails a different principle, both principles are named in the entry.
-
-2. **Updated `AUDIT.md`** with the Status section reflecting what this chat covered — the full principle for mechanical audits, or the specific submodule(s) within a principle for interpretive audits. If notes for the next chat are relevant (e.g. patterns to watch for, where to pick up next), they go in the Notes section.
-
-3. **Fix-file growth.** For interpretive principles spanning multiple chats, the fix-file is appended to across chats, not overwritten. Each chat's contribution is dated and labelled with the submodule audited.
-
-4. **Summary message for the user.** Format: number of violations found in this chat, distribution by file as prose, number of items marked `needs human judgment` with file-and-line for up to five of them, and the grep log — every grep pattern run in this chat with its result count. Keep prose tight. The full hit-list lives in the fix-file. The summary exists for the user to verify proportions and pass-coverage, not to read the full audit.
+1. A fix-file `fix_principle<N>.md`: every violation with path, line, a one-sentence classification, and for clear violations a short note on the fix. Carve-outs are not listed; `needs human judgment` items carry a separate marker. For interpretive principles the file grows across sessions, each contribution dated and labelled with its submodule.
+2. This document's Status and Notes updated.
+3. A short summary for the user: the number of violations and their spread over files, up to five `needs human judgment` items with file and line, and the grep log.
 
 ## The five principles
 
-Each principle below is the operational version. Philosophical motivation is intentionally omitted; this document is for executing audits, not for explaining the codebase.
-
 ### Principle 1 — High modularity
 
-The codebase aims for one concern per file, with `.py` and corresponding `.yaml` paired where the module has configurable behavior. Smaller files are preferred over larger files when the responsibility can be split without forcing artificial abstractions.
+One concern per file, with `.py` and `.yaml` paired where a module has configurable behavior; smaller files preferred where a split does not force artificial abstractions. Audited per submodule under `src/straightjacket/engine/`: list every Python file with its line count and public functions.
 
-This principle is interpretive. It is audited per submodule, not codebase-wide in one pass. For each submodule under `src/straightjacket/engine/`, list every Python file with its line count and its public functions. The audit proceeds in two separate steps — mechanical flagging first, concern-analysis second — and the two outputs are kept distinct in the fix-file.
+**Step 1a — Mechanical flagging.** Flag every file over 400 lines. Line count is a lookup signal, not a verdict.
 
-**Step 1a — Mechanical flagging.** Flag every file that exceeds 400 lines. List file path and line count. Do not classify as violation based on line count alone — line count is a lookup signal, not a verdict.
+**Step 1b — Concern analysis.** For each flagged file, and each file with a nameable reason for suspicion (for example "this filename suggests two domains"), examine the public API and classify: violation (two or more distinct concerns that split without artificial coupling), legitimate (one large concern), or `needs human judgment`.
 
-**Step 1b — Concern analysis.** For each flagged file from Step 1a, plus every file the auditor has substantive reason to suspect (gut-feeling not allowed; the reason must be nameable, e.g. "this filename suggests two domains"), examine the public API. Classify as: violation (two or more clearly distinct concerns that could split without forcing artificial coupling), legitimate (one concern, file is large because the concern is large), or `needs human judgment` (split is non-obvious or would create artificial abstraction).
-
-Carve-outs: re-export hubs (`models.py`, `__init__.py` files exposing subpackage public API) are not modularity violations. ARCHITECTURE.md "Subpackage public API via `__init__.py`" documents this pattern.
+Carve-outs: re-export hubs (`models.py`, `__init__.py` files), per "Subpackage public API via `__init__.py`" in ARCHITECTURE.md.
 
 ### Principle 2 — Config-driven
 
-No hardcoded defaults in Python for values that belong in YAML. No hardcoded user-facing strings in Python. Anything that a translator, designer, or game-rules editor would want to change without touching Python belongs in YAML.
+The rules "Domain config keys raise on a miss" and "Readable strings live in yaml" in CONTRIBUTING.md. Anything a translator, designer, or rules editor would change without touching Python belongs in YAML.
 
-This principle is highly grep-able. Audit in the following passes:
+**Pass 2a — User-facing strings.** Grep `src/straightjacket/` for literals that look like narration, error messages, UI labels, or AI prompts, and cross-reference `strings/*.yaml` and `prompts/*.yaml`. A user-, narrator-, or AI-readable string not loaded from YAML is a violation.
 
-**Pass 2a — Hardcoded user-facing strings.** Grep `src/straightjacket/` for string literals that match patterns of narration, error messages, UI labels, or AI prompts. Cross-reference against `strings/*.yaml`, `prompts/*.yaml`. A hit is a violation if the string is user-facing, narrator-facing, or AI-readable and is not loaded from a YAML file.
+**Pass 2b — Numeric thresholds.** Grep numeric literals in `mechanics/`, `npc/`, `game/`, and `ai/`, cross-referenced with `engine/*.yaml`. A domain threshold, limit, or rule is a violation; a structural constant (loop bound, index) is not.
 
-**Pass 2b — Hardcoded numeric thresholds.** Grep for numeric literals in domain modules (`mechanics/`, `npc/`, `game/`, `ai/`). Cross-reference against `engine/*.yaml`. A hit is a violation if the number represents a domain threshold, limit, or rule (e.g. damage cap, NPC limit, scene-type chance) rather than a structural constant (loop bound, enum value, list index).
+**Pass 2c — Mappings.** Grep dict and set literals in domain modules that hold domain keys (move names, dispositions, statuses). A mapping that should extend without Python changes is a violation.
 
-**Pass 2c — Hardcoded mappings.** Grep for dict literals or set literals in domain modules that contain domain-data keys (move names, NPC dispositions, status names). A hit is a violation if the mapping should be in YAML for extensibility.
+**Pass 2d — Dataclass defaults.** Grep `field(default=`, `field(default_factory=`, and `=` defaults on dataclass fields in `src/straightjacket/engine/`. A violation unless it is one of the three exceptions under "Domain config keys raise on a miss" in CONTRIBUTING.md; the optional fields of `AICallSpec` in `ai/provider_base.py` count as external-boundary parsing. `_check_no_dataclass_defaults_in_config_binding` covers the config binding mechanically; this pass covers every other dataclass.
 
-**Pass 2d — Dataclass defaults outside the three carve-outs.** Grep for `field(default=`, `field(default_factory=`, and direct `=` defaults on dataclass fields in `src/straightjacket/engine/`. A hit is a violation unless it matches one of the three documented carve-outs in ARCHITECTURE.md "Project rules": empty collections via `field(default_factory=list/dict)`, external-boundary parsing where the field is intrinsically optional per contract, or AI-call fields that are part of a documented retry-fallback dict. The optional fields of `AICallSpec` in `ai/provider_base.py` model the external AI API shape and fall under external-boundary parsing (CHANGELOG 2026.04.27.10). Note that the mechanical scan `_check_no_dataclass_defaults_in_config_binding` does not cover this pass; see Notes.
-
-Carve-outs anchored in ARCHITECTURE.md: the `get_raw` pattern for yaml whose keys are domain-data, the AI-call exception carve-out for the files in `_AI_CALL_CARVE_OUT_FILES`, the `theme_die_table` cross-validation pattern.
+Carve-outs: the `get_raw` pattern for yaml whose keys are domain data, the AI-call carve-out files in `_AI_CALL_CARVE_OUT_FILES`, the `theme_die_table` cross-validation.
 
 ### Principle 3 — No defensive programming, no boilerplate, no dead structure
 
-Errors propagate. Guards against impossible states are violations. Try/except clauses that catch broad exceptions outside the documented carve-out are violations. Functions that exist to wrap a single call without adding logic are violations. Classes with one instance, options always set the same way, abstractions used in only one place — all violations.
+"Errors propagate" in CONTRIBUTING.md, plus the structure that adds nothing: guards against impossible states, wrappers without logic, classes with one instance, options always set the same way, and abstractions used once are violations.
 
-This principle has both grep-able and reasoning components.
+**Pass 3a — Broad except.** Grep `except Exception`, `except:`, `except BaseException`, cross-referenced with `_AI_CALL_CARVE_OUT_FILES` in `tests/test_project_rules.py`, the authoritative carve-out list. A hit outside those files is a violation, and so is one inside them around a non-AI operation (config loading, yaml parsing, persistence, input validation, domain rules).
 
-**Pass 3a — Broad except clauses outside the AI-call carve-out.** Grep for `except Exception`, `except:`, `except BaseException`. Cross-reference against `_AI_CALL_CARVE_OUT_FILES` in `tests/test_project_rules.py`, which ARCHITECTURE.md ("AI-call exception carve-out") names as the authoritative carve-out file list. A hit is a violation if it appears in any file outside that list, or inside one of those files but around a non-AI-call operation (config loading, yaml parsing, file persistence, input validation, domain-rule enforcement — these must raise even within carve-out files).
+**Pass 3b — Defensive None checks (non-mechanical).** Per submodule, every `if x is None:` on a value whose type does not include `None`: violation, or legitimate because a documented protocol allows None.
 
-**Pass 3b — Defensive None checks on values that cannot be None per spec.** This is non-mechanical. Per submodule, list every `if x is None:` check on a value where the type signature does not include `None`. Per hit, classify as violation (the check guards against an impossibility) or legitimate (the check exists because the value can be None per a documented protocol).
+**Pass 3c — Single-use abstractions.** Functions called exactly once where inlining would not hurt readability; classes with exactly one instance where a module function would do.
 
-**Pass 3c — Single-use abstractions.** For each function in a submodule, count callsites within the codebase. Flag any function called exactly once where inlining would not damage readability. For each class, count instances. Flag any class with exactly one instance where a module-level function would suffice.
+**Pass 3d — Wrappers without logic.** Functions whose body is a single `return foo(...)` with no parameter transformation, error handling, or caching.
 
-**Pass 3d — Wrapper functions with no added logic.** Per submodule, list every function whose body is a single `return foo(...)` or `return self.foo(...)` call. Flag as violation if the wrapper adds no parameter transformation, no error handling, no caching.
-
-Carve-outs: the AI-call exception carve-out for broad except clauses (ARCHITECTURE.md "Project rules"). Re-export functions in `__init__.py` files that constitute the documented public API.
+Carve-outs: the AI-call carve-out for broad excepts; re-exports that make up the documented public API in `__init__.py` files.
 
 ### Principle 4 — No backwards compatibility
 
-Save format breaks whenever the code requires it. No migration layer. No default-on-old-fields. No `ignore_unknown_fields`. Every dataclass field is required, apart from the carve-outs documented in ARCHITECTURE.md "Project rules" (empty collections via `default_factory`, external-boundary structures, AI-call fallback fields).
+"No backwards compatibility" in CONTRIBUTING.md: every dataclass field is required apart from the exceptions under "Domain config keys raise on a miss".
 
-This principle is fully grep-able.
+**Pass 4a — Dataclass field defaults.** References Pass 2d.
 
-**Pass 4a — Dataclass field defaults.** Reuses Pass 2d output per the cross-pass dedupe rule. Every default outside the three carve-outs already counted under Principle 2 is referenced from this audit, not re-listed.
+**Pass 4b — Migration patterns.** Grep `if .* in data`, `data.get(`, `try:.*KeyError`, `getattr(.*default`, and comments mentioning an old format, legacy fields, backwards compatibility, or migration. A hit that accommodates an old save format is a violation.
 
-**Pass 4b — Migration patterns.** Grep for: `if .* in data`, `data.get(`, `try:.*KeyError`, `getattr(.*default`, comments mentioning "old format", "legacy field", "for backwards compat", "migration". Each hit is examined: is it accommodating an old save format? If yes, violation.
-
-**Pass 4c — Permissive deserialization.** Grep for `**kwargs` in `from_dict`, `__init__`, or `SerializableMixin` overrides. Grep for `extra="ignore"` in pydantic models if any. Each hit is a violation.
-
-Anchor: ARCHITECTURE.md "Project rules" — saves break whenever the code requires it, no migration layer, no default-on-old fields, no ignore-unknown-fields.
+**Pass 4c — Permissive deserialization.** Grep `**kwargs` in `from_dict`, `__init__`, or `SerializableMixin` overrides, and `extra="ignore"` in any pydantic model, and parsers that pick known keys with `if "key" in data` without rejecting the rest. Each hit is a violation.
 
 ### Principle 5 — Clean codebase, no dead code, YAML-Python alignment
 
-No dead Python symbols. No dead YAML keys. Every YAML key has a Python consumer; every Python config-access has a YAML key that supplies it. YAGNI, KISS, LEAN, DRY applied consistently.
+No dead Python symbols, no dead YAML keys; every YAML key has a Python consumer and every config access a YAML source. YAGNI, KISS, DRY.
 
-This principle has multiple passes.
+**Pass 5a — Dead Python symbols.** For each public symbol in `src/straightjacket/`, grep `src/`, `tests/`, `engine/*.yaml`, `prompts/*.yaml`, and `data/`. Dead means no reader and no writer beyond the definition on every surface. Static tools (vulture, pylint) miss dict writes, getattr reads, fixtures, schema generation, and serialization; do not rely on them. Count production callers separately: a re-export plus tests is not a use in play.
 
-**Pass 5a — Dead Python symbols.** For each public symbol in `src/straightjacket/`, grep for usage across all five surfaces: `src/`, `tests/`, `engine/*.yaml` (string references in config), `prompts/*.yaml` (string references), `data/`. A symbol is dead if it has no reader, no writer beyond definition, on all five surfaces. Static-analysis tools (vulture, pylint) miss dict-assignment writes, getattr reads, fixture access, schema generation, serialization — do not rely on them as primary evidence; verify by grep across surfaces. Any symbol whose containing module uses dynamic access patterns (`getattr(obj, name)` with variable `name`, `globals()[name]`, `locals()[name]`, dict-key construction at runtime, fixture-injection by string, schema generation by introspection) defaults to `needs human judgment` rather than dead, even when grep returns zero hits.
+**Pass 5b — Dead YAML keys.** For each key in `engine/`, `strings/`, `prompts/`, and `emotions/`, grep `src/` for the key; for each zero-hit key, check `get_raw` consumption and dataclass fields of the same name. Unambiguous orphans are violations.
 
-**Pass 5b — Dead YAML keys.** For each YAML file under `engine/`, `strings/`, `prompts/`, `emotions/`, list every top-level and nested key. Grep `src/` for each key as string literal. Flag keys with zero hits in `src/` as candidates. Per candidate, check whether it is consumed via `get_raw` (key may be domain-data parameter, not directly grepped) or via a dataclass field (the dataclass field name should match). Mark unambiguous orphans as violations.
+**Pass 5c — Config dataclass fields without a YAML source.** For each subsystem dataclass in `engine_config_dataclasses.py`, locate each field's YAML key; fields never populated from config are violations.
 
-**Pass 5c — Dataclass fields without YAML source.** For each subsystem dataclass in `engine_config_dataclasses.py`, list every field. For each field, locate the corresponding YAML key. Flag fields with no corresponding YAML source as violations (these are fields that exist in Python but are never populated from config). Cross-pass dedupe: if Pass 2d already flagged the field as having an illegitimate Python default, reference Pass 2d rather than re-listing.
+**Pass 5d — YAML keys without a dataclass field.** The inverse of 5c, unless the block is read through `get_raw`.
 
-**Pass 5d — YAML keys without dataclass field.** Inverse of 5c. For each top-level YAML block in `engine/`, locate the binding dataclass. Flag YAML keys not present in any dataclass field as violations, unless the block is consumed via `get_raw`.
+**Pass 5e — Single-use functions and classes.** References Pass 3c.
 
-**Pass 5e — Single-use functions and classes.** Reuses Pass 3c output per the cross-pass dedupe rule. Single-use functions where inlining would not damage readability are referenced from Principle 3, not re-listed.
-
-Carve-outs: explicit orphan-symbol carve-outs documented in `tests/test_project_rules.py` (e.g., `CharacterTraits`). Symbols where the consumer side is genuinely planned in a near-term roadmap step may be flagged with `needs human judgment` rather than as outright violations.
+Carve-outs: the orphan-symbol carve-outs in `tests/test_project_rules.py` (for example `CharacterTraits`). A symbol whose consumer is planned in a near-term roadmap step may be marked `needs human judgment`.
 
 ## Status
 
-Update this section at the end of every audit chat. Do not delete completed entries; mark them as done. The history serves as a record of what was audited when.
+Submodules for principles 1, 3, and 5: `mechanics/`, `npc/`, `game/`, `ai/`, `db/`, `datasworn/`, `tools/`, `correction/`, the files directly under `engine/`, `web/`, and the top level of `src/straightjacket/` (`i18n.py`, `strings_loader.py`). A finished submodule is listed under its principle with its date; a principle is done when every submodule is listed.
 
-Interpretive principles (1, 3, 5) are tracked per submodule. Mechanical principles (2, 4) are tracked per principle. A principle is fully audited when every submodule line is marked done.
+- Principle 1: no submodule audited.
+- Principle 2: not audited.
+- Principle 3: no submodule audited.
+- Principle 4: not audited. Pass 4c was largely settled outside an audit: strict loading since 2026.09.24.45 and a settings loader that refuses unknown keys since 2026.09.25.0.
+- Principle 5: no submodule audited.
 
-Submodule list for interpretive principles: `mechanics/`, `npc/`, `game/`, `ai/`, `db/`, `datasworn/`, `tools/`, `correction/`, plus top-level `src/straightjacket/engine/` (the files directly under engine/, not in any subpackage) plus `web/`, plus top-level `src/straightjacket/` (`i18n.py`, `strings_loader.py`).
+## Notes
 
-Principle 1, high modularity (per submodule):
-- mechanics/: todo
-- npc/: todo
-- game/: todo
-- ai/: todo
-- db/: todo
-- datasworn/: todo
-- tools/: todo
-- correction/: todo
-- engine/ top-level: todo
-- straightjacket/ top-level: todo
-- web/: todo
+Findings recorded outside a principle audit, not yet classified:
 
-Principle 2, config-driven: todo, not yet audited.
-
-Principle 3, no defensive programming (per submodule):
-- mechanics/: todo
-- npc/: todo
-- game/: todo
-- ai/: todo
-- db/: todo
-- datasworn/: todo
-- tools/: todo
-- correction/: todo
-- engine/ top-level: todo
-- straightjacket/ top-level: todo
-- web/: todo
-
-Principle 4, no backwards compatibility: todo, not yet audited.
-
-Principle 5, clean codebase and YAML-Python alignment (per submodule):
-- mechanics/: todo
-- npc/: todo
-- game/: todo
-- ai/: todo
-- db/: todo
-- datasworn/: todo
-- tools/: todo
-- correction/: todo
-- engine/ top-level: todo
-- straightjacket/ top-level: todo
-- web/: todo
-
-### Notes for the next chat
-
-Add observations here that the next audit chat should know — patterns that emerged, scope adjustments made, ambiguities encountered, hand-off notes when a chat ended mid-principle.
-
-2026-09-24 (documentation re-sync, not an audit chat). Pre-findings for later passes, not yet classified:
-
-- Resolved in 2026.09.24.1: `_check_no_dataclass_defaults_in_config_binding` now also scans `engine_config_dataclasses.py`. The mechanical scan covers the config binding; Pass 2d covers every other dataclass.
-- Outside the config binding, dataclasses in `src/` carry about 245 annotated fields with a default, concentrated in `models_story.py`, `models.py`, `models_base.py`, `datasworn/moves.py`, and `models_npc.py`. Many are `default_factory` empty collections (carve-out); the rest is Pass 2d / 4a material. Known example: `KeyedScene.source: str = ""` and `KeyedScene.bound_entity_id: str | None = None` (CHANGELOG 2026.05.06.3).
-- Resolved in 2026.09.24.1: stale carve-out entries (`log_tokens`, `impact_config`, `engine/ai/metadata.py`) removed; `_check_no_stale_carve_out_entries` now catches this class mechanically.
-- Resolved in 2026.09.24.4: the two upward imports from `mechanics/` into `game/` are gone. the track-lifecycle module moved from `game/` to `mechanics/tracks.py`, and `_check_import_layers` now enforces the layer order.
-- `web/serializers.py::build_creation_options` skips the setting `delve` by name (`if pkg_id == "delve"`), a Python branch on a setting id. Principle 2 (Pass 2c) material.
-- The `.get()` scan only flags constant, non-neutral defaults; `.get("key", some_variable)` passes unexamined (example: `truth_data.get("name", truth_id)` in `web/serializers.py`). Pass 4b should grep for these.
-- 64 of 173 `strings/*.yaml` keys have no literal reference in `src/` or `index.html`; most are built dynamically (`move.*`, `disposition.*`, `consequence.*`). A strings orphan scan needs prefix awareness before it can be mechanical.
-- `run.py` at the repository root contains docstrings but falls outside the comment/docstring scan, which covers `src/` and `tests/` only. Decide whether root scripts are in scope.
-- Working mode: audits can now run against a local clone with direct file access instead of a fresh clone per claude.ai chat. The Reading order still applies.
-- Later on 2026-09-24: several failures ran unseen for hours because AI-call carve-outs catch the error, log a warning, and play on (the metadata extraction, unroutable after 2026.09.24.9; the Director's tool calls, rejected after 2026.09.24.19). Elvira now reports every engine warning and error. Principle 3 passes should ask of every carve-out where its failure becomes visible.
-- Test fixtures that hand-build data in a form production never produces hid a bug: roll-bonus tests used asset ids as "category/key" while character creation stores bare ids (2026.09.24.41). Principle 5 passes should prefer fixtures made through the real creation path.
-
-2026.09.24.45 (audit round against the project rules, not a principle audit):
-
-- Principle 4, Pass 4c largely resolved: `serialization.py` → `deserialize` used to skip unknown keys and let dataclass defaults fill missing ones, which let the save-compatibility defaults of 2026.09.24.17 to .33 work. It now raises on both; `RollResult.d2` and the duplicate-id repair on load are gone. Still open, marked needs human judgment: `persistence.py` → `load_game` still normalises NPC dispositions, filters aliases, recomputes `needs_reflection`, and sanitises names after loading. Whether these repair old data or guard a current write path is not clear from the code.
-- Principle 5 blind spot: the orphan-symbol scan counts a re-export in an `__init__.py` and a use in tests as consumers, so the whole fate system (`mechanics/fate.py` → `resolve_fate`, `resolve_likelihood`) passed as live while nothing in play called it. Pass 5a should count production callers separately.
-- Principle 4, Pass 4c, resolved in 2026.09.25.0: the setting-yaml loader (`datasworn/settings.py`) read only the keys it knew and silently ignored the rest, which kept three orphaned `oracle_paths.factions` keys alive. It now raises on an unknown key at every level. Pass 4c should also grep for parsers that pick known keys with `if "key" in data` without checking for the rest.
-- Principle 3, corrected in 2026.09.24.47: most web handlers already caught their exceptions and kept the connection open. The real faults were that a failed turn, correction, or momentum burn left its half-applied state in place, and that the player heard the raw exception text. Both are fixed in 2026.09.24.47, and `web/server.py` now reports an unexpected error in a handler without its own catch instead of closing the connection.
+- Outside the config binding, dataclasses in `src/` carried about 245 annotated fields with a default on 2026-09-24, concentrated in `models_story.py`, `models.py`, `models_base.py`, `datasworn/moves.py`, and `models_npc.py`. Many are `default_factory` empty collections; the rest is Pass 2d material. Example: `KeyedScene.source: str = ""` and `KeyedScene.bound_entity_id: str | None = None`.
+- `web/serializers.py` → `build_creation_options` skips the setting `delve` by name (`if pkg_id == "delve"`). Pass 2c.
+- The `.get()` scan only flags constant, non-neutral defaults; `.get("key", some_variable)` passes unexamined (example: `truth_data.get("name", truth_id)` in `web/serializers.py`). Pass 4b.
+- 64 of 173 `strings/*.yaml` keys had no literal reference in `src/` or `index.html` on 2026-09-24; most are built dynamically (`move.*`, `disposition.*`, `consequence.*`). A mechanical strings scan needs prefix awareness. Pass 5b.
+- `run.py` at the repository root contains docstrings, but the comment and docstring scan covers `src/` and `tests/` only. Decide whether root scripts are in scope.
+- AI-call carve-outs catch an error, log a warning, and play on, which once hid failures for hours (2026.09.24.9 to .20). Principle 3 passes ask of every carve-out where its failure becomes visible; Elvira now reports every engine warning.
+- A hand-built test fixture hid a bug that the real creation path would have shown (2026.09.24.41). Principle 5 passes prefer fixtures made through the real creation path.

@@ -2,7 +2,7 @@
 
 ## API keys
 
-Straightjacket reads AI provider API keys from environment variables (for example `OPENAI_API_KEY`). Each provider under `ai.providers` in `config.yaml` names its variable in `api_key_env`; the key itself never goes in the file.
+Straightjacket reads AI provider API keys from the environment variables that `config.yaml` names; the key itself never goes in the file.
 
 API keys are never logged, never included in save files, and never sent over the WebSocket.
 

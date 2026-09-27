@@ -1009,9 +1009,8 @@ def _check_no_orphan_prompt_keys() -> tuple[str, list[Violation]]:
     return "orphan prompt key", violations
 
 
-_DOC_FILES = ("README.md", "ARCHITECTURE.md", "SECURITY.md", "ORIGINS.md", "AUDIT.md")
+_ROOT_DOC_FILES = ("README.md", "ARCHITECTURE.md", "CONTRIBUTING.md", "SECURITY.md", "ORIGINS.md", "AUDIT.md")
 _DOC_PATH_PLACEHOLDERS = {
-    "data/settings/your_setting.yaml",
     "ai/provider_yourname.py",
 }
 _DOC_PATH = re.compile(r"`([A-Za-z0-9_./-]+\.(?:py|yaml|sql|json|html|toml|md))(?:::[A-Za-z_]\w*)?`")
@@ -1032,40 +1031,53 @@ def _repo_files() -> list[str]:
     return out
 
 
+def _doc_files() -> list[Path]:
+    return [REPO_ROOT / name for name in _ROOT_DOC_FILES] + sorted((REPO_ROOT / "docs").glob("*.md"))
+
+
+def _doc_name(doc: Path) -> str:
+    return doc.relative_to(REPO_ROOT).as_posix()
+
+
 def _check_doc_paths_exist() -> tuple[str, list[Violation]]:
     files = _repo_files()
     violations: list[Violation] = []
     used_placeholders: set[str] = set()
-    for doc in _DOC_FILES:
-        for lineno, line in enumerate((REPO_ROOT / doc).read_text(encoding="utf-8").splitlines(), 1):
+    for doc in _doc_files():
+        for lineno, line in enumerate(doc.read_text(encoding="utf-8").splitlines(), 1):
             for match in _DOC_PATH.finditer(line):
                 path = match.group(1)
                 if path in _DOC_PATH_PLACEHOLDERS:
                     used_placeholders.add(path)
                     continue
                 if not any(f == path or f.endswith("/" + path) for f in files):
-                    violations.append(Violation(doc, lineno, f"`{path}` does not exist"))
+                    violations.append(Violation(_doc_name(doc), lineno, f"`{path}` does not exist"))
     for placeholder in sorted(_DOC_PATH_PLACEHOLDERS - used_placeholders):
         violations.append(Violation("<placeholders>", 0, f"`{placeholder}` is no longer used in any md file"))
     return "DOC DRIFT: path named in an md file does not exist", violations
 
 
-def _file_map_section() -> str:
+_CODE_MAP_ENTRY = re.compile(r"^- `([\w/]+)/`")
+
+
+def _code_map_packages() -> set[str]:
     text = (REPO_ROOT / "ARCHITECTURE.md").read_text(encoding="utf-8")
-    start = text.index("## File Map")
-    return text[start : text.index("\n## ", start + 1)]
+    start = text.index("## Code map")
+    section = text[start : text.index("\n## ", start + 1)]
+    return {m.group(1) for line in section.splitlines() if (m := _CODE_MAP_ENTRY.match(line))}
 
 
-def _check_file_map_complete() -> tuple[str, list[Violation]]:
-    listed = set(re.findall(r"([A-Za-z_]\w*\.(?:py|sql|html))", _file_map_section()))
-    existing = {p.name for p in SRC_ROOT.rglob("*") if p.suffix in (".py", ".sql", ".html")}
+def _check_code_map_complete() -> tuple[str, list[Violation]]:
+    listed = _code_map_packages()
+    existing = {
+        path.parent.relative_to(SRC_ROOT).as_posix() for path in _iter_source_files() if path.parent != SRC_ROOT
+    }
     violations: list[Violation] = []
-    for path in sorted(_iter_source_files()):
-        if path.name != "__init__.py" and path.name not in listed:
-            violations.append(Violation(_rel(path), 0, "missing from the ARCHITECTURE.md file map"))
-    for name in sorted(listed - existing):
-        violations.append(Violation("ARCHITECTURE.md", 0, f"file map lists {name!r}, which does not exist"))
-    return "DOC DRIFT: ARCHITECTURE.md file map", violations
+    for package in sorted(existing - listed):
+        violations.append(Violation(package, 0, "package missing from the ARCHITECTURE.md code map"))
+    for package in sorted(listed - existing):
+        violations.append(Violation("ARCHITECTURE.md", 0, f"code map lists {package!r}, which is not a package"))
+    return "DOC DRIFT: ARCHITECTURE.md code map", violations
 
 
 def _defines_top_level(path: Path, name: str) -> bool:
@@ -1085,19 +1097,19 @@ def _resolve_src_path(rel: str) -> Path | None:
     return matches[0] if len(matches) == 1 else None
 
 
-def _check_ownership_symbols_exist() -> tuple[str, list[Violation]]:
-    text = (REPO_ROOT / "ARCHITECTURE.md").read_text(encoding="utf-8")
+def _check_doc_symbols_exist() -> tuple[str, list[Violation]]:
     violations: list[Violation] = []
-    for lineno, line in enumerate(text.splitlines(), 1):
-        refs = [(m.group(1), n) for m in _OWNERSHIP_REF.finditer(line) for n in re.findall(r"`(\w+)`", m.group(2))]
-        refs += [(m.group(1), m.group(2)) for m in _OWNERSHIP_REF_COLON.finditer(line)]
-        for rel, name in refs:
-            path = _resolve_src_path(rel)
-            if path is None:
-                violations.append(Violation("ARCHITECTURE.md", lineno, f"`{rel}` does not resolve to one source file"))
-            elif not _defines_top_level(path, name):
-                violations.append(Violation("ARCHITECTURE.md", lineno, f"`{rel}` does not define {name!r}"))
-    return "DOC DRIFT: ARCHITECTURE.md names a symbol that does not exist", violations
+    for doc in _doc_files():
+        for lineno, line in enumerate(doc.read_text(encoding="utf-8").splitlines(), 1):
+            refs = [(m.group(1), n) for m in _OWNERSHIP_REF.finditer(line) for n in re.findall(r"`(\w+)`", m.group(2))]
+            refs += [(m.group(1), m.group(2)) for m in _OWNERSHIP_REF_COLON.finditer(line)]
+            for rel, name in refs:
+                path = _resolve_src_path(rel)
+                if path is None:
+                    violations.append(Violation(_doc_name(doc), lineno, f"`{rel}` does not resolve to one source file"))
+                elif not _defines_top_level(path, name):
+                    violations.append(Violation(_doc_name(doc), lineno, f"`{rel}` does not define {name!r}"))
+    return "DOC DRIFT: an md file names a symbol that does not exist", violations
 
 
 def _check_changelog_consistent() -> tuple[str, list[Violation]]:
@@ -1234,8 +1246,8 @@ _ALL_CHECKS = (
     _check_no_skip_or_xfail_in_tests,
     _check_no_orphan_prompt_keys,
     _check_doc_paths_exist,
-    _check_file_map_complete,
-    _check_ownership_symbols_exist,
+    _check_code_map_complete,
+    _check_doc_symbols_exist,
     _check_changelog_consistent,
     _check_import_layers,
 )

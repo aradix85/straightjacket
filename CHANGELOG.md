@@ -3,11 +3,29 @@
 Straightjacket — AI-powered narrative solo RPG engine.
 Originally forked from [EdgeTales](https://github.com/edgetales/edgetales). See [ORIGINS.md](ORIGINS.md).
 
-Entries up to 2026.09.26.0 were shortened to their essentials in 2026.09.26.1. The full original text, with every measurement and quality-gate figure, is in git history (commit 1cef542 and earlier).
+Entries up to 2026.09.26.19 were shortened to their essentials, in 2026.09.26.1 and 2026.09.27.0. The full original text, with every measurement and quality-gate figure, is in git history (commit 1cef542 for entries up to 2026.09.26.0, commit 5baa6ed for the rest).
 
 ## Versioning
 
 Calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day. The first CalVer release is 2026.04.25.0; earlier `0.x.y` releases keep their numbers.
+
+## [2026.09.27.0] — 2026-09-27
+
+Documentation only: the working documents slimmed down and restructured along common practice, with duplicates and claims the code contradicts removed, and roadmap step 9 split so that fate comes back first.
+
+Structure. ARCHITECTURE.md becomes a bird's-eye view (the core idea, the turn pipeline, a code map per package, state, configuration, the interface) instead of a reference for everything. CONTRIBUTING.md returns, undoing the merge of 2026.05.08.0: workflow, rules for a change, project rules, code standards, and testing, Elvira included. The details moved to `docs/`: `ai.md` (roles, models, routing, caching, failures, streaming, tool calling), `mechanics.md`, `settings.md`, and `divergences.md`. The per-file map and the module-ownership table are gone, and the rule against comments now points at the md files in the root and in `docs/`. The documentation-drift scans follow: the path and symbol scans read every md file in the root and in `docs/` except the CHANGELOG and the roadmap, and the file-map scan became a code-map scan that requires every package in the code map of ARCHITECTURE.md.
+
+Corrected on the way: Elvira plays and judges on GPT-6 Luna, not on the game's model; the narrator is GLM 5.3, not GLM 5.3 Flash; an eight-turn session costs about 16 cents, not two to three; the Director's truncated answers were the carriage-return loop of 2026.09.26.20; the Director's ban on gothic horror no longer applies to every setting; idea E5 was done in 2026.09.24.58; step 11 no longer names Director tools that 2026.09.26.11 removed; "genre constraints", removed in 2026.04.27.10, and a narrator "validate" step are gone; AUDIT no longer says that `load_game` repairs old data.
+
+CHANGELOG. Entries 2026.09.26.1 to .19 shortened to their essentials, as 2026.09.26.1 did for the entries before it; their full text is in commit 5baa6ed.
+
+Roadmap. Current state holds only the open priorities, the working agreements, and notes for this machine; its rules for a change moved to CONTRIBUTING.md. Step 9 is split into 9a, fact resolution, now NEXT, and 9b, the generators; fact resolution becomes the first category of the entry point decided in 2026.09.24.47, and where a fact's odds come from is proposed and marked to confirm before building.
+
+AUDIT. Written for local work instead of fresh chats, with a compact Status, and anchored in CONTRIBUTING.md and ARCHITECTURE.md.
+
+Sizes: the md files together went from about 257 to 161 KB; ARCHITECTURE.md, read at the start of every session, from 89 to 11.
+
+Quality gate: 1494 tests green, twenty-nine project-rule scans clean (the documentation-drift scans included), coverage 90.14%, ruff check and ruff format clean on 208 files, mypy --strict clean on 109 source files. No engine code, prompt, or configuration changed, so no Elvira run. Save format unchanged.
 
 ## [2026.09.26.20] — 2026-09-26
 
@@ -23,237 +41,79 @@ Quality gate: 1494 tests green, twenty-nine project-rule scans clean, coverage 9
 
 ## [2026.09.26.19] — 2026-09-26
 
-Why GLM 5.3's structured answers failed, recorded; the model mix of 2026.09.26.17 stays; a stale roadmap item corrected.
-
-A probe ran 220 structured calls on GLM 5.3 through Together with the game's own prompts and schemas (160 Brain calls on twenty player actions, 60 metadata extractions on three narrations) and kept each raw answer. Three failed, 1.4 percent (one Brain call, two extractions), all the same way: the answer stopped at the 8192-token limit after 55 to 200 characters of JSON, so the model had reasoned for about 8,000 tokens first; Together returns no reasoning text for GLM 5.3. It is the runaway already seen in the Director, not an unenforced schema and not a control character, which did not recur. At about 80 tokens a second such a runaway costs roughly 100 seconds, and for the Brain that wait comes before the narration and ends in a fallback turn; GLM 5.3 Flash showed no Brain runaway in the day's sessions, while its Director ran away now and then after the narration, where the player does not wait on it. A higher reasoning effort would lengthen a runaway, and GLM 5.3's reasoning cannot be turned off, so the structured roles stay on Flash; running them on GLM 5.3 would need a lower token limit and one retry for a truncated answer, left undone.
-
-The roadmap listed the Director sometimes reaching its maximum of three tool rounds as open; with one tool since 2026.09.26.11 it cannot happen.
-
-Quality gate: 1492 tests green, twenty-nine project-rule scans clean, coverage 90.13%, ruff check and ruff format clean on 207 files, mypy --strict clean on 109 source files. Save format unchanged.
+GLM 5.3's structured failures probed: 3 of 220 structured calls (1.4 percent) broke off at the 8192-token limit after a short piece of JSON, taken for a reasoning runaway, so the structured roles stayed on GLM 5.3 Flash. 2026.09.26.20 found the real cause, a carriage-return loop. The roadmap item about the Director reaching its three-round tool limit was dropped, since one tool cannot reach it.
 
 ## [2026.09.26.18] — 2026-09-26
 
-The prompt review's third group, measured on a forced-miss bench and not adopted; the wording of 2026.09.26.17 corrected.
-
-The bench plays twelve fixed situations from four saved sessions (an investigation, a compel, and facing danger per save) with the roll forced to a miss, three narrations each on the narrator's model (GLM 5.3), judged by Elvira's judge; only the narrator's prompts differed. Current prompts: result integrity on the misses 2.94 (investigation 2.83, compel 2.42, danger 3.58), player agency 2.50, overall 5.06. A WRONG/RIGHT pair for failed searches and questions after the MISS rule: 2.92 (2.75, 2.25, 3.75), 2.83, 4.94. The narrator system prompt without its eight MUSTs and NEVERs and without "every constraint below is a MUST": 2.81 (2.58, 2.92, 2.92), 2.39, 4.81. Neither helped, so neither is adopted and the emphasis stays. With the move's own miss text, a sentence ruling out leads, and a shorter history earlier in the day, that makes five instruction variants that did not make investigation misses more honest on GLM; the remaining softening looks like the model's, not the prompt's.
-
-2026.09.26.17 and ARCHITECTURE said the model mix matched or beat all-GLM-5.3 on the judged scores; the narrator is GLM 5.3 in both, so those differences are within noise, and both texts now say the mix is kept for its reliability and cost.
-
-Quality gate: 1492 tests green, twenty-nine project-rule scans clean, coverage 90.11%, ruff check and ruff format clean on 207 files, mypy --strict clean on 109 source files. Save format unchanged.
+A third group of narrator-prompt changes (a WRONG/RIGHT pair for failed searches and questions, the system prompt without its MUSTs and NEVERs) was measured on a forced-miss bench and not adopted. That bench is not in the repository. With earlier attempts, five instruction variants left investigation misses as soft as before, so the remaining softening looks like the model's. The wording of 2026.09.26.17 was corrected: the model mix was kept for reliability and cost, not for higher scores.
 
 ## [2026.09.26.17] — 2026-09-26
 
-The narrator and the creative cluster stay on GLM 5.3; the Director, the Brain, judgment, and extraction go back to GLM 5.3 Flash.
-
-Since 2026.09.26.14 GLM 5.3's JSON on Together failed where Flash's had not: the Brain twice, the opening-setup and metadata extractions once each. `config.yaml` now runs the `narrator` and `creative` clusters on `zai-org/GLM-5.3` and the `director`, `classification`, `judgment`, and `extraction` clusters on `zai-org/GLM-5.3-Flash`, both through Together; every other setting stays.
-
-Measured, four eight-turn sessions against 2026.09.26.16's four with every role on GLM 5.3, the same prompts, settings, and styles: player agency 4.21 against 4.17, result integrity 3.86 on seven misses against 2.71 on seven, overall 6.88 against 6.70, judged complaints about the player character 3 of 24 against 5 of 23; over 28 turns each no Brain failure and no failed extraction against one of each, one Director runaway each, and one truncated reflection rejected; the first sentence after a median 3.1 seconds against 2.7, since the Brain ahead of the narration now runs on Flash; about 7.3 cents for eight turns before caching against 16.5 (every role on GLM 5.3 Flash cost about 1.7). The narrator is GLM 5.3 in both setups, so the judged differences are within noise on these small counts (the miss score of this setup has swung between 2.9 and 3.9 across runs of seven to ten misses); the mix is kept because it matched GLM 5.3's scores with no Brain or extraction failure at half the cost, not because it scores higher.
-
-Quality gate: 1492 tests green, twenty-nine project-rule scans clean, coverage 90.16%, ruff check and ruff format clean on 207 files, mypy --strict clean on 109 source files. Save format unchanged.
+The narrator and creative clusters stayed on GLM 5.3; the Director, the Brain, judgment, and extraction went back to GLM 5.3 Flash after GLM 5.3's JSON failed a few times on Together. Over four sessions the mix matched all-GLM-5.3 on the judged scores at less than half the cost (7.3 against 16.5 cents for eight turns). Reverted in 2026.09.26.20.
 
 ## [2026.09.26.16] — 2026-09-26
 
-The prompt review's second group: word budgets for the longer scenes, the Brain's duplicate field list removed, and extractor prompts that take their values from the configuration.
-
-`task_opening` and `task_chapter_opening` ask for 250 to 350 words in their three or four paragraphs, `task_epilogue` for 350 to 500, and the epilogue's reflection on the character's growth is named as the one place where PLAYER AGENCY lets the narrator say what the character has become, drawn only from what the story showed; it drops "beautiful". `brain_parser` no longer lists the JSON fields in its rules, since the schema enforces them and a second list can drift from it. `opening_setup_extractor` took "6 segments, 1 filled" as text and `narrator_metadata` its dispositions as a fixed list; they now read `opening.clock_segments`, `opening.clock_filled`, and `enums.dispositions`, so the prompts cannot contradict the configuration.
-
-Measured, four eight-turn sessions on GLM 5.3 against group A's four: player agency 4.17 against 3.59, judged complaints about the player character 5 of 23 against 9 of 22, overall 6.70 against 6.68, result integrity 3.61 against 3.95 and 2.71 on seven misses against 2.50 on four, the first sentence after a median 2.7 seconds against 2.3; openings ran about 256 words against 226, since GLM 5.3 already wrote short openings and now writes toward the budget's floor. About 16.5 cents a session at GLM 5.3's prices.
-
-GLM 5.3's JSON on Together, collected over the sessions since 2026.09.26.14: the Brain's answer failed to parse twice (a raw control character, an unterminated string), the Director ran away twice and the metadata extraction once, and one opening-setup answer was empty; GLM 5.3 Flash showed no Brain failure in dozens of sessions. The prompt changes here are not the cause: the extractor received the same text before and after, and the Brain failures came before this release.
-
-Quality gate: 1492 tests green, twenty-nine project-rule scans clean, coverage 90.10%, ruff check and ruff format clean on 207 files, mypy --strict clean on 109 source files. Save format unchanged.
+Prompt review, second group: word budgets for the opening and chapter opening (250 to 350 words) and the epilogue (350 to 500), whose reflection on the character's growth is the one named exception to PLAYER AGENCY; the Brain prompt no longer restates the fields its schema enforces; the extractor prompts read the opening clock and the dispositions from configuration.
 
 ## [2026.09.26.15] — 2026-09-26
 
-The prompt review's first group: three contradictions removed and the Director's fixed task moved ahead of the changing scene for the cache.
-
-A full review of every prompt file found three places that contradicted each other or invited the faults being fought. `director_system` told the Director to stay within `<world>` genre physics and also never to introduce supernatural elements, while Sundered Isles opens with cursed waters and Ironsworn has mysticism; it now rules them out only where `<world>` does not contain them, as blueprint voicing already did. `task_chapter_opening` asked for the character's history and relationships "naturally" without saying whose; it now takes them only from `<campaign_history>`, `<backstory>`, and the returning NPCs and gives the player character no new past. `block_tone_authority` still said to follow `<director_guidance>` for narrative direction without the exception the task prompts gained in 2026.09.26.12; it now says the world and the NPCs. The Director's prompt put its fixed task text after the changing scene, story arc, and reflection blocks, so across turns only the system prompt could come from the cache; `director.py` now puts the task first.
-
-Measured, four eight-turn sessions each on GLM 5.3 (the same four settings and styles), the baseline started before the change and the new prompts beside it: the first Director call of a turn took 57 percent of its input from the cache against 10, and all Director input 50 percent against 27; result integrity 3.95 against 3.42 and overall 6.68 against 6.12, with player agency level (3.59 against 3.62) and judged complaints about the player character 9 of 22 against 8 of 24; one Director runaway in the baseline and none after, too few to call; the first sentence after a median 2.3 seconds against 2.1.
-
-The review's other findings wait: word budgets for the opening, chapter opening, and epilogue (the epilogue's reflection on the character's growth also needs an explicit exception to PLAYER AGENCY), the Brain prompt restating the JSON fields the schema already enforces, fixed values in extractor prompts that the engine configuration also holds, the narrator prompt's capitals and MUSTs, and misses on investigations.
-
-Quality gate: 1492 tests green, twenty-nine project-rule scans clean, coverage 90.11%, ruff check and ruff format clean on 207 files, mypy --strict clean on 109 source files. Save format unchanged.
+Prompt review, first group: three contradictions removed (the Director rules out the supernatural only where `<world>` lacks it, the chapter opening takes history only from what is established, the tone block follows the Director only for world and NPCs), and the Director's fixed task moved ahead of the changing scene, which raised its cached input from 27 to 50 percent.
 
 ## [2026.09.26.14] — 2026-09-26
 
-Every role runs on GLM 5.3 through Together, the user's choice; prompts and settings are unchanged.
-
-`config.yaml` moves all six clusters from `zai-org/GLM-5.3-Flash` to `zai-org/GLM-5.3` ($1.40 per million input tokens, $0.26 cached, $4.40 output, about nine times Flash); reasoning stays at `low`, the narrator at temperature 1.0 and top_p 0.8. Elvira's price table lists the model.
-
-Why. A forced-miss bench gave both models the same twelve situations from four saved sessions (an investigation, a compel, and facing danger per save), three narrations each with the same prompts, judged by Elvira's judge: GLM 5.3 scored 3.00 for result integrity on the misses (investigation 2.58, compel 2.83, danger 3.58), 2.53 for player agency, 4.97 overall; Flash 2.78 (2.67, 2.58, 3.08), 2.81, 5.08. So GLM 5.3 followed the instructions about as well, but finished a narration in a median 2.1 seconds against Flash's 3.3; independent measurements also put it ahead on speed (74 tokens a second against 46), since Flash is built for low cost rather than speed. Three prompt variants for misses tried on the way (the move's own miss text, a sentence ruling out leads, one narration of history instead of three) gave no gain in sessions of 7 to 10 misses and were reverted; the bench replaces those small samples for further tuning.
-
-Checked: an eight-turn Elvira session in Sundered Isles as dialogist on the new default; the Brain, the narrator, the Director with its one tool, and the extractors all ran, the Brain's prompt cached 768 tokens and the narrator's 2048, the first sentence after a median 2.8 seconds. Three engine warnings: the Director's final JSON broke off after 8192 output tokens with 120 characters written, the same runaway GLM 5.3 Flash showed in about 3 percent of Director calls; one metadata extraction broke off at character 75, likely the same; and one reflection field held stray JSON (`:null,`) and was rejected. Together enforced a strict schema for GLM 5.3 in four of four tries, so these are runaways, not an unenforced schema; one session cannot say whether GLM 5.3 runs away more often than Flash. The Director cost about 11 cents over eight turns. Four narrations were audited at 3 or 4 out of 10, three of them for a miss or a hit that still gave or took too much.
-
-Quality gate: 1492 tests green, twenty-nine project-rule scans clean, coverage 90.10%, ruff check and ruff format clean on 207 files, mypy --strict clean on 109 source files. Save format unchanged.
+Every role on GLM 5.3 through Together, the user's choice: on the forced-miss bench it followed the instructions about as well as GLM 5.3 Flash and finished a narration in 2.1 seconds against 3.3, at about nine times the price per token.
 
 ## [2026.09.26.13] — 2026-09-26
 
-Elvira's judge sees what is established and what the rolled move means, so her audit stops scoring continuity as invention and an unwelcome truth as a silver lining.
-
-The judge saw only the player's action, the result, the active NPCs' names, and the narration. It called details carried over from the previous turn invented, it could not tell whether an NPC detail contradicted anything, and its rubric ruled out any information on a miss, while Ironsworn's Gather Information miss is "a dire threat or an unwelcome truth". `judge_turn` now also takes the previous narration and the move id; the prompt gives it the player character's backstory, each active NPC's description, and the rolled move's own text for the result, taken from the Datasworn moves with links and emphasis marks stripped. The rubric says established facts are continuity; a miss may bring bad news, a threat, a cost, or an unwelcome truth, while anything that advances the player's goal is a silver lining; a past, relationships, injuries, or knowledge given to the player character count against player agency; and colour about an NPC is a fault only where it contradicts what is established. Two new tests check what the judge is given.
-
-New baseline, four eight-turn sessions on the current default (classic explorer, starforged aggressor, sundered isles explorer, classic aggressor, no momentum burns for the aggressors): player agency 3.79, result integrity 3.88, 3.88 on the eight misses, overall 6.79, judged complaints about the player character 3 of 24, 212 words, the first sentence after a median 5.0 seconds on a busy Together, 1.7 cents a session before caching; no Director or engine error. The same game setup scored 2.83 on misses under the old judge in 2026.09.26.12 (variant F, other sessions), so much of the softening it reported was likely its own reading.
-
-Quality gate: 1492 tests green, twenty-nine project-rule scans clean, coverage 90.14%, ruff check and ruff format clean on 207 files, mypy --strict clean on 109 source files. Save format unchanged.
+Elvira's judge also sees the previous narration, the backstory, the NPC descriptions, and the rolled move's own text for the result, so continuity no longer counts as invention and an unwelcome truth on a miss no longer as a silver lining. New baseline.
 
 ## [2026.09.26.12] — 2026-09-26
 
-The narrator stops taking over the player character: a word budget, a wider player-agency rule, a Director that keeps off the player character, and a steadier sampling setting.
-
-Cause. Capturing what the narrator received showed the Director writing guidance such as "force the decision: Reginald either sends a hand across or crosses himself" and "Maren and Knight's long history" for a player character with no backstory, while the narrator's task said it MUST follow the Director's guidance; a stricter narrator rule alone therefore changed nothing (two sessions, since reverted).
-
-Changes. `prompts/director.yaml` gets a PLAYER RULE ahead of every field: guidance directs the world and the NPCs, never what the player character does, decides, says, feels, or remembers, and gives the player character no past or ties the story has not established; a choice is put before the player through what the world does. In `prompts/tasks.yaml` the Director's guidance governs the world and the NPCs, and PLAYER AGENCY wins where it would move, speak for, decide for, or give a past to the player character. The narrator writes 150 to 220 words and stops once the world has reacted, in place of "2-4 paragraphs of immersive narration". Its PLAYER AGENCY rule now names three things that belong to the player alone (inner life; actions and words beyond the stated action; past, relationships, injuries, and knowledge), with WRONG/RIGHT pairs taken from the day's judged failures. `config.yaml` sends the narrator temperature 1.0, Z.ai's default for creative text, and top_p 0.8, Z.ai's example for steadier text; the other clusters keep theirs.
-
-Measured, six variants of four eight-turn Elvira sessions each (the same setting and style per slot, Elvira on GPT-6 Luna, player agency and overall as judged by her, "PC complaints" the judged weaknesses about the player character's actions, words, injuries, or past):
-- A, the Director rule only: player agency 2.75, overall 5.71, PC complaints 42%, 358 words, first sentence 3.5 s.
-- B, plus the word budget: 3.54, 6.08, 50%, 214 words.
-- C, plus the wider PLAYER AGENCY rule: 4.25, 6.21, 17%, 206 words, 3.0 s.
-- D, C with the Director and the extractors at reasoning `high`: 3.67, 6.04, 29%, at 2.5 cents a session instead of 1.8.
-- E, C with every role at reasoning `max`: 4.58, 6.38, 8%, but the first sentence after 54.9 s, 11.8 cents a session, four engine errors, and result integrity on a miss at 1.50.
-- F, C with the narrator at top_p 0.8: 4.08, 6.79, 17%, result integrity on a miss 2.83 (the highest), 208 words, 4.1 s. This release is F.
-Reading F's narrations: misses end with the world waiting on the player, but a miss can still leak a useful clue, and a narration now and then still adds a step the player did not take. Z.ai recommends tuning temperature or top_p, not both; min_p and repetition penalties were not needed.
-
-Checked: an eight-turn Elvira session in Starforged as explorer on the new default: no engine warning or error, six streamed turns identical to the final text, the first sentence after a median 3.9 seconds; of four audits, three were misses that still gave a clue or a win, the open item in roadmap priority 3, and one invented a past for the player character.
-
-Quality gate: 1490 tests green, twenty-nine project-rule scans clean, coverage 90.13%, ruff check and ruff format clean on 206 files, mypy --strict clean on 109 source files. Save format unchanged.
+The narrator stops taking over the player character: a budget of 150 to 220 words, a PLAYER AGENCY rule covering the character's inner life, actions, words, and past, a Director rule that keeps its guidance off the player character, and the narrator at temperature 1.0 and top_p 0.8. Over six measured variants this raised judged player agency from 2.75 to 4.08 and cut complaints about the player character from 42 to 17 percent.
 
 ## [2026.09.26.11] — 2026-09-26
 
-The Director gets one reflection slot per selected NPC and one tool for the game state.
-
-Reflections. The Director's answer listed reflections with an `npc_id` that could be any selected NPC or null, so one NPC could be reflected twice, and the engine skipped the second with a warning. `npc_reflections` is now an object with one required entry per NPC selected for reflection, keyed by that NPC's id, so a duplicate cannot be written and the id-or-null choice is gone; an empty reflection still means nothing new for that NPC. The Director prompt describes exactly that shape, the duplicate check is gone because nothing can reach it, and the tests build reflections through a new `keyed_reflections` helper; the duplicate test gives way to a schema test that each selected NPC gets exactly one required slot.
-
-Tool. The Director had `query_npc`, `query_active_threads`, and `query_active_clocks`; on GLM 5.3 Flash it queried them in rounds and sometimes hit the three-round limit, and it asked for the threads and clocks every turn. `query_game_state` replaces all three: without parameters it returns the active threads, the clocks that have not fired, and every active or background NPC with the fields `query_npc` gave, in one answer. The tool description, the Director prompt, the project-rule list, ARCHITECTURE, and the roadmap follow; three tool tests replace six.
-
-Measured against the Elvira session of 2026.09.26.10: Director calls stayed at three a turn (the old tools were mostly asked for in one round too), and input and output per Director turn fell by about 8 and 15 percent over two turns; the round limit can no longer be reached.
-
-Caching on Together, checked for this release: the narrator's system prompt keeps its 1,900 tokens of fixed rules first and every changing block at the end, the Brain's prompt is about three-quarters fixed, and the two extractors have short fixed system prompts ahead of the new narration; only the Director's fixed task text sits after the changing scene, worth about a hundredth of a cent a session. Together hit a repeated prefix five times in five with `user` and with `prompt_cache_key`, and still after 90 seconds, yet a real session hit the narrator's prefix four times in nine, so the remaining misses are on Together's side.
-
-Checked: an eight-turn Elvira session in Sundered Isles as aggressor on the default configuration: no engine warning or error; one tool call in each of the six Director turns, no duplicate reflection and no round limit; the first sentence after a median 4.0 seconds; two misses audited at 4 out of 10 for a useful clue and for deciding the player's moves.
-
-Quality gate: 1490 tests green, twenty-nine project-rule scans clean, coverage 90.15%, ruff check and ruff format clean on 206 files, mypy --strict clean on 109 source files. Save format unchanged.
+The Director's reflections become one required slot per selected NPC, keyed by its id, so a duplicate cannot be written; one tool, `query_game_state`, replaces `query_npc`, `query_active_threads`, and `query_active_clocks`.
 
 ## [2026.09.26.10] — 2026-09-26
 
-Blueprint voicing fixes its counts in the schema instead of asking again, and a Director failure shows the end of its reasoning.
-
-Blueprint voicing. Its schema left the number of acts, revelations, and possible endings open, and the engine counted afterwards and asked again up to four times; on GLM 5.3 Flash the first answer had one possible ending of three in both Together sessions. `get_blueprint_voicing_schema` now takes the three counts and fixes each array with `minItems` and `maxItems`, which Together, Fireworks, and OpenAI all enforced in a test that asked for one item against a schema of three. The call is made once; a wrong count despite the schema fails it, and the chapter goes on without a blueprint as before. The retry test is rewritten to check the counts in the schema and a single call; it fails without the change.
-
-Director. `AIResponse` carries the reasoning text a host returns (`reasoning` on Together, `reasoning_content` elsewhere), and a Director failure ends with the reasoning's length and its last characters, so the loop behind a broken answer can be read. GLM 5.3 Flash's reasoning cannot be turned off: Together accepted `reasoning_effort: "none"`, `reasoning: {"enabled": false}`, and two chat-template switches without error and reasoned anyway, as Z.ai documents. Two new tests cover the reasoning text and the failure message.
-
-Checked: an eight-turn Elvira session in Starforged as explorer on the default configuration: blueprint voicing succeeded on its only call with three acts and three revelations; no engine warning or error; 25 Director tool rounds in eight turns; the first sentence after a median 5.7 seconds; three narrations audited at 3 or 4 out of 10 for inventing player actions and history.
-
-Quality gate: 1494 tests green, twenty-nine project-rule scans clean, coverage 90.12%, ruff check and ruff format clean on 206 files, mypy --strict clean on 109 source files. Save format unchanged.
+Blueprint voicing fixes the number of acts, revelations, and endings in its schema with `minItems` and `maxItems` and calls once instead of asking again; `AIResponse` carries a host's reasoning text, and a Director failure shows its end.
 
 ## [2026.09.26.9] — 2026-09-26
 
-The Director no longer retries a broken final answer; it reports why the answer broke off, and the cause is found.
-
-Every Director final-step failure on GLM 5.3 Flash ran to the 8192-token output limit: the four recorded in Elvira's logs since 2026.09.26.2 (three on Together, one on BaseTen through OpenRouter) and one caught live in this release's check. On Together the JSON broke off after 1554 to 2328 characters, so most of the 8192 tokens went unseen, most likely a reasoning loop; on BaseTen the answer itself ran to about 250,000 characters of mostly line breaks. Together enforced the Director's JSON schema in every test, even against a prompt asking it not to, and 64 repeats of two recorded Director requests all parsed, so the loop is rare, about 3 percent of Director calls, and not a schema fault. A retry cannot prevent a loop and costs another 8192 tokens, so the retry of 2026.09.26.8 is gone; empty guidance still keeps the NPCs' importance accumulators.
-
-Diagnostics. The OpenAI-compatible adapter reports reasoning tokens as `reasoning_tokens`, nested under `completion_tokens_details` or at the top of `usage`. A Director failure now names the stop reason, the output and reasoning tokens, and the JSON's length; caught live: "stopped as truncated after 8192 output tokens, None of them reasoning, with 2272 characters of JSON", Together reporting no reasoning count for that answer though it did for a short test call. The two retry tests are replaced by one that checks this message and a single final call; a new adapter test covers both places of the reasoning count. Both fail without the change.
-
-Checked: an eight-turn Elvira session in Classic as dialogist on the default configuration: that Director failure, a Director tool loop stopped at its three-round limit, and a skipped duplicate reflection; the first sentence after a median 5.2 seconds; two misses audited at 3 out of 10. Roadmap priority 2 records the open loop and the two fixes weighed.
-
-Quality gate: 1493 tests green, twenty-nine project-rule scans clean, coverage 90.19%, ruff check and ruff format clean on 206 files, mypy --strict clean on 109 source files. Save format unchanged.
+The Director's retry of 2026.09.26.8 removed, since every failure ran to the 8192-token limit and a retry cannot prevent that; a failure now reports its stop reason, output and reasoning tokens, and JSON length, and the OpenAI-compatible adapter reports reasoning tokens.
 
 ## [2026.09.26.8] — 2026-09-26
 
-The Director asks once more when its final answer is not valid JSON, and a failed Director keeps the NPCs' accumulated importance.
-
-Together sometimes returned invalid JSON for the Director's final step despite its JSON schema: three times in about 110 Director calls over four sessions (2026.09.26.4 to .7). The Director gave up after one bad answer, and the empty result then reset every pending reflection flag and zeroed each NPC's importance accumulator, so a single bad answer postponed those NPCs' reflections until they had built importance up from nothing. Now the final step is asked once more on invalid JSON (logged as information, since the retry recovers), and only a second bad answer returns no guidance. Empty guidance still clears the reflection flags but keeps the accumulators, as a skipped Director turn already did. Two new tests cover the retry (it succeeds, and it stops after one retry); the empty-guidance test now expects the accumulator kept. All three fail without the change.
-
-Checked: an eight-turn Elvira session in Sundered Isles as explorer on the default configuration found no problems; its 13 Director calls all parsed at once, so the retry was not needed live, and the first sentence came after a median 4.8 seconds.
-
-Quality gate: 1493 tests green, twenty-nine project-rule scans clean, coverage 90.10%, ruff check and ruff format clean on 206 files, mypy --strict clean on 109 source files. Save format unchanged.
+The Director retried its final step once on invalid JSON (removed in 2026.09.26.9); a failed Director keeps the NPCs' importance accumulators instead of zeroing them.
 
 ## [2026.09.26.7] — 2026-09-26
 
-Elvira keeps her players inside her own folder, and the users folder can be moved.
-
-`config_loader.USERS_DIR` follows `STRAIGHTJACKET_USERS_DIR` when it is set, as `STRAIGHTJACKET_CONFIG` does for the configuration, and is the project's `users/` otherwise. `tests/elvira/elvira.py` sets it to tests/elvira/users before the engine loads, unless it is already set, so her saves no longer sit beside real players in `users/`; git ignores the folder, and the old `users/elvira` is gone. In `--ws` mode the server she connects to saves in its own users folder. Two new tests start a fresh process with and without the variable; the first fails without the change.
-
-Checked: after a full test run `users/` is empty. An eight-turn Elvira session in Starforged as aggressor saved to tests/elvira/users/elvira and loaded back twice without a difference, `users/` stayed empty, the first sentence came after a median 3.7 seconds. Two engine warnings that recur on GLM 5.3 Flash through Together and are unrelated to this release: blueprint voicing again returned one possible ending of three on its first attempt, and the Director's final JSON failed to parse once, the third such failure in four Together sessions; the turn went on without its guidance. Two misses were audited at 3 and 4 out of 10.
-
-Quality gate: 1491 tests green, twenty-nine project-rule scans clean, coverage 90.14%, ruff check and ruff format clean on 206 files, mypy --strict clean on 109 source files. Save format unchanged.
+The users folder follows `STRAIGHTJACKET_USERS_DIR` when set; Elvira keeps her players in tests/elvira/users.
 
 ## [2026.09.26.6] — 2026-09-26
 
-Tests no longer leave a player behind in the project's `users/` folder.
-
-The succession websocket tests in `tests/test_web.py` created the player `ws_succ` and saved a game in the real `users/` folder on every run; git ignores that folder, but a player of that name would have been overwritten. Their fixture now points the users folder at a temporary directory, as Elvira's smoke tests do, and the stale `users/ws_succ` is gone. After a full test run `users/` holds only `elvira`.
-
-Quality gate: 1489 tests green, twenty-nine project-rule scans clean, coverage 90.10%, ruff check and ruff format clean on 206 files, mypy --strict clean on 109 source files. No engine code, prompt, or configuration changed, so no Elvira run. Save format unchanged.
+The succession WebSocket tests save into a temporary users folder instead of the project's `users/`.
 
 ## [2026.09.26.5] — 2026-09-26
 
-Every role runs on GLM 5.3 Flash through Together, the user's choice for its narration; Elvira stays on GPT-6 Luna.
-
-`config.yaml`: all six clusters on `zai-org/GLM-5.3-Flash` through Together at reasoning effort `low`, its lowest (it always thinks), with the temperatures they had and `user: "straightjacket"` as a session key for the cache. The OpenAI provider stays configured for Elvira, whose price table now lists the model.
-
-Why Together. With every role on GLM 5.3 Flash and Elvira on Luna, twelve-turn sessions brought the first sentence after 2.9 seconds on Together direct (two sessions), 3.8 through OpenRouter to Together, and 4.0 to 4.3 on Fireworks direct, with or without Fireworks' Priority tier (1.25 times the price for this model), which changed nothing measurable. The difference is caching: Fireworks served cache hits only in whole blocks of 2048 tokens and Baseten in blocks of 1024, erratically even with its `x-session-affinity` header, so their Brain, Director, and extractor prompts rarely or never hit the cache, while Together cached from 64 tokens up (Brain 62 percent, Director 34). On Fireworks, a `user` key raised the narrator's cached share from 7 to 14 percent to 39 and brought the first sentence a second sooner. Baseten could not be measured fairly: an unverified account allows 15 requests and 100,000 tokens a minute, which gave 13 rate limits in five turns; a verified one allows 120 and 500,000 after a request to Baseten. Z.ai's GLM 5.3 FlashX, the same model served faster for $0.37, $0.09 cached, and $1.25 per million tokens without JSON-schema enforcement, began its text 2.7 to 3.3 seconds after the request against 0.4 to 0.7 on Together, so it was dropped.
-
-Checked: an eight-turn Elvira session in Starforged as aggressor on the new default, the startup check passing with Together; no engine error, six streamed turns identical to the final text, the first sentence after a median 3.8 seconds, a turn in 13.2, about two cents at list price. One engine warning: blueprint voicing returned one possible ending of three on its first attempt and was asked again. The judge scored all four misses 4 out of 10; read, three kept to Ironsworn's miss outcomes and the fourth decoded a route while the player's skiff was sabotaged. The narration still moves the player character and invents lore, which roadmap priority 3 now tunes for.
-
-Quality gate: 1489 tests green, twenty-nine project-rule scans clean, coverage 90.07%, ruff check and ruff format clean on 206 files, mypy --strict clean on 109 source files. Save format unchanged.
+Every role on GLM 5.3 Flash through Together, the user's choice for its narration; Elvira stays on GPT-6 Luna. Together beat OpenRouter, Fireworks, and Baseten on time to the first sentence (2.9 seconds) because it also caches short prompts.
 
 ## [2026.09.26.4] — 2026-09-26
 
-The startup check works with Together, which now stands configured beside the other providers; the game stays on GPT-6 Luna.
-
-Fix. The OpenAI-compatible adapter listed a provider's models through the OpenAI SDK, which expects an object with `data`; Together's `/models` returns a bare list, and the SDK raised an AttributeError, so the startup check stopped any game or Elvira run with a Together cluster. `list_models` now reads `/models` with a plain request and takes either shape, raising a TypeError on anything else. Checked live against OpenAI, Fireworks, and Together; three new adapter tests fail without the fix.
-
-Together. `config.yaml` names it as a provider (`https://api.together.xyz/v1`, `TOGETHER_API_KEY`), unused by the game. Measured with every role on GLM 5.3 Flash (`zai-org/GLM-5.3-Flash`, thinking at `low`) and Elvira on Luna, two twelve-turn sessions: the first sentence after 2.9 seconds in both, against 3.8 through OpenRouter to the same host and 4.0 to 4.3 on Fireworks direct; 40 to 43 percent of the game's input cached, because Together caches short prompts too while Fireworks cached only whole blocks of 2048 tokens, so the Brain, the Director, and the extractors never hit its cache. In one of the two sessions the Director's final JSON failed to parse twice out of 23 calls, and the turns went on without its guidance; no other GLM session showed this.
-
-Checked: an eight-turn Elvira session in Starforged as aggressor on the default configuration, with a correction and the injected narrator outage; no problems found, no engine warning or error, six streamed turns identical to the final text.
-
-Quality gate: 1489 tests green, twenty-nine project-rule scans clean, coverage 90.12%, ruff check and ruff format clean on 206 files, mypy --strict clean on 109 source files. Save format unchanged.
+The startup check works with Together, whose `/models` returns a bare list the OpenAI SDK cannot parse; Together configured beside the other providers.
 
 ## [2026.09.26.3] — 2026-09-26
 
-NPC statuses get one central list, and a correction can set only those.
-
-`engine/enums.yaml` lists `npc_statuses` (`active`, `background`, `deceased`, `lore`) beside the dispositions, read through `EnumsConfig`. The correction schema limits an NPC's `status` to that list, as 2026.09.26.2 did for `disposition`: before, a model could write any text there, and a status such as `dead` would have left the NPC outside every category the engine checks, silently gone from the prompts without an error. The new test fails without the change. The engine's own status checks keep their literal values; only the field a model fills is limited. Roadmap priority 5 loses the item.
-
-Checked: an eight-turn Elvira session in Classic as explorer, everything on GPT-6 Luna, with one correction and the injected narrator outage rolled back; no engine warning or error, six streamed turns identical to the final text, the first sentence after a median 2.3 seconds. Its one problem is a narration audit of 3 out of 10 for a miss that gave information.
-
-Quality gate: 1487 tests green, twenty-nine project-rule scans clean, coverage 90.10%, ruff check and ruff format clean on 206 files, mypy --strict clean on 109 source files. Save format unchanged.
+NPC statuses get one central list in `engine/enums.yaml`, and the correction schema limits `status` to it.
 
 ## [2026.09.26.2] — 2026-09-26
 
-Cheap models through OpenRouter measured against GPT-6 Luna, with Elvira on a model of her own; the game stays on Luna.
-
-Elvira. Her player and judge name their own provider and model under `ai` in `tests/elvira/elvira_config.yaml` (GPT-6 Luna at reasoning `none`; the judge keeps its own `low`) instead of following the Brain, and log as the role `elvira`, which her report prices apart from the game's total. Her temperature now comes from the config she is given rather than always from the default file. With `STRAIGHTJACKET_CONFIG` pointing at another `config.yaml` and a config with its own `username`, several runs play side by side.
-
-OpenRouter. `config.yaml` names OpenRouter as a provider, unused by the game. A cluster on it pins one host and sets thinking in its `extra_body`. OpenRouter's per-host discount field told fixed prices from temporary ones (Mercury 2.5 and Solar Pro 4 were 70 to 80 percent off), and a smoke test per host checked tools and JSON-schema output before any run: Qwen3.7 Flash at Alibaba and Ling 3.0 Flash at DeepInfra accept plain JSON but no schema, so they could only narrate.
-
-Fix. A model wrote the stance `guarded` into an NPC's disposition through a correction, and the stance matrix raised a KeyError on the next turn with that NPC. The correction schema limits `disposition` to the known dispositions; the new test fails without the fix. `status` is still free text there (roadmap priority 5).
-
-Measured, one or two Elvira sessions per model in Classic, twelve turns, first as explorer, then as aggressor without momentum burns; every game role on the candidate except Qwen and Ling, which narrated for Luna; Elvira on Luna; cost counted with caching and without Elvira's own calls:
-- GPT-6 Luna: first sentence after 2.3 and 2.8 seconds, a turn in 6.0 and 6.7, about 150 words, about 1.4 cents a session. Misses honest, prose plain.
-- DeepSeek V4 Flash (July), thinking off: at DeepInfra 3.1 to 3.5 seconds, turns of 15 seconds, about 1.3 cents; at Wafer 2.9 to 3.2 seconds, about 13 seconds, 2.4 cents, its cached input priced at $0.06. About 340 to 390 words of vivid prose, but most failed compels and investigations came out as successes, and it took over the player character and invented backstory. It also found the disposition bug.
-- GLM 5.3 Flash, thinking at `low` (it cannot be turned off): at BaseTen repeated rate limits and 2 percent cache hits, at Together neither; 3.8 seconds, 11 to 12 seconds, about 350 words, 2.4 cents at Together. The strongest atmosphere, and its misses kept to Ironsworn's miss outcomes (an unwelcome truth, a refusal, a costly demand), though it moves the player character unasked and invents history.
-- Qwen3.7 Flash as narrator: 2.8 to 3.1 seconds, about 300 words; misses mostly honest, but it slipped from second to third person, named a clock in the prose, and repeated three sentences word for word from two turns before.
-- Ling 3.0 Flash as narrator: 4.3 seconds, 29-second turns, about 540 words, the weakest prose. Gemma 4 31B at CoreWeave twice wrote repeated JSON up to the 8192-token limit (opening setup, Director), about four minutes each; stopped after five turns.
-
-The Director runs after the narration is shown, but on DeepSeek and GLM it made more and longer calls than on Luna. Elvira's judge marked down information on a miss even where Ironsworn's miss outcome is an unwelcome truth, and called continuity from earlier turns invented; the verdicts above rest on reading every miss.
-
-Quality gate: 1486 tests green, twenty-nine project-rule scans clean, coverage 90.10%, ruff check and ruff format clean on 206 files, mypy --strict clean on 109 source files. Save format unchanged.
+Elvira's player and judge name their own provider and model (GPT-6 Luna) instead of following the game; OpenRouter configured; cheap models measured against Luna (DeepSeek V4 Flash, GLM 5.3 Flash, Qwen3.7 Flash, Ling 3.0 Flash, Gemma 4 31B). Fix: the correction schema limits `disposition` to the known dispositions, after a model wrote a stance there and crashed the next turn.
 
 ## [2026.09.26.1] — 2026-09-26
 
-The project is the game plus Elvira again, at the user's request: the model-comparison harness is removed and this CHANGELOG is shortened.
-
-Removed: `tests/modeltest/` (the twenty-scene narrator harness with its judges, scenes, and GLM baseline), `tests/test_modeltest.py`, and the `.gitignore` line for the harness runs. Elvira's runner lost an unused constant that pointed at the harness configuration. `tests/test_brain_move_availability.py` borrowed the scripted Brain fields from the harness and now holds them itself. Elvira, with her per-turn narration audit, is the measurement for prompt changes.
-
-Coverage. The harness test was the only test that reached thirteen lines of engine code, which left coverage at 89.99 to 90.01 percent against the floor of 90. The new `tests/test_prompt_npc_and_clock_blocks.py` tests two of those paths directly: a filled clock reaches the narrator prompt as an escaped `<clock_filled>` tag, and an activated NPC carries its most recent memory, or its reflection as insight, into the prompt.
-
-CHANGELOG. Every version keeps its header and a short summary of what changed and why; measurement tables, test counts, and quality-gate lines of earlier entries are left to git history.
-
-ARCHITECTURE.md no longer describes the harness; the roadmap measures prompt tuning with Elvira and drops the item asking for a CHANGELOG summary.
-
-Quality gate: 1485 tests green, twenty-nine project-rule scans clean, coverage 90.08%, ruff check and ruff format clean on 206 files, mypy --strict clean on 109 source files. No engine code, prompt, or configuration changed, so no Elvira run. Save format unchanged.
+The model-comparison harness removed at the user's request, so the project is the game plus Elvira again; a new test covers the engine lines only the harness reached; this CHANGELOG shortened up to 2026.09.26.0.
 
 ## [2026.09.26.0] — 2026-09-26
 

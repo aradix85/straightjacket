@@ -24,21 +24,23 @@ Creates a venv, installs dependencies, downloads game data, starts the server at
 
 You type what your character does. An AI classifier reads it and picks the move and stat, choosing only from the moves the engine allows in that situation. The engine rolls the dice and applies every mechanical consequence. An AI narrator writes the scene within those constraints. The AI never rolls, never decides whether an action succeeds, never moves resources, and never controls the player character. That's the straightjacket.
 
-Not everything is engine-decided yet. Where the engine has not settled a fact the scene needs, such as whether a door is locked or who else is in the room, the narrator still supplies it, and the NPCs it introduces become part of the game state. Roadmap step 9 moves those facts to engine rolls.
+Not everything is engine-decided yet: ARCHITECTURE.md lists what the AI still decides, and the roadmap moves those facts to engine rolls.
 
-Mechanics drawn from Ironsworn/Starforged (action rolls, momentum, bonds), Mythic GME 2e (chaos factor, scene structure, random events; its fate questions are implemented but not yet connected to play, see roadmap step 9), the Adventure Crafter (plot structure and turning points), and Blades in the Dark (position & effect, clocks).
+Mechanics drawn from Ironsworn/Starforged (action rolls, momentum, bonds), Mythic GME 2e (chaos factor, scene structure, random events), the Adventure Crafter (plot structure and turning points), and Blades in the Dark (position & effect, clocks).
 
 ---
 
 ## Accessibility
 
-Screen reader accessible: semantic HTML, ARIA live regions for automatic narration readout, heading navigation per scene, native form controls. Text-in, text-out by design. Built by a blind developer — accessibility is structural, not cosmetic.
+Text-in, text-out, and built for screen readers from the start by a blind developer: accessibility is structural, not cosmetic. ARCHITECTURE.md describes how the interface does it.
 
 ---
 
 ## Further reading
 
-- [ARCHITECTURE.md](ARCHITECTURE.md) — turn pipeline, module layout, design decisions, configuration, extension guides, code standards, project rules, testing, contributing
+- [ARCHITECTURE.md](ARCHITECTURE.md) — the core idea, turn pipeline, code map, state, configuration, interface
+- [CONTRIBUTING.md](CONTRIBUTING.md) — workflow, project rules, code standards, testing
+- [docs/ai.md](docs/ai.md), [docs/mechanics.md](docs/mechanics.md), [docs/settings.md](docs/settings.md), [docs/divergences.md](docs/divergences.md) — the AI layer, the game mechanics, settings and character creation, and deliberate departures from the source rulebooks and the design document
 - [ORIGINS.md](ORIGINS.md) — project history, fork from EdgeTales, credits
 - [SECURITY.md](SECURITY.md) — API key handling, input sanitization, session model
 - [CHANGELOG.md](CHANGELOG.md) — release history, including the fork period
