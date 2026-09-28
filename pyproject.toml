@@ -1,6 +1,6 @@
 [project]
 name = "straightjacket"
-version = "2026.09.29.3"
+version = "2026.09.29.4"
 requires-python = ">=3.11"
 dependencies = [
     "starlette>=1.0,<2",

@@ -9,6 +9,10 @@ Entries up to 2026.09.26.19 were shortened to their essentials, in 2026.09.26.1 
 
 Calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day. The first CalVer release is 2026.04.25.0; earlier `0.x.y` releases keep their numbers.
 
+## [2026.09.29.4] — 2026-09-29
+
+Documentation only. ARCHITECTURE.md records the order of preference: a tabletop system decides first, an engine rule second, the AI only writes prose and reads free text; the divergence register judges departures by it. The user decided that classic Ironsworn earns experience by its own rule (section R) and that boasts are modelled (step 13b). New sketch step 9c: the engine settles when a revelation lands, and the revelation-check AI call goes, since it validates AI output after the fact. The roadmap lists every place the AI still decides and the system that takes it over, with steps 11 and 35 sharpened to use the Adventure Crafter's character tables and to build on facts.
+
 ## [2026.09.29.3] — 2026-09-29
 
 The opening extraction asks for the place's short name as the narration gives it, two to five words, with what happens there in `scene_context`. Before, all three openings of the day's classic sessions came back as descriptive sentences of 15 to 20 words, which then stood in `<location>`, `<prev_locations>`, and `<fact about>`; after, four openings (three Sundered Isles, one classic) gave three-word names such as "Terracoyote Crossing wayhouse". No engine warning besides one Director time-out.

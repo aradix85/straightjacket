@@ -71,6 +71,15 @@ Models: every AI role runs on GLM 5.3 through Together since 2026.09.26.20; `doc
 
 **Each spawn source names its own entities** from what it naturally has, as threats and clocks do today (`docs/mechanics.md`, Threats and clocks). Later spawners of new entity types follow the same axis.
 
+**Where the AI still decides, and the system that takes it over (2026-09-29).** Judged by the order of preference in ARCHITECTURE.md:
+- What an NPC does off screen: today the narrator invents it from `check_npc_agency`'s prompt; Mythic's NPC behavior table (`mythic_gme_2e.json` → `npc_behavior`) and NPC goal clocks take it over in steps 12 and 13.
+- Locations, settlements, and encounters: today narrated; Datasworn oracles and Mythic's themed element tables take them over in steps 9b, 10, 33, and 34.
+- Who a new NPC is: today narrated and then extracted; the Adventure Crafter's character-crafting tables (`mechanics/adventure_crafter.py` → `roll_character_traits`, ready but without a caller) and the setting's oracles take it over in step 11.
+- Whether a planned revelation has been told: today an AI call judges it; the engine settles it in step 9c.
+- Facts beyond the five fact types: today the narrator's; more fact types, and Mythic's detail-check chains in step 35, widen what fate settles.
+- A "breather" recommended by the Director: pacing is already engine-computed, so the recommendation leaves the Director prompt (priority 3).
+The Brain reading free text, the narrator's prose, and the Director's wording of agendas and arcs stay with the AI by design.
+
 ---
 
 ## DONE
@@ -141,6 +150,10 @@ Sketches; order indicative. Each entry gets substeps, a definition of done, and 
 
 Steps 11, 14b, 25, and 26 each plan a Director tool of their own. Since 2026.09.26.11 the Director has a single tool, `query_game_state`, which cut its tool rounds; whether each planned tool becomes a new one or part of that one is decided when the step is promoted.
 
+### 9c — Revelations settled by the engine
+
+Today the blueprint's revelations reach the narrator as `<revelation_ready>`, and a separate AI call (`call_revelation_check`) judges afterwards whether the prose contained one, which is the kind of post-hoc validator `docs/divergences.md` rules out. Instead the engine decides when a revelation lands (its scene range, or a keyed scene) and hands it to the narrator as a mandatory element, like a `<consequence>`, and marks it revealed at once; the `revelation_check` role, its prompt, schema, and cluster entry go. Measure with Elvira how often the narration carries the revelation before and after.
+
 ### E — Ideas from the EdgeTales comparison (2026-09-24)
 
 EdgeTales 0.9.67 to 0.9.96 (Lars) was read in full on 2026-09-24; its applicable bug fixes landed in 2026.09.24.6. The ideas below fit Straightjacket but need a design decision, a save-format change, or an Elvira measurement. Reimplement the idea, do not port code, and credit EdgeTales in the CHANGELOG entry that lands each one.
@@ -161,7 +174,7 @@ The principle and the list of deliberate divergences are in `docs/divergences.md
 
 Checked (2026.09.24.17 to .34): the action roll, momentum, Endure Harm and Endure Stress, Pay the Price, every match clause, chained and oracle moves, progress, legacy tracks and experience, connections, Mythic's fate check, fate chart, scene test, chaos factor, event focus, lists, and meaning tables, the Adventure Crafter's tables, theme priority, and turning points, Blades clock sizes, and asset and connection adds.
 
-Open: ability effects other than adds (step 18); wounded and shaken blocking recovery in classic Ironsworn; whether classic earns experience by its own rule instead of Starforged's legacy tracks; whether boasts get modelled; the individual words of the oracle and meaning tables, not checked against the books. Outcomes where the player would choose a cost are a recorded divergence, not open work.
+Open: ability effects other than adds (step 18); wounded and shaken blocking recovery in classic Ironsworn; the individual words of the oracle and meaning tables, not checked against the books. Decided on 2026-09-29: classic Ironsworn earns experience by its own rule when a vow is fulfilled, checked against the classic move texts before building, with succession in classic recorded as its own divergence; boasts are modelled with step 13b. Outcomes where the player would choose a cost are a recorded divergence, not open work.
 
 ### 10 — Location and encounter generators
 
@@ -177,7 +190,7 @@ Open: ability effects other than adds (step 18); wounded and shaken blocking rec
 
 ### 11 — NPC generation with tiers
 
-**11.1** Tier 1 (throwaway): demeanor, name, and disposition rolled from oracles, no AI call. New oracle paths `oracle_paths.npc_demeanor` and `oracle_paths.npc_disposition` in `data/settings/*.yaml`; `oracle_paths.names` gives the name; a missing path raises KeyError. The narrator receives the rolled values as structured prompt context.
+**11.1** Tier 1 (throwaway): demeanor, name, and disposition rolled from oracles, no AI call, and identity and descriptors from the Adventure Crafter's character-crafting tables (`mechanics/adventure_crafter.py` → `roll_character_traits`, whose `CharacterTraits` then leaves the orphan-symbol carve-out). New oracle paths `oracle_paths.npc_demeanor` and `oracle_paths.npc_disposition` in `data/settings/*.yaml`; `oracle_paths.names` gives the name; a missing path raises KeyError. The narrator receives the rolled values as structured prompt context.
 
 **11.2** Tier 2 (recurring): full AIMS plus a goal clock, the AI writing only the AIMS. The Director generates them: it reads the tier-1 base and the active threads through its game-state tool, then writes the AIMS through its JSON schema; always-relevant context (current location, faction state once step 14 lands) is prompt-injected.
 
@@ -214,6 +227,8 @@ Group A, formal moves: `combat/turn_the_tide`, `adventure/aid_your_ally` and `re
 Group B, engine triggers: `mark_failure_on_miss` (`failure/mark_your_failure`), `face_setback_at_min_momentum` (`suffer/face_a_setback`, when momentum would drop below -6), `mark_supply_depletion` (`suffer/out_of_supply`), `face_defeat_on_objective_loss` (`combat/face_defeat`). The existing `advance_menace_on_miss` and `pay_the_price` already follow this pattern.
 
 Group C, covered elsewhere or deliberately not wired: `legacy/continue_a_legacy` (step 3 succession), `fate/ask_the_oracle` (the engine's own `ask_the_oracle`), `threshold/overcome_destruction` (step 28), and the five session moves (decision in CHANGELOG 2026.04.28.3).
+
+Boasts, decided on 2026-09-29: Draw the Circle's weak-hit momentum depends on a boast the player chooses; the player states it in their text, the Brain reads it into a field limited to the move's boast options, and the engine applies the boast's cost and reward.
 
 **13b.1** Group A in `engine/move_outcomes.yaml` and `engine/move_categories.yaml`, reusing the existing handler patterns (progress mark, momentum shift, special track).
 
@@ -425,4 +440,4 @@ The other 39 tables mapped in `engine/themed_tables.yaml`; config only.
 
 ### 35 — Detail check chains
 
-Multi-question fate refinement: each follow-up shifts the odds one step toward the previous answer; at most three, config-driven.
+Multi-question fate refinement: each follow-up shifts the odds one step toward the previous answer; at most three, config-driven. Builds on fact resolution (`mechanics/facts.py`): a follow-up is a fact whose odds start from the answer before it, so the chain lands in `WorldState.facts` like any fact.
