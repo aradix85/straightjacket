@@ -101,8 +101,6 @@ class MockProvider:
                     {
                         "correction_source": "input_misread",
                         "corrected_input": "I talk to the guard instead",
-                        "reroll_needed": False,
-                        "corrected_stat": "none",
                         "narrator_guidance": "Rewrite as dialog with the guard.",
                         "director_useful": False,
                         "state_ops": [],

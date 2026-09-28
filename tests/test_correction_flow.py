@@ -7,6 +7,7 @@ from straightjacket.engine.models import (
     NarrationEntry,
     RollResult,
     SceneLogEntry,
+    SceneSetup,
 )
 from tests._helpers import make_brain_result, make_memory, make_npc
 
@@ -15,13 +16,11 @@ class MockProvider:
     def __init__(
         self,
         correction_source: str = "input_misread",
-        reroll_needed: bool = False,
         brain_stat: str = "none",
         dialog_only: bool = True,
     ) -> None:
         self.calls: list = []
         self._correction_source = correction_source
-        self._reroll_needed = reroll_needed
         self._brain_stat = brain_stat
         self._dialog_only = dialog_only
 
@@ -35,8 +34,6 @@ class MockProvider:
                     {
                         "correction_source": self._correction_source,
                         "corrected_input": "I talk to Mira instead",
-                        "reroll_needed": self._reroll_needed,
-                        "corrected_stat": "none",
                         "narrator_guidance": "Rewrite as peaceful dialog.",
                         "director_useful": False,
                         "state_ops": [
@@ -156,6 +153,7 @@ def _game() -> "GameState":
     )
     game.last_turn_snapshot = game.snapshot()
     game.last_turn_snapshot.player_input = "I attack the guard"
+    game.last_turn_snapshot.scene_setup = SceneSetup(scene_type="expected")
     game.last_turn_snapshot.brain = make_brain_result(
         move="combat/strike", stat="iron", player_intent="Attack the guard"
     )
@@ -186,7 +184,7 @@ def test_correction_input_misread_full_flow(load_engine: None, stub_emotions: No
     history_len_before = len(game.narrative.narration_history)
 
     provider = MockProvider(correction_source="input_misread")
-    game, narration, _director_ctx = process_correction(
+    game, narration, _offer, _director_ctx = process_correction(
         provider,
         game,
         "I didn't want to attack",
@@ -196,19 +194,18 @@ def test_correction_input_misread_full_flow(load_engine: None, stub_emotions: No
     assert game.resources.health == snap_health
     assert game.narrative.scene_count == scene_before + 1
     assert len(narration) > 10
-    assert len(game.narrative.narration_history) > history_len_before
-    assert "[corrected]" in game.narrative.narration_history[-1].prompt_summary
-    assert game.narrative.session_log[-1].summary.startswith("[corrected]")
+    assert len(game.narrative.narration_history) == history_len_before + 1
+    assert game.narrative.narration_history[-1].narration == narration
+    assert game.last_turn_snapshot is not None
+    assert game.last_turn_snapshot.player_input == "I talk to Mira instead"
 
 
 def test_correction_to_dialog_does_not_roll_even_with_a_stat(load_engine: None, stub_emotions: None) -> None:
     from straightjacket.engine.correction import process_correction
 
     game = _game()
-    provider = MockProvider(
-        correction_source="input_misread", reroll_needed=True, brain_stat="heart", dialog_only=False
-    )
-    game, narration, _director_ctx = process_correction(
+    provider = MockProvider(correction_source="input_misread", brain_stat="heart", dialog_only=False)
+    game, narration, _offer, _director_ctx = process_correction(
         provider,
         game,
         "That's not what I said, I was asking a question",
@@ -227,7 +224,7 @@ def test_correction_state_error_full_flow(load_engine: None, stub_emotions: None
     history_len_before = len(game.narrative.narration_history)
 
     provider = MockProvider(correction_source="state_error")
-    game, narration, _director_ctx = process_correction(
+    game, narration, _offer, _director_ctx = process_correction(
         provider,
         game,
         "Mira should be loyal",
@@ -247,7 +244,7 @@ def test_correction_no_snapshot(load_engine: None, stub_emotions: None) -> None:
     game.last_turn_snapshot = None
 
     provider = MockProvider()
-    game, narration, director_ctx = process_correction(
+    game, narration, _offer, director_ctx = process_correction(
         provider,
         game,
         "Fix something",

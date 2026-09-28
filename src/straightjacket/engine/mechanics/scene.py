@@ -2,24 +2,13 @@ from __future__ import annotations
 
 from typing import Any
 import random
-from dataclasses import dataclass, field
 
 from ..engine_loader import eng
 from ..logging_util import log
-from ..models import GameState, RandomEvent
-from ..serialization import SerializableMixin
+from ..models import GameState, SceneSetup
 from .fate import _load_mythic
 from .keyed_scenes import evaluate_keyed_scenes
 from .random_events import generate_random_event
-
-
-@dataclass
-class SceneSetup(SerializableMixin):
-    scene_type: str
-    chaos_roll: int = 0
-    adjustments: list[str] = field(default_factory=list)
-    interrupt_event: RandomEvent | None = None
-    narrative_hint: str = ""
 
 
 def check_scene(game: GameState, roll: int | None = None) -> SceneSetup:

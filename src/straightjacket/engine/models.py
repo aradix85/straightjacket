@@ -16,6 +16,7 @@ from .models_base import (
     RandomEvent,
     ResolvedFact,
     Resources,
+    SceneSetup,
     ThreatData,
     ThreatEvent,
     WorldState,
@@ -102,6 +103,7 @@ class TurnSnapshot(SerializableMixin):
     roll: RollResult | None = None
     narration: str | None = None
     facts: list[ResolvedFact] = field(default_factory=list)
+    scene_setup: SceneSetup | None = None
 
 
 @dataclass
@@ -219,6 +221,7 @@ __all__ = [
     "Revelation",
     "RollResult",
     "SceneLogEntry",
+    "SceneSetup",
     "StoryAct",
     "StoryBlueprint",
     "ThreadEntry",

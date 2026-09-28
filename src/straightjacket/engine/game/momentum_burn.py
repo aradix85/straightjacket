@@ -36,5 +36,7 @@ def process_momentum_burn(
         track=None,
         is_progress_roll=False,
     )
-    narration, director_ctx = resolve_and_narrate_action(ctx, outcome, burned=True)
+    ctx.narrator_note = _e.ai_text.narrator_defaults["momentum_burn_injection"]
+    ctx.summary_label = "Momentum burn"
+    narration, director_ctx = resolve_and_narrate_action(ctx, outcome)
     return game, narration, director_ctx

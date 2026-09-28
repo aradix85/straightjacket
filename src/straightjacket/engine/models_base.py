@@ -265,6 +265,15 @@ class RandomEvent(SerializableMixin):
 
 
 @dataclass
+class SceneSetup(SerializableMixin):
+    scene_type: str
+    chaos_roll: int = 0
+    adjustments: list[str] = field(default_factory=list)
+    interrupt_event: RandomEvent | None = None
+    narrative_hint: str = ""
+
+
+@dataclass
 class FateResult(SerializableMixin):
     answer: str
     odds: str

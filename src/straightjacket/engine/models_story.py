@@ -189,8 +189,8 @@ class NarrativeState(SerializableMixin):
     def snapshot(self) -> dict[str, Any]:
         return {
             "scene_count": self.scene_count,
-            "session_log_len": len(self.session_log),
-            "narration_history_len": len(self.narration_history),
+            "session_log": [e.to_dict() for e in self.session_log],
+            "narration_history": [n.to_dict() for n in self.narration_history],
             "threads": [t.to_dict() for t in self.threads],
             "characters_list": [c.to_dict() for c in self.characters_list],
             "plotlines_list": [p.to_dict() for p in self.plotlines_list],
@@ -211,8 +211,8 @@ class NarrativeState(SerializableMixin):
         self.scene_count = snap["scene_count"]
         self.director_guidance = DirectorGuidance.from_dict(snap["director_guidance"])
         self.scene_intensity_history = list(snap["scene_intensity_history"])
-        self.session_log = self.session_log[: snap["session_log_len"]]
-        self.narration_history = self.narration_history[: snap["narration_history_len"]]
+        self.session_log = [SceneLogEntry.from_dict(e) for e in snap["session_log"]]
+        self.narration_history = [NarrationEntry.from_dict(n) for n in snap["narration_history"]]
         self.threads = [ThreadEntry.from_dict(t) for t in snap["threads"]]
         self.characters_list = [CharacterListEntry.from_dict(c) for c in snap["characters_list"]]
         self.plotlines_list = [PlotlineEntry.from_dict(p) for p in snap["plotlines_list"]]

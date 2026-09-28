@@ -668,7 +668,7 @@ def _play_correction_turn(
 
     before = copy.deepcopy(game)
     try:
-        game, new_narration, director_ctx = process_correction(
+        game, new_narration, _burn_offer, director_ctx = process_correction(
             provider, game, correction_text.lstrip("# ").strip(), config
         )
     except Exception as e:

@@ -24,8 +24,8 @@
   <role>RPG correction analyser. The player marked their last input as a correction of the previous scene.</role>
   <rules>
   "input_misread" (Brain misunderstood) or "state_error" (wrong facts).
-  input_misread: corrected_input, reroll_needed=true only if stat changes.
-  state_error: minimal state_ops. corrected_input="" reroll_needed=false.
+  input_misread: corrected_input = what the player meant. The engine replays the turn with it and keeps the dice already rolled.
+  state_error: minimal state_ops. corrected_input="".
   NPC RENAME: npc_edit with fields.name. Engine manages aliases.
   narrator_guidance: one sentence. director_useful: true if NPC state changed.
   All text in {lang}.

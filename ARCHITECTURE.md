@@ -51,7 +51,7 @@ Database sync (db/sync.py) and save (persistence.py)
 Director (game/director_runner.py) → after the turn is returned: NPC reflections; saved again
 ```
 
-Dialog turns skip the roll and its consequences. A correction (`##`) restores the snapshot taken before the turn and runs resolution and narration again through the same shared functions, reusing the facts the turn had settled. A momentum burn restores the state taken right after the roll and runs the turn's own resolution, narration, and scene-end path with the better result (`game/momentum_burn.py` → `process_momentum_burn`).
+Dialog turns skip the roll and its consequences. A correction (`##`) of a misread input restores the state taken right after the scene test and plays the turn again with the corrected input, keeping the scene type, the settled facts, and the dice (`game/turn.py` → `replay_turn`); a correction of the state edits it and narrates the turn again. A momentum burn restores the state taken right after the roll and runs the turn's own resolution, narration, and scene-end path with the better result (`game/momentum_burn.py` → `process_momentum_burn`).
 
 ## Code map
 
@@ -78,7 +78,7 @@ Beside them, `i18n.py` and `strings_loader.py` serve user-facing strings. The te
 
 **Typed dataclasses.** `GameState` holds typed sub-objects (resources, world, narrative, campaign), and every other piece of state (NPCs, memories, moves, progress tracks, threads, clocks, threats, chapter summaries) is a dataclass with fixed fields, reached by attribute, never as a dict. `serialization.py` → `SerializableMixin` serializes every class without manual overrides.
 
-**Snapshot and restore.** `GameState.snapshot()` captures all mutable state before a turn, including every entry of the story lists, and `restore()` reverts it atomically. Corrections, momentum burns, and a turn whose AI call fails rely on it; the momentum burn also takes a second snapshot right after the roll. A resolved fact lives in `WorldState.facts`, so the snapshot carries it like any other world state.
+**Snapshot and restore.** `GameState.snapshot()` captures all mutable state, including every entry of the story lists, and `restore()` reverts it atomically. Each turn keeps a snapshot taken right after its scene test, with the scene type, as `GameState.last_turn_snapshot` for corrections; the momentum burn takes a second one right after the roll, and a turn whose AI call fails is rolled back to the state before it. A resolved fact lives in `WorldState.facts`, so the snapshot carries it like any other world state.
 
 **Saves.** A save is JSON in the users folder (the project's `users` folder, or the folder `STRAIGHTJACKET_USERS_DIR` names). Loading is strict: a field the class does not know, or a field the data lacks, raises, and `persistence.py` → `load_game` reports such a save to the player as incompatible.
 

@@ -205,6 +205,30 @@ def test_restore_reverts_changes_inside_the_story_lists(load_engine: None) -> No
     assert game.narrative.characters_list[0].weight == 1
 
 
+def test_a_burn_at_the_history_cap_keeps_the_earlier_entries(
+    load_engine: None, stub_emotions: None, forced_miss: None
+) -> None:
+    import copy
+
+    from straightjacket.engine.engine_loader import eng
+    from straightjacket.engine.game import process_momentum_burn, process_turn
+    from tests.elvira.elvira_bot.invariants import check_turn_replacement
+
+    game = _game()
+    cap = eng().pacing.max_narration_history
+    game.narrative.narration_history = [
+        NarrationEntry(scene=n, prompt_summary=f"Scene {n}", narration=f"Earlier scene {n}.") for n in range(1, cap + 1)
+    ]
+    provider = _Provider(_brain())
+    game, _n, _r, offer, _d = process_turn(provider, game, "I slip past Mira into the archive vault", _CONFIG)
+    assert offer is not None
+    before = copy.deepcopy(game)
+
+    game, narration, _director = process_momentum_burn(provider, game, offer, _CONFIG)
+
+    assert check_turn_replacement(before, game, narration, 4, "momentum burn", keeps_location=True) == []
+
+
 class _FakeWS:
     def __init__(self) -> None:
         self.sent: list[dict[str, Any]] = []

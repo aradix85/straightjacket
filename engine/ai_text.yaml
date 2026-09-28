@@ -68,8 +68,6 @@ ai_text:
     narrator_metadata_fallback_lore_npcs: []
     correction_brain_fallback_source: state_error
     correction_brain_fallback_corrected_input: ''
-    correction_brain_fallback_reroll_needed: false
-    correction_brain_fallback_corrected_stat: none
     correction_brain_fallback_director_useful: false
     correction_brain_fallback_state_ops: []
     new_chapter_threads_template: 'New chapter. Open threads: {threads}'

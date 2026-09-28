@@ -13,7 +13,7 @@ Every AI call carries its own role name (`AICallSpec.log_role`), and every role 
 - `revelation_check` decides whether a planned revelation has happened in the story (`ai/brain.py` → `call_revelation_check`).
 - `recap`, `chapter_summary`, and `blueprint_voicing` write the player-facing recap, the summary kept in campaign history, and a setting-specific story blueprint from an Adventure Crafter seed (`ai/recap.py`, `ai/chapter_summary.py`, `ai/blueprint_voicing.py`).
 - `director` writes NPC reflections after the turn (`director.py`).
-- `correction` analyses a `##` correction (`correction/analysis.py` → `call_correction_brain`).
+- `correction` analyses a `##` correction (`correction/analysis.py` → `call_correction_brain`): a misread input, which the engine replays with the corrected input and the dice already rolled, or state operations.
 
 The narrator writes pure prose; everything structured comes from separate calls with strict JSON schemas (`ai/schemas.py`). Why narration and extraction are separate calls is recorded in `docs/divergences.md`. Prompts live per role in `prompts/*.yaml` and are tuned for the models in use: switching models means re-tuning in place, not adding parallel variants.
 

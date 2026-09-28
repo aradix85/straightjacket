@@ -297,7 +297,6 @@ def get_correction_output_schema() -> dict[str, Any]:
     global _correction_cache
     if _correction_cache is None:
         _e = eng()
-        stat_names = list(_e.stats.names)
         field_props: dict[str, Any] = {}
         for fname in _e.enums.correction_fields:
             if fname == "aliases":
@@ -312,8 +311,6 @@ def get_correction_output_schema() -> dict[str, Any]:
             {
                 "correction_source": _str_enum(["input_misread", "state_error"]),
                 "corrected_input": _str(),
-                "reroll_needed": _bool(),
-                "corrected_stat": _str_enum(stat_names),
                 "narrator_guidance": _str(),
                 "director_useful": _bool(),
                 "state_ops": _arr(

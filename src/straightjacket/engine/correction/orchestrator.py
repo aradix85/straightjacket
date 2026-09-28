@@ -2,38 +2,16 @@ from __future__ import annotations
 
 from typing import Any
 from ...i18n import t
-from ..ai.brain import call_brain
-from ..models import BrainResult
 from ..ai.provider_base import AIProvider
-from ..datasworn.moves import get_moves
 from ..db import sync as _db_sync
 from ..director import should_call_director
 from ..engine_loader import eng
-from ..game.finalization import (
-    apply_post_narration,
-    apply_progress_and_legacy,
-    narrate_scene,
-    resolve_action_consequences,
-)
-from ..mechanics import find_progress_track
+from ..game import BurnOffer, replay_turn
+from ..game.finalization import apply_post_narration, narrate_scene
 from ..logging_util import log
-from ..mechanics import (
-    apply_brain_location_time,
-    check_npc_agency,
-    clear_facts_settled_by_hit,
-    facts_of_this_place,
-    generate_consequence_sentences,
-    is_dialog_branch,
-    record_scene_intensity,
-    remember_facts,
-    resolve_effect,
-    resolve_position,
-    resolve_turn_facts,
-    roll_action,
-    roll_oracle_answer,
-    update_chaos_factor,
-)
+from ..mechanics import check_npc_agency, facts_of_this_place, generate_consequence_sentences
 from ..models import (
+    BrainResult,
     EngineConfig,
     GameState,
     NarrationEntry,
@@ -46,88 +24,9 @@ from ..npc import activate_npcs_for_prompt
 from ..prompt_action import build_action_prompt
 from ..prompt_dialog import build_dialog_prompt
 from ..prompt_loader import get_prompt
+from ..xml_utils import xe as _xe
 from .analysis import call_correction_brain
 from .ops import _apply_correction_ops
-
-
-def _restore_from_snapshot(game: GameState, snap: TurnSnapshot) -> None:
-    game.restore(snap)
-    log("[Correction] State fully restored from snapshot")
-
-
-def _handle_input_misread(
-    provider: AIProvider, game: GameState, snap: TurnSnapshot, analysis: dict[str, Any], _cfg: EngineConfig
-) -> tuple[BrainResult, RollResult | None, str, list[str], list[ResolvedFact]]:
-    _restore_from_snapshot(game, snap)
-    corrected_input = analysis["corrected_input"] or snap.player_input
-
-    brain = call_brain(provider, game, corrected_input, _cfg)
-    apply_brain_location_time(game, brain)
-    remember_facts(game, snap.facts)
-    facts = resolve_turn_facts(game, brain)
-
-    nar = game.narrative
-    consequences: list[str] = []
-
-    if analysis["reroll_needed"] and not is_dialog_branch(brain) and brain.stat != "none":
-        nar.scene_count += 1
-        stat_name = brain.stat
-        roll = roll_action(
-            stat_name, game.get_stat(stat_name), brain.move, game.resources.momentum, game.resources.next_move_bonus
-        )
-        game.resources.next_move_bonus = 0
-        log(f"[Correction] Re-rolled: {roll.result} ({stat_name})")
-        position = resolve_position(game, brain)
-        effect = resolve_effect(game, brain, position)
-
-        action = resolve_action_consequences(game, brain, roll, position)
-        consequences = action.consequences
-        clock_events = action.clock_events
-        clear_facts_settled_by_hit(game, facts, roll.result)
-
-        if action.outcome:
-            ds_moves = get_moves(game.setting_id) if game.setting_id else {}
-            ds_move = ds_moves.get(brain.move)
-            source_category = ds_move.track_category if ds_move else "vow"
-            src_track = find_progress_track(game, source_category, target_track=brain.target_track)
-            source_rank = src_track.rank if src_track else "dangerous"
-            apply_progress_and_legacy(game, action.outcome, brain, source_category, source_rank)
-
-        npc_agency, _, _ = check_npc_agency(game)
-        activated_npcs, mentioned_npcs, _ = activate_npcs_for_prompt(game, brain, corrected_input)
-
-        consequence_sentences = generate_consequence_sentences(consequences, clock_events, game, brain)
-
-        prompt = build_action_prompt(
-            game,
-            brain,
-            roll,
-            consequences,
-            npc_agency,
-            player_words=corrected_input,
-            activated_npcs=activated_npcs,
-            mentioned_npcs=mentioned_npcs,
-            position=position,
-            effect=effect,
-            consequence_sentences=consequence_sentences,
-            clock_fill_results=action.clock_fill_results,
-            facts=facts,
-        )
-        return brain, roll, prompt, consequences, facts
-
-    nar.scene_count += 1
-    activated_npcs, mentioned_npcs, _ = activate_npcs_for_prompt(game, brain, corrected_input)
-    oracle_answer = roll_oracle_answer(game) if brain.move == "ask_the_oracle" and not facts else ""
-    prompt = build_dialog_prompt(
-        game,
-        brain,
-        player_words=corrected_input,
-        activated_npcs=activated_npcs,
-        mentioned_npcs=mentioned_npcs,
-        oracle_answer=oracle_answer,
-        facts=facts,
-    )
-    return brain, None, prompt, consequences, facts
 
 
 def _handle_state_error(
@@ -173,8 +72,8 @@ def _handle_state_error(
     return brain, None, prompt, [], facts
 
 
-def _update_correction_logs(
-    game: GameState, brain: BrainResult, roll: RollResult | None, narration: str, intent: str, source: str
+def _update_state_error_logs(
+    game: GameState, brain: BrainResult, roll: RollResult | None, narration: str, intent: str
 ) -> None:
     nar = game.narrative
     narration_entry = NarrationEntry(
@@ -182,30 +81,6 @@ def _update_correction_logs(
         prompt_summary=f"[corrected] {intent}",
         narration=narration[: eng().pacing.max_narration_chars],
     )
-
-    if source == "input_misread":
-        if roll:
-            update_chaos_factor(game, roll.result)
-            scene_type = "action"
-        else:
-            scene_type = "breather"
-        record_scene_intensity(game, scene_type)
-        nar.narration_history.append(narration_entry)
-        if len(nar.narration_history) > eng().pacing.max_narration_history:
-            nar.narration_history = nar.narration_history[-eng().pacing.max_narration_history :]
-        nar.session_log.append(
-            SceneLogEntry(
-                scene=nar.scene_count,
-                scene_type="expected",
-                summary=f"[corrected] {intent}",
-                move=brain.move,
-                result=roll.result if roll else "dialog",
-            )
-        )
-        if len(nar.session_log) > eng().pacing.max_session_log:
-            nar.session_log = nar.session_log[-eng().pacing.max_session_log :]
-        return
-
     if nar.narration_history:
         nar.narration_history[-1] = narration_entry
     else:
@@ -252,35 +127,30 @@ def _maybe_queue_director(
 
 def process_correction(
     provider: AIProvider, game: GameState, correction_text: str, config: EngineConfig | None = None
-) -> tuple[GameState, str, dict[str, Any] | None]:
+) -> tuple[GameState, str, BurnOffer | None, dict[str, Any] | None]:
     snap = game.last_turn_snapshot
     if not snap:
         log("[Correction] No snapshot available — cannot correct", level="warning")
-        return game, t("correction.no_snapshot"), None
+        return game, t("correction.no_snapshot"), None, None
 
     _cfg = config or EngineConfig()
 
     analysis = call_correction_brain(provider, game, correction_text, _cfg)
-    source = analysis["correction_source"]
-
-    if source == "input_misread":
-        brain, roll, prompt, consequences, facts = _handle_input_misread(provider, game, snap, analysis, _cfg)
-    else:
-        brain, roll, prompt, consequences, facts = _handle_state_error(game, snap, analysis)
-
-    correction_tag = (
-        f"\n<correction_context>{analysis['narrator_guidance']}</correction_context>"
-        f"\n{get_prompt('block_correction_instruction', role='narrator')}"
+    note = (
+        f"<correction_context>{_xe(analysis['narrator_guidance'])}</correction_context>\n"
+        f"{get_prompt('block_correction_instruction', role='narrator')}"
     )
-    prompt = prompt + correction_tag
-    narration = narrate_scene(provider, game, prompt, config=_cfg)
 
-    if game.last_turn_snapshot is not None:
-        game.last_turn_snapshot.narration = narration
-        game.last_turn_snapshot.facts = list(facts)
-        if source == "input_misread":
-            game.last_turn_snapshot.brain = brain
-            game.last_turn_snapshot.roll = roll
+    if analysis["correction_source"] == "input_misread":
+        corrected_input = analysis["corrected_input"] or snap.player_input
+        narration, burn_offer, director_ctx = replay_turn(provider, game, corrected_input, _cfg, note)
+        log("[Correction] Complete: source=input_misread, turn replayed")
+        return game, narration, burn_offer, director_ctx
+
+    brain, roll, prompt, consequences, facts = _handle_state_error(game, snap, analysis)
+    narration = narrate_scene(provider, game, f"{prompt}\n{note}", config=_cfg)
+    snap.narration = narration
+    snap.facts = list(facts)
 
     activated_npcs, mentioned_npcs, _ = activate_npcs_for_prompt(game, brain, snap.player_input)
     _scene_present_ids = {n.id for n in activated_npcs} | {n.id for n in mentioned_npcs}
@@ -297,10 +167,10 @@ def process_correction(
     )
 
     intent = (brain.player_intent or snap.player_input)[: eng().truncations.log_medium]
-    _update_correction_logs(game, brain, roll, narration, intent, source)
+    _update_state_error_logs(game, brain, roll, narration, intent)
 
     director_ctx = _maybe_queue_director(game, analysis, roll, narration, metadata, _cfg)
 
-    log(f"[Correction] Complete: source={source}, rewrite done")
+    log("[Correction] Complete: source=state_error, rewrite done")
     _db_sync(game)
-    return game, narration, director_ctx
+    return game, narration, None, director_ctx

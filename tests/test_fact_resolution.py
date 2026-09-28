@@ -296,8 +296,6 @@ class _Provider:
                 {
                     "correction_source": "input_misread",
                     "corrected_input": "I force the vault door with my shoulder",
-                    "reroll_needed": True,
-                    "corrected_stat": "iron",
                     "narrator_guidance": "The player used force.",
                     "director_useful": False,
                     "state_ops": [],
@@ -441,16 +439,15 @@ def test_a_burn_keeps_the_facts_and_clears_them_on_the_better_result(
 def test_a_correction_reuses_the_facts_of_the_turn(
     load_engine: None, stub_emotions: None, counted_fate: list[str], monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    from straightjacket.engine.correction import orchestrator, process_correction
-    from straightjacket.engine.game import process_turn, turn
+    from straightjacket.engine.correction import process_correction
+    from straightjacket.engine.game import process_turn
 
     _force(monkeypatch, "MISS")
-    monkeypatch.setattr(orchestrator, "roll_action", turn.roll_action)
     provider = _Provider(_brain())
     game, _n, _r, _o, _d = process_turn(provider, _game(), "I force the vault door", _CONFIG)
     first = list(game.world.facts)
 
-    game, _narration, _director = process_correction(provider, game, "I meant with force", _CONFIG)
+    game, _narration, _offer, _director = process_correction(provider, game, "I meant with force", _CONFIG)
 
     assert counted_fate == ["locked:here"]
     assert game.world.facts == first

@@ -15,6 +15,7 @@ from ..engine.db.sync import sync as _db_sync
 from ..engine.director import reset_stale_reflection_flags
 from ..engine.engine_loader import eng
 from ..engine.game import (
+    BurnOffer,
     determine_end_reason,
     generate_epilogue,
     prepare_succession,
@@ -195,6 +196,16 @@ def _restore_after_failed_turn(
     _db_sync(game)
 
 
+async def _offer_burn(session: Session, ws: WebSocket, offer: BurnOffer | None) -> None:
+    if offer is None:
+        return
+    session.pending_burn = offer
+    await _send(
+        ws,
+        {"type": "burn_offer", "current": offer.roll.result, "upgrade": offer.new_result, "cost": offer.cost},
+    )
+
+
 async def handle_player_input(session: Session, ws: WebSocket, msg: dict[str, Any]) -> None:
     if session.processing:
         await _send(ws, {"type": "error", "text": t("game.still_processing")})
@@ -251,17 +262,7 @@ async def handle_player_input(session: Session, ws: WebSocket, msg: dict[str, An
             },
         )
 
-        if burn_offer:
-            session.pending_burn = burn_offer
-            await _send(
-                ws,
-                {
-                    "type": "burn_offer",
-                    "current": burn_offer.roll.result,
-                    "upgrade": burn_offer.new_result,
-                    "cost": burn_offer.cost,
-                },
-            )
+        await _offer_burn(session, ws, burn_offer)
 
         if game.game_over:
             if not game.campaign.pending_succession:
@@ -321,7 +322,7 @@ async def handle_correction(session: Session, ws: WebSocket, msg: dict[str, Any]
         provider = get_provider()
         before, last_before = session.game.snapshot(), copy.deepcopy(session.game.last_turn_snapshot)
         try:
-            game, narration, director_ctx = await asyncio.to_thread(
+            game, narration, burn_offer, director_ctx = await asyncio.to_thread(
                 process_correction, provider, session.game, text, session.config
             )
         except Exception as e:
@@ -332,6 +333,7 @@ async def handle_correction(session: Session, ws: WebSocket, msg: dict[str, Any]
         session.game = game
 
         await _send(ws, {"type": "replace_narration", "text": highlight_dialog(narration)})
+        await _offer_burn(session, ws, burn_offer)
 
         session.append_chat("user", f"## {text}")
         session.append_chat("assistant", narration)

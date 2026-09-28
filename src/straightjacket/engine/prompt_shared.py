@@ -13,8 +13,8 @@ from .mechanics import (
     resolve_npc_stance,
 )
 from .mechanics.impacts import impact_label
-from .mechanics.scene import SceneSetup, adjustment_descriptions
-from .models import BrainResult, GameState, NpcData, RandomEvent, ResolvedFact
+from .mechanics.scene import adjustment_descriptions
+from .models import BrainResult, GameState, NpcData, RandomEvent, ResolvedFact, SceneSetup
 from .npc import find_npc, retrieve_memories
 from .prompt_loader import get_prompt
 from .xml_utils import xa as _xa

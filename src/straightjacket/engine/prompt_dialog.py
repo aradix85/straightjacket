@@ -1,7 +1,6 @@
 from collections.abc import Sequence
 
-from .mechanics.scene import SceneSetup
-from .models import BrainResult, ClockFillResult, GameState, NpcData, RandomEvent, ResolvedFact
+from .models import BrainResult, ClockFillResult, GameState, NpcData, RandomEvent, ResolvedFact, SceneSetup
 from .prompt_blocks import narrative_direction_block, recent_events_block, story_context_block
 from .prompt_loader import get_prompt
 from .prompt_shared import (

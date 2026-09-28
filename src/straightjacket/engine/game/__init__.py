@@ -5,6 +5,7 @@ __all__ = [
     "prepare_succession",
     "process_momentum_burn",
     "process_turn",
+    "replay_turn",
     "run_deferred_director",
     "start_new_chapter",
     "start_new_game",
@@ -24,5 +25,5 @@ from .succession import (
     prepare_succession,
     start_succession_with_character,
 )
-from .turn import process_turn
+from .turn import process_turn, replay_turn
 from .turn_types import BurnOffer

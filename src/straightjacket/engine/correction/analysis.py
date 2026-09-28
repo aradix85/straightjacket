@@ -76,10 +76,7 @@ npcs:
         )
         response = create_with_retry(provider, spec)
         result: dict[str, Any] = json.loads(response.content)
-        log(
-            f"[Correction] source={result['correction_source']} "
-            f"reroll={result['reroll_needed']} ops={len(result['state_ops'])}"
-        )
+        log(f"[Correction] source={result['correction_source']} ops={len(result['state_ops'])}")
         return result
     except Exception as e:
         log(f"[Correction] Brain failed ({type(e).__name__}: {e}), falling back to no-op state_error", level="warning")
@@ -87,8 +84,6 @@ npcs:
         return {
             "correction_source": _defaults["correction_brain_fallback_source"],
             "corrected_input": _defaults["correction_brain_fallback_corrected_input"],
-            "reroll_needed": _defaults["correction_brain_fallback_reroll_needed"],
-            "corrected_stat": _defaults["correction_brain_fallback_corrected_stat"],
             "narrator_guidance": correction_text,
             "director_useful": _defaults["correction_brain_fallback_director_useful"],
             "state_ops": list(_defaults["correction_brain_fallback_state_ops"]),

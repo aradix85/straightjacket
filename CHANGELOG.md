@@ -9,6 +9,14 @@ Entries up to 2026.09.26.19 were shortened to their essentials, in 2026.09.26.1 
 
 Calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day. The first CalVer release is 2026.04.25.0; earlier `0.x.y` releases keep their numbers.
 
+## [2026.09.29.1] — 2026-09-29
+
+A correction of a misread input replays the turn through the turn's own code (`replay_turn`) instead of a separate copy: same scene type, the facts already settled, and the dice already rolled, rescored with the corrected stat. The copy narrated a correction without a new roll as dialog, so a miss vanished, and it skipped track creation, weak-hit clock ticks, and the scene end. The correction AI no longer decides whether to reroll (`reroll_needed` and `corrected_stat` are gone), and a corrected turn can offer a momentum burn. The turn snapshot is taken after the scene test and keeps the scene type; the save format breaks.
+
+Elvira's new checks caught at once that a restore still cut the narration history and the session log by length, which brings back the wrong entries once the history is at its cap of three; both lists are now copied whole. One Elvira session in classic, eight turns: a burn and a correction replayed, five facts resolved; one Director answer ran to the token limit (roadmap priority 2).
+
+Quality gate: 1523 tests green, twenty-nine project-rule scans clean, coverage 90.48%, ruff and mypy --strict clean.
+
 ## [2026.09.29.0] — 2026-09-29
 
 Step 9a, fact resolution: the Brain names the facts an action or question turns on, Mythic's fate chart settles them with odds the engine derives from `engine/fact_resolution.yaml`, and the narrator gets them as `<facts>`. A fact belongs to its place and clears on a move, a chapter start, or a succession; a hit settles a yes where the type says so. Ask the Oracle stays the move for questions: a yes/no question that a fact type covers is answered by the fact. `resolve_likelihood` is gone. The save format breaks.

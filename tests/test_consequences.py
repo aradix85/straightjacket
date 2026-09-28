@@ -304,7 +304,7 @@ def test_next_move_bonus_effect_is_banked_and_spent_on_the_next_action_roll(
     assert game.resources.next_move_bonus == 1
     game.resources.momentum = 2
     _fixed_dice(monkeypatch, 3, 9, 9)
-    outcome = _execute_roll(game, make_brain_result(move="adventure/face_danger", stat="wits"))
+    outcome = _execute_roll(game, make_brain_result(move="adventure/face_danger", stat="wits"), None)
     assert outcome.roll.action_score == 3 + game.get_stat("wits") + 1
     assert game.resources.next_move_bonus == 0
 

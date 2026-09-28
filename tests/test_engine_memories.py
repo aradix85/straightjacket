@@ -108,7 +108,7 @@ class TestExecuteRollStatNoneRejected:
         brain = make_brain_result(move="adventure/face_danger", stat="none", dialog_only=False)
 
         with pytest.raises(ValueError, match="stat='none'"):
-            _execute_roll(game, brain)
+            _execute_roll(game, brain, None)
 
     def test_action_roll_with_real_stat_succeeds(self) -> None:
         from straightjacket.engine.game.turn import _execute_roll
@@ -117,7 +117,7 @@ class TestExecuteRollStatNoneRejected:
         game.setting_id = "classic"
         brain = make_brain_result(move="adventure/face_danger", stat="wits", dialog_only=False)
 
-        outcome = _execute_roll(game, brain)
+        outcome = _execute_roll(game, brain, None)
         assert outcome.roll is not None
         assert outcome.roll.stat_name == "wits"
 

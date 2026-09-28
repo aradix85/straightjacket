@@ -4,7 +4,6 @@ from dataclasses import dataclass, field
 from ..ai.provider_base import AIProvider, NarrationSink
 from ..datasworn.moves import Move
 from ..models import ClockFillResult
-from ..mechanics.scene import SceneSetup
 from ..models import (
     BrainResult,
     ClockEvent,
@@ -15,6 +14,7 @@ from ..models import (
     RandomEvent,
     ResolvedFact,
     RollResult,
+    SceneSetup,
     ThreatEvent,
     TurnSnapshot,
 )
@@ -36,6 +36,8 @@ class SceneContext:
     mentioned_npcs: list[NpcData] = field(default_factory=list)
     pending_random_events: list[RandomEvent] = field(default_factory=list)
     stream: NarrationSink | None = None
+    narrator_note: str = ""
+    summary_label: str = "Action"
 
 
 @dataclass
