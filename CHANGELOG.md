@@ -9,6 +9,12 @@ Entries up to 2026.09.26.19 were shortened to their essentials, in 2026.09.26.1 
 
 Calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day. The first CalVer release is 2026.04.25.0; earlier `0.x.y` releases keep their numbers.
 
+## [2026.09.29.2] — 2026-09-29
+
+Loose ends. `docs/divergences.md` becomes a register: every departure from the design document or a rulebook states why and ends with a status (Permanent, Until step N, or Open), and a new project-rule scan rejects an entry without one. New entries: the narrator still invents off-screen NPC actions (until step 12), content is narrated rather than generated (until 9b), the WRONG/RIGHT prompt examples, the pause on AI failure, Mythic under CC BY-NC; classic experience and boasts are Open. `apply_progress_and_legacy` takes the rolled track and raises instead of assuming a vow of rank dangerous. Setting yaml gains a required `playable`, so Delve is no longer skipped by name. No Elvira session; the next release's measurement runs on this code.
+
+Quality gate: 1526 tests green, thirty project-rule scans clean, coverage 90.42%, ruff and mypy --strict clean.
+
 ## [2026.09.29.1] — 2026-09-29
 
 A correction of a misread input replays the turn through the turn's own code (`replay_turn`) instead of a separate copy: same scene type, the facts already settled, and the dice already rolled, rescored with the corrected stat. The copy narrated a correction without a new roll as dialog, so a miss vanished, and it skipped track creation, weak-hit clock ticks, and the scene end. The correction AI no longer decides whether to reroll (`reroll_needed` and `corrected_stat` are gone), and a corrected turn can offer a momentum burn. The turn snapshot is taken after the scene test and keeps the scene type; the save format breaks.

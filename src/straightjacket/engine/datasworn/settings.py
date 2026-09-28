@@ -65,6 +65,7 @@ class _SettingConfig:
     title: str
     datasworn_id: str
     description: str
+    playable: bool
     oracle_paths: _OraclePathsPartial
     vocabulary: VocabularyConfig
     creation_flow: _CreationFlowPartial
@@ -86,6 +87,15 @@ def _require_str(data: dict[str, Any], key: str, yaml_path: str) -> str:
     value = data[key]
     if not isinstance(value, str):
         raise TypeError(f"Expected str at '{key}' in {yaml_path}, got {type(value).__name__}")
+    return value
+
+
+def _require_bool(data: dict[str, Any], key: str, yaml_path: str) -> bool:
+    if key not in data:
+        raise KeyError(f"Required key '{key}' missing in {yaml_path}")
+    value = data[key]
+    if not isinstance(value, bool):
+        raise TypeError(f"Expected bool at '{key}' in {yaml_path}, got {type(value).__name__}")
     return value
 
 
@@ -143,6 +153,7 @@ def _parse_setting_config(data: dict[str, Any], yaml_path: str) -> _SettingConfi
         title=_require_str(data, "title", yaml_path),
         datasworn_id=_require_str(data, "datasworn_id", yaml_path),
         description=_require_str(data, "description", yaml_path),
+        playable=_require_bool(data, "playable", yaml_path),
         oracle_paths=_parse_oracle_paths_partial(_require_dict(data, "oracle_paths", yaml_path), yaml_path),
         vocabulary=_parse_vocabulary(_require_dict(data, "vocabulary", yaml_path), yaml_path),
         creation_flow=_parse_creation_flow_partial(data.get("creation_flow"), yaml_path),
@@ -230,6 +241,10 @@ class SettingPackage:
     @property
     def title(self) -> str:
         return self._config.title
+
+    @property
+    def playable(self) -> bool:
+        return self._config.playable
 
     @property
     def description(self) -> str:

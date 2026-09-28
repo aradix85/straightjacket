@@ -106,6 +106,7 @@ def _minimal_setting_yaml() -> dict:
         "id": "probe",
         "title": "Probe",
         "datasworn_id": "probe",
+        "playable": True,
         "description": "Probe setting.",
         "oracle_paths": {"threats": "a/b"},
         "vocabulary": {"substitutions": {}, "sensory_palette": ""},
@@ -128,6 +129,18 @@ def test_setting_yaml_unknown_key_raises(section: str | None) -> None:
     target = data if section is None else data[section]
     target["factions"] = "factions"
     with pytest.raises(KeyError, match=r"Unknown key\(s\) \['factions'\]"):
+        _parse_setting_config(data, "probe.yaml")
+
+
+def test_setting_yaml_must_say_whether_it_is_playable() -> None:
+    from straightjacket.engine.datasworn.settings import _parse_setting_config
+
+    data = _minimal_setting_yaml()
+    del data["playable"]
+    with pytest.raises(KeyError, match="playable"):
+        _parse_setting_config(data, "probe.yaml")
+    data["playable"] = "yes"
+    with pytest.raises(TypeError, match="playable"):
         _parse_setting_config(data, "probe.yaml")
 
 

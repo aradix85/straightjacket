@@ -2,6 +2,7 @@
 id: delve
 title: "Ironsworn: Delve"
 datasworn_id: delve
+playable: false
 parent: classic
 description: >
   Beneath the Ironlands lie ancient sites: ruins, caverns, tangled

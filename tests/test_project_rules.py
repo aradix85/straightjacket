@@ -1112,6 +1112,31 @@ def _check_doc_symbols_exist() -> tuple[str, list[Violation]]:
     return "DOC DRIFT: an md file names a symbol that does not exist", violations
 
 
+_DIVERGENCE_ENTRY = re.compile(r"^(?:- )?\*\*[^*]+\*\*")
+_DIVERGENCE_STATUS = re.compile(r"Status: (?:Permanent|Open|Until step (\S+?))[.,;]")
+
+
+def _check_divergences_have_a_status() -> tuple[str, list[Violation]]:
+    lines = (REPO_ROOT / "docs" / "divergences.md").read_text(encoding="utf-8").splitlines()
+    roadmap = (REPO_ROOT / "roadmap.md").read_text(encoding="utf-8")
+    violations: list[Violation] = []
+    for lineno, line in enumerate(lines, 1):
+        if not _DIVERGENCE_ENTRY.match(line):
+            continue
+        status = _DIVERGENCE_STATUS.search(line)
+        if status is None:
+            violations.append(
+                Violation("docs/divergences.md", lineno, "entry without Status: Permanent, Open, or Until step N")
+            )
+            continue
+        step = status.group(1)
+        if step is not None and f"### {step} — " not in roadmap and f"NEXT STEP — {step}:" not in roadmap:
+            violations.append(
+                Violation("docs/divergences.md", lineno, f"Until step {step}: no such step in roadmap.md")
+            )
+    return "DIVERGENCE without a status or with an unknown roadmap step", violations
+
+
 def _check_changelog_consistent() -> tuple[str, list[Violation]]:
     lines = (REPO_ROOT / "CHANGELOG.md").read_text(encoding="utf-8").splitlines()
     pyproject = (REPO_ROOT / "pyproject.toml").read_text(encoding="utf-8")
@@ -1249,6 +1274,7 @@ _ALL_CHECKS = (
     _check_code_map_complete,
     _check_doc_symbols_exist,
     _check_changelog_consistent,
+    _check_divergences_have_a_status,
     _check_import_layers,
 )
 

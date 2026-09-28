@@ -18,7 +18,7 @@ from ..mechanics.consequences import tick_threat_clock
 from ..mechanics.legacy import mark_legacy, mark_legacy_ticks, shifted_rank
 from ..mechanics.move_effects import OutcomeResult, strip_datasworn_links
 from ..mechanics.move_outcome import resolve_move_outcome
-from ..models import BrainResult, ClockEvent, EngineConfig, GameState, MemoryEntry, RollResult
+from ..models import BrainResult, ClockEvent, EngineConfig, GameState, MemoryEntry, ProgressTrack, RollResult
 from ..npc import find_npc, named_in
 from ..npc.memory import consolidate_memory
 from ..parser import parse_narrator_response
@@ -139,11 +139,13 @@ def apply_progress_and_legacy(
     game: GameState,
     outcome: OutcomeResult,
     brain: BrainResult,
-    source_track_category: str = "vow",
-    source_track_rank: str = "dangerous",
+    track_category: str | None,
+    rolled_track: ProgressTrack | None,
 ) -> None:
     if outcome.progress_marks > 0:
-        track = find_progress_track(game, source_track_category, target_track=brain.target_track)
+        if track_category is None:
+            raise ValueError(f"{brain.move}: its outcome marks progress, but the move names no track category")
+        track = find_progress_track(game, track_category, target_track=brain.target_track)
         if track:
             for _ in range(outcome.progress_marks):
                 added = track.mark_progress()
@@ -153,7 +155,9 @@ def apply_progress_and_legacy(
     if outcome.legacy_track and outcome.legacy_fixed_ticks:
         mark_legacy_ticks(game, outcome.legacy_track, outcome.legacy_fixed_ticks)
     elif outcome.legacy_track:
-        rank = shifted_rank(source_track_rank, outcome.legacy_rank_shift)
+        if rolled_track is None:
+            raise ValueError(f"{brain.move}: a legacy reward by rank needs the progress track that was rolled")
+        rank = shifted_rank(rolled_track.rank, outcome.legacy_rank_shift)
         if rank is not None:
             mark_legacy(game, outcome.legacy_track, source_rank=rank)
 

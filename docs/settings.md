@@ -16,12 +16,13 @@ Discovery is yaml-only: `list_packages()` scans `data/settings/*.yaml` and `get_
 
 ## Settings yaml format
 
-Parsed strictly at load. Required top-level keys: `id`, `title`, `datasworn_id`, `description`, `oracle_paths`, `vocabulary`. Optional: `parent`, `creation_flow`. A missing required key raises `KeyError`, and so does a key the loader does not know, at the top level or inside `oracle_paths`, `vocabulary`, or `creation_flow`.
+Parsed strictly at load. Required top-level keys: `id`, `title`, `datasworn_id`, `playable`, `description`, `oracle_paths`, `vocabulary`. Optional: `parent`, `creation_flow`. A missing required key raises `KeyError`, and so does a key the loader does not know, at the top level or inside `oracle_paths`, `vocabulary`, or `creation_flow`. `playable: false` keeps a package out of character creation and out of Elvira's choice, as for Delve, which only extends classic.
 
 ```yaml
 id: your_setting                    # yaml stem
 title: "Your Setting Name"
 datasworn_id: your_setting          # Datasworn JSON basename
+playable: true                      # offered in character creation
 description: "One paragraph."
 parent: classic                     # optional: inherits from this setting
 

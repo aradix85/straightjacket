@@ -187,9 +187,9 @@ def build_creation_options() -> dict[str, Any]:
     _e = eng()
     settings = []
     for pkg_id in list_packages():
-        if pkg_id == "delve":
-            continue
         pkg = load_package(pkg_id)
+        if not pkg.playable:
+            continue
 
         paths = []
         for asset in pkg.data.paths():

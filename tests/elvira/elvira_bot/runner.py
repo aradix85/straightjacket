@@ -24,7 +24,7 @@ from straightjacket.engine.persistence import delete_save, load_game, save_game
 from straightjacket.engine.user_management import create_user
 from straightjacket.engine.config_loader import VERSION, model_for_role, provider_for_role
 from straightjacket.engine.correction import process_correction
-from straightjacket.engine.datasworn.settings import list_packages
+from straightjacket.engine.datasworn.settings import list_packages, load_package
 from straightjacket.engine.game import (
     BurnOffer,
     determine_end_reason,
@@ -79,7 +79,7 @@ def load_config(path: Path) -> dict:
 
 
 def selectable_settings() -> list[str]:
-    return [s for s in list_packages() if s != "delve"]
+    return [s for s in list_packages() if load_package(s).playable]
 
 
 def _role_label(role: str) -> str:

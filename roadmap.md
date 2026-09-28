@@ -12,6 +12,7 @@ One step is one session: read the code, implement, test, pass the quality gate, 
 2. Violation grep on touched files: `.get("..", ` with a non-neutral literal, `or "..` on a domain value, `except Exception` outside the carve-out files. New hits are new violations; fix them.
 3. `git status` confirms the obsolete code is deleted.
 4. The step moves to DONE with one line; the next step is promoted to NEXT and gets substeps, a definition of done, and reference patterns; Current state records any decision taken. The md files (README, ARCHITECTURE, CONTRIBUTING, `docs/`, ORIGINS, SECURITY, AUDIT) are checked for claims the step made wrong, and the step gets one CHANGELOG entry.
+5. The step's area is read against the design document and the source rulebooks: a new departure gets an entry in `docs/divergences.md` with its reason and status, and an entry whose status names this step is removed or rewritten.
 
 ## Reference patterns
 
@@ -122,6 +123,7 @@ Entity creation through the entry point step 9a built: `mechanics/generation.py`
 - The four categories are registered in `engine/generation.yaml` and dispatched by `generate`; an unknown category or a missing oracle path raises.
 - Oracle paths per category live in the setting yaml; no Python branches on setting names.
 - Generated content reaches the narrator as `<generated>` with the setting's vocabulary substitutions applied.
+- Generation reads the world state it lands in, as the design document asks (no prosperous trading post in a region at war): each category names the game-state inputs that weight its tables, the way a fact type names its inputs in `engine/fact_resolution.yaml`.
 - `datasworn/cascade.py` → `roll_oracle_cascade` has a real callsite through a category.
 - ARCHITECTURE.md ("Engine-resolved fiction") and `docs/mechanics.md` say what is generated and when.
 - An Elvira run shows `<generated>` tags in play and no new engine warnings.
@@ -162,7 +164,7 @@ The principle and the list of deliberate divergences are in `docs/divergences.md
 
 Checked (2026.09.24.17 to .34): the action roll, momentum, Endure Harm and Endure Stress, Pay the Price, every match clause, chained and oracle moves, progress, legacy tracks and experience, connections, Mythic's fate check, fate chart, scene test, chaos factor, event focus, lists, and meaning tables, the Adventure Crafter's tables, theme priority, and turning points, Blades clock sizes, and asset and connection adds.
 
-Open: ability effects other than adds (step 18); wounded and shaken blocking recovery in classic Ironsworn; the individual words of the oracle and meaning tables, not checked against the books. Outcomes where the player would choose a cost are a recorded divergence, not open work.
+Open: ability effects other than adds (step 18); wounded and shaken blocking recovery in classic Ironsworn; whether classic earns experience by its own rule instead of Starforged's legacy tracks; whether boasts get modelled; the individual words of the oracle and meaning tables, not checked against the books. Outcomes where the player would choose a cost are a recorded divergence, not open work.
 
 ### 10 — Location and encounter generators
 
@@ -230,7 +232,7 @@ Done: formal-move coverage rises from 56 to about 67 stems, with four new engine
 
 ### 14a — Faction data model
 
-**14a.1** FactionData dataclass: name, goal, tenets, members (NPC ids); required fields; step 16 adds reputation.
+**14a.1** FactionData dataclass: name, goal, tenets, members (NPC ids), and its standing toward the other factions (allied, rival, or hostile), which the design document places in a setting's static layer; required fields; step 16 adds reputation.
 
 **14a.2** `faction_id` on NpcData.
 

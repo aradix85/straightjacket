@@ -2,6 +2,7 @@
 id: sundered_isles
 title: "Sundered Isles"
 datasworn_id: sundered_isles
+playable: true
 parent: starforged
 description: >
   Vast uncharted seas dotted with strange islands. Ancient ruins hold

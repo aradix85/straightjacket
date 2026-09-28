@@ -225,7 +225,7 @@ class TestSharedProgressAndLegacyHelper:
         game = _game()
         outcome = OutcomeResult(legacy_track="quests")
         brain = make_brain_result(move="quest/fulfill_your_vow")
-        apply_progress_and_legacy(game, outcome, brain, "vow", "dangerous")
+        apply_progress_and_legacy(game, outcome, brain, "vow", make_progress_track(rank="dangerous"))
         assert game.campaign.legacy_quests.ticks == 2
 
     def test_helper_consumes_progress_marks(self, stub_engine: None) -> None:
@@ -238,7 +238,7 @@ class TestSharedProgressAndLegacyHelper:
         )
         outcome = OutcomeResult(progress_marks=1)
         brain = make_brain_result(move="exploration/undertake_an_expedition")
-        apply_progress_and_legacy(game, outcome, brain, "vow", "dangerous")
+        apply_progress_and_legacy(game, outcome, brain, "vow", None)
         assert game.progress_tracks[0].ticks == 8
 
     def test_helper_handles_both_in_one_outcome(self, stub_engine: None) -> None:
@@ -248,7 +248,7 @@ class TestSharedProgressAndLegacyHelper:
         game = _game()
         outcome = OutcomeResult(progress_marks=0, legacy_track="bonds")
         brain = make_brain_result(move="connection/develop_your_relationship")
-        apply_progress_and_legacy(game, outcome, brain, "vow", "formidable")
+        apply_progress_and_legacy(game, outcome, brain, "vow", make_progress_track(rank="formidable"))
         assert game.campaign.legacy_bonds.ticks == 4
 
     def test_helper_noop_on_empty_outcome(self, stub_engine: None) -> None:
@@ -258,9 +258,30 @@ class TestSharedProgressAndLegacyHelper:
         game = _game()
         outcome = OutcomeResult()
         brain = make_brain_result(move="quest/swear_an_iron_vow")
-        apply_progress_and_legacy(game, outcome, brain, "vow", "dangerous")
+        apply_progress_and_legacy(game, outcome, brain, "vow", None)
         assert game.campaign.legacy_quests.ticks == 0
         assert game.campaign.xp == 0
+
+    def test_a_legacy_reward_by_rank_without_its_track_raises(self, stub_engine: None) -> None:
+        import pytest
+
+        from straightjacket.engine.game.finalization import apply_progress_and_legacy
+        from straightjacket.engine.mechanics.move_effects import OutcomeResult
+
+        outcome = OutcomeResult(legacy_track="quests")
+        brain = make_brain_result(move="quest/fulfill_your_vow")
+        with pytest.raises(ValueError, match="needs the progress track"):
+            apply_progress_and_legacy(_game(), outcome, brain, "vow", None)
+
+    def test_progress_marks_without_a_track_category_raise(self, stub_engine: None) -> None:
+        import pytest
+
+        from straightjacket.engine.game.finalization import apply_progress_and_legacy
+        from straightjacket.engine.mechanics.move_effects import OutcomeResult
+
+        outcome = OutcomeResult(progress_marks=1)
+        with pytest.raises(ValueError, match="names no track category"):
+            apply_progress_and_legacy(_game(), outcome, make_brain_result(move="world_shaping"), None, None)
 
 
 class TestChapterPersistence:

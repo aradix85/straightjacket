@@ -30,7 +30,7 @@ from .quality_checks import (
     check_npc_spatial_consistency,
 )
 from .recorder import record_turn
-from .runner import _EventCapture, RUNS_DIR
+from .runner import _EventCapture, RUNS_DIR, selectable_settings
 from .display import print_narration, print_state, print_summary
 
 SEPARATOR = "=" * 62
@@ -241,10 +241,7 @@ async def run_ws_session(bot_cfg: dict, auto_override: bool = False, turns_overr
     if not msg.get("has_game"):
         setting_id = game_cfg["setting_id"]
         if auto_mode:
-            from straightjacket.engine.datasworn.settings import list_packages
-
-            available = [s for s in list_packages() if s != "delve"]
-            setting_id = _random.choice(available)
+            setting_id = _random.choice(selectable_settings())
 
         creation_data = roll_character(setting_id, game_cfg)
 

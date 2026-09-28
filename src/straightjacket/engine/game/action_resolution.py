@@ -97,9 +97,13 @@ def resolve_action_phase(game: GameState, brain: BrainResult, roll_outcome: Roll
     fill_results = pending_from_prior_turn + action.clock_fill_results
 
     if action.outcome:
-        source_category = ds_move.track_category if ds_move else "vow"
-        source_rank = track.rank if is_progress_roll and track else "dangerous"
-        apply_progress_and_legacy(game, action.outcome, brain, source_category, source_rank)
+        apply_progress_and_legacy(
+            game,
+            action.outcome,
+            brain,
+            ds_move.track_category if ds_move else None,
+            track if is_progress_roll else None,
+        )
 
     if is_progress_roll and track:
         _apply_track_completion(game, roll, track)

@@ -2,6 +2,7 @@
 id: classic
 title: "Ironsworn"
 datasworn_id: classic
+playable: true
 description: >
   The Ironlands are a rough, sparsely settled frontier. Communities
   cling to survival against harsh weather, dangerous creatures, and

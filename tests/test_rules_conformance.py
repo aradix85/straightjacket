@@ -166,11 +166,11 @@ def test_fulfill_your_vow_weak_hit_rewards_one_rank_lower(
     from straightjacket.engine.game.finalization import apply_progress_and_legacy
     from straightjacket.engine.mechanics.legacy import get_legacy_track
     from straightjacket.engine.mechanics.move_outcome import resolve_move_outcome
-    from tests._helpers import make_brain_result, make_game_state
+    from tests._helpers import make_brain_result, make_game_state, make_progress_track
 
     game = make_game_state(setting_id="starforged")
     outcome = resolve_move_outcome(game, "quest/fulfill_your_vow", "WEAK_HIT")
-    apply_progress_and_legacy(game, outcome, make_brain_result(), source_track_rank=vow_rank)
+    apply_progress_and_legacy(game, outcome, make_brain_result(), "vow", make_progress_track(rank=vow_rank))
     assert get_legacy_track(game, "quests").ticks == expected_ticks
 
 
@@ -182,7 +182,7 @@ def test_develop_your_relationship_marks_two_bonds_ticks(load_engine: None) -> N
 
     game = make_game_state(setting_id="starforged")
     outcome = resolve_move_outcome(game, "connection/develop_your_relationship", "STRONG_HIT")
-    apply_progress_and_legacy(game, outcome, make_brain_result(), source_track_rank="epic")
+    apply_progress_and_legacy(game, outcome, make_brain_result(), "connection", None)
     assert get_legacy_track(game, "bonds").ticks == 2
 
 

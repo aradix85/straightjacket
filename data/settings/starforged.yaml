@@ -2,6 +2,7 @@
 id: starforged
 title: "Ironsworn: Starforged"
 datasworn_id: starforged
+playable: true
 description: >
   The Forge is a vast, chaotic expanse of space. Humanity fled here
   two generations ago. Settlements are scattered, resources scarce,
