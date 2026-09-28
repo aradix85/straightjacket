@@ -76,6 +76,9 @@ def _check_choices(result: BrainResult, move_keys: list[str], choices: dict[str,
         if value is not None and value not in allowed:
             raise ValueError(f"{field_name} {value!r} is not one of the choices offered")
     _check_fact_requests(result, choices["target_npc"])
+    boasts = eng().boasts
+    if len(result.boasts) > boasts.max_per_roll or any(b not in boasts.options for b in result.boasts):
+        raise ValueError(f"boasts {result.boasts!r} are not among the offered boasts")
 
 
 def _check_fact_requests(result: BrainResult, npc_ids: list[str]) -> None:

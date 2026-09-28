@@ -10,6 +10,7 @@ from ..ai.provider_base import AIUnavailableError, AIProvider, NarrationSink
 from ..engine_loader import damage, eng
 from ..logging_util import log
 from ..mechanics import (
+    apply_boasts,
     ClockFillResult,
     generate_engine_memories,
     generate_scene_context,
@@ -113,6 +114,8 @@ def resolve_action_consequences(
     outcome = resolve_move_outcome(game, brain.move, roll.result, target_npc_id=brain.target_npc, match=roll.match)
     if outcome.chained_move:
         _chain_move(game, brain, outcome)
+    if outcome.boast_slots:
+        apply_boasts(game, brain.boasts, outcome)
 
     if outcome.combat_position:
         game.world.combat_position = outcome.combat_position
@@ -160,6 +163,14 @@ def apply_progress_and_legacy(
         rank = shifted_rank(rolled_track.rank, outcome.legacy_rank_shift)
         if rank is not None:
             mark_legacy(game, outcome.legacy_track, source_rank=rank)
+
+    if outcome.experience_rank_shift is not None:
+        if rolled_track is None:
+            raise ValueError(f"{brain.move}: experience by rank needs the progress track that was rolled")
+        rank = shifted_rank(rolled_track.rank, outcome.experience_rank_shift)
+        gained = eng().legacy.experience_by_rank[rank] if rank is not None else 0
+        game.campaign.xp += gained
+        log(f"[Legacy] Experience +{gained} for a {rolled_track.rank} vow (total {game.campaign.xp})")
 
 
 def _update_crisis(game: GameState) -> None:

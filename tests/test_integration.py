@@ -39,6 +39,7 @@ class MockProvider:
                         "target_track": None,
                         "bonus_id": None,
                         "undetermined_facts": [],
+                        "boasts": [],
                     }
                 ),
                 usage={"input_tokens": 100, "output_tokens": 50},
@@ -231,6 +232,7 @@ def test_turn_dialog_skips_roll(load_engine: None) -> None:
                         "target_track": None,
                         "bonus_id": None,
                         "undetermined_facts": [],
+                        "boasts": [],
                     }
                 ),
                 usage={"input_tokens": 100, "output_tokens": 50},
@@ -719,6 +721,7 @@ def test_dialog_turn_runs_npc_agency_on_interval_scene(load_engine: None) -> Non
                         "target_track": None,
                         "bonus_id": None,
                         "undetermined_facts": [],
+                        "boasts": [],
                     }
                 ),
                 usage={"input_tokens": 100, "output_tokens": 50},

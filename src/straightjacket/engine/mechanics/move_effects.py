@@ -30,6 +30,8 @@ class OutcomeResult:
     legacy_track: str = ""
     legacy_rank_shift: int = 0
     legacy_fixed_ticks: int = 0
+    experience_rank_shift: int | None = None
+    boast_slots: int = 0
     chained_move: str = ""
     narrative_only: bool = False
 
@@ -240,6 +242,17 @@ def _apply_legacy_reward_effect(
     result.consequences.append(eng().ai_text.consequence_labels["legacy_reward"].format(track=effect.target))
 
 
+def _apply_experience_by_rank_effect(
+    game: GameState, effect: MoveEffect, result: OutcomeResult, target: NpcData | None
+) -> None:
+    result.experience_rank_shift = effect.value
+    result.consequences.append(eng().ai_text.consequence_labels["experience_reward"])
+
+
+def _apply_boasts_effect(game: GameState, effect: MoveEffect, result: OutcomeResult, target: NpcData | None) -> None:
+    result.boast_slots = effect.value
+
+
 def _apply_fill_clock_effect(
     game: GameState, effect: MoveEffect, result: OutcomeResult, target: NpcData | None
 ) -> None:
@@ -296,6 +309,8 @@ _EFFECT_HANDLERS: dict[str, Callable[[GameState, MoveEffect, OutcomeResult, NpcD
     "suffer_move": _apply_suffer_move_effect,
     "legacy_reward": _apply_legacy_reward_effect,
     "legacy_reward_lower": _apply_legacy_reward_lower_effect,
+    "experience_by_rank": _apply_experience_by_rank_effect,
+    "boasts": _apply_boasts_effect,
     "chain_move": _apply_chain_move_effect,
     "raise_connection_rank": _apply_raise_connection_rank_effect,
     "legacy_ticks": _apply_legacy_ticks_effect,

@@ -10,6 +10,7 @@ __all__ = [
     "add_thread_weight",
     "advance_asset",
     "advance_time",
+    "apply_boasts",
     "apply_brain_location_time",
     "apply_npc_carryover",
     "apply_threat_overcome_bonus",
@@ -97,6 +98,7 @@ from .adventure_crafter import (
     roll_turning_point,
 )
 from ..models import ClockFillResult
+from .boasts import apply_boasts
 from .clock_consequences import (
     resolve_clock_fill,
 )

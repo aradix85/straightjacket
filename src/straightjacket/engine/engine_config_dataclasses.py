@@ -174,6 +174,7 @@ class LegacyConfig:
     asset_upgrade_cost: int
     new_asset_cost: int
     ticks_by_rank: dict[str, int]
+    experience_by_rank: dict[str, int]
 
 
 @dataclass
@@ -423,6 +424,19 @@ class FactResolutionConfig:
 @dataclass
 class GenerationConfig:
     categories: list[str]
+
+
+@dataclass
+class BoastOption:
+    description: str
+    effects: list[str]
+
+
+@dataclass
+class BoastsConfig:
+    momentum_per_boast: int
+    max_per_roll: int
+    options: dict[str, BoastOption]
 
 
 @dataclass

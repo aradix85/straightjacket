@@ -392,8 +392,9 @@ move_outcomes:
   relationship/draw_the_circle:
     strong_hit:
     - momentum +1
+    - boasts 2
     weak_hit:
-    - momentum +1
+    - boasts 1
     miss:
     - pay_the_price
   relationship/forge_a_bond:
@@ -479,6 +480,13 @@ move_outcomes:
 
 move_outcome_overrides:
   classic:
+    quest/fulfill_your_vow:
+      strong_hit:
+      - experience_by_rank 0
+      weak_hit:
+      - experience_by_rank -1
+      miss:
+      - narrative
     combat/enter_the_fray:
       strong_hit:
       - momentum +2

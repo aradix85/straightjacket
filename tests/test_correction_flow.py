@@ -72,6 +72,7 @@ class MockProvider:
                         "target_track": None,
                         "bonus_id": None,
                         "undetermined_facts": [],
+                        "boasts": [],
                     }
                 ),
                 usage={"input_tokens": 100, "output_tokens": 50},

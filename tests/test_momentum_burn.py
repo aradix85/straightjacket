@@ -35,6 +35,7 @@ def _brain(**overrides: Any) -> dict[str, Any]:
         "target_track": None,
         "bonus_id": None,
         "undetermined_facts": [],
+        "boasts": [],
     }
     brain.update(overrides)
     return brain

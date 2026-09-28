@@ -12,3 +12,9 @@ legacy:
     formidable: 4
     extreme: 8
     epic: 12
+  experience_by_rank:
+    troublesome: 1
+    dangerous: 2
+    formidable: 3
+    extreme: 4
+    epic: 5

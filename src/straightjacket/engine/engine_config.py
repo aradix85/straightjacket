@@ -12,6 +12,8 @@ from .engine_config_dataclasses import (
     AiTextConfig,
     RecapLimitsConfig,
     BlueprintConfig,
+    BoastOption,
+    BoastsConfig,
     BondsConfig,
     ChaosConfig,
     ChaosResolverConfig,
@@ -144,6 +146,7 @@ class EngineSettings:
     fate: FateConfig
     fact_resolution: FactResolutionConfig
     generation: GenerationConfig
+    boasts: BoastsConfig
     story: StoryConfig
     enums: EnumsConfig
     memory_retrieval_weights: MemoryRetrievalWeights
@@ -455,6 +458,15 @@ def _build_fact_resolution(fr_raw: dict[str, Any]) -> FactResolutionConfig:
     return config
 
 
+def _build_boasts(b_raw: dict[str, Any]) -> BoastsConfig:
+    options = {
+        name: _build_strict(BoastOption, {**spec, "effects": list(spec["effects"])})
+        for name, spec in dict(b_raw.pop("options")).items()
+    }
+    config: BoastsConfig = _build_strict(BoastsConfig, {**b_raw, "options": options})
+    return config
+
+
 def parse_engine_yaml(data: dict[str, Any]) -> EngineSettings:
     simple_parsed: dict[str, Any] = {key: _build_strict(cls, data[key]) for key, cls in _SIMPLE_SECTIONS.items()}
 
@@ -627,6 +639,7 @@ def parse_engine_yaml(data: dict[str, Any]) -> EngineSettings:
         fate=fate,
         fact_resolution=fact_resolution,
         generation=simple_parsed["generation"],
+        boasts=_build_boasts(dict(data["boasts"])),
         story=simple_parsed["story"],
         enums=simple_parsed["enums"],
         memory_retrieval_weights=simple_parsed["memory_retrieval_weights"],
@@ -672,6 +685,8 @@ __all__ = [
     "AdventureCrafterConfig",
     "AiTextConfig",
     "BlueprintConfig",
+    "BoastOption",
+    "BoastsConfig",
     "BondsConfig",
     "ChaosConfig",
     "ChaosResolverConfig",

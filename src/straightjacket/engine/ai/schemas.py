@@ -109,6 +109,11 @@ def get_brain_output_schema(
             "target_track": _nullable_enum(track_names),
             "bonus_id": _nullable_enum(bonus_ids),
             "undetermined_facts": _fact_requests(npc_ids),
+            "boasts": {
+                "type": "array",
+                "items": _str_enum(sorted(_e.boasts.options)),
+                "maxItems": _e.boasts.max_per_roll,
+            },
         },
         _e.ai_text.schema_titles["brain_output"],
     )

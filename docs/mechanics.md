@@ -22,7 +22,9 @@ Connection tracks carry an NPC's bond: `npc/bond.py` → `get_npc_bond` reads th
 
 Impacts (wounded, shaken, and the rest) are configured in `engine/impacts.yaml` and applied by `mechanics/impacts.py` → `apply_impact`, `clear_impact`, `blocks_recovery`, `recalc_max_momentum`.
 
-Legacy tracks (quests, bonds, discoveries) and experience are configured in `engine/legacy.yaml` and kept on the campaign: `mechanics/legacy.py` → `mark_legacy`, `apply_threat_overcome_bonus`, `advance_asset`.
+Legacy tracks (quests, bonds, discoveries) and experience are configured in `engine/legacy.yaml` and kept on the campaign: `mechanics/legacy.py` → `mark_legacy`, `apply_threat_overcome_bonus`, `advance_asset`. Classic Ironsworn has no legacy tracks: Fulfill Your Vow marks experience by the vow's rank, one rank lower on a weak hit (`experience_by_rank` in `engine/legacy.yaml`, applied by `game/finalization.py` → `apply_progress_and_legacy`).
+
+**Boasts.** Draw the Circle takes the boasts the player declares, which the Brain reads into its `boasts` field: up to two on a strong hit, one on a weak hit, none on a miss, each for +1 momentum and its cost from `engine/boasts.yaml` (`mechanics/boasts.py` → `apply_boasts`).
 
 Assets: `GameState.asset_abilities` records the enabled abilities of every path and asset, starting from the Datasworn defaults; an upgrade enables the next ability in order (`mechanics/assets.py`). `mechanics/bonuses.py` offers every enabled ability whose text grants an add, and every active connection's aid (from `engine/roll_bonuses.yaml`), in a `<bonuses>` block of the Brain's prompt. The Brain names at most one by id in `bonus_id` when the action clearly meets its condition; the engine checks the id and takes the number from the rule text, counting momentum on a hit only when the text ties it to the same add. Only adds are modelled; rerolls, other effects, condition meters for companions and vehicles, and choosing which ability an upgrade enables are roadmap step 18.
 

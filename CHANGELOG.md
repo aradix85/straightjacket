@@ -9,6 +9,12 @@ Entries up to 2026.09.26.19 were shortened to their essentials, in 2026.09.26.1 
 
 Calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day. The first CalVer release is 2026.04.25.0; earlier `0.x.y` releases keep their numbers.
 
+## [2026.09.29.5] — 2026-09-29
+
+The user's two decisions, built from the classic move texts. Classic Ironsworn marks experience by the vow's rank when Fulfill Your Vow hits (troublesome 1 to epic 5, one rank lower on a weak hit) instead of filling Starforged's legacy tracks. Draw the Circle takes the boasts the player declares, read by the Brain: up to two on a strong hit, one on a weak hit, each +1 momentum with its cost from `engine/boasts.yaml`; its weak hit no longer grants momentum without a boast, which closes the last known momentum divergence. New register entries: a classic successor inherits no legacy boxes, and a duel opens no combat track (until step 13b).
+
+Quality gate: 1535 tests green, thirty project-rule scans clean, coverage 90.47%, ruff and mypy --strict clean.
+
 ## [2026.09.29.4] — 2026-09-29
 
 Documentation only. ARCHITECTURE.md records the order of preference: a tabletop system decides first, an engine rule second, the AI only writes prose and reads free text; the divergence register judges departures by it. The user decided that classic Ironsworn earns experience by its own rule (section R) and that boasts are modelled (step 13b). New sketch step 9c: the engine settles when a revelation lands, and the revelation-check AI call goes, since it validates AI output after the fact. The roadmap lists every place the AI still decides and the system that takes it over, with steps 11 and 35 sharpened to use the Adventure Crafter's character tables and to build on facts.

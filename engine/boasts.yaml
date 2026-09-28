@@ -1,0 +1,20 @@
+boasts:
+  momentum_per_boast: 1
+  max_per_roll: 2
+  options:
+    grant_first_strike:
+      description: 'Boast: you grant first strike, and your foe has initiative.'
+      effects: []
+    bare_yourself:
+      description: "Boast: you bare yourself, taking no benefit of armor or shield; your foe's harm is +1."
+      effects: []
+    hold_no_iron:
+      description: 'Boast: you hold no iron, taking no benefit of weapons; your harm is 1.'
+      effects: []
+    bloody_yourself:
+      description: 'Boast: you bloody yourself and endure 1 harm.'
+      effects:
+      - health -1
+    to_the_death:
+      description: 'Boast: to the death; one way or another, this fight must end with death.'
+      effects: []

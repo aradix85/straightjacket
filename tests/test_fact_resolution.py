@@ -254,6 +254,7 @@ def _brain(**overrides: Any) -> dict[str, Any]:
         "target_track": None,
         "bonus_id": None,
         "undetermined_facts": [{"fact_type": "locked", "about": "here"}],
+        "boasts": [],
     }
     brain.update(overrides)
     return brain

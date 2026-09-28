@@ -33,6 +33,7 @@ ai_text:
     chained_move: 'follow-up move {move}: {result}'
     connection_rank: '{name} connection rank now {rank}'
     legacy_reward: legacy reward ({track})
+    experience_reward: mark experience
     clock_fill: clock +{n}
     bond_progress: '{name} bond progress +{n} ticks'
     disposition_shift: '{name} disposition {old}→{new}'

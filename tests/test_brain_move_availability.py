@@ -20,6 +20,7 @@ BRAIN_FIELDS: dict[str, Any] = {
     "target_track": None,
     "bonus_id": None,
     "undetermined_facts": [],
+    "boasts": [],
 }
 
 

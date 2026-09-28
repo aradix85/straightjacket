@@ -6,7 +6,7 @@ Which AI roles exist, which model runs them, and how calls are routed, cached, s
 
 Every AI call carries its own role name (`AICallSpec.log_role`), and every role maps to one cluster in `config.yaml`.
 
-- `brain` turns the player's input into a move, a stat, a roll bonus, a target NPC, a new track's name and rank, and the undetermined facts the action or question turns on (`ai/brain.py` → `call_brain`). The game state is injected into its prompt, and its output schema offers only the available moves, the offered bonuses, the listed NPCs, the active tracks, and the fact types with the subjects each allows; `call_brain` refuses anything else. The Brain names a fact; the engine decides it (`docs/mechanics.md`, Facts).
+- `brain` turns the player's input into a move, a stat, a roll bonus, a target NPC, a new track's name and rank, the undetermined facts the action or question turns on, and the boasts the player declares in a duel (`ai/brain.py` → `call_brain`). The game state is injected into its prompt, and its output schema offers only the available moves, the offered bonuses, the listed NPCs, the active tracks, and the fact types with the subjects each allows; `call_brain` refuses anything else. The Brain names a fact; the engine decides it (`docs/mechanics.md`, Facts).
 - `narrator` writes the prose, with conversation memory (`ai/narrator.py`).
 - `narrator_metadata` reads the finished narration and extracts NPC data (new NPCs, renames, details, deaths), which `ai/metadata.py` applies to the game state.
 - `opening_setup` extracts the NPCs, their first memories, the location, and the scene context from the opening of a new game, a chapter, or a succession; the opening clock and the time of day are the engine's (`docs/mechanics.md`).

@@ -174,7 +174,7 @@ The principle and the list of deliberate divergences are in `docs/divergences.md
 
 Checked (2026.09.24.17 to .34): the action roll, momentum, Endure Harm and Endure Stress, Pay the Price, every match clause, chained and oracle moves, progress, legacy tracks and experience, connections, Mythic's fate check, fate chart, scene test, chaos factor, event focus, lists, and meaning tables, the Adventure Crafter's tables, theme priority, and turning points, Blades clock sizes, and asset and connection adds.
 
-Open: ability effects other than adds (step 18); wounded and shaken blocking recovery in classic Ironsworn; the individual words of the oracle and meaning tables, not checked against the books. Decided on 2026-09-29: classic Ironsworn earns experience by its own rule when a vow is fulfilled, checked against the classic move texts before building, with succession in classic recorded as its own divergence; boasts are modelled with step 13b. Outcomes where the player would choose a cost are a recorded divergence, not open work.
+Open: ability effects other than adds (step 18); wounded and shaken blocking recovery in classic Ironsworn; the individual words of the oracle and meaning tables, not checked against the books. Done on 2026-09-29: classic Ironsworn earns experience by its own rule when a vow is fulfilled, and Draw the Circle's boasts are modelled. Outcomes where the player would choose a cost are a recorded divergence, not open work.
 
 ### 10 — Location and encounter generators
 
@@ -228,7 +228,7 @@ Group B, engine triggers: `mark_failure_on_miss` (`failure/mark_your_failure`), 
 
 Group C, covered elsewhere or deliberately not wired: `legacy/continue_a_legacy` (step 3 succession), `fate/ask_the_oracle` (the engine's own `ask_the_oracle`), `threshold/overcome_destruction` (step 28), and the five session moves (decision in CHANGELOG 2026.04.28.3).
 
-Boasts, decided on 2026-09-29: Draw the Circle's weak-hit momentum depends on a boast the player chooses; the player states it in their text, the Brain reads it into a field limited to the move's boast options, and the engine applies the boast's cost and reward.
+Duels: Draw the Circle's boasts are modelled (2026.09.29.5), but the duel opens no combat track, so the foe's initiative after a miss or the boast Grant first strike is narrated; wiring the duel into the combat track and position belongs here.
 
 **13b.1** Group A in `engine/move_outcomes.yaml` and `engine/move_categories.yaml`, reusing the existing handler patterns (progress mark, momentum shift, special track).
 
