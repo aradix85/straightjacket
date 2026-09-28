@@ -20,15 +20,28 @@ from ..logging_util import log
 from ..mechanics import (
     apply_brain_location_time,
     check_npc_agency,
+    clear_facts_settled_by_hit,
+    facts_of_this_place,
     generate_consequence_sentences,
     is_dialog_branch,
     record_scene_intensity,
+    remember_facts,
     resolve_effect,
     resolve_position,
+    resolve_turn_facts,
     roll_action,
+    roll_oracle_answer,
     update_chaos_factor,
 )
-from ..models import EngineConfig, GameState, NarrationEntry, RollResult, SceneLogEntry, TurnSnapshot
+from ..models import (
+    EngineConfig,
+    GameState,
+    NarrationEntry,
+    ResolvedFact,
+    RollResult,
+    SceneLogEntry,
+    TurnSnapshot,
+)
 from ..npc import activate_npcs_for_prompt
 from ..prompt_action import build_action_prompt
 from ..prompt_dialog import build_dialog_prompt
@@ -44,12 +57,14 @@ def _restore_from_snapshot(game: GameState, snap: TurnSnapshot) -> None:
 
 def _handle_input_misread(
     provider: AIProvider, game: GameState, snap: TurnSnapshot, analysis: dict[str, Any], _cfg: EngineConfig
-) -> tuple[BrainResult, RollResult | None, str, list[str]]:
+) -> tuple[BrainResult, RollResult | None, str, list[str], list[ResolvedFact]]:
     _restore_from_snapshot(game, snap)
     corrected_input = analysis["corrected_input"] or snap.player_input
 
     brain = call_brain(provider, game, corrected_input, _cfg)
     apply_brain_location_time(game, brain)
+    remember_facts(game, snap.facts)
+    facts = resolve_turn_facts(game, brain)
 
     nar = game.narrative
     consequences: list[str] = []
@@ -68,6 +83,7 @@ def _handle_input_misread(
         action = resolve_action_consequences(game, brain, roll, position)
         consequences = action.consequences
         clock_events = action.clock_events
+        clear_facts_settled_by_hit(game, facts, roll.result)
 
         if action.outcome:
             ds_moves = get_moves(game.setting_id) if game.setting_id else {}
@@ -95,28 +111,33 @@ def _handle_input_misread(
             effect=effect,
             consequence_sentences=consequence_sentences,
             clock_fill_results=action.clock_fill_results,
+            facts=facts,
         )
-        return brain, roll, prompt, consequences
+        return brain, roll, prompt, consequences, facts
 
     nar.scene_count += 1
     activated_npcs, mentioned_npcs, _ = activate_npcs_for_prompt(game, brain, corrected_input)
+    oracle_answer = roll_oracle_answer(game) if brain.move == "ask_the_oracle" and not facts else ""
     prompt = build_dialog_prompt(
         game,
         brain,
         player_words=corrected_input,
         activated_npcs=activated_npcs,
         mentioned_npcs=mentioned_npcs,
+        oracle_answer=oracle_answer,
+        facts=facts,
     )
-    return brain, None, prompt, consequences
+    return brain, None, prompt, consequences, facts
 
 
 def _handle_state_error(
     game: GameState, snap: TurnSnapshot, analysis: dict[str, Any]
-) -> tuple[BrainResult, RollResult | None, str, list[str]]:
+) -> tuple[BrainResult, RollResult | None, str, list[str], list[ResolvedFact]]:
     roll = snap.roll
 
     brain = snap.brain or BrainResult(type="none", move="none", stat="none")
     _apply_correction_ops(game, analysis["state_ops"])
+    facts = facts_of_this_place(game, snap.facts)
 
     activated_npcs, mentioned_npcs, _ = activate_npcs_for_prompt(game, brain, snap.player_input)
     _last_entry = game.narrative.session_log[-1] if game.narrative.session_log else None
@@ -136,8 +157,9 @@ def _handle_state_error(
             activated_npcs=activated_npcs,
             mentioned_npcs=mentioned_npcs,
             consequence_sentences=consequence_sentences,
+            facts=facts,
         )
-        return brain, roll, prompt, consequences
+        return brain, roll, prompt, consequences, facts
 
     prompt = build_dialog_prompt(
         game,
@@ -145,8 +167,10 @@ def _handle_state_error(
         player_words=snap.player_input,
         activated_npcs=activated_npcs,
         mentioned_npcs=mentioned_npcs,
+        oracle_answer=_last_entry.oracle_answer if _last_entry else "",
+        facts=facts,
     )
-    return brain, None, prompt, []
+    return brain, None, prompt, [], facts
 
 
 def _update_correction_logs(
@@ -240,9 +264,9 @@ def process_correction(
     source = analysis["correction_source"]
 
     if source == "input_misread":
-        brain, roll, prompt, consequences = _handle_input_misread(provider, game, snap, analysis, _cfg)
+        brain, roll, prompt, consequences, facts = _handle_input_misread(provider, game, snap, analysis, _cfg)
     else:
-        brain, roll, prompt, consequences = _handle_state_error(game, snap, analysis)
+        brain, roll, prompt, consequences, facts = _handle_state_error(game, snap, analysis)
 
     correction_tag = (
         f"\n<correction_context>{analysis['narrator_guidance']}</correction_context>"
@@ -253,6 +277,7 @@ def process_correction(
 
     if game.last_turn_snapshot is not None:
         game.last_turn_snapshot.narration = narration
+        game.last_turn_snapshot.facts = list(facts)
         if source == "input_misread":
             game.last_turn_snapshot.brain = brain
             game.last_turn_snapshot.roll = roll

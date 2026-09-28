@@ -30,10 +30,13 @@ from .engine_config_dataclasses import (
     EffectResolverWeights,
     EngineMove,
     EnumsConfig,
+    FactResolutionConfig,
+    FactTypeConfig,
     FateConfig,
     FateLikelihoodRules,
     FlagCondition,
     FuzzyMatchConfig,
+    GenerationConfig,
     ImpactConfig,
     InformationGateConfig,
     InformationGatePoints,
@@ -139,6 +142,8 @@ class EngineSettings:
     memory_templates: MemoryTemplates
     narrative_direction: NarrativeDirectionConfig
     fate: FateConfig
+    fact_resolution: FactResolutionConfig
+    generation: GenerationConfig
     story: StoryConfig
     enums: EnumsConfig
     memory_retrieval_weights: MemoryRetrievalWeights
@@ -262,6 +267,7 @@ _SIMPLE_SECTIONS: dict[str, type] = {
     "truncations": TruncationsConfig,
     "persistence": PersistenceConfig,
     "correction": CorrectionConfig,
+    "generation": GenerationConfig,
 }
 
 
@@ -434,6 +440,21 @@ def _build_roll_bonuses(rb_raw: dict[str, Any]) -> RollBonusesConfig:
     )
 
 
+_FACT_SUBJECTS = ("place", "npc")
+
+
+def _build_fact_resolution(fr_raw: dict[str, Any]) -> FactResolutionConfig:
+    types = {
+        name: _build_strict(FactTypeConfig, {**spec, "inputs": dict(spec["inputs"])})
+        for name, spec in dict(fr_raw.pop("types")).items()
+    }
+    for name, spec in types.items():
+        if spec.subject not in _FACT_SUBJECTS:
+            raise ValueError(f"fact type {name!r} has subject {spec.subject!r}; valid: {list(_FACT_SUBJECTS)}")
+    config: FactResolutionConfig = _build_strict(FactResolutionConfig, {**fr_raw, "types": types})
+    return config
+
+
 def parse_engine_yaml(data: dict[str, Any]) -> EngineSettings:
     simple_parsed: dict[str, Any] = {key: _build_strict(cls, data[key]) for key, cls in _SIMPLE_SECTIONS.items()}
 
@@ -459,6 +480,7 @@ def parse_engine_yaml(data: dict[str, Any]) -> EngineSettings:
         chaos_modifiers=chaos_modifiers,
         likelihood_rules=lr,
     )
+    fact_resolution = _build_fact_resolution(dict(data["fact_resolution"]))
 
     impacts = {
         key: _build_strict(ImpactConfig, {**impact_data, "key": key}) for key, impact_data in data["impacts"].items()
@@ -603,6 +625,8 @@ def parse_engine_yaml(data: dict[str, Any]) -> EngineSettings:
         memory_templates=memory_templates,
         narrative_direction=narrative_direction,
         fate=fate,
+        fact_resolution=fact_resolution,
+        generation=simple_parsed["generation"],
         story=simple_parsed["story"],
         enums=simple_parsed["enums"],
         memory_retrieval_weights=simple_parsed["memory_retrieval_weights"],
@@ -667,10 +691,13 @@ __all__ = [
     "EngineMove",
     "EngineSettings",
     "EnumsConfig",
+    "FactResolutionConfig",
+    "FactTypeConfig",
     "FateConfig",
     "FateLikelihoodRules",
     "FlagCondition",
     "FuzzyMatchConfig",
+    "GenerationConfig",
     "ImpactConfig",
     "InformationGateBuckets",
     "InformationGateConfig",

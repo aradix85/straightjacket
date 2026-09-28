@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 import json
 import logging
 import time
@@ -23,13 +24,14 @@ from straightjacket.engine.persistence import delete_save, load_game, save_game
 from straightjacket.engine.user_management import create_user
 from straightjacket.engine.config_loader import VERSION, model_for_role, provider_for_role
 from straightjacket.engine.correction import process_correction
-from straightjacket.engine.game.momentum_burn import process_momentum_burn
 from straightjacket.engine.datasworn.settings import list_packages
 from straightjacket.engine.game import (
+    BurnOffer,
     determine_end_reason,
     prepare_succession,
     start_succession_with_character,
     generate_epilogue,
+    process_momentum_burn,
     process_turn,
     run_deferred_director,
     start_new_chapter,
@@ -51,7 +53,7 @@ from .ai_helpers import (
 from .creation import roll_character
 from .faults import NarratorOutage
 from .scenarios import prepare_scenario
-from .invariants import assert_game_state
+from .invariants import assert_game_state, check_turn_replacement
 from .models import ChapterRecord, NpcSnapshot, SessionLog, TurnRecord
 from .quality_checks import (
     check_chapter_continuity,
@@ -403,7 +405,7 @@ def _play_turn(
     snapshot, last_snapshot, before_state = game.snapshot(), game.last_turn_snapshot, game.to_dict()
     turn_provider = NarratorOutage(provider) if inject_failure else provider
     try:
-        game, narration, roll, burn_info, director_ctx = process_turn(turn_provider, game, action, config, stream)
+        game, narration, roll, burn_offer, director_ctx = process_turn(turn_provider, game, action, config, stream)
     except AIUnavailableError as e:
         _restore(game, snapshot, last_snapshot)
         rec = TurnRecord(turn=turn, chapter=game.campaign.chapter_number, action=action, rolled_back=True)
@@ -432,8 +434,12 @@ def _play_turn(
     match = bool(roll and roll.match)
     coverage.observe_turn(before, world_view(game), result, match, roll.move if roll else "")
 
-    if burn_info:
-        _handle_burn(provider, config, game, burn_info, burn_setting, style, rec)
+    if burn_offer:
+        narration, director_ctx = _handle_burn(
+            provider, config, game, burn_offer, narration, director_ctx, burn_setting, style, rec, turn, slog
+        )
+        if rec.burn_taken and not rec.burn_error:
+            result = burn_offer.new_result
 
     if director_ctx:
         try:
@@ -660,6 +666,7 @@ def _play_correction_turn(
     correction_text = _random.choice(correction_prompts)
     print(f"\n  [PLAYER] {correction_text}")
 
+    before = copy.deepcopy(game)
     try:
         game, new_narration, director_ctx = process_correction(
             provider, game, correction_text.lstrip("# ").strip(), config
@@ -704,6 +711,7 @@ def _play_correction_turn(
     print_state(game)
 
     violations = assert_game_state(game, turn)
+    violations += check_turn_replacement(before, game, new_narration, turn, "correction", keeps_location=False)
     if violations:
         rec.violations = violations
         for v in violations:
@@ -728,46 +736,54 @@ def _handle_burn(
     provider: AIProvider,
     config: EngineConfig,
     game: GameState,
-    burn_info: dict,
+    offer: BurnOffer,
+    narration: str,
+    director_ctx: dict | None,
     burn_setting: str,
     style: str,
     rec: TurnRecord,
-) -> GameState:
+    turn: int,
+    slog: SessionLog,
+) -> tuple[str, dict | None]:
     should_burn = False
     if burn_setting == "always":
         should_burn = True
     elif burn_setting != "never":
         try:
-            should_burn = decide_burn_momentum(game, burn_info, style)
+            should_burn = decide_burn_momentum(game, offer.roll.result, offer.new_result, style)
         except Exception:
             should_burn = False
 
-    rec.burn_offered = burn_info["new_result"]
+    rec.burn_offered = offer.new_result
     rec.burn_taken = should_burn
     print(
-        f"  [BURN] Available ({burn_info['roll'].result} -> "
-        f"{burn_info['new_result']}) | Decision: {'BURN' if should_burn else 'skip'}"
+        f"  [BURN] Available ({offer.roll.result} -> "
+        f"{offer.new_result}) | Decision: {'BURN' if should_burn else 'skip'}"
     )
 
     if should_burn:
+        before = copy.deepcopy(game)
+        snapshot, last_snapshot = game.snapshot(), copy.deepcopy(game.last_turn_snapshot)
         try:
-            game, narration = process_momentum_burn(
-                provider=provider,
-                game=game,
-                old_roll=burn_info["roll"],
-                new_result=burn_info["new_result"],
-                brain_data=burn_info["brain"],
-                player_words=burn_info["player_words"],
-                config=config,
-                pre_snapshot=burn_info["pre_snapshot"],
-                scene_setup=burn_info.get("scene_setup"),
-            )
+            _game, narration, director_ctx = process_momentum_burn(provider, game, offer, config)
             print(f"  [BURN] Re-narrated: {narration.replace(chr(10), ' ')[:180]}...")
         except Exception as e:
+            _restore(game, snapshot, last_snapshot)
             rec.burn_error = str(e)
             print(f"  [BURN] Failed: {e}")
+            return narration, director_ctx
+        violations = check_turn_replacement(before, game, narration, turn, "momentum burn", keeps_location=True)
+        snap_roll = game.last_turn_snapshot.roll if game.last_turn_snapshot else None
+        if snap_roll is None or snap_roll.result != offer.new_result:
+            violations.append(f"[TURN {turn}] momentum burn: turn snapshot does not hold the burned result")
+        if game.narrative.session_log and game.narrative.session_log[-1].result != offer.new_result:
+            violations.append(f"[TURN {turn}] momentum burn: last session log entry is not the burned result")
+        for v in violations:
+            print(f"  !!  {v}")
+            slog.violations.append(v)
+        rec.violations.extend(violations)
 
-    return game
+    return narration, director_ctx
 
 
 def _chapter_transition(

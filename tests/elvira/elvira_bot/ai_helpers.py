@@ -175,13 +175,13 @@ def build_turn_context(
     )
 
 
-def decide_burn_momentum(game: GameState, burn_info: dict, style: str) -> bool:
+def decide_burn_momentum(game: GameState, current_result: str, new_result: str, style: str) -> bool:
     if style == "aggressor":
         return True
     prompt = _p(
         "burn_decision",
-        current_result=burn_info["roll"].result,
-        new_result=burn_info["new_result"],
+        current_result=current_result,
+        new_result=new_result,
         momentum=game.resources.momentum,
     )
     answer = ask_bot(_p("burn_decision_system"), prompt, max_tokens=10)

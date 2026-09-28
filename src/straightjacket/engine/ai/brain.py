@@ -15,6 +15,7 @@ from ..tools.builtins import available_moves
 from .provider_base import AIUnavailableError, AICallSpec, AIProvider, create_with_retry
 from .schemas import get_brain_output_schema, get_revelation_check_schema
 from ..mechanics.bonuses import bonus_block, roll_bonuses
+from ..xml_utils import xe as _xe
 
 
 def _build_moves_block(game: GameState) -> str:
@@ -37,7 +38,7 @@ def _build_moves_block(game: GameState) -> str:
 
 def build_stats_line(game: GameState) -> str:
     cfg = eng().stats
-    parts = [game.player_name]
+    parts = [_xe(game.player_name)]
     for name in cfg.names:
         if name not in cfg.prompt_abbreviations:
             continue
@@ -61,6 +62,12 @@ def _build_tracks_block(game: GameState) -> str:
     return "<tracks>\n" + "\n".join(lines) + "\n</tracks>"
 
 
+def _build_fact_types_block() -> str:
+    types = eng().fact_resolution.types
+    lines = [f"  {name} [{spec.subject}]: {spec.description}" for name, spec in types.items()]
+    return "<fact_types>\n" + "\n".join(lines) + "\n</fact_types>"
+
+
 def _check_choices(result: BrainResult, move_keys: list[str], choices: dict[str, list[str]]) -> None:
     if result.move not in move_keys and result.move not in eng().engine_moves:
         raise ValueError(f"move {result.move!r} is not available in this situation")
@@ -68,6 +75,19 @@ def _check_choices(result: BrainResult, move_keys: list[str], choices: dict[str,
         value = getattr(result, field_name)
         if value is not None and value not in allowed:
             raise ValueError(f"{field_name} {value!r} is not one of the choices offered")
+    _check_fact_requests(result, choices["target_npc"])
+
+
+def _check_fact_requests(result: BrainResult, npc_ids: list[str]) -> None:
+    cfg = eng().fact_resolution
+    if len(result.undetermined_facts) > cfg.max_per_turn:
+        raise ValueError(f"{len(result.undetermined_facts)} undetermined facts, at most {cfg.max_per_turn} allowed")
+    for request in result.undetermined_facts:
+        if request.fact_type not in cfg.types:
+            raise ValueError(f"fact_type {request.fact_type!r} is not one of the choices offered")
+        allowed = [cfg.place_reference] if cfg.types[request.fact_type].subject == "place" else npc_ids
+        if request.about not in allowed:
+            raise ValueError(f"fact {request.fact_type!r} cannot be about {request.about!r}")
 
 
 def call_brain(
@@ -82,6 +102,9 @@ def call_brain(
         "brain_parser",
         lang=_brain_lang,
         content_boundaries_block=content_boundaries_block(game),
+        fact_types_block=_build_fact_types_block(),
+        max_facts=str(eng().fact_resolution.max_per_turn),
+        place=eng().fact_resolution.place_reference,
         moves_block=_build_moves_block(game),
     )
 
@@ -90,9 +113,9 @@ def call_brain(
 
     npc_lines = []
     for n in _listed_npcs(game):
-        entry = f"  {n.name} (id:{n.id}, {n.disposition})"
+        entry = f"  {_xe(n.name)} (id:{n.id}, {n.disposition})"
         if n.aliases:
-            entry += f" aliases:{','.join(n.aliases)}"
+            entry += f" aliases:{_xe(','.join(n.aliases))}"
         npc_lines.append(entry)
     npc_block = "<npcs>\n" + "\n".join(npc_lines) + "\n</npcs>" if npc_lines else f"<npcs>{_ai_text['no_npcs']}</npcs>"
 
@@ -100,14 +123,14 @@ def call_brain(
     bonuses = bonus_block(game)
 
     user_msg = f"""<state>
-loc:{w.current_location} | ctx:{w.current_scene_context}
+loc:{_xe(w.current_location)} | ctx:{_xe(w.current_scene_context)}
 time:{w.time_of_day or _ai_text["unknown_time"]}
 {build_stats_line(game)}
 </state>
 {npc_block}
 {tracks_block}
 {bonuses}
-<input>{player_message}</input>"""
+<input>{_xe(player_message)}</input>"""
 
     move_keys = [m["move"] for m in available_moves(game)["moves"]]
     choices = {

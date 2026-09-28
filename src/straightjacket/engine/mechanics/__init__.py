@@ -19,6 +19,8 @@ __all__ = [
     "check_npc_agency",
     "check_scene",
     "choose_story_structure",
+    "clear_facts",
+    "clear_facts_settled_by_hit",
     "complete_track",
     "compute_npc_gate",
     "consolidate_characters",
@@ -28,6 +30,7 @@ __all__ = [
     "dispatch_meta",
     "drain_pending_events",
     "evaluate_keyed_scenes",
+    "facts_of_this_place",
     "find_progress_track",
     "generate_consequence_sentences",
     "generate_engine_memories",
@@ -49,6 +52,7 @@ __all__ = [
     "pick_template",
     "purge_old_fired_clocks",
     "record_scene_intensity",
+    "remember_facts",
     "resolve_clock_fill",
     "resolve_consequence_sentence",
     "resolve_effect",
@@ -56,10 +60,10 @@ __all__ = [
     "resolve_fate_chart",
     "resolve_fate_check",
     "resolve_fate_check_with_dice",
-    "resolve_likelihood",
     "resolve_npc_stance",
     "resolve_position",
     "resolve_time_progression",
+    "resolve_turn_facts",
     "roll_action",
     "roll_event_focus",
     "roll_meaning_table",
@@ -110,13 +114,18 @@ from .engine_memories import (
     generate_engine_memories,
     generate_scene_context,
 )
+from .facts import (
+    clear_facts_settled_by_hit,
+    facts_of_this_place,
+    remember_facts,
+)
 from .fate import (
     resolve_fate,
     resolve_fate_chart,
     resolve_fate_check,
     resolve_fate_check_with_dice,
-    resolve_likelihood,
 )
+from .generation import resolve_turn_facts
 from .keyed_scenes import (
     evaluate_keyed_scenes,
 )
@@ -164,6 +173,7 @@ from .world import (
     advance_time,
     apply_brain_location_time,
     choose_story_structure,
+    clear_facts,
     get_pacing_hint,
     locations_match,
     record_scene_intensity,

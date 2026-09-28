@@ -7,9 +7,9 @@ from straightjacket.engine.mechanics.fate import (
     resolve_fate,
     resolve_fate_chart,
     resolve_fate_check_with_dice,
-    resolve_likelihood,
+    score_to_odds,
 )
-from tests._helpers import make_game_state, make_npc
+from tests._helpers import make_game_state
 
 
 def test_fate_chart_four_outcomes() -> None:
@@ -117,57 +117,14 @@ def test_fate_check_all_odds_all_cf(load_engine: None) -> None:
                 assert result.answer in ("yes", "no", "exceptional_yes", "exceptional_no")
 
 
-def test_likelihood_default_fifty_fifty(load_engine: None) -> None:
-    game = make_game_state()
-    game.world.chaos_factor = 5
-    assert resolve_likelihood(game) == "fifty_fifty"
+def test_score_to_odds_covers_the_scale(load_engine: None) -> None:
+    assert score_to_odds(10) == "certain"
+    assert score_to_odds(3) == "very_likely"
+    assert score_to_odds(0) == "fifty_fifty"
+    assert score_to_odds(-2) == "unlikely"
+    assert score_to_odds(-99) == "impossible"
 
 
-def test_likelihood_npc_disposition_shifts_odds(load_engine: None) -> None:
-    game = make_game_state()
-    game.world.chaos_factor = 5
-
-    friendly = make_npc(id="npc_1", name="Kira", status="active", disposition="friendly")
-    game.npcs = [friendly]
-    friendly_odds = resolve_likelihood(game, context_hint="Kira")
-
-    hostile = make_npc(id="npc_1", name="Kira", status="active", disposition="hostile")
-    game.npcs = [hostile]
-    hostile_odds = resolve_likelihood(game, context_hint="Kira")
-
-    assert eng().enums.odds_levels.index(friendly_odds) < eng().enums.odds_levels.index(hostile_odds)
-
-
-def test_likelihood_chaos_shifts_odds(load_engine: None) -> None:
-    high = make_game_state()
-    high.world.chaos_factor = 8
-    low = make_game_state()
-    low.world.chaos_factor = 2
-
-    high_odds = resolve_likelihood(high)
-    low_odds = resolve_likelihood(low)
-    assert eng().enums.odds_levels.index(low_odds) < eng().enums.odds_levels.index(high_odds)
-
-
-def test_likelihood_critical_resources(load_engine: None) -> None:
-    game = make_game_state()
-    game.world.chaos_factor = 5
-    game.resources.health = 1
-    odds_critical = resolve_likelihood(game)
-
-    game2 = make_game_state()
-    game2.world.chaos_factor = 5
-    game2.resources.health = 5
-    odds_healthy = resolve_likelihood(game2)
-
-    assert eng().enums.odds_levels.index(odds_critical) >= eng().enums.odds_levels.index(odds_healthy)
-
-
-def test_likelihood_factors_stack(load_engine: None) -> None:
-    game = make_game_state()
-    game.world.chaos_factor = 8
-    game.resources.health = 1
-    npc = make_npc(id="npc_1", name="Kira", status="active", disposition="hostile")
-    game.npcs.append(npc)
-    odds = resolve_likelihood(game, context_hint="Kira")
-    assert odds in ("very_unlikely", "nearly_impossible", "impossible")
+def test_score_below_the_catch_all_raises(load_engine: None) -> None:
+    with pytest.raises(ValueError, match="no matching threshold"):
+        score_to_odds(-100)

@@ -1,5 +1,6 @@
 from typing import Any
 import asyncio
+import copy
 from concurrent.futures import Future
 
 from starlette.websockets import WebSocket, WebSocketDisconnect
@@ -17,13 +18,13 @@ from ..engine.game import (
     determine_end_reason,
     generate_epilogue,
     prepare_succession,
+    process_momentum_burn,
     process_turn,
     run_deferred_director,
     start_new_chapter,
     start_new_game,
     start_succession_with_character,
 )
-from ..engine.game.momentum_burn import process_momentum_burn
 from ..engine.logging_util import log
 from ..engine.mechanics.legacy import advance_asset
 from ..engine.models import GameState, TurnSnapshot
@@ -38,7 +39,7 @@ from .serializers import (
     build_tracks_status,
     highlight_dialog,
 )
-from .session import BurnOffer, Session
+from .session import Session
 
 
 async def _send(ws: WebSocket, msg: dict[str, Any]) -> None:
@@ -208,15 +209,16 @@ async def handle_player_input(session: Session, ws: WebSocket, msg: dict[str, An
         return
 
     session.processing = True
+    session.pending_burn = None
     try:
         session.append_chat("user", text)
         await _send(ws, {"type": "status", "text": "..."})
 
         provider = get_provider()
         stream, pending_sentences = _narration_stream(ws, session.game) if cfg().server.stream_narration else (None, [])
-        before, last_before = session.game.snapshot(), session.game.last_turn_snapshot
+        before, last_before = session.game.snapshot(), copy.deepcopy(session.game.last_turn_snapshot)
         try:
-            game, narration, _roll, burn_info, director_ctx = await asyncio.to_thread(
+            game, narration, _roll, burn_offer, director_ctx = await asyncio.to_thread(
                 process_turn, provider, session.game, text, session.config, stream
             )
         except Exception as e:
@@ -249,23 +251,15 @@ async def handle_player_input(session: Session, ws: WebSocket, msg: dict[str, An
             },
         )
 
-        if burn_info:
-            session.pending_burn = BurnOffer(
-                roll=burn_info["roll"],
-                new_result=burn_info["new_result"],
-                cost=burn_info["cost"],
-                brain=burn_info["brain"],
-                player_words=burn_info["player_words"],
-                pre_snapshot=burn_info["pre_snapshot"],
-                scene_setup=burn_info.get("scene_setup"),
-            )
+        if burn_offer:
+            session.pending_burn = burn_offer
             await _send(
                 ws,
                 {
                     "type": "burn_offer",
-                    "current": burn_info["roll"].result,
-                    "upgrade": burn_info["new_result"],
-                    "cost": burn_info["cost"],
+                    "current": burn_offer.roll.result,
+                    "upgrade": burn_offer.new_result,
+                    "cost": burn_offer.cost,
                 },
             )
 
@@ -321,10 +315,11 @@ async def handle_correction(session: Session, ws: WebSocket, msg: dict[str, Any]
         return
 
     session.processing = True
+    session.pending_burn = None
     try:
         await _send(ws, {"type": "status", "text": "..."})
         provider = get_provider()
-        before, last_before = session.game.snapshot(), session.game.last_turn_snapshot
+        before, last_before = session.game.snapshot(), copy.deepcopy(session.game.last_turn_snapshot)
         try:
             game, narration, director_ctx = await asyncio.to_thread(
                 process_correction, provider, session.game, text, session.config
@@ -371,19 +366,10 @@ async def handle_burn_momentum(session: Session, ws: WebSocket, msg: dict[str, A
     try:
         await _send(ws, {"type": "status", "text": t("momentum.gathering")})
         provider = get_provider()
-        before, last_before = session.game.snapshot(), session.game.last_turn_snapshot
+        before, last_before = session.game.snapshot(), copy.deepcopy(session.game.last_turn_snapshot)
         try:
-            game, narration = await asyncio.to_thread(
-                process_momentum_burn,
-                provider=provider,
-                game=session.game,
-                old_roll=burn.roll,
-                new_result=burn.new_result,
-                brain_data=burn.brain,
-                player_words=burn.player_words,
-                config=session.config,
-                pre_snapshot=burn.pre_snapshot,
-                scene_setup=burn.scene_setup,
+            game, narration, director_ctx = await asyncio.to_thread(
+                process_momentum_burn, provider, session.game, burn, session.config
             )
         except Exception as e:
             _restore_after_failed_turn(session.game, before, last_before)
@@ -396,6 +382,16 @@ async def handle_burn_momentum(session: Session, ws: WebSocket, msg: dict[str, A
 
         session.replace_last_assistant(narration)
         save_game(game, session.player, session.chat_messages, session.save_name)
+
+        if director_ctx:
+            try:
+                await asyncio.to_thread(run_deferred_director, provider, game, director_ctx)
+                save_game(game, session.player, session.chat_messages, session.save_name)
+            except Exception as e:
+                log(f"[Web] Director after momentum burn failed: {e}", level="warning")
+        elif any(n.needs_reflection for n in game.npcs):
+            reset_stale_reflection_flags(game)
+
         await _send(ws, {"type": "turn_complete"})
     except Exception as e:
         log(f"[Web] burn failed: {e}", level="error")

@@ -86,6 +86,16 @@ class ClockData(SerializableMixin):
 
 
 @dataclass
+class ResolvedFact(SerializableMixin):
+    about: str
+    about_name: str
+    fact_type: str
+    answer: str
+    odds: str
+    location: str
+
+
+@dataclass
 class WorldState(SerializableMixin):
     chaos_factor: int
     current_location: str = ""
@@ -95,6 +105,7 @@ class WorldState(SerializableMixin):
     clocks: list[ClockData] = field(default_factory=list)
     pending_clock_fills: list[ClockFillResult] = field(default_factory=list)
     combat_position: str = ""
+    facts: list[ResolvedFact] = field(default_factory=list)
 
     @classmethod
     def from_config(cls) -> WorldState:

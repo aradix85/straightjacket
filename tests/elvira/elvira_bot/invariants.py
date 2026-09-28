@@ -180,3 +180,40 @@ def _check_combat_track_sync(game: GameState, turn: int, violations: list[str]) 
         violations.append(
             f"[TURN {turn}] Combat sync: combat_position cleared but orphan active combat track(s): {names}"
         )
+
+
+def check_turn_replacement(
+    before: GameState, after: GameState, narration: str, turn: int, kind: str, keeps_location: bool
+) -> list[str]:
+    violations: list[str] = []
+
+    def check(condition: bool, msg: str) -> None:
+        if not condition:
+            violations.append(f"[TURN {turn}] {kind}: {msg}")
+
+    old_history, new_history = before.narrative.narration_history, after.narrative.narration_history
+    check(len(new_history) == len(old_history), f"narration history {len(old_history)} → {len(new_history)} entries")
+    check(
+        [h.to_dict() for h in new_history[:-1]] == [h.to_dict() for h in old_history[:-1]],
+        "an earlier narration entry changed",
+    )
+    check(bool(new_history) and new_history[-1].narration == narration, "last narration entry is not the new one")
+
+    old_log, new_log = before.narrative.session_log, after.narrative.session_log
+    check(len(new_log) == len(old_log), f"session log {len(old_log)} → {len(new_log)} entries")
+    check(
+        [e.to_dict() for e in new_log[:-1]] == [e.to_dict() for e in old_log[:-1]],
+        "an earlier session log entry changed",
+    )
+    check(
+        after.narrative.scene_count == before.narrative.scene_count,
+        f"scene count {before.narrative.scene_count} → {after.narrative.scene_count}",
+    )
+    if keeps_location:
+        check(
+            after.world.current_location == before.world.current_location,
+            f"location {before.world.current_location!r} → {after.world.current_location!r}",
+        )
+    snap = after.last_turn_snapshot
+    check(snap is not None and snap.narration == narration, "turn snapshot does not hold the new narration")
+    return violations

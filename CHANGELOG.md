@@ -9,6 +9,16 @@ Entries up to 2026.09.26.19 were shortened to their essentials, in 2026.09.26.1 
 
 Calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day. The first CalVer release is 2026.04.25.0; earlier `0.x.y` releases keep their numbers.
 
+## [2026.09.29.0] — 2026-09-29
+
+Step 9a, fact resolution: the Brain names the facts an action or question turns on, Mythic's fate chart settles them with odds the engine derives from `engine/fact_resolution.yaml`, and the narrator gets them as `<facts>`. A fact belongs to its place and clears on a move, a chapter start, or a succession; a hit settles a yes where the type says so. Ask the Oracle stays the move for questions: a yes/no question that a fact type covers is answered by the fact. `resolve_likelihood` is gone. The save format breaks.
+
+Momentum burn: it overwrote the previous turn's log entries and lost the turn's move, track, and events; it now resumes from a snapshot taken after the roll and runs the turn's own path. A restore copies the story lists whole. Also fixed: an interrupt event shown twice, a corrected oracle turn losing its answer, player input unescaped in the Brain prompt.
+
+Elvira checks what a burn or correction may change and counts resolved facts. Two sessions (classic, eight turns, and the burn scenario): facts resolved in play, burn and rollback correct, no engine warnings; they showed a hit clearing a no, now fixed.
+
+Quality gate: 1517 tests green, twenty-nine project-rule scans clean, coverage 90.52%, ruff and mypy --strict clean.
+
 ## [2026.09.27.2] — 2026-09-27
 
 Documentation only: the user decided the two points step 9a left open. A fact hangs on an NPC, by the id the Brain's prompt offers, or on the current location, with no free-text objects, so the engine can recognise it again. Every fact is cleared when the player moves and at a chapter start, and each fact type says in yaml whether a hit on an action that depended on it clears it. Resolved facts live in one list on the world state. Roadmap step 9a records both decisions and their rejected alternatives.

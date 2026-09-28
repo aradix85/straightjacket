@@ -16,7 +16,7 @@ The sanitization is in `user_management.py._safe_name()` and is applied in all p
 
 Player input is included in AI prompts as XML element content. All player-supplied text (input, names, backstory, vow text) is escaped before insertion into prompt XML: `xml_utils.xe()` for element content and `xml_utils.xa()` for attribute values, both HTML entity escaping. This prevents players from injecting XML tags that could alter AI behavior — e.g. closing a `<scene>` tag and injecting a fake `<result type="STRONG_HIT">`.
 
-The escaping is applied in every prompt-assembly module (`prompt_action.py`, `prompt_dialog.py`, `prompt_boundary.py`, `prompt_shared.py`, `prompt_blocks.py`, `director.py`) and in `ai/brain.py` (which uses `html.escape` directly for the same effect). The Brain's `player_intent` field is AI-generated from player input, not raw player text, which provides a secondary layer of isolation.
+The escaping is applied in every prompt-assembly module (`prompt_action.py`, `prompt_dialog.py`, `prompt_boundary.py`, `prompt_shared.py`, `prompt_blocks.py`, `director.py`) and in `ai/brain.py`, which escapes the player's input, NPC names, the player name, the location, and the scene context with the same `xml_utils` helpers. Track names reach the Brain unescaped because it must copy them back exactly as a choice; they come from the Brain's own earlier answers. The Brain's `player_intent` field is AI-generated from player input, not raw player text, which provides a secondary layer of isolation.
 
 ## Session model
 

@@ -15,6 +15,7 @@ from ..engine_loader import eng
 from ..logging_util import log
 from ..mechanics import (
     choose_story_structure,
+    clear_facts,
     record_scene_intensity,
 )
 from ..mechanics.adventure_crafter import (
@@ -170,6 +171,7 @@ def _reset_chapter_mechanics(game: GameState) -> None:
     game.narrative.story_blueprint = None
     game.world.time_of_day = eng().opening.time_of_day
     game.world.location_history = []
+    clear_facts(game)
     game.narrative.director_guidance = DirectorGuidance()
 
     game.progress_tracks = []

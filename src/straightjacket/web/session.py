@@ -6,23 +6,12 @@ from typing import Any
 from starlette.websockets import WebSocket
 
 from ..engine.engine_loader import eng
-from ..engine.mechanics.scene import SceneSetup
-from ..engine.models import BrainResult, EngineConfig, GameState, RollResult, TurnSnapshot
+from ..engine.game import BurnOffer
+from ..engine.models import EngineConfig, GameState
 
 
 def _default_save_name() -> str:
     return eng().persistence.default_save_name
-
-
-@dataclass
-class BurnOffer:
-    roll: RollResult
-    new_result: str
-    cost: int
-    brain: BrainResult
-    player_words: str
-    pre_snapshot: TurnSnapshot
-    scene_setup: SceneSetup | None = None
 
 
 @dataclass

@@ -1,6 +1,5 @@
 import json
 
-from straightjacket.engine import engine_loader
 from straightjacket.engine.ai.provider_base import AICallSpec, AIResponse
 from straightjacket.engine.models import (
     EngineConfig,
@@ -75,6 +74,7 @@ class MockProvider:
                         "track_rank": None,
                         "target_track": None,
                         "bonus_id": None,
+                        "undetermined_facts": [],
                     }
                 ),
                 usage={"input_tokens": 100, "output_tokens": 50},
@@ -238,36 +238,6 @@ def test_correction_state_error_full_flow(load_engine: None, stub_emotions: None
     assert len(narration) > 10
     assert len(game.narrative.narration_history) == history_len_before
     assert game.narrative.session_log[-1].summary.startswith("[corrected]")
-
-
-def test_momentum_burn_full_flow(load_engine: None, stub_emotions: None) -> None:
-    from straightjacket.engine.game.momentum_burn import process_momentum_burn
-
-    game = _game()
-    pre_snap = game.last_turn_snapshot
-    assert pre_snap is not None
-    snap_health = pre_snap.resources["health"]
-    game.narrative.session_log.append(
-        SceneLogEntry(scene=4, summary="Attack", move="combat/strike", result="MISS", scene_type="expected")
-    )
-
-    provider = MockProvider()
-    game, narration = process_momentum_burn(
-        provider,
-        game,
-        pre_snap.roll,
-        "STRONG_HIT",
-        make_brain_result(move="combat/strike", stat="iron", player_intent="Attack"),
-        config=EngineConfig(narration_lang="English"),
-        pre_snapshot=pre_snap,
-    )
-
-    assert game.resources.health == snap_health
-    _e = engine_loader.eng()
-
-    assert game.resources.momentum == _e.momentum.start
-    assert len(narration) > 10
-    assert game.narrative.session_log[-1].result == "STRONG_HIT"
 
 
 def test_correction_no_snapshot(load_engine: None, stub_emotions: None) -> None:

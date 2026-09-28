@@ -32,6 +32,7 @@ class _NarratorCapture(MockProvider):
                 "track_rank": None,
                 "target_track": None,
                 "bonus_id": None,
+                "undetermined_facts": [],
             }
             return AIResponse(content=json.dumps(brain), usage={"input_tokens": 1, "output_tokens": 1})
         if spec.log_role == "narrator":

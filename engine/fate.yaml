@@ -27,15 +27,6 @@ fate:
       neutral: 0
       friendly: 2
       loyal: 3
-    chaos_thresholds:
-      high: 7
-      low: 3
-    chaos_scores:
-      high: -1
-      low: 1
-    resource_critical_below: 2
-    resource_scores:
-      critical: -1
     score_to_odds:
     - min_score: 5
       odds: certain

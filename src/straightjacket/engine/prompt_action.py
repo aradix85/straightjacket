@@ -2,13 +2,14 @@ from collections.abc import Sequence
 
 from .mechanics import ClockFillResult
 from .mechanics.scene import SceneSetup
-from .models import BrainResult, GameState, NpcData, RandomEvent, RollResult, ThreatEvent
+from .models import BrainResult, GameState, NpcData, RandomEvent, ResolvedFact, RollResult, ThreatEvent
 from .prompt_blocks import narrative_direction_block, recent_events_block, story_context_block
 from .prompt_loader import get_prompt
 from .prompt_shared import (
     _npc_agency_block,
     _clock_filled_block,
     _director_block,
+    _facts_block,
     _loc_hist,
     _npc_block,
     _npcs_section,
@@ -86,6 +87,7 @@ def build_action_prompt(
     random_events: Sequence[RandomEvent] = (),
     threat_events: Sequence[ThreatEvent] = (),
     clock_fill_results: Sequence[ClockFillResult] = (),
+    facts: Sequence[ResolvedFact] = (),
 ) -> str:
     context_text = f"{player_words} {brain.player_intent} {game.world.current_scene_context}"
 
@@ -119,7 +121,7 @@ def build_action_prompt(
     return f"""<scene type="action" n="{game.narrative.scene_count}">
 {_scene_header(game)}
 <intent>{_xe(brain.player_intent)} ({_xe(brain.approach)})</intent>{pw}
-{constraint}{cons_tags}{threat_tags}{clock_section}
+{constraint}{cons_tags}{threat_tags}{clock_section}{_facts_block(facts)}
 {position_tag}
 <location>{_xe(game.world.current_location)}</location>{_loc_hist(game)}{_time_ctx(game)}{_scene_enrichment(game)}
 {npc}{npcs_sect}{wl}{flags}{agency}

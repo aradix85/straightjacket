@@ -14,6 +14,7 @@ from .models_base import (
     PlayerPreferences,
     ProgressTrack,
     RandomEvent,
+    ResolvedFact,
     Resources,
     ThreatData,
     ThreatEvent,
@@ -61,6 +62,12 @@ class RollResult(SerializableMixin):
 
 
 @dataclass
+class FactRequest(SerializableMixin):
+    fact_type: str
+    about: str
+
+
+@dataclass
 class BrainResult(SerializableMixin):
     type: str = field(kw_only=True)
     move: str = field(kw_only=True)
@@ -75,6 +82,7 @@ class BrainResult(SerializableMixin):
     track_rank: str | None = None
     target_track: str | None = None
     bonus_id: str | None = None
+    undetermined_facts: list[FactRequest] = field(default_factory=list)
 
 
 @dataclass
@@ -93,6 +101,7 @@ class TurnSnapshot(SerializableMixin):
     brain: BrainResult | None = None
     roll: RollResult | None = None
     narration: str | None = None
+    facts: list[ResolvedFact] = field(default_factory=list)
 
 
 @dataclass
@@ -189,6 +198,7 @@ __all__ = [
     "CurrentAct",
     "DirectorGuidance",
     "EngineConfig",
+    "FactRequest",
     "FateResult",
     "GameState",
     "InheritanceRollResult",
@@ -204,6 +214,7 @@ __all__ = [
     "PredecessorRecord",
     "ProgressTrack",
     "RandomEvent",
+    "ResolvedFact",
     "Resources",
     "Revelation",
     "RollResult",

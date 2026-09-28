@@ -27,6 +27,7 @@ TARGETS = (
     "bonus_used",
     "chained_move",
     "pay_the_price",
+    "fact_resolved",
     "ai_failure_rollback",
 )
 
@@ -82,6 +83,7 @@ class Coverage:
         if any(e.startswith("[Chain]") and "skipped" not in e for e in events):
             self.hit("chained_move")
         self.hit("pay_the_price", sum(1 for e in events if e.startswith("[PayThePrice]")))
+        self.hit("fact_resolved", sum(1 for e in events if e.startswith("[Fact] Resolved")))
 
     def steer(self, turn: int, max_turns: int) -> str | None:
         if turn <= max_turns // 2:

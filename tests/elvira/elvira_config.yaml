@@ -59,6 +59,8 @@ logging:
   event_prefixes:
   - "[Bonus]"
   - "[Chain]"
+  - "[Fact]"
+  - "[Fate]"
   - "[PayThePrice]"
   - "[Metadata]"
   - "[OpeningSetup]"

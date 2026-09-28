@@ -1,0 +1,35 @@
+fact_resolution:
+  place_reference: here
+  max_per_turn: 2
+  types:
+    locked:
+      subject: place
+      description: a door, gate, lid, or passage the action needs is locked, barred, or blocked
+      base_score: 0
+      inputs: {}
+      cleared_by_hit: true
+    useful:
+      subject: place
+      description: this place holds something useful for what the player character is trying to do
+      base_score: 0
+      inputs: {}
+      cleared_by_hit: true
+    occupied:
+      subject: place
+      description: someone the player character has not accounted for is here
+      base_score: -2
+      inputs: {}
+      cleared_by_hit: false
+    present:
+      subject: npc
+      description: this person is here, within reach of the player character, right now
+      base_score: 0
+      inputs: {}
+      cleared_by_hit: false
+    alert:
+      subject: npc
+      description: this person is on guard and watching for the player character or for trouble
+      base_score: 0
+      inputs:
+        npc_disposition: -1
+      cleared_by_hit: false

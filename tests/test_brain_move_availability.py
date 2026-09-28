@@ -19,6 +19,7 @@ BRAIN_FIELDS: dict[str, Any] = {
     "track_rank": None,
     "target_track": None,
     "bonus_id": None,
+    "undetermined_facts": [],
 }
 
 

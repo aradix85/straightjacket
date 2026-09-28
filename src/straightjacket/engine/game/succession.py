@@ -18,6 +18,7 @@ from ..mechanics import (
     apply_npc_carryover,
     build_predecessor_record,
     choose_story_structure,
+    clear_facts,
     record_scene_intensity,
     run_inheritance_rolls,
     seed_successor_legacy,
@@ -126,6 +127,7 @@ def _reset_for_successor(
     game.world.clocks = []
     game.world.time_of_day = _e.opening.time_of_day
     game.world.location_history = []
+    clear_facts(game)
 
     game.narrative.session_log = []
     game.narrative.narration_history = []

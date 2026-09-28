@@ -1,13 +1,14 @@
 from collections.abc import Sequence
 
 from .mechanics.scene import SceneSetup
-from .models import BrainResult, ClockFillResult, GameState, NpcData, RandomEvent
+from .models import BrainResult, ClockFillResult, GameState, NpcData, RandomEvent, ResolvedFact
 from .prompt_blocks import narrative_direction_block, recent_events_block, story_context_block
 from .prompt_loader import get_prompt
 from .prompt_shared import (
     _npc_agency_block,
     _clock_filled_block,
     _director_block,
+    _facts_block,
     _loc_hist,
     _npc_block,
     _npcs_section,
@@ -31,6 +32,7 @@ def build_dialog_prompt(
     random_events: Sequence[RandomEvent] = (),
     clock_fill_results: Sequence[ClockFillResult] = (),
     npc_agency: Sequence[str] = (),
+    facts: Sequence[ResolvedFact] = (),
 ) -> str:
     context_text = f"{player_words} {brain.player_intent} {game.world.current_scene_context}"
     move_cat = "social"
@@ -48,14 +50,20 @@ def build_dialog_prompt(
     director = _director_block(game)
     oracle_tag = f"\n<oracle_answer>{_xe(oracle_answer)}</oracle_answer>" if oracle_answer else ""
 
-    scene_type = "oracle" if oracle_answer else "dialog"
-    task = get_prompt("task_oracle") if oracle_answer else get_prompt("task_dialog")
+    is_oracle = brain.move == "ask_the_oracle"
+    scene_type = "oracle" if is_oracle else "dialog"
+    if not is_oracle:
+        task = get_prompt("task_dialog")
+    elif oracle_answer:
+        task = get_prompt("task_oracle")
+    else:
+        task = get_prompt("task_oracle_facts")
 
     clock_section = f"\n{clock_block}" if clock_block else ""
 
     return f"""<scene type="{scene_type}" n="{game.narrative.scene_count}">
 {_scene_header(game)}
-<intent>{_xe(brain.player_intent)}</intent>{pw}{oracle_tag}{clock_section}
+<intent>{_xe(brain.player_intent)}</intent>{pw}{oracle_tag}{_facts_block(facts)}{clock_section}
 <location>{_xe(game.world.current_location)}</location>{_loc_hist(game)}{_time_ctx(game)}{_scene_enrichment(game)}
 {npc}{npcs_sect}{wl}{agency}{crisis}
 {pacing}

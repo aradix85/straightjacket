@@ -3,6 +3,7 @@ from __future__ import annotations
 import random
 
 from ..engine_loader import eng
+from ..logging_util import log
 from ..models import BrainResult, GameState
 
 
@@ -63,6 +64,12 @@ def advance_time(game: GameState, progression: str) -> None:
         game.world.time_of_day = phases[new_idx]
 
 
+def clear_facts(game: GameState) -> None:
+    if game.world.facts:
+        log(f"[Fact] Cleared {len(game.world.facts)} fact(s) of {game.world.current_location!r}")
+        game.world.facts = []
+
+
 def update_location(game: GameState, new_location: str) -> None:
     if not new_location:
         return
@@ -76,6 +83,7 @@ def update_location(game: GameState, new_location: str) -> None:
         return
     if locations_match(new_location, w.current_location):
         return
+    clear_facts(game)
     if w.location_history:
         if locations_match(w.location_history[-1], w.current_location):
             w.location_history[-1] = w.current_location

@@ -1,7 +1,9 @@
 __all__ = [
+    "BurnOffer",
     "determine_end_reason",
     "generate_epilogue",
     "prepare_succession",
+    "process_momentum_burn",
     "process_turn",
     "run_deferred_director",
     "start_new_chapter",
@@ -16,9 +18,11 @@ from .chapters import (
 )
 from .director_runner import run_deferred_director
 from .game_start import start_new_game
+from .momentum_burn import process_momentum_burn
 from .succession import (
     determine_end_reason,
     prepare_succession,
     start_succession_with_character,
 )
 from .turn import process_turn
+from .turn_types import BurnOffer

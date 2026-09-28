@@ -6,6 +6,7 @@ import uuid
 
 from ..engine_loader import eng
 from ..logging_util import log
+from ..mechanics import clear_facts, locations_match
 from ..models import NPC_STATUSES, GameState, NpcData
 from ..npc import consolidate_memory, find_npc
 from ..npc.lifecycle import sanitize_aliases
@@ -82,6 +83,8 @@ def _op_npc_merge(game: GameState, op_dict: dict[str, Any]) -> None:
 
 def _op_location_edit(game: GameState, op_dict: dict[str, Any]) -> None:
     if op_dict["value"]:
+        if not locations_match(op_dict["value"], game.world.current_location):
+            clear_facts(game)
         game.world.current_location = op_dict["value"]
         log(f"[Correction] location → {game.world.current_location}")
 

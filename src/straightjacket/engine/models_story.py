@@ -191,9 +191,9 @@ class NarrativeState(SerializableMixin):
             "scene_count": self.scene_count,
             "session_log_len": len(self.session_log),
             "narration_history_len": len(self.narration_history),
-            "threads_len": len(self.threads),
-            "characters_list_len": len(self.characters_list),
-            "plotlines_list_len": len(self.plotlines_list),
+            "threads": [t.to_dict() for t in self.threads],
+            "characters_list": [c.to_dict() for c in self.characters_list],
+            "plotlines_list": [p.to_dict() for p in self.plotlines_list],
             "keyed_scenes": [k.to_dict() for k in self.keyed_scenes],
             "director_guidance": self.director_guidance.to_dict(),
             "scene_intensity_history": list(self.scene_intensity_history),
@@ -213,9 +213,9 @@ class NarrativeState(SerializableMixin):
         self.scene_intensity_history = list(snap["scene_intensity_history"])
         self.session_log = self.session_log[: snap["session_log_len"]]
         self.narration_history = self.narration_history[: snap["narration_history_len"]]
-        self.threads = self.threads[: snap["threads_len"]]
-        self.characters_list = self.characters_list[: snap["characters_list_len"]]
-        self.plotlines_list = self.plotlines_list[: snap["plotlines_list_len"]]
+        self.threads = [ThreadEntry.from_dict(t) for t in snap["threads"]]
+        self.characters_list = [CharacterListEntry.from_dict(c) for c in snap["characters_list"]]
+        self.plotlines_list = [PlotlineEntry.from_dict(p) for p in snap["plotlines_list"]]
         self.keyed_scenes = [KeyedScene.from_dict(k) for k in snap["keyed_scenes"]]
         bp_snap = snap["story_blueprint_snapshot"]
         if bp_snap is not None and self.story_blueprint is not None:

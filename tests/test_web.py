@@ -4,13 +4,15 @@ from typing import Any
 import pytest
 
 from straightjacket.engine import engine_loader
+from straightjacket.engine.game import BurnOffer
+from straightjacket.engine.mechanics.scene import SceneSetup
 from straightjacket.engine.models import (
     GameState,
     RollResult,
     TurnSnapshot,
 )
 from tests._helpers import make_brain_result, make_clock, make_game_state, make_npc
-from straightjacket.web.session import BurnOffer, Session
+from straightjacket.web.session import Session
 from straightjacket.web.serializers import (
     build_creation_options,
     build_narrative_status,
@@ -102,7 +104,11 @@ class TestSession:
             cost=5,
             brain=make_brain_result(),
             player_words="x",
-            pre_snapshot=TurnSnapshot(),
+            scene_setup=SceneSetup(scene_type="expected"),
+            ds_move=None,
+            random_events=[],
+            facts=[],
+            resume_snapshot=TurnSnapshot(),
         )
         s.clear_game()
         assert s.game is None
@@ -126,36 +132,6 @@ class TestSession:
         filtered = s.filtered_messages()
         assert len(filtered) == 2
         assert all(not m.get("recap") for m in filtered)
-
-
-class TestBurnOffer:
-    def test_fields(self) -> None:
-        from straightjacket.engine.mechanics.scene import SceneSetup
-
-        bo = BurnOffer(
-            roll=RollResult(1, 3, 4, "iron", 3, 6, "MISS", "combat/strike", match=False),
-            new_result="STRONG_HIT",
-            cost=7,
-            brain=make_brain_result(move="combat/strike", stat="iron"),
-            player_words="I attack",
-            pre_snapshot=TurnSnapshot(),
-            scene_setup=SceneSetup(scene_type="altered", adjustments=["add_character"]),
-        )
-        assert bo.new_result == "STRONG_HIT"
-        assert bo.cost == 7
-        assert bo.scene_setup is not None
-        assert bo.scene_setup.scene_type == "altered"
-
-    def test_scene_setup_defaults_none(self) -> None:
-        bo = BurnOffer(
-            roll=RollResult(1, 1, 1, "wits", 1, 3, "MISS", "adventure/face_danger", match=True),
-            new_result="WEAK_HIT",
-            cost=3,
-            brain=make_brain_result(),
-            player_words="x",
-            pre_snapshot=TurnSnapshot(),
-        )
-        assert bo.scene_setup is None
 
 
 class TestHighlightDialog:

@@ -74,6 +74,20 @@ def _nullable_enum(values: list[str]) -> dict[str, Any]:
     return {"anyOf": [{"type": "string", "enum": sorted(set(values))}, {"type": "null"}]}
 
 
+def _fact_requests(npc_ids: list[str]) -> dict[str, Any]:
+    cfg = eng().fact_resolution
+    place_types = sorted(name for name, spec in cfg.types.items() if spec.subject == "place")
+    npc_types = sorted(name for name, spec in cfg.types.items() if spec.subject == "npc")
+    branches: list[dict[str, Any]] = []
+    if place_types:
+        branches.append(_obj({"fact_type": _str_enum(place_types), "about": _str_enum([cfg.place_reference])}))
+    if npc_types and npc_ids:
+        branches.append(_obj({"fact_type": _str_enum(npc_types), "about": _str_enum(sorted(set(npc_ids)))}))
+    if not branches:
+        return {"type": "array", "items": {"type": "null"}, "maxItems": 0}
+    return {"type": "array", "items": {"anyOf": branches}, "maxItems": cfg.max_per_turn}
+
+
 def get_brain_output_schema(
     move_keys: list[str], bonus_ids: list[str], npc_ids: list[str], track_names: list[str]
 ) -> dict[str, Any]:
@@ -94,6 +108,7 @@ def get_brain_output_schema(
             "track_rank": _str_enum(rank_enum),
             "target_track": _nullable_enum(track_names),
             "bonus_id": _nullable_enum(bonus_ids),
+            "undetermined_facts": _fact_requests(npc_ids),
         },
         _e.ai_text.schema_titles["brain_output"],
     )

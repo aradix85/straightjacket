@@ -28,9 +28,9 @@ One step is one session: read the code, implement, test, pass the quality gate, 
 
 ### Priorities
 
-Set 2026-09-24, revised 2026-09-27.
+Set 2026-09-24, revised 2026-09-29.
 
-1. Step 9a, fact resolution (NEXT STEP below). It reconnects Mythic's fate system, which has had no caller in play since 0.46.50; until it lands, the narrator invents every fact the engine has not settled. The user put this first because fate is a core part of the design. Step 9b, the generators, follows.
+1. Step 9b, the generators (NEXT STEP below). Settlements, locations, NPCs, and encounters come from the entry point step 9a built, so the narrator invents fewer entities.
 2. Open findings from Elvira runs:
    - The coverage tracker counted no NPC introductions while the metadata extraction reported one.
    - The metadata extraction's identity reveals for unnamed NPCs are rejected for zero word overlap, and a stub NPC is created instead (runs of 2026-09-25).
@@ -49,7 +49,8 @@ Set 2026-09-24, revised 2026-09-27.
    - The Director was about half of a session's cost in 2026.09.25.5, measured before its single tool (2026.09.26.11) and before GLM 5.3; measure again before deciding anything. Running it less often would leave NPC profiles stale and is not planned.
 4. Test fixtures made through the real character-creation path instead of hand-built states, since a hand-built fixture hid the roll-bonus bug of 2026.09.24.33.
 5. Smaller open items:
-   - The Brain prompt routes player questions ("is the door locked?") to `ask_the_oracle`, while ARCHITECTURE.md says the player types actions, never questions; settled in step 9a.
+   - The correction of a misread input still resolves its roll through its own code (`correction/orchestrator.py` → `_handle_input_misread`) instead of the turn's `resolve_and_narrate_action`, as the momentum burn now does: it skips track creation, weak-hit clock ticks, and scene-end bookkeeping, and it and `game/action_resolution.py` → `resolve_action_phase` still fall back to the literals `"vow"` and `"dangerous"` when no track is found (Principle 2 material).
+   - The opening extraction returns whole descriptive sentences as location names ("Smoke-shed in a cedar canyon settlement, by a rain-swollen river, …"), which then stand in `<location>`, `<prev_locations>`, and `<fact about>`; the Brain's `location_change` already asks for a short name, the opening extractor does not.
    - `web/serializers.py` → `build_creation_options` branches on the setting id `delve` (Principle 2 material, see AUDIT.md).
    - No principle audit from AUDIT.md has been run yet.
 
@@ -96,56 +97,15 @@ One line per completed step, newest last. Details in CHANGELOG.
 - Elvira rebuilt — streaming checks, blind judge, save round trip, succession, coverage, WebSocket probes, engine events and warnings, report (2026.09.24.15 to .42).
 - Rules conformance pass R, see section R (2026.09.24.17 to .34).
 - EdgeTales idea E5 — the Brain's `target_npc`, `bonus_id`, and `target_track` limited to what the prompt offers (2026.09.24.58).
+- Step 9a — Fact resolution: the Brain names undetermined facts, fate settles them with engine-derived odds, the narrator gets `<facts>`; Ask the Oracle answers yes/no questions through facts; the momentum burn resumes after the roll on the turn's own path (2026.09.29.0).
 
 ---
 
-## NEXT STEP — 9a: Fact resolution
+## NEXT STEP — 9b: Generators
 
-The fiction often depends on a fact the game state does not hold: whether a door is locked, whether an NPC is alert, whether a room holds something useful. Today the narrator decides such facts. Step 9a lets the engine decide them through Mythic's fate system and remember the answers. Step 9 was split on 2026-09-27 so that fate, the reason this step leads, comes back first; the generators follow in 9b.
+Entity creation through the entry point step 9a built: `mechanics/generation.py` → `generate(game, category, context)`, whose categories are registered in `engine/generation.yaml` and dispatched through `_GENERATORS`, with `fact` as the first category. Step 9b adds entity categories that return a `GeneratedEntity`: the category plus the rolled table results, keyed by the role each table plays in that category. How `generate` types its context and result once there is more than one category (a union, or one typed function per category behind the registry) is decided at the start of the step.
 
-Decision (2026-09-24): the Brain detects, the engine decides. The Brain output gains a field listing the undetermined facts the player's action depends on, each an entity reference plus a fact type from a fixed yaml list (start with four or five, for example locked or blocked, present, alert, contains something useful). The engine derives the odds from game state, resolves through `mechanics/fate.py` → `resolve_fate`, stores the answer, and gives it to the narrator as a `<fact>` tag. Rejected: fixed engine rules per move and target (cannot cover free input), the narrator requesting facts (an extra call, and the narrator would decide what is uncertain), and pre-generating facts only when an entity is created (cannot anticipate everything; it complements this decision once step 10 lands). This is not the player fate question removed in 2026.04.28.4: the player still types actions, and the Brain recognises the uncertainty inside an action.
-
-**9a.1** Fact types live in `engine/fact_resolution.yaml` (new), bound to a dataclass; an unknown fact type raises. Decided on 2026-09-27: each fact type names its own base odds and the game-state inputs that shift them (the disposition of the NPC the fact is about, for example, for an alert guard but not for a locked door), and the resulting score converts to odds through the existing `fate.likelihood_rules.score_to_odds` in `engine/fate.yaml`, so there is one odds scale. The chaos factor does not enter the score: the fate chart already reads it as its column, as Mythic intends, and the current `resolve_likelihood` counts it twice. Fact resolution passes the entity reference instead of a free-text hint whose names `resolve_likelihood` matches; whether `resolve_likelihood` survives in its present form is settled in this step, since fact resolution becomes its only caller.
-
-**9a.2** The Brain output schema gains the undetermined-facts field, its fact types an enum from yaml. Decided on 2026-09-27: a fact's entity is an NPC id from the list the prompt offers, as for `target_npc`, or `here`, the current location; there are no free-text objects such as "the north door", because reuse depends on recognising the same fact again, and a free-text object depends on how the Brain phrases it that turn. The cost is one answer per fact type per place, so two doors in one room share `locked`, until step 10 gives locations structure. `prompts/brain.yaml` explains the field with examples in the same commit, because the `fate_question` field of 2026.04.28.2 died unused for lack of exactly that. A per-turn cap in yaml keeps the prompt bounded.
-
-**9a.3** Resolution goes through the single entry point decided in 2026.09.24.47, `generate(game, category, context)`, with `fact` as its first registered category, returning a typed `ResolvedFact` (entity reference, fact type, answer, odds); 9b adds the entity categories and `GeneratedEntity`. Categories are registered in yaml, not a closed Python enum. A resolved fact is stored in one list on the world state, keyed by entity and fact type, and reused instead of re-rolled. Decided on 2026-09-27, two engine rules end a fact's life. First, every fact belongs to the place where it was resolved and is cleared when the player moves: wherever the current location changes (`update_location` recording a real move, a correction of the location, a chapter start, a succession), NPC facts such as `alert` included, since they are situational. Second, each fact type states in `engine/fact_resolution.yaml` whether a hit on an action that depended on it clears it (`locked` yes, `alert` no), so a door the player just forced is not reported locked again. Rejected: expiry after a fixed number of scenes (arbitrary) and an AI call reporting which facts the narration changed (more AI decisions). The save format breaks, no migration. A fate doublet generates a random event through the existing pipeline.
-
-**9a.4** The answer reaches the narrator as a `<fact>` tag rendered by a `prompt_shared.py` helper with its template in `prompts/blocks.yaml`. It is prompt-injected, because it is always relevant for the call that triggered it and its payload is bounded ("Tool calling and prompt injection" in `docs/ai.md`).
-
-**9a.5** The Brain prompt's routing of player questions to `ask_the_oracle` is settled (priority 5).
-
-**9a.6** Tests: a fixed-seed roll gives a deterministic answer, an unknown fact type raises, a resolved fact is reused on a later turn, a move and a chapter start clear the facts, a hit clears a fact whose type says so and keeps one whose type does not, the Brain schema offers only known fact types and entities (NPC ids and `here`), and a doublet queues a random event.
-
-### Definition of Done
-
-- The Brain names undetermined facts from the yaml list; the engine resolves them through `resolve_fate`; the narrator receives `<fact>` tags.
-- `engine/fact_resolution.yaml` is bound to a dataclass; an unknown fact type or category raises.
-- Resolved facts persist in one list on the world state and are reused; a move, a chapter start, and a hit on a fact type that says so clear them; the save format breaks.
-- `mechanics/fate.py` has a caller in play again; ARCHITECTURE.md ("What the AI still decides", "Engine-resolved fiction") and the Fate section of `docs/mechanics.md` say so.
-- An Elvira run shows `<fact>` tags in play and no new engine warnings.
-- Quality gate green, no new project-rule violations, one CHANGELOG entry.
-
-### Reference patterns
-
-- Fate with engine-derived odds: `mechanics/fate.py` → `resolve_fate`, `resolve_likelihood`; `engine/fate.yaml` → `fate.likelihood_rules`.
-- Engine fact as prompt tag: `prompt_shared.py` → `_clock_filled_block` (`<clock_filled>`), and the `<oracle_answer>` tag of `ask_the_oracle`.
-- Brain schema limited to what the prompt offers: `ai/schemas.py` → `_nullable_enum`.
-- Registry with yaml names and a Python dispatch validated at load: `engine/keyed_scenes.yaml` plus `mechanics/keyed_scenes.py` → `_EVALUATORS`.
-
----
-
-## Next steps
-
-Sketches; order indicative. Each entry gets substeps, a definition of done, and reference patterns when it is promoted to NEXT.
-
-Steps 11, 14b, 25, and 26 each plan a Director tool of their own. Since 2026.09.26.11 the Director has a single tool, `query_game_state`, which cut its tool rounds; whether each planned tool becomes a new one or part of that one is decided when the step is promoted.
-
-### 9b — Generators
-
-Entity creation through the entry point of 9a: `generate(game, category, context)` returns a `GeneratedEntity` (the category plus the rolled table results, keyed by the role each table plays in that category).
-
-**9b.1** Categories settlement, location, npc, and encounter registered in yaml; steps 11, 25, and 26 add npc tiers, waypoints, and sites.
+**9b.1** Categories settlement, location, npc, and encounter registered in `engine/generation.yaml`; steps 11, 25, and 26 add npc tiers, waypoints, and sites.
 
 **9b.2** An oracle accessor for Delve theme plus domain, Sundered Isles cursed and non-cursed variants, and Starforged flat d100, with the format taken from setting yaml, not from branching on setting names.
 
@@ -155,7 +115,32 @@ Entity creation through the entry point of 9a: `generate(game, category, context
 
 **9b.5** Chained oracle tables go through `datasworn/cascade.py` → `roll_oracle_cascade`. At least one real callsite; candidate: `npc/naming.py` → `roll_oracle_name` through the `npc` category. If none fits, a documented orphan-symbol carve-out that step 10 removes, as for `CharacterTraits`.
 
-**9b.6** Tests: smoke with stub oracle data, the registry accepts additions, a missing path raises. If generated entities are persisted, the save format breaks.
+**9b.6** Tests: smoke with stub oracle data, the registry and the yaml list stay equal (as `tests/test_fact_resolution.py` checks for `fact`), a missing path raises. If generated entities are persisted, the save format breaks.
+
+### Definition of Done
+
+- The four categories are registered in `engine/generation.yaml` and dispatched by `generate`; an unknown category or a missing oracle path raises.
+- Oracle paths per category live in the setting yaml; no Python branches on setting names.
+- Generated content reaches the narrator as `<generated>` with the setting's vocabulary substitutions applied.
+- `datasworn/cascade.py` → `roll_oracle_cascade` has a real callsite through a category.
+- ARCHITECTURE.md ("Engine-resolved fiction") and `docs/mechanics.md` say what is generated and when.
+- An Elvira run shows `<generated>` tags in play and no new engine warnings.
+- Quality gate green, no new project-rule violations, one CHANGELOG entry.
+
+### Reference patterns
+
+- Entry point and registry: `mechanics/generation.py` → `generate`, `_GENERATORS`; `engine/generation.yaml`.
+- A generated result as a prompt block: `prompt_shared.py` → `_facts_block`, templates in `prompts/blocks.yaml`.
+- Parent-chain oracle lookup: `datasworn/settings.py` → `SettingPackage.oracle_data_for`.
+- Cascade rolls: `datasworn/cascade.py` → `roll_oracle_cascade`, used today by threat naming.
+
+---
+
+## Next steps
+
+Sketches; order indicative. Each entry gets substeps, a definition of done, and reference patterns when it is promoted to NEXT.
+
+Steps 11, 14b, 25, and 26 each plan a Director tool of their own. Since 2026.09.26.11 the Director has a single tool, `query_game_state`, which cut its tool rounds; whether each planned tool becomes a new one or part of that one is decided when the step is promoted.
 
 ### E — Ideas from the EdgeTales comparison (2026-09-24)
 

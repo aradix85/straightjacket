@@ -8,7 +8,7 @@ from typing import Any
 from ..config_loader import PROJECT_ROOT
 from ..engine_loader import eng
 from ..logging_util import log
-from ..models import FateResult, GameState, NpcData
+from ..models import FateResult, GameState
 
 
 _MYTHIC_DATA_PATH = PROJECT_ROOT / "data" / "mythic_gme_2e.json"
@@ -151,49 +151,8 @@ def resolve_fate(
     return result
 
 
-def resolve_likelihood(game: GameState, context_hint: str = "") -> str:
-    _e = eng()
-    rules = _e.fate.likelihood_rules
-
-    score = 0
-
-    if context_hint:
-        hint_lower = context_hint.lower()
-        npc = _find_hint_npc(game, hint_lower)
-        if npc:
-            disp = npc.disposition
-            disp_scores = rules.disposition_scores
-            if disp in disp_scores:
-                score += int(disp_scores[disp])
-
-    cf = game.world.chaos_factor
-    cf_thresholds = rules.chaos_thresholds
-    if cf >= cf_thresholds["high"]:
-        score += int(rules.chaos_scores["high"])
-    elif cf <= cf_thresholds["low"]:
-        score += int(rules.chaos_scores["low"])
-
-    res = game.resources
-    resource_critical = int(rules.resource_critical_below)
-    if res.health <= resource_critical or res.spirit <= resource_critical:
-        score += int(rules.resource_scores["critical"])
-
-    return _score_to_odds(score, rules)
-
-
-def _find_hint_npc(game: GameState, hint_lower: str) -> NpcData | None:
-    for npc in game.npcs:
-        if npc.status != "active":
-            continue
-        if npc.name.lower() in hint_lower or npc.id in hint_lower:
-            return npc
-    return None
-
-
-def _score_to_odds(score: int, rules: Any) -> str:
-    thresholds = rules.score_to_odds
-
-    for entry in thresholds:
+def score_to_odds(score: int) -> str:
+    for entry in eng().fate.likelihood_rules.score_to_odds:
         if score >= int(entry["min_score"]):
             return str(entry["odds"])
     raise ValueError(

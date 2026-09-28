@@ -8,9 +8,11 @@ from ..ids import unique_id
 from ..mechanics import (
     apply_brain_location_time,
     can_burn_momentum,
+    clear_facts_settled_by_hit,
     generate_consequence_sentences,
     is_dialog_branch,
     purge_old_fired_clocks,
+    resolve_turn_facts,
     roll_action,
     roll_progress,
 )
@@ -24,6 +26,7 @@ from ..models import (
     GameState,
     ProgressTrack,
     RandomEvent,
+    ResolvedFact,
     RollResult,
     ThreadEntry,
 )
@@ -36,7 +39,7 @@ from .finalization import narrate_scene
 from .scene_finalization import finalize_scene
 from ..mechanics import find_progress_track, roll_oracle_answer
 from ..mechanics.bonuses import apply_momentum_on_hit, chosen_bonus
-from .turn_types import ActionResolution, RollOutcome, SceneContext
+from .turn_types import ActionResolution, BurnOffer, RollOutcome, SceneContext
 
 
 def process_turn(
@@ -45,7 +48,7 @@ def process_turn(
     player_message: str,
     config: EngineConfig | None = None,
     stream: NarrationSink | None = None,
-) -> tuple[GameState, str, RollResult | None, dict[str, Any] | None, dict[str, Any] | None]:
+) -> tuple[GameState, str, RollResult | None, BurnOffer | None, dict[str, Any] | None]:
     if game.game_over:
         raise RuntimeError(
             "process_turn called on a game with game_over=True. "
@@ -58,10 +61,10 @@ def process_turn(
 
     brain = _run_brain_phase(provider, game, player_message, config)
     _sanitize_brain_output(game, brain)
-    pending_random_events = _resolve_brain_requests(game, brain)
-
     _apply_brain_state_mutations(game, brain)
-    ctx = _build_scene_context(provider, game, brain, config, player_message, scene_setup, pending_random_events)
+    facts, pending_random_events = _resolve_brain_requests(game, brain, scene_setup)
+
+    ctx = build_scene_context(provider, game, brain, config, player_message, scene_setup, pending_random_events, facts)
     ctx.stream = stream
 
     if is_dialog_branch(brain):
@@ -73,15 +76,11 @@ def process_turn(
     _maybe_create_track(game, brain)
 
     roll_outcome = _execute_roll(game, brain)
-    roll = roll_outcome.roll
+    burn_offer = _offer_momentum_burn(ctx, roll_outcome)
 
-    burn_info = _check_burn_possibility(game, brain, roll_outcome, player_message, scene_setup)
+    narration, director_ctx = resolve_and_narrate_action(ctx, roll_outcome, burned=False)
 
-    action_res = resolve_action_phase(game, brain, roll_outcome)
-
-    narration, director_ctx = _narrate_action_and_finalize(ctx, roll_outcome, action_res, player_message)
-
-    return game, narration, roll, burn_info, director_ctx
+    return game, narration, roll_outcome.roll, burn_offer, director_ctx
 
 
 def _sanitize_brain_output(game: GameState, brain: BrainResult) -> None:
@@ -132,14 +131,20 @@ def _run_brain_phase(
     return brain
 
 
-def _resolve_brain_requests(game: GameState, brain: BrainResult) -> list[RandomEvent]:
+def _resolve_brain_requests(
+    game: GameState, brain: BrainResult, scene_setup: SceneSetup
+) -> tuple[list[ResolvedFact], list[RandomEvent]]:
+    facts = resolve_turn_facts(game, brain)
+    if game.last_turn_snapshot is not None:
+        game.last_turn_snapshot.facts = list(facts)
+
     pending_random_events = drain_pending_events()
 
     for event in pending_random_events:
         if event.target_id and any(t.id == event.target_id for t in game.threats):
             advance_threat_by_id(game, event.target_id, marks=1, source="random_event")
 
-    return pending_random_events
+    return facts, [event for event in pending_random_events if event is not scene_setup.interrupt_event]
 
 
 def _apply_brain_state_mutations(game: GameState, brain: BrainResult) -> None:
@@ -151,7 +156,7 @@ def _apply_brain_state_mutations(game: GameState, brain: BrainResult) -> None:
     apply_brain_location_time(game, brain)
 
 
-def _build_scene_context(
+def build_scene_context(
     provider: AIProvider,
     game: GameState,
     brain: BrainResult,
@@ -159,6 +164,7 @@ def _build_scene_context(
     player_message: str,
     scene_setup: SceneSetup,
     pending_random_events: list[RandomEvent],
+    facts: list[ResolvedFact],
 ) -> SceneContext:
     activated_npcs, mentioned_npcs, npc_activation_debug = activate_npcs_for_prompt(game, brain, player_message)
     scene_present_ids = {n.id for n in activated_npcs} | {n.id for n in mentioned_npcs}
@@ -174,6 +180,7 @@ def _build_scene_context(
         scene_present_ids=scene_present_ids,
         pending_revs=pending_revs,
         npc_activation_debug=npc_activation_debug,
+        facts=facts,
         activated_npcs=activated_npcs,
         mentioned_npcs=mentioned_npcs,
         pending_random_events=pending_random_events,
@@ -186,7 +193,7 @@ def _process_dialog_turn(ctx: SceneContext) -> tuple[str, dict[str, Any] | None]
     is_oracle = brain.move == "ask_the_oracle"
     game.narrative.scene_count += 1
 
-    oracle_answer = roll_oracle_answer(game) if is_oracle else ""
+    oracle_answer = roll_oracle_answer(game) if is_oracle and not ctx.facts else ""
 
     pending_fills = list(game.world.pending_clock_fills)
     game.world.pending_clock_fills.clear()
@@ -204,6 +211,7 @@ def _process_dialog_turn(ctx: SceneContext) -> tuple[str, dict[str, Any] | None]
         random_events=ctx.pending_random_events,
         clock_fill_results=pending_fills,
         npc_agency=npc_agency,
+        facts=ctx.facts,
     )
     narration = narrate_scene(
         ctx.provider,
@@ -338,39 +346,46 @@ def _log_action_roll(roll: RollResult, adds: int, cancelled: bool) -> None:
     )
 
 
-def _check_burn_possibility(
-    game: GameState,
-    brain: BrainResult,
-    roll_outcome: RollOutcome,
-    player_message: str,
-    scene_setup: SceneSetup,
-) -> dict[str, Any] | None:
+def _offer_momentum_burn(ctx: SceneContext, roll_outcome: RollOutcome) -> BurnOffer | None:
+    game = ctx.game
     roll = roll_outcome.roll
-    if roll_outcome.is_progress_roll or roll.result not in ("MISS", "WEAK_HIT") or game.resources.momentum <= 0:
+    if roll_outcome.is_progress_roll:
         return None
-    potential_burn = can_burn_momentum(game, roll)
-    if not potential_burn:
+    new_result = can_burn_momentum(game, roll)
+    if new_result is None:
         return None
-    return {
-        "roll": roll,
-        "new_result": potential_burn,
-        "cost": game.resources.momentum,
-        "brain": brain,
-        "player_words": player_message,
-        "scene_setup": scene_setup,
-        "pre_snapshot": game.last_turn_snapshot,
-    }
+    return BurnOffer(
+        roll=roll,
+        new_result=new_result,
+        cost=game.resources.momentum,
+        brain=ctx.brain,
+        player_words=ctx.player_message,
+        scene_setup=ctx.scene_setup,
+        ds_move=roll_outcome.ds_move,
+        random_events=list(ctx.pending_random_events),
+        facts=list(ctx.facts),
+        resume_snapshot=game.snapshot(),
+    )
+
+
+def resolve_and_narrate_action(
+    ctx: SceneContext, roll_outcome: RollOutcome, *, burned: bool
+) -> tuple[str, dict[str, Any] | None]:
+    action_res = resolve_action_phase(ctx.game, ctx.brain, roll_outcome)
+    clear_facts_settled_by_hit(ctx.game, ctx.facts, roll_outcome.roll.result)
+    return _narrate_action_and_finalize(ctx, roll_outcome, action_res, burned)
 
 
 def _narrate_action_and_finalize(
     ctx: SceneContext,
     roll_outcome: RollOutcome,
     action_res: ActionResolution,
-    player_message: str,
+    burned: bool,
 ) -> tuple[str, dict[str, Any] | None]:
     game = ctx.game
     brain = ctx.brain
     roll = roll_outcome.roll
+    player_message = ctx.player_message
 
     consequence_sentences = generate_consequence_sentences(
         action_res.consequences, action_res.clock_events, game, brain
@@ -392,7 +407,11 @@ def _narrate_action_and_finalize(
         random_events=ctx.pending_random_events,
         threat_events=action_res.threat_events,
         clock_fill_results=action_res.clock_fill_results,
+        facts=ctx.facts,
     )
+    if burned:
+        injection = eng().ai_text.narrator_defaults["momentum_burn_injection"]
+        prompt = prompt.replace("<task>", f"{injection}\n<task>")
     narration = narrate_scene(
         ctx.provider,
         game,
@@ -402,8 +421,10 @@ def _narrate_action_and_finalize(
     )
 
     if game.last_turn_snapshot is not None:
+        game.last_turn_snapshot.roll = roll
         game.last_turn_snapshot.narration = narration
 
+    summary_label = "Momentum burn" if burned else "Action"
     _, director_ctx = finalize_scene(
         ctx,
         narration,
@@ -420,7 +441,7 @@ def _narrate_action_and_finalize(
             "npc_activation": ctx.npc_activation_debug,
             "_pacing_type": "action",
         },
-        prompt_summary=f"Action ({roll.result}): {(brain.player_intent or player_message)[: eng().truncations.log_medium]}",
+        prompt_summary=f"{summary_label} ({roll.result}): {(brain.player_intent or player_message)[: eng().truncations.log_medium]}",
         roll_result_str=roll.result,
         roll=roll,
         consequences=action_res.consequences,

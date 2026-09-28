@@ -13,8 +13,10 @@ from ..models import (
     NpcData,
     ProgressTrack,
     RandomEvent,
+    ResolvedFact,
     RollResult,
     ThreatEvent,
+    TurnSnapshot,
 )
 
 
@@ -29,6 +31,7 @@ class SceneContext:
     scene_present_ids: set[str]
     pending_revs: list[Any]
     npc_activation_debug: dict[str, Any]
+    facts: list[ResolvedFact]
     activated_npcs: list[NpcData] = field(default_factory=list)
     mentioned_npcs: list[NpcData] = field(default_factory=list)
     pending_random_events: list[RandomEvent] = field(default_factory=list)
@@ -41,6 +44,20 @@ class RollOutcome:
     ds_move: Move | None
     track: ProgressTrack | None
     is_progress_roll: bool
+
+
+@dataclass
+class BurnOffer:
+    roll: RollResult
+    new_result: str
+    cost: int
+    brain: BrainResult
+    player_words: str
+    scene_setup: SceneSetup
+    ds_move: Move | None
+    random_events: list[RandomEvent]
+    facts: list[ResolvedFact]
+    resume_snapshot: TurnSnapshot
 
 
 @dataclass

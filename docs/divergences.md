@@ -16,6 +16,7 @@ A rule taken from Ironsworn/Starforged, Mythic GME 2e, the Adventure Crafter, or
 - **Roll bonuses are chosen for the player.** The Brain decides whether an action meets a bonus's condition and names at most one bonus per roll; an asset upgrade enables its abilities in order, where the player would choose; only adds are modelled (the mechanism is in `docs/mechanics.md`).
 - **Boasts are not modelled.** Draw the Circle grants its weak-hit momentum without the boast the player would choose.
 - **A fate-chart roll of 100 counts as doubles** and triggers a random event; Mythic 2e does not settle this edge case.
+- **Yes/no questions go through Mythic's fate chart, with odds the engine derives.** Ironsworn's Ask the Oracle and Mythic's fate question both let the player choose the odds. Straightjacket answers the facts an action or question depends on through Mythic's fate chart, so the chaos factor weighs in as Mythic intends and there is one odds scale, and derives the odds from the fact type and the game state (`engine/fact_resolution.yaml`), because the engine, not the player, decides what the fiction holds. Only the fact types listed there can be asked this way; a question no fact type covers is answered by the setting's action and theme oracle, Ironsworn's "spark an idea" rather than a yes or no. A fact lasts until the player leaves the place, and a hit on an action that depended on it can settle it; neither rule has a source.
 
 ## From the design document
 

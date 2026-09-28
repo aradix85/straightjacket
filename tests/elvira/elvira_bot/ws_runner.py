@@ -520,11 +520,7 @@ async def _handle_burn(
         should_burn = True
     elif burn_setting != "never":
         try:
-            compat_info = {
-                "roll": type("_R", (), {"result": current})(),
-                "new_result": upgrade,
-            }
-            should_burn = decide_burn_momentum(game, compat_info, style)
+            should_burn = decide_burn_momentum(game, current, upgrade, style)
         except Exception:
             should_burn = False
 

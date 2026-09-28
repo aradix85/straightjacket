@@ -14,7 +14,7 @@ from .mechanics import (
 )
 from .mechanics.impacts import impact_label
 from .mechanics.scene import SceneSetup, adjustment_descriptions
-from .models import BrainResult, GameState, NpcData, RandomEvent
+from .models import BrainResult, GameState, NpcData, RandomEvent, ResolvedFact
 from .npc import find_npc, retrieve_memories
 from .prompt_loader import get_prompt
 from .xml_utils import xa as _xa
@@ -254,6 +254,22 @@ def _clock_filled_block(fill_results: Sequence[ClockFillResult]) -> str:
             f"</clock_filled>"
         )
     return "\n".join(parts)
+
+
+def _facts_block(facts: Sequence[ResolvedFact]) -> str:
+    if not facts:
+        return ""
+    types = eng().fact_resolution.types
+    lines = [
+        get_prompt(
+            "block_fact_line",
+            about=_xa(fact.about_name),
+            answer=fact.answer,
+            description=_xe(types[fact.fact_type].description),
+        )
+        for fact in facts
+    ]
+    return "\n" + get_prompt("block_facts_wrapper", lines="\n".join(lines))
 
 
 def _lore_figures_block(game: GameState) -> str:

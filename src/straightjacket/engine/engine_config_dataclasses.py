@@ -393,10 +393,6 @@ class NarrativeDirectionConfig:
 @dataclass
 class FateLikelihoodRules:
     disposition_scores: dict[str, int]
-    chaos_thresholds: dict[str, int]
-    chaos_scores: dict[str, int]
-    resource_critical_below: int
-    resource_scores: dict[str, int]
     score_to_odds: list[dict[str, Any]]
 
 
@@ -406,6 +402,27 @@ class FateConfig:
     odds_modifiers: dict[str, int]
     chaos_modifiers: dict[int, int]
     likelihood_rules: FateLikelihoodRules
+
+
+@dataclass
+class FactTypeConfig:
+    subject: str
+    description: str
+    base_score: int
+    inputs: dict[str, int]
+    cleared_by_hit: bool
+
+
+@dataclass
+class FactResolutionConfig:
+    place_reference: str
+    max_per_turn: int
+    types: dict[str, FactTypeConfig]
+
+
+@dataclass
+class GenerationConfig:
+    categories: list[str]
 
 
 @dataclass

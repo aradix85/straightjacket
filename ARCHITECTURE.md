@@ -6,16 +6,16 @@ A bird's-eye view of Straightjacket: what it is built to do, how a turn flows, w
 
 Straightjacket implements the Narrative RPG Engine design document (`docs/narrative_rpg_engine_v2_4.pdf`): the engine owns the rules and the facts, the AI writes prose within them. Every value that can be derived from game state is computed by the engine: dice and outcomes, resources, pacing, act transitions, the emotional weight of memories, the opening clock and time of day. The AI receives results, not choices.
 
-**What the AI still decides.** Four decisions stay with the AI, each bounded by the engine:
+**What the AI still decides.** Four decisions stay with the AI in play, each bounded by the engine:
 
-- The Brain turns free player text into a move, a stat, a roll bonus, a target NPC, and a new track's name and rank. Free text needs interpretation, but each choice is limited to what the engine offers in that situation, and the dice and the engine decide the outcome.
-- The narrator supplies every fact the engine has not settled, such as whether a door is locked or who else is present.
-- The metadata extraction registers the NPCs, renames, and deaths the narration introduces, so narrated facts can become state.
+- The Brain turns free player text into a move, a stat, a roll bonus, a target NPC, a new track's name and rank, and the undetermined facts the action turns on. Free text needs interpretation, but each choice is limited to what the engine offers in that situation, and the dice, fate, and the engine decide the outcome.
+- The narrator supplies every fact the engine has not settled, such as the look of a room or what an NPC says.
+- The metadata extraction registers the NPCs, renames, and deaths the narration introduces, so narrated facts can become state; the opening extraction does the same for an opening scene.
 - The Director writes agendas, instincts, and arcs for the NPCs the engine selects.
 
-The first and last are part of the design; roadmap steps 9a and 9b shrink the second and third.
+Three further calls judge rather than invent: the revelation check decides whether a planned revelation has appeared in the prose, the correction analysis turns a `##` correction into state operations, and blueprint voicing words the Adventure Crafter's rolled turning points for the setting. The first and last of the four are part of the design; step 9a moved the facts an action depends on from the narrator to fate, and step 9b shrinks the second and third further by generating entities before the narrator writes.
 
-**Engine-resolved fiction.** The player types actions, never questions. The target is an engine that produces every fact the fiction needs before the narrator writes: names and dispositions from oracle rolls, locations from generators, plot beats from the Adventure Crafter, NPC behaviour under uncertainty from Mythic's fate system, encounters from weighted tables, scene structure from chaos rolls, content from Mythic's element meaning tables. Implemented today: NPC names from oracles, plot beats from the Adventure Crafter, scene structure from chaos rolls, meaning-table rolls inside random events, and the naming of threats and clocks. The fate system is implemented and tested but has had no caller in play since 0.46.50; step 9a reconnects it. Fate and oracles are consulted at concrete callsites in the modules that need them; a shared layer is extracted only when the number of callsites and their overlap force it.
+**Engine-resolved fiction.** The target is an engine that produces every fact the fiction needs before the narrator writes: names and dispositions from oracle rolls, locations from generators, plot beats from the Adventure Crafter, facts and NPC behaviour under uncertainty from Mythic's fate system, encounters from weighted tables, scene structure from chaos rolls, content from Mythic's element meaning tables. Implemented today: NPC names from oracles, plot beats from the Adventure Crafter, scene structure from chaos rolls, meaning-table rolls inside random events, the naming of threats and clocks, and facts: the Brain names the uncertain facts an action or question depends on, and the engine settles each through Mythic's fate chart with odds it derives from the fact type and the game state (`docs/mechanics.md`, Facts). The player types what the character does; a question about the fiction is Ironsworn's Ask the Oracle, which the engine answers, a yes/no question that a fact type covers through fate and an open question through the setting's oracle tables. Fate and oracles are consulted at concrete callsites in the modules that need them; `mechanics/generation.py` → `generate` is the single entry point for engine-generated content, with facts as its first category.
 
 ## Turn pipeline
 
@@ -28,13 +28,17 @@ Scene test (mechanics/scene.py) → keyed > interrupt > altered > expected
   ↓
 Brain (ai/brain.py) → one classification call with the game state in its prompt
   ↓
+Location and time (mechanics/world.py) → the Brain's move to another place clears the facts of the old one
+  ↓
+Fact resolution (mechanics/generation.py, mechanics/facts.py) → each undetermined fact settled by fate or reused
+  ↓
 NPC activation (npc/activation.py) → decides which NPCs get full context
   ↓
 Roll (mechanics/consequences.py) → the Ironsworn action roll: STRONG_HIT, WEAK_HIT, or MISS
   ↓
-Consequences (game/action_resolution.py) → move outcome, combat position, clock ticks, crisis check
+Consequences (game/action_resolution.py) → move outcome, combat position, clock ticks, crisis check; a hit clears the facts whose type says so
   ↓
-Prompt assembly (prompt_action.py, prompt_dialog.py) → XML prompt with world, NPCs, result, scene type
+Prompt assembly (prompt_action.py, prompt_dialog.py) → XML prompt with world, NPCs, result, facts, scene type
   ↓
 Narration (game/finalization.py) → narrator call, then cleanup of leaked metadata (parser.py)
   ↓
@@ -47,14 +51,14 @@ Database sync (db/sync.py) and save (persistence.py)
 Director (game/director_runner.py) → after the turn is returned: NPC reflections; saved again
 ```
 
-Dialog turns skip the roll and its consequences. A correction (`##`) and a momentum burn restore the snapshot taken before the turn and run resolution and narration again through the same shared functions.
+Dialog turns skip the roll and its consequences. A correction (`##`) restores the snapshot taken before the turn and runs resolution and narration again through the same shared functions, reusing the facts the turn had settled. A momentum burn restores the state taken right after the roll and runs the turn's own resolution, narration, and scene-end path with the better result (`game/momentum_burn.py` → `process_momentum_burn`).
 
 ## Code map
 
 The source lives under `src/straightjacket/`.
 
 - `engine/` — the engine core: the typed models (`models.py` re-exports every dataclass from `models_base.py`, `models_npc.py`, and `models_story.py`), strict serialization (`serialization.py`), saves (`persistence.py`), users and save folders (`user_management.py`), the loaders for `config.yaml` and the yaml stores, narrator prompt assembly (`prompt_action.py`, `prompt_dialog.py`, `prompt_boundary.py`, with shared parts in `prompt_shared.py` and `prompt_blocks.py`), narrator output cleanup (`parser.py`), story-arc tracking (`story_state.py`), and the Director (`director.py`).
-- `engine/mechanics/` — the rules, with no AI: rolls and consequences, move outcomes, progress tracks, impacts, legacy, assets and roll bonuses, NPC stance and information gating, fate, scene structure and keyed scenes, random events, threats, clocks, the Adventure Crafter, and the mechanical side of succession.
+- `engine/mechanics/` — the rules, with no AI: rolls and consequences, move outcomes, progress tracks, impacts, legacy, assets and roll bonuses, NPC stance and information gating, fate, facts and the generation entry point, scene structure and keyed scenes, random events, threats, clocks, the Adventure Crafter, and the mechanical side of succession.
 - `engine/npc/` — NPC state: bond from connection tracks, name matching, memory, activation, lifecycle, oracle names, and applying extracted metadata.
 - `engine/ai/` — every AI call: provider adapters and routing, the Brain, the narrator, metadata extraction, recap, chapter summary, blueprint voicing, output schemas, and sentence streaming.
 - `engine/tools/` — the Director's tool registry and tool loop, and engine query functions such as the available moves.
@@ -74,7 +78,7 @@ Beside them, `i18n.py` and `strings_loader.py` serve user-facing strings. The te
 
 **Typed dataclasses.** `GameState` holds typed sub-objects (resources, world, narrative, campaign), and every other piece of state (NPCs, memories, moves, progress tracks, threads, clocks, threats, chapter summaries) is a dataclass with fixed fields, reached by attribute, never as a dict. `serialization.py` → `SerializableMixin` serializes every class without manual overrides.
 
-**Snapshot and restore.** `GameState.snapshot()` captures all mutable state before a turn and `restore()` reverts it atomically. Corrections, momentum burns, and a turn whose AI call fails rely on it.
+**Snapshot and restore.** `GameState.snapshot()` captures all mutable state before a turn, including every entry of the story lists, and `restore()` reverts it atomically. Corrections, momentum burns, and a turn whose AI call fails rely on it; the momentum burn also takes a second snapshot right after the roll. A resolved fact lives in `WorldState.facts`, so the snapshot carries it like any other world state.
 
 **Saves.** A save is JSON in the users folder (the project's `users` folder, or the folder `STRAIGHTJACKET_USERS_DIR` names). Loading is strict: a field the class does not know, or a field the data lacks, raises, and `persistence.py` → `load_game` reports such a save to the player as incompatible.
 

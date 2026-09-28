@@ -92,5 +92,11 @@
 "result_match_hint_strong_hit": " A MATCH — an unexpected boon, a fateful revelation, or a dramatic advantage beyond the clean success."
 "block_crisis": |-
   <crisis>Character at breaking point.</crisis>
+"block_facts_wrapper": |-
+  <facts>
+  The engine has settled these facts for this scene. The narration keeps to them and never contradicts them; an exceptional answer holds more strongly than expected.
+  {lines}
+  </facts>
+"block_fact_line": '<fact about="{about}" answer="{answer}">{description}</fact>'
 "block_background_npcs_prefix": "Known but not recently active: "
 "block_npc_evolutions_hint": These are PROJECTIONS of how NPCs may have changed during the time skip. Use as inspiration, not as hard facts.
