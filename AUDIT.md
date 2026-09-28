@@ -119,7 +119,6 @@ Submodules for principles 1, 3, and 5: `mechanics/`, `npc/`, `game/`, `ai/`, `db
 Findings recorded outside a principle audit, not yet classified:
 
 - Outside the config binding, dataclasses in `src/` carried about 245 annotated fields with a default on 2026-09-24, concentrated in `models_story.py`, `models.py`, `models_base.py`, `datasworn/moves.py`, and `models_npc.py`. Many are `default_factory` empty collections; the rest is Pass 2d material. Example: `KeyedScene.source: str = ""` and `KeyedScene.bound_entity_id: str | None = None`.
-- `web/serializers.py` → `build_creation_options` skips the setting `delve` by name (`if pkg_id == "delve"`). Pass 2c.
 - The `.get()` scan only flags constant, non-neutral defaults; `.get("key", some_variable)` passes unexamined (example: `truth_data.get("name", truth_id)` in `web/serializers.py`). Pass 4b.
 - 64 of 173 `strings/*.yaml` keys had no literal reference in `src/` or `index.html` on 2026-09-24; most are built dynamically (`move.*`, `disposition.*`, `consequence.*`). A mechanical strings scan needs prefix awareness. Pass 5b.
 - `run.py` at the repository root contains docstrings, but the comment and docstring scan covers `src/` and `tests/` only. Decide whether root scripts are in scope.

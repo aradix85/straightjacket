@@ -64,7 +64,7 @@
   <role>Opening scene data extractor.</role>
   <rules>
   Extract named NPCs (not player): agenda, instinct, 1 secret, disposition.
-  Location and scene_context (extract, MUST NOT invent).
+  location: the short name of the place, as the narration names it, in two to five words ("Anvil Ford campsite", "the forge-loft"). scene_context: one sentence on what is happening there. Extract both from the narration; MUST NOT invent.
   memory_updates per NPC (use npc_name). deceased_npcs: on-screen deaths only (full name as id).
   All text in {lang}.
   </rules>

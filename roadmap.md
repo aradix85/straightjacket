@@ -50,9 +50,6 @@ Set 2026-09-24, revised 2026-09-29.
    - The Director was about half of a session's cost in 2026.09.25.5, measured before its single tool (2026.09.26.11) and before GLM 5.3; measure again before deciding anything. Running it less often would leave NPC profiles stale and is not planned.
 4. Test fixtures made through the real character-creation path instead of hand-built states, since a hand-built fixture hid the roll-bonus bug of 2026.09.24.33.
 5. Smaller open items:
-   - `game/action_resolution.py` → `resolve_action_phase` falls back to the literals `"vow"` and `"dangerous"` when a move has no Datasworn entry or no progress track (Principle 2 material).
-   - The opening extraction returns whole descriptive sentences as location names ("Smoke-shed in a cedar canyon settlement, by a rain-swollen river, …"), which then stand in `<location>`, `<prev_locations>`, and `<fact about>`; the Brain's `location_change` already asks for a short name, the opening extractor does not.
-   - `web/serializers.py` → `build_creation_options` branches on the setting id `delve` (Principle 2 material, see AUDIT.md).
    - No principle audit from AUDIT.md has been run yet.
 
 ### Working agreements

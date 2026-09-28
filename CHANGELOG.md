@@ -9,6 +9,12 @@ Entries up to 2026.09.26.19 were shortened to their essentials, in 2026.09.26.1 
 
 Calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day. The first CalVer release is 2026.04.25.0; earlier `0.x.y` releases keep their numbers.
 
+## [2026.09.29.3] — 2026-09-29
+
+The opening extraction asks for the place's short name as the narration gives it, two to five words, with what happens there in `scene_context`. Before, all three openings of the day's classic sessions came back as descriptive sentences of 15 to 20 words, which then stood in `<location>`, `<prev_locations>`, and `<fact about>`; after, four openings (three Sundered Isles, one classic) gave three-word names such as "Terracoyote Crossing wayhouse". No engine warning besides one Director time-out.
+
+Quality gate: 1526 tests green, thirty project-rule scans clean, ruff and mypy --strict clean.
+
 ## [2026.09.29.2] — 2026-09-29
 
 Loose ends. `docs/divergences.md` becomes a register: every departure from the design document or a rulebook states why and ends with a status (Permanent, Until step N, or Open), and a new project-rule scan rejects an entry without one. New entries: the narrator still invents off-screen NPC actions (until step 12), content is narrated rather than generated (until 9b), the WRONG/RIGHT prompt examples, the pause on AI failure, Mythic under CC BY-NC; classic experience and boasts are Open. `apply_progress_and_legacy` takes the rolled track and raises instead of assuming a vow of rank dangerous. Setting yaml gains a required `playable`, so Delve is no longer skipped by name. No Elvira session; the next release's measurement runs on this code.
