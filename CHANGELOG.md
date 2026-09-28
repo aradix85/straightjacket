@@ -9,6 +9,10 @@ Entries up to 2026.09.26.19 were shortened to their essentials, in 2026.09.26.1 
 
 Calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day. The first CalVer release is 2026.04.25.0; earlier `0.x.y` releases keep their numbers.
 
+## [2026.09.29.6] — 2026-09-29
+
+Documentation only. A one-time coverage map, read and then removed, checked every part of the four Datasworn rulesets, Mythic GME 2e, the Adventure Crafter, Blades, and the design document against the code and the roadmap; everything that stood nowhere is now on the roadmap, including three new steps (10b launch oracles, 13c foe actions and plot twists from oracles, 36 setting tooling). The register gains the session moves and Mythic's rules-system parts as Permanent, and foe actions and ranks decided by the AI until step 13c. The miss experiment (priority 3) is recorded; every role stays on one model.
+
 ## [2026.09.29.5] — 2026-09-29
 
 The user's two decisions, built from the classic move texts. Classic Ironsworn marks experience by the vow's rank when Fulfill Your Vow hits (troublesome 1 to epic 5, one rank lower on a weak hit) instead of filling Starforged's legacy tracks. Draw the Circle takes the boasts the player declares, read by the Brain: up to two on a strong hit, one on a weak hit, each +1 momentum with its cost from `engine/boasts.yaml`; its weak hit no longer grants momentum without a boast, which closes the last known momentum divergence. New register entries: a classic successor inherits no legacy boxes, and a duel opens no combat track (until step 13b).

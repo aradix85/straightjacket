@@ -39,8 +39,9 @@ Set 2026-09-24, revised 2026-09-29.
    - After a chapter transition the returning NPC "Maren Silk" and a new NPC "Maren" stood side by side as two active NPCs (2026.09.27.1); returning NPCs are merged by exact name only.
    - Structured answers that ran to the 8192-token limit (the Director in about 3 percent of its calls on GLM 5.3 Flash, the Brain and the extractors on GLM 5.3, one opening setup on 2026-09-25) were a carriage-return loop, banned in 2026.09.26.20. Five sessions ran clean afterwards, but on 2026-09-29 one Director answer ran to the limit again (24,693 characters, "Invalid control character" at column 4), so some other whitespace or control character loops too. Capture the raw answer the next time it happens before choosing a fix.
 3. Narrator-prompt tuning for GLM 5.3, one change at a time, measured with Elvira sessions and by reading the narrations of misses. Open:
-   - A miss still sometimes hands the player a useful clue (result integrity on a miss swings between about 2.8 and 3.9 of 5). Five instruction variants did not help (2026.09.26.14 and .18), so this looks like the model. A narration now and then adds a step the player did not take.
+   - A miss still sometimes hands the player a useful clue (result integrity on a miss swings between about 2.8 and 3.9 of 5). Five instruction variants did not help (2026.09.26.14 and .18), so this looks like the model. A narration now and then adds a step the player did not take. The Elvira sessions of 2026-09-29 add invented backstory for the player character to the pattern.
    - Three rules still apply on a miss without exception: NPCs answer what was asked, one unexplained background detail per scene, a suspended scene ending.
+   - Miss experiment, decided 2026-09-29: attack the soft miss from the engine side, as the design document does everything, instead of with more wording, in two measured changes. First, structure: on a miss the prompt assembly leaves out the three rules above instead of rephrasing them; they move from the cached system prompt into the per-turn task, so measure the cache share too. Second, content: on a miss the narrator also gets the rolled move's own miss text from Datasworn, and a miss on an information move (Gather Information, a search, a question) settles `useful` as no for the place through fact resolution, so there is no clue left to hand out. Measure each with Elvira sessions forced to misses and by reading their narrations, before and after. Starforged and Sundered Isles carry a story-complication and a story-clue oracle, which can supply what a miss costs and what an information hit finds (coverage map 2026-09-29).
    - The action task tells a strong hit in a desperate phase to carry the surrounding darkness.
    - PLAYER AGENCY's inner-life clause says to describe what a camera could record, including action, beside the clause that limits the character's actions to the stated one.
    - `fact_budget` allows one or two extra facts, while the dialog task says nothing beyond the question's scope.
@@ -61,7 +62,7 @@ Set 2026-09-24, revised 2026-09-29.
 
 On this machine the API keys live in the Windows user environment: `TOGETHER_API_KEY` for the game, `OPENAI_API_KEY` for Elvira. How to run her is under Testing in CONTRIBUTING.md.
 
-Models: every AI role runs on GLM 5.3 through Together since 2026.09.26.20; `docs/ai.md` describes the configuration, and the measurements behind it are in the CHANGELOG from 2026.09.26.2 to .20.
+Models: every AI role runs on GLM 5.3 through Together since 2026.09.26.20; `docs/ai.md` describes the configuration, and the measurements behind it are in the CHANGELOG from 2026.09.26.2 to .20. The user prefers one model for every role (2026-09-29): a stronger model for a few scenes (openings, epilogues) is not planned, and quality work goes through engine-side structure and prompt tuning.
 
 ### Decisions referenced by later steps
 
@@ -174,7 +175,7 @@ The principle and the list of deliberate divergences are in `docs/divergences.md
 
 Checked (2026.09.24.17 to .34): the action roll, momentum, Endure Harm and Endure Stress, Pay the Price, every match clause, chained and oracle moves, progress, legacy tracks and experience, connections, Mythic's fate check, fate chart, scene test, chaos factor, event focus, lists, and meaning tables, the Adventure Crafter's tables, theme priority, and turning points, Blades clock sizes, and asset and connection adds.
 
-Open: ability effects other than adds (step 18); wounded and shaken blocking recovery in classic Ironsworn; the individual words of the oracle and meaning tables, not checked against the books. Done on 2026-09-29: classic Ironsworn earns experience by its own rule when a vow is fulfilled, and Draw the Circle's boasts are modelled. Outcomes where the player would choose a cost are a recorded divergence, not open work.
+Open: ability effects other than adds (step 18); wounded and shaken blocking recovery in classic Ironsworn; the individual words of the oracle and meaning tables, not checked against the books. Done on 2026-09-29: classic Ironsworn earns experience by its own rule when a vow is fulfilled, and Draw the Circle's boasts are modelled. Outcomes where the player would choose a cost are a recorded divergence, not open work. Added from the coverage map (2026-09-29): classic's bonds special track (Forge a Bond marks it, Write Your Epilogue rolls it), and the Adventure Crafter's theme translation, which lets the adventure's tone pick a theme for the blueprint.
 
 ### 10 — Location and encounter generators
 
@@ -188,9 +189,15 @@ Open: ability effects other than adds (step 18); wounded and shaken blocking rec
 
 **10.5** Tests.
 
+**10.6** The setting's own tables feed these generators (coverage map 2026-09-29): the atlas regions of classic and Sundered Isles for locations; the Datasworn NPC entries (classic ironlanders, firstborn, animals, beasts, horrors; Delve and Starforged entries), Starforged creatures and starships, and Delve monstrosities for encounters.
+
+### 10b — Campaign launch from the setting's oracles
+
+The opening scene and the character's start come from the setting's launch tables instead of the narrator's invention: Starforged's inciting incident and background assets, and Sundered Isles' getting-underway tables (create your character, take command, chart your course). Starforged's starship history and quirks belong with the ship in step 19.
+
 ### 11 — NPC generation with tiers
 
-**11.1** Tier 1 (throwaway): demeanor, name, and disposition rolled from oracles, no AI call, and identity and descriptors from the Adventure Crafter's character-crafting tables (`mechanics/adventure_crafter.py` → `roll_character_traits`, whose `CharacterTraits` then leaves the orphan-symbol carve-out). New oracle paths `oracle_paths.npc_demeanor` and `oracle_paths.npc_disposition` in `data/settings/*.yaml`; `oracle_paths.names` gives the name; a missing path raises KeyError. The narrator receives the rolled values as structured prompt context.
+**11.1** Tier 1 (throwaway): demeanor, name, and disposition rolled from oracles, no AI call, with the setting's character oracles (Starforged first look, initial disposition, role, goal, revealed aspect; classic role, goal, descriptor), and identity and descriptors from the Adventure Crafter's character-crafting tables (`mechanics/adventure_crafter.py` → `roll_character_traits`, whose `CharacterTraits` then leaves the orphan-symbol carve-out). New oracle paths `oracle_paths.npc_demeanor` and `oracle_paths.npc_disposition` in `data/settings/*.yaml`; `oracle_paths.names` gives the name; a missing path raises KeyError. The narrator receives the rolled values as structured prompt context.
 
 **11.2** Tier 2 (recurring): full AIMS plus a goal clock, the AI writing only the AIMS. The Director generates them: it reads the tier-1 base and the active threads through its game-state tool, then writes the AIMS through its JSON schema; always-relevant context (current location, faction state once step 14 lands) is prompt-injected.
 
@@ -222,7 +229,7 @@ Fate plus expected behavior derived from AIMS and stance. Data: `mythic_gme_2e.j
 
 The move categories of the four shipped settings hold 89 unique move stems; 56 are formal moves in `engine/move_outcomes.yaml` (recounted in 2026.09.24.46). The other 33 are `no_roll` (29) or `special_track` (4): 6 belong to steps 25, 26, and 28, and about 27 are general mechanics not yet wired. Asset abilities define 48 further moves, covered by steps 18 to 20. This step wires the general group following "Datasworn mechanic naming" in `docs/mechanics.md`: a player choice with a structured outcome becomes a formal move; a consequence that fires when a condition becomes true becomes an engine trigger with a direct name.
 
-Group A, formal moves: `combat/turn_the_tide`, `adventure/aid_your_ally` and `relationship/aid_your_ally` (needs the NPC-action context of step 11), `relationship/write_your_epilogue` (couples with the retire flow of step 3), `scene_challenge/begin_the_scene`, `failure/learn_from_your_failures`, `threat/take_a_hiatus`, and the progress-mark moves `legacy/advance`, `legacy/earn_experience`, `quest/advance`, `quest/reach_a_milestone`.
+Group A, formal moves: Forsake Your Vow as the player's own choice (`quest/forsake_your_vow`, today only an engine trigger when a threat's menace fills), `combat/turn_the_tide`, `adventure/aid_your_ally` and `relationship/aid_your_ally` (needs the NPC-action context of step 11), `relationship/write_your_epilogue` (couples with the retire flow of step 3), `scene_challenge/begin_the_scene`, `failure/learn_from_your_failures`, `threat/take_a_hiatus`, and the progress-mark moves `legacy/advance`, `legacy/earn_experience`, `quest/advance`, `quest/reach_a_milestone`.
 
 Group B, engine triggers: `mark_failure_on_miss` (`failure/mark_your_failure`), `face_setback_at_min_momentum` (`suffer/face_a_setback`, when momentum would drop below -6), `mark_supply_depletion` (`suffer/out_of_supply`), `face_defeat_on_objective_loss` (`combat/face_defeat`). The existing `advance_menace_on_miss` and `pay_the_price` already follow this pattern.
 
@@ -241,6 +248,10 @@ Duels: Draw the Circle's boasts are modelled (2026.09.29.5), but the duel opens 
 **13b.5** Tests: each formal move through the move-outcome pipeline, each trigger under its exact condition, `advance_menace_on_miss` as regression.
 
 Done: formal-move coverage rises from 56 to about 67 stems, with four new engine triggers.
+
+### 13c — Foe actions and plot twists from oracles
+
+What a foe does in a fight comes from the setting's combat-action oracle (classic turning point combat action, Starforged and Sundered Isles misc combat action, Delve combat event) instead of the narrator. A new track's rank in classic comes from the challenge-rank oracle when the player names none, instead of the Brain's guess. Classic's major plot twist joins the turning-point sources. Each result reaches the narrator as a structured tag.
 
 ### 14a — Faction data model
 
@@ -314,9 +325,11 @@ The Yaml content boundary (CONTRIBUTING.md) rules out hand-written lists of name
 
 **19.6** Tests.
 
+Starforged's starship history and quirks (campaign launch oracles) are rolled when the command vehicle is created.
+
 ### 20 — Asset rollout per setting
 
-One session per setting, every Datasworn asset working through the step 18 pipeline: **20.1** Starforged, **20.2** Classic, **20.3** Delve, **20.4** Sundered Isles. An asset that needs a fix gets it in the pipeline, not as a per-setting patch.
+One session per setting, every Datasworn asset working through the step 18 pipeline: **20.1** Starforged, **20.2** Classic, **20.3** Delve, **20.4** Sundered Isles. Classic's rituals bring the mystic-backlash oracle with them (20.2). An asset that needs a fix gets it in the pipeline, not as a per-setting patch.
 
 ### 21 — Relationship event detection
 
@@ -382,6 +395,8 @@ NPC-to-NPC requests and triangles, limited to those that involve the player. Int
 
 **26.6** Tests.
 
+**26.7** Delve's prepared sites (20 in the data) as ready sites, and its rarities (62) with Wield a Rarity (`rarity/wield_a_rarity`).
+
 ### 27 — Sites for Starforged and Sundered Isles
 
 **27.1** Starforged derelicts, precursor vaults, and location themes as site configurations, no Python.
@@ -389,6 +404,8 @@ NPC-to-NPC requests and triangles, limited to those that involve the player. Int
 **27.2** Sundered Isles exploration as site configurations.
 
 **27.3** Tests.
+
+Starforged's anomaly-effect oracle goes with vaults and anomalies.
 
 ### 28 — Sundered Isles specifics
 
@@ -399,6 +416,8 @@ NPC-to-NPC requests and triangles, limited to those that involve the player. Int
 **28.3** Data config: naval encounters, treasure, the 16 Sundered Isles oracle categories, exploration.
 
 **28.4** Tests.
+
+Sundered Isles' misc tables join here: interlude scene, sea-battle features, ship damage, magnitude, local seas.
 
 ### 29 — Crew mechanics
 
@@ -420,7 +439,7 @@ Four strategies in `mythic_gme_2e.json` → `player_vs_pc_knowledge`: Test-Ask-R
 
 ### 32 — Chaos factor variants
 
-Standard, Mid-Chaos, Low-Chaos, and No-Chaos, each with its own fate chart and fate-check modifier table (`mythic_gme_2e.json` → `chaos_variants`). `fate.chaos_mode` required in config.
+Standard, Mid-Chaos, Low-Chaos, and No-Chaos, each with its own fate chart and fate-check modifier table (`mythic_gme_2e.json` → `chaos_variants`). `fate.chaos_mode` required in config. Mythic's prepared-adventure event focus (with its Adventure Feature entry) replaces the standard focus table while a blueprint is active, since a blueprint is a prepared adventure.
 
 ### 33 — Themed element tables
 
@@ -441,3 +460,7 @@ The other 39 tables mapped in `engine/themed_tables.yaml`; config only.
 ### 35 — Detail check chains
 
 Multi-question fate refinement: each follow-up shifts the odds one step toward the previous answer; at most three, config-driven. Builds on fact resolution (`mechanics/facts.py`): a follow-up is a fact whose odds start from the answer before it, so the chain lands in `WorldState.facts` like any fact.
+
+### 36 — Setting authoring tooling
+
+The design document names tooling for setting authors as a way to lower the barrier: a command that checks a new setting package (its yaml against the Datasworn file, every oracle path it names, its inheritance) and reports what a generator category still lacks, so that adding a setting stays data work.
