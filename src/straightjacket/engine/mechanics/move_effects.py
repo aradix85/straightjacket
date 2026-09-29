@@ -4,6 +4,7 @@ import re
 from collections.abc import Callable
 from dataclasses import dataclass, field
 
+from ..datasworn.loader import OracleTable
 from ..datasworn.settings import load_package
 from ..engine_loader import eng
 from .legacy import shifted_rank
@@ -107,25 +108,32 @@ def _connection_track(game: GameState, npc: NpcData) -> ProgressTrack | None:
     )
 
 
-def _roll_pay_the_price_rows(game: GameState, depth: int) -> list[str]:
-    cfg = eng().pay_the_price
-    path = cfg.oracle_path
+def _oracle_table(game: GameState, path: str) -> OracleTable | None:
     data = load_package(game.setting_id).oracle_data_for(path)
-    table = data.oracle(path) if data is not None else None
+    return data.oracle(path) if data is not None else None
+
+
+def _roll_price_rows(game: GameState, path: str, depth: int) -> list[str]:
+    cfg = eng().pay_the_price
+    table = _oracle_table(game, path)
     if table is None:
-        raise KeyError(f"Pay the Price table '{path}' missing for setting {game.setting_id!r}")
+        raise KeyError(f"Oracle table '{path}' missing for setting {game.setting_id!r}")
     text = strip_datasworn_links(str(table.roll().value))
     for rule in cfg.reroll_rows:
         if text.startswith(rule.prefix) and depth < cfg.max_rerolls:
             rows = [text]
             for _ in range(rule.extra_rolls):
-                rows += _roll_pay_the_price_rows(game, depth + 1)
+                rows += _roll_price_rows(game, path, depth + 1)
             return rows
     return [text]
 
 
+def has_story_complication(game: GameState) -> bool:
+    return _oracle_table(game, eng().pay_the_price.match_miss_oracle_path) is not None
+
+
 def pay_the_price(game: GameState, result: OutcomeResult) -> None:
-    rows = _roll_pay_the_price_rows(game, 0)
+    rows = _roll_price_rows(game, eng().pay_the_price.oracle_path, 0)
     log(f"[PayThePrice] {'; '.join(rows)}")
     result.pay_the_price = True
     result.consequences.append("; ".join(rows))
@@ -175,6 +183,15 @@ def _apply_pay_the_price_effect(
     game: GameState, effect: MoveEffect, result: OutcomeResult, target: NpcData | None
 ) -> None:
     pay_the_price(game, result)
+
+
+def _apply_story_complication_effect(
+    game: GameState, effect: MoveEffect, result: OutcomeResult, target: NpcData | None
+) -> None:
+    rows = _roll_price_rows(game, eng().pay_the_price.match_miss_oracle_path, 0)
+    log(f"[StoryComplication] {'; '.join(rows)}")
+    result.pay_the_price = True
+    result.consequences.append("; ".join(rows))
 
 
 def _apply_next_move_bonus_effect(
@@ -304,6 +321,7 @@ _EFFECT_HANDLERS: dict[str, Callable[[GameState, MoveEffect, OutcomeResult, NpcD
     "integrity": _apply_integrity_effect,
     "mark_progress": _apply_mark_progress_effect,
     "pay_the_price": _apply_pay_the_price_effect,
+    "story_complication": _apply_story_complication_effect,
     "next_move_bonus": _apply_next_move_bonus_effect,
     "position": _apply_position_effect,
     "suffer_move": _apply_suffer_move_effect,

@@ -94,6 +94,12 @@ scenarios:
     directive: "bot_turn_directive_attack"
     expect: ["combat"]
     combat: true
+  miss:
+    turns: 10
+    burn_momentum: "never"
+    directive: "bot_turn_directive_investigate"
+    expect: ["result:MISS"]
+    every_stat: 1
   clock:
     turns: 6
     expect: ["clock_fired"]

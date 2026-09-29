@@ -5,6 +5,7 @@ from ..logging_util import log
 from ..models import FactRequest, GameState, ResolvedFact
 from ..npc import find_npc
 from .fate import resolve_fate, score_to_odds
+from .resolvers import move_category
 from .world import locations_match
 
 
@@ -74,6 +75,32 @@ def clear_facts_settled_by_hit(game: GameState, facts: Sequence[ResolvedFact], r
         return
     game.world.facts = [f for f in game.world.facts if (f.about, f.fact_type) not in settled]
     log(f"[Fact] Settled by {result}: {sorted(t for _, t in settled)}")
+
+
+def settle_facts_by_miss(game: GameState, facts: Sequence[ResolvedFact], move: str, result: str) -> list[ResolvedFact]:
+    if result != "MISS" or move_category(move) != "gather_information":
+        return list(facts)
+    cfg = eng().fact_resolution
+    here = cfg.place_reference
+    settled = [
+        ResolvedFact(
+            about=here,
+            about_name=game.world.current_location,
+            fact_type=fact_type,
+            answer=answer,
+            odds="settled_by_miss",
+            location=game.world.current_location,
+        )
+        for fact_type, answer in cfg.information_miss_settles.items()
+    ]
+    replaced = set(cfg.information_miss_settles)
+
+    def _kept(fact: ResolvedFact) -> bool:
+        return not (fact.about == here and fact.fact_type in replaced)
+
+    game.world.facts = [f for f in game.world.facts if _kept(f)] + settled
+    log(f"[Fact] Settled by a miss on {move}: " + ", ".join(f"{f.fact_type} {f.answer}" for f in settled))
+    return [f for f in facts if _kept(f)] + settled
 
 
 def facts_of_this_place(game: GameState, facts: Sequence[ResolvedFact]) -> list[ResolvedFact]:

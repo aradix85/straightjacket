@@ -430,6 +430,7 @@ def _build_clocks(c_raw: dict[str, Any]) -> ClocksConfig:
 def _build_pay_the_price(ptp_raw: dict[str, Any]) -> PayThePriceConfig:
     return PayThePriceConfig(
         oracle_path=ptp_raw["oracle_path"],
+        match_miss_oracle_path=ptp_raw["match_miss_oracle_path"],
         max_rerolls=ptp_raw["max_rerolls"],
         reroll_rows=[_build_strict(PayThePriceRerollRow, dict(row)) for row in ptp_raw["reroll_rows"]],
         suffer_rows=[_build_strict(PayThePriceSufferRow, dict(row)) for row in ptp_raw["suffer_rows"]],
@@ -454,7 +455,13 @@ def _build_fact_resolution(fr_raw: dict[str, Any]) -> FactResolutionConfig:
     for name, spec in types.items():
         if spec.subject not in _FACT_SUBJECTS:
             raise ValueError(f"fact type {name!r} has subject {spec.subject!r}; valid: {list(_FACT_SUBJECTS)}")
-    config: FactResolutionConfig = _build_strict(FactResolutionConfig, {**fr_raw, "types": types})
+    settles = dict(fr_raw.pop("information_miss_settles"))
+    for name in settles:
+        if name not in types or types[name].subject != "place":
+            raise ValueError(f"information_miss_settles names {name!r}, which is not a place fact type")
+    config: FactResolutionConfig = _build_strict(
+        FactResolutionConfig, {**fr_raw, "types": types, "information_miss_settles": settles}
+    )
     return config
 
 
@@ -560,6 +567,7 @@ def parse_engine_yaml(data: dict[str, Any]) -> EngineSettings:
         gate_max=ig["gate_max"],
         stance_caps=dict(ig["stance_caps"]),
         fact_budget_by_gate={int(k): int(v) for k, v in ig["fact_budget_by_gate"].items()},
+        miss_stance=_build_strict(StanceMatrixEntry, dict(ig["miss_stance"])),
     )
 
     stance_bond_buckets = _build_strict(StanceBondBuckets, dict(data["stance_bond_buckets"]))

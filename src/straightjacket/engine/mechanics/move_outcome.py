@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Any
 from ..engine_loader import eng
 from ..models import GameState
-from .move_effects import OutcomeResult, apply_effects, parse_effects
+from .move_effects import MoveEffect, OutcomeResult, apply_effects, has_story_complication, parse_effects
 from .move_handlers import apply_recovery_handler, apply_suffer_handler, apply_threshold_handler
 
 
@@ -37,6 +37,8 @@ def resolve_move_outcome(
         effects_raw = list(effects_raw)
 
     effects = parse_effects(effects_raw)
+    if match and roll_result == "MISS" and has_story_complication(game):
+        effects = [MoveEffect(type="story_complication") if e.type == "pay_the_price" else e for e in effects]
     return apply_effects(game, effects, target_npc_id=target_npc_id)
 
 

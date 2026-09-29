@@ -3,6 +3,7 @@ from pathlib import Path
 import pytest
 
 from tests._helpers import make_act, make_blueprint, make_clock, make_game_state
+from tests.elvira.elvira_bot.models import RollRecord, SessionLog, TurnRecord
 
 ELVIRA_CONFIG = Path(__file__).resolve().parent / "elvira" / "elvira_config.yaml"
 
@@ -65,3 +66,47 @@ def test_an_open_clock_is_one_segment_from_full(load_engine: None) -> None:
     game.world.clocks = [make_clock(name="Storm", segments=6, filled=1)]
     prepare_scenario(game, {"expect": ["clock_fired"], "clock_nearly_full": True})
     assert game.world.clocks[0].filled == 5
+
+
+def test_every_stat_is_set_to_one_value(load_engine: None) -> None:
+    from tests.elvira.elvira_bot.scenarios import prepare_scenario
+
+    game = make_game_state()
+    names = set(game.stats)
+    notes = prepare_scenario(game, {"expect": ["result:MISS"], "every_stat": 1})
+    assert notes == ["every stat 1"]
+    assert set(game.stats) == names
+    assert set(game.stats.values()) == {1}
+
+
+def _audited_turn(turn: int, result: str, integrity: int, overall: int, burned_to: str = "") -> TurnRecord:
+    verdict = {c: 3 for c in ("prompt_elements", "npc_voice", "player_agency", "restraint", "prose")}
+    verdict |= {"result_integrity": integrity, "overall": overall, "weakness": ""}
+    return TurnRecord(
+        turn=turn,
+        roll=RollRecord(result=result),
+        burn_offered=burned_to,
+        burn_taken=bool(burned_to),
+        judge=verdict,
+    )
+
+
+def test_the_report_scores_misses_apart() -> None:
+    from tests.elvira.elvira_bot.report import _audit_lines
+
+    slog = SessionLog(
+        turns=[
+            _audited_turn(1, "MISS", 2, 4),
+            _audited_turn(2, "MISS", 4, 8),
+            _audited_turn(3, "STRONG_HIT", 5, 9),
+            _audited_turn(4, "MISS", 5, 9, burned_to="WEAK_HIT"),
+        ]
+    )
+    assert "On misses alone, 2 turns: result_integrity 3.0 out of 5, overall 6.0 out of 10." in _audit_lines(slog)
+
+
+def test_the_report_says_when_no_miss_was_audited() -> None:
+    from tests.elvira.elvira_bot.report import _audit_lines
+
+    slog = SessionLog(turns=[_audited_turn(1, "WEAK_HIT", 4, 7)])
+    assert "No misses audited." in _audit_lines(slog)

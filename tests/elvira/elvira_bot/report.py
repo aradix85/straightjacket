@@ -10,7 +10,7 @@ from .ai_helpers import ELVIRA_ROLE, bot_model
 
 from .coverage import Coverage
 from .judge import CRITERIA
-from .models import SessionLog
+from .models import SessionLog, TurnRecord
 
 
 def _warning_problems(slog: SessionLog) -> list[str]:
@@ -80,6 +80,24 @@ def _cost_lines(slog: SessionLog, prices: dict[str, list[float]]) -> list[str]:
     return lines
 
 
+def _judged_result(turn: TurnRecord) -> str | None:
+    if turn.burn_taken and not turn.burn_error:
+        return turn.burn_offered
+    return turn.roll.result if turn.roll else None
+
+
+def _miss_audit_line(slog: SessionLog) -> str:
+    misses = [t.judge for t in slog.turns if "overall" in t.judge and _judged_result(t) == "MISS"]
+    if not misses:
+        return "No misses audited."
+    integrity = statistics.mean(a["result_integrity"] for a in misses)
+    overall = statistics.mean(a["overall"] for a in misses)
+    return (
+        f"On misses alone, {len(misses)} turns: result_integrity {integrity:.1f} out of 5, "
+        f"overall {overall:.1f} out of 10."
+    )
+
+
 def _audit_lines(slog: SessionLog) -> list[str]:
     audited = [t.judge for t in slog.turns if "overall" in t.judge]
     if not audited:
@@ -88,6 +106,7 @@ def _audit_lines(slog: SessionLog) -> list[str]:
         means = {c: statistics.mean(a[c] for a in audited) for c in (*CRITERIA, "overall")}
         lines = [f"{len(audited)} turns audited. Overall {means['overall']:.1f} out of 10."]
         lines += [f"- {c}: {means[c]:.1f} out of 5" for c in CRITERIA]
+        lines.append(_miss_audit_line(slog))
     failed = sum(1 for t in slog.turns if "error" in t.judge)
     if failed:
         lines.append(f"{failed} audit(s) failed to produce a verdict.")

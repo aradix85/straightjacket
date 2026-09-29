@@ -1,6 +1,8 @@
 fact_resolution:
   place_reference: here
   max_per_turn: 2
+  information_miss_settles:
+    useful: "no"
   types:
     locked:
       subject: place

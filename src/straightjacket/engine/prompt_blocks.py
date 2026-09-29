@@ -130,7 +130,7 @@ def status_context_block(game: GameState) -> str:
     )
 
 
-def story_context_block(game: GameState) -> str:
+def story_context_block(game: GameState, *, miss: bool = False) -> str:
     bp = game.narrative.story_blueprint
     if not bp or not bp.acts:
         return ""
@@ -138,7 +138,7 @@ def story_context_block(game: GameState) -> str:
 
     pending = get_pending_revelations(game)
     rev_block = ""
-    if pending:
+    if pending and not miss:
         rev = pending[0]
         rev_block = "\n" + get_prompt("block_revelation_ready", weight=str(rev.dramatic_weight), content=rev.content)
 

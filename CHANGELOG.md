@@ -9,6 +9,14 @@ Entries up to 2026.09.26.19 were shortened to their essentials, in 2026.09.26.1 
 
 Calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day. The first CalVer release is 2026.04.25.0; earlier `0.x.y` releases keep their numbers.
 
+## [2026.09.29.12] — 2026-09-29
+
+Step 9c, soft misses from the engine side. On a miss the engine withholds what the narrator used to leak: every NPC present withholds (`information_gate.miss_stance`), the target NPC's agenda, memories, and secrets stay out with fact budget 0, bystanders lose their memory hint, and the previous Director guidance and a pending revelation wait for a hit. A miss on an information move settles `useful` as no for the place; a miss with a match rolls the story-complication oracle instead of Pay the Price in Starforged and Sundered Isles, as Datasworn describes it. Elvira gained the `miss` scenario and a report line scoring misses alone; the Director's JSON failure warning shows how the answer began. Documentation fixed where step 9b had left it stale.
+
+Measured on audited misses (result integrity of 5, overall of 10, three to five sessions each): baseline 3.0 / 5.8; the kept version 3.4 / 6.1. Dropped because they measured no better: leaving three narrator rules out on a miss (2.4 / 4.7), the move's Datasworn miss text in the prompt (2.2 / 4.3; "reveals an unwelcome truth" read as licence to reveal), and settling `occupied` as yes on an information miss (3.3 / 5.9; "someone is here" answered a search for an intruder).
+
+Quality gate: 1550 tests green, project-rule scans clean, coverage 90.65%, ruff and mypy --strict clean.
+
 ## [2026.09.29.11] — 2026-09-29
 
 Documentation only. The design document is now `docs/narrative_rpg_engine_v2_4.md` instead of a PDF, so a session reads it with the other md files; the text is unchanged (5,493 words in both, compared word by word), with its sections as headings and its prompt examples as code blocks. README, ORIGINS, ARCHITECTURE, and the divergence register link to it.

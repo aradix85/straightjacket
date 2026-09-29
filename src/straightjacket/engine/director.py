@@ -232,7 +232,8 @@ def call_director(
             reasoning_tail = " ".join(response2.reasoning[-eng().truncations.log_xlong :].split())
             raise ValueError(
                 f"{e}; the answer stopped as {response2.stop_reason} after {usage.get('output_tokens')} output tokens, "
-                f"{usage.get('reasoning_tokens')} of them reasoning, with {len(response2.content)} characters of JSON "
+                f"{usage.get('reasoning_tokens')} of them reasoning, with {len(response2.content)} characters of JSON, "
+                f"which began: {response2.content[: eng().truncations.log_xlong]!r}, "
                 f"and {len(response2.reasoning)} of reasoning text, which ended: {reasoning_tail!r}"
             ) from e
 

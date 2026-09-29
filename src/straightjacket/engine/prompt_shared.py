@@ -87,14 +87,16 @@ def _build_gate0_target(target: NpcData, aliases_attr: str) -> str:
     return f'<target_npc name="{_xa(target.name)}" gate="0"{aliases_attr}>{_xe(target.description)}</target_npc>'
 
 
-def _npc_block(game: GameState, target_id: str | None, context_text: str, move_category: str) -> str:
+def _npc_block(
+    game: GameState, target_id: str | None, context_text: str, move_category: str, *, miss: bool = False
+) -> str:
     target = find_npc(game, target_id) if target_id else None
     if not target:
         return ""
 
-    stance = resolve_npc_stance(game, target, move_category)
+    stance = resolve_npc_stance(game, target, move_category, miss=miss)
     gate = compute_npc_gate(game, target, game.narrative.scene_count, stance.stance)
-    fact_budget = eng().information_gate.fact_budget_by_gate[gate]
+    fact_budget = 0 if miss else eng().information_gate.fact_budget_by_gate[gate]
     log(f"[Gate] {target.name}: gate={gate} (stance={stance.stance}) fact_budget={fact_budget}")
 
     aliases_attr = f' aliases="{_xa(",".join(target.aliases))}"' if target.aliases else ""
@@ -125,7 +127,12 @@ def _npc_block(game: GameState, target_id: str | None, context_text: str, move_c
         secrets_label = get_prompt("secrets_label")
         secrets_line = f"\nsecrets({secrets_label}):{_xe(secs)}"
 
-    body = f"{agenda_line}{instinct_line}{mem_str}{secrets_line}" if gate >= 2 else _xe(target.description)
+    if miss:
+        body = f"{_xe(target.description)}{instinct_line}"
+    elif gate >= 2:
+        body = f"{agenda_line}{instinct_line}{mem_str}{secrets_line}"
+    else:
+        body = _xe(target.description)
 
     return f'<target_npc name="{_xa(target.name)}"{stance_attr}{aliases_attr}{arc_attr}{fact_budget_attr} gate="{gate}">\n{body}\n</target_npc>'
 
@@ -136,6 +143,8 @@ def _activated_npcs_block(
     game: GameState,
     context_text: str,
     move_category: str,
+    *,
+    miss: bool = False,
 ) -> str:
     parts = []
     for npc in activated:
@@ -148,7 +157,7 @@ def _activated_npcs_block(
             current_scene=game.narrative.scene_count,
         )
         mem_hint = ""
-        if memories:
+        if memories and not miss:
             pd = eng().prompt_display
             reflections = [m for m in memories if m.type == "reflection"]
             if reflections:
@@ -163,7 +172,7 @@ def _activated_npcs_block(
             loc_hint = f' last_seen="{_xa(loc)}"'
 
         arc_hint = f' arc="{_xa(npc.arc)}"' if npc.arc.strip() else ""
-        stance = resolve_npc_stance(game, npc, move_category)
+        stance = resolve_npc_stance(game, npc, move_category, miss=miss)
         parts.append(
             f'<activated_npc name="{_xa(npc.name)}" stance="{_xa(stance.stance)}" '
             f'constraint="{_xa(stance.constraint)}"{arc_hint}{mem_hint}{loc_hint}/>'
@@ -302,9 +311,11 @@ def _npcs_section(
     activated_npcs: Sequence[NpcData],
     mentioned_npcs: Sequence[NpcData],
     move_category: str,
+    *,
+    miss: bool = False,
 ) -> str:
     target_id = brain.target_npc
-    activated_block = _activated_npcs_block(activated_npcs, target_id, game, context_text, move_category)
+    activated_block = _activated_npcs_block(activated_npcs, target_id, game, context_text, move_category, miss=miss)
     exclude_ids = {n.id for n in activated_npcs}
     if target_id:
         t = find_npc(game, target_id)

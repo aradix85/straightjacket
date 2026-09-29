@@ -80,7 +80,7 @@ The `AIProvider` protocol has two implementations, `ai/provider_anthropic.py` an
 
 The two calls a turn cannot do without, the Brain and the narrator, do not degrade. After the retries they raise `ai/provider_base.py` → `AIUnavailableError`, as do a persistent refusal and an empty narration. The web handler for a turn, a correction, or a momentum burn then restores the snapshot it took before the call and tells the player that nothing in the story changed, as the design document asks (`web/handlers.py` → `_restore_after_failed_turn`, `_error_text`); `web/server.py` → `_dispatch_one_message` reports an unexpected error in a handler without its own catch.
 
-Every other call degrades without a wrong state change: a failed revelation check counts as not yet confirmed, the metadata extraction and the Director are skipped, blueprint voicing returns None, and a recap or chapter summary uses its fallback. Each such site logs at warning or error level, and Elvira reports every warning as a problem, because the game would otherwise play on silently. The broad exception handling this needs is the one exception to "errors propagate" in CONTRIBUTING.md.
+Every other call degrades without a wrong state change: a failed revelation check counts as not yet confirmed, the metadata extraction and the Director are skipped, blueprint voicing returns None, and a recap uses its fallback. Each such site logs at warning or error level, and Elvira reports every warning as a problem, because the game would otherwise play on silently. The broad exception handling this needs is the one exception to "errors propagate" in CONTRIBUTING.md.
 
 ## Narration streaming
 

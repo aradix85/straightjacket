@@ -15,7 +15,10 @@ class NpcStance:
     constraint: str
 
 
-def resolve_npc_stance(game: GameState, npc: NpcData, move_category: str) -> NpcStance:
+def resolve_npc_stance(game: GameState, npc: NpcData, move_category: str, *, miss: bool = False) -> NpcStance:
+    if miss:
+        held = eng().information_gate.miss_stance
+        return NpcStance(npc_id=npc.id, npc_name=npc.name, stance=held.stance, constraint=held.constraint)
     matrix = eng().stance_matrix
     buckets = eng().stance_bond_buckets
 

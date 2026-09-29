@@ -10,6 +10,7 @@ from ..mechanics import (
     apply_brain_location_time,
     can_burn_momentum,
     clear_facts_settled_by_hit,
+    settle_facts_by_miss,
     generate_consequence_sentences,
     is_dialog_branch,
     keep_action_dice,
@@ -441,6 +442,7 @@ def _offer_momentum_burn(ctx: SceneContext, roll_outcome: RollOutcome) -> BurnOf
 def resolve_and_narrate_action(ctx: SceneContext, roll_outcome: RollOutcome) -> tuple[str, dict[str, Any] | None]:
     action_res = resolve_action_phase(ctx.game, ctx.brain, roll_outcome)
     clear_facts_settled_by_hit(ctx.game, ctx.facts, roll_outcome.roll.result)
+    ctx.facts = settle_facts_by_miss(ctx.game, ctx.facts, ctx.brain.move, roll_outcome.roll.result)
     return _narrate_action_and_finalize(ctx, roll_outcome, action_res)
 
 

@@ -1,5 +1,6 @@
 pay_the_price:
   oracle_path: moves/pay_the_price
+  match_miss_oracle_path: misc/story_complication
   max_rerolls: 2
   reroll_rows:
   - prefix: Roll twice

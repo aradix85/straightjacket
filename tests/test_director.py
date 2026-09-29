@@ -124,7 +124,7 @@ def test_director_reports_why_its_final_answer_broke_off(stub_all: None, monkeyp
     assert provider.final_calls == 1
     warning = " ".join(warnings)
     assert "stopped as truncated after 8192 output tokens, 7800 of them reasoning" in warning
-    assert f"with {len(broken)} characters of JSON" in warning
+    assert f"with {len(broken)} characters of JSON, which began: {broken!r}" in warning
     assert "of reasoning text, which ended: '" in warning
     assert warning.rstrip().endswith("Let me reconsider.'), continuing without guidance")
 

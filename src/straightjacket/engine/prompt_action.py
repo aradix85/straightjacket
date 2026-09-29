@@ -90,9 +90,12 @@ def build_action_prompt(
 ) -> str:
     context_text = f"{player_words} {brain.player_intent} {game.world.current_scene_context}"
 
+    miss = roll.result == "MISS"
     stance_cat = _resolve_stance_category(brain.move)
-    npc = _npc_block(game, brain.target_npc, context_text=context_text, move_category=stance_cat)
-    npcs_sect = _npcs_section(game, brain, context_text, activated_npcs, mentioned_npcs, move_category=stance_cat)
+    npc = _npc_block(game, brain.target_npc, context_text=context_text, move_category=stance_cat, miss=miss)
+    npcs_sect = _npcs_section(
+        game, brain, context_text, activated_npcs, mentioned_npcs, move_category=stance_cat, miss=miss
+    )
 
     wa = brain.world_addition
     wl = f"\n<world_add>{_xe(wa)}</world_add>" if wa else ""
@@ -107,7 +110,7 @@ def build_action_prompt(
     pacing = _pacing_block(game, scene_setup)
     events_block = _random_events_block(random_events)
     clock_block = _clock_filled_block(clock_fill_results)
-    director = _director_block(game)
+    director = "" if miss else _director_block(game)
 
     cons_tags = "\n".join(f"<consequence>{_xe(s)}</consequence>" for s in consequence_sentences)
     if cons_tags:
@@ -127,5 +130,5 @@ def build_action_prompt(
 {pacing}
 {events_block}{director}
 {narrative_direction_block(game, roll.result)}
-{story_context_block(game)}{recent_events_block(game)}</scene>
+{story_context_block(game, miss=miss)}{recent_events_block(game)}</scene>
 <task>{get_prompt("task_action")}</task>"""

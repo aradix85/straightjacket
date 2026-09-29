@@ -90,45 +90,11 @@ One line per completed step, newest last. Details in CHANGELOG.
 - EdgeTales idea E5 — the Brain's `target_npc`, `bonus_id`, and `target_track` limited to what the prompt offers (2026.09.24.58).
 - Step 9a — Fact resolution: the Brain names undetermined facts, fate settles them with engine-derived odds, the narrator gets `<facts>`; Ask the Oracle answers yes/no questions through facts; the momentum burn resumes after the roll on the turn's own path (2026.09.29.0).
 - Step 9b — Chapters as Mythic adventures: a new chapter keeps the character's meters, momentum, and clocks, a game that is over goes to succession, and the engine writes the chapter record; the `chapter_summary` AI role is gone (2026.09.29.8).
+- Step 9c — Soft misses: on a miss the engine withholds NPC knowledge, Director guidance, and revelations, and NPCs present withhold; result integrity on misses 3.0 → 3.4 (2026.09.29.12).
 
 ---
 
-## NEXT STEP — 9c: Soft misses, from the engine side
-
-A miss still often hands the player a useful clue or a partial success, and now and then the narration adds a step the player did not take or invents backstory for the player character: judged result integrity on a miss swings between about 2.8 and 3.9 of 5, and five instruction variants did not help (2026.09.26.14 and .18). The user made this the next step on 2026-09-29. The design document's answer is the engine's: dictate more of the result instead of instructing harder.
-
-**9c.1** An Elvira scenario that makes misses frequent, so a few sessions give enough misses to judge, and a report line with the audit score on misses alone.
-
-**9c.2** Baseline: sessions with that scenario on the current code; the audit scores on misses, and the narrations of the misses read.
-
-**9c.3** Structure: three rules still apply on a miss without exception (NPCs answer what was asked, one unexplained background detail per scene, a suspended scene ending). On a miss the prompt assembly leaves them out instead of rephrasing them; they move from the cached system prompt into the per-turn task, so measure the cache share too. Measure against 9c.2.
-
-**9c.4** Content: on a miss the narrator also gets the rolled move's own miss text from Datasworn; a miss on an information move (Gather Information, a search, a question) settles `useful` as no for the place through fact resolution, so there is no clue left to hand out; where the setting has them (Starforged, Sundered Isles), the story-complication oracle supplies what the miss costs. Measure against the better of 9c.2 and 9c.3.
-
-**9c.5** Keep what measured better and drop what did not; the CHANGELOG entry gives the numbers.
-
-### Definition of Done
-
-- The miss scenario exists and its report shows the audit score on misses.
-- 9c.3 and 9c.4 are each measured against a baseline, and only what improved stays.
-- `docs/mechanics.md` says what the narrator gets on a miss.
-- Quality gate green, no new project-rule violations, one CHANGELOG entry.
-
-### Reference patterns
-
-- Elvira scenarios: `tests/elvira/elvira_config.yaml` → `scenarios`, prepared like `momentum_burn` and `chapter_end`.
-- Per-turn prompt parts by result: `prompt_action.py` → `build_action_prompt`.
-- Facts settled by the engine: `mechanics/facts.py` → `resolve_fact`.
-
----
-
-## Next steps
-
-Sketches; order indicative. Each entry gets substeps, a definition of done, and reference patterns when it is promoted to NEXT.
-
-Steps 11, 14b, 25, and 26 each plan a Director tool of their own. Since 2026.09.26.11 the Director has a single tool, `query_game_state`, which cut its tool rounds; whether each planned tool becomes a new one or part of that one is decided when the step is promoted.
-
-### 9d — Generators
+## NEXT STEP — 9d: Generators
 
 Entity creation through the entry point step 9a built: `mechanics/generation.py` → `generate(game, category, context)`, whose categories are registered in `engine/generation.yaml` and dispatched through `_GENERATORS`, with `fact` as the first category. Step 9d adds entity categories that return a `GeneratedEntity`: the category plus the rolled table results, keyed by the role each table plays in that category. How `generate` types its context and result once there is more than one category (a union, or one typed function per category behind the registry) is decided at the start of the step.
 
@@ -144,7 +110,7 @@ Entity creation through the entry point step 9a built: `mechanics/generation.py`
 
 **9d.6** Tests: smoke with stub oracle data, the registry and the yaml list stay equal (as `tests/test_fact_resolution.py` checks for `fact`), a missing path raises. If generated entities are persisted, the save format breaks.
 
-Definition of done:
+### Definition of Done
 
 - The four categories are registered in `engine/generation.yaml` and dispatched by `generate`; an unknown category or a missing oracle path raises.
 - Oracle paths per category live in the setting yaml; no Python branches on setting names.
@@ -155,12 +121,20 @@ Definition of done:
 - An Elvira run shows `<generated>` tags in play and no new engine warnings.
 - Quality gate green, no new project-rule violations, one CHANGELOG entry.
 
-Reference patterns:
+### Reference patterns
 
 - Entry point and registry: `mechanics/generation.py` → `generate`, `_GENERATORS`; `engine/generation.yaml`.
 - A generated result as a prompt block: `prompt_shared.py` → `_facts_block`, templates in `prompts/blocks.yaml`.
 - Parent-chain oracle lookup: `datasworn/settings.py` → `SettingPackage.oracle_data_for`.
 - Cascade rolls: `datasworn/cascade.py` → `roll_oracle_cascade`, used today by threat naming.
+
+---
+
+## Next steps
+
+Sketches; order indicative. Each entry gets substeps, a definition of done, and reference patterns when it is promoted to NEXT.
+
+Steps 11, 14b, 25, and 26 each plan a Director tool of their own. Since 2026.09.26.11 the Director has a single tool, `query_game_state`, which cut its tool rounds; whether each planned tool becomes a new one or part of that one is decided when the step is promoted.
 
 ### 9e — Open findings from Elvira runs
 
@@ -168,7 +142,7 @@ Reference patterns:
 - The metadata extraction's identity reveals for unnamed NPCs are rejected for zero word overlap, and a stub NPC is created instead (runs of 2026-09-25).
 - The metadata extraction once named an NPC id that does not exist (`npc_details: could not find NPC 'npc_5'`, 2026.09.25.6).
 - After a chapter transition the returning NPC "Maren Silk" and a new NPC "Maren" stood side by side as two active NPCs (2026.09.27.1); returning NPCs are merged by exact name only.
-- Structured answers that ran to the 8192-token limit (the Director in about 3 percent of its calls on GLM 5.3 Flash, the Brain and the extractors on GLM 5.3, one opening setup on 2026-09-25) were a carriage-return loop, banned in 2026.09.26.20. Five sessions ran clean afterwards, but on 2026-09-29 one Director answer ran to the limit again (24,693 characters, "Invalid control character" at column 4), so some other whitespace or control character loops too. Capture the raw answer the next time it happens before choosing a fix.
+- The Director's final JSON answer breaks now and then (several times in the 9c sessions of 2026-09-29): a stray control character inside a string, a run to the 8192-token limit, or its reasoning's `"..."` placeholders copied into the answer, as in `{"   ,"npc_guidance":`. The carriage-return loop was banned in 2026.09.26.20; the failure warning now shows how the JSON began. First check whether Together constrains that call's JSON at all.
 
 ### 9f — Narrator, Director, and extraction prompts
 
@@ -430,7 +404,7 @@ NPC-to-NPC requests and triangles, limited to those that involve the player. Int
 
 **25.4** Each waypoint is a scene boundary with a chaos check.
 
-**25.5** About 30 tokens of expedition state prompt-injected while an expedition is active; expedition history for the Director's chapter summary or recap (see the note on Director tools above).
+**25.5** About 30 tokens of expedition state prompt-injected while an expedition is active; expedition history for the Director (see the note on Director tools above), the engine's chapter record, and the recap.
 
 **25.6** Tests.
 

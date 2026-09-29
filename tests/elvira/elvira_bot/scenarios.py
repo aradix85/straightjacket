@@ -22,6 +22,11 @@ def _set_resources(game: GameState, resources: dict[str, Any]) -> list[str]:
     return notes
 
 
+def _set_every_stat(game: GameState, value: int) -> str:
+    game.stats = {name: value for name in game.stats}
+    return f"every stat {value}"
+
+
 def _near_story_end(game: GameState) -> str:
     blueprint = game.narrative.story_blueprint
     if blueprint is None or len(blueprint.acts) < 2:
@@ -54,6 +59,8 @@ def prepare_scenario(game: GameState, spec: dict[str, Any]) -> list[str]:
     notes: list[str] = []
     if "resources" in spec:
         notes += _set_resources(game, spec["resources"])
+    if "every_stat" in spec:
+        notes.append(_set_every_stat(game, int(spec["every_stat"])))
     if "story_end" in spec:
         notes.append(_near_story_end(game))
     if "combat" in spec:

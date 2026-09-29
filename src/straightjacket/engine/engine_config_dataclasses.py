@@ -367,6 +367,7 @@ class InformationGateConfig:
     gate_max: int
     stance_caps: dict[str, int]
     fact_budget_by_gate: dict[int, int]
+    miss_stance: StanceMatrixEntry
 
 
 @dataclass
@@ -419,6 +420,7 @@ class FactResolutionConfig:
     place_reference: str
     max_per_turn: int
     types: dict[str, FactTypeConfig]
+    information_miss_settles: dict[str, str]
 
 
 @dataclass
@@ -804,6 +806,7 @@ class PayThePriceSufferRow:
 @dataclass
 class PayThePriceConfig:
     oracle_path: str
+    match_miss_oracle_path: str
     max_rerolls: int
     reroll_rows: list[PayThePriceRerollRow]
     suffer_rows: list[PayThePriceSufferRow]
