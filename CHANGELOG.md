@@ -9,6 +9,10 @@ Entries up to 2026.09.26.19 were shortened to their essentials, in 2026.09.26.1 
 
 Calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day. The first CalVer release is 2026.04.25.0; earlier `0.x.y` releases keep their numbers.
 
+## [2026.09.29.9] — 2026-09-29
+
+Documentation only. The user asked for no priorities or open items beside the steps: the priorities list is gone, and every item on it is now a numbered step in the order of work. The soft miss becomes the next step (9c, with a miss scenario for Elvira first); then the generators (9d), the open Elvira findings (9e), the remaining prompt work (9f), fixtures through the real creation path (9g), the first principle audit (9h), revelations (9i), and the rules conformance items (9j). A new finding becomes a substep or a step in the same commit.
+
 ## [2026.09.29.8] — 2026-09-29
 
 Step 9b, chapters as Mythic adventures. A chapter is Mythic's and the Adventure Crafter's adventure within a campaign; the EdgeTales resets are gone: health, spirit, supply, momentum, and clocks carry over, the chaos factor restarts at Mythic's 5, and a game that is over can only continue through succession. The engine writes the chapter record from its own data (conflict, vows, plotlines, threads, people, the dead, threats, the place), so the `chapter_summary` AI role is removed, and with it the AI's projections of how NPCs change between chapters and its choice of where the next chapter starts. Step 9c, the generators, is next. The save format breaks.

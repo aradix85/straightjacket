@@ -27,31 +27,9 @@ One step is one session: read the code, implement, test, pass the quality gate, 
 
 ## Current state
 
-### Priorities
+### Order of work
 
-Set 2026-09-24, revised 2026-09-29.
-
-1. Step 9c, the generators (NEXT STEP below): settlements, locations, NPCs, and encounters come from the entry point step 9a built, so the narrator invents fewer entities.
-2. Open findings from Elvira runs:
-   - The coverage tracker counted no NPC introductions while the metadata extraction reported one.
-   - The metadata extraction's identity reveals for unnamed NPCs are rejected for zero word overlap, and a stub NPC is created instead (runs of 2026-09-25).
-   - The metadata extraction once named an NPC id that does not exist (`npc_details: could not find NPC 'npc_5'`, 2026.09.25.6).
-   - After a chapter transition the returning NPC "Maren Silk" and a new NPC "Maren" stood side by side as two active NPCs (2026.09.27.1); returning NPCs are merged by exact name only.
-   - Structured answers that ran to the 8192-token limit (the Director in about 3 percent of its calls on GLM 5.3 Flash, the Brain and the extractors on GLM 5.3, one opening setup on 2026-09-25) were a carriage-return loop, banned in 2026.09.26.20. Five sessions ran clean afterwards, but on 2026-09-29 one Director answer ran to the limit again (24,693 characters, "Invalid control character" at column 4), so some other whitespace or control character loops too. Capture the raw answer the next time it happens before choosing a fix.
-3. Narrator-prompt tuning for GLM 5.3, one change at a time, measured with Elvira sessions and by reading the narrations of misses. Open:
-   - A miss still sometimes hands the player a useful clue (result integrity on a miss swings between about 2.8 and 3.9 of 5). Five instruction variants did not help (2026.09.26.14 and .18), so this looks like the model. A narration now and then adds a step the player did not take. The Elvira sessions of 2026-09-29 add invented backstory for the player character to the pattern.
-   - Three rules still apply on a miss without exception: NPCs answer what was asked, one unexplained background detail per scene, a suspended scene ending.
-   - Miss experiment, decided 2026-09-29: attack the soft miss from the engine side, as the design document does everything, instead of with more wording, in two measured changes. First, structure: on a miss the prompt assembly leaves out the three rules above instead of rephrasing them; they move from the cached system prompt into the per-turn task, so measure the cache share too. Second, content: on a miss the narrator also gets the rolled move's own miss text from Datasworn, and a miss on an information move (Gather Information, a search, a question) settles `useful` as no for the place through fact resolution, so there is no clue left to hand out. Measure each with Elvira sessions forced to misses and by reading their narrations, before and after. Starforged and Sundered Isles carry a story-complication and a story-clue oracle, which can supply what a miss costs and what an information hit finds (coverage map 2026-09-29).
-   - The action task tells a strong hit in a desperate phase to carry the surrounding darkness.
-   - PLAYER AGENCY's inner-life clause says to describe what a camera could record, including action, beside the clause that limits the character's actions to the stated one.
-   - `fact_budget` allows one or two extra facts, while the dialog task says nothing beyond the question's scope.
-   - `<style>` asks for terse prose, and much of the system prompt still addresses GENRE PHYSICS.
-   - `prompts/director.yaml` still has the Director recommend a "breather", although pacing is engine-computed.
-   - The extraction prompts (`narrator_metadata`, `opening_setup_extractor`), `revelation_check_system`, `blueprint_voicing`, and `recap` have been read but not tuned.
-   - The Director was about half of a session's cost in 2026.09.25.5, measured before its single tool (2026.09.26.11) and before GLM 5.3; measure again before deciding anything. Running it less often would leave NPC profiles stale and is not planned.
-4. Test fixtures made through the real character-creation path instead of hand-built states, since a hand-built fixture hid the roll-bonus bug of 2026.09.24.33.
-5. Smaller open items:
-   - No principle audit from AUDIT.md has been run yet.
+Revised 2026-09-29: the steps are the order of work, NEXT STEP first and then the steps below in their order. Nothing is worked on outside a step, and a new finding becomes a substep of an existing step or a new step in the same commit, so there are no loose priorities or open items beside the steps.
 
 ### Working agreements
 
@@ -74,11 +52,11 @@ Models: every AI role runs on GLM 5.3 through Together since 2026.09.26.20; `doc
 
 **Where the AI still decides, and the system that takes it over (2026-09-29).** Judged by the order of preference in ARCHITECTURE.md:
 - What an NPC does off screen: today the narrator invents it from `check_npc_agency`'s prompt; Mythic's NPC behavior table (`mythic_gme_2e.json` → `npc_behavior`) and NPC goal clocks take it over in steps 12 and 13.
-- Locations, settlements, and encounters: today narrated; Datasworn oracles and Mythic's themed element tables take them over in steps 9c, 10, 33, and 34.
+- Locations, settlements, and encounters: today narrated; Datasworn oracles and Mythic's themed element tables take them over in steps 9d, 10, 33, and 34.
 - Who a new NPC is: today narrated and then extracted; the Adventure Crafter's character-crafting tables (`mechanics/adventure_crafter.py` → `roll_character_traits`, ready but without a caller) and the setting's oracles take it over in step 11.
-- Whether a planned revelation has been told: today an AI call judges it; the engine settles it in step 9d.
+- Whether a planned revelation has been told: today an AI call judges it; the engine settles it in step 9i.
 - Facts beyond the five fact types: today the narrator's; more fact types, and Mythic's detail-check chains in step 35, widen what fate settles.
-- A "breather" recommended by the Director: pacing is already engine-computed, so the recommendation leaves the Director prompt (priority 3).
+- A "breather" recommended by the Director: pacing is already engine-computed, so the recommendation leaves the Director prompt (step 9f).
 The Brain reading free text, the narrator's prose, and the Director's wording of agendas and arcs stay with the AI by design.
 
 ---
@@ -103,30 +81,65 @@ One line per completed step, newest last. Details in CHANGELOG.
 - Providers and SDKs — per-role providers, startup model check, single retry layer, timeouts, refusals, OpenAI's own models (2026.09.24.9 to .14).
 - Sentence-level narration streaming (2026.09.24.12).
 - Elvira rebuilt — streaming checks, blind judge, save round trip, succession, coverage, WebSocket probes, engine events and warnings, report (2026.09.24.15 to .42).
-- Rules conformance pass, see step 9e (2026.09.24.17 to .34).
+- Rules conformance pass, see step 9j (2026.09.24.17 to .34).
 - EdgeTales idea E5 — the Brain's `target_npc`, `bonus_id`, and `target_track` limited to what the prompt offers (2026.09.24.58).
 - Step 9a — Fact resolution: the Brain names undetermined facts, fate settles them with engine-derived odds, the narrator gets `<facts>`; Ask the Oracle answers yes/no questions through facts; the momentum burn resumes after the roll on the turn's own path (2026.09.29.0).
 - Step 9b — Chapters as Mythic adventures: a new chapter keeps the character's meters, momentum, and clocks, a game that is over goes to succession, and the engine writes the chapter record; the `chapter_summary` AI role is gone (2026.09.29.8).
 
 ---
 
-## NEXT STEP — 9c: Generators
+## NEXT STEP — 9c: Soft misses, from the engine side
 
-Entity creation through the entry point step 9a built: `mechanics/generation.py` → `generate(game, category, context)`, whose categories are registered in `engine/generation.yaml` and dispatched through `_GENERATORS`, with `fact` as the first category. Step 9c adds entity categories that return a `GeneratedEntity`: the category plus the rolled table results, keyed by the role each table plays in that category. How `generate` types its context and result once there is more than one category (a union, or one typed function per category behind the registry) is decided at the start of the step.
+A miss still often hands the player a useful clue or a partial success, and now and then the narration adds a step the player did not take or invents backstory for the player character: judged result integrity on a miss swings between about 2.8 and 3.9 of 5, and five instruction variants did not help (2026.09.26.14 and .18). The user made this the next step on 2026-09-29. The design document's answer is the engine's: dictate more of the result instead of instructing harder.
 
-**9c.1** Categories settlement, location, npc, and encounter registered in `engine/generation.yaml`; steps 11, 25, and 26 add npc tiers, waypoints, and sites.
+**9c.1** An Elvira scenario that makes misses frequent, so a few sessions give enough misses to judge, and a report line with the audit score on misses alone.
 
-**9c.2** An oracle accessor for Delve theme plus domain, Sundered Isles cursed and non-cursed variants, and Starforged flat d100, with the format taken from setting yaml, not from branching on setting names.
+**9c.2** Baseline: sessions with that scenario on the current code; the audit scores on misses, and the narrations of the misses read.
 
-**9c.3** Per-category oracle paths in setting yaml as a mapping keyed by category name (the keys are domain data, decided in 2026.09.24.47); a registered category without a path in the active setting's parent chain raises KeyError. The parent-chain lookup exists: `datasworn/settings.py` → `SettingPackage.oracle_data_for`, `_resolve_oracle_paths`.
+**9c.3** Structure: three rules still apply on a miss without exception (NPCs answer what was asked, one unexplained background detail per scene, a suspended scene ending). On a miss the prompt assembly leaves them out instead of rephrasing them; they move from the cached system prompt into the per-turn task, so measure the cache share too. Measure against 9c.2.
 
-**9c.4** Generated content reaches the narrator as a `<generated>` tag after the setting's `vocabulary.substitutions` are applied: if the oracle says "spaceship", the prompt gets the setting's substitution. No post-hoc check.
+**9c.4** Content: on a miss the narrator also gets the rolled move's own miss text from Datasworn; a miss on an information move (Gather Information, a search, a question) settles `useful` as no for the place through fact resolution, so there is no clue left to hand out; where the setting has them (Starforged, Sundered Isles), the story-complication oracle supplies what the miss costs. Measure against the better of 9c.2 and 9c.3.
 
-**9c.5** Chained oracle tables go through `datasworn/cascade.py` → `roll_oracle_cascade`. At least one real callsite; candidate: `npc/naming.py` → `roll_oracle_name` through the `npc` category. If none fits, a documented orphan-symbol carve-out that step 10 removes, as for `CharacterTraits`.
-
-**9c.6** Tests: smoke with stub oracle data, the registry and the yaml list stay equal (as `tests/test_fact_resolution.py` checks for `fact`), a missing path raises. If generated entities are persisted, the save format breaks.
+**9c.5** Keep what measured better and drop what did not; the CHANGELOG entry gives the numbers.
 
 ### Definition of Done
+
+- The miss scenario exists and its report shows the audit score on misses.
+- 9c.3 and 9c.4 are each measured against a baseline, and only what improved stays.
+- `docs/mechanics.md` says what the narrator gets on a miss.
+- Quality gate green, no new project-rule violations, one CHANGELOG entry.
+
+### Reference patterns
+
+- Elvira scenarios: `tests/elvira/elvira_config.yaml` → `scenarios`, prepared like `momentum_burn` and `chapter_end`.
+- Per-turn prompt parts by result: `prompt_action.py` → `build_action_prompt`.
+- Facts settled by the engine: `mechanics/facts.py` → `resolve_fact`.
+
+---
+
+## Next steps
+
+Sketches; order indicative. Each entry gets substeps, a definition of done, and reference patterns when it is promoted to NEXT.
+
+Steps 11, 14b, 25, and 26 each plan a Director tool of their own. Since 2026.09.26.11 the Director has a single tool, `query_game_state`, which cut its tool rounds; whether each planned tool becomes a new one or part of that one is decided when the step is promoted.
+
+### 9d — Generators
+
+Entity creation through the entry point step 9a built: `mechanics/generation.py` → `generate(game, category, context)`, whose categories are registered in `engine/generation.yaml` and dispatched through `_GENERATORS`, with `fact` as the first category. Step 9d adds entity categories that return a `GeneratedEntity`: the category plus the rolled table results, keyed by the role each table plays in that category. How `generate` types its context and result once there is more than one category (a union, or one typed function per category behind the registry) is decided at the start of the step.
+
+**9d.1** Categories settlement, location, npc, and encounter registered in `engine/generation.yaml`; steps 11, 25, and 26 add npc tiers, waypoints, and sites.
+
+**9d.2** An oracle accessor for Delve theme plus domain, Sundered Isles cursed and non-cursed variants, and Starforged flat d100, with the format taken from setting yaml, not from branching on setting names.
+
+**9d.3** Per-category oracle paths in setting yaml as a mapping keyed by category name (the keys are domain data, decided in 2026.09.24.47); a registered category without a path in the active setting's parent chain raises KeyError. The parent-chain lookup exists: `datasworn/settings.py` → `SettingPackage.oracle_data_for`, `_resolve_oracle_paths`.
+
+**9d.4** Generated content reaches the narrator as a `<generated>` tag after the setting's `vocabulary.substitutions` are applied: if the oracle says "spaceship", the prompt gets the setting's substitution. No post-hoc check.
+
+**9d.5** Chained oracle tables go through `datasworn/cascade.py` → `roll_oracle_cascade`. At least one real callsite; candidate: `npc/naming.py` → `roll_oracle_name` through the `npc` category. If none fits, a documented orphan-symbol carve-out that step 10 removes, as for `CharacterTraits`.
+
+**9d.6** Tests: smoke with stub oracle data, the registry and the yaml list stay equal (as `tests/test_fact_resolution.py` checks for `fact`), a missing path raises. If generated entities are persisted, the save format breaks.
+
+Definition of done:
 
 - The four categories are registered in `engine/generation.yaml` and dispatched by `generate`; an unknown category or a missing oracle path raises.
 - Oracle paths per category live in the setting yaml; no Python branches on setting names.
@@ -137,42 +150,62 @@ Entity creation through the entry point step 9a built: `mechanics/generation.py`
 - An Elvira run shows `<generated>` tags in play and no new engine warnings.
 - Quality gate green, no new project-rule violations, one CHANGELOG entry.
 
-### Reference patterns
+Reference patterns:
 
 - Entry point and registry: `mechanics/generation.py` → `generate`, `_GENERATORS`; `engine/generation.yaml`.
 - A generated result as a prompt block: `prompt_shared.py` → `_facts_block`, templates in `prompts/blocks.yaml`.
 - Parent-chain oracle lookup: `datasworn/settings.py` → `SettingPackage.oracle_data_for`.
 - Cascade rolls: `datasworn/cascade.py` → `roll_oracle_cascade`, used today by threat naming.
 
----
+### 9e — Open findings from Elvira runs
 
-## Next steps
+- The coverage tracker counted no NPC introductions while the metadata extraction reported one.
+- The metadata extraction's identity reveals for unnamed NPCs are rejected for zero word overlap, and a stub NPC is created instead (runs of 2026-09-25).
+- The metadata extraction once named an NPC id that does not exist (`npc_details: could not find NPC 'npc_5'`, 2026.09.25.6).
+- After a chapter transition the returning NPC "Maren Silk" and a new NPC "Maren" stood side by side as two active NPCs (2026.09.27.1); returning NPCs are merged by exact name only.
+- Structured answers that ran to the 8192-token limit (the Director in about 3 percent of its calls on GLM 5.3 Flash, the Brain and the extractors on GLM 5.3, one opening setup on 2026-09-25) were a carriage-return loop, banned in 2026.09.26.20. Five sessions ran clean afterwards, but on 2026-09-29 one Director answer ran to the limit again (24,693 characters, "Invalid control character" at column 4), so some other whitespace or control character loops too. Capture the raw answer the next time it happens before choosing a fix.
 
-Sketches; order indicative. Each entry gets substeps, a definition of done, and reference patterns when it is promoted to NEXT.
+### 9f — Narrator, Director, and extraction prompts
 
-Steps 11, 14b, 25, and 26 each plan a Director tool of their own. Since 2026.09.26.11 the Director has a single tool, `query_game_state`, which cut its tool rounds; whether each planned tool becomes a new one or part of that one is decided when the step is promoted.
+One change at a time, measured with Elvira sessions and by reading the narrations.
 
-### 9d — Revelations settled by the engine
+- The action task tells a strong hit in a desperate phase to carry the surrounding darkness.
+- PLAYER AGENCY's inner-life clause says to describe what a camera could record, including action, beside the clause that limits the character's actions to the stated one.
+- `fact_budget` allows one or two extra facts, while the dialog task says nothing beyond the question's scope.
+- `<style>` asks for terse prose, and much of the system prompt still addresses GENRE PHYSICS.
+- `prompts/director.yaml` still has the Director recommend a "breather", although pacing is engine-computed.
+- The extraction prompts (`narrator_metadata`, `opening_setup_extractor`), `revelation_check_system`, `blueprint_voicing`, and `recap` have been read but not tuned.
+- The Director was about half of a session's cost in 2026.09.25.5, measured before its single tool (2026.09.26.11) and before GLM 5.3; measure again before deciding anything. Running it less often would leave NPC profiles stale and is not planned.
+
+### 9g — Test fixtures through the real creation path
+
+Fixtures made through the real character-creation path instead of hand-built states, since a hand-built fixture hid the roll-bonus bug of 2026.09.24.33 and the momentum-burn bug of 2026.09.29.0; the tests that still build a `GameState` by hand move over one file at a time.
+
+### 9h — First principle audit
+
+Run the first pass of AUDIT.md over the code; every finding is fixed or becomes a substep here.
+
+### 9i — Revelations settled by the engine
 
 Today the blueprint's revelations reach the narrator as `<revelation_ready>`, and a separate AI call (`call_revelation_check`) judges afterwards whether the prose contained one, which is the kind of post-hoc validator `docs/divergences.md` rules out. Instead the engine decides when a revelation lands (its scene range, or a keyed scene) and hands it to the narrator as a mandatory element, like a `<consequence>`, and marks it revealed at once; the `revelation_check` role, its prompt, schema, and cluster entry go. Measure with Elvira how often the narration carries the revelation before and after.
 
-### 9e — Rules conformance: classic and the Adventure Crafter
+### 9j — Rules conformance: classic and the Adventure Crafter
 
 The principle and the list of deliberate divergences are in `docs/divergences.md`. Checked in the conformance pass (2026.09.24.17 to .34): the action roll, momentum, Endure Harm and Endure Stress, Pay the Price, every match clause, chained and oracle moves, progress, legacy tracks and experience, connections, Mythic's fate check, fate chart, scene test, chaos factor, event focus, lists, and meaning tables, the Adventure Crafter's tables, theme priority, and turning points, Blades clock sizes, and asset and connection adds. Done on 2026-09-29: classic experience by vow rank, and Draw the Circle's boasts.
 
-**9e.1** In classic Ironsworn, wounded and shaken no longer block recovery; classic asks only for health or spirit above 0, and the rule stays for Starforged and Sundered Isles.
+**9j.1** In classic Ironsworn, wounded and shaken no longer block recovery; classic asks only for health or spirit above 0, and the rule stays for Starforged and Sundered Isles.
 
-**9e.2** Classic's bonds special track: Forge a Bond marks it, and Write Your Epilogue (step 13b) rolls it.
+**9j.2** Classic's bonds special track: Forge a Bond marks it, and Write Your Epilogue (step 13b) rolls it.
 
-**9e.3** The Adventure Crafter's theme translation lets the adventure's tone pick a theme for the blueprint.
+**9j.3** The Adventure Crafter's theme translation lets the adventure's tone pick a theme for the blueprint.
 
-**9e.4** The individual words of the oracle and meaning tables are checked against the books.
+**9j.4** The individual words of the oracle and meaning tables are checked against the books.
 
 Ability effects other than adds belong to step 18; outcomes where the player would choose a cost are a recorded divergence.
 
 ### 10 — Location and encounter generators
 
-**10.1** Location generator through the step 9c framework: Datasworn oracles give a structured location, the AI describes it within that structure.
+**10.1** Location generator through the step 9d framework: Datasworn oracles give a structured location, the AI describes it within that structure.
 
 **10.2** Encounter generator weighted by location properties, active threats, and chaos; oracle for structure, AI for description. Weights in `engine/encounter_weights.yaml` (new).
 
@@ -308,7 +341,7 @@ From the EdgeTales comparison of 2026-09-24: reimplement the idea, do not port c
 
 ### 17 — Setting enrichment from sourced tables
 
-The Yaml content boundary (CONTRIBUTING.md) rules out hand-written lists of names, descriptors, or descriptions in setting yaml. Variety comes from tables with a source: the Datasworn oracles each setting ships, through steps 9c and 10, and Mythic's element meaning tables, through steps 33 and 34. What remains of this step is wiring inside those steps: each setting's oracle-path mapping gains the tables its generator categories need.
+The Yaml content boundary (CONTRIBUTING.md) rules out hand-written lists of names, descriptors, or descriptions in setting yaml. Variety comes from tables with a source: the Datasworn oracles each setting ships, through steps 9d and 10, and Mythic's element meaning tables, through steps 33 and 34. What remains of this step is wiring inside those steps: each setting's oracle-path mapping gains the tables its generator categories need.
 
 ### 18 — Asset mechanics beyond adds
 
@@ -386,7 +419,7 @@ NPC-to-NPC requests and triangles, limited to those that involve the player. Int
 
 **25.2** Expedition moves: Undertake an Expedition, Explore a Waypoint, Make a Discovery, Confront Chaos, Finish, Set a Course; routing config-driven.
 
-**25.3** Waypoints as a new step 9c category in yaml.
+**25.3** Waypoints as a new step 9d category in yaml.
 
 **25.4** Each waypoint is a scene boundary with a chaos check.
 
@@ -424,7 +457,7 @@ Starforged's anomaly-effect oracle goes with vaults and anomalies.
 
 **28.1** Ship mechanics (command vehicle with modules, condition track, repair) through the step 18 and 19 asset pipeline.
 
-**28.2** Cursed die. The Datasworn texts that mention it, all in the Chattering Skull asset, describe an extra ten-sided die added to the roll with an effect on a 10; check the Sundered Isles rules for when it is rolled before designing this (step 9e). The existing `cursed` impact in `engine/impacts.yaml` is a separate mechanic.
+**28.2** Cursed die. The Datasworn texts that mention it, all in the Chattering Skull asset, describe an extra ten-sided die added to the roll with an effect on a 10; check the Sundered Isles rules for when it is rolled before designing this (step 9j). The existing `cursed` impact in `engine/impacts.yaml` is a separate mechanic.
 
 **28.3** Data config: naval encounters, treasure, the 16 Sundered Isles oracle categories, exploration.
 
