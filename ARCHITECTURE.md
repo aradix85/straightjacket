@@ -4,7 +4,7 @@ A bird's-eye view of Straightjacket: what it is built to do, how a turn flows, w
 
 ## The core idea
 
-Straightjacket implements the Narrative RPG Engine design document (`docs/narrative_rpg_engine_v2_4.pdf`): the engine owns the rules and the facts, the AI writes prose within them. Every value that can be derived from game state is computed by the engine: dice and outcomes, resources, pacing, act transitions, the emotional weight of memories, the opening clock and time of day. The AI receives results, not choices.
+Straightjacket implements the Narrative RPG Engine design document (`docs/narrative_rpg_engine_v2_4.md`): the engine owns the rules and the facts, the AI writes prose within them. Every value that can be derived from game state is computed by the engine: dice and outcomes, resources, pacing, act transitions, the emotional weight of memories, the opening clock and time of day. The AI receives results, not choices.
 
 **Order of preference.** Whoever can decide something decides it in this order: first a tabletop system the engine implements (Mythic GME as the game master's stand-in, the Ironsworn and Starforged rules, the Adventure Crafter, Blades in the Dark), then an engine rule where no source settles it, and only then the AI, which writes prose and reads the player's free text. The design document's specific recommendations serve this aim; where practice shows one of them fails, `docs/divergences.md` records the departure and why, judged by this order.
 

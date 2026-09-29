@@ -46,7 +46,7 @@ Text-in, text-out, and built for screen readers from the start by a blind develo
 - [CHANGELOG.md](CHANGELOG.md) — release history, including the fork period
 - [roadmap.md](roadmap.md) — internal working doc: what gets built next, and in what order
 - [AUDIT.md](AUDIT.md) — internal working doc: how the codebase is audited against its principles
-- [Narrative RPG Engine design document](docs/narrative_rpg_engine_v2_4.pdf) — the design this implements
+- [Narrative RPG Engine design document](docs/narrative_rpg_engine_v2_4.md) — the design this implements
 
 ---
 

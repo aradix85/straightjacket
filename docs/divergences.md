@@ -1,6 +1,6 @@
 # Deliberate divergences
 
-Where Straightjacket departs on purpose from the rulebooks it draws on, or from the design document it implements (`docs/narrative_rpg_engine_v2_4.pdf`). Everything not listed here follows its source.
+Where Straightjacket departs on purpose from the rulebooks it draws on, or from the design document it implements (`docs/narrative_rpg_engine_v2_4.md`). Everything not listed here follows its source.
 
 When a source and practice disagree, the order of preference decides (ARCHITECTURE.md, The core idea): a tabletop system decides first, an engine rule second, and the AI only writes prose and reads the player's free text. A departure that moves a decision from the AI to a system needs little argument; one that moves a decision toward the AI needs a measured one.
 
