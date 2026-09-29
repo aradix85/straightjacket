@@ -9,6 +9,10 @@ Entries up to 2026.09.26.19 were shortened to their essentials, in 2026.09.26.1 
 
 Calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day. The first CalVer release is 2026.04.25.0; earlier `0.x.y` releases keep their numbers.
 
+## [2026.09.29.7] — 2026-09-29
+
+Documentation only. The user made chapters the next step: new step 9b treats a chapter as Mythic's and the Adventure Crafter's adventure within a campaign and removes what came from EdgeTales (refilled health, spirit, supply, and momentum, wiped clocks, an AI-written chapter summary), with two register entries until then. The generators move to step 9c and engine-settled revelations to 9d; earlier CHANGELOG entries keep the old numbers.
+
 ## [2026.09.29.6] — 2026-09-29
 
 Documentation only. A one-time coverage map, read and then removed, checked every part of the four Datasworn rulesets, Mythic GME 2e, the Adventure Crafter, Blades, and the design document against the code and the roadmap; everything that stood nowhere is now on the roadmap, including three new steps (10b launch oracles, 13c foe actions and plot twists from oracles, 36 setting tooling). The register gains the session moves and Mythic's rules-system parts as Permanent, and foe actions and ranks decided by the AI until step 13c. The miss experiment (priority 3) is recorded; every role stays on one model.

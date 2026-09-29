@@ -31,7 +31,7 @@ One step is one session: read the code, implement, test, pass the quality gate, 
 
 Set 2026-09-24, revised 2026-09-29.
 
-1. Step 9b, the generators (NEXT STEP below). Settlements, locations, NPCs, and encounters come from the entry point step 9a built, so the narrator invents fewer entities.
+1. Step 9b, chapters as Mythic adventures (NEXT STEP below): the chapter boundary follows Mythic's and the Adventure Crafter's adventure within a campaign, without the resets that came from EdgeTales. Then step 9c, the generators: settlements, locations, NPCs, and encounters come from the entry point step 9a built, so the narrator invents fewer entities.
 2. Open findings from Elvira runs:
    - The coverage tracker counted no NPC introductions while the metadata extraction reported one.
    - The metadata extraction's identity reveals for unnamed NPCs are rejected for zero word overlap, and a stub NPC is created instead (runs of 2026-09-25).
@@ -74,9 +74,9 @@ Models: every AI role runs on GLM 5.3 through Together since 2026.09.26.20; `doc
 
 **Where the AI still decides, and the system that takes it over (2026-09-29).** Judged by the order of preference in ARCHITECTURE.md:
 - What an NPC does off screen: today the narrator invents it from `check_npc_agency`'s prompt; Mythic's NPC behavior table (`mythic_gme_2e.json` → `npc_behavior`) and NPC goal clocks take it over in steps 12 and 13.
-- Locations, settlements, and encounters: today narrated; Datasworn oracles and Mythic's themed element tables take them over in steps 9b, 10, 33, and 34.
+- Locations, settlements, and encounters: today narrated; Datasworn oracles and Mythic's themed element tables take them over in steps 9c, 10, 33, and 34.
 - Who a new NPC is: today narrated and then extracted; the Adventure Crafter's character-crafting tables (`mechanics/adventure_crafter.py` → `roll_character_traits`, ready but without a caller) and the setting's oracles take it over in step 11.
-- Whether a planned revelation has been told: today an AI call judges it; the engine settles it in step 9c.
+- Whether a planned revelation has been told: today an AI call judges it; the engine settles it in step 9d.
 - Facts beyond the five fact types: today the narrator's; more fact types, and Mythic's detail-check chains in step 35, widen what fate settles.
 - A "breather" recommended by the Director: pacing is already engine-computed, so the recommendation leaves the Director prompt (priority 3).
 The Brain reading free text, the narrator's prose, and the Director's wording of agendas and arcs stay with the AI by design.
@@ -109,23 +109,61 @@ One line per completed step, newest last. Details in CHANGELOG.
 
 ---
 
-## NEXT STEP — 9b: Generators
+## NEXT STEP — 9b: Chapters as Mythic adventures
 
-Entity creation through the entry point step 9a built: `mechanics/generation.py` → `generate(game, category, context)`, whose categories are registered in `engine/generation.yaml` and dispatched through `_GENERATORS`, with `fact` as the first category. Step 9b adds entity categories that return a `GeneratedEntity`: the category plus the rolled table results, keyed by the role each table plays in that category. How `generate` types its context and result once there is more than one category (a union, or one typed function per category behind the registry) is decided at the start of the step.
+A chapter is what Mythic and the Adventure Crafter call an adventure within a campaign: one blueprint, and when its plotlines are resolved a new one begins, with the threads and characters lists carried over. The boundary stays; what `game/chapters.py` → `_reset_chapter_mechanics` does beyond it came from EdgeTales and has no source.
 
-**9b.1** Categories settlement, location, npc, and encounter registered in `engine/generation.yaml`; steps 11, 25, and 26 add npc tiers, waypoints, and sites.
+**9b.1** Health, spirit, supply, and momentum stay as they are at the chapter's end, as in Ironsworn and Starforged, where they recover only through moves (Sojourn, Heal, Make Camp, Resupply); the refill to starting values goes.
 
-**9b.2** An oracle accessor for Delve theme plus domain, Sundered Isles cursed and non-cursed variants, and Starforged flat d100, with the format taken from setting yaml, not from branching on setting names.
+**9b.2** Clocks carry over into the new chapter, as threats already do; a filled or fired clock is purged as within a chapter.
 
-**9b.3** Per-category oracle paths in setting yaml as a mapping keyed by category name (the keys are domain data, decided in 2026.09.24.47); a registered category without a path in the active setting's parent chain raises KeyError. The parent-chain lookup exists: `datasworn/settings.py` → `SettingPackage.oracle_data_for`, `_resolve_oracle_paths`.
+**9b.3** The chaos factor at a new adventure follows the Mythic GME 2e text, checked before building; if Mythic does not reset it, it carries over.
 
-**9b.4** Generated content reaches the narrator as a `<generated>` tag after the setting's `vocabulary.substitutions` are applied: if the oracle says "spaceship", the prompt gets the setting's substitution. No post-hoc check.
+**9b.4** The chapter summary that later prompts read is built by the engine from structured data: vows fulfilled and forsaken, plotlines closed, NPCs with their bond and status, threats and their menace. The AI writes at most the player-facing recap prose from it.
 
-**9b.5** Chained oracle tables go through `datasworn/cascade.py` → `roll_oracle_cascade`. At least one real callsite; candidate: `npc/naming.py` → `roll_oracle_name` through the `npc` category. If none fits, a documented orphan-symbol carve-out that step 10 removes, as for `CharacterTraits`.
-
-**9b.6** Tests: smoke with stub oracle data, the registry and the yaml list stay equal (as `tests/test_fact_resolution.py` checks for `fact`), a missing path raises. If generated entities are persisted, the save format breaks.
+**9b.5** Tests through a real chapter transition, not a hand-built state; Elvira's `chapter_end` scenario before and after.
 
 ### Definition of Done
+
+- A new chapter keeps health, spirit, supply, momentum, and clocks; the chaos factor follows the Mythic text.
+- The chapter summary in prompts is engine-built; no AI call decides what a chapter contained.
+- `docs/mechanics.md` (Chapters) and `docs/divergences.md` say what a chapter boundary does and why; the register entries of this step are removed.
+- An Elvira `chapter_end` session runs without new engine warnings.
+- Quality gate green, no new project-rule violations, one CHANGELOG entry.
+
+### Reference patterns
+
+- The chapter lifecycle: `game/chapters.py` → `_close_previous_chapter`, `_reset_chapter_mechanics`, `_restore_chapter_mechanics`.
+- Engine-built text from structured state: `prompt_blocks.py` → `recent_events_block`.
+- A test through the real path: `tests/test_momentum_burn.py`.
+
+---
+
+---
+
+## Next steps
+
+Sketches; order indicative. Each entry gets substeps, a definition of done, and reference patterns when it is promoted to NEXT.
+
+Steps 11, 14b, 25, and 26 each plan a Director tool of their own. Since 2026.09.26.11 the Director has a single tool, `query_game_state`, which cut its tool rounds; whether each planned tool becomes a new one or part of that one is decided when the step is promoted.
+
+### 9c — Generators
+
+Entity creation through the entry point step 9a built: `mechanics/generation.py` → `generate(game, category, context)`, whose categories are registered in `engine/generation.yaml` and dispatched through `_GENERATORS`, with `fact` as the first category. Step 9c adds entity categories that return a `GeneratedEntity`: the category plus the rolled table results, keyed by the role each table plays in that category. How `generate` types its context and result once there is more than one category (a union, or one typed function per category behind the registry) is decided at the start of the step.
+
+**9c.1** Categories settlement, location, npc, and encounter registered in `engine/generation.yaml`; steps 11, 25, and 26 add npc tiers, waypoints, and sites.
+
+**9c.2** An oracle accessor for Delve theme plus domain, Sundered Isles cursed and non-cursed variants, and Starforged flat d100, with the format taken from setting yaml, not from branching on setting names.
+
+**9c.3** Per-category oracle paths in setting yaml as a mapping keyed by category name (the keys are domain data, decided in 2026.09.24.47); a registered category without a path in the active setting's parent chain raises KeyError. The parent-chain lookup exists: `datasworn/settings.py` → `SettingPackage.oracle_data_for`, `_resolve_oracle_paths`.
+
+**9c.4** Generated content reaches the narrator as a `<generated>` tag after the setting's `vocabulary.substitutions` are applied: if the oracle says "spaceship", the prompt gets the setting's substitution. No post-hoc check.
+
+**9c.5** Chained oracle tables go through `datasworn/cascade.py` → `roll_oracle_cascade`. At least one real callsite; candidate: `npc/naming.py` → `roll_oracle_name` through the `npc` category. If none fits, a documented orphan-symbol carve-out that step 10 removes, as for `CharacterTraits`.
+
+**9c.6** Tests: smoke with stub oracle data, the registry and the yaml list stay equal (as `tests/test_fact_resolution.py` checks for `fact`), a missing path raises. If generated entities are persisted, the save format breaks.
+
+Definition of done:
 
 - The four categories are registered in `engine/generation.yaml` and dispatched by `generate`; an unknown category or a missing oracle path raises.
 - Oracle paths per category live in the setting yaml; no Python branches on setting names.
@@ -136,22 +174,14 @@ Entity creation through the entry point step 9a built: `mechanics/generation.py`
 - An Elvira run shows `<generated>` tags in play and no new engine warnings.
 - Quality gate green, no new project-rule violations, one CHANGELOG entry.
 
-### Reference patterns
+Reference patterns:
 
 - Entry point and registry: `mechanics/generation.py` → `generate`, `_GENERATORS`; `engine/generation.yaml`.
 - A generated result as a prompt block: `prompt_shared.py` → `_facts_block`, templates in `prompts/blocks.yaml`.
 - Parent-chain oracle lookup: `datasworn/settings.py` → `SettingPackage.oracle_data_for`.
 - Cascade rolls: `datasworn/cascade.py` → `roll_oracle_cascade`, used today by threat naming.
 
----
-
-## Next steps
-
-Sketches; order indicative. Each entry gets substeps, a definition of done, and reference patterns when it is promoted to NEXT.
-
-Steps 11, 14b, 25, and 26 each plan a Director tool of their own. Since 2026.09.26.11 the Director has a single tool, `query_game_state`, which cut its tool rounds; whether each planned tool becomes a new one or part of that one is decided when the step is promoted.
-
-### 9c — Revelations settled by the engine
+### 9d — Revelations settled by the engine
 
 Today the blueprint's revelations reach the narrator as `<revelation_ready>`, and a separate AI call (`call_revelation_check`) judges afterwards whether the prose contained one, which is the kind of post-hoc validator `docs/divergences.md` rules out. Instead the engine decides when a revelation lands (its scene range, or a keyed scene) and hands it to the narrator as a mandatory element, like a `<consequence>`, and marks it revealed at once; the `revelation_check` role, its prompt, schema, and cluster entry go. Measure with Elvira how often the narration carries the revelation before and after.
 
@@ -179,7 +209,7 @@ Open: ability effects other than adds (step 18); wounded and shaken blocking rec
 
 ### 10 — Location and encounter generators
 
-**10.1** Location generator through the step 9b framework: Datasworn oracles give a structured location, the AI describes it within that structure.
+**10.1** Location generator through the step 9c framework: Datasworn oracles give a structured location, the AI describes it within that structure.
 
 **10.2** Encounter generator weighted by location properties, active threats, and chaos; oracle for structure, AI for description. Weights in `engine/encounter_weights.yaml` (new).
 
@@ -295,7 +325,7 @@ What a foe does in a fight comes from the setting's combat-action oracle (classi
 
 ### 17 — Setting enrichment from sourced tables
 
-The Yaml content boundary (CONTRIBUTING.md) rules out hand-written lists of names, descriptors, or descriptions in setting yaml. Variety comes from tables with a source: the Datasworn oracles each setting ships, through steps 9b and 10, and Mythic's element meaning tables, through steps 33 and 34. What remains of this step is wiring inside those steps: each setting's oracle-path mapping gains the tables its generator categories need.
+The Yaml content boundary (CONTRIBUTING.md) rules out hand-written lists of names, descriptors, or descriptions in setting yaml. Variety comes from tables with a source: the Datasworn oracles each setting ships, through steps 9c and 10, and Mythic's element meaning tables, through steps 33 and 34. What remains of this step is wiring inside those steps: each setting's oracle-path mapping gains the tables its generator categories need.
 
 ### 18 — Asset mechanics beyond adds
 
@@ -373,7 +403,7 @@ NPC-to-NPC requests and triangles, limited to those that involve the player. Int
 
 **25.2** Expedition moves: Undertake an Expedition, Explore a Waypoint, Make a Discovery, Confront Chaos, Finish, Set a Course; routing config-driven.
 
-**25.3** Waypoints as a new step 9b category in yaml.
+**25.3** Waypoints as a new step 9c category in yaml.
 
 **25.4** Each waypoint is a scene boundary with a chaos check.
 
