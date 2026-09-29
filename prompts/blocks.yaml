@@ -99,4 +99,17 @@
   </facts>
 "block_fact_line": '<fact about="{about}" answer="{answer}">{description}</fact>'
 "block_background_npcs_prefix": "Known but not recently active: "
-"block_npc_evolutions_hint": These are PROJECTIONS of how NPCs may have changed during the time skip. Use as inspiration, not as hard facts.
+"block_chapter_record_untitled": 'Chapter {n}'
+"block_chapter_record_conflict": 'The conflict: {items}'
+"block_chapter_record_fulfilled": 'Vows fulfilled: {items}.'
+"block_chapter_record_forsaken": 'Vows forsaken: {items}.'
+"block_chapter_record_sworn": 'Vows still sworn: {items}.'
+"block_chapter_record_concluded": 'Plotlines concluded: {items}.'
+"block_chapter_record_threads": 'Open threads: {items}.'
+"block_chapter_record_person": '{who} ({disposition}, bond {bond})'
+"block_chapter_record_people": 'People: {items}.'
+"block_chapter_record_dead": 'Dead: {items}.'
+"block_chapter_record_threat": '{threat} (menace {filled} of {total})'
+"block_chapter_record_threats": 'Threats: {items}.'
+"block_chapter_record_overcome": 'Threats overcome: {items}.'
+"block_chapter_record_place": 'The chapter ended at {location}.'

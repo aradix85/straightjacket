@@ -92,17 +92,6 @@ def build_new_chapter_prompt(game: GameState) -> str:
         bg_prefix = get_prompt("block_background_npcs_prefix")
         npc_block += f"\n<background_npcs>{bg_prefix}{bg_names}</background_npcs>"
 
-    evolutions_block = ""
-    if game.campaign.campaign_history:
-        last_ch = game.campaign.campaign_history[-1]
-        evolutions = last_ch.npc_evolutions
-        if evolutions:
-            evo_lines = "\n".join(
-                f"  {_xe(e.name)}: {_xe(e.projection)}" for e in evolutions if e.name and e.projection
-            )
-            evo_hint = get_prompt("block_npc_evolutions_hint")
-            evolutions_block = f'\n<npc_evolutions hint="{_xa(evo_hint)}">\n{evo_lines}\n</npc_evolutions>'
-
     seed = creativity_seed()
     log(f"[Narrator] Chapter {game.campaign.chapter_number} opening creativity_seed={seed!r}")
 
@@ -111,7 +100,7 @@ def build_new_chapter_prompt(game: GameState) -> str:
 <location>{_xe(game.world.current_location)}</location>{_time_ctx(game)}
 <situation>{_xe(game.world.current_scene_context)}</situation>
 {campaign_history_block(game)}
-{npc_block}{evolutions_block}
+{npc_block}
 {story_context_block(game)}</scene>
 <task>
 {get_prompt("task_chapter_opening", chapter_number=str(game.campaign.chapter_number), seed=seed)}

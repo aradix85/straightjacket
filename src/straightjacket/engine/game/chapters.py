@@ -4,7 +4,6 @@ import random as _random_module
 import re
 from concurrent.futures import ThreadPoolExecutor
 
-from ..ai.chapter_summary import call_chapter_summary
 from ..ai.blueprint_voicing import call_blueprint_voicing
 from ..ai.metadata import process_deceased_npcs
 from ..ai.narrator import call_narrator, call_opening_setup
@@ -32,7 +31,6 @@ from ..models import (
     GameState,
     NarrationEntry,
     NpcData,
-    NpcEvolution,
     PlotlineEntry,
     ProgressTrack,
     SceneLogEntry,
@@ -46,6 +44,7 @@ from ..npc import (
 )
 from ..parser import parse_narrator_response
 from ..prompt_boundary import build_epilogue_prompt, build_new_chapter_prompt
+from ..prompt_loader import get_prompt
 from ..user_management import load_user_config, save_user_config
 
 from .setup_common import apply_opening_setup
@@ -82,9 +81,13 @@ def generate_epilogue(
 def start_new_chapter(
     provider: AIProvider, game: GameState, config: EngineConfig | None = None, username: str = ""
 ) -> tuple[GameState, str]:
+    if game.game_over:
+        raise RuntimeError(
+            "start_new_chapter called on a game with game_over=True; a game that is over continues through succession."
+        )
     log(f"[Campaign] Starting chapter {game.campaign.chapter_number + 1} for {game.player_name}")
 
-    chapter_summary = _close_previous_chapter(provider, game, config)
+    chapter_summary = _close_previous_chapter(game)
     _reset_chapter_mechanics(game)
     _restore_chapter_mechanics(game, chapter_summary)
     _prepare_npcs_for_new_chapter(game)
@@ -120,18 +123,66 @@ def start_new_chapter(
     return game, narration
 
 
-def _close_previous_chapter(provider: AIProvider, game: GameState, config: EngineConfig | None) -> ChapterSummary:
-    epilogue = game.campaign.epilogue_text or ""
-    narrative = call_chapter_summary(provider, game, config, epilogue_text=epilogue)
+def _chapter_conflict(game: GameState) -> list[str]:
+    bp = game.narrative.story_blueprint
+    return [bp.central_conflict] if bp is not None and bp.central_conflict else []
+
+
+def _people(game: GameState) -> list[str]:
+    return [
+        get_prompt(
+            "block_chapter_record_person", who=n.name, disposition=n.disposition, bond=str(get_npc_bond(game, n.id))
+        )
+        for n in game.npcs
+        if n.status in ("active", "background")
+    ]
+
+
+def _active_threats(game: GameState) -> list[str]:
+    return [
+        get_prompt(
+            "block_chapter_record_threat",
+            threat=th.name,
+            filled=str(th.menace_filled_boxes),
+            total=str(th.max_menace_ticks // ProgressTrack.TICKS_PER_BOX),
+        )
+        for th in game.threats
+        if th.status == "active"
+    ]
+
+
+def _vows(game: GameState, status: str) -> list[str]:
+    return [t.name for t in game.progress_tracks if t.track_type == "vow" and t.status == status]
+
+
+def _chapter_record(game: GameState) -> str:
+    parts = [
+        ("block_chapter_record_conflict", _chapter_conflict(game)),
+        ("block_chapter_record_fulfilled", _vows(game, "completed")),
+        ("block_chapter_record_forsaken", _vows(game, "failed")),
+        ("block_chapter_record_sworn", _vows(game, "active")),
+        ("block_chapter_record_concluded", [p.name for p in game.narrative.plotlines_list if p.status == "conclusion"]),
+        (
+            "block_chapter_record_threads",
+            [th.name for th in game.narrative.threads if th.active and th.thread_type != "vow"],
+        ),
+        ("block_chapter_record_people", _people(game)),
+        ("block_chapter_record_dead", [n.name for n in game.npcs if n.status == "deceased"]),
+        ("block_chapter_record_threats", _active_threats(game)),
+        ("block_chapter_record_overcome", [th.name for th in game.threats if th.status == "overcome"]),
+    ]
+    lines = [get_prompt(key, items=", ".join(items)) for key, items in parts if items]
+    lines.append(get_prompt("block_chapter_record_place", location=game.world.current_location))
+    return " ".join(lines)
+
+
+def _close_previous_chapter(game: GameState) -> ChapterSummary:
     chapter_summary = ChapterSummary(
         chapter=game.campaign.chapter_number,
-        title=narrative["title"],
-        summary=narrative["summary"],
-        unresolved_threads=list(narrative["unresolved_threads"]),
-        character_growth=narrative["character_growth"],
-        npc_evolutions=[NpcEvolution(**e) for e in narrative["npc_evolutions"]],
-        thematic_question=narrative["thematic_question"],
-        post_story_location=narrative["post_story_location"],
+        title=get_prompt("block_chapter_record_untitled", n=str(game.campaign.chapter_number)),
+        summary=_chapter_record(game),
+        unresolved_threads=[th.name for th in game.narrative.threads if th.active],
+        post_story_location=game.world.current_location,
         scenes=game.narrative.scene_count,
         progress_tracks=[ProgressTrack.from_dict(p.to_dict()) for p in game.progress_tracks],
         threats=[ThreatData.from_dict(t.to_dict()) for t in game.threats],
@@ -142,29 +193,17 @@ def _close_previous_chapter(provider: AIProvider, game: GameState, config: Engin
         plotlines_list=[PlotlineEntry.from_dict(p.to_dict()) for p in game.narrative.plotlines_list],
     )
     game.campaign.campaign_history.append(chapter_summary)
-
-    post_loc = chapter_summary.post_story_location
-    if post_loc:
-        game.world.current_location = post_loc
-
     game.campaign.chapter_number += 1
     return chapter_summary
 
 
 def _reset_chapter_mechanics(game: GameState) -> None:
     _e = eng()
-    game.resources.health = _e.resources.health_start
-    game.resources.spirit = _e.resources.spirit_start
-    game.resources.supply = _e.resources.supply_start
-    game.resources.momentum = _e.momentum.start
     game.narrative.scene_count = 1
     game.world.chaos_factor = _e.chaos.start
-    game.crisis_mode = False
-    game.game_over = False
     game.campaign.epilogue_shown = False
     game.campaign.epilogue_dismissed = False
     game.campaign.epilogue_text = ""
-    game.world.clocks = []
     game.narrative.session_log = []
     game.narrative.narration_history = []
     game.narrative.scene_intensity_history = []

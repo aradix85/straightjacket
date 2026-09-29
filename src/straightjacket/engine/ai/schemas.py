@@ -185,27 +185,6 @@ def get_blueprint_voicing_schema(acts: int, revelations: int, endings: int) -> d
     )
 
 
-_chapter_summary_cache: dict[str, Any] | None = None
-
-
-def get_chapter_summary_schema() -> dict[str, Any]:
-    global _chapter_summary_cache
-    if _chapter_summary_cache is None:
-        _chapter_summary_cache = _obj_root(
-            {
-                "title": _str(),
-                "summary": _str(),
-                "unresolved_threads": _str_arr(),
-                "character_growth": _str(),
-                "npc_evolutions": _arr(_obj({"name": _str(), "projection": _str()})),
-                "thematic_question": _str(),
-                "post_story_location": _str(),
-            },
-            eng().ai_text.schema_titles["chapter_summary_output"],
-        )
-    return _chapter_summary_cache
-
-
 _metadata_cache: dict[str, Any] | None = None
 
 

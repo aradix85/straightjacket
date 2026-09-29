@@ -228,12 +228,6 @@ class NarrativeState(SerializableMixin):
 
 
 @dataclass
-class NpcEvolution(SerializableMixin):
-    name: str
-    projection: str
-
-
-@dataclass
 class InheritanceRollResult(SerializableMixin):
     track_name: str
     predecessor_filled_boxes: int
@@ -264,9 +258,6 @@ class ChapterSummary(SerializableMixin):
     title: str
     summary: str
     unresolved_threads: list[str]
-    character_growth: str
-    npc_evolutions: list[NpcEvolution]
-    thematic_question: str
     post_story_location: str
     scenes: int
     progress_tracks: list[ProgressTrack]

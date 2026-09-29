@@ -235,7 +235,7 @@ def start_succession_with_character(
         f"predecessor={record.player_name}"
     )
 
-    chapter_summary = _close_previous_chapter(provider, game, config)
+    _close_previous_chapter(game)
 
     connection_tracks = [t for t in game.progress_tracks if t.track_type == "connection"]
     kept_npcs, kept_conn_tracks = apply_npc_carryover(game.npcs, connection_tracks)
@@ -253,9 +253,6 @@ def start_succession_with_character(
 
     seed_successor_legacy(game, rolls)
     _replace_character_identity(game, creation_data)
-
-    if chapter_summary.post_story_location:
-        game.world.current_location = chapter_summary.post_story_location
 
     _prepare_npcs_for_new_chapter(game)
 

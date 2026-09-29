@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from typing import Any
 
 import pytest
 
@@ -11,7 +10,6 @@ from straightjacket.engine.game.chapters import (
 from straightjacket.engine.models import (
     ChapterSummary,
     GameState,
-    NpcEvolution,
     ProgressTrack,
     ThreadEntry,
     ThreatData,
@@ -30,9 +28,6 @@ def _populated_summary() -> ChapterSummary:
         title="Title 3",
         summary="What happened.",
         unresolved_threads=["thread1", "thread2"],
-        character_growth="grew",
-        npc_evolutions=[NpcEvolution(name="Alice", projection="bitter")],
-        thematic_question="why?",
         post_story_location="Citadel",
         scenes=42,
         progress_tracks=[make_progress_track(id="t1", name="Vow", track_type="vow")],
@@ -52,8 +47,6 @@ class TestChapterSummaryRoundTrip:
         assert restored.chapter == 3
         assert restored.title == "Title 3"
         assert restored.summary == "What happened."
-        assert restored.character_growth == "grew"
-        assert restored.thematic_question == "why?"
         assert restored.post_story_location == "Citadel"
         assert restored.scenes == 42
 
@@ -63,14 +56,6 @@ class TestChapterSummaryRoundTrip:
         assert restored.unresolved_threads == ["thread1", "thread2"]
         assert restored.impacts == ["wounded", "shaken"]
         assert restored.assets == ["asset_compass", "asset_companion"]
-
-    def test_round_trip_preserves_npc_evolutions(self, stub_engine: None) -> None:
-        original = _populated_summary()
-        restored = ChapterSummary.from_dict(original.to_dict())
-        assert len(restored.npc_evolutions) == 1
-        assert restored.npc_evolutions[0].name == "Alice"
-        assert restored.npc_evolutions[0].projection == "bitter"
-        assert isinstance(restored.npc_evolutions[0], NpcEvolution)
 
     def test_round_trip_preserves_progress_tracks(self, stub_engine: None) -> None:
         original = _populated_summary()
@@ -106,10 +91,6 @@ class TestChapterSummaryRequiredFields:
                 title="t",
                 summary="s",
             )
-
-    def test_npc_evolution_missing_field_raises(self, stub_engine: None) -> None:
-        with pytest.raises(TypeError):
-            NpcEvolution(name="Alice")
 
 
 class TestResetChapterMechanics:
@@ -243,162 +224,58 @@ class TestChapterTransitionPreservesState:
         assert {t.id for t in game.narrative.threads} == thread_ids_before
 
 
-class TestCallChapterSummaryFallback:
-    def test_fallback_returns_complete_narrative_dict(self, stub_engine: None) -> None:
-        from straightjacket.engine.ai.chapter_summary import call_chapter_summary
+class TestChapterRecord:
+    def test_the_record_is_built_from_the_game_state(self, load_engine: None) -> None:
+        from straightjacket.engine.game.chapters import _close_previous_chapter
+        from straightjacket.engine.models import PlotlineEntry
+        from straightjacket.engine.models_story import StoryBlueprint
+        from tests._helpers import make_npc
 
         game = make_game_state(player_name="Hero", setting_id="starforged")
-        game.world.current_location = "TestLocation"
-
-        class _FailingProvider:
-            def create_message(self, **kwargs: Any) -> Any:
-                raise RuntimeError("simulated AI failure")
-
-        narrative = call_chapter_summary(_FailingProvider(), game, config=None)
-
-        for key in (
-            "title",
-            "summary",
-            "unresolved_threads",
-            "character_growth",
-            "npc_evolutions",
-            "thematic_question",
-            "post_story_location",
-        ):
-            assert key in narrative, f"fallback missing {key!r}"
-
-        assert isinstance(narrative["title"], str)
-        assert isinstance(narrative["unresolved_threads"], list)
-        assert isinstance(narrative["npc_evolutions"], list)
-        assert narrative["post_story_location"] == "TestLocation"
-
-    def test_fallback_dict_constructs_chaptersummary(self, stub_engine: None) -> None:
-        from straightjacket.engine.ai.chapter_summary import call_chapter_summary
-
-        game = make_game_state(player_name="Hero", setting_id="starforged")
-
-        class _FailingProvider:
-            def create_message(self, **kwargs: Any) -> Any:
-                raise RuntimeError("simulated AI failure")
-
-        narrative = call_chapter_summary(_FailingProvider(), game, config=None)
-
-        summary = ChapterSummary(
-            chapter=game.campaign.chapter_number,
-            title=narrative["title"],
-            summary=narrative["summary"],
-            unresolved_threads=list(narrative["unresolved_threads"]),
-            character_growth=narrative["character_growth"],
-            npc_evolutions=[NpcEvolution(**e) for e in narrative["npc_evolutions"]],
-            thematic_question=narrative["thematic_question"],
-            post_story_location=narrative["post_story_location"],
-            scenes=game.narrative.scene_count,
-            progress_tracks=list(game.progress_tracks),
-            threats=list(game.threats),
-            impacts=list(game.impacts),
-            assets=list(game.assets),
-            threads=list(game.narrative.threads),
-            characters_list=list(game.narrative.characters_list),
-            plotlines_list=list(game.narrative.plotlines_list),
+        game.world.current_location = "Old tollhouse"
+        game.narrative.story_blueprint = StoryBlueprint(
+            central_conflict="The drowned bell", antagonist_force="", thematic_thread="", structure_type="3act"
         )
+        fulfilled = make_progress_track(id="v1", name="Ring the bell", track_type="vow")
+        fulfilled.status = "completed"
+        game.progress_tracks = [fulfilled, make_progress_track(id="v2", name="Find Kira", track_type="vow")]
+        game.narrative.plotlines_list = [PlotlineEntry(id="p1", name="The bell", status="conclusion")]
+        game.narrative.threads = [
+            ThreadEntry(id="thr1", name="Who cast the bell", thread_type="plot", source="ac"),
+            ThreadEntry(id="thr2", name="Find Kira", thread_type="vow", source="vow"),
+        ]
+        game.npcs = [
+            make_npc(id="npc_1", name="Mira", disposition="friendly"),
+            make_npc(id="npc_2", name="Old Marda", status="deceased"),
+        ]
+        game.threats = [make_threat(id="th1", name="The tide cult")]
 
-        ChapterSummary.from_dict(summary.to_dict())
+        summary = _close_previous_chapter(game)
 
+        assert summary.title == "Chapter 1"
+        assert summary.summary.startswith("The conflict: The drowned bell")
+        for part in (
+            "Ring the bell",
+            "Find Kira",
+            "The bell",
+            "Who cast the bell",
+            "Mira (friendly",
+            "Old Marda",
+            "The tide cult",
+            "Old tollhouse",
+        ):
+            assert part in summary.summary
+        assert summary.unresolved_threads == ["Who cast the bell", "Find Kira"]
+        assert summary.summary.count("Find Kira") == 1
+        assert summary.post_story_location == "Old tollhouse"
+        assert game.campaign.campaign_history[-1] is summary
 
-def _full_game_for_summary(load_engine: None) -> Any:
-    from tests._helpers import make_game_state
+    def test_a_chapter_without_a_blueprint_has_no_conflict_line(self, load_engine: None) -> None:
+        from straightjacket.engine.game.chapters import _close_previous_chapter
 
-    g = make_game_state(
-        player_name="Aria",
-        character_concept="exiled archivist",
-        setting_genre="dark_fantasy",
-        setting_tone="serious",
-        setting_description="A grim world.",
-        backstory="She fled the temple.",
-    )
-    g.world.current_location = "Tavern"
-    g.world.current_scene_context = "Quiet morning."
-    return g
-
-
-def test_call_chapter_summary_returns_parsed_json(load_engine: None) -> None:
-    import json
-
-    from straightjacket.engine.ai.chapter_summary import call_chapter_summary
-    from tests._mocks import MockProvider
-
-    fake_summary = {
-        "title": "Chapter Title",
-        "summary": "What happened",
-        "unresolved_threads": ["thread1"],
-        "character_growth": "grew",
-        "npc_evolutions": [],
-        "thematic_question": "?",
-        "post_story_location": "Tavern",
-    }
-    provider = MockProvider(json.dumps(fake_summary))
-    g = _full_game_for_summary(None)
-    result = call_chapter_summary(provider, g)
-    assert result["title"] == "Chapter Title"
-
-
-def test_call_chapter_summary_falls_back_on_api_error(load_engine: None) -> None:
-    from straightjacket.engine.ai.chapter_summary import call_chapter_summary
-    from tests._mocks import MockProvider
-
-    provider = MockProvider(fail=True)
-    g = _full_game_for_summary(None)
-    g.campaign.chapter_number = 3
-    result = call_chapter_summary(provider, g)
-    assert "title" in result
-    assert "summary" in result
-    assert "unresolved_threads" in result
-
-
-def test_call_chapter_summary_with_blueprint(load_engine: None) -> None:
-    import json
-
-    from straightjacket.engine.ai.chapter_summary import call_chapter_summary
-    from straightjacket.engine.models_story import StoryBlueprint
-    from tests._mocks import MockProvider
-
-    fake_summary = {
-        "title": "T",
-        "summary": "S",
-        "unresolved_threads": [],
-        "character_growth": "",
-        "npc_evolutions": [],
-        "thematic_question": "?",
-        "post_story_location": "X",
-    }
-    provider = MockProvider(json.dumps(fake_summary))
-    g = _full_game_for_summary(None)
-    g.narrative.story_blueprint = StoryBlueprint(
-        central_conflict="The conflict",
-        antagonist_force="",
-        thematic_thread="",
-        structure_type="3act",
-    )
-    result = call_chapter_summary(provider, g)
-    assert result["title"] == "T"
-
-
-def test_call_chapter_summary_with_epilogue(load_engine: None) -> None:
-    import json
-
-    from straightjacket.engine.ai.chapter_summary import call_chapter_summary
-    from tests._mocks import MockProvider
-
-    fake_summary = {
-        "title": "T",
-        "summary": "S",
-        "unresolved_threads": [],
-        "character_growth": "",
-        "npc_evolutions": [],
-        "thematic_question": "?",
-        "post_story_location": "X",
-    }
-    provider = MockProvider(json.dumps(fake_summary))
-    g = _full_game_for_summary(None)
-    result = call_chapter_summary(provider, g, epilogue_text="The end was bittersweet.")
-    assert result["title"] == "T"
+        game = make_game_state(player_name="Hero", setting_id="starforged")
+        game.narrative.story_blueprint = None
+        game.campaign.chapter_number = 2
+        summary = _close_previous_chapter(game)
+        assert summary.title == "Chapter 2"
+        assert "The conflict" not in summary.summary

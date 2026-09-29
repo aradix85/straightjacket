@@ -11,7 +11,7 @@ Every AI call carries its own role name (`AICallSpec.log_role`), and every role 
 - `narrator_metadata` reads the finished narration and extracts NPC data (new NPCs, renames, details, deaths), which `ai/metadata.py` applies to the game state.
 - `opening_setup` extracts the NPCs, their first memories, the location, and the scene context from the opening of a new game, a chapter, or a succession; the opening clock and the time of day are the engine's (`docs/mechanics.md`).
 - `revelation_check` decides whether a planned revelation has happened in the story (`ai/brain.py` → `call_revelation_check`).
-- `recap`, `chapter_summary`, and `blueprint_voicing` write the player-facing recap, the summary kept in campaign history, and a setting-specific story blueprint from an Adventure Crafter seed (`ai/recap.py`, `ai/chapter_summary.py`, `ai/blueprint_voicing.py`).
+- `recap` and `blueprint_voicing` write the player-facing recap and a setting-specific story blueprint from an Adventure Crafter seed (`ai/recap.py`, `ai/blueprint_voicing.py`). The chapter summary kept in campaign history is built by the engine (`docs/mechanics.md`, Chapters and succession).
 - `director` writes NPC reflections after the turn (`director.py`).
 - `correction` analyses a `##` correction (`correction/analysis.py` → `call_correction_brain`): a misread input, which the engine replays with the corrected input and the dice already rolled, or state operations.
 
@@ -25,7 +25,7 @@ Each cluster names a provider, a model, and the call parameters its roles share,
 Cluster          Roles                                       Model, reasoning effort, temperature
 ────────────────────────────────────────────────────────────────────────────────────────────────────
 narrator         narrator                                    GLM 5.3, low, 1.0 (top_p 0.8)
-creative         blueprint_voicing, chapter_summary, recap   GLM 5.3, low, not sent
+creative         blueprint_voicing, recap                    GLM 5.3, low, not sent
 director         director                                    GLM 5.3, low, not sent
 classification   brain, correction                           GLM 5.3, low, 0.5
 judgment         revelation_check                            GLM 5.3, low, 0.5

@@ -23,7 +23,6 @@ _AI_CALL_CARVE_OUT_FILES = {
     "engine/ai/brain.py",
     "engine/ai/narrator.py",
     "engine/ai/recap.py",
-    "engine/ai/chapter_summary.py",
     "engine/ai/blueprint_voicing.py",
     "engine/ai/provider_base.py",
     "engine/correction/analysis.py",

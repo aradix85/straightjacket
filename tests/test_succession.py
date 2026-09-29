@@ -483,9 +483,6 @@ class _SuccessionMockProvider:
                         "title": "Last Chapter",
                         "summary": "End of Aria's journey",
                         "unresolved_threads": ["the relic"],
-                        "character_growth": "endured",
-                        "npc_evolutions": [],
-                        "thematic_question": "?",
                         "post_story_location": "Memorial",
                     }
                 ),

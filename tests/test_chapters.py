@@ -1,5 +1,3 @@
-import json
-
 import pytest
 
 from straightjacket.engine.models import GameState, ProgressTrack, ThreadEntry, ThreatData
@@ -39,16 +37,29 @@ def _populated_game(load_engine: None) -> GameState:
     return g
 
 
-def test_reset_chapter_mechanics_resets_resources(load_engine: None) -> None:
-    from straightjacket.engine.engine_loader import eng
+def test_a_new_chapter_keeps_the_character_and_the_clocks(load_engine: None) -> None:
     from straightjacket.engine.game.chapters import _reset_chapter_mechanics
+    from tests._helpers import make_clock
 
     g = _populated_game(None)
+    g.resources.health, g.resources.spirit, g.resources.supply, g.resources.momentum = 2, 3, 1, 7
+    g.world.clocks = [make_clock(name="The flood rises")]
+    clocks = [c.to_dict() for c in g.world.clocks]
     _reset_chapter_mechanics(g)
-    assert g.resources.health == eng().resources.health_start
-    assert g.resources.spirit == eng().resources.spirit_start
-    assert g.resources.supply == eng().resources.supply_start
-    assert g.resources.momentum == eng().momentum.start
+    assert (g.resources.health, g.resources.spirit, g.resources.supply, g.resources.momentum) == (2, 3, 1, 7)
+    assert [c.to_dict() for c in g.world.clocks] == clocks
+
+
+def test_a_game_that_is_over_cannot_start_a_chapter(load_engine: None) -> None:
+    import pytest
+
+    from straightjacket.engine.game.chapters import start_new_chapter
+    from tests._mocks import MockProvider
+
+    g = _populated_game(None)
+    g.game_over = True
+    with pytest.raises(RuntimeError, match="succession"):
+        start_new_chapter(MockProvider(), g)
 
 
 def test_reset_chapter_mechanics_clears_world_state(load_engine: None) -> None:
@@ -57,7 +68,7 @@ def test_reset_chapter_mechanics_clears_world_state(load_engine: None) -> None:
 
     g = _populated_game(None)
     _reset_chapter_mechanics(g)
-    assert g.world.clocks == []
+    assert g.world.chaos_factor == eng().chaos.start
     assert g.world.time_of_day == eng().opening.time_of_day
     assert g.world.location_history == []
 
@@ -78,8 +89,6 @@ def test_reset_chapter_mechanics_clears_flags(load_engine: None) -> None:
 
     g = _populated_game(None)
     _reset_chapter_mechanics(g)
-    assert g.crisis_mode is False
-    assert g.game_over is False
     assert g.campaign.epilogue_shown is False
     assert g.campaign.epilogue_text == ""
 
@@ -102,9 +111,6 @@ def _make_chapter_summary(load_engine: None) -> ChapterSummary:
         title="Ch 1",
         summary="Things happened",
         unresolved_threads=["the relic"],
-        character_growth="grew",
-        npc_evolutions=[],
-        thematic_question="?",
         post_story_location="Tavern",
         scenes=5,
         progress_tracks=[ProgressTrack(id="v1", name="Vow", track_type="vow", rank="dangerous", max_ticks=40, ticks=8)],
@@ -296,25 +302,19 @@ def test_record_chapter_opening_appends_log(load_engine: None) -> None:
 def test_close_previous_chapter_archives_and_advances(load_engine: None, stub_all: None) -> None:
     from straightjacket.engine.game.chapters import _close_previous_chapter
 
-    fake_summary = {
-        "title": "Chapter 1",
-        "summary": "Things happened",
-        "unresolved_threads": ["thread1"],
-        "character_growth": "grew",
-        "npc_evolutions": [{"name": "Kira", "projection": "wary"}],
-        "thematic_question": "?",
-        "post_story_location": "New Place",
-    }
-    provider = MockProvider(json.dumps(fake_summary))
     g = make_game_state(player_name="X", setting_id="starforged")
     g.campaign.chapter_number = 1
     g.narrative.scene_count = 5
+    g.narrative.story_blueprint = None
+    g.world.current_location = "Tavern"
 
-    summary = _close_previous_chapter(provider, g, None)
+    summary = _close_previous_chapter(g)
 
     assert summary.title == "Chapter 1"
+    assert summary.scenes == 5
+    assert summary.post_story_location == "Tavern"
     assert g.campaign.chapter_number == 2
-    assert g.world.current_location == "New Place"
+    assert g.world.current_location == "Tavern"
     assert len(g.campaign.campaign_history) == 1
 
 

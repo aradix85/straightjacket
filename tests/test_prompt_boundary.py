@@ -1,5 +1,5 @@
 from straightjacket.engine.models import GameState
-from straightjacket.engine.models_story import ChapterSummary, NpcEvolution, PossibleEnding, StoryBlueprint
+from straightjacket.engine.models_story import ChapterSummary, PossibleEnding, StoryBlueprint
 from tests._helpers import make_game_state, make_npc
 
 
@@ -127,19 +127,16 @@ def test_build_new_chapter_prompt_includes_background_npcs(load_engine: None) ->
     assert "Background" in out
 
 
-def test_build_new_chapter_prompt_includes_npc_evolutions(load_engine: None) -> None:
+def test_build_new_chapter_prompt_carries_the_engine_record(load_engine: None) -> None:
     from straightjacket.engine.prompt_boundary import build_new_chapter_prompt
 
     g = _opening_game()
     g.campaign.campaign_history = [
         ChapterSummary(
             chapter=1,
-            title="Chapter 1",
-            summary="Things happened",
+            title="The drowned bell",
+            summary="Vows fulfilled: Ring the bell. People: Kira (wary, bond 2).",
             unresolved_threads=[],
-            character_growth="grew",
-            npc_evolutions=[NpcEvolution(name="Kira", projection="Becomes wary")],
-            thematic_question="?",
             post_story_location="Station",
             scenes=5,
             progress_tracks=[],
@@ -152,16 +149,6 @@ def test_build_new_chapter_prompt_includes_npc_evolutions(load_engine: None) -> 
         )
     ]
     out = build_new_chapter_prompt(g)
-    assert "<npc_evolutions" in out
-    assert "Kira" in out
-    assert "Becomes wary" in out
-
-
-def test_build_new_chapter_prompt_no_evolutions_when_empty(load_engine: None) -> None:
-    from straightjacket.engine.prompt_boundary import build_new_chapter_prompt
-
-    g = _opening_game()
-    g.campaign.campaign_history = []
-    out = build_new_chapter_prompt(g)
-    scene_section, _, _ = out.partition("<task>")
-    assert "<npc_evolutions" not in scene_section
+    assert "The drowned bell" in out
+    assert "Kira (wary, bond 2)" in out
+    assert "<npc_evolutions" not in out

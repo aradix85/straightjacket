@@ -9,6 +9,14 @@ Entries up to 2026.09.26.19 were shortened to their essentials, in 2026.09.26.1 
 
 Calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day. The first CalVer release is 2026.04.25.0; earlier `0.x.y` releases keep their numbers.
 
+## [2026.09.29.8] — 2026-09-29
+
+Step 9b, chapters as Mythic adventures. A chapter is Mythic's and the Adventure Crafter's adventure within a campaign; the EdgeTales resets are gone: health, spirit, supply, momentum, and clocks carry over, the chaos factor restarts at Mythic's 5, and a game that is over can only continue through succession. The engine writes the chapter record from its own data (conflict, vows, plotlines, threads, people, the dead, threats, the place), so the `chapter_summary` AI role is removed, and with it the AI's projections of how NPCs change between chapters and its choice of where the next chapter starts. Step 9c, the generators, is next. The save format breaks.
+
+Checked: an Elvira `chapter_end` session in Sundered Isles reached the new chapter with its two clocks carried over and no engine warning; its two problems are soft misses (priority 3). The record it wrote listed a vow twice and used the blueprint's conflict sentence as a title; both fixed.
+
+Quality gate: 1529 tests green, thirty project-rule scans clean, coverage 90.44%, ruff and mypy --strict clean.
+
 ## [2026.09.29.7] — 2026-09-29
 
 Documentation only. The user made chapters the next step: new step 9b treats a chapter as Mythic's and the Adventure Crafter's adventure within a campaign and removes what came from EdgeTales (refilled health, spirit, supply, and momentum, wiped clocks, an AI-written chapter summary), with two register entries until then. The generators move to step 9c and engine-settled revelations to 9d; earlier CHANGELOG entries keep the old numbers.

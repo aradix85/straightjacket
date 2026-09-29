@@ -106,7 +106,6 @@ ai:
     narrator: narrator
     blueprint_voicing: creative
     director: director
-    chapter_summary: creative
     recap: creative
     brain: classification
     correction: classification

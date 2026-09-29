@@ -649,7 +649,6 @@ class RecapLimitsConfig:
     recap_campaign_history_window: int
     recap_campaign_summary_truncate: int
     recap_campaign_window: int
-    chapter_summary_log_window: int
 
 
 @dataclass
