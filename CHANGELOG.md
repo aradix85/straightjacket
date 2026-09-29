@@ -9,6 +9,10 @@ Entries up to 2026.09.26.19 were shortened to their essentials, in 2026.09.26.1 
 
 Calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day. The first CalVer release is 2026.04.25.0; earlier `0.x.y` releases keep their numbers.
 
+## [2026.09.29.10] — 2026-09-29
+
+Documentation only. The working agreements that lived only in conversation are now in the roadmap, so a fresh session can pick up the work: short CHANGELOG entries, commit and push per finished release, Elvira sessions as part of a step, Dutch plain-prose answers for a screen-reader user, and starting a session by reading every md file. Step 10 notes the Location Crafter in case the user buys it.
+
 ## [2026.09.29.9] — 2026-09-29
 
 Documentation only. The user asked for no priorities or open items beside the steps: the priorities list is gone, and every item on it is now a numbered step in the order of work. The soft miss becomes the next step (9c, with a miss scenario for Elvira first); then the generators (9d), the open Elvira findings (9e), the remaining prompt work (9f), fixtures through the real creation path (9g), the first principle audit (9h), revelations (9i), and the rules conformance items (9j). A new finding becomes a substep or a step in the same commit.

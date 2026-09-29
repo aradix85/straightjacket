@@ -35,6 +35,11 @@ Revised 2026-09-29: the steps are the order of work, NEXT STEP first and then th
 
 - Nothing goes in the CHANGELOG before its check has been read.
 - Fewer, larger releases: one release per finished piece of work, not one per measurement.
+- CHANGELOG entries are short: what changed, why, what was measured, and the quality gate, in a few sentences, not an essay.
+- Each finished release is committed and pushed.
+- The Elvira sessions a step's definition of done needs are part of the work; a short session costs about 15 to 20 cents.
+- The user writes in Dutch and reads with a screen reader: answers to the user are in Dutch and in plain prose, while the repository stays in English.
+- A session starts by reading every md file in the root and in `docs/`, then continues with NEXT STEP.
 
 ### Running things
 
@@ -216,6 +221,8 @@ Ability effects other than adds belong to step 18; outcomes where the player wou
 **10.5** Tests.
 
 **10.6** The setting's own tables feed these generators (coverage map 2026-09-29): the atlas regions of classic and Sundered Isles for locations; the Datasworn NPC entries (classic ironlanders, firstborn, animals, beasts, horrors; Delve and Starforged entries), Starforged creatures and starships, and Delve monstrosities for encounters.
+
+If the user buys the Location Crafter (Word Mill Games, under the same CC BY-NC license as Mythic), its tables join step 10 as data for areas where the setting has no location tools of its own; until then step 10 uses the setting's oracles only.
 
 ### 10b — Campaign launch from the setting's oracles
 
