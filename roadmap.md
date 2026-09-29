@@ -146,7 +146,7 @@ Steps 11, 14b, 25, and 26 each plan a Director tool of their own. Since 2026.09.
 
 ### 9f — Narrator, Director, and extraction prompts
 
-One change at a time, measured with Elvira sessions and by reading the narrations.
+One change at a time, measured with Elvira sessions and by reading the narrations. Measuring costs about 25 cents of engine calls per session plus Elvira's own, and step 9c needed 29 sessions: before measuring, consider collecting situations once and rerunning only the narrator and judge per variant, stop a variant as soon as it is clearly worse, and read the narrations before running more.
 
 - The action task tells a strong hit in a desperate phase to carry the surrounding darkness.
 - PLAYER AGENCY's inner-life clause says to describe what a camera could record, including action, beside the clause that limits the character's actions to the stated one.
@@ -154,7 +154,7 @@ One change at a time, measured with Elvira sessions and by reading the narration
 - `<style>` asks for terse prose, and much of the system prompt still addresses GENRE PHYSICS.
 - `prompts/director.yaml` still has the Director recommend a "breather", although pacing is engine-computed.
 - The extraction prompts (`narrator_metadata`, `opening_setup_extractor`), `revelation_check_system`, `blueprint_voicing`, and `recap` have been read but not tuned.
-- The Director was about half of a session's cost in 2026.09.25.5, measured before its single tool (2026.09.26.11) and before GLM 5.3; measure again before deciding anything. Running it less often would leave NPC profiles stale and is not planned.
+- The Director is still about 45 percent of a session's engine cost on GLM 5.3 (miss-scenario sessions of 2026-09-29, where every miss triggers it). Running it less often would leave NPC profiles stale and is not planned.
 
 ### 9g — Test fixtures through the real creation path
 
