@@ -10,12 +10,14 @@
   Write ONLY narrative prose. No metadata, no JSON.
 "task_dialog": |-
   150-220 words of narration. Focus entirely on atmosphere, dialog, and character interaction. NPC speech content rule applies: NPCs answer what was asked and say nothing beyond the question's scope. The surrounding act phase from <story_arc> MUST shape the texture of the exchange. If <director_guidance> is present, follow it for the world and the NPCs; where it would move, speak for, decide for, or give a past to the player character, PLAYER AGENCY wins.
+  PLAYER AGENCY: the player character does only what <player_words> and <intent> state. Write no thoughts, feelings, realizations, memories, decisions, invented words, or extra actions for the player character. Describe only what a camera could record.
 "task_oracle": |-
   150-220 words of narration. The oracle has spoken: use <oracle_answer> as a creative seed for what the player discovers or what happens. Interpret the word pair through the current scene context. MUST NOT quote the oracle words literally.
 "task_oracle_facts": |-
   150-220 words of narration. The player asked about the fiction and <facts> holds the answer. Show the answer through what the player character can see, hear, or touch in the current scene, never as a stated verdict.
 "task_action": |-
   150-220 words of narration. The current act's mood from story_arc MUST shape the texture of the outcome — a STRONG_HIT in a desperate phase still carries the surrounding darkness. If <director_guidance> is present, follow it for the world and the NPCs; where it would move, speak for, decide for, or give a past to the player character, PLAYER AGENCY wins.
+  PLAYER AGENCY: the player character does only what <player_words> and <intent> state. Write no thoughts, feelings, realizations, memories, decisions, invented words, or extra actions for the player character. Describe only what a camera could record.
 "task_epilogue": |-
   Write an EPILOGUE for this story in 350-500 words (4-6 paragraphs). This is NOT a new scene — no dice, no mechanics.
   PERSPECTIVE: Second person singular ("you") throughout. MUST NOT shift to third person.

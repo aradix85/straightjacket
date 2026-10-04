@@ -41,11 +41,7 @@ Closing a step: the checks of CONTRIBUTING.md pass, the step leaves this documen
 
 ## NEXT STEP — 9f: Narrator, Director, and extraction prompts
 
-The prompts are tuned one change at a time against measurements, not impressions. A measurement replays the same situations for every variant: full narrator prompts captured from real sessions, each variant run three times per situation, every narration audited against its own prompt by a judge from a model family other than the narrator's (contradictions, information the prompt withholds, softened results, player-character overreach, word budget), and pairs of narrations read blind with the order shuffled and each model or variant on position A equally often. The measuring scripts stay outside the repository; what a change measured goes in its CHANGELOG entry. On the current set of nine situations, the same variant run twice moved the audit total by about five findings and a single kind by up to ten, so a change is adopted only when it beats that spread.
-
-**9f.1** A wider situation set. The current nine situations (four misses, two weak hits, two strong hits, one with an NPC's secrets in the prompt) lack dialog with a hostile or silent NPC, near death, the opening, and Pay the Price. Capture those from sessions with the matching Elvira scenarios, so result integrity, NPC voice, and player agency are each covered.
-
-**9f.2** End-of-scene reminders. A reminder of PLAYER AGENCY in the prompt's own wording and a length line of 150 to 200 words, placed after the scene tags, were measured on GLM 5.3 over the nine situations, three runs each: player-character overreach fell from 23 findings to 14 and narrations within budget rose from 19 of 27 to 26, while revealed information rose from 20 to 28 and softened results from 16 to 21. Repeat on the wider set, each reminder alone and both together, before either goes into `prompts/tasks.yaml`.
+The prompts are tuned one change at a time against measurements, not impressions. A measurement replays the same situations for every variant: full narrator prompts captured from real sessions, each variant run three times per situation, every narration audited against its own prompt by a judge from a model family other than the narrator's (contradictions, information the prompt withholds, softened results, player-character overreach, word budget), and pairs of narrations read blind with the order shuffled and each model or variant on position A equally often. The measuring scripts stay outside the repository; what a change measured goes in its CHANGELOG entry. The situation set holds fourteen situations: misses with and without a match, weak and strong hits, an NPC's secrets, near death, two openings, and two dialogs without a roll; a dialog without a roll with a hostile NPC is still missing, since the Brain turns most questions into moves. On that set the unchanged prompt run twice moved the audit total by twelve findings, so a change is adopted only when it beats the spread of its own two runs and of the baseline's. A blind reading by one judge drifts toward one position, so each pair is read twice, the second time with the positions swapped, and a preference counts only when both readings agree.
 
 **9f.3** PLAYER AGENCY's inner-life clause says to describe what a camera could record, including action, beside the clause that limits the character's actions to the stated one.
 
@@ -58,6 +54,12 @@ The prompts are tuned one change at a time against measurements, not impressions
 **9f.7** `prompts/director.yaml` still has the Director recommend a "breather", although pacing is engine-computed. The Director is about 40 to 45 percent of a session's engine cost, more in sessions with many misses, since every miss triggers it; running it less often would leave NPC profiles stale and is not planned.
 
 **9f.8** The extraction prompts (`narrator_metadata`, `opening_setup_extractor`), `revelation_check_system`, `blueprint_voicing`, and `recap` have been read but not tuned.
+
+**9f.9** Openings slip into the third person ("Zari Kobayashi's eyes open") under the current `task_opening`, which names the player character as the "you" of the narration but does not hold the perspective, as the epilogue task does ("MUST NOT shift to third person"). The narration stays in the second person, as the user prefers.
+
+**9f.10** An evasive NPC tells the player character's past: in almost every measured variant and with both models, Kestrel's intercom line named the character's forgotten contract or old name while her stance allows one fact. Find where that past reaches the narrator in the prompt assembly (NPC secrets, Director guidance) before tuning wording.
+
+**9f.11** A weak hit's cost is still left out now and then, with and without the player-agency line at the end of the action task. A sentence on the result in that line did not help when measured, so the cost belongs in the result block or elsewhere in the action task.
 
 ### Definition of Done
 
