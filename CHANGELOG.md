@@ -8,6 +8,12 @@ This log starts at 2026.09.24.0, the restart after a four-month pause. Earlier r
 
 Calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day.
 
+## [2026.10.04.5] — 2026-10-04
+
+Documentation only. The roadmap's notes for sessions with the user say where the measuring setup for prompt tuning lives (outside the repository, with a README on capturing situations, measuring a variant, and reading blind) and that its captured situations predate the player-agency line of 2026.10.04.4. They also note that the evaluation of MiMo-V2.6-Pro at Prima Labs waits for Prima Labs' answer about its rate limit, with the report beside the measuring setup.
+
+Quality gate: 1557 tests green, project-rule scans clean (documentation drift included). No code, prompt, or configuration changed.
+
 ## [2026.10.04.4] — 2026-10-04
 
 Step 9f, substeps 1 and 2. The narrator's action and dialog tasks end with a player-agency line in the system prompt's own wording; at the end of the prompt it catches what the rule at the top of the system prompt misses. Measured on GLM 5.3 over fourteen situations captured from sessions (misses with and without a match, weak and strong hits, an NPC's secrets, near death, two openings, two dialogs without a roll), three runs per situation and two runs per variant, each narration audited against its full prompt by GPT-6 Luna: player-character overreach fell from 49 findings on average to 30 and the audit total from 158 to 131, while the unchanged prompt's two runs differed by 12, and no other kind rose beyond its spread. A length line of 150 to 200 words raised narrations within budget from 26 of 42 to 36, but together with the agency line it left weak hits without their cost more often, so it is not adopted; a sentence on the result inside the agency line did not help either. Openings keep their own task, since an opening has no player words. A blind reading found the two prompts level overall, the agency line winning on the player character and losing on some weak-hit costs. Step 9f gains three substeps from the measurement (openings that slip into the third person, an evasive NPC telling the player character's past, weak hits without their cost), and its method now reads each blind pair twice with the positions swapped, after one reader's preferences drifted toward one position.
