@@ -234,17 +234,21 @@ def test_find_progress_track(load_engine: None) -> None:
 
     game = _game()
     game.progress_tracks = [
-        make_progress_track(id="v1", name="Old vow", track_type="vow", ticks=8),
+        make_progress_track(id="v1", name="Find Kira", track_type="vow", ticks=8),
         make_progress_track(id="c1", name="Fight", track_type="combat", ticks=12),
-        make_progress_track(id="v2", name="New vow", track_type="vow", ticks=20),
+        make_progress_track(id="v2", name="Find Kira's killer", track_type="vow", ticks=20),
     ]
     with pytest.raises(ValueError, match="Multiple active vow tracks"):
         _find_progress_track(game, "Vow")
 
-    assert _find_progress_track(game, "Vow", target_track="New").name == "New vow"
-    assert _find_progress_track(game, "Vow", target_track="Old").name == "Old vow"
+    assert _find_progress_track(game, "Vow", target_track="v2").name == "Find Kira's killer"
+    assert _find_progress_track(game, "Vow", target_track="v1").name == "Find Kira"
+    assert _find_progress_track(game, "Vow", target_track="Find Kira") is None
+    assert _find_progress_track(game, "Vow", target_track="c1") is None
     assert _find_progress_track(game, "Combat").name == "Fight"
     assert _find_progress_track(game, "Expedition") is None
+    with pytest.raises(KeyError):
+        _find_progress_track(game, "vow")
 
     game.progress_tracks[0].status = "completed"
-    assert _find_progress_track(game, "Vow").name == "New vow"
+    assert _find_progress_track(game, "Vow").name == "Find Kira's killer"

@@ -1,6 +1,6 @@
 [project]
 name = "straightjacket"
-version = "2026.09.29.12"
+version = "2026.10.04.0"
 requires-python = ">=3.11"
 dependencies = [
     "starlette>=1.0,<2",
@@ -22,7 +22,7 @@ target-version = "py311"
 select = ["E", "W", "F", "B", "SIM", "UP", "RUF", "PERF", "PT", "PTH", "DTZ"]
 ignore = [
     "E501",   # line length — handled by formatter, not linter
-    "E402",   # module-level import not at top — app.py needs ensure_requirements() first
+    "E402",   # module-level import not at top — tests/conftest.py and tests/elvira/elvira.py set sys.path and the environment first
     "SIM108", # ternary — readability over conciseness in game logic
     "SIM401", # dict.get(k, fallback) — conflicts with the no-fallback rule on domain config
     "PERF401", # manual list comprehension — loops with conditions stay loops when they read clearer

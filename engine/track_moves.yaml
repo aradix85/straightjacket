@@ -7,3 +7,20 @@ track_creating_moves:
 scene_challenge_progress_moves:
 - adventure/face_danger
 - adventure/secure_an_advantage
+track_types_by_category:
+  Vow: vow
+  Connection: connection
+  Combat: combat
+  Expedition: expedition
+  Scene Challenge: scene_challenge
+  Journey: journey
+  Delve: delve
+progress_mark_categories:
+  combat/strike: Combat
+  combat/clash: Combat
+  combat/gain_ground: Combat
+  exploration/undertake_an_expedition: Expedition
+  adventure/undertake_a_journey: Journey
+  delve/delve_the_depths: Delve
+  scene_challenge/face_danger: Scene Challenge
+  scene_challenge/secure_an_advantage: Scene Challenge

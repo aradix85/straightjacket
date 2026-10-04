@@ -6,16 +6,26 @@ import pytest
 
 from straightjacket.engine.engine_loader import eng
 from straightjacket.engine.mechanics.adventure_crafter import (
+    PlotPointHit,
     PlotPointResult,
+    ThemeAlternation,
+    TurningPoint,
     _META_HANDLERS,
+    _create_character,
+    _create_plotline,
     _load_ac_data,
     _validate_random_themes,
     assign_themes,
     dispatch_meta,
     get_meta_handler_names,
+    lookup_characters_template,
     lookup_meta_plot_point,
     lookup_plot_point,
+    lookup_plotlines_template,
+    lookup_theme_priority,
+    roll_turning_point,
 )
+from straightjacket.engine.models_story import NarrativeState
 
 
 _SPECIAL_BOUNDARIES = [
@@ -186,20 +196,6 @@ def test_dispatch_meta_unknown_name_raises_keyerror(monkeypatch):
     narrative = NarrativeState()
     with pytest.raises(KeyError, match="drifted"):
         dispatch_meta(50, narrative, None)
-
-
-from straightjacket.engine.mechanics.adventure_crafter import (
-    PlotPointHit,
-    ThemeAlternation,
-    TurningPoint,
-    _create_character,
-    _create_plotline,
-    lookup_characters_template,
-    lookup_plotlines_template,
-    lookup_theme_priority,
-    roll_turning_point,
-)
-from straightjacket.engine.models_story import NarrativeState
 
 
 def test_lookup_theme_priority_constant_for_first_three_buckets():

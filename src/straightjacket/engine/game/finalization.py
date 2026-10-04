@@ -142,12 +142,10 @@ def apply_progress_and_legacy(
     game: GameState,
     outcome: OutcomeResult,
     brain: BrainResult,
-    track_category: str | None,
     rolled_track: ProgressTrack | None,
 ) -> None:
     if outcome.progress_marks > 0:
-        if track_category is None:
-            raise ValueError(f"{brain.move}: its outcome marks progress, but the move names no track category")
+        track_category = eng().get_raw("progress_mark_categories")[brain.move]
         track = find_progress_track(game, track_category, target_track=brain.target_track)
         if track:
             for _ in range(outcome.progress_marks):

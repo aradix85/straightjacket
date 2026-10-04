@@ -76,11 +76,16 @@ def _score_threat_clocks(game: GameState) -> int:
     return max(penalty, w.threat_clock_critical * chaos_cfg.clock_pressure_cap_multiplier)
 
 
+def _secured_advantage(recent_log: list[Any]) -> bool:
+    return bool(
+        recent_log
+        and recent_log[-1].move == eng().position_resolver.secured_advantage_move
+        and recent_log[-1].result in ("STRONG_HIT", "WEAK_HIT")
+    )
+
+
 def _score_secured_advantage(recent_log: list[Any]) -> int:
-    w = eng().position_resolver.weights
-    if recent_log and recent_log[-1].move == "secure_advantage" and recent_log[-1].result in ("STRONG_HIT", "WEAK_HIT"):
-        return w.secured_advantage
-    return 0
+    return eng().position_resolver.weights.secured_advantage if _secured_advantage(recent_log) else 0
 
 
 def _score_move_category_baseline(cat: str) -> int:
@@ -113,7 +118,7 @@ def _map_score_to_position(score: int) -> str:
     return "risky"
 
 
-def _apply_position_overrides(position: str, game: GameState, brain: BrainResult, cat: str) -> str:
+def _apply_position_overrides(position: str, game: GameState, cat: str) -> str:
     cfg = eng().position_resolver
     w = cfg.weights
 
@@ -121,21 +126,14 @@ def _apply_position_overrides(position: str, game: GameState, brain: BrainResult
         game.narrative.session_log[-eng().chaos_resolver.recent_session_window :] if game.narrative.session_log else []
     )
     res = game.resources
-    has_secured = bool(
-        recent and recent[-1].move == "secure_advantage" and recent[-1].result in ("STRONG_HIT", "WEAK_HIT")
-    )
     any_resource_critical = any(v < w.resource_critical_below for v in (res.health, res.spirit, res.supply))
 
     for override in cfg.overrides:
         _cond_checks: dict[str, bool] = {
-            "secured_advantage": has_secured,
+            "secured_advantage": _secured_advantage(recent),
             "any_resource_critical": any_resource_critical,
             "crisis_mode": game.crisis_mode,
             "recovery_move": cat == "recovery",
-            "previous_match": bool(recent and recent[-1].result and getattr(recent[-1], "match", False)),
-            "same_target_npc": bool(
-                recent and brain.target_npc and getattr(recent[-1], "target_npc", None) == brain.target_npc
-            ),
         }
         match = all(_cond_checks[cond] for cond in override.conditions)
 
@@ -144,11 +142,6 @@ def _apply_position_overrides(position: str, game: GameState, brain: BrainResult
                 override.effect == "floor_at_risky" and position == "desperate"
             ):
                 position = "risky"
-            elif override.effect == "shift_up_one":
-                if position == "desperate":
-                    position = "risky"
-                elif position == "risky":
-                    position = "controlled"
             log(f"[Position] Override '{override.name}' applied → {position}")
 
     return position
@@ -158,7 +151,7 @@ def resolve_position(game: GameState, brain: BrainResult) -> str:
     cat = move_category(brain.move)
     score = _score_position_factors(game, brain, cat)
     position = _map_score_to_position(score)
-    position = _apply_position_overrides(position, game, brain, cat)
+    position = _apply_position_overrides(position, game, cat)
     log(f"[Position] score={score}, position={position} (move={brain.move}, cat={cat})")
     return position
 
@@ -180,7 +173,7 @@ def resolve_effect(game: GameState, brain: BrainResult, position: str) -> str:
                 score += w.bond_low
 
     recent = game.narrative.session_log[-1:] if game.narrative.session_log else []
-    if recent and recent[0].move == "secure_advantage" and recent[0].result in ("STRONG_HIT", "WEAK_HIT"):
+    if _secured_advantage(recent):
         score += w.secured_advantage
 
     score += cfg.move_baselines[brain.move] if brain.move in cfg.move_baselines else cfg.move_baselines["other"]

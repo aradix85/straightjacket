@@ -49,7 +49,6 @@ ai_text:
     no_npcs_nearby: no one nearby
     no_roll: dialog (no roll)
     npc_appeared_event: '{npc_name} appeared'
-    unnamed_track: Unnamed conflict
     recap_fallback: ({player_name} recalls the recent events...)
     opening_setup_fallback_npcs: []
     opening_setup_fallback_location: ''

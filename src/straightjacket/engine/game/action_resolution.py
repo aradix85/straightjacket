@@ -28,7 +28,7 @@ def _maybe_mark_scene_challenge(game: GameState, brain: BrainResult, roll: RollR
     sc_progress_moves = eng().get_raw("scene_challenge_progress_moves")
     if brain.move not in sc_progress_moves or roll.result not in ("STRONG_HIT", "WEAK_HIT"):
         return
-    sc_track = find_progress_track(game, "scene_challenge")
+    sc_track = find_progress_track(game, "Scene Challenge")
     if not sc_track:
         return
     added = sc_track.mark_progress()
@@ -81,7 +81,6 @@ def _track_gather_information_success(game: GameState, brain: BrainResult, roll:
 
 def resolve_action_phase(game: GameState, brain: BrainResult, roll_outcome: RollOutcome) -> ActionResolution:
     roll = roll_outcome.roll
-    ds_move = roll_outcome.ds_move
     track = roll_outcome.track
     is_progress_roll = roll_outcome.is_progress_roll
 
@@ -101,7 +100,6 @@ def resolve_action_phase(game: GameState, brain: BrainResult, roll_outcome: Roll
             game,
             action.outcome,
             brain,
-            ds_move.track_category if ds_move else None,
             track if is_progress_roll else None,
         )
 

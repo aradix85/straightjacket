@@ -543,6 +543,7 @@ def parse_engine_yaml(data: dict[str, Any]) -> EngineSettings:
         weights=pr_weights,
         move_baselines=dict(pr["move_baselines"]),
         overrides=pr_overrides,
+        secured_advantage_move=pr["secured_advantage_move"],
     )
 
     er = dict(data["effect_resolver"])

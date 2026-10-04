@@ -168,7 +168,7 @@ def test_fulfill_your_vow_weak_hit_rewards_one_rank_lower(
 
     game = make_game_state(setting_id="starforged")
     outcome = resolve_move_outcome(game, "quest/fulfill_your_vow", "WEAK_HIT")
-    apply_progress_and_legacy(game, outcome, make_brain_result(), "vow", make_progress_track(rank=vow_rank))
+    apply_progress_and_legacy(game, outcome, make_brain_result(), make_progress_track(rank=vow_rank))
     assert get_legacy_track(game, "quests").ticks == expected_ticks
 
 
@@ -191,7 +191,7 @@ def test_classic_fulfill_your_vow_marks_experience_by_rank(
 
     game = make_game_state(setting_id="classic")
     outcome = resolve_move_outcome(game, "quest/fulfill_your_vow", result)
-    apply_progress_and_legacy(game, outcome, make_brain_result(), "vow", make_progress_track(rank=vow_rank))
+    apply_progress_and_legacy(game, outcome, make_brain_result(), make_progress_track(rank=vow_rank))
     assert game.campaign.xp == expected_xp
     assert get_legacy_track(game, "quests").ticks == 0
 
@@ -204,8 +204,33 @@ def test_develop_your_relationship_marks_two_bonds_ticks(load_engine: None) -> N
 
     game = make_game_state(setting_id="starforged")
     outcome = resolve_move_outcome(game, "connection/develop_your_relationship", "STRONG_HIT")
-    apply_progress_and_legacy(game, outcome, make_brain_result(), "connection", None)
+    apply_progress_and_legacy(game, outcome, make_brain_result(), None)
     assert get_legacy_track(game, "bonds").ticks == 2
+
+
+@pytest.mark.parametrize("setting_id", ["classic", "starforged"])
+def test_a_strike_marks_progress_on_the_open_fight(load_engine: None, setting_id: str) -> None:
+    from straightjacket.engine.game.finalization import apply_progress_and_legacy
+    from straightjacket.engine.mechanics.move_outcome import resolve_move_outcome
+    from tests._helpers import make_brain_result, make_game_state, make_progress_track
+
+    game = make_game_state(setting_id=setting_id)
+    game.progress_tracks.append(make_progress_track(id="combat_raider", name="Raider", track_type="combat"))
+    outcome = resolve_move_outcome(game, "combat/strike", "STRONG_HIT")
+    apply_progress_and_legacy(game, outcome, make_brain_result(move="combat/strike"), None)
+    assert game.progress_tracks[-1].ticks > 0
+
+
+def test_every_move_that_marks_progress_names_its_track_category(load_engine: None) -> None:
+    import yaml
+
+    from straightjacket.engine.engine_loader import eng
+
+    outcomes = yaml.safe_load((REPO / "engine" / "move_outcomes.yaml").read_text(encoding="utf-8"))["move_outcomes"]
+    marking = sorted(move for move, results in outcomes.items() if "mark_progress" in str(results))
+    categories = eng().get_raw("progress_mark_categories")
+    assert sorted(categories) == marking
+    assert set(categories.values()) <= set(eng().get_raw("track_types_by_category"))
 
 
 def test_make_a_connection_gives_no_momentum(load_engine: None) -> None:

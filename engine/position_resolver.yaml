@@ -40,8 +40,4 @@ position_resolver:
     - crisis_mode
     - recovery_move
     effect: floor_at_risky
-  - name: matched_momentum
-    conditions:
-    - previous_match
-    - same_target_npc
-    effect: shift_up_one
+  secured_advantage_move: adventure/secure_an_advantage

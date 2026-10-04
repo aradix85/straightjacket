@@ -69,8 +69,6 @@ class CreationConfig:
     max_starting_assets: int
     starting_asset_categories: list[str]
     background_vow_default_rank: str
-    brain_track_rank_fallback: str
-    brain_track_name_max_length: int
     chaos_vow_modifiers: dict[str, list[str]]
     chaos_modifier_values: dict[str, int]
     truth_threads: dict[str, str]
@@ -261,6 +259,7 @@ class PositionResolverConfig:
     weights: PositionResolverWeights
     move_baselines: dict[str, int]
     overrides: list[PositionOverride]
+    secured_advantage_move: str
 
 
 @dataclass

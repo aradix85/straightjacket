@@ -1,4 +1,5 @@
 import copy
+import re
 from typing import Any
 from ..ai.brain import call_brain
 from ..ai.provider_base import AIProvider, drain_token_log, NarrationSink
@@ -59,7 +60,7 @@ def process_turn(
     if game.game_over:
         raise RuntimeError(
             "process_turn called on a game with game_over=True. "
-            "Caller must handle game_over (succession or new chapter) before requesting another turn."
+            "Caller must continue the campaign through succession before requesting another turn."
         )
 
     _begin_turn(game, player_message)
@@ -319,19 +320,10 @@ def _maybe_create_track(game: GameState, brain: BrainResult) -> None:
     track_category = track_creating.get(brain.move)
     if not track_category:
         return
+    assert brain.track_name
+    assert brain.track_rank
 
-    if not brain.track_name:
-        _cr = eng().creation
-        brain.track_name = (
-            brain.player_intent[: _cr.brain_track_name_max_length].strip()
-            or eng().ai_text.narrator_defaults["unnamed_track"]
-        )
-        log(f"[Track] Brain omitted track_name, generated: {brain.track_name}", level="warning")
-    if not brain.track_rank:
-        brain.track_rank = eng().creation.brain_track_rank_fallback
-        log(f"[Track] Brain omitted track_rank, defaulting to {brain.track_rank}", level="warning")
-
-    slug = brain.track_name.lower().replace(" ", "_")
+    slug = re.sub(r"\W+", "_", brain.track_name.lower()).strip("_")
     base_id = f"{track_category}_{slug}"
     if any(t.id == base_id and t.status == "active" for t in game.progress_tracks):
         log(f"[Track] {track_category} '{brain.track_name}' is already active; not created again")

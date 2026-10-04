@@ -12,11 +12,11 @@ One step is one session: read the code, implement, test, pass the quality gate, 
 2. Violation grep on touched files: `.get("..", ` with a non-neutral literal, `or "..` on a domain value, `except Exception` outside the carve-out files. New hits are new violations; fix them.
 3. `git status` confirms the obsolete code is deleted.
 4. The step moves to DONE with one line; the next step is promoted to NEXT and gets substeps, a definition of done, and reference patterns; Current state records any decision taken. The md files (README, ARCHITECTURE, CONTRIBUTING, `docs/`, ORIGINS, SECURITY, AUDIT) are checked for claims the step made wrong, and the step gets one CHANGELOG entry.
-5. The step's area is read against the design document and the source rulebooks: a new departure gets an entry in `docs/divergences.md` with its reason and status, and an entry whose status names this step is removed or rewritten.
+5. The step's area is read against the source rulebooks, and against the design document's architecture where the step touches it: a new departure gets an entry in `docs/divergences.md` with its reason and status, and an entry whose status names this step is removed or rewritten.
 
 ## Reference patterns
 
-- New AI-call wrapper: `ai/brain.py` (call_brain, call_revelation_check).
+- New AI-call wrapper: `ai/brain.py` → `call_brain` for a call the turn cannot do without, `ai/blueprint_voicing.py` → `call_blueprint_voicing` for one that degrades.
 - Director tool: `tools/builtins.py` → `query_game_state` (`docs/ai.md`, Tool calling and prompt injection).
 - Strict nested domain lookup: `mechanics/stance_gate.py` (resolve_npc_stance).
 - New yaml-backed config section: an entry in `engine_config.py` `_SIMPLE_SECTIONS`, with its dataclass in `engine_config_dataclasses.py` (required fields, no defaults).
@@ -39,11 +39,11 @@ Revised 2026-09-29: the steps are the order of work, NEXT STEP first and then th
 - Each finished release is committed and pushed.
 - The Elvira sessions a step's definition of done needs are part of the work; a short session costs about 15 to 20 cents.
 - The user writes in Dutch and reads with a screen reader: answers to the user are in Dutch and in plain prose, while the repository stays in English.
-- A session starts by reading every md file in the root and in `docs/`, then continues with NEXT STEP.
+- A session starts by reading every md file in the root and in `docs/`, except that of the CHANGELOG it reads only the entries since the last finished step, then continues with NEXT STEP. The Narrative RPG Engine design document is not in the repository: it is a theoretical concept published on itch.io (link in README), consulted when a step touches the architecture it proposes.
 
 ### Running things
 
-On this machine the API keys live in the Windows user environment: `TOGETHER_API_KEY` for the game, `OPENAI_API_KEY` for Elvira. How to run her is under Testing in CONTRIBUTING.md.
+On this machine the API keys live in the Windows user environment: `TOGETHER_API_KEY` for the game, `OPENAI_API_KEY` for Elvira. A process started from another process may not see them until they are set in its own environment. How to run her is in `docs/elvira.md`.
 
 Models: every AI role runs on GLM 5.3 through Together since 2026.09.26.20; `docs/ai.md` describes the configuration, and the measurements behind it are in the CHANGELOG from 2026.09.26.2 to .20. The user prefers one model for every role (2026-09-29): a stronger model for a few scenes (openings, epilogues) is not planned, and quality work goes through engine-side structure and prompt tuning.
 
@@ -55,14 +55,7 @@ Models: every AI role runs on GLM 5.3 through Together since 2026.09.26.20; `doc
 
 **Each spawn source names its own entities** from what it naturally has, as threats and clocks do today (`docs/mechanics.md`, Threats and clocks). Later spawners of new entity types follow the same axis.
 
-**Where the AI still decides, and the system that takes it over (2026-09-29).** Judged by the order of preference in ARCHITECTURE.md:
-- What an NPC does off screen: today the narrator invents it from `check_npc_agency`'s prompt; Mythic's NPC behavior table (`mythic_gme_2e.json` → `npc_behavior`) and NPC goal clocks take it over in steps 12 and 13.
-- Locations, settlements, and encounters: today narrated; Datasworn oracles and Mythic's themed element tables take them over in steps 9d, 10, 33, and 34.
-- Who a new NPC is: today narrated and then extracted; the Adventure Crafter's character-crafting tables (`mechanics/adventure_crafter.py` → `roll_character_traits`, ready but without a caller) and the setting's oracles take it over in step 11.
-- Whether a planned revelation has been told: today an AI call judges it; the engine settles it in step 9i.
-- Facts beyond the five fact types: today the narrator's; more fact types, and Mythic's detail-check chains in step 35, widen what fate settles.
-- A "breather" recommended by the Director: pacing is already engine-computed, so the recommendation leaves the Director prompt (step 9f).
-The Brain reading free text, the narrator's prose, and the Director's wording of agendas and arcs stay with the AI by design.
+**Where the AI still decides, and the system that takes it over (2026-09-29).** The list lives in ARCHITECTURE.md (The core idea, What a system takes over, and when), so that it exists once; a step that moves a decision from the AI to a system updates it there.
 
 ---
 
@@ -96,27 +89,31 @@ One line per completed step, newest last. Details in CHANGELOG.
 
 ## NEXT STEP — 9d: Generators
 
-Entity creation through the entry point step 9a built: `mechanics/generation.py` → `generate(game, category, context)`, whose categories are registered in `engine/generation.yaml` and dispatched through `_GENERATORS`, with `fact` as the first category. Step 9d adds entity categories that return a `GeneratedEntity`: the category plus the rolled table results, keyed by the role each table plays in that category. How `generate` types its context and result once there is more than one category (a union, or one typed function per category behind the registry) is decided at the start of the step.
+Entity creation through the entry point step 9a built: `mechanics/generation.py` → `generate(game, category, context)`, whose categories are registered in `engine/generation.yaml` and dispatched through `_GENERATORS`, with `fact` as the first category. Step 9d builds the framework for entity categories, the location and settlement categories, and moves NPC naming behind an npc category; step 10 adds the encounter category and the weighting of location tables by the setting's atlas, and step 11 widens the npc category with tiers. An entity category returns a `GeneratedEntity` (decided in 2026.09.24.47): the category plus the rolled table results, keyed by the role each table plays in that category.
 
-**9d.1** Categories settlement, location, npc, and encounter registered in `engine/generation.yaml`; steps 11, 25, and 26 add npc tiers, waypoints, and sites.
+Two decisions open the step and are taken with the user before building, as step 9a did for fact resolution. First, when each category fires: a fact fires because the Brain names it, while the candidates for an entity are a move to a place the world state does not know yet, the Brain naming a new place or person the action depends on, and an altered or interrupt scene. Second, how `generate` types its context and result across categories: a union, or one typed function per category behind the registry.
 
-**9d.2** An oracle accessor for Delve theme plus domain, Sundered Isles cursed and non-cursed variants, and Starforged flat d100, with the format taken from setting yaml, not from branching on setting names.
+**9d.1** Categories location and settlement registered in `engine/generation.yaml`, each with a callsite in play where the first decision puts it, and npc for the oracle-rolled name (9d.5). Step 10 adds encounter; steps 11, 25, and 26 widen npc and add waypoints and sites.
 
-**9d.3** Per-category oracle paths in setting yaml as a mapping keyed by category name (the keys are domain data, decided in 2026.09.24.47); a registered category without a path in the active setting's parent chain raises KeyError. The parent-chain lookup exists: `datasworn/settings.py` → `SettingPackage.oracle_data_for`, `_resolve_oracle_paths`.
+**9d.2** An oracle accessor that takes a table's format from setting yaml instead of branching on setting names: Starforged's flat d100 tables, classic's tables, and Delve's theme plus domain for the sites of step 26. Sundered Isles' cursed variants come with the cursed die (step 28.2); until then the accessor reads its standard tables.
 
-**9d.4** Generated content reaches the narrator as a `<generated>` tag after the setting's `vocabulary.substitutions` are applied: if the oracle says "spaceship", the prompt gets the setting's substitution. No post-hoc check.
+**9d.3** Per-category oracle paths in setting yaml as a mapping keyed by category name (the keys are domain data, decided in 2026.09.24.47); a registered category without a path in the active setting's parent chain raises KeyError. The parent-chain lookup exists: `datasworn/settings.py` → `SettingPackage.oracle_data_for`, `_resolve_oracle_paths`. Later categories add their tables to this mapping rather than new fields on `OraclePaths` (steps 11 and 14b), and when NPC naming moves behind the npc category, `oracle_paths.names` moves into its entry.
 
-**9d.5** Chained oracle tables go through `datasworn/cascade.py` → `roll_oracle_cascade`. At least one real callsite; candidate: `npc/naming.py` → `roll_oracle_name` through the `npc` category. If none fits, a documented orphan-symbol carve-out that step 10 removes, as for `CharacterTraits`.
+**9d.4** Generated content reaches the narrator as a `<generated>` tag. The setting's `vocabulary.substitutions` reach the narrator today as instructions in the vocabulary block (`prompt_blocks.py`), not as replacements, and their values are descriptions ("starship — worn, patched") that would read oddly inside an oracle result; the step decides whether those instructions already cover generated content or whether a substitution needs a form that can replace a word in place. No post-hoc check.
+
+**9d.5** NPC naming goes through the npc category. Chained oracle tables go through `datasworn/cascade.py` → `roll_oracle_cascade`, which already serves threat naming; the step gives it a callsite through a category, with the npc category as the candidate. If no 9d category rolls a chained table, that callsite moves to the encounter category of step 10.
 
 **9d.6** Tests: smoke with stub oracle data, the registry and the yaml list stay equal (as `tests/test_fact_resolution.py` checks for `fact`), a missing path raises. If generated entities are persisted, the save format breaks.
 
 ### Definition of Done
 
-- The four categories are registered in `engine/generation.yaml` and dispatched by `generate`; an unknown category or a missing oracle path raises.
+- Location, settlement, and npc are registered in `engine/generation.yaml` and dispatched by `generate`; an unknown category or a missing oracle path raises.
+- Each category fires where the opening decision puts it, with a callsite in play.
 - Oracle paths per category live in the setting yaml; no Python branches on setting names.
-- Generated content reaches the narrator as `<generated>` with the setting's vocabulary substitutions applied.
+- Generated content reaches the narrator as `<generated>`, with the vocabulary decision of 9d.4 applied.
 - Generation reads the world state it lands in, as the design document asks (no prosperous trading post in a region at war): each category names the game-state inputs that weight its tables, the way a fact type names its inputs in `engine/fact_resolution.yaml`.
-- `datasworn/cascade.py` → `roll_oracle_cascade` has a real callsite through a category.
+- `datasworn/cascade.py` → `roll_oracle_cascade` has a callsite through a category, or 9d.5's move to step 10 is recorded.
+- The entry "Locations and settlements are narrated, not generated" leaves `docs/divergences.md`.
 - ARCHITECTURE.md ("Engine-resolved fiction") and `docs/mechanics.md` say what is generated and when.
 - An Elvira run shows `<generated>` tags in play and no new engine warnings.
 - Quality gate green, no new project-rule violations, one CHANGELOG entry.
@@ -132,7 +129,7 @@ Entity creation through the entry point step 9a built: `mechanics/generation.py`
 
 ## Next steps
 
-Sketches; order indicative. Each entry gets substeps, a definition of done, and reference patterns when it is promoted to NEXT.
+Sketches, in the order of work. Each entry gets substeps, a definition of done, and reference patterns when it is promoted to NEXT.
 
 Steps 11, 14b, 25, and 26 each plan a Director tool of their own. Since 2026.09.26.11 the Director has a single tool, `query_game_state`, which cut its tool rounds; whether each planned tool becomes a new one or part of that one is decided when the step is promoted.
 
@@ -164,6 +161,8 @@ Fixtures made through the real character-creation path instead of hand-built sta
 
 Run the first pass of AUDIT.md over the code; every finding is fixed or becomes a substep here.
 
+**9h.1** Found while fixing the Brain's track choice (2026.10.04.0), for the audit to classify: `game/turn.py` → `_sanitize_brain_output` turns an action-roll move with stat `none` into a dialog turn instead of `call_brain` refusing the answer (the tests treat `world_shaping` without a stat as dialog on purpose); `mechanics/tracks.py` → `roll_oracle_answer` returns an empty answer when the game has no setting or the setting fewer than two action-theme paths; `find_progress_track` returns None for a target track of another type, which plays a progress roll on zero boxes; and `engine/damage.yaml` → `miss.endure`, `miss.combat`, `miss.social`, and `miss.other` have no reader that a grep finds (only `miss.clock_ticks` is read, through a dotted path).
+
 ### 9i — Revelations settled by the engine
 
 Today the blueprint's revelations reach the narrator as `<revelation_ready>`, and a separate AI call (`call_revelation_check`) judges afterwards whether the prose contained one, which is the kind of post-hoc validator `docs/divergences.md` rules out. Instead the engine decides when a revelation lands (its scene range, or a keyed scene) and hands it to the narrator as a mandatory element, like a `<consequence>`, and marks it revealed at once; the `revelation_check` role, its prompt, schema, and cluster entry go. Measure with Elvira how often the narration carries the revelation before and after.
@@ -180,13 +179,15 @@ The principle and the list of deliberate divergences are in `docs/divergences.md
 
 **9j.4** The individual words of the oracle and meaning tables are checked against the books.
 
+**9j.5** The user decides whether the game stays over when health and spirit are both 0 after a turn (`game/finalization.py` → `_update_crisis`, an engine rule with no rulebook source, Open in `docs/divergences.md`) or whether death comes only through Face Death and Endure Harm's and Endure Stress's tables, as the rulebooks have it.
+
 Ability effects other than adds belong to step 18; outcomes where the player would choose a cost are a recorded divergence.
 
 ### 10 — Location and encounter generators
 
-**10.1** Location generator through the step 9d framework: Datasworn oracles give a structured location, the AI describes it within that structure.
+**10.1** The location and settlement categories of step 9d weighted by location properties and the world state, with the setting's atlas tables (10.6).
 
-**10.2** Encounter generator weighted by location properties, active threats, and chaos; oracle for structure, AI for description. Weights in `engine/encounter_weights.yaml` (new).
+**10.2** The encounter category, registered in `engine/generation.yaml` here, weighted by location properties, active threats, and chaos; oracle for structure, AI for description. Weights in `engine/encounter_weights.yaml` (new).
 
 **10.3** Prompt budget: `<generated>` tags replace unstructured invention, net near zero.
 
@@ -204,7 +205,7 @@ The opening scene and the character's start come from the setting's launch table
 
 ### 11 — NPC generation with tiers
 
-**11.1** Tier 1 (throwaway): demeanor, name, and disposition rolled from oracles, no AI call, with the setting's character oracles (Starforged first look, initial disposition, role, goal, revealed aspect; classic role, goal, descriptor), and identity and descriptors from the Adventure Crafter's character-crafting tables (`mechanics/adventure_crafter.py` → `roll_character_traits`, whose `CharacterTraits` then leaves the orphan-symbol carve-out). New oracle paths `oracle_paths.npc_demeanor` and `oracle_paths.npc_disposition` in `data/settings/*.yaml`; `oracle_paths.names` gives the name; a missing path raises KeyError. The narrator receives the rolled values as structured prompt context.
+**11.1** Tier 1 (throwaway): demeanor, name, and disposition rolled from oracles, no AI call, with the setting's character oracles (Starforged first look, initial disposition, role, goal, revealed aspect; classic role, goal, descriptor), and identity and descriptors from the Adventure Crafter's character-crafting tables (`mechanics/adventure_crafter.py` → `roll_character_traits`, whose `CharacterTraits` then leaves the orphan-symbol carve-out). The demeanor and disposition tables join the npc category's entry in the per-category oracle-path mapping of step 9d.3, beside the name tables; a missing path raises KeyError. The narrator receives the rolled values as structured prompt context.
 
 **11.2** Tier 2 (recurring): full AIMS plus a goal clock, the AI writing only the AIMS. The Director generates them: it reads the tier-1 base and the active threads through its game-state tool, then writes the AIMS through its JSON schema; always-relevant context (current location, faction state once step 14 lands) is prompt-injected.
 
@@ -292,7 +293,7 @@ What a foe does in a fight comes from the setting's combat-action oracle (classi
 
 **14b.2** ChapterSummary gains `factions: list[FactionData]`, through the three-place chapter pattern.
 
-**14b.3** Faction archetypes from Datasworn oracles: `factions: str` returns to the `OraclePaths` dataclass and the paths to the setting yamls (starforged `factions`, sundered_isles `faction`; classic Ironsworn has none). A setting with factions and no path raises KeyError.
+**14b.3** Faction archetypes from Datasworn oracles: a faction category joins the per-category oracle-path mapping of step 9d.3, with its paths in the setting yamls (starforged `factions`, sundered_isles `faction`; classic Ironsworn has none). A setting with factions and no path raises KeyError.
 
 **14b.4** Faction-event tags are prompt-injected for the narrator; the Director gets faction context for NPC reflections (see the note on Director tools above).
 
@@ -319,10 +320,6 @@ From the EdgeTales comparison of 2026-09-24: reimplement the idea, do not port c
 **16.2** NPC loyalty derived from faction bond against player bond through connection tracks; no new NpcData field.
 
 **16.3** The reputation field on FactionData reserved in 14a.1.
-
-### 17 — Setting enrichment from sourced tables
-
-The Yaml content boundary (CONTRIBUTING.md) rules out hand-written lists of names, descriptors, or descriptions in setting yaml. Variety comes from tables with a source: the Datasworn oracles each setting ships, through steps 9d and 10, and Mythic's element meaning tables, through steps 33 and 34. What remains of this step is wiring inside those steps: each setting's oracle-path mapping gains the tables its generator categories need.
 
 ### 18 — Asset mechanics beyond adds
 
@@ -438,7 +435,7 @@ Starforged's anomaly-effect oracle goes with vaults and anomalies.
 
 **28.1** Ship mechanics (command vehicle with modules, condition track, repair) through the step 18 and 19 asset pipeline.
 
-**28.2** Cursed die. The Datasworn texts that mention it, all in the Chattering Skull asset, describe an extra ten-sided die added to the roll with an effect on a 10; check the Sundered Isles rules for when it is rolled before designing this (step 9j). The existing `cursed` impact in `engine/impacts.yaml` is a separate mechanic.
+**28.2** Cursed die. The Datasworn texts that mention it, all in the Chattering Skull asset, describe an extra ten-sided die added to the roll with an effect on a 10; check the Sundered Isles rules for when it is rolled at the start of this step, before designing it. The existing `cursed` impact in `engine/impacts.yaml` is a separate mechanic.
 
 **28.3** Data config: naval encounters, treasure, the 16 Sundered Isles oracle categories, exploration.
 

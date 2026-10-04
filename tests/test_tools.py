@@ -1,5 +1,7 @@
+import importlib
 import sqlite3
 
+import straightjacket.engine.tools.builtins as _builtins_mod
 from straightjacket.engine.db.connection import close_db, reset_db
 from straightjacket.engine.db.sync import sync
 from straightjacket.engine.models import (
@@ -15,6 +17,7 @@ from straightjacket.engine.tools.registry import (
     register_test_tool,
 )
 from straightjacket.engine.tools.handler import execute_tool_call
+from tests._helpers import make_clock, make_game_state, make_memory, make_npc
 
 
 def _fresh_db() -> sqlite3.Connection:
@@ -178,11 +181,6 @@ def test_execute_tool_call_error() -> None:
     assert "failed" in result
     assert "boom" in result
     clear_registry()
-
-
-import importlib
-import straightjacket.engine.tools.builtins as _builtins_mod
-from tests._helpers import make_clock, make_game_state, make_memory, make_npc
 
 
 def _reload_builtins() -> None:

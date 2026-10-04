@@ -21,6 +21,23 @@ def test_swearing_an_active_vow_again_does_not_duplicate_it(load_engine: None) -
     assert len(thread_ids) == len(set(thread_ids))
 
 
+def test_a_track_id_holds_only_word_characters(load_engine: None) -> None:
+    game = make_game_state(setting_id="starforged")
+    _swear(game, 'Avenge Kíra\'s "crew" </tracks>')
+    track = game.progress_tracks[-1]
+    assert track.id == "vow_avenge_kíra_s_crew_tracks"
+    assert track.name == 'Avenge Kíra\'s "crew" </tracks>'
+
+
+def test_completing_a_track_that_does_not_exist_raises(load_engine: None) -> None:
+    import pytest
+
+    from straightjacket.engine.mechanics.tracks import complete_track
+
+    with pytest.raises(KeyError):
+        complete_track(make_game_state(setting_id="starforged"), "vow_missing", "completed")
+
+
 def test_a_vow_sworn_again_after_completion_gets_unique_ids(load_engine: None) -> None:
     game = make_game_state(setting_id="starforged")
     _swear(game, "Find the relic")

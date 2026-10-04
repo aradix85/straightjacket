@@ -1,37 +1,21 @@
 from __future__ import annotations
 
 from ..datasworn.settings import active_package
+from ..engine_loader import eng
 from ..logging_util import log
 from .legacy import apply_threat_overcome_bonus
 from ..models import GameState, ProgressTrack
 
 
 def find_progress_track(game: GameState, track_category: str, target_track: str | None = None) -> ProgressTrack | None:
-    cat_lower = track_category.lower()
-    type_map = {
-        "vow": "vow",
-        "connection": "connection",
-        "combat": "combat",
-        "expedition": "expedition",
-        "delve": "delve",
-        "scene challenge": "scene_challenge",
-    }
-    track_type = type_map.get(cat_lower, cat_lower)
-
+    track_type = eng().get_raw("track_types_by_category")[track_category]
     candidates = [t for t in game.progress_tracks if t.track_type == track_type and t.status == "active"]
 
     if not candidates:
         return None
 
     if target_track:
-        target_lower = target_track.lower()
-        matches = [t for t in candidates if target_lower in t.name.lower()]
-        if len(matches) == 1:
-            return matches[0]
-        if len(matches) > 1:
-            names = ", ".join(t.name for t in matches)
-            raise ValueError(f"Ambiguous target_track '{target_track}' matches: {names}")
-        return None
+        return next((t for t in candidates if t.id == target_track), None)
 
     if len(candidates) == 1:
         return candidates[0]
@@ -42,9 +26,8 @@ def find_progress_track(game: GameState, track_category: str, target_track: str 
 
 def complete_track(game: GameState, track_id: str, outcome: str) -> None:
     track = next((t for t in game.progress_tracks if t.id == track_id), None)
-    if not track:
-        log(f"[Track] complete_track: not found {track_id}")
-        return
+    if track is None:
+        raise KeyError(f"complete_track: no progress track with id {track_id!r}")
     track.status = outcome
     log(f"[Track] {track.name} ({track.track_type}) → {outcome}")
 

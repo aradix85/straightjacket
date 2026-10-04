@@ -58,7 +58,7 @@ def _build_tracks_block(game: GameState) -> str:
     tracks = _active_tracks(game)
     if not tracks:
         return ""
-    lines = [f"  {t.name} ({t.track_type}, {t.rank}) {t.filled_boxes}/10" for t in tracks]
+    lines = [f"  {_xe(t.name)} (id:{t.id}, {t.track_type}, {t.rank}) {t.filled_boxes}/10" for t in tracks]
     return "<tracks>\n" + "\n".join(lines) + "\n</tracks>"
 
 
@@ -76,6 +76,8 @@ def _check_choices(result: BrainResult, move_keys: list[str], choices: dict[str,
         if value is not None and value not in allowed:
             raise ValueError(f"{field_name} {value!r} is not one of the choices offered")
     _check_fact_requests(result, choices["target_npc"])
+    if result.move in eng().get_raw("track_creating_moves") and not (result.track_name and result.track_name.strip()):
+        raise ValueError(f"move {result.move!r} starts a track, but track_name is empty")
     boasts = eng().boasts
     if len(result.boasts) > boasts.max_per_roll or any(b not in boasts.options for b in result.boasts):
         raise ValueError(f"boasts {result.boasts!r} are not among the offered boasts")
@@ -139,7 +141,7 @@ time:{w.time_of_day or _ai_text["unknown_time"]}
     choices = {
         "bonus_id": [b.id for b in roll_bonuses(game)],
         "target_npc": [n.id for n in _listed_npcs(game)],
-        "target_track": [tr.name for tr in _active_tracks(game)],
+        "target_track": [tr.id for tr in _active_tracks(game)],
     }
     try:
         spec = AICallSpec(

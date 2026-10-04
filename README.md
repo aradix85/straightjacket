@@ -16,7 +16,7 @@ cd straightjacket
 python run.py
 ```
 
-Creates a venv, installs dependencies, downloads game data, starts the server at **http://localhost:8081**. Set your API key(s) as environment variables: each provider under `ai.providers` in `config.yaml` names its variable in `api_key_env`. On startup the server checks that every configured model is offered by its provider and stops with a clear message if one is not.
+Creates a venv, installs dependencies, downloads any game data file that is missing from `data/`, starts the server at **http://localhost:8081**. Set your API key(s) as environment variables: each provider under `ai.providers` in `config.yaml` names its variable in `api_key_env`. On startup the server checks that every configured model is offered by its provider and stops with a clear message if one is not.
 
 ---
 
@@ -40,13 +40,13 @@ Text-in, text-out, and built for screen readers from the start by a blind develo
 
 - [ARCHITECTURE.md](ARCHITECTURE.md) — the core idea, turn pipeline, code map, state, configuration, interface
 - [CONTRIBUTING.md](CONTRIBUTING.md) — workflow, project rules, code standards, testing
-- [docs/ai.md](docs/ai.md), [docs/mechanics.md](docs/mechanics.md), [docs/settings.md](docs/settings.md), [docs/divergences.md](docs/divergences.md) — the AI layer, the game mechanics, settings and character creation, and deliberate departures from the source rulebooks and the design document
+- [docs/ai.md](docs/ai.md), [docs/mechanics.md](docs/mechanics.md), [docs/settings.md](docs/settings.md), [docs/divergences.md](docs/divergences.md), [docs/elvira.md](docs/elvira.md) — the AI layer, the game mechanics, settings and character creation, deliberate departures from the source rulebooks and the design document, and the test player Elvira
 - [ORIGINS.md](ORIGINS.md) — project history, fork from EdgeTales, credits
 - [SECURITY.md](SECURITY.md) — API key handling, input sanitization, session model
 - [CHANGELOG.md](CHANGELOG.md) — release history, including the fork period
 - [roadmap.md](roadmap.md) — internal working doc: what gets built next, and in what order
 - [AUDIT.md](AUDIT.md) — internal working doc: how the codebase is audited against its principles
-- [Narrative RPG Engine design document](docs/narrative_rpg_engine_v2_4.md) — the design this implements
+- [Narrative RPG Engine design document](https://blindgamer85.itch.io/narrative-rpg-engine-accessible-solo-tabletop-with-ai-as-narrator-and-systems-u) — the theoretical concept this project puts into practice, published on itch.io
 
 ---
 
