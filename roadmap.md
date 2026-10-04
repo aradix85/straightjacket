@@ -16,7 +16,6 @@ Closing a step: the checks of CONTRIBUTING.md pass, the step leaves this documen
 - Each finished release is committed and pushed to main.
 - On this machine the API keys live in the Windows user environment (`TOGETHER_API_KEY` for the game, `OPENAI_API_KEY` for Elvira); a process started by a tool may need them set in its own environment first.
 - The measuring setup for prompt tuning lives outside the repository in `C:\Users\radix\Documents\mimo_probe`: captured situations, the audit and blind-reading scripts, and a README.md that says how to capture, measure a variant, and read blind. Its captured situations predate the player-agency line in `prompts/tasks.yaml`; the README says how to measure against the current prompt.
-- An evaluation of MiMo-V2.6-Pro at Prima Labs (`PRIMALABS_API_KEY`) waits for Prima Labs' answer about its rate limit; the report is `verslag.md` in that folder.
 
 ## Reference patterns
 
