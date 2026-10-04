@@ -8,6 +8,12 @@ This log starts at 2026.09.24.0, the restart after a four-month pause. Earlier r
 
 Calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day.
 
+## [2026.10.04.3] — 2026-10-04
+
+Documentation only. Step 9f, prompt tuning, becomes NEXT STEP ahead of 9d at the user's choice: the roadmap gave no reason for the old order, and the narrator's core rules (player agency, result integrity, length) do not depend on the generators. Step 9f gets substeps, a definition of done, and reference patterns, and describes how a prompt change is measured: the same captured situations for every variant, three runs each, an audit against the prompt by a judge from another model family, and blind reading with balanced positions. The first measurements come from comparing GLM 5.3 with MiMo-V2.6-Pro at Prima Labs over nine situations: with the same prompt changes both scored alike (93 and 97 audit findings) and drew level in a blind reading (three wins each, three ties), and the two end-of-scene reminders of 9f.2 cut GLM's player-character overreach from 23 to 14 findings and brought 26 of 27 narrations within the word budget. Step 9d keeps its content as the first sketch after NEXT STEP. Step 9e gains a finding: a `<fact>` can place an NPC out of reach while the same NPC is the scene's target.
+
+Quality gate: 1557 tests green, project-rule scans clean (documentation drift included), coverage 90.77%. No code, prompt, or configuration changed.
+
 ## [2026.10.04.2] — 2026-10-04
 
 Documentation only. Scene challenges turned out to be configured but unreachable in play: Begin the Scene has no roll, so the available-moves filter keeps it from the Brain, no scene-challenge track ever exists, the moves that need one are never offered, and the `fill_clock` effect of their misses is computed but read by nothing. New step 9k makes them playable from the rulebook (Begin the Scene as a formal move, a tension clock, `fill_clock` applied, the engine's own progress rule for the ordinary moves removed); step 13b no longer lists Begin the Scene, `docs/mechanics.md` says scene challenges are not playable yet, and step 9h.10 asks that every move-outcome field has a reader in play.

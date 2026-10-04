@@ -39,7 +39,50 @@ Closing a step: the checks of CONTRIBUTING.md pass, the step leaves this documen
 
 ---
 
-## NEXT STEP — 9d: Generators
+## NEXT STEP — 9f: Narrator, Director, and extraction prompts
+
+The prompts are tuned one change at a time against measurements, not impressions. A measurement replays the same situations for every variant: full narrator prompts captured from real sessions, each variant run three times per situation, every narration audited against its own prompt by a judge from a model family other than the narrator's (contradictions, information the prompt withholds, softened results, player-character overreach, word budget), and pairs of narrations read blind with the order shuffled and each model or variant on position A equally often. The measuring scripts stay outside the repository; what a change measured goes in its CHANGELOG entry. On the current set of nine situations, the same variant run twice moved the audit total by about five findings and a single kind by up to ten, so a change is adopted only when it beats that spread.
+
+**9f.1** A wider situation set. The current nine situations (four misses, two weak hits, two strong hits, one with an NPC's secrets in the prompt) lack dialog with a hostile or silent NPC, near death, the opening, and Pay the Price. Capture those from sessions with the matching Elvira scenarios, so result integrity, NPC voice, and player agency are each covered.
+
+**9f.2** End-of-scene reminders. A reminder of PLAYER AGENCY in the prompt's own wording and a length line of 150 to 200 words, placed after the scene tags, were measured on GLM 5.3 over the nine situations, three runs each: player-character overreach fell from 23 findings to 14 and narrations within budget rose from 19 of 27 to 26, while revealed information rose from 20 to 28 and softened results from 16 to 21. Repeat on the wider set, each reminder alone and both together, before either goes into `prompts/tasks.yaml`.
+
+**9f.3** PLAYER AGENCY's inner-life clause says to describe what a camera could record, including action, beside the clause that limits the character's actions to the stated one.
+
+**9f.4** The action task tells a strong hit in a desperate phase to carry the surrounding darkness.
+
+**9f.5** `fact_budget` allows one or two extra facts, while the dialog task says nothing beyond the question's scope.
+
+**9f.6** `<style>` asks for terse prose, and much of the system prompt still addresses GENRE PHYSICS.
+
+**9f.7** `prompts/director.yaml` still has the Director recommend a "breather", although pacing is engine-computed. The Director is about 40 to 45 percent of a session's engine cost, more in sessions with many misses, since every miss triggers it; running it less often would leave NPC profiles stale and is not planned.
+
+**9f.8** The extraction prompts (`narrator_metadata`, `opening_setup_extractor`), `revelation_check_system`, `blueprint_voicing`, and `recap` have been read but not tuned.
+
+### Definition of Done
+
+- Each adopted change was measured on the same situation set against the unchanged prompt, with at least two runs per variant, and beats the run-to-run spread without raising any audit kind beyond it.
+- The narrations of every adopted change were read, not only counted.
+- Prompt text stays in `prompts/*.yaml`; no prompt text enters Python.
+- An Elvira session on the final prompts shows no new engine warnings.
+- `docs/ai.md` describes the prompts as they are.
+- Quality gate green, no new project-rule violations, one CHANGELOG entry with what each change measured.
+
+### Reference patterns
+
+- Narrator system prompt: `prompts/narrator.yaml`; task texts per scene type: `prompts/tasks.yaml`; narrator-facing blocks: `prompts/blocks.yaml`.
+- Prompt assembly: `prompt_action.py`, `prompt_dialog.py`, `prompt_shared.py`.
+- Director prompt: `prompts/director.yaml`.
+
+---
+
+## Next steps
+
+Sketches, in the order of work; a step gets its definition of done and reference patterns when it becomes NEXT STEP.
+
+Steps 11, 14b, 25, and 26 each plan a Director tool. The Director has one tool, `query_game_state`; whether a planned tool becomes a new one or part of it is decided when the step becomes NEXT STEP.
+
+### 9d — Generators
 
 Entity creation through the entry point step 9a built: `mechanics/generation.py` → `generate(game, category, context)`, whose categories are registered in `engine/generation.yaml` and dispatched through `_GENERATORS`, with `fact` as the first category. Step 9d builds the framework for entity categories, the location and settlement categories, and moves NPC naming behind an npc category; step 10 adds the encounter category and the weighting of location tables by the setting's atlas, and step 11 widens the npc category with tiers. An entity category returns a `GeneratedEntity`: the category plus the rolled table results, keyed by the role each table plays in that category.
 
@@ -57,7 +100,7 @@ Two decisions open the step and are taken with the user before building. First, 
 
 **9d.6** Tests: smoke with stub oracle data, the registry and the yaml list stay equal (as `tests/test_fact_resolution.py` checks for `fact`), a missing path raises. If generated entities are persisted, the save format breaks.
 
-### Definition of Done
+Definition of done, as written when the step was NEXT STEP:
 
 - Location, settlement, and npc are registered in `engine/generation.yaml` and dispatched by `generate`; an unknown category or a missing oracle path raises.
 - Each category fires where the opening decision puts it, with a callsite in play.
@@ -70,20 +113,12 @@ Two decisions open the step and are taken with the user before building. First, 
 - An Elvira run shows `<generated>` tags in play and no new engine warnings.
 - Quality gate green, no new project-rule violations, one CHANGELOG entry.
 
-### Reference patterns
+Reference patterns:
 
 - Entry point and registry: `mechanics/generation.py` → `generate`, `_GENERATORS`; `engine/generation.yaml`.
 - A generated result as a prompt block: `prompt_shared.py` → `_facts_block`, templates in `prompts/blocks.yaml`.
 - Parent-chain oracle lookup: `datasworn/settings.py` → `SettingPackage.oracle_data_for`.
 - Cascade rolls: `datasworn/cascade.py` → `roll_oracle_cascade`, used today by threat naming.
-
----
-
-## Next steps
-
-Sketches, in the order of work; a step gets its definition of done and reference patterns when it becomes NEXT STEP.
-
-Steps 11, 14b, 25, and 26 each plan a Director tool. The Director has one tool, `query_game_state`; whether a planned tool becomes a new one or part of it is decided when the step becomes NEXT STEP.
 
 ### 9e — Open findings from Elvira runs
 
@@ -91,19 +126,8 @@ Steps 11, 14b, 25, and 26 each plan a Director tool. The Director has one tool, 
 - The metadata extraction's identity reveals for unnamed NPCs are rejected for zero word overlap, and a stub NPC is created instead.
 - The metadata extraction has named an NPC id that does not exist (`npc_details: could not find NPC 'npc_5'`).
 - After a chapter transition a returning NPC ("Maren Silk") and a new NPC of almost the same name ("Maren") can stand side by side, since returning NPCs are merged by exact name only.
+- The scene can tell the narrator through a `<fact>` that an NPC is not within reach while the same NPC is the scene's `<target_npc>`; both models then let the NPC speak. Settle presence once, so the fact and the target agree.
 - The Director's final JSON answer breaks now and then: a stray control character inside a string, a run to the 8192-token limit, or its reasoning's `"..."` placeholders copied into the answer. The failure warning shows how the JSON began. First check whether Together constrains that call's JSON at all.
-
-### 9f — Narrator, Director, and extraction prompts
-
-One change at a time, measured with Elvira sessions and by reading the narrations. A measuring session costs about 25 cents of engine calls plus Elvira's own, and a prompt step can need dozens: collect situations once and rerun only the narrator and judge per variant, stop a variant as soon as it is clearly worse, and read the narrations before running more.
-
-- The action task tells a strong hit in a desperate phase to carry the surrounding darkness.
-- PLAYER AGENCY's inner-life clause says to describe what a camera could record, including action, beside the clause that limits the character's actions to the stated one.
-- `fact_budget` allows one or two extra facts, while the dialog task says nothing beyond the question's scope.
-- `<style>` asks for terse prose, and much of the system prompt still addresses GENRE PHYSICS.
-- `prompts/director.yaml` still has the Director recommend a "breather", although pacing is engine-computed.
-- The extraction prompts (`narrator_metadata`, `opening_setup_extractor`), `revelation_check_system`, `blueprint_voicing`, and `recap` have been read but not tuned.
-- The Director is about 40 to 45 percent of a session's engine cost, more in sessions with many misses, since every miss triggers it. Running it less often would leave NPC profiles stale and is not planned.
 
 ### 9g — Test fixtures through the real creation path
 
