@@ -8,6 +8,12 @@ This log starts at 2026.09.24.0, the restart after a four-month pause. Earlier r
 
 Calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day.
 
+## [2026.10.04.2] — 2026-10-04
+
+Documentation only. Scene challenges turned out to be configured but unreachable in play: Begin the Scene has no roll, so the available-moves filter keeps it from the Brain, no scene-challenge track ever exists, the moves that need one are never offered, and the `fill_clock` effect of their misses is computed but read by nothing. New step 9k makes them playable from the rulebook (Begin the Scene as a formal move, a tension clock, `fill_clock` applied, the engine's own progress rule for the ordinary moves removed); step 13b no longer lists Begin the Scene, `docs/mechanics.md` says scene challenges are not playable yet, and step 9h.10 asks that every move-outcome field has a reader in play.
+
+Quality gate: 1557 tests green, project-rule scans clean (documentation drift included), coverage 90.81%. No code, prompt, or configuration changed, so no Elvira run.
+
 ## [2026.10.04.1] — 2026-10-04
 
 Documentation only. The md files now state the current state, each fact in one file: reasons are written out instead of pointing to CHANGELOG versions, the roadmap's DONE list, duplicated process rules, and model paragraph are gone (process rules live in CONTRIBUTING.md), AUDIT's loose notes became substeps of step 9h, ai.md lost its prices and measurement history, the register in `docs/divergences.md` is the one list of where the AI still decides what a system will take over, ORIGINS keeps lineage and credits, and this log starts at 2026.09.24.0. Fixed on the way: `docs/mechanics.md` still called `generate` the single entry point, overstated `check_npc_agency`, missed the progress-mark category when adding a move, and described chapter transitions unclearly. The user decided that death comes only through Face Death, as the rulebooks have it; step 9j.5 builds it, and the register entry moves from Open to Until step 9j.
