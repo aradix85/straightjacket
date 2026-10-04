@@ -1,6 +1,6 @@
 # AUDIT
 
-How to audit this codebase against the five principles below. Stateful: the Status section at the bottom records what has been audited.
+How to audit this codebase against the five principles below. The Status section at the bottom records what has been audited; findings that wait for an audit are substeps of roadmap step 9h.
 
 Earlier audits produced false reassurance: asked "is the codebase config-driven?", Claude answered "yes" while significant parts were still hardcoded. So an audit never gives a verdict. It produces an exhaustive hit-list the user can verify; zero hits and eighty hits are both valid answers, a selective summary is not.
 
@@ -10,7 +10,7 @@ Earlier audits produced false reassurance: asked "is the codebase config-driven?
 2. Read `ARCHITECTURE.md` and `CONTRIBUTING.md` in full: they define where things live and which exceptions to the project rules exist. Without them, violations and carve-outs get misclassified.
 3. Read this document in full, then take the next open item from Status.
 
-One audit session covers one principle, or for the interpretive principles (1, 3, 5) one submodule. The mechanical principles (2, 4) usually fit in one session. Do not combine principles or start the next one because time is left. Stopping halfway is a successful session: record the progress in Status and a hand-off note in Notes.
+One audit session covers one principle, or for the interpretive principles (1, 3, 5) one submodule. The mechanical principles (2, 4) usually fit in one session. Do not combine principles or start the next one because time is left. Stopping halfway is a successful session: record the progress in Status, and anything to pick up next time as a substep of roadmap step 9h.
 
 ## Working method
 
@@ -35,7 +35,7 @@ One audit session covers one principle, or for the interpretive principles (1, 3
 ## Output
 
 1. A fix-file `fix_principle<N>.md`: every violation with path, line, a one-sentence classification, and for clear violations a short note on the fix. Carve-outs are not listed; `needs human judgment` items carry a separate marker. For interpretive principles the file grows across sessions, each contribution dated and labelled with its submodule.
-2. This document's Status and Notes updated.
+2. This document's Status updated, and every finding the session leaves open added to roadmap step 9h.
 3. A short summary for the user: the number of violations and their spread over files, up to five `needs human judgment` items with file and line, and the grep log.
 
 ## The five principles
@@ -111,16 +111,5 @@ Submodules for principles 1, 3, and 5: `mechanics/`, `npc/`, `game/`, `ai/`, `db
 - Principle 1: no submodule audited.
 - Principle 2: not audited.
 - Principle 3: no submodule audited.
-- Principle 4: not audited. Pass 4c was largely settled outside an audit: strict loading since 2026.09.24.45 and a settings loader that refuses unknown keys since 2026.09.25.0.
+- Principle 4: not audited. Pass 4c is largely enforced already: saves load strictly, and the settings loader refuses unknown keys.
 - Principle 5: no submodule audited.
-
-## Notes
-
-Findings recorded outside a principle audit, not yet classified:
-
-- Outside the config binding, dataclasses in `src/` carried about 245 annotated fields with a default on 2026-09-24, concentrated in `models_story.py`, `models.py`, `models_base.py`, `datasworn/moves.py`, and `models_npc.py`. Many are `default_factory` empty collections; the rest is Pass 2d material. Example: `KeyedScene.source: str = ""` and `KeyedScene.bound_entity_id: str | None = None`.
-- The `.get()` scan only flags constant, non-neutral defaults; `.get("key", some_variable)` passes unexamined (example: `truth_data.get("name", truth_id)` in `web/serializers.py`). Pass 4b.
-- 64 of 173 `strings/*.yaml` keys had no literal reference in `src/` or `index.html` on 2026-09-24; most are built dynamically (`move.*`, `disposition.*`, `consequence.*`). A mechanical strings scan needs prefix awareness. Pass 5b.
-- `run.py` at the repository root contains docstrings, but the comment and docstring scan covers `src/` and `tests/` only. Decide whether root scripts are in scope.
-- AI-call carve-outs catch an error, log a warning, and play on, which once hid failures for hours (2026.09.24.9 to .20). Principle 3 passes ask of every carve-out where its failure becomes visible; Elvira now reports every engine warning.
-- A hand-built test fixture hid a bug that the real creation path would have shown (2026.09.24.41). Principle 5 passes prefer fixtures made through the real creation path.

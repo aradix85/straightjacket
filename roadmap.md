@@ -1,103 +1,55 @@
 # Straightjacket — Roadmap
 
-## Purpose
+Internal working doc: what gets built next, and in what order. The rules every change keeps and the checks before a commit are in CONTRIBUTING.md; this document adds only the order of work and what concerns the sessions with the user.
 
-Internal working doc: what to build, in what order, with guardrails specific to this codebase. Read after ARCHITECTURE.md, CONTRIBUTING.md, and the code; the rules every change keeps are in CONTRIBUTING.md.
+## How the roadmap works
 
-One step is one session: read the code, implement, test, pass the quality gate, delete what the step made obsolete, update this document. When reality diverges from the plan during a step, the roadmap is updated in the same commit; it never claims something the code contradicts.
+The steps below are the order of work: NEXT STEP first, then the others in their order. Nothing is worked on outside a step, and a new finding becomes a substep of an existing step or a new step in the same commit. One step is one session: read the code, build, test, and delete what the step made obsolete. When reality diverges from the plan, the roadmap changes in the same commit; it never claims what the code contradicts.
 
-## After every step
+Closing a step: the checks of CONTRIBUTING.md pass, the step leaves this document and gets its CHANGELOG entry, the next step becomes NEXT STEP with substeps, a definition of done, and reference patterns, and a decision that later steps rely on goes under Decisions. The step's area is read against the source rulebooks and, where it touches the architecture, against the design document; a departure goes to `docs/divergences.md`.
 
-1. The workflow checks of CONTRIBUTING.md (ruff, the test suite with its coverage floor, mypy) and, where it applies, the Elvira run.
-2. Violation grep on touched files: `.get("..", ` with a non-neutral literal, `or "..` on a domain value, `except Exception` outside the carve-out files. New hits are new violations; fix them.
-3. `git status` confirms the obsolete code is deleted.
-4. The step moves to DONE with one line; the next step is promoted to NEXT and gets substeps, a definition of done, and reference patterns; Current state records any decision taken. The md files (README, ARCHITECTURE, CONTRIBUTING, `docs/`, ORIGINS, SECURITY, AUDIT) are checked for claims the step made wrong, and the step gets one CHANGELOG entry.
-5. The step's area is read against the source rulebooks, and against the design document's architecture where the step touches it: a new departure gets an entry in `docs/divergences.md` with its reason and status, and an entry whose status names this step is removed or rewritten.
+## Sessions with the user
+
+- The user writes in Dutch and reads with a screen reader: answers are in Dutch and in plain prose, while the repository stays in English.
+- A session starts by reading every md file in the root and in `docs/`, of the CHANGELOG only the entries since the last finished step, and then continues with NEXT STEP. The design document is not in the repository; README.md links it.
+- The Elvira sessions a step needs are part of the work; an eight-turn session costs about 15 to 20 cents.
+- Each finished release is committed and pushed to main.
+- On this machine the API keys live in the Windows user environment (`TOGETHER_API_KEY` for the game, `OPENAI_API_KEY` for Elvira); a process started by a tool may need them set in its own environment first.
 
 ## Reference patterns
 
 - New AI-call wrapper: `ai/brain.py` → `call_brain` for a call the turn cannot do without, `ai/blueprint_voicing.py` → `call_blueprint_voicing` for one that degrades.
 - Director tool: `tools/builtins.py` → `query_game_state` (`docs/ai.md`, Tool calling and prompt injection).
-- Strict nested domain lookup: `mechanics/stance_gate.py` (resolve_npc_stance).
+- Strict nested domain lookup: `mechanics/stance_gate.py` → `resolve_npc_stance`.
 - New yaml-backed config section: an entry in `engine_config.py` `_SIMPLE_SECTIONS`, with its dataclass in `engine_config_dataclasses.py` (required fields, no defaults).
 - New template text: `prompts/*.yaml` for AI-facing text, with narrator-facing blocks in `prompts/blocks.yaml`; `strings/*.yaml` for user-facing text; `engine/*.yaml` for engine-internal values.
 - Subpackage layout: `engine/correction/`.
 - Large container split: `engine_config.py` re-exporting from `engine_config_dataclasses.py`.
-- No post-hoc validators of AI output: see "No narration validator" in `docs/divergences.md`.
+- No post-hoc validators of AI output: "No narration validator" in `docs/divergences.md`.
 
-## Current state
+## Decisions referenced by later steps
 
-### Order of work
+**Track-type composition (Option C).** Domain objects that own a progress track (expeditions, sites, and thread tracks in steps 25, 26, and 31) hold a `progress: ProgressTrack` field plus their own fields. Rejected: inheriting from ProgressTrack, which would push domain concerns onto a primitive used everywhere, and a registry with a `kind` discriminator, which adds a lookup at every callsite.
 
-Revised 2026-09-29: the steps are the order of work, NEXT STEP first and then the steps below in their order. Nothing is worked on outside a step, and a new finding becomes a substep of an existing step or a new step in the same commit, so there are no loose priorities or open items beside the steps.
+**Categorisation follows implementation.** `available_moves` filters `no_roll` and `special_track` moves out of the Brain's choice, so a category on those moves cannot be enforced; `test_every_implemented_move_has_real_category` checks implemented moves only. If a filter change brings such moves back into view, they get their category and their outcomes in the same commit (step 13b).
 
-### Working agreements
+**Each spawn source names its own entities** from what it naturally has, as threats and clocks do (`docs/mechanics.md`, Threats and clocks). Later spawners of new entity types follow the same axis.
 
-- Nothing goes in the CHANGELOG before its check has been read.
-- Fewer, larger releases: one release per finished piece of work, not one per measurement.
-- CHANGELOG entries are short: what changed, why, what was measured, and the quality gate, in a few sentences, not an essay.
-- Each finished release is committed and pushed.
-- The Elvira sessions a step's definition of done needs are part of the work; a short session costs about 15 to 20 cents.
-- The user writes in Dutch and reads with a screen reader: answers to the user are in Dutch and in plain prose, while the repository stays in English.
-- A session starts by reading every md file in the root and in `docs/`, except that of the CHANGELOG it reads only the entries since the last finished step, then continues with NEXT STEP. The Narrative RPG Engine design document is not in the repository: it is a theoretical concept published on itch.io (link in README), consulted when a step touches the architecture it proposes.
-
-### Running things
-
-On this machine the API keys live in the Windows user environment: `TOGETHER_API_KEY` for the game, `OPENAI_API_KEY` for Elvira. A process started from another process may not see them until they are set in its own environment. How to run her is in `docs/elvira.md`.
-
-Models: every AI role runs on GLM 5.3 through Together since 2026.09.26.20; `docs/ai.md` describes the configuration, and the measurements behind it are in the CHANGELOG from 2026.09.26.2 to .20. The user prefers one model for every role (2026-09-29): a stronger model for a few scenes (openings, epilogues) is not planned, and quality work goes through engine-side structure and prompt tuning.
-
-### Decisions referenced by later steps
-
-**Track-type composition (Option C).** Domain objects that own a progress track (expeditions, sites, and thread tracks in steps 25, 26, and 31) hold a `progress: ProgressTrack` field plus their own fields. Rejected: inheriting from ProgressTrack, which would push domain concerns onto a primitive used everywhere, and a registry with a `kind` discriminator, which adds a lookup at every callsite. ProgressTrack stays single-purpose, snapshot and restore work through SerializableMixin on either layer, and a new track-owning object needs no change to ProgressTrack.
-
-**Categorisation follows implementation.** `available_moves` filters `no_roll` and `special_track` moves out of the Brain's choice, so a category on those moves cannot be enforced; `test_every_implemented_move_has_real_category` checks implemented moves only. If a filter change brings such moves back into view, they get their category and their outcomes in the same commit as the filter change (step 13b).
-
-**Each spawn source names its own entities** from what it naturally has, as threats and clocks do today (`docs/mechanics.md`, Threats and clocks). Later spawners of new entity types follow the same axis.
-
-**Where the AI still decides, and the system that takes it over (2026-09-29).** The list lives in ARCHITECTURE.md (The core idea, What a system takes over, and when), so that it exists once; a step that moves a decision from the AI to a system updates it there.
-
----
-
-## DONE
-
-One line per completed step, newest last. Details in CHANGELOG.
-
-- Step 1 — Explicit chapter transitions: `ChapterSummary` carries a mechanical snapshot; three-place capture/reset/restore pattern (0.74.0).
-- Step 2 — Chapter-summary contradiction validator (2026.04.25.0), removed again in 2026.04.27.9.
-- Step 3 — Continue a Legacy: character succession with locked-in inheritance rolls (2026.04.25.1).
-- Step 4 — Keyed scenes, consumer side: `keyed > interrupt > altered > expected` (2026.04.25.2).
-- Step 5 — Adventure Crafter primitives: themes, plot points, meta dispatch (2026.04.26.0).
-- Step 6 — AI data supply audit: tool-call vs prompt-inject verified at fourteen AI call sites (2026.04.28.5).
-- Step 6b — AC turning points and supporting tables; shared `characters_list` plus `plotlines_list` (2026.04.29.0).
-- Step 7a — AI architect replaced by AC blueprint seed plus `call_blueprint_voicing` (2026.05.06.0).
-- Step 8 — `ai/architect.py` split into `ai/recap.py` and `ai/chapter_summary.py` (2026.05.06.1).
-- Step 7b — AC character-crafting tables as pure helpers; `CharacterTraits` under orphan carve-out until step 11 (2026.05.06.2).
-- Step 7c — Keyed-scene spawners from AC, random events, and clocks, plus pattern grammar (2026.05.06.3).
-- Threat creation from random events and AC plot-points; `datasworn/cascade.py` (2026.05.11.0).
-- Clock expansion — fill consequences in `engine/clocks.yaml::fill_consequences`, clock creation from random events and AC plot-points (AC clocks named after the plot point), `owner_kind`/`owner_id` refactor (2026.05.14.0).
-- Providers and SDKs — per-role providers, startup model check, single retry layer, timeouts, refusals, OpenAI's own models (2026.09.24.9 to .14).
-- Sentence-level narration streaming (2026.09.24.12).
-- Elvira rebuilt — streaming checks, blind judge, save round trip, succession, coverage, WebSocket probes, engine events and warnings, report (2026.09.24.15 to .42).
-- Rules conformance pass, see step 9j (2026.09.24.17 to .34).
-- EdgeTales idea E5 — the Brain's `target_npc`, `bonus_id`, and `target_track` limited to what the prompt offers (2026.09.24.58).
-- Step 9a — Fact resolution: the Brain names undetermined facts, fate settles them with engine-derived odds, the narrator gets `<facts>`; Ask the Oracle answers yes/no questions through facts; the momentum burn resumes after the roll on the turn's own path (2026.09.29.0).
-- Step 9b — Chapters as Mythic adventures: a new chapter keeps the character's meters, momentum, and clocks, a game that is over goes to succession, and the engine writes the chapter record; the `chapter_summary` AI role is gone (2026.09.29.8).
-- Step 9c — Soft misses: on a miss the engine withholds NPC knowledge, Director guidance, and revelations, and NPCs present withhold; result integrity on misses 3.0 → 3.4 (2026.09.29.12).
+**One model for every role.** The user prefers one model for all AI roles: quality work goes through engine-side structure and prompt tuning, not a stronger model for a few scenes (`docs/ai.md`, Model assignment).
 
 ---
 
 ## NEXT STEP — 9d: Generators
 
-Entity creation through the entry point step 9a built: `mechanics/generation.py` → `generate(game, category, context)`, whose categories are registered in `engine/generation.yaml` and dispatched through `_GENERATORS`, with `fact` as the first category. Step 9d builds the framework for entity categories, the location and settlement categories, and moves NPC naming behind an npc category; step 10 adds the encounter category and the weighting of location tables by the setting's atlas, and step 11 widens the npc category with tiers. An entity category returns a `GeneratedEntity` (decided in 2026.09.24.47): the category plus the rolled table results, keyed by the role each table plays in that category.
+Entity creation through the entry point step 9a built: `mechanics/generation.py` → `generate(game, category, context)`, whose categories are registered in `engine/generation.yaml` and dispatched through `_GENERATORS`, with `fact` as the first category. Step 9d builds the framework for entity categories, the location and settlement categories, and moves NPC naming behind an npc category; step 10 adds the encounter category and the weighting of location tables by the setting's atlas, and step 11 widens the npc category with tiers. An entity category returns a `GeneratedEntity`: the category plus the rolled table results, keyed by the role each table plays in that category.
 
-Two decisions open the step and are taken with the user before building, as step 9a did for fact resolution. First, when each category fires: a fact fires because the Brain names it, while the candidates for an entity are a move to a place the world state does not know yet, the Brain naming a new place or person the action depends on, and an altered or interrupt scene. Second, how `generate` types its context and result across categories: a union, or one typed function per category behind the registry.
+Two decisions open the step and are taken with the user before building. First, when each category fires: a fact fires because the Brain names it, while the candidates for an entity are a move to a place the world state does not know yet, the Brain naming a new place or person the action depends on, and an altered or interrupt scene. Second, how `generate` types its context and result across categories: a union, or one typed function per category behind the registry.
 
 **9d.1** Categories location and settlement registered in `engine/generation.yaml`, each with a callsite in play where the first decision puts it, and npc for the oracle-rolled name (9d.5). Step 10 adds encounter; steps 11, 25, and 26 widen npc and add waypoints and sites.
 
 **9d.2** An oracle accessor that takes a table's format from setting yaml instead of branching on setting names: Starforged's flat d100 tables, classic's tables, and Delve's theme plus domain for the sites of step 26. Sundered Isles' cursed variants come with the cursed die (step 28.2); until then the accessor reads its standard tables.
 
-**9d.3** Per-category oracle paths in setting yaml as a mapping keyed by category name (the keys are domain data, decided in 2026.09.24.47); a registered category without a path in the active setting's parent chain raises KeyError. The parent-chain lookup exists: `datasworn/settings.py` → `SettingPackage.oracle_data_for`, `_resolve_oracle_paths`. Later categories add their tables to this mapping rather than new fields on `OraclePaths` (steps 11 and 14b), and when NPC naming moves behind the npc category, `oracle_paths.names` moves into its entry.
+**9d.3** Per-category oracle paths in setting yaml as a mapping keyed by category name, read with `get_raw` because the keys are domain data; a registered category without a path in the active setting's parent chain raises KeyError. The parent-chain lookup exists: `datasworn/settings.py` → `SettingPackage.oracle_data_for`, `_resolve_oracle_paths`. Later categories add their tables to this mapping rather than new fields on `OraclePaths` (steps 11 and 14b), and when NPC naming moves behind the npc category, `oracle_paths.names` moves into its entry.
 
 **9d.4** Generated content reaches the narrator as a `<generated>` tag. The setting's `vocabulary.substitutions` reach the narrator today as instructions in the vocabulary block (`prompt_blocks.py`), not as replacements, and their values are descriptions ("starship — worn, patched") that would read oddly inside an oracle result; the step decides whether those instructions already cover generated content or whether a substitution needs a form that can replace a word in place. No post-hoc check.
 
@@ -129,21 +81,21 @@ Two decisions open the step and are taken with the user before building, as step
 
 ## Next steps
 
-Sketches, in the order of work. Each entry gets substeps, a definition of done, and reference patterns when it is promoted to NEXT.
+Sketches, in the order of work; a step gets its definition of done and reference patterns when it becomes NEXT STEP.
 
-Steps 11, 14b, 25, and 26 each plan a Director tool of their own. Since 2026.09.26.11 the Director has a single tool, `query_game_state`, which cut its tool rounds; whether each planned tool becomes a new one or part of that one is decided when the step is promoted.
+Steps 11, 14b, 25, and 26 each plan a Director tool. The Director has one tool, `query_game_state`; whether a planned tool becomes a new one or part of it is decided when the step becomes NEXT STEP.
 
 ### 9e — Open findings from Elvira runs
 
-- The coverage tracker counted no NPC introductions while the metadata extraction reported one.
-- The metadata extraction's identity reveals for unnamed NPCs are rejected for zero word overlap, and a stub NPC is created instead (runs of 2026-09-25).
-- The metadata extraction once named an NPC id that does not exist (`npc_details: could not find NPC 'npc_5'`, 2026.09.25.6).
-- After a chapter transition the returning NPC "Maren Silk" and a new NPC "Maren" stood side by side as two active NPCs (2026.09.27.1); returning NPCs are merged by exact name only.
-- The Director's final JSON answer breaks now and then (several times in the 9c sessions of 2026-09-29): a stray control character inside a string, a run to the 8192-token limit, or its reasoning's `"..."` placeholders copied into the answer, as in `{"   ,"npc_guidance":`. The carriage-return loop was banned in 2026.09.26.20; the failure warning now shows how the JSON began. First check whether Together constrains that call's JSON at all.
+- Check against a run whether the coverage tracker still misses NPC introductions that the metadata extraction reports.
+- The metadata extraction's identity reveals for unnamed NPCs are rejected for zero word overlap, and a stub NPC is created instead.
+- The metadata extraction has named an NPC id that does not exist (`npc_details: could not find NPC 'npc_5'`).
+- After a chapter transition a returning NPC ("Maren Silk") and a new NPC of almost the same name ("Maren") can stand side by side, since returning NPCs are merged by exact name only.
+- The Director's final JSON answer breaks now and then: a stray control character inside a string, a run to the 8192-token limit, or its reasoning's `"..."` placeholders copied into the answer. The failure warning shows how the JSON began. First check whether Together constrains that call's JSON at all.
 
 ### 9f — Narrator, Director, and extraction prompts
 
-One change at a time, measured with Elvira sessions and by reading the narrations. Measuring costs about 25 cents of engine calls per session plus Elvira's own, and step 9c needed 29 sessions: before measuring, consider collecting situations once and rerunning only the narrator and judge per variant, stop a variant as soon as it is clearly worse, and read the narrations before running more.
+One change at a time, measured with Elvira sessions and by reading the narrations. A measuring session costs about 25 cents of engine calls plus Elvira's own, and a prompt step can need dozens: collect situations once and rerun only the narrator and judge per variant, stop a variant as soon as it is clearly worse, and read the narrations before running more.
 
 - The action task tells a strong hit in a desperate phase to carry the surrounding darkness.
 - PLAYER AGENCY's inner-life clause says to describe what a camera could record, including action, beside the clause that limits the character's actions to the stated one.
@@ -151,17 +103,33 @@ One change at a time, measured with Elvira sessions and by reading the narration
 - `<style>` asks for terse prose, and much of the system prompt still addresses GENRE PHYSICS.
 - `prompts/director.yaml` still has the Director recommend a "breather", although pacing is engine-computed.
 - The extraction prompts (`narrator_metadata`, `opening_setup_extractor`), `revelation_check_system`, `blueprint_voicing`, and `recap` have been read but not tuned.
-- The Director is still about 45 percent of a session's engine cost on GLM 5.3 (miss-scenario sessions of 2026-09-29, where every miss triggers it). Running it less often would leave NPC profiles stale and is not planned.
+- The Director is about 40 to 45 percent of a session's engine cost, more in sessions with many misses, since every miss triggers it. Running it less often would leave NPC profiles stale and is not planned.
 
 ### 9g — Test fixtures through the real creation path
 
-Fixtures made through the real character-creation path instead of hand-built states, since a hand-built fixture hid the roll-bonus bug of 2026.09.24.33 and the momentum-burn bug of 2026.09.29.0; the tests that still build a `GameState` by hand move over one file at a time.
+Fixtures made through the real character-creation path instead of hand-built states, since hand-built fixtures have hidden real bugs more than once (a roll bonus that never applied, momentum burns that overwrote the previous turn, progress marks that never reached a track); the tests that still build a `GameState` by hand move over one file at a time.
 
-### 9h — First principle audit
+### 9h — Principle audits
 
-Run the first pass of AUDIT.md over the code; every finding is fixed or becomes a substep here.
+The audits of AUDIT.md, one session per principle or submodule as it prescribes, in this order: principles 2 and 4, which are mechanical, then principles 3, 5, and 1 per submodule. Every finding is fixed in its session or becomes a substep here. Waiting for the audit to classify:
 
-**9h.1** Found while fixing the Brain's track choice (2026.10.04.0), for the audit to classify: `game/turn.py` → `_sanitize_brain_output` turns an action-roll move with stat `none` into a dialog turn instead of `call_brain` refusing the answer (the tests treat `world_shaping` without a stat as dialog on purpose); `mechanics/tracks.py` → `roll_oracle_answer` returns an empty answer when the game has no setting or the setting fewer than two action-theme paths; `find_progress_track` returns None for a target track of another type, which plays a progress roll on zero boxes; and `engine/damage.yaml` → `miss.endure`, `miss.combat`, `miss.social`, and `miss.other` have no reader that a grep finds (only `miss.clock_ticks` is read, through a dotted path).
+**9h.1** `game/turn.py` → `_sanitize_brain_output` turns an action-roll move with stat `none` into a dialog turn instead of `call_brain` refusing the answer; the tests treat `world_shaping` without a stat as dialog on purpose (principle 3).
+
+**9h.2** `mechanics/tracks.py` → `roll_oracle_answer` returns an empty answer when the game has no setting or the setting fewer than two action-theme paths, and `find_progress_track` returns None for a target track of another type, which plays a progress roll on zero boxes (principle 3).
+
+**9h.3** Config with no reader that a grep finds: `engine/damage.yaml` → `miss.endure`, `miss.combat`, `miss.social`, and `miss.other` (only `miss.clock_ticks` is read, through a dotted path); `engine/creation.yaml` → `starting_asset_categories`, which each setting's `creation_flow` supplies instead; and the short move names in `strings/move.yaml`, such as `move.secure_advantage`, which no current move key matches (principle 5).
+
+**9h.4** `game/chapters.py` → `_reset_chapter_mechanics` empties the tracks, threats, impacts, assets, threads, and lists that `_restore_chapter_mechanics` copies straight back, a round trip that amounts to a copy, and `_prepare_npcs_for_new_chapter` tests the same status twice (principle 3).
+
+**9h.5** Dataclasses outside the config binding carry defaults, concentrated in `models_story.py`, `models.py`, `models_base.py`, `datasworn/moves.py`, and `models_npc.py` (for example `KeyedScene.source` and `KeyedScene.bound_entity_id`); many are empty `default_factory` collections (pass 2d).
+
+**9h.6** The `.get()` scan flags only constant, non-neutral defaults, so `.get("key", variable)` passes unexamined, for example in `web/serializers.py` (pass 4b).
+
+**9h.7** Many `strings/*.yaml` keys are built at runtime (`move.*`, `disposition.*`, `consequence.*`), so a strings scan needs to know those prefixes (pass 5b).
+
+**9h.8** `run.py` holds docstrings, and the comment scan covers only `src/` and `tests/`: decide whether root scripts are in scope.
+
+**9h.9** For every AI-call carve-out, where its failure becomes visible: a caught failure plays on silently unless Elvira or the log shows it (principle 3).
 
 ### 9i — Revelations settled by the engine
 
@@ -169,7 +137,7 @@ Today the blueprint's revelations reach the narrator as `<revelation_ready>`, an
 
 ### 9j — Rules conformance: classic and the Adventure Crafter
 
-The principle and the list of deliberate divergences are in `docs/divergences.md`. Checked in the conformance pass (2026.09.24.17 to .34): the action roll, momentum, Endure Harm and Endure Stress, Pay the Price, every match clause, chained and oracle moves, progress, legacy tracks and experience, connections, Mythic's fate check, fate chart, scene test, chaos factor, event focus, lists, and meaning tables, the Adventure Crafter's tables, theme priority, and turning points, Blades clock sizes, and asset and connection adds. Done on 2026-09-29: classic experience by vow rank, and Draw the Circle's boasts.
+The register of deliberate departures is `docs/divergences.md`. Already checked against the books: the action roll, momentum, Endure Harm and Endure Stress, Pay the Price, every match clause, chained and oracle moves, progress, legacy tracks and experience, connections, Mythic's fate check, fate chart, scene test, chaos factor, event focus, lists, and meaning tables, the Adventure Crafter's tables, theme priority, and turning points, Blades clock sizes, asset and connection adds, classic experience by vow rank, and Draw the Circle's boasts.
 
 **9j.1** In classic Ironsworn, wounded and shaken no longer block recovery; classic asks only for health or spirit above 0, and the rule stays for Starforged and Sundered Isles.
 
@@ -179,7 +147,7 @@ The principle and the list of deliberate divergences are in `docs/divergences.md
 
 **9j.4** The individual words of the oracle and meaning tables are checked against the books.
 
-**9j.5** The user decides whether the game stays over when health and spirit are both 0 after a turn (`game/finalization.py` → `_update_crisis`, an engine rule with no rulebook source, Open in `docs/divergences.md`) or whether death comes only through Face Death and Endure Harm's and Endure Stress's tables, as the rulebooks have it.
+**9j.5** Death through Face Death, as the rulebooks have it (the user's decision). The game no longer ends because health and spirit are both 0 (`game/finalization.py` → `_update_crisis` keeps only the crisis status). Harm or stress taken at 0 goes through Endure Harm or Endure Stress, and a miss at 0 marks an impact the move offers while one is free (a fixed choice for the register) or, when none is free, rolls the move's Datasworn table (`<setting>/oracles/moves/endure_harm` and `endure_stress`). A result that names Face Death, Face Desolation, or Forsake Your Vow starts that move through the engine, as an engine trigger. The dying result (Heal within an hour or two, or Face Death) needs a deadline, a clock or a keyed scene, decided in the step. Whether harm from Pay the Price and from miss consequences should itself be rolled through Endure Harm, as the rulebooks do, is checked against the books first. The register entry "Game over when health and spirit are both 0" leaves `docs/divergences.md`; Elvira's `near_death` scenario follows the new path.
 
 Ability effects other than adds belong to step 18; outcomes where the player would choose a cost are a recorded divergence.
 
@@ -195,7 +163,7 @@ Ability effects other than adds belong to step 18; outcomes where the player wou
 
 **10.5** Tests.
 
-**10.6** The setting's own tables feed these generators (coverage map 2026-09-29): the atlas regions of classic and Sundered Isles for locations; the Datasworn NPC entries (classic ironlanders, firstborn, animals, beasts, horrors; Delve and Starforged entries), Starforged creatures and starships, and Delve monstrosities for encounters.
+**10.6** The setting's own tables feed these generators: the atlas regions of classic and Sundered Isles for locations; the Datasworn NPC entries (classic ironlanders, firstborn, animals, beasts, horrors; Delve and Starforged entries), Starforged creatures and starships, and Delve monstrosities for encounters.
 
 If the user buys the Location Crafter (Word Mill Games, under the same CC BY-NC license as Mythic), its tables join step 10 as data for areas where the setting has no location tools of its own; until then step 10 uses the setting's oracles only.
 
@@ -217,7 +185,7 @@ The opening scene and the character's start come from the setting's launch table
 
 ### 11b — NPC exits and retirement
 
-From the EdgeTales comparison of 2026-09-24: reimplement the idea, do not port code, and credit EdgeTales in the CHANGELOG entry that lands it.
+An idea from EdgeTales: reimplement it, do not port code, and credit EdgeTales in the CHANGELOG entry that lands it.
 
 **11b.1** Exit tracking. NPCs who walk out of a scene can be pulled back next scene by the activation bonus without narrative reason. The narrator_metadata extractor reports `exited_npc_ids` (the same pattern as `deceased_npcs`); `NpcData` gets an absent-until-scene value (the save format breaks); activation scores the NPC zero while absent unless the player names them or the Brain targets them; chapter start clears the value. Tests for exit, suppression, the player-name override, and the chapter reset.
 
@@ -225,11 +193,11 @@ From the EdgeTales comparison of 2026-09-24: reimplement the idea, do not port c
 
 ### 11c — NPC-to-NPC memories in the prompt
 
-From the EdgeTales comparison of 2026-09-24: reimplement the idea, do not port code, and credit EdgeTales in the CHANGELOG entry that lands it. `MemoryEntry.about_npc` records what NPCs remember about each other, but the narrator never sees it. The engine selects `about_npc` memories between NPCs present in the scene (one per pair, most recent first, cap in yaml) and injects them as a block whose template lives in `prompts/blocks.yaml`. Stepping stone for step 24.
+An idea from EdgeTales: reimplement it, do not port code, and credit EdgeTales in the CHANGELOG entry that lands it. `MemoryEntry.about_npc` records what NPCs remember about each other, but the narrator never sees it. The engine selects `about_npc` memories between NPCs present in the scene (one per pair, most recent first, cap in yaml) and injects them as a block whose template lives in `prompts/blocks.yaml`. Stepping stone for step 24.
 
 ### 11d — Narrator direction on NPC backstory
 
-From the EdgeTales comparison of 2026-09-24: reimplement the idea, do not port code, and credit EdgeTales in the CHANGELOG entry that lands it. NPCs draw on their description, agenda, arc, and earlier scenes; where their past is not established, they keep it vague rather than invent family or history. Phrase it as direction, not prohibition, and measure with Elvira before and after, because prompt wording has caused regressions before (2026.04.27.4).
+An idea from EdgeTales: reimplement it, do not port code, and credit EdgeTales in the CHANGELOG entry that lands it. NPCs draw on their description, agenda, arc, and earlier scenes; where their past is not established, they keep it vague rather than invent family or history. Phrase it as direction, not prohibition, and measure with Elvira before and after, because prompt wording has caused regressions before.
 
 ### 12 — NPC goal clocks and autonomous actions
 
@@ -251,15 +219,15 @@ Fate plus expected behavior derived from AIMS and stance. Data: `mythic_gme_2e.j
 
 ### 13b — Unimplemented Datasworn mechanics
 
-The move categories of the four shipped settings hold 89 unique move stems; 56 are formal moves in `engine/move_outcomes.yaml` (recounted in 2026.09.24.46). The other 33 are `no_roll` (29) or `special_track` (4): 6 belong to steps 25, 26, and 28, and about 27 are general mechanics not yet wired. Asset abilities define 48 further moves, covered by steps 18 to 20. This step wires the general group following "Datasworn mechanic naming" in `docs/mechanics.md`: a player choice with a structured outcome becomes a formal move; a consequence that fires when a condition becomes true becomes an engine trigger with a direct name.
+This step covers the Datasworn moves of the shipped settings that are neither formal moves in `engine/move_outcomes.yaml` nor covered by another step (expeditions, sites, and Sundered Isles in steps 25, 26, and 28, asset abilities in steps 18 to 20), and wires them following "Datasworn mechanic naming" in `docs/mechanics.md`: a player choice with a structured outcome becomes a formal move; a consequence that fires when a condition becomes true becomes an engine trigger with a direct name.
 
 Group A, formal moves: Forsake Your Vow as the player's own choice (`quest/forsake_your_vow`, today only an engine trigger when a threat's menace fills), `combat/turn_the_tide`, `adventure/aid_your_ally` and `relationship/aid_your_ally` (needs the NPC-action context of step 11), `relationship/write_your_epilogue` (couples with the retire flow of step 3), `scene_challenge/begin_the_scene`, `failure/learn_from_your_failures`, `threat/take_a_hiatus`, and the progress-mark moves `legacy/advance`, `legacy/earn_experience`, `quest/advance`, `quest/reach_a_milestone`.
 
 Group B, engine triggers: `mark_failure_on_miss` (`failure/mark_your_failure`), `face_setback_at_min_momentum` (`suffer/face_a_setback`, when momentum would drop below -6), `mark_supply_depletion` (`suffer/out_of_supply`), `face_defeat_on_objective_loss` (`combat/face_defeat`). The existing `advance_menace_on_miss` and `pay_the_price` already follow this pattern.
 
-Group C, covered elsewhere or deliberately not wired: `legacy/continue_a_legacy` (step 3 succession), `fate/ask_the_oracle` (the engine's own `ask_the_oracle`), `threshold/overcome_destruction` (step 28), and the five session moves (decision in CHANGELOG 2026.04.28.3).
+Group C, covered elsewhere or deliberately not wired: `legacy/continue_a_legacy` (step 3 succession), `fate/ask_the_oracle` (the engine's own `ask_the_oracle`), `threshold/overcome_destruction` (step 28), and the five session moves (a recorded divergence).
 
-Duels: Draw the Circle's boasts are modelled (2026.09.29.5), but the duel opens no combat track, so the foe's initiative after a miss or the boast Grant first strike is narrated; wiring the duel into the combat track and position belongs here.
+Duels: Draw the Circle's boasts are modelled, but the duel opens no combat track, so the foe's initiative after a miss or the boast Grant first strike is narrated; wiring the duel into the combat track and position belongs here.
 
 **13b.1** Group A in `engine/move_outcomes.yaml` and `engine/move_categories.yaml`, reusing the existing handler patterns (progress mark, momentum shift, special track).
 
@@ -271,7 +239,7 @@ Duels: Draw the Circle's boasts are modelled (2026.09.29.5), but the duel opens 
 
 **13b.5** Tests: each formal move through the move-outcome pipeline, each trigger under its exact condition, `advance_menace_on_miss` as regression.
 
-Done: formal-move coverage rises from 56 to about 67 stems, with four new engine triggers.
+Done: every move in groups A and B is wired, and `docs/mechanics.md` names the new engine triggers.
 
 ### 13c — Foe actions and plot twists from oracles
 
@@ -301,7 +269,7 @@ What a foe does in a fight comes from the setting's combat-action oracle (classi
 
 ### 14c — Clock and threat pressure in narrative direction
 
-From the EdgeTales comparison of 2026-09-24: reimplement the idea, do not port code, and credit EdgeTales in the CHANGELOG entry that lands it. The narrator only learns about a clock when it fills, while the design document names clock states and threat levels as sources of narrative intensity. The engine computes a pressure tier from the fullest active threat or scheme clock and the highest threat menace (thresholds in engine yaml) and feeds it into the existing intensity derivation; no numbers or clock names reach the prompt. Measure with Elvira before and after.
+An idea from EdgeTales: reimplement it, do not port code, and credit EdgeTales in the CHANGELOG entry that lands it. The narrator only learns about a clock when it fills, while the design document names clock states and threat levels as sources of narrative intensity. The engine computes a pressure tier from the fullest active threat or scheme clock and the highest threat menace (thresholds in engine yaml) and feeds it into the existing intensity derivation; no numbers or clock names reach the prompt. Measure with Elvira before and after.
 
 ### 15 — Faction prompts and status
 

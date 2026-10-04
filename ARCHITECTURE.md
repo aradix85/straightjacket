@@ -1,6 +1,6 @@
 # Architecture
 
-A bird's-eye view of Straightjacket: what it is built to do, how a turn flows, where the code lives, and the rules its structure keeps. Details live elsewhere and are not repeated here: [CONTRIBUTING.md](CONTRIBUTING.md) holds the project rules, code standards, and testing; `docs/ai.md` the AI layer; `docs/mechanics.md` the game mechanics; `docs/settings.md` settings and character creation; `docs/divergences.md` the deliberate departures from the source rulebooks and the design document; `docs/elvira.md` the test player Elvira.
+A bird's-eye view of Straightjacket: what it is built to do, how a turn flows, where the code lives, and the rules its structure keeps. The details live in the files README.md lists and are not repeated here.
 
 ## The core idea
 
@@ -10,26 +10,14 @@ Straightjacket puts the Narrative RPG Engine design document ([itch.io](https://
 
 **What the AI still decides.** Four decisions stay with the AI in play, each bounded by the engine:
 
-- The Brain turns free player text into a move, a stat, a roll bonus, a target NPC, a new track's name and rank, and the undetermined facts the action turns on. Free text needs interpretation, but each choice is limited to what the engine offers in that situation, and the dice, fate, and the engine decide the outcome.
+- The Brain turns free player text into a move and its parameters (`docs/ai.md`, Roles). Each choice is limited to what the engine offers in that situation, and the dice, fate, and the engine decide the outcome.
 - The narrator supplies every fact the engine has not settled, such as the look of a room or what an NPC says.
 - The metadata extraction registers the NPCs, renames, and deaths the narration introduces, so narrated facts can become state; the opening extraction does the same for an opening scene.
 - The Director writes agendas, instincts, and arcs for the NPCs the engine selects.
 
-Three further calls are bounded in other ways: the revelation check judges whether a planned revelation has appeared in the prose (step 9i moves that decision to the engine), the correction analysis turns a `##` correction into state operations, and blueprint voicing writes the acts, revelations, and possible endings around the turning points the Adventure Crafter rolled. The first and last of the four stay with the AI by design; step 9a moved the facts an action depends on from the narrator to fate, and step 9d shrinks the second and third further by generating entities before the narrator writes.
+The Brain reading free text, the narrator's prose, and the Director's wording of agendas and arcs stay with the AI by design. What the narrator still invents where a system could decide (locations, encounters, who a new NPC is, what an NPC does off screen, a foe's action) is listed with the roadmap step that takes it over in `docs/divergences.md`, as is the revelation check, the one call that judges the narration after the fact.
 
-**What a system takes over, and when.** This is the one list of places where the AI still decides something a system could, judged by the order of preference; the roadmap steps named here carry the work, and `docs/divergences.md` records the departures that remain until then.
-
-- What an NPC does off screen: the narrator invents it when `mechanics/consequences.py` → `check_npc_agency` says an NPC pursues its agenda; Mythic's NPC behaviour table and NPC goal clocks take it over in steps 12 and 13.
-- Locations, settlements, and encounters: narrated; the setting's Datasworn oracles and Mythic's themed element tables take them over in steps 9d, 10, 33, and 34.
-- Who a new NPC is: narrated and then extracted; the Adventure Crafter's character-crafting tables (`mechanics/adventure_crafter.py` → `roll_character_traits`) and the setting's oracles take it over in step 11.
-- Whether a planned revelation has been told: an AI call judges it; the engine settles it in step 9i.
-- Facts beyond the five fact types: an action's are the narrator's, a question's get the setting's action and theme oracle; more fact types, and Mythic's detail-check chains in step 35, widen what fate settles.
-- What a foe does in a fight and how hard a new track is: the narrator and the Brain decide; the setting's combat-action and challenge-rank oracles take them over in step 13c.
-- A "breather" the Director recommends: pacing is already engine-computed, so the recommendation leaves the Director's prompt in step 9f.
-
-The Brain reading free text, the narrator's prose, and the Director's wording of agendas and arcs stay with the AI by design.
-
-**Engine-resolved fiction.** The target is an engine that produces every fact the fiction needs before the narrator writes: names and dispositions from oracle rolls, locations from generators, plot beats from the Adventure Crafter, facts and NPC behaviour under uncertainty from Mythic's fate system, encounters from weighted tables, scene structure from chaos rolls, content from Mythic's element meaning tables. Implemented today: NPC names from oracles, plot beats from the Adventure Crafter, scene structure from chaos rolls, meaning-table rolls inside random events, the naming of threats and clocks, and facts: the Brain names the uncertain facts an action or question depends on, and the engine settles each through Mythic's fate chart with odds it derives from the fact type and the game state (`docs/mechanics.md`, Facts). The player types what the character does; a question about the fiction is Ironsworn's Ask the Oracle, which the engine answers, a yes/no question that a fact type covers through fate and any other question through the setting's action and theme oracle. Fate and oracles are consulted at concrete callsites in the modules that need them; `mechanics/generation.py` → `generate` is the entry point for the content a turn asks the engine to settle, with facts as its first category, while NPC names, threats, and clocks are still rolled at their own callsites.
+**Engine-resolved fiction.** The target is an engine that produces every fact the fiction needs before the narrator writes: names and dispositions from oracle rolls, locations from generators, plot beats from the Adventure Crafter, facts and NPC behaviour under uncertainty from Mythic's fate system, encounters from weighted tables, scene structure from chaos rolls, content from Mythic's element meaning tables. Implemented today: NPC names from oracles, plot beats from the Adventure Crafter, scene structure from chaos rolls, meaning-table rolls inside random events, the naming of threats and clocks, and facts that the Brain names and fate settles (`docs/mechanics.md`, Facts). `mechanics/generation.py` → `generate` is the entry point for the content a turn asks the engine to settle, with facts as its first category; NPC names, threats, and clocks are still rolled at their own callsites.
 
 ## Turn pipeline
 
@@ -82,7 +70,7 @@ The source lives under `src/straightjacket/`.
 - `engine/db/` — the in-memory SQLite read model: schema, sync, and read-only queries.
 - `web/` — the Starlette server, one handler per WebSocket message, session state, serializers that turn game state into client JSON, and the single-page client `web/static/index.html`.
 
-Beside them, `i18n.py` and `strings_loader.py` serve user-facing strings. The tests are described in CONTRIBUTING.md, the test player Elvira in `docs/elvira.md`.
+Beside them, `i18n.py` and `strings_loader.py` serve user-facing strings.
 
 **Subpackage public API via `__init__.py`.** `mechanics`, `npc`, `game`, `db`, `tools`, and `correction` re-export their public names in `__init__.py`, so callers write `from straightjacket.engine.mechanics import roll_action` and the internal file layout stays free to change. `models.py` is the same kind of hub for the dataclasses. `engine`, `ai`, `datasworn`, and `web` are package markers without re-exports.
 
@@ -112,4 +100,4 @@ During play there is one text input plus the Save/Load and Retire buttons. Every
 
 ## Constraints
 
-**Single session.** One player at a time (SECURITY.md describes the session model). Module-level accumulators (the pending random events, the token log) and the in-memory database assume a single session; several would need per-session state.
+**Single session.** One player at a time (SECURITY.md, Session model). Module-level accumulators (the pending random events, the token log) and the in-memory database assume it; several sessions would need per-session state.

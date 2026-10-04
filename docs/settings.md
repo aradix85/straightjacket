@@ -1,6 +1,6 @@
 # Settings and character creation
 
-A setting is a data package: a Datasworn JSON file with the game content (moves, oracles, assets) and a settings yaml with what the engine needs to use it (vocabulary, oracle paths, creation flow). The shipped settings are classic Ironsworn (`classic`), Starforged (`starforged`), and Sundered Isles (`sundered_isles`), plus Delve (`delve`), an expansion of classic that inherits from it and is not offered as a setting of its own. `datasworn/settings.py` loads the packages.
+A setting is a data package: a Datasworn JSON file with the game content (moves, oracles, assets) and a settings yaml with what the engine needs to use it (vocabulary, oracle paths, creation flow). The shipped settings are classic Ironsworn (`classic`), Starforged (`starforged`), and Sundered Isles (`sundered_isles`), plus Delve (`delve`), which only extends classic. `datasworn/settings.py` loads the packages.
 
 ## Character creation
 
@@ -16,15 +16,15 @@ Discovery is yaml-only: `list_packages()` scans `data/settings/*.yaml` and `get_
 
 ## Settings yaml format
 
-Parsed strictly at load. Required top-level keys: `id`, `title`, `datasworn_id`, `playable`, `description`, `oracle_paths`, `vocabulary`. Optional: `parent`, `creation_flow`. A missing required key raises `KeyError`, and so does a key the loader does not know, at the top level or inside `oracle_paths`, `vocabulary`, or `creation_flow`. `playable: false` keeps a package out of character creation and out of Elvira's choice, as for Delve, which only extends classic.
+Parsed strictly at load. Required top-level keys: `id`, `title`, `datasworn_id`, `playable`, `description`, `oracle_paths`, `vocabulary`. Optional: `parent`, `creation_flow`. A missing required key raises `KeyError`, and so does a key the loader does not know, at the top level or inside `oracle_paths`, `vocabulary`, or `creation_flow`.
 
 ```yaml
-id: your_setting                    # yaml stem
+id: your_setting
 title: "Your Setting Name"
-datasworn_id: your_setting          # Datasworn JSON basename
-playable: true                      # offered in character creation
+datasworn_id: your_setting
+playable: true
 description: "One paragraph."
-parent: classic                     # optional: inherits from this setting
+parent: classic
 
 vocabulary:
   substitutions: { spaceship: "starship — worn, patched" }
@@ -44,7 +44,7 @@ creation_flow:
   starting_asset_categories: [companion, module]
 ```
 
-The comments in this example explain the fields; the rule against comments in yaml applies to the files in the repository. `vocabulary` keeps the narrator's word choice in the setting and is the one hand-written block the Yaml content boundary allows (CONTRIBUTING.md). `oracle_paths.names` drives NPC name rolls and `oracle_paths.threats` threat naming (`docs/mechanics.md`). `creation_flow` controls the client's creation steps.
+`id` is the yaml file's stem, and `datasworn_id` the basename of the Datasworn JSON. `playable: false` keeps a package out of character creation and out of Elvira's choice, as for Delve. `parent` names the setting it inherits from. `vocabulary` keeps the narrator's word choice in the setting and is the one hand-written block the Yaml content boundary allows (CONTRIBUTING.md). `oracle_paths.names` drives NPC name rolls and `oracle_paths.threats` threat naming (`docs/mechanics.md`). `creation_flow` controls the client's creation steps.
 
 ## Inheritance
 

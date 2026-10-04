@@ -19,54 +19,13 @@ The narrator writes pure prose; everything structured comes from separate calls 
 
 ## Model assignment
 
-Each cluster names a provider, a model, and the call parameters its roles share, in full even where clusters repeat each other. `model_for_role(role)`, `provider_for_role(role)`, and `sampling_params(role)` are the only way to reach them; no module hardcodes a model.
+`config.yaml` names, under `ai.clusters`, each cluster's provider, model, and call parameters, in full even where clusters repeat each other, and maps every role to exactly one cluster under `ai.role_cluster`. The clusters are narrator, creative (blueprint voicing, recap), director, classification (brain, correction), judgment (revelation check), and extraction (narrator metadata, opening setup). `model_for_role(role)`, `provider_for_role(role)`, and `sampling_params(role)` are the only way to reach them; no module hardcodes a model. A `null` temperature or top_p is not sent, and an `api_base` of `""` means the SDK's default endpoint. A key is needed only for a provider in use; providers that are configured but unused stay, so that a cluster can move with a change of its `provider`, `model`, and `extra_body`.
 
-```
-Cluster          Roles                                       Model, reasoning effort, temperature
-────────────────────────────────────────────────────────────────────────────────────────────────────
-narrator         narrator                                    GLM 5.3, low, 1.0 (top_p 0.8)
-creative         blueprint_voicing, recap                    GLM 5.3, low, not sent
-director         director                                    GLM 5.3, low, not sent
-classification   brain, correction                           GLM 5.3, low, 0.5
-judgment         revelation_check                            GLM 5.3, low, 0.5
-extraction       narrator_metadata, opening_setup            GLM 5.3, low, 0.3
-```
+The user prefers one model for every role: quality work goes through engine-side structure and prompt tuning, not a stronger model for a few scenes. Every cluster currently runs GLM 5.3 through Together at its lowest reasoning effort, `low`, where it honours strict JSON schemas and function calling. OpenAI's GPT-6 Luna needs reasoning effort `none` wherever a cluster sends a temperature or calls tools. Through OpenRouter, a cluster's `extra_body` pins one host with `provider: {order: [host], allow_fallbacks: false, require_parameters: true}`, since without the pin OpenRouter may route to a discounted, quantized, or schema-less host.
 
-Every cluster runs on GLM 5.3 (`zai-org/GLM-5.3`) through Together's own API, the user's choice for its narration. On a forced-miss bench it followed the instructions about as well as GLM 5.3 Flash and finished a narration in 2.1 seconds against 3.3, at about nine times the price per token ($1.40 per million input tokens, $0.26 cached, $4.40 output); an eight-turn session costs about 16 cents before caching. GLM 5.3 always thinks. Every cluster runs at `low`, its lowest effort, where it honours strict JSON schemas and function calling.
+Two measures keep structured answers from running away. A JSON grammar allows any whitespace between tokens, and GLM 5.3 sometimes wrote carriage returns until the token limit, so every cluster's `extra_body` bans, through `logit_bias`, the tokens of its tokenizer that contain a carriage return (one list under the YAML anchor `no_carriage_return`). And `ai/api_client.py` → `_schema_in_prompt` appends the compact JSON schema (template `json_schema_instruction` in `prompts/blocks.yaml`) to the end of the last user message of every call with a schema, or to the system prompt if the last message is not plain user text, so the model sees what it must write; it goes last, so every cached prefix stays intact.
 
-Two measures keep structured answers from running away (CHANGELOG 2026.09.26.20). A JSON grammar allows any whitespace between tokens, and GLM 5.3 sometimes wrote carriage returns until the token limit; every cluster's `extra_body` therefore bans, through `logit_bias`, the 396 tokens of its tokenizer that contain a carriage return, one list under the YAML anchor `no_carriage_return`. And `ai/api_client.py` → `_schema_in_prompt` appends the compact JSON schema (template `json_schema_instruction` in `prompts/blocks.yaml`) to the end of the last user message of every call with a schema, or to the system prompt if the last message is not plain user text, so the model sees what it must write; it goes last, so every cached prefix stays intact.
-
-Alternatives, measured in the CHANGELOG from 2026.09.26.2 to .20: GLM 5.3 Flash (`zai-org/GLM-5.3-Flash`, about a tenth of the price and slower, the game's model from 2026.09.26.5 to .13) and GPT-6 Luna (the fastest and cheapest, with plainer prose). Moving a cluster is a change of its `provider`, `model`, and `extra_body`; Luna needs reasoning effort `none` wherever a cluster sends a temperature or calls tools (CHANGELOG 2026.09.24.42).
-
-The shape of `config.yaml`, shortened:
-
-```yaml
-ai:
-  providers:
-    together:
-      type: "openai_compatible"
-      api_base: "https://api.together.xyz/v1"
-      api_key_env: "TOGETHER_API_KEY"
-      timeout_seconds: 120
-  clusters:
-    narrator:
-      provider: together
-      model: "zai-org/GLM-5.3"
-      temperature: 1.0
-      top_p: 0.8
-      max_tokens: 8192
-      max_retries: 3
-      extra_body:
-        reasoning_effort: "low"
-        user: "straightjacket"
-  role_cluster:
-    narrator: narrator
-    director: director
-```
-
-Every cluster has the same keys; every role maps to exactly one cluster in `role_cluster`. An `api_base` of `""` means the SDK's default endpoint; a `null` temperature or top_p is not sent. The OpenAI, Fireworks, OpenRouter, and Anthropic providers stay configured but unused by the game, and a key is needed only for a provider in use: `TOGETHER_API_KEY` for the game, `OPENAI_API_KEY` for Elvira (`docs/elvira.md`). Through OpenRouter a cluster's `extra_body` pins one host with `provider: {order: [host], allow_fallbacks: false, require_parameters: true}` and sets thinking with `reasoning: {effort, exclude: true}`; without the pin OpenRouter may route to a discounted, quantized, or schema-less host.
-
-**Caching.** Together caches the shared start of prompts, short prompts included, and bills cached input at about a fifth of fresh input; Fireworks caches only whole blocks of 2048 tokens and Baseten of 1024, which is why the game runs on Together (CHANGELOG 2026.09.26.5). Every host matches the longest identical prefix, so prompts put their fixed text first and what changes per turn last: the narrator system prompt its fixed rules, then the blocks fixed for a game, then the character state; the Director its fixed task ahead of the scene. Every cluster sends `user: "straightjacket"` as a session-affinity key; Baseten takes that key only as an `x-session-affinity` header, which the adapter does not send. Anthropic caching needs `cache_control` in the extra body; OpenAI, Fireworks, and Together cache automatically. Both adapters report the cached share as `cache_read_tokens`, and the OpenAI-compatible adapter the reasoning share as `reasoning_tokens` where the host reports it; the `[TOKENS]` log line shows them.
+**Caching.** Hosts cache the longest identical prefix of a prompt, so prompts put their fixed text first and what changes per turn last: the narrator system prompt its fixed rules, then the blocks fixed for a game, then the character state; the Director its fixed task ahead of the scene. Every cluster sends `user: "straightjacket"` as a session-affinity key. OpenAI and Together cache automatically; Anthropic needs `cache_control` in the extra body. Both adapters report the cached share as `cache_read_tokens`, and the OpenAI-compatible adapter the reasoning share as `reasoning_tokens` where the host reports it; the `[TOKENS]` log line shows them.
 
 ## Routing and the startup check
 

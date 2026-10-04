@@ -4,12 +4,13 @@ How to change Straightjacket: the workflow, the rules every change keeps, the co
 
 ## Workflow
 
-1. Fork, branch, make your change.
-2. `ruff check --fix src/ tests/` and `ruff format src/ tests/`: must be clean.
-3. `python -m pytest tests/ -q --cov`: every test passes, and total coverage stays at or above `fail_under` in `pyproject.toml` (`[tool.coverage.report]`). Raise the floor when coverage rises; never lower it.
-4. `mypy src/ --config-file pyproject.toml`: must be clean.
-5. A release that touches the turn pipeline, AI calls, prompts, or configuration first gets a short Elvira run (8 to 20 turns, see `docs/elvira.md`), and every engine warning in its report is a finding.
-6. Open a PR with a clear description of what changed and why.
+1. `ruff check --fix src/ tests/` and `ruff format src/ tests/`: must be clean.
+2. `python -m pytest tests/ -q --cov`: every test passes, and total coverage stays at or above `fail_under` in `pyproject.toml` (`[tool.coverage.report]`). When the total passes the next whole percent, raise `fail_under` to it; never lower it.
+3. `mypy src/ --config-file pyproject.toml`: must be clean.
+4. A change to the turn pipeline, AI calls, prompts, or configuration first gets a short Elvira run (8 to 20 turns, `docs/elvira.md`), and every engine warning in its report is a finding.
+5. One CHANGELOG entry per finished piece of work, not one per measurement, and only after its checks have been read: what changed, why, what was measured, and the quality gate, in a few sentences. The version in `pyproject.toml` matches the newest entry.
+
+An outside contributor forks, branches, and opens a pull request that says what changed and why. The maintainer's sessions commit each finished release to main and push it.
 
 ## Rules for a change
 
@@ -19,7 +20,9 @@ How to change Straightjacket: the workflow, the rules every change keeps, the co
 
 **Update every caller in the same commit.** When a function signature, dataclass field, or yaml key changes, fix its callers at once, and delete legacy code rather than retire it. A new public `def` or `class`, or a new top-level key in `engine/*.yaml` or `prompts/*.yaml`, gets its consumer in the same commit; the orphan scans reject definitions without callers and keys without readers, apart from their carve-outs for Starlette route handlers, dataclasses bound only through a parent attribute, and `AICallSpec` sub-fields. A symbol is removed only when both sides are dead: no reader in code and none in config.
 
-**Record every departure from a source.** A change that departs from a source rulebook, or from an architectural recommendation of the design document, adds an entry to `docs/divergences.md` in the same commit, with what the source says, what the engine does, why, and its status: Permanent, Until step N, or Open. A change that brings the engine in line removes the entry. The design document is a theoretical concept and this project its practical implementation, so a difference in detail from the document needs no entry.
+**Record every departure from a source.** A change that departs from a source rulebook, or from an architectural recommendation of the design document, adds an entry to `docs/divergences.md` in the same commit, with what the source says, what the engine does, why, and its status: Permanent (with the reason or measurement behind it), Until step N (that step's commit removes the entry), or Open (the roadmap lists the decision). A change that brings the engine in line removes the entry. The design document is a theoretical concept and this project its practical implementation, so a difference in detail from the document needs no entry.
+
+**Documentation states the current state.** The md files describe what the code does now and why, not how it got there: a reason is written out, not referred to by a CHANGELOG version, and history stays in the CHANGELOG and in git. Each fact lives in one file; another file refers to it.
 
 ## Project rules
 
@@ -53,6 +56,6 @@ python -m pytest tests/ -q --cov                         # unit and integration 
 
 **The test suite** runs without an API key, on mock providers with canned responses. It covers the engine's logic: consequences, NPC processing, serialization, the correction flow, prompt assembly, the WebSocket handlers. `tests/test_rules_conformance.py` pins the rules checked against the source rulebooks (`docs/divergences.md`).
 
-**Project rules.** `tests/test_project_rules.py` is one test that runs 30 AST and regex scans. Besides the rules above they cover orphan public symbols and orphan keys in `engine/*.yaml` and `prompts/*.yaml`, stale carve-out and whitelist entries, skip and xfail, `ruff format --check`, the import layers, AI calls that route by their own role, and documentation drift: every path named in the md files exists, every package appears in the code map of ARCHITECTURE.md, every `file.py → symbol` reference resolves, and the newest CHANGELOG entry matches the `pyproject.toml` version; every entry in `docs/divergences.md` carries a status, and a status that names a roadmap step names one that exists. Of the roadmap only the step headings are read, and of the CHANGELOG only the version headers. Run it before starting work to see the current state.
+**Project rules.** `tests/test_project_rules.py` is one test that runs all AST and regex scans. Besides the rules above they cover orphan public symbols and orphan keys in `engine/*.yaml` and `prompts/*.yaml`, stale carve-out and whitelist entries, skip and xfail, `ruff format --check`, the import layers, AI calls that route by their own role, and documentation drift: every path named in the md files exists, every package appears in the code map of ARCHITECTURE.md, every `file.py → symbol` reference resolves, and the newest CHANGELOG entry matches the `pyproject.toml` version; every entry in `docs/divergences.md` carries a status, and a status that names a roadmap step names one that exists. Of the roadmap only the step headings are read, and of the CHANGELOG only the version headers. Run it before starting work to see the current state.
 
 **Elvira**, the headless test player that plays the real game on the configured models, is described in `docs/elvira.md`, with the commands to run her.
