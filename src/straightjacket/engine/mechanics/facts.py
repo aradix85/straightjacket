@@ -77,6 +77,22 @@ def clear_facts_settled_by_hit(game: GameState, facts: Sequence[ResolvedFact], r
     log(f"[Fact] Settled by {result}: {sorted(t for _, t in settled)}")
 
 
+def overrule_facts_by_hit(game: GameState, facts: Sequence[ResolvedFact], result: str) -> list[ResolvedFact]:
+    if result not in ("STRONG_HIT", "WEAK_HIT"):
+        return list(facts)
+    miss_settles = eng().fact_resolution.information_miss_settles
+    overruled = {
+        (f.about, f.fact_type)
+        for f in facts
+        if f.fact_type in miss_settles and (f.answer in _YES_ANSWERS) == (miss_settles[f.fact_type] in _YES_ANSWERS)
+    }
+    if not overruled:
+        return list(facts)
+    game.world.facts = [f for f in game.world.facts if (f.about, f.fact_type) not in overruled]
+    log(f"[Fact] Overruled by {result}: {sorted(t for _, t in overruled)}")
+    return [f for f in facts if (f.about, f.fact_type) not in overruled]
+
+
 def settle_facts_by_miss(game: GameState, facts: Sequence[ResolvedFact], move: str, result: str) -> list[ResolvedFact]:
     if result != "MISS" or move_category(move) != "gather_information":
         return list(facts)

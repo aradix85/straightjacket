@@ -52,6 +52,7 @@ __all__ = [
     "lookup_theme_priority",
     "mark_legacy",
     "move_category",
+    "overrule_facts_by_hit",
     "pick_template",
     "purge_old_fired_clocks",
     "record_scene_intensity",
@@ -123,6 +124,7 @@ from .engine_memories import (
 )
 from .facts import (
     clear_facts_settled_by_hit,
+    overrule_facts_by_hit,
     settle_facts_by_miss,
     facts_of_this_place,
     remember_facts,

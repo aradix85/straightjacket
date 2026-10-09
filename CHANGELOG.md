@@ -8,6 +8,14 @@ This log starts at 2026.09.24.0, the restart after a four-month pause. Earlier r
 
 Calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day.
 
+## [2026.10.09.4] — 2026-10-09
+
+A hit on a search no longer reaches the narrator beside the fact that nothing useful is there. A miss on a `gather_information` move settles the place's `useful` fact to no, so searching the same place again does not roll it again, and the fact roll of a turn can answer no as well. A hit cleared only yes answers, so a later hit at that place, a hit right after a no from the same turn's fact roll, and a momentum burn from a miss to a hit all told the narrator "this place holds something useful" with answer no beside a successful result, and it had to break one of the two. Three of the fourteen situations in the measuring set carried this. `mechanics/facts.py` → `overrule_facts_by_hit` now drops, on a hit, the facts of the turn whose type and answer are what a search miss settles (`fact_resolution.information_miss_settles`), both from what the narrator hears and from the place; the turn, the momentum burn, and the correction of a state error all call it. Seven tests cover a no and an exceptional no overruled, a miss and a yes left alone, a locked no untouched, the turn on a hit and on a miss, and a burn from a miss to a hit.
+
+Five Elvira sessions on this version: overall 7.12, result integrity 3.82, no engine warning, and the overrule fired five times. The same prompts scored 7.50 in the five sessions of 2026.10.09.3, so five sessions do not separate a change of this size from the spread between runs. A narrator prompt with targeted changes for Sonnet was measured as well and not adopted (roadmap 9f.14).
+
+Quality gate: 1599 tests green, project-rule scans clean, coverage 90.96%, ruff and mypy --strict clean. Save format unchanged.
+
 ## [2026.10.09.3] — 2026-10-09
 
 Every role now runs Claude Sonnet 5.5 at effort medium, the user's choice after comparing it with Haiku 5.5 (roadmap 9f.12). On the prompts of 2026.10.09.2, with every role on one setting and caching on: GPT-6 Luna, reading blind with the positions swapped, preferred Sonnet medium over Haiku medium 14 to 6 (8 undecided), Sonnet at low effort 11 to 7, and Sonnet without up-front thinking (`between_tools`) 10 to 11; Haiku won the plain misses in every pairing, where Sonnet added actions for the player character and dangers the scene had not set up. The audit counted 115 findings on average for Haiku and 122 to 126 for the three Sonnet settings, within the spread; Sonnet narrates longer (median 225 to 245 words). Five Elvira sessions each scored Haiku 7.12, Sonnet between_tools 7.10, low 7.08, medium 7.60; the first sentence in play came after 12.0, 4.6, 5.6, and 8.6 seconds.

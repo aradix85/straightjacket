@@ -9,7 +9,13 @@ from ..engine_loader import eng
 from ..game import BurnOffer, replay_turn
 from ..game.finalization import apply_post_narration, narrate_scene
 from ..logging_util import log
-from ..mechanics import check_npc_agency, facts_of_this_place, generate_consequence_sentences, settle_facts_by_miss
+from ..mechanics import (
+    check_npc_agency,
+    facts_of_this_place,
+    generate_consequence_sentences,
+    overrule_facts_by_hit,
+    settle_facts_by_miss,
+)
 from ..models import (
     BrainResult,
     EngineConfig,
@@ -42,6 +48,7 @@ def _handle_state_error(
     _last_entry = game.narrative.session_log[-1] if game.narrative.session_log else None
 
     if roll:
+        facts = overrule_facts_by_hit(game, facts, roll.result)
         facts = settle_facts_by_miss(game, facts, brain.move, roll.result)
         consequences = _last_entry.consequences if _last_entry else []
         clock_events = _last_entry.clock_events if _last_entry else []

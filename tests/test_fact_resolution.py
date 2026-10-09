@@ -180,6 +180,28 @@ def test_a_hit_does_not_settle_a_no(load_engine: None) -> None:
     assert game.world.facts == [nothing_useful]
 
 
+@pytest.mark.parametrize("answer", ["no", "exceptional_no"])
+def test_a_hit_overrules_what_a_search_miss_would_settle(load_engine: None, answer: str) -> None:
+    from straightjacket.engine.mechanics import overrule_facts_by_hit
+
+    game = _game()
+    nothing_useful, open_door = _fact("useful", answer=answer), _fact("locked", answer="no")
+    game.world.facts = [nothing_useful, open_door]
+    assert overrule_facts_by_hit(game, [nothing_useful, open_door], "WEAK_HIT") == [open_door]
+    assert game.world.facts == [open_door]
+
+
+@pytest.mark.parametrize(("answer", "result"), [("no", "MISS"), ("yes", "STRONG_HIT")])
+def test_a_miss_or_a_yes_is_not_overruled(load_engine: None, answer: str, result: str) -> None:
+    from straightjacket.engine.mechanics import overrule_facts_by_hit
+
+    game = _game()
+    useful = _fact("useful", answer=answer)
+    game.world.facts = [useful]
+    assert overrule_facts_by_hit(game, [useful], result) == [useful]
+    assert game.world.facts == [useful]
+
+
 def test_remembered_facts_come_back_only_at_their_own_place(load_engine: None) -> None:
     from straightjacket.engine.mechanics import remember_facts
 
@@ -435,6 +457,45 @@ def test_a_burn_keeps_the_facts_and_clears_them_on_the_better_result(
     assert game.world.facts == []
     assert "<facts>" in provider.prompts[-1]
     assert counted_fate == ["locked:here"]
+
+
+def _nothing_useful_search(monkeypatch: pytest.MonkeyPatch, result: str) -> _Provider:
+    from straightjacket.engine.mechanics import facts
+
+    monkeypatch.setattr(facts, "resolve_fate", lambda game, odds, chaos_factor, question: _fate("no"))
+    _force(monkeypatch, result)
+    return _Provider(
+        _brain(move="adventure/gather_information", undetermined_facts=[{"fact_type": "useful", "about": "here"}])
+    )
+
+
+@pytest.mark.parametrize("result", ["STRONG_HIT", "MISS"])
+def test_a_search_that_hits_is_not_told_that_nothing_useful_is_here(
+    load_engine: None, stub_emotions: None, monkeypatch: pytest.MonkeyPatch, result: str
+) -> None:
+    from straightjacket.engine.game import process_turn
+
+    provider = _nothing_useful_search(monkeypatch, result)
+    game, _n, _r, _o, _d = process_turn(provider, _game(), "I search the shelves", _CONFIG)
+
+    told = eng().fact_resolution.types["useful"].description in provider.prompts[-1]
+    assert told == (result == "MISS")
+    assert [f.fact_type for f in game.world.facts] == (["useful"] if result == "MISS" else [])
+
+
+def test_a_burn_to_a_hit_overrules_nothing_useful(
+    load_engine: None, stub_emotions: None, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from straightjacket.engine.game import process_momentum_burn, process_turn
+
+    provider = _nothing_useful_search(monkeypatch, "MISS")
+    game, _n, _r, offer, _d = process_turn(provider, _game(), "I search the shelves", _CONFIG)
+    assert offer is not None
+
+    game, _narration, _director = process_momentum_burn(provider, game, offer, _CONFIG)
+
+    assert eng().fact_resolution.types["useful"].description not in provider.prompts[-1]
+    assert game.world.facts == []
 
 
 def test_a_correction_reuses_the_facts_of_the_turn(
