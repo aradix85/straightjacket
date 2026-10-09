@@ -37,7 +37,7 @@ ai:
   clusters:
     narrator:
       provider: anthropic
-      model: "claude-haiku-5-5"
+      model: "claude-sonnet-5-5"
       temperature: null
       top_p: null
       max_tokens: 16000
@@ -47,7 +47,7 @@ ai:
         cache_control: {type: "ephemeral", ttl: "1h"}
     creative:
       provider: anthropic
-      model: "claude-haiku-5-5"
+      model: "claude-sonnet-5-5"
       temperature: null
       top_p: null
       max_tokens: 16000
@@ -57,7 +57,7 @@ ai:
         cache_control: {type: "ephemeral", ttl: "1h"}
     director:
       provider: anthropic
-      model: "claude-haiku-5-5"
+      model: "claude-sonnet-5-5"
       temperature: null
       top_p: null
       max_tokens: 16000
@@ -67,7 +67,7 @@ ai:
         cache_control: {type: "ephemeral", ttl: "1h"}
     classification:
       provider: anthropic
-      model: "claude-haiku-5-5"
+      model: "claude-sonnet-5-5"
       temperature: null
       top_p: null
       max_tokens: 8192
@@ -77,7 +77,7 @@ ai:
         cache_control: {type: "ephemeral", ttl: "1h"}
     judgment:
       provider: anthropic
-      model: "claude-haiku-5-5"
+      model: "claude-sonnet-5-5"
       temperature: null
       top_p: null
       max_tokens: 8192
@@ -87,7 +87,7 @@ ai:
         cache_control: {type: "ephemeral", ttl: "1h"}
     extraction:
       provider: anthropic
-      model: "claude-haiku-5-5"
+      model: "claude-sonnet-5-5"
       temperature: null
       top_p: null
       max_tokens: 8192

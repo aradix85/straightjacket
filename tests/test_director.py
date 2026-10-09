@@ -92,6 +92,59 @@ def test_director_reports_why_its_final_answer_broke_off(stub_all: None, monkeyp
     assert warning.rstrip().endswith("Let me reconsider.'), continuing without guidance")
 
 
+class _ToolCallingDirectorProvider:
+    def __init__(self, tool_name: str) -> None:
+        self.tool_name = tool_name
+        self.specs: list[Any] = []
+
+    def create_message(self, spec: Any) -> Any:
+        from straightjacket.engine.ai.provider_base import AIResponse
+
+        self.specs.append(spec)
+        if spec.json_schema is None:
+            return AIResponse(
+                content="",
+                stop_reason="tool_use",
+                tool_calls=[{"id": "c1", "name": self.tool_name, "arguments": {}}],
+            )
+        return AIResponse(
+            content='{"scene_summary": "S.", "narrator_guidance": "G.", "npc_guidance": [], '
+            '"npc_reflections": {}, "arc_notes": "A."}',
+            stop_reason="complete",
+        )
+
+
+def test_the_director_hands_the_tool_results_straight_to_its_final_answer(stub_all: None) -> None:
+    from straightjacket.engine import director, prompt_loader
+    from tests._mocks import make_test_game
+
+    prompt_loader._prompts = None
+    prompt_loader._ensure_loaded()
+    provider = _ToolCallingDirectorProvider("query_game_state")
+    guidance = director.call_director(provider, make_test_game(), "Text.")
+    assert guidance["narrator_guidance"] == "G."
+    assert len(provider.specs) == 2
+    final_prompt = provider.specs[1].messages[-1]["content"]
+    assert "<tool_results>" in final_prompt
+    assert provider.specs[1].tools is None
+
+
+def test_an_invented_tool_costs_no_extra_round(stub_all: None, monkeypatch: Any) -> None:
+    from straightjacket.engine import director, prompt_loader
+    from straightjacket.engine.tools import handler
+    from tests._mocks import make_test_game
+
+    prompt_loader._prompts = None
+    prompt_loader._ensure_loaded()
+    warnings: list[str] = []
+    monkeypatch.setattr(handler, "log", lambda msg, level="info": warnings.append(msg) if level == "warning" else None)
+    provider = _ToolCallingDirectorProvider("respond")
+    guidance = director.call_director(provider, make_test_game(), "Text.")
+    assert guidance["arc_notes"] == "A."
+    assert len(provider.specs) == 2
+    assert warnings == ["[Tools] Unknown tool: respond (role=director)"]
+
+
 def test_stores_narrator_guidance(stub_all: None) -> None:
     from straightjacket.engine.director import apply_director_guidance
 

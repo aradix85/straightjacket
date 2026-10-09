@@ -10,4 +10,3 @@ pacing:
   weak_hit_clock_tick_chance: 0.5
   fired_clock_keep_scenes: 3
   npc_agency_interval: 5
-  max_tool_rounds: 3

@@ -165,12 +165,12 @@ def make_npc_reflection(**kwargs: Any) -> dict:
     kwargs.setdefault("reflection", "Reflection text.")
     kwargs.setdefault("tone", "")
     kwargs.setdefault("tone_key", "neutral")
-    kwargs.setdefault("updated_description", None)
-    kwargs.setdefault("about_npc", None)
-    kwargs.setdefault("agenda", None)
-    kwargs.setdefault("instinct", None)
-    kwargs.setdefault("updated_agenda", None)
-    kwargs.setdefault("updated_arc", None)
+    kwargs.setdefault("updated_description", "")
+    kwargs.setdefault("about_npc", "")
+    kwargs.setdefault("agenda", "")
+    kwargs.setdefault("instinct", "")
+    kwargs.setdefault("updated_agenda", "")
+    kwargs.setdefault("updated_arc", "")
     return kwargs
 
 

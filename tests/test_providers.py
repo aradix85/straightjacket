@@ -330,7 +330,8 @@ def test_anthropic_passes_cluster_extra_body_to_the_right_parameters(anthropic_e
             "schema": provider_anthropic.anthropic.transform_schema({"title": "t", "type": "object"}),
         },
     }
-    assert sent["cache_control"] == {"type": "ephemeral"}
+    assert "cache_control" not in sent
+    assert sent["system"] == [{"type": "text", "text": "system text", "cache_control": {"type": "ephemeral"}}]
     assert sent["extra_body"] == {"temperature": 0.5, "metadata_flag": True}
     assert extra == {"output_config": {"effort": "low"}, "cache_control": {"type": "ephemeral"}, "metadata_flag": True}
 
@@ -347,7 +348,7 @@ def test_anthropic_caches_the_stable_start_of_the_system_prompt(anthropic_endpoi
         {"type": "text", "text": "fixed rules\n", "cache_control": cache},
         {"type": "text", "text": "state: wounded"},
     ]
-    assert sent["cache_control"] == cache
+    assert "cache_control" not in sent
 
 
 def test_anthropic_caches_the_whole_system_prompt_without_a_prefix(anthropic_endpoint: _FakeEndpoint) -> None:

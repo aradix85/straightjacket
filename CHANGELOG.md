@@ -8,6 +8,19 @@ This log starts at 2026.09.24.0, the restart after a four-month pause. Earlier r
 
 Calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day.
 
+## [2026.10.09.3] — 2026-10-09
+
+Every role now runs Claude Sonnet 5.5 at effort medium, the user's choice after comparing it with Haiku 5.5 (roadmap 9f.12). On the prompts of 2026.10.09.2, with every role on one setting and caching on: GPT-6 Luna, reading blind with the positions swapped, preferred Sonnet medium over Haiku medium 14 to 6 (8 undecided), Sonnet at low effort 11 to 7, and Sonnet without up-front thinking (`between_tools`) 10 to 11; Haiku won the plain misses in every pairing, where Sonnet added actions for the player character and dangers the scene had not set up. The audit counted 115 findings on average for Haiku and 122 to 126 for the three Sonnet settings, within the spread; Sonnet narrates longer (median 225 to 245 words). Five Elvira sessions each scored Haiku 7.12, Sonnet between_tools 7.10, low 7.08, medium 7.60; the first sentence in play came after 12.0, 4.6, 5.6, and 8.6 seconds.
+
+Those Sonnet sessions showed three engine faults, all fixed here:
+- Anthropic refuses a structured-output schema with more than 16 nullable or union-typed fields, and each Director reflection had six, so the Director failed whenever three NPCs reflected at once: seven times in a row in one session, which then never had reflections. Haiku's sessions never had three at once, but the limit is the API's. The reflection fields are plain strings now, empty when there is nothing to set (`ai/schemas.py`, `prompts/director.yaml`); `tests/test_schema_strictness.py` keeps every schema, the Director's with twelve NPCs included, under the limit.
+- After its tool call the Director got a further round to comment on the result, and Sonnet used it to call tools that do not exist ("respond", "reflect", "x") until the limit of three rounds. `director.py` → `call_director` now hands the raw tool results to the call that writes the structured answer, without that round, which also saves a call; `tools/handler.py` → `run_tool_loop` and its settings (`pacing.max_tool_rounds`, `retry.tool_loop_round_max_retries`) are gone. Two tests cover the results reaching the final call and an invented tool costing no extra round.
+- Next to its own cache mark on the fixed part of the system prompt, the Anthropic adapter also set Anthropic's automatic mark, which writes every request's changing tail at the cache-write price (twice the input price for a one-hour cache) without any later request reading it. It no longer does.
+
+Five Elvira sessions on this version: overall 7.50 out of 10, result integrity 4.08, first sentence after 9.5 seconds, no Director warning. Counted from the token logs at Anthropic's prices, a twelve-turn session cost about $1.08 before these fixes and about $0.54 after, against about $0.05 on Haiku. One Brain warning remains, logged under roadmap 25.2: the Brain chose Set a Course, which rolls +supply, and the turn was played as dialog.
+
+Quality gate: 1592 tests green, project-rule scans clean, coverage 90.94%, ruff and mypy --strict clean. Save format unchanged.
+
 ## [2026.10.09.2] — 2026-10-09
 
 Every role now runs Claude Haiku 5.5 at effort medium, the user's choice after 2026.10.09.1 (roadmap 9f.12); Haiku 5.5 refuses `temperature`, `top_p`, and `top_k`, so every cluster sets them to null and the roles differ only in effort and prompt. Then every prompt and every engine text that reaches a model was read against Anthropic's guidance for Haiku 5.5 and the current best-practice guide.

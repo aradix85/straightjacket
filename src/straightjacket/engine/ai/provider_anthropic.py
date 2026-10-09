@@ -94,9 +94,7 @@ class AnthropicProvider:
             create_kwargs["output_config"] = output_config
 
         if "cache_control" in extra:
-            cache_control = extra.pop("cache_control")
-            create_kwargs["cache_control"] = cache_control
-            create_kwargs["system"] = _cached_system(spec, cache_control)
+            create_kwargs["system"] = _cached_system(spec, extra.pop("cache_control"))
         if "thinking" in extra:
             create_kwargs["thinking"] = extra.pop("thinking")
 

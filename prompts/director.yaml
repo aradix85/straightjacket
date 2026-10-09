@@ -21,16 +21,16 @@
   - scene_summary: two or three sentences on what happened and why it matters
   - narrator_guidance: specific direction for the next one or two scenes. If <story_arc> has a thematic_thread, now and then anchor the guidance to the aspect of it most alive in the current moment.
   - npc_guidance: an array of {{"npc_id": "npc_1", "guidance": "what this NPC should do or feel next"}}, with each NPC's id as a <reflect> tag or query_game_state gives it
-  - npc_reflections: an object with one entry for every NPC in a <reflect> tag, keyed by that NPC's id from the tag, and no other entries. Leave an entry's reflection empty only when the scene gave that NPC nothing new. Each entry has:
+  - npc_reflections: an object with one entry for every NPC in a <reflect> tag, keyed by that NPC's id from the tag, and no other entries. Leave an entry's reflection empty only when the scene gave that NPC nothing new. Every field below is text; an empty string means nothing to set or change. Each entry has:
     - reflection: one or two sentences of higher-level insight
     - tone: one to three words capturing the emotional shift (for example "protective guilt", "reluctant trust")
     - tone_key: one word from this list: neutral, curious, wary, suspicious, grateful, terrified, loyal, conflicted, betrayed, devastated, euphoric, defiant, guilty, protective, angry, devoted, impressed, hopeful
-    - updated_description: at most 100 characters: role, key visual traits, and personality, keeping physical details such as age, hair, and build. Begin with the role rather than the NPC's name, and describe what the NPC is rather than what they are doing. null if unchanged.
-    - agenda: the NPC's hidden goal in at most eight words, only when needs_profile="true"; null otherwise
-    - instinct: the NPC's psychological signature under real pressure in at most eight words, only when needs_profile="true"; null otherwise. Name the specific person underneath, not their job demeanor or a genre convention. Instinct is set once and never changes.
-    - updated_agenda: a new agenda of at most eight words when the current one is stale; null while it still holds
-    - updated_arc: the NPC's current narrative trajectory in one or two sentences; null only when the NPC had no meaningful interaction
-    - about_npc: when the reflection is mainly about the relationship with another NPC, that NPC's id; null otherwise
+    - updated_description: at most 100 characters: role, key visual traits, and personality, keeping physical details such as age, hair, and build. Begin with the role rather than the NPC's name, and describe what the NPC is rather than what they are doing. Empty if unchanged.
+    - agenda: the NPC's hidden goal in at most eight words, only when needs_profile="true"; empty otherwise
+    - instinct: the NPC's psychological signature under real pressure in at most eight words, only when needs_profile="true"; empty otherwise. Name the specific person underneath, not their job demeanor or a genre convention. Instinct is set once and never changes.
+    - updated_agenda: a new agenda of at most eight words when the current one is stale; empty while it still holds
+    - updated_arc: the NPC's current narrative trajectory in one or two sentences; empty only when the NPC had no meaningful interaction
+    - about_npc: when the reflection is mainly about the relationship with another NPC, that NPC's id; empty otherwise
   - arc_notes: a brief observation on how the story arc is progressing
 
   When a <reflect> tag has a last_reflection attribute, write a new insight that builds on, deepens, or contradicts it, with a different theme or emotional tone.

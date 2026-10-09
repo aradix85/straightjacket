@@ -140,12 +140,12 @@ def get_director_output_schema(reflection_ids: list[str]) -> dict[str, Any]:
                             "reflection": _str(),
                             "tone": _str(),
                             "tone_key": _str_enum(list(_e.enums.tone_keys)),
-                            "updated_description": _nullable_str(),
-                            "about_npc": _nullable_str(),
-                            "agenda": _nullable_str(),
-                            "instinct": _nullable_str(),
-                            "updated_agenda": _nullable_str(),
-                            "updated_arc": _nullable_str(),
+                            "updated_description": _str(),
+                            "about_npc": _str(),
+                            "agenda": _str(),
+                            "instinct": _str(),
+                            "updated_agenda": _str(),
+                            "updated_arc": _str(),
                         }
                     )
                     for npc_id in reflection_ids

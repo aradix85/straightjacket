@@ -10,7 +10,7 @@ from .engine_loader import eng
 from .logging_util import log
 from .models import DirectorGuidance, EngineConfig, GameState, MemoryEntry, NpcData
 from .prompt_blocks import character_tag, content_boundaries_block, world_tag
-from .tools import get_tools, run_tool_loop
+from .tools import execute_tool_call, get_tools
 from .xml_utils import xa as _xa
 from .npc import (
     consolidate_memory,
@@ -196,19 +196,12 @@ def call_director(
             )
             response = create_with_retry(provider, spec)
 
-            if response.stop_reason == "tool_use":
-                final_content, tool_log = run_tool_loop(
-                    provider,
-                    response,
-                    role="director",
-                    game=game,
-                    initial_spec=spec,
+            if response.stop_reason == "tool_use" and response.tool_calls:
+                results = [execute_tool_call("director", call, game) for call in response.tool_calls]
+                tool_context = (
+                    f"\n<tool_results>\n{chr(10).join(results)[: eng().truncations.prompt_xxlong]}\n</tool_results>"
                 )
-                if final_content.strip():
-                    tool_context = (
-                        f"\n<tool_results>\n{final_content[: eng().truncations.prompt_xxlong]}\n</tool_results>"
-                    )
-                log(f"[Director] Phase 1: {len(tool_log)} tool calls")
+                log(f"[Director] Phase 1: {len(results)} tool calls")
             else:
                 log("[Director] Phase 1: no tools called")
 

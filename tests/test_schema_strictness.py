@@ -72,6 +72,36 @@ def test_the_director_schema_requires_all_its_properties(load_engine: None) -> N
     assert problems == []
 
 
+ANTHROPIC_UNION_LIMIT = 16
+
+
+def _unions(node: Any) -> int:
+    if isinstance(node, dict):
+        own = 1 if "anyOf" in node or isinstance(node.get("type"), list) else 0
+        return own + sum(_unions(value) for value in node.values())
+    if isinstance(node, list):
+        return sum(_unions(value) for value in node)
+    return 0
+
+
+def test_every_schema_stays_within_anthropics_limit_on_union_typed_fields(load_engine: None) -> None:
+    from straightjacket.engine.ai.schemas import get_brain_output_schema, get_director_output_schema
+
+    many_npcs = [f"npc_{i}" for i in range(1, 13)]
+    schemas = {name: builder() for name, builder in _schema_builders()}
+    schemas["director with twelve reflections"] = get_director_output_schema(many_npcs)
+    schemas["brain with every choice"] = get_brain_output_schema(
+        ["adventure/face_danger"], ["infiltrator#0"], many_npcs, ["track_1"]
+    )
+    over = {name: _unions(schema) for name, schema in schemas.items() if _unions(schema) > ANTHROPIC_UNION_LIMIT}
+    assert over == {}
+
+
+def test_the_union_count_sees_any_of_and_type_lists() -> None:
+    assert _unions({"anyOf": [{"type": "string"}, {"type": "null"}]}) == 1
+    assert _unions({"properties": {"a": {"type": ["string", "null"]}, "b": {"type": "string"}}}) == 1
+
+
 def test_a_correction_can_set_only_a_known_disposition(load_engine: None) -> None:
     from straightjacket.engine.ai.schemas import get_correction_output_schema
     from straightjacket.engine.engine_loader import eng
