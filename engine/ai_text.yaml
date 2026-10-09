@@ -42,7 +42,6 @@ ai_text:
   narrator_defaults:
     unknown_location: unknown
     unknown_time: unspecified
-    unknown_transition_trigger: '?'
     split_default_name: Unknown
     no_npcs: (none)
     no_npcs_yet: none yet

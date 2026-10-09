@@ -36,7 +36,7 @@ Closing a step: the checks of CONTRIBUTING.md pass, the step leaves this documen
 
 **Each spawn source names its own entities** from what it naturally has, as threats and clocks do (`docs/mechanics.md`, Threats and clocks). Later spawners of new entity types follow the same axis.
 
-**One model for every role.** The user prefers one model for all AI roles: quality work goes through engine-side structure and prompt tuning, not a stronger model for a few scenes (`docs/ai.md`, Model assignment).
+**One model for every role**, the user's preference, is recorded in `docs/ai.md` (Model assignment); the prompt work of step 9f relies on it.
 
 ---
 
@@ -144,21 +144,17 @@ The audits of AUDIT.md, one session per principle or submodule as it prescribes,
 
 **9h.2** `mechanics/tracks.py` → `roll_oracle_answer` returns an empty answer when the game has no setting or the setting fewer than two action-theme paths, and `find_progress_track` returns None for a target track of another type, which plays a progress roll on zero boxes (principle 3).
 
-**9h.3** Config with no reader that a grep finds: `engine/damage.yaml` → `miss.endure`, `miss.combat`, `miss.social`, and `miss.other` (only `miss.clock_ticks` is read, through a dotted path); `engine/creation.yaml` → `starting_asset_categories`, which each setting's `creation_flow` supplies instead; and the short move names in `strings/move.yaml`, such as `move.secure_advantage`, which no current move key matches (principle 5).
+**9h.3** `game/chapters.py` → `_reset_chapter_mechanics` empties the tracks, threats, impacts, assets, threads, and lists that `_restore_chapter_mechanics` copies straight back from the chapter summary, a round trip that amounts to a copy. Those snapshot fields of `ChapterSummary` have no other reader, so ending the round trip removes them as well and breaks the save format. `_prepare_npcs_for_new_chapter` tests the same status twice (principle 3).
 
-**9h.4** `game/chapters.py` → `_reset_chapter_mechanics` empties the tracks, threats, impacts, assets, threads, and lists that `_restore_chapter_mechanics` copies straight back, a round trip that amounts to a copy, and `_prepare_npcs_for_new_chapter` tests the same status twice (principle 3).
+**9h.4** Dataclasses carry defaults against the rule as CONTRIBUTING.md states it ("Domain config keys raise on a miss, and dataclass fields have no defaults"): about two hundred defaults that are not empty collections, in 43 classes, concentrated in `models_story.py`, `models.py`, `models_base.py`, `datasworn/moves.py`, `mechanics/move_effects.py`, and `models_npc.py` (for example `KeyedScene.source` and `KeyedScene.bound_entity_id`), beside about seventy empty `default_factory` collections, which the rule allows. The optional fields of `AICallSpec` and the partial classes in `datasworn/settings.py` parse external structures and keep theirs. Each module loses its defaults with every constructor call updated, one module per session; when the last is done, the config-binding scan widens to every dataclass (pass 2d).
 
-**9h.5** Dataclasses outside the config binding carry defaults, concentrated in `models_story.py`, `models.py`, `models_base.py`, `datasworn/moves.py`, and `models_npc.py` (for example `KeyedScene.source` and `KeyedScene.bound_entity_id`); many are empty `default_factory` collections (pass 2d).
+**9h.5** The `.get()` scan flags only constant, non-neutral defaults, so `.get("key", variable)` passes unexamined, for example in `web/serializers.py` (pass 4b).
 
-**9h.6** The `.get()` scan flags only constant, non-neutral defaults, so `.get("key", variable)` passes unexamined, for example in `web/serializers.py` (pass 4b).
+**9h.6** Some `strings/*.yaml` keys are read by prefix (`i18n.py` → `get_disposition_labels`, `get_time_labels`, `get_story_phase_labels`) or built at runtime (`succession.legacy_track_*` in `web/serializers.py`), so a strings scan needs to know those prefixes (pass 5b).
 
-**9h.7** Many `strings/*.yaml` keys are built at runtime (`move.*`, `disposition.*`, `consequence.*`), so a strings scan needs to know those prefixes (pass 5b).
+**9h.7** For every AI-call carve-out, where its failure becomes visible: a caught failure plays on silently unless Elvira or the log shows it (principle 3).
 
-**9h.8** `run.py` holds docstrings, and the comment scan covers only `src/` and `tests/`: decide whether root scripts are in scope.
-
-**9h.9** For every AI-call carve-out, where its failure becomes visible: a caught failure plays on silently unless Elvira or the log shows it (principle 3).
-
-**9h.10** Every field of `mechanics/move_effects.py` → `OutcomeResult` has a reader in the production path, not only in tests: results that were computed but never applied have hidden faults before (progress marks that never reached a track, a position factor that never fired, and `clock_fills`, step 9k) (principle 5).
+**9h.8** Every field of `mechanics/move_effects.py` → `OutcomeResult` has a reader in the production path, not only in tests: results that were computed but never applied have hidden faults before (progress marks that never reached a track, a position factor that never fired, and `clock_fills`, step 9k) (principle 5).
 
 ### 9i — Revelations settled by the engine
 
@@ -178,6 +174,8 @@ The register of deliberate departures is `docs/divergences.md`. Already checked 
 
 **9j.5** Death through Face Death, as the rulebooks have it (the user's decision). The game no longer ends because health and spirit are both 0 (`game/finalization.py` → `_update_crisis` keeps only the crisis status). Harm or stress taken at 0 goes through Endure Harm or Endure Stress, and a miss at 0 marks an impact the move offers while one is free (a fixed choice for the register) or, when none is free, rolls the move's Datasworn table (`<setting>/oracles/moves/endure_harm` and `endure_stress`). A result that names Face Death, Face Desolation, or Forsake Your Vow starts that move through the engine, as an engine trigger. The dying result (Heal within an hour or two, or Face Death) needs a deadline, a clock or a keyed scene, decided in the step. Whether harm from Pay the Price and from miss consequences should itself be rolled through Endure Harm, as the rulebooks do, is checked against the books first. The register entry "Game over when health and spirit are both 0" leaves `docs/divergences.md`; Elvira's `near_death` scenario follows the new path.
 
+**9j.6** Threats and Forsake Your Vow as the books have them. Advance a Threat is rolled on its Delve table when the character gives ground to a threat through inaction, failure, or delay; which misses count, and whether the autonomous tick stays as the engine's reading of delay, is checked against Delve first. A full menace track starts Forsake Your Vow as an engine trigger, with classic's spirit cost by the vow's rank through Endure Stress, and Starforged's choice of costs as a fixed choice for the register. The register entries "Threats advance by engine rule, not by Advance a Threat" and "A full menace track forsakes the vow at a fixed cost" leave `docs/divergences.md`.
+
 Ability effects other than adds belong to step 18; outcomes where the player would choose a cost are a recorded divergence.
 
 ### 9k — Scene challenges
@@ -190,7 +188,7 @@ The scene challenge of Starforged and Sundered Isles is configured but unreachab
 
 **9k.3** `fill_clock` fills the tension clock of the active scene challenge; what a full tension clock does follows the book, checked first.
 
-**9k.4** The engine's own rule that the ordinary Face Danger and Secure an Advantage mark scene-challenge progress (`scene_challenge_progress_moves` in `engine/track_moves.yaml`, `game/action_resolution.py` → `_maybe_mark_scene_challenge`) goes, since Starforged uses the scene-challenge versions of those moves.
+**9k.4** The engine's own rule that the ordinary Face Danger and Secure an Advantage mark scene-challenge progress (`scene_challenge_progress_moves` in `engine/track_moves.yaml`, `game/action_resolution.py` → `_maybe_mark_scene_challenge`) goes, since Starforged uses the scene-challenge versions of those moves, and with it the register entry "Ordinary moves mark scene-challenge progress".
 
 **9k.5** A test plays a scene challenge through the real path from Begin the Scene to Finish the Scene and checks that misses fill the tension clock; an Elvira scenario starts one.
 
@@ -264,11 +262,11 @@ Fate plus expected behavior derived from AIMS and stance. Data: `mythic_gme_2e.j
 
 This step covers the Datasworn moves of the shipped settings that are neither formal moves in `engine/move_outcomes.yaml` nor covered by another step (expeditions, sites, and Sundered Isles in steps 25, 26, and 28, asset abilities in steps 18 to 20), and wires them following "Datasworn mechanic naming" in `docs/mechanics.md`: a player choice with a structured outcome becomes a formal move; a consequence that fires when a condition becomes true becomes an engine trigger with a direct name.
 
-Group A, formal moves: Forsake Your Vow as the player's own choice (`quest/forsake_your_vow`, today only an engine trigger when a threat's menace fills), `combat/turn_the_tide`, `adventure/aid_your_ally` and `relationship/aid_your_ally` (needs the NPC-action context of step 11), `relationship/write_your_epilogue` (couples with the retire flow of step 3), `failure/learn_from_your_failures`, `threat/take_a_hiatus`, and the progress-mark moves `legacy/advance`, `legacy/earn_experience`, `quest/advance`, `quest/reach_a_milestone`.
+Group A, formal moves: Forsake Your Vow as the player's own choice (`quest/forsake_your_vow`, today only an engine trigger when a threat's menace fills), `combat/turn_the_tide`, `adventure/aid_your_ally` and `relationship/aid_your_ally` (needs the NPC-action context of step 11), `relationship/write_your_epilogue` (couples with the existing retire flow), `failure/learn_from_your_failures`, `threat/take_a_hiatus`, and the progress-mark moves `legacy/advance`, `legacy/earn_experience`, `quest/advance`, `quest/reach_a_milestone`.
 
 Group B, engine triggers: `mark_failure_on_miss` (`failure/mark_your_failure`), `face_setback_at_min_momentum` (`suffer/face_a_setback`, when momentum would drop below -6), `mark_supply_depletion` (`suffer/out_of_supply`), `face_defeat_on_objective_loss` (`combat/face_defeat`). The existing `advance_menace_on_miss` and `pay_the_price` already follow this pattern.
 
-Group C, covered elsewhere or deliberately not wired: `legacy/continue_a_legacy` (step 3 succession), `fate/ask_the_oracle` (the engine's own `ask_the_oracle`), `scene_challenge/begin_the_scene` (step 9k), `threshold/overcome_destruction` (step 28), and the five session moves (a recorded divergence).
+Group C, covered elsewhere or deliberately not wired: `legacy/continue_a_legacy` (built as succession), `fate/ask_the_oracle` (the engine's own `ask_the_oracle`), `scene_challenge/begin_the_scene` (step 9k), `threshold/overcome_destruction` (step 28), and the five session moves (a recorded divergence).
 
 Duels: Draw the Circle's boasts are modelled, but the duel opens no combat track, so the foe's initiative after a miss or the boast Grant first strike is narrated; wiring the duel into the combat track and position belongs here.
 

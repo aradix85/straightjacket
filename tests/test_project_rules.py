@@ -397,8 +397,16 @@ def _docstring_lines(tree: ast.AST) -> list[int]:
     return out
 
 
+def _iter_root_scripts() -> Iterator[Path]:
+    yield REPO_ROOT / "run.py"
+    yield from sorted((REPO_ROOT / "data").glob("*.py"))
+
+
 def _check_no_python_comments_or_docstrings() -> tuple[str, list[Violation]]:
-    return "PYTHON COMMENT or DOCSTRING", _run_scan_src_and_tests(_scan_comments_docstrings)
+    violations = _run_scan_src_and_tests(_scan_comments_docstrings)
+    for path in _iter_root_scripts():
+        violations.extend(_scan_comments_docstrings(path, path.relative_to(REPO_ROOT).as_posix()))
+    return "PYTHON COMMENT or DOCSTRING", violations
 
 
 def _scan_comments_docstrings(path: Path, rel: str) -> list[Violation]:
@@ -980,6 +988,9 @@ def _check_no_stale_carve_out_entries() -> tuple[str, list[Violation]]:
     for rel, name in sorted(_COMPLEXITY_TEST_WHITELIST):
         if not _defines(TESTS_ROOT / rel, name):
             violations.append(Violation(rel, 0, f"complexity whitelist function {name!r} is not defined there"))
+    for stem in sorted(_CORE_BASE):
+        if not (SRC_ROOT / "engine" / f"{stem}.py").exists():
+            violations.append(Violation(f"engine/{stem}.py", 0, "import-layer base file does not exist"))
     return "STALE carve-out or whitelist entry", violations
 
 
@@ -1157,14 +1168,36 @@ def _check_changelog_consistent() -> tuple[str, list[Violation]]:
 
 
 _ENGINE_SUBPACKAGES = frozenset({"ai", "correction", "datasworn", "db", "game", "mechanics", "npc", "tools"})
+_CORE_BASE = frozenset(
+    {
+        "bootstrap_log",
+        "config_loader",
+        "emotions_loader",
+        "engine_config",
+        "engine_config_dataclasses",
+        "engine_loader",
+        "format_utils",
+        "ids",
+        "logging_util",
+        "models",
+        "models_base",
+        "models_npc",
+        "models_story",
+        "prompt_loader",
+        "serialization",
+        "xml_utils",
+        "yaml_merge",
+    }
+)
 _UPPER = frozenset({"correction", "game", "web"})
 _LAYER_FORBIDDEN: dict[str, frozenset[str]] = {
-    "datasworn": frozenset({"db", "npc", "mechanics", "ai", "tools"}) | _UPPER,
-    "db": frozenset({"datasworn", "npc", "mechanics", "ai", "tools"}) | _UPPER,
-    "npc": frozenset({"ai", "tools"}) | _UPPER,
-    "mechanics": frozenset({"ai", "tools"}) | _UPPER,
+    "base": frozenset({"core", "datasworn", "npc", "mechanics", "ai", "tools"}) | _UPPER,
+    "datasworn": frozenset({"core", "db", "npc", "mechanics", "ai", "tools"}) | _UPPER,
+    "db": frozenset({"core", "datasworn", "npc", "mechanics", "ai", "tools"}) | _UPPER,
+    "npc": frozenset({"core", "ai", "tools"}) | _UPPER,
+    "mechanics": frozenset({"core", "ai", "tools"}) | _UPPER,
+    "tools": frozenset({"core"}) | _UPPER,
     "ai": _UPPER,
-    "tools": _UPPER,
     "core": _UPPER,
     "game": frozenset({"correction", "web"}),
     "correction": frozenset({"web"}),
@@ -1177,7 +1210,9 @@ def _layer(parts: list[str]) -> str:
     if parts[:1] == ["web"]:
         return "web"
     if parts[:1] == ["engine"]:
-        return parts[1] if len(parts) >= 2 and parts[1] in _ENGINE_SUBPACKAGES else "core"
+        if len(parts) >= 2 and parts[1] in _ENGINE_SUBPACKAGES:
+            return parts[1]
+        return "base" if len(parts) >= 2 and parts[1] in _CORE_BASE else "core"
     return "top"
 
 
@@ -1193,7 +1228,7 @@ def _check_import_layers() -> tuple[str, list[Violation]]:
     violations: list[Violation] = []
     for path in _iter_source_files():
         parts = path.relative_to(SRC_ROOT).parts
-        own = _layer(list(parts[:-1]))
+        own = _layer([*parts[:-1], path.stem])
         _, lines, tree, _ = _load(path)
         for node in ast.walk(tree):
             if not isinstance(node, ast.ImportFrom):

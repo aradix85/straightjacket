@@ -1,10 +1,6 @@
 creation:
   max_paths: 2
   max_starting_assets: 1
-  starting_asset_categories:
-  - companion
-  - module
-  - command_vehicle
   background_vow_default_rank: extreme
   chaos_vow_modifiers:
     desperate:

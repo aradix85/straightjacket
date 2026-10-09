@@ -8,6 +8,16 @@ This log starts at 2026.09.24.0, the restart after a four-month pause. Earlier r
 
 Calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day.
 
+## [2026.10.09.0] — 2026-10-09
+
+A critical read of every md file against the code, and the fixes it called for. Act transitions no longer depend on the Director: the check moved from `director.py` to `story_state.py` → `check_act_transition` and runs in every turn's scene-end bookkeeping, so an act ends at the last scene of its range, where before it ended one scene earlier only when a Director call happened to run and succeed at that scene. The WebSocket origin check refused the LAN play SECURITY.md describes, and IPv6 loopback, since `[::1]` never matched a parsed host; it now also accepts a page served from the same IP address and port, and still refuses other sites and host names that are not loopback. Player and save names with a path separator or a leading dot are refused instead of stripped, since stripping let two names share one folder. The import-layer scan now splits the engine core into its base and the rest, which `datasworn`, `db`, `npc`, `mechanics`, and `tools` may not import. Dead config went (`engine/damage.yaml` apart from the miss ticks, now `clocks.miss_ticks_by_position`; creation's `starting_asset_categories`; `strings/move.yaml`; `unknown_transition_trigger`), and `run.py` and `data/data.py` lost their comments and docstrings and joined the comment scan (roadmap 9h, two substeps closed).
+
+Documentation: CONTRIBUTING states the strict reading the user chose, no default on any dataclass field apart from the three exceptions, and roadmap 9h.4 counts what is left (about two hundred defaults in 43 classes). ARCHITECTURE lists the correction analysis among the AI's decisions and describes the import layers as the scan now enforces them. The register gains three entries, checked against the Datasworn texts: threats advance by an engine rule instead of Delve's Advance a Threat, a full menace track forsakes the vow at a fixed spirit cost, and the ordinary moves mark scene-challenge progress; step 9j gains 9j.6. SECURITY describes the origin check, the `debug_state` message, and what escaping does not stop. Smaller corrections in `docs/ai.md`, `docs/settings.md`, `docs/elvira.md`, README, and the roadmap.
+
+Elvira, twelve turns in Starforged as explorer: the act ended at scene 7, the last of its range; no engine warnings; streaming complete and identical on all ten streamed turns; three narration findings of kinds step 9f already covers (an unprompted transmission, player-character overreach, a miss that still gave answers); about 30 cents.
+
+Quality gate: 1580 tests green, project-rule scans clean, coverage 90.91%, ruff and mypy --strict clean. Save format unchanged.
+
 ## [2026.10.04.6] — 2026-10-04
 
 Documentation only. The roadmap no longer notes the MiMo evaluation: the user is not changing models now and will take it up again later if needed.

@@ -73,6 +73,30 @@ def get_current_act(game: GameState) -> CurrentAct:
     )
 
 
+def check_act_transition(game: GameState) -> None:
+    bp = game.narrative.story_blueprint
+    if not bp or not bp.acts:
+        return
+    act = get_current_act(game)
+    if act.act_number >= len(bp.acts):
+        return
+    act_idx = act.act_number - 1
+    act_id = f"act_{act_idx}"
+    sr = act.scene_range or default_scene_range()
+    if game.narrative.scene_count < sr[1] or act_id in bp.triggered_transitions:
+        return
+    for i in range(act_idx):
+        fill_id = f"act_{i}"
+        if fill_id not in bp.triggered_transitions:
+            bp.triggered_transitions.append(fill_id)
+            log(f"[Story] Back-filled skipped act transition: {fill_id}")
+    bp.triggered_transitions.append(act_id)
+    log(
+        f"[Story] Act transition: act {act.act_number} '{act.phase}' ends at scene "
+        f"{game.narrative.scene_count}: '{act.transition_trigger[: eng().truncations.log_medium]}'"
+    )
+
+
 def get_pending_revelations(game: GameState) -> list[Revelation]:
     bp = game.narrative.story_blueprint
     if not bp or not bp.revelations:

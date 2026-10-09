@@ -3,8 +3,6 @@ from typing import Any
 from straightjacket.engine.models import (
     GameState,
     SceneLogEntry,
-    StoryAct,
-    StoryBlueprint,
 )
 from tests._helpers import (
     make_director_guidance,
@@ -43,41 +41,6 @@ def _game() -> GameState:
         ),
     ]
     return game
-
-
-def _blueprint() -> StoryBlueprint:
-    return StoryBlueprint(
-        central_conflict="Shadow rises",
-        antagonist_force="Darkness",
-        thematic_thread="Cost of survival",
-        structure_type="3act",
-        acts=[
-            StoryAct(
-                phase="setup",
-                title="Gathering",
-                goal="",
-                scene_range=[1, 7],
-                mood="mysterious",
-                transition_trigger="Allies gathered",
-            ),
-            StoryAct(
-                phase="confrontation",
-                title="Darkness",
-                goal="",
-                scene_range=[8, 14],
-                mood="tense",
-                transition_trigger="Shadow revealed",
-            ),
-            StoryAct(
-                phase="climax",
-                title="Final",
-                goal="",
-                scene_range=[15, 20],
-                mood="desperate",
-                transition_trigger="Resolution",
-            ),
-        ],
-    )
 
 
 def test_empty_guidance_resets_reflection_flags_and_keeps_the_accumulator(stub_all: None) -> None:
@@ -369,42 +332,6 @@ def test_reflection_rejects_truncated_description(stub_all: None) -> None:
         ),
     )
     assert game.npcs[0].description == "Original description here."
-
-
-def test_act_transition_marks_blueprint(stub_all: None) -> None:
-    from straightjacket.engine.director import apply_director_guidance
-
-    game = _game()
-    game.narrative.scene_count = 7
-    game.narrative.story_blueprint = _blueprint()
-    apply_director_guidance(game, make_director_guidance(narrator_guidance="proceed"))
-    assert "act_0" in game.narrative.story_blueprint.triggered_transitions
-
-
-def test_act_transition_backfills_skipped_acts(stub_all: None) -> None:
-    from straightjacket.engine.director import apply_director_guidance
-
-    game = _game()
-    game.narrative.scene_count = 14
-    bp = _blueprint()
-    bp.triggered_transitions = []
-    game.narrative.story_blueprint = bp
-    apply_director_guidance(game, make_director_guidance(narrator_guidance="proceed"))
-    assert "act_0" in bp.triggered_transitions
-    assert "act_1" in bp.triggered_transitions
-
-
-def test_act_transition_ignores_final_act(stub_all: None) -> None:
-    from straightjacket.engine.director import apply_director_guidance
-
-    game = _game()
-    game.narrative.scene_count = 20
-    bp = _blueprint()
-    bp.triggered_transitions = ["act_0", "act_1"]
-    game.narrative.story_blueprint = bp
-    apply_director_guidance(game, {})
-
-    assert "act_2" not in bp.triggered_transitions
 
 
 def test_unreflected_npcs_get_reset(stub_all: None) -> None:

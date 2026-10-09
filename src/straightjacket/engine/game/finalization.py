@@ -7,7 +7,7 @@ from dataclasses import dataclass, field
 from ..ai.metadata import apply_narrator_metadata
 from ..ai.narrator import call_narrator, call_narrator_metadata
 from ..ai.provider_base import AIUnavailableError, AIProvider, NarrationSink
-from ..engine_loader import damage, eng
+from ..engine_loader import eng
 from ..logging_util import log
 from ..mechanics import (
     apply_boasts,
@@ -123,7 +123,7 @@ def resolve_action_consequences(
     clock_events: list[ClockEvent] = []
     fill_results: list[ClockFillResult] = []
     if roll.result == "MISS":
-        clock_ticks = damage("damage.miss.clock_ticks", position)
+        clock_ticks = eng().clocks.miss_ticks_by_position[position]
         if clock_ticks > 0:
             tick_threat_clock(game, clock_ticks, clock_events, fill_results)
 

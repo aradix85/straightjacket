@@ -16,7 +16,7 @@ Discovery is yaml-only: `list_packages()` scans `data/settings/*.yaml` and `get_
 
 ## Settings yaml format
 
-Parsed strictly at load. Required top-level keys: `id`, `title`, `datasworn_id`, `playable`, `description`, `oracle_paths`, `vocabulary`. Optional: `parent`, `creation_flow`. A missing required key raises `KeyError`, and so does a key the loader does not know, at the top level or inside `oracle_paths`, `vocabulary`, or `creation_flow`.
+Parsed strictly at load. Required top-level keys: `id`, `title`, `datasworn_id`, `playable`, `description`, `oracle_paths`, `vocabulary`. Optional: `parent`, and `creation_flow` for a setting whose parent chain supplies every field of it (Inheritance). A missing required key raises `KeyError`, and so does a key the loader does not know, at the top level or inside `oracle_paths`, `vocabulary`, or `creation_flow`.
 
 ```yaml
 id: your_setting

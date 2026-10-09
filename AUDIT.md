@@ -52,7 +52,7 @@ Carve-outs: re-export hubs (`models.py`, `__init__.py` files), per "Subpackage p
 
 ### Principle 2 — Config-driven
 
-The rules "Domain config keys raise on a miss" and "Readable strings live in yaml" in CONTRIBUTING.md. Anything a translator, designer, or rules editor would change without touching Python belongs in YAML.
+The rules "Domain config keys raise on a miss, and dataclass fields have no defaults" and "Readable strings live in yaml" in CONTRIBUTING.md. Anything a translator, designer, or rules editor would change without touching Python belongs in YAML.
 
 **Pass 2a — User-facing strings.** Grep `src/straightjacket/` for literals that look like narration, error messages, UI labels, or AI prompts, and cross-reference `strings/*.yaml` and `prompts/*.yaml`. A user-, narrator-, or AI-readable string not loaded from YAML is a violation.
 
@@ -60,7 +60,7 @@ The rules "Domain config keys raise on a miss" and "Readable strings live in yam
 
 **Pass 2c — Mappings.** Grep dict and set literals in domain modules that hold domain keys (move names, dispositions, statuses). A mapping that should extend without Python changes is a violation.
 
-**Pass 2d — Dataclass defaults.** Grep `field(default=`, `field(default_factory=`, and `=` defaults on dataclass fields in `src/straightjacket/engine/`. A violation unless it is one of the three exceptions under "Domain config keys raise on a miss" in CONTRIBUTING.md; the optional fields of `AICallSpec` in `ai/provider_base.py` count as external-boundary parsing. `_check_no_dataclass_defaults_in_config_binding` covers the config binding mechanically; this pass covers every other dataclass.
+**Pass 2d — Dataclass defaults.** Grep `field(default=`, `field(default_factory=`, and `=` defaults on dataclass fields in `src/straightjacket/`. A violation unless it is one of the three exceptions under "Domain config keys raise on a miss, and dataclass fields have no defaults" in CONTRIBUTING.md; the optional fields of `AICallSpec` in `ai/provider_base.py` count as external-boundary parsing. `_check_no_dataclass_defaults_in_config_binding` covers the config binding mechanically; this pass covers every other dataclass.
 
 Carve-outs: the `get_raw` pattern for yaml whose keys are domain data, the AI-call carve-out files in `_AI_CALL_CARVE_OUT_FILES`, the `theme_die_table` cross-validation.
 
@@ -80,7 +80,7 @@ Carve-outs: the AI-call carve-out for broad excepts; re-exports that make up the
 
 ### Principle 4 — No backwards compatibility
 
-"No backwards compatibility" in CONTRIBUTING.md: every dataclass field is required apart from the exceptions under "Domain config keys raise on a miss".
+"No backwards compatibility" in CONTRIBUTING.md: every dataclass field is required apart from the exceptions under "Domain config keys raise on a miss, and dataclass fields have no defaults".
 
 **Pass 4a — Dataclass field defaults.** References Pass 2d.
 

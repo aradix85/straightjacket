@@ -9,6 +9,11 @@ clocks:
 
   max_clocks_per_chapter: 4
 
+  miss_ticks_by_position:
+    controlled: 0
+    risky: 1
+    desperate: 2
+
   fill_consequences:
     threat:
       tag_template: "{clock_name}: the danger has arrived. The shape of the threat is concrete now."

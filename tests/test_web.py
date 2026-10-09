@@ -1,7 +1,9 @@
 from pathlib import Path
-from typing import Any
+from types import SimpleNamespace
+from typing import Any, cast
 
 import pytest
+from starlette.websockets import WebSocket, WebSocketDisconnect
 
 from straightjacket.engine import engine_loader
 from straightjacket.engine.game import BurnOffer
@@ -331,6 +333,57 @@ class TestWebSocket:
             assert msg["name"] == "ws_recon"
             ws2.send_json({"type": "delete_player", "name": "ws_recon"})
             ws2.receive_json()
+
+    def test_a_foreign_origin_is_refused(self, client: Any) -> None:
+        with (
+            pytest.raises(WebSocketDisconnect),
+            client.websocket_connect("/ws", headers={"origin": "https://evil.example"}) as ws,
+        ):
+            ws.receive_json()
+
+
+def _origin_ws(headers: dict[str, str]) -> WebSocket:
+    return cast(WebSocket, SimpleNamespace(headers=headers))
+
+
+class TestOriginCheck:
+    @pytest.mark.parametrize(
+        "origin",
+        ["http://localhost:8081", "http://127.0.0.1:8081", "http://[::1]:8081"],
+    )
+    def test_loopback_origins_pass(self, origin: str) -> None:
+        from straightjacket.web.server import _check_origin
+
+        assert _check_origin(_origin_ws({"origin": origin, "host": "localhost:8081"}))
+
+    def test_no_origin_passes(self) -> None:
+        from straightjacket.web.server import _check_origin
+
+        assert _check_origin(_origin_ws({"host": "localhost:8081"}))
+
+    @pytest.mark.parametrize(
+        ("origin", "host"),
+        [("http://192.168.1.10:8081", "192.168.1.10:8081"), ("http://[fe80::1]:8081", "[fe80::1]:8081")],
+    )
+    def test_a_lan_address_passes_when_the_page_came_from_the_same_address(self, origin: str, host: str) -> None:
+        from straightjacket.web.server import _check_origin
+
+        assert _check_origin(_origin_ws({"origin": origin, "host": host}))
+
+    @pytest.mark.parametrize(
+        ("origin", "host"),
+        [
+            ("https://evil.example", "localhost:8081"),
+            ("http://192.168.1.66:8081", "192.168.1.10:8081"),
+            ("http://192.168.1.10:9999", "192.168.1.10:8081"),
+            ("http://rebind.example:8081", "rebind.example:8081"),
+            ("http://[::1", "localhost:8081"),
+        ],
+    )
+    def test_other_origins_are_refused(self, origin: str, host: str) -> None:
+        from straightjacket.web.server import _check_origin
+
+        assert not _check_origin(_origin_ws({"origin": origin, "host": host}))
 
 
 class TestSuccessionWebSocket:

@@ -8,7 +8,7 @@ from .config_loader import USERS_DIR
 from .logging_util import log
 
 
-_WINDOWS_INVALID_CHARS = frozenset('<>:"|?*')
+_FORBIDDEN_NAME_CHARS = frozenset('<>:"|?*/\\')
 _WINDOWS_RESERVED_NAMES = frozenset(
     {"CON", "PRN", "AUX", "NUL"} | {f"{port}{n}" for port in ("COM", "LPT") for n in "123456789¹²³"}
 )
@@ -19,15 +19,15 @@ class InvalidNameError(ValueError):
 
 
 def _safe_name(name: str) -> str:
-    clean = name.replace("/", "").replace("\\", "").replace("\0", "").replace("..", "").strip()
-    clean = clean.lstrip(".")
-    clean = " ".join(clean.split())
-    if not clean or clean in (".", ".."):
+    if any(ch in _FORBIDDEN_NAME_CHARS or ord(ch) < 32 for ch in name):
+        raise InvalidNameError(f"Name contains a character no file name may hold: {name!r}")
+    clean = " ".join(name.split())
+    if not clean:
         raise InvalidNameError(f"Invalid name: {name!r}")
     if len(clean) > 100:
         raise InvalidNameError(f"Name too long ({len(clean)} chars, max 100): {name[:20]!r}...")
-    if any(ch in _WINDOWS_INVALID_CHARS or ord(ch) < 32 for ch in clean):
-        raise InvalidNameError(f"Name contains a character no file name may hold: {name!r}")
+    if clean.startswith("."):
+        raise InvalidNameError(f"Name starts with a dot: {name!r}")
     if clean.endswith("."):
         raise InvalidNameError(f"Name ends with a dot, which Windows drops: {name!r}")
     if clean.split(".")[0].strip().upper() in _WINDOWS_RESERVED_NAMES:

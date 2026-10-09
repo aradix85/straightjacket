@@ -112,6 +112,59 @@ def test_get_current_act_approaching_end_on_final_act(load_engine: None) -> None
     assert act.approaching_end is True
 
 
+def test_check_act_transition_waits_for_the_last_scene_of_the_act(load_engine: None) -> None:
+    from straightjacket.engine.story_state import check_act_transition
+
+    g = make_game_state()
+    g.narrative.story_blueprint = _bp_with_acts([(1, 5), (6, 10), (11, 15)])
+    g.narrative.scene_count = 4
+    check_act_transition(g)
+    assert g.narrative.story_blueprint.triggered_transitions == []
+
+
+def test_check_act_transition_marks_the_act_at_its_last_scene(load_engine: None) -> None:
+    from straightjacket.engine.story_state import check_act_transition, get_current_act
+
+    g = make_game_state()
+    g.narrative.story_blueprint = _bp_with_acts([(1, 5), (6, 10), (11, 15)])
+    g.narrative.scene_count = 5
+    check_act_transition(g)
+    assert g.narrative.story_blueprint.triggered_transitions == ["act_0"]
+    assert get_current_act(g).act_number == 2
+
+
+def test_check_act_transition_is_idempotent(load_engine: None) -> None:
+    from straightjacket.engine.story_state import check_act_transition
+
+    g = make_game_state()
+    g.narrative.story_blueprint = _bp_with_acts([(1, 5), (6, 10), (11, 15)])
+    g.narrative.scene_count = 5
+    check_act_transition(g)
+    check_act_transition(g)
+    assert g.narrative.story_blueprint.triggered_transitions == ["act_0"]
+
+
+def test_check_act_transition_backfills_skipped_acts(load_engine: None) -> None:
+    from straightjacket.engine.story_state import check_act_transition
+
+    g = make_game_state()
+    g.narrative.story_blueprint = _bp_with_acts([(1, 5), (6, 10), (11, 15)])
+    g.narrative.scene_count = 10
+    check_act_transition(g)
+    assert g.narrative.story_blueprint.triggered_transitions == ["act_0", "act_1"]
+
+
+def test_check_act_transition_ignores_the_final_act(load_engine: None) -> None:
+    from straightjacket.engine.story_state import check_act_transition
+
+    g = make_game_state()
+    g.narrative.story_blueprint = _bp_with_acts([(1, 5), (6, 10), (11, 15)])
+    g.narrative.story_blueprint.triggered_transitions = ["act_0", "act_1"]
+    g.narrative.scene_count = 20
+    check_act_transition(g)
+    assert g.narrative.story_blueprint.triggered_transitions == ["act_0", "act_1"]
+
+
 def test_get_pending_revelations_no_blueprint(load_engine: None) -> None:
     from straightjacket.engine.story_state import get_pending_revelations
 

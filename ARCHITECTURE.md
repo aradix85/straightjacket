@@ -8,12 +8,13 @@ Straightjacket puts the Narrative RPG Engine design document ([itch.io](https://
 
 **Order of preference.** Whoever can decide something decides it in this order: first a tabletop system the engine implements (Mythic GME as the game master's stand-in, the Ironsworn and Starforged rules, the Adventure Crafter, Blades in the Dark), then an engine rule where no source settles it, and only then the AI, which writes prose and reads the player's free text. The design document's specific recommendations serve this aim; where practice shows one of them fails, `docs/divergences.md` records the departure and why, judged by this order.
 
-**What the AI still decides.** Four decisions stay with the AI in play, each bounded by the engine:
+**What the AI still decides.** These decisions stay with the AI in play, each bounded by the engine:
 
 - The Brain turns free player text into a move and its parameters (`docs/ai.md`, Roles). Each choice is limited to what the engine offers in that situation, and the dice, fate, and the engine decide the outcome.
 - The narrator supplies every fact the engine has not settled, such as the look of a room or what an NPC says.
 - The metadata extraction registers the NPCs, renames, and deaths the narration introduces, so narrated facts can become state; the opening extraction does the same for an opening scene.
 - The Director writes agendas, instincts, and arcs for the NPCs the engine selects.
+- The correction analysis reads a `##` correction and decides whether the input was misread, which the engine replays with the dice already rolled, or which state operations apply; the operations, fields, and values are limited to those its schema offers.
 
 The Brain reading free text, the narrator's prose, and the Director's wording of agendas and arcs stay with the AI by design. What the narrator still invents where a system could decide (locations, encounters, who a new NPC is, what an NPC does off screen, a foe's action) is listed with the roadmap step that takes it over in `docs/divergences.md`, as is the revelation check, the one call that judges the narration after the fact.
 
@@ -46,7 +47,7 @@ Narration (game/finalization.py) → narrator call, then cleanup of leaked metad
   ↓
 Post-narration (game/finalization.py) → engine memories, scene context, metadata extraction
   ↓
-Scene-end bookkeeping (game/scene_finalization.py) → autonomous clock and threat ticks, chaos, list upkeep
+Scene-end bookkeeping (game/scene_finalization.py) → autonomous clock and threat ticks, act transition, story completion, chaos, list upkeep
   ↓
 Database sync (db/sync.py) and save (persistence.py)
   ↓
@@ -59,10 +60,10 @@ Dialog turns skip the roll and its consequences. A correction (`##`) of a misrea
 
 The source lives under `src/straightjacket/`.
 
-- `engine/` — the engine core: the typed models (`models.py` re-exports every dataclass from `models_base.py`, `models_npc.py`, and `models_story.py`), strict serialization (`serialization.py`), saves (`persistence.py`), users and save folders (`user_management.py`), the loaders for `config.yaml` and the yaml stores, narrator prompt assembly (`prompt_action.py`, `prompt_dialog.py`, `prompt_boundary.py`, with shared parts in `prompt_shared.py` and `prompt_blocks.py`), narrator output cleanup (`parser.py`), story-arc tracking (`story_state.py`), and the Director (`director.py`).
+- `engine/` — the engine core: the typed models (`models.py` re-exports every dataclass from `models_base.py`, `models_npc.py`, and `models_story.py`), strict serialization (`serialization.py`), saves (`persistence.py`), users and save folders (`user_management.py`), the loaders for `config.yaml` and the yaml stores, narrator prompt assembly (`prompt_action.py`, `prompt_dialog.py`, `prompt_boundary.py`, with shared parts in `prompt_shared.py` and `prompt_blocks.py`), narrator output cleanup (`parser.py`), story-arc tracking and act transitions (`story_state.py`), and the Director with its AI call (`director.py`).
 - `engine/mechanics/` — the rules, with no AI: rolls and consequences, move outcomes, progress tracks, impacts, legacy, assets and roll bonuses, NPC stance and information gating, fate, facts and the generation entry point, scene structure and keyed scenes, random events, threats, clocks, the Adventure Crafter, and the mechanical side of succession.
 - `engine/npc/` — NPC state: bond from connection tracks, name matching, memory, activation, lifecycle, oracle names, and applying extracted metadata.
-- `engine/ai/` — every AI call: provider adapters and routing, the Brain, the narrator, metadata extraction, recap, blueprint voicing, output schemas, and sentence streaming.
+- `engine/ai/` — provider adapters and routing, output schemas, sentence streaming, and the AI calls of the Brain, the revelation check, the narrator, metadata extraction, recap, and blueprint voicing. Two calls live with the code that uses them: the Director's in `director.py` and the correction analysis in `correction/analysis.py`.
 - `engine/tools/` — the Director's tool registry and tool loop, and engine query functions such as the available moves.
 - `engine/game/` — orchestration: the turn, action resolution, shared narration and finalization, momentum burn, game start, chapters, succession, and the deferred Director run.
 - `engine/correction/` — the `##` correction: the analysis call, atomic state patches, and snapshot restore with re-narration.
@@ -74,7 +75,7 @@ Beside them, `i18n.py` and `strings_loader.py` serve user-facing strings.
 
 **Subpackage public API via `__init__.py`.** `mechanics`, `npc`, `game`, `db`, `tools`, and `correction` re-export their public names in `__init__.py`, so callers write `from straightjacket.engine.mechanics import roll_action` and the internal file layout stays free to change. `models.py` is the same kind of hub for the dataclasses. `engine`, `ai`, `datasworn`, and `web` are package markers without re-exports.
 
-**Import layers.** Dependencies point downward. `datasworn` and `db` import only the engine core (models, config, loaders). `npc` and `mechanics` may use those and each other, but never `ai`, `tools`, `game`, `correction`, or `web`. `ai`, `tools`, and the engine core's own files never import `game`, `correction`, or `web`. `game` orchestrates everything below it, `correction` builds on `game`, and nothing in the engine imports `web`. A project-rule scan enforces this, inline imports included.
+**Import layers.** Dependencies point downward. The files directly under `engine/` are not one layer. Their base (the models, serialization, the configuration and yaml loaders, logging, and small helpers such as `xml_utils.py`; the list is `_CORE_BASE` in `tests/test_project_rules.py`) imports nothing above it, apart from `GameState.restore`, which rebuilds the database read model through an inline import. `datasworn` and `db` import only that base. `npc` and `mechanics` may use the base, `datasworn`, `db`, and each other, but not `ai` or `tools`; `tools` may use all of those and `ai`, since its tool loop makes the Director's AI rounds. None of them imports the rest of the core files, `game`, `correction`, or `web`. The rest of the core (prompt assembly, the parser, persistence, story-arc tracking, and the Director) and `ai` use each other: the Brain and the narrator read prompt blocks and the parser, while the Director in `director.py` calls `ai` and `tools`. No core file and nothing in `ai` imports `game`, `correction`, or `web`. `game` orchestrates everything below it, `correction` builds on `game`, and nothing in the engine imports `web`. A project-rule scan enforces this, inline imports included.
 
 ## State
 

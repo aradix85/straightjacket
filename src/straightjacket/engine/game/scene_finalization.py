@@ -27,7 +27,7 @@ from ..models import (
     RollResult,
     SceneLogEntry,
 )
-from ..story_state import check_story_completion, mark_revelation_used
+from ..story_state import check_act_transition, check_story_completion, mark_revelation_used
 from .finalization import apply_post_narration
 from ..mechanics import sync_combat_tracks
 from .turn_types import SceneContext
@@ -133,6 +133,7 @@ def finalize_scene(
     tick_autonomous_threats(game)
     resolve_full_menace(game)
 
+    check_act_transition(game)
     check_story_completion(game)
 
     update_chaos_factor(game, roll_result_str, target_npc_id=brain.target_npc)

@@ -65,6 +65,7 @@ logging:
   - "[Metadata]"
   - "[OpeningSetup]"
   - "[Director]"
+  - "[Story]"
   - "[Tools]"
   - "[Legacy]"
   - "[Clock]"

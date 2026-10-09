@@ -423,6 +423,7 @@ def _build_clocks(c_raw: dict[str, Any]) -> ClocksConfig:
         default_owner_kind=c_raw["default_owner_kind"],
         default_segments=c_raw["default_segments"],
         max_clocks_per_chapter=c_raw["max_clocks_per_chapter"],
+        miss_ticks_by_position={str(k): int(v) for k, v in dict(c_raw["miss_ticks_by_position"]).items()},
         fill_consequences=fill,
     )
 

@@ -67,7 +67,6 @@ class StatsConfig:
 class CreationConfig:
     max_paths: int
     max_starting_assets: int
-    starting_asset_categories: list[str]
     background_vow_default_rank: str
     chaos_vow_modifiers: dict[str, list[str]]
     chaos_modifier_values: dict[str, int]
@@ -787,6 +786,7 @@ class ClocksConfig:
     default_owner_kind: str
     default_segments: int
     max_clocks_per_chapter: int
+    miss_ticks_by_position: dict[str, int]
     fill_consequences: dict[str, ClockFillConsequenceEntry]
 
 

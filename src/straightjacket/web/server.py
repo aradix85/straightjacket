@@ -1,5 +1,6 @@
 from typing import Any
 import asyncio
+import ipaddress
 from collections.abc import Callable
 from pathlib import Path
 from urllib.parse import urlparse
@@ -80,7 +81,7 @@ _HANDLERS: dict[str, Callable[..., Any]] = {
 }
 
 
-_SAFE_ORIGINS = {"localhost", "127.0.0.1", "[::1]"}
+_LOOPBACK_HOSTS = frozenset({"localhost", "127.0.0.1", "::1"})
 
 
 def _check_origin(ws: WebSocket) -> bool:
@@ -90,11 +91,14 @@ def _check_origin(ws: WebSocket) -> bool:
         return True
 
     try:
-        host = urlparse(origin).hostname or ""
-        return host in _SAFE_ORIGINS
-    except ValueError as e:
-        log(f"[Web] Origin parse failed for '{origin}': {e}", level="warning")
+        parsed = urlparse(origin)
+        host = parsed.hostname or ""
+        if host in _LOOPBACK_HOSTS:
+            return True
+        ipaddress.ip_address(host)
+    except ValueError:
         return False
+    return parsed.netloc.lower() == (ws.headers.get("host") or "").strip().lower()
 
 
 async def _takeover_existing_session(ws: WebSocket) -> None:

@@ -1,14 +1,3 @@
-#!/usr/bin/env python3
-"""
-Straightjacket Launcher
-=======================
-Run from project root: python run.py
-
-First run: creates venv, installs dependencies, starts the server.
-Subsequent runs: checks venv exists, starts the server.
-Works on Windows, macOS, Linux.
-"""
-
 import os
 import subprocess
 import sys
@@ -27,8 +16,7 @@ def _in_venv() -> bool:
     return sys.prefix != sys.base_prefix
 
 
-def _bootstrap():
-    """Create venv if needed, install dependencies, re-launch inside venv."""
+def _bootstrap() -> None:
     venv_py = _venv_python()
 
     if not venv_py.exists():
@@ -43,8 +31,7 @@ def _bootstrap():
     os.execv(str(venv_py), [str(venv_py), str(ROOT / "run.py")])
 
 
-def _ensure_data():
-    """Download game data files if missing."""
+def _ensure_data() -> None:
     data_dir = ROOT / "data"
     needed = [
         "classic.json",
@@ -61,8 +48,7 @@ def _ensure_data():
     subprocess.check_call([sys.executable, str(data_dir / "data.py")])
 
 
-def _start():
-    """Start the Straightjacket server."""
+def _start() -> None:
     _ensure_data()
     sys.path.insert(0, str(ROOT / "src"))
 

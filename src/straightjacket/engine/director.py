@@ -258,35 +258,6 @@ def call_director(
         return {}
 
 
-def _check_engine_act_transition(game: GameState) -> None:
-    bp = game.narrative.story_blueprint
-    if not bp or not bp.acts:
-        return
-    act = get_current_act(game)
-    act_idx = act.act_number - 1
-    act_id = f"act_{act_idx}"
-    total_acts = len(bp.acts)
-    if act.act_number >= total_acts:
-        return
-    sr = act.scene_range or default_scene_range()
-    if game.narrative.scene_count < sr[1]:
-        return
-    if act_id in bp.triggered_transitions:
-        return
-    for i in range(act_idx):
-        fill_id = f"act_{i}"
-        if fill_id not in bp.triggered_transitions:
-            bp.triggered_transitions.append(fill_id)
-            log(f"[Director] Back-filled skipped act transition: {fill_id}")
-    bp.triggered_transitions.append(act_id)
-    trigger_text = act.transition_trigger or eng().ai_text.narrator_defaults["unknown_transition_trigger"]
-    log(
-        f"[Director] Engine act transition: act {act.act_number} "
-        f"'{act.phase}' scene {game.narrative.scene_count} ≥ range end {sr[1]}: "
-        f"'{trigger_text[: eng().truncations.log_medium]}'"
-    )
-
-
 def _reset_all_reflection_flags(game: GameState, reason: str) -> None:
     for npc in game.npcs:
         if npc.needs_reflection:
@@ -421,8 +392,6 @@ def apply_director_guidance(game: GameState, guidance: dict[str, Any]) -> None:
         npc_guidance=guidance["npc_guidance"],
         arc_notes=guidance["arc_notes"],
     )
-
-    _check_engine_act_transition(game)
 
     if guidance["scene_summary"] and game.narrative.session_log:
         game.narrative.session_log[-1].rich_summary = guidance["scene_summary"]

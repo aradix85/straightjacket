@@ -201,6 +201,39 @@ def test_turn_action_produces_narration(load_engine: None) -> None:
     assert len(provider.calls) >= 3
 
 
+def test_a_turn_ends_the_act_at_its_last_scene_without_the_director(load_engine: None) -> None:
+    from straightjacket.engine.game.turn import process_turn
+    from straightjacket.engine.models import EngineConfig
+    from straightjacket.engine.models_story import StoryAct
+    from straightjacket.engine.story_state import get_current_act
+    from tests._helpers import make_blueprint
+
+    game = _make_game()
+    game.narrative.story_blueprint = make_blueprint(
+        central_conflict="x",
+        acts=[
+            StoryAct(
+                phase=f"phase_{i}",
+                title=f"Act {i + 1}",
+                goal="",
+                scene_range=list(r),
+                mood="tense",
+                transition_trigger=f"trigger_{i}",
+            )
+            for i, r in enumerate([(1, 4), (5, 8), (9, 12)])
+        ],
+    )
+
+    game, _narration, _roll, _burn_info, _director_ctx = process_turn(
+        MockProvider(), game, "I search the room for clues", config=EngineConfig(narration_lang="English")
+    )
+
+    assert game.narrative.scene_count == 4
+    assert game.narrative.story_blueprint is not None
+    assert game.narrative.story_blueprint.triggered_transitions == ["act_0"]
+    assert get_current_act(game).act_number == 2
+
+
 def test_turn_dialog_skips_roll(load_engine: None) -> None:
     from straightjacket.engine.game.turn import process_turn
     from straightjacket.engine.models import EngineConfig
