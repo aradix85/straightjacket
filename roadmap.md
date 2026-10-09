@@ -62,6 +62,8 @@ The prompts are tuned one change at a time against measurements, not impressions
 
 **9f.11** A weak hit's cost is still left out now and then, with and without the player-agency line at the end of the action task. A sentence on the result in that line did not help when measured, so the cost belongs in the result block or elsewhere in the action task.
 
+**9f.12** The model, decided before the other substeps, since every prompt change is measured on one model. Claude Haiku 5.5 with the narrator at effort medium tells the turns better than GLM 5.3 at any playable setting (fewer audit findings, preferred in blind readings, better Elvira scores, no engine warnings with every role on it) but reaches the first sentence about 7 seconds later per turn; GLM's own settings that come close in the audit reason for about 40 seconds first. The user chooses between GLM 5.3 at low and Haiku 5.5 with the narrator at medium and the other roles at low or without thinking; on Haiku, the substeps above are measured again before any tuning. The measuring scripts for this comparison are in the measuring setup outside the repository.
+
 ### Definition of Done
 
 - Each adopted change was measured on the same situation set against the unchanged prompt, with at least two runs per variant, and beats the run-to-run spread without raising any audit kind beyond it.

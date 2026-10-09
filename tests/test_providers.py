@@ -108,7 +108,9 @@ class TestAnthropicProvider:
         assert sent["messages"] == [{"role": "user", "content": "hello"}]
         assert sent["extra_body"] == {"temperature": 0.5, "top_p": 0.9, "top_k": 40}
         assert not {"temperature", "top_p", "top_k"} & set(sent)
-        assert sent["output_config"] == {"format": {"type": "json_schema", "schema": schema}}
+        assert sent["output_config"] == {
+            "format": {"type": "json_schema", "schema": provider_anthropic.anthropic.transform_schema(schema)}
+        }
         assert sent["tools"] == [
             {
                 "name": "query_npc",
@@ -323,11 +325,25 @@ def test_anthropic_passes_cluster_extra_body_to_the_right_parameters(anthropic_e
     sent = anthropic_endpoint.calls[0]
     assert sent["output_config"] == {
         "effort": "low",
-        "format": {"type": "json_schema", "schema": {"title": "t", "type": "object"}},
+        "format": {
+            "type": "json_schema",
+            "schema": provider_anthropic.anthropic.transform_schema({"title": "t", "type": "object"}),
+        },
     }
     assert sent["cache_control"] == {"type": "ephemeral"}
     assert sent["extra_body"] == {"temperature": 0.5, "metadata_flag": True}
     assert extra == {"output_config": {"effort": "low"}, "cache_control": {"type": "ephemeral"}, "metadata_flag": True}
+
+
+def test_anthropic_moves_array_limits_it_cannot_enforce_into_the_description(anthropic_endpoint: _FakeEndpoint) -> None:
+    anthropic_endpoint.response = _anthropic_reply(SimpleNamespace(type="text", text="{}"))
+    boasts = {"type": "array", "items": {"type": "string", "enum": ["a", "b"]}, "maxItems": 2}
+    schema = {"type": "object", "properties": {"boasts": boasts}, "required": ["boasts"], "additionalProperties": False}
+    provider_anthropic.AnthropicProvider(api_key="k", timeout_seconds=30).create_message(_spec(json_schema=schema))
+    sent_boasts = anthropic_endpoint.calls[0]["output_config"]["format"]["schema"]["properties"]["boasts"]
+    assert "maxItems" not in sent_boasts
+    assert "maxItems: 2" in sent_boasts["description"]
+    assert boasts["maxItems"] == 2
 
 
 def test_anthropic_usage_counts_cached_input_and_reports_the_cached_share(anthropic_endpoint: _FakeEndpoint) -> None:

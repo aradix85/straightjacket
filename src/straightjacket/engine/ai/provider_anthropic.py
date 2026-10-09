@@ -78,7 +78,8 @@ class AnthropicProvider:
 
         output_config: dict[str, Any] = extra.pop("output_config") if "output_config" in extra else {}
         if spec.json_schema is not None:
-            output_config = {**output_config, "format": {"type": "json_schema", "schema": spec.json_schema}}
+            schema = anthropic.transform_schema(spec.json_schema)
+            output_config = {**output_config, "format": {"type": "json_schema", "schema": schema}}
         if output_config:
             create_kwargs["output_config"] = output_config
 
