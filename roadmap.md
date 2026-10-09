@@ -12,10 +12,10 @@ Closing a step: the checks of CONTRIBUTING.md pass, the step leaves this documen
 
 - The user writes in Dutch and reads with a screen reader: answers are in Dutch and in plain prose, while the repository stays in English.
 - A session starts by reading every md file in the root and in `docs/`, of the CHANGELOG only the entries since the last finished step, and then continues with NEXT STEP. The design document is not in the repository; README.md links it.
-- The Elvira sessions a step needs are part of the work; an eight-turn session costs about 15 to 20 cents.
+- The Elvira sessions a step needs are part of the work; a twelve-turn session on Sonnet costs about 55 to 65 cents. Say what a measuring round will cost before starting it; the API spend limit is set in the Claude Console (Settings, Billing).
 - Each finished release is committed and pushed to main.
-- On this machine the API keys live in the Windows user environment (`TOGETHER_API_KEY` for the game, `OPENAI_API_KEY` for Elvira); a process started by a tool may need them set in its own environment first.
-- The measuring setup for prompt tuning lives outside the repository in `C:\Users\radix\Documents\mimo_probe`: captured situations, the audit and blind-reading scripts, and a README.md that says how to capture, measure a variant, and read blind. Its captured situations predate the player-agency line in `prompts/tasks.yaml`; the README says how to measure against the current prompt.
+- On this machine the API keys live in the Windows user environment (`ANTHROPIC_API_KEY` for the game, `OPENAI_API_KEY` for Elvira and the measuring judge); a process started by a tool may need them set in its own environment first.
+- The measuring setup for prompt tuning lives outside the repository in `C:\Users\radix\Documents\mimo_probe`: captured situations, the audit, blind-reading, and Elvira comparison scripts, and a README.md that says how to use them.
 
 ## Reference patterns
 
@@ -42,7 +42,7 @@ Closing a step: the checks of CONTRIBUTING.md pass, the step leaves this documen
 
 ## NEXT STEP — 9f: Narrator, Director, and extraction prompts
 
-The prompts are tuned one change at a time against measurements, not impressions. A measurement replays the same situations for every variant: full narrator prompts captured from real sessions, each variant run three times per situation, every narration audited against its own prompt by a judge from a model family other than the narrator's (contradictions, information the prompt withholds, softened results, player-character overreach, word budget), and pairs of narrations read blind with the order shuffled and each model or variant on position A equally often. The measuring scripts stay outside the repository; what a change measured goes in its CHANGELOG entry. The situation set holds fourteen situations: misses with and without a match, weak and strong hits, an NPC's secrets, near death, two openings, and two dialogs without a roll; a dialog without a roll with a hostile NPC is still missing, since the Brain turns most questions into moves. On that set the unchanged prompt run twice moved the audit total by twelve findings, so a change is adopted only when it beats the spread of its own two runs and of the baseline's. A blind reading by one judge drifts toward one position, so each pair is read twice, the second time with the positions swapped, and a preference counts only when both readings agree.
+The prompts run on Claude Sonnet 5.5 at effort medium (`docs/ai.md`) and are tuned one change at a time against measurements, not impressions; the measuring setup outside the repository holds the situation set and the scripts, and its README says how to measure. A change is measured three ways. The audit: fourteen situations captured from real sessions, three narrations each and two runs per variant, each narration checked against its own prompt by a judge from another model family; it reads the prompt's own rules, so a milder rule lowers its count without better prose. The blind reading: each pair read twice with the positions swapped, a preference counting only when both readings agree. Elvira: at least ten sessions per variant, since five sessions of one prompt scored anywhere from 7.12 to 7.92.
 
 **9f.3** PLAYER AGENCY's inner-life clause says to describe what a camera could record, including action, beside the clause that limits the character's actions to the stated one.
 
@@ -52,23 +52,19 @@ The prompts are tuned one change at a time against measurements, not impressions
 
 **9f.6** `<style>` asks for terse prose, and much of the system prompt still addresses GENRE PHYSICS.
 
-**9f.8** The extraction prompts (`narrator_metadata`, `opening_setup_extractor`), `revelation_check_system`, `blueprint_voicing`, and `recap` were rewritten for Haiku 5.5 in plain sentences with the reason for each rule, and Elvira showed no warning from them; no situation set measures them yet.
+**9f.8** No situation set measures the extraction prompts (`narrator_metadata`, `opening_setup_extractor`), `revelation_check_system`, `blueprint_voicing`, or `recap` yet.
 
 **9f.9** Openings slip into the third person ("Zari Kobayashi's eyes open") under the current `task_opening`, which names the player character as the "you" of the narration but does not hold the perspective, as the epilogue task does ("MUST NOT shift to third person"). The narration stays in the second person, as the user prefers.
 
-**9f.10** An evasive NPC tells the player character's past: in almost every measured variant and with both models, Kestrel's intercom line named the character's forgotten contract or old name while her stance allows one fact. Find where that past reaches the narrator in the prompt assembly (NPC secrets, Director guidance) before tuning wording.
+**9f.10** An evasive NPC tells the player character's past: in almost every measured variant, Kestrel's intercom line named the character's forgotten contract or old name while her stance allows one fact. Find where that past reaches the narrator in the prompt assembly (NPC secrets, Director guidance) before tuning wording.
 
-**9f.11** A weak hit's cost is still left out now and then, with and without the player-agency line at the end of the action task. A sentence on the result in that line did not help when measured, so the cost belongs in the result block or elsewhere in the action task.
+**9f.11** A weak hit's cost is still left out now and then, and on a weak hit of Compel the NPC often asks nothing in return. A sentence on the result in the player-agency line of the action task did not help when measured, so the cost belongs in the result block or elsewhere in the action task.
 
-**9f.12** The model is decided: Claude Sonnet 5.5 at effort medium for every role, the user's choice of 9 October 2026, after a day on Haiku 5.5 at effort medium. Against Haiku medium on the same prompts, Sonnet medium was preferred by the blind reader 14 to 6, scored 7.60 against 7.12 in Elvira, and reached the first sentence in play sooner (8.6 against 12.0 seconds), at about eighteen times the price per token; Haiku kept the stronger plain misses (4 to 1 in the blind reading). Sonnet without up-front thinking (`between_tools`) and at low effort read about as well as Haiku and were faster still. The roles send no temperature, top_p, or top_k and differ only in effort and prompt. The substeps above are measured again on Sonnet before any tuning; the measuring scripts are in the measuring setup outside the repository.
-
-**9f.13** A full rewrite of the narrator's system prompt and task texts for Haiku 5.5 (plain sentences, a reason per rule, examples in tags, a glossary of the scene tags) was measured and not adopted. The audit favoured it, 79 to 97 findings in four runs against 110 to 125 in six of the unchanged prompt, with half the contradictions and about two seconds less per narration; but the blind reader preferred the unchanged prompt 14 to 3 (11 without agreement), naming objects that act on their own, NPCs with a fact budget of 0 who still tell something, and actions the player did not choose, and Elvira scored all five sessions lower, by 0.6 on average. The condensed GENRE PHYSICS section, which lost the old list of forbidden verb kinds, is the first suspect. What the variants showed, for the one-change-at-a-time work that follows: a checklist at the end of the system prompt softened more misses; an explicit rule against adding steps to the player's action raised player-character findings from about 30 to about 40; a glossary of the scene tags together with stance constraints that describe manner rather than amount lowered the information NPCs give away from about 26 to about 19 findings. The variants are kept in the measuring setup.
-
-**9f.14** A narrator prompt with targeted changes for Sonnet 5.5 was measured at effort medium and not adopted (`prompts_v11` in the measuring setup). PLAYER AGENCY says it holds after the stated action too: danger that reaches the character stops there, looking or studying opens, takes, and breaks nothing, and no cost comes from a move the player did not choose. A miss's worsening comes from what the scene holds, and a change that matters has a visible cause. GENRE PHYSICS allows plain mechanical sounds and processes and keeps the forbidden verb kinds. The example "she is already gone when you turn around" is replaced, since Sonnet copied its turn in both runs. The facts block says that answer="no" makes the statement false, since the judge had read a no as a yes. The audit counted 82 and 76 findings against 123 and 126, most of the drop from the milder GENRE PHYSICS rule that the audit reads; player-character findings on misses went from 14 and 11 to 10 and 7. The blind reader preferred neither with the unchanged prompt as reference (9 to 9, 10 undecided, 3 to 1 on misses) and the variant 16 to 9 with the variant as reference. In ten Elvira sessions each on 2026.10.09.4, the variant scored 7.23 (result integrity 3.81) and the unchanged prompt 7.52 (4.09), each with a standard error of about 0.2: not better, so the unchanged prompt stays.
+**9f.15** On misses Sonnet gives the player character moves the player did not choose (14 and 11 audit findings against 5 and 7 for Haiku): looking or studying becomes prying, touching, or grabbing, and the cost of a weak hit or miss comes from that move or from an injury the engine did not set. Sonnet also copies the prompt's own examples, as it did with the RIGHT example "she is already gone when you turn around". A combined rewrite of these points (`prompts_v11` in the measuring setup) lowered the audit's player-character findings but did not win the blind reading or Elvira; try its parts one at a time, starting with the replaced example.
 
 ### Definition of Done
 
-- Each adopted change was measured on the same situation set against the unchanged prompt, with at least two runs per variant, and beats the run-to-run spread without raising any audit kind beyond it.
+- Each adopted change wins the blind reading or Elvira against the unchanged prompt, and raises no audit kind beyond the spread of two runs.
 - The narrations of every adopted change were read, not only counted.
 - Prompt text stays in `prompts/*.yaml`; no prompt text enters Python.
 - An Elvira session on the final prompts shows no new engine warnings.
@@ -86,6 +82,8 @@ The prompts are tuned one change at a time against measurements, not impressions
 ## Next steps
 
 Sketches, in the order of work; a step gets its definition of done and reference patterns when it becomes NEXT STEP.
+
+Steps 11b, 11c, 11d, and 14c take ideas from EdgeTales: reimplement them, do not port code, and credit EdgeTales in the CHANGELOG entry that lands each.
 
 Steps 11, 14b, 25, and 26 each plan a Director tool. The Director has one tool, `query_game_state`; whether a planned tool becomes a new one or part of it is decided when the step becomes NEXT STEP.
 
@@ -107,7 +105,7 @@ Two decisions open the step and are taken with the user before building. First, 
 
 **9d.6** Tests: smoke with stub oracle data, the registry and the yaml list stay equal (as `tests/test_fact_resolution.py` checks for `fact`), a missing path raises. If generated entities are persisted, the save format breaks.
 
-Definition of done, as written when the step was NEXT STEP:
+Definition of done:
 
 - Location, settlement, and npc are registered in `engine/generation.yaml` and dispatched by `generate`; an unknown category or a missing oracle path raises.
 - Each category fires where the opening decision puts it, with a callsite in play.
@@ -133,8 +131,7 @@ Reference patterns:
 - The metadata extraction's identity reveals for unnamed NPCs are rejected for zero word overlap, and a stub NPC is created instead.
 - The metadata extraction has named an NPC id that does not exist (`npc_details: could not find NPC 'npc_5'`).
 - After a chapter transition a returning NPC ("Maren Silk") and a new NPC of almost the same name ("Maren") can stand side by side, since returning NPCs are merged by exact name only.
-- The scene can tell the narrator through a `<fact>` that an NPC is not within reach while the same NPC is the scene's `<target_npc>`; both models then let the NPC speak. Settle presence once, so the fact and the target agree.
-- The Director's final JSON answer breaks now and then: a stray control character inside a string, a run to the 8192-token limit, or its reasoning's `"..."` placeholders copied into the answer. The failure warning shows how the JSON began. First check whether Together constrains that call's JSON at all.
+- The scene can tell the narrator through a `<fact>` that an NPC is not within reach while the same NPC is the scene's `<target_npc>`; the narrator then lets the NPC speak or has her vanish, and on a hit Elvira's audit counts the vanishing as a broken result. Settle presence once, so the fact and the target agree.
 
 ### 9g — Test fixtures through the real creation path
 
@@ -166,7 +163,7 @@ Today the blueprint's revelations reach the narrator as `<revelation_ready>`, an
 
 ### 9j — Rules conformance: classic and the Adventure Crafter
 
-The register of deliberate departures is `docs/divergences.md`. Already checked against the books: the action roll, momentum, Endure Harm and Endure Stress, Pay the Price, every match clause, chained and oracle moves, progress, legacy tracks and experience, connections, Mythic's fate check, fate chart, scene test, chaos factor, event focus, lists, and meaning tables, the Adventure Crafter's tables, theme priority, and turning points, Blades clock sizes, asset and connection adds, classic experience by vow rank, and Draw the Circle's boasts.
+The register of deliberate departures is `docs/divergences.md`.
 
 **9j.1** In classic Ironsworn, wounded and shaken no longer block recovery; classic asks only for health or spirit above 0, and the rule stays for Starforged and Sundered Isles.
 
@@ -214,7 +211,7 @@ If the user buys the Location Crafter (Word Mill Games, under the same CC BY-NC 
 
 ### 10b — Campaign launch from the setting's oracles
 
-The opening scene and the character's start come from the setting's launch tables instead of the narrator's invention: Starforged's inciting incident and background assets, and Sundered Isles' getting-underway tables (create your character, take command, chart your course). Starforged's starship history and quirks belong with the ship in step 19.
+The opening scene and the character's start come from the setting's launch tables instead of the narrator's invention: Starforged's inciting incident and background assets, and Sundered Isles' getting-underway tables (create your character, take command, chart your course).
 
 ### 11 — NPC generation with tiers
 
@@ -230,19 +227,17 @@ The opening scene and the character's start come from the setting's launch table
 
 ### 11b — NPC exits and retirement
 
-An idea from EdgeTales: reimplement it, do not port code, and credit EdgeTales in the CHANGELOG entry that lands it.
-
 **11b.1** Exit tracking. NPCs who walk out of a scene can be pulled back next scene by the activation bonus without narrative reason. The narrator_metadata extractor reports `exited_npc_ids` (the same pattern as `deceased_npcs`); `NpcData` gets an absent-until-scene value (the save format breaks); activation scores the NPC zero while absent unless the player names them or the Brain targets them; chapter start clears the value. Tests for exit, suppression, the player-name override, and the chapter reset.
 
 **11b.2** Stale retirement. An active NPC with an empty connection track and no new memory for N scenes (yaml) moves to background; reactivation already exists. Guard against retiring an NPC in the scene they reappear.
 
 ### 11c — NPC-to-NPC memories in the prompt
 
-An idea from EdgeTales: reimplement it, do not port code, and credit EdgeTales in the CHANGELOG entry that lands it. `MemoryEntry.about_npc` records what NPCs remember about each other, but the narrator never sees it. The engine selects `about_npc` memories between NPCs present in the scene (one per pair, most recent first, cap in yaml) and injects them as a block whose template lives in `prompts/blocks.yaml`. Stepping stone for step 24.
+`MemoryEntry.about_npc` records what NPCs remember about each other, but the narrator never sees it. The engine selects `about_npc` memories between NPCs present in the scene (one per pair, most recent first, cap in yaml) and injects them as a block whose template lives in `prompts/blocks.yaml`. Stepping stone for step 24.
 
 ### 11d — Narrator direction on NPC backstory
 
-An idea from EdgeTales: reimplement it, do not port code, and credit EdgeTales in the CHANGELOG entry that lands it. NPCs draw on their description, agenda, arc, and earlier scenes; where their past is not established, they keep it vague rather than invent family or history. Phrase it as direction, not prohibition, and measure with Elvira before and after, because prompt wording has caused regressions before.
+NPCs draw on their description, agenda, arc, and earlier scenes; where their past is not established, they keep it vague rather than invent family or history. Phrase it as direction, not prohibition, and measure with Elvira before and after, because prompt wording has caused regressions before.
 
 ### 12 — NPC goal clocks and autonomous actions
 
@@ -314,7 +309,7 @@ What a foe does in a fight comes from the setting's combat-action oracle (classi
 
 ### 14c — Clock and threat pressure in narrative direction
 
-An idea from EdgeTales: reimplement it, do not port code, and credit EdgeTales in the CHANGELOG entry that lands it. The narrator only learns about a clock when it fills, while the design document names clock states and threat levels as sources of narrative intensity. The engine computes a pressure tier from the fullest active threat or scheme clock and the highest threat menace (thresholds in engine yaml) and feeds it into the existing intensity derivation; no numbers or clock names reach the prompt. Measure with Elvira before and after.
+The narrator only learns about a clock when it fills, while the design document names clock states and threat levels as sources of narrative intensity. The engine computes a pressure tier from the fullest active threat or scheme clock and the highest threat menace (thresholds in engine yaml) and feeds it into the existing intensity derivation; no numbers or clock names reach the prompt. Measure with Elvira before and after.
 
 ### 15 — Faction prompts and status
 
@@ -408,7 +403,7 @@ NPC-to-NPC requests and triangles, limited to those that involve the player. Int
 
 **25.1** ExpeditionData (Option C): destination, rank, `progress: ProgressTrack`, waypoints, dangers.
 
-**25.2** Expedition moves: Undertake an Expedition, Explore a Waypoint, Make a Discovery, Confront Chaos, Finish, Set a Course; routing config-driven. Set a Course is already offered to the Brain, but it rolls +supply, a condition meter the Brain's stat choice cannot name; in Elvira on 9 October 2026 the Brain chose it once with stat none, and the turn was played as dialog.
+**25.2** Expedition moves: Undertake an Expedition, Explore a Waypoint, Make a Discovery, Confront Chaos, Finish, Set a Course; routing config-driven. Set a Course is already offered to the Brain, but it rolls +supply, a condition meter the Brain's stat choice cannot name, so the Brain picks it with stat none and the turn is played as dialog (9h.1).
 
 **25.3** Waypoints as a new step 9d category in yaml.
 
