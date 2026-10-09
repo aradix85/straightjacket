@@ -50,7 +50,7 @@ The prompts run on Claude Sonnet 5.5 at effort medium (`docs/ai.md`) and are tun
 
 **9f.5** `fact_budget` allows one or two extra facts, while the dialog task says nothing beyond the question's scope.
 
-**9f.6** `<style>` asks for terse prose, and much of the system prompt still addresses GENRE PHYSICS. The user likes rich sensory detail and does not mind longer narrations, so a change here leans away from terse.
+**9f.6** `<style>` asks for terse prose, and much of the system prompt still addresses GENRE PHYSICS. The user likes rich sensory detail and has played RPGs with narrations of several thousand tokens: only quality counts, not length, and the narration streams. The word budget of 150 to 220 words in `<o>` and the task texts is therefore ours, not the user's; measure a larger one.
 
 **9f.8** No situation set measures the extraction prompts (`narrator_metadata`, `opening_setup_extractor`), `revelation_check_system`, `blueprint_voicing`, or `recap` yet.
 
