@@ -9,6 +9,8 @@ from ..models import BrainResult, EngineConfig, GameState
 from ..parser import salvage_truncated_narration
 from ..prompt_blocks import content_boundaries_block, get_narration_lang, get_narrator_system
 from ..prompt_loader import get_prompt
+from ..xml_utils import xa as _xa
+from ..xml_utils import xe as _xe
 from .provider_base import (
     AICallSpec,
     AIProvider,
@@ -27,7 +29,6 @@ def call_narrator(
     config: EngineConfig | None = None,
     system_suffix: str = "",
     skip_history: bool = False,
-    extra_messages: Sequence[dict[str, Any]] = (),
     stream: NarrationSink | None = None,
 ) -> str:
     log(f"[Narrator] Calling narrator (prompt: {len(prompt)} chars{', skip_history' if skip_history else ''})")
@@ -40,10 +41,7 @@ def call_narrator(
 
     messages.append({"role": "user", "content": prompt})
 
-    if extra_messages:
-        messages.extend(extra_messages)
-
-    system = get_narrator_system(config or EngineConfig(), game)
+    system, cached_prefix = get_narrator_system(config or EngineConfig(), game)
     if system_suffix:
         system = system + "\n" + system_suffix
 
@@ -52,6 +50,7 @@ def call_narrator(
         system=system,
         messages=messages,
         log_role="narrator",
+        cached_system_prefix=cached_prefix,
         **sampling_params("narrator"),
     )
     response = stream_with_retry(provider, spec, stream) if stream is not None else create_with_retry(provider, spec)
@@ -88,12 +87,15 @@ def call_opening_setup(
     system = get_prompt("opening_setup_extractor", lang=lang)
     _defaults = eng().ai_text.narrator_defaults
 
-    prompt = f"""<narration>{narration}</narration>
-<player_character>{game.player_name}</player_character>
-<world genre="{game.setting_genre}" tone="{game.setting_tone}">{game.setting_description}</world>
-<current_location>{game.world.current_location or _defaults["unknown_location"]}</current_location>
-Extract all NPCs, the location, the scene context, and initial NPC memories from the opening narration above.
-IMPORTANT: {game.player_name} is the PLAYER CHARACTER — do NOT include them as an NPC. NPCs are OTHER characters the player meets."""
+    prompt = get_prompt(
+        "opening_setup_request",
+        narration=narration,
+        player_name=_xe(game.player_name),
+        genre=_xa(game.setting_genre),
+        tone=_xa(game.setting_tone),
+        description=_xe(game.setting_description),
+        location=_xe(game.world.current_location or _defaults["unknown_location"]),
+    )
 
     try:
         spec = AICallSpec(
@@ -134,9 +136,9 @@ def call_narrator_metadata(
     for n in game.npcs:
         if n.status not in ("active", "background", "deceased", "lore"):
             continue
-        entry = f"{n.id}={n.name}"
+        entry = f"{n.id}={_xe(n.name)}"
         if n.aliases:
-            entry += f" (aka {', '.join(n.aliases)})"
+            entry += f" (aka {_xe(', '.join(n.aliases))})"
         if n.status == "deceased":
             entry += " [DECEASED]"
         elif n.status == "lore":
@@ -144,11 +146,11 @@ def call_narrator_metadata(
 
         npc_loc = n.last_location
         if npc_loc:
-            entry += f" [at:{npc_loc}]"
+            entry += f" [at:{_xe(npc_loc)}]"
 
         desc = n.description
         if desc:
-            entry += f" — {desc[: eng().truncations.prompt_xshort]}"
+            entry += f" — {_xe(desc[: eng().truncations.prompt_xshort])}"
         npc_refs.append(entry)
 
     mechanical_ctx = ""
@@ -169,12 +171,15 @@ def call_narrator_metadata(
     system = f"{system_base}\n{cb}" if cb else system_base
     _defaults = eng().ai_text.narrator_defaults
 
-    prompt = f"""<narration>{narration}</narration>
-<player_character>{game.player_name}</player_character>
-<known_npcs>{chr(10).join(npc_refs) if npc_refs else _defaults["no_npcs"]}</known_npcs>
-<current_location>{game.world.current_location or _defaults["unknown_location"]}</current_location>
-<current_time>{game.world.time_of_day or _defaults["unknown_time"]}</current_time>{mechanical_ctx}
-Extract all metadata from the narration above. Remember: {game.player_name} is the PLAYER CHARACTER, not an NPC."""
+    prompt = get_prompt(
+        "narrator_metadata_request",
+        narration=narration,
+        player_name=_xe(game.player_name),
+        known_npcs="\n".join(npc_refs) if npc_refs else _defaults["no_npcs"],
+        location=_xe(game.world.current_location or _defaults["unknown_location"]),
+        time=game.world.time_of_day or _defaults["unknown_time"],
+        engine_context=mechanical_ctx,
+    )
 
     try:
         spec = AICallSpec(

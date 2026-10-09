@@ -8,16 +8,17 @@ ai_text:
     correction_output: correction_output
     revelation_check: revelation_check
   brain_trigger_hints:
-    dialog: pure conversation with an NPC, no risk, no action, no world declarations
-    ask_the_oracle: yes/no or open question about the fiction, not an action
-    world_shaping: player DECLARES a new fact about the world — 'there is a well', 'the door has a lock', 'I say there's a
-      market nearby'. NOT dialog (no NPC addressed). NOT a question (that is ask_the_oracle). The player is TELLING the fiction
-      what exists.
-    adventure/face_danger: attempt something risky or react to an imminent threat RIGHT NOW (not preparation, not investigation)
-    adventure/gather_information: search for clues, investigate, study, research, analyze evidence — the goal is to LEARN
-      something unknown (not to gain a tactical edge — that is secure_an_advantage)
-    adventure/secure_an_advantage: prepare, position, set up, hide, scout ahead, gain leverage BEFORE acting — the goal is
-      a TACTICAL EDGE for the next action (not to discover new information — that is gather_information)
+    dialog: pure conversation with an NPC, without risk, action, or claims about the world
+    ask_the_oracle: a yes/no or open question about the fiction instead of an action
+    world_shaping: the player declares a new fact about the world ('there is a well', 'the door has a lock', 'I say there's
+      a market nearby'), telling the fiction what exists. It is not dialog, since no NPC is addressed, and not a question,
+      which is ask_the_oracle.
+    adventure/face_danger: an attempt at something risky, or a reaction to an immediate threat, right now; preparing and
+      investigating are other moves
+    adventure/gather_information: searching for clues, investigating, studying, researching, or analyzing evidence, to
+      learn something unknown; gaining a tactical edge is secure_an_advantage
+    adventure/secure_an_advantage: preparing, positioning, setting up, hiding, or scouting ahead before acting, to gain a
+      tactical edge for the next action; learning something new is gather_information
   schema_descriptions:
     revelation_check:
       revelation_confirmed: True if the narration clearly contains or foreshadows the revelation.
@@ -64,5 +65,7 @@ ai_text:
     correction_brain_fallback_state_ops: []
     new_chapter_threads_template: 'New chapter. Open threads: {threads}'
     new_chapter_blank: A new chapter begins.
-    npc_agency_action_template: 'NPC "{npc_name}" pursues agenda "{agenda}" — concrete offscreen action.'
-    momentum_burn_injection: <momentum_burn>Character digs deep, turns the tide.</momentum_burn>
+    npc_agency_action_template: '{npc_name} acts on their agenda ("{agenda}") somewhere off screen; show an effect of it
+      that reaches this scene: a sign, a rumour, or a consequence.'
+    momentum_burn_injection: <momentum_burn>The player spent momentum to turn the result; the result in the scene already
+      counts it. Show the turn through the player character's effort.</momentum_burn>

@@ -8,6 +8,28 @@ This log starts at 2026.09.24.0, the restart after a four-month pause. Earlier r
 
 Calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day.
 
+## [2026.10.09.2] — 2026-10-09
+
+Every role now runs Claude Haiku 5.5 at effort medium, the user's choice after 2026.10.09.1 (roadmap 9f.12); Haiku 5.5 refuses `temperature`, `top_p`, and `top_k`, so every cluster sets them to null and the roles differ only in effort and prompt. Then every prompt and every engine text that reaches a model was read against Anthropic's guidance for Haiku 5.5 and the current best-practice guide.
+
+Caching did not work on Anthropic: in five Elvira sessions the narrator, the Brain, and the extraction read nothing from cache, because Anthropic's automatic cache mark falls on the last block of the request, which changes every turn. `ai/provider_anthropic.py` → `_cached_system` now sends the system prompt as two blocks and marks the part that is fixed within a game (`AICallSpec.cached_system_prefix`, cut by `prompt_loader.py` → `get_prompt_prefix` at the narrator's character state and at the Brain's list of moves). In the five sessions of this version the cache served 53 percent of the narrator's input, 51 of the metadata extraction's, 42 of the Brain's, and 37 of the Director's; the revelation check's prompt is shorter than Haiku's minimum of 512 tokens. Tests cover both blocks, a call without a prefix, and a prefix that does not start the system prompt.
+
+Three defects in what the models were told:
+- A progress mark was told as a lasting wound. `mechanics/consequences.py` → `_classify` read every consequence starting with "mark" as an impact, so a strong hit on a vow ("mark progress ×2") or an experience reward reached the narrator as "Shen Zhang is now progress ×2. The cost of this moment won't fade with rest." Only a configured impact counts now; tests cover the progress and experience labels and a real impact.
+- The narrator read the Director's NPC guidance under the NPC's id (`<npc_note for="npc_3">`), which it cannot connect to a name; `prompt_shared.py` → `_director_block` gives the name and drops guidance for an unknown id. Test added.
+- The Brain and the Director were told to stay within the genre of `<world>` but were never shown it; both now get the world, the Director the character too, in the cached part of their system prompts (`prompt_blocks.py` → `world_tag`, `character_tag`).
+
+Engine texts the narrator must follow:
+- The consequence sentences, which the narrator has to show happening, gave the player character thoughts and choices ("Doubt creeps in", "Clarity returns", "presses both hands to the wound", "checks the pack", "catches the rhythm"). They now describe only what visibly happens to the character or the world (`engine/consequence_templates.yaml`); the spirit levels of the character state are worded as visible strain.
+- Ten stance constraints set an amount ("Shares everything", "Holds nothing back", "One fact, then silence") that contradicted the NPC's fact budget; they now set manner only (`engine/stance_matrix.yaml`).
+- The Brain's move hints lost their capitals; the NPC agency line says the action happens off screen and that only its effect reaches the scene; the momentum burn line says the result already counts it (`engine/ai_text.yaml`).
+
+Prompts rewritten in plain sentences with the reason for each rule: the Brain (with what `world_addition` is), the correction analysis, the revelation check, the Director (the "breather" recommendation is gone, roadmap 9f.7, and npc_guidance names where the ids come from), blueprint voicing, the metadata and opening extraction, and the recap. The extraction requests moved from Python into `prompts/narrator.yaml` (`narrator_metadata_request`, `opening_setup_request`), with names and descriptions XML-escaped.
+
+The narrator's system prompt, task texts, and blocks stay as they were. Their rewrite was measured and not adopted (roadmap 9f.13): on the fourteen situations, three attempts each, audited by GPT-6 Luna, the unchanged prompt scored 110, 119, 115, 121, 124, and 125 findings in six runs and the rewrite 79 to 97 in four, with half the contradictions; but the blind reader preferred the unchanged prompt 14 to 3 with 11 undecided, and Elvira scored all five sessions lower, by 0.6 on average. With the unchanged narrator prompt and everything above, the audit counted 106 and 124 findings, within the unchanged prompt's spread, and five Elvira sessions averaged 7.12 out of 10 (result integrity 3.96) against 7.44 for the narrator alone on Haiku medium in 2026.10.09.1; single sessions moved by up to 1.6 points between the two setups, both ways. No session logged an engine warning; only the narration audit raised problems. The narrator's first sentence on the measured situation came after about 6 seconds with a warm cache, and the Brain took about 4.
+
+Elvira's price list has Haiku 5.5 and Sonnet 5.5. Quality gate: 1591 tests green, project-rule scans clean, coverage 91.00%, ruff and mypy --strict clean. Save format unchanged.
+
 ## [2026.10.09.1] — 2026-10-09
 
 Claude Haiku 5.5 measured against GLM 5.3 for every role, at every effort setting of both, at the user's request; the model stays GLM 5.3 until the user decides (roadmap 9f.12). One engine change was needed: Anthropic's structured outputs refuse `maxItems`, so every Brain call failed on Haiku. The Anthropic adapter now passes schemas through the SDK's `transform_schema`, which moves such limits into the field's description; the engine already checked the counts after parsing. One test checks the move.

@@ -335,6 +335,46 @@ def test_anthropic_passes_cluster_extra_body_to_the_right_parameters(anthropic_e
     assert extra == {"output_config": {"effort": "low"}, "cache_control": {"type": "ephemeral"}, "metadata_flag": True}
 
 
+def test_anthropic_caches_the_stable_start_of_the_system_prompt(anthropic_endpoint: _FakeEndpoint) -> None:
+    anthropic_endpoint.response = _anthropic_reply(SimpleNamespace(type="text", text="ok"))
+    cache = {"type": "ephemeral", "ttl": "1h"}
+    spec = _spec(
+        system="fixed rules\nstate: wounded", cached_system_prefix="fixed rules\n", extra_body={"cache_control": cache}
+    )
+    provider_anthropic.AnthropicProvider(api_key="k", timeout_seconds=30).create_message(spec)
+    sent = anthropic_endpoint.calls[0]
+    assert sent["system"] == [
+        {"type": "text", "text": "fixed rules\n", "cache_control": cache},
+        {"type": "text", "text": "state: wounded"},
+    ]
+    assert sent["cache_control"] == cache
+
+
+def test_anthropic_caches_the_whole_system_prompt_without_a_prefix(anthropic_endpoint: _FakeEndpoint) -> None:
+    anthropic_endpoint.response = _anthropic_reply(SimpleNamespace(type="text", text="ok"))
+    cache = {"type": "ephemeral"}
+    spec = _spec(extra_body={"cache_control": cache})
+    provider_anthropic.AnthropicProvider(api_key="k", timeout_seconds=30).create_message(spec)
+    assert anthropic_endpoint.calls[0]["system"] == [{"type": "text", "text": "system text", "cache_control": cache}]
+
+
+def test_anthropic_refuses_a_cache_prefix_that_is_not_the_start_of_the_system(
+    anthropic_endpoint: _FakeEndpoint,
+) -> None:
+    anthropic_endpoint.response = _anthropic_reply(SimpleNamespace(type="text", text="ok"))
+    spec = _spec(cached_system_prefix="other text", extra_body={"cache_control": {"type": "ephemeral"}})
+    with pytest.raises(ValueError, match="cached_system_prefix"):
+        provider_anthropic.AnthropicProvider(api_key="k", timeout_seconds=30).create_message(spec)
+
+
+def test_anthropic_sends_the_system_prompt_as_text_without_caching(anthropic_endpoint: _FakeEndpoint) -> None:
+    anthropic_endpoint.response = _anthropic_reply(SimpleNamespace(type="text", text="ok"))
+    provider_anthropic.AnthropicProvider(api_key="k", timeout_seconds=30).create_message(
+        _spec(cached_system_prefix="sys")
+    )
+    assert anthropic_endpoint.calls[0]["system"] == "system text"
+
+
 def test_anthropic_moves_array_limits_it_cannot_enforce_into_the_description(anthropic_endpoint: _FakeEndpoint) -> None:
     anthropic_endpoint.response = _anthropic_reply(SimpleNamespace(type="text", text="{}"))
     boasts = {"type": "array", "items": {"type": "string", "enum": ["a", "b"]}, "maxItems": 2}

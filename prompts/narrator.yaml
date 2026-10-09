@@ -52,23 +52,35 @@
   {content_boundaries_block}{backstory_block}{tone_authority_block}
   {status_context_block}
 "narrator_metadata": |-
-  NPC detection extractor for RPG engine. Analyze narration for NPC-related changes only. All text in {lang}.
-  Engine handles location, time, scene context, and NPC memories — you MUST NOT extract those.
-  disposition: {dispositions}
-  npc_renames: identity reveals only.
-  npc_details: newly established facts (full_name, description).
-  new_npcs: physically present and interacting. TEST: Can they hear the player? If not, MUST NOT be listed as new NPC.
-  deceased_npcs: on-screen deaths only. Dialog claims = unreliable, MUST NOT be treated as deaths.
-  lore_npcs: historically significant, never physically present. MUST NOT duplicate known NPCs.
+  You read one passage of narration from a roleplaying game and record the changes it makes to the game's non-player characters (NPCs). Write all text in {lang}.
+  The engine tracks location, time, scene context, and NPC memories itself, so record only these, naming a known NPC by the id before the = in <known_npcs>:
+  - new_npcs: NPCs who appear for the first time and are physically present, close enough to hear the player character.
+  - npc_renames: an NPC whose real name or identity is revealed.
+  - npc_details: newly established facts about a known NPC (full_name, description).
+  - deceased_npcs: NPCs who die on the page. Someone saying that a person died is not enough.
+  - lore_npcs: people who matter to the story but are never physically present. Leave out NPCs the game already knows.
+  disposition: one of {dispositions}
+"narrator_metadata_request": |-
+  <narration>{narration}</narration>
+  <player_character>{player_name}</player_character>
+  <known_npcs>{known_npcs}</known_npcs>
+  <current_location>{location}</current_location>
+  <current_time>{time}</current_time>{engine_context}
+  Record the NPC changes in the narration above. {player_name} is the player character, not an NPC.
+"opening_setup_request": |-
+  <narration>{narration}</narration>
+  <player_character>{player_name}</player_character>
+  <world genre="{genre}" tone="{tone}">{description}</world>
+  <current_location>{location}</current_location>
+  Record the NPCs, the location, the scene context, and the NPCs' first memories from the opening narration above. {player_name} is the player character, the "you" of the narration, and not an NPC; list only the other characters the player meets.
 "opening_setup_extractor": |-
-  <role>Opening scene data extractor.</role>
-  <rules>
-  Extract named NPCs (not player): agenda, instinct, 1 secret, disposition.
-  location: the short name of the place, as the narration names it, in two to five words ("Anvil Ford campsite", "the forge-loft"). scene_context: one sentence on what is happening there. Extract both from the narration; MUST NOT invent.
-  memory_updates per NPC (use npc_name). deceased_npcs: on-screen deaths only (full name as id).
-  All text in {lang}.
-  </rules>
+  You read the opening scene of a roleplaying game and record what the game needs from it. Write all text in {lang}.
+  - The named NPCs, not the player character: each one's agenda, instinct, one secret, and disposition, as the scene shows them.
+  - location: the short name of the place as the narration gives it, in two to five words ("Anvil Ford campsite", "the forge-loft").
+  - scene_context: one sentence on what is happening there.
+  - memory_updates for each NPC, keyed by npc_name.
+  - deceased_npcs: NPCs who die on the page, by full name.
+  Take everything from the narration itself; where it says nothing, leave the field empty rather than inventing.
 "recap": |-
-  Recap RPG story in {lang}. Second person. 4-6 atmospheric sentences.
-  Mood, key NPCs, current tension. Player's perspective only.
+  Recap the story so far for the player, in {lang}, in the second person, in four to six atmospheric sentences: the mood, the key people, and the tension the player is in now, all from the player character's point of view.
   {content_boundaries_block}

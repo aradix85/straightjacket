@@ -10,7 +10,7 @@ from ..npc import find_npc, normalize_for_match
 
 from ..models import ClockFillResult
 from .clock_consequences import resolve_clock_fill
-from .impacts import impact_label
+from .impacts import impact_config, impact_label
 
 
 def roll_action(stat_name: str, stat_value: int, move: str, momentum: int, adds: int) -> RollResult:
@@ -202,11 +202,17 @@ def pick_template(key: str) -> str:
     return result
 
 
+def _classify_impact(verb: str, rest: str) -> tuple[str, str, str] | None:
+    key = rest.strip()
+    if impact_config(key) is None:
+        return None
+    return ("impact_mark" if verb == "mark" else "impact_clear"), "", impact_label(key)
+
+
 def _classify(cons: str, default_npc: str) -> tuple[str, str, str] | None:
-    if cons.startswith("mark "):
-        return "impact_mark", "", impact_label(cons[5:].strip())
-    if cons.startswith("clear "):
-        return "impact_clear", "", impact_label(cons[6:].strip())
+    verb, _, rest = cons.partition(" ")
+    if verb in ("mark", "clear"):
+        return _classify_impact(verb, rest)
 
     parts = cons.split()
     if len(parts) >= 2 and "bond" in cons.lower():

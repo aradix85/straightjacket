@@ -109,6 +109,24 @@ def test_stores_narrator_guidance(stub_all: None) -> None:
     assert dg.npc_guidance == {"npc_1": "Kira should test loyalty."}
 
 
+def test_the_narrator_reads_npc_guidance_under_the_npc_name(stub_all: None) -> None:
+    from straightjacket.engine.director import apply_director_guidance
+    from straightjacket.engine.prompt_shared import _director_block
+
+    game = _game()
+    apply_director_guidance(
+        game,
+        make_director_guidance(
+            narrator_guidance="Build tension slowly.",
+            npc_guidance={"npc_1": "Kira should test loyalty.", "npc_9": "Nobody we know."},
+        ),
+    )
+    block = _director_block(game)
+    assert '<npc_note for="Kira">Kira should test loyalty.</npc_note>' in block
+    assert "npc_1" not in block
+    assert "Nobody we know" not in block
+
+
 def test_enriches_session_log_with_summary(stub_all: None) -> None:
     from straightjacket.engine.director import apply_director_guidance
 

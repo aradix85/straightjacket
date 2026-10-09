@@ -58,7 +58,7 @@ def test_distrustful_low_gather() -> None:
     game = _game(npc, bond=1)
     stance = resolve_npc_stance(game, npc, "gather_information")
     assert stance.stance == "evasive"
-    assert "silence" in stance.constraint.lower()
+    assert "silent" in stance.constraint.lower()
 
 
 def test_friendly_mid_social() -> None:

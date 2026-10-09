@@ -37,6 +37,16 @@ def _to_anthropic_messages(messages: list[dict[str, Any]]) -> list[dict[str, Any
     return converted
 
 
+def _cached_system(spec: AICallSpec, cache_control: dict[str, Any]) -> list[dict[str, Any]]:
+    prefix = spec.cached_system_prefix or spec.system
+    if not spec.system.startswith(prefix):
+        raise ValueError(f"{spec.log_role}: cached_system_prefix is not the start of the system prompt")
+    blocks: list[dict[str, Any]] = [{"type": "text", "text": prefix, "cache_control": cache_control}]
+    if len(spec.system) > len(prefix):
+        blocks.append({"type": "text", "text": spec.system[len(prefix) :]})
+    return blocks
+
+
 class AnthropicProvider:
     def __init__(self, api_key: str, timeout_seconds: float, api_base: str | None = None):
         client_kwargs: dict[str, Any] = {"api_key": api_key, "max_retries": 0, "timeout": timeout_seconds}
@@ -83,9 +93,12 @@ class AnthropicProvider:
         if output_config:
             create_kwargs["output_config"] = output_config
 
-        for typed_param in ("cache_control", "thinking"):
-            if typed_param in extra:
-                create_kwargs[typed_param] = extra.pop(typed_param)
+        if "cache_control" in extra:
+            cache_control = extra.pop("cache_control")
+            create_kwargs["cache_control"] = cache_control
+            create_kwargs["system"] = _cached_system(spec, cache_control)
+        if "thinking" in extra:
+            create_kwargs["thinking"] = extra.pop("thinking")
 
         body = {**sampling, **extra}
         if body:

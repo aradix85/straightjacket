@@ -379,11 +379,14 @@ def test_narrator_system_prompt_includes_constraints(stub_engine: None) -> None:
     game = _make_game()
     game.preferences.content_lines = "no spiders"
 
-    system = get_narrator_system(EngineConfig(narration_lang="English"), game)
+    system, cached_prefix = get_narrator_system(EngineConfig(narration_lang="English"), game)
 
     assert "<world>" in system
     assert "<player>" in system
     assert "spiders" in system
+    assert system.startswith(cached_prefix)
+    assert "spiders" in cached_prefix
+    assert "<character_state" not in cached_prefix
 
 
 def test_correction_brain_parses_response(stub_engine: None) -> None:

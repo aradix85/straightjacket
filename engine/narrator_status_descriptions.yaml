@@ -8,10 +8,10 @@ narrator_status_descriptions:
     0: at the physical limit — collapse is imminent (see <flags>)
   spirit:
     5: steady and composed
-    4: mildly unsettled — small cracks under the surface
-    3: shaken — stress is showing, focus is harder to maintain
-    2: deeply troubled — holding on by a thread, doubt and fear are present
-    1: near breaking — barely functioning, the weight is crushing
+    4: mildly unsettled — small signs of strain
+    3: shaken — the strain shows in breath and hands
+    2: deeply troubled — holding on by a thread; the strain shows in voice, hands, and posture
+    1: near breaking — barely functioning under the weight
     0: at the mental limit — breakdown is imminent (see <flags>)
   supply:
     5: well-equipped

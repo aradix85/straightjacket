@@ -9,7 +9,7 @@ from .config_loader import model_for_role, sampling_params
 from .engine_loader import eng
 from .logging_util import log
 from .models import DirectorGuidance, EngineConfig, GameState, MemoryEntry, NpcData
-from .prompt_blocks import content_boundaries_block
+from .prompt_blocks import character_tag, content_boundaries_block, world_tag
 from .tools import get_tools, run_tool_loop
 from .xml_utils import xa as _xa
 from .npc import (
@@ -30,7 +30,7 @@ def _get_director_system_base() -> str:
 
 def _director_system(game: GameState) -> str:
     cb = content_boundaries_block(game)
-    base = _get_director_system_base()
+    base = f"{_get_director_system_base()}\n{world_tag(game)}\n{character_tag(game)}"
     return f"{base}\n{cb}" if cb else base
 
 

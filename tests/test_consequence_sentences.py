@@ -78,6 +78,19 @@ def test_resolve_unknown_returns_empty() -> None:
     assert resolve_consequence_sentence("gibberish", "Ash", "", "") == ""
 
 
+@pytest.mark.parametrize("label", ["mark_progress", "experience_reward"])
+def test_a_progress_or_experience_mark_is_not_told_as_a_lasting_impact(label: str) -> None:
+    from straightjacket.engine.engine_loader import eng
+
+    cons = eng().ai_text.consequence_labels[label].format(n=2)
+    assert cons.startswith("mark ")
+    assert resolve_consequence_sentence(cons, "Ash", "", "") == ""
+
+
+def test_a_real_impact_mark_is_told_with_its_label() -> None:
+    assert "permanently harmed" in resolve_consequence_sentence("mark permanently_harmed", "Ash", "", "")
+
+
 def test_generate_sentences_from_consequences() -> None:
     sentences = generate_consequence_sentences(["health -2", "momentum -3"], [], _game(), _brain())
     assert len(sentences) == 2
@@ -139,7 +152,7 @@ def test_no_consequence_tags_when_empty() -> None:
         player_words="climb the wall",
         consequence_sentences=[],
     )
-    assert "<consequence>" not in prompt
+    assert "</consequence>" not in prompt
 
 
 def test_task_mentions_consequence_weaving() -> None:

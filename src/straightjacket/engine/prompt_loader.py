@@ -29,6 +29,16 @@ def _ensure_loaded() -> dict[str, Any]:
     return _prompts
 
 
+_PREFIX_MARKER = "\x00"
+
+
+def get_prompt_prefix(name: str, until: str, **variables: str) -> str:
+    rendered = get_prompt(name, **{**variables, until: _PREFIX_MARKER})
+    if _PREFIX_MARKER not in rendered:
+        raise KeyError(f"Prompt '{name}' has no placeholder '{until}'")
+    return rendered[: rendered.index(_PREFIX_MARKER)]
+
+
 def get_prompt(name: str, **variables: str) -> str:
     prompts = _ensure_loaded()
     template: str | None = prompts.get(name)

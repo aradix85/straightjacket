@@ -52,9 +52,7 @@ The prompts are tuned one change at a time against measurements, not impressions
 
 **9f.6** `<style>` asks for terse prose, and much of the system prompt still addresses GENRE PHYSICS.
 
-**9f.7** `prompts/director.yaml` still has the Director recommend a "breather", although pacing is engine-computed. The Director is about 40 to 45 percent of a session's engine cost, more in sessions with many misses, since every miss triggers it; running it less often would leave NPC profiles stale and is not planned.
-
-**9f.8** The extraction prompts (`narrator_metadata`, `opening_setup_extractor`), `revelation_check_system`, `blueprint_voicing`, and `recap` have been read but not tuned.
+**9f.8** The extraction prompts (`narrator_metadata`, `opening_setup_extractor`), `revelation_check_system`, `blueprint_voicing`, and `recap` were rewritten for Haiku 5.5 in plain sentences with the reason for each rule, and Elvira showed no warning from them; no situation set measures them yet.
 
 **9f.9** Openings slip into the third person ("Zari Kobayashi's eyes open") under the current `task_opening`, which names the player character as the "you" of the narration but does not hold the perspective, as the epilogue task does ("MUST NOT shift to third person"). The narration stays in the second person, as the user prefers.
 
@@ -62,7 +60,9 @@ The prompts are tuned one change at a time against measurements, not impressions
 
 **9f.11** A weak hit's cost is still left out now and then, with and without the player-agency line at the end of the action task. A sentence on the result in that line did not help when measured, so the cost belongs in the result block or elsewhere in the action task.
 
-**9f.12** The model, decided before the other substeps, since every prompt change is measured on one model. Claude Haiku 5.5 with the narrator at effort medium tells the turns better than GLM 5.3 at any playable setting (fewer audit findings, preferred in blind readings, better Elvira scores, no engine warnings with every role on it) but reaches the first sentence about 7 seconds later per turn; GLM's own settings that come close in the audit reason for about 40 seconds first. The user chooses between GLM 5.3 at low and Haiku 5.5 with the narrator at medium and the other roles at low or without thinking; on Haiku, the substeps above are measured again before any tuning. The measuring scripts for this comparison are in the measuring setup outside the repository.
+**9f.12** The model is decided: Claude Haiku 5.5 at effort medium for every role, the user's choice of 9 October 2026. It tells the turns better than GLM 5.3 at any playable setting (fewer audit findings, preferred in blind readings, better Elvira scores, no engine warnings) and reaches the first sentence about 7 seconds later per turn. Haiku 5.5 takes no temperature, top_p, or top_k, so the roles differ only in effort and prompt. The substeps above are measured again on Haiku before any tuning; the measuring scripts are in the measuring setup outside the repository.
+
+**9f.13** A full rewrite of the narrator's system prompt and task texts for Haiku 5.5 (plain sentences, a reason per rule, examples in tags, a glossary of the scene tags) was measured and not adopted. The audit favoured it, 79 to 97 findings in four runs against 110 to 125 in six of the unchanged prompt, with half the contradictions and about two seconds less per narration; but the blind reader preferred the unchanged prompt 14 to 3 (11 without agreement), naming objects that act on their own, NPCs with a fact budget of 0 who still tell something, and actions the player did not choose, and Elvira scored all five sessions lower, by 0.6 on average. The condensed GENRE PHYSICS section, which lost the old list of forbidden verb kinds, is the first suspect. What the variants showed, for the one-change-at-a-time work that follows: a checklist at the end of the system prompt softened more misses; an explicit rule against adding steps to the player's action raised player-character findings from about 30 to about 40; a glossary of the scene tags together with stance constraints that describe manner rather than amount lowered the information NPCs give away from about 26 to about 19 findings. The variants are kept in the measuring setup.
 
 ### Definition of Done
 

@@ -35,7 +35,7 @@ stance_matrix:
         constraint: Engages but every word carries an edge.
       gather_information:
         stance: grudging
-        constraint: One fact, wrapped in resentment.
+        constraint: Gives what it must, wrapped in resentment.
       other:
         stance: reluctant_hostile
         constraint: Opposes but doesn't commit fully.
@@ -49,7 +49,7 @@ stance_matrix:
         constraint: One short answer, then deflects or leaves.
       gather_information:
         stance: evasive
-        constraint: One fact, then silence. No elaboration.
+        constraint: Answers in as few words as possible, then goes silent.
       other:
         stance: wary
         constraint: Cooperates minimally. Watches for betrayal.
@@ -75,7 +75,7 @@ stance_matrix:
         constraint: Direct but watches for reaction.
       gather_information:
         stance: forthcoming
-        constraint: Shares what they know but flags uncertainty.
+        constraint: Answers directly and flags uncertainty.
       other:
         stance: cooperative_guarded
         constraint: Works together but keeps an exit open.
@@ -102,7 +102,7 @@ stance_matrix:
         constraint: Genuine conversation. Gives opinions when asked.
       gather_information:
         stance: helpful
-        constraint: Shares freely. Points toward next steps.
+        constraint: Answers readily, without hedging.
       other:
         stance: willing
         constraint: Cooperates without needing persuasion.
@@ -115,7 +115,7 @@ stance_matrix:
         constraint: Speaks freely. Comfortable silence between words.
       gather_information:
         stance: generous
-        constraint: Shares what they know and what they suspect.
+        constraint: Answers readily and voices suspicions where they fit.
       other:
         stance: proactive
         constraint: Anticipates needs. Acts without being asked.
@@ -129,7 +129,7 @@ stance_matrix:
         constraint: Genuine warmth but respects distance.
       gather_information:
         stance: eager_to_help
-        constraint: Shares everything they can. Apologizes for gaps.
+        constraint: Eager to help. Apologizes for what they cannot say.
       other:
         stance: supportive
         constraint: Offers help before being asked.
@@ -142,7 +142,7 @@ stance_matrix:
         constraint: Shares personal concerns. Asks for the player's view.
       gather_information:
         stance: transparent
-        constraint: Holds nothing back. Thinks out loud.
+        constraint: Open in manner. Thinks out loud.
       other:
         stance: dependable
         constraint: Shows up. Does the work. No complaints.
@@ -155,7 +155,7 @@ stance_matrix:
         constraint: Speaks from vulnerability. Trusts completely.
       gather_information:
         stance: unreserved
-        constraint: Shares secrets, suspicions, fears. Everything.
+        constraint: Speaks without guard, fears and suspicions included.
       other:
         stance: selfless
         constraint: Puts the player's needs first, even at cost.
@@ -182,7 +182,7 @@ stance_matrix:
         constraint: Communicates in shorthand. Deep mutual understanding.
       gather_information:
         stance: oracle
-        constraint: Shares everything including things the player might not want to hear.
+        constraint: Says hard things the player might not want to hear.
       other:
         stance: ride_or_die
         constraint: All in. No reservations. No exit strategy.
@@ -195,7 +195,7 @@ stance_matrix:
         constraint: Communicates in shorthand. Deep mutual understanding.
       gather_information:
         stance: oracle
-        constraint: Shares everything including things the player might not want to hear.
+        constraint: Says hard things the player might not want to hear.
       other:
         stance: ride_or_die
         constraint: All in. No reservations. No exit strategy.

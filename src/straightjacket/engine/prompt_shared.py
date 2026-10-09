@@ -16,6 +16,7 @@ from .mechanics.impacts import impact_label
 from .mechanics.scene import adjustment_descriptions
 from .models import BrainResult, GameState, NpcData, RandomEvent, ResolvedFact, SceneSetup
 from .npc import find_npc, retrieve_memories
+from .prompt_blocks import character_tag, world_tag
 from .prompt_loader import get_prompt
 from .xml_utils import xa as _xa
 from .xml_utils import xe as _xe
@@ -32,13 +33,7 @@ def _scene_header(game: GameState) -> str:
     if game.impacts:
         labels = ", ".join(impact_label(k) for k in game.impacts)
         impacts_tag = f'\n<character_state impacts="{_xa(labels)}"/>'
-    return (
-        f'<world genre="{_xa(game.setting_genre)}" tone="{_xa(game.setting_tone)}">'
-        f"{_xe(game.setting_description)}</world>\n"
-        f'<character name="{_xa(game.player_name)}">'
-        f"{_xe(game.character_concept)}</character>"
-        f"{impacts_tag}"
-    )
+    return f"{world_tag(game)}\n{character_tag(game)}{impacts_tag}"
 
 
 def _time_ctx(game: GameState) -> str:
@@ -336,7 +331,10 @@ def _director_block(game: GameState) -> str:
         return ""
     block = f"\n<director_guidance>{_xe(dg.narrator_guidance)}</director_guidance>"
     for npc_id, guidance in dg.npc_guidance.items():
-        block += f'\n<npc_note for="{_xa(npc_id)}">{_xe(guidance)}</npc_note>'
+        npc = find_npc(game, npc_id)
+        if npc is None:
+            continue
+        block += f'\n<npc_note for="{_xa(npc.name)}">{_xe(guidance)}</npc_note>'
     return block
 
 

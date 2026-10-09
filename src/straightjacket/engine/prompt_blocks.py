@@ -3,7 +3,7 @@ from .datasworn.settings import active_package
 from .engine_loader import eng
 from .mechanics import get_pacing_hint
 from .models import EngineConfig, GameState
-from .prompt_loader import get_prompt
+from .prompt_loader import get_prompt, get_prompt_prefix
 from .story_state import get_current_act, get_pending_revelations
 from .xml_utils import xa as _xa
 from .xml_utils import xe as _xe
@@ -11,6 +11,17 @@ from .xml_utils import xe as _xe
 
 def get_narration_lang(config: EngineConfig) -> str:
     return config.narration_lang or narration_language()
+
+
+def world_tag(game: GameState) -> str:
+    return (
+        f'<world genre="{_xa(game.setting_genre)}" tone="{_xa(game.setting_tone)}">'
+        f"{_xe(game.setting_description)}</world>"
+    )
+
+
+def character_tag(game: GameState) -> str:
+    return f'<character name="{_xa(game.player_name)}">{_xe(game.character_concept)}</character>'
 
 
 def content_boundaries_block(game: GameState) -> str:
@@ -206,21 +217,14 @@ def campaign_history_block(game: GameState) -> str:
     )
 
 
-def get_narrator_system(config: EngineConfig, game: GameState) -> str:
-    lang = get_narration_lang(config)
-    cb = content_boundaries_block(game)
-    bs = backstory_block(game)
-    sc = status_context_block(game)
-    vc = vocabulary_block(game)
-    tc = truths_block(game)
-    ta = tone_authority_block(game)
-    return get_prompt(
-        "narrator_system",
-        lang=lang,
-        content_boundaries_block=cb,
-        backstory_block=bs,
-        status_context_block=sc,
-        tone_authority_block=ta,
-        vocabulary_block=vc,
-        world_truths_block=tc,
-    )
+def get_narrator_system(config: EngineConfig, game: GameState) -> tuple[str, str]:
+    variables = {
+        "lang": get_narration_lang(config),
+        "content_boundaries_block": content_boundaries_block(game),
+        "backstory_block": backstory_block(game),
+        "tone_authority_block": tone_authority_block(game),
+        "vocabulary_block": vocabulary_block(game),
+        "world_truths_block": truths_block(game),
+    }
+    system = get_prompt("narrator_system", status_context_block=status_context_block(game), **variables)
+    return system, get_prompt_prefix("narrator_system", "status_context_block", **variables)

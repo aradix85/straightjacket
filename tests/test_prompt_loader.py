@@ -27,3 +27,14 @@ def test_get_prompt_template_variables_fill(monkeypatch: pytest.MonkeyPatch) -> 
     _install_prompts(monkeypatch, {"task_action": "Write {n} paragraphs."})
     out = prompt_loader.get_prompt("task_action", n="3")
     assert out == "Write 3 paragraphs."
+
+
+def test_get_prompt_prefix_stops_at_the_named_placeholder(monkeypatch: pytest.MonkeyPatch) -> None:
+    _install_prompts(monkeypatch, {"sys": "Rules for {lang}.\n{state}\nEnd."})
+    assert prompt_loader.get_prompt_prefix("sys", "state", lang="English") == "Rules for English.\n"
+
+
+def test_get_prompt_prefix_raises_without_the_placeholder(monkeypatch: pytest.MonkeyPatch) -> None:
+    _install_prompts(monkeypatch, {"sys": "Rules."})
+    with pytest.raises(KeyError, match="no placeholder"):
+        prompt_loader.get_prompt_prefix("sys", "state")

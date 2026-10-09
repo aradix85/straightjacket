@@ -4,64 +4,64 @@ consequence_templates:
   - The impact catches {player} in the side. Blood wells through torn fabric.
   - Pain flares where the blow landed. {player} staggers, favoring one leg.
   health_heavy:
-  - '{player} crumples. Something is broken — bone, cartilage, certainty.'
-  - Blood runs freely. {player} presses both hands to the wound.
-  - '{player} goes down hard. Standing takes too long and costs too much.'
+  - '{player} crumples. Something is broken, bone or cartilage.'
+  - Blood runs freely from {player}'s wound and will not stop on its own.
+  - '{player} goes down hard. Getting up takes too long and costs too much.'
   spirit_light:
-  - '{player}''s focus slips. Doubt creeps in.'
-  - '{player} falters — hands slow, breathing heavy, resolve thinning.'
-  - Exhaustion drags at {player}. The task ahead looks harder now.
+  - '{player}''s hands lose their steadiness for a moment.'
+  - '{player}''s breathing turns heavy, and their movements slow.'
+  - Exhaustion drags at {player}; every motion takes more effort than it should.
   spirit_heavy:
-  - '{player}''s hands shake. Focus scatters.'
-  - '{player} stops mid-step. The purpose that drove them here feels hollow.'
-  - '{player}''s composure cracks — voice tight, breathing ragged.'
+  - '{player}''s hands shake and will not stop.'
+  - '{player} goes still for a long moment, jaw locked tight.'
+  - '{player}''s composure cracks: voice tight, breathing ragged.'
   supply_any:
-  - '{player} loses gear from the pack — dropped, broken, or spent.'
-  - Supplies run low. {player} checks the pack and finds less than expected.
+  - '{player} loses gear from the pack: dropped, broken, or spent.'
+  - Supplies run low; {player}'s pack holds less than it did.
   - Something essential is gone from {player}'s kit.
   momentum_loss:
-  - '{player} loses momentum. The advantage is gone.'
-  - The momentum shifts against {player}. Ground lost.
+  - Whatever advantage {player} had slips away.
+  - The situation turns against {player}. Ground lost.
   - The footing slips out from under {player}. Whatever edge there was, it's gone.
   bond_loss:
   - '{npc} steps back and crosses their arms. Trust broken.'
   - '{npc} turns away from {player}. The conversation is over.'
-  - '{npc} withdraws — jaw tight, eyes averted, distance deliberate.'
+  - '{npc} withdraws: jaw tight, eyes averted, distance deliberate.'
   health_gain:
-  - '{player} catches breath. The worst pain recedes.'
+  - '{player} catches their breath. The worst pain recedes.'
   - '{player} steadies. Wounded, but functional.'
   - The pain ebbs to something {player} can carry.
   spirit_gain:
-  - Clarity returns to {player}. Enough to keep moving.
-  - '{player} steadies. The fog lifts, if only slightly.'
-  - Something settles in {player}. The ground feels firmer.
+  - '{player}''s breathing evens out. Enough to keep moving.'
+  - '{player}''s hands are steady again.'
+  - The tightness goes out of {player}'s shoulders.
   supply_gain:
-  - '{player} restocks the essentials.'
-  - '{player}''s pack is heavier now — useful weight, the kind that buys time.'
-  - The kit is whole again. {player} packs it tight.
+  - '{player}''s essentials are restocked.'
+  - '{player}''s pack is heavier now: useful weight, the kind that buys time.'
+  - '{player}''s kit is whole again.'
   bond_gain:
   - '{npc} meets {player}''s gaze and holds it. Trust, earned.'
-  - '{npc} settles closer to {player} — the small distance that says belief.'
-  - Something in {npc}''s posture eases toward {player}. The wall is lower now.
+  - '{npc} settles closer to {player}: the small distance that says belief.'
+  - Something in {npc}'s posture eases toward {player}. The wall is lower now.
   momentum_gain:
-  - '{player} finds an opening. The advantage shifts.'
-  - The opportunity opens. {player} reads it before it closes.
-  - Ground tilts toward {player}. The fight, the room, the moment — leaning their way now.
-  - '{player} catches the rhythm. The edge is theirs.'
+  - An opening appears, and it favours {player}.
+  - The situation tilts toward {player}.
+  - Ground tilts toward {player}. The fight, the room, the moment lean their way now.
+  - The edge passes to {player}.
   disposition_shift:
-  - '{npc}''s attitude toward {player} shifts — visible in posture, tone, or gaze.'
-  - Something changes in how {npc} regards {player}. Read it in the eyes.
+  - '{npc}''s attitude toward {player} shifts, visible in posture, tone, or gaze.'
+  - Something changes in how {npc} regards {player}, plain in the eyes.
   - The temperature between {npc} and {player} moves. {npc} is not the same toward them.
   clock_tick:
   - Time passes. The threat advances.
   - The deadline moves closer whether {player} is ready or not.
   clock_triggered:
-  - Time's up. {clock} — {trigger}.
+  - 'Time''s up. {clock}: {trigger}.'
   impact_mark:
   - '{player} carries a lasting mark of this: {impact}.'
-  - Something has changed in {player}. {impact} — the kind of wound that stays.
+  - This leaves {player} {impact}, the kind of wound that stays.
   - '{player} is now {impact}. The cost of this moment won''t fade with rest.'
   impact_clear:
   - The weight of being {impact} lifts from {player}.
-  - '{player} sheds the hold of {impact} — no longer what they were.'
-  - '{impact} no longer defines {player}. Something has healed.'
+  - '{player} is no longer {impact}.'
+  - '{impact} no longer marks {player}. Something has healed.'

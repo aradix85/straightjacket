@@ -9,8 +9,9 @@ from ..models import BrainResult, EngineConfig, GameState, Revelation
 from ..prompt_blocks import (
     content_boundaries_block,
     get_narration_lang,
+    world_tag,
 )
-from ..prompt_loader import get_prompt
+from ..prompt_loader import get_prompt, get_prompt_prefix
 from ..tools.builtins import available_moves
 from .provider_base import AIUnavailableError, AICallSpec, AIProvider, create_with_retry
 from .schemas import get_brain_output_schema, get_revelation_check_schema
@@ -103,15 +104,16 @@ def call_brain(
 
     log(f"[Brain] Scene {game.narrative.scene_count + 1} | Input: {player_message[: eng().truncations.log_long]}")
 
-    system = get_prompt(
-        "brain_parser",
-        lang=_brain_lang,
-        content_boundaries_block=content_boundaries_block(game),
-        fact_types_block=_build_fact_types_block(),
-        max_facts=str(eng().fact_resolution.max_per_turn),
-        place=eng().fact_resolution.place_reference,
-        moves_block=_build_moves_block(game),
-    )
+    system_variables = {
+        "lang": _brain_lang,
+        "world": world_tag(game),
+        "content_boundaries_block": content_boundaries_block(game),
+        "fact_types_block": _build_fact_types_block(),
+        "max_facts": str(eng().fact_resolution.max_per_turn),
+        "place": eng().fact_resolution.place_reference,
+    }
+    system = get_prompt("brain_parser", moves_block=_build_moves_block(game), **system_variables)
+    cached_prefix = get_prompt_prefix("brain_parser", "moves_block", **system_variables)
 
     w = game.world
     _ai_text = eng().ai_text.narrator_defaults
@@ -152,6 +154,7 @@ time:{w.time_of_day or _ai_text["unknown_time"]}
                 move_keys, choices["bonus_id"], choices["target_npc"], choices["target_track"]
             ),
             log_role="brain",
+            cached_system_prefix=cached_prefix,
             **sampling_params("brain"),
         )
         response = create_with_retry(provider, spec)
