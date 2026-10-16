@@ -8,6 +8,12 @@ This log starts at 2026.09.24.0, the restart after a four-month pause. Earlier r
 
 Calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day.
 
+## [2026.10.16.3] — 2026-10-16
+
+Documentation only: the first round of step 9f against the new baseline. The measuring set now matches the engine (no "nothing useful" fact on a hit, Director notes by name), and the audit baseline was remade on it: 98 and 122 findings. Openings stayed in the second person and Kestrel kept the player character's past to herself on Sonnet, so 9f.9 and 9f.10 close without a prompt change. Three variants were measured and none adopted: removing "action" from the camera list (9f.3; blind reading 9 to 8, Elvira 6.52 against 6.41), replacing the copied example (blind reading 10 to 7, Elvira 6.60), and the rule that looking touches nothing (lost the blind reading 4 to 15; Elvira 6.39), which 9f.15 now pairs with a visible cause for setbacks. `docs/ai.md` gives the reason the clusters send no sampling parameters. About 25 dollars at full price.
+
+Quality gate: project-rule scans clean. No code, prompt, or configuration changed.
+
 ## [2026.10.16.2] — 2026-10-16
 
 Documentation only: a new Elvira baseline for step 9f under the Haiku 5.5 judge. Ten sessions of the unchanged prompt (the five comparison situations twice) scored 6.41 ± 0.14 overall and 3.81 for result integrity, where GPT-6 Luna had scored the same prompt 7.52 ± 0.18, so Haiku judges more strictly; the measuring setup's README names the new baseline. Two engine warnings: the Brain's known Set a Course as dialog (step 25), and blueprint voicing returning one revelation of three, since Anthropic does not enforce array counts, now a finding under step 9e. About 6.30 dollars at full price for the ten sessions.

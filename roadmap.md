@@ -44,8 +44,6 @@ Closing a step: the checks of CONTRIBUTING.md pass, the step leaves this documen
 
 The prompts run on Claude Sonnet 5.5 at effort medium (`docs/ai.md`) and are tuned one change at a time against measurements, not impressions; the measuring setup outside the repository holds the situation set and the scripts, and its README says how to measure. A change is measured three ways. The audit: fourteen situations captured from real sessions, three narrations each and two runs per variant, each narration checked against its own prompt by a judge from another model family; it reads the prompt's own rules, so a milder rule lowers its count without better prose. The blind reading: each pair read twice with the positions swapped, a preference counting only when both readings agree. Elvira: at least ten sessions per variant, since five sessions of one prompt scored anywhere from 7.12 to 7.92. Elvira's judge is Claude Haiku 5.5 now, which scores more strictly than GPT-6 Luna did, so a variant is compared only with the ten baseline sessions this judge scored (the measuring setup's README names them).
 
-**9f.3** PLAYER AGENCY's inner-life clause says to describe what a camera could record, including action, beside the clause that limits the character's actions to the stated one.
-
 **9f.4** The action task tells a strong hit in a desperate phase to carry the surrounding darkness.
 
 **9f.5** `fact_budget` allows one or two extra facts, while the dialog task says nothing beyond the question's scope.
@@ -54,13 +52,9 @@ The prompts run on Claude Sonnet 5.5 at effort medium (`docs/ai.md`) and are tun
 
 **9f.8** No situation set measures the extraction prompts (`narrator_metadata`, `opening_setup_extractor`), `revelation_check_system`, `blueprint_voicing`, or `recap` yet.
 
-**9f.9** Openings slip into the third person ("Zari Kobayashi's eyes open") under the current `task_opening`, which names the player character as the "you" of the narration but does not hold the perspective, as the epilogue task does ("MUST NOT shift to third person"). The narration stays in the second person, as the user prefers.
-
-**9f.10** An evasive NPC tells the player character's past: in almost every measured variant, Kestrel's intercom line named the character's forgotten contract or old name while her stance allows one fact. Find where that past reaches the narrator in the prompt assembly (NPC secrets, Director guidance) before tuning wording.
-
 **9f.11** A weak hit's cost is still left out now and then, and on a weak hit of Compel the NPC often asks nothing in return. A sentence on the result in the player-agency line of the action task did not help when measured, so the cost belongs in the result block or elsewhere in the action task.
 
-**9f.15** On misses Sonnet gives the player character moves the player did not choose (14 and 11 audit findings against 5 and 7 for Haiku): looking or studying becomes prying, touching, or grabbing, and the cost of a weak hit or miss comes from that move or from an injury the engine did not set. Sonnet also copies the prompt's own examples, as it did with the RIGHT example "she is already gone when you turn around". A combined rewrite of these points (`prompts_v11` in the measuring setup) lowered the audit's player-character findings but did not win the blind reading or Elvira; try its parts one at a time, starting with the replaced example.
+**9f.15** On misses Sonnet gives the player character moves the player did not choose: looking or studying becomes prying, touching, or grabbing, and the cost of a weak hit or miss comes from that move or from an injury the engine did not set. A combined rewrite (`prompts_v11` in the measuring setup) lowered the audit's player-character findings but did not win the blind reading or Elvira, so its parts are tried one at a time. Replacing the RIGHT example "she is already gone when you turn around", which Sonnet copied, leaned positive without proving itself (blind reading 10 to 7, Elvira 6.60 against 6.41). The rule that looking or studying touches nothing lost the blind reading 4 to 15 on its own, because the narrator then made objects fail or move without a cause; try it again together with v11's rule that a setback has a cause the player can see.
 
 ### Definition of Done
 
@@ -114,7 +108,7 @@ Two decisions open the step and are taken with the user before building. First, 
 - The metadata extraction has named an NPC id that does not exist (`npc_details: could not find NPC 'npc_5'`).
 - After a chapter transition a returning NPC ("Maren Silk") and a new NPC of almost the same name ("Maren") can stand side by side, since returning NPCs are merged by exact name only.
 - The scene can tell the narrator through a `<fact>` that an NPC is not within reach while the same NPC is the scene's `<target_npc>`; the narrator then lets the NPC speak or has her vanish, and on a hit Elvira's audit counts the vanishing as a broken result. Settle presence once, so the fact and the target agree.
-- Blueprint voicing can return fewer revelations than the blueprint asks for (one of three in a Sundered Isles session), since Anthropic's structured outputs do not enforce array counts; the chapter then plays without a blueprint. Decide between asking once more and accepting fewer revelations.
+- Blueprint voicing can return other counts than the blueprint asks for (one revelation of three, four acts of three), since Anthropic's structured outputs do not enforce array counts; the chapter then plays without a blueprint. Decide between asking once more and accepting other counts where the structure allows it.
 
 ### 9g — Test fixtures through the real creation path
 
