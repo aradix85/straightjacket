@@ -33,6 +33,7 @@ def _brain(**overrides: Any) -> dict[str, Any]:
         "track_name": "Reach the vault",
         "track_rank": "dangerous",
         "target_track": None,
+        "target_clock": None,
         "bonus_id": None,
         "undetermined_facts": [],
         "boasts": [],

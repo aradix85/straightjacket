@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
+from straightjacket.engine.mechanics.complications import open_complications
 from straightjacket.engine.models import GameState
 
 TARGETS = (
@@ -14,6 +15,8 @@ TARGETS = (
     "npc_introduced",
     "npc_died",
     "clock_fired",
+    "complication_clock",
+    "complication_averted",
     "location_change",
     "director",
     "burn_offered",
@@ -42,6 +45,7 @@ STEERING = (
 class WorldView:
     npc_status: dict[str, str]
     fired_clocks: set[str]
+    open_complications: set[str]
     location: str
 
 
@@ -74,6 +78,11 @@ class Coverage:
             ),
         )
         self.hit("clock_fired", len(after.fired_clocks - before.fired_clocks))
+        self.hit("complication_clock", len(after.open_complications - before.open_complications))
+        self.hit(
+            "complication_averted",
+            len(before.open_complications - after.open_complications - after.fired_clocks),
+        )
         if after.location and after.location != before.location:
             self.hit("location_change")
 
@@ -107,5 +116,6 @@ def world_view(game: GameState) -> WorldView:
     return WorldView(
         npc_status={n.id: n.status for n in game.npcs},
         fired_clocks={c.name for c in game.world.clocks if c.fired},
+        open_complications={c.name for c in open_complications(game)},
         location=game.world.current_location,
     )

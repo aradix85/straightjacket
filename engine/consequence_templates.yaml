@@ -58,6 +58,12 @@ consequence_templates:
   complication_compel:
   - The agreement comes with a demand, something {player} must give or do in return.
   - They agree, but on a condition {player} will have to meet.
+  complication_clock:
+  - 'The first sign of a new danger shows, small for now: {danger}. Left alone, it will grow.'
+  - 'Something starts that will not stop by itself: {danger}. For now it is only a sign.'
+  complication_averted:
+  - '{player} heads off the danger before it strikes: {danger}.'
+  - 'The danger is stopped in time, by {player}''s hand: {danger}.'
   clock_tick:
   - Time passes. The threat advances.
   - The deadline moves closer whether {player} is ready or not.

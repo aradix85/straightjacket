@@ -243,7 +243,7 @@ def _count_emergent_clocks(game: GameState) -> int:
     return sum(1 for c in game.world.clocks if c.creation_source.startswith(EMERGENT_SOURCE_PREFIXES))
 
 
-def _next_clock_name(game: GameState, base_name: str) -> str:
+def unique_clock_name(game: GameState, base_name: str) -> str:
     existing = {c.name for c in game.world.clocks}
     if base_name not in existing:
         return base_name
@@ -269,7 +269,7 @@ def spawn_clock_from_random_event(game: GameState, event: RandomEvent) -> ClockD
 
     entry = cfg.clock_creation_mapping[event.focus]
     base_name = _name_from_mythic_pair(event.meaning_action, event.meaning_subject)
-    clock_name = _next_clock_name(game, base_name)
+    clock_name = unique_clock_name(game, base_name)
     creation_source = f"{RANDOM_EVENT_SOURCE_PREFIX}{event.focus}:{dedup_key}"
 
     clock = ClockData(

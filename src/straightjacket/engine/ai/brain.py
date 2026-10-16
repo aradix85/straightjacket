@@ -16,6 +16,7 @@ from ..tools.builtins import available_moves
 from .provider_base import AIUnavailableError, AICallSpec, AIProvider, create_with_retry
 from .schemas import get_brain_output_schema, get_revelation_check_schema
 from ..mechanics.bonuses import bonus_block, roll_bonuses
+from ..mechanics.complications import open_complications
 from ..xml_utils import xe as _xe
 
 
@@ -61,6 +62,14 @@ def _build_tracks_block(game: GameState) -> str:
         return ""
     lines = [f"  {_xe(t.name)} (id:{t.id}, {t.track_type}, {t.rank}) {t.filled_boxes}/10" for t in tracks]
     return "<tracks>\n" + "\n".join(lines) + "\n</tracks>"
+
+
+def _build_dangers_block(game: GameState) -> str:
+    clocks = open_complications(game)
+    if not clocks:
+        return ""
+    lines = [f"  {_xe(c.name)} {c.filled}/{c.segments}" for c in clocks]
+    return "<dangers>\n" + "\n".join(lines) + "\n</dangers>"
 
 
 def _build_fact_types_block() -> str:
@@ -127,6 +136,7 @@ def call_brain(
     npc_block = "<npcs>\n" + "\n".join(npc_lines) + "\n</npcs>" if npc_lines else f"<npcs>{_ai_text['no_npcs']}</npcs>"
 
     tracks_block = _build_tracks_block(game)
+    dangers_block = _build_dangers_block(game)
     bonuses = bonus_block(game)
 
     user_msg = f"""<state>
@@ -136,6 +146,7 @@ time:{w.time_of_day or _ai_text["unknown_time"]}
 </state>
 {npc_block}
 {tracks_block}
+{dangers_block}
 {bonuses}
 <input>{_xe(player_message)}</input>"""
 
@@ -144,6 +155,7 @@ time:{w.time_of_day or _ai_text["unknown_time"]}
         "bonus_id": [b.id for b in roll_bonuses(game)],
         "target_npc": [n.id for n in _listed_npcs(game)],
         "target_track": [tr.id for tr in _active_tracks(game)],
+        "target_clock": [c.name for c in open_complications(game)],
     }
     try:
         spec = AICallSpec(
@@ -151,7 +163,11 @@ time:{w.time_of_day or _ai_text["unknown_time"]}
             system=system,
             messages=[{"role": "user", "content": user_msg}],
             json_schema=get_brain_output_schema(
-                move_keys, choices["bonus_id"], choices["target_npc"], choices["target_track"]
+                move_keys,
+                choices["bonus_id"],
+                choices["target_npc"],
+                choices["target_track"],
+                choices["target_clock"],
             ),
             log_role="brain",
             cached_system_prefix=cached_prefix,
@@ -164,6 +180,7 @@ time:{w.time_of_day or _ai_text["unknown_time"]}
         log(
             f"[Brain] move={result.move}, stat={result.stat}, "
             f"intent={result.player_intent[: eng().truncations.log_short]}"
+            + (f", target_clock={result.target_clock}" if result.target_clock else "")
         )
         return result
 

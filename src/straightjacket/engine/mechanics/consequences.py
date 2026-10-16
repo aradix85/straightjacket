@@ -10,6 +10,7 @@ from ..npc import find_npc, normalize_for_match
 
 from ..models import ClockFillResult
 from .clock_consequences import resolve_clock_fill
+from .complications import is_complication
 from .impacts import impact_config, impact_label
 
 
@@ -152,6 +153,7 @@ def check_npc_agency(game: GameState) -> tuple[list[str], list[ClockEvent], list
 
 def tick_autonomous_clocks(game: GameState) -> list[ClockEvent]:
     tick_chance = eng().pacing.autonomous_clock_tick_chance
+    complication_chance = eng().clocks.complication.tick_chance
     ticked: list[ClockEvent] = []
     for clock in game.world.clocks:
         if clock.clock_type != "threat":
@@ -160,7 +162,7 @@ def tick_autonomous_clocks(game: GameState) -> list[ClockEvent]:
             continue
         if clock.owner_kind != "world":
             continue
-        if random.random() < tick_chance:
+        if random.random() < (complication_chance if is_complication(clock) else tick_chance):
             clock.filled = min(clock.segments, clock.filled + 1)
             triggered = clock.filled >= clock.segments
             if triggered:
@@ -202,6 +204,9 @@ def pick_template(key: str) -> str:
     return result
 
 
+_DANGER_VERBS = ("complication_clock", "complication_averted")
+
+
 def _classify_impact(verb: str, rest: str) -> tuple[str, str, str] | None:
     key = rest.strip()
     if impact_config(key) is None:
@@ -209,12 +214,18 @@ def _classify_impact(verb: str, rest: str) -> tuple[str, str, str] | None:
     return ("impact_mark" if verb == "mark" else "impact_clear"), "", impact_label(key)
 
 
-def _classify(cons: str, default_npc: str) -> tuple[str, str, str] | None:
-    verb, _, rest = cons.partition(" ")
+def _classify_keyword(verb: str, rest: str) -> tuple[str, str, str] | None:
     if verb in ("mark", "clear"):
         return _classify_impact(verb, rest)
     if verb == "complication":
         return f"complication_{rest.strip()}", "", ""
+    return verb, "", rest.strip()
+
+
+def _classify(cons: str, default_npc: str) -> tuple[str, str, str] | None:
+    verb, _, rest = cons.partition(" ")
+    if verb in ("mark", "clear", "complication", *_DANGER_VERBS):
+        return _classify_keyword(verb, rest)
 
     parts = cons.split()
     if len(parts) >= 2 and "bond" in cons.lower():
@@ -279,7 +290,7 @@ def generate_consequence_sentences(
 
 
 def resolve_consequence_sentence(cons: str, player: str, npc_name: str, location: str) -> str:
-    if "," in cons:
+    if "," in cons and cons.partition(" ")[0] not in _DANGER_VERBS:
         parts = []
         for sub in cons.split(","):
             sub = sub.strip()
@@ -301,5 +312,6 @@ def resolve_consequence_sentence(cons: str, player: str, npc_name: str, location
         "location": location,
         "amount": "",
         "impact": impact_text,
+        "danger": impact_text,
     }
     return pick_template(event_code).format(**fmt)

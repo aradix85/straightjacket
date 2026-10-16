@@ -81,6 +81,7 @@ class BrainResult(SerializableMixin):
     track_name: str | None = None
     track_rank: str | None = None
     target_track: str | None = None
+    target_clock: str | None = None
     bonus_id: str | None = None
     undetermined_facts: list[FactRequest] = field(default_factory=list)
     boasts: list[str] = field(default_factory=list)

@@ -4,9 +4,9 @@ Internal working doc: what gets built next, and in what order. The rules every c
 
 ## How the roadmap works
 
-The steps below are the order of work: NEXT STEP first, then the others in their order. Nothing is worked on outside a step, and a new finding becomes a substep of an existing step or a new step in the same commit. One step is one session: read the code, build, test, and delete what the step made obsolete. When reality diverges from the plan, the roadmap changes in the same commit; it never claims what the code contradicts.
+The steps below are the order of work: NEXT STEP first, then the others in their order, and DONE at the bottom. Nothing is worked on outside a step, and a new finding becomes a substep of an existing step or a new step in the same commit. One step is one session: read the code, build, test, and delete what the step made obsolete. When reality diverges from the plan, the roadmap changes in the same commit; it never claims what the code contradicts.
 
-Closing a step: the checks of CONTRIBUTING.md pass, the step leaves this document and gets its CHANGELOG entry, the next step becomes NEXT STEP with substeps, a definition of done, and reference patterns, and a decision that later steps rely on goes under Decisions. The step's area is read against the source rulebooks and, where it touches the architecture, against the design document; a departure goes to `docs/divergences.md`.
+Closing a step: the checks of CONTRIBUTING.md pass, the step moves to DONE at the bottom, cut to what a later session needs to understand the whole, and gets its CHANGELOG entry with the details, the next step becomes NEXT STEP with substeps, a definition of done, and reference patterns, and a decision that later steps rely on goes under Decisions. The step's area is read against the source rulebooks and, where it touches the architecture, against the design document; a departure goes to `docs/divergences.md`.
 
 ## Sessions with the user
 
@@ -171,10 +171,6 @@ The scene challenge of Starforged and Sundered Isles is configured but unreachab
 **9k.4** The engine's own rule that the ordinary Face Danger and Secure an Advantage mark scene-challenge progress (`scene_challenge_progress_moves` in `engine/track_moves.yaml`, `game/action_resolution.py` → `_maybe_mark_scene_challenge`) goes, since Starforged uses the scene-challenge versions of those moves, and with it the register entry "Ordinary moves mark scene-challenge progress".
 
 **9k.5** A test plays a scene challenge through the real path from Begin the Scene to Finish the Scene and checks that misses fill the tension clock; an Elvira scenario starts one.
-
-### 9l — Complications as clocks
-
-The user's idea for the weak hit whose move text costs a complication (Gather Information and Compel, the `complication` effect in `engine/move_outcomes.yaml`): the complication starts something now that strikes only if the player leaves it, such as air leaking from a lock or a charge counting down. The engine has the piece for it in a small threat clock, as Blades in the Dark turns a complication into a clock and Starforged's scene challenge fills one; it fills by the existing autonomous ticks and fires its consequence when full. Decide with the user how the engine names the clock before the narration, following "Each spawn source names its own entities" (an oracle roll, for instance), and how it counts against `max_clocks_per_chapter`.
 
 ### 10 — Location and encounter generators
 
@@ -361,3 +357,17 @@ Follow-up fate questions whose odds start from the answer before, at most three,
 ### 36 — Setting authoring tooling
 
 A command that checks a new setting package (its yaml against the Datasworn file, every oracle path it names, its inheritance) and reports what a generator category still lacks, as the design document suggests for setting authors.
+
+---
+
+## DONE
+
+Finished work in its shortest form; the CHANGELOG has the details.
+
+- **Before step 9a.** Ironsworn, Delve, Starforged, and Sundered Isles from Datasworn: moves and their outcomes per setting, Pay the Price, matches, chained moves, roll bonuses from assets and connections, legacy tracks and experience, impacts. Mythic GME 2e lists, fate, meaning tables, and random events; the Adventure Crafter's blueprint and plot points; Blades-sized clocks. Narration streamed by sentence for the screen reader, strict loading of saves and config, and Elvira, the test player who plays, judges, and reports.
+- **9a — Fact resolution.** The Brain names the facts an action turns on, and Mythic's fate chart settles them (`docs/mechanics.md`, Facts).
+- **9b — Chapters as Mythic adventures.** Resources and clocks carry over, chaos restarts at 5, and a game that is over continues only through succession.
+- **9c — Soft misses from the engine side.** On a miss the NPCs present withhold, and the engine keeps agenda, secrets, guidance, and a pending revelation out of the prompt.
+- **9f so far.** Every role runs Claude Sonnet 5.5 at effort medium, and Elvira plays and judges on Claude Haiku 5.5 (baseline 6.41 ± 0.14). Adopted: a player-agency line at the end of the action and dialog tasks (9f.1 and 9f.2). 9f.9 and 9f.10 lapsed, because Sonnet does not show those faults; what was measured and not adopted is under NEXT STEP.
+- **9f.11 — Weak-hit complications follow the rulebook.** The weak hit of Gather Information and Compel costs the complication its move text names, which may be subtle, and the narrator's WEAK_HIT rule accepts it as the cost.
+- **9l — Complications as clocks.** Such a complication can start a small threat clock that strikes within four scenes unless a hit heads it off (`docs/mechanics.md`, Complication clocks).

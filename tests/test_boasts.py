@@ -44,7 +44,7 @@ def test_the_brain_offers_the_boasts_of_the_rules(load_engine: None) -> None:
     from straightjacket.engine.ai.schemas import get_brain_output_schema
     from straightjacket.engine.engine_loader import eng
 
-    boasts = get_brain_output_schema([_MOVE], [], [], [])["properties"]["boasts"]
+    boasts = get_brain_output_schema([_MOVE], [], [], [], [])["properties"]["boasts"]
     assert boasts["items"]["enum"] == sorted(eng().boasts.options)
     assert len(boasts["items"]["enum"]) == 5
     assert boasts["maxItems"] == 2

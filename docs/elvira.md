@@ -24,7 +24,7 @@ Each run picks its setting (classic, starforged, or sundered_isles) and its play
 
 ## Scenarios
 
-`--scenario` prepares a rare situation after character creation and reports whether the run reached it: `near_death` (health and spirit 0: game over at the crisis check, then succession), `chapter_end` (epilogue and new chapter), `momentum_burn` (a burn offered and taken), `combat` (an open fight), `clock` (a clock one segment from full), and `miss` (every stat at 1, investigating turns, no burns, so misses come often; the audit section of the report scores misses apart). The scenarios live in `tests/elvira/elvira_config.yaml` and their preparation in `tests/elvira/elvira_bot/scenarios.py`.
+`--scenario` prepares a rare situation after character creation and reports whether the run reached it: `near_death` (health and spirit 0: game over at the crisis check, then succession), `chapter_end` (epilogue and new chapter), `momentum_burn` (a burn offered and taken), `combat` (an open fight), `clock` (a clock one segment from full), `miss` (every stat at 1, investigating turns, no burns, so misses come often; the audit section of the report scores misses apart), and `complication` (investigating turns, so weak hits of Gather Information start complication clocks; the coverage counts them and the ones headed off). The scenarios live in `tests/elvira/elvira_config.yaml` and their preparation in `tests/elvira/elvira_bot/scenarios.py`.
 
 ## Reports and folders
 

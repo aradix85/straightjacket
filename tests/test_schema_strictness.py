@@ -50,7 +50,7 @@ def test_the_brain_schema_requires_all_its_properties(load_engine: None) -> None
 
     problems: list[str] = []
     _loose_objects(
-        get_brain_output_schema(["adventure/face_danger"], ["infiltrator#0"], ["npc_1"], []), "brain", problems
+        get_brain_output_schema(["adventure/face_danger"], ["infiltrator#0"], ["npc_1"], [], []), "brain", problems
     )
     assert problems == []
 
@@ -58,7 +58,7 @@ def test_the_brain_schema_requires_all_its_properties(load_engine: None) -> None
 def test_the_brain_schema_always_asks_for_a_track_name_and_rank(load_engine: None) -> None:
     from straightjacket.engine.ai.schemas import get_brain_output_schema
 
-    props = get_brain_output_schema(["combat/enter_the_fray"], [], [], [])["properties"]
+    props = get_brain_output_schema(["combat/enter_the_fray"], [], [], [], [])["properties"]
     assert props["track_name"] == {"type": "string"}
     assert props["track_rank"]["type"] == "string"
     assert "dangerous" in props["track_rank"]["enum"]
@@ -91,7 +91,7 @@ def test_every_schema_stays_within_anthropics_limit_on_union_typed_fields(load_e
     schemas = {name: builder() for name, builder in _schema_builders()}
     schemas["director with twelve reflections"] = get_director_output_schema(many_npcs)
     schemas["brain with every choice"] = get_brain_output_schema(
-        ["adventure/face_danger"], ["infiltrator#0"], many_npcs, ["track_1"]
+        ["adventure/face_danger"], ["infiltrator#0"], many_npcs, ["track_1"], ["A danger"]
     )
     over = {name: _unions(schema) for name, schema in schemas.items() if _unions(schema) > ANTHROPIC_UNION_LIMIT}
     assert over == {}

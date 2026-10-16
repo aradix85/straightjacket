@@ -36,6 +36,8 @@ ai_text:
     experience_reward: mark experience
     clock_fill: clock +{n}
     complication: complication {kind}
+    complication_clock: complication_clock {name}
+    complication_averted: complication_averted {name}
     bond_progress: '{name} bond progress +{n} ticks'
     disposition_shift: '{name} disposition {old}→{new}'
     mark_impact: mark {impact}

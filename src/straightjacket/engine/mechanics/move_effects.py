@@ -7,7 +7,9 @@ from dataclasses import dataclass, field
 from ..datasworn.loader import OracleTable
 from ..datasworn.settings import load_package
 from ..engine_loader import eng
+from .complications import spawn_complication_clock
 from .legacy import shifted_rank
+from .random_events import roll_meaning_table
 from ..logging_util import log
 from ..models import GameState, NpcData, ProgressTrack
 from ..npc import find_npc
@@ -282,10 +284,22 @@ def _apply_fill_clock_effect(
     result.consequences.append(eng().ai_text.consequence_labels["clock_fill"].format(n=effect.value))
 
 
+def _complication_danger(game: GameState) -> str:
+    table = _oracle_table(game, eng().clocks.complication.name_oracle_path)
+    if table is not None:
+        return strip_datasworn_links(str(table.roll().value))
+    action, subject = roll_meaning_table("actions")
+    return f"{action} {subject}"
+
+
 def _apply_complication_effect(
     game: GameState, effect: MoveEffect, result: OutcomeResult, target: NpcData | None
 ) -> None:
-    result.consequences.append(eng().ai_text.consequence_labels["complication"].format(kind=effect.target))
+    labels = eng().ai_text.consequence_labels
+    result.consequences.append(labels["complication"].format(kind=effect.target))
+    clock = spawn_complication_clock(game, effect.target, _complication_danger(game))
+    if clock is not None:
+        result.consequences.append(labels["complication_clock"].format(name=clock.name))
 
 
 def _apply_bond_effect(game: GameState, effect: MoveEffect, result: OutcomeResult, target: NpcData | None) -> None:

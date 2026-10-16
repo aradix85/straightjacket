@@ -31,6 +31,7 @@ class _NarratorCapture(MockProvider):
                 "track_name": None,
                 "track_rank": None,
                 "target_track": None,
+                "target_clock": None,
                 "bonus_id": None,
                 "undetermined_facts": [],
                 "boasts": [],

@@ -89,7 +89,11 @@ def _fact_requests(npc_ids: list[str]) -> dict[str, Any]:
 
 
 def get_brain_output_schema(
-    move_keys: list[str], bonus_ids: list[str], npc_ids: list[str], track_ids: list[str]
+    move_keys: list[str],
+    bonus_ids: list[str],
+    npc_ids: list[str],
+    track_ids: list[str],
+    clock_names: list[str],
 ) -> dict[str, Any]:
     _e = eng()
     rank_enum = sorted(_e.progress.track_types["default"].ticks_per_mark.keys())
@@ -107,6 +111,7 @@ def get_brain_output_schema(
             "track_name": _str(),
             "track_rank": _str_enum(rank_enum),
             "target_track": _nullable_enum(track_ids),
+            "target_clock": _nullable_enum(clock_names),
             "bonus_id": _nullable_enum(bonus_ids),
             "undetermined_facts": _fact_requests(npc_ids),
             "boasts": {

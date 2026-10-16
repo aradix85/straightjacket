@@ -8,6 +8,7 @@ from ..mechanics import (
     resolve_effect,
     resolve_position,
 )
+from ..mechanics.complications import avert_complication
 from ..mechanics.consequences import tick_threat_clock
 from ..mechanics.threats import advance_menace_on_miss, resolve_full_menace
 from ..models import BrainResult, ClockEvent, GameState, ProgressTrack, RollResult, ThreatEvent
@@ -48,6 +49,13 @@ def _maybe_tick_weak_hit_clock(
     should_tick = (position == "desperate") or (random.random() < eng().pacing.weak_hit_clock_tick_chance)
     if should_tick:
         tick_threat_clock(game, 1, clock_events, fill_results)
+
+
+def _maybe_avert_complication(game: GameState, brain: BrainResult, roll: RollResult, consequences: list[str]) -> None:
+    if not brain.target_clock or roll.result not in ("STRONG_HIT", "WEAK_HIT"):
+        return
+    if avert_complication(game, brain.target_clock):
+        consequences.append(eng().ai_text.consequence_labels["complication_averted"].format(name=brain.target_clock))
 
 
 def _collect_threat_events(game: GameState, roll: RollResult) -> list[ThreatEvent]:
@@ -107,6 +115,7 @@ def resolve_action_phase(game: GameState, brain: BrainResult, roll_outcome: Roll
         _apply_track_completion(game, roll, track)
 
     _maybe_mark_scene_challenge(game, brain, roll)
+    _maybe_avert_complication(game, brain, roll, consequences)
     _maybe_tick_weak_hit_clock(game, roll, position, clock_events, fill_results)
 
     npc_agency, agency_clock_events, agency_fill_results = check_npc_agency(game)

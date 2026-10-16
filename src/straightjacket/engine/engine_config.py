@@ -23,6 +23,7 @@ from .engine_config_dataclasses import (
     ClockKeyedSceneEntry,
     ClockKeyedScenesConfig,
     ClocksConfig,
+    ComplicationClockConfig,
     CombatPosCondition,
     ConnectionAidConfig,
     CorrectionConfig,
@@ -425,6 +426,7 @@ def _build_clocks(c_raw: dict[str, Any]) -> ClocksConfig:
         max_clocks_per_chapter=c_raw["max_clocks_per_chapter"],
         miss_ticks_by_position={str(k): int(v) for k, v in dict(c_raw["miss_ticks_by_position"]).items()},
         fill_consequences=fill,
+        complication=_build_strict(ComplicationClockConfig, dict(c_raw["complication"])),
     )
 
 
@@ -707,6 +709,7 @@ __all__ = [
     "ClockKeyedScenesConfig",
     "ClocksConfig",
     "CombatPosCondition",
+    "ComplicationClockConfig",
     "ConnectionAidConfig",
     "CorrectionConfig",
     "CreationConfig",

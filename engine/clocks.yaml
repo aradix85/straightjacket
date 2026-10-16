@@ -9,6 +9,12 @@ clocks:
 
   max_clocks_per_chapter: 4
 
+  complication:
+    segments: 4
+    tick_chance: 1.0
+    max_open: 1
+    name_oracle_path: misc/story_complication
+
   miss_ticks_by_position:
     controlled: 0
     risky: 1

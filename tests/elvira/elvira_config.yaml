@@ -107,3 +107,7 @@ scenarios:
     turns: 6
     expect: ["clock_fired"]
     clock_nearly_full: true
+  complication:
+    turns: 10
+    directive: "bot_turn_directive_investigate"
+    expect: ["complication_clock"]

@@ -8,6 +8,12 @@ This log starts at 2026.09.24.0, the restart after a four-month pause. Earlier r
 
 Calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day.
 
+## [2026.10.16.8] — 2026-10-16
+
+Step 9l, the user's idea: a weak-hit complication of Gather Information or Compel can start a four-segment threat clock (`mechanics/complications.py`), named from the story-complication table or a Mythic action pair, one open at a time. It fills every scene and strikes through the threat fill tag unless the Brain aims a hit at it (`target_clock`, from a `<dangers>` block). Elvira's new `complication` scenario, three sessions: the narrator showed each danger as a subtle first sign and its arrival later, and one was headed off. The roadmap keeps finished work in a short DONE section at the bottom.
+
+Quality gate: 1621 tests green, coverage 91.09%, ruff and mypy clean. Save format unchanged. Elvira about $2.
+
 ## [2026.10.16.7] — 2026-10-16
 
 The weak hit of Gather Information and Compel follows the rulebook, at the user's choice: its cost is the complication the move text names (a complication or a new danger, a demand in return), and it may be subtle. A `complication` effect in `engine/move_outcomes.yaml` gives the narrator that complication as a consequence it must tell (`engine/consequence_templates.yaml`), and the narrator's WEAK_HIT rule takes a named complication as the cost, falling back to something lost or broken where none is named. Measured on the three weak hits of the set, the audit no longer missed a cost; the blind reader, judging by the old rule, preferred a material loss 10 to 3, which is the stricter reading the user chose not to keep. The user's idea of a complication that strikes only when left alone becomes step 9l, complications as clocks. Tests cover the effect and its sentence.

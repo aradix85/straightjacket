@@ -779,6 +779,14 @@ class ClockFillConsequenceEntry:
 
 
 @dataclass
+class ComplicationClockConfig:
+    segments: int
+    tick_chance: float
+    max_open: int
+    name_oracle_path: str
+
+
+@dataclass
 class ClocksConfig:
     owner_kinds: frozenset[str]
     default_owner_kind: str
@@ -786,6 +794,7 @@ class ClocksConfig:
     max_clocks_per_chapter: int
     miss_ticks_by_position: dict[str, int]
     fill_consequences: dict[str, ClockFillConsequenceEntry]
+    complication: ComplicationClockConfig
 
 
 @dataclass
