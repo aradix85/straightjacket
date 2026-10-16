@@ -356,6 +356,14 @@ class TestResolveOutcome:
         assert result.progress_marks == 1
         assert result.clock_fills == 1
 
+    @pytest.mark.parametrize("move", ["adventure/gather_information", "adventure/compel"])
+    def test_weak_hit_names_its_complication(self, game_real: GameState, move: str) -> None:
+        weak = resolve_move_outcome(game_real, move, "WEAK_HIT")
+        strong = resolve_move_outcome(game_real, move, "STRONG_HIT")
+        kind = move.split("/")[1]
+        assert f"complication {kind}" in weak.consequences
+        assert not any(c.startswith("complication") for c in strong.consequences)
+
     def test_unknown_move_raises(self, game_real: GameState) -> None:
         with pytest.raises(ValueError, match="No outcome config"):
             resolve_move_outcome(game_real, "nonexistent/move", "STRONG_HIT")

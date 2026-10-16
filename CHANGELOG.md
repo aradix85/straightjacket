@@ -8,6 +8,12 @@ This log starts at 2026.09.24.0, the restart after a four-month pause. Earlier r
 
 Calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day.
 
+## [2026.10.16.7] — 2026-10-16
+
+The weak hit of Gather Information and Compel follows the rulebook, at the user's choice: its cost is the complication the move text names (a complication or a new danger, a demand in return), and it may be subtle. A `complication` effect in `engine/move_outcomes.yaml` gives the narrator that complication as a consequence it must tell (`engine/consequence_templates.yaml`), and the narrator's WEAK_HIT rule takes a named complication as the cost, falling back to something lost or broken where none is named. Measured on the three weak hits of the set, the audit no longer missed a cost; the blind reader, judging by the old rule, preferred a material loss 10 to 3, which is the stricter reading the user chose not to keep. The user's idea of a complication that strikes only when left alone becomes step 9l, complications as clocks. Tests cover the effect and its sentence.
+
+Quality gate: 1606 tests green, project-rule scans clean, coverage 90.98%, ruff and mypy --strict clean. Save format unchanged. Elvira, eight turns in Starforged: no problems and no engine warnings, though no weak hit of these two moves came up; about 43 cents.
+
 ## [2026.10.16.6] — 2026-10-16
 
 Documentation only: the 9f.11 branch measured with a WEAK_HIT rule that counts a named complication as the cost, on the three weak hits of the set. The audit no longer missed a cost, but the blind reader preferred the current narrations 10 to 3, because they show a loss where the branch shows a complication. Whether these weak hits follow the rulebook or keep the stricter loss is now an open decision for the user under 9f.11. Under 1 dollar.

@@ -52,6 +52,12 @@ consequence_templates:
   - '{npc}''s attitude toward {player} shifts, visible in posture, tone, or gaze.'
   - Something changes in how {npc} regards {player}, plain in the eyes.
   - The temperature between {npc} and {player} moves. {npc} is not the same toward them.
+  complication_gather_information:
+  - What {player} learns also complicates the quest or brings a new danger into view.
+  - The answer comes with a catch that makes the way ahead harder for {player}.
+  complication_compel:
+  - The agreement comes with a demand, something {player} must give or do in return.
+  - They agree, but on a condition {player} will have to meet.
   clock_tick:
   - Time passes. The threat advances.
   - The deadline moves closer whether {player} is ready or not.

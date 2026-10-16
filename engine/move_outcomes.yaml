@@ -19,6 +19,7 @@ move_outcomes:
     - momentum +2
     weak_hit:
     - momentum +1
+    - complication gather_information
     miss:
     - pay_the_price
   adventure/compel:
@@ -26,6 +27,7 @@ move_outcomes:
     - momentum +1
     weak_hit:
     - momentum +1
+    - complication compel
     miss:
     - pay_the_price
   adventure/check_your_gear:

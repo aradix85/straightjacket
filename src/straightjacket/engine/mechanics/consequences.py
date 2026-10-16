@@ -213,6 +213,8 @@ def _classify(cons: str, default_npc: str) -> tuple[str, str, str] | None:
     verb, _, rest = cons.partition(" ")
     if verb in ("mark", "clear"):
         return _classify_impact(verb, rest)
+    if verb == "complication":
+        return f"complication_{rest.strip()}", "", ""
 
     parts = cons.split()
     if len(parts) >= 2 and "bond" in cons.lower():

@@ -44,6 +44,7 @@ _CHAIN_MOVE_RE = re.compile(r"^chain_move\s+(\S+)$")
 _LEGACY_LOWER_RE = re.compile(r"^legacy_reward_lower\s+(\w+)$")
 _LEGACY_TICKS_RE = re.compile(r"^legacy_ticks\s+(\w+)\s+(\d+)$")
 _FILL_CLOCK_RE = re.compile(r"^fill_clock\s+(\d+)$")
+_COMPLICATION_RE = re.compile(r"^complication\s+(\w+)$")
 
 
 def parse_effect(effect_str: str) -> MoveEffect:
@@ -76,6 +77,10 @@ def parse_effect(effect_str: str) -> MoveEffect:
     m = _FILL_CLOCK_RE.match(effect_str)
     if m:
         return MoveEffect(type="fill_clock", value=int(m.group(1)))
+
+    m = _COMPLICATION_RE.match(effect_str)
+    if m:
+        return MoveEffect(type="complication", target=m.group(1))
 
     if effect_str in ("pay_the_price", "narrative", "suffer_move", "disposition_shift", "raise_connection_rank"):
         return MoveEffect(type=effect_str)
@@ -277,6 +282,12 @@ def _apply_fill_clock_effect(
     result.consequences.append(eng().ai_text.consequence_labels["clock_fill"].format(n=effect.value))
 
 
+def _apply_complication_effect(
+    game: GameState, effect: MoveEffect, result: OutcomeResult, target: NpcData | None
+) -> None:
+    result.consequences.append(eng().ai_text.consequence_labels["complication"].format(kind=effect.target))
+
+
 def _apply_bond_effect(game: GameState, effect: MoveEffect, result: OutcomeResult, target: NpcData | None) -> None:
     if not target:
         return
@@ -333,6 +344,7 @@ _EFFECT_HANDLERS: dict[str, Callable[[GameState, MoveEffect, OutcomeResult, NpcD
     "raise_connection_rank": _apply_raise_connection_rank_effect,
     "legacy_ticks": _apply_legacy_ticks_effect,
     "fill_clock": _apply_fill_clock_effect,
+    "complication": _apply_complication_effect,
     "bond": _apply_bond_effect,
     "disposition_shift": _apply_disposition_shift_effect,
     "narrative": _apply_narrative_effect,
