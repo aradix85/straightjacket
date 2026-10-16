@@ -172,7 +172,7 @@ def _replace_character_identity(game: GameState, creation_data: dict[str, Any]) 
 
     if not background_vow:
         raise ValueError(
-            "creation_data['background_vow'] is empty. Opening clock requires a background vow on the new character."
+            "creation_data['background_vow'] is empty. The successor's background vow becomes their first vow track."
         )
     if not player_name:
         raise ValueError("creation_data['player_name'] is empty.")

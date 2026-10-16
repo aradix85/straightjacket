@@ -2,76 +2,47 @@
 
 Straightjacket — AI-powered narrative solo RPG engine. See [ORIGINS.md](ORIGINS.md) for where it comes from.
 
-This log starts at 2026.09.24.0, the restart after a four-month pause. Earlier releases, back to the fork from EdgeTales, and the full text of entries that were later shortened, are in git history: the file as of commit d2f8dfe holds every entry.
+This log starts at 2026.09.24.0, the restart after a four-month pause. Earlier releases, back to the fork from EdgeTales, and the longer text of entries that were later shortened are in git history (`git log -p CHANGELOG.md`).
 
 ## Versioning
 
 Calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day.
 
+## [2026.10.16.0] — 2026-10-16
+
+A critical read of every md file against the code. Corrected: a tool loop that no longer exists, a death through Face Death that nothing starts, a succession that clears every clock, AI decisions the docs left out (the Brain's free-text location, the Director's narrator guidance, the extraction's dispositions), provider notes presented as current, and Delve's 12 domains; duplicates point to one place, and this log keeps a few sentences per entry. The correction analysis and blueprint voicing escape player text, the layer scan keeps `tools` from `ai`, and a setting's `id` must equal its file name, each with a test. Roadmap steps 14a to 36 are short sketches now. The Yaml content boundary states the user's choice: game content comes from the sources, an oracle, or as the last resort the AI, never by hand, while the engine's own text lives in yaml. New substeps 9h.9 and 9h.10.
+
+Quality gate: 1602 tests green, project-rule scans clean, coverage 90.96 to 91.03% between runs, so the floor stays at 90, ruff and mypy --strict clean. Save format unchanged. Elvira, eight turns in classic as explorer: a correction replayed through the escaped analysis, blueprint voicing succeeded, no engine warnings; three problems of known kinds (an NPC moving off screen, a soft miss, a weak hit without its benefit); about 48 cents at full price.
+
 ## [2026.10.09.4] — 2026-10-09
 
-A hit on a search no longer reaches the narrator beside the fact that nothing useful is there. A miss on a `gather_information` move settles the place's `useful` fact to no, so searching the same place again does not roll it again, and the fact roll of a turn can answer no as well. A hit cleared only yes answers, so a later hit at that place, a hit right after a no from the same turn's fact roll, and a momentum burn from a miss to a hit all told the narrator "this place holds something useful" with answer no beside a successful result, and it had to break one of the two. Three of the fourteen situations in the measuring set carried this. `mechanics/facts.py` → `overrule_facts_by_hit` now drops, on a hit, the facts of the turn whose type and answer are what a search miss settles (`fact_resolution.information_miss_settles`), both from what the narrator hears and from the place; the turn, the momentum burn, and the correction of a state error all call it. Seven tests cover a no and an exceptional no overruled, a miss and a yes left alone, a locked no untouched, the turn on a hit and on a miss, and a burn from a miss to a hit.
+A hit on a search no longer reaches the narrator beside a fact saying that nothing useful is there. A search miss settles `useful` to no, so a later hit at that place, a hit after a no from the same turn's fact roll, or a burn from a miss to a hit told the narrator both. `mechanics/facts.py` → `overrule_facts_by_hit` now drops such a no on a hit, from the prompt and from the place; the turn, the momentum burn, and the state correction call it. Five Elvira sessions: overall 7.12, no engine warning. A narrator prompt with targeted changes for Sonnet (roadmap 9f.15) was measured and not adopted: fewer audit findings, no preference in the blind reading, and 7.23 against 7.52 in ten Elvira sessions each.
 
-Five Elvira sessions on this version: overall 7.12, result integrity 3.82, no engine warning, and the overrule fired five times. The same prompts scored 7.50 in the five sessions of 2026.10.09.3, so five sessions do not separate a change of this size from the spread between runs. A narrator prompt with targeted changes for Sonnet (roadmap 9f.15) was measured as well and not adopted: the audit counted 82 and 76 findings against 123 and 126, mostly through a milder GENRE PHYSICS rule that the audit reads, the blind reader preferred neither (9 to 9), and in ten Elvira sessions per prompt it scored 7.23 against 7.52 for the unchanged prompt.
-
-Quality gate: 1599 tests green, project-rule scans clean, coverage 90.96%, ruff and mypy --strict clean. Save format unchanged.
+Quality gate: 1599 tests green, coverage 90.96%. Save format unchanged.
 
 ## [2026.10.09.3] — 2026-10-09
 
-Every role now runs Claude Sonnet 5.5 at effort medium, the user's choice after comparing it with Haiku 5.5 (roadmap 9f.12). On the prompts of 2026.10.09.2, with every role on one setting and caching on: GPT-6 Luna, reading blind with the positions swapped, preferred Sonnet medium over Haiku medium 14 to 6 (8 undecided), Sonnet at low effort 11 to 7, and Sonnet without up-front thinking (`between_tools`) 10 to 11; Haiku won the plain misses in every pairing, where Sonnet added actions for the player character and dangers the scene had not set up. The audit counted 115 findings on average for Haiku and 122 to 126 for the three Sonnet settings, within the spread; Sonnet narrates longer (median 225 to 245 words). Five Elvira sessions each scored Haiku 7.12, Sonnet between_tools 7.10, low 7.08, medium 7.60; the first sentence in play came after 12.0, 4.6, 5.6, and 8.6 seconds.
+Every role now runs Claude Sonnet 5.5 at effort medium, the user's choice after comparing it with Haiku 5.5: the blind reader preferred Sonnet medium over Haiku medium 14 to 6, and five Elvira sessions each scored Sonnet medium 7.60 against 7.12 for Haiku, at about ten times the cost. Three faults that Sonnet showed are fixed: the Director's schema broke Anthropic's limit of 16 nullable fields when three NPCs reflected, so its reflection fields are plain strings; the Director no longer gets a tool round in which Sonnet called tools that do not exist, and `run_tool_loop` is gone; and the Anthropic adapter no longer sets the automatic cache mark beside its own. A twelve-turn session costs about 54 cents.
 
-Those Sonnet sessions showed three engine faults, all fixed here:
-- Anthropic refuses a structured-output schema with more than 16 nullable or union-typed fields, and each Director reflection had six, so the Director failed whenever three NPCs reflected at once: seven times in a row in one session, which then never had reflections. Haiku's sessions never had three at once, but the limit is the API's. The reflection fields are plain strings now, empty when there is nothing to set (`ai/schemas.py`, `prompts/director.yaml`); `tests/test_schema_strictness.py` keeps every schema, the Director's with twelve NPCs included, under the limit.
-- After its tool call the Director got a further round to comment on the result, and Sonnet used it to call tools that do not exist ("respond", "reflect", "x") until the limit of three rounds. `director.py` → `call_director` now hands the raw tool results to the call that writes the structured answer, without that round, which also saves a call; `tools/handler.py` → `run_tool_loop` and its settings (`pacing.max_tool_rounds`, `retry.tool_loop_round_max_retries`) are gone. Two tests cover the results reaching the final call and an invented tool costing no extra round.
-- Next to its own cache mark on the fixed part of the system prompt, the Anthropic adapter also set Anthropic's automatic mark, which writes every request's changing tail at the cache-write price (twice the input price for a one-hour cache) without any later request reading it. It no longer does.
-
-Five Elvira sessions on this version: overall 7.50 out of 10, result integrity 4.08, first sentence after 9.5 seconds, no Director warning. Counted from the token logs at Anthropic's prices, a twelve-turn session cost about $1.08 before these fixes and about $0.54 after, against about $0.05 on Haiku. One Brain warning remains, logged under roadmap 25.2: the Brain chose Set a Course, which rolls +supply, and the turn was played as dialog.
-
-Quality gate: 1592 tests green, project-rule scans clean, coverage 90.94%, ruff and mypy --strict clean. Save format unchanged.
+Quality gate: 1592 tests green, coverage 90.94%. Save format unchanged.
 
 ## [2026.10.09.2] — 2026-10-09
 
-Every role now runs Claude Haiku 5.5 at effort medium, the user's choice after 2026.10.09.1 (roadmap 9f.12); Haiku 5.5 refuses `temperature`, `top_p`, and `top_k`, so every cluster sets them to null and the roles differ only in effort and prompt. Then every prompt and every engine text that reaches a model was read against Anthropic's guidance for Haiku 5.5 and the current best-practice guide.
+Every role ran Claude Haiku 5.5 at effort medium, the user's choice after 2026.10.09.1; Haiku 5.5 refuses `temperature`, `top_p`, and `top_k`, so the clusters stopped sending them. Anthropic caching works now: the adapter marks the part of the system prompt that is fixed within a game, where the automatic mark fell on the changing last block. Fixed in what the models are told: a progress mark no longer reaches the narrator as a lasting wound, Director notes name the NPC instead of its id, and the Brain and the Director see the world. Every prompt and engine text was rewritten except the narrator's, whose rewrite cut audit findings but lost the blind reading 3 to 14 and scored lower in Elvira; the extraction requests moved into `prompts/narrator.yaml`.
 
-Caching did not work on Anthropic: in five Elvira sessions the narrator, the Brain, and the extraction read nothing from cache, because Anthropic's automatic cache mark falls on the last block of the request, which changes every turn. `ai/provider_anthropic.py` → `_cached_system` now sends the system prompt as two blocks and marks the part that is fixed within a game (`AICallSpec.cached_system_prefix`, cut by `prompt_loader.py` → `get_prompt_prefix` at the narrator's character state and at the Brain's list of moves). In the five sessions of this version the cache served 53 percent of the narrator's input, 51 of the metadata extraction's, 42 of the Brain's, and 37 of the Director's; the revelation check's prompt is shorter than Haiku's minimum of 512 tokens. Tests cover both blocks, a call without a prefix, and a prefix that does not start the system prompt.
-
-Three defects in what the models were told:
-- A progress mark was told as a lasting wound. `mechanics/consequences.py` → `_classify` read every consequence starting with "mark" as an impact, so a strong hit on a vow ("mark progress ×2") or an experience reward reached the narrator as "Shen Zhang is now progress ×2. The cost of this moment won't fade with rest." Only a configured impact counts now; tests cover the progress and experience labels and a real impact.
-- The narrator read the Director's NPC guidance under the NPC's id (`<npc_note for="npc_3">`), which it cannot connect to a name; `prompt_shared.py` → `_director_block` gives the name and drops guidance for an unknown id. Test added.
-- The Brain and the Director were told to stay within the genre of `<world>` but were never shown it; both now get the world, the Director the character too, in the cached part of their system prompts (`prompt_blocks.py` → `world_tag`, `character_tag`).
-
-Engine texts the narrator must follow:
-- The consequence sentences, which the narrator has to show happening, gave the player character thoughts and choices ("Doubt creeps in", "Clarity returns", "presses both hands to the wound", "checks the pack", "catches the rhythm"). They now describe only what visibly happens to the character or the world (`engine/consequence_templates.yaml`); the spirit levels of the character state are worded as visible strain.
-- Ten stance constraints set an amount ("Shares everything", "Holds nothing back", "One fact, then silence") that contradicted the NPC's fact budget; they now set manner only (`engine/stance_matrix.yaml`).
-- The Brain's move hints lost their capitals; the NPC agency line says the action happens off screen and that only its effect reaches the scene; the momentum burn line says the result already counts it (`engine/ai_text.yaml`).
-
-Prompts rewritten in plain sentences with the reason for each rule: the Brain (with what `world_addition` is), the correction analysis, the revelation check, the Director (the "breather" recommendation is gone, roadmap 9f.7, and npc_guidance names where the ids come from), blueprint voicing, the metadata and opening extraction, and the recap. The extraction requests moved from Python into `prompts/narrator.yaml` (`narrator_metadata_request`, `opening_setup_request`), with names and descriptions XML-escaped.
-
-The narrator's system prompt, task texts, and blocks stay as they were. Their rewrite was measured and not adopted (roadmap 9f.13): on the fourteen situations, three attempts each, audited by GPT-6 Luna, the unchanged prompt scored 110, 119, 115, 121, 124, and 125 findings in six runs and the rewrite 79 to 97 in four, with half the contradictions; but the blind reader preferred the unchanged prompt 14 to 3 with 11 undecided, and Elvira scored all five sessions lower, by 0.6 on average. With the unchanged narrator prompt and everything above, the audit counted 106 and 124 findings, within the unchanged prompt's spread, and five Elvira sessions averaged 7.12 out of 10 (result integrity 3.96) against 7.44 for the narrator alone on Haiku medium in 2026.10.09.1; single sessions moved by up to 1.6 points between the two setups, both ways. No session logged an engine warning; only the narration audit raised problems. The narrator's first sentence on the measured situation came after about 6 seconds with a warm cache, and the Brain took about 4.
-
-Elvira's price list has Haiku 5.5 and Sonnet 5.5. Quality gate: 1591 tests green, project-rule scans clean, coverage 91.00%, ruff and mypy --strict clean. Save format unchanged.
+Quality gate: 1591 tests green, coverage 91.00%. Save format unchanged.
 
 ## [2026.10.09.1] — 2026-10-09
 
-Claude Haiku 5.5 measured against GLM 5.3 for every role, at every effort setting of both, at the user's request; the model stays GLM 5.3 until the user decides (roadmap 9f.12). One engine change was needed: Anthropic's structured outputs refuse `maxItems`, so every Brain call failed on Haiku. The Anthropic adapter now passes schemas through the SDK's `transform_schema`, which moves such limits into the field's description; the engine already checked the counts after parsing. One test checks the move.
+Claude Haiku 5.5 measured against GLM 5.3 for every role and effort, at the user's request; the model stayed GLM 5.3 until the user decided. One engine change: Anthropic's structured outputs refuse array limits such as `maxItems`, so the adapter passes schemas through the SDK's `transform_schema`, and the engine keeps checking counts after parsing. Haiku at medium won the blind readings against GLM at low and high and had fewer audit findings than GLM at low; GLM won the strong hits. In five Elvira sessions per setup, Haiku with the narrator at medium scored 7.44 against 6.82 for GLM at low, at about a sixth of the cost, with the first sentence after 10.8 seconds instead of 3.1.
 
-Narration, on the fourteen situations brought up to the current prompt (the player-agency line added), three attempts each, two runs per setting, audited by GPT-6 Luna; findings, fewer is better. GLM 5.3: none 133 and 112, low 168 and 154, medium 122 and 102, high 158 and 145; at none and medium GLM reasons for about 40 seconds before the first word. Haiku 5.5: thinking off 177 and 178, with the most softened results of all settings; low 130 and 140; medium 119 and 110; high 112 and 112; xhigh 86 and 72; max ran out of 32,000 tokens without a narration in 40 of 42 attempts. Blind readings by GPT-6 Luna, each pair read twice with the positions swapped and counted only when both agree: Haiku medium beat GLM low 15 to 5 and GLM high 15 to 9, high beat GLM low 15 to 7, low 15 to 10, xhigh 17 to 6; GLM won the strong hits in every pairing, where Haiku added a cost to a clean success or left out an element the scene asked for.
-
-Speed, streamed, ten calls per state: the narrator's first sentence came after about 1.0 to 1.2 seconds on GLM low, 3.8 to 4.2 on GLM high, 34 to 41 on GLM none and medium, 1.1 on Haiku with thinking off, 4.3 on low, 6.6 to 7.0 on medium, 9 to 10 on high, 25 to 33 on xhigh, never on max; the Brain took 0.8 to 1.1 seconds on GLM low and 1.9 to 3.9 on Haiku from thinking off to medium. Prompt caching made no difference on Haiku, whose wait is the thinking, and saved about 0.2 seconds on GLM low.
-
-Elvira, five sessions per setup (three settings at twelve turns, the miss and combat scenarios), every role on the setup's model: GLM low overall 6.82 of 10, result integrity 3.74, first sentence after 3.1 seconds, about 26 cents a session; Haiku with the narrator at medium and the rest at low 7.44, 4.16, 10.8 seconds, 4 cents; narrator high and the rest low 6.86, 3.62, 16.3 seconds; narrator low and the rest without thinking 6.62, 3.60, 8.7 seconds. No Haiku session logged an engine warning, Brain, Director, and extraction included.
-
-Quality gate: 1581 tests green, project-rule scans clean, coverage 90.95%, ruff and mypy --strict clean. Save format unchanged.
+Quality gate: 1581 tests green, coverage 90.95%. Save format unchanged.
 
 ## [2026.10.09.0] — 2026-10-09
 
-A critical read of every md file against the code, and the fixes it called for. Act transitions no longer depend on the Director: the check moved from `director.py` to `story_state.py` → `check_act_transition` and runs in every turn's scene-end bookkeeping, so an act ends at the last scene of its range, where before it ended one scene earlier only when a Director call happened to run and succeed at that scene. The WebSocket origin check refused the LAN play SECURITY.md describes, and IPv6 loopback, since `[::1]` never matched a parsed host; it now also accepts a page served from the same IP address and port, and still refuses other sites and host names that are not loopback. Player and save names with a path separator or a leading dot are refused instead of stripped, since stripping let two names share one folder. The import-layer scan now splits the engine core into its base and the rest, which `datasworn`, `db`, `npc`, `mechanics`, and `tools` may not import. Dead config went (`engine/damage.yaml` apart from the miss ticks, now `clocks.miss_ticks_by_position`; creation's `starting_asset_categories`; `strings/move.yaml`; `unknown_transition_trigger`), and `run.py` and `data/data.py` lost their comments and docstrings and joined the comment scan (roadmap 9h, two substeps closed).
+A critical read of every md file against the code, and the fixes it called for. Act transitions no longer depend on the Director: `story_state.py` checks them in every turn's scene-end bookkeeping, so an act ends at the last scene of its range. The WebSocket origin check allows LAN play and IPv6 loopback and still refuses other sites. Player and save names with a path separator or a leading dot are refused instead of stripped. The import-layer scan splits the engine core into a base and the rest. Dead config went, `run.py` and `data/data.py` joined the comment scan, and the register gained three entries on threats, Forsake Your Vow, and scene-challenge progress. One Elvira session: no engine warnings.
 
-Documentation: CONTRIBUTING states the strict reading the user chose, no default on any dataclass field apart from the three exceptions, and roadmap 9h.4 counts what is left (about two hundred defaults in 43 classes). ARCHITECTURE lists the correction analysis among the AI's decisions and describes the import layers as the scan now enforces them. The register gains three entries, checked against the Datasworn texts: threats advance by an engine rule instead of Delve's Advance a Threat, a full menace track forsakes the vow at a fixed spirit cost, and the ordinary moves mark scene-challenge progress; step 9j gains 9j.6. SECURITY describes the origin check, the `debug_state` message, and what escaping does not stop. Smaller corrections in `docs/ai.md`, `docs/settings.md`, `docs/elvira.md`, README, and the roadmap.
-
-Elvira, twelve turns in Starforged as explorer: the act ended at scene 7, the last of its range; no engine warnings; streaming complete and identical on all ten streamed turns; three narration findings of kinds step 9f already covers (an unprompted transmission, player-character overreach, a miss that still gave answers); about 30 cents.
-
-Quality gate: 1580 tests green, project-rule scans clean, coverage 90.91%, ruff and mypy --strict clean. Save format unchanged.
+Quality gate: 1580 tests green, coverage 90.91%. Save format unchanged.
 
 ## [2026.10.04.6] — 2026-10-04
 
@@ -87,41 +58,39 @@ Quality gate: 1557 tests green, project-rule scans clean (documentation drift in
 
 ## [2026.10.04.4] — 2026-10-04
 
-Step 9f, substeps 1 and 2. The narrator's action and dialog tasks end with a player-agency line in the system prompt's own wording; at the end of the prompt it catches what the rule at the top of the system prompt misses. Measured on GLM 5.3 over fourteen situations captured from sessions (misses with and without a match, weak and strong hits, an NPC's secrets, near death, two openings, two dialogs without a roll), three runs per situation and two runs per variant, each narration audited against its full prompt by GPT-6 Luna: player-character overreach fell from 49 findings on average to 30 and the audit total from 158 to 131, while the unchanged prompt's two runs differed by 12, and no other kind rose beyond its spread. A length line of 150 to 200 words raised narrations within budget from 26 of 42 to 36, but together with the agency line it left weak hits without their cost more often, so it is not adopted; a sentence on the result inside the agency line did not help either. Openings keep their own task, since an opening has no player words. A blind reading found the two prompts level overall, the agency line winning on the player character and losing on some weak-hit costs. Step 9f gains three substeps from the measurement (openings that slip into the third person, an evasive NPC telling the player character's past, weak hits without their cost), and its method now reads each blind pair twice with the positions swapped, after one reader's preferences drifted toward one position.
+Step 9f, substeps 1 and 2: the narrator's action and dialog tasks end with a player-agency line in the system prompt's own wording. Measured on GLM 5.3 over fourteen captured situations, audited by GPT-6 Luna: player-character overreach fell from 49 findings to 30 and the audit total from 158 to 131, and no other kind rose beyond the spread. A length line was not adopted, since together with the agency line it left weak hits without their cost more often. Step 9f gained three substeps from the measurement. One Elvira session: no engine warnings, player agency 4.5 of 5.
 
-Quality gate: 1557 tests green, project-rule scans clean, coverage 90.79%. Elvira, eight turns in Starforged on the new prompt: no engine warnings, player agency 4.5 of 5, streaming complete on all six turns, and two narration findings of known kinds (a miss that still gave answers, an NPC that deflected on a strong-hit Compel).
+Quality gate: 1557 tests green, coverage 90.79%.
 
 ## [2026.10.04.3] — 2026-10-04
 
-Documentation only. Step 9f, prompt tuning, becomes NEXT STEP ahead of 9d at the user's choice: the roadmap gave no reason for the old order, and the narrator's core rules (player agency, result integrity, length) do not depend on the generators. Step 9f gets substeps, a definition of done, and reference patterns, and describes how a prompt change is measured: the same captured situations for every variant, three runs each, an audit against the prompt by a judge from another model family, and blind reading with balanced positions. The first measurements come from comparing GLM 5.3 with MiMo-V2.6-Pro at Prima Labs over nine situations: with the same prompt changes both scored alike (93 and 97 audit findings) and drew level in a blind reading (three wins each, three ties), and the two end-of-scene reminders of 9f.2 cut GLM's player-character overreach from 23 to 14 findings and brought 26 of 27 narrations within the word budget. Step 9d keeps its content as the first sketch after NEXT STEP. Step 9e gains a finding: a `<fact>` can place an NPC out of reach while the same NPC is the scene's target.
+Documentation only. Step 9f, prompt tuning, becomes NEXT STEP ahead of 9d at the user's choice, with substeps, a definition of done, and a measuring method: the same captured situations for every variant, an audit by a judge from another model family, and a blind reading with balanced positions. A first comparison of GLM 5.3 with MiMo-V2.6-Pro scored both alike. Step 9e gains a finding: a fact can place an NPC out of reach while that NPC is the scene's target.
 
-Quality gate: 1557 tests green, project-rule scans clean (documentation drift included), coverage 90.77%. No code, prompt, or configuration changed.
+Quality gate: 1557 tests green, coverage 90.77%.
 
 ## [2026.10.04.2] — 2026-10-04
 
-Documentation only. Scene challenges turned out to be configured but unreachable in play: Begin the Scene has no roll, so the available-moves filter keeps it from the Brain, no scene-challenge track ever exists, the moves that need one are never offered, and the `fill_clock` effect of their misses is computed but read by nothing. New step 9k makes them playable from the rulebook (Begin the Scene as a formal move, a tension clock, `fill_clock` applied, the engine's own progress rule for the ordinary moves removed); step 13b no longer lists Begin the Scene, `docs/mechanics.md` says scene challenges are not playable yet, and step 9h.10 asks that every move-outcome field has a reader in play.
+Documentation only. Scene challenges turned out to be configured but unreachable: Begin the Scene has no roll, so no scene-challenge track ever exists, and the `fill_clock` effect of their misses is read by nothing. New step 9k makes them playable from the rulebook, and `docs/mechanics.md` says they are not playable yet.
 
-Quality gate: 1557 tests green, project-rule scans clean (documentation drift included), coverage 90.81%. No code, prompt, or configuration changed, so no Elvira run.
+Quality gate: 1557 tests green, coverage 90.81%.
 
 ## [2026.10.04.1] — 2026-10-04
 
-Documentation only. The md files now state the current state, each fact in one file: reasons are written out instead of pointing to CHANGELOG versions, the roadmap's DONE list, duplicated process rules, and model paragraph are gone (process rules live in CONTRIBUTING.md), AUDIT's loose notes became substeps of step 9h, ai.md lost its prices and measurement history, the register in `docs/divergences.md` is the one list of where the AI still decides what a system will take over, ORIGINS keeps lineage and credits, and this log starts at 2026.09.24.0. Fixed on the way: `docs/mechanics.md` still called `generate` the single entry point, overstated `check_npc_agency`, missed the progress-mark category when adding a move, and described chapter transitions unclearly. The user decided that death comes only through Face Death, as the rulebooks have it; step 9j.5 builds it, and the register entry moves from Open to Until step 9j.
+Documentation only. The md files state the current state, each fact in one file: reasons are written out instead of pointing to CHANGELOG versions, process rules live in CONTRIBUTING.md, the divergence register is the one list of where the AI still decides, and this log starts at 2026.09.24.0. The user decided that death comes only through Face Death; step 9j.5 builds it.
 
-Quality gate: 1557 tests green, project-rule scans clean (documentation drift included), coverage 90.77%, ruff and mypy --strict clean. No code, prompt, or configuration changed, so no Elvira run.
+Quality gate: 1557 tests green, coverage 90.77%.
 
 ## [2026.10.04.0] — 2026-10-04
 
-The Brain chooses a track by id, and track names reach its prompt escaped, since the background vow carries the player's own text. Action moves that mark progress (Strike, Clash, Gain Ground, expeditions, journeys, delves, scene challenges) never marked it, because Datasworn gives a track category only to progress rolls; they name their category in `engine/track_moves.yaml` now. The position resolver's secured-advantage factor never fired (an old move name) and its `matched_momentum` override read fields that do not exist; fixed and removed. The design document is linked instead of copied, Elvira has `docs/elvira.md`, and position and effect are documented. Two Elvira sessions in Starforged: two known problems in the first, none in a combat scenario where Strike and Clash filled the fight's track.
+The Brain chooses a track by id, and track names reach its prompt escaped. Action moves that mark progress (Strike, Clash, Gain Ground, expeditions, journeys, delves, scene challenges) never marked it, because Datasworn gives a track category only to progress rolls; they name their category in `engine/track_moves.yaml` now. The position resolver's secured-advantage factor fires again. The design document is linked instead of copied, and Elvira has `docs/elvira.md`. Two Elvira sessions in Starforged: Strike and Clash filled the fight's track.
 
-Quality gate: 1557 tests green, thirty project-rule scans clean, coverage 90.76%, ruff and mypy --strict clean. Save format unchanged.
+Quality gate: 1557 tests green, coverage 90.76%. Save format unchanged.
 
 ## [2026.09.29.12] — 2026-09-29
 
-Step 9c, soft misses from the engine side. On a miss the engine withholds what the narrator used to leak: every NPC present withholds (`information_gate.miss_stance`), the target NPC's agenda, memories, and secrets stay out with fact budget 0, bystanders lose their memory hint, and the previous Director guidance and a pending revelation wait for a hit. A miss on an information move settles `useful` as no for the place; a miss with a match rolls the story-complication oracle instead of Pay the Price in Starforged and Sundered Isles, as Datasworn describes it. Elvira gained the `miss` scenario and a report line scoring misses alone; the Director's JSON failure warning shows how the answer began. Documentation fixed where step 9b had left it stale.
+Step 9c, soft misses from the engine side. On a miss every NPC present withholds, the target NPC's agenda, memories, and secrets stay out of the prompt, and Director guidance and a pending revelation wait for a hit; an information miss settles `useful` as no, and a miss with a match rolls the story-complication oracle where the setting has one. Elvira gained a `miss` scenario. On audited misses, result integrity rose from 3.0 to 3.4 of 5; three other variants measured no better and were dropped.
 
-Measured on audited misses (result integrity of 5, overall of 10, three to five sessions each): baseline 3.0 / 5.8; the kept version 3.4 / 6.1. Dropped because they measured no better: leaving three narrator rules out on a miss (2.4 / 4.7), the move's Datasworn miss text in the prompt (2.2 / 4.3; "reveals an unwelcome truth" read as licence to reveal), and settling `occupied` as yes on an information miss (3.3 / 5.9; "someone is here" answered a search for an intruder).
-
-Quality gate: 1550 tests green, project-rule scans clean, coverage 90.65%, ruff and mypy --strict clean.
+Quality gate: 1550 tests green, coverage 90.65%.
 
 ## [2026.09.29.11] — 2026-09-29
 
@@ -133,15 +102,13 @@ Documentation only. The working agreements that lived only in conversation are n
 
 ## [2026.09.29.9] — 2026-09-29
 
-Documentation only. The user asked for no priorities or open items beside the steps: the priorities list is gone, and every item on it is now a numbered step in the order of work. The soft miss becomes the next step (9c, with a miss scenario for Elvira first); then the generators (9d), the open Elvira findings (9e), the remaining prompt work (9f), fixtures through the real creation path (9g), the first principle audit (9h), revelations (9i), and the rules conformance items (9j). A new finding becomes a substep or a step in the same commit.
+Documentation only. At the user's request the priorities list is gone and every item on it is a numbered step in the order of work: 9c soft misses, 9d generators, 9e Elvira findings, 9f prompt work, 9g fixtures, 9h principle audits, 9i revelations, 9j rules conformance. A new finding becomes a substep or a step in the same commit.
 
 ## [2026.09.29.8] — 2026-09-29
 
-Step 9b, chapters as Mythic adventures. A chapter is Mythic's and the Adventure Crafter's adventure within a campaign; the EdgeTales resets are gone: health, spirit, supply, momentum, and clocks carry over, the chaos factor restarts at Mythic's 5, and a game that is over can only continue through succession. The engine writes the chapter record from its own data (conflict, vows, plotlines, threads, people, the dead, threats, the place), so the `chapter_summary` AI role is removed, and with it the AI's projections of how NPCs change between chapters and its choice of where the next chapter starts. Step 9c, the generators, is next. The save format breaks.
+Step 9b, chapters as Mythic adventures. The EdgeTales resets are gone: health, spirit, supply, momentum, and clocks carry over, the chaos factor restarts at Mythic's 5, and a game that is over continues only through succession. The engine writes the chapter record from its own data, so the `chapter_summary` AI role is removed. An Elvira `chapter_end` session reached the new chapter with its clocks carried over and no engine warning. The save format breaks.
 
-Checked: an Elvira `chapter_end` session in Sundered Isles reached the new chapter with its two clocks carried over and no engine warning; its two problems are soft misses (priority 3). The record it wrote listed a vow twice and used the blueprint's conflict sentence as a title; both fixed.
-
-Quality gate: 1529 tests green, thirty project-rule scans clean, coverage 90.44%, ruff and mypy --strict clean.
+Quality gate: 1529 tests green, coverage 90.44%.
 
 ## [2026.09.29.7] — 2026-09-29
 
@@ -149,17 +116,17 @@ Documentation only. The user made chapters the next step: new step 9b treats a c
 
 ## [2026.09.29.6] — 2026-09-29
 
-Documentation only. A one-time coverage map, read and then removed, checked every part of the four Datasworn rulesets, Mythic GME 2e, the Adventure Crafter, Blades, and the design document against the code and the roadmap; everything that stood nowhere is now on the roadmap, including three new steps (10b launch oracles, 13c foe actions and plot twists from oracles, 36 setting tooling). The register gains the session moves and Mythic's rules-system parts as Permanent, and foe actions and ranks decided by the AI until step 13c. The miss experiment (priority 3) is recorded; every role stays on one model.
+Documentation only. A one-time coverage map checked every part of the four Datasworn rulesets, Mythic GME 2e, the Adventure Crafter, Blades, and the design document against the code and the roadmap. What stood nowhere became roadmap work, including new steps 10b, 13c, and 36, and the register gained the session moves, Mythic's rules-system parts, and foe actions decided by the AI.
 
 ## [2026.09.29.5] — 2026-09-29
 
-The user's two decisions, built from the classic move texts. Classic Ironsworn marks experience by the vow's rank when Fulfill Your Vow hits (troublesome 1 to epic 5, one rank lower on a weak hit) instead of filling Starforged's legacy tracks. Draw the Circle takes the boasts the player declares, read by the Brain: up to two on a strong hit, one on a weak hit, each +1 momentum with its cost from `engine/boasts.yaml`; its weak hit no longer grants momentum without a boast, which closes the last known momentum divergence. New register entries: a classic successor inherits no legacy boxes, and a duel opens no combat track (until step 13b).
+The user's two decisions, built from the classic move texts. Classic Ironsworn marks experience by the vow's rank when Fulfill Your Vow hits, instead of filling Starforged's legacy tracks. Draw the Circle takes the boasts the player declares, read by the Brain, each for +1 momentum and its cost from `engine/boasts.yaml`. New register entries: a classic successor inherits no legacy boxes, and a duel opens no combat track.
 
-Quality gate: 1535 tests green, thirty project-rule scans clean, coverage 90.47%, ruff and mypy --strict clean.
+Quality gate: 1535 tests green, coverage 90.47%.
 
 ## [2026.09.29.4] — 2026-09-29
 
-Documentation only. ARCHITECTURE.md records the order of preference: a tabletop system decides first, an engine rule second, the AI only writes prose and reads free text; the divergence register judges departures by it. The user decided that classic Ironsworn earns experience by its own rule (section R) and that boasts are modelled (step 13b). New sketch step 9c: the engine settles when a revelation lands, and the revelation-check AI call goes, since it validates AI output after the fact. The roadmap lists every place the AI still decides and the system that takes it over, with steps 11 and 35 sharpened to use the Adventure Crafter's character tables and to build on facts.
+Documentation only. ARCHITECTURE.md records the order of preference: a tabletop system decides first, an engine rule second, and the AI only writes prose and reads free text. The user decided that classic Ironsworn earns experience by its own rule and that boasts are modelled. A new sketch step lets the engine settle when a revelation lands, so the revelation-check AI call can go.
 
 ## [2026.09.29.3] — 2026-09-29
 
@@ -169,75 +136,43 @@ Quality gate: 1526 tests green, thirty project-rule scans clean, ruff and mypy -
 
 ## [2026.09.29.2] — 2026-09-29
 
-Loose ends. `docs/divergences.md` becomes a register: every departure from the design document or a rulebook states why and ends with a status (Permanent, Until step N, or Open), and a new project-rule scan rejects an entry without one. New entries: the narrator still invents off-screen NPC actions (until step 12), content is narrated rather than generated (until 9b), the WRONG/RIGHT prompt examples, the pause on AI failure, Mythic under CC BY-NC; classic experience and boasts are Open. `apply_progress_and_legacy` takes the rolled track and raises instead of assuming a vow of rank dangerous. Setting yaml gains a required `playable`, so Delve is no longer skipped by name. No Elvira session; the next release's measurement runs on this code.
+`docs/divergences.md` becomes a register: every departure says why and ends with a status (Permanent, Until step N, or Open), and a project-rule scan rejects an entry without one. `apply_progress_and_legacy` takes the rolled track and raises instead of assuming a rank. Setting yaml gains a required `playable`, so Delve is no longer skipped by name.
 
-Quality gate: 1526 tests green, thirty project-rule scans clean, coverage 90.42%, ruff and mypy --strict clean.
+Quality gate: 1526 tests green, coverage 90.42%.
 
 ## [2026.09.29.1] — 2026-09-29
 
-A correction of a misread input replays the turn through the turn's own code (`replay_turn`) instead of a separate copy: same scene type, the facts already settled, and the dice already rolled, rescored with the corrected stat. The copy narrated a correction without a new roll as dialog, so a miss vanished, and it skipped track creation, weak-hit clock ticks, and the scene end. The correction AI no longer decides whether to reroll (`reroll_needed` and `corrected_stat` are gone), and a corrected turn can offer a momentum burn. The turn snapshot is taken after the scene test and keeps the scene type; the save format breaks.
+A correction of a misread input replays the turn through the turn's own code (`replay_turn`) with the same scene type, facts, and dice, instead of a separate copy that lost misses, track creation, clock ticks, and the scene end. The correction AI no longer decides whether to reroll, and a corrected turn can offer a momentum burn. Elvira's new checks caught a restore that cut the narration history by length; it is copied whole now. The save format breaks.
 
-Elvira's new checks caught at once that a restore still cut the narration history and the session log by length, which brings back the wrong entries once the history is at its cap of three; both lists are now copied whole. One Elvira session in classic, eight turns: a burn and a correction replayed, five facts resolved; one Director answer ran to the token limit (roadmap priority 2).
-
-Quality gate: 1523 tests green, twenty-nine project-rule scans clean, coverage 90.48%, ruff and mypy --strict clean.
+Quality gate: 1523 tests green, coverage 90.48%.
 
 ## [2026.09.29.0] — 2026-09-29
 
-Step 9a, fact resolution: the Brain names the facts an action or question turns on, Mythic's fate chart settles them with odds the engine derives from `engine/fact_resolution.yaml`, and the narrator gets them as `<facts>`. A fact belongs to its place and clears on a move, a chapter start, or a succession; a hit settles a yes where the type says so. Ask the Oracle stays the move for questions: a yes/no question that a fact type covers is answered by the fact. `resolve_likelihood` is gone. The save format breaks.
+Step 9a, fact resolution: the Brain names the facts an action or question turns on, Mythic's fate chart settles them with odds the engine derives from `engine/fact_resolution.yaml`, and the narrator gets them as `<facts>`. A fact belongs to its place, and a hit settles a yes where the type says so. The momentum burn resumes from a snapshot taken after the roll instead of overwriting the previous turn. Two Elvira sessions: facts resolved in play, no engine warnings. The save format breaks.
 
-Momentum burn: it overwrote the previous turn's log entries and lost the turn's move, track, and events; it now resumes from a snapshot taken after the roll and runs the turn's own path. A restore copies the story lists whole. Also fixed: an interrupt event shown twice, a corrected oracle turn losing its answer, player input unescaped in the Brain prompt.
-
-Elvira checks what a burn or correction may change and counts resolved facts. Two sessions (classic, eight turns, and the burn scenario): facts resolved in play, burn and rollback correct, no engine warnings; they showed a hit clearing a no, now fixed.
-
-Quality gate: 1517 tests green, twenty-nine project-rule scans clean, coverage 90.52%, ruff and mypy --strict clean.
+Quality gate: 1517 tests green, coverage 90.52%.
 
 ## [2026.09.27.2] — 2026-09-27
 
-Documentation only: the user decided the two points step 9a left open. A fact hangs on an NPC, by the id the Brain's prompt offers, or on the current location, with no free-text objects, so the engine can recognise it again. Every fact is cleared when the player moves and at a chapter start, and each fact type says in yaml whether a hit on an action that depended on it clears it. Resolved facts live in one list on the world state. Roadmap step 9a records both decisions and their rejected alternatives.
+Documentation only: the user decided step 9a's open points. A fact hangs on an NPC id or on the current location, every fact clears when the player moves and at a chapter start, each fact type says whether a hit clears it, and resolved facts live in one list on the world state.
 
 ## [2026.09.27.1] — 2026-09-27
 
-Openings: the engine owns the opening clock and the time of day, and a succession applies its opening extraction instead of discarding it.
+The engine owns the opening clock and the time of day. The opening extraction asked the model for both and overwrote the engine's clock and time, and a succession discarded its extraction, so the successor's opening NPCs were never registered. The extraction now returns only NPCs, memories, deaths, location, and scene context; every opening starts at `opening.time_of_day`, only a new game gets an opening clock, and a succession applies its extraction. Two Elvira sessions in Sundered Isles reached succession and a chapter transition without engine warnings. The user decided how step 9a derives its odds.
 
-Cause. `opening_setup_extractor` asked for a threat clock and a time of day although the engine sets both before the opening narration. At a new game `apply_world_setup` then replaced every clock with the model's, including the engine's clock named after the background vow, with a size the model chose, and overwrote the time. A chapter opening added the model's clock and took its time only from the extraction, which left the time empty for the whole chapter whenever the extraction was skipped. A succession made the extraction call and threw the answer away, so the successor's opening NPCs were never registered.
-
-Changes. The opening extraction returns NPCs, their first memories, deceased NPCs, the location, and the scene context; its prompt, schema, fallback, and log line lose the clock and the time. Every opening (new game, chapter, succession) starts at `opening.time_of_day`; only a new game gets an opening clock, so chapters and successions get their clocks from Adventure Crafter plot points and random events like the rest of play. A succession applies its extraction, deceased NPCs included, and skips NPCs already in play. With no clock left from a model, `conform_clock_segments`, `allowed_segments`, and the parser for setup clocks are gone; the rules-conformance test now checks that the configured clock sizes are Blades sizes. The wrappers `_apply_opening_setup` and `_apply_chapter_opening_setup`, a string replace that changed nothing, and dead validator mocks in two tests are removed. Two new tests (the schema leaves clocks and time to the engine; a succession registers its opening NPCs and keeps the engine's time) fail without the change.
-
-Roadmap. Step 9a's odds are decided by the user: each fact type names its own base odds and the game state that shifts them, the chaos factor stays out of the score because the fate chart already reads it, and the score converts to odds through `score_to_odds`.
-
-Checked: two Elvira sessions in Sundered Isles. `near_death` (aggressor, eight turns) reached game over and succession; `chapter_end` (explorer, five turns) reached the chapter transition, and its final save holds the engine's time of day and one clock from a random event. No engine warning or error in either; the four problems are narration audits of 3 or 4 out of 10 for misses that still give a lead (roadmap priority 3). The successor in `near_death` kept an introduced NPC, so its opening extraction was not called in play; the new unit test covers that path. In `chapter_end` a returning NPC and a new NPC of almost the same name stood side by side in chapter two (roadmap priority 2). About 28 cents for both sessions before caching.
-
-Quality gate: 1489 tests green (five fewer: the clock-size cases and the wrapper tests went with their code), twenty-nine project-rule scans clean, coverage 90.15%, ruff check and ruff format clean on 208 files, mypy --strict clean on 109 source files. Save format unchanged.
+Quality gate: 1489 tests green, coverage 90.15%. Save format unchanged.
 
 ## [2026.09.27.0] — 2026-09-27
 
-Documentation only: the working documents slimmed down and restructured along common practice, with duplicates and claims the code contradicts removed, and roadmap step 9 split so that fate comes back first.
+Documentation only: the working documents restructured along common practice, with duplicates and claims the code contradicts removed. ARCHITECTURE.md becomes a bird's-eye view, CONTRIBUTING.md returns, and the details move to `docs/` (`ai.md`, `mechanics.md`, `settings.md`, `divergences.md`); the documentation-drift scans follow. Roadmap step 9 is split so that fact resolution comes first. The md files went from about 257 to 161 KB.
 
-Structure. ARCHITECTURE.md becomes a bird's-eye view (the core idea, the turn pipeline, a code map per package, state, configuration, the interface) instead of a reference for everything. CONTRIBUTING.md returns, undoing the merge of 2026.05.08.0: workflow, rules for a change, project rules, code standards, and testing, Elvira included. The details moved to `docs/`: `ai.md` (roles, models, routing, caching, failures, streaming, tool calling), `mechanics.md`, `settings.md`, and `divergences.md`. The per-file map and the module-ownership table are gone, and the rule against comments now points at the md files in the root and in `docs/`. The documentation-drift scans follow: the path and symbol scans read every md file in the root and in `docs/` except the CHANGELOG and the roadmap, and the file-map scan became a code-map scan that requires every package in the code map of ARCHITECTURE.md.
-
-Corrected on the way: Elvira plays and judges on GPT-6 Luna, not on the game's model; the narrator is GLM 5.3, not GLM 5.3 Flash; an eight-turn session costs about 16 cents, not two to three; the Director's truncated answers were the carriage-return loop of 2026.09.26.20; the Director's ban on gothic horror no longer applies to every setting; idea E5 was done in 2026.09.24.58; step 11 no longer names Director tools that 2026.09.26.11 removed; "genre constraints", removed in 2026.04.27.10, and a narrator "validate" step are gone; AUDIT no longer says that `load_game` repairs old data.
-
-CHANGELOG. Entries 2026.09.26.1 to .19 shortened to their essentials, as 2026.09.26.1 did for the entries before it; their full text is in commit 5baa6ed.
-
-Roadmap. Current state holds only the open priorities, the working agreements, and notes for this machine; its rules for a change moved to CONTRIBUTING.md. Step 9 is split into 9a, fact resolution, now NEXT, and 9b, the generators; fact resolution becomes the first category of the entry point decided in 2026.09.24.47, and where a fact's odds come from is proposed and marked to confirm before building.
-
-AUDIT. Written for local work instead of fresh chats, with a compact Status, and anchored in CONTRIBUTING.md and ARCHITECTURE.md.
-
-Sizes: the md files together went from about 257 to 161 KB; ARCHITECTURE.md, read at the start of every session, from 89 to 11.
-
-Quality gate: 1494 tests green, twenty-nine project-rule scans clean (the documentation-drift scans included), coverage 90.14%, ruff check and ruff format clean on 208 files, mypy --strict clean on 109 source files. No engine code, prompt, or configuration changed, so no Elvira run. Save format unchanged.
+Quality gate: 1494 tests green, coverage 90.14%.
 
 ## [2026.09.26.20] — 2026-09-26
 
-The structured answers' "runaway" was a carriage-return loop inside the JSON; the tokens are banned, the schema goes into every structured prompt, and every role runs on GLM 5.3 again.
+The "runaway" of GLM 5.3's structured answers was a carriage-return loop inside the JSON, which a JSON grammar allows. Every cluster bans the 396 tokens of its tokenizer that hold a carriage return through `logit_bias`, and every call with a schema gets the compact schema at the end of its prompt, so cached prefixes stay intact. Before, 3 of 220 structured calls broke off at the token limit; after, 0 of 360. Every role runs on GLM 5.3 again; an eight-turn Elvira session showed no failures.
 
-Cause. Streaming the Brain's own request on GLM 5.3 150 times caught one failure whole: after `{"type": "action", "move": "ask_the_oracle"` the model wrote a space and then about 8,180 carriage returns (`\r`) to the 8192-token limit, with no reasoning at all. A JSON grammar allows any whitespace between tokens, so the enforced schema could not stop it, and Together strips trailing whitespace from a non-streamed answer, which is why the failures of 2026.09.26.9 to .19 looked like short broken JSON with an empty reasoning field and were called a reasoning runaway; those entries' "runaway" is this loop. Together returns reasoning text in `reasoning_content` whenever the model reasons.
-
-Changes. GLM 5.3 and GLM 5.3 Flash share one tokenizer of 154,820 tokens, 396 of which contain a carriage return; JSON never needs one, and neither does prose. `config.yaml` bans all 396 in every cluster through `logit_bias`, written once under the YAML anchor `no_carriage_return` and referenced by the others; Together accepted the full list for both models. Together's structured-output guide says to put the schema in the prompt as well as in `response_format`, and Fireworks and OpenAI warn that a model which does not see the schema may emit whitespace until the limit. `RoutingProvider` now appends one line from `prompts/blocks.yaml` with the compact schema to the end of the last user message of every call that has a schema (to the system prompt if the last message is not plain user text), last so that nothing before it changes and every cached prefix stays intact, including the Director's, whose schema changes with the NPCs selected for reflection. Two new tests cover the placement and an unchanged call without a schema. With structured calls safe, every cluster runs on `zai-org/GLM-5.3`.
-
-Measured: before the changes 3 of 220 structured GLM 5.3 calls (160 Brain, 60 metadata) broke off at the limit; after them 0 of 360 (300 Brain calls on ten player actions, 60 metadata extractions), all ending normally, which at the earlier rate would happen by chance less than one time in a hundred. An eight-turn Elvira session in classic as aggressor on the new default: no Brain, Director, or extraction failure and no engine warning or error, six streamed turns identical to the final text, the first sentence after a median 3.1 seconds, the Brain's prompt taking 1,024 of 1,843 tokens from the cache, the narrator's 2,560 of 5,134, and about 16 cents for the session before caching.
-
-Quality gate: 1494 tests green, twenty-nine project-rule scans clean, coverage 90.13%, ruff check and ruff format clean on 208 files, mypy --strict clean on 109 source files. Save format unchanged.
+Quality gate: 1494 tests green, coverage 90.13%. Save format unchanged.
 
 ## [2026.09.26.19] — 2026-09-26
 

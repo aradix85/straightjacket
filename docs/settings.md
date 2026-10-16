@@ -44,7 +44,7 @@ creation_flow:
   starting_asset_categories: [companion, module]
 ```
 
-`id` is the yaml file's stem, and `datasworn_id` the basename of the Datasworn JSON. `playable: false` keeps a package out of character creation and out of Elvira's choice, as for Delve. `parent` names the setting it inherits from. `vocabulary` keeps the narrator's word choice in the setting and is the one hand-written block the Yaml content boundary allows (CONTRIBUTING.md). `oracle_paths.names` drives NPC name rolls and `oracle_paths.threats` threat naming (`docs/mechanics.md`). `creation_flow` controls the client's creation steps.
+`id` must equal the yaml file's stem, which the loader checks, and `datasworn_id` is the basename of the Datasworn JSON. `playable: false` keeps a package out of character creation and out of Elvira's choice, as for Delve. `parent` names the setting it inherits from. `vocabulary` keeps the narrator's word choice in the setting and is the one block of hand-written game content the Yaml content boundary allows (CONTRIBUTING.md). `oracle_paths.names` drives NPC name rolls and `oracle_paths.threats` threat naming (`docs/mechanics.md`). `creation_flow` controls the client's creation steps.
 
 ## Inheritance
 

@@ -12,6 +12,7 @@ from ..logging_util import log
 from ..models import EngineConfig, GameState, NpcData
 from ..prompt_blocks import get_narration_lang
 from ..prompt_loader import get_prompt
+from ..xml_utils import xe as _xe
 
 
 def call_correction_brain(
@@ -28,9 +29,10 @@ def call_correction_brain(
     _trunc = eng().truncations
 
     def _npc_line(n: NpcData) -> str:
-        aliases = f" aliases:{','.join(n.aliases)}" if n.aliases else ""
+        aliases = f" aliases:{_xe(','.join(n.aliases))}" if n.aliases else ""
         return (
-            f'id:{n.id} name:"{n.name}"{aliases} disposition:{n.disposition} desc:"{n.description[: _trunc.log_xlong]}"'
+            f'id:{n.id} name:"{_xe(n.name)}"{aliases} disposition:{n.disposition} '
+            f'desc:"{_xe(n.description[: _trunc.log_xlong])}"'
         )
 
     npc_lines = "\n".join(_npc_line(n) for n in game.npcs) or _defaults["no_npcs"]
@@ -47,18 +49,18 @@ def call_correction_brain(
     system = get_prompt("correction_brain", lang=lang)
     w = game.world
 
-    user_msg = f"""## correction from player: {correction_text}
+    user_msg = f"""## correction from player: {_xe(correction_text)}
 
 <last_turn>
-player_input: {snap.player_input}
-brain_interpretation: move={brain.move} stat={brain.stat} intent={brain.player_intent[: _trunc.prompt_short]}
+player_input: {_xe(snap.player_input)}
+brain_interpretation: move={brain.move} stat={brain.stat} intent={_xe(brain.player_intent[: _trunc.prompt_short])}
 roll: {roll_summary}
-narration (first {_trunc.narration_preview} chars): {(snap.narration or "")[: _trunc.narration_preview]}
+narration (first {_trunc.narration_preview} chars): {_xe((snap.narration or "")[: _trunc.narration_preview])}
 </last_turn>
 
 <current_state>
-location: {w.current_location}
-scene_context: {w.current_scene_context[: _trunc.prompt_short]}
+location: {_xe(w.current_location)}
+scene_context: {_xe(w.current_scene_context[: _trunc.prompt_short])}
 time: {w.time_of_day}
 npcs:
 {npc_lines}

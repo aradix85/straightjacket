@@ -132,6 +132,13 @@ def test_setting_yaml_unknown_key_raises(section: str | None) -> None:
         _parse_setting_config(data, "probe.yaml")
 
 
+def test_setting_yaml_id_must_equal_its_file_name() -> None:
+    from straightjacket.engine.datasworn.settings import _parse_setting_config
+
+    with pytest.raises(ValueError, match="must equal the file name 'other'"):
+        _parse_setting_config(_minimal_setting_yaml(), "other.yaml")
+
+
 def test_setting_yaml_must_say_whether_it_is_playable() -> None:
     from straightjacket.engine.datasworn.settings import _parse_setting_config
 

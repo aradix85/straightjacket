@@ -1196,7 +1196,7 @@ _LAYER_FORBIDDEN: dict[str, frozenset[str]] = {
     "db": frozenset({"core", "datasworn", "npc", "mechanics", "ai", "tools"}) | _UPPER,
     "npc": frozenset({"core", "ai", "tools"}) | _UPPER,
     "mechanics": frozenset({"core", "ai", "tools"}) | _UPPER,
-    "tools": frozenset({"core"}) | _UPPER,
+    "tools": frozenset({"core", "ai"}) | _UPPER,
     "ai": _UPPER,
     "core": _UPPER,
     "game": frozenset({"correction", "web"}),

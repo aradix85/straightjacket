@@ -95,7 +95,7 @@ Two decisions open the step and are taken with the user before building. First, 
 
 **9d.1** Categories location and settlement registered in `engine/generation.yaml`, each with a callsite in play where the first decision puts it, and npc for the oracle-rolled name (9d.5). Step 10 adds encounter; steps 11, 25, and 26 widen npc and add waypoints and sites.
 
-**9d.2** An oracle accessor that takes a table's format from setting yaml instead of branching on setting names: Starforged's flat d100 tables, classic's tables, and Delve's theme plus domain for the sites of step 26. Sundered Isles' cursed variants come with the cursed die (step 28.2); until then the accessor reads its standard tables.
+**9d.2** An oracle accessor that takes a table's format from setting yaml instead of branching on setting names: Starforged's flat d100 tables, classic's tables, and Delve's theme plus domain for the sites of step 26. Sundered Isles' cursed variants come with the cursed die (step 28); until then the accessor reads its standard tables.
 
 **9d.3** Per-category oracle paths in setting yaml as a mapping keyed by category name, read with `get_raw` because the keys are domain data; a registered category without a path in the active setting's parent chain raises KeyError. The parent-chain lookup exists: `datasworn/settings.py` → `SettingPackage.oracle_data_for`, `_resolve_oracle_paths`. Later categories add their tables to this mapping rather than new fields on `OraclePaths` (steps 11 and 14b), and when NPC naming moves behind the npc category, `oracle_paths.names` moves into its entry.
 
@@ -105,25 +105,7 @@ Two decisions open the step and are taken with the user before building. First, 
 
 **9d.6** Tests: smoke with stub oracle data, the registry and the yaml list stay equal (as `tests/test_fact_resolution.py` checks for `fact`), a missing path raises. If generated entities are persisted, the save format breaks.
 
-Definition of done:
-
-- Location, settlement, and npc are registered in `engine/generation.yaml` and dispatched by `generate`; an unknown category or a missing oracle path raises.
-- Each category fires where the opening decision puts it, with a callsite in play.
-- Oracle paths per category live in the setting yaml; no Python branches on setting names.
-- Generated content reaches the narrator as `<generated>`, with the vocabulary decision of 9d.4 applied.
-- Generation reads the world state it lands in, as the design document asks (no prosperous trading post in a region at war): each category names the game-state inputs that weight its tables, the way a fact type names its inputs in `engine/fact_resolution.yaml`.
-- `datasworn/cascade.py` → `roll_oracle_cascade` has a callsite through a category, or 9d.5's move to step 10 is recorded.
-- The entry "Locations and settlements are narrated, not generated" leaves `docs/divergences.md`.
-- ARCHITECTURE.md ("Engine-resolved fiction") and `docs/mechanics.md` say what is generated and when.
-- An Elvira run shows `<generated>` tags in play and no new engine warnings.
-- Quality gate green, no new project-rule violations, one CHANGELOG entry.
-
-Reference patterns:
-
-- Entry point and registry: `mechanics/generation.py` → `generate`, `_GENERATORS`; `engine/generation.yaml`.
-- A generated result as a prompt block: `prompt_shared.py` → `_facts_block`, templates in `prompts/blocks.yaml`.
-- Parent-chain oracle lookup: `datasworn/settings.py` → `SettingPackage.oracle_data_for`.
-- Cascade rolls: `datasworn/cascade.py` → `roll_oracle_cascade`, used today by threat naming.
+**9d.7** Generation reads the world state it lands in, as the design document asks (no prosperous trading post in a region at war): each category names the game-state inputs that weight its tables, the way a fact type names its inputs in `engine/fact_resolution.yaml`.
 
 ### 9e — Open findings from Elvira runs
 
@@ -156,6 +138,10 @@ The audits of AUDIT.md, one session per principle or submodule as it prescribes,
 **9h.7** For every AI-call carve-out, where its failure becomes visible: a caught failure plays on silently unless Elvira or the log shows it (principle 3).
 
 **9h.8** Every field of `mechanics/move_effects.py` → `OutcomeResult` has a reader in the production path, not only in tests: results that were computed but never applied have hidden faults before (progress marks that never reached a track, a position factor that never fired, and `clock_fills`, step 9k) (principle 5).
+
+**9h.9** `mechanics/world.py` → `choose_story_structure` looks a tone up in `story.kishotenketsu_probability`, but its three callers pass the setting id, `setting_genre`, or `setting_tone`, which is always empty, so no key ever matches and every blueprint takes `kishotenketsu_fallback_probability`. The tone table and the silent fallback date from EdgeTales; which structure a setting gets is decided with the user (principles 2 and 3).
+
+**9h.10** `creation.truth_threads` in `engine/creation.yaml` is hand-written game content, which the Yaml content boundary rules out: it names the tension a chosen truth starts as a thread ("Scarcity drives conflict") with no table behind it. Check whether the truth's own Datasworn text can name the thread, or the threads go (principle 2).
 
 ### 9i — Revelations settled by the engine
 
@@ -279,177 +265,73 @@ Duels: Draw the Circle's boasts are modelled, but the duel opens no combat track
 
 **13b.5** Tests: each formal move through the move-outcome pipeline, each trigger under its exact condition, `advance_menace_on_miss` as regression.
 
-Done: every move in groups A and B is wired, and `docs/mechanics.md` names the new engine triggers.
-
 ### 13c — Foe actions and plot twists from oracles
 
 What a foe does in a fight comes from the setting's combat-action oracle (classic turning point combat action, Starforged and Sundered Isles misc combat action, Delve combat event) instead of the narrator. A new track's rank in classic comes from the challenge-rank oracle when the player names none, instead of the Brain's guess. Classic's major plot twist joins the turning-point sources. Each result reaches the narrator as a structured tag.
 
 ### 14a — Faction data model
 
-**14a.1** FactionData dataclass: name, goal, tenets, members (NPC ids), and its standing toward the other factions (allied, rival, or hostile), which the design document places in a setting's static layer; required fields; step 16 adds reputation.
-
-**14a.2** `faction_id` on NpcData.
-
-**14a.3** Faction table in the DB; round trip through SerializableMixin.
-
-**14a.4** Tests: round trip of NpcData and FactionData, membership survives save and load.
+FactionData with name, goal, tenets, members, and its standing toward the other factions, which the design document places in a setting's static layer; `faction_id` on NpcData and a faction table in the database. The save format breaks.
 
 ### 14b — Scheme clocks and chapter-spanning factions
 
-**14b.1** A scheme clock per faction, ticking every N scenes (`engine/factions.yaml` → `scheme_clock_interval`, new); a fill queues a faction event. The creation site calls `spawn_keyed_scenes_for_clock` (`engine/clock_keyed_scenes.yaml` already covers `scheme`).
-
-**14b.2** ChapterSummary gains `factions: list[FactionData]`, through the three-place chapter pattern.
-
-**14b.3** Faction archetypes from Datasworn oracles: a faction category joins the per-category oracle-path mapping of step 9d.3, with its paths in the setting yamls (starforged `factions`, sundered_isles `faction`; classic Ironsworn has none). A setting with factions and no path raises KeyError.
-
-**14b.4** Faction-event tags are prompt-injected for the narrator; the Director gets faction context for NPC reflections (see the note on Director tools above).
-
-**14b.5** Tests: scheme clocks tick, faction events queue, snapshot and restore across a chapter boundary.
+A scheme clock per faction that ticks on its own and queues a faction event when full (`engine/clock_keyed_scenes.yaml` already covers `scheme`); factions carry over chapters through the three-place chapter pattern; faction archetypes come from the setting's Datasworn oracles through the per-category oracle-path mapping of 9d.3 (classic Ironsworn has none).
 
 ### 14c — Clock and threat pressure in narrative direction
 
-The narrator only learns about a clock when it fills, while the design document names clock states and threat levels as sources of narrative intensity. The engine computes a pressure tier from the fullest active threat or scheme clock and the highest threat menace (thresholds in engine yaml) and feeds it into the existing intensity derivation; no numbers or clock names reach the prompt. Measure with Elvira before and after.
+The narrator learns about a clock only when it fills, while the design document names clock states and threat levels as sources of narrative intensity. A pressure tier from the fullest clock and the highest menace feeds the existing intensity derivation, with no numbers or names in the prompt; measured with Elvira before and after.
 
 ### 15 — Faction prompts and status
 
-**15.1** Faction context for activated NPCs in the prompt (about 15 tokens per NPC), budget in `engine/factions.yaml`.
-
-**15.2** `<faction_event>` tag on a scheme-clock fill (about 30 tokens), template in `prompts/blocks.yaml`.
-
-**15.3** `/factions` status command in narrative form, strings in `strings/*.yaml`.
-
-**15.4** Tests.
+Faction context for activated NPCs, a `<faction_event>` tag when a scheme clock fills, and a `/factions` status command in narrative form.
 
 ### 16 — Faction reputation and NPC loyalty
 
-**16.1** Player reputation per faction (hostile, neutral, allied); an extreme overrides personal bond in the stance resolver. Thresholds in yaml.
-
-**16.2** NPC loyalty derived from faction bond against player bond through connection tracks; no new NpcData field.
-
-**16.3** The reputation field on FactionData reserved in 14a.1.
+Player reputation per faction, whose extremes override personal bond in the stance resolver, and NPC loyalty derived from faction bond against player bond through connection tracks.
 
 ### 18 — Asset mechanics beyond adds
 
-`GameState.asset_abilities` records the enabled abilities of every path and asset, and enabled abilities with an add reach the action roll through the Brain's `bonus_id` (`mechanics/assets.py`, `mechanics/bonuses.py`). The steps below build on that mechanism.
-
-**18.1** Rerolls granted by abilities.
-
-**18.2** Extra effects on a hit (mark progress, take momentum, clear an impact) beyond the momentum-on-hit already handled.
-
-**18.3** Condition meters on assets (companion health, vehicle integrity), shared with step 19.
-
-**18.4** Choosing which ability an upgrade enables instead of the next in order.
-
-**18.5** Tests per effect type with real Datasworn assets and ids exactly as character creation stores them.
+Builds on the enabled abilities and the Brain's `bonus_id` (`mechanics/assets.py`, `mechanics/bonuses.py`): rerolls, extra effects on a hit, condition meters on assets, and choosing which ability an upgrade enables. Tests use real Datasworn assets with ids as character creation stores them.
 
 ### 19 — Companion and vehicle assets
 
-**19.1** Companion health tracks (not NpcData).
-
-**19.2** Vehicle condition tracks; Withstand Damage as a suffer move on vehicle condition.
-
-**19.3** Setting-specific companion and vehicle assets.
-
-**19.4** `/assets` status command.
-
-**19.5** Companions and vehicles extend `<character_state>`; template in yaml.
-
-**19.6** Tests.
-
-Starforged's starship history and quirks (campaign launch oracles) are rolled when the command vehicle is created.
+Companion health and vehicle condition tracks, with Withstand Damage as a suffer move; an `/assets` command; companions and vehicles in `<character_state>`. Starforged's starship history and quirks are rolled when the command vehicle is created.
 
 ### 20 — Asset rollout per setting
 
-One session per setting, every Datasworn asset working through the step 18 pipeline: **20.1** Starforged, **20.2** Classic, **20.3** Delve, **20.4** Sundered Isles. Classic's rituals bring the mystic-backlash oracle with them (20.2). An asset that needs a fix gets it in the pipeline, not as a per-setting patch.
+One session per setting (Starforged, classic, Delve, Sundered Isles), every Datasworn asset through the step 18 pipeline; classic's rituals bring the mystic-backlash oracle with them.
 
 ### 21 — Relationship event detection
 
-**21.1** Event types in `engine/relationship_events.yaml` → `types`: promise_broken, betrayal, sacrifice, debt_owed, debt_repaid, loyalty_shown. Extensible.
-
-**21.2** The metadata extractor detects events: `relationship_events: list[{npc_id, event_type, description}]`.
-
-**21.3** Persisted as `relationship_events: list[RelationshipEvent]` on NpcData, with snapshot and restore. Engine-internal, feeding steps 22 and 23.
-
-**21.4** Tests.
+The metadata extraction reports relationship events per NPC (a promise broken, betrayal, sacrifice, a debt owed or repaid, loyalty shown), kept on NpcData for steps 22 and 23.
 
 ### 22 — Emotional requests
 
-**22.1** NPC-to-player requests generated by the engine from NPC state (disposition, bond, recent events). Rules in `engine/emotional_requests.yaml` (new); templates in `prompts/blocks.yaml`.
-
-**22.2** `<emotional_request>` tag in the narrator prompt.
-
-**22.3** `pending_request: str | None` on NpcData, one per NPC.
-
-**22.4** Prompt budget about 40 tokens per NPC with a request, cap in config.
-
-**22.5** Tests.
+The engine generates an NPC's request to the player from disposition, bond, and recent events, one per NPC, and the narrator receives it as `<emotional_request>`.
 
 ### 23 — Refusals, concessions, relationship effects
 
-**23.1** The Brain classifies the player's response to a request as granting or denying.
-
-**23.2** `concessions: int` and `refusals: int` on NpcData.
-
-**23.3** Refusals and concessions affect bond through the connection track and the stance matrix; weights in `engine/relationship_events.yaml` → `effects`.
-
-**23.4** Tests.
+The Brain classifies the player's answer to a request; refusals and concessions move bond through the connection track and the stance matrix.
 
 ### 24 — NPC-NPC triangles involving the player
 
-NPC-to-NPC requests and triangles, limited to those that involve the player. Inter-faction emotional dynamics are out of scope (see the relationship-layer scope in `docs/divergences.md`); factions act through schemes (steps 14 to 16).
+Requests and triangles between NPCs, limited to those that involve the player; emotional dynamics between factions stay out of scope (`docs/divergences.md`), since factions act through schemes (steps 14 to 16).
 
 ### 25 — Expedition moves and waypoints
 
-**25.1** ExpeditionData (Option C): destination, rank, `progress: ProgressTrack`, waypoints, dangers.
-
-**25.2** Expedition moves: Undertake an Expedition, Explore a Waypoint, Make a Discovery, Confront Chaos, Finish, Set a Course; routing config-driven. Set a Course is already offered to the Brain, but it rolls +supply, a condition meter the Brain's stat choice cannot name, so the Brain picks it with stat none and the turn is played as dialog (9h.1).
-
-**25.3** Waypoints as a new step 9d category in yaml.
-
-**25.4** Each waypoint is a scene boundary with a chaos check.
-
-**25.5** About 30 tokens of expedition state prompt-injected while an expedition is active; expedition history for the Director (see the note on Director tools above), the engine's chapter record, and the recap.
-
-**25.6** Tests.
+An expedition object (Option C) and its moves (Undertake an Expedition, Explore a Waypoint, Make a Discovery, Confront Chaos, Finish, Set a Course), with waypoints as a step 9d category and as scene boundaries. Set a Course rolls +supply, which the Brain's stat choice cannot name, so today it is played as dialog (9h.1).
 
 ### 26 — Site exploration data model and Delve
 
-**26.1** SiteData (Option C): name, objective, theme, domain, rank, `progress: ProgressTrack`, denizen matrix, discovered features, active dangers. One model for every setting.
-
-**26.2** Theme and domain from Datasworn; Delve has 8 themes and 10 domains with feature and danger tables.
-
-**26.3** Delve's denizen matrix: a d100 per site in four ranges (common, uncommon, rare, unforeseen), boundaries in per-setting config.
-
-**26.4** Delve moves: Discover a Site, Delve the Depths, Find an Opportunity, Reveal a Danger, Locate Your Objective, Escape the Depths; routing config-driven.
-
-**26.5** About 60 tokens of active site state prompt-injected, the three most recent discovered features; the full feature list for the Director (see the note on Director tools above).
-
-**26.6** Tests.
-
-**26.7** Delve's prepared sites (20 in the data) as ready sites, and its rarities (62) with Wield a Rarity (`rarity/wield_a_rarity`).
+One site model (Option C) for every setting, with Delve's 8 themes and 12 domains, its denizen matrix, its site moves, its 20 prepared sites, and its 62 rarities with Wield a Rarity.
 
 ### 27 — Sites for Starforged and Sundered Isles
 
-**27.1** Starforged derelicts, precursor vaults, and location themes as site configurations, no Python.
-
-**27.2** Sundered Isles exploration as site configurations.
-
-**27.3** Tests.
-
-Starforged's anomaly-effect oracle goes with vaults and anomalies.
+Starforged's derelicts, precursor vaults, and location themes, and Sundered Isles' exploration, as site configurations without Python; Starforged's anomaly-effect oracle comes with the vaults.
 
 ### 28 — Sundered Isles specifics
 
-**28.1** Ship mechanics (command vehicle with modules, condition track, repair) through the step 18 and 19 asset pipeline.
-
-**28.2** Cursed die. The Datasworn texts that mention it, all in the Chattering Skull asset, describe an extra ten-sided die added to the roll with an effect on a 10; check the Sundered Isles rules for when it is rolled at the start of this step, before designing it. The existing `cursed` impact in `engine/impacts.yaml` is a separate mechanic.
-
-**28.3** Data config: naval encounters, treasure, the 16 Sundered Isles oracle categories, exploration.
-
-**28.4** Tests.
-
-Sundered Isles' misc tables join here: interlude scene, sea-battle features, ship damage, magnitude, local seas.
+Ship mechanics through the asset pipeline of steps 18 and 19; the cursed die, checked against the Sundered Isles rules first (the `cursed` impact in `engine/impacts.yaml` is a separate mechanic); the setting's own oracle categories and misc tables.
 
 ### 29 — Crew mechanics
 
@@ -457,42 +339,28 @@ The Sundered Isles crew and morale system.
 
 ### 30 — Player vs PC knowledge
 
-Four strategies in `mythic_gme_2e.json` → `player_vs_pc_knowledge`: Test-Ask-Real (default), Reliable vs Unreliable, Going With It, Extra Knowledge as RP. New field `knowledge_status: str` on RandomEvent and on NpcData secrets, values engine_only, pc_confirmed, pc_denied; strategy in `engine/fate.yaml`.
+Mythic's four strategies for what the player knows against what the character knows (`mythic_gme_2e.json` → `player_vs_pc_knowledge`), with a knowledge status on random events and NPC secrets.
 
 ### 31 — Thread progress tracks and discovery checks
 
-**31.1** ThreadTrackData (Option C) with `progress: ProgressTrack`, `current_phase: int`, and `flashpoint_in_phase: bool`: the focus thread linked to a track of 10, 15, or 20, phases of 5, a forced Flashpoint at a phase boundary without one. Length by vow rank (troublesome 10, dangerous 15, formidable and higher 20; non-vow threads 15) in `engine/thread_tracks.yaml` (new) → `length_by_rank`.
-
-**31.2** Discovery checks: a fate question with a 50/50 floor, mapped to the Thread Discovery Check Table (`mythic_gme_2e.json` → `thread_discovery_check`).
-
-**31.3** A `thread_phase` keyed-scene trigger in `engine/keyed_scenes.yaml` (`value_format: "<thread_id>:<phase>"`) with its evaluator in `mechanics/keyed_scenes.py` → `_EVALUATORS`, and the matching entry in AC's keyed-scene mapping.
-
-**31.4** Tests.
+Mythic's thread progress track (Option C) with its phases and Flashpoints, discovery checks through the fate system, and a `thread_phase` keyed-scene trigger.
 
 ### 32 — Chaos factor variants
 
-Standard, Mid-Chaos, Low-Chaos, and No-Chaos, each with its own fate chart and fate-check modifier table (`mythic_gme_2e.json` → `chaos_variants`). `fate.chaos_mode` required in config. Mythic's prepared-adventure event focus (with its Adventure Feature entry) replaces the standard focus table while a blueprint is active, since a blueprint is a prepared adventure.
+Mythic's chaos variants, each with its own fate chart, and the prepared-adventure event focus while a blueprint is active, since a blueprint is a prepared adventure.
 
 ### 33 — Themed element tables
 
-`data/mythic_gme_2e.json` → `meaning_tables.elements` holds 45 themed d100 tables (locations, characters, objects, adventure tone, character traits, creature descriptors, terrain, and more). `mechanics/random_events.py` → `roll_meaning_table` reads only actions and descriptions and raises on an unknown name.
-
-**33.1** `roll_meaning_table` accepts any table in `meaning_tables.elements`, the valid names read at load, the KeyError kept.
-
-**33.2** Six high-use tables first, chosen through `engine/themed_tables.yaml` (new) from event focus, scene type, and location type. The same word twice means greater intensity.
-
-**33.3** The random-event pipeline uses a themed table when one matches the context and actions and descriptions otherwise; the result goes into the existing `<random_event>` tag.
-
-**33.4** Tests.
+`mechanics/random_events.py` → `roll_meaning_table` reads only actions and descriptions; the 45 themed tables in `mythic_gme_2e.json` → `meaning_tables.elements` join random events by context, six high-use tables first.
 
 ### 34 — Remaining themed tables
 
-The other 39 tables mapped in `engine/themed_tables.yaml`; config only.
+The other 39 themed tables, config only.
 
 ### 35 — Detail check chains
 
-Multi-question fate refinement: each follow-up shifts the odds one step toward the previous answer; at most three, config-driven. Builds on fact resolution (`mechanics/facts.py`): a follow-up is a fact whose odds start from the answer before it, so the chain lands in `WorldState.facts` like any fact.
+Follow-up fate questions whose odds start from the answer before, at most three, built on fact resolution so that the chain lands in `WorldState.facts`.
 
 ### 36 — Setting authoring tooling
 
-The design document names tooling for setting authors as a way to lower the barrier: a command that checks a new setting package (its yaml against the Datasworn file, every oracle path it names, its inheritance) and reports what a generator category still lacks, so that adding a setting stays data work.
+A command that checks a new setting package (its yaml against the Datasworn file, every oracle path it names, its inheritance) and reports what a generator category still lacks, as the design document suggests for setting authors.

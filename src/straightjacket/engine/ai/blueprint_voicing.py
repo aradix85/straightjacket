@@ -11,6 +11,7 @@ from ..prompt_blocks import (
     get_narration_lang,
 )
 from ..prompt_loader import get_prompt
+from ..xml_utils import xe as _xe
 from .provider_base import AICallSpec, AIProvider, create_with_retry
 from .schemas import get_blueprint_voicing_schema
 
@@ -22,12 +23,12 @@ def _build_voicing_user_msg(game: GameState, seed: BlueprintSeed) -> str:
         f"genre:{game.setting_genre}",
         f"tone:{game.setting_tone}",
         f"world:{game.setting_description}",
-        f"character:{game.player_name} — {game.character_concept}",
+        f"character:{_xe(game.player_name)} — {_xe(game.character_concept)}",
     ]
     if game.backstory:
-        parts.append(f"backstory:{game.backstory}")
+        parts.append(f"backstory:{_xe(game.backstory)}")
     if game.world.current_location:
-        parts.append(f"location:{game.world.current_location}")
+        parts.append(f"location:{_xe(game.world.current_location)}")
 
     blueprint = eng().adventure_crafter.blueprint
     parts.append(
@@ -59,7 +60,7 @@ def _build_voicing_user_msg(game: GameState, seed: BlueprintSeed) -> str:
     if game.campaign.campaign_history:
         parts.append(f"campaign_chapter:{game.campaign.chapter_number}")
         for ch in game.campaign.campaign_history[-eng().recap_limits.recap_campaign_window :]:
-            parts.append(f"  prev_chapter_{ch.chapter}: {ch.summary}")
+            parts.append(f"  prev_chapter_{ch.chapter}: {_xe(ch.summary)}")
 
     return "\n".join(parts)
 

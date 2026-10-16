@@ -147,9 +147,12 @@ def _parse_creation_flow_partial(data: dict[str, Any] | None, yaml_path: str) ->
 
 def _parse_setting_config(data: dict[str, Any], yaml_path: str) -> _SettingConfig:
     _reject_unknown_keys(data, _SettingConfig, "the setting", yaml_path)
+    setting_id = _require_str(data, "id", yaml_path)
+    if setting_id != Path(yaml_path).stem:
+        raise ValueError(f"Setting id '{setting_id}' must equal the file name '{Path(yaml_path).stem}' in {yaml_path}")
     parent_raw = data.get("parent")
     return _SettingConfig(
-        id=_require_str(data, "id", yaml_path),
+        id=setting_id,
         title=_require_str(data, "title", yaml_path),
         datasworn_id=_require_str(data, "datasworn_id", yaml_path),
         description=_require_str(data, "description", yaml_path),
