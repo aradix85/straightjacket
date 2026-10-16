@@ -8,6 +8,12 @@ This log starts at 2026.09.24.0, the restart after a four-month pause. Earlier r
 
 Calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day.
 
+## [2026.10.16.5] — 2026-10-16
+
+Documentation only: 9f.6 and 9f.11 measured, neither adopted. The blind reader no longer counts length, since the user values only quality. A budget of 300 to 400 words lost that reading 7 to 14, because the extra words went to NPC facts beyond the fact budget, further developments on a miss, and moves the player did not choose; 9f.6 now asks for the extra room to go to sensory detail. For 9f.11 the engine names the complication that the weak hit of Gather Information and Compel carries by its move text; the narrator told it, but the audit still counted a missing cost, since the narrator prompt defines a weak hit's cost more narrowly than the moves do. That change waits on the branch `9f11-weak-hit-complication`, with its tests, until it is measured together with a WEAK_HIT rule that matches the moves. About 2 dollars.
+
+Quality gate: project-rule scans clean. No code, prompt, or configuration changed on main.
+
 ## [2026.10.16.4] — 2026-10-16
 
 Documentation only. Step 9f spends credits only where a change shows something, at the user's wish: a variant targets a problem found in measured narrations, gets the audit and the blind reading first, and the ten Elvira sessions only on a clear signal. The first variant under that rule paired "looking touches nothing" with a visible cause for every setback; the misses recovered from v14, but player-character findings stayed at 41 and 41 and the blind reader preferred the current prompt 9 to 7, so no Elvira sessions ran and the prompt stays. About 1.50 dollars.
