@@ -43,7 +43,7 @@ def configure_bot(ai_cfg: dict[str, Any]) -> None:
         provider=provider_named(ai_cfg["provider"]),
         label=f"{ai_cfg['provider']}/{ai_cfg['model']}",
         model=ai_cfg["model"],
-        temperature=float(ai_cfg["temperature"]),
+        temperature=None if ai_cfg["temperature"] is None else float(ai_cfg["temperature"]),
         extra_body=dict(ai_cfg["extra_body"]),
     )
 

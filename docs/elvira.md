@@ -12,11 +12,11 @@ python tests/elvira/elvira.py --auto --scenario all      # every prepared rare s
 python tests/elvira/elvira.py --ws --auto --turns 5      # through the WebSocket server
 ```
 
-The API keys must be in the environment of the process that starts her: the game's provider key (`docs/ai.md`) and the key for her own player and judge. `tests/test_elvira_smoke.py` runs both modes against the mock provider in the normal test gate, so she cannot break unnoticed.
+The API keys must be in the environment of the process that starts her: the game's provider key (`docs/ai.md`) and the key of the provider her own player and judge use. `tests/test_elvira_smoke.py` runs both modes against the mock provider in the normal test gate, so she cannot break unnoticed.
 
 ## Player and judge
 
-Her own player and her judge use the provider and model under `ai` in `tests/elvira/elvira_config.yaml` (GPT-6 Luna, the judge at reasoning `low`), log as the role `elvira`, and are priced apart from the game in her report. Because the judge stays on one model while the game's clusters change, it scores every game model alike. It sees the player's action, the result, the previous narration, the player character's backstory, the active NPCs' descriptions, and the rolled move's own text for the result, so continuity is not scored as invention and an unwelcome truth on a miss is not scored as a silver lining; its scores are read together with the narrations.
+Her own player and her judge use the provider and model under `ai` in `tests/elvira/elvira_config.yaml` (Claude Haiku 5.5, the player without thinking and the judge at effort `low`), log as the role `elvira`, and are priced apart from the game in her report. Because the judge stays on one model while the game's clusters change, it scores every game model alike. A judge tends to favour its own model family, and this one is a Claude model judging Claude narration, so its scores are compared only with runs it scored itself. It sees the player's action, the result, the previous narration, the player character's backstory, the active NPCs' descriptions, and the rolled move's own text for the result, so continuity is not scored as invention and an unwelcome truth on a miss is not scored as a silver lining; its scores are read together with the narrations.
 
 ## What she checks
 

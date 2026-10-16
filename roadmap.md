@@ -14,7 +14,7 @@ Closing a step: the checks of CONTRIBUTING.md pass, the step leaves this documen
 - A session starts by reading every md file in the root and in `docs/`, of the CHANGELOG only the entries since the last finished step, and then continues with NEXT STEP. The design document is not in the repository; README.md links it.
 - The Elvira sessions a step needs are part of the work; a twelve-turn session on Sonnet costs about 55 to 65 cents. Say what a measuring round will cost before starting it; the API spend limit is set in the Claude Console (Settings, Billing).
 - Each finished release is committed and pushed to main.
-- On this machine the API keys live in the Windows user environment (`ANTHROPIC_API_KEY` for the game, `OPENAI_API_KEY` for Elvira and the measuring judge); a process started by a tool may need them set in its own environment first.
+- On this machine the API keys live in the Windows user environment (`ANTHROPIC_API_KEY` for the game and Elvira, `OPENAI_API_KEY` for the judges of the measuring setup); a process started by a tool may need them set in its own environment first.
 - The measuring setup for prompt tuning lives outside the repository in `C:\Users\radix\Documents\mimo_probe`: captured situations, the audit, blind-reading, and Elvira comparison scripts, and a README.md that says how to use them.
 
 ## Reference patterns
@@ -42,7 +42,7 @@ Closing a step: the checks of CONTRIBUTING.md pass, the step leaves this documen
 
 ## NEXT STEP — 9f: Narrator, Director, and extraction prompts
 
-The prompts run on Claude Sonnet 5.5 at effort medium (`docs/ai.md`) and are tuned one change at a time against measurements, not impressions; the measuring setup outside the repository holds the situation set and the scripts, and its README says how to measure. A change is measured three ways. The audit: fourteen situations captured from real sessions, three narrations each and two runs per variant, each narration checked against its own prompt by a judge from another model family; it reads the prompt's own rules, so a milder rule lowers its count without better prose. The blind reading: each pair read twice with the positions swapped, a preference counting only when both readings agree. Elvira: at least ten sessions per variant, since five sessions of one prompt scored anywhere from 7.12 to 7.92.
+The prompts run on Claude Sonnet 5.5 at effort medium (`docs/ai.md`) and are tuned one change at a time against measurements, not impressions; the measuring setup outside the repository holds the situation set and the scripts, and its README says how to measure. A change is measured three ways. The audit: fourteen situations captured from real sessions, three narrations each and two runs per variant, each narration checked against its own prompt by a judge from another model family; it reads the prompt's own rules, so a milder rule lowers its count without better prose. The blind reading: each pair read twice with the positions swapped, a preference counting only when both readings agree. Elvira: at least ten sessions per variant, since five sessions of one prompt scored anywhere from 7.12 to 7.92. Elvira's judge is Claude Haiku 5.5 now, so the earlier Elvira scores, judged by GPT-6 Luna, are no baseline: the unchanged prompt needs ten fresh sessions before a variant is compared.
 
 **9f.3** PLAYER AGENCY's inner-life clause says to describe what a camera could record, including action, beside the clause that limits the character's actions to the stated one.
 

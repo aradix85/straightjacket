@@ -8,6 +8,12 @@ This log starts at 2026.09.24.0, the restart after a four-month pause. Earlier r
 
 Calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day.
 
+## [2026.10.16.1] — 2026-10-16
+
+Elvira's player and judge run on Claude Haiku 5.5 instead of GPT-6 Luna, at the user's choice, since the monthly Anthropic credit covers them: the player without thinking, the judge at effort low with room for 16,000 tokens, and a null temperature now accepted. A judge tends to favour its own model family, so Elvira scores from before this version are no baseline; step 9f needs ten fresh sessions of the unchanged prompt first. A four-turn Elvira session in Sundered Isles ran with the Anthropic key alone: the judge scored every narration, no engine warnings.
+
+Quality gate: 1602 tests green, project-rule scans clean, coverage 90.97%, ruff and mypy --strict clean. Save format unchanged.
+
 ## [2026.10.16.0] — 2026-10-16
 
 A critical read of every md file against the code. Corrected: a tool loop that no longer exists, a death through Face Death that nothing starts, a succession that clears every clock, AI decisions the docs left out (the Brain's free-text location, the Director's narrator guidance, the extraction's dispositions), provider notes presented as current, and Delve's 12 domains; duplicates point to one place, and this log keeps a few sentences per entry. The correction analysis and blueprint voicing escape player text, the layer scan keeps `tools` from `ai`, and a setting's `id` must equal its file name, each with a test. Roadmap steps 14a to 36 are short sketches now. The Yaml content boundary states the user's choice: game content comes from the sources, an oracle, or as the last resort the AI, never by hand, while the engine's own text lives in yaml. New substeps 9h.9 and 9h.10.
