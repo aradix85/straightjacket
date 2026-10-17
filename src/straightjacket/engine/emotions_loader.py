@@ -27,12 +27,3 @@ def importance_map() -> dict[str, int]:
 def keyword_boosts() -> dict[int, list[str]]:
     raw = _ensure_loaded()["keyword_boosts"]
     return {int(k): v for k, v in raw.items()}
-
-
-def disposition_map() -> dict[str, str]:
-    result: dict[str, str] = _ensure_loaded()["disposition_map"]
-    return result
-
-
-def normalize_disposition(raw: str) -> str:
-    return disposition_map().get(raw.lower().strip(), "neutral")

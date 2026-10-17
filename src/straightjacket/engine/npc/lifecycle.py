@@ -1,11 +1,10 @@
-from typing import Any, TYPE_CHECKING
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from ..engine_config_dataclasses import DescriptionDedupConfig
     from ..models import GameState
 
 
-from ..emotions_loader import normalize_disposition
 from ..engine_loader import eng
 from ..logging_util import log
 from ..models import NpcData
@@ -17,12 +16,6 @@ from .matching import (
 from .memory import consolidate_memory
 
 
-def normalize_npc_dispositions(npcs: list[Any]) -> None:
-    for n in npcs:
-        if n.disposition:
-            n.disposition = normalize_disposition(n.disposition)
-
-
 def retire_distant_npcs(game: "GameState", max_active: int | None = None) -> None:
     if max_active is None:
         max_active = eng().npc.max_active
@@ -31,7 +24,7 @@ def retire_distant_npcs(game: "GameState", max_active: int | None = None) -> Non
         return
 
     def relevance(npc: NpcData) -> int:
-        last_scene = max((m.scene for m in npc.memory), default=0) or 0
+        last_scene = max((m.scene for m in npc.memory), default=0)
 
         dd = eng().description_dedup
         score = last_scene + get_npc_bond(game, npc.id) * dd.bond_multiplier
@@ -97,20 +90,17 @@ def merge_npc_identity(existing: NpcData, new_name: str, new_desc: str = "", gam
 
 
 def is_complete_description(desc: str) -> bool:
-    if not desc or len(desc) < eng().fuzzy_match.description_match_min_length:
+    if len(desc) < eng().fuzzy_match.description_match_min_length:
         return False
     return desc.rstrip().endswith(tuple(eng().parser.sentence_end_marks))
 
 
 def sanitize_aliases(npc: NpcData) -> None:
     name = npc.name
-    aliases = npc.aliases
-    if not aliases:
-        return
     dd = eng().description_dedup
     seen = set()
     clean = []
-    for a in aliases:
+    for a in npc.aliases:
         a_stripped = a.strip()
         low = a_stripped.lower()
         if not a_stripped or low in seen or low == name.lower():
@@ -140,7 +130,7 @@ def _absorb_richer_duplicate_fields(original: NpcData, dup: NpcData) -> None:
         original.agenda = dup.agenda
     if dup.instinct:
         original.instinct = dup.instinct
-    if dup.disposition and dup.disposition != "neutral":
+    if dup.disposition != eng().npc.default_new_npc_disposition:
         original.disposition = dup.disposition
     if dup.last_location:
         original.last_location = dup.last_location
@@ -174,7 +164,7 @@ def _merge_aliases_and_location(original: NpcData, dup: NpcData, merged_norm: st
 def absorb_duplicate_npc(game: "GameState", original: NpcData, merged_name: str) -> None:
     merged_norm = normalize_for_match(merged_name)
     for dup in game.npcs:
-        if dup is original or dup.id == original.id:
+        if dup is original:
             continue
         dup_name_norm = normalize_for_match(dup.name)
         dup_alias_norms = {normalize_for_match(a) for a in dup.aliases}
@@ -248,14 +238,9 @@ def _description_candidate_meets_threshold(
     if effective_overlap < dd.effective_overlap_min:
         return False, effective_overlap
 
-    min_set_size = min(len(new_words), len(existing_words))
-    overlap_ratio = effective_overlap / max(min_set_size, 1)
+    overlap_ratio = effective_overlap / min(len(new_words), len(existing_words))
     has_long_match = any(len(w) >= dd.long_word_chars for w in exact_overlap)
-
-    meets = (overlap_ratio >= dd.min_overlap_ratio and effective_overlap >= dd.effective_overlap_min) or (
-        has_long_match and effective_overlap >= dd.effective_overlap_min
-    )
-    return meets, effective_overlap
+    return overlap_ratio >= dd.min_overlap_ratio or has_long_match, effective_overlap
 
 
 def _npc_eligible_for_desc_match(npc: NpcData, new_name_norm: str, current_location: str) -> bool:
@@ -276,7 +261,7 @@ def description_match_existing_npc(game: "GameState", new_desc: str, new_name_no
     dd = eng().description_dedup
     stopwords = eng().stopwords.general
 
-    if not new_desc or len(new_desc) < dd.min_desc_chars:
+    if len(new_desc) < dd.min_desc_chars:
         return None
 
     new_words = _desc_tokens(new_desc, dd.min_word_chars_for_match, stopwords)
@@ -287,7 +272,7 @@ def description_match_existing_npc(game: "GameState", new_desc: str, new_name_no
     if len(new_words) < dd.min_new_word_count:
         return None
 
-    current_location = game.world.current_location or ""
+    current_location = game.world.current_location
     best_match: NpcData | None = None
     best_score: float = 0
 
@@ -303,8 +288,7 @@ def description_match_existing_npc(game: "GameState", new_desc: str, new_name_no
             best_match = n
             exact_overlap = new_words & existing_words
             substring_matches = _desc_substring_overlap(new_words, existing_words, dd)
-            min_set_size = min(len(new_words), len(existing_words))
-            overlap_ratio = effective_overlap / max(min_set_size, 1)
+            overlap_ratio = effective_overlap / min(len(new_words), len(existing_words))
             log(
                 f"[NPC] Description match candidate: new='{new_desc[:50]}' ~ "
                 f"existing='{n.name}' desc='{n.description[:50]}' "

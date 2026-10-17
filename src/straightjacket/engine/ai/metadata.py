@@ -100,13 +100,13 @@ def _process_lore_npcs(game: GameState, lore_list: list[Any]) -> None:
         fuzzy, _ = fuzzy_match_existing_npc(game, name)
         if fuzzy:
             continue
-        npc_id, _ = next_npc_id(game)
+        npc_id = next_npc_id(game)
 
         npc = NpcData(
             id=npc_id,
             name=name,
             description=entry["description"],
-            disposition="neutral",
+            disposition=eng().npc.default_new_npc_disposition,
             status="lore",
             name_rolled=False,
             introduced=False,

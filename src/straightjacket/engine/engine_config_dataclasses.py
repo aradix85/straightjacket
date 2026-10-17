@@ -549,6 +549,7 @@ class MemoryConfig:
     consolidation_floor: int
     unknown_emotion_importance: int
     overlap_scale: int
+    relevance_min_context_words: int
     importance_max: int
     emotion_split_pattern: str
 

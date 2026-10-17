@@ -301,7 +301,7 @@ def _merge_returning_npcs(game: GameState, returning_npcs: list[NpcData]) -> Non
         if old_npc.name.lower().strip() in new_npc_names:
             continue
         old_id = old_npc.id
-        fresh_id, _ = next_npc_id(game)
+        fresh_id = next_npc_id(game)
         id_remap[old_id] = fresh_id
         old_npc.id = fresh_id
         old_npc.introduced = True

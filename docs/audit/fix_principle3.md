@@ -89,3 +89,63 @@ Run with an AST script kept outside the repository, over every `.py` file under 
 | 3c | functions and classes with at most one production reference | 160 |
 | 3d | functions whose body is one `return call(...)` | 18 |
 | 3 | parameters with a default that production never passes, or always passes | 17 |
+
+## npc/ — 2026-10-17
+
+All four passes over the 8 files of `npc/`, with the 9h.13 item that sat on its path (`emotions_loader.py:38`). Every fixed violation below is in release 2026.10.17.12.
+
+### Pass 3a — Broad except
+
+No except handler at all.
+
+### Pass 3b — Guards against impossible states
+
+- **P3-37** `npc/naming.py:11` — a game without a setting got the AI's label as an NPC's name and said nothing, where the generator raises; `npc/processing.py:237` kept the AI's label only on that path. Fixed: the guard is gone, so the generator's error reaches the caller, and every new NPC's name is rolled.
+- **P3-38** `npc/processing.py:89`, `168`, `248`, `262`, `npc/lifecycle.py:20`, and its callers `parser.py:200` and `game/setup_common.py:67`, with `emotions_loader.py:37` (the 9h.13 item at line 38) — dispositions went through a synonym map with neutral as fallback, though every source of a disposition (the metadata and opening extractions and the correction) offers only the engine's five. Fixed: the map's readers are gone, and the stub of a rejected name reveal and a lore figure take `npc.default_new_npc_disposition` instead of a literal "neutral" (`ai/metadata.py:109`), as does the test at `npc/lifecycle.py:143` for a duplicate's disposition. The map's yaml went with them, with the user's consent.
+- **P3-39** `npc/activation.py:16`, `41`, `58`, `65`, `68` — early returns and guards in the TF-IDF scoring that the later steps already cover: an empty NPC list or document set, a document frequency of 0 that counting cannot produce, an empty token list no caller passes, and `idf.get` for a term every document set contains. Fixed.
+- **P3-40** `npc/activation.py:116` — the target was also compared with each NPC's name, though the Brain names targets by id. Fixed.
+- **P3-41** `npc/memory.py:65`, `79`, `120`, `159` — an early return for an empty memory list, a test for empty context text before a comprehension that handles it, a test that the replaced memory is not a reflection where none can be, and a log guard for a consolidation that always removes something. Fixed. `npc/memory.py:97` divided by `min_token_length`, a word length, as the smallest context size (principle 2). Fixed: `memory.relevance_min_context_words`, with the same value.
+- **P3-42** `npc/lifecycle.py:34`, `100`, `108`, `177`, `252`, `255`, `279`, `290`, `307` — `or 0` after a `max` with a default, a test for an empty description before a length test that fails for it, an early return for an empty alias list, an id comparison for NPCs whose ids are unique, a division guard and a repeated threshold test after the early return for a too small overlap, and `or ""` for a location that is always a string. Fixed.
+- **P3-43** `npc/matching.py:24`, `207`, `308` — a test for an empty name before a membership or length test that fails for it, and the substring test of `_check_substring_match` repeated from its only caller. Fixed.
+
+### Pass 3c — Single-use abstractions and dead structure
+
+- **P3-44** `npc/processing.py:46` repeated `_is_player_collision`, and `npc/processing.py:176` returned a bool its one caller ignores. Fixed.
+- **P3-45** `npc/matching.py:163` — `next_npc_id` returned the id and its number, and all four callers threw the number away. Fixed: it returns the id.
+
+### Pass 3d — Wrappers without logic
+
+None; `normalize_for_match` has logic of its own.
+
+### Needs human judgment
+
+- **P3-46 [needs human judgment]** More parameters that exist for tests, for roadmap 9h.15: `npc/lifecycle.py:26` `retire_distant_npcs(max_active)`, which production never sets, and defaults every production call overrides: `reactivate_npc(reason)`, `merge_npc_identity(game)` with its test for a missing game, `resolve_about_npc(owner_id)`, `score_importance(event_text, debug)`, and `process_npc_details(world_addition)`.
+- **P3-47 [needs human judgment]** `npc/memory.py:56` — no production call passes `present_npc_ids` to `retrieve_memories`, so the boost for memories about an NPC who is present (`npc.about_npc_relevance_boost`) never applies. Passing them changes the memories the narrator sees, which roadmap step 11c, NPC-to-NPC memories in the prompt, measures.
+- **P3-48 [needs human judgment]** `npc/memory.py:18` — every production call asks `score_importance` for its debug text, which goes only into `MemoryEntry._score_debug`, a field nothing reads (principle 5, roadmap 9h.13); removing the field breaks the save format.
+
+The owner rename of NPC-owned clocks in `npc/lifecycle.py:87` is dead with the agency tick of P3-35.
+
+### Not violations
+
+The nullable `full_name` and `description` of the metadata extraction's NPC details; renames and details for an NPC that an earlier entry of the same extraction merged away, which are logged at warning level; an empty location; and the guards against an empty name in matching, since a correction can write one (below).
+
+### Findings for other submodules and later principles
+
+- correction/: `correction/ops.py` → `_op_npc_edit` accepts an empty name.
+- Principle 1 (roadmap 9h.14): `game/setup_common.py` counts NPC numbers itself beside `npc/matching.py` → `next_npc_id`, and `npc/processing.py` → `_apply_surname_update` repeats most of the alias handling of `npc/lifecycle.py` → `merge_npc_identity`.
+
+### Grep log
+
+The same script as for `mechanics/`, over every `.py` file under `npc/`.
+
+| Pass | Query | Hits |
+| --- | --- | --- |
+| 3a | `except` with no type, `Exception`, or `BaseException` | 0 |
+| 3a | every `except` handler | 0 |
+| 3b | `is None` and `is not None` comparisons | 6 |
+| 3b | `x or <literal>`, `.get(`, `getattr` with a default, nested `min`/`max` clamps | 11 |
+| 3b | `if not x: return` or `continue` | 21 |
+| 3b | `isinstance`, `hasattr`, `callable` | 0 |
+| 3c | functions and classes with at most one production reference | 40 |
+| 3d | functions whose body is one `return call(...)` | 1 |
+| 3 | parameters with a default that production never passes, or always passes | 12 |

@@ -60,7 +60,7 @@ def test_reflection_for_npc_the_engine_did_not_select_is_rejected(load_engine: N
 
 
 def test_npc_introduced_and_killed_in_the_same_scene_is_marked_deceased(load_engine: None) -> None:
-    game = make_game_state()
+    game = make_game_state(setting_id="classic")
     game.npcs = []
     metadata = {
         "npc_renames": [],
@@ -70,7 +70,7 @@ def test_npc_introduced_and_killed_in_the_same_scene_is_marked_deceased(load_eng
         "lore_npcs": [],
     }
     apply_narrator_metadata(game, metadata, scene_present_ids=set(), world_addition="")
-    mara = next(n for n in game.npcs if n.name == "Mara Voss")
+    mara = next(n for n in game.npcs if "Mara Voss" in n.aliases)
     assert mara.status == "deceased"
 
 
@@ -122,7 +122,7 @@ def test_an_npc_called_by_part_of_its_name_stays_one_npc(load_engine: None) -> N
 
 @pytest.mark.parametrize(("label", "count"), [("Second deckhand", 2), ("Lunging deckhand", 1)])
 def test_an_npc_the_engine_named_is_matched_only_by_its_own_label(load_engine: None, label: str, count: int) -> None:
-    game = make_game_state()
+    game = make_game_state(setting_id="classic")
     nerissa = make_npc(id="npc_4", name="Nerissa Ashcroft", name_rolled=True, aliases=["Lunging deckhand"])
     game.npcs = [nerissa]
     metadata = {

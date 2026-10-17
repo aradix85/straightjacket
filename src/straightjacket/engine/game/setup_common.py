@@ -6,7 +6,7 @@ from ..engine_loader import eng
 from ..logging_util import log
 from ..mechanics import update_location
 from ..models import GameState, MemoryEntry, NpcData
-from ..npc import apply_name_sanitization, fuzzy_match_existing_npc, normalize_npc_dispositions, score_importance
+from ..npc import apply_name_sanitization, fuzzy_match_existing_npc, score_importance
 
 
 def _find_npc_by_name(npcs: list[NpcData], npc_name: str) -> NpcData | None:
@@ -64,7 +64,6 @@ def register_extracted_npcs(
         game.npcs.append(npc)
 
     game.npcs = [n for n in game.npcs if n.name.lower().strip() != player_lower]
-    normalize_npc_dispositions(game.npcs)
     return max_num
 
 

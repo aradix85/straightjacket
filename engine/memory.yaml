@@ -3,6 +3,7 @@ memory:
   consolidation_floor: 3
   unknown_emotion_importance: 4
   overlap_scale: 2
+  relevance_min_context_words: 3
   importance_max: 10
   emotion_split_pattern: '[_/,;:\s]+|(?:\s+and\s+)|(?:\s+mixed\s+with\s+)'
 memory_emotions:

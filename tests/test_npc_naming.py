@@ -1,13 +1,15 @@
 from unittest.mock import patch
 
+import pytest
+
 from tests._helpers import make_game_state
 
 
-def test_roll_oracle_name_no_setting() -> None:
+def test_roll_oracle_name_needs_the_setting(load_engine: None) -> None:
     from straightjacket.engine.npc.naming import roll_oracle_name
 
-    game = make_game_state()
-    assert roll_oracle_name(game) == ""
+    with pytest.raises(ValueError, match="setting"):
+        roll_oracle_name(make_game_state())
 
 
 def test_roll_oracle_name_classic_single_path(load_engine: None) -> None:
@@ -56,12 +58,3 @@ def test_process_new_npcs_uses_oracle_name(stub_all: None, load_engine: None) ->
     assert game.npcs[0].name == "Sigrid Ironhand"
 
     assert "AI Generated Name" in game.npcs[0].aliases
-
-
-def test_process_new_npcs_fallback_to_ai_name(stub_all: None, load_engine: None) -> None:
-    from straightjacket.engine.npc.processing import process_new_npcs
-
-    game = make_game_state(player_name="Hero")
-    process_new_npcs(game, [{"name": "AI Name", "description": "d", "disposition": "neutral"}])
-    assert len(game.npcs) == 1
-    assert game.npcs[0].name == "AI Name"

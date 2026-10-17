@@ -6,7 +6,6 @@ if TYPE_CHECKING:
 from ..engine_loader import eng
 from ..logging_util import log
 from ..models import MemoryEntry, NpcData
-from ..emotions_loader import normalize_disposition
 from .lifecycle import (
     absorb_duplicate_npc,
     description_match_existing_npc,
@@ -41,9 +40,8 @@ def process_npc_renames(game: "GameState", renames: list[Any]) -> None:
             log(f"[NPC] Rename skipped for deceased NPC: {npc.name}")
             continue
         new_name = r["new_name"].strip()
-        new_norm = normalize_for_match(new_name)
         player_norm = normalize_for_match(game.player_name)
-        if new_norm == player_norm or (set(new_norm.split()) & set(player_norm.split())):
+        if _is_player_collision(normalize_for_match(new_name), player_norm, set(player_norm.split())):
             log(f"[NPC] Rename rejected: '{new_name}' matches player character")
             continue
         merge_npc_identity(npc, new_name, "", game=game)
@@ -81,12 +79,12 @@ def _create_stub_for_rejected_reveal(
     if find_npc(game, new_name):
         return
     stub_desc = (d["description"] or "").strip() or world_addition.strip()
-    npc_id, _ = next_npc_id(game)
+    npc_id = next_npc_id(game)
     stub = NpcData(
         id=npc_id,
         name=new_name,
         description=stub_desc,
-        disposition=normalize_disposition("neutral"),
+        disposition=eng().npc.default_new_npc_disposition,
         status="active",
         name_rolled=False,
         aliases=paren_aliases,
@@ -158,14 +156,13 @@ def process_npc_details(game: "GameState", details: list[Any], world_addition: s
         _process_one_npc_detail(game, d, world_addition)
 
 
-def _normalize_new_npc_input(raw_nd: dict[str, Any], default_disp: str) -> dict[str, Any] | None:
+def _normalize_new_npc_input(raw_nd: dict[str, Any]) -> dict[str, Any] | None:
     if not raw_nd["name"]:
         return None
-    disposition = raw_nd["disposition"]
     return {
         "name": raw_nd["name"],
         "description": raw_nd["description"].strip(),
-        "disposition": disposition if disposition else default_disp,
+        "disposition": raw_nd["disposition"],
     }
 
 
@@ -173,15 +170,14 @@ def _is_player_collision(name_norm: str, player_norm: str, player_parts: set[str
     return name_norm == player_norm or bool(set(name_norm.split()) & player_parts)
 
 
-def _handle_exact_name_match(game: "GameState", name_norm: str) -> bool:
+def _handle_exact_name_match(game: "GameState", name_norm: str) -> None:
     existing = next((n for n in game.npcs if normalize_for_match(n.name) == name_norm), None)
-    if not existing:
-        return False
+    if existing is None:
+        return
     if existing.status in eng().npc_status_groups.reactivatable:
         reactivate_npc(existing, reason="reappeared in new_npcs")
     elif existing.status == "deceased":
         reactivate_npc(existing, reason="resurrected -- exact name in new_npcs", force=True)
-    return True
 
 
 def _handle_fuzzy_match(game: "GameState", nd: dict[str, Any]) -> bool:
@@ -230,24 +226,20 @@ def _handle_description_match(game: "GameState", nd: dict[str, Any], name_norm: 
 
 
 def _create_new_npc(game: "GameState", nd: dict[str, Any]) -> NpcData:
-    npc_id, _ = next_npc_id(game)
-    clean_name, paren_aliases = sanitize_npc_name(nd["name"].strip())
-
+    npc_id = next_npc_id(game)
+    ai_name, paren_aliases = sanitize_npc_name(nd["name"].strip())
     oracle_name = roll_oracle_name(game)
-    if oracle_name:
-        ai_name = clean_name
-        clean_name = oracle_name
-        if ai_name and ai_name.lower() != oracle_name.lower():
-            paren_aliases.append(ai_name)
-        log(f"[NPC name] Oracle rolled '{oracle_name}' (AI: '{ai_name}')")
+    if ai_name and ai_name.lower() != oracle_name.lower():
+        paren_aliases.append(ai_name)
+    log(f"[NPC name] Oracle rolled '{oracle_name}' (AI: '{ai_name}')")
 
     npc = NpcData(
         id=npc_id,
-        name=clean_name,
+        name=oracle_name,
         description=nd["description"],
-        disposition=normalize_disposition(nd["disposition"]),
+        disposition=nd["disposition"],
         status="active",
-        name_rolled=bool(oracle_name),
+        name_rolled=True,
         aliases=paren_aliases,
         last_location=game.world.current_location,
         introduced=True,
@@ -259,9 +251,7 @@ def _create_new_npc(game: "GameState", nd: dict[str, Any]) -> NpcData:
 
 def _seed_initial_memory(game: "GameState", npc: NpcData, nd: dict[str, Any]) -> None:
     seed_event = nd["description"] or eng().ai_text.narrator_defaults["npc_appeared_event"].format(npc_name=npc.name)
-    seed_disposition = normalize_disposition(nd["disposition"])
-    disp_to_emotion = eng().get_raw("disposition_to_seed_emotion")
-    seed_emotion = disp_to_emotion[seed_disposition]
+    seed_emotion = eng().get_raw("disposition_to_seed_emotion")[nd["disposition"]]
     seed_imp, seed_debug = score_importance(seed_emotion, seed_event, debug=True)
     seed_imp = max(seed_imp, eng().npc.seed_importance_floor)
     npc.memory.append(
@@ -282,10 +272,9 @@ def process_new_npcs(game: "GameState", new_npcs: list[Any]) -> None:
     player_norm = normalize_for_match(game.player_name)
     player_parts = set(player_norm.split())
     existing_names = {normalize_for_match(n.name) for n in game.npcs}
-    default_disp = eng().npc.default_new_npc_disposition
 
     for raw_nd in new_npcs:
-        nd = _normalize_new_npc_input(raw_nd, default_disp)
+        nd = _normalize_new_npc_input(raw_nd)
         if nd is None:
             continue
 

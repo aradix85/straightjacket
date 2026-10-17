@@ -62,9 +62,6 @@ def retrieve_memories(
     present_npc_ids: frozenset[str] = frozenset(),
 ) -> list[MemoryEntry]:
     memories = npc.memory
-    if not memories:
-        return []
-
     reflections = [m for m in memories if m.type == "reflection"]
     _e = eng()
     _w = _e.memory_retrieval_weights
@@ -75,9 +72,7 @@ def retrieve_memories(
     recency_floor = _e.npc.reflection_recency_floor
     about_boost = _e.npc.about_npc_relevance_boost
 
-    context_words = set()
-    if context_text:
-        context_words = {w.lower() for w in context_text.split() if len(w) >= _mem_cfg.min_token_length}
+    context_words = {w.lower() for w in context_text.split() if len(w) >= _mem_cfg.min_token_length}
 
     def _score_memory(mem: MemoryEntry) -> float:
         scene_gap = max(0, current_scene - mem.scene)
@@ -94,7 +89,10 @@ def retrieve_memories(
             overlap = context_words & event_words
             if overlap:
                 relevance = min(
-                    1.0, len(overlap) / max(_mem_cfg.min_token_length, len(context_words)) * _mem_cfg.overlap_scale
+                    1.0,
+                    len(overlap)
+                    / max(_mem_cfg.relevance_min_context_words, len(context_words))
+                    * _mem_cfg.overlap_scale,
                 )
 
         if present_npc_ids and mem.about_npc in present_npc_ids:
@@ -115,10 +113,7 @@ def retrieve_memories(
             reflection_included = True
 
     if not reflection_included and reflections and result:
-        best_ref = max(reflections, key=lambda m: m.importance)
-        worst_idx = len(result) - 1
-        if result[worst_idx].type != "reflection":
-            result[worst_idx] = best_ref
+        result[-1] = max(reflections, key=lambda m: m.importance)
 
     return result
 
@@ -155,10 +150,8 @@ def consolidate_memory(npc: NpcData) -> None:
     all_kept.sort(key=lambda m: m.scene)
 
     npc.memory = all_kept
-    removed = len(memories) - len(all_kept)
-    if removed > 0:
-        log(
-            f"[NPC] Consolidated {npc.name} memory: "
-            f"{len(memories)} -> {len(all_kept)} ({removed} removed, "
-            f"{len(kept_reflections)} reflections, {len(kept_observations)} observations)"
-        )
+    log(
+        f"[NPC] Consolidated {npc.name} memory: "
+        f"{len(memories)} -> {len(all_kept)} ({len(memories) - len(all_kept)} removed, "
+        f"{len(kept_reflections)} reflections, {len(kept_observations)} observations)"
+    )

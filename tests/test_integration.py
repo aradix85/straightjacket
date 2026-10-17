@@ -670,7 +670,7 @@ def test_chapter_about_npc_id_remap(stub_engine: None) -> None:
     new_names = set()
     for old_npc in returning:
         old_id = old_npc.id
-        fresh_id, _ = next_npc_id(game)
+        fresh_id = next_npc_id(game)
         id_remap[old_id] = fresh_id
         old_npc.id = fresh_id
         game.npcs.append(old_npc)

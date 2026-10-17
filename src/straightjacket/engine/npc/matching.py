@@ -21,7 +21,7 @@ def normalize_for_match(s: str) -> str:
 
 
 def sanitize_npc_name(name: str) -> tuple[str, list[str]]:
-    if not name or "(" not in name:
+    if "(" not in name:
         return name.strip(), []
     m = re.match(r"^(.+?)\s*\((.+)\)\s*$", name)
     if not m:
@@ -160,14 +160,13 @@ def resolve_about_npc(game: "GameState", raw: str | None, owner_id: str | None =
     return None
 
 
-def next_npc_id(game: "GameState") -> tuple[str, int]:
+def next_npc_id(game: "GameState") -> str:
     max_num = 0
     for n in game.npcs:
         m = re.match(r"npc_(\d+)", n.id)
         if m:
             max_num = max(max_num, int(m.group(1)))
-    max_num += 1
-    return f"npc_{max_num}", max_num
+    return f"npc_{max_num + 1}"
 
 
 def edit_distance_le1(a: str, b: str) -> bool:
@@ -203,14 +202,12 @@ def _strip_titles(words: set[str] | list[str], titles: "frozenset[str]") -> set[
 
 
 def _check_substring_match(new_norm: str, npc: NpcData, best: _FuzzyMatch, min_word_length: int) -> None:
-    name_norm = normalize_for_match(npc.name)
-    if new_norm in name_norm or name_norm in new_norm:
-        shorter, longer = sorted((new_norm, name_norm), key=len)
-        whole_words = set(shorter.split()) <= set(longer.split())
-        if (len(shorter) >= min_word_length or whole_words) and len(shorter) > best.score:
-            best.score = len(shorter)
-            best.npc = npc
-            best.match_type = "identity"
+    shorter, longer = sorted((new_norm, normalize_for_match(npc.name)), key=len)
+    whole_words = set(shorter.split()) <= set(longer.split())
+    if (len(shorter) >= min_word_length or whole_words) and len(shorter) > best.score:
+        best.score = len(shorter)
+        best.npc = npc
+        best.match_type = "identity"
 
 
 def _check_alias_match(
@@ -305,7 +302,7 @@ def _check_edit_distance_variant(
 
 
 def fuzzy_match_existing_npc(game: "GameState", new_name: str) -> tuple[NpcData | None, str | None]:
-    if not new_name or len(new_name.strip()) < eng().fuzzy_match.npc_name_min_length:
+    if len(new_name.strip()) < eng().fuzzy_match.npc_name_min_length:
         return None, None
 
     new_norm = normalize_for_match(new_name)

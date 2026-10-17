@@ -4,9 +4,6 @@ from collections.abc import Callable
 from .engine_loader import eng
 from .logging_util import log
 from .models import GameState
-from .npc import (
-    normalize_npc_dispositions,
-)
 
 
 def salvage_truncated_narration(raw: str) -> str:
@@ -197,7 +194,6 @@ def parse_narrator_response(game: GameState, raw: str) -> str:
     if hits:
         log(f"[Parser] Cleanup steps triggered: {', '.join(hits)}")
 
-    normalize_npc_dispositions(game.npcs)
     _mark_introduced_npcs(game, narration)
 
     active = [n for n in game.npcs if n.status == "active"]

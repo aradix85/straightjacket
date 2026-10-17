@@ -13,9 +13,6 @@ if TYPE_CHECKING:
 
 
 def compute_npc_tfidf_scores(npcs: list[NpcData], query_text: str) -> dict[str, float]:
-    if not query_text or not npcs:
-        return {}
-
     _tf = eng().tf_idf
     min_tok = _tf.token_min_length
 
@@ -38,9 +35,6 @@ def compute_npc_tfidf_scores(npcs: list[NpcData], query_text: str) -> dict[str, 
             parts.append(m.event)
         docs[npc_id] = _tokenize(" ".join(parts))
 
-    if not docs:
-        return {}
-
     query_tokens = _tokenize(query_text)
     if not query_tokens:
         return {}
@@ -53,19 +47,14 @@ def compute_npc_tfidf_scores(npcs: list[NpcData], query_text: str) -> dict[str, 
         for term in seen:
             df[term] = df.get(term, 0) + 1
 
-    idf = {}
-    for term, count in df.items():
-        idf[term] = math.log(n_docs / count) if count > 0 else 0
+    idf = {term: math.log(n_docs / count) for term, count in df.items()}
 
     def _tfidf_vector(tokens: list[str]) -> dict[str, float]:
         tf: dict[str, int] = {}
         for t in tokens:
             tf[t] = tf.get(t, 0) + 1
-
-        if not tokens:
-            return {}
         doc_len = len(tokens)
-        return {t: (count / doc_len) * idf.get(t, 0) for t, count in tf.items()}
+        return {t: (count / doc_len) * idf[t] for t, count in tf.items()}
 
     query_vec = _tfidf_vector(query_tokens)
     _q_sumsq = sum(v * v for v in query_vec.values())
@@ -113,7 +102,7 @@ def _score_npc(
     reasons: list[str] = []
     npc_name_lower = npc.name.lower()
 
-    if target_id and (npc.id == target_id or npc_name_lower == target_id.lower()):
+    if npc.id == target_id:
         score += _scores.target
         reasons.append("target")
 

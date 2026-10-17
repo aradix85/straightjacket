@@ -112,6 +112,6 @@ Submodules for principles 1, 3, and 5: `mechanics/`, `npc/`, `game/`, `ai/`, `db
 
 - Principle 1: no submodule audited.
 - Principle 2: audited 2026-10-17, all four passes (`docs/audit/fix_principle2.md`); every violation is fixed except the prompt markup (roadmap 9h.12) and the dataclass defaults (9h.4), and what the audit saw for principles 3 and 5 is 9h.13.
-- Principle 3: `mechanics/` audited 2026-10-17, all four passes (`docs/audit/fix_principle3.md`); every clear violation is fixed, and the five items for the user and the findings for other submodules are roadmap 9h.13 to 9h.18 and 9j.7.
+- Principle 3 (`docs/audit/fix_principle3.md`): `mechanics/` audited 2026-10-17, `npc/` audited 2026-10-17, all four passes each; every clear violation is fixed, and the items for the user and the findings for other submodules are roadmap 9h.13 to 9h.18, 9j.7, and step 11c.
 - Principle 4: audited 2026-10-17, all three passes (`docs/audit/fix_principle4.md`); every violation is fixed, the dataclass defaults of pass 4a are roadmap 9h.4, and what the audit saw for principles 3 and 5 is 9h.13.
 - Principle 5: no submodule audited.

@@ -13,9 +13,7 @@ __all__ = [
     "merge_npc_identity",
     "named_in",
     "next_npc_id",
-    "normalize_disposition",
     "normalize_for_match",
-    "normalize_npc_dispositions",
     "process_new_npcs",
     "process_npc_details",
     "process_npc_renames",
@@ -28,7 +26,6 @@ __all__ = [
 ]
 
 
-from ..emotions_loader import normalize_disposition
 from .activation import (
     activate_npcs_for_prompt,
     compute_npc_tfidf_scores,
@@ -39,7 +36,6 @@ from .lifecycle import (
     description_match_existing_npc,
     is_complete_description,
     merge_npc_identity,
-    normalize_npc_dispositions,
     reactivate_npc,
     retire_distant_npcs,
 )

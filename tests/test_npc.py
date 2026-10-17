@@ -1,3 +1,5 @@
+from unittest.mock import patch
+
 from straightjacket.engine.models import GameState
 from tests._helpers import (
     make_brain_result,
@@ -419,22 +421,14 @@ def test_activate_npcs_name_mention(stub_engine: None) -> None:
     assert "npc_1" in all_npcs
 
 
-def test_normalize_disposition(stub_emotions: None) -> None:
-    from straightjacket.engine.npc.lifecycle import normalize_disposition
-
-    assert normalize_disposition("hostile") == "hostile"
-    assert normalize_disposition("wary") == "distrustful"
-    assert normalize_disposition("curious") == "neutral"
-    assert normalize_disposition("unknown_value") == "neutral"
-
-
 def test_process_new_npcs_adds_npc(stub_engine: None) -> None:
     from straightjacket.engine.npc.processing import process_new_npcs
 
     game = _make_game()
     assert len(game.npcs) == 2
 
-    process_new_npcs(game, [{"name": "Maren", "description": "Young scout", "disposition": "curious"}])
+    with patch("straightjacket.engine.npc.processing.roll_oracle_name", return_value="Maren"):
+        process_new_npcs(game, [{"name": "Maren", "description": "Young scout", "disposition": "neutral"}])
 
     assert len(game.npcs) == 3
     maren = next(n for n in game.npcs if n.name == "Maren")

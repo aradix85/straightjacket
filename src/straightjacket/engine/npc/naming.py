@@ -2,14 +2,11 @@ from __future__ import annotations
 
 import random
 
-from ..datasworn.settings import active_package
 from ..engine_loader import eng
 from ..models import GameState
 
 
 def roll_oracle_name(game: GameState) -> str:
-    if active_package(game) is None:
-        return ""
     from ..mechanics import generate_entity
 
     naming = eng().naming

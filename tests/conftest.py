@@ -98,14 +98,6 @@ def stub_emotions() -> None:
             5: ["secret", "betrayed", "trust"],
             3: ["gift", "helped", "fought"],
         },
-        "disposition_map": {
-            "hostile": "hostile",
-            "neutral": "neutral",
-            "friendly": "friendly",
-            "wary": "distrustful",
-            "curious": "neutral",
-            "loyal": "loyal",
-        },
     }
 
 
