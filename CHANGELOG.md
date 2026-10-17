@@ -12,7 +12,7 @@ Calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for relea
 
 Step 9h, the user's decisions on 9h.1 and 9h.20. An action move that offers stats but comes back from the Brain with stat `none` is asked again once, with the move and its stats named (`retry.brain_stat_retries`, prompt `brain_stat_retry`); a second answer without a stat fails the turn, which rolls back as an unreachable Brain does. Before, such a turn played as dialog, and the risk the player took passed without a roll. `world_shaping` without a stat still plays as dialog, as does a move that rolls with a meter instead of a stat, which is now 9h.21. A rolled move that acts on a vow adds weight to the vow's thread, the engine's reading of a Mythic thread invoked in a scene (`mechanics/tracks.py` → `vow_acted_on`, registered in `docs/divergences.md`); the old step that matched the target NPC's id against thread names never fired. Today only Fulfill Your Vow acts on a vow, and Reach a Milestone joins it once it is a formal move. The category lookup for a track move is one function, which the Brain's target-track check now shares.
 
-Quality gate: 1642 tests green, coverage 92.41%, ruff and mypy --strict clean.
+Quality gate: 1642 tests green, coverage 92.41%, ruff and mypy --strict clean. A four-turn Elvira session in classic Ironsworn, with an AI failure, found no problems (overall 7.3); the Brain needed no second ask. Elvira about $0.17 for the game, plus her own player and judge.
 
 ## [2026.10.17.13] — 2026-10-17
 
