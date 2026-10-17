@@ -24,6 +24,7 @@ from ..models_story import (
     StoryBlueprint,
 )
 from .keyed_scenes import spawn_keyed_scenes_for_clock
+from .random_events import unique_clock_name
 from .spawn_sources import AC_SOURCE_PREFIX, EMERGENT_SOURCE_PREFIXES
 
 
@@ -264,7 +265,10 @@ def roll_turning_point(
     existing_plotline = _select_active_plotline(narrative)
 
     if plotline_template == "new_plotline" or existing_plotline is None:
-        plotline = _create_plotline(narrative, name=f"Plotline {len(narrative.plotlines_list) + 1}")
+        plotline = _create_plotline(
+            narrative,
+            name=eng().adventure_crafter.plotline_name_template.format(n=len(narrative.plotlines_list) + 1),
+        )
         plotline_was_new = True
     else:
         plotline = existing_plotline
@@ -322,7 +326,10 @@ def _meta_character_exits(narrative: NarrativeState, _active_plotline_id: str | 
 def _meta_character_returns(narrative: NarrativeState, _active_plotline_id: str | None) -> None:
     exited = [c for c in narrative.characters_list if c.ac_status == "exited"]
     if not exited:
-        new_char = _create_character(narrative, name=f"Returning {len(narrative.characters_list) + 1}")
+        new_char = _create_character(
+            narrative,
+            name=eng().adventure_crafter.returning_character_name_template.format(n=len(narrative.characters_list) + 1),
+        )
         new_char.ac_status = "returned"
         log(f"[AdventureCrafter] character_returns: no exited characters, created new '{new_char.name}'")
         return
@@ -425,8 +432,11 @@ class CharacterTraits:
     descriptors: list[str]
 
 
-_IDENTITY_FLAG_MAX = 33
-_DESCRIPTOR_FLAG_MAX = 21
+def _roll_twice_max(table: str, row_text: str, text_key: str) -> int:
+    for entry in _load_ac_data()[table]:
+        if entry[text_key] == row_text:
+            return int(entry["max"])
+    raise LookupError(f"data/adventure_crafter.json {table} has no row {row_text!r}")
 
 
 def lookup_character_special_trait(roll: int) -> str:
@@ -471,20 +481,24 @@ def lookup_character_descriptor(roll: int) -> str:
 def roll_character_traits(rng: random.Random) -> CharacterTraits:
     special_trait = lookup_character_special_trait(rng.randint(1, 100))
 
+    cfg = eng().adventure_crafter
+    identity_twice = _roll_twice_max("character_identity", cfg.identity_roll_twice_row, "identity")
+    descriptor_twice = _roll_twice_max("character_descriptors", cfg.descriptor_roll_twice_row, "descriptor")
+
     identity_roll = rng.randint(1, 100)
-    if identity_roll <= _IDENTITY_FLAG_MAX:
+    if identity_roll <= identity_twice:
         identities = [
-            lookup_character_identity(rng.randint(_IDENTITY_FLAG_MAX + 1, 100)),
-            lookup_character_identity(rng.randint(_IDENTITY_FLAG_MAX + 1, 100)),
+            lookup_character_identity(rng.randint(identity_twice + 1, 100)),
+            lookup_character_identity(rng.randint(identity_twice + 1, 100)),
         ]
     else:
         identities = [lookup_character_identity(identity_roll)]
 
     descriptor_roll = rng.randint(1, 100)
-    if descriptor_roll <= _DESCRIPTOR_FLAG_MAX:
+    if descriptor_roll <= descriptor_twice:
         descriptors = [
-            lookup_character_descriptor(rng.randint(_DESCRIPTOR_FLAG_MAX + 1, 100)),
-            lookup_character_descriptor(rng.randint(_DESCRIPTOR_FLAG_MAX + 1, 100)),
+            lookup_character_descriptor(rng.randint(descriptor_twice + 1, 100)),
+            lookup_character_descriptor(rng.randint(descriptor_twice + 1, 100)),
         ]
     else:
         descriptors = [lookup_character_descriptor(descriptor_roll)]
@@ -619,16 +633,6 @@ def _count_emergent_clocks(game: GameState) -> int:
     return sum(1 for c in game.world.clocks if c.creation_source.startswith(EMERGENT_SOURCE_PREFIXES))
 
 
-def _next_ac_clock_name(game: GameState, base_name: str) -> str:
-    existing = {c.name for c in game.world.clocks}
-    if base_name not in existing:
-        return base_name
-    n = 2
-    while f"{base_name} ({n})" in existing:
-        n += 1
-    return f"{base_name} ({n})"
-
-
 def spawn_clocks_for_turning_point(game: GameState, turning_point: TurningPoint) -> int:
     cfg = eng().adventure_crafter
     clocks_cfg = eng().clocks
@@ -649,7 +653,7 @@ def spawn_clocks_for_turning_point(game: GameState, turning_point: TurningPoint)
 
         entry = mapping[hit.name]
         base_name = hit.name
-        clock_name = _next_ac_clock_name(game, base_name)
+        clock_name = unique_clock_name(game, base_name)
         creation_source = f"{AC_SOURCE_PREFIX}{hit.name}"
 
         clock = ClockData(

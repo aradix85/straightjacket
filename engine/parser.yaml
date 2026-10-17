@@ -3,3 +3,5 @@ parser:
   min_line_length: 4
   stream_hold_markers: ["<", "```", "{", "\n---", "\n#"]
   stream_abbreviations: ["Mr.", "Mrs.", "Ms.", "Dr.", "St.", "Mt.", "e.g.", "i.e.", "etc."]
+  sentence_end_marks: [".", "!", "?", "\"", "“", "”", "»", "«", "…", ")", "–", "—", "*"]
+  sentence_breaks: [". ", ".\" ", ".\"\n", ".\"", ".\n\n", "! ", "!\" ", "!\"", "!\n\n", "? ", "?\" ", "?\"", "?\n\n", "…", "…\"", "… "]

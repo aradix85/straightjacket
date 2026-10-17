@@ -119,3 +119,16 @@
 "block_chapter_record_threats": 'Threats: {items}.'
 "block_chapter_record_overcome": 'Threats overcome: {items}.'
 "block_chapter_record_place": 'The chapter ended at {location}.'
+"history_label_action": Action
+"history_label_corrected": Corrected action
+"history_label_burn": Momentum burn
+"history_action": '{label} ({result}): {intent}'
+"history_dialog": 'Dialog: {intent}'
+"history_oracle": 'Oracle: {intent}'
+"history_corrected": '[corrected] {intent}'
+"history_opening": 'Opening scene: {player} in {location}'
+"history_chapter_opening": 'Chapter {n} opening: {player} in {location}'
+"history_succession_opening": 'Succession opening: {player} continues after {predecessor} ({reason}) — chapter {n}, location {location}'
+"scene_log_game_start": Game start
+"scene_log_chapter_start": 'Chapter {n} begins'
+"scene_log_succession_start": 'Succession from {predecessor}'

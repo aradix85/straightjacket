@@ -123,7 +123,7 @@ def check_npc_agency(game: GameState) -> tuple[list[str], list[ClockEvent], list
             npc_norms = {normalize_for_match(npc.name)}
             npc_norms.update(normalize_for_match(a) for a in npc.aliases)
             for clock in game.world.clocks:
-                if clock.clock_type not in ("scheme", "threat"):
+                if clock.clock_type not in eng().pacing.npc_agency_clock_types:
                     continue
                 if clock.owner_kind != "npc" or clock.owner_id is None:
                     continue
@@ -242,7 +242,7 @@ def _classify(cons: str, default_npc: str) -> tuple[str, str, str] | None:
                 amount = int(delta.replace("-", ""))
             except ValueError:
                 amount = 1
-            severity = "heavy" if amount >= 2 else "light"
+            severity = "heavy" if amount >= eng().resources.heavy_loss_amount else "light"
             if track in ("health", "spirit"):
                 return f"{track}_{severity}", "", ""
             if track == "supply" or "supply" in cons:

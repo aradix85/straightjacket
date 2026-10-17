@@ -9,6 +9,11 @@ adventure_crafter:
 
   theme_slots: 5
 
+  plotline_name_template: "Plotline {n}"
+  returning_character_name_template: "Returning {n}"
+  identity_roll_twice_row: "Roll for two Identities"
+  descriptor_roll_twice_row: "Roll for two Descriptors"
+
   theme_die_table:
     1: action
     2: action

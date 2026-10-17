@@ -41,6 +41,7 @@ from ..models import (
 )
 from ..parser import parse_narrator_response
 from ..prompt_boundary import build_new_game_prompt
+from ..prompt_loader import get_prompt
 from .setup_common import apply_opening_setup
 from .chapters import (
     _apply_blueprint,
@@ -304,10 +305,13 @@ def _generate_succession_opening(provider: AIProvider, game: GameState, config: 
 
 def _record_succession_opening(game: GameState, narration: str, predecessor: PredecessorRecord) -> None:
     record_scene_intensity(game, "action")
-    summary = (
-        f"Succession opening: {game.player_name} continues after {predecessor.player_name} "
-        f"({predecessor.end_reason}) — chapter {game.campaign.chapter_number}, "
-        f"location {game.world.current_location}"
+    summary = get_prompt(
+        "history_succession_opening",
+        player=game.player_name,
+        predecessor=predecessor.player_name,
+        reason=predecessor.end_reason,
+        n=str(game.campaign.chapter_number),
+        location=game.world.current_location,
     )
     game.narrative.narration_history.append(
         NarrationEntry(
@@ -320,7 +324,7 @@ def _record_succession_opening(game: GameState, narration: str, predecessor: Pre
         SceneLogEntry(
             scene=1,
             scene_type="expected",
-            summary=f"Succession from {predecessor.player_name}",
+            summary=get_prompt("scene_log_succession_start", predecessor=predecessor.player_name),
             result="opening",
         )
     )

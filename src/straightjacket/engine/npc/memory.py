@@ -47,7 +47,7 @@ def score_importance(emotional_weight: str, event_text: str = "", debug: bool = 
                 base = max(base, min_score)
                 break
 
-    result = min(10, base)
+    result = min(_mem_cfg.importance_max, base)
     if debug:
         return result, debug_info
     return result
@@ -86,7 +86,7 @@ def retrieve_memories(
         else:
             recency = _e.npc.memory_recency_decay**scene_gap
 
-        importance = mem.importance / 10.0
+        importance = mem.importance / _mem_cfg.importance_max
 
         relevance = 0.0
         if context_words:

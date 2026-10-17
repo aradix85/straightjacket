@@ -22,7 +22,7 @@ def locations_match(loc_a: str, loc_b: str) -> bool:
     if wa == wb:
         return True
     shorter, longer = (wa, wb) if len(wa) <= len(wb) else (wb, wa)
-    if len(shorter) >= 2:
+    if len(shorter) >= eng().location.word_match_min_words:
         return set(shorter).issubset(set(longer))
     return shorter[0] == longer[0]
 
@@ -39,9 +39,9 @@ def update_chaos_factor(game: GameState, result: str, target_npc_id: str | None 
 
         npc = find_npc(game, target_npc_id)
         if npc:
-            if npc.disposition in ("hostile", "distrustful"):
+            if npc.disposition in _c.dialog_raising_dispositions:
                 game.world.tick_chaos(_c.adjust_dialog_hostile, floor=_c.min, ceiling=_c.max)
-            elif npc.disposition in ("friendly", "loyal"):
+            elif npc.disposition in _c.dialog_lowering_dispositions:
                 game.world.tick_chaos(_c.adjust_dialog_friendly, floor=_c.min, ceiling=_c.max)
 
 
@@ -50,18 +50,15 @@ def time_phases() -> list[str]:
 
 
 def advance_time(game: GameState, progression: str) -> None:
-    phases = time_phases()
-    if not game.world.time_of_day or progression in ("none", "short"):
+    steps = eng().time_progression_steps.mapping[progression]
+    if not game.world.time_of_day or not steps:
         return
+    phases = time_phases()
     try:
         idx = phases.index(game.world.time_of_day)
     except ValueError:
         return
-    steps_map = eng().time_progression_steps.mapping
-    steps = steps_map[progression]
-    if steps:
-        new_idx = (idx + steps) % len(phases)
-        game.world.time_of_day = phases[new_idx]
+    game.world.time_of_day = phases[(idx + steps) % len(phases)]
 
 
 def clear_facts(game: GameState) -> None:
@@ -112,7 +109,7 @@ def get_pacing_hint(game: GameState) -> str:
 
     consecutive_intense = 0
     for h in reversed(history):
-        if h in ("action", "interrupt"):
+        if h in _e.pacing.intense_scene_types:
             consecutive_intense += 1
         else:
             break

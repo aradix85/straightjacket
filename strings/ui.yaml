@@ -33,7 +33,7 @@ ui.saves: Saves
 ui.no_saves: No saves found.
 ui.save_as: Save as
 ui.save: Save
-ui.load: Load
+ui.load_entry: 'Load: {name} (scene {scene})'
 ui.delete: Delete
 ui.delete_confirm: Delete?
 ui.burn_title: Burn Momentum?

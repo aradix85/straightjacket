@@ -16,10 +16,11 @@ def get_current_act(game: GameState) -> CurrentAct:
 
     if bp.story_complete and game.campaign.epilogue_dismissed:
         last = bp.acts[-1]
+        defaults = eng().ai_text.narrator_defaults
         return CurrentAct(
             phase="aftermath",
-            title="Aftermath",
-            goal="Open-ended play",
+            title=defaults["aftermath_act_title"],
+            goal=defaults["aftermath_act_goal"],
             mood=last.mood,
             act_number=len(bp.acts),
             total_acts=len(bp.acts),
@@ -57,7 +58,7 @@ def get_current_act(game: GameState) -> CurrentAct:
     else:
         progress = "late"
 
-    approaching_end = act_number == len(acts) and progress in ("mid", "late")
+    approaching_end = act_number == len(acts) and progress in cfg.approaching_end_progress
 
     return CurrentAct(
         phase=current.phase,

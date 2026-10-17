@@ -65,7 +65,7 @@ def call_narrator(
     else:
         _prose = raw[: raw.find("<game_data>")] if "<game_data>" in raw else raw
         _stripped = _prose.rstrip()
-        if _stripped and _stripped[-1] not in '.!?"\u201c\u201d\u00bb\u00ab\u2026)\u2013\u2014*':
+        if _stripped and _stripped[-1] not in eng().parser.sentence_end_marks:
             log(
                 f"[Narrator] WARNING: Response appears truncated despite complete "
                 f"({len(raw)} chars, ends with '{_stripped[-20:]}')",

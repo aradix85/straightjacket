@@ -45,6 +45,7 @@ from ..models import (
 from ..npc import activate_npcs_for_prompt, find_npc, reactivate_npc
 from ..prompt_action import build_action_prompt
 from ..prompt_dialog import build_dialog_prompt
+from ..prompt_loader import get_prompt
 from ..story_state import get_pending_revelations
 from .action_resolution import resolve_action_phase
 from .finalization import narrate_scene
@@ -85,7 +86,7 @@ def process_turn(
         earlier=None,
         earlier_places=[],
         narrator_note="",
-        label="Action",
+        label=get_prompt("history_label_action"),
     )
     return game, narration, roll, burn_offer, director_ctx
 
@@ -120,7 +121,7 @@ def replay_turn(
         earlier=earlier,
         earlier_places=earlier_places,
         narrator_note=narrator_note,
-        label="Corrected action",
+        label=get_prompt("history_label_corrected"),
     )
     return narration, burn_offer, director_ctx
 
@@ -147,10 +148,11 @@ def _play_turn(
     facts, pending_random_events = _resolve_brain_requests(game, brain)
     release_absent_target(brain, facts)
 
-    ctx = build_scene_context(provider, game, brain, config, player_message, scene_setup, pending_random_events, facts)
+    ctx = build_scene_context(
+        provider, game, brain, config, player_message, scene_setup, pending_random_events, facts, label
+    )
     ctx.stream = stream
     ctx.narrator_note = narrator_note
-    ctx.summary_label = label
 
     if is_dialog_branch(brain):
         narration, director_ctx = _process_dialog_turn(ctx)
@@ -247,6 +249,7 @@ def build_scene_context(
     scene_setup: SceneSetup,
     pending_random_events: list[RandomEvent],
     facts: list[ResolvedFact],
+    summary_label: str,
 ) -> SceneContext:
     activated_npcs, mentioned_npcs, npc_activation_debug = activate_npcs_for_prompt(game, brain, player_message)
     scene_present_ids = {n.id for n in activated_npcs} | {n.id for n in mentioned_npcs}
@@ -263,6 +266,7 @@ def build_scene_context(
         pending_revs=pending_revs,
         npc_activation_debug=npc_activation_debug,
         facts=facts,
+        summary_label=summary_label,
         activated_npcs=activated_npcs,
         mentioned_npcs=mentioned_npcs,
         pending_random_events=pending_random_events,
@@ -326,7 +330,10 @@ def _process_dialog_turn(ctx: SceneContext) -> tuple[str, dict[str, Any] | None]
         ctx,
         narration,
         log_entry=log_entry,
-        prompt_summary=f"{result_label.capitalize()}: {(brain.player_intent or ctx.player_message)[: eng().truncations.log_medium]}",
+        prompt_summary=get_prompt(
+            "history_oracle" if is_oracle else "history_dialog",
+            intent=(brain.player_intent or ctx.player_message)[: eng().truncations.log_medium],
+        ),
         roll_result_str=result_label,
         agency_clock_events=agency_clock_events,
     )
@@ -362,7 +369,7 @@ def _maybe_create_track(game: GameState, brain: BrainResult) -> None:
                 id=unique_id(f"thread_{slug}", {t.id for t in game.narrative.threads}),
                 name=brain.track_name,
                 thread_type="vow",
-                weight=2,
+                weight=eng().random_events.seeded_list_weight,
                 source="vow",
                 linked_track_id=track_id,
             )
@@ -506,7 +513,6 @@ def _narrate_action_and_finalize(
         game.last_turn_snapshot.roll = roll
         game.last_turn_snapshot.narration = narration
 
-    summary_label = ctx.summary_label
     _, director_ctx = finalize_scene(
         ctx,
         narration,
@@ -523,7 +529,12 @@ def _narrate_action_and_finalize(
             "npc_activation": ctx.npc_activation_debug,
             "_pacing_type": "action",
         },
-        prompt_summary=f"{summary_label} ({roll.result}): {(brain.player_intent or player_message)[: eng().truncations.log_medium]}",
+        prompt_summary=get_prompt(
+            "history_action",
+            label=ctx.summary_label,
+            result=roll.result,
+            intent=(brain.player_intent or player_message)[: eng().truncations.log_medium],
+        ),
         roll_result_str=roll.result,
         roll=roll,
         consequences=action_res.consequences,

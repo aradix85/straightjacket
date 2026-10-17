@@ -6,6 +6,7 @@ import json
 
 from ..logging_util import log
 from ..models import GameState
+from ..prompt_loader import get_prompt
 from .registry import get_handler
 
 
@@ -23,7 +24,7 @@ def execute_tool_call(role: str, tool_call: dict[str, Any], game: GameState) -> 
     handler = get_handler(role, name)
     if handler is None:
         log(f"[Tools] Unknown tool: {name} (role={role})", level="warning")
-        return json.dumps({"error": f"unknown tool: {name}"})
+        return json.dumps({"error": get_prompt("tool_error_unknown", tool=name)})
 
     unknown = _unknown_arguments(handler, arguments)
     if unknown:
@@ -39,4 +40,4 @@ def execute_tool_call(role: str, tool_call: dict[str, Any], game: GameState) -> 
         return str(result)
     except Exception as e:
         log(f"[Tools] {name} failed: {e}", level="warning")
-        return json.dumps({"error": f"{name} failed: {e}"})
+        return json.dumps({"error": get_prompt("tool_error_failed", tool=name, error=str(e))})

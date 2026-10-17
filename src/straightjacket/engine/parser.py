@@ -24,24 +24,7 @@ def salvage_truncated_narration(raw: str) -> str:
     metadata = raw[prose_end:]
 
     last_sentence = -1
-    for pattern in [
-        ". ",
-        '." ',
-        '."\n',
-        '."',
-        ".\n\n",
-        "! ",
-        '!" ',
-        '!"',
-        "!\n\n",
-        "? ",
-        '?" ',
-        '?"',
-        "?\n\n",
-        "…",
-        '…"',
-        "… ",
-    ]:
+    for pattern in eng().parser.sentence_breaks:
         idx = prose.rfind(pattern)
         if idx != -1:
             end = idx + len(pattern)

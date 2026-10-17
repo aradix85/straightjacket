@@ -173,19 +173,6 @@ class ProgressTrack(SerializableMixin):
         return self.ticks - old
 
 
-THREAT_CATEGORIES: tuple[str, ...] = (
-    "burgeoning_conflict",
-    "cursed_site",
-    "environmental_calamity",
-    "malignant_plague",
-    "rampaging_creature",
-    "ravaging_horde",
-    "scheming_leader",
-    "power_hungry_mystic",
-    "zealous_cult",
-)
-
-
 @dataclass
 class ThreatData(SerializableMixin):
     id: str

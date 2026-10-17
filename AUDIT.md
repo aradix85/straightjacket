@@ -34,7 +34,7 @@ One audit session covers one principle, or for the interpretive principles (1, 3
 
 ## Output
 
-1. A fix-file `fix_principle<N>.md`: every violation with path, line, a one-sentence classification, and for clear violations a short note on the fix. Carve-outs are not listed; `needs human judgment` items carry a separate marker. For interpretive principles the file grows across sessions, each contribution dated and labelled with its submodule.
+1. A fix-file `fix_principle<N>.md` in `docs/audit/`: every violation with path, line, a one-sentence classification, and for clear violations a short note on the fix. Carve-outs are not listed; `needs human judgment` items carry a separate marker. For interpretive principles the file grows across sessions, each contribution dated and labelled with its submodule.
 2. This document's Status updated, and every finding the session leaves open added to roadmap step 9h.
 3. A short summary for the user: the number of violations and their spread over files, up to five `needs human judgment` items with file and line, and the grep log.
 
@@ -109,7 +109,7 @@ Carve-outs: the orphan-symbol carve-outs in `tests/test_project_rules.py` (for e
 Submodules for principles 1, 3, and 5: `mechanics/`, `npc/`, `game/`, `ai/`, `db/`, `datasworn/`, `tools/`, `correction/`, the files directly under `engine/`, `web/`, and the top level of `src/straightjacket/` (`i18n.py`, `strings_loader.py`). A finished submodule is listed under its principle with its date; a principle is done when every submodule is listed.
 
 - Principle 1: no submodule audited.
-- Principle 2: not audited.
+- Principle 2: audited 2026-10-17, all four passes (`docs/audit/fix_principle2.md`); the clear violations are fixed, and what waits for the user or for a later session is in roadmap 9h.4, 9h.12, and 9h.13.
 - Principle 3: no submodule audited.
 - Principle 4: not audited. Pass 4c is largely enforced already: saves load strictly, and the settings loader refuses unknown keys.
 - Principle 5: no submodule audited.

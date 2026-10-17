@@ -5,9 +5,6 @@ from dataclasses import dataclass, field
 from .serialization import SerializableMixin
 
 
-NPC_STATUSES: frozenset[str] = frozenset({"active", "background", "deceased", "lore"})
-
-
 @dataclass
 class MemoryEntry(SerializableMixin):
     scene: int

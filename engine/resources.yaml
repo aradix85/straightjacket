@@ -5,3 +5,4 @@ resources:
   health_start: 5
   spirit_start: 5
   supply_start: 5
+  heavy_loss_amount: 2

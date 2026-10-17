@@ -84,9 +84,10 @@ def _update_state_error_logs(
     game: GameState, brain: BrainResult, roll: RollResult | None, narration: str, intent: str
 ) -> None:
     nar = game.narrative
+    summary = get_prompt("history_corrected", intent=intent)
     narration_entry = NarrationEntry(
         scene=nar.scene_count,
-        prompt_summary=f"[corrected] {intent}",
+        prompt_summary=summary,
         narration=narration[: eng().pacing.max_narration_chars],
     )
     if nar.narration_history:
@@ -94,13 +95,13 @@ def _update_state_error_logs(
     else:
         nar.narration_history.append(narration_entry)
     if nar.session_log:
-        nar.session_log[-1].summary = f"[corrected] {intent}"
+        nar.session_log[-1].summary = summary
     else:
         nar.session_log.append(
             SceneLogEntry(
                 scene=nar.scene_count,
                 scene_type="expected",
-                summary=f"[corrected] {intent}",
+                summary=summary,
                 move=brain.move,
                 result=roll.result if roll else "dialog",
             )

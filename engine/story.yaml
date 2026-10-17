@@ -14,3 +14,4 @@ story_state:
   intensity_smoothing_current: 0.3
   intensity_smoothing_previous: 0.7
   crisis_scene_offset: 5
+  approaching_end_progress: [mid, late]

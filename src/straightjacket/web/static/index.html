@@ -479,13 +479,14 @@ function renderSavesList(saves) {
   }
   saves.forEach(sv => {
     const loadBtn = document.createElement("button");
-    loadBtn.textContent = `${s("ui.load")}: ${sv.name} (scene ${sv.scene_count || "?"})`;
+    loadBtn.textContent = s("ui.load_entry", {name: sv.name, scene: sv.scene_count});
     loadBtn.onclick = () => send({type: "load", name: sv.name});
     div.appendChild(loadBtn);
     div.appendChild(document.createTextNode(" "));
     if (sv.name !== "autosave") {
       const delBtn = document.createElement("button");
       delBtn.textContent = "✕";
+      delBtn.setAttribute("aria-label", s("ui.delete") + " " + sv.name);
       delBtn.style.color = "var(--error)";
       delBtn.onclick = () => { if (confirm(s("ui.delete_confirm"))) send({type: "delete_save", name: sv.name}); };
       div.appendChild(delBtn);

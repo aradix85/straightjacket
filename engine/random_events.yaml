@@ -19,6 +19,7 @@ random_events:
   consolidation_weight_high: 3
   consolidation_weight_low: 2
   consolidation_weight_default: 1
+  seeded_list_weight: 2
 
   keyed_scene_mapping:
     npc_action:

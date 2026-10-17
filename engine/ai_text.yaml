@@ -68,6 +68,8 @@ ai_text:
     correction_brain_fallback_state_ops: []
     new_chapter_threads_template: 'New chapter. Open threads: {threads}'
     new_chapter_blank: A new chapter begins.
+    aftermath_act_title: Aftermath
+    aftermath_act_goal: Open-ended play
     npc_agency_action_template: '{npc_name} acts on their agenda ("{agenda}") somewhere off screen; show an effect of it
       that reaches this scene: a sign, a rumour, or a consequence.'
     momentum_burn_injection: <momentum_burn>The player spent momentum to turn the result; the result in the scene already

@@ -32,12 +32,12 @@ class SceneContext:
     pending_revs: list[Any]
     npc_activation_debug: dict[str, Any]
     facts: list[ResolvedFact]
+    summary_label: str
     activated_npcs: list[NpcData] = field(default_factory=list)
     mentioned_npcs: list[NpcData] = field(default_factory=list)
     pending_random_events: list[RandomEvent] = field(default_factory=list)
     stream: NarrationSink | None = None
     narrator_note: str = ""
-    summary_label: str = "Action"
 
 
 @dataclass

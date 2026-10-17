@@ -6,6 +6,8 @@ chaos:
   adjust_strong: -1
   adjust_dialog_hostile: 1
   adjust_dialog_friendly: -1
+  dialog_raising_dispositions: [hostile, distrustful]
+  dialog_lowering_dispositions: [friendly, loyal]
 chaos_resolver:
   high_threshold: 7
   low_threshold: 3

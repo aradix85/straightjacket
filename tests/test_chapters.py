@@ -377,3 +377,14 @@ def test_generate_epilogue_raises_on_empty_narration(load_engine: None, stub_all
     g = make_game_state(player_name="Aria", setting_id="starforged")
     with pytest.raises(AIUnavailableError, match="empty narration"):
         generate_epilogue(provider, g)
+
+
+def test_generate_epilogue_raises_when_cleanup_leaves_nothing(load_engine: None, stub_all: None) -> None:
+    from straightjacket.engine.ai.provider_base import AIUnavailableError
+    from straightjacket.engine.game.chapters import generate_epilogue
+
+    provider = MockProvider("```json\n{}\n```")
+    g = make_game_state(player_name="Aria", setting_id="starforged")
+    with pytest.raises(AIUnavailableError, match="empty epilogue"):
+        generate_epilogue(provider, g)
+    assert g.campaign.epilogue_shown is False

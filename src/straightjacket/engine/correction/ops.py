@@ -7,7 +7,7 @@ import uuid
 from ..engine_loader import eng
 from ..logging_util import log
 from ..mechanics import clear_facts, locations_match
-from ..models import NPC_STATUSES, GameState, NpcData
+from ..models import GameState, NpcData
 from ..npc import consolidate_memory, find_npc
 from ..npc.lifecycle import sanitize_aliases
 
@@ -24,7 +24,7 @@ def _op_npc_edit(game: GameState, op_dict: dict[str, Any]) -> None:
     if is_rename:
         edits.pop("aliases", None)
 
-    if "status" in edits and edits["status"] not in NPC_STATUSES:
+    if "status" in edits and edits["status"] not in eng().enums.npc_statuses:
         edits.pop("status")
 
     for k, v in edits.items():

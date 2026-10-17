@@ -4,3 +4,4 @@ fuzzy_match:
   description_match_min_length: 10
   description_word_min_length: 3
   npc_name_min_length: 3
+  named_in_min_word_length: 4

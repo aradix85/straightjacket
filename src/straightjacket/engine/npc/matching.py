@@ -112,12 +112,13 @@ def _find_by_substring(game: "GameState", ref_norm: str) -> NpcData | None:
 
 def named_in(npc: "NpcData", text: str) -> bool:
     lowered = text.lower()
+    min_word = eng().fuzzy_match.named_in_min_word_length
     for name in (npc.name, *npc.aliases):
         whole = name.lower().strip()
         if whole and whole in lowered:
             return True
         for part in name.split():
-            if len(part) >= 4 and re.search(rf"\b{re.escape(part.lower())}\b", lowered):
+            if len(part) >= min_word and re.search(rf"\b{re.escape(part.lower())}\b", lowered):
                 return True
     return False
 

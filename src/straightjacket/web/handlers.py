@@ -223,7 +223,7 @@ async def handle_player_input(session: Session, ws: WebSocket, msg: dict[str, An
     session.pending_burn = None
     try:
         session.append_chat("user", text)
-        await _send(ws, {"type": "status", "text": "..."})
+        await _send(ws, {"type": "status", "text": t("game.processing")})
 
         provider = get_provider()
         stream, pending_sentences = _narration_stream(ws, session.game) if cfg().server.stream_narration else (None, [])
@@ -318,7 +318,7 @@ async def handle_correction(session: Session, ws: WebSocket, msg: dict[str, Any]
     session.processing = True
     session.pending_burn = None
     try:
-        await _send(ws, {"type": "status", "text": "..."})
+        await _send(ws, {"type": "status", "text": t("game.processing")})
         provider = get_provider()
         before, last_before = session.game.snapshot(), copy.deepcopy(session.game.last_turn_snapshot)
         try:

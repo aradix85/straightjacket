@@ -24,7 +24,6 @@ from .models_base import (
     WorldState,
 )
 from .models_npc import (
-    NPC_STATUSES,
     MemoryEntry,
     NpcData,
 )
@@ -197,7 +196,6 @@ class GameState(SerializableMixin):
 
 
 __all__ = [
-    "NPC_STATUSES",
     "BrainResult",
     "CampaignState",
     "ChapterSummary",

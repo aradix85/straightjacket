@@ -35,6 +35,7 @@ from ..models import (
 )
 from ..parser import parse_narrator_response
 from ..prompt_boundary import build_new_game_prompt
+from ..prompt_loader import get_prompt
 from ..user_management import load_user_config, save_user_config
 
 from .setup_common import apply_opening_setup
@@ -146,7 +147,7 @@ def _seed_background_vow(game: GameState, vow_text: str, rank: str = "") -> None
             id="thread_background_vow",
             name=vow_text,
             thread_type="vow",
-            weight=2,
+            weight=eng().random_events.seeded_list_weight,
             source="creation",
             linked_track_id="vow_background",
         )
@@ -162,7 +163,7 @@ def _seed_vow_subject(game: GameState, vow_subject: str) -> None:
             id="char_vow_subject",
             name=vow_subject,
             entry_type="abstract",
-            weight=2,
+            weight=eng().random_events.seeded_list_weight,
         )
     )
     log(f"[NewGame] Vow subject seeded in characters list: {vow_subject}")
@@ -307,7 +308,7 @@ def start_new_game(
     game.narrative.narration_history.append(
         NarrationEntry(
             scene=1,
-            prompt_summary=f"Opening scene: {game.player_name} in {game.world.current_location}",
+            prompt_summary=get_prompt("history_opening", player=game.player_name, location=game.world.current_location),
             narration=narration,
         )
     )
@@ -315,7 +316,7 @@ def start_new_game(
         SceneLogEntry(
             scene=1,
             scene_type="expected",
-            summary="Game start",
+            summary=get_prompt("scene_log_game_start"),
             result="opening",
         )
     )

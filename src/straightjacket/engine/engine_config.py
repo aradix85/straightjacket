@@ -362,6 +362,10 @@ def _build_adventure_crafter(ac_raw: dict[str, Any]) -> AdventureCrafterConfig:
         max_threats_per_chapter=ac_raw["max_threats_per_chapter"],
         threat_creation_mapping=ac_threat_creation,
         clock_creation_mapping=ac_clock_creation,
+        plotline_name_template=ac_raw["plotline_name_template"],
+        returning_character_name_template=ac_raw["returning_character_name_template"],
+        identity_roll_twice_row=ac_raw["identity_roll_twice_row"],
+        descriptor_roll_twice_row=ac_raw["descriptor_roll_twice_row"],
     )
 
 
@@ -409,6 +413,7 @@ def _build_random_events(re_raw: dict[str, Any]) -> RandomEventsConfig:
         consolidation_weight_high=re_raw["consolidation_weight_high"],
         consolidation_weight_low=re_raw["consolidation_weight_low"],
         consolidation_weight_default=re_raw["consolidation_weight_default"],
+        seeded_list_weight=re_raw["seeded_list_weight"],
         keyed_scene_mapping=re_keyed_mapping,
         threat_creation_mapping=re_threat_creation,
         clock_creation_mapping=re_clock_creation,
@@ -428,6 +433,7 @@ def _build_clocks(c_raw: dict[str, Any]) -> ClocksConfig:
         miss_ticks_by_position={str(k): int(v) for k, v in dict(c_raw["miss_ticks_by_position"]).items()},
         fill_consequences=fill,
         complication=_build_strict(ComplicationClockConfig, dict(c_raw["complication"])),
+        duplicate_name_template=c_raw["duplicate_name_template"],
     )
 
 
@@ -495,14 +501,7 @@ def parse_engine_yaml(data: dict[str, Any]) -> EngineSettings:
 
     f_data = dict(data["fate"])
     lr = _build_strict(FateLikelihoodRules, dict(f_data.pop("likelihood_rules")))
-    odds_modifiers = dict(f_data["odds_modifiers"])
-    chaos_modifiers = {int(k): int(v) for k, v in f_data["chaos_modifiers"].items()}
-    fate = FateConfig(
-        default_method=f_data["default_method"],
-        odds_modifiers=odds_modifiers,
-        chaos_modifiers=chaos_modifiers,
-        likelihood_rules=lr,
-    )
+    fate = FateConfig(default_method=f_data["default_method"], likelihood_rules=lr)
     fact_resolution = _build_fact_resolution(dict(data["fact_resolution"]))
 
     impacts = {

@@ -247,10 +247,11 @@ def unique_clock_name(game: GameState, base_name: str) -> str:
     existing = {c.name for c in game.world.clocks}
     if base_name not in existing:
         return base_name
+    template = eng().clocks.duplicate_name_template
     n = 2
-    while f"{base_name} ({n})" in existing:
+    while template.format(name=base_name, n=n) in existing:
         n += 1
-    return f"{base_name} ({n})"
+    return template.format(name=base_name, n=n)
 
 
 def spawn_clock_from_random_event(game: GameState, event: RandomEvent) -> ClockData | None:
@@ -290,8 +291,7 @@ def spawn_clock_from_random_event(game: GameState, event: RandomEvent) -> ClockD
 
 
 def _name_from_mythic_pair(action: str, subject: str) -> str:
-    parts = [p for p in (action, subject) if p]
-    return " ".join(parts) if parts else "Unnamed threat"
+    return f"{action} {subject}"
 
 
 def _count_emergent_threats(game: GameState) -> int:

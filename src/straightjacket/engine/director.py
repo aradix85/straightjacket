@@ -61,10 +61,7 @@ def should_call_director(
     bp = game.narrative.story_blueprint
     if bp and bp.acts:
         act = get_current_act(game)
-        if (
-            act.phase in ("climax", "resolution", "ten_twist", "ketsu_resolution")
-            and act.phase not in bp.triggered_director_phases
-        ):
+        if act.phase in eng().pacing.director_phases and act.phase not in bp.triggered_director_phases:
             return f"phase:{act.phase}"
 
     if game.narrative.scene_count > 0 and game.narrative.scene_count % eng().pacing.director_interval == 0:
@@ -259,7 +256,7 @@ def _reset_all_reflection_flags(game: GameState, reason: str) -> None:
 
 
 def _reflection_is_truncated(text: str) -> bool:
-    return not text.rstrip().endswith((".", "!", "?", '"', "»", "…", ")", "\u2013", "—"))
+    return not text.rstrip().endswith(tuple(eng().parser.sentence_end_marks))
 
 
 def _append_reflection_memory(npc: NpcData, ref: dict[str, Any], game: GameState) -> None:

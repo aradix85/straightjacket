@@ -9,6 +9,8 @@ clocks:
 
   max_clocks_per_chapter: 4
 
+  duplicate_name_template: "{name} ({n})"
+
   complication:
     segments: 4
     tick_chance: 1.0

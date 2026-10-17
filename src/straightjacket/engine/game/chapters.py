@@ -7,7 +7,7 @@ from concurrent.futures import ThreadPoolExecutor
 from ..ai.blueprint_voicing import call_blueprint_voicing
 from ..ai.metadata import process_deceased_npcs
 from ..ai.narrator import call_narrator, call_opening_setup
-from ..ai.provider_base import AIProvider
+from ..ai.provider_base import AIProvider, AIUnavailableError
 from ..db import sync as _db_sync
 from ..db.connection import reset_db
 from ..engine_loader import eng
@@ -70,7 +70,7 @@ def generate_epilogue(
     narration = narration.strip()
 
     if not narration:
-        narration = "(The narrator pauses, then offers a quiet reflection on the journey...)"
+        raise AIUnavailableError("narrator: empty epilogue")
 
     game.campaign.epilogue_shown = True
     game.campaign.epilogue_text = narration
@@ -328,7 +328,12 @@ def _record_chapter_opening(game: GameState, narration: str) -> None:
     game.narrative.narration_history.append(
         NarrationEntry(
             scene=1,
-            prompt_summary=f"Chapter {game.campaign.chapter_number} opening: {game.player_name} in {game.world.current_location}",
+            prompt_summary=get_prompt(
+                "history_chapter_opening",
+                n=str(game.campaign.chapter_number),
+                player=game.player_name,
+                location=game.world.current_location,
+            ),
             narration=narration,
         )
     )
@@ -336,7 +341,7 @@ def _record_chapter_opening(game: GameState, narration: str) -> None:
         SceneLogEntry(
             scene=1,
             scene_type="expected",
-            summary=f"Chapter {game.campaign.chapter_number} begins",
+            summary=get_prompt("scene_log_chapter_start", n=str(game.campaign.chapter_number)),
             result="opening",
         )
     )

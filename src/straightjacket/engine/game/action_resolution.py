@@ -64,7 +64,8 @@ def _collect_threat_events(game: GameState, roll: RollResult) -> list[ThreatEven
 
     high_threshold = eng().threats.menace_high_threshold
     for threat in game.threats:
-        if threat.status == "overcome" and threat.menace_filled_boxes / 10 >= high_threshold:
+        boxes = threat.max_menace_ticks // ProgressTrack.TICKS_PER_BOX
+        if threat.status == "overcome" and threat.menace_filled_boxes / boxes >= high_threshold:
             events.append(
                 ThreatEvent(
                     threat_id=threat.id,

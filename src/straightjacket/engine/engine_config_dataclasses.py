@@ -35,6 +35,8 @@ class ChaosConfig:
     adjust_strong: int
     adjust_dialog_hostile: int
     adjust_dialog_friendly: int
+    dialog_raising_dispositions: list[str]
+    dialog_lowering_dispositions: list[str]
 
 
 @dataclass
@@ -50,6 +52,9 @@ class PacingConfig:
     weak_hit_clock_tick_chance: float
     fired_clock_keep_scenes: int
     npc_agency_interval: int
+    npc_agency_clock_types: list[str]
+    intense_scene_types: list[str]
+    director_phases: list[str]
 
 
 @dataclass
@@ -79,6 +84,7 @@ class ResourcesConfig:
     health_start: int
     spirit_start: int
     supply_start: int
+    heavy_loss_amount: int
 
 
 @dataclass
@@ -117,6 +123,7 @@ class ActivationScores:
 class LocationConfig:
     history_size: int
     prompt_history_size: int
+    word_match_min_words: int
 
 
 @dataclass
@@ -397,8 +404,6 @@ class FateLikelihoodRules:
 @dataclass
 class FateConfig:
     default_method: str
-    odds_modifiers: dict[str, int]
-    chaos_modifiers: dict[int, int]
     likelihood_rules: FateLikelihoodRules
 
 
@@ -471,6 +476,7 @@ class FuzzyMatchConfig:
     description_match_min_length: int
     description_word_min_length: int
     npc_name_min_length: int
+    named_in_min_word_length: int
 
 
 @dataclass
@@ -516,6 +522,7 @@ class MemoryConfig:
     consolidation_floor: int
     unknown_emotion_importance: int
     overlap_scale: int
+    importance_max: int
 
 
 @dataclass
@@ -552,6 +559,8 @@ class ParserConfig:
     min_line_length: int
     stream_hold_markers: list[str]
     stream_abbreviations: list[str]
+    sentence_end_marks: list[str]
+    sentence_breaks: list[str]
 
 
 @dataclass
@@ -559,6 +568,7 @@ class StoryStateConfig:
     intensity_smoothing_current: float
     intensity_smoothing_previous: float
     crisis_scene_offset: int
+    approaching_end_progress: list[str]
 
 
 @dataclass
@@ -613,6 +623,7 @@ class RandomEventsConfig:
     consolidation_weight_high: int
     consolidation_weight_low: int
     consolidation_weight_default: int
+    seeded_list_weight: int
     keyed_scene_mapping: dict[str, RandomEventKeyedSceneMappingEntry]
     threat_creation_mapping: dict[str, ThreatCreationMappingEntry]
     clock_creation_mapping: dict[str, ClockCreationMappingEntry]
@@ -769,6 +780,10 @@ class AdventureCrafterConfig:
     max_threats_per_chapter: int
     threat_creation_mapping: dict[str, ThreatCreationMappingEntry]
     clock_creation_mapping: dict[str, ClockCreationMappingEntry]
+    plotline_name_template: str
+    returning_character_name_template: str
+    identity_roll_twice_row: str
+    descriptor_roll_twice_row: str
 
 
 @dataclass
@@ -798,6 +813,7 @@ class ClocksConfig:
     miss_ticks_by_position: dict[str, int]
     fill_consequences: dict[str, ClockFillConsequenceEntry]
     complication: ComplicationClockConfig
+    duplicate_name_template: str
 
 
 @dataclass

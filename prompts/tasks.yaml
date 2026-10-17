@@ -39,3 +39,4 @@
   IMPORTANT: The <character> above is the PLAYER CHARACTER. MUST NOT include them as an NPC.
   creativity_seed: {seed} (loose inspiration for NPC names, locations, and scene details — not literal)
   Write only narrative prose.
+"opening_pronouns_hint": ' Use {pronouns} pronouns for the player character.'

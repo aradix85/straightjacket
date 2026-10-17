@@ -19,7 +19,7 @@ def build_new_game_prompt(game: GameState) -> str:
     paths_tag = f"\n<paths>{_xe(', '.join(game.paths))}</paths>" if game.paths else ""
     vow_tag = f"\n<vow>{_xe(game.background_vow)}</vow>" if game.background_vow else ""
 
-    pronouns_hint = f" Use {game.pronouns} pronouns for the player character." if game.pronouns else ""
+    pronouns_hint = get_prompt("opening_pronouns_hint", pronouns=game.pronouns) if game.pronouns else ""
     task = get_prompt(
         "task_opening",
         player_name=game.player_name,

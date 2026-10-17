@@ -82,27 +82,35 @@ def resolve_fate_check(odds: str, chaos_factor: int, question: str) -> FateResul
     return resolve_fate_check_with_dice(odds, chaos_factor, question, (random.randint(1, 10), random.randint(1, 10)))
 
 
+_CHECK_ANSWER_PRECEDENCE = ("exceptional_yes", "exceptional_no", "yes", "no")
+
+
+def _check_answer(answers: dict[str, dict[str, int]], total: int) -> str:
+    for answer in _CHECK_ANSWER_PRECEDENCE:
+        bounds = answers[answer]
+        if "min_total" in bounds and total < bounds["min_total"]:
+            continue
+        if "max_total" in bounds and total > bounds["max_total"]:
+            continue
+        return answer
+    raise ValueError(f"fate_check answers in mythic_gme_2e.json cover no total {total}")
+
+
 def resolve_fate_check_with_dice(odds: str, chaos_factor: int, question: str, dice: tuple[int, int]) -> FateResult:
-    cfg = eng().fate
-    if odds not in cfg.odds_modifiers:
-        raise KeyError(f"Unknown odds level '{odds}' (valid: {sorted(cfg.odds_modifiers.keys())})")
-    if chaos_factor not in cfg.chaos_modifiers:
-        raise KeyError(f"Unknown chaos_factor {chaos_factor} (valid: {sorted(cfg.chaos_modifiers.keys())})")
+    check = _load_mythic()["fate_check"]
+    odds_modifiers = {row["odds"]: row["modifier"] for row in check["odds_modifiers"]}
+    chaos_modifiers = {row["chaos_factor"]: row["modifier"] for row in check["chaos_factor_modifiers"]}
+    if odds not in odds_modifiers:
+        raise KeyError(f"Unknown odds level '{odds}' (valid: {sorted(odds_modifiers)})")
+    if chaos_factor not in chaos_modifiers:
+        raise KeyError(f"Unknown chaos_factor {chaos_factor} (valid: {sorted(chaos_modifiers)})")
 
     d1, d2 = dice
 
-    odds_mod = cfg.odds_modifiers[odds]
-    cf_mod = cfg.chaos_modifiers[chaos_factor]
+    odds_mod = odds_modifiers[odds]
+    cf_mod = chaos_modifiers[chaos_factor]
     total = d1 + d2 + odds_mod + cf_mod
-
-    if 18 <= total <= 20:
-        answer = "exceptional_yes"
-    elif 2 <= total <= 4:
-        answer = "exceptional_no"
-    elif total >= 11:
-        answer = "yes"
-    else:
-        answer = "no"
+    answer = _check_answer(check["answers"], total)
 
     event_triggered = _check_check_random_event(d1, d2, chaos_factor)
 
