@@ -3,8 +3,8 @@ from __future__ import annotations
 from ..engine_loader import eng
 from ..logging_util import log
 from ..models import ClockData, GameState
-from .random_events import unique_clock_name
-from .spawn_sources import COMPLICATION_SOURCE_PREFIX, EMERGENT_SOURCE_PREFIXES
+from .clocks import count_emergent_clocks, unique_clock_name
+from .spawn_sources import COMPLICATION_SOURCE_PREFIX
 
 
 def is_complication(clock: ClockData) -> bool:
@@ -20,8 +20,7 @@ def spawn_complication_clock(game: GameState, kind: str, danger: str) -> ClockDa
     if len(open_complications(game)) >= cfg.complication.max_open:
         log(f"[Complication] {cfg.complication.max_open} complication clock(s) already open, no clock for '{danger}'")
         return None
-    emergent = sum(1 for c in game.world.clocks if c.creation_source.startswith(EMERGENT_SOURCE_PREFIXES))
-    if emergent >= cfg.max_clocks_per_chapter:
+    if count_emergent_clocks(game) >= cfg.max_clocks_per_chapter:
         log(f"[Complication] emergent clock cap {cfg.max_clocks_per_chapter} reached, no clock for '{danger}'")
         return None
     clock = ClockData(

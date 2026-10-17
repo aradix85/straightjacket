@@ -214,7 +214,7 @@ def _known_npcs_string(mentioned: Sequence[NpcData], game: GameState, exclude_id
     for n in game.npcs:
         if n.id in exclude_ids:
             continue
-        if n.status not in ("active", "background"):
+        if n.status not in eng().npc_status_groups.in_play:
             continue
         parts.append(_npc_entry(n))
 

@@ -36,7 +36,7 @@ def resolve_fate_chart(odds: str, chaos_factor: int, question: str, roll: int | 
     cell = chart[odds][cf_index]
 
     if roll is None:
-        roll = random.randint(1, 100)
+        roll = random.randint(1, eng().dice.fate_chart_die)
 
     ey_threshold = cell["exceptional_yes"]
     yes_threshold = cell["yes"]
@@ -67,7 +67,7 @@ def resolve_fate_chart(odds: str, chaos_factor: int, question: str, roll: int | 
 
 
 def _check_chart_random_event(roll: int, chaos_factor: int) -> bool:
-    if roll == 100:
+    if roll == eng().dice.fate_chart_die:
         return True
     if roll < 11:
         return False
@@ -79,7 +79,8 @@ def _check_chart_random_event(roll: int, chaos_factor: int) -> bool:
 
 
 def resolve_fate_check(odds: str, chaos_factor: int, question: str) -> FateResult:
-    return resolve_fate_check_with_dice(odds, chaos_factor, question, (random.randint(1, 10), random.randint(1, 10)))
+    die = eng().dice.fate_check_die
+    return resolve_fate_check_with_dice(odds, chaos_factor, question, (random.randint(1, die), random.randint(1, die)))
 
 
 _CHECK_ANSWER_PRECEDENCE = ("exceptional_yes", "exceptional_no", "yes", "no")

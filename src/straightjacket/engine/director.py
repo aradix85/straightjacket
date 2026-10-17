@@ -55,7 +55,7 @@ def should_call_director(
         return "revelation"
 
     for npc in game.npcs:
-        if npc.needs_reflection and npc.status in ("active", "background"):
+        if npc.needs_reflection and npc.status in eng().npc_status_groups.in_play:
             return f"reflection:{npc.name}"
 
     bp = game.narrative.story_blueprint
@@ -108,7 +108,7 @@ def _build_reflection_block(game: GameState, npc: NpcData) -> str:
 
 def _reflection_eligible(npc: NpcData) -> bool:
     needs_profile = not npc.agenda.strip() or not npc.instinct.strip()
-    return (npc.needs_reflection or needs_profile) and npc.status in ("active", "background")
+    return (npc.needs_reflection or needs_profile) and npc.status in eng().npc_status_groups.in_play
 
 
 def _collect_reflection_blocks(game: GameState) -> str:
@@ -405,6 +405,6 @@ def apply_director_guidance(game: GameState, guidance: dict[str, Any]) -> None:
 
 def reset_stale_reflection_flags(game: GameState) -> None:
     for npc in game.npcs:
-        if npc.needs_reflection and npc.status in ("active", "background"):
+        if npc.needs_reflection and npc.status in eng().npc_status_groups.in_play:
             npc.needs_reflection = False
             log(f"[Director] Reset stale reflection flag for {npc.name} (skipped turn, accumulator preserved)")

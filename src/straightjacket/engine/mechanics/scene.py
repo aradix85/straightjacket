@@ -23,9 +23,9 @@ def check_scene(game: GameState, roll: int | None = None) -> SceneSetup:
     cf = game.world.chaos_factor
 
     if roll is None:
-        roll = random.randint(1, 10)
+        roll = random.randint(1, eng().dice.scene_test_die)
 
-    if roll == 10 or roll > cf:
+    if roll > cf:
         log(f"[Scene] Expected (roll={roll} > CF{cf})")
         return SceneSetup(scene_type="expected", chaos_roll=roll)
 
@@ -47,7 +47,7 @@ def _roll_adjustments(roll: int | None = None) -> list[str]:
     table = data["scene_adjustment"]
 
     if roll is None:
-        roll = random.randint(1, 10)
+        roll = random.randint(1, eng().dice.scene_adjustment_die)
 
     result = _lookup_adjustment(table, roll)
     if result != "make_2_adjustments":
@@ -70,7 +70,7 @@ def _lookup_adjustment(table: list[dict[str, Any]], roll: int) -> str:
 
 def _roll_single_adjustment(table: list[dict[str, Any]]) -> str:
     for _ in range(10):
-        roll = random.randint(1, 10)
+        roll = random.randint(1, eng().dice.scene_adjustment_die)
         result = _lookup_adjustment(table, roll)
         if result != "make_2_adjustments":
             return result

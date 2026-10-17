@@ -24,7 +24,7 @@ def compute_npc_tfidf_scores(npcs: list[NpcData], query_text: str) -> dict[str, 
 
     docs = {}
     for npc in npcs:
-        if npc.status not in ("active", "background"):
+        if npc.status not in eng().npc_status_groups.in_play:
             continue
         npc_id = npc.id
         parts = [
@@ -176,7 +176,7 @@ def _recursive_activation(activated: list[NpcData], mentioned: list[NpcData], ga
         for other in game.npcs:
             if other in activated or other in mentioned or other in secondary:
                 continue
-            if other.status not in ("active", "background"):
+            if other.status not in eng().npc_status_groups.in_play:
                 continue
             other_name = other.name.lower()
             if other_name and other_name in ref_text.lower():
@@ -201,7 +201,7 @@ def activate_npcs_for_prompt(
     activation_debug: dict[str, Any] = {}
 
     for npc in game.npcs:
-        if npc.status not in ("active", "background"):
+        if npc.status not in eng().npc_status_groups.in_play:
             continue
 
         tfidf = tfidf_scores.get(npc.id, 0.0)

@@ -187,10 +187,29 @@ class ProgressTrackType:
 @dataclass
 class ProgressConfig:
     max_ticks: int
+    ticks_per_box: int
     track_types: dict[str, ProgressTrackType]
 
     def ticks_per_mark(self, rank: str, track_type: str = "default") -> int:
         return self.track_types[track_type].ticks_per_mark[rank]
+
+    @property
+    def boxes(self) -> int:
+        return self.max_ticks // self.ticks_per_box
+
+
+@dataclass
+class DiceConfig:
+    action_die: int
+    challenge_die: int
+    action_score_max: int
+    fate_chart_die: int
+    fate_check_die: int
+    scene_test_die: int
+    scene_adjustment_die: int
+    event_focus_die: int
+    adventure_crafter_table_die: int
+    adventure_crafter_theme_die: int
 
 
 @dataclass
@@ -463,6 +482,14 @@ class EnumsConfig:
 
 
 @dataclass
+class NpcStatusGroups:
+    in_play: list[str]
+    reactivatable: list[str]
+    description_matchable: list[str]
+    chapter_returning: list[str]
+
+
+@dataclass
 class MemoryRetrievalWeights:
     recency: float
     importance: float
@@ -523,6 +550,7 @@ class MemoryConfig:
     unknown_emotion_importance: int
     overlap_scale: int
     importance_max: int
+    emotion_split_pattern: str
 
 
 @dataclass
@@ -561,12 +589,13 @@ class ParserConfig:
     stream_abbreviations: list[str]
     sentence_end_marks: list[str]
     sentence_breaks: list[str]
+    epilogue_heading: str
 
 
 @dataclass
 class StoryStateConfig:
-    intensity_smoothing_current: float
-    intensity_smoothing_previous: float
+    act_early_share: float
+    act_mid_share: float
     crisis_scene_offset: int
     approaching_end_progress: list[str]
 
@@ -784,6 +813,7 @@ class AdventureCrafterConfig:
     returning_character_name_template: str
     identity_roll_twice_row: str
     descriptor_roll_twice_row: str
+    present_character_statuses: list[str]
 
 
 @dataclass

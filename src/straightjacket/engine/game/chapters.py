@@ -60,13 +60,7 @@ def generate_epilogue(
     raw = call_narrator(provider, build_epilogue_prompt(game), game, config)
     narration = parse_narrator_response(game, raw)
 
-    narration = re.sub(
-        r"^\s*#*\s*\*{0,3}\s*Epilog(?:ue)?\s*\*{0,3}\s*\n+",
-        "",
-        narration,
-        count=1,
-        flags=re.IGNORECASE,
-    )
+    narration = re.sub(eng().parser.epilogue_heading, "", narration, count=1, flags=re.IGNORECASE)
     narration = narration.strip()
 
     if not narration:
@@ -101,7 +95,8 @@ def start_new_chapter(
     else:
         game.world.current_scene_context = _defaults["new_chapter_blank"]
 
-    returning_npcs = [copy.deepcopy(n) for n in game.npcs if n.status in ("active", "background", "deceased")]
+    returning = eng().npc_status_groups.chapter_returning
+    returning_npcs = [copy.deepcopy(n) for n in game.npcs if n.status in returning]
 
     narration, setup_data = _generate_chapter_opening(provider, game, config, returning_npcs)
 
@@ -134,7 +129,7 @@ def _people(game: GameState) -> list[str]:
             "block_chapter_record_person", who=n.name, disposition=n.disposition, bond=str(get_npc_bond(game, n.id))
         )
         for n in game.npcs
-        if n.status in ("active", "background")
+        if n.status in eng().npc_status_groups.in_play
     ]
 
 
@@ -144,7 +139,7 @@ def _active_threats(game: GameState) -> list[str]:
             "block_chapter_record_threat",
             threat=th.name,
             filled=str(th.menace_filled_boxes),
-            total=str(th.max_menace_ticks // ProgressTrack.TICKS_PER_BOX),
+            total=str(th.menace_total_boxes),
         )
         for th in game.threats
         if th.status == "active"

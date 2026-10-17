@@ -6,6 +6,11 @@ from .tracks import complete_track
 from ..engine_loader import eng
 from ..logging_util import log
 from ..models import GameState, ThreatEvent
+from .spawn_sources import EMERGENT_SOURCE_PREFIXES
+
+
+def count_emergent_threats(game: GameState) -> int:
+    return sum(1 for t in game.threats if t.creation_source.startswith(EMERGENT_SOURCE_PREFIXES))
 
 
 def advance_menace_on_miss(game: GameState) -> list[ThreatEvent]:

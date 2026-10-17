@@ -42,23 +42,25 @@ One audit session covers one principle, or for the interpretive principles (1, 3
 
 ### Principle 1 — High modularity
 
-One concern per file, with `.py` and `.yaml` paired where a module has configurable behavior; smaller files preferred where a split does not force artificial abstractions. Audited per submodule under `src/straightjacket/engine/`: list every Python file with its line count and public functions.
+One concern per file, and one file per concern, with `.py` and `.yaml` paired where a module has configurable behavior; smaller files preferred where a split does not force artificial abstractions. The rule "What belongs together lives together" in CONTRIBUTING.md is the second half: a concern spread over several files is as much a violation as two concerns in one. Audited per submodule under `src/straightjacket/engine/`: list every Python file with its line count and public functions.
 
 **Step 1a — Mechanical flagging.** Flag every file over 400 lines. Line count is a lookup signal, not a verdict.
 
 **Step 1b — Concern analysis.** For each flagged file, and each file with a nameable reason for suspicion (for example "this filename suggests two domains"), examine the public API and classify: violation (two or more distinct concerns that split without artificial coupling), legitimate (one large concern), or `needs human judgment`.
 
+**Step 1c — Scattered concerns.** For each concern the submodule names (clocks, threats, tracks, NPC naming), grep its key symbols across `src/` and list every file that defines behaviour for it; a concern with more than one home is a violation unless the files are layers of it (a model, its rules, its prompt block).
+
 Carve-outs: re-export hubs (`models.py`, `__init__.py` files), per "Subpackage public API via `__init__.py`" in ARCHITECTURE.md.
 
 ### Principle 2 — Config-driven
 
-The rules "Domain config keys raise on a miss, and dataclass fields have no defaults" and "Readable strings live in yaml" in CONTRIBUTING.md. Anything a translator, designer, or rules editor would change without touching Python belongs in YAML.
+The rules "Domain config keys raise on a miss, and dataclass fields have no defaults", "Readable strings live in yaml", and "Config over code" in CONTRIBUTING.md. Anything a translator, designer, or rules editor would change without touching Python belongs in YAML.
 
-**Pass 2a — User-facing strings.** Grep `src/straightjacket/` for literals that look like narration, error messages, UI labels, or AI prompts, and cross-reference `strings/*.yaml` and `prompts/*.yaml`. A user-, narrator-, or AI-readable string not loaded from YAML is a violation.
+**Pass 2a — User-facing strings.** Grep `src/straightjacket/` for literals that look like narration, error messages, UI labels, or AI prompts, and cross-reference `strings/*.yaml` and `prompts/*.yaml`. A user-, narrator-, or AI-readable string not loaded from YAML is a violation, the markup of a prompt and patterns for the AI's words included.
 
-**Pass 2b — Numeric thresholds.** Grep numeric literals in `mechanics/`, `npc/`, `game/`, and `ai/`, cross-referenced with `engine/*.yaml`. A domain threshold, limit, or rule is a violation; a structural constant (loop bound, index) is not.
+**Pass 2b — Numeric thresholds.** Grep numeric literals in `mechanics/`, `npc/`, `game/`, and `ai/`, cross-referenced with `engine/*.yaml`. A domain threshold, limit, or rule is a violation, the source systems' rule constants such as dice sizes included; a structural constant (loop bound, index) is not.
 
-**Pass 2c — Mappings.** Grep dict and set literals in domain modules that hold domain keys (move names, dispositions, statuses). A mapping that should extend without Python changes is a violation.
+**Pass 2c — Mappings.** Grep dict and set literals in domain modules that hold domain keys (move names, dispositions, statuses). A mapping that should extend without Python changes is a violation, and so is a group of enum values written out at its callsites.
 
 **Pass 2d — Dataclass defaults.** Grep `field(default=`, `field(default_factory=`, and `=` defaults on dataclass fields in `src/straightjacket/`. A violation unless it is one of the three exceptions under "Domain config keys raise on a miss, and dataclass fields have no defaults" in CONTRIBUTING.md; the optional fields of `AICallSpec` in `ai/provider_base.py` count as external-boundary parsing. `_check_no_dataclass_defaults_in_config_binding` covers the config binding mechanically; this pass covers every other dataclass.
 
@@ -109,7 +111,7 @@ Carve-outs: the orphan-symbol carve-outs in `tests/test_project_rules.py` (for e
 Submodules for principles 1, 3, and 5: `mechanics/`, `npc/`, `game/`, `ai/`, `db/`, `datasworn/`, `tools/`, `correction/`, the files directly under `engine/`, `web/`, and the top level of `src/straightjacket/` (`i18n.py`, `strings_loader.py`). A finished submodule is listed under its principle with its date; a principle is done when every submodule is listed.
 
 - Principle 1: no submodule audited.
-- Principle 2: audited 2026-10-17, all four passes (`docs/audit/fix_principle2.md`); the clear violations are fixed, and what waits for the user or for a later session is in roadmap 9h.4, 9h.12, and 9h.13.
+- Principle 2: audited 2026-10-17, all four passes (`docs/audit/fix_principle2.md`); every violation is fixed except the prompt markup (roadmap 9h.12) and the dataclass defaults (9h.4), and what the audit saw for principles 3 and 5 is 9h.13.
 - Principle 3: no submodule audited.
 - Principle 4: not audited. Pass 4c is largely enforced already: saves load strictly, and the settings loader refuses unknown keys.
 - Principle 5: no submodule audited.

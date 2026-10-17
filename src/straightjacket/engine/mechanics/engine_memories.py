@@ -58,7 +58,7 @@ def generate_engine_memories(
     for npc in game.npcs:
         if npc.id not in activated_npc_ids:
             continue
-        if npc.status not in ("active", "background"):
+        if npc.status not in eng().npc_status_groups.in_play:
             continue
 
         is_targeted = brain.target_npc and brain.target_npc == npc.id

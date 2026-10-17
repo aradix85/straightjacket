@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, ClassVar
+from typing import Any
 
 from .engine_loader import eng
 from .logging_util import log
@@ -141,8 +141,6 @@ class WorldState(SerializableMixin):
 
 @dataclass
 class ProgressTrack(SerializableMixin):
-    TICKS_PER_BOX: ClassVar[int] = 4
-
     id: str
     name: str
     track_type: str
@@ -162,10 +160,10 @@ class ProgressTrack(SerializableMixin):
 
     @property
     def filled_boxes(self) -> int:
-        return self.ticks // ProgressTrack.TICKS_PER_BOX
+        return self.ticks // eng().progress.ticks_per_box
 
     def ticks_for_filled_boxes(self, filled_boxes: int) -> int:
-        return min(self.max_ticks, filled_boxes * ProgressTrack.TICKS_PER_BOX)
+        return min(self.max_ticks, filled_boxes * eng().progress.ticks_per_box)
 
     def mark_progress(self) -> int:
         old = self.ticks
@@ -215,7 +213,11 @@ class ThreatData(SerializableMixin):
 
     @property
     def menace_filled_boxes(self) -> int:
-        return self.menace_ticks // ProgressTrack.TICKS_PER_BOX
+        return self.menace_ticks // eng().progress.ticks_per_box
+
+    @property
+    def menace_total_boxes(self) -> int:
+        return self.max_menace_ticks // eng().progress.ticks_per_box
 
     def advance_menace(self, marks: int = 1) -> int:
         old = self.menace_ticks

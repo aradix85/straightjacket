@@ -25,7 +25,7 @@ def score_importance(emotional_weight: str, event_text: str = "", debug: bool = 
         base = _imp[raw]
         debug_info = f"direct:{raw}={base}"
     else:
-        tokens = re.split(r"[_/,;:\s]+|(?:\s+and\s+)|(?:\s+mixed\s+with\s+)", raw)
+        tokens = re.split(_mem_cfg.emotion_split_pattern, raw)
         tokens = [t.strip() for t in tokens if len(t.strip()) >= _mem_cfg.min_token_length]
 
         best = _mem_cfg.unknown_emotion_importance

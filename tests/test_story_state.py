@@ -1,3 +1,5 @@
+import pytest
+
 from straightjacket.engine.models_story import Revelation, StoryAct, StoryBlueprint
 from tests._helpers import make_blueprint, make_game_state
 
@@ -17,23 +19,22 @@ def _bp_with_acts(scene_ranges: list[tuple[int, int]]) -> StoryBlueprint:
     return make_blueprint(central_conflict="x", acts=acts)
 
 
-def test_get_current_act_no_blueprint(load_engine: None) -> None:
+def test_there_is_no_current_act_without_a_blueprint(load_engine: None) -> None:
     from straightjacket.engine.story_state import get_current_act
 
     g = make_game_state()
     g.narrative.story_blueprint = None
-    act = get_current_act(g)
-    assert act.phase == "setup"
-    assert act.title == "?"
+    with pytest.raises(ValueError, match="blueprint"):
+        get_current_act(g)
 
 
-def test_get_current_act_empty_acts(load_engine: None) -> None:
+def test_there_is_no_current_act_in_a_blueprint_without_acts(load_engine: None) -> None:
     from straightjacket.engine.story_state import get_current_act
 
     g = make_game_state()
     g.narrative.story_blueprint = make_blueprint(acts=[])
-    act = get_current_act(g)
-    assert act.phase == "setup"
+    with pytest.raises(ValueError, match="blueprint"):
+        get_current_act(g)
 
 
 def test_get_current_act_first_act_when_in_range(load_engine: None) -> None:

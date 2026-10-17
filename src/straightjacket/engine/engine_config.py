@@ -16,6 +16,8 @@ from .engine_config_dataclasses import (
     BoastsConfig,
     BondsConfig,
     ChaosConfig,
+    DiceConfig,
+    NpcStatusGroups,
     ChaosResolverConfig,
     ChapterConfig,
     ClockCreationMappingEntry,
@@ -112,6 +114,8 @@ from .engine_config_dataclasses import (
 @dataclass
 class EngineSettings:
     npc: NpcConfig
+    dice: DiceConfig
+    npc_status_groups: NpcStatusGroups
     chaos: ChaosConfig
     pacing: PacingConfig
     stats: StatsConfig
@@ -237,6 +241,8 @@ def _build_strict(cls: type, data: dict[str, Any]) -> Any:
 
 
 _SIMPLE_SECTIONS: dict[str, type] = {
+    "dice": DiceConfig,
+    "npc_status_groups": NpcStatusGroups,
     "chaos": ChaosConfig,
     "pacing": PacingConfig,
     "creation": CreationConfig,
@@ -366,6 +372,7 @@ def _build_adventure_crafter(ac_raw: dict[str, Any]) -> AdventureCrafterConfig:
         returning_character_name_template=ac_raw["returning_character_name_template"],
         identity_roll_twice_row=ac_raw["identity_roll_twice_row"],
         descriptor_roll_twice_row=ac_raw["descriptor_roll_twice_row"],
+        present_character_statuses=list(ac_raw["present_character_statuses"]),
     )
 
 
@@ -517,7 +524,9 @@ def parse_engine_yaml(data: dict[str, Any]) -> EngineSettings:
         name: _build_strict(ProgressTrackType, {"ticks_per_mark": dict(tt["ticks_per_mark"])})
         for name, tt in progress_raw["track_types"].items()
     }
-    progress = ProgressConfig(max_ticks=progress_raw["max_ticks"], track_types=track_types)
+    progress = ProgressConfig(
+        max_ticks=progress_raw["max_ticks"], ticks_per_box=progress_raw["ticks_per_box"], track_types=track_types
+    )
 
     engine_moves = {
         key: _build_strict(EngineMove, {"name": m["name"], "stats": list(m["stats"]), "roll_type": m["roll_type"]})
@@ -616,6 +625,8 @@ def parse_engine_yaml(data: dict[str, Any]) -> EngineSettings:
 
     return EngineSettings(
         npc=npc,
+        dice=simple_parsed["dice"],
+        npc_status_groups=simple_parsed["npc_status_groups"],
         chaos=simple_parsed["chaos"],
         pacing=simple_parsed["pacing"],
         stats=stats,
@@ -714,6 +725,7 @@ __all__ = [
     "CorrectionConfig",
     "CreationConfig",
     "DescriptionDedupConfig",
+    "DiceConfig",
     "EffectResolverConfig",
     "EffectResolverWeights",
     "EngineMove",
@@ -753,6 +765,7 @@ __all__ = [
     "NpcCarryoverEntry",
     "NpcConfig",
     "NpcMatchingConfig",
+    "NpcStatusGroups",
     "OpeningConfig",
     "PacingConfig",
     "ParserConfig",

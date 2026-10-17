@@ -50,7 +50,7 @@ def build_stats_line(game: GameState) -> str:
 
 
 def _listed_npcs(game: GameState) -> list[Any]:
-    return [n for n in game.npcs if n.status in ("active", "background")]
+    return [n for n in game.npcs if n.status in eng().npc_status_groups.in_play]
 
 
 def _active_tracks(game: GameState) -> list[Any]:

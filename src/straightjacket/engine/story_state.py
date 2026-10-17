@@ -12,7 +12,7 @@ def default_scene_range() -> list[int]:
 def get_current_act(game: GameState) -> CurrentAct:
     bp = game.narrative.story_blueprint
     if not bp or not bp.acts:
-        return CurrentAct(phase="setup", title="?", goal="?", mood="mysterious")
+        raise ValueError("get_current_act needs a story blueprint with acts")
 
     if bp.story_complete and game.campaign.epilogue_dismissed:
         last = bp.acts[-1]
@@ -51,9 +51,9 @@ def get_current_act(game: GameState) -> CurrentAct:
     act_len = max(sr[1] - sr[0] + 1, 1)
     scenes_in = scene - sr[0] + 1
     cfg = eng().story_state
-    if scenes_in <= act_len * cfg.intensity_smoothing_current:
+    if scenes_in <= act_len * cfg.act_early_share:
         progress = "early"
-    elif scenes_in <= act_len * cfg.intensity_smoothing_previous:
+    elif scenes_in <= act_len * cfg.act_mid_share:
         progress = "mid"
     else:
         progress = "late"

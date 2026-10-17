@@ -1,5 +1,6 @@
 progress:
   max_ticks: 40
+  ticks_per_box: 4
   track_types:
     default:
       ticks_per_mark:

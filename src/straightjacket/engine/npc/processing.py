@@ -177,7 +177,7 @@ def _handle_exact_name_match(game: "GameState", name_norm: str) -> bool:
     existing = next((n for n in game.npcs if normalize_for_match(n.name) == name_norm), None)
     if not existing:
         return False
-    if existing.status in ("background", "lore"):
+    if existing.status in eng().npc_status_groups.reactivatable:
         reactivate_npc(existing, reason="reappeared in new_npcs")
     elif existing.status == "deceased":
         reactivate_npc(existing, reason="resurrected -- exact name in new_npcs", force=True)
@@ -212,7 +212,7 @@ def _keep_name_add_alias(npc: NpcData, label: str, reason: str) -> None:
     if normalize_for_match(label) not in {normalize_for_match(a) for a in npc.aliases}:
         npc.aliases.append(label)
         log(f"[NPC] Added alias: '{label}' -> '{npc.name}'")
-    if npc.status in ("background", "lore"):
+    if npc.status in eng().npc_status_groups.reactivatable:
         reactivate_npc(npc, reason=reason)
 
 

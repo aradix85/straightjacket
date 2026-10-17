@@ -81,7 +81,7 @@ def merge_npc_identity(existing: NpcData, new_name: str, new_desc: str = "", gam
             existing.aliases.append(alias)
     if new_desc and not existing.description:
         existing.description = new_desc
-    if existing.status in ("background", "lore"):
+    if existing.status in eng().npc_status_groups.reactivatable:
         reactivate_npc(existing, reason=f"identity revealed as {new_name}")
 
     if game is not None:
@@ -259,7 +259,7 @@ def _description_candidate_meets_threshold(
 
 
 def _npc_eligible_for_desc_match(npc: NpcData, new_name_norm: str, current_location: str) -> bool:
-    if npc.status not in ("active", "background", "lore"):
+    if npc.status not in eng().npc_status_groups.description_matchable:
         return False
     if normalize_for_match(npc.name) == new_name_norm:
         return False

@@ -24,8 +24,9 @@ from ..models_story import (
     StoryBlueprint,
 )
 from .keyed_scenes import spawn_keyed_scenes_for_clock
-from .random_events import unique_clock_name
-from .spawn_sources import AC_SOURCE_PREFIX, EMERGENT_SOURCE_PREFIXES
+from .clocks import count_emergent_clocks, unique_clock_name
+from .spawn_sources import AC_SOURCE_PREFIX
+from .threats import count_emergent_threats
 
 
 _AC_DATA_PATH = PROJECT_ROOT / "data" / "adventure_crafter.json"
@@ -93,17 +94,26 @@ class ThemeAlternation:
     next_is_4: bool = True
 
 
+def _check_roll(roll: int, die: int, what: str) -> None:
+    if not 1 <= roll <= die:
+        raise ValueError(f"{what} roll {roll} outside 1..{die}")
+
+
+def _table_roll(rng: random.Random) -> int:
+    return rng.randint(1, eng().dice.adventure_crafter_table_die)
+
+
 def assign_themes(rng: random.Random) -> list[str]:
     cfg = eng().adventure_crafter
-    return [cfg.theme_die_table[rng.randint(1, 10)] for _ in range(cfg.theme_slots)]
+    die = eng().dice.adventure_crafter_theme_die
+    return [cfg.theme_die_table[rng.randint(1, die)] for _ in range(cfg.theme_slots)]
 
 
 def lookup_plot_point(theme: str, roll: int) -> PlotPointResult:
     cfg = eng().adventure_crafter
     if theme not in cfg.themes:
         raise KeyError(f"unknown theme {theme!r}; expected one of {cfg.themes}")
-    if not 1 <= roll <= 100:
-        raise ValueError(f"plot-point roll {roll} outside 1..100")
+    _check_roll(roll, eng().dice.adventure_crafter_table_die, "plot-point")
 
     data = _load_ac_data()
     for entry in data["plot_points"]:
@@ -129,8 +139,7 @@ def _special_range_for(roll: int, ranges: PlotPointRanges) -> str | None:
 
 
 def lookup_meta_plot_point(roll: int) -> str:
-    if not 1 <= roll <= 100:
-        raise ValueError(f"meta-plot-point roll {roll} outside 1..100")
+    _check_roll(roll, eng().dice.adventure_crafter_table_die, "meta-plot-point")
     data = _load_ac_data()
     for entry in data["meta_plot_points"]:
         if entry["min"] <= roll <= entry["max"]:
@@ -142,14 +151,14 @@ def lookup_meta_plot_point(roll: int) -> str:
 
 
 def lookup_theme_priority(roll: int, alternation: ThemeAlternation) -> int:
-    if not 1 <= roll <= 10:
-        raise ValueError(f"theme-priority roll {roll} outside 1..10")
+    _check_roll(roll, eng().dice.adventure_crafter_theme_die, "theme-priority")
     data = _load_ac_data()
     for entry in data["plot_point_theme_priority"]:
         if entry["min"] <= roll <= entry["max"]:
-            priority = entry["priority"]
-            if priority == "4_or_5":
-                resolved = 4 if alternation.next_is_4 else 5
+            priority = str(entry["priority"])
+            if "_or_" in priority:
+                first, second = (int(p) for p in priority.split("_or_"))
+                resolved = first if alternation.next_is_4 else second
                 alternation.next_is_4 = not alternation.next_is_4
                 return resolved
             return int(priority)
@@ -157,8 +166,7 @@ def lookup_theme_priority(roll: int, alternation: ThemeAlternation) -> int:
 
 
 def _lookup_template_result(roll: int, template_key: str) -> str:
-    if not 1 <= roll <= 100:
-        raise ValueError(f"template roll {roll} outside 1..100")
+    _check_roll(roll, eng().dice.adventure_crafter_table_die, "template")
     data = _load_ac_data()
     for entry in data[template_key]:
         if entry["min"] <= roll <= entry["max"]:
@@ -175,7 +183,8 @@ def lookup_plotlines_template(roll: int) -> str:
 
 
 def _ac_active_characters(narrative: NarrativeState) -> list[CharacterListEntry]:
-    return [c for c in narrative.characters_list if c.ac_status in ("present", "returned", "upgraded", "downgraded")]
+    present = eng().adventure_crafter.present_character_statuses
+    return [c for c in narrative.characters_list if c.ac_status in present]
 
 
 def _next_character_id(narrative: NarrativeState) -> str:
@@ -229,16 +238,20 @@ def _create_plotline(narrative: NarrativeState, name: str) -> PlotlineEntry:
 def _roll_plot_point(
     rng: random.Random, themes: list[str], alternation: ThemeAlternation, conclusion_counts_as_none: bool
 ) -> PlotPointHit:
-    priority = lookup_theme_priority(rng.randint(1, 10), alternation)
+    priority = lookup_theme_priority(rng.randint(1, eng().dice.adventure_crafter_theme_die), alternation)
     theme_index = priority - 1
     if not 0 <= theme_index < len(themes):
         raise LookupError(f"theme priority {priority} outside themes list of length {len(themes)}")
     theme = themes[theme_index]
-    plot_roll = rng.randint(1, 100)
+    plot_roll = _table_roll(rng)
     result = lookup_plot_point(theme, plot_roll)
     if result.special_range == "conclusion" and conclusion_counts_as_none:
         special_ranges = eng().adventure_crafter.special_ranges
-        none_roll = next(r for r in range(1, 101) if _special_range_for(r, special_ranges) == "none")
+        none_roll = next(
+            r
+            for r in range(1, eng().dice.adventure_crafter_table_die + 1)
+            if _special_range_for(r, special_ranges) == "none"
+        )
         return PlotPointHit(
             theme=theme,
             priority=priority,
@@ -260,7 +273,7 @@ def roll_turning_point(
     if len(themes) != cfg.theme_slots:
         raise ValueError(f"themes length {len(themes)} != theme_slots {cfg.theme_slots}")
 
-    plotline_roll = rng.randint(1, 100)
+    plotline_roll = _table_roll(rng)
     plotline_template = lookup_plotlines_template(plotline_roll)
     existing_plotline = _select_active_plotline(narrative)
 
@@ -440,8 +453,7 @@ def _roll_twice_max(table: str, row_text: str, text_key: str) -> int:
 
 
 def lookup_character_special_trait(roll: int) -> str:
-    if not 1 <= roll <= 100:
-        raise ValueError(f"character-special-trait roll {roll} outside 1..100")
+    _check_roll(roll, eng().dice.adventure_crafter_table_die, "character-special-trait")
     data = _load_ac_data()
     for entry in data["character_special_trait"]:
         if entry["min"] <= roll <= entry["max"]:
@@ -453,8 +465,7 @@ def lookup_character_special_trait(roll: int) -> str:
 
 
 def lookup_character_identity(roll: int) -> str:
-    if not 1 <= roll <= 100:
-        raise ValueError(f"character-identity roll {roll} outside 1..100")
+    _check_roll(roll, eng().dice.adventure_crafter_table_die, "character-identity")
     data = _load_ac_data()
     for entry in data["character_identity"]:
         if entry["min"] <= roll <= entry["max"]:
@@ -466,8 +477,7 @@ def lookup_character_identity(roll: int) -> str:
 
 
 def lookup_character_descriptor(roll: int) -> str:
-    if not 1 <= roll <= 100:
-        raise ValueError(f"character-descriptor roll {roll} outside 1..100")
+    _check_roll(roll, eng().dice.adventure_crafter_table_die, "character-descriptor")
     data = _load_ac_data()
     for entry in data["character_descriptors"]:
         if entry["min"] <= roll <= entry["max"]:
@@ -479,26 +489,27 @@ def lookup_character_descriptor(roll: int) -> str:
 
 
 def roll_character_traits(rng: random.Random) -> CharacterTraits:
-    special_trait = lookup_character_special_trait(rng.randint(1, 100))
+    die = eng().dice.adventure_crafter_table_die
+    special_trait = lookup_character_special_trait(rng.randint(1, die))
 
     cfg = eng().adventure_crafter
     identity_twice = _roll_twice_max("character_identity", cfg.identity_roll_twice_row, "identity")
     descriptor_twice = _roll_twice_max("character_descriptors", cfg.descriptor_roll_twice_row, "descriptor")
 
-    identity_roll = rng.randint(1, 100)
+    identity_roll = rng.randint(1, die)
     if identity_roll <= identity_twice:
         identities = [
-            lookup_character_identity(rng.randint(identity_twice + 1, 100)),
-            lookup_character_identity(rng.randint(identity_twice + 1, 100)),
+            lookup_character_identity(rng.randint(identity_twice + 1, die)),
+            lookup_character_identity(rng.randint(identity_twice + 1, die)),
         ]
     else:
         identities = [lookup_character_identity(identity_roll)]
 
-    descriptor_roll = rng.randint(1, 100)
+    descriptor_roll = rng.randint(1, die)
     if descriptor_roll <= descriptor_twice:
         descriptors = [
-            lookup_character_descriptor(rng.randint(descriptor_twice + 1, 100)),
-            lookup_character_descriptor(rng.randint(descriptor_twice + 1, 100)),
+            lookup_character_descriptor(rng.randint(descriptor_twice + 1, die)),
+            lookup_character_descriptor(rng.randint(descriptor_twice + 1, die)),
         ]
     else:
         descriptors = [lookup_character_descriptor(descriptor_roll)]
@@ -567,10 +578,6 @@ def _ac_threat_already_spawned(game: GameState, plot_point_name: str) -> bool:
     return any(t.creation_source == target for t in game.threats)
 
 
-def _count_emergent_threats(game: GameState) -> int:
-    return sum(1 for t in game.threats if t.creation_source.startswith(EMERGENT_SOURCE_PREFIXES))
-
-
 def _next_threat_id(game: GameState, prefix: str) -> str:
     n = 1
     while any(t.id == f"{prefix}{n}" for t in game.threats):
@@ -595,7 +602,7 @@ def spawn_threats_for_turning_point(game: GameState, turning_point: TurningPoint
             continue
         if _ac_threat_already_spawned(game, hit.name):
             continue
-        if _count_emergent_threats(game) >= cap:
+        if count_emergent_threats(game) >= cap:
             log(f"[AdventureCrafter] threat cap {cap} reached, skipping plot-point '{hit.name}'")
             break
 
@@ -629,10 +636,6 @@ def _ac_clock_already_spawned(game: GameState, plot_point_name: str) -> bool:
     return any(c.creation_source == target for c in game.world.clocks)
 
 
-def _count_emergent_clocks(game: GameState) -> int:
-    return sum(1 for c in game.world.clocks if c.creation_source.startswith(EMERGENT_SOURCE_PREFIXES))
-
-
 def spawn_clocks_for_turning_point(game: GameState, turning_point: TurningPoint) -> int:
     cfg = eng().adventure_crafter
     clocks_cfg = eng().clocks
@@ -647,7 +650,7 @@ def spawn_clocks_for_turning_point(game: GameState, turning_point: TurningPoint)
             continue
         if _ac_clock_already_spawned(game, hit.name):
             continue
-        if _count_emergent_clocks(game) >= cap:
+        if count_emergent_clocks(game) >= cap:
             log(f"[AdventureCrafter] clock cap {cap} reached, skipping plot-point '{hit.name}'")
             break
 

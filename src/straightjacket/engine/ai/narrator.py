@@ -135,8 +135,6 @@ def call_narrator_metadata(
     npc_refs = []
     npc_ids: list[str] = []
     for n in game.npcs:
-        if n.status not in ("active", "background", "deceased", "lore"):
-            continue
         npc_ids.append(n.id)
         entry = f"{n.id}={_xe(n.name)}"
         if n.aliases:

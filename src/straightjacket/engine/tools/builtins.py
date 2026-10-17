@@ -47,7 +47,7 @@ def query_game_state(game: GameState) -> dict[str, Any]:
             }
             for c in query_clocks(clock_type=None, fired=False)
         ],
-        "npcs": [_npc_state(game, npc) for npc in game.npcs if npc.status in ("active", "background")],
+        "npcs": [_npc_state(game, npc) for npc in game.npcs if npc.status in eng().npc_status_groups.in_play],
     }
 
 

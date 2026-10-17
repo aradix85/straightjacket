@@ -7,9 +7,11 @@ from ..engine_loader import eng
 from ..logging_util import log
 from ..models import ClockData, GameState, KeyedScene, RandomEvent, ThreatData
 from .fate import _load_mythic
+from .clocks import count_emergent_clocks, unique_clock_name
 from .keyed_scenes import spawn_keyed_scenes_for_clock
 from ..npc import find_npc
-from .spawn_sources import EMERGENT_SOURCE_PREFIXES, RANDOM_EVENT_SOURCE_PREFIX
+from .spawn_sources import RANDOM_EVENT_SOURCE_PREFIX
+from .threats import count_emergent_threats
 
 
 _pending_events: list[RandomEvent] = []
@@ -25,14 +27,15 @@ def roll_event_focus(roll: int | None = None) -> tuple[str, int]:
     data = _load_mythic()
     table = data["event_focus"]
 
+    die = eng().dice.event_focus_die
     if roll is None:
-        roll = random.randint(1, 100)
+        roll = random.randint(1, die)
 
     for entry in table:
         if entry["min"] <= roll <= entry["max"]:
             return entry["focus"], roll
 
-    raise ValueError(f"event_focus table has no entry covering roll={roll}; table must span 1..100")
+    raise ValueError(f"event_focus table has no entry covering roll={roll}; table must span 1..{die}")
 
 
 def roll_meaning_table(table_name: str) -> tuple[str, str]:
@@ -207,7 +210,7 @@ def spawn_threat_from_random_event(game: GameState, event: RandomEvent) -> Threa
         return None
 
     max_threats = eng().adventure_crafter.max_threats_per_chapter
-    if _count_emergent_threats(game) >= max_threats:
+    if count_emergent_threats(game) >= max_threats:
         log(f"[Threat] emergent threat cap {max_threats} reached, skipping focus '{event.focus}'")
         return None
 
@@ -239,21 +242,6 @@ def _re_clock_already_spawned(game: GameState, focus: str, dedup_key: str) -> bo
     return any(c.creation_source == target for c in game.world.clocks)
 
 
-def _count_emergent_clocks(game: GameState) -> int:
-    return sum(1 for c in game.world.clocks if c.creation_source.startswith(EMERGENT_SOURCE_PREFIXES))
-
-
-def unique_clock_name(game: GameState, base_name: str) -> str:
-    existing = {c.name for c in game.world.clocks}
-    if base_name not in existing:
-        return base_name
-    template = eng().clocks.duplicate_name_template
-    n = 2
-    while template.format(name=base_name, n=n) in existing:
-        n += 1
-    return template.format(name=base_name, n=n)
-
-
 def spawn_clock_from_random_event(game: GameState, event: RandomEvent) -> ClockData | None:
     cfg = eng().random_events
     if event.focus not in cfg.clock_creation_mapping:
@@ -264,7 +252,7 @@ def spawn_clock_from_random_event(game: GameState, event: RandomEvent) -> ClockD
         return None
 
     clocks_cfg = eng().clocks
-    if _count_emergent_clocks(game) >= clocks_cfg.max_clocks_per_chapter:
+    if count_emergent_clocks(game) >= clocks_cfg.max_clocks_per_chapter:
         log(f"[Clock] emergent clock cap {clocks_cfg.max_clocks_per_chapter} reached, skipping focus '{event.focus}'")
         return None
 
@@ -292,10 +280,6 @@ def spawn_clock_from_random_event(game: GameState, event: RandomEvent) -> ClockD
 
 def _name_from_mythic_pair(action: str, subject: str) -> str:
     return f"{action} {subject}"
-
-
-def _count_emergent_threats(game: GameState) -> int:
-    return sum(1 for t in game.threats if t.creation_source.startswith(EMERGENT_SOURCE_PREFIXES))
 
 
 def add_thread_weight(game: GameState, thread_id: str) -> None:

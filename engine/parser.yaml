@@ -4,4 +4,5 @@ parser:
   stream_hold_markers: ["<", "```", "{", "\n---", "\n#"]
   stream_abbreviations: ["Mr.", "Mrs.", "Ms.", "Dr.", "St.", "Mt.", "e.g.", "i.e.", "etc."]
   sentence_end_marks: [".", "!", "?", "\"", "“", "”", "»", "«", "…", ")", "–", "—", "*"]
+  epilogue_heading: '^\s*#*\s*\*{0,3}\s*Epilog(?:ue)?\s*\*{0,3}\s*\n+'
   sentence_breaks: [". ", ".\" ", ".\"\n", ".\"", ".\n\n", "! ", "!\" ", "!\"", "!\n\n", "? ", "?\" ", "?\"", "?\n\n", "…", "…\"", "… "]
