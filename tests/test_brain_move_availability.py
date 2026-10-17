@@ -178,6 +178,28 @@ def test_an_action_move_still_without_a_stat_fails_the_turn(load_engine: None) -
         call_brain(_BrainSequence("none", "none"), _starforged(), "I jump the gap.")
 
 
+def test_a_stat_the_move_does_not_offer_is_asked_again(load_engine: None) -> None:
+    from straightjacket.engine.ai.brain import call_brain
+
+    provider = _BrainSequence("wits", "heart", move="adventure/compel")
+    assert call_brain(provider, _starforged(), "I talk her into it.").stat == "heart"
+    assert "stat is wits" in provider.messages[1][-1]["content"]
+
+
+def test_a_move_with_nothing_to_roll_with_for_its_target_is_refused(load_engine: None) -> None:
+    from straightjacket.engine.ai.brain import call_brain
+    from tests._helpers import make_npc
+
+    game = _starforged()
+    game.npcs = [make_npc(id="npc_1", name="Vex"), make_npc(id="npc_2", name="Orla")]
+    game.progress_tracks.append(
+        ProgressTrack.new(id="connection_npc_1", name="Vex", track_type="connection", rank="dangerous")
+    )
+    provider = _BrainAnswers("connection/develop_your_relationship", stat="none", target_npc="npc_2")
+    with pytest.raises(AIUnavailableError, match="nothing to roll with"):
+        call_brain(provider, game, "I share a drink with Orla.")
+
+
 def test_world_shaping_without_a_stat_is_not_asked_again(load_engine: None) -> None:
     from straightjacket.engine.ai.brain import call_brain
 

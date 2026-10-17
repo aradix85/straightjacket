@@ -23,7 +23,7 @@
   {fact_types_block}
   {moves_block}
 "brain_stat_retry": |-
-  {move} is an action roll and needs one of its stats ({stats}), but stat is none. Answer again with the stat that fits the action.
+  {move} rolls with one of its own stats ({stats}), but stat is {stat}. Answer again with the stat of that move that fits the action.
 "correction_brain": |-
   <role>You analyse a correction in a roleplaying game. The player marked their last input as a correction of the previous scene, and you decide what went wrong.</role>
   <rules>

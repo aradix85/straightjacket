@@ -52,6 +52,8 @@ from .finalization import narrate_scene
 from .scene_finalization import finalize_scene
 from ..mechanics import find_progress_track, roll_oracle_answer
 from ..mechanics.bonuses import apply_momentum_on_hit, chosen_bonus
+from ..mechanics.roll_sources import roll_source_without_stat
+from ..datasworn.moves import Move
 from .turn_types import ActionResolution, BurnOffer, DirectorCall, RollOutcome, SceneContext
 
 
@@ -179,25 +181,11 @@ def _play_turn(
 
 
 def _sanitize_brain_output(game: GameState, brain: BrainResult) -> None:
-    if brain.dialog_only:
+    if brain.dialog_only or brain.stat != "none" or brain.move in get_moves(game.setting_id):
         return
-    if brain.move == "dialog" or brain.move == "ask_the_oracle":
-        return
-
-    roll_type = _move_roll_type(game, brain.move)
-    if roll_type != "action_roll":
-        return
-
-    if brain.stat == "none":
-        log(f"[Brain] {brain.move!r} is an action roll without a stat to roll; it plays as dialog", level="warning")
+    if eng().engine_moves[brain.move].roll_type == "action_roll":
+        log(f"[Brain] {brain.move!r} names no stat; it plays as dialog")
         brain.dialog_only = True
-
-
-def _move_roll_type(game: GameState, move: str) -> str:
-    ds_moves = get_moves(game.setting_id)
-    if move in ds_moves:
-        return ds_moves[move].roll_type
-    return eng().engine_moves[move].roll_type
 
 
 def _snapshot_of_turn(game: GameState) -> TurnSnapshot:
@@ -345,6 +333,7 @@ def _process_dialog_turn(ctx: SceneContext) -> tuple[str, DirectorCall | None]:
         ),
         roll_result_str=result_label,
         agency_clock_events=agency_clock_events,
+        threat_events=[],
     )
     return narration, director_ctx
 
@@ -406,16 +395,10 @@ def _execute_roll(game: GameState, brain: BrainResult, earlier: RollResult | Non
             f"→ {roll.result}{' MATCH!' if roll.match else ''}"
         )
     else:
-        stat_name = brain.stat
-        if stat_name == "none":
-            raise ValueError(
-                f"Brain returned stat='none' for action_roll move '{brain.move}'. "
-                f"This is a Brain output error: action_roll moves require a real stat. "
-                f"Brain should have either picked a valid stat or routed this as dialog/oracle."
-            )
+        stat_name, stat_value = _roll_source(game, brain, ds_move)
         bonus = chosen_bonus(game, brain.bonus_id)
         adds = game.resources.next_move_bonus + (bonus.add if bonus else 0)
-        stat_value, momentum = game.get_stat(stat_name), game.resources.momentum
+        momentum = game.resources.momentum
         if earlier is None:
             roll = roll_action(stat_name, stat_value, brain.move, momentum, adds)
         else:
@@ -428,6 +411,17 @@ def _execute_roll(game: GameState, brain: BrainResult, earlier: RollResult | Non
     _snapshot_of_turn(game).roll = roll
 
     return RollOutcome(roll=roll, ds_move=ds_move, track=track, is_progress_roll=is_progress_roll)
+
+
+def _roll_source(game: GameState, brain: BrainResult, ds_move: Move | None) -> tuple[str, int]:
+    if ds_move is not None and not ds_move.valid_stats:
+        source = roll_source_without_stat(game, ds_move, brain.target_npc)
+        if source is None:
+            raise ValueError(f"{brain.move!r} has nothing to roll with for target {brain.target_npc!r}")
+        return source
+    if brain.stat == "none":
+        raise ValueError(f"{brain.move!r} is an action roll, but the Brain named no stat")
+    return brain.stat, game.get_stat(brain.stat)
 
 
 def _log_action_roll(roll: RollResult, adds: int, cancelled: bool) -> None:
@@ -546,5 +540,6 @@ def _narrate_action_and_finalize(
         roll=roll,
         consequences=action_res.consequences,
         agency_clock_events=action_res.agency_clock_events,
+        threat_events=action_res.threat_events,
     )
     return narration, director_ctx

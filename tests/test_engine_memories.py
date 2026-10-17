@@ -108,7 +108,7 @@ class TestExecuteRollStatNoneRejected:
         brain = make_brain_result(move="adventure/face_danger", stat="none", dialog_only=False)
         game.last_turn_snapshot = game.snapshot()
 
-        with pytest.raises(ValueError, match="stat='none'"):
+        with pytest.raises(ValueError, match="named no stat"):
             _execute_roll(game, brain, None)
 
     def test_action_roll_with_real_stat_succeeds(self) -> None:
@@ -125,7 +125,7 @@ class TestExecuteRollStatNoneRejected:
 
 
 class TestSanitizeBrainOutput:
-    def test_action_roll_with_stat_none_routes_to_dialog(self) -> None:
+    def test_a_datasworn_move_without_a_stat_is_left_to_call_brain(self) -> None:
         from straightjacket.engine.game.turn import _sanitize_brain_output
 
         game = make_test_game()
@@ -134,7 +134,7 @@ class TestSanitizeBrainOutput:
 
         _sanitize_brain_output(game, brain)
 
-        assert brain.dialog_only is True
+        assert brain.dialog_only is False
 
     def test_dialog_move_unchanged(self) -> None:
         from straightjacket.engine.game.turn import _sanitize_brain_output

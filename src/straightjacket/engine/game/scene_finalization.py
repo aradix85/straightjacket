@@ -24,8 +24,10 @@ from ..models import (
     ClockEvent,
     GameState,
     NarrationEntry,
+    RandomEvent,
     RollResult,
     SceneLogEntry,
+    ThreatEvent,
 )
 from ..story_state import check_act_transition, check_story_completion, mark_revelation_used
 from .finalization import apply_post_narration
@@ -34,13 +36,7 @@ from ..npc import find_npc
 from .turn_types import DirectorCall, SceneContext
 
 
-def _update_scene_lists(
-    game: GameState,
-    brain: BrainResult,
-    roll: RollResult | None,
-    metadata: dict[str, Any],
-    scene_present_ids: set[Any],
-) -> None:
+def _update_characters_list(game: GameState, metadata: dict[str, Any], scene_present_ids: set[Any]) -> None:
     for npc in game.npcs:
         if npc.id in scene_present_ids:
             for c in game.narrative.characters_list:
@@ -60,11 +56,25 @@ def _update_scene_lists(
                 CharacterListEntry(id=entry_id, name=name, entry_type="npc", weight=1, active=True)
             )
 
+
+def invoked_threads(
+    game: GameState,
+    brain: BrainResult,
+    roll: RollResult | None,
+    events: Sequence[RandomEvent],
+    threat_events: Sequence[ThreatEvent],
+) -> list[str]:
     vow = vow_acted_on(game, brain.move, brain.target_track) if roll is not None else None
-    if vow is not None:
-        for t in game.narrative.threads:
-            if t.linked_track_id == vow.id:
-                add_thread_weight(game, t.id)
+    vow_ids: set[str] = {vow.id} if vow is not None else set()
+    threats = {t.id: t for t in game.threats}
+    threat_ids = {e.threat_id for e in threat_events} | {e.target_id for e in events if e.target_id in threats}
+    vow_ids |= {vow_id for i in threat_ids if (vow_id := threats[i].linked_vow_id) is not None}
+    event_targets = {e.target_id for e in events}
+    return [
+        t.id
+        for t in game.narrative.threads
+        if t.active and (t.id in event_targets or (t.linked_track_id is not None and t.linked_track_id in vow_ids))
+    ]
 
 
 def finalize_scene(
@@ -76,6 +86,8 @@ def finalize_scene(
     roll: RollResult | None = None,
     consequences: Sequence[str] = (),
     agency_clock_events: Sequence[ClockEvent] = (),
+    *,
+    threat_events: Sequence[ThreatEvent],
 ) -> tuple[bool, DirectorCall | None]:
     game = ctx.game
     brain = ctx.brain
@@ -140,7 +152,10 @@ def finalize_scene(
 
     update_chaos_factor(game, roll_result_str, target_npc_id=brain.target_npc)
 
-    _update_scene_lists(game, brain, roll, metadata, scene_present_ids)
+    _update_characters_list(game, metadata, scene_present_ids)
+    scene_events = [*ctx.pending_random_events, *filter(None, [ctx.scene_setup.interrupt_event])]
+    for thread_id in invoked_threads(game, brain, roll, scene_events, threat_events):
+        add_thread_weight(game, thread_id)
     consolidate_threads(game)
     consolidate_characters(game)
 

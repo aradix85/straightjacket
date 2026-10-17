@@ -81,7 +81,6 @@ The audits of AUDIT.md, one session per principle or submodule as it prescribes,
 
 **9h.19** A narration that ends in a stray code fence counts as truncated: `ai/narrator.py` → `call_narrator` tests the last character of the raw text before `parser.py` strips markdown, and `salvage_truncated_narration` then cut 109 characters from a complete narration in an Elvira session of 2026.10.17.12. The test belongs after the cleanup, or the fence is stripped first; it goes with the review of the salvage in 9h.13.
 
-**9h.21** Action-roll moves that roll with a meter or an asset instead of a stat (Check Your Gear, Make Camp, Withstand Damage, Companion Takes a Hit, Set a Course, Develop Your Relationship) offer no stat, so the Brain answers `none` and `game/turn.py` → `_sanitize_brain_output` plays the turn as dialog without a roll. Rolling them needs the move's roll options, as the chained moves read them in `game/finalization.py` → `_chained_roll_value`.
 
 ### Definition of Done
 
@@ -266,7 +265,7 @@ Builds on the enabled abilities and the Brain's `bonus_id` (`mechanics/assets.py
 
 ### 19 — Companion and vehicle assets
 
-Companion health and vehicle condition tracks, with Withstand Damage as a suffer move; an `/assets` command; companions and vehicles in `<character_state>`. Starforged's starship history and quirks are rolled when the command vehicle is created.
+Companion health and vehicle condition tracks, with Withstand Damage as a suffer move; Companion Takes a Hit and Withstand Damage roll with the asset's meter, which `mechanics/roll_sources.py` → `roll_source_without_stat` then reads beside condition meters and connection ranks; an `/assets` command; companions and vehicles in `<character_state>`. Starforged's starship history and quirks are rolled when the command vehicle is created.
 
 ### 20 — Asset rollout per setting
 
@@ -351,4 +350,4 @@ Finished work in its shortest form; the CHANGELOG has the details.
 - **9f — Prompt tuning on Sonnet.** Every role on Claude Sonnet 5.5 at effort medium, Elvira on Haiku 5.5 (baseline 6.41 ± 0.14). Rewording the narrator prompt stayed within the noise, so the faults that remain are for the engine; the measuring setup keeps every variant.
 - **9g — Tests through the real creation path** (`create_game` in `tests/_creation.py`).
 - **9l — Complications as clocks** (`docs/mechanics.md`, Complication clocks).
-- **9h, so far (the step is still open).** The campaign tone is chosen at creation. Principles 2 and 4 are audited and fixed apart from 9h.4 and 9h.12: readable text, thresholds, dice, and groupings live in yaml, and saves, snapshots, and config refuse what they do not know. Principle 3 is audited for `mechanics/`, `npc/`, and `game/`: silent skips of states that cannot occur now raise, redundant guards and dead code are gone, the disposition synonym map left once every source offered only the five dispositions, and a chapter no longer copies what carries over into its summary and back (9h.3). An action move that comes back without a stat is asked again once and otherwise fails the turn (9h.1), and a roll on a vow adds weight to its thread, the engine's reading of a Mythic thread invoked (9h.20).
+- **9h, so far (the step is still open).** The campaign tone is chosen at creation. Principles 2 and 4 are audited and fixed apart from 9h.4 and 9h.12: readable text, thresholds, dice, and groupings live in yaml, and saves, snapshots, and config refuse what they do not know. Principle 3 is audited for `mechanics/`, `npc/`, and `game/`: silent skips of states that cannot occur now raise, redundant guards and dead code are gone, the disposition synonym map left once every source offered only the five dispositions, and a chapter no longer copies what carries over into its summary and back (9h.3). An action move that comes back without a stat is asked again once and otherwise fails the turn (9h.1), and a thread gains weight when the scene invokes it, by a random event, a roll on its vow, or its vow's threat (9h.20). Moves that roll with a condition meter or a connection's rank are rolled instead of played as dialog (9h.21), and the Brain is asked again for a stat its move does not offer.

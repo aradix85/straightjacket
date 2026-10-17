@@ -18,6 +18,7 @@ from .provider_base import AIUnavailableError, AICallSpec, AIProvider, create_wi
 from .schemas import get_brain_output_schema, get_revelation_check_schema
 from ..mechanics.bonuses import bonus_block, roll_bonuses
 from ..mechanics.complications import open_complications
+from ..mechanics.roll_sources import roll_source_without_stat
 from ..mechanics.tracks import track_category_of_move
 from ..xml_utils import xe as _xe
 
@@ -112,13 +113,15 @@ def _check_target_track(game: GameState, result: BrainResult) -> None:
         )
 
 
-def _missing_stat(game: GameState, result: BrainResult) -> list[str]:
-    if result.dialog_only or result.stat != "none":
-        return []
+def _wrong_stat(game: GameState, result: BrainResult) -> list[str]:
     ds_move = get_moves(game.setting_id).get(result.move)
-    if ds_move is None or ds_move.roll_type != "action_roll":
+    if result.dialog_only or ds_move is None or ds_move.roll_type != "action_roll":
         return []
-    return list(ds_move.valid_stats)
+    if not ds_move.valid_stats:
+        if roll_source_without_stat(game, ds_move, result.target_npc) is None:
+            raise ValueError(f"move {result.move!r} has nothing to roll with for target_npc {result.target_npc!r}")
+        return []
+    return [] if result.stat in ds_move.valid_stats else list(ds_move.valid_stats)
 
 
 def _check_fact_requests(result: BrainResult, npc_ids: list[str]) -> None:
@@ -209,7 +212,7 @@ time:{w.time_of_day or _ai_text["unknown_time"]}
             result: BrainResult = BrainResult.from_dict(json.loads(content))
             _check_choices(result, move_keys, choices)
             _check_target_track(game, result)
-            stats = _missing_stat(game, result)
+            stats = _wrong_stat(game, result)
             if not stats:
                 log(
                     f"[Brain] move={result.move}, stat={result.stat}, "
@@ -217,12 +220,17 @@ time:{w.time_of_day or _ai_text["unknown_time"]}
                     + (f", target_clock={result.target_clock}" if result.target_clock else "")
                 )
                 return result
-            log(f"[Brain] {result.move} needs a stat but stat is none, asking again", level="warning")
+            log(f"[Brain] {result.move} rolls with {stats}, not stat {result.stat!r}; asking again", level="warning")
             messages.append({"role": "assistant", "content": content})
             messages.append(
-                {"role": "user", "content": get_prompt("brain_stat_retry", move=result.move, stats=", ".join(stats))}
+                {
+                    "role": "user",
+                    "content": get_prompt(
+                        "brain_stat_retry", move=result.move, stats=", ".join(stats), stat=result.stat
+                    ),
+                }
             )
-        raise ValueError(f"move {result.move!r} is an action roll, but stat is 'none' after asking again")
+        raise ValueError(f"move {result.move!r} rolls with {stats}, but stat is {result.stat!r} after asking again")
 
     except Exception as e:
         log(f"[Brain] Failed ({type(e).__name__}: {e})", level="warning")

@@ -55,7 +55,8 @@ move_availability:
   connection/make_a_connection:
     available: []
   connection/develop_your_relationship:
-    available: []
+    available:
+    - flag: has_connection
   connection/test_your_relationship:
     available: []
   connection/forge_a_bond:

@@ -19,6 +19,7 @@ from ..mechanics.consequences import tick_threat_clock
 from ..mechanics.legacy import mark_legacy, mark_legacy_ticks, shifted_rank
 from ..mechanics.move_effects import OutcomeResult, strip_datasworn_links
 from ..mechanics.move_outcome import resolve_move_outcome
+from ..mechanics.roll_sources import roll_source_without_stat
 from ..models import BrainResult, ClockEvent, EngineConfig, GameState, MemoryEntry, NpcData, ProgressTrack, RollResult
 from ..npc import named_in
 from ..npc.memory import consolidate_memory
@@ -39,23 +40,10 @@ class ActionOutcome:
 
 
 def _chained_roll_value(game: GameState, brain: BrainResult, move: Move) -> tuple[str, int] | None:
-    options = [option for condition in move.conditions for option in condition.roll_options]
-    stats = [option.stat for option in options if option.using == "stat" and option.stat]
-    if stats:
-        best = max(stats, key=game.get_stat)
+    if move.valid_stats:
+        best = max(move.valid_stats, key=game.get_stat)
         return best, game.get_stat(best)
-    track = next(
-        (
-            t
-            for t in game.progress_tracks
-            if t.track_type == "connection" and t.id == f"connection_{brain.target_npc}" and t.status == "active"
-        ),
-        None,
-    )
-    ranked = {option.label: option.value for option in options if option.using == "custom" and option.value is not None}
-    if track is None or track.rank not in ranked:
-        return None
-    return track.rank, int(ranked[track.rank])
+    return roll_source_without_stat(game, move, brain.target_npc)
 
 
 def _chain_oracle_move(game: GameState, move: Move, cfg: dict[str, Any], outcome: OutcomeResult) -> None:
