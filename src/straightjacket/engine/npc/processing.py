@@ -192,10 +192,16 @@ def _handle_fuzzy_match(game: "GameState", nd: dict[str, Any]) -> bool:
         log(f"[NPC] Fuzzy matched '{nd['name']}' to deceased '{fuzzy_hit.name}' -- creating new NPC instead")
         return False
 
+    new_norm = normalize_for_match(nd["name"])
     if match_type == "stt_variant":
         _keep_name_add_alias(fuzzy_hit, nd["name"], reason="STT variant reappeared")
-    elif set(normalize_for_match(nd["name"]).split()) <= set(normalize_for_match(fuzzy_hit.name).split()):
+    elif set(new_norm.split()) <= set(normalize_for_match(fuzzy_hit.name).split()):
         _keep_name_add_alias(fuzzy_hit, nd["name"], reason="named by part of the known name")
+    elif fuzzy_hit.name_rolled:
+        if new_norm not in {normalize_for_match(a) for a in fuzzy_hit.aliases}:
+            log(f"[NPC] '{nd['name']}' only resembles a label of '{fuzzy_hit.name}' -- creating new NPC instead")
+            return False
+        _keep_name_add_alias(fuzzy_hit, nd["name"], reason="its label reappeared")
     else:
         merge_npc_identity(fuzzy_hit, nd["name"], nd["description"], game=game)
     return True

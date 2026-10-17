@@ -8,6 +8,12 @@ This log starts at 2026.09.24.0, the restart after a four-month pause. Earlier r
 
 Calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day.
 
+## [2026.10.17.5] — 2026-10-17
+
+An eight-turn Elvira session in Sundered Isles, run as the check for the name matcher change of 2026.10.17.4, found a fault in the same path: in one extraction a "Lunging deckhand" got the rolled name Nerissa Ashcroft, and a "Second deckhand" then matched her through the shared word of her label and renamed her to "Second deckhand". An NPC whose name the engine rolled is now matched only by its own name and its exact earlier labels; a figure that merely shares a word with such a label is a new figure, and no label replaces a rolled name. The session otherwise showed no engine warnings and one known kind of problem, an NPC who moved without being shown moving.
+
+Quality gate: 1648 tests green, coverage 92.09%, ruff and mypy --strict clean; the new test fails without the fix. Save format unchanged. Elvira about $0.49.
+
 ## [2026.10.17.4] — 2026-10-17
 
 Step 9g: tests that play a turn, a correction, a momentum burn, or a chapter transition now build their game through the real character creation (`tests/_creation.py`, with a scripted provider for the opening, the blueprint, and the opening extraction), in place of hand-built states. The move surfaced what hand-built states hid. The correction tests had asserted that a correction adds a scene and a narration entry, an artifact of a snapshot taken after its own turn; real play keeps both, and the tests now play a real turn and correct it. The rollback test now fails a real narrator call after the turn changed the state, and the whole game comes back unchanged. A new test plays a created game through a chapter transition, and it showed the chapter opening registering "Kira" beside the returning "Kira Vance", because the name matcher ignored names shorter than five letters even when they were a whole word of the known name; such a name now matches, and mid-game it keeps the known name instead of shortening it. Hand-built stats had also been an invalid spread (seven points where creation demands nine). A created game plays a turn in each playable setting and passes Elvira's invariants. The scene-test check no longer loops over random rolls, which a created game's keyed scenes made fail now and then; it gives the three rolls that decide the three scene types. Step 9h, the principle audits, becomes NEXT STEP with a new substep.

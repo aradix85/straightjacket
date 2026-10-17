@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import pytest
 import yaml
 
 from straightjacket.engine.ai.metadata import apply_narrator_metadata
@@ -117,6 +118,23 @@ def test_an_npc_called_by_part_of_its_name_stays_one_npc(load_engine: None) -> N
     apply_narrator_metadata(game, metadata, scene_present_ids=set(), world_addition="")
     [kira] = game.npcs
     assert kira.name == "Kira Vance"
+
+
+@pytest.mark.parametrize(("label", "count"), [("Second deckhand", 2), ("Lunging deckhand", 1)])
+def test_an_npc_the_engine_named_is_matched_only_by_its_own_label(load_engine: None, label: str, count: int) -> None:
+    game = make_game_state()
+    nerissa = make_npc(id="npc_4", name="Nerissa Ashcroft", name_rolled=True, aliases=["Lunging deckhand"])
+    game.npcs = [nerissa]
+    metadata = {
+        "npc_renames": [],
+        "new_npcs": [{"name": label, "description": "", "disposition": "hostile"}],
+        "npc_details": [],
+        "deceased_npcs": [],
+        "lore_npcs": [],
+    }
+    apply_narrator_metadata(game, metadata, scene_present_ids=set(), world_addition="")
+    assert nerissa.name == "Nerissa Ashcroft"
+    assert len(game.npcs) == count
 
 
 def _detail(npc_id: str, full_name: str) -> dict:
