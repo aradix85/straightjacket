@@ -1,22 +1,25 @@
 # AUDIT
 
-How to audit this codebase against the five principles below. The Status section at the bottom records what has been audited; findings that wait for an audit are substeps of roadmap step 9h.
+How to audit this codebase against the five principles below. This document is enough to run an audit on its own, without following the roadmap's order of work: it says what to read first, how to work, what a session delivers, and, in Status at the bottom, what has been audited. Open items, the questions that wait for the user and the findings that belong to another principle or submodule, live in the roadmap's audit step (step 9h while it is open); when the roadmap has no audit step, they go to a section Open at the end of this document.
 
-Earlier audits produced false reassurance: asked "is the codebase config-driven?", Claude answered "yes" while significant parts were still hardcoded. So an audit never gives a verdict. It produces an exhaustive hit-list the user can verify; zero hits and eighty hits are both valid answers, a selective summary is not.
+Earlier audits produced false reassurance: asked "is the codebase config-driven?", Claude answered "yes" while significant parts were still hardcoded. So an audit never gives a verdict. It works from an exhaustive hit-list, and zero hits and eighty hits are both valid answers; a selective look is not.
 
 ## Scope and order
 
 1. Work in the local repository.
 2. Read `ARCHITECTURE.md` and `CONTRIBUTING.md` in full: they define where things live and which exceptions to the project rules exist. Without them, violations and carve-outs get misclassified.
-3. Read this document in full, then take the next open item from Status.
+3. Read the section Sessions with the user in `roadmap.md`: how the maintainer is answered, what a measuring run costs and that its cost is named before it starts, and where the API keys live.
+4. Read this document in full, then the open items, among them the findings earlier audits recorded for the principle or submodule at hand. Take the next open item from Status.
 
-One audit session covers one principle, or for the interpretive principles (1, 3, 5) one submodule. The mechanical principles (2, 4) usually fit in one session. Do not combine principles or start the next one because time is left. Stopping halfway is a successful session: record the progress in Status, and anything to pick up next time as a substep of roadmap step 9h.
+One audit session covers one principle, or for the interpretive principles (1, 3, 5) one submodule. The mechanical principles (2, 4) usually fit in one session. Do not combine principles or start the next one because time is left. Stopping halfway is a successful session: record the progress in Status, and anything to pick up next time as an open item.
+
+A session fixes every clear violation it finds, in the same session and by CONTRIBUTING.md's rules for a change: callers and tests in the same commit, the quality gate green, a short Elvira run when the turn pipeline, prompts, or configuration changed, one CHANGELOG entry, and the release committed to main and pushed. Only what needs the user's decision, or belongs to another principle or submodule, becomes an open item. Deleting a file the user did not name waits for the user's consent.
 
 ## Working method
 
 **Hit-lists, never verdicts.** "Is principle X satisfied?" becomes "where does the codebase fail principle X?", answered with a list, even an empty one.
 
-**Grep first, reason second.** Whatever can be a grep query is run as one before any reading; the result is the candidate list, and reasoning happens per hit. Every query is logged with its exact pattern and result count. Where a principle needs reasoning that no grep captures, say so and read file by file within one submodule.
+**Grep first, reason second.** Whatever can be a grep query is run as one before any reading; the result is the candidate list, and reasoning happens per hit. Every query is run with an exact pattern, and its result count goes into the CHANGELOG entry. Where a principle needs reasoning that no grep captures, say so and read file by file within one submodule.
 
 **Read context before classifying.** Open each hit and read at least ten lines around it; never classify from the grep line alone.
 
@@ -28,15 +31,18 @@ One audit session covers one principle, or for the interpretive principles (1, 3
 
 **Dynamic access defaults to `needs human judgment`.** Symbols reached through `getattr` with a variable name, runtime-built dict keys, fixture injection, schema generation, or serialization are invisible to grep; never declare them dead on grep alone.
 
-**List before counting.** Every hit is listed before any count or summary.
+**List before counting.** Every hit is listed and classified before any count or summary.
 
 **Each violation belongs to one principle.** Several passes overlap (2d and 4a on dataclass defaults, 3c and 5e on single-use functions). A violation is listed once, under the principle whose pass found it first; a later principle references that entry. A violation that fails two principles names both and sits under the lower number.
 
 ## Output
 
-1. A fix-file `fix_principle<N>.md` in `docs/audit/`: every violation with path, line, a one-sentence classification, and for clear violations a short note on the fix. Carve-outs are not listed; `needs human judgment` items carry a separate marker. For interpretive principles the file grows across sessions, each contribution dated and labelled with its submodule.
-2. This document's Status updated, and every finding the session leaves open added to roadmap step 9h.
-3. A short summary for the user: the number of violations and their spread over files, up to five `needs human judgment` items with file and line, and the grep log.
+1. The fixes, committed and pushed as one release.
+2. That release's CHANGELOG entry: the principle and submodule, each query with its number of hits and of violations, and what was fixed.
+3. This document's Status updated, and every open item recorded: a `needs human judgment` item with file, line, and one sentence on why, and a finding for another principle or submodule with file and line.
+4. A short summary for the user, in their language: what was fixed, and every question that waits for them.
+
+No report file is written; git, the CHANGELOG, and the open items carry the audit.
 
 ## The five principles
 
@@ -111,7 +117,7 @@ Carve-outs: the orphan-symbol carve-outs in `tests/test_project_rules.py` (for e
 Submodules for principles 1, 3, and 5: `mechanics/`, `npc/`, `game/`, `ai/`, `db/`, `datasworn/`, `tools/`, `correction/`, the files directly under `engine/`, `web/`, and the top level of `src/straightjacket/` (`i18n.py`, `strings_loader.py`). A finished submodule is listed under its principle with its date; a principle is done when every submodule is listed.
 
 - Principle 1: no submodule audited.
-- Principle 2: audited 2026-10-17, all four passes (`docs/audit/fix_principle2.md`); every violation is fixed except the prompt markup (roadmap 9h.12) and the dataclass defaults (9h.4), and what the audit saw for principles 3 and 5 is 9h.13.
-- Principle 3 (`docs/audit/fix_principle3.md`): `mechanics/` audited 2026-10-17, `npc/` audited 2026-10-17, all four passes each; every clear violation is fixed, and the items for the user and the findings for other submodules are roadmap 9h.13 to 9h.18, 9j.7, and step 11c.
-- Principle 4: audited 2026-10-17, all three passes (`docs/audit/fix_principle4.md`); every violation is fixed, the dataclass defaults of pass 4a are roadmap 9h.4, and what the audit saw for principles 3 and 5 is 9h.13.
+- Principle 2: audited 2026-10-17, all four passes; every violation is fixed except the prompt markup (roadmap 9h.12) and the dataclass defaults (9h.4).
+- Principle 3: `mechanics/` audited 2026-10-17, `npc/` audited 2026-10-17, all four passes each; `game/` is next. The open items are roadmap 9h.13 to 9h.19, 9j.7, and steps 11c and 12.
+- Principle 4: audited 2026-10-17, all three passes; every violation is fixed, and the dataclass defaults of pass 4a are roadmap 9h.4.
 - Principle 5: no submodule audited.
