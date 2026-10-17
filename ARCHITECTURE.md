@@ -10,7 +10,7 @@ Straightjacket puts the Narrative RPG Engine design document ([itch.io](https://
 
 **What the AI still decides.** These decisions stay with the AI in play, each bounded by the engine:
 
-- The Brain turns free player text into a move and its parameters (`docs/ai.md`, Roles). The move, stat, bonus, target, track, complication clock, facts, and boasts are limited to what the engine offers in that situation, and the dice, fate, and the engine decide the outcome; the place the character moves to and a detail the player adds to the scene are the Brain's free text.
+- The Brain turns free player text into a move and its parameters (`docs/ai.md`, Roles). The move, stat, bonus, target, track, complication clock, facts, boasts, and the kind of a place the character moves to are limited to what the engine offers in that situation, and the dice, fate, and the engine decide the outcome; the name of that place and a detail the player adds to the scene are the Brain's free text.
 - The narrator supplies every fact the engine has not settled, such as the look of a room or what an NPC says.
 - The metadata extraction registers the NPCs, renames, and deaths the narration introduces, and gives each new NPC a disposition from the engine's list, so narrated facts can become state; the opening extraction does the same for an opening scene and also writes the opening NPCs' agendas, instincts, and secrets.
 - The Director writes agendas, instincts, and arcs for the NPCs the engine selects, and guidance that reaches the narrator's next prompts.
@@ -18,7 +18,7 @@ Straightjacket puts the Narrative RPG Engine design document ([itch.io](https://
 
 The Brain reading free text, the narrator's prose, and the Director's wording stay with the AI by design. What the AI still decides where a system could, and the revelation check, the one call that judges the narration after the fact, are listed in `docs/divergences.md`, each with the roadmap step that takes it over.
 
-**Engine-resolved fiction.** The target is an engine that produces every fact the fiction needs before the narrator writes: names and dispositions from oracle rolls, locations from generators, plot beats from the Adventure Crafter, facts and NPC behaviour under uncertainty from Mythic's fate system, encounters from weighted tables, scene structure from chaos rolls, content from Mythic's element meaning tables. Implemented today: NPC names from oracles, plot beats from the Adventure Crafter, scene structure from chaos rolls, meaning-table rolls inside random events, the naming of threats and clocks (complication clocks included), and facts that the Brain names and fate settles (`docs/mechanics.md`, Facts). `mechanics/generation.py` → `generate` is the entry point for the content a turn asks the engine to settle, with facts as its first category; NPC names, threats, and clocks are still rolled at their own callsites.
+**Engine-resolved fiction.** The target is an engine that produces every fact the fiction needs before the narrator writes: names and dispositions from oracle rolls, locations from generators, plot beats from the Adventure Crafter, facts and NPC behaviour under uncertainty from Mythic's fate system, encounters from weighted tables, scene structure from chaos rolls, content from Mythic's element meaning tables. Implemented today: NPC names from oracles, locations and settlements from the setting's tables when the character first arrives, plot beats from the Adventure Crafter, scene structure from chaos rolls, meaning-table rolls inside random events, the naming of threats and clocks (complication clocks included), and facts that the Brain names and fate settles (`docs/mechanics.md`, Facts and Generators). `mechanics/generation.py` is the entry point for the content a turn asks the engine to settle: `generate_fact` settles a fact, and `generate_entity` rolls an entity category (an NPC's name, a location, a settlement) from the tables the setting names; threats and clocks are still rolled at their own callsites.
 
 ## Turn pipeline
 
@@ -32,6 +32,8 @@ Scene test (mechanics/scene.py) → keyed > interrupt > altered > expected
 Brain (ai/brain.py) → one classification call with the game state in its prompt
   ↓
 Location and time (mechanics/world.py) → the Brain's move to another place clears the facts of the old one
+  ↓
+Place generation (mechanics/generation.py) → a place the world does not know yet is rolled from the setting's tables
   ↓
 Fact resolution (mechanics/generation.py, mechanics/facts.py) → each undetermined fact settled by fate or reused
   ↓

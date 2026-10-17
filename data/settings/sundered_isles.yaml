@@ -12,9 +12,24 @@ description: >
 
 oracle_paths:
   action_theme: ["core/action", "core/theme"]
-  names: ["character/name/given_name", "character/name/family_name"]
   backstory: ""
   threats: "seafaring/peril"
+
+generators:
+  npc:
+    given_name: character/name/given_name
+    family_name: character/name/family_name
+  location:
+    region: overland/region
+    landmark: overland/region_landmarks/{region}
+  settlement:
+    location: settlement/location
+    aesthetics: settlement/aesthetics
+    first_look: settlement/first_look
+    focus: settlement/focus/{location}
+    authority: settlement/identity/authority
+    disposition: settlement/identity/disposition
+    details: settlement/details
 
 vocabulary:
   substitutions:

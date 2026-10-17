@@ -10,7 +10,7 @@
   approach: a few words in {lang} on how the character acts (carefully, with a feint, by talking fast); the narrator reads it beside player_intent.
   player_intent: the player's action in {lang}, in your words.
   world_addition: a physical detail that the player's input adds to the scene, such as something they say is there or reach for, which someone could see, hear, or touch; null when the input adds none. It stays within the genre of <world> and never adds anything supernatural or outside it.
-  location_change: the short name in {lang} of the place the character moves to, or null when they stay.
+  location_change: null when the character stays; otherwise the place they move to, with name its short name in {lang} and kind "settlement" for a place where people live (a village, town, port, station, or outpost) or "location" for any other place.
   bonus_id: when <bonuses> lists a bonus whose condition this action clearly meets, its id exactly as written; otherwise null. Use only ids from the list.
   target_npc: the id of the NPC the action is aimed at, exactly as <npcs> lists it after id:; otherwise null.
   target_track: when the move marks progress on or resolves a track in <tracks>, its id exactly as <tracks> lists it after id:; otherwise null.

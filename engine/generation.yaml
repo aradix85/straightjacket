@@ -1,3 +1,9 @@
 generation:
   categories:
   - fact
+  - npc
+  - location
+  - settlement
+  place_categories:
+  - location
+  - settlement

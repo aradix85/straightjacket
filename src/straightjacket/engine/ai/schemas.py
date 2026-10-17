@@ -107,7 +107,9 @@ def get_brain_output_schema(
             "dialog_only": _bool(),
             "player_intent": _str(),
             "world_addition": _nullable_str(),
-            "location_change": _nullable_str(),
+            "location_change": _nullable_obj(
+                {"name": _str(), "kind": _str_enum(sorted(_e.generation.place_categories))}
+            ),
             "track_name": _str(),
             "track_rank": _str_enum(rank_enum),
             "target_track": _nullable_enum(track_ids),

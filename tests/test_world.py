@@ -194,21 +194,24 @@ def test_update_location_history_capped(load_engine: None) -> None:
 
 def test_apply_brain_location_time_with_change(load_engine: None) -> None:
     from straightjacket.engine.mechanics.world import apply_brain_location_time
+    from straightjacket.engine.models import LocationChange
 
     g = make_game_state()
     g.world.current_location = "Tavern"
-    brain = make_brain_result(move="adventure/face_danger", location_change="Castle")
-    apply_brain_location_time(g, brain)
+    brain = make_brain_result(
+        move="adventure/face_danger", location_change=LocationChange(name="Castle", kind="location")
+    )
+    assert apply_brain_location_time(g, brain) is True
     assert g.world.current_location == "Castle"
 
 
-def test_apply_brain_location_time_null_change(load_engine: None) -> None:
+def test_apply_brain_location_time_without_change(load_engine: None) -> None:
     from straightjacket.engine.mechanics.world import apply_brain_location_time
 
     g = make_game_state()
     g.world.current_location = "Tavern"
-    brain = make_brain_result(move="dialog", location_change="null")
-    apply_brain_location_time(g, brain)
+    brain = make_brain_result(move="dialog", location_change=None)
+    assert apply_brain_location_time(g, brain) is False
     assert g.world.current_location == "Tavern"
 
 

@@ -18,6 +18,7 @@ TARGETS = (
     "complication_clock",
     "complication_averted",
     "location_change",
+    "place_generated",
     "director",
     "burn_offered",
     "burn_taken",
@@ -93,6 +94,7 @@ class Coverage:
             self.hit("chained_move")
         self.hit("pay_the_price", sum(1 for e in events if e.startswith("[PayThePrice]")))
         self.hit("fact_resolved", sum(1 for e in events if e.startswith("[Fact] Resolved")))
+        self.hit("place_generated", sum(1 for e in events if e.startswith("[Generate] New place")))
 
     def steer(self, turn: int, max_turns: int) -> str | None:
         if turn <= max_turns // 2:

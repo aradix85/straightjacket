@@ -16,7 +16,7 @@ Discovery is yaml-only: `list_packages()` scans `data/settings/*.yaml` and `get_
 
 ## Settings yaml format
 
-Parsed strictly at load. Required top-level keys: `id`, `title`, `datasworn_id`, `playable`, `description`, `oracle_paths`, `vocabulary`. Optional: `parent`, and `creation_flow` for a setting whose parent chain supplies every field of it (Inheritance). A missing required key raises `KeyError`, and so does a key the loader does not know, at the top level or inside `oracle_paths`, `vocabulary`, or `creation_flow`.
+Parsed strictly at load. Required top-level keys: `id`, `title`, `datasworn_id`, `playable`, `description`, `oracle_paths`, `generators`, `vocabulary`. Optional: `parent`, and `creation_flow` for a setting whose parent chain supplies every field of it (Inheritance). A missing required key raises `KeyError`, and so does a key the loader does not know, at the top level or inside `oracle_paths`, `vocabulary`, or `creation_flow`.
 
 ```yaml
 id: your_setting
@@ -32,9 +32,16 @@ vocabulary:
 
 oracle_paths:
   action_theme: ["core/action", "core/theme"]
-  names: ["characters/name/given", "characters/name/family_name"]
   backstory: "campaign_launch/backstory_prompts"
   threats: "campaign_launch/sector_trouble"
+
+generators:
+  npc:
+    given_name: "characters/name/given"
+    family_name: "characters/name/family_name"
+  location:
+    theme: "location_themes/type"
+    feature: "location_themes/{theme}/feature"
 
 creation_flow:
   has_truths: true
@@ -44,8 +51,8 @@ creation_flow:
   starting_asset_categories: [companion, module]
 ```
 
-`id` must equal the yaml file's stem, which the loader checks, and `datasworn_id` is the basename of the Datasworn JSON. `playable: false` keeps a package out of character creation and out of Elvira's choice, as for Delve. `parent` names the setting it inherits from. `vocabulary` keeps the narrator's word choice in the setting and is the one block of hand-written game content the Yaml content boundary allows (CONTRIBUTING.md). `oracle_paths.names` drives NPC name rolls and `oracle_paths.threats` threat naming (`docs/mechanics.md`). `creation_flow` controls the client's creation steps.
+`id` must equal the yaml file's stem, which the loader checks, and `datasworn_id` is the basename of the Datasworn JSON. `playable: false` keeps a package out of character creation and out of Elvira's choice, as for Delve. `parent` names the setting it inherits from. `vocabulary` keeps the narrator's word choice in the setting and is the one block of hand-written game content the Yaml content boundary allows (CONTRIBUTING.md). `oracle_paths.threats` drives threat naming (`docs/mechanics.md`). `generators` names, for each category registered in `engine/generation.yaml` apart from `fact`, the oracle table every role of it rolls: `npc` for NPC names (and the name buttons of character creation), `location` and `settlement` for places. A role's path may name an earlier role of the same category in braces, which stands for the table that role's row links to or for its text; a name that no earlier role rolls raises at load (`docs/mechanics.md`, Generators). `creation_flow` controls the client's creation steps.
 
 ## Inheritance
 
-With `parent:`, blocks inherit from the parent yaml, resolved at load. `oracle_paths` and `creation_flow` inherit per field: an omitted field takes the parent's value, a present field (even an empty one) overrides it, and a root setting must specify every field. `vocabulary` inherits as a whole: when both sub-fields are empty, the block comes from the parent.
+With `parent:`, blocks inherit from the parent yaml, resolved at load. `oracle_paths` and `creation_flow` inherit per field: an omitted field takes the parent's value, a present field (even an empty one) overrides it, and a root setting must specify every field. `generators` inherits per category: a category the setting names replaces its parent's. `vocabulary` inherits as a whole: when both sub-fields are empty, the block comes from the parent.

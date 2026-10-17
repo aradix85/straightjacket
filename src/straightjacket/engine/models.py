@@ -11,6 +11,8 @@ from .models_base import (
     ClockFillResult,
     EngineConfig,
     FateResult,
+    GeneratedEntity,
+    PlaceRecord,
     PlayerPreferences,
     ProgressTrack,
     RandomEvent,
@@ -68,6 +70,12 @@ class FactRequest(SerializableMixin):
 
 
 @dataclass
+class LocationChange(SerializableMixin):
+    name: str
+    kind: str
+
+
+@dataclass
 class BrainResult(SerializableMixin):
     type: str = field(kw_only=True)
     move: str = field(kw_only=True)
@@ -77,7 +85,7 @@ class BrainResult(SerializableMixin):
     dialog_only: bool = False
     player_intent: str = ""
     world_addition: str | None = None
-    location_change: str | None = None
+    location_change: LocationChange | None = None
     track_name: str | None = None
     track_rank: str | None = None
     target_track: str | None = None
@@ -204,12 +212,15 @@ __all__ = [
     "FactRequest",
     "FateResult",
     "GameState",
+    "GeneratedEntity",
     "InheritanceRollResult",
     "KeyedScene",
+    "LocationChange",
     "MemoryEntry",
     "NarrationEntry",
     "NarrativeState",
     "NpcData",
+    "PlaceRecord",
     "PlayerPreferences",
     "PlotlineEntry",
     "PossibleEnding",

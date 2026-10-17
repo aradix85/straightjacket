@@ -12,6 +12,8 @@ description: >
 oracle_paths:
   threats: "threat/category"
 
+generators: {}
+
 vocabulary:
   substitutions: {}
   sensory_palette: >

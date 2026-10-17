@@ -1,2 +1,4 @@
 naming:
+  category: npc
+  callsign_role: callsign
   callsign_probability: 0.5

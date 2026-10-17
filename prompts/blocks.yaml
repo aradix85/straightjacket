@@ -98,6 +98,12 @@
   {lines}
   </facts>
 "block_fact_line": '<fact about="{about}" answer="{answer}">{description}</fact>'
+"block_generated_wrapper": |-
+  <generated category="{category}" place="{place}">
+  The engine rolled these details of the place from the setting's tables. Describe the place from them where the scene shows it, and never contradict them.
+  {lines}
+  </generated>
+"block_generated_line": '<detail role="{role}">{value}</detail>'
 "block_background_npcs_prefix": "Known but not recently active: "
 "block_chapter_record_untitled": 'Chapter {n}'
 "block_chapter_record_conflict": 'The conflict: {items}'

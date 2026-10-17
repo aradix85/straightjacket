@@ -70,19 +70,17 @@ def clear_facts(game: GameState) -> None:
         game.world.facts = []
 
 
-def update_location(game: GameState, new_location: str) -> None:
-    if not new_location:
-        return
+def update_location(game: GameState, new_location: str) -> bool:
     new_location = new_location.replace("_", " ").strip()
     if not new_location:
-        return
+        return False
     w = game.world
 
     if not w.current_location:
         w.current_location = new_location
-        return
+        return True
     if locations_match(new_location, w.current_location):
-        return
+        return False
     clear_facts(game)
     if w.location_history:
         if locations_match(w.location_history[-1], w.current_location):
@@ -93,17 +91,17 @@ def update_location(game: GameState, new_location: str) -> None:
         w.location_history.append(w.current_location)
     w.location_history = w.location_history[-eng().location.history_size :]
     w.current_location = new_location
+    return True
 
 
-def apply_brain_location_time(game: GameState, brain: BrainResult) -> None:
+def apply_brain_location_time(game: GameState, brain: BrainResult) -> bool:
     from .resolvers import resolve_time_progression
 
-    loc = brain.location_change
-    has_location_change = bool(loc and loc != "null")
-    if loc and has_location_change:
-        update_location(game, loc)
-    time_prog = resolve_time_progression(brain.move, has_location_change)
+    change = brain.location_change
+    moved = update_location(game, change.name) if change is not None else False
+    time_prog = resolve_time_progression(brain.move, change is not None)
     advance_time(game, time_prog)
+    return moved
 
 
 def get_pacing_hint(game: GameState) -> str:

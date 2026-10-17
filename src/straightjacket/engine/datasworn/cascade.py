@@ -1,12 +1,9 @@
 from __future__ import annotations
 
-import re
 from dataclasses import dataclass
 
+from .oracle_rolls import LINK_PATTERN, is_table_link, link_path
 from .settings import SettingPackage
-
-_LINK_PATTERN = re.compile(r"\[([^\]]+)\]\(id:([^)]+)\)")
-_ORACLES_INFIX = "/oracles/"
 
 
 @dataclass(frozen=True)
@@ -43,12 +40,7 @@ def roll_oracle_cascade(pkg: SettingPackage, entry_path: str, max_depth: int = 4
 
 
 def _extract_next_path(text: str) -> tuple[str | None, str | None]:
-    match = _LINK_PATTERN.search(text)
-    if match is None:
+    match = LINK_PATTERN.search(text)
+    if match is None or not is_table_link(match.group(2)):
         return None, None
-    label = match.group(1)
-    target_id = match.group(2)
-    if _ORACLES_INFIX not in target_id:
-        return None, None
-    after_oracles = target_id.split(_ORACLES_INFIX, 1)[1]
-    return after_oracles, label
+    return link_path(match.group(2)), match.group(1)

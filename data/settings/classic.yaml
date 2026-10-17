@@ -11,9 +11,18 @@ description: >
 
 oracle_paths:
   action_theme: ["action_and_theme/action", "action_and_theme/theme"]
-  names: ["name/ironlander/a", "name/ironlander/b"]
   backstory: ""
   threats: "settlement/trouble"
+
+generators:
+  npc:
+    given_name: name/ironlander/a
+    family_name: name/ironlander/b
+  location:
+    descriptor: place/descriptor
+    location: place/location
+  settlement:
+    trouble: settlement/trouble
 
 vocabulary:
   substitutions:

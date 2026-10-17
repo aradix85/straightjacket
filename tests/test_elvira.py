@@ -1,5 +1,7 @@
 import pytest
 
+from straightjacket.engine.db import sync
+from straightjacket.engine.db.connection import reset_db
 from straightjacket.engine.models import (
     GameState,
 )
@@ -39,6 +41,8 @@ def game(load_engine: None) -> GameState:
         make_progress_track(id="vow_find_truth", name="Find the Truth", track_type="vow", rank="dangerous", ticks=16),
         make_progress_track(id="connection_npc_1", name="Kira", track_type="connection", rank="dangerous", ticks=8),
     ]
+    reset_db()
+    sync(g)
     return g
 
 

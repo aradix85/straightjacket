@@ -8,6 +8,7 @@ from .prompt_shared import (
     _clock_filled_block,
     _director_block,
     _facts_block,
+    _generated_place_block,
     _loc_hist,
     _npc_block,
     _npcs_section,
@@ -63,7 +64,7 @@ def build_dialog_prompt(
     return f"""<scene type="{scene_type}" n="{game.narrative.scene_count}">
 {_scene_header(game)}
 <intent>{_xe(brain.player_intent)}</intent>{pw}{oracle_tag}{_facts_block(facts)}{clock_section}
-<location>{_xe(game.world.current_location)}</location>{_loc_hist(game)}{_time_ctx(game)}{_scene_enrichment(game)}
+<location>{_xe(game.world.current_location)}</location>{_generated_place_block(game)}{_loc_hist(game)}{_time_ctx(game)}{_scene_enrichment(game)}
 {npc}{npcs_sect}{wl}{agency}{crisis}
 {pacing}
 {events_block}{director}

@@ -26,6 +26,7 @@ __all__ = [
     "compute_npc_gate",
     "consolidate_characters",
     "consolidate_threads",
+    "current_place",
     "deactivate_thread",
     "derive_memory_emotion",
     "dispatch_meta",
@@ -35,6 +36,8 @@ __all__ = [
     "find_progress_track",
     "generate_consequence_sentences",
     "generate_engine_memories",
+    "generate_entity",
+    "generate_place_on_arrival",
     "generate_random_event",
     "generate_scene_context",
     "get_legacy_track",
@@ -135,7 +138,7 @@ from .fate import (
     resolve_fate_check,
     resolve_fate_check_with_dice,
 )
-from .generation import resolve_turn_facts
+from .generation import current_place, generate_entity, generate_place_on_arrival, resolve_turn_facts
 from .keyed_scenes import (
     evaluate_keyed_scenes,
 )

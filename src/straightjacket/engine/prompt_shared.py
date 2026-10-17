@@ -7,6 +7,7 @@ from .logging_util import log
 from .mechanics import (
     ClockFillResult,
     compute_npc_gate,
+    current_place,
     get_pacing_hint,
     locations_match,
     move_category,
@@ -38,6 +39,22 @@ def _scene_header(game: GameState) -> str:
 
 def _time_ctx(game: GameState) -> str:
     return f"\n<time>{_xe(game.world.time_of_day)}</time>" if game.world.time_of_day else ""
+
+
+def _generated_place_block(game: GameState) -> str:
+    place = current_place(game)
+    if place is None:
+        return ""
+    lines = [
+        get_prompt("block_generated_line", role=_xa(role), value=_xe(value))
+        for role, value in place.entity.results.items()
+    ]
+    return "\n" + get_prompt(
+        "block_generated_wrapper",
+        category=_xa(place.entity.category),
+        place=_xa(place.name),
+        lines="\n".join(lines),
+    )
 
 
 def _loc_hist(game: GameState) -> str:

@@ -96,6 +96,18 @@ class ResolvedFact(SerializableMixin):
 
 
 @dataclass
+class GeneratedEntity(SerializableMixin):
+    category: str
+    results: dict[str, str]
+
+
+@dataclass
+class PlaceRecord(SerializableMixin):
+    name: str
+    entity: GeneratedEntity
+
+
+@dataclass
 class WorldState(SerializableMixin):
     chaos_factor: int
     current_location: str = ""
@@ -106,6 +118,7 @@ class WorldState(SerializableMixin):
     pending_clock_fills: list[ClockFillResult] = field(default_factory=list)
     combat_position: str = ""
     facts: list[ResolvedFact] = field(default_factory=list)
+    places: list[PlaceRecord] = field(default_factory=list)
 
     @classmethod
     def from_config(cls) -> WorldState:

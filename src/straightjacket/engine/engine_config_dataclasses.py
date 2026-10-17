@@ -423,6 +423,7 @@ class FactResolutionConfig:
 @dataclass
 class GenerationConfig:
     categories: list[str]
+    place_categories: list[str]
 
 
 @dataclass
@@ -582,6 +583,8 @@ class MetadataVotingConfig:
 
 @dataclass
 class NamingConfig:
+    category: str
+    callsign_role: str
     callsign_probability: float
 
 

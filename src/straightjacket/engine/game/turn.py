@@ -14,6 +14,7 @@ from ..mechanics import (
     overrule_facts_by_hit,
     settle_facts_by_miss,
     generate_consequence_sentences,
+    generate_place_on_arrival,
     is_dialog_branch,
     keep_action_dice,
     keep_progress_dice,
@@ -31,6 +32,7 @@ from ..models import (
     BrainResult,
     EngineConfig,
     GameState,
+    PlaceRecord,
     ProgressTrack,
     RandomEvent,
     ResolvedFact,
@@ -73,7 +75,16 @@ def process_turn(
     game.last_turn_snapshot = snapshot
 
     narration, roll, burn_offer, director_ctx = _play_turn(
-        provider, game, player_message, config, scene_setup, stream, earlier=None, narrator_note="", label="Action"
+        provider,
+        game,
+        player_message,
+        config,
+        scene_setup,
+        stream,
+        earlier=None,
+        earlier_places=[],
+        narrator_note="",
+        label="Action",
     )
     return game, narration, roll, burn_offer, director_ctx
 
@@ -90,6 +101,7 @@ def replay_turn(
         raise ValueError("replay_turn needs the snapshot of a played turn, taken after its scene test")
     scene_setup = snap.scene_setup
     earlier = copy.deepcopy(snap)
+    earlier_places = list(game.world.places)
     game.restore(snap)
     game.last_turn_snapshot = snap
     snap.player_input = player_message
@@ -105,6 +117,7 @@ def replay_turn(
         scene_setup,
         None,
         earlier=earlier,
+        earlier_places=earlier_places,
         narrator_note=narrator_note,
         label="Corrected action",
     )
@@ -120,12 +133,14 @@ def _play_turn(
     stream: NarrationSink | None,
     *,
     earlier: TurnSnapshot | None,
+    earlier_places: list[PlaceRecord],
     narrator_note: str,
     label: str,
 ) -> tuple[str, RollResult | None, BurnOffer | None, dict[str, Any] | None]:
     brain = _run_brain_phase(provider, game, player_message, config)
     _sanitize_brain_output(game, brain)
-    _apply_brain_state_mutations(game, brain)
+    moved = _apply_brain_state_mutations(game, brain)
+    generate_place_on_arrival(game, brain, moved, earlier_places)
     if earlier is not None:
         remember_facts(game, earlier.facts)
     facts, pending_random_events = _resolve_brain_requests(game, brain)
@@ -212,13 +227,13 @@ def _resolve_brain_requests(game: GameState, brain: BrainResult) -> tuple[list[R
     return facts, pending_random_events
 
 
-def _apply_brain_state_mutations(game: GameState, brain: BrainResult) -> None:
+def _apply_brain_state_mutations(game: GameState, brain: BrainResult) -> bool:
     tid = brain.target_npc
     if tid:
         target = find_npc(game, tid)
         if target and target.status == "background":
             reactivate_npc(target, reason=f"targeted by player in scene {game.narrative.scene_count + 1}")
-    apply_brain_location_time(game, brain)
+    return apply_brain_location_time(game, brain)
 
 
 def build_scene_context(

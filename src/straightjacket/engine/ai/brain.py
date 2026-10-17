@@ -86,6 +86,9 @@ def _check_choices(result: BrainResult, move_keys: list[str], choices: dict[str,
         if value is not None and value not in allowed:
             raise ValueError(f"{field_name} {value!r} is not one of the choices offered")
     _check_fact_requests(result, choices["target_npc"])
+    change = result.location_change
+    if change is not None and change.kind not in eng().generation.place_categories:
+        raise ValueError(f"location kind {change.kind!r} is not one of the choices offered")
     if result.move in eng().get_raw("track_creating_moves") and not (result.track_name and result.track_name.strip()):
         raise ValueError(f"move {result.move!r} starts a track, but track_name is empty")
     boasts = eng().boasts

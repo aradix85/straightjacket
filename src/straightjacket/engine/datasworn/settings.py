@@ -9,6 +9,7 @@ import yaml
 from ..config_loader import PROJECT_ROOT
 from ..logging_util import log
 from .loader import OracleTable, Setting, load_setting
+from .oracle_rolls import PLACEHOLDER_PATTERN
 
 if TYPE_CHECKING:
     from ..models import GameState
@@ -28,7 +29,6 @@ class VocabularyConfig:
 @dataclass
 class OraclePaths:
     action_theme: list[str]
-    names: list[str]
     backstory: str
     threats: str
 
@@ -45,7 +45,6 @@ class CreationFlow:
 @dataclass
 class _OraclePathsPartial:
     action_theme: list[str] | None = None
-    names: list[str] | None = None
     backstory: str | None = None
     threats: str | None = None
 
@@ -67,6 +66,7 @@ class _SettingConfig:
     description: str
     playable: bool
     oracle_paths: _OraclePathsPartial
+    generators: dict[str, dict[str, str]]
     vocabulary: VocabularyConfig
     creation_flow: _CreationFlowPartial
     parent: str | None
@@ -110,13 +110,30 @@ def _parse_oracle_paths_partial(data: dict[str, Any], yaml_path: str) -> _Oracle
     partial = _OraclePathsPartial()
     if "action_theme" in data:
         partial.action_theme = list(data["action_theme"])
-    if "names" in data:
-        partial.names = list(data["names"])
     if "backstory" in data:
         partial.backstory = data["backstory"]
     if "threats" in data:
         partial.threats = data["threats"]
     return partial
+
+
+def _parse_generators(data: dict[str, Any], yaml_path: str) -> dict[str, dict[str, str]]:
+    generators: dict[str, dict[str, str]] = {}
+    for category, tables in data.items():
+        if not isinstance(tables, dict) or not tables:
+            raise TypeError(f"Expected a mapping of roles to oracle paths at generators.{category} in {yaml_path}")
+        roles: dict[str, str] = {}
+        for role, template in tables.items():
+            if not isinstance(template, str):
+                raise TypeError(f"Expected an oracle path at generators.{category}.{role} in {yaml_path}")
+            unknown = [name for name in PLACEHOLDER_PATTERN.findall(template) if name not in roles]
+            if unknown:
+                raise KeyError(
+                    f"generators.{category}.{role} in {yaml_path} names {unknown}, which no earlier role of it rolls"
+                )
+            roles[str(role)] = template
+        generators[str(category)] = roles
+    return generators
 
 
 def _parse_vocabulary(data: dict[str, Any], yaml_path: str) -> VocabularyConfig:
@@ -158,6 +175,7 @@ def _parse_setting_config(data: dict[str, Any], yaml_path: str) -> _SettingConfi
         description=_require_str(data, "description", yaml_path),
         playable=_require_bool(data, "playable", yaml_path),
         oracle_paths=_parse_oracle_paths_partial(_require_dict(data, "oracle_paths", yaml_path), yaml_path),
+        generators=_parse_generators(_require_dict(data, "generators", yaml_path), yaml_path),
         vocabulary=_parse_vocabulary(_require_dict(data, "vocabulary", yaml_path), yaml_path),
         creation_flow=_parse_creation_flow_partial(data.get("creation_flow"), yaml_path),
         parent=str(parent_raw) if parent_raw else None,
@@ -181,7 +199,6 @@ def _resolve_oracle_paths(chain: list[_SettingConfig], yaml_path: str) -> Oracle
 
     return OraclePaths(
         action_theme=pick_str_list("action_theme"),
-        names=pick_str_list("names"),
         backstory=pick_str("backstory"),
         threats=pick_str("threats"),
     )
@@ -231,6 +248,9 @@ class SettingPackage:
 
         self._oracle_paths = _resolve_oracle_paths(chain, yaml_path)
         self._creation_flow = _resolve_creation_flow(chain, yaml_path)
+        self._generators: dict[str, dict[str, str]] = {}
+        for ancestor_config in reversed(chain):
+            self._generators.update(ancestor_config.generators)
 
         if config.vocabulary.is_empty() and parent is not None:
             self._vocabulary = parent.vocabulary
@@ -298,17 +318,19 @@ class SettingPackage:
             return None
         return data.oracle(path)
 
-    def name_tables(self) -> dict[str, OracleTable]:
+    def generator_tables(self, category: str) -> dict[str, str]:
+        if category not in self._generators:
+            raise KeyError(f"No generator tables for {category!r} in the setting chain of {self.id}")
+        return dict(self._generators[category])
+
+    def name_tables(self, category: str) -> dict[str, OracleTable]:
         result: dict[str, OracleTable] = {}
-        for path in self._oracle_paths.names:
+        for role, path in self.generator_tables(category).items():
             data = self.oracle_data_for(path)
-            if data is None:
-                continue
-            table = data.oracle(path)
+            table = data.oracle(path) if data is not None else None
             if table is None:
-                continue
-            short_id = path.rsplit("/", 1)[-1]
-            result[short_id] = table
+                raise KeyError(f"Oracle table '{path}' for {category}.{role} not found in setting chain for {self.id}")
+            result[role] = table
         return result
 
 

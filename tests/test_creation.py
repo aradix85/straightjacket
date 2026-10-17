@@ -109,6 +109,7 @@ def _minimal_setting_yaml() -> dict:
         "playable": True,
         "description": "Probe setting.",
         "oracle_paths": {"threats": "a/b"},
+        "generators": {"location": {"theme": "themes/type", "feature": "themes/{theme}/feature"}},
         "vocabulary": {"substitutions": {}, "sensory_palette": ""},
         "creation_flow": {"has_truths": False},
     }
@@ -119,6 +120,16 @@ def test_setting_yaml_with_known_keys_parses() -> None:
 
     config = _parse_setting_config(_minimal_setting_yaml(), "probe.yaml")
     assert config.oracle_paths.threats == "a/b"
+    assert config.generators["location"]["feature"] == "themes/{theme}/feature"
+
+
+def test_setting_yaml_generator_role_names_only_earlier_roles() -> None:
+    from straightjacket.engine.datasworn.settings import _parse_setting_config
+
+    data = _minimal_setting_yaml()
+    data["generators"] = {"location": {"feature": "themes/{theme}/feature", "theme": "themes/type"}}
+    with pytest.raises(KeyError, match="no earlier role"):
+        _parse_setting_config(data, "probe.yaml")
 
 
 @pytest.mark.parametrize("section", [None, "oracle_paths", "vocabulary", "creation_flow"])
@@ -195,8 +206,8 @@ def test_build_creation_options_settings_have_name_tables(load_engine: None) -> 
 
     opts = build_creation_options()
     sf = next(s for s in opts["settings"] if s["id"] == "starforged")
-    assert "given" in sf["name_tables"]
-    assert len(sf["name_tables"]["given"]) > 0
+    assert list(sf["name_tables"])[:2] == ["given_name", "family_name"]
+    assert len(sf["name_tables"]["given_name"]) > 0
 
 
 def test_build_creation_options_settings_have_starting_assets(load_engine: None) -> None:

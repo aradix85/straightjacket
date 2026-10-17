@@ -9,6 +9,7 @@ from .prompt_shared import (
     _clock_filled_block,
     _director_block,
     _facts_block,
+    _generated_place_block,
     _loc_hist,
     _npc_block,
     _npcs_section,
@@ -125,7 +126,7 @@ def build_action_prompt(
 <intent>{_xe(brain.player_intent)} ({_xe(brain.approach)})</intent>{pw}
 {constraint}{cons_tags}{threat_tags}{clock_section}{_facts_block(facts)}
 {position_tag}
-<location>{_xe(game.world.current_location)}</location>{_loc_hist(game)}{_time_ctx(game)}{_scene_enrichment(game)}
+<location>{_xe(game.world.current_location)}</location>{_generated_place_block(game)}{_loc_hist(game)}{_time_ctx(game)}{_scene_enrichment(game)}
 {npc}{npcs_sect}{wl}{flags}{agency}
 {pacing}
 {events_block}{director}

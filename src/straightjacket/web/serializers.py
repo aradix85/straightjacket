@@ -224,7 +224,7 @@ def build_creation_options() -> dict[str, Any]:
 
         name_tables = {}
         if flow.has_name_tables:
-            for table_id, table in pkg.name_tables().items():
+            for table_id, table in pkg.name_tables(eng().naming.category).items():
                 name_tables[table_id] = [row.text for row in table.rows]
 
         backstory_prompts = []

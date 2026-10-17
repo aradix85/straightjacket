@@ -64,14 +64,8 @@ def roll_character(setting_id: str, game_cfg: dict) -> dict:
 def _roll_name(pkg: SettingPackage, game_cfg: dict) -> str:
     if game_cfg.get("player_name"):
         return game_cfg["player_name"]
-    name_paths = pkg.oracle_paths.names
-    import contextlib
-
-    parts = []
-    for np in name_paths[:2]:
-        with contextlib.suppress(KeyError):
-            parts.append(pkg.data.roll_oracle(np))
-    return " ".join(parts) if parts else f"Wanderer-{_random.randint(100, 999)}"
+    tables = list(pkg.name_tables(eng().naming.category).values())[:2]
+    return " ".join(table.roll_text() for table in tables)
 
 
 def _roll_paths(pkg: SettingPackage, game_cfg: dict) -> list[str]:

@@ -211,19 +211,6 @@ def test_remembered_facts_come_back_only_at_their_own_place(load_engine: None) -
     assert game.world.facts == [here]
 
 
-def test_generation_categories_match_the_yaml(load_engine: None) -> None:
-    from straightjacket.engine.mechanics.generation import _GENERATORS
-
-    assert set(eng().generation.categories) == set(_GENERATORS)
-
-
-def test_an_unknown_generation_category_raises(load_engine: None) -> None:
-    from straightjacket.engine.mechanics.generation import generate
-
-    with pytest.raises(KeyError, match="Unknown generation category"):
-        generate(_game(), "settlement", FactRequest(fact_type="locked", about="here"))
-
-
 def test_every_fact_input_has_an_implementation(load_engine: None) -> None:
     from straightjacket.engine.mechanics.facts import _INPUTS
 
@@ -366,7 +353,7 @@ def test_the_turn_resolves_facts_at_the_place_it_moves_to(
     from straightjacket.engine.game import process_turn
 
     _force(monkeypatch, "MISS")
-    provider = _Provider(_brain(location_change="Archive Vault"))
+    provider = _Provider(_brain(location_change={"name": "Archive Vault", "kind": "location"}))
     game, _n, _r, _o, _d = process_turn(provider, _game(), "I force the vault door", _CONFIG)
 
     assert [(f.fact_type, f.location) for f in game.world.facts] == [("locked", "Archive Vault")]

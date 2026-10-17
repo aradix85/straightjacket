@@ -29,7 +29,7 @@ def _brain(**overrides: Any) -> dict[str, Any]:
         "dialog_only": False,
         "player_intent": "I slip past Mira into the archive vault",
         "world_addition": None,
-        "location_change": "Archive Vault",
+        "location_change": {"name": "Archive Vault", "kind": "location"},
         "track_name": "Reach the vault",
         "track_rank": "dangerous",
         "target_track": None,
