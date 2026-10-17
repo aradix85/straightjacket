@@ -62,14 +62,11 @@ def validate_stats(stats: dict[str, int]) -> None:
         raise ValueError(f"Invalid stat distribution: {sorted(values, reverse=True)}")
 
 
-def validate_creation(creation_data: dict[str, Any], pkg: object) -> None:
+def validate_creation(creation_data: dict[str, Any], pkg: SettingPackage) -> None:
     _e = eng()
-
-    if not isinstance(pkg, SettingPackage):
-        return
     flow = pkg.creation_flow
 
-    paths = creation_data.get("paths", [])
+    paths = creation_data["paths"]
     max_paths = _e.creation.max_paths
     if len(paths) > max_paths:
         raise ValueError(f"Too many paths: {len(paths)} (max {max_paths})")
@@ -78,7 +75,7 @@ def validate_creation(creation_data: dict[str, Any], pkg: object) -> None:
         if not pkg.data.asset("path", pid):
             raise ValueError(f"Path '{pid}' not found in setting '{pkg.id}'")
 
-    assets = creation_data.get("assets", [])
+    assets = creation_data["assets"]
     max_assets = _e.creation.max_starting_assets
     if len(assets) > max_assets:
         raise ValueError(f"Too many starting assets: {len(assets)} (max {max_assets})")
@@ -93,11 +90,11 @@ def validate_creation(creation_data: dict[str, Any], pkg: object) -> None:
             if not found:
                 raise ValueError(f"Asset '{asset_id}' not in allowed categories: {allowed_cats}")
 
-    truths = creation_data.get("truths", {})
+    truths = creation_data["truths"]
     if truths and not flow.has_truths:
         raise ValueError(f"Setting '{pkg.id}' does not support truths")
 
-    vow_rank = creation_data.get("background_vow_rank", "")
+    vow_rank = creation_data["background_vow_rank"]
     valid = _valid_ranks()
     if vow_rank and vow_rank not in valid:
         raise ValueError(f"Invalid vow rank: '{vow_rank}' (valid: {sorted(valid)})")
@@ -111,8 +108,6 @@ def validate_creation(creation_data: dict[str, Any], pkg: object) -> None:
 def _compute_chaos_start(vow_text: str) -> int:
     _e = eng()
     base = _e.chaos.start
-    if not vow_text:
-        return base
     vow_lower = vow_text.lower()
     modifiers = _e.creation.chaos_vow_modifiers
     values = _e.creation.chaos_modifier_values
@@ -126,8 +121,6 @@ def _compute_chaos_start(vow_text: str) -> int:
 
 
 def _seed_background_vow(game: GameState, vow_text: str, rank: str = "") -> None:
-    if not vow_text:
-        return
     _e = eng()
     if rank:
         if rank not in _valid_ranks():
@@ -195,18 +188,18 @@ def start_new_game(
         asset = pkg.data.asset("path", pid)
         if asset:
             path_names.append(extract_title(asset, pid))
-    concept = ", ".join(path_names) if path_names else ""
+    concept = ", ".join(path_names)
 
     _e = eng()
     stat_names = [n for n in _e.stats.names if n != "none"]
     stat_dict = {n: stats[n] for n in stat_names}
 
-    assets = list(creation_data.get("assets", []))
-    truths = dict(creation_data.get("truths", {}))
-    wishes = creation_data.get("wishes", "")
-    content_lines = creation_data.get("content_lines", "")
-    vow_subject = creation_data.get("vow_subject", "")
-    background_vow_rank = creation_data.get("background_vow_rank", "")
+    assets = list(creation_data["assets"])
+    truths = dict(creation_data["truths"])
+    wishes = creation_data["wishes"]
+    content_lines = creation_data["content_lines"]
+    vow_subject = creation_data["vow_subject"]
+    background_vow_rank = creation_data["background_vow_rank"]
 
     game = GameState(
         player_name=player_name,
@@ -286,10 +279,8 @@ def start_new_game(
     else:
         game.narrative.story_blueprint = None
 
-    setup_data = {}
-    if not game.npcs:
-        setup_data = call_opening_setup(provider, narration, game, config)
-        apply_opening_setup(game, setup_data, label="OpeningSetup")
+    setup_data = call_opening_setup(provider, narration, game, config)
+    apply_opening_setup(game, setup_data, label="OpeningSetup")
 
     for npc in game.npcs:
         npc.introduced = True
@@ -300,7 +291,7 @@ def start_new_game(
                 CharacterListEntry(id=npc.id, name=npc.name, entry_type="npc", weight=1)
             )
 
-    if setup_data.get("deceased_npcs"):
+    if setup_data["deceased_npcs"]:
         process_deceased_npcs(game, setup_data["deceased_npcs"])
 
     record_scene_intensity(game, "action")

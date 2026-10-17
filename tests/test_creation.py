@@ -71,15 +71,6 @@ def test_seed_background_vow_invalid_rank_raises(load_engine: None) -> None:
         _seed_background_vow(game, "Quest", "nonexistent_rank")
 
 
-def test_seed_background_vow_empty_skips(load_engine: None) -> None:
-    from straightjacket.engine.game.game_start import _seed_background_vow
-
-    game = make_game_state(player_name="Test")
-    _seed_background_vow(game, "", "")
-    assert len(game.progress_tracks) == 0
-    assert len(game.narrative.threads) == 0
-
-
 @pytest.mark.parametrize(
     ("setting", "expected_flags"),
     [
@@ -288,6 +279,9 @@ def test_truths_block_empty() -> None:
     assert truths_block(game) == ""
 
 
+_VALID_PAYLOAD = {"paths": [], "assets": [], "truths": {}, "background_vow_rank": "", "tone": "pulp"}
+
+
 @pytest.mark.parametrize(
     ("setting", "payload", "error_match"),
     [
@@ -306,7 +300,7 @@ def test_validate_creation_rejects_invalid(load_engine: None, setting: str, payl
     clear_cache()
     pkg = load_package(setting)
     with pytest.raises(ValueError, match=error_match):
-        validate_creation(payload, pkg)
+        validate_creation({**_VALID_PAYLOAD, **payload}, pkg)
 
 
 def test_validate_creation_valid_passes(load_engine: None) -> None:
@@ -315,7 +309,7 @@ def test_validate_creation_valid_passes(load_engine: None) -> None:
 
     clear_cache()
     pkg = load_package("starforged")
-    validate_creation({"paths": ["ace", "explorer"], "assets": [], "truths": {"x": "y"}, "tone": "pulp"}, pkg)
+    validate_creation({**_VALID_PAYLOAD, "paths": ["ace", "explorer"], "truths": {"x": "y"}}, pkg)
 
 
 def test_validate_creation_valid_vow_rank_passes(load_engine: None) -> None:
@@ -324,7 +318,7 @@ def test_validate_creation_valid_vow_rank_passes(load_engine: None) -> None:
 
     clear_cache()
     pkg = load_package("starforged")
-    validate_creation({"background_vow_rank": "epic", "tone": "cozy"}, pkg)
+    validate_creation({**_VALID_PAYLOAD, "background_vow_rank": "epic", "tone": "cozy"}, pkg)
 
 
 @pytest.mark.parametrize(

@@ -34,7 +34,10 @@ def _maybe_mark_scene_challenge(game: GameState, brain: BrainResult, roll: RollR
         return
     added = sc_track.mark_progress()
     if added:
-        log(f"[Track] Scene challenge '{sc_track.name}': +{added} ticks ({sc_track.filled_boxes}/10 boxes)")
+        log(
+            f"[Track] Scene challenge '{sc_track.name}': +{added} ticks "
+            f"({sc_track.filled_boxes}/{eng().progress.boxes} boxes)"
+        )
 
 
 def _maybe_tick_weak_hit_clock(
@@ -80,11 +83,12 @@ def _collect_threat_events(game: GameState, roll: RollResult) -> list[ThreatEven
 def _track_gather_information_success(game: GameState, brain: BrainResult, roll: RollResult) -> None:
     if brain.move != "adventure/gather_information" or roll.result not in ("STRONG_HIT", "WEAK_HIT"):
         return
-    if not brain.target_npc:
+    if brain.target_npc is None:
         return
     target = find_npc(game, brain.target_npc)
-    if target:
-        target.gather_count += 1
+    if target is None:
+        raise ValueError(f"Target NPC {brain.target_npc!r} is not in the game")
+    target.gather_count += 1
 
 
 def resolve_action_phase(game: GameState, brain: BrainResult, roll_outcome: RollOutcome) -> ActionResolution:
@@ -103,13 +107,12 @@ def resolve_action_phase(game: GameState, brain: BrainResult, roll_outcome: Roll
     clock_events = action.clock_events
     fill_results = pending_from_prior_turn + action.clock_fill_results
 
-    if action.outcome:
-        apply_progress_and_legacy(
-            game,
-            action.outcome,
-            brain,
-            track if is_progress_roll else None,
-        )
+    apply_progress_and_legacy(
+        game,
+        action.outcome,
+        brain,
+        track if is_progress_roll else None,
+    )
 
     if is_progress_roll and track:
         _apply_track_completion(game, roll, track)

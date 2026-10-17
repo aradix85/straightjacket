@@ -61,8 +61,6 @@ END_REASONS: tuple[str, ...] = ("death", "despair", "retire")
 
 def determine_end_reason(game: GameState) -> str:
     res = game.resources
-    if res.health <= 0 and res.spirit <= 0:
-        return "death"
     if res.health <= 0:
         return "death"
     if res.spirit <= 0:
@@ -182,7 +180,7 @@ def _replace_character_identity(game: GameState, creation_data: dict[str, Any]) 
         asset = pkg.data.asset("path", pid)
         if asset:
             path_names.append(extract_title(asset, pid))
-    concept = ", ".join(path_names) if path_names else ""
+    concept = ", ".join(path_names)
 
     _e = eng()
     stat_names = [n for n in _e.stats.names if n != "none"]
@@ -199,12 +197,12 @@ def _replace_character_identity(game: GameState, creation_data: dict[str, Any]) 
     game.backstory = backstory
     game.stats = stat_dict
 
-    game.assets = list(creation_data.get("assets", []))
-    game.truths = dict(creation_data.get("truths", {}))
-    game.preferences.player_wishes = creation_data.get("wishes", "")
-    game.preferences.content_lines = creation_data.get("content_lines", "")
-    vow_subject = creation_data.get("vow_subject", "")
-    background_vow_rank = creation_data.get("background_vow_rank", "")
+    game.assets = list(creation_data["assets"])
+    game.truths = dict(creation_data["truths"])
+    game.preferences.player_wishes = creation_data["wishes"]
+    game.preferences.content_lines = creation_data["content_lines"]
+    vow_subject = creation_data["vow_subject"]
+    background_vow_rank = creation_data["background_vow_rank"]
 
     _seed_background_vow(game, background_vow, background_vow_rank)
     _seed_vow_subject(game, vow_subject)
@@ -297,7 +295,7 @@ def _generate_succession_opening(provider: AIProvider, game: GameState, config: 
     if not [n for n in game.npcs if n.introduced]:
         setup_data = call_opening_setup(provider, narration, game, config)
         apply_opening_setup(game, setup_data, returning_npcs=list(game.npcs), label="SuccessionSetup")
-        if setup_data.get("deceased_npcs"):
+        if setup_data["deceased_npcs"]:
             process_deceased_npcs(game, setup_data["deceased_npcs"])
 
     return narration

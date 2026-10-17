@@ -27,7 +27,6 @@ _AI_CALL_CARVE_OUT_FILES = {
     "engine/ai/provider_base.py",
     "engine/correction/analysis.py",
     "engine/director.py",
-    "engine/game/director_runner.py",
     "engine/tools/handler.py",
     "web/handlers.py",
     "web/server.py",

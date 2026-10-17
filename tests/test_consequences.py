@@ -299,7 +299,8 @@ def test_next_move_bonus_effect_is_banked_and_spent_on_the_next_action_roll(
     from straightjacket.engine.mechanics.move_effects import MoveEffect, apply_effects
     from tests._helpers import make_brain_result, make_game_state
 
-    game = make_game_state()
+    game = make_game_state(setting_id="classic")
+    game.last_turn_snapshot = game.snapshot()
     apply_effects(game, [MoveEffect(type="next_move_bonus", value=1)])
     assert game.resources.next_move_bonus == 1
     game.resources.momentum = 2

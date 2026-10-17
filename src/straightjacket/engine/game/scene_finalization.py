@@ -30,7 +30,8 @@ from ..models import (
 from ..story_state import check_act_transition, check_story_completion, mark_revelation_used
 from .finalization import apply_post_narration
 from ..mechanics import sync_combat_tracks
-from .turn_types import SceneContext
+from ..npc import find_npc
+from .turn_types import DirectorCall, SceneContext
 
 
 def _update_scene_lists(
@@ -43,12 +44,11 @@ def _update_scene_lists(
                     add_character_weight(game, c.id)
                     break
 
-    new_npcs = metadata.get("new_npcs", [])
-    for new_npc in new_npcs:
-        name = new_npc.get("name", "")
-        if not name:
+    for new_npc in metadata["new_npcs"]:
+        if not new_npc["name"]:
             continue
-        npc_obj = next((n for n in game.npcs if n.name == name), None)
+        npc_obj = find_npc(game, new_npc["name"])
+        name = npc_obj.name if npc_obj else new_npc["name"]
         entry_id = npc_obj.id if npc_obj else f"char_{len(game.narrative.characters_list) + 1}"
         existing = any(c.name == name or c.id == entry_id for c in game.narrative.characters_list)
         if not existing:
@@ -72,7 +72,7 @@ def finalize_scene(
     roll: RollResult | None = None,
     consequences: Sequence[str] = (),
     agency_clock_events: Sequence[ClockEvent] = (),
-) -> tuple[bool, dict[str, Any] | None]:
+) -> tuple[bool, DirectorCall | None]:
     game = ctx.game
     brain = ctx.brain
     scene_present_ids = ctx.scene_present_ids
@@ -113,22 +113,20 @@ def finalize_scene(
     if len(nar.narration_history) > eng().pacing.max_narration_history:
         nar.narration_history = nar.narration_history[-eng().pacing.max_narration_history :]
 
-    log_entry.pop("_pacing_type", None)
+    log_entry.pop("_pacing_type")
     nar.session_log.append(SceneLogEntry(**log_entry))
     if len(nar.session_log) > eng().pacing.max_session_log:
         nar.session_log = nar.session_log[-eng().pacing.max_session_log :]
 
-    if ctx.pending_revs and nar.session_log:
+    if ctx.pending_revs:
         nar.session_log[-1].revelation_check = {
             "id": ctx.pending_revs[0].id,
             "confirmed": revelation_confirmed,
         }
 
     auto_clock_events = tick_autonomous_clocks(game)
-    if agency_clock_events and nar.session_log:
-        nar.session_log[-1].clock_events.extend(agency_clock_events)
-    if auto_clock_events and nar.session_log:
-        nar.session_log[-1].clock_events.extend(auto_clock_events)
+    nar.session_log[-1].clock_events.extend(agency_clock_events)
+    nar.session_log[-1].clock_events.extend(auto_clock_events)
 
     tick_autonomous_threats(game)
     resolve_full_menace(game)
@@ -142,18 +140,17 @@ def finalize_scene(
     consolidate_threads(game)
     consolidate_characters(game)
 
-    director_ctx = None
+    director_ctx: DirectorCall | None = None
     director_reason = should_call_director(
         game,
         roll_result=roll_result_str,
         chaos_used=ctx.scene_setup.scene_type != "expected",
-        new_npcs_found=bool(metadata.get("new_npcs")),
+        new_npcs_found=bool(metadata["new_npcs"]),
         revelation_used=revelation_confirmed,
     )
     if director_reason:
-        director_ctx = {"narration": narration, "config": ctx.config}
-        if nar.session_log:
-            nar.session_log[-1].director_trigger = director_reason
+        director_ctx = DirectorCall(narration=narration, config=ctx.config)
+        nar.session_log[-1].director_trigger = director_reason
 
         bp = game.narrative.story_blueprint
         if director_reason.startswith("phase:") and bp is not None:

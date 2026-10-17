@@ -1,5 +1,5 @@
 from typing import Any
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 from ..ai.provider_base import AIProvider, NarrationSink
 from ..datasworn.moves import Move
@@ -33,11 +33,17 @@ class SceneContext:
     npc_activation_debug: dict[str, Any]
     facts: list[ResolvedFact]
     summary_label: str
-    activated_npcs: list[NpcData] = field(default_factory=list)
-    mentioned_npcs: list[NpcData] = field(default_factory=list)
-    pending_random_events: list[RandomEvent] = field(default_factory=list)
-    stream: NarrationSink | None = None
-    narrator_note: str = ""
+    activated_npcs: list[NpcData]
+    mentioned_npcs: list[NpcData]
+    pending_random_events: list[RandomEvent]
+    stream: NarrationSink | None
+    narrator_note: str
+
+
+@dataclass
+class DirectorCall:
+    narration: str
+    config: EngineConfig | None
 
 
 @dataclass

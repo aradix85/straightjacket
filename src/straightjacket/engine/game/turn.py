@@ -52,7 +52,7 @@ from .finalization import narrate_scene
 from .scene_finalization import finalize_scene
 from ..mechanics import find_progress_track, roll_oracle_answer
 from ..mechanics.bonuses import apply_momentum_on_hit, chosen_bonus
-from .turn_types import ActionResolution, BurnOffer, RollOutcome, SceneContext
+from .turn_types import ActionResolution, BurnOffer, DirectorCall, RollOutcome, SceneContext
 
 
 def process_turn(
@@ -61,7 +61,7 @@ def process_turn(
     player_message: str,
     config: EngineConfig | None = None,
     stream: NarrationSink | None = None,
-) -> tuple[GameState, str, RollResult | None, BurnOffer | None, dict[str, Any] | None]:
+) -> tuple[GameState, str, RollResult | None, BurnOffer | None, DirectorCall | None]:
     if game.game_over:
         raise RuntimeError(
             "process_turn called on a game with game_over=True. "
@@ -97,7 +97,7 @@ def replay_turn(
     player_message: str,
     config: EngineConfig | None,
     narrator_note: str,
-) -> tuple[str, BurnOffer | None, dict[str, Any] | None]:
+) -> tuple[str, BurnOffer | None, DirectorCall | None]:
     snap = game.last_turn_snapshot
     if snap is None or snap.scene_setup is None:
         raise ValueError("replay_turn needs the snapshot of a played turn, taken after its scene test")
@@ -138,7 +138,7 @@ def _play_turn(
     earlier_places: list[PlaceRecord],
     narrator_note: str,
     label: str,
-) -> tuple[str, RollResult | None, BurnOffer | None, dict[str, Any] | None]:
+) -> tuple[str, RollResult | None, BurnOffer | None, DirectorCall | None]:
     brain = _run_brain_phase(provider, game, player_message, config)
     _sanitize_brain_output(game, brain)
     moved = _apply_brain_state_mutations(game, brain)
@@ -149,10 +149,18 @@ def _play_turn(
     release_absent_target(brain, facts)
 
     ctx = build_scene_context(
-        provider, game, brain, config, player_message, scene_setup, pending_random_events, facts, label
+        provider,
+        game,
+        brain,
+        config,
+        player_message,
+        scene_setup,
+        pending_random_events,
+        facts,
+        label,
+        stream=stream,
+        narrator_note=narrator_note,
     )
-    ctx.stream = stream
-    ctx.narrator_note = narrator_note
 
     if is_dialog_branch(brain):
         narration, director_ctx = _process_dialog_turn(ctx)
@@ -189,15 +197,18 @@ def _sanitize_brain_output(game: GameState, brain: BrainResult) -> None:
         brain.dialog_only = True
 
 
-def _move_roll_type(game: GameState, move: str) -> str | None:
-    ds_moves = get_moves(game.setting_id) if game.setting_id else {}
-    ds_move = ds_moves.get(move)
-    if ds_move is not None:
-        return ds_move.roll_type
-    engine_move = eng().engine_moves.get(move)
-    if engine_move is not None:
-        return engine_move.roll_type
-    return None
+def _move_roll_type(game: GameState, move: str) -> str:
+    ds_moves = get_moves(game.setting_id)
+    if move in ds_moves:
+        return ds_moves[move].roll_type
+    return eng().engine_moves[move].roll_type
+
+
+def _snapshot_of_turn(game: GameState) -> TurnSnapshot:
+    snapshot = game.last_turn_snapshot
+    if snapshot is None:
+        raise ValueError("A turn runs only after its snapshot is taken")
+    return snapshot
 
 
 def _begin_turn(game: GameState, player_message: str) -> None:
@@ -211,8 +222,7 @@ def _run_brain_phase(
     provider: AIProvider, game: GameState, player_message: str, config: EngineConfig | None
 ) -> BrainResult:
     brain = call_brain(provider, game, player_message, config)
-    if game.last_turn_snapshot is not None:
-        game.last_turn_snapshot.brain = brain
+    _snapshot_of_turn(game).brain = brain
     return brain
 
 
@@ -224,8 +234,7 @@ def _advance_threats_targeted_by(game: GameState, events: list[RandomEvent]) -> 
 
 def _resolve_brain_requests(game: GameState, brain: BrainResult) -> tuple[list[ResolvedFact], list[RandomEvent]]:
     facts = resolve_turn_facts(game, brain)
-    if game.last_turn_snapshot is not None:
-        game.last_turn_snapshot.facts = list(facts)
+    _snapshot_of_turn(game).facts = list(facts)
     pending_random_events = drain_pending_events()
     _advance_threats_targeted_by(game, pending_random_events)
     return facts, pending_random_events
@@ -250,6 +259,9 @@ def build_scene_context(
     pending_random_events: list[RandomEvent],
     facts: list[ResolvedFact],
     summary_label: str,
+    *,
+    stream: NarrationSink | None,
+    narrator_note: str,
 ) -> SceneContext:
     activated_npcs, mentioned_npcs, npc_activation_debug = activate_npcs_for_prompt(game, brain, player_message)
     scene_present_ids = {n.id for n in activated_npcs} | {n.id for n in mentioned_npcs}
@@ -270,10 +282,12 @@ def build_scene_context(
         activated_npcs=activated_npcs,
         mentioned_npcs=mentioned_npcs,
         pending_random_events=pending_random_events,
+        stream=stream,
+        narrator_note=narrator_note,
     )
 
 
-def _process_dialog_turn(ctx: SceneContext) -> tuple[str, dict[str, Any] | None]:
+def _process_dialog_turn(ctx: SceneContext) -> tuple[str, DirectorCall | None]:
     game = ctx.game
     brain = ctx.brain
     is_oracle = brain.move == "ask_the_oracle"
@@ -308,8 +322,7 @@ def _process_dialog_turn(ctx: SceneContext) -> tuple[str, dict[str, Any] | None]
         stream=ctx.stream,
     )
 
-    if game.last_turn_snapshot is not None:
-        game.last_turn_snapshot.narration = narration
+    _snapshot_of_turn(game).narration = narration
 
     result_label = "oracle" if is_oracle else "dialog"
     log_entry: dict[str, Any] = {
@@ -378,8 +391,7 @@ def _maybe_create_track(game: GameState, brain: BrainResult) -> None:
 
 
 def _execute_roll(game: GameState, brain: BrainResult, earlier: RollResult | None) -> RollOutcome:
-    ds_moves = get_moves(game.setting_id) if game.setting_id else {}
-    ds_move = ds_moves.get(brain.move)
+    ds_move = get_moves(game.setting_id).get(brain.move)
     is_progress_roll = ds_move is not None and ds_move.roll_type == "progress_roll"
     track: ProgressTrack | None = None
 
@@ -417,8 +429,7 @@ def _execute_roll(game: GameState, brain: BrainResult, earlier: RollResult | Non
             apply_momentum_on_hit(game, bonus, roll.result)
         _log_action_roll(roll, adds, cancelled=game.resources.momentum < 0 and -game.resources.momentum == roll.d1)
 
-    if game.last_turn_snapshot is not None:
-        game.last_turn_snapshot.roll = roll
+    _snapshot_of_turn(game).roll = roll
 
     return RollOutcome(roll=roll, ds_move=ds_move, track=track, is_progress_roll=is_progress_roll)
 
@@ -456,7 +467,7 @@ def _offer_momentum_burn(ctx: SceneContext, roll_outcome: RollOutcome) -> BurnOf
     )
 
 
-def resolve_and_narrate_action(ctx: SceneContext, roll_outcome: RollOutcome) -> tuple[str, dict[str, Any] | None]:
+def resolve_and_narrate_action(ctx: SceneContext, roll_outcome: RollOutcome) -> tuple[str, DirectorCall | None]:
     action_res = resolve_action_phase(ctx.game, ctx.brain, roll_outcome)
     clear_facts_settled_by_hit(ctx.game, ctx.facts, roll_outcome.roll.result)
     ctx.facts = overrule_facts_by_hit(ctx.game, ctx.facts, roll_outcome.roll.result)
@@ -472,7 +483,7 @@ def _narrate_action_and_finalize(
     ctx: SceneContext,
     roll_outcome: RollOutcome,
     action_res: ActionResolution,
-) -> tuple[str, dict[str, Any] | None]:
+) -> tuple[str, DirectorCall | None]:
     game = ctx.game
     brain = ctx.brain
     roll = roll_outcome.roll
@@ -509,9 +520,9 @@ def _narrate_action_and_finalize(
         stream=ctx.stream,
     )
 
-    if game.last_turn_snapshot is not None:
-        game.last_turn_snapshot.roll = roll
-        game.last_turn_snapshot.narration = narration
+    snapshot = _snapshot_of_turn(game)
+    snapshot.roll = roll
+    snapshot.narration = narration
 
     _, director_ctx = finalize_scene(
         ctx,

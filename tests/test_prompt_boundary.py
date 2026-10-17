@@ -139,13 +139,6 @@ def test_build_new_chapter_prompt_carries_the_engine_record(load_engine: None) -
             unresolved_threads=[],
             post_story_location="Station",
             scenes=5,
-            progress_tracks=[],
-            threats=[],
-            impacts=[],
-            assets=[],
-            threads=[],
-            characters_list=[],
-            plotlines_list=[],
         )
     ]
     out = build_new_chapter_prompt(g)

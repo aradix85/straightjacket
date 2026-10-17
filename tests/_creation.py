@@ -106,6 +106,12 @@ def create_game(
         "background_vow": background_vow,
         "paths": [],
         "backstory": "",
+        "background_vow_rank": "",
+        "vow_subject": "",
+        "assets": [],
+        "truths": {},
+        "wishes": "",
+        "content_lines": "",
     }
     provider = OpeningProvider(npcs, location)
     game, _narration = start_new_game(provider, creation, EngineConfig(narration_lang="English"))

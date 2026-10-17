@@ -1,8 +1,9 @@
-from tests._helpers import make_game_state, make_npc
+from straightjacket.engine.models import MemoryEntry, NpcData
+from tests._helpers import make_game_state, make_memory, make_npc
 
 
-def _memory() -> dict:
-    return {"npc_id": "npc_1", "event": "Saw the player leave", "emotional_weight": "calm", "importance": 2}
+def _memory(npc: NpcData) -> tuple[NpcData, MemoryEntry]:
+    return npc, make_memory(event="Saw the player leave", emotional_weight="calm", importance=2, scene=1)
 
 
 def test_an_npc_the_narration_leaves_behind_keeps_its_place(load_engine: None) -> None:
@@ -13,7 +14,7 @@ def test_an_npc_the_narration_leaves_behind_keeps_its_place(load_engine: None) -
     edda = make_npc(id="npc_1", name="Edda Varn")
     edda.last_location = "Settlement beneath the ridge"
     game.npcs = [edda]
-    apply_engine_memories(game, [_memory()], "You climb the trail alone, the gate shrinking behind you.")
+    apply_engine_memories(game, [_memory(edda)], "You climb the trail alone, the gate shrinking behind you.")
     assert edda.last_location == "Settlement beneath the ridge"
     assert edda.memory[-1].event == "Saw the player leave"
 
@@ -26,7 +27,7 @@ def test_an_npc_the_narration_names_moves_along(load_engine: None) -> None:
     edda = make_npc(id="npc_1", name="Edda Varn")
     edda.last_location = "Settlement beneath the ridge"
     game.npcs = [edda]
-    apply_engine_memories(game, [_memory()], "Edda follows you up the trail.")
+    apply_engine_memories(game, [_memory(edda)], "Edda follows you up the trail.")
     assert edda.last_location == "Glacier ridge trail"
 
 

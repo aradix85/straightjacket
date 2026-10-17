@@ -6,7 +6,7 @@ from ..ai.provider_base import AIProvider
 from ..db import sync as _db_sync
 from ..director import should_call_director
 from ..engine_loader import eng
-from ..game import BurnOffer, replay_turn
+from ..game import BurnOffer, DirectorCall, replay_turn
 from ..game.finalization import apply_post_narration, narrate_scene
 from ..logging_util import log
 from ..mechanics import (
@@ -115,7 +115,7 @@ def _maybe_queue_director(
     narration: str,
     metadata: dict[str, Any],
     _cfg: EngineConfig,
-) -> dict[str, Any] | None:
+) -> DirectorCall | None:
     if not analysis["director_useful"]:
         return None
     director_reason = should_call_director(
@@ -131,12 +131,12 @@ def _maybe_queue_director(
     bp = game.narrative.story_blueprint
     if director_reason.startswith("phase:") and bp is not None:
         bp.triggered_director_phases.append(director_reason[len("phase:") :])
-    return {"narration": narration, "config": _cfg}
+    return DirectorCall(narration=narration, config=_cfg)
 
 
 def process_correction(
     provider: AIProvider, game: GameState, correction_text: str, config: EngineConfig | None = None
-) -> tuple[GameState, str, BurnOffer | None, dict[str, Any] | None]:
+) -> tuple[GameState, str, BurnOffer | None, DirectorCall | None]:
     snap = game.last_turn_snapshot
     if not snap:
         log("[Correction] No snapshot available — cannot correct", level="warning")

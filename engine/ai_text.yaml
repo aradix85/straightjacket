@@ -58,6 +58,7 @@ ai_text:
     opening_setup_fallback_location: ''
     opening_setup_fallback_scene_context: ''
     opening_setup_fallback_memory_updates: []
+    opening_setup_fallback_deceased_npcs: []
     narrator_metadata_fallback_new_npcs: []
     narrator_metadata_fallback_npc_renames: []
     narrator_metadata_fallback_npc_details: []

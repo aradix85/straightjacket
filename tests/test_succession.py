@@ -358,6 +358,12 @@ def test_replace_character_identity_strict_required_fields(aria: GameState) -> N
         "background_vow": "find truth",
         "paths": [],
         "backstory": "",
+        "background_vow_rank": "",
+        "vow_subject": "",
+        "assets": [],
+        "truths": {},
+        "wishes": "",
+        "content_lines": "",
     }
     for missing in ("player_name", "pronouns", "background_vow", "paths", "backstory"):
         creation_data = {k: v for k, v in base.items() if k != missing}
@@ -376,6 +382,12 @@ def test_replace_character_identity_empty_field_raises(aria: GameState, empty_fi
         "background_vow": "find truth",
         "paths": [],
         "backstory": "",
+        "background_vow_rank": "",
+        "vow_subject": "",
+        "assets": [],
+        "truths": {},
+        "wishes": "",
+        "content_lines": "",
     }
     creation_data[empty_field] = ""
     with pytest.raises(ValueError, match=empty_field):
@@ -540,6 +552,12 @@ def _successor_creation_data() -> dict:
         "background_vow": "carry on the work",
         "paths": [],
         "backstory": "",
+        "background_vow_rank": "",
+        "vow_subject": "",
+        "assets": [],
+        "truths": {},
+        "wishes": "",
+        "content_lines": "",
     }
 
 

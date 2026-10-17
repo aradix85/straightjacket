@@ -428,45 +428,6 @@ def test_meta_plotline_combo_excludes_active_plotline_id():
     assert active.status == "advancement"
 
 
-def test_chapter_round_trip_preserves_characters_and_plotlines():
-    from straightjacket.engine.models import ChapterSummary, CharacterListEntry, PlotlineEntry
-
-    chars = [
-        CharacterListEntry(
-            id="ac_char_1",
-            name="Alice",
-            entry_type="ac",
-            weight=2,
-            active=True,
-            ac_status="present",
-            ac_turning_point_count=1,
-        ),
-    ]
-    plots = [PlotlineEntry(id="ac_plot_1", name="Quest", status="advancement", turning_point_count=2)]
-    summary = ChapterSummary(
-        chapter=1,
-        title="Ch 1",
-        summary="",
-        unresolved_threads=[],
-        post_story_location="",
-        scenes=0,
-        progress_tracks=[],
-        threats=[],
-        impacts=[],
-        assets=[],
-        threads=[],
-        characters_list=chars,
-        plotlines_list=plots,
-    )
-    restored = ChapterSummary.from_dict(summary.to_dict())
-    assert len(restored.characters_list) == 1
-    assert restored.characters_list[0].ac_status == "present"
-    assert restored.characters_list[0].ac_turning_point_count == 1
-    assert len(restored.plotlines_list) == 1
-    assert restored.plotlines_list[0].status == "advancement"
-    assert restored.plotlines_list[0].turning_point_count == 2
-
-
 def test_narrative_state_snapshot_restore_round_trips_plotlines_list():
     narrative = NarrativeState()
     _create_plotline(narrative, "Original")

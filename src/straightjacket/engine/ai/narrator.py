@@ -118,6 +118,7 @@ def call_opening_setup(
             "location": defaults["opening_setup_fallback_location"],
             "scene_context": defaults["opening_setup_fallback_scene_context"],
             "memory_updates": defaults["opening_setup_fallback_memory_updates"],
+            "deceased_npcs": defaults["opening_setup_fallback_deceased_npcs"],
         }
 
 

@@ -25,17 +25,12 @@ from ..mechanics.adventure_crafter import (
 )
 from ..models import (
     ChapterSummary,
-    CharacterListEntry,
     DirectorGuidance,
     EngineConfig,
     GameState,
     NarrationEntry,
     NpcData,
-    PlotlineEntry,
-    ProgressTrack,
     SceneLogEntry,
-    ThreadEntry,
-    ThreatData,
 )
 from ..npc import (
     consolidate_memory,
@@ -83,7 +78,6 @@ def start_new_chapter(
 
     chapter_summary = _close_previous_chapter(game)
     _reset_chapter_mechanics(game)
-    _restore_chapter_mechanics(game, chapter_summary)
     _prepare_npcs_for_new_chapter(game)
 
     threads = chapter_summary.unresolved_threads
@@ -102,7 +96,7 @@ def start_new_chapter(
 
     _merge_returning_npcs(game, returning_npcs)
 
-    if setup_data.get("deceased_npcs"):
+    if setup_data is not None and setup_data["deceased_npcs"]:
         process_deceased_npcs(game, setup_data["deceased_npcs"])
 
     _record_chapter_opening(game, narration)
@@ -179,13 +173,6 @@ def _close_previous_chapter(game: GameState) -> ChapterSummary:
         unresolved_threads=[th.name for th in game.narrative.threads if th.active],
         post_story_location=game.world.current_location,
         scenes=game.narrative.scene_count,
-        progress_tracks=[ProgressTrack.from_dict(p.to_dict()) for p in game.progress_tracks],
-        threats=[ThreatData.from_dict(t.to_dict()) for t in game.threats],
-        impacts=list(game.impacts),
-        assets=list(game.assets),
-        threads=[ThreadEntry.from_dict(th.to_dict()) for th in game.narrative.threads],
-        characters_list=[CharacterListEntry.from_dict(c.to_dict()) for c in game.narrative.characters_list],
-        plotlines_list=[PlotlineEntry.from_dict(p.to_dict()) for p in game.narrative.plotlines_list],
     )
     game.campaign.campaign_history.append(chapter_summary)
     game.campaign.chapter_number += 1
@@ -208,28 +195,10 @@ def _reset_chapter_mechanics(game: GameState) -> None:
     clear_facts(game)
     game.narrative.director_guidance = DirectorGuidance()
 
-    game.progress_tracks = []
-    game.threats = []
-    game.impacts = []
-    game.assets = []
-    game.narrative.threads = []
-    game.narrative.characters_list = []
-    game.narrative.plotlines_list = []
-
-
-def _restore_chapter_mechanics(game: GameState, summary: ChapterSummary) -> None:
-    game.progress_tracks = [ProgressTrack.from_dict(p.to_dict()) for p in summary.progress_tracks]
-    game.threats = [ThreatData.from_dict(t.to_dict()) for t in summary.threats]
-    game.impacts = list(summary.impacts)
-    game.assets = list(summary.assets)
-    game.narrative.threads = [ThreadEntry.from_dict(th.to_dict()) for th in summary.threads]
-    game.narrative.characters_list = [CharacterListEntry.from_dict(c.to_dict()) for c in summary.characters_list]
-    game.narrative.plotlines_list = [PlotlineEntry.from_dict(p.to_dict()) for p in summary.plotlines_list]
-
 
 def _prepare_npcs_for_new_chapter(game: GameState) -> None:
     for npc in game.npcs:
-        if npc.status == "deceased" or npc.status != "active":
+        if npc.status != "active":
             continue
         is_filler = (
             get_npc_bond(game, npc.id) <= eng().chapter.filler_bond_max
@@ -242,7 +211,7 @@ def _prepare_npcs_for_new_chapter(game: GameState) -> None:
 
     _chap_cfg = eng().chapter
     for npc in game.npcs:
-        if npc.memory and len(npc.memory) > _chap_cfg.open_threads_max:
+        if len(npc.memory) > _chap_cfg.open_threads_max:
             scored = sorted(npc.memory, key=lambda m: (m.importance, m.scene), reverse=True)
             npc.memory = sorted(scored[: _chap_cfg.open_threads_max], key=lambda m: m.scene)
         consolidate_memory(npc)
@@ -250,7 +219,7 @@ def _prepare_npcs_for_new_chapter(game: GameState) -> None:
 
 def _generate_chapter_opening(
     provider: AIProvider, game: GameState, config: EngineConfig | None, returning_npcs: list[NpcData]
-) -> tuple[str, dict[str, Any]]:
+) -> tuple[str, dict[str, Any] | None]:
     structure = choose_story_structure(game.setting_tone)
     rng = _random_module.Random()
     if structure == "kishotenketsu":
@@ -276,13 +245,11 @@ def _generate_chapter_opening(
 
     returning_ids = {n.id for n in returning_npcs}
     new_parser_npcs = [n for n in game.npcs if n.id not in returning_ids]
-    setup_data = {}
-    if not new_parser_npcs:
-        setup_data = call_opening_setup(provider, narration, game, config)
-        apply_opening_setup(game, setup_data, returning_npcs=returning_npcs, label="ChapterSetup")
-    else:
+    if new_parser_npcs:
         log(f"[Campaign] New NPCs already extracted by parser ({len(new_parser_npcs)}), skipping opening_setup call")
-
+        return narration, None
+    setup_data = call_opening_setup(provider, narration, game, config)
+    apply_opening_setup(game, setup_data, returning_npcs=returning_npcs, label="ChapterSetup")
     return narration, setup_data
 
 
@@ -308,11 +275,10 @@ def _merge_returning_npcs(game: GameState, returning_npcs: list[NpcData]) -> Non
         game.npcs.append(old_npc)
         new_npc_names.add(old_npc.name.lower().strip())
 
-    if id_remap:
-        for npc in game.npcs:
-            for mem in npc.memory:
-                if mem.about_npc and mem.about_npc in id_remap:
-                    mem.about_npc = id_remap[mem.about_npc]
+    for npc in game.npcs:
+        for mem in npc.memory:
+            if mem.about_npc is not None and mem.about_npc in id_remap:
+                mem.about_npc = id_remap[mem.about_npc]
 
     if game.world.current_location and not game.world.location_history:
         game.world.location_history.append(game.world.current_location)

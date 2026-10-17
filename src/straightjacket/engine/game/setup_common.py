@@ -110,7 +110,7 @@ def apply_opening_setup(
             if m:
                 start_id = max(start_id, int(m.group(1)))
 
-    if data.get("npcs"):
+    if data["npcs"]:
         register_extracted_npcs(
             game,
             data["npcs"],
@@ -124,11 +124,10 @@ def apply_opening_setup(
         else:
             log(f"[{label}] Registered {len(game.npcs)} NPCs: {[n.name for n in game.npcs]}")
 
-    if data.get("memory_updates"):
-        seed_opening_memories(game, data["memory_updates"], label=label.lower())
+    seed_opening_memories(game, data["memory_updates"], label=label.lower())
 
-    if data.get("location"):
+    if data["location"]:
         update_location(game, data["location"])
 
-    if data.get("scene_context"):
+    if data["scene_context"]:
         game.world.current_scene_context = data["scene_context"]

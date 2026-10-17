@@ -122,13 +122,6 @@ def make_chapter_summary(**kwargs: Any) -> Any:
     kwargs.setdefault("unresolved_threads", [])
     kwargs.setdefault("post_story_location", "")
     kwargs.setdefault("scenes", 0)
-    kwargs.setdefault("progress_tracks", [])
-    kwargs.setdefault("threats", [])
-    kwargs.setdefault("impacts", [])
-    kwargs.setdefault("assets", [])
-    kwargs.setdefault("threads", [])
-    kwargs.setdefault("characters_list", [])
-    kwargs.setdefault("plotlines_list", [])
     return ChapterSummary(**kwargs)
 
 

@@ -52,7 +52,7 @@ class TestEngineMemoriesNoKeyError:
         brain = make_brain_result(move="ask_the_oracle", target_npc="npc_1")
         memories = generate_engine_memories(game, brain, roll=None, activated_npc_ids={"npc_1"})
         assert len(memories) == 1
-        assert "exchanged words" in memories[0]["event"] or memories[0]["event"]
+        assert memories[0][1].event
 
     def test_dialog_only_with_action_move_and_none_roll(self) -> None:
         game = make_test_game()
@@ -106,6 +106,7 @@ class TestExecuteRollStatNoneRejected:
         game = make_test_game()
         game.setting_id = "classic"
         brain = make_brain_result(move="adventure/face_danger", stat="none", dialog_only=False)
+        game.last_turn_snapshot = game.snapshot()
 
         with pytest.raises(ValueError, match="stat='none'"):
             _execute_roll(game, brain, None)
@@ -116,6 +117,7 @@ class TestExecuteRollStatNoneRejected:
         game = make_test_game()
         game.setting_id = "classic"
         brain = make_brain_result(move="adventure/face_danger", stat="wits", dialog_only=False)
+        game.last_turn_snapshot = game.snapshot()
 
         outcome = _execute_roll(game, brain, None)
         assert outcome.roll is not None
@@ -167,16 +169,15 @@ class TestSanitizeBrainOutput:
 
         assert brain.dialog_only is False
 
-    def test_unknown_move_unchanged(self) -> None:
+    def test_unknown_move_raises(self) -> None:
         from straightjacket.engine.game.turn import _sanitize_brain_output
 
         game = make_test_game()
         game.setting_id = "classic"
         brain = make_brain_result(move="unknown/fake_move", stat="none", dialog_only=False)
 
-        _sanitize_brain_output(game, brain)
-
-        assert brain.dialog_only is False
+        with pytest.raises(KeyError, match="unknown/fake_move"):
+            _sanitize_brain_output(game, brain)
 
     def test_engine_move_action_roll_with_stat_none_routes_to_dialog(self) -> None:
         from straightjacket.engine.game.turn import _sanitize_brain_output

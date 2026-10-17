@@ -5,7 +5,7 @@ from dataclasses import dataclass, field
 
 from ..i18n import t
 from .engine_loader import eng
-from .models_base import ClockEvent, ProgressTrack, ThreatData
+from .models_base import ClockEvent, ProgressTrack
 from .serialization import SerializableMixin
 
 
@@ -260,13 +260,6 @@ class ChapterSummary(SerializableMixin):
     unresolved_threads: list[str]
     post_story_location: str
     scenes: int
-    progress_tracks: list[ProgressTrack]
-    threats: list[ThreatData]
-    impacts: list[str]
-    assets: list[str]
-    threads: list[ThreadEntry]
-    characters_list: list[CharacterListEntry]
-    plotlines_list: list[PlotlineEntry]
 
 
 def _legacy_quests_factory() -> ProgressTrack:

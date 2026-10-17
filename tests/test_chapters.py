@@ -1,7 +1,6 @@
 import pytest
 
-from straightjacket.engine.models import GameState, ProgressTrack, ThreadEntry, ThreatData
-from straightjacket.engine.models_story import ChapterSummary
+from straightjacket.engine.models import GameState, ThreadEntry
 from tests._helpers import (
     make_clock,
     make_game_state,
@@ -123,60 +122,16 @@ def test_reset_chapter_mechanics_clears_flags(load_engine: None) -> None:
     assert g.campaign.epilogue_text == ""
 
 
-def test_reset_chapter_mechanics_clears_collections(load_engine: None) -> None:
+def test_reset_chapter_mechanics_keeps_what_carries_over(load_engine: None) -> None:
     from straightjacket.engine.game.chapters import _reset_chapter_mechanics
 
     g = _populated_game(None)
     _reset_chapter_mechanics(g)
-    assert g.progress_tracks == []
-    assert g.threats == []
-    assert g.impacts == []
-    assert g.assets == []
-    assert g.narrative.threads == []
-
-
-def _make_chapter_summary(load_engine: None) -> ChapterSummary:
-    return ChapterSummary(
-        chapter=1,
-        title="Ch 1",
-        summary="Things happened",
-        unresolved_threads=["the relic"],
-        post_story_location="Tavern",
-        scenes=5,
-        progress_tracks=[ProgressTrack(id="v1", name="Vow", track_type="vow", rank="dangerous", max_ticks=40, ticks=8)],
-        threats=[
-            ThreatData(
-                id="t1",
-                name="Threat",
-                category="rampaging_creature",
-                linked_vow_id=None,
-                rank="dangerous",
-                max_menace_ticks=40,
-                description="",
-                creation_source="setup",
-            )
-        ],
-        impacts=["wounded"],
-        assets=["asset_a"],
-        threads=[ThreadEntry(id="th1", name="Thread", thread_type="vow", source="creation")],
-        characters_list=[],
-        plotlines_list=[],
-    )
-
-
-def test_restore_chapter_mechanics_restores_collections(load_engine: None) -> None:
-    from straightjacket.engine.game.chapters import _restore_chapter_mechanics
-
-    g = make_game_state(player_name="X", setting_id="starforged")
-    summary = _make_chapter_summary(None)
-    _restore_chapter_mechanics(g, summary)
-    assert len(g.progress_tracks) == 1
-    assert g.progress_tracks[0].id == "v1"
-    assert len(g.threats) == 1
-    assert g.threats[0].id == "t1"
+    assert [t.id for t in g.progress_tracks] == ["v1"]
+    assert [t.id for t in g.threats] == ["t1"]
     assert g.impacts == ["wounded"]
     assert g.assets == ["asset_a"]
-    assert len(g.narrative.threads) == 1
+    assert [t.id for t in g.narrative.threads] == ["th1"]
 
 
 def test_prepare_npcs_keeps_active_with_agenda(load_engine: None) -> None:

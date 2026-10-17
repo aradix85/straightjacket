@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 from collections.abc import Sequence
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 from ..ai.metadata import apply_narrator_metadata
 from ..ai.narrator import call_narrator, call_narrator_metadata
@@ -19,8 +19,8 @@ from ..mechanics.consequences import tick_threat_clock
 from ..mechanics.legacy import mark_legacy, mark_legacy_ticks, shifted_rank
 from ..mechanics.move_effects import OutcomeResult, strip_datasworn_links
 from ..mechanics.move_outcome import resolve_move_outcome
-from ..models import BrainResult, ClockEvent, EngineConfig, GameState, MemoryEntry, ProgressTrack, RollResult
-from ..npc import find_npc, named_in
+from ..models import BrainResult, ClockEvent, EngineConfig, GameState, MemoryEntry, NpcData, ProgressTrack, RollResult
+from ..npc import named_in
 from ..npc.memory import consolidate_memory
 from ..parser import parse_narrator_response
 
@@ -32,12 +32,10 @@ from ..mechanics.consequences import roll_action
 
 @dataclass
 class ActionOutcome:
-    consequences: list[str] = field(default_factory=list)
-    clock_events: list[ClockEvent] = field(default_factory=list)
-    clock_fill_results: list[ClockFillResult] = field(default_factory=list)
-    outcome: OutcomeResult | None = None
-    position: str = "risky"
-    effect: str = "standard"
+    consequences: list[str]
+    clock_events: list[ClockEvent]
+    clock_fill_results: list[ClockFillResult]
+    outcome: OutcomeResult
 
 
 def _chained_roll_value(game: GameState, brain: BrainResult, move: Move) -> tuple[str, int] | None:
@@ -134,7 +132,6 @@ def resolve_action_consequences(
         clock_events=clock_events,
         clock_fill_results=fill_results,
         outcome=outcome,
-        position=position,
     )
 
 
@@ -151,7 +148,7 @@ def apply_progress_and_legacy(
             for _ in range(outcome.progress_marks):
                 added = track.mark_progress()
                 if added:
-                    log(f"[Track] {track.name}: +{added} ticks ({track.filled_boxes}/10 boxes)")
+                    log(f"[Track] {track.name}: +{added} ticks ({track.filled_boxes}/{eng().progress.boxes} boxes)")
 
     if outcome.legacy_track and outcome.legacy_fixed_ticks:
         mark_legacy_ticks(game, outcome.legacy_track, outcome.legacy_fixed_ticks)
@@ -182,25 +179,11 @@ def _update_crisis(game: GameState) -> None:
         game.crisis_mode = False
 
 
-def apply_engine_memories(game: GameState, memories: list[dict[str, Any]], narration: str) -> None:
+def apply_engine_memories(game: GameState, memories: list[tuple[NpcData, MemoryEntry]], narration: str) -> None:
     _e = eng()
-    for mem in memories:
-        npc = find_npc(game, mem["npc_id"])
-        if not npc:
-            continue
-        entry = MemoryEntry(
-            scene=game.narrative.scene_count,
-            event=mem["event"],
-            emotional_weight=mem["emotional_weight"],
-            importance=mem["importance"],
-            type="observation",
-            tone=mem.get("tone", ""),
-            tone_key=mem.get("tone_key", ""),
-            about_npc=mem.get("about_npc"),
-        )
-        entry._score_debug = mem["_score_debug"] if "_score_debug" in mem else "engine-generated"
+    for npc, entry in memories:
         npc.memory.append(entry)
-        npc.importance_accumulator += mem["importance"]
+        npc.importance_accumulator += entry.importance
         if game.world.current_location and named_in(npc, narration):
             npc.last_location = game.world.current_location
         if npc.importance_accumulator >= _e.npc.reflection_threshold:
@@ -224,9 +207,9 @@ def apply_post_narration(
     ctx = generate_scene_context(game, brain, roll, activated_npc_names)
     game.world.current_scene_context = ctx
 
-    engine_mems = generate_engine_memories(game, brain, roll, scene_present_ids, consequences=cons_list)
-    if engine_mems:
-        apply_engine_memories(game, engine_mems, narration)
+    apply_engine_memories(
+        game, generate_engine_memories(game, brain, roll, scene_present_ids, consequences=cons_list), narration
+    )
 
     metadata = call_narrator_metadata(provider, narration, game, config, brain=brain, consequences=cons_list)
     apply_narrator_metadata(game, metadata, scene_present_ids=scene_present_ids, world_addition=world_addition)

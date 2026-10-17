@@ -27,6 +27,7 @@ from straightjacket.engine.correction import process_correction
 from straightjacket.engine.datasworn.settings import list_packages, load_package
 from straightjacket.engine.game import (
     BurnOffer,
+    DirectorCall,
     determine_end_reason,
     prepare_succession,
     start_succession_with_character,
@@ -738,7 +739,7 @@ def _handle_burn(
     game: GameState,
     offer: BurnOffer,
     narration: str,
-    director_ctx: dict | None,
+    director_ctx: DirectorCall | None,
     burn_setting: str,
     style: str,
     rec: TurnRecord,

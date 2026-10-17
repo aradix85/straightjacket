@@ -1,10 +1,9 @@
 from __future__ import annotations
 
-from typing import Any
 from collections.abc import Sequence
 
 from ..engine_loader import eng
-from ..models import BrainResult, GameState, RollResult
+from ..models import BrainResult, GameState, MemoryEntry, NpcData, RollResult
 from .resolvers import is_dialog_branch, is_dialog_memory, move_category
 
 
@@ -29,7 +28,7 @@ def generate_engine_memories(
     roll: RollResult | None,
     activated_npc_ids: set[str],
     consequences: Sequence[str] = (),
-) -> list[dict[str, Any]]:
+) -> list[tuple[NpcData, MemoryEntry]]:
     from ..npc.memory import score_importance
 
     _e = eng()
@@ -54,7 +53,7 @@ def generate_engine_memories(
     if consequences:
         result_text += f" ({', '.join(consequences[:_cons_max])})"
 
-    memories = []
+    memories: list[tuple[NpcData, MemoryEntry]] = []
     for npc in game.npcs:
         if npc.id not in activated_npc_ids:
             continue
@@ -85,14 +84,20 @@ def generate_engine_memories(
         importance, debug = score_importance(emotional, event_text, debug=True)
 
         memories.append(
-            {
-                "npc_id": npc.id,
-                "event": event_text,
-                "emotional_weight": emotional,
-                "importance": importance,
-                "about_npc": brain.target_npc if brain.target_npc and brain.target_npc != npc.id else None,
-                "_score_debug": f"engine-generated | {debug}",
-            }
+            (
+                npc,
+                MemoryEntry(
+                    scene=scene,
+                    event=event_text,
+                    emotional_weight=emotional,
+                    importance=importance,
+                    type="observation",
+                    tone="",
+                    tone_key="",
+                    about_npc=brain.target_npc if brain.target_npc != npc.id else None,
+                    _score_debug=f"engine-generated | {debug}",
+                ),
+            )
         )
 
     return memories
