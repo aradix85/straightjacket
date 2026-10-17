@@ -113,5 +113,5 @@ Submodules for principles 1, 3, and 5: `mechanics/`, `npc/`, `game/`, `ai/`, `db
 - Principle 1: no submodule audited.
 - Principle 2: audited 2026-10-17, all four passes (`docs/audit/fix_principle2.md`); every violation is fixed except the prompt markup (roadmap 9h.12) and the dataclass defaults (9h.4), and what the audit saw for principles 3 and 5 is 9h.13.
 - Principle 3: no submodule audited.
-- Principle 4: not audited. Pass 4c is largely enforced already: saves load strictly, and the settings loader refuses unknown keys.
+- Principle 4: audited 2026-10-17, all three passes (`docs/audit/fix_principle4.md`); every violation is fixed, the dataclass defaults of pass 4a are roadmap 9h.4, and what the audit saw for principles 3 and 5 is 9h.13.
 - Principle 5: no submodule audited.

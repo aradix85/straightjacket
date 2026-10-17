@@ -232,12 +232,16 @@ class EngineSettings:
         return compiled
 
 
-def _build_strict(cls: type, data: dict[str, Any]) -> Any:
+def _reject_unknown(cls: type, data: dict[str, Any]) -> dict[str, Any]:
     known = {f.name for f in dataclasses.fields(cls)}
     unknown = set(data.keys()) - known
     if unknown:
         raise ValueError(f"Unknown keys for {cls.__name__}: {sorted(unknown)}")
-    return cls(**data)
+    return data
+
+
+def _build_strict(cls: type, data: dict[str, Any]) -> Any:
+    return cls(**_reject_unknown(cls, data))
 
 
 _SIMPLE_SECTIONS: dict[str, type] = {
@@ -307,10 +311,11 @@ def _parse_move_availability_rule(rule: dict[str, Any]) -> MoveAvailabilityRule:
 
 
 def _build_keyed_scenes(keyed_raw: dict[str, Any]) -> KeyedScenesConfig:
+    _reject_unknown(KeyedScenesConfig, keyed_raw)
     pattern_grammars_raw = dict(keyed_raw["pattern_grammars"])
     pattern_grammars = {
         trigger_name: PatternGrammar(
-            pattern_prefixes=list(spec["pattern_prefixes"]),
+            pattern_prefixes=list(_reject_unknown(PatternGrammar, spec)["pattern_prefixes"]),
             matcher_strategy=spec["matcher_strategy"],
         )
         for trigger_name, spec in pattern_grammars_raw.items()
@@ -323,9 +328,10 @@ def _build_keyed_scenes(keyed_raw: dict[str, Any]) -> KeyedScenesConfig:
 
 
 def _build_adventure_crafter(ac_raw: dict[str, Any]) -> AdventureCrafterConfig:
+    _reject_unknown(AdventureCrafterConfig, ac_raw)
     ac_special = _build_strict(PlotPointRanges, dict(ac_raw["special_ranges"]))
     ac_meta_handlers = _build_strict(MetaHandlerConfig, dict(ac_raw["meta_handlers"]))
-    ac_blueprint_raw = dict(ac_raw["blueprint"])
+    ac_blueprint_raw = _reject_unknown(BlueprintConfig, dict(ac_raw["blueprint"]))
     ac_blueprint = BlueprintConfig(
         turning_points_pre_rolled=ac_blueprint_raw["turning_points_pre_rolled"],
         acts_three_act=ac_blueprint_raw["acts_three_act"],
@@ -338,7 +344,7 @@ def _build_adventure_crafter(ac_raw: dict[str, Any]) -> AdventureCrafterConfig:
     )
     ac_keyed_mapping = {
         name: KeyedSceneMappingEntry(
-            trigger_type=entry["trigger_type"],
+            trigger_type=_reject_unknown(KeyedSceneMappingEntry, entry)["trigger_type"],
             trigger_value=entry["trigger_value"],
             priority=entry["priority"],
             narrative_hint=entry["narrative_hint"],
@@ -346,14 +352,11 @@ def _build_adventure_crafter(ac_raw: dict[str, Any]) -> AdventureCrafterConfig:
         for name, entry in dict(ac_raw["keyed_scene_mapping"]).items()
     }
     ac_threat_creation = {
-        name: ThreatCreationMappingEntry(
-            rank=entry["rank"],
-            category=entry["category"],
-        )
+        name: _build_strict(ThreatCreationMappingEntry, dict(entry))
         for name, entry in dict(ac_raw["threat_creation_mapping"]).items()
     }
     ac_clock_creation = {
-        name: ClockCreationMappingEntry(clock_type=entry["clock_type"])
+        name: _build_strict(ClockCreationMappingEntry, dict(entry))
         for name, entry in dict(ac_raw["clock_creation_mapping"]).items()
     }
     return AdventureCrafterConfig(
@@ -379,7 +382,7 @@ def _build_adventure_crafter(ac_raw: dict[str, Any]) -> AdventureCrafterConfig:
 def _build_clock_keyed_scenes(cks_raw: dict[str, Any]) -> ClockKeyedScenesConfig:
     by_type = {
         clock_type: ClockKeyedSceneEntry(
-            fractions=[float(f) for f in spec["fractions"]],
+            fractions=[float(f) for f in _reject_unknown(ClockKeyedSceneEntry, spec)["fractions"]],
             priority=spec["priority"],
             narrative_hint_template=spec["narrative_hint_template"],
         )
@@ -389,24 +392,17 @@ def _build_clock_keyed_scenes(cks_raw: dict[str, Any]) -> ClockKeyedScenesConfig
 
 
 def _build_random_events(re_raw: dict[str, Any]) -> RandomEventsConfig:
+    _reject_unknown(RandomEventsConfig, re_raw)
     re_keyed_mapping = {
-        focus: RandomEventKeyedSceneMappingEntry(
-            trigger_type=entry["trigger_type"],
-            threshold=entry["threshold"],
-            priority=entry["priority"],
-            narrative_hint=entry["narrative_hint"],
-        )
+        focus: _build_strict(RandomEventKeyedSceneMappingEntry, dict(entry))
         for focus, entry in dict(re_raw["keyed_scene_mapping"]).items()
     }
     re_threat_creation = {
-        focus: ThreatCreationMappingEntry(
-            rank=entry["rank"],
-            category=entry["category"],
-        )
+        focus: _build_strict(ThreatCreationMappingEntry, dict(entry))
         for focus, entry in dict(re_raw["threat_creation_mapping"]).items()
     }
     re_clock_creation = {
-        focus: ClockCreationMappingEntry(clock_type=entry["clock_type"])
+        focus: _build_strict(ClockCreationMappingEntry, dict(entry))
         for focus, entry in dict(re_raw["clock_creation_mapping"]).items()
     }
     return RandomEventsConfig(
@@ -428,8 +424,9 @@ def _build_random_events(re_raw: dict[str, Any]) -> RandomEventsConfig:
 
 
 def _build_clocks(c_raw: dict[str, Any]) -> ClocksConfig:
+    _reject_unknown(ClocksConfig, c_raw)
     fill = {
-        clock_type: ClockFillConsequenceEntry(tag_template=entry["tag_template"])
+        clock_type: _build_strict(ClockFillConsequenceEntry, dict(entry))
         for clock_type, entry in dict(c_raw["fill_consequences"]).items()
     }
     return ClocksConfig(
@@ -445,6 +442,7 @@ def _build_clocks(c_raw: dict[str, Any]) -> ClocksConfig:
 
 
 def _build_pay_the_price(ptp_raw: dict[str, Any]) -> PayThePriceConfig:
+    _reject_unknown(PayThePriceConfig, ptp_raw)
     return PayThePriceConfig(
         oracle_path=ptp_raw["oracle_path"],
         match_miss_oracle_path=ptp_raw["match_miss_oracle_path"],
@@ -455,6 +453,7 @@ def _build_pay_the_price(ptp_raw: dict[str, Any]) -> PayThePriceConfig:
 
 
 def _build_roll_bonuses(rb_raw: dict[str, Any]) -> RollBonusesConfig:
+    _reject_unknown(RollBonusesConfig, rb_raw)
     return RollBonusesConfig(
         condition_chars=rb_raw["condition_chars"],
         connection_aid=_build_strict(ConnectionAidConfig, dict(rb_raw["connection_aid"])),
@@ -506,7 +505,7 @@ def parse_engine_yaml(data: dict[str, Any]) -> EngineSettings:
     suffer = _build_strict(SufferRecoveryGain, dict(m_data.pop("suffer_recovery")))
     momentum = MomentumConfig(**m_data, suffer_recovery=suffer)
 
-    f_data = dict(data["fate"])
+    f_data = _reject_unknown(FateConfig, dict(data["fate"]))
     lr = _build_strict(FateLikelihoodRules, dict(f_data.pop("likelihood_rules")))
     fate = FateConfig(default_method=f_data["default_method"], likelihood_rules=lr)
     fact_resolution = _build_fact_resolution(dict(data["fact_resolution"]))
@@ -519,9 +518,9 @@ def parse_engine_yaml(data: dict[str, Any]) -> EngineSettings:
     legacy_data["ticks_by_rank"] = dict(legacy_data["ticks_by_rank"])
     legacy = _build_strict(LegacyConfig, legacy_data)
 
-    progress_raw = data["progress"]
+    progress_raw = _reject_unknown(ProgressConfig, dict(data["progress"]))
     track_types = {
-        name: _build_strict(ProgressTrackType, {"ticks_per_mark": dict(tt["ticks_per_mark"])})
+        name: _build_strict(ProgressTrackType, {**tt, "ticks_per_mark": dict(tt["ticks_per_mark"])})
         for name, tt in progress_raw["track_types"].items()
     }
     progress = ProgressConfig(
@@ -529,13 +528,12 @@ def parse_engine_yaml(data: dict[str, Any]) -> EngineSettings:
     )
 
     engine_moves = {
-        key: _build_strict(EngineMove, {"name": m["name"], "stats": list(m["stats"]), "roll_type": m["roll_type"]})
-        for key, m in data["engine_moves"].items()
+        key: _build_strict(EngineMove, {**m, "stats": list(m["stats"])}) for key, m in data["engine_moves"].items()
     }
 
     move_availability = {key: _parse_move_availability_rule(rule) for key, rule in data["move_availability"].items()}
 
-    sw_raw = data["stopwords"]
+    sw_raw = _reject_unknown(StopwordsConfig, dict(data["stopwords"]))
     stopwords = StopwordsConfig(
         general=frozenset(sw_raw["general"]),
         location=frozenset(sw_raw["location"]),
@@ -543,7 +541,7 @@ def parse_engine_yaml(data: dict[str, Any]) -> EngineSettings:
 
     name_titles = frozenset(data["name_titles"])
 
-    pr = dict(data["position_resolver"])
+    pr = _reject_unknown(PositionResolverConfig, dict(data["position_resolver"]))
     pr_weights = _build_strict(PositionResolverWeights, dict(pr.pop("weights")))
     pr_overrides = [_build_strict(PositionOverride, dict(o)) for o in pr.pop("overrides")]
     position_resolver = PositionResolverConfig(
@@ -558,7 +556,7 @@ def parse_engine_yaml(data: dict[str, Any]) -> EngineSettings:
         secured_advantage_move=pr["secured_advantage_move"],
     )
 
-    er = dict(data["effect_resolver"])
+    er = _reject_unknown(EffectResolverConfig, dict(data["effect_resolver"]))
     er_weights = _build_strict(EffectResolverWeights, dict(er.pop("weights")))
     effect_resolver = EffectResolverConfig(
         limited_below=er["limited_below"],
@@ -570,7 +568,7 @@ def parse_engine_yaml(data: dict[str, Any]) -> EngineSettings:
         move_baselines=dict(er["move_baselines"]),
     )
 
-    ig = dict(data["information_gate"])
+    ig = _reject_unknown(InformationGateConfig, dict(data["information_gate"]))
     ig_points = _build_strict(InformationGatePoints, dict(ig.pop("points")))
     ig_buckets = _build_strict(InformationGateBuckets, dict(ig.pop("buckets")))
     information_gate = InformationGateConfig(
@@ -599,14 +597,14 @@ def parse_engine_yaml(data: dict[str, Any]) -> EngineSettings:
     memory_emotions = _build_strict(MemoryEmotions, dict(data["memory_emotions"]))
     memory_templates = _build_strict(MemoryTemplates, dict(data["memory_templates"]))
 
-    nd = dict(data["narrative_direction"])
+    nd = _reject_unknown(NarrativeDirectionConfig, dict(data["narrative_direction"]))
     nd_intensity = _build_strict(NarrativeIntensityThresholds, dict(nd.pop("intensity")))
     nd_result_map = {
         key: _build_strict(NarrativeDirectionEntry, dict(entry)) for key, entry in nd["result_map"].items()
     }
     narrative_direction = NarrativeDirectionConfig(intensity=nd_intensity, result_map=nd_result_map)
 
-    succession_raw = dict(data["succession"])
+    succession_raw = _reject_unknown(SuccessionConfig, dict(data["succession"]))
     inheritance = _build_strict(InheritanceConfig, dict(succession_raw["inheritance"]))
     npc_carryover = {
         status: _build_strict(NpcCarryoverEntry, dict(entry))

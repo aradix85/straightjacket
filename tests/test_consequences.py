@@ -307,12 +307,3 @@ def test_next_move_bonus_effect_is_banked_and_spent_on_the_next_action_roll(
     outcome = _execute_roll(game, make_brain_result(move="adventure/face_danger", stat="wits"), None)
     assert outcome.roll.action_score == 3 + game.get_stat("wits") + 1
     assert game.resources.next_move_bonus == 0
-
-
-def test_a_save_missing_a_field_does_not_load(load_engine: None) -> None:
-    from straightjacket.engine.models import Resources
-
-    data = Resources.from_config().to_dict()
-    data.pop("next_move_bonus")
-    with pytest.raises(ValueError, match=r"Resources: missing fields \['next_move_bonus'\]"):
-        Resources.from_dict(data)

@@ -1,6 +1,6 @@
 import os
 import re
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
@@ -50,7 +50,7 @@ class ClusterConfig:
     top_p: float | None
     max_tokens: int
     max_retries: int
-    extra_body: dict[str, Any] = field(default_factory=dict)
+    extra_body: dict[str, Any]
 
 
 @dataclass
@@ -80,15 +80,36 @@ class AppConfig:
     language: LanguageConfig
 
 
+def _check_keys(where: str, data: Any, keys: tuple[str, ...]) -> dict[str, Any]:
+    if not isinstance(data, dict):
+        raise ValueError(f"config.yaml: {where} must be a mapping")
+    unknown = sorted(set(data) - set(keys))
+    if unknown:
+        raise ValueError(f"config.yaml: {where} has unknown keys {unknown}")
+    missing = [k for k in keys if k not in data]
+    if missing:
+        raise ValueError(f"config.yaml: {where} missing required fields: {missing}")
+    return data
+
+
+_TOP_KEYS = ("server", "ai", "language")
+_SERVER_KEYS = ("host", "port", "stream_narration")
+_AI_KEYS = ("prompts_dir", "providers", "clusters", "role_cluster")
+_PROVIDER_KEYS = ("type", "api_base", "api_key_env", "timeout_seconds")
+_CLUSTER_KEYS = ("provider", "model", "temperature", "top_p", "max_tokens", "max_retries", "extra_body")
+_LANGUAGE_KEYS = ("narration_language",)
+
+
 def _parse_config(data: dict[str, Any]) -> AppConfig:
-    sd = data["server"]
+    _check_keys("the top level", data, _TOP_KEYS)
+    sd = _check_keys("server", data["server"], _SERVER_KEYS)
     server = ServerConfig(host=sd["host"], port=sd["port"], stream_narration=bool(sd["stream_narration"]))
 
-    ad = data["ai"]
+    ad = _check_keys("ai", data["ai"], _AI_KEYS)
 
     providers = {
         name: ProviderConfig(
-            type=pd["type"],
+            type=_check_keys(f"provider '{name}'", pd, _PROVIDER_KEYS)["type"],
             api_base=pd["api_base"],
             api_key_env=pd["api_key_env"],
             timeout_seconds=float(pd["timeout_seconds"]),
@@ -96,17 +117,9 @@ def _parse_config(data: dict[str, Any]) -> AppConfig:
         for name, pd in ad["providers"].items()
     }
 
-    _REQUIRED_CLUSTER_FIELDS = ("provider", "model", "temperature", "top_p", "max_tokens", "max_retries")
     clusters: dict[str, ClusterConfig] = {}
     for cname, cdata in ad["clusters"].items():
-        if not isinstance(cdata, dict):
-            continue
-        missing = [f for f in _REQUIRED_CLUSTER_FIELDS if f not in cdata]
-        if missing:
-            raise ValueError(
-                f"Cluster '{cname}' missing required fields: {missing}. "
-                f"Every cluster must specify: {list(_REQUIRED_CLUSTER_FIELDS)}."
-            )
+        _check_keys(f"cluster '{cname}'", cdata, _CLUSTER_KEYS)
         if cdata["provider"] not in providers:
             raise ValueError(
                 f"Cluster '{cname}' uses provider '{cdata['provider']}', which is not defined under ai.providers. "
@@ -119,7 +132,7 @@ def _parse_config(data: dict[str, Any]) -> AppConfig:
             top_p=None if cdata["top_p"] is None else float(cdata["top_p"]),
             max_tokens=int(cdata["max_tokens"]),
             max_retries=int(cdata["max_retries"]),
-            extra_body=cdata.get("extra_body", {}),
+            extra_body=dict(cdata["extra_body"]),
         )
 
     ai = AIConfig(
@@ -129,7 +142,7 @@ def _parse_config(data: dict[str, Any]) -> AppConfig:
         role_cluster=ad["role_cluster"],
     )
 
-    ld = data["language"]
+    ld = _check_keys("language", data["language"], _LANGUAGE_KEYS)
     language = LanguageConfig(
         narration_language=ld["narration_language"],
     )

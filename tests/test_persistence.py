@@ -141,3 +141,45 @@ def test_load_returns_exactly_what_was_saved(save_dir: Any) -> None:
     loaded, _ = load_game("tester", "exact_test")
     assert loaded is not None
     assert loaded.to_dict() == game.to_dict()
+
+
+def test_a_save_missing_a_field_does_not_load(load_engine: None) -> None:
+    from straightjacket.engine.models import Resources
+
+    data = Resources.from_config().to_dict()
+    data.pop("next_move_bonus")
+    with pytest.raises(ValueError, match=r"Resources: missing fields \['next_move_bonus'\]"):
+        Resources.from_dict(data)
+
+
+def test_a_save_with_an_unknown_field_does_not_load(load_engine: None) -> None:
+    data = _game().to_dict()
+    data["retired_field"] = 0
+    with pytest.raises(ValueError, match=r"GameState: unknown fields \['retired_field'\]"):
+        GameState.from_dict(data)
+
+
+def test_a_save_with_null_in_a_required_field_does_not_load(load_engine: None) -> None:
+    data = _game().to_dict()
+    data["world"]["current_location"] = None
+    with pytest.raises(ValueError, match="null where"):
+        GameState.from_dict(data)
+
+
+def test_a_save_with_a_value_where_an_object_belongs_does_not_load(load_engine: None) -> None:
+    data = _game().to_dict()
+    data["world"]["clocks"] = ["Doom"]
+    with pytest.raises(ValueError, match="not an object"):
+        GameState.from_dict(data)
+    data = _game().to_dict()
+    data["resources"] = 5
+    with pytest.raises(ValueError, match="Resources needs an object"):
+        GameState.from_dict(data)
+
+
+def test_a_snapshot_with_an_unknown_resource_does_not_restore(load_engine: None) -> None:
+    game = _game()
+    snap = game.snapshot()
+    snap.resources["retired_meter"] = 3
+    with pytest.raises(ValueError, match=r"Resources: unknown fields \['retired_meter'\]"):
+        game.restore(snap)

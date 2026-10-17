@@ -23,6 +23,7 @@ def _full_config_data(**overrides: object) -> dict:
                     "top_p": 0.95,
                     "max_tokens": 8192,
                     "max_retries": 3,
+                    "extra_body": {},
                 }
             },
             "role_cluster": {"recap": "classification"},
@@ -48,8 +49,33 @@ def test_appconfig_strict_on_empty() -> None:
 
     from straightjacket.engine.config_loader import _parse_config
 
-    with pytest.raises(KeyError):
+    with pytest.raises(ValueError, match="missing required fields"):
         _parse_config({})
+
+
+def test_an_unknown_key_in_config_is_refused() -> None:
+    import pytest
+
+    from straightjacket.engine.config_loader import _parse_config
+
+    data = _full_config_data()
+    data["ai"]["clusters"]["classification"]["temprature"] = 0.4
+    with pytest.raises(ValueError, match=r"cluster 'classification' has unknown keys \['temprature'\]"):
+        _parse_config(data)
+    data = _full_config_data(colour="blue")
+    with pytest.raises(ValueError, match=r"the top level has unknown keys \['colour'\]"):
+        _parse_config(data)
+
+
+def test_a_cluster_that_is_not_a_mapping_is_refused() -> None:
+    import pytest
+
+    from straightjacket.engine.config_loader import _parse_config
+
+    data = _full_config_data()
+    data["ai"]["clusters"]["classification"] = "qwen"
+    with pytest.raises(ValueError, match="must be a mapping"):
+        _parse_config(data)
 
 
 def test_cluster_all_fields_accessible() -> None:

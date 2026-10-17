@@ -24,7 +24,15 @@ class _FakeAdapter:
 
 
 def _cluster(provider: str, model: str) -> dict[str, Any]:
-    return {"provider": provider, "model": model, "temperature": 0.5, "top_p": 0.9, "max_tokens": 64, "max_retries": 0}
+    return {
+        "provider": provider,
+        "model": model,
+        "temperature": 0.5,
+        "top_p": 0.9,
+        "max_tokens": 64,
+        "max_retries": 0,
+        "extra_body": {},
+    }
 
 
 @pytest.fixture

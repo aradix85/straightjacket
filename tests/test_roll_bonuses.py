@@ -67,15 +67,6 @@ def test_a_chosen_bonus_adds_to_the_roll_and_momentum_on_a_hit(
     assert game.resources.momentum == momentum_after
 
 
-def test_a_save_with_an_unknown_field_does_not_load(load_engine: None) -> None:
-    from straightjacket.engine.models import GameState
-
-    data = make_game_state(setting_id="starforged").to_dict()
-    data["retired_field"] = 0
-    with pytest.raises(ValueError, match=r"GameState: unknown fields \['retired_field'\]"):
-        GameState.from_dict(data)
-
-
 def test_momentum_tied_to_another_move_is_not_granted_with_the_add(load_engine: None) -> None:
     from straightjacket.engine.mechanics.bonuses import roll_bonuses
 

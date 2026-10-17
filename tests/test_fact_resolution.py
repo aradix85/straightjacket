@@ -95,8 +95,9 @@ def test_a_fixed_seed_gives_the_same_answer(load_engine: None) -> None:
 
     answers = []
     for _ in range(2):
+        game = _game()
         random.seed(7)
-        answers.append(resolve_fact(_game(), FactRequest(fact_type="locked", about="here")).answer)
+        answers.append(resolve_fact(game, FactRequest(fact_type="locked", about="here")).answer)
     assert answers[0] == answers[1]
 
 

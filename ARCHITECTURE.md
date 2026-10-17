@@ -85,15 +85,15 @@ Beside them, `i18n.py` and `strings_loader.py` serve user-facing strings.
 
 **Snapshot and restore.** `GameState.snapshot()` captures all mutable state, including every entry of the story lists, and `restore()` reverts it atomically. Corrections, momentum burns, and turns whose AI call fails restore from snapshots (`docs/mechanics.md`, Shared outcome resolution; `docs/ai.md`, When an AI call fails). A resolved fact lives in `WorldState.facts`, so the snapshot carries it like any other world state.
 
-**Saves.** A save is JSON in the users folder (the project's `users` folder, or the folder `STRAIGHTJACKET_USERS_DIR` names). Loading is strict: a field the class does not know, or a field the data lacks, raises, and `persistence.py` → `load_game` reports such a save to the player as incompatible.
+**Saves.** A save is JSON in the users folder (the project's `users` folder, or the folder `STRAIGHTJACKET_USERS_DIR` names). Loading is strict: a field the class does not know, a field the data lacks, a null where the type allows none, or a plain value where an object belongs raises, and `persistence.py` → `load_game` reports such a save to the player as incompatible. Restoring a turn's snapshot is equally strict.
 
 **Database as read model.** An in-memory SQLite database mirrors `GameState` after every turn, creation, correction, restore, and load. The dataclasses stay the write model; the database serves indexed queries to prompt assembly and the Director's tool. It is rebuilt from `GameState`, so it needs no migrations.
 
 ## Configuration
 
-Configuration lives in yaml stores that are directories with one file per subsystem or topic: `engine` for rules and numbers, `prompts` for AI-facing text, `strings` for user-facing text, `emotions` for emotion scoring. Each loader merges its directory and raises on duplicate keys; code reaches them only through `eng()`, `get_prompt()`, `t()`, and `importance_map()`. `config.yaml` stays a single, user-edited file for the server, the providers, and the model assignment. Game content comes from Datasworn JSON and the Mythic and Adventure Crafter data in the `data` folder, each setting from a yaml file in `data/settings`.
+Configuration lives in yaml stores that are directories with one file per subsystem or topic: `engine` for rules and numbers, `prompts` for AI-facing text, `strings` for user-facing text, `emotions` for emotion scoring. Each loader merges its directory and raises on duplicate keys; code reaches them only through `eng()`, `get_prompt()`, `t()`, and `importance_map()`. `config.yaml` stays a single, user-edited file for the server, the providers, and the model assignment, read as strictly as the rest: a key it does not know or a key it lacks stops startup with a message that names it. Game content comes from Datasworn JSON and the Mythic and Adventure Crafter data in the `data` folder, each setting from a yaml file in `data/settings`.
 
-Every yaml block is parsed into a typed dataclass at load time (`engine_config.py`, `engine_config_dataclasses.py`) and read as `eng().subsystem.field`. The exception is yaml whose keys are themselves domain content, such as move names or dispositions, which must extend without a Python change; those blocks are read with `eng().get_raw("section")`.
+Every yaml block is parsed into a typed dataclass at load time (`engine_config.py`, `engine_config_dataclasses.py`) and read as `eng().subsystem.field`; a key the dataclass does not know raises, at every depth. The exception is yaml whose keys are themselves domain content, such as move names or dispositions, which must extend without a Python change; those blocks are read with `eng().get_raw("section")`.
 
 ## Interface and accessibility
 

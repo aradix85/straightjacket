@@ -18,6 +18,14 @@ def _resolve_item_type(tp: Any) -> type | None:
     return None
 
 
+def _allows_none(tp: Any) -> bool:
+    if tp is Any:
+        return True
+    if get_origin(tp) is Union or isinstance(tp, types.UnionType):
+        return type(None) in get_args(tp)
+    return False
+
+
 def _unwrap_optional(tp: Any) -> tuple[type | None, bool]:
     origin = get_origin(tp)
     if origin is Union or isinstance(tp, types.UnionType):
@@ -70,20 +78,24 @@ def deserialize(cls: type, data: dict[str, Any]) -> Any:
 
 def _deserialize_value(hint: Any, val: Any) -> Any:
     if val is None:
-        return None
+        if _allows_none(hint):
+            return None
+        raise ValueError(f"null where {hint} is required")
 
     inner, is_optional = _unwrap_optional(hint)
     if is_optional and inner is not None:
         return _deserialize_value(inner, val)
 
     if _is_dataclass_type(inner):
-        if isinstance(val, dict):
-            return deserialize(inner, val)
-        return val
+        if not isinstance(val, dict):
+            raise ValueError(f"{inner.__name__} needs an object, got {type(val).__name__}")
+        return deserialize(inner, val)
 
     item_type = _resolve_item_type(inner)
     if item_type is not None and isinstance(val, list):
-        return [deserialize(item_type, item) if isinstance(item, dict) else item for item in val]
+        if not all(isinstance(item, dict) for item in val):
+            raise ValueError(f"a list of {item_type.__name__} holds an entry that is not an object")
+        return [deserialize(item_type, item) for item in val]
 
     if get_origin(inner) is list and isinstance(val, list):
         return list(val)

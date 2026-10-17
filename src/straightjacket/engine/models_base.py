@@ -66,9 +66,9 @@ class Resources(SerializableMixin):
         return serialize(self)
 
     def restore(self, snap: dict[str, Any]) -> None:
-        for k, v in snap.items():
-            if hasattr(self, k):
-                setattr(self, k, v)
+        restored = deserialize(Resources, snap)
+        for f in self.__dataclass_fields__:
+            setattr(self, f, getattr(restored, f))
 
 
 @dataclass
