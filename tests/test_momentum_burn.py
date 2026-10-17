@@ -6,15 +6,11 @@ import pytest
 
 from straightjacket.engine.ai.provider_base import AICallSpec, AIResponse
 from straightjacket.engine.models import (
-    CharacterListEntry,
     EngineConfig,
     GameState,
     NarrationEntry,
-    RollResult,
-    SceneLogEntry,
-    ThreadEntry,
 )
-from tests._helpers import make_npc
+from tests._creation import OPENING_TEXT, create_game, force_miss
 
 _CONFIG = EngineConfig(narration_lang="English")
 
@@ -69,54 +65,21 @@ class _Provider:
 
 
 def _game() -> GameState:
-    game = GameState(
+    game = create_game(
+        "classic",
+        location="Abandoned Library",
+        npcs=[("Mira", "An archivist.", "friendly")],
+        stats=(2, 2, 1, 1, 3),
         player_name="Kael",
-        character_concept="A wandering scholar",
-        setting_id="classic",
-        setting_genre="dark_fantasy",
-        setting_tone="serious_balanced",
-        setting_description="A world of fading magic.",
-        stats={"edge": 1, "heart": 2, "iron": 1, "shadow": 1, "wits": 2},
+        background_vow="Keep the archive whole",
     )
     game.resources.momentum = 6
-    game.world.current_location = "Abandoned Library"
-    game.world.time_of_day = "evening"
-    game.world.chaos_factor = 5
-    game.npcs = [make_npc(id="npc_1", name="Mira", disposition="friendly", description="An archivist.")]
-    game.narrative.scene_count = 3
-    game.narrative.narration_history = [
-        NarrationEntry(scene=3, prompt_summary="Opening", narration="The library is cold and silent.")
-    ]
-    game.narrative.session_log = [
-        SceneLogEntry(scene=3, scene_type="expected", summary="Opening", move="opening", result="opening")
-    ]
-    game.narrative.threads = [
-        ThreadEntry(id="thread_codex", name="Find the lost codex", thread_type="vow", source="vow", weight=2)
-    ]
-    game.narrative.characters_list = [CharacterListEntry(id="npc_1", name="Mira", entry_type="npc", weight=1)]
     return game
 
 
 @pytest.fixture
 def forced_miss(monkeypatch: pytest.MonkeyPatch) -> None:
-    from straightjacket.engine.game import turn
-    from straightjacket.engine.mechanics.scene import SceneSetup
-
-    def _roll(stat_name: str, stat_value: int, move: str, momentum: int, adds: int) -> RollResult:
-        return RollResult(
-            d1=1,
-            c1=4,
-            c2=5,
-            stat_name=stat_name,
-            stat_value=stat_value,
-            action_score=1 + stat_value,
-            result="MISS",
-            move=move,
-            match=False,
-        )
-
-    monkeypatch.setattr(turn, "roll_action", _roll)
-    monkeypatch.setattr(turn, "check_scene", lambda _game: SceneSetup(scene_type="expected", chaos_roll=10))
+    force_miss(monkeypatch)
 
 
 def _turn_then_burn(provider: _Provider, game: GameState) -> tuple[GameState, str, Any]:
@@ -138,7 +101,7 @@ def test_burn_keeps_the_location_and_scene_count_of_the_turn(
     game, _narration, _director = _turn_then_burn(_Provider(_brain()), _game())
 
     assert game.world.current_location == "Archive Vault"
-    assert game.narrative.scene_count == 4
+    assert game.narrative.scene_count == 2
 
 
 def test_burn_writes_its_own_log_entries_and_leaves_the_previous_turn(
@@ -148,10 +111,10 @@ def test_burn_writes_its_own_log_entries_and_leaves_the_previous_turn(
     game, narration, _director = _turn_then_burn(provider, _game())
 
     history = game.narrative.narration_history
-    assert [h.narration for h in history] == ["The library is cold and silent.", narration]
+    assert [h.narration for h in history] == [OPENING_TEXT, narration]
     log = game.narrative.session_log
     assert [entry.result for entry in log] == ["opening", "STRONG_HIT"]
-    assert log[-1].scene == 4
+    assert log[-1].scene == 2
     assert narration == provider.narrations[-1]
     assert "<momentum_burn>" in provider.prompts[-1]
 
@@ -161,7 +124,7 @@ def test_burn_keeps_the_track_the_turn_created(load_engine: None, stub_emotions:
     game, _narration, _director = _turn_then_burn(_Provider(brain), _game())
 
     vows = [t for t in game.progress_tracks if t.track_type == "vow"]
-    assert [t.name for t in vows] == ["Recover the codex"]
+    assert [t.name for t in vows] == ["Keep the archive whole", "Recover the codex"]
 
 
 def test_burn_updates_the_turn_snapshot(load_engine: None, stub_emotions: None, forced_miss: None) -> None:
@@ -228,7 +191,7 @@ def test_a_burn_at_the_history_cap_keeps_the_earlier_entries(
 
     game, narration, _director = process_momentum_burn(provider, game, offer, _CONFIG)
 
-    assert check_turn_replacement(before, game, narration, 4, "momentum burn", keeps_location=True) == []
+    assert check_turn_replacement(before, game, narration, 2, "momentum burn", keeps_location=True) == []
 
 
 class _FakeWS:

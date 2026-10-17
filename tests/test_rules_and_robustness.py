@@ -104,6 +104,21 @@ def test_a_figure_matched_by_description_keeps_the_named_npc_name(load_engine: N
     assert "Warden archer" in hale.aliases
 
 
+def test_an_npc_called_by_part_of_its_name_stays_one_npc(load_engine: None) -> None:
+    game = make_game_state()
+    game.npcs = [make_npc(id="npc_1", name="Kira Vance", description="A pilot.")]
+    metadata = {
+        "npc_renames": [],
+        "new_npcs": [{"name": "Kira", "description": "A pilot.", "disposition": "neutral"}],
+        "npc_details": [],
+        "deceased_npcs": [],
+        "lore_npcs": [],
+    }
+    apply_narrator_metadata(game, metadata, scene_present_ids=set(), world_addition="")
+    [kira] = game.npcs
+    assert kira.name == "Kira Vance"
+
+
 def _detail(npc_id: str, full_name: str) -> dict:
     return {
         "npc_renames": [],

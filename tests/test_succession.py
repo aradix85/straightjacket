@@ -27,6 +27,7 @@ from straightjacket.engine.models import (
     GameState,
     ThreadEntry,
 )
+from tests._creation import create_game
 from tests._helpers import (
     make_game_state,
     make_inheritance_roll,
@@ -39,12 +40,13 @@ from tests._helpers import (
 
 @pytest.fixture
 def aria(load_engine: None) -> GameState:
-    g = make_game_state(
+    g = create_game(
+        "classic",
+        location="Hearthwood",
+        npcs=[("Kira", "A hunter.", "friendly")],
+        stats=(2, 2, 1, 1, 3),
         player_name="Aria",
-        pronouns="she/her",
-        character_concept="outlander, deepwoods",
         background_vow="avenge sister",
-        setting_id="classic",
     )
     g.campaign.legacy_quests.ticks = 24
     g.campaign.legacy_bonds.ticks = 8

@@ -8,6 +8,12 @@ This log starts at 2026.09.24.0, the restart after a four-month pause. Earlier r
 
 Calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day.
 
+## [2026.10.17.4] — 2026-10-17
+
+Step 9g: tests that play a turn, a correction, a momentum burn, or a chapter transition now build their game through the real character creation (`tests/_creation.py`, with a scripted provider for the opening, the blueprint, and the opening extraction), in place of hand-built states. The move surfaced what hand-built states hid. The correction tests had asserted that a correction adds a scene and a narration entry, an artifact of a snapshot taken after its own turn; real play keeps both, and the tests now play a real turn and correct it. The rollback test now fails a real narrator call after the turn changed the state, and the whole game comes back unchanged. A new test plays a created game through a chapter transition, and it showed the chapter opening registering "Kira" beside the returning "Kira Vance", because the name matcher ignored names shorter than five letters even when they were a whole word of the known name; such a name now matches, and mid-game it keeps the known name instead of shortening it. Hand-built stats had also been an invalid spread (seven points where creation demands nine). A created game plays a turn in each playable setting and passes Elvira's invariants. The scene-test check no longer loops over random rolls, which a created game's keyed scenes made fail now and then; it gives the three rolls that decide the three scene types. Step 9h, the principle audits, becomes NEXT STEP with a new substep.
+
+Quality gate: 1646 tests green, coverage 91.97 to 92.04% between runs, so the floor rises to 91; ruff and mypy --strict clean. Save format unchanged. No Elvira session, since only tests and the name matcher changed and the matcher has its tests.
+
 ## [2026.10.17.3] — 2026-10-17
 
 Documentation only. Step 10 gains substep 10.7, at the user's request: at a generated place, a miss takes its worsening from the place's own peril table and an offered opportunity from its opportunity table (Starforged's location themes, derelicts, vaults, planets, and space; Sundered Isles' overland, caves, ruins, and shipwrecks), so the soft and unconnected costs that Elvira's audit keeps finding on misses come from the source tables instead of the narrator. The roadmap's notes for sessions with the user record the user's preference to settle from the source material whatever a rulebook table can settle.

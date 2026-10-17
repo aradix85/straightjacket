@@ -226,3 +226,32 @@ def test_valid_ranks_returns_set(load_engine: None) -> None:
     assert isinstance(ranks, set)
     assert "epic" in ranks
     assert "troublesome" in ranks
+
+
+@pytest.mark.parametrize("setting_id", ["classic", "starforged", "sundered_isles"])
+def test_a_created_game_plays_a_turn_in_every_playable_setting(
+    load_engine: None, stub_emotions: None, monkeypatch: pytest.MonkeyPatch, setting_id: str
+) -> None:
+    from straightjacket.engine.game import process_turn
+    from tests._creation import create_game, force_miss
+    from tests.elvira.elvira_bot.invariants import assert_game_state
+    from tests.test_momentum_burn import _CONFIG, _brain, _Provider
+
+    game = create_game(
+        setting_id,
+        location="Abandoned Library",
+        npcs=[("Mira", "An archivist.", "friendly")],
+        stats=(2, 2, 1, 1, 3),
+        player_name="Kael",
+        background_vow="Keep the archive whole",
+    )
+    assert assert_game_state(game, turn=0) == []
+    force_miss(monkeypatch)
+    game, _narration, roll, _offer, _director = process_turn(
+        _Provider(_brain()), game, "I slip into the vault", _CONFIG
+    )
+
+    assert roll is not None
+    assert game.narrative.scene_count == 2
+    assert [p.name for p in game.world.places] == ["Archive Vault"]
+    assert assert_game_state(game, turn=1) == []

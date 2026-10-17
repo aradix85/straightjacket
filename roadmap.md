@@ -43,41 +43,8 @@ Closing a step: the checks of CONTRIBUTING.md pass, the step moves to DONE at th
 
 ---
 
-## NEXT STEP — 9g: Test fixtures through the real creation path
+## NEXT STEP — 9h: Principle audits
 
-Hand-built test states have hidden real bugs more than once: a roll bonus that never applied, momentum burns that overwrote the previous turn, progress marks that never reached a track, and a fixture whose database was never synced, which made a test pass or fail by the order the tests ran in. Fixtures come from the real character-creation path instead, and the tests that still build a `GameState` by hand move over one file at a time.
-
-**9g.1** A fixture builder that creates a game through the real creation path (`game/game_start.py`, with a mock provider for the opening) for each playable setting, with the database synced, and the few named variants the tests need, such as an NPC present, a sworn vow, or an open threat.
-
-**9g.2** An inventory of the test files that build `GameState` or `NpcData` by hand (`tests/_helpers.py` → `make_game_state`, `make_npc`), ordered by how much of the engine they play through; the turn, correction, momentum-burn, and chapter tests move first.
-
-**9g.3** Each moved file keeps its assertions. A test that passed only because its hand-built state skipped a real step is a finding, fixed in the same commit.
-
-**9g.4** `make_game_state` and `make_npc` stay for unit tests of single functions.
-
-### Definition of Done
-
-- The fixture builder exists for every playable setting, and every test that plays a turn, a correction, a momentum burn, or a chapter transition uses it.
-- Every finding the move surfaces is fixed, with its test.
-- Quality gate green, coverage not lower than before, one CHANGELOG entry.
-
-### Reference patterns
-
-- Character creation: `game/game_start.py` → `validate_creation` and the game start it guards.
-- Mock providers: `tests/_mocks.py`.
-- A turn played end to end: `tests/test_momentum_burn.py` with its scripted provider.
-
----
-
-## Next steps
-
-Sketches, in the order of work; a step gets its definition of done and reference patterns when it becomes NEXT STEP.
-
-Steps 11b, 11c, 11d, and 14c take ideas from EdgeTales: reimplement them, do not port code, and credit EdgeTales in the CHANGELOG entry that lands each.
-
-Steps 11, 14b, 25, and 26 each plan a Director tool. The Director has one tool, `query_game_state`; whether a planned tool becomes a new one or part of it is decided when the step becomes NEXT STEP.
-
-### 9h — Principle audits
 
 The audits of AUDIT.md, one session per principle or submodule as it prescribes, in this order: principles 2 and 4, which are mechanical, then principles 3, 5, and 1 per submodule. Every finding is fixed in its session or becomes a substep here. Waiting for the audit to classify:
 
@@ -97,9 +64,34 @@ The audits of AUDIT.md, one session per principle or submodule as it prescribes,
 
 **9h.8** Every field of `mechanics/move_effects.py` → `OutcomeResult` has a reader in the production path, not only in tests: results that were computed but never applied have hidden faults before (progress marks that never reached a track, a position factor that never fired, and `clock_fills`, step 9k) (principle 5).
 
-**9h.9** `mechanics/world.py` → `choose_story_structure` looks a tone up in `story.kishotenketsu_probability`, but its three callers pass the setting id, `setting_genre`, or `setting_tone`, which is always empty, so no key ever matches and every blueprint takes `kishotenketsu_fallback_probability`. The tone table and the silent fallback date from EdgeTales; which structure a setting gets is decided with the user (principles 2 and 3).
+**9h.9** `mechanics/world.py` → `choose_story_structure` looks a tone up in `story.kishotenketsu_probability`, but its three callers pass the setting id, `setting_genre`, or `setting_tone`, which is always empty, so no key ever matches and every blueprint takes `kishotenketsu_fallback_probability`. A created game has an empty `setting_tone` and `setting_archetype`, so every narrator prompt carries an empty tone attribute in its world tag. The tone table and the silent fallback date from EdgeTales; which structure a setting gets is decided with the user (principles 2 and 3).
 
 **9h.10** `creation.truth_threads` in `engine/creation.yaml` is hand-written game content, which the Yaml content boundary rules out: it names the tension a chosen truth starts as a thread ("Scarcity drives conflict") with no table behind it. Check whether the truth's own Datasworn text can name the thread, or the threads go (principle 2).
+
+**9h.11** `game/setup_common.py` → `seed_opening_memories` reads the opening extraction's memory updates with `.get` and empty fallbacks, although the schema requires those fields (principles 3 and 4).
+
+### Definition of Done
+
+- Every principle is audited as AUDIT.md prescribes, and its Status lists every submodule the principle covers; a session that stops halfway records where it stopped.
+- Every violation is fixed in its session or becomes a substep here, and every substep above is classified and fixed or settled with the user.
+- Each session's fix-file and grep log exist as AUDIT.md describes.
+- Quality gate green, no new project-rule violations, one CHANGELOG entry per finished session.
+
+### Reference patterns
+
+- The method, the passes, and the carve-outs: AUDIT.md.
+- The carve-out lists the audits read: `_AI_CALL_CARVE_OUT_FILES` and `_INLINE_IMPORT_WHITELIST` in `tests/test_project_rules.py`.
+- A config binding without defaults: `engine_config_dataclasses.py`, read through `eng()`.
+
+---
+
+## Next steps
+
+Sketches, in the order of work; a step gets its definition of done and reference patterns when it becomes NEXT STEP.
+
+Steps 11b, 11c, 11d, and 14c take ideas from EdgeTales: reimplement them, do not port code, and credit EdgeTales in the CHANGELOG entry that lands each.
+
+Steps 11, 14b, 25, and 26 each plan a Director tool. The Director has one tool, `query_game_state`; whether a planned tool becomes a new one or part of it is decided when the step becomes NEXT STEP.
 
 ### 9i — Revelations settled by the engine
 
@@ -341,5 +333,6 @@ Finished work in its shortest form; the CHANGELOG has the details.
 - **9c — Soft misses from the engine side.** On a miss the NPCs present withhold, and the engine keeps agenda, secrets, guidance, and a pending revelation out of the prompt.
 - **9d — Generators.** The npc, location, and settlement categories roll the tables each setting names under `generators`, following Datasworn's own roll instructions; a place is rolled when the character first arrives, stays with the world, and reaches the narrator as `<generated>`, and NPC names go through the npc category (`docs/mechanics.md`, Generators).
 - **9e — Elvira findings.** A target that a present fact sends away leaves the turn; the metadata extraction names only known NPCs; a name the engine rolled holds against an unrelated full name, while a figure the narration named takes its revealed name; description matching and chapter openings no longer rename or split known NPCs; blueprint voicing asks once more on wrong counts; and in dialogs the NPC's fact budget governs, at the user's choice.
+- **9g — Test fixtures through the real creation path.** Tests that play a turn, a correction, a momentum burn, or a chapter transition build their game through the real character creation (`create_game` in `tests/_creation.py`); the move showed corrections asserting a new scene where real play keeps it, and a chapter opening that split "Kira" from "Kira Vance".
 - **9f — Prompt tuning on Sonnet.** Every role runs Claude Sonnet 5.5 at effort medium, and Elvira plays and judges on Claude Haiku 5.5 (baseline 6.41 ± 0.14). Adopted: a player-agency line at the end of the action and dialog tasks, and the weak hit of Gather Information and Compel costing the complication its move text names, which the narrator's WEAK_HIT rule accepts as the cost. Rewording the narrator prompt (examples, rules for looking and for setbacks, a longer budget steered to sensory detail, mechanical sounds) stayed within the measurement's noise in every round, so the faults that remain, moves for the player character and NPCs volunteering facts, are for the engine to take on. The measuring setup outside the repository keeps every variant and its numbers.
 - **9l — Complications as clocks.** Such a complication can start a small threat clock that strikes within four scenes unless a hit heads it off (`docs/mechanics.md`, Complication clocks).

@@ -11,41 +11,24 @@ from straightjacket.engine.models import (
     FactRequest,
     FateResult,
     GameState,
-    NarrationEntry,
     ResolvedFact,
     RollResult,
-    SceneLogEntry,
 )
-from tests._helpers import make_npc
+from tests._creation import create_game
 
 _CONFIG = EngineConfig(narration_lang="English")
 
 
 def _game() -> GameState:
-    game = GameState(
+    game = create_game(
+        "classic",
+        location="Abandoned Library",
+        npcs=[("Mira", "An archivist.", "friendly"), ("Brannoc", "A guard.", "hostile")],
+        stats=(2, 2, 1, 1, 3),
         player_name="Kael",
-        character_concept="A wandering scholar",
-        setting_id="classic",
-        setting_genre="dark_fantasy",
-        setting_tone="serious_balanced",
-        setting_description="A world of fading magic.",
-        stats={"edge": 1, "heart": 2, "iron": 1, "shadow": 1, "wits": 2},
+        background_vow="Keep the archive whole",
     )
     game.resources.momentum = 6
-    game.world.current_location = "Abandoned Library"
-    game.world.time_of_day = "evening"
-    game.world.chaos_factor = 5
-    game.npcs = [
-        make_npc(id="npc_1", name="Mira", disposition="friendly", description="An archivist."),
-        make_npc(id="npc_2", name="Brannoc", disposition="hostile", description="A guard."),
-    ]
-    game.narrative.scene_count = 3
-    game.narrative.narration_history = [
-        NarrationEntry(scene=3, prompt_summary="Opening", narration="The library is cold and silent.")
-    ]
-    game.narrative.session_log = [
-        SceneLogEntry(scene=3, scene_type="expected", summary="Opening", move="opening", result="opening")
-    ]
     return game
 
 

@@ -50,6 +50,36 @@ def test_a_new_chapter_keeps_the_character_and_the_clocks(load_engine: None) -> 
     assert [c.to_dict() for c in g.world.clocks] == clocks
 
 
+def test_a_created_game_moves_into_its_next_chapter(load_engine: None, stub_emotions: None) -> None:
+    from straightjacket.engine.game.chapters import start_new_chapter
+    from tests._creation import OPENING_TEXT, OpeningProvider, create_game
+    from tests.elvira.elvira_bot.invariants import assert_game_state
+
+    game = create_game(
+        "starforged",
+        location="Drift Station",
+        npcs=[("Kira Vance", "A pilot with a burned hand.", "friendly")],
+        stats=(2, 2, 1, 1, 3),
+        player_name="Aria",
+        background_vow="Keep the station running",
+    )
+    game.npcs[0].agenda = "keep her ship"
+    provider = OpeningProvider(
+        [("Kira", "A pilot.", "friendly"), ("Dace Orrin", "A dockhand.", "neutral")], "Ring Dock"
+    )
+
+    game, narration = start_new_chapter(provider, game)
+
+    assert narration == OPENING_TEXT
+    assert game.campaign.chapter_number == 2
+    assert game.narrative.scene_count == 1
+    assert game.world.current_location == "Ring Dock"
+    assert game.narrative.story_blueprint is not None
+    assert sorted(n.name for n in game.npcs) == ["Dace Orrin", "Kira Vance"]
+    assert [t.id for t in game.progress_tracks] == ["vow_background"]
+    assert assert_game_state(game, turn=1) == []
+
+
 def test_a_game_that_is_over_cannot_start_a_chapter(load_engine: None) -> None:
     import pytest
 

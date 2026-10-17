@@ -204,9 +204,10 @@ def _strip_titles(words: set[str] | list[str], titles: "frozenset[str]") -> set[
 def _check_substring_match(new_norm: str, npc: NpcData, best: _FuzzyMatch, min_word_length: int) -> None:
     name_norm = normalize_for_match(npc.name)
     if new_norm in name_norm or name_norm in new_norm:
-        shorter_len = min(len(new_norm), len(name_norm))
-        if shorter_len >= min_word_length and shorter_len > best.score:
-            best.score = shorter_len
+        shorter, longer = sorted((new_norm, name_norm), key=len)
+        whole_words = set(shorter.split()) <= set(longer.split())
+        if (len(shorter) >= min_word_length or whole_words) and len(shorter) > best.score:
+            best.score = len(shorter)
             best.npc = npc
             best.match_type = "identity"
 

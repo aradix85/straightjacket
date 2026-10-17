@@ -121,25 +121,23 @@ class MockProvider:
 
 
 def _make_game():
-    from straightjacket.engine.models import GameState
+    from tests._creation import create_game
 
-    game = GameState(
+    game = create_game(
+        "classic",
+        location="Abandoned Library",
+        npcs=[("Mira", "Young archivist with ink-stained hands", "friendly")],
+        stats=(2, 2, 1, 1, 3),
         player_name="Kael",
-        character_concept="A wandering scholar",
-        setting_id="classic",
-        setting_genre="dark_fantasy",
-        setting_tone="serious_balanced",
-        setting_description="A world of fading magic and creeping shadow.",
-        stats={"edge": 1, "heart": 2, "iron": 1, "shadow": 1, "wits": 2},
+        background_vow="Keep the archive whole",
     )
-    game.resources.health = 4
-    game.resources.spirit = 3
-    game.resources.supply = 5
-    game.resources.momentum = 3
-    game.world.current_location = "Abandoned Library"
-    game.world.time_of_day = "evening"
-    game.world.chaos_factor = 5
-    game.world.clocks = [
+    mira = game.npcs[0]
+    mira.agenda = "protect the archives"
+    mira.instinct = "trust cautiously"
+    mira.memory.append(
+        make_memory(event="Met the player at the entrance", emotional_weight="curious", type="observation", scene=1)
+    )
+    game.world.clocks.append(
         make_clock(
             name="Shadow Rising",
             clock_type="threat",
@@ -147,24 +145,8 @@ def _make_game():
             filled=2,
             owner_kind="world",
             trigger_description="Darkness engulfs the library",
-        ),
-    ]
-    game.npcs = [
-        make_npc(
-            id="npc_1",
-            name="Mira",
-            disposition="friendly",
-            agenda="protect the archives",
-            instinct="trust cautiously",
-            description="Young archivist with ink-stained hands",
-            memory=[
-                make_memory(
-                    event="Met the player at the entrance", emotional_weight="curious", type="observation", scene=1
-                )
-            ],
-        ),
-    ]
-    game.narrative.scene_count = 3
+        )
+    )
     return game
 
 
@@ -196,8 +178,8 @@ def test_turn_action_produces_narration(load_engine: None) -> None:
     assert game.last_turn_snapshot is not None
     assert game.last_turn_snapshot.player_input == "I search the room for clues"
 
-    assert len(game.narrative.session_log) == 1
-    assert game.narrative.session_log[0].move == "adventure/face_danger"
+    assert [entry.result for entry in game.narrative.session_log] == ["opening", roll.result]
+    assert game.narrative.session_log[-1].move == "adventure/face_danger"
 
     assert len(provider.calls) >= 3
 
@@ -221,7 +203,7 @@ def test_a_turn_ends_the_act_at_its_last_scene_without_the_director(load_engine:
                 mood="tense",
                 transition_trigger=f"trigger_{i}",
             )
-            for i, r in enumerate([(1, 4), (5, 8), (9, 12)])
+            for i, r in enumerate([(1, 2), (3, 4), (5, 6)])
         ],
     )
 
@@ -229,7 +211,7 @@ def test_a_turn_ends_the_act_at_its_last_scene_without_the_director(load_engine:
         MockProvider(), game, "I search the room for clues", config=EngineConfig(narration_lang="English")
     )
 
-    assert game.narrative.scene_count == 4
+    assert game.narrative.scene_count == 2
     assert game.narrative.story_blueprint is not None
     assert game.narrative.story_blueprint.triggered_transitions == ["act_0"]
     assert get_current_act(game).act_number == 2
@@ -288,7 +270,7 @@ def test_turn_dialog_skips_roll(load_engine: None) -> None:
 
     assert len(narration) > 10
 
-    assert game.narrative.scene_count == 4
+    assert game.narrative.scene_count == 2
 
 
 def test_turn_consequences_applied_on_miss(load_engine: None) -> None:
@@ -307,16 +289,11 @@ def test_scene_test_produces_three_types(load_engine: None) -> None:
     game = _make_game()
     game.world.chaos_factor = 9
 
-    types_seen: set[str] = set()
-    for _ in range(200):
-        setup = check_scene(game)
-        types_seen.add(setup.scene_type)
-        if len(types_seen) == 3:
-            break
+    def scene_type(roll: int) -> str:
+        game.narrative.keyed_scenes = []
+        return check_scene(game, roll=roll).scene_type
 
-    assert "expected" in types_seen
-    assert "altered" in types_seen
-    assert "interrupt" in types_seen
+    assert [scene_type(roll) for roll in (10, 9, 8)] == ["expected", "altered", "interrupt"]
 
 
 def test_dialog_prompt_contains_world_and_character(stub_engine: None) -> None:
@@ -330,7 +307,7 @@ def test_dialog_prompt_contains_world_and_character(stub_engine: None) -> None:
     )
     prompt = build_dialog_prompt(game, brain, player_words="I ask Mira about the archives")
 
-    assert "dark_fantasy" in prompt
+    assert '<world genre="classic"' in prompt
     assert "Kael" in prompt
     assert "Mira" in prompt
     assert "dialog" in prompt

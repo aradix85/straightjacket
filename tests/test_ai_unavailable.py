@@ -3,8 +3,11 @@ from typing import Any
 
 import pytest
 
+from straightjacket.engine.ai.provider_base import AICallSpec, AIResponse
+from tests._creation import force_miss
 from tests._helpers import make_game_state, make_revelation
 from tests._mocks import MockProvider
+from tests.test_momentum_burn import _brain, _game, _Provider
 
 
 class _FakeWS:
@@ -37,26 +40,28 @@ def test_an_empty_narration_raises(load_engine: None) -> None:
         narrate_scene(MockProvider(response_content=""), make_game_state(setting_id="starforged"), "<scene/>")
 
 
-def test_a_failed_turn_is_rolled_back_and_reported(load_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:
-    from straightjacket.engine.ai.provider_base import AIUnavailableError
+class _NarratorDown(_Provider):
+    def create_message(self, spec: AICallSpec) -> AIResponse:
+        if spec.json_schema is None:
+            raise ConnectionError("narrator unreachable")
+        return super().create_message(spec)
+
+
+def test_a_failed_turn_is_rolled_back_and_reported(
+    load_engine: None, stub_emotions: None, monkeypatch: pytest.MonkeyPatch
+) -> None:
     from straightjacket.i18n import t
     from straightjacket.web import handlers
     from straightjacket.web.session import Session
 
-    game = make_game_state(setting_id="starforged")
+    game = _game()
     before = game.to_dict()
     session = Session()
     session.game = game
     ws = _FakeWS()
 
-    def failing_turn(provider: Any, g: Any, text: str, config: Any, stream: Any) -> Any:
-        g.resources.health -= 2
-        g.narrative.scene_count += 1
-        g.last_turn_snapshot = g.snapshot()
-        raise AIUnavailableError("narrator: test")
-
-    monkeypatch.setattr(handlers, "process_turn", failing_turn)
-    monkeypatch.setattr(handlers, "get_provider", lambda: None)
+    force_miss(monkeypatch)
+    monkeypatch.setattr(handlers, "get_provider", lambda: _NarratorDown(_brain()))
     monkeypatch.setattr(handlers, "_narration_stream", lambda _ws, _game: (None, []))
 
     asyncio.run(handlers.handle_player_input(session, ws, {"text": "I leap the gorge"}))

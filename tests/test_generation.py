@@ -5,29 +5,13 @@ import pytest
 from straightjacket.engine.datasworn.loader import Setting
 from straightjacket.engine.engine_loader import eng
 from tests.test_correction_replay import _Provider as _ReplayProvider
-from straightjacket.engine.models import RollResult, SceneSetup
+from tests._creation import force_miss
 from tests.test_momentum_burn import _CONFIG, _brain, _game, _Provider
 
 
 @pytest.fixture
 def miss(monkeypatch: pytest.MonkeyPatch) -> None:
-    from straightjacket.engine.game import turn
-
-    def _roll(stat_name: str, stat_value: int, move: str, momentum: int, adds: int) -> RollResult:
-        return RollResult(
-            d1=1,
-            c1=4,
-            c2=5,
-            stat_name=stat_name,
-            stat_value=stat_value,
-            action_score=1 + stat_value,
-            result="MISS",
-            move=move,
-            match=False,
-        )
-
-    monkeypatch.setattr(turn, "roll_action", _roll)
-    monkeypatch.setattr(turn, "check_scene", lambda _game: SceneSetup(scene_type="expected", chaos_roll=10))
+    force_miss(monkeypatch)
 
 
 def _row(low: int, text: str, rolls: list[dict[str, Any]]) -> dict[str, Any]:

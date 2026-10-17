@@ -1,15 +1,19 @@
 import json
+from typing import Any
+
+import pytest
 
 from straightjacket.engine.ai.provider_base import AICallSpec, AIResponse
-from straightjacket.engine.models import (
-    EngineConfig,
-    GameState,
-    NarrationEntry,
-    RollResult,
-    SceneLogEntry,
-    SceneSetup,
-)
-from tests._helpers import make_brain_result, make_memory, make_npc
+from straightjacket.engine.models import EngineConfig, GameState
+from tests._creation import create_game, force_miss
+
+_CONFIG = EngineConfig(narration_lang="English")
+_TURN_BRAIN = {
+    "move": "adventure/face_danger",
+    "stat": "iron",
+    "dialog_only": False,
+    "player_intent": "Shove past the guard",
+}
 
 
 class MockProvider:
@@ -21,8 +25,10 @@ class MockProvider:
     ) -> None:
         self.calls: list = []
         self._correction_source = correction_source
-        self._brain_stat = brain_stat
-        self._dialog_only = dialog_only
+        self._brains: list[dict[str, Any]] = [
+            _TURN_BRAIN,
+            {"move": "dialog", "stat": brain_stat, "dialog_only": dialog_only, "player_intent": "Talk to Mira"},
+        ]
 
     def create_message(self, spec: AICallSpec) -> AIResponse:
         json_schema = spec.json_schema
@@ -55,16 +61,14 @@ class MockProvider:
             )
 
         if json_schema and "move" in json_schema.get("properties", {}):
+            brain = self._brains.pop(0) if len(self._brains) > 1 else self._brains[0]
             return AIResponse(
                 content=json.dumps(
                     {
                         "type": "action",
-                        "move": "dialog",
-                        "stat": self._brain_stat,
                         "approach": "speaking gently",
                         "target_npc": "npc_1",
-                        "dialog_only": self._dialog_only,
-                        "player_intent": "Talk to Mira",
+                        **brain,
                         "world_addition": None,
                         "location_change": None,
                         "track_name": None,
@@ -111,127 +115,71 @@ class MockProvider:
         )
 
 
-def _game() -> "GameState":
-    game = GameState(
-        player_name="Kael",
-        character_concept="Wandering scholar",
-        setting_id="classic",
-        setting_genre="dark_fantasy",
-        setting_tone="serious_balanced",
-        setting_description="A world of fading magic.",
-        stats={"edge": 1, "heart": 2, "iron": 1, "shadow": 1, "wits": 2},
-    )
-    game.resources.health = 4
-    game.resources.spirit = 3
-    game.resources.supply = 5
-    game.resources.momentum = 5
-    game.world.current_location = "Abandoned Library"
-    game.world.time_of_day = "evening"
-    game.world.chaos_factor = 5
-    game.npcs = [
-        make_npc(
-            id="npc_1",
-            name="Mira",
-            disposition="friendly",
-            agenda="protect the archives",
-            instinct="trust cautiously",
-            description="Young archivist with ink-stained hands",
-            memory=[make_memory(event="Met the player", emotional_weight="curious", type="observation", scene=1)],
-        ),
-    ]
-    game.narrative.scene_count = 3
-    game.narrative.session_log.append(
-        SceneLogEntry(
-            scene=3,
-            summary="Searched the room",
-            move="adventure/face_danger",
-            result="MISS",
-            consequences=["health -2"],
-            scene_type="expected",
-        )
-    )
-    game.narrative.narration_history.append(
-        NarrationEntry(scene=3, prompt_summary="Original scene", narration="Old narration.")
-    )
-    game.last_turn_snapshot = game.snapshot()
-    game.last_turn_snapshot.player_input = "I attack the guard"
-    game.last_turn_snapshot.scene_setup = SceneSetup(scene_type="expected")
-    game.last_turn_snapshot.brain = make_brain_result(
-        move="combat/strike", stat="iron", player_intent="Attack the guard"
-    )
-    game.last_turn_snapshot.roll = RollResult(
-        d1=2,
-        c1=7,
-        c2=8,
-        stat_name="iron",
-        stat_value=1,
-        action_score=6,
-        result="MISS",
-        move="combat/strike",
-        match=False,
-    )
-    game.last_turn_snapshot.narration = "You swung wildly and missed."
+def _played_game(provider: MockProvider, monkeypatch: pytest.MonkeyPatch) -> GameState:
+    from straightjacket.engine.game import process_turn
 
-    game.resources.health = 1
+    game = create_game(
+        "classic",
+        location="Abandoned Library",
+        npcs=[("Mira", "Young archivist with ink-stained hands", "friendly")],
+        stats=(2, 2, 1, 1, 3),
+        player_name="Kael",
+        background_vow="Keep the archive whole",
+    )
+    force_miss(monkeypatch)
+    game, _narration, _roll, _offer, _director = process_turn(provider, game, "I shove past the guard", _CONFIG)
     return game
 
 
-def test_correction_input_misread_full_flow(load_engine: None, stub_emotions: None) -> None:
+def test_correction_input_misread_full_flow(
+    load_engine: None, stub_emotions: None, monkeypatch: pytest.MonkeyPatch
+) -> None:
     from straightjacket.engine.correction import process_correction
 
-    game = _game()
+    provider = MockProvider(correction_source="input_misread")
+    game = _played_game(provider, monkeypatch)
     assert game.last_turn_snapshot is not None
     snap_health = game.last_turn_snapshot.resources["health"]
     scene_before = game.narrative.scene_count
     history_len_before = len(game.narrative.narration_history)
 
-    provider = MockProvider(correction_source="input_misread")
-    game, narration, _offer, _director_ctx = process_correction(
-        provider,
-        game,
-        "I didn't want to attack",
-        config=EngineConfig(narration_lang="English"),
-    )
+    game, narration, _offer, _director_ctx = process_correction(provider, game, "I didn't want to attack", _CONFIG)
 
     assert game.resources.health == snap_health
-    assert game.narrative.scene_count == scene_before + 1
+    assert game.narrative.scene_count == scene_before
     assert len(narration) > 10
-    assert len(game.narrative.narration_history) == history_len_before + 1
+    assert len(game.narrative.narration_history) == history_len_before
     assert game.narrative.narration_history[-1].narration == narration
     assert game.last_turn_snapshot is not None
     assert game.last_turn_snapshot.player_input == "I talk to Mira instead"
 
 
-def test_correction_to_dialog_does_not_roll_even_with_a_stat(load_engine: None, stub_emotions: None) -> None:
+def test_correction_to_dialog_does_not_roll_even_with_a_stat(
+    load_engine: None, stub_emotions: None, monkeypatch: pytest.MonkeyPatch
+) -> None:
     from straightjacket.engine.correction import process_correction
 
-    game = _game()
     provider = MockProvider(correction_source="input_misread", brain_stat="heart", dialog_only=False)
+    game = _played_game(provider, monkeypatch)
     game, narration, _offer, _director_ctx = process_correction(
-        provider,
-        game,
-        "That's not what I said, I was asking a question",
-        config=EngineConfig(narration_lang="English"),
+        provider, game, "That's not what I said, I was asking a question", _CONFIG
     )
 
     assert len(narration) > 10
     assert game.narrative.session_log[-1].result == "dialog"
 
 
-def test_correction_state_error_full_flow(load_engine: None, stub_emotions: None) -> None:
+def test_correction_state_error_full_flow(
+    load_engine: None, stub_emotions: None, monkeypatch: pytest.MonkeyPatch
+) -> None:
     from straightjacket.engine.correction import process_correction
 
-    game = _game()
+    provider = MockProvider(correction_source="state_error")
+    game = _played_game(provider, monkeypatch)
     assert game.npcs[0].disposition == "friendly"
     history_len_before = len(game.narrative.narration_history)
 
-    provider = MockProvider(correction_source="state_error")
-    game, narration, _offer, _director_ctx = process_correction(
-        provider,
-        game,
-        "Mira should be loyal",
-        config=EngineConfig(narration_lang="English"),
-    )
+    game, narration, _offer, _director_ctx = process_correction(provider, game, "Mira should be loyal", _CONFIG)
 
     assert game.npcs[0].disposition == "loyal"
     assert len(narration) > 10
@@ -239,19 +187,14 @@ def test_correction_state_error_full_flow(load_engine: None, stub_emotions: None
     assert game.narrative.session_log[-1].summary.startswith("[corrected]")
 
 
-def test_correction_no_snapshot(load_engine: None, stub_emotions: None) -> None:
+def test_correction_no_snapshot(load_engine: None, stub_emotions: None, monkeypatch: pytest.MonkeyPatch) -> None:
     from straightjacket.engine.correction import process_correction
 
-    game = _game()
+    provider = MockProvider()
+    game = _played_game(provider, monkeypatch)
     game.last_turn_snapshot = None
 
-    provider = MockProvider()
-    game, narration, _offer, director_ctx = process_correction(
-        provider,
-        game,
-        "Fix something",
-        config=EngineConfig(narration_lang="English"),
-    )
+    game, narration, _offer, director_ctx = process_correction(provider, game, "Fix something", _CONFIG)
 
     assert director_ctx is None
     assert isinstance(narration, str)

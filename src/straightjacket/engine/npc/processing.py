@@ -194,6 +194,8 @@ def _handle_fuzzy_match(game: "GameState", nd: dict[str, Any]) -> bool:
 
     if match_type == "stt_variant":
         _keep_name_add_alias(fuzzy_hit, nd["name"], reason="STT variant reappeared")
+    elif set(normalize_for_match(nd["name"]).split()) <= set(normalize_for_match(fuzzy_hit.name).split()):
+        _keep_name_add_alias(fuzzy_hit, nd["name"], reason="named by part of the known name")
     else:
         merge_npc_identity(fuzzy_hit, nd["name"], nd["description"], game=game)
     return True
