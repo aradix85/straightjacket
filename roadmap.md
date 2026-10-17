@@ -36,50 +36,11 @@ Closing a step: the checks of CONTRIBUTING.md pass, the step moves to DONE at th
 
 **Each spawn source names its own entities** from what it naturally has, as threats and clocks do (`docs/mechanics.md`, Threats and clocks). Later spawners of new entity types follow the same axis.
 
-**One model for every role**, the user's preference, is recorded in `docs/ai.md` (Model assignment); the prompt work of step 9f relies on it.
+**One model for every role**, the user's preference, is recorded in `docs/ai.md` (Model assignment); the prompt tuning of step 9f relied on it.
 
 ---
 
-## NEXT STEP — 9f: Narrator, Director, and extraction prompts
-
-The prompts run on Claude Sonnet 5.5 at effort medium (`docs/ai.md`) and are tuned one change at a time against measurements, not impressions; the measuring setup outside the repository holds the situation set and the scripts, and its README says how to measure. A change is measured three ways. The audit: fourteen situations captured from real sessions, three narrations each and two runs per variant, each narration checked against its own prompt by a judge from another model family; it reads the prompt's own rules, so a milder rule lowers its count without better prose. The blind reading: each pair read twice with the positions swapped, a preference counting only when both readings agree. Elvira: at least ten sessions per variant, since five sessions of one prompt scored anywhere from 7.12 to 7.92. Elvira's judge is Claude Haiku 5.5 now, which scores more strictly than GPT-6 Luna did, so a variant is compared only with the ten baseline sessions this judge scored (the measuring setup's README names them). The user wants credits spent only where a change shows something: each variant targets a problem found, with quotes, in measured narrations; it gets the audit and the blind reading first, and the Elvira sessions only when the blind reader clearly prefers it or the audit kind it targets falls beyond the spread of two runs.
-
-**9f.4** The action task tells a strong hit in a desperate phase to carry the surrounding darkness.
-
-**9f.5** `fact_budget` allows one or two extra facts, while the dialog task says nothing beyond the question's scope.
-
-**9f.6** `<style>` asks for terse prose, and much of the system prompt still addresses GENRE PHYSICS. The user likes rich sensory detail and has played RPGs with narrations of several thousand tokens: only quality counts, not length, and the narration streams. The word budget of 150 to 220 words in `<o>` and the task texts is therefore ours, not the user's; measure a larger one. A budget of 300 to 400 words without "terse", read by a blind reader told that length is no criterion, lost 7 to 14: the extra words went to NPC facts beyond the fact budget, further developments on a miss, and moves the player did not choose, although per thousand words the audit counted fewer findings. A longer budget therefore needs its extra room directed at sensory detail, with no more facts, events, or moves than now.
-
-**9f.8** No situation set measures the extraction prompts (`narrator_metadata`, `opening_setup_extractor`), `revelation_check_system`, `blueprint_voicing`, or `recap` yet.
-
-**9f.15** On misses Sonnet gives the player character moves the player did not choose: looking or studying becomes prying, touching, or grabbing, and the cost of a weak hit or miss comes from that move or from an injury the engine did not set. A combined rewrite (`prompts_v11` in the measuring setup) lowered the audit's player-character findings but did not win the blind reading or Elvira, so its parts are tried one at a time. Replacing the RIGHT example "she is already gone when you turn around", which Sonnet copied, leaned positive without proving itself (blind reading 10 to 7, Elvira 6.60 against 6.41). The rule that looking or studying touches nothing lost the blind reading 4 to 15 on its own, because the narrator then made objects fail or move without a cause. Paired with v11's rule that a setback has a cause the player can see, the misses recovered but nothing moved overall (blind reading 7 to 9, player-character findings 41 and 41 against 38 and 39), so rewording PLAYER AGENCY has not changed what Sonnet writes. v11's other parts are untried: ordinary mechanical sounds allowed under GENRE PHYSICS (with 9f.6), a worsening built from what the scene already holds, and what answer="no" means for a fact.
-
-### Definition of Done
-
-- Each adopted change wins the blind reading or Elvira against the unchanged prompt, and raises no audit kind beyond the spread of two runs.
-- The narrations of every adopted change were read, not only counted.
-- Prompt text stays in `prompts/*.yaml`; no prompt text enters Python.
-- An Elvira session on the final prompts shows no new engine warnings.
-- `docs/ai.md` describes the prompts as they are.
-- Quality gate green, no new project-rule violations, one CHANGELOG entry with what each change measured.
-
-### Reference patterns
-
-- Narrator system prompt: `prompts/narrator.yaml`; task texts per scene type: `prompts/tasks.yaml`; narrator-facing blocks: `prompts/blocks.yaml`.
-- Prompt assembly: `prompt_action.py`, `prompt_dialog.py`, `prompt_shared.py`.
-- Director prompt: `prompts/director.yaml`.
-
----
-
-## Next steps
-
-Sketches, in the order of work; a step gets its definition of done and reference patterns when it becomes NEXT STEP.
-
-Steps 11b, 11c, 11d, and 14c take ideas from EdgeTales: reimplement them, do not port code, and credit EdgeTales in the CHANGELOG entry that lands each.
-
-Steps 11, 14b, 25, and 26 each plan a Director tool. The Director has one tool, `query_game_state`; whether a planned tool becomes a new one or part of it is decided when the step becomes NEXT STEP.
-
-### 9d — Generators
+## NEXT STEP — 9d: Generators
 
 Entity creation through the entry point step 9a built: `mechanics/generation.py` → `generate(game, category, context)`, whose categories are registered in `engine/generation.yaml` and dispatched through `_GENERATORS`, with `fact` as the first category. Step 9d builds the framework for entity categories, the location and settlement categories, and moves NPC naming behind an npc category; step 10 adds the encounter category and the weighting of location tables by the setting's atlas, and step 11 widens the npc category with tiers. An entity category returns a `GeneratedEntity`: the category plus the rolled table results, keyed by the role each table plays in that category.
 
@@ -99,6 +60,35 @@ Two decisions open the step and are taken with the user before building. First, 
 
 **9d.7** Generation reads the world state it lands in, as the design document asks (no prosperous trading post in a region at war): each category names the game-state inputs that weight its tables, the way a fact type names its inputs in `engine/fact_resolution.yaml`.
 
+### Definition of Done
+
+- The two opening decisions are recorded under Decisions referenced by later steps.
+- `engine/generation.yaml` registers location, settlement, and npc beside fact, and a test keeps the registry and the yaml list equal.
+- Each category rolls the active setting's own tables through the per-category oracle-path mapping in setting yaml; a registered category without a path in the setting's parent chain raises KeyError.
+- Generated content reaches the narrator as a `<generated>` block whose template lives in `prompts/blocks.yaml`; nothing checks the narration afterwards.
+- NPC naming runs through the npc category, and `oracle_paths.names` has moved into its entry.
+- The register entry "Locations and settlements are narrated, not generated" leaves `docs/divergences.md`, and `docs/mechanics.md` and ARCHITECTURE.md (Engine-resolved fiction) describe the generators.
+- Elvira sessions in every playable setting show generated places in the narration and no new engine warnings.
+- Quality gate green, no new project-rule violations, one CHANGELOG entry.
+
+### Reference patterns
+
+- Category registry and dispatch: `mechanics/generation.py` → `generate`, with the categories in `engine/generation.yaml`.
+- Game-state inputs that weight a roll: the fact types in `engine/fact_resolution.yaml`, scored by `mechanics/facts.py` → `resolve_fact`.
+- Chained oracle tables: `datasworn/cascade.py` → `roll_oracle_cascade`, as `mechanics/adventure_crafter.py` → `spawn_threats_for_turning_point` uses it.
+- Setting yaml with parent-chain inheritance: `datasworn/settings.py` → `_resolve_oracle_paths`.
+- A narrator block built from engine data: `prompt_shared.py` → `_facts_block`, with its templates in `prompts/blocks.yaml`.
+
+---
+
+## Next steps
+
+Sketches, in the order of work; a step gets its definition of done and reference patterns when it becomes NEXT STEP.
+
+Steps 11b, 11c, 11d, and 14c take ideas from EdgeTales: reimplement them, do not port code, and credit EdgeTales in the CHANGELOG entry that lands each.
+
+Steps 11, 14b, 25, and 26 each plan a Director tool. The Director has one tool, `query_game_state`; whether a planned tool becomes a new one or part of it is decided when the step becomes NEXT STEP.
+
 ### 9e — Open findings from Elvira runs
 
 - Check against a run whether the coverage tracker still misses NPC introductions that the metadata extraction reports.
@@ -107,6 +97,7 @@ Two decisions open the step and are taken with the user before building. First, 
 - After a chapter transition a returning NPC ("Maren Silk") and a new NPC of almost the same name ("Maren") can stand side by side, since returning NPCs are merged by exact name only.
 - The scene can tell the narrator through a `<fact>` that an NPC is not within reach while the same NPC is the scene's `<target_npc>`; the narrator then lets the NPC speak or has her vanish, and on a hit Elvira's audit counts the vanishing as a broken result. Settle presence once, so the fact and the target agree.
 - Blueprint voicing can return other counts than the blueprint asks for (one revelation of three, four acts of three), since Anthropic's structured outputs do not enforce array counts; the chapter then plays without a blueprint. Decide between asking once more and accepting other counts where the structure allows it.
+- The dialog task tells an NPC to say nothing beyond the question's scope, while `fact_budget` lets it volunteer one or two extra facts; in measured dialogs NPCs volunteered extras, which the blind reader held against them. Decide which of the two governs, with the engine's `fact_budget` as the candidate.
 
 ### 9g — Test fixtures through the real creation path
 
@@ -171,6 +162,10 @@ The scene challenge of Starforged and Sundered Isles is configured but unreachab
 **9k.4** The engine's own rule that the ordinary Face Danger and Secure an Advantage mark scene-challenge progress (`scene_challenge_progress_moves` in `engine/track_moves.yaml`, `game/action_resolution.py` → `_maybe_mark_scene_challenge`) goes, since Starforged uses the scene-challenge versions of those moves, and with it the register entry "Ordinary moves mark scene-challenge progress".
 
 **9k.5** A test plays a scene challenge through the real path from Begin the Scene to Finish the Scene and checks that misses fill the tension clock; an Elvira scenario starts one.
+
+### 9m — Measuring the other prompts
+
+The measuring setup outside the repository captures narrator calls only; no situation set measures the extraction prompts (`narrator_metadata`, `opening_setup_extractor`), `blueprint_voicing`, or `recap`. A set of captured calls per prompt, with a judge that checks each answer against its input, comes before any change to these prompts. The revelation check is left out, since step 9i removes it.
 
 ### 10 — Location and encounter generators
 
@@ -368,6 +363,5 @@ Finished work in its shortest form; the CHANGELOG has the details.
 - **9a — Fact resolution.** The Brain names the facts an action turns on, and Mythic's fate chart settles them (`docs/mechanics.md`, Facts).
 - **9b — Chapters as Mythic adventures.** Resources and clocks carry over, chaos restarts at 5, and a game that is over continues only through succession.
 - **9c — Soft misses from the engine side.** On a miss the NPCs present withhold, and the engine keeps agenda, secrets, guidance, and a pending revelation out of the prompt.
-- **9f so far.** Every role runs Claude Sonnet 5.5 at effort medium, and Elvira plays and judges on Claude Haiku 5.5 (baseline 6.41 ± 0.14). Adopted: a player-agency line at the end of the action and dialog tasks (9f.1 and 9f.2). 9f.9 and 9f.10 lapsed, because Sonnet does not show those faults; what was measured and not adopted is under NEXT STEP.
-- **9f.11 — Weak-hit complications follow the rulebook.** The weak hit of Gather Information and Compel costs the complication its move text names, which may be subtle, and the narrator's WEAK_HIT rule accepts it as the cost.
+- **9f — Prompt tuning on Sonnet.** Every role runs Claude Sonnet 5.5 at effort medium, and Elvira plays and judges on Claude Haiku 5.5 (baseline 6.41 ± 0.14). Adopted: a player-agency line at the end of the action and dialog tasks, and the weak hit of Gather Information and Compel costing the complication its move text names, which the narrator's WEAK_HIT rule accepts as the cost. Rewording the narrator prompt (examples, rules for looking and for setbacks, a longer budget steered to sensory detail, mechanical sounds) stayed within the measurement's noise in every round, so the faults that remain, moves for the player character and NPCs volunteering facts, are for the engine to take on. The measuring setup outside the repository keeps every variant and its numbers.
 - **9l — Complications as clocks.** Such a complication can start a small threat clock that strikes within four scenes unless a hit heads it off (`docs/mechanics.md`, Complication clocks).

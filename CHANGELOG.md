@@ -8,6 +8,12 @@ This log starts at 2026.09.24.0, the restart after a four-month pause. Earlier r
 
 Calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day.
 
+## [2026.10.17.0] — 2026-10-17
+
+Documentation only: step 9f closes, at the user's choice. Two more narrator-prompt variants for 9f.6 were measured on the fourteen situations: a budget of 250 to 350 words with the extra room steered to sensory detail of the same beats, and the same with ordinary mechanical sounds allowed under GENRE PHYSICS. Steering the room took away the loss of the earlier longer budget (blind reading 7 to 14 then), but neither variant won (8 to 7 and 8 to 9), player-character findings rose with the length, and the second variant wrote three of 84 narrations in the third person; its lower audit count came from the milder rule alone. After six rounds in which rewording stayed within the noise, the faults that remain are for the engine. The roadmap keeps 9f as one DONE entry, moves measuring the extraction prompts to the new step 9m and the clash between fact budget and dialog task to step 9e, and makes 9d, generators, the next step. About 4 dollars.
+
+Quality gate: project-rule scans clean. No code, prompt, or configuration changed.
+
 ## [2026.10.16.8] — 2026-10-16
 
 Step 9l, the user's idea: a weak-hit complication of Gather Information or Compel can start a four-segment threat clock (`mechanics/complications.py`), named from the story-complication table or a Mythic action pair, one open at a time. It fills every scene and strikes through the threat fill tag unless the Brain aims a hit at it (`target_clock`, from a `<dangers>` block). Elvira's new `complication` scenario, three sessions: the narrator showed each danger as a subtle first sign and its arrival later, and one was headed off. The roadmap keeps finished work in a short DONE section at the bottom.
