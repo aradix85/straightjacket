@@ -8,6 +8,8 @@ The steps below are the order of work: NEXT STEP first, then the others in their
 
 Closing a step: the checks of CONTRIBUTING.md pass, the step moves to DONE at the bottom, cut to what a later session needs to understand the whole, and gets its CHANGELOG entry with the details, the next step becomes NEXT STEP with substeps, a definition of done, and reference patterns, and a decision that later steps rely on goes under Decisions. The step's area is read against the source rulebooks and, where it touches the architecture, against the design document; a departure goes to `docs/divergences.md`.
 
+A finished substep or session of a step that stays open leaves the list in the same commit and goes, cut short, into that step's line under DONE. Every session also reads DONE for what can be shorter and cuts it.
+
 ## Sessions with the user
 
 - The user writes in Dutch and reads with a screen reader: answers are in Dutch and in plain prose, while the repository stays in English.
