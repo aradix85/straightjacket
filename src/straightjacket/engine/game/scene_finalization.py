@@ -29,13 +29,17 @@ from ..models import (
 )
 from ..story_state import check_act_transition, check_story_completion, mark_revelation_used
 from .finalization import apply_post_narration
-from ..mechanics import sync_combat_tracks
+from ..mechanics import sync_combat_tracks, vow_acted_on
 from ..npc import find_npc
 from .turn_types import DirectorCall, SceneContext
 
 
 def _update_scene_lists(
-    game: GameState, brain: BrainResult, metadata: dict[str, Any], scene_present_ids: set[Any]
+    game: GameState,
+    brain: BrainResult,
+    roll: RollResult | None,
+    metadata: dict[str, Any],
+    scene_present_ids: set[Any],
 ) -> None:
     for npc in game.npcs:
         if npc.id in scene_present_ids:
@@ -56,11 +60,11 @@ def _update_scene_lists(
                 CharacterListEntry(id=entry_id, name=name, entry_type="npc", weight=1, active=True)
             )
 
-    if brain.target_npc:
+    vow = vow_acted_on(game, brain.move, brain.target_track) if roll is not None else None
+    if vow is not None:
         for t in game.narrative.threads:
-            if brain.target_npc in t.id or brain.target_npc in t.name.lower():
+            if t.linked_track_id == vow.id:
                 add_thread_weight(game, t.id)
-                break
 
 
 def finalize_scene(
@@ -136,7 +140,7 @@ def finalize_scene(
 
     update_chaos_factor(game, roll_result_str, target_npc_id=brain.target_npc)
 
-    _update_scene_lists(game, brain, metadata, scene_present_ids)
+    _update_scene_lists(game, brain, roll, metadata, scene_present_ids)
     consolidate_threads(game)
     consolidate_characters(game)
 

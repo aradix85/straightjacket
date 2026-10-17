@@ -189,11 +189,7 @@ def _sanitize_brain_output(game: GameState, brain: BrainResult) -> None:
         return
 
     if brain.stat == "none":
-        log(
-            f"[Brain] Sanitize: move={brain.move!r} requires action_roll but stat='none'. "
-            f"Routing as dialog. Brain output likely invalid.",
-            level="warning",
-        )
+        log(f"[Brain] {brain.move!r} is an action roll without a stat to roll; it plays as dialog", level="warning")
         brain.dialog_only = True
 
 

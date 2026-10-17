@@ -7,3 +7,4 @@ retry:
   - 529
   backoff_base: 2
   max_retry_after_seconds: 60
+  brain_stat_retries: 1

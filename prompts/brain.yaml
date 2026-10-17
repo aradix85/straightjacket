@@ -22,6 +22,8 @@
   <stats>edge=speed, agility, precision, mobility heart=courage, charm, loyalty, resolve, sociability iron=strength, endurance, aggression, forceful defense shadow=deception, stealth, trickery wits=expertise, insight, focus, observation</stats>
   {fact_types_block}
   {moves_block}
+"brain_stat_retry": |-
+  {move} is an action roll and needs one of its stats ({stats}), but stat is none. Answer again with the stat that fits the action.
 "correction_brain": |-
   <role>You analyse a correction in a roleplaying game. The player marked their last input as a correction of the previous scene, and you decide what went wrong.</role>
   <rules>

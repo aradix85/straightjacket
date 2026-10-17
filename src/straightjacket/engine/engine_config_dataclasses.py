@@ -529,6 +529,7 @@ class RetryConfig:
     retryable_http_codes: list[int]
     backoff_base: int
     max_retry_after_seconds: float
+    brain_stat_retries: int
 
 
 @dataclass

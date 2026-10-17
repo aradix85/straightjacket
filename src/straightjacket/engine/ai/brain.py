@@ -18,6 +18,7 @@ from .provider_base import AIUnavailableError, AICallSpec, AIProvider, create_wi
 from .schemas import get_brain_output_schema, get_revelation_check_schema
 from ..mechanics.bonuses import bonus_block, roll_bonuses
 from ..mechanics.complications import open_complications
+from ..mechanics.tracks import track_category_of_move
 from ..xml_utils import xe as _xe
 
 
@@ -100,12 +101,8 @@ def _check_choices(result: BrainResult, move_keys: list[str], choices: dict[str,
 def _check_target_track(game: GameState, result: BrainResult) -> None:
     if result.target_track is None:
         return
-    ds_move = get_moves(game.setting_id).get(result.move)
-    if ds_move is not None and ds_move.roll_type == "progress_roll":
-        category = ds_move.track_category
-    elif result.move in eng().get_raw("progress_mark_categories"):
-        category = eng().get_raw("progress_mark_categories")[result.move]
-    else:
+    category = track_category_of_move(game, result.move)
+    if category is None:
         return
     wanted = eng().get_raw("track_types_by_category")[category]
     track = next(t for t in game.progress_tracks if t.id == result.target_track)
@@ -113,6 +110,15 @@ def _check_target_track(game: GameState, result: BrainResult) -> None:
         raise ValueError(
             f"move {result.move!r} works on a {wanted} track, but target_track {track.id!r} is a {track.track_type} track"
         )
+
+
+def _missing_stat(game: GameState, result: BrainResult) -> list[str]:
+    if result.dialog_only or result.stat != "none":
+        return []
+    ds_move = get_moves(game.setting_id).get(result.move)
+    if ds_move is None or ds_move.roll_type != "action_roll":
+        return []
+    return list(ds_move.valid_stats)
 
 
 def _check_fact_requests(result: BrainResult, npc_ids: list[str]) -> None:
@@ -179,33 +185,44 @@ time:{w.time_of_day or _ai_text["unknown_time"]}
         "target_track": [tr.id for tr in _active_tracks(game)],
         "target_clock": [c.name for c in open_complications(game)],
     }
+    schema = get_brain_output_schema(
+        move_keys,
+        choices["bonus_id"],
+        choices["target_npc"],
+        choices["target_track"],
+        choices["target_clock"],
+    )
+    messages: list[dict[str, Any]] = [{"role": "user", "content": user_msg}]
     try:
-        spec = AICallSpec(
-            model=model_for_role("brain"),
-            system=system,
-            messages=[{"role": "user", "content": user_msg}],
-            json_schema=get_brain_output_schema(
-                move_keys,
-                choices["bonus_id"],
-                choices["target_npc"],
-                choices["target_track"],
-                choices["target_clock"],
-            ),
-            log_role="brain",
-            cached_system_prefix=cached_prefix,
-            **sampling_params("brain"),
-        )
-        response = create_with_retry(provider, spec)
+        for _attempt in range(eng().retry.brain_stat_retries + 1):
+            spec = AICallSpec(
+                model=model_for_role("brain"),
+                system=system,
+                messages=list(messages),
+                json_schema=schema,
+                log_role="brain",
+                cached_system_prefix=cached_prefix,
+                **sampling_params("brain"),
+            )
+            content = create_with_retry(provider, spec).content
 
-        result: BrainResult = BrainResult.from_dict(json.loads(response.content))
-        _check_choices(result, move_keys, choices)
-        _check_target_track(game, result)
-        log(
-            f"[Brain] move={result.move}, stat={result.stat}, "
-            f"intent={result.player_intent[: eng().truncations.log_short]}"
-            + (f", target_clock={result.target_clock}" if result.target_clock else "")
-        )
-        return result
+            result: BrainResult = BrainResult.from_dict(json.loads(content))
+            _check_choices(result, move_keys, choices)
+            _check_target_track(game, result)
+            stats = _missing_stat(game, result)
+            if not stats:
+                log(
+                    f"[Brain] move={result.move}, stat={result.stat}, "
+                    f"intent={result.player_intent[: eng().truncations.log_short]}"
+                    + (f", target_clock={result.target_clock}" if result.target_clock else "")
+                )
+                return result
+            log(f"[Brain] {result.move} needs a stat but stat is none, asking again", level="warning")
+            messages.append({"role": "assistant", "content": content})
+            messages.append(
+                {"role": "user", "content": get_prompt("brain_stat_retry", move=result.move, stats=", ".join(stats))}
+            )
+        raise ValueError(f"move {result.move!r} is an action roll, but stat is 'none' after asking again")
 
     except Exception as e:
         log(f"[Brain] Failed ({type(e).__name__}: {e})", level="warning")

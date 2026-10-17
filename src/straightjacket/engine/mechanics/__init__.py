@@ -84,6 +84,7 @@ __all__ = [
     "tick_autonomous_clocks",
     "update_chaos_factor",
     "update_location",
+    "vow_acted_on",
 ]
 
 from .adventure_crafter import (
@@ -192,4 +193,10 @@ from .world import (
     update_chaos_factor,
     update_location,
 )
-from .tracks import complete_track, find_progress_track, roll_oracle_answer, sync_combat_tracks
+from .tracks import (
+    complete_track,
+    find_progress_track,
+    roll_oracle_answer,
+    sync_combat_tracks,
+    vow_acted_on,
+)

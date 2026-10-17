@@ -147,6 +147,45 @@ def test_a_bonus_the_game_does_not_offer_is_refused(load_engine: None) -> None:
     assert chosen.bonus_id == "infiltrator#0"
 
 
+class _BrainSequence:
+    def __init__(self, *stats: str, move: str = "adventure/face_danger") -> None:
+        self.stats = list(stats)
+        self.move = move
+        self.messages: list[list[dict[str, Any]]] = []
+
+    def create_message(self, spec: AICallSpec) -> AIResponse:
+        self.messages.append(list(spec.messages))
+        answer = {**BRAIN_FIELDS, "move": self.move, "stat": self.stats.pop(0), "player_intent": "jump"}
+        return AIResponse(content=json.dumps(answer), usage={"input_tokens": 0, "output_tokens": 0})
+
+
+def test_an_action_move_without_a_stat_is_asked_again_once(load_engine: None) -> None:
+    from straightjacket.engine.ai.brain import call_brain
+
+    provider = _BrainSequence("none", "edge")
+    result = call_brain(provider, _starforged(), "I jump the gap.")
+    assert result.stat == "edge"
+    assert len(provider.messages) == 2
+    retry = provider.messages[1][-1]["content"]
+    assert "adventure/face_danger" in retry
+    assert "edge" in retry
+
+
+def test_an_action_move_still_without_a_stat_fails_the_turn(load_engine: None) -> None:
+    from straightjacket.engine.ai.brain import call_brain
+
+    with pytest.raises(AIUnavailableError, match="stat is 'none'"):
+        call_brain(_BrainSequence("none", "none"), _starforged(), "I jump the gap.")
+
+
+def test_world_shaping_without_a_stat_is_not_asked_again(load_engine: None) -> None:
+    from straightjacket.engine.ai.brain import call_brain
+
+    provider = _BrainSequence("none", move="world_shaping")
+    assert call_brain(provider, _starforged(), "There is a well in the square.").stat == "none"
+    assert len(provider.messages) == 1
+
+
 def test_the_brain_prompt_explains_every_field_of_its_schema(load_engine: None) -> None:
     from straightjacket.engine.ai.brain import call_brain
 
