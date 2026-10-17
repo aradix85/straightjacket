@@ -443,7 +443,6 @@ class BoastsConfig:
 @dataclass
 class StoryConfig:
     kishotenketsu_probability: dict[str, float]
-    kishotenketsu_fallback_probability: float
 
 
 @dataclass

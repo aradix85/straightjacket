@@ -679,6 +679,11 @@ function renderCreationForm(options, forcedSettingId) {
   });
   html += `</div>`;
 
+  // Tone, preset to the setting's own
+  html += `<div class="field"${settingsLocked ? " hidden" : ""}><label for="c-tone">${s("ui.tone")}</label><select id="c-tone">`;
+  options.tones.forEach(tn => { html += `<option value="${esc(tn.id)}">${esc(tn.label)}</option>`; });
+  html += `</select></div>`;
+
   // Name + roll button
   html += `<div class="field"><label for="c-name">${s("ui.character_name")}</label>`;
   html += `<div style="display:flex;gap:0.5rem"><input type="text" id="c-name" value="${esc(currentPlayer)}" style="flex:1">`;
@@ -794,8 +799,11 @@ function renderCreationForm(options, forcedSettingId) {
     if (prompts.length) $("c-backstory").value = prompts[Math.floor(Math.random() * prompts.length)];
   }
 
+  // Tone follows the setting until the player picks one
+  function updateTone() { $("c-tone").value = curSetting().default_tone; }
+
   // Setting change wires
-  function onSettingChange() { updatePaths(); updateTruths(); updateAssets(); }
+  function onSettingChange() { updatePaths(); updateTruths(); updateAssets(); updateTone(); }
   document.querySelectorAll('input[name="setting"]').forEach(r => r.onchange = onSettingChange);
   onSettingChange();
 
@@ -840,6 +848,7 @@ function renderCreationForm(options, forcedSettingId) {
 
     const creationData = {
       setting_id: document.querySelector('input[name="setting"]:checked')?.value,
+      tone: $("c-tone").value,
       player_name: $("c-name").value.trim() || currentPlayer,
       pronouns: $("c-pronouns").value,
       paths: [$("c-path1").value, $("c-path2").value],

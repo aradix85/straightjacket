@@ -37,6 +37,8 @@ Closing a step: the checks of CONTRIBUTING.md pass, the step moves to DONE at th
 
 **Each spawn source names its own entities** from what it naturally has, as threats and clocks do (`docs/mechanics.md`, Threats and clocks). Later spawners of new entity types follow the same axis.
 
+**Tone (step 9h).** The player picks a tone at character creation, preset to the setting's `default_tone` in setting yaml. The tone decides each chapter's story structure through `story.kishotenketsu_probability` and reaches the narrator as its tone authority. Chosen with the user, as a mix of a default per setting and the player's own choice.
+
 **When a generator fires, and how its call is typed (step 9d).** A place is generated when the Brain moves the character to a place that is neither a generated place nor in the location history: the Brain names the place's kind from the engine's list, and the engine rolls it. An NPC's name is rolled when the metadata extraction registers a new NPC. Altered and interrupt scenes get no generator, since Mythic's random events already serve them. A fact goes through `generate_fact` and an entity category through `generate_entity`, both behind the registry in `engine/generation.yaml`, and every entity category returns a `GeneratedEntity` rolled from the role tables its setting names. Later categories (encounters, waypoints, sites, NPC tiers) follow both choices.
 
 **One model for every role**, the user's preference, is recorded in `docs/ai.md` (Model assignment); the prompt tuning of step 9f relied on it.
@@ -63,8 +65,6 @@ The audits of AUDIT.md, one session per principle or submodule as it prescribes,
 **9h.7** For every AI-call carve-out, where its failure becomes visible: a caught failure plays on silently unless Elvira or the log shows it (principle 3).
 
 **9h.8** Every field of `mechanics/move_effects.py` → `OutcomeResult` has a reader in the production path, not only in tests: results that were computed but never applied have hidden faults before (progress marks that never reached a track, a position factor that never fired, and `clock_fills`, step 9k) (principle 5).
-
-**9h.9** `mechanics/world.py` → `choose_story_structure` looks a tone up in `story.kishotenketsu_probability`, but its three callers pass the setting id, `setting_genre`, or `setting_tone`, which is always empty, so no key ever matches and every blueprint takes `kishotenketsu_fallback_probability`. A created game has an empty `setting_tone` and `setting_archetype`, so every narrator prompt carries an empty tone attribute in its world tag. The tone table and the silent fallback date from EdgeTales; which structure a setting gets is decided with the user (principles 2 and 3).
 
 **9h.10** `creation.truth_threads` in `engine/creation.yaml` is hand-written game content, which the Yaml content boundary rules out: it names the tension a chosen truth starts as a thread ("Scarcity drives conflict") with no table behind it. Check whether the truth's own Datasworn text can name the thread, or the threads go (principle 2).
 

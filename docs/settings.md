@@ -16,7 +16,7 @@ Discovery is yaml-only: `list_packages()` scans `data/settings/*.yaml` and `get_
 
 ## Settings yaml format
 
-Parsed strictly at load. Required top-level keys: `id`, `title`, `datasworn_id`, `playable`, `description`, `oracle_paths`, `generators`, `vocabulary`. Optional: `parent`, and `creation_flow` for a setting whose parent chain supplies every field of it (Inheritance). A missing required key raises `KeyError`, and so does a key the loader does not know, at the top level or inside `oracle_paths`, `vocabulary`, or `creation_flow`.
+Parsed strictly at load. Required top-level keys: `id`, `title`, `datasworn_id`, `playable`, `description`, `oracle_paths`, `generators`, `vocabulary`. Optional: `parent`, and `default_tone` and `creation_flow` for a setting whose parent chain supplies them (Inheritance). `default_tone` is one of the tones in `story.kishotenketsu_probability`, the one character creation offers first; the player's choice decides the chapters' story structure and reaches the narrator (`docs/mechanics.md`, Blueprint). A missing required key raises `KeyError`, and so does a key the loader does not know, at the top level or inside `oracle_paths`, `vocabulary`, or `creation_flow`.
 
 ```yaml
 id: your_setting
@@ -55,4 +55,4 @@ creation_flow:
 
 ## Inheritance
 
-With `parent:`, blocks inherit from the parent yaml, resolved at load. `oracle_paths` and `creation_flow` inherit per field: an omitted field takes the parent's value, a present field (even an empty one) overrides it, and a root setting must specify every field. `generators` inherits per category: a category the setting names replaces its parent's. `vocabulary` inherits as a whole: when both sub-fields are empty, the block comes from the parent.
+With `parent:`, blocks inherit from the parent yaml, resolved at load. `oracle_paths` and `creation_flow` inherit per field: an omitted field takes the parent's value, a present field (even an empty one) overrides it, and a root setting must specify every field. `generators` inherits per category: a category the setting names replaces its parent's. `default_tone` comes from the nearest setting in the chain that names it. `vocabulary` inherits as a whole: when both sub-fields are empty, the block comes from the parent.

@@ -5,6 +5,7 @@ ui.name_placeholder: Name...
 ui.create: Create
 ui.create_character: Create your character
 ui.setting: Setting
+ui.tone: Tone of the story (the setting's own tone is chosen already)
 ui.character_name: Character name
 ui.pronouns: Pronouns
 ui.paths: Paths

@@ -3,6 +3,7 @@ id: sundered_isles
 title: "Sundered Isles"
 datasworn_id: sundered_isles
 playable: true
+default_tone: pulp
 parent: starforged
 description: >
   Vast uncharted seas dotted with strange islands. Ancient ruins hold

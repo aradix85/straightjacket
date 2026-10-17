@@ -269,7 +269,7 @@ def start_succession_with_character(
 
 
 def _generate_succession_opening(provider: AIProvider, game: GameState, config: EngineConfig | None) -> str:
-    structure = choose_story_structure(game.setting_genre)
+    structure = choose_story_structure(game.setting_tone)
     rng = _random_module.Random()
     if structure == "kishotenketsu":
         seed = assemble_blueprint_seed_kishotenketsu(rng, game)

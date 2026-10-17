@@ -138,7 +138,5 @@ def record_scene_intensity(game: GameState, scene_type: str) -> None:
 
 
 def choose_story_structure(tone: str) -> str:
-    _e = eng()
-    kprob = _e.story.kishotenketsu_probability
-    probability = kprob[tone] if tone in kprob else _e.story.kishotenketsu_fallback_probability
+    probability = eng().story.kishotenketsu_probability[tone]
     return "kishotenketsu" if random.random() < probability else "3act"

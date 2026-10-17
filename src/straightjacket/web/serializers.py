@@ -262,6 +262,7 @@ def build_creation_options() -> dict[str, Any]:
                     "has_ship_creation": flow.has_ship_creation,
                     "starting_asset_categories": flow.starting_asset_categories,
                 },
+                "default_tone": pkg.default_tone,
             }
         )
 
@@ -279,6 +280,7 @@ def build_creation_options() -> dict[str, Any]:
             "background_vow_default_rank": _e.creation.background_vow_default_rank,
             "vow_ranks": list(_e.legacy.ticks_by_rank.keys()),
         },
+        "tones": [{"id": tone, "label": t(f"tone.{tone}")} for tone in _e.story.kishotenketsu_probability],
     }
 
 

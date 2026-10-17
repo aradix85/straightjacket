@@ -94,10 +94,12 @@ def create_game(
     player_name: str,
     background_vow: str,
 ) -> GameState:
+    from straightjacket.engine.datasworn.settings import load_package
     from straightjacket.engine.game import start_new_game
 
     creation = {
         "setting_id": setting_id,
+        "tone": load_package(setting_id).default_tone,
         "stats": dict(zip(STAT_ORDER, stats, strict=True)),
         "player_name": player_name,
         "pronouns": "she/her",

@@ -210,6 +210,21 @@ def test_build_creation_options_settings_have_name_tables(load_engine: None) -> 
     assert len(sf["name_tables"]["given_name"]) > 0
 
 
+def test_every_setting_offers_a_known_tone_as_its_default(load_engine: None) -> None:
+    from straightjacket.engine.engine_loader import eng
+    from straightjacket.web.serializers import build_creation_options
+
+    opts = build_creation_options()
+    tones = [tone["id"] for tone in opts["tones"]]
+    assert tones == list(eng().story.kishotenketsu_probability)
+    assert all(tone["label"] != f"tone.{tone['id']}" for tone in opts["tones"])
+    assert {s["id"]: s["default_tone"] for s in opts["settings"]} == {
+        "classic": "dark_gritty",
+        "starforged": "epic_heroic",
+        "sundered_isles": "pulp",
+    }
+
+
 def test_build_creation_options_settings_have_starting_assets(load_engine: None) -> None:
     from straightjacket.web.serializers import build_creation_options
 
@@ -306,7 +321,8 @@ def test_truths_block_empty() -> None:
         ("starforged", {"assets": ["a", "b"]}, "Too many starting assets"),
         ("delve", {"truths": {"x": "y"}}, "does not support truths"),
         ("starforged", {"paths": ["alchemist"]}, "not found in setting"),
-        ("starforged", {"background_vow_rank": "legendary"}, "Invalid vow rank"),
+        ("starforged", {"background_vow_rank": "legendary", "tone": "pulp"}, "Invalid vow rank"),
+        ("starforged", {"tone": "whimsical"}, "Unknown tone"),
     ],
 )
 def test_validate_creation_rejects_invalid(load_engine: None, setting: str, payload: dict, error_match: str) -> None:
@@ -325,7 +341,7 @@ def test_validate_creation_valid_passes(load_engine: None) -> None:
 
     clear_cache()
     pkg = load_package("starforged")
-    validate_creation({"paths": ["ace", "explorer"], "assets": [], "truths": {"x": "y"}}, pkg)
+    validate_creation({"paths": ["ace", "explorer"], "assets": [], "truths": {"x": "y"}, "tone": "pulp"}, pkg)
 
 
 def test_validate_creation_valid_vow_rank_passes(load_engine: None) -> None:
@@ -334,7 +350,7 @@ def test_validate_creation_valid_vow_rank_passes(load_engine: None) -> None:
 
     clear_cache()
     pkg = load_package("starforged")
-    validate_creation({"background_vow_rank": "epic"}, pkg)
+    validate_creation({"background_vow_rank": "epic", "tone": "cozy"}, pkg)
 
 
 @pytest.mark.parametrize(

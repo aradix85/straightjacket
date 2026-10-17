@@ -8,6 +8,12 @@ This log starts at 2026.09.24.0, the restart after a four-month pause. Earlier r
 
 Calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day.
 
+## [2026.10.17.6] — 2026-10-17
+
+The campaign's tone, substep 9h.9, chosen with the user. Every game had an empty tone, and the story-structure roll looked the setting id up in a table of tones, so every chapter fell back to an even chance between three acts and Kishōtenketsu. Character creation now offers a tone, preset to the setting's new `default_tone` (dark and gritty for classic Ironsworn, epic and heroic for Starforged, pulp adventure for Sundered Isles); the tone decides each chapter's structure through `story.kishotenketsu_probability`, which shrinks to ten tones and loses its fallback, and it reaches the narrator through the tone-authority block and the world tag that were empty until now. An unknown tone is refused at creation; a successor keeps the campaign's tone. The dead `setting_archetype` field is gone. Measured first on the fourteen situations with each setting's default tone: the blind reader, shown the toned prompt, preferred it 11 to 5 (12 without agreement), mostly on misses, where the costs came out harder and more concrete, on a strong hit in a desperate position, and near death; the audit stayed within the spread of two runs (114 and 102 against 94 and 125). An eight-turn Elvira session in classic Ironsworn found no problems (overall 7.0).
+
+Quality gate: 1650 tests green, ruff and mypy --strict clean. The save format breaks: `setting_archetype` is gone. About $2.50 for the measurement and Elvira.
+
 ## [2026.10.17.5] — 2026-10-17
 
 An eight-turn Elvira session in Sundered Isles, run as the check for the name matcher change of 2026.10.17.4, found a fault in the same path: in one extraction a "Lunging deckhand" got the rolled name Nerissa Ashcroft, and a "Second deckhand" then matched her through the shared word of her label and renamed her to "Second deckhand". An NPC whose name the engine rolled is now matched only by its own name and its exact earlier labels; a figure that merely shares a word with such a label is a new figure, and no label replaces a rolled name. The session otherwise showed no engine warnings and one known kind of problem, an NPC who moved without being shown moving.

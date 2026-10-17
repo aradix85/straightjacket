@@ -46,6 +46,7 @@ def roll_character(setting_id: str, game_cfg: dict) -> dict:
 
     return {
         "setting_id": setting_id,
+        "tone": pkg.default_tone,
         "player_name": name,
         "pronouns": pronouns,
         "paths": paths,

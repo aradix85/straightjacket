@@ -101,6 +101,11 @@ def validate_creation(creation_data: dict[str, Any], pkg: object) -> None:
     if vow_rank and vow_rank not in valid:
         raise ValueError(f"Invalid vow rank: '{vow_rank}' (valid: {sorted(valid)})")
 
+    tone = creation_data["tone"]
+    tones = _e.story.kishotenketsu_probability
+    if tone not in tones:
+        raise ValueError(f"Unknown tone '{tone}' (valid: {sorted(tones)})")
+
 
 def _compute_chaos_start(vow_text: str) -> int:
     _e = eng()
@@ -234,8 +239,7 @@ def start_new_game(
         background_vow=background_vow,
         setting_id=setting_id,
         setting_genre=pkg.id,
-        setting_tone="",
-        setting_archetype="",
+        setting_tone=creation_data["tone"],
         setting_description=pkg.description,
         backstory=backstory,
         assets=assets,
@@ -277,7 +281,7 @@ def start_new_game(
         user_cfg["content_lines"] = game.preferences.content_lines
         save_user_config(username, user_cfg)
 
-    structure = choose_story_structure(pkg.id)
+    structure = choose_story_structure(game.setting_tone)
     rng = _random_module.Random()
     if structure == "kishotenketsu":
         seed = assemble_blueprint_seed_kishotenketsu(rng, game)

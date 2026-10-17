@@ -95,6 +95,7 @@ class _SmartMockProvider:
 def _valid_creation_data() -> dict:
     return {
         "setting_id": "starforged",
+        "tone": "epic_heroic",
         "stats": {"edge": 3, "heart": 2, "iron": 2, "shadow": 1, "wits": 1},
         "player_name": "Aria",
         "pronouns": "she/her",

@@ -351,6 +351,7 @@ def test_reset_for_successor_filters_characters_list(aria: GameState) -> None:
 def test_replace_character_identity_strict_required_fields(aria: GameState) -> None:
     base = {
         "setting_id": "classic",
+        "tone": "dark_gritty",
         "stats": {"edge": 3, "heart": 2, "iron": 2, "shadow": 1, "wits": 1},
         "player_name": "Bryn",
         "pronouns": "they/them",
@@ -368,6 +369,7 @@ def test_replace_character_identity_strict_required_fields(aria: GameState) -> N
 def test_replace_character_identity_empty_field_raises(aria: GameState, empty_field: str) -> None:
     creation_data = {
         "setting_id": "classic",
+        "tone": "dark_gritty",
         "stats": {"edge": 3, "heart": 2, "iron": 2, "shadow": 1, "wits": 1},
         "player_name": "Bryn",
         "pronouns": "they/them",
@@ -531,6 +533,7 @@ class _SuccessionMockProvider:
 def _successor_creation_data() -> dict:
     return {
         "setting_id": "classic",
+        "tone": "dark_gritty",
         "stats": {"edge": 3, "heart": 2, "iron": 2, "shadow": 1, "wits": 1},
         "player_name": "Bryn",
         "pronouns": "they/them",

@@ -1,3 +1,5 @@
+import pytest
+
 from tests._helpers import make_brain_result, make_game_state, make_npc
 
 
@@ -262,15 +264,18 @@ def test_record_scene_intensity_caps_at_window(load_engine: None) -> None:
     assert len(g.narrative.scene_intensity_history) == window
 
 
-def test_choose_story_structure_returns_known(load_engine: None) -> None:
+def test_choose_story_structure_follows_the_tone(load_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:
+    import random
+
     from straightjacket.engine.mechanics.world import choose_story_structure
 
-    result = choose_story_structure("serious")
-    assert result in {"kishotenketsu", "3act"}
+    monkeypatch.setattr(random, "random", lambda: 0.5)
+    assert choose_story_structure("dark_gritty") == "3act"
+    assert choose_story_structure("cozy") == "kishotenketsu"
 
 
-def test_choose_story_structure_unknown_tone_uses_fallback(load_engine: None) -> None:
+def test_choose_story_structure_rejects_an_unknown_tone(load_engine: None) -> None:
     from straightjacket.engine.mechanics.world import choose_story_structure
 
-    result = choose_story_structure("nonsense_tone")
-    assert result in {"kishotenketsu", "3act"}
+    with pytest.raises(KeyError):
+        choose_story_structure("nonsense_tone")

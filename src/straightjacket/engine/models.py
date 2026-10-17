@@ -125,7 +125,6 @@ class GameState(SerializableMixin):
     setting_id: str = ""
     setting_genre: str = ""
     setting_tone: str = ""
-    setting_archetype: str = ""
     setting_description: str = ""
 
     stats: dict[str, int] = field(kw_only=True)

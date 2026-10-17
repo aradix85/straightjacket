@@ -65,6 +65,7 @@ class _SettingConfig:
     datasworn_id: str
     description: str
     playable: bool
+    default_tone: str | None
     oracle_paths: _OraclePathsPartial
     generators: dict[str, dict[str, str]]
     vocabulary: VocabularyConfig
@@ -174,6 +175,7 @@ def _parse_setting_config(data: dict[str, Any], yaml_path: str) -> _SettingConfi
         datasworn_id=_require_str(data, "datasworn_id", yaml_path),
         description=_require_str(data, "description", yaml_path),
         playable=_require_bool(data, "playable", yaml_path),
+        default_tone=_require_str(data, "default_tone", yaml_path) if "default_tone" in data else None,
         oracle_paths=_parse_oracle_paths_partial(_require_dict(data, "oracle_paths", yaml_path), yaml_path),
         generators=_parse_generators(_require_dict(data, "generators", yaml_path), yaml_path),
         vocabulary=_parse_vocabulary(_require_dict(data, "vocabulary", yaml_path), yaml_path),
@@ -251,6 +253,10 @@ class SettingPackage:
         self._generators: dict[str, dict[str, str]] = {}
         for ancestor_config in reversed(chain):
             self._generators.update(ancestor_config.generators)
+        tones = [cfg.default_tone for cfg in chain if cfg.default_tone is not None]
+        if not tones:
+            raise KeyError(f"default_tone missing in setting chain ending at {yaml_path}")
+        self._default_tone = tones[0]
 
         if config.vocabulary.is_empty() and parent is not None:
             self._vocabulary = parent.vocabulary
@@ -268,6 +274,10 @@ class SettingPackage:
     @property
     def playable(self) -> bool:
         return self._config.playable
+
+    @property
+    def default_tone(self) -> str:
+        return self._default_tone
 
     @property
     def description(self) -> str:
