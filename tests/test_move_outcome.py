@@ -50,7 +50,6 @@ class TestParseEffect:
             ("legacy_reward quests", "legacy_reward", 0, "quests"),
             ("pay_the_price", "pay_the_price", 0, ""),
             ("narrative", "narrative", 0, ""),
-            ("xyzzy", "unknown", 0, ""),
         ],
     )
     def test_parse_effect(self, effect_str: str, expected_type: str, expected_value: int, expected_target: str) -> None:
@@ -59,6 +58,10 @@ class TestParseEffect:
         assert e.value == expected_value
         if expected_target:
             assert e.target == expected_target
+
+    def test_parse_effect_unknown_raises(self) -> None:
+        with pytest.raises(ValueError, match="xyzzy"):
+            parse_effect("xyzzy")
 
     def test_parse_effects_list(self) -> None:
         effects = parse_effects(["momentum +1", "position in_control"])

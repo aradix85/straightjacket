@@ -30,7 +30,7 @@ def roll_bonuses(game: GameState) -> list[RollBonus]:
         if data is None:
             continue
         flags = enabled_abilities(game, asset_id)
-        for index, (ability, enabled) in enumerate(zip(data["abilities"], flags, strict=False)):
+        for index, (ability, enabled) in enumerate(zip(data["abilities"], flags, strict=True)):
             text = strip_datasworn_links(str(ability["text"]))
             add = _ADD.search(text)
             if not enabled or add is None:
@@ -61,14 +61,13 @@ def roll_bonuses(game: GameState) -> list[RollBonus]:
 
 
 def chosen_bonus(game: GameState, bonus_id: str | None) -> RollBonus | None:
-    if not bonus_id:
+    if bonus_id is None:
         return None
     for option in roll_bonuses(game):
         if option.id == bonus_id:
             log(f"[Bonus] {option.source}: +{option.add}")
             return option
-    log(f"[Bonus] Brain chose unknown bonus '{bonus_id}'; ignored", level="warning")
-    return None
+    raise ValueError(f"Bonus {bonus_id!r} is not on offer")
 
 
 def apply_momentum_on_hit(game: GameState, bonus: RollBonus, result: str) -> None:

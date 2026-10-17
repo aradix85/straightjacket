@@ -3,8 +3,17 @@ from __future__ import annotations
 from typing import Any
 from ..engine_loader import eng
 from ..logging_util import log
-from ..models import BrainResult, GameState
+from ..models import BrainResult, GameState, NpcData
 from ..npc import find_npc, get_npc_bond
+
+
+def _target_npc(game: GameState, brain: BrainResult) -> NpcData | None:
+    if brain.target_npc is None:
+        return None
+    target = find_npc(game, brain.target_npc)
+    if target is None:
+        raise ValueError(f"Target NPC {brain.target_npc!r} is not in the game")
+    return target
 
 
 def _score_resource_pressure(game: GameState) -> int:
@@ -20,10 +29,8 @@ def _score_resource_pressure(game: GameState) -> int:
 
 
 def _score_npc_relationship(game: GameState, brain: BrainResult) -> int:
-    if not brain.target_npc:
-        return 0
-    target = find_npc(game, brain.target_npc)
-    if not target:
+    target = _target_npc(game, brain)
+    if target is None:
         return 0
     cfg = eng().position_resolver
     score = cfg.disposition_weights[target.disposition]
@@ -67,11 +74,7 @@ def _score_threat_clocks(game: GameState) -> int:
     chaos_cfg = _e.chaos_resolver
     penalty = 0
     for clock in game.world.clocks:
-        if (
-            not clock.fired
-            and clock.segments > 0
-            and clock.filled / clock.segments >= chaos_cfg.clock_pressure_threshold
-        ):
+        if not clock.fired and clock.filled / clock.segments >= chaos_cfg.clock_pressure_threshold:
             penalty += w.threat_clock_critical
     return max(penalty, w.threat_clock_critical * chaos_cfg.clock_pressure_cap_multiplier)
 
@@ -95,7 +98,7 @@ def _score_move_category_baseline(cat: str) -> int:
 
 def _score_position_factors(game: GameState, brain: BrainResult, cat: str) -> int:
     chaos_cfg = eng().chaos_resolver
-    recent = game.narrative.session_log[-chaos_cfg.recent_session_window :] if game.narrative.session_log else []
+    recent = game.narrative.session_log[-chaos_cfg.recent_session_window :]
     recent_results = [e.result for e in recent if e.result]
 
     return (
@@ -122,22 +125,17 @@ def _apply_position_overrides(position: str, game: GameState, cat: str) -> str:
     cfg = eng().position_resolver
     w = cfg.weights
 
-    recent = (
-        game.narrative.session_log[-eng().chaos_resolver.recent_session_window :] if game.narrative.session_log else []
-    )
+    recent = game.narrative.session_log[-eng().chaos_resolver.recent_session_window :]
     res = game.resources
-    any_resource_critical = any(v < w.resource_critical_below for v in (res.health, res.spirit, res.supply))
+    conditions: dict[str, bool] = {
+        "secured_advantage": _secured_advantage(recent),
+        "any_resource_critical": any(v < w.resource_critical_below for v in (res.health, res.spirit, res.supply)),
+        "crisis_mode": game.crisis_mode,
+        "recovery_move": cat == "recovery",
+    }
 
     for override in cfg.overrides:
-        _cond_checks: dict[str, bool] = {
-            "secured_advantage": _secured_advantage(recent),
-            "any_resource_critical": any_resource_critical,
-            "crisis_mode": game.crisis_mode,
-            "recovery_move": cat == "recovery",
-        }
-        match = all(_cond_checks[cond] for cond in override.conditions)
-
-        if match and override.conditions:
+        if all(conditions[cond] for cond in override.conditions):
             if (override.effect == "cap_at_risky" and position == "controlled") or (
                 override.effect == "floor_at_risky" and position == "desperate"
             ):
@@ -163,17 +161,15 @@ def resolve_effect(game: GameState, brain: BrainResult, position: str) -> str:
 
     score += cfg.position_weights[position]
 
-    if brain.target_npc:
-        target = find_npc(game, brain.target_npc)
-        if target:
-            bond = get_npc_bond(game, target.id)
-            if bond >= cfg.bond_high_min:
-                score += w.bond_high
-            elif bond <= cfg.bond_low_max:
-                score += w.bond_low
+    target = _target_npc(game, brain)
+    if target is not None:
+        bond = get_npc_bond(game, target.id)
+        if bond >= cfg.bond_high_min:
+            score += w.bond_high
+        elif bond <= cfg.bond_low_max:
+            score += w.bond_low
 
-    recent = game.narrative.session_log[-1:] if game.narrative.session_log else []
-    if _secured_advantage(recent):
+    if _secured_advantage(game.narrative.session_log[-1:]):
         score += w.secured_advantage
 
     score += cfg.move_baselines[brain.move] if brain.move in cfg.move_baselines else cfg.move_baselines["other"]

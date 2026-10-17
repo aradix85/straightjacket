@@ -11,7 +11,7 @@ from ..npc import find_npc, normalize_for_match
 from ..models import ClockFillResult
 from .clock_consequences import resolve_clock_fill
 from .complications import is_complication
-from .impacts import impact_config, impact_label
+from .impacts import impact_label
 
 
 def _roll_challenge_dice() -> tuple[int, int]:
@@ -168,7 +168,7 @@ def tick_autonomous_clocks(game: GameState) -> list[ClockEvent]:
         if clock.owner_kind != "world":
             continue
         if random.random() < (complication_chance if is_complication(clock) else tick_chance):
-            clock.filled = min(clock.segments, clock.filled + 1)
+            clock.filled += 1
             triggered = clock.filled >= clock.segments
             if triggered:
                 clock.fired = True
@@ -201,11 +201,7 @@ def purge_old_fired_clocks(game: GameState, keep_scenes: int | None = None) -> N
 
 
 def pick_template(key: str) -> str:
-    templates = eng().get_raw("consequence_templates")
-    options = templates[key]
-    if isinstance(options, str):
-        return options
-    result: str = random.choice(options)
+    result: str = random.choice(eng().get_raw("consequence_templates")[key])
     return result
 
 
@@ -214,7 +210,7 @@ _DANGER_VERBS = ("complication_clock", "complication_averted")
 
 def _classify_impact(verb: str, rest: str) -> tuple[str, str, str] | None:
     key = rest.strip()
-    if impact_config(key) is None:
+    if key not in eng().impacts:
         return None
     return ("impact_mark" if verb == "mark" else "impact_clear"), "", impact_label(key)
 

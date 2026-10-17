@@ -26,7 +26,7 @@ from ..models_story import (
 from .keyed_scenes import spawn_keyed_scenes_for_clock
 from .clocks import count_emergent_clocks, unique_clock_name
 from .spawn_sources import AC_SOURCE_PREFIX
-from .threats import count_emergent_threats
+from .threats import count_emergent_threats, next_threat_id
 
 
 _AC_DATA_PATH = PROJECT_ROOT / "data" / "adventure_crafter.json"
@@ -94,11 +94,6 @@ class ThemeAlternation:
     next_is_4: bool = True
 
 
-def _check_roll(roll: int, die: int, what: str) -> None:
-    if not 1 <= roll <= die:
-        raise ValueError(f"{what} roll {roll} outside 1..{die}")
-
-
 def _table_roll(rng: random.Random) -> int:
     return rng.randint(1, eng().dice.adventure_crafter_table_die)
 
@@ -111,10 +106,6 @@ def assign_themes(rng: random.Random) -> list[str]:
 
 def lookup_plot_point(theme: str, roll: int) -> PlotPointResult:
     cfg = eng().adventure_crafter
-    if theme not in cfg.themes:
-        raise KeyError(f"unknown theme {theme!r}; expected one of {cfg.themes}")
-    _check_roll(roll, eng().dice.adventure_crafter_table_die, "plot-point")
-
     data = _load_ac_data()
     for entry in data["plot_points"]:
         themes = entry["themes"]
@@ -139,7 +130,6 @@ def _special_range_for(roll: int, ranges: PlotPointRanges) -> str | None:
 
 
 def lookup_meta_plot_point(roll: int) -> str:
-    _check_roll(roll, eng().dice.adventure_crafter_table_die, "meta-plot-point")
     data = _load_ac_data()
     for entry in data["meta_plot_points"]:
         if entry["min"] <= roll <= entry["max"]:
@@ -151,7 +141,6 @@ def lookup_meta_plot_point(roll: int) -> str:
 
 
 def lookup_theme_priority(roll: int, alternation: ThemeAlternation) -> int:
-    _check_roll(roll, eng().dice.adventure_crafter_theme_die, "theme-priority")
     data = _load_ac_data()
     for entry in data["plot_point_theme_priority"]:
         if entry["min"] <= roll <= entry["max"]:
@@ -166,7 +155,6 @@ def lookup_theme_priority(roll: int, alternation: ThemeAlternation) -> int:
 
 
 def _lookup_template_result(roll: int, template_key: str) -> str:
-    _check_roll(roll, eng().dice.adventure_crafter_table_die, "template")
     data = _load_ac_data()
     for entry in data[template_key]:
         if entry["min"] <= roll <= entry["max"]:
@@ -453,7 +441,6 @@ def _roll_twice_max(table: str, row_text: str, text_key: str) -> int:
 
 
 def lookup_character_special_trait(roll: int) -> str:
-    _check_roll(roll, eng().dice.adventure_crafter_table_die, "character-special-trait")
     data = _load_ac_data()
     for entry in data["character_special_trait"]:
         if entry["min"] <= roll <= entry["max"]:
@@ -465,7 +452,6 @@ def lookup_character_special_trait(roll: int) -> str:
 
 
 def lookup_character_identity(roll: int) -> str:
-    _check_roll(roll, eng().dice.adventure_crafter_table_die, "character-identity")
     data = _load_ac_data()
     for entry in data["character_identity"]:
         if entry["min"] <= roll <= entry["max"]:
@@ -477,7 +463,6 @@ def lookup_character_identity(roll: int) -> str:
 
 
 def lookup_character_descriptor(roll: int) -> str:
-    _check_roll(roll, eng().dice.adventure_crafter_table_die, "character-descriptor")
     data = _load_ac_data()
     for entry in data["character_descriptors"]:
         if entry["min"] <= roll <= entry["max"]:
@@ -578,13 +563,6 @@ def _ac_threat_already_spawned(game: GameState, plot_point_name: str) -> bool:
     return any(t.creation_source == target for t in game.threats)
 
 
-def _next_threat_id(game: GameState, prefix: str) -> str:
-    n = 1
-    while any(t.id == f"{prefix}{n}" for t in game.threats):
-        n += 1
-    return f"{prefix}{n}"
-
-
 def spawn_threats_for_turning_point(game: GameState, turning_point: TurningPoint) -> int:
     cfg = eng().adventure_crafter
     mapping = cfg.threat_creation_mapping
@@ -592,7 +570,7 @@ def spawn_threats_for_turning_point(game: GameState, turning_point: TurningPoint
 
     pkg = active_package(game)
     if pkg is None:
-        return 0
+        raise ValueError("Naming a threat from a turning point needs the game's setting")
 
     spawned = 0
     for hit in turning_point.plot_points:
@@ -610,7 +588,7 @@ def spawn_threats_for_turning_point(game: GameState, turning_point: TurningPoint
         cascade = roll_oracle_cascade(pkg, pkg.oracle_paths.threats)
         name = cascade[-1].label
         description = " — ".join(step.text for step in cascade)
-        threat_id = _next_threat_id(game, "threat_ac_")
+        threat_id = next_threat_id(game, "threat_ac_")
         creation_source = f"{AC_SOURCE_PREFIX}{hit.name}"
 
         threat = ThreatData.new(
@@ -717,7 +695,7 @@ def _flatten_revelation_seeds(turning_points: list[TurningPoint], limit: int) ->
         for hit in tp.plot_points:
             if hit.special_range is None and len(seeds) < limit:
                 seeds.append(hit)
-    return seeds[:limit]
+    return seeds
 
 
 def _ending_seeds(narrative: NarrativeState, limit: int) -> list[PlotlineEntry]:
@@ -818,7 +796,7 @@ def materialize_blueprint(seed: BlueprintSeed, voicing: dict[str, Any]) -> Story
         raise ValueError(
             f"voicing returned {len(voicing_revelations)} revelations, expected {bp_cfg.revelations_per_blueprint}"
         )
-    earliest = seed.acts[0].scene_range[0] if seed.acts else 1
+    earliest = seed.acts[0].scene_range[0]
     revelations: list[Revelation] = []
     for i, v in enumerate(voicing_revelations):
         weight = weights[i % len(weights)]

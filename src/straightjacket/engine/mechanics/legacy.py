@@ -53,7 +53,7 @@ def mark_legacy_ticks(game: GameState, track_name: str, ticks: int) -> int:
 
 def apply_threat_overcome_bonus(game: GameState, threat: ThreatData) -> int:
     cfg = eng().legacy
-    ratio = threat.menace_ticks / threat.max_menace_ticks if threat.max_menace_ticks else 0.0
+    ratio = threat.menace_ticks / threat.max_menace_ticks
     if ratio < cfg.threat_overcome_threshold:
         return 0
     game.campaign.xp += cfg.threat_overcome_bonus

@@ -45,20 +45,10 @@ def update_chaos_factor(game: GameState, result: str, target_npc_id: str | None 
                 game.world.tick_chaos(_c.adjust_dialog_friendly, floor=_c.min, ceiling=_c.max)
 
 
-def time_phases() -> list[str]:
-    return list(eng().enums.time_phases)
-
-
 def advance_time(game: GameState, progression: str) -> None:
     steps = eng().time_progression_steps.mapping[progression]
-    if not game.world.time_of_day or not steps:
-        return
-    phases = time_phases()
-    try:
-        idx = phases.index(game.world.time_of_day)
-    except ValueError:
-        return
-    game.world.time_of_day = phases[(idx + steps) % len(phases)]
+    phases = eng().enums.time_phases
+    game.world.time_of_day = phases[(phases.index(game.world.time_of_day) + steps) % len(phases)]
 
 
 def clear_facts(game: GameState) -> None:

@@ -11,17 +11,17 @@ from .spawn_sources import CLOCK_KEYED_SOURCE_PREFIX
 
 
 def _eval_clock_fills(game: GameState, value: str) -> bool:
-    pool, threshold = _parse_pattern_value(value, "clock_fills")
+    pool, threshold = _parse_pattern_value(value)
     return len(_clock_pool_candidates(game, pool, threshold, exclude_ids=set())) > 0
 
 
 def _eval_threat_menace_phase(game: GameState, value: str) -> bool:
-    pool, threshold = _parse_pattern_value(value, "threat_menace_phase")
+    pool, threshold = _parse_pattern_value(value)
     return len(_threat_pool_candidates(game, pool, threshold, exclude_ids=set())) > 0
 
 
 def _eval_bond_threshold(game: GameState, value: str) -> bool:
-    pool, threshold = _parse_pattern_value(value, "bond_threshold")
+    pool, threshold = _parse_pattern_value(value)
     return len(_bond_pool_candidates(game, pool, threshold, exclude_ids=set())) > 0
 
 
@@ -36,8 +36,7 @@ def _eval_chaos_extreme(game: GameState, value: str) -> bool:
 
 
 def _eval_scene_count(game: GameState, value: str) -> bool:
-    threshold = _parse_int(value, "scene_count")
-    return game.narrative.scene_count >= threshold
+    return game.narrative.scene_count >= int(value)
 
 
 def _bond_pool_candidates(
@@ -74,7 +73,7 @@ def _threat_pool_candidates(
     if pool != "any":
         threat = next((t for t in game.threats if t.name == pool), None)
         if threat is None:
-            return []
+            raise KeyError(f"threat_menace_phase trigger references unknown threat {pool!r}")
         if threat.id in exclude_ids:
             return []
         return [threat.id] if threat.menace_filled_boxes >= threshold else []
@@ -136,7 +135,7 @@ def _resolve_pattern_entity(
     value: str,
     already_bound: set[str],
 ) -> str | None:
-    pool, threshold = _parse_pattern_value(value, trigger_type)
+    pool, threshold = _parse_pattern_value(value)
     grammar = eng().keyed_scenes.pattern_grammars[trigger_type]
     strategy = grammar.matcher_strategy
 
@@ -169,24 +168,9 @@ def _resolve_pattern_entity(
     raise ValueError(f"trigger_type {trigger_type!r} has no resolver")
 
 
-def _parse_pattern_value(value: str, trigger_name: str) -> tuple[str, int]:
-    pool, threshold_str = _split_two(value, trigger_name)
-    threshold = _parse_int(threshold_str, f"{trigger_name}.threshold")
-    return pool, threshold
-
-
-def _split_two(value: str, trigger_name: str) -> tuple[str, str]:
-    parts = value.split(":", 1)
-    if len(parts) != 2 or not parts[0] or not parts[1]:
-        raise ValueError(f"{trigger_name} trigger_value must be '<pool>:<n>', got {value!r}")
-    return parts[0], parts[1]
-
-
-def _parse_int(text: str, label: str) -> int:
-    try:
-        return int(text)
-    except ValueError as exc:
-        raise ValueError(f"{label} must be an integer, got {text!r}") from exc
+def _parse_pattern_value(value: str) -> tuple[str, int]:
+    pool, threshold = value.split(":", 1)
+    return pool, int(threshold)
 
 
 _EVALUATORS: dict[str, Callable[[GameState, str], bool]] = {
@@ -222,7 +206,7 @@ def evaluate_keyed_scenes(game: GameState) -> KeyedScene | None:
 
 
 def _bound_entity_meets_threshold(game: GameState, trigger_type: str, value: str, entity_id: str) -> bool:
-    _pool, threshold = _parse_pattern_value(value, trigger_type)
+    _pool, threshold = _parse_pattern_value(value)
     if trigger_type == "bond_threshold":
         npc = find_npc(game, entity_id)
         if npc is None:
@@ -231,7 +215,7 @@ def _bound_entity_meets_threshold(game: GameState, trigger_type: str, value: str
     if trigger_type == "threat_menace_phase":
         threat = next((t for t in game.threats if t.id == entity_id), None)
         if threat is None:
-            return False
+            raise KeyError(f"threat_menace_phase keyed scene is bound to unknown threat {entity_id!r}")
         return threat.menace_filled_boxes >= threshold
     if trigger_type == "clock_fills":
         for clock in game.world.clocks:
@@ -254,10 +238,7 @@ def _next_clock_keyed_scene_id(narrative: NarrativeState) -> str:
 
 
 def spawn_keyed_scenes_for_clock(narrative: NarrativeState, clock: ClockData) -> int:
-    cks = eng().clock_keyed_scenes.by_clock_type
-    if clock.clock_type not in cks:
-        return 0
-    entry = cks[clock.clock_type]
+    entry = eng().clock_keyed_scenes.by_clock_type[clock.clock_type]
 
     spawned = 0
     for fraction in entry.fractions:

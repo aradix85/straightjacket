@@ -3,7 +3,6 @@ from straightjacket.engine.mechanics.random_events import (
     add_character_weight,
     add_thread_weight,
     consolidate_threads,
-    deactivate_thread,
     generate_random_event,
     roll_event_focus,
     roll_meaning_table,
@@ -216,15 +215,6 @@ def test_consolidate_threads_under_threshold_noop() -> None:
     ]
     consolidate_threads(game)
     assert game.narrative.threads[0].weight == 3
-
-
-def test_deactivate_thread() -> None:
-    game = make_game_state()
-    game.narrative.threads = [
-        ThreadEntry(id="t1", name="Quest", weight=2, active=True, source="creation", thread_type="vow")
-    ]
-    deactivate_thread(game, "t1")
-    assert game.narrative.threads[0].active is False
 
 
 def test_random_event_roundtrip() -> None:

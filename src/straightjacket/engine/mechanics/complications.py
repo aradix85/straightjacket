@@ -36,10 +36,9 @@ def spawn_complication_clock(game: GameState, kind: str, danger: str) -> ClockDa
     return clock
 
 
-def avert_complication(game: GameState, name: str) -> bool:
+def avert_complication(game: GameState, name: str) -> None:
     clock = next((c for c in open_complications(game) if c.name == name), None)
     if clock is None:
-        return False
+        raise ValueError(f"No open complication clock named {name!r}")
     game.world.clocks.remove(clock)
     log(f"[Complication] clock '{name}' averted at {clock.filled}/{clock.segments}")
-    return True

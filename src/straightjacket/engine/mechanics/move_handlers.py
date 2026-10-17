@@ -72,8 +72,7 @@ def apply_suffer_handler(game: GameState, roll_result: str, params: dict[str, An
             res.adjust_momentum(miss_extra_momentum, floor=_e.momentum.floor, ceiling=_e.momentum.max)
             result.consequences.append(_labels["momentum_change"].format(value=str(miss_extra_momentum)))
 
-        track_value = getattr(res, track, None) if track in ("health", "spirit", "supply") else None
-        if track_value is not None and track_value <= 0:
+        if track in ("health", "spirit", "supply") and getattr(res, track) <= 0:
             impact_pair = params["impact_pair"]
             if impact_pair:
                 chosen = impact_pair[0] if impact_pair[0] not in game.impacts else impact_pair[1]

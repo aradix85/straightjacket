@@ -48,7 +48,7 @@ def test_lookup_character_special_trait_full_coverage_1_to_100() -> None:
 
 @pytest.mark.parametrize("roll", [0, -1, 101, 200])
 def test_lookup_character_special_trait_out_of_range_raises(roll: int) -> None:
-    with pytest.raises(ValueError, match=r"outside 1\.\.100"):
+    with pytest.raises(LookupError, match="covers"):
         lookup_character_special_trait(roll)
 
 
@@ -76,7 +76,7 @@ def test_lookup_character_identity_boundary_examples() -> None:
 
 @pytest.mark.parametrize("roll", [0, -1, 101, 9999])
 def test_lookup_character_identity_out_of_range_raises(roll: int) -> None:
-    with pytest.raises(ValueError, match=r"outside 1\.\.100"):
+    with pytest.raises(LookupError, match="covers"):
         lookup_character_identity(roll)
 
 
@@ -99,7 +99,7 @@ def test_lookup_character_descriptor_boundary_examples() -> None:
 
 @pytest.mark.parametrize("roll", [0, -1, 101])
 def test_lookup_character_descriptor_out_of_range_raises(roll: int) -> None:
-    with pytest.raises(ValueError, match=r"outside 1\.\.100"):
+    with pytest.raises(LookupError, match="covers"):
         lookup_character_descriptor(roll)
 
 

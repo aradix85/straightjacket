@@ -54,8 +54,8 @@ def _maybe_tick_weak_hit_clock(
 def _maybe_avert_complication(game: GameState, brain: BrainResult, roll: RollResult, consequences: list[str]) -> None:
     if not brain.target_clock or roll.result not in ("STRONG_HIT", "WEAK_HIT"):
         return
-    if avert_complication(game, brain.target_clock):
-        consequences.append(eng().ai_text.consequence_labels["complication_averted"].format(name=brain.target_clock))
+    avert_complication(game, brain.target_clock)
+    consequences.append(eng().ai_text.consequence_labels["complication_averted"].format(name=brain.target_clock))
 
 
 def _collect_threat_events(game: GameState, roll: RollResult) -> list[ThreatEvent]:

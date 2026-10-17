@@ -155,14 +155,6 @@ class TestThreatOvercomeBonus:
         bonus = apply_threat_overcome_bonus(game, threat)
         assert bonus == 2
 
-    def test_zero_max_menace_safe(self, stub_engine: None) -> None:
-        from straightjacket.engine.mechanics.legacy import apply_threat_overcome_bonus
-
-        game = _game()
-        threat = make_threat(id="t1", name="Foo", menace_ticks=0, max_menace_ticks=0)
-        bonus = apply_threat_overcome_bonus(game, threat)
-        assert bonus == 0
-
 
 class TestCampaignSnapshot:
     def test_snapshot_captures_xp(self, stub_engine: None) -> None:

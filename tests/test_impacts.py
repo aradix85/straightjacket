@@ -1,3 +1,5 @@
+import pytest
+
 from straightjacket.engine.models import GameState, Resources
 from tests._helpers import make_game_state
 
@@ -24,11 +26,12 @@ class TestApplyImpact:
         assert apply_impact(game, "wounded") is False
         assert game.impacts.count("wounded") == 1
 
-    def test_apply_unknown_impact_returns_false(self, stub_engine: None) -> None:
+    def test_apply_unknown_impact_raises(self, stub_engine: None) -> None:
         from straightjacket.engine.mechanics.impacts import apply_impact
 
         game = _game()
-        assert apply_impact(game, "nonexistent_impact") is False
+        with pytest.raises(KeyError, match="nonexistent_impact"):
+            apply_impact(game, "nonexistent_impact")
         assert "nonexistent_impact" not in game.impacts
 
 

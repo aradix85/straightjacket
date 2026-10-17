@@ -87,29 +87,21 @@ def test_advance_time_none_progression_noop(load_engine: None) -> None:
     assert g.world.time_of_day == "morning"
 
 
-def test_advance_time_no_current_time_noop(load_engine: None) -> None:
-    from straightjacket.engine.mechanics.world import advance_time
-
-    g = make_game_state()
-    g.world.time_of_day = ""
-    advance_time(g, "moderate")
-    assert g.world.time_of_day == ""
-
-
-def test_advance_time_unknown_phase_noop(load_engine: None) -> None:
+def test_advance_time_unknown_phase_raises(load_engine: None) -> None:
     from straightjacket.engine.mechanics.world import advance_time
 
     g = make_game_state()
     g.world.time_of_day = "tea_time"
-    advance_time(g, "moderate")
-    assert g.world.time_of_day == "tea_time"
+    with pytest.raises(ValueError, match="tea_time"):
+        advance_time(g, "moderate")
 
 
 def test_advance_time_moderate_advances(load_engine: None) -> None:
-    from straightjacket.engine.mechanics.world import advance_time, time_phases
+    from straightjacket.engine.engine_loader import eng
+    from straightjacket.engine.mechanics.world import advance_time
 
     g = make_game_state()
-    phases = time_phases()
+    phases = eng().enums.time_phases
     g.world.time_of_day = phases[0]
     advance_time(g, "moderate")
     assert g.world.time_of_day != phases[0]
@@ -117,10 +109,11 @@ def test_advance_time_moderate_advances(load_engine: None) -> None:
 
 
 def test_advance_time_long_wraps(load_engine: None) -> None:
-    from straightjacket.engine.mechanics.world import advance_time, time_phases
+    from straightjacket.engine.engine_loader import eng
+    from straightjacket.engine.mechanics.world import advance_time
 
     g = make_game_state()
-    phases = time_phases()
+    phases = eng().enums.time_phases
     g.world.time_of_day = phases[-1]
     advance_time(g, "long")
     assert g.world.time_of_day in phases
@@ -200,6 +193,7 @@ def test_apply_brain_location_time_with_change(load_engine: None) -> None:
 
     g = make_game_state()
     g.world.current_location = "Tavern"
+    g.world.time_of_day = "morning"
     brain = make_brain_result(
         move="adventure/face_danger", location_change=LocationChange(name="Castle", kind="location")
     )
@@ -212,6 +206,7 @@ def test_apply_brain_location_time_without_change(load_engine: None) -> None:
 
     g = make_game_state()
     g.world.current_location = "Tavern"
+    g.world.time_of_day = "morning"
     brain = make_brain_result(move="dialog", location_change=None)
     assert apply_brain_location_time(g, brain) is False
     assert g.world.current_location == "Tavern"

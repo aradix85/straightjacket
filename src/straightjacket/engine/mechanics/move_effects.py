@@ -84,16 +84,10 @@ def parse_effect(effect_str: str) -> MoveEffect:
     if m:
         return MoveEffect(type="complication", target=m.group(1))
 
-    if effect_str in ("pay_the_price", "narrative", "suffer_move", "disposition_shift", "raise_connection_rank"):
+    if effect_str in ("pay_the_price", "narrative", "disposition_shift", "raise_connection_rank"):
         return MoveEffect(type=effect_str)
 
-    if effect_str.startswith("suffer_move"):
-        parts = effect_str.split()
-        if len(parts) == 2:
-            return MoveEffect(type="suffer_move", value=int(parts[1]))
-
-    log(f"[MoveOutcome] Unknown effect: {effect_str!r}", level="warning")
-    return MoveEffect(type="unknown", target=effect_str)
+    raise ValueError(f"Unknown move effect {effect_str!r}")
 
 
 def parse_effects(effect_list: list[str]) -> list[MoveEffect]:
@@ -370,11 +364,7 @@ def apply_effects(game: GameState, effects: list[MoveEffect], target_npc_id: str
     target = find_npc(game, target_npc_id) if target_npc_id else None
 
     for effect in effects:
-        handler = _EFFECT_HANDLERS.get(effect.type)
-        if handler:
-            handler(game, effect, result, target)
-        elif effect.type != "unknown":
-            log(f"[MoveOutcome] Unhandled effect type: {effect.type}", level="warning")
+        _EFFECT_HANDLERS[effect.type](game, effect, result, target)
 
     return result
 

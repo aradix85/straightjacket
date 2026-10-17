@@ -40,10 +40,11 @@ def test_a_connection_offers_its_aid(load_engine: None) -> None:
     assert (option.add, option.momentum_on_hit) == (1, 1)
 
 
-def test_an_unknown_choice_is_ignored(load_engine: None) -> None:
+def test_a_bonus_not_on_offer_raises(load_engine: None) -> None:
     from straightjacket.engine.mechanics.bonuses import chosen_bonus
 
-    assert chosen_bonus(_game_with("companion/combat_bot"), "companion/combat_bot#7") is None
+    with pytest.raises(ValueError, match="combat_bot#7"):
+        chosen_bonus(_game_with("companion/combat_bot"), "companion/combat_bot#7")
 
 
 @pytest.mark.parametrize(("dice", "momentum_after"), [([3, 9, 9], 2), ([6, 1, 1], 3)])

@@ -31,11 +31,6 @@ def resolve_move_outcome(
     if effects_raw is None:
         raise ValueError(f"No effects for {move_key}/{result_key}. Add it to engine.yaml move_outcomes.")
 
-    if isinstance(effects_raw, str):
-        effects_raw = [effects_raw]
-    elif not isinstance(effects_raw, list):
-        effects_raw = list(effects_raw)
-
     effects = parse_effects(effects_raw)
     if match and roll_result == "MISS" and has_story_complication(game):
         effects = [MoveEffect(type="story_complication") if e.type == "pay_the_price" else e for e in effects]

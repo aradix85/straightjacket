@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import pytest
+
 from straightjacket.engine.mechanics.adventure_crafter import (
     PlotPointHit,
     TurningPoint,
@@ -187,10 +189,9 @@ def test_fill_handler_progress_clock_completes_linked_track(load_engine: None) -
     assert track.status == "completed"
 
 
-def test_fill_handler_unknown_clock_type_returns_none(load_engine: None) -> None:
+def test_fill_handler_unknown_clock_type_raises(load_engine: None) -> None:
     g = make_game_state(player_name="Hero", setting_id="starforged")
     clock = make_clock(name="Strange", clock_type="unmapped", segments=4, filled=4)
 
-    fill = resolve_clock_fill(g, clock)
-
-    assert fill is None
+    with pytest.raises(KeyError, match="unmapped"):
+        resolve_clock_fill(g, clock)

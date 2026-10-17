@@ -11,7 +11,7 @@ from .clocks import count_emergent_clocks, unique_clock_name
 from .keyed_scenes import spawn_keyed_scenes_for_clock
 from ..npc import find_npc
 from .spawn_sources import RANDOM_EVENT_SOURCE_PREFIX
-from .threats import count_emergent_threats
+from .threats import count_emergent_threats, next_threat_id
 
 
 _pending_events: list[RandomEvent] = []
@@ -57,9 +57,6 @@ def roll_meaning_table(table_name: str) -> tuple[str, str]:
 
 
 def _select_from_weighted_list(entries: list[Any]) -> tuple[str, str]:
-    if not entries:
-        return "", ""
-
     active = [e for e in entries if e.active]
     if not active:
         return "", ""
@@ -67,9 +64,6 @@ def _select_from_weighted_list(entries: list[Any]) -> tuple[str, str]:
     pool: list[tuple[str, str]] = []
     for entry in active:
         pool.extend([(entry.name, entry.id)] * entry.weight)
-
-    if not pool:
-        return "", ""
 
     return random.choice(pool)
 
@@ -193,13 +187,6 @@ def _re_threat_already_spawned(game: GameState, focus: str, target_id: str) -> b
     return any(t.creation_source == target for t in game.threats)
 
 
-def _next_threat_id(game: GameState, prefix: str) -> str:
-    n = 1
-    while any(t.id == f"{prefix}{n}" for t in game.threats):
-        n += 1
-    return f"{prefix}{n}"
-
-
 def spawn_threat_from_random_event(game: GameState, event: RandomEvent) -> ThreatData | None:
     cfg = eng().random_events
     if event.focus not in cfg.threat_creation_mapping:
@@ -217,7 +204,7 @@ def spawn_threat_from_random_event(game: GameState, event: RandomEvent) -> Threa
     entry = cfg.threat_creation_mapping[event.focus]
     name = _name_from_mythic_pair(event.meaning_action, event.meaning_subject)
     description = f"{event.meaning_action} / {event.meaning_subject}"
-    threat_id = _next_threat_id(game, "threat_re_")
+    threat_id = next_threat_id(game, "threat_re_")
     creation_source = f"{RANDOM_EVENT_SOURCE_PREFIX}{event.focus}:{dedup_key}"
 
     threat = ThreatData.new(
@@ -332,11 +319,3 @@ def consolidate_characters(game: GameState) -> None:
         )
 
     log(f"[Lists] Consolidated {len(chars)} characters")
-
-
-def deactivate_thread(game: GameState, thread_id: str) -> None:
-    for t in game.narrative.threads:
-        if t.id == thread_id:
-            t.active = False
-            log(f"[Lists] Thread '{t.name}' deactivated")
-            return

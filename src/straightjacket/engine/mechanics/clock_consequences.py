@@ -13,17 +13,11 @@ def _has_pending_keyed_scene_for_clock(game: GameState, clock_name: str) -> bool
 
 
 def resolve_clock_fill(game: GameState, clock: ClockData) -> ClockFillResult | None:
-    cfg = eng().clocks.fill_consequences
-    if clock.clock_type not in cfg:
-        log(f"[ClockFill] no fill-consequence entry for clock_type='{clock.clock_type}', skipping")
-        return None
-
     if _has_pending_keyed_scene_for_clock(game, clock.name):
         log(f"[ClockFill] '{clock.name}' has attached keyed-scene, default suppressed")
         return None
 
-    entry = cfg[clock.clock_type]
-    tag_text = entry.tag_template.format(clock_name=clock.name)
+    tag_text = eng().clocks.fill_consequences[clock.clock_type].tag_template.format(clock_name=clock.name)
     track_completed = False
 
     if clock.clock_type == "progress":
@@ -39,7 +33,6 @@ def resolve_clock_fill(game: GameState, clock: ClockData) -> ClockFillResult | N
 
 
 def _try_complete_linked_track(game: GameState, clock: ClockData) -> bool:
-
     for track in game.progress_tracks:
         if track.name == clock.name and track.status == "active":
             complete_track(game, track.id, "completed")

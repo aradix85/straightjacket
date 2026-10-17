@@ -31,9 +31,10 @@ def resolve_fate_chart(odds: str, chaos_factor: int, question: str, roll: int | 
 
     if odds not in chart:
         raise KeyError(f"Unknown odds level '{odds}' (valid: {sorted(chart.keys())})")
+    if not 1 <= chaos_factor <= len(chart[odds]):
+        raise KeyError(f"Unknown chaos_factor {chaos_factor} (valid: 1..{len(chart[odds])})")
 
-    cf_index = max(0, min(8, chaos_factor - 1))
-    cell = chart[odds][cf_index]
+    cell = chart[odds][chaos_factor - 1]
 
     if roll is None:
         roll = random.randint(1, eng().dice.fate_chart_die)
@@ -69,8 +70,6 @@ def resolve_fate_chart(odds: str, chaos_factor: int, question: str, roll: int | 
 def _check_chart_random_event(roll: int, chaos_factor: int) -> bool:
     if roll == eng().dice.fate_chart_die:
         return True
-    if roll < 11:
-        return False
     tens = roll // 10
     ones = roll % 10
     if tens != ones:
@@ -149,8 +148,10 @@ def resolve_fate(
 
     if method == "fate_check":
         result = resolve_fate_check(odds, chaos_factor, question)
-    else:
+    elif method == "fate_chart":
         result = resolve_fate_chart(odds, chaos_factor, question)
+    else:
+        raise ValueError(f"Unknown fate method {method!r}; valid: 'fate_chart', 'fate_check'")
 
     if result.random_event_triggered:
         from .random_events import generate_random_event

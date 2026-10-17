@@ -123,13 +123,13 @@ def test_plot_point_lookup_covers_full_d100(theme: str):
 
 
 def test_plot_point_lookup_unknown_theme_raises():
-    with pytest.raises(KeyError, match="unknown theme"):
+    with pytest.raises(LookupError, match="covers theme='horror'"):
         lookup_plot_point("horror", 50)
 
 
 @pytest.mark.parametrize("bad_roll", [0, -1, 101, 200])
 def test_plot_point_lookup_out_of_range_roll_raises(bad_roll: int):
-    with pytest.raises(ValueError, match=r"outside 1\.\.100"):
+    with pytest.raises(LookupError, match="covers"):
         lookup_plot_point("action", bad_roll)
 
 
@@ -171,7 +171,7 @@ def test_meta_lookup_at_boundaries(roll: int, expected_name: str):
 
 @pytest.mark.parametrize("bad_roll", [0, -1, 101, 200])
 def test_meta_lookup_out_of_range_roll_raises(bad_roll: int):
-    with pytest.raises(ValueError, match=r"outside 1\.\.100"):
+    with pytest.raises(LookupError, match="covers"):
         lookup_meta_plot_point(bad_roll)
 
 
@@ -221,7 +221,7 @@ def test_lookup_theme_priority_alternates_on_ten():
 
 @pytest.mark.parametrize("bad_roll", [0, -1, 11, 100])
 def test_lookup_theme_priority_out_of_range_raises(bad_roll: int):
-    with pytest.raises(ValueError, match=r"outside 1\.\.10"):
+    with pytest.raises(LookupError, match="covers"):
         lookup_theme_priority(bad_roll, ThemeAlternation())
 
 

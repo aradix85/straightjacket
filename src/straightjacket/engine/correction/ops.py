@@ -97,7 +97,7 @@ def _op_scene_context(game: GameState, op_dict: dict[str, Any]) -> None:
 
 
 def _op_time_edit(game: GameState, op_dict: dict[str, Any]) -> None:
-    if op_dict["value"]:
+    if op_dict["value"] in eng().enums.time_phases:
         game.world.time_of_day = op_dict["value"]
         log(f"[Correction] time_of_day → {game.world.time_of_day}")
 

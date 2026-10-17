@@ -5,7 +5,7 @@ from collections.abc import Sequence
 
 from ..engine_loader import eng
 from ..models import BrainResult, GameState, RollResult
-from .resolvers import is_dialog_memory, move_category
+from .resolvers import is_dialog_branch, is_dialog_memory, move_category
 
 
 def derive_memory_emotion(move: str, result: str, disposition: str) -> str:
@@ -61,11 +61,9 @@ def generate_engine_memories(
         if npc.status not in eng().npc_status_groups.in_play:
             continue
 
-        is_targeted = brain.target_npc and brain.target_npc == npc.id
-
         if is_dialog:
-            template_key = "dialog" if (is_targeted or brain.target_npc) else "dialog_no_target"
-        elif is_targeted:
+            template_key = "dialog" if brain.target_npc else "dialog_no_target"
+        elif brain.target_npc == npc.id:
             template_key = "action_targeted"
         else:
             template_key = "action"
@@ -76,11 +74,11 @@ def generate_engine_memories(
             scene=scene,
             player=game.player_name,
             npc=npc.name,
-            intent=intent[: eng().truncations.log_medium] if intent else "general",
+            intent=intent[: eng().truncations.log_medium] if intent else _e.ai_text.narrator_defaults["unknown_intent"],
             move_verb=move_verb,
             result_text=result_text,
             move=move,
-            consequences=", ".join(consequences[:_cons_max]) if consequences else "",
+            consequences=", ".join(consequences[:_cons_max]),
         )
 
         emotional = derive_memory_emotion(move, result, npc.disposition)
@@ -113,14 +111,13 @@ def generate_scene_context(
     location = game.world.current_location or _defaults["unknown_location"]
     npc_summary = ", ".join(activated_npc_names[:_npc_max]) if activated_npc_names else _defaults["no_npcs_nearby"]
 
-    if is_dialog_memory(brain, roll_present=roll is not None):
+    if roll is None or is_dialog_branch(brain):
         return _e.scene_context.dialog.format(location=location, npc_summary=npc_summary)
 
-    result = roll.result if roll else "MISS"
     verb_map = _e.get_raw("memory_move_verbs")
     move_label = verb_map[move] if move in verb_map else move
     return _e.scene_context.template.format(
-        result=result,
+        result=roll.result,
         move_label=move_label,
         location=location,
         npc_summary=npc_summary,

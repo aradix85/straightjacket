@@ -27,7 +27,6 @@ __all__ = [
     "consolidate_characters",
     "consolidate_threads",
     "current_place",
-    "deactivate_thread",
     "derive_memory_emotion",
     "dispatch_meta",
     "drain_pending_events",
@@ -83,7 +82,6 @@ __all__ = [
     "settle_facts_by_miss",
     "sync_combat_tracks",
     "tick_autonomous_clocks",
-    "time_phases",
     "update_chaos_factor",
     "update_location",
 ]
@@ -156,7 +154,6 @@ from .random_events import (
     add_thread_weight,
     consolidate_characters,
     consolidate_threads,
-    deactivate_thread,
     drain_pending_events,
     generate_random_event,
     roll_event_focus,
@@ -192,7 +189,6 @@ from .world import (
     get_pacing_hint,
     locations_match,
     record_scene_intensity,
-    time_phases,
     update_chaos_factor,
     update_location,
 )

@@ -122,8 +122,10 @@ def test_a_fired_or_unknown_complication_cannot_be_headed_off(load_engine: None)
     fired = _complication(filled=4)
     fired.fired = True
     game.world.clocks = [fired]
-    assert not avert_complication(game, "A beacon calls the raiders")
-    assert not avert_complication(game, "Something else")
+    with pytest.raises(ValueError, match="A beacon calls the raiders"):
+        avert_complication(game, "A beacon calls the raiders")
+    with pytest.raises(ValueError, match="Something else"):
+        avert_complication(game, "Something else")
     assert game.world.clocks == [fired]
 
 

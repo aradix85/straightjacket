@@ -69,15 +69,12 @@ def _lookup_adjustment(table: list[dict[str, Any]], roll: int) -> str:
 
 
 def _roll_single_adjustment(table: list[dict[str, Any]]) -> str:
-    for _ in range(10):
-        roll = random.randint(1, eng().dice.scene_adjustment_die)
-        result = _lookup_adjustment(table, roll)
-        if result != "make_2_adjustments":
-            return result
-    raise RuntimeError(
-        "scene_adjustment table produced 10 consecutive make_2_adjustments rolls; "
-        "single-adjustment entries are unreachable"
-    )
+    faces = [
+        roll
+        for roll in range(1, eng().dice.scene_adjustment_die + 1)
+        if _lookup_adjustment(table, roll) != "make_2_adjustments"
+    ]
+    return _lookup_adjustment(table, random.choice(faces))
 
 
 def adjustment_descriptions(adjustments: list[str]) -> list[str]:
