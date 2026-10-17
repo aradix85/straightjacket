@@ -12,6 +12,7 @@ Closing a step: the checks of CONTRIBUTING.md pass, the step moves to DONE at th
 
 - The user writes in Dutch and reads with a screen reader: answers are in Dutch and in plain prose, while the repository stays in English.
 - A session starts by reading every md file in the root and in `docs/`, of the CHANGELOG only the entries since the last finished step, and then continues with NEXT STEP. The design document is not in the repository; README.md links it.
+- The user wants as much as possible to come from the source material: where a table of the rulebooks can settle what the narrator still invents, that is the fix to reach for, ahead of new prompt wording, which on Sonnet stayed within the noise (step 9f).
 - The Elvira sessions a step needs are part of the work; a twelve-turn session on Sonnet costs about 55 to 65 cents. Say what a measuring round will cost before starting it; the API spend limit is set in the Claude Console (Settings, Billing).
 - Each finished release is committed and pushed to main.
 - On this machine the API keys live in the Windows user environment (`ANTHROPIC_API_KEY` for the game and Elvira, `OPENAI_API_KEY` for the judges of the measuring setup); a process started by a tool may need them set in its own environment first.
@@ -153,6 +154,8 @@ The measuring setup outside the repository captures narrator calls only; no situ
 **10.5** Tests.
 
 **10.6** The setting's own tables feed these generators: the atlas regions of classic and Sundered Isles for locations; the Datasworn NPC entries (classic ironlanders, firstborn, animals, beasts, horrors; Delve and Starforged entries), Starforged creatures and starships, and Delve monstrosities for encounters.
+
+**10.7** Perils and opportunities of the place. Starforged's location themes, derelicts, vaults, planets, and space, and Sundered Isles' overland, caves, ruins, and shipwrecks each have a peril and an opportunity table. At a generated place, a miss takes its worsening from the place's peril table, and a result whose move text offers an opportunity takes it from the opportunity table; each reaches the narrator as a consequence it must tell, the way a weak hit's complication does, so the worsening comes from the place instead of the narrator. How a peril relates to Pay the Price, which the engine rolls on a miss today, is checked against the books first. Classic Ironsworn has no such tables and keeps Pay the Price; Delve's Reveal a Danger comes with its sites in step 26. A place keeps the choices its rolls made (today it keeps only their text), so a path such as `location_themes/{theme}/peril` in its generator entry resolves on a later turn.
 
 If the user buys the Location Crafter (Word Mill Games, under the same CC BY-NC license as Mythic), its tables join step 10 as data for areas where the setting has no location tools of its own; until then step 10 uses the setting's oracles only.
 

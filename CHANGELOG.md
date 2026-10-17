@@ -8,6 +8,12 @@ This log starts at 2026.09.24.0, the restart after a four-month pause. Earlier r
 
 Calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day.
 
+## [2026.10.17.3] — 2026-10-17
+
+Documentation only. Step 10 gains substep 10.7, at the user's request: at a generated place, a miss takes its worsening from the place's own peril table and an offered opportunity from its opportunity table (Starforged's location themes, derelicts, vaults, planets, and space; Sundered Isles' overland, caves, ruins, and shipwrecks), so the soft and unconnected costs that Elvira's audit keeps finding on misses come from the source tables instead of the narrator. The roadmap's notes for sessions with the user record the user's preference to settle from the source material whatever a rulebook table can settle.
+
+Quality gate: project-rule scans clean. No code, prompt, or configuration changed.
+
 ## [2026.10.17.2] — 2026-10-17
 
 Step 9e, the open findings from Elvira runs, each fixed in the engine. A `present` fact answered no about the NPC an action targets now releases that target, so the narrator is no longer told an NPC is out of reach while the same NPC is the one the action is aimed at. The metadata extraction's schema offers only known NPC ids for renames and details. An NPC records whether the engine rolled its name: a different full name for such an NPC becomes a new figure, while a figure the narration named, such as a lore figure, now takes its revealed name instead of spawning a stub. A figure matched by description keeps the known NPC's name (a classic run had renamed "Corrin Hale" to "Warden archer"), and a chapter opening no longer registers "Maren" beside the returning "Maren Silk". Blueprint voicing asks once more when its counts are wrong, the user's choice. In dialogs the NPC's fact budget governs instead of "nothing beyond the question", also the user's choice: on the two dialog situations the blind reader preferred the variant 5 to 4 when shown its prompt, and the old prompt 5 to 2 when shown the old rule, which forbids what the budget allows. The coverage tracker no longer misses NPC introductions. Step 9g becomes NEXT STEP.
