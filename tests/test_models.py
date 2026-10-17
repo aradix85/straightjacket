@@ -188,7 +188,7 @@ def test_phase_trigger_dedup(load_engine: None) -> None:
     assert reason2 != "phase:resolution"
 
 
-def test_memory_guard_rejects_zero_overlap() -> None:
+def test_an_engine_rolled_name_is_not_replaced_by_one_without_overlap() -> None:
     from straightjacket.engine.npc.processing import process_npc_details
 
     game = make_game_state()
@@ -196,6 +196,7 @@ def test_memory_guard_rejects_zero_overlap() -> None:
         id="npc_1",
         name="Theo",
         status="active",
+        name_rolled=True,
         memory=[make_memory(scene=1, event="Met the player", importance=5)],
     )
     game.npcs.append(npc)

@@ -39,10 +39,10 @@ def _insert_npcs(conn: sqlite3.Connection, game: GameState) -> None:
     for n in game.npcs:
         conn.execute(
             "INSERT INTO npcs (id, name, description, agenda, instinct, arc, secrets, "
-            "disposition, status, introduced, aliases, keywords, "
+            "disposition, status, name_rolled, introduced, aliases, keywords, "
             "importance_accumulator, last_reflection_scene, last_location, needs_reflection, "
             "gather_count) "
-            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             (
                 n.id,
                 n.name,
@@ -53,6 +53,7 @@ def _insert_npcs(conn: sqlite3.Connection, game: GameState) -> None:
                 json.dumps(n.secrets, ensure_ascii=False),
                 n.disposition,
                 n.status,
+                int(n.name_rolled),
                 int(n.introduced),
                 json.dumps(n.aliases, ensure_ascii=False),
                 json.dumps(n.keywords, ensure_ascii=False),

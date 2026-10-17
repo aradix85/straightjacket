@@ -522,3 +522,27 @@ def test_a_fact_type_with_an_unknown_subject_raises() -> None:
     data["fact_resolution"]["types"]["locked"]["subject"] = "room"
     with pytest.raises(ValueError, match="subject"):
         parse_engine_yaml(data)
+
+
+@pytest.mark.parametrize(("answer", "target"), [("no", None), ("yes", "npc_1")])
+def test_a_target_that_is_not_present_leaves_the_scene(
+    load_engine: None, stub_emotions: None, monkeypatch: pytest.MonkeyPatch, answer: str, target: str | None
+) -> None:
+    from straightjacket.engine.game import process_turn
+    from straightjacket.engine.mechanics import facts
+
+    monkeypatch.setattr(facts, "resolve_fate", lambda game, odds, chaos_factor, question: _fate(answer))
+    _force(monkeypatch, "WEAK_HIT")
+    provider = _Provider(
+        _brain(
+            move="adventure/gather_information",
+            target_npc="npc_1",
+            undetermined_facts=[{"fact_type": "present", "about": "npc_1"}],
+        )
+    )
+    game, _n, _r, _o, _d = process_turn(provider, _game(), "I look for Mira among the stacks", _CONFIG)
+
+    assert game.last_turn_snapshot is not None
+    assert game.last_turn_snapshot.brain is not None
+    assert game.last_turn_snapshot.brain.target_npc == target
+    assert ('<target_npc name="Mira"' in provider.prompts[-1]) is (target is not None)

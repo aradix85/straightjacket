@@ -8,7 +8,7 @@ from straightjacket.engine.ai.metadata import apply_narrator_metadata
 from straightjacket.engine.director import _process_npc_reflection
 from straightjacket.engine.engine_loader import eng
 from straightjacket.engine.models import GameState, NpcData, Resources
-from tests._helpers import make_game_state, make_npc, make_npc_reflection
+from tests._helpers import make_game_state, make_memory, make_npc, make_npc_reflection
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 
@@ -73,7 +73,58 @@ def test_npc_introduced_and_killed_in_the_same_scene_is_marked_deceased(load_eng
     assert mara.status == "deceased"
 
 
-def test_blueprint_voicing_fixes_the_counts_in_its_schema_and_asks_once(load_engine: None) -> None:
+def test_a_figure_matched_by_description_keeps_the_named_npc_name(load_engine: None) -> None:
+    game = make_game_state()
+    game.world.current_location = "quarry road"
+    game.npcs = [
+        make_npc(
+            id="npc_3",
+            name="Corrin Hale",
+            status="active",
+            description="One of the two riders, he rides north by the quarry road in a warden's grey cloak.",
+            last_location="quarry road",
+        )
+    ]
+    metadata = {
+        "npc_renames": [],
+        "new_npcs": [
+            {
+                "name": "Warden archer",
+                "description": "A man in a warden's grey cloak, his sleeves crusted with frost-rimed mud.",
+                "disposition": "hostile",
+            }
+        ],
+        "npc_details": [],
+        "deceased_npcs": [],
+        "lore_npcs": [],
+    }
+    apply_narrator_metadata(game, metadata, scene_present_ids=set(), world_addition="")
+    [hale] = game.npcs
+    assert hale.name == "Corrin Hale"
+    assert "Warden archer" in hale.aliases
+
+
+def _detail(npc_id: str, full_name: str) -> dict:
+    return {
+        "npc_renames": [],
+        "new_npcs": [],
+        "npc_details": [{"npc_id": npc_id, "full_name": full_name, "description": ""}],
+        "deceased_npcs": [],
+        "lore_npcs": [],
+    }
+
+
+def test_a_name_revealed_for_an_unnamed_figure_is_taken(load_engine: None) -> None:
+    game = make_game_state()
+    memory = [make_memory(scene=1, event="A voice on the comm", emotional_weight="neutral", importance=3)]
+    game.npcs = [make_npc(id="npc_2", name="Unnamed woman on the comm", status="lore", memory=memory)]
+    apply_narrator_metadata(game, _detail("npc_2", "Kestrel Vane"), scene_present_ids=set(), world_addition="")
+    [kestrel] = game.npcs
+    assert kestrel.name == "Kestrel Vane"
+    assert "Unnamed woman on the comm" in kestrel.aliases
+
+
+def test_blueprint_voicing_fixes_the_counts_in_its_schema_and_asks_again_once(load_engine: None) -> None:
     import json
     import random
 
@@ -99,13 +150,13 @@ def test_blueprint_voicing_fixes_the_counts_in_its_schema_and_asks_once(load_eng
         )
 
     class Scripted:
-        def __init__(self, reply: str) -> None:
-            self.reply = reply
+        def __init__(self, *replies: str) -> None:
+            self.replies = list(replies)
             self.specs: list[AICallSpec] = []
 
         def create_message(self, spec: AICallSpec) -> AIResponse:
             self.specs.append(spec)
-            return AIResponse(content=self.reply)
+            return AIResponse(content=self.replies.pop(0) if len(self.replies) > 1 else self.replies[0])
 
     good = Scripted(voicing(blueprint.possible_endings_per_blueprint))
     result = call_blueprint_voicing(good, game, seed)
@@ -121,4 +172,11 @@ def test_blueprint_voicing_fixes_the_counts_in_its_schema_and_asks_once(load_eng
 
     short = Scripted(voicing(blueprint.possible_endings_per_blueprint - 1))
     assert call_blueprint_voicing(short, game, seed) is None
-    assert len(short.specs) == 1
+    assert len(short.specs) == blueprint.voicing_count_retries + 1
+    assert "wrong number of entries" in short.specs[-1].messages[-1]["content"]
+
+    corrected = Scripted(
+        voicing(blueprint.possible_endings_per_blueprint - 1), voicing(blueprint.possible_endings_per_blueprint)
+    )
+    assert call_blueprint_voicing(corrected, game, seed) is not None
+    assert [m["role"] for m in corrected.specs[-1].messages] == ["user", "assistant", "user"]

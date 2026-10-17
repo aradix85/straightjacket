@@ -15,6 +15,7 @@ def make_npc(**kwargs: Any) -> Any:
 
     kwargs.setdefault("disposition", "neutral")
     kwargs.setdefault("status", "active")
+    kwargs.setdefault("name_rolled", False)
     return NpcData(**kwargs)
 
 

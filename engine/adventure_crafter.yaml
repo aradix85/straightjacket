@@ -42,6 +42,7 @@ adventure_crafter:
     acts_kishotenketsu: 4
     revelations_per_blueprint: 3
     possible_endings_per_blueprint: 3
+    voicing_count_retries: 1
     three_act_phases:
       - setup
       - confrontation

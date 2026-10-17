@@ -66,7 +66,7 @@ def _apply_surname_update(npc: NpcData, new_name: str, paren_aliases: list[str])
 
 
 def _should_reject_identity_reveal(npc: NpcData, new_name: str) -> bool:
-    if not npc.memory:
+    if not npc.name_rolled:
         return False
     known_words: set[str] = set(normalize_for_match(npc.name).split())
     for a in npc.aliases:
@@ -88,6 +88,7 @@ def _create_stub_for_rejected_reveal(
         description=stub_desc,
         disposition=normalize_disposition("neutral"),
         status="active",
+        name_rolled=False,
         aliases=paren_aliases,
         last_location=game.world.current_location,
         introduced=False,
@@ -114,8 +115,8 @@ def _apply_name_update(game: "GameState", npc: NpcData, d: dict[str, Any], world
     if _should_reject_identity_reveal(npc, new_name):
         log(
             f"[NPC] npc_details: REJECTED identity reveal "
-            f"'{npc.name}' → '{new_name}': NPC has memories and "
-            f"zero word overlap — creating stub instead",
+            f"'{npc.name}' → '{new_name}': the engine rolled this NPC's name and "
+            f"the new one shares no word with it — creating stub instead",
             level="warning",
         )
         _create_stub_for_rejected_reveal(game, new_name, d, world_addition, paren_aliases)
@@ -192,29 +193,31 @@ def _handle_fuzzy_match(game: "GameState", nd: dict[str, Any]) -> bool:
         return False
 
     if match_type == "stt_variant":
-        variant = nd["name"].strip()
-        if normalize_for_match(variant) not in {normalize_for_match(a) for a in fuzzy_hit.aliases}:
-            fuzzy_hit.aliases.append(variant)
-            log(f"[NPC] Added STT variant as alias: '{variant}' -> '{fuzzy_hit.name}'")
-        if fuzzy_hit.status in ("background", "lore"):
-            reactivate_npc(fuzzy_hit, reason="STT variant reappeared")
+        _keep_name_add_alias(fuzzy_hit, nd["name"], reason="STT variant reappeared")
     else:
         merge_npc_identity(fuzzy_hit, nd["name"], nd["description"], game=game)
     return True
 
 
+def _keep_name_add_alias(npc: NpcData, label: str, reason: str) -> None:
+    label = label.strip()
+    if normalize_for_match(label) not in {normalize_for_match(a) for a in npc.aliases}:
+        npc.aliases.append(label)
+        log(f"[NPC] Added alias: '{label}' -> '{npc.name}'")
+    if npc.status in ("background", "lore"):
+        reactivate_npc(npc, reason=reason)
+
+
 def _handle_description_match(game: "GameState", nd: dict[str, Any], name_norm: str) -> bool:
     new_desc = nd["description"]
-    if not new_desc or len(new_desc) < 10:
-        return False
     desc_hit = description_match_existing_npc(game, new_desc, name_norm)
     if not desc_hit:
         return False
     if desc_hit.status == "deceased":
         log(f"[NPC] Description matched '{nd['name']}' to deceased '{desc_hit.name}' -- creating new NPC instead")
         return False
-    log(f"[NPC] Description-based dedup: '{nd['name']}' matches '{desc_hit.name}' -- treating as identity reveal")
-    merge_npc_identity(desc_hit, nd["name"], new_desc, game=game)
+    log(f"[NPC] Description-based dedup: '{nd['name']}' matches '{desc_hit.name}' -- same person, name kept")
+    _keep_name_add_alias(desc_hit, nd["name"], reason="described again in new_npcs")
     return True
 
 
@@ -236,6 +239,7 @@ def _create_new_npc(game: "GameState", nd: dict[str, Any]) -> NpcData:
         description=nd["description"],
         disposition=normalize_disposition(nd["disposition"]),
         status="active",
+        name_rolled=bool(oracle_name),
         aliases=paren_aliases,
         last_location=game.world.current_location,
         introduced=True,

@@ -410,6 +410,7 @@ class FactTypeConfig:
     base_score: int
     inputs: dict[str, int]
     cleared_by_hit: bool
+    no_releases_target: bool
 
 
 @dataclass
@@ -744,6 +745,7 @@ class BlueprintConfig:
     acts_kishotenketsu: int
     revelations_per_blueprint: int
     possible_endings_per_blueprint: int
+    voicing_count_retries: int
     three_act_phases: list[str]
     kishotenketsu_phases: list[str]
 

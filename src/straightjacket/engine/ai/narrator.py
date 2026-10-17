@@ -133,9 +133,11 @@ def call_narrator_metadata(
     lang = get_narration_lang(_cfg)
 
     npc_refs = []
+    npc_ids: list[str] = []
     for n in game.npcs:
         if n.status not in ("active", "background", "deceased", "lore"):
             continue
+        npc_ids.append(n.id)
         entry = f"{n.id}={_xe(n.name)}"
         if n.aliases:
             entry += f" (aka {_xe(', '.join(n.aliases))})"
@@ -186,7 +188,7 @@ def call_narrator_metadata(
             model=model_for_role("narrator_metadata"),
             system=system,
             messages=[{"role": "user", "content": prompt}],
-            json_schema=get_narrator_metadata_schema(),
+            json_schema=get_narrator_metadata_schema(npc_ids),
             log_role="narrator_metadata",
             **sampling_params("narrator_metadata"),
         )

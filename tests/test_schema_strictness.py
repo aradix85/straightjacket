@@ -85,16 +85,33 @@ def _unions(node: Any) -> int:
 
 
 def test_every_schema_stays_within_anthropics_limit_on_union_typed_fields(load_engine: None) -> None:
-    from straightjacket.engine.ai.schemas import get_brain_output_schema, get_director_output_schema
+    from straightjacket.engine.ai.schemas import (
+        get_brain_output_schema,
+        get_director_output_schema,
+        get_narrator_metadata_schema,
+    )
 
     many_npcs = [f"npc_{i}" for i in range(1, 13)]
     schemas = {name: builder() for name, builder in _schema_builders()}
     schemas["director with twelve reflections"] = get_director_output_schema(many_npcs)
+    schemas["metadata with twelve known NPCs"] = get_narrator_metadata_schema(many_npcs)
     schemas["brain with every choice"] = get_brain_output_schema(
         ["adventure/face_danger"], ["infiltrator#0"], many_npcs, ["track_1"], ["A danger"]
     )
     over = {name: _unions(schema) for name, schema in schemas.items() if _unions(schema) > ANTHROPIC_UNION_LIMIT}
     assert over == {}
+
+
+def test_the_metadata_extraction_names_only_known_npcs(load_engine: None) -> None:
+    from straightjacket.engine.ai.schemas import get_narrator_metadata_schema
+
+    schema = get_narrator_metadata_schema(["npc_2", "npc_1"])
+    problems: list[str] = []
+    _loose_objects(schema, "metadata", problems)
+    assert problems == []
+    for field in ("npc_renames", "npc_details"):
+        assert schema["properties"][field]["items"]["properties"]["npc_id"]["enum"] == ["npc_1", "npc_2"]
+        assert get_narrator_metadata_schema([])["properties"][field]["maxItems"] == 0
 
 
 def test_the_union_count_sees_any_of_and_type_lists() -> None:

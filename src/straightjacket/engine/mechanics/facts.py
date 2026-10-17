@@ -2,7 +2,7 @@ from collections.abc import Callable, Sequence
 
 from ..engine_loader import eng
 from ..logging_util import log
-from ..models import FactRequest, GameState, ResolvedFact
+from ..models import BrainResult, FactRequest, GameState, ResolvedFact
 from ..npc import find_npc
 from .fate import resolve_fate, score_to_odds
 from .resolvers import move_category
@@ -64,6 +64,16 @@ def resolve_fact(game: GameState, request: FactRequest) -> ResolvedFact:
 
 
 _YES_ANSWERS = ("yes", "exceptional_yes")
+
+
+def release_absent_target(brain: BrainResult, facts: Sequence[ResolvedFact]) -> None:
+    target = brain.target_npc
+    if target is None:
+        return
+    types = eng().fact_resolution.types
+    if any(f.about == target and types[f.fact_type].no_releases_target and f.answer not in _YES_ANSWERS for f in facts):
+        log(f"[Fact] {target} is not within reach, so the action has no target NPC")
+        brain.target_npc = None
 
 
 def clear_facts_settled_by_hit(game: GameState, facts: Sequence[ResolvedFact], result: str) -> None:

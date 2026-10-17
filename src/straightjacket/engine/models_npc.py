@@ -27,6 +27,7 @@ class NpcData(SerializableMixin):
     name: str
     disposition: str
     status: str
+    name_rolled: bool
     description: str = ""
     agenda: str = ""
     instinct: str = ""

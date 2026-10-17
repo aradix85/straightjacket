@@ -49,6 +49,21 @@ def test_register_extracted_npcs_skips_returning(stub_all: None) -> None:
     assert "Borin" in names
 
 
+def test_a_chapter_opening_does_not_split_a_returning_npc_by_a_shorter_name(stub_all: None) -> None:
+    from straightjacket.engine.game.setup_common import apply_opening_setup
+
+    game = make_game_state(player_name="Hero")
+    game.npcs = [make_npc(id="npc_1", name="Maren Silk", description="A smuggler.")]
+    data = {
+        "npcs": [_npc("Maren", "A smuggler", "neutral")],
+        "memory_updates": [],
+        "location": "Dock",
+        "scene_context": "",
+    }
+    apply_opening_setup(game, data, returning_npcs=list(game.npcs))
+    assert [n.name for n in game.npcs] == ["Maren Silk"]
+
+
 def test_seed_opening_memories_matches_and_skips(stub_all: None) -> None:
     from straightjacket.engine.game.setup_common import seed_opening_memories
 

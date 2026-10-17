@@ -59,6 +59,7 @@ __all__ = [
     "pick_template",
     "purge_old_fired_clocks",
     "record_scene_intensity",
+    "release_absent_target",
     "remember_facts",
     "resolve_clock_fill",
     "resolve_consequence_sentence",
@@ -130,6 +131,7 @@ from .facts import (
     overrule_facts_by_hit,
     settle_facts_by_miss,
     facts_of_this_place,
+    release_absent_target,
     remember_facts,
 )
 from .fate import (

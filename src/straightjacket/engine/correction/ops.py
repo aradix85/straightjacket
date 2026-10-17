@@ -58,6 +58,7 @@ def _op_npc_split(game: GameState, op_dict: dict[str, Any]) -> None:
         description=new_desc,
         disposition=existing.disposition,
         status=existing.status,
+        name_rolled=False,
         introduced=True,
     )
     game.npcs.append(new_npc)

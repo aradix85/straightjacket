@@ -10,24 +10,28 @@ fact_resolution:
       base_score: 0
       inputs: {}
       cleared_by_hit: true
+      no_releases_target: false
     useful:
       subject: place
       description: this place holds something useful for what the player character is trying to do
       base_score: 0
       inputs: {}
       cleared_by_hit: true
+      no_releases_target: false
     occupied:
       subject: place
       description: someone the player character has not accounted for is here
       base_score: -2
       inputs: {}
       cleared_by_hit: false
+      no_releases_target: false
     present:
       subject: npc
       description: this person is here, within reach of the player character, right now
       base_score: 0
       inputs: {}
       cleared_by_hit: false
+      no_releases_target: true
     alert:
       subject: npc
       description: this person is on guard and watching for the player character or for trouble
@@ -35,3 +39,4 @@ fact_resolution:
       inputs:
         npc_disposition: -1
       cleared_by_hit: false
+      no_releases_target: false

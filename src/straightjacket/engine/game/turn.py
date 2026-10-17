@@ -19,6 +19,7 @@ from ..mechanics import (
     keep_action_dice,
     keep_progress_dice,
     purge_old_fired_clocks,
+    release_absent_target,
     remember_facts,
     resolve_turn_facts,
     roll_action,
@@ -144,6 +145,7 @@ def _play_turn(
     if earlier is not None:
         remember_facts(game, earlier.facts)
     facts, pending_random_events = _resolve_brain_requests(game, brain)
+    release_absent_target(brain, facts)
 
     ctx = build_scene_context(provider, game, brain, config, player_message, scene_setup, pending_random_events, facts)
     ctx.stream = stream

@@ -192,56 +192,40 @@ def get_blueprint_voicing_schema(acts: int, revelations: int, endings: int) -> d
     )
 
 
-_metadata_cache: dict[str, Any] | None = None
+def _about_known_npcs(npc_ids: list[str], props: dict[str, Any]) -> dict[str, Any]:
+    if not npc_ids:
+        return {"type": "array", "items": {"type": "null"}, "maxItems": 0}
+    return _arr(_obj({"npc_id": _str_enum(sorted(set(npc_ids))), **props}))
 
 
-def get_narrator_metadata_schema() -> dict[str, Any]:
-    global _metadata_cache
-    if _metadata_cache is None:
-        _e = eng()
-        dispositions = list(_e.enums.dispositions)
-        _metadata_cache = _obj_root(
-            {
-                "new_npcs": _arr(
-                    _obj(
-                        {
-                            "name": _str(),
-                            "description": _str(),
-                            "disposition": _str_enum(dispositions),
-                        }
-                    )
-                ),
-                "npc_renames": _arr(
-                    _obj(
-                        {
-                            "npc_id": _str(),
-                            "new_name": _str(),
-                            "reason": _str(),
-                        }
-                    )
-                ),
-                "npc_details": _arr(
-                    _obj(
-                        {
-                            "npc_id": _str(),
-                            "full_name": _nullable_str(),
-                            "description": _nullable_str(),
-                        }
-                    )
-                ),
-                "deceased_npcs": _arr(_obj({"npc_id": _str()})),
-                "lore_npcs": _arr(
-                    _obj(
-                        {
-                            "name": _str(),
-                            "description": _str(),
-                        }
-                    )
-                ),
-            },
-            _e.ai_text.schema_titles["narrator_metadata"],
-        )
-    return _metadata_cache
+def get_narrator_metadata_schema(npc_ids: list[str]) -> dict[str, Any]:
+    _e = eng()
+    dispositions = list(_e.enums.dispositions)
+    return _obj_root(
+        {
+            "new_npcs": _arr(
+                _obj(
+                    {
+                        "name": _str(),
+                        "description": _str(),
+                        "disposition": _str_enum(dispositions),
+                    }
+                )
+            ),
+            "npc_renames": _about_known_npcs(npc_ids, {"new_name": _str(), "reason": _str()}),
+            "npc_details": _about_known_npcs(npc_ids, {"full_name": _nullable_str(), "description": _nullable_str()}),
+            "deceased_npcs": _arr(_obj({"npc_id": _str()})),
+            "lore_npcs": _arr(
+                _obj(
+                    {
+                        "name": _str(),
+                        "description": _str(),
+                    }
+                )
+            ),
+        },
+        _e.ai_text.schema_titles["narrator_metadata"],
+    )
 
 
 _opening_cache: dict[str, Any] | None = None

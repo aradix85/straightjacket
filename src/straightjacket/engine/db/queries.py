@@ -18,6 +18,7 @@ def _row_to_npc(row: sqlite3.Row) -> NpcData:
         secrets=json.loads(row["secrets"]),
         disposition=row["disposition"],
         status=row["status"],
+        name_rolled=bool(row["name_rolled"]),
         introduced=bool(row["introduced"]),
         aliases=json.loads(row["aliases"]),
         keywords=json.loads(row["keywords"]),

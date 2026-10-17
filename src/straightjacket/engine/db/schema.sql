@@ -8,6 +8,7 @@ CREATE TABLE IF NOT EXISTS npcs (
     secrets     TEXT NOT NULL,
     disposition TEXT NOT NULL,
     status      TEXT NOT NULL,
+    name_rolled INTEGER NOT NULL,
     introduced  INTEGER NOT NULL,
     aliases     TEXT NOT NULL,
     keywords    TEXT NOT NULL,

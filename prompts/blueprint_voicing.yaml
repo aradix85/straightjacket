@@ -9,3 +9,5 @@
   Fill exactly the number of possible endings given in required_counts, each with type (one word: earned, bittersweet, tragic, or similar, as fits the setting) and description (one sentence: what this ending looks like, grounded in setting and character). Base them on the ending seeds in order; when there are fewer seeds than required, the remaining endings resolve the same central conflict, each with a different type.
   Stay within the world's vocabulary, using the substitutions and the sensory palette from the setting context. Add no plot beats that the seeds do not contain. Write all text in {lang}.
   </rules>
+"blueprint_voicing_count_retry": |-
+  Your blueprint has the wrong number of entries: {mismatch}. Write the whole blueprint again with exactly the counts in required_counts, keeping what fits.

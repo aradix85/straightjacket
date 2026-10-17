@@ -108,6 +108,7 @@ def _process_lore_npcs(game: GameState, lore_list: list[Any]) -> None:
             description=entry["description"],
             disposition="neutral",
             status="lore",
+            name_rolled=False,
             introduced=False,
         )
         apply_name_sanitization(npc)

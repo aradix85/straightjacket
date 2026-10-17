@@ -212,6 +212,7 @@ def test_only_place_facts_can_be_settled_by_a_miss() -> None:
                 "base_score": 0,
                 "inputs": {},
                 "cleared_by_hit": False,
+                "no_releases_target": False,
             }
         },
     }

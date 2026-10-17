@@ -326,6 +326,7 @@ def _build_adventure_crafter(ac_raw: dict[str, Any]) -> AdventureCrafterConfig:
         acts_kishotenketsu=ac_blueprint_raw["acts_kishotenketsu"],
         revelations_per_blueprint=ac_blueprint_raw["revelations_per_blueprint"],
         possible_endings_per_blueprint=ac_blueprint_raw["possible_endings_per_blueprint"],
+        voicing_count_retries=ac_blueprint_raw["voicing_count_retries"],
         three_act_phases=list(ac_blueprint_raw["three_act_phases"]),
         kishotenketsu_phases=list(ac_blueprint_raw["kishotenketsu_phases"]),
     )

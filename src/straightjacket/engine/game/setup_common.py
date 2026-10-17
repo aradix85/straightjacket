@@ -6,7 +6,7 @@ from ..engine_loader import eng
 from ..logging_util import log
 from ..mechanics import update_location
 from ..models import GameState, MemoryEntry, NpcData
-from ..npc import apply_name_sanitization, normalize_npc_dispositions, score_importance
+from ..npc import apply_name_sanitization, fuzzy_match_existing_npc, normalize_npc_dispositions, score_importance
 
 
 def _find_npc_by_name(npcs: list[NpcData], npc_name: str) -> NpcData | None:
@@ -43,12 +43,17 @@ def register_extracted_npcs(
         name = nd["name"].lower().strip()
         if not name or name in skip:
             continue
+        known, _match_type = fuzzy_match_existing_npc(game, nd["name"])
+        if known is not None:
+            log(f"[NPC] Extracted '{nd['name']}' is the known '{known.name}', not a new NPC")
+            continue
         max_num += 1
         npc = NpcData(
             id=f"npc_{max_num}",
             name=nd["name"],
             disposition=nd["disposition"],
             status="active",
+            name_rolled=False,
             description=nd["description"],
             agenda=nd["agenda"],
             instinct=nd["instinct"],

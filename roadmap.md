@@ -42,38 +42,29 @@ Closing a step: the checks of CONTRIBUTING.md pass, the step moves to DONE at th
 
 ---
 
-## NEXT STEP — 9e: Open findings from Elvira runs
+## NEXT STEP — 9g: Test fixtures through the real creation path
 
-Faults that Elvira sessions and measurements turned up. Each is fixed at its root, in the engine where it can be, and checked against a run afterwards; a fault in what an AI writes gets a measurement before and after where the measuring setup covers it.
+Hand-built test states have hidden real bugs more than once: a roll bonus that never applied, momentum burns that overwrote the previous turn, progress marks that never reached a track, and a fixture whose database was never synced, which made a test pass or fail by the order the tests ran in. Fixtures come from the real character-creation path instead, and the tests that still build a `GameState` by hand move over one file at a time.
 
-**9e.1** Check against a run whether the coverage tracker still misses NPC introductions that the metadata extraction reports.
+**9g.1** A fixture builder that creates a game through the real creation path (`game/game_start.py`, with a mock provider for the opening) for each playable setting, with the database synced, and the few named variants the tests need, such as an NPC present, a sworn vow, or an open threat.
 
-**9e.2** The metadata extraction's identity reveals for unnamed NPCs are rejected for zero word overlap, and a stub NPC is created instead.
+**9g.2** An inventory of the test files that build `GameState` or `NpcData` by hand (`tests/_helpers.py` → `make_game_state`, `make_npc`), ordered by how much of the engine they play through; the turn, correction, momentum-burn, and chapter tests move first.
 
-**9e.3** The metadata extraction has named an NPC id that does not exist (`npc_details: could not find NPC 'npc_5'`).
+**9g.3** Each moved file keeps its assertions. A test that passed only because its hand-built state skipped a real step is a finding, fixed in the same commit.
 
-**9e.4** After a chapter transition a returning NPC ("Maren Silk") and a new NPC of almost the same name ("Maren") can stand side by side, since returning NPCs are merged by exact name only.
-
-**9e.5** The scene can tell the narrator through a `<fact>` that an NPC is not within reach while the same NPC is the scene's `<target_npc>`; the narrator then lets the NPC speak or has her vanish, and on a hit Elvira's audit counts the vanishing as a broken result. Settle presence once, so the fact and the target agree.
-
-**9e.6** Blueprint voicing can return other counts than the blueprint asks for (one revelation of three, four acts of three), since Anthropic's structured outputs do not enforce array counts; the chapter then plays without a blueprint. Decide between asking once more and accepting other counts where the structure allows it.
-
-**9e.7** The dialog task tells an NPC to say nothing beyond the question's scope, while `fact_budget` lets it volunteer one or two extra facts; in measured dialogs NPCs volunteered extras, which the blind reader held against them. Decide which of the two governs, with the engine's `fact_budget` as the candidate.
-
-**9e.8** Description-based deduplication can merge a new figure into a named NPC and rename the named one to the newcomer's generic label: in a classic run, "Corrin Hale" became "Warden archer" (`npc/processing.py` → `_handle_description_match`).
+**9g.4** `make_game_state` and `make_npc` stay for unit tests of single functions.
 
 ### Definition of Done
 
-- Every substep is fixed, or settled with the user where it is a decision (9e.6, 9e.7).
-- A deterministic fault has a test that reproduces it and passes after the fix.
-- Elvira sessions in two settings show none of the fixed faults and no new engine warnings.
-- Quality gate green, no new project-rule violations, one CHANGELOG entry.
+- The fixture builder exists for every playable setting, and every test that plays a turn, a correction, a momentum burn, or a chapter transition uses it.
+- Every finding the move surfaces is fixed, with its test.
+- Quality gate green, coverage not lower than before, one CHANGELOG entry.
 
 ### Reference patterns
 
-- Applying extracted NPC data: `ai/metadata.py` → `apply_narrator_metadata`, with matching and merging in `npc/matching.py` and `npc/lifecycle.py`.
-- Facts and their subjects: `mechanics/facts.py`, `engine/fact_resolution.yaml`.
-- Counts checked after parsing, since Anthropic's structured outputs do not enforce them: `ai/brain.py` → `_check_choices`.
+- Character creation: `game/game_start.py` → `validate_creation` and the game start it guards.
+- Mock providers: `tests/_mocks.py`.
+- A turn played end to end: `tests/test_momentum_burn.py` with its scripted provider.
 
 ---
 
@@ -84,10 +75,6 @@ Sketches, in the order of work; a step gets its definition of done and reference
 Steps 11b, 11c, 11d, and 14c take ideas from EdgeTales: reimplement them, do not port code, and credit EdgeTales in the CHANGELOG entry that lands each.
 
 Steps 11, 14b, 25, and 26 each plan a Director tool. The Director has one tool, `query_game_state`; whether a planned tool becomes a new one or part of it is decided when the step becomes NEXT STEP.
-
-### 9g — Test fixtures through the real creation path
-
-Fixtures made through the real character-creation path instead of hand-built states, since hand-built fixtures have hidden real bugs more than once (a roll bonus that never applied, momentum burns that overwrote the previous turn, progress marks that never reached a track); the tests that still build a `GameState` by hand move over one file at a time.
 
 ### 9h — Principle audits
 
@@ -350,5 +337,6 @@ Finished work in its shortest form; the CHANGELOG has the details.
 - **9b — Chapters as Mythic adventures.** Resources and clocks carry over, chaos restarts at 5, and a game that is over continues only through succession.
 - **9c — Soft misses from the engine side.** On a miss the NPCs present withhold, and the engine keeps agenda, secrets, guidance, and a pending revelation out of the prompt.
 - **9d — Generators.** The npc, location, and settlement categories roll the tables each setting names under `generators`, following Datasworn's own roll instructions; a place is rolled when the character first arrives, stays with the world, and reaches the narrator as `<generated>`, and NPC names go through the npc category (`docs/mechanics.md`, Generators).
+- **9e — Elvira findings.** A target that a present fact sends away leaves the turn; the metadata extraction names only known NPCs; a name the engine rolled holds against an unrelated full name, while a figure the narration named takes its revealed name; description matching and chapter openings no longer rename or split known NPCs; blueprint voicing asks once more on wrong counts; and in dialogs the NPC's fact budget governs, at the user's choice.
 - **9f — Prompt tuning on Sonnet.** Every role runs Claude Sonnet 5.5 at effort medium, and Elvira plays and judges on Claude Haiku 5.5 (baseline 6.41 ± 0.14). Adopted: a player-agency line at the end of the action and dialog tasks, and the weak hit of Gather Information and Compel costing the complication its move text names, which the narrator's WEAK_HIT rule accepts as the cost. Rewording the narrator prompt (examples, rules for looking and for setbacks, a longer budget steered to sensory detail, mechanical sounds) stayed within the measurement's noise in every round, so the faults that remain, moves for the player character and NPCs volunteering facts, are for the engine to take on. The measuring setup outside the repository keeps every variant and its numbers.
 - **9l — Complications as clocks.** Such a complication can start a small threat clock that strikes within four scenes unless a hit heads it off (`docs/mechanics.md`, Complication clocks).
