@@ -49,7 +49,6 @@ from .chapters import (
 )
 from .game_start import (
     _seed_background_vow,
-    _seed_truth_threads,
     _seed_vow_subject,
     validate_creation,
     validate_stats,
@@ -207,7 +206,6 @@ def _replace_character_identity(game: GameState, creation_data: dict[str, Any]) 
     background_vow_rank = creation_data.get("background_vow_rank", "")
 
     _seed_background_vow(game, background_vow, background_vow_rank)
-    _seed_truth_threads(game)
     _seed_vow_subject(game, vow_subject)
 
     log(f"[Succession] Successor character: {game.player_name}, concept={concept!r}, paths={paths}")

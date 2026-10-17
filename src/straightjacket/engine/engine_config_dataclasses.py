@@ -69,7 +69,6 @@ class CreationConfig:
     background_vow_default_rank: str
     chaos_vow_modifiers: dict[str, list[str]]
     chaos_modifier_values: dict[str, int]
-    truth_threads: dict[str, str]
 
 
 @dataclass

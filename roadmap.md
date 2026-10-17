@@ -52,8 +52,6 @@ The audits of AUDIT.md, one session per principle or submodule as it prescribes,
 
 **9h.1** `game/turn.py` → `_sanitize_brain_output` turns an action-roll move with stat `none` into a dialog turn instead of `call_brain` refusing the answer; the tests treat `world_shaping` without a stat as dialog on purpose (principle 3).
 
-**9h.2** `mechanics/tracks.py` → `roll_oracle_answer` returns an empty answer when the game has no setting or the setting fewer than two action-theme paths, and `find_progress_track` returns None for a target track of another type, which plays a progress roll on zero boxes (principle 3).
-
 **9h.3** `game/chapters.py` → `_reset_chapter_mechanics` empties the tracks, threats, impacts, assets, threads, and lists that `_restore_chapter_mechanics` copies straight back from the chapter summary, a round trip that amounts to a copy. Those snapshot fields of `ChapterSummary` have no other reader, so ending the round trip removes them as well and breaks the save format. `_prepare_npcs_for_new_chapter` tests the same status twice (principle 3).
 
 **9h.4** Dataclasses carry defaults against the rule as CONTRIBUTING.md states it ("Domain config keys raise on a miss, and dataclass fields have no defaults"): about two hundred defaults that are not empty collections, in 43 classes, concentrated in `models_story.py`, `models.py`, `models_base.py`, `datasworn/moves.py`, `mechanics/move_effects.py`, and `models_npc.py` (for example `KeyedScene.source` and `KeyedScene.bound_entity_id`), beside about seventy empty `default_factory` collections, which the rule allows. The optional fields of `AICallSpec` and the partial classes in `datasworn/settings.py` parse external structures and keep theirs. Each module loses its defaults with every constructor call updated, one module per session; when the last is done, the config-binding scan widens to every dataclass (pass 2d).
@@ -65,10 +63,6 @@ The audits of AUDIT.md, one session per principle or submodule as it prescribes,
 **9h.7** For every AI-call carve-out, where its failure becomes visible: a caught failure plays on silently unless Elvira or the log shows it (principle 3).
 
 **9h.8** Every field of `mechanics/move_effects.py` → `OutcomeResult` has a reader in the production path, not only in tests: results that were computed but never applied have hidden faults before (progress marks that never reached a track, a position factor that never fired, and `clock_fills`, step 9k) (principle 5).
-
-**9h.10** `creation.truth_threads` in `engine/creation.yaml` is hand-written game content, which the Yaml content boundary rules out: it names the tension a chosen truth starts as a thread ("Scarcity drives conflict") with no table behind it. Check whether the truth's own Datasworn text can name the thread, or the threads go (principle 2).
-
-**9h.11** `game/setup_common.py` → `seed_opening_memories` reads the opening extraction's memory updates with `.get` and empty fallbacks, although the schema requires those fields (principles 3 and 4).
 
 ### Definition of Done
 
@@ -153,7 +147,7 @@ If the user buys the Location Crafter (Word Mill Games, under the same CC BY-NC 
 
 ### 10b — Campaign launch from the setting's oracles
 
-The opening scene and the character's start come from the setting's launch tables instead of the narrator's invention: Starforged's inciting incident and background assets, and Sundered Isles' getting-underway tables (create your character, take command, chart your course).
+The opening scene and the character's start come from the setting's launch tables instead of the narrator's invention: Starforged's inciting incident and background assets, and Sundered Isles' getting-underway tables (create your character, take command, chart your course). The quest starters of the chosen truths, which Datasworn carries with each truth option, are candidates for the opening threads, since the hand-written tensions that used to stand there are gone.
 
 ### 11 — NPC generation with tiers
 

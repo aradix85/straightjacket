@@ -304,12 +304,8 @@ class SettingPackage:
         return self._creation_flow
 
     def roll_action_theme(self) -> tuple[str, str]:
-        paths = self._oracle_paths.action_theme
-        if len(paths) >= 2:
-            action = self._data.roll_oracle(paths[0])
-            theme = self._data.roll_oracle(paths[1])
-            return action, theme
-        return "", ""
+        action_path, theme_path = self._oracle_paths.action_theme
+        return self._data.roll_oracle(action_path), self._data.roll_oracle(theme_path)
 
     def oracle_data_for(self, oracle_path: str) -> Setting | None:
         pkg: SettingPackage | None = self

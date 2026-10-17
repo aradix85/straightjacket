@@ -3,6 +3,7 @@ import html
 import json
 
 from ..config_loader import model_for_role, sampling_params
+from ..datasworn.moves import get_moves
 from ..engine_loader import eng
 from ..logging_util import log
 from ..models import BrainResult, EngineConfig, GameState, Revelation
@@ -96,6 +97,24 @@ def _check_choices(result: BrainResult, move_keys: list[str], choices: dict[str,
         raise ValueError(f"boasts {result.boasts!r} are not among the offered boasts")
 
 
+def _check_target_track(game: GameState, result: BrainResult) -> None:
+    if result.target_track is None:
+        return
+    ds_move = get_moves(game.setting_id).get(result.move)
+    if ds_move is not None and ds_move.roll_type == "progress_roll":
+        category = ds_move.track_category
+    elif result.move in eng().get_raw("progress_mark_categories"):
+        category = eng().get_raw("progress_mark_categories")[result.move]
+    else:
+        return
+    wanted = eng().get_raw("track_types_by_category")[category]
+    track = next(t for t in game.progress_tracks if t.id == result.target_track)
+    if track.track_type != wanted:
+        raise ValueError(
+            f"move {result.move!r} works on a {wanted} track, but target_track {track.id!r} is a {track.track_type} track"
+        )
+
+
 def _check_fact_requests(result: BrainResult, npc_ids: list[str]) -> None:
     cfg = eng().fact_resolution
     if len(result.undetermined_facts) > cfg.max_per_turn:
@@ -180,6 +199,7 @@ time:{w.time_of_day or _ai_text["unknown_time"]}
 
         result: BrainResult = BrainResult.from_dict(json.loads(response.content))
         _check_choices(result, move_keys, choices)
+        _check_target_track(game, result)
         log(
             f"[Brain] move={result.move}, stat={result.stat}, "
             f"intent={result.player_intent[: eng().truncations.log_short]}"

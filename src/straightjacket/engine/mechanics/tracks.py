@@ -15,7 +15,10 @@ def find_progress_track(game: GameState, track_category: str, target_track: str 
         return None
 
     if target_track:
-        return next((t for t in candidates if t.id == target_track), None)
+        track = next((t for t in candidates if t.id == target_track), None)
+        if track is None:
+            raise ValueError(f"Target track {target_track!r} is not an active {track_type} track")
+        return track
 
     if len(candidates) == 1:
         return candidates[0]
@@ -64,9 +67,7 @@ def sync_combat_tracks(game: GameState) -> None:
 
 def roll_oracle_answer(game: GameState) -> str:
     pkg = active_package(game)
-    if not pkg:
-        return ""
+    if pkg is None:
+        raise ValueError("Asking the oracle needs the game's setting")
     action, theme = pkg.roll_action_theme()
-    if action and theme:
-        return f"{action} / {theme}"
-    return ""
+    return f"{action} / {theme}"

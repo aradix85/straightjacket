@@ -243,8 +243,9 @@ def test_find_progress_track(load_engine: None) -> None:
 
     assert _find_progress_track(game, "Vow", target_track="v2").name == "Find Kira's killer"
     assert _find_progress_track(game, "Vow", target_track="v1").name == "Find Kira"
-    assert _find_progress_track(game, "Vow", target_track="Find Kira") is None
-    assert _find_progress_track(game, "Vow", target_track="c1") is None
+    for wrong in ("Find Kira", "c1"):
+        with pytest.raises(ValueError, match="is not an active vow track"):
+            _find_progress_track(game, "Vow", target_track=wrong)
     assert _find_progress_track(game, "Combat").name == "Fight"
     assert _find_progress_track(game, "Expedition") is None
     with pytest.raises(KeyError):

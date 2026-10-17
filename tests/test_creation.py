@@ -252,32 +252,6 @@ def test_build_creation_options_has_creation_flow(load_engine: None) -> None:
     assert sf["creation_flow"]["has_truths"] is True
 
 
-def test_seed_truth_threads_matches(load_engine: None) -> None:
-    from straightjacket.engine.game.game_start import _seed_truth_threads
-
-    game = make_game_state(player_name="Test", truths={"communities": "Communities are scattered and isolated"})
-    _seed_truth_threads(game)
-    assert len(game.narrative.threads) == 1
-    assert game.narrative.threads[0].thread_type == "tension"
-    assert game.narrative.threads[0].source == "creation"
-
-
-def test_seed_truth_threads_no_match(load_engine: None) -> None:
-    from straightjacket.engine.game.game_start import _seed_truth_threads
-
-    game = make_game_state(player_name="Test", truths={"cataclysm": "Something unique happened"})
-    _seed_truth_threads(game)
-    assert len(game.narrative.threads) == 0
-
-
-def test_seed_truth_threads_empty_truths(load_engine: None) -> None:
-    from straightjacket.engine.game.game_start import _seed_truth_threads
-
-    game = make_game_state(player_name="Test")
-    _seed_truth_threads(game)
-    assert len(game.narrative.threads) == 0
-
-
 def test_seed_vow_subject(load_engine: None) -> None:
     from straightjacket.engine.game.game_start import _seed_vow_subject
 

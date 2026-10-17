@@ -265,6 +265,21 @@ def test_the_brain_rejects_a_fact_about_an_unknown_npc(load_engine: None) -> Non
         call_brain(MockProvider(response_content=content), _game(), "I slip past the guard")
 
 
+def test_the_brain_rejects_a_progress_roll_on_a_track_of_another_kind(load_engine: None) -> None:
+    from straightjacket.engine.ai.brain import call_brain
+    from straightjacket.engine.ai.provider_base import AIUnavailableError
+    from straightjacket.engine.models import ProgressTrack
+    from tests._mocks import MockProvider
+
+    game = _game()
+    game.progress_tracks.append(
+        ProgressTrack.new(id="expedition_ridge", name="Cross the ridge", track_type="expedition", rank="dangerous")
+    )
+    content = json.dumps(_brain(move="quest/fulfill_your_vow", stat="none", target_track="expedition_ridge"))
+    with pytest.raises(AIUnavailableError, match="works on a vow track"):
+        call_brain(MockProvider(response_content=content), game, "I fulfill my vow")
+
+
 def test_the_brain_prompt_lists_the_fact_types(load_engine: None) -> None:
     from straightjacket.engine.ai.brain import call_brain
     from tests._mocks import MockProvider

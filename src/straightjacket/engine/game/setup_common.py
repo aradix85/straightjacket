@@ -74,15 +74,10 @@ def seed_opening_memories(
     label: str = "opening_setup",
 ) -> None:
     for mu in memory_updates:
-        npc_name = mu.get("npc_name", "")
-        if not npc_name:
-            continue
-        target = _find_npc_by_name(game.npcs, npc_name)
+        target = _find_npc_by_name(game.npcs, mu["npc_name"])
         if not target:
             continue
-        event = mu.get("event", "")
-        if "emotional_weight" not in mu:
-            raise KeyError(f"Memory update from {label} missing required 'emotional_weight' for npc='{npc_name}'")
+        event = mu["event"]
         emotional = mu["emotional_weight"]
         imp, dbg = score_importance(emotional, event, debug=True)
         target.memory.append(

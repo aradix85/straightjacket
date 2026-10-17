@@ -52,7 +52,7 @@ Assets: `GameState.asset_abilities` records the enabled abilities of every path 
 
 **Random events.** A four-step pipeline in `mechanics/random_events.py`: event focus (a d100 over the focus categories, `roll_event_focus`), a target from the weighted Mythic lists, a meaning-table roll on actions or descriptions (`roll_meaning_table`), and a structured `RandomEvent` (`generate_random_event`). Events fire on interrupt scenes and on fate doublets. They reach the narrator as `<random_event>` and `<interrupt_scene>` tags; an interrupt scene's own event appears only as `<interrupt_scene>`.
 
-**Mythic lists.** The threads list starts with the background vow plus tensions derived from the chosen truths (templates in `engine/creation.yaml`); the characters list starts with the vow's subject, if any, and the opening scene's NPCs. Both live on `NarrativeState`. Present NPCs and threads gain weight, new NPCs join the characters list, and the lists consolidate past their cap (`mechanics/random_events.py` → `add_thread_weight`, `add_character_weight`, `consolidate_threads`).
+**Mythic lists.** The threads list starts with the background vow; the characters list starts with the vow's subject, if any, and the opening scene's NPCs. Both live on `NarrativeState`. Present NPCs and threads gain weight, new NPCs join the characters list, and the lists consolidate past their cap (`mechanics/random_events.py` → `add_thread_weight`, `add_character_weight`, `consolidate_threads`).
 
 ## Fate
 

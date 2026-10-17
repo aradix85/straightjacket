@@ -154,30 +154,6 @@ def _seed_background_vow(game: GameState, vow_text: str, rank: str = "") -> None
     log(f"[NewGame] Background vow track: rank={vow_rank}, thread seeded")
 
 
-def _seed_truth_threads(game: GameState) -> None:
-    if not game.truths:
-        return
-    _e = eng()
-    truth_map = _e.creation.truth_threads
-    counter = 0
-    for summary in game.truths.values():
-        summary_lower = summary.lower()
-        for pattern, thread_name in truth_map.items():
-            if pattern.lower() in summary_lower:
-                counter += 1
-                game.narrative.threads.append(
-                    ThreadEntry(
-                        id=f"thread_truth_{counter}",
-                        name=thread_name,
-                        thread_type="tension",
-                        weight=1,
-                        source="creation",
-                    )
-                )
-                log(f"[NewGame] Truth thread seeded: {thread_name}")
-                break
-
-
 def _seed_vow_subject(game: GameState, vow_subject: str) -> None:
     if not vow_subject:
         return
@@ -253,7 +229,6 @@ def start_new_game(
     game.preferences.content_lines = content_lines
 
     _seed_background_vow(game, background_vow, background_vow_rank)
-    _seed_truth_threads(game)
     _seed_vow_subject(game, vow_subject)
 
     _opening = _e.opening

@@ -8,6 +8,12 @@ This log starts at 2026.09.24.0, the restart after a four-month pause. Earlier r
 
 Calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day.
 
+## [2026.10.17.7] — 2026-10-17
+
+Step 9h, three substeps. 9h.2: Ask the Oracle without a setting now raises instead of answering with nothing, the action and theme roll takes exactly the two tables its setting names, and a progress roll or progress mark on a track of the wrong kind no longer plays on zero boxes: `call_brain` refuses a target track that does not fit the move, and `find_progress_track` raises for one it cannot find. 9h.10: the hand-written tensions that chosen truths used to start as threads are gone, since no source table stands behind them; the truths still reach every narrator prompt, and step 10b names the truths' own quest starters as candidates for opening threads. 9h.11: the opening's memory updates are read as the schema requires them, without empty fallbacks. An eight-turn Elvira session in Starforged found no problems (overall 6.7).
+
+Quality gate: 1648 tests green, ruff and mypy --strict clean. Save format unchanged. Elvira about $0.47.
+
 ## [2026.10.17.6] — 2026-10-17
 
 The campaign's tone, substep 9h.9, chosen with the user. Every game had an empty tone, and the story-structure roll looked the setting id up in a table of tones, so every chapter fell back to an even chance between three acts and Kishōtenketsu. Character creation now offers a tone, preset to the setting's new `default_tone` (dark and gritty for classic Ironsworn, epic and heroic for Starforged, pulp adventure for Sundered Isles); the tone decides each chapter's structure through `story.kishotenketsu_probability`, which shrinks to ten tones and loses its fallback, and it reaches the narrator through the tone-authority block and the world tag that were empty until now. An unknown tone is refused at creation; a successor keeps the campaign's tone. The dead `setting_archetype` field is gone. Measured first on the fourteen situations with each setting's default tone: the blind reader, shown the toned prompt, preferred it 11 to 5 (12 without agreement), mostly on misses, where the costs came out harder and more concrete, on a strong hit in a desperate position, and near death; the audit stayed within the spread of two runs (114 and 102 against 94 and 125). An eight-turn Elvira session in classic Ironsworn found no problems (overall 7.0).
