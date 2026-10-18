@@ -41,8 +41,8 @@ class ActionOutcome:
 
 def _chained_roll_value(game: GameState, brain: BrainResult, move: Move) -> tuple[str, int] | None:
     if move.valid_stats:
-        best = max(move.valid_stats, key=game.get_stat)
-        return best, game.get_stat(best)
+        best = max(move.valid_stats, key=game.stats.__getitem__)
+        return best, game.stats[best]
     return roll_source_without_stat(game, move, brain.target_npc)
 
 

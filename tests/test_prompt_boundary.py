@@ -1,3 +1,5 @@
+import pytest
+
 from straightjacket.engine.models import GameState
 from straightjacket.engine.models_story import ChapterSummary, PossibleEnding, StoryBlueprint
 from tests._helpers import make_game_state, make_npc
@@ -90,14 +92,13 @@ def test_build_epilogue_prompt_renders(load_engine: None) -> None:
     assert "Kira" in out
 
 
-def test_build_epilogue_prompt_without_blueprint(load_engine: None) -> None:
+def test_an_epilogue_without_a_story_to_end_raises(load_engine: None) -> None:
     from straightjacket.engine.prompt_boundary import build_epilogue_prompt
 
     g = _opening_game()
     g.narrative.story_blueprint = None
-    out = build_epilogue_prompt(g)
-    assert '<scene type="epilogue">' in out
-    assert "open" in out
+    with pytest.raises(ValueError, match="blueprint"):
+        build_epilogue_prompt(g)
 
 
 def test_build_new_chapter_prompt_renders_with_active_npcs(load_engine: None) -> None:

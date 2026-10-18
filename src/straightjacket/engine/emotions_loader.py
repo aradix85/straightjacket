@@ -1,6 +1,7 @@
 from typing import Any
-from .bootstrap_log import bootstrap_log as _log
+
 from .config_loader import PROJECT_ROOT
+from .logging_util import log
 from .yaml_merge import load_yaml_dir
 
 _EMOTIONS_DIR = PROJECT_ROOT / "emotions"
@@ -15,7 +16,7 @@ def _ensure_loaded() -> dict[str, Any]:
             _EMOTIONS_DIR,
             missing_dir_hint="The emotions/ directory ships with the repo.",
         )
-        _log(f"[Emotions] Loaded {_EMOTIONS_DIR} ({len(_data)} sections)")
+        log(f"[Emotions] Loaded {_EMOTIONS_DIR} ({len(_data)} sections)")
     return _data
 
 

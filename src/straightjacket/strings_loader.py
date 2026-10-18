@@ -2,9 +2,9 @@ from pathlib import Path
 
 import yaml
 
-from .engine.bootstrap_log import bootstrap_log as _log
 from .engine.config_loader import PROJECT_ROOT
 from .engine.format_utils import PartialFormatDict
+from .engine.logging_util import log
 
 _STRINGS_DIR = PROJECT_ROOT / "strings"
 
@@ -35,7 +35,7 @@ def _ensure_loaded() -> dict[str, str]:
                     raise ValueError(f"Duplicate string key '{key}' in {path} — already defined in {origin[key]}")
                 _strings[key] = val
                 origin[key] = path
-        _log(f"[Strings] {len(_strings)} strings ready")
+        log(f"[Strings] {len(_strings)} strings ready")
     return _strings
 
 

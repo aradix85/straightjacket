@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import dataclasses
-import re
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -80,7 +79,6 @@ from .engine_config_dataclasses import (
     PositionResolverConfig,
     PositionResolverWeights,
     ProgressConfig,
-    ProgressTrackType,
     PromptDisplayConfig,
     RandomEventsConfig,
     RandomEventKeyedSceneMappingEntry,
@@ -133,6 +131,7 @@ class EngineSettings:
     progress: ProgressConfig
     engine_moves: dict[str, EngineMove]
     move_availability: dict[str, MoveAvailabilityRule]
+    unoffered_roll_types: list[str]
     stopwords: StopwordsConfig
     name_titles: frozenset[str]
     position_resolver: PositionResolverConfig
@@ -191,45 +190,8 @@ class EngineSettings:
 
     _raw: dict[str, Any] = field(default_factory=dict, repr=False)
 
-    _compiled_patterns: dict[str, Any] = field(default_factory=dict, repr=False)
-
     def get_raw(self, key: str) -> Any:
         return self._raw[key]
-
-    def compiled_patterns(self, section: str, key: str) -> list[Any]:
-        cache_key = f"patterns:{section}.{key}"
-        if cache_key in self._compiled_patterns:
-            result: list[Any] = self._compiled_patterns[cache_key]
-            return result
-        raw_patterns = self._raw[section][key]
-        compiled = [re.compile(p, re.IGNORECASE) for p in raw_patterns]
-        self._compiled_patterns[cache_key] = compiled
-        return compiled
-
-    def compiled_labeled_patterns(self, section: str, key: str) -> list[tuple[Any, str]]:
-        cache_key = f"labeled:{section}.{key}"
-        if cache_key in self._compiled_patterns:
-            result: list[tuple[Any, str]] = self._compiled_patterns[cache_key]
-            return result
-        entries = self._raw[section][key]
-        flag_map = {"multiline": re.MULTILINE}
-        compiled: list[tuple[Any, str]] = []
-        for entry in entries:
-            flags = 0
-            for flag_name in entry["flags"].split():
-                flags |= flag_map[flag_name]
-            compiled.append((re.compile(entry["pattern"], flags), entry["label"]))
-        self._compiled_patterns[cache_key] = compiled
-        return compiled
-
-    def compiled_pattern(self, section: str, key: str, subkey: str) -> Any:
-        cache_key = f"single:{section}.{key}.{subkey}"
-        if cache_key in self._compiled_patterns:
-            return self._compiled_patterns[cache_key]
-        raw = self._raw[section][key][subkey]
-        compiled = re.compile(raw)
-        self._compiled_patterns[cache_key] = compiled
-        return compiled
 
 
 def _reject_unknown(cls: type, data: dict[str, Any]) -> dict[str, Any]:
@@ -282,6 +244,7 @@ _SIMPLE_SECTIONS: dict[str, type] = {
     "persistence": PersistenceConfig,
     "correction": CorrectionConfig,
     "generation": GenerationConfig,
+    "progress": ProgressConfig,
 }
 
 
@@ -525,15 +488,6 @@ def parse_engine_yaml(data: dict[str, Any]) -> EngineSettings:
     legacy_data["ticks_by_rank"] = dict(legacy_data["ticks_by_rank"])
     legacy = _build_strict(LegacyConfig, legacy_data)
 
-    progress_raw = _reject_unknown(ProgressConfig, dict(data["progress"]))
-    track_types = {
-        name: _build_strict(ProgressTrackType, {**tt, "ticks_per_mark": dict(tt["ticks_per_mark"])})
-        for name, tt in progress_raw["track_types"].items()
-    }
-    progress = ProgressConfig(
-        max_ticks=progress_raw["max_ticks"], ticks_per_box=progress_raw["ticks_per_box"], track_types=track_types
-    )
-
     engine_moves = {
         key: _build_strict(EngineMove, {**m, "stats": list(m["stats"])}) for key, m in data["engine_moves"].items()
     }
@@ -649,9 +603,10 @@ def parse_engine_yaml(data: dict[str, Any]) -> EngineSettings:
         threats=simple_parsed["threats"],
         impacts=impacts,
         legacy=legacy,
-        progress=progress,
+        progress=simple_parsed["progress"],
         engine_moves=engine_moves,
         move_availability=move_availability,
+        unoffered_roll_types=list(data["unoffered_roll_types"]),
         stopwords=stopwords,
         name_titles=name_titles,
         position_resolver=position_resolver,
@@ -787,7 +742,6 @@ __all__ = [
     "PositionResolverConfig",
     "PositionResolverWeights",
     "ProgressConfig",
-    "ProgressTrackType",
     "PromptDisplayConfig",
     "RandomEventKeyedSceneMappingEntry",
     "RandomEventsConfig",

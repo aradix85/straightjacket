@@ -24,9 +24,7 @@ from .xml_utils import xe as _xe
 
 
 def creativity_seed() -> str:
-    words = list(eng().creativity_seeds)
-    n = eng().prompt_display.creativity_seed_count
-    return " ".join(random.sample(words, min(n, len(words))))
+    return " ".join(random.sample(eng().creativity_seeds, eng().prompt_display.creativity_seed_count))
 
 
 def _scene_header(game: GameState) -> str:
@@ -95,10 +93,6 @@ def _format_memories(
     return "\n" + "\n".join(parts) if parts else ""
 
 
-def _build_gate0_target(target: NpcData, aliases_attr: str) -> str:
-    return f'<target_npc name="{_xa(target.name)}" gate="0"{aliases_attr}>{_xe(target.description)}</target_npc>'
-
-
 def _npc_block(
     game: GameState, target_id: str | None, context_text: str, move_category: str, *, miss: bool = False
 ) -> str:
@@ -114,7 +108,7 @@ def _npc_block(
     aliases_attr = f' aliases="{_xa(",".join(target.aliases))}"' if target.aliases else ""
 
     if gate == 0:
-        return _build_gate0_target(target, aliases_attr)
+        return f'<target_npc name="{_xa(target.name)}" gate="0"{aliases_attr}>{_xe(target.description)}</target_npc>'
 
     stance_attr = f' stance="{_xa(stance.stance)}" constraint="{_xa(stance.constraint)}"'
     fact_budget_attr = f' fact_budget="{fact_budget}"'
@@ -156,11 +150,11 @@ def _activated_npcs_block(
     context_text: str,
     move_category: str,
     *,
-    miss: bool = False,
+    miss: bool,
 ) -> str:
     parts = []
     for npc in activated:
-        if target_id and (npc.id == target_id or npc.name.lower() == str(target_id).lower()):
+        if npc.id == target_id:
             continue
         memories = retrieve_memories(
             npc,
@@ -221,20 +215,20 @@ def _known_npcs_string(mentioned: Sequence[NpcData], game: GameState, exclude_id
     return ", ".join(parts) or eng().ai_text.narrator_defaults["no_npcs"]
 
 
-def _pacing_block(game: GameState, scene_setup: SceneSetup | None = None) -> str:
+def _pacing_block(game: GameState, scene_setup: SceneSetup) -> str:
     parts = []
     pacing = get_pacing_hint(game)
     if pacing != "neutral":
         parts.append(f'<pacing type="{pacing}"/>')
 
-    if scene_setup and scene_setup.scene_type == "keyed":
+    if scene_setup.scene_type == "keyed":
         wrapper = eng().keyed_scenes.prompt_wrapper
         parts.append(wrapper.format(hint=_xe(scene_setup.narrative_hint)))
-    elif scene_setup and scene_setup.scene_type == "altered":
+    elif scene_setup.scene_type == "altered":
         descs = adjustment_descriptions(scene_setup.adjustments)
         adj_text = "; ".join(descs)
         parts.append(f"<altered_scene>{adj_text}</altered_scene>")
-    elif scene_setup and scene_setup.scene_type == "interrupt" and scene_setup.interrupt_event:
+    elif scene_setup.interrupt_event is not None:
         ev = scene_setup.interrupt_event
         target_attr = f' target="{_xa(ev.target)}"' if ev.target else ""
         parts.append(
@@ -330,9 +324,7 @@ def _npcs_section(
     activated_block = _activated_npcs_block(activated_npcs, target_id, game, context_text, move_category, miss=miss)
     exclude_ids = {n.id for n in activated_npcs}
     if target_id:
-        t = find_npc(game, target_id)
-        if t:
-            exclude_ids.add(t.id)
+        exclude_ids.add(target_id)
     known_str = _known_npcs_string(mentioned_npcs, game, exclude_ids)
     section = ""
     if activated_block:
@@ -344,7 +336,7 @@ def _npcs_section(
 
 def _director_block(game: GameState) -> str:
     dg = game.narrative.director_guidance
-    if not dg or not dg.narrator_guidance:
+    if not dg.narrator_guidance:
         return ""
     block = f"\n<director_guidance>{_xe(dg.narrator_guidance)}</director_guidance>"
     for npc_id, guidance in dg.npc_guidance.items():

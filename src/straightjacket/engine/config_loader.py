@@ -6,9 +6,7 @@ from typing import Any
 
 import yaml
 
-
-from .bootstrap_log import bootstrap_log as _log
-
+from .logging_util import log
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent.parent
 
@@ -18,8 +16,6 @@ _CONFIG_PATH = Path(os.environ.get("STRAIGHTJACKET_CONFIG", str(PROJECT_ROOT / "
 
 def _read_version() -> str:
     pyproject = PROJECT_ROOT / "pyproject.toml"
-    if not pyproject.exists():
-        raise RuntimeError(f"pyproject.toml not found at {pyproject}; cannot determine version")
     m = re.search(r'^version\s*=\s*"([^"]+)"', pyproject.read_text(encoding="utf-8"), re.MULTILINE)
     if not m:
         raise RuntimeError(f'no `version = "..."` line in {pyproject}')
@@ -31,7 +27,6 @@ VERSION = _read_version()
 
 USERS_DIR = Path(os.environ.get("STRAIGHTJACKET_USERS_DIR", str(PROJECT_ROOT / "users")))
 USERS_DIR.mkdir(parents=True, exist_ok=True)
-GLOBAL_CONFIG_FILE = _CONFIG_PATH
 
 
 @dataclass
@@ -161,7 +156,7 @@ def _load_config_file() -> dict[str, Any]:
         data = yaml.safe_load(f)
     if not isinstance(data, dict):
         raise ValueError(f"Config file is not a valid YAML dict: {_CONFIG_PATH}")
-    _log(f"[Config] Loaded {_CONFIG_PATH}")
+    log(f"[Config] Loaded {_CONFIG_PATH}")
     return data
 
 

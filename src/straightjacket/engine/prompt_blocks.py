@@ -74,7 +74,7 @@ def tone_authority_block(game: GameState) -> str:
     return "\n" + get_prompt("block_tone_authority_wrapper", tone=_xa(game.setting_tone), body=body)
 
 
-def narrative_direction_block(game: GameState, roll_result: str = "", is_player_caused: bool = True) -> str:
+def narrative_direction_block(game: GameState, roll_result: str) -> str:
     nd = eng().narrative_direction
     parts = []
 
@@ -90,15 +90,10 @@ def narrative_direction_block(game: GameState, roll_result: str = "", is_player_
     else:
         parts.append(get_prompt("narrative_direction_intensity_low"))
 
-    entry = nd.entry_for(roll_result)
+    entry = nd.result_map[roll_result]
     parts.append(get_prompt("narrative_direction_tempo_label", tempo=entry.tempo))
     parts.append(get_prompt("narrative_direction_perspective_label", perspective=entry.perspective))
-
-    parts.append(
-        get_prompt("narrative_direction_player_caused")
-        if is_player_caused
-        else get_prompt("narrative_direction_player_witnessing")
-    )
+    parts.append(get_prompt("narrative_direction_player_caused"))
 
     hint = get_pacing_hint(game)
     if hint == "breather":
@@ -112,10 +107,7 @@ def narrative_direction_block(game: GameState, roll_result: str = "", is_player_
 
 
 def _describe_narrator_resource(value: int, descriptions: dict[int, str]) -> str:
-    for threshold in sorted(descriptions.keys(), reverse=True):
-        if value >= threshold:
-            return descriptions[threshold]
-    return descriptions[min(descriptions.keys())]
+    return descriptions[max(threshold for threshold in descriptions if threshold <= value)]
 
 
 def status_context_block(game: GameState) -> str:
@@ -136,7 +128,7 @@ def status_context_block(game: GameState) -> str:
 
 def story_context_block(game: GameState, *, miss: bool = False) -> str:
     bp = game.narrative.story_blueprint
-    if not bp or not bp.acts:
+    if bp is None:
         return ""
     act = get_current_act(game)
 
@@ -175,14 +167,9 @@ def story_context_block(game: GameState, *, miss: bool = False) -> str:
 
 
 def recent_events_block(game: GameState) -> str:
-    if not game.narrative.session_log or len(game.narrative.session_log) < 2:
-        return ""
     window = eng().prompt_display.recent_events_window
-    entries = game.narrative.session_log[-(window + 1) : -1] if len(game.narrative.session_log) > 1 else []
-    if not entries:
-        return ""
     lines = []
-    for s in entries:
+    for s in game.narrative.session_log[-(window + 1) : -1]:
         summary = s.rich_summary or s.summary
         if summary:
             lines.append(get_prompt("block_recent_events_line", scene=str(s.scene), summary=_xe(summary)))

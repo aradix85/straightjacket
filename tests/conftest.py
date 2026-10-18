@@ -10,17 +10,6 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
 _lm = types.ModuleType("straightjacket.engine.logging_util")
 _lm.log = lambda *a, **k: None
-_lm.setup_file_logging = lambda: None
-_lm.get_logger = lambda component: type(
-    "_L",
-    (),
-    {
-        "info": lambda self, *a: None,
-        "debug": lambda self, *a: None,
-        "warning": lambda self, *a: None,
-        "error": lambda self, *a: None,
-    },
-)()
 sys.modules["straightjacket.engine.logging_util"] = _lm
 
 

@@ -305,11 +305,19 @@ def test_close_previous_chapter_archives_and_advances(load_engine: None, stub_al
     assert len(g.campaign.campaign_history) == 1
 
 
+def _ending_game() -> GameState:
+    from tests._helpers import make_blueprint
+
+    g = make_game_state(player_name="Aria", setting_id="starforged")
+    g.narrative.story_blueprint = make_blueprint(story_complete=True)
+    return g
+
+
 def test_generate_epilogue_returns_narration(load_engine: None, stub_all: None) -> None:
     from straightjacket.engine.game.chapters import generate_epilogue
 
     provider = MockProvider("The journey ended quietly.")
-    g = make_game_state(player_name="Aria", setting_id="starforged")
+    g = _ending_game()
     g.world.current_location = "Tavern"
     _, narration = generate_epilogue(provider, g)
     assert "ended quietly" in narration
@@ -321,7 +329,7 @@ def test_generate_epilogue_strips_epilogue_header(load_engine: None, stub_all: N
     from straightjacket.engine.game.chapters import generate_epilogue
 
     provider = MockProvider("# Epilogue\n\nThe story ends here.")
-    g = make_game_state(player_name="Aria", setting_id="starforged")
+    g = _ending_game()
     _, narration = generate_epilogue(provider, g)
     assert "Epilogue" not in narration.split("\n")[0]
 
@@ -331,7 +339,7 @@ def test_generate_epilogue_raises_on_empty_narration(load_engine: None, stub_all
     from straightjacket.engine.game.chapters import generate_epilogue
 
     provider = MockProvider("")
-    g = make_game_state(player_name="Aria", setting_id="starforged")
+    g = _ending_game()
     with pytest.raises(AIUnavailableError, match="empty narration"):
         generate_epilogue(provider, g)
 
@@ -341,7 +349,7 @@ def test_generate_epilogue_raises_when_cleanup_leaves_nothing(load_engine: None,
     from straightjacket.engine.game.chapters import generate_epilogue
 
     provider = MockProvider("```json\n{}\n```")
-    g = make_game_state(player_name="Aria", setting_id="starforged")
+    g = _ending_game()
     with pytest.raises(AIUnavailableError, match="empty narration after cleanup"):
         generate_epilogue(provider, g)
     assert g.campaign.epilogue_shown is False

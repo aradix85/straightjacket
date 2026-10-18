@@ -7,7 +7,14 @@ from straightjacket.engine.models import (
     RollResult,
 )
 from straightjacket.engine.prompt_action import build_action_prompt
-from tests._helpers import make_brain_result, make_game_state, make_memory, make_npc, make_progress_track
+from tests._helpers import (
+    action_prompt_kwargs,
+    make_brain_result,
+    make_game_state,
+    make_memory,
+    make_npc,
+    make_progress_track,
+)
 
 
 pytestmark = pytest.mark.usefixtures("load_engine")
@@ -145,8 +152,7 @@ def _build_prompt(npc: NpcData, scene: int = 5, bond: int = 0) -> str:
         roll,
         ["momentum +1"],
         [],
-        consequence_sentences=["The tide shifts."],
-        player_words="approach carefully",
+        **action_prompt_kwargs(consequence_sentences=["The tide shifts."], player_words="approach carefully"),
     )
 
 

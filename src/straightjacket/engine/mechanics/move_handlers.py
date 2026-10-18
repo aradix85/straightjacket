@@ -116,7 +116,7 @@ def apply_recovery_handler(game: GameState, roll_result: str, params: dict[str, 
 
     has_impact = bool(blocking_impact) and blocking_impact in game.impacts
 
-    if roll_result in ("STRONG_HIT", "WEAK_HIT"):
+    if roll_result in eng().dice.hit_results:
         amount = impact_amount if has_impact else full_amount
         if has_impact and clear_impact(game, blocking_impact):
             result.consequences.append(_labels["clear_impact"].format(impact=blocking_impact))

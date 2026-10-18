@@ -28,21 +28,20 @@ def locations_match(loc_a: str, loc_b: str) -> bool:
 
 
 def update_chaos_factor(game: GameState, result: str, target_npc_id: str | None) -> None:
-    _e = eng()
-    _c = _e.chaos
+    _c = eng().chaos
     if result == "MISS":
-        game.world.tick_chaos(_c.adjust_miss, floor=_c.min, ceiling=_c.max)
+        game.world.tick_chaos(_c.adjust_miss)
     elif result == "STRONG_HIT":
-        game.world.tick_chaos(_c.adjust_strong, floor=_c.min, ceiling=_c.max)
+        game.world.tick_chaos(_c.adjust_strong)
     elif result == "dialog" and target_npc_id:
         from ..npc import find_npc
 
         npc = find_npc(game, target_npc_id)
         if npc:
             if npc.disposition in _c.dialog_raising_dispositions:
-                game.world.tick_chaos(_c.adjust_dialog_hostile, floor=_c.min, ceiling=_c.max)
+                game.world.tick_chaos(_c.adjust_dialog_hostile)
             elif npc.disposition in _c.dialog_lowering_dispositions:
-                game.world.tick_chaos(_c.adjust_dialog_friendly, floor=_c.min, ceiling=_c.max)
+                game.world.tick_chaos(_c.adjust_dialog_friendly)
 
 
 def advance_time(game: GameState, progression: str) -> None:

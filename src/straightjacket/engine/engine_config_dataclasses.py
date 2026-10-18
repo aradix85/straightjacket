@@ -180,18 +180,10 @@ class LegacyConfig:
 
 
 @dataclass
-class ProgressTrackType:
-    ticks_per_mark: dict[str, int]
-
-
-@dataclass
 class ProgressConfig:
     max_ticks: int
     ticks_per_box: int
-    track_types: dict[str, ProgressTrackType]
-
-    def ticks_per_mark(self, rank: str, track_type: str = "default") -> int:
-        return self.track_types[track_type].ticks_per_mark[rank]
+    ticks_per_mark: dict[str, int]
 
     @property
     def boxes(self) -> int:
@@ -203,6 +195,7 @@ class DiceConfig:
     action_die: int
     challenge_die: int
     action_score_max: int
+    hit_results: list[str]
     fate_chart_die: int
     fate_check_die: int
     scene_test_die: int
@@ -410,9 +403,6 @@ class NarrativeDirectionEntry:
 class NarrativeDirectionConfig:
     intensity: NarrativeIntensityThresholds
     result_map: dict[str, NarrativeDirectionEntry]
-
-    def entry_for(self, roll_result: str) -> NarrativeDirectionEntry:
-        return self.result_map[roll_result]
 
 
 @dataclass

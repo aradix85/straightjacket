@@ -7,7 +7,7 @@ from straightjacket.engine.mechanics.move_effects import has_story_complication
 from straightjacket.engine.mechanics.move_outcome import resolve_move_outcome
 from straightjacket.engine.models import GameState, ResolvedFact, RollResult
 from straightjacket.engine.prompt_action import build_action_prompt
-from tests._helpers import make_brain_result, make_game_state, make_npc
+from tests._helpers import action_prompt_kwargs, make_brain_result, make_game_state, make_npc
 
 
 def _game(setting_id: str = "starforged") -> GameState:
@@ -45,7 +45,7 @@ def _roll(result: str) -> RollResult:
 
 def _prompt(game: GameState, result: str, target: str | None = None) -> str:
     brain = make_brain_result(move="adventure/gather_information", stat="wits", target_npc=target)
-    return build_action_prompt(game, brain, _roll(result), [], [], player_words="search", consequence_sentences=[])
+    return build_action_prompt(game, brain, _roll(result), [], [], **action_prompt_kwargs(player_words="search"))
 
 
 def test_an_information_miss_turns_useful_to_no(load_engine: None) -> None:
@@ -70,7 +70,7 @@ def test_the_settled_facts_reach_the_narrator(load_engine: None) -> None:
     facts = settle_facts_by_miss(game, [], "adventure/gather_information", "MISS")
     brain = make_brain_result(move="adventure/gather_information", stat="wits")
     prompt = build_action_prompt(
-        game, brain, _roll("MISS"), [], [], player_words="search", consequence_sentences=[], facts=facts
+        game, brain, _roll("MISS"), [], [], **action_prompt_kwargs(player_words="search", facts=facts)
     )
     assert eng().fact_resolution.types["useful"].description in prompt
 
@@ -187,7 +187,7 @@ def test_everyone_present_withholds_on_a_miss(load_engine: None, monkeypatch: py
     game.npcs += [target, bystander]
     brain = make_brain_result(move="adventure/gather_information", stat="wits", target_npc="npc_1")
     prompt = build_action_prompt(
-        game, brain, _roll(result), [], [], player_words="ask", consequence_sentences=[], activated_npcs=[bystander]
+        game, brain, _roll(result), [], [], **action_prompt_kwargs(player_words="ask", activated_npcs=[bystander])
     )
     held = eng().information_gate.miss_stance.stance
     withheld = (

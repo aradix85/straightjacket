@@ -195,6 +195,38 @@ def make_npc_rename(**kwargs: Any) -> dict:
     return kwargs
 
 
+def action_prompt_kwargs(**kwargs: Any) -> dict[str, Any]:
+    from straightjacket.engine.models import SceneSetup
+
+    kwargs.setdefault("consequence_sentences", [])
+    kwargs.setdefault("player_words", "")
+    kwargs.setdefault("scene_setup", SceneSetup(scene_type="expected"))
+    kwargs.setdefault("activated_npcs", [])
+    kwargs.setdefault("mentioned_npcs", [])
+    kwargs.setdefault("position", "risky")
+    kwargs.setdefault("effect", "standard")
+    kwargs.setdefault("random_events", [])
+    kwargs.setdefault("threat_events", [])
+    kwargs.setdefault("clock_fill_results", [])
+    kwargs.setdefault("facts", [])
+    return kwargs
+
+
+def dialog_prompt_kwargs(**kwargs: Any) -> dict[str, Any]:
+    from straightjacket.engine.models import SceneSetup
+
+    kwargs.setdefault("player_words", "")
+    kwargs.setdefault("scene_setup", SceneSetup(scene_type="expected"))
+    kwargs.setdefault("activated_npcs", [])
+    kwargs.setdefault("mentioned_npcs", [])
+    kwargs.setdefault("oracle_answer", "")
+    kwargs.setdefault("random_events", [])
+    kwargs.setdefault("clock_fill_results", [])
+    kwargs.setdefault("npc_agency", [])
+    kwargs.setdefault("facts", [])
+    return kwargs
+
+
 def make_director_guidance(**kwargs: Any) -> dict:
     kwargs.setdefault("scene_summary", "")
     kwargs.setdefault("narrator_guidance", "")

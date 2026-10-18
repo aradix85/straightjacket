@@ -28,15 +28,6 @@ def test_there_is_no_current_act_without_a_blueprint(load_engine: None) -> None:
         get_current_act(g)
 
 
-def test_there_is_no_current_act_in_a_blueprint_without_acts(load_engine: None) -> None:
-    from straightjacket.engine.story_state import get_current_act
-
-    g = make_game_state()
-    g.narrative.story_blueprint = make_blueprint(acts=[])
-    with pytest.raises(ValueError, match="blueprint"):
-        get_current_act(g)
-
-
 def test_get_current_act_first_act_when_in_range(load_engine: None) -> None:
     from straightjacket.engine.story_state import get_current_act
 

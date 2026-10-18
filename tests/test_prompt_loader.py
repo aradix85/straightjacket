@@ -19,8 +19,20 @@ def test_get_prompt_resolves_bare_name(monkeypatch: pytest.MonkeyPatch) -> None:
 
 def test_get_prompt_unknown_name_raises(monkeypatch: pytest.MonkeyPatch) -> None:
     _install_prompts(monkeypatch, {})
-    with pytest.raises(KeyError, match="Unknown prompt"):
+    with pytest.raises(KeyError, match="does_not_exist"):
         prompt_loader.get_prompt("does_not_exist")
+
+
+def test_get_prompt_raises_for_a_variable_it_was_not_given(monkeypatch: pytest.MonkeyPatch) -> None:
+    _install_prompts(monkeypatch, {"task_action": "Write {n} paragraphs in {lang}."})
+    with pytest.raises(KeyError, match="lang"):
+        prompt_loader.get_prompt("task_action", n="3")
+
+
+def test_a_prompt_that_is_not_text_stops_loading(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(prompt_loader, "load_yaml_dir", lambda directory, missing_dir_hint: {"a": "text", "b": [1]})
+    with pytest.raises(ValueError, match="'b'"):
+        prompt_loader.get_prompt("a")
 
 
 def test_get_prompt_template_variables_fill(monkeypatch: pytest.MonkeyPatch) -> None:

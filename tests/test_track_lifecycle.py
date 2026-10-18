@@ -126,7 +126,7 @@ class TestTracksStatus:
 def test_progress_track_ticks_per_mark() -> None:
     from straightjacket.engine.engine_loader import eng
 
-    expected_table = eng().progress.track_types["default"].ticks_per_mark
+    expected_table = eng().progress.ticks_per_mark
     for rank, expected in expected_table.items():
         t = make_progress_track(rank=rank)
         assert t.ticks_per_mark == expected

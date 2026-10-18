@@ -6,10 +6,17 @@ import pytest
 import yaml
 
 from straightjacket.engine.ai.metadata import apply_narrator_metadata
-from straightjacket.engine.director import _process_npc_reflection
+from straightjacket.engine.director import apply_director_guidance
 from straightjacket.engine.engine_loader import eng
 from straightjacket.engine.models import GameState, NpcData, Resources
-from tests._helpers import make_game_state, make_memory, make_npc, make_npc_reflection
+from tests._helpers import (
+    keyed_reflections,
+    make_director_guidance,
+    make_game_state,
+    make_memory,
+    make_npc,
+    make_npc_reflection,
+)
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 
@@ -43,11 +50,15 @@ def test_momentum_reset_follows_impacts_and_stops_at_reset_floor(load_engine: No
         assert resources.momentum == expected, max_momentum
 
 
+def _reflect_on_npc_1(game: GameState) -> None:
+    apply_director_guidance(game, make_director_guidance(npc_reflections=keyed_reflections(make_npc_reflection())))
+
+
 def test_reflection_for_deceased_npc_is_rejected(load_engine: None) -> None:
     npc = _profiled_npc("deceased", needs_reflection=True)
     game = _game_with(npc)
     before = len(npc.memory)
-    assert _process_npc_reflection(game, "npc_1", make_npc_reflection()) is None
+    _reflect_on_npc_1(game)
     assert len(npc.memory) == before
 
 
@@ -55,8 +66,17 @@ def test_reflection_for_npc_the_engine_did_not_select_is_rejected(load_engine: N
     npc = _profiled_npc("active", needs_reflection=False)
     game = _game_with(npc)
     before = len(npc.memory)
-    assert _process_npc_reflection(game, "npc_1", make_npc_reflection()) is None
+    _reflect_on_npc_1(game)
     assert len(npc.memory) == before
+
+
+def test_reflection_for_an_npc_the_game_does_not_know_is_rejected(load_engine: None) -> None:
+    npc = _profiled_npc("active", needs_reflection=True)
+    game = _game_with(npc)
+    apply_director_guidance(
+        game, make_director_guidance(npc_reflections=keyed_reflections(make_npc_reflection(npc_id="npc_9")))
+    )
+    assert [m for m in npc.memory if m.type == "reflection"] == []
 
 
 def test_npc_introduced_and_killed_in_the_same_scene_is_marked_deceased(load_engine: None) -> None:

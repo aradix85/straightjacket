@@ -1,5 +1,4 @@
 import re
-from collections.abc import Callable
 
 from .ai.provider_base import AIUnavailableError
 from .engine_loader import eng
@@ -24,16 +23,7 @@ def _strip_role_prefix(text: str) -> str:
     return re.sub(r"^\s*Narrator:\s*", "", text, flags=re.IGNORECASE)
 
 
-def _strip_metadata_and_prompt_tags(text: str) -> str:
-    text = re.sub(
-        r"<(?:npc_rename|new_npcs|npc_details|memory_updates|scene_context|"
-        r"location_update|time_update|game_data)>[\s\S]*?</(?:npc_rename|new_npcs|"
-        r"npc_details|memory_updates|scene_context|location_update|time_update|"
-        r"game_data)>",
-        "",
-        text,
-    ).strip()
-
+def _strip_prompt_tags(text: str) -> str:
     return re.sub(
         r"</?(?:task|scene|world|character|situation|conflict|possible_endings|"
         r"session_log|npc|returning_npc|campaign_history|chapter|story_arc|"
@@ -46,50 +36,6 @@ def _strip_metadata_and_prompt_tags(text: str) -> str:
 def _strip_code_fences(text: str) -> str:
     text = re.sub(r"```(?:\w+)?\s*[\s\S]*?```", "", text).strip()
     return re.sub(r"^\s*```(?:\w+)?\s*$", "", text, flags=re.MULTILINE).strip()
-
-
-def _strip_leaked_json(text: str) -> str:
-    text = re.sub(r'\[[\s]*\{[^[\]]*"(?:npc_id|event|emotional_weight)"[\s\S]*$', "", text).strip()
-    return re.sub(r'\{[^{}]*"(?:scene_context|location|npc_id)"[^{}]*\}', "", text).strip()
-
-
-def _strip_bracket_labels(text: str) -> str:
-    return re.sub(
-        r"^\[(?:memory[_\s-]*updates?|scene[_\s-]*context|new[_\s-]*npcs?|npc[_\s-]*renames?|"
-        r"npc[_\s-]*details?|location[_\s-]*update?|time[_\s-]*update?|game[_\s-]*data)\].*$",
-        "",
-        text,
-        flags=re.IGNORECASE | re.MULTILINE,
-    ).strip()
-
-
-def _strip_markdown_metadata_header(text: str) -> tuple[str, bool]:
-    meta_match = re.search(
-        r"^[*_#\s]*(scene[\s_-]*context|memory[\s_-]*updates?|location)\s*[*_#]*\s*[:=]\s*",
-        text,
-        re.IGNORECASE | re.MULTILINE,
-    )
-    if meta_match:
-        return text[: meta_match.start()].rstrip(), True
-    return text, False
-
-
-def _strip_trailing_json_and_labels(text: str) -> str:
-    lines = text.rstrip().split("\n")
-    while lines:
-        last = lines[-1].strip()
-        if not last:
-            lines.pop()
-            continue
-        if last.startswith(("{", "[")):
-            lines.pop()
-            continue
-        clean_last = re.sub(r"^[\s*_#]+", "", last)
-        if re.match(r"^(scene[\s_-]*context|memory[\s_-]*updates?|location)\s*[:=]", clean_last, re.IGNORECASE):
-            lines.pop()
-            continue
-        break
-    return "\n".join(lines).rstrip()
 
 
 def _strip_mechanic_annotations(text: str) -> str:
@@ -113,66 +59,40 @@ def _mark_introduced_npcs(game: GameState, narration: str) -> None:
     titles = _e.name_titles
 
     for npc in game.npcs:
-        if npc.introduced or not npc.name:
+        if npc.introduced:
             continue
-        name = npc.name.strip()
-        if not name:
-            continue
-        if name.lower() in narration_lower:
+        if npc.name.lower() in narration_lower:
             npc.introduced = True
             continue
 
-        for part in name.split():
+        for part in npc.name.split():
             part_clean = part.strip(".,;:!?\"'()-").lower()
             if len(part_clean) >= min_part and part_clean not in titles and part_clean in narration_lower:
                 npc.introduced = True
                 break
 
 
+_CLEANUP_STEPS = (
+    _strip_role_prefix,
+    _strip_prompt_tags,
+    _strip_code_fences,
+    _strip_mechanic_annotations,
+    _strip_markdown_formatting,
+)
+
+
 def parse_narrator_response(game: GameState, raw: str) -> str:
     narration = raw
     hits: list[str] = []
-
-    steps: list[tuple[str, Callable[[str], str]]] = [
-        ("0:role_prefix", _strip_role_prefix),
-        ("2:xml_tags", _strip_metadata_and_prompt_tags),
-        ("3:code_fences", _strip_code_fences),
-        ("4:leaked_json", _strip_leaked_json),
-        ("5:bracket_labels", _strip_bracket_labels),
-    ]
-    for label, fn in steps:
+    for step in _CLEANUP_STEPS:
         before = narration
-        narration = fn(narration)
+        narration = step(narration)
         if narration != before:
-            hits.append(label)
-
-    narration, md_hit = _strip_markdown_metadata_header(narration)
-    if md_hit:
-        hits.append("6:md_metadata")
-
-    steps_post_md: list[tuple[str, Callable[[str], str]]] = [
-        ("7:trailing_json", _strip_trailing_json_and_labels),
-        ("7.5:mechanic_annotations", _strip_mechanic_annotations),
-        ("8:markdown", _strip_markdown_formatting),
-    ]
-    for label, fn in steps_post_md:
-        before = narration
-        narration = fn(narration)
-        if narration != before:
-            hits.append(label)
-
+            hits.append(step.__name__)
     if hits:
         log(f"[Parser] Cleanup steps triggered: {', '.join(hits)}")
 
     _mark_introduced_npcs(game, narration)
-
-    active = [n for n in game.npcs if n.status == "active"]
-    background = [n for n in game.npcs if n.status == "background"]
-    introduced = [n for n in active if n.introduced]
-    log(
-        f"[Parser] Done. NPCs total={len(game.npcs)} active={len(active)} background={len(background)} "
-        f"introduced={len(introduced)}: {[n.name for n in introduced]}"
-    )
 
     if not narration.strip():
         log("[Parser] WARNING: nothing of the narration is left after cleanup", level="warning")
@@ -183,11 +103,6 @@ def parse_narrator_response(game: GameState, raw: str) -> str:
 
 def clean_sentence(text: str, first: bool) -> str:
     cleaned = _strip_role_prefix(text) if first else text
-    for step in (
-        _strip_metadata_and_prompt_tags,
-        _strip_bracket_labels,
-        _strip_mechanic_annotations,
-        _strip_markdown_formatting,
-    ):
+    for step in (_strip_prompt_tags, _strip_mechanic_annotations, _strip_markdown_formatting):
         cleaned = step(cleaned)
     return cleaned.strip()

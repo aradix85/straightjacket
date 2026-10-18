@@ -23,6 +23,7 @@ class MockProvider:
         dialog_only: bool = True,
     ) -> None:
         self.calls: list = []
+        self.narration_prompts: list[str] = []
         self._correction_source = correction_source
         self._brains: list[dict[str, Any]] = [
             _TURN_BRAIN,
@@ -108,6 +109,7 @@ class MockProvider:
                 usage={"input_tokens": 100, "output_tokens": 50},
             )
 
+        self.narration_prompts.append(spec.messages[-1]["content"])
         return AIResponse(
             content="Mira looked up from the archive, a question forming behind her eyes. You spoke first.",
             usage={"input_tokens": 100, "output_tokens": 50},
@@ -184,6 +186,26 @@ def test_correction_state_error_full_flow(
     assert len(narration) > 10
     assert len(game.narrative.narration_history) == history_len_before
     assert game.narrative.session_log[-1].summary.startswith("[corrected]")
+
+
+def test_a_state_correction_retells_the_turn_with_its_own_scene_and_position(
+    load_engine: None, stub_emotions: None, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from straightjacket.engine.correction import process_correction
+    from straightjacket.engine.models import SceneSetup
+
+    provider = MockProvider(correction_source="state_error")
+    game = _played_game(provider, monkeypatch)
+    assert game.last_turn_snapshot is not None
+    game.last_turn_snapshot.scene_setup = SceneSetup(scene_type="keyed", narrative_hint="The bell tolls")
+    game.narrative.session_log[-1].position = "desperate"
+    game.narrative.session_log[-1].effect = "limited"
+
+    process_correction(provider, game, "Mira should be loyal")
+
+    retold = provider.narration_prompts[-1]
+    assert "<keyed_scene>The bell tolls</keyed_scene>" in retold
+    assert '<position level="desperate" effect="limited"/>' in retold
 
 
 def test_a_snapshot_without_a_played_turn_is_refused(

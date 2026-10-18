@@ -147,14 +147,6 @@ class GameState(SerializableMixin):
     last_turn_snapshot: TurnSnapshot | None = field(default=None, repr=False)
     post_epilogue_director_done: bool = field(default=False, repr=False)
 
-    def get_stat(self, name: str) -> int:
-        valid = {n for n in eng().stats.names if n != "none"}
-        if name not in valid:
-            raise ValueError(f"Unknown stat: {name!r} (valid: {sorted(valid)})")
-        if name not in self.stats:
-            raise KeyError(f"Stat {name!r} not set on GameState")
-        return self.stats[name]
-
     def snapshot(self) -> TurnSnapshot:
         return TurnSnapshot(
             resources=self.resources.snapshot(),

@@ -8,7 +8,15 @@ from straightjacket.engine.models import (
 )
 from straightjacket.engine.prompt_action import build_action_prompt
 from straightjacket.engine.prompt_dialog import build_dialog_prompt
-from tests._helpers import make_brain_result, make_game_state, make_memory, make_npc, make_progress_track
+from tests._helpers import (
+    action_prompt_kwargs,
+    dialog_prompt_kwargs,
+    make_brain_result,
+    make_game_state,
+    make_memory,
+    make_npc,
+    make_progress_track,
+)
 
 
 pytestmark = pytest.mark.usefixtures("load_engine")
@@ -145,8 +153,7 @@ def test_stance_in_target_npc_block() -> None:
         roll,
         ["momentum +1"],
         [],
-        consequence_sentences=["The tide shifts."],
-        player_words="I ask about the cargo",
+        **action_prompt_kwargs(consequence_sentences=["The tide shifts."], player_words="I ask about the cargo"),
     )
     assert 'stance="evasive"' in prompt
     assert "constraint=" in prompt
@@ -181,9 +188,9 @@ def test_stance_in_activated_npc_block() -> None:
         roll,
         [],
         [],
-        consequence_sentences=["The tide shifts."],
-        player_words="dodge",
-        activated_npcs=[npc1, npc2],
+        **action_prompt_kwargs(
+            consequence_sentences=["The tide shifts."], player_words="dodge", activated_npcs=[npc1, npc2]
+        ),
     )
 
     assert "stance=" in prompt
@@ -197,7 +204,6 @@ def test_dialog_prompt_uses_social_stance() -> None:
     prompt = build_dialog_prompt(
         game,
         brain,
-        player_words="What happened last night?",
-        activated_npcs=[npc],
+        **dialog_prompt_kwargs(player_words="What happened last night?", activated_npcs=[npc]),
     )
     assert 'stance="guarded"' in prompt

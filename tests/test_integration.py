@@ -1,6 +1,14 @@
 import pytest
 
-from tests._helpers import fix_dice, make_brain_result, make_clock, make_memory, make_npc
+from tests._helpers import (
+    action_prompt_kwargs,
+    dialog_prompt_kwargs,
+    fix_dice,
+    make_brain_result,
+    make_clock,
+    make_memory,
+    make_npc,
+)
 
 import sys
 import json
@@ -405,7 +413,7 @@ def test_dialog_prompt_contains_world_and_character(stub_engine: None) -> None:
         target_npc="npc_1",
         player_intent="Ask about the archives",
     )
-    prompt = build_dialog_prompt(game, brain, player_words="I ask Mira about the archives")
+    prompt = build_dialog_prompt(game, brain, **dialog_prompt_kwargs(player_words="I ask Mira about the archives"))
 
     assert '<world genre="classic"' in prompt
     assert "Kael" in prompt
@@ -442,8 +450,10 @@ def test_action_prompt_contains_result_and_position(stub_engine: None) -> None:
         roll,
         consequences=[],
         npc_agency=[],
-        consequence_sentences=["The tide shifts. Hero can feel it."],
-        player_words="I search for hidden compartments",
+        **action_prompt_kwargs(
+            consequence_sentences=["The tide shifts. Hero can feel it."],
+            player_words="I search for hidden compartments",
+        ),
     )
 
     assert "STRONG_HIT" in prompt

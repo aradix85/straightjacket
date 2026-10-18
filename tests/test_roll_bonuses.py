@@ -65,7 +65,7 @@ def test_a_chosen_bonus_adds_to_the_roll_and_momentum_on_a_hit(
     brain.bonus_id = "connection:npc_1"
     game.last_turn_snapshot = game.snapshot()
     outcome = _execute_roll(game, brain, None)
-    assert outcome.roll.action_score == min(dice[0] + game.get_stat("wits") + 1, 10)
+    assert outcome.roll.action_score == min(dice[0] + game.stats["wits"] + 1, 10)
     assert game.resources.momentum == momentum_after
 
 

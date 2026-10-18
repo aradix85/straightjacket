@@ -11,22 +11,18 @@ def _is_dataclass_type(tp: Any) -> TypeGuard[type]:
 
 def _resolve_item_type(tp: Any) -> type | None:
     origin = get_origin(tp)
-    if origin is list:
-        args = get_args(tp)
-        if args and _is_dataclass_type(args[0]):
-            return args[0]
+    if origin is list and _is_dataclass_type(item := get_args(tp)[0]):
+        return item
     return None
 
 
 def _allows_none(tp: Any) -> bool:
-    if tp is Any:
-        return True
     if get_origin(tp) is Union or isinstance(tp, types.UnionType):
         return type(None) in get_args(tp)
     return False
 
 
-def _unwrap_optional(tp: Any) -> tuple[type | None, bool]:
+def _unwrap_optional(tp: Any) -> tuple[Any, bool]:
     origin = get_origin(tp)
     if origin is Union or isinstance(tp, types.UnionType):
         args = get_args(tp)
@@ -83,7 +79,7 @@ def _deserialize_value(hint: Any, val: Any) -> Any:
         raise ValueError(f"null where {hint} is required")
 
     inner, is_optional = _unwrap_optional(hint)
-    if is_optional and inner is not None:
+    if is_optional:
         return _deserialize_value(inner, val)
 
     if _is_dataclass_type(inner):

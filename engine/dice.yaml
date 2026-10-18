@@ -2,6 +2,7 @@ dice:
   action_die: 6
   challenge_die: 10
   action_score_max: 10
+  hit_results: [STRONG_HIT, WEAK_HIT]
   fate_chart_die: 100
   fate_check_die: 10
   scene_test_die: 10

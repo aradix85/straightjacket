@@ -22,6 +22,7 @@ from ..models import (
     NpcData,
     ResolvedFact,
     RollResult,
+    SceneSetup,
     TurnSnapshot,
 )
 from ..npc import activate_npcs_for_prompt
@@ -37,6 +38,7 @@ def _rewrite_prompt(
     game: GameState,
     snap: TurnSnapshot,
     brain: BrainResult,
+    scene_setup: SceneSetup,
     activated_npcs: list[NpcData],
     mentioned_npcs: list[NpcData],
 ) -> tuple[str, list[str], list[ResolvedFact]]:
@@ -49,9 +51,13 @@ def _rewrite_prompt(
             game,
             brain,
             player_words=snap.player_input,
+            scene_setup=scene_setup,
             activated_npcs=activated_npcs,
             mentioned_npcs=mentioned_npcs,
             oracle_answer=last_entry.oracle_answer,
+            random_events=[],
+            clock_fill_results=[],
+            npc_agency=[],
             facts=facts,
         )
         return prompt, [], facts
@@ -67,10 +73,16 @@ def _rewrite_prompt(
         roll,
         consequences,
         npc_agency,
+        consequence_sentences=consequence_sentences,
         player_words=snap.player_input,
+        scene_setup=scene_setup,
         activated_npcs=activated_npcs,
         mentioned_npcs=mentioned_npcs,
-        consequence_sentences=consequence_sentences,
+        position=last_entry.position,
+        effect=last_entry.effect,
+        random_events=[],
+        threat_events=[],
+        clock_fill_results=[],
         facts=facts,
     )
     return prompt, consequences, facts
@@ -116,14 +128,14 @@ def process_correction(
     if snap is None:
         log("[Correction] No snapshot available — cannot correct", level="warning")
         return game, t("correction.no_snapshot"), None, None
-    brain, last_narration = snap.brain, snap.narration
-    if brain is None or last_narration is None:
-        raise ValueError("The last turn's snapshot holds no Brain result or narration")
+    brain, last_narration, scene_setup = snap.brain, snap.narration, snap.scene_setup
+    if brain is None or last_narration is None or scene_setup is None:
+        raise ValueError("The last turn's snapshot holds no Brain result, narration, or scene setup")
 
     analysis = call_correction_brain(provider, game, correction_text, snap, brain, last_narration)
     note = (
         f"<correction_context>{_xe(analysis['narrator_guidance'])}</correction_context>\n"
-        f"{get_prompt('block_correction_instruction', role='narrator')}"
+        f"{get_prompt('block_correction_instruction')}"
     )
 
     if analysis["correction_source"] == "input_misread":
@@ -135,7 +147,7 @@ def process_correction(
     roll = snap.roll
     apply_correction_ops(game, analysis["state_ops"])
     activated_npcs, mentioned_npcs, _ = activate_npcs_for_prompt(game, brain, snap.player_input)
-    prompt, consequences, facts = _rewrite_prompt(game, snap, brain, activated_npcs, mentioned_npcs)
+    prompt, consequences, facts = _rewrite_prompt(game, snap, brain, scene_setup, activated_npcs, mentioned_npcs)
     narration = narrate_scene(provider, game, f"{prompt}\n{note}")
     snap.narration = narration
     snap.facts = list(facts)

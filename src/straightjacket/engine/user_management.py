@@ -1,8 +1,6 @@
-from typing import Any
-import json
 import shutil
-from datetime import datetime
 from pathlib import Path
+from typing import Any
 
 from .config_loader import USERS_DIR
 from .logging_util import log
@@ -44,22 +42,14 @@ def get_save_dir(username: str) -> Path:
 
 
 def list_users() -> list[dict[str, Any]]:
-    users = []
-    if USERS_DIR.exists():
-        for p in sorted(USERS_DIR.iterdir()):
-            if p.is_dir():
-                users.append({"name": p.name})
-    return users
+    return [{"name": p.name} for p in sorted(USERS_DIR.iterdir()) if p.is_dir()]
 
 
 def create_user(name: str) -> bool:
     user_dir = _get_user_dir(name)
     if user_dir.exists():
         return False
-    user_dir.mkdir(parents=True, exist_ok=True)
-    (user_dir / "saves").mkdir(exist_ok=True)
-    meta = {"created": datetime.now().astimezone().isoformat()}
-    (user_dir / "user.json").write_text(json.dumps(meta, ensure_ascii=False), encoding="utf-8")
+    (user_dir / "saves").mkdir(parents=True)
     log(f"[User] Created user: {name}")
     return True
 

@@ -28,9 +28,9 @@ class Resources(SerializableMixin):
             max_momentum=_e.momentum.max,
         )
 
-    def damage(self, track: str, amount: int, floor: int = 0) -> int:
+    def damage(self, track: str, amount: int) -> int:
         old = getattr(self, track)
-        new = max(floor, old - amount)
+        new = max(0, old - amount)
         setattr(self, track, new)
         actual: int = old - new
         if actual > 0:
@@ -119,9 +119,10 @@ class WorldState(SerializableMixin):
     def from_config(cls) -> WorldState:
         return cls(chaos_factor=eng().chaos.start)
 
-    def tick_chaos(self, direction: int, floor: int = 1, ceiling: int = 9) -> None:
+    def tick_chaos(self, direction: int) -> None:
         old = self.chaos_factor
-        self.chaos_factor = max(floor, min(ceiling, self.chaos_factor + direction))
+        chaos = eng().chaos
+        self.chaos_factor = max(chaos.min, min(chaos.max, self.chaos_factor + direction))
         if self.chaos_factor != old:
             log(f"[World] chaos {old}→{self.chaos_factor}")
 
@@ -146,12 +147,12 @@ class ProgressTrack(SerializableMixin):
     completions: int = 0
 
     @classmethod
-    def new(cls, *, id: str, name: str, track_type: str, rank: str, ticks: int = 0) -> ProgressTrack:
-        return cls(id=id, name=name, track_type=track_type, rank=rank, max_ticks=eng().progress.max_ticks, ticks=ticks)
+    def new(cls, *, id: str, name: str, track_type: str, rank: str) -> ProgressTrack:
+        return cls(id=id, name=name, track_type=track_type, rank=rank, max_ticks=eng().progress.max_ticks)
 
     @property
     def ticks_per_mark(self) -> int:
-        return eng().progress.ticks_per_mark(self.rank)
+        return eng().progress.ticks_per_mark[self.rank]
 
     @property
     def filled_boxes(self) -> int:
@@ -204,7 +205,7 @@ class ThreatData(SerializableMixin):
 
     @property
     def menace_per_mark(self) -> int:
-        return eng().progress.ticks_per_mark(self.rank)
+        return eng().progress.ticks_per_mark[self.rank]
 
     @property
     def menace_filled_boxes(self) -> int:
@@ -214,7 +215,7 @@ class ThreatData(SerializableMixin):
     def menace_total_boxes(self) -> int:
         return self.max_menace_ticks // eng().progress.ticks_per_box
 
-    def advance_menace(self, marks: int = 1) -> int:
+    def advance_menace(self, marks: int) -> int:
         old = self.menace_ticks
         self.menace_ticks = min(self.max_menace_ticks, self.menace_ticks + self.menace_per_mark * marks)
         return self.menace_ticks - old

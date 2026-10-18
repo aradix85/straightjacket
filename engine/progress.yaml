@@ -1,11 +1,9 @@
 progress:
   max_ticks: 40
   ticks_per_box: 4
-  track_types:
-    default:
-      ticks_per_mark:
-        troublesome: 12
-        dangerous: 8
-        formidable: 4
-        extreme: 2
-        epic: 1
+  ticks_per_mark:
+    troublesome: 12
+    dangerous: 8
+    formidable: 4
+    extreme: 2
+    epic: 1

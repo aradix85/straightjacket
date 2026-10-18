@@ -83,7 +83,7 @@ def _secured_advantage(recent_log: list[Any]) -> bool:
     return bool(
         recent_log
         and recent_log[-1].move == eng().position_resolver.secured_advantage_move
-        and recent_log[-1].result in ("STRONG_HIT", "WEAK_HIT")
+        and recent_log[-1].result in eng().dice.hit_results
     )
 
 

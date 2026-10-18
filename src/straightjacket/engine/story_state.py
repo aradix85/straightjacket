@@ -5,14 +5,10 @@ from .logging_util import log
 from .models import CurrentAct, GameState, Revelation
 
 
-def default_scene_range() -> list[int]:
-    return list(eng().scene_range_default)
-
-
 def get_current_act(game: GameState) -> CurrentAct:
     bp = game.narrative.story_blueprint
-    if not bp or not bp.acts:
-        raise ValueError("get_current_act needs a story blueprint with acts")
+    if bp is None:
+        raise ValueError("get_current_act needs a story blueprint")
 
     if bp.story_complete and game.campaign.epilogue_dismissed:
         last = bp.acts[-1]
@@ -21,6 +17,7 @@ def get_current_act(game: GameState) -> CurrentAct:
             phase="aftermath",
             title=defaults["aftermath_act_title"],
             goal=defaults["aftermath_act_goal"],
+            scene_range=list(last.scene_range),
             mood=last.mood,
             act_number=len(bp.acts),
             total_acts=len(bp.acts),
@@ -35,19 +32,15 @@ def get_current_act(game: GameState) -> CurrentAct:
     act_number = 1
 
     for i, act in enumerate(acts[:-1]):
-        sr = act.scene_range or default_scene_range()
-        act_id = f"act_{i}"
-
-        if act_id in triggered or scene > sr[1]:
-            if i + 1 < len(acts):
-                current = acts[i + 1]
-                act_number = i + 2
+        if f"act_{i}" in triggered or scene > act.scene_range[1]:
+            current = acts[i + 1]
+            act_number = i + 2
         else:
             current = act
             act_number = i + 1
             break
 
-    sr = current.scene_range or default_scene_range()
+    sr = current.scene_range
     act_len = max(sr[1] - sr[0] + 1, 1)
     scenes_in = scene - sr[0] + 1
     cfg = eng().story_state
@@ -76,15 +69,14 @@ def get_current_act(game: GameState) -> CurrentAct:
 
 def check_act_transition(game: GameState) -> None:
     bp = game.narrative.story_blueprint
-    if not bp or not bp.acts:
+    if bp is None:
         return
     act = get_current_act(game)
     if act.act_number >= len(bp.acts):
         return
     act_idx = act.act_number - 1
     act_id = f"act_{act_idx}"
-    sr = act.scene_range or default_scene_range()
-    if game.narrative.scene_count < sr[1] or act_id in bp.triggered_transitions:
+    if game.narrative.scene_count < act.scene_range[1] or act_id in bp.triggered_transitions:
         return
     for i in range(act_idx):
         fill_id = f"act_{i}"
@@ -100,7 +92,7 @@ def check_act_transition(game: GameState) -> None:
 
 def get_pending_revelations(game: GameState) -> list[Revelation]:
     bp = game.narrative.story_blueprint
-    if not bp or not bp.revelations:
+    if bp is None:
         return []
     revealed = set(bp.revealed)
     return [
@@ -116,14 +108,10 @@ def mark_revelation_used(game: GameState, rev_id: str) -> None:
 
 def check_story_completion(game: GameState) -> None:
     bp = game.narrative.story_blueprint
-    if not bp or not bp.acts:
-        return
-    if bp.story_complete:
+    if bp is None or bp.story_complete:
         return
     acts = bp.acts
-    if not acts:
-        return
-    final_end = (acts[-1].scene_range or default_scene_range())[1]
+    final_end = acts[-1].scene_range[1]
     sc = game.narrative.scene_count
 
     triggered = set(bp.triggered_transitions)
@@ -138,11 +126,9 @@ def check_story_completion(game: GameState) -> None:
     if sc >= final_end and not final_act_entered:
         for i, act in enumerate(acts[:-1]):
             act_id = f"act_{i}"
-            if act_id not in bp.triggered_transitions:
-                act_range = act.scene_range or default_scene_range()
-                if sc > act_range[1]:
-                    bp.triggered_transitions.append(act_id)
-                    log(f"[Story] Back-filled transition: {act_id} (scene {sc} > range end {act_range[1]})")
+            if act_id not in bp.triggered_transitions and sc > act.scene_range[1]:
+                bp.triggered_transitions.append(act_id)
+                log(f"[Story] Back-filled transition: {act_id} (scene {sc} > range end {act.scene_range[1]})")
         triggered = set(bp.triggered_transitions)
         if len(acts) >= 2 and penultimate_id in triggered:
             bp.story_complete = True

@@ -1165,7 +1165,6 @@ def _check_changelog_consistent() -> tuple[str, list[Violation]]:
 _ENGINE_SUBPACKAGES = frozenset({"ai", "correction", "datasworn", "game", "mechanics", "npc", "tools"})
 _CORE_BASE = frozenset(
     {
-        "bootstrap_log",
         "config_loader",
         "emotions_loader",
         "engine_config",

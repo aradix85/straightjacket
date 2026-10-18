@@ -24,15 +24,16 @@ from .xml_utils import xe as _xe
 def build_dialog_prompt(
     game: GameState,
     brain: BrainResult,
-    player_words: str = "",
-    scene_setup: SceneSetup | None = None,
-    activated_npcs: Sequence[NpcData] = (),
-    mentioned_npcs: Sequence[NpcData] = (),
-    oracle_answer: str = "",
-    random_events: Sequence[RandomEvent] = (),
-    clock_fill_results: Sequence[ClockFillResult] = (),
-    npc_agency: Sequence[str] = (),
-    facts: Sequence[ResolvedFact] = (),
+    *,
+    player_words: str,
+    scene_setup: SceneSetup,
+    activated_npcs: Sequence[NpcData],
+    mentioned_npcs: Sequence[NpcData],
+    oracle_answer: str,
+    random_events: Sequence[RandomEvent],
+    clock_fill_results: Sequence[ClockFillResult],
+    npc_agency: Sequence[str],
+    facts: Sequence[ResolvedFact],
 ) -> str:
     context_text = f"{player_words} {brain.player_intent} {game.world.current_scene_context}"
     move_cat = "social"

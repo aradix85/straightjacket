@@ -40,7 +40,6 @@
 "narrative_direction_tempo_label": "tempo:{tempo}"
 "narrative_direction_perspective_label": "perspective:{perspective}"
 "narrative_direction_player_caused": "player:caused_this"
-"narrative_direction_player_witnessing": "player:witnessing"
 "narrative_direction_position_aftermath": "position:aftermath"
 "narrative_direction_position_building": "position:building"
 "narrative_direction_position_steady": "position:steady"

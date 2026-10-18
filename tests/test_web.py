@@ -391,11 +391,13 @@ class TestSuccessionWebSocket:
     def _setup(self, load_engine: None, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
         from straightjacket.web.server import _session
 
+        users = tmp_path / "users"
+        users.mkdir()
         for target in (
             "straightjacket.engine.config_loader.USERS_DIR",
             "straightjacket.engine.user_management.USERS_DIR",
         ):
-            monkeypatch.setattr(target, tmp_path / "users")
+            monkeypatch.setattr(target, users)
         _session.player = ""
         _session.game = None
         _session.chat_messages = []

@@ -12,7 +12,7 @@ from straightjacket.engine.models import (
     RollResult,
 )
 from straightjacket.engine.prompt_action import build_action_prompt
-from tests._helpers import make_brain_result, make_game_state, make_npc
+from tests._helpers import action_prompt_kwargs, make_brain_result, make_game_state, make_npc
 
 
 def _game() -> GameState:
@@ -139,8 +139,7 @@ def test_consequence_tags_in_prompt() -> None:
         _roll("MISS"),
         ["health -2", "momentum -3"],
         [],
-        player_words="climb the wall",
-        consequence_sentences=sentences,
+        **action_prompt_kwargs(player_words="climb the wall", consequence_sentences=sentences),
     )
     assert "<consequence>" in prompt
     assert "The hit is bad" in prompt
@@ -156,8 +155,7 @@ def test_no_consequence_tags_when_empty() -> None:
         _roll("STRONG_HIT"),
         [],
         [],
-        player_words="climb the wall",
-        consequence_sentences=[],
+        **action_prompt_kwargs(player_words="climb the wall"),
     )
     assert "</consequence>" not in prompt
 
@@ -171,7 +169,6 @@ def test_task_mentions_consequence_weaving() -> None:
         _roll("MISS"),
         ["health -1"],
         [],
-        player_words="climb",
-        consequence_sentences=["Pain flares."],
+        **action_prompt_kwargs(player_words="climb", consequence_sentences=["Pain flares."]),
     )
     assert "<consequence>" in prompt.lower()

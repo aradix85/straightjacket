@@ -250,7 +250,7 @@ def call_revelation_check(provider: AIProvider, narration: str, revelation: Reve
     prompt = (
         f'<revelation weight="{html.escape(rev_weight, quote=True)}">{html.escape(rev_content)}</revelation>\n\n'
         f"<narration>{narration}</narration>\n\n"
-        f"{get_prompt('revelation_check_question', role='revelation_check')}"
+        f"{get_prompt('revelation_check_question')}"
     )
 
     spec = AICallSpec(

@@ -39,9 +39,9 @@ def build_new_game_prompt(game: GameState) -> str:
 
 def build_epilogue_prompt(game: GameState) -> str:
     bp = game.narrative.story_blueprint
-    endings = bp.possible_endings if bp else []
-    endings_text = ", ".join(f"{e.type}: {e.description}" for e in endings) if endings else "open"
-    conflict = bp.central_conflict if bp else ""
+    if bp is None:
+        raise ValueError("an epilogue ends the story of a blueprint, and this game has none")
+    endings_text = ", ".join(f"{e.type}: {e.description}" for e in bp.possible_endings)
 
     npc_block = "\n".join(
         f'<npc name="{_xa(n.name)}" disposition="{_xa(n.disposition)}" bond="{get_npc_bond(game, n.id)}/10">'
@@ -60,7 +60,7 @@ def build_epilogue_prompt(game: GameState) -> str:
 {_scene_header(game)}
 <location>{_xe(game.world.current_location)}</location>
 <situation>{_xe(game.world.current_scene_context)}</situation>
-<conflict>{_xe(conflict)}</conflict>
+<conflict>{_xe(bp.central_conflict)}</conflict>
 <possible_endings>{_xe(endings_text)}</possible_endings>
 {npc_block}
 {campaign_history_block(game)}

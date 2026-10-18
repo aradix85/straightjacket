@@ -77,7 +77,7 @@ def release_absent_target(brain: BrainResult, facts: Sequence[ResolvedFact]) -> 
 
 
 def clear_facts_settled_by_hit(game: GameState, facts: Sequence[ResolvedFact], result: str) -> None:
-    if result not in ("STRONG_HIT", "WEAK_HIT"):
+    if result not in eng().dice.hit_results:
         return
     types = eng().fact_resolution.types
     settled = {(f.about, f.fact_type) for f in facts if f.answer in _YES_ANSWERS and types[f.fact_type].cleared_by_hit}
@@ -88,7 +88,7 @@ def clear_facts_settled_by_hit(game: GameState, facts: Sequence[ResolvedFact], r
 
 
 def overrule_facts_by_hit(game: GameState, facts: Sequence[ResolvedFact], result: str) -> list[ResolvedFact]:
-    if result not in ("STRONG_HIT", "WEAK_HIT"):
+    if result not in eng().dice.hit_results:
         return list(facts)
     miss_settles = eng().fact_resolution.information_miss_settles
     overruled = {

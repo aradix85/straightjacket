@@ -1,3 +1,5 @@
+unoffered_roll_types: [no_roll, special_track]
+
 move_availability:
   adventure/face_danger:
     available: []

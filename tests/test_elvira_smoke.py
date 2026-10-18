@@ -14,11 +14,13 @@ def test_elvira_plays_a_short_session_end_to_end(
 ) -> None:
     from tests.elvira.elvira_bot import ai_helpers, runner
 
+    users = tmp_path / "users"
+    users.mkdir()
     for target in (
         "straightjacket.engine.config_loader.USERS_DIR",
         "straightjacket.engine.user_management.USERS_DIR",
     ):
-        monkeypatch.setattr(target, tmp_path / "users")
+        monkeypatch.setattr(target, users)
     monkeypatch.setattr(runner, "RUNS_DIR", tmp_path / "runs")
     monkeypatch.setattr(runner, "check_configured_models", lambda: None)
     monkeypatch.setattr(runner, "get_provider", MockProvider)
@@ -60,11 +62,13 @@ def test_elvira_websocket_mode_plays_through_the_real_server(
     from straightjacket.web import handlers
     from tests.elvira.elvira_bot import ai_helpers, runner, ws_runner
 
+    users = tmp_path / "users"
+    users.mkdir()
     for target in (
         "straightjacket.engine.config_loader.USERS_DIR",
         "straightjacket.engine.user_management.USERS_DIR",
     ):
-        monkeypatch.setattr(target, tmp_path / "users")
+        monkeypatch.setattr(target, users)
     monkeypatch.setattr(ws_runner, "RUNS_DIR", tmp_path / "runs")
     monkeypatch.setattr(api_client, "check_configured_models", lambda: None)
     monkeypatch.setattr(api_client, "get_provider", MockProvider)

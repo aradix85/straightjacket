@@ -156,21 +156,15 @@ def _validate_pattern_trigger_value(trigger_type: str, value: str) -> None:
     except ValueError as exc:
         raise ValueError(f"{trigger_type} threshold must be an integer, got {threshold_str!r}") from exc
 
-    grammar = eng().keyed_scenes.pattern_grammars[trigger_type]
-    for prefix in grammar.pattern_prefixes:
-        if prefix.endswith("_"):
-            if pool.startswith(prefix):
-                suffix = pool[len(prefix) :]
-                if prefix == "disposition_":
-                    valid = eng().enums.dispositions
-                    if suffix not in valid:
-                        raise ValueError(
-                            f"{trigger_type} disposition pattern {pool!r} uses unknown disposition "
-                            f"{suffix!r}; valid: {sorted(valid)}"
-                        )
-                return
-        elif pool == prefix:
-            return
+    prefixes = eng().keyed_scenes.pattern_grammars[trigger_type].pattern_prefixes
+    if "disposition_" in prefixes and pool.startswith("disposition_"):
+        disposition = pool.removeprefix("disposition_")
+        valid = eng().enums.dispositions
+        if disposition not in valid:
+            raise ValueError(
+                f"{trigger_type} disposition pattern {pool!r} uses unknown disposition "
+                f"{disposition!r}; valid: {sorted(valid)}"
+            )
 
 
 @dataclass
@@ -217,14 +211,14 @@ class NarrativeState(SerializableMixin):
         self.characters_list = [CharacterListEntry.from_dict(c) for c in snap["characters_list"]]
         self.plotlines_list = [PlotlineEntry.from_dict(p) for p in snap["plotlines_list"]]
         self.keyed_scenes = [KeyedScene.from_dict(k) for k in snap["keyed_scenes"]]
-        bp_snap = snap["story_blueprint_snapshot"]
-        if bp_snap is not None and self.story_blueprint is not None:
-            self.story_blueprint.revealed = list(bp_snap["revealed"])
-            self.story_blueprint.triggered_transitions = list(bp_snap["triggered_transitions"])
-            self.story_blueprint.triggered_director_phases = list(bp_snap["triggered_director_phases"])
-            self.story_blueprint.story_complete = bp_snap["story_complete"]
-        elif bp_snap is None:
-            self.story_blueprint = None
+        bp, bp_snap = self.story_blueprint, snap["story_blueprint_snapshot"]
+        if (bp is None) != (bp_snap is None):
+            raise ValueError("a turn's snapshot and the game disagree on whether there is a story blueprint")
+        if bp is not None:
+            bp.revealed = list(bp_snap["revealed"])
+            bp.triggered_transitions = list(bp_snap["triggered_transitions"])
+            bp.triggered_director_phases = list(bp_snap["triggered_director_phases"])
+            bp.story_complete = bp_snap["story_complete"]
 
 
 @dataclass
@@ -262,33 +256,11 @@ class ChapterSummary(SerializableMixin):
     scenes: int
 
 
-def _legacy_quests_factory() -> ProgressTrack:
+def _legacy_track(track_id: str, name_key: str) -> ProgressTrack:
     _e = eng()
     return ProgressTrack(
-        id="legacy_quests",
-        name=t("status.legacy_name_quests"),
-        track_type="legacy",
-        rank=_e.legacy.starting_rank,
-        max_ticks=_e.progress.max_ticks,
-    )
-
-
-def _legacy_bonds_factory() -> ProgressTrack:
-    _e = eng()
-    return ProgressTrack(
-        id="legacy_bonds",
-        name=t("status.legacy_name_bonds"),
-        track_type="legacy",
-        rank=_e.legacy.starting_rank,
-        max_ticks=_e.progress.max_ticks,
-    )
-
-
-def _legacy_discoveries_factory() -> ProgressTrack:
-    _e = eng()
-    return ProgressTrack(
-        id="legacy_discoveries",
-        name=t("status.legacy_name_discoveries"),
+        id=track_id,
+        name=t(name_key),
         track_type="legacy",
         rank=_e.legacy.starting_rank,
         max_ticks=_e.progress.max_ticks,
@@ -308,9 +280,15 @@ class CampaignState(SerializableMixin):
 
     xp: int = 0
     xp_spent: int = 0
-    legacy_quests: ProgressTrack = field(default_factory=_legacy_quests_factory)
-    legacy_bonds: ProgressTrack = field(default_factory=_legacy_bonds_factory)
-    legacy_discoveries: ProgressTrack = field(default_factory=_legacy_discoveries_factory)
+    legacy_quests: ProgressTrack = field(
+        default_factory=lambda: _legacy_track("legacy_quests", "status.legacy_name_quests")
+    )
+    legacy_bonds: ProgressTrack = field(
+        default_factory=lambda: _legacy_track("legacy_bonds", "status.legacy_name_bonds")
+    )
+    legacy_discoveries: ProgressTrack = field(
+        default_factory=lambda: _legacy_track("legacy_discoveries", "status.legacy_name_discoveries")
+    )
 
     @property
     def xp_available(self) -> int:

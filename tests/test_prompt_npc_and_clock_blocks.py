@@ -24,7 +24,7 @@ def test_an_activated_npc_carries_its_most_recent_memory(load_engine: None) -> N
     game = make_game_state()
     game.narrative.scene_count = 4
     npc = make_npc(id="npc_1", name="Mara", memory=[make_memory(scene=3, event="saw the harbour seal broken")])
-    block = _activated_npcs_block([npc], None, game, "the harbour seal lies broken", "social")
+    block = _activated_npcs_block([npc], None, game, "the harbour seal lies broken", "social", miss=False)
     assert block.startswith('<activated_npc name="Mara"')
     assert 'recent="saw the harbour seal broken(neutral)"' in block
     assert "insight=" not in block
@@ -41,6 +41,6 @@ def test_an_activated_npc_prefers_its_reflection_as_insight(load_engine: None) -
             make_memory(scene=3, event="the stranger cannot be trusted", type="reflection", importance=8),
         ],
     )
-    block = _activated_npcs_block([npc], None, game, "the harbour seal lies broken", "social")
+    block = _activated_npcs_block([npc], None, game, "the harbour seal lies broken", "social", miss=False)
     assert 'insight="the stranger cannot be trusted"' in block
     assert "recent=" not in block

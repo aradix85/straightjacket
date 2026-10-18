@@ -1,5 +1,7 @@
 from typing import Any
 
+import pytest
+
 from straightjacket.engine.game import DirectorCall
 from straightjacket.engine.models import (
     GameState,
@@ -146,6 +148,21 @@ def test_an_invented_tool_costs_no_extra_round(stub_all: None, monkeypatch: Any)
     assert warnings == ["[Tools] Unknown tool: respond"]
 
 
+def test_a_fault_in_a_tool_is_the_engines_and_propagates(stub_all: None, monkeypatch: Any) -> None:
+    from straightjacket.engine import director, prompt_loader
+    from tests._mocks import make_test_game
+
+    prompt_loader._prompts = None
+    prompt_loader._ensure_loaded()
+
+    def broken_tool(name: str, arguments: dict[str, Any], game: GameState) -> str:
+        raise KeyError("broken tool")
+
+    monkeypatch.setattr(director, "execute_tool_call", broken_tool)
+    with pytest.raises(KeyError, match="broken tool"):
+        director.call_director(_ToolCallingDirectorProvider("query_game_state"), make_test_game(), "Text.")
+
+
 def test_stores_narrator_guidance(stub_all: None) -> None:
     from straightjacket.engine.director import apply_director_guidance
 
@@ -217,27 +234,26 @@ def test_reflection_adds_memory_and_resets_flag(stub_all: None) -> None:
     assert ref[-1].tone_key == "conflicted"
 
 
-def test_reflection_rejects_truncated(stub_all: None) -> None:
+def test_a_reflection_without_a_closing_mark_is_kept(stub_all: None) -> None:
     from straightjacket.engine.director import apply_director_guidance
 
     game = _game()
-    mem_before = len(game.npcs[0].memory)
     apply_director_guidance(
         game,
         make_director_guidance(
             npc_reflections=keyed_reflections(
                 make_npc_reflection(
                     npc_id="npc_1",
-                    reflection="Kira is beginning to tru",
+                    reflection="Kira is beginning to trust the player",
                     tone_key="conflicted",
+                    updated_description="Archivist with ink on her hands",
                 )
             ),
         ),
     )
-
-    assert len(game.npcs[0].memory) == mem_before
-
-    assert game.npcs[0].needs_reflection is False
+    kira = game.npcs[0]
+    assert [m.event for m in kira.memory if m.type == "reflection"] == ["Kira is beginning to trust the player"]
+    assert kira.description == "Archivist with ink on her hands"
 
 
 def test_reflection_fills_empty_agenda_instinct(stub_all: None) -> None:
@@ -341,69 +357,6 @@ def test_reflection_updates_description(stub_all: None) -> None:
         ),
     )
     assert "Battle-scarred" in game.npcs[0].description
-
-
-def test_reflection_strips_name_prefix_from_description(stub_all: None) -> None:
-    from straightjacket.engine.director import apply_director_guidance
-
-    game = _game()
-    apply_director_guidance(
-        game,
-        make_director_guidance(
-            npc_reflections=keyed_reflections(
-                make_npc_reflection(
-                    npc_id="npc_1",
-                    reflection="Kira has changed.",
-                    tone_key="conflicted",
-                    updated_description="Kira: Battle-scarred archivist with haunted eyes.",
-                )
-            ),
-        ),
-    )
-    assert not game.npcs[0].description.startswith("Kira:")
-    assert "Battle-scarred" in game.npcs[0].description
-
-
-def test_reflection_rejects_too_long_description(stub_all: None) -> None:
-    from straightjacket.engine.director import apply_director_guidance
-
-    game = _game()
-    game.npcs[0].description = "Original."
-    apply_director_guidance(
-        game,
-        make_director_guidance(
-            npc_reflections=keyed_reflections(
-                make_npc_reflection(
-                    npc_id="npc_1",
-                    reflection="Kira evolves.",
-                    tone_key="conflicted",
-                    updated_description="x" * 201,
-                )
-            ),
-        ),
-    )
-    assert game.npcs[0].description == "Original."
-
-
-def test_reflection_rejects_truncated_description(stub_all: None) -> None:
-    from straightjacket.engine.director import apply_director_guidance
-
-    game = _game()
-    game.npcs[0].description = "Original description here."
-    apply_director_guidance(
-        game,
-        make_director_guidance(
-            npc_reflections=keyed_reflections(
-                make_npc_reflection(
-                    npc_id="npc_1",
-                    reflection="Kira evolves.",
-                    tone_key="conflicted",
-                    updated_description="Incomplete desc without",
-                )
-            ),
-        ),
-    )
-    assert game.npcs[0].description == "Original description here."
 
 
 def test_unreflected_npcs_get_reset(stub_all: None) -> None:

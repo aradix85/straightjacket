@@ -22,26 +22,6 @@ def test_strips_narrator_prefix(load_engine: None, stub_emotions: None) -> None:
     assert "wind howled" in result
 
 
-def test_strips_memory_updates_xml(load_engine: None, stub_emotions: None) -> None:
-    from straightjacket.engine.parser import parse_narrator_response
-
-    game = _game()
-    raw = 'The door creaked open.\n<memory_updates>[{"npc_id": "npc_1", "event": "test"}]</memory_updates>'
-    result = parse_narrator_response(game, raw)
-    assert "<memory_updates>" not in result
-    assert "npc_id" not in result
-    assert "door creaked" in result
-
-
-def test_strips_scene_context_xml(load_engine: None, stub_emotions: None) -> None:
-    from straightjacket.engine.parser import parse_narrator_response
-
-    game = _game()
-    raw = "The fire crackled.\n<scene_context>Player is in tavern</scene_context>"
-    result = parse_narrator_response(game, raw)
-    assert "<scene_context>" not in result
-
-
 def test_strips_prompt_echo_tags(load_engine: None, stub_emotions: None) -> None:
     from straightjacket.engine.parser import parse_narrator_response
 
@@ -62,44 +42,6 @@ def test_strips_code_fences(load_engine: None, stub_emotions: None) -> None:
     assert "```" not in result
     assert "scene_context" not in result
     assert "night was dark" in result
-
-
-def test_strips_leaked_json_array(load_engine: None, stub_emotions: None) -> None:
-    from straightjacket.engine.parser import parse_narrator_response
-
-    game = _game()
-    raw = 'The sword gleamed.\n[{"npc_id": "npc_1", "event": "saw player", "emotional_weight": "neutral"}]'
-    result = parse_narrator_response(game, raw)
-    assert "npc_id" not in result
-    assert "sword gleamed" in result
-
-
-def test_strips_leaked_json_object(load_engine: None, stub_emotions: None) -> None:
-    from straightjacket.engine.parser import parse_narrator_response
-
-    game = _game()
-    raw = 'The rain fell.\n{"scene_context": "rainy day", "location": "street"}'
-    result = parse_narrator_response(game, raw)
-    assert "scene_context" not in result
-
-
-def test_strips_bracket_metadata_labels(load_engine: None, stub_emotions: None) -> None:
-    from straightjacket.engine.parser import parse_narrator_response
-
-    game = _game()
-    raw = "The wind howled.\n[MEMORY UPDATES] npc_1 saw something"
-    result = parse_narrator_response(game, raw)
-    assert "[MEMORY" not in result
-
-
-def test_strips_markdown_metadata(load_engine: None, stub_emotions: None) -> None:
-    from straightjacket.engine.parser import parse_narrator_response
-
-    game = _game()
-    raw = "The door opened slowly.\n\n**Scene Context:** The player enters the room."
-    result = parse_narrator_response(game, raw)
-    assert "Scene Context" not in result
-    assert "door opened" in result
 
 
 def test_strips_bold_bracket_annotations(load_engine: None, stub_emotions: None) -> None:
@@ -178,7 +120,7 @@ def test_narration_without_prose_fails_like_an_empty_narration(load_engine: None
     from straightjacket.engine.parser import parse_narrator_response
 
     game = _game()
-    raw = 'Scene Context: a dark room\n\n<memory_updates>[{"npc_id": "npc_1"}]</memory_updates>'
+    raw = '```json\n{"location": "a dark room"}\n```\n**[SCENE CONTEXT: a dark room]**'
     with pytest.raises(AIUnavailableError, match="empty narration after cleanup"):
         parse_narrator_response(game, raw)
 
@@ -191,51 +133,15 @@ def test_combined_cleanup(load_engine: None, stub_emotions: None) -> None:
         "Narrator: The tavern was warm.\n\n"
         "She poured a drink \u2014 strong and bitter.\n\n"
         "**[SCENE CONTEXT: warm tavern]**\n"
-        '<memory_updates>[{"npc_id": "npc_1", "event": "served drink"}]</memory_updates>\n'
         '```json\n{"location": "tavern"}\n```'
     )
     result = parse_narrator_response(game, raw)
     assert "Narrator:" not in result
     assert "\u2014" in result
     assert "SCENE CONTEXT" not in result
-    assert "<memory_updates>" not in result
     assert "```" not in result
     assert "tavern was warm" in result
     assert "poured a drink" in result
-
-
-def test_strips_untagged_game_data_json(load_engine: None, stub_emotions: None) -> None:
-    from straightjacket.engine.parser import parse_narrator_response
-
-    game = _game()
-    raw = (
-        "The stranger entered the room.\n\n"
-        '{"npcs": [{"name": "Stranger", "description": "Tall figure"}], '
-        '"clocks": [], "location": "Tavern"}'
-    )
-    result = parse_narrator_response(game, raw)
-    assert '"npcs"' not in result
-    assert "stranger entered" in result
-
-
-def test_strips_trailing_json_lines(load_engine: None, stub_emotions: None) -> None:
-    from straightjacket.engine.parser import parse_narrator_response
-
-    game = _game()
-    raw = 'The fire crackled softly.\n{"scene_context": "warm room"}\n[{"npc_id": "npc_1"}]'
-    result = parse_narrator_response(game, raw)
-    assert "scene_context" not in result
-    assert "fire crackled" in result
-
-
-def test_strips_trailing_metadata_label_lines(load_engine: None, stub_emotions: None) -> None:
-    from straightjacket.engine.parser import parse_narrator_response
-
-    game = _game()
-    raw = "The wind howled.\n\nScene Context: The player is outside in the storm."
-    result = parse_narrator_response(game, raw)
-    assert "Scene Context:" not in result
-    assert "wind howled" in result
 
 
 def test_a_complete_narration_ending_in_a_stray_fence_keeps_every_sentence(load_engine: None) -> None:

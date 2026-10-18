@@ -53,10 +53,7 @@ def _start() -> None:
     sys.path.insert(0, str(ROOT / "src"))
 
     from straightjacket.engine.config_loader import cfg
-    from straightjacket.engine.logging_util import log, setup_file_logging
-
-    setup_file_logging()
-
+    from straightjacket.engine.logging_util import log
     from straightjacket.engine.ai.api_client import check_configured_models
 
     try:

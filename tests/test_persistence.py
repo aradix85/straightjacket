@@ -51,20 +51,6 @@ def test_save_and_load_roundtrip(save_dir: Any) -> None:
     assert len(loaded_msgs) == 1
 
 
-def test_save_excludes_recaps(save_dir: Any) -> None:
-    from straightjacket.engine.persistence import save_game, load_game
-
-    game = _game()
-    msgs = [
-        {"role": "assistant", "content": "Narration."},
-        {"role": "assistant", "content": "Recap text.", "recap": True},
-    ]
-    save_game(game, "tester", msgs, "test_save")
-    _, loaded_msgs = load_game("tester", "test_save")
-    assert len(loaded_msgs) == 1
-    assert not any(m.get("recap") for m in loaded_msgs)
-
-
 def test_load_nonexistent_returns_none(save_dir: Any) -> None:
     from straightjacket.engine.persistence import load_game
 
@@ -106,14 +92,14 @@ def test_delete_nonexistent_returns_false(save_dir: Any) -> None:
     assert delete_save("nobody", "nope") is False
 
 
-def test_save_carries_version(save_dir: Any) -> None:
+def test_a_save_holds_the_time_the_state_and_the_chat(save_dir: Any) -> None:
     from straightjacket.engine.persistence import save_game
-    from straightjacket.engine.config_loader import VERSION
 
-    game = _game()
-    path = save_game(game, "tester", [], "versioned")
+    msgs = [{"role": "assistant", "content": "Narration.", "epilogue": True}]
+    path = save_game(_game(), "tester", msgs, "keys")
     data = json.loads(path.read_text(encoding="utf-8"))
-    assert data["engine_version"] == VERSION
+    assert set(data) == {"saved_at", "game_state", "chat_messages"}
+    assert data["chat_messages"] == msgs
 
 
 def test_list_saves_skips_corrupt_files(save_dir: Any) -> None:
@@ -124,7 +110,7 @@ def test_list_saves_skips_corrupt_files(save_dir: Any) -> None:
 
     (save_root / "broken_json.json").write_text("{not valid json", encoding="utf-8")
 
-    (save_root / "missing_fields.json").write_text(json.dumps({"engine_version": "0.0.0"}), encoding="utf-8")
+    (save_root / "missing_fields.json").write_text(json.dumps({"saved_at": "2026-01-01"}), encoding="utf-8")
 
     result = list_saves_with_info("mixed")
     names = {s["name"] for s in result}
@@ -175,6 +161,17 @@ def test_a_save_with_a_value_where_an_object_belongs_does_not_load(load_engine: 
     data["resources"] = 5
     with pytest.raises(ValueError, match="Resources needs an object"):
         GameState.from_dict(data)
+
+
+def test_a_snapshot_that_disagrees_on_the_blueprint_does_not_restore(load_engine: None) -> None:
+    from tests._helpers import make_blueprint
+
+    game = _game()
+    game.narrative.story_blueprint = make_blueprint()
+    snap = game.snapshot()
+    game.narrative.story_blueprint = None
+    with pytest.raises(ValueError, match="story blueprint"):
+        game.restore(snap)
 
 
 def test_a_snapshot_with_an_unknown_resource_does_not_restore(load_engine: None) -> None:

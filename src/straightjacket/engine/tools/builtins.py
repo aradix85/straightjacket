@@ -63,7 +63,7 @@ def available_moves(game: GameState) -> list[dict[str, Any]]:
     moves = [
         {"move": key, "name": move.name, "stats": move.valid_stats, "roll_type": move.roll_type}
         for key, move in get_moves(game.setting_id).items()
-        if move.roll_type not in ("no_roll", "special_track")
+        if move.roll_type not in eng().unoffered_roll_types
         and _is_move_available(eng().move_availability[key], active_types, combat_pos)
     ]
     moves.extend(

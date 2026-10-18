@@ -1,10 +1,8 @@
 import json
-import shutil
 from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-from .config_loader import VERSION
 from .logging_util import log
 from .user_management import _safe_name, get_save_dir
 from .models import GameState
@@ -20,15 +18,13 @@ def save_game(game: GameState, username: str, chat_messages: list[dict[str, Any]
     save_dir.mkdir(parents=True, exist_ok=True)
     path = save_dir / f"{name}.json"
 
-    data: dict[str, Any] = {"saved_at": datetime.now().astimezone().isoformat()}
-    data["engine_version"] = VERSION
-    data["game_state"] = game.to_dict()
-
-    data["chat_messages"] = [msg for msg in chat_messages if not msg.get("recap")]
+    data = {
+        "saved_at": datetime.now().astimezone().isoformat(),
+        "game_state": game.to_dict(),
+        "chat_messages": chat_messages,
+    }
     path.write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
-    log(
-        f"[Save] Game saved: {username}/{name} (Scene {game.narrative.scene_count}, {len(data['chat_messages'])} chat msgs)"
-    )
+    log(f"[Save] Game saved: {username}/{name} (Scene {game.narrative.scene_count}, {len(chat_messages)} chat msgs)")
     return path
 
 
@@ -55,11 +51,8 @@ def load_game(username: str, name: str) -> tuple[GameState | None, list[Any]]:
 
 
 def list_saves_with_info(username: str) -> list[dict[str, Any]]:
-    save_dir = get_save_dir(username)
-    if not save_dir.exists():
-        return []
     infos = []
-    for path in save_dir.glob("*.json"):
+    for path in get_save_dir(username).glob("*.json"):
         try:
             data = json.loads(path.read_text(encoding="utf-8"))
             gs = data["game_state"]
@@ -81,14 +74,9 @@ def list_saves_with_info(username: str) -> list[dict[str, Any]]:
 
 def delete_save(username: str, name: str) -> bool:
     name = _safe_name(name)
-    save_dir = get_save_dir(username)
-    path = save_dir / f"{name}.json"
+    path = get_save_dir(username) / f"{name}.json"
     if not path.exists():
         return False
     path.unlink()
-
-    chapter_dir = save_dir / "chapters" / name
-    if chapter_dir.exists():
-        shutil.rmtree(chapter_dir, ignore_errors=True)
     log(f"[Save] Deleted: {username}/{name}")
     return True

@@ -71,7 +71,7 @@ def chosen_bonus(game: GameState, bonus_id: str | None) -> RollBonus | None:
 
 
 def apply_momentum_on_hit(game: GameState, bonus: RollBonus, result: str) -> None:
-    if bonus.momentum_on_hit and result in ("STRONG_HIT", "WEAK_HIT"):
+    if bonus.momentum_on_hit and result in eng().dice.hit_results:
         _e = eng()
         game.resources.adjust_momentum(bonus.momentum_on_hit, floor=_e.momentum.floor, ceiling=_e.momentum.max)
         log(f"[Bonus] {bonus.source}: +{bonus.momentum_on_hit} momentum on a hit")

@@ -71,7 +71,7 @@ def get_brain_output_schema(
     clock_names: list[str],
 ) -> dict[str, Any]:
     _e = eng()
-    rank_enum = sorted(_e.progress.track_types["default"].ticks_per_mark.keys())
+    rank_enum = sorted(_e.progress.ticks_per_mark)
     return _obj_root(
         {
             "type": _str_enum(["action"]),

@@ -39,7 +39,7 @@ from .setup_common import apply_opening_setup
 
 
 def _valid_ranks() -> set[str]:
-    return set(eng().progress.track_types["default"].ticks_per_mark.keys())
+    return set(eng().progress.ticks_per_mark)
 
 
 def validate_stats(stats: dict[str, int]) -> None:

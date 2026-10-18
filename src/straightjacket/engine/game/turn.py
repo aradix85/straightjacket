@@ -364,7 +364,7 @@ def _roll_source(game: GameState, brain: BrainResult, ds_move: Move | None) -> t
         return source
     if brain.stat == "none":
         raise ValueError(f"{brain.move!r} is an action roll, but the Brain named no stat")
-    return brain.stat, game.get_stat(brain.stat)
+    return brain.stat, game.stats[brain.stat]
 
 
 def _log_action_roll(roll: RollResult, adds: int, cancelled: bool) -> None:
