@@ -1,0 +1,394 @@
+{
+  "region": "The total area being explored: the dungeon, the island, the villain's lair, the haunted mansion, a hotel room where a murder took place, a planet an exploratory starship has run across. Any discrete locale of any size; the process is the same at every scale. By changing the scale, a Location of one Region becomes a Region of its own with its own lists (a planet, then one continent on it, then an alien citadel there), so Regions nest and interconnect.",
+  "scene": "Each discrete location within a Region is generated separately, and each occurrence of these locations is a Scene. The characters play out whatever they must in a Scene, depending on what they find in that location, before moving on to the next Scene.",
+  "categories": {
+    "locations": {
+      "text": "The areas within the larger Region, such as the chambers and halls of a dungeon or the rooms and breezeways of an apartment building: the specific places the characters find themselves in as they explore.",
+      "examples": [
+        "hallway",
+        "bedroom",
+        "swimming pool",
+        "command center",
+        "elevator",
+        "meadow",
+        "laboratory",
+        "cave",
+        "street"
+      ]
+    },
+    "encounters": {
+      "text": "People or creatures the characters can interact with and which will interact back, and also non-living things such as traps or devices: people, creatures, or objects within a Location that the characters will have to deal with, likely the most active part of each Location.",
+      "examples": [
+        "enemy agent",
+        "orc",
+        "robot",
+        "super villain",
+        "henchman",
+        "pit trap",
+        "innocent bystander",
+        "intruder",
+        "ghost"
+      ]
+    },
+    "objects": {
+      "text": "Things the characters run across that should be of interest to them: important items, not set dressing, which the Location and events already imply.",
+      "examples": [
+        "gun",
+        "sword",
+        "chest",
+        "treasure",
+        "key",
+        "orb",
+        "chain saw",
+        "shotgun"
+      ]
+    }
+  },
+  "elements": {
+    "custom": {
+      "categories": [
+        "locations",
+        "encounters",
+        "objects"
+      ],
+      "text": "Elements devised from what is already known or expected of the Region, the campaign, and what has happened in the adventure so far; the most common kind. One or two words to spur the imagination, generic (hallway, orc) or specific to the story (Vlad the Vampire, the vampire the characters are hunting)."
+    },
+    "expected": {
+      "categories": [
+        "locations",
+        "encounters",
+        "objects"
+      ],
+      "text": "What you most expect for that Category: the mundane in the Region, such as dark hallways in a dungeon, tangles of vines in a forest, or enemy henchmen patrolling a villain's lair. Expected Elements tune how active a Region is: with the first five Locations Expected, the characters delve a while before the story-pertinent Locations."
+    },
+    "none": {
+      "categories": [
+        "encounters",
+        "objects"
+      ],
+      "text": "No Element for that Category in the Scene; a Location cannot be None. The more None results a list has, the more deserted the Region."
+    },
+    "special": {
+      "categories": [
+        "locations",
+        "encounters",
+        "objects"
+      ],
+      "placement": "At least once in every Category, most likely in uncommon territory after the first six positions.",
+      "text": "An opportunity to shake things up: roll on the Special Elements table and apply its result to that Category as the Element for the Scene. It can alter the Category list, bring special scene events, or other unexpected twists."
+    },
+    "random": {
+      "categories": [
+        "locations",
+        "encounters",
+        "objects"
+      ],
+      "placement": "At least one in each Category.",
+      "description_question": "What does it look like?",
+      "action_question": "What does it do?",
+      "text": "Ask a Complex Question to learn what it is: most likely the description question, and the action question when you need to know what the Element is doing, such as what kind of trap it is. A Location may need only its look; an Encounter may need both."
+    },
+    "complete": {
+      "categories": [
+        "locations"
+      ],
+      "min_position": 7,
+      "treat_as": "expected",
+      "text": "The Region has been fully explored: there is no place else to go, at least that the characters are aware of. Treat it as Expected for this Scene, but there are no further Locations beyond this one. Access points described in earlier Scenes that the characters had not gone through, like doors or corridors, lead to Scenes that already exist, chosen by what makes the most sense or at random."
+    }
+  },
+  "unique": {
+    "marker": "U",
+    "text": "An Element of a unique nature, like the Big Bad of whom there is only one, is crossed off its list once the characters have discovered it and it cannot be discovered again; mark it with a U on the list from the outset. Striking it is a judgement call: a unique Location is met once, unless the characters go back to it on purpose, so off it goes; a unique villain who escapes the encounter is still on the loose and may stay on the list to be met again."
+  },
+  "list_building": {
+    "common_positions": 6,
+    "text": "Populate each Category with the Elements you think would occur in this Region, starting with the most likely, from what you already know or expect of it. The first six Elements of each list should be common, the kinds of things you'd expect early in exploration; more exotic and unique Elements follow further down, so they are likely to be discovered later rather than right off the bat. Lists have no length limit, but keep to the Elements most interesting and pertinent to the story.",
+    "repeats": "An Element can repeat in a list when it should be common in the Region, such as a dungeon crawling with skeletons, with a few vampires and ghosts further down. Elements can be rolled more than once anyway, unless Unique, so repeating one only makes it appear more often.",
+    "complete_position": {
+      "small_region": 7,
+      "large_region_min": 15,
+      "large_region_max": 16,
+      "text": "The larger the Region, the further down the Location list Complete sits: the 7th Element for a small apartment, the 15th or 16th for an entire jungle island. Placing it a few short of the end of a list raises the chance that the Region can be fully explored without exhausting all the lists."
+    }
+  },
+  "scene_roll": {
+    "die": 6,
+    "progress_start": 0,
+    "progress_per_roll": 1,
+    "progress_min": 0,
+    "text": "To generate a new Scene, including the first, roll 1d6 for each Category, add that list's Progress Points, and count down the list by the total; that Element is the Category's for the Scene. Combine the three Elements and interpret them. Each roll on a Category list for a new Scene adds one Progress Point to that list after the roll, so the first Scene rolls 1d6 and the second 1d6 + 1.",
+    "overflow": {
+      "result": "expected",
+      "progress_change": -5,
+      "text": "A total beyond the end of the list is Expected, and that list loses five Progress Points. In the book's example a list of nine with four points rolls a 6 for 10, the Scene's point makes five, and losing five leaves zero."
+    }
+  },
+  "first_scene": "The first Scene of a Region is its start point and contains an exit to the outside world, whatever makes most sense (the front door the characters entered by). Until further exploration reveals more exits, it is the only known entrance and exit.",
+  "ending": "Scenes are generated one at a time until Complete is rolled, until the game master decides the Region has been fully explored, or until the characters decide they are done and leave. A Region generated as you play need not be completed if the characters exit before that point.",
+  "special_table_rules": {
+    "die": 100,
+    "special_on_reroll": "expected",
+    "rerolls_add_progress": false,
+    "text": "When a Special Element is generated in a Category, roll 1d100 on the Special Elements table and apply the result to that Category as its Element for the current Scene. Additional rolls the table asks for in a Category list do not count toward that Category's Progress Points: only one mark, the original, is registered. A Special rolled again on such a roll is treated as Expected."
+  },
+  "special_elements": [
+    {
+      "key": "supersize",
+      "name": "Supersize",
+      "min": 1,
+      "max": 5,
+      "rerolls": 1,
+      "text": "Roll in the Category again. Whatever Element is generated, make it bigger than expected: take it up to the next level, or as grand as you can, while still making sense within the Scene. A Location of \"pool\" envisioned as a pond becomes a lake."
+    },
+    {
+      "key": "barely_there",
+      "name": "Barely There",
+      "min": 6,
+      "max": 10,
+      "rerolls": 1,
+      "text": "Roll in the Category again. Whatever Element is generated, minimize it as much as possible; take it down a notch or two. An enemy Encounter may be wounded or of a lesser nature than usual; a Location may be badly in need of repair or unusually small."
+    },
+    {
+      "key": "remove_element",
+      "name": "Remove Element",
+      "min": 11,
+      "max": 15,
+      "rerolls": 1,
+      "removes_from_list": true,
+      "text": "Roll in the Category again, and cross that Element out of the Category list. It is still used for this Scene, but the list has been altered for future rolls. A Unique Element is crossed off anyway, so for one this result has no effect."
+    },
+    {
+      "key": "add_element",
+      "name": "Add Element",
+      "min": 16,
+      "max": 25,
+      "rerolls": 0,
+      "adds_to_list": true,
+      "text": "Add a new Element to the end of this Category list. Generate it like a Random Element, rolling for a description of it on the Complex Question description tables. It is the Element for this Scene, and since it joins the list it may be encountered again later."
+    },
+    {
+      "key": "this_is_bad",
+      "name": "This Is Bad",
+      "min": 26,
+      "max": 30,
+      "rerolls": 1,
+      "text": "Roll in the Category again. Whatever you get is bad for the characters: an Encounter harmful to them, a Location very dark and treacherous, an Object unstable and about to explode. Not everything is dangerous; it could be an otherwise useful Object that is broken. Go with the most obvious modification, or roll on a Complex Question table for inspiration."
+    },
+    {
+      "key": "this_is_good",
+      "name": "This Is Good",
+      "min": 31,
+      "max": 35,
+      "rerolls": 1,
+      "text": "Roll in the Category again. Whatever you get, Location, Encounter, or Object, is something good for the characters: helpful or useful to them. Go with the most obvious modification, or roll on a Complex Question table for inspiration."
+    },
+    {
+      "key": "multi_element",
+      "name": "Multi-Element",
+      "min": 36,
+      "max": 50,
+      "rerolls": 2,
+      "text": "Roll twice on this Category list and allow both Elements into the Scene together. Locations of \"pool\" and \"stony chamber\" may make a chamber with an ornate fountain in it."
+    },
+    {
+      "key": "exit_here",
+      "name": "Exit Here",
+      "min": 51,
+      "max": 60,
+      "rerolls": 0,
+      "if_nonsensical": "expected",
+      "text": "This Location, in addition to whatever else it contains, also holds an exit from the Region, if that is possible: a back door out of the mansion, another exit from the cave. If this makes no sense, treat it as Expected."
+    },
+    {
+      "key": "return",
+      "name": "Return",
+      "min": 61,
+      "max": 70,
+      "rerolls": 0,
+      "if_nonsensical": "expected",
+      "text": "Whatever else this Location contains, it also has access to another, previously encountered Location. This is only possible if that Location had a way to reach this one: other doors or access the characters had not yet explored. If more than one Location matches, choose at random. If this makes no sense, treat it as Expected."
+    },
+    {
+      "key": "going_deeper",
+      "name": "Going Deeper",
+      "min": 71,
+      "max": 75,
+      "rerolls": 0,
+      "progress_mark": 3,
+      "treat_as": "expected",
+      "text": "Instead of adding one Progress Point for this Category, add three. Otherwise, treat this result as Expected."
+    },
+    {
+      "key": "common_ground",
+      "name": "Common Ground",
+      "min": 76,
+      "max": 80,
+      "rerolls": 0,
+      "progress_mark": -2,
+      "treat_as": "expected",
+      "text": "Eliminate three Progress Points for this Category: do not record this occurrence, and eliminate two more. Otherwise, treat this result as Expected."
+    },
+    {
+      "key": "random_element",
+      "name": "Random Element",
+      "min": 81,
+      "max": 100,
+      "rerolls": 0,
+      "text": "Treat this Special Element like a normal Random Element: as needed, ask the Complex Questions \"What does it look like?\" and \"What does it do?\" and interpret the results."
+    }
+  ],
+  "known_elements": {
+    "question": "Is this Element present?",
+    "adds_progress": false,
+    "text": "When the characters know of a Location, Encounter, or Object and head straight for it (directions to the graveyard, the sheriff at the sheriff's office, guns in the armory), the game master either chooses it from the list, when there is an overwhelming chance it is there, or asks the yes/no question. On a no, a sought Location is not reached yet: the characters come upon another Location instead, or along the way; a sought Encounter or Object is simply not at the Location. An Element may also come to light in the normal course of play without a question. An Element determined without rolling on its list adds no Progress Point for that Scene."
+  },
+  "further_investigation": "Detail beyond a Scene's three Elements comes from questions about the Region: a yes/no Simple Question when you have some idea of the answer (\"Does the chest contain tons of gold and jewels?\"), for which the book allows Mythic's fate in place of its own d10, and a Complex Question when you have none (\"What's in the chest?\"), answered on the description tables for how something looks and the action tables for what it does or what happens.",
+  "expanding_lists": {
+    "timing": "scene_end",
+    "position": "end",
+    "text": "As the characters learn about the Region, add new Elements to the bottom of its lists, at the end of a Scene when moving on to the next. Additions are limited to Elements actually encountered or referenced in play: the outlaw's brother, named in the saloon, joins Encounters, and the blood cult's sigil joins Objects. Brand-new Elements come only from the Add Element special result."
+  },
+  "mapping": {
+    "question": "Do these Locations connect?",
+    "text": "There is no rule for how Locations connect: when characters move from one Location to the next, the two have a connector of some kind (a doorway, a hallway, a road). While the Region is not completely explored, every Location is presumed to give access to a next one, and its exits are described as makes most sense. Keep track of each Location with its Encounters and Objects, as a list or a rough map, for backtracking and for whether one Location connects to another; some areas may interconnect logically as the Region unfolds, and when it is in question whether two connect, ask it as a yes/no question."
+  },
+  "interpretation": "The Elements are the essential components of a Scene, and everything else is interpreted and inferred from them, from what is already known of the Region, from what has happened, and from what is expected. Stay true to the results rolled and embellish as much detail as makes sense: an auto garage, a guard dog, and documents in a villain's warehouse make cars up on blocks, file cabinets rifled in a hurry, and a growling dog slinking out from under a car. Go with the first interpretation that springs to mind and makes sense, and focus on what keeps the exploration moving.",
+  "i_dunno": "If an Element or outcome cannot be justified with the Scene within a few seconds, or no interpretation that makes sense springs to mind, treat it as Expected and move on; this holds for Special Elements that do not fit the Scene as well. The flow of the adventure matters more than a forced interpretation.",
+  "example_regions": {
+    "notation": "Kinds are written as their keys (expected, none, special, random, complete); a custom Element is its text, and a trailing \" (U)\" marks it unique, as on the book's Region Sheets.",
+    "christoff_manor": {
+      "text": "A crumbling 1920s mansion reputed to be haunted by a dead wizard, explored in a horror adventure while investigating a murder. The game master placed Complete in the 9th position, three short of the end of the Location list, so the house can be fully explored without exhausting every list.",
+      "locations": [
+        "expected",
+        "expected",
+        "Empty Room",
+        "Dining Room",
+        "Moldy Bedroom",
+        "Kitchen (U)",
+        "Library (U)",
+        "special",
+        "complete",
+        "Attic (U)",
+        "random",
+        "Torture Chamber (U)"
+      ],
+      "encounters": [
+        "none",
+        "none",
+        "none",
+        "none",
+        "none",
+        "Broken floorboards",
+        "Runaway youth (U)",
+        "Rats",
+        "Homeless man (U)",
+        "Eerie sounds",
+        "special",
+        "Moving furniture",
+        "Christoff's ghost (U)",
+        "random"
+      ],
+      "objects": [
+        "none",
+        "none",
+        "expected",
+        "expected",
+        "Painting",
+        "Crime scene evidence",
+        "Books",
+        "Blood crusted knife (U)",
+        "Discarded shotgun (U)",
+        "Spent bullet shell casings",
+        "special",
+        "A murdered corpse",
+        "Christoff's mummified body (U)",
+        "random"
+      ]
+    },
+    "enemy_marauder_town": {
+      "text": "A post-apocalyptic town held by marauders, at the start of an adventure to rescue a prisoner. Played through, it gave six Locations loosely connected by dusty roads: the entrance street, a street guarded by a marauder patrol, a shack with some guards inside, a watchtower, hills with old cave dwellings the marauders live in, and an old house where the prisoner was kept.",
+      "locations": [
+        "expected",
+        "expected",
+        "Dusty Street",
+        "Dusty Street",
+        "Shack",
+        "Shack",
+        "Mechanic Garage (U)",
+        "random",
+        "special",
+        "Barracks (U)",
+        "Captain's House (U)",
+        "complete",
+        "Weapons Storage",
+        "Town Power Station (U)"
+      ],
+      "encounters": [
+        "none",
+        "none",
+        "Guard Dog",
+        "Marauder",
+        "Marauder",
+        "Patrol of Marauders",
+        "Mutant Sentry (U)",
+        "random",
+        "special",
+        "Prisoner (U)",
+        "Captain Kane (U)"
+      ],
+      "objects": [
+        "none",
+        "none",
+        "none",
+        "expected",
+        "expected",
+        "expected",
+        "Weapons",
+        "random",
+        "special",
+        "Working Car",
+        "random"
+      ]
+    },
+    "wizards_mine": {
+      "text": "An abandoned gold mine in a weird west adventure, where the characters seek the Hand of Luke to banish his ghost. The common area of the Location list holds Expecteds and a few Randoms, since the game master expects mostly general mine shafts; the final sheet after ten Scenes, ending on Complete.",
+      "locations": [
+        "expected",
+        "expected",
+        "expected",
+        "expected",
+        "random",
+        "random",
+        "special",
+        "Bottomless shaft (U)",
+        "Ceremony room (U)",
+        "random",
+        "complete"
+      ],
+      "encounters": [
+        "none",
+        "none",
+        "none",
+        "Bats",
+        "Rats",
+        "random",
+        "special",
+        "Luke (U)",
+        "Zombie",
+        "Zombie"
+      ],
+      "objects": [
+        "none",
+        "none",
+        "none",
+        "none",
+        "Old mining gear",
+        "random",
+        "Dead body",
+        "special",
+        "Hand of Luke (U)"
+      ]
+    }
+  }
+}
