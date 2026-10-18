@@ -1,16 +1,10 @@
 __all__ = [
-    "absorb_duplicate_npc",
     "activate_npcs_for_prompt",
     "apply_name_sanitization",
-    "compute_npc_tfidf_scores",
     "consolidate_memory",
-    "description_match_existing_npc",
-    "edit_distance_le1",
     "find_npc",
     "fuzzy_match_existing_npc",
     "get_npc_bond",
-    "is_complete_description",
-    "merge_npc_identity",
     "named_in",
     "next_npc_id",
     "normalize_for_match",
@@ -20,36 +14,22 @@ __all__ = [
     "reactivate_npc",
     "recent_observations",
     "resolve_about_npc",
-    "retire_distant_npcs",
     "retrieve_memories",
-    "sanitize_npc_name",
     "score_importance",
 ]
 
 
-from .activation import (
-    activate_npcs_for_prompt,
-    compute_npc_tfidf_scores,
-)
+from .activation import activate_npcs_for_prompt
 
-from .lifecycle import (
-    absorb_duplicate_npc,
-    description_match_existing_npc,
-    is_complete_description,
-    merge_npc_identity,
-    reactivate_npc,
-    retire_distant_npcs,
-)
+from .lifecycle import reactivate_npc
 from .matching import (
     apply_name_sanitization,
-    edit_distance_le1,
     find_npc,
     fuzzy_match_existing_npc,
     named_in,
     next_npc_id,
     normalize_for_match,
     resolve_about_npc,
-    sanitize_npc_name,
 )
 
 from .memory import (
