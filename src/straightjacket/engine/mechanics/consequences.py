@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import dataclasses
 from typing import Any
 import random
 
@@ -12,6 +13,7 @@ from ..models import ClockFillResult
 from .clock_consequences import resolve_clock_fill
 from .complications import is_complication
 from .impacts import impact_label
+from .outcome_result import move_outcome_config
 
 
 def _roll_challenge_dice() -> tuple[int, int]:
@@ -44,6 +46,20 @@ def score_action_roll(
     else:
         result = "MISS"
     return RollResult(d1, c1, c2, stat_name, stat_value, score, result, move, match=(c1 == c2))
+
+
+def downgrade_in_position(game: GameState, roll: RollResult) -> RollResult:
+    cfg = move_outcome_config(game, roll.move)
+    if "downgrade_in" not in cfg or game.world.combat_position != cfg["downgrade_in"]:
+        return roll
+    if roll.result == "WEAK_HIT":
+        lower = "MISS"
+    elif roll.result == "STRONG_HIT" and not roll.match:
+        lower = "WEAK_HIT"
+    else:
+        return roll
+    log(f"[Roll] {roll.move} in {game.world.combat_position}: {roll.result} counts as {lower}")
+    return dataclasses.replace(roll, result=lower)
 
 
 def roll_progress(track_name: str, filled_boxes: int, move: str) -> RollResult:
@@ -224,7 +240,7 @@ def _classify_keyword(verb: str, rest: str) -> tuple[str, str, str] | None:
 
 def _classify(cons: str, default_npc: str) -> tuple[str, str, str] | None:
     verb, _, rest = cons.partition(" ")
-    if verb in ("mark", "clear", "complication", *_DANGER_VERBS):
+    if verb in ("mark", "clear", "complication", "bond_request", "recommit", *_DANGER_VERBS):
         return _classify_keyword(verb, rest)
 
     parts = cons.split()

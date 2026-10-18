@@ -70,7 +70,7 @@ def parse_effect(effect_str: str) -> MoveEffect:
     if m:
         return MoveEffect(type="complication", target=m.group(1))
 
-    if effect_str in ("pay_the_price", "disposition_shift", "raise_connection_rank"):
+    if effect_str in ("pay_the_price", "disposition_shift", "raise_connection_rank", "bond_request"):
         return MoveEffect(type=effect_str)
 
     raise ValueError(f"Unknown move effect {effect_str!r}")
@@ -128,6 +128,12 @@ def _apply_resource_effect(game: GameState, effect: MoveEffect, result: OutcomeR
             result.consequences.append(_labels["track_gain"].format(track=effect.type, n=gained))
     else:
         suffer(game, effect.type, abs(effect.value), result)
+
+
+def _apply_bond_request_effect(
+    game: GameState, effect: MoveEffect, result: OutcomeResult, target: NpcData | None
+) -> None:
+    result.consequences.append(eng().ai_text.consequence_labels["bond_request"])
 
 
 def _apply_clear_condition_effect(
@@ -323,6 +329,7 @@ _EFFECT_HANDLERS: dict[str, Callable[[GameState, MoveEffect, OutcomeResult, NpcD
     "bond": _apply_bond_effect,
     "disposition_shift": _apply_disposition_shift_effect,
     "clear_condition": _apply_clear_condition_effect,
+    "bond_request": _apply_bond_request_effect,
 }
 
 

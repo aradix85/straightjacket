@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import random
 import re
+from collections.abc import Callable
 
 from ..datasworn.moves import get_moves
 from ..datasworn.settings import load_package
@@ -9,7 +11,7 @@ from ..ids import unique_id
 from ..logging_util import log
 from ..npc.bond import connection_track_id
 from .impacts import clear_impact
-from .legacy import apply_threat_overcome_bonus
+from .legacy import apply_threat_overcome_bonus, shifted_rank
 from .outcome_result import OutcomeResult
 from .suffer import suffer
 from ..models import BrainResult, GameState, ProgressTrack, ThreadEntry
@@ -77,6 +79,31 @@ def forsake_vow(game: GameState, vow: ProgressTrack, result: OutcomeResult) -> N
     complete_track(game, vow.id, "failed")
     result.consequences.append(eng().ai_text.consequence_labels["forsake_vow"].format(vow=vow.name))
     suffer(game, cfg.meter, cfg.cost, result)
+
+
+def _keep_one_box(track: ProgressTrack) -> int:
+    return min(track.ticks, eng().progress.ticks_per_box)
+
+
+def _clear_lowest_die(track: ProgressTrack) -> int:
+    die = eng().dice.challenge_die
+    lowest = min(random.randint(1, die), random.randint(1, die))
+    return max(0, track.ticks - lowest * eng().progress.ticks_per_box)
+
+
+_RECOMMIT_RULES: dict[str, Callable[[ProgressTrack], int]] = {
+    "keep_one_box": _keep_one_box,
+    "clear_lowest_die": _clear_lowest_die,
+}
+
+
+def recommit_track(track: ProgressTrack, rule: str, result: OutcomeResult) -> None:
+    track.ticks = _RECOMMIT_RULES[rule](track)
+    higher = shifted_rank(track.rank, 1)
+    if higher is not None:
+        track.rank = higher
+    result.consequences.append(eng().ai_text.consequence_labels["recommit"].format(track=track.name))
+    log(f"[Track] Recommitted to {track.name}: {track.filled_boxes} boxes, rank {track.rank}")
 
 
 def track_category_of_move(game: GameState, move: str) -> str | None:

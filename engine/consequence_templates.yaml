@@ -54,6 +54,12 @@ consequence_templates:
   complication_compel:
   - The agreement comes with a demand, something {player} must give or do in return.
   - They agree, but on a condition {player} will have to meet.
+  bond_request:
+  - The bond is sealed, but they ask something more of {player} first, a request still to be met.
+  - They accept the bond on one condition, something {player} has yet to do for them.
+  recommit:
+  - '{player} does not give up on it: {danger}. The way is longer now and harder.'
+  - 'The setback costs ground, but {player} takes it up again: {danger}, now harder than before.'
   complication_clock:
   - 'The first sign of a new danger shows, small for now: {danger}. Left alone, it will grow.'
   - 'Something starts that will not stop by itself: {danger}. For now it is only a sign.'

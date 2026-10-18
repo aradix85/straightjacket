@@ -94,12 +94,11 @@ move_outcomes:
     miss:
     - pay_the_price
   combat/take_decisive_action:
+    downgrade_in: bad_spot
     strong_hit:
     - momentum +1
-    - position in_control
     weak_hit:
     - pay_the_price
-    - position bad_spot
     miss:
     - pay_the_price
   quest/swear_an_iron_vow:
@@ -109,6 +108,7 @@ move_outcomes:
     - momentum +1
     miss: []
   quest/fulfill_your_vow:
+    recommit_on_miss: clear_lowest_die
     strong_hit:
     - legacy_reward quests
     weak_hit:
@@ -138,10 +138,12 @@ move_outcomes:
     miss:
     - pay_the_price
   connection/forge_a_bond:
+    recommit_on_miss: clear_lowest_die
     strong_hit:
     - legacy_reward bonds
     weak_hit:
     - legacy_reward bonds
+    - bond_request
     miss: []
   exploration/undertake_an_expedition:
     strong_hit:
@@ -170,11 +172,12 @@ move_outcomes:
     miss:
     - pay_the_price
   exploration/finish_an_expedition:
+    recommit_on_miss: clear_lowest_die
     strong_hit:
     - legacy_reward discoveries
-    weak_hit: []
-    miss:
-    - pay_the_price
+    weak_hit:
+    - legacy_reward_lower discoveries
+    miss: []
   recover/heal:
     handler: recovery
     params:
@@ -345,11 +348,11 @@ move_outcomes:
     miss:
     - pay_the_price
   adventure/reach_your_destination:
+    recommit_on_miss: keep_one_box
     strong_hit:
     - momentum +1
     weak_hit: []
-    miss:
-    - pay_the_price
+    miss: []
   adventure/resupply:
     strong_hit:
     - supply +2
@@ -472,6 +475,7 @@ move_outcomes:
 move_outcome_overrides:
   classic:
     quest/fulfill_your_vow:
+      recommit_on_miss: keep_one_box
       strong_hit:
       - experience_by_rank 0
       weak_hit:

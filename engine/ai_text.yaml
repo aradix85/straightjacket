@@ -44,6 +44,8 @@ ai_text:
     threshold_vow: 'return from the brink bound to the {rank} vow "{vow}"; the oracle: {oracle}'
     forsake_vow: 'forsake the vow "{vow}"'
     out_of_time: '{clock}: out of time'
+    bond_request: bond_request
+    recommit: recommit {track}
   narrator_defaults:
     unknown_location: unknown
     unknown_time: unspecified

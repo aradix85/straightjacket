@@ -10,20 +10,25 @@ from ..mechanics import (
 from ..mechanics.complications import avert_complication
 from ..mechanics.consequences import tick_threat_clock
 from ..mechanics.move_outcome import make_follow_up_moves
-from ..mechanics.outcome_result import OutcomeResult
+from ..mechanics.outcome_result import OutcomeResult, move_outcome_config
 from ..mechanics.suffer import tick_dying_clock
 from ..mechanics.threats import advance_menace_on_miss, resolve_full_menace
 from ..models import BrainResult, ClockEvent, GameState, ProgressTrack, RollResult, ThreatEvent
 from ..npc import find_npc
 from .finalization import apply_progress_and_legacy, resolve_action_consequences, update_crisis
 from ..mechanics import complete_track, start_track
+from ..mechanics.tracks import recommit_track
 from .turn_types import ActionResolution, RollOutcome
 
 
-def _apply_track_completion(game: GameState, roll: RollResult, track: ProgressTrack) -> None:
-    if roll.result == "STRONG_HIT":
+def _apply_track_completion(game: GameState, roll: RollResult, track: ProgressTrack, outcome: OutcomeResult) -> None:
+    if roll.result in eng().dice.hit_results:
         complete_track(game, track.id, "completed")
-    elif roll.result == "MISS":
+        return
+    cfg = move_outcome_config(game, roll.move)
+    if "recommit_on_miss" in cfg:
+        recommit_track(track, cfg["recommit_on_miss"], outcome)
+    else:
         complete_track(game, track.id, "failed")
 
 
@@ -97,7 +102,7 @@ def resolve_action_phase(game: GameState, brain: BrainResult, roll_outcome: Roll
     apply_progress_and_legacy(game, action.outcome, brain, track)
 
     if track is not None:
-        _apply_track_completion(game, roll, track)
+        _apply_track_completion(game, roll, track, action.outcome)
 
     _maybe_avert_complication(game, brain, roll, consequences)
     _maybe_tick_weak_hit_clock(game, roll, position, clock_events, fill_results)

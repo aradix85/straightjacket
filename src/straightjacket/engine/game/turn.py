@@ -24,6 +24,7 @@ from ..mechanics import (
     roll_progress,
 )
 from ..mechanics import check_npc_agency
+from ..mechanics.consequences import downgrade_in_position
 from ..mechanics.move_outcome import make_follow_up_moves
 from ..mechanics.outcome_result import OutcomeResult
 from ..mechanics.random_events import drain_pending_events
@@ -343,6 +344,7 @@ def _execute_roll(game: GameState, brain: BrainResult, earlier: RollResult | Non
             roll = roll_progress(track.name, filled, brain.move)
         else:
             roll = keep_progress_dice(earlier, track.name, filled, brain.move)
+        roll = downgrade_in_position(game, roll)
         log(
             f"[Roll] {roll.move} (progress: {track.name}={filled} boxes): "
             f"{roll.action_score} vs [{roll.c1},{roll.c2}] "
