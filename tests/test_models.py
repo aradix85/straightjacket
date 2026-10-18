@@ -181,13 +181,10 @@ def test_phase_trigger_dedup(load_engine: None) -> None:
     ]
     game.narrative.story_blueprint = bp
 
-    reason = should_call_director(game)
-    assert reason == "phase:resolution"
-
-    bp.triggered_director_phases.append("resolution")
-
-    reason2 = should_call_director(game)
-    assert reason2 != "phase:resolution"
+    triggers = {"roll_result": "", "chaos_used": False, "new_npcs_found": False, "revelation_used": False}
+    assert should_call_director(game, **triggers) == "phase:resolution"
+    assert bp.triggered_director_phases == ["resolution"]
+    assert should_call_director(game, **triggers) != "phase:resolution"
 
 
 def test_an_engine_rolled_name_is_not_replaced_by_one_without_overlap() -> None:

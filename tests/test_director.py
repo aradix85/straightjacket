@@ -432,21 +432,27 @@ def test_should_call_on_miss(stub_all: None) -> None:
     from straightjacket.engine.director import should_call_director
 
     game = _game()
-    assert should_call_director(game, roll_result="MISS") == "miss"
+    assert (
+        should_call_director(game, roll_result="MISS", chaos_used=False, new_npcs_found=False, revelation_used=False)
+        == "miss"
+    )
 
 
 def test_should_call_on_chaos(stub_all: None) -> None:
     from straightjacket.engine.director import should_call_director
 
     game = _game()
-    assert should_call_director(game, chaos_used=True) == "chaos"
+    assert (
+        should_call_director(game, roll_result="", chaos_used=True, new_npcs_found=False, revelation_used=False)
+        == "chaos"
+    )
 
 
 def test_should_call_on_reflection_needed(stub_all: None) -> None:
     from straightjacket.engine.director import should_call_director
 
     game = _game()
-    reason = should_call_director(game)
+    reason = should_call_director(game, roll_result="", chaos_used=False, new_npcs_found=False, revelation_used=False)
     assert reason is not None
     assert "reflection" in reason
 
@@ -457,7 +463,10 @@ def test_should_call_on_interval(stub_all: None) -> None:
     game = _game()
     game.npcs = []
     game.narrative.scene_count = 9
-    assert should_call_director(game) == "interval"
+    assert (
+        should_call_director(game, roll_result="", chaos_used=False, new_npcs_found=False, revelation_used=False)
+        == "interval"
+    )
 
 
 def test_should_call_returns_none_when_no_trigger(stub_all: None) -> None:
@@ -466,7 +475,10 @@ def test_should_call_returns_none_when_no_trigger(stub_all: None) -> None:
     game = _game()
     game.npcs = []
     game.narrative.scene_count = 7
-    assert should_call_director(game) is None
+    assert (
+        should_call_director(game, roll_result="", chaos_used=False, new_npcs_found=False, revelation_used=False)
+        is None
+    )
 
 
 def test_reset_stale_reflection_flags(stub_all: None) -> None:

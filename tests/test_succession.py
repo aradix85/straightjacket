@@ -340,6 +340,14 @@ def test_a_fight_the_predecessor_died_in_ends_with_them(aria: GameState) -> None
     assert aria.world.combat_position == ""
 
 
+def test_a_successor_cannot_correct_the_predecessors_last_turn(aria: GameState) -> None:
+    aria.last_turn_snapshot = aria.snapshot()
+    _reset_for_successor(
+        aria, surviving_threads=[], surviving_threats=[], surviving_npcs=[], surviving_connection_tracks=[]
+    )
+    assert aria.last_turn_snapshot is None
+
+
 def test_reset_for_successor_filters_characters_list(aria: GameState) -> None:
     from straightjacket.engine.models import CharacterListEntry
 

@@ -1,5 +1,13 @@
 correction:
-  npc_edit_allowed_fields:
+  ops:
+    - npc_edit
+    - npc_split
+    - npc_merge
+    - location_edit
+    - scene_context
+    - time_edit
+    - backstory_append
+  npc_edit_fields:
     - name
     - description
     - disposition

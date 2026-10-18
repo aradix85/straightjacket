@@ -87,12 +87,14 @@ def _unions(node: Any) -> int:
 def test_every_schema_stays_within_anthropics_limit_on_union_typed_fields(load_engine: None) -> None:
     from straightjacket.engine.ai.schemas import (
         get_brain_output_schema,
+        get_correction_output_schema,
         get_director_output_schema,
         get_narrator_metadata_schema,
     )
 
     many_npcs = [f"npc_{i}" for i in range(1, 13)]
     schemas = {name: builder() for name, builder in _schema_builders()}
+    schemas["correction with twelve known NPCs"] = get_correction_output_schema(many_npcs)
     schemas["director with twelve reflections"] = get_director_output_schema(many_npcs)
     schemas["metadata with twelve known NPCs"] = get_narrator_metadata_schema(many_npcs)
     schemas["brain with every choice"] = get_brain_output_schema(
@@ -119,11 +121,27 @@ def test_the_union_count_sees_any_of_and_type_lists() -> None:
     assert _unions({"properties": {"a": {"type": ["string", "null"]}, "b": {"type": "string"}}}) == 1
 
 
+def test_a_correction_names_only_known_npcs(load_engine: None) -> None:
+    from straightjacket.engine.ai.schemas import get_correction_output_schema
+    from straightjacket.engine.engine_loader import eng
+
+    schema = get_correction_output_schema(["npc_2", "npc_1"])
+    problems: list[str] = []
+    _loose_objects(schema, "correction", problems)
+    assert problems == []
+    op = schema["properties"]["state_ops"]["items"]["properties"]
+    assert op["op"]["enum"] == eng().correction.ops
+    for field in ("npc_id", "merge_source_id"):
+        assert op[field]["anyOf"][0]["enum"] == ["npc_1", "npc_2"]
+        no_npcs = get_correction_output_schema([])["properties"]["state_ops"]["items"]["properties"][field]
+        assert no_npcs == {"type": "null"}
+
+
 def test_a_correction_can_set_only_a_known_disposition(load_engine: None) -> None:
     from straightjacket.engine.ai.schemas import get_correction_output_schema
     from straightjacket.engine.engine_loader import eng
 
-    op = get_correction_output_schema()["properties"]["state_ops"]["items"]
+    op = get_correction_output_schema(["npc_1"])["properties"]["state_ops"]["items"]
     fields = next(branch for branch in op["properties"]["fields"]["anyOf"] if branch.get("type") == "object")
     choices = next(branch for branch in fields["properties"]["disposition"]["anyOf"] if branch.get("type") == "string")
     assert choices["enum"] == sorted(eng().enums.dispositions)
@@ -134,7 +152,7 @@ def test_a_correction_can_set_only_a_known_npc_status(load_engine: None) -> None
     from straightjacket.engine.ai.schemas import get_correction_output_schema
     from straightjacket.engine.engine_loader import eng
 
-    op = get_correction_output_schema()["properties"]["state_ops"]["items"]
+    op = get_correction_output_schema(["npc_1"])["properties"]["state_ops"]["items"]
     fields = next(branch for branch in op["properties"]["fields"]["anyOf"] if branch.get("type") == "object")
     choices = next(branch for branch in fields["properties"]["status"]["anyOf"] if branch.get("type") == "string")
     assert choices["enum"] == sorted(eng().enums.npc_statuses)

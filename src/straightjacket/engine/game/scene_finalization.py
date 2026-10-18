@@ -166,10 +166,6 @@ def finalize_scene(
     if director_reason:
         director_ctx = DirectorCall(narration=narration)
         nar.session_log[-1].director_trigger = director_reason
-
-        bp = game.narrative.story_blueprint
-        if director_reason.startswith("phase:") and bp is not None:
-            bp.triggered_director_phases.append(director_reason[len("phase:") :])
     else:
         log(f"[Director] Skipped (no trigger at scene {nar.scene_count})")
 

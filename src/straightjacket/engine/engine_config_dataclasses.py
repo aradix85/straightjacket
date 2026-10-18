@@ -347,7 +347,8 @@ class NarratorStatusDescriptions:
 
 @dataclass
 class CorrectionConfig:
-    npc_edit_allowed_fields: list[str]
+    ops: list[str]
+    npc_edit_fields: list[str]
 
 
 @dataclass
@@ -475,8 +476,6 @@ class EnumsConfig:
     npc_statuses: list[str]
     clock_types: list[str]
     tone_keys: list[str]
-    correction_ops: list[str]
-    correction_fields: list[str]
     dramatic_weights: list[str]
     odds_levels: list[str]
 

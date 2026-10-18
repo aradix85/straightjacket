@@ -236,10 +236,10 @@ def get_opening_setup_schema() -> dict[str, Any]:
     )
 
 
-def get_correction_output_schema() -> dict[str, Any]:
+def get_correction_output_schema(npc_ids: list[str]) -> dict[str, Any]:
     _e = eng()
     field_props: dict[str, Any] = {}
-    for fname in _e.enums.correction_fields:
+    for fname in _e.correction.npc_edit_fields:
         if fname == "aliases":
             field_props[fname] = {"anyOf": [_str_arr(), {"type": "null"}]}
         elif fname == "disposition":
@@ -257,11 +257,11 @@ def get_correction_output_schema() -> dict[str, Any]:
             "state_ops": _arr(
                 _obj(
                     {
-                        "op": _str_enum(list(_e.enums.correction_ops)),
-                        "npc_id": _nullable_str(),
+                        "op": _str_enum(list(_e.correction.ops)),
+                        "npc_id": _nullable_enum(npc_ids),
                         "split_name": _nullable_str(),
                         "split_description": _nullable_str(),
-                        "merge_source_id": _nullable_str(),
+                        "merge_source_id": _nullable_enum(npc_ids),
                         "fields": _nullable_obj(field_props),
                         "value": _nullable_str(),
                     }

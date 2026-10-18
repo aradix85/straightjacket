@@ -1,45 +1,43 @@
 from __future__ import annotations
 
 from typing import Any
-import re
-import uuid
 
 from ..engine_loader import eng
 from ..logging_util import log
 from ..mechanics import clear_facts, locations_match
 from ..models import GameState, NpcData
-from ..npc import consolidate_memory, find_npc
+from ..npc import consolidate_memory, find_npc, next_npc_id
 from ..npc.lifecycle import sanitize_aliases
+from ..npc.naming import roll_oracle_name
+
+
+def _skip(op_dict: dict[str, Any], reason: str) -> None:
+    log(f"[Correction] {op_dict['op']} skipped: {reason}", level="warning")
 
 
 def _op_npc_edit(game: GameState, op_dict: dict[str, Any]) -> None:
     npc = find_npc(game, op_dict["npc_id"])
-    if not npc or not op_dict["fields"]:
+    if npc is None or not op_dict["fields"]:
+        _skip(op_dict, "no NPC or no fields named")
         return
-    _allowed = set(eng().correction.npc_edit_allowed_fields)
-    edits = {k: v for k, v in op_dict["fields"].items() if k in _allowed and v is not None}
+    edits = {k: v for k, v in op_dict["fields"].items() if v is not None}
+    if "name" in edits and not edits["name"].strip():
+        log(f"[Correction] npc_edit: {npc.name} keeps its name, the analysis gave an empty one", level="warning")
+        edits.pop("name")
 
     old_name = npc.name
     is_rename = "name" in edits and edits["name"] != old_name
     if is_rename:
         edits.pop("aliases", None)
 
-    if "status" in edits and edits["status"] not in eng().enums.npc_statuses:
-        edits.pop("status")
-
     for k, v in edits.items():
         setattr(npc, k, v)
 
-    if is_rename and old_name:
+    if is_rename:
         if old_name not in npc.aliases:
             npc.aliases.append(old_name)
         new_lower = edits["name"].lower()
         npc.aliases = [a for a in npc.aliases if a.lower() != new_lower]
-
-    if edits.get("status") == "deceased" and npc.description:
-        npc.description = re.sub(
-            r"\s*\[?(VERSTORBEN|DECEASED|TOT|DEAD)\]?\s*", "", npc.description, flags=re.IGNORECASE
-        ).strip()
 
     if edits:
         log(f"[Correction] npc_edit: {npc.name} fields={list(edits.keys())}{' (RENAME)' if is_rename else ''}")
@@ -47,28 +45,29 @@ def _op_npc_edit(game: GameState, op_dict: dict[str, Any]) -> None:
 
 def _op_npc_split(game: GameState, op_dict: dict[str, Any]) -> None:
     existing = find_npc(game, op_dict["npc_id"])
-    if not existing:
+    if existing is None:
+        _skip(op_dict, "no NPC named")
         return
-    new_name = op_dict["split_name"] or eng().ai_text.narrator_defaults["split_default_name"]
-    new_desc = op_dict["split_description"] or ""
-    new_id = f"npc_{uuid.uuid4().hex[:8]}"
+    new_name = op_dict["split_name"] or roll_oracle_name(game)
     new_npc = NpcData(
-        id=new_id,
+        id=next_npc_id(game),
         name=new_name,
-        description=new_desc,
+        description=op_dict["split_description"] or "",
         disposition=existing.disposition,
         status=existing.status,
-        name_rolled=False,
+        name_rolled=not op_dict["split_name"],
+        last_location=existing.last_location,
         introduced=True,
     )
     game.npcs.append(new_npc)
-    log(f"[Correction] npc_split: '{existing.name}' → also '{new_name}' ({new_id})")
+    log(f"[Correction] npc_split: '{existing.name}' → also '{new_name}' ({new_npc.id})")
 
 
 def _op_npc_merge(game: GameState, op_dict: dict[str, Any]) -> None:
     target = find_npc(game, op_dict["npc_id"])
     source = find_npc(game, op_dict["merge_source_id"])
-    if not target or not source or target is source:
+    if target is None or source is None or target is source:
+        _skip(op_dict, "it needs two different NPCs")
         return
     target.memory.extend(source.memory)
     for alias in source.aliases:
@@ -83,30 +82,38 @@ def _op_npc_merge(game: GameState, op_dict: dict[str, Any]) -> None:
 
 
 def _op_location_edit(game: GameState, op_dict: dict[str, Any]) -> None:
-    if op_dict["value"]:
-        if not locations_match(op_dict["value"], game.world.current_location):
-            clear_facts(game)
-        game.world.current_location = op_dict["value"]
-        log(f"[Correction] location → {game.world.current_location}")
+    if not op_dict["value"]:
+        _skip(op_dict, "no location named")
+        return
+    if not locations_match(op_dict["value"], game.world.current_location):
+        clear_facts(game)
+    game.world.current_location = op_dict["value"]
+    log(f"[Correction] location → {game.world.current_location}")
 
 
 def _op_scene_context(game: GameState, op_dict: dict[str, Any]) -> None:
-    if op_dict["value"]:
-        game.world.current_scene_context = op_dict["value"]
-        log("[Correction] scene_context updated")
+    if not op_dict["value"]:
+        _skip(op_dict, "no scene context given")
+        return
+    game.world.current_scene_context = op_dict["value"]
+    log("[Correction] scene_context updated")
 
 
 def _op_time_edit(game: GameState, op_dict: dict[str, Any]) -> None:
-    if op_dict["value"] in eng().enums.time_phases:
-        game.world.time_of_day = op_dict["value"]
-        log(f"[Correction] time_of_day → {game.world.time_of_day}")
+    if op_dict["value"] not in eng().enums.time_phases:
+        _skip(op_dict, f"{op_dict['value']!r} is no time of day")
+        return
+    game.world.time_of_day = op_dict["value"]
+    log(f"[Correction] time_of_day → {game.world.time_of_day}")
 
 
 def _op_backstory_append(game: GameState, op_dict: dict[str, Any]) -> None:
-    if op_dict["value"]:
-        sep = "\n" if game.backstory else ""
-        game.backstory += sep + op_dict["value"]
-        log("[Correction] backstory appended")
+    if not op_dict["value"]:
+        _skip(op_dict, "no backstory given")
+        return
+    sep = "\n" if game.backstory else ""
+    game.backstory += sep + op_dict["value"]
+    log("[Correction] backstory appended")
 
 
 _OP_HANDLERS = {
@@ -120,8 +127,6 @@ _OP_HANDLERS = {
 }
 
 
-def _apply_correction_ops(game: GameState, ops: list[Any]) -> None:
+def apply_correction_ops(game: GameState, ops: list[Any]) -> None:
     for op_dict in ops:
-        handler = _OP_HANDLERS.get(op_dict["op"])
-        if handler:
-            handler(game, op_dict)
+        _OP_HANDLERS[op_dict["op"]](game, op_dict)

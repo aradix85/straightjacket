@@ -3,22 +3,24 @@ from __future__ import annotations
 from typing import Any
 import json
 
-from ..models import BrainResult
 from ..ai.provider_base import AICallSpec, AIProvider, create_with_retry
 from ..ai.schemas import get_correction_output_schema
 from ..config_loader import model_for_role, narration_language, sampling_params
 from ..engine_loader import eng
 from ..logging_util import log
-from ..models import GameState, NpcData
+from ..models import BrainResult, GameState, NpcData, TurnSnapshot
 from ..prompt_loader import get_prompt
 from ..xml_utils import xe as _xe
 
 
-def call_correction_brain(provider: AIProvider, game: GameState, correction_text: str) -> dict[str, Any]:
-    snap = game.last_turn_snapshot
-    if not snap:
-        raise ValueError("No last_turn_snapshot available for correction")
-
+def call_correction_brain(
+    provider: AIProvider,
+    game: GameState,
+    correction_text: str,
+    snap: TurnSnapshot,
+    brain: BrainResult,
+    narration: str,
+) -> dict[str, Any]:
     lang = narration_language()
 
     _defaults = eng().ai_text.narrator_defaults
@@ -33,7 +35,6 @@ def call_correction_brain(provider: AIProvider, game: GameState, correction_text
 
     npc_lines = "\n".join(_npc_line(n) for n in game.npcs) or _defaults["no_npcs"]
 
-    brain = snap.brain or BrainResult(type="none", move="none", stat="none")
     roll = snap.roll
     roll_summary = (
         f"{roll.result} ({roll.move}, {roll.stat_name}={roll.stat_value}, "
@@ -42,16 +43,14 @@ def call_correction_brain(provider: AIProvider, game: GameState, correction_text
         else _defaults["no_roll"]
     )
 
-    system = get_prompt("correction_brain", lang=lang)
     w = game.world
-
     user_msg = f"""## correction from player: {_xe(correction_text)}
 
 <last_turn>
 player_input: {_xe(snap.player_input)}
 brain_interpretation: move={brain.move} stat={brain.stat} intent={_xe(brain.player_intent[: _trunc.prompt_short])}
 roll: {roll_summary}
-narration (first {_trunc.narration_preview} chars): {_xe((snap.narration or "")[: _trunc.narration_preview])}
+narration (first {_trunc.narration_preview} chars): {_xe(narration[: _trunc.narration_preview])}
 </last_turn>
 
 <current_state>
@@ -62,27 +61,26 @@ npcs:
 {npc_lines}
 </current_state>"""
 
+    spec = AICallSpec(
+        model=model_for_role("correction"),
+        log_role="correction",
+        system=get_prompt("correction_brain", lang=lang),
+        messages=[{"role": "user", "content": user_msg}],
+        json_schema=get_correction_output_schema([n.id for n in game.npcs]),
+        **sampling_params("correction"),
+    )
     log(f"[Correction] Analysing: {correction_text[: _trunc.log_long]}")
     try:
-        spec = AICallSpec(
-            model=model_for_role("correction"),
-            log_role="correction",
-            system=system,
-            messages=[{"role": "user", "content": user_msg}],
-            json_schema=get_correction_output_schema(),
-            **sampling_params("correction"),
-        )
         response = create_with_retry(provider, spec)
         result: dict[str, Any] = json.loads(response.content)
         log(f"[Correction] source={result['correction_source']} ops={len(result['state_ops'])}")
         return result
     except Exception as e:
         log(f"[Correction] Brain failed ({type(e).__name__}: {e}), falling back to no-op state_error", level="warning")
-        _defaults = eng().ai_text.narrator_defaults
         return {
-            "correction_source": _defaults["correction_brain_fallback_source"],
-            "corrected_input": _defaults["correction_brain_fallback_corrected_input"],
+            "correction_source": "state_error",
+            "corrected_input": "",
             "narrator_guidance": correction_text,
-            "director_useful": _defaults["correction_brain_fallback_director_useful"],
-            "state_ops": list(_defaults["correction_brain_fallback_state_ops"]),
+            "director_useful": False,
+            "state_ops": [],
         }

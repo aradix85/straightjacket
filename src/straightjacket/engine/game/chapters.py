@@ -174,6 +174,7 @@ def _reset_chapter_mechanics(game: GameState) -> None:
     game.world.location_history = []
     clear_facts(game)
     game.narrative.director_guidance = DirectorGuidance()
+    game.last_turn_snapshot = None
 
 
 def _prepare_npcs_for_new_chapter(game: GameState) -> None:

@@ -186,6 +186,19 @@ def test_correction_state_error_full_flow(
     assert game.narrative.session_log[-1].summary.startswith("[corrected]")
 
 
+def test_a_snapshot_without_a_played_turn_is_refused(
+    load_engine: None, stub_emotions: None, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from straightjacket.engine.correction import process_correction
+
+    provider = MockProvider(correction_source="state_error")
+    game = _played_game(provider, monkeypatch)
+    assert game.last_turn_snapshot is not None
+    game.last_turn_snapshot.brain = None
+    with pytest.raises(ValueError, match="no Brain result"):
+        process_correction(provider, game, "Mira should be loyal")
+
+
 def test_correction_no_snapshot(load_engine: None, stub_emotions: None, monkeypatch: pytest.MonkeyPatch) -> None:
     from straightjacket.engine.correction import process_correction
 

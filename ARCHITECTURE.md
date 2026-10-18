@@ -14,7 +14,7 @@ Straightjacket puts the Narrative RPG Engine design document ([itch.io](https://
 - The narrator supplies every fact the engine has not settled, such as the look of a room or what an NPC says.
 - The metadata extraction registers the NPCs, renames, and deaths the narration introduces, and gives each new NPC a disposition from the engine's list, so narrated facts can become state; the opening extraction does the same for an opening scene and also writes the opening NPCs' agendas, instincts, and secrets.
 - The Director writes agendas, instincts, and arcs for the NPCs the engine selects, and guidance that reaches the narrator's next prompts.
-- The correction analysis reads a `##` correction and decides whether the input was misread, which the engine replays with the dice already rolled, or which state operations apply; the operations, fields, and values are limited to those its schema offers.
+- The correction analysis reads a `##` correction and decides whether the input was misread, which the engine replays with the dice already rolled, or which state operations apply; the operations, fields, NPCs, and values are limited to those its schema offers.
 
 The Brain reading free text, the narrator's prose, and the Director's wording stay with the AI by design. What the AI still decides where a system could, and the revelation check, the one call that judges the narration after the fact, are listed in `docs/divergences.md`, each with the roadmap step that takes it over.
 

@@ -106,11 +106,13 @@ def test_reset_chapter_mechanics_clears_narrative(load_engine: None) -> None:
     from straightjacket.engine.game.chapters import _reset_chapter_mechanics
 
     g = _populated_game(None)
+    g.last_turn_snapshot = g.snapshot()
     _reset_chapter_mechanics(g)
     assert g.narrative.scene_count == 1
     assert g.narrative.session_log == []
     assert g.narrative.narration_history == []
     assert g.narrative.story_blueprint is None
+    assert g.last_turn_snapshot is None
 
 
 def test_reset_chapter_mechanics_clears_flags(load_engine: None) -> None:

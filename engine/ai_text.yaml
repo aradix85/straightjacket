@@ -47,17 +47,12 @@ ai_text:
     unknown_location: unknown
     unknown_time: unspecified
     unknown_intent: general
-    split_default_name: Unknown
     no_npcs: (none)
     no_npcs_yet: none yet
     no_npcs_nearby: no one nearby
     no_roll: dialog (no roll)
     npc_appeared_event: '{npc_name} appeared'
     recap_fallback: ({player_name} recalls the recent events...)
-    correction_brain_fallback_source: state_error
-    correction_brain_fallback_corrected_input: ''
-    correction_brain_fallback_director_useful: false
-    correction_brain_fallback_state_ops: []
     new_chapter_threads_template: 'New chapter. Open threads: {threads}'
     new_chapter_blank: A new chapter begins.
     aftermath_act_title: Aftermath

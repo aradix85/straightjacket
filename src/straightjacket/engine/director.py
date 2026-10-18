@@ -36,10 +36,10 @@ def _director_system(game: GameState) -> str:
 
 def should_call_director(
     game: GameState,
-    roll_result: str = "",
-    chaos_used: bool = False,
-    new_npcs_found: bool = False,
-    revelation_used: bool = False,
+    roll_result: str,
+    chaos_used: bool,
+    new_npcs_found: bool,
+    revelation_used: bool,
 ) -> str | None:
     if game.campaign.epilogue_dismissed and not game.post_epilogue_director_done:
         game.post_epilogue_director_done = True
@@ -59,12 +59,13 @@ def should_call_director(
             return f"reflection:{npc.name}"
 
     bp = game.narrative.story_blueprint
-    if bp and bp.acts:
+    if bp is not None:
         act = get_current_act(game)
         if act.phase in eng().pacing.director_phases and act.phase not in bp.triggered_director_phases:
+            bp.triggered_director_phases.append(act.phase)
             return f"phase:{act.phase}"
 
-    if game.narrative.scene_count > 0 and game.narrative.scene_count % eng().pacing.director_interval == 0:
+    if game.narrative.scene_count % eng().pacing.director_interval == 0:
         return "interval"
 
     return None

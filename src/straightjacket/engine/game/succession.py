@@ -114,6 +114,7 @@ def _reset_for_successor(
     game.world.chaos_factor = _e.chaos.start
     game.crisis_mode = False
     game.game_over = False
+    game.last_turn_snapshot = None
 
     game.campaign.epilogue_shown = False
     game.campaign.epilogue_dismissed = False

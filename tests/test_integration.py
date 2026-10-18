@@ -407,23 +407,17 @@ def test_narrator_system_prompt_includes_constraints(stub_engine: None) -> None:
 
 
 def test_correction_brain_parses_response(stub_engine: None) -> None:
-    from straightjacket.engine.correction import call_correction_brain
+    from straightjacket.engine.correction.analysis import call_correction_brain
 
     provider = MockProvider()
     game = _make_game()
 
-    game.last_turn_snapshot = game.snapshot()
-    game.last_turn_snapshot.player_input = "I attack the guard"
-    game.last_turn_snapshot.brain = make_brain_result(
-        move="combat/strike", stat="iron", player_intent="Attack the guard"
-    )
-    game.last_turn_snapshot.roll = None
-    game.last_turn_snapshot.narration = "You swing your sword..."
+    snap = game.snapshot()
+    snap.player_input = "I attack the guard"
+    brain = make_brain_result(move="combat/strike", stat="iron", player_intent="Attack the guard")
 
     result = call_correction_brain(
-        provider,
-        game,
-        "I didn't want to attack, just talk",
+        provider, game, "I didn't want to attack, just talk", snap, brain, "You swing your sword..."
     )
 
     assert "correction_source" in result
@@ -522,12 +516,12 @@ def test_story_completion_triggers() -> None:
 
 
 def test_correction_state_ops_npc_edit(stub_engine: None) -> None:
-    from straightjacket.engine.correction import _apply_correction_ops
+    from straightjacket.engine.correction.ops import apply_correction_ops
 
     game = _make_game()
     original_name = game.npcs[0].name
 
-    _apply_correction_ops(
+    apply_correction_ops(
         game,
         [
             {
@@ -547,11 +541,11 @@ def test_correction_state_ops_npc_edit(stub_engine: None) -> None:
 
 
 def test_correction_state_ops_npc_rename(stub_engine: None) -> None:
-    from straightjacket.engine.correction import _apply_correction_ops
+    from straightjacket.engine.correction.ops import apply_correction_ops
 
     game = _make_game()
 
-    _apply_correction_ops(
+    apply_correction_ops(
         game,
         [
             {
@@ -570,11 +564,11 @@ def test_correction_state_ops_npc_rename(stub_engine: None) -> None:
 
 
 def test_correction_state_ops_location_edit(stub_engine: None) -> None:
-    from straightjacket.engine.correction import _apply_correction_ops
+    from straightjacket.engine.correction.ops import apply_correction_ops
 
     game = _make_game()
 
-    _apply_correction_ops(
+    apply_correction_ops(
         game,
         [
             {
@@ -592,12 +586,12 @@ def test_correction_state_ops_location_edit(stub_engine: None) -> None:
 
 
 def test_correction_state_ops_npc_split(stub_engine: None) -> None:
-    from straightjacket.engine.correction import _apply_correction_ops
+    from straightjacket.engine.correction.ops import apply_correction_ops
 
     game = _make_game()
     count_before = len(game.npcs)
 
-    _apply_correction_ops(
+    apply_correction_ops(
         game,
         [
             {
@@ -616,27 +610,88 @@ def test_correction_state_ops_npc_split(stub_engine: None) -> None:
     assert new_npc.description == "Identical but different"
 
 
-def test_correction_state_ops_invalid_status_rejected(stub_engine: None) -> None:
-    from straightjacket.engine.correction import _apply_correction_ops
+def _op(op: str, **fields: object) -> dict[str, object]:
+    base: dict[str, object] = {
+        "op": op,
+        "npc_id": None,
+        "fields": None,
+        "split_name": None,
+        "split_description": None,
+        "merge_source_id": None,
+        "value": None,
+    }
+    return {**base, **fields}
+
+
+def test_a_correction_keeps_the_name_when_it_is_given_an_empty_one(
+    stub_engine: None, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from straightjacket.engine.correction import ops
+
+    warnings: list[str] = []
+    monkeypatch.setattr(ops, "log", lambda msg, level="info": warnings.append(msg) if level == "warning" else None)
+    game = _make_game()
+    ops.apply_correction_ops(game, [_op("npc_edit", npc_id="npc_1", fields={"name": " ", "agenda": "hide"})])
+    assert (game.npcs[0].name, game.npcs[0].agenda) == ("Mira", "hide")
+    assert warnings == ["[Correction] npc_edit: Mira keeps its name, the analysis gave an empty one"]
+
+
+def test_a_correction_that_marks_an_npc_dead_leaves_the_description_whole(stub_engine: None) -> None:
+    from straightjacket.engine.correction.ops import apply_correction_ops
 
     game = _make_game()
-    original_status = game.npcs[0].status
+    game.npcs[0].description = "A tall woman who guards the totem of the dead king"
+    apply_correction_ops(game, [_op("npc_edit", npc_id="npc_1", fields={"status": "deceased"})])
+    assert game.npcs[0].status == "deceased"
+    assert game.npcs[0].description == "A tall woman who guards the totem of the dead king"
 
-    _apply_correction_ops(
-        game,
-        [
-            {
-                "op": "npc_edit",
-                "npc_id": "npc_1",
-                "fields": {"status": "imaginary"},
-                "split_name": None,
-                "split_description": None,
-                "merge_source_id": None,
-                "value": None,
-            }
-        ],
-    )
-    assert game.npcs[0].status == original_status
+
+def test_a_split_without_a_name_rolls_one_and_numbers_the_npc(
+    load_engine: None, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from straightjacket.engine.correction import ops
+
+    monkeypatch.setattr(ops, "roll_oracle_name", lambda game: "Bren Hollow")
+    game = _make_game()
+    game.npcs[0].last_location = "Abandoned Library"
+    ops.apply_correction_ops(game, [_op("npc_split", npc_id="npc_1")])
+    twin = game.npcs[-1]
+    assert (twin.id, twin.name, twin.name_rolled, twin.description) == ("npc_2", "Bren Hollow", True, "")
+    assert twin.last_location == "Abandoned Library"
+
+
+@pytest.mark.parametrize(
+    "op",
+    [
+        _op("npc_edit"),
+        _op("npc_split"),
+        _op("npc_merge", npc_id="npc_1", merge_source_id="npc_1"),
+        _op("location_edit", value=""),
+        _op("scene_context"),
+        _op("time_edit", value="teatime"),
+        _op("backstory_append"),
+    ],
+)
+def test_an_op_the_engine_cannot_apply_is_reported_and_changes_nothing(
+    stub_engine: None, monkeypatch: pytest.MonkeyPatch, op: dict[str, object]
+) -> None:
+    from straightjacket.engine.correction import ops
+
+    warnings: list[str] = []
+    monkeypatch.setattr(ops, "log", lambda msg, level="info": warnings.append(msg) if level == "warning" else None)
+    game = _make_game()
+    before = game.to_dict()
+    ops.apply_correction_ops(game, [op])
+    assert game.to_dict() == before
+    [warning] = warnings
+    assert warning.startswith(f"[Correction] {op['op']} skipped: ")
+
+
+def test_every_correction_op_has_a_handler(load_engine: None) -> None:
+    from straightjacket.engine.correction.ops import _OP_HANDLERS
+    from straightjacket.engine.engine_loader import eng
+
+    assert list(_OP_HANDLERS) == eng().correction.ops
 
 
 def test_description_match_catches_identity_reveal(stub_engine: None) -> None:
@@ -674,7 +729,7 @@ def test_merge_npc_identity_updates_clock_owner(stub_engine: None) -> None:
 
 
 def test_correction_state_ops_npc_merge(stub_engine: None) -> None:
-    from straightjacket.engine.correction import _apply_correction_ops
+    from straightjacket.engine.correction.ops import apply_correction_ops
 
     game = _make_game()
     source = make_npc(
@@ -685,7 +740,7 @@ def test_correction_state_ops_npc_merge(stub_engine: None) -> None:
     )
     game.npcs.append(source)
     ops = [{"op": "npc_merge", "npc_id": "npc_1", "merge_source_id": "npc_3"}]
-    _apply_correction_ops(game, ops)
+    apply_correction_ops(game, ops)
     assert not any(n.id == "npc_3" for n in game.npcs), "source should be removed"
     target = next(n for n in game.npcs if n.id == "npc_1")
     assert any(m.event == "saw fire" for m in target.memory), "memories should transfer"
