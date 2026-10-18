@@ -40,7 +40,8 @@ def _build_voicing_user_msg(game: GameState, seed: BlueprintSeed) -> str:
         if act_seed.turning_point is not None:
             tp = act_seed.turning_point
             beat_names = "; ".join(h.name for h in tp.plot_points if h.special_range != "none")
-            line += f" turning_point_beats=[{beat_names}]"
+            turn = "opens" if tp.opens_plotline else "concludes" if tp.concludes_plotline else "advances"
+            line += f" turning_point_beats=[{beat_names}] plotline={tp.plotline} plotline_turn={turn}"
         parts.append(line)
     parts.append("</acts>")
 

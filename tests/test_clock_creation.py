@@ -28,7 +28,10 @@ def _re(focus: str, target_id: str = "", target: str = "") -> RandomEvent:
 
 def _tp(plot_point_names: list[str]) -> TurningPoint:
     return TurningPoint(
-        plot_points=[PlotPointHit(theme="action", name=name, special_range=None) for name in plot_point_names]
+        plot_points=[PlotPointHit(theme="action", name=name, special_range=None) for name in plot_point_names],
+        plotline="Plotline 1",
+        opens_plotline=True,
+        concludes_plotline=False,
     )
 
 

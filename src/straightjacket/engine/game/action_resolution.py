@@ -12,7 +12,7 @@ from ..mechanics.consequences import tick_threat_clock
 from ..mechanics.move_outcome import make_follow_up_moves
 from ..mechanics.outcome_result import OutcomeResult, move_outcome_config
 from ..mechanics.suffer import tick_dying_clock
-from ..mechanics.threats import advance_menace_on_miss, resolve_full_menace
+from ..mechanics.threats import advance_menace_on_miss, resolve_full_menace, take_pending_threat_events
 from ..models import BrainResult, ClockEvent, GameState, ProgressTrack, RollResult, ThreatEvent
 from ..npc import find_npc
 from .finalization import apply_progress_and_legacy, resolve_action_consequences, update_crisis
@@ -54,7 +54,9 @@ def _maybe_avert_complication(game: GameState, brain: BrainResult, roll: RollRes
 
 
 def _collect_threat_events(game: GameState, roll: RollResult, outcome: OutcomeResult) -> list[ThreatEvent]:
-    events: list[ThreatEvent] = advance_menace_on_miss(game) if roll.result == "MISS" else []
+    events = take_pending_threat_events(game)
+    if roll.result == "MISS":
+        events.extend(advance_menace_on_miss(game))
     events.extend(resolve_full_menace(game, outcome))
 
     high_threshold = eng().threats.menace_high_threshold
@@ -67,6 +69,7 @@ def _collect_threat_events(game: GameState, roll: RollResult, outcome: OutcomeRe
                     ticks_added=0,
                     menace_full=False,
                     source="overcome_under_pressure",
+                    development="",
                 )
             )
     return events

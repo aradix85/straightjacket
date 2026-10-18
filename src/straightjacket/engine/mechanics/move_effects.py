@@ -4,6 +4,7 @@ import re
 from collections.abc import Callable
 from dataclasses import dataclass
 
+from ..datasworn.impacts import get_impacts
 from ..datasworn.loader import OracleTable
 from ..datasworn.moves import Move, get_moves
 from ..datasworn.oracle_rolls import plain_text, roll_rows, roll_table
@@ -163,10 +164,11 @@ def _apply_clear_condition_effect(
     game: GameState, effect: MoveEffect, result: OutcomeResult, target: NpcData | None
 ) -> None:
     _e = eng()
-    condition = next((key for key in game.impacts if _e.impacts[key].blocks_recovery), None)
+    impacts = get_impacts(game.setting_id)
+    condition = next((key for key in game.impacts if impacts[key].prevents_recovery), None)
     if condition is None:
         return
-    meter = _e.impacts[condition].blocks_recovery
+    meter = impacts[condition].prevents_recovery[0]
     clear_impact(game, condition)
     labels = _e.ai_text.consequence_labels
     result.consequences.append(labels["clear_impact"].format(impact=condition))

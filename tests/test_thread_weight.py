@@ -76,7 +76,12 @@ def test_a_random_event_about_a_thread_invokes_it(load_engine: None) -> None:
 def test_a_threat_that_advances_in_the_scene_invokes_the_thread_of_its_vow(load_engine: None) -> None:
     brain = make_brain_result(move="adventure/face_danger", stat="wits")
     advanced = ThreatEvent(
-        threat_id="threat_tide", threat_name="The tide cult", ticks_added=4, menace_full=False, source="miss"
+        threat_id="threat_tide",
+        threat_name="The tide cult",
+        ticks_added=4,
+        menace_full=False,
+        source="miss",
+        development="",
     )
     assert _invoked(_sworn_game(), brain, _roll(brain.move), [], [advanced]) == ["thread_bell"]
     assert _invoked(_sworn_game(), brain, None, [_event("threat_tide")], []) == ["thread_bell"]

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import random as _random
 
+import pytest
 
 from straightjacket.engine.mechanics.adventure_crafter import (
     PlotPointHit,
@@ -31,7 +32,10 @@ def _re(focus: str, target_id: str = "", target: str = "") -> RandomEvent:
 
 def _tp(plot_point_names: list[str]) -> TurningPoint:
     return TurningPoint(
-        plot_points=[PlotPointHit(theme="action", name=name, special_range=None) for name in plot_point_names]
+        plot_points=[PlotPointHit(theme="action", name=name, special_range=None) for name in plot_point_names],
+        plotline="Plotline 1",
+        opens_plotline=True,
+        concludes_plotline=False,
     )
 
 
@@ -132,6 +136,29 @@ def test_ac_threat_uses_datasworn_cascade_on_delve(load_engine: None) -> None:
     assert len(g.threats) == 1
     description = g.threats[0].description
     assert " — " in description, f"Delve cascade expected two steps in description, got {description!r}"
+
+
+def test_a_delve_threat_takes_the_category_its_cascade_rolled(
+    load_engine: None, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from tests._helpers import fix_dice
+
+    fix_dice(monkeypatch, 45, 1)
+    g = make_game_state(player_name="Hero", setting_id="delve")
+    spawn_threats_for_turning_point(g, _tp(["A New Enemy"]))
+    assert g.threats[0].category == "rampaging_creature"
+
+
+def test_a_cascade_row_that_rolls_twice_gives_both_results(load_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:
+    from tests._helpers import fix_dice
+
+    fix_dice(monkeypatch, 95, 5, 65, 1)
+    g = make_game_state(player_name="Hero", setting_id="delve")
+    spawn_threats_for_turning_point(g, _tp(["A New Enemy"]))
+    [threat] = g.threats
+    assert threat.category == "burgeoning_conflict"
+    assert "Roll twice" not in threat.name
+    assert "Scheming Leader" in threat.description
 
 
 def test_emergent_threats_cap_is_shared_across_ac_and_random_event(load_engine: None) -> None:

@@ -27,7 +27,7 @@ def move_outcome_config(game: GameState, move_key: str) -> dict[str, Any]:
     _e = eng()
     overrides = _e.get_raw("move_outcome_overrides")
     for pkg in load_package(game.setting_id).chain():
-        if move_key in overrides.get(pkg.id, {}):
+        if pkg.id in overrides and move_key in overrides[pkg.id]:
             cfg: dict[str, Any] = overrides[pkg.id][move_key]
             return cfg
     outcomes = _e.get_raw("move_outcomes")

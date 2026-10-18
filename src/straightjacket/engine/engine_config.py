@@ -41,7 +41,6 @@ from .engine_config_dataclasses import (
     ForsakeVowConfig,
     FuzzyMatchConfig,
     GenerationConfig,
-    ImpactConfig,
     InformationGateConfig,
     InformationGatePoints,
     InformationGateBuckets,
@@ -126,7 +125,6 @@ class EngineSettings:
     prompt_display: PromptDisplayConfig
     opening: OpeningConfig
     threats: ThreatConfig
-    impacts: dict[str, ImpactConfig]
     legacy: LegacyConfig
     progress: ProgressConfig
     engine_moves: dict[str, EngineMove]
@@ -489,8 +487,6 @@ def parse_engine_yaml(data: dict[str, Any]) -> EngineSettings:
     fate = FateConfig(default_method=f_data["default_method"], likelihood_rules=lr)
     fact_resolution = _build_fact_resolution(dict(data["fact_resolution"]))
 
-    impacts = {key: _build_strict(ImpactConfig, impact_data) for key, impact_data in data["impacts"].items()}
-
     legacy_data = dict(data["legacy"])
     legacy_data["ticks_by_rank"] = dict(legacy_data["ticks_by_rank"])
     legacy = _build_strict(LegacyConfig, legacy_data)
@@ -607,7 +603,6 @@ def parse_engine_yaml(data: dict[str, Any]) -> EngineSettings:
         prompt_display=simple_parsed["prompt_display"],
         opening=simple_parsed["opening"],
         threats=simple_parsed["threats"],
-        impacts=impacts,
         legacy=legacy,
         progress=simple_parsed["progress"],
         engine_moves=engine_moves,
@@ -705,7 +700,6 @@ __all__ = [
     "FateLikelihoodRules",
     "FuzzyMatchConfig",
     "GenerationConfig",
-    "ImpactConfig",
     "InformationGateBuckets",
     "InformationGateConfig",
     "InformationGatePoints",

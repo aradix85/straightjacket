@@ -13,7 +13,7 @@ from .mechanics import (
     move_category,
     resolve_npc_stance,
 )
-from .mechanics.impacts import impact_label
+from .datasworn.impacts import get_impacts
 from .mechanics.scene import adjustment_descriptions
 from .models import BrainResult, GameState, NpcData, RandomEvent, ResolvedFact, SceneSetup, ThreatEvent
 from .npc import find_npc, retrieve_memories
@@ -27,12 +27,20 @@ def creativity_seed() -> str:
     return " ".join(random.sample(eng().creativity_seeds, eng().prompt_display.creativity_seed_count))
 
 
+def _impacts_block(game: GameState) -> str:
+    if not game.impacts:
+        return ""
+    impacts = get_impacts(game.setting_id)
+    lines = [
+        get_prompt("block_impact_line", impact=_xa(impacts[k].label), description=_xe(impacts[k].description))
+        for k in game.impacts
+    ]
+    labels = ", ".join(impacts[k].label for k in game.impacts)
+    return "\n" + get_prompt("block_impacts_wrapper", labels=_xa(labels), lines="\n".join(lines))
+
+
 def _scene_header(game: GameState) -> str:
-    impacts_tag = ""
-    if game.impacts:
-        labels = ", ".join(impact_label(k) for k in game.impacts)
-        impacts_tag = f'\n<character_state impacts="{_xa(labels)}"/>'
-    return f"{world_tag(game)}\n{character_tag(game)}{impacts_tag}"
+    return f"{world_tag(game)}\n{character_tag(game)}{_impacts_block(game)}"
 
 
 def _time_ctx(game: GameState) -> str:
@@ -281,7 +289,10 @@ def _threat_events_block(threat_events: Sequence[ThreatEvent]) -> str:
         elif te.source == "overcome_under_pressure":
             parts.append(f'<threat_overcome name="{_xa(te.threat_name)}"/>')
         else:
-            parts.append(f'<threat_advance name="{_xa(te.threat_name)}" menace_full="{te.menace_full}"/>')
+            offscreen = ' offscreen="true"' if te.source == "autonomous" else ""
+            attrs = f'name="{_xa(te.threat_name)}" menace_full="{te.menace_full}"{offscreen}'
+            body = _xe(te.development)
+            parts.append(f"<threat_advance {attrs}>{body}</threat_advance>" if body else f"<threat_advance {attrs}/>")
     return "\n" + "\n".join(parts) if parts else ""
 
 

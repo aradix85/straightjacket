@@ -149,13 +149,7 @@ class ThreatConfig:
     autonomous_tick_chance: float
     autonomous_tick_marks: int
     menace_high_threshold: float
-
-
-@dataclass
-class ImpactConfig:
-    label: str
-    blocks_recovery: str
-    permanent: bool
+    category_oracle_collection: str
 
 
 @dataclass

@@ -12,7 +12,7 @@ from ..npc import find_npc, normalize_for_match
 from ..models import ClockFillResult
 from .clock_consequences import resolve_clock_fill
 from .complications import is_complication
-from .impacts import impact_label
+from ..datasworn.impacts import Impact, get_impacts
 from .outcome_result import move_outcome_config
 
 
@@ -223,25 +223,25 @@ def pick_template(key: str) -> str:
 _DANGER_VERBS = ("complication_clock", "complication_averted")
 
 
-def _classify_impact(verb: str, rest: str) -> tuple[str, str, str] | None:
+def _classify_impact(verb: str, rest: str, impacts: dict[str, Impact]) -> tuple[str, str, str] | None:
     key = rest.strip()
-    if key not in eng().impacts:
+    if key not in impacts:
         return None
-    return ("impact_mark" if verb == "mark" else "impact_clear"), "", impact_label(key)
+    return ("impact_mark" if verb == "mark" else "impact_clear"), "", impacts[key].label
 
 
-def _classify_keyword(verb: str, rest: str) -> tuple[str, str, str] | None:
+def _classify_keyword(verb: str, rest: str, impacts: dict[str, Impact]) -> tuple[str, str, str] | None:
     if verb in ("mark", "clear"):
-        return _classify_impact(verb, rest)
+        return _classify_impact(verb, rest, impacts)
     if verb == "complication":
         return f"complication_{rest.strip()}", "", ""
     return verb, "", rest.strip()
 
 
-def _classify(cons: str, default_npc: str) -> tuple[str, str, str] | None:
+def _classify(cons: str, default_npc: str, impacts: dict[str, Impact]) -> tuple[str, str, str] | None:
     verb, _, rest = cons.partition(" ")
     if verb in ("mark", "clear", "complication", "bond_request", "recommit", *_DANGER_VERBS):
-        return _classify_keyword(verb, rest)
+        return _classify_keyword(verb, rest, impacts)
 
     parts = cons.split()
     if len(parts) >= 2 and "bond" in cons.lower():
@@ -287,11 +287,12 @@ def generate_consequence_sentences(
     player = game.player_name
     npc_name = target.name if target else ""
     location = game.world.current_location
+    impacts = get_impacts(game.setting_id)
 
     sentences: list[str] = []
 
     for cons in consequences:
-        sentence = resolve_consequence_sentence(cons, player, npc_name, location)
+        sentence = resolve_consequence_sentence(cons, player, npc_name, location, impacts)
         if sentence:
             sentences.append(sentence)
 
@@ -305,19 +306,21 @@ def generate_consequence_sentences(
     return sentences
 
 
-def resolve_consequence_sentence(cons: str, player: str, npc_name: str, location: str) -> str:
+def resolve_consequence_sentence(
+    cons: str, player: str, npc_name: str, location: str, impacts: dict[str, Impact]
+) -> str:
     if "," in cons and cons.partition(" ")[0] not in _DANGER_VERBS:
         parts = []
         for sub in cons.split(","):
             sub = sub.strip()
             if not sub:
                 continue
-            s = resolve_consequence_sentence(sub, player, npc_name, location)
+            s = resolve_consequence_sentence(sub, player, npc_name, location, impacts)
             if s:
                 parts.append(s)
         return " ".join(parts)
 
-    classified = _classify(cons, npc_name)
+    classified = _classify(cons, npc_name, impacts)
     if classified is None:
         return ""
 

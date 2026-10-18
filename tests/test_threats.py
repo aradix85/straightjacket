@@ -160,6 +160,50 @@ class TestAdvanceById:
         assert game.threats[0].menace_ticks == 0
 
 
+class TestAdvancesReachTheNarrator:
+    def test_an_autonomous_tick_waits_for_the_next_turn_as_off_screen(
+        self, load_engine: None, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        from straightjacket.engine.mechanics import threats
+        from straightjacket.engine.prompt_shared import _threat_events_block
+
+        monkeypatch.setattr(threats.random, "random", lambda: 0.0)
+        game = _game_with_threat()
+        threats.tick_autonomous_threats(game)
+        [event] = game.world.pending_threat_events
+        assert (event.source, event.threat_name) == ("autonomous", "The Beast Awakens")
+        assert threats.take_pending_threat_events(game) == [event]
+        assert game.world.pending_threat_events == []
+        assert '<threat_advance name="The Beast Awakens" menace_full="False" offscreen="true"/>' in (
+            _threat_events_block([event])
+        )
+
+    def test_a_random_event_advance_is_told_in_its_own_turn(self, load_engine: None) -> None:
+        from straightjacket.engine.mechanics.threats import advance_threat_by_id, take_pending_threat_events
+        from straightjacket.engine.prompt_shared import _threat_events_block
+
+        game = _game_with_threat()
+        advance_threat_by_id(game, "threat_beast")
+        [event] = take_pending_threat_events(game)
+        assert event.source == "random_event"
+        assert "offscreen" not in _threat_events_block([event])
+
+    def test_delve_tells_what_the_threat_does_from_its_category(self, load_engine: None) -> None:
+        from straightjacket.engine.datasworn.settings import load_package
+        from straightjacket.engine.mechanics.threats import advance_menace_on_miss
+        from straightjacket.engine.prompt_shared import _threat_events_block
+
+        rows = {row.text for row in load_package("delve").oracle_table("threat/rampaging_creature").rows}
+        game = _game_with_threat()
+        game.setting_id = "delve"
+        [event] = advance_menace_on_miss(game)
+        assert event.development in rows
+        assert f">{event.development}</threat_advance>" in _threat_events_block([event])
+        game.setting_id = "starforged"
+        game.threats[0].menace_ticks = 0
+        assert advance_menace_on_miss(game)[0].development == ""
+
+
 class TestThreatsStatus:
     def test_active_threats_shown(self, load_engine: None) -> None:
         from straightjacket.web.serializers import build_threats_status

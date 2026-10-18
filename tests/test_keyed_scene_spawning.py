@@ -237,7 +237,10 @@ def test_clock_fills_any_picks_highest_filled():
 
 def _turning_point_with_plot_points(*plot_point_names: str) -> TurningPoint:
     return TurningPoint(
-        plot_points=[PlotPointHit(theme="action", name=n, special_range=None) for n in plot_point_names]
+        plot_points=[PlotPointHit(theme="action", name=n, special_range=None) for n in plot_point_names],
+        plotline="Plotline 1",
+        opens_plotline=True,
+        concludes_plotline=False,
     )
 
 
@@ -289,7 +292,12 @@ def test_ac_spawner_assigns_unique_ids():
 
 def test_ac_spawner_skips_special_range_plot_points():
     narrative = NarrativeState()
-    tp = TurningPoint(plot_points=[PlotPointHit(theme="action", name="Conclusion", special_range="conclusion")])
+    tp = TurningPoint(
+        plot_points=[PlotPointHit(theme="action", name="Conclusion", special_range="conclusion")],
+        plotline="Plotline 1",
+        opens_plotline=False,
+        concludes_plotline=True,
+    )
     spawn_keyed_scenes_for_turning_point(narrative, tp)
     assert narrative.keyed_scenes == []
 

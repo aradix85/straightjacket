@@ -1,5 +1,6 @@
 import pytest
 
+from straightjacket.engine.datasworn.impacts import get_impacts
 from straightjacket.engine.mechanics import generate_consequence_sentences
 from straightjacket.engine.mechanics.consequences import pick_template, resolve_consequence_sentence
 from straightjacket.engine.models import (
@@ -65,7 +66,7 @@ def test_pick_template_unknown_key_raises() -> None:
     ],
 )
 def test_resolve_consequence_produces_sentence(cons: str, player: str, npc: str, loc: str, must_contain: str) -> None:
-    sentence = resolve_consequence_sentence(cons, player, npc, loc)
+    sentence = resolve_consequence_sentence(cons, player, npc, loc, get_impacts("starforged"))
     assert sentence != ""
     if must_contain:
         assert must_contain in sentence
@@ -73,13 +74,13 @@ def test_resolve_consequence_produces_sentence(cons: str, player: str, npc: str,
 
 @pytest.mark.parametrize("kind", ["gather_information", "compel"])
 def test_a_complication_is_told_as_a_sentence_naming_the_player(kind: str) -> None:
-    sentence = resolve_consequence_sentence(f"complication {kind}", "Ash", "", "")
+    sentence = resolve_consequence_sentence(f"complication {kind}", "Ash", "", "", get_impacts("starforged"))
     assert "Ash" in sentence
     assert "{" not in sentence
 
 
 def test_resolve_unknown_returns_empty() -> None:
-    assert resolve_consequence_sentence("gibberish", "Ash", "", "") == ""
+    assert resolve_consequence_sentence("gibberish", "Ash", "", "", get_impacts("starforged")) == ""
 
 
 @pytest.mark.parametrize("label", ["mark_progress", "experience_reward"])
@@ -88,11 +89,13 @@ def test_a_progress_or_experience_mark_is_not_told_as_a_lasting_impact(label: st
 
     cons = eng().ai_text.consequence_labels[label].format(n=2)
     assert cons.startswith("mark ")
-    assert resolve_consequence_sentence(cons, "Ash", "", "") == ""
+    assert resolve_consequence_sentence(cons, "Ash", "", "", get_impacts("starforged")) == ""
 
 
 def test_a_real_impact_mark_is_told_with_its_label() -> None:
-    assert "permanently harmed" in resolve_consequence_sentence("mark permanently_harmed", "Ash", "", "")
+    assert "permanently harmed" in resolve_consequence_sentence(
+        "mark permanently_harmed", "Ash", "", "", get_impacts("starforged")
+    )
 
 
 def test_generate_sentences_from_consequences() -> None:

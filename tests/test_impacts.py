@@ -35,6 +35,46 @@ class TestApplyImpact:
         assert "nonexistent_impact" not in game.impacts
 
 
+class TestImpactsFromTheRules:
+    def test_each_ruleset_names_its_own_impacts(self, load_engine: None) -> None:
+        from straightjacket.engine.datasworn.impacts import get_impacts
+
+        assert "maimed" in get_impacts("classic")
+        assert "permanently_harmed" not in get_impacts("classic")
+        assert "permanently_harmed" in get_impacts("starforged")
+        assert get_impacts("delve") == get_impacts("classic")
+        assert get_impacts("sundered_isles") == get_impacts("starforged")
+        assert get_impacts("starforged")["wounded"].prevents_recovery == ["health"]
+        assert get_impacts("starforged")["traumatized"].permanent
+
+    def test_an_impact_another_ruleset_has_is_refused(self, load_engine: None) -> None:
+        from straightjacket.engine.mechanics.impacts import apply_impact
+
+        game = _game()
+        game.setting_id = "classic"
+        with pytest.raises(KeyError, match="permanently_harmed"):
+            apply_impact(game, "permanently_harmed")
+
+    def test_every_impact_a_move_marks_is_its_rulesets_own(self, load_engine: None) -> None:
+        from straightjacket.engine.datasworn.impacts import get_impacts
+        from straightjacket.engine.datasworn.moves import get_moves
+        from straightjacket.engine.datasworn.settings import list_packages
+        from straightjacket.engine.engine_loader import eng
+        from straightjacket.engine.mechanics.outcome_result import move_outcome_config
+
+        outcomes = eng().get_raw("move_outcomes")
+        for setting_id in list_packages():
+            game = make_game_state(setting_id=setting_id)
+            named: set[str] = set(eng().suffer.exhausted_impacts.values())
+            for key in get_moves(setting_id):
+                if key not in outcomes:
+                    continue
+                params = move_outcome_config(game, key).get("params", {})
+                named.update(params.get("impact_pair", []))
+                named.update(params[name] for name in ("blocking_impact", "impact") if params.get(name))
+            assert named <= set(get_impacts(setting_id)), (setting_id, named - set(get_impacts(setting_id)))
+
+
 class TestClearImpact:
     def test_clear_active_impact(self, stub_engine: None) -> None:
         from straightjacket.engine.mechanics.impacts import apply_impact, clear_impact
@@ -276,6 +316,9 @@ class TestCharacterStatePromptTag:
         apply_impact(game, "wounded")
         apply_impact(game, "doomed")
         header = _scene_header(game)
-        assert "character_state" in header
-        assert "wounded" in header
-        assert "doomed" in header
+        assert '<character_state impacts="wounded, doomed">' in header
+        assert (
+            '<impact name="wounded">Wounded may be marked when you are at 0 health and fail to Endure Harm.' in header
+        )
+        assert "Doomed is marked when you Face Death" in header
+        assert "](id:" not in header

@@ -28,7 +28,7 @@ def _status_resources_line(game: GameState) -> str:
 def _status_impact_lines(game: GameState) -> list[str]:
     if not game.impacts:
         return []
-    return [t("status.impacts", impacts=", ".join(impact_label(k) for k in game.impacts))]
+    return [t("status.impacts", impacts=", ".join(impact_label(game, k) for k in game.impacts))]
 
 
 def _status_track_lines(game: GameState) -> list[str]:

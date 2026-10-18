@@ -145,9 +145,10 @@ def test_the_brain_sees_open_complications_and_may_aim_at_one(load_engine: None)
 
 @pytest.mark.parametrize("verb", ["complication_clock", "complication_averted"])
 def test_a_danger_with_commas_is_told_whole(verb: str) -> None:
+    from straightjacket.engine.datasworn.impacts import get_impacts
     from straightjacket.engine.mechanics.consequences import resolve_consequence_sentence
 
     danger = "Weather, terrain, or a creature blocks the way"
-    sentence = resolve_consequence_sentence(f"{verb} {danger}", "Ash", "", "")
+    sentence = resolve_consequence_sentence(f"{verb} {danger}", "Ash", "", "", get_impacts("starforged"))
     assert danger in sentence
     assert "{" not in sentence

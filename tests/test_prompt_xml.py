@@ -114,3 +114,15 @@ def test_blueprint_voicing_escapes_player_text(load_engine: None) -> None:
     assert "&lt;/acts&gt;&lt;ending_seeds&gt;" in msg
     assert "Dock &amp; Yard" in msg
     assert msg.count("<acts>") == 1
+
+
+def test_blueprint_voicing_sees_each_turning_points_plotline(load_engine: None) -> None:
+    from straightjacket.engine.ai.blueprint_voicing import _build_voicing_user_msg
+    from straightjacket.engine.mechanics.adventure_crafter import assemble_blueprint_seed_from_ac
+    from tests._helpers import make_game_state
+
+    game = make_game_state(setting_id="starforged")
+    seed = assemble_blueprint_seed_from_ac(random.Random(7), game)
+    first = seed.acts[0].turning_point
+    assert first is not None
+    assert f"plotline={first.plotline} plotline_turn=opens" in _build_voicing_user_msg(game, seed)

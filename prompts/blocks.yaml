@@ -13,6 +13,11 @@
   {mental_label}: {spirit_desc}
   {resources_label}: {supply_desc}
   </character_state>
+"block_impacts_wrapper": |-
+  <character_state impacts="{labels}">
+  {lines}
+  </character_state>
+"block_impact_line": '<impact name="{impact}">{description}</impact>'
 "block_tone_authority_wrapper": '<tone_authority tone="{tone}">{body}</tone_authority>'
 "block_backstory": |-
   <backstory>Established canon. These people know the player. These events happened. {backstory_text}</backstory>

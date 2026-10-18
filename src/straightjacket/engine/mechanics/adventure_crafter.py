@@ -82,6 +82,9 @@ class PlotPointHit:
 @dataclass(frozen=True)
 class TurningPoint:
     plot_points: list[PlotPointHit]
+    plotline: str
+    opens_plotline: bool
+    concludes_plotline: bool
 
 
 @dataclass
@@ -284,7 +287,12 @@ def roll_turning_point(
         plotline.status = "conclusion"
         log(f"[AdventureCrafter] Plotline '{plotline.name}' flipped to conclusion")
 
-    return TurningPoint(plot_points=hits)
+    return TurningPoint(
+        plot_points=hits,
+        plotline=plotline.name,
+        opens_plotline=plotline_was_new,
+        concludes_plotline=flips_to_conclusion,
+    )
 
 
 MetaHandler = Callable[[NarrativeState, str | None], None]
@@ -562,11 +570,16 @@ def spawn_threats_for_turning_point(game: GameState, turning_point: TurningPoint
         description = " — ".join(step.text for step in cascade)
         threat_id = next_threat_id(game, "threat_ac_")
         creation_source = f"{AC_SOURCE_PREFIX}{hit.name}"
+        collection = f"{eng().threats.category_oracle_collection}/"
+        category = next(
+            (step.path.removeprefix(collection) for step in cascade[1:] if step.path.startswith(collection)),
+            entry.category,
+        )
 
         threat = ThreatData.new(
             id=threat_id,
             name=name,
-            category=entry.category,
+            category=category,
             linked_vow_id=None,
             rank=entry.rank,
             description=description,
@@ -575,7 +588,7 @@ def spawn_threats_for_turning_point(game: GameState, turning_point: TurningPoint
         game.threats.append(threat)
         log(
             f"[AdventureCrafter] spawned threat '{name}' (id={threat_id}, rank={entry.rank}, "
-            f"category={entry.category}) from plot-point '{hit.name}'"
+            f"category={category}) from plot-point '{hit.name}'"
         )
 
 

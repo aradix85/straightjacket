@@ -111,6 +111,7 @@ class WorldState(SerializableMixin):
     location_history: list[str] = field(default_factory=list)
     clocks: list[ClockData] = field(default_factory=list)
     pending_clock_fills: list[ClockFillResult] = field(default_factory=list)
+    pending_threat_events: list[ThreatEvent] = field(default_factory=list)
     combat_position: str = ""
     facts: list[ResolvedFact] = field(default_factory=list)
     places: list[PlaceRecord] = field(default_factory=list)
@@ -235,6 +236,7 @@ class ThreatEvent(SerializableMixin):
     ticks_added: int
     menace_full: bool
     source: str
+    development: str
 
 
 @dataclass

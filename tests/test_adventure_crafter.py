@@ -286,6 +286,13 @@ def test_roll_turning_point_creates_plotline_on_empty_list():
     assert narrative.plotlines_list[0].turning_point_count == 1
 
 
+def test_a_turning_point_names_its_plotline_and_what_it_does_to_it():
+    narrative = NarrativeState()
+    themes = ["action", "tension", "mystery", "social", "personal"]
+    tp = roll_turning_point(random.Random(1), themes, narrative)
+    assert (tp.plotline, tp.opens_plotline, tp.concludes_plotline) == (narrative.plotlines_list[0].name, True, False)
+
+
 def test_roll_turning_point_reuses_advancing_plotline():
     narrative = NarrativeState()
     _create_plotline(narrative, "First")
@@ -309,10 +316,11 @@ def test_conclusion_plot_point_flips_an_advancing_plotline_to_conclusion(monkeyp
         return next(rolls)
 
     monkeypatch.setattr(rng, "randint", fake_randint)
-    roll_turning_point(rng, themes, narrative)
+    tp = roll_turning_point(rng, themes, narrative)
     assert len(narrative.plotlines_list) == 1
     plotline = narrative.plotlines_list[0]
     assert plotline.status == "conclusion"
+    assert (tp.plotline, tp.opens_plotline, tp.concludes_plotline) == ("First", False, True)
 
 
 def test_meta_character_exits_marks_active_character_exited():

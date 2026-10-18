@@ -30,7 +30,7 @@ from ..mechanics.outcome_result import OutcomeResult
 from ..mechanics.random_events import drain_pending_events
 from ..mechanics.scene import check_scene
 from ..mechanics.suffer import tick_dying_clock
-from ..mechanics.threats import advance_threat_by_id, resolve_full_menace
+from ..mechanics.threats import advance_threat_by_id, resolve_full_menace, take_pending_threat_events
 from ..models import (
     BrainResult,
     GameState,
@@ -272,7 +272,8 @@ def _process_dialog_turn(ctx: SceneContext) -> tuple[str, DirectorCall | None]:
     pending_fills.extend(agency_fill_results)
     engine_moves = OutcomeResult()
     tick_dying_clock(game, engine_moves)
-    threat_events = resolve_full_menace(game, engine_moves)
+    threat_events = take_pending_threat_events(game)
+    threat_events.extend(resolve_full_menace(game, engine_moves))
     make_follow_up_moves(game, engine_moves)
     update_crisis(game)
 
