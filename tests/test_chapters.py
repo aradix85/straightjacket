@@ -242,6 +242,7 @@ def test_apply_blueprint_with_voicing_materializes(load_engine: None) -> None:
     seed = assemble_blueprint_seed_from_ac(rng, g)
     voicing = {
         "central_conflict": "Find the relic",
+        "antagonist_force": "The cult",
         "thematic_thread": "trust",
         "acts": [
             {"title": f"Act {i + 1}", "goal": "g", "mood": "tense", "transition_trigger": "t"}

@@ -194,6 +194,7 @@ def test_blueprint_voicing_fixes_the_counts_in_its_schema_and_asks_again_once(lo
         return json.dumps(
             {
                 "central_conflict": "A drowned city wants its name back",
+                "antagonist_force": "The tide-priests",
                 "thematic_thread": "Memory as debt",
                 "acts": [{"title": "t", "goal": "g", "mood": "m", "transition_trigger": "x"} for _ in seed.acts],
                 "revelations": [{"content": "r"} for _ in range(blueprint.revelations_per_blueprint)],

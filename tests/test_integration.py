@@ -101,6 +101,7 @@ class MockProvider:
                         "narrator_guidance": "Build tension slowly.",
                         "npc_guidance": [],
                         "npc_reflections": {},
+                        "arc_notes": "Story is progressing.",
                     }
                 ),
                 usage={"input_tokens": 100, "output_tokens": 50},
@@ -626,6 +627,7 @@ def test_story_completion_triggers() -> None:
         {
             "structure_type": "3act",
             "central_conflict": "The shadow threatens all",
+            "antagonist_force": "The creeping darkness",
             "thematic_thread": "What is worth saving?",
             "acts": [
                 {

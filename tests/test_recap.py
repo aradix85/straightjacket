@@ -46,6 +46,7 @@ def test_call_recap_with_arc(load_engine: None) -> None:
     g = _full_game(None)
     g.narrative.story_blueprint = StoryBlueprint(
         central_conflict="x",
+        antagonist_force="y",
         thematic_thread="z",
         structure_type="3act",
         acts=[

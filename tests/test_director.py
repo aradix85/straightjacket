@@ -111,7 +111,8 @@ class _ToolCallingDirectorProvider:
                 tool_calls=[ToolCall(name=self.tool_name, arguments={})],
             )
         return AIResponse(
-            content='{"scene_summary": "S.", "narrator_guidance": "G.", "npc_guidance": [], "npc_reflections": {}}',
+            content='{"scene_summary": "S.", "narrator_guidance": "G.", "npc_guidance": [], '
+            '"npc_reflections": {}, "arc_notes": "A."}',
             stop_reason="complete",
         )
 
@@ -142,7 +143,7 @@ def test_an_invented_tool_costs_no_extra_round(stub_all: None, monkeypatch: Any)
     monkeypatch.setattr(handler, "log", lambda msg, level="info": warnings.append(msg) if level == "warning" else None)
     provider = _ToolCallingDirectorProvider("respond")
     guidance = director.call_director(provider, make_test_game(), "Text.")
-    assert guidance["scene_summary"] == "S."
+    assert guidance["arc_notes"] == "A."
     assert len(provider.specs) == 2
     assert warnings == ["[Tools] Unknown tool: respond"]
 
@@ -171,6 +172,7 @@ def test_stores_narrator_guidance(stub_all: None) -> None:
         make_director_guidance(
             narrator_guidance="Build tension slowly.",
             npc_guidance={"npc_1": "Kira should test loyalty."},
+            arc_notes="Story progressing.",
         ),
     )
     dg = game.narrative.director_guidance
@@ -461,6 +463,7 @@ def test_run_deferred_director_applies_guidance(stub_all: None) -> None:
                 "narrator_guidance": "Build tension.",
                 "npc_guidance": [],
                 "npc_reflections": {},
+                "arc_notes": "Progressing.",
             }
         )
     )
@@ -485,3 +488,17 @@ def test_run_deferred_director_survives_api_error(stub_all: None) -> None:
         game,
         DirectorCall(narration="text"),
     )
+
+
+def test_the_director_reads_the_antagonist_and_its_own_last_arc_notes(load_engine: None) -> None:
+    from straightjacket.engine.director import build_director_prompt
+    from tests._helpers import make_act, make_blueprint
+
+    game = _game()
+    game.narrative.story_blueprint = make_blueprint(
+        antagonist_force="The tide-priests", acts=[make_act(scene_range=[1, 10])]
+    )
+    game.narrative.director_guidance.arc_notes = "Watch the ledger."
+    prompt = build_director_prompt(game, "Text.")
+    assert 'antagonist="The tide-priests"' in prompt
+    assert "<arc_notes>Watch the ledger.</arc_notes>" in prompt

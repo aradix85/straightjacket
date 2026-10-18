@@ -33,6 +33,7 @@ class _SmartMockProvider:
                 content=json.dumps(
                     {
                         "central_conflict": "Find the relic",
+                        "antagonist_force": "The cult",
                         "thematic_thread": "trust",
                         "acts": [
                             {

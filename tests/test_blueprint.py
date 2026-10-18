@@ -15,6 +15,7 @@ from tests._helpers import make_game_state
 def _voicing(act_count: int, revelations: int = 3, endings: int = 3) -> dict:
     return {
         "central_conflict": "The relic is contested",
+        "antagonist_force": "The cult",
         "thematic_thread": "trust",
         "acts": [
             {"title": f"Act {i + 1}", "goal": "g", "mood": "tense", "transition_trigger": "t"} for i in range(act_count)
@@ -134,6 +135,7 @@ def test_materialize_blueprint_uses_voicing_for_setting_fields(load_engine: None
     bp = materialize_blueprint(seed, _voicing(act_count=len(seed.acts)))
 
     assert bp.central_conflict == "The relic is contested"
+    assert bp.antagonist_force == "The cult"
     assert bp.thematic_thread == "trust"
     assert bp.acts[0].title == "Act 1"
     assert bp.acts[0].goal == "g"

@@ -19,7 +19,7 @@
 
   Respond with a JSON object with these fields:
   - scene_summary: two or three sentences on what happened and why it matters
-  - narrator_guidance: specific direction for the next one or two scenes. If <story_arc> has a thematic_thread, now and then anchor the guidance to the aspect of it most alive in the current moment.
+  - narrator_guidance: specific direction for the next one or two scenes. If <story_arc> has a thematic_thread, now and then anchor the guidance to the aspect of it most alive in the current moment; let the antagonist it names press on the world now and then, mostly through what it causes.
   - npc_guidance: an array of {{"npc_id": "npc_1", "guidance": "what this NPC should do or feel next"}}, with each NPC's id as a <reflect> tag or query_game_state gives it
   - npc_reflections: an object with one entry for every NPC in a <reflect> tag, keyed by that NPC's id from the tag, and no other entries. Leave an entry's reflection empty only when the scene gave that NPC nothing new. Every field below is text; an empty string means nothing to set or change. Each entry has:
     - reflection: one or two sentences of higher-level insight
@@ -31,6 +31,7 @@
     - updated_agenda: a new agenda of at most eight words when the current one is stale; empty while it still holds
     - updated_arc: the NPC's current narrative trajectory in one or two sentences; empty only when the NPC had no meaningful interaction
     - about_npc: when the reflection is mainly about the relationship with another NPC, that NPC's id; empty otherwise
+  - arc_notes: a brief observation on how the story arc is progressing and what to watch for next. Your next analysis receives it as <arc_notes>; build on it rather than repeat it.
 
   When a <reflect> tag has a last_reflection attribute, write a new insight that builds on, deepens, or contradicts it, with a different theme or emotional tone.
   </task>

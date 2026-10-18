@@ -195,6 +195,7 @@ class TestBuildNarrativeStatus:
         game = self._game()
         game.narrative.story_blueprint = StoryBlueprint(
             central_conflict="test",
+            antagonist_force="villain",
             thematic_thread="theme",
             structure_type="3act",
             acts=[

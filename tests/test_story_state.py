@@ -279,3 +279,12 @@ def test_check_story_completion_fallback_far_past_end(load_engine: None) -> None
     g.narrative.scene_count = 5 + offset + 1
     check_story_completion(g)
     assert g.narrative.story_blueprint.story_complete is True
+
+
+def test_the_narrators_story_arc_names_the_antagonist(load_engine: None) -> None:
+    from straightjacket.engine.prompt_blocks import story_context_block
+
+    g = make_game_state()
+    g.narrative.story_blueprint = _bp_with_acts([(1, 10)])
+    g.narrative.story_blueprint.antagonist_force = "The tide-priests"
+    assert 'antagonist="The tide-priests"' in story_context_block(g)

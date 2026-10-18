@@ -248,6 +248,7 @@ def make_director_guidance(**kwargs: Any) -> dict:
     kwargs.setdefault("narrator_guidance", "")
     kwargs.setdefault("npc_guidance", {})
     kwargs.setdefault("npc_reflections", {})
+    kwargs.setdefault("arc_notes", "")
     return kwargs
 
 
@@ -285,6 +286,7 @@ def make_blueprint(**kwargs: Any) -> Any:
     from straightjacket.engine.models_story import StoryBlueprint
 
     kwargs.setdefault("central_conflict", "")
+    kwargs.setdefault("antagonist_force", "")
     kwargs.setdefault("thematic_thread", "")
     kwargs.setdefault("structure_type", "3act")
     return StoryBlueprint(**kwargs)

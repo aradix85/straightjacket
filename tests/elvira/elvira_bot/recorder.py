@@ -156,7 +156,10 @@ def _snapshot_director_guidance(game: GameState) -> dict:
     dg = game.narrative.director_guidance
     if not dg:
         return {}
-    d: dict = {"narrator_guidance": dg.narrator_guidance}
+    d: dict = {
+        "narrator_guidance": dg.narrator_guidance,
+        "arc_notes": dg.arc_notes,
+    }
     if dg.npc_guidance:
         d["npc_guidance"] = dg.npc_guidance
 

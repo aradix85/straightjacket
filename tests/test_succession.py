@@ -490,6 +490,7 @@ class _SuccessionMockProvider:
                 content=json.dumps(
                     {
                         "central_conflict": "Continue the legacy",
+                        "antagonist_force": "Old foe",
                         "thematic_thread": "inheritance",
                         "acts": [
                             {"title": f"Act {i + 1}", "goal": "g", "mood": "tense", "transition_trigger": "t"}

@@ -157,6 +157,7 @@ def story_context_block(game: GameState, *, miss: bool = False) -> str:
         progress=str(act.progress),
         mood=_xa(act.mood),
         conflict=_xa(bp.central_conflict),
+        antagonist=_xa(bp.antagonist_force),
         act_goal=_xa(act.goal),
         thematic_attr=thematic_attr,
     )

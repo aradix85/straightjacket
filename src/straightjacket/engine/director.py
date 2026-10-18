@@ -106,7 +106,7 @@ def _build_story_arc_block(game: GameState) -> str:
         f'progress="{act.progress}" '
         f'current_scene="{game.narrative.scene_count}" scene_range="{scene_range[0]}-{scene_range[1]}"'
         f"{past_range_attr} "
-        f'conflict="{_xa(bp.central_conflict)}"'
+        f'conflict="{_xa(bp.central_conflict)}" antagonist="{_xa(bp.antagonist_force)}"'
     )
     if bp.thematic_thread:
         info += f' thematic_thread="{_xa(bp.thematic_thread)}"'
@@ -119,12 +119,14 @@ def _build_story_arc_block(game: GameState) -> str:
 def build_director_prompt(game: GameState, latest_narration: str) -> str:
     reflection_section = "\n".join(_build_reflection_block(game, npc) for npc in game.npcs if _reflection_eligible(npc))
     task = get_prompt("director_task", lang=narration_language())
+    notes = game.narrative.director_guidance.arc_notes
+    notes_block = f"\n<arc_notes>{_xe(notes)}</arc_notes>" if notes else ""
     return f"""{task}
 
 <latest_scene>
 {latest_narration[: eng().truncations.prompt_xlong]}
 </latest_scene>
-{_build_story_arc_block(game)}
+{_build_story_arc_block(game)}{notes_block}
 {reflection_section}"""
 
 
@@ -268,6 +270,7 @@ def apply_director_guidance(game: GameState, guidance: dict[str, Any]) -> None:
     game.narrative.director_guidance = DirectorGuidance(
         narrator_guidance=guidance["narrator_guidance"],
         npc_guidance=guidance["npc_guidance"],
+        arc_notes=guidance["arc_notes"],
     )
     if guidance["scene_summary"]:
         game.narrative.session_log[-1].rich_summary = guidance["scene_summary"]

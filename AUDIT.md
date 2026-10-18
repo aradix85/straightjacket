@@ -114,6 +114,8 @@ No dead Python symbols, no dead YAML keys; every YAML key has a Python consumer 
 
 **Pass 5e — Single-use functions and classes.** References Pass 3c.
 
+**A field without a reader.** The game should be bound to its rules as tightly as it can be, so before a field, a return value, or an answer asked of the AI goes because no code reads it, ask whether it carries something the rules or the story know that the game should act on or tell. If it does, the finding is a missing reader: the session gives it one, a prompt that shows it to the AI or code that acts on it, and an Elvira session shows how play takes it. Only constants, copies of what is held elsewhere, and what only tests read go.
+
 Carve-outs: the orphan-symbol carve-outs in `tests/test_project_rules.py` (for example `CharacterTraits`). A symbol whose consumer is planned in a near-term roadmap step may be marked `needs human judgment`.
 
 ## Status

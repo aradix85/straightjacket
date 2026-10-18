@@ -132,6 +132,7 @@ def get_director_output_schema(reflection_ids: list[str]) -> dict[str, Any]:
                     for npc_id in reflection_ids
                 }
             ),
+            "arc_notes": _str(),
         },
         _e.ai_text.schema_titles["director_output"],
     )
@@ -145,6 +146,7 @@ def get_blueprint_voicing_schema(acts: int, revelations: int, endings: int) -> d
     return _obj_root(
         {
             "central_conflict": _str(),
+            "antagonist_force": _str(),
             "thematic_thread": _str(),
             "acts": _counted_arr(
                 _obj(

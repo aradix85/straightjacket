@@ -19,7 +19,7 @@
 "block_narrative_direction_wrapper": |-
   <narrative_direction>{tokens}</narrative_direction>
 "block_story_arc": |-
-  <story_arc structure="{structure}" act="{act_pos}" phase="{phase}" progress="{progress}" mood="{mood}" conflict="{conflict}" act_goal="{act_goal}"{thematic_attr}/>
+  <story_arc structure="{structure}" act="{act_pos}" phase="{phase}" progress="{progress}" mood="{mood}" conflict="{conflict}" antagonist="{antagonist}" act_goal="{act_goal}"{thematic_attr}/>
 "block_story_arc_thematic_attr": ' thematic_thread="{thematic}"'
 "block_revelation_ready": |-
   <revelation_ready weight="{weight}">{content}</revelation_ready>
