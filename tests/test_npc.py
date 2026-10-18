@@ -359,6 +359,50 @@ def test_absorb_duplicate_npc(stub_engine: None, stub_emotions: None) -> None:
     assert any(m.event == "dup memory" for m in original.memory)
 
 
+def _merge_game(original_ticks: int | None, dup_ticks: int | None) -> GameState:
+    from straightjacket.engine.models import CharacterListEntry
+    from tests._helpers import make_clock, make_progress_track
+
+    game = make_game_state(player_name="Hero")
+    game.npcs = [make_npc(id="npc_1", name="Mira"), make_npc(id="npc_2", name="The stranger")]
+    for npc_id, ticks in (("npc_1", original_ticks), ("npc_2", dup_ticks)):
+        if ticks is not None:
+            game.progress_tracks.append(
+                make_progress_track(id=f"connection_{npc_id}", name=npc_id, track_type="connection", ticks=ticks)
+            )
+    game.world.clocks = [make_clock(name="The stranger's errand", owner_kind="npc", owner_id="The stranger")]
+    game.narrative.characters_list = [
+        CharacterListEntry(id="npc_1", name="Mira", entry_type="npc", weight=1),
+        CharacterListEntry(id="npc_2", name="The stranger", entry_type="npc", weight=1),
+    ]
+    return game
+
+
+def test_a_merged_npc_leaves_nothing_that_points_at_it(load_engine: None) -> None:
+    from straightjacket.engine.npc import get_npc_bond
+    from straightjacket.engine.npc.lifecycle import absorb_npc
+
+    game = _merge_game(original_ticks=None, dup_ticks=12)
+    mira, stranger = game.npcs
+    absorb_npc(game, mira, stranger)
+
+    assert [n.id for n in game.npcs] == ["npc_1"]
+    assert [(t.id, t.name) for t in game.progress_tracks] == [("connection_npc_1", "Mira")]
+    assert get_npc_bond(game, "npc_1") == 3
+    assert game.world.clocks[0].owner_id == "Mira"
+    assert [(c.id, c.weight) for c in game.narrative.characters_list] == [("npc_1", 2)]
+    assert "The stranger" in mira.aliases
+
+
+def test_a_merge_keeps_the_connection_with_the_most_progress(load_engine: None) -> None:
+    from straightjacket.engine.npc.lifecycle import absorb_npc
+
+    for original_ticks, dup_ticks, kept in ((20, 8, 20), (8, 20, 20), (8, 8, 8)):
+        game = _merge_game(original_ticks, dup_ticks)
+        absorb_npc(game, game.npcs[0], game.npcs[1])
+        assert [(t.id, t.ticks) for t in game.progress_tracks] == [("connection_npc_1", kept)]
+
+
 def test_is_complete_description() -> None:
     from straightjacket.engine.npc.lifecycle import is_complete_description
 

@@ -79,6 +79,7 @@ __all__ = [
     "run_inheritance_rolls",
     "seed_successor_legacy",
     "settle_facts_by_miss",
+    "start_track",
     "tick_autonomous_clocks",
     "update_chaos_factor",
     "update_location",
@@ -194,5 +195,6 @@ from .tracks import (
     complete_track,
     find_progress_track,
     roll_oracle_answer,
+    start_track,
     vow_acted_on,
 )

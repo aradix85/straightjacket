@@ -134,6 +134,14 @@ def test_a_move_that_starts_a_track_needs_a_track_name(load_engine: None) -> Non
         )
 
 
+def test_a_connection_needs_the_npc_it_is_made_with(load_engine: None) -> None:
+    from straightjacket.engine.ai.brain import call_brain
+
+    answer = _BrainAnswers("connection/make_a_connection", stat="heart", track_name="Vex", track_rank="dangerous")
+    with pytest.raises(AIUnavailableError, match="names no target_npc"):
+        call_brain(answer, _infiltrator(), "I buy Vex a drink.")
+
+
 def test_a_bonus_the_game_does_not_offer_is_refused(load_engine: None) -> None:
     from straightjacket.engine.ai.brain import call_brain
 

@@ -8,7 +8,7 @@ if TYPE_CHECKING:
 from ..engine_loader import eng
 from ..logging_util import log
 from ..models import NpcData
-from .bond import get_npc_bond
+from .bond import connection_track, connection_track_id, get_npc_bond
 from .matching import (
     normalize_for_match,
     sanitize_npc_name,
@@ -76,15 +76,18 @@ def merge_npc_identity(existing: NpcData, new_name: str, new_desc: str = "", *, 
     if existing.status in eng().npc_status_groups.reactivatable:
         reactivate_npc(existing, reason=f"identity revealed as {new_name}")
 
+    _transfer_clocks(game, old_name, new_name)
+    log(f"[NPC] Identity merged: '{old_name}' → '{new_name}' (aliases: {existing.aliases})")
+
+
+def _transfer_clocks(game: "GameState", old_name: str, new_name: str) -> None:
     old_name_norm = normalize_for_match(old_name)
     for clock in game.world.clocks:
         if clock.owner_kind != "npc" or clock.owner_id is None:
             continue
         if normalize_for_match(clock.owner_id) == old_name_norm:
-            old_owner = clock.owner_id
             clock.owner_id = new_name
-            log(f"[Clock] Owner updated on NPC rename: '{clock.name}' '{old_owner}' → '{new_name}'")
-    log(f"[NPC] Identity merged: '{old_name}' → '{new_name}' (aliases: {existing.aliases})")
+            log(f"[Clock] Owner of '{clock.name}': '{old_name}' → '{new_name}'")
 
 
 def is_complete_description(desc: str) -> bool:
@@ -149,14 +152,67 @@ def _fill_empty_fields_from_duplicate(original: NpcData, dup: NpcData) -> None:
         original.instinct = dup.instinct
 
 
-def _merge_aliases_and_location(original: NpcData, dup: NpcData, merged_norm: str) -> None:
-    existing_norms = {normalize_for_match(a) for a in original.aliases}
-    for alias in dup.aliases:
+def _merge_aliases_and_location(original: NpcData, dup: NpcData) -> None:
+    known_norms = {normalize_for_match(a) for a in original.aliases} | {normalize_for_match(original.name)}
+    for alias in [dup.name, *dup.aliases]:
         alias_norm = normalize_for_match(alias)
-        if alias_norm not in existing_norms and alias_norm != merged_norm:
+        if alias_norm not in known_norms:
             original.aliases.append(alias)
+            known_norms.add(alias_norm)
     if dup.last_location and not original.last_location:
         original.last_location = dup.last_location
+
+
+def _take_over_connection(game: "GameState", original: NpcData, dup: NpcData) -> None:
+    dup_track = connection_track(game, dup.id)
+    if dup_track is None:
+        return
+    own_track = connection_track(game, original.id)
+    if own_track is not None and own_track.ticks >= dup_track.ticks:
+        game.progress_tracks.remove(dup_track)
+        return
+    if own_track is not None:
+        game.progress_tracks.remove(own_track)
+    dup_track.id = connection_track_id(original.id)
+    dup_track.name = original.name
+    log(f"[NPC] Connection of '{dup.name}' kept for '{original.name}' ({dup_track.filled_boxes} boxes)")
+
+
+def _take_over_list_entry(game: "GameState", original: NpcData, dup: NpcData) -> None:
+    entries = game.narrative.characters_list
+    dup_entry = next((c for c in entries if c.id == dup.id), None)
+    if dup_entry is None:
+        return
+    own_entry = next((c for c in entries if c.id == original.id), None)
+    if own_entry is None:
+        dup_entry.id, dup_entry.name = original.id, original.name
+        return
+    own_entry.weight = min(own_entry.weight + dup_entry.weight, eng().random_events.list_weight_max)
+    entries.remove(dup_entry)
+
+
+def absorb_npc(game: "GameState", original: NpcData, dup: NpcData) -> None:
+    original.memory.extend(dup.memory)
+    original.importance_accumulator = original.importance_accumulator + dup.importance_accumulator
+
+    if _npc_richness(dup, game) > _npc_richness(original, game):
+        _absorb_richer_duplicate_fields(original, dup)
+        log(
+            f"[NPC] Absorb: '{dup.name}' ({dup.id}) was richer — "
+            f"its fields promoted into '{original.name}' ({original.id})"
+        )
+    else:
+        _fill_empty_fields_from_duplicate(original, dup)
+
+    _merge_aliases_and_location(original, dup)
+    _take_over_connection(game, original, dup)
+    _transfer_clocks(game, dup.name, original.name)
+    _take_over_list_entry(game, original, dup)
+
+    game.npcs.remove(dup)
+    log(f"[NPC] Absorbed '{dup.name}' ({dup.id}) into '{original.name}' ({original.id}): {len(dup.memory)} memories")
+    sanitize_aliases(original)
+    consolidate_memory(original)
 
 
 def absorb_duplicate_npc(game: "GameState", original: NpcData, merged_name: str) -> None:
@@ -164,37 +220,9 @@ def absorb_duplicate_npc(game: "GameState", original: NpcData, merged_name: str)
     for dup in game.npcs:
         if dup is original:
             continue
-        dup_name_norm = normalize_for_match(dup.name)
-        dup_alias_norms = {normalize_for_match(a) for a in dup.aliases}
-        if not (dup_name_norm == merged_norm or merged_norm in dup_alias_norms):
-            continue
-
-        dup_id = dup.id
-        dup_mem_count = len(dup.memory)
-
-        original.memory.extend(dup.memory)
-        original.importance_accumulator = original.importance_accumulator + dup.importance_accumulator
-
-        if _npc_richness(dup, game) > _npc_richness(original, game):
-            _absorb_richer_duplicate_fields(original, dup)
-            log(
-                f"[NPC] Absorb: dup '{dup.name}' ({dup_id}) was richer — "
-                f"its fields promoted into original '{original.name}' ({original.id})"
-            )
-        else:
-            _fill_empty_fields_from_duplicate(original, dup)
-
-        _merge_aliases_and_location(original, dup, merged_norm)
-
-        game.npcs.remove(dup)
-        log(
-            f"[NPC] Absorbed duplicate '{dup.name}' ({dup_id}) "
-            f"into '{original.name}' ({original.id}): "
-            f"{dup_mem_count} memories transferred"
-        )
-        sanitize_aliases(original)
-        consolidate_memory(original)
-        break
+        if normalize_for_match(dup.name) == merged_norm or merged_norm in {normalize_for_match(a) for a in dup.aliases}:
+            absorb_npc(game, original, dup)
+            return
 
 
 def _desc_tokens(text: str, min_word_chars: int, stopwords: "frozenset[str]") -> set[str]:

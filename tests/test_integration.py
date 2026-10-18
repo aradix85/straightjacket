@@ -256,6 +256,67 @@ def test_a_journey_is_started_once_and_then_continued_by_its_id(load_engine: Non
     assert track.ticks == hits * track.ticks_per_mark
 
 
+def _force_result(monkeypatch: pytest.MonkeyPatch, result: str) -> None:
+    from straightjacket.engine.game import turn
+    from straightjacket.engine.models import RollResult, SceneSetup
+
+    def _roll(stat_name: str, stat_value: int, move: str, momentum: int, adds: int) -> RollResult:
+        hit = result != "MISS"
+        return RollResult(
+            d1=6 if hit else 1,
+            c1=1 if hit else 9,
+            c2=2 if hit else 10,
+            stat_name=stat_name,
+            stat_value=stat_value,
+            action_score=min(6 + stat_value, 10) if hit else 1 + stat_value,
+            result=result,
+            move=move,
+            match=False,
+        )
+
+    monkeypatch.setattr(turn, "roll_action", _roll)
+    monkeypatch.setattr(turn, "check_scene", lambda _game: SceneSetup(scene_type="expected", chaos_roll=10))
+
+
+@pytest.mark.parametrize("result", ["STRONG_HIT", "MISS"])
+def test_a_connection_made_in_play_is_the_npcs_and_can_be_developed(
+    load_engine: None, stub_emotions: None, monkeypatch: pytest.MonkeyPatch, result: str
+) -> None:
+    from straightjacket.engine.game.turn import process_turn
+    from tests._creation import create_game
+
+    game = create_game(
+        "starforged",
+        location="Drift Station",
+        npcs=[("Kira Vance", "A pilot with a burned hand.", "friendly")],
+        stats=(2, 2, 1, 1, 3),
+        player_name="Aria",
+        background_vow="Keep the station running",
+    )
+    kira = game.npcs[0].id
+    _force_result(monkeypatch, result)
+    provider = _ScriptedBrain(
+        {
+            "move": "connection/make_a_connection",
+            "stat": "heart",
+            "target_npc": kira,
+            "track_name": "Kira",
+            "track_rank": "dangerous",
+        },
+        {"move": "connection/develop_your_relationship", "stat": "none", "target_npc": kira},
+    )
+    game, _narration, _roll, _burn, _director = process_turn(provider, game, "I share a drink with Kira", stream=None)
+    connections = [t.id for t in game.progress_tracks if t.track_type == "connection"]
+
+    if result == "MISS":
+        assert connections == []
+        return
+    assert connections == [f"connection_{kira}"]
+    game, _narration, roll, _burn, _director = process_turn(provider, game, "I help Kira fix her ship", stream=None)
+    assert roll is not None
+    assert (roll.move, roll.stat_name) == ("connection/develop_your_relationship", "dangerous")
+
+
 def test_turn_dialog_skips_roll(load_engine: None) -> None:
     from straightjacket.engine.game.turn import process_turn
 

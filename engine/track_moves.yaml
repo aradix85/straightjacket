@@ -5,6 +5,8 @@ track_creating_moves:
   exploration/undertake_an_expedition: expedition
   adventure/undertake_a_journey: journey
   scene_challenge/begin_the_scene: scene_challenge
+tracks_started_on_a_hit:
+- connection/make_a_connection
 track_types_by_category:
   Vow: vow
   Connection: connection

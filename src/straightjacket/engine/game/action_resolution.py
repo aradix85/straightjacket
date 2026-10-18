@@ -13,7 +13,7 @@ from ..mechanics.threats import advance_menace_on_miss, resolve_full_menace
 from ..models import BrainResult, ClockEvent, GameState, ProgressTrack, RollResult, ThreatEvent
 from ..npc import find_npc
 from .finalization import apply_progress_and_legacy, resolve_action_consequences
-from ..mechanics import complete_track
+from ..mechanics import complete_track, start_track
 from .turn_types import ActionResolution, RollOutcome
 
 
@@ -78,6 +78,7 @@ def _track_gather_information_success(game: GameState, brain: BrainResult, roll:
 def resolve_action_phase(game: GameState, brain: BrainResult, roll_outcome: RollOutcome) -> ActionResolution:
     roll = roll_outcome.roll
     track = roll_outcome.track
+    start_track(game, brain, roll.result)
 
     position = resolve_position(game, brain)
     effect = resolve_effect(game, brain, position)

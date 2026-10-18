@@ -6,8 +6,8 @@ from ..engine_loader import eng
 from ..logging_util import log
 from ..mechanics import clear_facts, locations_match
 from ..models import GameState, NpcData
-from ..npc import consolidate_memory, find_npc, next_npc_id
-from ..npc.lifecycle import sanitize_aliases
+from ..npc import find_npc, next_npc_id
+from ..npc.lifecycle import absorb_npc
 from ..npc.naming import roll_oracle_name
 
 
@@ -69,16 +69,7 @@ def _op_npc_merge(game: GameState, op_dict: dict[str, Any]) -> None:
     if target is None or source is None or target is source:
         _skip(op_dict, "it needs two different NPCs")
         return
-    target.memory.extend(source.memory)
-    for alias in source.aliases:
-        if alias not in target.aliases:
-            target.aliases.append(alias)
-    if source.name not in target.aliases:
-        target.aliases.append(source.name)
-    game.npcs = [n for n in game.npcs if n.id != source.id]
-    sanitize_aliases(target)
-    consolidate_memory(target)
-    log(f"[Correction] npc_merge: '{source.name}' absorbed into '{target.name}'")
+    absorb_npc(game, target, source)
 
 
 def _op_location_edit(game: GameState, op_dict: dict[str, Any]) -> None:

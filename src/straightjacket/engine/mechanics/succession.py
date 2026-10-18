@@ -9,6 +9,7 @@ from ..models import (
     PredecessorRecord,
     ProgressTrack,
 )
+from ..npc.bond import connection_track_id
 from .consequences import roll_progress
 from .legacy import LEGACY_TRACKS, get_legacy_track
 
@@ -99,10 +100,10 @@ def apply_npc_carryover(
             log(f"[Succession] Pruning {npc.status} NPC: {npc.name} ({npc.id})")
             continue
         kept_npcs.append(npc)
-        kept_track_ids.add(f"connection_{npc.id}")
+        kept_track_ids.add(connection_track_id(npc.id))
 
     kept_tracks: list[ProgressTrack] = []
-    npc_status_by_track: dict[str, str] = {f"connection_{n.id}": n.status for n in npcs}
+    npc_status_by_track: dict[str, str] = {connection_track_id(n.id): n.status for n in npcs}
     for track in connection_tracks:
         if track.id not in kept_track_ids:
             continue

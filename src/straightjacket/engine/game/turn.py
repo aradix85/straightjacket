@@ -1,12 +1,10 @@
 import copy
-import re
 from typing import Any
 from ..ai.brain import call_brain
 from ..ai.provider_base import AIProvider, drain_token_log, NarrationSink
 from ..datasworn.moves import get_moves
 from ..engine_loader import eng
 from ..logging_util import log
-from ..ids import unique_id
 from ..mechanics import (
     apply_brain_location_time,
     can_burn_momentum,
@@ -38,7 +36,6 @@ from ..models import (
     ResolvedFact,
     RollResult,
     SceneSetup,
-    ThreadEntry,
     TurnSnapshot,
 )
 from ..npc import activate_npcs_for_prompt, find_npc, reactivate_npc
@@ -162,8 +159,6 @@ def _play_turn(
         return narration, None, None, director_ctx
 
     game.narrative.scene_count += 1
-
-    _maybe_create_track(game, brain)
 
     roll_outcome = _execute_roll(game, brain, earlier.roll if earlier is not None else None)
     burn_offer = _offer_momentum_burn(ctx, roll_outcome)
@@ -324,46 +319,6 @@ def _process_dialog_turn(ctx: SceneContext) -> tuple[str, DirectorCall | None]:
         threat_events=[],
     )
     return narration, director_ctx
-
-
-def _maybe_create_track(game: GameState, brain: BrainResult) -> None:
-    track_creating = eng().get_raw("track_creating_moves")
-    track_category = track_creating.get(brain.move)
-    if not track_category:
-        return
-    if brain.target_track is not None and brain.move in eng().get_raw("progress_mark_categories"):
-        log(f"[Track] {brain.move} continues {brain.target_track}; no new {track_category} track")
-        return
-    assert brain.track_name
-    assert brain.track_rank
-
-    slug = re.sub(r"\W+", "_", brain.track_name.lower()).strip("_")
-    base_id = f"{track_category}_{slug}"
-    if any(t.id == base_id and t.status == "active" for t in game.progress_tracks):
-        log(f"[Track] {track_category} '{brain.track_name}' is already active; not created again")
-        return
-    track_id = unique_id(base_id, {t.id for t in game.progress_tracks})
-    new_track = ProgressTrack.new(
-        id=track_id,
-        name=brain.track_name,
-        track_type=track_category,
-        rank=brain.track_rank,
-    )
-    game.progress_tracks.append(new_track)
-    log(f"[Track] Created {track_category} track: {brain.track_name} ({brain.track_rank}), id={track_id}")
-
-    if track_category == "vow":
-        game.narrative.threads.append(
-            ThreadEntry(
-                id=unique_id(f"thread_{slug}", {t.id for t in game.narrative.threads}),
-                name=brain.track_name,
-                thread_type="vow",
-                weight=eng().random_events.seeded_list_weight,
-                source="vow",
-                linked_track_id=track_id,
-            )
-        )
-        log(f"[Track] Created linked thread for vow: {brain.track_name}")
 
 
 def _execute_roll(game: GameState, brain: BrainResult, earlier: RollResult | None) -> RollOutcome:

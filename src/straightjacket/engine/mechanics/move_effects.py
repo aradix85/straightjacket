@@ -10,8 +10,9 @@ from .complications import spawn_complication_clock
 from .legacy import shifted_rank
 from .random_events import roll_meaning_table
 from ..logging_util import log
-from ..models import GameState, NpcData, ProgressTrack
+from ..models import GameState, NpcData
 from ..npc import find_npc
+from ..npc.bond import connection_track
 
 
 @dataclass
@@ -95,17 +96,6 @@ def parse_effects(effect_list: list[str]) -> list[MoveEffect]:
 
 def strip_datasworn_links(text: str) -> str:
     return re.sub(r"\[([^\]]+)\]\([^)]*\)", r"\1", text).strip()
-
-
-def _connection_track(game: GameState, npc: NpcData) -> ProgressTrack | None:
-    return next(
-        (
-            t
-            for t in game.progress_tracks
-            if t.track_type == "connection" and t.id == f"connection_{npc.id}" and t.status == "active"
-        ),
-        None,
-    )
 
 
 def _roll_price_rows(game: GameState, path: str, depth: int) -> list[str]:
@@ -209,7 +199,7 @@ def _apply_raise_connection_rank_effect(
 ) -> None:
     if not target:
         return
-    track = _connection_track(game, target)
+    track = connection_track(game, target.id)
     if track is None:
         log(f"[MoveOutcome] rank raise but no connection track for {target.name}")
         return
@@ -291,7 +281,7 @@ def _apply_complication_effect(
 def _apply_bond_effect(game: GameState, effect: MoveEffect, result: OutcomeResult, target: NpcData | None) -> None:
     if not target:
         return
-    conn_track = _connection_track(game, target)
+    conn_track = connection_track(game, target.id)
     if not conn_track:
         log(f"[MoveOutcome] bond effect but no connection track for {target.name}")
         return

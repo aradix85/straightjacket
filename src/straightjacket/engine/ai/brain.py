@@ -93,8 +93,11 @@ def _check_choices(result: BrainResult, move_keys: list[str], choices: dict[str,
     change = result.location_change
     if change is not None and change.kind not in eng().generation.place_categories:
         _refuse(f"location kind {change.kind!r} is not one of the choices offered")
-    if result.move in eng().get_raw("track_creating_moves") and not (result.track_name and result.track_name.strip()):
+    started = eng().get_raw("track_creating_moves").get(result.move)
+    if started is not None and not (result.track_name and result.track_name.strip()):
         _refuse(f"move {result.move!r} starts a track, but track_name is empty")
+    if started == "connection" and result.target_npc is None:
+        _refuse(f"move {result.move!r} makes a connection, but names no target_npc")
     boasts = eng().boasts
     if len(result.boasts) > boasts.max_per_roll or any(b not in boasts.options for b in result.boasts):
         _refuse(f"boasts {result.boasts!r} are not among the offered boasts")

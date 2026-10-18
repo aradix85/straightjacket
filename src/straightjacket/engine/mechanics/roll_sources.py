@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from ..datasworn.moves import Move
 from ..models import GameState
+from ..npc.bond import connection_track
 
 
 def _meter_value(game: GameState, meter: str) -> int:
@@ -16,14 +17,7 @@ def roll_source_without_stat(game: GameState, move: Move, target_npc: str | None
         best = max(meters, key=lambda meter: _meter_value(game, meter))
         return best, _meter_value(game, best)
     ranked = {option.label: option.value for option in options if option.using == "custom" and option.value is not None}
-    track = next(
-        (
-            t
-            for t in game.progress_tracks
-            if t.track_type == "connection" and t.id == f"connection_{target_npc}" and t.status == "active"
-        ),
-        None,
-    )
+    track = connection_track(game, target_npc) if target_npc is not None else None
     if track is None or track.rank not in ranked:
         return None
     return track.rank, int(ranked[track.rank])

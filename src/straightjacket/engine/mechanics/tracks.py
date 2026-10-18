@@ -1,11 +1,59 @@
 from __future__ import annotations
 
+import re
+
 from ..datasworn.moves import get_moves
 from ..datasworn.settings import load_package
 from ..engine_loader import eng
+from ..ids import unique_id
 from ..logging_util import log
+from ..npc.bond import connection_track_id
 from .legacy import apply_threat_overcome_bonus
-from ..models import GameState, ProgressTrack
+from ..models import BrainResult, GameState, ProgressTrack, ThreadEntry
+
+
+def start_track(game: GameState, brain: BrainResult, result: str) -> None:
+    track_type = eng().get_raw("track_creating_moves").get(brain.move)
+    if not track_type:
+        return
+    if result == "MISS" and brain.move in eng().get_raw("tracks_started_on_a_hit"):
+        log(f"[Track] {brain.move} missed; no {track_type} track")
+        return
+    if brain.target_track is not None and brain.move in eng().get_raw("progress_mark_categories"):
+        log(f"[Track] {brain.move} continues {brain.target_track}; no new {track_type} track")
+        return
+    assert brain.track_name
+    assert brain.track_rank
+
+    slug = re.sub(r"\W+", "_", brain.track_name.lower()).strip("_")
+    if track_type == "connection":
+        if brain.target_npc is None:
+            log(f"[Track] {brain.move}: its target turned out absent; no connection")
+            return
+        base_id = connection_track_id(brain.target_npc)
+    else:
+        base_id = f"{track_type}_{slug}"
+    if any(t.id == base_id and t.status == "active" for t in game.progress_tracks):
+        log(f"[Track] {track_type} '{brain.track_name}' is already active; not created again")
+        return
+    track_id = unique_id(base_id, {t.id for t in game.progress_tracks})
+    game.progress_tracks.append(
+        ProgressTrack.new(id=track_id, name=brain.track_name, track_type=track_type, rank=brain.track_rank)
+    )
+    log(f"[Track] Created {track_type} track: {brain.track_name} ({brain.track_rank}), id={track_id}")
+
+    if track_type == "vow":
+        game.narrative.threads.append(
+            ThreadEntry(
+                id=unique_id(f"thread_{slug}", {t.id for t in game.narrative.threads}),
+                name=brain.track_name,
+                thread_type="vow",
+                weight=eng().random_events.seeded_list_weight,
+                source="vow",
+                linked_track_id=track_id,
+            )
+        )
+        log(f"[Track] Created linked thread for vow: {brain.track_name}")
 
 
 def track_category_of_move(game: GameState, move: str) -> str | None:

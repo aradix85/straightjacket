@@ -1,10 +1,17 @@
 from __future__ import annotations
 
-from ..models import GameState
+from ..models import GameState, ProgressTrack
+
+
+def connection_track_id(npc_id: str) -> str:
+    return f"connection_{npc_id}"
+
+
+def connection_track(game: GameState, npc_id: str) -> ProgressTrack | None:
+    track_id = connection_track_id(npc_id)
+    return next((t for t in game.progress_tracks if t.id == track_id and t.status == "active"), None)
 
 
 def get_npc_bond(game: GameState, npc_id: str) -> int:
-    for track in game.progress_tracks:
-        if track.track_type == "connection" and track.id == f"connection_{npc_id}" and track.status == "active":
-            return track.filled_boxes
-    return 0
+    track = connection_track(game, npc_id)
+    return track.filled_boxes if track is not None else 0
