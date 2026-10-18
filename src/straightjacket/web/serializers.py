@@ -9,12 +9,7 @@ from ..engine.npc import get_npc_bond
 from ..engine.story_state import get_current_act
 from ..engine.datasworn.loader import extract_title
 from ..engine.datasworn.settings import list_packages, load_package
-from ..i18n import (
-    get_disposition_labels,
-    get_story_phase_labels,
-    get_time_labels,
-    t,
-)
+from ..i18n import t
 
 
 def _status_resources_line(game: GameState) -> str:
@@ -24,7 +19,7 @@ def _status_resources_line(game: GameState) -> str:
         "status.resources",
         name=game.player_name,
         location=game.world.current_location or _defaults["unknown_location"],
-        time=get_time_labels()[game.world.time_of_day],
+        time=t(f"time.{game.world.time_of_day}"),
         health=describe_by_threshold(r.health, eng().status_descriptions.health),
         spirit=describe_by_threshold(r.spirit, eng().status_descriptions.spirit),
         supply=describe_by_threshold(r.supply, eng().status_descriptions.supply),
@@ -47,11 +42,10 @@ def _status_track_lines(game: GameState) -> list[str]:
 
 
 def _status_npc_lines(game: GameState) -> list[str]:
-    dl = get_disposition_labels()
     bond_desc = eng().status_descriptions.bond
     lines: list[str] = []
     for n in game.npcs:
-        disp_label = dl[n.disposition]
+        disp_label = t(f"disposition.{n.disposition}")
         bond = describe_by_threshold(get_npc_bond(game, n.id), bond_desc)
         if n.status == "deceased":
             lines.append(t("status.npc_deceased", name=n.name))
@@ -82,7 +76,7 @@ def _status_story_arc_lines(game: GameState) -> list[str]:
         t(
             "status.act",
             title=act.title,
-            phase=get_story_phase_labels()[act.phase],
+            phase=t(f"story.{act.phase}"),
             progress=eng().status_descriptions.act_progress[act.progress],
         )
     ]

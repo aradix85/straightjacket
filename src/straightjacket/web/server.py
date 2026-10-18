@@ -12,7 +12,7 @@ from starlette.websockets import WebSocket, WebSocketDisconnect
 
 from ..engine.engine_loader import eng
 from ..engine.logging_util import log
-from ..i18n import t
+from ..i18n import all_strings, t
 from .handlers import (
     _send,
     handle_advance_asset,
@@ -41,7 +41,6 @@ from .handlers import (
     handle_tracks_query,
     player_selected_message,
 )
-from ..strings_loader import all_strings
 from .session import Session
 
 

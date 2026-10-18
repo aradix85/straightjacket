@@ -25,3 +25,11 @@ def load_yaml_dir(directory: Path, *, missing_dir_hint: str) -> dict[str, Any]:
             merged[key] = value
             origin[key] = path
     return merged
+
+
+def load_text_dir(directory: Path, *, missing_dir_hint: str) -> dict[str, str]:
+    merged = load_yaml_dir(directory, missing_dir_hint=missing_dir_hint)
+    not_text = sorted(key for key, value in merged.items() if not isinstance(value, str))
+    if not_text:
+        raise ValueError(f"{directory} holds text only; these keys are not text: {not_text}")
+    return merged

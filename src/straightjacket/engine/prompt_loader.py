@@ -1,6 +1,6 @@
 from .config_loader import PROJECT_ROOT, cfg
 from .logging_util import log
-from .yaml_merge import load_yaml_dir
+from .yaml_merge import load_text_dir
 
 _prompts: dict[str, str] | None = None
 
@@ -9,11 +9,7 @@ def _ensure_loaded() -> dict[str, str]:
     global _prompts
     if _prompts is None:
         directory = PROJECT_ROOT / cfg().ai.prompts_dir
-        raw = load_yaml_dir(directory, missing_dir_hint="Check ai.prompts_dir in config.yaml.")
-        not_text = sorted(key for key, val in raw.items() if not isinstance(val, str))
-        if not_text:
-            raise ValueError(f"Prompts must be text; these are not: {not_text}")
-        _prompts = raw
+        _prompts = load_text_dir(directory, missing_dir_hint="Check ai.prompts_dir in config.yaml.")
         log(f"[Prompts] Loaded {len(_prompts)} prompts from {directory}")
     return _prompts
 

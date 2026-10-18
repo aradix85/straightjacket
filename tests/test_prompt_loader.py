@@ -30,7 +30,9 @@ def test_get_prompt_raises_for_a_variable_it_was_not_given(monkeypatch: pytest.M
 
 
 def test_a_prompt_that_is_not_text_stops_loading(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(prompt_loader, "load_yaml_dir", lambda directory, missing_dir_hint: {"a": "text", "b": [1]})
+    from straightjacket.engine import yaml_merge
+
+    monkeypatch.setattr(yaml_merge, "load_yaml_dir", lambda directory, missing_dir_hint: {"a": "text", "b": [1]})
     with pytest.raises(ValueError, match="'b'"):
         prompt_loader.get_prompt("a")
 

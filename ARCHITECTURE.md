@@ -72,7 +72,7 @@ The source lives under `src/straightjacket/`.
 - `engine/datasworn/` — Datasworn JSON: loading, moves, oracle cascades, and setting packages.
 - `web/` — the Starlette server, one handler per WebSocket message, session state, serializers that turn game state into client JSON, and the single-page client `web/static/index.html`.
 
-Beside them, `i18n.py` and `strings_loader.py` serve user-facing strings.
+Beside them, `i18n.py` serves user-facing strings.
 
 **Subpackage public API via `__init__.py`.** `mechanics`, `npc`, `game`, `tools`, and `correction` re-export their public names in `__init__.py`, so callers write `from straightjacket.engine.mechanics import roll_action` and the internal file layout stays free to change. `models.py` is the same kind of hub for the dataclasses. `engine`, `ai`, `datasworn`, and `web` are package markers without re-exports.
 

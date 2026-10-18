@@ -1,17 +1,21 @@
-from .strings_loader import get_string, get_strings_by_prefix
+from .engine.config_loader import PROJECT_ROOT
+from .engine.logging_util import log
+from .engine.yaml_merge import load_text_dir
+
+_strings: dict[str, str] | None = None
 
 
-def t(key: str, **kwargs: str | int) -> str:
-    return get_string(key, **kwargs)
+def _ensure_loaded() -> dict[str, str]:
+    global _strings
+    if _strings is None:
+        _strings = load_text_dir(PROJECT_ROOT / "strings", missing_dir_hint="strings/ ships with the repo.")
+        log(f"[Strings] {len(_strings)} strings ready")
+    return _strings
 
 
-def get_disposition_labels() -> dict[str, str]:
-    return get_strings_by_prefix("disposition.")
+def t(key: str, **variables: str | int) -> str:
+    return _ensure_loaded()[key].format_map(variables)
 
 
-def get_time_labels() -> dict[str, str]:
-    return get_strings_by_prefix("time.")
-
-
-def get_story_phase_labels() -> dict[str, str]:
-    return get_strings_by_prefix("story.")
+def all_strings() -> dict[str, str]:
+    return dict(_ensure_loaded())
