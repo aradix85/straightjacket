@@ -26,7 +26,7 @@ from ..mechanics import (
 from ..mechanics import check_npc_agency
 from ..mechanics.random_events import drain_pending_events
 from ..mechanics.scene import check_scene
-from ..mechanics.threats import advance_threat_by_id
+from ..mechanics.threats import advance_threat_by_id, resolve_full_menace
 from ..models import (
     BrainResult,
     GameState,
@@ -267,6 +267,7 @@ def _process_dialog_turn(ctx: SceneContext) -> tuple[str, DirectorCall | None]:
     game.world.pending_clock_fills.clear()
     npc_agency, agency_clock_events, agency_fill_results = check_npc_agency(game)
     pending_fills.extend(agency_fill_results)
+    threat_events = resolve_full_menace(game)
 
     prompt = build_dialog_prompt(
         game,
@@ -277,6 +278,7 @@ def _process_dialog_turn(ctx: SceneContext) -> tuple[str, DirectorCall | None]:
         mentioned_npcs=ctx.mentioned_npcs,
         oracle_answer=oracle_answer,
         random_events=ctx.pending_random_events,
+        threat_events=threat_events,
         clock_fill_results=pending_fills,
         npc_agency=npc_agency,
         facts=ctx.facts,
@@ -316,7 +318,7 @@ def _process_dialog_turn(ctx: SceneContext) -> tuple[str, DirectorCall | None]:
         ),
         roll_result_str=result_label,
         agency_clock_events=agency_clock_events,
-        threat_events=[],
+        threat_events=threat_events,
     )
     return narration, director_ctx
 

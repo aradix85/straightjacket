@@ -236,6 +236,7 @@ def dialog_prompt_kwargs(**kwargs: Any) -> dict[str, Any]:
     kwargs.setdefault("mentioned_npcs", [])
     kwargs.setdefault("oracle_answer", "")
     kwargs.setdefault("random_events", [])
+    kwargs.setdefault("threat_events", [])
     kwargs.setdefault("clock_fill_results", [])
     kwargs.setdefault("npc_agency", [])
     kwargs.setdefault("facts", [])

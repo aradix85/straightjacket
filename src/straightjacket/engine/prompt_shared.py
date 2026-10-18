@@ -15,7 +15,7 @@ from .mechanics import (
 )
 from .mechanics.impacts import impact_label
 from .mechanics.scene import adjustment_descriptions
-from .models import BrainResult, GameState, NpcData, RandomEvent, ResolvedFact, SceneSetup
+from .models import BrainResult, GameState, NpcData, RandomEvent, ResolvedFact, SceneSetup, ThreatEvent
 from .npc import find_npc, retrieve_memories
 from .prompt_blocks import character_tag, world_tag
 from .prompt_loader import get_prompt
@@ -256,6 +256,18 @@ def _random_events_block(events: Sequence[RandomEvent]) -> str:
 
 def _npc_agency_block(npc_agency: Sequence[str]) -> str:
     return f"\n<npc_agency>{_xe('| '.join(npc_agency))}</npc_agency>" if npc_agency else ""
+
+
+def _threat_events_block(threat_events: Sequence[ThreatEvent]) -> str:
+    parts: list[str] = []
+    for te in threat_events:
+        if te.source == "forsake_vow":
+            parts.append(f'<vow_forsaken threat="{_xa(te.threat_name)}"/>')
+        elif te.source == "overcome_under_pressure":
+            parts.append(f'<threat_overcome name="{_xa(te.threat_name)}"/>')
+        else:
+            parts.append(f'<threat_advance name="{_xa(te.threat_name)}" menace_full="{te.menace_full}"/>')
+    return "\n" + "\n".join(parts) if parts else ""
 
 
 def _clock_filled_block(fill_results: Sequence[ClockFillResult]) -> str:

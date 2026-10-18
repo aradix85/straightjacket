@@ -380,6 +380,33 @@ def test_turn_dialog_skips_roll(load_engine: None) -> None:
     assert game.narrative.scene_count == 2
 
 
+def test_a_menace_that_fills_at_scene_end_forsakes_its_vow_in_the_next_turn_and_is_told(
+    load_engine: None, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from straightjacket.engine.engine_loader import eng
+    from straightjacket.engine.game import turn
+    from straightjacket.engine.models import SceneSetup
+    from tests._helpers import make_threat
+
+    monkeypatch.setattr(turn, "check_scene", lambda _game: SceneSetup(scene_type="expected", chaos_roll=10))
+    monkeypatch.setattr(eng().threats, "autonomous_tick_chance", 1.0)
+    game = _make_game()
+    [vow] = [t for t in game.progress_tracks if t.track_type == "vow"]
+    threat = make_threat(id="t_king", name="The Hollow King", linked_vow_id=vow.id, rank="dangerous")
+    threat.menace_ticks = threat.max_menace_ticks - threat.menace_per_mark
+    game.threats.append(threat)
+    talk = {"move": "dialog", "stat": "none", "dialog_only": True, "target_npc": game.npcs[0].id}
+    provider = _ScriptedBrain(talk, talk)
+
+    game, *_ = turn.process_turn(provider, game, "I talk to Mira", stream=None)
+    assert (threat.menace_full, threat.status, vow.status) == (True, "active", "active")
+
+    game, *_ = turn.process_turn(provider, game, "I talk to Mira again", stream=None)
+    narrator_prompt = [c for c in provider.calls if not c["json_schema"]][-1]["messages"][-1]["content"]
+    assert '<vow_forsaken threat="The Hollow King"/>' in narrator_prompt
+    assert (threat.status, vow.status) == ("resolved", "failed")
+
+
 def test_turn_consequences_applied_on_miss(load_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:
     from straightjacket.engine.engine_loader import eng
     from straightjacket.engine.mechanics.move_outcome import resolve_move_outcome

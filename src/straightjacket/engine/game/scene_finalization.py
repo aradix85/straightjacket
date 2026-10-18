@@ -16,7 +16,7 @@ from ..mechanics.random_events import (
     consolidate_characters,
     consolidate_threads,
 )
-from ..mechanics.threats import resolve_full_menace, tick_autonomous_threats
+from ..mechanics.threats import tick_autonomous_threats
 from ..models import (
     BrainResult,
     CharacterListEntry,
@@ -141,7 +141,6 @@ def finalize_scene(
     nar.session_log[-1].clock_events.extend(auto_clock_events)
 
     tick_autonomous_threats(game)
-    resolve_full_menace(game)
 
     check_act_transition(game)
     check_story_completion(game)

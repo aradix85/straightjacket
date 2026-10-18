@@ -1,6 +1,6 @@
 from collections.abc import Sequence
 
-from .models import BrainResult, ClockFillResult, GameState, NpcData, RandomEvent, ResolvedFact, SceneSetup
+from .models import BrainResult, ClockFillResult, GameState, NpcData, RandomEvent, ResolvedFact, SceneSetup, ThreatEvent
 from .prompt_blocks import narrative_direction_block, recent_events_block, story_context_block
 from .prompt_loader import get_prompt
 from .prompt_shared import (
@@ -16,6 +16,7 @@ from .prompt_shared import (
     _random_events_block,
     _scene_enrichment,
     _scene_header,
+    _threat_events_block,
     _time_ctx,
 )
 from .xml_utils import xe as _xe
@@ -31,6 +32,7 @@ def build_dialog_prompt(
     mentioned_npcs: Sequence[NpcData],
     oracle_answer: str,
     random_events: Sequence[RandomEvent],
+    threat_events: Sequence[ThreatEvent],
     clock_fill_results: Sequence[ClockFillResult],
     npc_agency: Sequence[str],
     facts: Sequence[ResolvedFact],
@@ -64,7 +66,7 @@ def build_dialog_prompt(
 
     return f"""<scene type="{scene_type}" n="{game.narrative.scene_count}">
 {_scene_header(game)}
-<intent>{_xe(brain.player_intent)}</intent>{pw}{oracle_tag}{_facts_block(facts)}{clock_section}
+<intent>{_xe(brain.player_intent)}</intent>{pw}{oracle_tag}{_facts_block(facts)}{_threat_events_block(threat_events)}{clock_section}
 <location>{_xe(game.world.current_location)}</location>{_generated_place_block(game)}{_loc_hist(game)}{_time_ctx(game)}{_scene_enrichment(game)}
 {npc}{npcs_sect}{wl}{agency}{crisis}
 {pacing}

@@ -18,6 +18,7 @@ from .prompt_shared import (
     _resolve_stance_category,
     _scene_enrichment,
     _scene_header,
+    _threat_events_block,
     _time_ctx,
 )
 from .xml_utils import xa as _xa
@@ -37,18 +38,6 @@ def _build_status_flags(game: GameState) -> list[str]:
     elif game.crisis_mode:
         flags.append(get_prompt("flag_crisis"))
     return flags
-
-
-def _build_threat_event_tags(threat_events: Sequence[ThreatEvent]) -> str:
-    parts: list[str] = []
-    for te in threat_events:
-        if te.source == "forsake_vow":
-            parts.append(f'<vow_forsaken threat="{_xa(te.threat_name)}"/>')
-        elif te.source == "overcome_under_pressure":
-            parts.append(f'<threat_overcome name="{_xa(te.threat_name)}"/>')
-        else:
-            parts.append(f'<threat_advance name="{_xa(te.threat_name)}" menace_full="{te.menace_full}"/>')
-    return "\n" + "\n".join(parts) if parts else ""
 
 
 def _build_result_constraint(roll: RollResult, consequences: list[str]) -> str:
@@ -117,7 +106,7 @@ def build_action_prompt(
     if cons_tags:
         cons_tags = f"\n{cons_tags}"
 
-    threat_tags = _build_threat_event_tags(threat_events)
+    threat_tags = _threat_events_block(threat_events)
 
     clock_section = f"\n{clock_block}" if clock_block else ""
 

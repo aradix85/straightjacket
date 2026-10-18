@@ -56,6 +56,7 @@ def _rewrite_prompt(
             mentioned_npcs=mentioned_npcs,
             oracle_answer=last_entry.oracle_answer,
             random_events=[],
+            threat_events=[],
             clock_fill_results=[],
             npc_agency=[],
             facts=facts,
