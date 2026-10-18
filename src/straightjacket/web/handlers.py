@@ -15,7 +15,6 @@ from ..engine.director import reset_stale_reflection_flags
 from ..engine.engine_loader import eng
 from ..engine.game import (
     BurnOffer,
-    determine_end_reason,
     generate_epilogue,
     prepare_succession,
     process_momentum_burn,
@@ -255,8 +254,7 @@ async def handle_player_input(session: Session, ws: WebSocket, msg: dict[str, An
 
         if game.game_over:
             if not game.campaign.pending_succession:
-                end_reason = determine_end_reason(game)
-                await asyncio.to_thread(prepare_succession, game, end_reason)
+                await asyncio.to_thread(prepare_succession, game)
             await _send(ws, {"type": "game_over", "succession": build_succession_summary(game)})
         elif (
             game.narrative.story_blueprint
@@ -534,8 +532,8 @@ async def handle_retire(session: Session, ws: WebSocket, _msg: dict[str, Any]) -
         if game.campaign.pending_succession:
             await _send(ws, {"type": "error", "text": t("succession.error_already_pending")})
             return
-        game.game_over = True
-        await asyncio.to_thread(prepare_succession, game, "retire")
+        game.end_reason = "retire"
+        await asyncio.to_thread(prepare_succession, game)
         save_game(game, session.player, session.chat_messages, session.save_name)
         await _send(ws, {"type": "game_over", "succession": build_succession_summary(game)})
     finally:

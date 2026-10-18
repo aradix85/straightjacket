@@ -27,7 +27,6 @@ from straightjacket.engine.datasworn.settings import list_packages, load_package
 from straightjacket.engine.game import (
     BurnOffer,
     DirectorCall,
-    determine_end_reason,
     prepare_succession,
     start_succession_with_character,
     generate_epilogue,
@@ -627,7 +626,7 @@ def _play_succession(
 ) -> tuple[GameState, str]:
     coverage.hit("game_over")
     try:
-        prepare_succession(game, determine_end_reason(game))
+        prepare_succession(game)
         creation_data = roll_character(game.setting_id, game_cfg)
         game, narration = start_succession_with_character(provider, game, creation_data)
     except Exception as e:

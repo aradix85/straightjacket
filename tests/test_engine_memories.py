@@ -89,7 +89,7 @@ class TestProcessTurnGuard:
         from straightjacket.engine.game.turn import process_turn
 
         game = make_test_game()
-        game.game_over = True
+        game.end_reason = "death"
 
         with pytest.raises(RuntimeError, match="game_over=True"):
             process_turn(provider=None, game=game, player_message="anything", stream=None)

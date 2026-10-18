@@ -56,17 +56,8 @@ from .game_start import (
 END_REASONS: tuple[str, ...] = ("death", "despair", "retire")
 
 
-def determine_end_reason(game: GameState) -> str:
-    res = game.resources
-    if res.health <= 0:
-        return "death"
-    if res.spirit <= 0:
-        return "despair"
-
-    return "death"
-
-
-def prepare_succession(game: GameState, end_reason: str) -> PredecessorRecord:
+def prepare_succession(game: GameState) -> None:
+    end_reason = game.end_reason
     if end_reason not in END_REASONS:
         raise ValueError(f"Unknown succession end_reason: {end_reason!r} (valid: {END_REASONS})")
     if game.campaign.pending_succession:
@@ -85,7 +76,6 @@ def prepare_succession(game: GameState, end_reason: str) -> PredecessorRecord:
         f"quests={record.legacy_quests_filled_boxes} bonds={record.legacy_bonds_filled_boxes} "
         f"discoveries={record.legacy_discoveries_filled_boxes}. pending_succession=True."
     )
-    return record
 
 
 def _filter_threads_for_successor(threads: list[ThreadEntry]) -> list[ThreadEntry]:
@@ -113,7 +103,7 @@ def _reset_for_successor(
     game.narrative.scene_count = 1
     game.world.chaos_factor = _e.chaos.start
     game.crisis_mode = False
-    game.game_over = False
+    game.end_reason = ""
     game.last_turn_snapshot = None
 
     game.campaign.epilogue_shown = False
@@ -325,7 +315,6 @@ def _record_succession_opening(game: GameState, narration: str, predecessor: Pre
 
 __all__ = [
     "END_REASONS",
-    "determine_end_reason",
     "prepare_succession",
     "start_succession_with_character",
 ]

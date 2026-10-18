@@ -12,7 +12,6 @@ from straightjacket.engine.game.succession import (
     _filter_threads_for_successor,
     _replace_character_identity,
     _reset_for_successor,
-    determine_end_reason,
     prepare_succession,
     start_succession_with_character,
 )
@@ -243,45 +242,50 @@ def test_filter_drops_creation_threads_regardless_of_type() -> None:
 
 
 def test_prepare_succession_archives_and_sets_flag(aria: GameState) -> None:
-    record = prepare_succession(aria, "death")
+    aria.end_reason = "death"
+    prepare_succession(aria)
     assert aria.campaign.pending_succession is True
-    assert aria.campaign.predecessors[-1] is record
-    assert len(record.inheritance_rolls) == 3
+    assert len(aria.campaign.predecessors[-1].inheritance_rolls) == 3
 
 
 def test_prepare_succession_rejects_unknown_reason(aria: GameState) -> None:
+    aria.end_reason = "exhaustion"
     with pytest.raises(ValueError, match="end_reason"):
-        prepare_succession(aria, "exhaustion")
+        prepare_succession(aria)
 
 
 def test_prepare_succession_rejects_double_call(aria: GameState) -> None:
-    prepare_succession(aria, "death")
+    aria.end_reason = "death"
+    prepare_succession(aria)
     with pytest.raises(ValueError, match="pending_succession"):
-        prepare_succession(aria, "retire")
+        prepare_succession(aria)
 
 
-def test_prepare_succession_accepts_each_known_reason(aria: GameState) -> None:
+def test_prepare_succession_archives_the_recorded_reason(aria: GameState) -> None:
     for reason in END_REASONS:
         g = make_game_state(setting_id="classic")
         g.campaign.legacy_quests.ticks = 4
-        record = prepare_succession(g, reason)
-        assert record.end_reason == reason
+        g.end_reason = reason
+        prepare_succession(g)
+        assert g.campaign.predecessors[-1].end_reason == reason
 
 
 @pytest.mark.parametrize(
-    ("health", "spirit", "expected_reason"),
+    ("move", "reason"),
     [
-        (0, 3, "death"),
-        (3, 0, "despair"),
-        (0, 0, "death"),
-        (3, 3, "death"),
+        ("threshold/face_death", "death"),
+        ("threshold/face_desolation", "despair"),
+        ("suffer/face_death", "death"),
+        ("suffer/face_desolation", "despair"),
     ],
 )
-def test_determine_end_reason(health: int, spirit: int, expected_reason: str) -> None:
-    g = make_game_state()
-    g.resources.health = health
-    g.resources.spirit = spirit
-    assert determine_end_reason(g) == expected_reason
+def test_a_miss_at_the_threshold_records_why_the_game_ended(load_engine: None, move: str, reason: str) -> None:
+    from straightjacket.engine.mechanics.move_outcome import resolve_move_outcome
+
+    g = make_game_state(setting_id="classic" if move.startswith("suffer/") else "starforged")
+    g.resources.health, g.resources.spirit = 0, 0
+    resolve_move_outcome(g, move, "MISS", target_npc_id=None, match=False)
+    assert (g.game_over, g.end_reason) == (True, reason)
 
 
 def test_pending_succession_round_trips_through_campaign_snapshot(aria: GameState) -> None:
@@ -575,7 +579,8 @@ def _successor_creation_data() -> dict:
 def test_start_succession_with_character_happy_path(aria: GameState) -> None:
 
     aria.world.current_location = "Tavern"
-    prepare_succession(aria, "death")
+    aria.end_reason = "death"
+    prepare_succession(aria)
 
     provider = _SuccessionMockProvider("The successor steps forward.")
     game, narration = start_succession_with_character(provider, aria, _successor_creation_data())
@@ -591,7 +596,8 @@ def test_start_succession_resets_resources(aria: GameState) -> None:
     aria.resources.health = 0
     aria.resources.spirit = 0
     aria.world.current_location = "Tavern"
-    prepare_succession(aria, "death")
+    aria.end_reason = "death"
+    prepare_succession(aria)
 
     provider = _SuccessionMockProvider()
     game, _ = start_succession_with_character(provider, aria, _successor_creation_data())
@@ -603,7 +609,8 @@ def test_start_succession_resets_resources(aria: GameState) -> None:
 def test_start_succession_seeds_legacy_from_predecessor(aria: GameState) -> None:
 
     aria.world.current_location = "Tavern"
-    prepare_succession(aria, "death")
+    aria.end_reason = "death"
+    prepare_succession(aria)
 
     provider = _SuccessionMockProvider()
     game, _ = start_succession_with_character(provider, aria, _successor_creation_data())
@@ -619,7 +626,8 @@ def test_start_succession_seeds_legacy_from_predecessor(aria: GameState) -> None
 def test_start_succession_records_session_log(aria: GameState) -> None:
 
     aria.world.current_location = "Tavern"
-    prepare_succession(aria, "death")
+    aria.end_reason = "death"
+    prepare_succession(aria)
 
     provider = _SuccessionMockProvider()
     game, _ = start_succession_with_character(provider, aria, _successor_creation_data())
@@ -633,7 +641,8 @@ def test_start_succession_applies_the_opening_setup_and_the_engines_time(aria: G
 
     aria.npcs = []
     aria.world.current_location = "Tavern"
-    prepare_succession(aria, "death")
+    aria.end_reason = "death"
+    prepare_succession(aria)
 
     game, _ = start_succession_with_character(_SuccessionMockProvider(), aria, _successor_creation_data())
 

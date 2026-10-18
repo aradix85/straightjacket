@@ -1,7 +1,6 @@
 __all__ = [
     "BurnOffer",
     "DirectorCall",
-    "determine_end_reason",
     "generate_epilogue",
     "prepare_succession",
     "process_momentum_burn",
@@ -22,7 +21,6 @@ from .director_runner import run_deferred_director
 from .game_start import start_new_game
 from .momentum_burn import process_momentum_burn
 from .succession import (
-    determine_end_reason,
     prepare_succession,
     start_succession_with_character,
 )

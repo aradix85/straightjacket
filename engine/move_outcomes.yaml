@@ -283,6 +283,7 @@ move_outcomes:
     params:
       impact: doomed
       game_over_text: you are dead
+      end_reason: death
       vow_name: The deathbound quest
       vow_rank: extreme
       swear_miss_is_death: false
@@ -291,6 +292,7 @@ move_outcomes:
     params:
       impact: tormented
       game_over_text: you succumb to despair and are lost
+      end_reason: despair
       vow_name: The soul-bound quest
       vow_rank: extreme
       swear_miss_is_death: false
@@ -430,6 +432,7 @@ move_outcomes:
     params:
       impact: cursed
       game_over_text: you are dead
+      end_reason: death
       vow_name: The soul-bound quest
       vow_rank: extreme
       swear_miss_is_death: true
@@ -438,6 +441,7 @@ move_outcomes:
     params:
       impact: tormented
       game_over_text: you succumb to despair and are lost
+      end_reason: despair
       vow_name: The quest against the dread vision
       vow_rank: extreme
       swear_miss_is_death: true

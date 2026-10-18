@@ -22,7 +22,7 @@ def _populated_game(load_engine: None) -> GameState:
     g.resources.spirit = 3
     g.narrative.scene_count = 9
     g.crisis_mode = True
-    g.game_over = True
+    g.end_reason = "death"
     g.campaign.chapter_number = 2
     g.campaign.epilogue_shown = True
     g.campaign.epilogue_text = "End of last chapter."
@@ -86,7 +86,7 @@ def test_a_game_that_is_over_cannot_start_a_chapter(load_engine: None) -> None:
     from tests._mocks import MockProvider
 
     g = _populated_game(None)
-    g.game_over = True
+    g.end_reason = "death"
     with pytest.raises(RuntimeError, match="succession"):
         start_new_chapter(MockProvider(), g)
 

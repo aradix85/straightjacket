@@ -251,7 +251,7 @@ class TestSufferHandler:
 class TestThresholdHandler:
     @pytest.mark.parametrize(("result_type", "game_over"), [("STRONG_HIT", False), ("MISS", True)])
     def test_a_strong_hit_returns_and_a_miss_dies(self, game: GameState, result_type: str, game_over: bool) -> None:
-        params = {"impact": "doomed", "game_over_text": "you are dead"}
+        params = {"impact": "doomed", "game_over_text": "you are dead", "end_reason": "death"}
         result = apply_threshold_handler(game, result_type, params)
         assert game.game_over == game_over
         assert result.consequences == (["you are dead"] if game_over else [])

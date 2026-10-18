@@ -130,7 +130,7 @@ _TABLE_TRIGGERS: dict[str, Callable[[GameState, dict[str, Any], OutcomeResult], 
 
 
 def _die(game: GameState, params: dict[str, Any], result: OutcomeResult) -> None:
-    game.game_over = True
+    game.end_reason = params["end_reason"]
     result.consequences.append(params["game_over_text"])
 
 

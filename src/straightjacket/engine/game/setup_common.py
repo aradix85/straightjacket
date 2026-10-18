@@ -27,7 +27,7 @@ def register_extracted_npcs(
     *,
     skip_names: set[str],
     start_id: int,
-) -> int:
+) -> None:
     player_lower = game.player_name.lower().strip()
     skip = set(skip_names)
     skip.add(player_lower)
@@ -64,7 +64,6 @@ def register_extracted_npcs(
         game.npcs.append(npc)
 
     game.npcs = [n for n in game.npcs if n.name.lower().strip() != player_lower]
-    return max_num
 
 
 def seed_opening_memories(game: GameState, memory_updates: list[dict[str, Any]]) -> None:

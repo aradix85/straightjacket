@@ -104,7 +104,7 @@ class TurnSnapshot(SerializableMixin):
     threats: list[dict[str, Any]] = field(default_factory=list)
     impacts: list[str] = field(default_factory=list)
     crisis_mode: bool = False
-    game_over: bool = False
+    end_reason: str = ""
     player_input: str = ""
     brain: BrainResult | None = None
     roll: RollResult | None = None
@@ -142,10 +142,14 @@ class GameState(SerializableMixin):
 
     npcs: list[NpcData] = field(default_factory=list)
     crisis_mode: bool = False
-    game_over: bool = False
+    end_reason: str = ""
 
     last_turn_snapshot: TurnSnapshot | None = field(default=None, repr=False)
     post_epilogue_director_done: bool = field(default=False, repr=False)
+
+    @property
+    def game_over(self) -> bool:
+        return bool(self.end_reason)
 
     def snapshot(self) -> TurnSnapshot:
         return TurnSnapshot(
@@ -158,7 +162,7 @@ class GameState(SerializableMixin):
             threats=[t.to_dict() for t in self.threats],
             impacts=list(self.impacts),
             crisis_mode=self.crisis_mode,
-            game_over=self.game_over,
+            end_reason=self.end_reason,
         )
 
     def restore(self, snap: TurnSnapshot) -> None:
@@ -171,7 +175,7 @@ class GameState(SerializableMixin):
         self.threats = [ThreatData.from_dict(t) for t in snap.threats]
         self.impacts = list(snap.impacts)
         self.crisis_mode = snap.crisis_mode
-        self.game_over = snap.game_over
+        self.end_reason = snap.end_reason
         log(
             f"[GameState] Restored from snapshot: "
             f"H{self.resources.health} Sp{self.resources.spirit} "

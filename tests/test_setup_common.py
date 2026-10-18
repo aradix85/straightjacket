@@ -19,7 +19,7 @@ def test_register_extracted_npcs_skips_player(stub_all: None) -> None:
 
     game = make_game_state(player_name="Hero")
     game.world.current_location = "Tavern"
-    max_id = register_extracted_npcs(
+    register_extracted_npcs(
         game,
         [
             _npc("Mira", "Scout", "friendly"),
@@ -28,9 +28,7 @@ def test_register_extracted_npcs_skips_player(stub_all: None) -> None:
         skip_names=set(),
         start_id=0,
     )
-    assert len(game.npcs) == 1
-    assert game.npcs[0].name == "Mira"
-    assert max_id == 1
+    assert [(n.id, n.name) for n in game.npcs] == [("npc_1", "Mira")]
 
 
 def test_register_extracted_npcs_skips_returning(stub_all: None) -> None:
