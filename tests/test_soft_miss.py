@@ -2,7 +2,8 @@ import pytest
 
 from straightjacket.engine.engine_loader import eng
 from straightjacket.engine.mechanics.facts import find_fact, settle_facts_by_miss
-from straightjacket.engine.mechanics.move_effects import _oracle_table, has_story_complication
+from straightjacket.engine.datasworn.settings import load_package
+from straightjacket.engine.mechanics.move_effects import has_story_complication
 from straightjacket.engine.mechanics.move_outcome import resolve_move_outcome
 from straightjacket.engine.models import GameState, ResolvedFact, RollResult
 from straightjacket.engine.prompt_action import build_action_prompt
@@ -105,8 +106,7 @@ def test_story_complication_only_where_the_setting_has_it(load_engine: None) -> 
 
 
 def _complication_rows(game: GameState) -> set[str]:
-    table = _oracle_table(game, eng().pay_the_price.match_miss_oracle_path)
-    assert table is not None
+    table = load_package(game.setting_id).oracle_table(eng().pay_the_price.match_miss_oracle_path)
     return {row.text for row in table.rows if not row.oracle_rolls}
 
 

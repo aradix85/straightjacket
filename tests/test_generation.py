@@ -2,7 +2,7 @@ from typing import Any
 
 import pytest
 
-from straightjacket.engine.datasworn.loader import Setting
+from straightjacket.engine.datasworn.loader import OracleTable, Setting
 from straightjacket.engine.engine_loader import eng
 from tests.test_correction_replay import _Provider as _ReplayProvider
 from tests._creation import force_miss
@@ -55,8 +55,11 @@ class _Pkg:
             }
         )
 
-    def oracle_data_for(self, path: str) -> Setting | None:
-        return self.data if self.data.oracle(path) is not None else None
+    def oracle_table(self, path: str) -> OracleTable:
+        table = self.data.oracle(path)
+        if table is None:
+            raise KeyError(path)
+        return table
 
 
 def test_an_automatic_roll_replaces_its_link(load_engine: None) -> None:

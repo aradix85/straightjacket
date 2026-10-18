@@ -5,6 +5,8 @@ from dataclasses import dataclass
 from .oracle_rolls import LINK_PATTERN, is_table_link, link_path
 from .settings import SettingPackage
 
+_MAX_DEPTH = 4
+
 
 @dataclass(frozen=True)
 class CascadeStep:
@@ -13,20 +15,11 @@ class CascadeStep:
     text: str
 
 
-def roll_oracle_cascade(pkg: SettingPackage, entry_path: str, max_depth: int = 4) -> list[CascadeStep]:
-    if not entry_path:
-        raise ValueError("roll_oracle_cascade called with empty entry_path")
-
+def roll_oracle_cascade(pkg: SettingPackage, entry_path: str) -> list[CascadeStep]:
     steps: list[CascadeStep] = []
     current_path = entry_path
-    for _ in range(max_depth):
-        data = pkg.oracle_data_for(current_path)
-        if data is None:
-            raise KeyError(f"Oracle '{current_path}' not found in setting chain for {pkg.id}")
-        table = data.oracle(current_path)
-        if table is None:
-            raise KeyError(f"Oracle table '{current_path}' missing from setting {pkg.id}")
-        result = table.roll()
+    for _ in range(_MAX_DEPTH):
+        result = pkg.oracle_table(current_path).roll()
 
         next_path, label = _extract_next_path(result.value)
         if next_path is None:
@@ -36,7 +29,7 @@ def roll_oracle_cascade(pkg: SettingPackage, entry_path: str, max_depth: int = 4
         steps.append(CascadeStep(table_path=current_path, label=label or result.value, text=result.value))
         current_path = next_path
 
-    raise RuntimeError(f"Oracle cascade exceeded max_depth={max_depth} starting at '{entry_path}'")
+    raise RuntimeError(f"Oracle cascade from '{entry_path}' links on past {_MAX_DEPTH} tables")
 
 
 def _extract_next_path(text: str) -> tuple[str | None, str | None]:

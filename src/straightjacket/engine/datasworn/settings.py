@@ -2,7 +2,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass, fields
 from pathlib import Path
-from typing import Any, TYPE_CHECKING
+from collections.abc import Iterator
+from typing import Any
 
 import yaml
 
@@ -10,9 +11,6 @@ from ..config_loader import PROJECT_ROOT
 from ..logging_util import log
 from .loader import OracleTable, Setting, load_setting
 from .oracle_rolls import PLACEHOLDER_PATTERN
-
-if TYPE_CHECKING:
-    from ..models import GameState
 
 _SETTINGS_DIR = PROJECT_ROOT / "data" / "settings"
 
@@ -242,12 +240,7 @@ class SettingPackage:
         self._data = data
         self._parent = parent
 
-        chain: list[_SettingConfig] = [config]
-        ancestor = parent
-        while ancestor is not None:
-            chain.append(ancestor._config)
-            ancestor = ancestor._parent
-
+        chain = [pkg._config for pkg in self.chain()]
         self._oracle_paths = _resolve_oracle_paths(chain, yaml_path)
         self._creation_flow = _resolve_creation_flow(chain, yaml_path)
         self._generators: dict[str, dict[str, str]] = {}
@@ -303,26 +296,25 @@ class SettingPackage:
     def creation_flow(self) -> CreationFlow:
         return self._creation_flow
 
-    def roll_action_theme(self) -> tuple[str, str]:
-        action_path, theme_path = self._oracle_paths.action_theme
-        return self._data.roll_oracle(action_path), self._data.roll_oracle(theme_path)
-
-    def oracle_data_for(self, oracle_path: str) -> Setting | None:
+    def chain(self) -> Iterator[SettingPackage]:
         pkg: SettingPackage | None = self
         while pkg is not None:
-            if pkg._data.oracle(oracle_path) is not None:
-                return pkg._data
+            yield pkg
             pkg = pkg._parent
-        return None
 
-    def backstory_prompts(self) -> OracleTable | None:
-        path = self._oracle_paths.backstory
-        if not path:
-            return None
-        data = self.oracle_data_for(path)
-        if data is None:
-            return None
-        return data.oracle(path)
+    def has_oracle(self, path: str) -> bool:
+        return any(pkg._data.oracle(path) is not None for pkg in self.chain())
+
+    def oracle_table(self, path: str) -> OracleTable:
+        for pkg in self.chain():
+            table = pkg._data.oracle(path)
+            if table is not None:
+                return table
+        raise KeyError(f"Oracle table '{path}' not found in the setting chain of {self.id}")
+
+    def roll_action_theme(self) -> tuple[str, str]:
+        action_path, theme_path = self._oracle_paths.action_theme
+        return self.oracle_table(action_path).roll().value, self.oracle_table(theme_path).roll().value
 
     def generator_tables(self, category: str) -> dict[str, str]:
         if category not in self._generators:
@@ -330,22 +322,13 @@ class SettingPackage:
         return dict(self._generators[category])
 
     def name_tables(self, category: str) -> dict[str, OracleTable]:
-        result: dict[str, OracleTable] = {}
-        for role, path in self.generator_tables(category).items():
-            data = self.oracle_data_for(path)
-            table = data.oracle(path) if data is not None else None
-            if table is None:
-                raise KeyError(f"Oracle table '{path}' for {category}.{role} not found in setting chain for {self.id}")
-            result[role] = table
-        return result
+        return {role: self.oracle_table(path) for role, path in self.generator_tables(category).items()}
 
 
 _cache: dict[str, SettingPackage] = {}
 
 
 def list_packages() -> list[str]:
-    if not _SETTINGS_DIR.exists():
-        return []
     return sorted(p.stem for p in _SETTINGS_DIR.glob("*.yaml"))
 
 
@@ -356,19 +339,6 @@ def _read_yaml(setting_id: str) -> tuple[dict[str, Any], Path]:
     with Path(yaml_path).open(encoding="utf-8") as f:
         raw = yaml.safe_load(f)
     return raw, yaml_path
-
-
-def parent_of(setting_id: str) -> str | None:
-    raw, _ = _read_yaml(setting_id)
-    parent = raw.get("parent")
-    return str(parent) if parent else None
-
-
-def datasworn_id_of(setting_id: str) -> str:
-    raw, yaml_path = _read_yaml(setting_id)
-    if "datasworn_id" not in raw:
-        raise KeyError(f"Required key 'datasworn_id' missing in {yaml_path}")
-    return str(raw["datasworn_id"])
 
 
 def load_package(setting_id: str) -> SettingPackage:
@@ -392,9 +362,3 @@ def load_package(setting_id: str) -> SettingPackage:
 
 def clear_cache() -> None:
     _cache.clear()
-
-
-def active_package(game: GameState) -> SettingPackage | None:
-    if not game.setting_id:
-        return None
-    return load_package(game.setting_id)

@@ -229,9 +229,7 @@ def build_creation_options() -> dict[str, Any]:
 
         backstory_prompts = []
         if flow.has_backstory_oracle:
-            bs = pkg.backstory_prompts()
-            if bs:
-                backstory_prompts = [row.text for row in bs.rows]
+            backstory_prompts = [row.text for row in pkg.oracle_table(pkg.oracle_paths.backstory).rows]
 
         starting_assets = []
         for cat in flow.starting_asset_categories:

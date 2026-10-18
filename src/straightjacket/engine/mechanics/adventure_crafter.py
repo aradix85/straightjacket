@@ -8,7 +8,7 @@ from typing import Any
 
 from ..config_loader import PROJECT_ROOT
 from ..datasworn.cascade import roll_oracle_cascade
-from ..datasworn.settings import active_package
+from ..datasworn.settings import load_package
 from ..engine_config_dataclasses import PlotPointRanges
 from ..engine_loader import eng
 from ..logging_util import log
@@ -568,9 +568,7 @@ def spawn_threats_for_turning_point(game: GameState, turning_point: TurningPoint
     mapping = cfg.threat_creation_mapping
     cap = cfg.max_threats_per_chapter
 
-    pkg = active_package(game)
-    if pkg is None:
-        raise ValueError("Naming a threat from a turning point needs the game's setting")
+    pkg = load_package(game.setting_id)
 
     spawned = 0
     for hit in turning_point.plot_points:

@@ -10,7 +10,7 @@ from ..logging_util import log
 _DATA_DIR = PROJECT_ROOT / "data"
 
 
-def extract_title(obj: dict[str, Any], fallback: str = "") -> str:
+def extract_title(obj: dict[str, Any], fallback: str) -> str:
     title_raw = obj.get("title")
     if isinstance(title_raw, dict):
         return str(title_raw.get("canonical") or title_raw.get("standard") or fallback)
@@ -62,9 +62,6 @@ class OracleTable:
 
         raise ValueError(f"Oracle table '{self.id}' rolled {die_roll} but no row covers it — malformed row ranges")
 
-    def roll_text(self) -> str:
-        return self.roll().value
-
     def __len__(self) -> int:
         return len(self.rows)
 
@@ -77,7 +74,7 @@ class Setting:
 
     @property
     def id(self) -> str:
-        result: str = self._raw.get("_id", "")
+        result: str = self._raw["_id"]
         return result
 
     @property
@@ -85,7 +82,7 @@ class Setting:
         return extract_title(self._raw, self.id)
 
     def _load_oracles(self) -> None:
-        for coll_id, coll in self._raw.get("oracles", {}).items():
+        for coll_id, coll in self._raw["oracles"].items():
             self._load_oracle_collection(coll_id, coll)
 
     def _load_oracle_collection(self, path: str, coll: dict[str, Any]) -> None:
@@ -98,7 +95,7 @@ class Setting:
     def _parse_oracle_table(self, full_id: str, data: dict[str, Any], collection_path: str) -> OracleTable:
         title = extract_title(data, full_id)
         rows = []
-        for r in data.get("rows", []):
+        for r in data["rows"]:
             roll_obj = r.get("roll")
             if isinstance(roll_obj, dict):
                 row_min = roll_obj.get("min", 0)
@@ -110,7 +107,7 @@ class Setting:
                 OracleRow(
                     min=row_min,
                     max=row_max,
-                    text=r.get("text", ""),
+                    text=r["text"],
                     oracle_rolls=r.get("oracle_rolls"),
                 )
             )
@@ -122,36 +119,24 @@ class Setting:
     def oracle_ids(self) -> list[str]:
         return sorted(self._oracles.keys())
 
-    def roll_oracle(self, oracle_id: str) -> str:
-        table = self._oracles.get(oracle_id)
-        if table is None:
-            raise KeyError(f"Oracle table '{oracle_id}' not found in {self.id}")
-        return table.roll_text()
-
     def asset_categories(self) -> list[str]:
-        return sorted(self._raw.get("assets", {}).keys())
+        return sorted(self._raw["assets"].keys())
 
     def assets(self, category: str) -> list[dict[str, Any]]:
-        cat = self._raw.get("assets", {}).get(category, {})
-        return list(cat.get("contents", {}).values())
+        return list(self._raw["assets"][category]["contents"].values())
 
     def asset(self, category: str, asset_id: str) -> dict[str, Any] | None:
-        cat = self._raw.get("assets", {}).get(category, {})
-        result: dict[str, Any] | None = cat.get("contents", {}).get(asset_id)
+        result: dict[str, Any] | None = self._raw["assets"][category]["contents"].get(asset_id)
         return result
 
     def paths(self) -> list[dict[str, Any]]:
         return self.assets("path")
 
-    def moves(self, category: str) -> list[dict[str, Any]]:
-        cat = self._raw.get("moves", {}).get(category, {})
-        return list(cat.get("contents", {}).values())
-
     def truths(self) -> dict[str, Any]:
-        return dict(self._raw.get("truths", {}))
+        return dict(self._raw["truths"])
 
     def stats(self) -> dict[str, Any]:
-        return dict(self._raw.get("rules", {}).get("stats", {}))
+        return dict(self._raw["rules"].get("stats", {}))
 
     @property
     def raw(self) -> dict[str, Any]:

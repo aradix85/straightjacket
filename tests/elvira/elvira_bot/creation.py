@@ -66,7 +66,7 @@ def _roll_name(pkg: SettingPackage, game_cfg: dict) -> str:
     if game_cfg.get("player_name"):
         return game_cfg["player_name"]
     tables = list(pkg.name_tables(eng().naming.category).values())[:2]
-    return " ".join(table.roll_text() for table in tables)
+    return " ".join(table.roll().value for table in tables)
 
 
 def _roll_paths(pkg: SettingPackage, game_cfg: dict) -> list[str]:
@@ -82,12 +82,8 @@ def _roll_paths(pkg: SettingPackage, game_cfg: dict) -> list[str]:
 def _roll_backstory(pkg: SettingPackage, game_cfg: dict) -> str:
     if game_cfg.get("backstory"):
         return game_cfg["backstory"]
-    try:
-        table = pkg.backstory_prompts()
-        if table:
-            return table.roll().value
-    except Exception:
-        pass
+    if pkg.creation_flow.has_backstory_oracle:
+        return pkg.oracle_table(pkg.oracle_paths.backstory).roll().value
     return ""
 
 

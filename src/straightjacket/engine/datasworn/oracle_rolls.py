@@ -45,7 +45,7 @@ def is_table_link(target: str) -> bool:
 
 
 def roll_oracle(pkg: SettingPackage, path: str) -> RolledOracle:
-    table = _table(pkg, path)
+    table = pkg.oracle_table(path)
     row = table.roll().row
     repeats = _repeat_count(row)
     if repeats:
@@ -63,14 +63,6 @@ def roll_generator_tables(pkg: SettingPackage, tables: dict[str, str]) -> dict[s
         results[role] = rolled.text
         choices[role] = rolled.choice
     return results
-
-
-def _table(pkg: SettingPackage, path: str) -> OracleTable:
-    data = pkg.oracle_data_for(path)
-    table = data.oracle(path) if data is not None else None
-    if table is None:
-        raise KeyError(f"Oracle table '{path}' not found in setting chain for {pkg.id}")
-    return table
 
 
 def _auto_rolls(row: OracleRow) -> list[dict[str, Any]]:

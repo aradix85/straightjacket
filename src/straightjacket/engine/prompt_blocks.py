@@ -1,5 +1,5 @@
 from .config_loader import narration_language
-from .datasworn.settings import active_package
+from .datasworn.settings import load_package
 from .engine_loader import eng
 from .mechanics import get_pacing_hint
 from .models import GameState
@@ -41,10 +41,7 @@ def backstory_block(game: GameState) -> str:
 
 
 def vocabulary_block(game: GameState) -> str:
-    pkg = active_package(game)
-    if not pkg:
-        return ""
-    vocab = pkg.vocabulary
+    vocab = load_package(game.setting_id).vocabulary
     if vocab.is_empty():
         return ""
     body_parts: list[str] = []

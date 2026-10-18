@@ -56,13 +56,23 @@ def test_oracle_unknown_path_returns_none() -> None:
     assert sf.oracle("nonexistent/path") is None
 
 
-def test_roll_oracle_unknown_path_raises() -> None:
-    sf = load_setting("starforged")
-    try:
-        sf.roll_oracle("nonexistent/path")
-        raise AssertionError("Should have raised KeyError")
-    except KeyError:
-        pass
+def test_an_oracle_path_missing_from_the_setting_chain_raises() -> None:
+    import pytest
+
+    from straightjacket.engine.datasworn.settings import load_package
+
+    with pytest.raises(KeyError, match="nonexistent/path"):
+        load_package("sundered_isles").oracle_table("nonexistent/path")
+
+
+def test_an_oracle_table_comes_from_the_parent_setting() -> None:
+    from straightjacket.engine.datasworn.settings import load_package
+
+    path = "campaign_launch/backstory_prompts"
+    sundered = load_package("sundered_isles")
+    assert sundered.data.oracle(path) is None
+    assert sundered.has_oracle(path)
+    assert sundered.oracle_table(path) is load_package("starforged").data.oracle(path)
 
 
 def test_setting_isolation() -> None:

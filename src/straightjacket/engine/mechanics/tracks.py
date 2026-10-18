@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from ..datasworn.moves import get_moves
-from ..datasworn.settings import active_package
+from ..datasworn.settings import load_package
 from ..engine_loader import eng
 from ..logging_util import log
 from .legacy import apply_threat_overcome_bonus
@@ -83,8 +83,5 @@ def sync_combat_tracks(game: GameState) -> None:
 
 
 def roll_oracle_answer(game: GameState) -> str:
-    pkg = active_package(game)
-    if pkg is None:
-        raise ValueError("Asking the oracle needs the game's setting")
-    action, theme = pkg.roll_action_theme()
+    action, theme = load_package(game.setting_id).roll_action_theme()
     return f"{action} / {theme}"

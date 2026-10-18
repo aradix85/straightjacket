@@ -391,10 +391,7 @@ class _FakeOracle:
     def __init__(self, *values: str) -> None:
         self.values = list(values)
 
-    def oracle_data_for(self, path: str) -> _FakeOracle:
-        return self
-
-    def oracle(self, path: str) -> _FakeOracle:
+    def oracle_table(self, path: str) -> _FakeOracle:
         return self
 
     def roll(self) -> object:

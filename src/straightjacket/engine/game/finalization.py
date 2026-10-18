@@ -47,12 +47,8 @@ def _chained_roll_value(game: GameState, brain: BrainResult, move: Move) -> tupl
 
 
 def _chain_oracle_move(game: GameState, move: Move, cfg: dict[str, Any], outcome: OutcomeResult) -> None:
-    path = cfg["oracle"]
-    data = load_package(game.setting_id).oracle_data_for(path)
-    table = data.oracle(path) if data is not None else None
-    if table is None:
-        raise KeyError(f"Oracle '{path}' for chained move {move.name} missing in setting {game.setting_id!r}")
-    results = [strip_datasworn_links(str(table.roll().value)) for _ in range(cfg["rolls"])]
+    table = load_package(game.setting_id).oracle_table(cfg["oracle"])
+    results = [strip_datasworn_links(table.roll().value) for _ in range(cfg["rolls"])]
     outcome.consequences.append(
         eng().ai_text.consequence_labels["chained_move"].format(move=move.name, result="; ".join(results))
     )

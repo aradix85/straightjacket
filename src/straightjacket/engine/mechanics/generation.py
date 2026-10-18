@@ -1,7 +1,7 @@
 from collections.abc import Sequence
 
 from ..datasworn.oracle_rolls import roll_generator_tables
-from ..datasworn.settings import active_package
+from ..datasworn.settings import load_package
 from ..engine_loader import eng
 from ..logging_util import log
 from ..models import BrainResult, FactRequest, GameState, GeneratedEntity, PlaceRecord, ResolvedFact
@@ -26,9 +26,7 @@ def generate_entity(game: GameState, category: str) -> GeneratedEntity:
     _check_registered(category)
     if category == _FACT_CATEGORY:
         raise ValueError("A fact is settled by generate_fact, not rolled as an entity")
-    pkg = active_package(game)
-    if pkg is None:
-        raise ValueError(f"Generating {category!r} needs the game's setting")
+    pkg = load_package(game.setting_id)
     results = roll_generator_tables(pkg, pkg.generator_tables(category))
     log(f"[Generate] {category}: " + "; ".join(f"{role}={value}" for role, value in results.items()))
     return GeneratedEntity(category=category, results=results)

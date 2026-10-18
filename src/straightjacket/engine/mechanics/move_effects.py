@@ -4,7 +4,6 @@ import re
 from collections.abc import Callable
 from dataclasses import dataclass, field
 
-from ..datasworn.loader import OracleTable
 from ..datasworn.settings import load_package
 from ..engine_loader import eng
 from .complications import spawn_complication_clock
@@ -109,17 +108,9 @@ def _connection_track(game: GameState, npc: NpcData) -> ProgressTrack | None:
     )
 
 
-def _oracle_table(game: GameState, path: str) -> OracleTable | None:
-    data = load_package(game.setting_id).oracle_data_for(path)
-    return data.oracle(path) if data is not None else None
-
-
 def _roll_price_rows(game: GameState, path: str, depth: int) -> list[str]:
     cfg = eng().pay_the_price
-    table = _oracle_table(game, path)
-    if table is None:
-        raise KeyError(f"Oracle table '{path}' missing for setting {game.setting_id!r}")
-    text = strip_datasworn_links(str(table.roll().value))
+    text = strip_datasworn_links(load_package(game.setting_id).oracle_table(path).roll().value)
     for rule in cfg.reroll_rows:
         if text.startswith(rule.prefix) and depth < cfg.max_rerolls:
             rows = [text]
@@ -130,7 +121,7 @@ def _roll_price_rows(game: GameState, path: str, depth: int) -> list[str]:
 
 
 def has_story_complication(game: GameState) -> bool:
-    return _oracle_table(game, eng().pay_the_price.match_miss_oracle_path) is not None
+    return load_package(game.setting_id).has_oracle(eng().pay_the_price.match_miss_oracle_path)
 
 
 def pay_the_price(game: GameState, result: OutcomeResult) -> None:
@@ -279,9 +270,10 @@ def _apply_fill_clock_effect(
 
 
 def _complication_danger(game: GameState) -> str:
-    table = _oracle_table(game, eng().clocks.complication.name_oracle_path)
-    if table is not None:
-        return strip_datasworn_links(str(table.roll().value))
+    pkg = load_package(game.setting_id)
+    path = eng().clocks.complication.name_oracle_path
+    if pkg.has_oracle(path):
+        return strip_datasworn_links(pkg.oracle_table(path).roll().value)
     action, subject = roll_meaning_table("actions")
     return f"{action} {subject}"
 
