@@ -122,6 +122,8 @@ The user's decision (Decisions, Four layers). Today one setting carries both the
 
 **9n.4** The audit of principle 1 (AUDIT.md) runs per layer on the new layout, with the principle-1 findings 9h.13 and 9h.14 collected, since the split is itself the largest principle-1 change and an audit before it would judge a layout about to go.
 
+**9n.5** The audits already done stand for code the split only moves. Code it writes or rewrites (the interface between the layers, the meters, the loader that splits a Datasworn file) gets the queries of principles 2 and 3 (AUDIT.md) in the same step, beside the diff reading every change gets, and AUDIT.md's Status then names the audited code by its new packages.
+
 ### 9o — Dataclass defaults and prompt markup
 
 Two clean-ups of principle 2, formerly 9h.4 and 9h.12, one session per module or group. They depend neither on the audits of step 9h nor on the split of step 9n, so they wait until after it: the split comes sooner, and the defaults leave the state classes in the form the split gives them.
