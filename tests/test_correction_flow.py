@@ -4,10 +4,9 @@ from typing import Any
 import pytest
 
 from straightjacket.engine.ai.provider_base import AICallSpec, AIResponse
-from straightjacket.engine.models import EngineConfig, GameState
+from straightjacket.engine.models import GameState
 from tests._creation import create_game, force_miss
 
-_CONFIG = EngineConfig(narration_lang="English")
 _TURN_BRAIN = {
     "move": "adventure/face_danger",
     "stat": "iron",
@@ -127,7 +126,7 @@ def _played_game(provider: MockProvider, monkeypatch: pytest.MonkeyPatch) -> Gam
         background_vow="Keep the archive whole",
     )
     force_miss(monkeypatch)
-    game, _narration, _roll, _offer, _director = process_turn(provider, game, "I shove past the guard", _CONFIG)
+    game, _narration, _roll, _offer, _director = process_turn(provider, game, "I shove past the guard")
     return game
 
 
@@ -143,7 +142,7 @@ def test_correction_input_misread_full_flow(
     scene_before = game.narrative.scene_count
     history_len_before = len(game.narrative.narration_history)
 
-    game, narration, _offer, _director_ctx = process_correction(provider, game, "I didn't want to attack", _CONFIG)
+    game, narration, _offer, _director_ctx = process_correction(provider, game, "I didn't want to attack")
 
     assert game.resources.health == snap_health
     assert game.narrative.scene_count == scene_before
@@ -162,7 +161,7 @@ def test_correction_to_dialog_does_not_roll_even_with_a_stat(
     provider = MockProvider(correction_source="input_misread", brain_stat="heart", dialog_only=False)
     game = _played_game(provider, monkeypatch)
     game, narration, _offer, _director_ctx = process_correction(
-        provider, game, "That's not what I said, I was asking a question", _CONFIG
+        provider, game, "That's not what I said, I was asking a question"
     )
 
     assert len(narration) > 10
@@ -179,7 +178,7 @@ def test_correction_state_error_full_flow(
     assert game.npcs[0].disposition == "friendly"
     history_len_before = len(game.narrative.narration_history)
 
-    game, narration, _offer, _director_ctx = process_correction(provider, game, "Mira should be loyal", _CONFIG)
+    game, narration, _offer, _director_ctx = process_correction(provider, game, "Mira should be loyal")
 
     assert game.npcs[0].disposition == "loyal"
     assert len(narration) > 10
@@ -194,7 +193,7 @@ def test_correction_no_snapshot(load_engine: None, stub_emotions: None, monkeypa
     game = _played_game(provider, monkeypatch)
     game.last_turn_snapshot = None
 
-    game, narration, _offer, director_ctx = process_correction(provider, game, "Fix something", _CONFIG)
+    game, narration, _offer, director_ctx = process_correction(provider, game, "Fix something")
 
     assert director_ctx is None
     assert isinstance(narration, str)

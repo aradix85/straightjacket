@@ -20,7 +20,7 @@ from ..mechanics.legacy import mark_legacy, mark_legacy_ticks, shifted_rank
 from ..mechanics.move_effects import OutcomeResult, strip_datasworn_links
 from ..mechanics.move_outcome import resolve_move_outcome
 from ..mechanics.roll_sources import roll_source_without_stat
-from ..models import BrainResult, ClockEvent, EngineConfig, GameState, MemoryEntry, NpcData, ProgressTrack, RollResult
+from ..models import BrainResult, ClockEvent, GameState, MemoryEntry, NpcData, ProgressTrack, RollResult
 from ..npc import named_in
 from ..npc.memory import consolidate_memory
 from ..parser import parse_narrator_response
@@ -187,7 +187,6 @@ def apply_post_narration(
     roll: RollResult | None,
     scene_present_ids: set[str],
     activated_npc_names: list[str],
-    config: EngineConfig | None = None,
     consequences: Sequence[str] = (),
     world_addition: str = "",
 ) -> dict[str, Any]:
@@ -199,7 +198,7 @@ def apply_post_narration(
         game, generate_engine_memories(game, brain, roll, scene_present_ids, consequences=cons_list), narration
     )
 
-    metadata = call_narrator_metadata(provider, narration, game, config, brain=brain, consequences=cons_list)
+    metadata = call_narrator_metadata(provider, narration, game, brain=brain, consequences=cons_list)
     apply_narrator_metadata(game, metadata, scene_present_ids=scene_present_ids, world_addition=world_addition)
 
     return metadata
@@ -209,7 +208,6 @@ def narrate_scene(
     provider: AIProvider,
     game: GameState,
     prompt: str,
-    config: EngineConfig | None = None,
     stream: NarrationSink | None = None,
 ) -> str:
-    return parse_narrator_response(game, call_narrator(provider, prompt, game, config, stream=stream))
+    return parse_narrator_response(game, call_narrator(provider, prompt, game, stream=stream))

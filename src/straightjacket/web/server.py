@@ -10,10 +10,8 @@ from starlette.responses import FileResponse, JSONResponse
 from starlette.routing import Route, WebSocketRoute
 from starlette.websockets import WebSocket, WebSocketDisconnect
 
-from ..engine.config_loader import narration_language
 from ..engine.engine_loader import eng
 from ..engine.logging_util import log
-from ..engine.models import EngineConfig
 from ..i18n import t
 from .handlers import (
     _send,
@@ -50,7 +48,7 @@ from .session import Session
 _STATIC_DIR = Path(__file__).resolve().parent / "static"
 
 
-_session = Session(config=EngineConfig(narration_lang=narration_language()))
+_session = Session()
 
 
 _HANDLERS: dict[str, Callable[..., Any]] = {

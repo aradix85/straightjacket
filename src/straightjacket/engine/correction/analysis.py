@@ -6,24 +6,20 @@ import json
 from ..models import BrainResult
 from ..ai.provider_base import AICallSpec, AIProvider, create_with_retry
 from ..ai.schemas import get_correction_output_schema
-from ..config_loader import model_for_role, sampling_params
+from ..config_loader import model_for_role, narration_language, sampling_params
 from ..engine_loader import eng
 from ..logging_util import log
-from ..models import EngineConfig, GameState, NpcData
-from ..prompt_blocks import get_narration_lang
+from ..models import GameState, NpcData
 from ..prompt_loader import get_prompt
 from ..xml_utils import xe as _xe
 
 
-def call_correction_brain(
-    provider: AIProvider, game: GameState, correction_text: str, config: EngineConfig | None = None
-) -> dict[str, Any]:
+def call_correction_brain(provider: AIProvider, game: GameState, correction_text: str) -> dict[str, Any]:
     snap = game.last_turn_snapshot
     if not snap:
         raise ValueError("No last_turn_snapshot available for correction")
 
-    _cfg = config or EngineConfig()
-    lang = get_narration_lang(_cfg)
+    lang = narration_language()
 
     _defaults = eng().ai_text.narrator_defaults
     _trunc = eng().truncations

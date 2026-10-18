@@ -1,14 +1,13 @@
 from typing import Any
 import json
 
-from ..config_loader import model_for_role, sampling_params
+from ..config_loader import model_for_role, narration_language, sampling_params
 from ..engine_loader import eng
 from ..logging_util import log
 from ..mechanics.adventure_crafter import BlueprintSeed
-from ..models import EngineConfig, GameState
+from ..models import GameState
 from ..prompt_blocks import (
     content_boundaries_block,
-    get_narration_lang,
 )
 from ..prompt_loader import get_prompt
 from ..xml_utils import xe as _xe
@@ -69,10 +68,8 @@ def call_blueprint_voicing(
     provider: AIProvider,
     game: GameState,
     seed: BlueprintSeed,
-    config: EngineConfig | None = None,
 ) -> dict[str, Any] | None:
-    _cfg = config or EngineConfig()
-    lang = get_narration_lang(_cfg)
+    lang = narration_language()
     cb = content_boundaries_block(game)
 
     system = get_prompt("blueprint_voicing", lang=lang, content_boundaries_block=cb)

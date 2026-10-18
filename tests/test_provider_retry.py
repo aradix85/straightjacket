@@ -30,6 +30,27 @@ def test_create_with_retry_retries_on_connection_error() -> None:
     assert call_count[0] == 2
 
 
+def test_create_with_retry_retries_a_timeout_whose_message_never_says_connection(load_engine: None) -> None:
+    from straightjacket.engine.ai.provider_base import create_with_retry
+
+    class APIConnectionError(Exception):
+        pass
+
+    class APITimeoutError(APIConnectionError):
+        pass
+
+    outcomes: list[Exception | AIResponse] = [APITimeoutError("Request timed out."), AIResponse(content="OK")]
+
+    class SlowOnce:
+        def create_message(self, spec: AICallSpec) -> AIResponse:
+            outcome = outcomes.pop(0)
+            if isinstance(outcome, Exception):
+                raise outcome
+            return outcome
+
+    assert create_with_retry(SlowOnce(), _spec(max_retries=1)).content == "OK"
+
+
 def test_create_with_retry_raises_on_exhaustion() -> None:
     from straightjacket.engine.ai.provider_base import AIUnavailableError, create_with_retry
 

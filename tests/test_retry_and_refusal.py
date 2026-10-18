@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from types import SimpleNamespace
 from typing import Any
 
 import pytest
@@ -34,11 +35,10 @@ class _RateLimited(Exception):
 
 
 @pytest.fixture
-def waits() -> Any:
+def waits(monkeypatch: pytest.MonkeyPatch) -> list[float]:
     recorded: list[float] = []
-    provider_base.set_backoff_sleep(recorded.append)
-    yield recorded
-    provider_base.set_backoff_sleep(lambda _: None)
+    monkeypatch.setattr(provider_base, "_time", SimpleNamespace(sleep=recorded.append))
+    return recorded
 
 
 def test_a_refusal_is_retried(load_engine: None) -> None:

@@ -236,7 +236,7 @@ def test_a_created_game_plays_a_turn_in_every_playable_setting(
     from straightjacket.engine.game import process_turn
     from tests._creation import create_game, force_miss
     from tests.elvira.elvira_bot.invariants import assert_game_state
-    from tests.test_momentum_burn import _CONFIG, _brain, _Provider
+    from tests.test_momentum_burn import _brain, _Provider
 
     game = create_game(
         setting_id,
@@ -248,9 +248,7 @@ def test_a_created_game_plays_a_turn_in_every_playable_setting(
     )
     assert assert_game_state(game, turn=0) == []
     force_miss(monkeypatch)
-    game, _narration, roll, _offer, _director = process_turn(
-        _Provider(_brain()), game, "I slip into the vault", _CONFIG
-    )
+    game, _narration, roll, _offer, _director = process_turn(_Provider(_brain()), game, "I slip into the vault")
 
     assert roll is not None
     assert game.narrative.scene_count == 2

@@ -2,12 +2,12 @@ from typing import Any
 import json
 from collections.abc import Sequence
 
-from ..config_loader import model_for_role, sampling_params
+from ..config_loader import model_for_role, narration_language, sampling_params
 from ..engine_loader import eng
 from ..logging_util import log
-from ..models import BrainResult, EngineConfig, GameState
+from ..models import BrainResult, GameState
 from ..parser import salvage_truncated_narration
-from ..prompt_blocks import content_boundaries_block, get_narration_lang, get_narrator_system
+from ..prompt_blocks import content_boundaries_block, get_narrator_system
 from ..prompt_loader import get_prompt
 from ..xml_utils import xa as _xa
 from ..xml_utils import xe as _xe
@@ -26,7 +26,6 @@ def call_narrator(
     provider: AIProvider,
     prompt: str,
     game: GameState,
-    config: EngineConfig | None = None,
     stream: NarrationSink | None = None,
 ) -> str:
     log(f"[Narrator] Calling narrator (prompt: {len(prompt)} chars)")
@@ -36,7 +35,7 @@ def call_narrator(
         messages.append({"role": "assistant", "content": entry.narration})
     messages.append({"role": "user", "content": prompt})
 
-    system, cached_prefix = get_narrator_system(config or EngineConfig(), game)
+    system, cached_prefix = get_narrator_system(game)
 
     spec = AICallSpec(
         model=model_for_role("narrator"),
@@ -67,10 +66,8 @@ def _no_narrator_metadata() -> dict[str, Any]:
     return {"new_npcs": [], "npc_renames": [], "npc_details": [], "deceased_npcs": [], "lore_npcs": []}
 
 
-def call_opening_setup(
-    provider: AIProvider, narration: str, game: GameState, config: EngineConfig | None = None
-) -> dict[str, Any]:
-    lang = get_narration_lang(config or EngineConfig())
+def call_opening_setup(provider: AIProvider, narration: str, game: GameState) -> dict[str, Any]:
+    lang = narration_language()
 
     system = get_prompt("opening_setup_extractor", lang=lang)
     _defaults = eng().ai_text.narrator_defaults
@@ -106,12 +103,10 @@ def call_narrator_metadata(
     provider: AIProvider,
     narration: str,
     game: GameState,
-    config: EngineConfig | None = None,
-    brain: BrainResult | None = None,
-    consequences: Sequence[str] = (),
+    brain: BrainResult,
+    consequences: Sequence[str],
 ) -> dict[str, Any]:
-    _cfg = config or EngineConfig()
-    lang = get_narration_lang(_cfg)
+    lang = narration_language()
 
     npc_refs = []
     npc_ids: list[str] = []
@@ -134,17 +129,15 @@ def call_narrator_metadata(
             entry += f" — {_xe(desc[: eng().truncations.prompt_xshort])}"
         npc_refs.append(entry)
 
-    mechanical_ctx = ""
-    if brain:
-        parts = [f"move:{brain.move}"]
-        if brain.stat != "none":
-            parts.append(f"stat:{brain.stat}")
-        if brain.target_npc:
-            parts.append(f"target:{brain.target_npc}")
-        mechanical_ctx = f"\n<engine_context>{' | '.join(parts)}"
-        if consequences:
-            mechanical_ctx += f" | consequences: {', '.join(consequences)}"
-        mechanical_ctx += "</engine_context>"
+    parts = [f"move:{brain.move}"]
+    if brain.stat != "none":
+        parts.append(f"stat:{brain.stat}")
+    if brain.target_npc:
+        parts.append(f"target:{brain.target_npc}")
+    mechanical_ctx = f"\n<engine_context>{' | '.join(parts)}"
+    if consequences:
+        mechanical_ctx += f" | consequences: {', '.join(consequences)}"
+    mechanical_ctx += "</engine_context>"
 
     system_base = get_prompt("narrator_metadata", lang=lang, dispositions="|".join(eng().enums.dispositions))
 

@@ -25,7 +25,6 @@ game:
 session:
   max_chapters: 1
   max_turns: 8
-  narration_lang: "English"
   save_every_n_turns: 5
   save_name_output: "elvira"
   clean_before_run: true

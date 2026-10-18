@@ -102,7 +102,6 @@ def finalize_scene(
         roll,
         scene_present_ids,
         activated_npc_names,
-        config=ctx.config,
         consequences=consequences,
         world_addition=brain.world_addition or "",
     )
@@ -111,7 +110,7 @@ def finalize_scene(
 
     revelation_confirmed = False
     if ctx.pending_revs:
-        revelation_confirmed = call_revelation_check(ctx.provider, narration, ctx.pending_revs[0], ctx.config)
+        revelation_confirmed = call_revelation_check(ctx.provider, narration, ctx.pending_revs[0])
         if revelation_confirmed:
             mark_revelation_used(game, ctx.pending_revs[0].id)
 
@@ -168,7 +167,7 @@ def finalize_scene(
         revelation_used=revelation_confirmed,
     )
     if director_reason:
-        director_ctx = DirectorCall(narration=narration, config=ctx.config)
+        director_ctx = DirectorCall(narration=narration)
         nar.session_log[-1].director_trigger = director_reason
 
         bp = game.narrative.story_blueprint

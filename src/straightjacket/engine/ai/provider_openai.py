@@ -26,7 +26,7 @@ def _usage(raw_usage: Any) -> dict[str, int] | None:
 
 
 class OpenAICompatibleProvider:
-    def __init__(self, api_key: str, timeout_seconds: float, api_base: str | None = None):
+    def __init__(self, api_key: str, timeout_seconds: float, api_base: str):
         client_kwargs: dict[str, Any] = {"api_key": api_key, "max_retries": 0, "timeout": timeout_seconds}
         if api_base:
             client_kwargs["base_url"] = api_base

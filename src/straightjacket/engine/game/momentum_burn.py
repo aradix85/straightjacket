@@ -2,7 +2,7 @@ from dataclasses import replace
 
 from ..ai.provider_base import AIProvider
 from ..engine_loader import eng
-from ..models import EngineConfig, GameState
+from ..models import GameState
 from ..prompt_loader import get_prompt
 from .turn import build_scene_context, resolve_and_narrate_action
 from .turn_types import BurnOffer, DirectorCall, RollOutcome
@@ -12,7 +12,6 @@ def process_momentum_burn(
     provider: AIProvider,
     game: GameState,
     offer: BurnOffer,
-    config: EngineConfig | None,
 ) -> tuple[GameState, str, DirectorCall | None]:
     game.restore(offer.resume_snapshot)
     _e = eng()
@@ -24,7 +23,6 @@ def process_momentum_burn(
         provider,
         game,
         offer.brain,
-        config,
         offer.player_words,
         offer.scene_setup,
         list(offer.random_events),

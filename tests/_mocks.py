@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 from typing import Any
 
 from straightjacket.engine.ai.provider_base import AICallSpec, AIResponse
@@ -16,6 +17,11 @@ class MockProvider:
         if self._fail:
             raise ConnectionError("mock fail")
         return AIResponse(content=self._content, usage={"input_tokens": 10, "output_tokens": 10})
+
+    def stream_message(self, spec: AICallSpec, on_text: Callable[[str], None]) -> AIResponse:
+        response = self.create_message(spec)
+        on_text(response.content)
+        return response
 
 
 def make_test_game() -> Any:

@@ -60,11 +60,6 @@ def test_a_failed_stream_is_not_complete_and_stops_emitting(load_engine: None) -
     assert not stream.complete
 
 
-class _Plain:
-    def create_message(self, spec: AICallSpec) -> AIResponse:
-        return AIResponse(content="Whole reply arrives at once.")
-
-
 class _Broken:
     def create_message(self, spec: AICallSpec) -> AIResponse:
         return AIResponse(content="Recovered without streaming.")
@@ -76,15 +71,6 @@ class _Broken:
 
 def _spec() -> AICallSpec:
     return AICallSpec(model="m", system="s", messages=[], max_tokens=8, log_role="narrator")
-
-
-def test_stream_with_retry_feeds_a_non_streaming_provider_at_once(load_engine: None) -> None:
-    sentences: list[str] = []
-    stream = SentenceStream(sentences.append)
-    response = stream_with_retry(_Plain(), _spec(), stream)
-    assert response.content == "Whole reply arrives at once."
-    assert sentences == ["Whole reply arrives at once."]
-    assert stream.complete
 
 
 def test_stream_with_retry_falls_back_and_marks_the_stream_incomplete(load_engine: None) -> None:

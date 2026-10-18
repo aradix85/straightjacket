@@ -47,7 +47,7 @@ class SentenceStream:
     def fail(self) -> None:
         self.failed = True
 
-    def _boundary(self, limit: int | None = None) -> int | None:
+    def _boundary(self, limit: int | None) -> int | None:
         parser = eng().parser
         for match in re.finditer(parser.stream_sentence_boundary, self._pending):
             if limit is not None and match.end() > limit:

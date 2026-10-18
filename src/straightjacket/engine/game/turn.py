@@ -31,7 +31,6 @@ from ..mechanics.scene import check_scene
 from ..mechanics.threats import advance_threat_by_id
 from ..models import (
     BrainResult,
-    EngineConfig,
     GameState,
     PlaceRecord,
     ProgressTrack,
@@ -61,7 +60,6 @@ def process_turn(
     provider: AIProvider,
     game: GameState,
     player_message: str,
-    config: EngineConfig | None = None,
     stream: NarrationSink | None = None,
 ) -> tuple[GameState, str, RollResult | None, BurnOffer | None, DirectorCall | None]:
     if game.game_over:
@@ -82,7 +80,6 @@ def process_turn(
         provider,
         game,
         player_message,
-        config,
         scene_setup,
         stream,
         earlier=None,
@@ -97,7 +94,6 @@ def replay_turn(
     provider: AIProvider,
     game: GameState,
     player_message: str,
-    config: EngineConfig | None,
     narrator_note: str,
 ) -> tuple[str, BurnOffer | None, DirectorCall | None]:
     snap = game.last_turn_snapshot
@@ -117,7 +113,6 @@ def replay_turn(
         provider,
         game,
         player_message,
-        config,
         scene_setup,
         None,
         earlier=earlier,
@@ -132,7 +127,6 @@ def _play_turn(
     provider: AIProvider,
     game: GameState,
     player_message: str,
-    config: EngineConfig | None,
     scene_setup: SceneSetup,
     stream: NarrationSink | None,
     *,
@@ -141,7 +135,7 @@ def _play_turn(
     narrator_note: str,
     label: str,
 ) -> tuple[str, RollResult | None, BurnOffer | None, DirectorCall | None]:
-    brain = _run_brain_phase(provider, game, player_message, config)
+    brain = _run_brain_phase(provider, game, player_message)
     _sanitize_brain_output(game, brain)
     moved = _apply_brain_state_mutations(game, brain)
     generate_place_on_arrival(game, brain, moved, earlier_places)
@@ -154,7 +148,6 @@ def _play_turn(
         provider,
         game,
         brain,
-        config,
         player_message,
         scene_setup,
         pending_random_events,
@@ -202,10 +195,8 @@ def _begin_turn(game: GameState, player_message: str) -> None:
     purge_old_fired_clocks(game)
 
 
-def _run_brain_phase(
-    provider: AIProvider, game: GameState, player_message: str, config: EngineConfig | None
-) -> BrainResult:
-    brain = call_brain(provider, game, player_message, config)
+def _run_brain_phase(provider: AIProvider, game: GameState, player_message: str) -> BrainResult:
+    brain = call_brain(provider, game, player_message)
     _snapshot_of_turn(game).brain = brain
     return brain
 
@@ -237,7 +228,6 @@ def build_scene_context(
     provider: AIProvider,
     game: GameState,
     brain: BrainResult,
-    config: EngineConfig | None,
     player_message: str,
     scene_setup: SceneSetup,
     pending_random_events: list[RandomEvent],
@@ -255,7 +245,6 @@ def build_scene_context(
         provider=provider,
         game=game,
         brain=brain,
-        config=config,
         player_message=player_message,
         scene_setup=scene_setup,
         scene_present_ids=scene_present_ids,
@@ -302,7 +291,6 @@ def _process_dialog_turn(ctx: SceneContext) -> tuple[str, DirectorCall | None]:
         ctx.provider,
         game,
         prompt,
-        config=ctx.config,
         stream=ctx.stream,
     )
 
@@ -506,7 +494,6 @@ def _narrate_action_and_finalize(
         ctx.provider,
         game,
         prompt,
-        config=ctx.config,
         stream=ctx.stream,
     )
 

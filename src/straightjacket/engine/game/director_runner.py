@@ -5,5 +5,5 @@ from .turn_types import DirectorCall
 
 
 def run_deferred_director(provider: AIProvider, game: GameState, director_call: DirectorCall) -> None:
-    guidance = call_director(provider, game, director_call.narration, director_call.config)
+    guidance = call_director(provider, game, director_call.narration)
     apply_director_guidance(game, guidance)

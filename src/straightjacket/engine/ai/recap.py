@@ -1,20 +1,18 @@
-from ..config_loader import model_for_role, sampling_params
+from ..config_loader import model_for_role, narration_language, sampling_params
 from ..engine_loader import eng
 from ..logging_util import log
-from ..models import EngineConfig, GameState
+from ..models import GameState
 from ..npc import get_npc_bond
 from ..prompt_blocks import (
     content_boundaries_block,
-    get_narration_lang,
 )
 from ..prompt_loader import get_prompt
 from ..story_state import get_current_act
 from .provider_base import AICallSpec, AIProvider, create_with_retry
 
 
-def call_recap(provider: AIProvider, game: GameState, config: EngineConfig | None = None) -> str:
-    _cfg = config or EngineConfig()
-    lang = get_narration_lang(_cfg)
+def call_recap(provider: AIProvider, game: GameState) -> str:
+    lang = narration_language()
     _e = eng()
     _defaults = _e.ai_text.narrator_defaults
     _limits = _e.recap_limits

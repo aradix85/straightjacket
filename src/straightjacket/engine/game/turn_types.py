@@ -7,7 +7,6 @@ from ..models import ClockFillResult
 from ..models import (
     BrainResult,
     ClockEvent,
-    EngineConfig,
     GameState,
     NpcData,
     ProgressTrack,
@@ -25,7 +24,6 @@ class SceneContext:
     provider: AIProvider
     game: GameState
     brain: BrainResult
-    config: EngineConfig | None
     player_message: str
     scene_setup: SceneSetup
     scene_present_ids: set[str]
@@ -43,7 +41,6 @@ class SceneContext:
 @dataclass
 class DirectorCall:
     narration: str
-    config: EngineConfig | None
 
 
 @dataclass

@@ -507,7 +507,7 @@ def test_run_deferred_director_applies_guidance(stub_all: None) -> None:
     run_deferred_director(
         provider,
         game,
-        DirectorCall(narration="Text.", config=None),
+        DirectorCall(narration="Text."),
     )
     assert game.narrative.director_guidance.narrator_guidance == "Build tension."
 
@@ -521,5 +521,5 @@ def test_run_deferred_director_survives_api_error(stub_all: None) -> None:
     run_deferred_director(
         provider,
         game,
-        DirectorCall(narration="text", config=None),
+        DirectorCall(narration="text"),
     )

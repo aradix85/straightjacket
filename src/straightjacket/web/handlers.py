@@ -160,9 +160,7 @@ async def handle_start_game(session: Session, ws: WebSocket, msg: dict[str, Any]
         await _send(ws, {"type": "status", "text": t("creation.world_awakens")})
 
         provider = get_provider()
-        game, narration = await asyncio.to_thread(
-            start_new_game, provider, creation_data, session.config, session.player
-        )
+        game, narration = await asyncio.to_thread(start_new_game, provider, creation_data, session.player)
 
         session.game = game
         session.chat_messages = [{"role": "assistant", "content": narration}]
@@ -230,7 +228,7 @@ async def handle_player_input(session: Session, ws: WebSocket, msg: dict[str, An
         before, last_before = session.game.snapshot(), copy.deepcopy(session.game.last_turn_snapshot)
         try:
             game, narration, _roll, burn_offer, director_ctx = await asyncio.to_thread(
-                process_turn, provider, session.game, text, session.config, stream
+                process_turn, provider, session.game, text, stream
             )
         except Exception as e:
             _restore_after_failed_turn(session.game, before, last_before)
@@ -323,7 +321,7 @@ async def handle_correction(session: Session, ws: WebSocket, msg: dict[str, Any]
         before, last_before = session.game.snapshot(), copy.deepcopy(session.game.last_turn_snapshot)
         try:
             game, narration, burn_offer, director_ctx = await asyncio.to_thread(
-                process_correction, provider, session.game, text, session.config
+                process_correction, provider, session.game, text
             )
         except Exception as e:
             _restore_after_failed_turn(session.game, before, last_before)
@@ -370,9 +368,7 @@ async def handle_burn_momentum(session: Session, ws: WebSocket, msg: dict[str, A
         provider = get_provider()
         before, last_before = session.game.snapshot(), copy.deepcopy(session.game.last_turn_snapshot)
         try:
-            game, narration, director_ctx = await asyncio.to_thread(
-                process_momentum_burn, provider, session.game, burn, session.config
-            )
+            game, narration, director_ctx = await asyncio.to_thread(process_momentum_burn, provider, session.game, burn)
         except Exception as e:
             _restore_after_failed_turn(session.game, before, last_before)
             log(f"[Web] momentum burn not applied: {type(e).__name__}: {e}", level="error")
@@ -475,7 +471,7 @@ async def handle_recap(session: Session, ws: WebSocket, _msg: dict[str, Any]) ->
     try:
         await _send(ws, {"type": "status", "text": t("actions.recap_loading")})
         provider = get_provider()
-        recap_text = await asyncio.to_thread(call_recap, provider, session.game, session.config)
+        recap_text = await asyncio.to_thread(call_recap, provider, session.game)
         await _send(ws, {"type": "recap", "text": recap_text})
     except Exception as e:
         await _send(ws, {"type": "error", "text": _error_text(e)})
@@ -539,7 +535,7 @@ async def handle_generate_epilogue(session: Session, ws: WebSocket, _msg: dict[s
     try:
         await _send(ws, {"type": "status", "text": t("epilogue.generating")})
         provider = get_provider()
-        game, epilogue = await asyncio.to_thread(generate_epilogue, provider, session.game, session.config)
+        game, epilogue = await asyncio.to_thread(generate_epilogue, provider, session.game)
         session.game = game
         session.append_chat("assistant", epilogue, epilogue=True)
         save_game(game, session.player, session.chat_messages, session.save_name)
@@ -567,7 +563,7 @@ async def handle_new_chapter(session: Session, ws: WebSocket, _msg: dict[str, An
         await _send(ws, {"type": "status", "text": t("epilogue.chapter_msg", n=ch_num + 1)})
 
         provider = get_provider()
-        game, narration = await asyncio.to_thread(start_new_chapter, provider, game, session.config, session.player)
+        game, narration = await asyncio.to_thread(start_new_chapter, provider, game, session.player)
         session.game = game
         session.chat_messages = [{"role": "assistant", "content": narration}]
         save_game(game, session.player, session.chat_messages, session.save_name)
@@ -629,7 +625,7 @@ async def handle_start_succession(session: Session, ws: WebSocket, msg: dict[str
         await _send(ws, {"type": "status", "text": t("succession.starting")})
         provider = get_provider()
         game, narration = await asyncio.to_thread(
-            start_succession_with_character, provider, session.game, creation_data, session.config
+            start_succession_with_character, provider, session.game, creation_data
         )
         session.game = game
         session.chat_messages = [{"role": "assistant", "content": narration}]

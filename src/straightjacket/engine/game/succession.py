@@ -29,7 +29,6 @@ from ..mechanics.adventure_crafter import (
 )
 from ..models import (
     DirectorGuidance,
-    EngineConfig,
     GameState,
     NarrationEntry,
     PredecessorRecord,
@@ -214,7 +213,6 @@ def start_succession_with_character(
     provider: AIProvider,
     game: GameState,
     creation_data: dict[str, Any],
-    config: EngineConfig | None = None,
 ) -> tuple[GameState, str]:
     if not game.campaign.pending_succession:
         raise ValueError(
@@ -253,7 +251,7 @@ def start_succession_with_character(
 
     _prepare_npcs_for_new_chapter(game)
 
-    narration = _generate_succession_opening(provider, game, config)
+    narration = _generate_succession_opening(provider, game)
 
     _record_succession_opening(game, narration, record)
 
@@ -265,7 +263,7 @@ def start_succession_with_character(
     return game, narration
 
 
-def _generate_succession_opening(provider: AIProvider, game: GameState, config: EngineConfig | None) -> str:
+def _generate_succession_opening(provider: AIProvider, game: GameState) -> str:
     structure = choose_story_structure(game.setting_tone)
     rng = _random_module.Random()
     if structure == "kishotenketsu":
@@ -277,10 +275,10 @@ def _generate_succession_opening(provider: AIProvider, game: GameState, config: 
     narrator_prompt = build_new_game_prompt(game)
 
     def _run_narrator() -> str:
-        return call_narrator(provider, narrator_prompt, game, config)
+        return call_narrator(provider, narrator_prompt, game)
 
     def _run_voicing() -> dict[str, Any] | None:
-        return call_blueprint_voicing(provider, game, seed, config)
+        return call_blueprint_voicing(provider, game, seed)
 
     with ThreadPoolExecutor(max_workers=2) as pool:
         fut_narrator = pool.submit(_run_narrator)
@@ -293,7 +291,7 @@ def _generate_succession_opening(provider: AIProvider, game: GameState, config: 
     _apply_blueprint(game, seed, voicing)
 
     if not [n for n in game.npcs if n.introduced]:
-        setup_data = call_opening_setup(provider, narration, game, config)
+        setup_data = call_opening_setup(provider, narration, game)
         apply_opening_setup(game, setup_data, returning_npcs=list(game.npcs), label="SuccessionSetup")
         if setup_data["deceased_npcs"]:
             process_deceased_npcs(game, setup_data["deceased_npcs"])

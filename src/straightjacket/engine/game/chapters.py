@@ -26,7 +26,6 @@ from ..mechanics.adventure_crafter import (
 from ..models import (
     ChapterSummary,
     DirectorGuidance,
-    EngineConfig,
     GameState,
     NarrationEntry,
     NpcData,
@@ -45,14 +44,12 @@ from ..user_management import load_user_config, save_user_config
 from .setup_common import apply_opening_setup
 
 
-def generate_epilogue(
-    provider: AIProvider, game: GameState, config: EngineConfig | None = None
-) -> tuple[GameState, str]:
+def generate_epilogue(provider: AIProvider, game: GameState) -> tuple[GameState, str]:
     log(
         f"[Epilogue] Generating epilogue for {game.player_name} (chapter {game.campaign.chapter_number}, scene {game.narrative.scene_count})"
     )
 
-    raw = call_narrator(provider, build_epilogue_prompt(game), game, config)
+    raw = call_narrator(provider, build_epilogue_prompt(game), game)
     narration = parse_narrator_response(game, raw)
 
     narration = re.sub(eng().parser.epilogue_heading, "", narration, count=1, flags=re.IGNORECASE).strip()
@@ -63,9 +60,7 @@ def generate_epilogue(
     return game, narration
 
 
-def start_new_chapter(
-    provider: AIProvider, game: GameState, config: EngineConfig | None = None, username: str = ""
-) -> tuple[GameState, str]:
+def start_new_chapter(provider: AIProvider, game: GameState, username: str = "") -> tuple[GameState, str]:
     if game.game_over:
         raise RuntimeError(
             "start_new_chapter called on a game with game_over=True; a game that is over continues through succession."
@@ -88,7 +83,7 @@ def start_new_chapter(
     returning = eng().npc_status_groups.chapter_returning
     returning_npcs = [copy.deepcopy(n) for n in game.npcs if n.status in returning]
 
-    narration, setup_data = _generate_chapter_opening(provider, game, config, returning_npcs)
+    narration, setup_data = _generate_chapter_opening(provider, game, returning_npcs)
 
     _merge_returning_npcs(game, returning_npcs)
 
@@ -214,7 +209,7 @@ def _prepare_npcs_for_new_chapter(game: GameState) -> None:
 
 
 def _generate_chapter_opening(
-    provider: AIProvider, game: GameState, config: EngineConfig | None, returning_npcs: list[NpcData]
+    provider: AIProvider, game: GameState, returning_npcs: list[NpcData]
 ) -> tuple[str, dict[str, Any] | None]:
     structure = choose_story_structure(game.setting_tone)
     rng = _random_module.Random()
@@ -230,8 +225,8 @@ def _generate_chapter_opening(
     voicing_game = copy.copy(game)
 
     with ThreadPoolExecutor(max_workers=2) as pool:
-        fut_narrator = pool.submit(call_narrator, provider, chapter_prompt, game, config)
-        fut_voicing = pool.submit(call_blueprint_voicing, provider, voicing_game, seed, config)
+        fut_narrator = pool.submit(call_narrator, provider, chapter_prompt, game)
+        fut_voicing = pool.submit(call_blueprint_voicing, provider, voicing_game, seed)
         raw = fut_narrator.result()
         voicing = fut_voicing.result()
 
@@ -244,7 +239,7 @@ def _generate_chapter_opening(
     if new_parser_npcs:
         log(f"[Campaign] New NPCs already extracted by parser ({len(new_parser_npcs)}), skipping opening_setup call")
         return narration, None
-    setup_data = call_opening_setup(provider, narration, game, config)
+    setup_data = call_opening_setup(provider, narration, game)
     apply_opening_setup(game, setup_data, returning_npcs=returning_npcs, label="ChapterSetup")
     return narration, setup_data
 

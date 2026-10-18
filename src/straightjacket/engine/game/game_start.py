@@ -26,7 +26,6 @@ from ..mechanics.spawn_sources import SETUP_SOURCE
 from ..models import (
     CharacterListEntry,
     ClockData,
-    EngineConfig,
     GameState,
     NarrationEntry,
     ProgressTrack,
@@ -162,9 +161,7 @@ def _seed_vow_subject(game: GameState, vow_subject: str) -> None:
     log(f"[NewGame] Vow subject seeded in characters list: {vow_subject}")
 
 
-def start_new_game(
-    provider: AIProvider, creation_data: dict[str, Any], config: EngineConfig | None = None, username: str = ""
-) -> tuple[GameState, str]:
+def start_new_game(provider: AIProvider, creation_data: dict[str, Any], username: str = "") -> tuple[GameState, str]:
     setting_id = creation_data["setting_id"]
     stats = creation_data["stats"]
     player_name = creation_data["player_name"]
@@ -261,10 +258,10 @@ def start_new_game(
     narrator_prompt = build_new_game_prompt(game)
 
     def _run_narrator() -> str:
-        return call_narrator(provider, narrator_prompt, game, config)
+        return call_narrator(provider, narrator_prompt, game)
 
     def _run_voicing() -> dict[str, Any] | None:
-        return call_blueprint_voicing(provider, game, seed, config)
+        return call_blueprint_voicing(provider, game, seed)
 
     with ThreadPoolExecutor(max_workers=2) as pool:
         fut_narrator = pool.submit(_run_narrator)
@@ -279,7 +276,7 @@ def start_new_game(
     else:
         game.narrative.story_blueprint = None
 
-    setup_data = call_opening_setup(provider, narration, game, config)
+    setup_data = call_opening_setup(provider, narration, game)
     apply_opening_setup(game, setup_data, label="OpeningSetup")
 
     for npc in game.npcs:

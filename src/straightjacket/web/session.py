@@ -7,7 +7,7 @@ from starlette.websockets import WebSocket
 
 from ..engine.engine_loader import eng
 from ..engine.game import BurnOffer
-from ..engine.models import EngineConfig, GameState
+from ..engine.models import GameState
 
 
 def _default_save_name() -> str:
@@ -19,7 +19,6 @@ class Session:
     player: str = ""
     game: GameState | None = None
     chat_messages: list[dict[str, Any]] = field(default_factory=list)
-    config: EngineConfig = field(default_factory=EngineConfig)
     save_name: str = field(default_factory=_default_save_name)
     processing: bool = False
     active_ws: WebSocket | None = field(default=None, repr=False)

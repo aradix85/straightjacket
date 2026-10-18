@@ -24,9 +24,11 @@ _lm.get_logger = lambda component: type(
 sys.modules["straightjacket.engine.logging_util"] = _lm
 
 
-from straightjacket.engine.ai.provider_base import set_backoff_sleep
+@pytest.fixture(autouse=True)
+def _no_backoff_wait(monkeypatch: pytest.MonkeyPatch) -> None:
+    from straightjacket.engine.ai import provider_base
 
-set_backoff_sleep(lambda _: None)
+    monkeypatch.setattr(provider_base, "_time", types.SimpleNamespace(sleep=lambda _: None))
 
 
 @pytest.fixture(autouse=True)

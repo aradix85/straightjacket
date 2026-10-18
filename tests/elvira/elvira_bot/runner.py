@@ -19,10 +19,10 @@ from straightjacket.engine.ai.api_client import check_configured_models, get_pro
 from straightjacket.engine.ai.provider_base import AIUnavailableError, drain_token_log
 from straightjacket.engine.ai.sentence_stream import SentenceStream
 from straightjacket.engine.db.sync import sync as db_sync
-from straightjacket.engine.models import EngineConfig, GameState, TurnSnapshot
+from straightjacket.engine.models import GameState, TurnSnapshot
 from straightjacket.engine.persistence import delete_save, load_game, save_game
 from straightjacket.engine.user_management import create_user
-from straightjacket.engine.config_loader import VERSION, model_for_role, provider_for_role
+from straightjacket.engine.config_loader import VERSION, model_for_role, narration_language, provider_for_role
 from straightjacket.engine.correction import process_correction
 from straightjacket.engine.datasworn.settings import list_packages, load_package
 from straightjacket.engine.game import (
@@ -97,7 +97,6 @@ def run_session(bot_cfg: dict, auto_override: bool = False, turns_override: int 
 
     max_chapters = session_cfg["max_chapters"]
     max_turns = turns_override or session_cfg["max_turns"]
-    narration_lang = session_cfg["narration_lang"]
     save_every = session_cfg["save_every_n_turns"]
     save_out = session_cfg["save_name_output"]
     clean_before = session_cfg["clean_before_run"]
@@ -124,7 +123,6 @@ def run_session(bot_cfg: dict, auto_override: bool = False, turns_override: int 
     check_configured_models()
     configure_bot(bot_cfg["ai"])
     provider = get_provider()
-    config = EngineConfig(narration_lang=narration_lang)
     create_user(username)
 
     if clean_before and not game_cfg["load_existing"] and delete_save(username, save_out):
@@ -142,7 +140,7 @@ def run_session(bot_cfg: dict, auto_override: bool = False, turns_override: int 
     print(f"  Straightjacket — Elvira Test Bot — {setting_id}, {style}")
     print(
         f"  Auto: {'YES' if auto_mode else 'NO'} | Turns/ch: {max_turns} | "
-        f"Chapters: {max_chapters} | Lang: {narration_lang}"
+        f"Chapters: {max_chapters} | Lang: {narration_language()}"
     )
     roles = ", ".join(_role_label(role) for role in ("narrator", "brain", "director"))
     print(f"  Engine: v{VERSION} | {roles}")
@@ -151,7 +149,7 @@ def run_session(bot_cfg: dict, auto_override: bool = False, turns_override: int 
     )
     print(SEPARATOR)
 
-    game, narration, chat_messages = _setup_game(provider, config, username, game_cfg, auto_mode, slog)
+    game, narration, chat_messages = _setup_game(provider, username, game_cfg, auto_mode, slog)
 
     _log_story_blueprint(game, slog)
     _apply_scenario(game, scenario_name, scenario, slog)
@@ -188,12 +186,11 @@ def run_session(bot_cfg: dict, auto_override: bool = False, turns_override: int 
 
             if is_correction_turn:
                 game, narration, turn_rec, session_ended = _play_correction_turn(
-                    provider, config, game, narration, total_turns, persona, slog
+                    provider, game, narration, total_turns, persona, slog
                 )
             else:
                 game, narration, turn_rec, session_ended = _play_turn(
                     provider,
-                    config,
                     game,
                     narration,
                     total_turns,
@@ -232,7 +229,7 @@ def run_session(bot_cfg: dict, auto_override: bool = False, turns_override: int 
                 _save_and_verify(game, username, chat_messages, save_out, slog, coverage)
 
             if game.game_over and not session_ended and succession_enabled and not slog.succession:
-                game, succession_narration = _play_succession(provider, config, game, game_cfg, slog, coverage)
+                game, succession_narration = _play_succession(provider, game, game_cfg, slog, coverage)
                 if "error" not in slog.succession:
                     narration = succession_narration
                     chat_messages.append({"role": "assistant", "content": narration})
@@ -272,7 +269,7 @@ def run_session(bot_cfg: dict, auto_override: bool = False, turns_override: int 
             ]
 
             game, narration, chat_messages, should_break = _chapter_transition(
-                provider, config, game, chat_messages, username, save_out, chapter_num, chapter_idx, max_chapters, slog
+                provider, game, chat_messages, username, save_out, chapter_num, chapter_idx, max_chapters, slog
             )
 
             if not should_break and pre_chapter_npcs:
@@ -328,7 +325,7 @@ def run_session(bot_cfg: dict, auto_override: bool = False, turns_override: int 
 
 
 def _setup_game(
-    provider: AIProvider, config: EngineConfig, username: str, game_cfg: dict, auto_mode: bool, slog: SessionLog
+    provider: AIProvider, username: str, game_cfg: dict, auto_mode: bool, slog: SessionLog
 ) -> tuple[GameState, str, list[dict]]:
     if not auto_mode and game_cfg["load_existing"]:
         save_name = game_cfg["save_name"]
@@ -348,7 +345,7 @@ def _setup_game(
     creation_data = roll_character(game_cfg["setting_id"], game_cfg)
 
     try:
-        game, narration = start_new_game(provider, creation_data, config, username)
+        game, narration = start_new_game(provider, creation_data, username)
     except Exception as e:
         print(f"[ERROR] start_new_game failed: {e}")
         traceback.print_exc()
@@ -360,7 +357,6 @@ def _setup_game(
 
 def _play_turn(
     provider: AIProvider,
-    config: EngineConfig,
     game: GameState,
     narration: str,
     turn: int,
@@ -406,7 +402,7 @@ def _play_turn(
     snapshot, last_snapshot, before_state = game.snapshot(), game.last_turn_snapshot, game.to_dict()
     turn_provider = NarratorOutage(provider) if inject_failure else provider
     try:
-        game, narration, roll, burn_offer, director_ctx = process_turn(turn_provider, game, action, config, stream)
+        game, narration, roll, burn_offer, director_ctx = process_turn(turn_provider, game, action, stream)
     except AIUnavailableError as e:
         _restore(game, snapshot, last_snapshot)
         rec = TurnRecord(turn=turn, chapter=game.campaign.chapter_number, action=action, rolled_back=True)
@@ -437,7 +433,7 @@ def _play_turn(
 
     if burn_offer:
         narration, director_ctx = _handle_burn(
-            provider, config, game, burn_offer, narration, director_ctx, burn_setting, style, rec, turn, slog
+            provider, game, burn_offer, narration, director_ctx, burn_setting, style, rec, turn, slog
         )
         if rec.burn_taken and not rec.burn_error:
             result = burn_offer.new_result
@@ -630,13 +626,13 @@ def _save_and_verify(
 
 
 def _play_succession(
-    provider: AIProvider, config: EngineConfig, game: GameState, game_cfg: dict, slog: SessionLog, coverage: Coverage
+    provider: AIProvider, game: GameState, game_cfg: dict, slog: SessionLog, coverage: Coverage
 ) -> tuple[GameState, str]:
     coverage.hit("game_over")
     try:
         prepare_succession(game, determine_end_reason(game))
         creation_data = roll_character(game.setting_id, game_cfg)
-        game, narration = start_succession_with_character(provider, game, creation_data, config)
+        game, narration = start_succession_with_character(provider, game, creation_data)
     except Exception as e:
         slog.succession = {"error": f"{type(e).__name__}: {e}"[:300]}
         print(f"  [SUCCESSION] Failed: {e}")
@@ -649,7 +645,6 @@ def _play_succession(
 
 def _play_correction_turn(
     provider: AIProvider,
-    config: EngineConfig,
     game: GameState,
     narration: str,
     turn: int,
@@ -670,7 +665,7 @@ def _play_correction_turn(
     before = copy.deepcopy(game)
     try:
         game, new_narration, _burn_offer, director_ctx = process_correction(
-            provider, game, correction_text.lstrip("# ").strip(), config
+            provider, game, correction_text.lstrip("# ").strip()
         )
     except Exception as e:
         print(f"  [CORRECTION] Failed: {e}")
@@ -735,7 +730,6 @@ def _play_correction_turn(
 
 def _handle_burn(
     provider: AIProvider,
-    config: EngineConfig,
     game: GameState,
     offer: BurnOffer,
     narration: str,
@@ -766,7 +760,7 @@ def _handle_burn(
         before = copy.deepcopy(game)
         snapshot, last_snapshot = game.snapshot(), copy.deepcopy(game.last_turn_snapshot)
         try:
-            _game, narration, director_ctx = process_momentum_burn(provider, game, offer, config)
+            _game, narration, director_ctx = process_momentum_burn(provider, game, offer)
             print(f"  [BURN] Re-narrated: {narration.replace(chr(10), ' ')[:180]}...")
         except Exception as e:
             _restore(game, snapshot, last_snapshot)
@@ -789,7 +783,6 @@ def _handle_burn(
 
 def _chapter_transition(
     provider: AIProvider,
-    config: EngineConfig,
     game: GameState,
     chat_messages: list[dict],
     username: str,
@@ -801,7 +794,7 @@ def _chapter_transition(
 ) -> tuple[GameState, str, list[dict], bool]:
     print(f"\n{SEPARATOR}\n  GENERATING EPILOGUE — Chapter {chapter_num}\n{SEPARATOR}")
     try:
-        game, epilogue = generate_epilogue(provider, game, config)
+        game, epilogue = generate_epilogue(provider, game)
         chat_messages.append({"role": "assistant", "content": epilogue, "epilogue": True})
         print_narration(epilogue, full=True)
     except Exception as e:
@@ -820,7 +813,7 @@ def _chapter_transition(
 
     print(f"\n{SEPARATOR}\n  STARTING CHAPTER {chapter_num + 1}\n{SEPARATOR}")
     try:
-        game, narration = start_new_chapter(provider, game, config, username)
+        game, narration = start_new_chapter(provider, game, username)
         chat_messages = [{"role": "assistant", "content": narration}]
         print(f"  [CHAPTER] Chapter {game.campaign.chapter_number} at {game.world.current_location}")
         return game, narration, chat_messages, False

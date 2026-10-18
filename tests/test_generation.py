@@ -6,7 +6,7 @@ from straightjacket.engine.datasworn.loader import Setting
 from straightjacket.engine.engine_loader import eng
 from tests.test_correction_replay import _Provider as _ReplayProvider
 from tests._creation import force_miss
-from tests.test_momentum_burn import _CONFIG, _brain, _game, _Provider
+from tests.test_momentum_burn import _brain, _game, _Provider
 
 
 @pytest.fixture
@@ -133,7 +133,7 @@ def test_a_move_to_an_unknown_place_generates_it(load_engine: None, stub_emotion
     from straightjacket.engine.game import process_turn
 
     provider = _Provider(_brain(location_change={"name": "Archive Vault", "kind": "settlement"}))
-    game, _n, _r, _o, _d = process_turn(provider, _game(), "I slip past Mira into the archive vault", _CONFIG)
+    game, _n, _r, _o, _d = process_turn(provider, _game(), "I slip past Mira into the archive vault")
 
     [place] = game.world.places
     assert place.name == "Archive Vault"
@@ -149,7 +149,7 @@ def test_a_place_already_seen_is_not_generated(load_engine: None, stub_emotions:
     game = _game()
     game.world.location_history = ["Archive Vault"]
     provider = _Provider(_brain())
-    game, _n, _r, _o, _d = process_turn(provider, game, "I go back to the vault", _CONFIG)
+    game, _n, _r, _o, _d = process_turn(provider, game, "I go back to the vault")
 
     assert game.world.current_location == "Archive Vault"
     assert game.world.places == []
@@ -160,7 +160,7 @@ def test_staying_put_generates_nothing(load_engine: None, stub_emotions: None, m
     from straightjacket.engine.game import process_turn
 
     provider = _Provider(_brain(location_change=None))
-    game, _n, _r, _o, _d = process_turn(provider, _game(), "I search the shelves", _CONFIG)
+    game, _n, _r, _o, _d = process_turn(provider, _game(), "I search the shelves")
     assert game.world.places == []
 
 
@@ -169,8 +169,8 @@ def test_a_misread_correction_keeps_the_generated_place(load_engine: None, stub_
     from straightjacket.engine.game import process_turn
 
     provider = _ReplayProvider(_brain(), _brain(stat="iron"))
-    game, _n, _r, _o, _d = process_turn(provider, _game(), "I slip into the vault", _CONFIG)
+    game, _n, _r, _o, _d = process_turn(provider, _game(), "I slip into the vault")
     before = [p.to_dict() for p in game.world.places]
-    game, _narration, _offer, _director = process_correction(provider, game, "I meant I use force", _CONFIG)
+    game, _narration, _offer, _director = process_correction(provider, game, "I meant I use force")
 
     assert [p.to_dict() for p in game.world.places] == before

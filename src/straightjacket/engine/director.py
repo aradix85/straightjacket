@@ -5,10 +5,10 @@ import re
 
 from .ai.provider_base import AICallSpec, AIProvider, create_with_retry
 from .ai.schemas import get_director_output_schema
-from .config_loader import model_for_role, sampling_params
+from .config_loader import model_for_role, narration_language, sampling_params
 from .engine_loader import eng
 from .logging_util import log
-from .models import DirectorGuidance, EngineConfig, GameState, MemoryEntry, NpcData
+from .models import DirectorGuidance, GameState, MemoryEntry, NpcData
 from .prompt_blocks import character_tag, content_boundaries_block, world_tag
 from .tools import execute_tool_call, get_tools
 from .xml_utils import xa as _xa
@@ -19,7 +19,6 @@ from .npc import (
     is_complete_description,
     resolve_about_npc,
 )
-from .prompt_blocks import get_narration_lang
 from .prompt_loader import get_prompt
 from .story_state import get_current_act, default_scene_range
 
@@ -149,9 +148,8 @@ def _build_story_arc_block(game: GameState) -> str:
     return info
 
 
-def build_director_prompt(game: GameState, latest_narration: str, config: EngineConfig | None = None) -> str:
-    _cfg = config or EngineConfig()
-    lang = get_narration_lang(_cfg)
+def build_director_prompt(game: GameState, latest_narration: str) -> str:
+    lang = narration_language()
 
     reflection_section = _collect_reflection_blocks(game)
     story_info = _build_story_arc_block(game)
@@ -166,12 +164,10 @@ def build_director_prompt(game: GameState, latest_narration: str, config: Engine
 {reflection_section}"""
 
 
-def call_director(
-    provider: AIProvider, game: GameState, latest_narration: str, config: EngineConfig | None = None
-) -> dict[str, Any]:
+def call_director(provider: AIProvider, game: GameState, latest_narration: str) -> dict[str, Any]:
     log(f"[Director] Analyzing scene {game.narrative.scene_count}")
 
-    prompt = build_director_prompt(game, latest_narration, config)
+    prompt = build_director_prompt(game, latest_narration)
     tools = get_tools("director")
     system = _director_system(game)
 

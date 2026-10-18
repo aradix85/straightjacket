@@ -400,7 +400,7 @@ def test_start_succession_without_pending_raises(aria: GameState) -> None:
             raise AssertionError("AI must not be invoked when pending_succession is False")
 
     with pytest.raises(ValueError, match="pending_succession"):
-        start_succession_with_character(_FailingProvider(), aria, {}, None)
+        start_succession_with_character(_FailingProvider(), aria, {})
 
 
 def test_start_succession_pending_without_predecessor_raises(aria: GameState) -> None:
@@ -412,7 +412,7 @@ def test_start_succession_pending_without_predecessor_raises(aria: GameState) ->
             raise AssertionError("AI must not be invoked when archive is empty")
 
     with pytest.raises(ValueError, match="predecessors"):
-        start_succession_with_character(_FailingProvider(), aria, {}, None)
+        start_succession_with_character(_FailingProvider(), aria, {})
 
 
 def test_succession_summary_when_no_pending() -> None:

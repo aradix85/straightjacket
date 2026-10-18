@@ -9,11 +9,6 @@ from .serialization import SerializableMixin, deserialize, serialize
 
 
 @dataclass
-class EngineConfig(SerializableMixin):
-    narration_lang: str = ""
-
-
-@dataclass
 class Resources(SerializableMixin):
     health: int
     spirit: int

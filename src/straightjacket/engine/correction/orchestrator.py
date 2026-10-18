@@ -18,7 +18,6 @@ from ..mechanics import (
 )
 from ..models import (
     BrainResult,
-    EngineConfig,
     GameState,
     NarrationEntry,
     ResolvedFact,
@@ -114,7 +113,6 @@ def _maybe_queue_director(
     roll: RollResult | None,
     narration: str,
     metadata: dict[str, Any],
-    _cfg: EngineConfig,
 ) -> DirectorCall | None:
     if not analysis["director_useful"]:
         return None
@@ -131,20 +129,18 @@ def _maybe_queue_director(
     bp = game.narrative.story_blueprint
     if director_reason.startswith("phase:") and bp is not None:
         bp.triggered_director_phases.append(director_reason[len("phase:") :])
-    return DirectorCall(narration=narration, config=_cfg)
+    return DirectorCall(narration=narration)
 
 
 def process_correction(
-    provider: AIProvider, game: GameState, correction_text: str, config: EngineConfig | None = None
+    provider: AIProvider, game: GameState, correction_text: str
 ) -> tuple[GameState, str, BurnOffer | None, DirectorCall | None]:
     snap = game.last_turn_snapshot
     if not snap:
         log("[Correction] No snapshot available — cannot correct", level="warning")
         return game, t("correction.no_snapshot"), None, None
 
-    _cfg = config or EngineConfig()
-
-    analysis = call_correction_brain(provider, game, correction_text, _cfg)
+    analysis = call_correction_brain(provider, game, correction_text)
     note = (
         f"<correction_context>{_xe(analysis['narrator_guidance'])}</correction_context>\n"
         f"{get_prompt('block_correction_instruction', role='narrator')}"
@@ -152,12 +148,12 @@ def process_correction(
 
     if analysis["correction_source"] == "input_misread":
         corrected_input = analysis["corrected_input"] or snap.player_input
-        narration, burn_offer, director_ctx = replay_turn(provider, game, corrected_input, _cfg, note)
+        narration, burn_offer, director_ctx = replay_turn(provider, game, corrected_input, note)
         log("[Correction] Complete: source=input_misread, turn replayed")
         return game, narration, burn_offer, director_ctx
 
     brain, roll, prompt, consequences, facts = _handle_state_error(game, snap, analysis)
-    narration = narrate_scene(provider, game, f"{prompt}\n{note}", config=_cfg)
+    narration = narrate_scene(provider, game, f"{prompt}\n{note}")
     snap.narration = narration
     snap.facts = list(facts)
 
@@ -171,14 +167,13 @@ def process_correction(
         roll,
         _scene_present_ids,
         [n.name for n in game.npcs if n.id in _scene_present_ids],
-        config=_cfg,
         consequences=consequences if roll else [],
     )
 
     intent = (brain.player_intent or snap.player_input)[: eng().truncations.log_medium]
     _update_state_error_logs(game, brain, roll, narration, intent)
 
-    director_ctx = _maybe_queue_director(game, analysis, roll, narration, metadata, _cfg)
+    director_ctx = _maybe_queue_director(game, analysis, roll, narration, metadata)
 
     log("[Correction] Complete: source=state_error, rewrite done")
     _db_sync(game)

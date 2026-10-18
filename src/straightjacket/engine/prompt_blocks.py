@@ -2,15 +2,11 @@ from .config_loader import narration_language
 from .datasworn.settings import active_package
 from .engine_loader import eng
 from .mechanics import get_pacing_hint
-from .models import EngineConfig, GameState
+from .models import GameState
 from .prompt_loader import get_prompt, get_prompt_prefix
 from .story_state import get_current_act, get_pending_revelations
 from .xml_utils import xa as _xa
 from .xml_utils import xe as _xe
-
-
-def get_narration_lang(config: EngineConfig) -> str:
-    return config.narration_lang or narration_language()
 
 
 def world_tag(game: GameState) -> str:
@@ -217,9 +213,9 @@ def campaign_history_block(game: GameState) -> str:
     )
 
 
-def get_narrator_system(config: EngineConfig, game: GameState) -> tuple[str, str]:
+def get_narrator_system(game: GameState) -> tuple[str, str]:
     variables = {
-        "lang": get_narration_lang(config),
+        "lang": narration_language(),
         "content_boundaries_block": content_boundaries_block(game),
         "backstory_block": backstory_block(game),
         "tone_authority_block": tone_authority_block(game),

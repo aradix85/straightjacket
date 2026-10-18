@@ -7,7 +7,7 @@ from typing import Any
 import pytest
 
 from straightjacket.engine.ai.provider_base import AICallSpec, AIResponse
-from straightjacket.engine.models import EngineConfig, GameState, RollResult, SceneSetup
+from straightjacket.engine.models import GameState, RollResult, SceneSetup
 
 OPENING_TEXT = "The opening scene settles around you."
 STAT_ORDER = ("edge", "heart", "iron", "shadow", "wits")
@@ -114,5 +114,5 @@ def create_game(
         "content_lines": "",
     }
     provider = OpeningProvider(npcs, location)
-    game, _narration = start_new_game(provider, creation, EngineConfig(narration_lang="English"))
+    game, _narration = start_new_game(provider, creation)
     return game

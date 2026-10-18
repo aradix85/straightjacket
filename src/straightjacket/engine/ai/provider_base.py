@@ -1,18 +1,10 @@
 import re
 import time as _time
 from dataclasses import dataclass, field, replace
-from typing import Any, Protocol, runtime_checkable
+from typing import Any, Protocol
 from collections.abc import Callable
 
 from ..logging_util import log
-
-
-_backoff_sleep: Callable[[float], Any] = _time.sleep
-
-
-def set_backoff_sleep(fn: Callable[[float], Any]) -> None:
-    global _backoff_sleep
-    _backoff_sleep = fn
 
 
 _token_log: list[dict[str, str | int]] = []
@@ -67,16 +59,11 @@ def normalize_stop_reason(raw: str, truncated_values: tuple[str, ...], tool_use_
 class AIProvider(Protocol):
     def create_message(self, spec: AICallSpec) -> AIResponse: ...
 
-
-@runtime_checkable
-class StreamingProvider(Protocol):
     def stream_message(self, spec: AICallSpec, on_text: Callable[[str], None]) -> AIResponse: ...
 
 
 class ModelListingProvider(AIProvider, Protocol):
     def list_models(self) -> list[str]: ...
-
-    def stream_message(self, spec: AICallSpec, on_text: Callable[[str], None]) -> AIResponse: ...
 
 
 class NarrationSink(Protocol):
@@ -156,7 +143,7 @@ def create_with_retry(provider: AIProvider, spec: AICallSpec) -> AIResponse:
         except Exception as e:
             _retry_cfg = _eng().retry
             status_code = getattr(e, "status_code", None)
-            is_connection_error = "connection" in type(e).__name__.lower() or "connect" in str(e).lower()
+            is_connection_error = any("Connection" in cls.__name__ for cls in type(e).__mro__)
             is_retryable_status = status_code in _retry_cfg.retryable_http_codes
             if attempt >= spec.max_retries or not (is_retryable_status or is_connection_error):
                 raise AIUnavailableError(f"{spec.log_role}: {type(e).__name__}: {e}") from e
@@ -168,7 +155,7 @@ def create_with_retry(provider: AIProvider, spec: AICallSpec) -> AIResponse:
             )
             error_desc = f"HTTP {status_code}" if status_code else str(e)[: _eng().truncations.log_medium]
             log(f"[AI] {error_desc}, retry {attempt + 1}/{spec.max_retries} in {wait}s", level="warning")
-            _backoff_sleep(wait)
+            _time.sleep(wait)
             attempt += 1
             continue
         result = post_process_response(response)
@@ -183,11 +170,6 @@ def create_with_retry(provider: AIProvider, spec: AICallSpec) -> AIResponse:
 
 
 def stream_with_retry(provider: AIProvider, spec: AICallSpec, sink: NarrationSink) -> AIResponse:
-    if not isinstance(provider, StreamingProvider):
-        response = create_with_retry(provider, spec)
-        sink.feed(response.content)
-        sink.finish()
-        return response
     try:
         response = provider.stream_message(spec, sink.feed)
     except Exception as e:

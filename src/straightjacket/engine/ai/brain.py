@@ -2,14 +2,13 @@ from typing import Any, NoReturn
 import html
 import json
 
-from ..config_loader import model_for_role, sampling_params
+from ..config_loader import model_for_role, narration_language, sampling_params
 from ..datasworn.moves import get_moves
 from ..engine_loader import eng
 from ..logging_util import log
-from ..models import BrainResult, EngineConfig, GameState, Revelation
+from ..models import BrainResult, GameState, Revelation
 from ..prompt_blocks import (
     content_boundaries_block,
-    get_narration_lang,
     world_tag,
 )
 from ..prompt_loader import get_prompt, get_prompt_prefix
@@ -150,11 +149,8 @@ def _ask_brain(provider: AIProvider, spec: AICallSpec) -> tuple[str, BrainResult
         raise AIUnavailableError(f"brain: {type(e).__name__}: {e}") from e
 
 
-def call_brain(
-    provider: AIProvider, game: GameState, player_message: str, config: EngineConfig | None = None
-) -> BrainResult:
-    _cfg = config or EngineConfig()
-    _brain_lang = get_narration_lang(_cfg)
+def call_brain(provider: AIProvider, game: GameState, player_message: str) -> BrainResult:
+    _brain_lang = narration_language()
 
     log(f"[Brain] Scene {game.narrative.scene_count + 1} | Input: {player_message[: eng().truncations.log_long]}")
 
@@ -244,11 +240,8 @@ time:{w.time_of_day or _ai_text["unknown_time"]}
     _refuse(f"move {result.move!r} rolls with {stats}, but stat is {result.stat!r} after asking again")
 
 
-def call_revelation_check(
-    provider: AIProvider, narration: str, revelation: Revelation, config: EngineConfig | None = None
-) -> bool:
-    _cfg = config or EngineConfig()
-    lang = get_narration_lang(_cfg)
+def call_revelation_check(provider: AIProvider, narration: str, revelation: Revelation) -> bool:
+    lang = narration_language()
     rev_content = revelation.content
     rev_weight = revelation.dramatic_weight
 

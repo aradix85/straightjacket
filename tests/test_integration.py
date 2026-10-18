@@ -2,6 +2,7 @@ from tests._helpers import make_brain_result, make_clock, make_memory, make_npc
 
 import sys
 import json
+from collections.abc import Callable
 
 from straightjacket.engine.ai.provider_base import AICallSpec, AIResponse
 
@@ -119,6 +120,11 @@ class MockProvider:
             usage={"input_tokens": 100, "output_tokens": 50},
         )
 
+    def stream_message(self, spec: AICallSpec, on_text: Callable[[str], None]) -> AIResponse:
+        response = self.create_message(spec)
+        on_text(response.content)
+        return response
+
 
 def _make_game():
     from tests._creation import create_game
@@ -152,7 +158,6 @@ def _make_game():
 
 def test_turn_action_produces_narration(load_engine: None) -> None:
     from straightjacket.engine.game.turn import process_turn
-    from straightjacket.engine.models import EngineConfig
 
     provider = MockProvider()
     game = _make_game()
@@ -162,7 +167,6 @@ def test_turn_action_produces_narration(load_engine: None) -> None:
         provider,
         game,
         "I search the room for clues",
-        config=EngineConfig(narration_lang="English"),
     )
 
     assert game.narrative.scene_count == initial_scene + 1
@@ -186,7 +190,6 @@ def test_turn_action_produces_narration(load_engine: None) -> None:
 
 def test_a_turn_ends_the_act_at_its_last_scene_without_the_director(load_engine: None) -> None:
     from straightjacket.engine.game.turn import process_turn
-    from straightjacket.engine.models import EngineConfig
     from straightjacket.engine.models_story import StoryAct
     from straightjacket.engine.story_state import get_current_act
     from tests._helpers import make_blueprint
@@ -208,7 +211,7 @@ def test_a_turn_ends_the_act_at_its_last_scene_without_the_director(load_engine:
     )
 
     game, _narration, _roll, _burn_info, _director_ctx = process_turn(
-        MockProvider(), game, "I search the room for clues", config=EngineConfig(narration_lang="English")
+        MockProvider(), game, "I search the room for clues"
     )
 
     assert game.narrative.scene_count == 2
@@ -219,7 +222,6 @@ def test_a_turn_ends_the_act_at_its_last_scene_without_the_director(load_engine:
 
 def test_turn_dialog_skips_roll(load_engine: None) -> None:
     from straightjacket.engine.game.turn import process_turn
-    from straightjacket.engine.models import EngineConfig
 
     provider = MockProvider()
 
@@ -263,7 +265,6 @@ def test_turn_dialog_skips_roll(load_engine: None) -> None:
         provider,
         game,
         "I talk to Mira",
-        config=EngineConfig(narration_lang="English"),
     )
 
     assert roll is None
@@ -353,12 +354,11 @@ def test_action_prompt_contains_result_and_position(stub_engine: None) -> None:
 
 def test_narrator_system_prompt_includes_constraints(stub_engine: None) -> None:
     from straightjacket.engine.prompt_blocks import get_narrator_system
-    from straightjacket.engine.models import EngineConfig
 
     game = _make_game()
     game.preferences.content_lines = "no spiders"
 
-    system, cached_prefix = get_narrator_system(EngineConfig(narration_lang="English"), game)
+    system, cached_prefix = get_narrator_system(game)
 
     assert "<world>" in system
     assert "<player>" in system
@@ -370,7 +370,6 @@ def test_narrator_system_prompt_includes_constraints(stub_engine: None) -> None:
 
 def test_correction_brain_parses_response(stub_engine: None) -> None:
     from straightjacket.engine.correction import call_correction_brain
-    from straightjacket.engine.models import EngineConfig
 
     provider = MockProvider()
     game = _make_game()
@@ -387,7 +386,6 @@ def test_correction_brain_parses_response(stub_engine: None) -> None:
         provider,
         game,
         "I didn't want to attack, just talk",
-        config=EngineConfig(narration_lang="English"),
     )
 
     assert "correction_source" in result
@@ -711,7 +709,6 @@ if __name__ == "__main__":
 def test_dialog_turn_runs_npc_agency_on_interval_scene(load_engine: None) -> None:
     from straightjacket.engine.engine_loader import eng
     from straightjacket.engine.game.turn import process_turn
-    from straightjacket.engine.models import EngineConfig
 
     provider = MockProvider()
     original_create = provider.create_message
@@ -750,7 +747,7 @@ def test_dialog_turn_runs_npc_agency_on_interval_scene(load_engine: None) -> Non
         npc.status = "active"
         npc.agenda = "Keep the archive sealed"
     game.narrative.scene_count = eng().pacing.npc_agency_interval - 1
-    process_turn(provider, game, "I talk to Mira", config=EngineConfig(narration_lang="English"))
+    process_turn(provider, game, "I talk to Mira")
     prompts = [
         message["content"]
         for call in provider.calls
