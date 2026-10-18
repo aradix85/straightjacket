@@ -57,6 +57,22 @@ Closing a step: the checks of CONTRIBUTING.md pass, the step moves to DONE at th
 
 **One model for every role**, the user's preference, is recorded in `docs/ai.md` (Model assignment); the prompt tuning of step 9f relied on it.
 
+**Sources bought when a step needs them.** The user buys a Word Mill book or a Mythic Magazine issue only when it fills a gap the setting's Datasworn data, Mythic 2e, and the Adventure Crafter leave, and only when a step needs it. The candidates below come from the titles in Robin's subject index of Mythic Magazine (linked from Word Mill's Mythic Magazine page) and are not yet read. A step that has candidates starts by reading each one's product page with the user, and an issue is bought only for a gap it names, at $4.95 an issue, or $14.95 for a compilation of six when several fall in the same six. A candidate that turns out not to fill its gap leaves the list. The Creature Crafter is left out, since it adjusts stat blocks that Ironsworn's foes do not have and the settings carry their own creature tables.
+
+- 9j: #5 Combining Mythic With The Adventure Crafter, #57 Evolve Adventure Settings With The Adventure Crafter, #64 Adventure Crafting Mythic.
+- 10: the Location Crafter itself, then #2 Randomized Location Crafting, #16 Location Crafting Random Cities, #36 Location Based Adventures, and #61 The City Crafter, each only where the setting has no table of its own.
+- 11 and 11d: #8 Generating Compelling Backstories, #41 The Villain Crafter, #63 Rivals, and #45 One-Page Character Crafter only where the Adventure Crafter's character tables fall short.
+- 12 and 13: #39 NPC Evolving Motivation Rules, #9 Generating NPC Behavior With Fate Questions, #1 Behavior Checks Simplified, #12 RPG Social Skills With Mythic's Behavior Check, #58 Creating Dialogue With NPCs.
+- 14a to 16: #49 The Society Crafter, #63 The Campaign Crafter.
+- 14c: #30 Dealing With Solo Adventure Pacing, #32 Dealing With Time Pressure.
+- 21 to 24: #24 When Characters Distrust Each Other, #14 Emotional Quest Adventures.
+- 25 and 31: #25 Handling Long Journeys In Solo Play, #53 Discovery Prompts.
+- 27: #3 Random Dungeon Crawl Generation, beside the Location Crafter.
+- 29: #32 "Gather A Crew" Mythic Adventures, #54 Simplify Playing Parties Solo.
+- 32: #34 Fluid Scene Structure, #10 Starting, And Ending, Scenes, read against the register entry "Chaos factor per turn".
+- 33 and 34: #18 Specialized Meaning Tables, #22 MORE Specialized Meaning Tables!, #40 Meaning Table Collections, beyond the 45 tables of Mythic 2e.
+- 35: #56 Detail Check Revisited, #61 Degrees of Fate.
+
 **Four layers (step 9n).** The user's decision: Mythic is the game master over whatever system is played, the Crafter books add content to it, and the ruleset and the setting are separate layers, even while every shipped setting runs on an Ironsworn ruleset, with as little as possible fixed in Python. From step 9n on, a step that adds rules (9j, 13b, 18 to 29) builds them in the ruleset, one that adds world content (10, 10b, 27) in the setting, and one that extends Mythic or a Crafter (30 to 35, and the Location Crafter of step 10) in its own layer. The order is the user's as well: the audits of principles 3 and 5 first, since they shrink what the split moves, then the split, with the audit of principle 1 on the layout it makes.
 
 ---
@@ -188,7 +204,7 @@ The measuring setup outside the repository captures narrator calls only; no situ
 
 **10.7** Perils and opportunities of the place. Starforged's location themes, derelicts, vaults, planets, and space, and Sundered Isles' overland, caves, ruins, and shipwrecks each have a peril and an opportunity table. At a generated place, a miss takes its worsening from the place's peril table, and a result whose move text offers an opportunity takes it from the opportunity table; each reaches the narrator as a consequence it must tell, the way a weak hit's complication does, so the worsening comes from the place instead of the narrator. How a peril relates to Pay the Price, which the engine rolls on a miss today, is checked against the books first. Classic Ironsworn has no such tables and keeps Pay the Price; Delve's Reveal a Danger comes with its sites in step 26. A place keeps the choices its rolls made (today it keeps only their text), so a path such as `location_themes/{theme}/peril` in its generator entry resolves on a later turn.
 
-If the user buys the Location Crafter (Word Mill Games, under the same CC BY-NC license as Mythic), its tables join step 10 as data for areas where the setting has no location tools of its own; until then step 10 uses the setting's oracles only.
+The user is buying the Location Crafter (Word Mill Games, under the same CC BY-NC license as Mythic). Its procedure explores a region area by area, with lists of locations, encounters, and objects, progress points, and results from expected to complete. It joins step 10 with the setting's own tables as its random content and the places, NPCs, and facts the game has established as its expected ones, so the Crafter gives the procedure and Datasworn the content; where Delve's sites or Starforged's expeditions have their own procedure (steps 25 to 27), the ruleset's progress holds and the Crafter supplies what the next area holds. Further candidates are under Decisions (Sources bought when a step needs them).
 
 ### 10b — Campaign launch from the setting's oracles
 
