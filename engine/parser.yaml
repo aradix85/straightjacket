@@ -1,7 +1,8 @@
 parser:
-  max_label_length: 30
+  salvage_min_length: 30
   min_line_length: 4
   stream_hold_markers: ["<", "```", "{", "\n---", "\n#"]
+  stream_sentence_boundary: '[.!?\u2026]+["''\u201d\u2019)\]]*(?=\s)|\n\s*\n'
   stream_abbreviations: ["Mr.", "Mrs.", "Ms.", "Dr.", "St.", "Mt.", "e.g.", "i.e.", "etc."]
   sentence_end_marks: [".", "!", "?", "\"", "“", "”", "»", "«", "…", ")", "–", "—", "*"]
   epilogue_heading: '^\s*#*\s*\*{0,3}\s*Epilog(?:ue)?\s*\*{0,3}\s*\n+'

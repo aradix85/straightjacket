@@ -71,6 +71,20 @@ def test_post_process_handles_mixed_real_and_literal_escapes() -> None:
     assert result.content == "real \u201cquote\u201d and literal \u201cquote\u201d"
 
 
+def test_post_process_keeps_the_reasoning_when_it_changes_the_content() -> None:
+    from straightjacket.engine.ai.provider_base import post_process_response, AIResponse
+
+    raw = AIResponse(
+        content="<think>plan</think>The door holds.",
+        stop_reason="complete",
+        tool_calls=[],
+        usage={},
+        reasoning="First, the door.",
+    )
+    result = post_process_response(raw)
+    assert (result.content, result.reasoning) == ("The door holds.", "First, the door.")
+
+
 def test_post_process_does_not_alter_response_without_escapes() -> None:
     from straightjacket.engine.ai.provider_base import post_process_response, AIResponse
 

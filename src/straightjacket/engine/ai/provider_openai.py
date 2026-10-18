@@ -6,19 +6,21 @@ from typing import Any
 import openai
 
 from ..logging_util import log
-from .provider_base import AICallSpec, AIResponse, extract_usage, normalize_stop_reason
+from .provider_base import AICallSpec, AIResponse, normalize_stop_reason
 
 
-def _usage_with_cache(raw_usage: Any) -> dict[str, int] | None:
-    usage = extract_usage(raw_usage, "prompt_tokens", "completion_tokens")
-    details = getattr(raw_usage, "prompt_tokens_details", None)
-    cached = getattr(details, "cached_tokens", None)
-    if usage is not None and isinstance(cached, int):
-        usage["cache_read_tokens"] = cached
-    reasoning = getattr(getattr(raw_usage, "completion_tokens_details", None), "reasoning_tokens", None)
+def _usage(raw_usage: Any) -> dict[str, int] | None:
+    if raw_usage is None:
+        return None
+    usage = {"input_tokens": raw_usage.prompt_tokens, "output_tokens": raw_usage.completion_tokens}
+    prompt_details = raw_usage.prompt_tokens_details
+    if prompt_details is not None and prompt_details.cached_tokens is not None:
+        usage["cache_read_tokens"] = prompt_details.cached_tokens
+    completion_details = raw_usage.completion_tokens_details
+    reasoning = completion_details.reasoning_tokens if completion_details is not None else None
     if reasoning is None:
-        reasoning = getattr(raw_usage, "reasoning_tokens", None)
-    if usage is not None and isinstance(reasoning, int):
+        reasoning = getattr(raw_usage, "reasoning_tokens", None)  # some hosts report it beside the standard fields
+    if reasoning is not None:
         usage["reasoning_tokens"] = reasoning
     return usage
 
@@ -57,13 +59,13 @@ class OpenAICompatibleProvider:
                     on_text(text)
                 if choice.finish_reason:
                     finish_reason = choice.finish_reason
-            if getattr(chunk, "usage", None):
+            if chunk.usage is not None:
                 raw_usage = chunk.usage
         return AIResponse(
             content=content,
             stop_reason=normalize_stop_reason(finish_reason, ("length",), "tool_calls", "content_filter"),
             tool_calls=[],
-            usage=_usage_with_cache(raw_usage),
+            usage=_usage(raw_usage),
         )
 
     def _request(self, spec: AICallSpec) -> dict[str, Any]:
@@ -119,7 +121,7 @@ class OpenAICompatibleProvider:
 
         stop_reason = normalize_stop_reason(choice.finish_reason, ("length",), "tool_calls", "content_filter")
 
-        usage = _usage_with_cache(getattr(response, "usage", None))
+        usage = _usage(response.usage)
 
         return AIResponse(
             content=content,

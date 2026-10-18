@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, NoReturn
 import html
 import json
 
@@ -41,7 +41,7 @@ def _build_moves_block(game: GameState) -> str:
     return "<moves>\n" + "\n".join(lines) + ("\n" + pos_line if pos_line else "") + "\n</moves>"
 
 
-def build_stats_line(game: GameState) -> str:
+def _build_stats_line(game: GameState) -> str:
     cfg = eng().stats
     parts = [_xe(game.player_name)]
     for name in cfg.names:
@@ -81,22 +81,27 @@ def _build_fact_types_block() -> str:
     return "<fact_types>\n" + "\n".join(lines) + "\n</fact_types>"
 
 
+def _refuse(reason: str) -> NoReturn:
+    log(f"[Brain] Refused: {reason}", level="warning")
+    raise AIUnavailableError(f"brain: {reason}")
+
+
 def _check_choices(result: BrainResult, move_keys: list[str], choices: dict[str, list[str]]) -> None:
     if result.move not in move_keys and result.move not in eng().engine_moves:
-        raise ValueError(f"move {result.move!r} is not available in this situation")
+        _refuse(f"move {result.move!r} is not available in this situation")
     for field_name, allowed in choices.items():
         value = getattr(result, field_name)
         if value is not None and value not in allowed:
-            raise ValueError(f"{field_name} {value!r} is not one of the choices offered")
+            _refuse(f"{field_name} {value!r} is not one of the choices offered")
     _check_fact_requests(result, choices["target_npc"])
     change = result.location_change
     if change is not None and change.kind not in eng().generation.place_categories:
-        raise ValueError(f"location kind {change.kind!r} is not one of the choices offered")
+        _refuse(f"location kind {change.kind!r} is not one of the choices offered")
     if result.move in eng().get_raw("track_creating_moves") and not (result.track_name and result.track_name.strip()):
-        raise ValueError(f"move {result.move!r} starts a track, but track_name is empty")
+        _refuse(f"move {result.move!r} starts a track, but track_name is empty")
     boasts = eng().boasts
     if len(result.boasts) > boasts.max_per_roll or any(b not in boasts.options for b in result.boasts):
-        raise ValueError(f"boasts {result.boasts!r} are not among the offered boasts")
+        _refuse(f"boasts {result.boasts!r} are not among the offered boasts")
 
 
 def _check_target_track(game: GameState, result: BrainResult) -> None:
@@ -108,7 +113,7 @@ def _check_target_track(game: GameState, result: BrainResult) -> None:
     wanted = eng().get_raw("track_types_by_category")[category]
     track = next(t for t in game.progress_tracks if t.id == result.target_track)
     if track.track_type != wanted:
-        raise ValueError(
+        _refuse(
             f"move {result.move!r} works on a {wanted} track, but target_track {track.id!r} is a {track.track_type} track"
         )
 
@@ -119,7 +124,7 @@ def _wrong_stat(game: GameState, result: BrainResult) -> list[str]:
         return []
     if not ds_move.valid_stats:
         if roll_source_without_stat(game, ds_move, result.target_npc) is None:
-            raise ValueError(f"move {result.move!r} has nothing to roll with for target_npc {result.target_npc!r}")
+            _refuse(f"move {result.move!r} has nothing to roll with for target_npc {result.target_npc!r}")
         return []
     return [] if result.stat in ds_move.valid_stats else list(ds_move.valid_stats)
 
@@ -127,13 +132,22 @@ def _wrong_stat(game: GameState, result: BrainResult) -> list[str]:
 def _check_fact_requests(result: BrainResult, npc_ids: list[str]) -> None:
     cfg = eng().fact_resolution
     if len(result.undetermined_facts) > cfg.max_per_turn:
-        raise ValueError(f"{len(result.undetermined_facts)} undetermined facts, at most {cfg.max_per_turn} allowed")
+        _refuse(f"{len(result.undetermined_facts)} undetermined facts, at most {cfg.max_per_turn} allowed")
     for request in result.undetermined_facts:
         if request.fact_type not in cfg.types:
-            raise ValueError(f"fact_type {request.fact_type!r} is not one of the choices offered")
+            _refuse(f"fact_type {request.fact_type!r} is not one of the choices offered")
         allowed = [cfg.place_reference] if cfg.types[request.fact_type].subject == "place" else npc_ids
         if request.about not in allowed:
-            raise ValueError(f"fact {request.fact_type!r} cannot be about {request.about!r}")
+            _refuse(f"fact {request.fact_type!r} cannot be about {request.about!r}")
+
+
+def _ask_brain(provider: AIProvider, spec: AICallSpec) -> tuple[str, BrainResult]:
+    try:
+        content = create_with_retry(provider, spec).content
+        return content, BrainResult.from_dict(json.loads(content))
+    except Exception as e:
+        log(f"[Brain] Failed ({type(e).__name__}: {e})", level="warning")
+        raise AIUnavailableError(f"brain: {type(e).__name__}: {e}") from e
 
 
 def call_brain(
@@ -173,7 +187,7 @@ def call_brain(
     user_msg = f"""<state>
 loc:{_xe(w.current_location)} | ctx:{_xe(w.current_scene_context)}
 time:{w.time_of_day or _ai_text["unknown_time"]}
-{build_stats_line(game)}
+{_build_stats_line(game)}
 </state>
 {npc_block}
 {tracks_block}
@@ -195,46 +209,39 @@ time:{w.time_of_day or _ai_text["unknown_time"]}
         choices["target_track"],
         choices["target_clock"],
     )
+    model = model_for_role("brain")
+    params = sampling_params("brain")
     messages: list[dict[str, Any]] = [{"role": "user", "content": user_msg}]
-    try:
-        for _attempt in range(eng().retry.brain_stat_retries + 1):
-            spec = AICallSpec(
-                model=model_for_role("brain"),
-                system=system,
-                messages=list(messages),
-                json_schema=schema,
-                log_role="brain",
-                cached_system_prefix=cached_prefix,
-                **sampling_params("brain"),
+    for _attempt in range(eng().retry.brain_stat_retries + 1):
+        spec = AICallSpec(
+            model=model,
+            system=system,
+            messages=list(messages),
+            json_schema=schema,
+            log_role="brain",
+            cached_system_prefix=cached_prefix,
+            **params,
+        )
+        content, result = _ask_brain(provider, spec)
+        _check_choices(result, move_keys, choices)
+        _check_target_track(game, result)
+        stats = _wrong_stat(game, result)
+        if not stats:
+            log(
+                f"[Brain] move={result.move}, stat={result.stat}, "
+                f"intent={result.player_intent[: eng().truncations.log_short]}"
+                + (f", target_clock={result.target_clock}" if result.target_clock else "")
             )
-            content = create_with_retry(provider, spec).content
-
-            result: BrainResult = BrainResult.from_dict(json.loads(content))
-            _check_choices(result, move_keys, choices)
-            _check_target_track(game, result)
-            stats = _wrong_stat(game, result)
-            if not stats:
-                log(
-                    f"[Brain] move={result.move}, stat={result.stat}, "
-                    f"intent={result.player_intent[: eng().truncations.log_short]}"
-                    + (f", target_clock={result.target_clock}" if result.target_clock else "")
-                )
-                return result
-            log(f"[Brain] {result.move} rolls with {stats}, not stat {result.stat!r}; asking again", level="warning")
-            messages.append({"role": "assistant", "content": content})
-            messages.append(
-                {
-                    "role": "user",
-                    "content": get_prompt(
-                        "brain_stat_retry", move=result.move, stats=", ".join(stats), stat=result.stat
-                    ),
-                }
-            )
-        raise ValueError(f"move {result.move!r} rolls with {stats}, but stat is {result.stat!r} after asking again")
-
-    except Exception as e:
-        log(f"[Brain] Failed ({type(e).__name__}: {e})", level="warning")
-        raise AIUnavailableError(f"brain: {type(e).__name__}: {e}") from e
+            return result
+        log(f"[Brain] {result.move} rolls with {stats}, not stat {result.stat!r}; asking again", level="warning")
+        messages.append({"role": "assistant", "content": content})
+        messages.append(
+            {
+                "role": "user",
+                "content": get_prompt("brain_stat_retry", move=result.move, stats=", ".join(stats), stat=result.stat),
+            }
+        )
+    _refuse(f"move {result.move!r} rolls with {stats}, but stat is {result.stat!r} after asking again")
 
 
 def call_revelation_check(
@@ -253,17 +260,16 @@ def call_revelation_check(
         f"{get_prompt('revelation_check_question', role='revelation_check')}"
     )
 
+    spec = AICallSpec(
+        model=model_for_role("revelation_check"),
+        system=system,
+        messages=[{"role": "user", "content": prompt}],
+        json_schema=get_revelation_check_schema(),
+        log_role="revelation_check",
+        **sampling_params("revelation_check"),
+    )
     try:
-        spec = AICallSpec(
-            model=model_for_role("revelation_check"),
-            system=system,
-            messages=[{"role": "user", "content": prompt}],
-            json_schema=get_revelation_check_schema(),
-            log_role="revelation_check",
-            **sampling_params("revelation_check"),
-        )
-        response = create_with_retry(provider, spec)
-        result = json.loads(response.content)
+        result = json.loads(create_with_retry(provider, spec).content)
         confirmed: bool = result["revelation_confirmed"]
         reasoning = result["reasoning"]
         log(f"[Revelation] Check for '{revelation.id}': confirmed={confirmed} — {reasoning}")

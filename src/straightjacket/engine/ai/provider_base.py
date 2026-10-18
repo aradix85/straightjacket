@@ -1,6 +1,6 @@
 import re
 import time as _time
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from typing import Any, Protocol, runtime_checkable
 from collections.abc import Callable
 
@@ -64,15 +64,6 @@ def normalize_stop_reason(raw: str, truncated_values: tuple[str, ...], tool_use_
     return "complete"
 
 
-def extract_usage(raw_usage: Any, input_key: str, output_key: str) -> dict[str, int] | None:
-    if not raw_usage:
-        return None
-    return {
-        "input_tokens": getattr(raw_usage, input_key, 0),
-        "output_tokens": getattr(raw_usage, output_key, 0),
-    }
-
-
 class AIProvider(Protocol):
     def create_message(self, spec: AICallSpec) -> AIResponse: ...
 
@@ -122,18 +113,11 @@ def post_process_response(response: AIResponse) -> AIResponse:
             content = decoded
 
     if content != response.content:
-        return AIResponse(
-            content=content,
-            stop_reason=response.stop_reason,
-            tool_calls=response.tool_calls,
-            usage=response.usage,
-        )
+        return replace(response, content=content)
     return response
 
 
 def _log_usage(spec: AICallSpec, result: AIResponse) -> None:
-    if not spec.log_role:
-        return
     if result.usage:
         inp = result.usage["input_tokens"]
         out = result.usage["output_tokens"]
@@ -163,42 +147,39 @@ class AIUnavailableError(Exception):
 
 
 def create_with_retry(provider: AIProvider, spec: AICallSpec) -> AIResponse:
-    for attempt in range(spec.max_retries + 1):
+    from ..engine_loader import eng as _eng
+
+    attempt = 0
+    while True:
         try:
             response = provider.create_message(spec)
-            result = post_process_response(response)
-            _log_usage(spec, result)
-            if result.stop_reason == "refusal":
-                if attempt < spec.max_retries:
-                    log(f"[AI] {spec.log_role}: model refused, retry {attempt + 1}/{spec.max_retries}", level="warning")
-                    continue
-                log(f"[AI] {spec.log_role}: model refused on every attempt", level="error")
-                raise AIUnavailableError(f"{spec.log_role}: model refused on every attempt")
-            return result
-
         except Exception as e:
-            from ..engine_loader import eng as _eng
-
             _retry_cfg = _eng().retry
             status_code = getattr(e, "status_code", None)
             is_connection_error = "connection" in type(e).__name__.lower() or "connect" in str(e).lower()
             is_retryable_status = status_code in _retry_cfg.retryable_http_codes
-
-            if attempt < spec.max_retries and (is_retryable_status or is_connection_error):
-                retry_after = _retry_after_seconds(e)
-                wait = (
-                    min(retry_after, _retry_cfg.max_retry_after_seconds)
-                    if retry_after is not None
-                    else _retry_cfg.backoff_base**attempt
-                )
-                error_desc = f"HTTP {status_code}" if status_code else str(e)[: _eng().truncations.log_medium]
-                log(f"[AI] {error_desc}, retry {attempt + 1}/{spec.max_retries} in {wait}s", level="warning")
-                _backoff_sleep(wait)
-                continue
-            if isinstance(e, AIUnavailableError):
-                raise
-            raise AIUnavailableError(f"{spec.log_role}: {type(e).__name__}: {e}") from e
-    raise RuntimeError(f"{spec.log_role}: no attempts made")
+            if attempt >= spec.max_retries or not (is_retryable_status or is_connection_error):
+                raise AIUnavailableError(f"{spec.log_role}: {type(e).__name__}: {e}") from e
+            retry_after = _retry_after_seconds(e)
+            wait = (
+                min(retry_after, _retry_cfg.max_retry_after_seconds)
+                if retry_after is not None
+                else _retry_cfg.backoff_base**attempt
+            )
+            error_desc = f"HTTP {status_code}" if status_code else str(e)[: _eng().truncations.log_medium]
+            log(f"[AI] {error_desc}, retry {attempt + 1}/{spec.max_retries} in {wait}s", level="warning")
+            _backoff_sleep(wait)
+            attempt += 1
+            continue
+        result = post_process_response(response)
+        _log_usage(spec, result)
+        if result.stop_reason != "refusal":
+            return result
+        if attempt >= spec.max_retries:
+            log(f"[AI] {spec.log_role}: model refused on every attempt", level="error")
+            raise AIUnavailableError(f"{spec.log_role}: model refused on every attempt")
+        log(f"[AI] {spec.log_role}: model refused, retry {attempt + 1}/{spec.max_retries}", level="warning")
+        attempt += 1
 
 
 def stream_with_retry(provider: AIProvider, spec: AICallSpec, sink: NarrationSink) -> AIResponse:

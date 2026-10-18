@@ -10,28 +10,12 @@ def _str_enum(enum: list[str]) -> dict[str, Any]:
     return {"type": "string", "enum": enum}
 
 
-def _str_with_desc(desc: str) -> dict[str, Any]:
-    return {"type": "string", "description": desc}
-
-
-def _int() -> dict[str, Any]:
-    return {"type": "integer"}
-
-
 def _bool() -> dict[str, Any]:
     return {"type": "boolean"}
 
 
-def _bool_with_desc(desc: str) -> dict[str, Any]:
-    return {"type": "boolean", "description": desc}
-
-
-def _nullable(typ: str) -> dict[str, Any]:
-    return {"anyOf": [{"type": typ}, {"type": "null"}]}
-
-
 def _nullable_str() -> dict[str, Any]:
-    return _nullable("string")
+    return {"anyOf": [{"type": "string"}, {"type": "null"}]}
 
 
 def _nullable_obj(props: dict[str, Any]) -> dict[str, Any]:
@@ -56,16 +40,7 @@ def _obj(props: dict[str, Any]) -> dict[str, Any]:
 
 
 def _obj_root(props: dict[str, Any], title: str) -> dict[str, Any]:
-    return {
-        "type": "object",
-        "properties": props,
-        "required": list(props.keys()),
-        "additionalProperties": False,
-        "title": title,
-    }
-
-
-_correction_cache: dict[str, Any] | None = None
+    return {**_obj(props), "title": title}
 
 
 def _nullable_enum(values: list[str]) -> dict[str, Any]:
@@ -228,98 +203,82 @@ def get_narrator_metadata_schema(npc_ids: list[str]) -> dict[str, Any]:
     )
 
 
-_opening_cache: dict[str, Any] | None = None
-
-
 def get_opening_setup_schema() -> dict[str, Any]:
-    global _opening_cache
-    if _opening_cache is None:
-        _e = eng()
-        dispositions = list(_e.enums.dispositions)
-        _opening_cache = _obj_root(
-            {
-                "npcs": _arr(
-                    _obj(
-                        {
-                            "name": _str(),
-                            "description": _str(),
-                            "agenda": _str(),
-                            "instinct": _str(),
-                            "secrets": _str_arr(),
-                            "disposition": _str_enum(dispositions),
-                        }
-                    )
-                ),
-                "location": _str(),
-                "scene_context": _str(),
-                "memory_updates": _arr(
-                    _obj(
-                        {
-                            "npc_name": _str(),
-                            "event": _str(),
-                            "emotional_weight": _str(),
-                        }
-                    )
-                ),
-                "deceased_npcs": _arr(_obj({"npc_id": _str()})),
-            },
-            _e.ai_text.schema_titles["opening_setup"],
-        )
-    return _opening_cache
+    _e = eng()
+    return _obj_root(
+        {
+            "npcs": _arr(
+                _obj(
+                    {
+                        "name": _str(),
+                        "description": _str(),
+                        "agenda": _str(),
+                        "instinct": _str(),
+                        "secrets": _str_arr(),
+                        "disposition": _str_enum(list(_e.enums.dispositions)),
+                    }
+                )
+            ),
+            "location": _str(),
+            "scene_context": _str(),
+            "memory_updates": _arr(
+                _obj(
+                    {
+                        "npc_name": _str(),
+                        "event": _str(),
+                        "emotional_weight": _str(),
+                    }
+                )
+            ),
+            "deceased_npcs": _arr(_obj({"npc_id": _str()})),
+        },
+        _e.ai_text.schema_titles["opening_setup"],
+    )
 
 
 def get_correction_output_schema() -> dict[str, Any]:
-    global _correction_cache
-    if _correction_cache is None:
-        _e = eng()
-        field_props: dict[str, Any] = {}
-        for fname in _e.enums.correction_fields:
-            if fname == "aliases":
-                field_props[fname] = {"anyOf": [_str_arr(), {"type": "null"}]}
-            elif fname == "disposition":
-                field_props[fname] = _nullable_enum(list(_e.enums.dispositions))
-            elif fname == "status":
-                field_props[fname] = _nullable_enum(list(_e.enums.npc_statuses))
-            else:
-                field_props[fname] = _nullable_str()
-        _correction_cache = _obj_root(
-            {
-                "correction_source": _str_enum(["input_misread", "state_error"]),
-                "corrected_input": _str(),
-                "narrator_guidance": _str(),
-                "director_useful": _bool(),
-                "state_ops": _arr(
-                    _obj(
-                        {
-                            "op": _str_enum(list(_e.enums.correction_ops)),
-                            "npc_id": _nullable_str(),
-                            "split_name": _nullable_str(),
-                            "split_description": _nullable_str(),
-                            "merge_source_id": _nullable_str(),
-                            "fields": _nullable_obj(field_props),
-                            "value": _nullable_str(),
-                        }
-                    )
-                ),
-            },
-            _e.ai_text.schema_titles["correction_output"],
-        )
-    return _correction_cache
-
-
-_revelation_check_cache: dict[str, Any] | None = None
+    _e = eng()
+    field_props: dict[str, Any] = {}
+    for fname in _e.enums.correction_fields:
+        if fname == "aliases":
+            field_props[fname] = {"anyOf": [_str_arr(), {"type": "null"}]}
+        elif fname == "disposition":
+            field_props[fname] = _nullable_enum(list(_e.enums.dispositions))
+        elif fname == "status":
+            field_props[fname] = _nullable_enum(list(_e.enums.npc_statuses))
+        else:
+            field_props[fname] = _nullable_str()
+    return _obj_root(
+        {
+            "correction_source": _str_enum(["input_misread", "state_error"]),
+            "corrected_input": _str(),
+            "narrator_guidance": _str(),
+            "director_useful": _bool(),
+            "state_ops": _arr(
+                _obj(
+                    {
+                        "op": _str_enum(list(_e.enums.correction_ops)),
+                        "npc_id": _nullable_str(),
+                        "split_name": _nullable_str(),
+                        "split_description": _nullable_str(),
+                        "merge_source_id": _nullable_str(),
+                        "fields": _nullable_obj(field_props),
+                        "value": _nullable_str(),
+                    }
+                )
+            ),
+        },
+        _e.ai_text.schema_titles["correction_output"],
+    )
 
 
 def get_revelation_check_schema() -> dict[str, Any]:
-    global _revelation_check_cache
-    if _revelation_check_cache is None:
-        _e = eng()
-        descs = _e.ai_text.schema_descriptions["revelation_check"]
-        _revelation_check_cache = _obj_root(
-            {
-                "revelation_confirmed": _bool_with_desc(descs["revelation_confirmed"]),
-                "reasoning": _str_with_desc(descs["reasoning"]),
-            },
-            _e.ai_text.schema_titles["revelation_check"],
-        )
-    return _revelation_check_cache
+    _e = eng()
+    descs = _e.ai_text.schema_descriptions["revelation_check"]
+    return _obj_root(
+        {
+            "revelation_confirmed": {**_bool(), "description": descs["revelation_confirmed"]},
+            "reasoning": {**_str(), "description": descs["reasoning"]},
+        },
+        _e.ai_text.schema_titles["revelation_check"],
+    )

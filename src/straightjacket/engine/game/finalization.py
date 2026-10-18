@@ -6,7 +6,7 @@ from dataclasses import dataclass
 
 from ..ai.metadata import apply_narrator_metadata
 from ..ai.narrator import call_narrator, call_narrator_metadata
-from ..ai.provider_base import AIUnavailableError, AIProvider, NarrationSink
+from ..ai.provider_base import AIProvider, NarrationSink
 from ..engine_loader import eng
 from ..logging_util import log
 from ..mechanics import (
@@ -212,8 +212,4 @@ def narrate_scene(
     config: EngineConfig | None = None,
     stream: NarrationSink | None = None,
 ) -> str:
-    raw = call_narrator(provider, prompt, game, config, stream=stream)
-    narration = parse_narrator_response(game, raw)
-    if not narration.strip():
-        raise AIUnavailableError("narrator: empty narration")
-    return narration
+    return parse_narrator_response(game, call_narrator(provider, prompt, game, config, stream=stream))

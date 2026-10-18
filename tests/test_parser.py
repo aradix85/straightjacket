@@ -1,3 +1,6 @@
+import pytest
+
+from straightjacket.engine.ai.provider_base import AIUnavailableError
 from straightjacket.engine.models import GameState
 from tests._helpers import make_game_state, make_npc
 
@@ -171,12 +174,13 @@ def test_does_not_mark_introduced_by_title_alone(load_engine: None, stub_emotion
     assert game.npcs[0].introduced is False
 
 
-def test_narration_without_prose_parses_to_empty(load_engine: None, stub_emotions: None) -> None:
+def test_narration_without_prose_fails_like_an_empty_narration(load_engine: None, stub_emotions: None) -> None:
     from straightjacket.engine.parser import parse_narrator_response
 
     game = _game()
-    raw = '<game_data>{"npcs": []}</game_data>'
-    assert parse_narrator_response(game, raw) == ""
+    raw = 'Scene Context: a dark room\n\n<memory_updates>[{"npc_id": "npc_1"}]</memory_updates>'
+    with pytest.raises(AIUnavailableError, match="empty narration after cleanup"):
+        parse_narrator_response(game, raw)
 
 
 def test_combined_cleanup(load_engine: None, stub_emotions: None) -> None:
@@ -198,12 +202,6 @@ def test_combined_cleanup(load_engine: None, stub_emotions: None) -> None:
     assert "```" not in result
     assert "tavern was warm" in result
     assert "poured a drink" in result
-
-
-if __name__ == "__main__":
-    import pytest
-
-    pytest.main([__file__, "-v"])
 
 
 def test_strips_untagged_game_data_json(load_engine: None, stub_emotions: None) -> None:
@@ -240,6 +238,15 @@ def test_strips_trailing_metadata_label_lines(load_engine: None, stub_emotions: 
     assert "wind howled" in result
 
 
+def test_a_complete_narration_ending_in_a_stray_fence_keeps_every_sentence(load_engine: None) -> None:
+    from straightjacket.engine.game.finalization import narrate_scene
+    from tests._mocks import MockProvider
+
+    raw = "The gate held against the storm all night. She turned away from it.\n```"
+    narration = narrate_scene(MockProvider(response_content=raw), make_game_state(setting_id="starforged"), "<scene/>")
+    assert narration == "The gate held against the storm all night. She turned away from it."
+
+
 def test_salvage_clean_text() -> None:
     from straightjacket.engine.parser import salvage_truncated_narration
 
@@ -247,13 +254,11 @@ def test_salvage_clean_text() -> None:
     assert salvage_truncated_narration(text) == text
 
 
-def test_salvage_strips_incomplete_game_data() -> None:
+def test_salvage_keeps_a_cut_that_ends_on_a_closing_quote() -> None:
     from straightjacket.engine.parser import salvage_truncated_narration
 
-    text = 'The door opened. She stepped inside.<game_data>{"npcs": ['
-    result = salvage_truncated_narration(text)
-    assert "<game_data>" not in result
-    assert "stepped inside." in result
+    text = 'The door opened. "Stay back," she said. "Not one step."'
+    assert salvage_truncated_narration(text) == text
 
 
 def test_salvage_trims_mid_word() -> None:
@@ -264,9 +269,8 @@ def test_salvage_trims_mid_word() -> None:
     assert result.endswith("inside.")
 
 
-def test_salvage_preserves_complete_game_data() -> None:
+def test_salvage_leaves_a_short_cut_whole() -> None:
     from straightjacket.engine.parser import salvage_truncated_narration
 
-    text = 'Story text here.<game_data>{"npcs": []}</game_data>'
-    result = salvage_truncated_narration(text)
-    assert "<game_data>" in result
+    text = "She ran. The light was fadi"
+    assert salvage_truncated_narration(text) == text

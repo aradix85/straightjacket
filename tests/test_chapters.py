@@ -340,6 +340,6 @@ def test_generate_epilogue_raises_when_cleanup_leaves_nothing(load_engine: None,
 
     provider = MockProvider("```json\n{}\n```")
     g = make_game_state(player_name="Aria", setting_id="starforged")
-    with pytest.raises(AIUnavailableError, match="empty epilogue"):
+    with pytest.raises(AIUnavailableError, match="empty narration after cleanup"):
         generate_epilogue(provider, g)
     assert g.campaign.epilogue_shown is False

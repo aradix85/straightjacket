@@ -54,16 +54,6 @@ ai_text:
     no_roll: dialog (no roll)
     npc_appeared_event: '{npc_name} appeared'
     recap_fallback: ({player_name} recalls the recent events...)
-    opening_setup_fallback_npcs: []
-    opening_setup_fallback_location: ''
-    opening_setup_fallback_scene_context: ''
-    opening_setup_fallback_memory_updates: []
-    opening_setup_fallback_deceased_npcs: []
-    narrator_metadata_fallback_new_npcs: []
-    narrator_metadata_fallback_npc_renames: []
-    narrator_metadata_fallback_npc_details: []
-    narrator_metadata_fallback_deceased_npcs: []
-    narrator_metadata_fallback_lore_npcs: []
     correction_brain_fallback_source: state_error
     correction_brain_fallback_corrected_input: ''
     correction_brain_fallback_director_useful: false

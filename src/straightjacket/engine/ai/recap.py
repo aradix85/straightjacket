@@ -38,7 +38,7 @@ def call_recap(provider: AIProvider, game: GameState, config: EngineConfig | Non
     )
 
     arc_info = ""
-    if game.narrative.story_blueprint and game.narrative.story_blueprint.acts:
+    if game.narrative.story_blueprint is not None:
         act = get_current_act(game)
         structure = game.narrative.story_blueprint.structure_type
         arc_info = (
@@ -53,26 +53,25 @@ def call_recap(provider: AIProvider, game: GameState, config: EngineConfig | Non
         for ch in game.campaign.campaign_history[-_limits.recap_campaign_history_window :]:
             campaign_info += f"\n  prev: {ch.title}: {ch.summary[: _limits.recap_campaign_summary_truncate]}"
 
+    spec = AICallSpec(
+        model=model_for_role("recap"),
+        system=get_prompt("recap", lang=lang, content_boundaries_block=content_boundaries_block(game)),
+        messages=[
+            {
+                "role": "user",
+                "content": f"{game.player_name}—{game.character_concept}\n"
+                f"genre:{game.setting_genre} tone:{game.setting_tone}\n"
+                f"world:{game.setting_description}\n"
+                f"at:{game.world.current_location}\nlog:{log_text}\nnpcs:{npc_text}"
+                f"{arc_info}{campaign_info}\nnow:{game.world.current_scene_context}\n"
+                f"recent_scenes:\n{recent_narrations}",
+            }
+        ],
+        log_role="recap",
+        **sampling_params("recap"),
+    )
     try:
-        spec = AICallSpec(
-            model=model_for_role("recap"),
-            system=get_prompt("recap", lang=lang, content_boundaries_block=content_boundaries_block(game)),
-            messages=[
-                {
-                    "role": "user",
-                    "content": f"{game.player_name}—{game.character_concept}\n"
-                    f"genre:{game.setting_genre} tone:{game.setting_tone}\n"
-                    f"world:{game.setting_description}\n"
-                    f"at:{game.world.current_location}\nlog:{log_text}\nnpcs:{npc_text}"
-                    f"{arc_info}{campaign_info}\nnow:{game.world.current_scene_context}\n"
-                    f"recent_scenes:\n{recent_narrations}",
-                }
-            ],
-            log_role="recap",
-            **sampling_params("recap"),
-        )
-        response = create_with_retry(provider, spec)
-        return response.content
+        return create_with_retry(provider, spec).content
     except Exception as e:
         log(f"[Recap] Failed: {e}", level="warning")
         result: str = _defaults["recap_fallback"].format(player_name=game.player_name)

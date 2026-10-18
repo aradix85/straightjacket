@@ -5,8 +5,6 @@ from ..engine_loader import eng
 from ..parser import clean_sentence
 from .provider_base import decode_literal_unicode_escapes
 
-_BOUNDARY = re.compile(r"[.!?\u2026]+[\"'\u201d\u2019)\]]*(?=\s)|\n\s*\n")
-
 
 class SentenceStream:
     def __init__(self, on_sentence: Callable[[str], None]) -> None:
@@ -50,12 +48,12 @@ class SentenceStream:
         self.failed = True
 
     def _boundary(self, limit: int | None = None) -> int | None:
-        abbreviations = eng().parser.stream_abbreviations
-        for match in _BOUNDARY.finditer(self._pending):
+        parser = eng().parser
+        for match in re.finditer(parser.stream_sentence_boundary, self._pending):
             if limit is not None and match.end() > limit:
                 return None
             head = self._pending[: match.end()].rstrip()
-            if not any(head.endswith(abbreviation) for abbreviation in abbreviations):
+            if not any(head.endswith(abbreviation) for abbreviation in parser.stream_abbreviations):
                 return match.end()
         return None
 

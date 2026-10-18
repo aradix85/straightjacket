@@ -62,10 +62,8 @@ def _schema_in_prompt(spec: AICallSpec) -> AICallSpec:
         return spec
     schema = json.dumps(spec.json_schema, ensure_ascii=False, separators=(",", ":"))
     instruction = get_prompt("json_schema_instruction", schema=schema)
-    last = spec.messages[-1] if spec.messages else None
-    if last is not None and last.get("role") == "user" and isinstance(last.get("content"), str):
-        return replace(spec, messages=[*spec.messages[:-1], {**last, "content": f"{last['content']}\n\n{instruction}"}])
-    return replace(spec, system=f"{spec.system}\n\n{instruction}")
+    last = spec.messages[-1]
+    return replace(spec, messages=[*spec.messages[:-1], {**last, "content": f"{last['content']}\n\n{instruction}"}])
 
 
 def get_provider() -> AIProvider:

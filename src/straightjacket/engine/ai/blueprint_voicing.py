@@ -65,18 +65,6 @@ def _build_voicing_user_msg(game: GameState, seed: BlueprintSeed) -> str:
     return "\n".join(parts)
 
 
-def _count_mismatch(voicing: dict[str, Any], seed: BlueprintSeed) -> list[str]:
-    blueprint = eng().adventure_crafter.blueprint
-    expected = {
-        "acts": len(seed.acts),
-        "revelations": blueprint.revelations_per_blueprint,
-        "possible_endings": blueprint.possible_endings_per_blueprint,
-    }
-    return [
-        f"{key} {len(voicing[key])} (expected {count})" for key, count in expected.items() if len(voicing[key]) != count
-    ]
-
-
 def call_blueprint_voicing(
     provider: AIProvider,
     game: GameState,
@@ -91,39 +79,53 @@ def call_blueprint_voicing(
     user_msg = _build_voicing_user_msg(game, seed)
     blueprint = eng().adventure_crafter.blueprint
 
-    schema = get_blueprint_voicing_schema(
-        len(seed.acts), blueprint.revelations_per_blueprint, blueprint.possible_endings_per_blueprint
-    )
+    expected = {
+        "acts": len(seed.acts),
+        "revelations": blueprint.revelations_per_blueprint,
+        "possible_endings": blueprint.possible_endings_per_blueprint,
+    }
+    schema = get_blueprint_voicing_schema(expected["acts"], expected["revelations"], expected["possible_endings"])
+    model = model_for_role("blueprint_voicing")
+    params = sampling_params("blueprint_voicing")
     messages: list[dict[str, Any]] = [{"role": "user", "content": user_msg}]
-    try:
-        for _attempt in range(blueprint.voicing_count_retries + 1):
-            spec = AICallSpec(
-                model=model_for_role("blueprint_voicing"),
-                system=system,
-                messages=list(messages),
-                json_schema=schema,
-                log_role="blueprint_voicing",
-                **sampling_params("blueprint_voicing"),
-            )
+    mismatch: list[str] = []
+    for _attempt in range(blueprint.voicing_count_retries + 1):
+        spec = AICallSpec(
+            model=model,
+            system=system,
+            messages=list(messages),
+            json_schema=schema,
+            log_role="blueprint_voicing",
+            **params,
+        )
+        try:
             content = create_with_retry(provider, spec).content
             voicing: dict[str, Any] = json.loads(content)
-            mismatch = _count_mismatch(voicing, seed)
-            if not mismatch:
-                log(
-                    f"[BlueprintVoicing] Succeeded: "
-                    f"conflict={voicing['central_conflict'][: eng().truncations.log_medium]}, "
-                    f"acts={len(voicing['acts'])}, revelations={len(voicing['revelations'])}"
-                )
-                return voicing
-            log(f"[BlueprintVoicing] Wrong counts ({', '.join(mismatch)}), asking again")
-            messages.append({"role": "assistant", "content": content})
-            messages.append(
-                {"role": "user", "content": get_prompt("blueprint_voicing_count_retry", mismatch=", ".join(mismatch))}
+            mismatch = [
+                f"{key} {len(voicing[key])} (expected {count})"
+                for key, count in expected.items()
+                if len(voicing[key]) != count
+            ]
+            conflict = voicing["central_conflict"]
+        except Exception as e:
+            log(
+                f"[BlueprintVoicing] Failed ({type(e).__name__}: {e}), continuing without blueprint",
+                level="warning",
             )
-        raise ValueError(f"voicing returned wrong counts despite its schema: {', '.join(mismatch)}")
-    except Exception as e:
-        log(
-            f"[BlueprintVoicing] Failed ({type(e).__name__}: {e}), continuing without blueprint",
-            level="warning",
+            return None
+        if not mismatch:
+            log(
+                f"[BlueprintVoicing] Succeeded: conflict={conflict[: eng().truncations.log_medium]}, "
+                f"acts={expected['acts']}, revelations={expected['revelations']}"
+            )
+            return voicing
+        log(f"[BlueprintVoicing] Wrong counts ({', '.join(mismatch)}), asking again")
+        messages.append({"role": "assistant", "content": content})
+        messages.append(
+            {"role": "user", "content": get_prompt("blueprint_voicing_count_retry", mismatch=", ".join(mismatch))}
         )
-        return None
+    log(
+        f"[BlueprintVoicing] Wrong counts despite its schema ({', '.join(mismatch)}), continuing without blueprint",
+        level="warning",
+    )
+    return None

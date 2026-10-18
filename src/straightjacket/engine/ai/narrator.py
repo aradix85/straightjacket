@@ -27,23 +27,16 @@ def call_narrator(
     prompt: str,
     game: GameState,
     config: EngineConfig | None = None,
-    system_suffix: str = "",
-    skip_history: bool = False,
     stream: NarrationSink | None = None,
 ) -> str:
-    log(f"[Narrator] Calling narrator (prompt: {len(prompt)} chars{', skip_history' if skip_history else ''})")
+    log(f"[Narrator] Calling narrator (prompt: {len(prompt)} chars)")
     messages = []
-
-    if not skip_history and game.narrative.narration_history:
-        for entry in game.narrative.narration_history[-eng().pacing.max_narration_history :]:
-            messages.append({"role": "user", "content": entry.prompt_summary})
-            messages.append({"role": "assistant", "content": entry.narration})
-
+    for entry in game.narrative.narration_history[-eng().pacing.max_narration_history :]:
+        messages.append({"role": "user", "content": entry.prompt_summary})
+        messages.append({"role": "assistant", "content": entry.narration})
     messages.append({"role": "user", "content": prompt})
 
     system, cached_prefix = get_narrator_system(config or EngineConfig(), game)
-    if system_suffix:
-        system = system + "\n" + system_suffix
 
     spec = AICallSpec(
         model=model_for_role("narrator"),
@@ -55,28 +48,23 @@ def call_narrator(
     )
     response = stream_with_retry(provider, spec, stream) if stream is not None else create_with_retry(provider, spec)
     raw = response.content
-    stop = response.stop_reason
     if not raw.strip():
         raise AIUnavailableError("narrator: empty narration")
 
-    if stop == "truncated":
+    if response.stop_reason == "truncated":
         log(f"[Narrator] WARNING: Response truncated at max_tokens ({len(raw)} chars)", level="warning")
         raw = salvage_truncated_narration(raw)
-    else:
-        _prose = raw[: raw.find("<game_data>")] if "<game_data>" in raw else raw
-        _stripped = _prose.rstrip()
-        if _stripped and _stripped[-1] not in eng().parser.sentence_end_marks:
-            log(
-                f"[Narrator] WARNING: Response appears truncated despite complete "
-                f"({len(raw)} chars, ends with '{_stripped[-20:]}')",
-                level="warning",
-            )
-            raw = salvage_truncated_narration(raw)
 
     log(f"[Narrator] Response ({len(raw)} chars): {raw[: eng().truncations.log_xlong]}...")
-    if "<game_data>" in raw:
-        log("[Narrator] Found <game_data> tag (opening/chapter scene)")
     return raw
+
+
+def _no_opening_setup() -> dict[str, Any]:
+    return {"npcs": [], "location": "", "scene_context": "", "memory_updates": [], "deceased_npcs": []}
+
+
+def _no_narrator_metadata() -> dict[str, Any]:
+    return {"new_npcs": [], "npc_renames": [], "npc_details": [], "deceased_npcs": [], "lore_npcs": []}
 
 
 def call_opening_setup(
@@ -97,29 +85,21 @@ def call_opening_setup(
         location=_xe(game.world.current_location or _defaults["unknown_location"]),
     )
 
+    spec = AICallSpec(
+        model=model_for_role("opening_setup"),
+        system=system,
+        messages=[{"role": "user", "content": prompt}],
+        json_schema=get_opening_setup_schema(),
+        log_role="opening_setup",
+        **sampling_params("opening_setup"),
+    )
     try:
-        spec = AICallSpec(
-            model=model_for_role("opening_setup"),
-            system=system,
-            messages=[{"role": "user", "content": prompt}],
-            json_schema=get_opening_setup_schema(),
-            log_role="opening_setup",
-            **sampling_params("opening_setup"),
-        )
-        response = create_with_retry(provider, spec)
-        data: dict[str, Any] = json.loads(response.content)
+        data: dict[str, Any] = json.loads(create_with_retry(provider, spec).content)
         log(f"[OpeningSetup] Extracted: {len(data['npcs'])} NPCs, loc={data['location']}")
         return data
     except Exception as e:
         log(f"[OpeningSetup] Extraction failed: {e}", level="warning")
-        defaults = eng().ai_text.narrator_defaults
-        return {
-            "npcs": defaults["opening_setup_fallback_npcs"],
-            "location": defaults["opening_setup_fallback_location"],
-            "scene_context": defaults["opening_setup_fallback_scene_context"],
-            "memory_updates": defaults["opening_setup_fallback_memory_updates"],
-            "deceased_npcs": defaults["opening_setup_fallback_deceased_npcs"],
-        }
+        return _no_opening_setup()
 
 
 def call_narrator_metadata(
@@ -157,7 +137,7 @@ def call_narrator_metadata(
     mechanical_ctx = ""
     if brain:
         parts = [f"move:{brain.move}"]
-        if brain.stat and brain.stat != "none":
+        if brain.stat != "none":
             parts.append(f"stat:{brain.stat}")
         if brain.target_npc:
             parts.append(f"target:{brain.target_npc}")
@@ -182,17 +162,16 @@ def call_narrator_metadata(
         engine_context=mechanical_ctx,
     )
 
+    spec = AICallSpec(
+        model=model_for_role("narrator_metadata"),
+        system=system,
+        messages=[{"role": "user", "content": prompt}],
+        json_schema=get_narrator_metadata_schema(npc_ids),
+        log_role="narrator_metadata",
+        **sampling_params("narrator_metadata"),
+    )
     try:
-        spec = AICallSpec(
-            model=model_for_role("narrator_metadata"),
-            system=system,
-            messages=[{"role": "user", "content": prompt}],
-            json_schema=get_narrator_metadata_schema(npc_ids),
-            log_role="narrator_metadata",
-            **sampling_params("narrator_metadata"),
-        )
-        response = create_with_retry(provider, spec)
-        metadata: dict[str, Any] = json.loads(response.content)
+        metadata: dict[str, Any] = json.loads(create_with_retry(provider, spec).content)
         log(
             f"[Metadata] Extracted: "
             f"{len(metadata['new_npcs'])} new NPCs, "
@@ -203,11 +182,4 @@ def call_narrator_metadata(
         return metadata
     except Exception as e:
         log(f"[Metadata] Extraction failed: {e}", level="warning")
-        defaults = eng().ai_text.narrator_defaults
-        return {
-            "new_npcs": defaults["narrator_metadata_fallback_new_npcs"],
-            "npc_renames": defaults["narrator_metadata_fallback_npc_renames"],
-            "npc_details": defaults["narrator_metadata_fallback_npc_details"],
-            "deceased_npcs": defaults["narrator_metadata_fallback_deceased_npcs"],
-            "lore_npcs": defaults["narrator_metadata_fallback_lore_npcs"],
-        }
+        return _no_narrator_metadata()

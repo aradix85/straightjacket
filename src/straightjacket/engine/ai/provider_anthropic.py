@@ -1,40 +1,10 @@
-import json
 from collections.abc import Callable
 from typing import Any
 
 import anthropic
 
 from ..logging_util import log
-from .provider_base import AICallSpec, AIResponse, extract_usage, normalize_stop_reason
-
-
-def _to_anthropic_messages(messages: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    converted: list[dict[str, Any]] = []
-    for msg in messages:
-        if msg["role"] == "tool":
-            block = {"type": "tool_result", "tool_use_id": msg["tool_call_id"], "content": msg["content"]}
-            previous = converted[-1] if converted else None
-            if previous is not None and previous["role"] == "user" and isinstance(previous["content"], list):
-                previous["content"].append(block)
-            else:
-                converted.append({"role": "user", "content": [block]})
-        elif msg["role"] == "assistant" and "tool_calls" in msg:
-            blocks: list[dict[str, Any]] = []
-            if msg["content"]:
-                blocks.append({"type": "text", "text": msg["content"]})
-            blocks.extend(
-                {
-                    "type": "tool_use",
-                    "id": tc["id"],
-                    "name": tc["function"]["name"],
-                    "input": json.loads(tc["function"]["arguments"]),
-                }
-                for tc in msg["tool_calls"]
-            )
-            converted.append({"role": "assistant", "content": blocks})
-        else:
-            converted.append(msg)
-    return converted
+from .provider_base import AICallSpec, AIResponse, normalize_stop_reason
 
 
 def _cached_system(spec: AICallSpec, cache_control: dict[str, Any]) -> list[dict[str, Any]]:
@@ -74,7 +44,7 @@ class AnthropicProvider:
             "model": spec.model,
             "max_tokens": spec.max_tokens,
             "system": spec.system,
-            "messages": _to_anthropic_messages(spec.messages),
+            "messages": spec.messages,
         }
         extra: dict[str, Any] = dict(spec.extra_body) if spec.extra_body else {}
 
@@ -133,12 +103,14 @@ class AnthropicProvider:
             response.stop_reason, ("max_tokens", "model_context_window_exceeded"), "tool_use", "refusal"
         )
 
-        usage = extract_usage(getattr(response, "usage", None), "input_tokens", "output_tokens")
-        if usage is not None:
-            cache_read = getattr(response.usage, "cache_read_input_tokens", None) or 0
-            cache_write = getattr(response.usage, "cache_creation_input_tokens", None) or 0
-            usage["input_tokens"] += cache_read + cache_write
-            usage["cache_read_tokens"] = cache_read
+        raw_usage = response.usage
+        cache_read = raw_usage.cache_read_input_tokens or 0
+        cache_write = raw_usage.cache_creation_input_tokens or 0
+        usage = {
+            "input_tokens": raw_usage.input_tokens + cache_read + cache_write,
+            "output_tokens": raw_usage.output_tokens,
+            "cache_read_tokens": cache_read,
+        }
 
         return AIResponse(
             content=content,

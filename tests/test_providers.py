@@ -39,6 +39,16 @@ def _spec(**overrides: Any) -> AICallSpec:
     return AICallSpec(**base)
 
 
+def _anthropic_usage(input_tokens: int = 5, output_tokens: int = 7, **cache: int) -> SimpleNamespace:
+    fields: dict[str, Any] = {"cache_read_input_tokens": None, "cache_creation_input_tokens": None, **cache}
+    return SimpleNamespace(input_tokens=input_tokens, output_tokens=output_tokens, **fields)
+
+
+def _openai_usage(prompt_tokens: int, completion_tokens: int, **extra: Any) -> SimpleNamespace:
+    fields: dict[str, Any] = {"prompt_tokens_details": None, "completion_tokens_details": None, **extra}
+    return SimpleNamespace(prompt_tokens=prompt_tokens, completion_tokens=completion_tokens, **fields)
+
+
 def _tool() -> dict[str, Any]:
     return {
         "type": "function",
@@ -88,7 +98,7 @@ class TestAnthropicProvider:
                 SimpleNamespace(type="tool_use", id="t1", name="query_npc", input={"npc_id": "npc_1"}),
             ],
             stop_reason="tool_use",
-            usage=SimpleNamespace(input_tokens=11, output_tokens=7),
+            usage=_anthropic_usage(11, 7),
         )
         result = provider_anthropic.AnthropicProvider(api_key="k", timeout_seconds=30).create_message(_spec())
         assert result.content == "Hello world"
@@ -99,7 +109,7 @@ class TestAnthropicProvider:
     def test_request_carries_system_sampling_schema_and_converted_tools(
         self, anthropic_endpoint: _FakeEndpoint
     ) -> None:
-        anthropic_endpoint.response = SimpleNamespace(content=[], stop_reason="end_turn")
+        anthropic_endpoint.response = _anthropic_reply()
         schema = {"title": "brain_output", "type": "object"}
         spec = _spec(temperature=0.5, top_p=0.9, top_k=40, json_schema=schema, tools=[_tool()])
         provider_anthropic.AnthropicProvider(api_key="k", timeout_seconds=30).create_message(spec)
@@ -120,17 +130,16 @@ class TestAnthropicProvider:
         ]
 
     def test_unset_options_are_not_sent(self, anthropic_endpoint: _FakeEndpoint) -> None:
-        anthropic_endpoint.response = SimpleNamespace(content=[], stop_reason="end_turn")
+        anthropic_endpoint.response = _anthropic_reply()
         provider_anthropic.AnthropicProvider(api_key="k", timeout_seconds=30).create_message(_spec())
         assert set(anthropic_endpoint.calls[0]) == {"model", "max_tokens", "system", "messages"}
 
-    def test_max_tokens_is_truncated_and_missing_usage_is_none(self, anthropic_endpoint: _FakeEndpoint) -> None:
+    def test_max_tokens_is_truncated(self, anthropic_endpoint: _FakeEndpoint) -> None:
         anthropic_endpoint.response = SimpleNamespace(
-            content=[SimpleNamespace(type="text", text="cut")], stop_reason="max_tokens"
+            content=[SimpleNamespace(type="text", text="cut")], stop_reason="max_tokens", usage=_anthropic_usage()
         )
         result = provider_anthropic.AnthropicProvider(api_key="k", timeout_seconds=30).create_message(_spec())
         assert result.stop_reason == "truncated"
-        assert result.usage is None
         assert result.tool_calls == []
 
     def test_base_url_only_when_configured(self, anthropic_endpoint: _FakeEndpoint) -> None:
@@ -149,7 +158,7 @@ def _openai_response(content: str | None, finish_reason: str, tool_calls: list |
     message = SimpleNamespace(content=content, tool_calls=tool_calls)
     return SimpleNamespace(
         choices=[SimpleNamespace(message=message, finish_reason=finish_reason)],
-        usage=SimpleNamespace(prompt_tokens=20, completion_tokens=5),
+        usage=_openai_usage(20, 5),
     )
 
 
@@ -218,7 +227,7 @@ def _accepted(create: Any) -> set[str]:
 
 
 def test_anthropic_request_uses_only_parameters_the_installed_sdk_accepts(anthropic_endpoint: _FakeEndpoint) -> None:
-    anthropic_endpoint.response = SimpleNamespace(content=[], stop_reason="end_turn")
+    anthropic_endpoint.response = _anthropic_reply()
     spec = _spec(temperature=0.5, top_p=0.9, top_k=40, json_schema={"title": "t", "type": "object"}, tools=[_tool()])
     provider_anthropic.AnthropicProvider(api_key="k", timeout_seconds=30).create_message(spec)
     accepted = _accepted(provider_anthropic.anthropic.resources.messages.Messages.create)
@@ -265,9 +274,7 @@ def test_openai_list_models_refuses_an_unknown_listing(openai_endpoint: _FakeEnd
 
 
 def _anthropic_reply(*blocks: SimpleNamespace) -> SimpleNamespace:
-    return SimpleNamespace(
-        content=list(blocks), stop_reason="end_turn", usage=SimpleNamespace(input_tokens=5, output_tokens=7)
-    )
+    return SimpleNamespace(content=list(blocks), stop_reason="end_turn", usage=_anthropic_usage())
 
 
 def test_anthropic_thinking_blocks_never_reach_the_content(anthropic_endpoint: _FakeEndpoint) -> None:
@@ -278,43 +285,6 @@ def test_anthropic_thinking_blocks_never_reach_the_content(anthropic_endpoint: _
     )
     result = provider_anthropic.AnthropicProvider(api_key="k", timeout_seconds=30).create_message(_spec())
     assert result.content == "The door holds."
-
-
-def test_anthropic_converts_the_tool_loop_conversation(anthropic_endpoint: _FakeEndpoint) -> None:
-    anthropic_endpoint.response = _anthropic_reply(SimpleNamespace(type="text", text="done"))
-    messages = [
-        {"role": "user", "content": "Who is Mira?"},
-        {
-            "role": "assistant",
-            "content": "",
-            "tool_calls": [
-                {"id": "t1", "type": "function", "function": {"name": "query_npc", "arguments": '{"npc_id": "npc_1"}'}},
-                {"id": "t2", "type": "function", "function": {"name": "query_npc", "arguments": '{"npc_id": "npc_2"}'}},
-            ],
-        },
-        {"role": "tool", "tool_call_id": "t1", "content": "Mira: archivist"},
-        {"role": "tool", "tool_call_id": "t2", "content": "Oren: warden"},
-    ]
-    provider_anthropic.AnthropicProvider(api_key="k", timeout_seconds=30).create_message(
-        _spec(messages=messages, tools=[_tool()])
-    )
-    sent = anthropic_endpoint.calls[0]["messages"]
-    assert sent[0] == {"role": "user", "content": "Who is Mira?"}
-    assert sent[1] == {
-        "role": "assistant",
-        "content": [
-            {"type": "tool_use", "id": "t1", "name": "query_npc", "input": {"npc_id": "npc_1"}},
-            {"type": "tool_use", "id": "t2", "name": "query_npc", "input": {"npc_id": "npc_2"}},
-        ],
-    }
-    assert sent[2] == {
-        "role": "user",
-        "content": [
-            {"type": "tool_result", "tool_use_id": "t1", "content": "Mira: archivist"},
-            {"type": "tool_result", "tool_use_id": "t2", "content": "Oren: warden"},
-        ],
-    }
-    assert len(sent) == 3
 
 
 def test_anthropic_passes_cluster_extra_body_to_the_right_parameters(anthropic_endpoint: _FakeEndpoint) -> None:
@@ -391,9 +361,7 @@ def test_anthropic_usage_counts_cached_input_and_reports_the_cached_share(anthro
     anthropic_endpoint.response = SimpleNamespace(
         content=[SimpleNamespace(type="text", text="ok")],
         stop_reason="end_turn",
-        usage=SimpleNamespace(
-            input_tokens=4, output_tokens=9, cache_read_input_tokens=3970, cache_creation_input_tokens=0
-        ),
+        usage=_anthropic_usage(4, 9, cache_read_input_tokens=3970, cache_creation_input_tokens=0),
     )
     result = provider_anthropic.AnthropicProvider(api_key="k", timeout_seconds=30).create_message(_spec())
     assert result.usage == {"input_tokens": 3974, "output_tokens": 9, "cache_read_tokens": 3970}
@@ -447,7 +415,7 @@ def test_openai_stream_collects_text_finish_reason_and_usage(openai_endpoint: _F
             choices=[SimpleNamespace(delta=SimpleNamespace(content=text), finish_reason=finish)], usage=None
         )
 
-    usage_chunk = SimpleNamespace(choices=[], usage=SimpleNamespace(prompt_tokens=3, completion_tokens=2))
+    usage_chunk = SimpleNamespace(choices=[], usage=_openai_usage(3, 2))
     openai_endpoint.response = iter([chunk("Rain "), chunk(None), chunk("falls.", "stop"), usage_chunk])
     received: list[str] = []
     result = provider_openai.OpenAICompatibleProvider(api_key="k", timeout_seconds=30).stream_message(
@@ -464,9 +432,7 @@ def test_openai_stream_collects_text_finish_reason_and_usage(openai_endpoint: _F
 
 def test_openai_usage_reports_cached_prompt_tokens(openai_endpoint: _FakeEndpoint) -> None:
     response = _openai_response("Narration", "stop", None)
-    response.usage = SimpleNamespace(
-        prompt_tokens=2000, completion_tokens=300, prompt_tokens_details=SimpleNamespace(cached_tokens=1500)
-    )
+    response.usage = _openai_usage(2000, 300, prompt_tokens_details=SimpleNamespace(cached_tokens=1500))
     openai_endpoint.response = response
     result = provider_openai.OpenAICompatibleProvider(api_key="k", timeout_seconds=30).create_message(_spec())
     assert result.usage == {"input_tokens": 2000, "output_tokens": 300, "cache_read_tokens": 1500}
@@ -475,9 +441,7 @@ def test_openai_usage_reports_cached_prompt_tokens(openai_endpoint: _FakeEndpoin
 def test_openai_usage_reports_reasoning_tokens_nested_or_top_level(openai_endpoint: _FakeEndpoint) -> None:
     provider = provider_openai.OpenAICompatibleProvider(api_key="k", timeout_seconds=30)
     nested = _openai_response("{}", "length", None)
-    nested.usage = SimpleNamespace(
-        prompt_tokens=10, completion_tokens=8192, completion_tokens_details=SimpleNamespace(reasoning_tokens=7800)
-    )
+    nested.usage = _openai_usage(10, 8192, completion_tokens_details=SimpleNamespace(reasoning_tokens=7800))
     openai_endpoint.response = nested
     assert provider.create_message(_spec()).usage == {
         "input_tokens": 10,
@@ -485,7 +449,7 @@ def test_openai_usage_reports_reasoning_tokens_nested_or_top_level(openai_endpoi
         "reasoning_tokens": 7800,
     }
     top_level = _openai_response("{}", "stop", None)
-    top_level.usage = SimpleNamespace(prompt_tokens=10, completion_tokens=600, reasoning_tokens=40)
+    top_level.usage = _openai_usage(10, 600, reasoning_tokens=40)
     openai_endpoint.response = top_level
     assert provider.create_message(_spec()).usage == {"input_tokens": 10, "output_tokens": 600, "reasoning_tokens": 40}
 
@@ -508,7 +472,7 @@ def test_anthropic_refusal_is_reported_as_refusal(anthropic_endpoint: _FakeEndpo
     anthropic_endpoint.response = SimpleNamespace(
         content=[SimpleNamespace(type="text", text="")],
         stop_reason="refusal",
-        usage=SimpleNamespace(input_tokens=1, output_tokens=1),
+        usage=_anthropic_usage(1, 1),
     )
     assert (
         provider_anthropic.AnthropicProvider(api_key="k", timeout_seconds=30).create_message(_spec()).stop_reason

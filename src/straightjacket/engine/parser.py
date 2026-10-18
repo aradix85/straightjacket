@@ -1,45 +1,23 @@
 import re
 from collections.abc import Callable
 
+from .ai.provider_base import AIUnavailableError
 from .engine_loader import eng
 from .logging_util import log
 from .models import GameState
 
 
 def salvage_truncated_narration(raw: str) -> str:
-    last_open = raw.rfind("<game_data>")
-    if last_open != -1 and raw.find("</game_data>", last_open) == -1:
-        raw = raw[:last_open].rstrip()
-        log("[Narrator] Removed incomplete <game_data> from truncated response")
-
-    prose_end = len(raw)
-    idx = raw.find("<game_data>")
-    if idx != -1 and idx < prose_end:
-        prose_end = idx
-
-    prose = raw[:prose_end]
-    metadata = raw[prose_end:]
-
-    last_sentence = -1
-    for pattern in eng().parser.sentence_breaks:
-        idx = prose.rfind(pattern)
-        if idx != -1:
-            end = idx + len(pattern)
-            if end > last_sentence:
-                last_sentence = end
-
-    stripped = prose.rstrip()
-    if stripped and stripped[-1] in ".!?":
-        last_sentence = max(last_sentence, len(stripped))
-    if stripped.endswith(('."', '!"', '?"')):
-        last_sentence = max(last_sentence, len(stripped))
-
-    if last_sentence > eng().parser.max_label_length and last_sentence < len(prose):
-        trimmed = prose[:last_sentence].rstrip()
-        log(f"[Narrator] Trimmed truncated prose: {len(prose)} → {len(trimmed)} chars")
-        prose = trimmed
-
-    return prose + metadata
+    cfg = eng().parser
+    prose = raw.rstrip()
+    if prose.endswith(tuple(mark.rstrip() for mark in cfg.sentence_breaks)):
+        return prose
+    last_sentence = max((prose.rfind(mark) + len(mark) for mark in cfg.sentence_breaks if mark in prose), default=0)
+    if last_sentence <= cfg.salvage_min_length:
+        return prose
+    trimmed = prose[:last_sentence].rstrip()
+    log(f"[Narrator] Trimmed truncated prose: {len(prose)} → {len(trimmed)} chars")
+    return trimmed
 
 
 def _strip_role_prefix(text: str) -> str:
@@ -151,14 +129,6 @@ def _mark_introduced_npcs(game: GameState, narration: str) -> None:
                 break
 
 
-def _salvage_empty_narration(raw: str) -> str:
-    for para in raw.split("\n\n"):
-        clean_para = para.strip()
-        if clean_para and not clean_para.startswith(("<", "{", "[", "```")):
-            return clean_para
-    return ""
-
-
 def parse_narrator_response(game: GameState, raw: str) -> str:
     narration = raw
     hits: list[str] = []
@@ -205,8 +175,8 @@ def parse_narrator_response(game: GameState, raw: str) -> str:
     )
 
     if not narration.strip():
-        log("[Parser] WARNING: Narration empty after parsing — returning raw text excerpt", level="warning")
-        narration = _salvage_empty_narration(raw)
+        log("[Parser] WARNING: nothing of the narration is left after cleanup", level="warning")
+        raise AIUnavailableError("narrator: empty narration after cleanup")
 
     return narration
 

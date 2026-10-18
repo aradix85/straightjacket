@@ -7,7 +7,7 @@ from concurrent.futures import ThreadPoolExecutor
 from ..ai.blueprint_voicing import call_blueprint_voicing
 from ..ai.metadata import process_deceased_npcs
 from ..ai.narrator import call_narrator, call_opening_setup
-from ..ai.provider_base import AIProvider, AIUnavailableError
+from ..ai.provider_base import AIProvider
 from ..db import sync as _db_sync
 from ..db.connection import reset_db
 from ..engine_loader import eng
@@ -55,11 +55,7 @@ def generate_epilogue(
     raw = call_narrator(provider, build_epilogue_prompt(game), game, config)
     narration = parse_narrator_response(game, raw)
 
-    narration = re.sub(eng().parser.epilogue_heading, "", narration, count=1, flags=re.IGNORECASE)
-    narration = narration.strip()
-
-    if not narration:
-        raise AIUnavailableError("narrator: empty epilogue")
+    narration = re.sub(eng().parser.epilogue_heading, "", narration, count=1, flags=re.IGNORECASE).strip()
 
     game.campaign.epilogue_shown = True
     game.campaign.epilogue_text = narration
