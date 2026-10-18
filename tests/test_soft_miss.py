@@ -2,7 +2,7 @@ import pytest
 
 from straightjacket.engine.engine_loader import eng
 from straightjacket.engine.mechanics.facts import find_fact, settle_facts_by_miss
-from straightjacket.engine.datasworn.settings import load_package
+from straightjacket.engine.datasworn.moves import get_moves
 from straightjacket.engine.mechanics.move_effects import has_story_complication
 from straightjacket.engine.mechanics.move_outcome import resolve_move_outcome
 from straightjacket.engine.models import GameState, ResolvedFact, RollResult
@@ -106,7 +106,7 @@ def test_story_complication_only_where_the_setting_has_it(load_engine: None) -> 
 
 
 def _complication_rows(game: GameState) -> set[str]:
-    table = load_package(game.setting_id).oracle_table(eng().pay_the_price.match_miss_oracle_path)
+    table = get_moves(game.setting_id)[eng().pay_the_price.move].tables[eng().pay_the_price.match_miss_table]
     return {row.text for row in table.rows if not row.oracle_rolls}
 
 
@@ -121,7 +121,7 @@ def test_a_matched_miss_rolls_a_story_complication_instead_of_pay_the_price(
     game = _game("starforged")
     rows = _complication_rows(game)
     outcome = resolve_move_outcome(game, "adventure/face_danger", "MISS", match=True, target_npc_id=None)
-    assert rolled == [eng().pay_the_price.match_miss_oracle_path]
+    assert rolled == ["Story Complication"]
     assert all(row in rows for row in _rolled_rows(outcome.consequences[-1]))
 
 
@@ -134,7 +134,7 @@ def test_other_misses_pay_the_price(
     rows = _complication_rows(_game("starforged"))
     for _ in range(20):
         outcome = resolve_move_outcome(game, "adventure/face_danger", "MISS", match=match, target_npc_id=None)
-        assert rolled.pop() == eng().pay_the_price.oracle_path
+        assert rolled.pop() == "Pay the Price"
         price = next(c for c in outcome.consequences if c.startswith("Pay the Price: "))
         assert not any(row in rows for row in _rolled_rows(price))
 

@@ -207,6 +207,42 @@ def test_a_move_with_nothing_to_roll_with_for_its_target_is_refused(load_engine:
         call_brain(provider, game, "I share a drink with Orla.")
 
 
+def test_the_brain_sees_each_way_of_a_move_in_the_books_words(load_engine: None) -> None:
+    from straightjacket.engine.ai.brain import call_brain
+
+    provider = _BrainAnswers("recover/heal", stat="lowest")
+    assert call_brain(provider, _starforged(), "I stitch the cut on my arm.").stat == "lowest"
+    assert "lowest of iron, wits: Mend your own wounds" in provider.systems[0]
+    assert "wits: Provide care" in provider.systems[0]
+    assert "edge: With speed, mobility, or agility" in provider.systems[0]
+    assert "lowest" in provider.schemas[0]["properties"]["stat"]["enum"]
+
+
+@pytest.mark.parametrize(
+    ("setting", "edge"),
+    [
+        ("starforged", "edge=Quickness, agility, and prowess when fighting at a distance."),
+        ("delve", "edge=Quickness, agility, and prowess in ranged combat."),
+    ],
+)
+def test_the_brain_reads_the_stats_as_the_rulebook_describes_them(load_engine: None, setting: str, edge: str) -> None:
+    from straightjacket.engine.ai.brain import call_brain
+
+    game = make_game_state(setting_id=setting)
+    provider = _BrainAnswers("adventure/face_danger")
+    call_brain(provider, game, "I jump the gap.")
+    assert edge in provider.systems[0]
+
+
+@pytest.mark.parametrize(("move", "second"), [("adventure/face_danger", "edge"), ("world_shaping", "wits")])
+def test_lowest_for_a_move_without_that_way_is_asked_again(load_engine: None, move: str, second: str) -> None:
+    from straightjacket.engine.ai.brain import call_brain
+
+    provider = _BrainSequence("lowest", second, move=move)
+    assert call_brain(provider, _starforged(), "I jump the gap.").stat == second
+    assert "stat is lowest" in provider.messages[1][-1]["content"]
+
+
 def test_world_shaping_without_a_stat_is_not_asked_again(load_engine: None) -> None:
     from straightjacket.engine.ai.brain import call_brain
 

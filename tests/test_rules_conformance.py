@@ -392,16 +392,14 @@ def test_conclusion_on_a_new_plotline_counts_as_none(load_engine: None) -> None:
 _ROLL_TWICE = {"oracle": None, "auto": True, "number_of_rolls": 2, "dice": None}
 
 
-class _FakeOracle:
+class _FakePriceMove:
     def __init__(self, *rows: Any) -> None:
         from straightjacket.engine.datasworn.loader import OracleTable
 
         self.order = list(rows)
         self.table = OracleTable(id="moves/pay_the_price", title="Pay the Price", rows=list(rows))
         self.table.roll = lambda: self.order.pop(0)
-
-    def oracle_table(self, path: str) -> Any:
-        return self.table
+        self.tables = {"pay_the_price": self.table}
 
 
 def _price_row(text: str, duplicates: str | None = None) -> Any:
@@ -439,7 +437,7 @@ def test_pay_the_price_harm_costs_health(load_engine: None, monkeypatch: pytest.
     from straightjacket.engine.mechanics.outcome_result import OutcomeResult
     from tests._helpers import make_game_state
 
-    monkeypatch.setattr(move_effects, "load_package", lambda setting: _FakeOracle(_price_row("You are harmed")))
+    monkeypatch.setattr(move_effects, "_pay_the_price_move", lambda game: _FakePriceMove(_price_row("You are harmed")))
     game = make_game_state(setting_id="starforged")
     game.resources.health = 4
     move_effects.pay_the_price(game, OutcomeResult())
@@ -454,7 +452,7 @@ def test_pay_the_price_roll_twice_tells_both_results_and_not_the_instruction(
     from tests._helpers import make_game_state
 
     rows = (_price_row("Roll twice", "reroll"), _price_row("You are stressed"), _price_row("A new enemy is revealed"))
-    monkeypatch.setattr(move_effects, "load_package", lambda setting: _FakeOracle(*rows))
+    monkeypatch.setattr(move_effects, "_pay_the_price_move", lambda game: _FakePriceMove(*rows))
     game = make_game_state(setting_id="starforged")
     game.resources.spirit = 4
     result = OutcomeResult()
@@ -472,7 +470,7 @@ def test_classic_pay_the_price_makes_a_twice_rolled_result_worse(
 
     enemy = _price_row("A new enemy is revealed")
     rows = (_price_row("Roll twice more on this table.", "make_it_worse"), enemy, enemy)
-    monkeypatch.setattr(move_effects, "load_package", lambda setting: _FakeOracle(*rows))
+    monkeypatch.setattr(move_effects, "_pay_the_price_move", lambda game: _FakePriceMove(*rows))
     result = OutcomeResult()
     move_effects.pay_the_price(make_game_state(setting_id="classic"), result)
     assert result.consequences == ["Pay the Price: A new enemy is revealed, made worse"]
@@ -487,7 +485,7 @@ def test_classic_roll_again_tells_the_next_result_made_worse(
 
     again = _price_row("Roll again and apply that result but make it worse. If you roll this result yet again, ...")
     rows = (again, _price_row("You are harmed"))
-    monkeypatch.setattr(move_effects, "load_package", lambda setting: _FakeOracle(*rows))
+    monkeypatch.setattr(move_effects, "_pay_the_price_move", lambda game: _FakePriceMove(*rows))
     game = make_game_state(setting_id="classic")
     game.resources.health = 4
     result = OutcomeResult()
@@ -648,6 +646,8 @@ def test_develop_your_relationship_match_raises_the_connection_rank(
         ("classic", "suffer/endure_stress", "shaken", "corrupted"),
         ("starforged", "suffer/endure_harm", "wounded", "permanently_harmed"),
         ("starforged", "suffer/endure_stress", "shaken", "traumatized"),
+        ("delve", "suffer/endure_harm", "wounded", "maimed"),
+        ("delve", "suffer/endure_stress", "shaken", "corrupted"),
     ],
 )
 def test_lasting_harm_uses_each_rulebooks_names(
@@ -662,3 +662,101 @@ def test_lasting_harm_uses_each_rulebooks_names(
     game.impacts = [first]
     resolve_move_outcome(game, move, "MISS", target_npc_id=None, match=False)
     assert lasting in game.impacts
+
+
+def test_delve_faces_death_with_the_classic_move(load_engine: None) -> None:
+    from straightjacket.engine.mechanics.outcome_result import move_outcome_config
+    from tests._helpers import make_game_state
+
+    params = move_outcome_config(make_game_state(setting_id="delve"), "suffer/endure_harm")["params"]
+    assert params["threshold_move"] == "suffer/face_death"
+
+
+def test_sundered_isles_discovers_from_its_own_table(load_engine: None) -> None:
+    from straightjacket.engine.datasworn.moves import get_moves
+    from straightjacket.engine.game.finalization import resolve_action_consequences
+    from straightjacket.engine.models import RollResult
+    from tests._helpers import make_brain_result, make_game_state
+
+    table = get_moves("sundered_isles")["exploration/make_a_discovery"].tables["make_a_discovery"]
+    own = {row.text for row in table.rows}
+    game = make_game_state(setting_id="sundered_isles")
+    brain = make_brain_result(move="exploration/explore_a_waypoint")
+    for _ in range(20):
+        roll = RollResult(3, 3, 3, "wits", 2, 5, "STRONG_HIT", "exploration/explore_a_waypoint", match=True)
+        action = resolve_action_consequences(game, brain, roll, "risky")
+        found = next(c for c in action.consequences if c.startswith("follow-up move Make a Discovery: "))
+        assert set(found.split(": ", 1)[1].removesuffix(", made worse").split("; ")) <= own
+
+
+def test_take_decisive_action_weak_hit_rolls_its_own_table_and_its_cost(
+    load_engine: None, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from straightjacket.engine.datasworn.moves import get_moves
+    from straightjacket.engine.mechanics.move_outcome import resolve_move_outcome
+    from tests._helpers import make_game_state, record_price_tables
+
+    worse = get_moves("starforged")["combat/take_decisive_action"].tables["take_decisive_action"].rows[0].text
+    rolled = record_price_tables(monkeypatch)
+    fix_dice(monkeypatch, 10)
+    game = make_game_state(setting_id="starforged")
+    game.resources.spirit = 3
+    game.resources.supply = 3
+    outcome = resolve_move_outcome(game, "combat/take_decisive_action", "WEAK_HIT", target_npc_id=None, match=False)
+    assert outcome.consequences[0] == f"Take Decisive Action: {worse}"
+    assert game.resources.health == 3
+    assert rolled == []
+
+
+@pytest.mark.parametrize(("setting", "clue"), [("starforged", True), ("sundered_isles", True), ("classic", False)])
+def test_gather_information_rolls_a_story_clue_where_the_move_has_one(
+    load_engine: None, setting: str, clue: bool
+) -> None:
+    from straightjacket.engine.mechanics.move_outcome import resolve_move_outcome
+    from tests._helpers import make_game_state
+
+    for result in ("STRONG_HIT", "WEAK_HIT"):
+        game = make_game_state(setting_id=setting)
+        outcome = resolve_move_outcome(game, "adventure/gather_information", result, target_npc_id=None, match=False)
+        assert any(c.startswith("Story Clue: ") for c in outcome.consequences) is clue
+
+
+def test_escape_the_depths_miss_reveals_a_danger_that_needs_no_site(load_engine: None) -> None:
+    from straightjacket.engine.game.finalization import resolve_action_consequences
+    from straightjacket.engine.models import RollResult
+    from tests._helpers import make_brain_result, make_game_state
+
+    game = make_game_state(setting_id="delve")
+    brain = make_brain_result(move="delve/escape_the_depths")
+    for _ in range(30):
+        roll = RollResult(1, 9, 9, "edge", 2, 3, "MISS", "delve/escape_the_depths", match=False)
+        action = resolve_action_consequences(game, brain, roll, "risky")
+        danger = next(c for c in action.consequences if c.startswith("follow-up move Reveal a Danger: "))
+        assert "theme card" not in danger
+        assert "domain card" not in danger
+
+
+@pytest.mark.parametrize(("iron", "wits", "rolled"), [(3, 1, ("wits", 1)), (1, 2, ("iron", 1))])
+def test_mending_your_own_wounds_rolls_the_lower_stat(
+    load_engine: None, iron: int, wits: int, rolled: tuple[str, int]
+) -> None:
+    from straightjacket.engine.datasworn.moves import get_moves
+    from straightjacket.engine.game.turn import _roll_source
+    from tests._helpers import make_brain_result, make_game_state
+
+    game = make_game_state(setting_id="starforged")
+    game.stats.update(iron=iron, wits=wits)
+    brain = make_brain_result(move="recover/heal", stat="lowest")
+    assert _roll_source(game, brain, get_moves("starforged")["recover/heal"]) == rolled
+
+
+def test_an_engine_chosen_roll_keeps_a_lowest_way_low(load_engine: None) -> None:
+    from straightjacket.engine.datasworn.moves import get_moves
+    from straightjacket.engine.mechanics.roll_sources import best_roll_option
+    from tests._helpers import make_game_state
+
+    game = make_game_state(setting_id="classic")
+    game.stats.update(iron=3, wits=1)
+    assert best_roll_option(game, get_moves("classic")["adventure/heal"]) == ("wits", 1)
+    game.resources.health = 2
+    assert best_roll_option(game, get_moves("classic")["suffer/endure_harm"]) == ("iron", 3)

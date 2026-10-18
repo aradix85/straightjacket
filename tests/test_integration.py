@@ -461,7 +461,6 @@ def test_a_dying_character_who_does_not_heal_faces_death_in_a_dialog_turn(
 
 
 def test_turn_consequences_applied_on_miss(load_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:
-    from straightjacket.engine.engine_loader import eng
     from straightjacket.engine.mechanics.move_outcome import resolve_move_outcome
     from tests._helpers import record_price_tables
 
@@ -470,7 +469,7 @@ def test_turn_consequences_applied_on_miss(load_engine: None, monkeypatch: pytes
 
     result = resolve_move_outcome(game, "adventure/face_danger", "MISS", target_npc_id=None, match=False)
 
-    assert rolled == [eng().pay_the_price.oracle_path]
+    assert rolled == ["Pay the Price"]
     assert result.consequences
 
 

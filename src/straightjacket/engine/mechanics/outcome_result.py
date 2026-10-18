@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any
 
+from ..datasworn.settings import load_package
 from ..engine_loader import eng
 from ..models import GameState
 
@@ -25,10 +26,10 @@ class OutcomeResult:
 def move_outcome_config(game: GameState, move_key: str) -> dict[str, Any]:
     _e = eng()
     overrides = _e.get_raw("move_outcome_overrides")
-    setting_overrides = overrides[game.setting_id] if game.setting_id in overrides else {}
-    if move_key in setting_overrides:
-        cfg: dict[str, Any] = setting_overrides[move_key]
-        return cfg
+    for pkg in load_package(game.setting_id).chain():
+        if move_key in overrides.get(pkg.id, {}):
+            cfg: dict[str, Any] = overrides[pkg.id][move_key]
+            return cfg
     outcomes = _e.get_raw("move_outcomes")
     if move_key not in outcomes:
         raise ValueError(f"No outcome config for {move_key}. Add it to engine.yaml move_outcomes.")

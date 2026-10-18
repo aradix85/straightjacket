@@ -43,6 +43,27 @@ class OracleTable:
         return len(self.rows)
 
 
+def parse_oracle_table(full_id: str, data: dict[str, Any]) -> OracleTable:
+    rows = []
+    for r in data["rows"]:
+        roll_obj = r.get("roll")
+        if isinstance(roll_obj, dict):
+            row_min = roll_obj.get("min", 0)
+            row_max = roll_obj.get("max", 0)
+        else:
+            row_min = r.get("min", 0)
+            row_max = r.get("max", 0)
+        rows.append(
+            OracleRow(
+                min=row_min,
+                max=row_max,
+                text=r["text"],
+                oracle_rolls=r.get("oracle_rolls"),
+            )
+        )
+    return OracleTable(id=full_id, title=data["name"], rows=rows)
+
+
 class Setting:
     def __init__(self, raw: dict[str, Any]):
         self._raw = raw
@@ -56,29 +77,9 @@ class Setting:
     def _load_oracle_collection(self, path: str, coll: dict[str, Any]) -> None:
         for table_id, table_data in (coll.get("contents") or {}).items():
             full_id = f"{path}/{table_id}"
-            self._oracles[full_id] = self._parse_oracle_table(full_id, table_data)
+            self._oracles[full_id] = parse_oracle_table(full_id, table_data)
         for sub_id, sub_coll in (coll.get("collections") or {}).items():
             self._load_oracle_collection(f"{path}/{sub_id}", sub_coll)
-
-    def _parse_oracle_table(self, full_id: str, data: dict[str, Any]) -> OracleTable:
-        rows = []
-        for r in data["rows"]:
-            roll_obj = r.get("roll")
-            if isinstance(roll_obj, dict):
-                row_min = roll_obj.get("min", 0)
-                row_max = roll_obj.get("max", 0)
-            else:
-                row_min = r.get("min", 0)
-                row_max = r.get("max", 0)
-            rows.append(
-                OracleRow(
-                    min=row_min,
-                    max=row_max,
-                    text=r["text"],
-                    oracle_rolls=r.get("oracle_rolls"),
-                )
-            )
-        return OracleTable(id=full_id, title=data["name"], rows=rows)
 
     def oracle(self, oracle_id: str) -> OracleTable | None:
         return self._oracles.get(oracle_id)

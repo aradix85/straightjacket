@@ -1,6 +1,7 @@
 pay_the_price:
-  oracle_path: moves/pay_the_price
-  match_miss_oracle_path: misc/story_complication
+  move: fate/pay_the_price
+  table: pay_the_price
+  match_miss_table: story_complication
   worse_reroll_prefixes:
   - Roll again and apply that result but make it worse
   suffer_rows:

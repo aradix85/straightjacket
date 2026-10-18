@@ -7,7 +7,7 @@ from ..engine_loader import eng
 from ..logging_util import log
 from ..models import GameState
 from .consequences import roll_action
-from .move_effects import MoveEffect, apply_effects, has_story_complication, parse_effects
+from .move_effects import MoveEffect, apply_effects, has_story_complication, parse_effects, roll_move_table
 from .move_handlers import apply_recovery_handler, apply_suffer_handler, apply_threshold_handler
 from .outcome_result import OutcomeResult, move_outcome_config
 from .roll_sources import best_roll_option
@@ -22,7 +22,7 @@ def resolve_move_outcome(
     handler = move_cfg.get("handler")
     if handler:
         params_dict = dict(move_cfg["params"])
-        return _dispatch_handler(game, handler, roll_result, params_dict)
+        return _dispatch_handler(game, move_key, handler, roll_result, params_dict)
 
     match_key = f"{result_key}_match"
     effects_raw = move_cfg[match_key] if match and match_key in move_cfg else move_cfg.get(result_key)
@@ -32,7 +32,11 @@ def resolve_move_outcome(
     effects = parse_effects(effects_raw)
     if match and roll_result == "MISS" and has_story_complication(game):
         effects = [MoveEffect(type="story_complication") if e.type == "pay_the_price" else e for e in effects]
-    return apply_effects(game, effects, target_npc_id=target_npc_id)
+    result = apply_effects(game, [e for e in effects if e.type != "table"], target_npc_id=target_npc_id)
+    for effect in effects:
+        if effect.type == "table":
+            roll_move_table(game, move_key, effect.target, result)
+    return result
 
 
 def make_follow_up_moves(game: GameState, result: OutcomeResult) -> None:
@@ -51,7 +55,9 @@ def make_follow_up_moves(game: GameState, result: OutcomeResult) -> None:
         result.consequences.extend(follow.consequences)
 
 
-def _dispatch_handler(game: GameState, handler: str, roll_result: str, params: dict[str, Any]) -> OutcomeResult:
+def _dispatch_handler(
+    game: GameState, move_key: str, handler: str, roll_result: str, params: dict[str, Any]
+) -> OutcomeResult:
     handlers = {
         "suffer": apply_suffer_handler,
         "threshold": apply_threshold_handler,
@@ -59,4 +65,4 @@ def _dispatch_handler(game: GameState, handler: str, roll_result: str, params: d
     }
     if handler not in handlers:
         raise ValueError(f"Unknown move-outcome handler {handler!r}. Valid: {sorted(handlers)}.")
-    return handlers[handler](game, roll_result, params)
+    return handlers[handler](game, move_key, roll_result, params)

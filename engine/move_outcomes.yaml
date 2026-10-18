@@ -17,9 +17,11 @@ move_outcomes:
   adventure/gather_information:
     strong_hit:
     - momentum +2
+    - table story_clue
     weak_hit:
     - momentum +1
     - complication gather_information
+    - table story_clue
     miss:
     - pay_the_price
   adventure/compel:
@@ -98,7 +100,7 @@ move_outcomes:
     strong_hit:
     - momentum +1
     weak_hit:
-    - pay_the_price
+    - table take_decisive_action
     miss:
     - pay_the_price
   quest/swear_an_iron_vow:
@@ -233,7 +235,7 @@ move_outcomes:
       weak_hit_exchange: true
       recover_from_zero: true
       endure_always: false
-      table: moves/endure_harm
+      table: endure_harm
       threshold_move: threshold/face_death
   suffer/endure_stress:
     handler: suffer
@@ -250,7 +252,7 @@ move_outcomes:
       weak_hit_exchange: true
       recover_from_zero: true
       endure_always: false
-      table: moves/endure_stress
+      table: endure_stress
       threshold_move: threshold/face_desolation
   suffer/withstand_damage:
     handler: suffer
@@ -462,7 +464,8 @@ move_outcomes:
     strong_hit:
     - momentum +1
     weak_hit: []
-    miss: []
+    miss:
+    - chain_move delve/reveal_a_danger
   delve/locate_your_objective:
     strong_hit:
     - momentum +1
@@ -510,7 +513,7 @@ move_outcome_overrides:
         weak_hit_exchange: false
         recover_from_zero: false
         endure_always: true
-        table: moves/endure_harm
+        table: endure_harm
         threshold_move: suffer/face_death
     suffer/endure_stress:
       handler: suffer
@@ -527,7 +530,7 @@ move_outcome_overrides:
         weak_hit_exchange: false
         recover_from_zero: false
         endure_always: true
-        table: moves/endure_stress
+        table: endure_stress
         threshold_move: suffer/face_desolation
     adventure/secure_an_advantage:
       strong_hit:
@@ -536,15 +539,39 @@ move_outcome_overrides:
       - momentum +1
       miss:
       - pay_the_price
+    adventure/gather_information:
+      strong_hit:
+      - momentum +2
+      weak_hit:
+      - momentum +1
+      - complication gather_information
+      miss:
+      - pay_the_price
 
 oracle_moves:
   exploration/make_a_discovery:
-    oracle: moves/make_a_discovery
+    table: make_a_discovery
     rolls: 1
+    reroll_prefixes: []
     legacy_track: discoveries
     ticks_per_roll: 2
   exploration/confront_chaos:
-    oracle: moves/confront_chaos
+    table: confront_chaos
     rolls: 1
+    reroll_prefixes: []
     legacy_track: discoveries
     ticks_per_roll: 1
+  delve/reveal_a_danger:
+    table: reveal_a_danger
+    rolls: 1
+    reroll_prefixes:
+    - Check the theme card
+    - Check the domain card
+    legacy_track: ''
+    ticks_per_roll: 0
+
+move_table_rows:
+  story_clue: []
+  take_decisive_action:
+  - prefix: It’s worse than you thought
+    effect: suffer_move -2

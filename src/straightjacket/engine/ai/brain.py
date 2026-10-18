@@ -3,7 +3,8 @@ import html
 import json
 
 from ..config_loader import model_for_role, narration_language, sampling_params
-from ..datasworn.moves import get_moves
+from ..datasworn.moves import PICK_METHODS, Move, get_moves
+from ..datasworn.settings import load_package
 from ..engine_loader import eng
 from ..logging_util import log
 from ..models import BrainResult, GameState, Revelation
@@ -22,19 +23,40 @@ from ..mechanics.tracks import track_category_of_move
 from ..xml_utils import xe as _xe
 
 
+def _ways(move: Move) -> list[str]:
+    ways: list[str] = []
+    for condition in move.conditions:
+        if condition.method in PICK_METHODS:
+            options = [
+                o.stat or o.condition_meter for o in condition.roll_options if o.using in ("stat", "condition_meter")
+            ]
+            labels = [get_prompt("brain_pick_way", method=condition.method, options=", ".join(options))]
+        else:
+            labels = [o.stat for o in condition.roll_options if o.using == "stat" and o.stat]
+        ways.extend(f"{label}: {condition.text}" if condition.text else label for label in labels)
+    return ways
+
+
 def _build_moves_block(game: GameState) -> str:
     combat_pos = game.world.combat_position
     trigger_hints = eng().ai_text.brain_trigger_hints
+    ds_moves = get_moves(game.setting_id)
 
     lines = []
     for m in available_moves(game):
-        stats = ", ".join(m["stats"]) if m["stats"] else "none"
+        ways = _ways(ds_moves[m["move"]]) if m["move"] in ds_moves else m["stats"]
+        stats = " | ".join(ways) if ways else "none"
         hint = trigger_hints.get(m["move"], "")
         trigger = f" when:{hint}" if hint else ""
         lines.append(f"  {m['move']} ({m['name']}) stats:[{stats}] roll:{m['roll_type']}{trigger}")
 
     pos_line = f"  combat_position: {combat_pos}" if combat_pos else ""
     return "<moves>\n" + "\n".join(lines) + ("\n" + pos_line if pos_line else "") + "\n</moves>"
+
+
+def _stat_descriptions(game: GameState) -> str:
+    stats = next(pkg.data.stats() for pkg in load_package(game.setting_id).chain() if pkg.data.stats())
+    return " ".join(f"{name}={_xe(entry['description'])}" for name, entry in stats.items())
 
 
 def _build_stats_line(game: GameState) -> str:
@@ -121,13 +143,17 @@ def _check_target_track(game: GameState, result: BrainResult) -> None:
 
 def _wrong_stat(game: GameState, result: BrainResult) -> list[str]:
     ds_move = get_moves(game.setting_id).get(result.move)
-    if result.dialog_only or ds_move is None or ds_move.roll_type != "action_roll":
+    if result.dialog_only:
+        return []
+    if ds_move is None:
+        return list(eng().engine_moves[result.move].stats) if result.stat in PICK_METHODS else []
+    if ds_move.roll_type != "action_roll":
         return []
     if not ds_move.valid_stats:
         if roll_source_without_stat(game, ds_move, result.target_npc) is None:
             _refuse(f"move {result.move!r} has nothing to roll with for target_npc {result.target_npc!r}")
         return []
-    return [] if result.stat in ds_move.valid_stats else list(ds_move.valid_stats)
+    return [] if result.stat in ds_move.stat_answers else ds_move.stat_answers
 
 
 def _check_fact_requests(result: BrainResult, npc_ids: list[str]) -> None:
@@ -160,6 +186,7 @@ def call_brain(provider: AIProvider, game: GameState, player_message: str) -> Br
         "lang": _brain_lang,
         "world": world_tag(game),
         "content_boundaries_block": content_boundaries_block(game),
+        "stats": _stat_descriptions(game),
         "fact_types_block": _build_fact_types_block(),
         "max_facts": str(eng().fact_resolution.max_per_turn),
         "place": eng().fact_resolution.place_reference,

@@ -20,15 +20,15 @@ from ..mechanics.legacy import mark_legacy, mark_legacy_ticks, shifted_rank
 from ..datasworn.oracle_rolls import roll_rows, plain_text
 from ..mechanics.move_outcome import resolve_move_outcome
 from ..mechanics.outcome_result import OutcomeResult
-from ..mechanics.roll_sources import roll_source_without_stat
+from ..mechanics.roll_sources import best_roll_option, roll_source_without_stat
 from ..models import BrainResult, ClockEvent, GameState, MemoryEntry, NpcData, ProgressTrack, RollResult
 from ..npc import named_in
 from ..npc.memory import consolidate_memory
 from ..parser import parse_narrator_response
 
 from ..mechanics import find_progress_track
+from ..datasworn.loader import OracleTable
 from ..datasworn.moves import Move, get_moves
-from ..datasworn.settings import load_package
 from ..mechanics.consequences import roll_action
 
 
@@ -42,18 +42,27 @@ class ActionOutcome:
 
 def _chained_roll_value(game: GameState, brain: BrainResult, move: Move) -> tuple[str, int] | None:
     if move.valid_stats:
-        best = max(move.valid_stats, key=game.stats.__getitem__)
-        return best, game.stats[best]
+        return best_roll_option(game, move)
     return roll_source_without_stat(game, move, brain.target_npc)
 
 
+def _roll_chained_table(table: OracleTable, reroll_prefixes: list[str]) -> str:
+    while True:
+        rolled = roll_rows(table)
+        rows = [plain_text(row.text) for row in rolled.rows]
+        if not any(row.startswith(tuple(reroll_prefixes)) for row in rows):
+            text = "; ".join(rows)
+            return eng().ai_text.consequence_labels["oracle_worse"].format(result=text) if rolled.worse else text
+
+
 def _chain_oracle_move(game: GameState, move: Move, cfg: dict[str, Any], outcome: OutcomeResult) -> None:
-    table = load_package(game.setting_id).oracle_table(cfg["oracle"])
-    results = [plain_text(row.text) for _ in range(cfg["rolls"]) for row in roll_rows(table).rows]
+    table = move.tables[cfg["table"]]
+    results = [_roll_chained_table(table, cfg["reroll_prefixes"]) for _ in range(cfg["rolls"])]
     outcome.consequences.append(
         eng().ai_text.consequence_labels["chained_move"].format(move=move.name, result="; ".join(results))
     )
-    mark_legacy_ticks(game, cfg["legacy_track"], cfg["ticks_per_roll"] * cfg["rolls"])
+    if cfg["legacy_track"]:
+        mark_legacy_ticks(game, cfg["legacy_track"], cfg["ticks_per_roll"] * cfg["rolls"])
     log(f"[Chain] {move.name}: {'; '.join(results)}")
 
 

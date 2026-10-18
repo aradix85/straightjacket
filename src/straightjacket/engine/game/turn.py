@@ -52,8 +52,8 @@ from .finalization import narrate_scene, update_crisis
 from .scene_finalization import finalize_scene
 from ..mechanics import find_progress_track, roll_oracle_answer
 from ..mechanics.bonuses import apply_momentum_on_hit, chosen_bonus
-from ..mechanics.roll_sources import roll_source_without_stat
-from ..datasworn.moves import Move
+from ..mechanics.roll_sources import roll_by_method, roll_source_without_stat
+from ..datasworn.moves import PICK_METHODS, Move
 from .turn_types import ActionResolution, BurnOffer, DirectorCall, RollOutcome, SceneContext
 
 
@@ -376,6 +376,10 @@ def _roll_source(game: GameState, brain: BrainResult, ds_move: Move | None) -> t
         return source
     if brain.stat == "none":
         raise ValueError(f"{brain.move!r} is an action roll, but the Brain named no stat")
+    if brain.stat in PICK_METHODS:
+        if ds_move is None:
+            raise ValueError(f"{brain.move!r} has no way that rolls the {brain.stat} stat")
+        return roll_by_method(game, ds_move, brain.stat)
     return brain.stat, game.stats[brain.stat]
 
 

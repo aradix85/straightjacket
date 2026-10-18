@@ -4,7 +4,9 @@ import re
 from collections.abc import Callable
 from dataclasses import dataclass
 
-from ..datasworn.oracle_rolls import roll_rows, plain_text
+from ..datasworn.loader import OracleTable
+from ..datasworn.moves import Move, get_moves
+from ..datasworn.oracle_rolls import plain_text, roll_rows, roll_table
 from ..datasworn.settings import load_package
 from ..engine_loader import eng
 from .complications import spawn_complication_clock
@@ -34,6 +36,7 @@ _LEGACY_LOWER_RE = re.compile(r"^legacy_reward_lower\s+(\w+)$")
 _LEGACY_TICKS_RE = re.compile(r"^legacy_ticks\s+(\w+)\s+(\d+)$")
 _FILL_CLOCK_RE = re.compile(r"^fill_clock\s+(\d+)$")
 _COMPLICATION_RE = re.compile(r"^complication\s+(\w+)$")
+_TABLE_RE = re.compile(r"^table\s+(\w+)$")
 
 
 def parse_effect(effect_str: str) -> MoveEffect:
@@ -71,6 +74,10 @@ def parse_effect(effect_str: str) -> MoveEffect:
     if m:
         return MoveEffect(type="complication", target=m.group(1))
 
+    m = _TABLE_RE.match(effect_str)
+    if m:
+        return MoveEffect(type="table", target=m.group(1))
+
     if effect_str in ("pay_the_price", "disposition_shift", "raise_connection_rank", "bond_request"):
         return MoveEffect(type=effect_str)
 
@@ -81,8 +88,7 @@ def parse_effects(effect_list: list[str]) -> list[MoveEffect]:
     return [parse_effect(e) for e in effect_list]
 
 
-def roll_oracle_result(game: GameState, path: str) -> tuple[list[str], str]:
-    table = load_package(game.setting_id).oracle_table(path)
+def roll_oracle_result(table: OracleTable) -> tuple[list[str], str]:
     rolled = roll_rows(table)
     rows = [plain_text(row.text) for row in rolled.rows]
     worse = rolled.worse
@@ -97,12 +103,28 @@ def roll_oracle_result(game: GameState, path: str) -> tuple[list[str], str]:
     return rows, labels["oracle_result"].format(table=table.title, result=result)
 
 
+def _pay_the_price_move(game: GameState) -> Move:
+    return get_moves(game.setting_id)[eng().pay_the_price.move]
+
+
 def has_story_complication(game: GameState) -> bool:
-    return load_package(game.setting_id).has_oracle(eng().pay_the_price.match_miss_oracle_path)
+    return eng().pay_the_price.match_miss_table in _pay_the_price_move(game).tables
+
+
+def roll_move_table(game: GameState, move_key: str, key: str, result: OutcomeResult) -> None:
+    table = get_moves(game.setting_id)[move_key].tables[key]
+    text = plain_text(roll_table(load_package(game.setting_id), table).text)
+    told = eng().ai_text.consequence_labels["oracle_result"].format(table=table.title, result=text)
+    log(f"[MoveTable] {told}")
+    result.consequences.append(told)
+    for rule in eng().get_raw("move_table_rows")[key]:
+        if text.startswith(rule["prefix"]):
+            effect = parse_effect(rule["effect"])
+            _EFFECT_HANDLERS[effect.type](game, effect, result, None)
 
 
 def pay_the_price(game: GameState, result: OutcomeResult) -> None:
-    rows, told = roll_oracle_result(game, eng().pay_the_price.oracle_path)
+    rows, told = roll_oracle_result(_pay_the_price_move(game).tables[eng().pay_the_price.table])
     log(f"[PayThePrice] {told}")
     result.consequences.append(told)
     for row in rows:
@@ -169,7 +191,7 @@ def _apply_pay_the_price_effect(
 def _apply_story_complication_effect(
     game: GameState, effect: MoveEffect, result: OutcomeResult, target: NpcData | None
 ) -> None:
-    _rows, told = roll_oracle_result(game, eng().pay_the_price.match_miss_oracle_path)
+    _rows, told = roll_oracle_result(_pay_the_price_move(game).tables[eng().pay_the_price.match_miss_table])
     log(f"[StoryComplication] {told}")
     result.consequences.append(told)
 

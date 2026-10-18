@@ -18,9 +18,9 @@ def record_price_tables(monkeypatch: pytest.MonkeyPatch) -> list[str]:
     rolled: list[str] = []
     real = move_effects.roll_oracle_result
 
-    def recording(game: Any, path: str) -> tuple[list[str], str]:
-        rolled.append(path)
-        return real(game, path)
+    def recording(table: Any) -> tuple[list[str], str]:
+        rolled.append(table.title)
+        return real(table)
 
     monkeypatch.setattr(move_effects, "roll_oracle_result", recording)
     return rolled

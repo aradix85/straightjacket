@@ -10,7 +10,6 @@ from straightjacket.engine.mechanics.move_handlers import (
     apply_suffer_handler,
     apply_threshold_handler,
 )
-from straightjacket.engine.engine_loader import eng
 from straightjacket.engine.mechanics.move_outcome import resolve_move_outcome
 from straightjacket.engine.models import GameState, Resources
 from tests._helpers import make_game_state, record_price_tables
@@ -199,14 +198,20 @@ class TestSufferHandler:
     def test_strong_hit_recovery(self, game: GameState) -> None:
         game.resources.health = 3
         result = apply_suffer_handler(
-            game, "STRONG_HIT", _suffer_params(track="health", recovery=1, blocking_impact="wounded")
+            game,
+            "suffer/endure_harm",
+            "STRONG_HIT",
+            _suffer_params(track="health", recovery=1, blocking_impact="wounded"),
         )
         assert game.resources.health == 4
         assert "health +1" in result.consequences
 
     def test_strong_hit_track_at_max_takes_momentum(self, game: GameState) -> None:
         result = apply_suffer_handler(
-            game, "STRONG_HIT", _suffer_params(track="health", recovery=1, blocking_impact="wounded")
+            game,
+            "suffer/endure_harm",
+            "STRONG_HIT",
+            _suffer_params(track="health", recovery=1, blocking_impact="wounded"),
         )
         assert game.resources.momentum == 3
         assert "momentum +1" in result.consequences
@@ -214,7 +219,12 @@ class TestSufferHandler:
     def test_weak_hit_exchange(self, game: GameState) -> None:
         game.resources.health = 3
         game.resources.momentum = 4
-        apply_suffer_handler(game, "WEAK_HIT", _suffer_params(track="health", recovery=1, blocking_impact="wounded"))
+        apply_suffer_handler(
+            game,
+            "suffer/endure_harm",
+            "WEAK_HIT",
+            _suffer_params(track="health", recovery=1, blocking_impact="wounded"),
+        )
         assert game.resources.health == 4
         assert game.resources.momentum == 3
 
@@ -222,6 +232,7 @@ class TestSufferHandler:
         game.resources.health = 3
         apply_suffer_handler(
             game,
+            "suffer/endure_harm",
             "MISS",
             _suffer_params(
                 track="health",
@@ -237,6 +248,7 @@ class TestSufferHandler:
         game.resources.momentum = 5
         result = apply_suffer_handler(
             game,
+            "suffer/endure_harm",
             "MISS",
             _suffer_params(
                 track="health",
@@ -254,7 +266,7 @@ class TestThresholdHandler:
     @pytest.mark.parametrize(("result_type", "game_over"), [("STRONG_HIT", False), ("MISS", True)])
     def test_a_strong_hit_returns_and_a_miss_dies(self, game: GameState, result_type: str, game_over: bool) -> None:
         params = {"impact": "doomed", "game_over_text": "you are dead", "end_reason": "death"}
-        result = apply_threshold_handler(game, result_type, params)
+        result = apply_threshold_handler(game, "threshold/face_death", result_type, params)
         assert game.game_over == game_over
         assert result.consequences == (["you are dead"] if game_over else [])
         assert game.impacts == []
@@ -265,6 +277,7 @@ class TestRecoveryHandler:
         game.resources.health = 2
         apply_recovery_handler(
             game,
+            "recover/heal",
             "STRONG_HIT",
             _recovery_params(track="health", full_amount=3, impact_amount=2, blocking_impact="wounded"),
         )
@@ -275,6 +288,7 @@ class TestRecoveryHandler:
         game.resources.momentum = 5
         apply_recovery_handler(
             game,
+            "recover/heal",
             "WEAK_HIT",
             _recovery_params(
                 track="health",
@@ -292,10 +306,11 @@ class TestRecoveryHandler:
         rolled = record_price_tables(monkeypatch)
         apply_recovery_handler(
             game_real,
+            "recover/heal",
             "MISS",
             _recovery_params(track="health", full_amount=3, impact_amount=2, blocking_impact="wounded"),
         )
-        assert rolled == [eng().pay_the_price.oracle_path]
+        assert rolled == ["Pay the Price"]
 
 
 class TestResolveOutcome:
@@ -319,7 +334,7 @@ class TestResolveOutcome:
     def test_a_miss_pays_the_price(self, game_real: GameState, monkeypatch: pytest.MonkeyPatch, move: str) -> None:
         rolled = record_price_tables(monkeypatch)
         resolve_move_outcome(game_real, move, "MISS", target_npc_id=None, match=False)
-        assert rolled == [eng().pay_the_price.oracle_path]
+        assert rolled == ["Pay the Price"]
 
     def test_strike_strong_hit_position(self, game_real: GameState) -> None:
         result = resolve_move_outcome(game_real, "combat/strike", "STRONG_HIT", target_npc_id=None, match=False)

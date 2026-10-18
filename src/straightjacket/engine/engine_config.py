@@ -411,8 +411,9 @@ def _build_clocks(c_raw: dict[str, Any]) -> ClocksConfig:
 def _build_pay_the_price(ptp_raw: dict[str, Any]) -> PayThePriceConfig:
     _reject_unknown(PayThePriceConfig, ptp_raw)
     return PayThePriceConfig(
-        oracle_path=ptp_raw["oracle_path"],
-        match_miss_oracle_path=ptp_raw["match_miss_oracle_path"],
+        move=ptp_raw["move"],
+        table=ptp_raw["table"],
+        match_miss_table=ptp_raw["match_miss_table"],
         worse_reroll_prefixes=[str(prefix) for prefix in ptp_raw["worse_reroll_prefixes"]],
         suffer_rows=[_build_strict(PayThePriceSufferRow, dict(row)) for row in ptp_raw["suffer_rows"]],
     )

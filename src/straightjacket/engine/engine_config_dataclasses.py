@@ -832,8 +832,9 @@ class PayThePriceSufferRow:
 
 @dataclass
 class PayThePriceConfig:
-    oracle_path: str
-    match_miss_oracle_path: str
+    move: str
+    table: str
+    match_miss_table: str
     worse_reroll_prefixes: list[str]
     suffer_rows: list[PayThePriceSufferRow]
 

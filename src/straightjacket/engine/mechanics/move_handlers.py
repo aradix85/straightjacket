@@ -52,7 +52,7 @@ def _suffer_weak_hit(game: GameState, params: dict[str, Any], blocked: bool, res
         _recover(game, params, eng().momentum.suffer_recovery.weak_hit_exchange_cost, result)
 
 
-def apply_suffer_handler(game: GameState, roll_result: str, params: dict[str, Any]) -> OutcomeResult:
+def apply_suffer_handler(game: GameState, move_key: str, roll_result: str, params: dict[str, Any]) -> OutcomeResult:
     result = OutcomeResult()
     _e = eng()
     _labels = _e.ai_text.consequence_labels
@@ -87,13 +87,13 @@ def apply_suffer_handler(game: GameState, roll_result: str, params: dict[str, An
                 apply_impact(game, free[0])
                 result.consequences.append(_labels["mark_impact"].format(impact=free[0]))
             else:
-                _roll_endure_table(game, params, result)
+                _roll_endure_table(game, move_key, params, result)
 
     return result
 
 
-def _roll_endure_table(game: GameState, params: dict[str, Any], result: OutcomeResult) -> None:
-    rows, told = roll_oracle_result(game, params["table"])
+def _roll_endure_table(game: GameState, move_key: str, params: dict[str, Any], result: OutcomeResult) -> None:
+    rows, told = roll_oracle_result(get_moves(game.setting_id)[move_key].tables[params["table"]])
     log(f"[Suffer] {told}")
     result.consequences.append(told)
     rule = next((r for r in eng().suffer.table_rows for row in rows if row.startswith(r.prefix)), None)
@@ -155,7 +155,7 @@ def _return_with_a_vow(game: GameState, params: dict[str, Any], result: OutcomeR
         result.consequences.append(labels["mark_impact"].format(impact=params["impact"]))
 
 
-def apply_threshold_handler(game: GameState, roll_result: str, params: dict[str, Any]) -> OutcomeResult:
+def apply_threshold_handler(game: GameState, move_key: str, roll_result: str, params: dict[str, Any]) -> OutcomeResult:
     result = OutcomeResult()
     if roll_result == "WEAK_HIT":
         _return_with_a_vow(game, params, result)
@@ -164,7 +164,7 @@ def apply_threshold_handler(game: GameState, roll_result: str, params: dict[str,
     return result
 
 
-def apply_recovery_handler(game: GameState, roll_result: str, params: dict[str, Any]) -> OutcomeResult:
+def apply_recovery_handler(game: GameState, move_key: str, roll_result: str, params: dict[str, Any]) -> OutcomeResult:
     result = OutcomeResult()
     _e = eng()
     _labels = _e.ai_text.consequence_labels

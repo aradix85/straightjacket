@@ -1,4 +1,5 @@
 from typing import Any
+from ..datasworn.moves import PICK_METHODS
 from ..engine_loader import eng
 
 
@@ -75,7 +76,7 @@ def get_brain_output_schema(
     return _obj_root(
         {
             "move": _str_enum(sorted({*move_keys, *_e.engine_moves.keys()})),
-            "stat": _str_enum(list(_e.stats.names)),
+            "stat": _str_enum([*_e.stats.names, *PICK_METHODS]),
             "approach": _str(),
             "target_npc": _nullable_enum(npc_ids),
             "dialog_only": _bool(),

@@ -77,7 +77,11 @@ def roll_rows(table: OracleTable) -> TableRoll:
 
 
 def roll_oracle(pkg: SettingPackage, path: str) -> RolledOracle:
-    rows = roll_rows(pkg.oracle_table(path)).rows
+    return roll_table(pkg, pkg.oracle_table(path))
+
+
+def roll_table(pkg: SettingPackage, table: OracleTable) -> RolledOracle:
+    rows = roll_rows(table).rows
     if len(rows) == 1:
         return _resolve_row(pkg, rows[0])
     text = "; ".join(_resolve_row(pkg, row).text for row in rows)

@@ -19,7 +19,7 @@ def test_roll_action_cap() -> None:
 def test_compel_strong_hit_marks_no_bond_and_no_disposition_shift(load_engine: None) -> None:
     from straightjacket.engine.mechanics.move_outcome import resolve_move_outcome
 
-    game = make_game_state()
+    game = make_game_state(setting_id="starforged")
     npc = make_npc(id="npc_1", name="Test", disposition="neutral")
     game.npcs.append(npc)
     game.progress_tracks.append(
@@ -34,7 +34,7 @@ def test_compel_strong_hit_marks_no_bond_and_no_disposition_shift(load_engine: N
 def test_test_bond_disposition_shift(load_engine: None) -> None:
     from straightjacket.engine.mechanics.move_outcome import resolve_move_outcome
 
-    game = make_game_state()
+    game = make_game_state(setting_id="starforged")
     npc = make_npc(id="npc_1", name="Test", disposition="neutral")
     game.npcs.append(npc)
     game.progress_tracks.append(
@@ -221,7 +221,7 @@ def test_memory_guard_allows_no_memories() -> None:
 def test_social_move_unresolved_target_skips_bond(load_engine: None) -> None:
     from straightjacket.engine.mechanics.move_outcome import resolve_move_outcome
 
-    game = make_game_state()
+    game = make_game_state(setting_id="starforged")
     npc = make_npc(id="npc_1", name="Test", disposition="neutral")
     game.npcs.append(npc)
 

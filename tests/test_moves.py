@@ -14,7 +14,8 @@ from collections.abc import Generator
 
 
 def _own_moves(setting_id: str) -> dict[str, Move]:
-    return _load_moves_from_setting(load_package(setting_id).data)
+    pkg = load_package(setting_id)
+    return _load_moves_from_setting(pkg, pkg)
 
 
 @pytest.fixture(autouse=True)
@@ -283,6 +284,55 @@ class TestSunderedIslesMoves:
         moves = get_moves("sundered_isles")
         assert moves["suffer/withstand_damage"] == _own_moves("sundered_isles")["suffer/withstand_damage"]
 
+    def test_replaced_moves_roll_their_own_tables(self) -> None:
+        isles = get_moves("sundered_isles")
+        starforged = get_moves("starforged")
+        for key, table in (
+            ("exploration/make_a_discovery", "make_a_discovery"),
+            ("exploration/confront_chaos", "confront_chaos"),
+        ):
+            own = [row.text for row in isles[key].tables[table].rows]
+            assert own != [row.text for row in starforged[key].tables[table].rows]
+        assert (
+            isles["exploration/make_a_discovery"].tables["make_a_discovery"].rows[0].text == "Abundant and unusual life"
+        )
+
+
+class TestMoveTables:
+    def test_a_move_carries_the_tables_datasworn_names_for_it(self) -> None:
+        assert set(get_moves("starforged")["fate/pay_the_price"].tables) == {"pay_the_price", "story_complication"}
+        assert set(get_moves("classic")["fate/pay_the_price"].tables) == {"pay_the_price"}
+        assert set(get_moves("starforged")["adventure/gather_information"].tables) == {"story_clue"}
+        assert get_moves("classic")["adventure/gather_information"].tables == {}
+
+    def test_an_inherited_move_reads_its_tables_from_its_own_package(self) -> None:
+        delve = get_moves("delve")
+        assert (
+            delve["suffer/endure_harm"].tables["endure_harm"]
+            is get_moves("classic")["suffer/endure_harm"].tables["endure_harm"]
+        )
+        assert set(delve["delve/delve_the_depths"].tables) == {"edge", "shadow", "wits"}
+
+
+class TestRollMethods:
+    def test_conditions_keep_their_method_and_text(self) -> None:
+        heal = get_moves("classic")["adventure/heal"]
+        assert [(c.method, c.text) for c in heal.conditions] == [
+            ("player_choice", ""),
+            ("lowest", "Mend your own wounds"),
+        ]
+
+    def test_a_lowest_way_is_answered_with_its_method(self) -> None:
+        assert get_moves("classic")["adventure/heal"].stat_answers == ["wits", "lowest"]
+        assert get_moves("starforged")["recover/heal"].stat_answers == ["iron", "lowest", "heart", "wits"]
+        assert get_moves("starforged")["adventure/face_danger"].stat_answers == [
+            "edge",
+            "heart",
+            "iron",
+            "shadow",
+            "wits",
+        ]
+
 
 class TestGetMoves:
     def test_starforged_cached(self) -> None:
@@ -323,7 +373,7 @@ class TestParsing:
             "trigger": {"conditions": None, "text": "When you do the thing..."},
             "outcomes": None,
         }
-        move = _parse_move(raw)
+        move = _parse_move(raw, load_package("starforged"))
         assert move.name == "Test Move"
         assert move.roll_type == "no_roll"
         assert move.conditions == []
@@ -352,7 +402,7 @@ class TestParsing:
                 "miss": {"text": "Fail."},
             },
         }
-        move = _parse_move(raw)
+        move = _parse_move(raw, load_package("starforged"))
         assert move.valid_stats == ["iron"]
         assert move.outcomes["strong_hit"].text == "You win."
 
@@ -378,5 +428,5 @@ class TestParsing:
             },
             "outcomes": {"strong_hit": {"text": "ok"}, "weak_hit": {"text": "ok"}, "miss": {"text": "ok"}},
         }
-        move = _parse_move(raw)
+        move = _parse_move(raw, load_package("starforged"))
         assert move.valid_stats == ["iron"]
