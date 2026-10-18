@@ -1,5 +1,6 @@
 from collections.abc import Sequence
 
+from .datasworn.moves import get_moves, outcome_text
 from .mechanics import ClockFillResult
 from .models import BrainResult, GameState, NpcData, RandomEvent, ResolvedFact, RollResult, SceneSetup, ThreatEvent
 from .prompt_blocks import narrative_direction_block, recent_events_block, story_context_block
@@ -45,6 +46,14 @@ def _build_result_constraint(roll: RollResult, consequences: list[str]) -> str:
     return f'<result type="STRONG_HIT"{match_tag}{cons_attr}>{body}{match_hint}</result>'
 
 
+def _move_outcome_block(game: GameState, brain: BrainResult, roll: RollResult) -> str:
+    text = outcome_text(game.setting_id, brain.move, roll.result)
+    if not text:
+        return ""
+    name = get_moves(game.setting_id)[brain.move].name
+    return "\n" + get_prompt("block_move_outcome", move=_xa(name), text=_xe(text))
+
+
 def build_action_prompt(
     game: GameState,
     brain: BrainResult,
@@ -77,7 +86,7 @@ def build_action_prompt(
     wl = f"\n<world_add>{_xe(wa)}</world_add>" if wa else ""
     pw = f"\n<player_words>{_xe(player_words)}</player_words>" if player_words else ""
 
-    constraint = _build_result_constraint(roll, consequences)
+    constraint = _build_result_constraint(roll, consequences) + _move_outcome_block(game, brain, roll)
     position_tag = f'<position level="{_xa(position)}" effect="{_xa(effect)}"/>'
 
     flags = _flags_block(game)

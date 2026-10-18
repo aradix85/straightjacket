@@ -46,6 +46,8 @@ ai_text:
     out_of_time: '{clock}: out of time'
     bond_request: bond_request
     recommit: recommit {track}
+    oracle_result: '{table}: {result}'
+    oracle_worse: '{result}, made worse'
   narrator_defaults:
     unknown_location: unknown
     unknown_time: unspecified

@@ -10,7 +10,6 @@ _MAX_DEPTH = 4
 
 @dataclass(frozen=True)
 class CascadeStep:
-    table_path: str
     label: str
     text: str
 
@@ -19,14 +18,14 @@ def roll_oracle_cascade(pkg: SettingPackage, entry_path: str) -> list[CascadeSte
     steps: list[CascadeStep] = []
     current_path = entry_path
     for _ in range(_MAX_DEPTH):
-        result = pkg.oracle_table(current_path).roll()
+        text = pkg.oracle_table(current_path).roll().text
 
-        next_path, label = _extract_next_path(result.value)
+        next_path, label = _extract_next_path(text)
         if next_path is None:
-            steps.append(CascadeStep(table_path=current_path, label=result.value, text=result.value))
+            steps.append(CascadeStep(label=text, text=text))
             return steps
 
-        steps.append(CascadeStep(table_path=current_path, label=label or result.value, text=result.value))
+        steps.append(CascadeStep(label=label or text, text=text))
         current_path = next_path
 
     raise RuntimeError(f"Oracle cascade from '{entry_path}' links on past {_MAX_DEPTH} tables")

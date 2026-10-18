@@ -314,7 +314,7 @@ class SettingPackage:
 
     def roll_action_theme(self) -> tuple[str, str]:
         action_path, theme_path = self._oracle_paths.action_theme
-        return self.oracle_table(action_path).roll().value, self.oracle_table(theme_path).roll().value
+        return self.oracle_table(action_path).roll().text, self.oracle_table(theme_path).roll().text
 
     def generator_tables(self, category: str) -> dict[str, str]:
         if category not in self._generators:

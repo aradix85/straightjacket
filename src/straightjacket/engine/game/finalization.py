@@ -17,7 +17,7 @@ from ..mechanics import (
 )
 from ..mechanics.consequences import tick_threat_clock
 from ..mechanics.legacy import mark_legacy, mark_legacy_ticks, shifted_rank
-from ..mechanics.move_effects import strip_datasworn_links
+from ..datasworn.oracle_rolls import roll_rows, plain_text
 from ..mechanics.move_outcome import resolve_move_outcome
 from ..mechanics.outcome_result import OutcomeResult
 from ..mechanics.roll_sources import roll_source_without_stat
@@ -49,7 +49,7 @@ def _chained_roll_value(game: GameState, brain: BrainResult, move: Move) -> tupl
 
 def _chain_oracle_move(game: GameState, move: Move, cfg: dict[str, Any], outcome: OutcomeResult) -> None:
     table = load_package(game.setting_id).oracle_table(cfg["oracle"])
-    results = [strip_datasworn_links(table.roll().value) for _ in range(cfg["rolls"])]
+    results = [plain_text(row.text) for _ in range(cfg["rolls"]) for row in roll_rows(table).rows]
     outcome.consequences.append(
         eng().ai_text.consequence_labels["chained_move"].format(move=move.name, result="; ".join(results))
     )

@@ -70,7 +70,6 @@ from .engine_config_dataclasses import (
     ParserConfig,
     PatternGrammar,
     PayThePriceConfig,
-    PayThePriceRerollRow,
     PayThePriceSufferRow,
     PersistenceConfig,
     PlotPointRanges,
@@ -414,8 +413,7 @@ def _build_pay_the_price(ptp_raw: dict[str, Any]) -> PayThePriceConfig:
     return PayThePriceConfig(
         oracle_path=ptp_raw["oracle_path"],
         match_miss_oracle_path=ptp_raw["match_miss_oracle_path"],
-        max_rerolls=ptp_raw["max_rerolls"],
-        reroll_rows=[_build_strict(PayThePriceRerollRow, dict(row)) for row in ptp_raw["reroll_rows"]],
+        worse_reroll_prefixes=[str(prefix) for prefix in ptp_raw["worse_reroll_prefixes"]],
         suffer_rows=[_build_strict(PayThePriceSufferRow, dict(row)) for row in ptp_raw["suffer_rows"]],
     )
 
@@ -739,7 +737,6 @@ __all__ = [
     "ParserConfig",
     "PatternGrammar",
     "PayThePriceConfig",
-    "PayThePriceRerollRow",
     "PayThePriceSufferRow",
     "PersistenceConfig",
     "PlotPointRanges",

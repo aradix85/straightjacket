@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import random as _random
 
-from straightjacket.engine.datasworn.loader import extract_title
 from straightjacket.engine.datasworn.settings import SettingPackage, load_package
 from straightjacket.engine.engine_loader import eng
 
@@ -28,7 +27,7 @@ def roll_character(setting_id: str, game_cfg: dict) -> dict:
     for pid in paths:
         asset = pkg.data.asset("path", pid)
         if asset:
-            path_display.append(extract_title(asset, pid))
+            path_display.append(asset["name"])
 
     print(f"[CREATION] Setting: {pkg.title}")
     print(f"[CREATION] Name: {name} ({pronouns})")
@@ -66,7 +65,7 @@ def _roll_name(pkg: SettingPackage, game_cfg: dict) -> str:
     if game_cfg.get("player_name"):
         return game_cfg["player_name"]
     tables = list(pkg.name_tables(eng().naming.category).values())[:2]
-    return " ".join(table.roll().value for table in tables)
+    return " ".join(table.roll().text for table in tables)
 
 
 def _roll_paths(pkg: SettingPackage, game_cfg: dict) -> list[str]:
@@ -83,7 +82,7 @@ def _roll_backstory(pkg: SettingPackage, game_cfg: dict) -> str:
     if game_cfg.get("backstory"):
         return game_cfg["backstory"]
     if pkg.creation_flow.has_backstory_oracle:
-        return pkg.oracle_table(pkg.oracle_paths.backstory).roll().value
+        return pkg.oracle_table(pkg.oracle_paths.backstory).roll().text
     return ""
 
 

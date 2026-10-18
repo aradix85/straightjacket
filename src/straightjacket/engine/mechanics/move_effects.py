@@ -4,6 +4,7 @@ import re
 from collections.abc import Callable
 from dataclasses import dataclass
 
+from ..datasworn.oracle_rolls import roll_rows, plain_text
 from ..datasworn.settings import load_package
 from ..engine_loader import eng
 from .complications import spawn_complication_clock
@@ -80,20 +81,20 @@ def parse_effects(effect_list: list[str]) -> list[MoveEffect]:
     return [parse_effect(e) for e in effect_list]
 
 
-def strip_datasworn_links(text: str) -> str:
-    return re.sub(r"\[([^\]]+)\]\([^)]*\)", r"\1", text).strip()
-
-
-def _roll_price_rows(game: GameState, path: str, depth: int) -> list[str]:
-    cfg = eng().pay_the_price
-    text = strip_datasworn_links(load_package(game.setting_id).oracle_table(path).roll().value)
-    for rule in cfg.reroll_rows:
-        if text.startswith(rule.prefix) and depth < cfg.max_rerolls:
-            rows = [text]
-            for _ in range(rule.extra_rolls):
-                rows += _roll_price_rows(game, path, depth + 1)
-            return rows
-    return [text]
+def roll_oracle_result(game: GameState, path: str) -> tuple[list[str], str]:
+    table = load_package(game.setting_id).oracle_table(path)
+    rolled = roll_rows(table)
+    rows = [plain_text(row.text) for row in rolled.rows]
+    worse = rolled.worse
+    if len(rows) == 1 and rows[0].startswith(tuple(eng().pay_the_price.worse_reroll_prefixes)):
+        again = [plain_text(row.text) for row in roll_rows(table).rows]
+        if again != rows:
+            rows, worse = again, True
+    labels = eng().ai_text.consequence_labels
+    result = "; ".join(rows)
+    if worse:
+        result = labels["oracle_worse"].format(result=result)
+    return rows, labels["oracle_result"].format(table=table.title, result=result)
 
 
 def has_story_complication(game: GameState) -> bool:
@@ -101,9 +102,9 @@ def has_story_complication(game: GameState) -> bool:
 
 
 def pay_the_price(game: GameState, result: OutcomeResult) -> None:
-    rows = _roll_price_rows(game, eng().pay_the_price.oracle_path, 0)
-    log(f"[PayThePrice] {'; '.join(rows)}")
-    result.consequences.append("; ".join(rows))
+    rows, told = roll_oracle_result(game, eng().pay_the_price.oracle_path)
+    log(f"[PayThePrice] {told}")
+    result.consequences.append(told)
     for row in rows:
         for rule in eng().pay_the_price.suffer_rows:
             if row.startswith(rule.prefix):
@@ -168,9 +169,9 @@ def _apply_pay_the_price_effect(
 def _apply_story_complication_effect(
     game: GameState, effect: MoveEffect, result: OutcomeResult, target: NpcData | None
 ) -> None:
-    rows = _roll_price_rows(game, eng().pay_the_price.match_miss_oracle_path, 0)
-    log(f"[StoryComplication] {'; '.join(rows)}")
-    result.consequences.append("; ".join(rows))
+    _rows, told = roll_oracle_result(game, eng().pay_the_price.match_miss_oracle_path)
+    log(f"[StoryComplication] {told}")
+    result.consequences.append(told)
 
 
 def _apply_next_move_bonus_effect(
@@ -259,7 +260,7 @@ def _complication_danger(game: GameState) -> str:
     pkg = load_package(game.setting_id)
     path = eng().clocks.complication.name_oracle_path
     if pkg.has_oracle(path):
-        return strip_datasworn_links(pkg.oracle_table(path).roll().value)
+        return "; ".join(plain_text(row.text) for row in roll_rows(pkg.oracle_table(path)).rows)
     action, subject = roll_meaning_table("actions")
     return f"{action} {subject}"
 

@@ -8,7 +8,6 @@ from ..ai.blueprint_voicing import call_blueprint_voicing
 from ..ai.metadata import process_deceased_npcs
 from ..ai.narrator import call_narrator, call_opening_setup
 from ..ai.provider_base import AIProvider
-from ..datasworn.loader import extract_title
 from ..datasworn.settings import load_package
 from ..engine_loader import eng
 from ..logging_util import log
@@ -168,7 +167,7 @@ def _replace_character_identity(game: GameState, creation_data: dict[str, Any]) 
     for pid in paths:
         asset = pkg.data.asset("path", pid)
         if asset:
-            path_names.append(extract_title(asset, pid))
+            path_names.append(asset["name"])
     concept = ", ".join(path_names)
 
     _e = eng()

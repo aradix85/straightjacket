@@ -17,12 +17,24 @@ _ORACLE_INFIXES = ("collections/oracles/", "oracles/")
 _TABLE_KIND = "oracle_rollable:"
 _ORACLE_SEGMENT = "/oracles/"
 _COLLECTION_SEGMENT = "/collections/"
+_DUPLICATE_RULES = ("reroll", "keep", "make_it_worse")
+_EMPHASIS = "__"
 
 
 @dataclass(frozen=True)
 class RolledOracle:
     text: str
     choice: str
+
+
+@dataclass(frozen=True)
+class TableRoll:
+    rows: list[OracleRow]
+    worse: bool
+
+
+def plain_text(text: str) -> str:
+    return LINK_PATTERN.sub(r"\1", text).replace(_EMPHASIS, "").strip()
 
 
 def link_path(target: str) -> str:
@@ -44,14 +56,32 @@ def is_table_link(target: str) -> bool:
     return _ORACLE_SEGMENT in f"/{target}" and _COLLECTION_SEGMENT not in f"/{target}"
 
 
+def roll_rows(table: OracleTable) -> TableRoll:
+    row = table.roll()
+    instruction = _roll_again(row)
+    if instruction is None:
+        return TableRoll(rows=[row], worse=False)
+    rule = instruction["duplicates"]
+    if rule not in _DUPLICATE_RULES:
+        raise ValueError(f"Oracle table '{table.id}' has an unknown duplicates rule {rule!r}")
+    picked: list[OracleRow] = []
+    while len(picked) < int(instruction["number_of_rolls"]):
+        again = table.roll()
+        if _roll_again(again) is not None or (rule == "reroll" and _among(again, picked)):
+            continue
+        picked.append(again)
+    distinct = [row for i, row in enumerate(picked) if not _among(row, picked[:i])]
+    if rule == "make_it_worse" and len(distinct) < len(picked):
+        return TableRoll(rows=distinct, worse=True)
+    return TableRoll(rows=picked, worse=False)
+
+
 def roll_oracle(pkg: SettingPackage, path: str) -> RolledOracle:
-    table = pkg.oracle_table(path)
-    row = table.roll().row
-    repeats = _repeat_count(row)
-    if repeats:
-        text = "; ".join(_resolve_row(pkg, picked).text for picked in _distinct_rows(table, repeats))
-        return RolledOracle(text=text, choice=_slug(text))
-    return _resolve_row(pkg, row)
+    rows = roll_rows(pkg.oracle_table(path)).rows
+    if len(rows) == 1:
+        return _resolve_row(pkg, rows[0])
+    text = "; ".join(_resolve_row(pkg, row).text for row in rows)
+    return RolledOracle(text=text, choice=_slug(text))
 
 
 def roll_generator_tables(pkg: SettingPackage, tables: dict[str, str]) -> dict[str, str]:
@@ -69,18 +99,12 @@ def _auto_rolls(row: OracleRow) -> list[dict[str, Any]]:
     return [instruction for instruction in row.oracle_rolls or [] if instruction["auto"]]
 
 
-def _repeat_count(row: OracleRow) -> int:
-    return sum(int(i["number_of_rolls"]) for i in _auto_rolls(row) if i["oracle"] is None)
+def _roll_again(row: OracleRow) -> dict[str, Any] | None:
+    return next((i for i in _auto_rolls(row) if i["oracle"] is None), None)
 
 
-def _distinct_rows(table: OracleTable, count: int) -> list[OracleRow]:
-    picked: list[OracleRow] = []
-    while len(picked) < count:
-        row = table.roll().row
-        if _repeat_count(row) or any(row is earlier for earlier in picked):
-            continue
-        picked.append(row)
-    return picked
+def _among(row: OracleRow, rows: list[OracleRow]) -> bool:
+    return any(row is earlier for earlier in rows)
 
 
 def _resolve_row(pkg: SettingPackage, row: OracleRow) -> RolledOracle:

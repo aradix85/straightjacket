@@ -37,17 +37,16 @@ def test_roll_returns_valid_row() -> None:
     table = sf.oracle("core/action")
     assert table is not None
     for _ in range(50):
-        result = table.roll()
-        assert 1 <= result.roll <= 100
-        assert result.value
-        assert result.table_path == "core/action"
+        row = table.roll()
+        assert row in table.rows
+        assert row.text
 
 
 def test_roll_distribution_covers_range() -> None:
     sf = load_setting("starforged")
     table = sf.oracle("core/action")
     assert table is not None
-    results = {table.roll().value for _ in range(100)}
+    results = {table.roll().text for _ in range(100)}
     assert len(results) > 20, f"Only {len(results)} distinct values in 100 rolls"
 
 

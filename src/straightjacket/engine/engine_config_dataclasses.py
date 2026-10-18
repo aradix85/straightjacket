@@ -825,12 +825,6 @@ class ClocksConfig:
 
 
 @dataclass
-class PayThePriceRerollRow:
-    prefix: str
-    extra_rolls: int
-
-
-@dataclass
 class PayThePriceSufferRow:
     prefix: str
     effect: str
@@ -840,8 +834,7 @@ class PayThePriceSufferRow:
 class PayThePriceConfig:
     oracle_path: str
     match_miss_oracle_path: str
-    max_rerolls: int
-    reroll_rows: list[PayThePriceRerollRow]
+    worse_reroll_prefixes: list[str]
     suffer_rows: list[PayThePriceSufferRow]
 
 

@@ -86,6 +86,7 @@
 "result_miss_body": The attempt fails and the situation gets worse. The player leaves this scene worse off, without what they came for.
 "result_weak_hit_body": Success with tangible cost or complication.
 "result_strong_hit_body": Clean success.
+"block_move_outcome": '<move_outcome move="{move}">{text}</move_outcome>'
 "result_match_hint_miss": " A MATCH — the situation escalates dramatically, a fateful twist makes everything worse."
 "result_match_hint_weak_hit": " A MATCH — despite the cost, something unexpected and significant happens, a twist of fate."
 "result_match_hint_strong_hit": " A MATCH — an unexpected boon, a fateful revelation, or a dramatic advantage beyond the clean success."

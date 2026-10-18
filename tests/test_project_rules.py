@@ -816,7 +816,6 @@ _ORPHAN_SYMBOL_CARVE_OUT: set[tuple[str, str]] = {
     ("OraclePaths", "engine/datasworn/settings.py"),
     ("CreationFlow", "engine/datasworn/settings.py"),
     ("VocabularyConfig", "engine/datasworn/settings.py"),
-    ("OracleResult", "engine/datasworn/loader.py"),
     ("OracleRow", "engine/datasworn/loader.py"),
     ("RollOption", "engine/datasworn/moves.py"),
     ("TriggerCondition", "engine/datasworn/moves.py"),

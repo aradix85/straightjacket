@@ -3,6 +3,7 @@ from __future__ import annotations
 import random
 import re
 from pathlib import Path
+from typing import Any
 
 import pytest
 import yaml
@@ -388,17 +389,26 @@ def test_conclusion_on_a_new_plotline_counts_as_none(load_engine: None) -> None:
     assert all(p.status != "conclusion" for p in narrative.plotlines_list)
 
 
+_ROLL_TWICE = {"oracle": None, "auto": True, "number_of_rolls": 2, "dice": None}
+
+
 class _FakeOracle:
-    def __init__(self, *values: str) -> None:
-        self.values = list(values)
+    def __init__(self, *rows: Any) -> None:
+        from straightjacket.engine.datasworn.loader import OracleTable
 
-    def oracle_table(self, path: str) -> _FakeOracle:
-        return self
+        self.order = list(rows)
+        self.table = OracleTable(id="moves/pay_the_price", title="Pay the Price", rows=list(rows))
+        self.table.roll = lambda: self.order.pop(0)
 
-    def roll(self) -> object:
-        from types import SimpleNamespace
+    def oracle_table(self, path: str) -> Any:
+        return self.table
 
-        return SimpleNamespace(value=self.values.pop(0))
+
+def _price_row(text: str, duplicates: str | None = None) -> Any:
+    from straightjacket.engine.datasworn.loader import OracleRow
+
+    rolls = [{**_ROLL_TWICE, "duplicates": duplicates}] if duplicates else None
+    return OracleRow(min=1, max=1, text=text, oracle_rolls=rolls)
 
 
 @pytest.mark.parametrize("setting", ["starforged", "classic"])
@@ -418,7 +428,10 @@ def test_pay_the_price_rolls_the_official_table(load_engine: None, setting: str)
     for _ in range(30):
         result = OutcomeResult()
         pay_the_price(game, result)
-        assert all(part in rows for part in result.consequences[0].split("; "))
+        told = result.consequences[0]
+        assert told.startswith("Pay the Price: ")
+        assert "Roll twice" not in told
+        assert all(any(part.startswith(row) for row in rows) for part in told.split(": ", 1)[1].split("; "))
 
 
 def test_pay_the_price_harm_costs_health(load_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -426,26 +439,61 @@ def test_pay_the_price_harm_costs_health(load_engine: None, monkeypatch: pytest.
     from straightjacket.engine.mechanics.outcome_result import OutcomeResult
     from tests._helpers import make_game_state
 
-    monkeypatch.setattr(move_effects, "load_package", lambda setting: _FakeOracle("You are harmed"))
+    monkeypatch.setattr(move_effects, "load_package", lambda setting: _FakeOracle(_price_row("You are harmed")))
     game = make_game_state(setting_id="starforged")
     game.resources.health = 4
     move_effects.pay_the_price(game, OutcomeResult())
     assert game.resources.health == 3
 
 
-def test_pay_the_price_roll_twice_adds_two_results(load_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_pay_the_price_roll_twice_tells_both_results_and_not_the_instruction(
+    load_engine: None, monkeypatch: pytest.MonkeyPatch
+) -> None:
     from straightjacket.engine.mechanics import move_effects
     from straightjacket.engine.mechanics.outcome_result import OutcomeResult
     from tests._helpers import make_game_state
 
-    fake = _FakeOracle("Roll twice", "You are stressed", "A new enemy is revealed")
-    monkeypatch.setattr(move_effects, "load_package", lambda setting: fake)
+    rows = (_price_row("Roll twice", "reroll"), _price_row("You are stressed"), _price_row("A new enemy is revealed"))
+    monkeypatch.setattr(move_effects, "load_package", lambda setting: _FakeOracle(*rows))
     game = make_game_state(setting_id="starforged")
     game.resources.spirit = 4
     result = OutcomeResult()
     move_effects.pay_the_price(game, result)
-    assert result.consequences[0].split("; ") == ["Roll twice", "You are stressed", "A new enemy is revealed"]
+    assert result.consequences[0] == "Pay the Price: You are stressed; A new enemy is revealed"
     assert game.resources.spirit == 3
+
+
+def test_classic_pay_the_price_makes_a_twice_rolled_result_worse(
+    load_engine: None, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from straightjacket.engine.mechanics import move_effects
+    from straightjacket.engine.mechanics.outcome_result import OutcomeResult
+    from tests._helpers import make_game_state
+
+    enemy = _price_row("A new enemy is revealed")
+    rows = (_price_row("Roll twice more on this table.", "make_it_worse"), enemy, enemy)
+    monkeypatch.setattr(move_effects, "load_package", lambda setting: _FakeOracle(*rows))
+    result = OutcomeResult()
+    move_effects.pay_the_price(make_game_state(setting_id="classic"), result)
+    assert result.consequences == ["Pay the Price: A new enemy is revealed, made worse"]
+
+
+def test_classic_roll_again_tells_the_next_result_made_worse(
+    load_engine: None, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from straightjacket.engine.mechanics import move_effects
+    from straightjacket.engine.mechanics.outcome_result import OutcomeResult
+    from tests._helpers import make_game_state
+
+    again = _price_row("Roll again and apply that result but make it worse. If you roll this result yet again, ...")
+    rows = (again, _price_row("You are harmed"))
+    monkeypatch.setattr(move_effects, "load_package", lambda setting: _FakeOracle(*rows))
+    game = make_game_state(setting_id="classic")
+    game.resources.health = 4
+    result = OutcomeResult()
+    move_effects.pay_the_price(game, result)
+    assert result.consequences[0] == "Pay the Price: You are harmed, made worse"
+    assert game.resources.health == 3
 
 
 @pytest.mark.parametrize(("setting", "pays"), [("classic", True), ("starforged", False)])

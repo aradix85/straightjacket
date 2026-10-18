@@ -4,13 +4,12 @@ from collections.abc import Callable
 from typing import Any
 
 from ..datasworn.moves import get_moves
-from ..datasworn.settings import load_package
 from ..engine_loader import eng
 from ..logging_util import log
 from ..models import GameState
 from .consequences import roll_action
 from .impacts import apply_impact, blocks_recovery, clear_impact
-from .move_effects import apply_effects, parse_effects, pay_the_price, strip_datasworn_links
+from .move_effects import apply_effects, parse_effects, pay_the_price, roll_oracle_result
 from .outcome_result import OutcomeResult, move_outcome_config
 from .roll_sources import best_roll_option
 from .suffer import start_dying_clock, suffer
@@ -94,10 +93,10 @@ def apply_suffer_handler(game: GameState, roll_result: str, params: dict[str, An
 
 
 def _roll_endure_table(game: GameState, params: dict[str, Any], result: OutcomeResult) -> None:
-    row = strip_datasworn_links(load_package(game.setting_id).oracle_table(params["table"]).roll().value)
-    log(f"[Suffer] {params['table']}: {row}")
-    result.consequences.append(row)
-    rule = next((r for r in eng().suffer.table_rows if row.startswith(r.prefix)), None)
+    rows, told = roll_oracle_result(game, params["table"])
+    log(f"[Suffer] {told}")
+    result.consequences.append(told)
+    rule = next((r for r in eng().suffer.table_rows for row in rows if row.startswith(r.prefix)), None)
     if rule is not None:
         _TABLE_TRIGGERS[rule.trigger](game, params, result)
 

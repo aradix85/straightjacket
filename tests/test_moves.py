@@ -44,8 +44,6 @@ class TestStarforgedMoves:
         fd = moves["adventure/face_danger"]
         assert fd.name == "Face Danger"
         assert fd.roll_type == "action_roll"
-        assert fd.category == "adventure"
-        assert fd.key == "face_danger"
         assert fd.valid_stats == ["edge", "heart", "iron", "shadow", "wits"]
         assert "strong_hit" in fd.outcomes
         assert "weak_hit" in fd.outcomes
@@ -59,7 +57,6 @@ class TestStarforgedMoves:
         sc = moves["scene_challenge/face_danger"]
         assert adv.name == "Face Danger"
         assert sc.name == "Face Danger (Scene Challenge)"
-        assert adv.id != sc.id
 
     def test_endure_harm_highest_method(self) -> None:
         moves = _own_moves("starforged")
@@ -147,7 +144,7 @@ class TestStarforgedMoves:
 
     def test_all_categories_present(self) -> None:
         moves = _own_moves("starforged")
-        categories = {m.category for m in moves.values()}
+        categories = {key.split("/")[0] for key in moves}
         expected = {
             "session",
             "adventure",
@@ -164,12 +161,10 @@ class TestStarforgedMoves:
         }
         assert categories == expected
 
-    def test_all_moves_have_id_and_name(self) -> None:
+    def test_all_moves_have_a_name(self) -> None:
         moves = _own_moves("starforged")
         for key, move in moves.items():
-            assert move.id, f"{key} missing id"
             assert move.name, f"{key} missing name"
-            assert key.endswith(f"/{move.key}"), f"{key} doesn't end with /{move.key}"
 
     def test_action_rolls_have_outcomes(self) -> None:
         moves = _own_moves("starforged")
@@ -278,18 +273,15 @@ class TestSunderedIslesMoves:
     def test_si_overrides_starforged(self) -> None:
         moves = get_moves("sundered_isles")
         ute = moves["exploration/undertake_an_expedition"]
-        assert "sundered_isles" in ute.id
         assert "sail" in ute.text.lower()
 
     def test_non_overridden_moves_preserved(self) -> None:
         moves = get_moves("sundered_isles")
-        fd = moves["adventure/face_danger"]
-        assert "starforged" in fd.id
+        assert moves["adventure/face_danger"] == get_moves("starforged")["adventure/face_danger"]
 
     def test_si_withstand_damage(self) -> None:
         moves = get_moves("sundered_isles")
-        wd = moves["suffer/withstand_damage"]
-        assert "sundered_isles" in wd.id
+        assert moves["suffer/withstand_damage"] == _own_moves("sundered_isles")["suffer/withstand_damage"]
 
 
 class TestGetMoves:
@@ -311,7 +303,7 @@ class TestGetMoves:
     def test_sundered_isles_auto_parent(self) -> None:
         moves = get_moves("sundered_isles")
         assert "adventure/face_danger" in moves
-        assert "sundered_isles" in moves["exploration/undertake_an_expedition"].id
+        assert "sail" in moves["exploration/undertake_an_expedition"].text.lower()
 
     def test_clear_cache(self) -> None:
         m1 = get_moves("starforged")
@@ -331,11 +323,9 @@ class TestParsing:
             "trigger": {"conditions": None, "text": "When you do the thing..."},
             "outcomes": None,
         }
-        move = _parse_move(raw, "test_cat")
-        assert move.key == "test_move"
+        move = _parse_move(raw)
         assert move.name == "Test Move"
         assert move.roll_type == "no_roll"
-        assert move.category == "test_cat"
         assert move.conditions == []
         assert move.outcomes == {}
         assert move.valid_stats == []
@@ -362,7 +352,7 @@ class TestParsing:
                 "miss": {"text": "Fail."},
             },
         }
-        move = _parse_move(raw, "cat")
+        move = _parse_move(raw)
         assert move.valid_stats == ["iron"]
         assert move.outcomes["strong_hit"].text == "You win."
 
@@ -388,5 +378,5 @@ class TestParsing:
             },
             "outcomes": {"strong_hit": {"text": "ok"}, "weak_hit": {"text": "ok"}, "miss": {"text": "ok"}},
         }
-        move = _parse_move(raw, "cat")
+        move = _parse_move(raw)
         assert move.valid_stats == ["iron"]

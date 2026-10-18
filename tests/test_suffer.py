@@ -3,7 +3,8 @@ import pytest
 from straightjacket.engine.datasworn.settings import load_package
 from straightjacket.engine.engine_loader import eng
 from straightjacket.engine.game.finalization import update_crisis
-from straightjacket.engine.mechanics.move_effects import apply_effects, parse_effects, strip_datasworn_links
+from straightjacket.engine.datasworn.oracle_rolls import plain_text
+from straightjacket.engine.mechanics.move_effects import apply_effects, parse_effects
 from straightjacket.engine.mechanics.move_handlers import _TABLE_TRIGGERS
 from straightjacket.engine.mechanics.move_outcome import make_follow_up_moves, resolve_move_outcome
 from straightjacket.engine.mechanics.outcome_result import OutcomeResult
@@ -161,7 +162,7 @@ def test_unconscious_faces_death_only_in_a_fight(
         game.progress_tracks.append(make_progress_track(id="combat_raiders", track_type="combat"))
     fix_dice(monkeypatch, 25)
     result = resolve_move_outcome(game, "suffer/endure_harm", "MISS", target_npc_id=None, match=False)
-    assert result.consequences[-1].startswith("You are unconscious")
+    assert result.consequences[-1].startswith("Endure Harm: You are unconscious")
     assert result.follow_up_moves == follow_ups
 
 
@@ -177,7 +178,7 @@ def test_giving_up_forsakes_the_newest_vow(load_engine: None, monkeypatch: pytes
     assert [t.status for t in game.progress_tracks] == ["active", "failed"]
     assert result.consequences == [
         "momentum -2",
-        "You give up. Forsake Your Vow.",
+        "Endure Stress: You give up. Forsake Your Vow.",
         'forsake the vow "New"',
         "momentum -2",
     ]
@@ -191,7 +192,7 @@ def test_every_table_row_that_names_a_threshold_or_forsake_has_a_trigger(load_en
     for setting_id in ("classic", "starforged", "sundered_isles"):
         for path in ("moves/endure_harm", "moves/endure_stress"):
             for row in load_package(setting_id).oracle_table(path).rows:
-                text = strip_datasworn_links(row.text)
+                text = plain_text(row.text)
                 if any(name in text for name in named):
                     assert any(text.startswith(rule.prefix) for rule in rules), text
 

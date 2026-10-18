@@ -16,14 +16,13 @@ def record_price_tables(monkeypatch: pytest.MonkeyPatch) -> list[str]:
     from straightjacket.engine.mechanics import move_effects
 
     rolled: list[str] = []
-    real = move_effects._roll_price_rows
+    real = move_effects.roll_oracle_result
 
-    def recording(game: Any, path: str, depth: int) -> list[str]:
-        if depth == 0:
-            rolled.append(path)
-        return real(game, path, depth)
+    def recording(game: Any, path: str) -> tuple[list[str], str]:
+        rolled.append(path)
+        return real(game, path)
 
-    monkeypatch.setattr(move_effects, "_roll_price_rows", recording)
+    monkeypatch.setattr(move_effects, "roll_oracle_result", recording)
     return rolled
 
 

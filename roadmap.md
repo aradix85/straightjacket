@@ -19,7 +19,7 @@ Closing a step: the checks of CONTRIBUTING.md pass, the step moves to DONE at th
 
 - The user writes in Dutch and reads with a screen reader: answers are in Dutch and in plain prose, while the repository stays in English.
 - A session starts by reading every md file in the root and in `docs/`, of the CHANGELOG only the entries since the last finished step, and then continues with NEXT STEP. The design document is not in the repository; README.md links it.
-- The user wants as much as possible to come from the source material: where a table of the rulebooks can settle what the narrator still invents, that is the fix to reach for, ahead of new prompt wording, which on Sonnet stayed within the noise (step 9f).
+- The user wants as much as possible to come from the source material: where a table of the rulebooks can settle what the narrator still invents, that is the fix to reach for, ahead of new prompt wording, which on Sonnet stayed within the noise (step 9f). What the source data already carries is read, never dropped because nothing reads it yet (Decisions, Bound to the rules).
 - The Elvira sessions a step needs are part of the work; a twelve-turn session on Sonnet costs about 55 to 65 cents. Say what a measuring round will cost before starting it; the API spend limit is set in the Claude Console (Settings, Billing).
 - Each finished release is committed and pushed to main.
 - On this machine the API keys live in the Windows user environment (`ANTHROPIC_API_KEY` for the game and Elvira, `OPENAI_API_KEY` for the judges of the measuring setup); a process started by a tool may need them set in its own environment first.
@@ -53,6 +53,8 @@ Closing a step: the checks of CONTRIBUTING.md pass, the step moves to DONE at th
 
 **Lean over structure (9h.15).** The user wants the code lean, KISS, YAGNI, and DRY (CONTRIBUTING.md, Lean, not defensive), and left the judgment calls of 9h.15 and of the retry's catch to the session. So parameters for tests are ruled out (CONTRIBUTING.md, No parameters for tests), and the retry's catch keeps covering the request built inside the provider's call rather than adding a request step to the provider protocol (`docs/ai.md`, Provider adapters).
 
+**Bound to the rules (step 9h).** The user wants the game bound to the engine and its rules as tightly as it can be. What the rules, the source data, or the story already know is read and acted on or told: a field of a Datasworn row, an oracle table's name, a move's own text for a result, an answer the AI was asked for. A field without a reader is first a missing reader (AUDIT.md, principle 5, A field without a reader), and only constants, copies of what is held elsewhere, and what only tests read go. Every step that brings source data into play (9j, 9k, 10, 10b, 13b, 13c, and 18 to 29) first reads what Datasworn carries for its mechanic, its roll instructions, its named results, its texts, and builds on that rather than on rules of its own in yaml or Python; data the engine loads and still ignores is named in the step it belongs to, or in 13b when no step names it. The audits of step 9h and the layer split of 9n apply the same test.
+
 **One model for every role**, the user's preference, is recorded in `docs/ai.md` (Model assignment); the prompt tuning of step 9f relied on it.
 
 **Four layers (step 9n).** The user's decision: Mythic is the game master over whatever system is played, the Crafter books add content to it, and the ruleset and the setting are separate layers, even while every shipped setting runs on an Ironsworn ruleset, with as little as possible fixed in Python. From step 9n on, a step that adds rules (9j, 13b, 18 to 29) builds them in the ruleset, one that adds world content (10, 10b, 27) in the setting, and one that extends Mythic or a Crafter (30 to 35, and the Location Crafter of step 10) in its own layer. The order is the user's as well: the audits of principles 3 and 5 first, since they shrink what the split moves, then the split, with the audit of principle 1 on the layout it makes.
@@ -62,7 +64,7 @@ Closing a step: the checks of CONTRIBUTING.md pass, the step moves to DONE at th
 ## NEXT STEP — 9h: Principle audits
 
 
-The audits of AUDIT.md, one session per principle or submodule as it prescribes, in this order: principles 2 and 4, which are mechanical, then principles 3 and 5 per submodule; principle 1 runs in step 9n, on the layout that step makes, and the two long clean-ups of principle 2 wait in step 9o. Principles 2, 3, and 4 are done; principle 5 runs one submodule per session in AUDIT.md's order, `mechanics/`, `npc/`, `game/`, and `ai/` done and `datasworn/` next. Every finding is fixed in its session or becomes a substep here. Waiting for the audit to classify, or for the user:
+The audits of AUDIT.md, one session per principle or submodule as it prescribes, in this order: principles 2 and 4, which are mechanical, then principles 3 and 5 per submodule; principle 1 runs in step 9n, on the layout that step makes, and the two long clean-ups of principle 2 wait in step 9o. Principles 2, 3, and 4 are done; principle 5 runs one submodule per session in AUDIT.md's order, `mechanics/`, `npc/`, `game/`, `ai/`, and `datasworn/` done and `tools/` next, each judging a field without a reader as Decisions, Bound to the rules, says. Every finding is fixed in its session or becomes a substep here. Waiting for the audit to classify, or for the user:
 
 **9h.5** The `.get()` scan flags only constant, non-neutral defaults, so `.get("key", variable)` passes unexamined, for example in `web/serializers.py` (pass 4b).
 
@@ -81,6 +83,8 @@ The audits of AUDIT.md, one session per principle or submodule as it prescribes,
 **9h.25** A connection that Forge a Bond completes is no longer active, so its bond, its aid, and Develop Your Relationship no longer see it, though in Starforged the connection stays and becomes bonded. What a bonded connection keeps (its bond for the stance and the gate, its aid) is checked against the books before the step.
 
 **9h.28** A correction of the state narrates the turn again without the turn's random events, threat events, and filled clocks, since the turn's snapshot keeps none of them (`correction/orchestrator.py` → `_rewrite_prompt`); keeping them in `TurnSnapshot` breaks the save format.
+
+**9h.29** The Brain chooses a move from its name, its stats, and hand-written hints for six moves (`ai_text.brain_trigger_hints` in `engine/ai_text.yaml`), while Datasworn gives every move its trigger and its full text (`datasworn/moves.py` → `Move.text`, which nothing reads yet). Whether the Brain reads the book's trigger text instead, measured on its move choice before and after, since its prompt grows with every move on offer.
 
 
 ### Definition of Done
@@ -112,7 +116,7 @@ The user's decision (Decisions, Four layers). Today one setting carries both the
 
 **9n.1** Four layers, each with its own package and its own yaml folder, and a project-rule scan for the direction of imports between them. The game master: Mythic's fate, chaos, scene test, random events, and lists, with the engine's own rules that hold in any system (clocks, position and effect, facts, pacing, and the NPC layer). The crafters: the Adventure Crafter, its character-crafting tables, and the Location Crafter if the user buys it. The ruleset: classic Ironsworn and Starforged, with Delve and Sundered Isles as their expansions. The setting: the world, its truths, oracles, atlas, vocabulary, tone, and generators. The game master and the crafters know of a ruleset only what a narrow interface gives them: the tier of a roll's result, which drives the chaos factor, the Director, the emotion of a memory, and what a miss withholds, and a move's category.
 
-**9n.2** The ruleset owns what a system decides, read from its yaml instead of fixed in Python: dice and result tiers (three today, with the group of hits in `engine/dice.yaml`), meters (`models_base.py` → `Resources` holds health, spirit, supply, and momentum as fixed fields, read 25 times in 8 files), stats and their arrays, progress tracks and ranks, moves and their outcomes, impacts, legacy, and assets. Classic Ironsworn's rule differences, keyed today by the setting id under `move_outcome_overrides` in `engine/move_outcomes.yaml`, become the classic ruleset's own. The save format breaks.
+**9n.2** The ruleset owns what a system decides, read from what its Datasworn data already encodes and otherwise from its yaml, instead of fixed in Python (Decisions, Bound to the rules): dice and result tiers (three today, with the group of hits in `engine/dice.yaml`), meters (`models_base.py` → `Resources` holds health, spirit, supply, and momentum as fixed fields, read 25 times in 8 files), stats and their arrays, progress tracks and ranks, moves and their outcomes, impacts, legacy, and assets. Classic Ironsworn's rule differences, keyed today by the setting id under `move_outcome_overrides` in `engine/move_outcomes.yaml`, become the classic ruleset's own. The save format breaks.
 
 **9n.3** A setting names its ruleset. A Datasworn ruleset file carries both layers, so its rules and moves load as the ruleset and its oracles, truths, and atlas as the setting of the same world; where a section such as assets belongs is settled in the step, checked against the books. `docs/settings.md` then describes adding a setting and adding a ruleset apart.
 
@@ -238,7 +242,7 @@ Fate plus expected behavior derived from AIMS and stance. Data: `mythic_gme_2e.j
 
 ### 13b — Unimplemented Datasworn mechanics
 
-This step covers the Datasworn moves of the shipped settings that are neither formal moves in `engine/move_outcomes.yaml` nor covered by another step (expeditions, sites, and Sundered Isles in steps 25, 26, and 28, asset abilities in steps 18 to 20), and wires them following "Datasworn mechanic naming" in `docs/mechanics.md`: a player choice with a structured outcome becomes a formal move; a consequence that fires when a condition becomes true becomes an engine trigger with a direct name.
+Datasworn data the engine loads but does not act on belongs here when no other step names it (Decisions, Bound to the rules). This step covers the Datasworn moves of the shipped settings that are neither formal moves in `engine/move_outcomes.yaml` nor covered by another step (expeditions, sites, and Sundered Isles in steps 25, 26, and 28, asset abilities in steps 18 to 20), and wires them following "Datasworn mechanic naming" in `docs/mechanics.md`: a player choice with a structured outcome becomes a formal move; a consequence that fires when a condition becomes true becomes an engine trigger with a direct name.
 
 Group A, formal moves: Forsake Your Vow as the player's own choice (`quest/forsake_your_vow`, today only an engine trigger when a threat's menace fills or Endure Stress gives up), `combat/turn_the_tide`, `adventure/aid_your_ally` and `relationship/aid_your_ally` (needs the NPC-action context of step 11), `relationship/write_your_epilogue` (couples with the existing retire flow), `failure/learn_from_your_failures`, `threat/take_a_hiatus`, and the progress-mark moves `legacy/advance`, `legacy/earn_experience`, `quest/advance`, `quest/reach_a_milestone`.
 
@@ -324,7 +328,7 @@ Starforged's derelicts, precursor vaults, and location themes, and Sundered Isle
 
 ### 28 — Sundered Isles specifics
 
-Ship mechanics through the asset pipeline of steps 18 and 19; the cursed die, checked against the Sundered Isles rules first (the `cursed` impact in `engine/impacts.yaml` is a separate mechanic); the setting's own oracle categories and misc tables.
+Ship mechanics through the asset pipeline of steps 18 and 19, with the ship created at the start, which `creation_flow.has_ship_creation` in `data/settings/sundered_isles.yaml` announces and nothing reads yet; the cursed die, checked against the Sundered Isles rules first (the `cursed` impact in `engine/impacts.yaml` is a separate mechanic); the setting's own oracle categories and misc tables.
 
 ### 29 — Crew mechanics
 

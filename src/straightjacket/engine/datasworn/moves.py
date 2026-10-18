@@ -5,6 +5,7 @@ from dataclasses import dataclass, field
 
 from ..logging_util import log
 from .loader import Setting
+from .oracle_rolls import plain_text
 from .settings import load_package
 
 
@@ -29,10 +30,7 @@ class MoveOutcome:
 
 @dataclass
 class Move:
-    id: str = ""
-    key: str = ""
     name: str = ""
-    category: str = ""
     roll_type: str = ""
     text: str = ""
     conditions: list[TriggerCondition] = field(default_factory=list)
@@ -67,12 +65,16 @@ def _parse_outcomes(raw: dict[str, Any] | None) -> dict[str, MoveOutcome]:
     return {key: MoveOutcome(text=raw[key]["text"]) for key in ("strong_hit", "weak_hit", "miss")}
 
 
-def _parse_move(raw: dict[str, Any], category: str) -> Move:
+def outcome_text(setting_id: str, move_key: str, result: str) -> str:
+    move = get_moves(setting_id).get(move_key)
+    if move is None or not move.outcomes:
+        return ""
+    return plain_text(move.outcomes[result.lower()].text)
+
+
+def _parse_move(raw: dict[str, Any]) -> Move:
     return Move(
-        id=raw["_id"],
-        key=raw["_id"].rsplit("/", 1)[-1],
         name=raw["name"],
-        category=category,
         roll_type=raw["roll_type"],
         text=raw["text"],
         conditions=[
@@ -86,7 +88,7 @@ def _parse_move(raw: dict[str, Any], category: str) -> Move:
 
 def _load_moves_from_setting(setting: Setting) -> dict[str, Move]:
     return {
-        f"{cat_key}/{move_key}": _parse_move(move_data, cat_key)
+        f"{cat_key}/{move_key}": _parse_move(move_data)
         for cat_key, cat_data in setting.raw["moves"].items()
         for move_key, move_data in cat_data["contents"].items()
     }

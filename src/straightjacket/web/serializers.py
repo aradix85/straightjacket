@@ -7,7 +7,6 @@ from ..engine.mechanics.impacts import impact_label
 from ..engine.models import GameState
 from ..engine.npc import get_npc_bond
 from ..engine.story_state import get_current_act
-from ..engine.datasworn.loader import extract_title
 from ..engine.datasworn.settings import list_packages, load_package
 from ..i18n import t
 
@@ -172,7 +171,7 @@ def build_creation_options() -> dict[str, Any]:
         paths = []
         for asset in pkg.data.paths():
             asset_id = asset["_id"].rsplit("/", 1)[-1]
-            paths.append({"id": asset_id, "title": extract_title(asset, asset_id)})
+            paths.append({"id": asset_id, "title": asset["name"]})
 
         truths = []
         flow = pkg.creation_flow
@@ -216,7 +215,7 @@ def build_creation_options() -> dict[str, Any]:
                 starting_assets.append(
                     {
                         "id": asset_id,
-                        "title": extract_title(asset, asset_id),
+                        "title": asset["name"],
                         "category": cat,
                     }
                 )

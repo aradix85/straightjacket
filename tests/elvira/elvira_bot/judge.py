@@ -1,11 +1,10 @@
 from __future__ import annotations
 
 import json
-import re
 from typing import Any
 
 from straightjacket.engine.ai.provider_base import AICallSpec
-from straightjacket.engine.datasworn.moves import get_moves
+from straightjacket.engine.datasworn.moves import get_moves, outcome_text
 from straightjacket.engine.models import GameState
 
 from .ai_helpers import ELVIRA_ROLE, _p, bot_model, bot_provider
@@ -28,12 +27,11 @@ JUDGE_SCHEMA: dict[str, Any] = {
 def _move_outcome(game: GameState, move_id: str, result: str | None) -> tuple[str, str]:
     if not move_id or result is None:
         return _p("judge_none_move"), _p("judge_none_move")
-    moves = get_moves(game.setting_id)
-    move = moves.get(move_id) or next((m for m in moves.values() if m.key == move_id.split("/")[-1]), None)
-    if move is None or result.lower() not in move.outcomes:
+    move = get_moves(game.setting_id).get(move_id)
+    text = outcome_text(game.setting_id, move_id, result)
+    if move is None or not text:
         return move_id, _p("judge_none_move")
-    text = re.sub(r"\[([^\]]+)\]\([^)]*\)", r"\1", move.outcomes[result.lower()].text).replace("__", "")
-    return move.name or move_id, text.strip()
+    return move.name, text
 
 
 def judge_turn(

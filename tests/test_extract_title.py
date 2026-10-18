@@ -1,21 +1,17 @@
 from __future__ import annotations
 
-import pytest
 
-from straightjacket.engine.datasworn.loader import extract_title
+def test_path_and_asset_titles_are_the_datasworn_names(load_engine: None) -> None:
+    from straightjacket.engine.datasworn.settings import load_package
+    from straightjacket.web.serializers import build_creation_options
+
+    for setting in build_creation_options()["settings"]:
+        data = load_package(setting["id"]).data
+        assert {p["title"] for p in setting["paths"]} == {a["name"] for a in data.paths()}
+        assert all(a["title"] == data.asset(a["category"], a["id"])["name"] for a in setting["starting_assets"])
 
 
-@pytest.mark.parametrize(
-    ("obj", "expected"),
-    [
-        ({"title": {"canonical": "Iron Vow", "standard": "Vow"}}, "Iron Vow"),
-        ({"title": {"standard": "Sworn Vow"}}, "Sworn Vow"),
-        ({"title": {}}, "fallback"),
-        ({"title": "Plain Title"}, "Plain Title"),
-        ({"title": "", "_id": "starforged/assets/path/ace_pilot"}, "Ace Pilot"),
-        ({"_id": "classic/oracles/settlement_trouble"}, "Settlement Trouble"),
-        ({}, "fallback"),
-    ],
-)
-def test_extract_title_prefers_title_then_id_then_fallback(obj: dict[str, object], expected: str) -> None:
-    assert extract_title(obj, "fallback") == expected
+def test_an_oracle_tables_title_is_its_datasworn_name(load_engine: None) -> None:
+    from straightjacket.engine.datasworn.settings import load_package
+
+    assert load_package("classic").oracle_table("moves/pay_the_price").title == "Pay the Price"

@@ -111,7 +111,7 @@ def _complication_rows(game: GameState) -> set[str]:
 
 
 def _rolled_rows(consequence: str) -> list[str]:
-    return [row for row in consequence.split("; ") if not row.startswith("Roll ")]
+    return consequence.split(": ", 1)[1].split("; ")
 
 
 def test_a_matched_miss_rolls_a_story_complication_instead_of_pay_the_price(
@@ -135,7 +135,8 @@ def test_other_misses_pay_the_price(
     for _ in range(20):
         outcome = resolve_move_outcome(game, "adventure/face_danger", "MISS", match=match, target_npc_id=None)
         assert rolled.pop() == eng().pay_the_price.oracle_path
-        assert not any(row in rows for row in _rolled_rows(outcome.consequences[-1]))
+        price = next(c for c in outcome.consequences if c.startswith("Pay the Price: "))
+        assert not any(row in rows for row in _rolled_rows(price))
 
 
 @pytest.mark.parametrize("result", ["MISS", "WEAK_HIT"])
@@ -224,3 +225,15 @@ def test_only_place_facts_can_be_settled_by_a_miss() -> None:
     }
     with pytest.raises(ValueError, match="not a place fact type"):
         _build_fact_resolution(raw)
+
+
+@pytest.mark.parametrize("result", ["MISS", "WEAK_HIT", "STRONG_HIT"])
+def test_the_narrator_reads_the_rulebook_text_of_the_result(load_engine: None, result: str) -> None:
+    from straightjacket.engine.datasworn.moves import get_moves
+    from straightjacket.engine.datasworn.oracle_rolls import plain_text
+
+    book = plain_text(get_moves("starforged")["adventure/gather_information"].outcomes[result.lower()].text)
+    prompt = _prompt(_game(), result)
+    assert f'<move_outcome move="Gather Information">{book}</move_outcome>' in prompt
+    assert "__" not in book
+    assert "](" not in book

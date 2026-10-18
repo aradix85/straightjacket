@@ -147,7 +147,9 @@ class TestApplyEffects:
             for r in data["oracles"]["moves"]["contents"]["pay_the_price"]["rows"]
         }
         result = apply_effects(game, parse_effects(["pay_the_price"]))
-        assert all(part in rows for part in result.consequences[0].split("; "))
+        table, told = result.consequences[0].split(": ", 1)
+        assert table == "Pay the Price"
+        assert all(any(part.startswith(row) for row in rows) for part in told.split("; "))
 
     def test_suffer_move_picks_highest_track(self, game: GameState) -> None:
         game.resources.health = 5

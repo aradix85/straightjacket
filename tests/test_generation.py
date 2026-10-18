@@ -33,22 +33,29 @@ class _Pkg:
                 "oracles": {
                     "t": {
                         "contents": {
-                            "pair": {"rows": [_row(1, pair, [_auto("probe/oracles/t/a"), _auto("probe/oracles/t/b")])]},
-                            "a": {"rows": [_row(1, "Alpha", [])]},
-                            "b": {"rows": [_row(1, "Beta", [])]},
+                            "pair": {
+                                "name": "Probe",
+                                "rows": [_row(1, pair, [_auto("probe/oracles/t/a"), _auto("probe/oracles/t/b")])],
+                            },
+                            "a": {"name": "Probe", "rows": [_row(1, "Alpha", [])]},
+                            "b": {"name": "Probe", "rows": [_row(1, "Beta", [])]},
                             "twice": {
+                                "name": "Probe",
                                 "rows": [
                                     _row(1, "Roll twice", [_auto(None, 2)]),
                                     _row(2, "One", []),
                                     _row(3, "Two", []),
-                                ]
+                                ],
                             },
-                            "type": {"rows": [_row(1, "[Ruined](id:probe/collections/oracles/t/ruined)", [])]},
-                            "kind": {"rows": [_row(1, "Shore", [])]},
+                            "type": {
+                                "name": "Probe",
+                                "rows": [_row(1, "[Ruined](id:probe/collections/oracles/t/ruined)", [])],
+                            },
+                            "kind": {"name": "Probe", "rows": [_row(1, "Shore", [])]},
                         },
                         "collections": {
-                            "ruined": {"contents": {"feature": {"rows": [_row(1, "Rubble", [])]}}},
-                            "shore": {"contents": {"feature": {"rows": [_row(1, "Driftwood", [])]}}},
+                            "ruined": {"contents": {"feature": {"name": "Probe", "rows": [_row(1, "Rubble", [])]}}},
+                            "shore": {"contents": {"feature": {"name": "Probe", "rows": [_row(1, "Driftwood", [])]}}},
                         },
                     }
                 },
@@ -177,3 +184,30 @@ def test_a_misread_correction_keeps_the_generated_place(load_engine: None, stub_
     game, _narration, _offer, _director = process_correction(provider, game, "I meant I use force")
 
     assert [p.to_dict() for p in game.world.places] == before
+
+
+def test_a_roll_twice_row_keeps_or_worsens_a_repeated_result(
+    load_engine: None, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from straightjacket.engine.datasworn import loader
+    from straightjacket.engine.datasworn.loader import OracleRow, OracleTable
+    from straightjacket.engine.datasworn.oracle_rolls import roll_rows
+
+    outcomes = {}
+    for rule in ("keep", "make_it_worse"):
+        twice = OracleRow(min=1, max=1, text="Roll twice", oracle_rolls=[{**_auto(None, 2), "duplicates": rule}])
+        rows = [twice, OracleRow(min=2, max=2, text="One"), OracleRow(min=3, max=3, text="Two")]
+        dice = [1, 2, 2]
+        monkeypatch.setattr(loader.random, "randint", lambda low, high, queue=dice: queue.pop(0))
+        rolled = roll_rows(OracleTable(id="t/twice", title="Twice", rows=rows))
+        outcomes[rule] = ([row.text for row in rolled.rows], rolled.worse)
+    assert outcomes == {"keep": (["One", "One"], False), "make_it_worse": (["One"], True)}
+
+
+def test_an_unknown_duplicates_rule_raises(load_engine: None) -> None:
+    from straightjacket.engine.datasworn.loader import OracleRow, OracleTable
+    from straightjacket.engine.datasworn.oracle_rolls import roll_rows
+
+    twice = OracleRow(min=1, max=1, text="Roll twice", oracle_rolls=[{**_auto(None, 2), "duplicates": "merge"}])
+    with pytest.raises(ValueError, match="merge"):
+        roll_rows(OracleTable(id="t/twice", title="Twice", rows=[twice]))

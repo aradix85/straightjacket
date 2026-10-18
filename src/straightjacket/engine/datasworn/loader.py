@@ -10,19 +10,6 @@ from ..logging_util import log
 _DATA_DIR = PROJECT_ROOT / "data"
 
 
-def extract_title(obj: dict[str, Any], fallback: str) -> str:
-    title_raw = obj.get("title")
-    if isinstance(title_raw, dict):
-        return str(title_raw.get("canonical") or title_raw.get("standard") or fallback)
-    if isinstance(title_raw, str) and title_raw:
-        return title_raw
-    obj_id = obj.get("_id", "")
-    if obj_id:
-        result: str = obj_id.rsplit("/", 1)[-1].replace("_", " ").title()
-        return result
-    return fallback
-
-
 @dataclass
 class OracleRow:
     min: int
@@ -36,29 +23,19 @@ class OracleRow:
 
 
 @dataclass
-class OracleResult:
-    value: str
-    roll: int
-    table_path: str
-    table_title: str
-    row: OracleRow
-
-
-@dataclass
 class OracleTable:
     id: str
     title: str
     rows: list[OracleRow] = field(default_factory=list)
-    collection_path: str = ""
 
-    def roll(self) -> OracleResult:
+    def roll(self) -> OracleRow:
         if not self.rows:
             raise ValueError(f"Oracle table '{self.id}' has no rows")
         die_max = self.rows[-1].max
         die_roll = random.randint(1, die_max)
         for row in self.rows:
             if row.min <= die_roll <= row.max:
-                return OracleResult(value=row.text, roll=die_roll, table_path=self.id, table_title=self.title, row=row)
+                return row
 
         raise ValueError(f"Oracle table '{self.id}' rolled {die_roll} but no row covers it — malformed row ranges")
 
@@ -72,15 +49,6 @@ class Setting:
         self._oracles: dict[str, OracleTable] = {}
         self._load_oracles()
 
-    @property
-    def id(self) -> str:
-        result: str = self._raw["_id"]
-        return result
-
-    @property
-    def title(self) -> str:
-        return extract_title(self._raw, self.id)
-
     def _load_oracles(self) -> None:
         for coll_id, coll in self._raw["oracles"].items():
             self._load_oracle_collection(coll_id, coll)
@@ -88,12 +56,11 @@ class Setting:
     def _load_oracle_collection(self, path: str, coll: dict[str, Any]) -> None:
         for table_id, table_data in (coll.get("contents") or {}).items():
             full_id = f"{path}/{table_id}"
-            self._oracles[full_id] = self._parse_oracle_table(full_id, table_data, path)
+            self._oracles[full_id] = self._parse_oracle_table(full_id, table_data)
         for sub_id, sub_coll in (coll.get("collections") or {}).items():
             self._load_oracle_collection(f"{path}/{sub_id}", sub_coll)
 
-    def _parse_oracle_table(self, full_id: str, data: dict[str, Any], collection_path: str) -> OracleTable:
-        title = extract_title(data, full_id)
+    def _parse_oracle_table(self, full_id: str, data: dict[str, Any]) -> OracleTable:
         rows = []
         for r in data["rows"]:
             roll_obj = r.get("roll")
@@ -111,7 +78,7 @@ class Setting:
                     oracle_rolls=r.get("oracle_rolls"),
                 )
             )
-        return OracleTable(id=full_id, title=title, rows=rows, collection_path=collection_path)
+        return OracleTable(id=full_id, title=data["name"], rows=rows)
 
     def oracle(self, oracle_id: str) -> OracleTable | None:
         return self._oracles.get(oracle_id)

@@ -7,7 +7,7 @@ from ..engine_loader import eng
 from ..logging_util import log
 from ..models import GameState
 from .assets import asset_data, enabled_abilities
-from .move_effects import strip_datasworn_links
+from ..datasworn.oracle_rolls import plain_text
 
 _ADD = re.compile(r"\badd \+(\d)", re.IGNORECASE)
 _MOMENTUM_ON_HIT = re.compile(r"add \+\d and take \+(\d) momentum on a hit", re.IGNORECASE)
@@ -31,7 +31,7 @@ def roll_bonuses(game: GameState) -> list[RollBonus]:
             continue
         flags = enabled_abilities(game, asset_id)
         for index, (ability, enabled) in enumerate(zip(data["abilities"], flags, strict=True)):
-            text = strip_datasworn_links(str(ability["text"]))
+            text = plain_text(str(ability["text"]))
             add = _ADD.search(text)
             if not enabled or add is None:
                 continue
