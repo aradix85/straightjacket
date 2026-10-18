@@ -15,6 +15,8 @@ One audit session covers one principle, or for the interpretive principles (1, 3
 
 A session fixes every clear violation it finds, in the same session and by CONTRIBUTING.md's rules for a change: callers and tests in the same commit, the quality gate green, a short Elvira run when the turn pipeline, prompts, or configuration changed, one CHANGELOG entry, and the release committed to main and pushed. Only what needs the user's decision, or belongs to another principle or submodule, becomes an open item. Deleting a file the user did not name waits for the user's consent.
 
+The maintainer wants the code lean, KISS, YAGNI, and DRY (CONTRIBUTING.md, Lean, not defensive). So a session also fixes what it meets that is ugly, illogical, or broken, even where no principle names it, and no fix adds window dressing or defensive code: a fix leaves less structure behind, not more. Where a fix would add structure, such as a new protocol step or layer, the session weighs it against that wish, and the maintainer has left such calls to the session.
+
 ## Working method
 
 **Hit-lists, never verdicts.** "Is principle X satisfied?" becomes "where does the codebase fail principle X?", answered with a list, even an empty one.
@@ -84,6 +86,8 @@ Carve-outs: the `get_raw` pattern for yaml whose keys are domain data, the AI-ca
 
 **Pass 3d — Wrappers without logic.** Functions whose body is a single `return foo(...)` with no parameter transformation, error handling, or caching.
 
+**Pass 3e — Parameters for tests.** Every parameter with a default, checked against its production callers (CONTRIBUTING.md, No parameters for tests): a parameter production never sets, or a default every production call overrides, is a violation, and so is a branch or setter in production code that only tests reach. A default that production uses both ways stays.
+
 Carve-outs: the AI-call carve-out for broad excepts; re-exports that make up the documented public API in `__init__.py` files.
 
 ### Principle 4 — No backwards compatibility
@@ -118,6 +122,6 @@ Submodules for principles 1, 3, and 5: `mechanics/`, `npc/`, `game/`, `ai/`, `db
 
 - Principle 1: no submodule audited.
 - Principle 2: audited 2026-10-17, all four passes; every violation is fixed except the prompt markup (roadmap 9h.12) and the dataclass defaults (9h.4).
-- Principle 3: `mechanics/`, `npc/`, and `game/` audited 2026-10-17 and `ai/` 2026-10-18, all four passes each; `db/` is next. The open items are roadmap 9h.7, 9h.13 to 9h.18, 9j.7, and steps 11c and 12.
+- Principle 3: `mechanics/`, `npc/`, and `game/` audited 2026-10-17 and `ai/` 2026-10-18, every pass each, parameters included; `db/` is next. The open items are roadmap 9h.7, 9h.13 to 9h.18, 9j.7, and steps 11c and 12.
 - Principle 4: audited 2026-10-17, all three passes; every violation is fixed, and the dataclass defaults of pass 4a are roadmap 9h.4.
 - Principle 5: no submodule audited.

@@ -46,7 +46,7 @@ A finished substep or session of a step that stays open leaves the list in the s
 
 **Config over code, and what belongs together lives together (step 9h).** The user wants the code as modular and as config-driven as it can be, with nothing hardcoded that need not be, and wants what belongs together in one place rather than spread over the codebase; CONTRIBUTING.md states both as rules, and AUDIT.md's principle 1 checks the second (step 1c). They settled the judgment calls of the principle-2 audit: the markup of prompts, the source systems' rule constants, named status groups, and patterns for the AI's words all move to yaml.
 
-**Lean over structure (9h.15).** The user wants the code lean, KISS, YAGNI, and DRY, and left the judgment calls of 9h.15 and of the retry's catch to the session. Fixing what is ugly, illogical, or broken is welcome; window dressing and defensive code are not. So parameters for tests are ruled out (CONTRIBUTING.md, No parameters for tests), and the retry's catch keeps covering the request built inside the provider's call rather than adding a request step to the provider protocol (`docs/ai.md`, Provider adapters).
+**Lean over structure (9h.15).** The user wants the code lean, KISS, YAGNI, and DRY (CONTRIBUTING.md, Lean, not defensive), and left the judgment calls of 9h.15 and of the retry's catch to the session. So parameters for tests are ruled out (CONTRIBUTING.md, No parameters for tests), and the retry's catch keeps covering the request built inside the provider's call rather than adding a request step to the provider protocol (`docs/ai.md`, Provider adapters).
 
 **One model for every role**, the user's preference, is recorded in `docs/ai.md` (Model assignment); the prompt tuning of step 9f relied on it.
 
