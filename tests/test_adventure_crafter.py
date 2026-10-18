@@ -17,7 +17,6 @@ from straightjacket.engine.mechanics.adventure_crafter import (
     _validate_random_themes,
     assign_themes,
     dispatch_meta,
-    get_meta_handler_names,
     lookup_characters_template,
     lookup_meta_plot_point,
     lookup_plot_point,
@@ -136,7 +135,7 @@ def test_plot_point_lookup_out_of_range_roll_raises(bad_roll: int):
 def test_meta_handlers_match_json_names():
     data = _load_ac_data()
     json_names = {entry["name"] for entry in data["meta_plot_points"]}
-    handler_names = set(get_meta_handler_names())
+    handler_names = set(_META_HANDLERS)
     assert json_names == handler_names, f"drift between JSON {json_names} and handlers {handler_names}"
 
 
@@ -268,8 +267,6 @@ def test_roll_turning_point_produces_two_to_five_plot_points():
         for hit in tp.plot_points:
             assert isinstance(hit, PlotPointHit)
             assert hit.theme in themes
-            assert 1 <= hit.priority <= 5
-            assert 1 <= hit.roll <= 100
 
 
 def test_roll_turning_point_themes_length_must_match_theme_slots():
@@ -284,10 +281,9 @@ def test_roll_turning_point_creates_plotline_on_empty_list():
     rng = random.Random(1)
     themes = ["action", "tension", "mystery", "social", "personal"]
     assert narrative.plotlines_list == []
-    tp = roll_turning_point(rng, themes, narrative)
-    assert tp.plotline_was_new is True
+    roll_turning_point(rng, themes, narrative)
     assert len(narrative.plotlines_list) == 1
-    assert narrative.plotlines_list[0].id == tp.plotline_id
+    assert narrative.plotlines_list[0].turning_point_count == 1
 
 
 def test_roll_turning_point_reuses_advancing_plotline():
@@ -295,10 +291,10 @@ def test_roll_turning_point_reuses_advancing_plotline():
     _create_plotline(narrative, "First")
     rng = random.Random(0)
     themes = ["action", "tension", "mystery", "social", "personal"]
-    tp = roll_turning_point(rng, themes, narrative)
+    roll_turning_point(rng, themes, narrative)
     assert len(narrative.plotlines_list) in (1, 2)
-    if not tp.plotline_was_new:
-        assert tp.plotline_id == "ac_plot_1"
+    if len(narrative.plotlines_list) == 1:
+        assert narrative.plotlines_list[0].turning_point_count == 1
 
 
 def test_conclusion_plot_point_flips_an_advancing_plotline_to_conclusion(monkeypatch):
@@ -313,9 +309,8 @@ def test_conclusion_plot_point_flips_an_advancing_plotline_to_conclusion(monkeyp
         return next(rolls)
 
     monkeypatch.setattr(rng, "randint", fake_randint)
-    tp = roll_turning_point(rng, themes, narrative)
-    assert tp.plotline_was_new is False
-    assert tp.flips_to_conclusion is True
+    roll_turning_point(rng, themes, narrative)
+    assert len(narrative.plotlines_list) == 1
     plotline = narrative.plotlines_list[0]
     assert plotline.status == "conclusion"
 

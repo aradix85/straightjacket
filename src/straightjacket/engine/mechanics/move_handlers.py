@@ -86,16 +86,13 @@ def apply_threshold_handler(game: GameState, roll_result: str, params: dict[str,
     result = OutcomeResult()
     _labels = eng().ai_text.consequence_labels
 
-    if roll_result == "STRONG_HIT":
-        result.narrative_only = True
-
-    elif roll_result == "WEAK_HIT":
+    if roll_result == "WEAK_HIT":
         impact = params["impact"]
         if impact and apply_impact(game, impact):
             result.consequences.append(_labels["mark_impact"].format(impact=impact))
         result.consequences.append(_labels["threshold_vow"])
 
-    else:
+    elif roll_result == "MISS":
         game.game_over = True
         result.consequences.append(params["game_over_text"])
 

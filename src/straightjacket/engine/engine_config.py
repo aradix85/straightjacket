@@ -5,7 +5,6 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from .engine_config_dataclasses import (
-    ActProgressConfig,
     ActivationScores,
     ActiveTrackCondition,
     AdventureCrafterConfig,
@@ -14,7 +13,6 @@ from .engine_config_dataclasses import (
     BlueprintConfig,
     BoastOption,
     BoastsConfig,
-    BondsConfig,
     ChaosConfig,
     DiceConfig,
     NpcStatusGroups,
@@ -120,7 +118,6 @@ class EngineSettings:
     creation: CreationConfig
     resources: ResourcesConfig
     momentum: MomentumConfig
-    bonds: BondsConfig
     activation_scores: ActivationScores
     location: LocationConfig
     prompt_display: PromptDisplayConfig
@@ -156,7 +153,6 @@ class EngineSettings:
     memory_retrieval_weights: MemoryRetrievalWeights
     fuzzy_match: FuzzyMatchConfig
     npc_matching: NpcMatchingConfig
-    act_progress: ActProgressConfig
     rate_limit: RateLimitConfig
     retry: RetryConfig
     tf_idf: TfIdfConfig
@@ -213,7 +209,6 @@ _SIMPLE_SECTIONS: dict[str, type] = {
     "pacing": PacingConfig,
     "creation": CreationConfig,
     "resources": ResourcesConfig,
-    "bonds": BondsConfig,
     "activation_scores": ActivationScores,
     "location": LocationConfig,
     "prompt_display": PromptDisplayConfig,
@@ -224,7 +219,6 @@ _SIMPLE_SECTIONS: dict[str, type] = {
     "memory_retrieval_weights": MemoryRetrievalWeights,
     "fuzzy_match": FuzzyMatchConfig,
     "npc_matching": NpcMatchingConfig,
-    "act_progress": ActProgressConfig,
     "rate_limit": RateLimitConfig,
     "retry": RetryConfig,
     "tf_idf": TfIdfConfig,
@@ -400,7 +394,6 @@ def _build_clocks(c_raw: dict[str, Any]) -> ClocksConfig:
         for clock_type, entry in dict(c_raw["fill_consequences"]).items()
     }
     return ClocksConfig(
-        owner_kinds=frozenset(c_raw["owner_kinds"]),
         default_owner_kind=c_raw["default_owner_kind"],
         default_segments=c_raw["default_segments"],
         max_clocks_per_chapter=c_raw["max_clocks_per_chapter"],
@@ -480,9 +473,7 @@ def parse_engine_yaml(data: dict[str, Any]) -> EngineSettings:
     fate = FateConfig(default_method=f_data["default_method"], likelihood_rules=lr)
     fact_resolution = _build_fact_resolution(dict(data["fact_resolution"]))
 
-    impacts = {
-        key: _build_strict(ImpactConfig, {**impact_data, "key": key}) for key, impact_data in data["impacts"].items()
-    }
+    impacts = {key: _build_strict(ImpactConfig, impact_data) for key, impact_data in data["impacts"].items()}
 
     legacy_data = dict(data["legacy"])
     legacy_data["ticks_by_rank"] = dict(legacy_data["ticks_by_rank"])
@@ -595,7 +586,6 @@ def parse_engine_yaml(data: dict[str, Any]) -> EngineSettings:
         creation=simple_parsed["creation"],
         resources=simple_parsed["resources"],
         momentum=momentum,
-        bonds=simple_parsed["bonds"],
         activation_scores=simple_parsed["activation_scores"],
         location=simple_parsed["location"],
         prompt_display=simple_parsed["prompt_display"],
@@ -631,7 +621,6 @@ def parse_engine_yaml(data: dict[str, Any]) -> EngineSettings:
         memory_retrieval_weights=simple_parsed["memory_retrieval_weights"],
         fuzzy_match=simple_parsed["fuzzy_match"],
         npc_matching=simple_parsed["npc_matching"],
-        act_progress=simple_parsed["act_progress"],
         rate_limit=simple_parsed["rate_limit"],
         retry=simple_parsed["retry"],
         tf_idf=simple_parsed["tf_idf"],
@@ -666,7 +655,6 @@ def parse_engine_yaml(data: dict[str, Any]) -> EngineSettings:
 
 
 __all__ = [
-    "ActProgressConfig",
     "ActivationScores",
     "ActiveTrackCondition",
     "AdventureCrafterConfig",
@@ -674,7 +662,6 @@ __all__ = [
     "BlueprintConfig",
     "BoastOption",
     "BoastsConfig",
-    "BondsConfig",
     "ChaosConfig",
     "ChaosResolverConfig",
     "ChapterConfig",

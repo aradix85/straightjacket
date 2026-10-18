@@ -12,6 +12,21 @@ def fix_dice(monkeypatch: pytest.MonkeyPatch, *rolls: int) -> None:
     monkeypatch.setattr(random, "randint", lambda low, high: queue.pop(0) if queue else real(low, high))
 
 
+def record_price_tables(monkeypatch: pytest.MonkeyPatch) -> list[str]:
+    from straightjacket.engine.mechanics import move_effects
+
+    rolled: list[str] = []
+    real = move_effects._roll_price_rows
+
+    def recording(game: Any, path: str, depth: int) -> list[str]:
+        if depth == 0:
+            rolled.append(path)
+        return real(game, path, depth)
+
+    monkeypatch.setattr(move_effects, "_roll_price_rows", recording)
+    return rolled
+
+
 def make_game_state(**kwargs: Any) -> Any:
     from straightjacket.engine.models import GameState
 

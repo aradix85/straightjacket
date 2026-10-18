@@ -19,10 +19,6 @@ enums:
   - background
   - deceased
   - lore
-  clock_types:
-  - threat
-  - scheme
-  - progress
   tone_keys:
   - neutral
   - curious
@@ -47,16 +43,6 @@ enums:
   - medium
   - high
   - critical
-  odds_levels:
-  - certain
-  - nearly_certain
-  - very_likely
-  - likely
-  - fifty_fifty
-  - unlikely
-  - very_unlikely
-  - nearly_impossible
-  - impossible
 npc_status_groups:
   in_play: [active, background]
   reactivatable: [background, lore]

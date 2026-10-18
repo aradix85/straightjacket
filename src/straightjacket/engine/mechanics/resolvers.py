@@ -92,8 +92,7 @@ def _score_secured_advantage(recent_log: list[Any]) -> int:
 
 
 def _score_move_category_baseline(cat: str) -> int:
-    cfg = eng().position_resolver
-    return cfg.move_baselines[cat] if cat in cfg.move_baselines else cfg.move_baselines["other"]
+    return eng().position_resolver.move_baselines[cat]
 
 
 def _score_position_factors(game: GameState, brain: BrainResult, cat: str) -> int:

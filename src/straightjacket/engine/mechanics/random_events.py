@@ -133,14 +133,14 @@ def _re_next_keyed_scene_id(game: GameState) -> str:
     return f"ks_re_{n}"
 
 
-def spawn_keyed_scene_from_random_event(game: GameState, event: RandomEvent) -> bool:
+def spawn_keyed_scene_from_random_event(game: GameState, event: RandomEvent) -> None:
     cfg = eng().random_events
     if event.focus not in cfg.keyed_scene_mapping:
-        return False
+        return
     if not event.target_id:
-        return False
+        return
     if _re_already_spawned_for_target(game, event.focus, event.target_id):
-        return False
+        return
 
     entry = cfg.keyed_scene_mapping[event.focus]
     if entry.trigger_type == "bond_threshold":
@@ -149,7 +149,7 @@ def spawn_keyed_scene_from_random_event(game: GameState, event: RandomEvent) -> 
                 f"[RandomEvent] focus '{event.focus}' targets '{event.target_id}', a character without an NPC "
                 "record; a bond keyed-scene needs an NPC, so none is spawned"
             )
-            return False
+            return
         pool = event.target_id
     elif entry.trigger_type == "threat_menace_phase":
         pool = event.target
@@ -175,7 +175,6 @@ def spawn_keyed_scene_from_random_event(game: GameState, event: RandomEvent) -> 
         f"target_id='{event.target_id}' (trigger {entry.trigger_type}={trigger_value!r}, "
         f"priority={entry.priority})"
     )
-    return True
 
 
 def _re_threat_already_spawned(game: GameState, focus: str, target_id: str) -> bool:
@@ -183,19 +182,19 @@ def _re_threat_already_spawned(game: GameState, focus: str, target_id: str) -> b
     return any(t.creation_source == target for t in game.threats)
 
 
-def spawn_threat_from_random_event(game: GameState, event: RandomEvent) -> ThreatData | None:
+def spawn_threat_from_random_event(game: GameState, event: RandomEvent) -> None:
     cfg = eng().random_events
     if event.focus not in cfg.threat_creation_mapping:
-        return None
+        return
 
     dedup_key = event.target_id or event.focus
     if _re_threat_already_spawned(game, event.focus, dedup_key):
-        return None
+        return
 
     max_threats = eng().adventure_crafter.max_threats_per_chapter
     if count_emergent_threats(game) >= max_threats:
         log(f"[Threat] emergent threat cap {max_threats} reached, skipping focus '{event.focus}'")
-        return None
+        return
 
     entry = cfg.threat_creation_mapping[event.focus]
     name = _name_from_mythic_pair(event.meaning_action, event.meaning_subject)
@@ -217,7 +216,6 @@ def spawn_threat_from_random_event(game: GameState, event: RandomEvent) -> Threa
         f"[Threat] spawned '{name}' (id={threat_id}, rank={entry.rank}, category={entry.category}) "
         f"from random-event focus '{event.focus}'"
     )
-    return threat
 
 
 def _re_clock_already_spawned(game: GameState, focus: str, dedup_key: str) -> bool:
@@ -225,19 +223,19 @@ def _re_clock_already_spawned(game: GameState, focus: str, dedup_key: str) -> bo
     return any(c.creation_source == target for c in game.world.clocks)
 
 
-def spawn_clock_from_random_event(game: GameState, event: RandomEvent) -> ClockData | None:
+def spawn_clock_from_random_event(game: GameState, event: RandomEvent) -> None:
     cfg = eng().random_events
     if event.focus not in cfg.clock_creation_mapping:
-        return None
+        return
 
     dedup_key = event.target_id or event.focus
     if _re_clock_already_spawned(game, event.focus, dedup_key):
-        return None
+        return
 
     clocks_cfg = eng().clocks
     if count_emergent_clocks(game) >= clocks_cfg.max_clocks_per_chapter:
         log(f"[Clock] emergent clock cap {clocks_cfg.max_clocks_per_chapter} reached, skipping focus '{event.focus}'")
-        return None
+        return
 
     entry = cfg.clock_creation_mapping[event.focus]
     base_name = _name_from_mythic_pair(event.meaning_action, event.meaning_subject)
@@ -258,7 +256,6 @@ def spawn_clock_from_random_event(game: GameState, event: RandomEvent) -> ClockD
         f"[Clock] spawned '{clock_name}' (type={entry.clock_type}, segments={clocks_cfg.default_segments}) "
         f"from random-event focus '{event.focus}'"
     )
-    return clock
 
 
 def _name_from_mythic_pair(action: str, subject: str) -> str:

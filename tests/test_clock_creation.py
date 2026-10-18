@@ -27,14 +27,8 @@ def _re(focus: str, target_id: str = "", target: str = "") -> RandomEvent:
 
 
 def _tp(plot_point_names: list[str]) -> TurningPoint:
-    plot_points = [
-        PlotPointHit(theme="action", priority=1, roll=50, name=name, special_range=None) for name in plot_point_names
-    ]
     return TurningPoint(
-        plotline_id="pl_1",
-        plotline_was_new=True,
-        plot_points=plot_points,
-        flips_to_conclusion=False,
+        plot_points=[PlotPointHit(theme="action", name=name, special_range=None) for name in plot_point_names]
     )
 
 
@@ -42,25 +36,23 @@ def test_random_event_clock_spawns_for_mapped_focus(load_engine: None) -> None:
     g = make_game_state(player_name="Hero", setting_id="starforged")
     event = _re("pc_negative")
 
-    clock = spawn_clock_from_random_event(g, event)
+    spawn_clock_from_random_event(g, event)
 
-    assert clock is not None
+    [clock] = g.world.clocks
     assert clock.clock_type == "threat"
     assert clock.segments == 6
     assert clock.creation_source.startswith("random_event:pc_negative")
     assert clock.owner_kind == "world"
     assert clock.owner_id is None
     assert clock.name == "Storm Approaches"
-    assert clock in g.world.clocks
 
 
 def test_random_event_clock_skips_unmapped_focus(load_engine: None) -> None:
     g = make_game_state(player_name="Hero", setting_id="starforged")
     event = _re("npc_action")
 
-    clock = spawn_clock_from_random_event(g, event)
+    spawn_clock_from_random_event(g, event)
 
-    assert clock is None
     assert g.world.clocks == []
 
 
@@ -68,9 +60,9 @@ def test_random_event_clock_progress_type_for_thread_moves(load_engine: None) ->
     g = make_game_state(player_name="Hero", setting_id="starforged")
     event = _re("move_toward_thread", target_id="thread_1", target="The Pact")
 
-    clock = spawn_clock_from_random_event(g, event)
+    spawn_clock_from_random_event(g, event)
 
-    assert clock is not None
+    [clock] = g.world.clocks
     assert clock.clock_type == "progress"
 
 
@@ -78,11 +70,9 @@ def test_random_event_clock_dedups_same_target(load_engine: None) -> None:
     g = make_game_state(player_name="Hero", setting_id="starforged")
     event = _re("pc_negative", target_id="threat_1")
 
-    first = spawn_clock_from_random_event(g, event)
-    second = spawn_clock_from_random_event(g, event)
+    spawn_clock_from_random_event(g, event)
+    spawn_clock_from_random_event(g, event)
 
-    assert first is not None
-    assert second is None
     assert len(g.world.clocks) == 1
 
 
@@ -90,10 +80,9 @@ def test_ac_clock_spawns_for_mapped_plot_point(load_engine: None) -> None:
     g = make_game_state(player_name="Hero", setting_id="starforged")
     tp = _tp(["Time Limit"])
 
-    spawned = spawn_clocks_for_turning_point(g, tp)
+    spawn_clocks_for_turning_point(g, tp)
 
-    assert spawned == 1
-    clock = g.world.clocks[0]
+    [clock] = g.world.clocks
     assert clock.name == "Time Limit"
     assert clock.clock_type == "threat"
     assert clock.creation_source == "ac:Time Limit"
@@ -104,9 +93,8 @@ def test_ac_clock_skips_unmapped_plot_point(load_engine: None) -> None:
     g = make_game_state(player_name="Hero", setting_id="starforged")
     tp = _tp(["A New Enemy"])
 
-    spawned = spawn_clocks_for_turning_point(g, tp)
+    spawn_clocks_for_turning_point(g, tp)
 
-    assert spawned == 0
     assert g.world.clocks == []
 
 
@@ -129,8 +117,7 @@ def test_emergent_clock_cap_shared_across_sources(load_engine: None) -> None:
     spawn_clock_from_random_event(g, _re("pc_negative", target_id="extra"))
     assert len(g.world.clocks) == 4
 
-    rejected = spawn_clock_from_random_event(g, _re("pc_negative", target_id="overflow"))
-    assert rejected is None
+    spawn_clock_from_random_event(g, _re("pc_negative", target_id="overflow"))
     assert len(g.world.clocks) == 4
 
 

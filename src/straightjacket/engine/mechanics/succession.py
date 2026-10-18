@@ -74,12 +74,8 @@ def seed_successor_legacy(game: GameState, rolls: list[InheritanceRollResult]) -
         roll = by_name[name]
         track.ticks = track.ticks_for_filled_boxes(roll.new_filled_boxes)
         track.status = "active"
-    log(
-        f"[Succession] Successor legacy seeded: "
-        f"quests={game.campaign.legacy_quests.filled_boxes}/10 boxes, "
-        f"bonds={game.campaign.legacy_bonds.filled_boxes}/10 boxes, "
-        f"discoveries={game.campaign.legacy_discoveries.filled_boxes}/10 boxes"
-    )
+    seeded = ", ".join(f"{name}={get_legacy_track(game, name).filled_boxes}" for name in LEGACY_TRACKS)
+    log(f"[Succession] Successor legacy seeded (boxes of {eng().progress.boxes}): {seeded}")
 
 
 def apply_npc_carryover(

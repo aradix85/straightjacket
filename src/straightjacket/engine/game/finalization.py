@@ -80,7 +80,6 @@ def _chain_move(game: GameState, brain: BrainResult, outcome: OutcomeResult) -> 
         eng().ai_text.consequence_labels["chained_move"].format(move=move.name, result=roll.result)
     )
     outcome.consequences.extend(chained.consequences)
-    outcome.pay_the_price = outcome.pay_the_price or chained.pay_the_price
     if chained.legacy_track and not outcome.legacy_track:
         outcome.legacy_track = chained.legacy_track
         outcome.legacy_rank_shift = chained.legacy_rank_shift

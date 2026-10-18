@@ -835,6 +835,8 @@ _ORPHAN_SYMBOL_CARVE_OUT: set[tuple[str, str]] = {
     ("lookup_character_special_trait", "engine/mechanics/adventure_crafter.py"),
     ("lookup_character_identity", "engine/mechanics/adventure_crafter.py"),
     ("lookup_character_descriptor", "engine/mechanics/adventure_crafter.py"),
+    ("dispatch_meta", "engine/mechanics/adventure_crafter.py"),
+    ("lookup_characters_template", "engine/mechanics/adventure_crafter.py"),
 }
 
 

@@ -1,10 +1,7 @@
 import pytest
 
-from straightjacket.engine.mechanics import (
-    generate_consequence_sentences,
-    pick_template,
-    resolve_consequence_sentence,
-)
+from straightjacket.engine.mechanics import generate_consequence_sentences
+from straightjacket.engine.mechanics.consequences import pick_template, resolve_consequence_sentence
 from straightjacket.engine.models import (
     BrainResult,
     ClockEvent,

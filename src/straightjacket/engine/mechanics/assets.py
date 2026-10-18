@@ -29,10 +29,9 @@ def enabled_abilities(game: GameState, asset_id: str) -> list[bool]:
     return [bool(ability.get("enabled")) for ability in data["abilities"]]
 
 
-def enable_next_ability(game: GameState, asset_id: str) -> bool:
+def enable_next_ability(game: GameState, asset_id: str) -> None:
     flags = enabled_abilities(game, asset_id)
     if all(flags):
-        return False
+        return
     flags[flags.index(False)] = True
     game.asset_abilities[asset_id] = flags
-    return True

@@ -199,7 +199,7 @@ def _run_brain_phase(provider: AIProvider, game: GameState, player_message: str)
 def _advance_threats_targeted_by(game: GameState, events: list[RandomEvent]) -> None:
     for event in events:
         if event.target_id and any(t.id == event.target_id for t in game.threats):
-            advance_threat_by_id(game, event.target_id, marks=1, source="random_event")
+            advance_threat_by_id(game, event.target_id)
 
 
 def _resolve_brain_requests(game: GameState, brain: BrainResult) -> tuple[list[ResolvedFact], list[RandomEvent]]:

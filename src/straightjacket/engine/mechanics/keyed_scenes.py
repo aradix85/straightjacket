@@ -237,10 +237,9 @@ def _next_clock_keyed_scene_id(narrative: NarrativeState) -> str:
     return f"ks_clock_{n}"
 
 
-def spawn_keyed_scenes_for_clock(narrative: NarrativeState, clock: ClockData) -> int:
+def spawn_keyed_scenes_for_clock(narrative: NarrativeState, clock: ClockData) -> None:
     entry = eng().clock_keyed_scenes.by_clock_type[clock.clock_type]
 
-    spawned = 0
     for fraction in entry.fractions:
         threshold = max(1, round(clock.segments * fraction))
         if _clock_already_spawned(narrative, clock.name, threshold):
@@ -256,9 +255,7 @@ def spawn_keyed_scenes_for_clock(narrative: NarrativeState, clock: ClockData) ->
             source=f"{CLOCK_KEYED_SOURCE_PREFIX}{clock.name}:{threshold}",
         )
         narrative.keyed_scenes.append(scene)
-        spawned += 1
         log(
             f"[Clock] spawned keyed-scene '{scene_id}' for clock '{clock.name}' "
             f"(type={clock.clock_type}, fraction={fraction}, threshold={threshold}, priority={entry.priority})"
         )
-    return spawned

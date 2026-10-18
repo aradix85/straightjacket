@@ -111,14 +111,6 @@ def test_unknown_move_category_raises() -> None:
         resolve_npc_stance(game, npc, "unknown_category", miss=False)
 
 
-def test_stance_has_npc_metadata() -> None:
-    npc = _npc("friendly")
-    game = _game(npc, bond=3)
-    stance = resolve_npc_stance(game, npc, "social", miss=False)
-    assert stance.npc_id == "npc_1"
-    assert stance.npc_name == "Kira"
-
-
 def test_stance_constraint_not_empty() -> None:
     for disp in ("hostile", "distrustful", "neutral", "friendly", "loyal"):
         for bond in (0, 2, 4):

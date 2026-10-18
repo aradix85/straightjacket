@@ -5,13 +5,12 @@ import random
 import pytest
 
 from straightjacket.engine.engine_loader import eng
-from straightjacket.engine.mechanics import evaluate_keyed_scenes
 from straightjacket.engine.mechanics.adventure_crafter import (
     PlotPointHit,
     TurningPoint,
     spawn_keyed_scenes_for_turning_point,
 )
-from straightjacket.engine.mechanics.keyed_scenes import spawn_keyed_scenes_for_clock
+from straightjacket.engine.mechanics.keyed_scenes import evaluate_keyed_scenes, spawn_keyed_scenes_for_clock
 from straightjacket.engine.mechanics.random_events import (
     generate_random_event,
     spawn_keyed_scene_from_random_event,
@@ -236,20 +235,15 @@ def test_clock_fills_any_picks_highest_filled():
 
 
 def _turning_point_with_plot_points(*plot_point_names: str) -> TurningPoint:
-    hits = [PlotPointHit(theme="action", priority=1, roll=50, name=n, special_range=None) for n in plot_point_names]
     return TurningPoint(
-        plotline_id="pl_1",
-        plotline_was_new=False,
-        plot_points=hits,
-        flips_to_conclusion=False,
+        plot_points=[PlotPointHit(theme="action", name=n, special_range=None) for n in plot_point_names]
     )
 
 
 def test_ac_spawner_emits_keyed_scene_for_mapped_plot_point():
     narrative = NarrativeState()
     tp = _turning_point_with_plot_points("Betrayal!")
-    spawned = spawn_keyed_scenes_for_turning_point(narrative, tp)
-    assert spawned == 1
+    spawn_keyed_scenes_for_turning_point(narrative, tp)
     assert len(narrative.keyed_scenes) == 1
     scene = narrative.keyed_scenes[0]
     assert scene.trigger_type == "bond_threshold"
@@ -260,8 +254,7 @@ def test_ac_spawner_emits_keyed_scene_for_mapped_plot_point():
 def test_ac_spawner_skips_unmapped_plot_points():
     narrative = NarrativeState()
     tp = _turning_point_with_plot_points("A Common Social Gathering", "Dense Urban Setting")
-    spawned = spawn_keyed_scenes_for_turning_point(narrative, tp)
-    assert spawned == 0
+    spawn_keyed_scenes_for_turning_point(narrative, tp)
     assert narrative.keyed_scenes == []
 
 
@@ -295,8 +288,7 @@ def test_ac_spawner_assigns_unique_ids():
 
 def test_ac_spawner_skips_special_range_plot_points():
     narrative = NarrativeState()
-    hit = PlotPointHit(theme="action", priority=1, roll=5, name="Conclusion", special_range="conclusion")
-    tp = TurningPoint(plotline_id="pl_1", plotline_was_new=False, plot_points=[hit], flips_to_conclusion=False)
+    tp = TurningPoint(plot_points=[PlotPointHit(theme="action", name="Conclusion", special_range="conclusion")])
     spawn_keyed_scenes_for_turning_point(narrative, tp)
     assert narrative.keyed_scenes == []
 
@@ -316,7 +308,7 @@ def test_random_event_spawner_creates_concrete_bond_keyed_scene_for_npc_focus():
 def test_random_event_spawner_skips_a_bond_scene_for_a_character_without_npc_record():
     game = _seed_game()
     event = make_random_event(focus="npc_action", target="The ferryman", target_id="char_1")
-    assert spawn_keyed_scene_from_random_event(game, event) is False
+    spawn_keyed_scene_from_random_event(game, event)
     assert game.narrative.keyed_scenes == []
 
 
@@ -381,8 +373,7 @@ def test_clock_spawner_emits_keyed_scenes_per_fraction_for_threat_clock():
         owner_kind="world",
         creation_source="setup",
     )
-    spawned = spawn_keyed_scenes_for_clock(narrative, clock)
-    assert spawned == 2
+    spawn_keyed_scenes_for_clock(narrative, clock)
     trigger_values = sorted(ks.trigger_value for ks in narrative.keyed_scenes)
     assert trigger_values == ["The Storm Approaches:3", "The Storm Approaches:6"]
     for ks in narrative.keyed_scenes:
@@ -401,9 +392,9 @@ def test_clock_spawner_progress_clock_only_emits_full():
         owner_kind="world",
         creation_source="setup",
     )
-    spawned = spawn_keyed_scenes_for_clock(narrative, clock)
-    assert spawned == 1
-    assert narrative.keyed_scenes[0].trigger_value == "The Bridge:8"
+    spawn_keyed_scenes_for_clock(narrative, clock)
+    [scene] = narrative.keyed_scenes
+    assert scene.trigger_value == "The Bridge:8"
 
 
 def test_clock_spawner_renders_clock_name_into_narrative_hint():

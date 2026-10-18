@@ -216,7 +216,7 @@ def test_every_fact_input_has_an_implementation(load_engine: None) -> None:
 
 
 def test_a_doublet_queues_a_random_event(load_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:
-    from straightjacket.engine.mechanics import drain_pending_events
+    from straightjacket.engine.mechanics.random_events import drain_pending_events
     from straightjacket.engine.mechanics.facts import resolve_fact
 
     _chart_rolls(monkeypatch, 55)

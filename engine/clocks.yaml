@@ -1,8 +1,4 @@
 clocks:
-  owner_kinds:
-  - npc
-  - world
-
   default_owner_kind: world
 
   default_segments: 6

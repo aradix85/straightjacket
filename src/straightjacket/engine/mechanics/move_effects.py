@@ -26,8 +26,6 @@ class MoveEffect:
 class OutcomeResult:
     consequences: list[str] = field(default_factory=list)
     combat_position: str = ""
-    pay_the_price: bool = False
-    next_move_bonus: int = 0
     progress_marks: int = 0
     clock_fills: int = 0
     legacy_track: str = ""
@@ -36,7 +34,6 @@ class OutcomeResult:
     experience_rank_shift: int | None = None
     boast_slots: int = 0
     chained_move: str = ""
-    narrative_only: bool = False
 
 
 _EFFECT_RE = re.compile(r"^(\w+)\s+([+-]?\d+)$")
@@ -84,7 +81,7 @@ def parse_effect(effect_str: str) -> MoveEffect:
     if m:
         return MoveEffect(type="complication", target=m.group(1))
 
-    if effect_str in ("pay_the_price", "narrative", "disposition_shift", "raise_connection_rank"):
+    if effect_str in ("pay_the_price", "disposition_shift", "raise_connection_rank"):
         return MoveEffect(type=effect_str)
 
     raise ValueError(f"Unknown move effect {effect_str!r}")
@@ -117,7 +114,6 @@ def has_story_complication(game: GameState) -> bool:
 def pay_the_price(game: GameState, result: OutcomeResult) -> None:
     rows = _roll_price_rows(game, eng().pay_the_price.oracle_path, 0)
     log(f"[PayThePrice] {'; '.join(rows)}")
-    result.pay_the_price = True
     result.consequences.append("; ".join(rows))
     for row in rows:
         for rule in eng().pay_the_price.suffer_rows:
@@ -147,13 +143,6 @@ def _apply_resource_effect(game: GameState, effect: MoveEffect, result: OutcomeR
             result.consequences.append(_labels["track_loss"].format(track=effect.type, n=lost))
 
 
-def _apply_integrity_effect(game: GameState, effect: MoveEffect, result: OutcomeResult, target: NpcData | None) -> None:
-    sign = "+" if effect.value > 0 else ""
-    result.consequences.append(
-        eng().ai_text.consequence_labels["integrity_change"].format(value=f"{sign}{effect.value}")
-    )
-
-
 def _apply_mark_progress_effect(
     game: GameState, effect: MoveEffect, result: OutcomeResult, target: NpcData | None
 ) -> None:
@@ -172,14 +161,12 @@ def _apply_story_complication_effect(
 ) -> None:
     rows = _roll_price_rows(game, eng().pay_the_price.match_miss_oracle_path, 0)
     log(f"[StoryComplication] {'; '.join(rows)}")
-    result.pay_the_price = True
     result.consequences.append("; ".join(rows))
 
 
 def _apply_next_move_bonus_effect(
     game: GameState, effect: MoveEffect, result: OutcomeResult, target: NpcData | None
 ) -> None:
-    result.next_move_bonus = effect.value
     game.resources.next_move_bonus += effect.value
     result.consequences.append(eng().ai_text.consequence_labels["next_move_bonus"].format(n=effect.value))
 
@@ -310,16 +297,11 @@ def _apply_disposition_shift_effect(
         )
 
 
-def _apply_narrative_effect(game: GameState, effect: MoveEffect, result: OutcomeResult, target: NpcData | None) -> None:
-    result.narrative_only = True
-
-
 _EFFECT_HANDLERS: dict[str, Callable[[GameState, MoveEffect, OutcomeResult, NpcData | None], None]] = {
     "momentum": _apply_momentum_effect,
     "health": _apply_resource_effect,
     "spirit": _apply_resource_effect,
     "supply": _apply_resource_effect,
-    "integrity": _apply_integrity_effect,
     "mark_progress": _apply_mark_progress_effect,
     "pay_the_price": _apply_pay_the_price_effect,
     "story_complication": _apply_story_complication_effect,
@@ -337,7 +319,6 @@ _EFFECT_HANDLERS: dict[str, Callable[[GameState, MoveEffect, OutcomeResult, NpcD
     "complication": _apply_complication_effect,
     "bond": _apply_bond_effect,
     "disposition_shift": _apply_disposition_shift_effect,
-    "narrative": _apply_narrative_effect,
 }
 
 

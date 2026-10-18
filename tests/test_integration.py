@@ -380,14 +380,18 @@ def test_turn_dialog_skips_roll(load_engine: None) -> None:
     assert game.narrative.scene_count == 2
 
 
-def test_turn_consequences_applied_on_miss(load_engine: None) -> None:
+def test_turn_consequences_applied_on_miss(load_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:
+    from straightjacket.engine.engine_loader import eng
     from straightjacket.engine.mechanics.move_outcome import resolve_move_outcome
+    from tests._helpers import record_price_tables
 
+    rolled = record_price_tables(monkeypatch)
     game = _make_game()
 
     result = resolve_move_outcome(game, "adventure/face_danger", "MISS", target_npc_id=None, match=False)
 
-    assert result.pay_the_price is True
+    assert rolled == [eng().pay_the_price.oracle_path]
+    assert result.consequences
 
 
 def test_scene_test_produces_three_types(load_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:

@@ -103,12 +103,6 @@ class MomentumConfig:
 
 
 @dataclass
-class BondsConfig:
-    max: int
-    start: int
-
-
-@dataclass
 class ActivationScores:
     target: float
     name_match: float
@@ -151,6 +145,7 @@ class OpeningConfig:
 @dataclass
 class ThreatConfig:
     menace_on_miss: int
+    menace_on_random_event: int
     autonomous_tick_chance: float
     autonomous_tick_marks: int
     menace_high_threshold: float
@@ -159,9 +154,7 @@ class ThreatConfig:
 
 @dataclass
 class ImpactConfig:
-    key: str
     label: str
-    description: str
     blocks_recovery: str
     permanent: bool
 
@@ -464,10 +457,8 @@ class EnumsConfig:
     time_phases: list[str]
     dispositions: list[str]
     npc_statuses: list[str]
-    clock_types: list[str]
     tone_keys: list[str]
     dramatic_weights: list[str]
-    odds_levels: list[str]
 
 
 @dataclass
@@ -498,11 +489,6 @@ class FuzzyMatchConfig:
 @dataclass
 class NpcMatchingConfig:
     stt_alias_bonus: int
-
-
-@dataclass
-class ActProgressConfig:
-    filler_max: int
 
 
 @dataclass
@@ -696,7 +682,6 @@ class TruncationsConfig:
     prompt_xshort: int
     prompt_short: int
     prompt_medium: int
-    prompt_long: int
     prompt_xlong: int
     prompt_xxlong: int
     narration_preview: int
@@ -831,7 +816,6 @@ class ComplicationClockConfig:
 
 @dataclass
 class ClocksConfig:
-    owner_kinds: frozenset[str]
     default_owner_kind: str
     default_segments: int
     max_clocks_per_chapter: int

@@ -1,24 +1,14 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
-
+from ..engine_config import StanceMatrixEntry
 from ..engine_loader import eng
 from ..models import GameState, NpcData
 from ..npc import get_npc_bond
 
 
-@dataclass
-class NpcStance:
-    npc_id: str
-    npc_name: str
-    stance: str
-    constraint: str
-
-
-def resolve_npc_stance(game: GameState, npc: NpcData, move_category: str, *, miss: bool) -> NpcStance:
+def resolve_npc_stance(game: GameState, npc: NpcData, move_category: str, *, miss: bool) -> StanceMatrixEntry:
     if miss:
-        held = eng().information_gate.miss_stance
-        return NpcStance(npc_id=npc.id, npc_name=npc.name, stance=held.stance, constraint=held.constraint)
+        return eng().information_gate.miss_stance
     matrix = eng().stance_matrix
     buckets = eng().stance_bond_buckets
 
@@ -32,13 +22,7 @@ def resolve_npc_stance(game: GameState, npc: NpcData, move_category: str, *, mis
     else:
         bond_range = "high"
 
-    entry = matrix[disposition][bond_range][move_category]
-    return NpcStance(
-        npc_id=npc.id,
-        npc_name=npc.name,
-        stance=entry.stance,
-        constraint=entry.constraint,
-    )
+    return matrix[disposition][bond_range][move_category]
 
 
 def compute_npc_gate(game: GameState, npc: NpcData, current_scene: int, stance: str) -> int:

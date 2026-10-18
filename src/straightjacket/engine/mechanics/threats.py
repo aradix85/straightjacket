@@ -45,11 +45,10 @@ def advance_menace_on_miss(game: GameState) -> list[ThreatEvent]:
     return events
 
 
-def tick_autonomous_threats(game: GameState) -> list[ThreatEvent]:
+def tick_autonomous_threats(game: GameState) -> None:
     _cfg = eng().threats
     tick_chance = _cfg.autonomous_tick_chance
     marks = _cfg.autonomous_tick_marks
-    events: list[ThreatEvent] = []
     for threat in game.threats:
         if threat.status != "active":
             continue
@@ -58,38 +57,19 @@ def tick_autonomous_threats(game: GameState) -> list[ThreatEvent]:
         if random.random() >= tick_chance:
             continue
         ticks = threat.advance_menace(marks)
-        if ticks > 0:
-            events.append(
-                ThreatEvent(
-                    threat_id=threat.id,
-                    threat_name=threat.name,
-                    ticks_added=ticks,
-                    menace_full=threat.menace_full,
-                    source="autonomous",
-                )
-            )
-            status = "FULL" if threat.menace_full else f"{threat.menace_filled_boxes}/{threat.menace_total_boxes}"
-            log(f"[Threat] Autonomous menace: '{threat.name}' +{ticks} ticks → {status}")
-    return events
+        status = "FULL" if threat.menace_full else f"{threat.menace_filled_boxes}/{threat.menace_total_boxes}"
+        log(f"[Threat] Autonomous menace: '{threat.name}' +{ticks} ticks → {status}")
 
 
-def advance_threat_by_id(game: GameState, threat_id: str, marks: int, source: str) -> ThreatEvent | None:
+def advance_threat_by_id(game: GameState, threat_id: str) -> None:
     threat = next((t for t in game.threats if t.id == threat_id and t.status == "active"), None)
     if not threat:
-        return None
-    ticks = threat.advance_menace(marks)
+        return
+    ticks = threat.advance_menace(eng().threats.menace_on_random_event)
     if ticks <= 0:
-        return None
-    event = ThreatEvent(
-        threat_id=threat.id,
-        threat_name=threat.name,
-        ticks_added=ticks,
-        menace_full=threat.menace_full,
-        source=source,
-    )
+        return
     status = "FULL" if threat.menace_full else f"{threat.menace_filled_boxes}/{threat.menace_total_boxes}"
-    log(f"[Threat] Menace advance ({source}): '{threat.name}' +{ticks} ticks → {status}")
-    return event
+    log(f"[Threat] Menace advance (random event): '{threat.name}' +{ticks} ticks → {status}")
 
 
 def resolve_full_menace(game: GameState) -> list[ThreatEvent]:

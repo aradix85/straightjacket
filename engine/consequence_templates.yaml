@@ -48,10 +48,6 @@ consequence_templates:
   - The situation tilts toward {player}.
   - Ground tilts toward {player}. The fight, the room, the moment lean their way now.
   - The edge passes to {player}.
-  disposition_shift:
-  - '{npc}''s attitude toward {player} shifts, visible in posture, tone, or gaze.'
-  - Something changes in how {npc} regards {player}, plain in the eyes.
-  - The temperature between {npc} and {player} moves. {npc} is not the same toward them.
   complication_gather_information:
   - What {player} learns also complicates the quest or brings a new danger into view.
   - The answer comes with a catch that makes the way ahead harder for {player}.

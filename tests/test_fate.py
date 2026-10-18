@@ -99,15 +99,19 @@ def test_resolve_fate_follows_the_configured_method(load_engine: None, monkeypat
         assert resolve_fate(game, "fifty_fifty", chaos_factor=5, question="").method == method
 
 
+def _odds_scale() -> list[str]:
+    return [entry["odds"] for entry in eng().fate.likelihood_rules.score_to_odds]
+
+
 def test_fate_chart_all_odds_all_cf(load_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:
-    for odds in eng().enums.odds_levels:
+    for odds in _odds_scale():
         for cf in range(1, 10):
             for roll in (1, 50, 100):
                 assert _chart(monkeypatch, odds, cf, roll).answer in ("yes", "no", "exceptional_yes", "exceptional_no")
 
 
 def test_fate_check_all_odds_all_cf(load_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:
-    for odds in eng().enums.odds_levels:
+    for odds in _odds_scale():
         for cf in range(1, 10):
             for dice in ((1, 1), (5, 5), (10, 10), (1, 10)):
                 assert _check(monkeypatch, odds, cf, dice).answer in ("yes", "no", "exceptional_yes", "exceptional_no")

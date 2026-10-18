@@ -1,3 +1,5 @@
+import pytest
+
 from straightjacket.engine.models import GameState, Resources, ThreatData
 from tests._helpers import make_game_state, make_progress_track, make_threat, make_world_state
 
@@ -135,17 +137,26 @@ class TestAdvanceById:
         from straightjacket.engine.mechanics.threats import advance_threat_by_id
 
         game = _game_with_threat()
-        event = advance_threat_by_id(game, "threat_beast", marks=1, source="random_event")
-        assert event is not None
-        assert event.source == "random_event"
+        advance_threat_by_id(game, "threat_beast")
         assert game.threats[0].menace_ticks == 8
 
-    def test_advance_nonexistent_returns_none(self, stub_engine: None) -> None:
+    def test_a_random_event_marks_the_configured_menace(
+        self, stub_engine: None, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        from straightjacket.engine.engine_loader import eng
+        from straightjacket.engine.mechanics.threats import advance_threat_by_id
+
+        monkeypatch.setattr(eng().threats, "menace_on_random_event", 2)
+        game = _game_with_threat()
+        advance_threat_by_id(game, "threat_beast")
+        assert game.threats[0].menace_ticks == 16
+
+    def test_advance_nonexistent_changes_nothing(self, stub_engine: None) -> None:
         from straightjacket.engine.mechanics.threats import advance_threat_by_id
 
         game = _game_with_threat()
-        event = advance_threat_by_id(game, "nonexistent", marks=1, source="test")
-        assert event is None
+        advance_threat_by_id(game, "nonexistent")
+        assert game.threats[0].menace_ticks == 0
 
 
 class TestThreatsStatus:

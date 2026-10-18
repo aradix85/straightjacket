@@ -33,8 +33,6 @@ move_categories:
   - suffer/companion_takes_a_hit
   - suffer/face_death
   - suffer/face_desolation
-  - suffer/lose_momentum
-  - suffer/sacrifice_resources
   - threshold/face_death
   - threshold/face_desolation
   recovery:

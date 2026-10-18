@@ -25,11 +25,11 @@ def shifted_rank(rank: str, shift: int) -> str | None:
     return ranks[index] if 0 <= index < len(ranks) else None
 
 
-def mark_legacy(game: GameState, track_name: str, source_rank: str) -> int:
-    return mark_legacy_ticks(game, track_name, eng().legacy.ticks_by_rank[source_rank])
+def mark_legacy(game: GameState, track_name: str, source_rank: str) -> None:
+    mark_legacy_ticks(game, track_name, eng().legacy.ticks_by_rank[source_rank])
 
 
-def mark_legacy_ticks(game: GameState, track_name: str, ticks: int) -> int:
+def mark_legacy_ticks(game: GameState, track_name: str, ticks: int) -> None:
     track = get_legacy_track(game, track_name)
     cfg = eng().legacy
     xp_gained = 0
@@ -48,20 +48,18 @@ def mark_legacy_ticks(game: GameState, track_name: str, ticks: int) -> int:
         f"[Legacy] {track_name} +{ticks} ticks ({track.filled_boxes} boxes, completions {track.completions}), "
         f"+{xp_gained} XP (total {game.campaign.xp})"
     )
-    return xp_gained
 
 
-def apply_threat_overcome_bonus(game: GameState, threat: ThreatData) -> int:
+def apply_threat_overcome_bonus(game: GameState, threat: ThreatData) -> None:
     cfg = eng().legacy
     ratio = threat.menace_ticks / threat.max_menace_ticks
     if ratio < cfg.threat_overcome_threshold:
-        return 0
+        return
     game.campaign.xp += cfg.threat_overcome_bonus
     log(
         f"[Legacy] Threat '{threat.name}' overcome at menace {ratio:.0%} "
         f"→ +{cfg.threat_overcome_bonus} XP (total {game.campaign.xp})"
     )
-    return cfg.threat_overcome_bonus
 
 
 def advance_asset(game: GameState, asset_id: str, kind: str) -> int:

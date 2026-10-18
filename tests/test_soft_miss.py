@@ -7,7 +7,7 @@ from straightjacket.engine.mechanics.move_effects import has_story_complication
 from straightjacket.engine.mechanics.move_outcome import resolve_move_outcome
 from straightjacket.engine.models import GameState, ResolvedFact, RollResult
 from straightjacket.engine.prompt_action import build_action_prompt
-from tests._helpers import action_prompt_kwargs, make_brain_result, make_game_state, make_npc
+from tests._helpers import action_prompt_kwargs, make_brain_result, make_game_state, make_npc, record_price_tables
 
 
 def _game(setting_id: str = "starforged") -> GameState:
@@ -114,21 +114,27 @@ def _rolled_rows(consequence: str) -> list[str]:
     return [row for row in consequence.split("; ") if not row.startswith("Roll ")]
 
 
-def test_a_matched_miss_rolls_a_story_complication_instead_of_pay_the_price(load_engine: None) -> None:
+def test_a_matched_miss_rolls_a_story_complication_instead_of_pay_the_price(
+    load_engine: None, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    rolled = record_price_tables(monkeypatch)
     game = _game("starforged")
     rows = _complication_rows(game)
     outcome = resolve_move_outcome(game, "adventure/face_danger", "MISS", match=True, target_npc_id=None)
-    assert outcome.pay_the_price
+    assert rolled == [eng().pay_the_price.match_miss_oracle_path]
     assert all(row in rows for row in _rolled_rows(outcome.consequences[-1]))
 
 
 @pytest.mark.parametrize(("setting_id", "match"), [("starforged", False), ("classic", True)])
-def test_other_misses_pay_the_price(load_engine: None, setting_id: str, match: bool) -> None:
+def test_other_misses_pay_the_price(
+    load_engine: None, monkeypatch: pytest.MonkeyPatch, setting_id: str, match: bool
+) -> None:
+    rolled = record_price_tables(monkeypatch)
     game = _game(setting_id)
     rows = _complication_rows(_game("starforged"))
     for _ in range(20):
         outcome = resolve_move_outcome(game, "adventure/face_danger", "MISS", match=match, target_npc_id=None)
-        assert outcome.pay_the_price
+        assert rolled.pop() == eng().pay_the_price.oracle_path
         assert not any(row in rows for row in _rolled_rows(outcome.consequences[-1]))
 
 

@@ -7,7 +7,6 @@ truncations:
   prompt_xshort: 60
   prompt_short: 200
   prompt_medium: 300
-  prompt_long: 500
   prompt_xlong: 1000
   prompt_xxlong: 2000
   narration_preview: 600

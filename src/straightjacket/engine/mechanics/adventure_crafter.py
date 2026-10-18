@@ -75,18 +75,13 @@ class PlotPointResult:
 @dataclass(frozen=True)
 class PlotPointHit:
     theme: str
-    priority: int
-    roll: int
     name: str
     special_range: str | None
 
 
 @dataclass(frozen=True)
 class TurningPoint:
-    plotline_id: str
-    plotline_was_new: bool
     plot_points: list[PlotPointHit]
-    flips_to_conclusion: bool
 
 
 @dataclass
@@ -240,16 +235,8 @@ def _roll_plot_point(
             for r in range(1, eng().dice.adventure_crafter_table_die + 1)
             if _special_range_for(r, special_ranges) == "none"
         )
-        return PlotPointHit(
-            theme=theme,
-            priority=priority,
-            roll=plot_roll,
-            name=lookup_plot_point(theme, none_roll).name,
-            special_range="none",
-        )
-    return PlotPointHit(
-        theme=theme, priority=priority, roll=plot_roll, name=result.name, special_range=result.special_range
-    )
+        return PlotPointHit(theme=theme, name=lookup_plot_point(theme, none_roll).name, special_range="none")
+    return PlotPointHit(theme=theme, name=result.name, special_range=result.special_range)
 
 
 def roll_turning_point(
@@ -297,12 +284,7 @@ def roll_turning_point(
         plotline.status = "conclusion"
         log(f"[AdventureCrafter] Plotline '{plotline.name}' flipped to conclusion")
 
-    return TurningPoint(
-        plotline_id=plotline.id,
-        plotline_was_new=plotline_was_new,
-        plot_points=hits,
-        flips_to_conclusion=flips_to_conclusion,
-    )
+    return TurningPoint(plot_points=hits)
 
 
 MetaHandler = Callable[[NarrativeState, str | None], None]
@@ -422,10 +404,6 @@ def dispatch_meta(roll: int, narrative: NarrativeState, active_plotline_id: str 
     _META_HANDLERS[meta_name](narrative, active_plotline_id)
 
 
-def get_meta_handler_names() -> tuple[str, ...]:
-    return tuple(_META_HANDLERS.keys())
-
-
 @dataclass(frozen=True)
 class CharacterTraits:
     special_trait: str
@@ -522,12 +500,11 @@ def _next_keyed_scene_id(narrative: NarrativeState) -> str:
     return f"ks_ac_{n}"
 
 
-def spawn_keyed_scenes_for_turning_point(narrative: NarrativeState, turning_point: TurningPoint) -> int:
+def spawn_keyed_scenes_for_turning_point(narrative: NarrativeState, turning_point: TurningPoint) -> None:
     cfg = eng().adventure_crafter
     mapping = cfg.keyed_scene_mapping
     cap = cfg.max_keyed_scenes_per_chapter
 
-    spawned = 0
     for hit in turning_point.plot_points:
         if hit.special_range is not None:
             continue
@@ -550,12 +527,10 @@ def spawn_keyed_scenes_for_turning_point(narrative: NarrativeState, turning_poin
             source=f"{AC_SOURCE_PREFIX}{hit.name}",
         )
         narrative.keyed_scenes.append(scene)
-        spawned += 1
         log(
             f"[AdventureCrafter] spawned keyed-scene '{scene_id}' from plot-point '{hit.name}' "
             f"(trigger {entry.trigger_type}={entry.trigger_value!r}, priority={entry.priority})"
         )
-    return spawned
 
 
 def _ac_threat_already_spawned(game: GameState, plot_point_name: str) -> bool:
@@ -563,14 +538,13 @@ def _ac_threat_already_spawned(game: GameState, plot_point_name: str) -> bool:
     return any(t.creation_source == target for t in game.threats)
 
 
-def spawn_threats_for_turning_point(game: GameState, turning_point: TurningPoint) -> int:
+def spawn_threats_for_turning_point(game: GameState, turning_point: TurningPoint) -> None:
     cfg = eng().adventure_crafter
     mapping = cfg.threat_creation_mapping
     cap = cfg.max_threats_per_chapter
 
     pkg = load_package(game.setting_id)
 
-    spawned = 0
     for hit in turning_point.plot_points:
         if hit.special_range is not None:
             continue
@@ -599,12 +573,10 @@ def spawn_threats_for_turning_point(game: GameState, turning_point: TurningPoint
             creation_source=creation_source,
         )
         game.threats.append(threat)
-        spawned += 1
         log(
             f"[AdventureCrafter] spawned threat '{name}' (id={threat_id}, rank={entry.rank}, "
             f"category={entry.category}) from plot-point '{hit.name}'"
         )
-    return spawned
 
 
 def _ac_clock_already_spawned(game: GameState, plot_point_name: str) -> bool:
@@ -612,13 +584,12 @@ def _ac_clock_already_spawned(game: GameState, plot_point_name: str) -> bool:
     return any(c.creation_source == target for c in game.world.clocks)
 
 
-def spawn_clocks_for_turning_point(game: GameState, turning_point: TurningPoint) -> int:
+def spawn_clocks_for_turning_point(game: GameState, turning_point: TurningPoint) -> None:
     cfg = eng().adventure_crafter
     clocks_cfg = eng().clocks
     mapping = cfg.clock_creation_mapping
     cap = clocks_cfg.max_clocks_per_chapter
 
-    spawned = 0
     for hit in turning_point.plot_points:
         if hit.special_range is not None:
             continue
@@ -645,12 +616,10 @@ def spawn_clocks_for_turning_point(game: GameState, turning_point: TurningPoint)
         )
         game.world.clocks.append(clock)
         spawn_keyed_scenes_for_clock(game.narrative, clock)
-        spawned += 1
         log(
             f"[AdventureCrafter] spawned clock '{clock_name}' (type={entry.clock_type}, "
             f"segments={clocks_cfg.default_segments}) from plot-point '{hit.name}'"
         )
-    return spawned
 
 
 @dataclass(frozen=True)

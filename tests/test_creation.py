@@ -333,12 +333,12 @@ def test_validate_creation_valid_vow_rank_passes(load_engine: None) -> None:
 def test_derive_memory_emotion(
     load_engine: None, move: str, result: str, disposition: str, expected_fragment: str
 ) -> None:
-    from straightjacket.engine.mechanics import derive_memory_emotion
+    from straightjacket.engine.mechanics.engine_memories import derive_memory_emotion
 
     assert expected_fragment in derive_memory_emotion(move, result, disposition)
 
 
 def test_derive_memory_emotion_recovery_strong(load_engine: None) -> None:
-    from straightjacket.engine.mechanics import derive_memory_emotion
+    from straightjacket.engine.mechanics.engine_memories import derive_memory_emotion
 
     assert "devoted" in derive_memory_emotion("suffer/endure_harm", "STRONG_HIT", "loyal")

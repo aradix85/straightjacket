@@ -46,17 +46,15 @@ def current_place(game: GameState) -> PlaceRecord | None:
     return find_place(game, game.world.current_location)
 
 
-def generate_place_on_arrival(
-    game: GameState, brain: BrainResult, moved: bool, earlier: Sequence[PlaceRecord]
-) -> PlaceRecord | None:
+def generate_place_on_arrival(game: GameState, brain: BrainResult, moved: bool, earlier: Sequence[PlaceRecord]) -> None:
     change = brain.location_change
     if not moved or change is None:
-        return None
+        return
     here = game.world.current_location
     if find_place(game, here) is not None:
-        return None
+        return
     if any(locations_match(here, seen) for seen in game.world.location_history):
-        return None
+        return
     remembered = next(
         (p for p in earlier if locations_match(p.name, here) and p.entity.category == change.kind),
         None,
@@ -64,4 +62,3 @@ def generate_place_on_arrival(
     place = remembered or PlaceRecord(name=here, entity=generate_entity(game, change.kind))
     game.world.places.append(place)
     log(f"[Generate] New place {here!r} ({change.kind})")
-    return place

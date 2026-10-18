@@ -1,3 +1,5 @@
+import pytest
+
 from straightjacket.engine.models import SceneLogEntry
 from tests._helpers import make_brain_result, make_clock, make_game_state, make_npc, make_progress_track
 
@@ -109,6 +111,16 @@ def test_position_combat_baseline(stub_engine: None) -> None:
     assert pos_combat != "controlled" or pos_recovery == "controlled"
 
 
+def test_a_move_category_without_a_baseline_raises(stub_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:
+    from straightjacket.engine.engine_loader import eng
+    from straightjacket.engine.mechanics import resolve_position
+
+    baselines = {k: v for k, v in eng().position_resolver.move_baselines.items() if k != "combat"}
+    monkeypatch.setattr(eng().position_resolver, "move_baselines", baselines)
+    with pytest.raises(KeyError, match="combat"):
+        resolve_position(make_game_state(player_name="Test"), make_brain_result(move="combat/clash", stat="iron"))
+
+
 def test_effect_default_standard(stub_engine: None) -> None:
     from straightjacket.engine.mechanics import resolve_effect
 
@@ -155,31 +167,31 @@ def test_effect_strike_baseline(stub_engine: None) -> None:
 
 
 def test_time_progression_dialog_is_none(stub_engine: None) -> None:
-    from straightjacket.engine.mechanics import resolve_time_progression
+    from straightjacket.engine.mechanics.resolvers import resolve_time_progression
 
     assert resolve_time_progression("dialog", has_location_change=False) == "none"
 
 
 def test_time_progression_gather_is_short(stub_engine: None) -> None:
-    from straightjacket.engine.mechanics import resolve_time_progression
+    from straightjacket.engine.mechanics.resolvers import resolve_time_progression
 
     assert resolve_time_progression("adventure/gather_information", has_location_change=False) == "short"
 
 
 def test_time_progression_resupply_is_moderate(stub_engine: None) -> None:
-    from straightjacket.engine.mechanics import resolve_time_progression
+    from straightjacket.engine.mechanics.resolvers import resolve_time_progression
 
     assert resolve_time_progression("recover/resupply", has_location_change=False) == "moderate"
 
 
 def test_time_progression_location_change_is_long(stub_engine: None) -> None:
-    from straightjacket.engine.mechanics import resolve_time_progression
+    from straightjacket.engine.mechanics.resolvers import resolve_time_progression
 
     assert resolve_time_progression("adventure/face_danger", has_location_change=True) == "long"
 
 
 def test_time_progression_unknown_move_uses_default(stub_engine: None) -> None:
-    from straightjacket.engine.mechanics import resolve_time_progression
+    from straightjacket.engine.mechanics.resolvers import resolve_time_progression
 
     assert resolve_time_progression("unknown_move", has_location_change=False) == "short"
 

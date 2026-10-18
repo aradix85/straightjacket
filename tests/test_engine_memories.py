@@ -5,9 +5,9 @@ import pytest
 from straightjacket.engine.mechanics import (
     generate_engine_memories,
     is_dialog_branch,
-    is_dialog_memory,
     move_category,
 )
+from straightjacket.engine.mechanics.resolvers import is_dialog_memory
 from straightjacket.engine.engine_loader import eng
 
 from tests._helpers import make_brain_result

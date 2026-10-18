@@ -30,14 +30,8 @@ def _re(focus: str, target_id: str = "", target: str = "") -> RandomEvent:
 
 
 def _tp(plot_point_names: list[str]) -> TurningPoint:
-    plot_points = [
-        PlotPointHit(theme="action", priority=1, roll=50, name=name, special_range=None) for name in plot_point_names
-    ]
     return TurningPoint(
-        plotline_id="pl_1",
-        plotline_was_new=True,
-        plot_points=plot_points,
-        flips_to_conclusion=False,
+        plot_points=[PlotPointHit(theme="action", name=name, special_range=None) for name in plot_point_names]
     )
 
 
@@ -45,24 +39,22 @@ def test_random_event_threat_spawns_for_mapped_focus(load_engine: None) -> None:
     g = make_game_state(player_name="Hero", setting_id="starforged")
     event = _re("pc_negative", target_id="")
 
-    threat = spawn_threat_from_random_event(g, event)
+    spawn_threat_from_random_event(g, event)
 
-    assert threat is not None
+    [threat] = g.threats
     assert threat.creation_source.startswith("random_event:pc_negative")
     assert threat.rank == "dangerous"
     assert threat.category == "emergent"
     assert threat.linked_vow_id is None
     assert threat.name == "Betray Faith"
-    assert threat in g.threats
 
 
 def test_random_event_threat_skips_unmapped_focus(load_engine: None) -> None:
     g = make_game_state(player_name="Hero", setting_id="starforged")
     event = _re("npc_positive", target_id="npc_kira")
 
-    result = spawn_threat_from_random_event(g, event)
+    spawn_threat_from_random_event(g, event)
 
-    assert result is None
     assert g.threats == []
 
 
@@ -70,11 +62,9 @@ def test_random_event_threat_dedup_per_focus_target(load_engine: None) -> None:
     g = make_game_state(player_name="Hero", setting_id="starforged")
     event = _re("npc_negative", target_id="npc_kira")
 
-    first = spawn_threat_from_random_event(g, event)
-    second = spawn_threat_from_random_event(g, event)
+    spawn_threat_from_random_event(g, event)
+    spawn_threat_from_random_event(g, event)
 
-    assert first is not None
-    assert second is None
     assert len(g.threats) == 1
 
 
@@ -85,8 +75,7 @@ def test_random_event_threat_cap_respects_max_threats_per_chapter(load_engine: N
 
     assert len(g.threats) == 3
 
-    blocked = spawn_threat_from_random_event(g, _re("pc_negative", target_id="t_extra"))
-    assert blocked is None
+    spawn_threat_from_random_event(g, _re("pc_negative", target_id="t_extra"))
     assert len(g.threats) == 3
 
 
@@ -94,11 +83,9 @@ def test_ac_threat_spawns_for_mapped_plot_point(load_engine: None) -> None:
     g = make_game_state(player_name="Hero", setting_id="starforged")
     tp = _tp(["A New Enemy"])
 
-    count = spawn_threats_for_turning_point(g, tp)
+    spawn_threats_for_turning_point(g, tp)
 
-    assert count == 1
-    assert len(g.threats) == 1
-    threat = g.threats[0]
+    [threat] = g.threats
     assert threat.creation_source == "ac:A New Enemy"
     assert threat.rank == "dangerous"
     assert threat.category == "scheming_leader"
@@ -110,9 +97,8 @@ def test_ac_threat_skips_unmapped_plot_point(load_engine: None) -> None:
     g = make_game_state(player_name="Hero", setting_id="starforged")
     tp = _tp(["Suspicion", "An Opposing Story"])
 
-    count = spawn_threats_for_turning_point(g, tp)
+    spawn_threats_for_turning_point(g, tp)
 
-    assert count == 0
     assert g.threats == []
 
 
@@ -131,9 +117,8 @@ def test_ac_threat_cap_blocks_after_max(load_engine: None) -> None:
     g = make_game_state(player_name="Hero", setting_id="starforged")
     tp = _tp(["A New Enemy", "Hidden Threat", "Enemies", "Hunted", "A Problem Returns"])
 
-    count = spawn_threats_for_turning_point(g, tp)
+    spawn_threats_for_turning_point(g, tp)
 
-    assert count == 3
     assert len(g.threats) == 3
 
 
@@ -168,9 +153,8 @@ def test_setup_threat_does_not_count_against_emergent_cap(load_engine: None) -> 
     g.threats.append(make_threat(id="setup_threat_2", name="Setup 2", creation_source="setup"))
     g.threats.append(make_threat(id="setup_threat_3", name="Setup 3", creation_source="setup"))
 
-    threat = spawn_threat_from_random_event(g, _re("pc_negative", target_id="t_new"))
+    spawn_threat_from_random_event(g, _re("pc_negative", target_id="t_new"))
 
-    assert threat is not None
     assert len(g.threats) == 4
 
 

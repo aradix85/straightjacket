@@ -71,7 +71,6 @@ memory_move_verbs:
   connection/test_your_relationship: tested a bond
   recover/resupply: resupplied
   world_shaping: shaped the world
-  dialog: spoke
   _catchall: acted
 memory_retrieval_weights:
   recency: 0.4

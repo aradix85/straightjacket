@@ -13,8 +13,4 @@ effect_resolver:
     secured_advantage: 1
   move_baselines:
     combat/strike: 1
-    combat/clash: 0
-    adventure/gather_information: 0
-    adventure/compel: 0
-    adventure/face_danger: 0
     other: 0

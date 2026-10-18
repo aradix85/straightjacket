@@ -262,9 +262,10 @@ def test_a_full_legacy_track_clears_and_then_earns_one_experience_per_box(load_e
     game.campaign.xp = 0
     track = get_legacy_track(game, "quests")
     track.ticks = track.max_ticks - 2
-    assert mark_legacy_ticks(game, "quests", 4) == 2
+    mark_legacy_ticks(game, "quests", 4)
+    assert game.campaign.xp == 2
     assert (track.ticks, track.completions) == (2, 1)
-    assert mark_legacy_ticks(game, "quests", 2) == 1
+    mark_legacy_ticks(game, "quests", 2)
     assert game.campaign.xp == 3
 
 
@@ -366,13 +367,13 @@ def test_turning_point_always_has_five_slots_and_at_most_three_none(load_engine:
 
 
 def test_a_fourth_none_is_rerolled(load_engine: None) -> None:
-    from straightjacket.engine.mechanics.adventure_crafter import roll_turning_point
+    from straightjacket.engine.mechanics.adventure_crafter import lookup_plot_point, roll_turning_point
     from tests._helpers import make_game_state
 
     rolls = [5] + [1, 10] * 4 + [1, 50, 1, 60]
     points = roll_turning_point(_ScriptedRng(*rolls), THEMES, make_game_state().narrative).plot_points
     assert [p.special_range for p in points].count("none") == 3
-    assert [p.roll for p in points[-2:]] == [50, 60]
+    assert [p.name for p in points[-2:]] == [lookup_plot_point(THEMES[0], roll).name for roll in (50, 60)]
 
 
 def test_conclusion_on_a_new_plotline_counts_as_none(load_engine: None) -> None:
@@ -382,7 +383,7 @@ def test_conclusion_on_a_new_plotline_counts_as_none(load_engine: None) -> None:
     rolls = [5, 1, 1] + [1, 50] * 4
     narrative = make_game_state().narrative
     turning_point = roll_turning_point(_ScriptedRng(*rolls), THEMES, narrative)
-    assert turning_point.plotline_was_new
+    assert len(narrative.plotlines_list) == 1
     assert turning_point.plot_points[0].special_range == "none"
     assert all(p.status != "conclusion" for p in narrative.plotlines_list)
 
@@ -445,14 +446,17 @@ def test_pay_the_price_roll_twice_adds_two_results(load_engine: None, monkeypatc
 
 
 @pytest.mark.parametrize(("setting", "pays"), [("classic", True), ("starforged", False)])
-def test_enter_the_fray_miss_pays_the_price_only_in_classic(load_engine: None, setting: str, pays: bool) -> None:
+def test_enter_the_fray_miss_pays_the_price_only_in_classic(
+    load_engine: None, monkeypatch: pytest.MonkeyPatch, setting: str, pays: bool
+) -> None:
     from straightjacket.engine.mechanics.move_outcome import resolve_move_outcome
-    from tests._helpers import make_game_state
+    from tests._helpers import make_game_state, record_price_tables
 
-    outcome = resolve_move_outcome(
+    rolled = record_price_tables(monkeypatch)
+    resolve_move_outcome(
         make_game_state(setting_id=setting), "combat/enter_the_fray", "MISS", target_npc_id=None, match=False
     )
-    assert outcome.pay_the_price is pays
+    assert bool(rolled) is pays
 
 
 @pytest.mark.parametrize("setting", ["classic", "starforged"])
@@ -555,20 +559,20 @@ def test_a_chain_without_a_connection_is_skipped(load_engine: None) -> None:
     [("STRONG_HIT", "Make a Discovery", 2, False), ("MISS", "Confront Chaos", 1, False)],
 )
 def test_explore_a_waypoint_match_chains_an_oracle_move(
-    load_engine: None, result: str, move_name: str, ticks: int, pays: bool
+    load_engine: None, monkeypatch: pytest.MonkeyPatch, result: str, move_name: str, ticks: int, pays: bool
 ) -> None:
     from straightjacket.engine.game.finalization import resolve_action_consequences
     from straightjacket.engine.mechanics.legacy import get_legacy_track
     from straightjacket.engine.models import RollResult
-    from tests._helpers import make_brain_result, make_game_state
+    from tests._helpers import make_brain_result, make_game_state, record_price_tables
 
+    rolled = record_price_tables(monkeypatch)
     game = make_game_state(setting_id="starforged")
     roll = RollResult(3, 3, 3, "wits", 2, 5, result, "exploration/explore_a_waypoint", match=True)
     action = resolve_action_consequences(game, make_brain_result(move="exploration/explore_a_waypoint"), roll, "risky")
     assert any(c.startswith(f"follow-up move {move_name}: ") for c in action.consequences)
     assert get_legacy_track(game, "discoveries").ticks == ticks
-    assert action.outcome is not None
-    assert action.outcome.pay_the_price is pays
+    assert bool(rolled) is pays
 
 
 @pytest.mark.parametrize(("rank", "expected"), [("dangerous", "formidable"), ("epic", "epic")])

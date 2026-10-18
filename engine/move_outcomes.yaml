@@ -107,20 +107,17 @@ move_outcomes:
     - momentum +2
     weak_hit:
     - momentum +1
-    miss:
-    - narrative
+    miss: []
   quest/fulfill_your_vow:
     strong_hit:
     - legacy_reward quests
     weak_hit:
     - legacy_reward_lower quests
-    miss:
-    - narrative
+    miss: []
   connection/make_a_connection:
     strong_hit:
     - disposition_shift
-    weak_hit:
-    - narrative
+    weak_hit: []
     miss:
     - pay_the_price
   connection/develop_your_relationship:
@@ -131,8 +128,7 @@ move_outcomes:
     - raise_connection_rank
     weak_hit:
     - momentum +2
-    miss:
-    - narrative
+    miss: []
   connection/test_your_relationship:
     strong_hit:
     - chain_move connection/develop_your_relationship
@@ -146,8 +142,7 @@ move_outcomes:
     - legacy_reward bonds
     weak_hit:
     - legacy_reward bonds
-    miss:
-    - narrative
+    miss: []
   exploration/undertake_an_expedition:
     strong_hit:
     - mark_progress 1
@@ -177,8 +172,7 @@ move_outcomes:
   exploration/finish_an_expedition:
     strong_hit:
     - legacy_reward discoveries
-    weak_hit:
-    - narrative
+    weak_hit: []
     miss:
     - pay_the_price
   recover/heal:
@@ -209,10 +203,8 @@ move_outcomes:
       weak_hit_cost_type: momentum
       weak_hit_cost: -1
   recover/repair:
-    strong_hit:
-    - narrative
-    weak_hit:
-    - narrative
+    strong_hit: []
+    weak_hit: []
     miss:
     - pay_the_price
   recover/sojourn:
@@ -277,20 +269,6 @@ move_outcomes:
       strong_hit_exchange_cost: 0
       weak_hit_exchange: true
       recover_from_zero: true
-  suffer/lose_momentum:
-    strong_hit:
-    - narrative
-    weak_hit:
-    - narrative
-    miss:
-    - narrative
-  suffer/sacrifice_resources:
-    strong_hit:
-    - narrative
-    weak_hit:
-    - narrative
-    miss:
-    - narrative
   threshold/face_death:
     handler: threshold
     params:
@@ -332,8 +310,7 @@ move_outcomes:
     - fill_clock 2
     - pay_the_price
   scene_challenge/finish_the_scene:
-    strong_hit:
-    - narrative
+    strong_hit: []
     weak_hit:
     - pay_the_price
     miss:
@@ -358,8 +335,7 @@ move_outcomes:
   adventure/reach_your_destination:
     strong_hit:
     - momentum +1
-    weak_hit:
-    - narrative
+    weak_hit: []
     miss:
     - pay_the_price
   adventure/resupply:
@@ -379,8 +355,7 @@ move_outcomes:
     miss:
     - pay_the_price
   combat/end_the_fight:
-    strong_hit:
-    - narrative
+    strong_hit: []
     weak_hit:
     - pay_the_price
     miss:
@@ -418,8 +393,7 @@ move_outcomes:
   relationship/test_your_bond:
     strong_hit:
     - spirit +1
-    weak_hit:
-    - narrative
+    weak_hit: []
     miss:
     - pay_the_price
   suffer/companion_endure_harm:
@@ -455,29 +429,23 @@ move_outcomes:
   delve/delve_the_depths:
     strong_hit:
     - mark_progress 1
-    weak_hit:
-    - narrative
-    miss:
-    - narrative
+    weak_hit: []
+    miss: []
   delve/escape_the_depths:
     strong_hit:
     - momentum +1
-    weak_hit:
-    - narrative
-    miss:
-    - narrative
+    weak_hit: []
+    miss: []
   delve/locate_your_objective:
     strong_hit:
     - momentum +1
-    weak_hit:
-    - narrative
+    weak_hit: []
     miss:
     - pay_the_price
   world_shaping:
     strong_hit:
     - momentum +1
-    weak_hit:
-    - narrative
+    weak_hit: []
     miss:
     - pay_the_price
 
@@ -488,8 +456,7 @@ move_outcome_overrides:
       - experience_by_rank 0
       weak_hit:
       - experience_by_rank -1
-      miss:
-      - narrative
+      miss: []
     combat/enter_the_fray:
       strong_hit:
       - momentum +2

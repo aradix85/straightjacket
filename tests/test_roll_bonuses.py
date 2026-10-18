@@ -24,7 +24,7 @@ def test_a_disabled_ability_is_offered_only_after_an_upgrade(load_engine: None) 
 
     game = _game_with("companion/banshee")
     assert "companion/banshee#1" not in {o.id for o in roll_bonuses(game)}
-    assert enable_next_ability(game, "companion/banshee")
+    enable_next_ability(game, "companion/banshee")
     option = next(o for o in roll_bonuses(game) if o.id == "companion/banshee#1")
     assert (option.add, option.momentum_on_hit) == (1, 1)
 

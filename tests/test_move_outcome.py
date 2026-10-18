@@ -10,9 +10,10 @@ from straightjacket.engine.mechanics.move_handlers import (
     apply_suffer_handler,
     apply_threshold_handler,
 )
+from straightjacket.engine.engine_loader import eng
 from straightjacket.engine.mechanics.move_outcome import resolve_move_outcome
 from straightjacket.engine.models import GameState, Resources
-from tests._helpers import make_game_state
+from tests._helpers import make_game_state, record_price_tables
 
 
 @pytest.fixture
@@ -40,7 +41,6 @@ class TestParseEffect:
             ("health +3", "health", 3, ""),
             ("spirit -2", "spirit", -2, ""),
             ("supply -1", "supply", -1, ""),
-            ("integrity +1", "integrity", 1, ""),
             ("mark_progress 2", "mark_progress", 2, ""),
             ("next_move_bonus +1", "next_move_bonus", 1, ""),
             ("suffer_move -2", "suffer_move", -2, ""),
@@ -49,7 +49,6 @@ class TestParseEffect:
             ("position bad_spot", "position", 0, "bad_spot"),
             ("legacy_reward quests", "legacy_reward", 0, "quests"),
             ("pay_the_price", "pay_the_price", 0, ""),
-            ("narrative", "narrative", 0, ""),
         ],
     )
     def test_parse_effect(self, effect_str: str, expected_type: str, expected_value: int, expected_target: str) -> None:
@@ -110,17 +109,25 @@ class TestApplyEffects:
         ("effect", "attr", "expected"),
         [
             ("mark_progress 2", "progress_marks", 2),
-            ("pay_the_price", "pay_the_price", True),
             ("position in_control", "combat_position", "in_control"),
             ("position bad_spot", "combat_position", "bad_spot"),
-            ("next_move_bonus +1", "next_move_bonus", 1),
             ("fill_clock 2", "clock_fills", 2),
-            ("narrative", "narrative_only", True),
         ],
     )
     def test_result_fields(self, game: GameState, effect: str, attr: str, expected: object) -> None:
         result = apply_effects(game, parse_effects([effect]))
         assert getattr(result, attr) == expected
+
+    def test_next_move_bonus_waits_for_the_next_roll(self, game: GameState) -> None:
+        result = apply_effects(game, parse_effects(["next_move_bonus +1"]))
+        assert game.resources.next_move_bonus == 1
+        assert "next move +1" in result.consequences
+
+    def test_no_effects_change_nothing(self, game: GameState) -> None:
+        before = game.resources.snapshot()
+        result = apply_effects(game, [])
+        assert game.resources.snapshot() == before
+        assert result.consequences == []
 
     def test_multiple_effects(self, game: GameState) -> None:
         result = apply_effects(game, parse_effects(["momentum +2", "position in_control"]))
@@ -140,7 +147,6 @@ class TestApplyEffects:
             for r in data["oracles"]["moves"]["contents"]["pay_the_price"]["rows"]
         }
         result = apply_effects(game, parse_effects(["pay_the_price"]))
-        assert result.pay_the_price is True
         assert all(part in rows for part in result.consequences[0].split("; "))
 
     def test_suffer_move_picks_highest_track(self, game: GameState) -> None:
@@ -244,20 +250,18 @@ class TestSufferHandler:
 
 class TestThresholdHandler:
     @pytest.mark.parametrize(
-        ("result_type", "game_over", "has_impact", "narrative_only"),
+        ("result_type", "game_over", "has_impact"),
         [
-            ("STRONG_HIT", False, False, True),
-            ("WEAK_HIT", False, True, False),
-            ("MISS", True, False, False),
+            ("STRONG_HIT", False, False),
+            ("WEAK_HIT", False, True),
+            ("MISS", True, False),
         ],
     )
-    def test_threshold_outcomes(
-        self, game: GameState, result_type: str, game_over: bool, has_impact: bool, narrative_only: bool
-    ) -> None:
+    def test_threshold_outcomes(self, game: GameState, result_type: str, game_over: bool, has_impact: bool) -> None:
         params = {"impact": "doomed", "game_over_text": "you are dead"}
         result = apply_threshold_handler(game, result_type, params)
         assert game.game_over == game_over
-        assert result.narrative_only == narrative_only
+        assert (result.consequences == []) == (result_type == "STRONG_HIT")
         if has_impact:
             assert "mark doomed" in result.consequences
         if game_over:
@@ -292,13 +296,14 @@ class TestRecoveryHandler:
         assert game.resources.health == 5
         assert game.resources.momentum == 3
 
-    def test_miss_pay_the_price(self, game: GameState) -> None:
-        result = apply_recovery_handler(
-            game,
+    def test_miss_pay_the_price(self, game_real: GameState, monkeypatch: pytest.MonkeyPatch) -> None:
+        rolled = record_price_tables(monkeypatch)
+        apply_recovery_handler(
+            game_real,
             "MISS",
             _recovery_params(track="health", full_amount=3, impact_amount=2, blocking_impact="wounded"),
         )
-        assert result.pay_the_price is True
+        assert rolled == [eng().pay_the_price.oracle_path]
 
 
 class TestResolveOutcome:
@@ -310,15 +315,19 @@ class TestResolveOutcome:
                 "STRONG_HIT",
                 lambda g, r: g.resources.momentum == 3 and "momentum +1" in r.consequences,
             ),
-            ("adventure/face_danger", "MISS", lambda g, r: r.pay_the_price is True),
             ("adventure/gather_information", "STRONG_HIT", lambda g, r: g.resources.momentum == 4),
             ("quest/swear_an_iron_vow", "STRONG_HIT", lambda g, r: g.resources.momentum == 4),
-            ("recover/resupply", "MISS", lambda g, r: r.pay_the_price is True),
         ],
     )
     def test_simple_outcomes(self, game_real: GameState, move: str, result_type: str, check_fn: object) -> None:
         result = resolve_move_outcome(game_real, move, result_type, target_npc_id=None, match=False)
         assert check_fn(game_real, result)
+
+    @pytest.mark.parametrize("move", ["adventure/face_danger", "recover/resupply"])
+    def test_a_miss_pays_the_price(self, game_real: GameState, monkeypatch: pytest.MonkeyPatch, move: str) -> None:
+        rolled = record_price_tables(monkeypatch)
+        resolve_move_outcome(game_real, move, "MISS", target_npc_id=None, match=False)
+        assert rolled == [eng().pay_the_price.oracle_path]
 
     def test_strike_strong_hit_position(self, game_real: GameState) -> None:
         result = resolve_move_outcome(game_real, "combat/strike", "STRONG_HIT", target_npc_id=None, match=False)

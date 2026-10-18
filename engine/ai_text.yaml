@@ -27,7 +27,6 @@ ai_text:
     momentum_change: momentum {value}
     track_gain: '{track} +{n}'
     track_loss: '{track} -{n}'
-    integrity_change: integrity {value}
     mark_progress: mark progress ×{n}
     next_move_bonus: next move +{n}
     chained_move: 'follow-up move {move}: {result}'
@@ -48,7 +47,6 @@ ai_text:
     unknown_time: unspecified
     unknown_intent: general
     no_npcs: (none)
-    no_npcs_yet: none yet
     no_npcs_nearby: no one nearby
     no_roll: dialog (no roll)
     npc_appeared_event: '{npc_name} appeared'
