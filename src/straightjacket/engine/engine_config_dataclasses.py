@@ -575,6 +575,8 @@ class DescriptionDedupConfig:
 @dataclass
 class ParserConfig:
     salvage_min_length: int
+    role_prefixes: list[str]
+    leaked_prompt_tags: list[str]
     min_line_length: int
     stream_hold_markers: list[str]
     stream_sentence_boundary: str
@@ -656,12 +658,13 @@ class StatusDescriptionsConfig:
     spirit: dict[int, str]
     supply: dict[int, str]
     bond: dict[int, str]
-    clock: dict[str, str]
+    clock: dict[int, str]
     track: dict[int, str]
     legacy: dict[int, str]
     xp: dict[int, str]
     combat_position: dict[str, str]
     menace: dict[int, str]
+    act_progress: dict[str, str]
 
 
 @dataclass

@@ -541,17 +541,10 @@ $("complete-epilogue").onclick = () => {
   playerInput.focus();
 };
 
-// onGameOver shows the succession overlay (predecessor + inheritance text).
-// The server always includes a pending succession payload — game_over and
-// succession are now coupled by the engine (auto-prepare on game_over flag).
-// If succession.pending is false the engine state is corrupt; surface it
-// rather than masking with a fallback.
+// onGameOver shows the succession overlay (predecessor + inheritance text);
+// the server prepares the succession before it sends game_over.
 function onGameOver(msg) {
   const succ = msg.succession;
-  if (!succ || !succ.pending) {
-    showError("game_over received without pending succession — engine state is inconsistent.");
-    return;
-  }
   $("succession-title").textContent = succ.title;
   $("succession-headline").textContent = succ.headline;
   $("succession-predecessor-history").textContent = succ.predecessor.history;

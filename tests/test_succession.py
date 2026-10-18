@@ -435,14 +435,6 @@ def test_start_succession_pending_without_predecessor_raises(aria: GameState) ->
         start_succession_with_character(_FailingProvider(), aria, {})
 
 
-def test_succession_summary_when_no_pending() -> None:
-    from straightjacket.web.serializers import build_succession_summary
-
-    g = make_game_state()
-    summary = build_succession_summary(g)
-    assert summary == {"pending": False}
-
-
 def test_succession_summary_renders_narrative_text(aria: GameState) -> None:
     from straightjacket.web.serializers import build_succession_summary
 
@@ -462,7 +454,6 @@ def test_succession_summary_renders_narrative_text(aria: GameState) -> None:
     aria.campaign.predecessors = [record]
 
     summary = build_succession_summary(aria)
-    assert summary["pending"] is True
     assert summary["title"]
     assert "Aria" in summary["headline"]
     assert summary["predecessor"]["name"] == "Aria"

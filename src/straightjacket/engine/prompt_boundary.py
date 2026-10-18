@@ -44,7 +44,7 @@ def build_epilogue_prompt(game: GameState) -> str:
     endings_text = ", ".join(f"{e.type}: {e.description}" for e in bp.possible_endings)
 
     npc_block = "\n".join(
-        f'<npc name="{_xa(n.name)}" disposition="{_xa(n.disposition)}" bond="{get_npc_bond(game, n.id)}/10">'
+        f'<npc name="{_xa(n.name)}" disposition="{_xa(n.disposition)}" bond="{get_npc_bond(game, n.id)}/{eng().progress.boxes}">'
         f"{_xe(n.description)}</npc>"
         for n in game.npcs
         if n.status == "active"
@@ -74,7 +74,7 @@ def build_epilogue_prompt(game: GameState) -> str:
 def build_new_chapter_prompt(game: GameState) -> str:
     npc_block = "\n".join(
         f'<returning_npc id="{_xa(n.id)}" name="{_xa(n.name)}" disposition="{_xa(n.disposition)}" '
-        f'bond="{get_npc_bond(game, n.id)}/10"'
+        f'bond="{get_npc_bond(game, n.id)}/{eng().progress.boxes}"'
         + (f' aliases="{_xa(",".join(n.aliases))}"' if n.aliases else "")
         + f">{_xe(n.description)}</returning_npc>"
         for n in game.npcs

@@ -32,7 +32,6 @@ class TestSession:
         s = Session()
         assert s.player == ""
         assert s.game is None
-        assert s.has_game is False
         assert s.processing is False
         assert s.chat_messages == []
         assert s.pending_burn is None
@@ -117,23 +116,6 @@ class TestSession:
         assert s.chat_messages == []
         assert s.save_name == "autosave"
         assert s.pending_burn is None
-
-    def test_has_game_property(self) -> None:
-        s = Session()
-        assert s.has_game is False
-        s.game = make_game_state()
-        assert s.has_game is True
-
-    def test_filtered_messages_strips_recaps(self) -> None:
-        s = Session()
-        s.chat_messages = [
-            {"role": "assistant", "content": "narration"},
-            {"role": "user", "content": "action"},
-            {"role": "assistant", "content": "recap", "recap": True},
-        ]
-        filtered = s.filtered_messages()
-        assert len(filtered) == 2
-        assert all(not m.get("recap") for m in filtered)
 
 
 class TestHighlightDialog:
@@ -454,7 +436,6 @@ class TestSuccessionWebSocket:
             msg = ws.receive_json()
             assert msg["type"] == "game_over"
             succ = msg["succession"]
-            assert succ["pending"] is True
             assert succ["predecessor"]["name"] == "Aria"
             assert succ["predecessor"]["end_reason"] == "retire"
             assert "Aria" in succ["headline"]

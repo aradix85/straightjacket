@@ -27,9 +27,9 @@ status_descriptions:
     2: tentative acquaintance
     0: stranger
   clock:
-    early: distant
-    mid: building
-    late: imminent
+    75: imminent
+    35: building
+    0: distant
   track:
     8: nearly complete
     6: well underway
@@ -57,3 +57,7 @@ status_descriptions:
     4: growing
     2: stirring
     0: distant
+  act_progress:
+    early: just begun
+    mid: well underway
+    late: drawing to its close

@@ -33,6 +33,18 @@ def test_strips_prompt_echo_tags(load_engine: None, stub_emotions: None) -> None
     assert "tavern was quiet" in result
 
 
+def test_the_leaked_prompt_tags_come_from_the_parser_config(
+    load_engine: None, stub_emotions: None, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from straightjacket.engine.engine_loader import eng
+    from straightjacket.engine.parser import parse_narrator_response
+
+    monkeypatch.setattr(eng().parser, "leaked_prompt_tags", ["ledger"])
+    result = parse_narrator_response(_game(), "<ledger>The tavern was quiet.</ledger> <task>x</task>")
+    assert "<ledger>" not in result
+    assert "<task>" in result
+
+
 def test_strips_code_fences(load_engine: None, stub_emotions: None) -> None:
     from straightjacket.engine.parser import parse_narrator_response
 

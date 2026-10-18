@@ -1,5 +1,7 @@
 parser:
   salvage_min_length: 30
+  role_prefixes: [Narrator]
+  leaked_prompt_tags: [task, scene, world, character, situation, conflict, possible_endings, session_log, npc, returning_npc, campaign_history, chapter, story_arc, story_ending, momentum_burn, revelation_ready]
   min_line_length: 4
   stream_hold_markers: ["<", "```", "{", "\n---", "\n#"]
   stream_sentence_boundary: '[.!?\u2026]+["''\u201d\u2019)\]]*(?=\s)|\n\s*\n'

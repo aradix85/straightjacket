@@ -1,6 +1,7 @@
 from .config_loader import narration_language
 from .datasworn.settings import load_package
 from .engine_loader import eng
+from .format_utils import describe_by_threshold
 from .mechanics import get_pacing_hint
 from .models import GameState
 from .prompt_loader import get_prompt, get_prompt_prefix
@@ -106,10 +107,6 @@ def narrative_direction_block(game: GameState, roll_result: str) -> str:
     return get_prompt("block_narrative_direction_wrapper", tokens=" ".join(parts))
 
 
-def _describe_narrator_resource(value: int, descriptions: dict[int, str]) -> str:
-    return descriptions[max(threshold for threshold in descriptions if threshold <= value)]
-
-
 def status_context_block(game: GameState) -> str:
     descriptions = eng().narrator_status_descriptions
     h, sp, su = game.resources.health, game.resources.spirit, game.resources.supply
@@ -120,9 +117,9 @@ def status_context_block(game: GameState) -> str:
         physical_label=get_prompt("label_character_state_physical"),
         mental_label=get_prompt("label_character_state_mental"),
         resources_label=get_prompt("label_character_state_resources"),
-        health_desc=_describe_narrator_resource(h, descriptions.health),
-        spirit_desc=_describe_narrator_resource(sp, descriptions.spirit),
-        supply_desc=_describe_narrator_resource(su, descriptions.supply),
+        health_desc=describe_by_threshold(h, descriptions.health),
+        spirit_desc=describe_by_threshold(sp, descriptions.spirit),
+        supply_desc=describe_by_threshold(su, descriptions.supply),
     )
 
 

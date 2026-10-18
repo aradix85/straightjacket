@@ -59,7 +59,9 @@ def _build_tracks_block(game: GameState) -> str:
     tracks = _active_tracks(game)
     if not tracks:
         return ""
-    lines = [f"  {_xe(t.name)} (id:{t.id}, {t.track_type}, {t.rank}) {t.filled_boxes}/10" for t in tracks]
+    lines = [
+        f"  {_xe(t.name)} (id:{t.id}, {t.track_type}, {t.rank}) {t.filled_boxes}/{eng().progress.boxes}" for t in tracks
+    ]
     return "<tracks>\n" + "\n".join(lines) + "\n</tracks>"
 
 

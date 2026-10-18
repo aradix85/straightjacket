@@ -19,18 +19,16 @@ def salvage_truncated_narration(raw: str) -> str:
     return trimmed
 
 
+def _any_of(words: list[str]) -> str:
+    return "|".join(re.escape(word) for word in words)
+
+
 def _strip_role_prefix(text: str) -> str:
-    return re.sub(r"^\s*Narrator:\s*", "", text, flags=re.IGNORECASE)
+    return re.sub(rf"^\s*(?:{_any_of(eng().parser.role_prefixes)}):\s*", "", text, flags=re.IGNORECASE)
 
 
 def _strip_prompt_tags(text: str) -> str:
-    return re.sub(
-        r"</?(?:task|scene|world|character|situation|conflict|possible_endings|"
-        r"session_log|npc|returning_npc|campaign_history|chapter|story_arc|"
-        r"story_ending|momentum_burn|revelation_ready)[^>]*>",
-        "",
-        text,
-    ).strip()
+    return re.sub(rf"</?(?:{_any_of(eng().parser.leaked_prompt_tags)})[^>]*>", "", text).strip()
 
 
 def _strip_code_fences(text: str) -> str:

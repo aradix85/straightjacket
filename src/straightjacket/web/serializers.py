@@ -2,6 +2,7 @@ from typing import Any
 import re
 
 from ..engine.engine_loader import eng
+from ..engine.format_utils import describe_by_threshold
 from ..engine.mechanics.impacts import impact_label
 from ..engine.models import GameState
 from ..engine.npc import get_npc_bond
@@ -16,26 +17,17 @@ from ..i18n import (
 )
 
 
-def _describe_resource(value: int, descriptions: dict[int, str]) -> str:
-    for threshold in sorted(descriptions.keys(), reverse=True):
-        if value >= threshold:
-            return descriptions[threshold]
-    return descriptions[min(descriptions.keys())]
-
-
 def _status_resources_line(game: GameState) -> str:
-    tl = get_time_labels()
     _defaults = eng().ai_text.narrator_defaults
     r = game.resources
-    time_label = tl.get(game.world.time_of_day, "") if game.world.time_of_day else ""
     return t(
         "status.resources",
         name=game.player_name,
         location=game.world.current_location or _defaults["unknown_location"],
-        time=time_label or _defaults["unknown_time"],
-        health=_describe_resource(r.health, eng().status_descriptions.health),
-        spirit=_describe_resource(r.spirit, eng().status_descriptions.spirit),
-        supply=_describe_resource(r.supply, eng().status_descriptions.supply),
+        time=get_time_labels()[game.world.time_of_day],
+        health=describe_by_threshold(r.health, eng().status_descriptions.health),
+        spirit=describe_by_threshold(r.spirit, eng().status_descriptions.spirit),
+        supply=describe_by_threshold(r.supply, eng().status_descriptions.supply),
     )
 
 
@@ -48,7 +40,7 @@ def _status_impact_lines(game: GameState) -> list[str]:
 def _status_track_lines(game: GameState) -> list[str]:
     track_desc = eng().status_descriptions.track
     return [
-        t("status.tracks", name=tr.name, progress=_describe_resource(tr.filled_boxes, track_desc))
+        t("status.tracks", name=tr.name, progress=describe_by_threshold(tr.filled_boxes, track_desc))
         for tr in game.progress_tracks
         if tr.status == "active"
     ]
@@ -59,8 +51,8 @@ def _status_npc_lines(game: GameState) -> list[str]:
     bond_desc = eng().status_descriptions.bond
     lines: list[str] = []
     for n in game.npcs:
-        disp_label = dl.get(n.disposition, n.disposition)
-        bond = _describe_resource(get_npc_bond(game, n.id), bond_desc)
+        disp_label = dl[n.disposition]
+        bond = describe_by_threshold(get_npc_bond(game, n.id), bond_desc)
         if n.status == "deceased":
             lines.append(t("status.npc_deceased", name=n.name))
         elif n.status == "background":
@@ -77,29 +69,21 @@ def _status_clock_lines(game: GameState) -> list[str]:
         if c.fired:
             lines.append(t("status.clock_fired", name=c.name))
             continue
-        ratio = c.filled / c.segments if c.segments > 0 else 0
-        if ratio >= 0.75:
-            urgency = clock_desc["late"]
-        elif ratio >= 0.35:
-            urgency = clock_desc["mid"]
-        else:
-            urgency = clock_desc["early"]
+        urgency = describe_by_threshold(100 * c.filled // c.segments, clock_desc)
         lines.append(t("status.clock", name=c.name, urgency=urgency))
     return lines
 
 
 def _status_story_arc_lines(game: GameState) -> list[str]:
-    bp = game.narrative.story_blueprint
-    if not (bp and bp.acts):
+    if game.narrative.story_blueprint is None:
         return []
-    pl = get_story_phase_labels()
     act = get_current_act(game)
     return [
         t(
             "status.act",
             title=act.title,
-            phase=pl.get(act.phase, act.phase),
-            progress=act.progress,
+            phase=get_story_phase_labels()[act.phase],
+            progress=eng().status_descriptions.act_progress[act.progress],
         )
     ]
 
@@ -108,7 +92,7 @@ def _status_xp_and_legacy_lines(game: GameState) -> list[str]:
     lines: list[str] = []
     camp = game.campaign
     if camp.xp_available > 0 or camp.xp_spent > 0:
-        lines.append(t("status.xp", xp=_describe_resource(camp.xp_available, eng().status_descriptions.xp)))
+        lines.append(t("status.xp", xp=describe_by_threshold(camp.xp_available, eng().status_descriptions.xp)))
     if any(lt.filled_boxes > 0 for lt in (camp.legacy_quests, camp.legacy_bonds, camp.legacy_discoveries)):
         legacy_desc = eng().status_descriptions.legacy
         lines.append(
@@ -117,17 +101,17 @@ def _status_xp_and_legacy_lines(game: GameState) -> list[str]:
                 quests=t(
                     "status.legacy_item",
                     name=camp.legacy_quests.name,
-                    progress=_describe_resource(camp.legacy_quests.filled_boxes, legacy_desc),
+                    progress=describe_by_threshold(camp.legacy_quests.filled_boxes, legacy_desc),
                 ),
                 bonds=t(
                     "status.legacy_item",
                     name=camp.legacy_bonds.name,
-                    progress=_describe_resource(camp.legacy_bonds.filled_boxes, legacy_desc),
+                    progress=describe_by_threshold(camp.legacy_bonds.filled_boxes, legacy_desc),
                 ),
                 discoveries=t(
                     "status.legacy_item",
                     name=camp.legacy_discoveries.name,
-                    progress=_describe_resource(camp.legacy_discoveries.filled_boxes, legacy_desc),
+                    progress=describe_by_threshold(camp.legacy_discoveries.filled_boxes, legacy_desc),
                 ),
             )
         )
@@ -154,7 +138,7 @@ def build_tracks_status(game: GameState) -> str:
     track_desc_map = eng().status_descriptions.track
     combat_pos_desc = eng().status_descriptions.combat_position
     for tr in active:
-        track_desc = _describe_resource(tr.filled_boxes, track_desc_map)
+        track_desc = describe_by_threshold(tr.filled_boxes, track_desc_map)
         if tr.track_type == "combat":
             cp = game.world.combat_position
             pos_desc = combat_pos_desc[cp] if cp else ""
@@ -177,7 +161,7 @@ def build_threats_status(game: GameState) -> str:
     lines = []
     menace_desc = eng().status_descriptions.menace
     for th in active:
-        urgency = _describe_resource(th.menace_filled_boxes, menace_desc)
+        urgency = describe_by_threshold(th.menace_filled_boxes, menace_desc)
         lines.append(t("status.threat", name=th.name, urgency=urgency))
 
     return "\n".join(lines)
@@ -217,7 +201,7 @@ def build_creation_options() -> dict[str, Any]:
                 truths.append(
                     {
                         "id": truth_id,
-                        "name": truth_data.get("name", truth_id),
+                        "name": truth_data["name"],
                         "options": options,
                     }
                 )
@@ -283,9 +267,6 @@ def build_creation_options() -> dict[str, Any]:
 
 
 def build_succession_summary(game: GameState) -> dict[str, Any]:
-    if not game.campaign.pending_succession or not game.campaign.predecessors:
-        return {"pending": False}
-
     record = game.campaign.predecessors[-1]
     end_reason = record.end_reason
     title_key = f"succession.title_{end_reason}"
@@ -308,7 +289,6 @@ def build_succession_summary(game: GameState) -> dict[str, Any]:
         )
 
     return {
-        "pending": True,
         "title": t(title_key),
         "headline": t(headline_key, predecessor=record.player_name),
         "predecessor": {

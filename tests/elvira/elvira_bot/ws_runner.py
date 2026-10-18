@@ -21,7 +21,14 @@ from straightjacket.engine.models import GameState
 
 from .coverage import Coverage
 from .report import write_report
-from .ai_helpers import ask_bot, build_turn_context, configure_bot, decide_burn_momentum, get_persona
+from .ai_helpers import (
+    ask_bot,
+    available_styles,
+    build_turn_context,
+    configure_bot,
+    decide_burn_momentum,
+    get_persona,
+)
 from .creation import roll_character
 from .invariants import assert_game_state
 from .models import ChapterRecord, NpcSnapshot, SessionLog, TurnRecord
@@ -81,7 +88,7 @@ class WsClient:
             pass
         return msgs
 
-    async def collect_turn(self, timeout: float = 180) -> dict[str, Any]:
+    async def collect_turn(self, until: str, timeout: float = 180) -> dict[str, Any]:
         result: dict[str, Any] = {
             "narration": None,
             "replace_narration": None,
@@ -95,13 +102,13 @@ class WsClient:
             "other": [],
         }
         started = time.monotonic()
-        deadline = asyncio.get_event_loop().time() + timeout
+        deadline = asyncio.get_running_loop().time() + timeout
         while True:
-            remaining = deadline - asyncio.get_event_loop().time()
+            remaining = deadline - asyncio.get_running_loop().time()
             if remaining <= 0:
                 break
             try:
-                msg = await self.recv(timeout=min(remaining, 5))
+                msg = await self.recv(timeout=remaining)
             except TimeoutError:
                 break
             t = msg.get("type", "")
@@ -113,8 +120,6 @@ class WsClient:
                 result["replace_narration"] = msg
             elif t == "burn_offer":
                 result["burn_offer"] = msg
-            elif t == "turn_complete":
-                break
             elif t == "error":
                 result["error"] = msg["text"]
                 break
@@ -126,10 +131,10 @@ class WsClient:
                 result["epilogue"] = msg
             elif t == "chapter_started":
                 result["chapter_started"] = msg
-            elif t == "status" or t == "scene_marker":
-                pass
-            else:
+            elif t not in ("status", "scene_marker", "turn_complete"):
                 result["other"].append(msg)
+            if t == until:
+                break
         return result
 
     async def get_debug_state(self) -> GameState | None:
@@ -175,9 +180,9 @@ async def run_ws_session(bot_cfg: dict, auto_override: bool = False, turns_overr
     max_turns = turns_override or session_cfg["max_turns"]
     save_every = session_cfg["save_every_n_turns"]
     save_out = session_cfg["save_name_output"]
-    style = behavior["style"]
+    style = behavior["style"] or _random.choice(available_styles())
     burn_setting = behavior["burn_momentum"]
-    setting_id = game_cfg["setting_id"]
+    setting_id = game_cfg["setting_id"] or _random.choice(selectable_settings())
     log_file_base = Path(log_cfg["log_file"])
     timestamp = datetime.now().astimezone().strftime("%Y%m%d_%H%M%S")
     log_file = log_file_base.with_stem(f"{log_file_base.stem}_{setting_id}_{style}_{timestamp}")
@@ -196,7 +201,11 @@ async def run_ws_session(bot_cfg: dict, auto_override: bool = False, turns_overr
     url = f"ws://127.0.0.1:{port}/ws"
 
     slog = SessionLog(
-        config=bot_cfg,
+        config={
+            **bot_cfg,
+            "game": {**game_cfg, "setting_id": setting_id},
+            "bot_behavior": {**behavior, "style": style},
+        },
         engine_version=VERSION,
         style=style,
     )
@@ -239,14 +248,10 @@ async def run_ws_session(bot_cfg: dict, auto_override: bool = False, turns_overr
         print(f"[CLEAN] Deleted previous saves, has_game: {msg.get('has_game')}")
 
     if not msg.get("has_game"):
-        setting_id = game_cfg["setting_id"]
-        if auto_mode:
-            setting_id = _random.choice(selectable_settings())
-
         creation_data = roll_character(setting_id, game_cfg)
 
         await client.send({"type": "start_game", "creation_data": creation_data})
-        turn_data = await client.collect_turn(timeout=180)
+        turn_data = await client.collect_turn("narration")
 
         if turn_data["error"]:
             print(f"[ERROR] start_game: {turn_data['error']}")
@@ -445,7 +450,7 @@ async def _play_turn(
     print(f"\n  [PLAYER] {action}")
     started = time.monotonic()
     await client.send({"type": "player_input", "text": action})
-    td = await client.collect_turn()
+    td = await client.collect_turn("turn_complete")
 
     if td["error"]:
         print(f"  [ERROR] {td['error']}")
@@ -482,7 +487,7 @@ async def _play_correction(
     print(f"  [CORRECTION TEST] ## {text}")
 
     await client.send({"type": "correction", "text": text})
-    td = await client.collect_turn()
+    td = await client.collect_turn("turn_complete")
 
     rec = TurnRecord(turn=turn, chapter=game.campaign.chapter_number, action=f"## {text}", is_correction=True)
 
@@ -528,7 +533,7 @@ async def _handle_burn(
     await client.send({"type": "burn_momentum", "accept": should_burn})
     error = ""
     if should_burn:
-        td = await client.collect_turn()
+        td = await client.collect_turn("turn_complete")
         if td["error"]:
             error = td["error"]
             rec.burn_error = error
@@ -544,7 +549,7 @@ async def _chapter_transition(
 ) -> tuple[str, GameState | None, bool]:
     print(f"\n{SEPARATOR}\n  GENERATING EPILOGUE\n{SEPARATOR}")
     await client.send({"type": "generate_epilogue"})
-    td = await client.collect_turn(timeout=180)
+    td = await client.collect_turn("epilogue")
     if td["error"]:
         print(f"  [EPILOGUE] Failed: {td['error']}")
         slog.ended_reason = f"epilogue_error: {td['error']}"
@@ -558,7 +563,7 @@ async def _chapter_transition(
 
     print(f"\n{SEPARATOR}\n  STARTING NEW CHAPTER\n{SEPARATOR}")
     await client.send({"type": "new_chapter"})
-    td = await client.collect_turn(timeout=180)
+    td = await client.collect_turn("chapter_started")
     if td["error"]:
         print(f"  [CHAPTER] Failed: {td['error']}")
         slog.ended_reason = f"chapter_error: {td['error']}"

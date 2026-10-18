@@ -296,6 +296,7 @@ def test_handle_status_query_with_game_returns_status(load_engine: None, session
     from straightjacket.web.handlers import handle_status_query
 
     session.game = make_game_state(player_name="X", setting_id="starforged")
+    session.game.world.time_of_day = "evening"
     _run(handle_status_query(session, fake_ws, {}))
     assert any(m["type"] == "status" for m in fake_ws.sent)
 

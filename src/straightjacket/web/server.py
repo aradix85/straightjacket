@@ -39,9 +39,9 @@ from .handlers import (
     handle_status_query,
     handle_threats_query,
     handle_tracks_query,
+    player_selected_message,
 )
 from ..strings_loader import all_strings
-from .serializers import build_creation_options
 from .session import Session
 
 
@@ -122,26 +122,8 @@ async def _send_initial_state(ws: WebSocket) -> None:
     if orphan:
         await _send(ws, {"type": "retry_available", "text": orphan})
 
-    if _session.player and _session.game is not None:
-        await _send(
-            ws,
-            {
-                "type": "player_selected",
-                "name": _session.player,
-                "has_game": True,
-                "messages": _session.filtered_messages(),
-            },
-        )
-    elif _session.player:
-        await _send(
-            ws,
-            {
-                "type": "player_selected",
-                "name": _session.player,
-                "has_game": False,
-                "creation_options": build_creation_options(),
-            },
-        )
+    if _session.player:
+        await _send(ws, player_selected_message(_session))
 
 
 async def _dispatch_one_message(ws: WebSocket, data: dict[str, Any]) -> None:
@@ -163,20 +145,18 @@ async def _dispatch_one_message(ws: WebSocket, data: dict[str, Any]) -> None:
 
 
 async def _message_loop(ws: WebSocket) -> None:
-    _rl = eng().rate_limit
-    _msg_times: list[float] = []
-    _RATE_WINDOW = _rl.window_seconds
-    _RATE_MAX = _rl.max_requests
+    rate_limit = eng().rate_limit
+    message_times: list[float] = []
 
     while True:
         data = await ws.receive_json()
 
-        now = asyncio.get_event_loop().time()
-        _msg_times = [tm for tm in _msg_times if now - tm < _RATE_WINDOW]
-        if len(_msg_times) >= _RATE_MAX:
+        now = asyncio.get_running_loop().time()
+        message_times = [tm for tm in message_times if now - tm < rate_limit.window_seconds]
+        if len(message_times) >= rate_limit.max_requests:
             await _send(ws, {"type": "error", "text": t("error.rate_limited")})
             continue
-        _msg_times.append(now)
+        message_times.append(now)
 
         await _dispatch_one_message(ws, data)
 
@@ -200,8 +180,6 @@ async def websocket_endpoint(ws: WebSocket) -> None:
         await _message_loop(ws)
     except WebSocketDisconnect:
         pass
-    except Exception as e:
-        log(f"[Web] WebSocket error: {e}", level="error")
     finally:
         if _session.active_ws is ws:
             _session.active_ws = None

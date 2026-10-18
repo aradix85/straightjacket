@@ -252,6 +252,7 @@ class TestImpactsStatus:
 
         game = _game()
         game.setting_id = "starforged"
+        game.world.time_of_day = "evening"
         apply_impact(game, "wounded")
         apply_impact(game, "doomed")
         text = build_narrative_status(game)
@@ -262,6 +263,7 @@ class TestImpactsStatus:
         from straightjacket.web.serializers import build_narrative_status
 
         game = _game()
+        game.world.time_of_day = "evening"
         text = build_narrative_status(game)
         assert "Impacts:" not in text
 
@@ -280,6 +282,7 @@ class TestCharacterStatePromptTag:
 
         game = _game()
         game.setting_id = "starforged"
+        game.world.time_of_day = "evening"
         apply_impact(game, "wounded")
         apply_impact(game, "doomed")
         header = _scene_header(game)

@@ -24,10 +24,6 @@ class Session:
     active_ws: WebSocket | None = field(default=None, repr=False)
     pending_burn: BurnOffer | None = None
 
-    @property
-    def has_game(self) -> bool:
-        return self.game is not None
-
     def clear_game(self) -> None:
         self.game = None
         self.chat_messages = []
@@ -40,20 +36,17 @@ class Session:
         self.chat_messages.append(msg)
 
     def pop_last_user_message(self) -> None:
-        if self.chat_messages and self.chat_messages[-1].get("role") == "user":
+        if self.chat_messages and self.chat_messages[-1]["role"] == "user":
             self.chat_messages.pop()
 
     def replace_last_assistant(self, content: str) -> None:
         for msg in reversed(self.chat_messages):
-            if msg.get("role") == "assistant":
+            if msg["role"] == "assistant":
                 msg["content"] = content
                 break
 
     def orphan_input(self) -> str | None:
-        if self.chat_messages and self.chat_messages[-1].get("role") == "user":
-            result: str | None = self.chat_messages[-1].get("content", "")
+        if self.chat_messages and self.chat_messages[-1]["role"] == "user":
+            result: str = self.chat_messages[-1]["content"]
             return result
         return None
-
-    def filtered_messages(self) -> list[dict[str, Any]]:
-        return [m for m in self.chat_messages if not m.get("recap")]

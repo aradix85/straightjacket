@@ -33,7 +33,7 @@ def load_game(username: str, name: str) -> tuple[GameState | None, list[Any]]:
     save_dir = get_save_dir(username)
     path = save_dir / f"{name}.json"
     if not path.exists():
-        log(f"[Load] Save not found: {username}/{name}", level="warning")
+        log(f"[Load] No save named {username}/{name}")
         return None, []
     data = json.loads(path.read_text(encoding="utf-8"))
 
