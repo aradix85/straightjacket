@@ -188,9 +188,8 @@ def tick_autonomous_clocks(game: GameState) -> list[ClockEvent]:
     return ticked
 
 
-def purge_old_fired_clocks(game: GameState, keep_scenes: int | None = None) -> None:
-    if keep_scenes is None:
-        keep_scenes = eng().pacing.fired_clock_keep_scenes
+def purge_old_fired_clocks(game: GameState) -> None:
+    keep_scenes = eng().pacing.fired_clock_keep_scenes
     before = len(game.world.clocks)
     game.world.clocks = [
         c for c in game.world.clocks if not c.fired or (game.narrative.scene_count - c.fired_at_scene) <= keep_scenes

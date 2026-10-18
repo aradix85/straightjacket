@@ -25,7 +25,7 @@ def _load_mythic() -> dict[str, Any]:
     return _mythic
 
 
-def resolve_fate_chart(odds: str, chaos_factor: int, question: str, roll: int | None = None) -> FateResult:
+def resolve_fate_chart(odds: str, chaos_factor: int, question: str) -> FateResult:
     data = _load_mythic()
     chart = data["fate_chart"]
 
@@ -35,9 +35,7 @@ def resolve_fate_chart(odds: str, chaos_factor: int, question: str, roll: int | 
         raise KeyError(f"Unknown chaos_factor {chaos_factor} (valid: 1..{len(chart[odds])})")
 
     cell = chart[odds][chaos_factor - 1]
-
-    if roll is None:
-        roll = random.randint(1, eng().dice.fate_chart_die)
+    roll = random.randint(1, eng().dice.fate_chart_die)
 
     ey_threshold = cell["exceptional_yes"]
     yes_threshold = cell["yes"]
@@ -77,11 +75,6 @@ def _check_chart_random_event(roll: int, chaos_factor: int) -> bool:
     return ones <= chaos_factor
 
 
-def resolve_fate_check(odds: str, chaos_factor: int, question: str) -> FateResult:
-    die = eng().dice.fate_check_die
-    return resolve_fate_check_with_dice(odds, chaos_factor, question, (random.randint(1, die), random.randint(1, die)))
-
-
 _CHECK_ANSWER_PRECEDENCE = ("exceptional_yes", "exceptional_no", "yes", "no")
 
 
@@ -96,7 +89,7 @@ def _check_answer(answers: dict[str, dict[str, int]], total: int) -> str:
     raise ValueError(f"fate_check answers in mythic_gme_2e.json cover no total {total}")
 
 
-def resolve_fate_check_with_dice(odds: str, chaos_factor: int, question: str, dice: tuple[int, int]) -> FateResult:
+def resolve_fate_check(odds: str, chaos_factor: int, question: str) -> FateResult:
     check = _load_mythic()["fate_check"]
     odds_modifiers = {row["odds"]: row["modifier"] for row in check["odds_modifiers"]}
     chaos_modifiers = {row["chaos_factor"]: row["modifier"] for row in check["chaos_factor_modifiers"]}
@@ -105,7 +98,8 @@ def resolve_fate_check_with_dice(odds: str, chaos_factor: int, question: str, di
     if chaos_factor not in chaos_modifiers:
         raise KeyError(f"Unknown chaos_factor {chaos_factor} (valid: {sorted(chaos_modifiers)})")
 
-    d1, d2 = dice
+    die = eng().dice.fate_check_die
+    d1, d2 = random.randint(1, die), random.randint(1, die)
 
     odds_mod = odds_modifiers[odds]
     cf_mod = chaos_modifiers[chaos_factor]
@@ -141,11 +135,8 @@ def resolve_fate(
     odds: str,
     chaos_factor: int,
     question: str,
-    method: str | None = None,
 ) -> FateResult:
-    if method is None:
-        method = eng().fate.default_method
-
+    method = eng().fate.default_method
     if method == "fate_check":
         result = resolve_fate_check(odds, chaos_factor, question)
     elif method == "fate_chart":

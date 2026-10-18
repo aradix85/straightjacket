@@ -97,7 +97,7 @@ def test_gate_4_fully_open() -> None:
 def test_gate_capped_by_hostile_stance() -> None:
     npc = _npc(disposition="hostile", memories=8, first_scene=1, gather_count=3)
     game = _game(npc, bond=4)
-    stance = resolve_npc_stance(game, npc, "combat")
+    stance = resolve_npc_stance(game, npc, "combat", miss=False)
     gate = compute_npc_gate(game, npc, current_scene=10, stance=stance.stance)
     assert gate <= 2
 

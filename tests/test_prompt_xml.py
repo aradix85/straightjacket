@@ -51,6 +51,7 @@ def _narrator_prompt(seed: int, dialog: bool) -> tuple[str | None, str]:
         provider,
         _make_game(),
         "I try to take the ledger from the counter.",
+        stream=None,
     )
     return (roll.result if roll else None), provider.prompts[0]
 

@@ -160,7 +160,7 @@ async def handle_start_game(session: Session, ws: WebSocket, msg: dict[str, Any]
         await _send(ws, {"type": "status", "text": t("creation.world_awakens")})
 
         provider = get_provider()
-        game, narration = await asyncio.to_thread(start_new_game, provider, creation_data, session.player)
+        game, narration = await asyncio.to_thread(start_new_game, provider, creation_data)
 
         session.game = game
         session.chat_messages = [{"role": "assistant", "content": narration}]
@@ -563,7 +563,7 @@ async def handle_new_chapter(session: Session, ws: WebSocket, _msg: dict[str, An
         await _send(ws, {"type": "status", "text": t("epilogue.chapter_msg", n=ch_num + 1)})
 
         provider = get_provider()
-        game, narration = await asyncio.to_thread(start_new_chapter, provider, game, session.player)
+        game, narration = await asyncio.to_thread(start_new_chapter, provider, game)
         session.game = game
         session.chat_messages = [{"role": "assistant", "content": narration}]
         save_game(game, session.player, session.chat_messages, session.save_name)

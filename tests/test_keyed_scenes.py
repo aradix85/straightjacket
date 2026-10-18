@@ -13,6 +13,7 @@ from straightjacket.engine.models import (
 )
 from straightjacket.engine.prompt_shared import _pacing_block
 from tests._helpers import (
+    fix_dice,
     make_clock,
     make_game_state,
     make_npc,
@@ -195,35 +196,39 @@ def test_priority_tie_resolves_by_insertion_order():
     assert matched.id == "ks_first"
 
 
-def test_check_scene_consumes_matched_keyed_scene():
+def test_check_scene_consumes_matched_keyed_scene(monkeypatch: pytest.MonkeyPatch):
     game = _seed_game(chaos_factor=5)
     game.narrative.scene_count = 10
     game.narrative.keyed_scenes.append(_ks(id="ks_consume", trigger_type="scene_count", trigger_value="10"))
-    setup = check_scene(game, roll=10)
+    fix_dice(monkeypatch, 10)
+    setup = check_scene(game)
     assert setup.scene_type == "keyed"
     assert setup.narrative_hint == "test hint"
     assert all(k.id != "ks_consume" for k in game.narrative.keyed_scenes)
 
 
-def test_check_scene_keyed_priority_overrides_interrupt():
+def test_check_scene_keyed_priority_overrides_interrupt(monkeypatch: pytest.MonkeyPatch):
     game = _seed_game(chaos_factor=9)
     game.narrative.scene_count = 10
     game.narrative.keyed_scenes.append(_ks(trigger_type="scene_count", trigger_value="10"))
-    setup = check_scene(game, roll=2)
+    fix_dice(monkeypatch, 2)
+    setup = check_scene(game)
     assert setup.scene_type == "keyed"
 
 
-def test_check_scene_no_match_falls_through_to_chaos():
+def test_check_scene_no_match_falls_through_to_chaos(monkeypatch: pytest.MonkeyPatch):
     game = _seed_game(chaos_factor=5)
     game.narrative.scene_count = 1
     game.narrative.keyed_scenes.append(_ks(trigger_type="scene_count", trigger_value="10"))
-    setup = check_scene(game, roll=8)
+    fix_dice(monkeypatch, 8)
+    setup = check_scene(game)
     assert setup.scene_type == "expected"
 
 
-def test_check_scene_no_keyed_scenes_uses_chaos():
+def test_check_scene_no_keyed_scenes_uses_chaos(monkeypatch: pytest.MonkeyPatch):
     game = _seed_game(chaos_factor=5)
-    setup = check_scene(game, roll=8)
+    fix_dice(monkeypatch, 8)
+    setup = check_scene(game)
     assert setup.scene_type == "expected"
 
 

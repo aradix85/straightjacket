@@ -25,7 +25,7 @@ def shifted_rank(rank: str, shift: int) -> str | None:
     return ranks[index] if 0 <= index < len(ranks) else None
 
 
-def mark_legacy(game: GameState, track_name: str, source_rank: str = "dangerous") -> int:
+def mark_legacy(game: GameState, track_name: str, source_rank: str) -> int:
     return mark_legacy_ticks(game, track_name, eng().legacy.ticks_by_rank[source_rank])
 
 
@@ -64,7 +64,7 @@ def apply_threat_overcome_bonus(game: GameState, threat: ThreatData) -> int:
     return cfg.threat_overcome_bonus
 
 
-def advance_asset(game: GameState, asset_id: str, kind: str = "upgrade") -> int:
+def advance_asset(game: GameState, asset_id: str, kind: str) -> int:
     cfg = eng().legacy
     cost = cfg.asset_upgrade_cost if kind == "upgrade" else cfg.new_asset_cost
     if game.campaign.xp_available < cost:

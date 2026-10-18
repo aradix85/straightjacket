@@ -26,7 +26,7 @@ def register_extracted_npcs(
     npc_dicts: list[dict[str, Any]],
     *,
     skip_names: set[str],
-    start_id: int = 0,
+    start_id: int,
 ) -> int:
     player_lower = game.player_name.lower().strip()
     skip = set(skip_names)
@@ -67,18 +67,14 @@ def register_extracted_npcs(
     return max_num
 
 
-def seed_opening_memories(
-    game: GameState,
-    memory_updates: list[dict[str, Any]],
-    label: str = "opening_setup",
-) -> None:
+def seed_opening_memories(game: GameState, memory_updates: list[dict[str, Any]]) -> None:
     for mu in memory_updates:
         target = _find_npc_by_name(game.npcs, mu["npc_name"])
         if not target:
             continue
         event = mu["event"]
         emotional = mu["emotional_weight"]
-        imp, dbg = score_importance(emotional, event, debug=True)
+        imp = score_importance(emotional, event)
         target.memory.append(
             MemoryEntry(
                 scene=game.narrative.scene_count,
@@ -88,7 +84,6 @@ def seed_opening_memories(
                 type="observation",
                 tone="",
                 tone_key="",
-                _score_debug=f"{label} | {dbg}",
             )
         )
         target.importance_accumulator = target.importance_accumulator + imp
@@ -99,7 +94,7 @@ def apply_opening_setup(
     data: dict[str, Any],
     *,
     returning_npcs: Sequence[NpcData] = (),
-    label: str = "OpeningSetup",
+    label: str,
 ) -> None:
     skip_names: set[str] = {n.name.lower().strip() for n in returning_npcs}
     start_id = 0
@@ -124,7 +119,7 @@ def apply_opening_setup(
         else:
             log(f"[{label}] Registered {len(game.npcs)} NPCs: {[n.name for n in game.npcs]}")
 
-    seed_opening_memories(game, data["memory_updates"], label=label.lower())
+    seed_opening_memories(game, data["memory_updates"])
 
     if data["location"]:
         update_location(game, data["location"])

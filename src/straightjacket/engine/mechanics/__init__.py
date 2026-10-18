@@ -66,7 +66,6 @@ __all__ = [
     "resolve_fate",
     "resolve_fate_chart",
     "resolve_fate_check",
-    "resolve_fate_check_with_dice",
     "resolve_npc_stance",
     "resolve_position",
     "resolve_time_progression",
@@ -137,7 +136,6 @@ from .fate import (
     resolve_fate,
     resolve_fate_chart,
     resolve_fate_check,
-    resolve_fate_check_with_dice,
 )
 from .generation import current_place, generate_entity, generate_place_on_arrival, resolve_turn_facts
 from .keyed_scenes import (

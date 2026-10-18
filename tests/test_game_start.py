@@ -203,18 +203,16 @@ def test_start_new_game_seeds_thread_for_vow(load_engine: None) -> None:
     assert len(vow_threads) == 1
 
 
-def test_start_new_game_with_user_persists_content_lines(load_engine: None, tmp_path, monkeypatch) -> None:
+def test_start_new_game_keeps_the_content_lines(load_engine: None) -> None:
     from straightjacket.engine.db.connection import close_db, reset_db
     from straightjacket.engine.game.game_start import start_new_game
-
-    monkeypatch.setattr("straightjacket.engine.user_management.USERS_DIR", tmp_path)
 
     reset_db()
     provider = _SmartMockProvider()
     creation = _valid_creation_data()
     creation["content_lines"] = "no spiders, no body horror"
     try:
-        game, _ = start_new_game(provider, creation, username="testuser")
+        game, _ = start_new_game(provider, creation)
     finally:
         close_db()
     assert game.preferences.content_lines == "no spiders, no body horror"
@@ -248,7 +246,9 @@ def test_a_created_game_plays_a_turn_in_every_playable_setting(
     )
     assert assert_game_state(game, turn=0) == []
     force_miss(monkeypatch)
-    game, _narration, roll, _offer, _director = process_turn(_Provider(_brain()), game, "I slip into the vault")
+    game, _narration, roll, _offer, _director = process_turn(
+        _Provider(_brain()), game, "I slip into the vault", stream=None
+    )
 
     assert roll is not None
     assert game.narrative.scene_count == 2

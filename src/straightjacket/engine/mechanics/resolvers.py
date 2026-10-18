@@ -185,7 +185,7 @@ def resolve_effect(game: GameState, brain: BrainResult, position: str) -> str:
     return effect
 
 
-def resolve_time_progression(move: str, has_location_change: bool = False) -> str:
+def resolve_time_progression(move: str, has_location_change: bool) -> str:
     tmap = eng().get_raw("time_progression_map")
     if has_location_change:
         key = "_with_location_change"

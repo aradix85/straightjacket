@@ -60,7 +60,7 @@ def process_turn(
     provider: AIProvider,
     game: GameState,
     player_message: str,
-    stream: NarrationSink | None = None,
+    stream: NarrationSink | None,
 ) -> tuple[GameState, str, RollResult | None, BurnOffer | None, DirectorCall | None]:
     if game.game_over:
         raise RuntimeError(

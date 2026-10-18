@@ -1,6 +1,15 @@
 from __future__ import annotations
 
+import random
 from typing import Any
+
+import pytest
+
+
+def fix_dice(monkeypatch: pytest.MonkeyPatch, *rolls: int) -> None:
+    queue = list(rolls)
+    real = random.randint
+    monkeypatch.setattr(random, "randint", lambda low, high: queue.pop(0) if queue else real(low, high))
 
 
 def make_game_state(**kwargs: Any) -> Any:

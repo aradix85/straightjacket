@@ -1,81 +1,95 @@
+import pytest
+
 from straightjacket.engine.mechanics.scene import (
     SceneSetup,
     _roll_adjustments,
     adjustment_descriptions,
     check_scene,
 )
-from tests._helpers import make_game_state, make_random_event
+from tests._helpers import fix_dice, make_game_state, make_random_event
 
 
-def test_expected_when_roll_above_cf() -> None:
+def test_expected_when_roll_above_cf(monkeypatch: pytest.MonkeyPatch) -> None:
     game = make_game_state()
     game.world.chaos_factor = 5
-    setup = check_scene(game, roll=6)
+    fix_dice(monkeypatch, 6)
+    setup = check_scene(game)
     assert setup.scene_type == "expected"
 
 
-def test_expected_when_roll_is_10() -> None:
+def test_expected_when_roll_is_10(monkeypatch: pytest.MonkeyPatch) -> None:
     game = make_game_state()
     game.world.chaos_factor = 9
-    setup = check_scene(game, roll=10)
+    fix_dice(monkeypatch, 10)
+    setup = check_scene(game)
     assert setup.scene_type == "expected"
 
 
-def test_altered_when_roll_le_cf_odd() -> None:
+def test_altered_when_roll_le_cf_odd(monkeypatch: pytest.MonkeyPatch) -> None:
     game = make_game_state()
     game.world.chaos_factor = 5
-    setup = check_scene(game, roll=3)
+    fix_dice(monkeypatch, 3)
+    setup = check_scene(game)
     assert setup.scene_type == "altered"
     assert len(setup.adjustments) >= 1
 
 
-def test_interrupt_when_roll_le_cf_even() -> None:
+def test_interrupt_when_roll_le_cf_even(monkeypatch: pytest.MonkeyPatch) -> None:
     game = make_game_state()
     game.world.chaos_factor = 5
-    setup = check_scene(game, roll=4)
+    fix_dice(monkeypatch, 4)
+    setup = check_scene(game)
     assert setup.scene_type == "interrupt"
     assert setup.interrupt_event is not None
     assert setup.interrupt_event.source == "interrupt_scene"
     assert setup.interrupt_event.focus != ""
 
 
-def test_cf1_only_roll1_triggers() -> None:
+def test_cf1_only_roll1_triggers(monkeypatch: pytest.MonkeyPatch) -> None:
     game = make_game_state()
     game.world.chaos_factor = 1
-    assert check_scene(game, roll=1).scene_type == "altered"
-    assert check_scene(game, roll=2).scene_type == "expected"
+    fix_dice(monkeypatch, 1)
+    assert check_scene(game).scene_type == "altered"
+    fix_dice(monkeypatch, 2)
+    assert check_scene(game).scene_type == "expected"
 
 
-def test_cf9_most_rolls_trigger() -> None:
+def test_cf9_most_rolls_trigger(monkeypatch: pytest.MonkeyPatch) -> None:
     game = make_game_state()
     game.world.chaos_factor = 9
-    assert check_scene(game, roll=10).scene_type == "expected"
-    assert check_scene(game, roll=9).scene_type == "altered"
-    assert check_scene(game, roll=8).scene_type == "interrupt"
+    fix_dice(monkeypatch, 10)
+    assert check_scene(game).scene_type == "expected"
+    fix_dice(monkeypatch, 9)
+    assert check_scene(game).scene_type == "altered"
+    fix_dice(monkeypatch, 8)
+    assert check_scene(game).scene_type == "interrupt"
 
 
-def test_chaos_roll_stored() -> None:
+def test_chaos_roll_stored(monkeypatch: pytest.MonkeyPatch) -> None:
     game = make_game_state()
     game.world.chaos_factor = 5
-    setup = check_scene(game, roll=7)
+    fix_dice(monkeypatch, 7)
+    setup = check_scene(game)
     assert setup.chaos_roll == 7
 
 
-def test_single_adjustment() -> None:
+def test_single_adjustment(monkeypatch: pytest.MonkeyPatch) -> None:
     for roll in range(1, 7):
-        adjs = _roll_adjustments(roll)
+        fix_dice(monkeypatch, roll)
+        adjs = _roll_adjustments()
         assert len(adjs) == 1
         assert adjs[0] != "make_2_adjustments"
 
 
-def test_double_adjustment() -> None:
-    adjs = _roll_adjustments(7)
+def test_double_adjustment(monkeypatch: pytest.MonkeyPatch) -> None:
+    fix_dice(monkeypatch, 7)
+    adjs = _roll_adjustments()
     assert len(adjs) == 2
     for a in adjs:
         assert a != "make_2_adjustments"
 
 
-def test_adjustment_types() -> None:
+def test_adjustment_types(monkeypatch: pytest.MonkeyPatch) -> None:
     expected = {
         "remove_character",
         "add_character",
@@ -86,7 +100,8 @@ def test_adjustment_types() -> None:
     }
     seen = set()
     for roll in range(1, 7):
-        adjs = _roll_adjustments(roll)
+        fix_dice(monkeypatch, roll)
+        adjs = _roll_adjustments()
         seen.add(adjs[0])
     assert seen == expected
 

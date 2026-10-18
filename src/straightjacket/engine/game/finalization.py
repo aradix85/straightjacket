@@ -187,7 +187,7 @@ def apply_post_narration(
     roll: RollResult | None,
     scene_present_ids: set[str],
     activated_npc_names: list[str],
-    consequences: Sequence[str] = (),
+    consequences: Sequence[str],
     world_addition: str = "",
 ) -> dict[str, Any]:
     cons_list = list(consequences)

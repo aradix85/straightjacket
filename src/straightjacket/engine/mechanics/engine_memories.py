@@ -27,7 +27,7 @@ def generate_engine_memories(
     brain: BrainResult,
     roll: RollResult | None,
     activated_npc_ids: set[str],
-    consequences: Sequence[str] = (),
+    consequences: Sequence[str],
 ) -> list[tuple[NpcData, MemoryEntry]]:
     from ..npc.memory import score_importance
 
@@ -81,7 +81,7 @@ def generate_engine_memories(
         )
 
         emotional = derive_memory_emotion(move, result, npc.disposition)
-        importance, debug = score_importance(emotional, event_text, debug=True)
+        importance = score_importance(emotional, event_text)
 
         memories.append(
             (
@@ -95,7 +95,6 @@ def generate_engine_memories(
                     tone="",
                     tone_key="",
                     about_npc=brain.target_npc if brain.target_npc != npc.id else None,
-                    _score_debug=f"engine-generated | {debug}",
                 ),
             )
         )

@@ -12,8 +12,22 @@ from straightjacket.engine.models import (
     GameState,
     ResolvedFact,
     RollResult,
+    SceneSetup,
 )
 from tests._creation import create_game
+from tests._helpers import fix_dice
+
+
+def _chart_rolls(monkeypatch: pytest.MonkeyPatch, roll: int) -> None:
+    from straightjacket.engine.mechanics import fate
+
+    original = fate.resolve_fate_chart
+
+    def chart(odds: str, chaos_factor: int, question: str) -> FateResult:
+        fix_dice(monkeypatch, roll)
+        return original(odds, chaos_factor, question)
+
+    monkeypatch.setattr(fate, "resolve_fate_chart", chart)
 
 
 def _game() -> GameState:
@@ -202,11 +216,10 @@ def test_every_fact_input_has_an_implementation(load_engine: None) -> None:
 
 
 def test_a_doublet_queues_a_random_event(load_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:
-    from straightjacket.engine.mechanics import drain_pending_events, fate
+    from straightjacket.engine.mechanics import drain_pending_events
     from straightjacket.engine.mechanics.facts import resolve_fact
 
-    original = fate.resolve_fate_chart
-    monkeypatch.setattr(fate, "resolve_fate_chart", lambda odds, cf, question: original(odds, cf, question, roll=55))
+    _chart_rolls(monkeypatch, 55)
     drain_pending_events()
     resolve_fact(_game(), FactRequest(fact_type="locked", about="here"))
     events = drain_pending_events()
@@ -340,7 +353,12 @@ def _force(monkeypatch: pytest.MonkeyPatch, result: str, scene_roll: int = 10) -
         )
 
     monkeypatch.setattr(turn, "roll_action", _roll)
-    monkeypatch.setattr(turn, "check_scene", lambda game: scene.check_scene(game, roll=scene_roll))
+
+    def _scene_with_fixed_roll(game: GameState) -> SceneSetup:
+        fix_dice(monkeypatch, scene_roll)
+        return scene.check_scene(game)
+
+    monkeypatch.setattr(turn, "check_scene", _scene_with_fixed_roll)
 
 
 def test_the_turn_resolves_facts_at_the_place_it_moves_to(
@@ -350,7 +368,7 @@ def test_the_turn_resolves_facts_at_the_place_it_moves_to(
 
     _force(monkeypatch, "MISS")
     provider = _Provider(_brain(location_change={"name": "Archive Vault", "kind": "location"}))
-    game, _n, _r, _o, _d = process_turn(provider, _game(), "I force the vault door")
+    game, _n, _r, _o, _d = process_turn(provider, _game(), "I force the vault door", stream=None)
 
     assert [(f.fact_type, f.location) for f in game.world.facts] == [("locked", "Archive Vault")]
     assert game.last_turn_snapshot is not None
@@ -365,7 +383,7 @@ def test_a_hit_clears_the_fact_but_the_narrator_still_gets_it(
 
     _force(monkeypatch, "STRONG_HIT")
     provider = _Provider(_brain())
-    game, _n, _r, _o, _d = process_turn(provider, _game(), "I force the vault door")
+    game, _n, _r, _o, _d = process_turn(provider, _game(), "I force the vault door", stream=None)
 
     assert game.world.facts == []
     assert "<facts>" in provider.prompts[-1]
@@ -375,13 +393,11 @@ def test_a_doublet_event_reaches_the_same_turn(
     load_engine: None, stub_emotions: None, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     from straightjacket.engine.game import process_turn
-    from straightjacket.engine.mechanics import fate
 
     _force(monkeypatch, "MISS")
-    original = fate.resolve_fate_chart
-    monkeypatch.setattr(fate, "resolve_fate_chart", lambda odds, cf, question: original(odds, cf, question, roll=55))
+    _chart_rolls(monkeypatch, 55)
     provider = _Provider(_brain())
-    process_turn(provider, _game(), "I force the vault door")
+    process_turn(provider, _game(), "I force the vault door", stream=None)
 
     assert "<random_event" in provider.prompts[-1]
 
@@ -393,7 +409,7 @@ def test_an_interrupt_event_is_shown_once(
 
     _force(monkeypatch, "MISS", scene_roll=2)
     provider = _Provider(_brain(undetermined_facts=[]))
-    process_turn(provider, _game(), "I force the vault door")
+    process_turn(provider, _game(), "I force the vault door", stream=None)
 
     prompt = provider.prompts[-1]
     assert prompt.count("<interrupt_scene") == 1
@@ -419,7 +435,7 @@ def test_an_oracle_question_covered_by_a_fact_skips_the_oracle_roll(
         undetermined_facts=[{"fact_type": "occupied", "about": "here"}],
     )
     provider = _Provider(brain)
-    process_turn(provider, _game(), "Is anyone else in the library?")
+    process_turn(provider, _game(), "Is anyone else in the library?", stream=None)
 
     prompt = provider.prompts[-1]
     assert '<scene type="oracle"' in prompt
@@ -434,7 +450,7 @@ def test_a_burn_keeps_the_facts_and_clears_them_on_the_better_result(
 
     _force(monkeypatch, "MISS")
     provider = _Provider(_brain())
-    game, _n, _r, offer, _d = process_turn(provider, _game(), "I force the vault door")
+    game, _n, _r, offer, _d = process_turn(provider, _game(), "I force the vault door", stream=None)
     assert offer is not None
     assert [f.fact_type for f in game.world.facts] == ["locked"]
 
@@ -462,7 +478,7 @@ def test_a_search_that_hits_is_not_told_that_nothing_useful_is_here(
     from straightjacket.engine.game import process_turn
 
     provider = _nothing_useful_search(monkeypatch, result)
-    game, _n, _r, _o, _d = process_turn(provider, _game(), "I search the shelves")
+    game, _n, _r, _o, _d = process_turn(provider, _game(), "I search the shelves", stream=None)
 
     told = eng().fact_resolution.types["useful"].description in provider.prompts[-1]
     assert told == (result == "MISS")
@@ -475,7 +491,7 @@ def test_a_burn_to_a_hit_overrules_nothing_useful(
     from straightjacket.engine.game import process_momentum_burn, process_turn
 
     provider = _nothing_useful_search(monkeypatch, "MISS")
-    game, _n, _r, offer, _d = process_turn(provider, _game(), "I search the shelves")
+    game, _n, _r, offer, _d = process_turn(provider, _game(), "I search the shelves", stream=None)
     assert offer is not None
 
     game, _narration, _director = process_momentum_burn(provider, game, offer)
@@ -492,7 +508,7 @@ def test_a_correction_reuses_the_facts_of_the_turn(
 
     _force(monkeypatch, "MISS")
     provider = _Provider(_brain())
-    game, _n, _r, _o, _d = process_turn(provider, _game(), "I force the vault door")
+    game, _n, _r, _o, _d = process_turn(provider, _game(), "I force the vault door", stream=None)
     first = list(game.world.facts)
 
     game, _narration, _offer, _director = process_correction(provider, game, "I meant with force")
@@ -536,7 +552,7 @@ def test_a_target_that_is_not_present_leaves_the_scene(
             undetermined_facts=[{"fact_type": "present", "about": "npc_1"}],
         )
     )
-    game, _n, _r, _o, _d = process_turn(provider, _game(), "I look for Mira among the stacks")
+    game, _n, _r, _o, _d = process_turn(provider, _game(), "I look for Mira among the stacks", stream=None)
 
     assert game.last_turn_snapshot is not None
     assert game.last_turn_snapshot.brain is not None

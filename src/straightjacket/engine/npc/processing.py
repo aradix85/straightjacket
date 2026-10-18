@@ -44,7 +44,7 @@ def process_npc_renames(game: "GameState", renames: list[Any]) -> None:
         if _is_player_collision(normalize_for_match(new_name), player_norm, set(player_norm.split())):
             log(f"[NPC] Rename rejected: '{new_name}' matches player character")
             continue
-        merge_npc_identity(npc, new_name, "", game=game)
+        merge_npc_identity(npc, new_name, game=game)
         absorb_duplicate_npc(game, npc, new_name)
 
 
@@ -151,7 +151,7 @@ def _process_one_npc_detail(game: "GameState", d: dict[str, Any], world_addition
         _apply_description_updates(npc, d)
 
 
-def process_npc_details(game: "GameState", details: list[Any], world_addition: str = "") -> None:
+def process_npc_details(game: "GameState", details: list[Any], world_addition: str) -> None:
     for d in details:
         _process_one_npc_detail(game, d, world_addition)
 
@@ -252,8 +252,7 @@ def _create_new_npc(game: "GameState", nd: dict[str, Any]) -> NpcData:
 def _seed_initial_memory(game: "GameState", npc: NpcData, nd: dict[str, Any]) -> None:
     seed_event = nd["description"] or eng().ai_text.narrator_defaults["npc_appeared_event"].format(npc_name=npc.name)
     seed_emotion = eng().get_raw("disposition_to_seed_emotion")[nd["disposition"]]
-    seed_imp, seed_debug = score_importance(seed_emotion, seed_event, debug=True)
-    seed_imp = max(seed_imp, eng().npc.seed_importance_floor)
+    seed_imp = max(score_importance(seed_emotion, seed_event), eng().npc.seed_importance_floor)
     npc.memory.append(
         MemoryEntry(
             scene=game.narrative.scene_count,
@@ -263,7 +262,6 @@ def _seed_initial_memory(game: "GameState", npc: NpcData, nd: dict[str, Any]) ->
             type="observation",
             tone="",
             tone_key="",
-            _score_debug=f"auto-seed from new_npcs | {seed_debug}",
         )
     )
 

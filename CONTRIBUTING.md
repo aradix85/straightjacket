@@ -7,8 +7,9 @@ How to change Straightjacket: the workflow, the rules every change keeps, the co
 1. `ruff check --fix src/ tests/` and `ruff format src/ tests/`: must be clean.
 2. `python -m pytest tests/ -q --cov`: every test passes, and total coverage stays at or above `fail_under` in `pyproject.toml` (`[tool.coverage.report]`). When the total passes the next whole percent, raise `fail_under` to it; never lower it.
 3. `mypy src/ --config-file pyproject.toml`: must be clean.
-4. A change to the turn pipeline, AI calls, prompts, or configuration first gets a short Elvira run (8 to 20 turns, `docs/elvira.md`), and every engine warning in its report is a finding.
-5. One CHANGELOG entry per finished piece of work, not one per measurement, and only after its checks have been read: what changed, why, what was measured, and the quality gate, in a few sentences. The version in `pyproject.toml` matches the newest entry.
+4. Read the whole diff back before the commit, after every substep, and fix what it finds: no new default or parameter for tests, no broad except, no guard against a state that cannot occur, no dead branch or symbol, nothing that copies what already exists, nothing illogical or unclear, every caller and every document the change touches updated, and for every fix a test that fails without it. A green suite does not replace this reading, since tests written beside the code share its blind spots.
+5. A change to the turn pipeline, AI calls, prompts, or configuration first gets a short Elvira run (8 to 20 turns, `docs/elvira.md`), and every engine warning in its report is a finding.
+6. One CHANGELOG entry per finished piece of work, not one per measurement, and only after its checks have been read: what changed, why, what was measured, and the quality gate, in a few sentences. The version in `pyproject.toml` matches the newest entry.
 
 An outside contributor forks, branches, and opens a pull request that says what changed and why. The maintainer's sessions commit each finished release to main and push it.
 

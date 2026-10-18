@@ -1,3 +1,5 @@
+import pytest
+
 from straightjacket.engine.mechanics.random_events import (
     _select_target,
     add_character_weight,
@@ -12,13 +14,14 @@ from straightjacket.engine.models import (
     RandomEvent,
     ThreadEntry,
 )
-from tests._helpers import make_fate_result, make_game_state, make_random_event
+from tests._helpers import fix_dice, make_fate_result, make_game_state, make_random_event
 
 
-def test_event_focus_covers_full_range() -> None:
+def test_event_focus_covers_full_range(monkeypatch: pytest.MonkeyPatch) -> None:
     seen: set[str] = set()
     for roll in range(1, 101):
-        focus, actual_roll = roll_event_focus(roll)
+        fix_dice(monkeypatch, roll)
+        focus, actual_roll = roll_event_focus()
         assert focus != "", f"roll {roll} produced empty focus"
         assert actual_roll == roll
         seen.add(focus)
@@ -26,14 +29,21 @@ def test_event_focus_covers_full_range() -> None:
     assert len(seen) == 12
 
 
-def test_event_focus_boundary_values() -> None:
-    assert roll_event_focus(1)[0] == "remote_event"
-    assert roll_event_focus(5)[0] == "remote_event"
-    assert roll_event_focus(6)[0] == "ambiguous_event"
-    assert roll_event_focus(21)[0] == "npc_action"
-    assert roll_event_focus(40)[0] == "npc_action"
-    assert roll_event_focus(86)[0] == "current_context"
-    assert roll_event_focus(100)[0] == "current_context"
+def test_event_focus_boundary_values(monkeypatch: pytest.MonkeyPatch) -> None:
+    fix_dice(monkeypatch, 1)
+    assert roll_event_focus()[0] == "remote_event"
+    fix_dice(monkeypatch, 5)
+    assert roll_event_focus()[0] == "remote_event"
+    fix_dice(monkeypatch, 6)
+    assert roll_event_focus()[0] == "ambiguous_event"
+    fix_dice(monkeypatch, 21)
+    assert roll_event_focus()[0] == "npc_action"
+    fix_dice(monkeypatch, 40)
+    assert roll_event_focus()[0] == "npc_action"
+    fix_dice(monkeypatch, 86)
+    assert roll_event_focus()[0] == "current_context"
+    fix_dice(monkeypatch, 100)
+    assert roll_event_focus()[0] == "current_context"
 
 
 def test_meaning_table_actions_returns_pair() -> None:
@@ -143,7 +153,7 @@ def test_generate_random_event_empty_lists() -> None:
     assert event.meaning_action != ""
 
 
-def test_fate_doublet_generates_random_event(load_engine: None) -> None:
+def test_fate_doublet_generates_random_event(load_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:
     from straightjacket.engine.mechanics.fate import resolve_fate_chart
     from straightjacket.engine.mechanics.random_events import generate_random_event
 
@@ -153,7 +163,8 @@ def test_fate_doublet_generates_random_event(load_engine: None) -> None:
         CharacterListEntry(id="c1", name="Kira", weight=1, active=True, entry_type="npc"),
     ]
 
-    chart_result = resolve_fate_chart("fifty_fifty", chaos_factor=5, roll=33, question="")
+    fix_dice(monkeypatch, 33)
+    chart_result = resolve_fate_chart("fifty_fifty", chaos_factor=5, question="")
     assert chart_result.random_event_triggered is True
 
     event = generate_random_event(game, source="fate_doublet")
@@ -161,10 +172,11 @@ def test_fate_doublet_generates_random_event(load_engine: None) -> None:
     assert event.focus != ""
 
 
-def test_fate_no_doublet_no_event(load_engine: None) -> None:
+def test_fate_no_doublet_no_event(load_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:
     from straightjacket.engine.mechanics.fate import resolve_fate_chart
 
-    result = resolve_fate_chart("fifty_fifty", chaos_factor=5, roll=34, question="")
+    fix_dice(monkeypatch, 34)
+    result = resolve_fate_chart("fifty_fifty", chaos_factor=5, question="")
     assert result.random_event_triggered is False
     assert result.random_event is None
 

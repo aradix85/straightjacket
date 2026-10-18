@@ -25,7 +25,7 @@ def test_compel_strong_hit_marks_no_bond_and_no_disposition_shift(load_engine: N
     game.progress_tracks.append(
         make_progress_track(id="connection_npc_1", name="Test", track_type="connection", rank="dangerous", ticks=0)
     )
-    resolve_move_outcome(game, "adventure/compel", "STRONG_HIT", target_npc_id="npc_1")
+    resolve_move_outcome(game, "adventure/compel", "STRONG_HIT", target_npc_id="npc_1", match=False)
     conn = next(t for t in game.progress_tracks if t.id == "connection_npc_1")
     assert conn.ticks == 0
     assert npc.disposition == "neutral"
@@ -40,7 +40,9 @@ def test_test_bond_disposition_shift(load_engine: None) -> None:
     game.progress_tracks.append(
         make_progress_track(id="connection_npc_1", name="Test", track_type="connection", rank="dangerous", ticks=0)
     )
-    outcome = resolve_move_outcome(game, "connection/test_your_relationship", "STRONG_HIT", target_npc_id="npc_1")
+    outcome = resolve_move_outcome(
+        game, "connection/test_your_relationship", "STRONG_HIT", target_npc_id="npc_1", match=False
+    )
     conn = next(t for t in game.progress_tracks if t.id == "connection_npc_1")
     assert outcome.chained_move == "connection/develop_your_relationship"
     assert conn.ticks == 0
@@ -201,7 +203,7 @@ def test_an_engine_rolled_name_is_not_replaced_by_one_without_overlap() -> None:
     )
     game.npcs.append(npc)
 
-    process_npc_details(game, [make_npc_detail(npc_id="npc_1", full_name="Klaus Kinski")])
+    process_npc_details(game, [make_npc_detail(npc_id="npc_1", full_name="Klaus Kinski")], world_addition="")
     assert npc.name == "Theo"
 
     stub = next((n for n in game.npcs if n.name == "Klaus Kinski"), None)
@@ -215,7 +217,7 @@ def test_memory_guard_allows_no_memories() -> None:
     game = make_game_state()
     npc = make_npc(id="npc_1", name="Der Fremde", status="active")
     game.npcs.append(npc)
-    process_npc_details(game, [make_npc_detail(npc_id="npc_1", full_name="Heinrich Blum")])
+    process_npc_details(game, [make_npc_detail(npc_id="npc_1", full_name="Heinrich Blum")], world_addition="")
     assert npc.name == "Heinrich Blum"
 
 
@@ -226,7 +228,7 @@ def test_social_move_unresolved_target_skips_bond(load_engine: None) -> None:
     npc = make_npc(id="npc_1", name="Test", disposition="neutral")
     game.npcs.append(npc)
 
-    resolve_move_outcome(game, "adventure/compel", "STRONG_HIT", target_npc_id="nonexistent")
+    resolve_move_outcome(game, "adventure/compel", "STRONG_HIT", target_npc_id="nonexistent", match=False)
     assert npc.disposition == "neutral"
 
 

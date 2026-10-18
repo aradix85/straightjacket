@@ -157,19 +157,19 @@ def test_effect_strike_baseline(stub_engine: None) -> None:
 def test_time_progression_dialog_is_none(stub_engine: None) -> None:
     from straightjacket.engine.mechanics import resolve_time_progression
 
-    assert resolve_time_progression("dialog") == "none"
+    assert resolve_time_progression("dialog", has_location_change=False) == "none"
 
 
 def test_time_progression_gather_is_short(stub_engine: None) -> None:
     from straightjacket.engine.mechanics import resolve_time_progression
 
-    assert resolve_time_progression("adventure/gather_information") == "short"
+    assert resolve_time_progression("adventure/gather_information", has_location_change=False) == "short"
 
 
 def test_time_progression_resupply_is_moderate(stub_engine: None) -> None:
     from straightjacket.engine.mechanics import resolve_time_progression
 
-    assert resolve_time_progression("recover/resupply") == "moderate"
+    assert resolve_time_progression("recover/resupply", has_location_change=False) == "moderate"
 
 
 def test_time_progression_location_change_is_long(stub_engine: None) -> None:
@@ -181,7 +181,7 @@ def test_time_progression_location_change_is_long(stub_engine: None) -> None:
 def test_time_progression_unknown_move_uses_default(stub_engine: None) -> None:
     from straightjacket.engine.mechanics import resolve_time_progression
 
-    assert resolve_time_progression("unknown_move") == "short"
+    assert resolve_time_progression("unknown_move", has_location_change=False) == "short"
 
 
 def test_locations_match_identical() -> None:

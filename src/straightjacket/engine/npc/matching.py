@@ -145,13 +145,13 @@ def find_npc(game: "GameState", npc_ref: str | None) -> NpcData | None:
     return substring_match
 
 
-def resolve_about_npc(game: "GameState", raw: str | None, owner_id: str | None = None) -> str | None:
+def resolve_about_npc(game: "GameState", raw: str, owner_id: str) -> str | None:
     if not raw:
         return None
     npc = find_npc(game, raw)
     if npc:
         resolved = npc.id
-        if owner_id and resolved == owner_id:
+        if resolved == owner_id:
             log(f"[NPC] about_npc self-reference rejected (owner={owner_id}, raw='{raw}')")
             return None
         if resolved != raw:

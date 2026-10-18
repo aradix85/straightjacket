@@ -27,7 +27,7 @@ def locations_match(loc_a: str, loc_b: str) -> bool:
     return shorter[0] == longer[0]
 
 
-def update_chaos_factor(game: GameState, result: str, target_npc_id: str | None = None) -> None:
+def update_chaos_factor(game: GameState, result: str, target_npc_id: str | None) -> None:
     _e = eng()
     _c = _e.chaos
     if result == "MISS":

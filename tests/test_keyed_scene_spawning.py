@@ -366,7 +366,7 @@ def test_generate_random_event_invokes_spawner():
     )
     random.seed(42)
     pre_count = len(game.narrative.keyed_scenes)
-    generate_random_event(game)
+    generate_random_event(game, source="")
     assert len(game.narrative.keyed_scenes) >= pre_count
 
 

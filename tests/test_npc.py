@@ -204,15 +204,15 @@ def test_resolve_about_npc_valid(stub_engine: None) -> None:
 def test_score_importance_direct(stub_engine: None, stub_emotions: None) -> None:
     from straightjacket.engine.npc.memory import score_importance
 
-    assert score_importance("neutral") == 2
-    assert score_importance("terrified") == 7
-    assert score_importance("transformed") == 10
+    assert score_importance("neutral", event_text="") == 2
+    assert score_importance("terrified", event_text="") == 7
+    assert score_importance("transformed", event_text="") == 10
 
 
 def test_score_importance_compound(stub_engine: None, stub_emotions: None) -> None:
     from straightjacket.engine.npc.memory import score_importance
 
-    score = score_importance("angry_terrified")
+    score = score_importance("angry_terrified", event_text="")
     assert score >= 7
 
 
@@ -221,14 +221,6 @@ def test_score_importance_keyword_boost(stub_engine: None, stub_emotions: None) 
 
     score = score_importance("neutral", "witnessed a death")
     assert score >= 7
-
-
-def test_score_importance_debug(stub_engine: None, stub_emotions: None) -> None:
-    from straightjacket.engine.npc.memory import score_importance
-
-    score, debug = score_importance("angry", "helped a friend", debug=True)
-    assert isinstance(debug, str)
-    assert score >= 5
 
 
 def test_consolidate_memory_under_limit(stub_engine: None, stub_emotions: None) -> None:
@@ -318,7 +310,7 @@ def test_merge_npc_identity(stub_engine: None) -> None:
     from straightjacket.engine.npc.lifecycle import merge_npc_identity
 
     npc = make_npc(id="npc_1", name="Old Man", disposition="neutral")
-    merge_npc_identity(npc, "Professor Heinrich")
+    merge_npc_identity(npc, "Professor Heinrich", game=make_game_state(npcs=[npc]))
     assert npc.name == "Professor Heinrich"
     assert "Old Man" in npc.aliases
 
@@ -327,7 +319,7 @@ def test_merge_npc_identity_same_name_skipped(stub_engine: None) -> None:
     from straightjacket.engine.npc.lifecycle import merge_npc_identity
 
     npc = make_npc(id="npc_1", name="Kira", disposition="neutral")
-    merge_npc_identity(npc, "Kira")
+    merge_npc_identity(npc, "Kira", game=make_game_state(npcs=[npc]))
     assert npc.name == "Kira"
     assert npc.aliases == []
 
@@ -485,7 +477,7 @@ def test_process_npc_details_extends_surname(stub_engine: None) -> None:
 
     game = _make_game()
 
-    process_npc_details(game, [make_npc_detail(npc_id="npc_2", full_name="Old Borin Ironhand")])
+    process_npc_details(game, [make_npc_detail(npc_id="npc_2", full_name="Old Borin Ironhand")], world_addition="")
 
     npc = next(n for n in game.npcs if n.id == "npc_2")
     assert npc.name == "Old Borin Ironhand"
@@ -500,6 +492,7 @@ def test_process_npc_details_updates_description(stub_engine: None) -> None:
     process_npc_details(
         game,
         [make_npc_detail(npc_id="npc_2", description="Grumpy dwarf blacksmith with burn scars, secretly loyal.")],
+        world_addition="",
     )
 
     npc = next(n for n in game.npcs if n.id == "npc_2")

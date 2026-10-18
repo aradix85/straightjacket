@@ -1,4 +1,6 @@
-from tests._helpers import make_brain_result, make_clock, make_memory, make_npc
+import pytest
+
+from tests._helpers import fix_dice, make_brain_result, make_clock, make_memory, make_npc
 
 import sys
 import json
@@ -167,6 +169,7 @@ def test_turn_action_produces_narration(load_engine: None) -> None:
         provider,
         game,
         "I search the room for clues",
+        stream=None,
     )
 
     assert game.narrative.scene_count == initial_scene + 1
@@ -211,7 +214,7 @@ def test_a_turn_ends_the_act_at_its_last_scene_without_the_director(load_engine:
     )
 
     game, _narration, _roll, _burn_info, _director_ctx = process_turn(
-        MockProvider(), game, "I search the room for clues"
+        MockProvider(), game, "I search the room for clues", stream=None
     )
 
     assert game.narrative.scene_count == 2
@@ -265,6 +268,7 @@ def test_turn_dialog_skips_roll(load_engine: None) -> None:
         provider,
         game,
         "I talk to Mira",
+        stream=None,
     )
 
     assert roll is None
@@ -279,12 +283,12 @@ def test_turn_consequences_applied_on_miss(load_engine: None) -> None:
 
     game = _make_game()
 
-    result = resolve_move_outcome(game, "adventure/face_danger", "MISS")
+    result = resolve_move_outcome(game, "adventure/face_danger", "MISS", target_npc_id=None, match=False)
 
     assert result.pay_the_price is True
 
 
-def test_scene_test_produces_three_types(load_engine: None) -> None:
+def test_scene_test_produces_three_types(load_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:
     from straightjacket.engine.mechanics.scene import check_scene
 
     game = _make_game()
@@ -292,7 +296,8 @@ def test_scene_test_produces_three_types(load_engine: None) -> None:
 
     def scene_type(roll: int) -> str:
         game.narrative.keyed_scenes = []
-        return check_scene(game, roll=roll).scene_type
+        fix_dice(monkeypatch, roll)
+        return check_scene(game).scene_type
 
     assert [scene_type(roll) for roll in (10, 9, 8)] == ["expected", "altered", "interrupt"]
 
@@ -747,7 +752,7 @@ def test_dialog_turn_runs_npc_agency_on_interval_scene(load_engine: None) -> Non
         npc.status = "active"
         npc.agenda = "Keep the archive sealed"
     game.narrative.scene_count = eng().pacing.npc_agency_interval - 1
-    process_turn(provider, game, "I talk to Mira")
+    process_turn(provider, game, "I talk to Mira", stream=None)
     prompts = [
         message["content"]
         for call in provider.calls

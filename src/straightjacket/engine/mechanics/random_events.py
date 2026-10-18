@@ -23,19 +23,15 @@ def drain_pending_events() -> list[RandomEvent]:
     return events
 
 
-def roll_event_focus(roll: int | None = None) -> tuple[str, int]:
-    data = _load_mythic()
-    table = data["event_focus"]
-
-    die = eng().dice.event_focus_die
-    if roll is None:
-        roll = random.randint(1, die)
+def roll_event_focus() -> tuple[str, int]:
+    table = _load_mythic()["event_focus"]
+    roll = random.randint(1, eng().dice.event_focus_die)
 
     for entry in table:
         if entry["min"] <= roll <= entry["max"]:
             return entry["focus"], roll
 
-    raise ValueError(f"event_focus table has no entry covering roll={roll}; table must span 1..{die}")
+    raise ValueError(f"event_focus table has no entry covering roll={roll}")
 
 
 def roll_meaning_table(table_name: str) -> tuple[str, str]:
@@ -93,7 +89,7 @@ def _select_target(focus: str, game: GameState) -> tuple[str, str]:
     return "", ""
 
 
-def generate_random_event(game: GameState, source: str = "") -> RandomEvent:
+def generate_random_event(game: GameState, source: str) -> RandomEvent:
     cfg = eng().random_events
 
     focus, focus_roll = roll_event_focus()

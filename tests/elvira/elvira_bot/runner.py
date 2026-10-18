@@ -345,7 +345,7 @@ def _setup_game(
     creation_data = roll_character(game_cfg["setting_id"], game_cfg)
 
     try:
-        game, narration = start_new_game(provider, creation_data, username)
+        game, narration = start_new_game(provider, creation_data)
     except Exception as e:
         print(f"[ERROR] start_new_game failed: {e}")
         traceback.print_exc()
@@ -813,7 +813,7 @@ def _chapter_transition(
 
     print(f"\n{SEPARATOR}\n  STARTING CHAPTER {chapter_num + 1}\n{SEPARATOR}")
     try:
-        game, narration = start_new_chapter(provider, game, username)
+        game, narration = start_new_chapter(provider, game)
         chat_messages = [{"role": "assistant", "content": narration}]
         print(f"  [CHAPTER] Chapter {game.campaign.chapter_number} at {game.world.current_location}")
         return game, narration, chat_messages, False

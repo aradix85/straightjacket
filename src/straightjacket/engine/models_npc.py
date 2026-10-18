@@ -15,7 +15,6 @@ class MemoryEntry(SerializableMixin):
     tone: str = ""
     tone_key: str = ""
     about_npc: str | None = None
-    _score_debug: str = ""
 
 
 @dataclass

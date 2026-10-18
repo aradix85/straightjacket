@@ -43,30 +43,6 @@ def get_save_dir(username: str) -> Path:
     return _get_user_dir(username) / "saves"
 
 
-def _get_user_config_file(username: str) -> Path:
-    return _get_user_dir(username) / "settings.json"
-
-
-def load_user_config(username: str) -> dict[str, Any]:
-    cfg_file = _get_user_config_file(username)
-    if not cfg_file.exists():
-        return {}
-    try:
-        result: dict[str, Any] = json.loads(cfg_file.read_text(encoding="utf-8"))
-        return result
-    except (json.JSONDecodeError, OSError) as e:
-        log(f"[UserMgmt] load_user_config('{username}') failed: {e}", level="warning")
-        return {}
-
-
-def save_user_config(username: str, cfg: dict[str, Any]) -> None:
-    cfg_file = _get_user_config_file(username)
-    try:
-        cfg_file.write_text(json.dumps(cfg, indent=2, ensure_ascii=False), encoding="utf-8")
-    except OSError as e:
-        log(f"[UserMgmt] save_user_config('{username}') failed: {e}", level="warning")
-
-
 def list_users() -> list[dict[str, Any]]:
     users = []
     if USERS_DIR.exists():

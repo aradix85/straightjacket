@@ -7,6 +7,8 @@ from pathlib import Path
 import pytest
 import yaml
 
+from tests._helpers import fix_dice
+
 REPO = Path(__file__).resolve().parent.parent
 GAIN = re.compile(r"take \+(\d) momentum", re.I)
 LOSS = re.compile(r"(?:suffer|lose) -(\d) momentum", re.I)
@@ -75,19 +77,23 @@ def test_unconditional_momentum_matches_the_rulebooks(load_engine: None) -> None
     ],
 )
 def test_fate_check_follows_mythic_2e(
-    load_engine: None, dice: tuple[int, int], odds: str, chaos: int, expected: str
+    load_engine: None, dice: tuple[int, int], odds: str, chaos: int, expected: str, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    from straightjacket.engine.mechanics.fate import resolve_fate_check_with_dice
+    from straightjacket.engine.mechanics.fate import resolve_fate_check
 
-    assert resolve_fate_check_with_dice(odds, chaos, "q", dice).answer == expected
+    fix_dice(monkeypatch, *dice)
+    assert resolve_fate_check(odds, chaos, "q").answer == expected
 
 
-def test_fate_check_random_event_needs_doubles_within_chaos(load_engine: None) -> None:
-    from straightjacket.engine.mechanics.fate import resolve_fate_check_with_dice
+def test_fate_check_random_event_needs_doubles_within_chaos(load_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:
+    from straightjacket.engine.mechanics.fate import resolve_fate_check
 
-    assert resolve_fate_check_with_dice("fifty_fifty", 5, "q", (4, 4)).random_event_triggered
-    assert not resolve_fate_check_with_dice("fifty_fifty", 5, "q", (6, 6)).random_event_triggered
-    assert not resolve_fate_check_with_dice("fifty_fifty", 5, "q", (4, 3)).random_event_triggered
+    fix_dice(monkeypatch, *(4, 4))
+    assert resolve_fate_check("fifty_fifty", 5, "q").random_event_triggered
+    fix_dice(monkeypatch, *(6, 6))
+    assert not resolve_fate_check("fifty_fifty", 5, "q").random_event_triggered
+    fix_dice(monkeypatch, *(4, 3))
+    assert not resolve_fate_check("fifty_fifty", 5, "q").random_event_triggered
 
 
 def test_fate_chart_has_the_mythic_2e_shape(load_engine: None) -> None:
@@ -108,14 +114,17 @@ def test_event_focus_table_is_mythic_2e(load_engine: None) -> None:
 
 
 @pytest.mark.parametrize(("roll", "expected"), [(10, "expected"), (6, "expected"), (3, "altered"), (4, "interrupt")])
-def test_scene_test_follows_mythic_2e(load_engine: None, roll: int, expected: str) -> None:
+def test_scene_test_follows_mythic_2e(
+    load_engine: None, roll: int, expected: str, monkeypatch: pytest.MonkeyPatch
+) -> None:
     from straightjacket.engine.mechanics.scene import check_scene
     from tests._helpers import make_game_state
 
     game = make_game_state()
     game.world.chaos_factor = 5
     game.narrative.keyed_scenes = []
-    assert check_scene(game, roll=roll).scene_type.startswith(expected)
+    fix_dice(monkeypatch, roll)
+    assert check_scene(game).scene_type.startswith(expected)
 
 
 @pytest.mark.parametrize(("setting", "expected"), [("classic", 1), ("starforged", 2)])
@@ -125,7 +134,7 @@ def test_secure_an_advantage_weak_hit_follows_each_rulebook(load_engine: None, s
 
     game = make_game_state(setting_id=setting)
     game.resources.momentum = 0
-    resolve_move_outcome(game, "adventure/secure_an_advantage", "WEAK_HIT")
+    resolve_move_outcome(game, "adventure/secure_an_advantage", "WEAK_HIT", target_npc_id=None, match=False)
     assert game.resources.momentum == expected
 
 
@@ -153,7 +162,7 @@ def test_endure_harm_follows_each_rulebook(
     game.resources.health = health
     game.resources.momentum = 2
     game.impacts = []
-    resolve_move_outcome(game, "suffer/endure_harm", result)
+    resolve_move_outcome(game, "suffer/endure_harm", result, target_npc_id=None, match=False)
     assert (game.resources.health, game.resources.momentum) == expected
 
 
@@ -167,7 +176,7 @@ def test_fulfill_your_vow_weak_hit_rewards_one_rank_lower(
     from tests._helpers import make_brain_result, make_game_state, make_progress_track
 
     game = make_game_state(setting_id="starforged")
-    outcome = resolve_move_outcome(game, "quest/fulfill_your_vow", "WEAK_HIT")
+    outcome = resolve_move_outcome(game, "quest/fulfill_your_vow", "WEAK_HIT", target_npc_id=None, match=False)
     apply_progress_and_legacy(game, outcome, make_brain_result(), make_progress_track(rank=vow_rank))
     assert get_legacy_track(game, "quests").ticks == expected_ticks
 
@@ -190,7 +199,7 @@ def test_classic_fulfill_your_vow_marks_experience_by_rank(
     from tests._helpers import make_brain_result, make_game_state, make_progress_track
 
     game = make_game_state(setting_id="classic")
-    outcome = resolve_move_outcome(game, "quest/fulfill_your_vow", result)
+    outcome = resolve_move_outcome(game, "quest/fulfill_your_vow", result, target_npc_id=None, match=False)
     apply_progress_and_legacy(game, outcome, make_brain_result(), make_progress_track(rank=vow_rank))
     assert game.campaign.xp == expected_xp
     assert get_legacy_track(game, "quests").ticks == 0
@@ -203,7 +212,9 @@ def test_develop_your_relationship_marks_two_bonds_ticks(load_engine: None) -> N
     from tests._helpers import make_brain_result, make_game_state
 
     game = make_game_state(setting_id="starforged")
-    outcome = resolve_move_outcome(game, "connection/develop_your_relationship", "STRONG_HIT")
+    outcome = resolve_move_outcome(
+        game, "connection/develop_your_relationship", "STRONG_HIT", target_npc_id=None, match=False
+    )
     apply_progress_and_legacy(game, outcome, make_brain_result(), None)
     assert get_legacy_track(game, "bonds").ticks == 2
 
@@ -216,7 +227,7 @@ def test_a_strike_marks_progress_on_the_open_fight(load_engine: None, setting_id
 
     game = make_game_state(setting_id=setting_id)
     game.progress_tracks.append(make_progress_track(id="combat_raider", name="Raider", track_type="combat"))
-    outcome = resolve_move_outcome(game, "combat/strike", "STRONG_HIT")
+    outcome = resolve_move_outcome(game, "combat/strike", "STRONG_HIT", target_npc_id=None, match=False)
     apply_progress_and_legacy(game, outcome, make_brain_result(move="combat/strike"), None)
     assert game.progress_tracks[-1].ticks > 0
 
@@ -239,7 +250,7 @@ def test_make_a_connection_gives_no_momentum(load_engine: None) -> None:
 
     game = make_game_state(setting_id="starforged")
     game.resources.momentum = 2
-    resolve_move_outcome(game, "connection/make_a_connection", "WEAK_HIT")
+    resolve_move_outcome(game, "connection/make_a_connection", "WEAK_HIT", target_npc_id=None, match=False)
     assert game.resources.momentum == 2
 
 
@@ -441,7 +452,9 @@ def test_enter_the_fray_miss_pays_the_price_only_in_classic(load_engine: None, s
     from straightjacket.engine.mechanics.move_outcome import resolve_move_outcome
     from tests._helpers import make_game_state
 
-    outcome = resolve_move_outcome(make_game_state(setting_id=setting), "combat/enter_the_fray", "MISS")
+    outcome = resolve_move_outcome(
+        make_game_state(setting_id=setting), "combat/enter_the_fray", "MISS", target_npc_id=None, match=False
+    )
     assert outcome.pay_the_price is pays
 
 
@@ -482,7 +495,9 @@ def test_scene_challenge_match_outcomes(
     from straightjacket.engine.mechanics.move_outcome import resolve_move_outcome
     from tests._helpers import make_game_state
 
-    outcome = resolve_move_outcome(make_game_state(setting_id="starforged"), move, result, match=match)
+    outcome = resolve_move_outcome(
+        make_game_state(setting_id="starforged"), move, result, match=match, target_npc_id=None
+    )
     assert (outcome.progress_marks, outcome.clock_fills) == (progress, clock)
 
 
@@ -577,5 +592,5 @@ def test_lasting_harm_uses_each_rulebooks_names(
     track = "health" if move.endswith("harm") else "spirit"
     setattr(game.resources, track, 0)
     game.impacts = [first]
-    resolve_move_outcome(game, move, "MISS")
+    resolve_move_outcome(game, move, "MISS", target_npc_id=None, match=False)
     assert lasting in game.impacts

@@ -317,56 +317,58 @@ class TestResolveOutcome:
         ],
     )
     def test_simple_outcomes(self, game_real: GameState, move: str, result_type: str, check_fn: object) -> None:
-        result = resolve_move_outcome(game_real, move, result_type)
+        result = resolve_move_outcome(game_real, move, result_type, target_npc_id=None, match=False)
         assert check_fn(game_real, result)
 
     def test_strike_strong_hit_position(self, game_real: GameState) -> None:
-        result = resolve_move_outcome(game_real, "combat/strike", "STRONG_HIT")
+        result = resolve_move_outcome(game_real, "combat/strike", "STRONG_HIT", target_npc_id=None, match=False)
         assert result.combat_position == "in_control"
         assert result.progress_marks == 2
 
     def test_strike_weak_hit_bad_spot(self, game_real: GameState) -> None:
-        result = resolve_move_outcome(game_real, "combat/strike", "WEAK_HIT")
+        result = resolve_move_outcome(game_real, "combat/strike", "WEAK_HIT", target_npc_id=None, match=False)
         assert result.combat_position == "bad_spot"
         assert result.progress_marks == 2
 
     def test_enter_fray_strong_hit(self, game_real: GameState) -> None:
-        result = resolve_move_outcome(game_real, "combat/enter_the_fray", "STRONG_HIT")
+        result = resolve_move_outcome(game_real, "combat/enter_the_fray", "STRONG_HIT", target_npc_id=None, match=False)
         assert game_real.resources.momentum == 4
         assert result.combat_position == "in_control"
 
     def test_endure_harm_handler(self, game_real: GameState) -> None:
         game_real.resources.health = 3
-        resolve_move_outcome(game_real, "suffer/endure_harm", "STRONG_HIT")
+        resolve_move_outcome(game_real, "suffer/endure_harm", "STRONG_HIT", target_npc_id=None, match=False)
         assert game_real.resources.health == 4
 
     def test_endure_stress_handler(self, game_real: GameState) -> None:
         game_real.resources.spirit = 3
-        resolve_move_outcome(game_real, "suffer/endure_stress", "STRONG_HIT")
+        resolve_move_outcome(game_real, "suffer/endure_stress", "STRONG_HIT", target_npc_id=None, match=False)
         assert game_real.resources.spirit == 4
 
     def test_face_death_miss(self, game_real: GameState) -> None:
-        resolve_move_outcome(game_real, "threshold/face_death", "MISS")
+        resolve_move_outcome(game_real, "threshold/face_death", "MISS", target_npc_id=None, match=False)
         assert game_real.game_over is True
 
     def test_heal_strong_hit(self, game_real: GameState) -> None:
         game_real.resources.health = 2
-        resolve_move_outcome(game_real, "recover/heal", "STRONG_HIT")
+        resolve_move_outcome(game_real, "recover/heal", "STRONG_HIT", target_npc_id=None, match=False)
         assert game_real.resources.health == 5
 
     def test_scene_challenge_face_danger_weak_hit(self, game_real: GameState) -> None:
-        result = resolve_move_outcome(game_real, "scene_challenge/face_danger", "WEAK_HIT")
+        result = resolve_move_outcome(
+            game_real, "scene_challenge/face_danger", "WEAK_HIT", target_npc_id=None, match=False
+        )
         assert result.progress_marks == 1
         assert result.clock_fills == 1
 
     @pytest.mark.parametrize("move", ["adventure/gather_information", "adventure/compel"])
     def test_weak_hit_names_its_complication(self, game_real: GameState, move: str) -> None:
-        weak = resolve_move_outcome(game_real, move, "WEAK_HIT")
-        strong = resolve_move_outcome(game_real, move, "STRONG_HIT")
+        weak = resolve_move_outcome(game_real, move, "WEAK_HIT", target_npc_id=None, match=False)
+        strong = resolve_move_outcome(game_real, move, "STRONG_HIT", target_npc_id=None, match=False)
         kind = move.split("/")[1]
         assert f"complication {kind}" in weak.consequences
         assert not any(c.startswith("complication") for c in strong.consequences)
 
     def test_unknown_move_raises(self, game_real: GameState) -> None:
         with pytest.raises(ValueError, match="No outcome config"):
-            resolve_move_outcome(game_real, "nonexistent/move", "STRONG_HIT")
+            resolve_move_outcome(game_real, "nonexistent/move", "STRONG_HIT", target_npc_id=None, match=False)

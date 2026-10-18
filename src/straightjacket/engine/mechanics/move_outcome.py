@@ -8,7 +8,7 @@ from .move_handlers import apply_recovery_handler, apply_suffer_handler, apply_t
 
 
 def resolve_move_outcome(
-    game: GameState, move_key: str, roll_result: str, target_npc_id: str | None = None, match: bool = False
+    game: GameState, move_key: str, roll_result: str, target_npc_id: str | None, match: bool
 ) -> OutcomeResult:
     _e = eng()
     outcomes_cfg = _e.get_raw("move_outcomes")

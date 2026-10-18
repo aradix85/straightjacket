@@ -26,6 +26,7 @@ def test_register_extracted_npcs_skips_player(stub_all: None) -> None:
             _npc("Hero", "Player", "neutral"),
         ],
         skip_names=set(),
+        start_id=0,
     )
     assert len(game.npcs) == 1
     assert game.npcs[0].name == "Mira"
@@ -43,6 +44,7 @@ def test_register_extracted_npcs_skips_returning(stub_all: None) -> None:
             _npc("Borin", "Smith", "neutral"),
         ],
         skip_names={"kira"},
+        start_id=0,
     )
     names = {n.name for n in game.npcs}
     assert "Kira" not in names
@@ -60,7 +62,7 @@ def test_a_chapter_opening_does_not_split_a_returning_npc_by_a_shorter_name(stub
         "location": "Dock",
         "scene_context": "",
     }
-    apply_opening_setup(game, data, returning_npcs=list(game.npcs))
+    apply_opening_setup(game, data, returning_npcs=list(game.npcs), label="OpeningSetup")
     assert [n.name for n in game.npcs] == ["Maren Silk"]
 
 
@@ -86,7 +88,9 @@ def test_opening_setup_sets_location_and_context_and_keeps_the_engines_clock_and
     game = make_game_state(player_name="Hero")
     game.world.clocks = [make_clock(name="Engine clock")]
     game.world.time_of_day = "morning"
-    apply_opening_setup(game, {"npcs": [], "memory_updates": [], "location": "Market", "scene_context": "Busy."})
+    apply_opening_setup(
+        game, {"npcs": [], "memory_updates": [], "location": "Market", "scene_context": "Busy."}, label="OpeningSetup"
+    )
     assert game.world.current_location == "Market"
     assert game.world.current_scene_context == "Busy."
     assert [c.name for c in game.world.clocks] == ["Engine clock"]

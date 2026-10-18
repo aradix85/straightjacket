@@ -126,7 +126,7 @@ def _played_game(provider: MockProvider, monkeypatch: pytest.MonkeyPatch) -> Gam
         background_vow="Keep the archive whole",
     )
     force_miss(monkeypatch)
-    game, _narration, _roll, _offer, _director = process_turn(provider, game, "I shove past the guard")
+    game, _narration, _roll, _offer, _director = process_turn(provider, game, "I shove past the guard", stream=None)
     return game
 
 

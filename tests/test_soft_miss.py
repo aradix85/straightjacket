@@ -117,7 +117,7 @@ def _rolled_rows(consequence: str) -> list[str]:
 def test_a_matched_miss_rolls_a_story_complication_instead_of_pay_the_price(load_engine: None) -> None:
     game = _game("starforged")
     rows = _complication_rows(game)
-    outcome = resolve_move_outcome(game, "adventure/face_danger", "MISS", match=True)
+    outcome = resolve_move_outcome(game, "adventure/face_danger", "MISS", match=True, target_npc_id=None)
     assert outcome.pay_the_price
     assert all(row in rows for row in _rolled_rows(outcome.consequences[-1]))
 
@@ -127,7 +127,7 @@ def test_other_misses_pay_the_price(load_engine: None, setting_id: str, match: b
     game = _game(setting_id)
     rows = _complication_rows(_game("starforged"))
     for _ in range(20):
-        outcome = resolve_move_outcome(game, "adventure/face_danger", "MISS", match=match)
+        outcome = resolve_move_outcome(game, "adventure/face_danger", "MISS", match=match, target_npc_id=None)
         assert outcome.pay_the_price
         assert not any(row in rows for row in _rolled_rows(outcome.consequences[-1]))
 

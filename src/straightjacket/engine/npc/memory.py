@@ -1,5 +1,4 @@
 import re
-from typing import Literal, overload
 
 from ..emotions_loader import importance_map, keyword_boosts
 from ..engine_loader import eng
@@ -7,50 +6,25 @@ from ..logging_util import log
 from ..models import MemoryEntry, NpcData
 
 
-@overload
-def score_importance(emotional_weight: str, event_text: str = "", debug: Literal[False] = ...) -> int: ...
-
-
-@overload
-def score_importance(emotional_weight: str, event_text: str = "", debug: Literal[True] = ...) -> tuple[int, str]: ...
-
-
-def score_importance(emotional_weight: str, event_text: str = "", debug: bool = False) -> int | tuple[int, str]:
+def score_importance(emotional_weight: str, event_text: str) -> int:
     raw = emotional_weight.lower().strip()
-    debug_info = ""
     _imp = importance_map()
     _mem_cfg = eng().memory
 
     if raw in _imp:
         base = _imp[raw]
-        debug_info = f"direct:{raw}={base}"
     else:
         tokens = re.split(_mem_cfg.emotion_split_pattern, raw)
         tokens = [t.strip() for t in tokens if len(t.strip()) >= _mem_cfg.min_token_length]
+        base = max([_imp[t] for t in tokens if t in _imp] + [_mem_cfg.unknown_emotion_importance])
 
-        best = _mem_cfg.unknown_emotion_importance
-        best_token = "default"
-        for token in tokens:
-            if token in _imp and _imp[token] > best:
-                best = _imp[token]
-                best_token = f"token:{token}={best}"
-        base = best
-        debug_info = best_token
+    event_lower = event_text.lower()
+    for min_score, keywords in keyword_boosts().items():
+        if any(kw in event_lower for kw in keywords):
+            base = max(base, min_score)
+            break
 
-    if event_text:
-        event_lower = event_text.lower()
-        for min_score, keywords in keyword_boosts().items():
-            matched_kw = [kw for kw in keywords if kw in event_lower]
-            if matched_kw:
-                if min_score > base:
-                    debug_info += f"+event:{matched_kw[0]}≥{min_score}"
-                base = max(base, min_score)
-                break
-
-    result = min(_mem_cfg.importance_max, base)
-    if debug:
-        return result, debug_info
-    return result
+    return min(_mem_cfg.importance_max, base)
 
 
 def retrieve_memories(

@@ -133,7 +133,7 @@ def test_a_move_to_an_unknown_place_generates_it(load_engine: None, stub_emotion
     from straightjacket.engine.game import process_turn
 
     provider = _Provider(_brain(location_change={"name": "Archive Vault", "kind": "settlement"}))
-    game, _n, _r, _o, _d = process_turn(provider, _game(), "I slip past Mira into the archive vault")
+    game, _n, _r, _o, _d = process_turn(provider, _game(), "I slip past Mira into the archive vault", stream=None)
 
     [place] = game.world.places
     assert place.name == "Archive Vault"
@@ -149,7 +149,7 @@ def test_a_place_already_seen_is_not_generated(load_engine: None, stub_emotions:
     game = _game()
     game.world.location_history = ["Archive Vault"]
     provider = _Provider(_brain())
-    game, _n, _r, _o, _d = process_turn(provider, game, "I go back to the vault")
+    game, _n, _r, _o, _d = process_turn(provider, game, "I go back to the vault", stream=None)
 
     assert game.world.current_location == "Archive Vault"
     assert game.world.places == []
@@ -160,7 +160,7 @@ def test_staying_put_generates_nothing(load_engine: None, stub_emotions: None, m
     from straightjacket.engine.game import process_turn
 
     provider = _Provider(_brain(location_change=None))
-    game, _n, _r, _o, _d = process_turn(provider, _game(), "I search the shelves")
+    game, _n, _r, _o, _d = process_turn(provider, _game(), "I search the shelves", stream=None)
     assert game.world.places == []
 
 
@@ -169,7 +169,7 @@ def test_a_misread_correction_keeps_the_generated_place(load_engine: None, stub_
     from straightjacket.engine.game import process_turn
 
     provider = _ReplayProvider(_brain(), _brain(stat="iron"))
-    game, _n, _r, _o, _d = process_turn(provider, _game(), "I slip into the vault")
+    game, _n, _r, _o, _d = process_turn(provider, _game(), "I slip into the vault", stream=None)
     before = [p.to_dict() for p in game.world.places]
     game, _narration, _offer, _director = process_correction(provider, game, "I meant I use force")
 

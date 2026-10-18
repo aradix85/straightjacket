@@ -85,8 +85,8 @@ def finalize_scene(
     roll_result_str: str,
     roll: RollResult | None = None,
     consequences: Sequence[str] = (),
-    agency_clock_events: Sequence[ClockEvent] = (),
     *,
+    agency_clock_events: Sequence[ClockEvent],
     threat_events: Sequence[ThreatEvent],
 ) -> tuple[bool, DirectorCall | None]:
     game = ctx.game

@@ -39,7 +39,6 @@ from ..npc import (
 from ..parser import parse_narrator_response
 from ..prompt_boundary import build_epilogue_prompt, build_new_chapter_prompt
 from ..prompt_loader import get_prompt
-from ..user_management import load_user_config, save_user_config
 
 from .setup_common import apply_opening_setup
 
@@ -60,7 +59,7 @@ def generate_epilogue(provider: AIProvider, game: GameState) -> tuple[GameState,
     return game, narration
 
 
-def start_new_chapter(provider: AIProvider, game: GameState, username: str = "") -> tuple[GameState, str]:
+def start_new_chapter(provider: AIProvider, game: GameState) -> tuple[GameState, str]:
     if game.game_over:
         raise RuntimeError(
             "start_new_chapter called on a game with game_over=True; a game that is over continues through succession."
@@ -91,11 +90,6 @@ def start_new_chapter(provider: AIProvider, game: GameState, username: str = "")
         process_deceased_npcs(game, setup_data["deceased_npcs"])
 
     _record_chapter_opening(game, narration)
-
-    if username and game.preferences.content_lines:
-        user_cfg = load_user_config(username)
-        user_cfg["content_lines"] = game.preferences.content_lines
-        save_user_config(username, user_cfg)
 
     reset_db()
     _db_sync(game)

@@ -35,7 +35,6 @@ from ..models import (
 from ..parser import parse_narrator_response
 from ..prompt_boundary import build_new_game_prompt
 from ..prompt_loader import get_prompt
-from ..user_management import load_user_config, save_user_config
 
 from .setup_common import apply_opening_setup
 
@@ -119,7 +118,7 @@ def _compute_chaos_start(vow_text: str) -> int:
     return base
 
 
-def _seed_background_vow(game: GameState, vow_text: str, rank: str = "") -> None:
+def _seed_background_vow(game: GameState, vow_text: str, rank: str) -> None:
     _e = eng()
     if rank:
         if rank not in _valid_ranks():
@@ -161,7 +160,7 @@ def _seed_vow_subject(game: GameState, vow_subject: str) -> None:
     log(f"[NewGame] Vow subject seeded in characters list: {vow_subject}")
 
 
-def start_new_game(provider: AIProvider, creation_data: dict[str, Any], username: str = "") -> tuple[GameState, str]:
+def start_new_game(provider: AIProvider, creation_data: dict[str, Any]) -> tuple[GameState, str]:
     setting_id = creation_data["setting_id"]
     stats = creation_data["stats"]
     player_name = creation_data["player_name"]
@@ -241,11 +240,6 @@ def start_new_game(provider: AIProvider, creation_data: dict[str, Any], username
     log(f"[NewGame] Engine-created opening clock and time_of_day={_opening.time_of_day}")
 
     log(f"[NewGame] Character: {game.player_name}, paths={paths}, assets={game.assets}")
-
-    if username:
-        user_cfg = load_user_config(username)
-        user_cfg["content_lines"] = game.preferences.content_lines
-        save_user_config(username, user_cfg)
 
     structure = choose_story_structure(game.setting_tone)
     rng = _random_module.Random()

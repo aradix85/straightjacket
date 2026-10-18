@@ -73,7 +73,7 @@ def tick_autonomous_threats(game: GameState) -> list[ThreatEvent]:
     return events
 
 
-def advance_threat_by_id(game: GameState, threat_id: str, marks: int = 1, source: str = "") -> ThreatEvent | None:
+def advance_threat_by_id(game: GameState, threat_id: str, marks: int, source: str) -> ThreatEvent | None:
     threat = next((t for t in game.threats if t.id == threat_id and t.status == "active"), None)
     if not threat:
         return None

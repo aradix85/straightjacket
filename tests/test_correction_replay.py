@@ -4,6 +4,7 @@ from typing import Any
 import pytest
 
 from straightjacket.engine.ai.provider_base import AICallSpec, AIResponse
+from tests._helpers import fix_dice
 from tests.test_momentum_burn import _brain, _game
 
 
@@ -55,7 +56,8 @@ def dice(monkeypatch: pytest.MonkeyPatch) -> dict[str, int]:
 
     def _scene(game: Any) -> Any:
         counts["scenes"] += 1
-        return real_scene(game, roll=counts["scene_roll"])
+        fix_dice(monkeypatch, counts["scene_roll"])
+        return real_scene(game)
 
     monkeypatch.setattr(turn, "roll_action", _roll)
     monkeypatch.setattr(turn, "check_scene", _scene)
@@ -68,7 +70,7 @@ def _turn_then_correct(provider: _Provider) -> tuple[Any, Any, str, Any]:
     from straightjacket.engine.correction import process_correction
     from straightjacket.engine.game import process_turn
 
-    game, _n, _r, _o, _d = process_turn(provider, _game(), "I slip into the vault")
+    game, _n, _r, _o, _d = process_turn(provider, _game(), "I slip into the vault", stream=None)
     before = copy.deepcopy(game)
     game, narration, offer, _director = process_correction(provider, game, "I meant I use force")
     return before, game, narration, offer

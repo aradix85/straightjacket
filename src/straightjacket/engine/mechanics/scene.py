@@ -11,7 +11,7 @@ from .keyed_scenes import evaluate_keyed_scenes
 from .random_events import generate_random_event
 
 
-def check_scene(game: GameState, roll: int | None = None) -> SceneSetup:
+def check_scene(game: GameState) -> SceneSetup:
     keyed = evaluate_keyed_scenes(game)
     if keyed is not None:
         game.narrative.keyed_scenes = [k for k in game.narrative.keyed_scenes if k.id != keyed.id]
@@ -21,9 +21,7 @@ def check_scene(game: GameState, roll: int | None = None) -> SceneSetup:
         return SceneSetup(scene_type="keyed", narrative_hint=keyed.narrative_hint)
 
     cf = game.world.chaos_factor
-
-    if roll is None:
-        roll = random.randint(1, eng().dice.scene_test_die)
+    roll = random.randint(1, eng().dice.scene_test_die)
 
     if roll > cf:
         log(f"[Scene] Expected (roll={roll} > CF{cf})")
@@ -42,14 +40,9 @@ def check_scene(game: GameState, roll: int | None = None) -> SceneSetup:
         return SceneSetup(scene_type="interrupt", chaos_roll=roll, interrupt_event=event)
 
 
-def _roll_adjustments(roll: int | None = None) -> list[str]:
-    data = _load_mythic()
-    table = data["scene_adjustment"]
-
-    if roll is None:
-        roll = random.randint(1, eng().dice.scene_adjustment_die)
-
-    result = _lookup_adjustment(table, roll)
+def _roll_adjustments() -> list[str]:
+    table = _load_mythic()["scene_adjustment"]
+    result = _lookup_adjustment(table, random.randint(1, eng().dice.scene_adjustment_die))
     if result != "make_2_adjustments":
         return [result]
 

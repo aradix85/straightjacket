@@ -48,7 +48,7 @@ def _game(npc: NpcData | None = None, bond: int = 0) -> GameState:
 def test_hostile_low_combat() -> None:
     npc = _npc("hostile")
     game = _game(npc, bond=0)
-    stance = resolve_npc_stance(game, npc, "combat")
+    stance = resolve_npc_stance(game, npc, "combat", miss=False)
     assert stance.stance == "aggressive"
     assert "quarter" in stance.constraint.lower() or "hesitation" in stance.constraint.lower()
 
@@ -56,7 +56,7 @@ def test_hostile_low_combat() -> None:
 def test_distrustful_low_gather() -> None:
     npc = _npc("distrustful")
     game = _game(npc, bond=1)
-    stance = resolve_npc_stance(game, npc, "gather_information")
+    stance = resolve_npc_stance(game, npc, "gather_information", miss=False)
     assert stance.stance == "evasive"
     assert "silent" in stance.constraint.lower()
 
@@ -64,35 +64,35 @@ def test_distrustful_low_gather() -> None:
 def test_friendly_mid_social() -> None:
     npc = _npc("friendly")
     game = _game(npc, bond=2)
-    stance = resolve_npc_stance(game, npc, "social")
+    stance = resolve_npc_stance(game, npc, "social", miss=False)
     assert stance.stance == "confiding"
 
 
 def test_loyal_high_other() -> None:
     npc = _npc("loyal")
     game = _game(npc, bond=4)
-    stance = resolve_npc_stance(game, npc, "other")
+    stance = resolve_npc_stance(game, npc, "other", miss=False)
     assert stance.stance == "ride_or_die"
 
 
 def test_neutral_low_other() -> None:
     npc = _npc("neutral")
     game = _game(npc, bond=0)
-    stance = resolve_npc_stance(game, npc, "other")
+    stance = resolve_npc_stance(game, npc, "other", miss=False)
     assert stance.stance == "indifferent"
 
 
 def test_bond_range_mid() -> None:
     npc = _npc("neutral")
     game = _game(npc, bond=2)
-    stance = resolve_npc_stance(game, npc, "social")
+    stance = resolve_npc_stance(game, npc, "social", miss=False)
     assert stance.stance == "engaged"
 
 
 def test_bond_range_high() -> None:
     npc = _npc("neutral")
     game = _game(npc, bond=4)
-    stance = resolve_npc_stance(game, npc, "social")
+    stance = resolve_npc_stance(game, npc, "social", miss=False)
     assert stance.stance == "open"
 
 
@@ -100,13 +100,13 @@ def test_unknown_move_category_raises() -> None:
     npc = _npc("neutral")
     game = _game(npc, bond=1)
     with pytest.raises(KeyError):
-        resolve_npc_stance(game, npc, "unknown_category")
+        resolve_npc_stance(game, npc, "unknown_category", miss=False)
 
 
 def test_stance_has_npc_metadata() -> None:
     npc = _npc("friendly")
     game = _game(npc, bond=3)
-    stance = resolve_npc_stance(game, npc, "social")
+    stance = resolve_npc_stance(game, npc, "social", miss=False)
     assert stance.npc_id == "npc_1"
     assert stance.npc_name == "Kira"
 
@@ -117,7 +117,7 @@ def test_stance_constraint_not_empty() -> None:
             for cat in ("combat", "social", "gather_information", "other"):
                 npc = _npc(disp)
                 game = _game(npc, bond=bond)
-                stance = resolve_npc_stance(game, npc, cat)
+                stance = resolve_npc_stance(game, npc, cat, miss=False)
                 assert stance.constraint, f"Empty constraint for {disp}/{bond}/{cat}"
                 assert stance.stance, f"Empty stance for {disp}/{bond}/{cat}"
 

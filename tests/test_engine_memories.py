@@ -50,20 +50,20 @@ class TestEngineMemoriesNoKeyError:
     def test_ask_the_oracle_with_none_roll(self) -> None:
         game = make_test_game()
         brain = make_brain_result(move="ask_the_oracle", target_npc="npc_1")
-        memories = generate_engine_memories(game, brain, roll=None, activated_npc_ids={"npc_1"})
+        memories = generate_engine_memories(game, brain, roll=None, activated_npc_ids={"npc_1"}, consequences=())
         assert len(memories) == 1
         assert memories[0][1].event
 
     def test_dialog_only_with_action_move_and_none_roll(self) -> None:
         game = make_test_game()
         brain = make_brain_result(move="combat/clash", dialog_only=True, target_npc="npc_1")
-        memories = generate_engine_memories(game, brain, roll=None, activated_npc_ids={"npc_1"})
+        memories = generate_engine_memories(game, brain, roll=None, activated_npc_ids={"npc_1"}, consequences=())
         assert len(memories) == 1
 
     def test_world_shaping_with_none_roll(self) -> None:
         game = make_test_game()
         brain = make_brain_result(move="world_shaping", dialog_only=True)
-        memories = generate_engine_memories(game, brain, roll=None, activated_npc_ids={"npc_1"})
+        memories = generate_engine_memories(game, brain, roll=None, activated_npc_ids={"npc_1"}, consequences=())
         assert len(memories) == 1
 
 
@@ -92,7 +92,7 @@ class TestProcessTurnGuard:
         game.game_over = True
 
         with pytest.raises(RuntimeError, match="game_over=True"):
-            process_turn(provider=None, game=game, player_message="anything")
+            process_turn(provider=None, game=game, player_message="anything", stream=None)
 
     def test_does_not_raise_when_game_active(self) -> None:
         game = make_test_game()
