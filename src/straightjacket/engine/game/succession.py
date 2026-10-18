@@ -10,8 +10,6 @@ from ..ai.narrator import call_narrator, call_opening_setup
 from ..ai.provider_base import AIProvider
 from ..datasworn.loader import extract_title
 from ..datasworn.settings import load_package
-from ..db import sync as _db_sync
-from ..db.connection import reset_db
 from ..engine_loader import eng
 from ..logging_util import log
 from ..mechanics import (
@@ -256,9 +254,6 @@ def start_succession_with_character(
     _record_succession_opening(game, narration, record)
 
     game.campaign.pending_succession = False
-
-    reset_db()
-    _db_sync(game)
 
     return game, narration
 

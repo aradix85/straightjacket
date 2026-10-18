@@ -153,7 +153,8 @@ def _event_lines(slog: SessionLog) -> list[str]:
         found = [e for e in events if e.startswith(prefix)]
         lines.append(f"{label}: {len(found)}.")
         lines += [f"- {e[len(prefix) :].strip()}" for e in found[:8]]
-    lines.append(f"Director tool rounds: {sum(1 for e in events if e.startswith('[Tools]'))}.")
+    tool_calls = sum(int(m.group(1)) for e in events if (m := re.match(r"\[Director\] Phase 1: (\d+) tool calls", e)))
+    lines.append(f"Director tool calls: {tool_calls}.")
     return lines
 
 

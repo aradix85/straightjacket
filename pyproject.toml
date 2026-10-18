@@ -1,6 +1,6 @@
 [project]
 name = "straightjacket"
-version = "2026.10.18.5"
+version = "2026.10.18.6"
 requires-python = ">=3.11"
 dependencies = [
     "starlette>=1.0,<2",
@@ -27,7 +27,7 @@ ignore = [
     "SIM401", # dict.get(k, fallback) — conflicts with the no-fallback rule on domain config
     "PERF401", # manual list comprehension — loops with conditions stay loops when they read clearer
 ]
-per-file-ignores = {"src/straightjacket/engine/npc/__init__.py" = ["F401"], "src/straightjacket/engine/game/__init__.py" = ["F401"], "src/straightjacket/engine/db/__init__.py" = ["F401"], "src/straightjacket/engine/tools/__init__.py" = ["F401"], "src/straightjacket/engine/mechanics/__init__.py" = ["F401"], "src/straightjacket/engine/models.py" = ["F401"]}
+per-file-ignores = {"src/straightjacket/engine/npc/__init__.py" = ["F401"], "src/straightjacket/engine/game/__init__.py" = ["F401"], "src/straightjacket/engine/tools/__init__.py" = ["F401"], "src/straightjacket/engine/mechanics/__init__.py" = ["F401"], "src/straightjacket/engine/models.py" = ["F401"]}
 
 [tool.mypy]
 python_version = "3.11"

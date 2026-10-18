@@ -60,7 +60,7 @@ Closing a step: the checks of CONTRIBUTING.md pass, the step moves to DONE at th
 ## NEXT STEP — 9h: Principle audits
 
 
-The audits of AUDIT.md, one session per principle or submodule as it prescribes, in this order: principles 2 and 4, which are mechanical, then principles 3, 5, and 1 per submodule. Principles 2 and 4 are done; principle 3 runs one submodule per session in AUDIT.md's order, with `mechanics/`, `npc/`, `game/`, and `ai/` done and `db/` next. Every finding is fixed in its session or becomes a substep here. Waiting for the audit to classify, or for the user:
+The audits of AUDIT.md, one session per principle or submodule as it prescribes, in this order: principles 2 and 4, which are mechanical, then principles 3, 5, and 1 per submodule. Principles 2 and 4 are done; principle 3 runs one submodule per session in AUDIT.md's order, with `mechanics/`, `npc/`, `game/`, and `ai/` done and `datasworn/` next. Every finding is fixed in its session or becomes a substep here. Waiting for the audit to classify, or for the user:
 
 **9h.4** Dataclasses carry defaults against the rule as CONTRIBUTING.md states it ("Domain config keys raise on a miss, and dataclass fields have no defaults"): about two hundred defaults that are not empty collections, in 43 classes, concentrated in `models_story.py`, `models.py`, `models_base.py`, `datasworn/moves.py`, `mechanics/move_effects.py`, and `models_npc.py` (for example `KeyedScene.source` and `KeyedScene.bound_entity_id`), beside about seventy empty `default_factory` collections, which the rule allows. The optional fields of `AICallSpec` and the partial classes in `datasworn/settings.py` parse external structures and keep theirs. Each module loses its defaults with every constructor call updated, one module per session; when the last is done, the config-binding scan widens to every dataclass (pass 2d). Pass 2d's scan of dataclass fields with a value finds them; it counted 196.
 
@@ -178,7 +178,7 @@ The opening scene and the character's start come from the setting's launch table
 
 **11.2** Tier 2 (recurring): full AIMS plus a goal clock, the AI writing only the AIMS. The Director generates them: it reads the tier-1 base and the active threads through its game-state tool, then writes the AIMS through its JSON schema; always-relevant context (current location, faction state once step 14 lands) is prompt-injected.
 
-**11.3** Promotion trigger in `engine/npc_promotion.yaml` (new), default three interactions in five scenes, through a DB query.
+**11.3** Promotion trigger in `engine/npc_promotion.yaml` (new), default three interactions in five scenes, counted from the NPC's memories.
 
 **11.4** A `tier` field on NpcData as a config-key string, not a Python enum.
 
@@ -202,7 +202,7 @@ NPCs draw on their description, agenda, arc, and earlier scenes; where their pas
 
 Builds on step 11 and extends `check_npc_agency` (`pacing.npc_agency_interval`). Today no clock has an NPC owner, so its agency tick and the owner rename in `npc/lifecycle.py` → `merge_npc_identity` never run; the goal clock decides what `owner_id` holds, an NPC id rather than the name it is matched against now.
 
-**12.1** `goal_clock: ClockData | None` on NpcData, persisted and DB-indexed.
+**12.1** `goal_clock: ClockData | None` on NpcData, persisted with the NPC.
 
 **12.2** Ticks after scene-end bookkeeping on triggers in `engine/npc_goal_clocks.yaml` (new): bond below N, health below N, scene count. Deterministic.
 
@@ -244,7 +244,7 @@ What a foe does in a fight comes from the setting's combat-action oracle (classi
 
 ### 14a — Faction data model
 
-FactionData with name, goal, tenets, members, and its standing toward the other factions, which the design document places in a setting's static layer; `faction_id` on NpcData and a faction table in the database. The save format breaks.
+FactionData with name, goal, tenets, members, and its standing toward the other factions, which the design document places in a setting's static layer; `faction_id` on NpcData and the factions in `GameState`. The save format breaks.
 
 ### 14b — Scheme clocks and chapter-spanning factions
 
@@ -353,4 +353,4 @@ Finished work in its shortest form; the CHANGELOG has the details.
 - **9f — Prompt tuning on Sonnet.** Every role on Claude Sonnet 5.5 at effort medium, Elvira on Haiku 5.5 (baseline 6.41 ± 0.14). Rewording the narrator prompt stayed within the noise, so the faults that remain are for the engine; the measuring setup keeps every variant.
 - **9g — Tests through the real creation path** (`create_game` in `tests/_creation.py`).
 - **9l — Complications as clocks** (`docs/mechanics.md`, Complication clocks).
-- **9h, so far (the step is still open).** The campaign tone is chosen at creation. Principles 2 and 4 are audited and fixed apart from 9h.4 and 9h.12: text, thresholds, dice, and groupings live in yaml, and saves, snapshots, and config refuse what they do not know. Principle 3 is audited for `mechanics/`, `npc/`, `game/`, and `ai/`: impossible states raise, redundant guards, dead code, write-only data, and parameters only tests set are gone (9h.15), the AI calls catch only the call and its answer, a complete narration is kept whole (9h.19), and chapters no longer copy what carries over (9h.3). The Brain is asked again for a missing or wrong stat (9h.1), threads gain weight when a scene invokes them (9h.20), and moves that roll with a meter or a connection's rank are rolled (9h.21).
+- **9h, so far (the step is still open).** The campaign tone is chosen at creation. Principles 2 and 4 are audited and fixed apart from 9h.4 and 9h.12: text, thresholds, dice, and groupings live in yaml, and saves, snapshots, and config refuse what they do not know. Principle 3 is audited for `mechanics/`, `npc/`, `game/`, and `ai/`: impossible states raise, redundant guards, dead code, write-only data, parameters only tests set (9h.15), and the database copy of the game state that only the Director's tool read are gone, the AI calls catch only the call and its answer, a complete narration is kept whole (9h.19), and chapters no longer copy what carries over (9h.3). The Brain is asked again for a missing or wrong stat (9h.1), threads gain weight when a scene invokes them (9h.20), and moves that roll with a meter or a connection's rank are rolled (9h.21).

@@ -441,7 +441,6 @@ def _check_no_yaml_comments() -> tuple[str, list[Violation]]:
 
 
 _INLINE_IMPORT_WHITELIST: set[tuple[str, str]] = {
-    ("engine/models.py", "restore"),
     ("engine/npc/lifecycle.py", "_npc_eligible_for_desc_match"),
     ("engine/npc/naming.py", "roll_oracle_name"),
     ("engine/ai/api_client.py", "build_adapter"),
@@ -1165,7 +1164,7 @@ def _check_changelog_consistent() -> tuple[str, list[Violation]]:
     return "DOC DRIFT: CHANGELOG versions and headers", violations
 
 
-_ENGINE_SUBPACKAGES = frozenset({"ai", "correction", "datasworn", "db", "game", "mechanics", "npc", "tools"})
+_ENGINE_SUBPACKAGES = frozenset({"ai", "correction", "datasworn", "game", "mechanics", "npc", "tools"})
 _CORE_BASE = frozenset(
     {
         "bootstrap_log",
@@ -1190,8 +1189,7 @@ _CORE_BASE = frozenset(
 _UPPER = frozenset({"correction", "game", "web"})
 _LAYER_FORBIDDEN: dict[str, frozenset[str]] = {
     "base": frozenset({"core", "datasworn", "npc", "mechanics", "ai", "tools"}) | _UPPER,
-    "datasworn": frozenset({"core", "db", "npc", "mechanics", "ai", "tools"}) | _UPPER,
-    "db": frozenset({"core", "datasworn", "npc", "mechanics", "ai", "tools"}) | _UPPER,
+    "datasworn": frozenset({"core", "npc", "mechanics", "ai", "tools"}) | _UPPER,
     "npc": frozenset({"core", "ai", "tools"}) | _UPPER,
     "mechanics": frozenset({"core", "ai", "tools"}) | _UPPER,
     "tools": frozenset({"core", "ai"}) | _UPPER,

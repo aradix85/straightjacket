@@ -140,6 +140,21 @@ def test_event_capture_keeps_every_warning_and_error() -> None:
     assert capture.warnings == ["WARNING: [Metadata] Extraction failed: no route", "ERROR: [DB] sync failed"]
 
 
+def test_the_report_counts_the_directors_tool_calls() -> None:
+    from tests.elvira.elvira_bot.models import SessionLog, TurnRecord
+    from tests.elvira.elvira_bot.report import _event_lines
+
+    slog = SessionLog(config={"game": {"setting_id": "starforged"}})
+    slog.turns = [
+        TurnRecord(turn=1, engine_events=["[Director] Phase 1: 1 tool calls"]),
+        TurnRecord(
+            turn=2, engine_events=["[Director] Phase 1: no tools called", "[Tools] Registered query_game_state"]
+        ),
+        TurnRecord(turn=3, engine_events=["[Director] Phase 1: 2 tool calls"]),
+    ]
+    assert "Director tool calls: 3." in _event_lines(slog)
+
+
 def test_repeated_engine_warnings_become_one_counted_problem() -> None:
     from tests.elvira.elvira_bot.models import SessionLog
     from tests.elvira.elvira_bot.report import collect_problems

@@ -3,7 +3,6 @@ from __future__ import annotations
 from typing import Any
 from ...i18n import t
 from ..ai.provider_base import AIProvider
-from ..db import sync as _db_sync
 from ..director import should_call_director
 from ..engine_loader import eng
 from ..game import BurnOffer, DirectorCall, replay_turn
@@ -176,5 +175,4 @@ def process_correction(
     director_ctx = _maybe_queue_director(game, analysis, roll, narration, metadata)
 
     log("[Correction] Complete: source=state_error, rewrite done")
-    _db_sync(game)
     return game, narration, None, director_ctx

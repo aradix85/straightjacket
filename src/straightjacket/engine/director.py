@@ -17,6 +17,7 @@ from .npc import (
     find_npc,
     get_npc_bond,
     is_complete_description,
+    recent_observations,
     resolve_about_npc,
 )
 from .prompt_loader import get_prompt
@@ -70,9 +71,7 @@ def should_call_director(
 
 
 def _build_reflection_block(game: GameState, npc: NpcData) -> str:
-    window = eng().npc.reflection_observation_window
-    recent_obs = [m for m in npc.memory if m.type == "observation"][-window:]
-    mem_text = "; ".join(f"{m.event}({m.emotional_weight})" for m in recent_obs)
+    mem_text = "; ".join(f"{m.event}({m.emotional_weight})" for m in recent_observations(npc))
 
     prev_reflections = [m for m in npc.memory if m.type == "reflection"]
     prev_ref_text = ""

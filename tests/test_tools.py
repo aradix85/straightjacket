@@ -1,9 +1,6 @@
 import importlib
-import sqlite3
 
 import straightjacket.engine.tools.builtins as _builtins_mod
-from straightjacket.engine.db.connection import close_db, reset_db
-from straightjacket.engine.db.sync import sync
 from straightjacket.engine.models import (
     GameState,
     ThreadEntry,
@@ -18,10 +15,6 @@ from straightjacket.engine.tools.registry import (
 )
 from straightjacket.engine.tools.handler import execute_tool_call
 from tests._helpers import make_clock, make_game_state, make_memory, make_npc
-
-
-def _fresh_db() -> sqlite3.Connection:
-    return reset_db()
 
 
 def _game_with_data() -> GameState:
@@ -188,9 +181,7 @@ def _reload_builtins() -> None:
 
 
 def test_builtin_query_game_state_returns_threads_clocks_and_npcs_at_once() -> None:
-    _fresh_db()
     game = _game_with_data()
-    sync(game)
     _reload_builtins()
 
     handler = get_handler("director", "query_game_state")
@@ -202,7 +193,22 @@ def test_builtin_query_game_state_returns_threads_clocks_and_npcs_at_once() -> N
     assert kira["name"] == "Kira"
     assert kira["disposition"] == "distrustful"
     assert len(kira["recent_memories"]) == 2
-    close_db()
+
+
+def test_query_game_state_shows_the_memories_the_reflection_block_shows(load_engine: None) -> None:
+    from straightjacket.engine.director import _build_reflection_block
+
+    game = _game_with_data()
+    kira = game.npcs[0]
+    kira.memory.append(make_memory(scene=4, event="Doubts the player", importance=6, type="reflection"))
+    _reload_builtins()
+
+    handler = get_handler("director", "query_game_state")
+    assert handler is not None
+    shown = next(n for n in handler(game=game)["npcs"] if n["id"] == "npc_1")["recent_memories"]
+    assert [m["event"] for m in shown] == ["Met at the docks", "Broke a promise"]
+    block = _build_reflection_block(game, kira)
+    assert all(m["event"] in block for m in shown)
 
 
 def test_builtin_query_game_state_is_director_only() -> None:

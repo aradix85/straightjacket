@@ -18,7 +18,6 @@ if TYPE_CHECKING:
 from straightjacket.engine.ai.api_client import check_configured_models, get_provider
 from straightjacket.engine.ai.provider_base import AIUnavailableError, drain_token_log
 from straightjacket.engine.ai.sentence_stream import SentenceStream
-from straightjacket.engine.db.sync import sync as db_sync
 from straightjacket.engine.models import GameState, TurnSnapshot
 from straightjacket.engine.persistence import delete_save, load_game, save_game
 from straightjacket.engine.user_management import create_user
@@ -511,7 +510,6 @@ def _apply_scenario(game: GameState, name: str, spec: dict | None, slog: Session
     if spec is None:
         return
     notes = prepare_scenario(game, spec)
-    db_sync(game)
     slog.scenario = {"name": name, "prepared": notes, "expect": list(spec["expect"])}
     print(f"  [SCENARIO] {name}: {'; '.join(notes) or 'nothing to prepare'}")
 
@@ -533,7 +531,6 @@ def _finish_scenario(slog: SessionLog, coverage: Coverage) -> None:
 def _restore(game: GameState, snapshot: TurnSnapshot, last_snapshot: TurnSnapshot | None) -> None:
     game.restore(snapshot)
     game.last_turn_snapshot = last_snapshot
-    db_sync(game)
 
 
 def _check_rollback(

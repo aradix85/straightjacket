@@ -89,7 +89,7 @@ def _assemble_definition(
     required: list[str] = []
 
     for param_name, param in sig.parameters.items():
-        if param_name in ("game", "conn", "db"):
+        if param_name == "game":
             continue
 
         if param_name not in hints:

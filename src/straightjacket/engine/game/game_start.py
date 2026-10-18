@@ -9,7 +9,6 @@ from ..ai.narrator import call_narrator, call_opening_setup
 from ..ai.provider_base import AIProvider
 from ..datasworn.loader import extract_title
 from ..datasworn.settings import SettingPackage, load_package
-from ..db import sync as _db_sync
 from ..engine_loader import eng
 from ..logging_util import log
 from ..mechanics import (
@@ -302,7 +301,5 @@ def start_new_game(provider: AIProvider, creation_data: dict[str, Any]) -> tuple
             result="opening",
         )
     )
-
-    _db_sync(game)
 
     return game, narration

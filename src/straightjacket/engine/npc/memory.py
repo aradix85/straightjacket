@@ -27,6 +27,10 @@ def score_importance(emotional_weight: str, event_text: str) -> int:
     return min(_mem_cfg.importance_max, base)
 
 
+def recent_observations(npc: NpcData) -> list[MemoryEntry]:
+    return [m for m in npc.memory if m.type == "observation"][-eng().npc.reflection_observation_window :]
+
+
 def retrieve_memories(
     npc: NpcData,
     *,

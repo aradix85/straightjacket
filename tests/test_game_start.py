@@ -112,16 +112,11 @@ def _valid_creation_data() -> dict:
 
 
 def test_start_new_game_happy_path(load_engine: None, tmp_path) -> None:
-    from straightjacket.engine.db.connection import close_db, reset_db
     from straightjacket.engine.game.game_start import start_new_game
 
-    reset_db()
     provider = _SmartMockProvider("The station hums with cold air.")
     creation = _valid_creation_data()
-    try:
-        game, narration = start_new_game(provider, creation)
-    finally:
-        close_db()
+    game, narration = start_new_game(provider, creation)
     assert isinstance(game, GameState)
     assert game.player_name == "Aria"
     assert game.pronouns == "she/her"
@@ -161,60 +156,40 @@ def test_start_new_game_invalid_stats_raises(load_engine: None) -> None:
 
 
 def test_start_new_game_seeds_background_vow_track(load_engine: None) -> None:
-    from straightjacket.engine.db.connection import close_db, reset_db
     from straightjacket.engine.game.game_start import start_new_game
 
-    reset_db()
     provider = _SmartMockProvider()
-    try:
-        game, _ = start_new_game(provider, _valid_creation_data())
-    finally:
-        close_db()
+    game, _ = start_new_game(provider, _valid_creation_data())
     vow_tracks = [t for t in game.progress_tracks if t.id == "vow_background"]
     assert len(vow_tracks) == 1
     assert vow_tracks[0].rank == "epic"
 
 
 def test_start_new_game_creates_opening_clock(load_engine: None) -> None:
-    from straightjacket.engine.db.connection import close_db, reset_db
     from straightjacket.engine.game.game_start import start_new_game
 
-    reset_db()
     provider = _SmartMockProvider()
-    try:
-        game, _ = start_new_game(provider, _valid_creation_data())
-    finally:
-        close_db()
+    game, _ = start_new_game(provider, _valid_creation_data())
     assert len(game.world.clocks) >= 1
     assert any(c.name == "Find the lost archive" for c in game.world.clocks)
 
 
 def test_start_new_game_seeds_thread_for_vow(load_engine: None) -> None:
-    from straightjacket.engine.db.connection import close_db, reset_db
     from straightjacket.engine.game.game_start import start_new_game
 
-    reset_db()
     provider = _SmartMockProvider()
-    try:
-        game, _ = start_new_game(provider, _valid_creation_data())
-    finally:
-        close_db()
+    game, _ = start_new_game(provider, _valid_creation_data())
     vow_threads = [t for t in game.narrative.threads if t.id == "thread_background_vow"]
     assert len(vow_threads) == 1
 
 
 def test_start_new_game_keeps_the_content_lines(load_engine: None) -> None:
-    from straightjacket.engine.db.connection import close_db, reset_db
     from straightjacket.engine.game.game_start import start_new_game
 
-    reset_db()
     provider = _SmartMockProvider()
     creation = _valid_creation_data()
     creation["content_lines"] = "no spiders, no body horror"
-    try:
-        game, _ = start_new_game(provider, creation)
-    finally:
-        close_db()
+    game, _ = start_new_game(provider, creation)
     assert game.preferences.content_lines == "no spiders, no body horror"
 
 

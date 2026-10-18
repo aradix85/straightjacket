@@ -86,8 +86,6 @@ def assert_game_state(game: GameState, turn: int) -> list[str]:
             f"session_log last scene={last.scene} != scene_count={game.narrative.scene_count}",
         )
 
-    _check_npc_db_sync(game, turn, violations)
-
     _check_combat_track_sync(game, turn, violations)
 
     return violations
@@ -138,34 +136,6 @@ def _check_clock(clock: ClockData, turn: int, violations: list[str]) -> None:
     check(0 <= clock.filled <= clock.segments, f"filled={clock.filled} out of [0,{clock.segments}]")
     if clock.fired:
         check(clock.filled >= clock.segments, f"fired=True but filled={clock.filled} < segments={clock.segments}")
-
-
-def _check_npc_db_sync(game: GameState, turn: int, violations: list[str]) -> None:
-    from straightjacket.engine.db.connection import get_db
-
-    try:
-        conn = get_db()
-    except Exception as e:
-        violations.append(f"[TURN {turn}] DB sync: cannot access db ({type(e).__name__}: {e})")
-        return
-
-    try:
-        db_ids = {row[0] for row in conn.execute("SELECT id FROM npcs").fetchall()}
-    except Exception as e:
-        violations.append(f"[TURN {turn}] DB sync: query failed ({type(e).__name__}: {e})")
-        return
-
-    game_ids = {n.id for n in game.npcs}
-
-    if not db_ids and game_ids:
-        return
-
-    missing_in_db = game_ids - db_ids
-    missing_in_game = db_ids - game_ids
-    for npc_id in missing_in_db:
-        violations.append(f"[TURN {turn}] DB sync: NPC '{npc_id}' in GameState but not in db")
-    for npc_id in missing_in_game:
-        violations.append(f"[TURN {turn}] DB sync: NPC '{npc_id}' in db but not in GameState")
 
 
 def _check_combat_track_sync(game: GameState, turn: int, violations: list[str]) -> None:

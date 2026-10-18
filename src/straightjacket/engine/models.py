@@ -186,13 +186,6 @@ class GameState(SerializableMixin):
             f"Su{self.resources.supply} Chaos{self.world.chaos_factor}"
         )
 
-        from .db import sync as _db_sync
-
-        from .db.connection import reset_db
-
-        reset_db()
-        _db_sync(self)
-
 
 __all__ = [
     "BrainResult",

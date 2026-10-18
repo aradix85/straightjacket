@@ -2,7 +2,6 @@ from typing import Any
 from collections.abc import Sequence
 
 from ..ai.brain import call_revelation_check
-from ..db import sync as _db_sync
 from ..director import should_call_director
 from ..engine_loader import eng
 from ..logging_util import log
@@ -175,7 +174,5 @@ def finalize_scene(
             bp.triggered_director_phases.append(director_reason[len("phase:") :])
     else:
         log(f"[Director] Skipped (no trigger at scene {nar.scene_count})")
-
-    _db_sync(game)
 
     return revelation_confirmed, director_ctx

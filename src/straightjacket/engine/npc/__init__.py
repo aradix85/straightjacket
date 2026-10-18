@@ -18,6 +18,7 @@ __all__ = [
     "process_npc_details",
     "process_npc_renames",
     "reactivate_npc",
+    "recent_observations",
     "resolve_about_npc",
     "retire_distant_npcs",
     "retrieve_memories",
@@ -53,6 +54,7 @@ from .matching import (
 
 from .memory import (
     consolidate_memory,
+    recent_observations,
     retrieve_memories,
     score_importance,
 )

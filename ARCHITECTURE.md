@@ -51,7 +51,7 @@ Post-narration (game/finalization.py) → engine memories, scene context, metada
   ↓
 Scene-end bookkeeping (game/scene_finalization.py) → autonomous clock and threat ticks, act transition, story completion, chaos, list upkeep
   ↓
-Database sync (db/sync.py) and save (persistence.py)
+Save (persistence.py)
   ↓
 Director (game/director_runner.py) → after the turn is returned: NPC reflections; saved again
 ```
@@ -70,14 +70,13 @@ The source lives under `src/straightjacket/`.
 - `engine/game/` — orchestration: the turn, action resolution, shared narration and finalization, momentum burn, game start, chapters, succession, and the deferred Director run.
 - `engine/correction/` — the `##` correction: the analysis call, atomic state patches, and snapshot restore with re-narration.
 - `engine/datasworn/` — Datasworn JSON: loading, moves, oracle cascades, and setting packages.
-- `engine/db/` — the in-memory SQLite read model: schema, sync, and read-only queries.
 - `web/` — the Starlette server, one handler per WebSocket message, session state, serializers that turn game state into client JSON, and the single-page client `web/static/index.html`.
 
 Beside them, `i18n.py` and `strings_loader.py` serve user-facing strings.
 
-**Subpackage public API via `__init__.py`.** `mechanics`, `npc`, `game`, `db`, `tools`, and `correction` re-export their public names in `__init__.py`, so callers write `from straightjacket.engine.mechanics import roll_action` and the internal file layout stays free to change. `models.py` is the same kind of hub for the dataclasses. `engine`, `ai`, `datasworn`, and `web` are package markers without re-exports.
+**Subpackage public API via `__init__.py`.** `mechanics`, `npc`, `game`, `tools`, and `correction` re-export their public names in `__init__.py`, so callers write `from straightjacket.engine.mechanics import roll_action` and the internal file layout stays free to change. `models.py` is the same kind of hub for the dataclasses. `engine`, `ai`, `datasworn`, and `web` are package markers without re-exports.
 
-**Import layers.** Dependencies point downward. The files directly under `engine/` are not one layer. Their base (the models, serialization, the configuration and yaml loaders, logging, and small helpers such as `xml_utils.py`; the list is `_CORE_BASE` in `tests/test_project_rules.py`) imports nothing above it, apart from `GameState.restore`, which rebuilds the database read model through an inline import. `datasworn` and `db` import only that base. `npc` and `mechanics` may use the base, `datasworn`, `db`, and each other, but not `ai` or `tools`; `tools` may use all of those but not `ai`, since it only answers the tool calls the Director's AI call makes in `director.py`. None of them imports the rest of the core files, `game`, `correction`, or `web`. The rest of the core (prompt assembly, the parser, persistence, story-arc tracking, and the Director) and `ai` use each other: the Brain and the narrator read prompt blocks and the parser, while the Director in `director.py` calls `ai` and `tools`. No core file and nothing in `ai` imports `game`, `correction`, or `web`. `game` orchestrates everything below it, `correction` builds on `game`, and nothing in the engine imports `web`. A project-rule scan enforces this, inline imports included.
+**Import layers.** Dependencies point downward. The files directly under `engine/` are not one layer. Their base (the models, serialization, the configuration and yaml loaders, logging, and small helpers such as `xml_utils.py`; the list is `_CORE_BASE` in `tests/test_project_rules.py`) imports nothing above it. `datasworn` imports only that base. `npc` and `mechanics` may use the base, `datasworn`, and each other, but not `ai` or `tools`; `tools` may use all of those but not `ai`, since it only answers the tool calls the Director's AI call makes in `director.py`. None of them imports the rest of the core files, `game`, `correction`, or `web`. The rest of the core (prompt assembly, the parser, persistence, story-arc tracking, and the Director) and `ai` use each other: the Brain and the narrator read prompt blocks and the parser, while the Director in `director.py` calls `ai` and `tools`. No core file and nothing in `ai` imports `game`, `correction`, or `web`. `game` orchestrates everything below it, `correction` builds on `game`, and nothing in the engine imports `web`. A project-rule scan enforces this, inline imports included.
 
 ## State
 
@@ -87,7 +86,7 @@ Beside them, `i18n.py` and `strings_loader.py` serve user-facing strings.
 
 **Saves.** A save is JSON in the users folder (the project's `users` folder, or the folder `STRAIGHTJACKET_USERS_DIR` names). Loading is strict: a field the class does not know, a field the data lacks, a null where the type allows none, or a plain value where an object belongs raises, and `persistence.py` → `load_game` reports such a save to the player as incompatible. Restoring a turn's snapshot is equally strict.
 
-**Database as read model.** An in-memory SQLite database mirrors `GameState` after every turn, creation, correction, restore, and load. The dataclasses stay the write model; the database serves indexed queries to prompt assembly and the Director's tool. It is rebuilt from `GameState`, so it needs no migrations.
+**No second store.** The dataclasses are the only store; the Director's tool and the prompts filter them directly. A copy for queries would have to be rebuilt after every change and cost more than the filtering it saves, while the state of a solo game stays small enough to fit in memory.
 
 ## Configuration
 
@@ -103,4 +102,4 @@ During play there is one text input plus the Save/Load and Retire buttons. Every
 
 ## Constraints
 
-**Single session.** One player at a time (SECURITY.md, Session model). Module-level accumulators (the pending random events, the token log) and the in-memory database assume it; several sessions would need per-session state.
+**Single session.** One player at a time (SECURITY.md, Session model). Module-level accumulators (the pending random events, the token log) assume it; several sessions would need per-session state.

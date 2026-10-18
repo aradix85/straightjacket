@@ -562,17 +562,12 @@ def _successor_creation_data() -> dict:
 
 
 def test_start_succession_with_character_happy_path(aria: GameState) -> None:
-    from straightjacket.engine.db.connection import close_db, reset_db
 
     aria.world.current_location = "Tavern"
     prepare_succession(aria, "death")
 
-    reset_db()
     provider = _SuccessionMockProvider("The successor steps forward.")
-    try:
-        game, narration = start_succession_with_character(provider, aria, _successor_creation_data())
-    finally:
-        close_db()
+    game, narration = start_succession_with_character(provider, aria, _successor_creation_data())
 
     assert game.player_name == "Bryn"
     assert "successor" in narration.lower()
@@ -580,7 +575,6 @@ def test_start_succession_with_character_happy_path(aria: GameState) -> None:
 
 
 def test_start_succession_resets_resources(aria: GameState) -> None:
-    from straightjacket.engine.db.connection import close_db, reset_db
     from straightjacket.engine.engine_loader import eng
 
     aria.resources.health = 0
@@ -588,29 +582,20 @@ def test_start_succession_resets_resources(aria: GameState) -> None:
     aria.world.current_location = "Tavern"
     prepare_succession(aria, "death")
 
-    reset_db()
     provider = _SuccessionMockProvider()
-    try:
-        game, _ = start_succession_with_character(provider, aria, _successor_creation_data())
-    finally:
-        close_db()
+    game, _ = start_succession_with_character(provider, aria, _successor_creation_data())
 
     assert game.resources.health == eng().resources.health_start
     assert game.resources.spirit == eng().resources.spirit_start
 
 
 def test_start_succession_seeds_legacy_from_predecessor(aria: GameState) -> None:
-    from straightjacket.engine.db.connection import close_db, reset_db
 
     aria.world.current_location = "Tavern"
     prepare_succession(aria, "death")
 
-    reset_db()
     provider = _SuccessionMockProvider()
-    try:
-        game, _ = start_succession_with_character(provider, aria, _successor_creation_data())
-    finally:
-        close_db()
+    game, _ = start_succession_with_character(provider, aria, _successor_creation_data())
 
     quest_filled = game.campaign.legacy_quests.filled_boxes
     bond_filled = game.campaign.legacy_bonds.filled_boxes
@@ -621,35 +606,25 @@ def test_start_succession_seeds_legacy_from_predecessor(aria: GameState) -> None
 
 
 def test_start_succession_records_session_log(aria: GameState) -> None:
-    from straightjacket.engine.db.connection import close_db, reset_db
 
     aria.world.current_location = "Tavern"
     prepare_succession(aria, "death")
 
-    reset_db()
     provider = _SuccessionMockProvider()
-    try:
-        game, _ = start_succession_with_character(provider, aria, _successor_creation_data())
-    finally:
-        close_db()
+    game, _ = start_succession_with_character(provider, aria, _successor_creation_data())
 
     assert len(game.narrative.session_log) == 1
     assert game.narrative.session_log[0].result == "opening"
 
 
 def test_start_succession_applies_the_opening_setup_and_the_engines_time(aria: GameState) -> None:
-    from straightjacket.engine.db.connection import close_db, reset_db
     from straightjacket.engine.engine_loader import eng
 
     aria.npcs = []
     aria.world.current_location = "Tavern"
     prepare_succession(aria, "death")
 
-    reset_db()
-    try:
-        game, _ = start_succession_with_character(_SuccessionMockProvider(), aria, _successor_creation_data())
-    finally:
-        close_db()
+    game, _ = start_succession_with_character(_SuccessionMockProvider(), aria, _successor_creation_data())
 
     assert [n.name for n in game.npcs] == ["Mara Voss"]
     assert game.world.current_scene_context == "A new dawn"

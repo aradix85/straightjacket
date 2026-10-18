@@ -8,8 +8,6 @@ from ..ai.blueprint_voicing import call_blueprint_voicing
 from ..ai.metadata import process_deceased_npcs
 from ..ai.narrator import call_narrator, call_opening_setup
 from ..ai.provider_base import AIProvider
-from ..db import sync as _db_sync
-from ..db.connection import reset_db
 from ..engine_loader import eng
 from ..logging_util import log
 from ..mechanics import (
@@ -90,9 +88,6 @@ def start_new_chapter(provider: AIProvider, game: GameState) -> tuple[GameState,
         process_deceased_npcs(game, setup_data["deceased_npcs"])
 
     _record_chapter_opening(game, narration)
-
-    reset_db()
-    _db_sync(game)
 
     return game, narration
 

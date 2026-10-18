@@ -2,16 +2,14 @@ from __future__ import annotations
 
 from typing import Any
 from ..datasworn.moves import get_moves
-from ..db.queries import query_clocks, query_memories, query_threads
 from ..engine_config import CombatPosCondition, FlagCondition, NotFlagCondition
 from ..engine_loader import eng
 from ..models import GameState, NpcData
-from ..npc import get_npc_bond
+from ..npc import get_npc_bond, recent_observations
 from .registry import register
 
 
 def _npc_state(game: GameState, npc: NpcData) -> dict[str, Any]:
-    recent_mems = query_memories(npc_id=npc.id, limit=eng().npc.reflection_observation_window)
     return {
         "id": npc.id,
         "name": npc.name,
@@ -24,8 +22,8 @@ def _npc_state(game: GameState, npc: NpcData) -> dict[str, Any]:
         "description": npc.description,
         "last_location": npc.last_location,
         "recent_memories": [
-            {"scene": m.scene, "event": m.event, "emotional_weight": m.emotional_weight, "type": m.type}
-            for m in recent_mems
+            {"scene": m.scene, "event": m.event, "emotional_weight": m.emotional_weight}
+            for m in recent_observations(npc)
         ],
     }
 
@@ -34,7 +32,9 @@ def _npc_state(game: GameState, npc: NpcData) -> dict[str, Any]:
 def query_game_state(game: GameState) -> dict[str, Any]:
     return {
         "threads": [
-            {"id": t.id, "name": t.name, "type": t.thread_type, "weight": t.weight} for t in query_threads(active=True)
+            {"id": t.id, "name": t.name, "type": t.thread_type, "weight": t.weight}
+            for t in game.narrative.threads
+            if t.active
         ],
         "clocks": [
             {
@@ -45,7 +45,8 @@ def query_game_state(game: GameState) -> dict[str, Any]:
                 "owner_kind": c.owner_kind,
                 "owner_id": c.owner_id,
             }
-            for c in query_clocks(clock_type=None, fired=False)
+            for c in game.world.clocks
+            if not c.fired
         ],
         "npcs": [_npc_state(game, npc) for npc in game.npcs if npc.status in eng().npc_status_groups.in_play],
     }

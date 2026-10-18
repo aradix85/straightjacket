@@ -11,7 +11,6 @@ from ..engine.ai.recap import call_recap
 from ..engine.ai.sentence_stream import SentenceStream
 from ..engine.config_loader import cfg
 from ..engine.correction import process_correction
-from ..engine.db.sync import sync as _db_sync
 from ..engine.director import reset_stale_reflection_flags
 from ..engine.engine_loader import eng
 from ..engine.game import (
@@ -191,7 +190,6 @@ def _restore_after_failed_turn(
 ) -> None:
     game.restore(snapshot)
     game.last_turn_snapshot = last_turn_snapshot
-    _db_sync(game)
 
 
 async def _offer_burn(session: Session, ws: WebSocket, offer: BurnOffer | None) -> None:
@@ -522,7 +520,6 @@ async def handle_advance_asset(session: Session, ws: WebSocket, msg: dict[str, A
         await _send(ws, {"type": "status", "text": t("advance.insufficient")})
         return
 
-    _db_sync(session.game)
     save_game(session.game, session.player, session.chat_messages, session.save_name)
     msg_key = "advance.upgraded" if kind == "upgrade" else "advance.acquired"
     await _send(ws, {"type": "status", "text": t(msg_key, asset=asset_id, cost=spent)})
