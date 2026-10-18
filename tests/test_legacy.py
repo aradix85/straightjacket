@@ -208,7 +208,7 @@ class TestLegacyTrackType:
 class TestSharedProgressAndLegacyHelper:
     def test_helper_consumes_legacy_track(self, stub_engine: None) -> None:
         from straightjacket.engine.game.finalization import apply_progress_and_legacy
-        from straightjacket.engine.mechanics.move_effects import OutcomeResult
+        from straightjacket.engine.mechanics.outcome_result import OutcomeResult
 
         game = _game()
         outcome = OutcomeResult(legacy_track="quests")
@@ -218,7 +218,7 @@ class TestSharedProgressAndLegacyHelper:
 
     def test_helper_consumes_progress_marks(self, stub_engine: None) -> None:
         from straightjacket.engine.game.finalization import apply_progress_and_legacy
-        from straightjacket.engine.mechanics.move_effects import OutcomeResult
+        from straightjacket.engine.mechanics.outcome_result import OutcomeResult
 
         game = _game()
         game.progress_tracks.append(
@@ -235,7 +235,7 @@ class TestSharedProgressAndLegacyHelper:
 
     def test_helper_handles_both_in_one_outcome(self, stub_engine: None) -> None:
         from straightjacket.engine.game.finalization import apply_progress_and_legacy
-        from straightjacket.engine.mechanics.move_effects import OutcomeResult
+        from straightjacket.engine.mechanics.outcome_result import OutcomeResult
 
         game = _game()
         outcome = OutcomeResult(progress_marks=0, legacy_track="bonds")
@@ -245,7 +245,7 @@ class TestSharedProgressAndLegacyHelper:
 
     def test_helper_noop_on_empty_outcome(self, stub_engine: None) -> None:
         from straightjacket.engine.game.finalization import apply_progress_and_legacy
-        from straightjacket.engine.mechanics.move_effects import OutcomeResult
+        from straightjacket.engine.mechanics.outcome_result import OutcomeResult
 
         game = _game()
         outcome = OutcomeResult()
@@ -258,7 +258,7 @@ class TestSharedProgressAndLegacyHelper:
         import pytest
 
         from straightjacket.engine.game.finalization import apply_progress_and_legacy
-        from straightjacket.engine.mechanics.move_effects import OutcomeResult
+        from straightjacket.engine.mechanics.outcome_result import OutcomeResult
 
         outcome = OutcomeResult(legacy_track="quests")
         brain = make_brain_result(move="quest/fulfill_your_vow")
@@ -269,7 +269,7 @@ class TestSharedProgressAndLegacyHelper:
         import pytest
 
         from straightjacket.engine.game.finalization import apply_progress_and_legacy
-        from straightjacket.engine.mechanics.move_effects import OutcomeResult
+        from straightjacket.engine.mechanics.outcome_result import OutcomeResult
 
         outcome = OutcomeResult(progress_marks=1)
         with pytest.raises(KeyError):

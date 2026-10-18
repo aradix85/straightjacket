@@ -41,7 +41,9 @@ ai_text:
     disposition_shift: '{name} disposition {old}→{new}'
     mark_impact: mark {impact}
     clear_impact: clear {impact}
-    threshold_vow: swear a deathbound vow
+    threshold_vow: 'return from the brink bound to the {rank} vow "{vow}"; the oracle: {oracle}'
+    forsake_vow: 'forsake the vow "{vow}"'
+    out_of_time: '{clock}: out of time'
   narrator_defaults:
     unknown_location: unknown
     unknown_time: unspecified

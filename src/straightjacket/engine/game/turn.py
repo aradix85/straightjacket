@@ -24,8 +24,11 @@ from ..mechanics import (
     roll_progress,
 )
 from ..mechanics import check_npc_agency
+from ..mechanics.move_outcome import make_follow_up_moves
+from ..mechanics.outcome_result import OutcomeResult
 from ..mechanics.random_events import drain_pending_events
 from ..mechanics.scene import check_scene
+from ..mechanics.suffer import tick_dying_clock
 from ..mechanics.threats import advance_threat_by_id, resolve_full_menace
 from ..models import (
     BrainResult,
@@ -44,7 +47,7 @@ from ..prompt_dialog import build_dialog_prompt
 from ..prompt_loader import get_prompt
 from ..story_state import get_pending_revelations
 from .action_resolution import resolve_action_phase
-from .finalization import narrate_scene
+from .finalization import narrate_scene, update_crisis
 from .scene_finalization import finalize_scene
 from ..mechanics import find_progress_track, roll_oracle_answer
 from ..mechanics.bonuses import apply_momentum_on_hit, chosen_bonus
@@ -267,7 +270,11 @@ def _process_dialog_turn(ctx: SceneContext) -> tuple[str, DirectorCall | None]:
     game.world.pending_clock_fills.clear()
     npc_agency, agency_clock_events, agency_fill_results = check_npc_agency(game)
     pending_fills.extend(agency_fill_results)
-    threat_events = resolve_full_menace(game)
+    engine_moves = OutcomeResult()
+    tick_dying_clock(game, engine_moves)
+    threat_events = resolve_full_menace(game, engine_moves)
+    make_follow_up_moves(game, engine_moves)
+    update_crisis(game)
 
     prompt = build_dialog_prompt(
         game,
@@ -279,6 +286,7 @@ def _process_dialog_turn(ctx: SceneContext) -> tuple[str, DirectorCall | None]:
         oracle_answer=oracle_answer,
         random_events=ctx.pending_random_events,
         threat_events=threat_events,
+        consequences=engine_moves.consequences,
         clock_fill_results=pending_fills,
         npc_agency=npc_agency,
         facts=ctx.facts,
@@ -299,7 +307,7 @@ def _process_dialog_turn(ctx: SceneContext) -> tuple[str, DirectorCall | None]:
         "summary": (brain.player_intent or ctx.player_message),
         "move": brain.move,
         "result": result_label,
-        "consequences": [],
+        "consequences": engine_moves.consequences,
         "clock_events": [],
         "scene_type": ctx.scene_setup.scene_type,
         "npc_activation": ctx.npc_activation_debug,
@@ -317,6 +325,7 @@ def _process_dialog_turn(ctx: SceneContext) -> tuple[str, DirectorCall | None]:
             intent=(brain.player_intent or ctx.player_message)[: eng().truncations.log_medium],
         ),
         roll_result_str=result_label,
+        consequences=engine_moves.consequences,
         agency_clock_events=agency_clock_events,
         threat_events=threat_events,
     )

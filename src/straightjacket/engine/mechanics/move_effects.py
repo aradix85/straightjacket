@@ -2,13 +2,16 @@ from __future__ import annotations
 
 import re
 from collections.abc import Callable
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 from ..datasworn.settings import load_package
 from ..engine_loader import eng
 from .complications import spawn_complication_clock
+from .impacts import clear_impact
 from .legacy import shifted_rank
+from .outcome_result import OutcomeResult
 from .random_events import roll_meaning_table
+from .suffer import suffer
 from ..logging_util import log
 from ..models import GameState, NpcData
 from ..npc import find_npc
@@ -20,20 +23,6 @@ class MoveEffect:
     type: str = ""
     value: int = 0
     target: str = ""
-
-
-@dataclass
-class OutcomeResult:
-    consequences: list[str] = field(default_factory=list)
-    combat_position: str = ""
-    progress_marks: int = 0
-    clock_fills: int = 0
-    legacy_track: str = ""
-    legacy_rank_shift: int = 0
-    legacy_fixed_ticks: int = 0
-    experience_rank_shift: int | None = None
-    boast_slots: int = 0
-    chained_move: str = ""
 
 
 _EFFECT_RE = re.compile(r"^(\w+)\s+([+-]?\d+)$")
@@ -138,9 +127,23 @@ def _apply_resource_effect(game: GameState, effect: MoveEffect, result: OutcomeR
         if gained:
             result.consequences.append(_labels["track_gain"].format(track=effect.type, n=gained))
     else:
-        lost = game.resources.damage(effect.type, abs(effect.value))
-        if lost:
-            result.consequences.append(_labels["track_loss"].format(track=effect.type, n=lost))
+        suffer(game, effect.type, abs(effect.value), result)
+
+
+def _apply_clear_condition_effect(
+    game: GameState, effect: MoveEffect, result: OutcomeResult, target: NpcData | None
+) -> None:
+    _e = eng()
+    condition = next((key for key in game.impacts if _e.impacts[key].blocks_recovery), None)
+    if condition is None:
+        return
+    meter = _e.impacts[condition].blocks_recovery
+    clear_impact(game, condition)
+    labels = _e.ai_text.consequence_labels
+    result.consequences.append(labels["clear_impact"].format(impact=condition))
+    gained = game.resources.heal(meter, effect.value, cap=getattr(_e.resources, f"{meter}_max"))
+    if gained:
+        result.consequences.append(labels["track_gain"].format(track=meter, n=gained))
 
 
 def _apply_mark_progress_effect(
@@ -319,6 +322,7 @@ _EFFECT_HANDLERS: dict[str, Callable[[GameState, MoveEffect, OutcomeResult, NpcD
     "complication": _apply_complication_effect,
     "bond": _apply_bond_effect,
     "disposition_shift": _apply_disposition_shift_effect,
+    "clear_condition": _apply_clear_condition_effect,
 }
 
 
@@ -333,8 +337,6 @@ def apply_effects(game: GameState, effects: list[MoveEffect], target_npc_id: str
 
 
 def _apply_generic_suffer(game: GameState, amount: int, result: OutcomeResult) -> None:
-    _e = eng()
-    _labels = _e.ai_text.consequence_labels
     res = game.resources
 
     tracks = [
@@ -344,7 +346,4 @@ def _apply_generic_suffer(game: GameState, amount: int, result: OutcomeResult) -
     ]
 
     tracks.sort(key=lambda t: t[1], reverse=True)
-    track = tracks[0][0]
-    lost = res.damage(track, amount)
-    if lost:
-        result.consequences.append(_labels["track_loss"].format(track=track, n=lost))
+    suffer(game, tracks[0][0], amount, result)

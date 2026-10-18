@@ -62,6 +62,7 @@ def make_progress_track(**kwargs: Any) -> Any:
     kwargs.setdefault("track_type", "vow")
     kwargs.setdefault("rank", "dangerous")
     kwargs.setdefault("max_ticks", 40)
+    kwargs.setdefault("bound_impact", "")
     return ProgressTrack(**kwargs)
 
 
@@ -237,6 +238,7 @@ def dialog_prompt_kwargs(**kwargs: Any) -> dict[str, Any]:
     kwargs.setdefault("oracle_answer", "")
     kwargs.setdefault("random_events", [])
     kwargs.setdefault("threat_events", [])
+    kwargs.setdefault("consequences", [])
     kwargs.setdefault("clock_fill_results", [])
     kwargs.setdefault("npc_agency", [])
     kwargs.setdefault("facts", [])

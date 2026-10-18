@@ -73,14 +73,18 @@ logging:
   - "[Clock]"
   - "[AdventureCrafter]"
   - "[MoveOutcome]"
+  - "[FollowUp]"
+  - "[Impact]"
+  - "[Suffer]"
 
 scenarios:
   near_death:
     turns: 8
     style: "aggressor"
     directive: "bot_turn_directive_physical_risk"
-    expect: ["game_over", "succession"]
-    resources: {health: 0, spirit: 0}
+    expect: ["follow_up_move", "impact_marked", "game_over", "succession"]
+    resources: {health: 0, spirit: 0, supply: 0}
+    every_stat: 1
   chapter_end:
     turns: 4
     max_chapters: 2

@@ -102,6 +102,7 @@ def test_bond_threshold_fires_when_connection_track_meets_filled_boxes():
             track_type="connection",
             rank="dangerous",
             max_ticks=40,
+            bound_impact="",
             ticks=24,
             status="active",
         )
@@ -121,6 +122,7 @@ def test_bond_threshold_below_threshold_does_not_fire():
             track_type="connection",
             rank="dangerous",
             max_ticks=40,
+            bound_impact="",
             ticks=8,
             status="active",
         )

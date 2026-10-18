@@ -3,7 +3,8 @@ from collections.abc import Sequence
 from ..engine_loader import eng
 from ..logging_util import log
 from ..models import GameState
-from .move_effects import OutcomeResult, apply_effects, parse_effects
+from .move_effects import apply_effects, parse_effects
+from .outcome_result import OutcomeResult
 
 
 def apply_boasts(game: GameState, boasts: Sequence[str], outcome: OutcomeResult) -> None:
@@ -15,6 +16,7 @@ def apply_boasts(game: GameState, boasts: Sequence[str], outcome: OutcomeResult)
         applied = apply_effects(game, effects)
         outcome.consequences.append(option.description)
         outcome.consequences.extend(applied.consequences)
+        outcome.follow_up_moves.extend(applied.follow_up_moves)
         if applied.combat_position:
             outcome.combat_position = applied.combat_position
     if chosen:

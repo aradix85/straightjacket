@@ -149,7 +149,6 @@ class ThreatConfig:
     autonomous_tick_chance: float
     autonomous_tick_marks: int
     menace_high_threshold: float
-    forsake_spirit_cost: int
 
 
 @dataclass
@@ -844,6 +843,37 @@ class PayThePriceConfig:
     max_rerolls: int
     reroll_rows: list[PayThePriceRerollRow]
     suffer_rows: list[PayThePriceSufferRow]
+
+
+@dataclass
+class SufferTableRow:
+    prefix: str
+    trigger: str
+
+
+@dataclass
+class DyingClockConfig:
+    name: str
+    clock_type: str
+    segments: int
+    trigger_description: str
+    meter: str
+
+
+@dataclass
+class ForsakeVowConfig:
+    meter: str
+    cost: int
+
+
+@dataclass
+class SufferConfig:
+    endure_moves: dict[str, str]
+    exhausted_impacts: dict[str, str]
+    swear_move: str
+    table_rows: list[SufferTableRow]
+    dying_clock: DyingClockConfig
+    forsake_vow: ForsakeVowConfig
 
 
 @dataclass

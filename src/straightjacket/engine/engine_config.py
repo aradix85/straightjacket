@@ -15,6 +15,7 @@ from .engine_config_dataclasses import (
     BoastsConfig,
     ChaosConfig,
     DiceConfig,
+    DyingClockConfig,
     NpcStatusGroups,
     ChaosResolverConfig,
     ChapterConfig,
@@ -37,6 +38,7 @@ from .engine_config_dataclasses import (
     FactTypeConfig,
     FateConfig,
     FateLikelihoodRules,
+    ForsakeVowConfig,
     FuzzyMatchConfig,
     GenerationConfig,
     ImpactConfig,
@@ -95,7 +97,9 @@ from .engine_config_dataclasses import (
     StopwordsConfig,
     StoryConfig,
     StoryStateConfig,
+    SufferConfig,
     SufferRecoveryGain,
+    SufferTableRow,
     SuccessionConfig,
     InheritanceConfig,
     NpcCarryoverEntry,
@@ -178,6 +182,7 @@ class EngineSettings:
     clock_keyed_scenes: ClockKeyedScenesConfig
     clocks: ClocksConfig
     pay_the_price: PayThePriceConfig
+    suffer: SufferConfig
     roll_bonuses: RollBonusesConfig
 
     scene_range_default: list[int]
@@ -415,6 +420,18 @@ def _build_pay_the_price(ptp_raw: dict[str, Any]) -> PayThePriceConfig:
     )
 
 
+def _build_suffer(s_raw: dict[str, Any]) -> SufferConfig:
+    _reject_unknown(SufferConfig, s_raw)
+    return SufferConfig(
+        endure_moves={str(k): str(v) for k, v in dict(s_raw["endure_moves"]).items()},
+        exhausted_impacts={str(k): str(v) for k, v in dict(s_raw["exhausted_impacts"]).items()},
+        swear_move=s_raw["swear_move"],
+        table_rows=[_build_strict(SufferTableRow, dict(row)) for row in s_raw["table_rows"]],
+        dying_clock=_build_strict(DyingClockConfig, dict(s_raw["dying_clock"])),
+        forsake_vow=_build_strict(ForsakeVowConfig, dict(s_raw["forsake_vow"])),
+    )
+
+
 def _build_roll_bonuses(rb_raw: dict[str, Any]) -> RollBonusesConfig:
     _reject_unknown(RollBonusesConfig, rb_raw)
     return RollBonusesConfig(
@@ -646,6 +663,7 @@ def parse_engine_yaml(data: dict[str, Any]) -> EngineSettings:
         clock_keyed_scenes=clock_keyed_scenes,
         clocks=clocks,
         pay_the_price=_build_pay_the_price(dict(data["pay_the_price"])),
+        suffer=_build_suffer(dict(data["suffer"])),
         roll_bonuses=_build_roll_bonuses(dict(data["roll_bonuses"])),
         scene_range_default=list(data["scene_range_default"]),
         death_emotions=list(data["death_emotions"]),
@@ -749,7 +767,9 @@ __all__ = [
     "StoryConfig",
     "StoryStateConfig",
     "SuccessionConfig",
+    "SufferConfig",
     "SufferRecoveryGain",
+    "SufferTableRow",
     "TfIdfConfig",
     "ThreatConfig",
     "ThreatCreationMappingEntry",

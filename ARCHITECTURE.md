@@ -41,7 +41,7 @@ NPC activation (npc/activation.py) → decides which NPCs get full context
   ↓
 Roll (mechanics/consequences.py) → the Ironsworn action roll: STRONG_HIT, WEAK_HIT, or MISS
   ↓
-Consequences (game/action_resolution.py) → position and effect, move outcome, combat position, clock ticks, crisis check; a hit clears the facts whose type says so
+Consequences (game/action_resolution.py) → position and effect, move outcome, combat position, clock ticks, threats, the dying clock, follow-up moves (Endure, Face Death), crisis check; a hit clears the facts whose type says so
   ↓
 Prompt assembly (prompt_action.py, prompt_dialog.py) → XML prompt with world, NPCs, result, facts, scene type
   ↓

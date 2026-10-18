@@ -112,6 +112,7 @@ def apply_npc_carryover(
             track_type=track.track_type,
             rank=track.rank,
             max_ticks=track.max_ticks,
+            bound_impact=track.bound_impact,
             ticks=0,
             status="active",
         )

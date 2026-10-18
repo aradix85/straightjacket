@@ -235,16 +235,6 @@ class TestRecoveryHandlerClearsImpact:
         assert not any("wounded" in c for c in result.consequences)
 
 
-class TestThresholdHandlerMarksImpact:
-    def test_face_death_weak_hit_marks_doomed(self, stub_engine: None) -> None:
-        from straightjacket.engine.mechanics.move_handlers import apply_threshold_handler
-
-        game = _game()
-        result = apply_threshold_handler(game, "WEAK_HIT", {"impact": "doomed"})
-        assert "doomed" in game.impacts
-        assert any("doomed" in c for c in result.consequences)
-
-
 class TestImpactsStatus:
     def test_impacts_shown_in_status(self, load_engine: None) -> None:
         from straightjacket.engine.mechanics.impacts import apply_impact

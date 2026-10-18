@@ -142,13 +142,16 @@ class ProgressTrack(SerializableMixin):
     track_type: str
     rank: str
     max_ticks: int
+    bound_impact: str
     ticks: int = 0
     status: str = "active"
     completions: int = 0
 
     @classmethod
     def new(cls, *, id: str, name: str, track_type: str, rank: str) -> ProgressTrack:
-        return cls(id=id, name=name, track_type=track_type, rank=rank, max_ticks=eng().progress.max_ticks)
+        return cls(
+            id=id, name=name, track_type=track_type, rank=rank, max_ticks=eng().progress.max_ticks, bound_impact=""
+        )
 
     @property
     def ticks_per_mark(self) -> int:

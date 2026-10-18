@@ -1,0 +1,29 @@
+suffer:
+  endure_moves:
+    health: suffer/endure_harm
+    spirit: suffer/endure_stress
+  exhausted_impacts:
+    supply: unprepared
+  swear_move: quest/swear_an_iron_vow
+  table_rows:
+  - prefix: The harm is mortal
+    trigger: threshold
+  - prefix: You suffer mortal harm
+    trigger: threshold
+  - prefix: You are dying
+    trigger: dying
+  - prefix: You are unconscious
+    trigger: threshold_in_a_fight
+  - prefix: You are overwhelmed
+    trigger: threshold
+  - prefix: You give up
+    trigger: forsake_vow
+  dying_clock:
+    name: Dying
+    clock_type: dying
+    segments: 2
+    trigger_description: Heal and raise health above 0, or Face Death
+    meter: health
+  forsake_vow:
+    meter: spirit
+    cost: 2

@@ -2,10 +2,11 @@ from __future__ import annotations
 
 import random
 
-from .tracks import complete_track
+from .tracks import forsake_vow
 from ..engine_loader import eng
 from ..logging_util import log
 from ..models import GameState, ThreatEvent
+from .outcome_result import OutcomeResult
 from .spawn_sources import EMERGENT_SOURCE_PREFIXES
 
 
@@ -72,8 +73,7 @@ def advance_threat_by_id(game: GameState, threat_id: str) -> None:
     log(f"[Threat] Menace advance (random event): '{threat.name}' +{ticks} ticks → {status}")
 
 
-def resolve_full_menace(game: GameState) -> list[ThreatEvent]:
-    spirit_cost = eng().threats.forsake_spirit_cost
+def resolve_full_menace(game: GameState, result: OutcomeResult) -> list[ThreatEvent]:
     events: list[ThreatEvent] = []
 
     for threat in game.threats:
@@ -89,9 +89,8 @@ def resolve_full_menace(game: GameState) -> list[ThreatEvent]:
             log(f"[Threat] '{threat.name}' menace full but vow already gone — resolved")
             continue
 
-        complete_track(game, vow.id, "failed")
         threat.status = "resolved"
-        game.resources.damage("spirit", spirit_cost)
+        forsake_vow(game, vow, result)
         events.append(
             ThreatEvent(
                 threat_id=threat.id,
@@ -101,6 +100,6 @@ def resolve_full_menace(game: GameState) -> list[ThreatEvent]:
                 source="forsake_vow",
             )
         )
-        log(f"[Threat] FORSAKE YOUR VOW: '{threat.name}' menace full → vow '{vow.name}' failed, spirit -{spirit_cost}")
+        log(f"[Threat] FORSAKE YOUR VOW: '{threat.name}' menace full → vow '{vow.name}' failed")
 
     return events

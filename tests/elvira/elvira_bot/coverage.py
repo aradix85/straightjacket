@@ -30,6 +30,8 @@ TARGETS = (
     "stream_complete",
     "bonus_used",
     "chained_move",
+    "follow_up_move",
+    "impact_marked",
     "pay_the_price",
     "fact_resolved",
     "ai_failure_rollback",
@@ -92,6 +94,8 @@ class Coverage:
             self.hit("bonus_used")
         if any(e.startswith("[Chain]") and "skipped" not in e for e in events):
             self.hit("chained_move")
+        self.hit("follow_up_move", sum(1 for e in events if e.startswith("[FollowUp]")))
+        self.hit("impact_marked", sum(1 for e in events if e.startswith("[Impact]") and " applied " in e))
         self.hit("pay_the_price", sum(1 for e in events if e.startswith("[PayThePrice]")))
         self.hit("fact_resolved", sum(1 for e in events if e.startswith("[Fact] Resolved")))
         self.hit("place_generated", sum(1 for e in events if e.startswith("[Generate] New place")))

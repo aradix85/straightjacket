@@ -405,7 +405,8 @@ class _FakeOracle:
 def test_pay_the_price_rolls_the_official_table(load_engine: None, setting: str) -> None:
     import json
 
-    from straightjacket.engine.mechanics.move_effects import OutcomeResult, pay_the_price
+    from straightjacket.engine.mechanics.move_effects import pay_the_price
+    from straightjacket.engine.mechanics.outcome_result import OutcomeResult
     from tests._helpers import make_game_state
 
     data = json.loads((REPO / "data" / f"{setting}.json").read_text(encoding="utf-8"))
@@ -422,24 +423,26 @@ def test_pay_the_price_rolls_the_official_table(load_engine: None, setting: str)
 
 def test_pay_the_price_harm_costs_health(load_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:
     from straightjacket.engine.mechanics import move_effects
+    from straightjacket.engine.mechanics.outcome_result import OutcomeResult
     from tests._helpers import make_game_state
 
     monkeypatch.setattr(move_effects, "load_package", lambda setting: _FakeOracle("You are harmed"))
     game = make_game_state(setting_id="starforged")
     game.resources.health = 4
-    move_effects.pay_the_price(game, move_effects.OutcomeResult())
+    move_effects.pay_the_price(game, OutcomeResult())
     assert game.resources.health == 3
 
 
 def test_pay_the_price_roll_twice_adds_two_results(load_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:
     from straightjacket.engine.mechanics import move_effects
+    from straightjacket.engine.mechanics.outcome_result import OutcomeResult
     from tests._helpers import make_game_state
 
     fake = _FakeOracle("Roll twice", "You are stressed", "A new enemy is revealed")
     monkeypatch.setattr(move_effects, "load_package", lambda setting: fake)
     game = make_game_state(setting_id="starforged")
     game.resources.spirit = 4
-    result = move_effects.OutcomeResult()
+    result = OutcomeResult()
     move_effects.pay_the_price(game, result)
     assert result.consequences[0].split("; ") == ["Roll twice", "You are stressed", "A new enemy is revealed"]
     assert game.resources.spirit == 3

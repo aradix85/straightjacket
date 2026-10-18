@@ -264,9 +264,8 @@ def test_a_journey_is_started_once_and_then_continued_by_its_id(load_engine: Non
     assert track.ticks == hits * track.ticks_per_mark
 
 
-def _force_result(monkeypatch: pytest.MonkeyPatch, result: str) -> None:
-    from straightjacket.engine.game import turn
-    from straightjacket.engine.models import RollResult, SceneSetup
+def _rolling(result: str) -> Callable[[str, int, str, int, int], object]:
+    from straightjacket.engine.models import RollResult
 
     def _roll(stat_name: str, stat_value: int, move: str, momentum: int, adds: int) -> RollResult:
         hit = result != "MISS"
@@ -282,7 +281,14 @@ def _force_result(monkeypatch: pytest.MonkeyPatch, result: str) -> None:
             match=False,
         )
 
-    monkeypatch.setattr(turn, "roll_action", _roll)
+    return _roll
+
+
+def _force_result(monkeypatch: pytest.MonkeyPatch, result: str) -> None:
+    from straightjacket.engine.game import turn
+    from straightjacket.engine.models import SceneSetup
+
+    monkeypatch.setattr(turn, "roll_action", _rolling(result))
     monkeypatch.setattr(turn, "check_scene", lambda _game: SceneSetup(scene_type="expected", chaos_roll=10))
 
 
@@ -405,6 +411,55 @@ def test_a_menace_that_fills_at_scene_end_forsakes_its_vow_in_the_next_turn_and_
     narrator_prompt = [c for c in provider.calls if not c["json_schema"]][-1]["messages"][-1]["content"]
     assert '<vow_forsaken threat="The Hollow King"/>' in narrator_prompt
     assert (threat.status, vow.status) == ("resolved", "failed")
+
+
+def _last_narrator_prompt(provider: MockProvider) -> str:
+    prompt: str = [c for c in provider.calls if not c["json_schema"]][-1]["messages"][-1]["content"]
+    return prompt
+
+
+def test_harm_at_zero_in_a_turn_is_endured_and_does_not_end_the_game(
+    load_engine: None, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from straightjacket.engine.game import turn
+    from straightjacket.engine.mechanics import move_outcome
+
+    _force_result(monkeypatch, "WEAK_HIT")
+    monkeypatch.setattr(move_outcome, "roll_action", _rolling("MISS"))
+    game = _make_game()
+    game.resources.health, game.resources.spirit, game.resources.supply = 0, 0, 0
+    provider = _ScriptedBrain({"move": "adventure/face_danger", "stat": "wits"})
+
+    game, *_ = turn.process_turn(provider, game, "I climb the crumbling shelves", stream=None)
+
+    assert (game.game_over, game.crisis_mode, game.impacts) == (False, True, ["wounded"])
+    assert "follow-up move Endure Harm: MISS" in _last_narrator_prompt(provider)
+    assert "follow-up move Endure Harm: MISS" in game.narrative.session_log[-1].consequences
+
+
+def test_a_dying_character_who_does_not_heal_faces_death_in_a_dialog_turn(
+    load_engine: None, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from straightjacket.engine.game import turn
+    from straightjacket.engine.mechanics import move_outcome
+    from straightjacket.engine.mechanics.suffer import start_dying_clock
+    from straightjacket.engine.models import SceneSetup
+
+    monkeypatch.setattr(turn, "check_scene", lambda _game: SceneSetup(scene_type="expected", chaos_roll=10))
+    monkeypatch.setattr(move_outcome, "roll_action", _rolling("MISS"))
+    game = _make_game()
+    game.resources.health = 0
+    start_dying_clock(game)
+    game.world.clocks[-1].filled = 1
+    provider = _ScriptedBrain({"move": "dialog", "stat": "none", "dialog_only": True, "target_npc": game.npcs[0].id})
+
+    game, *_ = turn.process_turn(provider, game, "I whisper to Mira", stream=None)
+
+    prompt = _last_narrator_prompt(provider)
+    assert game.game_over
+    for told in ("Dying: out of time", "follow-up move Face Death: MISS", "you are dead"):
+        assert f"<consequence>{told}</consequence>" in prompt
+    assert "FINAL_SCENE" in prompt
 
 
 def test_turn_consequences_applied_on_miss(load_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:

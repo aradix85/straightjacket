@@ -17,8 +17,9 @@ from ..mechanics import (
 )
 from ..mechanics.consequences import tick_threat_clock
 from ..mechanics.legacy import mark_legacy, mark_legacy_ticks, shifted_rank
-from ..mechanics.move_effects import OutcomeResult, strip_datasworn_links
+from ..mechanics.move_effects import strip_datasworn_links
 from ..mechanics.move_outcome import resolve_move_outcome
+from ..mechanics.outcome_result import OutcomeResult
 from ..mechanics.roll_sources import roll_source_without_stat
 from ..models import BrainResult, ClockEvent, GameState, MemoryEntry, NpcData, ProgressTrack, RollResult
 from ..npc import named_in
@@ -80,6 +81,7 @@ def _chain_move(game: GameState, brain: BrainResult, outcome: OutcomeResult) -> 
         eng().ai_text.consequence_labels["chained_move"].format(move=move.name, result=roll.result)
     )
     outcome.consequences.extend(chained.consequences)
+    outcome.follow_up_moves.extend(chained.follow_up_moves)
     if chained.legacy_track and not outcome.legacy_track:
         outcome.legacy_track = chained.legacy_track
         outcome.legacy_rank_shift = chained.legacy_rank_shift
@@ -107,8 +109,6 @@ def resolve_action_consequences(
         clock_ticks = eng().clocks.miss_ticks_by_position[position]
         if clock_ticks > 0:
             tick_threat_clock(game, clock_ticks, clock_events, fill_results)
-
-    _update_crisis(game)
 
     return ActionOutcome(
         consequences=outcome.consequences,
@@ -150,15 +150,8 @@ def apply_progress_and_legacy(
         log(f"[Legacy] Experience +{gained} for a {rolled_track.rank} vow (total {game.campaign.xp})")
 
 
-def _update_crisis(game: GameState) -> None:
-    res = game.resources
-    if res.health <= 0 and res.spirit <= 0:
-        game.game_over = True
-        game.crisis_mode = True
-    elif res.health <= 0 or res.spirit <= 0:
-        game.crisis_mode = True
-    else:
-        game.crisis_mode = False
+def update_crisis(game: GameState) -> None:
+    game.crisis_mode = game.resources.health <= 0 or game.resources.spirit <= 0
 
 
 def apply_engine_memories(game: GameState, memories: list[tuple[NpcData, MemoryEntry]], narration: str) -> None:

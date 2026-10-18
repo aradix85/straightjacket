@@ -34,8 +34,8 @@ def assert_game_state(game: GameState, turn: int) -> list[str]:
 
     if res.health > 0 and res.spirit > 0:
         check(not game.crisis_mode, f"crisis_mode=True but health={res.health} spirit={res.spirit} (both > 0)")
-    if res.health <= 0 and res.spirit <= 0:
-        check(game.game_over, f"game_over=False but health={res.health} spirit={res.spirit} (both <= 0)")
+    else:
+        check(game.crisis_mode, f"crisis_mode=False but health={res.health} spirit={res.spirit} (one at 0)")
 
     for npc in game.npcs:
         _check_npc(npc, turn, violations, _e)
@@ -131,7 +131,8 @@ def _check_clock(clock: ClockData, turn: int, violations: list[str]) -> None:
             violations.append(f"[TURN {turn}] Clock '{clock.name}': {msg}")
 
     check(clock.name != "", "empty name")
-    check(clock.clock_type in ("threat", "scheme", "progress"), f"invalid clock_type '{clock.clock_type}'")
+    clock_types = ("threat", "scheme", "progress", eng().suffer.dying_clock.clock_type)
+    check(clock.clock_type in clock_types, f"invalid clock_type '{clock.clock_type}'")
     check(clock.segments > 0, f"segments={clock.segments} <= 0")
     check(0 <= clock.filled <= clock.segments, f"filled={clock.filled} out of [0,{clock.segments}]")
     if clock.fired:

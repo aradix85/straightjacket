@@ -249,23 +249,13 @@ class TestSufferHandler:
 
 
 class TestThresholdHandler:
-    @pytest.mark.parametrize(
-        ("result_type", "game_over", "has_impact"),
-        [
-            ("STRONG_HIT", False, False),
-            ("WEAK_HIT", False, True),
-            ("MISS", True, False),
-        ],
-    )
-    def test_threshold_outcomes(self, game: GameState, result_type: str, game_over: bool, has_impact: bool) -> None:
+    @pytest.mark.parametrize(("result_type", "game_over"), [("STRONG_HIT", False), ("MISS", True)])
+    def test_a_strong_hit_returns_and_a_miss_dies(self, game: GameState, result_type: str, game_over: bool) -> None:
         params = {"impact": "doomed", "game_over_text": "you are dead"}
         result = apply_threshold_handler(game, result_type, params)
         assert game.game_over == game_over
-        assert (result.consequences == []) == (result_type == "STRONG_HIT")
-        if has_impact:
-            assert "mark doomed" in result.consequences
-        if game_over:
-            assert "you are dead" in result.consequences
+        assert result.consequences == (["you are dead"] if game_over else [])
+        assert game.impacts == []
 
 
 class TestRecoveryHandler:

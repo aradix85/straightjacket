@@ -4,4 +4,3 @@ threats:
   autonomous_tick_chance: 0.15
   autonomous_tick_marks: 1
   menace_high_threshold: 0.75
-  forsake_spirit_cost: 2

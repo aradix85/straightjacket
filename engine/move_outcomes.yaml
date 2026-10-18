@@ -229,6 +229,9 @@ move_outcomes:
       strong_hit_exchange_cost: 0
       weak_hit_exchange: true
       recover_from_zero: true
+      endure_always: false
+      table: moves/endure_harm
+      threshold_move: threshold/face_death
   suffer/endure_stress:
     handler: suffer
     params:
@@ -243,6 +246,9 @@ move_outcomes:
       strong_hit_exchange_cost: 0
       weak_hit_exchange: true
       recover_from_zero: true
+      endure_always: false
+      table: moves/endure_stress
+      threshold_move: threshold/face_desolation
   suffer/withstand_damage:
     handler: suffer
     params:
@@ -274,11 +280,17 @@ move_outcomes:
     params:
       impact: doomed
       game_over_text: you are dead
+      vow_name: The deathbound quest
+      vow_rank: extreme
+      swear_miss_is_death: false
   threshold/face_desolation:
     handler: threshold
     params:
       impact: tormented
       game_over_text: you succumb to despair and are lost
+      vow_name: The soul-bound quest
+      vow_rank: extreme
+      swear_miss_is_death: false
   scene_challenge/face_danger:
     strong_hit:
     - mark_progress 1
@@ -319,7 +331,7 @@ move_outcomes:
     handler: recovery
     params:
       track: health
-      full_amount: 3
+      full_amount: 2
       impact_amount: 2
       blocking_impact: wounded
       weak_hit_cost_type: supply
@@ -384,9 +396,11 @@ move_outcomes:
     - pay_the_price
   relationship/sojourn:
     strong_hit:
+    - clear_condition +1
     - health +1
     - spirit +1
     weak_hit:
+    - clear_condition +1
     - health +1
     miss:
     - pay_the_price
@@ -411,13 +425,19 @@ move_outcomes:
   suffer/face_death:
     handler: threshold
     params:
-      impact: doomed
+      impact: cursed
       game_over_text: you are dead
+      vow_name: The soul-bound quest
+      vow_rank: extreme
+      swear_miss_is_death: true
   suffer/face_desolation:
     handler: threshold
     params:
       impact: tormented
       game_over_text: you succumb to despair and are lost
+      vow_name: The quest against the dread vision
+      vow_rank: extreme
+      swear_miss_is_death: true
   delve/check_your_gear:
     strong_hit:
     - momentum +1
@@ -481,6 +501,9 @@ move_outcome_overrides:
         strong_hit_exchange_cost: 1
         weak_hit_exchange: false
         recover_from_zero: false
+        endure_always: true
+        table: moves/endure_harm
+        threshold_move: suffer/face_death
     suffer/endure_stress:
       handler: suffer
       params:
@@ -495,6 +518,9 @@ move_outcome_overrides:
         strong_hit_exchange_cost: 1
         weak_hit_exchange: false
         recover_from_zero: false
+        endure_always: true
+        table: moves/endure_stress
+        threshold_move: suffer/face_desolation
     adventure/secure_an_advantage:
       strong_hit:
       - momentum +2

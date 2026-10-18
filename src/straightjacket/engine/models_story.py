@@ -264,6 +264,7 @@ def _legacy_track(track_id: str, name_key: str) -> ProgressTrack:
         track_type="legacy",
         rank=_e.legacy.starting_rank,
         max_ticks=_e.progress.max_ticks,
+        bound_impact="",
     )
 
 

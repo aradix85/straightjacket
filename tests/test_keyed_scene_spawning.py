@@ -43,6 +43,7 @@ def _bond_track(npc_id: str, filled_boxes: int) -> ProgressTrack:
         track_type="connection",
         rank="dangerous",
         max_ticks=40,
+        bound_impact="",
         ticks=filled_boxes * 4,
         status="active",
     )

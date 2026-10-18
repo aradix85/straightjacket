@@ -88,14 +88,20 @@ def test_catches_crisis_mode_when_both_positive(load_engine: None) -> None:
     assert any("crisis" in v.lower() for v in violations)
 
 
-def test_catches_game_over_missing(load_engine: None) -> None:
+def test_catches_crisis_mode_missing_at_zero(load_engine: None) -> None:
+    game = _clean_game()
+    game.resources.spirit = 0
+    game.crisis_mode = False
+    violations = assert_game_state(game, turn=1)
+    assert any("crisis_mode=False" in v for v in violations)
+
+
+def test_meters_at_zero_without_game_over_are_no_violation(load_engine: None) -> None:
     game = _clean_game()
     game.resources.health = 0
     game.resources.spirit = 0
-    game.game_over = False
     game.crisis_mode = True
-    violations = assert_game_state(game, turn=1)
-    assert any("game_over" in v.lower() for v in violations)
+    assert assert_game_state(game, turn=1) == []
 
 
 def test_catches_npc_empty_id(load_engine: None) -> None:
@@ -148,6 +154,16 @@ def test_catches_invalid_clock_type(load_engine: None) -> None:
     game.world.clocks[0].clock_type = "timer"
     violations = assert_game_state(game, turn=1)
     assert any("clock_type" in v for v in violations)
+
+
+def test_a_dying_clock_is_a_valid_clock(load_engine: None) -> None:
+    from straightjacket.engine.mechanics.suffer import start_dying_clock
+
+    game = _clean_game()
+    game.resources.health = 0
+    game.crisis_mode = True
+    start_dying_clock(game)
+    assert assert_game_state(game, turn=1) == []
 
 
 if __name__ == "__main__":

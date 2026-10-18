@@ -9,10 +9,13 @@ from ..mechanics import (
 )
 from ..mechanics.complications import avert_complication
 from ..mechanics.consequences import tick_threat_clock
+from ..mechanics.move_outcome import make_follow_up_moves
+from ..mechanics.outcome_result import OutcomeResult
+from ..mechanics.suffer import tick_dying_clock
 from ..mechanics.threats import advance_menace_on_miss, resolve_full_menace
 from ..models import BrainResult, ClockEvent, GameState, ProgressTrack, RollResult, ThreatEvent
 from ..npc import find_npc
-from .finalization import apply_progress_and_legacy, resolve_action_consequences
+from .finalization import apply_progress_and_legacy, resolve_action_consequences, update_crisis
 from ..mechanics import complete_track, start_track
 from .turn_types import ActionResolution, RollOutcome
 
@@ -45,9 +48,9 @@ def _maybe_avert_complication(game: GameState, brain: BrainResult, roll: RollRes
     consequences.append(eng().ai_text.consequence_labels["complication_averted"].format(name=brain.target_clock))
 
 
-def _collect_threat_events(game: GameState, roll: RollResult) -> list[ThreatEvent]:
+def _collect_threat_events(game: GameState, roll: RollResult, outcome: OutcomeResult) -> list[ThreatEvent]:
     events: list[ThreatEvent] = advance_menace_on_miss(game) if roll.result == "MISS" else []
-    events.extend(resolve_full_menace(game))
+    events.extend(resolve_full_menace(game, outcome))
 
     high_threshold = eng().threats.menace_high_threshold
     for threat in game.threats:
@@ -102,7 +105,10 @@ def resolve_action_phase(game: GameState, brain: BrainResult, roll_outcome: Roll
     npc_agency, agency_clock_events, agency_fill_results = check_npc_agency(game)
     fill_results.extend(agency_fill_results)
 
-    threat_events = _collect_threat_events(game, roll)
+    threat_events = _collect_threat_events(game, roll, action.outcome)
+    tick_dying_clock(game, action.outcome)
+    make_follow_up_moves(game, action.outcome)
+    update_crisis(game)
 
     _track_gather_information_success(game, brain, roll)
 

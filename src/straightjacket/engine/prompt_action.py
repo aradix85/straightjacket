@@ -9,6 +9,7 @@ from .prompt_shared import (
     _clock_filled_block,
     _director_block,
     _facts_block,
+    _flags_block,
     _generated_place_block,
     _loc_hist,
     _npc_block,
@@ -23,21 +24,6 @@ from .prompt_shared import (
 )
 from .xml_utils import xa as _xa
 from .xml_utils import xe as _xe
-
-
-def _build_status_flags(game: GameState) -> list[str]:
-    flags: list[str] = []
-    if game.resources.health <= 0:
-        flags.append(get_prompt("flag_wounded"))
-    if game.resources.spirit <= 0:
-        flags.append(get_prompt("flag_broken"))
-    if game.resources.supply <= 0:
-        flags.append(get_prompt("flag_depleted"))
-    if game.game_over:
-        flags.append(get_prompt("flag_final_scene"))
-    elif game.crisis_mode:
-        flags.append(get_prompt("flag_crisis"))
-    return flags
 
 
 def _build_result_constraint(roll: RollResult, consequences: list[str]) -> str:
@@ -94,8 +80,7 @@ def build_action_prompt(
     constraint = _build_result_constraint(roll, consequences)
     position_tag = f'<position level="{_xa(position)}" effect="{_xa(effect)}"/>'
 
-    status_flags = _build_status_flags(game)
-    flags = f"\n<flags>{','.join(status_flags)}</flags>" if status_flags else ""
+    flags = _flags_block(game)
     agency = _npc_agency_block(npc_agency)
     pacing = _pacing_block(game, scene_setup)
     events_block = _random_events_block(random_events)

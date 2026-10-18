@@ -45,6 +45,7 @@ def _rewrite_prompt(
     roll = snap.roll
     facts = facts_of_this_place(game, snap.facts)
     last_entry = game.narrative.session_log[-1]
+    consequences = last_entry.consequences
 
     if roll is None:
         prompt = build_dialog_prompt(
@@ -57,15 +58,15 @@ def _rewrite_prompt(
             oracle_answer=last_entry.oracle_answer,
             random_events=[],
             threat_events=[],
+            consequences=consequences,
             clock_fill_results=[],
             npc_agency=[],
             facts=facts,
         )
-        return prompt, [], facts
+        return prompt, consequences, facts
 
     facts = overrule_facts_by_hit(game, facts, roll.result)
     facts = settle_facts_by_miss(game, facts, brain.move, roll.result)
-    consequences = last_entry.consequences
     npc_agency, _, _ = check_npc_agency(game)
     consequence_sentences = generate_consequence_sentences(consequences, last_entry.clock_events, game, brain)
     prompt = build_action_prompt(

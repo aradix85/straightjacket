@@ -8,8 +8,15 @@ from ..engine_loader import eng
 from ..ids import unique_id
 from ..logging_util import log
 from ..npc.bond import connection_track_id
+from .impacts import clear_impact
 from .legacy import apply_threat_overcome_bonus
+from .outcome_result import OutcomeResult
+from .suffer import suffer
 from ..models import BrainResult, GameState, ProgressTrack, ThreadEntry
+
+
+def _slug(name: str) -> str:
+    return re.sub(r"\W+", "_", name.lower()).strip("_")
 
 
 def start_track(game: GameState, brain: BrainResult, result: str) -> None:
@@ -25,35 +32,51 @@ def start_track(game: GameState, brain: BrainResult, result: str) -> None:
     assert brain.track_name
     assert brain.track_rank
 
-    slug = re.sub(r"\W+", "_", brain.track_name.lower()).strip("_")
     if track_type == "connection":
         if brain.target_npc is None:
             log(f"[Track] {brain.move}: its target turned out absent; no connection")
             return
         base_id = connection_track_id(brain.target_npc)
     else:
-        base_id = f"{track_type}_{slug}"
+        base_id = f"{track_type}_{_slug(brain.track_name)}"
     if any(t.id == base_id and t.status == "active" for t in game.progress_tracks):
         log(f"[Track] {track_type} '{brain.track_name}' is already active; not created again")
         return
+    _add_track(game, base_id, brain.track_name, track_type, brain.track_rank)
+
+
+def _add_track(game: GameState, base_id: str, name: str, track_type: str, rank: str) -> ProgressTrack:
     track_id = unique_id(base_id, {t.id for t in game.progress_tracks})
-    game.progress_tracks.append(
-        ProgressTrack.new(id=track_id, name=brain.track_name, track_type=track_type, rank=brain.track_rank)
-    )
-    log(f"[Track] Created {track_type} track: {brain.track_name} ({brain.track_rank}), id={track_id}")
+    track = ProgressTrack.new(id=track_id, name=name, track_type=track_type, rank=rank)
+    game.progress_tracks.append(track)
+    log(f"[Track] Created {track_type} track: {name} ({rank}), id={track_id}")
 
     if track_type == "vow":
         game.narrative.threads.append(
             ThreadEntry(
-                id=unique_id(f"thread_{slug}", {t.id for t in game.narrative.threads}),
-                name=brain.track_name,
+                id=unique_id(f"thread_{_slug(name)}", {t.id for t in game.narrative.threads}),
+                name=name,
                 thread_type="vow",
                 weight=eng().random_events.seeded_list_weight,
                 source="vow",
                 linked_track_id=track_id,
             )
         )
-        log(f"[Track] Created linked thread for vow: {brain.track_name}")
+        log(f"[Track] Created linked thread for vow: {name}")
+    return track
+
+
+def start_bound_vow(game: GameState, name: str, rank: str, impact: str) -> ProgressTrack:
+    vow = _add_track(game, f"vow_{_slug(name)}", name, "vow", rank)
+    vow.bound_impact = impact
+    return vow
+
+
+def forsake_vow(game: GameState, vow: ProgressTrack, result: OutcomeResult) -> None:
+    cfg = eng().suffer.forsake_vow
+    complete_track(game, vow.id, "failed")
+    result.consequences.append(eng().ai_text.consequence_labels["forsake_vow"].format(vow=vow.name))
+    suffer(game, cfg.meter, cfg.cost, result)
 
 
 def track_category_of_move(game: GameState, move: str) -> str | None:
@@ -105,6 +128,9 @@ def complete_track(game: GameState, track_id: str, outcome: str) -> None:
         log("[Track] Combat ended: cleared combat_position")
 
     if track.track_type == "vow":
+        if track.bound_impact and outcome == "completed":
+            clear_impact(game, track.bound_impact)
+
         for thread in game.narrative.threads:
             if thread.linked_track_id == track_id:
                 thread.active = False

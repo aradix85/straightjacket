@@ -258,6 +258,21 @@ def _npc_agency_block(npc_agency: Sequence[str]) -> str:
     return f"\n<npc_agency>{_xe('| '.join(npc_agency))}</npc_agency>" if npc_agency else ""
 
 
+def _flags_block(game: GameState) -> str:
+    flags: list[str] = []
+    if game.resources.health <= 0:
+        flags.append(get_prompt("flag_wounded"))
+    if game.resources.spirit <= 0:
+        flags.append(get_prompt("flag_broken"))
+    if game.resources.supply <= 0:
+        flags.append(get_prompt("flag_depleted"))
+    if game.game_over:
+        flags.append(get_prompt("flag_final_scene"))
+    elif game.crisis_mode:
+        flags.append(get_prompt("flag_crisis"))
+    return f"\n<flags>{','.join(flags)}</flags>" if flags else ""
+
+
 def _threat_events_block(threat_events: Sequence[ThreatEvent]) -> str:
     parts: list[str] = []
     for te in threat_events:
