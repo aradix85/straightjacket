@@ -268,7 +268,6 @@ def apply_director_guidance(game: GameState, guidance: dict[str, Any]) -> None:
     game.narrative.director_guidance = DirectorGuidance(
         narrator_guidance=guidance["narrator_guidance"],
         npc_guidance=guidance["npc_guidance"],
-        arc_notes=guidance["arc_notes"],
     )
     if guidance["scene_summary"]:
         game.narrative.session_log[-1].rich_summary = guidance["scene_summary"]

@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from straightjacket.engine.ai.provider_base import drain_token_log
 from straightjacket.engine.models import GameState, RollResult
 from straightjacket.engine.story_state import get_current_act
 
@@ -61,7 +60,6 @@ def record_turn(
     rec.engine_log = _snapshot_engine_log(game)
     rec.story_arc = _snapshot_story_arc(game)
     rec.director_guidance = _snapshot_director_guidance(game)
-    rec.token_usage = drain_token_log()
 
     return rec
 
@@ -158,10 +156,7 @@ def _snapshot_director_guidance(game: GameState) -> dict:
     dg = game.narrative.director_guidance
     if not dg:
         return {}
-    d: dict = {
-        "narrator_guidance": dg.narrator_guidance,
-        "arc_notes": dg.arc_notes,
-    }
+    d: dict = {"narrator_guidance": dg.narrator_guidance}
     if dg.npc_guidance:
         d["npc_guidance"] = dg.npc_guidance
 

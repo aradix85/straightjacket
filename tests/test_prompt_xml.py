@@ -19,7 +19,6 @@ class _NarratorCapture(MockProvider):
         schema = spec.json_schema
         if self.dialog and schema and "move" in schema["properties"]:
             brain = {
-                "type": "action",
                 "move": "dialog",
                 "stat": "none",
                 "approach": "",

@@ -52,7 +52,6 @@ class OpeningProvider:
 def _voicing(props: dict[str, Any]) -> dict[str, Any]:
     return {
         "central_conflict": "A buried record threatens the settlement",
-        "antagonist_force": "The ones who buried it",
         "thematic_thread": "What a place chooses to remember",
         "acts": [
             {"title": f"Act {i}", "goal": "g", "mood": "cold", "transition_trigger": "t"}

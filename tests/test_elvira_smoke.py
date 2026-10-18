@@ -50,6 +50,7 @@ def test_elvira_plays_a_short_session_end_to_end(
     assert all(t.stream_complete for t in session.turns if not t.is_correction and not t.error and not t.rolled_back)
     assert session.coverage["counts"]["ai_failure_rollback"] == 1
     assert session.rollback_issues == []
+    assert {"narrator", "opening_setup", "brain"} <= {str(e["role"]) for e in session.turns[0].token_usage}
 
 
 def test_elvira_websocket_mode_plays_through_the_real_server(
@@ -92,6 +93,7 @@ def test_elvira_websocket_mode_plays_through_the_real_server(
     assert all(t.stream_sentences > 0 and t.stream_complete and t.stream_matches for t in played)
     assert session.query_issues == []
     assert session.stream_issues == []
+    assert all(t.token_usage for t in played)
     assert list((tmp_path / "runs").glob("*.md"))
 
 

@@ -73,7 +73,6 @@ def test_build_epilogue_prompt_renders(load_engine: None) -> None:
     g = _opening_game()
     g.narrative.story_blueprint = StoryBlueprint(
         central_conflict="The archive holds a lethal truth",
-        antagonist_force="",
         thematic_thread="",
         structure_type="3act",
         possible_endings=[

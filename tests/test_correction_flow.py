@@ -65,7 +65,6 @@ class MockProvider:
             return AIResponse(
                 content=json.dumps(
                     {
-                        "type": "action",
                         "approach": "speaking gently",
                         "target_npc": "npc_1",
                         **brain,

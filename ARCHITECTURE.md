@@ -102,4 +102,4 @@ During play there is one text input plus the Save/Load and Retire buttons. Every
 
 ## Constraints
 
-**Single session.** One player at a time (SECURITY.md, Session model). Module-level accumulators (the pending random events, the token log) assume it; several sessions would need per-session state.
+**Single session.** One player at a time (SECURITY.md, Session model). Module-level accumulators (the pending random events) assume it; several sessions would need per-session state.

@@ -75,7 +75,6 @@ class LocationChange(SerializableMixin):
 
 @dataclass
 class BrainResult(SerializableMixin):
-    type: str = field(kw_only=True)
     move: str = field(kw_only=True)
     stat: str = field(kw_only=True)
     approach: str = ""

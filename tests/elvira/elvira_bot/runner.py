@@ -16,7 +16,7 @@ if TYPE_CHECKING:
     from straightjacket.engine.ai.provider_base import AIProvider
 
 from straightjacket.engine.ai.api_client import check_configured_models, get_provider
-from straightjacket.engine.ai.provider_base import AIUnavailableError, drain_token_log
+from straightjacket.engine.ai.provider_base import AIUnavailableError
 from straightjacket.engine.ai.sentence_stream import SentenceStream
 from straightjacket.engine.models import GameState, TurnSnapshot
 from straightjacket.engine.persistence import delete_save, load_game, save_game
@@ -52,6 +52,7 @@ from .ai_helpers import (
 from .creation import roll_character
 from .faults import NarratorOutage
 from .scenarios import prepare_scenario
+from .tokens import TokenMeter
 from .invariants import assert_game_state, check_turn_replacement
 from .models import ChapterRecord, NpcSnapshot, SessionLog, TurnRecord
 from .quality_checks import (
@@ -120,7 +121,7 @@ def run_session(bot_cfg: dict, auto_override: bool = False, turns_override: int 
 
     check_configured_models()
     configure_bot(bot_cfg["ai"])
-    provider = get_provider()
+    provider = TokenMeter(get_provider())
     create_user(username)
 
     if clean_before and not game_cfg["load_existing"] and delete_save(username, save_out):
@@ -354,7 +355,7 @@ def _setup_game(
 
 
 def _play_turn(
-    provider: AIProvider,
+    provider: TokenMeter,
     game: GameState,
     narration: str,
     turn: int,
@@ -404,6 +405,7 @@ def _play_turn(
     except AIUnavailableError as e:
         _restore(game, snapshot, last_snapshot)
         rec = TurnRecord(turn=turn, chapter=game.campaign.chapter_number, action=action, rolled_back=True)
+        rec.token_usage = provider.drain()
         _check_rollback(game, before_state, turn, e, inject_failure, slog, coverage)
         if inject_failure:
             del events.warnings[warnings_before:]
@@ -440,13 +442,13 @@ def _play_turn(
         try:
             run_deferred_director(provider, game, director_ctx)
             rec.director_ran = True
-            rec.token_usage.extend(drain_token_log())
             coverage.hit("director")
             sl = game.narrative.session_log
             trigger = sl[-1].director_trigger if sl else "?"
             print(f"  [DIRECTOR] Ran — trigger: {trigger}")
         except Exception as e:
             rec.director_error = str(e)
+    rec.token_usage = provider.drain()
 
     print_state(game)
     _check_turn(game, narration, turn, prev_npcs, do_invariants, slog, rec)
@@ -640,7 +642,7 @@ def _play_succession(
 
 
 def _play_correction_turn(
-    provider: AIProvider,
+    provider: TokenMeter,
     game: GameState,
     narration: str,
     turn: int,
@@ -698,6 +700,7 @@ def _play_correction_turn(
             rec.director_ran = True
         except Exception as e:
             rec.director_error = str(e)
+    rec.token_usage = provider.drain()
 
     print_narration(new_narration, full=False)
     print_state(game)

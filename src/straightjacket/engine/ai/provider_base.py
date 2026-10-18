@@ -7,19 +7,6 @@ from collections.abc import Callable
 from ..logging_util import log
 
 
-_token_log: list[dict[str, str | int]] = []
-
-
-def log_tokens(role: str, input_tokens: int, output_tokens: int) -> None:
-    _token_log.append({"role": role, "input": input_tokens, "output": output_tokens})
-
-
-def drain_token_log() -> list[dict[str, str | int]]:
-    records = list(_token_log)
-    _token_log.clear()
-    return records
-
-
 @dataclass(frozen=True)
 class ToolCall:
     name: str
@@ -117,7 +104,6 @@ def _log_usage(spec: AICallSpec, result: AIResponse) -> None:
         cached = result.usage.get("cache_read_tokens")
         cached_note = f", {cached} cached" if cached is not None else ""
         log(f"[TOKENS] {spec.log_role}: {inp} in + {out} out = {inp + out} total{cached_note}")
-        log_tokens(spec.log_role, inp, out)
     else:
         log(f"[TOKENS] {spec.log_role}: usage not returned by provider", level="warning")
 

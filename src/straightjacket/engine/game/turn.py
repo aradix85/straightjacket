@@ -1,7 +1,7 @@
 import copy
 from typing import Any
 from ..ai.brain import call_brain
-from ..ai.provider_base import AIProvider, drain_token_log, NarrationSink
+from ..ai.provider_base import AIProvider, NarrationSink
 from ..datasworn.moves import get_moves
 from ..engine_loader import eng
 from ..logging_util import log
@@ -190,7 +190,6 @@ def _snapshot_of_turn(game: GameState) -> TurnSnapshot:
 def _begin_turn(game: GameState, player_message: str) -> None:
     log(f"[Turn] Scene {game.narrative.scene_count + 1} | Player: {player_message[: eng().truncations.log_long]}")
     drain_pending_events()
-    drain_token_log()
     purge_old_fired_clocks(game)
 
 

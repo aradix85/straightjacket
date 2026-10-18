@@ -74,7 +74,6 @@ def get_brain_output_schema(
     rank_enum = sorted(_e.progress.ticks_per_mark)
     return _obj_root(
         {
-            "type": _str_enum(["action"]),
             "move": _str_enum(sorted({*move_keys, *_e.engine_moves.keys()})),
             "stat": _str_enum(list(_e.stats.names)),
             "approach": _str(),
@@ -133,7 +132,6 @@ def get_director_output_schema(reflection_ids: list[str]) -> dict[str, Any]:
                     for npc_id in reflection_ids
                 }
             ),
-            "arc_notes": _str(),
         },
         _e.ai_text.schema_titles["director_output"],
     )
@@ -147,7 +145,6 @@ def get_blueprint_voicing_schema(acts: int, revelations: int, endings: int) -> d
     return _obj_root(
         {
             "central_conflict": _str(),
-            "antagonist_force": _str(),
             "thematic_thread": _str(),
             "acts": _counted_arr(
                 _obj(
@@ -187,7 +184,7 @@ def get_narrator_metadata_schema(npc_ids: list[str]) -> dict[str, Any]:
                     }
                 )
             ),
-            "npc_renames": _about_known_npcs(npc_ids, {"new_name": _str(), "reason": _str()}),
+            "npc_renames": _about_known_npcs(npc_ids, {"new_name": _str()}),
             "npc_details": _about_known_npcs(npc_ids, {"full_name": _nullable_str(), "description": _nullable_str()}),
             "deceased_npcs": _arr(_obj({"npc_id": _str()})),
             "lore_npcs": _arr(

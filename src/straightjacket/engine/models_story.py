@@ -107,7 +107,6 @@ class PossibleEnding(SerializableMixin):
 @dataclass
 class StoryBlueprint(SerializableMixin):
     central_conflict: str
-    antagonist_force: str
     thematic_thread: str
     structure_type: str
     acts: list[StoryAct] = field(default_factory=list)
@@ -123,7 +122,6 @@ class StoryBlueprint(SerializableMixin):
 class DirectorGuidance(SerializableMixin):
     narrator_guidance: str = ""
     npc_guidance: dict[str, str] = field(default_factory=dict)
-    arc_notes: str = ""
 
 
 @dataclass

@@ -787,7 +787,6 @@ def materialize_blueprint(seed: BlueprintSeed, voicing: dict[str, Any]) -> Story
 
     return StoryBlueprint(
         central_conflict=voicing["central_conflict"],
-        antagonist_force=voicing["antagonist_force"],
         thematic_thread=voicing["thematic_thread"],
         structure_type=seed.structure_type,
         acts=acts,

@@ -245,7 +245,6 @@ def test_the_brain_schema_offers_only_known_types_and_subjects(load_engine: None
 
 def _brain(**overrides: Any) -> dict[str, Any]:
     brain: dict[str, Any] = {
-        "type": "action",
         "move": "adventure/face_danger",
         "stat": "wits",
         "approach": "quietly",

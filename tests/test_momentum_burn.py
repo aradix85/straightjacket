@@ -14,7 +14,6 @@ from tests._creation import OPENING_TEXT, create_game, force_miss
 
 def _brain(**overrides: Any) -> dict[str, Any]:
     brain: dict[str, Any] = {
-        "type": "action",
         "move": "adventure/face_danger",
         "stat": "wits",
         "approach": "quietly",

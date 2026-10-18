@@ -490,7 +490,6 @@ class _SuccessionMockProvider:
                 content=json.dumps(
                     {
                         "central_conflict": "Continue the legacy",
-                        "antagonist_force": "Old foe",
                         "thematic_thread": "inheritance",
                         "acts": [
                             {"title": f"Act {i + 1}", "goal": "g", "mood": "tense", "transition_trigger": "t"}
@@ -498,23 +497,6 @@ class _SuccessionMockProvider:
                         ],
                         "revelations": [{"content": f"reveal {i + 1}"} for i in range(3)],
                         "possible_endings": [{"type": "earned", "description": f"end {i + 1}"} for i in range(3)],
-                    }
-                ),
-                usage={"input_tokens": 10, "output_tokens": 10},
-            )
-        if "fixed_conflict" in props:
-            return AIResponse(
-                content=json.dumps({"pass": True, "violations": [], "fixed_conflict": "", "fixed_antagonist": ""}),
-                usage={"input_tokens": 10, "output_tokens": 10},
-            )
-        if "title" in props and "summary" in props and "unresolved_threads" in props:
-            return AIResponse(
-                content=json.dumps(
-                    {
-                        "title": "Last Chapter",
-                        "summary": "End of Aria's journey",
-                        "unresolved_threads": ["the relic"],
-                        "post_story_location": "Memorial",
                     }
                 ),
                 usage={"input_tokens": 10, "output_tokens": 10},

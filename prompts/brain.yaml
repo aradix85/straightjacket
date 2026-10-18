@@ -6,7 +6,6 @@
   Accept every player input and find the move that matches their action.
   dialog is pure conversation without risk; anything else is a move with a stat. dialog_only is true when the input is pure conversation without risk, even if a move could fit, and the turn then plays as dialog without a roll; otherwise it is false.
   ask_the_oracle is for a question about the fiction instead of an action, such as "is the door locked?", "does she recognize me?", or "what do I find?". A yes/no question that a type in <fact_types> covers also lists that fact in undetermined_facts, and the engine answers it; an open question lists none.
-  type is always "action".
   approach: a few words in {lang} on how the character acts (carefully, with a feint, by talking fast); the narrator reads it beside player_intent.
   player_intent: the player's action in {lang}, in your words.
   world_addition: a physical detail that the player's input adds to the scene, such as something they say is there or reach for, which someone could see, hear, or touch; null when the input adds none. It stays within the genre of <world> and never adds anything supernatural or outside it.

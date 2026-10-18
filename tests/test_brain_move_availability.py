@@ -8,7 +8,6 @@ from straightjacket.engine.models import ProgressTrack
 from tests._helpers import make_game_state
 
 BRAIN_FIELDS: dict[str, Any] = {
-    "type": "action",
     "approach": "",
     "target_npc": None,
     "dialog_only": False,

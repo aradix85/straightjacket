@@ -33,7 +33,6 @@ class _SmartMockProvider:
                 content=json.dumps(
                     {
                         "central_conflict": "Find the relic",
-                        "antagonist_force": "The cult",
                         "thematic_thread": "trust",
                         "acts": [
                             {
@@ -46,18 +45,6 @@ class _SmartMockProvider:
                         ],
                         "revelations": [{"content": f"reveal {i + 1}"} for i in range(3)],
                         "possible_endings": [{"type": "earned", "description": f"end {i + 1}"} for i in range(3)],
-                    }
-                ),
-                usage={"input_tokens": 10, "output_tokens": 10},
-            )
-        if "fixed_conflict" in props:
-            return AIResponse(
-                content=json.dumps(
-                    {
-                        "pass": True,
-                        "violations": [],
-                        "fixed_conflict": "",
-                        "fixed_antagonist": "",
                     }
                 ),
                 usage={"input_tokens": 10, "output_tokens": 10},

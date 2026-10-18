@@ -36,7 +36,6 @@ class MockProvider:
             return AIResponse(
                 content=json.dumps(
                     {
-                        "type": "action",
                         "move": "adventure/face_danger",
                         "stat": "wits",
                         "approach": "carefully examining the area",
@@ -102,7 +101,6 @@ class MockProvider:
                         "narrator_guidance": "Build tension slowly.",
                         "npc_guidance": [],
                         "npc_reflections": {},
-                        "arc_notes": "Story is progressing.",
                     }
                 ),
                 usage={"input_tokens": 100, "output_tokens": 50},
@@ -347,7 +345,6 @@ def test_turn_dialog_skips_roll(load_engine: None) -> None:
             return AIResponse(
                 content=json.dumps(
                     {
-                        "type": "action",
                         "move": "dialog",
                         "stat": "none",
                         "approach": "",
@@ -629,7 +626,6 @@ def test_story_completion_triggers() -> None:
         {
             "structure_type": "3act",
             "central_conflict": "The shadow threatens all",
-            "antagonist_force": "The creeping darkness",
             "thematic_thread": "What is worth saving?",
             "acts": [
                 {
@@ -969,7 +965,6 @@ def test_dialog_turn_runs_npc_agency_on_interval_scene(load_engine: None) -> Non
             return AIResponse(
                 content=json.dumps(
                     {
-                        "type": "action",
                         "move": "dialog",
                         "stat": "none",
                         "approach": "",

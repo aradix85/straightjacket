@@ -118,7 +118,6 @@ def make_random_event(**kwargs: Any) -> Any:
 def make_brain_result(**kwargs: Any) -> Any:
     from straightjacket.engine.models import BrainResult
 
-    kwargs.setdefault("type", "action")
     kwargs.setdefault("move", "dialog")
     kwargs.setdefault("stat", "none")
     return BrainResult(**kwargs)
@@ -207,7 +206,6 @@ def make_npc_detail(**kwargs: Any) -> dict:
 def make_npc_rename(**kwargs: Any) -> dict:
     kwargs.setdefault("npc_id", "npc_1")
     kwargs.setdefault("new_name", "")
-    kwargs.setdefault("reason", "")
     return kwargs
 
 
@@ -250,7 +248,6 @@ def make_director_guidance(**kwargs: Any) -> dict:
     kwargs.setdefault("narrator_guidance", "")
     kwargs.setdefault("npc_guidance", {})
     kwargs.setdefault("npc_reflections", {})
-    kwargs.setdefault("arc_notes", "")
     return kwargs
 
 
@@ -288,7 +285,6 @@ def make_blueprint(**kwargs: Any) -> Any:
     from straightjacket.engine.models_story import StoryBlueprint
 
     kwargs.setdefault("central_conflict", "")
-    kwargs.setdefault("antagonist_force", "")
     kwargs.setdefault("thematic_thread", "")
     kwargs.setdefault("structure_type", "3act")
     return StoryBlueprint(**kwargs)

@@ -106,9 +106,7 @@ def test_a_hit_aimed_at_a_complication_heads_it_off(load_engine: None, result: s
 
     game = _game()
     game.world.clocks = [_complication(filled=2)]
-    brain = BrainResult(
-        type="action", move="adventure/face_danger", stat="wits", target_clock="A beacon calls the raiders"
-    )
+    brain = BrainResult(move="adventure/face_danger", stat="wits", target_clock="A beacon calls the raiders")
     consequences: list[str] = []
     _maybe_avert_complication(game, brain, _roll(result), consequences)
     assert (game.world.clocks == []) is averted

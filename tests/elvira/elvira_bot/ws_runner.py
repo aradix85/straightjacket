@@ -38,6 +38,7 @@ from .quality_checks import (
 )
 from .recorder import record_turn
 from .runner import _EventCapture, RUNS_DIR, selectable_settings
+from .tokens import TokenMeter
 from .display import print_narration, print_state, print_summary
 
 SEPARATOR = "=" * 62
@@ -191,10 +192,12 @@ async def run_ws_session(bot_cfg: dict, auto_override: bool = False, turns_overr
     full_debug = log_cfg["full_debug_log"]
 
     from straightjacket.engine.ai.api_client import check_configured_models, get_provider
+    from straightjacket.web import handlers
 
     check_configured_models()
     configure_bot(bot_cfg["ai"])
-    provider = get_provider()
+    provider = TokenMeter(get_provider())
+    handlers.get_provider = lambda: provider
     persona = get_persona(style)
 
     port = bot_cfg.get("ws_port", cfg().server.port)
@@ -326,6 +329,7 @@ async def run_ws_session(bot_cfg: dict, auto_override: bool = False, turns_overr
                 break
 
             full_rec = record_turn(game, total_turns, rec.action, narration, None)
+            full_rec.token_usage = provider.drain()
             full_rec.is_correction = rec.is_correction
             full_rec.burn_offered = rec.burn_offered
             full_rec.burn_taken = rec.burn_taken

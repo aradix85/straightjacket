@@ -126,7 +126,6 @@ def test_npc_arc_field() -> None:
 def test_story_blueprint_triggered_director_phases() -> None:
     bp = StoryBlueprint(
         central_conflict="test",
-        antagonist_force="villain",
         thematic_thread="theme",
         structure_type="3act",
         revealed=[],
@@ -145,7 +144,6 @@ def test_story_blueprint_triggered_director_phases_snapshot() -> None:
     game = make_game_state()
     bp = StoryBlueprint(
         central_conflict="c",
-        antagonist_force="a",
         thematic_thread="t",
         structure_type="3act",
         revealed=[],
@@ -167,7 +165,6 @@ def test_phase_trigger_dedup(load_engine: None) -> None:
     game.narrative.scene_count = 12
     bp = StoryBlueprint(
         central_conflict="c",
-        antagonist_force="a",
         thematic_thread="t",
         structure_type="3act",
         revealed=[],

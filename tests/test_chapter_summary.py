@@ -102,7 +102,7 @@ class TestChapterRecord:
         game = make_game_state(player_name="Hero", setting_id="starforged")
         game.world.current_location = "Old tollhouse"
         game.narrative.story_blueprint = StoryBlueprint(
-            central_conflict="The drowned bell", antagonist_force="", thematic_thread="", structure_type="3act"
+            central_conflict="The drowned bell", thematic_thread="", structure_type="3act"
         )
         fulfilled = make_progress_track(id="v1", name="Ring the bell", track_type="vow")
         fulfilled.status = "completed"
