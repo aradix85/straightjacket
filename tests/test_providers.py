@@ -7,7 +7,7 @@ from typing import Any
 import pytest
 
 from straightjacket.engine.ai import provider_anthropic, provider_openai
-from straightjacket.engine.ai.provider_base import AICallSpec
+from straightjacket.engine.ai.provider_base import AICallSpec, ToolCall
 
 
 class _FakeEndpoint:
@@ -104,7 +104,7 @@ class TestAnthropicProvider:
             _spec()
         )
         assert result.content == "Hello world"
-        assert result.tool_calls == [{"id": "t1", "name": "query_npc", "arguments": {"npc_id": "npc_1"}}]
+        assert result.tool_calls == [ToolCall(name="query_npc", arguments={"npc_id": "npc_1"})]
         assert result.stop_reason == "tool_use"
         assert result.usage == {"input_tokens": 11, "output_tokens": 7, "cache_read_tokens": 0}
 
@@ -174,7 +174,7 @@ class TestOpenAICompatibleProvider:
             _spec()
         )
         assert result.content == "Narration"
-        assert result.tool_calls == [{"id": "c1", "name": "query_npc", "arguments": {"npc_id": "npc_2"}}]
+        assert result.tool_calls == [ToolCall(name="query_npc", arguments={"npc_id": "npc_2"})]
         assert result.stop_reason == "tool_use"
         assert result.usage == {"input_tokens": 20, "output_tokens": 5}
 

@@ -26,14 +26,11 @@ def vow_acted_on(game: GameState, move: str, target_track: str | None) -> Progre
     return vows[0] if len(vows) == 1 else None
 
 
-def find_progress_track(game: GameState, track_category: str, target_track: str | None = None) -> ProgressTrack | None:
+def find_progress_track(game: GameState, track_category: str, target_track: str | None) -> ProgressTrack:
     track_type = eng().get_raw("track_types_by_category")[track_category]
     candidates = [t for t in game.progress_tracks if t.track_type == track_type and t.status == "active"]
 
-    if not candidates:
-        return None
-
-    if target_track:
+    if target_track is not None:
         track = next((t for t in candidates if t.id == target_track), None)
         if track is None:
             raise ValueError(f"Target track {target_track!r} is not an active {track_type} track")
@@ -42,6 +39,8 @@ def find_progress_track(game: GameState, track_category: str, target_track: str 
     if len(candidates) == 1:
         return candidates[0]
 
+    if not candidates:
+        raise ValueError(f"No active {track_type} track")
     names = ", ".join(t.name for t in candidates)
     raise ValueError(f"Multiple active {track_type} tracks: {names}. Brain must set target_track.")
 
@@ -71,15 +70,6 @@ def complete_track(game: GameState, track_id: str, outcome: str) -> None:
 
                 if threat.status == "overcome":
                     apply_threat_overcome_bonus(game, threat)
-
-
-def sync_combat_tracks(game: GameState) -> None:
-    if game.world.combat_position:
-        return
-    for track in game.progress_tracks:
-        if track.track_type == "combat" and track.status == "active":
-            track.status = "failed"
-            log(f"[Track] Orphaned combat track '{track.name}' removed (combat_position cleared)")
 
 
 def roll_oracle_answer(game: GameState) -> str:

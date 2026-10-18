@@ -1,4 +1,2 @@
 tool_descriptions:
-  query_game_state:
-    description: "The game state in one call: the active story threads with their types and weights, the clocks that have not fired, and every active or background NPC with disposition, bond, agenda, instinct, arc, description, and recent memories."
-    params: {}
+  query_game_state: "The game state in one call: the active story threads with their types and weights, the clocks that have not fired, and every active or background NPC with disposition, bond, agenda, instinct, arc, description, and recent memories."

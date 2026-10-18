@@ -4,7 +4,7 @@ from typing import Any
 import anthropic
 
 from ..logging_util import log
-from .provider_base import AICallSpec, AIResponse, normalize_stop_reason
+from .provider_base import AICallSpec, AIResponse, ToolCall, normalize_stop_reason
 
 
 def _cached_system(spec: AICallSpec, cache_control: dict[str, Any]) -> list[dict[str, Any]]:
@@ -91,13 +91,7 @@ class AnthropicProvider:
             if block.type == "text":
                 content += block.text
             elif block.type == "tool_use":
-                parsed_tool_calls.append(
-                    {
-                        "id": block.id,
-                        "name": block.name,
-                        "arguments": block.input,
-                    }
-                )
+                parsed_tool_calls.append(ToolCall(name=block.name, arguments=block.input))
 
         stop_reason = normalize_stop_reason(
             response.stop_reason, ("max_tokens", "model_context_window_exceeded"), "tool_use", "refusal"

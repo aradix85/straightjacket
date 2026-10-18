@@ -36,4 +36,3 @@
   When a <reflect> tag has a last_reflection attribute, write a new insight that builds on, deepens, or contradicts it, with a different theme or emotional tone.
   </task>
 "tool_error_unknown": 'unknown tool: {tool}'
-"tool_error_failed": '{tool} failed: {error}'

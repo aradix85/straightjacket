@@ -167,39 +167,31 @@ def call_director(provider: AIProvider, game: GameState, latest_narration: str) 
     log(f"[Director] Analyzing scene {game.narrative.scene_count}")
 
     prompt = build_director_prompt(game, latest_narration)
-    tools = get_tools("director")
     system = _director_system(game)
 
     try:
         _dp = sampling_params("director")
         _director_model = model_for_role("director")
 
-        tool_context = ""
-        if tools:
-            _dp1 = dict(_dp)
-            _dp1["max_retries"] = 1
-            spec = AICallSpec(
-                model=_director_model,
-                system=system,
-                messages=[{"role": "user", "content": prompt}],
-                tools=tools,
-                log_role="director",
-                **_dp1,
-            )
-            response = create_with_retry(provider, spec)
-
-            if response.stop_reason == "tool_use" and response.tool_calls:
-                results = [execute_tool_call("director", call, game) for call in response.tool_calls]
-                tool_context = (
-                    f"\n<tool_results>\n{chr(10).join(results)[: eng().truncations.prompt_xxlong]}\n</tool_results>"
-                )
-                log(f"[Director] Phase 1: {len(results)} tool calls")
-            else:
-                log("[Director] Phase 1: no tools called")
+        spec = AICallSpec(
+            model=_director_model,
+            system=system,
+            messages=[{"role": "user", "content": prompt}],
+            tools=get_tools(),
+            log_role="director",
+            **{**_dp, "max_retries": 1},
+        )
+        response = create_with_retry(provider, spec)
 
         phase2_prompt = prompt
-        if tool_context:
-            phase2_prompt = prompt + tool_context
+        if response.stop_reason == "tool_use" and response.tool_calls:
+            results = [execute_tool_call(call.name, call.arguments, game) for call in response.tool_calls]
+            phase2_prompt += (
+                f"\n<tool_results>\n{chr(10).join(results)[: eng().truncations.prompt_xxlong]}\n</tool_results>"
+            )
+            log(f"[Director] Phase 1: {len(results)} tool calls")
+        else:
+            log("[Director] Phase 1: no tools called")
 
         spec2 = AICallSpec(
             model=_director_model,

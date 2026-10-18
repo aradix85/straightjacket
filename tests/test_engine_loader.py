@@ -39,3 +39,16 @@ def test_dice_sizes_cover_the_tables_they_roll(load_engine: None) -> None:
     assert max(row["max"] for row in mythic["event_focus"]) == dice.event_focus_die
     assert max(row["max"] for row in mythic["scene_adjustment"]) == dice.scene_adjustment_die
     assert max(eng().adventure_crafter.theme_die_table) == dice.adventure_crafter_theme_die
+
+
+def test_a_move_gate_on_a_track_type_that_does_not_exist_is_refused() -> None:
+    import pytest
+
+    from straightjacket.engine.engine_config import ActiveTrackCondition, _parse_move_availability_rule
+
+    track_types = {"vow", "journey"}
+    rule = _parse_move_availability_rule({"available": [{"active_track": "journey"}]}, track_types)
+    assert rule.available == [ActiveTrackCondition(active_track="journey")]
+    for key in ("active_track", "no_active_track"):
+        with pytest.raises(ValueError, match="'has_journey', which is no track type"):
+            _parse_move_availability_rule({"available": [{key: "has_journey"}]}, track_types)

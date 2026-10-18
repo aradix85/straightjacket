@@ -29,7 +29,7 @@ def _offered(game: Any) -> list[str]:
     from straightjacket.engine.ai.schemas import get_brain_output_schema
     from straightjacket.engine.tools.builtins import available_moves
 
-    schema = get_brain_output_schema([m["move"] for m in available_moves(game)["moves"]], [], [], [], [])
+    schema = get_brain_output_schema([m["move"] for m in available_moves(game)], [], [], [], [])
     offered: list[str] = schema["properties"]["move"]["enum"]
     return offered
 

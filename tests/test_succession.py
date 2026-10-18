@@ -328,6 +328,18 @@ def test_reset_for_successor_clears_pc_state_keeps_world(aria: GameState) -> Non
     assert aria.threats[0].id == "thr_1"
 
 
+def test_a_fight_the_predecessor_died_in_ends_with_them(aria: GameState) -> None:
+    from straightjacket.engine.models import ProgressTrack
+
+    aria.progress_tracks.append(ProgressTrack.new(id="combat_raid", name="Raid", track_type="combat", rank="dangerous"))
+    aria.world.combat_position = "bad_spot"
+    _reset_for_successor(
+        aria, surviving_threads=[], surviving_threats=[], surviving_npcs=[], surviving_connection_tracks=[]
+    )
+    assert aria.progress_tracks == []
+    assert aria.world.combat_position == ""
+
+
 def test_reset_for_successor_filters_characters_list(aria: GameState) -> None:
     from straightjacket.engine.models import CharacterListEntry
 

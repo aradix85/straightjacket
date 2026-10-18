@@ -2,7 +2,12 @@ from __future__ import annotations
 
 from typing import Any
 from ..datasworn.moves import get_moves
-from ..engine_config import CombatPosCondition, FlagCondition, NotFlagCondition
+from ..engine_config import (
+    ActiveTrackCondition,
+    MoveAvailabilityCondition,
+    MoveAvailabilityRule,
+    NoActiveTrackCondition,
+)
 from ..engine_loader import eng
 from ..models import GameState, NpcData
 from ..npc import get_npc_bond, recent_observations
@@ -28,7 +33,7 @@ def _npc_state(game: GameState, npc: NpcData) -> dict[str, Any]:
     }
 
 
-@register("director")
+@register
 def query_game_state(game: GameState) -> dict[str, Any]:
     return {
         "threads": [
@@ -52,86 +57,29 @@ def query_game_state(game: GameState) -> dict[str, Any]:
     }
 
 
-def available_moves(game: GameState) -> dict[str, Any]:
-    if not game.setting_id:
-        raise ValueError("No setting loaded")
-
-    ds_moves = get_moves(game.setting_id)
+def available_moves(game: GameState) -> list[dict[str, Any]]:
+    active_types = {t.track_type for t in game.progress_tracks if t.status == "active"}
     combat_pos = game.world.combat_position
-    in_combat = combat_pos in ("in_control", "bad_spot")
-    active_tracks = [t for t in game.progress_tracks if t.status == "active"]
-    has_vow = any(t.track_type == "vow" for t in active_tracks)
-    has_expedition = any(t.track_type == "expedition" for t in active_tracks)
-    has_scene_challenge = any(t.track_type == "scene_challenge" for t in active_tracks)
-    has_combat_track = any(t.track_type == "combat" for t in active_tracks)
-    has_connection = any(t.track_type == "connection" for t in active_tracks)
-
-    result: list[dict[str, Any]] = []
-
-    for key, move in ds_moves.items():
-        if move.roll_type in ("no_roll", "special_track"):
-            continue
-        if not _is_move_available(
-            key,
-            in_combat,
-            combat_pos,
-            has_vow,
-            has_expedition,
-            has_scene_challenge,
-            has_combat_track,
-            has_connection,
-        ):
-            continue
-        stats = move.valid_stats
-        result.append(
-            {
-                "move": key,
-                "name": move.name,
-                "stats": stats if stats else [],
-                "roll_type": move.roll_type,
-            }
-        )
-
-    for key, em in eng().engine_moves.items():
-        result.append(
-            {
-                "move": key,
-                "name": em.name,
-                "stats": list(em.stats),
-                "roll_type": em.roll_type,
-            }
-        )
-
-    return {"moves": result, "combat_position": combat_pos}
+    moves = [
+        {"move": key, "name": move.name, "stats": move.valid_stats, "roll_type": move.roll_type}
+        for key, move in get_moves(game.setting_id).items()
+        if move.roll_type not in ("no_roll", "special_track")
+        and _is_move_available(eng().move_availability[key], active_types, combat_pos)
+    ]
+    moves.extend(
+        {"move": key, "name": em.name, "stats": list(em.stats), "roll_type": em.roll_type}
+        for key, em in eng().engine_moves.items()
+    )
+    return moves
 
 
-def _is_move_available(
-    key: str,
-    in_combat: bool,
-    combat_pos: str,
-    has_vow: bool,
-    has_expedition: bool,
-    has_scene_challenge: bool,
-    has_combat_track: bool,
-    has_connection: bool,
-) -> bool:
-    rule = eng().move_availability[key]
-    if rule.never:
-        return False
+def _is_move_available(rule: MoveAvailabilityRule, active_types: set[str], combat_pos: str) -> bool:
+    return not rule.never and all(_condition_holds(cond, active_types, combat_pos) for cond in rule.available)
 
-    flags = {
-        "in_combat": in_combat,
-        "has_vow": has_vow,
-        "has_expedition": has_expedition,
-        "has_scene_challenge": has_scene_challenge,
-        "has_combat_track": has_combat_track,
-        "has_connection": has_connection,
-    }
-    for cond in rule.available:
-        if isinstance(cond, FlagCondition) and not flags[cond.flag]:
-            return False
-        if isinstance(cond, NotFlagCondition) and flags[cond.not_flag]:
-            return False
-        if isinstance(cond, CombatPosCondition) and combat_pos not in cond.combat_pos_in:
-            return False
-    return True
+
+def _condition_holds(cond: MoveAvailabilityCondition, active_types: set[str], combat_pos: str) -> bool:
+    if isinstance(cond, ActiveTrackCondition):
+        return cond.active_track in active_types
+    if isinstance(cond, NoActiveTrackCondition):
+        return cond.no_active_track not in active_types
+    return combat_pos in cond.combat_pos_in

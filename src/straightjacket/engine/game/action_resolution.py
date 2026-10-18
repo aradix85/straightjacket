@@ -1,7 +1,6 @@
 import random
 
 from ..engine_loader import eng
-from ..logging_util import log
 from ..mechanics import (
     ClockFillResult,
     check_npc_agency,
@@ -14,7 +13,7 @@ from ..mechanics.threats import advance_menace_on_miss, resolve_full_menace
 from ..models import BrainResult, ClockEvent, GameState, ProgressTrack, RollResult, ThreatEvent
 from ..npc import find_npc
 from .finalization import apply_progress_and_legacy, resolve_action_consequences
-from ..mechanics import complete_track, find_progress_track
+from ..mechanics import complete_track
 from .turn_types import ActionResolution, RollOutcome
 
 
@@ -23,21 +22,6 @@ def _apply_track_completion(game: GameState, roll: RollResult, track: ProgressTr
         complete_track(game, track.id, "completed")
     elif roll.result == "MISS":
         complete_track(game, track.id, "failed")
-
-
-def _maybe_mark_scene_challenge(game: GameState, brain: BrainResult, roll: RollResult) -> None:
-    sc_progress_moves = eng().get_raw("scene_challenge_progress_moves")
-    if brain.move not in sc_progress_moves or roll.result not in ("STRONG_HIT", "WEAK_HIT"):
-        return
-    sc_track = find_progress_track(game, "Scene Challenge")
-    if not sc_track:
-        return
-    added = sc_track.mark_progress()
-    if added:
-        log(
-            f"[Track] Scene challenge '{sc_track.name}': +{added} ticks "
-            f"({sc_track.filled_boxes}/{eng().progress.boxes} boxes)"
-        )
 
 
 def _maybe_tick_weak_hit_clock(
@@ -94,7 +78,6 @@ def _track_gather_information_success(game: GameState, brain: BrainResult, roll:
 def resolve_action_phase(game: GameState, brain: BrainResult, roll_outcome: RollOutcome) -> ActionResolution:
     roll = roll_outcome.roll
     track = roll_outcome.track
-    is_progress_roll = roll_outcome.is_progress_roll
 
     position = resolve_position(game, brain)
     effect = resolve_effect(game, brain, position)
@@ -107,17 +90,11 @@ def resolve_action_phase(game: GameState, brain: BrainResult, roll_outcome: Roll
     clock_events = action.clock_events
     fill_results = pending_from_prior_turn + action.clock_fill_results
 
-    apply_progress_and_legacy(
-        game,
-        action.outcome,
-        brain,
-        track if is_progress_roll else None,
-    )
+    apply_progress_and_legacy(game, action.outcome, brain, track)
 
-    if is_progress_roll and track:
+    if track is not None:
         _apply_track_completion(game, roll, track)
 
-    _maybe_mark_scene_challenge(game, brain, roll)
     _maybe_avert_complication(game, brain, roll, consequences)
     _maybe_tick_weak_hit_clock(game, roll, position, clock_events, fill_results)
 

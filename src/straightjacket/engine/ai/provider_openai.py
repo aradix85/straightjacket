@@ -6,7 +6,7 @@ from typing import Any
 import openai
 
 from ..logging_util import log
-from .provider_base import AICallSpec, AIResponse, normalize_stop_reason
+from .provider_base import AICallSpec, AIResponse, ToolCall, normalize_stop_reason
 
 
 def _usage(raw_usage: Any) -> dict[str, int] | None:
@@ -108,16 +108,10 @@ class OpenAICompatibleProvider:
         choice = response.choices[0]
         content = choice.message.content or ""
 
-        parsed_tool_calls = []
-        if choice.message.tool_calls:
-            for tc in choice.message.tool_calls:
-                parsed_tool_calls.append(
-                    {
-                        "id": tc.id,
-                        "name": tc.function.name,
-                        "arguments": _json.loads(tc.function.arguments),
-                    }
-                )
+        parsed_tool_calls = [
+            ToolCall(name=tc.function.name, arguments=_json.loads(tc.function.arguments))
+            for tc in choice.message.tool_calls or []
+        ]
 
         stop_reason = normalize_stop_reason(choice.finish_reason, ("length",), "tool_calls", "content_filter")
 

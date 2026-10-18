@@ -43,6 +43,7 @@ move_outcomes:
     - position in_control
     weak_hit:
     - momentum +2
+    - position bad_spot
     miss:
     - position bad_spot
   combat/strike:
@@ -495,6 +496,7 @@ move_outcome_overrides:
       - position in_control
       weak_hit:
       - momentum +2
+      - position bad_spot
       miss:
       - position bad_spot
       - pay_the_price

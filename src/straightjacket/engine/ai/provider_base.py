@@ -20,11 +20,17 @@ def drain_token_log() -> list[dict[str, str | int]]:
     return records
 
 
+@dataclass(frozen=True)
+class ToolCall:
+    name: str
+    arguments: dict[str, Any]
+
+
 @dataclass
 class AIResponse:
     content: str
     stop_reason: str = "complete"
-    tool_calls: list[dict[str, str | dict[str, Any]]] = field(default_factory=list)
+    tool_calls: list[ToolCall] = field(default_factory=list)
     usage: dict[str, int] | None = field(default=None, repr=False)
     reasoning: str = field(default="", repr=False)
 

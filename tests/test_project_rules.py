@@ -27,7 +27,6 @@ _AI_CALL_CARVE_OUT_FILES = {
     "engine/ai/provider_base.py",
     "engine/correction/analysis.py",
     "engine/director.py",
-    "engine/tools/handler.py",
     "web/handlers.py",
     "web/server.py",
 }
@@ -827,7 +826,6 @@ _ORPHAN_SYMBOL_CARVE_OUT: set[tuple[str, str]] = {
     ("websocket_endpoint", "web/server.py"),
     ("build_director_prompt", "engine/director.py"),
     ("apply_engine_memories", "engine/game/finalization.py"),
-    ("register_test_tool", "engine/tools/registry.py"),
     ("clear_cache", "engine/datasworn/moves.py"),
     ("clear_cache", "engine/datasworn/settings.py"),
     ("query_game_state", "engine/tools/builtins.py"),

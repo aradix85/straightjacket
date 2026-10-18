@@ -35,7 +35,6 @@ def process_momentum_burn(
         roll=replace(offer.roll, result=offer.new_result),
         ds_move=offer.ds_move,
         track=None,
-        is_progress_roll=False,
     )
     narration, director_ctx = resolve_and_narrate_action(ctx, outcome)
     return game, narration, director_ctx

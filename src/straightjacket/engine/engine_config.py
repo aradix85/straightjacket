@@ -8,6 +8,7 @@ from typing import Any
 from .engine_config_dataclasses import (
     ActProgressConfig,
     ActivationScores,
+    ActiveTrackCondition,
     AdventureCrafterConfig,
     AiTextConfig,
     RecapLimitsConfig,
@@ -39,7 +40,6 @@ from .engine_config_dataclasses import (
     FactTypeConfig,
     FateConfig,
     FateLikelihoodRules,
-    FlagCondition,
     FuzzyMatchConfig,
     GenerationConfig,
     ImpactConfig,
@@ -63,7 +63,7 @@ from .engine_config_dataclasses import (
     NarrativeDirectionEntry,
     NarrativeIntensityThresholds,
     NarratorStatusDescriptions,
-    NotFlagCondition,
+    NoActiveTrackCondition,
     NpcConfig,
     NpcMatchingConfig,
     OpeningConfig,
@@ -285,27 +285,34 @@ _SIMPLE_SECTIONS: dict[str, type] = {
 }
 
 
-def _parse_move_availability_condition(cond: dict[str, Any]) -> MoveAvailabilityCondition:
+def _known_track_type(track_type: str, track_types: set[str]) -> str:
+    if track_type not in track_types:
+        raise ValueError(f"move_availability names {track_type!r}, which is no track type of track_types_by_category")
+    return track_type
+
+
+def _parse_move_availability_condition(cond: dict[str, Any], track_types: set[str]) -> MoveAvailabilityCondition:
     keys = set(cond.keys())
-    if keys == {"flag"}:
-        return FlagCondition(flag=cond["flag"])
-    if keys == {"not_flag"}:
-        return NotFlagCondition(not_flag=cond["not_flag"])
+    if keys == {"active_track"}:
+        return ActiveTrackCondition(active_track=_known_track_type(cond["active_track"], track_types))
+    if keys == {"no_active_track"}:
+        return NoActiveTrackCondition(no_active_track=_known_track_type(cond["no_active_track"], track_types))
     if keys == {"combat_pos_in"}:
         return CombatPosCondition(combat_pos_in=list(cond["combat_pos_in"]))
     raise ValueError(
-        f"Invalid move_availability condition: {cond!r}. Expected exactly one of: flag, not_flag, combat_pos_in."
+        f"Invalid move_availability condition: {cond!r}. "
+        "Expected exactly one of: active_track, no_active_track, combat_pos_in."
     )
 
 
-def _parse_move_availability_rule(rule: dict[str, Any]) -> MoveAvailabilityRule:
+def _parse_move_availability_rule(rule: dict[str, Any], track_types: set[str]) -> MoveAvailabilityRule:
     keys = set(rule.keys())
     if keys == {"never"}:
         if not rule["never"]:
             raise ValueError(f"move_availability rule with never=false is not allowed: {rule!r}")
         return MoveAvailabilityRule(never=True, available=[])
     if keys == {"available"}:
-        conds = [_parse_move_availability_condition(dict(c)) for c in rule["available"]]
+        conds = [_parse_move_availability_condition(dict(c), track_types) for c in rule["available"]]
         return MoveAvailabilityRule(never=False, available=conds)
     raise ValueError(f"Invalid move_availability rule: {rule!r}. Expected exactly one of: never, available.")
 
@@ -531,7 +538,10 @@ def parse_engine_yaml(data: dict[str, Any]) -> EngineSettings:
         key: _build_strict(EngineMove, {**m, "stats": list(m["stats"])}) for key, m in data["engine_moves"].items()
     }
 
-    move_availability = {key: _parse_move_availability_rule(rule) for key, rule in data["move_availability"].items()}
+    gated_track_types = set(data["track_types_by_category"].values())
+    move_availability = {
+        key: _parse_move_availability_rule(rule, gated_track_types) for key, rule in data["move_availability"].items()
+    }
 
     sw_raw = _reject_unknown(StopwordsConfig, dict(data["stopwords"]))
     stopwords = StopwordsConfig(
@@ -703,6 +713,7 @@ def parse_engine_yaml(data: dict[str, Any]) -> EngineSettings:
 __all__ = [
     "ActProgressConfig",
     "ActivationScores",
+    "ActiveTrackCondition",
     "AdventureCrafterConfig",
     "AiTextConfig",
     "BlueprintConfig",
@@ -733,7 +744,6 @@ __all__ = [
     "FactTypeConfig",
     "FateConfig",
     "FateLikelihoodRules",
-    "FlagCondition",
     "FuzzyMatchConfig",
     "GenerationConfig",
     "ImpactConfig",
@@ -759,7 +769,7 @@ __all__ = [
     "NarrativeDirectionEntry",
     "NarrativeIntensityThresholds",
     "NarratorStatusDescriptions",
-    "NotFlagCondition",
+    "NoActiveTrackCondition",
     "NpcCarryoverEntry",
     "NpcConfig",
     "NpcMatchingConfig",

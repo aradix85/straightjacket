@@ -3,10 +3,8 @@ track_creating_moves:
   connection/make_a_connection: connection
   combat/enter_the_fray: combat
   exploration/undertake_an_expedition: expedition
+  adventure/undertake_a_journey: journey
   scene_challenge/begin_the_scene: scene_challenge
-scene_challenge_progress_moves:
-- adventure/face_danger
-- adventure/secure_an_advantage
 track_types_by_category:
   Vow: vow
   Connection: connection

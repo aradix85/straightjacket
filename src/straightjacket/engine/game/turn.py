@@ -331,6 +331,9 @@ def _maybe_create_track(game: GameState, brain: BrainResult) -> None:
     track_category = track_creating.get(brain.move)
     if not track_category:
         return
+    if brain.target_track is not None and brain.move in eng().get_raw("progress_mark_categories"):
+        log(f"[Track] {brain.move} continues {brain.target_track}; no new {track_category} track")
+        return
     assert brain.track_name
     assert brain.track_rank
 
@@ -365,20 +368,17 @@ def _maybe_create_track(game: GameState, brain: BrainResult) -> None:
 
 def _execute_roll(game: GameState, brain: BrainResult, earlier: RollResult | None) -> RollOutcome:
     ds_move = get_moves(game.setting_id).get(brain.move)
-    is_progress_roll = ds_move is not None and ds_move.roll_type == "progress_roll"
     track: ProgressTrack | None = None
 
-    if is_progress_roll:
-        assert ds_move is not None
-        track = find_progress_track(game, ds_move.track_category, target_track=brain.target_track)
-        filled = track.filled_boxes if track else 0
-        track_name = track.name if track else ds_move.track_category
+    if ds_move is not None and ds_move.roll_type == "progress_roll":
+        track = find_progress_track(game, ds_move.track_category, brain.target_track)
+        filled = track.filled_boxes
         if earlier is None:
-            roll = roll_progress(track_name, filled, brain.move)
+            roll = roll_progress(track.name, filled, brain.move)
         else:
-            roll = keep_progress_dice(earlier, track_name, filled, brain.move)
+            roll = keep_progress_dice(earlier, track.name, filled, brain.move)
         log(
-            f"[Roll] {roll.move} (progress: {track_name}={filled} boxes): "
+            f"[Roll] {roll.move} (progress: {track.name}={filled} boxes): "
             f"{roll.action_score} vs [{roll.c1},{roll.c2}] "
             f"→ {roll.result}{' MATCH!' if roll.match else ''}"
         )
@@ -398,7 +398,7 @@ def _execute_roll(game: GameState, brain: BrainResult, earlier: RollResult | Non
 
     _snapshot_of_turn(game).roll = roll
 
-    return RollOutcome(roll=roll, ds_move=ds_move, track=track, is_progress_roll=is_progress_roll)
+    return RollOutcome(roll=roll, ds_move=ds_move, track=track)
 
 
 def _roll_source(game: GameState, brain: BrainResult, ds_move: Move | None) -> tuple[str, int]:
@@ -426,7 +426,7 @@ def _log_action_roll(roll: RollResult, adds: int, cancelled: bool) -> None:
 def _offer_momentum_burn(ctx: SceneContext, roll_outcome: RollOutcome) -> BurnOffer | None:
     game = ctx.game
     roll = roll_outcome.roll
-    if roll_outcome.is_progress_roll:
+    if roll_outcome.track is not None:
         return None
     new_result = can_burn_momentum(game, roll)
     if new_result is None:

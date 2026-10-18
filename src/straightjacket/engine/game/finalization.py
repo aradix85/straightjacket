@@ -127,12 +127,11 @@ def apply_progress_and_legacy(
 ) -> None:
     if outcome.progress_marks > 0:
         track_category = eng().get_raw("progress_mark_categories")[brain.move]
-        track = find_progress_track(game, track_category, target_track=brain.target_track)
-        if track:
-            for _ in range(outcome.progress_marks):
-                added = track.mark_progress()
-                if added:
-                    log(f"[Track] {track.name}: +{added} ticks ({track.filled_boxes}/{eng().progress.boxes} boxes)")
+        track = find_progress_track(game, track_category, brain.target_track)
+        for _ in range(outcome.progress_marks):
+            added = track.mark_progress()
+            if added:
+                log(f"[Track] {track.name}: +{added} ticks ({track.filled_boxes}/{eng().progress.boxes} boxes)")
 
     if outcome.legacy_track and outcome.legacy_fixed_ticks:
         mark_legacy_ticks(game, outcome.legacy_track, outcome.legacy_fixed_ticks)

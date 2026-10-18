@@ -8,7 +8,8 @@ move_availability:
   adventure/make_camp:
     available: []
   adventure/reach_your_destination:
-    available: []
+    available:
+    - active_track: journey
   adventure/resupply:
     available: []
   adventure/secure_an_advantage:
@@ -21,70 +22,71 @@ move_availability:
     available: []
   combat/end_the_fight:
     available:
-    - flag: in_combat
+    - active_track: combat
   combat/enter_the_fray:
     available:
-    - not_flag: in_combat
+    - no_active_track: combat
   combat/battle:
     available:
-    - not_flag: in_combat
+    - no_active_track: combat
   combat/take_decisive_action:
     available:
-    - flag: in_combat
-    - flag: has_combat_track
+    - active_track: combat
   combat/strike:
     available:
-    - flag: in_combat
+    - active_track: combat
     - combat_pos_in:
       - in_control
   combat/gain_ground:
     available:
-    - flag: in_combat
+    - active_track: combat
     - combat_pos_in:
       - in_control
   combat/clash:
     available:
-    - flag: in_combat
+    - active_track: combat
     - combat_pos_in:
       - bad_spot
   combat/react_under_fire:
     available:
-    - flag: in_combat
+    - active_track: combat
     - combat_pos_in:
       - bad_spot
   connection/make_a_connection:
     available: []
   connection/develop_your_relationship:
     available:
-    - flag: has_connection
+    - active_track: connection
   connection/test_your_relationship:
     available: []
   connection/forge_a_bond:
     available:
-    - flag: has_connection
+    - active_track: connection
   delve/check_your_gear:
     available: []
   delve/delve_the_depths:
-    available: []
+    available:
+    - active_track: delve
   delve/escape_the_depths:
     available: []
   delve/locate_your_objective:
-    available: []
+    available:
+    - active_track: delve
   exploration/set_a_course:
     available: []
   exploration/undertake_an_expedition:
     available: []
   exploration/explore_a_waypoint:
     available:
-    - flag: has_expedition
+    - active_track: expedition
   exploration/finish_an_expedition:
     available:
-    - flag: has_expedition
+    - active_track: expedition
   quest/swear_an_iron_vow:
     available: []
   quest/fulfill_your_vow:
     available:
-    - flag: has_vow
+    - active_track: vow
   recover/heal:
     available: []
   recover/hearten:
@@ -107,13 +109,13 @@ move_availability:
     available: []
   scene_challenge/face_danger:
     available:
-    - flag: has_scene_challenge
+    - active_track: scene_challenge
   scene_challenge/secure_an_advantage:
     available:
-    - flag: has_scene_challenge
+    - active_track: scene_challenge
   scene_challenge/finish_the_scene:
     available:
-    - flag: has_scene_challenge
+    - active_track: scene_challenge
   suffer/companion_endure_harm:
     never: true
   suffer/companion_takes_a_hit:

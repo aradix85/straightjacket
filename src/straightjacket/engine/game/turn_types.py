@@ -48,7 +48,6 @@ class RollOutcome:
     roll: RollResult
     ds_move: Move | None
     track: ProgressTrack | None
-    is_progress_roll: bool
 
 
 @dataclass

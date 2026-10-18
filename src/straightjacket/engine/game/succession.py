@@ -120,6 +120,7 @@ def _reset_for_successor(
     game.campaign.epilogue_text = ""
 
     game.world.clocks = []
+    game.world.combat_position = ""
     game.world.time_of_day = _e.opening.time_of_day
     game.world.location_history = []
     clear_facts(game)

@@ -30,7 +30,7 @@ from ..models import (
 )
 from ..story_state import check_act_transition, check_story_completion, mark_revelation_used
 from .finalization import apply_post_narration
-from ..mechanics import sync_combat_tracks, vow_acted_on
+from ..mechanics import vow_acted_on
 from ..npc import find_npc
 from .turn_types import DirectorCall, SceneContext
 
@@ -104,8 +104,6 @@ def finalize_scene(
         consequences=consequences,
         world_addition=brain.world_addition or "",
     )
-
-    sync_combat_tracks(game)
 
     revelation_confirmed = False
     if ctx.pending_revs:

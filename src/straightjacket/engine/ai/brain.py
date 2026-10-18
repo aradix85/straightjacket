@@ -23,14 +23,11 @@ from ..xml_utils import xe as _xe
 
 
 def _build_moves_block(game: GameState) -> str:
-    data = available_moves(game)
-    moves = data["moves"]
-    combat_pos = data["combat_position"]
-
+    combat_pos = game.world.combat_position
     trigger_hints = eng().ai_text.brain_trigger_hints
 
     lines = []
-    for m in moves:
+    for m in available_moves(game):
         stats = ", ".join(m["stats"]) if m["stats"] else "none"
         hint = trigger_hints.get(m["move"], "")
         trigger = f" when:{hint}" if hint else ""
@@ -191,7 +188,7 @@ time:{w.time_of_day or _ai_text["unknown_time"]}
 {bonuses}
 <input>{_xe(player_message)}</input>"""
 
-    move_keys = [m["move"] for m in available_moves(game)["moves"]]
+    move_keys = [m["move"] for m in available_moves(game)]
     choices = {
         "bonus_id": [b.id for b in roll_bonuses(game)],
         "target_npc": [n.id for n in _listed_npcs(game)],

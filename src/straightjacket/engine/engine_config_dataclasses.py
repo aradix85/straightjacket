@@ -220,13 +220,13 @@ class EngineMove:
 
 
 @dataclass
-class FlagCondition:
-    flag: str
+class ActiveTrackCondition:
+    active_track: str
 
 
 @dataclass
-class NotFlagCondition:
-    not_flag: str
+class NoActiveTrackCondition:
+    no_active_track: str
 
 
 @dataclass
@@ -234,7 +234,7 @@ class CombatPosCondition:
     combat_pos_in: list[str]
 
 
-MoveAvailabilityCondition = FlagCondition | NotFlagCondition | CombatPosCondition
+MoveAvailabilityCondition = ActiveTrackCondition | NoActiveTrackCondition | CombatPosCondition
 
 
 @dataclass

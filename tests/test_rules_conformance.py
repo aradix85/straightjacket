@@ -455,6 +455,22 @@ def test_enter_the_fray_miss_pays_the_price_only_in_classic(load_engine: None, s
     assert outcome.pay_the_price is pays
 
 
+@pytest.mark.parametrize("setting", ["classic", "starforged"])
+@pytest.mark.parametrize(
+    ("result", "position"), [("STRONG_HIT", "in_control"), ("WEAK_HIT", "bad_spot"), ("MISS", "bad_spot")]
+)
+def test_every_enter_the_fray_result_sets_who_is_in_control(
+    load_engine: None, setting: str, result: str, position: str
+) -> None:
+    from straightjacket.engine.mechanics.move_outcome import resolve_move_outcome
+    from tests._helpers import make_game_state
+
+    outcome = resolve_move_outcome(
+        make_game_state(setting_id=setting), "combat/enter_the_fray", result, target_npc_id=None, match=False
+    )
+    assert outcome.combat_position == position
+
+
 KNOWN_MATCH_GAPS: set[tuple[str, str, str]] = set()
 
 

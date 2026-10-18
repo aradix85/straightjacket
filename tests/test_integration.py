@@ -223,6 +223,39 @@ def test_a_turn_ends_the_act_at_its_last_scene_without_the_director(load_engine:
     assert get_current_act(game).act_number == 2
 
 
+class _ScriptedBrain(MockProvider):
+    def __init__(self, *answers: dict) -> None:
+        super().__init__()
+        self.answers = list(answers)
+
+    def create_message(self, spec: AICallSpec) -> AIResponse:
+        from tests.test_brain_move_availability import BRAIN_FIELDS
+
+        if spec.json_schema and "move" in spec.json_schema["properties"]:
+            answer = {**BRAIN_FIELDS, **self.answers.pop(0)}
+            return AIResponse(content=json.dumps(answer), usage={"input_tokens": 100, "output_tokens": 50})
+        return super().create_message(spec)
+
+
+def test_a_journey_is_started_once_and_then_continued_by_its_id(load_engine: None) -> None:
+    from straightjacket.engine.game.turn import process_turn
+
+    journey = {"move": "adventure/undertake_a_journey", "stat": "wits", "track_rank": "dangerous"}
+    provider = _ScriptedBrain(
+        {**journey, "track_name": "To the ridge"},
+        {**journey, "track_name": "Across the moor", "target_track": "journey_to_the_ridge"},
+    )
+    game = _make_game()
+    hits = 0
+    for _ in range(2):
+        game, _narration, roll, _burn_info, _director_ctx = process_turn(provider, game, "I travel on", stream=None)
+        assert roll is not None
+        hits += roll.result in ("STRONG_HIT", "WEAK_HIT")
+    [track] = [t for t in game.progress_tracks if t.track_type == "journey"]
+    assert (track.id, track.status) == ("journey_to_the_ridge", "active")
+    assert track.ticks == hits * track.ticks_per_mark
+
+
 def test_turn_dialog_skips_roll(load_engine: None) -> None:
     from straightjacket.engine.game.turn import process_turn
 
