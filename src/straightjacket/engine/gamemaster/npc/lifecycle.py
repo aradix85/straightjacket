@@ -6,6 +6,43 @@ from .matching import normalize_for_match, sanitize_npc_name
 from .memory import consolidate_memory
 
 
+def new_npc(
+    *,
+    id: str,
+    name: str,
+    disposition: str,
+    status: str,
+    name_rolled: bool,
+    description: str,
+    agenda: str,
+    instinct: str,
+    secrets: list[str],
+    aliases: list[str],
+    last_location: str,
+    introduced: bool,
+) -> NpcData:
+    return NpcData(
+        id=id,
+        name=name,
+        disposition=disposition,
+        status=status,
+        name_rolled=name_rolled,
+        description=description,
+        agenda=agenda,
+        instinct=instinct,
+        arc="",
+        secrets=secrets,
+        memory=[],
+        introduced=introduced,
+        aliases=aliases,
+        importance_accumulator=0,
+        last_reflection_scene=0,
+        last_location=last_location,
+        needs_reflection=False,
+        gather_count=0,
+    )
+
+
 def retire_distant_npcs(game: GameState) -> None:
     max_active = gm().npc.max_active
     active = [n for n in game.npcs if n.status == "active"]

@@ -2,6 +2,7 @@ from collections.abc import Sequence
 from typing import Any
 
 from ..engine_loader import eng
+from ..gamemaster.npc.lifecycle import new_npc
 from ..gamemaster.npc.matching import apply_name_sanitization, fuzzy_match_existing_npc, next_npc_id
 from ..gamemaster.npc.memory import score_importance
 from ..gamemaster.world import update_location
@@ -40,7 +41,7 @@ def register_extracted_npcs(
         if known is not None:
             log(f"[NPC] Extracted '{nd['name']}' is the known '{known.name}', not a new NPC")
             continue
-        npc = NpcData(
+        npc = new_npc(
             id=next_npc_id(game, reserved_ids),
             name=nd["name"],
             disposition=nd["disposition"],
@@ -50,7 +51,9 @@ def register_extracted_npcs(
             agenda=nd["agenda"],
             instinct=nd["instinct"],
             secrets=list(nd["secrets"]),
+            aliases=[],
             last_location=game.world.current_location,
+            introduced=False,
         )
         apply_name_sanitization(npc)
         game.npcs.append(npc)
@@ -75,6 +78,7 @@ def seed_opening_memories(game: GameState, memory_updates: list[dict[str, Any]])
                 type="observation",
                 tone="",
                 tone_key="",
+                about_npc=None,
             )
         )
         target.importance_accumulator = target.importance_accumulator + imp

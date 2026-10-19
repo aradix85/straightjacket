@@ -55,6 +55,13 @@ def make_npc(**kwargs: Any) -> Any:
     kwargs.setdefault("disposition", "neutral")
     kwargs.setdefault("status", "active")
     kwargs.setdefault("name_rolled", False)
+    for name in ("description", "agenda", "instinct", "arc", "last_location"):
+        kwargs.setdefault(name, "")
+    kwargs.setdefault("introduced", False)
+    kwargs.setdefault("importance_accumulator", 0)
+    kwargs.setdefault("last_reflection_scene", 0)
+    kwargs.setdefault("needs_reflection", False)
+    kwargs.setdefault("gather_count", 0)
     return NpcData(**kwargs)
 
 
@@ -112,6 +119,9 @@ def make_memory(**kwargs: Any) -> Any:
     kwargs.setdefault("emotional_weight", "neutral")
     kwargs.setdefault("importance", 3)
     kwargs.setdefault("type", "observation")
+    kwargs.setdefault("tone", "")
+    kwargs.setdefault("tone_key", "")
+    kwargs.setdefault("about_npc", None)
     return MemoryEntry(**kwargs)
 
 

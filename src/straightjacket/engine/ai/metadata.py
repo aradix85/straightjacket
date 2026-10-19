@@ -2,6 +2,7 @@ from typing import Any
 
 from ..engine_loader import eng
 from ..gamemaster.config import gm
+from ..gamemaster.npc.lifecycle import new_npc
 from ..gamemaster.npc.matching import apply_name_sanitization, find_npc, fuzzy_match_existing_npc, next_npc_id
 from ..gamemaster.npc.processing import process_new_npcs, process_npc_details, process_npc_renames
 from ..logging_util import log
@@ -78,13 +79,18 @@ def _process_lore_npcs(game: GameState, lore_list: list[Any]) -> None:
             continue
         npc_id = next_npc_id(game)
 
-        npc = NpcData(
+        npc = new_npc(
             id=npc_id,
             name=name,
-            description=entry["description"],
             disposition=gm().npc.default_new_npc_disposition,
             status="lore",
             name_rolled=False,
+            description=entry["description"],
+            agenda="",
+            instinct="",
+            secrets=[],
+            aliases=[],
+            last_location="",
             introduced=False,
         )
         apply_name_sanitization(npc)

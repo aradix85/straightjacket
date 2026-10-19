@@ -8,6 +8,12 @@ This log starts at 2026.09.24.0, the restart after a four-month pause. Earlier r
 
 Calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day.
 
+## [2026.10.19.48] — 2026-10-19
+
+Step 9o, 9o.1, third module: `models_npc.py` loses its thirteen defaults. A new NPC is made in one place, `gamemaster/npc/lifecycle.py` → `new_npc`, which sets its starting state (no arc or memories yet, its counters at 0, no reflection due) and takes what differs between its makers by name: the opening's NPCs, a mid-game NPC, the stub of a rejected reveal, a lore figure, and an NPC a correction splits off, where each of the five wrote its own. A memory names who it is about at every maker. `NpcData` is keyword-only, so its fields keep their order. 80 defaults remain. Play does not change.
+
+Quality gate: 1846 tests, coverage 94.96%. Save format unchanged. No Elvira session (Sessions with the user); none would have been needed, since play does not change.
+
 ## [2026.10.19.47] — 2026-10-19
 
 Step 9o, 9o.1, second module: `models.py` loses its 34 defaults and `PlayerPreferences` its two. `BrainResult`, `TurnSnapshot`, and `GameState` are keyword-only, so their fields keep their order and the save format holds. A Brain answer was already read strictly, every field required, so only the tests' brain results needed the fields they left out, which `make_brain_result` now fills. A turn's snapshot names at its one maker (`GameState.snapshot`) that the turn's input, Brain answer, roll, narration, and scene are still to come. A new game names every field too: it is made without a character, with an empty name, concept, stats, and wishes, and takes one up through `take_up_character` as a successor does, which now gives the preferences whole. 93 defaults remain. Play does not change.

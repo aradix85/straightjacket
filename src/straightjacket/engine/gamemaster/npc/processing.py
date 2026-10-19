@@ -5,7 +5,14 @@ from ...logging_util import log
 from ...models import GameState, MemoryEntry, NpcData
 from ..config import gm
 from .description_match import description_match_existing_npc, is_complete_description
-from .lifecycle import absorb_duplicate_npc, merge_npc_identity, reactivate_npc, rename_npc, retire_distant_npcs
+from .lifecycle import (
+    absorb_duplicate_npc,
+    merge_npc_identity,
+    new_npc,
+    reactivate_npc,
+    rename_npc,
+    retire_distant_npcs,
+)
 from .matching import find_npc, fuzzy_match_existing_npc, next_npc_id, normalize_for_match, sanitize_npc_name
 from .memory import score_importance
 from .naming import roll_oracle_name
@@ -57,13 +64,16 @@ def _create_stub_for_rejected_reveal(
         return
     stub_desc = (d["description"] or "").strip() or world_addition.strip()
     npc_id = next_npc_id(game)
-    stub = NpcData(
+    stub = new_npc(
         id=npc_id,
         name=new_name,
-        description=stub_desc,
         disposition=gm().npc.default_new_npc_disposition,
         status="active",
         name_rolled=False,
+        description=stub_desc,
+        agenda="",
+        instinct="",
+        secrets=[],
         aliases=paren_aliases,
         last_location=game.world.current_location,
         introduced=False,
@@ -210,13 +220,16 @@ def _create_new_npc(game: GameState, nd: dict[str, Any]) -> NpcData:
         paren_aliases.append(ai_name)
     log(f"[NPC name] Oracle rolled '{oracle_name}' (AI: '{ai_name}')")
 
-    npc = NpcData(
+    npc = new_npc(
         id=npc_id,
         name=oracle_name,
-        description=nd["description"],
         disposition=nd["disposition"],
         status="active",
         name_rolled=True,
+        description=nd["description"],
+        agenda="",
+        instinct="",
+        secrets=[],
         aliases=paren_aliases,
         last_location=game.world.current_location,
         introduced=True,
@@ -239,6 +252,7 @@ def _seed_initial_memory(game: GameState, npc: NpcData, nd: dict[str, Any]) -> N
             type="observation",
             tone="",
             tone_key="",
+            about_npc=None,
         )
     )
 

@@ -12,28 +12,28 @@ class MemoryEntry(SerializableMixin):
     emotional_weight: str
     importance: int
     type: str
-    tone: str = ""
-    tone_key: str = ""
-    about_npc: str | None = None
+    tone: str
+    tone_key: str
+    about_npc: str | None
 
 
-@dataclass
+@dataclass(kw_only=True)
 class NpcData(SerializableMixin):
     id: str
     name: str
     disposition: str
     status: str
     name_rolled: bool
-    description: str = ""
-    agenda: str = ""
-    instinct: str = ""
-    arc: str = ""
+    description: str
+    agenda: str
+    instinct: str
+    arc: str
     secrets: list[str] = field(default_factory=list)
     memory: list[MemoryEntry] = field(default_factory=list)
-    introduced: bool = False
+    introduced: bool
     aliases: list[str] = field(default_factory=list)
-    importance_accumulator: int = 0
-    last_reflection_scene: int = 0
-    last_location: str = ""
-    needs_reflection: bool = False
-    gather_count: int = 0
+    importance_accumulator: int
+    last_reflection_scene: int
+    last_location: str
+    needs_reflection: bool
+    gather_count: int

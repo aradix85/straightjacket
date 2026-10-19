@@ -3,12 +3,12 @@ from __future__ import annotations
 from typing import Any
 
 from ..gamemaster.config import gm
-from ..gamemaster.npc.lifecycle import absorb_npc
+from ..gamemaster.npc.lifecycle import absorb_npc, new_npc
 from ..gamemaster.npc.matching import find_npc, next_npc_id
 from ..gamemaster.npc.naming import roll_oracle_name
 from ..gamemaster.world import clear_facts, locations_match
 from ..logging_util import log
-from ..models import GameState, NpcData
+from ..models import GameState
 
 
 def _skip(op_dict: dict[str, Any], reason: str) -> None:
@@ -49,18 +49,22 @@ def _op_npc_split(game: GameState, op_dict: dict[str, Any]) -> None:
         _skip(op_dict, "no NPC named")
         return
     new_name = op_dict["split_name"] or roll_oracle_name(game)
-    new_npc = NpcData(
+    split = new_npc(
         id=next_npc_id(game),
         name=new_name,
-        description=op_dict["split_description"] or "",
         disposition=existing.disposition,
         status=existing.status,
         name_rolled=not op_dict["split_name"],
+        description=op_dict["split_description"] or "",
+        agenda="",
+        instinct="",
+        secrets=[],
+        aliases=[],
         last_location=existing.last_location,
         introduced=True,
     )
-    game.npcs.append(new_npc)
-    log(f"[Correction] npc_split: '{existing.name}' → also '{new_name}' ({new_npc.id})")
+    game.npcs.append(split)
+    log(f"[Correction] npc_split: '{existing.name}' → also '{new_name}' ({split.id})")
 
 
 def _op_npc_merge(game: GameState, op_dict: dict[str, Any]) -> None:
