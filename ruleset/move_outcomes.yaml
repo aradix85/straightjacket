@@ -188,7 +188,6 @@ move_outcomes:
       track: health
       full_amount: 3
       impact_amount: 2
-      blocking_impact: wounded
       weak_hit_cost_type: momentum
       weak_hit_cost: -2
   recover/hearten:
@@ -197,7 +196,6 @@ move_outcomes:
       track: spirit
       full_amount: 2
       impact_amount: 1
-      blocking_impact: shaken
       weak_hit_cost_type: momentum
       weak_hit_cost: -1
   recover/resupply:
@@ -206,7 +204,6 @@ move_outcomes:
       track: supply
       full_amount: 2
       impact_amount: 1
-      blocking_impact: unprepared
       weak_hit_cost_type: momentum
       weak_hit_cost: -1
   recover/repair:
@@ -232,7 +229,6 @@ move_outcomes:
       impact_pair:
       - wounded
       - permanently_harmed
-      blocking_impact: wounded
       strong_hit_exchange_cost: 0
       weak_hit_exchange: true
       recover_from_zero: true
@@ -249,7 +245,6 @@ move_outcomes:
       impact_pair:
       - shaken
       - traumatized
-      blocking_impact: shaken
       strong_hit_exchange_cost: 0
       weak_hit_exchange: true
       recover_from_zero: true
@@ -266,7 +261,6 @@ move_outcomes:
       impact_pair:
       - battered
       - cursed
-      blocking_impact: battered
       strong_hit_exchange_cost: 0
       weak_hit_exchange: true
       recover_from_zero: true
@@ -278,7 +272,6 @@ move_outcomes:
       miss_extra_track: -1
       miss_extra_momentum: -2
       impact_pair: []
-      blocking_impact: ''
       strong_hit_exchange_cost: 0
       weak_hit_exchange: true
       recover_from_zero: true
@@ -342,7 +335,6 @@ move_outcomes:
       track: health
       full_amount: 2
       impact_amount: 2
-      blocking_impact: wounded
       weak_hit_cost_type: supply
       weak_hit_cost: -1
   adventure/make_camp:
@@ -425,7 +417,6 @@ move_outcomes:
       miss_extra_track: -1
       miss_extra_momentum: -1
       impact_pair: []
-      blocking_impact: ''
       strong_hit_exchange_cost: 0
       weak_hit_exchange: true
       recover_from_zero: true
@@ -508,7 +499,6 @@ move_outcome_overrides:
         impact_pair:
         - wounded
         - maimed
-        blocking_impact: wounded
         strong_hit_exchange_cost: 1
         weak_hit_exchange: false
         recover_from_zero: false
@@ -525,7 +515,6 @@ move_outcome_overrides:
         impact_pair:
         - shaken
         - corrupted
-        blocking_impact: shaken
         strong_hit_exchange_cost: 1
         weak_hit_exchange: false
         recover_from_zero: false

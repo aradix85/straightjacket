@@ -160,11 +160,11 @@ def apply_recovery_handler(game: GameState, move_key: str, roll_result: str, par
     track = params["track"]
     full_amount = params["full_amount"]
     impact_amount = params["impact_amount"]
-    blocking_impact = params["blocking_impact"]
     weak_cost_type = params["weak_hit_cost_type"]
     weak_cost = params["weak_hit_cost"]
 
-    has_impact = bool(blocking_impact) and blocking_impact in game.impacts
+    blocking_impact = blocks_recovery(game, track)
+    has_impact = bool(blocking_impact)
 
     if roll_result in rules().dice.hit_results:
         amount = impact_amount if has_impact else full_amount

@@ -164,7 +164,6 @@ _SUFFER_DEFAULTS = {
     "weak_hit_exchange": True,
     "recover_from_zero": True,
     "impact_pair": [],
-    "blocking_impact": "",
 }
 
 
@@ -178,7 +177,6 @@ _RECOVERY_DEFAULTS = {
     "track": "health",
     "full_amount": 3,
     "impact_amount": 2,
-    "blocking_impact": "",
     "weak_hit_cost_type": "momentum",
     "weak_hit_cost": -2,
 }
@@ -197,7 +195,7 @@ class TestSufferHandler:
             game,
             "suffer/endure_harm",
             "STRONG_HIT",
-            _suffer_params(track="health", recovery=1, blocking_impact="wounded"),
+            _suffer_params(track="health", recovery=1),
         )
         assert game.resources.meters["health"] == 4
         assert "health +1" in labels_of(result.consequences)
@@ -207,7 +205,7 @@ class TestSufferHandler:
             game,
             "suffer/endure_harm",
             "STRONG_HIT",
-            _suffer_params(track="health", recovery=1, blocking_impact="wounded"),
+            _suffer_params(track="health", recovery=1),
         )
         assert game.resources.meters["momentum"] == 3
         assert "momentum +1" in labels_of(result.consequences)
@@ -219,7 +217,7 @@ class TestSufferHandler:
             game,
             "suffer/endure_harm",
             "WEAK_HIT",
-            _suffer_params(track="health", recovery=1, blocking_impact="wounded"),
+            _suffer_params(track="health", recovery=1),
         )
         assert game.resources.meters["health"] == 4
         assert game.resources.meters["momentum"] == 3
@@ -275,7 +273,7 @@ class TestRecoveryHandler:
             game,
             "recover/heal",
             "STRONG_HIT",
-            _recovery_params(track="health", full_amount=3, impact_amount=2, blocking_impact="wounded"),
+            _recovery_params(track="health", full_amount=3, impact_amount=2),
         )
         assert game.resources.meters["health"] == 5
 
@@ -290,7 +288,6 @@ class TestRecoveryHandler:
                 track="health",
                 full_amount=3,
                 impact_amount=2,
-                blocking_impact="wounded",
                 weak_hit_cost_type="momentum",
                 weak_hit_cost=-2,
             ),
@@ -304,7 +301,7 @@ class TestRecoveryHandler:
             game_real,
             "recover/heal",
             "MISS",
-            _recovery_params(track="health", full_amount=3, impact_amount=2, blocking_impact="wounded"),
+            _recovery_params(track="health", full_amount=3, impact_amount=2),
         )
         assert rolled == ["Pay the Price"]
 

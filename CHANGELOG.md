@@ -8,6 +8,12 @@ This log starts at 2026.09.24.0, the restart after a four-month pause. Earlier r
 
 Calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day.
 
+## [2026.10.19.31] — 2026-10-19
+
+Step 9n, 9n.2h: the impacts are the ruleset's. They already came from the Datasworn rules with their labels, permanence, and the meters each keeps from recovering, and no code outside the ruleset names one. What the inventory found is a copy: `blocking_impact` in `ruleset/move_outcomes.yaml` named for eleven recovery and suffer moves the impact that blocks their meter, which the Datasworn rules already say (`prevents_recovery`). The suffer handler never read it, and the recovery handler now asks the rules (`ruleset/impacts.py` → `blocks_recovery`), so the key is gone; Heal still clears wounded, Hearten shaken, and Resupply unprepared. Withstand Damage's entry named battered, which its Datasworn rules let block nothing, and no turn reaches that move yet (step 19). What a move marks (`impact_pair`, `impact`) and the impact supply at 0 marks (`exhausted_impacts`) stay in the ruleset's yaml, since Datasworn says them only in the move texts.
+
+Quality gate: 1802 tests, coverage 94.72%. Save format unchanged. No Elvira session: the recovery handler finds the same impact it was named before, and no prompt or turn changed; the session of the next release plays it.
+
 ## [2026.10.19.30] — 2026-10-19
 
 Step 9n, 9n.2g: dialog and asking the oracle are the game master's own moves, the user's choice. They sat in `ruleset/engine_moves.yaml` beside world shaping, and the ruleset's yaml gave dialog its time and both their category, while the game master and the game package named their ids. They are now `gamemaster/moves.yaml`, each with the time it takes, and `gamemaster/moves.py` says whether a turn plays as dialog, whether it asks the oracle, and rolls the oracle's answer (`roll_oracle_answer`, from `ruleset/tracks.py`). World shaping, an action roll with the ruleset's stats, stays in `ruleset/engine_moves.yaml`. The move filter now offers only the Datasworn moves a situation allows, and the Brain offers those, the game master's moves, and world shaping in the same order as before (`ai/brain.py` → `_offered_moves`); a game master's move shows the Brain no roll by `ai_text.no_roll_type`. The Brain's system prompt, cached prefix, message, and schema are byte-identical before and after, and every move takes the time it took.

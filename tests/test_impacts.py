@@ -71,7 +71,7 @@ class TestImpactsFromTheRules:
                     continue
                 params = move_outcome_config(game, key).get("params", {})
                 named.update(params.get("impact_pair", []))
-                named.update(params[name] for name in ("blocking_impact", "impact") if params.get(name))
+                named.update(params[name] for name in ("impact",) if params.get(name))
             assert named <= set(get_impacts(setting_id)), (setting_id, named - set(get_impacts(setting_id)))
 
 
@@ -223,7 +223,6 @@ class TestSufferHandlerMarksImpact:
             "weak_hit_exchange": True,
             "recover_from_zero": True,
             "impact_pair": ["wounded", "permanently_harmed"],
-            "blocking_impact": "wounded",
         }
         result = apply_suffer_handler(game, "suffer/endure_harm", "MISS", params)
         assert "wounded" in game.impacts
@@ -245,13 +244,37 @@ class TestSufferHandlerMarksImpact:
             "weak_hit_exchange": True,
             "recover_from_zero": True,
             "impact_pair": ["wounded", "permanently_harmed"],
-            "blocking_impact": "wounded",
         }
         apply_suffer_handler(game, "suffer/endure_harm", "MISS", params)
         assert "permanently_harmed" in game.impacts
 
 
 class TestRecoveryHandlerClearsImpact:
+    @pytest.mark.parametrize(
+        ("marked", "cleared", "spirit"),
+        [("shaken", True, 3), ("wounded", False, 4)],
+    )
+    def test_the_impact_a_recovery_clears_is_the_one_its_rules_say_blocks_its_meter(
+        self, load_engine: None, marked: str, cleared: bool, spirit: int
+    ) -> None:
+        from straightjacket.engine.ruleset.impacts import apply_impact
+        from straightjacket.engine.ruleset.move_handlers import apply_recovery_handler
+
+        game = _game()
+        game.setting_id = "starforged"
+        game.resources.meters["spirit"] = 2
+        apply_impact(game, marked)
+        params = {
+            "track": "spirit",
+            "full_amount": 2,
+            "impact_amount": 1,
+            "weak_hit_cost_type": "momentum",
+            "weak_hit_cost": -1,
+        }
+        apply_recovery_handler(game, "recover/hearten", "STRONG_HIT", params)
+        assert (marked not in game.impacts) is cleared
+        assert game.resources.meters["spirit"] == spirit
+
     def test_heal_clears_wounded(self, stub_engine: None) -> None:
         from straightjacket.engine.ruleset.impacts import apply_impact
         from straightjacket.engine.ruleset.move_handlers import apply_recovery_handler
@@ -262,7 +285,6 @@ class TestRecoveryHandlerClearsImpact:
             "track": "health",
             "full_amount": 3,
             "impact_amount": 2,
-            "blocking_impact": "wounded",
             "weak_hit_cost_type": "momentum",
             "weak_hit_cost": -2,
         }
@@ -278,7 +300,6 @@ class TestRecoveryHandlerClearsImpact:
             "track": "health",
             "full_amount": 3,
             "impact_amount": 2,
-            "blocking_impact": "wounded",
             "weak_hit_cost_type": "momentum",
             "weak_hit_cost": -2,
         }
