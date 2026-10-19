@@ -178,5 +178,5 @@ class FateResult(SerializableMixin):
 
 @dataclass
 class PlayerPreferences(SerializableMixin):
-    player_wishes: str = ""
-    content_lines: str = ""
+    player_wishes: str
+    content_lines: str

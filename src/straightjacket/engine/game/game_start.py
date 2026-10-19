@@ -21,6 +21,8 @@ from ..models import (
     CharacterListEntry,
     GameState,
     NarrationEntry,
+    NarrativeState,
+    PlayerPreferences,
     SceneLogEntry,
 )
 from ..parser import parse_narrator_response
@@ -55,8 +57,9 @@ def take_up_character(
     game.setting_id = pkg.id
     game.setting_genre = pkg.id
     game.truths = dict(creation_data["truths"])
-    game.preferences.player_wishes = creation_data["wishes"]
-    game.preferences.content_lines = creation_data["content_lines"]
+    game.preferences = PlayerPreferences(
+        player_wishes=creation_data["wishes"], content_lines=creation_data["content_lines"]
+    )
     give_character(game, character)
     _seed_vow_subject(game, creation_data["vow_subject"])
 
@@ -96,12 +99,25 @@ def start_new_game(provider: AIProvider, creation_data: dict[str, Any]) -> tuple
     character = make_character(creation_data, pkg)
 
     game = GameState(
+        player_name="",
+        character_concept="",
+        pronouns="",
+        background_vow="",
+        setting_id=pkg.id,
+        setting_genre=pkg.id,
         setting_tone=creation_data["tone"],
         setting_description=pkg.description,
-        stats=character.stats,
+        stats={},
+        backstory="",
         resources=starting_resources(setting_id),
         world=new_world(),
+        narrative=NarrativeState(),
         campaign=new_campaign(setting_id),
+        preferences=PlayerPreferences(player_wishes="", content_lines=""),
+        crisis_mode=False,
+        end_reason="",
+        last_turn_snapshot=None,
+        post_epilogue_director_done=False,
     )
     take_up_character(game, character, creation_data, pkg)
 

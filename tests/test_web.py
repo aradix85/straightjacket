@@ -10,7 +10,6 @@ from straightjacket.engine.game import BurnOffer
 from straightjacket.engine.models import (
     GameState,
     RollResult,
-    TurnSnapshot,
 )
 from straightjacket.i18n import t
 from straightjacket.web.serializers import (
@@ -109,7 +108,7 @@ class TestSession:
             ds_move=None,
             random_events=[],
             facts=[],
-            resume_snapshot=TurnSnapshot(),
+            resume_snapshot=make_game_state().snapshot(),
         )
         s.clear_game()
         assert s.game is None

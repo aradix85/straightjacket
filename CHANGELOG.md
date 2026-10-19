@@ -8,6 +8,12 @@ This log starts at 2026.09.24.0, the restart after a four-month pause. Earlier r
 
 Calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day.
 
+## [2026.10.19.47] — 2026-10-19
+
+Step 9o, 9o.1, second module: `models.py` loses its 34 defaults and `PlayerPreferences` its two. `BrainResult`, `TurnSnapshot`, and `GameState` are keyword-only, so their fields keep their order and the save format holds. A Brain answer was already read strictly, every field required, so only the tests' brain results needed the fields they left out, which `make_brain_result` now fills. A turn's snapshot names at its one maker (`GameState.snapshot`) that the turn's input, Brain answer, roll, narration, and scene are still to come. A new game names every field too: it is made without a character, with an empty name, concept, stats, and wishes, and takes one up through `take_up_character` as a successor does, which now gives the preferences whole. 93 defaults remain. Play does not change.
+
+Quality gate: 1846 tests, coverage 94.97%. Save format unchanged. No Elvira session (Sessions with the user); none would have been needed, since play does not change.
+
 ## [2026.10.19.46] — 2026-10-19
 
 Step 9o, 9o.1, first module: the dataclasses of `models_base.py` lose their seventeen defaults, so every maker of a clock, the world, a progress track, a threat, a random event, or a scene setup names each field, and one that forgets fails at once. The makers that wrote a fresh one in several places now share one: a clock comes from `gamemaster/clocks.py` → `new_clock`, which the spawners, the opening clock, the complication clocks, and the ruleset's dying clock use, with the owner, an empty fill, and no firing set there; a legacy track comes from `ruleset/progress.py` → `new_track` like every other track, where `ruleset/legacy.py` wrote it out. `PlayerPreferences` keeps its two defaults until `models.py`, since its only maker is `GameState`'s default. The test helpers fill the fields the models no longer default, and `make_scene_setup` replaces the bare scene setups in the tests. 129 defaults remain. Play does not change.

@@ -28,15 +28,24 @@ def record_price_tables(monkeypatch: pytest.MonkeyPatch) -> list[str]:
 
 def make_game_state(**kwargs: Any) -> Any:
     from straightjacket.engine.gamemaster.world import new_world
-    from straightjacket.engine.models import GameState
+    from straightjacket.engine.models import GameState, NarrativeState, PlayerPreferences
     from straightjacket.engine.ruleset.legacy import new_campaign
     from straightjacket.engine.ruleset.meters import starting_resources
 
     kwargs.setdefault("setting_id", "starforged")
+    for name in ("player_name", "character_concept", "pronouns", "background_vow", "setting_genre"):
+        kwargs.setdefault(name, "")
+    for name in ("setting_tone", "setting_description", "backstory", "end_reason"):
+        kwargs.setdefault(name, "")
     kwargs.setdefault("stats", {"edge": 1, "heart": 2, "iron": 1, "shadow": 1, "wits": 2})
     kwargs.setdefault("resources", starting_resources(kwargs["setting_id"]))
     kwargs.setdefault("world", new_world())
+    kwargs.setdefault("narrative", NarrativeState())
     kwargs.setdefault("campaign", new_campaign(kwargs["setting_id"]))
+    kwargs.setdefault("preferences", PlayerPreferences(player_wishes="", content_lines=""))
+    kwargs.setdefault("crisis_mode", False)
+    kwargs.setdefault("last_turn_snapshot", None)
+    kwargs.setdefault("post_epilogue_director_done", False)
     return GameState(**kwargs)
 
 
@@ -123,6 +132,13 @@ def make_brain_result(**kwargs: Any) -> Any:
 
     kwargs.setdefault("move", "dialog")
     kwargs.setdefault("stat", "none")
+    kwargs.setdefault("approach", "")
+    kwargs.setdefault("dialog_only", False)
+    kwargs.setdefault("player_intent", "")
+    for name in ("target_npc", "world_addition", "location_change", "track_name", "track_rank"):
+        kwargs.setdefault(name, None)
+    for name in ("target_track", "target_clock", "target_threat", "bonus_id"):
+        kwargs.setdefault(name, None)
     return BrainResult(**kwargs)
 
 

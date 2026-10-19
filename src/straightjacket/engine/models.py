@@ -76,27 +76,27 @@ class LocationChange(SerializableMixin):
     kind: str
 
 
-@dataclass
+@dataclass(kw_only=True)
 class BrainResult(SerializableMixin):
-    move: str = field(kw_only=True)
-    stat: str = field(kw_only=True)
-    approach: str = ""
-    target_npc: str | None = None
-    dialog_only: bool = False
-    player_intent: str = ""
-    world_addition: str | None = None
-    location_change: LocationChange | None = None
-    track_name: str | None = None
-    track_rank: str | None = None
-    target_track: str | None = None
-    target_clock: str | None = None
-    target_threat: str | None = None
-    bonus_id: str | None = None
+    move: str
+    stat: str
+    approach: str
+    target_npc: str | None
+    dialog_only: bool
+    player_intent: str
+    world_addition: str | None
+    location_change: LocationChange | None
+    track_name: str | None
+    track_rank: str | None
+    target_track: str | None
+    target_clock: str | None
+    target_threat: str | None
+    bonus_id: str | None
     undetermined_facts: list[FactRequest] = field(default_factory=list)
     boasts: list[str] = field(default_factory=list)
 
 
-@dataclass
+@dataclass(kw_only=True)
 class TurnSnapshot(SerializableMixin):
     resources: dict[str, Any] = field(default_factory=dict)
     world: dict[str, Any] = field(default_factory=dict)
@@ -106,34 +106,34 @@ class TurnSnapshot(SerializableMixin):
     progress_tracks: list[dict[str, Any]] = field(default_factory=list)
     threats: list[dict[str, Any]] = field(default_factory=list)
     impacts: list[str] = field(default_factory=list)
-    crisis_mode: bool = False
-    end_reason: str = ""
-    player_input: str = ""
-    brain: BrainResult | None = None
-    roll: RollResult | None = None
-    narration: str | None = None
+    crisis_mode: bool
+    end_reason: str
+    player_input: str
+    brain: BrainResult | None
+    roll: RollResult | None
+    narration: str | None
     facts: list[ResolvedFact] = field(default_factory=list)
-    scene_setup: SceneSetup | None = None
+    scene_setup: SceneSetup | None
     random_events: list[RandomEvent] = field(default_factory=list)
     threat_events: list[ThreatEvent] = field(default_factory=list)
     clock_fill_results: list[ClockFillResult] = field(default_factory=list)
     npc_agency: list[str] = field(default_factory=list)
 
 
-@dataclass
+@dataclass(kw_only=True)
 class GameState(SerializableMixin):
-    player_name: str = ""
-    character_concept: str = ""
-    pronouns: str = ""
+    player_name: str
+    character_concept: str
+    pronouns: str
     paths: list[str] = field(default_factory=list)
-    background_vow: str = ""
-    setting_id: str = ""
-    setting_genre: str = ""
-    setting_tone: str = ""
-    setting_description: str = ""
+    background_vow: str
+    setting_id: str
+    setting_genre: str
+    setting_tone: str
+    setting_description: str
 
-    stats: dict[str, int] = field(kw_only=True)
-    backstory: str = ""
+    stats: dict[str, int]
+    backstory: str
     assets: list[str] = field(default_factory=list)
     asset_abilities: dict[str, list[bool]] = field(default_factory=dict)
     progress_tracks: list[ProgressTrack] = field(default_factory=list)
@@ -141,18 +141,18 @@ class GameState(SerializableMixin):
     impacts: list[str] = field(default_factory=list)
     truths: dict[str, str] = field(default_factory=dict)
 
-    resources: Resources = field(kw_only=True)
-    world: WorldState = field(kw_only=True)
-    narrative: NarrativeState = field(default_factory=NarrativeState)
-    campaign: CampaignState = field(kw_only=True)
-    preferences: PlayerPreferences = field(default_factory=PlayerPreferences)
+    resources: Resources
+    world: WorldState
+    narrative: NarrativeState
+    campaign: CampaignState
+    preferences: PlayerPreferences
 
     npcs: list[NpcData] = field(default_factory=list)
-    crisis_mode: bool = False
-    end_reason: str = ""
+    crisis_mode: bool
+    end_reason: str
 
-    last_turn_snapshot: TurnSnapshot | None = field(default=None, repr=False)
-    post_epilogue_director_done: bool = field(default=False, repr=False)
+    last_turn_snapshot: TurnSnapshot | None = field(repr=False)
+    post_epilogue_director_done: bool = field(repr=False)
 
     @property
     def game_over(self) -> bool:
@@ -170,6 +170,11 @@ class GameState(SerializableMixin):
             impacts=list(self.impacts),
             crisis_mode=self.crisis_mode,
             end_reason=self.end_reason,
+            player_input="",
+            brain=None,
+            roll=None,
+            narration=None,
+            scene_setup=None,
         )
 
     def restore(self, snap: TurnSnapshot) -> None:
