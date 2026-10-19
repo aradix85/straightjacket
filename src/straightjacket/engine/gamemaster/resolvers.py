@@ -154,14 +154,8 @@ def resolve_effect(game: GameState, brain: BrainResult, position: str) -> str:
 
 
 def resolve_time_progression(move: str, has_location_change: bool) -> str:
-    return gm().location.change_time if has_location_change else answers().time_taken(move)
-
-
-def is_dialog_branch(brain: BrainResult) -> bool:
-    if brain.dialog_only:
-        return True
-    return brain.move == "dialog" or brain.move == "ask_the_oracle"
-
-
-def is_dialog_memory(brain: BrainResult, roll_present: bool) -> bool:
-    return is_dialog_branch(brain) or not roll_present
+    if has_location_change:
+        return gm().location.change_time
+    if move in gm().moves:
+        return gm().moves[move].time
+    return answers().time_taken(move)

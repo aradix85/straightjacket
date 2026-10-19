@@ -25,10 +25,10 @@ BRAIN_FIELDS: dict[str, Any] = {
 
 
 def _offered(game: Any) -> list[str]:
+    from straightjacket.engine.ai.brain import _offered_moves
     from straightjacket.engine.ai.schemas import get_brain_output_schema
-    from straightjacket.engine.ruleset.move_availability import available_moves
 
-    schema = get_brain_output_schema(list(available_moves(game)), [], [], [], [], [])
+    schema = get_brain_output_schema(list(_offered_moves(game)), [], [], [], [], [])
     offered: list[str] = schema["properties"]["move"]["enum"]
     return offered
 

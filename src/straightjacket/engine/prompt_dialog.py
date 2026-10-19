@@ -1,5 +1,6 @@
 from collections.abc import Sequence
 
+from .gamemaster.moves import asks_the_oracle
 from .models import (
     BrainResult,
     ClockFillResult,
@@ -66,7 +67,7 @@ def build_dialog_prompt(
     director = _director_block(game)
     oracle_tag = f"\n<oracle_answer>{_xe(oracle_answer)}</oracle_answer>" if oracle_answer else ""
 
-    is_oracle = brain.move == "ask_the_oracle"
+    is_oracle = asks_the_oracle(brain.move)
     scene_type = "oracle" if is_oracle else "dialog"
     if not is_oracle:
         task = get_prompt("task_dialog")

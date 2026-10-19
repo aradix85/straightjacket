@@ -91,6 +91,7 @@ class TestEveryMoveResolvesEndToEnd:
         for sid in list_packages():
             all_moves.update(get_moves(sid).keys())
         all_moves.update(rules().engine_moves.keys())
+        all_moves.update(gm().moves.keys())
 
         failures = []
         for move in sorted(all_moves):
@@ -115,6 +116,7 @@ class TestEveryMoveResolvesEndToEnd:
         for sid in list_packages():
             all_moves.update(get_moves(sid).keys())
         all_moves.update(rules().engine_moves.keys())
+        all_moves.update(gm().moves.keys())
 
         baselines = gm().position_resolver.move_baselines
         unmapped = [m for m in sorted(all_moves) if action_kind(m) not in baselines]

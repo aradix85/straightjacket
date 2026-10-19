@@ -3,6 +3,7 @@ from __future__ import annotations
 from collections.abc import Callable
 from typing import Any
 
+from ..gamemaster.moves import roll_oracle_answer
 from ..logging_util import log
 from ..models import GameState, consequence
 from .config import rules
@@ -14,7 +15,7 @@ from .outcome_result import OutcomeResult, move_outcome_config
 from .roll_sources import best_roll_option
 from .rolls import roll_action
 from .suffer import start_dying_clock, suffer
-from .tracks import forsake_vow, roll_oracle_answer, start_bound_vow
+from .tracks import forsake_vow, start_bound_vow
 
 
 def _can_recover(game: GameState, params: dict[str, Any], blocked: bool) -> bool:

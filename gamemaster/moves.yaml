@@ -1,0 +1,7 @@
+moves:
+  dialog:
+    name: Dialog
+    time: none
+  ask_the_oracle:
+    name: Ask the Oracle
+    time: short

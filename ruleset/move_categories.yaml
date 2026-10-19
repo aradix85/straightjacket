@@ -49,8 +49,6 @@ move_categories:
   - adventure/face_danger
   - adventure/reach_your_destination
   - adventure/undertake_a_journey
-  - ask_the_oracle
-  - dialog
   - world_shaping
   - delve/check_your_gear
   - delve/delve_the_depths

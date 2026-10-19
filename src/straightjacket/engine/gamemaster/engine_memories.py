@@ -5,8 +5,8 @@ from collections.abc import Sequence
 from ..engine_loader import eng
 from ..models import BrainResult, GameState, MemoryEntry, NpcData
 from .config import gm
+from .moves import is_dialog_branch, is_dialog_memory
 from .questions import answers
-from .resolvers import is_dialog_branch, is_dialog_memory
 
 
 def derive_memory_emotion(move: str, outcome: str, disposition: str) -> str:

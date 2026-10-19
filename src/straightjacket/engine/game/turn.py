@@ -13,12 +13,12 @@ from ..gamemaster.facts import (
     settle_facts_by_miss,
 )
 from ..gamemaster.generation import generate_place_on_arrival, resolve_turn_facts
+from ..gamemaster.moves import asks_the_oracle, is_dialog_branch, roll_oracle_answer
 from ..gamemaster.npc.activation import activate_npcs_for_prompt
 from ..gamemaster.npc.lifecycle import reactivate_npc
 from ..gamemaster.npc.matching import find_npc
 from ..gamemaster.questions import answers
 from ..gamemaster.random_events import drain_pending_events
-from ..gamemaster.resolvers import is_dialog_branch
 from ..gamemaster.scene import check_scene
 from ..gamemaster.world import apply_brain_location_time
 from ..logging_util import log
@@ -44,12 +44,9 @@ from ..ruleset.meters import momentum
 from ..ruleset.move_outcome import make_follow_up_moves
 from ..ruleset.moves import get_moves
 from ..ruleset.outcome_result import OutcomeResult
-from ..ruleset.rolls import (
-    can_burn_momentum,
-)
+from ..ruleset.rolls import can_burn_momentum
 from ..ruleset.suffer import tick_dying_clock
 from ..ruleset.threats import advance_threat_by_id, resolve_full_menace, take_pending_threat_events
-from ..ruleset.tracks import roll_oracle_answer
 from ..story_state import get_pending_revelations
 from .action_resolution import resolve_action_phase
 from .finalization import narrate_scene, update_crisis
@@ -174,7 +171,7 @@ def _play_turn(
 
 
 def _sanitize_brain_output(game: GameState, brain: BrainResult) -> None:
-    if brain.dialog_only or brain.stat != eng().ai_text.no_stat or brain.move in get_moves(game.setting_id):
+    if is_dialog_branch(brain) or brain.stat != eng().ai_text.no_stat or brain.move in get_moves(game.setting_id):
         return
     if rules().engine_moves[brain.move].is_action_roll:
         log(f"[Brain] {brain.move!r} names no stat; it plays as dialog")
@@ -275,7 +272,7 @@ def build_scene_context(
 def _process_dialog_turn(ctx: SceneContext) -> tuple[str, DirectorCall | None]:
     game = ctx.game
     brain = ctx.brain
-    is_oracle = brain.move == "ask_the_oracle"
+    is_oracle = asks_the_oracle(brain.move)
     game.narrative.scene_count += 1
 
     oracle_answer = roll_oracle_answer(game) if is_oracle and not ctx.facts else ""

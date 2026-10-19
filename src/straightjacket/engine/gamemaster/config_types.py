@@ -5,6 +5,12 @@ from typing import Any
 
 
 @dataclass
+class GameMasterMove:
+    name: str
+    time: str
+
+
+@dataclass
 class NpcConfig:
     max_active: int
     max_memory_entries: int

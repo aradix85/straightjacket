@@ -5,7 +5,6 @@ from .config import rules
 from .config_types import (
     ActiveTrackCondition,
     BondedTrackCondition,
-    EngineMove,
     MoveAvailabilityCondition,
     MoveAvailabilityRule,
     NoActiveTrackCondition,
@@ -13,17 +12,15 @@ from .config_types import (
 from .moves import Move, get_moves
 
 
-def available_moves(game: GameState) -> dict[str, Move | EngineMove]:
+def available_moves(game: GameState) -> dict[str, Move]:
     track_states = {(t.track_type, t.status) for t in game.progress_tracks}
     combat_pos = game.world.combat_position
-    moves: dict[str, Move | EngineMove] = {
+    return {
         key: move
         for key, move in get_moves(game.setting_id).items()
         if move.roll_type not in rules().unoffered_roll_types
         and _is_move_available(rules().move_availability[key], track_states, combat_pos)
     }
-    moves.update(rules().engine_moves)
-    return moves
 
 
 def _is_move_available(rule: MoveAvailabilityRule, track_states: set[tuple[str, str]], combat_pos: str) -> bool:

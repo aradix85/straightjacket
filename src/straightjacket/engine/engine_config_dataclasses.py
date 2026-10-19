@@ -108,6 +108,7 @@ class StatusDescriptionsConfig:
 class AiTextConfig:
     schema_titles: dict[str, str]
     no_stat: str
+    no_roll_type: str
     brain_trigger_hints: dict[str, str]
     schema_descriptions: dict[str, dict[str, str]]
     consequence_labels: dict[str, str]

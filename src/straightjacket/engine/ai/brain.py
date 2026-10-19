@@ -6,6 +6,7 @@ from ..config_loader import model_for_role, narration_language, sampling_params
 from ..engine_loader import eng
 from ..gamemaster.complications import open_complications
 from ..gamemaster.config import gm
+from ..gamemaster.config_types import GameMasterMove
 from ..logging_util import log
 from ..models import BrainResult, GameState, Revelation
 from ..prompt_blocks import (
@@ -16,6 +17,7 @@ from ..prompt_loader import get_prompt, get_prompt_prefix
 from ..ruleset.bond import connection_track, is_bonded, starts_a_connection
 from ..ruleset.bonuses import bonus_block, roll_bonuses
 from ..ruleset.config import rules
+from ..ruleset.config_types import EngineMove
 from ..ruleset.move_availability import available_moves
 from ..ruleset.move_outcome import acts_on_an_npc
 from ..ruleset.moves import PICK_METHODS, Move, get_moves
@@ -42,17 +44,29 @@ def _ways(move: Move) -> list[str]:
     return ways
 
 
+def _offered_moves(game: GameState) -> dict[str, Move | GameMasterMove | EngineMove]:
+    return {**available_moves(game), **gm().moves, **rules().engine_moves}
+
+
+def _ways_and_roll(move: Move | GameMasterMove | EngineMove) -> tuple[list[str], str]:
+    if isinstance(move, Move):
+        return _ways(move), move.roll_type
+    if isinstance(move, EngineMove):
+        return move.stats, move.roll_type
+    return [], eng().ai_text.no_roll_type
+
+
 def _build_moves_block(game: GameState) -> str:
     combat_pos = game.world.combat_position
     trigger_hints = eng().ai_text.brain_trigger_hints
 
     lines = []
-    for key, move in available_moves(game).items():
-        ways = _ways(move) if isinstance(move, Move) else move.stats
+    for key, move in _offered_moves(game).items():
+        ways, roll = _ways_and_roll(move)
         stats = " | ".join(ways) if ways else eng().ai_text.no_stat
         hint = trigger_hints.get(key, "")
         trigger = f" when:{hint}" if hint else ""
-        lines.append(f"  {key} ({move.name}) stats:[{stats}] roll:{move.roll_type}{trigger}")
+        lines.append(f"  {key} ({move.name}) stats:[{stats}] roll:{roll}{trigger}")
 
     pos_line = f"  combat_position: {combat_pos}" if combat_pos else ""
     return "<moves>\n" + "\n".join(lines) + ("\n" + pos_line if pos_line else "") + "\n</moves>"
@@ -146,7 +160,7 @@ def _check_target_track(game: GameState, result: BrainResult) -> None:
 
 def _wrong_stat(game: GameState, result: BrainResult) -> list[str]:
     ds_move = get_moves(game.setting_id).get(result.move)
-    if result.dialog_only:
+    if result.dialog_only or result.move in gm().moves:
         return []
     if ds_move is None:
         return list(rules().engine_moves[result.move].stats) if result.stat in PICK_METHODS else []
@@ -225,7 +239,7 @@ time:{w.time_of_day or _ai_text["unknown_time"]}
 {bonuses}
 <input>{_xe(player_message)}</input>"""
 
-    move_keys = list(available_moves(game))
+    move_keys = list(_offered_moves(game))
     choices = {
         "bonus_id": [b.id for b in roll_bonuses(game)],
         "target_npc": [n.id for n in _listed_npcs(game)],

@@ -76,13 +76,20 @@ class TestAvailableMoves:
     def test_recovery_moves_available(self, load_engine: None) -> None:
         assert {"recover/heal", "recover/resupply"} <= _moves(_game())
 
-    def test_engine_specific_moves_present(self, load_engine: None) -> None:
-        assert {"dialog", "ask_the_oracle", "world_shaping"} <= _moves(_game())
-
-    def test_offers_the_settings_own_moves_and_the_engines(self, load_engine: None) -> None:
+    def test_offers_only_the_settings_own_moves(self, load_engine: None) -> None:
         offered = available_moves(_game())
         assert offered["adventure/face_danger"] is get_moves("starforged")["adventure/face_danger"]
-        assert offered["dialog"] is rules().engine_moves["dialog"]
+        assert not {"dialog", "ask_the_oracle", "world_shaping"} & set(offered)
+
+    def test_the_brain_offers_the_game_masters_moves_and_world_shaping_beside_them(self, load_engine: None) -> None:
+        from straightjacket.engine.ai.brain import _offered_moves
+        from straightjacket.engine.gamemaster.config import gm
+
+        offered = _offered_moves(_game())
+        assert offered["dialog"] is gm().moves["dialog"]
+        assert offered["ask_the_oracle"] is gm().moves["ask_the_oracle"]
+        assert offered["world_shaping"] is rules().engine_moves["world_shaping"]
+        assert list(offered)[-3:] == ["dialog", "ask_the_oracle", "world_shaping"]
 
     def test_classic_setting(self, load_engine: None) -> None:
         moves = _moves(_game(setting="classic"))

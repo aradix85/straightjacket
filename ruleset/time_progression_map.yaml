@@ -1,5 +1,4 @@
 time_progression_map:
-  dialog: none
   adventure/gather_information: short
   adventure/compel: short
   connection/make_a_connection: short

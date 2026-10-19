@@ -1,12 +1,4 @@
 engine_moves:
-  dialog:
-    name: Dialog
-    stats: []
-    roll_type: none
-  ask_the_oracle:
-    name: Ask the Oracle
-    stats: []
-    roll_type: none
   world_shaping:
     name: World Shaping
     stats:

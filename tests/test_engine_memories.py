@@ -3,7 +3,7 @@ from __future__ import annotations
 import pytest
 
 from straightjacket.engine.gamemaster.engine_memories import generate_engine_memories
-from straightjacket.engine.gamemaster.resolvers import is_dialog_branch, is_dialog_memory
+from straightjacket.engine.gamemaster.moves import asks_the_oracle, is_dialog_branch, is_dialog_memory
 from straightjacket.engine.ruleset.answers import action_kind
 from straightjacket.engine.ruleset.config import rules
 from tests._helpers import make_brain_result
@@ -26,6 +26,14 @@ class TestIsDialogBranch:
     def test_action_move_without_flag_is_not_dialog(self) -> None:
         brain = make_brain_result(move="combat/clash", dialog_only=False)
         assert is_dialog_branch(brain) is False
+
+    def test_world_shaping_is_the_rulesets_move_and_rolls(self) -> None:
+        brain = make_brain_result(move="world_shaping", dialog_only=False)
+        assert is_dialog_branch(brain) is False
+
+    def test_only_asking_the_oracle_asks_the_oracle(self) -> None:
+        assert asks_the_oracle("ask_the_oracle") is True
+        assert asks_the_oracle("dialog") is False
 
 
 class TestIsDialogMemory:

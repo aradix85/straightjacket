@@ -172,6 +172,14 @@ def test_time_progression_dialog_is_none(stub_engine: None) -> None:
     assert resolve_time_progression("dialog", has_location_change=False) == "none"
 
 
+def test_the_game_master_s_own_moves_take_its_own_time(stub_engine: None) -> None:
+    from straightjacket.engine.gamemaster.config import gm
+    from straightjacket.engine.gamemaster.resolvers import resolve_time_progression
+
+    for move, spec in gm().moves.items():
+        assert resolve_time_progression(move, has_location_change=False) == spec.time
+
+
 def test_time_progression_gather_is_short(stub_engine: None) -> None:
     from straightjacket.engine.gamemaster.resolvers import resolve_time_progression
 

@@ -8,7 +8,6 @@ from ..gamemaster.config import gm
 from ..ids import unique_id
 from ..logging_util import log
 from ..models import BrainResult, ClockData, GameState, ProgressTrack, RollResult, ThreadEntry, consequence
-from ..setting.packages import load_package
 from .bond import connection_track, connection_track_id
 from .config import rules
 from .impacts import clear_impact
@@ -263,8 +262,3 @@ def complete_track_of_clock(game: GameState, clock: ClockData) -> None:
             complete_track(game, track.id, "completed")
             log(f"[ClockFill] linked progress track '{track.name}' completed")
             return
-
-
-def roll_oracle_answer(game: GameState) -> str:
-    action, theme = load_package(game.setting_id).roll_action_theme()
-    return f"{action} / {theme}"
