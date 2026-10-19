@@ -12,7 +12,7 @@ Creation is driven by the setting's Datasworn data, with no AI call: the client 
 2. Create `data/settings/<id>.yaml`, with `data/settings/starforged.yaml` as template. The file's stem is the setting id the engine uses; `datasworn_id` inside it points at the JSON.
 3. The setting appears in character creation automatically; no Python changes.
 
-Discovery is yaml-only: `list_packages()` scans `data/settings/*.yaml` and `get_moves()` reads `parent:` from the child yaml. There are no Python mapping tables.
+Discovery is yaml-only: `list_packages()` scans `data/settings/*.yaml`, and `get_moves()` merges the moves along the package's `parent:` chain, the parent's first, so a child's move replaces its parent's.
 
 ## Settings yaml format
 

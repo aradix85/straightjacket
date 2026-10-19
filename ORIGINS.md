@@ -13,7 +13,7 @@ The codebase still contains code and design decisions from EdgeTales. It is not 
 - **Lars** ([EdgeTales](https://github.com/edgetales/edgetales)) — the first working implementation of the design document, the fork point for Straightjacket, and the source of code and design decisions that persist in it. Straightjacket exists because Lars built the first version and permitted the refactor that followed.
 - **Shawn Tomkin** — Ironsworn, Ironsworn: Delve, Ironsworn: Starforged, and Sundered Isles.
 - **rsek** — the [Datasworn](https://github.com/rsek/datasworn) data format.
-- **Tana Pigeon** — Mythic Game Master Emulator Second Edition and The Adventure Crafter, published by Word Mill Games.
+- **Tana Pigeon** — Mythic Game Master Emulator Second Edition, The Adventure Crafter, and The Location Crafter, published by Word Mill Games.
 - **John Harper** — Blades in the Dark (position and effect, clocks).
 - **Gnome Stew** — the AIMS framework (Agenda, Instinct, Moves, Secrets) for NPC agency.
 
