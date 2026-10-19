@@ -5,7 +5,7 @@ from .engine_config import EngineSettings, parse_engine_yaml
 from .logging_util import log
 from .yaml_merge import load_yaml_dir
 
-_CONFIG_DIRS = tuple(PROJECT_ROOT / name for name in ("engine", "gamemaster", "crafters", "ruleset"))
+_CONFIG_DIR = PROJECT_ROOT / "engine"
 
 _eng: EngineSettings | None = None
 
@@ -13,10 +13,7 @@ _eng: EngineSettings | None = None
 def eng() -> EngineSettings:
     global _eng
     if _eng is None:
-        data = load_yaml_dir(
-            *_CONFIG_DIRS,
-            missing_dir_hint="The engine, gamemaster, crafters, and ruleset directories ship with the repo.",
-        )
+        data = load_yaml_dir(_CONFIG_DIR, missing_dir_hint="The engine/ directory ships with the repo.")
         _eng = parse_engine_yaml(data)
-        log(f"[Engine] Loaded {len(data)} sections from {', '.join(d.name for d in _CONFIG_DIRS)}")
+        log(f"[Config] Loaded {_CONFIG_DIR} ({len(data)} sections)")
     return _eng

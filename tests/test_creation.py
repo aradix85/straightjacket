@@ -1,5 +1,6 @@
 import pytest
 
+from straightjacket.engine.gamemaster.config import gm
 from tests._helpers import make_game_state
 
 
@@ -203,12 +204,11 @@ def test_build_creation_options_settings_have_name_tables(load_engine: None) -> 
 
 
 def test_every_setting_offers_a_known_tone_as_its_default(load_engine: None) -> None:
-    from straightjacket.engine.engine_loader import eng
     from straightjacket.web.serializers import build_creation_options
 
     opts = build_creation_options()
     tones = [tone["id"] for tone in opts["tones"]]
-    assert tones == list(eng().story.kishotenketsu_probability)
+    assert tones == list(gm().story.kishotenketsu_probability)
     assert all(tone["label"] != f"tone.{tone['id']}" for tone in opts["tones"])
     assert {s["id"]: s["default_tone"] for s in opts["settings"]} == {
         "classic": "dark_gritty",

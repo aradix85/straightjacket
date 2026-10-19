@@ -1,9 +1,10 @@
 import pytest
 
-from straightjacket.engine.engine_loader import eng
+from straightjacket.engine.gamemaster.config import gm
 from straightjacket.engine.gamemaster.facts import find_fact, settle_facts_by_miss
 from straightjacket.engine.models import GameState, ResolvedFact, RollResult, labels_of
 from straightjacket.engine.prompt_action import build_action_prompt
+from straightjacket.engine.ruleset.config import rules
 from straightjacket.engine.ruleset.move_effects import has_story_complication
 from straightjacket.engine.ruleset.move_outcome import resolve_move_outcome
 from straightjacket.engine.ruleset.moves import get_moves
@@ -20,7 +21,7 @@ def _game(setting_id: str = "starforged") -> GameState:
 
 def _useful(answer: str) -> ResolvedFact:
     return ResolvedFact(
-        about=eng().fact_resolution.place_reference,
+        about=gm().fact_resolution.place_reference,
         about_name="The Docks",
         fact_type="useful",
         answer=answer,
@@ -71,7 +72,7 @@ def test_the_settled_facts_reach_the_narrator(load_engine: None) -> None:
     prompt = build_action_prompt(
         game, brain, _roll("MISS"), [], [], **action_prompt_kwargs(player_words="search", facts=facts)
     )
-    assert eng().fact_resolution.types["useful"].description in prompt
+    assert gm().fact_resolution.types["useful"].description in prompt
 
 
 @pytest.mark.parametrize(
@@ -94,7 +95,7 @@ def test_the_target_npc_volunteers_nothing_on_a_miss(
     monkeypatch.setattr(prompt_shared, "compute_npc_gate", lambda *_: 4)
     game = _game()
     game.npcs.append(make_npc(id="npc_1", name="Kira", disposition="friendly"))
-    expected = 0 if result == "MISS" else eng().information_gate.fact_budget_by_gate[4]
+    expected = 0 if result == "MISS" else gm().information_gate.fact_budget_by_gate[4]
     assert f'fact_budget="{expected}"' in _prompt(game, result, target="npc_1")
 
 
@@ -105,7 +106,7 @@ def test_story_complication_only_where_the_setting_has_it(load_engine: None) -> 
 
 
 def _complication_rows(game: GameState) -> set[str]:
-    table = get_moves(game.setting_id)[eng().pay_the_price.move].tables[eng().pay_the_price.match_miss_table]
+    table = get_moves(game.setting_id)[rules().pay_the_price.move].tables[rules().pay_the_price.match_miss_table]
     return {row.text for row in table.rows if not row.oracle_rolls}
 
 
@@ -195,7 +196,7 @@ def test_everyone_present_withholds_on_a_miss(load_engine: None, monkeypatch: py
     prompt = build_action_prompt(
         game, brain, _roll(result), [], [], **action_prompt_kwargs(player_words="ask", activated_npcs=[bystander])
     )
-    held = eng().information_gate.miss_stance.stance
+    held = gm().information_gate.miss_stance.stance
     withheld = (
         f'<target_npc name="Kira" stance="{held}"' in prompt,
         f'<activated_npc name="Oren" stance="{held}"' in prompt,
@@ -205,7 +206,7 @@ def test_everyone_present_withholds_on_a_miss(load_engine: None, monkeypatch: py
 
 
 def test_only_place_facts_can_be_settled_by_a_miss() -> None:
-    from straightjacket.engine.engine_config import _build_fact_resolution
+    from straightjacket.engine.gamemaster.config import _build_fact_resolution
 
     raw = {
         "place_reference": "here",

@@ -1,9 +1,9 @@
 import math
 from typing import TYPE_CHECKING
 
-from ...engine_loader import eng
 from ...logging_util import log
 from ...models import GameState, NpcData
+from ..config import gm
 from ..questions import answers
 from .lifecycle import reactivate_npc
 from .matching import find_npc
@@ -13,7 +13,7 @@ if TYPE_CHECKING:
 
 
 def compute_npc_tfidf_scores(npcs: list[NpcData], query_text: str) -> dict[str, float]:
-    _tf = eng().tf_idf
+    _tf = gm().tf_idf
     min_tok = _tf.token_min_length
 
     def _tokenize(text: str) -> list[str]:
@@ -21,7 +21,7 @@ def compute_npc_tfidf_scores(npcs: list[NpcData], query_text: str) -> dict[str, 
 
     docs = {}
     for npc in npcs:
-        if npc.status not in eng().npc_status_groups.in_play:
+        if npc.status not in gm().npc_status_groups.in_play:
             continue
         npc_id = npc.id
         parts = [
@@ -76,7 +76,7 @@ def compute_npc_tfidf_scores(npcs: list[NpcData], query_text: str) -> dict[str, 
 
 
 def _build_scan_text(brain: "BrainResult", game: "GameState", player_input: str) -> str:
-    _tf = eng().tf_idf
+    _tf = gm().tf_idf
     scan_parts = [
         player_input,
         brain.player_intent,
@@ -96,8 +96,8 @@ def _score_npc(
     tfidf: float,
     game: "GameState",
 ) -> float:
-    _scores = eng().activation_scores
-    _tf = eng().tf_idf
+    _scores = gm().activation_scores
+    _tf = gm().tf_idf
     score = 0.0
     npc_name_lower = npc.name.lower()
 
@@ -129,7 +129,7 @@ def _score_npc(
 def _cap_activated_overflow(
     activated: list[NpcData], mentioned: list[NpcData], target_id: str | None, game: "GameState"
 ) -> tuple[list[NpcData], list[NpcData]]:
-    _max_activated = eng().npc.max_activated
+    _max_activated = gm().npc.max_activated
     if len(activated) <= _max_activated:
         return activated, mentioned
 
@@ -151,12 +151,12 @@ def _recursive_activation(activated: list[NpcData], mentioned: list[NpcData], ga
         for other in game.npcs:
             if other in activated or other in mentioned or other in secondary:
                 continue
-            if other.status not in eng().npc_status_groups.in_play:
+            if other.status not in gm().npc_status_groups.in_play:
                 continue
             other_name = other.name.lower()
             if other_name and other_name in ref_text.lower():
                 secondary.append(other)
-                if len(secondary) >= eng().activation_scores.max_recursive:
+                if len(secondary) >= gm().activation_scores.max_recursive:
                     break
         if secondary:
             break
@@ -170,22 +170,21 @@ def activate_npcs_for_prompt(
     scan_text = _build_scan_text(brain, game, player_input)
     tfidf_scores = compute_npc_tfidf_scores(game.npcs, scan_text)
 
-    _e = eng()
     activated: list[NpcData] = []
     mentioned: list[NpcData] = []
 
     for npc in game.npcs:
-        if npc.status not in eng().npc_status_groups.in_play:
+        if npc.status not in gm().npc_status_groups.in_play:
             continue
 
         tfidf = tfidf_scores.get(npc.id, 0.0)
         score = _score_npc(npc, target_id, scan_text, tfidf, game)
 
-        if score >= _e.npc.activation_threshold:
+        if score >= gm().npc.activation_threshold:
             activated.append(npc)
             if npc.status == "background":
                 reactivate_npc(npc, reason=f"context activation (score={score:.2f})")
-        elif score >= _e.npc.mention_threshold:
+        elif score >= gm().npc.mention_threshold:
             mentioned.append(npc)
 
     activated, mentioned = _cap_activated_overflow(activated, mentioned, target_id, game)

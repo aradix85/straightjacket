@@ -9,6 +9,7 @@ from straightjacket.engine.ruleset.consequences import generate_consequence_sent
 from straightjacket.engine.ruleset.legacy import get_legacy_track
 from straightjacket.engine.ruleset.moves import get_moves
 from straightjacket.engine.ruleset.outcome_result import OutcomeResult
+from straightjacket.engine.ruleset.progress import filled_boxes
 from straightjacket.engine.ruleset.rolls import downgrade_in_position
 from straightjacket.engine.ruleset.tracks import recommit_track
 from tests._helpers import fix_dice, make_brain_result, make_game_state, make_progress_track
@@ -134,7 +135,7 @@ def test_a_bonded_connection_keeps_its_bond_and_is_not_made_again(load_engine: N
 
     track = make_progress_track(id="connection_npc_1", name="Mira", track_type="connection", ticks=24)
     game, _ = _play("starforged", "connection/forge_a_bond", track, "STRONG_HIT")
-    assert get_npc_bond(game, "npc_1") == track.filled_boxes == 6
+    assert get_npc_bond(game, "npc_1") == filled_boxes(track) == 6
     again = make_brain_result(
         move="connection/make_a_connection", target_npc="npc_1", track_name="Mira", track_rank="dangerous"
     )

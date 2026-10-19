@@ -1,5 +1,6 @@
 import pytest
 
+from straightjacket.engine.gamemaster.config import gm
 from straightjacket.engine.models import GameState, ThreadEntry
 from tests._helpers import (
     make_clock,
@@ -91,13 +92,12 @@ def test_a_game_that_is_over_cannot_start_a_chapter(load_engine: None) -> None:
 
 
 def test_reset_chapter_mechanics_clears_world_state(load_engine: None) -> None:
-    from straightjacket.engine.engine_loader import eng
     from straightjacket.engine.game.chapters import _reset_chapter_mechanics
 
     g = _populated_game(None)
     _reset_chapter_mechanics(g)
-    assert g.world.chaos_factor == eng().chaos.start
-    assert g.world.time_of_day == eng().opening.time_of_day
+    assert g.world.chaos_factor == gm().chaos.start
+    assert g.world.time_of_day == gm().opening.time_of_day
     assert g.world.location_history == []
 
 
@@ -166,11 +166,10 @@ def test_prepare_npcs_skips_deceased(load_engine: None) -> None:
 
 
 def test_prepare_npcs_caps_memory_at_open_threads_max(load_engine: None, stub_emotions: None) -> None:
-    from straightjacket.engine.engine_loader import eng
     from straightjacket.engine.game.chapters import _prepare_npcs_for_new_chapter
 
     g = make_game_state(player_name="X", setting_id="starforged")
-    cap = eng().chapter.open_threads_max
+    cap = gm().chapter.open_threads_max
     npc = make_npc(id="npc_1", name="Major", status="active", agenda="something")
     npc.memory = [make_memory(scene=i, event=f"event {i}", type="observation", importance=5) for i in range(cap + 5)]
     g.npcs = [npc]

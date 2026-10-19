@@ -9,6 +9,7 @@ from ..ai.narrator import call_narrator, call_narrator_metadata
 from ..ai.provider_base import AIProvider, NarrationSink
 from ..engine_loader import eng
 from ..gamemaster.clock_ticks import tick_threat_clock
+from ..gamemaster.config import gm
 from ..gamemaster.engine_memories import generate_engine_memories, generate_scene_context
 from ..gamemaster.npc.matching import named_in
 from ..gamemaster.npc.memory import consolidate_memory
@@ -30,11 +31,13 @@ from ..models import (
 from ..parser import parse_narrator_response
 from ..ruleset.boasts import apply_boasts
 from ..ruleset.bond import connection_track
+from ..ruleset.config import rules
 from ..ruleset.legacy import mark_legacy, mark_legacy_ticks, shifted_rank
 from ..ruleset.move_effects import apply_effects, parse_effects
 from ..ruleset.move_outcome import resolve_move_outcome
 from ..ruleset.moves import Move, get_moves
 from ..ruleset.outcome_result import OutcomeResult, move_outcome_config
+from ..ruleset.progress import filled_boxes, mark_progress
 from ..ruleset.roll_sources import best_roll_option, roll_source_without_stat
 from ..ruleset.rolls import roll_action
 from ..ruleset.tracks import find_progress_track
@@ -87,7 +90,7 @@ def _chain_without_bond(game: GameState, brain: BrainResult, outcome: OutcomeRes
 
 def _chain_move(game: GameState, brain: BrainResult, outcome: OutcomeResult) -> None:
     move = get_moves(game.setting_id)[outcome.chained_move]
-    oracle_moves = eng().get_raw("oracle_moves")
+    oracle_moves = rules().get_raw("oracle_moves")
     if move.roll_type == "no_roll" and outcome.chained_move in oracle_moves:
         _chain_oracle_move(game, move, oracle_moves[outcome.chained_move], outcome)
         return
@@ -134,7 +137,7 @@ def resolve_action_consequences(
     clock_events: list[ClockEvent] = []
     fill_results: list[ClockFillResult] = []
     if roll.result == "MISS":
-        clock_ticks = eng().clocks.miss_ticks_by_position[position]
+        clock_ticks = gm().clocks.miss_ticks_by_position[position]
         if clock_ticks > 0:
             tick_threat_clock(game, clock_ticks, clock_events, fill_results)
 
@@ -153,12 +156,12 @@ def apply_progress_and_legacy(
     rolled_track: ProgressTrack | None,
 ) -> None:
     if outcome.progress_marks > 0:
-        track_category = eng().get_raw("progress_mark_categories")[brain.move]
+        track_category = rules().get_raw("progress_mark_categories")[brain.move]
         track = find_progress_track(game, track_category, brain.target_track)
         for _ in range(outcome.progress_marks):
-            added = track.mark_progress()
+            added = mark_progress(track)
             if added:
-                log(f"[Track] {track.name}: +{added} ticks ({track.filled_boxes}/{eng().progress.boxes} boxes)")
+                log(f"[Track] {track.name}: +{added} ticks ({filled_boxes(track)}/{rules().progress.boxes} boxes)")
 
     if outcome.legacy_track and outcome.legacy_fixed_ticks:
         mark_legacy_ticks(game, outcome.legacy_track, outcome.legacy_fixed_ticks)
@@ -173,7 +176,7 @@ def apply_progress_and_legacy(
         if rolled_track is None:
             raise ValueError(f"{brain.move}: experience by rank needs the progress track that was rolled")
         rank = shifted_rank(rolled_track.rank, outcome.experience_rank_shift)
-        gained = eng().legacy.experience_by_rank[rank] if rank is not None else 0
+        gained = rules().legacy.experience_by_rank[rank] if rank is not None else 0
         game.campaign.xp += gained
         log(f"[Legacy] Experience +{gained} for a {rolled_track.rank} vow (total {game.campaign.xp})")
 
@@ -183,13 +186,12 @@ def update_crisis(game: GameState) -> None:
 
 
 def apply_engine_memories(game: GameState, memories: list[tuple[NpcData, MemoryEntry]], narration: str) -> None:
-    _e = eng()
     for npc, entry in memories:
         npc.memory.append(entry)
         npc.importance_accumulator += entry.importance
         if game.world.current_location and named_in(npc, narration):
             npc.last_location = game.world.current_location
-        if npc.importance_accumulator >= _e.npc.reflection_threshold:
+        if npc.importance_accumulator >= gm().npc.reflection_threshold:
             npc.needs_reflection = True
         consolidate_memory(npc)
 

@@ -9,8 +9,13 @@ from straightjacket.engine.crafters.adventure_crafter import (
     TurningPoint,
     spawn_keyed_scenes_for_turning_point,
 )
-from straightjacket.engine.engine_loader import eng
-from straightjacket.engine.gamemaster.keyed_scenes import evaluate_keyed_scenes, spawn_keyed_scenes_for_clock
+from straightjacket.engine.crafters.config import crafter
+from straightjacket.engine.gamemaster.config import gm
+from straightjacket.engine.gamemaster.keyed_scenes import (
+    evaluate_keyed_scenes,
+    new_keyed_scene,
+    spawn_keyed_scenes_for_clock,
+)
 from straightjacket.engine.gamemaster.random_events import generate_random_event, spawn_keyed_scene_from_random_event
 from straightjacket.engine.models import (
     ClockData,
@@ -65,7 +70,7 @@ def test_bond_threshold_any_pattern_validates():
 
 
 def test_bond_threshold_disposition_pattern_validates_for_each_disposition():
-    for disp in eng().enums.dispositions:
+    for disp in gm().enums.dispositions:
         KeyedScene(
             id=f"ks_{disp}",
             trigger_type="bond_threshold",
@@ -77,33 +82,50 @@ def test_bond_threshold_disposition_pattern_validates_for_each_disposition():
 
 def test_bond_threshold_unknown_disposition_raises():
     with pytest.raises(ValueError, match="unknown disposition"):
-        KeyedScene(
+        new_keyed_scene(
             id="ks_bad",
             trigger_type="bond_threshold",
             trigger_value="disposition_alien:4",
             priority=1,
             narrative_hint="",
+            source="test",
         )
 
 
 def test_bond_threshold_malformed_trigger_value_raises():
     with pytest.raises(ValueError, match="trigger_value must be"):
-        KeyedScene(id="ks_bad", trigger_type="bond_threshold", trigger_value="malformed", priority=1, narrative_hint="")
+        new_keyed_scene(
+            id="ks_bad",
+            trigger_type="bond_threshold",
+            trigger_value="malformed",
+            priority=1,
+            narrative_hint="",
+            source="test",
+        )
 
 
 def test_bond_threshold_non_integer_threshold_raises():
     with pytest.raises(ValueError, match="must be an integer"):
-        KeyedScene(
-            id="ks_bad", trigger_type="bond_threshold", trigger_value="any:not_a_number", priority=1, narrative_hint=""
+        new_keyed_scene(
+            id="ks_bad",
+            trigger_type="bond_threshold",
+            trigger_value="any:not_a_number",
+            priority=1,
+            narrative_hint="",
+            source="test",
         )
 
 
 def test_threat_menace_phase_any_pattern_validates():
-    KeyedScene(id="ks", trigger_type="threat_menace_phase", trigger_value="any:3", priority=1, narrative_hint="")
+    new_keyed_scene(
+        id="ks", trigger_type="threat_menace_phase", trigger_value="any:3", priority=1, narrative_hint="", source="test"
+    )
 
 
 def test_clock_fills_any_pattern_validates():
-    KeyedScene(id="ks", trigger_type="clock_fills", trigger_value="any:3", priority=1, narrative_hint="")
+    new_keyed_scene(
+        id="ks", trigger_type="clock_fills", trigger_value="any:3", priority=1, narrative_hint="", source="test"
+    )
 
 
 def test_bond_threshold_any_fires_when_some_npc_meets_threshold():
@@ -270,8 +292,8 @@ def test_ac_spawner_dedups_same_plot_point_within_chapter():
 
 def test_ac_spawner_respects_max_keyed_scenes_per_chapter_cap():
     narrative = NarrativeState()
-    cap = eng().adventure_crafter.max_keyed_scenes_per_chapter
-    mappable_names = list(eng().adventure_crafter.keyed_scene_mapping.keys())
+    cap = crafter().adventure_crafter.max_keyed_scenes_per_chapter
+    mappable_names = list(crafter().adventure_crafter.keyed_scene_mapping.keys())
     assert len(mappable_names) > cap
     over_cap = mappable_names[: cap + 2]
     tp = _turning_point_with_plot_points(*over_cap)

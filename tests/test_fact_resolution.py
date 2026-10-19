@@ -5,7 +5,7 @@ from typing import Any
 import pytest
 
 from straightjacket.engine.ai.provider_base import AICallSpec, AIResponse
-from straightjacket.engine.engine_loader import eng
+from straightjacket.engine.gamemaster.config import gm
 from straightjacket.engine.models import (
     FactRequest,
     FateResult,
@@ -14,6 +14,7 @@ from straightjacket.engine.models import (
     RollResult,
     SceneSetup,
 )
+from straightjacket.engine.ruleset.progress import new_track
 from tests._creation import create_game
 from tests._helpers import fix_dice
 
@@ -206,7 +207,7 @@ def test_remembered_facts_come_back_only_at_their_own_place(load_engine: None) -
 def test_every_fact_input_has_an_implementation(load_engine: None) -> None:
     from straightjacket.engine.gamemaster.facts import _INPUTS
 
-    for name, spec in eng().fact_resolution.types.items():
+    for name, spec in gm().fact_resolution.types.items():
         assert set(spec.inputs) <= set(_INPUTS), name
         if "npc_disposition" in spec.inputs:
             assert spec.subject == "npc", name
@@ -234,7 +235,7 @@ def test_the_brain_schema_offers_only_known_types_and_subjects(load_engine: None
     assert place["properties"]["about"]["enum"] == ["here"]
     assert npc["properties"]["fact_type"]["enum"] == ["alert", "present"]
     assert npc["properties"]["about"]["enum"] == ["npc_1"]
-    assert facts["maxItems"] == eng().fact_resolution.max_per_turn
+    assert facts["maxItems"] == gm().fact_resolution.max_per_turn
 
     alone = get_brain_output_schema(["adventure/face_danger"], [], [], [], [])["properties"]["undetermined_facts"]
     assert len(alone["items"]["anyOf"]) == 1
@@ -275,12 +276,11 @@ def test_the_brain_rejects_a_fact_about_an_unknown_npc(load_engine: None) -> Non
 def test_the_brain_rejects_a_progress_roll_on_a_track_of_another_kind(load_engine: None) -> None:
     from straightjacket.engine.ai.brain import call_brain
     from straightjacket.engine.ai.provider_base import AIUnavailableError
-    from straightjacket.engine.models import ProgressTrack
     from tests._mocks import MockProvider
 
     game = _game()
     game.progress_tracks.append(
-        ProgressTrack.new(id="expedition_ridge", name="Cross the ridge", track_type="expedition", rank="dangerous")
+        new_track(id="expedition_ridge", name="Cross the ridge", track_type="expedition", rank="dangerous")
     )
     content = json.dumps(_brain(move="quest/fulfill_your_vow", stat="none", target_track="expedition_ridge"))
     with pytest.raises(AIUnavailableError, match="works on a vow track"):
@@ -480,7 +480,7 @@ def test_a_search_that_hits_is_not_told_that_nothing_useful_is_here(
     game = _game()
     _n, _r, _o, _d = process_turn(provider, game, "I search the shelves", stream=None)
 
-    told = eng().fact_resolution.types["useful"].description in provider.prompts[-1]
+    told = gm().fact_resolution.types["useful"].description in provider.prompts[-1]
     assert told == (result == "MISS")
     assert [f.fact_type for f in game.world.facts] == (["useful"] if result == "MISS" else [])
 
@@ -497,7 +497,7 @@ def test_a_burn_to_a_hit_overrules_nothing_useful(
 
     _narration, _director = process_momentum_burn(provider, game, offer)
 
-    assert eng().fact_resolution.types["useful"].description not in provider.prompts[-1]
+    assert gm().fact_resolution.types["useful"].description not in provider.prompts[-1]
     assert game.world.facts == []
 
 
@@ -528,14 +528,13 @@ def test_facts_survive_a_save_round_trip(load_engine: None) -> None:
 
 
 def test_a_fact_type_with_an_unknown_subject_raises() -> None:
-    from straightjacket.engine.engine_config import parse_engine_yaml
-    from straightjacket.engine.engine_loader import _CONFIG_DIRS
+    from straightjacket.engine.gamemaster.config import _CONFIG_DIR, parse_gamemaster_yaml
     from straightjacket.engine.yaml_merge import load_yaml_dir
 
-    data = load_yaml_dir(*_CONFIG_DIRS, missing_dir_hint="")
+    data = load_yaml_dir(_CONFIG_DIR, missing_dir_hint="")
     data["fact_resolution"]["types"]["locked"]["subject"] = "room"
     with pytest.raises(ValueError, match="subject"):
-        parse_engine_yaml(data)
+        parse_gamemaster_yaml(data)
 
 
 @pytest.mark.parametrize(("answer", "target"), [("no", None), ("yes", "npc_1")])

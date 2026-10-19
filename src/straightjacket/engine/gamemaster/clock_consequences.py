@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from ..engine_loader import eng
 from ..logging_util import log
 from ..models import ClockData, ClockFillResult, GameState
+from .config import gm
 from .questions import answers
 from .spawn_sources import CLOCK_KEYED_SOURCE_PREFIX
 
@@ -17,7 +17,7 @@ def resolve_clock_fill(game: GameState, clock: ClockData) -> ClockFillResult | N
         log(f"[ClockFill] '{clock.name}' has attached keyed-scene, default suppressed")
         return None
 
-    tag_text = eng().clocks.fill_consequences[clock.clock_type].tag_template.format(clock_name=clock.name)
+    tag_text = gm().clocks.fill_consequences[clock.clock_type].tag_template.format(clock_name=clock.name)
 
     answers().clock_filled(game, clock)
 

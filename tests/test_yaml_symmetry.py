@@ -1,20 +1,21 @@
 from __future__ import annotations
 
-from straightjacket.engine.engine_loader import eng
+from straightjacket.engine.gamemaster.config import gm
+from straightjacket.engine.ruleset.config import rules
 
 
 def _all_categories() -> set[str]:
-    return set(eng().get_raw("move_categories").keys())
+    return set(rules().get_raw("move_categories").keys())
 
 
 def _stance_bucket_values() -> set[str]:
-    return set(eng().stance_move_buckets.mapping.values())
+    return set(gm().stance_move_buckets.mapping.values())
 
 
 class TestMoveCategoriesSymmetry:
     def test_stance_move_buckets_covers_every_category(self) -> None:
         cats = _all_categories()
-        mapping_keys = set(eng().stance_move_buckets.mapping.keys())
+        mapping_keys = set(gm().stance_move_buckets.mapping.keys())
         missing = cats - mapping_keys
         assert missing == set(), (
             f"Categories defined in move_categories.yaml but missing from stance_move_buckets.mapping: {sorted(missing)}. "
@@ -23,7 +24,7 @@ class TestMoveCategoriesSymmetry:
 
     def test_stance_move_buckets_has_no_extra_keys(self) -> None:
         cats = _all_categories()
-        mapping_keys = set(eng().stance_move_buckets.mapping.keys())
+        mapping_keys = set(gm().stance_move_buckets.mapping.keys())
         extra = mapping_keys - cats
         assert extra == set(), (
             f"stance_move_buckets.mapping has keys not in move_categories: {sorted(extra)}. "
@@ -32,7 +33,7 @@ class TestMoveCategoriesSymmetry:
 
     def test_position_resolver_baselines_cover_every_category(self) -> None:
         cats = _all_categories()
-        baselines = set(eng().position_resolver.move_baselines.keys())
+        baselines = set(gm().position_resolver.move_baselines.keys())
         missing = cats - baselines
         assert missing == set(), (
             f"Categories missing from position_resolver.move_baselines: {sorted(missing)}. "
@@ -42,7 +43,7 @@ class TestMoveCategoriesSymmetry:
 
     def test_stance_matrix_buckets_cover_stance_move_buckets_values(self) -> None:
         bucket_values = _stance_bucket_values()
-        matrix = eng().stance_matrix
+        matrix = gm().stance_matrix
         for disposition, bond_levels in matrix.items():
             for bond_level, cats in bond_levels.items():
                 missing = bucket_values - set(cats.keys())
@@ -54,8 +55,8 @@ class TestMoveCategoriesSymmetry:
 
     def test_memory_emotions_covers_every_non_dialog_combination(self) -> None:
         cats = _all_categories()
-        results = set(eng().get_raw("result_outcomes").values())
-        base = eng().memory_emotions.base
+        results = set(rules().get_raw("result_outcomes").values())
+        base = gm().memory_emotions.base
         missing = []
         for cat in cats:
             for res in results:
@@ -68,18 +69,16 @@ class TestMoveCategoriesSymmetry:
 
     def test_memory_result_text_covers_every_non_dialog_combination(self) -> None:
         cats = _all_categories()
-        results = set(eng().get_raw("result_outcomes").values())
-        result_text = eng().get_raw("memory_result_text")
+        results = set(rules().get_raw("result_outcomes").values())
+        result_text = gm().get_raw("memory_result_text")
         missing = [f"{cat}_{res}" for cat in cats for res in results if f"{cat}_{res}" not in result_text]
         assert missing == [], f"memory_result_text missing keys: {missing}."
 
     def test_memory_emotions_has_dialog_key(self) -> None:
-        assert "dialog" in eng().memory_emotions.base, (
-            "memory_emotions.base must contain 'dialog' key for dialog turns."
-        )
+        assert "dialog" in gm().memory_emotions.base, "memory_emotions.base must contain 'dialog' key for dialog turns."
 
     def test_memory_result_text_has_dialog_key(self) -> None:
-        assert "dialog" in eng().get_raw("memory_result_text"), "memory_result_text must contain 'dialog' key."
+        assert "dialog" in gm().get_raw("memory_result_text"), "memory_result_text must contain 'dialog' key."
 
 
 class TestEveryMoveResolvesEndToEnd:
@@ -91,7 +90,7 @@ class TestEveryMoveResolvesEndToEnd:
         all_moves: set[str] = set()
         for sid in list_packages():
             all_moves.update(get_moves(sid).keys())
-        all_moves.update(eng().engine_moves.keys())
+        all_moves.update(rules().engine_moves.keys())
 
         failures = []
         for move in sorted(all_moves):
@@ -115,9 +114,9 @@ class TestEveryMoveResolvesEndToEnd:
         all_moves: set[str] = set()
         for sid in list_packages():
             all_moves.update(get_moves(sid).keys())
-        all_moves.update(eng().engine_moves.keys())
+        all_moves.update(rules().engine_moves.keys())
 
-        baselines = eng().position_resolver.move_baselines
+        baselines = gm().position_resolver.move_baselines
         unmapped = [m for m in sorted(all_moves) if action_kind(m) not in baselines]
         assert unmapped == [], f"Moves whose category has no baseline in position_resolver.move_baselines: {unmapped}."
 
@@ -132,11 +131,11 @@ class TestMoveOutcomesCoverage:
             for move_id, move in get_moves(sid).items():
                 if move.roll_type == "action_roll":
                     action_roll_moves.add(move_id)
-        for move_id, em in eng().engine_moves.items():
+        for move_id, em in rules().engine_moves.items():
             if em.roll_type == "action_roll":
                 action_roll_moves.add(move_id)
 
-        outcomes = eng().get_raw("move_outcomes")
+        outcomes = rules().get_raw("move_outcomes")
         missing = sorted(action_roll_moves - set(outcomes.keys()))
         assert missing == [], (
             f"Action_roll moves without an entry in engine/move_outcomes.yaml: {missing}. "
@@ -150,9 +149,9 @@ class TestMoveOutcomesCoverage:
         all_known_moves: set[str] = set()
         for sid in list_packages():
             all_known_moves.update(get_moves(sid).keys())
-        all_known_moves.update(eng().engine_moves.keys())
+        all_known_moves.update(rules().engine_moves.keys())
 
-        outcomes = eng().get_raw("move_outcomes")
+        outcomes = rules().get_raw("move_outcomes")
         orphan = sorted(set(outcomes.keys()) - all_known_moves)
         assert orphan == [], (
             f"engine/move_outcomes.yaml has entries for moves that don't exist: {orphan}. "

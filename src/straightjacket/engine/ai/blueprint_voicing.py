@@ -3,6 +3,7 @@ from typing import Any
 
 from ..config_loader import model_for_role, narration_language, sampling_params
 from ..crafters.adventure_crafter import BlueprintSeed
+from ..crafters.config import crafter
 from ..engine_loader import eng
 from ..logging_util import log
 from ..models import GameState
@@ -29,7 +30,7 @@ def _build_voicing_user_msg(game: GameState, seed: BlueprintSeed) -> str:
     if game.world.current_location:
         parts.append(f"location:{_xe(game.world.current_location)}")
 
-    blueprint = eng().adventure_crafter.blueprint
+    blueprint = crafter().adventure_crafter.blueprint
     parts.append(
         f"required_counts: acts={len(seed.acts)} revelations={blueprint.revelations_per_blueprint} "
         f"possible_endings={blueprint.possible_endings_per_blueprint}"
@@ -75,7 +76,7 @@ def call_blueprint_voicing(
 
     system = get_prompt("blueprint_voicing", lang=lang, content_boundaries_block=cb)
     user_msg = _build_voicing_user_msg(game, seed)
-    blueprint = eng().adventure_crafter.blueprint
+    blueprint = crafter().adventure_crafter.blueprint
 
     expected = {
         "acts": len(seed.acts),

@@ -6,6 +6,7 @@ from dataclasses import dataclass
 
 from ..engine_loader import eng
 from ..gamemaster.complications import spawn_complication_clock
+from ..gamemaster.config import gm
 from ..gamemaster.npc.matching import find_npc
 from ..gamemaster.random_events import roll_meaning_table
 from ..logging_util import log
@@ -14,10 +15,12 @@ from ..setting.loader import OracleTable
 from ..setting.oracle_rolls import plain_text, roll_rows, roll_table
 from ..setting.packages import load_package
 from .bond import connection_track
+from .config import rules
 from .impacts import clear_impact, get_impacts
 from .legacy import shifted_rank
 from .moves import Move, get_moves
 from .outcome_result import OutcomeResult
+from .progress import mark_progress
 from .suffer import suffer
 
 
@@ -92,7 +95,7 @@ def roll_oracle_result(table: OracleTable) -> tuple[list[str], Consequence]:
     rolled = roll_rows(table)
     rows = [plain_text(row.text) for row in rolled.rows]
     worse = rolled.worse
-    if len(rows) == 1 and rows[0].startswith(tuple(eng().pay_the_price.worse_reroll_prefixes)):
+    if len(rows) == 1 and rows[0].startswith(tuple(rules().pay_the_price.worse_reroll_prefixes)):
         again = [plain_text(row.text) for row in roll_rows(table).rows]
         if again != rows:
             rows, worse = again, True
@@ -103,11 +106,11 @@ def roll_oracle_result(table: OracleTable) -> tuple[list[str], Consequence]:
 
 
 def _pay_the_price_move(game: GameState) -> Move:
-    return get_moves(game.setting_id)[eng().pay_the_price.move]
+    return get_moves(game.setting_id)[rules().pay_the_price.move]
 
 
 def has_story_complication(game: GameState) -> bool:
-    return eng().pay_the_price.match_miss_table in _pay_the_price_move(game).tables
+    return rules().pay_the_price.match_miss_table in _pay_the_price_move(game).tables
 
 
 def roll_move_table(game: GameState, move_key: str, key: str, result: OutcomeResult) -> None:
@@ -116,33 +119,31 @@ def roll_move_table(game: GameState, move_key: str, key: str, result: OutcomeRes
     told = consequence("oracle_result", table=table.title, result=text)
     log(f"[MoveTable] {told.label}")
     result.consequences.append(told)
-    for rule in eng().get_raw("move_table_rows")[key]:
+    for rule in rules().get_raw("move_table_rows")[key]:
         if text.startswith(rule["prefix"]):
             effect = parse_effect(rule["effect"])
             _EFFECT_HANDLERS[effect.type](game, effect, result, None)
 
 
 def pay_the_price(game: GameState, result: OutcomeResult) -> None:
-    rows, told = roll_oracle_result(_pay_the_price_move(game).tables[eng().pay_the_price.table])
+    rows, told = roll_oracle_result(_pay_the_price_move(game).tables[rules().pay_the_price.table])
     log(f"[PayThePrice] {told.label}")
     result.consequences.append(told)
     for row in rows:
-        for rule in eng().pay_the_price.suffer_rows:
+        for rule in rules().pay_the_price.suffer_rows:
             if row.startswith(rule.prefix):
                 effect = parse_effect(rule.effect)
                 _EFFECT_HANDLERS[effect.type](game, effect, result, None)
 
 
 def _apply_momentum_effect(game: GameState, effect: MoveEffect, result: OutcomeResult, target: NpcData | None) -> None:
-    _e = eng()
-    game.resources.adjust_momentum(effect.value, floor=_e.momentum.floor, ceiling=_e.momentum.max)
+    game.resources.adjust_momentum(effect.value, floor=rules().momentum.floor, ceiling=rules().momentum.max)
     result.consequences.append(consequence("momentum_change", n=effect.value))
 
 
 def _apply_resource_effect(game: GameState, effect: MoveEffect, result: OutcomeResult, target: NpcData | None) -> None:
-    _e = eng()
     if effect.value > 0:
-        cap = getattr(_e.resources, f"{effect.type}_max")
+        cap = getattr(rules().resources, f"{effect.type}_max")
         gained = game.resources.heal(effect.type, effect.value, cap=cap)
         if gained:
             result.consequences.append(consequence("track_gain", track=effect.type, n=gained))
@@ -159,7 +160,6 @@ def _apply_bond_request_effect(
 def _apply_clear_condition_effect(
     game: GameState, effect: MoveEffect, result: OutcomeResult, target: NpcData | None
 ) -> None:
-    _e = eng()
     impacts = get_impacts(game.setting_id)
     condition = next((key for key in game.impacts if impacts[key].prevents_recovery), None)
     if condition is None:
@@ -167,7 +167,7 @@ def _apply_clear_condition_effect(
     meter = impacts[condition].prevents_recovery[0]
     clear_impact(game, condition)
     result.consequences.append(consequence("clear_impact", impact=condition))
-    gained = game.resources.heal(meter, effect.value, cap=getattr(_e.resources, f"{meter}_max"))
+    gained = game.resources.heal(meter, effect.value, cap=getattr(rules().resources, f"{meter}_max"))
     if gained:
         result.consequences.append(consequence("track_gain", track=meter, n=gained))
 
@@ -188,7 +188,7 @@ def _apply_pay_the_price_effect(
 def _apply_story_complication_effect(
     game: GameState, effect: MoveEffect, result: OutcomeResult, target: NpcData | None
 ) -> None:
-    _rows, told = roll_oracle_result(_pay_the_price_move(game).tables[eng().pay_the_price.match_miss_table])
+    _rows, told = roll_oracle_result(_pay_the_price_move(game).tables[rules().pay_the_price.match_miss_table])
     log(f"[StoryComplication] {told.label}")
     result.consequences.append(told)
 
@@ -287,7 +287,7 @@ def _apply_fill_clock_effect(
 
 def _complication_danger(game: GameState) -> str:
     pkg = load_package(game.setting_id)
-    path = eng().clocks.complication.name_oracle_path
+    path = gm().clocks.complication.name_oracle_path
     if pkg.has_oracle(path):
         return "; ".join(plain_text(row.text) for row in roll_rows(pkg.oracle_table(path)).rows)
     action, subject = roll_meaning_table("actions")
@@ -306,7 +306,7 @@ def _apply_complication_effect(
 def _apply_bond_effect(game: GameState, effect: MoveEffect, result: OutcomeResult, target: NpcData | None) -> None:
     target, conn_track = _target_connection(game, effect, target)
     for _ in range(abs(effect.value)):
-        added = conn_track.mark_progress()
+        added = mark_progress(conn_track)
         if added:
             result.consequences.append(consequence("bond_progress", name=target.name, n=added))
 
@@ -315,7 +315,7 @@ def _apply_disposition_shift_effect(
     game: GameState, effect: MoveEffect, result: OutcomeResult, target: NpcData | None
 ) -> None:
     target = _required_target(effect, target)
-    shifts = eng().get_raw("disposition_shifts")
+    shifts = gm().get_raw("disposition_shifts")
     old_disp = target.disposition
 
     if old_disp in shifts:

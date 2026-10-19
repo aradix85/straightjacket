@@ -140,10 +140,10 @@ class GameState(SerializableMixin):
     impacts: list[str] = field(default_factory=list)
     truths: dict[str, str] = field(default_factory=dict)
 
-    resources: Resources = field(default_factory=Resources.from_config)
-    world: WorldState = field(default_factory=WorldState.from_config)
+    resources: Resources = field(kw_only=True)
+    world: WorldState = field(kw_only=True)
     narrative: NarrativeState = field(default_factory=NarrativeState)
-    campaign: CampaignState = field(default_factory=CampaignState)
+    campaign: CampaignState = field(kw_only=True)
     preferences: PlayerPreferences = field(default_factory=PlayerPreferences)
 
     npcs: list[NpcData] = field(default_factory=list)

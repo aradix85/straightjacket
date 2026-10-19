@@ -1,6 +1,7 @@
 from typing import Any
 
 from ..engine_loader import eng
+from ..gamemaster.config import gm
 from ..gamemaster.npc.matching import apply_name_sanitization, find_npc, fuzzy_match_existing_npc, next_npc_id
 from ..gamemaster.npc.processing import process_new_npcs, process_npc_details, process_npc_renames
 from ..logging_util import log
@@ -81,7 +82,7 @@ def _process_lore_npcs(game: GameState, lore_list: list[Any]) -> None:
             id=npc_id,
             name=name,
             description=entry["description"],
-            disposition=eng().npc.default_new_npc_disposition,
+            disposition=gm().npc.default_new_npc_disposition,
             status="lore",
             name_rolled=False,
             introduced=False,
@@ -93,8 +94,8 @@ def _process_lore_npcs(game: GameState, lore_list: list[Any]) -> None:
 
 def _check_death_corroboration(game: GameState) -> None:
     current_scene = game.narrative.scene_count
-    death_emotions = set(eng().death_emotions)
-    min_importance = eng().npc.death_corroboration_min_importance
+    death_emotions = set(gm().death_emotions)
+    min_importance = gm().npc.death_corroboration_min_importance
     voting = eng().metadata_voting
 
     for npc in game.npcs:

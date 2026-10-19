@@ -1,15 +1,15 @@
 from __future__ import annotations
 
-from ..engine_config import StanceMatrixEntry
-from ..engine_loader import eng
 from ..models import GameState, NpcData
+from .config import gm
+from .config_types import StanceMatrixEntry
 from .questions import answers
 
 
 def resolve_npc_stance(
     game: GameState, npc: NpcData, move_category: str, *, miss: bool, hit: bool
 ) -> StanceMatrixEntry:
-    gate_cfg = eng().information_gate
+    gate_cfg = gm().information_gate
     if miss:
         return gate_cfg.miss_stance
     entry = _matrix_stance(game, npc, move_category)
@@ -19,8 +19,8 @@ def resolve_npc_stance(
 
 
 def _matrix_stance(game: GameState, npc: NpcData, move_category: str) -> StanceMatrixEntry:
-    matrix = eng().stance_matrix
-    buckets = eng().stance_bond_buckets
+    matrix = gm().stance_matrix
+    buckets = gm().stance_bond_buckets
 
     disposition = npc.disposition
     closeness = answers().closeness(game, npc.id)
@@ -36,8 +36,7 @@ def _matrix_stance(game: GameState, npc: NpcData, move_category: str) -> StanceM
 
 
 def compute_npc_gate(game: GameState, npc: NpcData, current_scene: int, stance: str) -> int:
-    _e = eng()
-    cfg = _e.information_gate
+    cfg = gm().information_gate
     p = cfg.points
     b = cfg.buckets
 

@@ -2,7 +2,8 @@ from __future__ import annotations
 
 from typing import Any
 
-from straightjacket.engine.models import GameState, ProgressTrack
+from straightjacket.engine.models import GameState
+from straightjacket.engine.ruleset.progress import new_track
 
 from .coverage import TARGETS
 
@@ -39,7 +40,7 @@ def _near_story_end(game: GameState) -> str:
 
 
 def _start_combat(game: GameState) -> str:
-    track = ProgressTrack.new(id="combat_elvira_scenario", name="Scenario fight", track_type="combat", rank="dangerous")
+    track = new_track(id="combat_elvira_scenario", name="Scenario fight", track_type="combat", rank="dangerous")
     game.progress_tracks.append(track)
     game.world.combat_position = "in_control"
     return "combat track opened, position in control"

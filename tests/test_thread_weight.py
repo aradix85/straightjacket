@@ -1,6 +1,8 @@
 from typing import Any
 
-from straightjacket.engine.models import ProgressTrack, RandomEvent, RollResult, ThreadEntry, ThreatEvent
+from straightjacket.engine.gamemaster.config import gm
+from straightjacket.engine.models import RandomEvent, RollResult, ThreadEntry, ThreatEvent
+from straightjacket.engine.ruleset.progress import new_track
 from tests._helpers import make_brain_result, make_game_state, make_threat
 
 
@@ -21,8 +23,8 @@ def _roll(move: str) -> RollResult:
 def _sworn_game() -> Any:
     game = make_game_state(setting_id="starforged")
     game.progress_tracks = [
-        ProgressTrack.new(id="vow_bell", name="Ring the bell", track_type="vow", rank="dangerous"),
-        ProgressTrack.new(id="vow_kira", name="Find Kira", track_type="vow", rank="formidable"),
+        new_track(id="vow_bell", name="Ring the bell", track_type="vow", rank="dangerous"),
+        new_track(id="vow_kira", name="Find Kira", track_type="vow", rank="formidable"),
     ]
     game.narrative.threads = [
         ThreadEntry(
@@ -85,12 +87,9 @@ def test_a_threat_that_advances_in_the_scene_invokes_the_thread_of_its_vow(load_
 
 
 def test_thread_weight_stops_at_the_list_maximum(load_engine: None) -> None:
-    from straightjacket.engine.engine_loader import eng
     from straightjacket.engine.gamemaster.random_events import add_thread_weight
 
     game = _sworn_game()
-    for _ in range(eng().random_events.list_weight_max + 2):
+    for _ in range(gm().random_events.list_weight_max + 2):
         add_thread_weight(game, "thread_bell")
-    assert (
-        next(t for t in game.narrative.threads if t.id == "thread_bell").weight == eng().random_events.list_weight_max
-    )
+    assert next(t for t in game.narrative.threads if t.id == "thread_bell").weight == gm().random_events.list_weight_max

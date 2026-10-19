@@ -23,7 +23,7 @@ from straightjacket.engine.crafters.adventure_crafter import (
     lookup_theme_priority,
     roll_turning_point,
 )
-from straightjacket.engine.engine_loader import eng
+from straightjacket.engine.crafters.config import crafter
 from straightjacket.engine.models_story import NarrativeState
 
 _SPECIAL_BOUNDARIES = [
@@ -39,7 +39,7 @@ _SPECIAL_BOUNDARIES = [
 
 
 def test_ac_config_loads_required_fields():
-    cfg = eng().adventure_crafter
+    cfg = crafter().adventure_crafter
     assert cfg.themes == ["action", "tension", "mystery", "social", "personal"]
     assert cfg.theme_slots == 5
 
@@ -52,7 +52,7 @@ def test_ac_config_loads_required_fields():
 
 
 def test_ac_meta_handlers_config_loads():
-    cfg = eng().adventure_crafter.meta_handlers
+    cfg = crafter().adventure_crafter.meta_handlers
     assert isinstance(cfg.weight_delta_step_up, int)
     assert isinstance(cfg.weight_delta_step_down, int)
     assert isinstance(cfg.weight_delta_upgrade, int)
@@ -85,9 +85,9 @@ def test_ac_data_validation_raises_on_theme_mismatch():
 def test_assign_themes_returns_theme_slots_entries():
     rng = random.Random(0)
     out = assign_themes(rng)
-    assert len(out) == eng().adventure_crafter.theme_slots
+    assert len(out) == crafter().adventure_crafter.theme_slots
     for theme in out:
-        assert theme in eng().adventure_crafter.themes
+        assert theme in crafter().adventure_crafter.themes
 
 
 def test_assign_themes_deterministic_with_seed():
@@ -357,14 +357,14 @@ def test_meta_character_steps_up_increases_weight():
     char = _create_character(narrative, "Alice")
     initial = char.weight
     _meta_character_steps_up(narrative, None)
-    expected = initial + eng().adventure_crafter.meta_handlers.weight_delta_step_up
+    expected = initial + crafter().adventure_crafter.meta_handlers.weight_delta_step_up
     assert char.weight == expected
 
 
 def test_meta_character_steps_down_decreases_weight_to_floor():
     from straightjacket.engine.crafters.adventure_crafter import _meta_character_steps_down
 
-    cfg = eng().adventure_crafter.meta_handlers
+    cfg = crafter().adventure_crafter.meta_handlers
     narrative = NarrativeState()
     char = _create_character(narrative, "Alice")
     char.weight = 5
@@ -378,7 +378,7 @@ def test_meta_character_steps_down_decreases_weight_to_floor():
 def test_meta_character_downgrade_marks_status_and_decreases_weight():
     from straightjacket.engine.crafters.adventure_crafter import _meta_character_downgrade
 
-    cfg = eng().adventure_crafter.meta_handlers
+    cfg = crafter().adventure_crafter.meta_handlers
     narrative = NarrativeState()
     char = _create_character(narrative, "Alice")
     char.weight = 5
@@ -390,7 +390,7 @@ def test_meta_character_downgrade_marks_status_and_decreases_weight():
 def test_meta_character_upgrade_marks_status_and_increases_weight():
     from straightjacket.engine.crafters.adventure_crafter import _meta_character_upgrade
 
-    cfg = eng().adventure_crafter.meta_handlers
+    cfg = crafter().adventure_crafter.meta_handlers
     narrative = NarrativeState()
     char = _create_character(narrative, "Alice")
     initial = char.weight
@@ -447,7 +447,7 @@ def test_narrative_state_snapshot_restore_round_trips_plotlines_list():
 def test_plot_points_round_trip_special_entries():
     data = _load_ac_data()
     by_name = {entry["name"]: entry for entry in data["plot_points"]}
-    sr = eng().adventure_crafter.special_ranges
+    sr = crafter().adventure_crafter.special_ranges
     for name, expected in [
         ("Conclusion", (sr.conclusion_min, sr.conclusion_max)),
         ("None", (sr.none_min, sr.none_max)),
@@ -455,7 +455,7 @@ def test_plot_points_round_trip_special_entries():
     ]:
         assert name in by_name, f"{name} missing from plot_points"
         themes = by_name[name]["themes"]
-        assert set(themes.keys()) == set(eng().adventure_crafter.themes), f"{name} missing a theme"
+        assert set(themes.keys()) == set(crafter().adventure_crafter.themes), f"{name} missing a theme"
         for t, range_ in themes.items():
             assert (
                 range_["min"],

@@ -3,6 +3,7 @@ from straightjacket.engine.models import (
     StoryAct,
     StoryBlueprint,
 )
+from straightjacket.engine.ruleset.progress import mark_progress
 from tests._helpers import make_clock, make_game_state, make_memory, make_npc, make_npc_detail, make_progress_track
 
 
@@ -240,7 +241,7 @@ def test_progress_tracks_snapshot_restore() -> None:
 
     snap = game.snapshot()
 
-    game.progress_tracks[0].mark_progress()
+    mark_progress(game.progress_tracks[0])
     game.progress_tracks[1].status = "completed"
     game.progress_tracks.append(make_progress_track(id="v2", name="New Vow", track_type="vow"))
 

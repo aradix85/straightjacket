@@ -9,7 +9,7 @@ from ..ai.metadata import process_deceased_npcs
 from ..ai.narrator import call_narrator, call_opening_setup
 from ..ai.provider_base import AIProvider
 from ..crafters.adventure_crafter import assemble_blueprint_seed_from_ac, assemble_blueprint_seed_kishotenketsu
-from ..engine_loader import eng
+from ..gamemaster.config import gm
 from ..gamemaster.world import choose_story_structure, clear_facts, record_scene_intensity
 from ..logging_util import log
 from ..models import (
@@ -18,7 +18,6 @@ from ..models import (
     NarrationEntry,
     PredecessorRecord,
     ProgressTrack,
-    Resources,
     SceneLogEntry,
     ThreadEntry,
     ThreatData,
@@ -26,6 +25,8 @@ from ..models import (
 from ..parser import parse_narrator_response
 from ..prompt_boundary import build_new_game_prompt
 from ..prompt_loader import get_prompt
+from ..ruleset.config import rules
+from ..ruleset.meters import starting_resources
 from ..ruleset.succession import (
     apply_npc_carryover,
     build_predecessor_record,
@@ -91,10 +92,9 @@ def _reset_for_successor(
     surviving_npcs: list[Any],
     surviving_connection_tracks: list[ProgressTrack],
 ) -> None:
-    _e = eng()
-    game.resources = Resources.from_config()
+    game.resources = starting_resources()
     game.narrative.scene_count = 1
-    game.world.chaos_factor = _e.chaos.start
+    game.world.chaos_factor = gm().chaos.start
     game.crisis_mode = False
     game.end_reason = ""
     game.last_turn_snapshot = None
@@ -103,7 +103,7 @@ def _reset_for_successor(
 
     game.world.clocks = []
     game.world.combat_position = ""
-    game.world.time_of_day = _e.opening.time_of_day
+    game.world.time_of_day = gm().opening.time_of_day
     game.world.location_history = []
     clear_facts(game)
 
@@ -162,8 +162,7 @@ def _replace_character_identity(game: GameState, creation_data: dict[str, Any]) 
             path_names.append(asset["name"])
     concept = ", ".join(path_names)
 
-    _e = eng()
-    stat_dict = {n: stats[n] for n in _e.stats.character_names}
+    stat_dict = {n: stats[n] for n in rules().stats.character_names}
 
     game.player_name = player_name
     game.character_concept = concept

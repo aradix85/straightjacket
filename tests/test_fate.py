@@ -2,7 +2,7 @@ from typing import Any
 
 import pytest
 
-from straightjacket.engine.engine_loader import eng
+from straightjacket.engine.gamemaster.config import gm
 from straightjacket.engine.gamemaster.fate import (
     _check_chart_random_event,
     _check_check_random_event,
@@ -110,13 +110,13 @@ def test_resolve_fate_follows_the_configured_method(load_engine: None, monkeypat
     monkeypatch.setattr(fate, "resolve_fate_chart", answering("fate_chart"))
     monkeypatch.setattr(fate, "resolve_fate_check", answering("fate_check"))
     for method in ("fate_chart", "fate_check"):
-        monkeypatch.setattr(eng().fate, "default_method", method)
+        monkeypatch.setattr(gm().fate, "default_method", method)
         resolve_fate(game, "fifty_fifty")
     assert asked == [("fate_chart", "fifty_fifty", 7), ("fate_check", "fifty_fifty", 7)]
 
 
 def _odds_scale() -> list[str]:
-    return [entry["odds"] for entry in eng().fate.likelihood_rules.score_to_odds]
+    return [entry["odds"] for entry in gm().fate.likelihood_rules.score_to_odds]
 
 
 def test_fate_chart_all_odds_all_cf(load_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:

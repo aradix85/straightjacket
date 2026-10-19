@@ -1,14 +1,14 @@
 from collections.abc import Sequence
 
-from ..engine_loader import eng
 from ..logging_util import log
 from ..models import GameState, consequence
+from .config import rules
 from .move_effects import apply_effects, parse_effects
 from .outcome_result import OutcomeResult
 
 
 def apply_boasts(game: GameState, boasts: Sequence[str], outcome: OutcomeResult) -> None:
-    cfg = eng().boasts
+    cfg = rules().boasts
     chosen = list(boasts)[: outcome.boast_slots]
     for name in chosen:
         option = cfg.options[name]

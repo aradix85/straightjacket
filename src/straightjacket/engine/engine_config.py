@@ -1,796 +1,82 @@
 from __future__ import annotations
 
-import dataclasses
 from dataclasses import dataclass, field
 from typing import Any
 
+from .config_binding import RawSections, build_strict, reject_unknown
 from .engine_config_dataclasses import (
-    ActivationScores,
-    ActiveTrackCondition,
-    AdventureCrafterConfig,
-    AdventureCrafterDiceConfig,
     AiTextConfig,
-    BlueprintConfig,
-    BoastOption,
-    BoastsConfig,
-    BondedTrackCondition,
-    ChaosConfig,
-    ChaosResolverConfig,
-    ChapterConfig,
-    ClockCreationMappingEntry,
-    ClockFillConsequenceEntry,
-    ClockKeyedSceneEntry,
-    ClockKeyedScenesConfig,
-    ClocksConfig,
-    CombatPosCondition,
-    ComplicationClockConfig,
-    ConnectionAidConfig,
     CorrectionConfig,
-    CreationConfig,
-    DescriptionDedupConfig,
-    DiceConfig,
-    DyingClockConfig,
-    EffectResolverConfig,
-    EffectResolverWeights,
-    EngineMove,
-    EnumsConfig,
-    FactResolutionConfig,
-    FactTypeConfig,
-    FateConfig,
-    FateLikelihoodRules,
-    ForsakeVowConfig,
-    FuzzyMatchConfig,
-    GenerationConfig,
-    InformationGateBuckets,
-    InformationGateConfig,
-    InformationGatePoints,
-    InheritanceConfig,
-    KeyedSceneMappingEntry,
-    KeyedScenesConfig,
-    LegacyConfig,
-    LocationConfig,
-    MemoryConfig,
-    MemoryEmotions,
-    MemoryRetrievalWeights,
-    MemoryTemplates,
     MetadataVotingConfig,
-    MetaHandlerConfig,
-    MomentumConfig,
-    MoveAvailabilityCondition,
-    MoveAvailabilityRule,
-    MythicDiceConfig,
-    NamingConfig,
     NarrativeDirectionConfig,
     NarrativeDirectionEntry,
     NarrativeIntensityThresholds,
     NarratorStatusDescriptions,
-    NoActiveTrackCondition,
-    NpcCarryoverEntry,
-    NpcConfig,
-    NpcMatchingConfig,
-    NpcStatusGroups,
-    OpeningConfig,
-    OutcomesConfig,
-    PacingConfig,
     ParserConfig,
-    PatternGrammar,
-    PayThePriceConfig,
-    PayThePriceSufferRow,
     PersistenceConfig,
-    PlotPointRanges,
-    PositionOverride,
-    PositionResolverConfig,
-    PositionResolverWeights,
-    ProgressConfig,
     PromptDisplayConfig,
-    RandomEventKeyedSceneMappingEntry,
-    RandomEventsConfig,
     RateLimitConfig,
     RecapLimitsConfig,
-    ResourcesConfig,
     RetryConfig,
-    RollBonusesConfig,
-    SceneAdjustments,
-    SceneContextTemplates,
     SetupCommonConfig,
-    StanceBondBuckets,
-    StanceMatrixEntry,
-    StanceMoveBuckets,
-    StatsConfig,
     StatusDescriptionsConfig,
-    StopwordsConfig,
-    StoryConfig,
-    StoryStateConfig,
-    StrainConfig,
-    SuccessionConfig,
-    SufferConfig,
-    SufferRecoveryGain,
-    SufferTableRow,
-    TfIdfConfig,
-    ThreatConfig,
-    ThreatCreationMappingEntry,
-    TimeProgressionSteps,
     TruncationsConfig,
 )
 
 
 @dataclass
-class EngineSettings:
-    npc: NpcConfig
-    dice: DiceConfig
-    mythic_dice: MythicDiceConfig
-    adventure_crafter_dice: AdventureCrafterDiceConfig
-    npc_status_groups: NpcStatusGroups
-    chaos: ChaosConfig
-    pacing: PacingConfig
-    stats: StatsConfig
-    creation: CreationConfig
-    resources: ResourcesConfig
-    momentum: MomentumConfig
-    activation_scores: ActivationScores
-    location: LocationConfig
-    prompt_display: PromptDisplayConfig
-    opening: OpeningConfig
-    threats: ThreatConfig
-    legacy: LegacyConfig
-    progress: ProgressConfig
-    engine_moves: dict[str, EngineMove]
-    move_availability: dict[str, MoveAvailabilityRule]
-    unoffered_roll_types: list[str]
-    stopwords: StopwordsConfig
-    name_titles: frozenset[str]
-    position_resolver: PositionResolverConfig
-    effect_resolver: EffectResolverConfig
-    information_gate: InformationGateConfig
-    stance_bond_buckets: StanceBondBuckets
-    stance_move_buckets: StanceMoveBuckets
-    stance_matrix: dict[str, dict[str, dict[str, StanceMatrixEntry]]]
-    time_progression_steps: TimeProgressionSteps
-    narrator_status_descriptions: NarratorStatusDescriptions
-    scene_adjustments: SceneAdjustments
-    scene_context: SceneContextTemplates
-    memory_emotions: MemoryEmotions
-    memory_templates: MemoryTemplates
-    narrative_direction: NarrativeDirectionConfig
-    fate: FateConfig
-    fact_resolution: FactResolutionConfig
-    generation: GenerationConfig
-    boasts: BoastsConfig
-    story: StoryConfig
-    enums: EnumsConfig
-    memory_retrieval_weights: MemoryRetrievalWeights
-    fuzzy_match: FuzzyMatchConfig
-    npc_matching: NpcMatchingConfig
-    rate_limit: RateLimitConfig
-    retry: RetryConfig
-    tf_idf: TfIdfConfig
-    memory: MemoryConfig
-    chaos_resolver: ChaosResolverConfig
-    description_dedup: DescriptionDedupConfig
-    parser: ParserConfig
-    story_state: StoryStateConfig
-    chapter: ChapterConfig
-    setup_common: SetupCommonConfig
-    metadata_voting: MetadataVotingConfig
-    naming: NamingConfig
-    random_events: RandomEventsConfig
+class EngineSettings(RawSections):
     ai_text: AiTextConfig
+    correction: CorrectionConfig
+    metadata_voting: MetadataVotingConfig
+    narrative_direction: NarrativeDirectionConfig
+    narrator_status_descriptions: NarratorStatusDescriptions
+    parser: ParserConfig
+    persistence: PersistenceConfig
+    prompt_display: PromptDisplayConfig
+    rate_limit: RateLimitConfig
     recap_limits: RecapLimitsConfig
+    retry: RetryConfig
+    setup_common: SetupCommonConfig
     status_descriptions: StatusDescriptionsConfig
     truncations: TruncationsConfig
-    persistence: PersistenceConfig
-    correction: CorrectionConfig
-    succession: SuccessionConfig
-    keyed_scenes: KeyedScenesConfig
-    adventure_crafter: AdventureCrafterConfig
-    clock_keyed_scenes: ClockKeyedScenesConfig
-    clocks: ClocksConfig
-    pay_the_price: PayThePriceConfig
-    suffer: SufferConfig
-    roll_bonuses: RollBonusesConfig
-    outcomes: OutcomesConfig
-    strain: StrainConfig
-
-    advantage_moves: list[str]
     scene_range_default: list[int]
-    death_emotions: list[str]
     creativity_seeds: list[str]
 
     _raw: dict[str, Any] = field(default_factory=dict, repr=False)
 
-    def get_raw(self, key: str) -> Any:
-        return self._raw[key]
-
-
-def _reject_unknown(cls: type, data: dict[str, Any]) -> dict[str, Any]:
-    known = {f.name for f in dataclasses.fields(cls)}
-    unknown = set(data.keys()) - known
-    if unknown:
-        raise ValueError(f"Unknown keys for {cls.__name__}: {sorted(unknown)}")
-    return data
-
-
-def _build_strict(cls: type, data: dict[str, Any]) -> Any:
-    return cls(**_reject_unknown(cls, data))
-
 
 _SIMPLE_SECTIONS: dict[str, type] = {
-    "dice": DiceConfig,
-    "mythic_dice": MythicDiceConfig,
-    "adventure_crafter_dice": AdventureCrafterDiceConfig,
-    "npc_status_groups": NpcStatusGroups,
-    "chaos": ChaosConfig,
-    "pacing": PacingConfig,
-    "creation": CreationConfig,
-    "resources": ResourcesConfig,
-    "activation_scores": ActivationScores,
-    "location": LocationConfig,
-    "prompt_display": PromptDisplayConfig,
-    "opening": OpeningConfig,
-    "story": StoryConfig,
-    "enums": EnumsConfig,
-    "memory_retrieval_weights": MemoryRetrievalWeights,
-    "fuzzy_match": FuzzyMatchConfig,
-    "npc_matching": NpcMatchingConfig,
-    "rate_limit": RateLimitConfig,
-    "retry": RetryConfig,
-    "tf_idf": TfIdfConfig,
-    "memory": MemoryConfig,
-    "chaos_resolver": ChaosResolverConfig,
-    "description_dedup": DescriptionDedupConfig,
-    "parser": ParserConfig,
-    "story_state": StoryStateConfig,
-    "chapter": ChapterConfig,
-    "setup_common": SetupCommonConfig,
-    "metadata_voting": MetadataVotingConfig,
-    "naming": NamingConfig,
     "ai_text": AiTextConfig,
+    "correction": CorrectionConfig,
+    "metadata_voting": MetadataVotingConfig,
+    "narrator_status_descriptions": NarratorStatusDescriptions,
+    "parser": ParserConfig,
+    "persistence": PersistenceConfig,
+    "prompt_display": PromptDisplayConfig,
+    "rate_limit": RateLimitConfig,
     "recap_limits": RecapLimitsConfig,
+    "retry": RetryConfig,
+    "setup_common": SetupCommonConfig,
     "status_descriptions": StatusDescriptionsConfig,
     "truncations": TruncationsConfig,
-    "persistence": PersistenceConfig,
-    "correction": CorrectionConfig,
-    "generation": GenerationConfig,
-    "progress": ProgressConfig,
-    "outcomes": OutcomesConfig,
-    "strain": StrainConfig,
 }
 
 
-def _known_track_type(track_type: str, track_types: set[str]) -> str:
-    if track_type not in track_types:
-        raise ValueError(f"move_availability names {track_type!r}, which is no track type of track_types_by_category")
-    return track_type
-
-
-def _parse_move_availability_condition(cond: dict[str, Any], track_types: set[str]) -> MoveAvailabilityCondition:
-    keys = set(cond.keys())
-    if keys == {"active_track"}:
-        return ActiveTrackCondition(active_track=_known_track_type(cond["active_track"], track_types))
-    if keys == {"no_active_track"}:
-        return NoActiveTrackCondition(no_active_track=_known_track_type(cond["no_active_track"], track_types))
-    if keys == {"bonded_track"}:
-        return BondedTrackCondition(bonded_track=_known_track_type(cond["bonded_track"], track_types))
-    if keys == {"combat_pos_in"}:
-        return CombatPosCondition(combat_pos_in=list(cond["combat_pos_in"]))
-    raise ValueError(
-        f"Invalid move_availability condition: {cond!r}. "
-        "Expected exactly one of: active_track, no_active_track, bonded_track, combat_pos_in."
+def _build_narrative_direction(nd: dict[str, Any]) -> NarrativeDirectionConfig:
+    reject_unknown(NarrativeDirectionConfig, nd)
+    return NarrativeDirectionConfig(
+        intensity=build_strict(NarrativeIntensityThresholds, dict(nd["intensity"])),
+        result_map={key: build_strict(NarrativeDirectionEntry, dict(entry)) for key, entry in nd["result_map"].items()},
     )
-
-
-def _parse_move_availability_rule(rule: dict[str, Any], track_types: set[str]) -> MoveAvailabilityRule:
-    keys = set(rule.keys())
-    if keys == {"never"}:
-        if not rule["never"]:
-            raise ValueError(f"move_availability rule with never=false is not allowed: {rule!r}")
-        return MoveAvailabilityRule(never=True, available=[])
-    if keys == {"available"}:
-        conds = [_parse_move_availability_condition(dict(c), track_types) for c in rule["available"]]
-        return MoveAvailabilityRule(never=False, available=conds)
-    raise ValueError(f"Invalid move_availability rule: {rule!r}. Expected exactly one of: never, available.")
-
-
-def _build_keyed_scenes(keyed_raw: dict[str, Any]) -> KeyedScenesConfig:
-    _reject_unknown(KeyedScenesConfig, keyed_raw)
-    pattern_grammars_raw = dict(keyed_raw["pattern_grammars"])
-    pattern_grammars = {
-        trigger_name: PatternGrammar(
-            pattern_prefixes=list(_reject_unknown(PatternGrammar, spec)["pattern_prefixes"]),
-            matcher_strategy=spec["matcher_strategy"],
-        )
-        for trigger_name, spec in pattern_grammars_raw.items()
-    }
-    return KeyedScenesConfig(
-        triggers=frozenset(keyed_raw["triggers"]),
-        prompt_wrapper=keyed_raw["prompt_wrapper"],
-        pattern_grammars=pattern_grammars,
-    )
-
-
-def _build_adventure_crafter(ac_raw: dict[str, Any]) -> AdventureCrafterConfig:
-    _reject_unknown(AdventureCrafterConfig, ac_raw)
-    ac_special = _build_strict(PlotPointRanges, dict(ac_raw["special_ranges"]))
-    ac_meta_handlers = _build_strict(MetaHandlerConfig, dict(ac_raw["meta_handlers"]))
-    ac_blueprint_raw = _reject_unknown(BlueprintConfig, dict(ac_raw["blueprint"]))
-    ac_blueprint = BlueprintConfig(
-        turning_points_pre_rolled=ac_blueprint_raw["turning_points_pre_rolled"],
-        acts_three_act=ac_blueprint_raw["acts_three_act"],
-        acts_kishotenketsu=ac_blueprint_raw["acts_kishotenketsu"],
-        revelations_per_blueprint=ac_blueprint_raw["revelations_per_blueprint"],
-        possible_endings_per_blueprint=ac_blueprint_raw["possible_endings_per_blueprint"],
-        voicing_count_retries=ac_blueprint_raw["voicing_count_retries"],
-        three_act_phases=list(ac_blueprint_raw["three_act_phases"]),
-        kishotenketsu_phases=list(ac_blueprint_raw["kishotenketsu_phases"]),
-    )
-    ac_keyed_mapping = {
-        name: KeyedSceneMappingEntry(
-            trigger_type=_reject_unknown(KeyedSceneMappingEntry, entry)["trigger_type"],
-            trigger_value=entry["trigger_value"],
-            priority=entry["priority"],
-            narrative_hint=entry["narrative_hint"],
-        )
-        for name, entry in dict(ac_raw["keyed_scene_mapping"]).items()
-    }
-    ac_clock_creation = {
-        name: _build_strict(ClockCreationMappingEntry, dict(entry))
-        for name, entry in dict(ac_raw["clock_creation_mapping"]).items()
-    }
-    return AdventureCrafterConfig(
-        themes=list(ac_raw["themes"]),
-        theme_slots=ac_raw["theme_slots"],
-        theme_die_table={int(k): v for k, v in ac_raw["theme_die_table"].items()},
-        special_ranges=ac_special,
-        meta_handlers=ac_meta_handlers,
-        blueprint=ac_blueprint,
-        max_keyed_scenes_per_chapter=ac_raw["max_keyed_scenes_per_chapter"],
-        keyed_scene_mapping=ac_keyed_mapping,
-        danger_plot_points=list(ac_raw["danger_plot_points"]),
-        clock_creation_mapping=ac_clock_creation,
-        plotline_name_template=ac_raw["plotline_name_template"],
-        returning_character_name_template=ac_raw["returning_character_name_template"],
-        identity_roll_twice_row=ac_raw["identity_roll_twice_row"],
-        descriptor_roll_twice_row=ac_raw["descriptor_roll_twice_row"],
-        present_character_statuses=list(ac_raw["present_character_statuses"]),
-    )
-
-
-def _build_clock_keyed_scenes(cks_raw: dict[str, Any]) -> ClockKeyedScenesConfig:
-    by_type = {
-        clock_type: ClockKeyedSceneEntry(
-            fractions=[float(f) for f in _reject_unknown(ClockKeyedSceneEntry, spec)["fractions"]],
-            priority=spec["priority"],
-            narrative_hint_template=spec["narrative_hint_template"],
-        )
-        for clock_type, spec in cks_raw.items()
-    }
-    return ClockKeyedScenesConfig(by_clock_type=by_type)
-
-
-def _build_random_events(re_raw: dict[str, Any]) -> RandomEventsConfig:
-    _reject_unknown(RandomEventsConfig, re_raw)
-    re_keyed_mapping = {
-        focus: _build_strict(RandomEventKeyedSceneMappingEntry, dict(entry))
-        for focus, entry in dict(re_raw["keyed_scene_mapping"]).items()
-    }
-    re_clock_creation = {
-        focus: _build_strict(ClockCreationMappingEntry, dict(entry))
-        for focus, entry in dict(re_raw["clock_creation_mapping"]).items()
-    }
-    return RandomEventsConfig(
-        threat_target_probability=re_raw["threat_target_probability"],
-        description_focus_categories=list(re_raw["description_focus_categories"]),
-        npc_focus_categories=list(re_raw["npc_focus_categories"]),
-        thread_focus_categories=list(re_raw["thread_focus_categories"]),
-        threat_eligible_focus_categories=list(re_raw["threat_eligible_focus_categories"]),
-        list_weight_max=re_raw["list_weight_max"],
-        consolidation_threshold=re_raw["consolidation_threshold"],
-        consolidation_weight_high=re_raw["consolidation_weight_high"],
-        consolidation_weight_low=re_raw["consolidation_weight_low"],
-        consolidation_weight_default=re_raw["consolidation_weight_default"],
-        seeded_list_weight=re_raw["seeded_list_weight"],
-        keyed_scene_mapping=re_keyed_mapping,
-        danger_foci=list(re_raw["danger_foci"]),
-        clock_creation_mapping=re_clock_creation,
-    )
-
-
-def _build_threats(t_raw: dict[str, Any]) -> ThreatConfig:
-    _reject_unknown(ThreatConfig, t_raw)
-    by_origin = {
-        origin: _build_strict(ThreatCreationMappingEntry, dict(entry)) for origin, entry in t_raw["by_origin"].items()
-    }
-    return ThreatConfig(**{**t_raw, "by_origin": by_origin})
-
-
-def _build_clocks(c_raw: dict[str, Any]) -> ClocksConfig:
-    _reject_unknown(ClocksConfig, c_raw)
-    fill = {
-        clock_type: _build_strict(ClockFillConsequenceEntry, dict(entry))
-        for clock_type, entry in dict(c_raw["fill_consequences"]).items()
-    }
-    return ClocksConfig(
-        default_owner_kind=c_raw["default_owner_kind"],
-        default_segments=c_raw["default_segments"],
-        max_clocks_per_chapter=c_raw["max_clocks_per_chapter"],
-        miss_ticks_by_position={str(k): int(v) for k, v in dict(c_raw["miss_ticks_by_position"]).items()},
-        fill_consequences=fill,
-        complication=_build_strict(ComplicationClockConfig, dict(c_raw["complication"])),
-        duplicate_name_template=c_raw["duplicate_name_template"],
-    )
-
-
-def _build_pay_the_price(ptp_raw: dict[str, Any]) -> PayThePriceConfig:
-    _reject_unknown(PayThePriceConfig, ptp_raw)
-    return PayThePriceConfig(
-        move=ptp_raw["move"],
-        table=ptp_raw["table"],
-        match_miss_table=ptp_raw["match_miss_table"],
-        worse_reroll_prefixes=[str(prefix) for prefix in ptp_raw["worse_reroll_prefixes"]],
-        suffer_rows=[_build_strict(PayThePriceSufferRow, dict(row)) for row in ptp_raw["suffer_rows"]],
-    )
-
-
-def _build_suffer(s_raw: dict[str, Any]) -> SufferConfig:
-    _reject_unknown(SufferConfig, s_raw)
-    return SufferConfig(
-        endure_moves={str(k): str(v) for k, v in dict(s_raw["endure_moves"]).items()},
-        exhausted_impacts={str(k): str(v) for k, v in dict(s_raw["exhausted_impacts"]).items()},
-        swear_move=s_raw["swear_move"],
-        table_rows=[_build_strict(SufferTableRow, dict(row)) for row in s_raw["table_rows"]],
-        dying_clock=_build_strict(DyingClockConfig, dict(s_raw["dying_clock"])),
-        forsake_vow=_build_strict(ForsakeVowConfig, dict(s_raw["forsake_vow"])),
-    )
-
-
-def _build_roll_bonuses(rb_raw: dict[str, Any]) -> RollBonusesConfig:
-    _reject_unknown(RollBonusesConfig, rb_raw)
-    return RollBonusesConfig(
-        condition_chars=rb_raw["condition_chars"],
-        connection_aid=_build_strict(ConnectionAidConfig, dict(rb_raw["connection_aid"])),
-    )
-
-
-_FACT_SUBJECTS = ("place", "npc")
-
-
-def _build_fact_resolution(fr_raw: dict[str, Any]) -> FactResolutionConfig:
-    types = {
-        name: _build_strict(FactTypeConfig, {**spec, "inputs": dict(spec["inputs"])})
-        for name, spec in dict(fr_raw.pop("types")).items()
-    }
-    for name, spec in types.items():
-        if spec.subject not in _FACT_SUBJECTS:
-            raise ValueError(f"fact type {name!r} has subject {spec.subject!r}; valid: {list(_FACT_SUBJECTS)}")
-    settles = dict(fr_raw.pop("information_miss_settles"))
-    for name in settles:
-        if name not in types or types[name].subject != "place":
-            raise ValueError(f"information_miss_settles names {name!r}, which is not a place fact type")
-    config: FactResolutionConfig = _build_strict(
-        FactResolutionConfig, {**fr_raw, "types": types, "information_miss_settles": settles}
-    )
-    return config
-
-
-def _build_boasts(b_raw: dict[str, Any]) -> BoastsConfig:
-    options = {
-        name: _build_strict(BoastOption, {**spec, "effects": list(spec["effects"])})
-        for name, spec in dict(b_raw.pop("options")).items()
-    }
-    config: BoastsConfig = _build_strict(BoastsConfig, {**b_raw, "options": options})
-    return config
 
 
 def parse_engine_yaml(data: dict[str, Any]) -> EngineSettings:
-    simple_parsed: dict[str, Any] = {key: _build_strict(cls, data[key]) for key, cls in _SIMPLE_SECTIONS.items()}
-
-    npc_data = dict(data["npc"])
-    npc_data["gate_memory_counts"] = {int(k): v for k, v in npc_data["gate_memory_counts"].items()}
-    npc = _build_strict(NpcConfig, npc_data)
-
-    stats_data = dict(data["stats"])
-    stats_data["valid_arrays"] = [list(a) for a in stats_data["valid_arrays"]]
-    stats = _build_strict(StatsConfig, stats_data)
-
-    m_data = dict(data["momentum"])
-    suffer = _build_strict(SufferRecoveryGain, dict(m_data.pop("suffer_recovery")))
-    momentum = MomentumConfig(**m_data, suffer_recovery=suffer)
-
-    f_data = _reject_unknown(FateConfig, dict(data["fate"]))
-    lr = _build_strict(FateLikelihoodRules, dict(f_data.pop("likelihood_rules")))
-    fate = FateConfig(default_method=f_data["default_method"], likelihood_rules=lr)
-    fact_resolution = _build_fact_resolution(dict(data["fact_resolution"]))
-
-    legacy_data = dict(data["legacy"])
-    legacy_data["ticks_by_rank"] = dict(legacy_data["ticks_by_rank"])
-    legacy = _build_strict(LegacyConfig, legacy_data)
-
-    engine_moves = {
-        key: _build_strict(EngineMove, {**m, "stats": list(m["stats"])}) for key, m in data["engine_moves"].items()
-    }
-
-    gated_track_types = set(data["track_types_by_category"].values())
-    move_availability = {
-        key: _parse_move_availability_rule(rule, gated_track_types) for key, rule in data["move_availability"].items()
-    }
-
-    sw_raw = _reject_unknown(StopwordsConfig, dict(data["stopwords"]))
-    stopwords = StopwordsConfig(
-        general=frozenset(sw_raw["general"]),
-        location=frozenset(sw_raw["location"]),
-    )
-
-    name_titles = frozenset(data["name_titles"])
-
-    pr = _reject_unknown(PositionResolverConfig, dict(data["position_resolver"]))
-    pr_weights = _build_strict(PositionResolverWeights, dict(pr.pop("weights")))
-    pr_overrides = [_build_strict(PositionOverride, dict(o)) for o in pr.pop("overrides")]
-    position_resolver = PositionResolverConfig(
-        desperate_below=pr["desperate_below"],
-        controlled_above=pr["controlled_above"],
-        npc_bond_high_min=pr["npc_bond_high_min"],
-        npc_bond_low_max=pr["npc_bond_low_max"],
-        strain_weights=dict(pr["strain_weights"]),
-        disposition_weights=dict(pr["disposition_weights"]),
-        weights=pr_weights,
-        move_baselines=dict(pr["move_baselines"]),
-        overrides=pr_overrides,
-    )
-
-    er = _reject_unknown(EffectResolverConfig, dict(data["effect_resolver"]))
-    er_weights = _build_strict(EffectResolverWeights, dict(er.pop("weights")))
-    effect_resolver = EffectResolverConfig(
-        limited_below=er["limited_below"],
-        great_above=er["great_above"],
-        bond_high_min=er["bond_high_min"],
-        bond_low_max=er["bond_low_max"],
-        position_weights=dict(er["position_weights"]),
-        weights=er_weights,
-    )
-
-    ig = _reject_unknown(InformationGateConfig, dict(data["information_gate"]))
-    ig_points = _build_strict(InformationGatePoints, dict(ig.pop("points")))
-    ig_buckets = _build_strict(InformationGateBuckets, dict(ig.pop("buckets")))
-    information_gate = InformationGateConfig(
-        points=ig_points,
-        buckets=ig_buckets,
-        gate_min=ig["gate_min"],
-        gate_max=ig["gate_max"],
-        stance_caps=dict(ig["stance_caps"]),
-        fact_budget_by_gate={int(k): int(v) for k, v in ig["fact_budget_by_gate"].items()},
-        miss_stance=_build_strict(StanceMatrixEntry, dict(ig["miss_stance"])),
-        hit_stance=_build_strict(StanceMatrixEntry, dict(ig["hit_stance"])),
-        refusing_stances=list(ig["refusing_stances"]),
-    )
-
-    stance_bond_buckets = _build_strict(StanceBondBuckets, dict(data["stance_bond_buckets"]))
-    stance_move_buckets = _build_strict(StanceMoveBuckets, dict(data["stance_move_buckets"]))
-    stance_matrix: dict[str, dict[str, dict[str, StanceMatrixEntry]]] = {
-        disp: {
-            bond: {cat: _build_strict(StanceMatrixEntry, dict(entry)) for cat, entry in cats.items()}
-            for bond, cats in bonds.items()
-        }
-        for disp, bonds in data["stance_matrix"].items()
-    }
-    time_progression_steps = _build_strict(TimeProgressionSteps, dict(data["time_progression_steps"]))
-    narrator_status_descriptions = _build_strict(NarratorStatusDescriptions, dict(data["narrator_status_descriptions"]))
-    scene_adjustments = _build_strict(SceneAdjustments, dict(data["scene_adjustments"]))
-    scene_context = _build_strict(SceneContextTemplates, dict(data["scene_context"]))
-    memory_emotions = _build_strict(MemoryEmotions, dict(data["memory_emotions"]))
-    memory_templates = _build_strict(MemoryTemplates, dict(data["memory_templates"]))
-
-    nd = _reject_unknown(NarrativeDirectionConfig, dict(data["narrative_direction"]))
-    nd_intensity = _build_strict(NarrativeIntensityThresholds, dict(nd.pop("intensity")))
-    nd_result_map = {
-        key: _build_strict(NarrativeDirectionEntry, dict(entry)) for key, entry in nd["result_map"].items()
-    }
-    narrative_direction = NarrativeDirectionConfig(intensity=nd_intensity, result_map=nd_result_map)
-
-    succession_raw = _reject_unknown(SuccessionConfig, dict(data["succession"]))
-    inheritance = _build_strict(InheritanceConfig, dict(succession_raw["inheritance"]))
-    npc_carryover = {
-        status: _build_strict(NpcCarryoverEntry, dict(entry))
-        for status, entry in succession_raw["npc_carryover"].items()
-    }
-    succession = SuccessionConfig(
-        inheritance=inheritance,
-        npc_carryover=npc_carryover,
-    )
-
-    keyed_scenes = _build_keyed_scenes(dict(data["keyed_scenes"]))
-    adventure_crafter = _build_adventure_crafter(dict(data["adventure_crafter"]))
-    clock_keyed_scenes = _build_clock_keyed_scenes(dict(data["clock_keyed_scenes"]))
-    clocks = _build_clocks(dict(data["clocks"]))
-    random_events = _build_random_events(dict(data["random_events"]))
-
+    simple: dict[str, Any] = {key: build_strict(cls, data[key]) for key, cls in _SIMPLE_SECTIONS.items()}
     return EngineSettings(
-        npc=npc,
-        dice=simple_parsed["dice"],
-        mythic_dice=simple_parsed["mythic_dice"],
-        adventure_crafter_dice=simple_parsed["adventure_crafter_dice"],
-        npc_status_groups=simple_parsed["npc_status_groups"],
-        chaos=simple_parsed["chaos"],
-        pacing=simple_parsed["pacing"],
-        stats=stats,
-        creation=simple_parsed["creation"],
-        resources=simple_parsed["resources"],
-        momentum=momentum,
-        activation_scores=simple_parsed["activation_scores"],
-        location=simple_parsed["location"],
-        prompt_display=simple_parsed["prompt_display"],
-        opening=simple_parsed["opening"],
-        threats=_build_threats(dict(data["threats"])),
-        legacy=legacy,
-        progress=simple_parsed["progress"],
-        engine_moves=engine_moves,
-        move_availability=move_availability,
-        unoffered_roll_types=list(data["unoffered_roll_types"]),
-        stopwords=stopwords,
-        name_titles=name_titles,
-        position_resolver=position_resolver,
-        effect_resolver=effect_resolver,
-        information_gate=information_gate,
-        stance_bond_buckets=stance_bond_buckets,
-        stance_move_buckets=stance_move_buckets,
-        stance_matrix=stance_matrix,
-        time_progression_steps=time_progression_steps,
-        narrator_status_descriptions=narrator_status_descriptions,
-        scene_adjustments=scene_adjustments,
-        scene_context=scene_context,
-        memory_emotions=memory_emotions,
-        memory_templates=memory_templates,
-        narrative_direction=narrative_direction,
-        fate=fate,
-        fact_resolution=fact_resolution,
-        generation=simple_parsed["generation"],
-        boasts=_build_boasts(dict(data["boasts"])),
-        story=simple_parsed["story"],
-        enums=simple_parsed["enums"],
-        memory_retrieval_weights=simple_parsed["memory_retrieval_weights"],
-        fuzzy_match=simple_parsed["fuzzy_match"],
-        npc_matching=simple_parsed["npc_matching"],
-        rate_limit=simple_parsed["rate_limit"],
-        retry=simple_parsed["retry"],
-        tf_idf=simple_parsed["tf_idf"],
-        memory=simple_parsed["memory"],
-        chaos_resolver=simple_parsed["chaos_resolver"],
-        description_dedup=simple_parsed["description_dedup"],
-        parser=simple_parsed["parser"],
-        story_state=simple_parsed["story_state"],
-        chapter=simple_parsed["chapter"],
-        setup_common=simple_parsed["setup_common"],
-        metadata_voting=simple_parsed["metadata_voting"],
-        naming=simple_parsed["naming"],
-        random_events=random_events,
-        ai_text=simple_parsed["ai_text"],
-        recap_limits=simple_parsed["recap_limits"],
-        status_descriptions=simple_parsed["status_descriptions"],
-        truncations=simple_parsed["truncations"],
-        persistence=simple_parsed["persistence"],
-        correction=simple_parsed["correction"],
-        succession=succession,
-        keyed_scenes=keyed_scenes,
-        adventure_crafter=adventure_crafter,
-        clock_keyed_scenes=clock_keyed_scenes,
-        clocks=clocks,
-        pay_the_price=_build_pay_the_price(dict(data["pay_the_price"])),
-        suffer=_build_suffer(dict(data["suffer"])),
-        roll_bonuses=_build_roll_bonuses(dict(data["roll_bonuses"])),
-        outcomes=simple_parsed["outcomes"],
-        strain=simple_parsed["strain"],
-        advantage_moves=list(data["advantage_moves"]),
+        **simple,
+        narrative_direction=_build_narrative_direction(dict(data["narrative_direction"])),
         scene_range_default=list(data["scene_range_default"]),
-        death_emotions=list(data["death_emotions"]),
         creativity_seeds=list(data["creativity_seeds"]),
         _raw=data,
     )
-
-
-__all__ = [
-    "ActivationScores",
-    "ActiveTrackCondition",
-    "AdventureCrafterConfig",
-    "AdventureCrafterDiceConfig",
-    "AiTextConfig",
-    "BlueprintConfig",
-    "BoastOption",
-    "BoastsConfig",
-    "BondedTrackCondition",
-    "ChaosConfig",
-    "ChaosResolverConfig",
-    "ChapterConfig",
-    "ClockCreationMappingEntry",
-    "ClockFillConsequenceEntry",
-    "ClockKeyedSceneEntry",
-    "ClockKeyedScenesConfig",
-    "ClocksConfig",
-    "CombatPosCondition",
-    "ComplicationClockConfig",
-    "ConnectionAidConfig",
-    "CorrectionConfig",
-    "CreationConfig",
-    "DescriptionDedupConfig",
-    "DiceConfig",
-    "EffectResolverConfig",
-    "EffectResolverWeights",
-    "EngineMove",
-    "EngineSettings",
-    "EnumsConfig",
-    "FactResolutionConfig",
-    "FactTypeConfig",
-    "FateConfig",
-    "FateLikelihoodRules",
-    "FuzzyMatchConfig",
-    "GenerationConfig",
-    "InformationGateBuckets",
-    "InformationGateConfig",
-    "InformationGatePoints",
-    "InheritanceConfig",
-    "KeyedSceneMappingEntry",
-    "KeyedScenesConfig",
-    "LegacyConfig",
-    "LocationConfig",
-    "MemoryConfig",
-    "MemoryEmotions",
-    "MemoryRetrievalWeights",
-    "MemoryTemplates",
-    "MetaHandlerConfig",
-    "MetadataVotingConfig",
-    "MomentumConfig",
-    "MoveAvailabilityCondition",
-    "MoveAvailabilityRule",
-    "MythicDiceConfig",
-    "NamingConfig",
-    "NarrativeDirectionConfig",
-    "NarrativeDirectionEntry",
-    "NarrativeIntensityThresholds",
-    "NarratorStatusDescriptions",
-    "NoActiveTrackCondition",
-    "NpcCarryoverEntry",
-    "NpcConfig",
-    "NpcMatchingConfig",
-    "NpcStatusGroups",
-    "OpeningConfig",
-    "OutcomesConfig",
-    "PacingConfig",
-    "ParserConfig",
-    "PatternGrammar",
-    "PayThePriceConfig",
-    "PayThePriceSufferRow",
-    "PersistenceConfig",
-    "PlotPointRanges",
-    "PositionOverride",
-    "PositionResolverConfig",
-    "PositionResolverWeights",
-    "ProgressConfig",
-    "PromptDisplayConfig",
-    "RandomEventKeyedSceneMappingEntry",
-    "RandomEventsConfig",
-    "RateLimitConfig",
-    "RecapLimitsConfig",
-    "ResourcesConfig",
-    "RetryConfig",
-    "RollBonusesConfig",
-    "SceneAdjustments",
-    "SceneContextTemplates",
-    "SetupCommonConfig",
-    "StanceBondBuckets",
-    "StanceMatrixEntry",
-    "StanceMoveBuckets",
-    "StatsConfig",
-    "StatusDescriptionsConfig",
-    "StopwordsConfig",
-    "StoryConfig",
-    "StoryStateConfig",
-    "StrainConfig",
-    "SuccessionConfig",
-    "SufferConfig",
-    "SufferRecoveryGain",
-    "SufferTableRow",
-    "TfIdfConfig",
-    "ThreatConfig",
-    "ThreatCreationMappingEntry",
-    "TimeProgressionSteps",
-    "TruncationsConfig",
-    "parse_engine_yaml",
-]

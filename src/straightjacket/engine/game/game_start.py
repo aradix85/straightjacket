@@ -11,54 +11,55 @@ from ..crafters.adventure_crafter import (
     assemble_blueprint_seed_kishotenketsu,
     materialize_blueprint,
 )
-from ..engine_loader import eng
+from ..gamemaster.config import gm
 from ..gamemaster.keyed_scenes import spawn_keyed_scenes_for_clock
 from ..gamemaster.spawn_sources import SETUP_SOURCE
-from ..gamemaster.world import choose_story_structure, record_scene_intensity
+from ..gamemaster.world import choose_story_structure, new_world, record_scene_intensity
 from ..logging_util import log
 from ..models import (
     CharacterListEntry,
     ClockData,
     GameState,
     NarrationEntry,
-    ProgressTrack,
     SceneLogEntry,
     ThreadEntry,
 )
 from ..parser import parse_narrator_response
 from ..prompt_boundary import build_new_game_prompt
 from ..prompt_loader import get_prompt
+from ..ruleset.config import rules
+from ..ruleset.legacy import new_campaign
+from ..ruleset.meters import starting_resources
+from ..ruleset.progress import new_track
 from ..setting.packages import SettingPackage, load_package
 from .setup_common import apply_opening_setup
 
 
 def _valid_ranks() -> set[str]:
-    return set(eng().progress.ticks_per_mark)
+    return set(rules().progress.ticks_per_mark)
 
 
 def validate_stats(stats: dict[str, int]) -> None:
-    _e = eng()
-    stat_names = _e.stats.character_names
+    stat_names = rules().stats.character_names
     for name in stat_names:
         if name not in stats:
             raise ValueError(f"Missing stat: {name}")
     values = [stats[n] for n in stat_names]
-    if sum(values) != _e.stats.target_sum:
-        raise ValueError(f"Stats must total {_e.stats.target_sum}, got {sum(values)}")
+    if sum(values) != rules().stats.target_sum:
+        raise ValueError(f"Stats must total {rules().stats.target_sum}, got {sum(values)}")
     for name in stat_names:
         v = stats[name]
-        if v < _e.stats.min or v > _e.stats.max:
-            raise ValueError(f"Stat {name}={v} outside [{_e.stats.min}, {_e.stats.max}]")
-    if sorted(values, reverse=True) not in [list(a) for a in _e.stats.valid_arrays]:
+        if v < rules().stats.min or v > rules().stats.max:
+            raise ValueError(f"Stat {name}={v} outside [{rules().stats.min}, {rules().stats.max}]")
+    if sorted(values, reverse=True) not in [list(a) for a in rules().stats.valid_arrays]:
         raise ValueError(f"Invalid stat distribution: {sorted(values, reverse=True)}")
 
 
 def validate_creation(creation_data: dict[str, Any], pkg: SettingPackage) -> None:
-    _e = eng()
     flow = pkg.creation_flow
 
     paths = creation_data["paths"]
-    max_paths = _e.creation.max_paths
+    max_paths = rules().creation.max_paths
     if len(paths) > max_paths:
         raise ValueError(f"Too many paths: {len(paths)} (max {max_paths})")
 
@@ -67,7 +68,7 @@ def validate_creation(creation_data: dict[str, Any], pkg: SettingPackage) -> Non
             raise ValueError(f"Path '{pid}' not found in setting '{pkg.id}'")
 
     assets = creation_data["assets"]
-    max_assets = _e.creation.max_starting_assets
+    max_assets = rules().creation.max_starting_assets
     if len(assets) > max_assets:
         raise ValueError(f"Too many starting assets: {len(assets)} (max {max_assets})")
     allowed_cats = set(flow.starting_asset_categories)
@@ -91,47 +92,40 @@ def validate_creation(creation_data: dict[str, Any], pkg: SettingPackage) -> Non
         raise ValueError(f"Invalid vow rank: '{vow_rank}' (valid: {sorted(valid)})")
 
     tone = creation_data["tone"]
-    tones = _e.story.kishotenketsu_probability
+    tones = gm().story.kishotenketsu_probability
     if tone not in tones:
         raise ValueError(f"Unknown tone '{tone}' (valid: {sorted(tones)})")
 
 
 def _compute_chaos_start(vow_text: str) -> int:
-    _e = eng()
-    base = _e.chaos.start
+    base = gm().chaos.start
     vow_lower = vow_text.lower()
-    modifiers = _e.creation.chaos_vow_modifiers
-    values = _e.creation.chaos_modifier_values
+    modifiers = rules().creation.chaos_vow_modifiers
+    values = rules().creation.chaos_modifier_values
     for level, keywords in modifiers.items():
         if any(kw in vow_lower for kw in keywords):
             adjustment = values[level]
-            result = max(_e.chaos.min, min(_e.chaos.max, base + adjustment))
+            result = max(gm().chaos.min, min(gm().chaos.max, base + adjustment))
             log(f"[NewGame] Chaos start {base}→{result} (vow keyword match: {level})")
             return result
     return base
 
 
 def _seed_background_vow(game: GameState, vow_text: str, rank: str) -> None:
-    _e = eng()
     if rank:
         if rank not in _valid_ranks():
             raise ValueError(f"Invalid vow rank: '{rank}' (valid: {sorted(_valid_ranks())})")
         vow_rank = rank
     else:
-        vow_rank = _e.creation.background_vow_default_rank
-    track = ProgressTrack.new(
-        id="vow_background",
-        name=vow_text,
-        track_type="vow",
-        rank=vow_rank,
-    )
+        vow_rank = rules().creation.background_vow_default_rank
+    track = new_track(id="vow_background", name=vow_text, track_type="vow", rank=vow_rank)
     game.progress_tracks.append(track)
     game.narrative.threads.append(
         ThreadEntry(
             id="thread_background_vow",
             name=vow_text,
             thread_type="vow",
-            weight=eng().random_events.seeded_list_weight,
+            weight=gm().random_events.seeded_list_weight,
             source="creation",
             linked_track_id="vow_background",
         )
@@ -147,7 +141,7 @@ def _seed_vow_subject(game: GameState, vow_subject: str) -> None:
             id="char_vow_subject",
             name=vow_subject,
             entry_type="abstract",
-            weight=eng().random_events.seeded_list_weight,
+            weight=gm().random_events.seeded_list_weight,
         )
     )
     log(f"[NewGame] Vow subject seeded in characters list: {vow_subject}")
@@ -179,8 +173,7 @@ def start_new_game(provider: AIProvider, creation_data: dict[str, Any]) -> tuple
             path_names.append(asset["name"])
     concept = ", ".join(path_names)
 
-    _e = eng()
-    stat_dict = {n: stats[n] for n in _e.stats.character_names}
+    stat_dict = {n: stats[n] for n in rules().stats.character_names}
 
     assets = list(creation_data["assets"])
     truths = dict(creation_data["truths"])
@@ -203,6 +196,9 @@ def start_new_game(provider: AIProvider, creation_data: dict[str, Any]) -> tuple
         assets=assets,
         truths=truths,
         stats=stat_dict,
+        resources=starting_resources(),
+        world=new_world(),
+        campaign=new_campaign(),
     )
 
     game.narrative.scene_count = 1
@@ -213,7 +209,7 @@ def start_new_game(provider: AIProvider, creation_data: dict[str, Any]) -> tuple
     _seed_background_vow(game, background_vow, background_vow_rank)
     _seed_vow_subject(game, vow_subject)
 
-    _opening = _e.opening
+    _opening = gm().opening
     game.world.time_of_day = _opening.time_of_day
 
     _trigger = _opening.clock_trigger_template.format(player=game.player_name)

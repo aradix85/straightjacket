@@ -1,8 +1,10 @@
 from typing import TYPE_CHECKING
 
+from ..config import gm
+
 if TYPE_CHECKING:
-    from ...engine_config_dataclasses import DescriptionDedupConfig
     from ...models import GameState
+    from ..config_types import DescriptionDedupConfig
 
 
 from ...engine_loader import eng
@@ -14,7 +16,7 @@ from .memory import consolidate_memory
 
 
 def retire_distant_npcs(game: "GameState") -> None:
-    max_active = eng().npc.max_active
+    max_active = gm().npc.max_active
     active = [n for n in game.npcs if n.status == "active"]
     if len(active) <= max_active:
         return
@@ -22,7 +24,7 @@ def retire_distant_npcs(game: "GameState") -> None:
     def relevance(npc: NpcData) -> int:
         last_scene = max((m.scene for m in npc.memory), default=0)
 
-        dd = eng().description_dedup
+        dd = gm().description_dedup
         score = last_scene + answers().closeness(game, npc.id) * dd.bond_multiplier
         if not npc.memory or last_scene >= game.narrative.scene_count:
             score += dd.identity_score_delta
@@ -70,7 +72,7 @@ def merge_npc_identity(existing: NpcData, new_name: str, new_desc: str = "", *, 
             existing.aliases.append(alias)
     if new_desc and not existing.description:
         existing.description = new_desc
-    if existing.status in eng().npc_status_groups.reactivatable:
+    if existing.status in gm().npc_status_groups.reactivatable:
         reactivate_npc(existing, reason=f"identity revealed as {new_name}")
 
     _transfer_clocks(game, old_name, new_name)
@@ -88,14 +90,14 @@ def _transfer_clocks(game: "GameState", old_name: str, new_name: str) -> None:
 
 
 def is_complete_description(desc: str) -> bool:
-    if len(desc) < eng().fuzzy_match.description_match_min_length:
+    if len(desc) < gm().fuzzy_match.description_match_min_length:
         return False
     return desc.rstrip().endswith(tuple(eng().parser.sentence_end_marks))
 
 
 def sanitize_aliases(npc: NpcData) -> None:
     name = npc.name
-    dd = eng().description_dedup
+    dd = gm().description_dedup
     seen = set()
     clean = []
     for a in npc.aliases:
@@ -111,7 +113,7 @@ def sanitize_aliases(npc: NpcData) -> None:
 
 
 def _npc_richness(npc: NpcData, game: "GameState") -> int:
-    dd = eng().description_dedup
+    dd = gm().description_dedup
     return (
         len(npc.memory) * dd.richness_memory
         + bool(npc.agenda) * dd.richness_aim
@@ -128,7 +130,7 @@ def _absorb_richer_duplicate_fields(original: NpcData, dup: NpcData) -> None:
         original.agenda = dup.agenda
     if dup.instinct:
         original.instinct = dup.instinct
-    if dup.disposition != eng().npc.default_new_npc_disposition:
+    if dup.disposition != gm().npc.default_new_npc_disposition:
         original.disposition = dup.disposition
     if dup.last_location:
         original.last_location = dup.last_location
@@ -169,7 +171,7 @@ def _take_over_list_entry(game: "GameState", original: NpcData, dup: NpcData) ->
     if own_entry is None:
         dup_entry.id, dup_entry.name = original.id, original.name
         return
-    own_entry.weight = min(own_entry.weight + dup_entry.weight, eng().random_events.list_weight_max)
+    own_entry.weight = min(own_entry.weight + dup_entry.weight, gm().random_events.list_weight_max)
     entries.remove(dup_entry)
 
 
@@ -252,7 +254,7 @@ def _description_candidate_meets_threshold(
 
 
 def _npc_eligible_for_desc_match(npc: NpcData, new_name_norm: str, current_location: str) -> bool:
-    if npc.status not in eng().npc_status_groups.description_matchable:
+    if npc.status not in gm().npc_status_groups.description_matchable:
         return False
     if normalize_for_match(npc.name) == new_name_norm:
         return False
@@ -266,8 +268,8 @@ def _npc_eligible_for_desc_match(npc: NpcData, new_name_norm: str, current_locat
 
 
 def description_match_existing_npc(game: "GameState", new_desc: str, new_name_norm: str) -> NpcData | None:
-    dd = eng().description_dedup
-    stopwords = eng().stopwords.general
+    dd = gm().description_dedup
+    stopwords = gm().stopwords.general
 
     if len(new_desc) < dd.min_desc_chars:
         return None

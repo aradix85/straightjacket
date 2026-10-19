@@ -1,10 +1,10 @@
 from collections.abc import Sequence
 
-from ..engine_loader import eng
 from ..logging_util import log
 from ..models import BrainResult, FactRequest, GameState, GeneratedEntity, PlaceRecord, ResolvedFact
 from ..setting.oracle_rolls import roll_generator_tables
 from ..setting.packages import load_package
+from .config import gm
 from .facts import resolve_fact
 from .world import locations_match
 
@@ -12,7 +12,7 @@ _FACT_CATEGORY = "fact"
 
 
 def _check_registered(category: str) -> None:
-    categories = eng().generation.categories
+    categories = gm().generation.categories
     if category not in categories:
         raise KeyError(f"Unknown generation category {category!r}; registered: {categories}")
 

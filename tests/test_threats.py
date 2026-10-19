@@ -1,7 +1,9 @@
 import pytest
 
 from straightjacket.engine.models import GameState, Resources, ThreatData, labels_of
+from straightjacket.engine.ruleset.config import rules
 from straightjacket.engine.ruleset.outcome_result import OutcomeResult
+from straightjacket.engine.ruleset.progress import advance_menace, menace_boxes, menace_per_mark
 from tests._helpers import make_game_state, make_progress_track, make_threat, make_world_state
 
 
@@ -26,22 +28,22 @@ def _game_with_threat() -> GameState:
 class TestThreatData:
     def test_menace_per_mark_dangerous(self) -> None:
         t = make_threat(rank="dangerous")
-        assert t.menace_per_mark == 8
+        assert menace_per_mark(t) == 8
 
     def test_menace_per_mark_epic(self) -> None:
         t = make_threat(rank="epic")
-        assert t.menace_per_mark == 1
+        assert menace_per_mark(t) == 1
 
     def test_advance_menace(self) -> None:
         t = make_threat(rank="dangerous", menace_ticks=0)
-        added = t.advance_menace(1)
+        added = advance_menace(t, 1)
         assert added == 8
         assert t.menace_ticks == 8
-        assert t.menace_filled_boxes == 2
+        assert menace_boxes(t) == 2
 
     def test_advance_menace_clamped(self) -> None:
         t = make_threat(rank="dangerous", menace_ticks=36)
-        added = t.advance_menace(1)
+        added = advance_menace(t, 1)
         assert added == 4
         assert t.menace_ticks == 40
         assert t.menace_full
@@ -66,7 +68,7 @@ class TestThreatData:
         assert t2.id == "t1"
         assert t2.menace_ticks == 12
         assert t2.rank == "formidable"
-        assert t2.menace_per_mark == 4
+        assert menace_per_mark(t2) == 4
 
 
 class TestThreatSnapshotRestore:
@@ -74,7 +76,7 @@ class TestThreatSnapshotRestore:
         game = _game_with_threat()
         snap = game.snapshot()
 
-        game.threats[0].advance_menace(2)
+        advance_menace(game.threats[0], 2)
         game.threats.append(make_threat(id="t2", name="New Threat"))
         assert game.threats[0].menace_ticks == 16
         assert len(game.threats) == 2
@@ -86,7 +88,7 @@ class TestThreatSnapshotRestore:
 
     def test_to_dict_from_dict_round_trip(self) -> None:
         game = _game_with_threat()
-        game.threats[0].advance_menace(1)
+        advance_menace(game.threats[0], 1)
         d = game.to_dict()
         game2 = GameState.from_dict(d)
         assert len(game2.threats) == 1
@@ -143,10 +145,9 @@ class TestAdvanceById:
     def test_a_random_event_marks_the_configured_menace(
         self, stub_engine: None, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        from straightjacket.engine.engine_loader import eng
         from straightjacket.engine.ruleset.threats import advance_threat_by_id
 
-        monkeypatch.setattr(eng().threats, "menace_on_random_event", 2)
+        monkeypatch.setattr(rules().threats, "menace_on_random_event", 2)
         game = _game_with_threat()
         advance_threat_by_id(game, "threat_beast")
         assert game.threats[0].menace_ticks == 16

@@ -8,6 +8,7 @@ from straightjacket.engine.crafters.adventure_crafter import (
     assemble_blueprint_seed_kishotenketsu,
     materialize_blueprint,
 )
+from straightjacket.engine.crafters.config import crafter
 from tests._helpers import make_game_state
 
 
@@ -39,23 +40,21 @@ def test_assemble_blueprint_seed_from_ac_is_deterministic_with_fixed_rng(load_en
 
 
 def test_assemble_blueprint_seed_from_ac_act_count_matches_yaml(load_engine: None) -> None:
-    from straightjacket.engine.engine_loader import eng
 
     rng = random.Random(7)
     game = make_game_state(player_name="Hero", setting_id="starforged")
     seed = assemble_blueprint_seed_from_ac(rng, game)
 
-    assert len(seed.acts) == eng().adventure_crafter.blueprint.acts_three_act
+    assert len(seed.acts) == crafter().adventure_crafter.blueprint.acts_three_act
 
 
 def test_assemble_blueprint_seed_from_ac_phases_from_yaml(load_engine: None) -> None:
-    from straightjacket.engine.engine_loader import eng
 
     rng = random.Random(7)
     game = make_game_state(player_name="Hero", setting_id="starforged")
     seed = assemble_blueprint_seed_from_ac(rng, game)
 
-    expected_phases = list(eng().adventure_crafter.blueprint.three_act_phases)
+    expected_phases = list(crafter().adventure_crafter.blueprint.three_act_phases)
     assert [a.phase for a in seed.acts] == expected_phases
 
 
@@ -70,14 +69,13 @@ def test_assemble_blueprint_seed_from_ac_seeds_plotlines(load_engine: None) -> N
 
 
 def test_assemble_blueprint_seed_kishotenketsu_act_count_from_yaml(load_engine: None) -> None:
-    from straightjacket.engine.engine_loader import eng
 
     rng = random.Random(7)
     game = make_game_state(player_name="Hero", setting_id="starforged")
     seed = assemble_blueprint_seed_kishotenketsu(rng, game)
 
     assert seed.structure_type == "kishotenketsu"
-    assert len(seed.acts) == eng().adventure_crafter.blueprint.acts_kishotenketsu
+    assert len(seed.acts) == crafter().adventure_crafter.blueprint.acts_kishotenketsu
 
 
 def test_assemble_blueprint_seed_kishotenketsu_does_not_roll_turning_points(load_engine: None) -> None:
@@ -90,13 +88,12 @@ def test_assemble_blueprint_seed_kishotenketsu_does_not_roll_turning_points(load
 
 
 def test_assemble_blueprint_seed_phases_from_yaml_kishotenketsu(load_engine: None) -> None:
-    from straightjacket.engine.engine_loader import eng
 
     rng = random.Random(7)
     game = make_game_state(player_name="Hero", setting_id="starforged")
     seed = assemble_blueprint_seed_kishotenketsu(rng, game)
 
-    expected = list(eng().adventure_crafter.blueprint.kishotenketsu_phases)
+    expected = list(crafter().adventure_crafter.blueprint.kishotenketsu_phases)
     assert [a.phase for a in seed.acts] == expected
 
 

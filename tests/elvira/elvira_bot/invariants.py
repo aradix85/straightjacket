@@ -1,13 +1,12 @@
 from __future__ import annotations
 
-from straightjacket.engine.engine_config import EngineSettings
-from straightjacket.engine.engine_loader import eng
+from straightjacket.engine.gamemaster.config import gm
 from straightjacket.engine.models import ClockData, GameState, MemoryEntry, NpcData
+from straightjacket.engine.ruleset.config import rules
 
 
 def assert_game_state(game: GameState, turn: int) -> list[str]:
     violations: list[str] = []
-    _e = eng()
 
     def check(condition: bool, msg: str) -> None:
         if not condition:
@@ -16,18 +15,27 @@ def assert_game_state(game: GameState, turn: int) -> list[str]:
     res = game.resources
     world = game.world
 
-    check(0 <= res.health <= _e.resources.health_max, f"health={res.health} out of [0,{_e.resources.health_max}]")
-    check(0 <= res.spirit <= _e.resources.spirit_max, f"spirit={res.spirit} out of [0,{_e.resources.spirit_max}]")
-    check(0 <= res.supply <= _e.resources.supply_max, f"supply={res.supply} out of [0,{_e.resources.supply_max}]")
     check(
-        _e.momentum.floor <= res.momentum <= _e.momentum.max,
-        f"momentum={res.momentum} out of [{_e.momentum.floor},{_e.momentum.max}]",
+        0 <= res.health <= rules().resources.health_max,
+        f"health={res.health} out of [0,{rules().resources.health_max}]",
+    )
+    check(
+        0 <= res.spirit <= rules().resources.spirit_max,
+        f"spirit={res.spirit} out of [0,{rules().resources.spirit_max}]",
+    )
+    check(
+        0 <= res.supply <= rules().resources.supply_max,
+        f"supply={res.supply} out of [0,{rules().resources.supply_max}]",
+    )
+    check(
+        rules().momentum.floor <= res.momentum <= rules().momentum.max,
+        f"momentum={res.momentum} out of [{rules().momentum.floor},{rules().momentum.max}]",
     )
     check(res.momentum <= res.max_momentum, f"momentum={res.momentum} > max_momentum={res.max_momentum}")
 
     check(
-        _e.chaos.min <= world.chaos_factor <= _e.chaos.max,
-        f"chaos_factor={world.chaos_factor} out of [{_e.chaos.min},{_e.chaos.max}]",
+        gm().chaos.min <= world.chaos_factor <= gm().chaos.max,
+        f"chaos_factor={world.chaos_factor} out of [{gm().chaos.min},{gm().chaos.max}]",
     )
 
     check(game.narrative.scene_count >= 1, f"scene_count={game.narrative.scene_count} < 1")
@@ -38,7 +46,7 @@ def assert_game_state(game: GameState, turn: int) -> list[str]:
         check(game.crisis_mode, f"crisis_mode=False but health={res.health} spirit={res.spirit} (one at 0)")
 
     for npc in game.npcs:
-        _check_npc(npc, turn, violations, _e)
+        _check_npc(npc, turn, violations)
 
     for clock in world.clocks:
         _check_clock(clock, turn, violations)
@@ -91,7 +99,7 @@ def assert_game_state(game: GameState, turn: int) -> list[str]:
     return violations
 
 
-def _check_npc(npc: NpcData, turn: int, violations: list[str], _e: EngineSettings) -> None:
+def _check_npc(npc: NpcData, turn: int, violations: list[str]) -> None:
     def check(condition: bool, msg: str) -> None:
         if not condition:
             violations.append(f"[TURN {turn}] NPC '{npc.name}': {msg}")
@@ -118,7 +126,7 @@ def _check_npc(npc: NpcData, turn: int, violations: list[str], _e: EngineSetting
     for alias in npc.aliases:
         check(alias.lower() != name_lower, f"alias '{alias}' duplicates primary name")
 
-    max_mem = _e.npc.max_memory_entries
+    max_mem = gm().npc.max_memory_entries
     check(
         len(npc.memory) <= max_mem + 5,
         f"memory count {len(npc.memory)} exceeds limit {max_mem}",
@@ -131,7 +139,7 @@ def _check_clock(clock: ClockData, turn: int, violations: list[str]) -> None:
             violations.append(f"[TURN {turn}] Clock '{clock.name}': {msg}")
 
     check(clock.name != "", "empty name")
-    clock_types = ("threat", "scheme", "progress", eng().suffer.dying_clock.clock_type)
+    clock_types = ("threat", "scheme", "progress", rules().suffer.dying_clock.clock_type)
     check(clock.clock_type in clock_types, f"invalid clock_type '{clock.clock_type}'")
     check(clock.segments > 0, f"segments={clock.segments} <= 0")
     check(0 <= clock.filled <= clock.segments, f"filled={clock.filled} out of [0,{clock.segments}]")

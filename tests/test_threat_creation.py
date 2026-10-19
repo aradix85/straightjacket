@@ -8,6 +8,7 @@ from straightjacket.engine.crafters.adventure_crafter import PlotPointHit, Turni
 from straightjacket.engine.gamemaster.random_events import spawn_danger_from_random_event
 from straightjacket.engine.gamemaster.scene import check_scene
 from straightjacket.engine.models import KeyedScene, RandomEvent
+from straightjacket.engine.ruleset.progress import advance_menace, menace_boxes
 from tests._helpers import make_game_state, make_threat
 
 
@@ -194,8 +195,8 @@ def test_keyed_scene_threat_menace_fires_after_spawn(load_engine: None) -> None:
         )
     )
 
-    threat.advance_menace(2)
-    assert threat.menace_filled_boxes >= 1
+    advance_menace(threat, 2)
+    assert menace_boxes(threat) >= 1
 
     setup = check_scene(g)
     assert setup.scene_type == "keyed", f"keyed scene did not fire; got {setup.scene_type}"

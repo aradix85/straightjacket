@@ -5,7 +5,6 @@ from typing import Any, cast
 import pytest
 from starlette.websockets import WebSocket, WebSocketDisconnect
 
-from straightjacket.engine import engine_loader
 from straightjacket.engine.engine_loader import eng
 from straightjacket.engine.game import BurnOffer
 from straightjacket.engine.gamemaster.scene import SceneSetup
@@ -21,12 +20,12 @@ from straightjacket.web.serializers import (
     highlight_dialog,
 )
 from straightjacket.web.session import Session
-from tests._helpers import make_brain_result, make_clock, make_game_state, make_npc
+from tests._helpers import install_config, make_brain_result, make_clock, make_game_state, make_npc
 
 
 @pytest.fixture
 def load_engine(_real_engine) -> None:
-    engine_loader._eng = _real_engine
+    install_config(_real_engine)
 
 
 class TestSession:
@@ -138,7 +137,7 @@ class TestHighlightDialog:
 
 class TestBuildNarrativeStatus:
     def _game(self) -> GameState:
-        game = GameState(
+        game = make_game_state(
             player_name="Kael",
             character_concept="Scholar",
             stats={"edge": 1, "heart": 2, "iron": 1, "shadow": 1, "wits": 2},

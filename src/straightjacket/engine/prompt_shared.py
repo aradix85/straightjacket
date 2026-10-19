@@ -3,6 +3,7 @@ import random
 from collections.abc import Sequence
 
 from .engine_loader import eng
+from .gamemaster.config import gm
 from .gamemaster.generation import current_place
 from .gamemaster.npc.matching import find_npc
 from .gamemaster.npc.memory import retrieve_memories
@@ -62,7 +63,7 @@ def _generated_place_block(game: GameState) -> str:
 def _loc_hist(game: GameState) -> str:
     if not game.world.location_history:
         return ""
-    n = eng().location.prompt_history_size
+    n = gm().location.prompt_history_size
     return f"\n<prev_locations>{_xe(', '.join(game.world.location_history[-n:]))}</prev_locations>"
 
 
@@ -77,7 +78,7 @@ def _scene_enrichment(game: GameState) -> str:
 def _format_memories(
     target: NpcData, context_text: str, gate: int, current_scene: int, include_reflections: bool
 ) -> str:
-    gate_mem_counts = eng().npc.gate_memory_counts
+    gate_mem_counts = gm().npc.gate_memory_counts
     mem_count = gate_mem_counts[gate]
     memories = retrieve_memories(target, context_text=context_text, max_count=mem_count, current_scene=current_scene)
     observations = [m for m in memories if m.type != "reflection"]
@@ -112,7 +113,7 @@ def _npc_block(
 
     stance = resolve_npc_stance(game, target, move_category, miss=miss, hit=hit)
     gate = compute_npc_gate(game, target, game.narrative.scene_count, stance.stance)
-    fact_budget = 0 if miss else eng().information_gate.fact_budget_by_gate[gate]
+    fact_budget = 0 if miss else gm().information_gate.fact_budget_by_gate[gate]
     log(f"[Gate] {target.name}: gate={gate} (stance={stance.stance}) fact_budget={fact_budget}")
 
     aliases_attr = f' aliases="{_xa(",".join(target.aliases))}"' if target.aliases else ""
@@ -169,7 +170,7 @@ def _activated_npcs_block(
         memories = retrieve_memories(
             npc,
             context_text=context_text,
-            max_count=eng().npc.activated_memory_count,
+            max_count=gm().npc.activated_memory_count,
             current_scene=game.narrative.scene_count,
         )
         mem_hint = ""
@@ -218,7 +219,7 @@ def _known_npcs_string(mentioned: Sequence[NpcData], game: GameState, exclude_id
     for n in game.npcs:
         if n.id in exclude_ids:
             continue
-        if n.status not in eng().npc_status_groups.in_play:
+        if n.status not in gm().npc_status_groups.in_play:
             continue
         parts.append(_npc_entry(n))
 
@@ -232,7 +233,7 @@ def _pacing_block(game: GameState, scene_setup: SceneSetup) -> str:
         parts.append(f'<pacing type="{pacing}"/>')
 
     if scene_setup.scene_type == "keyed":
-        wrapper = eng().keyed_scenes.prompt_wrapper
+        wrapper = gm().keyed_scenes.prompt_wrapper
         parts.append(wrapper.format(hint=_xe(scene_setup.narrative_hint)))
     elif scene_setup.scene_type == "altered":
         descs = adjustment_descriptions(scene_setup.adjustments)
@@ -314,7 +315,7 @@ def _clock_filled_block(fill_results: Sequence[ClockFillResult]) -> str:
 def _facts_block(facts: Sequence[ResolvedFact]) -> str:
     if not facts:
         return ""
-    types = eng().fact_resolution.types
+    types = gm().fact_resolution.types
     lines = [
         get_prompt(
             "block_fact_line",
@@ -389,4 +390,4 @@ def _director_block(game: GameState) -> str:
 
 def _resolve_stance_category(move: str) -> str:
     move_cat = answers().action_kind(move)
-    return eng().stance_move_buckets.mapping[move_cat]
+    return gm().stance_move_buckets.mapping[move_cat]

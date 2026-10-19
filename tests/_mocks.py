@@ -25,10 +25,9 @@ class MockProvider:
 
 
 def make_test_game() -> Any:
-    from straightjacket.engine.models import GameState
-    from tests._helpers import make_npc
+    from tests._helpers import make_game_state, make_npc
 
-    g = GameState(
+    g = make_game_state(
         player_name="Hero",
         setting_id="classic",
         setting_genre="dark_fantasy",

@@ -1,5 +1,6 @@
 import pytest
 
+from straightjacket.engine.gamemaster.config import gm
 from straightjacket.engine.models import SceneLogEntry
 from tests._helpers import make_brain_result, make_clock, make_game_state, make_npc, make_progress_track
 
@@ -112,11 +113,10 @@ def test_position_combat_baseline(stub_engine: None) -> None:
 
 
 def test_a_move_category_without_a_baseline_raises(stub_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:
-    from straightjacket.engine.engine_loader import eng
     from straightjacket.engine.gamemaster.resolvers import resolve_position
 
-    baselines = {k: v for k, v in eng().position_resolver.move_baselines.items() if k != "combat"}
-    monkeypatch.setattr(eng().position_resolver, "move_baselines", baselines)
+    baselines = {k: v for k, v in gm().position_resolver.move_baselines.items() if k != "combat"}
+    monkeypatch.setattr(gm().position_resolver, "move_baselines", baselines)
     with pytest.raises(KeyError, match="combat"):
         resolve_position(make_game_state(player_name="Test"), make_brain_result(move="combat/clash", stat="iron"))
 

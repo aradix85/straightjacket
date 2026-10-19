@@ -4,6 +4,7 @@ from typing import Any
 
 from ..config_loader import model_for_role, narration_language, sampling_params
 from ..engine_loader import eng
+from ..gamemaster.config import gm
 from ..logging_util import log
 from ..models import BrainResult, GameState
 from ..parser import salvage_truncated_narration
@@ -30,7 +31,7 @@ def call_narrator(
 ) -> str:
     log(f"[Narrator] Calling narrator (prompt: {len(prompt)} chars)")
     messages = []
-    for entry in game.narrative.narration_history[-eng().pacing.max_narration_history :]:
+    for entry in game.narrative.narration_history[-gm().pacing.max_narration_history :]:
         messages.append({"role": "user", "content": entry.prompt_summary})
         messages.append({"role": "assistant", "content": entry.narration})
     messages.append({"role": "user", "content": prompt})
@@ -139,7 +140,7 @@ def call_narrator_metadata(
         mechanical_ctx += f" | consequences: {', '.join(consequences)}"
     mechanical_ctx += "</engine_context>"
 
-    system_base = get_prompt("narrator_metadata", lang=lang, dispositions="|".join(eng().enums.dispositions))
+    system_base = get_prompt("narrator_metadata", lang=lang, dispositions="|".join(gm().enums.dispositions))
 
     cb = content_boundaries_block(game)
     system = f"{system_base}\n{cb}" if cb else system_base

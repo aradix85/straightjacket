@@ -4,16 +4,18 @@ import random
 import re
 from collections.abc import Callable
 
-from ..engine_loader import eng
+from ..gamemaster.config import gm
 from ..ids import unique_id
 from ..logging_util import log
 from ..models import BrainResult, ClockData, GameState, ProgressTrack, ThreadEntry, consequence
 from ..setting.packages import load_package
 from .bond import connection_track, connection_track_id
+from .config import rules
 from .impacts import clear_impact
 from .legacy import apply_threat_overcome_bonus, shifted_rank
 from .moves import get_moves
 from .outcome_result import OutcomeResult
+from .progress import filled_boxes, new_track
 from .suffer import suffer
 
 
@@ -22,13 +24,13 @@ def _slug(name: str) -> str:
 
 
 def start_track(game: GameState, brain: BrainResult, result: str) -> None:
-    track_type = eng().get_raw("track_creating_moves").get(brain.move)
+    track_type = rules().get_raw("track_creating_moves").get(brain.move)
     if not track_type:
         return
-    if result == "MISS" and brain.move in eng().get_raw("tracks_started_on_a_hit"):
+    if result == "MISS" and brain.move in rules().get_raw("tracks_started_on_a_hit"):
         log(f"[Track] {brain.move} missed; no {track_type} track")
         return
-    if brain.target_track is not None and brain.move in eng().get_raw("progress_mark_categories"):
+    if brain.target_track is not None and brain.move in rules().get_raw("progress_mark_categories"):
         log(f"[Track] {brain.move} continues {brain.target_track}; no new {track_type} track")
         return
     assert brain.track_name
@@ -52,7 +54,7 @@ def start_track(game: GameState, brain: BrainResult, result: str) -> None:
 
 def _add_track(game: GameState, base_id: str, name: str, track_type: str, rank: str) -> ProgressTrack:
     track_id = unique_id(base_id, {t.id for t in game.progress_tracks})
-    track = ProgressTrack.new(id=track_id, name=name, track_type=track_type, rank=rank)
+    track = new_track(id=track_id, name=name, track_type=track_type, rank=rank)
     game.progress_tracks.append(track)
     log(f"[Track] Created {track_type} track: {name} ({rank}), id={track_id}")
 
@@ -62,7 +64,7 @@ def _add_track(game: GameState, base_id: str, name: str, track_type: str, rank: 
                 id=unique_id(f"thread_{_slug(name)}", {t.id for t in game.narrative.threads}),
                 name=name,
                 thread_type="vow",
-                weight=eng().random_events.seeded_list_weight,
+                weight=gm().random_events.seeded_list_weight,
                 source="vow",
                 linked_track_id=track_id,
             )
@@ -78,20 +80,20 @@ def start_bound_vow(game: GameState, name: str, rank: str, impact: str) -> Progr
 
 
 def forsake_vow(game: GameState, vow: ProgressTrack, result: OutcomeResult) -> None:
-    cfg = eng().suffer.forsake_vow
+    cfg = rules().suffer.forsake_vow
     complete_track(game, vow.id, "failed")
     result.consequences.append(consequence("forsake_vow", vow=vow.name))
     suffer(game, cfg.meter, cfg.cost, result)
 
 
 def _keep_one_box(track: ProgressTrack) -> int:
-    return min(track.ticks, eng().progress.ticks_per_box)
+    return min(track.ticks, rules().progress.ticks_per_box)
 
 
 def _clear_lowest_die(track: ProgressTrack) -> int:
-    die = eng().dice.challenge_die
+    die = rules().dice.challenge_die
     lowest = min(random.randint(1, die), random.randint(1, die))
-    return max(0, track.ticks - lowest * eng().progress.ticks_per_box)
+    return max(0, track.ticks - lowest * rules().progress.ticks_per_box)
 
 
 _RECOMMIT_RULES: dict[str, Callable[[ProgressTrack], int]] = {
@@ -106,20 +108,20 @@ def recommit_track(track: ProgressTrack, rule: str, result: OutcomeResult) -> No
     if higher is not None:
         track.rank = higher
     result.consequences.append(consequence("recommit", track=track.name))
-    log(f"[Track] Recommitted to {track.name}: {track.filled_boxes} boxes, rank {track.rank}")
+    log(f"[Track] Recommitted to {track.name}: {filled_boxes(track)} boxes, rank {track.rank}")
 
 
 def track_category_of_move(game: GameState, move: str) -> str | None:
     ds_move = get_moves(game.setting_id).get(move)
     if ds_move is not None and ds_move.roll_type == "progress_roll":
         return ds_move.track_category
-    categories: dict[str, str] = eng().get_raw("progress_mark_categories")
+    categories: dict[str, str] = rules().get_raw("progress_mark_categories")
     return categories.get(move)
 
 
 def vow_acted_on(game: GameState, move: str, target_track: str | None) -> ProgressTrack | None:
     category = track_category_of_move(game, move)
-    if category is None or eng().get_raw("track_types_by_category")[category] != "vow":
+    if category is None or rules().get_raw("track_types_by_category")[category] != "vow":
         return None
     if target_track is not None:
         return next(t for t in game.progress_tracks if t.id == target_track)
@@ -128,7 +130,7 @@ def vow_acted_on(game: GameState, move: str, target_track: str | None) -> Progre
 
 
 def find_progress_track(game: GameState, track_category: str, target_track: str | None) -> ProgressTrack:
-    track_type = eng().get_raw("track_types_by_category")[track_category]
+    track_type = rules().get_raw("track_types_by_category")[track_category]
     candidates = [t for t in game.progress_tracks if t.track_type == track_type and t.status == "active"]
 
     if target_track is not None:

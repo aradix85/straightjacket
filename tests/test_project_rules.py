@@ -281,7 +281,15 @@ def _has_default(stmt: ast.AnnAssign) -> bool:
     return stmt.value is not None
 
 
-_CONFIG_BINDING_FILES = ("engine_config.py", "engine_config_dataclasses.py")
+_CONFIG_BINDING_FILES = (
+    "engine_config.py",
+    "engine_config_dataclasses.py",
+    "gamemaster/config.py",
+    "gamemaster/config_types.py",
+    "crafters/config.py",
+    "ruleset/config.py",
+    "ruleset/config_types.py",
+)
 
 
 def _check_no_dataclass_defaults_in_config_binding() -> tuple[str, list[Violation]]:
@@ -1169,6 +1177,7 @@ _ENGINE_SUBPACKAGES = frozenset({"ai", "correction", "crafters", "game", "gamema
 _LAYERS = frozenset({"gamemaster", "crafters", "ruleset"})
 _CORE_BASE = frozenset(
     {
+        "config_binding",
         "config_loader",
         "emotions_loader",
         "engine_config",
@@ -1241,69 +1250,6 @@ def _check_import_layers() -> tuple[str, list[Violation]]:
     return "IMPORT LAYER violated (dependencies point downward)", violations
 
 
-_LAYER_CONFIG_FOLDERS: dict[str, frozenset[str]] = {
-    "setting": frozenset({"engine"}),
-    "gamemaster": frozenset({"engine", "gamemaster"}),
-    "crafters": frozenset({"engine", "gamemaster", "crafters"}),
-    "ruleset": frozenset({"engine", "gamemaster", "crafters", "ruleset"}),
-}
-
-
-def _config_section_folders() -> dict[str, str]:
-    return {
-        key: root.name
-        for root in ENGINE_YAML_ROOTS
-        for yfile in sorted(root.glob("*.yaml"))
-        for key in yaml.safe_load(yfile.read_text(encoding="utf-8"))
-    }
-
-
-def _is_eng_call(node: ast.AST) -> bool:
-    return isinstance(node, ast.Call) and isinstance(node.func, ast.Name) and node.func.id == "eng"
-
-
-def _config_sections_read(tree: ast.AST) -> list[tuple[int, str]]:
-    aliases = {
-        target.id
-        for node in ast.walk(tree)
-        if isinstance(node, ast.Assign) and _is_eng_call(node.value)
-        for target in node.targets
-        if isinstance(target, ast.Name)
-    }
-
-    def reads_config(node: ast.AST) -> bool:
-        return _is_eng_call(node) or (isinstance(node, ast.Name) and node.id in aliases)
-
-    reads: list[tuple[int, str]] = []
-    for node in ast.walk(tree):
-        if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute) and node.func.attr == "get_raw":
-            if reads_config(node.func.value):
-                key = node.args[0]
-                reads.append((node.lineno, key.value if isinstance(key, ast.Constant) else "<computed key>"))
-        elif isinstance(node, ast.Attribute) and node.attr != "get_raw" and reads_config(node.value):
-            reads.append((node.lineno, node.attr))
-    return reads
-
-
-def _check_layer_config_reads() -> tuple[str, list[Violation]]:
-    folders = _config_section_folders()
-    violations: list[Violation] = []
-    for path in _iter_source_files():
-        parts = path.relative_to(SRC_ROOT).parts
-        own = _layer([*parts[:-1], path.stem])
-        if own not in _LAYER_CONFIG_FOLDERS:
-            continue
-        for lineno, section in _config_sections_read(_load(path)[2]):
-            if section not in folders:
-                violations.append(Violation(_rel(path), lineno, f"{own} reads {section!r}, which no yaml folder holds"))
-            elif folders[section] not in _LAYER_CONFIG_FOLDERS[own]:
-                violations.append(Violation(_rel(path), lineno, f"{own} reads {section!r} of {folders[section]}/"))
-    return (
-        "LAYER CONFIG read against the direction (a layer reads its own yaml, the layers below, and engine/)",
-        violations,
-    )
-
-
 def _check_ai_calls_route_by_their_role() -> tuple[str, list[Violation]]:
     config = yaml.safe_load((Path(__file__).resolve().parent.parent / "config.yaml").read_text(encoding="utf-8"))
     roles = set(config["ai"]["role_cluster"])
@@ -1371,7 +1317,6 @@ _ALL_CHECKS = (
     _check_changelog_consistent,
     _check_divergences_have_a_status,
     _check_import_layers,
-    _check_layer_config_reads,
 )
 
 

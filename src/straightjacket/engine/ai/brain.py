@@ -5,6 +5,7 @@ from typing import Any, NoReturn
 from ..config_loader import model_for_role, narration_language, sampling_params
 from ..engine_loader import eng
 from ..gamemaster.complications import open_complications
+from ..gamemaster.config import gm
 from ..logging_util import log
 from ..models import BrainResult, GameState, Revelation
 from ..prompt_blocks import (
@@ -14,8 +15,10 @@ from ..prompt_blocks import (
 from ..prompt_loader import get_prompt, get_prompt_prefix
 from ..ruleset.bond import connection_track
 from ..ruleset.bonuses import bonus_block, roll_bonuses
+from ..ruleset.config import rules
 from ..ruleset.move_outcome import acts_on_an_npc
 from ..ruleset.moves import PICK_METHODS, Move, get_moves
+from ..ruleset.progress import filled_boxes
 from ..ruleset.roll_sources import roll_source_without_stat
 from ..ruleset.tracks import track_category_of_move
 from ..setting.packages import load_package
@@ -61,7 +64,7 @@ def _stat_descriptions(game: GameState) -> str:
 
 
 def _build_stats_line(game: GameState) -> str:
-    cfg = eng().stats
+    cfg = rules().stats
     parts = [_xe(game.player_name)]
     for name in cfg.names:
         if name not in cfg.prompt_abbreviations:
@@ -71,7 +74,7 @@ def _build_stats_line(game: GameState) -> str:
 
 
 def _listed_npcs(game: GameState) -> list[Any]:
-    return [n for n in game.npcs if n.status in eng().npc_status_groups.in_play]
+    return [n for n in game.npcs if n.status in gm().npc_status_groups.in_play]
 
 
 def _active_tracks(game: GameState) -> list[Any]:
@@ -83,7 +86,8 @@ def _build_tracks_block(game: GameState) -> str:
     if not tracks:
         return ""
     lines = [
-        f"  {_xe(t.name)} (id:{t.id}, {t.track_type}, {t.rank}) {t.filled_boxes}/{eng().progress.boxes}" for t in tracks
+        f"  {_xe(t.name)} (id:{t.id}, {t.track_type}, {t.rank}) {filled_boxes(t)}/{rules().progress.boxes}"
+        for t in tracks
     ]
     return "<tracks>\n" + "\n".join(lines) + "\n</tracks>"
 
@@ -97,7 +101,7 @@ def _build_dangers_block(game: GameState) -> str:
 
 
 def _build_fact_types_block() -> str:
-    types = eng().fact_resolution.types
+    types = gm().fact_resolution.types
     lines = [f"  {name} [{spec.subject}]: {spec.description}" for name, spec in types.items()]
     return "<fact_types>\n" + "\n".join(lines) + "\n</fact_types>"
 
@@ -116,14 +120,14 @@ def _check_choices(result: BrainResult, move_keys: list[str], choices: dict[str,
             _refuse(f"{field_name} {value!r} is not one of the choices offered")
     _check_fact_requests(result, choices["target_npc"])
     change = result.location_change
-    if change is not None and change.kind not in eng().generation.place_categories:
+    if change is not None and change.kind not in gm().generation.place_categories:
         _refuse(f"location kind {change.kind!r} is not one of the choices offered")
-    started = eng().get_raw("track_creating_moves").get(result.move)
+    started = rules().get_raw("track_creating_moves").get(result.move)
     if started is not None and not (result.track_name and result.track_name.strip()):
         _refuse(f"move {result.move!r} starts a track, but track_name is empty")
     if started == "connection" and result.target_npc is None:
         _refuse(f"move {result.move!r} makes a connection, but names no target_npc")
-    boasts = eng().boasts
+    boasts = rules().boasts
     if len(result.boasts) > boasts.max_per_roll or any(b not in boasts.options for b in result.boasts):
         _refuse(f"boasts {result.boasts!r} are not among the offered boasts")
 
@@ -141,7 +145,7 @@ def _check_target_track(game: GameState, result: BrainResult) -> None:
     category = track_category_of_move(game, result.move)
     if category is None:
         return
-    wanted = eng().get_raw("track_types_by_category")[category]
+    wanted = rules().get_raw("track_types_by_category")[category]
     track = next(t for t in game.progress_tracks if t.id == result.target_track)
     if track.track_type != wanted:
         _refuse(
@@ -154,7 +158,7 @@ def _wrong_stat(game: GameState, result: BrainResult) -> list[str]:
     if result.dialog_only:
         return []
     if ds_move is None:
-        return list(eng().engine_moves[result.move].stats) if result.stat in PICK_METHODS else []
+        return list(rules().engine_moves[result.move].stats) if result.stat in PICK_METHODS else []
     if ds_move.roll_type != "action_roll":
         return []
     if not ds_move.valid_stats:
@@ -165,7 +169,7 @@ def _wrong_stat(game: GameState, result: BrainResult) -> list[str]:
 
 
 def _check_fact_requests(result: BrainResult, npc_ids: list[str]) -> None:
-    cfg = eng().fact_resolution
+    cfg = gm().fact_resolution
     if len(result.undetermined_facts) > cfg.max_per_turn:
         _refuse(f"{len(result.undetermined_facts)} undetermined facts, at most {cfg.max_per_turn} allowed")
     for request in result.undetermined_facts:
@@ -196,8 +200,8 @@ def call_brain(provider: AIProvider, game: GameState, player_message: str) -> Br
         "content_boundaries_block": content_boundaries_block(game),
         "stats": _stat_descriptions(game),
         "fact_types_block": _build_fact_types_block(),
-        "max_facts": str(eng().fact_resolution.max_per_turn),
-        "place": eng().fact_resolution.place_reference,
+        "max_facts": str(gm().fact_resolution.max_per_turn),
+        "place": gm().fact_resolution.place_reference,
     }
     system = get_prompt("brain_parser", moves_block=_build_moves_block(game), **system_variables)
     cached_prefix = get_prompt_prefix("brain_parser", "moves_block", **system_variables)

@@ -2,10 +2,11 @@ import re
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
+from ..config import gm
+
 if TYPE_CHECKING:
     from ...models import GameState
 
-from ...engine_loader import eng
 from ...logging_util import log
 from ...models import NpcData
 
@@ -80,13 +81,13 @@ def _find_by_exact_alias(game: "GameState", ref_norm: str) -> NpcData | None:
 
 
 def _find_by_substring(game: "GameState", ref_norm: str) -> NpcData | None:
-    if len(ref_norm) < eng().fuzzy_match.min_word_length:
+    if len(ref_norm) < gm().fuzzy_match.min_word_length:
         return None
     ref_words = set(ref_norm.split())
-    if ref_words and ref_words <= eng().name_titles:
+    if ref_words and ref_words <= gm().name_titles:
         return None
 
-    min_len = eng().fuzzy_match.min_word_length
+    min_len = gm().fuzzy_match.min_word_length
     best_match: NpcData | None = None
     best_score = 0
 
@@ -111,7 +112,7 @@ def _find_by_substring(game: "GameState", ref_norm: str) -> NpcData | None:
 
 def named_in(npc: "NpcData", text: str) -> bool:
     lowered = text.lower()
-    min_word = eng().fuzzy_match.named_in_min_word_length
+    min_word = gm().fuzzy_match.named_in_min_word_length
     for name in (npc.name, *npc.aliases):
         whole = name.lower().strip()
         if whole and whole in lowered:
@@ -274,7 +275,7 @@ def _check_edit_distance_variant(
     if not ext_words or not new_words_sorted or len(ext_words) != len(new_words_sorted):
         return
 
-    _fm = eng().fuzzy_match
+    _fm = gm().fuzzy_match
     _desc_word_min = _fm.description_word_min_length
     exact = 0
     near = 0
@@ -301,16 +302,16 @@ def _check_edit_distance_variant(
 
 
 def fuzzy_match_existing_npc(game: "GameState", new_name: str) -> tuple[NpcData | None, str | None]:
-    if len(new_name.strip()) < eng().fuzzy_match.npc_name_min_length:
+    if len(new_name.strip()) < gm().fuzzy_match.npc_name_min_length:
         return None, None
 
     new_norm = normalize_for_match(new_name)
-    titles = eng().name_titles
+    titles = gm().name_titles
     new_words_raw = set(new_norm.split())
     new_words = _strip_titles(new_words_raw, titles)
 
-    _fuzzy = eng().fuzzy_match
-    _npc_match = eng().npc_matching
+    _fuzzy = gm().fuzzy_match
+    _npc_match = gm().npc_matching
 
     best = _FuzzyMatch()
 

@@ -3,11 +3,11 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 
-from ..engine_loader import eng
 from ..logging_util import log
 from ..models import GameState
 from ..setting.oracle_rolls import plain_text
 from .assets import asset_data, enabled_abilities
+from .config import rules
 
 _ADD = re.compile(r"\badd \+(\d)", re.IGNORECASE)
 _MOMENTUM_ON_HIT = re.compile(r"add \+\d and take \+(\d) momentum on a hit", re.IGNORECASE)
@@ -23,7 +23,7 @@ class RollBonus:
 
 
 def roll_bonuses(game: GameState) -> list[RollBonus]:
-    cfg = eng().roll_bonuses
+    cfg = rules().roll_bonuses
     options: list[RollBonus] = []
     for asset_id in [*game.paths, *game.assets]:
         data = asset_data(game, asset_id)
@@ -71,9 +71,10 @@ def chosen_bonus(game: GameState, bonus_id: str | None) -> RollBonus | None:
 
 
 def apply_momentum_on_hit(game: GameState, bonus: RollBonus, result: str) -> None:
-    if bonus.momentum_on_hit and result in eng().dice.hit_results:
-        _e = eng()
-        game.resources.adjust_momentum(bonus.momentum_on_hit, floor=_e.momentum.floor, ceiling=_e.momentum.max)
+    if bonus.momentum_on_hit and result in rules().dice.hit_results:
+        game.resources.adjust_momentum(
+            bonus.momentum_on_hit, floor=rules().momentum.floor, ceiling=rules().momentum.max
+        )
         log(f"[Bonus] {bonus.source}: +{bonus.momentum_on_hit} momentum on a hit")
 
 

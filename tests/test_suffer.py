@@ -1,8 +1,8 @@
 import pytest
 
-from straightjacket.engine.engine_loader import eng
 from straightjacket.engine.game.finalization import update_crisis
 from straightjacket.engine.models import GameState, Resources, labels_of
+from straightjacket.engine.ruleset.config import rules
 from straightjacket.engine.ruleset.move_effects import apply_effects, parse_effects
 from straightjacket.engine.ruleset.move_handlers import _TABLE_TRIGGERS
 from straightjacket.engine.ruleset.move_outcome import make_follow_up_moves, resolve_move_outcome
@@ -25,7 +25,7 @@ def _game(setting_id: str, health: int = 5, spirit: int = 5, supply: int = 5) ->
 
 
 def _dying(game: GameState) -> list[str]:
-    return [c.name for c in game.world.clocks if c.clock_type == eng().suffer.dying_clock.clock_type]
+    return [c.name for c in game.world.clocks if c.clock_type == rules().suffer.dying_clock.clock_type]
 
 
 def test_harm_above_zero_in_starforged_is_taken_without_endure_harm(load_engine: None) -> None:
@@ -189,15 +189,15 @@ def test_giving_up_forsakes_the_newest_vow(load_engine: None, monkeypatch: pytes
 
 
 def test_every_table_row_that_names_a_threshold_or_forsake_has_a_trigger(load_engine: None) -> None:
-    rules = eng().suffer.table_rows
-    assert all(rule.trigger in _TABLE_TRIGGERS for rule in rules)
+    table_rows = rules().suffer.table_rows
+    assert all(rule.trigger in _TABLE_TRIGGERS for rule in table_rows)
     named = ("Face Death", "Face Desolation", "Forsake Your Vow")
     for setting_id in ("classic", "starforged", "sundered_isles"):
         for path in ("moves/endure_harm", "moves/endure_stress"):
             for row in load_package(setting_id).oracle_table(path).rows:
                 text = plain_text(row.text)
                 if any(name in text for name in named):
-                    assert any(text.startswith(rule.prefix) for rule in rules), text
+                    assert any(text.startswith(rule.prefix) for rule in table_rows), text
 
 
 def test_meters_at_zero_bring_crisis_but_not_death(load_engine: None) -> None:

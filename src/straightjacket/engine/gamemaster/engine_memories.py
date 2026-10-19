@@ -4,13 +4,13 @@ from collections.abc import Sequence
 
 from ..engine_loader import eng
 from ..models import BrainResult, GameState, MemoryEntry, NpcData
+from .config import gm
 from .questions import answers
 from .resolvers import is_dialog_branch, is_dialog_memory
 
 
 def derive_memory_emotion(move: str, outcome: str, disposition: str) -> str:
-    _e = eng()
-    memory_emotions = _e.memory_emotions
+    memory_emotions = gm().memory_emotions
     base_map = memory_emotions.base
     suffix_map = memory_emotions.disposition_suffix
 
@@ -32,9 +32,8 @@ def generate_engine_memories(
 ) -> list[tuple[NpcData, MemoryEntry]]:
     from .npc.memory import score_importance
 
-    _e = eng()
-    templates = _e.memory_templates
-    result_text_map = _e.get_raw("memory_result_text")
+    templates = gm().memory_templates
+    result_text_map = gm().get_raw("memory_result_text")
     scene = game.narrative.scene_count
 
     move = brain.move
@@ -57,7 +56,7 @@ def generate_engine_memories(
     for npc in game.npcs:
         if npc.id not in activated_npc_ids:
             continue
-        if npc.status not in eng().npc_status_groups.in_play:
+        if npc.status not in gm().npc_status_groups.in_play:
             continue
 
         if is_dialog:
@@ -73,7 +72,9 @@ def generate_engine_memories(
             scene=scene,
             player=game.player_name,
             npc=npc.name,
-            intent=intent[: eng().truncations.log_medium] if intent else _e.ai_text.narrator_defaults["unknown_intent"],
+            intent=intent[: eng().truncations.log_medium]
+            if intent
+            else eng().ai_text.narrator_defaults["unknown_intent"],
             move_verb=move_verb,
             result_text=result_text,
             move=move,
@@ -108,17 +109,16 @@ def generate_scene_context(
     outcome: str | None,
     activated_npc_names: list[str],
 ) -> str:
-    _e = eng()
-    _defaults = _e.ai_text.narrator_defaults
-    _npc_max = _e.prompt_display.memory_npcs_max
+    _defaults = eng().ai_text.narrator_defaults
+    _npc_max = eng().prompt_display.memory_npcs_max
     move = brain.move
     location = game.world.current_location or _defaults["unknown_location"]
     npc_summary = ", ".join(activated_npc_names[:_npc_max]) if activated_npc_names else _defaults["no_npcs_nearby"]
 
     if outcome is None or is_dialog_branch(brain):
-        return _e.scene_context.dialog.format(location=location, npc_summary=npc_summary)
+        return gm().scene_context.dialog.format(location=location, npc_summary=npc_summary)
 
-    return _e.scene_context.template.format(
+    return gm().scene_context.template.format(
         result=outcome,
         move_label=answers().action_phrase(move),
         location=location,

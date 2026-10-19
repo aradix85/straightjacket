@@ -3,8 +3,6 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any
 
-from ..i18n import t
-from .engine_loader import eng
 from .models_base import ClockEvent, Consequence, ProgressTrack
 from .serialization import SerializableMixin
 
@@ -132,36 +130,6 @@ class KeyedScene(SerializableMixin):
     bound_entity_id: str | None = None
     source: str = ""
 
-    def __post_init__(self) -> None:
-        cfg = eng().keyed_scenes
-        if self.trigger_type not in cfg.triggers:
-            raise ValueError(
-                f"Unknown KeyedScene trigger_type {self.trigger_type!r}; registered: {sorted(cfg.triggers)}"
-            )
-        if self.trigger_type in cfg.pattern_grammars:
-            _validate_pattern_trigger_value(self.trigger_type, self.trigger_value)
-
-
-def _validate_pattern_trigger_value(trigger_type: str, value: str) -> None:
-    parts = value.split(":", 1)
-    if len(parts) != 2 or not parts[0] or not parts[1]:
-        raise ValueError(f"{trigger_type} trigger_value must be '<pool>:<threshold>', got {value!r}")
-    pool, threshold_str = parts
-    try:
-        int(threshold_str)
-    except ValueError as exc:
-        raise ValueError(f"{trigger_type} threshold must be an integer, got {threshold_str!r}") from exc
-
-    prefixes = eng().keyed_scenes.pattern_grammars[trigger_type].pattern_prefixes
-    if "disposition_" in prefixes and pool.startswith("disposition_"):
-        disposition = pool.removeprefix("disposition_")
-        valid = eng().enums.dispositions
-        if disposition not in valid:
-            raise ValueError(
-                f"{trigger_type} disposition pattern {pool!r} uses unknown disposition "
-                f"{disposition!r}; valid: {sorted(valid)}"
-            )
-
 
 @dataclass
 class NarrativeState(SerializableMixin):
@@ -248,18 +216,6 @@ class ChapterSummary(SerializableMixin):
     unresolved_threads: list[str]
 
 
-def _legacy_track(track_id: str, name_key: str) -> ProgressTrack:
-    _e = eng()
-    return ProgressTrack(
-        id=track_id,
-        name=t(name_key),
-        track_type="legacy",
-        rank=_e.legacy.starting_rank,
-        max_ticks=_e.progress.max_ticks,
-        bound_impact="",
-    )
-
-
 @dataclass
 class CampaignState(SerializableMixin):
     campaign_history: list[ChapterSummary] = field(default_factory=list)
@@ -271,15 +227,9 @@ class CampaignState(SerializableMixin):
 
     xp: int = 0
     xp_spent: int = 0
-    legacy_quests: ProgressTrack = field(
-        default_factory=lambda: _legacy_track("legacy_quests", "status.legacy_name_quests")
-    )
-    legacy_bonds: ProgressTrack = field(
-        default_factory=lambda: _legacy_track("legacy_bonds", "status.legacy_name_bonds")
-    )
-    legacy_discoveries: ProgressTrack = field(
-        default_factory=lambda: _legacy_track("legacy_discoveries", "status.legacy_name_discoveries")
-    )
+    legacy_quests: ProgressTrack = field(kw_only=True)
+    legacy_bonds: ProgressTrack = field(kw_only=True)
+    legacy_discoveries: ProgressTrack = field(kw_only=True)
 
     @property
     def xp_available(self) -> int:

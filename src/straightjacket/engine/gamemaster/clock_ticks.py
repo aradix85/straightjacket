@@ -7,6 +7,7 @@ from ..logging_util import log
 from ..models import ClockEvent, ClockFillResult, GameState
 from .clock_consequences import resolve_clock_fill
 from .complications import is_complication
+from .config import gm
 from .npc.matching import normalize_for_match
 
 
@@ -37,7 +38,7 @@ def tick_threat_clock(
 
 
 def check_npc_agency(game: GameState) -> tuple[list[str], list[ClockEvent], list[ClockFillResult]]:
-    if game.narrative.scene_count % eng().pacing.npc_agency_interval != 0:
+    if game.narrative.scene_count % gm().pacing.npc_agency_interval != 0:
         return [], [], []
     _defaults = eng().ai_text.narrator_defaults
     actions: list[str] = []
@@ -49,7 +50,7 @@ def check_npc_agency(game: GameState) -> tuple[list[str], list[ClockEvent], list
             npc_norms = {normalize_for_match(npc.name)}
             npc_norms.update(normalize_for_match(a) for a in npc.aliases)
             for clock in game.world.clocks:
-                if clock.clock_type not in eng().pacing.npc_agency_clock_types:
+                if clock.clock_type not in gm().pacing.npc_agency_clock_types:
                     continue
                 if clock.owner_kind != "npc" or clock.owner_id is None:
                     continue
@@ -78,8 +79,8 @@ def check_npc_agency(game: GameState) -> tuple[list[str], list[ClockEvent], list
 
 
 def tick_autonomous_clocks(game: GameState) -> list[ClockEvent]:
-    tick_chance = eng().pacing.autonomous_clock_tick_chance
-    complication_chance = eng().clocks.complication.tick_chance
+    tick_chance = gm().pacing.autonomous_clock_tick_chance
+    complication_chance = gm().clocks.complication.tick_chance
     ticked: list[ClockEvent] = []
     for clock in game.world.clocks:
         if clock.clock_type != "threat":
@@ -110,7 +111,7 @@ def tick_autonomous_clocks(game: GameState) -> list[ClockEvent]:
 
 
 def purge_old_fired_clocks(game: GameState) -> None:
-    keep_scenes = eng().pacing.fired_clock_keep_scenes
+    keep_scenes = gm().pacing.fired_clock_keep_scenes
     before = len(game.world.clocks)
     game.world.clocks = [
         c for c in game.world.clocks if not c.fired or (game.narrative.scene_count - c.fired_at_scene) <= keep_scenes

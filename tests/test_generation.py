@@ -2,7 +2,7 @@ from typing import Any
 
 import pytest
 
-from straightjacket.engine.engine_loader import eng
+from straightjacket.engine.gamemaster.config import gm
 from straightjacket.engine.setting.loader import OracleTable, Setting
 from tests._creation import force_miss
 from tests.test_correction_replay import _Provider as _ReplayProvider
@@ -94,10 +94,10 @@ def test_a_role_rolls_the_table_an_earlier_role_points_to(load_engine: None) -> 
 
 
 def test_the_place_categories_are_registered(load_engine: None) -> None:
-    generation = eng().generation
+    generation = gm().generation
     assert "fact" in generation.categories
     assert set(generation.place_categories) <= set(generation.categories)
-    assert eng().naming.category in generation.categories
+    assert gm().naming.category in generation.categories
 
 
 @pytest.mark.parametrize("setting", ["classic", "delve", "starforged", "sundered_isles"])
@@ -106,7 +106,7 @@ def test_every_setting_rolls_every_entity_category(load_engine: None, setting: s
     from straightjacket.engine.setting.packages import load_package
 
     pkg = load_package(setting)
-    for category in eng().generation.categories:
+    for category in gm().generation.categories:
         if category == "fact":
             continue
         tables = pkg.generator_tables(category)

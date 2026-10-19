@@ -6,9 +6,11 @@ import pytest
 import yaml
 
 from straightjacket.engine.ai.metadata import apply_narrator_metadata
+from straightjacket.engine.crafters.config import crafter
 from straightjacket.engine.director import apply_director_guidance
-from straightjacket.engine.engine_loader import eng
-from straightjacket.engine.models import GameState, NpcData, Resources
+from straightjacket.engine.models import GameState, NpcData
+from straightjacket.engine.ruleset.config import rules
+from straightjacket.engine.ruleset.meters import starting_resources
 from tests._helpers import (
     keyed_reflections,
     make_director_guidance,
@@ -41,8 +43,8 @@ def test_compel_strong_hit_does_not_mark_bond() -> None:
 
 
 def test_momentum_reset_follows_impacts_and_stops_at_reset_floor(load_engine: None) -> None:
-    cfg = eng().momentum
-    resources = Resources.from_config()
+    cfg = rules().momentum
+    resources = starting_resources()
     for max_momentum, expected in {10: 2, 9: 1, 8: 0, 7: 0, 6: 0}.items():
         resources.max_momentum = max_momentum
         resources.momentum = 5
@@ -188,7 +190,7 @@ def test_blueprint_voicing_fixes_the_counts_in_its_schema_and_asks_again_once(lo
 
     game = _make_game()
     seed = assemble_blueprint_seed_from_ac(random.Random(1), game)
-    blueprint = eng().adventure_crafter.blueprint
+    blueprint = crafter().adventure_crafter.blueprint
 
     def voicing(endings: int) -> str:
         return json.dumps(

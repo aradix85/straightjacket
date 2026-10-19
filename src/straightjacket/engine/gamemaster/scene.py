@@ -3,9 +3,9 @@ from __future__ import annotations
 import random
 from typing import Any
 
-from ..engine_loader import eng
 from ..logging_util import log
 from ..models import GameState, SceneSetup
+from .config import gm
 from .fate import _load_mythic
 from .keyed_scenes import evaluate_keyed_scenes
 from .random_events import generate_random_event
@@ -21,7 +21,7 @@ def check_scene(game: GameState) -> SceneSetup:
         return SceneSetup(scene_type="keyed", narrative_hint=keyed.narrative_hint)
 
     cf = game.world.chaos_factor
-    roll = random.randint(1, eng().mythic_dice.scene_test_die)
+    roll = random.randint(1, gm().mythic_dice.scene_test_die)
 
     if roll > cf:
         log(f"[Scene] Expected (roll={roll} > CF{cf})")
@@ -42,7 +42,7 @@ def check_scene(game: GameState) -> SceneSetup:
 
 def _roll_adjustments() -> list[str]:
     table = _load_mythic()["scene_adjustment"]
-    result = _lookup_adjustment(table, random.randint(1, eng().mythic_dice.scene_adjustment_die))
+    result = _lookup_adjustment(table, random.randint(1, gm().mythic_dice.scene_adjustment_die))
     if result != "make_2_adjustments":
         return [result]
 
@@ -64,12 +64,12 @@ def _lookup_adjustment(table: list[dict[str, Any]], roll: int) -> str:
 def _roll_single_adjustment(table: list[dict[str, Any]]) -> str:
     faces = [
         roll
-        for roll in range(1, eng().mythic_dice.scene_adjustment_die + 1)
+        for roll in range(1, gm().mythic_dice.scene_adjustment_die + 1)
         if _lookup_adjustment(table, roll) != "make_2_adjustments"
     ]
     return _lookup_adjustment(table, random.choice(faces))
 
 
 def adjustment_descriptions(adjustments: list[str]) -> list[str]:
-    mapping = eng().scene_adjustments.mapping
+    mapping = gm().scene_adjustments.mapping
     return [mapping[a] for a in adjustments]

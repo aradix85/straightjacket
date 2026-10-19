@@ -1,8 +1,8 @@
 from collections.abc import Callable, Sequence
 
-from ..engine_loader import eng
 from ..logging_util import log
 from ..models import BrainResult, FactRequest, GameState, ResolvedFact
+from .config import gm
 from .fate import resolve_fate, score_to_odds
 from .npc.matching import find_npc
 from .questions import answers
@@ -13,7 +13,7 @@ def _npc_disposition(game: GameState, request: FactRequest) -> int:
     npc = find_npc(game, request.about)
     if npc is None:
         raise ValueError(f"fact input npc_disposition needs an NPC, got about={request.about!r}")
-    return eng().fate.likelihood_rules.disposition_scores[npc.disposition]
+    return gm().fate.likelihood_rules.disposition_scores[npc.disposition]
 
 
 _INPUTS: dict[str, Callable[[GameState, FactRequest], int]] = {
@@ -22,7 +22,7 @@ _INPUTS: dict[str, Callable[[GameState, FactRequest], int]] = {
 
 
 def fact_odds(game: GameState, request: FactRequest) -> str:
-    spec = eng().fact_resolution.types[request.fact_type]
+    spec = gm().fact_resolution.types[request.fact_type]
     score = spec.base_score + sum(weight * _INPUTS[name](game, request) for name, weight in spec.inputs.items())
     return score_to_odds(score)
 
@@ -35,7 +35,7 @@ def find_fact(game: GameState, about: str, fact_type: str) -> ResolvedFact | Non
 
 
 def _about_name(game: GameState, request: FactRequest) -> str:
-    if eng().fact_resolution.types[request.fact_type].subject == "place":
+    if gm().fact_resolution.types[request.fact_type].subject == "place":
         return game.world.current_location
     npc = find_npc(game, request.about)
     if npc is None:
@@ -69,16 +69,16 @@ def release_absent_target(brain: BrainResult, facts: Sequence[ResolvedFact]) -> 
     target = brain.target_npc
     if target is None:
         return
-    types = eng().fact_resolution.types
+    types = gm().fact_resolution.types
     if any(f.about == target and types[f.fact_type].no_releases_target and f.answer not in _YES_ANSWERS for f in facts):
         log(f"[Fact] {target} is not within reach, so the action has no target NPC")
         brain.target_npc = None
 
 
 def clear_facts_settled_by_hit(game: GameState, facts: Sequence[ResolvedFact], outcome: str) -> None:
-    if outcome not in eng().outcomes.gained:
+    if outcome not in gm().outcomes.gained:
         return
-    types = eng().fact_resolution.types
+    types = gm().fact_resolution.types
     settled = {(f.about, f.fact_type) for f in facts if f.answer in _YES_ANSWERS and types[f.fact_type].cleared_by_hit}
     if not settled:
         return
@@ -87,9 +87,9 @@ def clear_facts_settled_by_hit(game: GameState, facts: Sequence[ResolvedFact], o
 
 
 def overrule_facts_by_hit(game: GameState, facts: Sequence[ResolvedFact], outcome: str) -> list[ResolvedFact]:
-    if outcome not in eng().outcomes.gained:
+    if outcome not in gm().outcomes.gained:
         return list(facts)
-    miss_settles = eng().fact_resolution.information_miss_settles
+    miss_settles = gm().fact_resolution.information_miss_settles
     overruled = {
         (f.about, f.fact_type)
         for f in facts
@@ -105,7 +105,7 @@ def overrule_facts_by_hit(game: GameState, facts: Sequence[ResolvedFact], outcom
 def settle_facts_by_miss(game: GameState, facts: Sequence[ResolvedFact], move: str, outcome: str) -> list[ResolvedFact]:
     if outcome != "failure" or answers().action_kind(move) != "gather_information":
         return list(facts)
-    cfg = eng().fact_resolution
+    cfg = gm().fact_resolution
     here = cfg.place_reference
     settled = [
         ResolvedFact(

@@ -1,8 +1,8 @@
 import pytest
 
-from straightjacket.engine.engine_config import ActiveTrackCondition
-from straightjacket.engine.engine_loader import eng
 from straightjacket.engine.models import GameState, Resources
+from straightjacket.engine.ruleset.config import rules
+from straightjacket.engine.ruleset.config_types import ActiveTrackCondition
 from straightjacket.engine.ruleset.moves import get_moves
 from straightjacket.engine.tools import available_moves
 from tests._helpers import make_game_state, make_progress_track
@@ -82,7 +82,7 @@ class TestAvailableMoves:
     def test_offers_the_settings_own_moves_and_the_engines(self, load_engine: None) -> None:
         offered = available_moves(_game())
         assert offered["adventure/face_danger"] is get_moves("starforged")["adventure/face_danger"]
-        assert offered["dialog"] is eng().engine_moves["dialog"]
+        assert offered["dialog"] is rules().engine_moves["dialog"]
 
     def test_classic_setting(self, load_engine: None) -> None:
         moves = _moves(_game(setting="classic"))
@@ -101,9 +101,9 @@ class TestAvailableMoves:
 
 @pytest.mark.parametrize("setting", ["classic", "delve", "starforged", "sundered_isles"])
 def test_every_offered_progress_move_has_its_track(load_engine: None, setting: str) -> None:
-    track_types = eng().get_raw("track_types_by_category")
-    marking = eng().get_raw("progress_mark_categories")
-    creating = eng().get_raw("track_creating_moves")
+    track_types = rules().get_raw("track_types_by_category")
+    marking = rules().get_raw("progress_mark_categories")
+    creating = rules().get_raw("track_creating_moves")
     ds_moves = get_moves(setting)
     for key, move in ds_moves.items():
         if move.roll_type == "progress_roll":
@@ -112,6 +112,6 @@ def test_every_offered_progress_move_has_its_track(load_engine: None, setting: s
             category = marking[key]
         else:
             continue
-        rule = eng().move_availability[key]
+        rule = rules().move_availability[key]
         required = {c.active_track for c in rule.available if isinstance(c, ActiveTrackCondition)}
         assert rule.never or track_types[category] in required, f"{setting}: {key} is offered without its track"

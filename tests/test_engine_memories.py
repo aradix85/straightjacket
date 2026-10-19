@@ -2,10 +2,10 @@ from __future__ import annotations
 
 import pytest
 
-from straightjacket.engine.engine_loader import eng
 from straightjacket.engine.gamemaster.engine_memories import generate_engine_memories
 from straightjacket.engine.gamemaster.resolvers import is_dialog_branch, is_dialog_memory
 from straightjacket.engine.ruleset.answers import action_kind
+from straightjacket.engine.ruleset.config import rules
 from tests._helpers import make_brain_result
 from tests._mocks import make_test_game
 
@@ -65,8 +65,8 @@ class TestEngineMemoriesNoKeyError:
 
 class TestMoveCategoriesCoverage:
     def test_every_implemented_move_has_real_category(self) -> None:
-        outcomes = eng().get_raw("move_outcomes")
-        engine_moves = eng().engine_moves
+        outcomes = rules().get_raw("move_outcomes")
+        engine_moves = rules().engine_moves
 
         implemented = set(outcomes.keys()) | set(engine_moves.keys())
 
@@ -188,5 +188,5 @@ class TestSanitizeBrainOutput:
 
 
 def _explicitly_other() -> set[str]:
-    mc = eng().get_raw("move_categories")
+    mc = rules().get_raw("move_categories")
     return set(mc.get("other", []))

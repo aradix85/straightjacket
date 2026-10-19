@@ -39,10 +39,12 @@ from ..prompt_action import build_action_prompt
 from ..prompt_dialog import build_dialog_prompt
 from ..prompt_loader import get_prompt
 from ..ruleset.bonuses import apply_momentum_on_hit, chosen_bonus
+from ..ruleset.config import rules
 from ..ruleset.consequences import generate_consequence_sentences
 from ..ruleset.move_outcome import make_follow_up_moves
 from ..ruleset.moves import PICK_METHODS, Move, get_moves
 from ..ruleset.outcome_result import OutcomeResult
+from ..ruleset.progress import filled_boxes
 from ..ruleset.roll_sources import roll_by_method, roll_source_without_stat
 from ..ruleset.rolls import (
     can_burn_momentum,
@@ -180,7 +182,7 @@ def _play_turn(
 def _sanitize_brain_output(game: GameState, brain: BrainResult) -> None:
     if brain.dialog_only or brain.stat != "none" or brain.move in get_moves(game.setting_id):
         return
-    if eng().engine_moves[brain.move].roll_type == "action_roll":
+    if rules().engine_moves[brain.move].roll_type == "action_roll":
         log(f"[Brain] {brain.move!r} names no stat; it plays as dialog")
         brain.dialog_only = True
 
@@ -357,7 +359,7 @@ def _execute_roll(game: GameState, brain: BrainResult, earlier: RollResult | Non
 
     if ds_move is not None and ds_move.roll_type == "progress_roll":
         track = find_progress_track(game, ds_move.track_category, brain.target_track)
-        filled = track.filled_boxes
+        filled = filled_boxes(track)
         if earlier is None:
             roll = roll_progress(track.name, filled, brain.move)
         else:

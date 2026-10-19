@@ -108,7 +108,7 @@ No dead Python symbols, no dead YAML keys; every YAML key has a Python consumer 
 
 **Pass 5b — Dead YAML keys.** For each key in `engine/`, `gamemaster/`, `crafters/`, `ruleset/`, `strings/`, `prompts/`, and `emotions/`, grep `src/` for the key; for each zero-hit key, check `get_raw` consumption and dataclass fields of the same name. Unambiguous orphans are violations.
 
-**Pass 5c — Config dataclass fields without a YAML source.** For each subsystem dataclass in `engine_config_dataclasses.py`, locate each field's YAML key; fields never populated from config are violations.
+**Pass 5c — Config dataclass fields without a YAML source.** For each subsystem dataclass in `engine_config_dataclasses.py` and the layers' `config_types.py` and `crafters/config.py`, locate each field's YAML key; fields never populated from config are violations.
 
 **Pass 5d — YAML keys without a dataclass field.** The inverse of 5c, unless the block is read through `get_raw`.
 

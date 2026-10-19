@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from .engine_loader import eng
+from .gamemaster.config import gm
 from .logging_util import log
 from .models import CurrentAct, GameState, Revelation
 
@@ -43,7 +44,7 @@ def get_current_act(game: GameState) -> CurrentAct:
     sr = current.scene_range
     act_len = max(sr[1] - sr[0] + 1, 1)
     scenes_in = scene - sr[0] + 1
-    cfg = eng().story_state
+    cfg = gm().story_state
     if scenes_in <= act_len * cfg.act_early_share:
         progress = "early"
     elif scenes_in <= act_len * cfg.act_mid_share:
@@ -138,7 +139,7 @@ def check_story_completion(game: GameState) -> None:
             )
             return
 
-    offset = eng().story_state.crisis_scene_offset
+    offset = gm().story_state.crisis_scene_offset
     if sc >= final_end + offset:
         bp.story_complete = True
         log(f"[Story] Complete (fallback): scene {sc} >= final_end+{offset} ({final_end + offset})")

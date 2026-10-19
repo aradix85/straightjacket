@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from straightjacket.engine.models import GameState
+from straightjacket.engine.ruleset.progress import filled_boxes
 from tests._helpers import make_brain_result, make_game_state, make_progress_track, make_threat
 
 
@@ -55,7 +56,7 @@ class TestMarkLegacy:
         mark_legacy(game, "quests", "dangerous")
         mark_legacy(game, "quests", "dangerous")
         assert game.campaign.xp == 2
-        assert game.campaign.legacy_quests.filled_boxes == 1
+        assert filled_boxes(game.campaign.legacy_quests) == 1
 
     def test_epic_rank_fills_3_boxes_at_once(self, stub_engine: None) -> None:
         from straightjacket.engine.ruleset.legacy import mark_legacy
@@ -63,7 +64,7 @@ class TestMarkLegacy:
         game = _game()
         mark_legacy(game, "quests", "epic")
         assert game.campaign.xp == 6
-        assert game.campaign.legacy_quests.filled_boxes == 3
+        assert filled_boxes(game.campaign.legacy_quests) == 3
 
     def test_full_track_clears_and_continues_at_one_xp_per_box(self, stub_engine: None) -> None:
         from straightjacket.engine.ruleset.legacy import mark_legacy
@@ -81,9 +82,9 @@ class TestMarkLegacy:
         game = _game()
         mark_legacy(game, "quests", "formidable")
         mark_legacy(game, "bonds", "dangerous")
-        assert game.campaign.legacy_quests.filled_boxes == 1
-        assert game.campaign.legacy_bonds.filled_boxes == 0
-        assert game.campaign.legacy_discoveries.filled_boxes == 0
+        assert filled_boxes(game.campaign.legacy_quests) == 1
+        assert filled_boxes(game.campaign.legacy_bonds) == 0
+        assert filled_boxes(game.campaign.legacy_discoveries) == 0
 
 
 class TestAdvanceAsset:
@@ -216,9 +217,9 @@ class TestCampaignSnapshot:
         game = _game()
         snap = game.campaign.snapshot()
         mark_legacy(game, "quests", "epic")
-        assert game.campaign.legacy_quests.filled_boxes == 3
+        assert filled_boxes(game.campaign.legacy_quests) == 3
         game.campaign.restore(snap)
-        assert game.campaign.legacy_quests.filled_boxes == 0
+        assert filled_boxes(game.campaign.legacy_quests) == 0
         assert game.campaign.xp == 0
 
     def test_campaign_history_preserved_across_snapshot(self, stub_engine: None) -> None:
@@ -345,6 +346,6 @@ class TestChapterPersistence:
         mark_legacy(game, "quests", "epic")
         mark_legacy(game, "bonds", "formidable")
         _reset_chapter_mechanics(game)
-        assert game.campaign.legacy_quests.filled_boxes == 3
-        assert game.campaign.legacy_bonds.filled_boxes == 1
-        assert game.campaign.legacy_discoveries.filled_boxes == 0
+        assert filled_boxes(game.campaign.legacy_quests) == 3
+        assert filled_boxes(game.campaign.legacy_bonds) == 1
+        assert filled_boxes(game.campaign.legacy_discoveries) == 0

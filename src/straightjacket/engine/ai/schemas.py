@@ -1,6 +1,8 @@
 from typing import Any
 
 from ..engine_loader import eng
+from ..gamemaster.config import gm
+from ..ruleset.config import rules
 from ..ruleset.moves import PICK_METHODS
 
 
@@ -52,7 +54,7 @@ def _nullable_enum(values: list[str]) -> dict[str, Any]:
 
 
 def _fact_requests(npc_ids: list[str]) -> dict[str, Any]:
-    cfg = eng().fact_resolution
+    cfg = gm().fact_resolution
     place_types = sorted(name for name, spec in cfg.types.items() if spec.subject == "place")
     npc_types = sorted(name for name, spec in cfg.types.items() if spec.subject == "npc")
     branches: list[dict[str, Any]] = []
@@ -72,19 +74,18 @@ def get_brain_output_schema(
     track_ids: list[str],
     clock_names: list[str],
 ) -> dict[str, Any]:
-    _e = eng()
-    rank_enum = sorted(_e.progress.ticks_per_mark)
+    rank_enum = sorted(rules().progress.ticks_per_mark)
     return _obj_root(
         {
             "move": _str_enum(sorted(move_keys)),
-            "stat": _str_enum([*_e.stats.names, *PICK_METHODS]),
+            "stat": _str_enum([*rules().stats.names, *PICK_METHODS]),
             "approach": _str(),
             "target_npc": _nullable_enum(npc_ids),
             "dialog_only": _bool(),
             "player_intent": _str(),
             "world_addition": _nullable_str(),
             "location_change": _nullable_obj(
-                {"name": _str(), "kind": _str_enum(sorted(_e.generation.place_categories))}
+                {"name": _str(), "kind": _str_enum(sorted(gm().generation.place_categories))}
             ),
             "track_name": _str(),
             "track_rank": _str_enum(rank_enum),
@@ -94,16 +95,15 @@ def get_brain_output_schema(
             "undetermined_facts": _fact_requests(npc_ids),
             "boasts": {
                 "type": "array",
-                "items": _str_enum(sorted(_e.boasts.options)),
-                "maxItems": _e.boasts.max_per_roll,
+                "items": _str_enum(sorted(rules().boasts.options)),
+                "maxItems": rules().boasts.max_per_roll,
             },
         },
-        _e.ai_text.schema_titles["brain_output"],
+        eng().ai_text.schema_titles["brain_output"],
     )
 
 
 def get_director_output_schema(reflection_ids: list[str]) -> dict[str, Any]:
-    _e = eng()
     return _obj_root(
         {
             "scene_summary": _str(),
@@ -122,7 +122,7 @@ def get_director_output_schema(reflection_ids: list[str]) -> dict[str, Any]:
                         {
                             "reflection": _str(),
                             "tone": _str(),
-                            "tone_key": _str_enum(list(_e.enums.tone_keys)),
+                            "tone_key": _str_enum(list(gm().enums.tone_keys)),
                             "updated_description": _str(),
                             "about_npc": _str(),
                             "agenda": _str(),
@@ -136,7 +136,7 @@ def get_director_output_schema(reflection_ids: list[str]) -> dict[str, Any]:
             ),
             "arc_notes": _str(),
         },
-        _e.ai_text.schema_titles["director_output"],
+        eng().ai_text.schema_titles["director_output"],
     )
 
 
@@ -175,8 +175,7 @@ def _about_known_npcs(npc_ids: list[str], props: dict[str, Any]) -> dict[str, An
 
 
 def get_narrator_metadata_schema(npc_ids: list[str]) -> dict[str, Any]:
-    _e = eng()
-    dispositions = list(_e.enums.dispositions)
+    dispositions = list(gm().enums.dispositions)
     return _obj_root(
         {
             "new_npcs": _arr(
@@ -200,12 +199,11 @@ def get_narrator_metadata_schema(npc_ids: list[str]) -> dict[str, Any]:
                 )
             ),
         },
-        _e.ai_text.schema_titles["narrator_metadata"],
+        eng().ai_text.schema_titles["narrator_metadata"],
     )
 
 
 def get_opening_setup_schema() -> dict[str, Any]:
-    _e = eng()
     return _obj_root(
         {
             "npcs": _arr(
@@ -216,7 +214,7 @@ def get_opening_setup_schema() -> dict[str, Any]:
                         "agenda": _str(),
                         "instinct": _str(),
                         "secrets": _str_arr(),
-                        "disposition": _str_enum(list(_e.enums.dispositions)),
+                        "disposition": _str_enum(list(gm().enums.dispositions)),
                     }
                 )
             ),
@@ -233,20 +231,19 @@ def get_opening_setup_schema() -> dict[str, Any]:
             ),
             "deceased_npcs": _arr(_obj({"npc_id": _str()})),
         },
-        _e.ai_text.schema_titles["opening_setup"],
+        eng().ai_text.schema_titles["opening_setup"],
     )
 
 
 def get_correction_output_schema(npc_ids: list[str]) -> dict[str, Any]:
-    _e = eng()
     field_props: dict[str, Any] = {}
-    for fname in _e.correction.npc_edit_fields:
+    for fname in eng().correction.npc_edit_fields:
         if fname == "aliases":
             field_props[fname] = {"anyOf": [_str_arr(), {"type": "null"}]}
         elif fname == "disposition":
-            field_props[fname] = _nullable_enum(list(_e.enums.dispositions))
+            field_props[fname] = _nullable_enum(list(gm().enums.dispositions))
         elif fname == "status":
-            field_props[fname] = _nullable_enum(list(_e.enums.npc_statuses))
+            field_props[fname] = _nullable_enum(list(gm().enums.npc_statuses))
         else:
             field_props[fname] = _nullable_str()
     return _obj_root(
@@ -258,7 +255,7 @@ def get_correction_output_schema(npc_ids: list[str]) -> dict[str, Any]:
             "state_ops": _arr(
                 _obj(
                     {
-                        "op": _str_enum(list(_e.correction.ops)),
+                        "op": _str_enum(list(eng().correction.ops)),
                         "npc_id": _nullable_enum(npc_ids),
                         "split_name": _nullable_str(),
                         "split_description": _nullable_str(),
@@ -269,17 +266,16 @@ def get_correction_output_schema(npc_ids: list[str]) -> dict[str, Any]:
                 )
             ),
         },
-        _e.ai_text.schema_titles["correction_output"],
+        eng().ai_text.schema_titles["correction_output"],
     )
 
 
 def get_revelation_check_schema() -> dict[str, Any]:
-    _e = eng()
-    descs = _e.ai_text.schema_descriptions["revelation_check"]
+    descs = eng().ai_text.schema_descriptions["revelation_check"]
     return _obj_root(
         {
             "revelation_confirmed": {**_bool(), "description": descs["revelation_confirmed"]},
             "reasoning": {**_str(), "description": descs["reasoning"]},
         },
-        _e.ai_text.schema_titles["revelation_check"],
+        eng().ai_text.schema_titles["revelation_check"],
     )

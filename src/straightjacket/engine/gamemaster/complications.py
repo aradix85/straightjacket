@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from ..engine_loader import eng
 from ..logging_util import log
 from ..models import ClockData, GameState
 from .clocks import count_emergent_clocks, unique_clock_name
+from .config import gm
 from .spawn_sources import COMPLICATION_SOURCE_PREFIX
 
 
@@ -16,7 +16,7 @@ def open_complications(game: GameState) -> list[ClockData]:
 
 
 def spawn_complication_clock(game: GameState, kind: str, danger: str) -> ClockData | None:
-    cfg = eng().clocks
+    cfg = gm().clocks
     if len(open_complications(game)) >= cfg.complication.max_open:
         log(f"[Complication] {cfg.complication.max_open} complication clock(s) already open, no clock for '{danger}'")
         return None

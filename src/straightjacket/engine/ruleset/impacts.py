@@ -2,11 +2,11 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from ..engine_loader import eng
 from ..logging_util import log
 from ..models import GameState
 from ..setting.oracle_rolls import plain_text
 from ..setting.packages import load_package
+from .config import rules
 
 
 @dataclass(frozen=True)
@@ -38,7 +38,7 @@ def get_impacts(setting_id: str) -> dict[str, Impact]:
 
 
 def recalc_max_momentum(game: GameState) -> None:
-    base_max = eng().momentum.max
+    base_max = rules().momentum.max
     new_max = max(0, base_max - len(game.impacts))
     game.resources.max_momentum = new_max
     if game.resources.momentum > new_max:

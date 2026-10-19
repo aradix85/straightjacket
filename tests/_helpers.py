@@ -27,9 +27,15 @@ def record_price_tables(monkeypatch: pytest.MonkeyPatch) -> list[str]:
 
 
 def make_game_state(**kwargs: Any) -> Any:
+    from straightjacket.engine.gamemaster.world import new_world
     from straightjacket.engine.models import GameState
+    from straightjacket.engine.ruleset.legacy import new_campaign
+    from straightjacket.engine.ruleset.meters import starting_resources
 
     kwargs.setdefault("stats", {"edge": 1, "heart": 2, "iron": 1, "shadow": 1, "wits": 2})
+    kwargs.setdefault("resources", starting_resources())
+    kwargs.setdefault("world", new_world())
+    kwargs.setdefault("campaign", new_campaign())
     return GameState(**kwargs)
 
 
@@ -271,3 +277,12 @@ def make_blueprint(**kwargs: Any) -> Any:
     kwargs.setdefault("thematic_thread", "")
     kwargs.setdefault("structure_type", "3act")
     return StoryBlueprint(**kwargs)
+
+
+def install_config(settings: tuple) -> None:
+    from straightjacket.engine import engine_loader
+    from straightjacket.engine.crafters import config as crafters_config
+    from straightjacket.engine.gamemaster import config as gamemaster_config
+    from straightjacket.engine.ruleset import config as ruleset_config
+
+    engine_loader._eng, gamemaster_config._gm, crafters_config._crafter, ruleset_config._rules = settings

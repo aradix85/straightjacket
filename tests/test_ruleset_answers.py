@@ -1,8 +1,10 @@
 import pytest
 
 from straightjacket.engine.gamemaster import questions
+from straightjacket.engine.gamemaster.config import gm
 from straightjacket.engine.models import SceneLogEntry
 from straightjacket.engine.ruleset import answers
+from straightjacket.engine.ruleset.progress import menace_total_boxes
 from tests._helpers import make_game_state, make_npc, make_progress_track, make_threat
 
 
@@ -84,13 +86,12 @@ def test_a_danger_is_open_while_its_threat_is_active_and_not_full(load_engine: N
     dangers = {d.id: d for d in answers.dangers(game)}
     assert dangers["t_open"].open
     assert not dangers["t_full"].open
-    assert dangers["t_full"].progress == full.menace_total_boxes
+    assert dangers["t_full"].progress == menace_total_boxes(full)
 
 
 def test_the_game_master_s_time_for_a_place_change_is_its_own(load_engine: None) -> None:
-    from straightjacket.engine.engine_loader import eng
     from straightjacket.engine.gamemaster.resolvers import resolve_time_progression
 
-    assert resolve_time_progression("combat/strike", has_location_change=True) == eng().location.change_time
+    assert resolve_time_progression("combat/strike", has_location_change=True) == gm().location.change_time
     assert resolve_time_progression("recover/resupply", has_location_change=False) == "moderate"
     assert resolve_time_progression("quest/swear_an_iron_vow", has_location_change=False) == "short"

@@ -3,9 +3,12 @@ from typing import Any
 
 from ..engine.engine_loader import eng
 from ..engine.format_utils import describe_by_threshold
+from ..engine.gamemaster.config import gm
 from ..engine.models import GameState
 from ..engine.ruleset.bond import get_npc_bond
+from ..engine.ruleset.config import rules
 from ..engine.ruleset.impacts import impact_label
+from ..engine.ruleset.progress import filled_boxes, menace_boxes
 from ..engine.setting.packages import list_packages, load_package
 from ..engine.story_state import get_current_act
 from ..i18n import t
@@ -34,7 +37,7 @@ def _status_impact_lines(game: GameState) -> list[str]:
 def _status_track_lines(game: GameState) -> list[str]:
     track_desc = eng().status_descriptions.track
     return [
-        t("status.tracks", name=tr.name, progress=describe_by_threshold(tr.filled_boxes, track_desc))
+        t("status.tracks", name=tr.name, progress=describe_by_threshold(filled_boxes(tr), track_desc))
         for tr in game.progress_tracks
         if tr.status == "active"
     ]
@@ -86,7 +89,7 @@ def _status_xp_and_legacy_lines(game: GameState) -> list[str]:
     camp = game.campaign
     if camp.xp_available > 0 or camp.xp_spent > 0:
         lines.append(t("status.xp", xp=describe_by_threshold(camp.xp_available, eng().status_descriptions.xp)))
-    if any(lt.filled_boxes > 0 for lt in (camp.legacy_quests, camp.legacy_bonds, camp.legacy_discoveries)):
+    if any(filled_boxes(lt) > 0 for lt in (camp.legacy_quests, camp.legacy_bonds, camp.legacy_discoveries)):
         legacy_desc = eng().status_descriptions.legacy
         lines.append(
             t(
@@ -94,17 +97,17 @@ def _status_xp_and_legacy_lines(game: GameState) -> list[str]:
                 quests=t(
                     "status.legacy_item",
                     name=camp.legacy_quests.name,
-                    progress=describe_by_threshold(camp.legacy_quests.filled_boxes, legacy_desc),
+                    progress=describe_by_threshold(filled_boxes(camp.legacy_quests), legacy_desc),
                 ),
                 bonds=t(
                     "status.legacy_item",
                     name=camp.legacy_bonds.name,
-                    progress=describe_by_threshold(camp.legacy_bonds.filled_boxes, legacy_desc),
+                    progress=describe_by_threshold(filled_boxes(camp.legacy_bonds), legacy_desc),
                 ),
                 discoveries=t(
                     "status.legacy_item",
                     name=camp.legacy_discoveries.name,
-                    progress=describe_by_threshold(camp.legacy_discoveries.filled_boxes, legacy_desc),
+                    progress=describe_by_threshold(filled_boxes(camp.legacy_discoveries), legacy_desc),
                 ),
             )
         )
@@ -132,7 +135,7 @@ def build_tracks_status(game: GameState) -> str:
     track_desc_map = eng().status_descriptions.track
     combat_pos_desc = eng().status_descriptions.combat_position
     for tr in active:
-        track_desc = describe_by_threshold(tr.filled_boxes, track_desc_map)
+        track_desc = describe_by_threshold(filled_boxes(tr), track_desc_map)
         if tr.track_type == "combat":
             cp = game.world.combat_position
             pos_desc = combat_pos_desc[cp] if cp else ""
@@ -155,14 +158,13 @@ def build_threats_status(game: GameState) -> str:
     lines = []
     menace_desc = eng().status_descriptions.menace
     for th in active:
-        urgency = describe_by_threshold(th.menace_filled_boxes, menace_desc)
+        urgency = describe_by_threshold(menace_boxes(th), menace_desc)
         lines.append(t("status.threat", name=th.name, urgency=urgency))
 
     return "\n".join(lines)
 
 
 def build_creation_options() -> dict[str, Any]:
-    _e = eng()
     settings = []
     for pkg_id in list_packages():
         pkg = load_package(pkg_id)
@@ -201,7 +203,7 @@ def build_creation_options() -> dict[str, Any]:
 
         name_tables = {}
         if flow.has_name_tables:
-            for table_id, table in pkg.name_tables(eng().naming.category).items():
+            for table_id, table in pkg.name_tables(gm().naming.category).items():
                 name_tables[table_id] = [row.text for row in table.rows]
 
         backstory_prompts = []
@@ -237,19 +239,19 @@ def build_creation_options() -> dict[str, Any]:
     return {
         "settings": settings,
         "stat_constraints": {
-            "names": _e.stats.character_names,
-            "target_sum": _e.stats.target_sum,
-            "min": _e.stats.min,
-            "max": _e.stats.max,
+            "names": rules().stats.character_names,
+            "target_sum": rules().stats.target_sum,
+            "min": rules().stats.min,
+            "max": rules().stats.max,
         },
         "creation_defaults": {
-            "max_paths": _e.creation.max_paths,
-            "max_starting_assets": _e.creation.max_starting_assets,
-            "background_vow_default_rank": _e.creation.background_vow_default_rank,
-            "pronoun_options": _e.creation.pronoun_options,
-            "vow_ranks": list(_e.legacy.ticks_by_rank.keys()),
+            "max_paths": rules().creation.max_paths,
+            "max_starting_assets": rules().creation.max_starting_assets,
+            "background_vow_default_rank": rules().creation.background_vow_default_rank,
+            "pronoun_options": rules().creation.pronoun_options,
+            "vow_ranks": list(rules().legacy.ticks_by_rank.keys()),
         },
-        "tones": [{"id": tone, "label": t(f"tone.{tone}")} for tone in _e.story.kishotenketsu_probability],
+        "tones": [{"id": tone, "label": t(f"tone.{tone}")} for tone in gm().story.kishotenketsu_probability],
     }
 
 

@@ -3,8 +3,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Protocol
 
-from ..engine_loader import eng
 from ..models import ClockData, GameState, NpcData
+from .config import gm
 
 
 @dataclass(frozen=True)
@@ -56,4 +56,4 @@ def answers() -> RulesetAnswers:
 
 
 def outcome_of(result: str) -> str:
-    return result if result in eng().outcomes.unrolled else answers().outcome(result)
+    return result if result in gm().outcomes.unrolled else answers().outcome(result)

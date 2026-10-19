@@ -1,15 +1,15 @@
 import re
 
 from ...emotions_loader import importance_map, keyword_boosts
-from ...engine_loader import eng
 from ...logging_util import log
 from ...models import MemoryEntry, NpcData
+from ..config import gm
 
 
 def score_importance(emotional_weight: str, event_text: str) -> int:
     raw = emotional_weight.lower().strip()
     _imp = importance_map()
-    _mem_cfg = eng().memory
+    _mem_cfg = gm().memory
 
     if raw in _imp:
         base = _imp[raw]
@@ -28,7 +28,7 @@ def score_importance(emotional_weight: str, event_text: str) -> int:
 
 
 def recent_observations(npc: NpcData) -> list[MemoryEntry]:
-    return [m for m in npc.memory if m.type == "observation"][-eng().npc.reflection_observation_window :]
+    return [m for m in npc.memory if m.type == "observation"][-gm().npc.reflection_observation_window :]
 
 
 def retrieve_memories(
@@ -41,23 +41,22 @@ def retrieve_memories(
 ) -> list[MemoryEntry]:
     memories = npc.memory
     reflections = [m for m in memories if m.type == "reflection"]
-    _e = eng()
-    _w = _e.memory_retrieval_weights
-    _mem_cfg = _e.memory
+    _w = gm().memory_retrieval_weights
+    _mem_cfg = gm().memory
     w_recency = _w.recency
     w_importance = _w.importance
     w_relevance = _w.relevance
-    recency_floor = _e.npc.reflection_recency_floor
-    about_boost = _e.npc.about_npc_relevance_boost
+    recency_floor = gm().npc.reflection_recency_floor
+    about_boost = gm().npc.about_npc_relevance_boost
 
     context_words = {w.lower() for w in context_text.split() if len(w) >= _mem_cfg.min_token_length}
 
     def _score_memory(mem: MemoryEntry) -> float:
         scene_gap = max(0, current_scene - mem.scene)
         if mem.type == "reflection":
-            recency = max(recency_floor, _e.npc.memory_recency_decay**scene_gap)
+            recency = max(recency_floor, gm().npc.memory_recency_decay ** scene_gap)
         else:
-            recency = _e.npc.memory_recency_decay**scene_gap
+            recency = gm().npc.memory_recency_decay ** scene_gap
 
         importance = mem.importance / _mem_cfg.importance_max
 
@@ -98,20 +97,19 @@ def retrieve_memories(
 
 def consolidate_memory(npc: NpcData) -> None:
     memories = npc.memory
-    _e = eng()
-    if len(memories) <= _e.npc.max_memory_entries:
+    if len(memories) <= gm().npc.max_memory_entries:
         return
 
     reflections = [m for m in memories if m.type == "reflection"]
     observations = [m for m in memories if m.type != "reflection"]
 
-    kept_reflections = reflections[-_e.npc.max_reflections :]
-    obs_budget = _e.npc.max_memory_entries - len(kept_reflections)
+    kept_reflections = reflections[-gm().npc.max_reflections :]
+    obs_budget = gm().npc.max_memory_entries - len(kept_reflections)
 
     if len(observations) <= obs_budget:
         kept_observations = observations
     else:
-        recency_budget = max(_e.memory.consolidation_floor, int(obs_budget * _e.npc.consolidation_recency_ratio))
+        recency_budget = max(gm().memory.consolidation_floor, int(obs_budget * gm().npc.consolidation_recency_ratio))
         importance_budget = obs_budget - recency_budget
 
         by_recency = sorted(observations, key=lambda m: m.scene, reverse=True)

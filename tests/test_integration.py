@@ -5,7 +5,10 @@ from collections.abc import Callable
 import pytest
 
 from straightjacket.engine.ai.provider_base import AICallSpec, AIResponse
+from straightjacket.engine.gamemaster.config import gm
 from straightjacket.engine.models import labels_of
+from straightjacket.engine.ruleset.config import rules
+from straightjacket.engine.ruleset.progress import menace_per_mark, ticks_per_mark
 from tests._helpers import (
     action_prompt_kwargs,
     dialog_prompt_kwargs,
@@ -260,7 +263,7 @@ def test_a_journey_is_started_once_and_then_continued_by_its_id(load_engine: Non
         hits += roll.result in ("STRONG_HIT", "WEAK_HIT")
     [track] = [t for t in game.progress_tracks if t.track_type == "journey"]
     assert (track.id, track.status) == ("journey_to_the_ridge", "active")
-    assert track.ticks == hits * track.ticks_per_mark
+    assert track.ticks == hits * ticks_per_mark(track)
 
 
 def _rolling(result: str) -> Callable[[str, int, str, int, int], object]:
@@ -328,7 +331,7 @@ def test_a_connection_made_in_play_grows_through_its_tests_and_once_bonded_devel
     [track] = connections
     assert track.id == f"connection_{kira}"
     process_turn(provider, game, "I stand by Kira when her crew turns on her", stream=None)
-    assert track.ticks == track.ticks_per_mark
+    assert track.ticks == ticks_per_mark(track)
     track.status = "bonded"
     _narration, roll, _burn, _director = process_turn(provider, game, "I help Kira fix her ship", stream=None)
     assert roll is not None
@@ -392,17 +395,16 @@ def test_turn_dialog_skips_roll(load_engine: None) -> None:
 def test_a_menace_that_fills_at_scene_end_forsakes_its_vow_in_the_next_turn_and_is_told(
     load_engine: None, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    from straightjacket.engine.engine_loader import eng
     from straightjacket.engine.game import turn
     from straightjacket.engine.models import SceneSetup
     from tests._helpers import make_threat
 
     monkeypatch.setattr(turn, "check_scene", lambda _game: SceneSetup(scene_type="expected"))
-    monkeypatch.setattr(eng().threats, "autonomous_tick_chance", 1.0)
+    monkeypatch.setattr(rules().threats, "autonomous_tick_chance", 1.0)
     game = _make_game()
     [vow] = [t for t in game.progress_tracks if t.track_type == "vow"]
     threat = make_threat(id="t_king", name="The Hollow King", linked_vow_id=vow.id, rank="dangerous")
-    threat.menace_ticks = threat.max_menace_ticks - threat.menace_per_mark
+    threat.menace_ticks = threat.max_menace_ticks - menace_per_mark(threat)
     game.threats.append(threat)
     talk = {"move": "dialog", "stat": "none", "dialog_only": True, "target_npc": game.npcs[0].id}
     provider = _ScriptedBrain(talk, talk)
@@ -958,7 +960,6 @@ if __name__ == "__main__":
 
 
 def test_dialog_turn_runs_npc_agency_on_interval_scene(load_engine: None) -> None:
-    from straightjacket.engine.engine_loader import eng
     from straightjacket.engine.game.turn import process_turn
 
     provider = MockProvider()
@@ -996,7 +997,7 @@ def test_dialog_turn_runs_npc_agency_on_interval_scene(load_engine: None) -> Non
     for npc in game.npcs:
         npc.status = "active"
         npc.agenda = "Keep the archive sealed"
-    game.narrative.scene_count = eng().pacing.npc_agency_interval - 1
+    game.narrative.scene_count = gm().pacing.npc_agency_interval - 1
     process_turn(provider, game, "I talk to Mira", stream=None)
     prompts = [
         message["content"]

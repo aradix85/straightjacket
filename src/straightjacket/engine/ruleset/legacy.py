@@ -2,12 +2,33 @@ from __future__ import annotations
 
 from typing import Any
 
-from ..engine_loader import eng
+from ...i18n import t
 from ..logging_util import log
-from ..models import GameState, ProgressTrack, ThreatData
+from ..models import CampaignState, GameState, ProgressTrack, ThreatData
 from .assets import asset_data, enable_next_ability, enabled_abilities
+from .config import rules
+from .progress import filled_boxes
 
 LEGACY_TRACKS: tuple[str, ...] = ("quests", "bonds", "discoveries")
+
+
+def _legacy_track(track_id: str, name_key: str) -> ProgressTrack:
+    return ProgressTrack(
+        id=track_id,
+        name=t(name_key),
+        track_type="legacy",
+        rank=rules().legacy.starting_rank,
+        max_ticks=rules().progress.max_ticks,
+        bound_impact="",
+    )
+
+
+def new_campaign() -> CampaignState:
+    return CampaignState(
+        legacy_quests=_legacy_track("legacy_quests", "status.legacy_name_quests"),
+        legacy_bonds=_legacy_track("legacy_bonds", "status.legacy_name_bonds"),
+        legacy_discoveries=_legacy_track("legacy_discoveries", "status.legacy_name_discoveries"),
+    )
 
 
 def get_legacy_track(game: GameState, name: str) -> ProgressTrack:
@@ -21,23 +42,23 @@ def get_legacy_track(game: GameState, name: str) -> ProgressTrack:
 
 
 def shifted_rank(rank: str, shift: int) -> str | None:
-    ranks = list(eng().legacy.ticks_by_rank)
+    ranks = list(rules().legacy.ticks_by_rank)
     index = ranks.index(rank) + shift
     return ranks[index] if 0 <= index < len(ranks) else None
 
 
 def mark_legacy(game: GameState, track_name: str, source_rank: str) -> None:
-    mark_legacy_ticks(game, track_name, eng().legacy.ticks_by_rank[source_rank])
+    mark_legacy_ticks(game, track_name, rules().legacy.ticks_by_rank[source_rank])
 
 
 def mark_legacy_ticks(game: GameState, track_name: str, ticks: int) -> None:
     track = get_legacy_track(game, track_name)
-    cfg = eng().legacy
+    cfg = rules().legacy
     xp_gained = 0
     for _ in range(ticks):
-        boxes_before = track.filled_boxes
+        boxes_before = filled_boxes(track)
         track.ticks += 1
-        if track.filled_boxes > boxes_before:
+        if filled_boxes(track) > boxes_before:
             xp_gained += cfg.xp_per_box if track.completions == 0 else cfg.xp_per_box_after_clear
         if track.ticks >= track.max_ticks:
             track.ticks = 0
@@ -46,13 +67,13 @@ def mark_legacy_ticks(game: GameState, track_name: str, ticks: int) -> None:
     if xp_gained > 0:
         game.campaign.xp += xp_gained
     log(
-        f"[Legacy] {track_name} +{ticks} ticks ({track.filled_boxes} boxes, completions {track.completions}), "
+        f"[Legacy] {track_name} +{ticks} ticks ({filled_boxes(track)} boxes, completions {track.completions}), "
         f"+{xp_gained} XP (total {game.campaign.xp})"
     )
 
 
 def apply_threat_overcome_bonus(game: GameState, threat: ThreatData) -> None:
-    cfg = eng().legacy
+    cfg = rules().legacy
     ratio = threat.menace_ticks / threat.max_menace_ticks
     if ratio < cfg.threat_overcome_threshold:
         return
@@ -64,7 +85,7 @@ def apply_threat_overcome_bonus(game: GameState, threat: ThreatData) -> None:
 
 
 def advance_cost(kind: str) -> int:
-    cfg = eng().legacy
+    cfg = rules().legacy
     if kind == "upgrade":
         return cfg.asset_upgrade_cost
     if kind == "new":

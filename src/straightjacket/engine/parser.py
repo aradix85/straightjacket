@@ -2,6 +2,7 @@ import re
 
 from .ai.provider_base import AIUnavailableError
 from .engine_loader import eng
+from .gamemaster.config import gm
 from .logging_util import log
 from .models import GameState
 
@@ -52,9 +53,8 @@ def _strip_markdown_formatting(text: str) -> str:
 
 def _mark_introduced_npcs(game: GameState, narration: str) -> None:
     narration_lower = narration.lower()
-    _e = eng()
-    min_part = _e.parser.min_line_length
-    titles = _e.name_titles
+    min_part = eng().parser.min_line_length
+    titles = gm().name_titles
 
     for npc in game.npcs:
         if npc.introduced:

@@ -5,10 +5,12 @@ from typing import Any
 import pytest
 
 from straightjacket.engine.ai.provider_base import AICallSpec, AIResponse
+from straightjacket.engine.gamemaster.config import gm
 from straightjacket.engine.models import (
     GameState,
     NarrationEntry,
 )
+from straightjacket.engine.ruleset.config import rules
 from tests._creation import OPENING_TEXT, create_game, force_miss
 
 
@@ -125,7 +127,6 @@ def test_burn_keeps_the_track_the_turn_created(load_engine: None, stub_emotions:
 
 
 def test_burn_updates_the_turn_snapshot(load_engine: None, stub_emotions: None, forced_miss: None) -> None:
-    from straightjacket.engine.engine_loader import eng
 
     game, narration, _director = _turn_then_burn(_Provider(_brain()), _game())
 
@@ -135,7 +136,7 @@ def test_burn_updates_the_turn_snapshot(load_engine: None, stub_emotions: None, 
     assert snap.roll.result == "STRONG_HIT"
     assert snap.narration == narration
     assert snap.player_input == "I slip past Mira into the archive vault"
-    assert game.resources.momentum == eng().momentum.start + 1
+    assert game.resources.momentum == rules().momentum.start + 1
 
 
 def test_burn_runs_scene_end_bookkeeping_exactly_once(
@@ -173,12 +174,11 @@ def test_a_burn_at_the_history_cap_keeps_the_earlier_entries(
 ) -> None:
     import copy
 
-    from straightjacket.engine.engine_loader import eng
     from straightjacket.engine.game import process_momentum_burn, process_turn
     from tests.elvira.elvira_bot.invariants import check_turn_replacement
 
     game = _game()
-    cap = eng().pacing.max_narration_history
+    cap = gm().pacing.max_narration_history
     game.narrative.narration_history = [
         NarrationEntry(scene=n, prompt_summary=f"Scene {n}", narration=f"Earlier scene {n}.") for n in range(1, cap + 1)
     ]

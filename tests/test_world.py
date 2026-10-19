@@ -1,5 +1,6 @@
 import pytest
 
+from straightjacket.engine.gamemaster.config import gm
 from tests._helpers import make_brain_result, make_game_state, make_npc
 
 
@@ -97,11 +98,10 @@ def test_advance_time_unknown_phase_raises(load_engine: None) -> None:
 
 
 def test_advance_time_moderate_advances(load_engine: None) -> None:
-    from straightjacket.engine.engine_loader import eng
     from straightjacket.engine.gamemaster.world import advance_time
 
     g = make_game_state()
-    phases = eng().enums.time_phases
+    phases = gm().enums.time_phases
     g.world.time_of_day = phases[0]
     advance_time(g, "moderate")
     assert g.world.time_of_day != phases[0]
@@ -109,11 +109,10 @@ def test_advance_time_moderate_advances(load_engine: None) -> None:
 
 
 def test_advance_time_long_wraps(load_engine: None) -> None:
-    from straightjacket.engine.engine_loader import eng
     from straightjacket.engine.gamemaster.world import advance_time
 
     g = make_game_state()
-    phases = eng().enums.time_phases
+    phases = gm().enums.time_phases
     g.world.time_of_day = phases[-1]
     advance_time(g, "long")
     assert g.world.time_of_day in phases
@@ -176,11 +175,10 @@ def test_update_location_dedup_consecutive(load_engine: None) -> None:
 
 
 def test_update_location_history_capped(load_engine: None) -> None:
-    from straightjacket.engine.engine_loader import eng
     from straightjacket.engine.gamemaster.world import update_location
 
     g = make_game_state()
-    cap = eng().location.history_size
+    cap = gm().location.history_size
     g.world.current_location = "Start"
     for i in range(cap + 5):
         update_location(g, f"Place_{i}")
@@ -221,21 +219,19 @@ def test_get_pacing_hint_neutral_when_empty(load_engine: None) -> None:
 
 
 def test_get_pacing_hint_breather_after_intense_run(load_engine: None) -> None:
-    from straightjacket.engine.engine_loader import eng
     from straightjacket.engine.gamemaster.world import get_pacing_hint
 
     g = make_game_state()
-    threshold = eng().pacing.intense_threshold
+    threshold = gm().pacing.intense_threshold
     g.narrative.scene_intensity_history = ["action"] * threshold
     assert get_pacing_hint(g) == "breather"
 
 
 def test_get_pacing_hint_action_after_calm_run(load_engine: None) -> None:
-    from straightjacket.engine.engine_loader import eng
     from straightjacket.engine.gamemaster.world import get_pacing_hint
 
     g = make_game_state()
-    threshold = eng().pacing.calm_threshold
+    threshold = gm().pacing.calm_threshold
     g.narrative.scene_intensity_history = ["breather"] * threshold
     assert get_pacing_hint(g) == "action"
 
@@ -249,11 +245,10 @@ def test_get_pacing_hint_neutral_mixed(load_engine: None) -> None:
 
 
 def test_record_scene_intensity_caps_at_window(load_engine: None) -> None:
-    from straightjacket.engine.engine_loader import eng
     from straightjacket.engine.gamemaster.world import record_scene_intensity
 
     g = make_game_state()
-    window = eng().pacing.window_size
+    window = gm().pacing.window_size
     for _ in range(window + 5):
         record_scene_intensity(g, "action")
     assert len(g.narrative.scene_intensity_history) == window

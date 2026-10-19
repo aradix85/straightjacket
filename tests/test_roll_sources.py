@@ -1,6 +1,6 @@
 from typing import Any
 
-from straightjacket.engine.models import ProgressTrack
+from straightjacket.engine.ruleset.progress import new_track
 from tests._helpers import make_brain_result, make_game_state, make_npc
 
 
@@ -34,7 +34,7 @@ def test_develop_your_relationship_rolls_with_the_rank_of_a_bonded_connection(lo
 
     game = _starforged()
     game.npcs = [make_npc(id="npc_1", name="Vex")]
-    track = ProgressTrack.new(id="connection_npc_1", name="Vex", track_type="connection", rank="dangerous")
+    track = new_track(id="connection_npc_1", name="Vex", track_type="connection", rank="dangerous")
     track.status = "bonded"
     game.progress_tracks.append(track)
     brain = make_brain_result(move="connection/develop_your_relationship", stat="none", target_npc="npc_1")
@@ -47,9 +47,7 @@ def test_a_connection_without_a_bond_gives_develop_your_relationship_nothing_to_
     from straightjacket.engine.ruleset.roll_sources import roll_source_without_stat
 
     game = _starforged()
-    game.progress_tracks.append(
-        ProgressTrack.new(id="connection_npc_1", name="Vex", track_type="connection", rank="dangerous")
-    )
+    game.progress_tracks.append(new_track(id="connection_npc_1", name="Vex", track_type="connection", rank="dangerous"))
     develop = get_moves("starforged")["connection/develop_your_relationship"]
     assert roll_source_without_stat(game, develop, "npc_1") is None
 

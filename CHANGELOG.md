@@ -8,6 +8,12 @@ This log starts at 2026.09.24.0, the restart after a four-month pause. Earlier r
 
 Calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day.
 
+## [2026.10.19.22] — 2026-10-19
+
+Step 9n, 9n.1d, at the user's choice: each layer reads its yaml through its own accessor, so reading against the direction is importing against it. `gm()` (`gamemaster/config.py`, its dataclasses in `gamemaster/config_types.py`), `crafter()` (`crafters/config.py`), and `rules()` (`ruleset/config.py`, `ruleset/config_types.py`) each load their own folder, and `eng()` loads only `engine/`; the strict binding they share is `config_binding.py`. Every configuration read moved to the accessor of the folder its yaml lives in, about 385 in the source and 140 in the tests, and the scan of configuration reads that 9n.1c added is gone again: the import scan now covers what it guarded, including a read handed along as a value, which that scan could not follow. The models in the base no longer read a layer's rules. A track's and a threat's arithmetic is `ruleset/progress.py`, the starting meters `ruleset/meters.py`, the chaos factor's start and step `gamemaster/world.py`, the legacy tracks `ruleset/legacy.py` → `new_campaign`, and a keyed scene is validated where a source makes it (`gamemaster/keyed_scenes.py` → `new_keyed_scene`); a new game's resources, world, and campaign come from these, no longer from defaults that read the configuration.
+
+Quality gate: 1771 tests, coverage 94.67%. Save format unchanged. No Elvira session: no rule, value, prompt, or turn changed; the four loaders were run against the real yaml.
+
 ## [2026.10.19.21] — 2026-10-19
 
 Step 9n, 9n.1c: two project-rule scans hold the layers to their direction, and 9n.1 is done. The import scan now refuses the game master an import of the crafters or the ruleset, and the crafters one of the ruleset (`_check_import_layers`). A new scan reads every configuration read in the four layers' code, `eng().section` and `get_raw("section")` through any name bound to `eng()`, and refuses a section whose yaml lives in a layer above the reader (`_check_layer_config_reads`): a layer reads its own folder, the layers below it, and `engine/`, the engine's own text and infrastructure. Today's code passes both; an import of the ruleset placed in the game master and a read of a ruleset section placed in the game master and in the crafters were each refused, then removed. The whole engine still reads one merged `eng()`, which the scan makes safe to keep.

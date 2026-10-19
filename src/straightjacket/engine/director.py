@@ -5,6 +5,7 @@ from .ai.provider_base import AICallSpec, AIProvider, create_with_retry
 from .ai.schemas import get_director_output_schema
 from .config_loader import model_for_role, narration_language, sampling_params
 from .engine_loader import eng
+from .gamemaster.config import gm
 from .gamemaster.npc.matching import resolve_about_npc
 from .gamemaster.npc.memory import consolidate_memory, recent_observations
 from .logging_util import log
@@ -45,17 +46,17 @@ def should_call_director(
         return "revelation"
 
     for npc in game.npcs:
-        if npc.needs_reflection and npc.status in eng().npc_status_groups.in_play:
+        if npc.needs_reflection and npc.status in gm().npc_status_groups.in_play:
             return f"reflection:{npc.name}"
 
     bp = game.narrative.story_blueprint
     if bp is not None:
         act = get_current_act(game)
-        if act.phase in eng().pacing.director_phases and act.phase not in bp.triggered_director_phases:
+        if act.phase in gm().pacing.director_phases and act.phase not in bp.triggered_director_phases:
             bp.triggered_director_phases.append(act.phase)
             return f"phase:{act.phase}"
 
-    if game.narrative.scene_count % eng().pacing.director_interval == 0:
+    if game.narrative.scene_count % gm().pacing.director_interval == 0:
         return "interval"
 
     return None
@@ -66,7 +67,7 @@ def _needs_profile(npc: NpcData) -> bool:
 
 
 def _reflection_eligible(npc: NpcData) -> bool:
-    return (npc.needs_reflection or _needs_profile(npc)) and npc.status in eng().npc_status_groups.in_play
+    return (npc.needs_reflection or _needs_profile(npc)) and npc.status in gm().npc_status_groups.in_play
 
 
 def _build_reflection_block(game: GameState, npc: NpcData) -> str:
@@ -241,7 +242,7 @@ def _apply_reflection(game: GameState, npc: NpcData, ref: dict[str, Any]) -> Non
             emotional_weight=ref["tone_key"],
             tone=ref["tone"],
             tone_key=ref["tone_key"],
-            importance=eng().npc.reflection_importance,
+            importance=gm().npc.reflection_importance,
             type="reflection",
             about_npc=resolve_about_npc(game, ref["about_npc"], owner_id=npc.id),
         )
@@ -290,6 +291,6 @@ def apply_director_guidance(game: GameState, guidance: dict[str, Any]) -> None:
 
 def reset_stale_reflection_flags(game: GameState) -> None:
     for npc in game.npcs:
-        if npc.needs_reflection and npc.status in eng().npc_status_groups.in_play:
+        if npc.needs_reflection and npc.status in gm().npc_status_groups.in_play:
             npc.needs_reflection = False
             log(f"[Director] Reset stale reflection flag for {npc.name} (skipped turn, accumulator preserved)")

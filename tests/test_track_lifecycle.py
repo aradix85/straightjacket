@@ -1,4 +1,6 @@
 from straightjacket.engine.models import GameState, Resources
+from straightjacket.engine.ruleset.config import rules
+from straightjacket.engine.ruleset.progress import filled_boxes, mark_progress, ticks_per_mark
 from tests._helpers import make_game_state, make_progress_track, make_world_state
 
 
@@ -134,48 +136,47 @@ class TestTracksStatus:
 
 
 def test_progress_track_ticks_per_mark() -> None:
-    from straightjacket.engine.engine_loader import eng
 
-    expected_table = eng().progress.ticks_per_mark
+    expected_table = rules().progress.ticks_per_mark
     for rank, expected in expected_table.items():
         t = make_progress_track(rank=rank)
-        assert t.ticks_per_mark == expected
+        assert ticks_per_mark(t) == expected
 
 
 def test_progress_track_mark_progress_troublesome() -> None:
     t = make_progress_track(rank="troublesome", ticks=0)
-    added = t.mark_progress()
+    added = mark_progress(t)
     assert added == 12
     assert t.ticks == 12
-    assert t.filled_boxes == 3
+    assert filled_boxes(t) == 3
 
 
 def test_progress_track_mark_progress_epic() -> None:
     t = make_progress_track(rank="epic", ticks=0)
-    added = t.mark_progress()
+    added = mark_progress(t)
     assert added == 1
     assert t.ticks == 1
-    assert t.filled_boxes == 0
+    assert filled_boxes(t) == 0
 
 
 def test_progress_track_mark_progress_clamps_at_max() -> None:
     t = make_progress_track(rank="troublesome", ticks=36)
-    added = t.mark_progress()
+    added = mark_progress(t)
     assert t.ticks == 40
     assert added == 4
 
 
 def test_progress_track_filled_boxes() -> None:
     t = make_progress_track(ticks=17)
-    assert t.filled_boxes == 4
+    assert filled_boxes(t) == 4
 
 
 def test_progress_roll_uses_track_boxes(load_engine: None) -> None:
     from straightjacket.engine.ruleset.rolls import roll_progress
 
     track = make_progress_track(id="v1", name="Find the artifact", track_type="vow", rank="dangerous", ticks=24)
-    assert track.filled_boxes == 6
-    roll = roll_progress(track.name, track.filled_boxes, "quest/fulfill_your_vow")
+    assert filled_boxes(track) == 6
+    roll = roll_progress(track.name, filled_boxes(track), "quest/fulfill_your_vow")
     assert roll.stat_value == 6
     assert roll.action_score == 6
     assert roll.d1 == 0

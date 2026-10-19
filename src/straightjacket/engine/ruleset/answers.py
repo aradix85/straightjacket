@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from ..engine_loader import eng
 from ..models import GameState
 from .bond import get_npc_bond as closeness
 from .bond import merge_connections as merge_npcs
+from .config import rules
 from .threats import add_threat as add_danger
 from .threats import threats_as_dangers as dangers
 from .tracks import complete_track_of_clock as clock_filled
@@ -25,12 +25,12 @@ __all__ = [
 
 
 def outcome(result: str) -> str:
-    outcomes: dict[str, str] = eng().get_raw("result_outcomes")
+    outcomes: dict[str, str] = rules().get_raw("result_outcomes")
     return outcomes[result]
 
 
 def action_kind(move: str) -> str:
-    categories = eng().get_raw("move_categories")
+    categories = rules().get_raw("move_categories")
     kind: str
     for kind in categories:
         if move in categories[kind]:
@@ -39,22 +39,22 @@ def action_kind(move: str) -> str:
 
 
 def action_phrase(move: str) -> str:
-    phrases: dict[str, str] = eng().get_raw("action_phrases")
+    phrases: dict[str, str] = rules().get_raw("action_phrases")
     return phrases[move] if move in phrases else phrases["_catchall"]
 
 
 def time_taken(move: str) -> str:
-    steps: dict[str, str] = eng().get_raw("time_progression_map")
+    steps: dict[str, str] = rules().get_raw("time_progression_map")
     return steps[move] if move in steps else steps["_catchall"]
 
 
 def effect_bonus(move: str) -> int:
-    bonuses: dict[str, int] = eng().get_raw("effect_bonus_moves")
+    bonuses: dict[str, int] = rules().get_raw("effect_bonus_moves")
     return bonuses[move] if move in bonuses else bonuses["other"]
 
 
 def strain(game: GameState) -> list[str]:
-    cfg = eng().strain
+    cfg = rules().strain
     levels: list[str] = []
     for meter in cfg.meters:
         value = getattr(game.resources, meter)
@@ -64,4 +64,4 @@ def strain(game: GameState) -> list[str]:
 
 def gained_advantage(game: GameState) -> bool:
     log = game.narrative.session_log
-    return bool(log) and log[-1].move in eng().advantage_moves and log[-1].result in eng().dice.hit_results
+    return bool(log) and log[-1].move in rules().advantage_moves and log[-1].result in rules().dice.hit_results

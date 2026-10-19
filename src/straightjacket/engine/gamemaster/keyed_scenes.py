@@ -2,10 +2,10 @@ from __future__ import annotations
 
 from collections.abc import Callable
 
-from ..engine_loader import eng
 from ..logging_util import log
 from ..models import ClockData, GameState, KeyedScene, NarrativeState
 from ..models_npc import NpcData
+from .config import gm
 from .npc.matching import find_npc
 from .questions import answers
 from .spawn_sources import CLOCK_KEYED_SOURCE_PREFIX
@@ -27,7 +27,7 @@ def _eval_bond_threshold(game: GameState, value: str) -> bool:
 
 
 def _eval_chaos_extreme(game: GameState, value: str) -> bool:
-    chaos = eng().chaos
+    chaos = gm().chaos
     cf = game.world.chaos_factor
     if value == "min":
         return cf <= chaos.min
@@ -132,7 +132,7 @@ def _resolve_pattern_entity(
     already_bound: set[str],
 ) -> str | None:
     pool, threshold = _parse_pattern_value(value)
-    grammar = eng().keyed_scenes.pattern_grammars[trigger_type]
+    grammar = gm().keyed_scenes.pattern_grammars[trigger_type]
     strategy = grammar.matcher_strategy
 
     if trigger_type == "bond_threshold":
@@ -183,7 +183,7 @@ def evaluate_keyed_scenes(game: GameState) -> KeyedScene | None:
         return None
     already_bound: set[str] = {s.bound_entity_id for s in game.narrative.keyed_scenes if s.bound_entity_id is not None}
     ordered = sorted(game.narrative.keyed_scenes, key=lambda k: -k.priority)
-    pattern_supporting = eng().keyed_scenes.pattern_grammars
+    pattern_supporting = gm().keyed_scenes.pattern_grammars
     for scene in ordered:
         if scene.trigger_type in pattern_supporting and scene.bound_entity_id is not None:
             if _bound_entity_meets_threshold(game, scene.trigger_type, scene.trigger_value, scene.bound_entity_id):
@@ -221,6 +221,45 @@ def _bound_entity_meets_threshold(game: GameState, trigger_type: str, value: str
     raise ValueError(f"trigger_type {trigger_type!r} not pattern-supporting")
 
 
+def new_keyed_scene(
+    *, id: str, trigger_type: str, trigger_value: str, priority: int, narrative_hint: str, source: str
+) -> KeyedScene:
+    cfg = gm().keyed_scenes
+    if trigger_type not in cfg.triggers:
+        raise ValueError(f"Unknown KeyedScene trigger_type {trigger_type!r}; registered: {sorted(cfg.triggers)}")
+    if trigger_type in cfg.pattern_grammars:
+        _validate_pattern_trigger_value(trigger_type, trigger_value)
+    return KeyedScene(
+        id=id,
+        trigger_type=trigger_type,
+        trigger_value=trigger_value,
+        priority=priority,
+        narrative_hint=narrative_hint,
+        source=source,
+    )
+
+
+def _validate_pattern_trigger_value(trigger_type: str, value: str) -> None:
+    parts = value.split(":", 1)
+    if len(parts) != 2 or not parts[0] or not parts[1]:
+        raise ValueError(f"{trigger_type} trigger_value must be '<pool>:<threshold>', got {value!r}")
+    pool, threshold_str = parts
+    try:
+        int(threshold_str)
+    except ValueError as exc:
+        raise ValueError(f"{trigger_type} threshold must be an integer, got {threshold_str!r}") from exc
+
+    prefixes = gm().keyed_scenes.pattern_grammars[trigger_type].pattern_prefixes
+    if "disposition_" in prefixes and pool.startswith("disposition_"):
+        disposition = pool.removeprefix("disposition_")
+        valid = gm().enums.dispositions
+        if disposition not in valid:
+            raise ValueError(
+                f"{trigger_type} disposition pattern {pool!r} uses unknown disposition "
+                f"{disposition!r}; valid: {sorted(valid)}"
+            )
+
+
 def _clock_already_spawned(narrative: NarrativeState, clock_name: str, threshold: int) -> bool:
     target = f"{CLOCK_KEYED_SOURCE_PREFIX}{clock_name}:{threshold}"
     return any(ks.source == target for ks in narrative.keyed_scenes)
@@ -234,7 +273,7 @@ def _next_clock_keyed_scene_id(narrative: NarrativeState) -> str:
 
 
 def spawn_keyed_scenes_for_clock(narrative: NarrativeState, clock: ClockData) -> None:
-    entry = eng().clock_keyed_scenes.by_clock_type[clock.clock_type]
+    entry = gm().clock_keyed_scenes.by_clock_type[clock.clock_type]
 
     for fraction in entry.fractions:
         threshold = max(1, round(clock.segments * fraction))
@@ -242,7 +281,7 @@ def spawn_keyed_scenes_for_clock(narrative: NarrativeState, clock: ClockData) ->
             continue
         scene_id = _next_clock_keyed_scene_id(narrative)
         narrative_hint = entry.narrative_hint_template.format(clock_name=clock.name)
-        scene = KeyedScene(
+        scene = new_keyed_scene(
             id=scene_id,
             trigger_type="clock_fills",
             trigger_value=f"{clock.name}:{threshold}",

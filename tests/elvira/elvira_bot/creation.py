@@ -2,23 +2,23 @@ from __future__ import annotations
 
 import random as _random
 
-from straightjacket.engine.engine_loader import eng
+from straightjacket.engine.gamemaster.config import gm
+from straightjacket.engine.ruleset.config import rules
 from straightjacket.engine.setting.packages import SettingPackage, load_package
 
 
 def roll_character(setting_id: str, game_cfg: dict) -> dict:
     pkg = load_package(setting_id)
-    _e = eng()
 
     name = _roll_name(pkg, game_cfg)
-    pronouns = game_cfg.get("pronouns") or _random.choice(_e.creation.pronoun_options)
+    pronouns = game_cfg.get("pronouns") or _random.choice(rules().creation.pronoun_options)
     paths = _roll_paths(pkg, game_cfg)
     backstory = _roll_backstory(pkg, game_cfg)
     vow = _roll_vow(pkg, game_cfg)
     stats = _roll_stats(game_cfg)
     truths = _roll_truths(pkg, game_cfg)
     assets = _roll_starting_assets(pkg, game_cfg)
-    vow_rank = game_cfg.get("background_vow_rank", _e.creation.background_vow_default_rank)
+    vow_rank = game_cfg.get("background_vow_rank", rules().creation.background_vow_default_rank)
     vow_subject = game_cfg.get("vow_subject", "")
 
     path_display = []
@@ -62,12 +62,12 @@ def roll_character(setting_id: str, game_cfg: dict) -> dict:
 def _roll_name(pkg: SettingPackage, game_cfg: dict) -> str:
     if game_cfg.get("player_name"):
         return game_cfg["player_name"]
-    tables = list(pkg.name_tables(eng().naming.category).values())[:2]
+    tables = list(pkg.name_tables(gm().naming.category).values())[:2]
     return " ".join(table.roll().text for table in tables)
 
 
 def _roll_paths(pkg: SettingPackage, game_cfg: dict) -> list[str]:
-    max_paths = eng().creation.max_paths
+    max_paths = rules().creation.max_paths
     if game_cfg.get("paths") and len(game_cfg["paths"]) == max_paths:
         return game_cfg["paths"]
     all_paths = pkg.data.paths()
@@ -94,9 +94,8 @@ def _roll_vow(pkg: SettingPackage, game_cfg: dict) -> str:
 
 
 def _roll_stats(game_cfg: dict) -> dict[str, int]:
-    _e = eng()
-    target = _e.stats.target_sum
-    valid_arrays = [list(a) for a in _e.stats.valid_arrays]
+    target = rules().stats.target_sum
+    valid_arrays = [list(a) for a in rules().stats.valid_arrays]
     cfg_stats = game_cfg.get("stats")
     if cfg_stats and sum(cfg_stats.values()) == target and sorted(cfg_stats.values(), reverse=True) in valid_arrays:
         return cfg_stats
@@ -109,7 +108,7 @@ def _random_stats(target: int, valid_arrays: list[list[int]]) -> dict[str, int]:
 
     array = list(_random.choice(valid_arrays))
     _random.shuffle(array)
-    return dict(zip(eng().stats.character_names, array, strict=True))
+    return dict(zip(rules().stats.character_names, array, strict=True))
 
 
 def _roll_truths(pkg: SettingPackage, game_cfg: dict) -> dict[str, str]:
@@ -134,12 +133,11 @@ def _roll_truths(pkg: SettingPackage, game_cfg: dict) -> dict[str, str]:
 def _roll_starting_assets(pkg: SettingPackage, game_cfg: dict) -> list[str]:
     if game_cfg.get("assets"):
         return game_cfg["assets"]
-    _e = eng()
     flow = pkg.creation_flow
     cats = flow.starting_asset_categories
     if not cats:
         return []
-    max_assets = _e.creation.max_starting_assets
+    max_assets = rules().creation.max_starting_assets
     available = []
     for cat in cats:
         for asset in pkg.data.assets(cat):

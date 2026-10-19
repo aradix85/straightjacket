@@ -3,9 +3,9 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any
 
-from ..engine_loader import eng
 from ..models import Consequence, GameState
 from ..setting.packages import load_package
+from .config import rules
 
 
 @dataclass
@@ -24,13 +24,12 @@ class OutcomeResult:
 
 
 def move_outcome_config(game: GameState, move_key: str) -> dict[str, Any]:
-    _e = eng()
-    overrides = _e.get_raw("move_outcome_overrides")
+    overrides = rules().get_raw("move_outcome_overrides")
     for pkg in load_package(game.setting_id).chain():
         if pkg.id in overrides and move_key in overrides[pkg.id]:
             cfg: dict[str, Any] = overrides[pkg.id][move_key]
             return cfg
-    outcomes = _e.get_raw("move_outcomes")
+    outcomes = rules().get_raw("move_outcomes")
     if move_key not in outcomes:
         raise ValueError(f"No outcome config for {move_key}. Add it to engine.yaml move_outcomes.")
     default: dict[str, Any] = outcomes[move_key]

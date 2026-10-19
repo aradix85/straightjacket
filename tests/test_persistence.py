@@ -4,11 +4,12 @@ from typing import Any
 import pytest
 
 from straightjacket.engine.models import GameState
-from tests._helpers import make_clock, make_memory, make_npc
+from straightjacket.engine.ruleset.meters import starting_resources
+from tests._helpers import make_clock, make_game_state, make_memory, make_npc
 
 
 def _game() -> GameState:
-    game = GameState(player_name="TestHero", stats={"edge": 2, "heart": 2, "iron": 1, "shadow": 1, "wits": 1})
+    game = make_game_state(player_name="TestHero", stats={"edge": 2, "heart": 2, "iron": 1, "shadow": 1, "wits": 1})
     game.resources.health = 4
     game.resources.momentum = 3
     game.world.current_location = "TestTavern"
@@ -133,7 +134,7 @@ def test_load_returns_exactly_what_was_saved(save_dir: Any) -> None:
 def test_a_save_missing_a_field_does_not_load(load_engine: None) -> None:
     from straightjacket.engine.models import Resources
 
-    data = Resources.from_config().to_dict()
+    data = starting_resources().to_dict()
     data.pop("next_move_bonus")
     with pytest.raises(ValueError, match=r"Resources: missing fields \['next_move_bonus'\]"):
         Resources.from_dict(data)

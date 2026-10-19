@@ -7,17 +7,16 @@ from dataclasses import dataclass
 from typing import Any
 
 from ..config_loader import PROJECT_ROOT
-from ..engine_config_dataclasses import PlotPointRanges
 from ..engine_loader import eng
 from ..gamemaster.clocks import count_emergent_clocks, unique_clock_name
-from ..gamemaster.keyed_scenes import spawn_keyed_scenes_for_clock
+from ..gamemaster.config import gm
+from ..gamemaster.keyed_scenes import new_keyed_scene, spawn_keyed_scenes_for_clock
 from ..gamemaster.questions import answers
 from ..gamemaster.spawn_sources import AC_SOURCE_PREFIX
 from ..logging_util import log
 from ..models import ClockData, GameState
 from ..models_story import (
     CharacterListEntry,
-    KeyedScene,
     NarrativeState,
     PlotlineEntry,
     PossibleEnding,
@@ -25,6 +24,7 @@ from ..models_story import (
     StoryAct,
     StoryBlueprint,
 )
+from .config import PlotPointRanges, crafter
 
 _AC_DATA_PATH = PROJECT_ROOT / "data" / "adventure_crafter.json"
 
@@ -42,7 +42,7 @@ def _load_ac_data() -> dict[str, Any]:
 
 
 def _validate_random_themes(data: dict[str, Any]) -> None:
-    cfg = eng().adventure_crafter
+    cfg = crafter().adventure_crafter
     json_table: dict[int, str] = {}
     for entry in data["random_themes"]:
         for face in range(entry["min"], entry["max"] + 1):
@@ -90,17 +90,17 @@ class ThemeAlternation:
 
 
 def _table_roll(rng: random.Random) -> int:
-    return rng.randint(1, eng().adventure_crafter_dice.table_die)
+    return rng.randint(1, crafter().adventure_crafter_dice.table_die)
 
 
 def assign_themes(rng: random.Random) -> list[str]:
-    cfg = eng().adventure_crafter
-    die = eng().adventure_crafter_dice.theme_die
+    cfg = crafter().adventure_crafter
+    die = crafter().adventure_crafter_dice.theme_die
     return [cfg.theme_die_table[rng.randint(1, die)] for _ in range(cfg.theme_slots)]
 
 
 def lookup_plot_point(theme: str, roll: int) -> PlotPointResult:
-    cfg = eng().adventure_crafter
+    cfg = crafter().adventure_crafter
     data = _load_ac_data()
     for entry in data["plot_points"]:
         themes = entry["themes"]
@@ -166,7 +166,7 @@ def lookup_plotlines_template(roll: int) -> str:
 
 
 def _ac_active_characters(narrative: NarrativeState) -> list[CharacterListEntry]:
-    present = eng().adventure_crafter.present_character_statuses
+    present = crafter().adventure_crafter.present_character_statuses
     return [c for c in narrative.characters_list if c.ac_status in present]
 
 
@@ -220,7 +220,7 @@ def _create_plotline(narrative: NarrativeState, name: str) -> PlotlineEntry:
 def _roll_plot_point(
     rng: random.Random, themes: list[str], alternation: ThemeAlternation, conclusion_counts_as_none: bool
 ) -> PlotPointHit:
-    priority = lookup_theme_priority(rng.randint(1, eng().adventure_crafter_dice.theme_die), alternation)
+    priority = lookup_theme_priority(rng.randint(1, crafter().adventure_crafter_dice.theme_die), alternation)
     theme_index = priority - 1
     if not 0 <= theme_index < len(themes):
         raise LookupError(f"theme priority {priority} outside themes list of length {len(themes)}")
@@ -228,10 +228,10 @@ def _roll_plot_point(
     plot_roll = _table_roll(rng)
     result = lookup_plot_point(theme, plot_roll)
     if result.special_range == "conclusion" and conclusion_counts_as_none:
-        special_ranges = eng().adventure_crafter.special_ranges
+        special_ranges = crafter().adventure_crafter.special_ranges
         none_roll = next(
             r
-            for r in range(1, eng().adventure_crafter_dice.table_die + 1)
+            for r in range(1, crafter().adventure_crafter_dice.table_die + 1)
             if _special_range_for(r, special_ranges) == "none"
         )
         return PlotPointHit(theme=theme, name=lookup_plot_point(theme, none_roll).name, special_range="none")
@@ -243,7 +243,7 @@ def roll_turning_point(
     themes: list[str],
     narrative: NarrativeState,
 ) -> TurningPoint:
-    cfg = eng().adventure_crafter
+    cfg = crafter().adventure_crafter
     if len(themes) != cfg.theme_slots:
         raise ValueError(f"themes length {len(themes)} != theme_slots {cfg.theme_slots}")
 
@@ -254,7 +254,7 @@ def roll_turning_point(
     if plotline_template == "new_plotline" or existing_plotline is None:
         plotline = _create_plotline(
             narrative,
-            name=eng().adventure_crafter.plotline_name_template.format(n=len(narrative.plotlines_list) + 1),
+            name=crafter().adventure_crafter.plotline_name_template.format(n=len(narrative.plotlines_list) + 1),
         )
         plotline_was_new = True
     else:
@@ -295,7 +295,7 @@ MetaHandler = Callable[[NarrativeState, str | None], None]
 
 
 def _apply_weight_delta(target: CharacterListEntry, delta: int) -> None:
-    floor = eng().adventure_crafter.meta_handlers.weight_floor
+    floor = crafter().adventure_crafter.meta_handlers.weight_floor
     target.weight = max(floor, target.weight + delta)
 
 
@@ -315,7 +315,9 @@ def _meta_character_returns(narrative: NarrativeState, _active_plotline_id: str 
     if not exited:
         new_char = _create_character(
             narrative,
-            name=eng().adventure_crafter.returning_character_name_template.format(n=len(narrative.characters_list) + 1),
+            name=crafter().adventure_crafter.returning_character_name_template.format(
+                n=len(narrative.characters_list) + 1
+            ),
         )
         new_char.ac_status = "returned"
         log(f"[AdventureCrafter] character_returns: no exited characters, created new '{new_char.name}'")
@@ -333,7 +335,7 @@ def _meta_character_steps_up(narrative: NarrativeState, _active_plotline_id: str
         log("[AdventureCrafter] character_steps_up: no active character")
         return
     target = rng.choice(active)
-    _apply_weight_delta(target, eng().adventure_crafter.meta_handlers.weight_delta_step_up)
+    _apply_weight_delta(target, crafter().adventure_crafter.meta_handlers.weight_delta_step_up)
     log(f"[AdventureCrafter] character_steps_up: '{target.name}' weight → {target.weight}")
 
 
@@ -344,7 +346,7 @@ def _meta_character_steps_down(narrative: NarrativeState, _active_plotline_id: s
         log("[AdventureCrafter] character_steps_down: no active character")
         return
     target = rng.choice(active)
-    _apply_weight_delta(target, eng().adventure_crafter.meta_handlers.weight_delta_step_down)
+    _apply_weight_delta(target, crafter().adventure_crafter.meta_handlers.weight_delta_step_down)
     log(f"[AdventureCrafter] character_steps_down: '{target.name}' weight → {target.weight}")
 
 
@@ -356,7 +358,7 @@ def _meta_character_downgrade(narrative: NarrativeState, _active_plotline_id: st
         return
     target = rng.choice(active)
     target.ac_status = "downgraded"
-    _apply_weight_delta(target, eng().adventure_crafter.meta_handlers.weight_delta_downgrade)
+    _apply_weight_delta(target, crafter().adventure_crafter.meta_handlers.weight_delta_downgrade)
     log(f"[AdventureCrafter] character_downgrade: '{target.name}' downgraded weight → {target.weight}")
 
 
@@ -368,7 +370,7 @@ def _meta_character_upgrade(narrative: NarrativeState, _active_plotline_id: str 
         return
     target = rng.choice(active)
     target.ac_status = "upgraded"
-    _apply_weight_delta(target, eng().adventure_crafter.meta_handlers.weight_delta_upgrade)
+    _apply_weight_delta(target, crafter().adventure_crafter.meta_handlers.weight_delta_upgrade)
     log(f"[AdventureCrafter] character_upgrade: '{target.name}' upgraded weight → {target.weight}")
 
 
@@ -456,10 +458,10 @@ def lookup_character_descriptor(roll: int) -> str:
 
 
 def roll_character_traits(rng: random.Random) -> CharacterTraits:
-    die = eng().adventure_crafter_dice.table_die
+    die = crafter().adventure_crafter_dice.table_die
     special_trait = lookup_character_special_trait(rng.randint(1, die))
 
-    cfg = eng().adventure_crafter
+    cfg = crafter().adventure_crafter
     identity_twice = _roll_twice_max("character_identity", cfg.identity_roll_twice_row, "identity")
     descriptor_twice = _roll_twice_max("character_descriptors", cfg.descriptor_roll_twice_row, "descriptor")
 
@@ -505,7 +507,7 @@ def _next_keyed_scene_id(narrative: NarrativeState) -> str:
 
 
 def spawn_keyed_scenes_for_turning_point(narrative: NarrativeState, turning_point: TurningPoint) -> None:
-    cfg = eng().adventure_crafter
+    cfg = crafter().adventure_crafter
     mapping = cfg.keyed_scene_mapping
     cap = cfg.max_keyed_scenes_per_chapter
 
@@ -522,7 +524,7 @@ def spawn_keyed_scenes_for_turning_point(narrative: NarrativeState, turning_poin
 
         entry = mapping[hit.name]
         scene_id = _next_keyed_scene_id(narrative)
-        scene = KeyedScene(
+        scene = new_keyed_scene(
             id=scene_id,
             trigger_type=entry.trigger_type,
             trigger_value=entry.trigger_value,
@@ -538,7 +540,7 @@ def spawn_keyed_scenes_for_turning_point(narrative: NarrativeState, turning_poin
 
 
 def spawn_dangers_for_turning_point(game: GameState, turning_point: TurningPoint) -> None:
-    danger_plot_points = eng().adventure_crafter.danger_plot_points
+    danger_plot_points = crafter().adventure_crafter.danger_plot_points
     for hit in turning_point.plot_points:
         if hit.special_range is None and hit.name in danger_plot_points:
             answers().add_danger(game, hit.name, f"{AC_SOURCE_PREFIX}{hit.name}", None)
@@ -550,8 +552,8 @@ def _ac_clock_already_spawned(game: GameState, plot_point_name: str) -> bool:
 
 
 def spawn_clocks_for_turning_point(game: GameState, turning_point: TurningPoint) -> None:
-    cfg = eng().adventure_crafter
-    clocks_cfg = eng().clocks
+    cfg = crafter().adventure_crafter
+    clocks_cfg = gm().clocks
     mapping = cfg.clock_creation_mapping
     cap = clocks_cfg.max_clocks_per_chapter
 
@@ -642,7 +644,7 @@ def assemble_blueprint_seed_from_ac(
     game: GameState,
 ) -> BlueprintSeed:
     narrative = game.narrative
-    bp_cfg = eng().adventure_crafter.blueprint
+    bp_cfg = crafter().adventure_crafter.blueprint
     themes = assign_themes(rng)
     pre_rolled_count = bp_cfg.turning_points_pre_rolled
     turning_points: list[TurningPoint] = []
@@ -680,7 +682,7 @@ def assemble_blueprint_seed_kishotenketsu(
     game: GameState,
 ) -> BlueprintSeed:
     narrative = game.narrative
-    bp_cfg = eng().adventure_crafter.blueprint
+    bp_cfg = crafter().adventure_crafter.blueprint
     themes = assign_themes(rng)
 
     act_count = bp_cfg.acts_kishotenketsu
@@ -703,8 +705,8 @@ def assemble_blueprint_seed_kishotenketsu(
 
 
 def materialize_blueprint(seed: BlueprintSeed, voicing: dict[str, Any]) -> StoryBlueprint:
-    bp_cfg = eng().adventure_crafter.blueprint
-    weights = list(eng().enums.dramatic_weights)
+    bp_cfg = crafter().adventure_crafter.blueprint
+    weights = list(gm().enums.dramatic_weights)
 
     voicing_acts = list(voicing["acts"])
     if len(voicing_acts) != len(seed.acts):

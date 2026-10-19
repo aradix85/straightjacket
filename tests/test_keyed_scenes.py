@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import pytest
 
-from straightjacket.engine.engine_loader import eng
-from straightjacket.engine.gamemaster.keyed_scenes import evaluate_keyed_scenes
+from straightjacket.engine.gamemaster.config import gm
+from straightjacket.engine.gamemaster.keyed_scenes import evaluate_keyed_scenes, new_keyed_scene
 from straightjacket.engine.gamemaster.scene import SceneSetup, check_scene
 from straightjacket.engine.models import (
     GameState,
@@ -37,17 +37,18 @@ def _ks(**kwargs) -> KeyedScene:
 
 def test_keyed_scene_unknown_trigger_type_raises():
     with pytest.raises(ValueError, match="Unknown KeyedScene trigger_type"):
-        KeyedScene(
+        new_keyed_scene(
             id="ks_bad",
             trigger_type="not_a_real_trigger",
             trigger_value="x",
             priority=1,
             narrative_hint="",
+            source="test",
         )
 
 
 def test_keyed_scene_each_registered_trigger_constructs():
-    for trigger_name in eng().keyed_scenes.triggers:
+    for trigger_name in gm().keyed_scenes.triggers:
         _ks(id=f"ks_{trigger_name}", trigger_type=trigger_name, trigger_value="x:1")
 
 
@@ -139,19 +140,19 @@ def test_bond_threshold_unknown_npc_raises():
 
 
 def test_chaos_extreme_max_fires_at_chaos_max():
-    game = _seed_game(chaos_factor=eng().chaos.max)
+    game = _seed_game(chaos_factor=gm().chaos.max)
     game.narrative.keyed_scenes.append(_ks(trigger_type="chaos_extreme", trigger_value="max"))
     assert evaluate_keyed_scenes(game) is not None
 
 
 def test_chaos_extreme_min_fires_at_chaos_min():
-    game = _seed_game(chaos_factor=eng().chaos.min)
+    game = _seed_game(chaos_factor=gm().chaos.min)
     game.narrative.keyed_scenes.append(_ks(trigger_type="chaos_extreme", trigger_value="min"))
     assert evaluate_keyed_scenes(game) is not None
 
 
 def test_chaos_extreme_does_not_fire_in_middle():
-    mid = (eng().chaos.min + eng().chaos.max) // 2
+    mid = (gm().chaos.min + gm().chaos.max) // 2
     game = _seed_game(chaos_factor=mid)
     game.narrative.keyed_scenes.append(_ks(trigger_type="chaos_extreme", trigger_value="max"))
     assert evaluate_keyed_scenes(game) is None

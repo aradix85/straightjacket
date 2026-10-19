@@ -5,9 +5,9 @@ import random
 from typing import Any
 
 from ..config_loader import PROJECT_ROOT
-from ..engine_loader import eng
 from ..logging_util import log
 from ..models import FateResult, GameState
+from .config import gm
 
 _MYTHIC_DATA_PATH = PROJECT_ROOT / "data" / "mythic_gme_2e.json"
 
@@ -33,7 +33,7 @@ def resolve_fate_chart(odds: str, chaos_factor: int) -> FateResult:
         raise KeyError(f"Unknown chaos_factor {chaos_factor} (valid: 1..{len(chart[odds])})")
 
     cell = chart[odds][chaos_factor - 1]
-    roll = random.randint(1, eng().mythic_dice.fate_chart_die)
+    roll = random.randint(1, gm().mythic_dice.fate_chart_die)
 
     ey_threshold = cell["exceptional_yes"]
     yes_threshold = cell["yes"]
@@ -56,7 +56,7 @@ def resolve_fate_chart(odds: str, chaos_factor: int) -> FateResult:
 
 
 def _check_chart_random_event(roll: int, chaos_factor: int) -> bool:
-    if roll == eng().mythic_dice.fate_chart_die:
+    if roll == gm().mythic_dice.fate_chart_die:
         return True
     tens = roll // 10
     ones = roll % 10
@@ -88,7 +88,7 @@ def resolve_fate_check(odds: str, chaos_factor: int) -> FateResult:
     if chaos_factor not in chaos_modifiers:
         raise KeyError(f"Unknown chaos_factor {chaos_factor} (valid: {sorted(chaos_modifiers)})")
 
-    die = eng().mythic_dice.fate_check_die
+    die = gm().mythic_dice.fate_check_die
     d1, d2 = random.randint(1, die), random.randint(1, die)
 
     odds_mod = odds_modifiers[odds]
@@ -113,7 +113,7 @@ def _check_check_random_event(d1: int, d2: int, chaos_factor: int) -> bool:
 
 
 def resolve_fate(game: GameState, odds: str) -> FateResult:
-    method = eng().fate.default_method
+    method = gm().fate.default_method
     if method == "fate_check":
         result = resolve_fate_check(odds, game.world.chaos_factor)
     elif method == "fate_chart":
@@ -130,7 +130,7 @@ def resolve_fate(game: GameState, odds: str) -> FateResult:
 
 
 def score_to_odds(score: int) -> str:
-    for entry in eng().fate.likelihood_rules.score_to_odds:
+    for entry in gm().fate.likelihood_rules.score_to_odds:
         if score >= int(entry["min_score"]):
             return str(entry["odds"])
     raise ValueError(

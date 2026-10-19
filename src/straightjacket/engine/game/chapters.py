@@ -15,6 +15,7 @@ from ..crafters.adventure_crafter import (
     materialize_blueprint,
 )
 from ..engine_loader import eng
+from ..gamemaster.config import gm
 from ..gamemaster.npc.matching import next_npc_id
 from ..gamemaster.npc.memory import consolidate_memory
 from ..gamemaster.world import choose_story_structure, clear_facts, record_scene_intensity
@@ -31,6 +32,7 @@ from ..parser import parse_narrator_response
 from ..prompt_boundary import build_epilogue_prompt, build_new_chapter_prompt
 from ..prompt_loader import get_prompt
 from ..ruleset.bond import get_npc_bond
+from ..ruleset.progress import menace_boxes, menace_total_boxes
 from .setup_common import apply_opening_setup
 
 
@@ -60,7 +62,7 @@ def start_new_chapter(provider: AIProvider, game: GameState) -> str:
     _prepare_npcs_for_new_chapter(game)
 
     threads = chapter_summary.unresolved_threads
-    _chap = eng().chapter
+    _chap = gm().chapter
     _defaults = eng().ai_text.narrator_defaults
     if threads:
         threads_text = "; ".join(threads[: _chap.scene_context_threads_max])
@@ -68,7 +70,7 @@ def start_new_chapter(provider: AIProvider, game: GameState) -> str:
     else:
         game.world.current_scene_context = _defaults["new_chapter_blank"]
 
-    returning = eng().npc_status_groups.chapter_returning
+    returning = gm().npc_status_groups.chapter_returning
     returning_npcs = [copy.deepcopy(n) for n in game.npcs if n.status in returning]
 
     narration, setup_data = _generate_chapter_opening(provider, game, returning_npcs)
@@ -94,7 +96,7 @@ def _people(game: GameState) -> list[str]:
             "block_chapter_record_person", who=n.name, disposition=n.disposition, bond=str(get_npc_bond(game, n.id))
         )
         for n in game.npcs
-        if n.status in eng().npc_status_groups.in_play
+        if n.status in gm().npc_status_groups.in_play
     ]
 
 
@@ -103,8 +105,8 @@ def _active_threats(game: GameState) -> list[str]:
         get_prompt(
             "block_chapter_record_threat",
             threat=th.name,
-            filled=str(th.menace_filled_boxes),
-            total=str(th.menace_total_boxes),
+            filled=str(menace_boxes(th)),
+            total=str(menace_total_boxes(th)),
         )
         for th in game.threats
         if th.status == "active"
@@ -149,15 +151,14 @@ def _close_previous_chapter(game: GameState) -> ChapterSummary:
 
 
 def _reset_chapter_mechanics(game: GameState) -> None:
-    _e = eng()
     game.narrative.scene_count = 1
-    game.world.chaos_factor = _e.chaos.start
+    game.world.chaos_factor = gm().chaos.start
     game.campaign.epilogue_dismissed = False
     game.narrative.session_log = []
     game.narrative.narration_history = []
     game.narrative.scene_intensity_history = []
     game.narrative.story_blueprint = None
-    game.world.time_of_day = eng().opening.time_of_day
+    game.world.time_of_day = gm().opening.time_of_day
     game.world.location_history = []
     clear_facts(game)
     game.narrative.director_guidance = DirectorGuidance()
@@ -169,15 +170,15 @@ def _prepare_npcs_for_new_chapter(game: GameState) -> None:
         if npc.status != "active":
             continue
         is_filler = (
-            get_npc_bond(game, npc.id) <= eng().chapter.filler_bond_max
-            and len(npc.memory) <= eng().chapter.filler_max
+            get_npc_bond(game, npc.id) <= gm().chapter.filler_bond_max
+            and len(npc.memory) <= gm().chapter.filler_max
             and not npc.agenda.strip()
         )
         if is_filler:
             npc.status = "background"
             log(f"[Campaign] Retired NPC to background at chapter boundary: {npc.name} (low-engagement filler)")
 
-    _chap_cfg = eng().chapter
+    _chap_cfg = gm().chapter
     for npc in game.npcs:
         if len(npc.memory) > _chap_cfg.open_threads_max:
             scored = sorted(npc.memory, key=lambda m: (m.importance, m.scene), reverse=True)

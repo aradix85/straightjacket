@@ -1,8 +1,8 @@
 import random
 
-from ..engine_loader import eng
 from ..gamemaster.clock_ticks import check_npc_agency, tick_threat_clock
 from ..gamemaster.complications import avert_complication
+from ..gamemaster.config import gm
 from ..gamemaster.npc.matching import find_npc
 from ..gamemaster.resolvers import resolve_effect, resolve_position
 from ..models import (
@@ -16,8 +16,10 @@ from ..models import (
     ThreatEvent,
     consequence,
 )
+from ..ruleset.config import rules
 from ..ruleset.move_outcome import make_follow_up_moves
 from ..ruleset.outcome_result import OutcomeResult, move_outcome_config
+from ..ruleset.progress import menace_boxes, menace_total_boxes
 from ..ruleset.suffer import tick_dying_clock
 from ..ruleset.threats import advance_menace_on_miss, resolve_full_menace, take_pending_threat_events
 from ..ruleset.tracks import complete_track, recommit_track, start_track
@@ -26,8 +28,8 @@ from .turn_types import ActionResolution, RollOutcome
 
 
 def _apply_track_completion(game: GameState, roll: RollResult, track: ProgressTrack, outcome: OutcomeResult) -> None:
-    if roll.result in eng().dice.hit_results:
-        bonded = track.track_type in eng().get_raw("tracks_bonded_on_a_hit")
+    if roll.result in rules().dice.hit_results:
+        bonded = track.track_type in rules().get_raw("tracks_bonded_on_a_hit")
         complete_track(game, track.id, "bonded" if bonded else "completed")
         return
     cfg = move_outcome_config(game, roll.move)
@@ -46,7 +48,7 @@ def _maybe_tick_weak_hit_clock(
 ) -> None:
     if roll.result != "WEAK_HIT" or position == "controlled":
         return
-    should_tick = (position == "desperate") or (random.random() < eng().pacing.weak_hit_clock_tick_chance)
+    should_tick = (position == "desperate") or (random.random() < gm().pacing.weak_hit_clock_tick_chance)
     if should_tick:
         tick_threat_clock(game, 1, clock_events, fill_results)
 
@@ -54,7 +56,7 @@ def _maybe_tick_weak_hit_clock(
 def _maybe_avert_complication(
     game: GameState, brain: BrainResult, roll: RollResult, consequences: list[Consequence]
 ) -> None:
-    if not brain.target_clock or roll.result not in eng().dice.hit_results:
+    if not brain.target_clock or roll.result not in rules().dice.hit_results:
         return
     avert_complication(game, brain.target_clock)
     consequences.append(consequence("complication_averted", name=brain.target_clock))
@@ -66,9 +68,9 @@ def _collect_threat_events(game: GameState, roll: RollResult, outcome: OutcomeRe
         events.extend(advance_menace_on_miss(game))
     events.extend(resolve_full_menace(game, outcome))
 
-    high_threshold = eng().threats.menace_high_threshold
+    high_threshold = rules().threats.menace_high_threshold
     for threat in game.threats:
-        if threat.status == "overcome" and threat.menace_filled_boxes / threat.menace_total_boxes >= high_threshold:
+        if threat.status == "overcome" and menace_boxes(threat) / menace_total_boxes(threat) >= high_threshold:
             events.append(
                 ThreatEvent(
                     threat_id=threat.id,
@@ -82,7 +84,7 @@ def _collect_threat_events(game: GameState, roll: RollResult, outcome: OutcomeRe
 
 
 def _track_gather_information_success(game: GameState, brain: BrainResult, roll: RollResult) -> None:
-    if brain.move != "adventure/gather_information" or roll.result not in eng().dice.hit_results:
+    if brain.move != "adventure/gather_information" or roll.result not in rules().dice.hit_results:
         return
     if brain.target_npc is None:
         return

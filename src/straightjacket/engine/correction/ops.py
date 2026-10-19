@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from ..engine_loader import eng
+from ..gamemaster.config import gm
 from ..gamemaster.npc.lifecycle import absorb_npc
 from ..gamemaster.npc.matching import find_npc, next_npc_id
 from ..gamemaster.npc.naming import roll_oracle_name
@@ -91,7 +91,7 @@ def _op_scene_context(game: GameState, op_dict: dict[str, Any]) -> None:
 
 
 def _op_time_edit(game: GameState, op_dict: dict[str, Any]) -> None:
-    if op_dict["value"] not in eng().enums.time_phases:
+    if op_dict["value"] not in gm().enums.time_phases:
         _skip(op_dict, f"{op_dict['value']!r} is no time of day")
         return
     game.world.time_of_day = op_dict["value"]

@@ -3,12 +3,12 @@ from __future__ import annotations
 import random
 from typing import Any
 
-from ..engine_loader import eng
 from ..logging_util import log
-from ..models import ClockData, GameState, KeyedScene, RandomEvent
+from ..models import ClockData, GameState, RandomEvent
 from .clocks import count_emergent_clocks, unique_clock_name
+from .config import gm
 from .fate import _load_mythic
-from .keyed_scenes import spawn_keyed_scenes_for_clock
+from .keyed_scenes import new_keyed_scene, spawn_keyed_scenes_for_clock
 from .npc.matching import find_npc
 from .questions import answers
 from .spawn_sources import RANDOM_EVENT_SOURCE_PREFIX
@@ -24,7 +24,7 @@ def drain_pending_events() -> list[RandomEvent]:
 
 def roll_event_focus() -> str:
     table = _load_mythic()["event_focus"]
-    roll = random.randint(1, eng().mythic_dice.event_focus_die)
+    roll = random.randint(1, gm().mythic_dice.event_focus_die)
 
     for entry in table:
         if entry["min"] <= roll <= entry["max"]:
@@ -65,7 +65,7 @@ def _select_from_weighted_list(entries: list[Any]) -> tuple[str, str]:
 
 
 def _select_target(focus: str, game: GameState) -> tuple[str, str]:
-    cfg = eng().random_events
+    cfg = gm().random_events
 
     if focus in cfg.threat_eligible_focus_categories:
         open_dangers = [d for d in answers().dangers(game) if d.open]
@@ -90,7 +90,7 @@ def _select_target(focus: str, game: GameState) -> tuple[str, str]:
 
 
 def generate_random_event(game: GameState, source: str) -> RandomEvent:
-    cfg = eng().random_events
+    cfg = gm().random_events
 
     focus = roll_event_focus()
 
@@ -132,7 +132,7 @@ def _re_next_keyed_scene_id(game: GameState) -> str:
 
 
 def spawn_keyed_scene_from_random_event(game: GameState, event: RandomEvent) -> None:
-    cfg = eng().random_events
+    cfg = gm().random_events
     if event.focus not in cfg.keyed_scene_mapping:
         return
     if not event.target_id:
@@ -159,7 +159,7 @@ def spawn_keyed_scene_from_random_event(game: GameState, event: RandomEvent) -> 
     trigger_value = f"{pool}:{entry.threshold}"
 
     scene_id = _re_next_keyed_scene_id(game)
-    scene = KeyedScene(
+    scene = new_keyed_scene(
         id=scene_id,
         trigger_type=entry.trigger_type,
         trigger_value=trigger_value,
@@ -176,7 +176,7 @@ def spawn_keyed_scene_from_random_event(game: GameState, event: RandomEvent) -> 
 
 
 def spawn_danger_from_random_event(game: GameState, event: RandomEvent) -> None:
-    if event.focus not in eng().random_events.danger_foci:
+    if event.focus not in gm().random_events.danger_foci:
         return
     answers().add_danger(
         game,
@@ -195,7 +195,7 @@ def _re_clock_already_spawned(game: GameState, focus: str, dedup_key: str) -> bo
 
 
 def spawn_clock_from_random_event(game: GameState, event: RandomEvent) -> None:
-    cfg = eng().random_events
+    cfg = gm().random_events
     if event.focus not in cfg.clock_creation_mapping:
         return
 
@@ -203,7 +203,7 @@ def spawn_clock_from_random_event(game: GameState, event: RandomEvent) -> None:
     if _re_clock_already_spawned(game, event.focus, dedup_key):
         return
 
-    clocks_cfg = eng().clocks
+    clocks_cfg = gm().clocks
     if count_emergent_clocks(game) >= clocks_cfg.max_clocks_per_chapter:
         log(f"[Clock] emergent clock cap {clocks_cfg.max_clocks_per_chapter} reached, skipping focus '{event.focus}'")
         return
@@ -234,7 +234,7 @@ def _name_from_mythic_pair(action: str, subject: str) -> str:
 
 
 def add_thread_weight(game: GameState, thread_id: str) -> None:
-    cap = eng().random_events.list_weight_max
+    cap = gm().random_events.list_weight_max
     for t in game.narrative.threads:
         if t.id == thread_id and t.active:
             if t.weight < cap:
@@ -244,7 +244,7 @@ def add_thread_weight(game: GameState, thread_id: str) -> None:
 
 
 def add_character_weight(game: GameState, character_id: str) -> None:
-    cap = eng().random_events.list_weight_max
+    cap = gm().random_events.list_weight_max
     for c in game.narrative.characters_list:
         if c.id == character_id and c.active:
             if c.weight < cap:
@@ -254,7 +254,7 @@ def add_character_weight(game: GameState, character_id: str) -> None:
 
 
 def consolidate_threads(game: GameState) -> None:
-    cfg = eng().random_events
+    cfg = gm().random_events
     threads = [t for t in game.narrative.threads if t.active]
     if len(threads) < cfg.consolidation_threshold:
         return
@@ -270,7 +270,7 @@ def consolidate_threads(game: GameState) -> None:
 
 
 def consolidate_characters(game: GameState) -> None:
-    cfg = eng().random_events
+    cfg = gm().random_events
     chars = [c for c in game.narrative.characters_list if c.active]
     if len(chars) < cfg.consolidation_threshold:
         return

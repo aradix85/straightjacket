@@ -1,5 +1,7 @@
 from typing import TYPE_CHECKING, Any
 
+from ..config import gm
+
 if TYPE_CHECKING:
     from ...models import GameState
 
@@ -78,7 +80,7 @@ def _create_stub_for_rejected_reveal(
         id=npc_id,
         name=new_name,
         description=stub_desc,
-        disposition=eng().npc.default_new_npc_disposition,
+        disposition=gm().npc.default_new_npc_disposition,
         status="active",
         name_rolled=False,
         aliases=paren_aliases,
@@ -168,7 +170,7 @@ def _handle_exact_name_match(game: "GameState", name_norm: str) -> None:
     existing = next((n for n in game.npcs if normalize_for_match(n.name) == name_norm), None)
     if existing is None:
         return
-    if existing.status in eng().npc_status_groups.reactivatable:
+    if existing.status in gm().npc_status_groups.reactivatable:
         reactivate_npc(existing, reason="reappeared in new_npcs")
     elif existing.status == "deceased":
         reactivate_npc(existing, reason="resurrected -- exact name in new_npcs", force=True)
@@ -202,7 +204,7 @@ def _keep_name_add_alias(npc: NpcData, label: str, reason: str) -> None:
     if normalize_for_match(label) not in {normalize_for_match(a) for a in npc.aliases}:
         npc.aliases.append(label)
         log(f"[NPC] Added alias: '{label}' -> '{npc.name}'")
-    if npc.status in eng().npc_status_groups.reactivatable:
+    if npc.status in gm().npc_status_groups.reactivatable:
         reactivate_npc(npc, reason=reason)
 
 
@@ -245,8 +247,8 @@ def _create_new_npc(game: "GameState", nd: dict[str, Any]) -> NpcData:
 
 def _seed_initial_memory(game: "GameState", npc: NpcData, nd: dict[str, Any]) -> None:
     seed_event = nd["description"] or eng().ai_text.narrator_defaults["npc_appeared_event"].format(npc_name=npc.name)
-    seed_emotion = eng().get_raw("disposition_to_seed_emotion")[nd["disposition"]]
-    seed_imp = max(score_importance(seed_emotion, seed_event), eng().npc.seed_importance_floor)
+    seed_emotion = gm().get_raw("disposition_to_seed_emotion")[nd["disposition"]]
+    seed_imp = max(score_importance(seed_emotion, seed_event), gm().npc.seed_importance_floor)
     npc.memory.append(
         MemoryEntry(
             scene=game.narrative.scene_count,

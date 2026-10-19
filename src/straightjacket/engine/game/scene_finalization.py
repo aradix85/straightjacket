@@ -3,8 +3,8 @@ from typing import Any
 
 from ..ai.brain import call_revelation_check
 from ..director import should_call_director
-from ..engine_loader import eng
 from ..gamemaster.clock_ticks import tick_autonomous_clocks
+from ..gamemaster.config import gm
 from ..gamemaster.npc.matching import find_npc
 from ..gamemaster.questions import outcome_of
 from ..gamemaster.random_events import (
@@ -118,13 +118,13 @@ def finalize_scene(
             narration=narration,
         )
     )
-    if len(nar.narration_history) > eng().pacing.max_narration_history:
-        nar.narration_history = nar.narration_history[-eng().pacing.max_narration_history :]
+    if len(nar.narration_history) > gm().pacing.max_narration_history:
+        nar.narration_history = nar.narration_history[-gm().pacing.max_narration_history :]
 
     log_entry.pop("_pacing_type")
     nar.session_log.append(SceneLogEntry(**log_entry))
-    if len(nar.session_log) > eng().pacing.max_session_log:
-        nar.session_log = nar.session_log[-eng().pacing.max_session_log :]
+    if len(nar.session_log) > gm().pacing.max_session_log:
+        nar.session_log = nar.session_log[-gm().pacing.max_session_log :]
 
     auto_clock_events = tick_autonomous_clocks(game)
     nar.session_log[-1].clock_events.extend(agency_clock_events)

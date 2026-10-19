@@ -13,9 +13,8 @@ from .provider_base import AICallSpec, AIProvider, create_with_retry
 
 def call_recap(provider: AIProvider, game: GameState) -> str:
     lang = narration_language()
-    _e = eng()
-    _defaults = _e.ai_text.narrator_defaults
-    _limits = _e.recap_limits
+    _defaults = eng().ai_text.narrator_defaults
+    _limits = eng().recap_limits
     log_text = "; ".join(
         f"S{s.scene}:{s.rich_summary or s.summary}({s.result})"
         for s in game.narrative.session_log[-_limits.recap_log_window :]

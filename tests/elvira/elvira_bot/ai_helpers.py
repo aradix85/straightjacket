@@ -8,6 +8,7 @@ import yaml
 from straightjacket.engine.ai.api_client import provider_named
 from straightjacket.engine.ai.provider_base import AICallSpec, AIProvider, post_process_response
 from straightjacket.engine.models import GameState
+from straightjacket.engine.ruleset.progress import filled_boxes
 from straightjacket.engine.story_state import get_current_act
 
 _HERE = Path(__file__).resolve().parent.parent
@@ -121,7 +122,7 @@ def build_turn_context(
             name=t.name,
             track_type=t.track_type,
             rank=t.rank,
-            filled_boxes=t.filled_boxes,
+            filled_boxes=filled_boxes(t),
         )
         for t in game.progress_tracks
         if t.status == "active"

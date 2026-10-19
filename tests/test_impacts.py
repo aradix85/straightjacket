@@ -1,6 +1,7 @@
 import pytest
 
 from straightjacket.engine.models import GameState, Resources, labels_of
+from straightjacket.engine.ruleset.config import rules
 from tests._helpers import make_game_state
 
 
@@ -56,16 +57,15 @@ class TestImpactsFromTheRules:
             apply_impact(game, "permanently_harmed")
 
     def test_every_impact_a_move_marks_is_its_rulesets_own(self, load_engine: None) -> None:
-        from straightjacket.engine.engine_loader import eng
         from straightjacket.engine.ruleset.impacts import get_impacts
         from straightjacket.engine.ruleset.moves import get_moves
         from straightjacket.engine.ruleset.outcome_result import move_outcome_config
         from straightjacket.engine.setting.packages import list_packages
 
-        outcomes = eng().get_raw("move_outcomes")
+        outcomes = rules().get_raw("move_outcomes")
         for setting_id in list_packages():
             game = make_game_state(setting_id=setting_id)
-            named: set[str] = set(eng().suffer.exhausted_impacts.values())
+            named: set[str] = set(rules().suffer.exhausted_impacts.values())
             for key in get_moves(setting_id):
                 if key not in outcomes:
                     continue

@@ -2,7 +2,12 @@ from __future__ import annotations
 
 from typing import Any
 
-from ..engine_config import (
+from ..gamemaster.config import gm
+from ..gamemaster.npc.memory import recent_observations
+from ..models import GameState, NpcData
+from ..ruleset.bond import get_npc_bond
+from ..ruleset.config import rules
+from ..ruleset.config_types import (
     ActiveTrackCondition,
     BondedTrackCondition,
     EngineMove,
@@ -10,10 +15,6 @@ from ..engine_config import (
     MoveAvailabilityRule,
     NoActiveTrackCondition,
 )
-from ..engine_loader import eng
-from ..gamemaster.npc.memory import recent_observations
-from ..models import GameState, NpcData
-from ..ruleset.bond import get_npc_bond
 from ..ruleset.moves import Move, get_moves
 from .registry import register
 
@@ -57,7 +58,7 @@ def query_game_state(game: GameState) -> dict[str, Any]:
             for c in game.world.clocks
             if not c.fired
         ],
-        "npcs": [_npc_state(game, npc) for npc in game.npcs if npc.status in eng().npc_status_groups.in_play],
+        "npcs": [_npc_state(game, npc) for npc in game.npcs if npc.status in gm().npc_status_groups.in_play],
     }
 
 
@@ -67,10 +68,10 @@ def available_moves(game: GameState) -> dict[str, Move | EngineMove]:
     moves: dict[str, Move | EngineMove] = {
         key: move
         for key, move in get_moves(game.setting_id).items()
-        if move.roll_type not in eng().unoffered_roll_types
-        and _is_move_available(eng().move_availability[key], track_states, combat_pos)
+        if move.roll_type not in rules().unoffered_roll_types
+        and _is_move_available(rules().move_availability[key], track_states, combat_pos)
     }
-    moves.update(eng().engine_moves)
+    moves.update(rules().engine_moves)
     return moves
 
 

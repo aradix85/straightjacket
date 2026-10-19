@@ -35,40 +35,49 @@ def _reset_random() -> None:
     _random.seed()
 
 
-@pytest.fixture(scope="session")
-def _real_engine():
+def _parse_config(stubbed: bool) -> tuple:
+    from straightjacket.engine import engine_loader
+    from straightjacket.engine.crafters import config as crafters_config
     from straightjacket.engine.engine_config import parse_engine_yaml
-    from straightjacket.engine.engine_loader import _CONFIG_DIRS
+    from straightjacket.engine.gamemaster import config as gamemaster_config
+    from straightjacket.engine.ruleset import config as ruleset_config
     from straightjacket.engine.yaml_merge import load_yaml_dir
 
-    data = load_yaml_dir(*_CONFIG_DIRS, missing_dir_hint="")
-    return parse_engine_yaml(data)
+    engine_data = load_yaml_dir(engine_loader._CONFIG_DIR, missing_dir_hint="")
+    gamemaster_data = load_yaml_dir(gamemaster_config._CONFIG_DIR, missing_dir_hint="")
+    if stubbed:
+        gamemaster_data["story"]["kishotenketsu_probability"] = {"dark_gritty": 0.15}
+        engine_data["creativity_seeds"] = ["amber", "glacier", "compass", "obsidian", "cedar"]
+    return (
+        parse_engine_yaml(engine_data),
+        gamemaster_config.parse_gamemaster_yaml(gamemaster_data),
+        crafters_config.parse_crafters_yaml(load_yaml_dir(crafters_config._CONFIG_DIR, missing_dir_hint="")),
+        ruleset_config.parse_ruleset_yaml(load_yaml_dir(ruleset_config._CONFIG_DIR, missing_dir_hint="")),
+    )
+
+
+@pytest.fixture(scope="session")
+def _real_engine():
+    return _parse_config(stubbed=False)
 
 
 @pytest.fixture(scope="session")
 def _stub_engine_instance():
-    from straightjacket.engine.engine_config import parse_engine_yaml
-    from straightjacket.engine.engine_loader import _CONFIG_DIRS
-    from straightjacket.engine.yaml_merge import load_yaml_dir
-
-    data = load_yaml_dir(*_CONFIG_DIRS, missing_dir_hint="")
-    data["story"]["kishotenketsu_probability"] = {"dark_gritty": 0.15}
-    data["creativity_seeds"] = ["amber", "glacier", "compass", "obsidian", "cedar"]
-    return parse_engine_yaml(data)
+    return _parse_config(stubbed=True)
 
 
 @pytest.fixture
 def load_engine(_real_engine) -> None:
-    from straightjacket.engine import engine_loader
+    from tests._helpers import install_config
 
-    engine_loader._eng = _real_engine
+    install_config(_real_engine)
 
 
 @pytest.fixture
 def stub_engine(_stub_engine_instance) -> None:
-    from straightjacket.engine import engine_loader
+    from tests._helpers import install_config
 
-    engine_loader._eng = _stub_engine_instance
+    install_config(_stub_engine_instance)
 
 
 @pytest.fixture

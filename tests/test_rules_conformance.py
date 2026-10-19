@@ -8,7 +8,10 @@ from typing import Any
 import pytest
 import yaml
 
+from straightjacket.engine.gamemaster.config import gm
 from straightjacket.engine.models import labels_of
+from straightjacket.engine.ruleset.config import rules
+from straightjacket.engine.ruleset.progress import ticks_per_mark
 from tests._helpers import fix_dice
 
 REPO = Path(__file__).resolve().parent.parent
@@ -237,13 +240,11 @@ def test_a_strike_marks_progress_on_the_open_fight(load_engine: None, setting_id
 def test_every_move_that_marks_progress_names_its_track_category(load_engine: None) -> None:
     import yaml
 
-    from straightjacket.engine.engine_loader import eng
-
     outcomes = yaml.safe_load((REPO / "ruleset" / "move_outcomes.yaml").read_text(encoding="utf-8"))["move_outcomes"]
     marking = sorted(move for move, results in outcomes.items() if "mark_progress" in str(results))
-    categories = eng().get_raw("progress_mark_categories")
+    categories = rules().get_raw("progress_mark_categories")
     assert sorted(categories) == marking
-    assert set(categories.values()) <= set(eng().get_raw("track_types_by_category"))
+    assert set(categories.values()) <= set(rules().get_raw("track_types_by_category"))
 
 
 def test_make_a_connection_gives_no_momentum(load_engine: None) -> None:
@@ -272,16 +273,14 @@ def test_a_full_legacy_track_clears_and_then_earns_one_experience_per_box(load_e
 
 
 def test_clocks_use_blades_sizes(load_engine: None) -> None:
-    from straightjacket.engine.engine_loader import eng
 
-    assert eng().clocks.default_segments in (4, 6, 8)
-    assert eng().opening.clock_segments in (4, 6, 8)
+    assert gm().clocks.default_segments in (4, 6, 8)
+    assert gm().opening.clock_segments in (4, 6, 8)
 
 
 def test_mythic_lists_hold_an_entry_at_most_three_times(load_engine: None) -> None:
-    from straightjacket.engine.engine_loader import eng
 
-    assert eng().random_events.list_weight_max == 3
+    assert gm().random_events.list_weight_max == 3
 
 
 def test_meaning_tables_have_the_mythic_2e_shape(load_engine: None) -> None:
@@ -580,7 +579,7 @@ def test_test_your_relationship_marks_progress_on_a_connection_without_a_bond(lo
     roll = RollResult(4, 1, 2, "heart", 2, 6, "STRONG_HIT", "connection/test_your_relationship", match=False)
     brain = make_brain_result(move="connection/test_your_relationship", target_npc="npc_1")
     action = resolve_action_consequences(game, brain, roll, "risky")
-    assert track.ticks == track.ticks_per_mark
+    assert track.ticks == ticks_per_mark(track)
     assert not any(c.startswith("follow-up move") for c in labels_of(action.consequences))
     assert action.outcome.legacy_fixed_ticks == 0
 

@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from ..engine_loader import eng
 from ..logging_util import log
 from ..models import BrainResult, GameState, NpcData
+from .config import gm
 from .npc.matching import find_npc
 from .questions import answers, outcome_of
 
@@ -17,7 +17,7 @@ def _target_npc(game: GameState, brain: BrainResult) -> NpcData | None:
 
 
 def _score_strain(game: GameState) -> int:
-    weights = eng().position_resolver.strain_weights
+    weights = gm().position_resolver.strain_weights
     return sum(weights[level] for level in answers().strain(game))
 
 
@@ -25,7 +25,7 @@ def _score_npc_relationship(game: GameState, brain: BrainResult) -> int:
     target = _target_npc(game, brain)
     if target is None:
         return 0
-    cfg = eng().position_resolver
+    cfg = gm().position_resolver
     score = cfg.disposition_weights[target.disposition]
     closeness = answers().closeness(game, target.id)
     w = cfg.weights
@@ -37,9 +37,8 @@ def _score_npc_relationship(game: GameState, brain: BrainResult) -> int:
 
 
 def _score_chaos_factor(chaos_factor: int) -> int:
-    _e = eng()
-    w = _e.position_resolver.weights
-    chaos_cfg = _e.chaos_resolver
+    w = gm().position_resolver.weights
+    chaos_cfg = gm().chaos_resolver
     if chaos_factor >= chaos_cfg.high_threshold:
         return w.chaos_high
     if chaos_factor <= chaos_cfg.low_threshold:
@@ -48,9 +47,8 @@ def _score_chaos_factor(chaos_factor: int) -> int:
 
 
 def _score_recent_streak(recent_outcomes: list[str]) -> int:
-    _e = eng()
-    w = _e.position_resolver.weights
-    streak = _e.chaos_resolver.recent_result_window
+    w = gm().position_resolver.weights
+    streak = gm().chaos_resolver.recent_result_window
     if len(recent_outcomes) < streak:
         return 0
     tail = recent_outcomes[-streak:]
@@ -62,9 +60,8 @@ def _score_recent_streak(recent_outcomes: list[str]) -> int:
 
 
 def _score_threat_clocks(game: GameState) -> int:
-    _e = eng()
-    w = _e.position_resolver.weights
-    chaos_cfg = _e.chaos_resolver
+    w = gm().position_resolver.weights
+    chaos_cfg = gm().chaos_resolver
     penalty = 0
     for clock in game.world.clocks:
         if not clock.fired and clock.filled / clock.segments >= chaos_cfg.clock_pressure_threshold:
@@ -73,9 +70,9 @@ def _score_threat_clocks(game: GameState) -> int:
 
 
 def _score_position_factors(game: GameState, brain: BrainResult, kind: str) -> int:
-    recent = game.narrative.session_log[-eng().chaos_resolver.recent_session_window :]
+    recent = game.narrative.session_log[-gm().chaos_resolver.recent_session_window :]
     recent_outcomes = [outcome_of(e.result) for e in recent if e.result]
-    advantage = eng().position_resolver.weights.secured_advantage if answers().gained_advantage(game) else 0
+    advantage = gm().position_resolver.weights.secured_advantage if answers().gained_advantage(game) else 0
     return (
         _score_strain(game)
         + _score_npc_relationship(game, brain)
@@ -83,12 +80,12 @@ def _score_position_factors(game: GameState, brain: BrainResult, kind: str) -> i
         + _score_recent_streak(recent_outcomes)
         + _score_threat_clocks(game)
         + advantage
-        + eng().position_resolver.move_baselines[kind]
+        + gm().position_resolver.move_baselines[kind]
     )
 
 
 def _map_score_to_position(score: int) -> str:
-    cfg = eng().position_resolver
+    cfg = gm().position_resolver
     if score <= cfg.desperate_below:
         return "desperate"
     if score >= cfg.controlled_above:
@@ -97,7 +94,7 @@ def _map_score_to_position(score: int) -> str:
 
 
 def _apply_position_overrides(position: str, game: GameState, kind: str) -> str:
-    cfg = eng().position_resolver
+    cfg = gm().position_resolver
     conditions: dict[str, bool] = {
         "secured_advantage": answers().gained_advantage(game),
         "any_strain_critical": "critical" in answers().strain(game),
@@ -126,7 +123,7 @@ def resolve_position(game: GameState, brain: BrainResult) -> str:
 
 
 def resolve_effect(game: GameState, brain: BrainResult, position: str) -> str:
-    cfg = eng().effect_resolver
+    cfg = gm().effect_resolver
     w = cfg.weights
     score = 0
 
@@ -157,7 +154,7 @@ def resolve_effect(game: GameState, brain: BrainResult, position: str) -> str:
 
 
 def resolve_time_progression(move: str, has_location_change: bool) -> str:
-    return eng().location.change_time if has_location_change else answers().time_taken(move)
+    return gm().location.change_time if has_location_change else answers().time_taken(move)
 
 
 def is_dialog_branch(brain: BrainResult) -> bool:

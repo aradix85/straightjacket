@@ -6,6 +6,7 @@ from typing import Any
 from ..engine_loader import eng
 from ..gamemaster.npc.matching import find_npc
 from ..models import BrainResult, ClockEvent, Consequence, GameState
+from .config import rules
 from .impacts import Impact, get_impacts
 
 
@@ -18,7 +19,7 @@ def _meter_event(meter: str, change: int) -> str | None:
     if meter in ("health", "spirit"):
         if change > 0:
             return f"{meter}_gain"
-        return f"{meter}_heavy" if -change >= eng().resources.heavy_loss_amount else f"{meter}_light"
+        return f"{meter}_heavy" if -change >= rules().resources.heavy_loss_amount else f"{meter}_light"
     if meter == "supply":
         return "supply_gain" if change > 0 else "supply_any"
     return None

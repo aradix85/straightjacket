@@ -6,7 +6,6 @@ from typing import Any
 
 import pytest
 
-from straightjacket.engine.engine_loader import eng
 from straightjacket.engine.game.succession import (
     END_REASONS,
     _filter_threads_for_successor,
@@ -15,11 +14,14 @@ from straightjacket.engine.game.succession import (
     prepare_succession,
     start_succession_with_character,
 )
+from straightjacket.engine.gamemaster.config import gm
 from straightjacket.engine.models import (
     CampaignState,
     GameState,
     ThreadEntry,
 )
+from straightjacket.engine.ruleset.config import rules
+from straightjacket.engine.ruleset.progress import filled_boxes, new_track
 from straightjacket.engine.ruleset.succession import (
     apply_npc_carryover,
     build_predecessor_record,
@@ -77,13 +79,13 @@ def test_run_inheritance_rolls_returns_one_per_legacy_track(aria: GameState) -> 
 
 
 def test_run_inheritance_rolls_does_not_mutate_predecessor(aria: GameState) -> None:
-    pre_quests = aria.campaign.legacy_quests.filled_boxes
-    pre_bonds = aria.campaign.legacy_bonds.filled_boxes
-    pre_disc = aria.campaign.legacy_discoveries.filled_boxes
+    pre_quests = filled_boxes(aria.campaign.legacy_quests)
+    pre_bonds = filled_boxes(aria.campaign.legacy_bonds)
+    pre_disc = filled_boxes(aria.campaign.legacy_discoveries)
     run_inheritance_rolls(aria)
-    assert aria.campaign.legacy_quests.filled_boxes == pre_quests
-    assert aria.campaign.legacy_bonds.filled_boxes == pre_bonds
-    assert aria.campaign.legacy_discoveries.filled_boxes == pre_disc
+    assert filled_boxes(aria.campaign.legacy_quests) == pre_quests
+    assert filled_boxes(aria.campaign.legacy_bonds) == pre_bonds
+    assert filled_boxes(aria.campaign.legacy_discoveries) == pre_disc
 
 
 @pytest.mark.parametrize(
@@ -131,9 +133,9 @@ def test_seed_successor_legacy_overwrites_tracks(aria: GameState) -> None:
         make_inheritance_roll(track_name="discoveries", new_filled_boxes=8),
     ]
     seed_successor_legacy(aria, rolls)
-    assert aria.campaign.legacy_quests.filled_boxes == 3
-    assert aria.campaign.legacy_bonds.filled_boxes == 0
-    assert aria.campaign.legacy_discoveries.filled_boxes == 8
+    assert filled_boxes(aria.campaign.legacy_quests) == 3
+    assert filled_boxes(aria.campaign.legacy_bonds) == 0
+    assert filled_boxes(aria.campaign.legacy_discoveries) == 8
 
 
 def test_seed_successor_legacy_resets_status(aria: GameState) -> None:
@@ -175,7 +177,7 @@ def test_carryover_track_filled_boxes_per_status(status: str, ticks: int, expect
     )
     kept_npcs, kept_tracks = apply_npc_carryover([npc], [track])
     assert len(kept_npcs) == 1
-    assert kept_tracks[0].filled_boxes == expected_filled_boxes
+    assert filled_boxes(kept_tracks[0]) == expected_filled_boxes
 
 
 def test_carryover_deceased_npc_pruned_entirely() -> None:
@@ -312,8 +314,8 @@ def test_reset_for_successor_clears_pc_state_keeps_world(aria: GameState) -> Non
 
     assert aria.impacts == []
     assert aria.assets == []
-    assert aria.resources.health == eng().resources.health_start
-    assert aria.resources.spirit == eng().resources.spirit_start
+    assert aria.resources.health == rules().resources.health_start
+    assert aria.resources.spirit == rules().resources.spirit_start
     assert aria.world.clocks == []
     assert aria.narrative.scene_count == 1
     assert aria.crisis_mode is False
@@ -323,9 +325,8 @@ def test_reset_for_successor_clears_pc_state_keeps_world(aria: GameState) -> Non
 
 
 def test_a_fight_the_predecessor_died_in_ends_with_them(aria: GameState) -> None:
-    from straightjacket.engine.models import ProgressTrack
 
-    aria.progress_tracks.append(ProgressTrack.new(id="combat_raid", name="Raid", track_type="combat", rank="dangerous"))
+    aria.progress_tracks.append(new_track(id="combat_raid", name="Raid", track_type="combat", rank="dangerous"))
     aria.world.combat_position = "bad_spot"
     _reset_for_successor(
         aria, surviving_threads=[], surviving_threats=[], surviving_npcs=[], surviving_connection_tracks=[]
@@ -565,7 +566,6 @@ def test_start_succession_with_character_happy_path(aria: GameState) -> None:
 
 
 def test_start_succession_resets_resources(aria: GameState) -> None:
-    from straightjacket.engine.engine_loader import eng
 
     aria.resources.health = 0
     aria.resources.spirit = 0
@@ -576,8 +576,8 @@ def test_start_succession_resets_resources(aria: GameState) -> None:
     provider = _SuccessionMockProvider()
     start_succession_with_character(provider, aria, _successor_creation_data())
 
-    assert aria.resources.health == eng().resources.health_start
-    assert aria.resources.spirit == eng().resources.spirit_start
+    assert aria.resources.health == rules().resources.health_start
+    assert aria.resources.spirit == rules().resources.spirit_start
 
 
 def test_start_succession_seeds_legacy_from_predecessor(aria: GameState) -> None:
@@ -589,9 +589,9 @@ def test_start_succession_seeds_legacy_from_predecessor(aria: GameState) -> None
     provider = _SuccessionMockProvider()
     start_succession_with_character(provider, aria, _successor_creation_data())
 
-    quest_filled = aria.campaign.legacy_quests.filled_boxes
-    bond_filled = aria.campaign.legacy_bonds.filled_boxes
-    disc_filled = aria.campaign.legacy_discoveries.filled_boxes
+    quest_filled = filled_boxes(aria.campaign.legacy_quests)
+    bond_filled = filled_boxes(aria.campaign.legacy_bonds)
+    disc_filled = filled_boxes(aria.campaign.legacy_discoveries)
     assert quest_filled >= 0
     assert bond_filled >= 0
     assert disc_filled >= 0
@@ -611,7 +611,6 @@ def test_start_succession_records_session_log(aria: GameState) -> None:
 
 
 def test_start_succession_applies_the_opening_setup_and_the_engines_time(aria: GameState) -> None:
-    from straightjacket.engine.engine_loader import eng
 
     aria.npcs = []
     aria.world.current_location = "Tavern"
@@ -622,4 +621,4 @@ def test_start_succession_applies_the_opening_setup_and_the_engines_time(aria: G
 
     assert [n.name for n in aria.npcs] == ["Mara Voss"]
     assert aria.world.current_scene_context == "A new dawn"
-    assert aria.world.time_of_day == eng().opening.time_of_day
+    assert aria.world.time_of_day == gm().opening.time_of_day
