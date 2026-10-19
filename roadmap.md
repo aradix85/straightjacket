@@ -76,11 +76,9 @@ Closing a step: the checks of CONTRIBUTING.md pass, the step moves to DONE cut t
 
 ## NEXT STEP — 9h: Principle audits
 
-The audits of AUDIT.md, one session per principle or submodule as it prescribes. Principles 2, 3, and 4 are done; principle 1 runs in 9n on the layout it makes, and the two long clean-ups of principle 2 wait in 9o. Principle 5 runs one submodule per session in AUDIT.md's order: `mechanics/`, `npc/`, `game/`, `ai/`, `datasworn/`, `tools/`, `correction/`, the files directly under `engine/`, and `web/` done, the top level (`i18n.py`) next, judging a field without a reader as Decisions, Bound to the rules, says. Every finding is fixed in its session or becomes a substep here. Open, waiting for the audit to classify or for the user:
+The audits of AUDIT.md, one session per principle or submodule as it prescribes. Principles 2, 3, 4, and 5 are done; principle 1 runs in 9n on the layout it makes, and the two long clean-ups of principle 2 wait in 9o. Every finding is fixed in its session or becomes a substep here. Open, waiting for the audit to classify or for the user:
 
 **9h.5** The `.get()` scan flags only constant, non-neutral defaults, so `.get("key", variable)` passes unexamined, for example in `web/serializers.py` (pass 4b).
-
-**9h.6** Some `strings/*.yaml` keys are built at runtime from a prefix (`time.`, `disposition.`, `story.`, `tone.`, `succession.title_`, `succession.headline_`, and `succession.legacy_track_` in `web/serializers.py`), so a strings scan needs those prefixes (pass 5b).
 
 **9h.13** For principle 1: `game/succession.py` → `_replace_character_identity` repeats the identity setup of `game/game_start.py` → `start_new_game`.
 
@@ -369,4 +367,4 @@ Finished work in its shortest form; the CHANGELOG has the details.
 - **9g — Tests through the real creation path** (`create_game` in `tests/_creation.py`).
 - **9l — Complications as clocks** (`docs/mechanics.md`, Complication clocks).
 - **9j, so far.** Suffering goes through `mechanics/suffer.py`; Endure Harm and Endure Stress are follow-up moves that mark impacts and roll their tables; a dying character has two turns to Heal, and the game ends only at Face Death or Face Desolation, whose weak hit binds an extreme vow (9j.5). A progress roll completes on a weak hit, a miss recommits at the user's choice, and Take Decisive Action counts lower in a bad spot (9j.9).
-- **9h, so far.** The tone is chosen at creation. Principles 2 and 4 are done apart from 9o, principle 3 for every submodule, and principle 5 for every submodule up to `web/`, with the earlier removals read again by its rule. Impossible states raise; dead code, write-only data, and parameters only tests set are gone; the engine reads what Datasworn carries where an audit found it unread; the narrator and the Director see the antagonist, and the Director its last notes; every AI-call carve-out is classified (9h.7). The finished substeps are in the CHANGELOG; 9h.4 and 9h.12 became 9o, and 9h.23 became 11.0.
+- **9h, so far.** The tone is chosen at creation. Principles 2 and 4 are done apart from 9o, principle 3 for every submodule, and principle 5 for every submodule, with the earlier removals read again by its rule. Impossible states raise; dead code, write-only data, and parameters only tests set are gone; the engine reads what Datasworn carries where an audit found it unread; the narrator and the Director see the antagonist, and the Director its last notes; every AI-call carve-out is classified (9h.7). The finished substeps are in the CHANGELOG; 9h.4 and 9h.12 became 9o, and 9h.23 became 11.0.

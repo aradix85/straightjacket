@@ -8,11 +8,17 @@ This log starts at 2026.09.24.0, the restart after a four-month pause. Earlier r
 
 Calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day.
 
+## [2026.10.19.10] — 2026-10-19
+
+Step 9h: the principle-5 audit of the top level, which closes principle 5. Queries (hits/violations): public symbols 3/1, return values 2/0, `strings/` keys built from a prefix against their domain values 9 families/0 (9h.6 settled). The package's `__version__` re-export, which nothing read, leaves `src/straightjacket/__init__.py`, now a package marker.
+
+Quality gate: 1713 tests, coverage 94.26%. Save format unchanged. No Elvira session: nothing in play changed.
+
 ## [2026.10.19.9] — 2026-10-19
 
 Step 9h, 9h.30 and 9h.31 at the user's word. `strings/consequence.yaml`, `strings/effect.yaml`, and `strings/position.yaml`, labels nothing showed, are deleted with the user's consent. The creation form takes its pronoun options from `creation.pronoun_options` in `engine/creation.yaml` through the creation defaults, since the chosen value also reaches the narrator's prompt, and its empty choice from `ui.no_choice`, which the starting-asset choice shares; Elvira rolls from the same list, and also takes the stat names and the number of paths from the config instead of her own copies.
 
-Quality gate: 1713 tests, coverage 94.28%, the page's script checked with `node --check`. Save format unchanged. No Elvira session: nothing in the engine's play changed.
+Quality gate: 1713 tests, coverage 94.26%, the page's script checked with `node --check`. Save format unchanged. No Elvira session: nothing in the engine's play changed.
 
 ## [2026.10.19.8] — 2026-10-19
 
