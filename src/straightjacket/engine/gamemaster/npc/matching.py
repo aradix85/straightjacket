@@ -190,9 +190,9 @@ def edit_distance_le1(a: str, b: str) -> bool:
 
 @dataclass
 class _FuzzyMatch:
-    npc: NpcData | None = None
-    score: int = 0
-    match_type: str = "identity"
+    npc: NpcData | None
+    score: int
+    match_type: str | None
 
 
 def _strip_titles(words: set[str] | list[str], titles: "frozenset[str]") -> set[str]:
@@ -256,6 +256,7 @@ def _check_word_overlap(
     if score > best.score:
         best.score = score
         best.npc = npc
+        best.match_type = "identity"
 
 
 def _check_edit_distance_variant(
@@ -311,7 +312,7 @@ def fuzzy_match_existing_npc(game: GameState, new_name: str) -> tuple[NpcData | 
     _fuzzy = gm().fuzzy_match
     _npc_match = gm().npc_matching
 
-    best = _FuzzyMatch()
+    best = _FuzzyMatch(npc=None, score=0, match_type=None)
 
     for npc in game.npcs:
         if normalize_for_match(npc.name) == new_norm:
@@ -336,4 +337,4 @@ def fuzzy_match_existing_npc(game: GameState, new_name: str) -> tuple[NpcData | 
         log(
             f"[NPC] Fuzzy match accepted: '{new_name}' → '{best.npc.name}' (score={best.score}, type={best.match_type})"
         )
-    return best.npc, best.match_type if best.npc else None
+    return best.npc, best.match_type

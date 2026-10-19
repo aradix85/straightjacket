@@ -160,6 +160,25 @@ def test_fuzzy_match_substring(stub_engine: None) -> None:
     assert match.name == "Kira Voss"
 
 
+def test_fuzzy_match_by_a_shared_word_is_the_same_figure(stub_engine: None) -> None:
+    from straightjacket.engine.gamemaster.npc.matching import fuzzy_match_existing_npc
+
+    game = make_game_state(player_name="Hero")
+    game.npcs = [make_npc(id="npc_1", name="Halvard Brennick")]
+    match, match_type = fuzzy_match_existing_npc(game, "Brennick the Elder")
+    assert match is not None
+    assert match.name == "Halvard Brennick"
+    assert match_type == "identity"
+
+
+def test_fuzzy_match_without_a_match_has_no_type(stub_engine: None) -> None:
+    from straightjacket.engine.gamemaster.npc.matching import fuzzy_match_existing_npc
+
+    game = make_game_state(player_name="Hero")
+    game.npcs = [make_npc(id="npc_1", name="Halvard Brennick")]
+    assert fuzzy_match_existing_npc(game, "Odette Marrow") == (None, None)
+
+
 def test_sanitize_npc_name() -> None:
     from straightjacket.engine.gamemaster.npc.matching import sanitize_npc_name
 
