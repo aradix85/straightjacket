@@ -172,7 +172,7 @@ def test_turn_action_produces_narration(load_engine: None) -> None:
     game = _make_game()
     initial_scene = game.narrative.scene_count
 
-    game, narration, roll, _burn_info, _director_ctx = process_turn(
+    narration, roll, _burn_info, _director_ctx = process_turn(
         provider,
         game,
         "I search the room for clues",
@@ -220,7 +220,7 @@ def test_a_turn_ends_the_act_at_its_last_scene_without_the_director(load_engine:
         ],
     )
 
-    game, _narration, _roll, _burn_info, _director_ctx = process_turn(
+    _narration, _roll, _burn_info, _director_ctx = process_turn(
         MockProvider(), game, "I search the room for clues", stream=None
     )
 
@@ -255,7 +255,7 @@ def test_a_journey_is_started_once_and_then_continued_by_its_id(load_engine: Non
     game = _make_game()
     hits = 0
     for _ in range(2):
-        game, _narration, roll, _burn_info, _director_ctx = process_turn(provider, game, "I travel on", stream=None)
+        _narration, roll, _burn_info, _director_ctx = process_turn(provider, game, "I travel on", stream=None)
         assert roll is not None
         hits += roll.result in ("STRONG_HIT", "WEAK_HIT")
     [track] = [t for t in game.progress_tracks if t.track_type == "journey"]
@@ -318,14 +318,14 @@ def test_a_connection_made_in_play_is_the_npcs_and_can_be_developed(
         },
         {"move": "connection/develop_your_relationship", "stat": "none", "target_npc": kira},
     )
-    game, _narration, _roll, _burn, _director = process_turn(provider, game, "I share a drink with Kira", stream=None)
+    _narration, _roll, _burn, _director = process_turn(provider, game, "I share a drink with Kira", stream=None)
     connections = [t.id for t in game.progress_tracks if t.track_type == "connection"]
 
     if result == "MISS":
         assert connections == []
         return
     assert connections == [f"connection_{kira}"]
-    game, _narration, roll, _burn, _director = process_turn(provider, game, "I help Kira fix her ship", stream=None)
+    _narration, roll, _burn, _director = process_turn(provider, game, "I help Kira fix her ship", stream=None)
     assert roll is not None
     assert (roll.move, roll.stat_name) == ("connection/develop_your_relationship", "dangerous")
 
@@ -370,7 +370,7 @@ def test_turn_dialog_skips_roll(load_engine: None) -> None:
     provider.create_message = dialog_brain
 
     game = _make_game()
-    game, narration, roll, _burn_info, _director_ctx = process_turn(
+    narration, roll, _burn_info, _director_ctx = process_turn(
         provider,
         game,
         "I talk to Mira",
@@ -402,10 +402,10 @@ def test_a_menace_that_fills_at_scene_end_forsakes_its_vow_in_the_next_turn_and_
     talk = {"move": "dialog", "stat": "none", "dialog_only": True, "target_npc": game.npcs[0].id}
     provider = _ScriptedBrain(talk, talk)
 
-    game, *_ = turn.process_turn(provider, game, "I talk to Mira", stream=None)
+    turn.process_turn(provider, game, "I talk to Mira", stream=None)
     assert (threat.menace_full, threat.status, vow.status) == (True, "active", "active")
 
-    game, *_ = turn.process_turn(provider, game, "I talk to Mira again", stream=None)
+    turn.process_turn(provider, game, "I talk to Mira again", stream=None)
     narrator_prompt = [c for c in provider.calls if not c["json_schema"]][-1]["messages"][-1]["content"]
     assert '<vow_forsaken threat="The Hollow King"/>' in narrator_prompt
     assert (threat.status, vow.status) == ("resolved", "failed")
@@ -428,7 +428,7 @@ def test_harm_at_zero_in_a_turn_is_endured_and_does_not_end_the_game(
     game.resources.health, game.resources.spirit, game.resources.supply = 0, 0, 0
     provider = _ScriptedBrain({"move": "adventure/face_danger", "stat": "wits"})
 
-    game, *_ = turn.process_turn(provider, game, "I climb the crumbling shelves", stream=None)
+    turn.process_turn(provider, game, "I climb the crumbling shelves", stream=None)
 
     assert (game.game_over, game.crisis_mode, game.impacts) == (False, True, ["wounded"])
     assert "follow-up move Endure Harm: MISS" in _last_narrator_prompt(provider)
@@ -451,7 +451,7 @@ def test_a_dying_character_who_does_not_heal_faces_death_in_a_dialog_turn(
     game.world.clocks[-1].filled = 1
     provider = _ScriptedBrain({"move": "dialog", "stat": "none", "dialog_only": True, "target_npc": game.npcs[0].id})
 
-    game, *_ = turn.process_turn(provider, game, "I whisper to Mira", stream=None)
+    turn.process_turn(provider, game, "I whisper to Mira", stream=None)
 
     prompt = _last_narrator_prompt(provider)
     assert game.game_over

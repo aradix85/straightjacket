@@ -202,7 +202,7 @@ def start_succession_with_character(
     provider: AIProvider,
     game: GameState,
     creation_data: dict[str, Any],
-) -> tuple[GameState, str]:
+) -> str:
     if not game.campaign.pending_succession:
         raise ValueError(
             "start_succession_with_character called without pending_succession set. "
@@ -246,7 +246,7 @@ def start_succession_with_character(
 
     game.campaign.pending_succession = False
 
-    return game, narration
+    return narration
 
 
 def _generate_succession_opening(provider: AIProvider, game: GameState) -> str:

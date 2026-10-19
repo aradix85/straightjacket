@@ -46,7 +46,7 @@ def _narrator_prompt(seed: int, dialog: bool) -> tuple[str | None, str]:
 
     random.seed(seed)
     provider = _NarratorCapture(dialog)
-    _, _, roll, _, _ = process_turn(
+    _, roll, _, _ = process_turn(
         provider,
         _make_game(),
         "I try to take the ledger from the counter.",

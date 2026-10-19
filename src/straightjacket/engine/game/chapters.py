@@ -41,7 +41,7 @@ from ..prompt_loader import get_prompt
 from .setup_common import apply_opening_setup
 
 
-def generate_epilogue(provider: AIProvider, game: GameState) -> tuple[GameState, str]:
+def generate_epilogue(provider: AIProvider, game: GameState) -> str:
     log(
         f"[Epilogue] Generating epilogue for {game.player_name} (chapter {game.campaign.chapter_number}, scene {game.narrative.scene_count})"
     )
@@ -54,10 +54,10 @@ def generate_epilogue(provider: AIProvider, game: GameState) -> tuple[GameState,
     game.campaign.epilogue_shown = True
     game.campaign.epilogue_text = narration
     log(f"[Epilogue] Generated ({len(narration)} chars)")
-    return game, narration
+    return narration
 
 
-def start_new_chapter(provider: AIProvider, game: GameState) -> tuple[GameState, str]:
+def start_new_chapter(provider: AIProvider, game: GameState) -> str:
     if game.game_over:
         raise RuntimeError(
             "start_new_chapter called on a game with game_over=True; a game that is over continues through succession."
@@ -89,7 +89,7 @@ def start_new_chapter(provider: AIProvider, game: GameState) -> tuple[GameState,
 
     _record_chapter_opening(game, narration)
 
-    return game, narration
+    return narration
 
 
 def _chapter_conflict(game: GameState) -> list[str]:

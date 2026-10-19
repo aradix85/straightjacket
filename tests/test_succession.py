@@ -566,11 +566,11 @@ def test_start_succession_with_character_happy_path(aria: GameState) -> None:
     prepare_succession(aria)
 
     provider = _SuccessionMockProvider("The successor steps forward.")
-    game, narration = start_succession_with_character(provider, aria, _successor_creation_data())
+    narration = start_succession_with_character(provider, aria, _successor_creation_data())
 
-    assert game.player_name == "Bryn"
+    assert aria.player_name == "Bryn"
     assert "successor" in narration.lower()
-    assert game.campaign.pending_succession is False
+    assert aria.campaign.pending_succession is False
 
 
 def test_start_succession_resets_resources(aria: GameState) -> None:
@@ -583,10 +583,10 @@ def test_start_succession_resets_resources(aria: GameState) -> None:
     prepare_succession(aria)
 
     provider = _SuccessionMockProvider()
-    game, _ = start_succession_with_character(provider, aria, _successor_creation_data())
+    start_succession_with_character(provider, aria, _successor_creation_data())
 
-    assert game.resources.health == eng().resources.health_start
-    assert game.resources.spirit == eng().resources.spirit_start
+    assert aria.resources.health == eng().resources.health_start
+    assert aria.resources.spirit == eng().resources.spirit_start
 
 
 def test_start_succession_seeds_legacy_from_predecessor(aria: GameState) -> None:
@@ -596,11 +596,11 @@ def test_start_succession_seeds_legacy_from_predecessor(aria: GameState) -> None
     prepare_succession(aria)
 
     provider = _SuccessionMockProvider()
-    game, _ = start_succession_with_character(provider, aria, _successor_creation_data())
+    start_succession_with_character(provider, aria, _successor_creation_data())
 
-    quest_filled = game.campaign.legacy_quests.filled_boxes
-    bond_filled = game.campaign.legacy_bonds.filled_boxes
-    disc_filled = game.campaign.legacy_discoveries.filled_boxes
+    quest_filled = aria.campaign.legacy_quests.filled_boxes
+    bond_filled = aria.campaign.legacy_bonds.filled_boxes
+    disc_filled = aria.campaign.legacy_discoveries.filled_boxes
     assert quest_filled >= 0
     assert bond_filled >= 0
     assert disc_filled >= 0
@@ -613,10 +613,10 @@ def test_start_succession_records_session_log(aria: GameState) -> None:
     prepare_succession(aria)
 
     provider = _SuccessionMockProvider()
-    game, _ = start_succession_with_character(provider, aria, _successor_creation_data())
+    start_succession_with_character(provider, aria, _successor_creation_data())
 
-    assert len(game.narrative.session_log) == 1
-    assert game.narrative.session_log[0].result == "opening"
+    assert len(aria.narrative.session_log) == 1
+    assert aria.narrative.session_log[0].result == "opening"
 
 
 def test_start_succession_applies_the_opening_setup_and_the_engines_time(aria: GameState) -> None:
@@ -627,8 +627,8 @@ def test_start_succession_applies_the_opening_setup_and_the_engines_time(aria: G
     aria.end_reason = "death"
     prepare_succession(aria)
 
-    game, _ = start_succession_with_character(_SuccessionMockProvider(), aria, _successor_creation_data())
+    start_succession_with_character(_SuccessionMockProvider(), aria, _successor_creation_data())
 
-    assert [n.name for n in game.npcs] == ["Mara Voss"]
-    assert game.world.current_scene_context == "A new dawn"
-    assert game.world.time_of_day == eng().opening.time_of_day
+    assert [n.name for n in aria.npcs] == ["Mara Voss"]
+    assert aria.world.current_scene_context == "A new dawn"
+    assert aria.world.time_of_day == eng().opening.time_of_day

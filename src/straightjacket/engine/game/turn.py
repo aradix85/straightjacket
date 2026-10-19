@@ -62,7 +62,7 @@ def process_turn(
     game: GameState,
     player_message: str,
     stream: NarrationSink | None,
-) -> tuple[GameState, str, RollResult | None, BurnOffer | None, DirectorCall | None]:
+) -> tuple[str, RollResult | None, BurnOffer | None, DirectorCall | None]:
     if game.game_over:
         raise RuntimeError(
             "process_turn called on a game with game_over=True. "
@@ -88,7 +88,7 @@ def process_turn(
         narrator_note="",
         label=get_prompt("history_label_action"),
     )
-    return game, narration, roll, burn_offer, director_ctx
+    return narration, roll, burn_offer, director_ctx
 
 
 def replay_turn(

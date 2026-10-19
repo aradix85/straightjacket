@@ -81,14 +81,15 @@ def forced_miss(monkeypatch: pytest.MonkeyPatch) -> None:
 def _turn_then_burn(provider: _Provider, game: GameState) -> tuple[GameState, str, Any]:
     from straightjacket.engine.game import process_momentum_burn, process_turn
 
-    game, _narration, roll, offer, _director = process_turn(
+    _narration, roll, offer, _director = process_turn(
         provider, game, "I slip past Mira into the archive vault", stream=None
     )
     assert roll is not None
     assert roll.result == "MISS"
     assert offer is not None
     assert offer.new_result == "STRONG_HIT"
-    return process_momentum_burn(provider, game, offer)
+    narration, director = process_momentum_burn(provider, game, offer)
+    return game, narration, director
 
 
 def test_burn_keeps_the_location_and_scene_count_of_the_turn(
@@ -142,8 +143,9 @@ def test_burn_runs_scene_end_bookkeeping_exactly_once(
 ) -> None:
     from straightjacket.engine.game import process_turn
 
-    reference, _n, _r, _o, _d = process_turn(
-        _Provider(_brain()), _game(), "I slip past Mira into the archive vault", stream=None
+    reference = _game()
+    _n, _r, _o, _d = process_turn(
+        _Provider(_brain()), reference, "I slip past Mira into the archive vault", stream=None
     )
     game, _narration, _director = _turn_then_burn(_Provider(_brain()), _game())
 
@@ -181,11 +183,11 @@ def test_a_burn_at_the_history_cap_keeps_the_earlier_entries(
         NarrationEntry(scene=n, prompt_summary=f"Scene {n}", narration=f"Earlier scene {n}.") for n in range(1, cap + 1)
     ]
     provider = _Provider(_brain())
-    game, _n, _r, offer, _d = process_turn(provider, game, "I slip past Mira into the archive vault", stream=None)
+    _n, _r, offer, _d = process_turn(provider, game, "I slip past Mira into the archive vault", stream=None)
     assert offer is not None
     before = copy.deepcopy(game)
 
-    game, narration, _director = process_momentum_burn(provider, game, offer)
+    narration, _director = process_momentum_burn(provider, game, offer)
 
     assert check_turn_replacement(before, game, narration, 2, "momentum burn", keeps_location=True) == []
 
@@ -206,7 +208,8 @@ def test_new_player_input_withdraws_a_pending_burn_offer(
     from straightjacket.web import handlers
     from straightjacket.web.session import Session
 
-    game, _n, _r, offer, _d = process_turn(_Provider(_brain()), _game(), "I slip into the vault", stream=None)
+    game = _game()
+    _n, _r, offer, _d = process_turn(_Provider(_brain()), game, "I slip into the vault", stream=None)
     session = Session()
     session.game = game
     session.pending_burn = offer

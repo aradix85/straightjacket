@@ -127,7 +127,7 @@ def _played_game(provider: MockProvider, monkeypatch: pytest.MonkeyPatch) -> Gam
         background_vow="Keep the archive whole",
     )
     force_miss(monkeypatch)
-    game, _narration, _roll, _offer, _director = process_turn(provider, game, "I shove past the guard", stream=None)
+    _narration, _roll, _offer, _director = process_turn(provider, game, "I shove past the guard", stream=None)
     return game
 
 
@@ -143,7 +143,7 @@ def test_correction_input_misread_full_flow(
     scene_before = game.narrative.scene_count
     history_len_before = len(game.narrative.narration_history)
 
-    game, narration, _offer, _director_ctx = process_correction(provider, game, "I didn't want to attack")
+    narration, _offer, _director_ctx = process_correction(provider, game, "I didn't want to attack")
 
     assert game.resources.health == snap_health
     assert game.narrative.scene_count == scene_before
@@ -161,7 +161,7 @@ def test_correction_to_dialog_does_not_roll_even_with_a_stat(
 
     provider = MockProvider(correction_source="input_misread", brain_stat="heart", dialog_only=False)
     game = _played_game(provider, monkeypatch)
-    game, narration, _offer, _director_ctx = process_correction(
+    narration, _offer, _director_ctx = process_correction(
         provider, game, "That's not what I said, I was asking a question"
     )
 
@@ -179,7 +179,7 @@ def test_correction_state_error_full_flow(
     assert game.npcs[0].disposition == "friendly"
     history_len_before = len(game.narrative.narration_history)
 
-    game, narration, _offer, _director_ctx = process_correction(provider, game, "Mira should be loyal")
+    narration, _offer, _director_ctx = process_correction(provider, game, "Mira should be loyal")
 
     assert game.npcs[0].disposition == "loyal"
     assert len(narration) > 10
@@ -207,6 +207,28 @@ def test_a_state_correction_retells_the_turn_with_its_own_scene_and_position(
     assert '<position level="desperate" effect="limited"/>' in retold
 
 
+def test_a_state_correction_extracts_with_the_turns_world_addition(
+    load_engine: None, stub_emotions: None, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from straightjacket.engine.correction import process_correction
+    from straightjacket.engine.game import finalization
+
+    provider = MockProvider(correction_source="state_error")
+    game = _played_game(provider, monkeypatch)
+    assert game.last_turn_snapshot is not None
+    assert game.last_turn_snapshot.brain is not None
+    game.last_turn_snapshot.brain.world_addition = "A rope hangs from the gallery"
+    seen: list[str] = []
+
+    def capture(game: GameState, metadata: dict[str, Any], *, scene_present_ids: set[str], world_addition: str) -> None:
+        seen.append(world_addition)
+
+    monkeypatch.setattr(finalization, "apply_narrator_metadata", capture)
+    process_correction(provider, game, "Mira should be loyal")
+
+    assert seen == ["A rope hangs from the gallery"]
+
+
 def test_a_snapshot_without_a_played_turn_is_refused(
     load_engine: None, stub_emotions: None, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -227,7 +249,7 @@ def test_correction_no_snapshot(load_engine: None, stub_emotions: None, monkeypa
     game = _played_game(provider, monkeypatch)
     game.last_turn_snapshot = None
 
-    game, narration, _offer, director_ctx = process_correction(provider, game, "Fix something")
+    narration, _offer, director_ctx = process_correction(provider, game, "Fix something")
 
     assert director_ctx is None
     assert isinstance(narration, str)

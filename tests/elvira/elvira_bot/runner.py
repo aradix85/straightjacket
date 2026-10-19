@@ -401,7 +401,7 @@ def _play_turn(
     snapshot, last_snapshot, before_state = game.snapshot(), game.last_turn_snapshot, game.to_dict()
     turn_provider = NarratorOutage(provider) if inject_failure else provider
     try:
-        game, narration, roll, burn_offer, director_ctx = process_turn(turn_provider, game, action, stream)
+        narration, roll, burn_offer, director_ctx = process_turn(turn_provider, game, action, stream)
     except AIUnavailableError as e:
         _restore(game, snapshot, last_snapshot)
         rec = TurnRecord(turn=turn, chapter=game.campaign.chapter_number, action=action, rolled_back=True)
@@ -630,7 +630,7 @@ def _play_succession(
     try:
         prepare_succession(game)
         creation_data = roll_character(game.setting_id, game_cfg)
-        game, narration = start_succession_with_character(provider, game, creation_data)
+        narration = start_succession_with_character(provider, game, creation_data)
     except Exception as e:
         slog.succession = {"error": f"{type(e).__name__}: {e}"[:300]}
         print(f"  [SUCCESSION] Failed: {e}")
@@ -662,7 +662,7 @@ def _play_correction_turn(
 
     before = copy.deepcopy(game)
     try:
-        game, new_narration, _burn_offer, director_ctx = process_correction(
+        new_narration, _burn_offer, director_ctx = process_correction(
             provider, game, correction_text.lstrip("# ").strip()
         )
     except Exception as e:
@@ -759,7 +759,7 @@ def _handle_burn(
         before = copy.deepcopy(game)
         snapshot, last_snapshot = game.snapshot(), copy.deepcopy(game.last_turn_snapshot)
         try:
-            _game, narration, director_ctx = process_momentum_burn(provider, game, offer)
+            narration, director_ctx = process_momentum_burn(provider, game, offer)
             print(f"  [BURN] Re-narrated: {narration.replace(chr(10), ' ')[:180]}...")
         except Exception as e:
             _restore(game, snapshot, last_snapshot)
@@ -793,7 +793,7 @@ def _chapter_transition(
 ) -> tuple[GameState, str, list[dict], bool]:
     print(f"\n{SEPARATOR}\n  GENERATING EPILOGUE — Chapter {chapter_num}\n{SEPARATOR}")
     try:
-        game, epilogue = generate_epilogue(provider, game)
+        epilogue = generate_epilogue(provider, game)
         chat_messages.append({"role": "assistant", "content": epilogue, "epilogue": True})
         print_narration(epilogue, full=True)
     except Exception as e:
@@ -812,7 +812,7 @@ def _chapter_transition(
 
     print(f"\n{SEPARATOR}\n  STARTING CHAPTER {chapter_num + 1}\n{SEPARATOR}")
     try:
-        game, narration = start_new_chapter(provider, game)
+        narration = start_new_chapter(provider, game)
         chat_messages = [{"role": "assistant", "content": narration}]
         print(f"  [CHAPTER] Chapter {game.campaign.chapter_number} at {game.world.current_location}")
         return game, narration, chat_messages, False

@@ -70,9 +70,10 @@ def _turn_then_correct(provider: _Provider) -> tuple[Any, Any, str, Any]:
     from straightjacket.engine.correction import process_correction
     from straightjacket.engine.game import process_turn
 
-    game, _n, _r, _o, _d = process_turn(provider, _game(), "I slip into the vault", stream=None)
+    game = _game()
+    _n, _r, _o, _d = process_turn(provider, game, "I slip into the vault", stream=None)
     before = copy.deepcopy(game)
-    game, narration, offer, _director = process_correction(provider, game, "I meant I use force")
+    narration, offer, _director = process_correction(provider, game, "I meant I use force")
     return before, game, narration, offer
 
 
@@ -131,5 +132,5 @@ def test_elvira_accepts_a_replayed_turn_and_a_burn(
 
     assert offer is not None
     before_burn = copy.deepcopy(game)
-    game, narration, _director = process_momentum_burn(_Provider(_brain(stat="iron")), game, offer)
+    narration, _director = process_momentum_burn(_Provider(_brain(stat="iron")), game, offer)
     assert check_turn_replacement(before_burn, game, narration, 1, "momentum burn", keeps_location=True) == []

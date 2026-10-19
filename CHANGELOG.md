@@ -8,6 +8,12 @@ This log starts at 2026.09.24.0, the restart after a four-month pause. Earlier r
 
 Calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day.
 
+## [2026.10.19.6] — 2026-10-19
+
+Step 9h: the principle-5 audit of `correction/`. Queries (hits/violations): public symbols 3/0, re-exports 1/0, public names imported past the hub 0/0, dataclass fields 0/0, return values 9/2, parameters that copy another 2/2, fields of the analysis's answer 19/0, config read 23/0, prompt keys 3/0, strings 1/0. `process_correction` returned the game it was handed, as did `process_turn`, `process_momentum_burn`, `generate_epilogue`, `start_new_chapter`, and `start_succession_with_character`; they now return what they make, and the web handlers and Elvira hold the game themselves. `apply_post_narration` reads the present NPCs' names and the Brain's world addition itself instead of taking copies, so a state correction now extracts with the turn's world addition, which it dropped. The correction's prompt rewrite no longer hands back the turn's consequences.
+
+Quality gate: 1715 tests, coverage 94.30%. Save format unchanged. Elvira about $0.52, no problems.
+
 ## [2026.10.19.5] — 2026-10-19
 
 Step 9h: the principle-5 audit of `tools/`. Queries (hits/violations): public symbols 7/0, re-exports 2/0, public names imported past the hub 1/1, dataclass fields 0/0, fields of the offered moves 4/4, fields of the tool's answer 24/0 with 3 for the user, config read (availability rules 54, roll types, engine-move fields 3, tool descriptions 1, prompt keys 1) 60/0, readers that add the engine moves again 2/2. `available_moves` returns the moves themselves by id instead of dicts copying their name, stats, and roll type, of which a Datasworn move's stats only a test read; the hub re-exports it, and the Brain's schema and its check no longer add the engine moves a second time. The thread id and the clock owner in the Director's tool answer wait under 11.0.

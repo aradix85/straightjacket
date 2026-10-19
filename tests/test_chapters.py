@@ -67,7 +67,7 @@ def test_a_created_game_moves_into_its_next_chapter(load_engine: None, stub_emot
         [("Kira", "A pilot.", "friendly"), ("Dace Orrin", "A dockhand.", "neutral")], "Ring Dock"
     )
 
-    game, narration = start_new_chapter(provider, game)
+    narration = start_new_chapter(provider, game)
 
     assert narration == OPENING_TEXT
     assert game.campaign.chapter_number == 2
@@ -319,7 +319,7 @@ def test_generate_epilogue_returns_narration(load_engine: None, stub_all: None) 
     provider = MockProvider("The journey ended quietly.")
     g = _ending_game()
     g.world.current_location = "Tavern"
-    _, narration = generate_epilogue(provider, g)
+    narration = generate_epilogue(provider, g)
     assert "ended quietly" in narration
     assert g.campaign.epilogue_shown is True
     assert g.campaign.epilogue_text == narration
@@ -330,7 +330,7 @@ def test_generate_epilogue_strips_epilogue_header(load_engine: None, stub_all: N
 
     provider = MockProvider("# Epilogue\n\nThe story ends here.")
     g = _ending_game()
-    _, narration = generate_epilogue(provider, g)
+    narration = generate_epilogue(provider, g)
     assert "Epilogue" not in narration.split("\n")[0]
 
 

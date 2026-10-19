@@ -91,7 +91,6 @@ def finalize_scene(
     game = ctx.game
     brain = ctx.brain
     scene_present_ids = ctx.scene_present_ids
-    activated_npc_names = [n.name for n in game.npcs if n.id in scene_present_ids]
 
     metadata = apply_post_narration(
         ctx.provider,
@@ -100,9 +99,7 @@ def finalize_scene(
         brain,
         roll,
         scene_present_ids,
-        activated_npc_names,
         consequences=consequences,
-        world_addition=brain.world_addition or "",
     )
 
     revelation_confirmed = False

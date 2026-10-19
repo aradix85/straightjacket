@@ -12,7 +12,7 @@ def process_momentum_burn(
     provider: AIProvider,
     game: GameState,
     offer: BurnOffer,
-) -> tuple[GameState, str, DirectorCall | None]:
+) -> tuple[str, DirectorCall | None]:
     game.restore(offer.resume_snapshot)
     _e = eng()
     game.resources.reset_momentum(
@@ -37,4 +37,4 @@ def process_momentum_burn(
         track=None,
     )
     narration, director_ctx = resolve_and_narrate_action(ctx, outcome)
-    return game, narration, director_ctx
+    return narration, director_ctx

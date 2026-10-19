@@ -367,7 +367,8 @@ def test_the_turn_resolves_facts_at_the_place_it_moves_to(
 
     _force(monkeypatch, "MISS")
     provider = _Provider(_brain(location_change={"name": "Archive Vault", "kind": "location"}))
-    game, _n, _r, _o, _d = process_turn(provider, _game(), "I force the vault door", stream=None)
+    game = _game()
+    _n, _r, _o, _d = process_turn(provider, game, "I force the vault door", stream=None)
 
     assert [(f.fact_type, f.location) for f in game.world.facts] == [("locked", "Archive Vault")]
     assert game.last_turn_snapshot is not None
@@ -382,7 +383,8 @@ def test_a_hit_clears_the_fact_but_the_narrator_still_gets_it(
 
     _force(monkeypatch, "STRONG_HIT")
     provider = _Provider(_brain())
-    game, _n, _r, _o, _d = process_turn(provider, _game(), "I force the vault door", stream=None)
+    game = _game()
+    _n, _r, _o, _d = process_turn(provider, game, "I force the vault door", stream=None)
 
     assert game.world.facts == []
     assert "<facts>" in provider.prompts[-1]
@@ -449,11 +451,12 @@ def test_a_burn_keeps_the_facts_and_clears_them_on_the_better_result(
 
     _force(monkeypatch, "MISS")
     provider = _Provider(_brain())
-    game, _n, _r, offer, _d = process_turn(provider, _game(), "I force the vault door", stream=None)
+    game = _game()
+    _n, _r, offer, _d = process_turn(provider, game, "I force the vault door", stream=None)
     assert offer is not None
     assert [f.fact_type for f in game.world.facts] == ["locked"]
 
-    game, _narration, _director = process_momentum_burn(provider, game, offer)
+    _narration, _director = process_momentum_burn(provider, game, offer)
 
     assert game.world.facts == []
     assert "<facts>" in provider.prompts[-1]
@@ -477,7 +480,8 @@ def test_a_search_that_hits_is_not_told_that_nothing_useful_is_here(
     from straightjacket.engine.game import process_turn
 
     provider = _nothing_useful_search(monkeypatch, result)
-    game, _n, _r, _o, _d = process_turn(provider, _game(), "I search the shelves", stream=None)
+    game = _game()
+    _n, _r, _o, _d = process_turn(provider, game, "I search the shelves", stream=None)
 
     told = eng().fact_resolution.types["useful"].description in provider.prompts[-1]
     assert told == (result == "MISS")
@@ -490,10 +494,11 @@ def test_a_burn_to_a_hit_overrules_nothing_useful(
     from straightjacket.engine.game import process_momentum_burn, process_turn
 
     provider = _nothing_useful_search(monkeypatch, "MISS")
-    game, _n, _r, offer, _d = process_turn(provider, _game(), "I search the shelves", stream=None)
+    game = _game()
+    _n, _r, offer, _d = process_turn(provider, game, "I search the shelves", stream=None)
     assert offer is not None
 
-    game, _narration, _director = process_momentum_burn(provider, game, offer)
+    _narration, _director = process_momentum_burn(provider, game, offer)
 
     assert eng().fact_resolution.types["useful"].description not in provider.prompts[-1]
     assert game.world.facts == []
@@ -507,10 +512,11 @@ def test_a_correction_reuses_the_facts_of_the_turn(
 
     _force(monkeypatch, "MISS")
     provider = _Provider(_brain())
-    game, _n, _r, _o, _d = process_turn(provider, _game(), "I force the vault door", stream=None)
+    game = _game()
+    _n, _r, _o, _d = process_turn(provider, game, "I force the vault door", stream=None)
     first = list(game.world.facts)
 
-    game, _narration, _offer, _director = process_correction(provider, game, "I meant with force")
+    _narration, _offer, _director = process_correction(provider, game, "I meant with force")
 
     assert counted_fate == ["locked:here"]
     assert game.world.facts == first
@@ -551,7 +557,8 @@ def test_a_target_that_is_not_present_leaves_the_scene(
             undetermined_facts=[{"fact_type": "present", "about": "npc_1"}],
         )
     )
-    game, _n, _r, _o, _d = process_turn(provider, _game(), "I look for Mira among the stacks", stream=None)
+    game = _game()
+    _n, _r, _o, _d = process_turn(provider, game, "I look for Mira among the stacks", stream=None)
 
     assert game.last_turn_snapshot is not None
     assert game.last_turn_snapshot.brain is not None

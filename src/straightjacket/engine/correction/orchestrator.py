@@ -41,7 +41,7 @@ def _rewrite_prompt(
     scene_setup: SceneSetup,
     activated_npcs: list[NpcData],
     mentioned_npcs: list[NpcData],
-) -> tuple[str, list[str], list[ResolvedFact]]:
+) -> tuple[str, list[ResolvedFact]]:
     roll = snap.roll
     facts = facts_of_this_place(game, snap.facts)
     last_entry = game.narrative.session_log[-1]
@@ -63,7 +63,7 @@ def _rewrite_prompt(
             npc_agency=[],
             facts=facts,
         )
-        return prompt, consequences, facts
+        return prompt, facts
 
     facts = overrule_facts_by_hit(game, facts, roll.result)
     facts = settle_facts_by_miss(game, facts, brain.move, roll.result)
@@ -87,7 +87,7 @@ def _rewrite_prompt(
         clock_fill_results=[],
         facts=facts,
     )
-    return prompt, consequences, facts
+    return prompt, facts
 
 
 def _update_state_error_logs(game: GameState, narration: str, intent: str) -> None:
@@ -125,11 +125,11 @@ def _maybe_queue_director(
 
 def process_correction(
     provider: AIProvider, game: GameState, correction_text: str
-) -> tuple[GameState, str, BurnOffer | None, DirectorCall | None]:
+) -> tuple[str, BurnOffer | None, DirectorCall | None]:
     snap = game.last_turn_snapshot
     if snap is None:
         log("[Correction] No snapshot available — cannot correct", level="warning")
-        return game, t("correction.no_snapshot"), None, None
+        return t("correction.no_snapshot"), None, None
     brain, last_narration, scene_setup = snap.brain, snap.narration, snap.scene_setup
     if brain is None or last_narration is None or scene_setup is None:
         raise ValueError("The last turn's snapshot holds no Brain result, narration, or scene setup")
@@ -144,26 +144,24 @@ def process_correction(
         corrected_input = analysis["corrected_input"] or snap.player_input
         narration, burn_offer, director_ctx = replay_turn(provider, game, corrected_input, note)
         log("[Correction] Complete: source=input_misread, turn replayed")
-        return game, narration, burn_offer, director_ctx
+        return narration, burn_offer, director_ctx
 
     roll = snap.roll
     apply_correction_ops(game, analysis["state_ops"])
     activated_npcs, mentioned_npcs, _ = activate_npcs_for_prompt(game, brain, snap.player_input)
-    prompt, consequences, facts = _rewrite_prompt(game, snap, brain, scene_setup, activated_npcs, mentioned_npcs)
+    prompt, facts = _rewrite_prompt(game, snap, brain, scene_setup, activated_npcs, mentioned_npcs)
     narration = narrate_scene(provider, game, f"{prompt}\n{note}")
     snap.narration = narration
     snap.facts = list(facts)
 
-    scene_present_ids = {n.id for n in activated_npcs} | {n.id for n in mentioned_npcs}
     metadata = apply_post_narration(
         provider,
         game,
         narration,
         brain,
         roll,
-        scene_present_ids,
-        [n.name for n in game.npcs if n.id in scene_present_ids],
-        consequences=consequences,
+        {n.id for n in activated_npcs} | {n.id for n in mentioned_npcs},
+        consequences=game.narrative.session_log[-1].consequences,
     )
 
     _update_state_error_logs(
@@ -173,4 +171,4 @@ def process_correction(
     director_ctx = _maybe_queue_director(game, analysis, roll, narration, metadata)
 
     log("[Correction] Complete: source=state_error, rewrite done")
-    return game, narration, None, director_ctx
+    return narration, None, director_ctx

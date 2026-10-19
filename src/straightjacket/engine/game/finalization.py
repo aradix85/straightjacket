@@ -182,12 +182,11 @@ def apply_post_narration(
     brain: BrainResult,
     roll: RollResult | None,
     scene_present_ids: set[str],
-    activated_npc_names: list[str],
     consequences: Sequence[str],
-    world_addition: str = "",
 ) -> dict[str, Any]:
     cons_list = list(consequences)
-    ctx = generate_scene_context(game, brain, roll, activated_npc_names)
+    present_names = [n.name for n in game.npcs if n.id in scene_present_ids]
+    ctx = generate_scene_context(game, brain, roll, present_names)
     game.world.current_scene_context = ctx
 
     apply_engine_memories(
@@ -195,7 +194,9 @@ def apply_post_narration(
     )
 
     metadata = call_narrator_metadata(provider, narration, game, brain=brain, consequences=cons_list)
-    apply_narrator_metadata(game, metadata, scene_present_ids=scene_present_ids, world_addition=world_addition)
+    apply_narrator_metadata(
+        game, metadata, scene_present_ids=scene_present_ids, world_addition=brain.world_addition or ""
+    )
 
     return metadata
 
