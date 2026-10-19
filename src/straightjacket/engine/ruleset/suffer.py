@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from ..gamemaster.config import gm
+from ..gamemaster.clocks import new_clock
 from ..logging_util import log
 from ..models import ClockData, GameState, consequence
 from .config import rules
@@ -38,12 +38,12 @@ def start_dying_clock(game: GameState) -> None:
         return
     cfg = rules().suffer.dying_clock
     game.world.clocks.append(
-        ClockData(
+        new_clock(
             name=cfg.name,
             clock_type=cfg.clock_type,
             segments=cfg.segments,
+            filled=0,
             trigger_description=cfg.trigger_description,
-            owner_kind=gm().clocks.default_owner_kind,
             creation_source=cfg.clock_type,
         )
     )

@@ -15,7 +15,6 @@ from straightjacket.engine.gamemaster.keyed_scenes import (
 )
 from straightjacket.engine.gamemaster.random_events import generate_random_event, spawn_keyed_scene_from_random_event
 from straightjacket.engine.models import (
-    ClockData,
     GameState,
     KeyedScene,
     NarrativeState,
@@ -25,6 +24,7 @@ from tests._helpers import (
     make_clock,
     make_game_state,
     make_npc,
+    make_progress_track,
     make_random_event,
     make_threat,
     make_world_state,
@@ -36,7 +36,7 @@ def _seed_game(**world_kwargs) -> GameState:
 
 
 def _bond_track(npc_id: str, filled_boxes: int) -> ProgressTrack:
-    return ProgressTrack(
+    return make_progress_track(
         id=f"connection_{npc_id}",
         name=f"Connection: {npc_id}",
         track_type="connection",
@@ -399,7 +399,7 @@ def test_generate_random_event_invokes_spawner():
 
 def test_clock_spawner_emits_keyed_scenes_per_fraction_for_threat_clock():
     narrative = NarrativeState()
-    clock = ClockData(
+    clock = make_clock(
         name="The Storm Approaches",
         clock_type="threat",
         segments=6,
@@ -418,7 +418,7 @@ def test_clock_spawner_emits_keyed_scenes_per_fraction_for_threat_clock():
 
 def test_clock_spawner_progress_clock_only_emits_full():
     narrative = NarrativeState()
-    clock = ClockData(
+    clock = make_clock(
         name="The Bridge",
         clock_type="progress",
         segments=8,
@@ -434,7 +434,7 @@ def test_clock_spawner_progress_clock_only_emits_full():
 
 def test_clock_spawner_renders_clock_name_into_narrative_hint():
     narrative = NarrativeState()
-    clock = ClockData(
+    clock = make_clock(
         name="De Hertog onthult zijn plan",
         clock_type="threat",
         segments=4,
@@ -450,7 +450,7 @@ def test_clock_spawner_renders_clock_name_into_narrative_hint():
 
 def test_clock_spawner_dedups_same_clock_threshold_on_repeat_calls():
     narrative = NarrativeState()
-    clock = ClockData(
+    clock = make_clock(
         name="Repeat Clock",
         clock_type="threat",
         segments=6,
@@ -477,7 +477,7 @@ def test_ac_spawned_pattern_scene_fires_when_state_meets_pattern():
 
 def test_clock_spawned_scene_fires_when_clock_fills():
     game = _seed_game()
-    clock = ClockData(
+    clock = make_clock(
         name="Doom",
         clock_type="threat",
         segments=6,

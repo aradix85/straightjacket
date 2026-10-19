@@ -1,7 +1,7 @@
 import pytest
 
 from straightjacket.engine.gamemaster.scene import SceneSetup, _roll_adjustments, adjustment_descriptions, check_scene
-from tests._helpers import fix_dice, make_game_state, make_random_event
+from tests._helpers import fix_dice, make_game_state, make_random_event, make_scene_setup
 
 
 def test_expected_when_roll_above_cf(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -102,7 +102,7 @@ def test_adjustment_descriptions_maps_all() -> None:
 
 
 def test_scene_setup_roundtrip() -> None:
-    setup = SceneSetup(scene_type="altered", adjustments=["add_character", "remove_object"])
+    setup = make_scene_setup(scene_type="altered", adjustments=["add_character", "remove_object"])
     d = setup.to_dict()
     restored = SceneSetup.from_dict(d)
     assert restored.scene_type == "altered"
@@ -111,7 +111,7 @@ def test_scene_setup_roundtrip() -> None:
 
 def test_scene_setup_interrupt_roundtrip() -> None:
     event = make_random_event(focus="npc_action", meaning_action="Betray", meaning_subject="Trust")
-    setup = SceneSetup(scene_type="interrupt", interrupt_event=event)
+    setup = make_scene_setup(scene_type="interrupt", interrupt_event=event)
     d = setup.to_dict()
     restored = SceneSetup.from_dict(d)
     assert restored.scene_type == "interrupt"

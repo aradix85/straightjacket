@@ -8,7 +8,7 @@ from ..models import CampaignState, GameState, ProgressTrack, ThreatData
 from .assets import asset_data, enable_next_ability, enabled_abilities
 from .config import rules
 from .datasworn import load_ruleset
-from .progress import filled_boxes, ranks
+from .progress import filled_boxes, new_track, ranks
 
 
 def _legacy_tracks(setting_id: str) -> dict[str, dict[str, Any]]:
@@ -26,13 +26,11 @@ def _earns_experience(setting_id: str, track_name: str) -> bool:
 
 
 def _legacy_track(name: str) -> ProgressTrack:
-    return ProgressTrack(
+    return new_track(
         id=f"legacy_{name}",
         name=t(f"status.legacy_name_{name}"),
         track_type="legacy",
         rank=rules().legacy.starting_rank,
-        max_ticks=rules().progress.max_ticks,
-        bound_impact="",
     )
 
 

@@ -49,6 +49,23 @@ def spawn_keyed_scenes_for_clock(narrative: NarrativeState, clock: ClockData) ->
         )
 
 
+def new_clock(
+    *, name: str, clock_type: str, segments: int, filled: int, trigger_description: str, creation_source: str
+) -> ClockData:
+    return ClockData(
+        name=name,
+        clock_type=clock_type,
+        segments=segments,
+        trigger_description=trigger_description,
+        owner_kind=gm().clocks.default_owner_kind,
+        creation_source=creation_source,
+        filled=filled,
+        owner_id=None,
+        fired=False,
+        fired_at_scene=0,
+    )
+
+
 def spawn_emergent_clock(
     game: GameState, *, base_name: str, clock_type: str, trigger_description: str, source: str
 ) -> ClockData | None:
@@ -58,12 +75,12 @@ def spawn_emergent_clock(
     if _emergent_cap_reached(game):
         log(f"[Clock] emergent clock cap {cfg.max_clocks_per_chapter} reached, no clock from '{source}'")
         return None
-    clock = ClockData(
+    clock = new_clock(
         name=_unique_clock_name(game, base_name),
         clock_type=clock_type,
         segments=cfg.default_segments,
+        filled=0,
         trigger_description=trigger_description,
-        owner_kind=cfg.default_owner_kind,
         creation_source=source,
     )
     game.world.clocks.append(clock)
@@ -74,13 +91,12 @@ def spawn_emergent_clock(
 
 def start_opening_clock(game: GameState) -> None:
     opening = gm().opening
-    clock = ClockData(
+    clock = new_clock(
         name=game.background_vow,
         clock_type="threat",
         segments=opening.clock_segments,
         filled=opening.clock_filled,
         trigger_description=opening.clock_trigger_template.format(player=game.player_name),
-        owner_kind=gm().clocks.default_owner_kind,
         creation_source=SETUP_SOURCE,
     )
     game.world.clocks.append(clock)
@@ -104,12 +120,12 @@ def spawn_complication_clock(game: GameState, kind: str, danger: str) -> ClockDa
     if _emergent_cap_reached(game):
         log(f"[Complication] emergent clock cap {cfg.max_clocks_per_chapter} reached, no clock for '{danger}'")
         return None
-    clock = ClockData(
+    clock = new_clock(
         name=_unique_clock_name(game, danger),
         clock_type="threat",
         segments=cfg.complication.segments,
+        filled=0,
         trigger_description=danger,
-        owner_kind=cfg.default_owner_kind,
         creation_source=f"{COMPLICATION_SOURCE_PREFIX}{kind}:{game.narrative.scene_count}",
     )
     game.world.clocks.append(clock)

@@ -97,6 +97,7 @@ def apply_npc_carryover(npcs: list[NpcData], tracks: list[ProgressTrack]) -> tup
             bound_impact=track.bound_impact,
             ticks=0,
             status="active",
+            completions=0,
         )
         new_track.ticks = ticks_for_filled_boxes(new_track, new_filled)
         kept_tracks.append(new_track)

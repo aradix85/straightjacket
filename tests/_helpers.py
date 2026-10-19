@@ -57,6 +57,10 @@ def make_clock(**kwargs: Any) -> Any:
     kwargs.setdefault("trigger_description", "")
     kwargs.setdefault("owner_kind", "world")
     kwargs.setdefault("creation_source", "setup")
+    kwargs.setdefault("filled", 0)
+    kwargs.setdefault("owner_id", None)
+    kwargs.setdefault("fired", False)
+    kwargs.setdefault("fired_at_scene", 0)
     return ClockData(**kwargs)
 
 
@@ -69,6 +73,9 @@ def make_progress_track(**kwargs: Any) -> Any:
     kwargs.setdefault("rank", "dangerous")
     kwargs.setdefault("max_ticks", 40)
     kwargs.setdefault("bound_impact", "")
+    kwargs.setdefault("ticks", 0)
+    kwargs.setdefault("status", "active")
+    kwargs.setdefault("completions", 0)
     return ProgressTrack(**kwargs)
 
 
@@ -83,6 +90,8 @@ def make_threat(**kwargs: Any) -> Any:
     kwargs.setdefault("max_menace_ticks", 40)
     kwargs.setdefault("description", "")
     kwargs.setdefault("creation_source", "setup")
+    kwargs.setdefault("menace_ticks", 0)
+    kwargs.setdefault("status", "active")
     return ThreatData(**kwargs)
 
 
@@ -104,6 +113,8 @@ def make_random_event(**kwargs: Any) -> Any:
     kwargs.setdefault("meaning_action", "Act")
     kwargs.setdefault("meaning_subject", "Thing")
     kwargs.setdefault("source", "fate_doublet")
+    kwargs.setdefault("target", "")
+    kwargs.setdefault("target_id", "")
     return RandomEvent(**kwargs)
 
 
@@ -119,7 +130,20 @@ def make_world_state(**kwargs: Any) -> Any:
     from straightjacket.engine.models import WorldState
 
     kwargs.setdefault("chaos_factor", 5)
+    kwargs.setdefault("current_location", "")
+    kwargs.setdefault("current_scene_context", "")
+    kwargs.setdefault("time_of_day", "")
+    kwargs.setdefault("combat_position", "")
     return WorldState(**kwargs)
+
+
+def make_scene_setup(**kwargs: Any) -> Any:
+    from straightjacket.engine.models import SceneSetup
+
+    kwargs.setdefault("scene_type", "expected")
+    kwargs.setdefault("interrupt_event", None)
+    kwargs.setdefault("narrative_hint", "")
+    return SceneSetup(**kwargs)
 
 
 def make_scene_log_entry(**kwargs: Any) -> Any:
@@ -196,11 +220,9 @@ def make_npc_rename(**kwargs: Any) -> dict:
 
 
 def action_prompt_kwargs(**kwargs: Any) -> dict[str, Any]:
-    from straightjacket.engine.models import SceneSetup
-
     kwargs.setdefault("consequence_sentences", [])
     kwargs.setdefault("player_words", "")
-    kwargs.setdefault("scene_setup", SceneSetup(scene_type="expected"))
+    kwargs.setdefault("scene_setup", make_scene_setup())
     kwargs.setdefault("activated_npcs", [])
     kwargs.setdefault("mentioned_npcs", [])
     kwargs.setdefault("position", "risky")
@@ -213,10 +235,8 @@ def action_prompt_kwargs(**kwargs: Any) -> dict[str, Any]:
 
 
 def dialog_prompt_kwargs(**kwargs: Any) -> dict[str, Any]:
-    from straightjacket.engine.models import SceneSetup
-
     kwargs.setdefault("player_words", "")
-    kwargs.setdefault("scene_setup", SceneSetup(scene_type="expected"))
+    kwargs.setdefault("scene_setup", make_scene_setup())
     kwargs.setdefault("activated_npcs", [])
     kwargs.setdefault("mentioned_npcs", [])
     kwargs.setdefault("oracle_answer", "")

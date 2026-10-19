@@ -29,10 +29,10 @@ class ClockData(SerializableMixin):
     trigger_description: str
     owner_kind: str
     creation_source: str
-    filled: int = 0
-    owner_id: str | None = None
-    fired: bool = False
-    fired_at_scene: int = 0
+    filled: int
+    owner_id: str | None
+    fired: bool
+    fired_at_scene: int
 
 
 @dataclass
@@ -59,14 +59,14 @@ class PlaceRecord(SerializableMixin):
 @dataclass
 class WorldState(SerializableMixin):
     chaos_factor: int
-    current_location: str = ""
-    current_scene_context: str = ""
-    time_of_day: str = ""
+    current_location: str
+    current_scene_context: str
+    time_of_day: str
+    combat_position: str
     location_history: list[str] = field(default_factory=list)
     clocks: list[ClockData] = field(default_factory=list)
     pending_clock_fills: list[ClockFillResult] = field(default_factory=list)
     pending_threat_events: list[ThreatEvent] = field(default_factory=list)
-    combat_position: str = ""
     facts: list[ResolvedFact] = field(default_factory=list)
     places: list[PlaceRecord] = field(default_factory=list)
 
@@ -87,9 +87,9 @@ class ProgressTrack(SerializableMixin):
     rank: str
     max_ticks: int
     bound_impact: str
-    ticks: int = 0
-    status: str = "active"
-    completions: int = 0
+    ticks: int
+    status: str
+    completions: int
 
 
 @dataclass
@@ -102,8 +102,8 @@ class ThreatData(SerializableMixin):
     max_menace_ticks: int
     description: str
     creation_source: str
-    menace_ticks: int = 0
-    status: str = "active"
+    menace_ticks: int
+    status: str
 
     @property
     def menace_full(self) -> bool:
@@ -158,16 +158,16 @@ class RandomEvent(SerializableMixin):
     meaning_action: str
     meaning_subject: str
     source: str
-    target: str = ""
-    target_id: str = ""
+    target: str
+    target_id: str
 
 
 @dataclass
 class SceneSetup(SerializableMixin):
     scene_type: str
+    interrupt_event: RandomEvent | None
+    narrative_hint: str
     adjustments: list[str] = field(default_factory=list)
-    interrupt_event: RandomEvent | None = None
-    narrative_hint: str = ""
 
 
 @dataclass

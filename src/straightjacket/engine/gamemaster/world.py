@@ -27,7 +27,9 @@ def locations_match(loc_a: str, loc_b: str) -> bool:
 
 
 def new_world() -> WorldState:
-    return WorldState(chaos_factor=gm().chaos.start)
+    return WorldState(
+        chaos_factor=gm().chaos.start, current_location="", current_scene_context="", time_of_day="", combat_position=""
+    )
 
 
 def resolve_time_progression(move: str, has_location_change: bool) -> str:

@@ -17,6 +17,7 @@ from tests._helpers import (
     make_clock,
     make_memory,
     make_npc,
+    make_scene_setup,
 )
 
 
@@ -302,11 +303,10 @@ def _rolling(result: str) -> Callable[[str, int, str, int, int], object]:
 
 def _force_result(monkeypatch: pytest.MonkeyPatch, result: str) -> None:
     from straightjacket.engine.game import turn
-    from straightjacket.engine.models import SceneSetup
     from straightjacket.engine.ruleset import make_move
 
     monkeypatch.setattr(make_move, "roll_action", _rolling(result))
-    monkeypatch.setattr(turn, "check_scene", lambda _game: SceneSetup(scene_type="expected"))
+    monkeypatch.setattr(turn, "check_scene", lambda _game: make_scene_setup(scene_type="expected"))
 
 
 @pytest.mark.parametrize("result", ["STRONG_HIT", "MISS"])
@@ -412,10 +412,9 @@ def test_a_menace_that_fills_at_scene_end_forsakes_its_vow_in_the_next_turn_and_
     load_engine: None, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     from straightjacket.engine.game import turn
-    from straightjacket.engine.models import SceneSetup
     from tests._helpers import make_threat
 
-    monkeypatch.setattr(turn, "check_scene", lambda _game: SceneSetup(scene_type="expected"))
+    monkeypatch.setattr(turn, "check_scene", lambda _game: make_scene_setup(scene_type="expected"))
     monkeypatch.setattr(rules().threats, "autonomous_tick_chance", 1.0)
     game = _make_game()
     [vow] = [t for t in game.progress_tracks if t.track_type == "vow"]
@@ -462,11 +461,10 @@ def test_a_dying_character_who_does_not_heal_faces_death_in_a_dialog_turn(
     load_engine: None, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     from straightjacket.engine.game import turn
-    from straightjacket.engine.models import SceneSetup
     from straightjacket.engine.ruleset import move_outcome
     from straightjacket.engine.ruleset.suffer import start_dying_clock
 
-    monkeypatch.setattr(turn, "check_scene", lambda _game: SceneSetup(scene_type="expected"))
+    monkeypatch.setattr(turn, "check_scene", lambda _game: make_scene_setup(scene_type="expected"))
     monkeypatch.setattr(move_outcome, "roll_action", _rolling("MISS"))
     game = _make_game()
     game.resources.meters["health"] = 0

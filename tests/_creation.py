@@ -7,7 +7,8 @@ from typing import Any
 import pytest
 
 from straightjacket.engine.ai.provider_base import AICallSpec, AIResponse
-from straightjacket.engine.models import GameState, RollResult, SceneSetup
+from straightjacket.engine.models import GameState, RollResult
+from tests._helpers import make_scene_setup
 
 OPENING_TEXT = "The opening scene settles around you."
 STAT_ORDER = ("edge", "heart", "iron", "shadow", "wits")
@@ -83,7 +84,7 @@ def force_miss(monkeypatch: pytest.MonkeyPatch) -> None:
         )
 
     monkeypatch.setattr(make_move, "roll_action", _roll)
-    monkeypatch.setattr(turn, "check_scene", lambda _game: SceneSetup(scene_type="expected"))
+    monkeypatch.setattr(turn, "check_scene", lambda _game: make_scene_setup(scene_type="expected"))
 
 
 def create_game(

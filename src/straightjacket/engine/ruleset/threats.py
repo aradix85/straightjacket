@@ -86,6 +86,8 @@ def add_threat(game: GameState, origin: str, source: str, named: tuple[str, str]
             max_menace_ticks=rules().progress.max_ticks,
             description=description,
             creation_source=source,
+            menace_ticks=0,
+            status="active",
         )
     )
     log(f"[Threat] spawned '{name}' (id={threat_id}, rank={entry.rank}, category={category}) from {origin!r}")

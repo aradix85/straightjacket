@@ -7,7 +7,6 @@ from starlette.websockets import WebSocket, WebSocketDisconnect
 
 from straightjacket.engine.engine_loader import eng
 from straightjacket.engine.game import BurnOffer
-from straightjacket.engine.gamemaster.scene import SceneSetup
 from straightjacket.engine.models import (
     GameState,
     RollResult,
@@ -20,7 +19,7 @@ from straightjacket.web.serializers import (
     highlight_dialog,
 )
 from straightjacket.web.session import Session
-from tests._helpers import install_config, make_brain_result, make_clock, make_game_state, make_npc
+from tests._helpers import install_config, make_brain_result, make_clock, make_game_state, make_npc, make_scene_setup
 
 
 @pytest.fixture
@@ -106,7 +105,7 @@ class TestSession:
             cost=5,
             brain=make_brain_result(),
             player_words="x",
-            scene_setup=SceneSetup(scene_type="expected"),
+            scene_setup=make_scene_setup(scene_type="expected"),
             ds_move=None,
             random_events=[],
             facts=[],

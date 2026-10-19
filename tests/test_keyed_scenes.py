@@ -9,7 +9,6 @@ from straightjacket.engine.models import (
     GameState,
     KeyedScene,
     NarrativeState,
-    ProgressTrack,
 )
 from straightjacket.engine.prompt_shared import _pacing_block
 from tests._helpers import (
@@ -17,6 +16,8 @@ from tests._helpers import (
     make_clock,
     make_game_state,
     make_npc,
+    make_progress_track,
+    make_scene_setup,
     make_threat,
     make_world_state,
 )
@@ -97,7 +98,7 @@ def test_bond_threshold_fires_when_connection_track_meets_filled_boxes():
     game.npcs.append(npc)
 
     game.progress_tracks.append(
-        ProgressTrack(
+        make_progress_track(
             id="connection_npc_1",
             name="Connection: Kira",
             track_type="connection",
@@ -117,7 +118,7 @@ def test_bond_threshold_below_threshold_does_not_fire():
     npc = make_npc(id="npc_1", name="Kira")
     game.npcs.append(npc)
     game.progress_tracks.append(
-        ProgressTrack(
+        make_progress_track(
             id="connection_npc_1",
             name="Connection: Kira",
             track_type="connection",
@@ -259,14 +260,14 @@ def test_keyed_scene_serialization_roundtrip():
 
 def test_pacing_block_emits_keyed_scene_tag():
     game = _seed_game()
-    setup = SceneSetup(scene_type="keyed", narrative_hint="The cult moves at dawn.")
+    setup = make_scene_setup(scene_type="keyed", narrative_hint="The cult moves at dawn.")
     block = _pacing_block(game, setup)
     assert "<keyed_scene>The cult moves at dawn.</keyed_scene>" in block
 
 
 def test_pacing_block_keyed_scene_xml_escapes_hint():
     game = _seed_game()
-    setup = SceneSetup(scene_type="keyed", narrative_hint="A & B < C")
+    setup = make_scene_setup(scene_type="keyed", narrative_hint="A & B < C")
     block = _pacing_block(game, setup)
     assert "<keyed_scene>" in block
 
@@ -280,7 +281,7 @@ def test_scene_setup_requires_scene_type():
 
 
 def test_scene_setup_keyed_serialization_roundtrip():
-    setup = SceneSetup(scene_type="keyed", narrative_hint="Beat hint")
+    setup = make_scene_setup(scene_type="keyed", narrative_hint="Beat hint")
     restored = SceneSetup.from_dict(setup.to_dict())
     assert restored.scene_type == "keyed"
     assert restored.narrative_hint == "Beat hint"

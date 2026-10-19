@@ -6,6 +6,7 @@ import pytest
 from straightjacket.engine.ai.provider_base import AICallSpec, AIResponse
 from straightjacket.engine.models import GameState
 from tests._creation import create_game, force_miss
+from tests._helpers import make_random_event, make_scene_setup
 
 _TURN_BRAIN = {
     "move": "adventure/face_danger",
@@ -192,12 +193,11 @@ def test_a_state_correction_retells_the_turn_with_its_own_scene_and_position(
     load_engine: None, stub_emotions: None, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     from straightjacket.engine.correction import process_correction
-    from straightjacket.engine.models import SceneSetup
 
     provider = MockProvider(correction_source="state_error")
     game = _played_game(provider, monkeypatch)
     assert game.last_turn_snapshot is not None
-    game.last_turn_snapshot.scene_setup = SceneSetup(scene_type="keyed", narrative_hint="The bell tolls")
+    game.last_turn_snapshot.scene_setup = make_scene_setup(scene_type="keyed", narrative_hint="The bell tolls")
     game.narrative.session_log[-1].position = "desperate"
     game.narrative.session_log[-1].effect = "limited"
 
@@ -284,14 +284,14 @@ def test_a_state_correction_retells_the_turns_events_and_filled_clocks(
     load_engine: None, stub_emotions: None, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     from straightjacket.engine.correction import process_correction
-    from straightjacket.engine.models import ClockFillResult, RandomEvent, ThreatEvent
+    from straightjacket.engine.models import ClockFillResult, ThreatEvent
 
     provider = MockProvider(correction_source="state_error")
     game = _played_game(provider, monkeypatch)
     snap = game.last_turn_snapshot
     assert snap is not None
     snap.random_events = [
-        RandomEvent(focus="npc_action", meaning_action="Betray", meaning_subject="Allies", source="chaos")
+        make_random_event(focus="npc_action", meaning_action="Betray", meaning_subject="Allies", source="chaos")
     ]
     snap.threat_events = [
         ThreatEvent(threat_id="t1", threat_name="The Iron Choir", menace_full=False, source="miss", development="")

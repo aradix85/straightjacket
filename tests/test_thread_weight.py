@@ -3,7 +3,7 @@ from typing import Any
 from straightjacket.engine.gamemaster.config import gm
 from straightjacket.engine.models import RandomEvent, RollResult, ThreadEntry, ThreatEvent
 from straightjacket.engine.ruleset.progress import new_track
-from tests._helpers import make_brain_result, make_game_state, make_threat
+from tests._helpers import make_brain_result, make_game_state, make_random_event, make_threat
 
 
 def _roll(move: str) -> RollResult:
@@ -38,7 +38,7 @@ def _sworn_game() -> Any:
 
 
 def _event(target_id: str) -> RandomEvent:
-    return RandomEvent(
+    return make_random_event(
         focus="move_toward_a_thread",
         meaning_action="Pursue",
         meaning_subject="Truths",
