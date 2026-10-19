@@ -76,15 +76,103 @@ def test_an_open_clock_is_one_segment_from_full(load_engine: None) -> None:
     assert game.world.clocks[0].filled == 5
 
 
-def test_every_stat_is_set_to_one_value(load_engine: None) -> None:
+def test_every_configured_scenario_fixes_only_results_the_ruleset_rolls(load_engine: None) -> None:
+    from tests.elvira.elvira_bot.fixed_results import check_results
+    from tests.elvira.elvira_bot.runner import load_config
+
+    for spec in load_config(ELVIRA_CONFIG)["scenarios"].values():
+        check_results(spec["results"] if "results" in spec else [])
+
+
+def test_a_result_the_ruleset_does_not_roll_is_refused(load_engine: None) -> None:
+    from tests.elvira.elvira_bot.scenarios import prepare_scenario
+
+    with pytest.raises(ValueError, match="CRITICAL_HIT"):
+        prepare_scenario(make_game_state(), {"expect": ["result:MISS"], "results": ["MISS", "CRITICAL_HIT"]})
+
+
+def test_each_turn_takes_its_own_fixed_result_and_later_turns_roll_freely() -> None:
+    from tests.elvira.elvira_bot.scenarios import fixed_result_of_turn
+
+    spec = {"expect": ["result:MISS"], "results": ["MISS", "WEAK_HIT"]}
+    assert [fixed_result_of_turn(spec, turn) for turn in (1, 2, 3)] == ["MISS", "WEAK_HIT", None]
+    assert fixed_result_of_turn({"expect": []}, 1) is None
+    assert fixed_result_of_turn(None, 1) is None
+
+
+@pytest.mark.parametrize("result", ["MISS", "WEAK_HIT", "STRONG_HIT"])
+@pytest.mark.parametrize("stat_value", [1, 3])
+def test_a_fixed_result_comes_out_of_every_action_roll_without_a_match(
+    load_engine: None, result: str, stat_value: int
+) -> None:
+    from straightjacket.engine.ruleset import make_move, move_outcome
+    from tests.elvira.elvira_bot.fixed_results import fixed_result
+
+    with fixed_result(result):
+        rolled = [
+            roll("edge", stat_value, "adventure/face_danger", 2, 0)
+            for roll in (make_move.roll_action, move_outcome.roll_action)
+            for _ in range(20)
+        ]
+    assert {r.result for r in rolled} == {result}
+    assert not any(r.match for r in rolled)
+
+
+def test_a_fixed_result_comes_out_of_a_progress_roll(load_engine: None) -> None:
+    from straightjacket.engine.ruleset import make_move
+    from tests.elvira.elvira_bot.fixed_results import fixed_result
+
+    with fixed_result("STRONG_HIT"):
+        roll = make_move.roll_progress("Find the archive", 10, "quest/fulfill_your_vow")
+    assert (roll.result, roll.match) == ("STRONG_HIT", False)
+
+
+def test_a_fixed_result_takes_a_match_only_when_no_other_dice_give_it(load_engine: None) -> None:
+    from straightjacket.engine.ruleset import make_move
+    from straightjacket.engine.ruleset.config import rules
+    from tests.elvira.elvira_bot.fixed_results import fixed_result
+
+    top = rules().dice.challenge_die
+    with fixed_result("MISS"):
+        roll = make_move.roll_progress("Find the archive", rules().progress.boxes, "quest/fulfill_your_vow")
+    assert (roll.result, roll.c1, roll.c2, roll.match) == ("MISS", top, top, True)
+
+
+def test_a_fixed_result_no_dice_can_give_is_refused(load_engine: None) -> None:
+    from straightjacket.engine.ruleset import make_move
+    from tests.elvira.elvira_bot.fixed_results import fixed_result
+
+    with fixed_result("STRONG_HIT"), pytest.raises(ValueError, match="no dice give"):
+        make_move.roll_progress("Find the archive", 0, "quest/fulfill_your_vow")
+
+
+def test_the_dice_roll_freely_after_a_fixed_turn(load_engine: None) -> None:
+    from straightjacket.engine.ruleset import rolls
+    from tests.elvira.elvira_bot.fixed_results import fixed_result
+
+    score_action = rolls.score_action_roll
+    with fixed_result("MISS"):
+        assert rolls.score_action_roll is not score_action
+    assert rolls.score_action_roll is score_action
+
+
+def test_a_scenario_can_start_at_a_game_over(load_engine: None) -> None:
     from tests.elvira.elvira_bot.scenarios import prepare_scenario
 
     game = make_game_state()
-    names = set(game.stats)
-    notes = prepare_scenario(game, {"expect": ["result:MISS"], "every_stat": 1})
-    assert notes == ["every stat 1"]
-    assert set(game.stats) == names
-    assert set(game.stats.values()) == {1}
+    notes = prepare_scenario(game, {"expect": ["succession"], "game_over": "death"})
+    assert game.game_over
+    assert game.end_reason == "death"
+    assert notes == ["game over (death), a successor waits"]
+
+
+def test_a_missed_aim_is_a_problem() -> None:
+    from tests.elvira.elvira_bot.report import collect_problems
+
+    slog = SessionLog(config={"game": {"setting_id": "starforged"}})
+    slog.scenario = {"name": "near_death", "prepared": [], "expect": ["impact_marked", "follow_up_move"]}
+    slog.scenario |= {"reached": ["follow_up_move"], "missed": ["impact_marked"]}
+    assert collect_problems(slog) == ["Scenario near_death: impact_marked not reached"]
 
 
 def _audited_turn(turn: int, result: str, integrity: int, overall: int, burned_to: str = "") -> TurnRecord:

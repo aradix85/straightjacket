@@ -6,6 +6,7 @@ import logging
 import random as _random
 import time
 import traceback
+from contextlib import nullcontext
 from datetime import datetime
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -50,6 +51,7 @@ from .coverage import Coverage, world_view
 from .creation import roll_character
 from .display import print_narration, print_state, print_summary
 from .faults import NarratorOutage
+from .fixed_results import fixed_result
 from .invariants import assert_game_state, check_turn_replacement
 from .judge import judge_turn
 from .models import ChapterRecord, NpcSnapshot, SessionLog, TurnRecord
@@ -60,7 +62,7 @@ from .quality_checks import (
 )
 from .recorder import record_turn
 from .report import write_report
-from .scenarios import prepare_scenario
+from .scenarios import fixed_result_of_turn, prepare_scenario
 from .tokens import TokenMeter
 
 RUNS_DIR = Path(__file__).resolve().parent.parent / "runs"
@@ -152,6 +154,11 @@ def run_session(bot_cfg: dict, auto_override: bool = False, turns_override: int 
 
     _log_story_blueprint(game, slog)
     _apply_scenario(game, scenario_name, scenario, slog)
+    if game.game_over and succession_enabled:
+        game, succession_narration = _play_succession(provider, game, game_cfg, slog, coverage)
+        if "error" not in slog.succession:
+            narration = succession_narration
+            chat_messages.append({"role": "assistant", "content": narration})
 
     prev_npcs: list[NpcSnapshot] | None = None
 
@@ -207,6 +214,7 @@ def run_session(bot_cfg: dict, auto_override: bool = False, turns_override: int 
                     inject_failure=total_turns == inject_turn,
                     directive_key=_directive(scenario, coverage, total_turns, max_chapters * max_turns),
                     prev_action=prev_action,
+                    fixed=fixed_result_of_turn(scenario, total_turns),
                 )
 
             prev_action = turn_rec.action or ""
@@ -373,6 +381,8 @@ def _play_turn(
     prev_action: str = "",
     inject_failure: bool = False,
     directive_key: str | None = None,
+    *,
+    fixed: str | None,
 ) -> tuple[GameState, str, TurnRecord, bool]:
     previous_narration = narration
     context = build_turn_context(game, narration, turn, prev_action=prev_action, directive_key=directive_key)
@@ -401,7 +411,8 @@ def _play_turn(
     snapshot, last_snapshot, before_state = game.snapshot(), game.last_turn_snapshot, game.to_dict()
     turn_provider = NarratorOutage(provider) if inject_failure else provider
     try:
-        narration, roll, burn_offer, director_ctx = process_turn(turn_provider, game, action, stream)
+        with fixed_result(fixed) if fixed else nullcontext():
+            narration, roll, burn_offer, director_ctx = process_turn(turn_provider, game, action, stream)
     except AIUnavailableError as e:
         _restore(game, snapshot, last_snapshot)
         rec = TurnRecord(turn=turn, chapter=game.campaign.chapter_number, action=action, rolled_back=True)

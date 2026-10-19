@@ -82,9 +82,13 @@ scenarios:
     turns: 8
     style: "aggressor"
     directive: "bot_turn_directive_physical_risk"
-    expect: ["follow_up_move", "impact_marked", "game_over", "succession"]
+    expect: ["follow_up_move", "impact_marked"]
     resources: {health: 0, spirit: 0, supply: 0}
-    every_stat: 1
+    results: [MISS, MISS, MISS, MISS, MISS, MISS, MISS, MISS]
+  succession:
+    turns: 2
+    expect: ["game_over", "succession"]
+    game_over: "death"
   chapter_end:
     turns: 4
     max_chapters: 2
@@ -95,6 +99,7 @@ scenarios:
     burn_momentum: "always"
     expect: ["burn_offered", "burn_taken"]
     resources: {momentum: "max"}
+    results: [MISS, MISS, MISS, MISS, MISS, MISS]
   combat:
     turns: 6
     style: "aggressor"
@@ -106,12 +111,14 @@ scenarios:
     burn_momentum: "never"
     directive: "bot_turn_directive_investigate"
     expect: ["result:MISS"]
-    every_stat: 1
+    results: [MISS, MISS, MISS, MISS, MISS, MISS, MISS, MISS, MISS, MISS]
   clock:
     turns: 6
     expect: ["clock_fired"]
     clock_nearly_full: true
+    results: [MISS, MISS, MISS, MISS, MISS, MISS]
   complication:
     turns: 10
     directive: "bot_turn_directive_investigate"
     expect: ["complication_clock"]
+    results: [WEAK_HIT, WEAK_HIT, WEAK_HIT, WEAK_HIT, WEAK_HIT, WEAK_HIT, WEAK_HIT, WEAK_HIT, WEAK_HIT, WEAK_HIT]

@@ -7,6 +7,7 @@ from straightjacket.engine.ruleset.meters import max_momentum
 from straightjacket.engine.ruleset.progress import new_track
 
 from .coverage import TARGETS
+from .fixed_results import check_results
 
 
 def check_expectations(spec: dict[str, Any]) -> None:
@@ -24,11 +25,6 @@ def _set_resources(game: GameState, resources: dict[str, Any]) -> list[str]:
         game.resources.meters[name] = amount
         notes.append(f"{name} {amount}")
     return notes
-
-
-def _set_every_stat(game: GameState, value: int) -> str:
-    game.stats = {name: value for name in game.stats}
-    return f"every stat {value}"
 
 
 def _near_story_end(game: GameState) -> str:
@@ -58,13 +54,26 @@ def _nearly_full_clock(game: GameState) -> str:
     return f"clock '{clock.name}' at {clock.filled} of {clock.segments}"
 
 
+def _game_over(game: GameState, reason: str) -> str:
+    game.end_reason = reason
+    return f"game over ({reason}), a successor waits"
+
+
+def fixed_result_of_turn(spec: dict[str, Any] | None, turn: int) -> str | None:
+    results: list[str] = spec["results"] if spec is not None and "results" in spec else []
+    return results[turn - 1] if turn <= len(results) else None
+
+
 def prepare_scenario(game: GameState, spec: dict[str, Any]) -> list[str]:
     check_expectations(spec)
     notes: list[str] = []
+    if "results" in spec:
+        check_results(spec["results"])
+        notes.append(f"results of the first {len(spec['results'])} turns fixed: {', '.join(spec['results'])}")
     if "resources" in spec:
         notes += _set_resources(game, spec["resources"])
-    if "every_stat" in spec:
-        notes.append(_set_every_stat(game, int(spec["every_stat"])))
+    if "game_over" in spec:
+        notes.append(_game_over(game, str(spec["game_over"])))
     if "story_end" in spec:
         notes.append(_near_story_end(game))
     if "combat" in spec:

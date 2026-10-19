@@ -46,7 +46,8 @@ def main() -> None:
     parser.add_argument("--config", type=Path, default=DEFAULT_CONFIG, help="Path to elvira_config.yaml")
     parser.add_argument("--auto", action="store_true", help="Override: enable full auto mode")
     parser.add_argument("--turns", type=int, default=None, help="Override: max turns per chapter")
-    parser.add_argument(
+    mode = parser.add_mutually_exclusive_group()
+    mode.add_argument(
         "--ws", action="store_true", help="WebSocket mode: play through the server instead of direct engine calls"
     )
     parser.add_argument("--port", type=int, default=None, help="Server port for --ws mode (default: from config.yaml)")
@@ -60,8 +61,11 @@ def main() -> None:
         help="Override: play style; random per run when empty in the config",
     )
     parser.add_argument("--matrix", action="store_true", help="Play one session for every setting and style in turn")
-    parser.add_argument(
-        "--scenario", type=str, default=None, help="Play a prepared situation from the config, or 'all'"
+    mode.add_argument(
+        "--scenario",
+        type=str,
+        default=None,
+        help="Play a prepared situation from the config, or 'all' (direct mode only)",
     )
     args = parser.parse_args()
 

@@ -23,6 +23,7 @@ Closing a step: the checks of CONTRIBUTING.md pass, the step moves to DONE cut t
 - A session starts by reading every md file in the root and in `docs/`, of the CHANGELOG only the entries since the last finished step, and continues with NEXT STEP. The design document is not in the repository; README.md links it.
 - The user wants as much as possible to come from the source material: where a rulebook table can settle what the narrator still invents, that is the fix to reach for, ahead of new prompt wording, which on Sonnet stayed within the noise (9f).
 - The Elvira sessions a step needs are part of the work; a twelve-turn session on Sonnet costs about 55 to 65 cents. Say what a measuring round will cost before starting it; the API spend limit is set in the Claude Console (Settings, Billing). The user keeps runs to what a change needs, no extra ones, since they are costly.
+- For now no Elvira session runs on the real models, the user's choice while the API credit is tight; the user wants them back later. A release that would have had one says so in its CHANGELOG entry, so the run can be caught up.
 - Each finished release is committed and pushed to main.
 - The API keys live in the Windows user environment (`ANTHROPIC_API_KEY` for the game and Elvira, `OPENAI_API_KEY` for the judges of the measuring setup); a process started by a tool may need them set in its own environment.
 - Outside the repository, in `C:\Users\radix\Documents`: the scan script of the principle-3 audit in `straightjacket_audit` (it takes a submodule name and writes its hit-list beside itself), and the measuring setup for prompt tuning in `mimo_probe`, whose README.md says how to use it.
@@ -74,37 +75,27 @@ Closing a step: the checks of CONTRIBUTING.md pass, the step moves to DONE cut t
 
 ---
 
-## NEXT STEP — 9q: Elvira reaches what a scenario prepares
+## NEXT STEP — 9o: Dataclass defaults and prompt markup
 
-The user's choice, first after 9n, since the Elvira runs of the steps after it gain from it. An overview of scores across runs is not built, the user's choice, and so no floor on the judge's scores either: one eight-turn run scores too few turns per criterion for a floor that neither trips on ordinary runs nor lets through all but a collapse, and a slow decline stays above any fixed floor.
+Two clean-ups of principle 2, formerly 9h.4 and 9h.12, one session per module or group.
 
-A scenario sets meters and stats today and hopes: `near_death` (health, spirit, and supply 0, every stat 1) reached none of its aims in an eight-turn run on 2026-10-19, since an impact, Face Death, game over, and succession wait on misses and on the Brain choosing a suffer move, and fifteen of the twenty-nine coverage targets were untouched in that run.
+**9o.1** About two hundred dataclass defaults that are not empty collections (pass 2d counted 196, in 43 classes, mostly in `models_story.py`, `models.py`, `models_base.py`, `ruleset/moves.py`, `ruleset/move_effects.py`, and `models_npc.py`) go, against CONTRIBUTING.md's rule, with every constructor call updated, one module per session; the optional fields of `AICallSpec` and the partial classes in `setting/packages.py` parse external structures and keep theirs. After the last, the config-binding scan widens to every dataclass.
 
-**9q.1** A missed aim is a problem. The report already lists for every aim whether the run reached it (`runner.py` → `_finish_scenario`); `report.py` → `collect_problems` counts each missed one.
-
-**9q.2** A scenario fixes the results of its next turns. Its yaml names them in order (for example `results: [MISS, MISS, WEAK_HIT]`), and Elvira's direct runner patches the dice of `ruleset/rolls.py` for those turns, so every action and progress roll of the turn, follow-up moves included, comes out as named, with no match unless the scenario names one; where an aim needs a row of a move's table (the dying result of Endure Harm), the session decides whether the scenario fixes that roll too. The engine keeps no switch for tests (CONTRIBUTING.md, No parameters for tests). The WebSocket runner plays a server stack it cannot patch, so it refuses a scenario with fixed results.
-
-**9q.3** A scenario that dice cannot bring to its moment starts at it, such as a game over waiting for a successor, so the successor's creation and opening play on the real models.
-
-**9q.4** Every scenario in `tests/elvira/elvira_config.yaml` is read against its aims and given what reaches them, `near_death` and `miss` fixed misses instead of hope; an aim no scenario can reach leaves it, with the reason in `docs/elvira.md`.
-
-**9q.5** Tests on the mock provider: fixed results come out as named for an action roll, a progress roll, and a follow-up move, the WebSocket runner refuses them, and a scenario with fixed results plays to its aims in direct mode.
+**9o.2** The prompt markup assembled in Python (XML tags, attribute names, `key:value` labels, markers) moves to `prompts/*.yaml`, one session per group, each rendering every prompt of the group on a created game before and after and requiring byte-identical text, since the cached prefixes and the measured tuning depend on it: `prompt_shared.py`; `prompt_action.py` and `prompt_dialog.py`; `prompt_boundary.py` and `prompt_blocks.py`; `ai/brain.py`; `ai/narrator.py` and `ai/recap.py`; `director.py`; `ai/blueprint_voicing.py`; and the small sites in `correction/`, `ruleset/bonuses.py`, `ruleset/tracks.py`, `gamemaster/random_events.py`, and `game/turn.py`.
 
 ### Definition of Done
 
-- A missed aim is a problem in Elvira's report.
-- A scenario can fix the results of its next turns in direct mode through a seam in Elvira's runner alone, the WebSocket runner refuses such a scenario, and the engine has no switch for it; a scenario dice cannot bring to its moment starts at it.
-- Every scenario names only aims it reaches, and the suite plays one with fixed results to its aims on the mock provider.
-- `docs/elvira.md` describes fixed results and the scenarios, and the quality gate is green.
-- The closing runs on the real models are the ones the user picks: one per scenario would be seven runs of four to ten turns, about four dollars together.
+- No dataclass field in `src/` has a default apart from the three exceptions of CONTRIBUTING.md (empty collections, external structures such as the optional fields of `AICallSpec` and the partial classes in `setting/packages.py`, and the AI-call carve-out), every constructor call names its fields, and the config-binding scan covers every dataclass.
+- No prompt markup is assembled in Python: tags, attribute names, labels, and markers come from `prompts/*.yaml`, and every prompt of each group rendered byte-identical before and after on created games in classic, Starforged, and Sundered Isles.
+- The save format holds, since every field is saved already; the quality gate is green after each module or group.
+- No Elvira run (Sessions with the user); the prompts are byte-identical, and each CHANGELOG entry says so.
 
 ### Reference patterns
 
-- A scenario's preparation and aims: `tests/elvira/elvira_bot/scenarios.py` → `prepare_scenario`, the scenarios in `tests/elvira/elvira_config.yaml`, their aims checked against `tests/elvira/elvira_bot/coverage.py` → `TARGETS`.
-- Reached, missed, and a run's problems: `tests/elvira/elvira_bot/runner.py` → `_finish_scenario`, `tests/elvira/elvira_bot/report.py` → `collect_problems`.
-- Another value in a test comes from patching the module that rolls it (`random` in `ruleset/rolls.py`), never from a parameter (CONTRIBUTING.md, No parameters for tests).
-- A game over continued by succession: `tests/elvira/elvira_bot/runner.py` → `_play_succession`.
-- The smoke runs on the mock provider: `tests/test_elvira_smoke.py` and `tests/test_elvira_scenarios.py`.
+- A dataclass without defaults, built in one place: `ruleset/character.py` → `Character`; the scan to widen: `tests/test_project_rules.py` → `_check_no_dataclass_defaults_in_config_binding`.
+- The test helpers that build state by hand (`tests/_helpers.py`) and the real creation path (`tests/_creation.py` → `create_game`) take the fields the defaults leave.
+- A prompt block in yaml with placeholders: `prompts/blocks.yaml`, read through `prompt_loader.py` → `get_prompt`.
+- The byte-identical check: render each prompt of the group on created games before the change, keep the text outside the repository, and compare after, as 9n.2j did for the narrator's and the Brain's prompts (CHANGELOG 2026.10.19.33).
 
 ---
 
@@ -115,14 +106,6 @@ Sketches, in the order of work.
 Steps 11b, 11c, 11d, and 14c take ideas from EdgeTales: reimplement them, do not port code, and credit EdgeTales in the CHANGELOG entry that lands each.
 
 Steps 11, 14b, 25, and 26 each plan a Director tool. The Director has one tool, `query_game_state`; whether it keeps one at all is decided in 11.0, and whether a planned tool becomes a new one or part of it when its step becomes NEXT STEP. A new tool works through the Director's two calls as they stand: the first offers the tools, the second gets their results as text. A round in which the model reads its results and calls again needs what was removed: the Anthropic adapter's `tool_use` and `tool_result` blocks and a place for the schema instruction when the last message is not the user's (`ai/provider_anthropic.py` and `ai/api_client.py` before commit 0514fd6), and the id of each tool call (`ai/provider_base.py` → `ToolCall`). A tool with parameters needs the schema built from its type hints and the check of the model's arguments (`tools/registry.py` and `tools/handler.py` before release 2026.10.18.8).
-
-### 9o — Dataclass defaults and prompt markup
-
-Two clean-ups of principle 2, formerly 9h.4 and 9h.12, one session per module or group, after the split, which gives the state classes their new form.
-
-**9o.1** About two hundred dataclass defaults that are not empty collections (pass 2d counted 196, in 43 classes, mostly in `models_story.py`, `models.py`, `models_base.py`, `ruleset/moves.py`, `ruleset/move_effects.py`, and `models_npc.py`) go, against CONTRIBUTING.md's rule, with every constructor call updated, one module per session; the optional fields of `AICallSpec` and the partial classes in `setting/packages.py` parse external structures and keep theirs. After the last, the config-binding scan widens to every dataclass.
-
-**9o.2** The prompt markup assembled in Python (XML tags, attribute names, `key:value` labels, markers) moves to `prompts/*.yaml`, one session per group, each rendering every prompt of the group on a created game before and after and requiring byte-identical text, since the cached prefixes and the measured tuning depend on it: `prompt_shared.py`; `prompt_action.py` and `prompt_dialog.py`; `prompt_boundary.py` and `prompt_blocks.py`; `ai/brain.py`; `ai/narrator.py` and `ai/recap.py`; `director.py`; `ai/blueprint_voicing.py`; and the small sites in `correction/`, `ruleset/bonuses.py`, `ruleset/tracks.py`, `gamemaster/random_events.py`, and `game/turn.py`.
 
 ### 9p — Test audit
 
@@ -358,3 +341,4 @@ Finished work in its shortest form; the CHANGELOG has the details.
 - **9j, so far.** Suffering goes through `ruleset/suffer.py`; Endure Harm and Endure Stress are follow-up moves that mark impacts and roll their tables; a dying character has two turns to Heal, and the game ends only at Face Death or Face Desolation, whose weak hit binds an extreme vow (9j.5). A progress roll completes on a weak hit, a miss recommits at the user's choice, and Take Decisive Action counts lower in a bad spot (9j.9).
 - **9h — Principle audits:** principles 2 to 5 audited (AUDIT.md, Status), the long clean-ups of principle 2 are 9o; the Brain keeps its hand-written hints, which chose moves better than the book's triggers (30 of 30 against 29 of 30). The substeps are in the CHANGELOG, and 9h.23 became 11.0.
 - **9n — Four layers:** the setting, the game master, the crafters, and the ruleset each have a package, a yaml folder, and an accessor, and a scan holds their imports to the direction (ARCHITECTURE.md, The four layers); the game master asks the ruleset only its questions (`docs/mechanics.md`, Game master and ruleset). The ruleset owns what a system decides, from its Datasworn rules and its own yaml, and code outside it names none of its words; dialog and asking the oracle are the game master's own moves, and every Datasworn file is at 0.1.0, pinned to one commit (the user's choices). A setting plays the ruleset its Datasworn file names (`docs/settings.md`, Rulesets). Principle 1 is done (AUDIT.md, Status): the duplicates 9h found share one helper each, every clock but the ruleset's dying clock is made, ticked, and filled in `gamemaster/clocks.py`, and the Adventure Crafter and five concerns of the game master have modules of their own. A threat gets its vow as Delve has it, through the Brain's `target_threat`. The code the split wrote or rewrote had the queries of principles 2 and 3.
+- **9q — Elvira reaches what a scenario prepares:** a missed aim is a problem; a scenario fixes the results of its first turns through a seam in Elvira alone, or starts at its moment, such as a game over waiting for a successor, and plays in direct mode only (`docs/elvira.md`, Scenarios). Tested on the mock provider; the scenarios' runs on the real models wait for the API credit (Sessions with the user).

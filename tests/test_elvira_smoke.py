@@ -1,17 +1,17 @@
 from __future__ import annotations
 
 from pathlib import Path
+from types import ModuleType
 
 import pytest
 
+from tests.elvira.elvira_bot.models import SessionLog
 from tests.test_integration import MockProvider
 
 ELVIRA_CONFIG = Path(__file__).resolve().parent / "elvira" / "elvira_config.yaml"
 
 
-def test_elvira_plays_a_short_session_end_to_end(
-    load_engine: None, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
-) -> None:
+def _mock_direct_runner(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> ModuleType:
     from tests.elvira.elvira_bot import ai_helpers, runner
 
     users = tmp_path / "users"
@@ -25,13 +25,49 @@ def test_elvira_plays_a_short_session_end_to_end(
     monkeypatch.setattr(runner, "check_configured_models", lambda: None)
     monkeypatch.setattr(runner, "get_provider", MockProvider)
     monkeypatch.setattr(ai_helpers, "provider_named", lambda name: MockProvider())
+    monkeypatch.setattr(runner, "selectable_settings", lambda: ["starforged"])
+    monkeypatch.setattr(runner, "available_styles", lambda: ["explorer"])
+    return runner
+
+
+def _scenario_run(runner: ModuleType, name: str, turns: int) -> SessionLog:
+    bot_cfg = runner.load_config(ELVIRA_CONFIG)
+    bot_cfg["session"] |= {"scenario": name, "max_turns": turns, "inject_ai_failure_turn": 0}
+    bot_cfg["logging"]["print_full_narration"] = False
+    session: SessionLog = runner.run_session(bot_cfg, auto_override=True)
+    return session
+
+
+def test_a_scenario_with_fixed_results_plays_to_its_aim(
+    load_engine: None, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    runner = _mock_direct_runner(monkeypatch, tmp_path)
+    session = _scenario_run(runner, "miss", 3)
+    assert session.scenario["missed"] == []
+    rolled = [t.roll.result for t in session.turns if t.roll and not t.is_correction]
+    assert rolled
+    assert set(rolled) == {"MISS"}
+
+
+def test_a_scenario_that_starts_at_a_game_over_plays_the_successor(
+    load_engine: None, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    runner = _mock_direct_runner(monkeypatch, tmp_path)
+    session = _scenario_run(runner, "succession", 1)
+    assert session.scenario["missed"] == []
+    assert "new_character" in session.succession
+    assert session.turns[0].error == ""
+
+
+def test_elvira_plays_a_short_session_end_to_end(
+    load_engine: None, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    runner = _mock_direct_runner(monkeypatch, tmp_path)
     monkeypatch.setattr(runner, "CORRECTION_TEST_INTERVAL", 2)
 
     bot_cfg = runner.load_config(ELVIRA_CONFIG)
     bot_cfg["session"]["max_turns"] = 3
     bot_cfg["logging"]["print_full_narration"] = False
-    monkeypatch.setattr(runner, "selectable_settings", lambda: ["starforged"])
-    monkeypatch.setattr(runner, "available_styles", lambda: ["explorer"])
     bot_cfg["session"]["inject_ai_failure_turn"] = 3
 
     session = runner.run_session(bot_cfg, auto_override=True)

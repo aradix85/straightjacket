@@ -45,6 +45,8 @@ def collect_problems(slog: SessionLog) -> list[str]:
     problems += [f"Correction: {c}" for c in slog.correction_tests if not c["success"]]
     if "error" in slog.succession:
         problems.append(f"Succession: {slog.succession['error']}")
+    if slog.scenario:
+        problems += [f"Scenario {slog.scenario['name']}: {aim} not reached" for aim in slog.scenario["missed"]]
     problems += _audit_problems(slog)
     return problems
 
