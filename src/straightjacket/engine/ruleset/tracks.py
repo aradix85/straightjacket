@@ -190,7 +190,7 @@ def is_vow_thread(thread: ThreadEntry) -> bool:
 
 def track_category_of_move(game: GameState, move: str) -> str | None:
     ds_move = get_moves(game.setting_id).get(move)
-    if ds_move is not None and ds_move.roll_type == "progress_roll":
+    if ds_move is not None and ds_move.is_progress_roll:
         return ds_move.track_category
     categories: dict[str, str] = rules().get_raw("progress_mark_categories")
     return categories.get(move)

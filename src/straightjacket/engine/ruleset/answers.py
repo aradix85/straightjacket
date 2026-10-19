@@ -17,6 +17,7 @@ __all__ = [
     "dangers",
     "effect_bonus",
     "gained_advantage",
+    "gathers_information",
     "merge_npcs",
     "outcome",
     "strain",
@@ -60,6 +61,10 @@ def strain(game: GameState) -> list[str]:
         value = game.resources.meters[meter]
         levels.append(next((level for level, below in cfg.below.items() if value < below), cfg.otherwise))
     return levels
+
+
+def gathers_information(move: str) -> bool:
+    return move in rules().information_moves
 
 
 def gained_advantage(game: GameState) -> bool:

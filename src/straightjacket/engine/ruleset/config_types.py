@@ -101,6 +101,10 @@ class EngineMove:
     stats: list[str]
     roll_type: str
 
+    @property
+    def is_action_roll(self) -> bool:
+        return self.roll_type == "action_roll"
+
 
 @dataclass
 class ActiveTrackCondition:

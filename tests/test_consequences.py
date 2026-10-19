@@ -297,7 +297,7 @@ def test_adds_still_count_when_negative_momentum_cancels_the_die(
 def test_next_move_bonus_effect_is_banked_and_spent_on_the_next_action_roll(
     load_engine: None, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    from straightjacket.engine.game.turn import _execute_roll
+    from straightjacket.engine.ruleset.make_move import roll_move
     from straightjacket.engine.ruleset.move_effects import MoveEffect, apply_effects
     from tests._helpers import make_brain_result, make_game_state
 
@@ -307,6 +307,6 @@ def test_next_move_bonus_effect_is_banked_and_spent_on_the_next_action_roll(
     assert game.resources.next_move_bonus == 1
     game.resources.meters["momentum"] = 2
     _fixed_dice(monkeypatch, 3, 9, 9)
-    outcome = _execute_roll(game, make_brain_result(move="adventure/face_danger", stat="wits"), None)
+    outcome = roll_move(game, make_brain_result(move="adventure/face_danger", stat="wits"), None)
     assert outcome.roll.action_score == 3 + game.stats["wits"] + 1
     assert game.resources.next_move_bonus == 0

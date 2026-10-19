@@ -62,8 +62,8 @@ def test_a_bonus_not_on_offer_raises(load_engine: None) -> None:
 def test_a_chosen_bonus_adds_to_the_roll_and_momentum_on_a_hit(
     load_engine: None, monkeypatch: pytest.MonkeyPatch, dice: list[int], momentum_after: int
 ) -> None:
-    from straightjacket.engine.game.turn import _execute_roll
     from straightjacket.engine.ruleset import rolls
+    from straightjacket.engine.ruleset.make_move import roll_move
 
     game = _game_with()
     game.progress_tracks.append(
@@ -75,7 +75,7 @@ def test_a_chosen_bonus_adds_to_the_roll_and_momentum_on_a_hit(
     brain = make_brain_result(move="adventure/face_danger", stat="wits")
     brain.bonus_id = "connection:npc_1"
     game.last_turn_snapshot = game.snapshot()
-    outcome = _execute_roll(game, brain, None)
+    outcome = roll_move(game, brain, None)
     assert outcome.roll.action_score == min(dice[0] + game.stats["wits"] + 1, 10)
     assert game.resources.meters["momentum"] == momentum_after
 

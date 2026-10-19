@@ -52,6 +52,14 @@ class Move:
     tables: dict[str, OracleTable]
 
     @property
+    def is_action_roll(self) -> bool:
+        return self.roll_type == "action_roll"
+
+    @property
+    def is_progress_roll(self) -> bool:
+        return self.roll_type == "progress_roll"
+
+    @property
     def valid_stats(self) -> list[str]:
         stats: list[str] = []
         seen: set[str] = set()

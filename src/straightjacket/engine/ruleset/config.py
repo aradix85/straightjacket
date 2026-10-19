@@ -64,6 +64,7 @@ class RulesetSettings(RawSections):
     roll_bonuses: RollBonusesConfig
     strain: StrainConfig
     advantage_moves: list[str]
+    information_moves: list[str]
 
     _raw: dict[str, Any] = field(default_factory=dict, repr=False)
 
@@ -197,6 +198,7 @@ def parse_ruleset_yaml(data: dict[str, Any]) -> RulesetSettings:
         suffer=_build_suffer(dict(data["suffer"])),
         roll_bonuses=_build_roll_bonuses(dict(data["roll_bonuses"])),
         advantage_moves=list(data["advantage_moves"]),
+        information_moves=list(data["information_moves"]),
         _raw=data,
     )
 

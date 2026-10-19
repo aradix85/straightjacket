@@ -3,9 +3,9 @@ import dataclasses
 import pytest
 
 from straightjacket.engine.game.action_resolution import resolve_action_phase
-from straightjacket.engine.game.turn_types import RollOutcome
 from straightjacket.engine.models import GameState, ProgressTrack, RollResult, labels_of
 from straightjacket.engine.ruleset.consequences import generate_consequence_sentences
+from straightjacket.engine.ruleset.make_move import RollOutcome
 from straightjacket.engine.ruleset.moves import get_moves
 from straightjacket.engine.ruleset.outcome_result import OutcomeResult
 from straightjacket.engine.ruleset.progress import filled_boxes

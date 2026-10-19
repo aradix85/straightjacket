@@ -4,9 +4,10 @@ from ..ai.provider_base import AIProvider
 from ..engine_loader import eng
 from ..models import GameState
 from ..prompt_loader import get_prompt
+from ..ruleset.make_move import RollOutcome
 from ..ruleset.meters import reset_momentum
 from .turn import build_scene_context, resolve_and_narrate_action
-from .turn_types import BurnOffer, DirectorCall, RollOutcome
+from .turn_types import BurnOffer, DirectorCall
 
 
 def process_momentum_burn(

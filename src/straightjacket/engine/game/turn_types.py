@@ -9,7 +9,6 @@ from ..models import (
     Consequence,
     GameState,
     NpcData,
-    ProgressTrack,
     RandomEvent,
     ResolvedFact,
     RollResult,
@@ -41,13 +40,6 @@ class SceneContext:
 @dataclass
 class DirectorCall:
     narration: str
-
-
-@dataclass
-class RollOutcome:
-    roll: RollResult
-    ds_move: Move | None
-    track: ProgressTrack | None
 
 
 @dataclass

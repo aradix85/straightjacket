@@ -67,6 +67,7 @@ def _voicing(props: dict[str, Any]) -> dict[str, Any]:
 
 def force_miss(monkeypatch: pytest.MonkeyPatch) -> None:
     from straightjacket.engine.game import turn
+    from straightjacket.engine.ruleset import make_move
 
     def _roll(stat_name: str, stat_value: int, move: str, momentum: int, adds: int) -> RollResult:
         return RollResult(
@@ -81,7 +82,7 @@ def force_miss(monkeypatch: pytest.MonkeyPatch) -> None:
             match=False,
         )
 
-    monkeypatch.setattr(turn, "roll_action", _roll)
+    monkeypatch.setattr(make_move, "roll_action", _roll)
     monkeypatch.setattr(turn, "check_scene", lambda _game: SceneSetup(scene_type="expected"))
 
 

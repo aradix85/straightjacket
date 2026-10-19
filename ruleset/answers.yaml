@@ -10,6 +10,8 @@ strain:
   otherwise: steady
 advantage_moves:
 - adventure/secure_an_advantage
+information_moves:
+- adventure/gather_information
 effect_bonus_moves:
   combat/strike: 1
   other: 0

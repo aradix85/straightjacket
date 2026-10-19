@@ -334,6 +334,7 @@ class _Provider:
 def _force(monkeypatch: pytest.MonkeyPatch, result: str, scene_roll: int = 10) -> None:
     from straightjacket.engine.game import turn
     from straightjacket.engine.gamemaster import scene
+    from straightjacket.engine.ruleset import make_move
 
     def _roll(stat_name: str, stat_value: int, move: str, momentum: int, adds: int) -> RollResult:
         return RollResult(
@@ -348,7 +349,7 @@ def _force(monkeypatch: pytest.MonkeyPatch, result: str, scene_roll: int = 10) -
             match=False,
         )
 
-    monkeypatch.setattr(turn, "roll_action", _roll)
+    monkeypatch.setattr(make_move, "roll_action", _roll)
 
     def _scene_with_fixed_roll(game: GameState) -> SceneSetup:
         fix_dice(monkeypatch, scene_roll)

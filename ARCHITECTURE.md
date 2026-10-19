@@ -39,7 +39,7 @@ Fact resolution (gamemaster/generation.py, gamemaster/facts.py) → each undeter
   ↓
 NPC activation (gamemaster/npc/activation.py) → decides which NPCs get full context
   ↓
-Roll (ruleset/rolls.py) → the Ironsworn action roll: STRONG_HIT, WEAK_HIT, or MISS
+Roll (ruleset/make_move.py) → the move's Ironsworn roll: STRONG_HIT, WEAK_HIT, or MISS
   ↓
 Consequences (game/action_resolution.py) → position and effect, move outcome, combat position, clock ticks, threats, the dying clock, follow-up moves (Endure, Face Death), crisis check; a hit clears the facts whose type says so
   ↓

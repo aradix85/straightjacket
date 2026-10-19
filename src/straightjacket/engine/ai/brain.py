@@ -150,7 +150,7 @@ def _wrong_stat(game: GameState, result: BrainResult) -> list[str]:
         return []
     if ds_move is None:
         return list(rules().engine_moves[result.move].stats) if result.stat in PICK_METHODS else []
-    if ds_move.roll_type != "action_roll":
+    if not ds_move.is_action_roll:
         return []
     if not ds_move.valid_stats:
         if roll_source_without_stat(game, ds_move, result.target_npc) is None:

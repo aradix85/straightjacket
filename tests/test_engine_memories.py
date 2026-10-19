@@ -97,7 +97,7 @@ class TestProcessTurnGuard:
 
 class TestExecuteRollStatNoneRejected:
     def test_action_roll_with_stat_none_raises(self) -> None:
-        from straightjacket.engine.game.turn import _execute_roll
+        from straightjacket.engine.ruleset.make_move import roll_move
 
         game = make_test_game()
         game.setting_id = "classic"
@@ -105,17 +105,17 @@ class TestExecuteRollStatNoneRejected:
         game.last_turn_snapshot = game.snapshot()
 
         with pytest.raises(ValueError, match="named no stat"):
-            _execute_roll(game, brain, None)
+            roll_move(game, brain, None)
 
     def test_action_roll_with_real_stat_succeeds(self) -> None:
-        from straightjacket.engine.game.turn import _execute_roll
+        from straightjacket.engine.ruleset.make_move import roll_move
 
         game = make_test_game()
         game.setting_id = "classic"
         brain = make_brain_result(move="adventure/face_danger", stat="wits", dialog_only=False)
         game.last_turn_snapshot = game.snapshot()
 
-        outcome = _execute_roll(game, brain, None)
+        outcome = roll_move(game, brain, None)
         assert outcome.roll is not None
         assert outcome.roll.stat_name == "wits"
 

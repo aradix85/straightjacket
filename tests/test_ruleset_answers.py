@@ -68,6 +68,18 @@ def test_an_advantage_is_gained_by_a_hit_on_an_advantage_move(
     assert answers.gained_advantage(game) is gained
 
 
+@pytest.mark.parametrize(
+    ("move", "gathers"),
+    [
+        ("adventure/gather_information", True),
+        ("adventure/secure_an_advantage", False),
+        ("dialog", False),
+    ],
+)
+def test_only_the_information_moves_gather_information(load_engine: None, move: str, gathers: bool) -> None:
+    assert answers.gathers_information(move) is gathers
+
+
 def test_closeness_is_the_connection_s_filled_boxes(load_engine: None) -> None:
     game = make_game_state(player_name="Test")
     game.npcs = [make_npc(id="npc_1", name="Kira")]

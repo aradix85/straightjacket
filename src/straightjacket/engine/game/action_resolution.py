@@ -17,6 +17,7 @@ from ..models import (
     consequence,
 )
 from ..ruleset.config import rules
+from ..ruleset.make_move import RollOutcome
 from ..ruleset.move_outcome import make_follow_up_moves
 from ..ruleset.outcome_result import OutcomeResult
 from ..ruleset.progress import menace_boxes, menace_total_boxes
@@ -24,7 +25,7 @@ from ..ruleset.suffer import tick_dying_clock
 from ..ruleset.threats import advance_menace_on_miss, resolve_full_menace, take_pending_threat_events
 from ..ruleset.tracks import apply_progress_and_legacy, resolve_progress_roll, start_track
 from .finalization import resolve_action_consequences, update_crisis
-from .turn_types import ActionResolution, RollOutcome
+from .turn_types import ActionResolution
 
 
 def _maybe_tick_weak_hit_clock(
@@ -71,8 +72,8 @@ def _collect_threat_events(game: GameState, roll: RollResult, outcome: OutcomeRe
     return events
 
 
-def _track_gather_information_success(game: GameState, brain: BrainResult, roll: RollResult) -> None:
-    if brain.move != "adventure/gather_information" or not gained(roll.result):
+def _count_information_gathered(game: GameState, brain: BrainResult, roll: RollResult) -> None:
+    if not answers().gathers_information(brain.move) or not gained(roll.result):
         return
     if brain.target_npc is None:
         return
@@ -114,7 +115,7 @@ def resolve_action_phase(game: GameState, brain: BrainResult, roll_outcome: Roll
     make_follow_up_moves(game, action.outcome)
     update_crisis(game)
 
-    _track_gather_information_success(game, brain, roll)
+    _count_information_gathered(game, brain, roll)
 
     return ActionResolution(
         position=position,

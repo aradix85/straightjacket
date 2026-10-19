@@ -7,14 +7,12 @@ from typing import Any
 from ..ai.metadata import apply_narrator_metadata
 from ..ai.narrator import call_narrator, call_narrator_metadata
 from ..ai.provider_base import AIProvider, NarrationSink
-from ..engine_loader import eng
 from ..gamemaster.clock_ticks import tick_threat_clock
 from ..gamemaster.config import gm
 from ..gamemaster.engine_memories import generate_engine_memories, generate_scene_context
 from ..gamemaster.npc.matching import named_in
 from ..gamemaster.npc.memory import consolidate_memory
 from ..gamemaster.questions import answers
-from ..logging_util import log
 from ..models import (
     BrainResult,
     ClockEvent,
@@ -24,23 +22,12 @@ from ..models import (
     MemoryEntry,
     NpcData,
     RollResult,
-    consequence,
     labels_of,
 )
 from ..parser import parse_narrator_response
-from ..ruleset.boasts import apply_boasts
-from ..ruleset.bond import connection_track, is_bonded
-from ..ruleset.config import rules
-from ..ruleset.legacy import mark_legacy_ticks
-from ..ruleset.meters import in_crisis, momentum
-from ..ruleset.move_effects import apply_effects, parse_effects
-from ..ruleset.move_outcome import resolve_move_outcome
-from ..ruleset.moves import Move, get_moves
-from ..ruleset.outcome_result import OutcomeResult, move_outcome_config
-from ..ruleset.roll_sources import best_roll_option, roll_source_without_stat
-from ..ruleset.rolls import roll_action
-from ..setting.loader import OracleTable
-from ..setting.oracle_rolls import plain_text, roll_rows
+from ..ruleset.make_move import resolve_move
+from ..ruleset.meters import in_crisis
+from ..ruleset.outcome_result import OutcomeResult
 
 
 @dataclass
@@ -51,86 +38,13 @@ class ActionOutcome:
     outcome: OutcomeResult
 
 
-def _chained_roll_value(game: GameState, brain: BrainResult, move: Move) -> tuple[str, int] | None:
-    if move.valid_stats:
-        return best_roll_option(game, move)
-    return roll_source_without_stat(game, move, brain.target_npc)
-
-
-def _roll_chained_table(table: OracleTable, reroll_prefixes: list[str]) -> str:
-    while True:
-        rolled = roll_rows(table)
-        rows = [plain_text(row.text) for row in rolled.rows]
-        if not any(row.startswith(tuple(reroll_prefixes)) for row in rows):
-            text = "; ".join(rows)
-            return eng().ai_text.consequence_labels["oracle_worse"].format(result=text) if rolled.worse else text
-
-
-def _chain_oracle_move(game: GameState, move: Move, cfg: dict[str, Any], outcome: OutcomeResult) -> None:
-    table = move.tables[cfg["table"]]
-    results = [_roll_chained_table(table, cfg["reroll_prefixes"]) for _ in range(cfg["rolls"])]
-    outcome.consequences.append(consequence("chained_move", move=move.name, result="; ".join(results)))
-    if cfg["legacy_track"]:
-        mark_legacy_ticks(game, cfg["legacy_track"], cfg["ticks_per_roll"] * cfg["rolls"])
-    log(f"[Chain] {move.name}: {'; '.join(results)}")
-
-
-def _chain_without_bond(game: GameState, brain: BrainResult, outcome: OutcomeResult) -> bool:
-    cfg = move_outcome_config(game, outcome.chained_move)
-    track = connection_track(game, brain.target_npc) if brain.target_npc is not None else None
-    if "without_bond" not in cfg or track is None or is_bonded(track):
-        return False
-    marked = apply_effects(game, parse_effects(cfg["without_bond"]), target_npc_id=brain.target_npc)
-    outcome.consequences.extend(marked.consequences)
-    log(f"[Chain] {outcome.chained_move}: no bond with {track.name} yet, so progress is marked without a roll")
-    return True
-
-
-def _chain_move(game: GameState, brain: BrainResult, outcome: OutcomeResult) -> None:
-    move = get_moves(game.setting_id)[outcome.chained_move]
-    oracle_moves = rules().get_raw("oracle_moves")
-    if move.roll_type == "no_roll" and outcome.chained_move in oracle_moves:
-        _chain_oracle_move(game, move, oracle_moves[outcome.chained_move], outcome)
-        return
-    if _chain_without_bond(game, brain, outcome):
-        return
-    value = _chained_roll_value(game, brain, move)
-    if value is None:
-        log(f"[Chain] {outcome.chained_move}: nothing to roll with, follow-up skipped", level="warning")
-        return
-    label, stat_value = value
-    adds = game.resources.next_move_bonus
-    roll = roll_action(label, stat_value, outcome.chained_move, momentum(game), adds)
-    game.resources.next_move_bonus = 0
-    chained = resolve_move_outcome(
-        game, outcome.chained_move, roll.result, target_npc_id=brain.target_npc, match=roll.match
-    )
-    log(
-        f"[Chain] {outcome.chained_move} ({label}={stat_value}, +{adds}): score {roll.action_score} vs [{roll.c1},{roll.c2}] → {roll.result}"
-    )
-    outcome.consequences.append(consequence("chained_move", move=move.name, result=roll.result))
-    outcome.consequences.extend(chained.consequences)
-    outcome.follow_up_moves.extend(chained.follow_up_moves)
-    if chained.legacy_track and not outcome.legacy_track:
-        outcome.legacy_track = chained.legacy_track
-        outcome.legacy_rank_shift = chained.legacy_rank_shift
-        outcome.legacy_fixed_ticks = chained.legacy_fixed_ticks
-
-
 def resolve_action_consequences(
     game: GameState,
     brain: BrainResult,
     roll: RollResult,
     position: str,
 ) -> ActionOutcome:
-    outcome = resolve_move_outcome(game, brain.move, roll.result, target_npc_id=brain.target_npc, match=roll.match)
-    if outcome.chained_move:
-        _chain_move(game, brain, outcome)
-    if outcome.boast_slots:
-        apply_boasts(game, brain.boasts, outcome)
-
-    if outcome.combat_position:
-        game.world.combat_position = outcome.combat_position
+    outcome = resolve_move(game, brain, roll)
 
     clock_events: list[ClockEvent] = []
     fill_results: list[ClockFillResult] = []

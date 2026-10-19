@@ -800,7 +800,7 @@ def test_escape_the_depths_miss_reveals_a_danger_that_needs_no_site(load_engine:
 def test_mending_your_own_wounds_rolls_the_lower_stat(
     load_engine: None, iron: int, wits: int, rolled: tuple[str, int]
 ) -> None:
-    from straightjacket.engine.game.turn import _roll_source
+    from straightjacket.engine.ruleset.make_move import _roll_source
     from straightjacket.engine.ruleset.moves import get_moves
     from tests._helpers import make_brain_result, make_game_state
 

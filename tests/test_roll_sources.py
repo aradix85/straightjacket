@@ -11,26 +11,26 @@ def _starforged() -> Any:
 
 
 def test_check_your_gear_rolls_with_supply(load_engine: None) -> None:
-    from straightjacket.engine.game.turn import _execute_roll
+    from straightjacket.engine.ruleset.make_move import roll_move
 
     game = _starforged()
     game.resources.meters["supply"] = 3
-    outcome = _execute_roll(game, make_brain_result(move="adventure/check_your_gear", stat="none"), None)
+    outcome = roll_move(game, make_brain_result(move="adventure/check_your_gear", stat="none"), None)
     assert outcome.roll.stat_name == "supply"
     assert outcome.roll.stat_value == 3
 
 
 def test_a_stat_the_brain_names_for_a_meter_move_is_ignored(load_engine: None) -> None:
-    from straightjacket.engine.game.turn import _execute_roll
+    from straightjacket.engine.ruleset.make_move import roll_move
 
     game = _starforged()
     game.resources.meters["supply"] = 2
-    outcome = _execute_roll(game, make_brain_result(move="exploration/set_a_course", stat="wits"), None)
+    outcome = roll_move(game, make_brain_result(move="exploration/set_a_course", stat="wits"), None)
     assert (outcome.roll.stat_name, outcome.roll.stat_value) == ("supply", 2)
 
 
 def test_develop_your_relationship_rolls_with_the_rank_of_a_bonded_connection(load_engine: None) -> None:
-    from straightjacket.engine.game.turn import _execute_roll
+    from straightjacket.engine.ruleset.make_move import roll_move
 
     game = _starforged()
     game.npcs = [make_npc(id="npc_1", name="Vex")]
@@ -38,7 +38,7 @@ def test_develop_your_relationship_rolls_with_the_rank_of_a_bonded_connection(lo
     track.status = "bonded"
     game.progress_tracks.append(track)
     brain = make_brain_result(move="connection/develop_your_relationship", stat="none", target_npc="npc_1")
-    outcome = _execute_roll(game, brain, None)
+    outcome = roll_move(game, brain, None)
     assert (outcome.roll.stat_name, outcome.roll.stat_value) == ("dangerous", 2)
 
 

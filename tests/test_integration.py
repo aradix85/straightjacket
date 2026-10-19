@@ -302,8 +302,9 @@ def _rolling(result: str) -> Callable[[str, int, str, int, int], object]:
 def _force_result(monkeypatch: pytest.MonkeyPatch, result: str) -> None:
     from straightjacket.engine.game import turn
     from straightjacket.engine.models import SceneSetup
+    from straightjacket.engine.ruleset import make_move
 
-    monkeypatch.setattr(turn, "roll_action", _rolling(result))
+    monkeypatch.setattr(make_move, "roll_action", _rolling(result))
     monkeypatch.setattr(turn, "check_scene", lambda _game: SceneSetup(scene_type="expected"))
 
 

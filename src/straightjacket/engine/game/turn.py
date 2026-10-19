@@ -27,7 +27,6 @@ from ..models import (
     ClockFillResult,
     GameState,
     PlaceRecord,
-    ProgressTrack,
     RandomEvent,
     ResolvedFact,
     RollResult,
@@ -38,31 +37,24 @@ from ..models import (
 from ..prompt_action import build_action_prompt
 from ..prompt_dialog import build_dialog_prompt
 from ..prompt_loader import get_prompt
-from ..ruleset.bonuses import apply_momentum_on_hit, chosen_bonus
 from ..ruleset.config import rules
 from ..ruleset.consequences import generate_consequence_sentences
+from ..ruleset.make_move import RollOutcome, roll_move
 from ..ruleset.meters import momentum
 from ..ruleset.move_outcome import make_follow_up_moves
-from ..ruleset.moves import PICK_METHODS, Move, get_moves
+from ..ruleset.moves import get_moves
 from ..ruleset.outcome_result import OutcomeResult
-from ..ruleset.progress import filled_boxes
-from ..ruleset.roll_sources import roll_by_method, roll_source_without_stat
 from ..ruleset.rolls import (
     can_burn_momentum,
-    downgrade_in_position,
-    keep_action_dice,
-    keep_progress_dice,
-    roll_action,
-    roll_progress,
 )
 from ..ruleset.suffer import tick_dying_clock
 from ..ruleset.threats import advance_threat_by_id, resolve_full_menace, take_pending_threat_events
-from ..ruleset.tracks import find_progress_track, roll_oracle_answer
+from ..ruleset.tracks import roll_oracle_answer
 from ..story_state import get_pending_revelations
 from .action_resolution import resolve_action_phase
 from .finalization import narrate_scene, update_crisis
 from .scene_finalization import finalize_scene
-from .turn_types import ActionResolution, BurnOffer, DirectorCall, RollOutcome, SceneContext
+from .turn_types import ActionResolution, BurnOffer, DirectorCall, SceneContext
 
 
 def process_turn(
@@ -172,7 +164,8 @@ def _play_turn(
 
     game.narrative.scene_count += 1
 
-    roll_outcome = _execute_roll(game, brain, earlier.roll if earlier is not None else None)
+    roll_outcome = roll_move(game, brain, earlier.roll if earlier is not None else None)
+    _snapshot_of_turn(game).roll = roll_outcome.roll
     burn_offer = _offer_momentum_burn(ctx, roll_outcome)
 
     narration, director_ctx = resolve_and_narrate_action(ctx, roll_outcome)
@@ -183,7 +176,7 @@ def _play_turn(
 def _sanitize_brain_output(game: GameState, brain: BrainResult) -> None:
     if brain.dialog_only or brain.stat != eng().ai_text.no_stat or brain.move in get_moves(game.setting_id):
         return
-    if rules().engine_moves[brain.move].roll_type == "action_roll":
+    if rules().engine_moves[brain.move].is_action_roll:
         log(f"[Brain] {brain.move!r} names no stat; it plays as dialog")
         brain.dialog_only = True
 
@@ -352,68 +345,6 @@ def _process_dialog_turn(ctx: SceneContext) -> tuple[str, DirectorCall | None]:
         threat_events=threat_events,
     )
     return narration, director_ctx
-
-
-def _execute_roll(game: GameState, brain: BrainResult, earlier: RollResult | None) -> RollOutcome:
-    ds_move = get_moves(game.setting_id).get(brain.move)
-    track: ProgressTrack | None = None
-
-    if ds_move is not None and ds_move.roll_type == "progress_roll":
-        track = find_progress_track(game, ds_move.track_category, brain.target_track)
-        filled = filled_boxes(track)
-        if earlier is None:
-            roll = roll_progress(track.name, filled, brain.move)
-        else:
-            roll = keep_progress_dice(earlier, track.name, filled, brain.move)
-        roll = downgrade_in_position(game, roll)
-        log(
-            f"[Roll] {roll.move} (progress: {track.name}={filled} boxes): "
-            f"{roll.action_score} vs [{roll.c1},{roll.c2}] "
-            f"→ {roll.result}{' MATCH!' if roll.match else ''}"
-        )
-    else:
-        stat_name, stat_value = _roll_source(game, brain, ds_move)
-        bonus = chosen_bonus(game, brain.bonus_id)
-        adds = game.resources.next_move_bonus + (bonus.add if bonus else 0)
-        rolled_momentum = momentum(game)
-        if earlier is None:
-            roll = roll_action(stat_name, stat_value, brain.move, rolled_momentum, adds)
-        else:
-            roll = keep_action_dice(earlier, stat_name, stat_value, brain.move, rolled_momentum, adds)
-        game.resources.next_move_bonus = 0
-        if bonus:
-            apply_momentum_on_hit(game, bonus, roll.result)
-        _log_action_roll(roll, adds, cancelled=rolled_momentum < 0 and -rolled_momentum == roll.d1)
-
-    _snapshot_of_turn(game).roll = roll
-
-    return RollOutcome(roll=roll, ds_move=ds_move, track=track)
-
-
-def _roll_source(game: GameState, brain: BrainResult, ds_move: Move | None) -> tuple[str, int]:
-    if ds_move is not None and not ds_move.valid_stats:
-        source = roll_source_without_stat(game, ds_move, brain.target_npc)
-        if source is None:
-            raise ValueError(f"{brain.move!r} has nothing to roll with for target {brain.target_npc!r}")
-        return source
-    if brain.stat == eng().ai_text.no_stat:
-        raise ValueError(f"{brain.move!r} is an action roll, but the Brain named no stat")
-    if brain.stat in PICK_METHODS:
-        if ds_move is None:
-            raise ValueError(f"{brain.move!r} has no way that rolls the {brain.stat} stat")
-        return roll_by_method(game, ds_move, brain.stat)
-    return brain.stat, game.stats[brain.stat]
-
-
-def _log_action_roll(roll: RollResult, adds: int, cancelled: bool) -> None:
-    raw = (0 if cancelled else roll.d1) + roll.stat_value + adds
-    score = f"{raw}→{roll.action_score}(cap)" if raw > roll.action_score else str(roll.action_score)
-    log(
-        f"[Roll] {roll.move} ({roll.stat_name}={roll.stat_value}): "
-        f"{roll.d1}+{roll.stat_value}{f'+{adds}' if adds else ''}={score} vs [{roll.c1},{roll.c2}] "
-        f"→ {roll.result}{' MATCH!' if roll.match else ''}"
-        f"{' (action die cancelled by negative momentum)' if cancelled else ''}"
-    )
 
 
 def _offer_momentum_burn(ctx: SceneContext, roll_outcome: RollOutcome) -> BurnOffer | None:
