@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 from typing import Any
-from ..datasworn.moves import get_moves
+from ..datasworn.moves import Move, get_moves
 from ..engine_config import (
     ActiveTrackCondition,
+    EngineMove,
     MoveAvailabilityCondition,
     MoveAvailabilityRule,
     NoActiveTrackCondition,
@@ -57,19 +58,16 @@ def query_game_state(game: GameState) -> dict[str, Any]:
     }
 
 
-def available_moves(game: GameState) -> list[dict[str, Any]]:
+def available_moves(game: GameState) -> dict[str, Move | EngineMove]:
     active_types = {t.track_type for t in game.progress_tracks if t.status == "active"}
     combat_pos = game.world.combat_position
-    moves = [
-        {"move": key, "name": move.name, "stats": move.valid_stats, "roll_type": move.roll_type}
+    moves: dict[str, Move | EngineMove] = {
+        key: move
         for key, move in get_moves(game.setting_id).items()
         if move.roll_type not in eng().unoffered_roll_types
         and _is_move_available(eng().move_availability[key], active_types, combat_pos)
-    ]
-    moves.extend(
-        {"move": key, "name": em.name, "stats": list(em.stats), "roll_type": em.roll_type}
-        for key, em in eng().engine_moves.items()
-    )
+    }
+    moves.update(eng().engine_moves)
     return moves
 
 

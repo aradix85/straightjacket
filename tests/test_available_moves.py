@@ -4,7 +4,7 @@ from straightjacket.engine.datasworn.moves import get_moves
 from straightjacket.engine.engine_config import ActiveTrackCondition
 from straightjacket.engine.engine_loader import eng
 from straightjacket.engine.models import GameState, Resources
-from straightjacket.engine.tools.builtins import available_moves
+from straightjacket.engine.tools import available_moves
 from tests._helpers import make_game_state, make_progress_track
 
 
@@ -21,7 +21,7 @@ def _in_fight(game: GameState, position: str) -> GameState:
 
 
 def _moves(game: GameState) -> set[str]:
-    return {m["move"] for m in available_moves(game)}
+    return set(available_moves(game))
 
 
 class TestAvailableMoves:
@@ -79,9 +79,10 @@ class TestAvailableMoves:
     def test_engine_specific_moves_present(self, load_engine: None) -> None:
         assert {"dialog", "ask_the_oracle", "world_shaping"} <= _moves(_game())
 
-    def test_moves_include_stats(self, load_engine: None) -> None:
-        fd = next(m for m in available_moves(_game()) if m["move"] == "adventure/face_danger")
-        assert set(fd["stats"]) == {"edge", "heart", "iron", "shadow", "wits"}
+    def test_offers_the_settings_own_moves_and_the_engines(self, load_engine: None) -> None:
+        offered = available_moves(_game())
+        assert offered["adventure/face_danger"] is get_moves("starforged")["adventure/face_danger"]
+        assert offered["dialog"] is eng().engine_moves["dialog"]
 
     def test_classic_setting(self, load_engine: None) -> None:
         moves = _moves(_game(setting="classic"))

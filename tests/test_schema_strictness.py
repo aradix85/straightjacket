@@ -64,6 +64,13 @@ def test_the_brain_schema_always_asks_for_a_track_name_and_rank(load_engine: Non
     assert "dangerous" in props["track_rank"]["enum"]
 
 
+def test_the_brain_schema_offers_exactly_the_moves_it_is_given(load_engine: None) -> None:
+    from straightjacket.engine.ai.schemas import get_brain_output_schema
+
+    props = get_brain_output_schema(["dialog", "combat/enter_the_fray"], [], [], [], [])["properties"]
+    assert props["move"]["enum"] == ["combat/enter_the_fray", "dialog"]
+
+
 def test_the_director_schema_requires_all_its_properties(load_engine: None) -> None:
     from straightjacket.engine.ai.schemas import get_director_output_schema
 

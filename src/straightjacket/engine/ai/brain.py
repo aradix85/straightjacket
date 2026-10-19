@@ -13,7 +13,7 @@ from ..prompt_blocks import (
     world_tag,
 )
 from ..prompt_loader import get_prompt, get_prompt_prefix
-from ..tools.builtins import available_moves
+from ..tools import available_moves
 from .provider_base import AIUnavailableError, AICallSpec, AIProvider, create_with_retry
 from .schemas import get_brain_output_schema, get_revelation_check_schema
 from ..mechanics.bonuses import bonus_block, roll_bonuses
@@ -40,15 +40,14 @@ def _ways(move: Move) -> list[str]:
 def _build_moves_block(game: GameState) -> str:
     combat_pos = game.world.combat_position
     trigger_hints = eng().ai_text.brain_trigger_hints
-    ds_moves = get_moves(game.setting_id)
 
     lines = []
-    for m in available_moves(game):
-        ways = _ways(ds_moves[m["move"]]) if m["move"] in ds_moves else m["stats"]
+    for key, move in available_moves(game).items():
+        ways = _ways(move) if isinstance(move, Move) else move.stats
         stats = " | ".join(ways) if ways else "none"
-        hint = trigger_hints.get(m["move"], "")
+        hint = trigger_hints.get(key, "")
         trigger = f" when:{hint}" if hint else ""
-        lines.append(f"  {m['move']} ({m['name']}) stats:[{stats}] roll:{m['roll_type']}{trigger}")
+        lines.append(f"  {key} ({move.name}) stats:[{stats}] roll:{move.roll_type}{trigger}")
 
     pos_line = f"  combat_position: {combat_pos}" if combat_pos else ""
     return "<moves>\n" + "\n".join(lines) + ("\n" + pos_line if pos_line else "") + "\n</moves>"
@@ -107,7 +106,7 @@ def _refuse(reason: str) -> NoReturn:
 
 
 def _check_choices(result: BrainResult, move_keys: list[str], choices: dict[str, list[str]]) -> None:
-    if result.move not in move_keys and result.move not in eng().engine_moves:
+    if result.move not in move_keys:
         _refuse(f"move {result.move!r} is not available in this situation")
     for field_name, allowed in choices.items():
         value = getattr(result, field_name)
@@ -220,7 +219,7 @@ time:{w.time_of_day or _ai_text["unknown_time"]}
 {bonuses}
 <input>{_xe(player_message)}</input>"""
 
-    move_keys = [m["move"] for m in available_moves(game)]
+    move_keys = list(available_moves(game))
     choices = {
         "bonus_id": [b.id for b in roll_bonuses(game)],
         "target_npc": [n.id for n in _listed_npcs(game)],

@@ -8,6 +8,12 @@ This log starts at 2026.09.24.0, the restart after a four-month pause. Earlier r
 
 Calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day.
 
+## [2026.10.19.5] — 2026-10-19
+
+Step 9h: the principle-5 audit of `tools/`. Queries (hits/violations): public symbols 7/0, re-exports 2/0, public names imported past the hub 1/1, dataclass fields 0/0, fields of the offered moves 4/4, fields of the tool's answer 24/0 with 3 for the user, config read (availability rules 54, roll types, engine-move fields 3, tool descriptions 1, prompt keys 1) 60/0, readers that add the engine moves again 2/2. `available_moves` returns the moves themselves by id instead of dicts copying their name, stats, and roll type, of which a Datasworn move's stats only a test read; the hub re-exports it, and the Brain's schema and its check no longer add the engine moves a second time. The thread id and the clock owner in the Director's tool answer wait under 11.0.
+
+Quality gate: 1714 tests, coverage 94.27%. Save format unchanged. No Elvira session: the Brain's prompt and schema are byte-identical before and after, checked in twelve states over the four settings.
+
 ## [2026.10.19.4] — 2026-10-19
 
 Documentation only, at the user's request: the md files shortened, since a session reads them all. The roadmap goes from about 61,000 to 47,000 characters: later steps are sketches that keep their decisions and the facts found, and point to CONTRIBUTING.md, AUDIT.md, `docs/`, the data, and the CHANGELOG instead of repeating them, with a rule that keeps it short; an independent check against the old text found nothing important lost, and its few gaps were put back. The CHANGELOG goes from about 126,000 to 66,000 characters: the 48 entries over 700 characters keep their core, the user's choices, the audits' queries and counts, and the quality gate, and their full text stays in git history. Corrected on the way: `docs/settings.md` on how a setting's moves merge along its parent chain, ORIGINS.md's credits for the Location Crafter, roadmap step 25's claim that Set a Course is played as dialog, and AUDIT.md's list of open items.

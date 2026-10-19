@@ -39,51 +39,51 @@ class TestCombatTrackCompletion:
 
 class TestAvailableMovesStatusFilter:
     def test_completed_vow_excludes_fulfill(self, load_engine: None) -> None:
-        from straightjacket.engine.tools.builtins import available_moves
+        from straightjacket.engine.tools import available_moves
 
         game = _game()
         game.progress_tracks.append(
             make_progress_track(id="v1", name="Old Vow", track_type="vow", ticks=40, status="completed")
         )
-        move_keys = {m["move"] for m in available_moves(game)}
+        move_keys = set(available_moves(game))
         assert "quest/fulfill_your_vow" not in move_keys
 
     def test_active_vow_includes_fulfill(self, load_engine: None) -> None:
-        from straightjacket.engine.tools.builtins import available_moves
+        from straightjacket.engine.tools import available_moves
 
         game = _game()
         game.progress_tracks.append(make_progress_track(id="v1", name="Active Vow", track_type="vow", ticks=20))
-        move_keys = {m["move"] for m in available_moves(game)}
+        move_keys = set(available_moves(game))
         assert "quest/fulfill_your_vow" in move_keys
 
     def test_failed_combat_track_excludes_decisive(self, load_engine: None) -> None:
-        from straightjacket.engine.tools.builtins import available_moves
+        from straightjacket.engine.tools import available_moves
 
         game = _game(combat_position="in_control")
         game.progress_tracks.append(
             make_progress_track(id="c1", name="Fight", track_type="combat", ticks=20, status="failed")
         )
-        move_keys = {m["move"] for m in available_moves(game)}
+        move_keys = set(available_moves(game))
         assert "combat/take_decisive_action" not in move_keys
 
     def test_completed_expedition_excludes_finish(self, load_engine: None) -> None:
-        from straightjacket.engine.tools.builtins import available_moves
+        from straightjacket.engine.tools import available_moves
 
         game = _game()
         game.progress_tracks.append(
             make_progress_track(id="e1", name="Journey", track_type="expedition", ticks=40, status="completed")
         )
-        move_keys = {m["move"] for m in available_moves(game)}
+        move_keys = set(available_moves(game))
         assert "exploration/finish_an_expedition" not in move_keys
 
     def test_completed_scene_challenge_excludes_moves(self, load_engine: None) -> None:
-        from straightjacket.engine.tools.builtins import available_moves
+        from straightjacket.engine.tools import available_moves
 
         game = _game()
         game.progress_tracks.append(
             make_progress_track(id="sc1", name="Escape", track_type="scene_challenge", ticks=40, status="completed")
         )
-        move_keys = {m["move"] for m in available_moves(game)}
+        move_keys = set(available_moves(game))
         assert "scene_challenge/finish_the_scene" not in move_keys
 
 

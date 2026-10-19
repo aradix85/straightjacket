@@ -75,7 +75,7 @@ def get_brain_output_schema(
     rank_enum = sorted(_e.progress.ticks_per_mark)
     return _obj_root(
         {
-            "move": _str_enum(sorted({*move_keys, *_e.engine_moves.keys()})),
+            "move": _str_enum(sorted(move_keys)),
             "stat": _str_enum([*_e.stats.names, *PICK_METHODS]),
             "approach": _str(),
             "target_npc": _nullable_enum(npc_ids),
