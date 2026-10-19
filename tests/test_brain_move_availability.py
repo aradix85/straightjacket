@@ -226,6 +226,14 @@ def test_develop_your_relationship_rolls_only_for_a_connection_with_a_bond(load_
     assert "Orla (id:npc_2, neutral)" in provider.user_messages[0]
 
 
+def test_a_move_that_acts_on_an_npc_without_a_target_is_refused(load_engine: None) -> None:
+    from straightjacket.engine.ai.brain import call_brain
+
+    provider = _BrainAnswers("connection/test_your_relationship", stat="heart", target_npc=None)
+    with pytest.raises(AIUnavailableError, match="acts on an NPC, but names no target_npc"):
+        call_brain(provider, _starforged(), "I test whether she still trusts me.")
+
+
 def test_develop_your_relationship_is_offered_only_with_a_bond(load_engine: None) -> None:
     from straightjacket.engine.tools import available_moves
 

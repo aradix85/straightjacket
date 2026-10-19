@@ -397,10 +397,8 @@ move_outcomes:
     miss:
     - pay_the_price
   relationship/forge_a_bond:
-    strong_hit:
-    - bond +1
-    weak_hit:
-    - bond +1
+    strong_hit: []
+    weak_hit: []
     miss:
     - pay_the_price
   relationship/sojourn:

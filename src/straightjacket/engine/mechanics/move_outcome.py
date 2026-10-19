@@ -7,7 +7,7 @@ from ..engine_loader import eng
 from ..logging_util import log
 from ..models import GameState
 from .consequences import roll_action
-from .move_effects import MoveEffect, apply_effects, has_story_complication, parse_effects, roll_move_table
+from .move_effects import NPC_EFFECTS, MoveEffect, apply_effects, has_story_complication, parse_effects, roll_move_table
 from .move_handlers import apply_recovery_handler, apply_suffer_handler, apply_threshold_handler
 from .outcome_result import OutcomeResult, move_outcome_config
 from .roll_sources import best_roll_option
@@ -37,6 +37,11 @@ def resolve_move_outcome(
         if effect.type == "table":
             roll_move_table(game, move_key, effect.target, result)
     return result
+
+
+def acts_on_an_npc(game: GameState, move_key: str) -> bool:
+    lists = [effects for effects in move_outcome_config(game, move_key).values() if isinstance(effects, list)]
+    return any(effect.type in NPC_EFFECTS for effects in lists for effect in parse_effects(effects))
 
 
 def make_follow_up_moves(game: GameState, result: OutcomeResult) -> None:

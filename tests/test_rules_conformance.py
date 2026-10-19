@@ -659,6 +659,51 @@ def test_develop_your_relationship_match_raises_the_connection_rank(
 
 
 @pytest.mark.parametrize(
+    ("effect", "message"),
+    [
+        ("disposition_shift", "needs a target NPC"),
+        ("bond +1", "needs a target NPC"),
+        ("raise_connection_rank", "needs a target NPC"),
+    ],
+)
+def test_an_npc_effect_without_a_target_raises(load_engine: None, effect: str, message: str) -> None:
+    from straightjacket.engine.mechanics.move_effects import apply_effects, parse_effects
+    from tests._helpers import make_game_state
+
+    with pytest.raises(ValueError, match=message):
+        apply_effects(make_game_state(setting_id="starforged"), parse_effects([effect]), target_npc_id=None)
+
+
+@pytest.mark.parametrize("effect", ["bond +1", "raise_connection_rank"])
+def test_a_connection_effect_on_an_npc_without_a_connection_raises(load_engine: None, effect: str) -> None:
+    from straightjacket.engine.mechanics.move_effects import apply_effects, parse_effects
+    from tests._helpers import make_game_state, make_npc
+
+    game = make_game_state(setting_id="starforged")
+    game.npcs = [make_npc(id="npc_1", name="Mira")]
+    with pytest.raises(ValueError, match="needs a connection with Mira"):
+        apply_effects(game, parse_effects([effect]), target_npc_id="npc_1")
+
+
+@pytest.mark.parametrize(
+    ("setting", "move", "acts"),
+    [
+        ("starforged", "connection/make_a_connection", True),
+        ("starforged", "connection/test_your_relationship", True),
+        ("starforged", "connection/develop_your_relationship", True),
+        ("starforged", "connection/forge_a_bond", False),
+        ("starforged", "adventure/face_danger", False),
+        ("classic", "relationship/forge_a_bond", False),
+    ],
+)
+def test_which_moves_act_on_an_npc(load_engine: None, setting: str, move: str, acts: bool) -> None:
+    from straightjacket.engine.mechanics.move_outcome import acts_on_an_npc
+    from tests._helpers import make_game_state
+
+    assert acts_on_an_npc(make_game_state(setting_id=setting), move) is acts
+
+
+@pytest.mark.parametrize(
     ("setting", "move", "first", "lasting"),
     [
         ("classic", "suffer/endure_harm", "wounded", "maimed"),

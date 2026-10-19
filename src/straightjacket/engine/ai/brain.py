@@ -18,6 +18,7 @@ from .provider_base import AIUnavailableError, AICallSpec, AIProvider, create_wi
 from .schemas import get_brain_output_schema, get_revelation_check_schema
 from ..mechanics.bonuses import bonus_block, roll_bonuses
 from ..mechanics.complications import open_complications
+from ..mechanics.move_outcome import acts_on_an_npc
 from ..mechanics.roll_sources import roll_source_without_stat
 from ..mechanics.tracks import track_category_of_move
 from ..npc.bond import connection_track
@@ -125,6 +126,13 @@ def _check_choices(result: BrainResult, move_keys: list[str], choices: dict[str,
     boasts = eng().boasts
     if len(result.boasts) > boasts.max_per_roll or any(b not in boasts.options for b in result.boasts):
         _refuse(f"boasts {result.boasts!r} are not among the offered boasts")
+
+
+def _check_target_npc(game: GameState, result: BrainResult) -> None:
+    if result.target_npc is not None or result.dialog_only or result.move not in get_moves(game.setting_id):
+        return
+    if acts_on_an_npc(game, result.move):
+        _refuse(f"move {result.move!r} acts on an NPC, but names no target_npc")
 
 
 def _check_target_track(game: GameState, result: BrainResult) -> None:
@@ -251,6 +259,7 @@ time:{w.time_of_day or _ai_text["unknown_time"]}
         )
         content, result = _ask_brain(provider, spec)
         _check_choices(result, move_keys, choices)
+        _check_target_npc(game, result)
         _check_target_track(game, result)
         stats = _wrong_stat(game, result)
         if not stats:

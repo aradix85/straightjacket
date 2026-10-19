@@ -17,7 +17,7 @@ from .outcome_result import OutcomeResult
 from .random_events import roll_meaning_table
 from .suffer import suffer
 from ..logging_util import log
-from ..models import GameState, NpcData
+from ..models import GameState, NpcData, ProgressTrack
 from ..npc import find_npc
 from ..npc.bond import connection_track
 
@@ -215,15 +215,27 @@ def _apply_suffer_move_effect(
     _apply_generic_suffer(game, abs(effect.value), result)
 
 
+NPC_EFFECTS = frozenset({"bond", "raise_connection_rank", "disposition_shift"})
+
+
+def _required_target(effect: MoveEffect, target: NpcData | None) -> NpcData:
+    if target is None:
+        raise ValueError(f"The {effect.type} effect needs a target NPC")
+    return target
+
+
+def _target_connection(game: GameState, effect: MoveEffect, target: NpcData | None) -> tuple[NpcData, ProgressTrack]:
+    npc = _required_target(effect, target)
+    track = connection_track(game, npc.id)
+    if track is None:
+        raise ValueError(f"The {effect.type} effect needs a connection with {npc.name}")
+    return npc, track
+
+
 def _apply_raise_connection_rank_effect(
     game: GameState, effect: MoveEffect, result: OutcomeResult, target: NpcData | None
 ) -> None:
-    if not target:
-        return
-    track = connection_track(game, target.id)
-    if track is None:
-        log(f"[MoveOutcome] rank raise but no connection track for {target.name}")
-        return
+    target, track = _target_connection(game, effect, target)
     higher = shifted_rank(track.rank, 1)
     if higher is None:
         return
@@ -300,12 +312,7 @@ def _apply_complication_effect(
 
 
 def _apply_bond_effect(game: GameState, effect: MoveEffect, result: OutcomeResult, target: NpcData | None) -> None:
-    if not target:
-        return
-    conn_track = connection_track(game, target.id)
-    if not conn_track:
-        log(f"[MoveOutcome] bond effect but no connection track for {target.name}")
-        return
+    target, conn_track = _target_connection(game, effect, target)
     _labels = eng().ai_text.consequence_labels
     for _ in range(abs(effect.value)):
         added = conn_track.mark_progress()
@@ -316,8 +323,7 @@ def _apply_bond_effect(game: GameState, effect: MoveEffect, result: OutcomeResul
 def _apply_disposition_shift_effect(
     game: GameState, effect: MoveEffect, result: OutcomeResult, target: NpcData | None
 ) -> None:
-    if not target:
-        return
+    target = _required_target(effect, target)
     _e = eng()
     shifts = _e.get_raw("disposition_shifts")
     old_disp = target.disposition

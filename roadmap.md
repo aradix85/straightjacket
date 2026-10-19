@@ -84,8 +84,6 @@ The audits of AUDIT.md, one session per principle or submodule as it prescribes.
 
 **9h.16** Consequence sentences are parsed back from the engine's own labels (`mechanics/consequences.py` → `_classify`): `mark` stands for an impact, progress, and experience, a bond is found by its word, Pay the Price rows pass through the same parser, which turns an unparsable amount into 1, and a disposition shift (Make a Connection, Test Your Relationship) gets no sentence. A structured consequence in `OutcomeResult` removes the parser and can give the disposition shift its sentence; it touches the effect and move handlers, boasts, finalization, and the narrator's consequence block.
 
-**9h.18** A bond, connection-rank, or disposition effect without a target NPC does nothing (`mechanics/move_effects.py`), since the Brain's schema lets `target_npc` be null for every move; whether `call_brain` refuses such a move without a target, as it does Make a Connection.
-
 **9h.28** A correction of the state narrates the turn again without the turn's random events, threat events, and filled clocks, since `TurnSnapshot` keeps none of them (`correction/orchestrator.py` → `_rewrite_prompt`); keeping them breaks the save format.
 
 **9h.29** The Brain chooses a move from its name, its ways to roll in the book's words, and hand-written hints for six moves (`ai_text.brain_trigger_hints` in `engine/ai_text.yaml`), while Datasworn gives every move its trigger and full text (`datasworn/moves.py` → `Move.text`, read by nothing yet). Whether the Brain reads the book's trigger instead of the hints, measured on its move choice before and after, since its prompt grows with every move on offer.
@@ -141,7 +139,7 @@ A separate AI call (`call_revelation_check`) judges after narration whether the 
 
 **9j.1** Which gains a marked condition blocks, per ruleset. In Starforged and Sundered Isles a meter whose condition is marked rises only through the move that clears it, while the engine checks only in Endure and the recovery moves, so Sojourn's gains still raise it. Classic's move texts ask only for the meter above 0, but its Datasworn rules text (`rules.impacts.conditions`) says a condition blocks its track; which holds is settled first. The register entries "Classic Ironsworn borrows one Starforged impact rule" and "Marked conditions block only Endure and the recovery moves" leave.
 
-**9j.2** Classic's bonds special track: Forge a Bond marks it, and Write Your Epilogue (13b) rolls it.
+**9j.2** Classic's bonds special track: Forge a Bond marks it, and Write Your Epilogue (13b) rolls it. Today classic's Forge a Bond marks nothing on a hit (`relationship/forge_a_bond` in `engine/move_outcomes.yaml`).
 
 **9j.3** The Adventure Crafter's theme translation lets the adventure's tone pick a theme for the blueprint.
 
