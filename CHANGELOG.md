@@ -8,6 +8,12 @@ This log starts at 2026.09.24.0, the restart after a four-month pause. Earlier r
 
 Calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day.
 
+## [2026.10.20.12] — 2026-10-20
+
+Step 9o, 9o.2, seventh group: the markup of `ai/blueprint_voicing.py` moves to `prompts/blueprint_voicing.yaml`, 16 keys: the voicing request as a template, its backstory and location lines, an act's line with its turning point and the three words for what a turning point does to its plotline (opens, concludes, advances), the revelation and ending seeds with their wrappers, and the campaign's chapter lines. An act's line is its own function, `_act_line`. The render script of this group rendered the request for 25 Adventure Crafter seeds and a Kishōtenketsu seed in each setting, with and without backstory, location, campaign history, and seeds, with every line that builds the request reached (what it leaves out are the call's failure and retry paths), and it was byte-identical before and after. Play does not change.
+
+Quality gate: 1848 tests, coverage 94.90%. Save format unchanged. No Elvira session (Sessions with the user); the prompts are byte-identical.
+
 ## [2026.10.20.11] — 2026-10-20
 
 Step 9o, 9o.2, sixth group: the markup of `director.py` moves to `prompts/director.yaml`, 12 keys: the Director's prompt as a template, its arc notes and tool results, the `<reflect>` tag with its instinct, last reflection, tone, and profile attributes, and its story arc with the scene range, the past-range marker, and the transition trigger. An NPC's memory form, its arc attribute, and the thematic thread attribute are the keys the narrator's blocks already use. The render script of this group rendered the Director's system prompt, its reflection blocks, its story arc at several scenes with and without a thematic thread and a transition trigger, and both of its calls with and without the tool's results, with every line that builds a prompt reached (what it leaves out are the trigger rules and how guidance is applied), and the five earlier groups' scripts ran again: all byte-identical before and after. The previous entry's key count is corrected to 17. Play does not change.

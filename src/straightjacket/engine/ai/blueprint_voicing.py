@@ -2,7 +2,7 @@ import json
 from typing import Any
 
 from ..config_loader import model_for_role, narration_language, sampling_params
-from ..crafters.blueprint import BlueprintSeed
+from ..crafters.blueprint import ActSeed, BlueprintSeed
 from ..crafters.config import crafter
 from ..engine_loader import eng
 from ..logging_util import log
@@ -16,54 +16,79 @@ from .provider_base import AICallSpec, AIProvider, create_with_retry
 from .schemas import get_blueprint_voicing_schema
 
 
+def _act_line(n: int, act_seed: ActSeed) -> str:
+    turning_point = ""
+    tp = act_seed.turning_point
+    if tp is not None:
+        if tp.opens_plotline:
+            turn = get_prompt("blueprint_turn_opens")
+        elif tp.concludes_plotline:
+            turn = get_prompt("blueprint_turn_concludes")
+        else:
+            turn = get_prompt("blueprint_turn_advances")
+        turning_point = get_prompt(
+            "blueprint_turning_point",
+            beats="; ".join(h.name for h in tp.plot_points if h.special_range != "none"),
+            plotline=tp.plotline,
+            turn=turn,
+        )
+    return get_prompt(
+        "blueprint_act",
+        n=str(n),
+        phase=act_seed.phase,
+        first=str(act_seed.scene_range[0]),
+        last=str(act_seed.scene_range[1]),
+        turning_point=turning_point,
+    )
+
+
 def _build_voicing_user_msg(game: GameState, seed: BlueprintSeed) -> str:
-    parts = [
-        f"structure_type:{seed.structure_type}",
-        f"themes:{', '.join(seed.themes)}",
-        f"genre:{game.setting_genre}",
-        f"tone:{game.setting_tone}",
-        f"world:{game.setting_description}",
-        f"character:{_xe(game.player_name)} — {_xe(game.character_concept)}",
-    ]
-    if game.backstory:
-        parts.append(f"backstory:{_xe(game.backstory)}")
-    if game.world.current_location:
-        parts.append(f"location:{_xe(game.world.current_location)}")
+    revelation_seeds = ""
+    if seed.revelation_seeds:
+        lines = [
+            get_prompt("blueprint_revelation_seed", n=str(i), seed=hit.name, theme=hit.theme)
+            for i, hit in enumerate(seed.revelation_seeds, start=1)
+        ]
+        revelation_seeds = "\n" + get_prompt("blueprint_revelation_seeds", lines="\n".join(lines))
+
+    ending_seeds = ""
+    if seed.ending_seeds:
+        lines = [
+            get_prompt("blueprint_ending_seed", n=str(i), plotline=plotline.name, status=plotline.status)
+            for i, plotline in enumerate(seed.ending_seeds, start=1)
+        ]
+        ending_seeds = "\n" + get_prompt("blueprint_ending_seeds", lines="\n".join(lines))
+
+    campaign = ""
+    if game.campaign.campaign_history:
+        campaign = "\n" + get_prompt("blueprint_campaign_chapter", chapter=str(game.campaign.chapter_number))
+        for ch in game.campaign.campaign_history[-eng().recap_limits.recap_campaign_window :]:
+            campaign += "\n" + get_prompt(
+                "blueprint_previous_chapter", chapter=str(ch.chapter), summary=_xe(ch.summary)
+            )
 
     blueprint = crafter().adventure_crafter.blueprint
-    parts.append(
-        f"required_counts: acts={len(seed.acts)} revelations={blueprint.revelations_per_blueprint} "
-        f"possible_endings={blueprint.possible_endings_per_blueprint}"
+    return get_prompt(
+        "blueprint_request",
+        structure=seed.structure_type,
+        themes=", ".join(seed.themes),
+        genre=game.setting_genre,
+        tone=game.setting_tone,
+        world=game.setting_description,
+        player=_xe(game.player_name),
+        concept=_xe(game.character_concept),
+        backstory="\n" + get_prompt("blueprint_backstory", backstory=_xe(game.backstory)) if game.backstory else "",
+        location="\n" + get_prompt("blueprint_location", location=_xe(game.world.current_location))
+        if game.world.current_location
+        else "",
+        acts=str(len(seed.acts)),
+        revelations=str(blueprint.revelations_per_blueprint),
+        endings=str(blueprint.possible_endings_per_blueprint),
+        act_lines="\n".join(_act_line(i, act_seed) for i, act_seed in enumerate(seed.acts, start=1)),
+        revelation_seeds=revelation_seeds,
+        ending_seeds=ending_seeds,
+        campaign=campaign,
     )
-    parts.append("<acts>")
-    for i, act_seed in enumerate(seed.acts, start=1):
-        line = f"act {i} phase={act_seed.phase} scene_range={act_seed.scene_range[0]}-{act_seed.scene_range[1]}"
-        if act_seed.turning_point is not None:
-            tp = act_seed.turning_point
-            beat_names = "; ".join(h.name for h in tp.plot_points if h.special_range != "none")
-            turn = "opens" if tp.opens_plotline else "concludes" if tp.concludes_plotline else "advances"
-            line += f" turning_point_beats=[{beat_names}] plotline={tp.plotline} plotline_turn={turn}"
-        parts.append(line)
-    parts.append("</acts>")
-
-    if seed.revelation_seeds:
-        parts.append("<revelation_seeds>")
-        for i, hit in enumerate(seed.revelation_seeds, start=1):
-            parts.append(f"revelation {i}: {hit.name} (theme={hit.theme})")
-        parts.append("</revelation_seeds>")
-
-    if seed.ending_seeds:
-        parts.append("<ending_seeds>")
-        for i, plotline in enumerate(seed.ending_seeds, start=1):
-            parts.append(f"ending {i}: plotline={plotline.name} status={plotline.status}")
-        parts.append("</ending_seeds>")
-
-    if game.campaign.campaign_history:
-        parts.append(f"campaign_chapter:{game.campaign.chapter_number}")
-        for ch in game.campaign.campaign_history[-eng().recap_limits.recap_campaign_window :]:
-            parts.append(f"  prev_chapter_{ch.chapter}: {_xe(ch.summary)}")
-
-    return "\n".join(parts)
 
 
 def call_blueprint_voicing(

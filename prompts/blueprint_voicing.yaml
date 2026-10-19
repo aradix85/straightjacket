@@ -12,3 +12,33 @@
   </rules>
 "blueprint_voicing_count_retry": |-
   Your blueprint has the wrong number of entries: {mismatch}. Write the whole blueprint again with exactly the counts in required_counts, keeping what fits.
+"blueprint_request": |-
+  structure_type:{structure}
+  themes:{themes}
+  genre:{genre}
+  tone:{tone}
+  world:{world}
+  character:{player} — {concept}{backstory}{location}
+  required_counts: acts={acts} revelations={revelations} possible_endings={endings}
+  <acts>
+  {act_lines}
+  </acts>{revelation_seeds}{ending_seeds}{campaign}
+"blueprint_backstory": 'backstory:{backstory}'
+"blueprint_location": 'location:{location}'
+"blueprint_act": 'act {n} phase={phase} scene_range={first}-{last}{turning_point}'
+"blueprint_turning_point": ' turning_point_beats=[{beats}] plotline={plotline} plotline_turn={turn}'
+"blueprint_turn_opens": 'opens'
+"blueprint_turn_concludes": 'concludes'
+"blueprint_turn_advances": 'advances'
+"blueprint_revelation_seeds": |-
+  <revelation_seeds>
+  {lines}
+  </revelation_seeds>
+"blueprint_revelation_seed": 'revelation {n}: {seed} (theme={theme})'
+"blueprint_ending_seeds": |-
+  <ending_seeds>
+  {lines}
+  </ending_seeds>
+"blueprint_ending_seed": 'ending {n}: plotline={plotline} status={status}'
+"blueprint_campaign_chapter": 'campaign_chapter:{chapter}'
+"blueprint_previous_chapter": '  prev_chapter_{chapter}: {summary}'
