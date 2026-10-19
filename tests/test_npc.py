@@ -404,7 +404,7 @@ def test_a_merge_keeps_the_connection_with_the_most_progress(load_engine: None) 
 
 
 def test_is_complete_description() -> None:
-    from straightjacket.engine.gamemaster.npc.lifecycle import is_complete_description
+    from straightjacket.engine.gamemaster.npc.description_match import is_complete_description
 
     assert is_complete_description("Tall woman with red hair.") is True
     assert is_complete_description("Tall woman with red") is False

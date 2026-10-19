@@ -3,16 +3,17 @@ from typing import Any
 
 from ..ai.brain import call_revelation_check
 from ..director import should_call_director
+from ..gamemaster.chaos import update_chaos_factor
 from ..gamemaster.clocks import tick_autonomous_clocks
 from ..gamemaster.config import gm
 from ..gamemaster.npc.matching import find_npc, present_in_narration
+from ..gamemaster.pacing import record_scene_intensity
 from ..gamemaster.questions import outcome_of
 from ..gamemaster.random_events import (
     add_character_weight,
     add_thread_weight,
     consolidate_lists,
 )
-from ..gamemaster.world import record_scene_intensity, update_chaos_factor
 from ..logging_util import log
 from ..models import (
     BrainResult,

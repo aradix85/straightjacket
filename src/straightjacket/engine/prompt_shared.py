@@ -7,10 +7,11 @@ from .gamemaster.config import gm
 from .gamemaster.generation import current_place
 from .gamemaster.npc.matching import find_npc
 from .gamemaster.npc.memory import retrieve_memories
+from .gamemaster.pacing import get_pacing_hint
 from .gamemaster.questions import answers
 from .gamemaster.scene import adjustment_descriptions
 from .gamemaster.stance_gate import compute_npc_gate, resolve_npc_stance
-from .gamemaster.world import get_pacing_hint, locations_match
+from .gamemaster.world import locations_match
 from .logging_util import log
 from .models import BrainResult, ClockFillResult, GameState, NpcData, RandomEvent, ResolvedFact, SceneSetup, ThreatEvent
 from .prompt_blocks import character_tag, world_tag

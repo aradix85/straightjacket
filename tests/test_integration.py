@@ -871,7 +871,7 @@ def test_every_correction_op_has_a_handler(load_engine: None) -> None:
 
 
 def test_description_match_catches_identity_reveal(stub_engine: None) -> None:
-    from straightjacket.engine.gamemaster.npc.lifecycle import description_match_existing_npc
+    from straightjacket.engine.gamemaster.npc.description_match import description_match_existing_npc
 
     game = _make_game()
 
@@ -885,7 +885,7 @@ def test_description_match_catches_identity_reveal(stub_engine: None) -> None:
 
 
 def test_description_match_rejects_short_descriptions(stub_engine: None) -> None:
-    from straightjacket.engine.gamemaster.npc.lifecycle import description_match_existing_npc
+    from straightjacket.engine.gamemaster.npc.description_match import description_match_existing_npc
 
     game = _make_game()
     match = description_match_existing_npc(game, "Short", "stranger")

@@ -4,15 +4,8 @@ from ...engine_loader import eng
 from ...logging_util import log
 from ...models import GameState, MemoryEntry, NpcData
 from ..config import gm
-from .lifecycle import (
-    absorb_duplicate_npc,
-    description_match_existing_npc,
-    is_complete_description,
-    merge_npc_identity,
-    reactivate_npc,
-    rename_npc,
-    retire_distant_npcs,
-)
+from .description_match import description_match_existing_npc, is_complete_description
+from .lifecycle import absorb_duplicate_npc, merge_npc_identity, reactivate_npc, rename_npc, retire_distant_npcs
 from .matching import find_npc, fuzzy_match_existing_npc, next_npc_id, normalize_for_match, sanitize_npc_name
 from .memory import score_importance
 from .naming import roll_oracle_name

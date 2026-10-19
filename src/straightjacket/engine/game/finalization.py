@@ -9,10 +9,11 @@ from ..ai.narrator import call_narrator, call_narrator_metadata
 from ..ai.provider_base import AIProvider, NarrationSink
 from ..gamemaster.clocks import tick_threat_clock
 from ..gamemaster.config import gm
-from ..gamemaster.engine_memories import generate_engine_memories, generate_scene_context
+from ..gamemaster.engine_memories import generate_engine_memories
 from ..gamemaster.npc.matching import named_in
 from ..gamemaster.npc.memory import consolidate_memory
 from ..gamemaster.questions import answers
+from ..gamemaster.scene_context import generate_scene_context
 from ..models import (
     BrainResult,
     ClockEvent,

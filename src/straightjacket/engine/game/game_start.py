@@ -13,8 +13,10 @@ from ..crafters.blueprint import (
 )
 from ..gamemaster.clocks import spawn_keyed_scenes_for_clock
 from ..gamemaster.config import gm
+from ..gamemaster.pacing import record_scene_intensity
 from ..gamemaster.spawn_sources import SETUP_SOURCE
-from ..gamemaster.world import choose_story_structure, new_world, record_scene_intensity
+from ..gamemaster.story import choose_story_structure
+from ..gamemaster.world import new_world
 from ..logging_util import log
 from ..models import (
     CharacterListEntry,

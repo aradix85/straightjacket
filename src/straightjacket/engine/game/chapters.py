@@ -18,7 +18,9 @@ from ..engine_loader import eng
 from ..gamemaster.config import gm
 from ..gamemaster.npc.matching import next_npc_id
 from ..gamemaster.npc.memory import consolidate_memory
-from ..gamemaster.world import choose_story_structure, clear_facts, record_scene_intensity
+from ..gamemaster.pacing import record_scene_intensity
+from ..gamemaster.story import choose_story_structure
+from ..gamemaster.world import clear_facts
 from ..logging_util import log
 from ..models import (
     ChapterSummary,

@@ -5,7 +5,7 @@ from tests._helpers import make_brain_result, make_game_state, make_npc
 
 
 def test_update_chaos_factor_miss_increases(load_engine: None) -> None:
-    from straightjacket.engine.gamemaster.world import update_chaos_factor
+    from straightjacket.engine.gamemaster.chaos import update_chaos_factor
 
     g = make_game_state()
     g.world.chaos_factor = 5
@@ -14,7 +14,7 @@ def test_update_chaos_factor_miss_increases(load_engine: None) -> None:
 
 
 def test_update_chaos_factor_strong_hit_decreases(load_engine: None) -> None:
-    from straightjacket.engine.gamemaster.world import update_chaos_factor
+    from straightjacket.engine.gamemaster.chaos import update_chaos_factor
 
     g = make_game_state()
     g.world.chaos_factor = 5
@@ -23,7 +23,7 @@ def test_update_chaos_factor_strong_hit_decreases(load_engine: None) -> None:
 
 
 def test_update_chaos_factor_dialog_hostile_increases(load_engine: None) -> None:
-    from straightjacket.engine.gamemaster.world import update_chaos_factor
+    from straightjacket.engine.gamemaster.chaos import update_chaos_factor
 
     g = make_game_state()
     g.world.chaos_factor = 5
@@ -33,7 +33,7 @@ def test_update_chaos_factor_dialog_hostile_increases(load_engine: None) -> None
 
 
 def test_update_chaos_factor_dialog_friendly_decreases(load_engine: None) -> None:
-    from straightjacket.engine.gamemaster.world import update_chaos_factor
+    from straightjacket.engine.gamemaster.chaos import update_chaos_factor
 
     g = make_game_state()
     g.world.chaos_factor = 5
@@ -43,7 +43,7 @@ def test_update_chaos_factor_dialog_friendly_decreases(load_engine: None) -> Non
 
 
 def test_update_chaos_factor_dialog_neutral_unchanged(load_engine: None) -> None:
-    from straightjacket.engine.gamemaster.world import update_chaos_factor
+    from straightjacket.engine.gamemaster.chaos import update_chaos_factor
 
     g = make_game_state()
     g.world.chaos_factor = 5
@@ -53,7 +53,7 @@ def test_update_chaos_factor_dialog_neutral_unchanged(load_engine: None) -> None
 
 
 def test_update_chaos_factor_dialog_unknown_npc(load_engine: None) -> None:
-    from straightjacket.engine.gamemaster.world import update_chaos_factor
+    from straightjacket.engine.gamemaster.chaos import update_chaos_factor
 
     g = make_game_state()
     g.world.chaos_factor = 5
@@ -62,7 +62,7 @@ def test_update_chaos_factor_dialog_unknown_npc(load_engine: None) -> None:
 
 
 def test_update_chaos_factor_weak_hit_unchanged(load_engine: None) -> None:
-    from straightjacket.engine.gamemaster.world import update_chaos_factor
+    from straightjacket.engine.gamemaster.chaos import update_chaos_factor
 
     g = make_game_state()
     g.world.chaos_factor = 5
@@ -211,7 +211,7 @@ def test_apply_brain_location_time_without_change(load_engine: None) -> None:
 
 
 def test_get_pacing_hint_neutral_when_empty(load_engine: None) -> None:
-    from straightjacket.engine.gamemaster.world import get_pacing_hint
+    from straightjacket.engine.gamemaster.pacing import get_pacing_hint
 
     g = make_game_state()
     g.narrative.scene_intensity_history = []
@@ -219,7 +219,7 @@ def test_get_pacing_hint_neutral_when_empty(load_engine: None) -> None:
 
 
 def test_get_pacing_hint_breather_after_intense_run(load_engine: None) -> None:
-    from straightjacket.engine.gamemaster.world import get_pacing_hint
+    from straightjacket.engine.gamemaster.pacing import get_pacing_hint
 
     g = make_game_state()
     threshold = gm().pacing.intense_threshold
@@ -228,7 +228,7 @@ def test_get_pacing_hint_breather_after_intense_run(load_engine: None) -> None:
 
 
 def test_get_pacing_hint_action_after_calm_run(load_engine: None) -> None:
-    from straightjacket.engine.gamemaster.world import get_pacing_hint
+    from straightjacket.engine.gamemaster.pacing import get_pacing_hint
 
     g = make_game_state()
     threshold = gm().pacing.calm_threshold
@@ -237,7 +237,7 @@ def test_get_pacing_hint_action_after_calm_run(load_engine: None) -> None:
 
 
 def test_get_pacing_hint_neutral_mixed(load_engine: None) -> None:
-    from straightjacket.engine.gamemaster.world import get_pacing_hint
+    from straightjacket.engine.gamemaster.pacing import get_pacing_hint
 
     g = make_game_state()
     g.narrative.scene_intensity_history = ["action", "breather", "action"]
@@ -245,7 +245,7 @@ def test_get_pacing_hint_neutral_mixed(load_engine: None) -> None:
 
 
 def test_record_scene_intensity_caps_at_window(load_engine: None) -> None:
-    from straightjacket.engine.gamemaster.world import record_scene_intensity
+    from straightjacket.engine.gamemaster.pacing import record_scene_intensity
 
     g = make_game_state()
     window = gm().pacing.window_size
@@ -257,7 +257,7 @@ def test_record_scene_intensity_caps_at_window(load_engine: None) -> None:
 def test_choose_story_structure_follows_the_tone(load_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:
     import random
 
-    from straightjacket.engine.gamemaster.world import choose_story_structure
+    from straightjacket.engine.gamemaster.story import choose_story_structure
 
     monkeypatch.setattr(random, "random", lambda: 0.5)
     assert choose_story_structure("dark_gritty") == "3act"
@@ -265,7 +265,7 @@ def test_choose_story_structure_follows_the_tone(load_engine: None, monkeypatch:
 
 
 def test_choose_story_structure_rejects_an_unknown_tone(load_engine: None) -> None:
-    from straightjacket.engine.gamemaster.world import choose_story_structure
+    from straightjacket.engine.gamemaster.story import choose_story_structure
 
     with pytest.raises(KeyError):
         choose_story_structure("nonsense_tone")

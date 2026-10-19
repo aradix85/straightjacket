@@ -130,7 +130,7 @@ def test_a_danger_is_open_while_its_threat_is_active_and_not_full(load_engine: N
 
 
 def test_the_game_master_s_time_for_a_place_change_is_its_own(load_engine: None) -> None:
-    from straightjacket.engine.gamemaster.resolvers import resolve_time_progression
+    from straightjacket.engine.gamemaster.world import resolve_time_progression
 
     assert resolve_time_progression("combat/strike", has_location_change=True) == gm().location.change_time
     assert resolve_time_progression("recover/resupply", has_location_change=False) == "moderate"

@@ -1,7 +1,7 @@
 from .config_loader import narration_language
 from .engine_loader import eng
 from .format_utils import describe_by_threshold
-from .gamemaster.world import get_pacing_hint
+from .gamemaster.pacing import get_pacing_hint
 from .models import GameState
 from .prompt_loader import get_prompt, get_prompt_prefix
 from .ruleset.answers import results_by_outcome

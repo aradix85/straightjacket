@@ -10,7 +10,9 @@ from ..ai.narrator import call_narrator, call_opening_setup
 from ..ai.provider_base import AIProvider
 from ..crafters.blueprint import assemble_blueprint_seed_from_ac, assemble_blueprint_seed_kishotenketsu
 from ..gamemaster.config import gm
-from ..gamemaster.world import choose_story_structure, clear_facts, record_scene_intensity
+from ..gamemaster.pacing import record_scene_intensity
+from ..gamemaster.story import choose_story_structure
+from ..gamemaster.world import clear_facts
 from ..logging_util import log
 from ..models import (
     DirectorGuidance,

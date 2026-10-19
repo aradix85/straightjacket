@@ -151,11 +151,3 @@ def resolve_effect(game: GameState, brain: BrainResult, position: str) -> str:
 
     log(f"[Effect] score={score}, effect={effect} (position={position}, move={brain.move})")
     return effect
-
-
-def resolve_time_progression(move: str, has_location_change: bool) -> str:
-    if has_location_change:
-        return gm().location.change_time
-    if move in gm().moves:
-        return gm().moves[move].time
-    return answers().time_taken(move)
