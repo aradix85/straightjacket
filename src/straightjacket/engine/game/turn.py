@@ -41,6 +41,7 @@ from ..prompt_loader import get_prompt
 from ..ruleset.bonuses import apply_momentum_on_hit, chosen_bonus
 from ..ruleset.config import rules
 from ..ruleset.consequences import generate_consequence_sentences
+from ..ruleset.meters import momentum
 from ..ruleset.move_outcome import make_follow_up_moves
 from ..ruleset.moves import PICK_METHODS, Move, get_moves
 from ..ruleset.outcome_result import OutcomeResult
@@ -374,15 +375,15 @@ def _execute_roll(game: GameState, brain: BrainResult, earlier: RollResult | Non
         stat_name, stat_value = _roll_source(game, brain, ds_move)
         bonus = chosen_bonus(game, brain.bonus_id)
         adds = game.resources.next_move_bonus + (bonus.add if bonus else 0)
-        momentum = game.resources.momentum
+        rolled_momentum = momentum(game)
         if earlier is None:
-            roll = roll_action(stat_name, stat_value, brain.move, momentum, adds)
+            roll = roll_action(stat_name, stat_value, brain.move, rolled_momentum, adds)
         else:
-            roll = keep_action_dice(earlier, stat_name, stat_value, brain.move, momentum, adds)
+            roll = keep_action_dice(earlier, stat_name, stat_value, brain.move, rolled_momentum, adds)
         game.resources.next_move_bonus = 0
         if bonus:
             apply_momentum_on_hit(game, bonus, roll.result)
-        _log_action_roll(roll, adds, cancelled=game.resources.momentum < 0 and -game.resources.momentum == roll.d1)
+        _log_action_roll(roll, adds, cancelled=rolled_momentum < 0 and -rolled_momentum == roll.d1)
 
     _snapshot_of_turn(game).roll = roll
 
@@ -426,7 +427,7 @@ def _offer_momentum_burn(ctx: SceneContext, roll_outcome: RollOutcome) -> BurnOf
     return BurnOffer(
         roll=roll,
         new_result=new_result,
-        cost=game.resources.momentum,
+        cost=momentum(game),
         brain=ctx.brain,
         player_words=ctx.player_message,
         scene_setup=ctx.scene_setup,

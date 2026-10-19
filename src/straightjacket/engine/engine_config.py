@@ -11,7 +11,7 @@ from .engine_config_dataclasses import (
     NarrativeDirectionConfig,
     NarrativeDirectionEntry,
     NarrativeIntensityThresholds,
-    NarratorStatusDescriptions,
+    NarratorMeterDescription,
     ParserConfig,
     PersistenceConfig,
     PromptDisplayConfig,
@@ -30,7 +30,7 @@ class EngineSettings(RawSections):
     correction: CorrectionConfig
     metadata_voting: MetadataVotingConfig
     narrative_direction: NarrativeDirectionConfig
-    narrator_status_descriptions: NarratorStatusDescriptions
+    narrator_status_descriptions: dict[str, NarratorMeterDescription]
     parser: ParserConfig
     persistence: PersistenceConfig
     prompt_display: PromptDisplayConfig
@@ -50,7 +50,6 @@ _SIMPLE_SECTIONS: dict[str, type] = {
     "ai_text": AiTextConfig,
     "correction": CorrectionConfig,
     "metadata_voting": MetadataVotingConfig,
-    "narrator_status_descriptions": NarratorStatusDescriptions,
     "parser": ParserConfig,
     "persistence": PersistenceConfig,
     "prompt_display": PromptDisplayConfig,
@@ -76,6 +75,10 @@ def parse_engine_yaml(data: dict[str, Any]) -> EngineSettings:
     return EngineSettings(
         **simple,
         narrative_direction=_build_narrative_direction(dict(data["narrative_direction"])),
+        narrator_status_descriptions={
+            meter: build_strict(NarratorMeterDescription, dict(description))
+            for meter, description in data["narrator_status_descriptions"].items()
+        },
         scene_range_default=list(data["scene_range_default"]),
         creativity_seeds=list(data["creativity_seeds"]),
         _raw=data,

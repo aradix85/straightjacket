@@ -12,11 +12,10 @@ from elvira_bot.quality_checks import check_narration_quality
 
 def _clean_game() -> GameState:
     game = make_game_state(player_name="Hero")
-    game.resources.health = 5
-    game.resources.spirit = 5
-    game.resources.supply = 5
-    game.resources.momentum = 3
-    game.resources.max_momentum = 10
+    game.resources.meters["health"] = 5
+    game.resources.meters["spirit"] = 5
+    game.resources.meters["supply"] = 5
+    game.resources.meters["momentum"] = 3
     game.world.chaos_factor = 5
     game.narrative.scene_count = 3
     game.npcs = [
@@ -47,22 +46,21 @@ def test_clean_state_no_violations(load_engine: None) -> None:
 
 def test_catches_health_out_of_range(load_engine: None) -> None:
     game = _clean_game()
-    game.resources.health = 7
+    game.resources.meters["health"] = 7
     violations = assert_game_state(game, turn=1)
     assert any("health" in v for v in violations)
 
 
 def test_catches_negative_spirit(load_engine: None) -> None:
     game = _clean_game()
-    game.resources.spirit = -1
+    game.resources.meters["spirit"] = -1
     violations = assert_game_state(game, turn=1)
     assert any("spirit" in v for v in violations)
 
 
 def test_catches_momentum_exceeds_max(load_engine: None) -> None:
     game = _clean_game()
-    game.resources.momentum = 12
-    game.resources.max_momentum = 10
+    game.resources.meters["momentum"] = 12
     violations = assert_game_state(game, turn=1)
     assert any("momentum" in v for v in violations)
 
@@ -90,7 +88,7 @@ def test_catches_crisis_mode_when_both_positive(load_engine: None) -> None:
 
 def test_catches_crisis_mode_missing_at_zero(load_engine: None) -> None:
     game = _clean_game()
-    game.resources.spirit = 0
+    game.resources.meters["spirit"] = 0
     game.crisis_mode = False
     violations = assert_game_state(game, turn=1)
     assert any("crisis_mode=False" in v for v in violations)
@@ -98,8 +96,8 @@ def test_catches_crisis_mode_missing_at_zero(load_engine: None) -> None:
 
 def test_meters_at_zero_without_game_over_are_no_violation(load_engine: None) -> None:
     game = _clean_game()
-    game.resources.health = 0
-    game.resources.spirit = 0
+    game.resources.meters["health"] = 0
+    game.resources.meters["spirit"] = 0
     game.crisis_mode = True
     assert assert_game_state(game, turn=1) == []
 
@@ -160,7 +158,7 @@ def test_a_dying_clock_is_a_valid_clock(load_engine: None) -> None:
     from straightjacket.engine.ruleset.suffer import start_dying_clock
 
     game = _clean_game()
-    game.resources.health = 0
+    game.resources.meters["health"] = 0
     game.crisis_mode = True
     start_dying_clock(game)
     assert assert_game_state(game, turn=1) == []

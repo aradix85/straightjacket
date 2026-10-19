@@ -9,7 +9,7 @@ from tests._helpers import make_game_state, make_progress_track, make_threat, ma
 
 def _game_with_threat() -> GameState:
     g = make_game_state(player_name="Hero", setting_id="starforged")
-    g.resources = Resources(health=5, spirit=5, supply=5, momentum=2, max_momentum=10)
+    g.resources = Resources(meters={"health": 5, "spirit": 5, "supply": 5, "momentum": 2}, next_move_bonus=0)
     g.world = make_world_state(current_location="Iron Hold")
     vow = make_progress_track(id="vow_hunt", name="Hunt the beast", track_type="vow", rank="dangerous", ticks=8)
     g.progress_tracks.append(vow)
@@ -246,10 +246,10 @@ class TestResolveForsakeVow:
 
         game = _game_with_threat()
         game.threats[0].menace_ticks = 40
-        old_spirit = game.resources.spirit
+        old_spirit = game.resources.meters["spirit"]
         result = OutcomeResult()
         resolve_full_menace(game, result)
-        assert game.resources.spirit == old_spirit - 2
+        assert game.resources.meters["spirit"] == old_spirit - 2
         assert labels_of(result.consequences) == ['forsake the vow "Hunt the beast"', "spirit -2"]
         assert result.follow_up_moves == []
 
@@ -310,7 +310,7 @@ class TestResolveForsakeVow:
         resolve_full_menace(game, OutcomeResult())
         assert game.threats[0].status == "resolved"
 
-        assert game.resources.spirit == 5
+        assert game.resources.meters["spirit"] == 5
 
 
 class TestVowCompletionResolveThreat:

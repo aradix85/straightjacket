@@ -20,7 +20,7 @@ from straightjacket.engine.models import (
     GameState,
     ThreadEntry,
 )
-from straightjacket.engine.ruleset.config import rules
+from straightjacket.engine.ruleset.meters import starting_resources
 from straightjacket.engine.ruleset.progress import filled_boxes, new_track
 from straightjacket.engine.ruleset.succession import (
     apply_npc_carryover,
@@ -275,7 +275,7 @@ def test_a_miss_at_the_threshold_records_why_the_game_ended(load_engine: None, m
     from straightjacket.engine.ruleset.move_outcome import resolve_move_outcome
 
     g = make_game_state(setting_id="classic" if move.startswith("suffer/") else "starforged")
-    g.resources.health, g.resources.spirit = 0, 0
+    g.resources.meters["health"], g.resources.meters["spirit"] = 0, 0
     resolve_move_outcome(g, move, "MISS", target_npc_id=None, match=False)
     assert (g.game_over, g.end_reason) == (True, reason)
 
@@ -298,8 +298,8 @@ def test_pending_succession_serialises_through_to_dict(aria: GameState) -> None:
 def test_reset_for_successor_clears_pc_state_keeps_world(aria: GameState) -> None:
     aria.impacts = ["wounded", "shaken"]
     aria.assets = ["asset_a"]
-    aria.resources.health = 1
-    aria.resources.spirit = 0
+    aria.resources.meters["health"] = 1
+    aria.resources.meters["spirit"] = 0
     aria.world.clocks = []
     aria.narrative.story_blueprint = None
     surviving_threats = [make_threat(id="thr_1", name="Faction war")]
@@ -314,8 +314,7 @@ def test_reset_for_successor_clears_pc_state_keeps_world(aria: GameState) -> Non
 
     assert aria.impacts == []
     assert aria.assets == []
-    assert aria.resources.health == rules().resources.health_start
-    assert aria.resources.spirit == rules().resources.spirit_start
+    assert aria.resources == starting_resources(aria.setting_id)
     assert aria.world.clocks == []
     assert aria.narrative.scene_count == 1
     assert aria.crisis_mode is False
@@ -567,8 +566,8 @@ def test_start_succession_with_character_happy_path(aria: GameState) -> None:
 
 def test_start_succession_resets_resources(aria: GameState) -> None:
 
-    aria.resources.health = 0
-    aria.resources.spirit = 0
+    aria.resources.meters["health"] = 0
+    aria.resources.meters["spirit"] = 0
     aria.world.current_location = "Tavern"
     aria.end_reason = "death"
     prepare_succession(aria)
@@ -576,8 +575,7 @@ def test_start_succession_resets_resources(aria: GameState) -> None:
     provider = _SuccessionMockProvider()
     start_succession_with_character(provider, aria, _successor_creation_data())
 
-    assert aria.resources.health == rules().resources.health_start
-    assert aria.resources.spirit == rules().resources.spirit_start
+    assert aria.resources == starting_resources(aria.setting_id)
 
 
 def test_start_succession_seeds_legacy_from_predecessor(aria: GameState) -> None:

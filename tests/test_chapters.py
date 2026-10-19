@@ -19,8 +19,8 @@ def _populated_game(load_engine: None) -> GameState:
     g.world.time_of_day = "evening"
     g.world.chaos_factor = 7
     g.world.clocks = [make_clock(name="Doom", clock_type="threat", segments=4, filled=2)]
-    g.resources.health = 2
-    g.resources.spirit = 3
+    g.resources.meters["health"] = 2
+    g.resources.meters["spirit"] = 3
     g.narrative.scene_count = 9
     g.crisis_mode = True
     g.end_reason = "death"
@@ -41,11 +41,21 @@ def test_a_new_chapter_keeps_the_character_and_the_clocks(load_engine: None) -> 
     from tests._helpers import make_clock
 
     g = _populated_game(None)
-    g.resources.health, g.resources.spirit, g.resources.supply, g.resources.momentum = 2, 3, 1, 7
+    (
+        g.resources.meters["health"],
+        g.resources.meters["spirit"],
+        g.resources.meters["supply"],
+        g.resources.meters["momentum"],
+    ) = 2, 3, 1, 7
     g.world.clocks = [make_clock(name="The flood rises")]
     clocks = [c.to_dict() for c in g.world.clocks]
     _reset_chapter_mechanics(g)
-    assert (g.resources.health, g.resources.spirit, g.resources.supply, g.resources.momentum) == (2, 3, 1, 7)
+    assert (
+        g.resources.meters["health"],
+        g.resources.meters["spirit"],
+        g.resources.meters["supply"],
+        g.resources.meters["momentum"],
+    ) == (2, 3, 1, 7)
     assert [c.to_dict() for c in g.world.clocks] == clocks
 
 

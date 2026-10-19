@@ -10,7 +10,7 @@ from tests._helpers import make_game_state, make_progress_track
 
 def _game(setting: str = "starforged") -> GameState:
     g = make_game_state(player_name="Hero", setting_id=setting)
-    g.resources = Resources(health=5, spirit=5, supply=5, momentum=2, max_momentum=10)
+    g.resources = Resources(meters={"health": 5, "spirit": 5, "supply": 5, "momentum": 2}, next_move_bonus=0)
     return g
 
 

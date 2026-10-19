@@ -8,6 +8,7 @@ from ..models import GameState
 from ..setting.oracle_rolls import plain_text
 from .assets import asset_data, enabled_abilities
 from .config import rules
+from .meters import adjust_momentum
 
 _ADD = re.compile(r"\badd \+(\d)", re.IGNORECASE)
 _MOMENTUM_ON_HIT = re.compile(r"add \+\d and take \+(\d) momentum on a hit", re.IGNORECASE)
@@ -72,9 +73,7 @@ def chosen_bonus(game: GameState, bonus_id: str | None) -> RollBonus | None:
 
 def apply_momentum_on_hit(game: GameState, bonus: RollBonus, result: str) -> None:
     if bonus.momentum_on_hit and result in rules().dice.hit_results:
-        game.resources.adjust_momentum(
-            bonus.momentum_on_hit, floor=rules().momentum.floor, ceiling=rules().momentum.max
-        )
+        adjust_momentum(game, bonus.momentum_on_hit)
         log(f"[Bonus] {bonus.source}: +{bonus.momentum_on_hit} momentum on a hit")
 
 

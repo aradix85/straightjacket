@@ -9,8 +9,7 @@ from straightjacket.engine.ai.metadata import apply_narrator_metadata
 from straightjacket.engine.crafters.config import crafter
 from straightjacket.engine.director import apply_director_guidance
 from straightjacket.engine.models import GameState, NpcData
-from straightjacket.engine.ruleset.config import rules
-from straightjacket.engine.ruleset.meters import starting_resources
+from straightjacket.engine.ruleset.meters import reset_momentum
 from tests._helpers import (
     keyed_reflections,
     make_director_guidance,
@@ -43,13 +42,12 @@ def test_compel_strong_hit_does_not_mark_bond() -> None:
 
 
 def test_momentum_reset_follows_impacts_and_stops_at_reset_floor(load_engine: None) -> None:
-    cfg = rules().momentum
-    resources = starting_resources()
-    for max_momentum, expected in {10: 2, 9: 1, 8: 0, 7: 0, 6: 0}.items():
-        resources.max_momentum = max_momentum
-        resources.momentum = 5
-        resources.reset_momentum(reset_floor=cfg.reset_floor, reset_value=cfg.start, max_cap=cfg.max)
-        assert resources.momentum == expected, max_momentum
+    impacts = ["wounded", "shaken", "unprepared", "doomed"]
+    for marked, expected in {0: 2, 1: 1, 2: 0, 3: 0, 4: 0}.items():
+        game = make_game_state(impacts=impacts[:marked])
+        game.resources.meters["momentum"] = 5
+        reset_momentum(game)
+        assert game.resources.meters["momentum"] == expected, marked
 
 
 def _reflect_on_npc_1(game: GameState) -> None:

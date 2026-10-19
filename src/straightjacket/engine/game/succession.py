@@ -92,7 +92,7 @@ def _reset_for_successor(
     surviving_npcs: list[Any],
     surviving_connection_tracks: list[ProgressTrack],
 ) -> None:
-    game.resources = starting_resources()
+    game.resources = starting_resources(game.setting_id)
     game.narrative.scene_count = 1
     game.world.chaos_factor = gm().chaos.start
     game.crisis_mode = False

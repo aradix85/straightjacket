@@ -40,8 +40,8 @@ def make_test_game() -> Any:
     g.world.current_location = "Tavern"
     g.world.time_of_day = "evening"
     g.world.chaos_factor = 5
-    g.resources.health = 3
-    g.resources.spirit = 4
+    g.resources.meters["health"] = 3
+    g.resources.meters["spirit"] = 4
     g.preferences.content_lines = "no spiders"
     g.preferences.player_wishes = "a loyal dog"
     g.npcs = [make_npc(id="npc_1", name="Kira", disposition="friendly")]

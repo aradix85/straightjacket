@@ -18,6 +18,7 @@ from .bond import connection_track
 from .config import rules
 from .impacts import clear_impact, get_impacts
 from .legacy import shifted_rank
+from .meters import adjust_momentum, condition_meters, gain, is_condition_meter
 from .moves import Move, get_moves
 from .outcome_result import OutcomeResult
 from .progress import mark_progress
@@ -121,8 +122,7 @@ def roll_move_table(game: GameState, move_key: str, key: str, result: OutcomeRes
     result.consequences.append(told)
     for rule in rules().get_raw("move_table_rows")[key]:
         if text.startswith(rule["prefix"]):
-            effect = parse_effect(rule["effect"])
-            _EFFECT_HANDLERS[effect.type](game, effect, result, None)
+            _apply_effect(game, parse_effect(rule["effect"]), result, None)
 
 
 def pay_the_price(game: GameState, result: OutcomeResult) -> None:
@@ -132,19 +132,17 @@ def pay_the_price(game: GameState, result: OutcomeResult) -> None:
     for row in rows:
         for rule in rules().pay_the_price.suffer_rows:
             if row.startswith(rule.prefix):
-                effect = parse_effect(rule.effect)
-                _EFFECT_HANDLERS[effect.type](game, effect, result, None)
+                _apply_effect(game, parse_effect(rule.effect), result, None)
 
 
 def _apply_momentum_effect(game: GameState, effect: MoveEffect, result: OutcomeResult, target: NpcData | None) -> None:
-    game.resources.adjust_momentum(effect.value, floor=rules().momentum.floor, ceiling=rules().momentum.max)
+    adjust_momentum(game, effect.value)
     result.consequences.append(consequence("momentum_change", n=effect.value))
 
 
 def _apply_resource_effect(game: GameState, effect: MoveEffect, result: OutcomeResult, target: NpcData | None) -> None:
     if effect.value > 0:
-        cap = getattr(rules().resources, f"{effect.type}_max")
-        gained = game.resources.heal(effect.type, effect.value, cap=cap)
+        gained = gain(game, effect.type, effect.value)
         if gained:
             result.consequences.append(consequence("track_gain", track=effect.type, n=gained))
     else:
@@ -167,7 +165,7 @@ def _apply_clear_condition_effect(
     meter = impacts[condition].prevents_recovery[0]
     clear_impact(game, condition)
     result.consequences.append(consequence("clear_impact", impact=condition))
-    gained = game.resources.heal(meter, effect.value, cap=getattr(rules().resources, f"{meter}_max"))
+    gained = gain(game, meter, effect.value)
     if gained:
         result.consequences.append(consequence("track_gain", track=meter, n=gained))
 
@@ -327,9 +325,6 @@ def _apply_disposition_shift_effect(
 
 _EFFECT_HANDLERS: dict[str, Callable[[GameState, MoveEffect, OutcomeResult, NpcData | None], None]] = {
     "momentum": _apply_momentum_effect,
-    "health": _apply_resource_effect,
-    "spirit": _apply_resource_effect,
-    "supply": _apply_resource_effect,
     "mark_progress": _apply_mark_progress_effect,
     "pay_the_price": _apply_pay_the_price_effect,
     "story_complication": _apply_story_complication_effect,
@@ -352,24 +347,24 @@ _EFFECT_HANDLERS: dict[str, Callable[[GameState, MoveEffect, OutcomeResult, NpcD
 }
 
 
+def _apply_effect(game: GameState, effect: MoveEffect, result: OutcomeResult, target: NpcData | None) -> None:
+    if is_condition_meter(game, effect.type):
+        _apply_resource_effect(game, effect, result, target)
+    else:
+        _EFFECT_HANDLERS[effect.type](game, effect, result, target)
+
+
 def apply_effects(game: GameState, effects: list[MoveEffect], target_npc_id: str | None = None) -> OutcomeResult:
     result = OutcomeResult()
     target = find_npc(game, target_npc_id) if target_npc_id else None
 
     for effect in effects:
-        _EFFECT_HANDLERS[effect.type](game, effect, result, target)
+        _apply_effect(game, effect, result, target)
 
     return result
 
 
 def _apply_generic_suffer(game: GameState, amount: int, result: OutcomeResult) -> None:
-    res = game.resources
-
-    tracks = [
-        ("health", res.health),
-        ("spirit", res.spirit),
-        ("supply", res.supply),
-    ]
-
-    tracks.sort(key=lambda t: t[1], reverse=True)
-    suffer(game, tracks[0][0], amount, result)
+    meters = game.resources.meters
+    highest = max(condition_meters(game.setting_id), key=lambda meter: meters[meter])
+    suffer(game, highest, amount, result)

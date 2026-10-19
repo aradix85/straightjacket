@@ -15,12 +15,8 @@ def print_narration(narration: str, full: bool) -> None:
 
 
 def print_state(game: GameState) -> None:
-    r = game.resources
-    print(
-        f"  [STATE] H:{r.health} Sp:{r.spirit} Su:{r.supply} "
-        f"Mo:{r.momentum} Chaos:{game.world.chaos_factor} "
-        f"Scene:{game.narrative.scene_count}"
-    )
+    meters = " ".join(f"{name}:{value}" for name, value in game.resources.meters.items())
+    print(f"  [STATE] {meters} chaos:{game.world.chaos_factor} scene:{game.narrative.scene_count}")
 
 
 def final_state_dict(game: GameState) -> dict:
@@ -29,10 +25,7 @@ def final_state_dict(game: GameState) -> dict:
         "chapter": game.campaign.chapter_number,
         "location": game.world.current_location,
         "scene": game.narrative.scene_count,
-        "health": game.resources.health,
-        "spirit": game.resources.spirit,
-        "supply": game.resources.supply,
-        "momentum": game.resources.momentum,
+        "meters": dict(game.resources.meters),
         "chaos": game.world.chaos_factor,
         "npcs": [
             {
@@ -75,7 +68,8 @@ def print_summary(slog: SessionLog, game: GameState | None) -> None:
     print(f"  Violations      : {len(slog.violations)}")
     if game:
         print(f"  Final scene     : {game.narrative.scene_count}")
-        print(f"  Final health    : {game.resources.health} | spirit: {game.resources.spirit}")
+        meters = ", ".join(f"{name} {value}" for name, value in game.resources.meters.items())
+        print(f"  Final meters    : {meters}")
     bs = slog.burn_stats
     if bs.get("offered", 0) > 0:
         print(f"  Burns           : {bs['offered']} offered, {bs['taken']} taken, {bs['failed']} failed")

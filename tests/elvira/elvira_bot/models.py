@@ -16,10 +16,7 @@ class RollRecord:
 
 @dataclass
 class StateSnapshot:
-    health: int = 0
-    spirit: int = 0
-    supply: int = 0
-    momentum: int = 0
+    meters: dict[str, int] = field(default_factory=dict)
     chaos: int = 0
     scene: int = 0
     location: str = ""
@@ -156,7 +153,7 @@ class TurnRecord:
             d["result"] = "dialog"
         d["action"] = self.action[:80]
         sa = self.state_after
-        d["state"] = f"H{sa.health} Sp{sa.spirit} Su{sa.supply} M{sa.momentum} C{sa.chaos}"
+        d["state"] = " ".join([*(f"{name} {value}" for name, value in sa.meters.items()), f"chaos {sa.chaos}"])
         if self.engine_log and self.engine_log.consequences:
             d["consequences"] = self.engine_log.consequences
         if self.engine_log and self.engine_log.clock_events:

@@ -1,0 +1,3 @@
+meters:
+  heavy_loss_amount: 2
+  crisis_at_zero: [health, spirit]

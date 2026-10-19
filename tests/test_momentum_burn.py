@@ -71,7 +71,7 @@ def _game() -> GameState:
         player_name="Kael",
         background_vow="Keep the archive whole",
     )
-    game.resources.momentum = 6
+    game.resources.meters["momentum"] = 6
     return game
 
 
@@ -136,7 +136,7 @@ def test_burn_updates_the_turn_snapshot(load_engine: None, stub_emotions: None, 
     assert snap.roll.result == "STRONG_HIT"
     assert snap.narration == narration
     assert snap.player_input == "I slip past Mira into the archive vault"
-    assert game.resources.momentum == rules().momentum.start + 1
+    assert game.resources.meters["momentum"] == rules().momentum.start + 1
 
 
 def test_burn_runs_scene_end_bookkeeping_exactly_once(

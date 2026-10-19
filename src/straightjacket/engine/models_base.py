@@ -4,47 +4,13 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from .engine_loader import eng
-from .logging_util import log
 from .serialization import SerializableMixin, deserialize, serialize
 
 
 @dataclass
 class Resources(SerializableMixin):
-    health: int
-    spirit: int
-    supply: int
-    momentum: int
-    max_momentum: int
-    next_move_bonus: int = 0
-
-    def damage(self, track: str, amount: int) -> int:
-        old = getattr(self, track)
-        new = max(0, old - amount)
-        setattr(self, track, new)
-        actual: int = old - new
-        if actual > 0:
-            log(f"[Resources] {track} -{actual} ({old}→{new})")
-        return actual
-
-    def heal(self, track: str, amount: int, cap: int) -> int:
-        old = getattr(self, track)
-        new = min(cap, old + amount)
-        setattr(self, track, new)
-        actual: int = new - old
-        if actual > 0:
-            log(f"[Resources] {track} +{actual} ({old}→{new})")
-        return actual
-
-    def adjust_momentum(self, delta: int, floor: int, ceiling: int) -> None:
-        old = self.momentum
-        self.momentum = max(floor, min(ceiling, self.momentum + delta))
-        if self.momentum != old:
-            log(f"[Resources] momentum {'+' if delta > 0 else ''}{delta} ({old}→{self.momentum})")
-
-    def reset_momentum(self, reset_floor: int, reset_value: int, max_cap: int) -> None:
-        old = self.momentum
-        self.momentum = max(reset_floor, reset_value - (max_cap - self.max_momentum))
-        log(f"[Resources] momentum burned ({old}→{self.momentum})")
+    meters: dict[str, int]
+    next_move_bonus: int
 
     def snapshot(self) -> dict[str, Any]:
         return serialize(self)

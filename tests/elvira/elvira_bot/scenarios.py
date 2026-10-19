@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Any
 
 from straightjacket.engine.models import GameState
+from straightjacket.engine.ruleset.meters import max_momentum
 from straightjacket.engine.ruleset.progress import new_track
 
 from .coverage import TARGETS
@@ -17,8 +18,10 @@ def check_expectations(spec: dict[str, Any]) -> None:
 def _set_resources(game: GameState, resources: dict[str, Any]) -> list[str]:
     notes = []
     for name, value in resources.items():
-        amount = game.resources.max_momentum if value == "max" else int(value)
-        setattr(game.resources, name, amount)
+        if name not in game.resources.meters:
+            raise KeyError(f"The scenario sets {name!r}, which is no meter of {game.setting_id}")
+        amount = max_momentum(game) if value == "max" else int(value)
+        game.resources.meters[name] = amount
         notes.append(f"{name} {amount}")
     return notes
 

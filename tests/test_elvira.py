@@ -13,10 +13,10 @@ def game(load_engine: None) -> GameState:
         setting_id="starforged",
         setting_genre="starforged",
     )
-    g.resources.health = 4
-    g.resources.spirit = 3
-    g.resources.supply = 5
-    g.resources.momentum = 3
+    g.resources.meters["health"] = 4
+    g.resources.meters["spirit"] = 3
+    g.resources.meters["supply"] = 5
+    g.resources.meters["momentum"] = 3
     g.world.current_location = "The Docks"
     g.world.time_of_day = "evening"
     g.world.chaos_factor = 6
@@ -49,7 +49,7 @@ class TestFinalStateDict:
         result = final_state_dict(game)
         assert isinstance(result, dict)
         assert result["character"] == "Elvira"
-        assert result["health"] == 4
+        assert result["meters"]["health"] == 4
         assert result["scene"] == 5
 
     def test_npcs_have_bond(self, game: GameState) -> None:
@@ -74,7 +74,7 @@ class TestSnapshotState:
         from tests.elvira.elvira_bot.recorder import _snapshot_state
 
         snap = _snapshot_state(game)
-        assert snap.health == 4
+        assert snap.meters["health"] == 4
         assert snap.chaos == 6
         assert snap.scene == 5
         assert snap.active_progress_tracks == 2
@@ -116,7 +116,7 @@ class TestInvariants:
     def test_catches_bad_health(self, game: GameState) -> None:
         from tests.elvira.elvira_bot.invariants import assert_game_state
 
-        game.resources.health = -1
+        game.resources.meters["health"] = -1
         violations = assert_game_state(game, turn=1)
         assert any("health" in v for v in violations)
 

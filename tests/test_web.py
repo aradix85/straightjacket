@@ -143,10 +143,10 @@ class TestBuildNarrativeStatus:
             stats={"edge": 1, "heart": 2, "iron": 1, "shadow": 1, "wits": 2},
             setting_genre="dark_fantasy",
         )
-        game.resources.health = 4
-        game.resources.spirit = 3
-        game.resources.supply = 5
-        game.resources.momentum = 5
+        game.resources.meters["health"] = 4
+        game.resources.meters["spirit"] = 3
+        game.resources.meters["supply"] = 5
+        game.resources.meters["momentum"] = 5
         game.world.current_location = "Library"
         game.world.time_of_day = "evening"
         game.world.chaos_factor = 6

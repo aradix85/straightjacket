@@ -14,7 +14,7 @@ def test_check_your_gear_rolls_with_supply(load_engine: None) -> None:
     from straightjacket.engine.game.turn import _execute_roll
 
     game = _starforged()
-    game.resources.supply = 3
+    game.resources.meters["supply"] = 3
     outcome = _execute_roll(game, make_brain_result(move="adventure/check_your_gear", stat="none"), None)
     assert outcome.roll.stat_name == "supply"
     assert outcome.roll.stat_value == 3
@@ -24,7 +24,7 @@ def test_a_stat_the_brain_names_for_a_meter_move_is_ignored(load_engine: None) -
     from straightjacket.engine.game.turn import _execute_roll
 
     game = _starforged()
-    game.resources.supply = 2
+    game.resources.meters["supply"] = 2
     outcome = _execute_roll(game, make_brain_result(move="exploration/set_a_course", stat="wits"), None)
     assert (outcome.roll.stat_name, outcome.roll.stat_value) == ("supply", 2)
 

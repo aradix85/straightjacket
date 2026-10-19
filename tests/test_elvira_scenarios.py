@@ -26,12 +26,20 @@ def test_an_unknown_target_is_refused(load_engine: None) -> None:
 
 
 def test_momentum_can_be_set_to_its_maximum(load_engine: None) -> None:
+    from straightjacket.engine.ruleset.meters import max_momentum
     from tests.elvira.elvira_bot.scenarios import prepare_scenario
 
     game = make_game_state()
     prepare_scenario(game, {"expect": ["burn_offered"], "resources": {"momentum": "max", "health": 0}})
-    assert game.resources.momentum == game.resources.max_momentum
-    assert game.resources.health == 0
+    assert game.resources.meters["momentum"] == max_momentum(game)
+    assert game.resources.meters["health"] == 0
+
+
+def test_a_meter_the_ruleset_lacks_is_refused(load_engine: None) -> None:
+    from tests.elvira.elvira_bot.scenarios import prepare_scenario
+
+    with pytest.raises(KeyError, match="helth"):
+        prepare_scenario(make_game_state(), {"expect": ["burn_offered"], "resources": {"helth": 0}})
 
 
 def test_the_story_completes_on_the_next_scene(load_engine: None) -> None:

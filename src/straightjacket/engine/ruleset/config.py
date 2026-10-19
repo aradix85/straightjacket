@@ -21,6 +21,7 @@ from .config_types import (
     ForsakeVowConfig,
     InheritanceConfig,
     LegacyConfig,
+    MetersConfig,
     MomentumConfig,
     MoveAvailabilityCondition,
     MoveAvailabilityRule,
@@ -29,7 +30,6 @@ from .config_types import (
     PayThePriceConfig,
     PayThePriceSufferRow,
     ProgressConfig,
-    ResourcesConfig,
     RollBonusesConfig,
     StatsConfig,
     StrainConfig,
@@ -49,7 +49,7 @@ class RulesetSettings(RawSections):
     dice: DiceConfig
     stats: StatsConfig
     creation: CreationConfig
-    resources: ResourcesConfig
+    meters: MetersConfig
     momentum: MomentumConfig
     threats: ThreatConfig
     legacy: LegacyConfig
@@ -71,7 +71,7 @@ class RulesetSettings(RawSections):
 _SIMPLE_SECTIONS: dict[str, type] = {
     "dice": DiceConfig,
     "creation": CreationConfig,
-    "resources": ResourcesConfig,
+    "meters": MetersConfig,
     "progress": ProgressConfig,
     "strain": StrainConfig,
 }

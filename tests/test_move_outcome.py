@@ -14,7 +14,7 @@ from tests._helpers import make_game_state, record_price_tables
 @pytest.fixture
 def game(stub_engine: None) -> GameState:
     g = make_game_state()
-    g.resources = Resources(health=5, spirit=5, supply=5, momentum=2, max_momentum=10)
+    g.resources = Resources(meters={"health": 5, "spirit": 5, "supply": 5, "momentum": 2}, next_move_bonus=0)
     g.setting_id = "starforged"
     return g
 
@@ -22,7 +22,7 @@ def game(stub_engine: None) -> GameState:
 @pytest.fixture
 def game_real(load_engine: None) -> GameState:
     g = make_game_state()
-    g.resources = Resources(health=5, spirit=5, supply=5, momentum=2, max_momentum=10)
+    g.resources = Resources(meters={"health": 5, "spirit": 5, "supply": 5, "momentum": 2}, next_move_bonus=0)
     g.setting_id = "starforged"
     return g
 
@@ -79,25 +79,25 @@ class TestApplyEffects:
     def test_resource_change(
         self, game: GameState, effect: str, track: str, start: int, expected: int, cons_fragment: str
     ) -> None:
-        setattr(game.resources, track, start)
+        game.resources.meters[track] = start
         result = apply_effects(game, parse_effects([effect]))
-        assert getattr(game.resources, track) == expected
+        assert game.resources.meters[track] == expected
         if cons_fragment:
             assert cons_fragment in labels_of(result.consequences)
 
     def test_momentum_clamped_to_max(self, game: GameState) -> None:
-        game.resources.momentum = 9
+        game.resources.meters["momentum"] = 9
         apply_effects(game, parse_effects(["momentum +2"]))
-        assert game.resources.momentum == 10
+        assert game.resources.meters["momentum"] == 10
 
     def test_momentum_clamped_to_floor(self, game: GameState) -> None:
-        game.resources.momentum = -5
+        game.resources.meters["momentum"] = -5
         apply_effects(game, parse_effects(["momentum -2"]))
-        assert game.resources.momentum == -6
+        assert game.resources.meters["momentum"] == -6
 
     def test_health_clamped_to_max_no_consequence(self, game: GameState) -> None:
         result = apply_effects(game, parse_effects(["health +1"]))
-        assert game.resources.health == 5
+        assert game.resources.meters["health"] == 5
         assert not any("health" in c for c in labels_of(result.consequences))
 
     @pytest.mark.parametrize(
@@ -126,7 +126,7 @@ class TestApplyEffects:
 
     def test_multiple_effects(self, game: GameState) -> None:
         result = apply_effects(game, parse_effects(["momentum +2", "position in_control"]))
-        assert game.resources.momentum == 4
+        assert game.resources.meters["momentum"] == 4
         assert result.combat_position == "in_control"
 
     def test_pay_the_price_appends_a_row_of_the_official_table(self, game: GameState) -> None:
@@ -147,11 +147,11 @@ class TestApplyEffects:
         assert all(any(part.startswith(row) for row in rows) for part in told.split("; "))
 
     def test_suffer_move_picks_highest_track(self, game: GameState) -> None:
-        game.resources.health = 5
-        game.resources.spirit = 3
-        game.resources.supply = 2
+        game.resources.meters["health"] = 5
+        game.resources.meters["spirit"] = 3
+        game.resources.meters["supply"] = 2
         result = apply_effects(game, parse_effects(["suffer_move -1"]))
-        assert game.resources.health == 4
+        assert game.resources.meters["health"] == 4
         assert "health -1" in labels_of(result.consequences)
 
 
@@ -192,14 +192,14 @@ def _recovery_params(**overrides: object) -> dict:
 
 class TestSufferHandler:
     def test_strong_hit_recovery(self, game: GameState) -> None:
-        game.resources.health = 3
+        game.resources.meters["health"] = 3
         result = apply_suffer_handler(
             game,
             "suffer/endure_harm",
             "STRONG_HIT",
             _suffer_params(track="health", recovery=1, blocking_impact="wounded"),
         )
-        assert game.resources.health == 4
+        assert game.resources.meters["health"] == 4
         assert "health +1" in labels_of(result.consequences)
 
     def test_strong_hit_track_at_max_takes_momentum(self, game: GameState) -> None:
@@ -209,23 +209,23 @@ class TestSufferHandler:
             "STRONG_HIT",
             _suffer_params(track="health", recovery=1, blocking_impact="wounded"),
         )
-        assert game.resources.momentum == 3
+        assert game.resources.meters["momentum"] == 3
         assert "momentum +1" in labels_of(result.consequences)
 
     def test_weak_hit_exchange(self, game: GameState) -> None:
-        game.resources.health = 3
-        game.resources.momentum = 4
+        game.resources.meters["health"] = 3
+        game.resources.meters["momentum"] = 4
         apply_suffer_handler(
             game,
             "suffer/endure_harm",
             "WEAK_HIT",
             _suffer_params(track="health", recovery=1, blocking_impact="wounded"),
         )
-        assert game.resources.health == 4
-        assert game.resources.momentum == 3
+        assert game.resources.meters["health"] == 4
+        assert game.resources.meters["momentum"] == 3
 
     def test_miss_extra_damage(self, game: GameState) -> None:
-        game.resources.health = 3
+        game.resources.meters["health"] = 3
         apply_suffer_handler(
             game,
             "suffer/endure_harm",
@@ -237,11 +237,11 @@ class TestSufferHandler:
                 impact_pair=["wounded", "permanently_harmed"],
             ),
         )
-        assert game.resources.health == 2
+        assert game.resources.meters["health"] == 2
 
     def test_miss_at_zero_reports_impact(self, game: GameState) -> None:
-        game.resources.health = 0
-        game.resources.momentum = 5
+        game.resources.meters["health"] = 0
+        game.resources.meters["momentum"] = 5
         result = apply_suffer_handler(
             game,
             "suffer/endure_harm",
@@ -253,7 +253,7 @@ class TestSufferHandler:
                 impact_pair=["wounded", "permanently_harmed"],
             ),
         )
-        assert game.resources.momentum == 3
+        assert game.resources.meters["momentum"] == 3
         assert any("mark wounded" in c for c in labels_of(result.consequences))
         assert "wounded" in game.impacts
 
@@ -270,18 +270,18 @@ class TestThresholdHandler:
 
 class TestRecoveryHandler:
     def test_strong_hit_full_recovery(self, game: GameState) -> None:
-        game.resources.health = 2
+        game.resources.meters["health"] = 2
         apply_recovery_handler(
             game,
             "recover/heal",
             "STRONG_HIT",
             _recovery_params(track="health", full_amount=3, impact_amount=2, blocking_impact="wounded"),
         )
-        assert game.resources.health == 5
+        assert game.resources.meters["health"] == 5
 
     def test_weak_hit_with_cost(self, game: GameState) -> None:
-        game.resources.health = 2
-        game.resources.momentum = 5
+        game.resources.meters["health"] = 2
+        game.resources.meters["momentum"] = 5
         apply_recovery_handler(
             game,
             "recover/heal",
@@ -295,8 +295,8 @@ class TestRecoveryHandler:
                 weak_hit_cost=-2,
             ),
         )
-        assert game.resources.health == 5
-        assert game.resources.momentum == 3
+        assert game.resources.meters["health"] == 5
+        assert game.resources.meters["momentum"] == 3
 
     def test_miss_pay_the_price(self, game_real: GameState, monkeypatch: pytest.MonkeyPatch) -> None:
         rolled = record_price_tables(monkeypatch)
@@ -316,10 +316,10 @@ class TestResolveOutcome:
             (
                 "adventure/face_danger",
                 "STRONG_HIT",
-                lambda g, r: g.resources.momentum == 3 and "momentum +1" in labels_of(r.consequences),
+                lambda g, r: g.resources.meters["momentum"] == 3 and "momentum +1" in labels_of(r.consequences),
             ),
-            ("adventure/gather_information", "STRONG_HIT", lambda g, r: g.resources.momentum == 4),
-            ("quest/swear_an_iron_vow", "STRONG_HIT", lambda g, r: g.resources.momentum == 4),
+            ("adventure/gather_information", "STRONG_HIT", lambda g, r: g.resources.meters["momentum"] == 4),
+            ("quest/swear_an_iron_vow", "STRONG_HIT", lambda g, r: g.resources.meters["momentum"] == 4),
         ],
     )
     def test_simple_outcomes(self, game_real: GameState, move: str, result_type: str, check_fn: object) -> None:
@@ -344,27 +344,27 @@ class TestResolveOutcome:
 
     def test_enter_fray_strong_hit(self, game_real: GameState) -> None:
         result = resolve_move_outcome(game_real, "combat/enter_the_fray", "STRONG_HIT", target_npc_id=None, match=False)
-        assert game_real.resources.momentum == 4
+        assert game_real.resources.meters["momentum"] == 4
         assert result.combat_position == "in_control"
 
     def test_endure_harm_handler(self, game_real: GameState) -> None:
-        game_real.resources.health = 3
+        game_real.resources.meters["health"] = 3
         resolve_move_outcome(game_real, "suffer/endure_harm", "STRONG_HIT", target_npc_id=None, match=False)
-        assert game_real.resources.health == 4
+        assert game_real.resources.meters["health"] == 4
 
     def test_endure_stress_handler(self, game_real: GameState) -> None:
-        game_real.resources.spirit = 3
+        game_real.resources.meters["spirit"] = 3
         resolve_move_outcome(game_real, "suffer/endure_stress", "STRONG_HIT", target_npc_id=None, match=False)
-        assert game_real.resources.spirit == 4
+        assert game_real.resources.meters["spirit"] == 4
 
     def test_face_death_miss(self, game_real: GameState) -> None:
         resolve_move_outcome(game_real, "threshold/face_death", "MISS", target_npc_id=None, match=False)
         assert game_real.game_over is True
 
     def test_heal_strong_hit(self, game_real: GameState) -> None:
-        game_real.resources.health = 2
+        game_real.resources.meters["health"] = 2
         resolve_move_outcome(game_real, "recover/heal", "STRONG_HIT", target_npc_id=None, match=False)
-        assert game_real.resources.health == 5
+        assert game_real.resources.meters["health"] == 5
 
     def test_scene_challenge_face_danger_weak_hit(self, game_real: GameState) -> None:
         result = resolve_move_outcome(

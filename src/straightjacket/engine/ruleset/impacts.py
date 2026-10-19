@@ -6,7 +6,7 @@ from ..logging_util import log
 from ..models import GameState
 from ..setting.oracle_rolls import plain_text
 from ..setting.packages import load_package
-from .config import rules
+from .meters import cap_momentum, max_momentum
 
 
 @dataclass(frozen=True)
@@ -37,14 +37,6 @@ def get_impacts(setting_id: str) -> dict[str, Impact]:
     return impacts
 
 
-def recalc_max_momentum(game: GameState) -> None:
-    base_max = rules().momentum.max
-    new_max = max(0, base_max - len(game.impacts))
-    game.resources.max_momentum = new_max
-    if game.resources.momentum > new_max:
-        game.resources.momentum = new_max
-
-
 def apply_impact(game: GameState, key: str) -> bool:
     if key in game.impacts:
         return False
@@ -52,8 +44,8 @@ def apply_impact(game: GameState, key: str) -> bool:
     if key not in impacts:
         raise KeyError(f"Unknown impact {key!r} in {game.setting_id}; its rules have: {sorted(impacts)}")
     game.impacts.append(key)
-    recalc_max_momentum(game)
-    log(f"[Impact] {key} applied — max_momentum → {game.resources.max_momentum}")
+    cap_momentum(game)
+    log(f"[Impact] {key} applied — max momentum → {max_momentum(game)}")
     return True
 
 
@@ -64,8 +56,7 @@ def clear_impact(game: GameState, key: str) -> bool:
         log(f"[Impact] Cannot clear permanent impact: {key}")
         return False
     game.impacts.remove(key)
-    recalc_max_momentum(game)
-    log(f"[Impact] {key} cleared — max_momentum → {game.resources.max_momentum}")
+    log(f"[Impact] {key} cleared — max momentum → {max_momentum(game)}")
     return True
 
 

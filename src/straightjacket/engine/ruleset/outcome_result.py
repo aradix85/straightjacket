@@ -31,6 +31,6 @@ def move_outcome_config(game: GameState, move_key: str) -> dict[str, Any]:
             return cfg
     outcomes = rules().get_raw("move_outcomes")
     if move_key not in outcomes:
-        raise ValueError(f"No outcome config for {move_key}. Add it to engine.yaml move_outcomes.")
+        raise ValueError(f"No outcome config for {move_key}. Add it to ruleset/move_outcomes.yaml.")
     default: dict[str, Any] = outcomes[move_key]
     return default

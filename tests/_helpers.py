@@ -32,8 +32,9 @@ def make_game_state(**kwargs: Any) -> Any:
     from straightjacket.engine.ruleset.legacy import new_campaign
     from straightjacket.engine.ruleset.meters import starting_resources
 
+    kwargs.setdefault("setting_id", "starforged")
     kwargs.setdefault("stats", {"edge": 1, "heart": 2, "iron": 1, "shadow": 1, "wits": 2})
-    kwargs.setdefault("resources", starting_resources())
+    kwargs.setdefault("resources", starting_resources(kwargs["setting_id"]))
     kwargs.setdefault("world", new_world())
     kwargs.setdefault("campaign", new_campaign())
     return GameState(**kwargs)

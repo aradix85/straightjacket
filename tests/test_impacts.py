@@ -7,7 +7,7 @@ from tests._helpers import make_game_state
 
 def _game() -> GameState:
     g = make_game_state(player_name="Hero", setting_id="starforged")
-    g.resources = Resources(health=3, spirit=3, supply=3, momentum=5, max_momentum=10)
+    g.resources = Resources(meters={"health": 3, "spirit": 3, "supply": 3, "momentum": 5}, next_move_bonus=0)
     return g
 
 
@@ -99,39 +99,49 @@ class TestClearImpact:
         assert "permanently_harmed" in game.impacts
 
 
-class TestRecalcMaxMomentum:
+class TestMaxMomentum:
     def test_no_impacts_keeps_base_max(self, stub_engine: None) -> None:
-        from straightjacket.engine.ruleset.impacts import recalc_max_momentum
+        from straightjacket.engine.ruleset.meters import max_momentum
 
-        game = _game()
-        recalc_max_momentum(game)
-        assert game.resources.max_momentum == 10
+        assert max_momentum(_game()) == 10
 
     def test_each_impact_reduces_max_by_one(self, stub_engine: None) -> None:
         from straightjacket.engine.ruleset.impacts import apply_impact
+        from straightjacket.engine.ruleset.meters import max_momentum
 
         game = _game()
         apply_impact(game, "wounded")
-        assert game.resources.max_momentum == 9
+        assert max_momentum(game) == 9
         apply_impact(game, "shaken")
-        assert game.resources.max_momentum == 8
+        assert max_momentum(game) == 8
+
+    def test_momentum_gained_stops_at_the_lowered_max(self, stub_engine: None) -> None:
+        from straightjacket.engine.ruleset.impacts import apply_impact
+        from straightjacket.engine.ruleset.meters import adjust_momentum
+
+        game = _game()
+        apply_impact(game, "wounded")
+        game.resources.meters["momentum"] = 8
+        adjust_momentum(game, 2)
+        assert game.resources.meters["momentum"] == 9
 
     def test_momentum_clamped_to_new_max(self, stub_engine: None) -> None:
         from straightjacket.engine.ruleset.impacts import apply_impact
 
         game = _game()
-        game.resources.momentum = 10
+        game.resources.meters["momentum"] = 10
         apply_impact(game, "wounded")
-        assert game.resources.momentum == 9
+        assert game.resources.meters["momentum"] == 9
 
     def test_clear_restores_momentum_max(self, stub_engine: None) -> None:
         from straightjacket.engine.ruleset.impacts import apply_impact, clear_impact
+        from straightjacket.engine.ruleset.meters import max_momentum
 
         game = _game()
         apply_impact(game, "wounded")
         apply_impact(game, "shaken")
         clear_impact(game, "wounded")
-        assert game.resources.max_momentum == 9
+        assert max_momentum(game) == 9
 
 
 class TestBlocksRecovery:
@@ -173,6 +183,7 @@ class TestBlocksRecovery:
 class TestImpactsSnapshotRestore:
     def test_impacts_restored(self, stub_engine: None) -> None:
         from straightjacket.engine.ruleset.impacts import apply_impact
+        from straightjacket.engine.ruleset.meters import max_momentum
 
         game = _game()
         apply_impact(game, "wounded")
@@ -183,7 +194,7 @@ class TestImpactsSnapshotRestore:
 
         game.restore(snap)
         assert game.impacts == ["wounded"]
-        assert game.resources.max_momentum == 9
+        assert max_momentum(game) == 9
 
     def test_impacts_round_trip(self, stub_engine: None) -> None:
         from straightjacket.engine.ruleset.impacts import apply_impact
@@ -202,7 +213,7 @@ class TestSufferHandlerMarksImpact:
         from straightjacket.engine.ruleset.move_handlers import apply_suffer_handler
 
         game = _game()
-        game.resources.health = 0
+        game.resources.meters["health"] = 0
         params = {
             "track": "health",
             "recovery": 1,
@@ -223,7 +234,7 @@ class TestSufferHandlerMarksImpact:
         from straightjacket.engine.ruleset.move_handlers import apply_suffer_handler
 
         game = _game()
-        game.resources.health = 0
+        game.resources.meters["health"] = 0
         apply_impact(game, "wounded")
         params = {
             "track": "health",

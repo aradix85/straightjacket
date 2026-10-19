@@ -65,12 +65,8 @@ def record_turn(
 
 
 def _snapshot_state(game: GameState) -> StateSnapshot:
-    res = game.resources
     return StateSnapshot(
-        health=res.health,
-        spirit=res.spirit,
-        supply=res.supply,
-        momentum=res.momentum,
+        meters=dict(game.resources.meters),
         chaos=game.world.chaos_factor,
         scene=game.narrative.scene_count,
         location=game.world.current_location,

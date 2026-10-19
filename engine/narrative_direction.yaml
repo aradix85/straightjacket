@@ -1,5 +1,6 @@
 narrative_direction:
   intensity:
+    meters: [health, spirit]
     critical_below: 1
     high_below: 3
     moderate_below: 4

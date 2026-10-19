@@ -3,6 +3,7 @@ from __future__ import annotations
 from straightjacket.engine.gamemaster.config import gm
 from straightjacket.engine.models import ClockData, GameState, MemoryEntry, NpcData
 from straightjacket.engine.ruleset.config import rules
+from straightjacket.engine.ruleset.meters import condition_meters, in_crisis, max_momentum, momentum
 
 
 def assert_game_state(game: GameState, turn: int) -> list[str]:
@@ -12,26 +13,13 @@ def assert_game_state(game: GameState, turn: int) -> list[str]:
         if not condition:
             violations.append(f"[TURN {turn}] {msg}")
 
-    res = game.resources
+    meters = game.resources.meters
     world = game.world
 
-    check(
-        0 <= res.health <= rules().resources.health_max,
-        f"health={res.health} out of [0,{rules().resources.health_max}]",
-    )
-    check(
-        0 <= res.spirit <= rules().resources.spirit_max,
-        f"spirit={res.spirit} out of [0,{rules().resources.spirit_max}]",
-    )
-    check(
-        0 <= res.supply <= rules().resources.supply_max,
-        f"supply={res.supply} out of [0,{rules().resources.supply_max}]",
-    )
-    check(
-        rules().momentum.floor <= res.momentum <= rules().momentum.max,
-        f"momentum={res.momentum} out of [{rules().momentum.floor},{rules().momentum.max}]",
-    )
-    check(res.momentum <= res.max_momentum, f"momentum={res.momentum} > max_momentum={res.max_momentum}")
+    for name, meter in condition_meters(game.setting_id).items():
+        check(meter.min <= meters[name] <= meter.max, f"{name}={meters[name]} out of [{meter.min},{meter.max}]")
+    floor, ceiling = rules().momentum.floor, max_momentum(game)
+    check(floor <= momentum(game) <= ceiling, f"momentum={momentum(game)} out of [{floor},{ceiling}]")
 
     check(
         gm().chaos.min <= world.chaos_factor <= gm().chaos.max,
@@ -40,10 +28,8 @@ def assert_game_state(game: GameState, turn: int) -> list[str]:
 
     check(game.narrative.scene_count >= 1, f"scene_count={game.narrative.scene_count} < 1")
 
-    if res.health > 0 and res.spirit > 0:
-        check(not game.crisis_mode, f"crisis_mode=True but health={res.health} spirit={res.spirit} (both > 0)")
-    else:
-        check(game.crisis_mode, f"crisis_mode=False but health={res.health} spirit={res.spirit} (one at 0)")
+    crisis_meters = {name: meters[name] for name in rules().meters.crisis_at_zero}
+    check(game.crisis_mode == in_crisis(game), f"crisis_mode={game.crisis_mode} but {crisis_meters}")
 
     for npc in game.npcs:
         _check_npc(npc, turn, violations)

@@ -5,18 +5,19 @@ from ..logging_util import log
 from ..models import ClockData, GameState, consequence
 from .config import rules
 from .impacts import apply_impact
+from .meters import adjust_momentum, lose
 from .outcome_result import OutcomeResult, move_outcome_config
 
 
 def suffer(game: GameState, meter: str, amount: int, result: OutcomeResult) -> None:
-    lost = game.resources.damage(meter, amount)
+    lost = lose(game, meter, amount)
     if lost:
         result.consequences.append(consequence("track_loss", track=meter, n=lost))
     remaining = amount - lost
     if remaining:
-        game.resources.adjust_momentum(-remaining, floor=rules().momentum.floor, ceiling=rules().momentum.max)
+        adjust_momentum(game, -remaining)
         result.consequences.append(consequence("momentum_change", n=-remaining))
-    at_zero = getattr(game.resources, meter) == 0
+    at_zero = game.resources.meters[meter] == 0
     if meter in rules().suffer.exhausted_impacts:
         impact = rules().suffer.exhausted_impacts[meter]
         if at_zero and apply_impact(game, impact):
@@ -54,7 +55,7 @@ def tick_dying_clock(game: GameState, result: OutcomeResult) -> None:
     if clock is None:
         return
     cfg = rules().suffer.dying_clock
-    if getattr(game.resources, cfg.meter) > 0:
+    if game.resources.meters[cfg.meter] > 0:
         game.world.clocks.remove(clock)
         log(f"[Suffer] {clock.name} ends: {cfg.meter} above 0")
         return

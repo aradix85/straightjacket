@@ -48,7 +48,7 @@ def test_a_label_the_ruleset_does_not_know_raises(load_engine: None) -> None:
 )
 def test_strain_is_a_level_per_meter(load_engine: None, value: int, level: str) -> None:
     game = make_game_state(player_name="Test")
-    game.resources.health = value
+    game.resources.meters["health"] = value
     assert answers.strain(game) == [level, "steady", "steady"]
 
 

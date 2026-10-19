@@ -8,8 +8,10 @@ from tests._helpers import make_game_state
 def test_roll_oracle_name_needs_the_setting(load_engine: None) -> None:
     from straightjacket.engine.gamemaster.npc.naming import roll_oracle_name
 
+    game = make_game_state()
+    game.setting_id = ""
     with pytest.raises(FileNotFoundError, match="Setting package not found"):
-        roll_oracle_name(make_game_state())
+        roll_oracle_name(game)
 
 
 def test_roll_oracle_name_classic_single_path(load_engine: None) -> None:

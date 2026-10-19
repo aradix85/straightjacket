@@ -40,7 +40,7 @@ def _game() -> GameState:
         player_name="Kael",
         background_vow="Keep the archive whole",
     )
-    game.resources.momentum = 6
+    game.resources.meters["momentum"] = 6
     return game
 
 

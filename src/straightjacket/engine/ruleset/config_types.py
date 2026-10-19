@@ -28,14 +28,9 @@ class CreationConfig:
 
 
 @dataclass
-class ResourcesConfig:
-    health_max: int
-    spirit_max: int
-    supply_max: int
-    health_start: int
-    spirit_start: int
-    supply_start: int
+class MetersConfig:
     heavy_loss_amount: int
+    crisis_at_zero: list[str]
 
 
 @dataclass

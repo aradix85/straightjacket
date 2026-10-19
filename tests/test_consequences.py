@@ -11,7 +11,9 @@ from tests._helpers import make_clock, make_game_state, make_npc
 
 def _game(health: int = 5, spirit: int = 5, supply: int = 5, momentum: int = 3) -> GameState:
     g = make_game_state(player_name="Hero")
-    g.resources = Resources(health=health, spirit=spirit, supply=supply, momentum=momentum, max_momentum=10)
+    g.resources = Resources(
+        meters={"health": health, "spirit": spirit, "supply": supply, "momentum": momentum}, next_move_bonus=0
+    )
     return g
 
 
@@ -303,7 +305,7 @@ def test_next_move_bonus_effect_is_banked_and_spent_on_the_next_action_roll(
     game.last_turn_snapshot = game.snapshot()
     apply_effects(game, [MoveEffect(type="next_move_bonus", value=1)])
     assert game.resources.next_move_bonus == 1
-    game.resources.momentum = 2
+    game.resources.meters["momentum"] = 2
     _fixed_dice(monkeypatch, 3, 9, 9)
     outcome = _execute_roll(game, make_brain_result(move="adventure/face_danger", stat="wits"), None)
     assert outcome.roll.action_score == 3 + game.stats["wits"] + 1

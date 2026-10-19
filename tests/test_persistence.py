@@ -10,8 +10,8 @@ from tests._helpers import make_clock, make_game_state, make_memory, make_npc
 
 def _game() -> GameState:
     game = make_game_state(player_name="TestHero", stats={"edge": 2, "heart": 2, "iron": 1, "shadow": 1, "wits": 1})
-    game.resources.health = 4
-    game.resources.momentum = 3
+    game.resources.meters["health"] = 4
+    game.resources.meters["momentum"] = 3
     game.world.current_location = "TestTavern"
     game.narrative.scene_count = 3
     game.npcs = [
@@ -45,7 +45,7 @@ def test_save_and_load_roundtrip(save_dir: Any) -> None:
     loaded, loaded_msgs = load_game("tester", "test_save")
     assert loaded is not None
     assert loaded.player_name == "TestHero"
-    assert loaded.resources.health == 4
+    assert loaded.resources.meters["health"] == 4
     assert loaded.narrative.scene_count == 3
     assert len(loaded.npcs) == 1
     assert loaded.npcs[0].name == "Ally"
@@ -134,7 +134,7 @@ def test_load_returns_exactly_what_was_saved(save_dir: Any) -> None:
 def test_a_save_missing_a_field_does_not_load(load_engine: None) -> None:
     from straightjacket.engine.models import Resources
 
-    data = starting_resources().to_dict()
+    data = starting_resources("starforged").to_dict()
     data.pop("next_move_bonus")
     with pytest.raises(ValueError, match=r"Resources: missing fields \['next_move_bonus'\]"):
         Resources.from_dict(data)

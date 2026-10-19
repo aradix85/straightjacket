@@ -6,7 +6,7 @@ from tests._helpers import make_game_state, make_progress_track, make_world_stat
 
 def _game(setting: str = "starforged", combat_position: str = "") -> GameState:
     g = make_game_state(player_name="Hero", setting_id=setting)
-    g.resources = Resources(health=5, spirit=5, supply=5, momentum=2, max_momentum=10)
+    g.resources = Resources(meters={"health": 5, "spirit": 5, "supply": 5, "momentum": 2}, next_move_bonus=0)
     g.world = make_world_state(current_location="Iron Hold", combat_position=combat_position)
     return g
 

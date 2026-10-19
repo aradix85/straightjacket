@@ -139,13 +139,13 @@ def test_correction_input_misread_full_flow(
     provider = MockProvider(correction_source="input_misread")
     game = _played_game(provider, monkeypatch)
     assert game.last_turn_snapshot is not None
-    snap_health = game.last_turn_snapshot.resources["health"]
+    snap_health = game.last_turn_snapshot.resources["meters"]["health"]
     scene_before = game.narrative.scene_count
     history_len_before = len(game.narrative.narration_history)
 
     narration, _offer, _director_ctx = process_correction(provider, game, "I didn't want to attack")
 
-    assert game.resources.health == snap_health
+    assert game.resources.meters["health"] == snap_health
     assert game.narrative.scene_count == scene_before
     assert len(narration) > 10
     assert len(game.narrative.narration_history) == history_len_before

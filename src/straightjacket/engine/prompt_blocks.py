@@ -79,9 +79,8 @@ def narrative_direction_block(game: GameState, roll_result: str) -> str:
     nd = eng().narrative_direction
     parts = []
 
-    h, sp = game.resources.health, game.resources.spirit
-    low_resource = min(h, sp)
     intensity = nd.intensity
+    low_resource = min(game.resources.meters[meter] for meter in intensity.meters)
     if game.game_over or game.crisis_mode or low_resource < intensity.critical_below:
         parts.append(get_prompt("narrative_direction_intensity_critical"))
     elif low_resource < intensity.high_below:
@@ -108,18 +107,17 @@ def narrative_direction_block(game: GameState, roll_result: str) -> str:
 
 
 def status_context_block(game: GameState) -> str:
-    descriptions = eng().narrator_status_descriptions
-    h, sp, su = game.resources.health, game.resources.spirit, game.resources.supply
-
+    meters = game.resources.meters
     return get_prompt(
         "block_character_state_wrapper",
         instruction=get_prompt("block_character_state_instruction"),
         physical_label=get_prompt("label_character_state_physical"),
         mental_label=get_prompt("label_character_state_mental"),
         resources_label=get_prompt("label_character_state_resources"),
-        health_desc=describe_by_threshold(h, descriptions.health),
-        spirit_desc=describe_by_threshold(sp, descriptions.spirit),
-        supply_desc=describe_by_threshold(su, descriptions.supply),
+        **{
+            f"{meter}_desc": describe_by_threshold(meters[meter], description.levels)
+            for meter, description in eng().narrator_status_descriptions.items()
+        },
     )
 
 

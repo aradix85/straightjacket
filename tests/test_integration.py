@@ -432,7 +432,7 @@ def test_harm_at_zero_in_a_turn_is_endured_and_does_not_end_the_game(
     _force_result(monkeypatch, "WEAK_HIT")
     monkeypatch.setattr(move_outcome, "roll_action", _rolling("MISS"))
     game = _make_game()
-    game.resources.health, game.resources.spirit, game.resources.supply = 0, 0, 0
+    game.resources.meters["health"], game.resources.meters["spirit"], game.resources.meters["supply"] = 0, 0, 0
     provider = _ScriptedBrain({"move": "adventure/face_danger", "stat": "wits"})
 
     turn.process_turn(provider, game, "I climb the crumbling shelves", stream=None)
@@ -453,7 +453,7 @@ def test_a_dying_character_who_does_not_heal_faces_death_in_a_dialog_turn(
     monkeypatch.setattr(turn, "check_scene", lambda _game: SceneSetup(scene_type="expected"))
     monkeypatch.setattr(move_outcome, "roll_action", _rolling("MISS"))
     game = _make_game()
-    game.resources.health = 0
+    game.resources.meters["health"] = 0
     start_dying_clock(game)
     game.world.clocks[-1].filled = 1
     provider = _ScriptedBrain({"move": "dialog", "stat": "none", "dialog_only": True, "target_npc": game.npcs[0].id})
@@ -590,7 +590,7 @@ def test_momentum_burn_upgrades_result() -> None:
     from straightjacket.engine.ruleset.rolls import can_burn_momentum
 
     game = _make_game()
-    game.resources.momentum = 7
+    game.resources.meters["momentum"] = 7
 
     roll = RollResult(
         d1=1,

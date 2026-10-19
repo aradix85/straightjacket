@@ -57,7 +57,7 @@ def strain(game: GameState) -> list[str]:
     cfg = rules().strain
     levels: list[str] = []
     for meter in cfg.meters:
-        value = getattr(game.resources, meter)
+        value = game.resources.meters[meter]
         levels.append(next((level for level, below in cfg.below.items() if value < below), cfg.otherwise))
     return levels
 

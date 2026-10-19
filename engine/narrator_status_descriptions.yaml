@@ -1,22 +1,28 @@
 narrator_status_descriptions:
   health:
-    5: uninjured
-    4: bruised — minor aches, nothing that slows them down
-    3: injured — clearly hurting, moving with effort
-    2: seriously wounded — every motion costs something
-    1: critically injured — barely holding together, on the edge of collapse
-    0: at the physical limit — collapse is imminent (see <flags>)
+    flag_at_zero: WOUNDED
+    levels:
+      5: uninjured
+      4: bruised — minor aches, nothing that slows them down
+      3: injured — clearly hurting, moving with effort
+      2: seriously wounded — every motion costs something
+      1: critically injured — barely holding together, on the edge of collapse
+      0: at the physical limit — collapse is imminent (see <flags>)
   spirit:
-    5: steady and composed
-    4: mildly unsettled — small signs of strain
-    3: shaken — the strain shows in breath and hands
-    2: deeply troubled — holding on by a thread; the strain shows in voice, hands, and posture
-    1: near breaking — barely functioning under the weight
-    0: at the mental limit — breakdown is imminent (see <flags>)
+    flag_at_zero: BROKEN
+    levels:
+      5: steady and composed
+      4: mildly unsettled — small signs of strain
+      3: shaken — the strain shows in breath and hands
+      2: deeply troubled — holding on by a thread; the strain shows in voice, hands, and posture
+      1: near breaking — barely functioning under the weight
+      0: at the mental limit — breakdown is imminent (see <flags>)
   supply:
-    5: well-equipped
-    4: adequate — supplies are fine for now
-    3: running low — rationing has begun, choices are being made
-    2: critically short — scarcity is a real pressure
-    1: nearly nothing — desperation is setting in
-    0: out of resources entirely (see <flags>)
+    flag_at_zero: DEPLETED
+    levels:
+      5: well-equipped
+      4: adequate — supplies are fine for now
+      3: running low — rationing has begun, choices are being made
+      2: critically short — scarcity is a real pressure
+      1: nearly nothing — desperation is setting in
+      0: out of resources entirely (see <flags>)

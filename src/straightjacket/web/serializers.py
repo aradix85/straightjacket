@@ -16,15 +16,16 @@ from ..i18n import t
 
 def _status_resources_line(game: GameState) -> str:
     _defaults = eng().ai_text.narrator_defaults
-    r = game.resources
+    meters = game.resources.meters
     return t(
         "status.resources",
         name=game.player_name,
         location=game.world.current_location or _defaults["unknown_location"],
         time=t(f"time.{game.world.time_of_day}"),
-        health=describe_by_threshold(r.health, eng().status_descriptions.health),
-        spirit=describe_by_threshold(r.spirit, eng().status_descriptions.spirit),
-        supply=describe_by_threshold(r.supply, eng().status_descriptions.supply),
+        **{
+            meter: describe_by_threshold(meters[meter], levels)
+            for meter, levels in eng().status_descriptions.meters.items()
+        },
     )
 
 

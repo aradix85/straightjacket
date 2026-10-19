@@ -19,10 +19,9 @@ class PromptDisplayConfig:
 
 
 @dataclass
-class NarratorStatusDescriptions:
-    health: dict[int, str]
-    spirit: dict[int, str]
-    supply: dict[int, str]
+class NarratorMeterDescription:
+    flag_at_zero: str
+    levels: dict[int, str]
 
 
 @dataclass
@@ -33,6 +32,7 @@ class CorrectionConfig:
 
 @dataclass
 class NarrativeIntensityThresholds:
+    meters: list[str]
     critical_below: int
     high_below: int
     moderate_below: int
@@ -93,9 +93,7 @@ class MetadataVotingConfig:
 
 @dataclass
 class StatusDescriptionsConfig:
-    health: dict[int, str]
-    spirit: dict[int, str]
-    supply: dict[int, str]
+    meters: dict[str, dict[int, str]]
     bond: dict[int, str]
     clock: dict[int, str]
     track: dict[int, str]

@@ -270,13 +270,11 @@ def _npc_agency_block(npc_agency: Sequence[str]) -> str:
 
 
 def _flags_block(game: GameState) -> str:
-    flags: list[str] = []
-    if game.resources.health <= 0:
-        flags.append(get_prompt("flag_wounded"))
-    if game.resources.spirit <= 0:
-        flags.append(get_prompt("flag_broken"))
-    if game.resources.supply <= 0:
-        flags.append(get_prompt("flag_depleted"))
+    flags = [
+        description.flag_at_zero
+        for meter, description in eng().narrator_status_descriptions.items()
+        if game.resources.meters[meter] <= 0
+    ]
     if game.game_over:
         flags.append(get_prompt("flag_final_scene"))
     elif game.crisis_mode:

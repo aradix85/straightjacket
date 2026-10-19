@@ -5,18 +5,13 @@ from .bond import connection_track
 from .moves import PICK_METHODS, Move, TriggerCondition
 
 
-def _meter_value(game: GameState, meter: str) -> int:
-    value: int = getattr(game.resources, meter)
-    return value
-
-
 def _option_values(game: GameState, condition: TriggerCondition) -> dict[str, int]:
     values: dict[str, int] = {}
     for option in condition.roll_options:
         if option.using == "stat":
             values[option.stat] = game.stats[option.stat]
         elif option.using == "condition_meter":
-            values[option.condition_meter] = _meter_value(game, option.condition_meter)
+            values[option.condition_meter] = game.resources.meters[option.condition_meter]
     return values
 
 
@@ -42,8 +37,8 @@ def roll_source_without_stat(game: GameState, move: Move, target_npc: str | None
     options = [option for condition in move.conditions for option in condition.roll_options]
     meters = [option.condition_meter for option in options if option.using == "condition_meter"]
     if meters:
-        best = max(meters, key=lambda meter: _meter_value(game, meter))
-        return best, _meter_value(game, best)
+        best = max(meters, key=lambda meter: game.resources.meters[meter])
+        return best, game.resources.meters[best]
     ranked = {option.label: option.value for option in options if option.using == "custom" and option.value is not None}
     track = connection_track(game, target_npc) if target_npc is not None else None
     if track is None or track.status != "bonded" or track.rank not in ranked:

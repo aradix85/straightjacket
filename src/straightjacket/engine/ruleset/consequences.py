@@ -16,13 +16,14 @@ def pick_template(key: str) -> str:
 
 
 def _meter_event(meter: str, change: int) -> str | None:
-    if meter in ("health", "spirit"):
-        if change > 0:
-            return f"{meter}_gain"
-        return f"{meter}_heavy" if -change >= rules().resources.heavy_loss_amount else f"{meter}_light"
-    if meter == "supply":
-        return "supply_gain" if change > 0 else "supply_any"
-    return None
+    templates = eng().get_raw("consequence_templates")
+    if change > 0:
+        event = f"{meter}_gain"
+    elif f"{meter}_heavy" in templates:
+        event = f"{meter}_heavy" if -change >= rules().meters.heavy_loss_amount else f"{meter}_light"
+    else:
+        event = f"{meter}_any"
+    return event if event in templates else None
 
 
 def _sentence_event(c: Consequence, impacts: dict[str, Impact]) -> tuple[str, str, str] | None:

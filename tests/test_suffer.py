@@ -20,7 +20,9 @@ STRONG_HIT = (6, 1, 1)
 
 def _game(setting_id: str, health: int = 5, spirit: int = 5, supply: int = 5) -> GameState:
     game = make_game_state(player_name="Hero", setting_id=setting_id)
-    game.resources = Resources(health=health, spirit=spirit, supply=supply, momentum=2, max_momentum=10)
+    game.resources = Resources(
+        meters={"health": health, "spirit": spirit, "supply": supply, "momentum": 2}, next_move_bonus=0
+    )
     return game
 
 
@@ -32,7 +34,7 @@ def test_harm_above_zero_in_starforged_is_taken_without_endure_harm(load_engine:
     game = _game("starforged", health=3)
     result = OutcomeResult()
     suffer(game, "health", 1, result)
-    assert game.resources.health == 2
+    assert game.resources.meters["health"] == 2
     assert (labels_of(result.consequences), result.follow_up_moves) == (["health -1"], [])
 
 
@@ -40,7 +42,7 @@ def test_harm_past_zero_costs_momentum_and_is_endured(load_engine: None) -> None
     game = _game("starforged", health=1)
     result = OutcomeResult()
     suffer(game, "health", 2, result)
-    assert (game.resources.health, game.resources.momentum) == (0, 1)
+    assert (game.resources.meters["health"], game.resources.meters["momentum"]) == (0, 1)
     assert labels_of(result.consequences) == ["health -1", "momentum -1"]
     assert result.follow_up_moves == ["suffer/endure_harm"]
 
@@ -66,7 +68,7 @@ def test_exhausted_supply_marks_unprepared_and_further_loss_costs_momentum(load_
     suffer(game, "supply", 1, result)
     assert game.impacts == ["unprepared"]
     assert labels_of(result.consequences) == ["supply -1", "mark unprepared", "momentum -1"]
-    assert (game.resources.momentum, result.follow_up_moves) == (1, [])
+    assert (game.resources.meters["momentum"], result.follow_up_moves) == (1, [])
 
 
 def test_a_miss_at_zero_marks_the_first_free_impact(load_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -149,7 +151,7 @@ def test_dying_gives_two_turns_to_raise_health(load_engine: None, monkeypatch: p
 def test_dying_ends_when_health_rises_above_zero(load_engine: None) -> None:
     game = _game("starforged", health=0)
     start_dying_clock(game)
-    game.resources.health = 2
+    game.resources.meters["health"] = 2
     result = OutcomeResult()
     tick_dying_clock(game, result)
     assert (_dying(game), labels_of(result.consequences), result.follow_up_moves) == ([], [], [])
@@ -210,11 +212,11 @@ def test_classic_sojourn_clears_a_marked_condition_first(load_engine: None) -> N
     game = _game("classic", health=3, spirit=2)
     game.impacts = ["shaken"]
     result = resolve_move_outcome(game, "relationship/sojourn", "WEAK_HIT", target_npc_id=None, match=False)
-    assert (game.impacts, game.resources.spirit, game.resources.health) == ([], 3, 4)
+    assert (game.impacts, game.resources.meters["spirit"], game.resources.meters["health"]) == ([], 3, 4)
     assert labels_of(result.consequences)[:2] == ["clear shaken", "spirit +1"]
 
 
 def test_classic_heal_gives_two_health(load_engine: None) -> None:
     game = _game("classic", health=1)
     resolve_move_outcome(game, "adventure/heal", "STRONG_HIT", target_npc_id=None, match=False)
-    assert game.resources.health == 3
+    assert game.resources.meters["health"] == 3

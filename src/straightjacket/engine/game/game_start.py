@@ -196,7 +196,7 @@ def start_new_game(provider: AIProvider, creation_data: dict[str, Any]) -> tuple
         assets=assets,
         truths=truths,
         stats=stat_dict,
-        resources=starting_resources(),
+        resources=starting_resources(setting_id),
         world=new_world(),
         campaign=new_campaign(),
     )

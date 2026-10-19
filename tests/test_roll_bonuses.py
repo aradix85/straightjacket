@@ -69,7 +69,7 @@ def test_a_chosen_bonus_adds_to_the_roll_and_momentum_on_a_hit(
     game.progress_tracks.append(
         make_progress_track(id="connection_npc_1", name="Mira", track_type="connection", rank="dangerous", ticks=0)
     )
-    game.resources.momentum = 2
+    game.resources.meters["momentum"] = 2
     sequence = list(dice)
     monkeypatch.setattr(rolls.random, "randint", lambda low, high: sequence.pop(0))
     brain = make_brain_result(move="adventure/face_danger", stat="wits")
@@ -77,7 +77,7 @@ def test_a_chosen_bonus_adds_to_the_roll_and_momentum_on_a_hit(
     game.last_turn_snapshot = game.snapshot()
     outcome = _execute_roll(game, brain, None)
     assert outcome.roll.action_score == min(dice[0] + game.stats["wits"] + 1, 10)
-    assert game.resources.momentum == momentum_after
+    assert game.resources.meters["momentum"] == momentum_after
 
 
 def test_momentum_tied_to_another_move_is_not_granted_with_the_add(load_engine: None) -> None:

@@ -18,9 +18,9 @@ def test_position_desperate_on_low_resources(stub_engine: None) -> None:
     from straightjacket.engine.gamemaster.resolvers import resolve_position
 
     game = make_game_state(player_name="Test")
-    game.resources.health = 1
-    game.resources.spirit = 1
-    game.resources.supply = 1
+    game.resources.meters["health"] = 1
+    game.resources.meters["spirit"] = 1
+    game.resources.meters["supply"] = 1
     game.world.chaos_factor = 5
     brain = make_brain_result(move="adventure/face_danger", stat="wits")
     assert resolve_position(game, brain) == "desperate"
@@ -30,9 +30,9 @@ def test_position_controlled_on_high_resources_low_chaos(stub_engine: None) -> N
     from straightjacket.engine.gamemaster.resolvers import resolve_position
 
     game = make_game_state(player_name="Test")
-    game.resources.health = 5
-    game.resources.spirit = 5
-    game.resources.supply = 5
+    game.resources.meters["health"] = 5
+    game.resources.meters["spirit"] = 5
+    game.resources.meters["supply"] = 5
     game.world.chaos_factor = 3
 
     game.narrative.session_log.append(
@@ -46,9 +46,9 @@ def test_position_hostile_npc_pushes_desperate(stub_engine: None) -> None:
     from straightjacket.engine.gamemaster.resolvers import resolve_position
 
     game = make_game_state(player_name="Test")
-    game.resources.health = 3
-    game.resources.spirit = 3
-    game.resources.supply = 3
+    game.resources.meters["health"] = 3
+    game.resources.meters["spirit"] = 3
+    game.resources.meters["supply"] = 3
     game.world.chaos_factor = 7
     game.npcs = [make_npc(id="npc_1", name="Enemy", disposition="hostile")]
     brain = make_brain_result(move="adventure/compel", stat="heart", target_npc="npc_1")
@@ -60,9 +60,9 @@ def test_position_friendly_npc_helps(stub_engine: None) -> None:
     from straightjacket.engine.gamemaster.resolvers import resolve_position
 
     game = make_game_state(player_name="Test")
-    game.resources.health = 5
-    game.resources.spirit = 5
-    game.resources.supply = 5
+    game.resources.meters["health"] = 5
+    game.resources.meters["spirit"] = 5
+    game.resources.meters["supply"] = 5
     game.world.chaos_factor = 5
     game.npcs = [make_npc(id="npc_1", name="Ally", disposition="friendly")]
     game.progress_tracks.append(

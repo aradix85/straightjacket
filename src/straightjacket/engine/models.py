@@ -182,11 +182,8 @@ class GameState(SerializableMixin):
         self.impacts = list(snap.impacts)
         self.crisis_mode = snap.crisis_mode
         self.end_reason = snap.end_reason
-        log(
-            f"[GameState] Restored from snapshot: "
-            f"H{self.resources.health} Sp{self.resources.spirit} "
-            f"Su{self.resources.supply} Chaos{self.world.chaos_factor}"
-        )
+        meters = " ".join(f"{name}={value}" for name, value in self.resources.meters.items())
+        log(f"[GameState] Restored from snapshot: {meters} chaos={self.world.chaos_factor}")
 
 
 __all__ = [

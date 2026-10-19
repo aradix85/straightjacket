@@ -81,9 +81,6 @@
 "label_character_state_physical": Physical
 "label_character_state_mental": Mental/Emotional
 "label_character_state_resources": Resources/Equipment
-"flag_wounded": WOUNDED
-"flag_broken": BROKEN
-"flag_depleted": DEPLETED
 "flag_final_scene": "FINAL_SCENE:dramatic ending,character falls,make it meaningful"
 "flag_crisis": "CRISIS:desperate,world closing in"
 

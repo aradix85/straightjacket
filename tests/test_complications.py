@@ -11,7 +11,7 @@ WEAK_HIT_MOVES = ["adventure/gather_information", "adventure/compel"]
 
 def _game(setting: str = "starforged") -> GameState:
     game = make_game_state()
-    game.resources = Resources(health=5, spirit=5, supply=5, momentum=2, max_momentum=10)
+    game.resources = Resources(meters={"health": 5, "spirit": 5, "supply": 5, "momentum": 2}, next_move_bonus=0)
     game.setting_id = setting
     return game
 

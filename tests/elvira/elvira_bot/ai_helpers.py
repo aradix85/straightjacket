@@ -8,6 +8,7 @@ import yaml
 from straightjacket.engine.ai.api_client import provider_named
 from straightjacket.engine.ai.provider_base import AICallSpec, AIProvider, post_process_response
 from straightjacket.engine.models import GameState
+from straightjacket.engine.ruleset.meters import max_momentum, momentum
 from straightjacket.engine.ruleset.progress import filled_boxes
 from straightjacket.engine.story_state import get_current_act
 
@@ -103,7 +104,6 @@ def _resolve_turn_directive(turn: int, directive_key: str | None = None) -> tupl
 def build_turn_context(
     game: GameState, narration: str, turn: int, prev_action: str = "", directive_key: str | None = None
 ) -> str:
-    res = game.resources
     world = game.world
     unknown = _p("bot_unknown_label")
     none_label = _p("bot_active_none_label")
@@ -164,11 +164,8 @@ def build_turn_context(
         player_name=game.player_name,
         location=world.current_location or unknown,
         time_of_day=world.time_of_day or unknown,
-        health=res.health,
-        spirit=res.spirit,
-        supply=res.supply,
-        momentum=res.momentum,
-        max_momentum=res.max_momentum,
+        **game.resources.meters,
+        max_momentum=max_momentum(game),
         story_block=story_block,
         active_npcs=active_npcs,
         active_tracks=active_tracks,
@@ -183,7 +180,7 @@ def decide_burn_momentum(game: GameState, current_result: str, new_result: str, 
         "burn_decision",
         current_result=current_result,
         new_result=new_result,
-        momentum=game.resources.momentum,
+        momentum=momentum(game),
     )
     answer = ask_bot(_p("burn_decision_system"), prompt, max_tokens=10)
     return answer.lower().startswith("y")

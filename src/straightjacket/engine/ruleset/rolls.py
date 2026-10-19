@@ -6,6 +6,7 @@ import random
 from ..logging_util import log
 from ..models import GameState, RollResult
 from .config import rules
+from .meters import momentum
 from .outcome_result import move_outcome_config
 
 
@@ -86,7 +87,7 @@ def score_progress_roll(c1: int, c2: int, track_name: str, filled_boxes: int, mo
 
 
 def can_burn_momentum(game: GameState, roll: RollResult) -> str | None:
-    mom = game.resources.momentum
+    mom = momentum(game)
     if mom <= 0:
         return None
     if roll.result == "MISS" and mom > roll.c1 and mom > roll.c2:

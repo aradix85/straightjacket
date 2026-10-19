@@ -4,6 +4,7 @@ from typing import Any
 
 from ..logging_util import log
 from ..models import GameState, consequence
+from .meters import momentum
 from .move_effects import NPC_EFFECTS, MoveEffect, apply_effects, has_story_complication, parse_effects, roll_move_table
 from .move_handlers import apply_recovery_handler, apply_suffer_handler, apply_threshold_handler
 from .moves import get_moves
@@ -26,7 +27,7 @@ def resolve_move_outcome(
     match_key = f"{result_key}_match"
     effects_raw = move_cfg[match_key] if match and match_key in move_cfg else move_cfg.get(result_key)
     if effects_raw is None:
-        raise ValueError(f"No effects for {move_key}/{result_key}. Add it to engine.yaml move_outcomes.")
+        raise ValueError(f"No effects for {move_key}/{result_key}. Add it to ruleset/move_outcomes.yaml.")
 
     effects = parse_effects(effects_raw)
     if match and roll_result == "MISS" and has_story_complication(game):
@@ -50,7 +51,7 @@ def make_follow_up_moves(game: GameState, result: OutcomeResult) -> None:
             return
         move = moves[move_key]
         stat, value = best_roll_option(game, move)
-        roll = roll_action(stat, value, move_key, game.resources.momentum, 0)
+        roll = roll_action(stat, value, move_key, momentum(game), 0)
         log(f"[FollowUp] {move_key} ({stat}={value}): {roll.action_score} vs [{roll.c1},{roll.c2}] → {roll.result}")
         follow = resolve_move_outcome(game, move_key, roll.result, target_npc_id=None, match=roll.match)
         make_follow_up_moves(game, follow)

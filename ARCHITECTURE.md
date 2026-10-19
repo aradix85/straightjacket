@@ -84,7 +84,7 @@ Beside them, `i18n.py` serves user-facing strings.
 
 ## State
 
-**Typed dataclasses.** `GameState` holds typed sub-objects (resources, world, narrative, campaign), and every other piece of state (NPCs, memories, moves, progress tracks, threads, clocks, threats, chapter summaries) is a dataclass with fixed fields, reached by attribute, never as a dict. `serialization.py` → `SerializableMixin` serializes every class without manual overrides.
+**Typed dataclasses.** `GameState` holds typed sub-objects (resources, world, narrative, campaign), and every other piece of state (NPCs, memories, moves, progress tracks, threads, clocks, threats, chapter summaries) is a dataclass with fixed fields, reached by attribute, never as a dict. The character's stats and meters are values keyed by the names their ruleset gives them (`GameState.stats`, `Resources.meters`), since another ruleset names others. `serialization.py` → `SerializableMixin` serializes every class without manual overrides.
 
 **Snapshot and restore.** `GameState.snapshot()` captures all mutable state, including every entry of the story lists, and `restore()` reverts it atomically. Corrections, momentum burns, and turns whose AI call fails restore from snapshots (`docs/mechanics.md`, Shared outcome resolution; `docs/ai.md`, When an AI call fails). A resolved fact lives in `WorldState.facts`, so the snapshot carries it like any other world state.
 

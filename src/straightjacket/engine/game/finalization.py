@@ -33,6 +33,7 @@ from ..ruleset.boasts import apply_boasts
 from ..ruleset.bond import connection_track
 from ..ruleset.config import rules
 from ..ruleset.legacy import mark_legacy, mark_legacy_ticks, shifted_rank
+from ..ruleset.meters import in_crisis, momentum
 from ..ruleset.move_effects import apply_effects, parse_effects
 from ..ruleset.move_outcome import resolve_move_outcome
 from ..ruleset.moves import Move, get_moves
@@ -102,7 +103,7 @@ def _chain_move(game: GameState, brain: BrainResult, outcome: OutcomeResult) -> 
         return
     label, stat_value = value
     adds = game.resources.next_move_bonus
-    roll = roll_action(label, stat_value, outcome.chained_move, game.resources.momentum, adds)
+    roll = roll_action(label, stat_value, outcome.chained_move, momentum(game), adds)
     game.resources.next_move_bonus = 0
     chained = resolve_move_outcome(
         game, outcome.chained_move, roll.result, target_npc_id=brain.target_npc, match=roll.match
@@ -182,7 +183,7 @@ def apply_progress_and_legacy(
 
 
 def update_crisis(game: GameState) -> None:
-    game.crisis_mode = game.resources.health <= 0 or game.resources.spirit <= 0
+    game.crisis_mode = in_crisis(game)
 
 
 def apply_engine_memories(game: GameState, memories: list[tuple[NpcData, MemoryEntry]], narration: str) -> None:

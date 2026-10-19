@@ -28,6 +28,8 @@ Not everything is engine-decided yet: `docs/divergences.md` lists what the narra
 
 Mechanics drawn from Ironsworn/Starforged (action rolls, momentum, bonds), Mythic GME 2e (chaos factor, scene structure, random events), the Adventure Crafter (plot structure and turning points), and Blades in the Dark (position & effect, clocks).
 
+Under the hood these are separate layers: the setting, Mythic as the game master, the Crafters that add content to it, and the rules system, which is Ironsworn today and is kept apart so that another system can take its place. ARCHITECTURE.md describes the layers.
+
 ---
 
 ## Accessibility

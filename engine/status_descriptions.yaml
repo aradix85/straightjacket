@@ -1,25 +1,26 @@
 status_descriptions:
-  health:
-    5: uninjured
-    4: bruised, minor aches
-    3: injured, moving with effort
-    2: seriously wounded
-    1: critically injured, barely holding together
-    0: at the physical limit, collapse is imminent
-  spirit:
-    5: steady and composed
-    4: mildly unsettled
-    3: shaken, stress is showing
-    2: deeply troubled, holding on by a thread
-    1: near breaking
-    0: at the mental limit
-  supply:
-    5: well-equipped
-    4: adequate for now
-    3: running low, rationing has begun
-    2: critically short
-    1: nearly nothing, desperation setting in
-    0: completely out of resources
+  meters:
+    health:
+      5: uninjured
+      4: bruised, minor aches
+      3: injured, moving with effort
+      2: seriously wounded
+      1: critically injured, barely holding together
+      0: at the physical limit, collapse is imminent
+    spirit:
+      5: steady and composed
+      4: mildly unsettled
+      3: shaken, stress is showing
+      2: deeply troubled, holding on by a thread
+      1: near breaking
+      0: at the mental limit
+    supply:
+      5: well-equipped
+      4: adequate for now
+      3: running low, rationing has begun
+      2: critically short
+      1: nearly nothing, desperation setting in
+      0: completely out of resources
   bond:
     8: deeply bonded
     6: strong connection

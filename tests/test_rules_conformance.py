@@ -138,9 +138,9 @@ def test_secure_an_advantage_weak_hit_follows_each_rulebook(load_engine: None, s
     from tests._helpers import make_game_state
 
     game = make_game_state(setting_id=setting)
-    game.resources.momentum = 0
+    game.resources.meters["momentum"] = 0
     resolve_move_outcome(game, "adventure/secure_an_advantage", "WEAK_HIT", target_npc_id=None, match=False)
-    assert game.resources.momentum == expected
+    assert game.resources.meters["momentum"] == expected
 
 
 @pytest.mark.parametrize(
@@ -164,11 +164,11 @@ def test_endure_harm_follows_each_rulebook(
     from tests._helpers import make_game_state
 
     game = make_game_state(setting_id=setting)
-    game.resources.health = health
-    game.resources.momentum = 2
+    game.resources.meters["health"] = health
+    game.resources.meters["momentum"] = 2
     game.impacts = []
     resolve_move_outcome(game, "suffer/endure_harm", result, target_npc_id=None, match=False)
-    assert (game.resources.health, game.resources.momentum) == expected
+    assert (game.resources.meters["health"], game.resources.meters["momentum"]) == expected
 
 
 @pytest.mark.parametrize(("vow_rank", "expected_ticks"), [("formidable", 2), ("dangerous", 1), ("troublesome", 0)])
@@ -252,9 +252,9 @@ def test_make_a_connection_gives_no_momentum(load_engine: None) -> None:
     from tests._helpers import make_game_state
 
     game = make_game_state(setting_id="starforged")
-    game.resources.momentum = 2
+    game.resources.meters["momentum"] = 2
     resolve_move_outcome(game, "connection/make_a_connection", "WEAK_HIT", target_npc_id=None, match=False)
-    assert game.resources.momentum == 2
+    assert game.resources.meters["momentum"] == 2
 
 
 def test_a_full_legacy_track_clears_and_then_earns_one_experience_per_box(load_engine: None) -> None:
@@ -439,9 +439,9 @@ def test_pay_the_price_harm_costs_health(load_engine: None, monkeypatch: pytest.
 
     monkeypatch.setattr(move_effects, "_pay_the_price_move", lambda game: _FakePriceMove(_price_row("You are harmed")))
     game = make_game_state(setting_id="starforged")
-    game.resources.health = 4
+    game.resources.meters["health"] = 4
     move_effects.pay_the_price(game, OutcomeResult())
-    assert game.resources.health == 3
+    assert game.resources.meters["health"] == 3
 
 
 def test_pay_the_price_roll_twice_tells_both_results_and_not_the_instruction(
@@ -454,11 +454,11 @@ def test_pay_the_price_roll_twice_tells_both_results_and_not_the_instruction(
     rows = (_price_row("Roll twice", "reroll"), _price_row("You are stressed"), _price_row("A new enemy is revealed"))
     monkeypatch.setattr(move_effects, "_pay_the_price_move", lambda game: _FakePriceMove(*rows))
     game = make_game_state(setting_id="starforged")
-    game.resources.spirit = 4
+    game.resources.meters["spirit"] = 4
     result = OutcomeResult()
     move_effects.pay_the_price(game, result)
     assert labels_of(result.consequences)[0] == "Pay the Price: You are stressed; A new enemy is revealed"
-    assert game.resources.spirit == 3
+    assert game.resources.meters["spirit"] == 3
 
 
 def test_classic_pay_the_price_makes_a_twice_rolled_result_worse(
@@ -487,11 +487,11 @@ def test_classic_roll_again_tells_the_next_result_made_worse(
     rows = (again, _price_row("You are harmed"))
     monkeypatch.setattr(move_effects, "_pay_the_price_move", lambda game: _FakePriceMove(*rows))
     game = make_game_state(setting_id="classic")
-    game.resources.health = 4
+    game.resources.meters["health"] = 4
     result = OutcomeResult()
     move_effects.pay_the_price(game, result)
     assert labels_of(result.consequences)[0] == "Pay the Price: You are harmed, made worse"
-    assert game.resources.health == 3
+    assert game.resources.meters["health"] == 3
 
 
 @pytest.mark.parametrize(("setting", "pays"), [("classic", True), ("starforged", False)])
@@ -722,7 +722,7 @@ def test_lasting_harm_uses_each_rulebooks_names(
 
     game = make_game_state(setting_id=setting)
     track = "health" if move.endswith("harm") else "spirit"
-    setattr(game.resources, track, 0)
+    game.resources.meters[track] = 0
     game.impacts = [first]
     resolve_move_outcome(game, move, "MISS", target_npc_id=None, match=False)
     assert lasting in game.impacts
@@ -764,11 +764,11 @@ def test_take_decisive_action_weak_hit_rolls_its_own_table_and_its_cost(
     rolled = record_price_tables(monkeypatch)
     fix_dice(monkeypatch, 10)
     game = make_game_state(setting_id="starforged")
-    game.resources.spirit = 3
-    game.resources.supply = 3
+    game.resources.meters["spirit"] = 3
+    game.resources.meters["supply"] = 3
     outcome = resolve_move_outcome(game, "combat/take_decisive_action", "WEAK_HIT", target_npc_id=None, match=False)
     assert labels_of(outcome.consequences)[0] == f"Take Decisive Action: {worse}"
-    assert game.resources.health == 3
+    assert game.resources.meters["health"] == 3
     assert rolled == []
 
 
@@ -822,5 +822,5 @@ def test_an_engine_chosen_roll_keeps_a_lowest_way_low(load_engine: None) -> None
     game = make_game_state(setting_id="classic")
     game.stats.update(iron=3, wits=1)
     assert best_roll_option(game, get_moves("classic")["adventure/heal"]) == ("wits", 1)
-    game.resources.health = 2
+    game.resources.meters["health"] = 2
     assert best_roll_option(game, get_moves("classic")["suffer/endure_harm"]) == ("iron", 3)
