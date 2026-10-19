@@ -113,32 +113,35 @@ def call_narrator_metadata(
     npc_ids: list[str] = []
     for n in game.npcs:
         npc_ids.append(n.id)
-        entry = f"{n.id}={_xe(n.name)}"
+        entry = get_prompt("metadata_npc_ref", id=n.id, npc=_xe(n.name))
         if n.aliases:
-            entry += f" (aka {_xe(', '.join(n.aliases))})"
+            entry += get_prompt("metadata_npc_aliases", aliases=_xe(", ".join(n.aliases)))
         if n.status == "deceased":
-            entry += " [DECEASED]"
+            entry += get_prompt("metadata_npc_deceased")
         elif n.status == "lore":
-            entry += " [LORE]"
+            entry += get_prompt("metadata_npc_lore")
 
         npc_loc = n.last_location
         if npc_loc:
-            entry += f" [at:{_xe(npc_loc)}]"
+            entry += get_prompt("metadata_npc_at", location=_xe(npc_loc))
 
         desc = n.description
         if desc:
-            entry += f" — {_xe(desc[: eng().truncations.prompt_xshort])}"
+            entry += get_prompt("metadata_npc_description", description=_xe(desc[: eng().truncations.prompt_xshort]))
         npc_refs.append(entry)
 
-    parts = [f"move:{brain.move}"]
+    parts = [get_prompt("metadata_context_move", move=brain.move)]
     if brain.stat != eng().ai_text.no_stat:
-        parts.append(f"stat:{brain.stat}")
+        parts.append(get_prompt("metadata_context_stat", stat=brain.stat))
     if brain.target_npc:
-        parts.append(f"target:{brain.target_npc}")
-    mechanical_ctx = f"\n<engine_context>{' | '.join(parts)}"
-    if consequences:
-        mechanical_ctx += f" | consequences: {', '.join(consequences)}"
-    mechanical_ctx += "</engine_context>"
+        parts.append(get_prompt("metadata_context_target", target=brain.target_npc))
+    mechanical_ctx = "\n" + get_prompt(
+        "metadata_engine_context",
+        context=" | ".join(parts),
+        consequences=get_prompt("metadata_context_consequences", consequences=", ".join(consequences))
+        if consequences
+        else "",
+    )
 
     system_base = get_prompt("narrator_metadata", lang=lang, dispositions="|".join(gm().enums.dispositions))
 

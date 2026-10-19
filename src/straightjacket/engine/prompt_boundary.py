@@ -68,7 +68,7 @@ def build_epilogue_prompt(game: GameState) -> str:
     epilogue_scenes = eng().prompt_display.epilogue_log_scenes
     log_text = "; ".join(
         get_prompt(
-            "block_epilogue_log_entry",
+            "block_session_log_entry",
             scene=str(s.scene),
             summary=_xe(s.rich_summary or s.summary),
             result=s.result,

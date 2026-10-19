@@ -8,9 +8,15 @@ This log starts at 2026.09.24.0, the restart after a four-month pause. Earlier r
 
 Calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day.
 
+## [2026.10.20.10] — 2026-10-20
+
+Step 9o, 9o.2, fifth group: the markup of `ai/narrator.py` and `ai/recap.py` moves to `prompts/narrator.yaml`, 21 keys: the recap's request as a template, its NPC, story-arc, and campaign forms, and the separator between recent scenes; the metadata extraction's NPC reference with its aliases, status markers, place, and description, and its engine context with the move, stat, target, and consequences. A session-log entry, which the epilogue and the recap write alike, is one key, `block_session_log_entry`, where the epilogue had its own. The render script of this group rendered the recap's and the extraction's prompts with and without NPCs of every status, a blueprint, campaign history, and consequences, with every line that builds a prompt reached (what it leaves out are the calls' failure paths and the narrator call, which assembles no markup), and the four earlier groups' scripts ran again: all byte-identical before and after. The previous entry's key count is corrected to 20. Play does not change.
+
+Quality gate: 1848 tests, coverage 94.90%. Save format unchanged. No Elvira session (Sessions with the user); the prompts are byte-identical.
+
 ## [2026.10.20.9] — 2026-10-20
 
-Step 9o, 9o.2, fourth group: the markup of `ai/brain.py` moves to `prompts/brain.yaml`, 24 keys: the Brain's user message as a template, the wrappers and lines of its moves, tracks, dangers, fact types, and NPCs, the form of a stat and of a stat's value, a way to roll with its condition, the trigger hint, the combat position, an NPC's bond and aliases, and the revelation check's prompt. The render script of this group rendered the Brain's system prompt, its cached prefix, and its user message with and without NPCs, tracks, dangers, a combat position, and a time of day, and the revelation check's prompt, in Delve as well as the three playable settings, with every line that builds a prompt reached (what it leaves out are the refusals and checks of the Brain's answer), and the three earlier groups' scripts ran again: all byte-identical before and after. Play does not change.
+Step 9o, 9o.2, fourth group: the markup of `ai/brain.py` moves to `prompts/brain.yaml`, 20 keys: the Brain's user message as a template, the wrappers and lines of its moves, tracks, dangers, fact types, and NPCs, the form of a stat and of a stat's value, a way to roll with its condition, the trigger hint, the combat position, an NPC's bond and aliases, and the revelation check's prompt. The render script of this group rendered the Brain's system prompt, its cached prefix, and its user message with and without NPCs, tracks, dangers, a combat position, and a time of day, and the revelation check's prompt, in Delve as well as the three playable settings, with every line that builds a prompt reached (what it leaves out are the refusals and checks of the Brain's answer), and the three earlier groups' scripts ran again: all byte-identical before and after. Play does not change.
 
 Quality gate: 1848 tests, coverage 94.89%. Save format unchanged. No Elvira session (Sessions with the user); the prompts are byte-identical.
 

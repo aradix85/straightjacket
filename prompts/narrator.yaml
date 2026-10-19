@@ -84,3 +84,29 @@
 "recap": |-
   Recap the story so far for the player, in {lang}, in the second person, in four to six atmospheric sentences: the mood, the key people, and the tension the player is in now, all from the player character's point of view.
   {content_boundaries_block}
+"recap_request": |-
+  {player}—{concept}
+  genre:{genre} tone:{tone}
+  world:{world}
+  at:{location}
+  log:{log}
+  npcs:{npcs}{arc}{campaign}
+  now:{situation}
+  recent_scenes:
+  {narrations}
+"recap_npc": '{npc}({disposition},B{bond})'
+"recap_story_arc": 'story_arc({structure}): act={act_number}/{total_acts} phase={phase} progress={progress}'
+"recap_campaign": 'campaign: chapter {chapter} of {chapters}'
+"recap_campaign_previous": '  prev: {title}: {summary}'
+"recap_narration_separator": "\n---\n"
+"metadata_npc_ref": '{id}={npc}'
+"metadata_npc_aliases": ' (aka {aliases})'
+"metadata_npc_deceased": ' [DECEASED]'
+"metadata_npc_lore": ' [LORE]'
+"metadata_npc_at": ' [at:{location}]'
+"metadata_npc_description": ' — {description}'
+"metadata_context_move": 'move:{move}'
+"metadata_context_stat": 'stat:{stat}'
+"metadata_context_target": 'target:{target}'
+"metadata_context_consequences": ' | consequences: {consequences}'
+"metadata_engine_context": '<engine_context>{context}{consequences}</engine_context>'

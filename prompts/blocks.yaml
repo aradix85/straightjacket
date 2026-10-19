@@ -187,7 +187,7 @@
 "block_returning_npc": '<returning_npc id="{id}" name="{npc}" disposition="{disposition}" bond="{bond}/{boxes}"{aliases}>{description}</returning_npc>'
 "block_epilogue_npc": '<npc name="{npc}" disposition="{disposition}" bond="{bond}/{boxes}">{description}</npc>'
 "block_epilogue_ending": '{type}: {description}'
-"block_epilogue_log_entry": 'S{scene}:{summary}({result})'
+"block_session_log_entry": 'S{scene}:{summary}({result})'
 "block_world": '<world genre="{genre}" tone="{tone}">{description}</world>'
 "block_character": '<character name="{player}">{concept}</character>'
 "block_pronouns": '<pronouns>{pronouns}</pronouns>'
