@@ -40,7 +40,6 @@ def _advance(game: GameState, threat: ThreatData, marks: int, source: str) -> Th
     return ThreatEvent(
         threat_id=threat.id,
         threat_name=threat.name,
-        ticks_added=ticks,
         menace_full=threat.menace_full,
         source=source,
         development=_development(game, threat),
@@ -109,7 +108,6 @@ def resolve_full_menace(game: GameState, result: OutcomeResult) -> list[ThreatEv
             ThreatEvent(
                 threat_id=threat.id,
                 threat_name=threat.name,
-                ticks_added=0,
                 menace_full=True,
                 source="forsake_vow",
                 development="",

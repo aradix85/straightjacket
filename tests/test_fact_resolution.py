@@ -23,9 +23,9 @@ def _chart_rolls(monkeypatch: pytest.MonkeyPatch, roll: int) -> None:
 
     original = fate.resolve_fate_chart
 
-    def chart(odds: str, chaos_factor: int, question: str) -> FateResult:
+    def chart(odds: str, chaos_factor: int) -> FateResult:
         fix_dice(monkeypatch, roll)
-        return original(odds, chaos_factor, question)
+        return original(odds, chaos_factor)
 
     monkeypatch.setattr(fate, "resolve_fate_chart", chart)
 
@@ -46,13 +46,11 @@ def _game() -> GameState:
 def _fact(
     fact_type: str, about: str = "here", answer: str = "yes", location: str = "Abandoned Library"
 ) -> ResolvedFact:
-    return ResolvedFact(
-        about=about, about_name=location, fact_type=fact_type, answer=answer, odds="fifty_fifty", location=location
-    )
+    return ResolvedFact(about=about, about_name=location, fact_type=fact_type, answer=answer, location=location)
 
 
 def _fate(answer: str) -> FateResult:
-    return FateResult(answer=answer, odds="fifty_fifty", chaos_factor=5, method="fate_chart", roll=40, question="")
+    return FateResult(answer=answer, random_event_triggered=False)
 
 
 @pytest.fixture
@@ -61,8 +59,8 @@ def counted_fate(monkeypatch: pytest.MonkeyPatch) -> list[str]:
 
     calls: list[str] = []
 
-    def _resolve(game: Any, odds: str, chaos_factor: int, question: str) -> FateResult:
-        calls.append(question)
+    def _resolve(game: Any, odds: str) -> FateResult:
+        calls.append(odds)
         return _fate("yes")
 
     monkeypatch.setattr(facts, "resolve_fate", _resolve)
@@ -94,11 +92,10 @@ def test_a_resolved_fact_is_stored_and_reused(load_engine: None, counted_fate: l
     second = resolve_fact(game, FactRequest(fact_type="alert", about="npc_2"))
 
     assert second is first
-    assert counted_fate == ["alert:npc_2"]
+    assert counted_fate == ["very_likely"]
     assert game.world.facts == [first]
     assert first.about_name == "Brannoc"
     assert first.location == "Abandoned Library"
-    assert first.odds == "very_likely"
 
 
 def test_a_fixed_seed_gives_the_same_answer(load_engine: None) -> None:
@@ -460,13 +457,13 @@ def test_a_burn_keeps_the_facts_and_clears_them_on_the_better_result(
 
     assert game.world.facts == []
     assert "<facts>" in provider.prompts[-1]
-    assert counted_fate == ["locked:here"]
+    assert counted_fate == ["fifty_fifty"]
 
 
 def _nothing_useful_search(monkeypatch: pytest.MonkeyPatch, result: str) -> _Provider:
     from straightjacket.engine.mechanics import facts
 
-    monkeypatch.setattr(facts, "resolve_fate", lambda game, odds, chaos_factor, question: _fate("no"))
+    monkeypatch.setattr(facts, "resolve_fate", lambda game, odds: _fate("no"))
     _force(monkeypatch, result)
     return _Provider(
         _brain(move="adventure/gather_information", undetermined_facts=[{"fact_type": "useful", "about": "here"}])
@@ -518,7 +515,7 @@ def test_a_correction_reuses_the_facts_of_the_turn(
 
     _narration, _offer, _director = process_correction(provider, game, "I meant with force")
 
-    assert counted_fate == ["locked:here"]
+    assert counted_fate == ["fifty_fifty"]
     assert game.world.facts == first
     assert game.last_turn_snapshot is not None
     assert game.last_turn_snapshot.facts == first
@@ -548,7 +545,7 @@ def test_a_target_that_is_not_present_leaves_the_scene(
     from straightjacket.engine.game import process_turn
     from straightjacket.engine.mechanics import facts
 
-    monkeypatch.setattr(facts, "resolve_fate", lambda game, odds, chaos_factor, question: _fate(answer))
+    monkeypatch.setattr(facts, "resolve_fate", lambda game, odds: _fate(answer))
     _force(monkeypatch, "WEAK_HIT")
     provider = _Provider(
         _brain(

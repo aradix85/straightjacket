@@ -51,8 +51,6 @@ def generate_epilogue(provider: AIProvider, game: GameState) -> str:
 
     narration = re.sub(eng().parser.epilogue_heading, "", narration, count=1, flags=re.IGNORECASE).strip()
 
-    game.campaign.epilogue_shown = True
-    game.campaign.epilogue_text = narration
     log(f"[Epilogue] Generated ({len(narration)} chars)")
     return narration
 
@@ -151,8 +149,6 @@ def _close_previous_chapter(game: GameState) -> ChapterSummary:
         title=get_prompt("block_chapter_record_untitled", n=str(game.campaign.chapter_number)),
         summary=_chapter_record(game),
         unresolved_threads=[th.name for th in game.narrative.threads if th.active],
-        post_story_location=game.world.current_location,
-        scenes=game.narrative.scene_count,
     )
     game.campaign.campaign_history.append(chapter_summary)
     game.campaign.chapter_number += 1
@@ -163,9 +159,7 @@ def _reset_chapter_mechanics(game: GameState) -> None:
     _e = eng()
     game.narrative.scene_count = 1
     game.world.chaos_factor = _e.chaos.start
-    game.campaign.epilogue_shown = False
     game.campaign.epilogue_dismissed = False
-    game.campaign.epilogue_text = ""
     game.narrative.session_log = []
     game.narrative.narration_history = []
     game.narrative.scene_intensity_history = []

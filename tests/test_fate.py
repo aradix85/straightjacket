@@ -1,3 +1,5 @@
+from typing import Any
+
 import pytest
 
 from straightjacket.engine.engine_loader import eng
@@ -15,12 +17,12 @@ from tests._helpers import fix_dice, make_game_state
 
 def _chart(monkeypatch: pytest.MonkeyPatch, odds: str, chaos_factor: int, roll: int) -> FateResult:
     fix_dice(monkeypatch, roll)
-    return resolve_fate_chart(odds, chaos_factor, question="")
+    return resolve_fate_chart(odds, chaos_factor)
 
 
 def _check(monkeypatch: pytest.MonkeyPatch, odds: str, chaos_factor: int, dice: tuple[int, int]) -> FateResult:
     fix_dice(monkeypatch, *dice)
-    return resolve_fate_check(odds, chaos_factor, question="")
+    return resolve_fate_check(odds, chaos_factor)
 
 
 def test_fate_chart_four_outcomes(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -48,7 +50,7 @@ def test_fate_chart_null_thresholds(monkeypatch: pytest.MonkeyPatch) -> None:
 
 def test_fate_chart_unknown_odds_raises() -> None:
     with pytest.raises(KeyError, match="Unknown odds level"):
-        resolve_fate_chart("totally_bonkers", chaos_factor=5, question="")
+        resolve_fate_chart("totally_bonkers", chaos_factor=5)
 
 
 def test_chart_random_event_doublet_logic() -> None:
@@ -92,11 +94,25 @@ def test_fate_results_carry_random_event_flag(monkeypatch: pytest.MonkeyPatch) -
 
 
 def test_resolve_fate_follows_the_configured_method(load_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:
+    from straightjacket.engine.mechanics import fate
+
     game = make_game_state()
-    game.world.chaos_factor = 5
+    game.world.chaos_factor = 7
+    asked: list[tuple[str, str, int]] = []
+
+    def answering(method: str) -> Any:
+        def resolve(odds: str, chaos_factor: int) -> FateResult:
+            asked.append((method, odds, chaos_factor))
+            return FateResult(answer="yes", random_event_triggered=False)
+
+        return resolve
+
+    monkeypatch.setattr(fate, "resolve_fate_chart", answering("fate_chart"))
+    monkeypatch.setattr(fate, "resolve_fate_check", answering("fate_check"))
     for method in ("fate_chart", "fate_check"):
         monkeypatch.setattr(eng().fate, "default_method", method)
-        assert resolve_fate(game, "fifty_fifty", chaos_factor=5, question="").method == method
+        resolve_fate(game, "fifty_fifty")
+    assert asked == [("fate_chart", "fifty_fifty", 7), ("fate_check", "fifty_fifty", 7)]
 
 
 def _odds_scale() -> list[str]:

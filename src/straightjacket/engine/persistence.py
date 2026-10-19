@@ -1,6 +1,5 @@
 import json
 from datetime import datetime
-from pathlib import Path
 from typing import Any
 
 from .logging_util import log
@@ -12,7 +11,7 @@ class IncompatibleSaveError(Exception):
     pass
 
 
-def save_game(game: GameState, username: str, chat_messages: list[dict[str, Any]], name: str) -> Path:
+def save_game(game: GameState, username: str, chat_messages: list[dict[str, Any]], name: str) -> None:
     name = _safe_name(name)
     save_dir = get_save_dir(username)
     save_dir.mkdir(parents=True, exist_ok=True)
@@ -25,7 +24,6 @@ def save_game(game: GameState, username: str, chat_messages: list[dict[str, Any]
     }
     path.write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
     log(f"[Save] Game saved: {username}/{name} (Scene {game.narrative.scene_count}, {len(chat_messages)} chat msgs)")
-    return path
 
 
 def load_game(username: str, name: str) -> tuple[GameState | None, list[Any]]:
@@ -72,11 +70,10 @@ def list_saves_with_info(username: str) -> list[dict[str, Any]]:
     return infos
 
 
-def delete_save(username: str, name: str) -> bool:
+def delete_save(username: str, name: str) -> None:
     name = _safe_name(name)
     path = get_save_dir(username) / f"{name}.json"
     if not path.exists():
-        return False
+        return
     path.unlink()
     log(f"[Save] Deleted: {username}/{name}")
-    return True

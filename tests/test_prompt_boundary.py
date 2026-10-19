@@ -138,8 +138,6 @@ def test_build_new_chapter_prompt_carries_the_engine_record(load_engine: None) -
             title="The drowned bell",
             summary="Vows fulfilled: Ring the bell. People: Kira (wary, bond 2).",
             unresolved_threads=[],
-            post_story_location="Station",
-            scenes=5,
         )
     ]
     out = build_new_chapter_prompt(g)

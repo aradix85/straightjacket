@@ -24,7 +24,6 @@ def _useful(answer: str) -> ResolvedFact:
         about_name="The Docks",
         fact_type="useful",
         answer=answer,
-        odds="fifty_fifty",
         location="The Docks",
     )
 

@@ -25,7 +25,7 @@ def _load_mythic() -> dict[str, Any]:
     return _mythic
 
 
-def resolve_fate_chart(odds: str, chaos_factor: int, question: str) -> FateResult:
+def resolve_fate_chart(odds: str, chaos_factor: int) -> FateResult:
     data = _load_mythic()
     chart = data["fate_chart"]
 
@@ -52,15 +52,7 @@ def resolve_fate_chart(odds: str, chaos_factor: int, question: str) -> FateResul
 
     event_triggered = _check_chart_random_event(roll, chaos_factor)
 
-    result = FateResult(
-        answer=answer,
-        odds=odds,
-        chaos_factor=chaos_factor,
-        method="fate_chart",
-        roll=roll,
-        question=question,
-        random_event_triggered=event_triggered,
-    )
+    result = FateResult(answer=answer, random_event_triggered=event_triggered)
     log(f"[Fate] Chart: {odds} CF{chaos_factor} roll={roll} → {answer}{' +EVENT' if event_triggered else ''}")
     return result
 
@@ -89,7 +81,7 @@ def _check_answer(answers: dict[str, dict[str, int]], total: int) -> str:
     raise ValueError(f"fate_check answers in mythic_gme_2e.json cover no total {total}")
 
 
-def resolve_fate_check(odds: str, chaos_factor: int, question: str) -> FateResult:
+def resolve_fate_check(odds: str, chaos_factor: int) -> FateResult:
     check = _load_mythic()["fate_check"]
     odds_modifiers = {row["odds"]: row["modifier"] for row in check["odds_modifiers"]}
     chaos_modifiers = {row["chaos_factor"]: row["modifier"] for row in check["chaos_factor_modifiers"]}
@@ -108,15 +100,7 @@ def resolve_fate_check(odds: str, chaos_factor: int, question: str) -> FateResul
 
     event_triggered = _check_check_random_event(d1, d2, chaos_factor)
 
-    result = FateResult(
-        answer=answer,
-        odds=odds,
-        chaos_factor=chaos_factor,
-        method="fate_check",
-        roll=d1 + d2,
-        question=question,
-        random_event_triggered=event_triggered,
-    )
+    result = FateResult(answer=answer, random_event_triggered=event_triggered)
     log(
         f"[Fate] Check: {odds} CF{chaos_factor} {d1}+{d2}+{odds_mod}+{cf_mod}={total} → {answer}"
         f"{' +EVENT' if event_triggered else ''}"
@@ -130,24 +114,19 @@ def _check_check_random_event(d1: int, d2: int, chaos_factor: int) -> bool:
     return d1 <= chaos_factor
 
 
-def resolve_fate(
-    game: GameState,
-    odds: str,
-    chaos_factor: int,
-    question: str,
-) -> FateResult:
+def resolve_fate(game: GameState, odds: str) -> FateResult:
     method = eng().fate.default_method
     if method == "fate_check":
-        result = resolve_fate_check(odds, chaos_factor, question)
+        result = resolve_fate_check(odds, game.world.chaos_factor)
     elif method == "fate_chart":
-        result = resolve_fate_chart(odds, chaos_factor, question)
+        result = resolve_fate_chart(odds, game.world.chaos_factor)
     else:
         raise ValueError(f"Unknown fate method {method!r}; valid: 'fate_chart', 'fate_check'")
 
     if result.random_event_triggered:
         from .random_events import generate_random_event
 
-        result.random_event = generate_random_event(game, source="fate_doublet")
+        generate_random_event(game, source="fate_doublet")
 
     return result
 

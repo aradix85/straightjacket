@@ -20,12 +20,10 @@ from tests._helpers import make_game_state, make_threat
 def _re(focus: str, target_id: str = "", target: str = "") -> RandomEvent:
     return RandomEvent(
         focus=focus,
-        focus_roll=50,
         target=target,
         target_id=target_id,
         meaning_action="Betray",
         meaning_subject="Faith",
-        meaning_table="actions",
         source="test",
     )
 

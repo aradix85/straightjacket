@@ -25,19 +25,19 @@ def check_scene(game: GameState) -> SceneSetup:
 
     if roll > cf:
         log(f"[Scene] Expected (roll={roll} > CF{cf})")
-        return SceneSetup(scene_type="expected", chaos_roll=roll)
+        return SceneSetup(scene_type="expected")
 
     if roll % 2 == 1:
         adjustments = _roll_adjustments()
         adj_str = ", ".join(adjustments)
         log(f"[Scene] Altered (roll={roll} ≤ CF{cf}, odd): {adj_str}")
-        return SceneSetup(scene_type="altered", chaos_roll=roll, adjustments=adjustments)
+        return SceneSetup(scene_type="altered", adjustments=adjustments)
     else:
         event = generate_random_event(game, source="interrupt_scene")
         log(
             f"[Scene] Interrupt (roll={roll} ≤ CF{cf}, even): {event.focus} → {event.meaning_action} / {event.meaning_subject}"
         )
-        return SceneSetup(scene_type="interrupt", chaos_roll=roll, interrupt_event=event)
+        return SceneSetup(scene_type="interrupt", interrupt_event=event)
 
 
 def _roll_adjustments() -> list[str]:

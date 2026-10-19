@@ -28,7 +28,6 @@ class CharacterListEntry(SerializableMixin):
     weight: int = 1
     active: bool = True
     ac_status: str = ""
-    ac_turning_point_count: int = 0
 
 
 @dataclass
@@ -50,11 +49,8 @@ class SceneLogEntry(SerializableMixin):
     clock_events: list[ClockEvent] = field(default_factory=list)
     position: str = "risky"
     effect: str = "standard"
-    npc_activation: dict[str, Any] = field(default_factory=dict)
     rich_summary: str = ""
-    director_trigger: str = ""
     oracle_answer: str = ""
-    revelation_check: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -224,9 +220,7 @@ class NarrativeState(SerializableMixin):
 @dataclass
 class InheritanceRollResult(SerializableMixin):
     track_name: str
-    predecessor_filled_boxes: int
     result: str
-    fraction: float
     new_filled_boxes: int
 
 
@@ -252,8 +246,6 @@ class ChapterSummary(SerializableMixin):
     title: str
     summary: str
     unresolved_threads: list[str]
-    post_story_location: str
-    scenes: int
 
 
 def _legacy_track(track_id: str, name_key: str) -> ProgressTrack:
@@ -273,9 +265,7 @@ class CampaignState(SerializableMixin):
     campaign_history: list[ChapterSummary] = field(default_factory=list)
     predecessors: list[PredecessorRecord] = field(default_factory=list)
     chapter_number: int = 1
-    epilogue_shown: bool = False
     epilogue_dismissed: bool = False
-    epilogue_text: str = ""
 
     pending_succession: bool = False
 
@@ -297,7 +287,6 @@ class CampaignState(SerializableMixin):
 
     def snapshot(self) -> dict[str, Any]:
         return {
-            "epilogue_shown": self.epilogue_shown,
             "epilogue_dismissed": self.epilogue_dismissed,
             "pending_succession": self.pending_succession,
             "xp": self.xp,
@@ -308,7 +297,6 @@ class CampaignState(SerializableMixin):
         }
 
     def restore(self, snap: dict[str, Any]) -> None:
-        self.epilogue_shown = snap["epilogue_shown"]
         self.epilogue_dismissed = snap["epilogue_dismissed"]
         self.pending_succession = snap["pending_succession"]
         self.xp = snap["xp"]

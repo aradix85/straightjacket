@@ -86,7 +86,6 @@ class ResolvedFact(SerializableMixin):
     about_name: str
     fact_type: str
     answer: str
-    odds: str
     location: str
 
 
@@ -233,7 +232,6 @@ class ThreatData(SerializableMixin):
 class ThreatEvent(SerializableMixin):
     threat_id: str
     threat_name: str
-    ticks_added: int
     menace_full: bool
     source: str
     development: str
@@ -252,16 +250,13 @@ class ClockFillResult(SerializableMixin):
     clock_name: str
     clock_type: str
     tag_text: str
-    track_completed: bool = False
 
 
 @dataclass
 class RandomEvent(SerializableMixin):
     focus: str
-    focus_roll: int
     meaning_action: str
     meaning_subject: str
-    meaning_table: str
     source: str
     target: str = ""
     target_id: str = ""
@@ -270,7 +265,6 @@ class RandomEvent(SerializableMixin):
 @dataclass
 class SceneSetup(SerializableMixin):
     scene_type: str
-    chaos_roll: int = 0
     adjustments: list[str] = field(default_factory=list)
     interrupt_event: RandomEvent | None = None
     narrative_hint: str = ""
@@ -279,13 +273,7 @@ class SceneSetup(SerializableMixin):
 @dataclass
 class FateResult(SerializableMixin):
     answer: str
-    odds: str
-    chaos_factor: int
-    method: str
-    roll: int
-    question: str
-    random_event_triggered: bool = False
-    random_event: RandomEvent | None = None
+    random_event_triggered: bool
 
 
 @dataclass

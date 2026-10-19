@@ -82,22 +82,23 @@ def test_delete_save(save_dir: Any) -> None:
     from straightjacket.engine.persistence import save_game, delete_save, list_saves_with_info
 
     save_game(_game(), "deleter", [], "to_delete")
-    assert delete_save("deleter", "to_delete") is True
+    delete_save("deleter", "to_delete")
     assert list_saves_with_info("deleter") == []
 
 
-def test_delete_nonexistent_returns_false(save_dir: Any) -> None:
-    from straightjacket.engine.persistence import delete_save
+def test_deleting_a_save_that_does_not_exist_changes_nothing(save_dir: Any) -> None:
+    from straightjacket.engine.persistence import delete_save, get_save_dir
 
-    assert delete_save("nobody", "nope") is False
+    delete_save("nobody", "nope")
+    assert not (get_save_dir("nobody") / "nope.json").exists()
 
 
 def test_a_save_holds_the_time_the_state_and_the_chat(save_dir: Any) -> None:
-    from straightjacket.engine.persistence import save_game
+    from straightjacket.engine.persistence import get_save_dir, save_game
 
     msgs = [{"role": "assistant", "content": "Narration.", "epilogue": True}]
-    path = save_game(_game(), "tester", msgs, "keys")
-    data = json.loads(path.read_text(encoding="utf-8"))
+    save_game(_game(), "tester", msgs, "keys")
+    data = json.loads((get_save_dir("tester") / "keys.json").read_text(encoding="utf-8"))
     assert set(data) == {"saved_at", "game_state", "chat_messages"}
     assert data["chat_messages"] == msgs
 

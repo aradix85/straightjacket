@@ -75,12 +75,10 @@ class EngineLogRecord:
     move: str = ""
     result: str = ""
     scene_type: str = "expected"
-    director_trigger: str = ""
     consequences: list[str] = field(default_factory=list)
     clock_events: list[dict] = field(default_factory=list)
     position: str = ""
     effect: str = ""
-    npc_activation: dict = field(default_factory=dict)
 
 
 @dataclass

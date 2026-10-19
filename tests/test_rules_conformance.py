@@ -83,18 +83,18 @@ def test_fate_check_follows_mythic_2e(
     from straightjacket.engine.mechanics.fate import resolve_fate_check
 
     fix_dice(monkeypatch, *dice)
-    assert resolve_fate_check(odds, chaos, "q").answer == expected
+    assert resolve_fate_check(odds, chaos).answer == expected
 
 
 def test_fate_check_random_event_needs_doubles_within_chaos(load_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:
     from straightjacket.engine.mechanics.fate import resolve_fate_check
 
     fix_dice(monkeypatch, *(4, 4))
-    assert resolve_fate_check("fifty_fifty", 5, "q").random_event_triggered
+    assert resolve_fate_check("fifty_fifty", 5).random_event_triggered
     fix_dice(monkeypatch, *(6, 6))
-    assert not resolve_fate_check("fifty_fifty", 5, "q").random_event_triggered
+    assert not resolve_fate_check("fifty_fifty", 5).random_event_triggered
     fix_dice(monkeypatch, *(4, 3))
-    assert not resolve_fate_check("fifty_fifty", 5, "q").random_event_triggered
+    assert not resolve_fate_check("fifty_fifty", 5).random_event_triggered
 
 
 def test_fate_chart_has_the_mythic_2e_shape(load_engine: None) -> None:

@@ -32,7 +32,6 @@ class NpcData(SerializableMixin):
     memory: list[MemoryEntry] = field(default_factory=list)
     introduced: bool = False
     aliases: list[str] = field(default_factory=list)
-    keywords: list[str] = field(default_factory=list)
     importance_accumulator: int = 0
     last_reflection_scene: int = 0
     last_location: str = ""

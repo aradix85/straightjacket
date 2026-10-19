@@ -18,24 +18,17 @@ def resolve_clock_fill(game: GameState, clock: ClockData) -> ClockFillResult | N
         return None
 
     tag_text = eng().clocks.fill_consequences[clock.clock_type].tag_template.format(clock_name=clock.name)
-    track_completed = False
 
     if clock.clock_type == "progress":
-        track_completed = _try_complete_linked_track(game, clock)
+        _complete_linked_track(game, clock)
 
     log(f"[ClockFill] '{clock.name}' (type={clock.clock_type}) fired → tag emitted")
-    return ClockFillResult(
-        clock_name=clock.name,
-        clock_type=clock.clock_type,
-        tag_text=tag_text,
-        track_completed=track_completed,
-    )
+    return ClockFillResult(clock_name=clock.name, clock_type=clock.clock_type, tag_text=tag_text)
 
 
-def _try_complete_linked_track(game: GameState, clock: ClockData) -> bool:
+def _complete_linked_track(game: GameState, clock: ClockData) -> None:
     for track in game.progress_tracks:
         if track.name == clock.name and track.status == "active":
             complete_track(game, track.id, "completed")
             log(f"[ClockFill] linked progress track '{track.name}' completed")
-            return True
-    return False
+            return

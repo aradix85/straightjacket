@@ -38,10 +38,8 @@ def _sworn_game() -> Any:
 def _event(target_id: str) -> RandomEvent:
     return RandomEvent(
         focus="move_toward_a_thread",
-        focus_roll=50,
         meaning_action="Pursue",
         meaning_subject="Truths",
-        meaning_table="actions",
         source="scene",
         target_id=target_id,
     )
@@ -78,7 +76,6 @@ def test_a_threat_that_advances_in_the_scene_invokes_the_thread_of_its_vow(load_
     advanced = ThreatEvent(
         threat_id="threat_tide",
         threat_name="The tide cult",
-        ticks_added=4,
         menace_full=False,
         source="miss",
         development="",

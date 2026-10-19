@@ -45,20 +45,17 @@ def list_users() -> list[dict[str, Any]]:
     return [{"name": p.name} for p in sorted(USERS_DIR.iterdir()) if p.is_dir()]
 
 
-def create_user(name: str) -> bool:
+def create_user(name: str) -> None:
     user_dir = _get_user_dir(name)
     if user_dir.exists():
-        return False
+        return
     (user_dir / "saves").mkdir(parents=True)
     log(f"[User] Created user: {name}")
-    return True
 
 
-def delete_user(name: str) -> bool:
+def delete_user(name: str) -> None:
     user_dir = _get_user_dir(name)
     if not user_dir.exists():
-        return False
-
+        return
     shutil.rmtree(user_dir)
     log(f"[User] Deleted user: {name}")
-    return True

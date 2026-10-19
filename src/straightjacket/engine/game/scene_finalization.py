@@ -127,12 +127,6 @@ def finalize_scene(
     if len(nar.session_log) > eng().pacing.max_session_log:
         nar.session_log = nar.session_log[-eng().pacing.max_session_log :]
 
-    if ctx.pending_revs:
-        nar.session_log[-1].revelation_check = {
-            "id": ctx.pending_revs[0].id,
-            "confirmed": revelation_confirmed,
-        }
-
     auto_clock_events = tick_autonomous_clocks(game)
     nar.session_log[-1].clock_events.extend(agency_clock_events)
     nar.session_log[-1].clock_events.extend(auto_clock_events)
@@ -161,7 +155,7 @@ def finalize_scene(
     )
     if director_reason:
         director_ctx = DirectorCall(narration=narration)
-        nar.session_log[-1].director_trigger = director_reason
+        log(f"[Director] Queued (reason: {director_reason})")
     else:
         log(f"[Director] Skipped (no trigger at scene {nar.scene_count})")
 

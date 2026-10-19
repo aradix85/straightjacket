@@ -49,13 +49,12 @@ def resolve_fact(game: GameState, request: FactRequest) -> ResolvedFact:
         log(f"[Fact] Reused {request.fact_type} about {known.about_name}: {known.answer}")
         return known
     odds = fact_odds(game, request)
-    fate = resolve_fate(game, odds, game.world.chaos_factor, question=f"{request.fact_type}:{request.about}")
+    fate = resolve_fate(game, odds)
     fact = ResolvedFact(
         about=request.about,
         about_name=_about_name(game, request),
         fact_type=request.fact_type,
         answer=fate.answer,
-        odds=odds,
         location=game.world.current_location,
     )
     game.world.facts.append(fact)
@@ -114,7 +113,6 @@ def settle_facts_by_miss(game: GameState, facts: Sequence[ResolvedFact], move: s
             about_name=game.world.current_location,
             fact_type=fact_type,
             answer=answer,
-            odds="settled_by_miss",
             location=game.world.current_location,
         )
         for fact_type, answer in cfg.information_miss_settles.items()

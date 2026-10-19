@@ -82,7 +82,7 @@ def force_miss(monkeypatch: pytest.MonkeyPatch) -> None:
         )
 
     monkeypatch.setattr(turn, "roll_action", _roll)
-    monkeypatch.setattr(turn, "check_scene", lambda _game: SceneSetup(scene_type="expected", chaos_roll=10))
+    monkeypatch.setattr(turn, "check_scene", lambda _game: SceneSetup(scene_type="expected"))
 
 
 def create_game(

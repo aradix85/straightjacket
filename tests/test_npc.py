@@ -441,7 +441,7 @@ def test_activate_npcs_target_always_activated(stub_engine: None) -> None:
     game = _make_game()
 
     brain = make_brain_result(target_npc="npc_2", player_intent="talk to blacksmith")
-    activated, _mentioned, _debug = activate_npcs_for_prompt(game, brain, "talk to blacksmith")
+    activated, _mentioned = activate_npcs_for_prompt(game, brain, "talk to blacksmith")
     activated_ids = {n.id for n in activated}
     assert "npc_2" in activated_ids
 
@@ -452,7 +452,7 @@ def test_activate_npcs_name_mention(stub_engine: None) -> None:
     game = _make_game()
 
     brain = make_brain_result(player_intent="I look for Kira")
-    activated, mentioned, _debug = activate_npcs_for_prompt(game, brain, "I look for Kira")
+    activated, mentioned = activate_npcs_for_prompt(game, brain, "I look for Kira")
     all_npcs = {n.id for n in activated} | {n.id for n in mentioned}
     assert "npc_1" in all_npcs
 

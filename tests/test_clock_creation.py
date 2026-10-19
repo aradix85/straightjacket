@@ -16,12 +16,10 @@ from tests._helpers import make_clock, make_game_state, make_progress_track
 def _re(focus: str, target_id: str = "", target: str = "") -> RandomEvent:
     return RandomEvent(
         focus=focus,
-        focus_roll=50,
         target=target,
         target_id=target_id,
         meaning_action="Storm",
         meaning_subject="Approaches",
-        meaning_table="actions",
         source="test",
     )
 
@@ -175,7 +173,6 @@ def test_fill_handler_progress_clock_completes_linked_track(load_engine: None) -
     fill = resolve_clock_fill(g, clock)
 
     assert fill is not None
-    assert fill.track_completed
     assert track.status == "completed"
 
 

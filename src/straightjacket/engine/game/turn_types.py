@@ -28,7 +28,6 @@ class SceneContext:
     scene_setup: SceneSetup
     scene_present_ids: set[str]
     pending_revs: list[Any]
-    npc_activation_debug: dict[str, Any]
     facts: list[ResolvedFact]
     summary_label: str
     activated_npcs: list[NpcData]

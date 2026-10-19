@@ -1,5 +1,5 @@
 import math
-from typing import Any, TYPE_CHECKING
+from typing import TYPE_CHECKING
 
 from ..engine_loader import eng
 from ..logging_util import log
@@ -95,49 +95,35 @@ def _score_npc(
     scan_text: str,
     tfidf: float,
     game: "GameState",
-) -> tuple[float, list[str]]:
+) -> float:
     _scores = eng().activation_scores
     _tf = eng().tf_idf
     score = 0.0
-    reasons: list[str] = []
     npc_name_lower = npc.name.lower()
 
     if npc.id == target_id:
         score += _scores.target
-        reasons.append("target")
 
     if npc_name_lower in scan_text:
         score += _scores.name_match
-        reasons.append("name")
-    else:
-        for part in npc_name_lower.split():
-            if len(part) >= _tf.token_min_length and part in scan_text:
-                score += _scores.name_part
-                reasons.append(f"part:{part}")
-                break
+    elif any(len(part) >= _tf.token_min_length and part in scan_text for part in npc_name_lower.split()):
+        score += _scores.name_part
 
-    for alias in npc.aliases:
-        if alias.lower() in scan_text:
-            score += _scores.alias_match
-            reasons.append(f"alias:{alias}")
-            break
+    if any(alias.lower() in scan_text for alias in npc.aliases):
+        score += _scores.alias_match
 
     if tfidf > _tf.score_floor:
-        tfidf_contrib = min(_tf.memory_score_cap, tfidf * _tf.memory_score_multiplier)
-        score += tfidf_contrib
-        reasons.append(f"tfidf:{tfidf:.2f}")
+        score += min(_tf.memory_score_cap, tfidf * _tf.memory_score_multiplier)
 
     npc_desc = (npc.description + " " + npc.agenda).lower()
     if game.world.current_location and game.world.current_location.lower() in npc_desc:
         score += _scores.location_match
-        reasons.append("location")
 
     recent_scenes = [m.scene for m in npc.memory[-_tf.recency_window :]]
     if recent_scenes and max(recent_scenes) >= game.narrative.scene_count - _tf.recency_offset:
         score += _scores.recent_interaction
-        reasons.append("recent")
 
-    return score, reasons
+    return score
 
 
 def _cap_activated_overflow(
@@ -179,7 +165,7 @@ def _recursive_activation(activated: list[NpcData], mentioned: list[NpcData], ga
 
 def activate_npcs_for_prompt(
     game: "GameState", brain: "BrainResult", player_input: str
-) -> tuple[list[NpcData], list[NpcData], dict[str, Any]]:
+) -> tuple[list[NpcData], list[NpcData]]:
     target_id = brain.target_npc
     scan_text = _build_scan_text(brain, game, player_input)
     tfidf_scores = compute_npc_tfidf_scores(game.npcs, scan_text)
@@ -187,29 +173,24 @@ def activate_npcs_for_prompt(
     _e = eng()
     activated: list[NpcData] = []
     mentioned: list[NpcData] = []
-    activation_debug: dict[str, Any] = {}
 
     for npc in game.npcs:
         if npc.status not in eng().npc_status_groups.in_play:
             continue
 
         tfidf = tfidf_scores.get(npc.id, 0.0)
-        score, reasons = _score_npc(npc, target_id, scan_text, tfidf, game)
+        score = _score_npc(npc, target_id, scan_text, tfidf, game)
 
         if score >= _e.npc.activation_threshold:
             activated.append(npc)
-            activation_debug[npc.name] = {"score": round(score, 2), "reasons": reasons, "status": "activated"}
             if npc.status == "background":
                 reactivate_npc(npc, reason=f"context activation (score={score:.2f})")
         elif score >= _e.npc.mention_threshold:
             mentioned.append(npc)
-            activation_debug[npc.name] = {"score": round(score, 2), "reasons": reasons, "status": "mentioned"}
-        elif reasons:
-            activation_debug[npc.name] = {"score": round(score, 2), "reasons": reasons, "status": "inactive"}
 
     activated, mentioned = _cap_activated_overflow(activated, mentioned, target_id, game)
     mentioned = mentioned + _recursive_activation(activated, mentioned, game)
 
     log(f"[NPC Activation] Activated: {[n.name for n in activated]}, Mentioned: {[n.name for n in mentioned]}")
 
-    return activated, mentioned, activation_debug
+    return activated, mentioned

@@ -202,7 +202,6 @@ def _create_character(narrative: NarrativeState, name: str) -> CharacterListEntr
         weight=1,
         active=True,
         ac_status="present",
-        ac_turning_point_count=0,
     )
     narrative.characters_list.append(entry)
     log(f"[AdventureCrafter] Created character '{name}' id={entry.id}")

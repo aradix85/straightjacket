@@ -117,13 +117,15 @@ def test_handle_select_player_with_an_incompatible_save_offers_a_new_game(
     import json
 
     from straightjacket.engine.engine_loader import eng
-    from straightjacket.engine.persistence import save_game
+    from straightjacket.engine.persistence import get_save_dir, save_game
     from straightjacket.i18n import t
     from straightjacket.web.handlers import handle_select_player
 
     monkeypatch.setattr("straightjacket.engine.user_management.USERS_DIR", tmp_path)
     monkeypatch.setattr("straightjacket.engine.config_loader.USERS_DIR", tmp_path)
-    path = save_game(make_game_state(setting_id="starforged"), "Alice", [], eng().persistence.default_save_name)
+    name = eng().persistence.default_save_name
+    save_game(make_game_state(setting_id="starforged"), "Alice", [], name)
+    path = get_save_dir("Alice") / f"{name}.json"
     data = json.loads(path.read_text(encoding="utf-8"))
     data["game_state"]["resources"].pop("next_move_bonus")
     path.write_text(json.dumps(data), encoding="utf-8")

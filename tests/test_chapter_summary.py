@@ -22,8 +22,6 @@ def _populated_summary() -> ChapterSummary:
         title="Title 3",
         summary="What happened.",
         unresolved_threads=["thread1", "thread2"],
-        post_story_location="Citadel",
-        scenes=42,
     )
 
 
@@ -34,8 +32,6 @@ class TestChapterSummaryRoundTrip:
         assert restored.chapter == 3
         assert restored.title == "Title 3"
         assert restored.summary == "What happened."
-        assert restored.post_story_location == "Citadel"
-        assert restored.scenes == 42
 
     def test_round_trip_preserves_unresolved_threads(self, stub_engine: None) -> None:
         original = _populated_summary()
@@ -135,7 +131,6 @@ class TestChapterRecord:
             assert part in summary.summary
         assert summary.unresolved_threads == ["Who cast the bell", "Find Kira"]
         assert summary.summary.count("Find Kira") == 1
-        assert summary.post_story_location == "Old tollhouse"
         assert game.campaign.campaign_history[-1] is summary
 
     def test_a_chapter_without_a_blueprint_has_no_conflict_line(self, load_engine: None) -> None:

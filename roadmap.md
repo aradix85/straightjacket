@@ -76,7 +76,7 @@ Closing a step: the checks of CONTRIBUTING.md pass, the step moves to DONE cut t
 
 ## NEXT STEP — 9h: Principle audits
 
-The audits of AUDIT.md, one session per principle or submodule as it prescribes. Principles 2, 3, and 4 are done; principle 1 runs in 9n on the layout it makes, and the two long clean-ups of principle 2 wait in 9o. Principle 5 runs one submodule per session in AUDIT.md's order: `mechanics/`, `npc/`, `game/`, `ai/`, `datasworn/`, `tools/`, and `correction/` done, the files directly under `engine/` next, judging a field without a reader as Decisions, Bound to the rules, says. Every finding is fixed in its session or becomes a substep here. Open, waiting for the audit to classify or for the user:
+The audits of AUDIT.md, one session per principle or submodule as it prescribes. Principles 2, 3, and 4 are done; principle 1 runs in 9n on the layout it makes, and the two long clean-ups of principle 2 wait in 9o. Principle 5 runs one submodule per session in AUDIT.md's order: `mechanics/`, `npc/`, `game/`, `ai/`, `datasworn/`, `tools/`, `correction/`, and the files directly under `engine/` done, `web/` next, judging a field without a reader as Decisions, Bound to the rules, says. Every finding is fixed in its session or becomes a substep here. Open, waiting for the audit to classify or for the user:
 
 **9h.5** The `.get()` scan flags only constant, non-neutral defaults, so `.get("key", variable)` passes unexamined, for example in `web/serializers.py` (pass 4b).
 
@@ -227,7 +227,7 @@ NPCs draw on their description, agenda, arc, and earlier scenes, and keep an une
 
 ### 12 — NPC goal clocks and autonomous actions
 
-Builds on step 11 and `check_npc_agency` (`pacing.npc_agency_interval`). No clock has an NPC owner today, so its agency tick and the owner rename in `npc/lifecycle.py` → `merge_npc_identity` never run; the goal clock makes `owner_id` an NPC id rather than a name.
+Builds on step 11 and `check_npc_agency` (`pacing.npc_agency_interval`). No clock has an NPC owner today, so its agency tick and the owner rename in `npc/lifecycle.py` → `merge_npc_identity` never run; the goal clock makes `owner_id` an NPC id rather than a name. A state correction retells the session log's clock events that are not `autonomous`, so an agency tick, which the turn's narration does not tell as a clock event, is marked like the scene-end ticks.
 
 **12.1** `goal_clock: ClockData | None` on NpcData, ticked after scene-end bookkeeping on deterministic triggers in `engine/npc_goal_clocks.yaml` (new): bond below N, health below N, scene count.
 
@@ -369,4 +369,4 @@ Finished work in its shortest form; the CHANGELOG has the details.
 - **9g — Tests through the real creation path** (`create_game` in `tests/_creation.py`).
 - **9l — Complications as clocks** (`docs/mechanics.md`, Complication clocks).
 - **9j, so far.** Suffering goes through `mechanics/suffer.py`; Endure Harm and Endure Stress are follow-up moves that mark impacts and roll their tables; a dying character has two turns to Heal, and the game ends only at Face Death or Face Desolation, whose weak hit binds an extreme vow (9j.5). A progress roll completes on a weak hit, a miss recommits at the user's choice, and Take Decisive Action counts lower in a bad spot (9j.9).
-- **9h, so far.** The tone is chosen at creation. Principles 2 and 4 are done apart from 9o, principle 3 for every submodule, and principle 5 for `mechanics/`, `npc/`, `game/`, `ai/`, `datasworn/`, `tools/`, and `correction/`, with the earlier removals read again by its rule. Impossible states raise; dead code, write-only data, and parameters only tests set are gone; the engine reads what Datasworn carries where an audit found it unread; the narrator and the Director see the antagonist, and the Director its last notes; every AI-call carve-out is classified (9h.7). The finished substeps are in the CHANGELOG; 9h.4 and 9h.12 became 9o, and 9h.23 became 11.0.
+- **9h, so far.** The tone is chosen at creation. Principles 2 and 4 are done apart from 9o, principle 3 for every submodule, and principle 5 for every submodule up to `web/`, with the earlier removals read again by its rule. Impossible states raise; dead code, write-only data, and parameters only tests set are gone; the engine reads what Datasworn carries where an audit found it unread; the narrator and the Director see the antagonist, and the Director its last notes; every AI-call carve-out is classified (9h.7). The finished substeps are in the CHANGELOG; 9h.4 and 9h.12 became 9o, and 9h.23 became 11.0.

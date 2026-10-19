@@ -24,8 +24,7 @@ def _populated_game(load_engine: None) -> GameState:
     g.crisis_mode = True
     g.end_reason = "death"
     g.campaign.chapter_number = 2
-    g.campaign.epilogue_shown = True
-    g.campaign.epilogue_text = "End of last chapter."
+    g.campaign.epilogue_dismissed = True
     g.progress_tracks = [make_progress_track(id="v1", name="Old vow")]
     g.threats = [make_threat(id="t1", name="Old threat")]
     g.impacts = ["wounded"]
@@ -120,8 +119,7 @@ def test_reset_chapter_mechanics_clears_flags(load_engine: None) -> None:
 
     g = _populated_game(None)
     _reset_chapter_mechanics(g)
-    assert g.campaign.epilogue_shown is False
-    assert g.campaign.epilogue_text == ""
+    assert g.campaign.epilogue_dismissed is False
 
 
 def test_reset_chapter_mechanics_keeps_what_carries_over(load_engine: None) -> None:
@@ -298,8 +296,6 @@ def test_close_previous_chapter_archives_and_advances(load_engine: None, stub_al
     summary = _close_previous_chapter(g)
 
     assert summary.title == "Chapter 1"
-    assert summary.scenes == 5
-    assert summary.post_story_location == "Tavern"
     assert g.campaign.chapter_number == 2
     assert g.world.current_location == "Tavern"
     assert len(g.campaign.campaign_history) == 1
@@ -321,8 +317,6 @@ def test_generate_epilogue_returns_narration(load_engine: None, stub_all: None) 
     g.world.current_location = "Tavern"
     narration = generate_epilogue(provider, g)
     assert "ended quietly" in narration
-    assert g.campaign.epilogue_shown is True
-    assert g.campaign.epilogue_text == narration
 
 
 def test_generate_epilogue_strips_epilogue_header(load_engine: None, stub_all: None) -> None:
@@ -352,4 +346,3 @@ def test_generate_epilogue_raises_when_cleanup_leaves_nothing(load_engine: None,
     g = _ending_game()
     with pytest.raises(AIUnavailableError, match="empty narration after cleanup"):
         generate_epilogue(provider, g)
-    assert g.campaign.epilogue_shown is False

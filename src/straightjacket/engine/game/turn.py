@@ -235,7 +235,7 @@ def build_scene_context(
     stream: NarrationSink | None,
     narrator_note: str,
 ) -> SceneContext:
-    activated_npcs, mentioned_npcs, npc_activation_debug = activate_npcs_for_prompt(game, brain, player_message)
+    activated_npcs, mentioned_npcs = activate_npcs_for_prompt(game, brain, player_message)
     scene_present_ids = {n.id for n in activated_npcs} | {n.id for n in mentioned_npcs}
     pending_revs = get_pending_revelations(game)
 
@@ -247,7 +247,6 @@ def build_scene_context(
         scene_setup=scene_setup,
         scene_present_ids=scene_present_ids,
         pending_revs=pending_revs,
-        npc_activation_debug=npc_activation_debug,
         facts=facts,
         summary_label=summary_label,
         activated_npcs=activated_npcs,
@@ -311,7 +310,6 @@ def _process_dialog_turn(ctx: SceneContext) -> tuple[str, DirectorCall | None]:
         "consequences": engine_moves.consequences,
         "clock_events": [],
         "scene_type": ctx.scene_setup.scene_type,
-        "npc_activation": ctx.npc_activation_debug,
         "_pacing_type": "breather",
     }
     if is_oracle:
@@ -486,7 +484,6 @@ def _narrate_action_and_finalize(
             "position": action_res.position,
             "effect": action_res.effect,
             "scene_type": ctx.scene_setup.scene_type,
-            "npc_activation": ctx.npc_activation_debug,
             "_pacing_type": "action",
         },
         prompt_summary=get_prompt(

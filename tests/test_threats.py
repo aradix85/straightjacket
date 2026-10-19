@@ -102,7 +102,6 @@ class TestMenaceOnMiss:
         events = advance_menace_on_miss(game)
         assert len(events) == 1
         assert events[0].threat_name == "The Beast Awakens"
-        assert events[0].ticks_added == 8
         assert game.threats[0].menace_ticks == 8
 
     def test_no_advance_when_vow_completed(self, stub_engine: None) -> None:

@@ -124,8 +124,8 @@ def run_session(bot_cfg: dict, auto_override: bool = False, turns_override: int 
     provider = TokenMeter(get_provider())
     create_user(username)
 
-    if clean_before and not game_cfg["load_existing"] and delete_save(username, save_out):
-        print(f"[CLEAN] Deleted previous save '{save_out}'")
+    if clean_before and not game_cfg["load_existing"]:
+        delete_save(username, save_out)
 
     persona = get_persona(style)
 
@@ -443,9 +443,7 @@ def _play_turn(
             run_deferred_director(provider, game, director_ctx)
             rec.director_ran = True
             coverage.hit("director")
-            sl = game.narrative.session_log
-            trigger = sl[-1].director_trigger if sl else "?"
-            print(f"  [DIRECTOR] Ran — trigger: {trigger}")
+            print("  [DIRECTOR] Ran")
         except Exception as e:
             rec.director_error = str(e)
     rec.token_usage = provider.drain()

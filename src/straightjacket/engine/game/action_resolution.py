@@ -66,7 +66,6 @@ def _collect_threat_events(game: GameState, roll: RollResult, outcome: OutcomeRe
                 ThreatEvent(
                     threat_id=threat.id,
                     threat_name=threat.name,
-                    ticks_added=0,
                     menace_full=False,
                     source="overcome_under_pressure",
                     development="",

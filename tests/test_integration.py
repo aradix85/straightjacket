@@ -288,7 +288,7 @@ def _force_result(monkeypatch: pytest.MonkeyPatch, result: str) -> None:
     from straightjacket.engine.models import SceneSetup
 
     monkeypatch.setattr(turn, "roll_action", _rolling(result))
-    monkeypatch.setattr(turn, "check_scene", lambda _game: SceneSetup(scene_type="expected", chaos_roll=10))
+    monkeypatch.setattr(turn, "check_scene", lambda _game: SceneSetup(scene_type="expected"))
 
 
 @pytest.mark.parametrize("result", ["STRONG_HIT", "MISS"])
@@ -392,7 +392,7 @@ def test_a_menace_that_fills_at_scene_end_forsakes_its_vow_in_the_next_turn_and_
     from straightjacket.engine.models import SceneSetup
     from tests._helpers import make_threat
 
-    monkeypatch.setattr(turn, "check_scene", lambda _game: SceneSetup(scene_type="expected", chaos_roll=10))
+    monkeypatch.setattr(turn, "check_scene", lambda _game: SceneSetup(scene_type="expected"))
     monkeypatch.setattr(eng().threats, "autonomous_tick_chance", 1.0)
     game = _make_game()
     [vow] = [t for t in game.progress_tracks if t.track_type == "vow"]
@@ -443,7 +443,7 @@ def test_a_dying_character_who_does_not_heal_faces_death_in_a_dialog_turn(
     from straightjacket.engine.mechanics.suffer import start_dying_clock
     from straightjacket.engine.models import SceneSetup
 
-    monkeypatch.setattr(turn, "check_scene", lambda _game: SceneSetup(scene_type="expected", chaos_roll=10))
+    monkeypatch.setattr(turn, "check_scene", lambda _game: SceneSetup(scene_type="expected"))
     monkeypatch.setattr(move_outcome, "roll_action", _rolling("MISS"))
     game = _make_game()
     game.resources.health = 0

@@ -86,27 +86,18 @@ def test_run_inheritance_rolls_does_not_mutate_predecessor(aria: GameState) -> N
     assert aria.campaign.legacy_discoveries.filled_boxes == pre_disc
 
 
-def test_run_inheritance_rolls_uses_predecessor_filled_boxes(aria: GameState) -> None:
-    rolls = run_inheritance_rolls(aria)
-    by_name = {r.track_name: r for r in rolls}
-    assert by_name["quests"].predecessor_filled_boxes == 6
-    assert by_name["bonds"].predecessor_filled_boxes == 2
-    assert by_name["discoveries"].predecessor_filled_boxes == 4
-
-
 @pytest.mark.parametrize(
-    ("ticks", "dice_values", "expected_result", "expected_fraction", "expected_new_filled"),
+    ("ticks", "dice_values", "expected_result", "expected_new_filled"),
     [
-        (32, [1], "STRONG_HIT", 1.0, 8),
-        (8, [10], "MISS", 0.0, 0),
-        (24, [4, 8], "WEAK_HIT", 0.5, 3),
+        (32, [1], "STRONG_HIT", 8),
+        (8, [10], "MISS", 0),
+        (24, [4, 8], "WEAK_HIT", 3),
     ],
 )
 def test_run_inheritance_rolls_outcomes(
     ticks: int,
     dice_values: list[int],
     expected_result: str,
-    expected_fraction: float,
     expected_new_filled: int,
 ) -> None:
     g = make_game_state()
@@ -130,7 +121,6 @@ def test_run_inheritance_rolls_outcomes(
         cons_mod.random = real
     quests = next(r for r in rolls if r.track_name == "quests")
     assert quests.result == expected_result
-    assert quests.fraction == expected_fraction
     assert quests.new_filled_boxes == expected_new_filled
 
 
@@ -449,9 +439,9 @@ def test_succession_summary_renders_narrative_text(aria: GameState) -> None:
         scenes_played=42,
         legacy_quests_filled_boxes=6,
         inheritance_rolls=[
-            make_inheritance_roll(track_name="quests", result="STRONG_HIT", fraction=1.0, new_filled_boxes=6),
-            make_inheritance_roll(track_name="bonds", result="WEAK_HIT", fraction=0.5, new_filled_boxes=1),
-            make_inheritance_roll(track_name="discoveries", result="MISS", fraction=0.0, new_filled_boxes=0),
+            make_inheritance_roll(track_name="quests", result="STRONG_HIT", new_filled_boxes=6),
+            make_inheritance_roll(track_name="bonds", result="WEAK_HIT", new_filled_boxes=1),
+            make_inheritance_roll(track_name="discoveries", result="MISS", new_filled_boxes=0),
         ],
     )
     aria.campaign.pending_succession = True

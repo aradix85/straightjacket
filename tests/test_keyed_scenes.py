@@ -283,4 +283,3 @@ def test_scene_setup_keyed_serialization_roundtrip():
     restored = SceneSetup.from_dict(setup.to_dict())
     assert restored.scene_type == "keyed"
     assert restored.narrative_hint == "Beat hint"
-    assert restored.chaos_roll == 0

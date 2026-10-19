@@ -207,6 +207,23 @@ def test_a_state_correction_retells_the_turn_with_its_own_scene_and_position(
     assert '<position level="desperate" effect="limited"/>' in retold
 
 
+def test_a_state_correction_does_not_tell_a_clock_that_filled_after_the_turn(
+    load_engine: None, stub_emotions: None, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from straightjacket.engine.correction import process_correction
+    from straightjacket.engine.models import ClockEvent
+
+    provider = MockProvider(correction_source="state_error")
+    game = _played_game(provider, monkeypatch)
+    game.narrative.session_log[-1].clock_events.append(
+        ClockEvent(clock="A storm gathers", trigger="The storm breaks", autonomous=True, triggered=True)
+    )
+
+    process_correction(provider, game, "Mira should be loyal")
+
+    assert "A storm gathers" not in provider.narration_prompts[-1]
+
+
 def test_a_state_correction_extracts_with_the_turns_world_addition(
     load_engine: None, stub_emotions: None, monkeypatch: pytest.MonkeyPatch
 ) -> None:

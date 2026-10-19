@@ -51,15 +51,7 @@ def run_inheritance_rolls(game: GameState) -> list[InheritanceRollResult]:
         roll = roll_progress(track_name=track.name, filled_boxes=boxes, move=move_name)
         fraction = _fraction_for_result(roll.result)
         new_boxes = round(boxes * fraction)
-        rolls.append(
-            InheritanceRollResult(
-                track_name=name,
-                predecessor_filled_boxes=boxes,
-                result=roll.result,
-                fraction=fraction,
-                new_filled_boxes=new_boxes,
-            )
-        )
+        rolls.append(InheritanceRollResult(track_name=name, result=roll.result, new_filled_boxes=new_boxes))
         log(
             f"[Succession] Inheritance roll {name}: {boxes} boxes vs 2d10 "
             f"({roll.c1}, {roll.c2}) → {roll.result}, fraction={fraction}, new={new_boxes} boxes"

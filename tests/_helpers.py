@@ -90,26 +90,12 @@ def make_memory(**kwargs: Any) -> Any:
     return MemoryEntry(**kwargs)
 
 
-def make_fate_result(**kwargs: Any) -> Any:
-    from straightjacket.engine.models import FateResult
-
-    kwargs.setdefault("answer", "yes")
-    kwargs.setdefault("odds", "fifty_fifty")
-    kwargs.setdefault("chaos_factor", 5)
-    kwargs.setdefault("method", "fate_chart")
-    kwargs.setdefault("roll", 50)
-    kwargs.setdefault("question", "")
-    return FateResult(**kwargs)
-
-
 def make_random_event(**kwargs: Any) -> Any:
     from straightjacket.engine.models import RandomEvent
 
     kwargs.setdefault("focus", "npc_action")
-    kwargs.setdefault("focus_roll", 50)
     kwargs.setdefault("meaning_action", "Act")
     kwargs.setdefault("meaning_subject", "Thing")
-    kwargs.setdefault("meaning_table", "actions")
     kwargs.setdefault("source", "fate_doublet")
     return RandomEvent(**kwargs)
 
@@ -143,8 +129,6 @@ def make_chapter_summary(**kwargs: Any) -> Any:
     kwargs.setdefault("title", "")
     kwargs.setdefault("summary", "")
     kwargs.setdefault("unresolved_threads", [])
-    kwargs.setdefault("post_story_location", "")
-    kwargs.setdefault("scenes", 0)
     return ChapterSummary(**kwargs)
 
 
@@ -152,9 +136,7 @@ def make_inheritance_roll(**kwargs: Any) -> Any:
     from straightjacket.engine.models import InheritanceRollResult
 
     kwargs.setdefault("track_name", "quests")
-    kwargs.setdefault("predecessor_filled_boxes", 0)
     kwargs.setdefault("result", "MISS")
-    kwargs.setdefault("fraction", 0.0)
     kwargs.setdefault("new_filled_boxes", 0)
     return InheritanceRollResult(**kwargs)
 

@@ -68,7 +68,8 @@ def _rewrite_prompt(
     facts = overrule_facts_by_hit(game, facts, roll.result)
     facts = settle_facts_by_miss(game, facts, brain.move, roll.result)
     npc_agency, _, _ = check_npc_agency(game)
-    consequence_sentences = generate_consequence_sentences(consequences, last_entry.clock_events, game, brain)
+    told_clock_events = [e for e in last_entry.clock_events if not e.autonomous]
+    consequence_sentences = generate_consequence_sentences(consequences, told_clock_events, game, brain)
     prompt = build_action_prompt(
         game,
         brain,
@@ -148,7 +149,7 @@ def process_correction(
 
     roll = snap.roll
     apply_correction_ops(game, analysis["state_ops"])
-    activated_npcs, mentioned_npcs, _ = activate_npcs_for_prompt(game, brain, snap.player_input)
+    activated_npcs, mentioned_npcs = activate_npcs_for_prompt(game, brain, snap.player_input)
     prompt, facts = _rewrite_prompt(game, snap, brain, scene_setup, activated_npcs, mentioned_npcs)
     narration = narrate_scene(provider, game, f"{prompt}\n{note}")
     snap.narration = narration

@@ -105,9 +105,7 @@ def _reset_for_successor(
     game.end_reason = ""
     game.last_turn_snapshot = None
 
-    game.campaign.epilogue_shown = False
     game.campaign.epilogue_dismissed = False
-    game.campaign.epilogue_text = ""
 
     game.world.clocks = []
     game.world.combat_position = ""

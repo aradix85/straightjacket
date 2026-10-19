@@ -65,14 +65,6 @@ def test_cf9_most_rolls_trigger(monkeypatch: pytest.MonkeyPatch) -> None:
     assert check_scene(game).scene_type == "interrupt"
 
 
-def test_chaos_roll_stored(monkeypatch: pytest.MonkeyPatch) -> None:
-    game = make_game_state()
-    game.world.chaos_factor = 5
-    fix_dice(monkeypatch, 7)
-    setup = check_scene(game)
-    assert setup.chaos_roll == 7
-
-
 def test_single_adjustment(monkeypatch: pytest.MonkeyPatch) -> None:
     for roll in range(1, 7):
         fix_dice(monkeypatch, roll)
@@ -115,17 +107,16 @@ def test_adjustment_descriptions_maps_all() -> None:
 
 
 def test_scene_setup_roundtrip() -> None:
-    setup = SceneSetup(scene_type="altered", chaos_roll=3, adjustments=["add_character", "remove_object"])
+    setup = SceneSetup(scene_type="altered", adjustments=["add_character", "remove_object"])
     d = setup.to_dict()
     restored = SceneSetup.from_dict(d)
     assert restored.scene_type == "altered"
-    assert restored.chaos_roll == 3
     assert restored.adjustments == ["add_character", "remove_object"]
 
 
 def test_scene_setup_interrupt_roundtrip() -> None:
     event = make_random_event(focus="npc_action", meaning_action="Betray", meaning_subject="Trust")
-    setup = SceneSetup(scene_type="interrupt", chaos_roll=4, interrupt_event=event)
+    setup = SceneSetup(scene_type="interrupt", interrupt_event=event)
     d = setup.to_dict()
     restored = SceneSetup.from_dict(d)
     assert restored.scene_type == "interrupt"
