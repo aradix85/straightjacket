@@ -25,8 +25,8 @@ from ..models import (
 from ..parser import parse_narrator_response
 from ..prompt_boundary import build_new_game_prompt
 from ..prompt_loader import get_prompt
+from ..ruleset.character import make_character
 from ..ruleset.meters import starting_resources
-from ..ruleset.stats import stat_descriptions, validate_stats
 from ..ruleset.succession import (
     apply_npc_carryover,
     build_predecessor_record,
@@ -34,14 +34,13 @@ from ..ruleset.succession import (
     seed_successor_legacy,
     threads_for_successor,
 )
-from ..ruleset.tracks import swear_background_vow
 from ..setting.packages import load_package
 from .chapters import (
     _apply_blueprint,
     _close_previous_chapter,
     _prepare_npcs_for_new_chapter,
 )
-from .game_start import _seed_vow_subject, validate_creation
+from .game_start import take_up_character
 from .setup_common import apply_opening_setup
 
 END_REASONS: tuple[str, ...] = ("death", "despair", "retire")
@@ -121,54 +120,8 @@ def _reset_for_successor(
 
 def _replace_character_identity(game: GameState, creation_data: dict[str, Any]) -> None:
     pkg = load_package(creation_data["setting_id"])
-    stats = creation_data["stats"]
-    validate_stats(stats, pkg.id)
-    validate_creation(creation_data, pkg)
-
-    player_name = creation_data["player_name"]
-    pronouns = creation_data["pronouns"]
-    background_vow = creation_data["background_vow"]
-    paths = list(creation_data["paths"])
-    backstory = creation_data["backstory"]
-
-    if not background_vow:
-        raise ValueError(
-            "creation_data['background_vow'] is empty. The successor's background vow becomes their first vow track."
-        )
-    if not player_name:
-        raise ValueError("creation_data['player_name'] is empty.")
-
-    path_names = []
-    for pid in paths:
-        asset = pkg.data.asset("path", pid)
-        if asset:
-            path_names.append(asset["name"])
-    concept = ", ".join(path_names)
-
-    stat_dict = {n: stats[n] for n in stat_descriptions(pkg.id)}
-
-    game.player_name = player_name
-    game.character_concept = concept
-    game.pronouns = pronouns
-    game.paths = paths
-    game.background_vow = background_vow
-    game.setting_id = creation_data["setting_id"]
-    game.setting_genre = pkg.id
-
-    game.backstory = backstory
-    game.stats = stat_dict
-
-    game.assets = list(creation_data["assets"])
-    game.truths = dict(creation_data["truths"])
-    game.preferences.player_wishes = creation_data["wishes"]
-    game.preferences.content_lines = creation_data["content_lines"]
-    vow_subject = creation_data["vow_subject"]
-    background_vow_rank = creation_data["background_vow_rank"]
-
-    swear_background_vow(game, background_vow, background_vow_rank)
-    _seed_vow_subject(game, vow_subject)
-
-    log(f"[Succession] Successor character: {game.player_name}, concept={concept!r}, paths={paths}")
+    take_up_character(game, make_character(creation_data, pkg), creation_data, pkg)
+    log(f"[Succession] Successor character: {game.player_name}, concept={game.character_concept!r}, paths={game.paths}")
 
 
 def start_succession_with_character(

@@ -299,18 +299,15 @@ def test_truths_block_empty() -> None:
     assert truths_block(game) == ""
 
 
-_VALID_PAYLOAD = {"paths": [], "assets": [], "truths": {}, "background_vow_rank": "", "tone": "pulp"}
+_VALID_PAYLOAD = {"player_name": "Kael", "truths": {}, "tone": "pulp"}
 
 
 @pytest.mark.parametrize(
     ("setting", "payload", "error_match"),
     [
-        ("starforged", {"paths": ["a", "b", "c"]}, "Too many paths"),
-        ("starforged", {"assets": ["a", "b"]}, "Too many starting assets"),
         ("delve", {"truths": {"x": "y"}}, "does not support truths"),
-        ("starforged", {"paths": ["alchemist"]}, "not found in setting"),
-        ("starforged", {"background_vow_rank": "legendary", "tone": "pulp"}, "Invalid vow rank"),
         ("starforged", {"tone": "whimsical"}, "Unknown tone"),
+        ("starforged", {"player_name": ""}, "player_name'\\] is empty"),
     ],
 )
 def test_validate_creation_rejects_invalid(load_engine: None, setting: str, payload: dict, error_match: str) -> None:
@@ -328,17 +325,75 @@ def test_validate_creation_valid_passes(load_engine: None) -> None:
     from straightjacket.engine.setting.packages import clear_cache, load_package
 
     clear_cache()
-    pkg = load_package("starforged")
-    validate_creation({**_VALID_PAYLOAD, "paths": ["ace", "explorer"], "truths": {"x": "y"}}, pkg)
+    validate_creation({**_VALID_PAYLOAD, "truths": {"x": "y"}, "tone": "cozy"}, load_package("starforged"))
 
 
-def test_validate_creation_valid_vow_rank_passes(load_engine: None) -> None:
-    from straightjacket.engine.game.game_start import validate_creation
+_CHARACTER = {
+    "stats": {"edge": 3, "heart": 2, "iron": 2, "shadow": 1, "wits": 1},
+    "paths": [],
+    "assets": [],
+    "background_vow": "Find the lost ship",
+    "background_vow_rank": "",
+}
+
+
+@pytest.mark.parametrize(
+    ("setting", "payload", "error_match"),
+    [
+        ("starforged", {"paths": ["a", "b", "c"]}, "Too many paths"),
+        ("starforged", {"paths": ["alchemist"]}, "not found in setting"),
+        ("starforged", {"assets": ["a", "b"]}, "Too many starting assets"),
+        ("starforged", {"assets": ["ace"]}, "not in allowed categories"),
+        ("delve", {"assets": ["ace"]}, "not in allowed categories"),
+        ("starforged", {"background_vow_rank": "legendary"}, "Invalid vow rank"),
+        ("starforged", {"background_vow": ""}, "background_vow'\\] is empty"),
+        ("starforged", {"stats": {"edge": 3}}, "Stats must be"),
+    ],
+)
+def test_make_character_rejects_invalid(load_engine: None, setting: str, payload: dict, error_match: str) -> None:
+    from straightjacket.engine.ruleset.character import make_character
+    from straightjacket.engine.setting.packages import clear_cache, load_package
+
+    clear_cache()
+    with pytest.raises(ValueError, match=error_match):
+        make_character({**_CHARACTER, **payload}, load_package(setting))
+
+
+def test_a_character_takes_its_concept_from_its_paths(load_engine: None) -> None:
+    from straightjacket.engine.ruleset.character import make_character
     from straightjacket.engine.setting.packages import clear_cache, load_package
 
     clear_cache()
     pkg = load_package("starforged")
-    validate_creation({**_VALID_PAYLOAD, "background_vow_rank": "epic", "tone": "cozy"}, pkg)
+    character = make_character({**_CHARACTER, "paths": ["ace", "explorer"], "background_vow_rank": "epic"}, pkg)
+    names = [pkg.data.asset("path", pid)["name"] for pid in ("ace", "explorer")]
+    assert character.concept == ", ".join(names)
+    assert character.background_vow_rank == "epic"
+
+
+def test_a_new_game_and_a_successor_take_up_a_character_alike(load_engine: None) -> None:
+    from straightjacket.engine.game.game_start import take_up_character
+    from straightjacket.engine.ruleset.character import make_character
+    from straightjacket.engine.setting.packages import clear_cache, load_package
+
+    clear_cache()
+    pkg = load_package("starforged")
+    creation = {
+        **_CHARACTER,
+        **_VALID_PAYLOAD,
+        "paths": ["ace"],
+        "pronouns": "she/her",
+        "backstory": "Raised on a derelict.",
+        "wishes": "",
+        "content_lines": "",
+        "vow_subject": "my sister",
+    }
+    game = make_game_state(player_name="Old")
+    take_up_character(game, make_character(creation, pkg), creation, pkg)
+    assert (game.player_name, game.setting_id, game.paths) == ("Kael", "starforged", ["ace"])
+    assert game.stats == _CHARACTER["stats"]
+    assert [t.id for t in game.progress_tracks] == ["vow_background"]
+    assert [c.name for c in game.narrative.characters_list] == ["my sister"]
 
 
 @pytest.mark.parametrize(

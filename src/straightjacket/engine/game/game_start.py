@@ -26,55 +26,39 @@ from ..models import (
 from ..parser import parse_narrator_response
 from ..prompt_boundary import build_new_game_prompt
 from ..prompt_loader import get_prompt
+from ..ruleset.character import Character, give_character, make_character
 from ..ruleset.config import rules
 from ..ruleset.legacy import new_campaign
 from ..ruleset.meters import starting_resources
-from ..ruleset.progress import ranks
-from ..ruleset.stats import stat_descriptions, validate_stats
-from ..ruleset.tracks import swear_background_vow
 from ..setting.packages import SettingPackage, load_package
 from .setup_common import apply_opening_setup
 
 
 def validate_creation(creation_data: dict[str, Any], pkg: SettingPackage) -> None:
-    flow = pkg.creation_flow
-
-    paths = creation_data["paths"]
-    max_paths = rules().creation.max_paths
-    if len(paths) > max_paths:
-        raise ValueError(f"Too many paths: {len(paths)} (max {max_paths})")
-
-    for pid in paths:
-        if not pkg.data.asset("path", pid):
-            raise ValueError(f"Path '{pid}' not found in setting '{pkg.id}'")
-
-    assets = creation_data["assets"]
-    max_assets = rules().creation.max_starting_assets
-    if len(assets) > max_assets:
-        raise ValueError(f"Too many starting assets: {len(assets)} (max {max_assets})")
-    allowed_cats = set(flow.starting_asset_categories)
-    if allowed_cats:
-        for asset_id in assets:
-            found = False
-            for cat in allowed_cats:
-                if pkg.data.asset(cat, asset_id):
-                    found = True
-                    break
-            if not found:
-                raise ValueError(f"Asset '{asset_id}' not in allowed categories: {allowed_cats}")
-
-    truths = creation_data["truths"]
-    if truths and not flow.has_truths:
+    if not creation_data["player_name"]:
+        raise ValueError("creation_data['player_name'] is empty.")
+    if creation_data["truths"] and not pkg.creation_flow.has_truths:
         raise ValueError(f"Setting '{pkg.id}' does not support truths")
-
-    vow_rank = creation_data["background_vow_rank"]
-    if vow_rank and vow_rank not in ranks():
-        raise ValueError(f"Invalid vow rank: '{vow_rank}' (valid: {ranks()})")
-
     tone = creation_data["tone"]
     tones = gm().story.kishotenketsu_probability
     if tone not in tones:
         raise ValueError(f"Unknown tone '{tone}' (valid: {sorted(tones)})")
+
+
+def take_up_character(
+    game: GameState, character: Character, creation_data: dict[str, Any], pkg: SettingPackage
+) -> None:
+    validate_creation(creation_data, pkg)
+    game.player_name = creation_data["player_name"]
+    game.pronouns = creation_data["pronouns"]
+    game.backstory = creation_data["backstory"]
+    game.setting_id = pkg.id
+    game.setting_genre = pkg.id
+    game.truths = dict(creation_data["truths"])
+    game.preferences.player_wishes = creation_data["wishes"]
+    game.preferences.content_lines = creation_data["content_lines"]
+    give_character(game, character)
+    _seed_vow_subject(game, creation_data["vow_subject"])
 
 
 def _compute_chaos_start(vow_text: str) -> int:
@@ -107,65 +91,22 @@ def _seed_vow_subject(game: GameState, vow_subject: str) -> None:
 
 def start_new_game(provider: AIProvider, creation_data: dict[str, Any]) -> tuple[GameState, str]:
     setting_id = creation_data["setting_id"]
-    stats = creation_data["stats"]
-    player_name = creation_data["player_name"]
-    pronouns = creation_data["pronouns"]
-    background_vow = creation_data["background_vow"]
-    paths = list(creation_data["paths"])
-    backstory = creation_data["backstory"]
-
-    if not background_vow:
-        raise ValueError("creation_data['background_vow'] is empty. Opening clock requires a background vow.")
-    if not player_name:
-        raise ValueError("creation_data['player_name'] is empty.")
-
     log(f"[NewGame] Starting: setting={setting_id}")
     pkg = load_package(setting_id)
-    validate_stats(stats, setting_id)
-    validate_creation(creation_data, pkg)
-
-    path_names = []
-    for pid in paths:
-        asset = pkg.data.asset("path", pid)
-        if asset:
-            path_names.append(asset["name"])
-    concept = ", ".join(path_names)
-
-    stat_dict = {n: stats[n] for n in stat_descriptions(setting_id)}
-
-    assets = list(creation_data["assets"])
-    truths = dict(creation_data["truths"])
-    wishes = creation_data["wishes"]
-    content_lines = creation_data["content_lines"]
-    vow_subject = creation_data["vow_subject"]
-    background_vow_rank = creation_data["background_vow_rank"]
+    character = make_character(creation_data, pkg)
 
     game = GameState(
-        player_name=player_name,
-        character_concept=concept,
-        pronouns=pronouns,
-        paths=paths,
-        background_vow=background_vow,
-        setting_id=setting_id,
-        setting_genre=pkg.id,
         setting_tone=creation_data["tone"],
         setting_description=pkg.description,
-        backstory=backstory,
-        assets=assets,
-        truths=truths,
-        stats=stat_dict,
+        stats=character.stats,
         resources=starting_resources(setting_id),
         world=new_world(),
         campaign=new_campaign(setting_id),
     )
+    take_up_character(game, character, creation_data, pkg)
 
     game.narrative.scene_count = 1
-    game.world.chaos_factor = _compute_chaos_start(background_vow)
-    game.preferences.player_wishes = wishes
-    game.preferences.content_lines = content_lines
-
-    swear_background_vow(game, background_vow, background_vow_rank)
-    _seed_vow_subject(game, vow_subject)
+    game.world.chaos_factor = _compute_chaos_start(game.background_vow)
 
     _opening = gm().opening
     game.world.time_of_day = _opening.time_of_day
@@ -185,7 +126,7 @@ def start_new_game(provider: AIProvider, creation_data: dict[str, Any]) -> tuple
     spawn_keyed_scenes_for_clock(game.narrative, background_clock)
     log(f"[NewGame] Engine-created opening clock and time_of_day={_opening.time_of_day}")
 
-    log(f"[NewGame] Character: {game.player_name}, paths={paths}, assets={game.assets}")
+    log(f"[NewGame] Character: {game.player_name}, paths={game.paths}, assets={game.assets}")
 
     structure = choose_story_structure(game.setting_tone)
     rng = _random_module.Random()
