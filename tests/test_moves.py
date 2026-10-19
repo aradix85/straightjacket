@@ -274,7 +274,7 @@ class TestSunderedIslesMoves:
     def test_si_overrides_starforged(self) -> None:
         moves = get_moves("sundered_isles")
         ute = moves["exploration/undertake_an_expedition"]
-        assert "sail" in ute.text.lower()
+        assert ute != get_moves("starforged")["exploration/undertake_an_expedition"]
 
     def test_non_overridden_moves_preserved(self) -> None:
         moves = get_moves("sundered_isles")
@@ -353,7 +353,10 @@ class TestGetMoves:
     def test_sundered_isles_auto_parent(self) -> None:
         moves = get_moves("sundered_isles")
         assert "adventure/face_danger" in moves
-        assert "sail" in moves["exploration/undertake_an_expedition"].text.lower()
+        assert (
+            moves["exploration/undertake_an_expedition"]
+            != get_moves("starforged")["exploration/undertake_an_expedition"]
+        )
 
     def test_clear_cache(self) -> None:
         m1 = get_moves("starforged")

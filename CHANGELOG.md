@@ -8,6 +8,12 @@ This log starts at 2026.09.24.0, the restart after a four-month pause. Earlier r
 
 Calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day.
 
+## [2026.10.19.17] — 2026-10-19
+
+Step 9h, 9h.29 settled by measurement, and step 9h closes. Thirty player inputs in Starforged, each with the move or moves the rules allow (the risky, the investigating, and the preparing moves, Compel, dialog, the oracle, world shaping, the recover, quest, connection, combat, and exploration moves), went to the Brain once with its hand-written hints and once with the book's trigger, the bold opening of each Datasworn move's text, for every Datasworn move on offer; the engine's own moves kept their hints in both. The hints chose right 30 times of 30, the triggers 29 (they took "I find a sniper's perch overlooking the landing pad" for world shaping), at 174 thousand against 181 thousand input tokens; 60 Brain calls, about $0.82. The hints stay, and `Move.text`, which only a test read, leaves `datasworn/moves.py`; the two tests that read it now check that Sundered Isles' Undertake an Expedition replaces Starforged's. Step 9h moves to DONE with its last two findings, 9h.13 and 9h.14, in 9n.4, and 9n becomes NEXT STEP with its definition of done and reference patterns.
+
+Quality gate: 1743 tests, coverage 94.66%. Save format unchanged. No Elvira session: no prompt or turn changed.
+
 ## [2026.10.19.16] — 2026-10-19
 
 Step 9h, 9h.16 fixed. Consequences are structured: every effect, handler, boast, chained move, and recommit records a `Consequence` (`models_base.py`: a kind, the key of its label in `ai_text.consequence_labels`, and the values the label is filled with) instead of a finished string, and `mechanics/consequences.py` picks the narrator's sentence by kind and values (`_sentence_event`) instead of parsing the label back (`_classify` is gone). The parser had told "legacy reward (bonds)" as a bond growing with someone called "legacy reward (", any follow-up move or oracle row containing "bond" as a bond, and split labels at their commas; a disposition shift (Make a Connection, Test Your Relationship) now has a sentence of its own (`disposition_shift` in `engine/consequence_templates.yaml`), and `bond_loss`, which nothing could produce, is gone. The momentum label takes a signed number (`momentum {n:+d}`), plain texts such as a boast or a death are the `told` kind, and the scene log keeps the structured consequences so a correction retells them the same way. Save format breaks.

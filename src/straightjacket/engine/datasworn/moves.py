@@ -46,7 +46,6 @@ class MoveOutcome:
 class Move:
     name: str
     roll_type: str
-    text: str
     conditions: list[TriggerCondition]
     outcomes: dict[str, MoveOutcome]
     track_category: str
@@ -109,7 +108,6 @@ def _parse_move(raw: dict[str, Any], pkg: SettingPackage) -> Move:
     return Move(
         name=raw["name"],
         roll_type=raw["roll_type"],
-        text=raw["text"],
         conditions=[
             TriggerCondition(
                 method=c["method"],

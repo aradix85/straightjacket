@@ -74,26 +74,33 @@ Closing a step: the checks of CONTRIBUTING.md pass, the step moves to DONE cut t
 
 ---
 
-## NEXT STEP — 9h: Principle audits
+## NEXT STEP — 9n: Game master, crafters, ruleset, and setting as layers
 
-The audits of AUDIT.md, one session per principle or submodule as it prescribes. Principles 2, 3, 4, and 5 are done; principle 1 runs in 9n on the layout it makes, and the two long clean-ups of principle 2 wait in 9o. Every finding is fixed in its session or becomes a substep here. Open, waiting for the audit to classify or for the user:
+Decisions, Four layers. Today one setting carries both rules and world (its yaml in `data/settings` and its Datasworn chain), while the Ironsworn rules sit in `engine/` beside Mythic's and the engine's own, 70 yaml files in one folder; `engine/dice.yaml` holds Ironsworn's dice beside Mythic's and the Adventure Crafter's. Datasworn already draws the line: classic and Starforged are `type: ruleset`, Delve and Sundered Isles `type: expansion`.
 
-**9h.13** For principle 1: `game/succession.py` → `_replace_character_identity` repeats the identity setup of `game/game_start.py` → `start_new_game`.
+**9n.1** Four layers, each with its own package and yaml folder, and a project-rule scan for the direction of imports. The game master: Mythic's fate, chaos, scene test, random events, and lists, with the engine's rules that hold in any system (clocks, position and effect, facts, pacing, the NPC layer). The crafters: the Adventure Crafter with its character tables, and the Location Crafter (`data/location_crafter.json`). The ruleset: classic and Starforged, with Delve and Sundered Isles as their expansions. The setting: world, truths, oracles, atlas, vocabulary, tone, and generators. The game master and the crafters know of a ruleset only a narrow interface: the tier of a roll's result, which drives the chaos factor, the Director, a memory's emotion, and what a miss withholds, and a move's category.
 
-**9h.14** For principle 1: three keyed-scene id helpers share one body (`mechanics/adventure_crafter.py` → `_next_keyed_scene_id`, `mechanics/random_events.py` → `_re_next_keyed_scene_id`, `mechanics/keyed_scenes.py` → `_next_clock_keyed_scene_id`); `consolidate_threads` repeats `consolidate_characters`; `game/setup_common.py` counts NPC numbers beside `npc/matching.py` → `next_npc_id`; and `npc/processing.py` → `_apply_surname_update` repeats the alias handling of `npc/lifecycle.py` → `merge_npc_identity`. Clock code lives in six places under `mechanics/` (`consequences.py`, `clock_consequences.py`, `clocks.py`, `complications.py`, the spawners in `random_events.py` and `adventure_crafter.py`, and `keyed_scenes.py`) and gathers in `clocks.py`; the same pattern is looked for in threats, tracks, and NPC naming.
+**9n.2** The ruleset owns what a system decides, read from its Datasworn data and otherwise its yaml, not fixed in Python: dice and result tiers (`engine/dice.yaml`), meters (`models_base.py` → `Resources` holds health, spirit, supply, and momentum as fixed fields, read 25 times in 8 files), stats, progress tracks and ranks, moves and outcomes, impacts, legacy, and assets. Classic's rule differences (`move_outcome_overrides` in `engine/move_outcomes.yaml`, keyed by setting id and holding in every setting built on classic) become the classic ruleset's own. The save format breaks.
 
-**9h.29** The Brain chooses a move from its name, its ways to roll in the book's words, and hand-written hints for six moves (`ai_text.brain_trigger_hints` in `engine/ai_text.yaml`), while Datasworn gives every move its trigger and full text (`datasworn/moves.py` → `Move.text`, read by nothing yet). Whether the Brain reads the book's trigger instead of the hints, measured on its move choice before and after, since its prompt grows with every move on offer.
+**9n.3** A setting names its ruleset. A Datasworn ruleset file carries both layers: its rules and moves load as the ruleset, its oracles, truths, and atlas as the setting; where a section such as assets belongs is settled against the books. `docs/settings.md` then describes adding a setting and adding a ruleset apart.
+
+**9n.4** The principle-1 audit runs per layer on the new layout and takes up two findings of 9h. First, `game/succession.py` → `_replace_character_identity` repeats the identity setup of `game/game_start.py` → `start_new_game`. Second, three keyed-scene id helpers share one body (`mechanics/adventure_crafter.py` → `_next_keyed_scene_id`, `mechanics/random_events.py` → `_re_next_keyed_scene_id`, `mechanics/keyed_scenes.py` → `_next_clock_keyed_scene_id`); `consolidate_threads` repeats `consolidate_characters`; `game/setup_common.py` counts NPC numbers beside `npc/matching.py` → `next_npc_id`; and `npc/processing.py` → `_apply_surname_update` repeats the alias handling of `npc/lifecycle.py` → `merge_npc_identity`. Clock code lives in six places under `mechanics/` (`consequences.py`, `clock_consequences.py`, `clocks.py`, `complications.py`, the spawners in `random_events.py` and `adventure_crafter.py`, and `keyed_scenes.py`) and gathers in `clocks.py`; the same pattern is looked for in threats, tracks, and NPC naming. Production code imports `mechanics/`, `npc/`, and `game/` both through their `__init__.py` and from their files; the split settles one way per package.
+
+**9n.5** Code the split only moves keeps its audits; code it writes or rewrites (the layer interface, the meters, the loader that splits a Datasworn file) gets the queries of principles 2 and 3 in the same step, and AUDIT.md's Status then names the audited code by its new packages.
 
 ### Definition of Done
 
-- Principles 3 and 5 are audited as AUDIT.md prescribes, each one's Status listing every submodule it covers; a session that stops halfway records where.
-- Every substep above is fixed or settled with the user; 9h.13 and 9h.14 move to 9n when this step closes.
-- Each session's CHANGELOG entry carries its queries and their counts (AUDIT.md), and the quality gate is green.
+- Four packages, one per layer, each with its own yaml folder; a project-rule scan in `tests/test_project_rules.py` rejects an import against the direction, and the game master and the crafters reach a ruleset only through the narrow interface of 9n.1.
+- A ruleset's dice and result tiers, meters, stats, tracks and ranks, moves and outcomes, impacts, legacy, and assets come from its Datasworn data or its own yaml; `Resources` holds no meter as a fixed field, and classic's overrides are the classic ruleset's own.
+- A setting names its ruleset, and `docs/settings.md` describes adding a setting and adding a ruleset apart.
+- The principle-1 audit has run per layer with the findings of 9n.4 fixed, each package is imported one way, and the code the split writes or rewrites has had the queries of principles 2 and 3; AUDIT.md's Status names the new packages.
+- The save format break is in the CHANGELOG, an Elvira run plays every setting (`--matrix`), and the quality gate is green.
 
 ### Reference patterns
 
-- Method, passes, and carve-outs: AUDIT.md; the carve-out lists `_AI_CALL_CARVE_OUT_FILES` and `_INLINE_IMPORT_WHITELIST` in `tests/test_project_rules.py`.
-- A config binding without defaults: `engine_config_dataclasses.py`, read through `eng()`.
+- The Datasworn line between the layers: `type: ruleset` for classic and Starforged, `type: expansion` for Delve and Sundered Isles, and the chain a setting loads (`datasworn/settings.py` → `SettingPackage.chain`).
+- The narrow interface as it stands: the result tier read by the chaos factor (`engine/chaos.yaml`), the Director's trigger (`director.py`), a memory's emotion (`engine/memory.yaml`), what a miss withholds (`docs/mechanics.md`), and a move's category (`engine/move_categories.yaml`).
+- The existing import and layering scans: `tests/test_project_rules.py`; the four layers: Decisions, Four layers.
 
 ---
 
@@ -104,20 +111,6 @@ Sketches, in the order of work.
 Steps 11b, 11c, 11d, and 14c take ideas from EdgeTales: reimplement them, do not port code, and credit EdgeTales in the CHANGELOG entry that lands each.
 
 Steps 11, 14b, 25, and 26 each plan a Director tool. The Director has one tool, `query_game_state`; whether it keeps one at all is decided in 11.0, and whether a planned tool becomes a new one or part of it when its step becomes NEXT STEP. A new tool works through the Director's two calls as they stand: the first offers the tools, the second gets their results as text. A round in which the model reads its results and calls again needs what was removed: the Anthropic adapter's `tool_use` and `tool_result` blocks and a place for the schema instruction when the last message is not the user's (`ai/provider_anthropic.py` and `ai/api_client.py` before commit 0514fd6), and the id of each tool call (`ai/provider_base.py` → `ToolCall`). A tool with parameters needs the schema built from its type hints and the check of the model's arguments (`tools/registry.py` and `tools/handler.py` before release 2026.10.18.8).
-
-### 9n — Game master, crafters, ruleset, and setting as layers
-
-Decisions, Four layers. Today one setting carries both rules and world (its yaml in `data/settings` and its Datasworn chain), while the Ironsworn rules sit in `engine/` beside Mythic's and the engine's own, 70 yaml files in one folder; `engine/dice.yaml` holds Ironsworn's dice beside Mythic's and the Adventure Crafter's. Datasworn already draws the line: classic and Starforged are `type: ruleset`, Delve and Sundered Isles `type: expansion`.
-
-**9n.1** Four layers, each with its own package and yaml folder, and a project-rule scan for the direction of imports. The game master: Mythic's fate, chaos, scene test, random events, and lists, with the engine's rules that hold in any system (clocks, position and effect, facts, pacing, the NPC layer). The crafters: the Adventure Crafter with its character tables, and the Location Crafter (`data/location_crafter.json`). The ruleset: classic and Starforged, with Delve and Sundered Isles as their expansions. The setting: world, truths, oracles, atlas, vocabulary, tone, and generators. The game master and the crafters know of a ruleset only a narrow interface: the tier of a roll's result, which drives the chaos factor, the Director, a memory's emotion, and what a miss withholds, and a move's category.
-
-**9n.2** The ruleset owns what a system decides, read from its Datasworn data and otherwise its yaml, not fixed in Python: dice and result tiers (`engine/dice.yaml`), meters (`models_base.py` → `Resources` holds health, spirit, supply, and momentum as fixed fields, read 25 times in 8 files), stats, progress tracks and ranks, moves and outcomes, impacts, legacy, and assets. Classic's rule differences (`move_outcome_overrides` in `engine/move_outcomes.yaml`, keyed by setting id and holding in every setting built on classic) become the classic ruleset's own. The save format breaks.
-
-**9n.3** A setting names its ruleset. A Datasworn ruleset file carries both layers: its rules and moves load as the ruleset, its oracles, truths, and atlas as the setting; where a section such as assets belongs is settled against the books. `docs/settings.md` then describes adding a setting and adding a ruleset apart.
-
-**9n.4** The principle-1 audit runs per layer on the new layout, with 9h.13 and 9h.14. Production code imports `mechanics/`, `npc/`, and `game/` both through their `__init__.py` and from their files; the split settles one way per package.
-
-**9n.5** Code the split only moves keeps its audits; code it writes or rewrites (the layer interface, the meters, the loader that splits a Datasworn file) gets the queries of principles 2 and 3 in the same step, and AUDIT.md's Status then names the audited code by its new packages.
 
 ### 9o — Dataclass defaults and prompt markup
 
@@ -355,4 +348,4 @@ Finished work in its shortest form; the CHANGELOG has the details.
 - **9g — Tests through the real creation path** (`create_game` in `tests/_creation.py`).
 - **9l — Complications as clocks** (`docs/mechanics.md`, Complication clocks).
 - **9j, so far.** Suffering goes through `mechanics/suffer.py`; Endure Harm and Endure Stress are follow-up moves that mark impacts and roll their tables; a dying character has two turns to Heal, and the game ends only at Face Death or Face Desolation, whose weak hit binds an extreme vow (9j.5). A progress roll completes on a weak hit, a miss recommits at the user's choice, and Take Decisive Action counts lower in a bad spot (9j.9).
-- **9h, so far.** The tone is chosen at creation. Principles 2 and 4 are done apart from 9o, principle 3 for every submodule, and principle 5 for every submodule, with the earlier removals read again by its rule. Impossible states raise; dead code, write-only data, and parameters only tests set are gone; the engine reads what Datasworn carries where an audit found it unread; the narrator and the Director see the antagonist, and the Director its last notes; every AI-call carve-out is classified (9h.7). The finished substeps are in the CHANGELOG; 9h.4 and 9h.12 became 9o, and 9h.23 became 11.0.
+- **9h — Principle audits:** principles 2 to 5 audited (AUDIT.md, Status), principle 1 runs in 9n, the long clean-ups of principle 2 are 9o. Impossible states raise; dead code, write-only data, and parameters only tests set are gone; the engine reads what Datasworn carries where an audit found it unread; a bonded connection stays and Develop Your Relationship follows both branches; consequences are structured; a correction retells what the turn told; the Brain keeps its hand-written hints, which chose moves better than the book's triggers (30 of 30 against 29 of 30). The substeps are in the CHANGELOG; 9h.4 and 9h.12 became 9o, 9h.13 and 9h.14 are in 9n.4, and 9h.23 became 11.0.
