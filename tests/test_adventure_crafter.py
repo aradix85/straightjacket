@@ -191,7 +191,7 @@ def test_dispatch_meta_unknown_name_raises_keyerror(monkeypatch):
 
 
 def test_lookup_theme_priority_constant_for_first_three_buckets():
-    alt = ThemeAlternation()
+    alt = ThemeAlternation(next_is_4=True)
     assert lookup_theme_priority(1, alt) == 1
     assert lookup_theme_priority(4, alt) == 1
     assert lookup_theme_priority(5, alt) == 2
@@ -201,7 +201,7 @@ def test_lookup_theme_priority_constant_for_first_three_buckets():
 
 
 def test_lookup_theme_priority_alternates_on_ten():
-    alt = ThemeAlternation()
+    alt = ThemeAlternation(next_is_4=True)
     first = lookup_theme_priority(10, alt)
     second = lookup_theme_priority(10, alt)
     third = lookup_theme_priority(10, alt)
@@ -214,7 +214,7 @@ def test_lookup_theme_priority_alternates_on_ten():
 @pytest.mark.parametrize("bad_roll", [0, -1, 11, 100])
 def test_lookup_theme_priority_out_of_range_raises(bad_roll: int):
     with pytest.raises(LookupError, match="covers"):
-        lookup_theme_priority(bad_roll, ThemeAlternation())
+        lookup_theme_priority(bad_roll, ThemeAlternation(next_is_4=True))
 
 
 def test_lookup_characters_template_resolves_full_d100():

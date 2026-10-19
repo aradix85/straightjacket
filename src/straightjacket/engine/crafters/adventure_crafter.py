@@ -72,7 +72,7 @@ class TurningPoint:
 
 @dataclass
 class ThemeAlternation:
-    next_is_4: bool = True
+    next_is_4: bool
 
 
 def _table_roll(rng: random.Random) -> int:
@@ -219,7 +219,7 @@ def roll_turning_point(
     none_limit = slots - rules["plot_points_per_turning_point"]["min"]
     conclusion_counts_as_none = plotline_was_new or plotline.status == "conclusion"
 
-    alternation = ThemeAlternation()
+    alternation = ThemeAlternation(next_is_4=True)
     hits: list[PlotPointHit] = []
     none_count = 0
     while len(hits) < slots:

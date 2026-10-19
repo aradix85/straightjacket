@@ -8,6 +8,12 @@ This log starts at 2026.09.24.0, the restart after a four-month pause. Earlier r
 
 Calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day.
 
+## [2026.10.20.4] — 2026-10-20
+
+Step 9o, 9o.1, the last two modules, each with one default: the Adventure Crafter's `ThemeAlternation` in `crafters/adventure_crafter.py` is made with its first choice named, four before five, where a turning point and the tests left it to the default, and `OracleRow.oracle_rolls` in `setting/loader.py`, a Datasworn field some rows lack, keeps its type that allows none but loses the default its one maker in the engine never used, since the parser always passes what the row holds. The 20 defaults left are the external structures of `ai/provider_base.py` and `setting/packages.py`. Play does not change.
+
+Quality gate: 1848 tests, coverage 94.95%. Save format unchanged. No Elvira session (Sessions with the user); none would have been needed, since play does not change.
+
 ## [2026.10.20.3] — 2026-10-20
 
 Step 9o, 9o.1, eighth module: `ruleset/move_effects.py` loses the three defaults of `MoveEffect`, the parsed form of an effect in `ruleset/move_outcomes.yaml`. Each branch of `parse_effect` names the value and the target its effect has, zero or empty where it has none, and so does the story complication a miss with a match swaps in for Pay the Price (`ruleset/move_outcome.py`). 22 defaults remain, 20 of them external structures. Play does not change.

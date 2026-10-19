@@ -209,7 +209,11 @@ def test_a_roll_twice_row_keeps_or_worsens_a_repeated_result(
     outcomes = {}
     for rule in ("keep", "make_it_worse"):
         twice = OracleRow(min=1, max=1, text="Roll twice", oracle_rolls=[{**_auto(None, 2), "duplicates": rule}])
-        rows = [twice, OracleRow(min=2, max=2, text="One"), OracleRow(min=3, max=3, text="Two")]
+        rows = [
+            twice,
+            OracleRow(min=2, max=2, text="One", oracle_rolls=None),
+            OracleRow(min=3, max=3, text="Two", oracle_rolls=None),
+        ]
         dice = [1, 2, 2]
         monkeypatch.setattr(loader.random, "randint", lambda low, high, queue=dice: queue.pop(0))
         rolled = roll_rows(OracleTable(id="t/twice", title="Twice", rows=rows))

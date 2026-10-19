@@ -299,13 +299,13 @@ def test_meaning_tables_have_the_mythic_2e_shape(load_engine: None) -> None:
 def test_adventure_crafter_theme_priority(load_engine: None, roll: int, expected: int) -> None:
     from straightjacket.engine.crafters.adventure_crafter import ThemeAlternation, lookup_theme_priority
 
-    assert lookup_theme_priority(roll, ThemeAlternation()) == expected
+    assert lookup_theme_priority(roll, ThemeAlternation(next_is_4=True)) == expected
 
 
 def test_adventure_crafter_theme_priority_ten_alternates_between_four_and_five(load_engine: None) -> None:
     from straightjacket.engine.crafters.adventure_crafter import ThemeAlternation, lookup_theme_priority
 
-    alternation = ThemeAlternation()
+    alternation = ThemeAlternation(next_is_4=True)
     assert {lookup_theme_priority(10, alternation) for _ in range(2)} == {4, 5}
 
 

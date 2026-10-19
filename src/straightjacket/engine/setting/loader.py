@@ -16,8 +16,7 @@ class OracleRow:
     min: int
     max: int
     text: str
-
-    oracle_rolls: list[Any] | None = None
+    oracle_rolls: list[Any] | None
 
     def __str__(self) -> str:
         return self.text
