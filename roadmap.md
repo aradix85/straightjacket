@@ -110,11 +110,9 @@ Steps 11, 14b, 25, and 26 each plan a Director tool. The Director has one tool, 
 
 ### 9q — Elvira reaches what a scenario prepares
 
-The user's choice, first after 9n, since the Elvira runs of the steps after it gain from it. The overview of scores across runs is not built, also the user's choice.
+The user's choice, first after 9n, since the Elvira runs of the steps after it gain from it. An overview of scores across runs is not built, the user's choice, and so no floor on the judge's scores either: one eight-turn run scores too few turns per criterion for a floor that neither trips on ordinary runs nor lets through all but a collapse, and a slow decline stays above any fixed floor.
 
-**9q.1** A scenario reaches its aims. Today it sets meters and stats and hopes: `near_death` (health, spirit, and supply 0, every stat 1) reached none of its aims in an eight-turn run on 2026-10-19, since an impact, Face Death, game over, and succession wait on misses and on the Brain choosing a suffer move, and fifteen of the twenty-nine coverage targets were untouched in that run. A scenario can fix the dice of its next turns, through a seam in Elvira's own runner in direct mode, so the engine keeps no switch for tests; or it starts at the moment itself, such as a game over waiting for a successor, so the successor's creation and opening play on the real models. The report then says for every aim whether it was reached, and a missed aim counts as a problem.
-
-**9q.2** A low score is a problem. The judge's scores count in the verdict when one falls below a floor per criterion, result integrity on misses first. The floors are set from the scores of the runs on record in `tests/elvira/runs`, so that an ordinary run does not trip them, given the judge's noise of about 0.14 (9f).
+A scenario reaches its aims. Today it sets meters and stats and hopes: `near_death` (health, spirit, and supply 0, every stat 1) reached none of its aims in an eight-turn run on 2026-10-19, since an impact, Face Death, game over, and succession wait on misses and on the Brain choosing a suffer move, and fifteen of the twenty-nine coverage targets were untouched in that run. A scenario can fix the dice of its next turns, through a seam in Elvira's own runner in direct mode, so the engine keeps no switch for tests; or it starts at the moment itself, such as a game over waiting for a successor, so the successor's creation and opening play on the real models. The report then says for every aim whether it was reached, and a missed aim counts as a problem.
 
 ### 9o — Dataclass defaults and prompt markup
 

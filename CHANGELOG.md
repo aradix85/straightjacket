@@ -10,7 +10,7 @@ Calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for relea
 
 ## [2026.10.19.34] — 2026-10-19
 
-Roadmap, the user's choices: step 9q makes Elvira's scenarios reach what they prepare, by fixing the dice of their next turns or starting at the moment itself, and counts a judge's score below a floor as a problem; it comes first after 9n, and an overview of scores across runs is not built. Step 9p audits the tests after 9o: a test that holds what the game does stays, one that holds how it is built is rebuilt or goes, double tests are joined, and the coverage floor is read again. No code changed.
+Roadmap, the user's choices: step 9q makes Elvira's scenarios reach what they prepare, by fixing the dice of their next turns or starting at the moment itself; it comes first after 9n. An overview of scores across runs is not built, and without one a floor on the judge's scores is left out too, since one short run scores too few turns per criterion to set it. Step 9p audits the tests after 9o: a test that holds what the game does stays, one that holds how it is built is rebuilt or goes, double tests are joined, and the coverage floor is read again. No code changed.
 
 Quality gate: 1810 tests, coverage 94.78%. Save format unchanged.
 
