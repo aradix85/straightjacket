@@ -8,6 +8,12 @@ This log starts at 2026.09.24.0, the restart after a four-month pause. Earlier r
 
 Calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day.
 
+## [2026.10.19.40] — 2026-10-19
+
+Step 9n, 9n.4: the principle-1 audit of `setting/` and `crafters/`, all three steps. Step 1a flagged one file over 400 lines in the two layers, `crafters/adventure_crafter.py` (713 lines, 25 public symbols); step 1b found it held five concerns that split without coupling, so it is five modules: `crafters/adventure_crafter.py` keeps the data, the table lookups, and the turning points; `crafters/meta_plot_points.py` holds the Meta handlers with the two character-list helpers only they use; `crafters/character_traits.py` the character tables; `crafters/turning_point_spawns.py` the keyed scenes, dangers, and clocks a turning point adds; and `crafters/blueprint.py` the blueprint seeds and their materialisation. The Adventure Crafter's data loader is public, since two modules read it, and the error of a Meta drift names the module it lives in, where it named one that was gone. In `setting/` every file holds one concern (step 1b); step 1c found one concern with two homes, the two paths that follow a link from one oracle row to another table, which roadmap step 10.2 already settles. Play does not change.
+
+Quality gate: 1827 tests, coverage 94.90%. Save format unchanged. No Elvira session, the user's choice: the change moves code without changing play.
+
 ## [2026.10.19.39] — 2026-10-19
 
 Step 9n, 9n.4: threats, tracks, and NPC naming looked at for one concern spread over several files. Tracks and NPC naming are layers of their concern (a track's arithmetic, its lifecycle, a connection's bond, the legacy tracks; an NPC's oracle name, matching, rename, and the extraction's updates), each in its own module. Threats had two loose ends: `ruleset/progress.py` built a threat for its only caller in `ruleset/threats.py`, which now builds it itself, and wrote a menace track's arithmetic out again beside a progress track's, which the two now share. Found and recorded for step 9j.6, and in `docs/mechanics.md`: no threat links to a vow in play, only in tests, since threats start only from a random event or a plot point, so a miss never advances a vow's threat, a full menace track never forsakes a vow, and a fulfilled vow never resolves its threat; how Delve ties a threat to a vow is read before that is wired. Play does not change.

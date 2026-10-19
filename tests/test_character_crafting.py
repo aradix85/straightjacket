@@ -5,7 +5,7 @@ import random
 
 import pytest
 
-from straightjacket.engine.crafters.adventure_crafter import (
+from straightjacket.engine.crafters.character_traits import (
     CharacterTraits,
     lookup_character_descriptor,
     lookup_character_identity,

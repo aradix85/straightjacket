@@ -2,7 +2,7 @@ import json
 from typing import Any
 
 from ..config_loader import model_for_role, narration_language, sampling_params
-from ..crafters.adventure_crafter import BlueprintSeed
+from ..crafters.blueprint import BlueprintSeed
 from ..crafters.config import crafter
 from ..engine_loader import eng
 from ..logging_util import log

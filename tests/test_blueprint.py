@@ -2,7 +2,7 @@ import random
 
 import pytest
 
-from straightjacket.engine.crafters.adventure_crafter import (
+from straightjacket.engine.crafters.blueprint import (
     BlueprintSeed,
     assemble_blueprint_seed_from_ac,
     assemble_blueprint_seed_kishotenketsu,

@@ -315,9 +315,9 @@ def _covers_one_to_hundred(ranges: list[tuple[int, int]]) -> bool:
 
 
 def test_adventure_crafter_tables_are_complete(load_engine: None) -> None:
-    from straightjacket.engine.crafters.adventure_crafter import _load_ac_data
+    from straightjacket.engine.crafters.adventure_crafter import load_ac_data
 
-    data = _load_ac_data()
+    data = load_ac_data()
     themes = {theme for point in data["plot_points"] for theme in point["themes"]}
     assert themes == {"action", "tension", "mystery", "social", "personal"}
     for theme in themes:
@@ -334,9 +334,9 @@ def test_adventure_crafter_tables_are_complete(load_engine: None) -> None:
 
 
 def test_adventure_crafter_conclusion_and_none_ranges(load_engine: None) -> None:
-    from straightjacket.engine.crafters.adventure_crafter import _load_ac_data
+    from straightjacket.engine.crafters.adventure_crafter import load_ac_data
 
-    points = {p["name"]: p["themes"] for p in _load_ac_data()["plot_points"]}
+    points = {p["name"]: p["themes"] for p in load_ac_data()["plot_points"]}
     assert all((r["min"], r["max"]) == (1, 8) for r in points["Conclusion"].values())
     assert all((r["min"], r["max"]) == (9, 24) for r in points["None"].values())
 

@@ -4,7 +4,8 @@ import random as _random
 
 import pytest
 
-from straightjacket.engine.crafters.adventure_crafter import PlotPointHit, TurningPoint, spawn_dangers_for_turning_point
+from straightjacket.engine.crafters.adventure_crafter import PlotPointHit, TurningPoint
+from straightjacket.engine.crafters.turning_point_spawns import spawn_dangers_for_turning_point
 from straightjacket.engine.gamemaster.random_events import spawn_danger_from_random_event
 from straightjacket.engine.gamemaster.scene import check_scene
 from straightjacket.engine.models import KeyedScene, RandomEvent

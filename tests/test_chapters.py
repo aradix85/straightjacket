@@ -239,7 +239,7 @@ def test_merge_returning_npcs_seeds_location_history(load_engine: None) -> None:
 def test_apply_blueprint_with_voicing_materializes(load_engine: None) -> None:
     import random
 
-    from straightjacket.engine.crafters.adventure_crafter import assemble_blueprint_seed_from_ac
+    from straightjacket.engine.crafters.blueprint import assemble_blueprint_seed_from_ac
     from straightjacket.engine.game.chapters import _apply_blueprint
 
     g = make_game_state(player_name="X", setting_id="starforged")
@@ -264,7 +264,7 @@ def test_apply_blueprint_with_voicing_materializes(load_engine: None) -> None:
 def test_apply_blueprint_with_none_clears(load_engine: None) -> None:
     import random
 
-    from straightjacket.engine.crafters.adventure_crafter import assemble_blueprint_seed_from_ac
+    from straightjacket.engine.crafters.blueprint import assemble_blueprint_seed_from_ac
     from straightjacket.engine.game.chapters import _apply_blueprint
     from tests._helpers import make_blueprint
 

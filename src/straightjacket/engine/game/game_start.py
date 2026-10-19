@@ -6,7 +6,7 @@ from ..ai.blueprint_voicing import call_blueprint_voicing
 from ..ai.metadata import process_deceased_npcs
 from ..ai.narrator import call_narrator, call_opening_setup
 from ..ai.provider_base import AIProvider
-from ..crafters.adventure_crafter import (
+from ..crafters.blueprint import (
     assemble_blueprint_seed_from_ac,
     assemble_blueprint_seed_kishotenketsu,
     materialize_blueprint,

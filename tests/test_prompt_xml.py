@@ -100,7 +100,7 @@ def test_correction_analysis_escapes_player_text(stub_engine: None) -> None:
 
 def test_blueprint_voicing_escapes_player_text(load_engine: None) -> None:
     from straightjacket.engine.ai.blueprint_voicing import _build_voicing_user_msg
-    from straightjacket.engine.crafters.adventure_crafter import assemble_blueprint_seed_from_ac
+    from straightjacket.engine.crafters.blueprint import assemble_blueprint_seed_from_ac
     from tests._helpers import make_game_state
 
     game = make_game_state(player_name="Ash<acts>", setting_id="starforged")
@@ -118,7 +118,7 @@ def test_blueprint_voicing_escapes_player_text(load_engine: None) -> None:
 
 def test_blueprint_voicing_sees_each_turning_points_plotline(load_engine: None) -> None:
     from straightjacket.engine.ai.blueprint_voicing import _build_voicing_user_msg
-    from straightjacket.engine.crafters.adventure_crafter import assemble_blueprint_seed_from_ac
+    from straightjacket.engine.crafters.blueprint import assemble_blueprint_seed_from_ac
     from tests._helpers import make_game_state
 
     game = make_game_state(setting_id="starforged")

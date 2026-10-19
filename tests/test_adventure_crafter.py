@@ -5,17 +5,14 @@ import random
 import pytest
 
 from straightjacket.engine.crafters.adventure_crafter import (
-    _META_HANDLERS,
     PlotPointHit,
     PlotPointResult,
     ThemeAlternation,
     TurningPoint,
-    _create_character,
     _create_plotline,
-    _load_ac_data,
     _validate_random_themes,
     assign_themes,
-    dispatch_meta,
+    load_ac_data,
     lookup_characters_template,
     lookup_meta_plot_point,
     lookup_plot_point,
@@ -24,6 +21,7 @@ from straightjacket.engine.crafters.adventure_crafter import (
     roll_turning_point,
 )
 from straightjacket.engine.crafters.config import crafter
+from straightjacket.engine.crafters.meta_plot_points import _META_HANDLERS, _create_character, dispatch_meta
 from straightjacket.engine.models_story import NarrativeState
 
 _SPECIAL_BOUNDARIES = [
@@ -64,7 +62,7 @@ def test_ac_meta_handlers_config_loads():
 
 
 def test_ac_data_validation_passes_on_real_data():
-    data = _load_ac_data()
+    data = load_ac_data()
     _validate_random_themes(data)
 
 
@@ -132,7 +130,7 @@ def test_plot_point_lookup_out_of_range_roll_raises(bad_roll: int):
 
 
 def test_meta_handlers_match_json_names():
-    data = _load_ac_data()
+    data = load_ac_data()
     json_names = {entry["name"] for entry in data["meta_plot_points"]}
     handler_names = set(_META_HANDLERS)
     assert json_names == handler_names, f"drift between JSON {json_names} and handlers {handler_names}"
@@ -188,7 +186,7 @@ def test_dispatch_meta_unknown_name_raises_keyerror(monkeypatch):
         return "Plot Twist"
 
     monkeypatch.setattr(
-        "straightjacket.engine.crafters.adventure_crafter.lookup_meta_plot_point",
+        "straightjacket.engine.crafters.meta_plot_points.lookup_meta_plot_point",
         fake_lookup,
     )
     narrative = NarrativeState()
@@ -323,7 +321,7 @@ def test_conclusion_plot_point_flips_an_advancing_plotline_to_conclusion(monkeyp
 
 
 def test_meta_character_exits_marks_active_character_exited():
-    from straightjacket.engine.crafters.adventure_crafter import _meta_character_exits
+    from straightjacket.engine.crafters.meta_plot_points import _meta_character_exits
 
     narrative = NarrativeState()
     char = _create_character(narrative, "Alice")
@@ -332,7 +330,7 @@ def test_meta_character_exits_marks_active_character_exited():
 
 
 def test_meta_character_returns_marks_exited_character_returned():
-    from straightjacket.engine.crafters.adventure_crafter import _meta_character_returns
+    from straightjacket.engine.crafters.meta_plot_points import _meta_character_returns
 
     narrative = NarrativeState()
     char = _create_character(narrative, "Alice")
@@ -342,7 +340,7 @@ def test_meta_character_returns_marks_exited_character_returned():
 
 
 def test_meta_character_returns_creates_new_when_no_exited():
-    from straightjacket.engine.crafters.adventure_crafter import _meta_character_returns
+    from straightjacket.engine.crafters.meta_plot_points import _meta_character_returns
 
     narrative = NarrativeState()
     _meta_character_returns(narrative, None)
@@ -351,7 +349,7 @@ def test_meta_character_returns_creates_new_when_no_exited():
 
 
 def test_meta_character_steps_up_increases_weight():
-    from straightjacket.engine.crafters.adventure_crafter import _meta_character_steps_up
+    from straightjacket.engine.crafters.meta_plot_points import _meta_character_steps_up
 
     narrative = NarrativeState()
     char = _create_character(narrative, "Alice")
@@ -362,7 +360,7 @@ def test_meta_character_steps_up_increases_weight():
 
 
 def test_meta_character_steps_down_decreases_weight_to_floor():
-    from straightjacket.engine.crafters.adventure_crafter import _meta_character_steps_down
+    from straightjacket.engine.crafters.meta_plot_points import _meta_character_steps_down
 
     cfg = crafter().adventure_crafter.meta_handlers
     narrative = NarrativeState()
@@ -376,7 +374,7 @@ def test_meta_character_steps_down_decreases_weight_to_floor():
 
 
 def test_meta_character_downgrade_marks_status_and_decreases_weight():
-    from straightjacket.engine.crafters.adventure_crafter import _meta_character_downgrade
+    from straightjacket.engine.crafters.meta_plot_points import _meta_character_downgrade
 
     cfg = crafter().adventure_crafter.meta_handlers
     narrative = NarrativeState()
@@ -388,7 +386,7 @@ def test_meta_character_downgrade_marks_status_and_decreases_weight():
 
 
 def test_meta_character_upgrade_marks_status_and_increases_weight():
-    from straightjacket.engine.crafters.adventure_crafter import _meta_character_upgrade
+    from straightjacket.engine.crafters.meta_plot_points import _meta_character_upgrade
 
     cfg = crafter().adventure_crafter.meta_handlers
     narrative = NarrativeState()
@@ -400,7 +398,7 @@ def test_meta_character_upgrade_marks_status_and_increases_weight():
 
 
 def test_meta_plotline_combo_merges_two_advancing_plotlines():
-    from straightjacket.engine.crafters.adventure_crafter import _meta_plotline_combo
+    from straightjacket.engine.crafters.meta_plot_points import _meta_plotline_combo
 
     narrative = NarrativeState()
     a = _create_plotline(narrative, "First")
@@ -412,7 +410,7 @@ def test_meta_plotline_combo_merges_two_advancing_plotlines():
 
 
 def test_meta_plotline_combo_skips_when_fewer_than_two_advancing():
-    from straightjacket.engine.crafters.adventure_crafter import _meta_plotline_combo
+    from straightjacket.engine.crafters.meta_plot_points import _meta_plotline_combo
 
     narrative = NarrativeState()
     only = _create_plotline(narrative, "Only one")
@@ -421,7 +419,7 @@ def test_meta_plotline_combo_skips_when_fewer_than_two_advancing():
 
 
 def test_meta_plotline_combo_excludes_active_plotline_id():
-    from straightjacket.engine.crafters.adventure_crafter import _meta_plotline_combo
+    from straightjacket.engine.crafters.meta_plot_points import _meta_plotline_combo
 
     narrative = NarrativeState()
     active = _create_plotline(narrative, "Active")
@@ -440,12 +438,12 @@ def test_narrative_state_snapshot_restore_round_trips_plotlines_list():
     assert len(narrative.plotlines_list) == 1
     assert narrative.plotlines_list[0].name == "Original"
 
-    data = _load_ac_data()
+    data = load_ac_data()
     assert len(data["plot_points"]) == 186
 
 
 def test_plot_points_round_trip_special_entries():
-    data = _load_ac_data()
+    data = load_ac_data()
     by_name = {entry["name"]: entry for entry in data["plot_points"]}
     sr = crafter().adventure_crafter.special_ranges
     for name, expected in [

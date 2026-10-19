@@ -4,12 +4,9 @@ import random
 
 import pytest
 
-from straightjacket.engine.crafters.adventure_crafter import (
-    PlotPointHit,
-    TurningPoint,
-    spawn_keyed_scenes_for_turning_point,
-)
+from straightjacket.engine.crafters.adventure_crafter import PlotPointHit, TurningPoint
 from straightjacket.engine.crafters.config import crafter
+from straightjacket.engine.crafters.turning_point_spawns import spawn_keyed_scenes_for_turning_point
 from straightjacket.engine.gamemaster.clocks import spawn_keyed_scenes_for_clock
 from straightjacket.engine.gamemaster.config import gm
 from straightjacket.engine.gamemaster.keyed_scenes import (
