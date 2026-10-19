@@ -8,6 +8,12 @@ This log starts at 2026.09.24.0, the restart after a four-month pause. Earlier r
 
 Calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day.
 
+## [2026.10.20.6] — 2026-10-20
+
+Step 9o, 9o.2, first group: the prompt markup that `prompt_shared.py` assembled in Python moves to `prompts/blocks.yaml`, 41 keys: the tags of time, earlier places, the active thread, known NPCs, lore figures, pacing, an altered or interrupt scene, random events, NPC agency, flags, threat events, filled clocks, and the Director's guidance and NPC notes; the target NPC's tag in its two forms with its attributes and its `agenda:`, `instinct:`, and `secrets(...)` labels; the activated NPC's tag with its attributes; and the memory labels `recent:` and `insight:` with the `event(weight)` form an NPC's memories share. What stays in Python is the joining of parts and the escaping. A placeholder is not named `name`, which `get_prompt` takes as the prompt's own name. A render script outside the repository (Sessions with the user) rendered every block of the module, on created games in classic, Starforged, and Sundered Isles with every line and branch of the module reached, and the action, dialog, oracle, and opening prompts that use them: 2466 renders, byte-identical before and after. Play does not change.
+
+Quality gate: 1848 tests, coverage 94.91%. Save format unchanged. No Elvira session (Sessions with the user); the prompts are byte-identical.
+
 ## [2026.10.20.5] — 2026-10-20
 
 Step 9o, 9o.1 closes: the project-rule scan that held only the config binding to no dataclass defaults now holds every dataclass in `src/` (`tests/test_project_rules.py` → `_check_no_dataclass_defaults`). An empty collection may stay a default, as CONTRIBUTING.md allows, except on a field the config binding fills from yaml, where it would fill a missing key; the binding's private raw store keeps its empty dict. The external structures are its carve-out, by class (`_EXTERNAL_STRUCTURE_DATACLASSES`: `AICallSpec` and `AIResponse` in `ai/provider_base.py`, the two partial classes in `setting/packages.py`), and a stale entry there, or a config binding file that is gone, fails the stale-entry scan. CONTRIBUTING.md and AUDIT.md (pass 2d and Status) say so, and the roadmap moves 9o.1 to DONE; 9o.2, the prompt markup, is left. Play does not change.

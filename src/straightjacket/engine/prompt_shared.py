@@ -13,7 +13,17 @@ from .gamemaster.scene import adjustment_descriptions
 from .gamemaster.stance_gate import compute_npc_gate, resolve_npc_stance
 from .gamemaster.world import locations_match
 from .logging_util import log
-from .models import BrainResult, ClockFillResult, GameState, NpcData, RandomEvent, ResolvedFact, SceneSetup, ThreatEvent
+from .models import (
+    BrainResult,
+    ClockFillResult,
+    GameState,
+    MemoryEntry,
+    NpcData,
+    RandomEvent,
+    ResolvedFact,
+    SceneSetup,
+    ThreatEvent,
+)
 from .prompt_blocks import character_tag, world_tag
 from .prompt_loader import get_prompt
 from .ruleset.impacts import get_impacts
@@ -42,7 +52,7 @@ def _scene_header(game: GameState) -> str:
 
 
 def _time_ctx(game: GameState) -> str:
-    return f"\n<time>{_xe(game.world.time_of_day)}</time>" if game.world.time_of_day else ""
+    return "\n" + get_prompt("block_time", time=_xe(game.world.time_of_day)) if game.world.time_of_day else ""
 
 
 def _generated_place_block(game: GameState) -> str:
@@ -65,7 +75,7 @@ def _loc_hist(game: GameState) -> str:
     if not game.world.location_history:
         return ""
     n = gm().location.prompt_history_size
-    return f"\n<prev_locations>{_xe(', '.join(game.world.location_history[-n:]))}</prev_locations>"
+    return "\n" + get_prompt("block_prev_locations", locations=_xe(", ".join(game.world.location_history[-n:])))
 
 
 def _scene_enrichment(game: GameState) -> str:
@@ -73,7 +83,11 @@ def _scene_enrichment(game: GameState) -> str:
     if not threads:
         return ""
     threads.sort(key=lambda t: t.weight, reverse=True)
-    return f"\n<active_thread>{_xe(threads[0].name)}</active_thread>"
+    return "\n" + get_prompt("block_active_thread", thread=_xe(threads[0].name))
+
+
+def _observed(memories: Sequence[MemoryEntry]) -> str:
+    return " | ".join(get_prompt("block_npc_memory", event=m.event, weight=m.emotional_weight) for m in memories)
 
 
 def _format_memories(
@@ -86,16 +100,15 @@ def _format_memories(
 
     if not include_reflections:
         if observations:
-            obs_text = " | ".join(f"{m.event}({m.emotional_weight})" for m in observations)
-            return f"\nrecent: {obs_text}"
+            return "\n" + get_prompt("block_npc_memories_recent", memories=_observed(observations))
         return ""
 
     reflections = [m for m in memories if m.type == "reflection"]
     parts: list[str] = []
     if reflections:
-        parts.append(f"insight: {' | '.join(m.event for m in reflections)}")
+        parts.append(get_prompt("block_npc_memories_insight", memories=" | ".join(m.event for m in reflections)))
     if observations:
-        parts.append(f"recent: {' | '.join(f'{m.event}({m.emotional_weight})' for m in observations)}")
+        parts.append(get_prompt("block_npc_memories_recent", memories=_observed(observations)))
     return "\n" + "\n".join(parts) if parts else ""
 
 
@@ -117,33 +130,38 @@ def _npc_block(
     fact_budget = 0 if miss else gm().information_gate.fact_budget_by_gate[gate]
     log(f"[Gate] {target.name}: gate={gate} (stance={stance.stance}) fact_budget={fact_budget}")
 
-    aliases_attr = f' aliases="{_xa(",".join(target.aliases))}"' if target.aliases else ""
+    aliases_attr = (
+        get_prompt("block_target_npc_aliases_attr", aliases=_xa(",".join(target.aliases))) if target.aliases else ""
+    )
 
     if gate == 0:
-        return f'<target_npc name="{_xa(target.name)}" gate="0"{aliases_attr}>{_xe(target.description)}</target_npc>'
-
-    stance_attr = f' stance="{_xa(stance.stance)}" constraint="{_xa(stance.constraint)}"'
-    fact_budget_attr = f' fact_budget="{fact_budget}"'
+        return get_prompt(
+            "block_target_npc_stranger",
+            npc=_xa(target.name),
+            aliases=aliases_attr,
+            description=_xe(target.description),
+        )
 
     agenda_line = ""
     mem_str = ""
     if gate >= 2:
-        agenda_line = f"agenda:{_xe(target.agenda)}"
+        agenda_line = get_prompt("block_target_npc_agenda", agenda=_xe(target.agenda))
         mem_str = _format_memories(target, context_text, gate, game.narrative.scene_count, include_reflections=False)
 
     instinct_line = ""
     arc_attr = ""
     if gate >= 3:
-        instinct_line = f" instinct:{_xe(target.instinct)}"
+        instinct_line = get_prompt("block_target_npc_instinct", instinct=_xe(target.instinct))
         if target.arc.strip():
-            arc_attr = f' arc="{_xa(target.arc)}"'
+            arc_attr = get_prompt("block_npc_arc_attr", arc=_xa(target.arc))
         mem_str = _format_memories(target, context_text, gate, game.narrative.scene_count, include_reflections=True)
 
     secrets_line = ""
     if gate >= 4 and target.secrets:
         secs = json.dumps(target.secrets, ensure_ascii=False)
-        secrets_label = get_prompt("secrets_label")
-        secrets_line = f"\nsecrets({secrets_label}):{_xe(secs)}"
+        secrets_line = "\n" + get_prompt(
+            "block_target_npc_secrets", label=get_prompt("secrets_label"), secrets=_xe(secs)
+        )
 
     if miss:
         body = f"{_xe(target.description)}{instinct_line}"
@@ -152,7 +170,16 @@ def _npc_block(
     else:
         body = _xe(target.description)
 
-    return f'<target_npc name="{_xa(target.name)}"{stance_attr}{aliases_attr}{arc_attr}{fact_budget_attr} gate="{gate}">\n{body}\n</target_npc>'
+    return get_prompt(
+        "block_target_npc",
+        npc=_xa(target.name),
+        stance=get_prompt("block_target_npc_stance_attr", stance=_xa(stance.stance), constraint=_xa(stance.constraint)),
+        aliases=aliases_attr,
+        arc=arc_attr,
+        fact_budget=get_prompt("block_target_npc_fact_budget_attr", budget=str(fact_budget)),
+        gate=str(gate),
+        body=body,
+    )
 
 
 def _activated_npcs_block(
@@ -179,21 +206,29 @@ def _activated_npcs_block(
             pd = eng().prompt_display
             reflections = [m for m in memories if m.type == "reflection"]
             if reflections:
-                mem_hint = f' insight="{_xa(reflections[0].event[: pd.insight_chars])}"'
+                insight = _xa(reflections[0].event[: pd.insight_chars])
+                mem_hint = get_prompt("block_activated_npc_insight_attr", insight=insight)
             else:
-                hint_text = f"{memories[0].event[: pd.recent_event_chars]}({memories[0].emotional_weight})"
-                mem_hint = f' recent="{_xa(hint_text)}"'
+                first = memories[0]
+                recent = get_prompt(
+                    "block_npc_memory", event=first.event[: pd.recent_event_chars], weight=first.emotional_weight
+                )
+                mem_hint = get_prompt("block_activated_npc_recent_attr", recent=_xa(recent))
 
-        loc_hint = ""
         loc = _npc_location_hint(npc, game.world.current_location)
-        if loc:
-            loc_hint = f' last_seen="{_xa(loc)}"'
-
-        arc_hint = f' arc="{_xa(npc.arc)}"' if npc.arc.strip() else ""
+        loc_hint = get_prompt("block_activated_npc_last_seen_attr", location=_xa(loc)) if loc else ""
+        arc_hint = get_prompt("block_npc_arc_attr", arc=_xa(npc.arc)) if npc.arc.strip() else ""
         stance = resolve_npc_stance(game, npc, move_category, miss=miss, hit=False)
         parts.append(
-            f'<activated_npc name="{_xa(npc.name)}" stance="{_xa(stance.stance)}" '
-            f'constraint="{_xa(stance.constraint)}"{arc_hint}{mem_hint}{loc_hint}/>'
+            get_prompt(
+                "block_activated_npc",
+                npc=_xa(npc.name),
+                stance=_xa(stance.stance),
+                constraint=_xa(stance.constraint),
+                arc=arc_hint,
+                memory=mem_hint,
+                location=loc_hint,
+            )
         )
     return "\n".join(parts)
 
@@ -203,12 +238,12 @@ def _known_npcs_string(mentioned: Sequence[NpcData], game: GameState, exclude_id
     parts = []
 
     def _npc_entry(n: NpcData) -> str:
-        entry = f"{_xe(n.name)}({_xe(n.disposition)})"
+        entry = get_prompt("block_known_npc", npc=_xe(n.name), disposition=_xe(n.disposition))
         if n.status == "background":
-            entry += "[bg]"
+            entry += get_prompt("block_known_npc_background")
         loc = _npc_location_hint(n, player_loc)
         if loc:
-            entry += f"[at:{_xe(loc)}]"
+            entry += get_prompt("block_known_npc_at", location=_xe(loc))
         return entry
 
     for n in mentioned:
@@ -231,43 +266,37 @@ def _pacing_block(game: GameState, scene_setup: SceneSetup) -> str:
     parts = []
     pacing = get_pacing_hint(game)
     if pacing != "neutral":
-        parts.append(f'<pacing type="{pacing}"/>')
+        parts.append(get_prompt("block_pacing", pacing=pacing))
 
     if scene_setup.scene_type == "keyed":
         wrapper = gm().keyed_scenes.prompt_wrapper
         parts.append(wrapper.format(hint=_xe(scene_setup.narrative_hint)))
     elif scene_setup.scene_type == "altered":
         descs = adjustment_descriptions(scene_setup.adjustments)
-        adj_text = "; ".join(descs)
-        parts.append(f"<altered_scene>{adj_text}</altered_scene>")
+        parts.append(get_prompt("block_altered_scene", adjustments="; ".join(descs)))
     elif scene_setup.interrupt_event is not None:
-        ev = scene_setup.interrupt_event
-        target_attr = f' target="{_xa(ev.target)}"' if ev.target else ""
-        parts.append(
-            f'<interrupt_scene focus="{_xa(ev.focus)}"{target_attr}>'
-            f"{_xe(ev.meaning_action)} / {_xe(ev.meaning_subject)}"
-            f"</interrupt_scene>"
-        )
+        parts.append(_event_tag("block_interrupt_scene", scene_setup.interrupt_event))
 
     return "\n".join(parts)
+
+
+def _event_tag(template: str, ev: RandomEvent) -> str:
+    target = get_prompt("block_event_target_attr", target=_xa(ev.target)) if ev.target else ""
+    return get_prompt(
+        template,
+        focus=_xa(ev.focus),
+        target=target,
+        action=_xe(ev.meaning_action),
+        subject=_xe(ev.meaning_subject),
+    )
 
 
 def _random_events_block(events: Sequence[RandomEvent]) -> str:
-    if not events:
-        return ""
-    parts = []
-    for ev in events:
-        target_attr = f' target="{_xa(ev.target)}"' if ev.target else ""
-        parts.append(
-            f'<random_event focus="{_xa(ev.focus)}"{target_attr}>'
-            f"{_xe(ev.meaning_action)} / {_xe(ev.meaning_subject)}"
-            f"</random_event>"
-        )
-    return "\n".join(parts)
+    return "\n".join(_event_tag("block_random_event", ev) for ev in events)
 
 
 def _npc_agency_block(npc_agency: Sequence[str]) -> str:
-    return f"\n<npc_agency>{_xe('| '.join(npc_agency))}</npc_agency>" if npc_agency else ""
+    return "\n" + get_prompt("block_npc_agency", agency=_xe("| ".join(npc_agency))) if npc_agency else ""
 
 
 def _flags_block(game: GameState) -> str:
@@ -280,35 +309,35 @@ def _flags_block(game: GameState) -> str:
         flags.append(get_prompt("flag_final_scene"))
     elif game.crisis_mode:
         flags.append(get_prompt("flag_crisis"))
-    return f"\n<flags>{','.join(flags)}</flags>" if flags else ""
+    return "\n" + get_prompt("block_flags", flags=",".join(flags)) if flags else ""
 
 
 def _threat_events_block(threat_events: Sequence[ThreatEvent]) -> str:
     parts: list[str] = []
     for te in threat_events:
         if te.source == "forsake_vow":
-            parts.append(f'<vow_forsaken threat="{_xa(te.threat_name)}"/>')
+            parts.append(get_prompt("block_vow_forsaken", threat=_xa(te.threat_name)))
         elif te.source == "overcome_under_pressure":
-            parts.append(f'<threat_overcome name="{_xa(te.threat_name)}"/>')
+            parts.append(get_prompt("block_threat_overcome", threat=_xa(te.threat_name)))
         else:
-            offscreen = ' offscreen="true"' if te.source == "autonomous" else ""
-            attrs = f'name="{_xa(te.threat_name)}" menace_full="{te.menace_full}"{offscreen}'
             body = _xe(te.development)
-            parts.append(f"<threat_advance {attrs}>{body}</threat_advance>" if body else f"<threat_advance {attrs}/>")
+            parts.append(
+                get_prompt(
+                    "block_threat_advance" if body else "block_threat_advance_bare",
+                    threat=_xa(te.threat_name),
+                    menace_full=str(te.menace_full),
+                    offscreen=get_prompt("block_threat_offscreen_attr") if te.source == "autonomous" else "",
+                    development=body,
+                )
+            )
     return "\n" + "\n".join(parts) if parts else ""
 
 
 def _clock_filled_block(fill_results: Sequence[ClockFillResult]) -> str:
-    if not fill_results:
-        return ""
-    parts = []
-    for fr in fill_results:
-        parts.append(
-            f'<clock_filled name="{_xa(fr.clock_name)}" clock_type="{_xa(fr.clock_type)}">'
-            f"{_xe(fr.tag_text)}"
-            f"</clock_filled>"
-        )
-    return "\n".join(parts)
+    return "\n".join(
+        get_prompt("block_clock_filled", clock=_xa(fr.clock_name), clock_type=_xa(fr.clock_type), text=_xe(fr.tag_text))
+        for fr in fill_results
+    )
 
 
 def _facts_block(facts: Sequence[ResolvedFact]) -> str:
@@ -336,11 +365,12 @@ def _lore_figures_block(game: GameState) -> str:
     for n in lore:
         entry = _xe(n.name)
         if n.description:
-            entry += f": {_xe(n.description[: pd.lore_description_chars])}"
+            description = _xe(n.description[: pd.lore_description_chars])
+            entry += get_prompt("block_lore_figure_description", description=description)
         if n.aliases:
-            entry += f" (aka {_xe(', '.join(n.aliases[: pd.lore_max_aliases]))})"
+            entry += get_prompt("block_lore_figure_aliases", aliases=_xe(", ".join(n.aliases[: pd.lore_max_aliases])))
         parts.append(entry)
-    return f"\n<lore_figures>{'; '.join(parts)}</lore_figures>"
+    return "\n" + get_prompt("block_lore_figures", figures="; ".join(parts))
 
 
 def _npc_location_hint(npc: NpcData, player_loc: str) -> str:
@@ -369,7 +399,7 @@ def _npcs_section(
     section = ""
     if activated_block:
         section += f"\n{activated_block}"
-    section += f"\n<known_npcs>{known_str}</known_npcs>"
+    section += "\n" + get_prompt("block_known_npcs", npcs=known_str)
     section += _lore_figures_block(game)
     return section
 
@@ -378,12 +408,12 @@ def _director_block(game: GameState) -> str:
     dg = game.narrative.director_guidance
     if not dg.narrator_guidance:
         return ""
-    block = f"\n<director_guidance>{_xe(dg.narrator_guidance)}</director_guidance>"
+    block = "\n" + get_prompt("block_director_guidance", guidance=_xe(dg.narrator_guidance))
     for npc_id, guidance in dg.npc_guidance.items():
         npc = find_npc(game, npc_id)
         if npc is None:
             continue
-        block += f'\n<npc_note for="{_xa(npc.name)}">{_xe(guidance)}</npc_note>'
+        block += "\n" + get_prompt("block_npc_note", npc=_xa(npc.name), guidance=_xe(guidance))
     return block
 
 
