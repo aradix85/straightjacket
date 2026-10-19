@@ -8,6 +8,12 @@ This log starts at 2026.09.24.0, the restart after a four-month pause. Earlier r
 
 Calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day.
 
+## [2026.10.20.5] — 2026-10-20
+
+Step 9o, 9o.1 closes: the project-rule scan that held only the config binding to no dataclass defaults now holds every dataclass in `src/` (`tests/test_project_rules.py` → `_check_no_dataclass_defaults`). An empty collection may stay a default, as CONTRIBUTING.md allows, except on a field the config binding fills from yaml, where it would fill a missing key; the binding's private raw store keeps its empty dict. The external structures are its carve-out, by class (`_EXTERNAL_STRUCTURE_DATACLASSES`: `AICallSpec` and `AIResponse` in `ai/provider_base.py`, the two partial classes in `setting/packages.py`), and a stale entry there, or a config binding file that is gone, fails the stale-entry scan. CONTRIBUTING.md and AUDIT.md (pass 2d and Status) say so, and the roadmap moves 9o.1 to DONE; 9o.2, the prompt markup, is left. Play does not change.
+
+Quality gate: 1848 tests, coverage 94.92%. Save format unchanged. No Elvira session (Sessions with the user); none would have been needed, since play does not change.
+
 ## [2026.10.20.4] — 2026-10-20
 
 Step 9o, 9o.1, the last two modules, each with one default: the Adventure Crafter's `ThemeAlternation` in `crafters/adventure_crafter.py` is made with its first choice named, four before five, where a turning point and the tests left it to the default, and `OracleRow.oracle_rolls` in `setting/loader.py`, a Datasworn field some rows lack, keeps its type that allows none but loses the default its one maker in the engine never used, since the parser always passes what the row holds. The 20 defaults left are the external structures of `ai/provider_base.py` and `setting/packages.py`. Play does not change.

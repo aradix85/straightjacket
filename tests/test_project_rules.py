@@ -277,50 +277,63 @@ def _is_dataclass_decorator(decorator: ast.expr) -> bool:
     return False
 
 
-def _has_default(stmt: ast.AnnAssign) -> bool:
-    return stmt.value is not None
-
-
-_CONFIG_BINDING_FILES = (
-    "engine_config.py",
-    "engine_config_dataclasses.py",
-    "gamemaster/config.py",
-    "gamemaster/config_types.py",
-    "crafters/config.py",
-    "ruleset/config.py",
-    "ruleset/config_types.py",
+_CONFIG_BINDING_FILES = frozenset(
+    {
+        "engine/engine_config.py",
+        "engine/engine_config_dataclasses.py",
+        "engine/gamemaster/config.py",
+        "engine/gamemaster/config_types.py",
+        "engine/crafters/config.py",
+        "engine/ruleset/config.py",
+        "engine/ruleset/config_types.py",
+    }
 )
 
+_EXTERNAL_STRUCTURE_DATACLASSES: set[tuple[str, str]] = {
+    ("engine/ai/provider_base.py", "AICallSpec"),
+    ("engine/ai/provider_base.py", "AIResponse"),
+    ("engine/setting/packages.py", "_OraclePathsPartial"),
+    ("engine/setting/packages.py", "_CreationFlowPartial"),
+}
 
-def _check_no_dataclass_defaults_in_config_binding() -> tuple[str, list[Violation]]:
+_EMPTY_COLLECTION_FACTORIES = frozenset({"list", "dict", "set"})
+
+
+def _field_without_default(value: ast.expr, empty_collection_allowed: bool) -> bool:
+    if not (isinstance(value, ast.Call) and isinstance(value.func, ast.Name) and value.func.id == "field"):
+        return False
+    keywords = {k.arg: k.value for k in value.keywords}
+    if "default" in keywords:
+        return False
+    if "default_factory" not in keywords:
+        return True
+    factory = keywords["default_factory"]
+    return empty_collection_allowed and isinstance(factory, ast.Name) and factory.id in _EMPTY_COLLECTION_FACTORIES
+
+
+def _check_no_dataclass_defaults() -> tuple[str, list[Violation]]:
     violations: list[Violation] = []
-    for fname in _CONFIG_BINDING_FILES:
-        path = SRC_ROOT / "engine" / fname
-        if not path.exists():
-            raise AssertionError(f"expected config binding at {path}")
-        violations.extend(_scan_dataclass_defaults(path))
-    return "DATACLASS DEFAULT in config binding", violations
-
-
-def _scan_dataclass_defaults(path: Path) -> list[Violation]:
-    _, lines, tree, _ = _load(path)
-    violations: list[Violation] = []
-    for node in ast.walk(tree):
-        if not isinstance(node, ast.ClassDef):
-            continue
-        if not any(_is_dataclass_decorator(d) for d in node.decorator_list):
-            continue
-        for stmt in node.body:
-            if not isinstance(stmt, ast.AnnAssign):
+    for path in _iter_source_files():
+        rel = _rel(path)
+        _, lines, tree, _ = _load(path)
+        for node in ast.walk(tree):
+            if not isinstance(node, ast.ClassDef) or not any(_is_dataclass_decorator(d) for d in node.decorator_list):
                 continue
-            if not _has_default(stmt):
+            if (rel, node.name) in _EXTERNAL_STRUCTURE_DATACLASSES:
                 continue
-            field_name = stmt.target.id if isinstance(stmt.target, ast.Name) else "?"
-            if field_name.startswith("_"):
-                continue
-            snippet = lines[stmt.lineno - 1].strip() if stmt.lineno <= len(lines) else ""
-            violations.append(Violation(_rel(path), stmt.lineno, f"{node.name}.{field_name}: {snippet}"))
-    return violations
+            for stmt in node.body:
+                if not isinstance(stmt, ast.AnnAssign) or stmt.value is None:
+                    continue
+                field_name = stmt.target.id if isinstance(stmt.target, ast.Name) else "?"
+                from_yaml = rel in _CONFIG_BINDING_FILES and not field_name.startswith("_")
+                if _field_without_default(stmt.value, not from_yaml):
+                    continue
+                snippet = lines[stmt.lineno - 1].strip()
+                violations.append(Violation(rel, stmt.lineno, f"{node.name}.{field_name}: {snippet}"))
+    return (
+        "DATACLASS DEFAULT (none but empty collections, not on fields bound from yaml, and external structures)",
+        violations,
+    )
 
 
 def _check_broad_except_inside_carve_out_only() -> tuple[str, list[Violation]]:
@@ -987,6 +1000,12 @@ def _check_no_stale_carve_out_entries() -> tuple[str, list[Violation]]:
     for rel, name in sorted(_INLINE_IMPORT_WHITELIST):
         if not _defines(SRC_ROOT / rel, name):
             violations.append(Violation(rel, 0, f"inline-import whitelist function {name!r} is not defined there"))
+    for rel, name in sorted(_EXTERNAL_STRUCTURE_DATACLASSES):
+        if not _defines(SRC_ROOT / rel, name):
+            violations.append(Violation(rel, 0, f"external-structure dataclass {name!r} is not defined there"))
+    for rel in sorted(_CONFIG_BINDING_FILES):
+        if not (SRC_ROOT / rel).exists():
+            violations.append(Violation(rel, 0, "config binding file does not exist"))
     for rel, name in sorted(_COMPLEXITY_TEST_WHITELIST):
         if not _defines(TESTS_ROOT / rel, name):
             violations.append(Violation(rel, 0, f"complexity whitelist function {name!r} is not defined there"))
@@ -1308,7 +1327,7 @@ _ALL_CHECKS = (
     _check_no_or_literal_fallback_on_lookups,
     _check_no_name_or_empty_collection_fallback,
     _check_no_optional_collection_param_default_none,
-    _check_no_dataclass_defaults_in_config_binding,
+    _check_no_dataclass_defaults,
     _check_broad_except_inside_carve_out_only,
     _check_no_python_comments_or_docstrings,
     _check_no_yaml_comments,
