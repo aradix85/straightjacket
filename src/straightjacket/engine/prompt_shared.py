@@ -100,15 +100,15 @@ def _format_memories(
 
     if not include_reflections:
         if observations:
-            return "\n" + get_prompt("block_npc_memories_recent", memories=_observed(observations))
+            return "\n" + get_prompt("block_npc_memories_recent", memories=_xe(_observed(observations)))
         return ""
 
     reflections = [m for m in memories if m.type == "reflection"]
     parts: list[str] = []
     if reflections:
-        parts.append(get_prompt("block_npc_memories_insight", memories=" | ".join(m.event for m in reflections)))
+        parts.append(get_prompt("block_npc_memories_insight", memories=_xe(" | ".join(m.event for m in reflections))))
     if observations:
-        parts.append(get_prompt("block_npc_memories_recent", memories=_observed(observations)))
+        parts.append(get_prompt("block_npc_memories_recent", memories=_xe(_observed(observations))))
     return "\n" + "\n".join(parts) if parts else ""
 
 

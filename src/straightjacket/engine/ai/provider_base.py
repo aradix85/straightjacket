@@ -4,6 +4,7 @@ from collections.abc import Callable
 from dataclasses import dataclass, field, replace
 from typing import Any, Protocol
 
+from ..engine_loader import eng
 from ..logging_util import log
 
 
@@ -67,7 +68,6 @@ class NarrationSink(Protocol):
     def fail(self) -> None: ...
 
 
-_THINK_TAG_RE = re.compile(r"<think>.*?</think>\s*", re.DOTALL)
 _UNICODE_ESCAPE_RE = re.compile(r"\\u([0-9a-fA-F]{4})")
 
 
@@ -81,8 +81,9 @@ def post_process_response(response: AIResponse) -> AIResponse:
 
     content = response.content
 
-    if "<think>" in content:
-        content = _THINK_TAG_RE.sub("", content).lstrip()
+    parser = eng().parser
+    if parser.think_open in content:
+        content = re.sub(parser.think_block, "", content, flags=re.DOTALL).lstrip()
         if content != response.content:
             log("[AI] Stripped <think> tags from response")
 

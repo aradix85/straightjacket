@@ -75,22 +75,31 @@ Closing a step: the checks of CONTRIBUTING.md pass, the step moves to DONE cut t
 
 ---
 
-## NEXT STEP — 9o: Dataclass defaults and prompt markup
+## NEXT STEP — 9p: Test audit
 
-Two clean-ups of principle 2, formerly 9h.4 and 9h.12; the dataclass defaults (9o.1) and the prompt markup (9o.2) are done, and what the render checks of 9o.2 found is left.
+The tests run to about 1.3 times the code (21,700 lines in 95 test files against 17,100 in `src/`, October 2026). Their number is no aim either way; their kind is, the user's choice. A test that holds what the game does stays. A test that holds how it is built, calling a private function or rebuilding a yaml block the code reads (the `blocking_impact` parameters that 9n.2h removed from two test files), is rebuilt on what the code does or goes, since it breaks on every rebuild while play stays the same. Tests that check the same thing twice are joined, and a test kept only for the coverage floor earns its place or goes. One session per group, each starting from the hit-list of its files (AUDIT.md, Working method): the private names a test imports or calls (`from straightjacket\S* import .*\b_[a-z]` and `\b[a-z_]+\._[a-z]\w*\(`), and the configuration a test builds by hand (`parse_\w+_yaml\(`, `install_config\(`, dict literals passed where the code reads yaml). `tests/test_project_rules.py` is the project's rules and stays out.
 
-**9o.3** Text that reaches a prompt unescaped, where SECURITY.md says player-supplied text is escaped: the memory events in the target NPC's block (`prompt_shared.py` → `_observed`, and the reflections beside it), whose words the extraction takes from the narration and so from the player's, and the source and condition of a roll bonus in the Brain's `<bonuses>` block (`ruleset/bonuses.py` → `bonus_block`), whose source is a connection's name, the Brain's track name from the player's words. And `ai/provider_base.py` strips a host's `<think>` reasoning with a pattern written in Python, where CONTRIBUTING.md puts the patterns for the AI's words in yaml (`engine/parser.yaml` holds the parser's).
+**9p.1** The ruleset: `test_rules_conformance.py`, `test_moves.py`, `test_move_outcome.py`, `test_legacy.py`, `test_impacts.py`, `test_consequences.py`, `test_consequence_sentences.py`, `test_suffer.py`, `test_track_lifecycle.py`, `test_progress_results.py`, `test_roll_bonuses.py`, `test_roll_sources.py`, `test_boasts.py`, `test_meters.py`, `test_ruleset_answers.py`, `test_ruleset_datasworn.py`, `test_available_moves.py`, `test_brain_move_availability.py`, `test_threats.py`, `test_threat_creation.py`, `test_track_ids.py`, `test_creation.py`.
+
+**9p.2** The game master and the crafters: `test_fact_resolution.py`, `test_npc.py`, `test_npc_location.py`, `test_npc_naming.py`, `test_keyed_scenes.py`, `test_keyed_scene_spawning.py`, `test_random_events.py`, `test_thread_weight.py`, `test_world.py`, `test_resolvers.py`, `test_stance.py`, `test_gate.py`, `test_generation.py`, `test_engine_memories.py`, `test_fate.py`, `test_scene.py`, `test_oracle.py`, `test_clock_creation.py`, `test_complications.py`, `test_adventure_crafter.py`, `test_blueprint.py`, `test_character_crafting.py`.
+
+**9p.3** The game and the correction: `test_integration.py`, `test_rules_and_robustness.py`, `test_game_start.py`, `test_setup_common.py`, `test_chapters.py`, `test_chapter_summary.py`, `test_succession.py`, `test_story_state.py`, `test_soft_miss.py`, `test_momentum_burn.py`, `test_correction_flow.py`, `test_correction_replay.py`, `test_director.py`, `test_director_choices.py`, `test_tools.py`, `test_invariants.py`.
+
+**9p.4** The AI and the prompts: `test_providers.py`, `test_provider_retry.py`, `test_api_client.py`, `test_retry_and_refusal.py`, `test_ai_unavailable.py`, `test_schema_strictness.py`, `test_schema_in_system.py`, `test_sentence_stream.py`, `test_parser.py`, `test_metadata.py`, `test_recap.py`, `test_extract_title.py`, `test_prompt_xml.py`, `test_prompt_boundary.py`, `test_prompt_loader.py`, `test_prompt_npc_and_clock_blocks.py`.
+
+**9p.5** The core, the server, and Elvira: `test_models.py`, `test_persistence.py`, `test_config_loader.py`, `test_engine_loader.py`, `test_yaml_symmetry.py`, `test_user_management.py`, `test_logging_util.py`, `test_i18n.py`, `test_ids.py`, `test_web.py`, `test_web_handlers.py`, `test_web_failures.py`, and the six `test_elvira*.py`.
 
 ### Definition of Done
 
-- The memory events in the target NPC's block and the roll bonuses in the Brain's prompt are escaped, each with a test that fails without it, and SECURITY.md holds.
-- The `<think>` pattern is read from `engine/parser.yaml`.
-- No Elvira run (Sessions with the user); a prompt changes only for text holding `<`, `>`, `&`, or a quote, which the CHANGELOG entry says.
+- Every test holds what the game does, through a public function, the real creation path, or a turn; a test of how the code is built is rebuilt on what it does or goes, and a test that checked the same thing as another is joined with it.
+- The quality gate is green after each group, the coverage floor holds (CONTRIBUTING.md never lowers it), and each group's CHANGELOG entry gives its queries with their hits and what was rebuilt, joined, or removed.
+- Play does not change; no Elvira run (Sessions with the user).
 
 ### Reference patterns
 
-- Escaping: `xml_utils.py` → `xe` for element content, `xa` for attribute values.
-- The render checks of 9o.2 (Sessions with the user) show where the bytes change: after the fix, only the renders whose text holds those characters differ.
+- A test through the real path: `tests/_creation.py` → `create_game`, and a turn as `tests/test_integration.py` plays it.
+- A unit test of one rule on a hand-built state: the makers in `tests/_helpers.py`.
+- The hit-list method: AUDIT.md, Working method.
 
 ---
 
@@ -101,10 +110,6 @@ Sketches, in the order of work.
 Steps 11b, 11c, 11d, and 14c take ideas from EdgeTales: reimplement them, do not port code, and credit EdgeTales in the CHANGELOG entry that lands each.
 
 Steps 11, 14b, 25, and 26 each plan a Director tool. The Director has one tool, `query_game_state`; whether it keeps one at all is decided in 11.0, and whether a planned tool becomes a new one or part of it when its step becomes NEXT STEP. A new tool works through the Director's two calls as they stand: the first offers the tools, the second gets their results as text. A round in which the model reads its results and calls again needs what was removed: the Anthropic adapter's `tool_use` and `tool_result` blocks and a place for the schema instruction when the last message is not the user's (`ai/provider_anthropic.py` and `ai/api_client.py` before commit 0514fd6), and the id of each tool call (`ai/provider_base.py` → `ToolCall`). A tool with parameters needs the schema built from its type hints and the check of the model's arguments (`tools/registry.py` and `tools/handler.py` before release 2026.10.18.8).
-
-### 9p — Test audit
-
-The tests run to about one and a half times the code (some 25,000 lines against 17,000 in October 2026). Their number is no aim either way; their kind is, the user's choice. A test that holds what the game does stays. A test that holds how it is built, calling a private function or rebuilding a yaml block the code reads (the `blocking_impact` parameters that 9n.2h removed from two test files), is rebuilt on what the code does or goes, since it breaks on every rebuild while play stays the same. Tests that check the same thing twice are joined, and a test kept only for the coverage floor earns its place or goes, with the floor read again afterwards. One session per group of test files, after 9o, when the state classes and the prompts stand still.
 
 ### 9i — Revelations settled by the engine
 
@@ -336,5 +341,5 @@ Finished work in its shortest form; the CHANGELOG has the details.
 - **9j, so far.** Suffering goes through `ruleset/suffer.py`; Endure Harm and Endure Stress are follow-up moves that mark impacts and roll their tables; a dying character has two turns to Heal, and the game ends only at Face Death or Face Desolation, whose weak hit binds an extreme vow (9j.5). A progress roll completes on a weak hit, a miss recommits at the user's choice, and Take Decisive Action counts lower in a bad spot (9j.9).
 - **9h — Principle audits:** principles 2 to 5 audited (AUDIT.md, Status), the long clean-ups of principle 2 are 9o; the Brain keeps its hand-written hints, which chose moves better than the book's triggers (30 of 30 against 29 of 30). The substeps are in the CHANGELOG, and 9h.23 became 11.0.
 - **9n — Four layers:** the setting, the game master, the crafters, and the ruleset each have a package, a yaml folder, and an accessor, and a scan holds their imports to the direction (ARCHITECTURE.md, The four layers); the game master asks the ruleset only its questions (`docs/mechanics.md`, Game master and ruleset). The ruleset owns what a system decides, from its Datasworn rules and its own yaml, and code outside it names none of its words; dialog and asking the oracle are the game master's own moves, and every Datasworn file is at 0.1.0, pinned to one commit (the user's choices). A setting plays the ruleset its Datasworn file names (`docs/settings.md`, Rulesets). Principle 1 is done, and the code the split wrote or rewrote had the queries of principles 2 and 3 (AUDIT.md, Status).
-- **9o, so far.** No dataclass field has a default but an empty collection, and none bound from yaml has one at all; the external structures of `ai/provider_base.py` and `setting/packages.py` are the carve-out of the scan that holds it (`tests/test_project_rules.py` → `_check_no_dataclass_defaults`). State made in several places is made in one (9o.1). No prompt markup is assembled in Python: every tag, attribute, label, and marker of a prompt comes from `prompts/*.yaml`, and every prompt rendered byte-identical before and after (9o.2).
+- **9o — Dataclass defaults and prompt markup:** no dataclass field has a default but an empty collection, and none bound from yaml has one at all; the external structures of `ai/provider_base.py` and `setting/packages.py` are the carve-out of the scan that holds it (`tests/test_project_rules.py` → `_check_no_dataclass_defaults`), and state made in several places is made in one (9o.1). No prompt markup is assembled in Python: every tag, attribute, label, and marker of a prompt comes from `prompts/*.yaml`, every prompt rendered byte-identical before and after (9o.2). The text from the player's words that the render checks found unescaped is escaped, and a host's `<think>` pattern is read from `engine/parser.yaml` (9o.3).
 - **9q — Elvira reaches what a scenario prepares:** a missed aim is a problem; a scenario fixes the results of its first turns through a seam in Elvira alone, or starts at its moment, such as a game over waiting for a successor, and plays in direct mode only (`docs/elvira.md`, Scenarios). Tested on the mock provider; the scenarios' runs on the real models wait for the API credit (Sessions with the user).

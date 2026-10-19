@@ -7,6 +7,7 @@ from ..logging_util import log
 from ..models import GameState
 from ..prompt_loader import get_prompt
 from ..setting.oracle_rolls import plain_text
+from ..xml_utils import xe as _xe
 from .assets import asset_data, enabled_abilities
 from .config import rules
 from .meters import adjust_momentum
@@ -83,7 +84,7 @@ def bonus_block(game: GameState) -> str:
     if not options:
         return ""
     lines = "\n".join(
-        get_prompt("brain_bonus_line", id=option.id, source=option.source, condition=option.condition)
+        get_prompt("brain_bonus_line", id=option.id, source=_xe(option.source), condition=_xe(option.condition))
         for option in options
     )
     return get_prompt("brain_bonuses_wrapper", lines=lines)

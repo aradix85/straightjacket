@@ -78,6 +78,8 @@ class ParserConfig:
     sentence_end_marks: list[str]
     sentence_breaks: list[str]
     epilogue_heading: str
+    think_open: str
+    think_block: str
 
 
 @dataclass
