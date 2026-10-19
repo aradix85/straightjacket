@@ -8,7 +8,7 @@ Creation is driven by the setting's Datasworn data, with no AI call: the client 
 
 ## Adding a new setting
 
-1. Place the Datasworn JSON at `data/<datasworn_id>.json`, where `<datasworn_id>` is the value the yaml declares. The format is documented at [github.com/rsek/datasworn](https://github.com/rsek/datasworn).
+1. Place the Datasworn JSON at `data/<datasworn_id>.json`, where `<datasworn_id>` is the value the yaml declares. The engine reads Datasworn 0.1.0, the form `data/data.py` downloads the shipped files in, pinned to one commit; the format is documented at [github.com/rsek/datasworn](https://github.com/rsek/datasworn).
 2. Create `data/settings/<id>.yaml`, with `data/settings/starforged.yaml` as template. The file's stem is the setting id the engine uses; `datasworn_id` inside it points at the JSON.
 3. The setting appears in character creation automatically; no Python changes.
 
@@ -32,16 +32,16 @@ vocabulary:
 
 oracle_paths:
   action_theme: ["core/action", "core/theme"]
-  backstory: "campaign_launch/backstory_prompts"
-  threats: "campaign_launch/sector_trouble"
+  backstory: "launching_your_campaign/character/backstory"
+  threats: "launching_your_campaign/starting_sector/trouble"
 
 generators:
   npc:
-    given_name: "characters/name/given"
-    family_name: "characters/name/family_name"
+    given_name: "character/name/given_name"
+    family_name: "character/name/family_name"
   location:
-    theme: "location_themes/type"
-    feature: "location_themes/{theme}/feature"
+    theme: "location_theme/type"
+    feature: "location_theme/{theme}/feature"
 
 creation_flow:
   has_truths: true

@@ -47,8 +47,8 @@ class TestMarkLegacy:
 
         assert list(new_campaign("classic").legacy) == ["bonds"]
         assert list(new_campaign("delve").legacy) == ["bonds"]
-        assert list(new_campaign("starforged").legacy) == ["quests", "bonds", "discoveries"]
-        assert list(new_campaign("sundered_isles").legacy) == ["quests", "bonds", "discoveries"]
+        assert set(new_campaign("starforged").legacy) == {"quests", "bonds", "discoveries"}
+        assert set(new_campaign("sundered_isles").legacy) == {"quests", "bonds", "discoveries"}
         assert new_campaign("classic").legacy["bonds"].id == "legacy_bonds"
 
     def test_the_legacy_tracks_load_back_as_tracks(self, load_engine: None) -> None:
@@ -59,6 +59,17 @@ class TestMarkLegacy:
         loaded = GameState.from_dict(game.to_dict()).campaign.legacy
         assert isinstance(loaded["bonds"], ProgressTrack)
         assert loaded["bonds"].ticks == 8
+
+    def test_a_legacy_track_earns_experience_only_where_its_rules_say_so(self, load_engine: None) -> None:
+        from straightjacket.engine.ruleset.legacy import mark_legacy
+
+        classic = make_game_state(player_name="Hero", setting_id="classic")
+        mark_legacy(classic, "bonds", "epic")
+        assert filled_boxes(classic.campaign.legacy["bonds"]) == 3
+        assert classic.campaign.xp == 0
+        starforged = _game()
+        mark_legacy(starforged, "bonds", "epic")
+        assert starforged.campaign.xp == 6
 
     def test_no_xp_before_box_fills(self, stub_engine: None) -> None:
         from straightjacket.engine.ruleset.legacy import mark_legacy

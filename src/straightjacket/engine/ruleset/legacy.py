@@ -11,13 +11,18 @@ from .config import rules
 from .progress import filled_boxes, ranks
 
 
-def _legacy_track_names(setting_id: str) -> list[str]:
-    names: list[str] = []
+def _legacy_tracks(setting_id: str) -> dict[str, dict[str, Any]]:
+    tracks: dict[str, dict[str, Any]] = {}
     for pkg in reversed(list(load_package(setting_id).chain())):
         for raw in (pkg.data.raw["rules"].get("special_tracks") or {}).values():
-            if not raw["optional"] and raw["label"] not in names:
-                names.append(raw["label"])
-    return names
+            if not raw["optional"] and raw["label"] not in tracks:
+                tracks[raw["label"]] = raw
+    return tracks
+
+
+def _earns_experience(setting_id: str, track_name: str) -> bool:
+    tags: dict[str, dict[str, Any]] = _legacy_tracks(setting_id)[track_name].get("tags", {})
+    return any(package_tags.get(rules().legacy.experience_tag) is True for package_tags in tags.values())
 
 
 def _legacy_track(name: str) -> ProgressTrack:
@@ -32,7 +37,7 @@ def _legacy_track(name: str) -> ProgressTrack:
 
 
 def new_campaign(setting_id: str) -> CampaignState:
-    return CampaignState(legacy={name: _legacy_track(name) for name in _legacy_track_names(setting_id)})
+    return CampaignState(legacy={name: _legacy_track(name) for name in _legacy_tracks(setting_id)})
 
 
 def shifted_rank(rank: str, shift: int) -> str | None:
@@ -48,11 +53,12 @@ def mark_legacy(game: GameState, track_name: str, source_rank: str) -> None:
 def mark_legacy_ticks(game: GameState, track_name: str, ticks: int) -> None:
     track = game.campaign.legacy[track_name]
     cfg = rules().legacy
+    earns = _earns_experience(game.setting_id, track_name)
     xp_gained = 0
     for _ in range(ticks):
         boxes_before = filled_boxes(track)
         track.ticks += 1
-        if filled_boxes(track) > boxes_before:
+        if earns and filled_boxes(track) > boxes_before:
             xp_gained += cfg.xp_per_box if track.completions == 0 else cfg.xp_per_box_after_clear
         if track.ticks >= track.max_ticks:
             track.ticks = 0

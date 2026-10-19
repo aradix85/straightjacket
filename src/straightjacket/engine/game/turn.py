@@ -347,7 +347,7 @@ def _process_dialog_turn(ctx: SceneContext) -> tuple[str, DirectorCall | None]:
 def _offer_momentum_burn(ctx: SceneContext, roll_outcome: RollOutcome) -> BurnOffer | None:
     game = ctx.game
     roll = roll_outcome.roll
-    if roll_outcome.track is not None:
+    if roll_outcome.ds_move is not None and not roll_outcome.ds_move.allow_momentum_burn:
         return None
     new_result = can_burn_momentum(game, roll)
     if new_result is None:

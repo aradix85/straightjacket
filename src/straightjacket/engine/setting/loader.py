@@ -31,8 +31,7 @@ class OracleTable:
     def roll(self) -> OracleRow:
         if not self.rows:
             raise ValueError(f"Oracle table '{self.id}' has no rows")
-        die_max = self.rows[-1].max
-        die_roll = random.randint(1, die_max)
+        die_roll = random.randint(1, max(row.max for row in self.rows))
         for row in self.rows:
             if row.min <= die_roll <= row.max:
                 return row
@@ -44,23 +43,11 @@ class OracleTable:
 
 
 def parse_oracle_table(full_id: str, data: dict[str, Any]) -> OracleTable:
-    rows = []
-    for r in data["rows"]:
-        roll_obj = r.get("roll")
-        if isinstance(roll_obj, dict):
-            row_min = roll_obj.get("min", 0)
-            row_max = roll_obj.get("max", 0)
-        else:
-            row_min = r.get("min", 0)
-            row_max = r.get("max", 0)
-        rows.append(
-            OracleRow(
-                min=row_min,
-                max=row_max,
-                text=r["text"],
-                oracle_rolls=r.get("oracle_rolls"),
-            )
-        )
+    rows = [
+        OracleRow(min=r["roll"]["min"], max=r["roll"]["max"], text=r["text"], oracle_rolls=r.get("oracle_rolls"))
+        for r in data["rows"]
+        if r["roll"] is not None
+    ]
     return OracleTable(id=full_id, title=data["name"], rows=rows)
 
 

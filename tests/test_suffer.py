@@ -6,11 +6,11 @@ from straightjacket.engine.ruleset.config import rules
 from straightjacket.engine.ruleset.move_effects import apply_effects, parse_effects
 from straightjacket.engine.ruleset.move_handlers import _TABLE_TRIGGERS
 from straightjacket.engine.ruleset.move_outcome import make_follow_up_moves, resolve_move_outcome
+from straightjacket.engine.ruleset.moves import get_moves
 from straightjacket.engine.ruleset.outcome_result import OutcomeResult
 from straightjacket.engine.ruleset.suffer import start_dying_clock, suffer, tick_dying_clock
 from straightjacket.engine.ruleset.tracks import complete_track
 from straightjacket.engine.setting.oracle_rolls import plain_text
-from straightjacket.engine.setting.packages import load_package
 from tests._helpers import fix_dice, make_game_state, make_progress_track
 
 MISS = (1, 10, 10)
@@ -195,8 +195,8 @@ def test_every_table_row_that_names_a_threshold_or_forsake_has_a_trigger(load_en
     assert all(rule.trigger in _TABLE_TRIGGERS for rule in table_rows)
     named = ("Face Death", "Face Desolation", "Forsake Your Vow")
     for setting_id in ("classic", "starforged", "sundered_isles"):
-        for path in ("moves/endure_harm", "moves/endure_stress"):
-            for row in load_package(setting_id).oracle_table(path).rows:
+        for key in ("endure_harm", "endure_stress"):
+            for row in get_moves(setting_id)[f"suffer/{key}"].tables[key].rows:
                 text = plain_text(row.text)
                 if any(name in text for name in named):
                     assert any(text.startswith(rule.prefix) for rule in table_rows), text

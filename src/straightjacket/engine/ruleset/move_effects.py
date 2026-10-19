@@ -19,7 +19,7 @@ from .config import rules
 from .impacts import clear_impact, get_impacts
 from .legacy import shifted_rank
 from .meters import adjust_momentum, condition_meters, gain, is_condition_meter
-from .moves import Move, get_moves
+from .moves import Move, get_moves, move_table, offers_table
 from .outcome_result import OutcomeResult
 from .progress import mark_progress
 from .suffer import suffer
@@ -111,11 +111,11 @@ def _pay_the_price_move(game: GameState) -> Move:
 
 
 def has_story_complication(game: GameState) -> bool:
-    return rules().pay_the_price.match_miss_table in _pay_the_price_move(game).tables
+    return offers_table(game.setting_id, _pay_the_price_move(game), rules().pay_the_price.match_miss_table)
 
 
 def roll_move_table(game: GameState, move_key: str, key: str, result: OutcomeResult) -> None:
-    table = get_moves(game.setting_id)[move_key].tables[key]
+    table = move_table(game.setting_id, get_moves(game.setting_id)[move_key], key)
     text = plain_text(roll_table(load_package(game.setting_id), table).text)
     told = consequence("oracle_result", table=table.title, result=text)
     log(f"[MoveTable] {told.label}")
@@ -186,7 +186,9 @@ def _apply_pay_the_price_effect(
 def _apply_story_complication_effect(
     game: GameState, effect: MoveEffect, result: OutcomeResult, target: NpcData | None
 ) -> None:
-    _rows, told = roll_oracle_result(_pay_the_price_move(game).tables[rules().pay_the_price.match_miss_table])
+    _rows, told = roll_oracle_result(
+        move_table(game.setting_id, _pay_the_price_move(game), rules().pay_the_price.match_miss_table)
+    )
     log(f"[StoryComplication] {told.label}")
     result.consequences.append(told)
 

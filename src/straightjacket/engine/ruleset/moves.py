@@ -6,7 +6,7 @@ from typing import Any
 
 from ..logging_util import log
 from ..setting.loader import OracleTable, parse_oracle_table
-from ..setting.oracle_rolls import plain_text
+from ..setting.oracle_rolls import is_table_link, link_path, plain_text
 from ..setting.packages import SettingPackage, load_package
 
 
@@ -50,6 +50,8 @@ class Move:
     outcomes: dict[str, MoveOutcome]
     track_category: str
     tables: dict[str, OracleTable]
+    suggestions: list[str]
+    allow_momentum_burn: bool
 
     @property
     def is_action_roll(self) -> bool:
@@ -97,12 +99,30 @@ def _parse_outcomes(raw: dict[str, Any] | None) -> dict[str, MoveOutcome]:
     return {key: MoveOutcome(text=outcome["text"]) for key, outcome in raw.items()}
 
 
-def _parse_tables(raw: list[str] | dict[str, Any] | None, pkg: SettingPackage) -> dict[str, OracleTable]:
+def _parse_tables(raw: dict[str, Any] | None) -> dict[str, OracleTable]:
     if raw is None:
         return {}
-    if isinstance(raw, list):
-        return {ref.rsplit("/", 1)[-1]: pkg.table_by_id(ref) for ref in raw}
     return {key: parse_oracle_table(table["_id"], table) for key, table in raw.items()}
+
+
+def _offered_table(setting_id: str, move: Move, key: str) -> OracleTable | None:
+    if key in move.tables:
+        return move.tables[key]
+    for ref in move.suggestions:
+        if is_table_link(ref) and link_path(ref).rsplit("/", 1)[-1] == key:
+            return load_package(setting_id).table_by_id(ref)
+    return None
+
+
+def offers_table(setting_id: str, move: Move, key: str) -> bool:
+    return _offered_table(setting_id, move, key) is not None
+
+
+def move_table(setting_id: str, move: Move, key: str) -> OracleTable:
+    table = _offered_table(setting_id, move, key)
+    if table is None:
+        raise KeyError(f"{move.name} neither carries nor suggests a table {key!r} in setting {setting_id!r}")
+    return table
 
 
 def outcome_text(setting_id: str, move_key: str, result: str) -> str:
@@ -112,7 +132,7 @@ def outcome_text(setting_id: str, move_key: str, result: str) -> str:
     return plain_text(move.outcomes[result.lower()].text)
 
 
-def _parse_move(raw: dict[str, Any], pkg: SettingPackage) -> Move:
+def _parse_move(raw: dict[str, Any]) -> Move:
     return Move(
         name=raw["name"],
         roll_type=raw["roll_type"],
@@ -126,13 +146,15 @@ def _parse_move(raw: dict[str, Any], pkg: SettingPackage) -> Move:
         ],
         outcomes=_parse_outcomes(raw.get("outcomes")),
         track_category=raw.get("tracks", {}).get("category", ""),
-        tables=_parse_tables(raw.get("oracles"), pkg),
+        tables=_parse_tables(raw.get("oracles")),
+        suggestions=list(raw.get("suggestions", [])),
+        allow_momentum_burn=raw["allow_momentum_burn"],
     )
 
 
-def _load_moves_from_setting(source: SettingPackage, pkg: SettingPackage) -> dict[str, Move]:
+def _load_moves_from_setting(source: SettingPackage) -> dict[str, Move]:
     return {
-        f"{cat_key}/{move_key}": _parse_move(move_data, pkg)
+        f"{cat_key}/{move_key}": _parse_move(move_data)
         for cat_key, cat_data in source.data.raw["moves"].items()
         for move_key, move_data in cat_data["contents"].items()
     }
@@ -148,7 +170,7 @@ def get_moves(setting_id: str) -> dict[str, Move]:
     pkg = load_package(setting_id)
     moves: dict[str, Move] = {}
     for source in reversed(list(pkg.chain())):
-        moves.update(_load_moves_from_setting(source, pkg))
+        moves.update(_load_moves_from_setting(source))
     log(f"[Moves] Loaded {setting_id}: {len(moves)} moves")
     _cache[setting_id] = moves
     return moves

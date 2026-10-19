@@ -417,7 +417,7 @@ def test_pay_the_price_rolls_the_official_table(load_engine: None, setting: str)
     data = json.loads((REPO / "data" / f"{setting}.json").read_text(encoding="utf-8"))
     rows = [
         re.sub(r"\[([^\]]+)\]\([^)]*\)", r"\1", r["text"]).strip()
-        for r in data["oracles"]["moves"]["contents"]["pay_the_price"]["rows"]
+        for r in data["moves"]["fate"]["contents"]["pay_the_price"]["oracles"]["pay_the_price"]["rows"]
     ]
     game = make_game_state(setting_id=setting)
     for _ in range(30):

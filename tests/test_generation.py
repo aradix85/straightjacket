@@ -26,7 +26,7 @@ class _Pkg:
     id = "probe"
 
     def __init__(self) -> None:
-        pair = "[A](id:probe/oracles/t/a) + [B](id:probe/oracles/t/b)"
+        pair = "[A](datasworn:oracle_rollable:probe/t/a) + [B](datasworn:oracle_rollable:probe/t/b)"
         self.data = Setting(
             {
                 "_id": "probe",
@@ -35,7 +35,13 @@ class _Pkg:
                         "contents": {
                             "pair": {
                                 "name": "Probe",
-                                "rows": [_row(1, pair, [_auto("probe/oracles/t/a"), _auto("probe/oracles/t/b")])],
+                                "rows": [
+                                    _row(
+                                        1,
+                                        pair,
+                                        [_auto("oracle_rollable:probe/t/a"), _auto("oracle_rollable:probe/t/b")],
+                                    )
+                                ],
                             },
                             "a": {"name": "Probe", "rows": [_row(1, "Alpha", [])]},
                             "b": {"name": "Probe", "rows": [_row(1, "Beta", [])]},
@@ -49,7 +55,7 @@ class _Pkg:
                             },
                             "type": {
                                 "name": "Probe",
-                                "rows": [_row(1, "[Ruined](id:probe/collections/oracles/t/ruined)", [])],
+                                "rows": [_row(1, "[Ruined](datasworn:oracle_collection:probe/t/ruined)", [])],
                             },
                             "kind": {"name": "Probe", "rows": [_row(1, "Shore", [])]},
                         },
@@ -134,9 +140,11 @@ def test_an_unregistered_category_raises(load_engine: None) -> None:
 
 def test_an_npc_name_comes_from_the_setting_tables(load_engine: None) -> None:
     from straightjacket.engine.gamemaster.npc.naming import roll_oracle_name
+    from straightjacket.engine.setting.packages import load_package
 
-    name = roll_oracle_name(_game())
-    assert len(name.split()) == 2
+    game = _game()
+    [table] = load_package(game.setting_id).name_tables("npc").values()
+    assert roll_oracle_name(game) in {row.text for row in table.rows}
 
 
 def test_a_move_to_an_unknown_place_generates_it(load_engine: None, stub_emotions: None, miss: None) -> None:

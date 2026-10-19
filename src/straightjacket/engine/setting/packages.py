@@ -10,7 +10,7 @@ import yaml
 from ..config_loader import PROJECT_ROOT
 from ..logging_util import log
 from .loader import OracleTable, Setting, load_setting
-from .oracle_rolls import PLACEHOLDER_PATTERN, link_path
+from .oracle_rolls import PLACEHOLDER_PATTERN, link_owner_and_path
 
 _SETTINGS_DIR = PROJECT_ROOT / "data" / "settings"
 
@@ -312,12 +312,12 @@ class SettingPackage:
                 return table
         raise KeyError(f"Oracle table '{path}' not found in the setting chain of {self.id}")
 
-    def table_by_id(self, datasworn_id: str) -> OracleTable:
-        owner = datasworn_id.split("/", 1)[0]
+    def table_by_id(self, datasworn_id: str) -> OracleTable | None:
+        owner, path = link_owner_and_path(datasworn_id)
         pkg = next((p for p in self.chain() if p._config.datasworn_id == owner), None)
         if pkg is None:
-            raise KeyError(f"Oracle '{datasworn_id}' belongs to no package in the setting chain of {self.id}")
-        table = pkg._data.oracle(link_path(datasworn_id))
+            return None
+        table = pkg._data.oracle(path)
         if table is None:
             raise KeyError(f"Oracle '{datasworn_id}' not found in {owner}")
         return table

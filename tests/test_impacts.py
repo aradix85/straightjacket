@@ -353,4 +353,4 @@ class TestCharacterStatePromptTag:
             '<impact name="wounded">Wounded may be marked when you are at 0 health and fail to Endure Harm.' in header
         )
         assert "Doomed is marked when you Face Death" in header
-        assert "](id:" not in header
+        assert "](" not in header

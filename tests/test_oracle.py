@@ -1,3 +1,6 @@
+import pytest
+
+from straightjacket.engine.setting import loader
 from straightjacket.engine.setting.loader import load_setting
 from straightjacket.engine.setting.packages import list_packages
 
@@ -50,14 +53,28 @@ def test_roll_distribution_covers_range() -> None:
     assert len(results) > 20, f"Only {len(results)} distinct values in 100 rolls"
 
 
+def test_a_row_of_a_shared_table_without_a_roll_is_left_out() -> None:
+    table = load_setting("starforged").oracle("planet/furnace/atmosphere")
+    assert table is not None
+    assert "Ideal" not in {row.text for row in table.rows}
+    assert {table.roll().text for _ in range(200)} <= {row.text for row in table.rows}
+
+
+def test_a_table_rolls_over_the_rows_it_holds(monkeypatch: pytest.MonkeyPatch) -> None:
+    table = load_setting("sundered_isles").oracle("overland/region_landmarks/highlands")
+    assert table is not None
+    ranges: list[tuple[int, int]] = []
+    monkeypatch.setattr(loader.random, "randint", lambda low, high: ranges.append((low, high)) or high)
+    assert table.roll() is table.rows[-1]
+    assert ranges == [(1, 50)]
+
+
 def test_oracle_unknown_path_returns_none() -> None:
     sf = load_setting("starforged")
     assert sf.oracle("nonexistent/path") is None
 
 
 def test_an_oracle_path_missing_from_the_setting_chain_raises() -> None:
-    import pytest
-
     from straightjacket.engine.setting.packages import load_package
 
     with pytest.raises(KeyError, match="nonexistent/path"):
@@ -67,7 +84,7 @@ def test_an_oracle_path_missing_from_the_setting_chain_raises() -> None:
 def test_an_oracle_table_comes_from_the_parent_setting() -> None:
     from straightjacket.engine.setting.packages import load_package
 
-    path = "campaign_launch/backstory_prompts"
+    path = "launching_your_campaign/character/backstory"
     sundered = load_package("sundered_isles")
     assert sundered.data.oracle(path) is None
     assert sundered.has_oracle(path)

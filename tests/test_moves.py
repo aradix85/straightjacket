@@ -2,13 +2,20 @@ from collections.abc import Generator
 
 import pytest
 
-from straightjacket.engine.ruleset.moves import Move, _load_moves_from_setting, _parse_move, clear_cache, get_moves
+from straightjacket.engine.ruleset.moves import (
+    Move,
+    _load_moves_from_setting,
+    _parse_move,
+    clear_cache,
+    get_moves,
+    move_table,
+    offers_table,
+)
 from straightjacket.engine.setting.packages import load_package
 
 
 def _own_moves(setting_id: str) -> dict[str, Move]:
-    pkg = load_package(setting_id)
-    return _load_moves_from_setting(pkg, pkg)
+    return _load_moves_from_setting(load_package(setting_id))
 
 
 @pytest.fixture(autouse=True)
@@ -266,8 +273,8 @@ class TestSunderedIslesMoves:
 
     def test_si_overrides_starforged(self) -> None:
         moves = get_moves("sundered_isles")
-        ute = moves["exploration/undertake_an_expedition"]
-        assert ute != get_moves("starforged")["exploration/undertake_an_expedition"]
+        assert moves["recover/repair"] == _own_moves("sundered_isles")["recover/repair"]
+        assert moves["recover/repair"] != get_moves("starforged")["recover/repair"]
 
     def test_non_overridden_moves_preserved(self) -> None:
         moves = get_moves("sundered_isles")
@@ -293,18 +300,44 @@ class TestSunderedIslesMoves:
 
 class TestMoveTables:
     def test_a_move_carries_the_tables_datasworn_names_for_it(self) -> None:
-        assert set(get_moves("starforged")["fate/pay_the_price"].tables) == {"pay_the_price", "story_complication"}
+        assert set(get_moves("starforged")["fate/pay_the_price"].tables) == {"pay_the_price"}
         assert set(get_moves("classic")["fate/pay_the_price"].tables) == {"pay_the_price"}
-        assert set(get_moves("starforged")["adventure/gather_information"].tables) == {"story_clue"}
+        assert get_moves("starforged")["adventure/gather_information"].tables == {}
         assert get_moves("classic")["adventure/gather_information"].tables == {}
 
     def test_an_inherited_move_reads_its_tables_from_its_own_package(self) -> None:
         delve = get_moves("delve")
         assert (
             delve["suffer/endure_harm"].tables["endure_harm"]
-            is get_moves("classic")["suffer/endure_harm"].tables["endure_harm"]
+            == get_moves("classic")["suffer/endure_harm"].tables["endure_harm"]
         )
         assert set(delve["delve/delve_the_depths"].tables) == {"edge", "shadow", "wits"}
+
+    @pytest.mark.parametrize("setting_id", ["starforged", "sundered_isles"])
+    def test_a_move_offers_the_tables_it_suggests_from_the_setting_chain(self, setting_id: str) -> None:
+        moves = get_moves(setting_id)
+        clue = move_table(setting_id, moves["adventure/gather_information"], "story_clue")
+        assert clue == load_package("starforged").oracle_table("misc/story_clue")
+        assert offers_table(setting_id, moves["fate/pay_the_price"], "story_complication")
+        assert offers_table(setting_id, moves["fate/pay_the_price"], "pay_the_price")
+
+    def test_a_move_offers_no_table_it_neither_carries_nor_suggests(self) -> None:
+        moves = get_moves("classic")
+        assert not offers_table("classic", moves["fate/pay_the_price"], "story_complication")
+        with pytest.raises(KeyError, match="story_clue"):
+            move_table("classic", moves["adventure/gather_information"], "story_clue")
+
+    def test_a_suggestion_by_pattern_names_no_table(self) -> None:
+        moves = get_moves("starforged")
+        assert "oracle_rollable:*/**/peril" in moves["fate/pay_the_price"].suggestions
+        assert not offers_table("starforged", moves["fate/pay_the_price"], "peril")
+
+
+class TestMomentumBurn:
+    def test_only_action_rolls_allow_a_momentum_burn(self) -> None:
+        for setting_id in ("classic", "starforged", "delve", "sundered_isles"):
+            for key, move in get_moves(setting_id).items():
+                assert move.allow_momentum_burn is move.is_action_roll, f"{setting_id} {key}"
 
 
 class TestRollMethods:
@@ -346,10 +379,7 @@ class TestGetMoves:
     def test_sundered_isles_auto_parent(self) -> None:
         moves = get_moves("sundered_isles")
         assert "adventure/face_danger" in moves
-        assert (
-            moves["exploration/undertake_an_expedition"]
-            != get_moves("starforged")["exploration/undertake_an_expedition"]
-        )
+        assert moves["recover/repair"] != get_moves("starforged")["recover/repair"]
 
     def test_clear_cache(self) -> None:
         m1 = get_moves("starforged")
@@ -368,8 +398,9 @@ class TestParsing:
             "text": "Do the thing.",
             "trigger": {"conditions": None, "text": "When you do the thing..."},
             "outcomes": None,
+            "allow_momentum_burn": False,
         }
-        move = _parse_move(raw, load_package("starforged"))
+        move = _parse_move(raw)
         assert move.name == "Test Move"
         assert move.roll_type == "no_roll"
         assert move.conditions == []
@@ -397,8 +428,9 @@ class TestParsing:
                 "weak_hit": {"text": "Partial."},
                 "miss": {"text": "Fail."},
             },
+            "allow_momentum_burn": True,
         }
-        move = _parse_move(raw, load_package("starforged"))
+        move = _parse_move(raw)
         assert move.valid_stats == ["iron"]
         assert move.outcomes["strong_hit"].text == "You win."
 
@@ -423,6 +455,7 @@ class TestParsing:
                 "text": "...",
             },
             "outcomes": {"strong_hit": {"text": "ok"}, "weak_hit": {"text": "ok"}, "miss": {"text": "ok"}},
+            "allow_momentum_burn": True,
         }
-        move = _parse_move(raw, load_package("starforged"))
+        move = _parse_move(raw)
         assert move.valid_stats == ["iron"]

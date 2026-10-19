@@ -1,4 +1,5 @@
 legacy:
+  experience_tag: legacy_track_xp
   xp_per_box: 2
   xp_per_box_after_clear: 1
   starting_rank: epic

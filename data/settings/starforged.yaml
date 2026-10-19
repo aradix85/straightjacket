@@ -12,24 +12,24 @@ description: >
 
 oracle_paths:
   action_theme: ["core/action", "core/theme"]
-  backstory: "campaign_launch/backstory_prompts"
-  threats: "campaign_launch/sector_trouble"
+  backstory: "launching_your_campaign/character/backstory"
+  threats: "launching_your_campaign/starting_sector/trouble"
 
 generators:
   npc:
-    given_name: characters/name/given
-    family_name: characters/name/family_name
-    callsign: characters/name/callsign
+    given_name: character/name/given_name
+    family_name: character/name/family_name
+    callsign: character/name/callsign
   location:
-    theme: location_themes/type
-    feature: location_themes/{theme}/feature
+    theme: location_theme/type
+    feature: location_theme/{theme}/feature
   settlement:
-    location: settlements/location
-    first_look: settlements/first_look
-    initial_contact: settlements/initial_contact
-    authority: settlements/authority
-    projects: settlements/projects
-    trouble: settlements/trouble
+    location: settlement/location
+    first_look: settlement/first_look
+    initial_contact: settlement/initial_contact
+    authority: settlement/authority
+    projects: settlement/projects
+    trouble: settlement/trouble
 
 vocabulary:
   substitutions:

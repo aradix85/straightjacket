@@ -11,12 +11,9 @@ if TYPE_CHECKING:
 
 LINK_PATTERN = re.compile(r"\[([^\]]+)\]\(([^)]+)\)")
 PLACEHOLDER_PATTERN = re.compile(r"\{(\w+)\}")
-_LINK_PREFIXES = ("id:", "datasworn:")
+_LINK_PREFIX = "datasworn:"
 _LINK_KINDS = ("oracle_rollable:", "oracle_collection:")
-_ORACLE_INFIXES = ("collections/oracles/", "oracles/")
 _TABLE_KIND = "oracle_rollable:"
-_ORACLE_SEGMENT = "/oracles/"
-_COLLECTION_SEGMENT = "/collections/"
 _DUPLICATE_RULES = ("reroll", "keep", "make_it_worse")
 _EMPHASIS = "__"
 
@@ -37,23 +34,20 @@ def plain_text(text: str) -> str:
     return LINK_PATTERN.sub(r"\1", text).replace(_EMPHASIS, "").strip()
 
 
-def link_path(target: str) -> str:
-    rest = target
-    for prefix in _LINK_PREFIXES:
-        rest = rest.removeprefix(prefix)
+def link_owner_and_path(target: str) -> tuple[str, str]:
+    rest = target.removeprefix(_LINK_PREFIX)
     for kind in _LINK_KINDS:
         rest = rest.removeprefix(kind)
-    rest = rest.split("/", 1)[1]
-    for infix in _ORACLE_INFIXES:
-        if rest.startswith(infix):
-            return rest[len(infix) :]
-    return rest
+    owner, path = rest.split("/", 1)
+    return owner, path
+
+
+def link_path(target: str) -> str:
+    return link_owner_and_path(target)[1]
 
 
 def is_table_link(target: str) -> bool:
-    if _TABLE_KIND in target:
-        return True
-    return _ORACLE_SEGMENT in f"/{target}" and _COLLECTION_SEGMENT not in f"/{target}"
+    return target.removeprefix(_LINK_PREFIX).startswith(_TABLE_KIND)
 
 
 def roll_rows(table: OracleTable) -> TableRoll:

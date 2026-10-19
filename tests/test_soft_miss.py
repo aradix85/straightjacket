@@ -7,7 +7,8 @@ from straightjacket.engine.prompt_action import build_action_prompt
 from straightjacket.engine.ruleset.config import rules
 from straightjacket.engine.ruleset.move_effects import has_story_complication
 from straightjacket.engine.ruleset.move_outcome import resolve_move_outcome
-from straightjacket.engine.ruleset.moves import get_moves
+from straightjacket.engine.ruleset.moves import get_moves, move_table
+from straightjacket.engine.setting.oracle_rolls import plain_text
 from tests._helpers import action_prompt_kwargs, make_brain_result, make_game_state, make_npc, record_price_tables
 
 
@@ -106,7 +107,8 @@ def test_story_complication_only_where_the_setting_has_it(load_engine: None) -> 
 
 
 def _complication_rows(game: GameState) -> set[str]:
-    table = get_moves(game.setting_id)[rules().pay_the_price.move].tables[rules().pay_the_price.match_miss_table]
+    move = get_moves(game.setting_id)[rules().pay_the_price.move]
+    table = move_table(game.setting_id, move, rules().pay_the_price.match_miss_table)
     return {row.text for row in table.rows if not row.oracle_rolls}
 
 
@@ -229,9 +231,6 @@ def test_only_place_facts_can_be_settled_by_a_miss() -> None:
 
 @pytest.mark.parametrize("result", ["MISS", "WEAK_HIT", "STRONG_HIT"])
 def test_the_narrator_reads_the_rulebook_text_of_the_result(load_engine: None, result: str) -> None:
-    from straightjacket.engine.ruleset.moves import get_moves
-    from straightjacket.engine.setting.oracle_rolls import plain_text
-
     book = plain_text(get_moves("starforged")["adventure/gather_information"].outcomes[result.lower()].text)
     prompt = _prompt(_game(), result)
     assert f'<move_outcome move="Gather Information">{book}</move_outcome>' in prompt

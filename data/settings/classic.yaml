@@ -17,8 +17,7 @@ oracle_paths:
 
 generators:
   npc:
-    given_name: name/ironlander/a
-    family_name: name/ironlander/b
+    name: name/ironlander
   location:
     descriptor: place/descriptor
     location: place/location

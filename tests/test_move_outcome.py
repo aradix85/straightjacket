@@ -139,7 +139,7 @@ class TestApplyEffects:
         )
         rows = {
             re.sub(r"\[([^\]]+)\]\([^)]*\)", r"\1", r["text"]).strip()
-            for r in data["oracles"]["moves"]["contents"]["pay_the_price"]["rows"]
+            for r in data["moves"]["fate"]["contents"]["pay_the_price"]["oracles"]["pay_the_price"]["rows"]
         }
         result = apply_effects(game, parse_effects(["pay_the_price"]))
         table, told = labels_of(result.consequences)[0].split(": ", 1)

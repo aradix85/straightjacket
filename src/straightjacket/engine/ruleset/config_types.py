@@ -61,6 +61,7 @@ class ThreatConfig:
 
 @dataclass
 class LegacyConfig:
+    experience_tag: str
     xp_per_box: int
     xp_per_box_after_clear: int
     starting_rank: str
