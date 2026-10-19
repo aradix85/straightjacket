@@ -22,7 +22,6 @@ from ..models import (
     GameState,
     NarrationEntry,
     SceneLogEntry,
-    ThreadEntry,
 )
 from ..parser import parse_narrator_response
 from ..prompt_boundary import build_new_game_prompt
@@ -30,14 +29,11 @@ from ..prompt_loader import get_prompt
 from ..ruleset.config import rules
 from ..ruleset.legacy import new_campaign
 from ..ruleset.meters import starting_resources
-from ..ruleset.progress import new_track
+from ..ruleset.progress import ranks
 from ..ruleset.stats import stat_descriptions, validate_stats
+from ..ruleset.tracks import swear_background_vow
 from ..setting.packages import SettingPackage, load_package
 from .setup_common import apply_opening_setup
-
-
-def _valid_ranks() -> set[str]:
-    return set(rules().progress.ticks_per_mark)
 
 
 def validate_creation(creation_data: dict[str, Any], pkg: SettingPackage) -> None:
@@ -72,9 +68,8 @@ def validate_creation(creation_data: dict[str, Any], pkg: SettingPackage) -> Non
         raise ValueError(f"Setting '{pkg.id}' does not support truths")
 
     vow_rank = creation_data["background_vow_rank"]
-    valid = _valid_ranks()
-    if vow_rank and vow_rank not in valid:
-        raise ValueError(f"Invalid vow rank: '{vow_rank}' (valid: {sorted(valid)})")
+    if vow_rank and vow_rank not in ranks():
+        raise ValueError(f"Invalid vow rank: '{vow_rank}' (valid: {ranks()})")
 
     tone = creation_data["tone"]
     tones = gm().story.kishotenketsu_probability
@@ -94,28 +89,6 @@ def _compute_chaos_start(vow_text: str) -> int:
             log(f"[NewGame] Chaos start {base}→{result} (vow keyword match: {level})")
             return result
     return base
-
-
-def _seed_background_vow(game: GameState, vow_text: str, rank: str) -> None:
-    if rank:
-        if rank not in _valid_ranks():
-            raise ValueError(f"Invalid vow rank: '{rank}' (valid: {sorted(_valid_ranks())})")
-        vow_rank = rank
-    else:
-        vow_rank = rules().creation.background_vow_default_rank
-    track = new_track(id="vow_background", name=vow_text, track_type="vow", rank=vow_rank)
-    game.progress_tracks.append(track)
-    game.narrative.threads.append(
-        ThreadEntry(
-            id="thread_background_vow",
-            name=vow_text,
-            thread_type="vow",
-            weight=gm().random_events.seeded_list_weight,
-            source="creation",
-            linked_track_id="vow_background",
-        )
-    )
-    log(f"[NewGame] Background vow track: rank={vow_rank}, thread seeded")
 
 
 def _seed_vow_subject(game: GameState, vow_subject: str) -> None:
@@ -191,7 +164,7 @@ def start_new_game(provider: AIProvider, creation_data: dict[str, Any]) -> tuple
     game.preferences.player_wishes = wishes
     game.preferences.content_lines = content_lines
 
-    _seed_background_vow(game, background_vow, background_vow_rank)
+    swear_background_vow(game, background_vow, background_vow_rank)
     _seed_vow_subject(game, vow_subject)
 
     _opening = gm().opening

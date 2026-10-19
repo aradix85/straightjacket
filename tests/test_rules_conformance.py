@@ -175,8 +175,8 @@ def test_endure_harm_follows_each_rulebook(
 def test_fulfill_your_vow_weak_hit_rewards_one_rank_lower(
     load_engine: None, vow_rank: str, expected_ticks: int
 ) -> None:
-    from straightjacket.engine.game.finalization import apply_progress_and_legacy
     from straightjacket.engine.ruleset.move_outcome import resolve_move_outcome
+    from straightjacket.engine.ruleset.tracks import apply_progress_and_legacy
     from tests._helpers import make_brain_result, make_game_state, make_progress_track
 
     game = make_game_state(setting_id="starforged")
@@ -197,8 +197,8 @@ def test_fulfill_your_vow_weak_hit_rewards_one_rank_lower(
 def test_classic_fulfill_your_vow_marks_experience_by_rank(
     load_engine: None, result: str, vow_rank: str, expected_xp: int
 ) -> None:
-    from straightjacket.engine.game.finalization import apply_progress_and_legacy
     from straightjacket.engine.ruleset.move_outcome import resolve_move_outcome
+    from straightjacket.engine.ruleset.tracks import apply_progress_and_legacy
     from tests._helpers import make_brain_result, make_game_state, make_progress_track
 
     game = make_game_state(setting_id="classic")
@@ -209,8 +209,8 @@ def test_classic_fulfill_your_vow_marks_experience_by_rank(
 
 
 def test_develop_your_relationship_marks_two_bonds_ticks(load_engine: None) -> None:
-    from straightjacket.engine.game.finalization import apply_progress_and_legacy
     from straightjacket.engine.ruleset.move_outcome import resolve_move_outcome
+    from straightjacket.engine.ruleset.tracks import apply_progress_and_legacy
     from tests._helpers import make_brain_result, make_game_state
 
     game = make_game_state(setting_id="starforged")
@@ -223,8 +223,8 @@ def test_develop_your_relationship_marks_two_bonds_ticks(load_engine: None) -> N
 
 @pytest.mark.parametrize("setting_id", ["classic", "starforged"])
 def test_a_strike_marks_progress_on_the_open_fight(load_engine: None, setting_id: str) -> None:
-    from straightjacket.engine.game.finalization import apply_progress_and_legacy
     from straightjacket.engine.ruleset.move_outcome import resolve_move_outcome
+    from straightjacket.engine.ruleset.tracks import apply_progress_and_legacy
     from tests._helpers import make_brain_result, make_game_state, make_progress_track
 
     game = make_game_state(setting_id=setting_id)

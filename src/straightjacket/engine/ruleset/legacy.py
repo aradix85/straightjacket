@@ -8,7 +8,7 @@ from ..models import CampaignState, GameState, ProgressTrack, ThreatData
 from ..setting.packages import load_package
 from .assets import asset_data, enable_next_ability, enabled_abilities
 from .config import rules
-from .progress import filled_boxes
+from .progress import filled_boxes, ranks
 
 
 def _legacy_track_names(setting_id: str) -> list[str]:
@@ -36,9 +36,9 @@ def new_campaign(setting_id: str) -> CampaignState:
 
 
 def shifted_rank(rank: str, shift: int) -> str | None:
-    ranks = list(rules().legacy.ticks_by_rank)
-    index = ranks.index(rank) + shift
-    return ranks[index] if 0 <= index < len(ranks) else None
+    ordered = ranks()
+    index = ordered.index(rank) + shift
+    return ordered[index] if 0 <= index < len(ordered) else None
 
 
 def mark_legacy(game: GameState, track_name: str, source_rank: str) -> None:

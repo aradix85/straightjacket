@@ -2,11 +2,24 @@ from __future__ import annotations
 
 from ..logging_util import log
 from ..models import GameState, NpcData, ProgressTrack
+from .config import rules
 from .progress import filled_boxes
 
 
 def connection_track_id(npc_id: str) -> str:
     return f"connection_{npc_id}"
+
+
+def starts_a_connection(move: str) -> bool:
+    return bool(rules().get_raw("track_creating_moves").get(move) == "connection")
+
+
+def is_bonded(track: ProgressTrack) -> bool:
+    return track.status == "bonded"
+
+
+def bonded_tracks(game: GameState) -> list[ProgressTrack]:
+    return [t for t in game.progress_tracks if is_bonded(t)]
 
 
 def connection_track(game: GameState, npc_id: str) -> ProgressTrack | None:

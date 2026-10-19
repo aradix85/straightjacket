@@ -53,11 +53,11 @@ def test_chaos_start_from_vow(load_engine: None, vow: str, expected: int) -> Non
     assert _compute_chaos_start(vow) == expected
 
 
-def test_seed_background_vow(load_engine: None) -> None:
-    from straightjacket.engine.game.game_start import _seed_background_vow
+def test_swear_background_vow(load_engine: None) -> None:
+    from straightjacket.engine.ruleset.tracks import swear_background_vow
 
     game = make_game_state(player_name="Test")
-    _seed_background_vow(game, "Find my sister", "extreme")
+    swear_background_vow(game, "Find my sister", "extreme")
     assert len(game.progress_tracks) == 1
     assert game.progress_tracks[0].rank == "extreme"
     assert game.progress_tracks[0].name == "Find my sister"
@@ -66,20 +66,21 @@ def test_seed_background_vow(load_engine: None) -> None:
     assert game.narrative.threads[0].weight == 2
 
 
-def test_seed_background_vow_custom_rank(load_engine: None) -> None:
-    from straightjacket.engine.game.game_start import _seed_background_vow
+def test_swear_background_vow_custom_rank(load_engine: None) -> None:
+    from straightjacket.engine.ruleset.tracks import swear_background_vow
 
     game = make_game_state(player_name="Test")
-    _seed_background_vow(game, "Minor task", "troublesome")
+    swear_background_vow(game, "Minor task", "troublesome")
     assert game.progress_tracks[0].rank == "troublesome"
 
 
-def test_seed_background_vow_invalid_rank_raises(load_engine: None) -> None:
-    from straightjacket.engine.game.game_start import _seed_background_vow
+def test_a_background_vow_without_a_rank_takes_the_default_rank(load_engine: None) -> None:
+    from straightjacket.engine.ruleset.config import rules
+    from straightjacket.engine.ruleset.tracks import swear_background_vow
 
     game = make_game_state(player_name="Test")
-    with pytest.raises(ValueError, match="Invalid vow rank"):
-        _seed_background_vow(game, "Quest", "nonexistent_rank")
+    swear_background_vow(game, "Quest", "")
+    assert game.progress_tracks[0].rank == rules().creation.background_vow_default_rank
 
 
 @pytest.mark.parametrize(

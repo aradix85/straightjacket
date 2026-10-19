@@ -26,7 +26,7 @@ BRAIN_FIELDS: dict[str, Any] = {
 
 def _offered(game: Any) -> list[str]:
     from straightjacket.engine.ai.schemas import get_brain_output_schema
-    from straightjacket.engine.tools import available_moves
+    from straightjacket.engine.ruleset.move_availability import available_moves
 
     schema = get_brain_output_schema(list(available_moves(game)), [], [], [], [], [])
     offered: list[str] = schema["properties"]["move"]["enum"]
@@ -233,7 +233,7 @@ def test_a_move_that_acts_on_an_npc_without_a_target_is_refused(load_engine: Non
 
 
 def test_develop_your_relationship_is_offered_only_with_a_bond(load_engine: None) -> None:
-    from straightjacket.engine.tools import available_moves
+    from straightjacket.engine.ruleset.move_availability import available_moves
 
     game = _starforged()
     connection = new_track(id="connection_npc_1", name="Vex", track_type="connection", rank="dangerous")

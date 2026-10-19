@@ -6,11 +6,12 @@ from ..engine.format_utils import describe_by_threshold
 from ..engine.gamemaster.config import gm
 from ..engine.gamemaster.questions import answers
 from ..engine.models import GameState
-from ..engine.ruleset.bond import get_npc_bond
+from ..engine.ruleset.bond import bonded_tracks, get_npc_bond
 from ..engine.ruleset.config import rules
 from ..engine.ruleset.impacts import impact_label
-from ..engine.ruleset.progress import filled_boxes, menace_boxes
+from ..engine.ruleset.progress import filled_boxes, menace_boxes, ranks
 from ..engine.ruleset.stats import stat_descriptions
+from ..engine.ruleset.tracks import active_tracks
 from ..engine.setting.packages import list_packages, load_package
 from ..engine.story_state import get_current_act
 from ..i18n import t
@@ -41,8 +42,7 @@ def _status_track_lines(game: GameState) -> list[str]:
     track_desc = eng().status_descriptions.track
     return [
         t("status.tracks", name=tr.name, progress=describe_by_threshold(filled_boxes(tr), track_desc))
-        for tr in game.progress_tracks
-        if tr.status == "active"
+        for tr in active_tracks(game)
     ]
 
 
@@ -114,26 +114,18 @@ def build_narrative_status(game: GameState) -> str:
 
 
 def build_tracks_status(game: GameState) -> str:
-    active = [tr for tr in game.progress_tracks if tr.status == "active"]
-    bonded = [tr for tr in game.progress_tracks if tr.status == "bonded"]
+    active = active_tracks(game)
+    bonded = bonded_tracks(game)
     if not active and not bonded:
         return t("status.no_tracks")
 
     lines = [t("status.track_bonded", name=tr.name) for tr in bonded]
     track_desc_map = eng().status_descriptions.track
-    combat_pos_desc = eng().status_descriptions.combat_position
+    cp = game.world.combat_position
+    position = eng().status_descriptions.combat_position[cp] if cp else ""
     for tr in active:
-        track_desc = describe_by_threshold(filled_boxes(tr), track_desc_map)
-        if tr.track_type == "combat":
-            cp = game.world.combat_position
-            pos_desc = combat_pos_desc[cp] if cp else ""
-            lines.append(t("status.track_combat", name=tr.name, progress=track_desc, position=pos_desc))
-        elif tr.track_type == "expedition":
-            lines.append(t("status.track_expedition", name=tr.name, progress=track_desc))
-        elif tr.track_type == "scene_challenge":
-            lines.append(t("status.track_scene_challenge", name=tr.name, progress=track_desc))
-        else:
-            lines.append(t("status.tracks", name=tr.name, progress=track_desc))
+        progress = describe_by_threshold(filled_boxes(tr), track_desc_map)
+        lines.append(t(f"status.track_{tr.track_type}", name=tr.name, progress=progress, position=position))
 
     return "\n".join(lines)
 
@@ -238,7 +230,7 @@ def build_creation_options() -> dict[str, Any]:
             "max_starting_assets": rules().creation.max_starting_assets,
             "background_vow_default_rank": rules().creation.background_vow_default_rank,
             "pronoun_options": rules().creation.pronoun_options,
-            "vow_ranks": list(rules().legacy.ticks_by_rank.keys()),
+            "vow_ranks": ranks(),
         },
         "tones": [{"id": tone, "label": t(f"tone.{tone}")} for tone in gm().story.kishotenketsu_probability],
     }

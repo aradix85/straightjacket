@@ -13,16 +13,16 @@ from ..prompt_blocks import (
     world_tag,
 )
 from ..prompt_loader import get_prompt, get_prompt_prefix
-from ..ruleset.bond import connection_track
+from ..ruleset.bond import connection_track, is_bonded, starts_a_connection
 from ..ruleset.bonuses import bonus_block, roll_bonuses
 from ..ruleset.config import rules
+from ..ruleset.move_availability import available_moves
 from ..ruleset.move_outcome import acts_on_an_npc
 from ..ruleset.moves import PICK_METHODS, Move, get_moves
 from ..ruleset.progress import filled_boxes
 from ..ruleset.roll_sources import roll_source_without_stat
 from ..ruleset.stats import stat_descriptions
-from ..ruleset.tracks import track_category_of_move
-from ..tools import available_moves
+from ..ruleset.tracks import active_tracks, track_category_of_move
 from ..xml_utils import xe as _xe
 from .provider_base import AICallSpec, AIProvider, AIUnavailableError, create_with_retry
 from .schemas import get_brain_output_schema, get_revelation_check_schema
@@ -72,12 +72,8 @@ def _listed_npcs(game: GameState) -> list[Any]:
     return [n for n in game.npcs if n.status in gm().npc_status_groups.in_play]
 
 
-def _active_tracks(game: GameState) -> list[Any]:
-    return [t for t in game.progress_tracks if t.status == "active"]
-
-
 def _build_tracks_block(game: GameState) -> str:
-    tracks = _active_tracks(game)
+    tracks = active_tracks(game)
     if not tracks:
         return ""
     lines = [
@@ -120,7 +116,7 @@ def _check_choices(result: BrainResult, move_keys: list[str], choices: dict[str,
     started = rules().get_raw("track_creating_moves").get(result.move)
     if started is not None and not (result.track_name and result.track_name.strip()):
         _refuse(f"move {result.move!r} starts a track, but track_name is empty")
-    if started == "connection" and result.target_npc is None:
+    if starts_a_connection(result.move) and result.target_npc is None:
         _refuse(f"move {result.move!r} makes a connection, but names no target_npc")
     boasts = rules().boasts
     if len(result.boasts) > boasts.max_per_roll or any(b not in boasts.options for b in result.boasts):
@@ -207,7 +203,7 @@ def call_brain(provider: AIProvider, game: GameState, player_message: str) -> Br
     npc_lines = []
     for n in _listed_npcs(game):
         connection = connection_track(game, n.id)
-        bonded = ", bonded" if connection is not None and connection.status == "bonded" else ""
+        bonded = ", bonded" if connection is not None and is_bonded(connection) else ""
         entry = f"  {_xe(n.name)} (id:{n.id}, {n.disposition}{bonded})"
         if n.aliases:
             entry += f" aliases:{_xe(','.join(n.aliases))}"
@@ -233,7 +229,7 @@ time:{w.time_of_day or _ai_text["unknown_time"]}
     choices = {
         "bonus_id": [b.id for b in roll_bonuses(game)],
         "target_npc": [n.id for n in _listed_npcs(game)],
-        "target_track": [tr.id for tr in _active_tracks(game)],
+        "target_track": [tr.id for tr in active_tracks(game)],
         "target_clock": [c.name for c in open_complications(game)],
     }
     schema = get_brain_output_schema(

@@ -32,18 +32,16 @@ from ..ruleset.succession import (
     build_predecessor_record,
     run_inheritance_rolls,
     seed_successor_legacy,
+    threads_for_successor,
 )
+from ..ruleset.tracks import swear_background_vow
 from ..setting.packages import load_package
 from .chapters import (
     _apply_blueprint,
     _close_previous_chapter,
     _prepare_npcs_for_new_chapter,
 )
-from .game_start import (
-    _seed_background_vow,
-    _seed_vow_subject,
-    validate_creation,
-)
+from .game_start import _seed_vow_subject, validate_creation
 from .setup_common import apply_opening_setup
 
 END_REASONS: tuple[str, ...] = ("death", "despair", "retire")
@@ -68,19 +66,6 @@ def prepare_succession(game: GameState) -> None:
         f"{record.chapters_played}, scene {record.scenes_played}: "
         f"legacy boxes {record.legacy_filled_boxes}. pending_succession=True."
     )
-
-
-def _filter_threads_for_successor(threads: list[ThreadEntry]) -> list[ThreadEntry]:
-    kept: list[ThreadEntry] = []
-    for t in threads:
-        if t.thread_type == "vow":
-            log(f"[Succession] Drop predecessor vow thread: {t.name}")
-            continue
-        if t.source == "creation":
-            log(f"[Succession] Drop predecessor creation thread: {t.name}")
-            continue
-        kept.append(t)
-    return kept
 
 
 def _reset_for_successor(
@@ -180,7 +165,7 @@ def _replace_character_identity(game: GameState, creation_data: dict[str, Any]) 
     vow_subject = creation_data["vow_subject"]
     background_vow_rank = creation_data["background_vow_rank"]
 
-    _seed_background_vow(game, background_vow, background_vow_rank)
+    swear_background_vow(game, background_vow, background_vow_rank)
     _seed_vow_subject(game, vow_subject)
 
     log(f"[Succession] Successor character: {game.player_name}, concept={concept!r}, paths={paths}")
@@ -209,10 +194,9 @@ def start_succession_with_character(
 
     _close_previous_chapter(game)
 
-    connection_tracks = [t for t in game.progress_tracks if t.track_type == "connection"]
-    kept_npcs, kept_conn_tracks = apply_npc_carryover(game.npcs, connection_tracks)
+    kept_npcs, kept_conn_tracks = apply_npc_carryover(game.npcs, game.progress_tracks)
 
-    surviving_threads = _filter_threads_for_successor(list(game.narrative.threads))
+    surviving_threads = threads_for_successor(list(game.narrative.threads))
     surviving_threats = list(game.threats)
 
     _reset_for_successor(

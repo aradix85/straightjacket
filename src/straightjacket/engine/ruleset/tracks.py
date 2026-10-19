@@ -7,15 +7,15 @@ from collections.abc import Callable
 from ..gamemaster.config import gm
 from ..ids import unique_id
 from ..logging_util import log
-from ..models import BrainResult, ClockData, GameState, ProgressTrack, ThreadEntry, consequence
+from ..models import BrainResult, ClockData, GameState, ProgressTrack, RollResult, ThreadEntry, consequence
 from ..setting.packages import load_package
 from .bond import connection_track, connection_track_id
 from .config import rules
 from .impacts import clear_impact
-from .legacy import apply_threat_overcome_bonus, shifted_rank
+from .legacy import apply_threat_overcome_bonus, mark_legacy, mark_legacy_ticks, shifted_rank
 from .moves import get_moves
-from .outcome_result import OutcomeResult
-from .progress import filled_boxes, new_track
+from .outcome_result import OutcomeResult, move_outcome_config
+from .progress import filled_boxes, mark_progress, new_track
 from .suffer import suffer
 
 
@@ -73,6 +73,23 @@ def _add_track(game: GameState, base_id: str, name: str, track_type: str, rank: 
     return track
 
 
+def swear_background_vow(game: GameState, vow_text: str, rank: str) -> None:
+    vow_rank = rank if rank else rules().creation.background_vow_default_rank
+    track = new_track(id="vow_background", name=vow_text, track_type="vow", rank=vow_rank)
+    game.progress_tracks.append(track)
+    game.narrative.threads.append(
+        ThreadEntry(
+            id="thread_background_vow",
+            name=vow_text,
+            thread_type="vow",
+            weight=gm().random_events.seeded_list_weight,
+            source="creation",
+            linked_track_id=track.id,
+        )
+    )
+    log(f"[Track] Background vow track: rank={vow_rank}, thread seeded")
+
+
 def start_bound_vow(game: GameState, name: str, rank: str, impact: str) -> ProgressTrack:
     vow = _add_track(game, f"vow_{_slug(name)}", name, "vow", rank)
     vow.bound_impact = impact
@@ -109,6 +126,66 @@ def recommit_track(track: ProgressTrack, rule: str, result: OutcomeResult) -> No
         track.rank = higher
     result.consequences.append(consequence("recommit", track=track.name))
     log(f"[Track] Recommitted to {track.name}: {filled_boxes(track)} boxes, rank {track.rank}")
+
+
+def resolve_progress_roll(game: GameState, roll: RollResult, track: ProgressTrack, outcome: OutcomeResult) -> None:
+    if roll.result in rules().dice.hit_results:
+        bonded = track.track_type in rules().get_raw("tracks_bonded_on_a_hit")
+        complete_track(game, track.id, "bonded" if bonded else "completed")
+        return
+    cfg = move_outcome_config(game, roll.move)
+    if "recommit_on_miss" in cfg:
+        recommit_track(track, cfg["recommit_on_miss"], outcome)
+    else:
+        complete_track(game, track.id, "failed")
+
+
+def apply_progress_and_legacy(
+    game: GameState,
+    outcome: OutcomeResult,
+    brain: BrainResult,
+    rolled_track: ProgressTrack | None,
+) -> None:
+    if outcome.progress_marks > 0:
+        track_category = rules().get_raw("progress_mark_categories")[brain.move]
+        track = find_progress_track(game, track_category, brain.target_track)
+        for _ in range(outcome.progress_marks):
+            added = mark_progress(track)
+            if added:
+                log(f"[Track] {track.name}: +{added} ticks ({filled_boxes(track)}/{rules().progress.boxes} boxes)")
+
+    if outcome.legacy_track and outcome.legacy_fixed_ticks:
+        mark_legacy_ticks(game, outcome.legacy_track, outcome.legacy_fixed_ticks)
+    elif outcome.legacy_track:
+        if rolled_track is None:
+            raise ValueError(f"{brain.move}: a legacy reward by rank needs the progress track that was rolled")
+        rank = shifted_rank(rolled_track.rank, outcome.legacy_rank_shift)
+        if rank is not None:
+            mark_legacy(game, outcome.legacy_track, source_rank=rank)
+
+    if outcome.experience_rank_shift is not None:
+        if rolled_track is None:
+            raise ValueError(f"{brain.move}: experience by rank needs the progress track that was rolled")
+        rank = shifted_rank(rolled_track.rank, outcome.experience_rank_shift)
+        gained = rules().legacy.experience_by_rank[rank] if rank is not None else 0
+        game.campaign.xp += gained
+        log(f"[Legacy] Experience +{gained} for a {rolled_track.rank} vow (total {game.campaign.xp})")
+
+
+def active_tracks(game: GameState) -> list[ProgressTrack]:
+    return [t for t in game.progress_tracks if t.status == "active"]
+
+
+def _vows(game: GameState, status: str) -> list[str]:
+    return [t.name for t in game.progress_tracks if t.track_type == "vow" and t.status == status]
+
+
+def vow_record(game: GameState) -> tuple[list[str], list[str], list[str]]:
+    return _vows(game, "completed"), _vows(game, "failed"), _vows(game, "active")
+
+
+def is_vow_thread(thread: ThreadEntry) -> bool:
+    return thread.thread_type == "vow"
 
 
 def track_category_of_move(game: GameState, move: str) -> str | None:

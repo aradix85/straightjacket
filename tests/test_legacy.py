@@ -274,8 +274,8 @@ class TestLegacyTrackType:
 
 class TestSharedProgressAndLegacyHelper:
     def test_helper_consumes_legacy_track(self, stub_engine: None) -> None:
-        from straightjacket.engine.game.finalization import apply_progress_and_legacy
         from straightjacket.engine.ruleset.outcome_result import OutcomeResult
+        from straightjacket.engine.ruleset.tracks import apply_progress_and_legacy
 
         game = _game()
         outcome = OutcomeResult(legacy_track="quests")
@@ -284,8 +284,8 @@ class TestSharedProgressAndLegacyHelper:
         assert game.campaign.legacy["quests"].ticks == 2
 
     def test_helper_consumes_progress_marks(self, stub_engine: None) -> None:
-        from straightjacket.engine.game.finalization import apply_progress_and_legacy
         from straightjacket.engine.ruleset.outcome_result import OutcomeResult
+        from straightjacket.engine.ruleset.tracks import apply_progress_and_legacy
 
         game = _game()
         game.progress_tracks.append(
@@ -301,8 +301,8 @@ class TestSharedProgressAndLegacyHelper:
         assert game.progress_tracks[1].ticks == 8
 
     def test_helper_handles_both_in_one_outcome(self, stub_engine: None) -> None:
-        from straightjacket.engine.game.finalization import apply_progress_and_legacy
         from straightjacket.engine.ruleset.outcome_result import OutcomeResult
+        from straightjacket.engine.ruleset.tracks import apply_progress_and_legacy
 
         game = _game()
         outcome = OutcomeResult(progress_marks=0, legacy_track="bonds")
@@ -311,8 +311,8 @@ class TestSharedProgressAndLegacyHelper:
         assert game.campaign.legacy["bonds"].ticks == 4
 
     def test_helper_noop_on_empty_outcome(self, stub_engine: None) -> None:
-        from straightjacket.engine.game.finalization import apply_progress_and_legacy
         from straightjacket.engine.ruleset.outcome_result import OutcomeResult
+        from straightjacket.engine.ruleset.tracks import apply_progress_and_legacy
 
         game = _game()
         outcome = OutcomeResult()
@@ -324,8 +324,8 @@ class TestSharedProgressAndLegacyHelper:
     def test_a_legacy_reward_by_rank_without_its_track_raises(self, stub_engine: None) -> None:
         import pytest
 
-        from straightjacket.engine.game.finalization import apply_progress_and_legacy
         from straightjacket.engine.ruleset.outcome_result import OutcomeResult
+        from straightjacket.engine.ruleset.tracks import apply_progress_and_legacy
 
         outcome = OutcomeResult(legacy_track="quests")
         brain = make_brain_result(move="quest/fulfill_your_vow")
@@ -335,8 +335,8 @@ class TestSharedProgressAndLegacyHelper:
     def test_progress_marks_from_a_move_without_a_track_category_raise(self, stub_engine: None) -> None:
         import pytest
 
-        from straightjacket.engine.game.finalization import apply_progress_and_legacy
         from straightjacket.engine.ruleset.outcome_result import OutcomeResult
+        from straightjacket.engine.ruleset.tracks import apply_progress_and_legacy
 
         outcome = OutcomeResult(progress_marks=1)
         with pytest.raises(KeyError):

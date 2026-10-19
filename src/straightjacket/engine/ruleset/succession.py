@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 from ..logging_util import log
-from ..models import GameState, InheritanceRollResult, NpcData, PredecessorRecord, ProgressTrack
+from ..models import GameState, InheritanceRollResult, NpcData, PredecessorRecord, ProgressTrack, ThreadEntry
 from .bond import connection_track_id
 from .config import rules
 from .progress import filled_boxes, ticks_for_filled_boxes
 from .rolls import roll_progress
+from .tracks import is_vow_thread
 
 
 def build_predecessor_record(game: GameState, end_reason: str) -> PredecessorRecord:
@@ -48,9 +49,20 @@ def seed_successor_legacy(game: GameState, rolls: list[InheritanceRollResult]) -
     log(f"[Succession] Successor legacy seeded (boxes of {rules().progress.boxes}): {seeded}")
 
 
-def apply_npc_carryover(
-    npcs: list[NpcData], connection_tracks: list[ProgressTrack]
-) -> tuple[list[NpcData], list[ProgressTrack]]:
+def threads_for_successor(threads: list[ThreadEntry]) -> list[ThreadEntry]:
+    kept: list[ThreadEntry] = []
+    for t in threads:
+        if is_vow_thread(t):
+            log(f"[Succession] Drop predecessor vow thread: {t.name}")
+            continue
+        if t.source == "creation":
+            log(f"[Succession] Drop predecessor creation thread: {t.name}")
+            continue
+        kept.append(t)
+    return kept
+
+
+def apply_npc_carryover(npcs: list[NpcData], tracks: list[ProgressTrack]) -> tuple[list[NpcData], list[ProgressTrack]]:
     carryover = rules().succession.npc_carryover
     kept_npcs: list[NpcData] = []
     kept_track_ids: set[str] = set()
@@ -70,7 +82,7 @@ def apply_npc_carryover(
 
     kept_tracks: list[ProgressTrack] = []
     npc_status_by_track: dict[str, str] = {connection_track_id(n.id): n.status for n in npcs}
-    for track in connection_tracks:
+    for track in tracks:
         if track.id not in kept_track_ids:
             continue
         status = npc_status_by_track[track.id]

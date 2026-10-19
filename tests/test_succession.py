@@ -8,7 +8,6 @@ import pytest
 
 from straightjacket.engine.game.succession import (
     END_REASONS,
-    _filter_threads_for_successor,
     _replace_character_identity,
     _reset_for_successor,
     prepare_succession,
@@ -27,6 +26,7 @@ from straightjacket.engine.ruleset.succession import (
     build_predecessor_record,
     run_inheritance_rolls,
     seed_successor_legacy,
+    threads_for_successor,
 )
 from tests._creation import create_game
 from tests._helpers import (
@@ -213,12 +213,22 @@ def test_carryover_preserves_track_name_and_rank() -> None:
     assert kept_tracks[0].rank == "formidable"
 
 
+def test_carryover_keeps_only_the_connections_of_every_track_it_is_given() -> None:
+    npc = make_npc(id="npc_1", name="Mira", status="active")
+    connection = make_progress_track(
+        id="connection_npc_1", name="Mira", track_type="connection", rank="dangerous", ticks=8
+    )
+    vow = make_progress_track(id="vow_find_mira", name="Find Mira", track_type="vow", rank="dangerous", ticks=8)
+    _, kept_tracks = apply_npc_carryover([npc], [vow, connection])
+    assert [t.id for t in kept_tracks] == ["connection_npc_1"]
+
+
 def test_filter_drops_vow_threads() -> None:
     threads = [
         ThreadEntry(id="t1", name="Avenge sister", thread_type="vow", source="creation"),
         ThreadEntry(id="t2", name="Find ally", thread_type="vow", source="vow"),
     ]
-    kept = _filter_threads_for_successor(threads)
+    kept = threads_for_successor(threads)
     assert kept == []
 
 
@@ -228,7 +238,7 @@ def test_filter_drops_creation_threads_regardless_of_type() -> None:
         ThreadEntry(id="t2", name="Faction war", thread_type="subplot", source="director"),
         ThreadEntry(id="t3", name="Rumor", thread_type="goal", source="event"),
     ]
-    kept = _filter_threads_for_successor(threads)
+    kept = threads_for_successor(threads)
     kept_ids = {t.id for t in kept}
     assert kept_ids == {"t2", "t3"}
 

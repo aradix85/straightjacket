@@ -4,6 +4,7 @@ from ..engine_loader import eng
 from ..gamemaster.config import gm
 from ..ruleset.config import rules
 from ..ruleset.moves import PICK_METHODS
+from ..ruleset.progress import ranks
 
 
 def _str() -> dict[str, Any]:
@@ -75,7 +76,7 @@ def get_brain_output_schema(
     track_ids: list[str],
     clock_names: list[str],
 ) -> dict[str, Any]:
-    rank_enum = sorted(rules().progress.ticks_per_mark)
+    rank_enum = sorted(ranks())
     return _obj_root(
         {
             "move": _str_enum(sorted(move_keys)),

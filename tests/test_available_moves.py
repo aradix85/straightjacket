@@ -3,8 +3,8 @@ import pytest
 from straightjacket.engine.models import GameState, Resources
 from straightjacket.engine.ruleset.config import rules
 from straightjacket.engine.ruleset.config_types import ActiveTrackCondition
+from straightjacket.engine.ruleset.move_availability import available_moves
 from straightjacket.engine.ruleset.moves import get_moves
-from straightjacket.engine.tools import available_moves
 from tests._helpers import make_game_state, make_progress_track
 
 

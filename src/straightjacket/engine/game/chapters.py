@@ -33,6 +33,7 @@ from ..prompt_boundary import build_epilogue_prompt, build_new_chapter_prompt
 from ..prompt_loader import get_prompt
 from ..ruleset.bond import get_npc_bond
 from ..ruleset.progress import menace_boxes, menace_total_boxes
+from ..ruleset.tracks import is_vow_thread, vow_record
 from .setup_common import apply_opening_setup
 
 
@@ -113,20 +114,17 @@ def _active_threats(game: GameState) -> list[str]:
     ]
 
 
-def _vows(game: GameState, status: str) -> list[str]:
-    return [t.name for t in game.progress_tracks if t.track_type == "vow" and t.status == status]
-
-
 def _chapter_record(game: GameState) -> str:
+    fulfilled, forsaken, sworn = vow_record(game)
     parts = [
         ("block_chapter_record_conflict", _chapter_conflict(game)),
-        ("block_chapter_record_fulfilled", _vows(game, "completed")),
-        ("block_chapter_record_forsaken", _vows(game, "failed")),
-        ("block_chapter_record_sworn", _vows(game, "active")),
+        ("block_chapter_record_fulfilled", fulfilled),
+        ("block_chapter_record_forsaken", forsaken),
+        ("block_chapter_record_sworn", sworn),
         ("block_chapter_record_concluded", [p.name for p in game.narrative.plotlines_list if p.status == "conclusion"]),
         (
             "block_chapter_record_threads",
-            [th.name for th in game.narrative.threads if th.active and th.thread_type != "vow"],
+            [th.name for th in game.narrative.threads if th.active and not is_vow_thread(th)],
         ),
         ("block_chapter_record_people", _people(game)),
         ("block_chapter_record_dead", [n.name for n in game.npcs if n.status == "deceased"]),

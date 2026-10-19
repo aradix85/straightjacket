@@ -181,13 +181,13 @@ def test_start_new_game_keeps_the_content_lines(load_engine: None) -> None:
     assert game.preferences.content_lines == "no spiders, no body horror"
 
 
-def test_valid_ranks_returns_set(load_engine: None) -> None:
-    from straightjacket.engine.game.game_start import _valid_ranks
+def test_the_ranks_run_from_troublesome_to_epic_in_every_rank_table(load_engine: None) -> None:
+    from straightjacket.engine.ruleset.config import rules
+    from straightjacket.engine.ruleset.progress import ranks
 
-    ranks = _valid_ranks()
-    assert isinstance(ranks, set)
-    assert "epic" in ranks
-    assert "troublesome" in ranks
+    assert ranks() == ["troublesome", "dangerous", "formidable", "extreme", "epic"]
+    assert list(rules().legacy.ticks_by_rank) == ranks()
+    assert list(rules().legacy.experience_by_rank) == ranks()
 
 
 @pytest.mark.parametrize("setting_id", ["classic", "starforged", "sundered_isles"])

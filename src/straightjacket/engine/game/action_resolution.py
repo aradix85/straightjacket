@@ -12,32 +12,19 @@ from ..models import (
     ClockFillResult,
     Consequence,
     GameState,
-    ProgressTrack,
     RollResult,
     ThreatEvent,
     consequence,
 )
 from ..ruleset.config import rules
 from ..ruleset.move_outcome import make_follow_up_moves
-from ..ruleset.outcome_result import OutcomeResult, move_outcome_config
+from ..ruleset.outcome_result import OutcomeResult
 from ..ruleset.progress import menace_boxes, menace_total_boxes
 from ..ruleset.suffer import tick_dying_clock
 from ..ruleset.threats import advance_menace_on_miss, resolve_full_menace, take_pending_threat_events
-from ..ruleset.tracks import complete_track, recommit_track, start_track
-from .finalization import apply_progress_and_legacy, resolve_action_consequences, update_crisis
+from ..ruleset.tracks import apply_progress_and_legacy, resolve_progress_roll, start_track
+from .finalization import resolve_action_consequences, update_crisis
 from .turn_types import ActionResolution, RollOutcome
-
-
-def _apply_track_completion(game: GameState, roll: RollResult, track: ProgressTrack, outcome: OutcomeResult) -> None:
-    if gained(roll.result):
-        bonded = track.track_type in rules().get_raw("tracks_bonded_on_a_hit")
-        complete_track(game, track.id, "bonded" if bonded else "completed")
-        return
-    cfg = move_outcome_config(game, roll.move)
-    if "recommit_on_miss" in cfg:
-        recommit_track(track, cfg["recommit_on_miss"], outcome)
-    else:
-        complete_track(game, track.id, "failed")
 
 
 def _maybe_tick_weak_hit_clock(
@@ -114,7 +101,7 @@ def resolve_action_phase(game: GameState, brain: BrainResult, roll_outcome: Roll
     apply_progress_and_legacy(game, action.outcome, brain, track)
 
     if track is not None:
-        _apply_track_completion(game, roll, track, action.outcome)
+        resolve_progress_roll(game, roll, track, action.outcome)
 
     _maybe_avert_complication(game, brain, roll, consequences)
     _maybe_tick_weak_hit_clock(game, roll, position, clock_events, fill_results)

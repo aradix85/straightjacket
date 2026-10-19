@@ -4,6 +4,10 @@ from ..models import ProgressTrack, ThreatData
 from .config import rules
 
 
+def ranks() -> list[str]:
+    return list(rules().progress.ticks_per_mark)
+
+
 def new_track(*, id: str, name: str, track_type: str, rank: str) -> ProgressTrack:
     return ProgressTrack(
         id=id, name=name, track_type=track_type, rank=rank, max_ticks=rules().progress.max_ticks, bound_impact=""

@@ -41,7 +41,7 @@ class TestCombatTrackCompletion:
 
 class TestAvailableMovesStatusFilter:
     def test_completed_vow_excludes_fulfill(self, load_engine: None) -> None:
-        from straightjacket.engine.tools import available_moves
+        from straightjacket.engine.ruleset.move_availability import available_moves
 
         game = _game()
         game.progress_tracks.append(
@@ -51,7 +51,7 @@ class TestAvailableMovesStatusFilter:
         assert "quest/fulfill_your_vow" not in move_keys
 
     def test_active_vow_includes_fulfill(self, load_engine: None) -> None:
-        from straightjacket.engine.tools import available_moves
+        from straightjacket.engine.ruleset.move_availability import available_moves
 
         game = _game()
         game.progress_tracks.append(make_progress_track(id="v1", name="Active Vow", track_type="vow", ticks=20))
@@ -59,7 +59,7 @@ class TestAvailableMovesStatusFilter:
         assert "quest/fulfill_your_vow" in move_keys
 
     def test_failed_combat_track_excludes_decisive(self, load_engine: None) -> None:
-        from straightjacket.engine.tools import available_moves
+        from straightjacket.engine.ruleset.move_availability import available_moves
 
         game = _game(combat_position="in_control")
         game.progress_tracks.append(
@@ -69,7 +69,7 @@ class TestAvailableMovesStatusFilter:
         assert "combat/take_decisive_action" not in move_keys
 
     def test_completed_expedition_excludes_finish(self, load_engine: None) -> None:
-        from straightjacket.engine.tools import available_moves
+        from straightjacket.engine.ruleset.move_availability import available_moves
 
         game = _game()
         game.progress_tracks.append(
@@ -79,7 +79,7 @@ class TestAvailableMovesStatusFilter:
         assert "exploration/finish_an_expedition" not in move_keys
 
     def test_completed_scene_challenge_excludes_moves(self, load_engine: None) -> None:
-        from straightjacket.engine.tools import available_moves
+        from straightjacket.engine.ruleset.move_availability import available_moves
 
         game = _game()
         game.progress_tracks.append(
@@ -133,6 +133,12 @@ class TestTracksStatus:
             make_progress_track(id="connection_npc_1", name="Mira", track_type="connection", status="bonded")
         )
         assert build_tracks_status(game) == t("status.track_bonded", name="Mira")
+
+    def test_every_track_type_of_the_ruleset_has_its_line(self, load_engine: None) -> None:
+        from straightjacket.i18n import all_strings
+
+        track_types = set(rules().get_raw("track_types_by_category").values())
+        assert {f"status.track_{track_type}" for track_type in track_types} <= set(all_strings())
 
 
 def test_progress_track_ticks_per_mark() -> None:

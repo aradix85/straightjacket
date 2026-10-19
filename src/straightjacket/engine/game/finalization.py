@@ -23,25 +23,22 @@ from ..models import (
     GameState,
     MemoryEntry,
     NpcData,
-    ProgressTrack,
     RollResult,
     consequence,
     labels_of,
 )
 from ..parser import parse_narrator_response
 from ..ruleset.boasts import apply_boasts
-from ..ruleset.bond import connection_track
+from ..ruleset.bond import connection_track, is_bonded
 from ..ruleset.config import rules
-from ..ruleset.legacy import mark_legacy, mark_legacy_ticks, shifted_rank
+from ..ruleset.legacy import mark_legacy_ticks
 from ..ruleset.meters import in_crisis, momentum
 from ..ruleset.move_effects import apply_effects, parse_effects
 from ..ruleset.move_outcome import resolve_move_outcome
 from ..ruleset.moves import Move, get_moves
 from ..ruleset.outcome_result import OutcomeResult, move_outcome_config
-from ..ruleset.progress import filled_boxes, mark_progress
 from ..ruleset.roll_sources import best_roll_option, roll_source_without_stat
 from ..ruleset.rolls import roll_action
-from ..ruleset.tracks import find_progress_track
 from ..setting.loader import OracleTable
 from ..setting.oracle_rolls import plain_text, roll_rows
 
@@ -81,7 +78,7 @@ def _chain_oracle_move(game: GameState, move: Move, cfg: dict[str, Any], outcome
 def _chain_without_bond(game: GameState, brain: BrainResult, outcome: OutcomeResult) -> bool:
     cfg = move_outcome_config(game, outcome.chained_move)
     track = connection_track(game, brain.target_npc) if brain.target_npc is not None else None
-    if "without_bond" not in cfg or track is None or track.status == "bonded":
+    if "without_bond" not in cfg or track is None or is_bonded(track):
         return False
     marked = apply_effects(game, parse_effects(cfg["without_bond"]), target_npc_id=brain.target_npc)
     outcome.consequences.extend(marked.consequences)
@@ -148,38 +145,6 @@ def resolve_action_consequences(
         clock_fill_results=fill_results,
         outcome=outcome,
     )
-
-
-def apply_progress_and_legacy(
-    game: GameState,
-    outcome: OutcomeResult,
-    brain: BrainResult,
-    rolled_track: ProgressTrack | None,
-) -> None:
-    if outcome.progress_marks > 0:
-        track_category = rules().get_raw("progress_mark_categories")[brain.move]
-        track = find_progress_track(game, track_category, brain.target_track)
-        for _ in range(outcome.progress_marks):
-            added = mark_progress(track)
-            if added:
-                log(f"[Track] {track.name}: +{added} ticks ({filled_boxes(track)}/{rules().progress.boxes} boxes)")
-
-    if outcome.legacy_track and outcome.legacy_fixed_ticks:
-        mark_legacy_ticks(game, outcome.legacy_track, outcome.legacy_fixed_ticks)
-    elif outcome.legacy_track:
-        if rolled_track is None:
-            raise ValueError(f"{brain.move}: a legacy reward by rank needs the progress track that was rolled")
-        rank = shifted_rank(rolled_track.rank, outcome.legacy_rank_shift)
-        if rank is not None:
-            mark_legacy(game, outcome.legacy_track, source_rank=rank)
-
-    if outcome.experience_rank_shift is not None:
-        if rolled_track is None:
-            raise ValueError(f"{brain.move}: experience by rank needs the progress track that was rolled")
-        rank = shifted_rank(rolled_track.rank, outcome.experience_rank_shift)
-        gained = rules().legacy.experience_by_rank[rank] if rank is not None else 0
-        game.campaign.xp += gained
-        log(f"[Legacy] Experience +{gained} for a {rolled_track.rank} vow (total {game.campaign.xp})")
 
 
 def update_crisis(game: GameState) -> None:
