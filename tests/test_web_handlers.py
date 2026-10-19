@@ -327,6 +327,17 @@ def test_handle_advance_asset_no_game_returns_status(load_engine: None, session:
     assert any(m["type"] == "status" for m in fake_ws.sent)
 
 
+def test_a_refused_advance_tells_the_player_why(load_engine: None, session: Session, fake_ws: _FakeWS) -> None:
+    from straightjacket.i18n import t
+    from straightjacket.web.handlers import handle_advance_asset
+
+    session.game = make_game_state(player_name="Hero", setting_id="starforged")
+    session.game.campaign.xp = 10
+    _run(handle_advance_asset(session, fake_ws, {"kind": "upgrade", "asset_id": "empath"}))
+    assert fake_ws.sent == [{"type": "status", "text": t("advance.not_held", asset="empath")}]
+    assert session.game.campaign.xp_spent == 0
+
+
 def test_handle_generate_epilogue_no_game_silent(load_engine: None, session: Session, fake_ws: _FakeWS) -> None:
     from straightjacket.web.handlers import handle_generate_epilogue
 

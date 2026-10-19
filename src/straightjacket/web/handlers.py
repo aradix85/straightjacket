@@ -25,7 +25,7 @@ from ..engine.game import (
     start_succession_with_character,
 )
 from ..engine.logging_util import log
-from ..engine.mechanics.legacy import advance_asset
+from ..engine.mechanics.legacy import advance_asset, advance_cost
 from ..engine.models import GameState, TurnSnapshot
 from ..engine.persistence import IncompatibleSaveError, delete_save, list_saves_with_info, load_game, save_game
 from ..engine.user_management import InvalidNameError, create_user, delete_user, list_users
@@ -457,14 +457,14 @@ async def handle_advance_asset(session: Session, ws: WebSocket, msg: dict[str, A
     if kind not in ("upgrade", "new"):
         await _send(ws, {"type": "status", "text": t("advance.usage")})
         return
-    spent = advance_asset(session.game, asset_id, kind)
-    if spent == 0:
-        await _send(ws, {"type": "status", "text": t("advance.insufficient")})
+    refusal = advance_asset(session.game, asset_id, kind)
+    if refusal is not None:
+        await _send(ws, {"type": "status", "text": t(f"advance.{refusal}", asset=asset_id)})
         return
 
     save_game(session.game, session.player, session.chat_messages, session.save_name)
     msg_key = "advance.upgraded" if kind == "upgrade" else "advance.acquired"
-    await _send(ws, {"type": "status", "text": t(msg_key, asset=asset_id, cost=spent)})
+    await _send(ws, {"type": "status", "text": t(msg_key, asset=asset_id, cost=advance_cost(kind))})
 
 
 async def handle_generate_epilogue(session: Session, ws: WebSocket, _msg: dict[str, Any]) -> None:

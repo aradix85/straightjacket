@@ -8,6 +8,12 @@ This log starts at 2026.09.24.0, the restart after a four-month pause. Earlier r
 
 Calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day.
 
+## [2026.10.19.12] — 2026-10-19
+
+Step 9h, 9h.17 fixed. `/advance` no longer spends experience for nothing: `mechanics/legacy.py` → `advance_asset` refuses an asset the setting lacks, a new asset the character already holds, an upgrade of an asset not held or with every ability enabled, and an advance the experience does not cover, and returns the reason, which `web/handlers.py` → `handle_advance_asset` tells the player from `strings/advance.yaml` (four new strings; `advance.insufficient` now names the asset). Before, an unknown id joined the character's assets, and an upgrade of an asset not held, unknown, or full cost experience and changed nothing. A held asset is matched however its id is written (`empath` or `path/empath`), and an upgrade lands on the id the character holds it under, which is the id the roll bonuses read. `advance_cost` gives the cost by kind and raises on an unknown kind; `mechanics/assets.py` → `enable_next_ability` no longer returns quietly when every ability is enabled, since that is refused before it.
+
+Quality gate: 1719 tests, coverage 94.42%. Save format unchanged. No Elvira session: Elvira does not use `/advance`.
+
 ## [2026.10.19.11] — 2026-10-19
 
 Step 9h, 9h.5 settled. Every `.get()`, `.setdefault()`, and `.pop()` in `src/` whose default is computed rather than a constant, found by walking the syntax tree: 2 hits, 0 violations. Both are documented environment overrides in `config_loader.py`, `STRAIGHTJACKET_CONFIG` and `STRAIGHTJACKET_USERS_DIR`, whose default is the project's own config file or users folder; the case in `web/serializers.py` that the substep named went in the principle-5 audit of `web/`. No code changed.

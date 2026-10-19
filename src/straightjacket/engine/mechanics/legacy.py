@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+from typing import Any
+
 from ..engine_loader import eng
-from .assets import enable_next_ability
+from .assets import asset_data, enable_next_ability, enabled_abilities
 from ..logging_util import log
 from ..models import GameState, ProgressTrack, ThreatData
 
@@ -62,16 +64,44 @@ def apply_threat_overcome_bonus(game: GameState, threat: ThreatData) -> None:
     )
 
 
-def advance_asset(game: GameState, asset_id: str, kind: str) -> int:
+def advance_cost(kind: str) -> int:
     cfg = eng().legacy
-    cost = cfg.asset_upgrade_cost if kind == "upgrade" else cfg.new_asset_cost
-    if game.campaign.xp_available < cost:
-        log(f"[Legacy] advance_asset failed: need {cost} XP, have {game.campaign.xp_available}")
-        return 0
-    if kind == "new" and asset_id not in game.assets:
-        game.assets.append(asset_id)
     if kind == "upgrade":
-        enable_next_ability(game, asset_id)
+        return cfg.asset_upgrade_cost
+    if kind == "new":
+        return cfg.new_asset_cost
+    raise ValueError(f"Unknown advance: {kind!r}. Valid: 'upgrade', 'new'")
+
+
+def _held_id(game: GameState, data: dict[str, Any]) -> str | None:
+    for held in (*game.paths, *game.assets):
+        held_data = asset_data(game, held)
+        if held_data is None:
+            raise ValueError(f"Held asset {held!r} is not in setting {game.setting_id!r}")
+        if held_data["_id"] == data["_id"]:
+            return held
+    return None
+
+
+def advance_asset(game: GameState, asset_id: str, kind: str) -> str | None:
+    cost = advance_cost(kind)
+    data = asset_data(game, asset_id)
+    if data is None:
+        return "unknown"
+    held_id = _held_id(game, data)
+    if kind == "new":
+        if held_id is not None:
+            return "held"
+    elif held_id is None:
+        return "not_held"
+    elif all(enabled_abilities(game, held_id)):
+        return "fully_upgraded"
+    if game.campaign.xp_available < cost:
+        return "insufficient"
+    if held_id is None:
+        game.assets.append(asset_id)
+    else:
+        enable_next_ability(game, held_id)
     game.campaign.xp_spent += cost
     log(f"[Legacy] {kind} '{asset_id}' for {cost} XP (available {game.campaign.xp_available})")
-    return cost
+    return None

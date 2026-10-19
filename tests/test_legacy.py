@@ -87,43 +87,92 @@ class TestMarkLegacy:
 
 
 class TestAdvanceAsset:
-    def test_upgrade_spends_xp(self, stub_engine: None) -> None:
+    def test_upgrade_spends_xp_on_the_next_ability(self, stub_engine: None) -> None:
+        from straightjacket.engine.mechanics.assets import enabled_abilities
         from straightjacket.engine.mechanics.legacy import advance_asset
 
         game = _game()
+        game.paths = ["empath"]
         game.campaign.xp = 5
-        spent = advance_asset(game, "path/empath", "upgrade")
-        assert spent == 2
+        before = sum(enabled_abilities(game, "empath"))
+        assert advance_asset(game, "empath", "upgrade") is None
         assert game.campaign.xp_spent == 2
         assert game.campaign.xp_available == 3
+        assert sum(enabled_abilities(game, "empath")) == before + 1
 
-    def test_new_asset_costs_more(self, stub_engine: None) -> None:
+    def test_upgrade_by_another_spelling_lands_on_the_held_id(self, stub_engine: None) -> None:
+        from straightjacket.engine.mechanics.legacy import advance_asset
+
+        game = _game()
+        game.paths = ["empath"]
+        game.campaign.xp = 5
+        assert advance_asset(game, "path/empath", "upgrade") is None
+        assert list(game.asset_abilities) == ["empath"]
+
+    def test_new_asset_costs_more_and_joins_the_assets(self, stub_engine: None) -> None:
         from straightjacket.engine.mechanics.legacy import advance_asset
 
         game = _game()
         game.campaign.xp = 5
-        spent = advance_asset(game, "path/empath", "new")
-        assert spent == 3
-        assert "path/empath" in game.assets
+        assert advance_asset(game, "empath", "new") is None
+        assert game.campaign.xp_spent == 3
+        assert game.assets == ["empath"]
 
-    def test_insufficient_xp_fails(self, stub_engine: None) -> None:
+    def test_insufficient_xp_is_refused(self, stub_engine: None) -> None:
         from straightjacket.engine.mechanics.legacy import advance_asset
 
         game = _game()
-        game.campaign.xp = 1
-        spent = advance_asset(game, "path/empath", "upgrade")
-        assert spent == 0
+        game.campaign.xp = 2
+        assert advance_asset(game, "empath", "new") == "insufficient"
         assert game.campaign.xp_spent == 0
-        assert "path/empath" not in game.assets
+        assert game.assets == []
 
-    def test_new_asset_not_duplicated(self, stub_engine: None) -> None:
+    def test_an_asset_the_setting_lacks_is_refused(self, stub_engine: None) -> None:
         from straightjacket.engine.mechanics.legacy import advance_asset
 
         game = _game()
         game.campaign.xp = 10
-        game.assets = ["path/empath"]
-        advance_asset(game, "path/empath", "new")
-        assert game.assets.count("path/empath") == 1
+        assert advance_asset(game, "no_such_asset", "new") == "unknown"
+        assert game.campaign.xp_spent == 0
+        assert game.assets == []
+
+    def test_buying_an_asset_already_held_is_refused(self, stub_engine: None) -> None:
+        from straightjacket.engine.mechanics.legacy import advance_asset
+
+        game = _game()
+        game.paths = ["empath"]
+        game.campaign.xp = 10
+        assert advance_asset(game, "path/empath", "new") == "held"
+        assert game.campaign.xp_spent == 0
+        assert game.assets == []
+
+    def test_upgrading_an_asset_not_held_is_refused(self, stub_engine: None) -> None:
+        from straightjacket.engine.mechanics.legacy import advance_asset
+
+        game = _game()
+        game.campaign.xp = 10
+        assert advance_asset(game, "empath", "upgrade") == "not_held"
+        assert game.campaign.xp_spent == 0
+        assert game.asset_abilities == {}
+
+    def test_upgrading_a_fully_upgraded_asset_is_refused(self, stub_engine: None) -> None:
+        from straightjacket.engine.mechanics.assets import enabled_abilities
+        from straightjacket.engine.mechanics.legacy import advance_asset
+
+        game = _game()
+        game.paths = ["empath"]
+        game.asset_abilities["empath"] = [True] * len(enabled_abilities(game, "empath"))
+        game.campaign.xp = 10
+        assert advance_asset(game, "empath", "upgrade") == "fully_upgraded"
+        assert game.campaign.xp_spent == 0
+
+    def test_an_unknown_kind_of_advance_raises(self, stub_engine: None) -> None:
+        import pytest
+
+        from straightjacket.engine.mechanics.legacy import advance_asset
+
+        with pytest.raises(ValueError, match="Unknown advance"):
+            advance_asset(_game(), "empath", "sell")
 
 
 class TestThreatOvercomeBonus:

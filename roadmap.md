@@ -84,8 +84,6 @@ The audits of AUDIT.md, one session per principle or submodule as it prescribes.
 
 **9h.16** Consequence sentences are parsed back from the engine's own labels (`mechanics/consequences.py` → `_classify`): `mark` stands for an impact, progress, and experience, a bond is found by its word, Pay the Price rows pass through the same parser, which turns an unparsable amount into 1, and a disposition shift (Make a Connection, Test Your Relationship) gets no sentence. A structured consequence in `OutcomeResult` removes the parser and can give the disposition shift its sentence; it touches the effect and move handlers, boasts, finalization, and the narrator's consequence block.
 
-**9h.17** `/advance` takes the asset id the player types (`web/handlers.py` → `handle_advance_asset`): an unknown id joins the character's assets, and `mechanics/legacy.py` → `advance_asset` spends experience on an asset not held, not existing, or fully upgraded. The player hears why it is refused, from `strings/`.
-
 **9h.18** A bond, connection-rank, or disposition effect without a target NPC does nothing (`mechanics/move_effects.py`), since the Brain's schema lets `target_npc` be null for every move; whether `call_brain` refuses such a move without a target, as it does Make a Connection.
 
 **9h.25** A connection Forge a Bond completes is no longer active, so its bond, its aid, and Develop Your Relationship no longer see it, though in Starforged it stays and becomes bonded; what a bonded connection keeps is checked against the books first.

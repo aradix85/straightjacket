@@ -1,4 +1,8 @@
 advance.usage: 'Usage: /advance upgrade <asset> or /advance new <asset>.'
-advance.insufficient: Not enough experience to advance that.
+advance.insufficient: Not enough experience to advance {asset}.
+advance.unknown: This setting has no asset called {asset}.
+advance.held: You already have {asset}.
+advance.not_held: You don't have {asset}, so you can't upgrade it.
+advance.fully_upgraded: Every ability of {asset} is already yours.
 advance.upgraded: 'Advanced {asset} (cost: {cost} experience).'
 advance.acquired: 'Acquired {asset} (cost: {cost} experience).'
