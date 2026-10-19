@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from straightjacket.engine.models import GameState
 from straightjacket.engine.ruleset.progress import filled_boxes
-from tests._helpers import make_brain_result, make_game_state, make_progress_track, make_threat
+from tests._helpers import make_brain_result, make_game_state, make_outcome, make_progress_track, make_threat
 
 
 def _game() -> GameState:
@@ -285,17 +285,15 @@ class TestLegacyTrackType:
 
 class TestSharedProgressAndLegacyHelper:
     def test_helper_consumes_legacy_track(self, stub_engine: None) -> None:
-        from straightjacket.engine.ruleset.outcome_result import OutcomeResult
         from straightjacket.engine.ruleset.tracks import apply_progress_and_legacy
 
         game = _game()
-        outcome = OutcomeResult(legacy_track="quests")
+        outcome = make_outcome(legacy_track="quests")
         brain = make_brain_result(move="quest/fulfill_your_vow")
         apply_progress_and_legacy(game, outcome, brain, make_progress_track(rank="dangerous"))
         assert game.campaign.legacy["quests"].ticks == 2
 
     def test_helper_consumes_progress_marks(self, stub_engine: None) -> None:
-        from straightjacket.engine.ruleset.outcome_result import OutcomeResult
         from straightjacket.engine.ruleset.tracks import apply_progress_and_legacy
 
         game = _game()
@@ -305,28 +303,26 @@ class TestSharedProgressAndLegacyHelper:
         game.progress_tracks.append(
             make_progress_track(id="expedition_ruins", name="The ruins", track_type="expedition", rank="dangerous")
         )
-        outcome = OutcomeResult(progress_marks=1)
+        outcome = make_outcome(progress_marks=1)
         brain = make_brain_result(move="exploration/undertake_an_expedition")
         apply_progress_and_legacy(game, outcome, brain, None)
         assert game.progress_tracks[0].ticks == 0
         assert game.progress_tracks[1].ticks == 8
 
     def test_helper_handles_both_in_one_outcome(self, stub_engine: None) -> None:
-        from straightjacket.engine.ruleset.outcome_result import OutcomeResult
         from straightjacket.engine.ruleset.tracks import apply_progress_and_legacy
 
         game = _game()
-        outcome = OutcomeResult(progress_marks=0, legacy_track="bonds")
+        outcome = make_outcome(progress_marks=0, legacy_track="bonds")
         brain = make_brain_result(move="connection/develop_your_relationship")
         apply_progress_and_legacy(game, outcome, brain, make_progress_track(rank="formidable"))
         assert game.campaign.legacy["bonds"].ticks == 4
 
     def test_helper_noop_on_empty_outcome(self, stub_engine: None) -> None:
-        from straightjacket.engine.ruleset.outcome_result import OutcomeResult
         from straightjacket.engine.ruleset.tracks import apply_progress_and_legacy
 
         game = _game()
-        outcome = OutcomeResult()
+        outcome = make_outcome()
         brain = make_brain_result(move="quest/swear_an_iron_vow")
         apply_progress_and_legacy(game, outcome, brain, None)
         assert game.campaign.legacy["quests"].ticks == 0
@@ -335,10 +331,9 @@ class TestSharedProgressAndLegacyHelper:
     def test_a_legacy_reward_by_rank_without_its_track_raises(self, stub_engine: None) -> None:
         import pytest
 
-        from straightjacket.engine.ruleset.outcome_result import OutcomeResult
         from straightjacket.engine.ruleset.tracks import apply_progress_and_legacy
 
-        outcome = OutcomeResult(legacy_track="quests")
+        outcome = make_outcome(legacy_track="quests")
         brain = make_brain_result(move="quest/fulfill_your_vow")
         with pytest.raises(ValueError, match="needs the progress track"):
             apply_progress_and_legacy(_game(), outcome, brain, None)
@@ -346,10 +341,9 @@ class TestSharedProgressAndLegacyHelper:
     def test_progress_marks_from_a_move_without_a_track_category_raise(self, stub_engine: None) -> None:
         import pytest
 
-        from straightjacket.engine.ruleset.outcome_result import OutcomeResult
         from straightjacket.engine.ruleset.tracks import apply_progress_and_legacy
 
-        outcome = OutcomeResult(progress_marks=1)
+        outcome = make_outcome(progress_marks=1)
         with pytest.raises(KeyError):
             apply_progress_and_legacy(_game(), outcome, make_brain_result(move="world_shaping"), None)
 

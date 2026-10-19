@@ -2,9 +2,15 @@ import pytest
 
 from straightjacket.engine.models import GameState, Resources, ThreatData, labels_of
 from straightjacket.engine.ruleset.config import rules
-from straightjacket.engine.ruleset.outcome_result import OutcomeResult
 from straightjacket.engine.ruleset.progress import advance_menace, menace_boxes, menace_per_mark
-from tests._helpers import make_game_state, make_progress_track, make_thread, make_threat, make_world_state
+from tests._helpers import (
+    make_game_state,
+    make_outcome,
+    make_progress_track,
+    make_thread,
+    make_threat,
+    make_world_state,
+)
 
 
 def _game_with_threat() -> GameState:
@@ -235,7 +241,7 @@ class TestResolveForsakeVow:
 
         game = _game_with_threat()
         game.threats[0].menace_ticks = 40
-        events = resolve_full_menace(game, OutcomeResult())
+        events = resolve_full_menace(game, make_outcome())
         assert len(events) == 1
         assert events[0].source == "forsake_vow"
         assert game.progress_tracks[0].status == "failed"
@@ -247,7 +253,7 @@ class TestResolveForsakeVow:
         game = _game_with_threat()
         game.threats[0].menace_ticks = 40
         old_spirit = game.resources.meters["spirit"]
-        result = OutcomeResult()
+        result = make_outcome()
         resolve_full_menace(game, result)
         assert game.resources.meters["spirit"] == old_spirit - 2
         assert labels_of(result.consequences) == ['forsake the vow "Hunt the beast"', "spirit -2"]
@@ -259,7 +265,7 @@ class TestResolveForsakeVow:
         game = _game_with_threat()
         game.setting_id = "classic"
         game.threats[0].menace_ticks = 40
-        result = OutcomeResult()
+        result = make_outcome()
         resolve_full_menace(game, result)
         assert result.follow_up_moves == ["suffer/endure_stress"]
 
@@ -278,7 +284,7 @@ class TestResolveForsakeVow:
             )
         )
         game.threats[0].menace_ticks = 40
-        resolve_full_menace(game, OutcomeResult())
+        resolve_full_menace(game, make_outcome())
         assert not game.narrative.threads[0].active
 
     def test_menace_not_full_no_effect(self, stub_engine: None) -> None:
@@ -286,7 +292,7 @@ class TestResolveForsakeVow:
 
         game = _game_with_threat()
         game.threats[0].menace_ticks = 30
-        events = resolve_full_menace(game, OutcomeResult())
+        events = resolve_full_menace(game, make_outcome())
         assert events == []
         assert game.progress_tracks[0].status == "active"
         assert game.threats[0].status == "active"
@@ -297,7 +303,7 @@ class TestResolveForsakeVow:
         game = _game_with_threat()
         game.threats[0].menace_ticks = 40
         game.threats[0].status = "resolved"
-        events = resolve_full_menace(game, OutcomeResult())
+        events = resolve_full_menace(game, make_outcome())
         assert events == []
 
     def test_menace_full_vow_already_gone(self, stub_engine: None) -> None:
@@ -306,7 +312,7 @@ class TestResolveForsakeVow:
         game = _game_with_threat()
         game.threats[0].menace_ticks = 40
         game.progress_tracks[0].status = "completed"
-        resolve_full_menace(game, OutcomeResult())
+        resolve_full_menace(game, make_outcome())
         assert game.threats[0].status == "resolved"
 
         assert game.resources.meters["spirit"] == 5

@@ -411,8 +411,7 @@ def test_pay_the_price_rolls_the_official_table(load_engine: None, setting: str)
     import json
 
     from straightjacket.engine.ruleset.move_effects import pay_the_price
-    from straightjacket.engine.ruleset.outcome_result import OutcomeResult
-    from tests._helpers import make_game_state
+    from tests._helpers import make_game_state, make_outcome
 
     data = json.loads((REPO / "data" / f"{setting}.json").read_text(encoding="utf-8"))
     rows = [
@@ -421,7 +420,7 @@ def test_pay_the_price_rolls_the_official_table(load_engine: None, setting: str)
     ]
     game = make_game_state(setting_id=setting)
     for _ in range(30):
-        result = OutcomeResult()
+        result = make_outcome()
         pay_the_price(game, result)
         told = labels_of(result.consequences)[0]
         assert told.startswith("Pay the Price: ")
@@ -431,13 +430,12 @@ def test_pay_the_price_rolls_the_official_table(load_engine: None, setting: str)
 
 def test_pay_the_price_harm_costs_health(load_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:
     from straightjacket.engine.ruleset import move_effects
-    from straightjacket.engine.ruleset.outcome_result import OutcomeResult
-    from tests._helpers import make_game_state
+    from tests._helpers import make_game_state, make_outcome
 
     monkeypatch.setattr(move_effects, "_pay_the_price_move", lambda game: _FakePriceMove(_price_row("You are harmed")))
     game = make_game_state(setting_id="starforged")
     game.resources.meters["health"] = 4
-    move_effects.pay_the_price(game, OutcomeResult())
+    move_effects.pay_the_price(game, make_outcome())
     assert game.resources.meters["health"] == 3
 
 
@@ -445,14 +443,13 @@ def test_pay_the_price_roll_twice_tells_both_results_and_not_the_instruction(
     load_engine: None, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     from straightjacket.engine.ruleset import move_effects
-    from straightjacket.engine.ruleset.outcome_result import OutcomeResult
-    from tests._helpers import make_game_state
+    from tests._helpers import make_game_state, make_outcome
 
     rows = (_price_row("Roll twice", "reroll"), _price_row("You are stressed"), _price_row("A new enemy is revealed"))
     monkeypatch.setattr(move_effects, "_pay_the_price_move", lambda game: _FakePriceMove(*rows))
     game = make_game_state(setting_id="starforged")
     game.resources.meters["spirit"] = 4
-    result = OutcomeResult()
+    result = make_outcome()
     move_effects.pay_the_price(game, result)
     assert labels_of(result.consequences)[0] == "Pay the Price: You are stressed; A new enemy is revealed"
     assert game.resources.meters["spirit"] == 3
@@ -462,13 +459,12 @@ def test_classic_pay_the_price_makes_a_twice_rolled_result_worse(
     load_engine: None, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     from straightjacket.engine.ruleset import move_effects
-    from straightjacket.engine.ruleset.outcome_result import OutcomeResult
-    from tests._helpers import make_game_state
+    from tests._helpers import make_game_state, make_outcome
 
     enemy = _price_row("A new enemy is revealed")
     rows = (_price_row("Roll twice more on this table.", "make_it_worse"), enemy, enemy)
     monkeypatch.setattr(move_effects, "_pay_the_price_move", lambda game: _FakePriceMove(*rows))
-    result = OutcomeResult()
+    result = make_outcome()
     move_effects.pay_the_price(make_game_state(setting_id="classic"), result)
     assert labels_of(result.consequences) == ["Pay the Price: A new enemy is revealed, made worse"]
 
@@ -477,15 +473,14 @@ def test_classic_roll_again_tells_the_next_result_made_worse(
     load_engine: None, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     from straightjacket.engine.ruleset import move_effects
-    from straightjacket.engine.ruleset.outcome_result import OutcomeResult
-    from tests._helpers import make_game_state
+    from tests._helpers import make_game_state, make_outcome
 
     again = _price_row("Roll again and apply that result but make it worse. If you roll this result yet again, ...")
     rows = (again, _price_row("You are harmed"))
     monkeypatch.setattr(move_effects, "_pay_the_price_move", lambda game: _FakePriceMove(*rows))
     game = make_game_state(setting_id="classic")
     game.resources.meters["health"] = 4
-    result = OutcomeResult()
+    result = make_outcome()
     move_effects.pay_the_price(game, result)
     assert labels_of(result.consequences)[0] == "Pay the Price: You are harmed, made worse"
     assert game.resources.meters["health"] == 3

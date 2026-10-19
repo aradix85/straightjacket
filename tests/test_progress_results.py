@@ -7,11 +7,10 @@ from straightjacket.engine.models import GameState, ProgressTrack, RollResult, l
 from straightjacket.engine.ruleset.consequences import generate_consequence_sentences
 from straightjacket.engine.ruleset.make_move import RollOutcome
 from straightjacket.engine.ruleset.moves import get_moves
-from straightjacket.engine.ruleset.outcome_result import OutcomeResult
 from straightjacket.engine.ruleset.progress import filled_boxes
 from straightjacket.engine.ruleset.rolls import downgrade_in_position
 from straightjacket.engine.ruleset.tracks import recommit_track
-from tests._helpers import fix_dice, make_brain_result, make_game_state, make_progress_track
+from tests._helpers import fix_dice, make_brain_result, make_game_state, make_outcome, make_progress_track
 
 
 def _roll(move: str, result: str, match: bool = False) -> RollResult:
@@ -94,20 +93,20 @@ def test_a_miss_loses_the_fight(load_engine: None, setting_id: str, move: str) -
 
 def test_an_epic_track_stays_epic_when_recommitted(load_engine: None) -> None:
     track = make_progress_track(rank="epic", ticks=9)
-    recommit_track(track, "keep_one_box", OutcomeResult())
+    recommit_track(track, "keep_one_box", make_outcome())
     assert (track.rank, track.ticks) == ("epic", 4)
 
 
 def test_keeping_one_box_keeps_less_when_less_is_filled(load_engine: None) -> None:
     track = make_progress_track(ticks=3)
-    recommit_track(track, "keep_one_box", OutcomeResult())
+    recommit_track(track, "keep_one_box", make_outcome())
     assert track.ticks == 3
 
 
 def test_clearing_by_the_lowest_die_stops_at_zero(load_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:
     track = make_progress_track(ticks=6)
     fix_dice(monkeypatch, 9, 7)
-    recommit_track(track, "clear_lowest_die", OutcomeResult())
+    recommit_track(track, "clear_lowest_die", make_outcome())
     assert track.ticks == 0
 
 

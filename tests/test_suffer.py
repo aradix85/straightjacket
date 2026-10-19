@@ -7,11 +7,10 @@ from straightjacket.engine.ruleset.move_effects import apply_effects, parse_effe
 from straightjacket.engine.ruleset.move_handlers import _TABLE_TRIGGERS
 from straightjacket.engine.ruleset.move_outcome import make_follow_up_moves, resolve_move_outcome
 from straightjacket.engine.ruleset.moves import get_moves
-from straightjacket.engine.ruleset.outcome_result import OutcomeResult
 from straightjacket.engine.ruleset.suffer import start_dying_clock, suffer, tick_dying_clock
 from straightjacket.engine.ruleset.tracks import complete_track
 from straightjacket.engine.setting.oracle_rolls import plain_text
-from tests._helpers import fix_dice, make_game_state, make_progress_track
+from tests._helpers import fix_dice, make_game_state, make_outcome, make_progress_track
 
 MISS = (1, 10, 10)
 WEAK_HIT = (6, 1, 10)
@@ -32,7 +31,7 @@ def _dying(game: GameState) -> list[str]:
 
 def test_harm_above_zero_in_starforged_is_taken_without_endure_harm(load_engine: None) -> None:
     game = _game("starforged", health=3)
-    result = OutcomeResult()
+    result = make_outcome()
     suffer(game, "health", 1, result)
     assert game.resources.meters["health"] == 2
     assert (labels_of(result.consequences), result.follow_up_moves) == (["health -1"], [])
@@ -40,7 +39,7 @@ def test_harm_above_zero_in_starforged_is_taken_without_endure_harm(load_engine:
 
 def test_harm_past_zero_costs_momentum_and_is_endured(load_engine: None) -> None:
     game = _game("starforged", health=1)
-    result = OutcomeResult()
+    result = make_outcome()
     suffer(game, "health", 2, result)
     assert (game.resources.meters["health"], game.resources.meters["momentum"]) == (0, 1)
     assert labels_of(result.consequences) == ["health -1", "momentum -1"]
@@ -50,7 +49,7 @@ def test_harm_past_zero_costs_momentum_and_is_endured(load_engine: None) -> None
 @pytest.mark.parametrize(("meter", "move"), [("health", "suffer/endure_harm"), ("spirit", "suffer/endure_stress")])
 def test_classic_endures_every_harm_and_stress(load_engine: None, meter: str, move: str) -> None:
     game = _game("classic")
-    result = OutcomeResult()
+    result = make_outcome()
     suffer(game, meter, 1, result)
     assert result.follow_up_moves == [move]
 
@@ -63,7 +62,7 @@ def test_pay_the_price_harm_goes_through_endure_harm(load_engine: None) -> None:
 
 def test_exhausted_supply_marks_unprepared_and_further_loss_costs_momentum(load_engine: None) -> None:
     game = _game("starforged", supply=1)
-    result = OutcomeResult()
+    result = make_outcome()
     suffer(game, "supply", 1, result)
     suffer(game, "supply", 1, result)
     assert game.impacts == ["unprepared"]
@@ -73,7 +72,7 @@ def test_exhausted_supply_marks_unprepared_and_further_loss_costs_momentum(load_
 
 def test_a_miss_at_zero_marks_the_first_free_impact(load_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:
     game = _game("starforged", health=0)
-    result = OutcomeResult(follow_up_moves=["suffer/endure_harm"])
+    result = make_outcome(follow_up_moves=["suffer/endure_harm"])
     fix_dice(monkeypatch, *MISS)
     make_follow_up_moves(game, result)
     assert game.impacts == ["wounded"]
@@ -83,7 +82,7 @@ def test_a_miss_at_zero_marks_the_first_free_impact(load_engine: None, monkeypat
 def test_with_both_impacts_marked_mortal_harm_faces_death(load_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:
     game = _game("starforged", health=0)
     game.impacts = ["wounded", "permanently_harmed"]
-    result = OutcomeResult(follow_up_moves=["suffer/endure_harm"])
+    result = make_outcome(follow_up_moves=["suffer/endure_harm"])
     fix_dice(monkeypatch, *MISS, 5, *MISS)
     make_follow_up_moves(game, result)
     assert game.game_over
@@ -94,7 +93,7 @@ def test_face_death_on_a_weak_hit_returns_bound_to_an_extreme_vow(
     load_engine: None, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     game = _game("starforged", health=0)
-    result = OutcomeResult(follow_up_moves=["threshold/face_death"])
+    result = make_outcome(follow_up_moves=["threshold/face_death"])
     fix_dice(monkeypatch, *WEAK_HIT, *STRONG_HIT)
     make_follow_up_moves(game, result)
     [vow] = game.progress_tracks
@@ -124,7 +123,7 @@ def test_classic_face_death_dies_when_the_vow_misses(
     load_engine: None, monkeypatch: pytest.MonkeyPatch, swear: tuple[int, ...], dead: bool, impacts: list[str]
 ) -> None:
     game = _game("classic", health=0)
-    result = OutcomeResult(follow_up_moves=["suffer/face_death"])
+    result = make_outcome(follow_up_moves=["suffer/face_death"])
     fix_dice(monkeypatch, *WEAK_HIT, *swear)
     make_follow_up_moves(game, result)
     assert (game.game_over, game.impacts, len(game.progress_tracks)) == (dead, impacts, 0 if dead else 1)
@@ -137,7 +136,7 @@ def test_dying_gives_two_turns_to_raise_health(load_engine: None, monkeypatch: p
     resolve_move_outcome(game, "suffer/endure_harm", "MISS", target_npc_id=None, match=False)
     assert _dying(game) == ["Dying"]
 
-    first, second = OutcomeResult(), OutcomeResult()
+    first, second = make_outcome(), make_outcome()
     tick_dying_clock(game, first)
     assert (_dying(game), first.follow_up_moves) == (["Dying"], [])
     tick_dying_clock(game, second)
@@ -152,7 +151,7 @@ def test_dying_ends_when_health_rises_above_zero(load_engine: None) -> None:
     game = _game("starforged", health=0)
     start_dying_clock(game)
     game.resources.meters["health"] = 2
-    result = OutcomeResult()
+    result = make_outcome()
     tick_dying_clock(game, result)
     assert (_dying(game), labels_of(result.consequences), result.follow_up_moves) == ([], [], [])
 

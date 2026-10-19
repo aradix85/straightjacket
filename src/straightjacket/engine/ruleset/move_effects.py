@@ -20,7 +20,7 @@ from .impacts import clear_impact, get_impacts
 from .legacy import shifted_rank
 from .meters import adjust_momentum, condition_meters, gain, is_condition_meter
 from .moves import Move, get_moves, move_table, offers_table
-from .outcome_result import OutcomeResult
+from .outcome_result import OutcomeResult, new_outcome
 from .progress import mark_progress
 from .suffer import suffer
 
@@ -357,7 +357,7 @@ def _apply_effect(game: GameState, effect: MoveEffect, result: OutcomeResult, ta
 
 
 def apply_effects(game: GameState, effects: list[MoveEffect], target_npc_id: str | None = None) -> OutcomeResult:
-    result = OutcomeResult()
+    result = new_outcome()
     target = find_npc(game, target_npc_id) if target_npc_id else None
 
     for effect in effects:

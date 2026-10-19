@@ -43,7 +43,7 @@ from ..ruleset.make_move import RollOutcome, roll_move
 from ..ruleset.meters import momentum
 from ..ruleset.move_outcome import make_follow_up_moves
 from ..ruleset.moves import get_moves
-from ..ruleset.outcome_result import OutcomeResult
+from ..ruleset.outcome_result import new_outcome
 from ..ruleset.rolls import can_burn_momentum
 from ..ruleset.suffer import tick_dying_clock
 from ..ruleset.threats import advance_threat_by_id, resolve_full_menace, take_pending_threat_events
@@ -281,7 +281,7 @@ def _process_dialog_turn(ctx: SceneContext) -> tuple[str, DirectorCall | None]:
     game.world.pending_clock_fills.clear()
     npc_agency, agency_clock_events, agency_fill_results = check_npc_agency(game)
     pending_fills.extend(agency_fill_results)
-    engine_moves = OutcomeResult()
+    engine_moves = new_outcome()
     tick_dying_clock(game, engine_moves)
     threat_events = take_pending_threat_events(game)
     threat_events.extend(resolve_full_menace(game, engine_moves))

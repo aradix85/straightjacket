@@ -11,7 +11,7 @@ from .impacts import apply_impact, blocks_recovery, clear_impact
 from .meters import adjust_momentum, condition_meters, gain, is_condition_meter, is_momentum, lose, momentum
 from .move_effects import apply_effects, parse_effects, pay_the_price, roll_oracle_result
 from .moves import get_moves
-from .outcome_result import OutcomeResult, move_outcome_config
+from .outcome_result import OutcomeResult, move_outcome_config, new_outcome
 from .roll_sources import best_roll_option
 from .rolls import roll_action
 from .suffer import start_dying_clock, suffer
@@ -52,7 +52,7 @@ def _suffer_weak_hit(game: GameState, params: dict[str, Any], blocked: bool, res
 
 
 def apply_suffer_handler(game: GameState, move_key: str, roll_result: str, params: dict[str, Any]) -> OutcomeResult:
-    result = OutcomeResult()
+    result = new_outcome()
     track = params["track"]
     miss_extra_track = params["miss_extra_track"]
     miss_extra_momentum = params["miss_extra_momentum"]
@@ -147,7 +147,7 @@ def _return_with_a_vow(game: GameState, params: dict[str, Any], result: OutcomeR
 
 
 def apply_threshold_handler(game: GameState, move_key: str, roll_result: str, params: dict[str, Any]) -> OutcomeResult:
-    result = OutcomeResult()
+    result = new_outcome()
     if roll_result == "WEAK_HIT":
         _return_with_a_vow(game, params, result)
     elif roll_result == "MISS":
@@ -156,7 +156,7 @@ def apply_threshold_handler(game: GameState, move_key: str, roll_result: str, pa
 
 
 def apply_recovery_handler(game: GameState, move_key: str, roll_result: str, params: dict[str, Any]) -> OutcomeResult:
-    result = OutcomeResult()
+    result = new_outcome()
     track = params["track"]
     full_amount = params["full_amount"]
     impact_amount = params["impact_amount"]

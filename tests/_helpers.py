@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import dataclasses
 import random
 from typing import Any
 
@@ -177,6 +178,12 @@ def make_random_event(**kwargs: Any) -> Any:
     kwargs.setdefault("target", "")
     kwargs.setdefault("target_id", "")
     return RandomEvent(**kwargs)
+
+
+def make_outcome(**kwargs: Any) -> Any:
+    from straightjacket.engine.ruleset.outcome_result import new_outcome
+
+    return dataclasses.replace(new_outcome(), **kwargs)
 
 
 def make_brain_result(**kwargs: Any) -> Any:

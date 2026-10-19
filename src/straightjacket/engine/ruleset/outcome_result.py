@@ -8,19 +8,33 @@ from .config import rules
 from .datasworn import load_ruleset
 
 
-@dataclass
+@dataclass(kw_only=True)
 class OutcomeResult:
     consequences: list[Consequence] = field(default_factory=list)
-    combat_position: str = ""
-    progress_marks: int = 0
-    clock_fills: int = 0
-    legacy_track: str = ""
-    legacy_rank_shift: int = 0
-    legacy_fixed_ticks: int = 0
-    experience_rank_shift: int | None = None
-    boast_slots: int = 0
-    chained_move: str = ""
+    combat_position: str
+    progress_marks: int
+    clock_fills: int
+    legacy_track: str
+    legacy_rank_shift: int
+    legacy_fixed_ticks: int
+    experience_rank_shift: int | None
+    boast_slots: int
+    chained_move: str
     follow_up_moves: list[str] = field(default_factory=list)
+
+
+def new_outcome() -> OutcomeResult:
+    return OutcomeResult(
+        combat_position="",
+        progress_marks=0,
+        clock_fills=0,
+        legacy_track="",
+        legacy_rank_shift=0,
+        legacy_fixed_ticks=0,
+        experience_rank_shift=None,
+        boast_slots=0,
+        chained_move="",
+    )
 
 
 def move_outcome_config(game: GameState, move_key: str) -> dict[str, Any]:
