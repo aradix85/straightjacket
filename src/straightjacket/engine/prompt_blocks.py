@@ -12,14 +12,16 @@ from .xml_utils import xe as _xe
 
 
 def world_tag(game: GameState) -> str:
-    return (
-        f'<world genre="{_xa(game.setting_genre)}" tone="{_xa(game.setting_tone)}">'
-        f"{_xe(game.setting_description)}</world>"
+    return get_prompt(
+        "block_world",
+        genre=_xa(game.setting_genre),
+        tone=_xa(game.setting_tone),
+        description=_xe(game.setting_description),
     )
 
 
 def character_tag(game: GameState) -> str:
-    return f'<character name="{_xa(game.player_name)}">{_xe(game.character_concept)}</character>'
+    return get_prompt("block_character", player=_xa(game.player_name), concept=_xe(game.character_concept))
 
 
 def content_boundaries_block(game: GameState) -> str:
@@ -151,7 +153,8 @@ def story_context_block(game: GameState, *, miss: bool = False) -> str:
     arc = get_prompt(
         "block_story_arc",
         structure=_xa(bp.structure_type),
-        act_pos=f"{act.act_number}/{act.total_acts}",
+        act_number=str(act.act_number),
+        total_acts=str(act.total_acts),
         phase=_xa(act.phase),
         progress=str(act.progress),
         mood=_xa(act.mood),

@@ -130,9 +130,7 @@ def _npc_block(
     fact_budget = 0 if miss else gm().information_gate.fact_budget_by_gate[gate]
     log(f"[Gate] {target.name}: gate={gate} (stance={stance.stance}) fact_budget={fact_budget}")
 
-    aliases_attr = (
-        get_prompt("block_target_npc_aliases_attr", aliases=_xa(",".join(target.aliases))) if target.aliases else ""
-    )
+    aliases_attr = get_prompt("block_npc_aliases_attr", aliases=_xa(",".join(target.aliases))) if target.aliases else ""
 
     if gate == 0:
         return get_prompt(

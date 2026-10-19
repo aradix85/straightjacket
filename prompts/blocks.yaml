@@ -24,7 +24,7 @@
 "block_narrative_direction_wrapper": |-
   <narrative_direction>{tokens}</narrative_direction>
 "block_story_arc": |-
-  <story_arc structure="{structure}" act="{act_pos}" phase="{phase}" progress="{progress}" mood="{mood}" conflict="{conflict}" antagonist="{antagonist}" act_goal="{act_goal}"{thematic_attr}/>
+  <story_arc structure="{structure}" act="{act_number}/{total_acts}" phase="{phase}" progress="{progress}" mood="{mood}" conflict="{conflict}" antagonist="{antagonist}" act_goal="{act_goal}"{thematic_attr}/>
 "block_story_arc_thematic_attr": ' thematic_thread="{thematic}"'
 "block_revelation_ready": |-
   <revelation_ready weight="{weight}">{content}</revelation_ready>
@@ -117,7 +117,7 @@
   <target_npc name="{npc}"{stance}{aliases}{arc}{fact_budget} gate="{gate}">
   {body}
   </target_npc>
-"block_target_npc_aliases_attr": ' aliases="{aliases}"'
+"block_npc_aliases_attr": ' aliases="{aliases}"'
 "block_target_npc_stance_attr": ' stance="{stance}" constraint="{constraint}"'
 "block_target_npc_fact_budget_attr": ' fact_budget="{budget}"'
 "block_target_npc_agenda": 'agenda:{agenda}'
@@ -182,7 +182,51 @@
   {direction}
   {story}{recent}</scene>
   <task>{task}</task>
-"block_background_npcs_prefix": "Known but not recently active: "
+"block_background_npcs": '<background_npcs>Known but not recently active: {npcs}</background_npcs>'
+"block_background_npc_aliases": '[aka {aliases}]'
+"block_returning_npc": '<returning_npc id="{id}" name="{npc}" disposition="{disposition}" bond="{bond}/{boxes}"{aliases}>{description}</returning_npc>'
+"block_epilogue_npc": '<npc name="{npc}" disposition="{disposition}" bond="{bond}/{boxes}">{description}</npc>'
+"block_epilogue_ending": '{type}: {description}'
+"block_epilogue_log_entry": 'S{scene}:{summary}({result})'
+"block_world": '<world genre="{genre}" tone="{tone}">{description}</world>'
+"block_character": '<character name="{player}">{concept}</character>'
+"block_pronouns": '<pronouns>{pronouns}</pronouns>'
+"block_paths": '<paths>{paths}</paths>'
+"block_vow": '<vow>{vow}</vow>'
+"block_scene_opening": |-
+  <scene type="opening">
+  {header}{pronouns}{paths}{vow}
+  <location>{location}</location>{previous_locations}{time}
+  <situation>{situation}</situation>{crisis}
+  {story}</scene>
+  <task>
+  {task}
+  </task>
+"block_scene_epilogue": |-
+  <scene type="epilogue">
+  {header}
+  <location>{location}</location>
+  <situation>{situation}</situation>
+  <conflict>{conflict}</conflict>
+  <possible_endings>{endings}</possible_endings>
+  {npcs}
+  {history}
+  <session_log>{log}</session_log>
+  </scene>
+  <task>
+  {task}
+  </task>
+"block_scene_chapter_opening": |-
+  <scene type="chapter_opening" chapter="{chapter}">
+  {header}
+  <location>{location}</location>{time}
+  <situation>{situation}</situation>
+  {history}
+  {npcs}
+  {story}</scene>
+  <task>
+  {task}
+  </task>
 "block_chapter_record_untitled": 'Chapter {n}'
 "block_chapter_record_conflict": 'The conflict: {items}'
 "block_chapter_record_fulfilled": 'Vows fulfilled: {items}.'

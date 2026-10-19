@@ -8,6 +8,12 @@ This log starts at 2026.09.24.0, the restart after a four-month pause. Earlier r
 
 Calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day.
 
+## [2026.10.20.8] — 2026-10-20
+
+Step 9o, 9o.2, third group: the markup of `prompt_boundary.py` and `prompt_blocks.py` moves to `prompts/blocks.yaml`. The opening, epilogue, and chapter-opening scenes are three templates; the world and character tags, which every prompt opens with, the tags of pronouns, paths, and vow, the epilogue's NPC tag, ending form, and session-log entry, and the chapter's returning NPC tag and background NPCs (whose `name(disposition)` form is the known NPCs' own) are keys of their own. The story arc's act position is part of its template, and the prefix of the background NPCs is part of theirs, so `block_background_npcs_prefix` goes; the aliases attribute the target NPC and a returning NPC share is `block_npc_aliases_attr`. The render script of this group rendered 612 blocks and opening, epilogue, and chapter prompts, in Delve as well as the three playable settings, with every line and branch of both modules reached, and the first two groups' scripts ran again: all byte-identical before and after. Play does not change.
+
+Quality gate: 1848 tests, coverage 94.92%. Save format unchanged. No Elvira session (Sessions with the user); the prompts are byte-identical.
+
 ## [2026.10.20.7] — 2026-10-20
 
 Step 9o, 9o.2, second group: the markup of `prompt_action.py` and `prompt_dialog.py` moves to `prompts/blocks.yaml`, 12 keys: the action and dialog scenes as two templates, the result tag with its match and consequences attributes, the position tag, and the tags of the player's words, a world addition, a consequence, and the oracle's answer. The three tags both prompts wrote out alike are one helper each in `prompt_shared.py` (`_player_words_tag`, `_world_add_tag`, `_consequence_tags`). The render script of this group rendered 90 action, dialog, and oracle prompts with every line and branch of both modules reached, and the first group's script ran again: both byte-identical before and after. Play does not change.
