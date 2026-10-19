@@ -41,7 +41,9 @@ def _ways(move: Move) -> list[str]:
             labels = [get_prompt("brain_pick_way", method=condition.method, options=", ".join(options))]
         else:
             labels = [o.stat for o in condition.roll_options if o.using == "stat" and o.stat]
-        ways.extend(f"{label}: {condition.text}" if condition.text else label for label in labels)
+        ways.extend(
+            get_prompt("brain_way", way=label, text=condition.text) if condition.text else label for label in labels
+        )
     return ways
 
 
@@ -64,22 +66,35 @@ def _build_moves_block(game: GameState) -> str:
     lines = []
     for key, move in _offered_moves(game).items():
         ways, roll = _ways_and_roll(move)
-        stats = " | ".join(ways) if ways else eng().ai_text.no_stat
         hint = trigger_hints.get(key, "")
-        trigger = f" when:{hint}" if hint else ""
-        lines.append(f"  {key} ({move.name}) stats:[{stats}] roll:{roll}{trigger}")
-
-    pos_line = f"  combat_position: {combat_pos}" if combat_pos else ""
-    return "<moves>\n" + "\n".join(lines) + ("\n" + pos_line if pos_line else "") + "\n</moves>"
+        lines.append(
+            get_prompt(
+                "brain_move_line",
+                key=key,
+                move=move.name,
+                stats=" | ".join(ways) if ways else eng().ai_text.no_stat,
+                roll=roll,
+                trigger=get_prompt("brain_move_trigger", hint=hint) if hint else "",
+            )
+        )
+    if combat_pos:
+        lines.append(get_prompt("brain_combat_position", position=combat_pos))
+    return get_prompt("brain_moves_wrapper", lines="\n".join(lines))
 
 
 def _stats_block(game: GameState) -> str:
-    return " ".join(f"{name}={_xe(text)}" for name, text in stat_descriptions(game.setting_id).items())
+    return " ".join(
+        get_prompt("brain_stat", stat=name, description=_xe(text))
+        for name, text in stat_descriptions(game.setting_id).items()
+    )
 
 
 def _build_stats_line(game: GameState) -> str:
     abbreviations = rules().stats.prompt_abbreviations
-    stats = [f"{abbreviations[name]}{game.stats[name]}" for name in stat_descriptions(game.setting_id)]
+    stats = [
+        get_prompt("brain_stat_value", abbreviation=abbreviations[name], value=str(game.stats[name]))
+        for name in stat_descriptions(game.setting_id)
+    ]
     return " ".join([_xe(game.player_name), *stats])
 
 
@@ -92,10 +107,18 @@ def _build_tracks_block(game: GameState) -> str:
     if not tracks:
         return ""
     lines = [
-        f"  {_xe(t.name)} (id:{t.id}, {t.track_type}, {t.rank}) {filled_boxes(t)}/{rules().progress.boxes}"
+        get_prompt(
+            "brain_track_line",
+            track=_xe(t.name),
+            id=t.id,
+            track_type=t.track_type,
+            rank=t.rank,
+            filled=str(filled_boxes(t)),
+            boxes=str(rules().progress.boxes),
+        )
         for t in tracks
     ]
-    return "<tracks>\n" + "\n".join(lines) + "\n</tracks>"
+    return get_prompt("brain_tracks_wrapper", lines="\n".join(lines))
 
 
 def _threat_line(game: GameState, threat: ThreatData) -> str:
@@ -108,17 +131,23 @@ def _threat_line(game: GameState, threat: ThreatData) -> str:
 
 
 def _build_dangers_block(game: GameState) -> str:
-    lines = [f"  {_xe(c.name)} {c.filled}/{c.segments}" for c in open_complications(game)]
+    lines = [
+        get_prompt("brain_danger_clock_line", clock=_xe(c.name), filled=str(c.filled), segments=str(c.segments))
+        for c in open_complications(game)
+    ]
     lines += [_threat_line(game, t) for t in active_threats(game)]
     if not lines:
         return ""
-    return "<dangers>\n" + "\n".join(lines) + "\n</dangers>"
+    return get_prompt("brain_dangers_wrapper", lines="\n".join(lines))
 
 
 def _build_fact_types_block() -> str:
     types = gm().fact_resolution.types
-    lines = [f"  {name} [{spec.subject}]: {spec.description}" for name, spec in types.items()]
-    return "<fact_types>\n" + "\n".join(lines) + "\n</fact_types>"
+    lines = [
+        get_prompt("brain_fact_type_line", fact_type=fact_type, subject=spec.subject, description=spec.description)
+        for fact_type, spec in types.items()
+    ]
+    return get_prompt("brain_fact_types_wrapper", lines="\n".join(lines))
 
 
 def _refuse(reason: str) -> NoReturn:
@@ -226,27 +255,38 @@ def call_brain(provider: AIProvider, game: GameState, player_message: str) -> Br
     npc_lines = []
     for n in _listed_npcs(game):
         connection = connection_track(game, n.id)
-        bonded = ", bonded" if connection is not None and is_bonded(connection) else ""
-        entry = f"  {_xe(n.name)} (id:{n.id}, {n.disposition}{bonded})"
+        entry = get_prompt(
+            "brain_npc_line",
+            npc=_xe(n.name),
+            id=n.id,
+            disposition=n.disposition,
+            bonded=get_prompt("brain_npc_bonded") if connection is not None and is_bonded(connection) else "",
+        )
         if n.aliases:
-            entry += f" aliases:{_xe(','.join(n.aliases))}"
+            entry += get_prompt("brain_npc_aliases", aliases=_xe(",".join(n.aliases)))
         npc_lines.append(entry)
-    npc_block = "<npcs>\n" + "\n".join(npc_lines) + "\n</npcs>" if npc_lines else f"<npcs>{_ai_text['no_npcs']}</npcs>"
+    npc_block = (
+        get_prompt("brain_npcs_wrapper", lines="\n".join(npc_lines))
+        if npc_lines
+        else get_prompt("brain_npcs_none", none=_ai_text["no_npcs"])
+    )
 
     tracks_block = _build_tracks_block(game)
     dangers_block = _build_dangers_block(game)
     bonuses = bonus_block(game)
 
-    user_msg = f"""<state>
-loc:{_xe(w.current_location)} | ctx:{_xe(w.current_scene_context)}
-time:{w.time_of_day or _ai_text["unknown_time"]}
-{_build_stats_line(game)}
-</state>
-{npc_block}
-{tracks_block}
-{dangers_block}
-{bonuses}
-<input>{_xe(player_message)}</input>"""
+    user_msg = get_prompt(
+        "brain_user_message",
+        location=_xe(w.current_location),
+        context=_xe(w.current_scene_context),
+        time=w.time_of_day or _ai_text["unknown_time"],
+        stats=_build_stats_line(game),
+        npcs=npc_block,
+        tracks=tracks_block,
+        dangers=dangers_block,
+        bonuses=bonuses,
+        input=_xe(player_message),
+    )
 
     move_keys = list(_offered_moves(game))
     choices = {
@@ -309,10 +349,12 @@ def call_revelation_check(provider: AIProvider, narration: str, revelation: Reve
 
     system = get_prompt("revelation_check_system", lang=lang)
 
-    prompt = (
-        f'<revelation weight="{html.escape(rev_weight, quote=True)}">{html.escape(rev_content)}</revelation>\n\n'
-        f"<narration>{narration}</narration>\n\n"
-        f"{get_prompt('revelation_check_question')}"
+    prompt = get_prompt(
+        "revelation_check_prompt",
+        weight=html.escape(rev_weight, quote=True),
+        content=html.escape(rev_content),
+        narration=narration,
+        question=get_prompt("revelation_check_question"),
     )
 
     spec = AICallSpec(

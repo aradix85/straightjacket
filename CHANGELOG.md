@@ -8,6 +8,12 @@ This log starts at 2026.09.24.0, the restart after a four-month pause. Earlier r
 
 Calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day.
 
+## [2026.10.20.9] — 2026-10-20
+
+Step 9o, 9o.2, fourth group: the markup of `ai/brain.py` moves to `prompts/brain.yaml`, 24 keys: the Brain's user message as a template, the wrappers and lines of its moves, tracks, dangers, fact types, and NPCs, the form of a stat and of a stat's value, a way to roll with its condition, the trigger hint, the combat position, an NPC's bond and aliases, and the revelation check's prompt. The render script of this group rendered the Brain's system prompt, its cached prefix, and its user message with and without NPCs, tracks, dangers, a combat position, and a time of day, and the revelation check's prompt, in Delve as well as the three playable settings, with every line that builds a prompt reached (what it leaves out are the refusals and checks of the Brain's answer), and the three earlier groups' scripts ran again: all byte-identical before and after. Play does not change.
+
+Quality gate: 1848 tests, coverage 94.89%. Save format unchanged. No Elvira session (Sessions with the user); the prompts are byte-identical.
+
 ## [2026.10.20.8] — 2026-10-20
 
 Step 9o, 9o.2, third group: the markup of `prompt_boundary.py` and `prompt_blocks.py` moves to `prompts/blocks.yaml`. The opening, epilogue, and chapter-opening scenes are three templates; the world and character tags, which every prompt opens with, the tags of pronouns, paths, and vow, the epilogue's NPC tag, ending form, and session-log entry, and the chapter's returning NPC tag and background NPCs (whose `name(disposition)` form is the known NPCs' own) are keys of their own. The story arc's act position is part of its template, and the prefix of the background NPCs is part of theirs, so `block_background_npcs_prefix` goes; the aliases attribute the target NPC and a returning NPC share is `block_npc_aliases_attr`. The render script of this group rendered 612 blocks and opening, epilogue, and chapter prompts, in Delve as well as the three playable settings, with every line and branch of both modules reached, and the first two groups' scripts ran again: all byte-identical before and after. Play does not change.

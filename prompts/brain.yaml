@@ -24,6 +24,50 @@
   {fact_types_block}
   {moves_block}
 "brain_pick_way": "{method} of {options}"
+"brain_way": '{way}: {text}'
+"brain_move_line": '  {key} ({move}) stats:[{stats}] roll:{roll}{trigger}'
+"brain_move_trigger": ' when:{hint}'
+"brain_combat_position": '  combat_position: {position}'
+"brain_moves_wrapper": |-
+  <moves>
+  {lines}
+  </moves>
+"brain_stat": '{stat}={description}'
+"brain_stat_value": '{abbreviation}{value}'
+"brain_track_line": '  {track} (id:{id}, {track_type}, {rank}) {filled}/{boxes}'
+"brain_tracks_wrapper": |-
+  <tracks>
+  {lines}
+  </tracks>
+"brain_danger_clock_line": '  {clock} {filled}/{segments}'
+"brain_dangers_wrapper": |-
+  <dangers>
+  {lines}
+  </dangers>
+"brain_fact_type_line": '  {fact_type} [{subject}]: {description}'
+"brain_fact_types_wrapper": |-
+  <fact_types>
+  {lines}
+  </fact_types>
+"brain_npc_line": '  {npc} (id:{id}, {disposition}{bonded})'
+"brain_npc_bonded": ', bonded'
+"brain_npc_aliases": ' aliases:{aliases}'
+"brain_npcs_wrapper": |-
+  <npcs>
+  {lines}
+  </npcs>
+"brain_npcs_none": '<npcs>{none}</npcs>'
+"brain_user_message": |-
+  <state>
+  loc:{location} | ctx:{context}
+  time:{time}
+  {stats}
+  </state>
+  {npcs}
+  {tracks}
+  {dangers}
+  {bonuses}
+  <input>{input}</input>
 "brain_stat_retry": |-
   {move} rolls with one of its own stats ({stats}), but stat is {stat}. Answer again with the stat of that move that fits the action.
 "correction_brain": |-
@@ -49,3 +93,9 @@
   The narration is in {lang}. Reason in {lang} if that helps, and always fill both JSON fields.
 "revelation_check_question": |-
   Was this revelation meaningfully present in the narration above?
+"revelation_check_prompt": |-
+  <revelation weight="{weight}">{content}</revelation>
+
+  <narration>{narration}</narration>
+
+  {question}
