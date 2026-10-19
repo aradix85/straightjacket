@@ -9,7 +9,7 @@ from straightjacket.engine.mechanics.consequences import downgrade_in_position, 
 from straightjacket.engine.mechanics.legacy import get_legacy_track
 from straightjacket.engine.mechanics.outcome_result import OutcomeResult
 from straightjacket.engine.mechanics.tracks import recommit_track
-from straightjacket.engine.models import GameState, ProgressTrack, RollResult
+from straightjacket.engine.models import GameState, ProgressTrack, RollResult, labels_of
 from tests._helpers import fix_dice, make_brain_result, make_game_state, make_progress_track
 
 
@@ -77,7 +77,7 @@ def test_a_miss_recommits_with_less_progress_and_a_higher_rank(
     fix_dice(monkeypatch, 3, 8)
     game, consequences = _play(setting_id, move, track, "MISS")
     assert (track.status, track.ticks, track.rank) == ("active", ticks_after, "formidable")
-    assert "recommit The Long Road" in consequences
+    assert "recommit The Long Road" in labels_of(consequences)
     sentences = generate_consequence_sentences(consequences, [], game, make_brain_result(move=move))
     assert any("Hero" in s and "The Long Road" in s for s in sentences)
 

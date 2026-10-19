@@ -1,3 +1,4 @@
+from straightjacket.engine.models import labels_of
 import pytest
 
 from straightjacket.engine.engine_loader import eng
@@ -121,7 +122,7 @@ def test_a_matched_miss_rolls_a_story_complication_instead_of_pay_the_price(
     rows = _complication_rows(game)
     outcome = resolve_move_outcome(game, "adventure/face_danger", "MISS", match=True, target_npc_id=None)
     assert rolled == ["Story Complication"]
-    assert all(row in rows for row in _rolled_rows(outcome.consequences[-1]))
+    assert all(row in rows for row in _rolled_rows(labels_of(outcome.consequences)[-1]))
 
 
 @pytest.mark.parametrize(("setting_id", "match"), [("starforged", False), ("classic", True)])
@@ -134,7 +135,7 @@ def test_other_misses_pay_the_price(
     for _ in range(20):
         outcome = resolve_move_outcome(game, "adventure/face_danger", "MISS", match=match, target_npc_id=None)
         assert rolled.pop() == "Pay the Price"
-        price = next(c for c in outcome.consequences if c.startswith("Pay the Price: "))
+        price = next(c for c in labels_of(outcome.consequences) if c.startswith("Pay the Price: "))
         assert not any(row in rows for row in _rolled_rows(price))
 
 

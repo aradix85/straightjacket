@@ -7,6 +7,7 @@ from ..models import ClockFillResult
 from ..models import (
     BrainResult,
     ClockEvent,
+    Consequence,
     GameState,
     NpcData,
     ProgressTrack,
@@ -67,7 +68,7 @@ class BurnOffer:
 class ActionResolution:
     position: str
     effect: str
-    consequences: list[str]
+    consequences: list[Consequence]
     clock_events: list[ClockEvent]
     npc_agency: list[str]
     agency_clock_events: list[ClockEvent]

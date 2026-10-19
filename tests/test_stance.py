@@ -1,3 +1,4 @@
+from straightjacket.engine.models import consequence
 import pytest
 
 from straightjacket.engine.mechanics import resolve_npc_stance
@@ -143,7 +144,7 @@ def test_stance_in_target_npc_block() -> None:
         game,
         brain,
         roll,
-        ["momentum +1"],
+        [consequence("momentum_change", n=1)],
         [],
         **action_prompt_kwargs(consequence_sentences=["The tide shifts."], player_words="I ask about the cargo"),
     )

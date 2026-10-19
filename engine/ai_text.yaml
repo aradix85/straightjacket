@@ -24,7 +24,7 @@ ai_text:
       revelation_confirmed: True if the narration clearly contains or foreshadows the revelation.
       reasoning: One sentence explaining why.
   consequence_labels:
-    momentum_change: momentum {value}
+    momentum_change: momentum {n:+d}
     track_gain: '{track} +{n}'
     track_loss: '{track} -{n}'
     mark_progress: mark progress ×{n}
@@ -48,6 +48,7 @@ ai_text:
     recommit: recommit {track}
     oracle_result: '{table}: {result}'
     oracle_worse: '{result}, made worse'
+    told: '{text}'
   narrator_defaults:
     unknown_location: unknown
     unknown_time: unspecified

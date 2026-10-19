@@ -238,6 +238,24 @@ class ThreatEvent(SerializableMixin):
 
 
 @dataclass
+class Consequence(SerializableMixin):
+    kind: str
+    values: dict[str, Any]
+
+    @property
+    def label(self) -> str:
+        return eng().ai_text.consequence_labels[self.kind].format(**self.values)
+
+
+def consequence(kind: str, /, **values: Any) -> Consequence:
+    return Consequence(kind=kind, values=values)
+
+
+def labels_of(consequences: list[Consequence]) -> list[str]:
+    return [c.label for c in consequences]
+
+
+@dataclass
 class ClockEvent(SerializableMixin):
     clock: str
     trigger: str

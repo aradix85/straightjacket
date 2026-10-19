@@ -5,7 +5,7 @@ from dataclasses import dataclass, field
 
 from ..i18n import t
 from .engine_loader import eng
-from .models_base import ClockEvent, ProgressTrack
+from .models_base import ClockEvent, Consequence, ProgressTrack
 from .serialization import SerializableMixin
 
 
@@ -45,7 +45,7 @@ class SceneLogEntry(SerializableMixin):
     summary: str = ""
     move: str = ""
     result: str = ""
-    consequences: list[str] = field(default_factory=list)
+    consequences: list[Consequence] = field(default_factory=list)
     clock_events: list[ClockEvent] = field(default_factory=list)
     position: str = "risky"
     effect: str = "standard"

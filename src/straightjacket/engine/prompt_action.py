@@ -2,7 +2,18 @@ from collections.abc import Sequence
 
 from .datasworn.moves import get_moves, outcome_text
 from .mechanics import ClockFillResult
-from .models import BrainResult, GameState, NpcData, RandomEvent, ResolvedFact, RollResult, SceneSetup, ThreatEvent
+from .models import (
+    BrainResult,
+    Consequence,
+    GameState,
+    NpcData,
+    RandomEvent,
+    ResolvedFact,
+    RollResult,
+    SceneSetup,
+    ThreatEvent,
+    labels_of,
+)
 from .prompt_blocks import narrative_direction_block, recent_events_block, story_context_block
 from .prompt_loader import get_prompt
 from .prompt_shared import (
@@ -27,9 +38,9 @@ from .xml_utils import xa as _xa
 from .xml_utils import xe as _xe
 
 
-def _build_result_constraint(roll: RollResult, consequences: list[str]) -> str:
+def _build_result_constraint(roll: RollResult, consequences: list[Consequence]) -> str:
     match_tag = ' match="true"' if roll.match else ""
-    cons_attr = f' consequences="{_xa(",".join(consequences))}"' if consequences else ""
+    cons_attr = f' consequences="{_xa(",".join(labels_of(consequences)))}"' if consequences else ""
 
     if roll.result == "MISS":
         match_hint = get_prompt("result_match_hint_miss") if roll.match else ""
@@ -58,7 +69,7 @@ def build_action_prompt(
     game: GameState,
     brain: BrainResult,
     roll: RollResult,
-    consequences: list[str],
+    consequences: list[Consequence],
     npc_agency: list[str],
     *,
     consequence_sentences: Sequence[str],

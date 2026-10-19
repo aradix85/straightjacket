@@ -1,3 +1,4 @@
+from straightjacket.engine.models import consequence
 import pytest
 
 from straightjacket.engine.mechanics import compute_npc_gate, resolve_npc_stance
@@ -150,7 +151,7 @@ def _build_prompt(npc: NpcData, scene: int = 5, bond: int = 0) -> str:
         game,
         brain,
         roll,
-        ["momentum +1"],
+        [consequence("momentum_change", n=1)],
         [],
         **action_prompt_kwargs(consequence_sentences=["The tide shifts."], player_words="approach carefully"),
     )

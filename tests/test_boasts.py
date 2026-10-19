@@ -1,3 +1,4 @@
+from straightjacket.engine.models import labels_of
 import json
 
 import pytest
@@ -16,7 +17,7 @@ def _duel(result: str, boasts: list[str]) -> tuple[int, int, list[str]]:
     brain = make_brain_result(move=_MOVE, stat="heart", boasts=boasts)
     roll = RollResult(3, 1, 9, "heart", 2, 5, result, _MOVE, match=False)
     outcome = resolve_action_consequences(game, brain, roll, "risky")
-    return game.resources.momentum - momentum, game.resources.health - health, outcome.consequences
+    return game.resources.momentum - momentum, game.resources.health - health, labels_of(outcome.consequences)
 
 
 def test_a_strong_hit_takes_momentum_and_up_to_two_boasts(load_engine: None) -> None:

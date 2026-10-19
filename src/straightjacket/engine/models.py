@@ -9,6 +9,7 @@ from .models_base import (
     ClockData,
     ClockEvent,
     ClockFillResult,
+    Consequence,
     FateResult,
     GeneratedEntity,
     PlaceRecord,
@@ -21,6 +22,8 @@ from .models_base import (
     ThreatData,
     ThreatEvent,
     WorldState,
+    consequence,
+    labels_of,
 )
 from .models_npc import (
     MemoryEntry,
@@ -194,6 +197,7 @@ __all__ = [
     "ClockData",
     "ClockEvent",
     "ClockFillResult",
+    "Consequence",
     "CurrentAct",
     "DirectorGuidance",
     "FactRequest",
@@ -227,4 +231,6 @@ __all__ = [
     "ThreatEvent",
     "TurnSnapshot",
     "WorldState",
+    "consequence",
+    "labels_of",
 ]

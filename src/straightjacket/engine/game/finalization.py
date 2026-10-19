@@ -22,7 +22,18 @@ from ..mechanics.move_effects import apply_effects, parse_effects
 from ..mechanics.move_outcome import resolve_move_outcome
 from ..mechanics.outcome_result import OutcomeResult, move_outcome_config
 from ..mechanics.roll_sources import best_roll_option, roll_source_without_stat
-from ..models import BrainResult, ClockEvent, GameState, MemoryEntry, NpcData, ProgressTrack, RollResult
+from ..models import (
+    BrainResult,
+    ClockEvent,
+    Consequence,
+    GameState,
+    MemoryEntry,
+    NpcData,
+    ProgressTrack,
+    RollResult,
+    consequence,
+    labels_of,
+)
 from ..npc import named_in
 from ..npc.bond import connection_track
 from ..npc.memory import consolidate_memory
@@ -36,7 +47,7 @@ from ..mechanics.consequences import roll_action
 
 @dataclass
 class ActionOutcome:
-    consequences: list[str]
+    consequences: list[Consequence]
     clock_events: list[ClockEvent]
     clock_fill_results: list[ClockFillResult]
     outcome: OutcomeResult
@@ -60,9 +71,7 @@ def _roll_chained_table(table: OracleTable, reroll_prefixes: list[str]) -> str:
 def _chain_oracle_move(game: GameState, move: Move, cfg: dict[str, Any], outcome: OutcomeResult) -> None:
     table = move.tables[cfg["table"]]
     results = [_roll_chained_table(table, cfg["reroll_prefixes"]) for _ in range(cfg["rolls"])]
-    outcome.consequences.append(
-        eng().ai_text.consequence_labels["chained_move"].format(move=move.name, result="; ".join(results))
-    )
+    outcome.consequences.append(consequence("chained_move", move=move.name, result="; ".join(results)))
     if cfg["legacy_track"]:
         mark_legacy_ticks(game, cfg["legacy_track"], cfg["ticks_per_roll"] * cfg["rolls"])
     log(f"[Chain] {move.name}: {'; '.join(results)}")
@@ -101,9 +110,7 @@ def _chain_move(game: GameState, brain: BrainResult, outcome: OutcomeResult) -> 
     log(
         f"[Chain] {outcome.chained_move} ({label}={stat_value}, +{adds}): score {roll.action_score} vs [{roll.c1},{roll.c2}] → {roll.result}"
     )
-    outcome.consequences.append(
-        eng().ai_text.consequence_labels["chained_move"].format(move=move.name, result=roll.result)
-    )
+    outcome.consequences.append(consequence("chained_move", move=move.name, result=roll.result))
     outcome.consequences.extend(chained.consequences)
     outcome.follow_up_moves.extend(chained.follow_up_moves)
     if chained.legacy_track and not outcome.legacy_track:
@@ -197,9 +204,9 @@ def apply_post_narration(
     brain: BrainResult,
     roll: RollResult | None,
     scene_present_ids: set[str],
-    consequences: Sequence[str],
+    consequences: Sequence[Consequence],
 ) -> dict[str, Any]:
-    cons_list = list(consequences)
+    cons_list = labels_of(list(consequences))
     present_names = [n.name for n in game.npcs if n.id in scene_present_ids]
     ctx = generate_scene_context(game, brain, roll, present_names)
     game.world.current_scene_context = ctx

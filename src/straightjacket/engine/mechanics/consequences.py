@@ -6,7 +6,7 @@ import random
 
 from ..engine_loader import eng
 from ..logging_util import log
-from ..models import BrainResult, ClockEvent, GameState, RollResult
+from ..models import BrainResult, ClockEvent, Consequence, GameState, RollResult
 from ..npc import find_npc, normalize_for_match
 
 from ..models import ClockFillResult
@@ -220,65 +220,45 @@ def pick_template(key: str) -> str:
     return result
 
 
-_DANGER_VERBS = ("complication_clock", "complication_averted")
+def _meter_event(meter: str, change: int) -> str | None:
+    if meter in ("health", "spirit"):
+        if change > 0:
+            return f"{meter}_gain"
+        return f"{meter}_heavy" if -change >= eng().resources.heavy_loss_amount else f"{meter}_light"
+    if meter == "supply":
+        return "supply_gain" if change > 0 else "supply_any"
+    return None
 
 
-def _classify_impact(verb: str, rest: str, impacts: dict[str, Impact]) -> tuple[str, str, str] | None:
-    key = rest.strip()
-    if key not in impacts:
-        return None
-    return ("impact_mark" if verb == "mark" else "impact_clear"), "", impacts[key].label
-
-
-def _classify_keyword(verb: str, rest: str, impacts: dict[str, Impact]) -> tuple[str, str, str] | None:
-    if verb in ("mark", "clear"):
-        return _classify_impact(verb, rest, impacts)
-    if verb == "complication":
-        return f"complication_{rest.strip()}", "", ""
-    return verb, "", rest.strip()
-
-
-def _classify(cons: str, default_npc: str, impacts: dict[str, Impact]) -> tuple[str, str, str] | None:
-    verb, _, rest = cons.partition(" ")
-    if verb in ("mark", "clear", "complication", "bond_request", "recommit", *_DANGER_VERBS):
-        return _classify_keyword(verb, rest, impacts)
-
-    parts = cons.split()
-    if len(parts) >= 2 and "bond" in cons.lower():
-        bond_npc = cons.split("bond")[0].strip()
-        subject = bond_npc or default_npc
-        delta = parts[-1]
-        return ("bond_loss" if "-" in delta else "bond_gain", subject, "")
-
-    if len(parts) >= 2:
-        track = parts[0].lower()
-        delta = parts[-1]
-        if "-" in delta:
-            try:
-                amount = int(delta.replace("-", ""))
-            except ValueError:
-                amount = 1
-            severity = "heavy" if amount >= eng().resources.heavy_loss_amount else "light"
-            if track in ("health", "spirit"):
-                return f"{track}_{severity}", "", ""
-            if track == "supply" or "supply" in cons:
-                return "supply_any", "", ""
-            if track == "momentum":
-                return "momentum_loss", "", ""
+def _sentence_event(c: Consequence, impacts: dict[str, Impact]) -> tuple[str, str, str] | None:
+    values = c.values
+    event: str | None
+    if c.kind in ("track_gain", "track_loss"):
+        event = _meter_event(values["track"], values["n"] if c.kind == "track_gain" else -values["n"])
+        return (event, "", "") if event else None
+    if c.kind == "momentum_change":
+        if values["n"] == 0:
             return None
-        if "+" in delta:
-            if track in ("health", "spirit"):
-                return f"{track}_gain", "", ""
-            if track == "supply" or "supply" in cons:
-                return "supply_gain", "", ""
-            if track == "momentum":
-                return "momentum_gain", "", ""
-            return None
+        return ("momentum_gain" if values["n"] > 0 else "momentum_loss"), "", ""
+    if c.kind == "bond_progress":
+        return "bond_gain", values["name"], ""
+    if c.kind == "disposition_shift":
+        return "disposition_shift", values["name"], ""
+    if c.kind in ("mark_impact", "clear_impact"):
+        return ("impact_mark" if c.kind == "mark_impact" else "impact_clear"), "", impacts[values["impact"]].label
+    if c.kind == "complication":
+        return f"complication_{values['kind']}", "", ""
+    if c.kind in ("complication_clock", "complication_averted"):
+        return c.kind, "", values["name"]
+    if c.kind == "bond_request":
+        return "bond_request", "", ""
+    if c.kind == "recommit":
+        return "recommit", "", values["track"]
     return None
 
 
 def generate_consequence_sentences(
-    consequences: list[str],
+    consequences: list[Consequence],
     clock_events: list[ClockEvent],
     game: GameState,
     brain: BrainResult,
@@ -291,8 +271,8 @@ def generate_consequence_sentences(
 
     sentences: list[str] = []
 
-    for cons in consequences:
-        sentence = resolve_consequence_sentence(cons, player, npc_name, location, impacts)
+    for c in consequences:
+        sentence = resolve_consequence_sentence(c, player, npc_name, location, impacts)
         if sentence:
             sentences.append(sentence)
 
@@ -307,30 +287,18 @@ def generate_consequence_sentences(
 
 
 def resolve_consequence_sentence(
-    cons: str, player: str, npc_name: str, location: str, impacts: dict[str, Impact]
+    c: Consequence, player: str, npc_name: str, location: str, impacts: dict[str, Impact]
 ) -> str:
-    if "," in cons and cons.partition(" ")[0] not in _DANGER_VERBS:
-        parts = []
-        for sub in cons.split(","):
-            sub = sub.strip()
-            if not sub:
-                continue
-            s = resolve_consequence_sentence(sub, player, npc_name, location, impacts)
-            if s:
-                parts.append(s)
-        return " ".join(parts)
-
-    classified = _classify(cons, npc_name, impacts)
-    if classified is None:
+    event = _sentence_event(c, impacts)
+    if event is None:
         return ""
-
-    event_code, subject_override, impact_text = classified
+    event_code, subject, detail = event
     fmt: dict[str, Any] = {
         "player": player,
-        "npc": subject_override or npc_name,
+        "npc": subject or npc_name,
         "location": location,
         "amount": "",
-        "impact": impact_text,
-        "danger": impact_text,
+        "impact": detail,
+        "danger": detail,
     }
     return pick_template(event_code).format(**fmt)

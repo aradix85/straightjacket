@@ -1,3 +1,4 @@
+from straightjacket.engine.models import labels_of
 import pytest
 
 from straightjacket.engine.datasworn.settings import load_package
@@ -33,7 +34,7 @@ def test_harm_above_zero_in_starforged_is_taken_without_endure_harm(load_engine:
     result = OutcomeResult()
     suffer(game, "health", 1, result)
     assert game.resources.health == 2
-    assert (result.consequences, result.follow_up_moves) == (["health -1"], [])
+    assert (labels_of(result.consequences), result.follow_up_moves) == (["health -1"], [])
 
 
 def test_harm_past_zero_costs_momentum_and_is_endured(load_engine: None) -> None:
@@ -41,7 +42,7 @@ def test_harm_past_zero_costs_momentum_and_is_endured(load_engine: None) -> None
     result = OutcomeResult()
     suffer(game, "health", 2, result)
     assert (game.resources.health, game.resources.momentum) == (0, 1)
-    assert result.consequences == ["health -1", "momentum -1"]
+    assert labels_of(result.consequences) == ["health -1", "momentum -1"]
     assert result.follow_up_moves == ["suffer/endure_harm"]
 
 
@@ -65,7 +66,7 @@ def test_exhausted_supply_marks_unprepared_and_further_loss_costs_momentum(load_
     suffer(game, "supply", 1, result)
     suffer(game, "supply", 1, result)
     assert game.impacts == ["unprepared"]
-    assert result.consequences == ["supply -1", "mark unprepared", "momentum -1"]
+    assert labels_of(result.consequences) == ["supply -1", "mark unprepared", "momentum -1"]
     assert (game.resources.momentum, result.follow_up_moves) == (1, [])
 
 
@@ -75,7 +76,7 @@ def test_a_miss_at_zero_marks_the_first_free_impact(load_engine: None, monkeypat
     fix_dice(monkeypatch, *MISS)
     make_follow_up_moves(game, result)
     assert game.impacts == ["wounded"]
-    assert result.consequences == ["follow-up move Endure Harm: MISS", "momentum -2", "mark wounded"]
+    assert labels_of(result.consequences) == ["follow-up move Endure Harm: MISS", "momentum -2", "mark wounded"]
 
 
 def test_with_both_impacts_marked_mortal_harm_faces_death(load_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -85,7 +86,7 @@ def test_with_both_impacts_marked_mortal_harm_faces_death(load_engine: None, mon
     fix_dice(monkeypatch, *MISS, 5, *MISS)
     make_follow_up_moves(game, result)
     assert game.game_over
-    assert result.consequences[-2:] == ["follow-up move Face Death: MISS", "you are dead"]
+    assert labels_of(result.consequences)[-2:] == ["follow-up move Face Death: MISS", "you are dead"]
 
 
 def test_face_death_on_a_weak_hit_returns_bound_to_an_extreme_vow(
@@ -99,10 +100,10 @@ def test_face_death_on_a_weak_hit_returns_bound_to_an_extreme_vow(
     assert (vow.name, vow.rank, vow.bound_impact, vow.status) == ("The deathbound quest", "extreme", "doomed", "active")
     assert game.impacts == ["doomed"]
     assert not game.game_over
-    assert "follow-up move Swear an Iron Vow: STRONG_HIT" in result.consequences
+    assert "follow-up move Swear an Iron Vow: STRONG_HIT" in labels_of(result.consequences)
     assert any(
         c.startswith('return from the brink bound to the extreme vow "The deathbound quest"')
-        for c in result.consequences
+        for c in labels_of(result.consequences)
     )
 
     complete_track(game, vow.id, "completed")
@@ -140,7 +141,10 @@ def test_dying_gives_two_turns_to_raise_health(load_engine: None, monkeypatch: p
     assert (_dying(game), first.follow_up_moves) == (["Dying"], [])
     tick_dying_clock(game, second)
     assert _dying(game) == []
-    assert (second.consequences, second.follow_up_moves) == (["Dying: out of time"], ["threshold/face_death"])
+    assert (labels_of(second.consequences), second.follow_up_moves) == (
+        ["Dying: out of time"],
+        ["threshold/face_death"],
+    )
 
 
 def test_dying_ends_when_health_rises_above_zero(load_engine: None) -> None:
@@ -149,7 +153,7 @@ def test_dying_ends_when_health_rises_above_zero(load_engine: None) -> None:
     game.resources.health = 2
     result = OutcomeResult()
     tick_dying_clock(game, result)
-    assert (_dying(game), result.consequences, result.follow_up_moves) == ([], [], [])
+    assert (_dying(game), labels_of(result.consequences), result.follow_up_moves) == ([], [], [])
 
 
 @pytest.mark.parametrize(("in_a_fight", "follow_ups"), [(False, []), (True, ["threshold/face_death"])])
@@ -162,7 +166,7 @@ def test_unconscious_faces_death_only_in_a_fight(
         game.progress_tracks.append(make_progress_track(id="combat_raiders", track_type="combat"))
     fix_dice(monkeypatch, 25)
     result = resolve_move_outcome(game, "suffer/endure_harm", "MISS", target_npc_id=None, match=False)
-    assert result.consequences[-1].startswith("Endure Harm: You are unconscious")
+    assert labels_of(result.consequences)[-1].startswith("Endure Harm: You are unconscious")
     assert result.follow_up_moves == follow_ups
 
 
@@ -176,7 +180,7 @@ def test_giving_up_forsakes_the_newest_vow(load_engine: None, monkeypatch: pytes
     fix_dice(monkeypatch, 15)
     result = resolve_move_outcome(game, "suffer/endure_stress", "MISS", target_npc_id=None, match=False)
     assert [t.status for t in game.progress_tracks] == ["active", "failed"]
-    assert result.consequences == [
+    assert labels_of(result.consequences) == [
         "momentum -2",
         "Endure Stress: You give up. Forsake Your Vow.",
         'forsake the vow "New"',
@@ -208,7 +212,7 @@ def test_classic_sojourn_clears_a_marked_condition_first(load_engine: None) -> N
     game.impacts = ["shaken"]
     result = resolve_move_outcome(game, "relationship/sojourn", "WEAK_HIT", target_npc_id=None, match=False)
     assert (game.impacts, game.resources.spirit, game.resources.health) == ([], 3, 4)
-    assert result.consequences[:2] == ["clear shaken", "spirit +1"]
+    assert labels_of(result.consequences)[:2] == ["clear shaken", "spirit +1"]
 
 
 def test_classic_heal_gives_two_health(load_engine: None) -> None:

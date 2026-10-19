@@ -14,7 +14,7 @@ from .impacts import clear_impact
 from .legacy import apply_threat_overcome_bonus, shifted_rank
 from .outcome_result import OutcomeResult
 from .suffer import suffer
-from ..models import BrainResult, GameState, ProgressTrack, ThreadEntry
+from ..models import BrainResult, GameState, ProgressTrack, ThreadEntry, consequence
 
 
 def _slug(name: str) -> str:
@@ -80,7 +80,7 @@ def start_bound_vow(game: GameState, name: str, rank: str, impact: str) -> Progr
 def forsake_vow(game: GameState, vow: ProgressTrack, result: OutcomeResult) -> None:
     cfg = eng().suffer.forsake_vow
     complete_track(game, vow.id, "failed")
-    result.consequences.append(eng().ai_text.consequence_labels["forsake_vow"].format(vow=vow.name))
+    result.consequences.append(consequence("forsake_vow", vow=vow.name))
     suffer(game, cfg.meter, cfg.cost, result)
 
 
@@ -105,7 +105,7 @@ def recommit_track(track: ProgressTrack, rule: str, result: OutcomeResult) -> No
     higher = shifted_rank(track.rank, 1)
     if higher is not None:
         track.rank = higher
-    result.consequences.append(eng().ai_text.consequence_labels["recommit"].format(track=track.name))
+    result.consequences.append(consequence("recommit", track=track.name))
     log(f"[Track] Recommitted to {track.name}: {track.filled_boxes} boxes, rank {track.rank}")
 
 

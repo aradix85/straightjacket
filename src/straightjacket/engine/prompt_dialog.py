@@ -1,6 +1,16 @@
 from collections.abc import Sequence
 
-from .models import BrainResult, ClockFillResult, GameState, NpcData, RandomEvent, ResolvedFact, SceneSetup, ThreatEvent
+from .models import (
+    BrainResult,
+    ClockFillResult,
+    Consequence,
+    GameState,
+    NpcData,
+    RandomEvent,
+    ResolvedFact,
+    SceneSetup,
+    ThreatEvent,
+)
 from .prompt_blocks import narrative_direction_block, recent_events_block, story_context_block
 from .prompt_loader import get_prompt
 from .prompt_shared import (
@@ -34,7 +44,7 @@ def build_dialog_prompt(
     oracle_answer: str,
     random_events: Sequence[RandomEvent],
     threat_events: Sequence[ThreatEvent],
-    consequences: Sequence[str],
+    consequences: Sequence[Consequence],
     clock_fill_results: Sequence[ClockFillResult],
     npc_agency: Sequence[str],
     facts: Sequence[ResolvedFact],
@@ -48,7 +58,7 @@ def build_dialog_prompt(
     wa = brain.world_addition
     wl = f"\n<world_add>{_xe(wa)}</world_add>" if wa else ""
     flags = _flags_block(game)
-    cons_tags = "".join(f"\n<consequence>{_xe(c)}</consequence>" for c in consequences)
+    cons_tags = "".join(f"\n<consequence>{_xe(c.label)}</consequence>" for c in consequences)
     pw = f"\n<player_words>{_xe(player_words)}</player_words>" if player_words else ""
     pacing = _pacing_block(game, scene_setup)
     events_block = _random_events_block(random_events)

@@ -21,6 +21,7 @@ from ..models import (
     BrainResult,
     CharacterListEntry,
     ClockEvent,
+    Consequence,
     GameState,
     NarrationEntry,
     RandomEvent,
@@ -84,7 +85,7 @@ def finalize_scene(
     roll_result_str: str,
     roll: RollResult | None = None,
     *,
-    consequences: Sequence[str],
+    consequences: Sequence[Consequence],
     agency_clock_events: Sequence[ClockEvent],
     threat_events: Sequence[ThreatEvent],
 ) -> tuple[bool, DirectorCall | None]:

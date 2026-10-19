@@ -13,7 +13,16 @@ from ..mechanics.move_outcome import make_follow_up_moves
 from ..mechanics.outcome_result import OutcomeResult, move_outcome_config
 from ..mechanics.suffer import tick_dying_clock
 from ..mechanics.threats import advance_menace_on_miss, resolve_full_menace, take_pending_threat_events
-from ..models import BrainResult, ClockEvent, GameState, ProgressTrack, RollResult, ThreatEvent
+from ..models import (
+    BrainResult,
+    ClockEvent,
+    Consequence,
+    GameState,
+    ProgressTrack,
+    RollResult,
+    ThreatEvent,
+    consequence,
+)
 from ..npc import find_npc
 from .finalization import apply_progress_and_legacy, resolve_action_consequences, update_crisis
 from ..mechanics import complete_track, start_track
@@ -47,11 +56,13 @@ def _maybe_tick_weak_hit_clock(
         tick_threat_clock(game, 1, clock_events, fill_results)
 
 
-def _maybe_avert_complication(game: GameState, brain: BrainResult, roll: RollResult, consequences: list[str]) -> None:
+def _maybe_avert_complication(
+    game: GameState, brain: BrainResult, roll: RollResult, consequences: list[Consequence]
+) -> None:
     if not brain.target_clock or roll.result not in eng().dice.hit_results:
         return
     avert_complication(game, brain.target_clock)
-    consequences.append(eng().ai_text.consequence_labels["complication_averted"].format(name=brain.target_clock))
+    consequences.append(consequence("complication_averted", name=brain.target_clock))
 
 
 def _collect_threat_events(game: GameState, roll: RollResult, outcome: OutcomeResult) -> list[ThreatEvent]:

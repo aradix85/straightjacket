@@ -8,6 +8,12 @@ This log starts at 2026.09.24.0, the restart after a four-month pause. Earlier r
 
 Calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day.
 
+## [2026.10.19.16] — 2026-10-19
+
+Step 9h, 9h.16 fixed. Consequences are structured: every effect, handler, boast, chained move, and recommit records a `Consequence` (`models_base.py`: a kind, the key of its label in `ai_text.consequence_labels`, and the values the label is filled with) instead of a finished string, and `mechanics/consequences.py` picks the narrator's sentence by kind and values (`_sentence_event`) instead of parsing the label back (`_classify` is gone). The parser had told "legacy reward (bonds)" as a bond growing with someone called "legacy reward (", any follow-up move or oracle row containing "bond" as a bond, and split labels at their commas; a disposition shift (Make a Connection, Test Your Relationship) now has a sentence of its own (`disposition_shift` in `engine/consequence_templates.yaml`), and `bond_loss`, which nothing could produce, is gone. The momentum label takes a signed number (`momentum {n:+d}`), plain texts such as a boast or a death are the `told` kind, and the scene log keeps the structured consequences so a correction retells them the same way. Save format breaks.
+
+Quality gate: 1742 tests, coverage 94.65%. Elvira, Starforged, aggressor, 8 turns, about $0.59: no problems, overall 6.7 out of 10, with a momentum burn, a correction, and two Pay the Price rows.
+
 ## [2026.10.19.15] — 2026-10-19
 
 Step 9h, 9h.28 fixed. A correction of the state narrates the turn again with what the turn told the narrator: `TurnSnapshot` keeps the turn's random events, threat events, filled clocks, and NPC agency (`game/turn.py` → `_keep_what_the_turn_told`, called where the action and dialog prompts are built, so a momentum burn and a replayed turn keep theirs too), and `correction/orchestrator.py` → `_rewrite_prompt` hands them on instead of empty lists. The check surfaced a second fault: the rewrite called `check_npc_agency` again, which advanced every NPC scheme clock a second time on a turn where agency fell due; it now reads the agency the turn told. Save format breaks: the snapshot gained four fields.

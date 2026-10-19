@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from straightjacket.engine.models import GameState, RollResult
+from straightjacket.engine.models import GameState, RollResult, labels_of
 from straightjacket.engine.story_state import get_current_act
 
 from .models import (
@@ -129,7 +129,7 @@ def _snapshot_engine_log(game: GameState) -> EngineLogRecord | None:
         move=sl.move,
         result=sl.result,
         scene_type=sl.scene_type,
-        consequences=list(sl.consequences),
+        consequences=labels_of(sl.consequences),
         clock_events=[e.to_dict() for e in sl.clock_events],
         position=sl.position,
         effect=sl.effect,

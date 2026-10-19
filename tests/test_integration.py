@@ -1,3 +1,4 @@
+from straightjacket.engine.models import labels_of
 import pytest
 
 from tests._helpers import (
@@ -437,7 +438,7 @@ def test_harm_at_zero_in_a_turn_is_endured_and_does_not_end_the_game(
 
     assert (game.game_over, game.crisis_mode, game.impacts) == (False, True, ["wounded"])
     assert "follow-up move Endure Harm: MISS" in _last_narrator_prompt(provider)
-    assert "follow-up move Endure Harm: MISS" in game.narrative.session_log[-1].consequences
+    assert "follow-up move Endure Harm: MISS" in labels_of(game.narrative.session_log[-1].consequences)
 
 
 def test_a_dying_character_who_does_not_heal_faces_death_in_a_dialog_turn(
@@ -475,7 +476,7 @@ def test_turn_consequences_applied_on_miss(load_engine: None, monkeypatch: pytes
     result = resolve_move_outcome(game, "adventure/face_danger", "MISS", target_npc_id=None, match=False)
 
     assert rolled == ["Pay the Price"]
-    assert result.consequences
+    assert labels_of(result.consequences)
 
 
 def test_scene_test_produces_three_types(load_engine: None, monkeypatch: pytest.MonkeyPatch) -> None:

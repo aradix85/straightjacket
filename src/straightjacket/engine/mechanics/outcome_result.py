@@ -5,12 +5,12 @@ from typing import Any
 
 from ..datasworn.settings import load_package
 from ..engine_loader import eng
-from ..models import GameState
+from ..models import Consequence, GameState
 
 
 @dataclass
 class OutcomeResult:
-    consequences: list[str] = field(default_factory=list)
+    consequences: list[Consequence] = field(default_factory=list)
     combat_position: str = ""
     progress_marks: int = 0
     clock_fills: int = 0

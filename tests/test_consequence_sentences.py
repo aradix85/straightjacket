@@ -6,8 +6,10 @@ from straightjacket.engine.mechanics.consequences import pick_template, resolve_
 from straightjacket.engine.models import (
     BrainResult,
     ClockEvent,
+    Consequence,
     GameState,
     RollResult,
+    consequence,
 )
 from straightjacket.engine.prompt_action import build_action_prompt
 from tests._helpers import action_prompt_kwargs, make_brain_result, make_game_state, make_npc
@@ -52,54 +54,67 @@ def test_pick_template_unknown_key_raises() -> None:
 
 
 @pytest.mark.parametrize(
-    ("cons", "player", "npc", "loc", "must_contain"),
+    ("cons", "npc", "must_contain"),
     [
-        ("health -1", "Ash", "", "The Docks", "Ash"),
-        ("health -2", "Ash", "", "The Docks", "Ash"),
-        ("spirit -1", "Ash", "", "", ""),
-        ("supply -1", "Ash", "", "", ""),
-        ("momentum -2", "Ash", "", "", ""),
-        ("Kira bond -1", "Ash", "Kira", "", "Kira"),
-        ("health +1", "Ash", "", "", ""),
-        ("Kira bond +1", "Ash", "Kira", "", ""),
-        ("supply -1, health -1", "Ash", "", "The Docks", ""),
+        (consequence("track_loss", track="health", n=1), "", "Ash"),
+        (consequence("track_loss", track="health", n=2), "", "Ash"),
+        (consequence("track_loss", track="spirit", n=1), "", ""),
+        (consequence("track_loss", track="supply", n=1), "", ""),
+        (consequence("momentum_change", n=-2), "", ""),
+        (consequence("track_gain", track="health", n=1), "", ""),
+        (consequence("bond_progress", name="Kira", n=2), "", "Kira"),
+        (consequence("disposition_shift", name="Kira", old="wary", new="neutral"), "", "Kira"),
     ],
 )
-def test_resolve_consequence_produces_sentence(cons: str, player: str, npc: str, loc: str, must_contain: str) -> None:
-    sentence = resolve_consequence_sentence(cons, player, npc, loc, get_impacts("starforged"))
+def test_resolve_consequence_produces_sentence(cons: Consequence, npc: str, must_contain: str) -> None:
+    sentence = resolve_consequence_sentence(cons, "Ash", npc, "The Docks", get_impacts("starforged"))
     assert sentence != ""
+    assert "{" not in sentence
     if must_contain:
         assert must_contain in sentence
 
 
 @pytest.mark.parametrize("kind", ["gather_information", "compel"])
 def test_a_complication_is_told_as_a_sentence_naming_the_player(kind: str) -> None:
-    sentence = resolve_consequence_sentence(f"complication {kind}", "Ash", "", "", get_impacts("starforged"))
+    sentence = resolve_consequence_sentence(
+        consequence("complication", kind=kind), "Ash", "", "", get_impacts("starforged")
+    )
     assert "Ash" in sentence
     assert "{" not in sentence
 
 
-def test_resolve_unknown_returns_empty() -> None:
-    assert resolve_consequence_sentence("gibberish", "Ash", "", "", get_impacts("starforged")) == ""
-
-
-@pytest.mark.parametrize("label", ["mark_progress", "experience_reward"])
-def test_a_progress_or_experience_mark_is_not_told_as_a_lasting_impact(label: str) -> None:
-    from straightjacket.engine.engine_loader import eng
-
-    cons = eng().ai_text.consequence_labels[label].format(n=2)
-    assert cons.startswith("mark ")
-    assert resolve_consequence_sentence(cons, "Ash", "", "", get_impacts("starforged")) == ""
+@pytest.mark.parametrize(
+    "cons",
+    [
+        consequence("mark_progress", n=2),
+        consequence("experience_reward"),
+        consequence("legacy_reward", track="bonds"),
+        consequence("chained_move", move="Test Your Bond", result="MISS"),
+        consequence("oracle_result", table="Pay the Price", result="A bond is tested, health -1"),
+        consequence("track_loss", track="companion_health", n=1),
+    ],
+)
+def test_a_consequence_without_a_sentence_of_its_own_is_not_told_as_one(cons: Consequence) -> None:
+    assert resolve_consequence_sentence(cons, "Ash", "Kira", "", get_impacts("starforged")) == ""
 
 
 def test_a_real_impact_mark_is_told_with_its_label() -> None:
     assert "permanently harmed" in resolve_consequence_sentence(
-        "mark permanently_harmed", "Ash", "", "", get_impacts("starforged")
+        consequence("mark_impact", impact="permanently_harmed"), "Ash", "", "", get_impacts("starforged")
+    )
+
+
+def test_a_momentum_change_labels_its_sign() -> None:
+    assert (consequence("momentum_change", n=2).label, consequence("momentum_change", n=-1).label) == (
+        "momentum +2",
+        "momentum -1",
     )
 
 
 def test_generate_sentences_from_consequences() -> None:
-    sentences = generate_consequence_sentences(["health -2", "momentum -3"], [], _game(), _brain())
+    sentences = generate_consequence_sentences(
+        [consequence("track_loss", track="health", n=2), consequence("momentum_change", n=-3)], [], _game(), _brain()
+    )
     assert len(sentences) == 2
     assert all(isinstance(s, str) and len(s) > 0 for s in sentences)
 
@@ -124,7 +139,9 @@ def test_generate_sentences_empty_returns_empty() -> None:
 def test_generate_sentences_with_npc_target() -> None:
     game = _game()
     game.npcs.append(make_npc(id="npc_1", name="Kira", disposition="distrustful"))
-    sentences = generate_consequence_sentences(["Kira bond -1"], [], game, _brain(target="npc_1"))
+    sentences = generate_consequence_sentences(
+        [consequence("disposition_shift", name="Kira", old="distrustful", new="wary")], [], game, _brain(target="npc_1")
+    )
     assert len(sentences) >= 1
     assert any("Kira" in s for s in sentences)
 
@@ -137,7 +154,7 @@ def test_consequence_tags_in_prompt() -> None:
         game,
         _brain(),
         _roll("MISS"),
-        ["health -2", "momentum -3"],
+        [consequence("track_loss", track="health", n=2), consequence("momentum_change", n=-3)],
         [],
         **action_prompt_kwargs(player_words="climb the wall", consequence_sentences=sentences),
     )
@@ -167,7 +184,7 @@ def test_task_mentions_consequence_weaving() -> None:
         game,
         _brain(),
         _roll("MISS"),
-        ["health -1"],
+        [consequence("track_loss", track="health", n=1)],
         [],
         **action_prompt_kwargs(player_words="climb", consequence_sentences=["Pain flares."]),
     )

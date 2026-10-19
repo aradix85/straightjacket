@@ -1,3 +1,4 @@
+from straightjacket.engine.models import labels_of
 import pytest
 
 from straightjacket.engine.mechanics.move_effects import (
@@ -87,7 +88,7 @@ class TestApplyEffects:
         result = apply_effects(game, parse_effects([effect]))
         assert getattr(game.resources, track) == expected
         if cons_fragment:
-            assert cons_fragment in result.consequences
+            assert cons_fragment in labels_of(result.consequences)
 
     def test_momentum_clamped_to_max(self, game: GameState) -> None:
         game.resources.momentum = 9
@@ -102,7 +103,7 @@ class TestApplyEffects:
     def test_health_clamped_to_max_no_consequence(self, game: GameState) -> None:
         result = apply_effects(game, parse_effects(["health +1"]))
         assert game.resources.health == 5
-        assert not any("health" in c for c in result.consequences)
+        assert not any("health" in c for c in labels_of(result.consequences))
 
     @pytest.mark.parametrize(
         ("effect", "attr", "expected"),
@@ -120,13 +121,13 @@ class TestApplyEffects:
     def test_next_move_bonus_waits_for_the_next_roll(self, game: GameState) -> None:
         result = apply_effects(game, parse_effects(["next_move_bonus +1"]))
         assert game.resources.next_move_bonus == 1
-        assert "next move +1" in result.consequences
+        assert "next move +1" in labels_of(result.consequences)
 
     def test_no_effects_change_nothing(self, game: GameState) -> None:
         before = game.resources.snapshot()
         result = apply_effects(game, [])
         assert game.resources.snapshot() == before
-        assert result.consequences == []
+        assert labels_of(result.consequences) == []
 
     def test_multiple_effects(self, game: GameState) -> None:
         result = apply_effects(game, parse_effects(["momentum +2", "position in_control"]))
@@ -146,7 +147,7 @@ class TestApplyEffects:
             for r in data["oracles"]["moves"]["contents"]["pay_the_price"]["rows"]
         }
         result = apply_effects(game, parse_effects(["pay_the_price"]))
-        table, told = result.consequences[0].split(": ", 1)
+        table, told = labels_of(result.consequences)[0].split(": ", 1)
         assert table == "Pay the Price"
         assert all(any(part.startswith(row) for row in rows) for part in told.split("; "))
 
@@ -156,7 +157,7 @@ class TestApplyEffects:
         game.resources.supply = 2
         result = apply_effects(game, parse_effects(["suffer_move -1"]))
         assert game.resources.health == 4
-        assert "health -1" in result.consequences
+        assert "health -1" in labels_of(result.consequences)
 
 
 _SUFFER_DEFAULTS = {
@@ -204,7 +205,7 @@ class TestSufferHandler:
             _suffer_params(track="health", recovery=1, blocking_impact="wounded"),
         )
         assert game.resources.health == 4
-        assert "health +1" in result.consequences
+        assert "health +1" in labels_of(result.consequences)
 
     def test_strong_hit_track_at_max_takes_momentum(self, game: GameState) -> None:
         result = apply_suffer_handler(
@@ -214,7 +215,7 @@ class TestSufferHandler:
             _suffer_params(track="health", recovery=1, blocking_impact="wounded"),
         )
         assert game.resources.momentum == 3
-        assert "momentum +1" in result.consequences
+        assert "momentum +1" in labels_of(result.consequences)
 
     def test_weak_hit_exchange(self, game: GameState) -> None:
         game.resources.health = 3
@@ -258,7 +259,7 @@ class TestSufferHandler:
             ),
         )
         assert game.resources.momentum == 3
-        assert any("mark wounded" in c for c in result.consequences)
+        assert any("mark wounded" in c for c in labels_of(result.consequences))
         assert "wounded" in game.impacts
 
 
@@ -268,7 +269,7 @@ class TestThresholdHandler:
         params = {"impact": "doomed", "game_over_text": "you are dead", "end_reason": "death"}
         result = apply_threshold_handler(game, "threshold/face_death", result_type, params)
         assert game.game_over == game_over
-        assert result.consequences == (["you are dead"] if game_over else [])
+        assert labels_of(result.consequences) == (["you are dead"] if game_over else [])
         assert game.impacts == []
 
 
@@ -320,7 +321,7 @@ class TestResolveOutcome:
             (
                 "adventure/face_danger",
                 "STRONG_HIT",
-                lambda g, r: g.resources.momentum == 3 and "momentum +1" in r.consequences,
+                lambda g, r: g.resources.momentum == 3 and "momentum +1" in labels_of(r.consequences),
             ),
             ("adventure/gather_information", "STRONG_HIT", lambda g, r: g.resources.momentum == 4),
             ("quest/swear_an_iron_vow", "STRONG_HIT", lambda g, r: g.resources.momentum == 4),
@@ -382,8 +383,8 @@ class TestResolveOutcome:
         weak = resolve_move_outcome(game_real, move, "WEAK_HIT", target_npc_id=None, match=False)
         strong = resolve_move_outcome(game_real, move, "STRONG_HIT", target_npc_id=None, match=False)
         kind = move.split("/")[1]
-        assert f"complication {kind}" in weak.consequences
-        assert not any(c.startswith("complication") for c in strong.consequences)
+        assert f"complication {kind}" in labels_of(weak.consequences)
+        assert not any(c.startswith("complication") for c in labels_of(strong.consequences))
 
     def test_unknown_move_raises(self, game_real: GameState) -> None:
         with pytest.raises(ValueError, match="No outcome config"):

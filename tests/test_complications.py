@@ -1,3 +1,4 @@
+from straightjacket.engine.models import labels_of
 from typing import Any
 
 import pytest
@@ -35,7 +36,7 @@ def test_a_weak_hit_of_these_moves_starts_a_small_complication_clock(load_engine
     assert clock.name
     assert "](" not in clock.name
     assert clock.trigger_description == clock.name
-    assert f"complication_clock {clock.name}" in outcome.consequences
+    assert f"complication_clock {clock.name}" in labels_of(outcome.consequences)
 
 
 @pytest.mark.parametrize("move", WEAK_HIT_MOVES)
@@ -69,8 +70,8 @@ def test_the_emergent_clock_cap_leaves_the_complication_without_a_clock(load_eng
     game.world.clocks = [make_clock(name=f"Event {i}", creation_source=f"random_event:x:{i}") for i in range(cap)]
     outcome = resolve_move_outcome(game, "adventure/gather_information", "WEAK_HIT", target_npc_id=None, match=False)
     assert len(game.world.clocks) == cap
-    assert "complication gather_information" in outcome.consequences
-    assert not any(c.startswith("complication_clock") for c in outcome.consequences)
+    assert "complication gather_information" in labels_of(outcome.consequences)
+    assert not any(c.startswith("complication_clock") for c in labels_of(outcome.consequences))
 
 
 def test_while_a_complication_clock_runs_a_new_complication_is_told_without_one(load_engine: None) -> None:
@@ -80,8 +81,8 @@ def test_while_a_complication_clock_runs_a_new_complication_is_told_without_one(
     game.world.clocks = [_complication(filled=1)]
     outcome = resolve_move_outcome(game, "adventure/compel", "WEAK_HIT", target_npc_id=None, match=False)
     assert [c.name for c in game.world.clocks] == ["A beacon calls the raiders"]
-    assert "complication compel" in outcome.consequences
-    assert not any(c.startswith("complication_clock") for c in outcome.consequences)
+    assert "complication compel" in labels_of(outcome.consequences)
+    assert not any(c.startswith("complication_clock") for c in labels_of(outcome.consequences))
 
 
 def test_a_complication_clock_fills_every_scene_and_strikes_when_full(load_engine: None) -> None:
@@ -102,15 +103,15 @@ def test_a_complication_clock_fills_every_scene_and_strikes_when_full(load_engin
 @pytest.mark.parametrize(("result", "averted"), [("STRONG_HIT", True), ("WEAK_HIT", True), ("MISS", False)])
 def test_a_hit_aimed_at_a_complication_heads_it_off(load_engine: None, result: str, averted: bool) -> None:
     from straightjacket.engine.game.action_resolution import _maybe_avert_complication
-    from straightjacket.engine.models import BrainResult
+    from straightjacket.engine.models import BrainResult, Consequence
 
     game = _game()
     game.world.clocks = [_complication(filled=2)]
     brain = BrainResult(move="adventure/face_danger", stat="wits", target_clock="A beacon calls the raiders")
-    consequences: list[str] = []
+    consequences: list[Consequence] = []
     _maybe_avert_complication(game, brain, _roll(result), consequences)
     assert (game.world.clocks == []) is averted
-    assert (consequences == ["complication_averted A beacon calls the raiders"]) is averted
+    assert (labels_of(consequences) == ["complication_averted A beacon calls the raiders"]) is averted
 
 
 def test_a_fired_or_unknown_complication_cannot_be_headed_off(load_engine: None) -> None:
@@ -147,8 +148,9 @@ def test_the_brain_sees_open_complications_and_may_aim_at_one(load_engine: None)
 def test_a_danger_with_commas_is_told_whole(verb: str) -> None:
     from straightjacket.engine.datasworn.impacts import get_impacts
     from straightjacket.engine.mechanics.consequences import resolve_consequence_sentence
+    from straightjacket.engine.models import consequence
 
     danger = "Weather, terrain, or a creature blocks the way"
-    sentence = resolve_consequence_sentence(f"{verb} {danger}", "Ash", "", "", get_impacts("starforged"))
+    sentence = resolve_consequence_sentence(consequence(verb, name=danger), "Ash", "", "", get_impacts("starforged"))
     assert danger in sentence
     assert "{" not in sentence

@@ -1,3 +1,4 @@
+from straightjacket.engine.models import labels_of
 import pytest
 
 from straightjacket.engine.models import GameState, Resources
@@ -216,7 +217,7 @@ class TestSufferHandlerMarksImpact:
         }
         result = apply_suffer_handler(game, "suffer/endure_harm", "MISS", params)
         assert "wounded" in game.impacts
-        assert any("wounded" in c for c in result.consequences)
+        assert any("wounded" in c for c in labels_of(result.consequences))
 
     def test_second_hit_marks_worse_impact(self, stub_engine: None) -> None:
         from straightjacket.engine.mechanics.impacts import apply_impact
@@ -257,7 +258,7 @@ class TestRecoveryHandlerClearsImpact:
         }
         result = apply_recovery_handler(game, "recover/heal", "STRONG_HIT", params)
         assert "wounded" not in game.impacts
-        assert any("wounded" in c for c in result.consequences)
+        assert any("wounded" in c for c in labels_of(result.consequences))
 
     def test_no_impact_no_clear(self, stub_engine: None) -> None:
         from straightjacket.engine.mechanics.move_handlers import apply_recovery_handler
@@ -272,7 +273,7 @@ class TestRecoveryHandlerClearsImpact:
             "weak_hit_cost": -2,
         }
         result = apply_recovery_handler(game, "recover/heal", "STRONG_HIT", params)
-        assert not any("wounded" in c for c in result.consequences)
+        assert not any("wounded" in c for c in labels_of(result.consequences))
 
 
 class TestImpactsStatus:

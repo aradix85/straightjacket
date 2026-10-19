@@ -3,9 +3,8 @@ from __future__ import annotations
 from typing import Any
 
 from ..datasworn.moves import get_moves
-from ..engine_loader import eng
 from ..logging_util import log
-from ..models import GameState
+from ..models import GameState, consequence
 from .consequences import roll_action
 from .move_effects import NPC_EFFECTS, MoveEffect, apply_effects, has_story_complication, parse_effects, roll_move_table
 from .move_handlers import apply_recovery_handler, apply_suffer_handler, apply_threshold_handler
@@ -45,7 +44,6 @@ def acts_on_an_npc(game: GameState, move_key: str) -> bool:
 
 
 def make_follow_up_moves(game: GameState, result: OutcomeResult) -> None:
-    labels = eng().ai_text.consequence_labels
     moves = get_moves(game.setting_id)
     for move_key in result.follow_up_moves:
         if game.game_over:
@@ -56,7 +54,7 @@ def make_follow_up_moves(game: GameState, result: OutcomeResult) -> None:
         log(f"[FollowUp] {move_key} ({stat}={value}): {roll.action_score} vs [{roll.c1},{roll.c2}] → {roll.result}")
         follow = resolve_move_outcome(game, move_key, roll.result, target_npc_id=None, match=roll.match)
         make_follow_up_moves(game, follow)
-        result.consequences.append(labels["chained_move"].format(move=move.name, result=roll.result))
+        result.consequences.append(consequence("chained_move", move=move.name, result=roll.result))
         result.consequences.extend(follow.consequences)
 
 

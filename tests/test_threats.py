@@ -1,3 +1,4 @@
+from straightjacket.engine.models import labels_of
 import pytest
 
 from straightjacket.engine.mechanics.outcome_result import OutcomeResult
@@ -249,7 +250,7 @@ class TestResolveForsakeVow:
         result = OutcomeResult()
         resolve_full_menace(game, result)
         assert game.resources.spirit == old_spirit - 2
-        assert result.consequences == ['forsake the vow "Hunt the beast"', "spirit -2"]
+        assert labels_of(result.consequences) == ['forsake the vow "Hunt the beast"', "spirit -2"]
         assert result.follow_up_moves == []
 
     def test_classic_forsakes_through_endure_stress(self, stub_engine: None) -> None:

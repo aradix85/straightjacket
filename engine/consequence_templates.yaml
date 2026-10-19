@@ -23,10 +23,6 @@ consequence_templates:
   - Whatever advantage {player} had slips away.
   - The situation turns against {player}. Ground lost.
   - The footing slips out from under {player}. Whatever edge there was, it's gone.
-  bond_loss:
-  - '{npc} steps back and crosses their arms. Trust broken.'
-  - '{npc} turns away from {player}. The conversation is over.'
-  - '{npc} withdraws: jaw tight, eyes averted, distance deliberate.'
   health_gain:
   - '{player} catches their breath. The worst pain recedes.'
   - '{player} steadies. Wounded, but functional.'
@@ -43,6 +39,10 @@ consequence_templates:
   - '{npc} meets {player}''s gaze and holds it. Trust, earned.'
   - '{npc} settles closer to {player}: the small distance that says belief.'
   - Something in {npc}'s posture eases toward {player}. The wall is lower now.
+  disposition_shift:
+  - '{npc} looks at {player} differently now, a shade warmer than before.'
+  - '{npc}''s guard toward {player} drops a notch.'
+  - Whatever {npc} thought of {player}, it has shifted, and for the better.
   momentum_gain:
   - An opening appears, and it favours {player}.
   - The situation tilts toward {player}.

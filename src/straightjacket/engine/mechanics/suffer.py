@@ -2,26 +2,25 @@ from __future__ import annotations
 
 from ..engine_loader import eng
 from ..logging_util import log
-from ..models import ClockData, GameState
+from ..models import ClockData, GameState, consequence
 from .impacts import apply_impact
 from .outcome_result import OutcomeResult, move_outcome_config
 
 
 def suffer(game: GameState, meter: str, amount: int, result: OutcomeResult) -> None:
     _e = eng()
-    labels = _e.ai_text.consequence_labels
     lost = game.resources.damage(meter, amount)
     if lost:
-        result.consequences.append(labels["track_loss"].format(track=meter, n=lost))
+        result.consequences.append(consequence("track_loss", track=meter, n=lost))
     remaining = amount - lost
     if remaining:
         game.resources.adjust_momentum(-remaining, floor=_e.momentum.floor, ceiling=_e.momentum.max)
-        result.consequences.append(labels["momentum_change"].format(value=f"-{remaining}"))
+        result.consequences.append(consequence("momentum_change", n=-remaining))
     at_zero = getattr(game.resources, meter) == 0
     if meter in _e.suffer.exhausted_impacts:
         impact = _e.suffer.exhausted_impacts[meter]
         if at_zero and apply_impact(game, impact):
-            result.consequences.append(labels["mark_impact"].format(impact=impact))
+            result.consequences.append(consequence("mark_impact", impact=impact))
         return
     endure = _e.suffer.endure_moves[meter]
     if at_zero or move_outcome_config(game, endure)["params"]["endure_always"]:
@@ -66,7 +65,7 @@ def tick_dying_clock(game: GameState, result: OutcomeResult) -> None:
         log(f"[Suffer] {clock.name} {clock.filled}/{clock.segments}")
         return
     game.world.clocks.remove(clock)
-    result.consequences.append(_e.ai_text.consequence_labels["out_of_time"].format(clock=clock.name))
+    result.consequences.append(consequence("out_of_time", clock=clock.name))
     endure = _e.suffer.endure_moves[cfg.meter]
     result.follow_up_moves.append(move_outcome_config(game, endure)["params"]["threshold_move"])
     log(f"[Suffer] {clock.name} full: Face Death")

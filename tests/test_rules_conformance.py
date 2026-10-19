@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import random
+
+from straightjacket.engine.models import labels_of
 import re
 from pathlib import Path
 from typing import Any
@@ -426,7 +428,7 @@ def test_pay_the_price_rolls_the_official_table(load_engine: None, setting: str)
     for _ in range(30):
         result = OutcomeResult()
         pay_the_price(game, result)
-        told = result.consequences[0]
+        told = labels_of(result.consequences)[0]
         assert told.startswith("Pay the Price: ")
         assert "Roll twice" not in told
         assert all(any(part.startswith(row) for row in rows) for part in told.split(": ", 1)[1].split("; "))
@@ -457,7 +459,7 @@ def test_pay_the_price_roll_twice_tells_both_results_and_not_the_instruction(
     game.resources.spirit = 4
     result = OutcomeResult()
     move_effects.pay_the_price(game, result)
-    assert result.consequences[0] == "Pay the Price: You are stressed; A new enemy is revealed"
+    assert labels_of(result.consequences)[0] == "Pay the Price: You are stressed; A new enemy is revealed"
     assert game.resources.spirit == 3
 
 
@@ -473,7 +475,7 @@ def test_classic_pay_the_price_makes_a_twice_rolled_result_worse(
     monkeypatch.setattr(move_effects, "_pay_the_price_move", lambda game: _FakePriceMove(*rows))
     result = OutcomeResult()
     move_effects.pay_the_price(make_game_state(setting_id="classic"), result)
-    assert result.consequences == ["Pay the Price: A new enemy is revealed, made worse"]
+    assert labels_of(result.consequences) == ["Pay the Price: A new enemy is revealed, made worse"]
 
 
 def test_classic_roll_again_tells_the_next_result_made_worse(
@@ -490,7 +492,7 @@ def test_classic_roll_again_tells_the_next_result_made_worse(
     game.resources.health = 4
     result = OutcomeResult()
     move_effects.pay_the_price(game, result)
-    assert result.consequences[0] == "Pay the Price: You are harmed, made worse"
+    assert labels_of(result.consequences)[0] == "Pay the Price: You are harmed, made worse"
     assert game.resources.health == 3
 
 
@@ -580,7 +582,7 @@ def test_test_your_relationship_marks_progress_on_a_connection_without_a_bond(lo
     brain = make_brain_result(move="connection/test_your_relationship", target_npc="npc_1")
     action = resolve_action_consequences(game, brain, roll, "risky")
     assert track.ticks == track.ticks_per_mark
-    assert not any(c.startswith("follow-up move") for c in action.consequences)
+    assert not any(c.startswith("follow-up move") for c in labels_of(action.consequences))
     assert action.outcome.legacy_fixed_ticks == 0
 
 
@@ -604,7 +606,7 @@ def test_test_your_relationship_chains_develop_your_relationship_with_a_bond(
     roll = RollResult(4, 1, 2, "heart", 2, 6, "STRONG_HIT", "connection/test_your_relationship", match=False)
     brain = make_brain_result(move="connection/test_your_relationship", target_npc="npc_1")
     action = resolve_action_consequences(game, brain, roll, "risky")
-    assert any(c.startswith("follow-up move") and c.endswith("STRONG_HIT") for c in action.consequences)
+    assert any(c.startswith("follow-up move") and c.endswith("STRONG_HIT") for c in labels_of(action.consequences))
     assert action.outcome is not None
     assert action.outcome.legacy_fixed_ticks == 2
 
@@ -619,7 +621,7 @@ def test_a_chain_without_a_connection_is_skipped(load_engine: None) -> None:
     roll = RollResult(4, 1, 2, "heart", 2, 6, "STRONG_HIT", "connection/test_your_relationship", match=False)
     brain = make_brain_result(move="connection/test_your_relationship", target_npc="npc_1")
     action = resolve_action_consequences(game, brain, roll, "risky")
-    assert not any(c.startswith("follow-up move") for c in action.consequences)
+    assert not any(c.startswith("follow-up move") for c in labels_of(action.consequences))
 
 
 @pytest.mark.parametrize(
@@ -638,7 +640,7 @@ def test_explore_a_waypoint_match_chains_an_oracle_move(
     game = make_game_state(setting_id="starforged")
     roll = RollResult(3, 3, 3, "wits", 2, 5, result, "exploration/explore_a_waypoint", match=True)
     action = resolve_action_consequences(game, make_brain_result(move="exploration/explore_a_waypoint"), roll, "risky")
-    assert any(c.startswith(f"follow-up move {move_name}: ") for c in action.consequences)
+    assert any(c.startswith(f"follow-up move {move_name}: ") for c in labels_of(action.consequences))
     assert get_legacy_track(game, "discoveries").ticks == ticks
     assert bool(rolled) is pays
 
@@ -749,7 +751,7 @@ def test_sundered_isles_discovers_from_its_own_table(load_engine: None) -> None:
     for _ in range(20):
         roll = RollResult(3, 3, 3, "wits", 2, 5, "STRONG_HIT", "exploration/explore_a_waypoint", match=True)
         action = resolve_action_consequences(game, brain, roll, "risky")
-        found = next(c for c in action.consequences if c.startswith("follow-up move Make a Discovery: "))
+        found = next(c for c in labels_of(action.consequences) if c.startswith("follow-up move Make a Discovery: "))
         assert set(found.split(": ", 1)[1].removesuffix(", made worse").split("; ")) <= own
 
 
@@ -767,7 +769,7 @@ def test_take_decisive_action_weak_hit_rolls_its_own_table_and_its_cost(
     game.resources.spirit = 3
     game.resources.supply = 3
     outcome = resolve_move_outcome(game, "combat/take_decisive_action", "WEAK_HIT", target_npc_id=None, match=False)
-    assert outcome.consequences[0] == f"Take Decisive Action: {worse}"
+    assert labels_of(outcome.consequences)[0] == f"Take Decisive Action: {worse}"
     assert game.resources.health == 3
     assert rolled == []
 
@@ -782,7 +784,7 @@ def test_gather_information_rolls_a_story_clue_where_the_move_has_one(
     for result in ("STRONG_HIT", "WEAK_HIT"):
         game = make_game_state(setting_id=setting)
         outcome = resolve_move_outcome(game, "adventure/gather_information", result, target_npc_id=None, match=False)
-        assert any(c.startswith("Story Clue: ") for c in outcome.consequences) is clue
+        assert any(c.startswith("Story Clue: ") for c in labels_of(outcome.consequences)) is clue
 
 
 def test_escape_the_depths_miss_reveals_a_danger_that_needs_no_site(load_engine: None) -> None:
@@ -795,7 +797,7 @@ def test_escape_the_depths_miss_reveals_a_danger_that_needs_no_site(load_engine:
     for _ in range(30):
         roll = RollResult(1, 9, 9, "edge", 2, 3, "MISS", "delve/escape_the_depths", match=False)
         action = resolve_action_consequences(game, brain, roll, "risky")
-        danger = next(c for c in action.consequences if c.startswith("follow-up move Reveal a Danger: "))
+        danger = next(c for c in labels_of(action.consequences) if c.startswith("follow-up move Reveal a Danger: "))
         assert "theme card" not in danger
         assert "domain card" not in danger
 
