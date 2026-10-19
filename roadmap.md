@@ -98,10 +98,6 @@ The audits of AUDIT.md, one session per principle or submodule as it prescribes.
 
 **9h.29** The Brain chooses a move from its name, its ways to roll in the book's words, and hand-written hints for six moves (`ai_text.brain_trigger_hints` in `engine/ai_text.yaml`), while Datasworn gives every move its trigger and full text (`datasworn/moves.py` → `Move.text`, read by nothing yet). Whether the Brain reads the book's trigger instead of the hints, measured on its move choice before and after, since its prompt grows with every move on offer.
 
-**9h.30** Three strings files have no reader and wait for the user's consent to go: `strings/consequence.yaml`, `strings/effect.yaml`, and `strings/position.yaml`, labels for meters, effect, and position that the player never sees, as ARCHITECTURE.md (Interface and accessibility) has it.
-
-**9h.31** For principle 2: the creation form in `web/static/index.html` writes its pronoun options in English instead of taking them from `strings/`.
-
 ### Definition of Done
 
 - Principles 3 and 5 are audited as AUDIT.md prescribes, each one's Status listing every submodule it covers; a session that stops halfway records where.

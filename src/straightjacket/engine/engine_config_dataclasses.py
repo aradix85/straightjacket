@@ -76,6 +76,7 @@ class CreationConfig:
     max_paths: int
     max_starting_assets: int
     background_vow_default_rank: str
+    pronoun_options: list[str]
     chaos_vow_modifiers: dict[str, list[str]]
     chaos_modifier_values: dict[str, int]
 

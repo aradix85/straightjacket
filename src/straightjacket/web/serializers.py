@@ -245,6 +245,7 @@ def build_creation_options() -> dict[str, Any]:
             "max_paths": _e.creation.max_paths,
             "max_starting_assets": _e.creation.max_starting_assets,
             "background_vow_default_rank": _e.creation.background_vow_default_rank,
+            "pronoun_options": _e.creation.pronoun_options,
             "vow_ranks": list(_e.legacy.ticks_by_rank.keys()),
         },
         "tones": [{"id": tone, "label": t(f"tone.{tone}")} for tone in _e.story.kishotenketsu_probability],

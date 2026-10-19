@@ -5,15 +5,13 @@ import random as _random
 from straightjacket.engine.datasworn.settings import SettingPackage, load_package
 from straightjacket.engine.engine_loader import eng
 
-STAT_NAMES = ["edge", "heart", "iron", "shadow", "wits"]
-
 
 def roll_character(setting_id: str, game_cfg: dict) -> dict:
     pkg = load_package(setting_id)
     _e = eng()
 
     name = _roll_name(pkg, game_cfg)
-    pronouns = game_cfg.get("pronouns") or _random.choice(["he/him", "she/her", "they/them"])
+    pronouns = game_cfg.get("pronouns") or _random.choice(_e.creation.pronoun_options)
     paths = _roll_paths(pkg, game_cfg)
     backstory = _roll_backstory(pkg, game_cfg)
     vow = _roll_vow(pkg, game_cfg)
@@ -69,13 +67,12 @@ def _roll_name(pkg: SettingPackage, game_cfg: dict) -> str:
 
 
 def _roll_paths(pkg: SettingPackage, game_cfg: dict) -> list[str]:
-    if game_cfg.get("paths") and len(game_cfg["paths"]) == 2:
+    max_paths = eng().creation.max_paths
+    if game_cfg.get("paths") and len(game_cfg["paths"]) == max_paths:
         return game_cfg["paths"]
     all_paths = pkg.data.paths()
     path_ids = [p.get("_id", "").rsplit("/", 1)[-1] for p in all_paths if p.get("_id")]
-    if len(path_ids) >= 2:
-        return _random.sample(path_ids, 2)
-    return path_ids[:2]
+    return _random.sample(path_ids, min(max_paths, len(path_ids)))
 
 
 def _roll_backstory(pkg: SettingPackage, game_cfg: dict) -> str:
@@ -112,7 +109,7 @@ def _random_stats(target: int, valid_arrays: list[list[int]]) -> dict[str, int]:
 
     array = list(_random.choice(valid_arrays))
     _random.shuffle(array)
-    return dict(zip(STAT_NAMES, array, strict=True))
+    return dict(zip(eng().stats.character_names, array, strict=True))
 
 
 def _roll_truths(pkg: SettingPackage, game_cfg: dict) -> dict[str, str]:

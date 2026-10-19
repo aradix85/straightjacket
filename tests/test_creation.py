@@ -172,6 +172,7 @@ def test_build_creation_options_has_creation_defaults(load_engine: None) -> None
     cd = opts["creation_defaults"]
     assert cd["max_paths"] == 2
     assert cd["max_starting_assets"] == 1
+    assert cd["pronoun_options"] == ["he/him", "she/her", "they/them"]
     assert cd["background_vow_default_rank"] == "extreme"
     assert "epic" in cd["vow_ranks"]
 

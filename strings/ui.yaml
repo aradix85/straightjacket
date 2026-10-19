@@ -17,7 +17,7 @@ ui.vow_subject: Who or what is this vow about? (for the world to remember)
 ui.truths: World truths
 ui.truth_pick: 'Choose a truth for: {name}'
 ui.starting_assets: Starting asset
-ui.no_asset: '— none —'
+ui.no_choice: '— none —'
 ui.name_roll: Roll a name
 ui.content_boundaries: Content boundaries
 ui.wishes: Wishes

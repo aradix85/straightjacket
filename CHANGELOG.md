@@ -8,6 +8,12 @@ This log starts at 2026.09.24.0, the restart after a four-month pause. Earlier r
 
 Calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day.
 
+## [2026.10.19.9] — 2026-10-19
+
+Step 9h, 9h.30 and 9h.31 at the user's word. `strings/consequence.yaml`, `strings/effect.yaml`, and `strings/position.yaml`, labels nothing showed, are deleted with the user's consent. The creation form takes its pronoun options from `creation.pronoun_options` in `engine/creation.yaml` through the creation defaults, since the chosen value also reaches the narrator's prompt, and its empty choice from `ui.no_choice`, which the starting-asset choice shares; Elvira rolls from the same list, and also takes the stat names and the number of paths from the config instead of her own copies.
+
+Quality gate: 1713 tests, coverage 94.28%, the page's script checked with `node --check`. Save format unchanged. No Elvira session: nothing in the engine's play changed.
+
 ## [2026.10.19.8] — 2026-10-19
 
 Step 9h: the principle-5 audit of `web/`, the page included. Queries (hits/violations): public symbols 36/1, session fields 7/0, fields of the messages the server sends against what the page reads 79/17, server values the page copies 4/4, keys of `strings/` 179/23. The unused `/health` route goes. Eleven message fields nothing read go (a truth's quest starter, the setting's creation flags, the stat arrays, and the predecessor's name, concept, end reason, and track ids in the succession summary); six gain a reader: the save list names the character and the chapter beside the scene, a new chapter and a succession open with a chapter heading, and the form offers as many paths and starting assets as the config allows. The page no longer copies the stat names, the autosave's name, or the creation defaults: the server sends the stat names (`StatsConfig.character_names`, which also replaces three copies of that filter in `game/`) and the default save's name, and the page labels stats with `strings/stat.yaml` and the burn offer with the result labels instead of raw codes. An epilogue reloaded from a save is shown as an epilogue. Dead strings leave (`succession.preparing`, the results' severities); three dead strings files wait for the user's consent (9h.30).

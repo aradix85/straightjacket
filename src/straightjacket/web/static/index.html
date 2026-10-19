@@ -694,7 +694,9 @@ function renderCreationForm(options, forcedSettingId) {
   html += `<button type="button" id="roll-name-btn">${s("ui.name_roll")}</button></div></div>`;
 
   // Pronouns
-  html += `<div class="field"><label for="c-pronouns">${s("ui.pronouns")}</label><select id="c-pronouns"><option value="">—</option><option value="he/him">he/him</option><option value="she/her">she/her</option><option value="they/them">they/them</option></select></div>`;
+  html += `<div class="field"><label for="c-pronouns">${s("ui.pronouns")}</label><select id="c-pronouns"><option value="">${s("ui.no_choice")}</option>`;
+  cd.pronoun_options.forEach(p => { html += `<option value="${esc(p)}">${esc(p)}</option>`; });
+  html += `</select></div>`;
 
   // Paths
   html += `<div class="field"><label>${s("ui.paths")}</label><div style="display:flex;gap:0.5rem">`;
@@ -770,7 +772,7 @@ function renderCreationForm(options, forcedSettingId) {
     const assets = curSetting().starting_assets;
     if (!assets.length) { container.innerHTML = ""; container.classList.add("hidden"); return; }
     container.classList.remove("hidden");
-    let assetOptions = `<option value="">${s("ui.no_asset")}</option>`;
+    let assetOptions = `<option value="">${s("ui.no_choice")}</option>`;
     let lastCat = "";
     assets.forEach(a => {
       if (a.category !== lastCat) { if (lastCat) assetOptions += `</optgroup>`; assetOptions += `<optgroup label="${esc(a.category)}">`; lastCat = a.category; }

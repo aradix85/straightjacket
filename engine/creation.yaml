@@ -2,6 +2,10 @@ creation:
   max_paths: 2
   max_starting_assets: 1
   background_vow_default_rank: extreme
+  pronoun_options:
+  - he/him
+  - she/her
+  - they/them
   chaos_vow_modifiers:
     desperate:
     - survive
