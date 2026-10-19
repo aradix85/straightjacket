@@ -376,7 +376,3 @@ def load_package(setting_id: str) -> SettingPackage:
 
     log(f"[Setting] Loaded {setting_id}: {pkg.title}{f' (parent: {config.parent})' if config.parent else ''}")
     return pkg
-
-
-def clear_cache() -> None:
-    _cache.clear()

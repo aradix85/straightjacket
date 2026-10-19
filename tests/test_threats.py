@@ -336,3 +336,53 @@ class TestVowCompletionResolveThreat:
         game.progress_tracks.append(make_progress_track(id="combat_1", name="Fight", track_type="combat", ticks=20))
         complete_track(game, "combat_1", "completed")
         assert game.threats[0].status == "active"
+
+
+class TestAVowSwornAgainstAThreat:
+    def test_swearing_a_vow_against_a_threat_links_them(self, load_engine: None) -> None:
+        from straightjacket.engine.ruleset.threats import advance_menace_on_miss, vow_against
+        from straightjacket.engine.ruleset.tracks import start_track
+        from tests._helpers import make_brain_result
+
+        game = make_game_state(player_name="Hero", setting_id="starforged")
+        game.threats.append(make_threat(id="threat_ac_1", name="The Hollow Choir"))
+        brain = make_brain_result(
+            move="quest/swear_an_iron_vow",
+            stat="heart",
+            track_name="Silence the Hollow Choir",
+            track_rank="dangerous",
+            target_threat="threat_ac_1",
+        )
+        start_track(game, brain, "STRONG_HIT")
+        vow = vow_against(game, game.threats[0])
+        assert vow is not None
+        assert vow.name == "Silence the Hollow Choir"
+        assert [e.threat_id for e in advance_menace_on_miss(game)] == ["threat_ac_1"]
+
+    def test_a_vow_sworn_without_a_threat_links_none(self, load_engine: None) -> None:
+        from straightjacket.engine.ruleset.threats import advance_menace_on_miss, vow_against
+        from straightjacket.engine.ruleset.tracks import start_track
+        from tests._helpers import make_brain_result
+
+        game = make_game_state(player_name="Hero", setting_id="starforged")
+        game.threats.append(make_threat(id="threat_ac_1"))
+        brain = make_brain_result(
+            move="quest/swear_an_iron_vow", stat="heart", track_name="Find my brother", track_rank="dangerous"
+        )
+        start_track(game, brain, "STRONG_HIT")
+        assert vow_against(game, game.threats[0]) is None
+        assert advance_menace_on_miss(game) == []
+
+    def test_the_brain_sees_threats_and_may_name_one_without_a_vow(self, load_engine: None) -> None:
+        from straightjacket.engine.ai.brain import call_brain
+        from tests.test_brain_move_availability import _BrainAnswers
+
+        game = _game_with_threat()
+        game.threats.append(make_threat(id="threat_ac_1", name="The Hollow Choir"))
+        provider = _BrainAnswers("adventure/face_danger", target_threat="threat_ac_1")
+        result = call_brain(provider, game, "I swear to silence the choir.")
+        message = provider.user_messages[0]
+        assert "The Beast Awakens (id:threat_beast) menace 0/10, the vow Hunt the beast is sworn against it" in message
+        assert "The Hollow Choir (id:threat_ac_1) menace 0/10" in message
+        assert provider.schemas[0]["properties"]["target_threat"]["anyOf"][0]["enum"] == ["threat_ac_1"]
+        assert result.target_threat == "threat_ac_1"

@@ -95,9 +95,8 @@ def test_a_background_vow_without_a_rank_takes_the_default_rank(load_engine: Non
     ],
 )
 def test_setting_creation_flow(setting: str, expected_flags: dict) -> None:
-    from straightjacket.engine.setting.packages import clear_cache, load_package
+    from straightjacket.engine.setting.packages import load_package
 
-    clear_cache()
     pkg = load_package(setting)
     flow = pkg.creation_flow
     for flag, expected in expected_flags.items():
@@ -312,9 +311,8 @@ _VALID_PAYLOAD = {"player_name": "Kael", "truths": {}, "tone": "pulp"}
 )
 def test_validate_creation_rejects_invalid(load_engine: None, setting: str, payload: dict, error_match: str) -> None:
     from straightjacket.engine.game.game_start import validate_creation
-    from straightjacket.engine.setting.packages import clear_cache, load_package
+    from straightjacket.engine.setting.packages import load_package
 
-    clear_cache()
     pkg = load_package(setting)
     with pytest.raises(ValueError, match=error_match):
         validate_creation({**_VALID_PAYLOAD, **payload}, pkg)
@@ -322,9 +320,8 @@ def test_validate_creation_rejects_invalid(load_engine: None, setting: str, payl
 
 def test_validate_creation_valid_passes(load_engine: None) -> None:
     from straightjacket.engine.game.game_start import validate_creation
-    from straightjacket.engine.setting.packages import clear_cache, load_package
+    from straightjacket.engine.setting.packages import load_package
 
-    clear_cache()
     validate_creation({**_VALID_PAYLOAD, "truths": {"x": "y"}, "tone": "cozy"}, load_package("starforged"))
 
 
@@ -352,9 +349,8 @@ _CHARACTER = {
 )
 def test_make_character_rejects_invalid(load_engine: None, setting: str, payload: dict, error_match: str) -> None:
     from straightjacket.engine.ruleset.character import make_character
-    from straightjacket.engine.setting.packages import clear_cache, load_package
+    from straightjacket.engine.setting.packages import load_package
 
-    clear_cache()
     with pytest.raises(ValueError, match=error_match):
         make_character({**_CHARACTER, **payload}, load_package(setting))
 
@@ -362,9 +358,8 @@ def test_make_character_rejects_invalid(load_engine: None, setting: str, payload
 def test_a_character_takes_its_concept_from_its_paths(load_engine: None) -> None:
     from straightjacket.engine.ruleset.character import make_character
     from straightjacket.engine.ruleset.datasworn import load_ruleset
-    from straightjacket.engine.setting.packages import clear_cache, load_package
+    from straightjacket.engine.setting.packages import load_package
 
-    clear_cache()
     pkg = load_package("starforged")
     character = make_character({**_CHARACTER, "paths": ["ace", "explorer"], "background_vow_rank": "epic"}, pkg)
     own = load_ruleset("starforged").setting_file
@@ -376,9 +371,8 @@ def test_a_character_takes_its_concept_from_its_paths(load_engine: None) -> None
 def test_a_new_game_and_a_successor_take_up_a_character_alike(load_engine: None) -> None:
     from straightjacket.engine.game.game_start import take_up_character
     from straightjacket.engine.ruleset.character import make_character
-    from straightjacket.engine.setting.packages import clear_cache, load_package
+    from straightjacket.engine.setting.packages import load_package
 
-    clear_cache()
     pkg = load_package("starforged")
     creation = {
         **_CHARACTER,

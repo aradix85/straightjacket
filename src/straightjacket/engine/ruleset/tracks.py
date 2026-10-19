@@ -48,7 +48,11 @@ def start_track(game: GameState, brain: BrainResult, result: str) -> None:
     if any(t.id == base_id and t.status == "active" for t in game.progress_tracks):
         log(f"[Track] {track_type} '{brain.track_name}' is already active; not created again")
         return
-    _add_track(game, base_id, brain.track_name, track_type, brain.track_rank)
+    track = _add_track(game, base_id, brain.track_name, track_type, brain.track_rank)
+    if track_type == "vow" and brain.target_threat is not None:
+        threat = next(t for t in game.threats if t.id == brain.target_threat)
+        threat.linked_vow_id = track.id
+        log(f"[Threat] '{threat.name}' now has the vow '{track.name}' sworn against it")
 
 
 def _add_track(game: GameState, base_id: str, name: str, track_type: str, rank: str) -> ProgressTrack:

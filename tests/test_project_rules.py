@@ -833,8 +833,6 @@ _ORPHAN_SYMBOL_CARVE_OUT: set[tuple[str, str]] = {
     ("websocket_endpoint", "web/server.py"),
     ("build_director_prompt", "engine/director.py"),
     ("apply_engine_memories", "engine/game/finalization.py"),
-    ("clear_cache", "engine/ruleset/moves.py"),
-    ("clear_cache", "engine/setting/packages.py"),
     ("query_game_state", "engine/tools/builtins.py"),
     ("CharacterTraits", "engine/crafters/character_traits.py"),
     ("check_configured_models", "engine/ai/api_client.py"),

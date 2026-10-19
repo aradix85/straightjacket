@@ -8,7 +8,7 @@ from ..gamemaster.clocks import open_complications
 from ..gamemaster.config import gm
 from ..gamemaster.config_types import GameMasterMove
 from ..logging_util import log
-from ..models import BrainResult, GameState, Revelation
+from ..models import BrainResult, GameState, Revelation, ThreatData
 from ..prompt_blocks import (
     content_boundaries_block,
     world_tag,
@@ -21,9 +21,10 @@ from ..ruleset.config_types import EngineMove
 from ..ruleset.move_availability import available_moves
 from ..ruleset.move_outcome import acts_on_an_npc
 from ..ruleset.moves import PICK_METHODS, Move, get_moves
-from ..ruleset.progress import filled_boxes
+from ..ruleset.progress import filled_boxes, menace_boxes, menace_total_boxes
 from ..ruleset.roll_sources import roll_source_without_stat
 from ..ruleset.stats import stat_descriptions
+from ..ruleset.threats import active_threats, vow_against
 from ..ruleset.tracks import active_tracks, track_category_of_move
 from ..xml_utils import xe as _xe
 from .provider_base import AICallSpec, AIProvider, AIUnavailableError, create_with_retry
@@ -97,11 +98,20 @@ def _build_tracks_block(game: GameState) -> str:
     return "<tracks>\n" + "\n".join(lines) + "\n</tracks>"
 
 
+def _threat_line(game: GameState, threat: ThreatData) -> str:
+    texts = eng().ai_text.narrator_defaults
+    line: str = texts["threat_danger"].format(
+        name=_xe(threat.name), id=threat.id, filled=menace_boxes(threat), total=menace_total_boxes(threat)
+    )
+    vow = vow_against(game, threat)
+    return line if vow is None else line + texts["threat_vow"].format(vow=_xe(vow.name))
+
+
 def _build_dangers_block(game: GameState) -> str:
-    clocks = open_complications(game)
-    if not clocks:
+    lines = [f"  {_xe(c.name)} {c.filled}/{c.segments}" for c in open_complications(game)]
+    lines += [_threat_line(game, t) for t in active_threats(game)]
+    if not lines:
         return ""
-    lines = [f"  {_xe(c.name)} {c.filled}/{c.segments}" for c in clocks]
     return "<dangers>\n" + "\n".join(lines) + "\n</dangers>"
 
 
@@ -245,6 +255,7 @@ time:{w.time_of_day or _ai_text["unknown_time"]}
         "target_npc": [n.id for n in _listed_npcs(game)],
         "target_track": [tr.id for tr in active_tracks(game)],
         "target_clock": [c.name for c in open_complications(game)],
+        "target_threat": [t.id for t in active_threats(game) if vow_against(game, t) is None],
     }
     schema = get_brain_output_schema(
         move_keys,
@@ -253,6 +264,7 @@ time:{w.time_of_day or _ai_text["unknown_time"]}
         choices["target_npc"],
         choices["target_track"],
         choices["target_clock"],
+        choices["target_threat"],
     )
     model = model_for_role("brain")
     params = sampling_params("brain")
@@ -277,6 +289,7 @@ time:{w.time_of_day or _ai_text["unknown_time"]}
                 f"[Brain] move={result.move}, stat={result.stat}, "
                 f"intent={result.player_intent[: eng().truncations.log_short]}"
                 + (f", target_clock={result.target_clock}" if result.target_clock else "")
+                + (f", target_threat={result.target_threat}" if result.target_threat else "")
             )
             return result
         log(f"[Brain] {result.move} rolls with {stats}, not stat {result.stat!r}; asking again", level="warning")

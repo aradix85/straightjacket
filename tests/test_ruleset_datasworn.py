@@ -1,4 +1,3 @@
-from collections.abc import Generator
 from pathlib import Path
 
 import pytest
@@ -6,17 +5,16 @@ import pytest
 from straightjacket.engine.ruleset.datasworn import load_ruleset
 from straightjacket.engine.ruleset.moves import get_moves
 from straightjacket.engine.setting import packages
-from straightjacket.engine.setting.packages import clear_cache, load_package
+from straightjacket.engine.setting.packages import load_package
 
 _REAL_SETTINGS = packages._SETTINGS_DIR
 
 
 @pytest.fixture
-def settings_dir(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Generator[Path, None, None]:
-    clear_cache()
+def settings_dir(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
+    monkeypatch.setattr(packages, "_cache", {})
     monkeypatch.setattr(packages, "_SETTINGS_DIR", tmp_path)
-    yield tmp_path
-    clear_cache()
+    return tmp_path
 
 
 def _copy(settings_dir: Path, setting_id: str, new_id: str, parent: str = "") -> None:

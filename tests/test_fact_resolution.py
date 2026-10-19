@@ -227,7 +227,7 @@ def test_a_doublet_queues_a_random_event(load_engine: None, monkeypatch: pytest.
 def test_the_brain_schema_offers_only_known_types_and_subjects(load_engine: None) -> None:
     from straightjacket.engine.ai.schemas import get_brain_output_schema
 
-    facts = get_brain_output_schema(["adventure/face_danger"], [], [], ["npc_1"], [], [])["properties"][
+    facts = get_brain_output_schema(["adventure/face_danger"], [], [], ["npc_1"], [], [], [])["properties"][
         "undetermined_facts"
     ]
     place, npc = facts["items"]["anyOf"]
@@ -237,7 +237,9 @@ def test_the_brain_schema_offers_only_known_types_and_subjects(load_engine: None
     assert npc["properties"]["about"]["enum"] == ["npc_1"]
     assert facts["maxItems"] == gm().fact_resolution.max_per_turn
 
-    alone = get_brain_output_schema(["adventure/face_danger"], [], [], [], [], [])["properties"]["undetermined_facts"]
+    alone = get_brain_output_schema(["adventure/face_danger"], [], [], [], [], [], [])["properties"][
+        "undetermined_facts"
+    ]
     assert len(alone["items"]["anyOf"]) == 1
 
 
@@ -255,6 +257,7 @@ def _brain(**overrides: Any) -> dict[str, Any]:
         "track_rank": "dangerous",
         "target_track": None,
         "target_clock": None,
+        "target_threat": None,
         "bonus_id": None,
         "undetermined_facts": [{"fact_type": "locked", "about": "here"}],
         "boasts": [],

@@ -10,7 +10,7 @@ Straightjacket puts the Narrative RPG Engine design document ([itch.io](https://
 
 **What the AI still decides.** These decisions stay with the AI in play, each bounded by the engine:
 
-- The Brain turns free player text into a move and its parameters (`docs/ai.md`, Roles). The move, stat, bonus, target, track, complication clock, facts, boasts, and the kind of a place the character moves to are limited to what the engine offers in that situation, and the dice, fate, and the engine decide the outcome; the name of that place and a detail the player adds to the scene are the Brain's free text.
+- The Brain turns free player text into a move and its parameters (`docs/ai.md`, Roles). The move, stat, bonus, target, track, complication clock, threat a sworn vow is against, facts, boasts, and the kind of a place the character moves to are limited to what the engine offers in that situation, and the dice, fate, and the engine decide the outcome; the name of that place and a detail the player adds to the scene are the Brain's free text.
 - The narrator supplies every fact the engine has not settled, such as the look of a room or what an NPC says.
 - The metadata extraction registers the NPCs, renames, and deaths the narration introduces, and gives each new NPC a disposition from the engine's list, so narrated facts can become state; the opening extraction does the same for an opening scene and also writes the opening NPCs' agendas, instincts, and secrets.
 - The Director writes agendas, instincts, and arcs for the NPCs the engine selects, and guidance that reaches the narrator's next prompts.

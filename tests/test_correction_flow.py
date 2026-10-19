@@ -74,6 +74,7 @@ class MockProvider:
                         "track_rank": None,
                         "target_track": None,
                         "target_clock": None,
+                        "target_threat": None,
                         "bonus_id": None,
                         "undetermined_facts": [],
                         "boasts": [],

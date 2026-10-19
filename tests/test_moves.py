@@ -1,13 +1,11 @@
-from collections.abc import Generator
-
 import pytest
 
+from straightjacket.engine.ruleset import moves as moves_module
 from straightjacket.engine.ruleset.datasworn import load_ruleset
 from straightjacket.engine.ruleset.moves import (
     Move,
     _load_moves,
     _parse_move,
-    clear_cache,
     get_moves,
     move_table,
     offers_table,
@@ -20,10 +18,8 @@ def _own_moves(setting_id: str) -> dict[str, Move]:
 
 
 @pytest.fixture(autouse=True)
-def _clear_moves_cache() -> Generator[None, None, None]:
-    clear_cache()
-    yield
-    clear_cache()
+def _empty_moves_cache(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(moves_module, "_cache", {})
 
 
 class TestStarforgedMoves:
@@ -381,12 +377,6 @@ class TestGetMoves:
         moves = get_moves("sundered_isles")
         assert "adventure/face_danger" in moves
         assert moves["recover/repair"] != get_moves("starforged")["recover/repair"]
-
-    def test_clear_cache(self) -> None:
-        m1 = get_moves("starforged")
-        clear_cache()
-        m2 = get_moves("starforged")
-        assert m1 is not m2
 
 
 class TestParsing:

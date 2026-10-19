@@ -6,7 +6,7 @@ from ..gamemaster.questions import Danger
 from ..gamemaster.spawn_sources import EMERGENT_SOURCE_PREFIXES
 from ..ids import next_id
 from ..logging_util import log
-from ..models import GameState, ThreatData, ThreatEvent
+from ..models import GameState, ProgressTrack, ThreatData, ThreatEvent
 from ..setting.cascade import roll_oracle_cascade
 from ..setting.oracle_rolls import plain_text, roll_table
 from ..setting.packages import load_package
@@ -117,14 +117,15 @@ def _advance(game: GameState, threat: ThreatData, marks: int, source: str) -> Th
     )
 
 
+def vow_against(game: GameState, threat: ThreatData) -> ProgressTrack | None:
+    return next((t for t in game.progress_tracks if t.id == threat.linked_vow_id and t.status == "active"), None)
+
+
 def advance_menace_on_miss(game: GameState) -> list[ThreatEvent]:
     marks = rules().threats.menace_on_miss
     events: list[ThreatEvent] = []
     for threat in game.threats:
-        if threat.status != "active":
-            continue
-        vow = next((t for t in game.progress_tracks if t.id == threat.linked_vow_id and t.status == "active"), None)
-        if not vow:
+        if threat.status != "active" or vow_against(game, threat) is None:
             continue
         event = _advance(game, threat, marks, "miss")
         if event is not None:
@@ -163,14 +164,10 @@ def resolve_full_menace(game: GameState, result: OutcomeResult) -> list[ThreatEv
     for threat in game.threats:
         if threat.status != "active" or not threat.menace_full:
             continue
-        if threat.linked_vow_id is None:
+        vow = vow_against(game, threat)
+        if vow is None:
             threat.status = "resolved"
-            log(f"[Threat] '{threat.name}' menace full, no linked vow — resolved")
-            continue
-        vow = next((t for t in game.progress_tracks if t.id == threat.linked_vow_id and t.status == "active"), None)
-        if not vow:
-            threat.status = "resolved"
-            log(f"[Threat] '{threat.name}' menace full but vow already gone — resolved")
+            log(f"[Threat] '{threat.name}' menace full, no vow sworn against it — resolved")
             continue
 
         threat.status = "resolved"

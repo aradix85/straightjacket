@@ -75,6 +75,7 @@ def get_brain_output_schema(
     npc_ids: list[str],
     track_ids: list[str],
     clock_names: list[str],
+    threat_ids: list[str],
 ) -> dict[str, Any]:
     rank_enum = sorted(ranks())
     return _obj_root(
@@ -93,6 +94,7 @@ def get_brain_output_schema(
             "track_rank": _str_enum(rank_enum),
             "target_track": _nullable_enum(track_ids),
             "target_clock": _nullable_enum(clock_names),
+            "target_threat": _nullable_enum(threat_ids),
             "bonus_id": _nullable_enum(bonus_ids),
             "undetermined_facts": _fact_requests(npc_ids),
             "boasts": {

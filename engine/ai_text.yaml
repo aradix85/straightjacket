@@ -56,6 +56,8 @@ ai_text:
     unknown_time: unspecified
     unknown_intent: general
     no_npcs: (none)
+    threat_danger: '  {name} (id:{id}) menace {filled}/{total}'
+    threat_vow: ', the vow {vow} is sworn against it'
     no_npcs_nearby: no one nearby
     no_roll: dialog (no roll)
     npc_appeared_event: '{npc_name} appeared'

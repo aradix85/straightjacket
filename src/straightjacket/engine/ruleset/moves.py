@@ -174,7 +174,3 @@ def get_moves(setting_id: str) -> dict[str, Move]:
     log(f"[Moves] Loaded {setting_id}: {len(moves)} moves")
     _cache[setting_id] = moves
     return moves
-
-
-def clear_cache() -> None:
-    _cache.clear()
