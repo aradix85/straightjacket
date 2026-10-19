@@ -96,6 +96,9 @@ def _deserialize_value(hint: Any, val: Any) -> Any:
     if get_origin(inner) is list and isinstance(val, list):
         return list(val)
 
+    if get_origin(inner) is dict and isinstance(val, dict) and _is_dataclass_type(value_type := get_args(inner)[1]):
+        return {key: deserialize(value_type, item) for key, item in val.items()}
+
     if isinstance(val, dict):
         return dict(val)
 

@@ -42,16 +42,16 @@ from tests._helpers import (
 @pytest.fixture
 def aria(load_engine: None) -> GameState:
     g = create_game(
-        "classic",
+        "starforged",
         location="Hearthwood",
         npcs=[("Kira", "A hunter.", "friendly")],
         stats=(2, 2, 1, 1, 3),
         player_name="Aria",
         background_vow="avenge sister",
     )
-    g.campaign.legacy_quests.ticks = 24
-    g.campaign.legacy_bonds.ticks = 8
-    g.campaign.legacy_discoveries.ticks = 16
+    g.campaign.legacy["quests"].ticks = 24
+    g.campaign.legacy["bonds"].ticks = 8
+    g.campaign.legacy["discoveries"].ticks = 16
     g.narrative.scene_count = 42
     g.campaign.chapter_number = 2
     return g
@@ -62,13 +62,13 @@ def test_build_predecessor_captures_pre_roll_state(aria: GameState) -> None:
     assert record.player_name == "Aria"
     assert record.pronouns == "she/her"
     assert record.background_vow == "avenge sister"
-    assert record.setting_id == "classic"
+    assert record.setting_id == "starforged"
     assert record.chapters_played == 2
     assert record.scenes_played == 42
     assert record.end_reason == "death"
-    assert record.legacy_quests_filled_boxes == 6
-    assert record.legacy_bonds_filled_boxes == 2
-    assert record.legacy_discoveries_filled_boxes == 4
+    assert record.legacy_filled_boxes["quests"] == 6
+    assert record.legacy_filled_boxes["bonds"] == 2
+    assert record.legacy_filled_boxes["discoveries"] == 4
     assert record.inheritance_rolls == []
 
 
@@ -79,13 +79,13 @@ def test_run_inheritance_rolls_returns_one_per_legacy_track(aria: GameState) -> 
 
 
 def test_run_inheritance_rolls_does_not_mutate_predecessor(aria: GameState) -> None:
-    pre_quests = filled_boxes(aria.campaign.legacy_quests)
-    pre_bonds = filled_boxes(aria.campaign.legacy_bonds)
-    pre_disc = filled_boxes(aria.campaign.legacy_discoveries)
+    pre_quests = filled_boxes(aria.campaign.legacy["quests"])
+    pre_bonds = filled_boxes(aria.campaign.legacy["bonds"])
+    pre_disc = filled_boxes(aria.campaign.legacy["discoveries"])
     run_inheritance_rolls(aria)
-    assert filled_boxes(aria.campaign.legacy_quests) == pre_quests
-    assert filled_boxes(aria.campaign.legacy_bonds) == pre_bonds
-    assert filled_boxes(aria.campaign.legacy_discoveries) == pre_disc
+    assert filled_boxes(aria.campaign.legacy["quests"]) == pre_quests
+    assert filled_boxes(aria.campaign.legacy["bonds"]) == pre_bonds
+    assert filled_boxes(aria.campaign.legacy["discoveries"]) == pre_disc
 
 
 @pytest.mark.parametrize(
@@ -103,7 +103,7 @@ def test_run_inheritance_rolls_outcomes(
     expected_new_filled: int,
 ) -> None:
     g = make_game_state()
-    g.campaign.legacy_quests.ticks = ticks
+    g.campaign.legacy["quests"].ticks = ticks
     random.seed(0)
 
     import straightjacket.engine.ruleset.rolls as rolls_mod
@@ -133,20 +133,20 @@ def test_seed_successor_legacy_overwrites_tracks(aria: GameState) -> None:
         make_inheritance_roll(track_name="discoveries", new_filled_boxes=8),
     ]
     seed_successor_legacy(aria, rolls)
-    assert filled_boxes(aria.campaign.legacy_quests) == 3
-    assert filled_boxes(aria.campaign.legacy_bonds) == 0
-    assert filled_boxes(aria.campaign.legacy_discoveries) == 8
+    assert filled_boxes(aria.campaign.legacy["quests"]) == 3
+    assert filled_boxes(aria.campaign.legacy["bonds"]) == 0
+    assert filled_boxes(aria.campaign.legacy["discoveries"]) == 8
 
 
 def test_seed_successor_legacy_resets_status(aria: GameState) -> None:
-    aria.campaign.legacy_quests.status = "completed"
+    aria.campaign.legacy["quests"].status = "completed"
     rolls = [
         make_inheritance_roll(track_name="quests", new_filled_boxes=3),
         make_inheritance_roll(track_name="bonds", new_filled_boxes=0),
         make_inheritance_roll(track_name="discoveries", new_filled_boxes=0),
     ]
     seed_successor_legacy(aria, rolls)
-    assert aria.campaign.legacy_quests.status == "active"
+    assert aria.campaign.legacy["quests"].status == "active"
 
 
 def test_seed_successor_legacy_preserves_xp(aria: GameState) -> None:
@@ -255,8 +255,8 @@ def test_prepare_succession_rejects_double_call(aria: GameState) -> None:
 
 def test_prepare_succession_archives_the_recorded_reason(aria: GameState) -> None:
     for reason in END_REASONS:
-        g = make_game_state(setting_id="classic")
-        g.campaign.legacy_quests.ticks = 4
+        g = make_game_state(setting_id="starforged")
+        g.campaign.legacy["quests"].ticks = 4
         g.end_reason = reason
         prepare_succession(g)
         assert g.campaign.predecessors[-1].end_reason == reason
@@ -437,7 +437,7 @@ def test_succession_summary_renders_narrative_text(aria: GameState) -> None:
         end_reason="death",
         chapters_played=2,
         scenes_played=42,
-        legacy_quests_filled_boxes=6,
+        legacy_filled_boxes={"quests": 6, "bonds": 2, "discoveries": 0},
         inheritance_rolls=[
             make_inheritance_roll(track_name="quests", result="STRONG_HIT", new_filled_boxes=6),
             make_inheritance_roll(track_name="bonds", result="WEAK_HIT", new_filled_boxes=1),
@@ -587,9 +587,9 @@ def test_start_succession_seeds_legacy_from_predecessor(aria: GameState) -> None
     provider = _SuccessionMockProvider()
     start_succession_with_character(provider, aria, _successor_creation_data())
 
-    quest_filled = filled_boxes(aria.campaign.legacy_quests)
-    bond_filled = filled_boxes(aria.campaign.legacy_bonds)
-    disc_filled = filled_boxes(aria.campaign.legacy_discoveries)
+    quest_filled = filled_boxes(aria.campaign.legacy["quests"])
+    bond_filled = filled_boxes(aria.campaign.legacy["bonds"])
+    disc_filled = filled_boxes(aria.campaign.legacy["discoveries"])
     assert quest_filled >= 0
     assert bond_filled >= 0
     assert disc_filled >= 0

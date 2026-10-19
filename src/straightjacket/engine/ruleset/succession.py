@@ -4,7 +4,6 @@ from ..logging_util import log
 from ..models import GameState, InheritanceRollResult, NpcData, PredecessorRecord, ProgressTrack
 from .bond import connection_track_id
 from .config import rules
-from .legacy import LEGACY_TRACKS, get_legacy_track
 from .progress import filled_boxes, ticks_for_filled_boxes
 from .rolls import roll_progress
 
@@ -19,9 +18,7 @@ def build_predecessor_record(game: GameState, end_reason: str) -> PredecessorRec
         chapters_played=game.campaign.chapter_number,
         scenes_played=game.narrative.scene_count,
         end_reason=end_reason,
-        legacy_quests_filled_boxes=filled_boxes(game.campaign.legacy_quests),
-        legacy_bonds_filled_boxes=filled_boxes(game.campaign.legacy_bonds),
-        legacy_discoveries_filled_boxes=filled_boxes(game.campaign.legacy_discoveries),
+        legacy_filled_boxes={name: filled_boxes(track) for name, track in game.campaign.legacy.items()},
         inheritance_rolls=[],
     )
 
@@ -29,8 +26,7 @@ def build_predecessor_record(game: GameState, end_reason: str) -> PredecessorRec
 def run_inheritance_rolls(game: GameState) -> list[InheritanceRollResult]:
     move_name = rules().succession.inheritance.move_name
     rolls: list[InheritanceRollResult] = []
-    for name in LEGACY_TRACKS:
-        track = get_legacy_track(game, name)
+    for name, track in game.campaign.legacy.items():
         boxes = filled_boxes(track)
         roll = roll_progress(track_name=track.name, filled_boxes=boxes, move=move_name)
         fraction = rules().succession.inheritance.fraction_by_result[roll.result]
@@ -45,12 +41,10 @@ def run_inheritance_rolls(game: GameState) -> list[InheritanceRollResult]:
 
 def seed_successor_legacy(game: GameState, rolls: list[InheritanceRollResult]) -> None:
     by_name = {r.track_name: r for r in rolls}
-    for name in LEGACY_TRACKS:
-        track = get_legacy_track(game, name)
-        roll = by_name[name]
-        track.ticks = ticks_for_filled_boxes(track, roll.new_filled_boxes)
+    for name, track in game.campaign.legacy.items():
+        track.ticks = ticks_for_filled_boxes(track, by_name[name].new_filled_boxes)
         track.status = "active"
-    seeded = ", ".join(f"{name}={filled_boxes(get_legacy_track(game, name))}" for name in LEGACY_TRACKS)
+    seeded = ", ".join(f"{name}={filled_boxes(track)}" for name, track in game.campaign.legacy.items())
     log(f"[Succession] Successor legacy seeded (boxes of {rules().progress.boxes}): {seeded}")
 
 

@@ -202,9 +202,7 @@ class PredecessorRecord(SerializableMixin):
     chapters_played: int
     scenes_played: int
     end_reason: str
-    legacy_quests_filled_boxes: int
-    legacy_bonds_filled_boxes: int
-    legacy_discoveries_filled_boxes: int
+    legacy_filled_boxes: dict[str, int]
     inheritance_rolls: list[InheritanceRollResult]
 
 
@@ -227,9 +225,7 @@ class CampaignState(SerializableMixin):
 
     xp: int = 0
     xp_spent: int = 0
-    legacy_quests: ProgressTrack = field(kw_only=True)
-    legacy_bonds: ProgressTrack = field(kw_only=True)
-    legacy_discoveries: ProgressTrack = field(kw_only=True)
+    legacy: dict[str, ProgressTrack] = field(kw_only=True)
 
     @property
     def xp_available(self) -> int:
@@ -241,9 +237,7 @@ class CampaignState(SerializableMixin):
             "pending_succession": self.pending_succession,
             "xp": self.xp,
             "xp_spent": self.xp_spent,
-            "legacy_quests": self.legacy_quests.to_dict(),
-            "legacy_bonds": self.legacy_bonds.to_dict(),
-            "legacy_discoveries": self.legacy_discoveries.to_dict(),
+            "legacy": {name: track.to_dict() for name, track in self.legacy.items()},
         }
 
     def restore(self, snap: dict[str, Any]) -> None:
@@ -251,6 +245,4 @@ class CampaignState(SerializableMixin):
         self.pending_succession = snap["pending_succession"]
         self.xp = snap["xp"]
         self.xp_spent = snap["xp_spent"]
-        self.legacy_quests = ProgressTrack.from_dict(snap["legacy_quests"])
-        self.legacy_bonds = ProgressTrack.from_dict(snap["legacy_bonds"])
-        self.legacy_discoveries = ProgressTrack.from_dict(snap["legacy_discoveries"])
+        self.legacy = {name: ProgressTrack.from_dict(track) for name, track in snap["legacy"].items()}

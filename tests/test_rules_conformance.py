@@ -176,14 +176,13 @@ def test_fulfill_your_vow_weak_hit_rewards_one_rank_lower(
     load_engine: None, vow_rank: str, expected_ticks: int
 ) -> None:
     from straightjacket.engine.game.finalization import apply_progress_and_legacy
-    from straightjacket.engine.ruleset.legacy import get_legacy_track
     from straightjacket.engine.ruleset.move_outcome import resolve_move_outcome
     from tests._helpers import make_brain_result, make_game_state, make_progress_track
 
     game = make_game_state(setting_id="starforged")
     outcome = resolve_move_outcome(game, "quest/fulfill_your_vow", "WEAK_HIT", target_npc_id=None, match=False)
     apply_progress_and_legacy(game, outcome, make_brain_result(), make_progress_track(rank=vow_rank))
-    assert get_legacy_track(game, "quests").ticks == expected_ticks
+    assert game.campaign.legacy["quests"].ticks == expected_ticks
 
 
 @pytest.mark.parametrize(
@@ -199,7 +198,6 @@ def test_classic_fulfill_your_vow_marks_experience_by_rank(
     load_engine: None, result: str, vow_rank: str, expected_xp: int
 ) -> None:
     from straightjacket.engine.game.finalization import apply_progress_and_legacy
-    from straightjacket.engine.ruleset.legacy import get_legacy_track
     from straightjacket.engine.ruleset.move_outcome import resolve_move_outcome
     from tests._helpers import make_brain_result, make_game_state, make_progress_track
 
@@ -207,12 +205,11 @@ def test_classic_fulfill_your_vow_marks_experience_by_rank(
     outcome = resolve_move_outcome(game, "quest/fulfill_your_vow", result, target_npc_id=None, match=False)
     apply_progress_and_legacy(game, outcome, make_brain_result(), make_progress_track(rank=vow_rank))
     assert game.campaign.xp == expected_xp
-    assert get_legacy_track(game, "quests").ticks == 0
+    assert all(track.ticks == 0 for track in game.campaign.legacy.values())
 
 
 def test_develop_your_relationship_marks_two_bonds_ticks(load_engine: None) -> None:
     from straightjacket.engine.game.finalization import apply_progress_and_legacy
-    from straightjacket.engine.ruleset.legacy import get_legacy_track
     from straightjacket.engine.ruleset.move_outcome import resolve_move_outcome
     from tests._helpers import make_brain_result, make_game_state
 
@@ -221,7 +218,7 @@ def test_develop_your_relationship_marks_two_bonds_ticks(load_engine: None) -> N
         game, "connection/develop_your_relationship", "STRONG_HIT", target_npc_id=None, match=False
     )
     apply_progress_and_legacy(game, outcome, make_brain_result(), None)
-    assert get_legacy_track(game, "bonds").ticks == 2
+    assert game.campaign.legacy["bonds"].ticks == 2
 
 
 @pytest.mark.parametrize("setting_id", ["classic", "starforged"])
@@ -258,12 +255,12 @@ def test_make_a_connection_gives_no_momentum(load_engine: None) -> None:
 
 
 def test_a_full_legacy_track_clears_and_then_earns_one_experience_per_box(load_engine: None) -> None:
-    from straightjacket.engine.ruleset.legacy import get_legacy_track, mark_legacy_ticks
+    from straightjacket.engine.ruleset.legacy import mark_legacy_ticks
     from tests._helpers import make_game_state
 
     game = make_game_state(setting_id="starforged")
     game.campaign.xp = 0
-    track = get_legacy_track(game, "quests")
+    track = game.campaign.legacy["quests"]
     track.ticks = track.max_ticks - 2
     mark_legacy_ticks(game, "quests", 4)
     assert game.campaign.xp == 2
@@ -631,7 +628,6 @@ def test_explore_a_waypoint_match_chains_an_oracle_move(
 ) -> None:
     from straightjacket.engine.game.finalization import resolve_action_consequences
     from straightjacket.engine.models import RollResult
-    from straightjacket.engine.ruleset.legacy import get_legacy_track
     from tests._helpers import make_brain_result, make_game_state, record_price_tables
 
     rolled = record_price_tables(monkeypatch)
@@ -639,7 +635,7 @@ def test_explore_a_waypoint_match_chains_an_oracle_move(
     roll = RollResult(3, 3, 3, "wits", 2, 5, result, "exploration/explore_a_waypoint", match=True)
     action = resolve_action_consequences(game, make_brain_result(move="exploration/explore_a_waypoint"), roll, "risky")
     assert any(c.startswith(f"follow-up move {move_name}: ") for c in labels_of(action.consequences))
-    assert get_legacy_track(game, "discoveries").ticks == ticks
+    assert game.campaign.legacy["discoveries"].ticks == ticks
     assert bool(rolled) is pays
 
 

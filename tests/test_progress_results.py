@@ -6,7 +6,6 @@ from straightjacket.engine.game.action_resolution import resolve_action_phase
 from straightjacket.engine.game.turn_types import RollOutcome
 from straightjacket.engine.models import GameState, ProgressTrack, RollResult, labels_of
 from straightjacket.engine.ruleset.consequences import generate_consequence_sentences
-from straightjacket.engine.ruleset.legacy import get_legacy_track
 from straightjacket.engine.ruleset.moves import get_moves
 from straightjacket.engine.ruleset.outcome_result import OutcomeResult
 from straightjacket.engine.ruleset.progress import filled_boxes
@@ -115,14 +114,14 @@ def test_clearing_by_the_lowest_die_stops_at_zero(load_engine: None, monkeypatch
 def test_finish_an_expedition_weak_hit_rewards_one_rank_lower(load_engine: None) -> None:
     track = make_progress_track(id="expedition_x", track_type="expedition", rank="formidable", ticks=24)
     game, _ = _play("starforged", "exploration/finish_an_expedition", track, "WEAK_HIT")
-    assert get_legacy_track(game, "discoveries").ticks == 2
+    assert game.campaign.legacy["discoveries"].ticks == 2
 
 
 def test_forge_a_bond_weak_hit_bonds_now_and_tells_the_request(load_engine: None) -> None:
     track = make_progress_track(id="connection_npc_1", track_type="connection", ticks=24)
     game, consequences = _play("starforged", "connection/forge_a_bond", track, "WEAK_HIT")
     assert track.status == "bonded"
-    assert get_legacy_track(game, "bonds").ticks == 2
+    assert game.campaign.legacy["bonds"].ticks == 2
     sentences = generate_consequence_sentences(
         consequences, [], game, make_brain_result(move="connection/forge_a_bond")
     )

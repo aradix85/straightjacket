@@ -15,14 +15,14 @@ class TestMarkLegacy:
 
         game = _game()
         mark_legacy(game, "quests", "dangerous")
-        assert game.campaign.legacy_quests.ticks == 2
+        assert game.campaign.legacy["quests"].ticks == 2
 
     def test_mark_formidable_adds_4_ticks(self, stub_engine: None) -> None:
         from straightjacket.engine.ruleset.legacy import mark_legacy
 
         game = _game()
         mark_legacy(game, "quests", "formidable")
-        assert game.campaign.legacy_quests.ticks == 4
+        assert game.campaign.legacy["quests"].ticks == 4
 
     def test_mark_unknown_rank_raises(self, stub_engine: None) -> None:
         import pytest
@@ -39,8 +39,26 @@ class TestMarkLegacy:
         from straightjacket.engine.ruleset.legacy import mark_legacy
 
         game = _game()
-        with pytest.raises(ValueError, match="Unknown legacy track"):
+        with pytest.raises(KeyError, match="bogus"):
             mark_legacy(game, "bogus", "dangerous")
+
+    def test_each_ruleset_keeps_the_legacy_tracks_its_rules_name(self, load_engine: None) -> None:
+        from straightjacket.engine.ruleset.legacy import new_campaign
+
+        assert list(new_campaign("classic").legacy) == ["bonds"]
+        assert list(new_campaign("delve").legacy) == ["bonds"]
+        assert list(new_campaign("starforged").legacy) == ["quests", "bonds", "discoveries"]
+        assert list(new_campaign("sundered_isles").legacy) == ["quests", "bonds", "discoveries"]
+        assert new_campaign("classic").legacy["bonds"].id == "legacy_bonds"
+
+    def test_the_legacy_tracks_load_back_as_tracks(self, load_engine: None) -> None:
+        from straightjacket.engine.models import GameState, ProgressTrack
+
+        game = _game()
+        game.campaign.legacy["bonds"].ticks = 8
+        loaded = GameState.from_dict(game.to_dict()).campaign.legacy
+        assert isinstance(loaded["bonds"], ProgressTrack)
+        assert loaded["bonds"].ticks == 8
 
     def test_no_xp_before_box_fills(self, stub_engine: None) -> None:
         from straightjacket.engine.ruleset.legacy import mark_legacy
@@ -56,7 +74,7 @@ class TestMarkLegacy:
         mark_legacy(game, "quests", "dangerous")
         mark_legacy(game, "quests", "dangerous")
         assert game.campaign.xp == 2
-        assert filled_boxes(game.campaign.legacy_quests) == 1
+        assert filled_boxes(game.campaign.legacy["quests"]) == 1
 
     def test_epic_rank_fills_3_boxes_at_once(self, stub_engine: None) -> None:
         from straightjacket.engine.ruleset.legacy import mark_legacy
@@ -64,16 +82,16 @@ class TestMarkLegacy:
         game = _game()
         mark_legacy(game, "quests", "epic")
         assert game.campaign.xp == 6
-        assert filled_boxes(game.campaign.legacy_quests) == 3
+        assert filled_boxes(game.campaign.legacy["quests"]) == 3
 
     def test_full_track_clears_and_continues_at_one_xp_per_box(self, stub_engine: None) -> None:
         from straightjacket.engine.ruleset.legacy import mark_legacy
 
         game = _game()
-        game.campaign.legacy_quests.ticks = 38
+        game.campaign.legacy["quests"].ticks = 38
         mark_legacy(game, "quests", "epic")
-        assert game.campaign.legacy_quests.ticks == 10
-        assert game.campaign.legacy_quests.completions == 1
+        assert game.campaign.legacy["quests"].ticks == 10
+        assert game.campaign.legacy["quests"].completions == 1
         assert game.campaign.xp == 2 + 1 + 1
 
     def test_separate_tracks_independent(self, stub_engine: None) -> None:
@@ -82,9 +100,9 @@ class TestMarkLegacy:
         game = _game()
         mark_legacy(game, "quests", "formidable")
         mark_legacy(game, "bonds", "dangerous")
-        assert filled_boxes(game.campaign.legacy_quests) == 1
-        assert filled_boxes(game.campaign.legacy_bonds) == 0
-        assert filled_boxes(game.campaign.legacy_discoveries) == 0
+        assert filled_boxes(game.campaign.legacy["quests"]) == 1
+        assert filled_boxes(game.campaign.legacy["bonds"]) == 0
+        assert filled_boxes(game.campaign.legacy["discoveries"]) == 0
 
 
 class TestAdvanceAsset:
@@ -217,9 +235,9 @@ class TestCampaignSnapshot:
         game = _game()
         snap = game.campaign.snapshot()
         mark_legacy(game, "quests", "epic")
-        assert filled_boxes(game.campaign.legacy_quests) == 3
+        assert filled_boxes(game.campaign.legacy["quests"]) == 3
         game.campaign.restore(snap)
-        assert filled_boxes(game.campaign.legacy_quests) == 0
+        assert filled_boxes(game.campaign.legacy["quests"]) == 0
         assert game.campaign.xp == 0
 
     def test_campaign_history_preserved_across_snapshot(self, stub_engine: None) -> None:
@@ -237,22 +255,21 @@ class TestCampaignSnapshot:
 class TestLegacyTrackType:
     def test_legacy_tracks_are_epic_rank(self, stub_engine: None) -> None:
         game = _game()
-        assert game.campaign.legacy_quests.rank == "epic"
-        assert game.campaign.legacy_bonds.rank == "epic"
-        assert game.campaign.legacy_discoveries.rank == "epic"
+        assert game.campaign.legacy["quests"].rank == "epic"
+        assert game.campaign.legacy["bonds"].rank == "epic"
+        assert game.campaign.legacy["discoveries"].rank == "epic"
 
     def test_legacy_tracks_have_correct_type(self, stub_engine: None) -> None:
         game = _game()
-        assert game.campaign.legacy_quests.track_type == "legacy"
-        assert game.campaign.legacy_bonds.track_type == "legacy"
-        assert game.campaign.legacy_discoveries.track_type == "legacy"
+        assert game.campaign.legacy["quests"].track_type == "legacy"
+        assert game.campaign.legacy["bonds"].track_type == "legacy"
+        assert game.campaign.legacy["discoveries"].track_type == "legacy"
 
     def test_get_legacy_track_returns_campaign_instance(self, stub_engine: None) -> None:
-        from straightjacket.engine.ruleset.legacy import get_legacy_track
 
         game = _game()
-        track = get_legacy_track(game, "quests")
-        assert track is game.campaign.legacy_quests
+        track = game.campaign.legacy["quests"]
+        assert track is game.campaign.legacy["quests"]
 
 
 class TestSharedProgressAndLegacyHelper:
@@ -264,7 +281,7 @@ class TestSharedProgressAndLegacyHelper:
         outcome = OutcomeResult(legacy_track="quests")
         brain = make_brain_result(move="quest/fulfill_your_vow")
         apply_progress_and_legacy(game, outcome, brain, make_progress_track(rank="dangerous"))
-        assert game.campaign.legacy_quests.ticks == 2
+        assert game.campaign.legacy["quests"].ticks == 2
 
     def test_helper_consumes_progress_marks(self, stub_engine: None) -> None:
         from straightjacket.engine.game.finalization import apply_progress_and_legacy
@@ -291,7 +308,7 @@ class TestSharedProgressAndLegacyHelper:
         outcome = OutcomeResult(progress_marks=0, legacy_track="bonds")
         brain = make_brain_result(move="connection/develop_your_relationship")
         apply_progress_and_legacy(game, outcome, brain, make_progress_track(rank="formidable"))
-        assert game.campaign.legacy_bonds.ticks == 4
+        assert game.campaign.legacy["bonds"].ticks == 4
 
     def test_helper_noop_on_empty_outcome(self, stub_engine: None) -> None:
         from straightjacket.engine.game.finalization import apply_progress_and_legacy
@@ -301,7 +318,7 @@ class TestSharedProgressAndLegacyHelper:
         outcome = OutcomeResult()
         brain = make_brain_result(move="quest/swear_an_iron_vow")
         apply_progress_and_legacy(game, outcome, brain, None)
-        assert game.campaign.legacy_quests.ticks == 0
+        assert game.campaign.legacy["quests"].ticks == 0
         assert game.campaign.xp == 0
 
     def test_a_legacy_reward_by_rank_without_its_track_raises(self, stub_engine: None) -> None:
@@ -346,6 +363,6 @@ class TestChapterPersistence:
         mark_legacy(game, "quests", "epic")
         mark_legacy(game, "bonds", "formidable")
         _reset_chapter_mechanics(game)
-        assert filled_boxes(game.campaign.legacy_quests) == 3
-        assert filled_boxes(game.campaign.legacy_bonds) == 1
-        assert filled_boxes(game.campaign.legacy_discoveries) == 0
+        assert filled_boxes(game.campaign.legacy["quests"]) == 3
+        assert filled_boxes(game.campaign.legacy["bonds"]) == 1
+        assert filled_boxes(game.campaign.legacy["discoveries"]) == 0

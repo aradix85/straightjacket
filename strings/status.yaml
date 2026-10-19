@@ -16,7 +16,7 @@ status.impacts: 'Impacts: {impacts}.'
 status.threat: '{name}: {urgency}.'
 status.no_threats: No active threats.
 status.xp: 'Experience: {xp} available.'
-status.legacy: Legacy — {quests}; {bonds}; {discoveries}.
+status.legacy: Legacy — {tracks}.
 status.legacy_item: '{name}: {progress}'
 status.legacy_name_quests: Quests
 status.legacy_name_bonds: Bonds

@@ -36,7 +36,7 @@ def make_game_state(**kwargs: Any) -> Any:
     kwargs.setdefault("stats", {"edge": 1, "heart": 2, "iron": 1, "shadow": 1, "wits": 2})
     kwargs.setdefault("resources", starting_resources(kwargs["setting_id"]))
     kwargs.setdefault("world", new_world())
-    kwargs.setdefault("campaign", new_campaign())
+    kwargs.setdefault("campaign", new_campaign(kwargs["setting_id"]))
     return GameState(**kwargs)
 
 
@@ -159,9 +159,7 @@ def make_predecessor(**kwargs: Any) -> Any:
     kwargs.setdefault("chapters_played", 1)
     kwargs.setdefault("scenes_played", 1)
     kwargs.setdefault("end_reason", "death")
-    kwargs.setdefault("legacy_quests_filled_boxes", 0)
-    kwargs.setdefault("legacy_bonds_filled_boxes", 0)
-    kwargs.setdefault("legacy_discoveries_filled_boxes", 0)
+    kwargs.setdefault("legacy_filled_boxes", {})
     kwargs.setdefault("inheritance_rolls", [])
     return PredecessorRecord(**kwargs)
 

@@ -5,17 +5,25 @@ from typing import Any
 from ...i18n import t
 from ..logging_util import log
 from ..models import CampaignState, GameState, ProgressTrack, ThreatData
+from ..setting.packages import load_package
 from .assets import asset_data, enable_next_ability, enabled_abilities
 from .config import rules
 from .progress import filled_boxes
 
-LEGACY_TRACKS: tuple[str, ...] = ("quests", "bonds", "discoveries")
+
+def _legacy_track_names(setting_id: str) -> list[str]:
+    names: list[str] = []
+    for pkg in reversed(list(load_package(setting_id).chain())):
+        for raw in (pkg.data.raw["rules"].get("special_tracks") or {}).values():
+            if not raw["optional"] and raw["label"] not in names:
+                names.append(raw["label"])
+    return names
 
 
-def _legacy_track(track_id: str, name_key: str) -> ProgressTrack:
+def _legacy_track(name: str) -> ProgressTrack:
     return ProgressTrack(
-        id=track_id,
-        name=t(name_key),
+        id=f"legacy_{name}",
+        name=t(f"status.legacy_name_{name}"),
         track_type="legacy",
         rank=rules().legacy.starting_rank,
         max_ticks=rules().progress.max_ticks,
@@ -23,22 +31,8 @@ def _legacy_track(track_id: str, name_key: str) -> ProgressTrack:
     )
 
 
-def new_campaign() -> CampaignState:
-    return CampaignState(
-        legacy_quests=_legacy_track("legacy_quests", "status.legacy_name_quests"),
-        legacy_bonds=_legacy_track("legacy_bonds", "status.legacy_name_bonds"),
-        legacy_discoveries=_legacy_track("legacy_discoveries", "status.legacy_name_discoveries"),
-    )
-
-
-def get_legacy_track(game: GameState, name: str) -> ProgressTrack:
-    if name == "quests":
-        return game.campaign.legacy_quests
-    if name == "bonds":
-        return game.campaign.legacy_bonds
-    if name == "discoveries":
-        return game.campaign.legacy_discoveries
-    raise ValueError(f"Unknown legacy track: {name!r}. Valid: {LEGACY_TRACKS}")
+def new_campaign(setting_id: str) -> CampaignState:
+    return CampaignState(legacy={name: _legacy_track(name) for name in _legacy_track_names(setting_id)})
 
 
 def shifted_rank(rank: str, shift: int) -> str | None:
@@ -52,7 +46,7 @@ def mark_legacy(game: GameState, track_name: str, source_rank: str) -> None:
 
 
 def mark_legacy_ticks(game: GameState, track_name: str, ticks: int) -> None:
-    track = get_legacy_track(game, track_name)
+    track = game.campaign.legacy[track_name]
     cfg = rules().legacy
     xp_gained = 0
     for _ in range(ticks):

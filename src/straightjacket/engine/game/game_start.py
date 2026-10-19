@@ -198,7 +198,7 @@ def start_new_game(provider: AIProvider, creation_data: dict[str, Any]) -> tuple
         stats=stat_dict,
         resources=starting_resources(setting_id),
         world=new_world(),
-        campaign=new_campaign(),
+        campaign=new_campaign(setting_id),
     )
 
     game.narrative.scene_count = 1

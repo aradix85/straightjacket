@@ -67,8 +67,7 @@ def prepare_succession(game: GameState) -> None:
     log(
         f"[Succession] Predecessor {record.player_name} ({end_reason}) archived at chapter "
         f"{record.chapters_played}, scene {record.scenes_played}: "
-        f"quests={record.legacy_quests_filled_boxes} bonds={record.legacy_bonds_filled_boxes} "
-        f"discoveries={record.legacy_discoveries_filled_boxes}. pending_succession=True."
+        f"legacy boxes {record.legacy_filled_boxes}. pending_succession=True."
     )
 
 

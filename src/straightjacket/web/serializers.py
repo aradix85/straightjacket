@@ -91,28 +91,13 @@ def _status_xp_and_legacy_lines(game: GameState) -> list[str]:
     camp = game.campaign
     if camp.xp_available > 0 or camp.xp_spent > 0:
         lines.append(t("status.xp", xp=describe_by_threshold(camp.xp_available, eng().status_descriptions.xp)))
-    if any(filled_boxes(lt) > 0 for lt in (camp.legacy_quests, camp.legacy_bonds, camp.legacy_discoveries)):
+    if any(filled_boxes(track) > 0 for track in camp.legacy.values()):
         legacy_desc = eng().status_descriptions.legacy
-        lines.append(
-            t(
-                "status.legacy",
-                quests=t(
-                    "status.legacy_item",
-                    name=camp.legacy_quests.name,
-                    progress=describe_by_threshold(filled_boxes(camp.legacy_quests), legacy_desc),
-                ),
-                bonds=t(
-                    "status.legacy_item",
-                    name=camp.legacy_bonds.name,
-                    progress=describe_by_threshold(filled_boxes(camp.legacy_bonds), legacy_desc),
-                ),
-                discoveries=t(
-                    "status.legacy_item",
-                    name=camp.legacy_discoveries.name,
-                    progress=describe_by_threshold(filled_boxes(camp.legacy_discoveries), legacy_desc),
-                ),
-            )
-        )
+        items = [
+            t("status.legacy_item", name=track.name, progress=describe_by_threshold(filled_boxes(track), legacy_desc))
+            for track in camp.legacy.values()
+        ]
+        lines.append(t("status.legacy", tracks="; ".join(items)))
     return lines
 
 

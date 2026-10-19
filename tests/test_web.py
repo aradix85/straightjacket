@@ -409,9 +409,9 @@ class TestSuccessionWebSocket:
             pronouns="she/her",
             character_concept="outlander",
             background_vow="avenge sister",
-            setting_id="classic",
+            setting_id="starforged",
         )
-        game.campaign.legacy_quests.ticks = 24
+        game.campaign.legacy["quests"].ticks = 24
         game.narrative.scene_count = 5
         save_game(game, player, [{"role": "assistant", "content": "..."}], "autosave")
 
@@ -492,7 +492,7 @@ class TestSuccessionWebSocket:
             msg = ws.receive_json()
             assert msg["type"] == "succession_creation_options"
             assert "creation_options" in msg
-            assert msg["current_setting_id"] == "classic"
+            assert msg["current_setting_id"] == "starforged"
 
     def test_start_succession_without_pending(self, client: Any) -> None:
         self._seed_session()
