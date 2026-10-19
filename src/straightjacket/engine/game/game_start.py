@@ -11,8 +11,8 @@ from ..crafters.adventure_crafter import (
     assemble_blueprint_seed_kishotenketsu,
     materialize_blueprint,
 )
+from ..gamemaster.clocks import spawn_keyed_scenes_for_clock
 from ..gamemaster.config import gm
-from ..gamemaster.keyed_scenes import spawn_keyed_scenes_for_clock
 from ..gamemaster.spawn_sources import SETUP_SOURCE
 from ..gamemaster.world import choose_story_structure, new_world, record_scene_intensity
 from ..logging_util import log

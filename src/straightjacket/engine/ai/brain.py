@@ -4,7 +4,7 @@ from typing import Any, NoReturn
 
 from ..config_loader import model_for_role, narration_language, sampling_params
 from ..engine_loader import eng
-from ..gamemaster.complications import open_complications
+from ..gamemaster.clocks import open_complications
 from ..gamemaster.config import gm
 from ..gamemaster.config_types import GameMasterMove
 from ..logging_util import log

@@ -3,13 +3,11 @@ from __future__ import annotations
 from collections.abc import Callable
 
 from ..ids import next_id
-from ..logging_util import log
-from ..models import ClockData, GameState, KeyedScene, NarrativeState
+from ..models import GameState, KeyedScene, NarrativeState
 from ..models_npc import NpcData
 from .config import gm
 from .npc.matching import find_npc
 from .questions import answers
-from .spawn_sources import CLOCK_KEYED_SOURCE_PREFIX
 
 _ID_PREFIX = "ks_"
 
@@ -267,25 +265,3 @@ def _validate_pattern_trigger_value(trigger_type: str, value: str) -> None:
                 f"{trigger_type} disposition pattern {pool!r} uses unknown disposition "
                 f"{disposition!r}; valid: {sorted(valid)}"
             )
-
-
-def spawn_keyed_scenes_for_clock(narrative: NarrativeState, clock: ClockData) -> None:
-    entry = gm().clock_keyed_scenes.by_clock_type[clock.clock_type]
-
-    for fraction in entry.fractions:
-        threshold = max(1, round(clock.segments * fraction))
-        source = f"{CLOCK_KEYED_SOURCE_PREFIX}{clock.name}:{threshold}"
-        if has_keyed_scene_from(narrative, source):
-            continue
-        scene = add_keyed_scene(
-            narrative,
-            trigger_type="clock_fills",
-            trigger_value=f"{clock.name}:{threshold}",
-            priority=entry.priority,
-            narrative_hint=entry.narrative_hint_template.format(clock_name=clock.name),
-            source=source,
-        )
-        log(
-            f"[Clock] spawned keyed-scene '{scene.id}' for clock '{clock.name}' "
-            f"(type={clock.clock_type}, fraction={fraction}, threshold={threshold}, priority={entry.priority})"
-        )

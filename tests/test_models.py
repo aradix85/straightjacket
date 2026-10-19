@@ -52,7 +52,7 @@ def test_test_bond_disposition_shift(load_engine: None) -> None:
 
 
 def test_npc_owned_threat_clock_ticks_in_agency() -> None:
-    from straightjacket.engine.gamemaster.clock_ticks import check_npc_agency
+    from straightjacket.engine.gamemaster.clocks import check_npc_agency
 
     game = make_game_state()
     game.narrative.scene_count = 5
@@ -71,7 +71,7 @@ def test_npc_owned_threat_clock_ticks_in_agency() -> None:
 
 
 def test_npc_agency_clock_fires_on_full() -> None:
-    from straightjacket.engine.gamemaster.clock_ticks import check_npc_agency
+    from straightjacket.engine.gamemaster.clocks import check_npc_agency
 
     game = make_game_state()
     game.narrative.scene_count = 10
@@ -90,7 +90,7 @@ def test_npc_agency_clock_fires_on_full() -> None:
 
 
 def test_npc_agency_empty_on_wrong_scene() -> None:
-    from straightjacket.engine.gamemaster.clock_ticks import check_npc_agency
+    from straightjacket.engine.gamemaster.clocks import check_npc_agency
 
     game = make_game_state()
     game.narrative.scene_count = 3
@@ -104,7 +104,7 @@ def test_npc_agency_empty_on_wrong_scene() -> None:
 def test_autonomous_clocks_skip_npc_owned(load_engine: None) -> None:
     import random
 
-    from straightjacket.engine.gamemaster.clock_ticks import tick_autonomous_clocks
+    from straightjacket.engine.gamemaster.clocks import tick_autonomous_clocks
 
     random.seed(0)
     game = make_game_state()

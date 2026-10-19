@@ -1,7 +1,6 @@
 import random
 
-from ..gamemaster.clock_ticks import check_npc_agency, tick_threat_clock
-from ..gamemaster.complications import avert_complication
+from ..gamemaster.clocks import avert_complication, check_npc_agency, tick_threat_clock
 from ..gamemaster.config import gm
 from ..gamemaster.npc.matching import find_npc
 from ..gamemaster.questions import answers, gained

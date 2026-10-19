@@ -5,7 +5,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 
 from ..engine_loader import eng
-from ..gamemaster.complications import spawn_complication_clock
+from ..gamemaster.clocks import spawn_complication_clock
 from ..gamemaster.config import gm
 from ..gamemaster.npc.matching import find_npc
 from ..gamemaster.random_events import roll_meaning_table

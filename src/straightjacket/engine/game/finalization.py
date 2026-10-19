@@ -7,7 +7,7 @@ from typing import Any
 from ..ai.metadata import apply_narrator_metadata
 from ..ai.narrator import call_narrator, call_narrator_metadata
 from ..ai.provider_base import AIProvider, NarrationSink
-from ..gamemaster.clock_ticks import tick_threat_clock
+from ..gamemaster.clocks import tick_threat_clock
 from ..gamemaster.config import gm
 from ..gamemaster.engine_memories import generate_engine_memories, generate_scene_context
 from ..gamemaster.npc.matching import named_in

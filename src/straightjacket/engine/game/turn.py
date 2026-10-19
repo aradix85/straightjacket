@@ -4,7 +4,7 @@ from typing import Any
 from ..ai.brain import call_brain
 from ..ai.provider_base import AIProvider, NarrationSink
 from ..engine_loader import eng
-from ..gamemaster.clock_ticks import check_npc_agency, purge_old_fired_clocks
+from ..gamemaster.clocks import check_npc_agency, purge_old_fired_clocks
 from ..gamemaster.facts import (
     clear_facts_settled_by_hit,
     overrule_facts_by_hit,

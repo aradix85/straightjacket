@@ -8,14 +8,14 @@ from typing import Any
 
 from ..config_loader import PROJECT_ROOT
 from ..engine_loader import eng
-from ..gamemaster.clocks import count_emergent_clocks, unique_clock_name
+from ..gamemaster.clocks import spawn_emergent_clock
 from ..gamemaster.config import gm
-from ..gamemaster.keyed_scenes import add_keyed_scene, has_keyed_scene_from, spawn_keyed_scenes_for_clock
+from ..gamemaster.keyed_scenes import add_keyed_scene, has_keyed_scene_from
 from ..gamemaster.questions import answers
 from ..gamemaster.spawn_sources import AC_SOURCE_PREFIX
 from ..ids import next_id
 from ..logging_util import log
-from ..models import ClockData, GameState
+from ..models import GameState
 from ..models_story import (
     CharacterListEntry,
     NarrativeState,
@@ -522,47 +522,17 @@ def spawn_dangers_for_turning_point(game: GameState, turning_point: TurningPoint
             answers().add_danger(game, hit.name, f"{AC_SOURCE_PREFIX}{hit.name}", None)
 
 
-def _ac_clock_already_spawned(game: GameState, plot_point_name: str) -> bool:
-    target = f"{AC_SOURCE_PREFIX}{plot_point_name}"
-    return any(c.creation_source == target for c in game.world.clocks)
-
-
 def spawn_clocks_for_turning_point(game: GameState, turning_point: TurningPoint) -> None:
-    cfg = crafter().adventure_crafter
-    clocks_cfg = gm().clocks
-    mapping = cfg.clock_creation_mapping
-    cap = clocks_cfg.max_clocks_per_chapter
-
+    mapping = crafter().adventure_crafter.clock_creation_mapping
     for hit in turning_point.plot_points:
-        if hit.special_range is not None:
-            continue
-        if hit.name not in mapping:
-            continue
-        if _ac_clock_already_spawned(game, hit.name):
-            continue
-        if count_emergent_clocks(game) >= cap:
-            log(f"[AdventureCrafter] clock cap {cap} reached, skipping plot-point '{hit.name}'")
-            break
-
-        entry = mapping[hit.name]
-        base_name = hit.name
-        clock_name = unique_clock_name(game, base_name)
-        creation_source = f"{AC_SOURCE_PREFIX}{hit.name}"
-
-        clock = ClockData(
-            name=clock_name,
-            clock_type=entry.clock_type,
-            segments=clocks_cfg.default_segments,
-            trigger_description=hit.name,
-            owner_kind=clocks_cfg.default_owner_kind,
-            creation_source=creation_source,
-        )
-        game.world.clocks.append(clock)
-        spawn_keyed_scenes_for_clock(game.narrative, clock)
-        log(
-            f"[AdventureCrafter] spawned clock '{clock_name}' (type={entry.clock_type}, "
-            f"segments={clocks_cfg.default_segments}) from plot-point '{hit.name}'"
-        )
+        if hit.special_range is None and hit.name in mapping:
+            spawn_emergent_clock(
+                game,
+                base_name=hit.name,
+                clock_type=mapping[hit.name].clock_type,
+                trigger_description=hit.name,
+                source=f"{AC_SOURCE_PREFIX}{hit.name}",
+            )
 
 
 @dataclass(frozen=True)

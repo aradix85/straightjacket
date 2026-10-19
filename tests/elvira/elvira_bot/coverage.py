@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-from straightjacket.engine.gamemaster.complications import open_complications
+from straightjacket.engine.gamemaster.clocks import open_complications
 from straightjacket.engine.models import GameState
 
 TARGETS = (

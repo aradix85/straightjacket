@@ -5,10 +5,10 @@ from collections.abc import Sequence
 from typing import Any
 
 from ..logging_util import log
-from ..models import CharacterListEntry, ClockData, GameState, RandomEvent, ThreadEntry
-from .clocks import count_emergent_clocks, unique_clock_name
+from ..models import CharacterListEntry, GameState, RandomEvent, ThreadEntry
+from .clocks import spawn_emergent_clock
 from .config import gm
-from .keyed_scenes import add_keyed_scene, has_keyed_scene_from, spawn_keyed_scenes_for_clock
+from .keyed_scenes import add_keyed_scene, has_keyed_scene_from
 from .mythic_data import load_mythic
 from .npc.matching import find_npc
 from .questions import answers
@@ -177,43 +177,17 @@ def spawn_danger_from_random_event(game: GameState, event: RandomEvent) -> None:
     )
 
 
-def _re_clock_already_spawned(game: GameState, focus: str, dedup_key: str) -> bool:
-    target = f"{RANDOM_EVENT_SOURCE_PREFIX}{focus}:{dedup_key}"
-    return any(c.creation_source == target for c in game.world.clocks)
-
-
 def spawn_clock_from_random_event(game: GameState, event: RandomEvent) -> None:
     cfg = gm().random_events
     if event.focus not in cfg.clock_creation_mapping:
         return
 
-    dedup_key = event.target_id or event.focus
-    if _re_clock_already_spawned(game, event.focus, dedup_key):
-        return
-
-    clocks_cfg = gm().clocks
-    if count_emergent_clocks(game) >= clocks_cfg.max_clocks_per_chapter:
-        log(f"[Clock] emergent clock cap {clocks_cfg.max_clocks_per_chapter} reached, skipping focus '{event.focus}'")
-        return
-
-    entry = cfg.clock_creation_mapping[event.focus]
-    base_name = _name_from_mythic_pair(event.meaning_action, event.meaning_subject)
-    clock_name = unique_clock_name(game, base_name)
-    creation_source = f"{RANDOM_EVENT_SOURCE_PREFIX}{event.focus}:{dedup_key}"
-
-    clock = ClockData(
-        name=clock_name,
-        clock_type=entry.clock_type,
-        segments=clocks_cfg.default_segments,
+    spawn_emergent_clock(
+        game,
+        base_name=_name_from_mythic_pair(event.meaning_action, event.meaning_subject),
+        clock_type=cfg.clock_creation_mapping[event.focus].clock_type,
         trigger_description=f"{event.meaning_action} / {event.meaning_subject}",
-        owner_kind=clocks_cfg.default_owner_kind,
-        creation_source=creation_source,
-    )
-    game.world.clocks.append(clock)
-    spawn_keyed_scenes_for_clock(game.narrative, clock)
-    log(
-        f"[Clock] spawned '{clock_name}' (type={entry.clock_type}, segments={clocks_cfg.default_segments}) "
-        f"from random-event focus '{event.focus}'"
+        source=f"{RANDOM_EVENT_SOURCE_PREFIX}{event.focus}:{event.target_id or event.focus}",
     )
 
 

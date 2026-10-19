@@ -10,11 +10,11 @@ from straightjacket.engine.crafters.adventure_crafter import (
     spawn_keyed_scenes_for_turning_point,
 )
 from straightjacket.engine.crafters.config import crafter
+from straightjacket.engine.gamemaster.clocks import spawn_keyed_scenes_for_clock
 from straightjacket.engine.gamemaster.config import gm
 from straightjacket.engine.gamemaster.keyed_scenes import (
     add_keyed_scene,
     evaluate_keyed_scenes,
-    spawn_keyed_scenes_for_clock,
 )
 from straightjacket.engine.gamemaster.random_events import generate_random_event, spawn_keyed_scene_from_random_event
 from straightjacket.engine.models import (

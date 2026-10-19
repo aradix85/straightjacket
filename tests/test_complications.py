@@ -26,7 +26,7 @@ def _complication(name: str = "A beacon calls the raiders", filled: int = 0) -> 
 
 @pytest.mark.parametrize("move", WEAK_HIT_MOVES)
 def test_a_weak_hit_of_these_moves_starts_a_small_complication_clock(load_engine: None, move: str) -> None:
-    from straightjacket.engine.gamemaster.complications import open_complications
+    from straightjacket.engine.gamemaster.clocks import open_complications
     from straightjacket.engine.ruleset.move_outcome import resolve_move_outcome
 
     game = _game()
@@ -51,7 +51,7 @@ def test_a_strong_hit_starts_no_complication(load_engine: None, move: str) -> No
 def test_without_a_story_complication_table_a_meaning_pair_names_the_danger(
     load_engine: None, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    from straightjacket.engine.gamemaster.complications import open_complications
+    from straightjacket.engine.gamemaster.clocks import open_complications
     from straightjacket.engine.ruleset import move_effects
     from straightjacket.engine.ruleset.move_outcome import resolve_move_outcome
 
@@ -85,7 +85,7 @@ def test_while_a_complication_clock_runs_a_new_complication_is_told_without_one(
 
 
 def test_a_complication_clock_fills_every_scene_and_strikes_when_full(load_engine: None) -> None:
-    from straightjacket.engine.gamemaster.clock_ticks import tick_autonomous_clocks
+    from straightjacket.engine.gamemaster.clocks import tick_autonomous_clocks
 
     game = _game()
     game.world.clocks = [_complication()]
@@ -114,7 +114,7 @@ def test_a_hit_aimed_at_a_complication_heads_it_off(load_engine: None, result: s
 
 
 def test_a_fired_or_unknown_complication_cannot_be_headed_off(load_engine: None) -> None:
-    from straightjacket.engine.gamemaster.complications import avert_complication
+    from straightjacket.engine.gamemaster.clocks import avert_complication
 
     game = _game()
     fired = _complication(filled=4)

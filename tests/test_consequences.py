@@ -53,7 +53,7 @@ def test_roll_action_score_capped_at_10() -> None:
 
 
 def test_tick_threat_clock() -> None:
-    from straightjacket.engine.gamemaster.clock_ticks import tick_threat_clock
+    from straightjacket.engine.gamemaster.clocks import tick_threat_clock
 
     game = _game()
     game.world.clocks = [make_clock(name="Storm", clock_type="threat", segments=4, filled=2)]
@@ -64,7 +64,7 @@ def test_tick_threat_clock() -> None:
 
 
 def test_tick_threat_clock_fires_when_full() -> None:
-    from straightjacket.engine.gamemaster.clock_ticks import tick_threat_clock
+    from straightjacket.engine.gamemaster.clocks import tick_threat_clock
 
     game = _game()
     game.world.clocks = [make_clock(name="Storm", clock_type="threat", segments=4, filled=3)]
@@ -77,7 +77,7 @@ def test_tick_threat_clock_fires_when_full() -> None:
 
 
 def test_tick_threat_clock_skips_non_threat() -> None:
-    from straightjacket.engine.gamemaster.clock_ticks import tick_threat_clock
+    from straightjacket.engine.gamemaster.clocks import tick_threat_clock
 
     game = _game()
     game.world.clocks = [make_clock(name="Progress", clock_type="progress", segments=4, filled=2)]
@@ -87,7 +87,7 @@ def test_tick_threat_clock_skips_non_threat() -> None:
 
 
 def test_tick_threat_clock_skips_full() -> None:
-    from straightjacket.engine.gamemaster.clock_ticks import tick_threat_clock
+    from straightjacket.engine.gamemaster.clocks import tick_threat_clock
 
     game = _game()
     game.world.clocks = [make_clock(name="Done", clock_type="threat", segments=4, filled=4, fired=True)]
@@ -127,7 +127,7 @@ def test_can_burn_momentum(
 
 
 def test_npc_agency_fires_on_scene_5(load_engine: None) -> None:
-    from straightjacket.engine.gamemaster.clock_ticks import check_npc_agency
+    from straightjacket.engine.gamemaster.clocks import check_npc_agency
 
     game = _game()
     game.narrative.scene_count = 5
@@ -139,7 +139,7 @@ def test_npc_agency_fires_on_scene_5(load_engine: None) -> None:
 
 
 def test_npc_agency_skips_non_multiple_of_5(load_engine: None) -> None:
-    from straightjacket.engine.gamemaster.clock_ticks import check_npc_agency
+    from straightjacket.engine.gamemaster.clocks import check_npc_agency
 
     game = _game()
     game.narrative.scene_count = 3
@@ -150,7 +150,7 @@ def test_npc_agency_skips_non_multiple_of_5(load_engine: None) -> None:
 
 
 def test_npc_agency_ticks_owned_clock(load_engine: None) -> None:
-    from straightjacket.engine.gamemaster.clock_ticks import check_npc_agency
+    from straightjacket.engine.gamemaster.clocks import check_npc_agency
 
     game = _game()
     game.narrative.scene_count = 5
@@ -165,7 +165,7 @@ def test_npc_agency_ticks_owned_clock(load_engine: None) -> None:
 
 
 def test_autonomous_clock_tick(load_engine: None) -> None:
-    from straightjacket.engine.gamemaster.clock_ticks import tick_autonomous_clocks
+    from straightjacket.engine.gamemaster.clocks import tick_autonomous_clocks
 
     game = _game()
     game.world.clocks = [make_clock(name="Plague", clock_type="threat", segments=6, filled=2, owner_kind="world")]
@@ -180,7 +180,7 @@ def test_autonomous_clock_tick(load_engine: None) -> None:
 
 
 def test_purge_old_fired_clocks(load_engine: None) -> None:
-    from straightjacket.engine.gamemaster.clock_ticks import purge_old_fired_clocks
+    from straightjacket.engine.gamemaster.clocks import purge_old_fired_clocks
 
     game = _game()
     game.narrative.scene_count = 10

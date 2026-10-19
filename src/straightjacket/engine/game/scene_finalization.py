@@ -3,7 +3,7 @@ from typing import Any
 
 from ..ai.brain import call_revelation_check
 from ..director import should_call_director
-from ..gamemaster.clock_ticks import tick_autonomous_clocks
+from ..gamemaster.clocks import tick_autonomous_clocks
 from ..gamemaster.config import gm
 from ..gamemaster.npc.matching import find_npc, present_in_narration
 from ..gamemaster.questions import outcome_of
