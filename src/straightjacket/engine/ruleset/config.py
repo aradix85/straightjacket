@@ -70,6 +70,7 @@ class RulesetSettings(RawSections):
 
 _SIMPLE_SECTIONS: dict[str, type] = {
     "dice": DiceConfig,
+    "stats": StatsConfig,
     "creation": CreationConfig,
     "meters": MetersConfig,
     "progress": ProgressConfig,
@@ -172,8 +173,6 @@ def _build_succession(succession_raw: dict[str, Any]) -> SuccessionConfig:
 
 def parse_ruleset_yaml(data: dict[str, Any]) -> RulesetSettings:
     simple: dict[str, Any] = {key: build_strict(cls, data[key]) for key, cls in _SIMPLE_SECTIONS.items()}
-    stats_data = dict(data["stats"])
-    stats_data["valid_arrays"] = [list(a) for a in stats_data["valid_arrays"]]
     m_data = dict(data["momentum"])
     recovery = build_strict(SufferRecoveryGain, dict(m_data.pop("suffer_recovery")))
     legacy_data = dict(data["legacy"])
@@ -181,7 +180,6 @@ def parse_ruleset_yaml(data: dict[str, Any]) -> RulesetSettings:
     gated_track_types = set(data["track_types_by_category"].values())
     return RulesetSettings(
         **simple,
-        stats=build_strict(StatsConfig, stats_data),
         momentum=MomentumConfig(**m_data, suffer_recovery=recovery),
         threats=_build_threats(dict(data["threats"])),
         legacy=build_strict(LegacyConfig, legacy_data),

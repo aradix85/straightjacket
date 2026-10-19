@@ -5,16 +5,8 @@ from dataclasses import dataclass
 
 @dataclass
 class StatsConfig:
-    target_sum: int
-    min: int
-    max: int
-    names: list[str]
-    valid_arrays: list[list[int]]
+    creation_array: list[int]
     prompt_abbreviations: dict[str, str]
-
-    @property
-    def character_names(self) -> list[str]:
-        return [n for n in self.names if n != "none"]
 
 
 @dataclass

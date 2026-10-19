@@ -139,7 +139,7 @@ def test_start_new_game_invalid_stats_raises(load_engine: None) -> None:
     provider = _SmartMockProvider()
     creation = _valid_creation_data()
     creation["stats"] = {"edge": 1, "heart": 1, "iron": 1, "shadow": 1, "wits": 1}
-    with pytest.raises(ValueError, match="must total"):
+    with pytest.raises(ValueError, match="must take"):
         start_new_game(provider, creation)
 
 

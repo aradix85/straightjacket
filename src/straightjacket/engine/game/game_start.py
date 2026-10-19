@@ -31,28 +31,13 @@ from ..ruleset.config import rules
 from ..ruleset.legacy import new_campaign
 from ..ruleset.meters import starting_resources
 from ..ruleset.progress import new_track
+from ..ruleset.stats import stat_descriptions, validate_stats
 from ..setting.packages import SettingPackage, load_package
 from .setup_common import apply_opening_setup
 
 
 def _valid_ranks() -> set[str]:
     return set(rules().progress.ticks_per_mark)
-
-
-def validate_stats(stats: dict[str, int]) -> None:
-    stat_names = rules().stats.character_names
-    for name in stat_names:
-        if name not in stats:
-            raise ValueError(f"Missing stat: {name}")
-    values = [stats[n] for n in stat_names]
-    if sum(values) != rules().stats.target_sum:
-        raise ValueError(f"Stats must total {rules().stats.target_sum}, got {sum(values)}")
-    for name in stat_names:
-        v = stats[name]
-        if v < rules().stats.min or v > rules().stats.max:
-            raise ValueError(f"Stat {name}={v} outside [{rules().stats.min}, {rules().stats.max}]")
-    if sorted(values, reverse=True) not in [list(a) for a in rules().stats.valid_arrays]:
-        raise ValueError(f"Invalid stat distribution: {sorted(values, reverse=True)}")
 
 
 def validate_creation(creation_data: dict[str, Any], pkg: SettingPackage) -> None:
@@ -163,7 +148,7 @@ def start_new_game(provider: AIProvider, creation_data: dict[str, Any]) -> tuple
 
     log(f"[NewGame] Starting: setting={setting_id}")
     pkg = load_package(setting_id)
-    validate_stats(stats)
+    validate_stats(stats, setting_id)
     validate_creation(creation_data, pkg)
 
     path_names = []
@@ -173,7 +158,7 @@ def start_new_game(provider: AIProvider, creation_data: dict[str, Any]) -> tuple
             path_names.append(asset["name"])
     concept = ", ".join(path_names)
 
-    stat_dict = {n: stats[n] for n in rules().stats.character_names}
+    stat_dict = {n: stats[n] for n in stat_descriptions(setting_id)}
 
     assets = list(creation_data["assets"])
     truths = dict(creation_data["truths"])

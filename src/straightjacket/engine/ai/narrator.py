@@ -131,7 +131,7 @@ def call_narrator_metadata(
         npc_refs.append(entry)
 
     parts = [f"move:{brain.move}"]
-    if brain.stat != "none":
+    if brain.stat != eng().ai_text.no_stat:
         parts.append(f"stat:{brain.stat}")
     if brain.target_npc:
         parts.append(f"target:{brain.target_npc}")

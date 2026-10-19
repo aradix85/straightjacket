@@ -1,20 +1,10 @@
 stats:
-  target_sum: 9
-  min: 0
-  max: 3
-  names:
-  - edge
-  - heart
-  - iron
-  - shadow
-  - wits
-  - none
-  valid_arrays:
-  - - 3
-    - 2
-    - 2
-    - 1
-    - 1
+  creation_array:
+  - 3
+  - 2
+  - 2
+  - 1
+  - 1
   prompt_abbreviations:
     edge: E
     heart: H

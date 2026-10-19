@@ -52,7 +52,9 @@ def test_the_brain_schema_requires_all_its_properties(load_engine: None) -> None
 
     problems: list[str] = []
     _loose_objects(
-        get_brain_output_schema(["adventure/face_danger"], ["infiltrator#0"], ["npc_1"], [], []), "brain", problems
+        get_brain_output_schema(["adventure/face_danger"], ["iron"], ["infiltrator#0"], ["npc_1"], [], []),
+        "brain",
+        problems,
     )
     assert problems == []
 
@@ -60,7 +62,7 @@ def test_the_brain_schema_requires_all_its_properties(load_engine: None) -> None
 def test_the_brain_schema_always_asks_for_a_track_name_and_rank(load_engine: None) -> None:
     from straightjacket.engine.ai.schemas import get_brain_output_schema
 
-    props = get_brain_output_schema(["combat/enter_the_fray"], [], [], [], [])["properties"]
+    props = get_brain_output_schema(["combat/enter_the_fray"], [], [], [], [], [])["properties"]
     assert props["track_name"] == {"type": "string"}
     assert props["track_rank"]["type"] == "string"
     assert "dangerous" in props["track_rank"]["enum"]
@@ -69,8 +71,15 @@ def test_the_brain_schema_always_asks_for_a_track_name_and_rank(load_engine: Non
 def test_the_brain_schema_offers_exactly_the_moves_it_is_given(load_engine: None) -> None:
     from straightjacket.engine.ai.schemas import get_brain_output_schema
 
-    props = get_brain_output_schema(["dialog", "combat/enter_the_fray"], [], [], [], [])["properties"]
+    props = get_brain_output_schema(["dialog", "combat/enter_the_fray"], [], [], [], [], [])["properties"]
     assert props["move"]["enum"] == ["combat/enter_the_fray", "dialog"]
+
+
+def test_the_brain_schema_offers_the_stats_it_is_given_beside_no_stat_and_the_pick_methods(load_engine: None) -> None:
+    from straightjacket.engine.ai.schemas import get_brain_output_schema
+
+    props = get_brain_output_schema(["adventure/face_danger"], ["grit", "guile"], [], [], [], [])["properties"]
+    assert props["stat"]["enum"] == ["grit", "guile", "none", "highest", "lowest"]
 
 
 def test_the_director_schema_requires_all_its_properties(load_engine: None) -> None:
@@ -107,7 +116,7 @@ def test_every_schema_stays_within_anthropics_limit_on_union_typed_fields(load_e
     schemas["director with twelve reflections"] = get_director_output_schema(many_npcs)
     schemas["metadata with twelve known NPCs"] = get_narrator_metadata_schema(many_npcs)
     schemas["brain with every choice"] = get_brain_output_schema(
-        ["adventure/face_danger"], ["infiltrator#0"], many_npcs, ["track_1"], ["A danger"]
+        ["adventure/face_danger"], ["iron"], ["infiltrator#0"], many_npcs, ["track_1"], ["A danger"]
     )
     over = {name: _unions(schema) for name, schema in schemas.items() if _unions(schema) > ANTHROPIC_UNION_LIMIT}
     assert over == {}

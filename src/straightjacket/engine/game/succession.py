@@ -25,8 +25,8 @@ from ..models import (
 from ..parser import parse_narrator_response
 from ..prompt_boundary import build_new_game_prompt
 from ..prompt_loader import get_prompt
-from ..ruleset.config import rules
 from ..ruleset.meters import starting_resources
+from ..ruleset.stats import stat_descriptions, validate_stats
 from ..ruleset.succession import (
     apply_npc_carryover,
     build_predecessor_record,
@@ -43,7 +43,6 @@ from .game_start import (
     _seed_background_vow,
     _seed_vow_subject,
     validate_creation,
-    validate_stats,
 )
 from .setup_common import apply_opening_setup
 
@@ -138,7 +137,7 @@ def _reset_for_successor(
 def _replace_character_identity(game: GameState, creation_data: dict[str, Any]) -> None:
     pkg = load_package(creation_data["setting_id"])
     stats = creation_data["stats"]
-    validate_stats(stats)
+    validate_stats(stats, pkg.id)
     validate_creation(creation_data, pkg)
 
     player_name = creation_data["player_name"]
@@ -161,7 +160,7 @@ def _replace_character_identity(game: GameState, creation_data: dict[str, Any]) 
             path_names.append(asset["name"])
     concept = ", ".join(path_names)
 
-    stat_dict = {n: stats[n] for n in rules().stats.character_names}
+    stat_dict = {n: stats[n] for n in stat_descriptions(pkg.id)}
 
     game.player_name = player_name
     game.character_concept = concept

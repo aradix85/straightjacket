@@ -721,12 +721,9 @@ function renderCreationForm(options, forcedSettingId) {
   // Starting asset container
   html += `<div class="field" id="asset-container"></div>`;
 
-  // Stats
-  html += `<div class="field"><label>${s("ui.stats_label", {target: sc.target_sum, min: sc.min, max: sc.max})}</label><div style="display:flex;gap:0.5rem;flex-wrap:wrap">`;
-  sc.names.forEach(st => {
-    html += `<label>${s(`stat.${st}`)}: <input type="number" class="stat-input" data-stat="${st}" min="${sc.min}" max="${sc.max}" value="1" style="width:3rem"></label>`;
-  });
-  html += `</div><div id="stat-total" style="font-size:0.8rem"></div></div>`;
+  // Stats container (populated per setting)
+  html += `<div class="field"><label>${s("ui.stats_label", {target: sc.target_sum, min: sc.min, max: sc.max})}</label><div id="stats-container" style="display:flex;gap:0.5rem;flex-wrap:wrap"></div>`;
+  html += `<div id="stat-total" style="font-size:0.8rem"></div></div>`;
 
   // Content boundaries + wishes
   html += `<div class="field"><label for="c-boundaries">${s("ui.content_boundaries")}</label><textarea id="c-boundaries" rows="2"></textarea></div>`;
@@ -808,8 +805,19 @@ function renderCreationForm(options, forcedSettingId) {
   // Tone follows the setting until the player picks one
   function updateTone() { $("c-tone").value = curSetting().default_tone; }
 
+  // Stats are the setting's own; a value already entered stays with its stat
+  function updateStatInputs() {
+    const kept = {};
+    document.querySelectorAll(".stat-input").forEach(i => { kept[i.dataset.stat] = i.value; });
+    $("stats-container").innerHTML = curSetting().stats.map(st =>
+      `<label>${s(`stat.${st}`)}: <input type="number" class="stat-input" data-stat="${esc(st)}" min="${sc.min}" max="${sc.max}" value="${esc(kept[st] ?? "1")}" style="width:3rem"></label>`
+    ).join("");
+    document.querySelectorAll(".stat-input").forEach(i => i.oninput = updateStats);
+    updateStats();
+  }
+
   // Setting change wires
-  function onSettingChange() { updatePaths(); updateTruths(); updateAssets(); updateTone(); }
+  function onSettingChange() { updatePaths(); updateTruths(); updateAssets(); updateTone(); updateStatInputs(); }
   document.querySelectorAll('input[name="setting"]').forEach(r => r.onchange = onSettingChange);
   onSettingChange();
 
@@ -823,8 +831,6 @@ function renderCreationForm(options, forcedSettingId) {
     $("stat-total").textContent = s("ui.stats_total", {t, target: sc.target_sum});
     $("stat-total").style.color = t === sc.target_sum ? "var(--success)" : "var(--error)";
   }
-  document.querySelectorAll(".stat-input").forEach(i => i.oninput = updateStats);
-  updateStats();
 
   // Submit
   $("start-game-btn").onclick = () => {

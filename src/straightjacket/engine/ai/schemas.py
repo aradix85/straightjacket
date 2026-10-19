@@ -69,6 +69,7 @@ def _fact_requests(npc_ids: list[str]) -> dict[str, Any]:
 
 def get_brain_output_schema(
     move_keys: list[str],
+    stat_names: list[str],
     bonus_ids: list[str],
     npc_ids: list[str],
     track_ids: list[str],
@@ -78,7 +79,7 @@ def get_brain_output_schema(
     return _obj_root(
         {
             "move": _str_enum(sorted(move_keys)),
-            "stat": _str_enum([*rules().stats.names, *PICK_METHODS]),
+            "stat": _str_enum([*stat_names, eng().ai_text.no_stat, *PICK_METHODS]),
             "approach": _str(),
             "target_npc": _nullable_enum(npc_ids),
             "dialog_only": _bool(),

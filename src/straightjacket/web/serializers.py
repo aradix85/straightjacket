@@ -10,6 +10,7 @@ from ..engine.ruleset.bond import get_npc_bond
 from ..engine.ruleset.config import rules
 from ..engine.ruleset.impacts import impact_label
 from ..engine.ruleset.progress import filled_boxes, menace_boxes
+from ..engine.ruleset.stats import stat_descriptions
 from ..engine.setting.packages import list_packages, load_package
 from ..engine.story_state import get_current_act
 from ..i18n import t
@@ -220,16 +221,17 @@ def build_creation_options() -> dict[str, Any]:
                 "backstory_prompts": backstory_prompts,
                 "starting_assets": starting_assets,
                 "default_tone": pkg.default_tone,
+                "stats": list(stat_descriptions(pkg_id)),
             }
         )
 
+    stat_array = rules().stats.creation_array
     return {
         "settings": settings,
         "stat_constraints": {
-            "names": rules().stats.character_names,
-            "target_sum": rules().stats.target_sum,
-            "min": rules().stats.min,
-            "max": rules().stats.max,
+            "target_sum": sum(stat_array),
+            "min": min(stat_array),
+            "max": max(stat_array),
         },
         "creation_defaults": {
             "max_paths": rules().creation.max_paths,

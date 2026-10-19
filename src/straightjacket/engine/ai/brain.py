@@ -20,8 +20,8 @@ from ..ruleset.move_outcome import acts_on_an_npc
 from ..ruleset.moves import PICK_METHODS, Move, get_moves
 from ..ruleset.progress import filled_boxes
 from ..ruleset.roll_sources import roll_source_without_stat
+from ..ruleset.stats import stat_descriptions
 from ..ruleset.tracks import track_category_of_move
-from ..setting.packages import load_package
 from ..tools import available_moves
 from ..xml_utils import xe as _xe
 from .provider_base import AICallSpec, AIProvider, AIUnavailableError, create_with_retry
@@ -49,7 +49,7 @@ def _build_moves_block(game: GameState) -> str:
     lines = []
     for key, move in available_moves(game).items():
         ways = _ways(move) if isinstance(move, Move) else move.stats
-        stats = " | ".join(ways) if ways else "none"
+        stats = " | ".join(ways) if ways else eng().ai_text.no_stat
         hint = trigger_hints.get(key, "")
         trigger = f" when:{hint}" if hint else ""
         lines.append(f"  {key} ({move.name}) stats:[{stats}] roll:{move.roll_type}{trigger}")
@@ -58,19 +58,14 @@ def _build_moves_block(game: GameState) -> str:
     return "<moves>\n" + "\n".join(lines) + ("\n" + pos_line if pos_line else "") + "\n</moves>"
 
 
-def _stat_descriptions(game: GameState) -> str:
-    stats = next(pkg.data.stats() for pkg in load_package(game.setting_id).chain() if pkg.data.stats())
-    return " ".join(f"{name}={_xe(entry['description'])}" for name, entry in stats.items())
+def _stats_block(game: GameState) -> str:
+    return " ".join(f"{name}={_xe(text)}" for name, text in stat_descriptions(game.setting_id).items())
 
 
 def _build_stats_line(game: GameState) -> str:
-    cfg = rules().stats
-    parts = [_xe(game.player_name)]
-    for name in cfg.names:
-        if name not in cfg.prompt_abbreviations:
-            continue
-        parts.append(f"{cfg.prompt_abbreviations[name]}{game.stats[name]}")
-    return " ".join(parts)
+    abbreviations = rules().stats.prompt_abbreviations
+    stats = [f"{abbreviations[name]}{game.stats[name]}" for name in stat_descriptions(game.setting_id)]
+    return " ".join([_xe(game.player_name), *stats])
 
 
 def _listed_npcs(game: GameState) -> list[Any]:
@@ -198,7 +193,7 @@ def call_brain(provider: AIProvider, game: GameState, player_message: str) -> Br
         "lang": _brain_lang,
         "world": world_tag(game),
         "content_boundaries_block": content_boundaries_block(game),
-        "stats": _stat_descriptions(game),
+        "stats": _stats_block(game),
         "fact_types_block": _build_fact_types_block(),
         "max_facts": str(gm().fact_resolution.max_per_turn),
         "place": gm().fact_resolution.place_reference,
@@ -243,6 +238,7 @@ time:{w.time_of_day or _ai_text["unknown_time"]}
     }
     schema = get_brain_output_schema(
         move_keys,
+        list(stat_descriptions(game.setting_id)),
         choices["bonus_id"],
         choices["target_npc"],
         choices["target_track"],

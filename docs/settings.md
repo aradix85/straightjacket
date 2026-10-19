@@ -4,7 +4,7 @@ A setting is a data package: a Datasworn JSON file with the game content (moves,
 
 ## Character creation
 
-Creation is driven by the setting's Datasworn data, with no AI call: the client receives the options from `web/serializers.py` → `build_creation_options`, the setting's `creation_flow` decides which steps it shows, and `game/game_start.py` → `validate_stats`, `validate_creation` check the result against the stat arrays in `ruleset/stats.yaml`. The chosen truths are stored on the game state and reach every narrator prompt as a `<world_truths>` block (`prompt_blocks.py` → `truths_block`), which the narrator treats as canon. How creation seeds the first threads and tracks is in `docs/mechanics.md`.
+Creation is driven by the setting's Datasworn data, with no AI call: the client receives the options from `web/serializers.py` → `build_creation_options`, the setting's `creation_flow` decides which steps it shows, `ruleset/stats.py` → `validate_stats` checks that the character takes its ruleset's stats with the array of `ruleset/stats.yaml` (`docs/mechanics.md`, Stats), and `game/game_start.py` → `validate_creation` checks the rest. The chosen truths are stored on the game state and reach every narrator prompt as a `<world_truths>` block (`prompt_blocks.py` → `truths_block`), which the narrator treats as canon. How creation seeds the first threads and tracks is in `docs/mechanics.md`.
 
 ## Adding a new setting
 

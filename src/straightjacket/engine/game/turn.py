@@ -181,7 +181,7 @@ def _play_turn(
 
 
 def _sanitize_brain_output(game: GameState, brain: BrainResult) -> None:
-    if brain.dialog_only or brain.stat != "none" or brain.move in get_moves(game.setting_id):
+    if brain.dialog_only or brain.stat != eng().ai_text.no_stat or brain.move in get_moves(game.setting_id):
         return
     if rules().engine_moves[brain.move].roll_type == "action_roll":
         log(f"[Brain] {brain.move!r} names no stat; it plays as dialog")
@@ -396,7 +396,7 @@ def _roll_source(game: GameState, brain: BrainResult, ds_move: Move | None) -> t
         if source is None:
             raise ValueError(f"{brain.move!r} has nothing to roll with for target {brain.target_npc!r}")
         return source
-    if brain.stat == "none":
+    if brain.stat == eng().ai_text.no_stat:
         raise ValueError(f"{brain.move!r} is an action roll, but the Brain named no stat")
     if brain.stat in PICK_METHODS:
         if ds_move is None:

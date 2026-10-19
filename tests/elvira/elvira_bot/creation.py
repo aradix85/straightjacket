@@ -4,6 +4,7 @@ import random as _random
 
 from straightjacket.engine.gamemaster.config import gm
 from straightjacket.engine.ruleset.config import rules
+from straightjacket.engine.ruleset.stats import stat_descriptions, validate_stats
 from straightjacket.engine.setting.packages import SettingPackage, load_package
 
 
@@ -15,7 +16,7 @@ def roll_character(setting_id: str, game_cfg: dict) -> dict:
     paths = _roll_paths(pkg, game_cfg)
     backstory = _roll_backstory(pkg, game_cfg)
     vow = _roll_vow(pkg, game_cfg)
-    stats = _roll_stats(game_cfg)
+    stats = _roll_stats(setting_id, game_cfg)
     truths = _roll_truths(pkg, game_cfg)
     assets = _roll_starting_assets(pkg, game_cfg)
     vow_rank = game_cfg.get("background_vow_rank", rules().creation.background_vow_default_rank)
@@ -93,22 +94,14 @@ def _roll_vow(pkg: SettingPackage, game_cfg: dict) -> str:
         return "Survive"
 
 
-def _roll_stats(game_cfg: dict) -> dict[str, int]:
-    target = rules().stats.target_sum
-    valid_arrays = [list(a) for a in rules().stats.valid_arrays]
+def _roll_stats(setting_id: str, game_cfg: dict) -> dict[str, int]:
     cfg_stats = game_cfg.get("stats")
-    if cfg_stats and sum(cfg_stats.values()) == target and sorted(cfg_stats.values(), reverse=True) in valid_arrays:
+    if cfg_stats:
+        validate_stats(cfg_stats, setting_id)
         return cfg_stats
-    return _random_stats(target, valid_arrays)
-
-
-def _random_stats(target: int, valid_arrays: list[list[int]]) -> dict[str, int]:
-    if not valid_arrays:
-        raise RuntimeError("No valid stat arrays configured in engine.yaml")
-
-    array = list(_random.choice(valid_arrays))
+    array = list(rules().stats.creation_array)
     _random.shuffle(array)
-    return dict(zip(rules().stats.character_names, array, strict=True))
+    return dict(zip(stat_descriptions(setting_id), array, strict=True))
 
 
 def _roll_truths(pkg: SettingPackage, game_cfg: dict) -> dict[str, str]:

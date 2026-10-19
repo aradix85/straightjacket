@@ -7,23 +7,34 @@ from tests._helpers import make_game_state
 @pytest.mark.parametrize(
     ("stats", "error_match"),
     [
-        ({"edge": 3, "heart": 2, "iron": 2, "shadow": 1, "wits": 2}, "must total"),
-        ({"edge": 4, "heart": 2, "iron": 2, "shadow": 1, "wits": 0}, "outside"),
-        ({"edge": 3, "heart": 3, "iron": 1, "shadow": 1, "wits": 1}, "Invalid stat distribution"),
-        ({"edge": 3, "heart": 2, "iron": 1, "shadow": 1}, "Missing stat"),
+        ({"edge": 3, "heart": 2, "iron": 2, "shadow": 1, "wits": 2}, "must take"),
+        ({"edge": 4, "heart": 2, "iron": 2, "shadow": 1, "wits": 0}, "must take"),
+        ({"edge": 3, "heart": 3, "iron": 1, "shadow": 1, "wits": 1}, "must take"),
+        ({"edge": 3, "heart": 2, "iron": 1, "shadow": 1}, "must be edge"),
+        ({"edge": 3, "heart": 2, "iron": 2, "shadow": 1, "wits": 1, "luck": 0}, "must be edge"),
     ],
 )
 def test_validate_stats_rejects_invalid(load_engine: None, stats: dict, error_match: str) -> None:
-    from straightjacket.engine.game.game_start import validate_stats
+    from straightjacket.engine.ruleset.stats import validate_stats
 
     with pytest.raises(ValueError, match=error_match):
-        validate_stats(stats)
+        validate_stats(stats, "starforged")
 
 
-def test_validate_stats_accepts_valid(load_engine: None) -> None:
-    from straightjacket.engine.game.game_start import validate_stats
+@pytest.mark.parametrize("setting_id", ["classic", "delve", "starforged", "sundered_isles"])
+def test_every_setting_takes_its_stats_from_its_datasworn_rules(load_engine: None, setting_id: str) -> None:
+    from straightjacket.engine.ruleset.stats import stat_descriptions, validate_stats
 
-    validate_stats({"edge": 3, "heart": 2, "iron": 2, "shadow": 1, "wits": 1})
+    assert list(stat_descriptions(setting_id)) == ["edge", "heart", "iron", "shadow", "wits"]
+    validate_stats({"edge": 3, "heart": 2, "iron": 2, "shadow": 1, "wits": 1}, setting_id)
+
+
+def test_an_expansion_takes_the_stats_of_its_ruleset(load_engine: None) -> None:
+    from straightjacket.engine.ruleset.stats import stat_descriptions
+
+    assert stat_descriptions("delve") == stat_descriptions("classic")
+    assert stat_descriptions("sundered_isles") == stat_descriptions("starforged")
+    assert stat_descriptions("classic")["edge"] != stat_descriptions("starforged")["edge"]
 
 
 @pytest.mark.parametrize(
@@ -157,12 +168,8 @@ def test_build_creation_options_has_stat_constraints(load_engine: None) -> None:
     from straightjacket.web.serializers import build_creation_options
 
     opts = build_creation_options()
-    assert "stat_constraints" in opts
-    sc = opts["stat_constraints"]
-    assert sc["target_sum"] == 9
-    assert sc["min"] == 0
-    assert sc["max"] == 3
-    assert sc["names"] == ["edge", "heart", "iron", "shadow", "wits"]
+    assert opts["stat_constraints"] == {"target_sum": 9, "min": 1, "max": 3}
+    assert all(s["stats"] == ["edge", "heart", "iron", "shadow", "wits"] for s in opts["settings"])
 
 
 def test_build_creation_options_has_creation_defaults(load_engine: None) -> None:
@@ -250,6 +257,7 @@ def test_build_creation_options_sends_what_the_creation_form_reads(load_engine: 
         "backstory_prompts",
         "starting_assets",
         "default_tone",
+        "stats",
     }
     assert set(sf["truths"][0]["options"][0]) == {"summary", "description"}
 
