@@ -110,6 +110,10 @@ class TurnSnapshot(SerializableMixin):
     narration: str | None = None
     facts: list[ResolvedFact] = field(default_factory=list)
     scene_setup: SceneSetup | None = None
+    random_events: list[RandomEvent] = field(default_factory=list)
+    threat_events: list[ThreatEvent] = field(default_factory=list)
+    clock_fill_results: list[ClockFillResult] = field(default_factory=list)
+    npc_agency: list[str] = field(default_factory=list)
 
 
 @dataclass

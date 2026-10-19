@@ -9,7 +9,6 @@ from ..game import BurnOffer, DirectorCall, replay_turn
 from ..game.finalization import apply_post_narration, narrate_scene
 from ..logging_util import log
 from ..mechanics import (
-    check_npc_agency,
     facts_of_this_place,
     generate_consequence_sentences,
     overrule_facts_by_hit,
@@ -56,18 +55,17 @@ def _rewrite_prompt(
             activated_npcs=activated_npcs,
             mentioned_npcs=mentioned_npcs,
             oracle_answer=last_entry.oracle_answer,
-            random_events=[],
-            threat_events=[],
+            random_events=snap.random_events,
+            threat_events=snap.threat_events,
             consequences=consequences,
-            clock_fill_results=[],
-            npc_agency=[],
+            clock_fill_results=snap.clock_fill_results,
+            npc_agency=snap.npc_agency,
             facts=facts,
         )
         return prompt, facts
 
     facts = overrule_facts_by_hit(game, facts, roll.result)
     facts = settle_facts_by_miss(game, facts, brain.move, roll.result)
-    npc_agency, _, _ = check_npc_agency(game)
     told_clock_events = [e for e in last_entry.clock_events if not e.autonomous]
     consequence_sentences = generate_consequence_sentences(consequences, told_clock_events, game, brain)
     prompt = build_action_prompt(
@@ -75,7 +73,7 @@ def _rewrite_prompt(
         brain,
         roll,
         consequences,
-        npc_agency,
+        snap.npc_agency,
         consequence_sentences=consequence_sentences,
         player_words=snap.player_input,
         scene_setup=scene_setup,
@@ -83,9 +81,9 @@ def _rewrite_prompt(
         mentioned_npcs=mentioned_npcs,
         position=last_entry.position,
         effect=last_entry.effect,
-        random_events=[],
-        threat_events=[],
-        clock_fill_results=[],
+        random_events=snap.random_events,
+        threat_events=snap.threat_events,
+        clock_fill_results=snap.clock_fill_results,
         facts=facts,
     )
     return prompt, facts

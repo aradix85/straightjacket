@@ -246,6 +246,67 @@ def test_a_state_correction_extracts_with_the_turns_world_addition(
     assert seen == ["A rope hangs from the gallery"]
 
 
+def test_a_state_correction_retells_what_the_turn_told_without_moving_npc_clocks_again(
+    load_engine: None, stub_emotions: None, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from straightjacket.engine.correction import process_correction
+    from straightjacket.engine.game import process_turn
+    from tests._helpers import make_clock
+
+    provider = MockProvider(correction_source="state_error")
+    game = create_game(
+        "classic",
+        location="Abandoned Library",
+        npcs=[("Mira", "Young archivist with ink-stained hands", "friendly")],
+        stats=(2, 2, 1, 1, 3),
+        player_name="Kael",
+        background_vow="Keep the archive whole",
+    )
+    game.npcs[0].agenda = "Hide the ledger from the wardens"
+    scheme = make_clock(name="The ledger vanishes", clock_type="scheme", owner_kind="npc", owner_id="Mira")
+    game.world.clocks.append(scheme)
+    game.narrative.scene_count = 4
+    force_miss(monkeypatch)
+    process_turn(provider, game, "I shove past the guard", stream=None)
+    assert game.last_turn_snapshot is not None
+    [told] = game.last_turn_snapshot.npc_agency
+    assert "Hide the ledger from the wardens" in told
+    assert scheme.filled == 1
+
+    process_correction(provider, game, "Mira should be loyal")
+
+    assert scheme.filled == 1
+    assert "Hide the ledger from the wardens" in provider.narration_prompts[-1]
+
+
+def test_a_state_correction_retells_the_turns_events_and_filled_clocks(
+    load_engine: None, stub_emotions: None, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from straightjacket.engine.correction import process_correction
+    from straightjacket.engine.models import ClockFillResult, RandomEvent, ThreatEvent
+
+    provider = MockProvider(correction_source="state_error")
+    game = _played_game(provider, monkeypatch)
+    snap = game.last_turn_snapshot
+    assert snap is not None
+    snap.random_events = [
+        RandomEvent(focus="npc_action", meaning_action="Betray", meaning_subject="Allies", source="chaos")
+    ]
+    snap.threat_events = [
+        ThreatEvent(threat_id="t1", threat_name="The Iron Choir", menace_full=False, source="miss", development="")
+    ]
+    snap.clock_fill_results = [
+        ClockFillResult(clock_name="The archive burns", clock_type="threat", tag_text="Smoke fills the stacks")
+    ]
+
+    process_correction(provider, game, "Mira should be loyal")
+
+    retold = provider.narration_prompts[-1]
+    assert "Betray" in retold
+    assert "The Iron Choir" in retold
+    assert "Smoke fills the stacks" in retold
+
+
 def test_a_snapshot_without_a_played_turn_is_refused(
     load_engine: None, stub_emotions: None, monkeypatch: pytest.MonkeyPatch
 ) -> None:

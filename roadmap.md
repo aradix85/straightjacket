@@ -84,8 +84,6 @@ The audits of AUDIT.md, one session per principle or submodule as it prescribes.
 
 **9h.16** Consequence sentences are parsed back from the engine's own labels (`mechanics/consequences.py` → `_classify`): `mark` stands for an impact, progress, and experience, a bond is found by its word, Pay the Price rows pass through the same parser, which turns an unparsable amount into 1, and a disposition shift (Make a Connection, Test Your Relationship) gets no sentence. A structured consequence in `OutcomeResult` removes the parser and can give the disposition shift its sentence; it touches the effect and move handlers, boasts, finalization, and the narrator's consequence block.
 
-**9h.28** A correction of the state narrates the turn again without the turn's random events, threat events, and filled clocks, since `TurnSnapshot` keeps none of them (`correction/orchestrator.py` → `_rewrite_prompt`); keeping them breaks the save format.
-
 **9h.29** The Brain chooses a move from its name, its ways to roll in the book's words, and hand-written hints for six moves (`ai_text.brain_trigger_hints` in `engine/ai_text.yaml`), while Datasworn gives every move its trigger and full text (`datasworn/moves.py` → `Move.text`, read by nothing yet). Whether the Brain reads the book's trigger instead of the hints, measured on its move choice before and after, since its prompt grows with every move on offer.
 
 ### Definition of Done

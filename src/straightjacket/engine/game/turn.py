@@ -33,6 +33,7 @@ from ..mechanics.suffer import tick_dying_clock
 from ..mechanics.threats import advance_threat_by_id, resolve_full_menace, take_pending_threat_events
 from ..models import (
     BrainResult,
+    ClockFillResult,
     GameState,
     PlaceRecord,
     ProgressTrack,
@@ -40,6 +41,7 @@ from ..models import (
     ResolvedFact,
     RollResult,
     SceneSetup,
+    ThreatEvent,
     TurnSnapshot,
 )
 from ..npc import activate_npcs_for_prompt, find_npc, reactivate_npc
@@ -187,6 +189,20 @@ def _snapshot_of_turn(game: GameState) -> TurnSnapshot:
     return snapshot
 
 
+def _keep_what_the_turn_told(
+    game: GameState,
+    random_events: list[RandomEvent],
+    threat_events: list[ThreatEvent],
+    clock_fill_results: list[ClockFillResult],
+    npc_agency: list[str],
+) -> None:
+    snapshot = _snapshot_of_turn(game)
+    snapshot.random_events = list(random_events)
+    snapshot.threat_events = list(threat_events)
+    snapshot.clock_fill_results = list(clock_fill_results)
+    snapshot.npc_agency = list(npc_agency)
+
+
 def _begin_turn(game: GameState, player_message: str) -> None:
     log(f"[Turn] Scene {game.narrative.scene_count + 1} | Player: {player_message[: eng().truncations.log_long]}")
     drain_pending_events()
@@ -275,6 +291,7 @@ def _process_dialog_turn(ctx: SceneContext) -> tuple[str, DirectorCall | None]:
     threat_events.extend(resolve_full_menace(game, engine_moves))
     make_follow_up_moves(game, engine_moves)
     update_crisis(game)
+    _keep_what_the_turn_told(game, ctx.pending_random_events, threat_events, pending_fills, npc_agency)
 
     prompt = build_dialog_prompt(
         game,
@@ -439,6 +456,13 @@ def _narrate_action_and_finalize(
 
     consequence_sentences = generate_consequence_sentences(
         action_res.consequences, action_res.clock_events, game, brain
+    )
+    _keep_what_the_turn_told(
+        game,
+        ctx.pending_random_events,
+        action_res.threat_events,
+        action_res.clock_fill_results,
+        action_res.npc_agency,
     )
 
     prompt = build_action_prompt(

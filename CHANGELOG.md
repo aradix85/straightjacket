@@ -8,6 +8,12 @@ This log starts at 2026.09.24.0, the restart after a four-month pause. Earlier r
 
 Calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day.
 
+## [2026.10.19.15] — 2026-10-19
+
+Step 9h, 9h.28 fixed. A correction of the state narrates the turn again with what the turn told the narrator: `TurnSnapshot` keeps the turn's random events, threat events, filled clocks, and NPC agency (`game/turn.py` → `_keep_what_the_turn_told`, called where the action and dialog prompts are built, so a momentum burn and a replayed turn keep theirs too), and `correction/orchestrator.py` → `_rewrite_prompt` hands them on instead of empty lists. The check surfaced a second fault: the rewrite called `check_npc_agency` again, which advanced every NPC scheme clock a second time on a turn where agency fell due; it now reads the agency the turn told. Save format breaks: the snapshot gained four fields.
+
+Quality gate: 1740 tests, coverage 94.62%; both new correction tests fail without the fix. Elvira, classic, 8 turns, one state correction, about $0.53: no problems, overall 7.2 out of 10.
+
 ## [2026.10.19.14] — 2026-10-19
 
 Step 9h, 9h.18 fixed. A move whose outcomes act on an NPC (a bond, a connection's rank, a disposition; `NPC_EFFECTS` in `mechanics/move_effects.py`) is refused by `call_brain` when it names no target NPC (`ai/brain.py` → `_check_target_npc`, `mechanics/move_outcome.py` → `acts_on_an_npc`, read from the move's outcomes), as Make a Connection already was; this catches Test Your Relationship, which had no such check. The effects themselves now raise without a target, and the bond and rank effects without a connection, instead of quietly doing nothing, since both are refused before them. Classic's Forge a Bond lost its `bond +1` on a hit, which could never act because classic has no connection tracks; 9j.2 says so.
