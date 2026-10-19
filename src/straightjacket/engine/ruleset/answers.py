@@ -20,6 +20,7 @@ __all__ = [
     "gathers_information",
     "merge_npcs",
     "outcome",
+    "results_by_outcome",
     "strain",
     "time_taken",
 ]
@@ -28,6 +29,11 @@ __all__ = [
 def outcome(result: str) -> str:
     outcomes: dict[str, str] = rules().get_raw("result_outcomes")
     return outcomes[result]
+
+
+def results_by_outcome() -> dict[str, str]:
+    outcomes: dict[str, str] = rules().get_raw("result_outcomes")
+    return {kind: result for result, kind in outcomes.items()}
 
 
 def action_kind(move: str) -> str:

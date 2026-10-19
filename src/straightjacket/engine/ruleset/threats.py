@@ -38,6 +38,29 @@ def threats_as_dangers(game: GameState) -> list[Danger]:
     ]
 
 
+def active_threats(game: GameState) -> list[ThreatData]:
+    return [t for t in game.threats if t.status == "active"]
+
+
+def overcome_threats(game: GameState) -> list[ThreatData]:
+    return [t for t in game.threats if t.status == "overcome"]
+
+
+def overcome_under_pressure(game: GameState) -> list[ThreatEvent]:
+    high_threshold = rules().threats.menace_high_threshold
+    return [
+        ThreatEvent(
+            threat_id=threat.id,
+            threat_name=threat.name,
+            menace_full=False,
+            source="overcome_under_pressure",
+            development="",
+        )
+        for threat in overcome_threats(game)
+        if menace_boxes(threat) / menace_total_boxes(threat) >= high_threshold
+    ]
+
+
 def _named_from_setting(game: GameState, fallback_category: str) -> tuple[str, str, str]:
     pkg = load_package(game.setting_id)
     cascade = roll_oracle_cascade(pkg, pkg.oracle_paths.threats)

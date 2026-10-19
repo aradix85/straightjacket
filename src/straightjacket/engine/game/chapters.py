@@ -33,6 +33,7 @@ from ..prompt_boundary import build_epilogue_prompt, build_new_chapter_prompt
 from ..prompt_loader import get_prompt
 from ..ruleset.bond import get_npc_bond
 from ..ruleset.progress import menace_boxes, menace_total_boxes
+from ..ruleset.threats import active_threats, overcome_threats
 from ..ruleset.tracks import is_vow_thread, vow_record
 from .setup_common import apply_opening_setup
 
@@ -109,8 +110,7 @@ def _active_threats(game: GameState) -> list[str]:
             filled=str(menace_boxes(th)),
             total=str(menace_total_boxes(th)),
         )
-        for th in game.threats
-        if th.status == "active"
+        for th in active_threats(game)
     ]
 
 
@@ -129,7 +129,7 @@ def _chapter_record(game: GameState) -> str:
         ("block_chapter_record_people", _people(game)),
         ("block_chapter_record_dead", [n.name for n in game.npcs if n.status == "deceased"]),
         ("block_chapter_record_threats", _active_threats(game)),
-        ("block_chapter_record_overcome", [th.name for th in game.threats if th.status == "overcome"]),
+        ("block_chapter_record_overcome", [th.name for th in overcome_threats(game)]),
     ]
     lines = [get_prompt(key, items=", ".join(items)) for key, items in parts if items]
     lines.append(get_prompt("block_chapter_record_place", location=game.world.current_location))

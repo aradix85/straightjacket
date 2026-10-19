@@ -16,13 +16,16 @@ from ..models import (
     ThreatEvent,
     consequence,
 )
-from ..ruleset.config import rules
 from ..ruleset.make_move import RollOutcome
 from ..ruleset.move_outcome import make_follow_up_moves
 from ..ruleset.outcome_result import OutcomeResult
-from ..ruleset.progress import menace_boxes, menace_total_boxes
 from ..ruleset.suffer import tick_dying_clock
-from ..ruleset.threats import advance_menace_on_miss, resolve_full_menace, take_pending_threat_events
+from ..ruleset.threats import (
+    advance_menace_on_miss,
+    overcome_under_pressure,
+    resolve_full_menace,
+    take_pending_threat_events,
+)
 from ..ruleset.tracks import apply_progress_and_legacy, resolve_progress_roll, start_track
 from .finalization import resolve_action_consequences, update_crisis
 from .turn_types import ActionResolution
@@ -56,19 +59,7 @@ def _collect_threat_events(game: GameState, roll: RollResult, outcome: OutcomeRe
     if answers().outcome(roll.result) == "failure":
         events.extend(advance_menace_on_miss(game))
     events.extend(resolve_full_menace(game, outcome))
-
-    high_threshold = rules().threats.menace_high_threshold
-    for threat in game.threats:
-        if threat.status == "overcome" and menace_boxes(threat) / menace_total_boxes(threat) >= high_threshold:
-            events.append(
-                ThreatEvent(
-                    threat_id=threat.id,
-                    threat_name=threat.name,
-                    menace_full=False,
-                    source="overcome_under_pressure",
-                    development="",
-                )
-            )
+    events.extend(overcome_under_pressure(game))
     return events
 
 

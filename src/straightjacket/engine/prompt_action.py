@@ -14,7 +14,7 @@ from .models import (
     ThreatEvent,
     labels_of,
 )
-from .prompt_blocks import narrative_direction_block, recent_events_block, story_context_block
+from .prompt_blocks import narrative_direction_block, recent_events_block, story_context_block, task_action
 from .prompt_loader import get_prompt
 from .prompt_shared import (
     _clock_filled_block,
@@ -125,4 +125,4 @@ def build_action_prompt(
 {events_block}{director}
 {narrative_direction_block(game, outcome)}
 {story_context_block(game, miss=miss)}{recent_events_block(game)}</scene>
-<task>{get_prompt("task_action")}</task>"""
+<task>{task_action()}</task>"""

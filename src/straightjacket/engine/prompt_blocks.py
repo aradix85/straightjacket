@@ -4,6 +4,7 @@ from .format_utils import describe_by_threshold
 from .gamemaster.world import get_pacing_hint
 from .models import GameState
 from .prompt_loader import get_prompt, get_prompt_prefix
+from .ruleset.answers import results_by_outcome
 from .setting.packages import load_package
 from .story_state import get_current_act, get_pending_revelations
 from .xml_utils import xa as _xa
@@ -193,8 +194,17 @@ def campaign_history_block(game: GameState) -> str:
     )
 
 
+def _result_names() -> dict[str, str]:
+    return {f"result_{kind}": result for kind, result in results_by_outcome().items()}
+
+
+def task_action() -> str:
+    return get_prompt("task_action", **_result_names())
+
+
 def get_narrator_system(game: GameState) -> tuple[str, str]:
     variables = {
+        **_result_names(),
         "lang": narration_language(),
         "content_boundaries_block": content_boundaries_block(game),
         "backstory_block": backstory_block(game),

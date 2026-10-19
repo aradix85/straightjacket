@@ -11,6 +11,7 @@ from ..engine.ruleset.config import rules
 from ..engine.ruleset.impacts import impact_label
 from ..engine.ruleset.progress import filled_boxes, menace_boxes, ranks
 from ..engine.ruleset.stats import stat_descriptions
+from ..engine.ruleset.threats import active_threats
 from ..engine.ruleset.tracks import active_tracks
 from ..engine.setting.packages import list_packages, load_package
 from ..engine.story_state import get_current_act
@@ -131,7 +132,7 @@ def build_tracks_status(game: GameState) -> str:
 
 
 def build_threats_status(game: GameState) -> str:
-    active = [th for th in game.threats if th.status == "active"]
+    active = active_threats(game)
     if not active:
         return t("status.no_threats")
 
