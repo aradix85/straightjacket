@@ -26,7 +26,7 @@ def test_register_extracted_npcs_skips_player(stub_all: None) -> None:
             _npc("Hero", "Player", "neutral"),
         ],
         skip_names=set(),
-        start_id=0,
+        reserved_ids=set(),
     )
     assert [(n.id, n.name) for n in game.npcs] == [("npc_1", "Mira")]
 
@@ -42,7 +42,7 @@ def test_register_extracted_npcs_skips_returning(stub_all: None) -> None:
             _npc("Borin", "Smith", "neutral"),
         ],
         skip_names={"kira"},
-        start_id=0,
+        reserved_ids=set(),
     )
     names = {n.name for n in game.npcs}
     assert "Kira" not in names

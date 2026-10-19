@@ -1,15 +1,11 @@
 import math
-from typing import TYPE_CHECKING
 
 from ...logging_util import log
-from ...models import GameState, NpcData
+from ...models import BrainResult, GameState, NpcData
 from ..config import gm
 from ..questions import answers
 from .lifecycle import reactivate_npc
 from .matching import find_npc
-
-if TYPE_CHECKING:
-    from ...models import BrainResult
 
 
 def compute_npc_tfidf_scores(npcs: list[NpcData], query_text: str) -> dict[str, float]:
@@ -75,7 +71,7 @@ def compute_npc_tfidf_scores(npcs: list[NpcData], query_text: str) -> dict[str, 
     return scores
 
 
-def _build_scan_text(brain: "BrainResult", game: "GameState", player_input: str) -> str:
+def _build_scan_text(brain: BrainResult, game: GameState, player_input: str) -> str:
     _tf = gm().tf_idf
     scan_parts = [
         player_input,
@@ -94,7 +90,7 @@ def _score_npc(
     target_id: str | None,
     scan_text: str,
     tfidf: float,
-    game: "GameState",
+    game: GameState,
 ) -> float:
     _scores = gm().activation_scores
     _tf = gm().tf_idf
@@ -127,7 +123,7 @@ def _score_npc(
 
 
 def _cap_activated_overflow(
-    activated: list[NpcData], mentioned: list[NpcData], target_id: str | None, game: "GameState"
+    activated: list[NpcData], mentioned: list[NpcData], target_id: str | None, game: GameState
 ) -> tuple[list[NpcData], list[NpcData]]:
     _max_activated = gm().npc.max_activated
     if len(activated) <= _max_activated:
@@ -142,7 +138,7 @@ def _cap_activated_overflow(
     return activated, mentioned
 
 
-def _recursive_activation(activated: list[NpcData], mentioned: list[NpcData], game: "GameState") -> list[NpcData]:
+def _recursive_activation(activated: list[NpcData], mentioned: list[NpcData], game: GameState) -> list[NpcData]:
     secondary: list[NpcData] = []
     for npc in activated:
         ref_text = " ".join(npc.secrets) + " " + npc.agenda
@@ -164,7 +160,7 @@ def _recursive_activation(activated: list[NpcData], mentioned: list[NpcData], ga
 
 
 def activate_npcs_for_prompt(
-    game: "GameState", brain: "BrainResult", player_input: str
+    game: GameState, brain: BrainResult, player_input: str
 ) -> tuple[list[NpcData], list[NpcData]]:
     target_id = brain.target_npc
     scan_text = _build_scan_text(brain, game, player_input)

@@ -1,30 +1,15 @@
 from __future__ import annotations
 
-import json
 import random
-from typing import Any
 
-from ..config_loader import PROJECT_ROOT
 from ..logging_util import log
 from ..models import FateResult, GameState
 from .config import gm
-
-_MYTHIC_DATA_PATH = PROJECT_ROOT / "data" / "mythic_gme_2e.json"
-
-_mythic: dict[str, Any] | None = None
-
-
-def _load_mythic() -> dict[str, Any]:
-    global _mythic
-    if _mythic is None:
-        with _MYTHIC_DATA_PATH.open(encoding="utf-8") as f:
-            _mythic = json.load(f)
-        log(f"[Fate] Loaded {_MYTHIC_DATA_PATH}")
-    return _mythic
+from .mythic_data import load_mythic
 
 
 def resolve_fate_chart(odds: str, chaos_factor: int) -> FateResult:
-    data = _load_mythic()
+    data = load_mythic()
     chart = data["fate_chart"]
 
     if odds not in chart:
@@ -80,7 +65,7 @@ def _check_answer(answers: dict[str, dict[str, int]], total: int) -> str:
 
 
 def resolve_fate_check(odds: str, chaos_factor: int) -> FateResult:
-    check = _load_mythic()["fate_check"]
+    check = load_mythic()["fate_check"]
     odds_modifiers = {row["odds"]: row["modifier"] for row in check["odds_modifiers"]}
     chaos_modifiers = {row["chaos_factor"]: row["modifier"] for row in check["chaos_factor_modifiers"]}
     if odds not in odds_modifiers:

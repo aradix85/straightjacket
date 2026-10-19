@@ -6,8 +6,7 @@ from ...i18n import t
 from ..ai.provider_base import AIProvider
 from ..director import should_call_director
 from ..engine_loader import eng
-from ..game import BurnOffer, DirectorCall, replay_turn
-from ..game.finalization import apply_post_narration, narrate_scene
+from ..game import BurnOffer, DirectorCall, apply_post_narration, narrate_scene, replay_turn
 from ..gamemaster.config import gm
 from ..gamemaster.facts import facts_of_this_place, overrule_facts_by_hit, settle_facts_by_miss
 from ..gamemaster.npc.activation import activate_npcs_for_prompt

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 
+from ..ids import next_id
 from ..logging_util import log
 from ..models import ClockData, GameState, KeyedScene, NarrativeState
 from ..models_npc import NpcData
@@ -9,6 +10,8 @@ from .config import gm
 from .npc.matching import find_npc
 from .questions import answers
 from .spawn_sources import CLOCK_KEYED_SOURCE_PREFIX
+
+_ID_PREFIX = "ks_"
 
 
 def _eval_clock_fills(game: GameState, value: str) -> bool:
@@ -221,22 +224,28 @@ def _bound_entity_meets_threshold(game: GameState, trigger_type: str, value: str
     raise ValueError(f"trigger_type {trigger_type!r} not pattern-supporting")
 
 
-def new_keyed_scene(
-    *, id: str, trigger_type: str, trigger_value: str, priority: int, narrative_hint: str, source: str
+def has_keyed_scene_from(narrative: NarrativeState, source: str) -> bool:
+    return any(ks.source == source for ks in narrative.keyed_scenes)
+
+
+def add_keyed_scene(
+    narrative: NarrativeState, *, trigger_type: str, trigger_value: str, priority: int, narrative_hint: str, source: str
 ) -> KeyedScene:
     cfg = gm().keyed_scenes
     if trigger_type not in cfg.triggers:
         raise ValueError(f"Unknown KeyedScene trigger_type {trigger_type!r}; registered: {sorted(cfg.triggers)}")
     if trigger_type in cfg.pattern_grammars:
         _validate_pattern_trigger_value(trigger_type, trigger_value)
-    return KeyedScene(
-        id=id,
+    scene = KeyedScene(
+        id=next_id(_ID_PREFIX, (ks.id for ks in narrative.keyed_scenes)),
         trigger_type=trigger_type,
         trigger_value=trigger_value,
         priority=priority,
         narrative_hint=narrative_hint,
         source=source,
     )
+    narrative.keyed_scenes.append(scene)
+    return scene
 
 
 def _validate_pattern_trigger_value(trigger_type: str, value: str) -> None:
@@ -260,37 +269,23 @@ def _validate_pattern_trigger_value(trigger_type: str, value: str) -> None:
             )
 
 
-def _clock_already_spawned(narrative: NarrativeState, clock_name: str, threshold: int) -> bool:
-    target = f"{CLOCK_KEYED_SOURCE_PREFIX}{clock_name}:{threshold}"
-    return any(ks.source == target for ks in narrative.keyed_scenes)
-
-
-def _next_clock_keyed_scene_id(narrative: NarrativeState) -> str:
-    n = 1
-    while any(ks.id == f"ks_clock_{n}" for ks in narrative.keyed_scenes):
-        n += 1
-    return f"ks_clock_{n}"
-
-
 def spawn_keyed_scenes_for_clock(narrative: NarrativeState, clock: ClockData) -> None:
     entry = gm().clock_keyed_scenes.by_clock_type[clock.clock_type]
 
     for fraction in entry.fractions:
         threshold = max(1, round(clock.segments * fraction))
-        if _clock_already_spawned(narrative, clock.name, threshold):
+        source = f"{CLOCK_KEYED_SOURCE_PREFIX}{clock.name}:{threshold}"
+        if has_keyed_scene_from(narrative, source):
             continue
-        scene_id = _next_clock_keyed_scene_id(narrative)
-        narrative_hint = entry.narrative_hint_template.format(clock_name=clock.name)
-        scene = new_keyed_scene(
-            id=scene_id,
+        scene = add_keyed_scene(
+            narrative,
             trigger_type="clock_fills",
             trigger_value=f"{clock.name}:{threshold}",
             priority=entry.priority,
-            narrative_hint=narrative_hint,
-            source=f"{CLOCK_KEYED_SOURCE_PREFIX}{clock.name}:{threshold}",
+            narrative_hint=entry.narrative_hint_template.format(clock_name=clock.name),
+            source=source,
         )
-        narrative.keyed_scenes.append(scene)
         log(
-            f"[Clock] spawned keyed-scene '{scene_id}' for clock '{clock.name}' "
+            f"[Clock] spawned keyed-scene '{scene.id}' for clock '{clock.name}' "
             f"(type={clock.clock_type}, fraction={fraction}, threshold={threshold}, priority={entry.priority})"
         )

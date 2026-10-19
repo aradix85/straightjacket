@@ -1,14 +1,13 @@
 import re
+from collections.abc import Iterable
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
 
+from ...ids import next_id
+from ...logging_util import log
+from ...models import GameState, NpcData
 from ..config import gm
 
-if TYPE_CHECKING:
-    from ...models import GameState
-
-from ...logging_util import log
-from ...models import NpcData
+NPC_ID_PREFIX = "npc_"
 
 _ALIAS_HINT_RE = re.compile(
     r"\b(?:also\s+known\s+as|aka|called)\s+",
@@ -58,21 +57,21 @@ def apply_name_sanitization(npc: NpcData) -> None:
     log(f"[NPC] Sanitized name: '{raw}' → '{clean}' (aliases: {npc.aliases})")
 
 
-def _find_by_id(game: "GameState", npc_ref: str) -> NpcData | None:
+def _find_by_id(game: GameState, npc_ref: str) -> NpcData | None:
     for n in game.npcs:
         if n.id == npc_ref:
             return n
     return None
 
 
-def _find_by_exact_name(game: "GameState", ref_norm: str) -> NpcData | None:
+def _find_by_exact_name(game: GameState, ref_norm: str) -> NpcData | None:
     for n in game.npcs:
         if normalize_for_match(n.name) == ref_norm:
             return n
     return None
 
 
-def _find_by_exact_alias(game: "GameState", ref_norm: str) -> NpcData | None:
+def _find_by_exact_alias(game: GameState, ref_norm: str) -> NpcData | None:
     for n in game.npcs:
         for alias in n.aliases:
             if normalize_for_match(alias) == ref_norm:
@@ -80,7 +79,7 @@ def _find_by_exact_alias(game: "GameState", ref_norm: str) -> NpcData | None:
     return None
 
 
-def _find_by_substring(game: "GameState", ref_norm: str) -> NpcData | None:
+def _find_by_substring(game: GameState, ref_norm: str) -> NpcData | None:
     if len(ref_norm) < gm().fuzzy_match.min_word_length:
         return None
     ref_words = set(ref_norm.split())
@@ -110,7 +109,7 @@ def _find_by_substring(game: "GameState", ref_norm: str) -> NpcData | None:
     return best_match
 
 
-def named_in(npc: "NpcData", text: str) -> bool:
+def named_in(npc: NpcData, text: str) -> bool:
     lowered = text.lower()
     min_word = gm().fuzzy_match.named_in_min_word_length
     for name in (npc.name, *npc.aliases):
@@ -123,11 +122,11 @@ def named_in(npc: "NpcData", text: str) -> bool:
     return False
 
 
-def present_in_narration(game: "GameState", in_prompt: set[str], target_id: str | None, narration: str) -> set[str]:
+def present_in_narration(game: GameState, in_prompt: set[str], target_id: str | None, narration: str) -> set[str]:
     return {npc.id for npc in game.npcs if npc.id in in_prompt and (npc.id == target_id or named_in(npc, narration))}
 
 
-def find_npc(game: "GameState", npc_ref: str | None) -> NpcData | None:
+def find_npc(game: GameState, npc_ref: str | None) -> NpcData | None:
     if not npc_ref:
         return None
 
@@ -149,7 +148,7 @@ def find_npc(game: "GameState", npc_ref: str | None) -> NpcData | None:
     return substring_match
 
 
-def resolve_about_npc(game: "GameState", raw: str, owner_id: str) -> str | None:
+def resolve_about_npc(game: GameState, raw: str, owner_id: str) -> str | None:
     if not raw:
         return None
     npc = find_npc(game, raw)
@@ -164,13 +163,8 @@ def resolve_about_npc(game: "GameState", raw: str, owner_id: str) -> str | None:
     return None
 
 
-def next_npc_id(game: "GameState") -> str:
-    max_num = 0
-    for n in game.npcs:
-        m = re.match(r"npc_(\d+)", n.id)
-        if m:
-            max_num = max(max_num, int(m.group(1)))
-    return f"npc_{max_num + 1}"
+def next_npc_id(game: GameState, reserved: Iterable[str] = ()) -> str:
+    return next_id(NPC_ID_PREFIX, [*(n.id for n in game.npcs), *reserved])
 
 
 def edit_distance_le1(a: str, b: str) -> bool:
@@ -305,7 +299,7 @@ def _check_edit_distance_variant(
         log(f"[NPC] Edit-distance match: '{new_norm}' ~ '{npc.name}'")
 
 
-def fuzzy_match_existing_npc(game: "GameState", new_name: str) -> tuple[NpcData | None, str | None]:
+def fuzzy_match_existing_npc(game: GameState, new_name: str) -> tuple[NpcData | None, str | None]:
     if len(new_name.strip()) < gm().fuzzy_match.npc_name_min_length:
         return None, None
 

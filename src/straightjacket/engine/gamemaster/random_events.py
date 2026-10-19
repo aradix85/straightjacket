@@ -1,14 +1,15 @@
 from __future__ import annotations
 
 import random
+from collections.abc import Sequence
 from typing import Any
 
 from ..logging_util import log
-from ..models import ClockData, GameState, RandomEvent
+from ..models import CharacterListEntry, ClockData, GameState, RandomEvent, ThreadEntry
 from .clocks import count_emergent_clocks, unique_clock_name
 from .config import gm
-from .fate import _load_mythic
-from .keyed_scenes import new_keyed_scene, spawn_keyed_scenes_for_clock
+from .keyed_scenes import add_keyed_scene, has_keyed_scene_from, spawn_keyed_scenes_for_clock
+from .mythic_data import load_mythic
 from .npc.matching import find_npc
 from .questions import answers
 from .spawn_sources import RANDOM_EVENT_SOURCE_PREFIX
@@ -23,7 +24,7 @@ def drain_pending_events() -> list[RandomEvent]:
 
 
 def roll_event_focus() -> str:
-    table = _load_mythic()["event_focus"]
+    table = load_mythic()["event_focus"]
     roll = random.randint(1, gm().mythic_dice.event_focus_die)
 
     for entry in table:
@@ -35,7 +36,7 @@ def roll_event_focus() -> str:
 
 
 def roll_meaning_table(table_name: str) -> tuple[str, str]:
-    data = _load_mythic()
+    data = load_mythic()
     tables = data["meaning_tables"]
 
     if table_name == "descriptions":
@@ -119,25 +120,14 @@ def generate_random_event(game: GameState, source: str) -> RandomEvent:
     return event
 
 
-def _re_already_spawned_for_target(game: GameState, focus: str, target_id: str) -> bool:
-    target = f"{RANDOM_EVENT_SOURCE_PREFIX}{focus}:{target_id}"
-    return any(ks.source == target for ks in game.narrative.keyed_scenes)
-
-
-def _re_next_keyed_scene_id(game: GameState) -> str:
-    n = 1
-    while any(ks.id == f"ks_re_{n}" for ks in game.narrative.keyed_scenes):
-        n += 1
-    return f"ks_re_{n}"
-
-
 def spawn_keyed_scene_from_random_event(game: GameState, event: RandomEvent) -> None:
     cfg = gm().random_events
     if event.focus not in cfg.keyed_scene_mapping:
         return
     if not event.target_id:
         return
-    if _re_already_spawned_for_target(game, event.focus, event.target_id):
+    source = f"{RANDOM_EVENT_SOURCE_PREFIX}{event.focus}:{event.target_id}"
+    if has_keyed_scene_from(game.narrative, source):
         return
 
     entry = cfg.keyed_scene_mapping[event.focus]
@@ -158,18 +148,16 @@ def spawn_keyed_scene_from_random_event(game: GameState, event: RandomEvent) -> 
         )
     trigger_value = f"{pool}:{entry.threshold}"
 
-    scene_id = _re_next_keyed_scene_id(game)
-    scene = new_keyed_scene(
-        id=scene_id,
+    scene = add_keyed_scene(
+        game.narrative,
         trigger_type=entry.trigger_type,
         trigger_value=trigger_value,
         priority=entry.priority,
         narrative_hint=entry.narrative_hint,
-        source=f"{RANDOM_EVENT_SOURCE_PREFIX}{event.focus}:{event.target_id}",
+        source=source,
     )
-    game.narrative.keyed_scenes.append(scene)
     log(
-        f"[RandomEvent] spawned keyed-scene '{scene_id}' from focus '{event.focus}' "
+        f"[RandomEvent] spawned keyed-scene '{scene.id}' from focus '{event.focus}' "
         f"target_id='{event.target_id}' (trigger {entry.trigger_type}={trigger_value!r}, "
         f"priority={entry.priority})"
     )
@@ -233,53 +221,38 @@ def _name_from_mythic_pair(action: str, subject: str) -> str:
     return f"{action} {subject}"
 
 
-def add_thread_weight(game: GameState, thread_id: str) -> None:
+def _add_weight(entries: Sequence[ThreadEntry] | Sequence[CharacterListEntry], entry_id: str, label: str) -> None:
     cap = gm().random_events.list_weight_max
-    for t in game.narrative.threads:
-        if t.id == thread_id and t.active:
-            if t.weight < cap:
-                t.weight += 1
-                log(f"[Lists] Thread '{t.name}' weight → {t.weight}")
+    for entry in entries:
+        if entry.id == entry_id and entry.active:
+            if entry.weight < cap:
+                entry.weight += 1
+                log(f"[Lists] {label} '{entry.name}' weight → {entry.weight}")
             return
+
+
+def add_thread_weight(game: GameState, thread_id: str) -> None:
+    _add_weight(game.narrative.threads, thread_id, "Thread")
 
 
 def add_character_weight(game: GameState, character_id: str) -> None:
-    cap = gm().random_events.list_weight_max
-    for c in game.narrative.characters_list:
-        if c.id == character_id and c.active:
-            if c.weight < cap:
-                c.weight += 1
-                log(f"[Lists] Character '{c.name}' weight → {c.weight}")
-            return
+    _add_weight(game.narrative.characters_list, character_id, "Character")
 
 
-def consolidate_threads(game: GameState) -> None:
+def _consolidate(entries: Sequence[ThreadEntry] | Sequence[CharacterListEntry], label: str) -> None:
     cfg = gm().random_events
-    threads = [t for t in game.narrative.threads if t.active]
-    if len(threads) < cfg.consolidation_threshold:
+    active = [e for e in entries if e.active]
+    if len(active) < cfg.consolidation_threshold:
         return
-
-    for t in threads:
-        t.weight = (
+    for entry in active:
+        entry.weight = (
             cfg.consolidation_weight_low
-            if t.weight >= cfg.consolidation_weight_high
+            if entry.weight >= cfg.consolidation_weight_high
             else cfg.consolidation_weight_default
         )
+    log(f"[Lists] Consolidated {len(active)} {label}")
 
-    log(f"[Lists] Consolidated {len(threads)} threads")
 
-
-def consolidate_characters(game: GameState) -> None:
-    cfg = gm().random_events
-    chars = [c for c in game.narrative.characters_list if c.active]
-    if len(chars) < cfg.consolidation_threshold:
-        return
-
-    for c in chars:
-        c.weight = (
-            cfg.consolidation_weight_low
-            if c.weight >= cfg.consolidation_weight_high
-            else cfg.consolidation_weight_default
-        )
-
-    log(f"[Lists] Consolidated {len(chars)} characters")
+def consolidate_lists(game: GameState) -> None:
+    _consolidate(game.narrative.threads, "threads")
+    _consolidate(game.narrative.characters_list, "characters")

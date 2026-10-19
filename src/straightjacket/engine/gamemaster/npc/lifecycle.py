@@ -1,21 +1,14 @@
-from typing import TYPE_CHECKING
-
-from ..config import gm
-
-if TYPE_CHECKING:
-    from ...models import GameState
-    from ..config_types import DescriptionDedupConfig
-
-
 from ...engine_loader import eng
 from ...logging_util import log
-from ...models import NpcData
+from ...models import GameState, NpcData
+from ..config import gm
+from ..config_types import DescriptionDedupConfig
 from ..questions import answers
 from .matching import normalize_for_match, sanitize_npc_name
 from .memory import consolidate_memory
 
 
-def retire_distant_npcs(game: "GameState") -> None:
+def retire_distant_npcs(game: GameState) -> None:
     max_active = gm().npc.max_active
     active = [n for n in game.npcs if n.status == "active"]
     if len(active) <= max_active:
@@ -50,7 +43,19 @@ def reactivate_npc(npc: NpcData, reason: str, force: bool = False) -> None:
         log(f"[NPC] Reactivated: {npc.name} (reason: {reason})")
 
 
-def merge_npc_identity(existing: NpcData, new_name: str, new_desc: str = "", *, game: "GameState") -> None:
+def rename_npc(npc: NpcData, new_name: str, extra_aliases: list[str]) -> None:
+    new_norm = normalize_for_match(new_name)
+    if npc.name and normalize_for_match(npc.name) not in {normalize_for_match(a) for a in npc.aliases}:
+        npc.aliases.append(npc.name)
+    npc.name = new_name
+    npc.aliases = [a for a in npc.aliases if normalize_for_match(a) != new_norm]
+    for alias in extra_aliases:
+        alias_norm = normalize_for_match(alias)
+        if alias_norm != new_norm and alias_norm not in {normalize_for_match(a) for a in npc.aliases}:
+            npc.aliases.append(alias)
+
+
+def merge_npc_identity(existing: NpcData, new_name: str, new_desc: str = "", *, game: GameState) -> None:
     old_name = existing.name
     new_name = new_name.strip()
     clean_name, extra_aliases = sanitize_npc_name(new_name)
@@ -58,18 +63,7 @@ def merge_npc_identity(existing: NpcData, new_name: str, new_desc: str = "", *, 
     if normalize_for_match(old_name) == normalize_for_match(new_name):
         log(f"[NPC] Identity merge skipped: '{old_name}' → '{new_name}' (same name)")
         return
-    old_norm = normalize_for_match(old_name)
-    if old_name and old_norm not in {normalize_for_match(a) for a in existing.aliases}:
-        existing.aliases.append(old_name)
-    existing.name = new_name
-    new_norm = normalize_for_match(new_name)
-    existing.aliases = [a for a in existing.aliases if normalize_for_match(a) != new_norm]
-    for alias in extra_aliases:
-        if (
-            normalize_for_match(alias) not in {normalize_for_match(a) for a in existing.aliases}
-            and normalize_for_match(alias) != new_norm
-        ):
-            existing.aliases.append(alias)
+    rename_npc(existing, new_name, extra_aliases)
     if new_desc and not existing.description:
         existing.description = new_desc
     if existing.status in gm().npc_status_groups.reactivatable:
@@ -79,7 +73,7 @@ def merge_npc_identity(existing: NpcData, new_name: str, new_desc: str = "", *, 
     log(f"[NPC] Identity merged: '{old_name}' → '{new_name}' (aliases: {existing.aliases})")
 
 
-def _transfer_clocks(game: "GameState", old_name: str, new_name: str) -> None:
+def _transfer_clocks(game: GameState, old_name: str, new_name: str) -> None:
     old_name_norm = normalize_for_match(old_name)
     for clock in game.world.clocks:
         if clock.owner_kind != "npc" or clock.owner_id is None:
@@ -112,7 +106,7 @@ def sanitize_aliases(npc: NpcData) -> None:
     npc.aliases = clean
 
 
-def _npc_richness(npc: NpcData, game: "GameState") -> int:
+def _npc_richness(npc: NpcData, game: GameState) -> int:
     dd = gm().description_dedup
     return (
         len(npc.memory) * dd.richness_memory
@@ -162,7 +156,7 @@ def _merge_aliases_and_location(original: NpcData, dup: NpcData) -> None:
         original.last_location = dup.last_location
 
 
-def _take_over_list_entry(game: "GameState", original: NpcData, dup: NpcData) -> None:
+def _take_over_list_entry(game: GameState, original: NpcData, dup: NpcData) -> None:
     entries = game.narrative.characters_list
     dup_entry = next((c for c in entries if c.id == dup.id), None)
     if dup_entry is None:
@@ -175,7 +169,7 @@ def _take_over_list_entry(game: "GameState", original: NpcData, dup: NpcData) ->
     entries.remove(dup_entry)
 
 
-def absorb_npc(game: "GameState", original: NpcData, dup: NpcData) -> None:
+def absorb_npc(game: GameState, original: NpcData, dup: NpcData) -> None:
     original.memory.extend(dup.memory)
     original.importance_accumulator = original.importance_accumulator + dup.importance_accumulator
 
@@ -199,7 +193,7 @@ def absorb_npc(game: "GameState", original: NpcData, dup: NpcData) -> None:
     consolidate_memory(original)
 
 
-def absorb_duplicate_npc(game: "GameState", original: NpcData, merged_name: str) -> None:
+def absorb_duplicate_npc(game: GameState, original: NpcData, merged_name: str) -> None:
     merged_norm = normalize_for_match(merged_name)
     for dup in game.npcs:
         if dup is original:
@@ -215,7 +209,7 @@ def _desc_tokens(text: str, min_word_chars: int, stopwords: "frozenset[str]") ->
     } - stopwords
 
 
-def _desc_substring_overlap(new_words: set[str], existing_words: set[str], dd: "DescriptionDedupConfig") -> set[str]:
+def _desc_substring_overlap(new_words: set[str], existing_words: set[str], dd: DescriptionDedupConfig) -> set[str]:
     exact = new_words & existing_words
     substring: set[str] = set()
     for nw in new_words - exact:
@@ -236,7 +230,7 @@ def _desc_substring_overlap(new_words: set[str], existing_words: set[str], dd: "
 def _description_candidate_meets_threshold(
     new_words: set[str],
     existing_words: set[str],
-    dd: "DescriptionDedupConfig",
+    dd: DescriptionDedupConfig,
 ) -> tuple[bool, float]:
     exact_overlap = new_words & existing_words
     substring_matches = _desc_substring_overlap(new_words, existing_words, dd)
@@ -267,7 +261,7 @@ def _npc_eligible_for_desc_match(npc: NpcData, new_name_norm: str, current_locat
     return bool(npc.description)
 
 
-def description_match_existing_npc(game: "GameState", new_desc: str, new_name_norm: str) -> NpcData | None:
+def description_match_existing_npc(game: GameState, new_desc: str, new_name_norm: str) -> NpcData | None:
     dd = gm().description_dedup
     stopwords = gm().stopwords.general
 

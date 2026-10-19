@@ -3,7 +3,7 @@ from __future__ import annotations
 import pytest
 
 from straightjacket.engine.gamemaster.config import gm
-from straightjacket.engine.gamemaster.keyed_scenes import evaluate_keyed_scenes, new_keyed_scene
+from straightjacket.engine.gamemaster.keyed_scenes import add_keyed_scene, evaluate_keyed_scenes
 from straightjacket.engine.gamemaster.scene import SceneSetup, check_scene
 from straightjacket.engine.models import (
     GameState,
@@ -37,8 +37,8 @@ def _ks(**kwargs) -> KeyedScene:
 
 def test_keyed_scene_unknown_trigger_type_raises():
     with pytest.raises(ValueError, match="Unknown KeyedScene trigger_type"):
-        new_keyed_scene(
-            id="ks_bad",
+        add_keyed_scene(
+            make_game_state().narrative,
             trigger_type="not_a_real_trigger",
             trigger_value="x",
             priority=1,

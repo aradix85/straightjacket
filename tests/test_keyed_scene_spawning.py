@@ -12,8 +12,8 @@ from straightjacket.engine.crafters.adventure_crafter import (
 from straightjacket.engine.crafters.config import crafter
 from straightjacket.engine.gamemaster.config import gm
 from straightjacket.engine.gamemaster.keyed_scenes import (
+    add_keyed_scene,
     evaluate_keyed_scenes,
-    new_keyed_scene,
     spawn_keyed_scenes_for_clock,
 )
 from straightjacket.engine.gamemaster.random_events import generate_random_event, spawn_keyed_scene_from_random_event
@@ -82,8 +82,8 @@ def test_bond_threshold_disposition_pattern_validates_for_each_disposition():
 
 def test_bond_threshold_unknown_disposition_raises():
     with pytest.raises(ValueError, match="unknown disposition"):
-        new_keyed_scene(
-            id="ks_bad",
+        add_keyed_scene(
+            make_game_state().narrative,
             trigger_type="bond_threshold",
             trigger_value="disposition_alien:4",
             priority=1,
@@ -94,8 +94,8 @@ def test_bond_threshold_unknown_disposition_raises():
 
 def test_bond_threshold_malformed_trigger_value_raises():
     with pytest.raises(ValueError, match="trigger_value must be"):
-        new_keyed_scene(
-            id="ks_bad",
+        add_keyed_scene(
+            make_game_state().narrative,
             trigger_type="bond_threshold",
             trigger_value="malformed",
             priority=1,
@@ -106,8 +106,8 @@ def test_bond_threshold_malformed_trigger_value_raises():
 
 def test_bond_threshold_non_integer_threshold_raises():
     with pytest.raises(ValueError, match="must be an integer"):
-        new_keyed_scene(
-            id="ks_bad",
+        add_keyed_scene(
+            make_game_state().narrative,
             trigger_type="bond_threshold",
             trigger_value="any:not_a_number",
             priority=1,
@@ -117,14 +117,24 @@ def test_bond_threshold_non_integer_threshold_raises():
 
 
 def test_threat_menace_phase_any_pattern_validates():
-    new_keyed_scene(
-        id="ks", trigger_type="threat_menace_phase", trigger_value="any:3", priority=1, narrative_hint="", source="test"
+    add_keyed_scene(
+        make_game_state().narrative,
+        trigger_type="threat_menace_phase",
+        trigger_value="any:3",
+        priority=1,
+        narrative_hint="",
+        source="test",
     )
 
 
 def test_clock_fills_any_pattern_validates():
-    new_keyed_scene(
-        id="ks", trigger_type="clock_fills", trigger_value="any:3", priority=1, narrative_hint="", source="test"
+    add_keyed_scene(
+        make_game_state().narrative,
+        trigger_type="clock_fills",
+        trigger_value="any:3",
+        priority=1,
+        narrative_hint="",
+        source="test",
     )
 
 

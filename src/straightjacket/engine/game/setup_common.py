@@ -1,9 +1,8 @@
-import re
 from collections.abc import Sequence
 from typing import Any
 
 from ..engine_loader import eng
-from ..gamemaster.npc.matching import apply_name_sanitization, fuzzy_match_existing_npc
+from ..gamemaster.npc.matching import apply_name_sanitization, fuzzy_match_existing_npc, next_npc_id
 from ..gamemaster.npc.memory import score_importance
 from ..gamemaster.world import update_location
 from ..logging_util import log
@@ -27,18 +26,11 @@ def register_extracted_npcs(
     npc_dicts: list[dict[str, Any]],
     *,
     skip_names: set[str],
-    start_id: int,
+    reserved_ids: set[str],
 ) -> None:
     player_lower = game.player_name.lower().strip()
     skip = set(skip_names)
     skip.add(player_lower)
-
-    max_num = start_id
-    if max_num == 0:
-        for n in game.npcs:
-            m = re.match(r"npc_(\d+)", n.id)
-            if m:
-                max_num = max(max_num, int(m.group(1)))
 
     for nd in npc_dicts:
         name = nd["name"].lower().strip()
@@ -48,9 +40,8 @@ def register_extracted_npcs(
         if known is not None:
             log(f"[NPC] Extracted '{nd['name']}' is the known '{known.name}', not a new NPC")
             continue
-        max_num += 1
         npc = NpcData(
-            id=f"npc_{max_num}",
+            id=next_npc_id(game, reserved_ids),
             name=nd["name"],
             disposition=nd["disposition"],
             status="active",
@@ -97,20 +88,13 @@ def apply_opening_setup(
     label: str,
 ) -> None:
     skip_names: set[str] = {n.name.lower().strip() for n in returning_npcs}
-    start_id = 0
-
-    if returning_npcs:
-        for n in list(game.npcs) + list(returning_npcs):
-            m = re.match(r"npc_(\d+)", str(n.id))
-            if m:
-                start_id = max(start_id, int(m.group(1)))
 
     if data["npcs"]:
         register_extracted_npcs(
             game,
             data["npcs"],
             skip_names=skip_names,
-            start_id=start_id,
+            reserved_ids={n.id for n in returning_npcs},
         )
         if returning_npcs:
             returning_ids = {r.id for r in returning_npcs}

@@ -10,9 +10,10 @@ from ..config_loader import PROJECT_ROOT
 from ..engine_loader import eng
 from ..gamemaster.clocks import count_emergent_clocks, unique_clock_name
 from ..gamemaster.config import gm
-from ..gamemaster.keyed_scenes import new_keyed_scene, spawn_keyed_scenes_for_clock
+from ..gamemaster.keyed_scenes import add_keyed_scene, has_keyed_scene_from, spawn_keyed_scenes_for_clock
 from ..gamemaster.questions import answers
 from ..gamemaster.spawn_sources import AC_SOURCE_PREFIX
+from ..ids import next_id
 from ..logging_util import log
 from ..models import ClockData, GameState
 from ..models_story import (
@@ -27,6 +28,8 @@ from ..models_story import (
 from .config import PlotPointRanges, crafter
 
 _AC_DATA_PATH = PROJECT_ROOT / "data" / "adventure_crafter.json"
+_CHARACTER_ID_PREFIX = "ac_char_"
+_PLOTLINE_ID_PREFIX = "ac_plot_"
 
 _ac_data: dict[str, Any] | None = None
 
@@ -170,20 +173,6 @@ def _ac_active_characters(narrative: NarrativeState) -> list[CharacterListEntry]
     return [c for c in narrative.characters_list if c.ac_status in present]
 
 
-def _next_character_id(narrative: NarrativeState) -> str:
-    n = 1
-    while any(c.id == f"ac_char_{n}" for c in narrative.characters_list):
-        n += 1
-    return f"ac_char_{n}"
-
-
-def _next_plotline_id(narrative: NarrativeState) -> str:
-    n = 1
-    while any(p.id == f"ac_plot_{n}" for p in narrative.plotlines_list):
-        n += 1
-    return f"ac_plot_{n}"
-
-
 def _select_active_plotline(narrative: NarrativeState) -> PlotlineEntry | None:
     advancing = [p for p in narrative.plotlines_list if p.status == "advancement"]
     if not advancing:
@@ -193,7 +182,7 @@ def _select_active_plotline(narrative: NarrativeState) -> PlotlineEntry | None:
 
 def _create_character(narrative: NarrativeState, name: str) -> CharacterListEntry:
     entry = CharacterListEntry(
-        id=_next_character_id(narrative),
+        id=next_id(_CHARACTER_ID_PREFIX, (c.id for c in narrative.characters_list)),
         name=name,
         entry_type="ac",
         weight=1,
@@ -207,7 +196,7 @@ def _create_character(narrative: NarrativeState, name: str) -> CharacterListEntr
 
 def _create_plotline(narrative: NarrativeState, name: str) -> PlotlineEntry:
     entry = PlotlineEntry(
-        id=_next_plotline_id(narrative),
+        id=next_id(_PLOTLINE_ID_PREFIX, (p.id for p in narrative.plotlines_list)),
         name=name,
         status="advancement",
         turning_point_count=0,
@@ -494,18 +483,6 @@ def _ac_keyed_scene_count(narrative: NarrativeState) -> int:
     return sum(1 for ks in narrative.keyed_scenes if ks.source.startswith(AC_SOURCE_PREFIX))
 
 
-def _ac_already_spawned(narrative: NarrativeState, plot_point_name: str) -> bool:
-    target = f"{AC_SOURCE_PREFIX}{plot_point_name}"
-    return any(ks.source == target for ks in narrative.keyed_scenes)
-
-
-def _next_keyed_scene_id(narrative: NarrativeState) -> str:
-    n = 1
-    while any(ks.id == f"ks_ac_{n}" for ks in narrative.keyed_scenes):
-        n += 1
-    return f"ks_ac_{n}"
-
-
 def spawn_keyed_scenes_for_turning_point(narrative: NarrativeState, turning_point: TurningPoint) -> None:
     cfg = crafter().adventure_crafter
     mapping = cfg.keyed_scene_mapping
@@ -516,25 +493,24 @@ def spawn_keyed_scenes_for_turning_point(narrative: NarrativeState, turning_poin
             continue
         if hit.name not in mapping:
             continue
-        if _ac_already_spawned(narrative, hit.name):
+        source = f"{AC_SOURCE_PREFIX}{hit.name}"
+        if has_keyed_scene_from(narrative, source):
             continue
         if _ac_keyed_scene_count(narrative) >= cap:
             log(f"[AdventureCrafter] keyed-scene cap {cap} reached, skipping '{hit.name}'")
             break
 
         entry = mapping[hit.name]
-        scene_id = _next_keyed_scene_id(narrative)
-        scene = new_keyed_scene(
-            id=scene_id,
+        scene = add_keyed_scene(
+            narrative,
             trigger_type=entry.trigger_type,
             trigger_value=entry.trigger_value,
             priority=entry.priority,
             narrative_hint=entry.narrative_hint,
-            source=f"{AC_SOURCE_PREFIX}{hit.name}",
+            source=source,
         )
-        narrative.keyed_scenes.append(scene)
         log(
-            f"[AdventureCrafter] spawned keyed-scene '{scene_id}' from plot-point '{hit.name}' "
+            f"[AdventureCrafter] spawned keyed-scene '{scene.id}' from plot-point '{hit.name}' "
             f"(trigger {entry.trigger_type}={entry.trigger_value!r}, priority={entry.priority})"
         )
 

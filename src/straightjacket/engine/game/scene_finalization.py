@@ -10,8 +10,7 @@ from ..gamemaster.questions import outcome_of
 from ..gamemaster.random_events import (
     add_character_weight,
     add_thread_weight,
-    consolidate_characters,
-    consolidate_threads,
+    consolidate_lists,
 )
 from ..gamemaster.world import record_scene_intensity, update_chaos_factor
 from ..logging_util import log
@@ -141,8 +140,7 @@ def finalize_scene(
     scene_events = [*ctx.pending_random_events, *filter(None, [ctx.scene_setup.interrupt_event])]
     for thread_id in invoked_threads(game, brain, roll, scene_events, threat_events):
         add_thread_weight(game, thread_id)
-    consolidate_threads(game)
-    consolidate_characters(game)
+    consolidate_lists(game)
 
     director_ctx: DirectorCall | None = None
     director_reason = should_call_director(

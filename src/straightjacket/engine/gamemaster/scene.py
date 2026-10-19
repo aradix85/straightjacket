@@ -6,8 +6,8 @@ from typing import Any
 from ..logging_util import log
 from ..models import GameState, SceneSetup
 from .config import gm
-from .fate import _load_mythic
 from .keyed_scenes import evaluate_keyed_scenes
+from .mythic_data import load_mythic
 from .random_events import generate_random_event
 
 
@@ -41,7 +41,7 @@ def check_scene(game: GameState) -> SceneSetup:
 
 
 def _roll_adjustments() -> list[str]:
-    table = _load_mythic()["scene_adjustment"]
+    table = load_mythic()["scene_adjustment"]
     result = _lookup_adjustment(table, random.randint(1, gm().mythic_dice.scene_adjustment_die))
     if result != "make_2_adjustments":
         return [result]

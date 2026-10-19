@@ -1250,6 +1250,26 @@ def _check_import_layers() -> tuple[str, list[Violation]]:
     return "IMPORT LAYER violated (dependencies point downward)", violations
 
 
+_HUB_PACKAGES = frozenset({"correction", "game", "tools"})
+
+
+def _check_hub_packages_imported_through_init() -> tuple[str, list[Violation]]:
+    violations: list[Violation] = []
+    for path in _iter_source_files():
+        parts = path.relative_to(SRC_ROOT).parts
+        _, lines, tree, _ = _load(path)
+        for node in ast.walk(tree):
+            if not isinstance(node, ast.ImportFrom):
+                continue
+            target = _import_target(node, parts)
+            if target is None or len(target) < 3 or target[0] != "engine" or target[1] not in _HUB_PACKAGES:
+                continue
+            if parts[:2] != ("engine", target[1]):
+                snippet = lines[node.lineno - 1].strip()
+                violations.append(Violation(_rel(path), node.lineno, snippet))
+    return "HUB IMPORT: code outside game, tools, or correction imports them through their __init__.py", violations
+
+
 def _check_ai_calls_route_by_their_role() -> tuple[str, list[Violation]]:
     config = yaml.safe_load((Path(__file__).resolve().parent.parent / "config.yaml").read_text(encoding="utf-8"))
     roles = set(config["ai"]["role_cluster"])
@@ -1317,6 +1337,7 @@ _ALL_CHECKS = (
     _check_changelog_consistent,
     _check_divergences_have_a_status,
     _check_import_layers,
+    _check_hub_packages_imported_through_init,
 )
 
 

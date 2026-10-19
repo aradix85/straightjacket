@@ -1,7 +1,9 @@
 __all__ = [
     "BurnOffer",
     "DirectorCall",
+    "apply_post_narration",
     "generate_epilogue",
+    "narrate_scene",
     "prepare_succession",
     "process_momentum_burn",
     "process_turn",
@@ -20,6 +22,7 @@ from .chapters import (
     start_new_chapter,
 )
 from .director_runner import run_deferred_director
+from .finalization import apply_post_narration, narrate_scene
 from .game_start import start_new_game
 from .momentum_burn import process_momentum_burn
 from .succession import (

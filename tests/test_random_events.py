@@ -4,7 +4,7 @@ from straightjacket.engine.gamemaster.random_events import (
     _select_target,
     add_character_weight,
     add_thread_weight,
-    consolidate_threads,
+    consolidate_lists,
     generate_random_event,
     roll_event_focus,
     roll_meaning_table,
@@ -204,26 +204,28 @@ def test_add_character_weight_increments() -> None:
     assert game.narrative.characters_list[0].weight == 2
 
 
-def test_consolidate_threads_at_threshold() -> None:
+def test_consolidate_lists_at_threshold() -> None:
     game = make_game_state()
     for i in range(25):
         w = 3 if i < 5 else 1
         game.narrative.threads.append(
             ThreadEntry(id=f"t{i}", name=f"Thread {i}", weight=w, active=True, source="creation", thread_type="vow")
         )
-    consolidate_threads(game)
-    heavy = [t for t in game.narrative.threads if t.weight == 2]
-    light = [t for t in game.narrative.threads if t.weight == 1]
-    assert len(heavy) == 5
-    assert len(light) == 20
+        game.narrative.characters_list.append(
+            CharacterListEntry(id=f"c{i}", name=f"Character {i}", entry_type="npc", weight=w, active=True)
+        )
+    consolidate_lists(game)
+    for entries in (game.narrative.threads, game.narrative.characters_list):
+        assert len([e for e in entries if e.weight == 2]) == 5
+        assert len([e for e in entries if e.weight == 1]) == 20
 
 
-def test_consolidate_threads_under_threshold_noop() -> None:
+def test_consolidate_lists_under_threshold_noop() -> None:
     game = make_game_state()
     game.narrative.threads = [
         ThreadEntry(id="t1", name="Quest", weight=3, active=True, source="creation", thread_type="vow")
     ]
-    consolidate_threads(game)
+    consolidate_lists(game)
     assert game.narrative.threads[0].weight == 3
 
 

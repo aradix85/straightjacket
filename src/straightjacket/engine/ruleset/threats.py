@@ -4,6 +4,7 @@ import random
 
 from ..gamemaster.questions import Danger
 from ..gamemaster.spawn_sources import EMERGENT_SOURCE_PREFIXES
+from ..ids import next_id
 from ..logging_util import log
 from ..models import GameState, ThreatData, ThreatEvent
 from ..setting.cascade import roll_oracle_cascade
@@ -17,13 +18,6 @@ from .tracks import forsake_vow
 
 def count_emergent_threats(game: GameState) -> int:
     return sum(1 for t in game.threats if t.creation_source.startswith(EMERGENT_SOURCE_PREFIXES))
-
-
-def next_threat_id(game: GameState, prefix: str) -> str:
-    n = 1
-    while any(t.id == f"{prefix}{n}" for t in game.threats):
-        n += 1
-    return f"{prefix}{n}"
 
 
 def threats_as_dangers(game: GameState) -> list[Danger]:
@@ -84,7 +78,7 @@ def add_threat(game: GameState, origin: str, source: str, named: tuple[str, str]
         name, description, category = _named_from_setting(game, entry.category)
     else:
         (name, description), category = named, entry.category
-    threat_id = next_threat_id(game, f"threat_{source.split(':', 1)[0]}_")
+    threat_id = next_id(f"threat_{source.split(':', 1)[0]}_", (t.id for t in game.threats))
     game.threats.append(
         new_threat(
             id=threat_id,

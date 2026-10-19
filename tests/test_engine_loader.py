@@ -32,10 +32,10 @@ def test_npc_status_groups_name_only_known_statuses(load_engine: None) -> None:
 
 
 def test_dice_sizes_cover_the_tables_they_roll(load_engine: None) -> None:
-    from straightjacket.engine.gamemaster.fate import _load_mythic
+    from straightjacket.engine.gamemaster.mythic_data import load_mythic
 
     dice = gm().mythic_dice
-    mythic = _load_mythic()
+    mythic = load_mythic()
     assert max(row["max"] for row in mythic["event_focus"]) == dice.event_focus_die
     assert max(row["max"] for row in mythic["scene_adjustment"]) == dice.scene_adjustment_die
     assert max(crafter().adventure_crafter.theme_die_table) == crafter().adventure_crafter_dice.theme_die

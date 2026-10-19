@@ -1,19 +1,16 @@
-from typing import TYPE_CHECKING, Any
-
-from ..config import gm
-
-if TYPE_CHECKING:
-    from ...models import GameState
+from typing import Any
 
 from ...engine_loader import eng
 from ...logging_util import log
-from ...models import MemoryEntry, NpcData
+from ...models import GameState, MemoryEntry, NpcData
+from ..config import gm
 from .lifecycle import (
     absorb_duplicate_npc,
     description_match_existing_npc,
     is_complete_description,
     merge_npc_identity,
     reactivate_npc,
+    rename_npc,
     retire_distant_npcs,
 )
 from .matching import find_npc, fuzzy_match_existing_npc, next_npc_id, normalize_for_match, sanitize_npc_name
@@ -21,7 +18,7 @@ from .memory import score_importance
 from .naming import roll_oracle_name
 
 
-def process_npc_renames(game: "GameState", renames: list[Any]) -> None:
+def process_npc_renames(game: GameState, renames: list[Any]) -> None:
     for r in renames:
         if not r["new_name"]:
             continue
@@ -46,16 +43,7 @@ def process_npc_renames(game: "GameState", renames: list[Any]) -> None:
 
 def _apply_surname_update(npc: NpcData, new_name: str, paren_aliases: list[str]) -> None:
     old_name = npc.name
-    new_norm = normalize_for_match(new_name)
-    existing_norms = {normalize_for_match(a) for a in npc.aliases}
-    if old_name and normalize_for_match(old_name) not in existing_norms:
-        npc.aliases.append(old_name)
-    npc.name = new_name
-    npc.aliases = [a for a in npc.aliases if normalize_for_match(a) != new_norm]
-    for alias in paren_aliases:
-        alias_norm = normalize_for_match(alias)
-        if alias_norm not in {normalize_for_match(a) for a in npc.aliases} and alias_norm != new_norm:
-            npc.aliases.append(alias)
+    rename_npc(npc, new_name, paren_aliases)
     log(f"[NPC] Details update: '{old_name}' -> '{new_name}' (surname established)")
 
 
@@ -70,7 +58,7 @@ def _should_reject_identity_reveal(npc: NpcData, new_name: str) -> bool:
 
 
 def _create_stub_for_rejected_reveal(
-    game: "GameState", new_name: str, d: dict[str, Any], world_addition: str, paren_aliases: list[str]
+    game: GameState, new_name: str, d: dict[str, Any], world_addition: str, paren_aliases: list[str]
 ) -> None:
     if find_npc(game, new_name):
         return
@@ -91,7 +79,7 @@ def _create_stub_for_rejected_reveal(
     log(f"[NPC] Created stub for rejected reveal: {new_name} ({npc_id})")
 
 
-def _apply_name_update(game: "GameState", npc: NpcData, d: dict[str, Any], world_addition: str) -> bool:
+def _apply_name_update(game: GameState, npc: NpcData, d: dict[str, Any], world_addition: str) -> bool:
     raw_name = (d["full_name"] or "").strip()
     if not raw_name:
         return False
@@ -136,7 +124,7 @@ def _apply_description_updates(npc: NpcData, d: dict[str, Any]) -> None:
             )
 
 
-def _process_one_npc_detail(game: "GameState", d: dict[str, Any], world_addition: str) -> None:
+def _process_one_npc_detail(game: GameState, d: dict[str, Any], world_addition: str) -> None:
     npc = find_npc(game, d["npc_id"])
     if not npc:
         log(f"[NPC] npc_details: could not find NPC '{d['npc_id']}'", level="warning")
@@ -147,7 +135,7 @@ def _process_one_npc_detail(game: "GameState", d: dict[str, Any], world_addition
         _apply_description_updates(npc, d)
 
 
-def process_npc_details(game: "GameState", details: list[Any], world_addition: str) -> None:
+def process_npc_details(game: GameState, details: list[Any], world_addition: str) -> None:
     for d in details:
         _process_one_npc_detail(game, d, world_addition)
 
@@ -166,7 +154,7 @@ def _is_player_collision(name_norm: str, player_norm: str, player_parts: set[str
     return name_norm == player_norm or bool(set(name_norm.split()) & player_parts)
 
 
-def _handle_exact_name_match(game: "GameState", name_norm: str) -> None:
+def _handle_exact_name_match(game: GameState, name_norm: str) -> None:
     existing = next((n for n in game.npcs if normalize_for_match(n.name) == name_norm), None)
     if existing is None:
         return
@@ -176,7 +164,7 @@ def _handle_exact_name_match(game: "GameState", name_norm: str) -> None:
         reactivate_npc(existing, reason="resurrected -- exact name in new_npcs", force=True)
 
 
-def _handle_fuzzy_match(game: "GameState", nd: dict[str, Any]) -> bool:
+def _handle_fuzzy_match(game: GameState, nd: dict[str, Any]) -> bool:
     fuzzy_hit, match_type = fuzzy_match_existing_npc(game, nd["name"])
     if not fuzzy_hit:
         return False
@@ -208,7 +196,7 @@ def _keep_name_add_alias(npc: NpcData, label: str, reason: str) -> None:
         reactivate_npc(npc, reason=reason)
 
 
-def _handle_description_match(game: "GameState", nd: dict[str, Any], name_norm: str) -> bool:
+def _handle_description_match(game: GameState, nd: dict[str, Any], name_norm: str) -> bool:
     new_desc = nd["description"]
     desc_hit = description_match_existing_npc(game, new_desc, name_norm)
     if not desc_hit:
@@ -221,7 +209,7 @@ def _handle_description_match(game: "GameState", nd: dict[str, Any], name_norm: 
     return True
 
 
-def _create_new_npc(game: "GameState", nd: dict[str, Any]) -> NpcData:
+def _create_new_npc(game: GameState, nd: dict[str, Any]) -> NpcData:
     npc_id = next_npc_id(game)
     ai_name, paren_aliases = sanitize_npc_name(nd["name"].strip())
     oracle_name = roll_oracle_name(game)
@@ -245,7 +233,7 @@ def _create_new_npc(game: "GameState", nd: dict[str, Any]) -> NpcData:
     return npc
 
 
-def _seed_initial_memory(game: "GameState", npc: NpcData, nd: dict[str, Any]) -> None:
+def _seed_initial_memory(game: GameState, npc: NpcData, nd: dict[str, Any]) -> None:
     seed_event = nd["description"] or eng().ai_text.narrator_defaults["npc_appeared_event"].format(npc_name=npc.name)
     seed_emotion = gm().get_raw("disposition_to_seed_emotion")[nd["disposition"]]
     seed_imp = max(score_importance(seed_emotion, seed_event), gm().npc.seed_importance_floor)
@@ -262,7 +250,7 @@ def _seed_initial_memory(game: "GameState", npc: NpcData, nd: dict[str, Any]) ->
     )
 
 
-def process_new_npcs(game: "GameState", new_npcs: list[Any]) -> None:
+def process_new_npcs(game: GameState, new_npcs: list[Any]) -> None:
     player_norm = normalize_for_match(game.player_name)
     player_parts = set(player_norm.split())
     existing_names = {normalize_for_match(n.name) for n in game.npcs}
