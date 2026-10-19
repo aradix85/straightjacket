@@ -20,5 +20,4 @@ succession.error_no_pending: 'No succession is pending. Cannot complete characte
 succession.error_already_pending: 'A succession is already in progress. Complete or cancel it before starting another.'
 succession.error_creation_data_malformed: 'Character data is missing or malformed.'
 
-succession.preparing: 'Closing out the previous chapter and rolling inheritance...'
 succession.starting: 'Bringing the new protagonist into the world...'

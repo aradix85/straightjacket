@@ -6,7 +6,7 @@ from pathlib import Path
 from urllib.parse import urlparse
 
 from starlette.applications import Starlette
-from starlette.responses import FileResponse, JSONResponse
+from starlette.responses import FileResponse
 from starlette.routing import Route, WebSocketRoute
 from starlette.websockets import WebSocket, WebSocketDisconnect
 
@@ -188,14 +188,9 @@ async def homepage(_request: object) -> FileResponse:
     return FileResponse(_STATIC_DIR / "index.html")
 
 
-async def health(_request: object) -> JSONResponse:
-    return JSONResponse({"status": "ok"})
-
-
 app = Starlette(
     routes=[
         Route("/", homepage),
-        Route("/health", health),
         WebSocketRoute("/ws", websocket_endpoint),
     ],
 )

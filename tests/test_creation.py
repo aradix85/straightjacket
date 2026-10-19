@@ -162,7 +162,7 @@ def test_build_creation_options_has_stat_constraints(load_engine: None) -> None:
     assert sc["target_sum"] == 9
     assert sc["min"] == 0
     assert sc["max"] == 3
-    assert [3, 2, 2, 1, 1] in sc["valid_arrays"]
+    assert sc["names"] == ["edge", "heart", "iron", "shadow", "wits"]
 
 
 def test_build_creation_options_has_creation_defaults(load_engine: None) -> None:
@@ -171,6 +171,7 @@ def test_build_creation_options_has_creation_defaults(load_engine: None) -> None
     opts = build_creation_options()
     cd = opts["creation_defaults"]
     assert cd["max_paths"] == 2
+    assert cd["max_starting_assets"] == 1
     assert cd["background_vow_default_rank"] == "extreme"
     assert "epic" in cd["vow_ranks"]
 
@@ -234,13 +235,23 @@ def test_build_creation_options_classic_no_backstory(load_engine: None) -> None:
     assert len(cl["backstory_prompts"]) == 0
 
 
-def test_build_creation_options_has_creation_flow(load_engine: None) -> None:
+def test_build_creation_options_sends_what_the_creation_form_reads(load_engine: None) -> None:
     from straightjacket.web.serializers import build_creation_options
 
     opts = build_creation_options()
     sf = next(s for s in opts["settings"] if s["id"] == "starforged")
-    assert "creation_flow" in sf
-    assert sf["creation_flow"]["has_truths"] is True
+    assert set(sf) == {
+        "id",
+        "title",
+        "description",
+        "paths",
+        "truths",
+        "name_tables",
+        "backstory_prompts",
+        "starting_assets",
+        "default_tone",
+    }
+    assert set(sf["truths"][0]["options"][0]) == {"summary", "description"}
 
 
 def test_seed_vow_subject(load_engine: None) -> None:

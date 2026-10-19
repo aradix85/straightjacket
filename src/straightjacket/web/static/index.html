@@ -253,10 +253,10 @@ function connect() {
   ws.onmessage = (e) => {
     const msg = JSON.parse(e.data);
     switch (msg.type) {
-      case "ui_strings": S = msg.strings || {}; applyStrings(); break;
+      case "ui_strings": S = msg.strings; applyStrings(); break;
       case "players_list": renderPlayerList(msg.players); break;
       case "player_selected": onPlayerSelected(msg); break;
-      case "saves_list": renderSavesList(msg.saves); break;
+      case "saves_list": renderSavesList(msg); break;
       case "narration": if (streamEl) finishStream(msg); else appendNarration(msg); break;
       case "narration_sentence": appendSentence(msg); break;
       case "replace_narration": replaceLast(msg.text); break;
@@ -313,8 +313,8 @@ function onPlayerSelected(msg) {
   if (msg.has_game) {
     showPhase("game");
     chatLog.innerHTML = "";
-    (msg.messages || []).forEach(m => {
-      if (m.role === "assistant") appendHTML("msg msg-narrator", m.content);
+    msg.messages.forEach(m => {
+      if (m.role === "assistant") appendHTML(m.epilogue ? "msg msg-epilogue" : "msg msg-narrator", m.content);
       else if (m.role === "user") appendText("msg msg-player", m.content);
     });
     scroll();
@@ -385,6 +385,11 @@ function appendSceneHeading(scene, loc) {
   const label = s("ui.scene_marker", {n: scene});
   h.textContent = loc ? `${label} — ${loc}` : label;
   if (chatLog.lastElementChild?.tagName === "H2" && chatLog.lastElementChild.textContent === h.textContent) return;
+  chatLog.appendChild(h);
+}
+function appendChapterHeading(chapter) {
+  const h = document.createElement("h2");
+  h.textContent = s("ui.chapter_marker", {n: chapter});
   chatLog.appendChild(h);
 }
 function appendRecap(text) {
@@ -466,7 +471,8 @@ inputForm.onsubmit = (e) => {
 
 // ── Saves ───────────────────────────────────────────────────
 function showSaves() { send({type: "list_saves"}); }
-function renderSavesList(saves) {
+function renderSavesList(msg) {
+  const saves = msg.saves;
   const div = document.createElement("div");
   div.className = "msg msg-system";
   const title = document.createElement("strong");
@@ -479,11 +485,11 @@ function renderSavesList(saves) {
   }
   saves.forEach(sv => {
     const loadBtn = document.createElement("button");
-    loadBtn.textContent = s("ui.load_entry", {name: sv.name, scene: sv.scene_count});
+    loadBtn.textContent = s("ui.load_entry", {name: sv.name, player: sv.player_name, chapter: sv.chapter_number, scene: sv.scene_count});
     loadBtn.onclick = () => send({type: "load", name: sv.name});
     div.appendChild(loadBtn);
     div.appendChild(document.createTextNode(" "));
-    if (sv.name !== "autosave") {
+    if (sv.name !== msg.default_save) {
       const delBtn = document.createElement("button");
       delBtn.textContent = "✕";
       delBtn.setAttribute("aria-label", s("ui.delete") + " " + sv.name);
@@ -514,7 +520,9 @@ function renderSavesList(saves) {
 
 // ── Burn offer ──────────────────────────────────────────────
 function showBurnOffer(msg) {
-  $("burn-text").textContent = s("ui.burn_text", {current: msg.current, upgrade: msg.upgrade, cost: msg.cost});
+  $("burn-text").textContent = s("ui.burn_text", {
+    current: s(`result.${msg.current}.label`), upgrade: s(`result.${msg.upgrade}.label`), cost: msg.cost
+  });
   $("burn-overlay").classList.remove("hidden");
   raf(() => $("burn-yes").focus());
 }
@@ -547,12 +555,12 @@ function onGameOver(msg) {
   const succ = msg.succession;
   $("succession-title").textContent = succ.title;
   $("succession-headline").textContent = succ.headline;
-  $("succession-predecessor-history").textContent = succ.predecessor.history;
+  $("succession-predecessor-history").textContent = succ.history;
   const list = $("succession-inheritance-list");
   list.innerHTML = "";
-  succ.inheritance.forEach(line => {
+  succ.inheritance.forEach(text => {
     const li = document.createElement("li");
-    li.textContent = line.text;
+    li.textContent = text;
     list.appendChild(li);
   });
   $("succession-overlay").classList.remove("hidden");
@@ -574,6 +582,7 @@ $("succession-restart").onclick = () => {
 function onSuccessionStarted(msg) {
   clearStatus();
   chatLog.innerHTML = "";
+  appendChapterHeading(msg.chapter);
   appendSceneHeading(1, "");
   appendHTML("msg msg-narrator", msg.narration);
   scroll();
@@ -605,6 +614,7 @@ $("retire-yes").onclick = () => {
 function onChapterStarted(msg) {
   clearStatus();
   chatLog.innerHTML = "";
+  appendChapterHeading(msg.chapter);
   appendSceneHeading(1, "");
   appendHTML("msg msg-narrator", msg.narration);
   scroll();
@@ -646,9 +656,9 @@ function showError(text) {
 // ever include user-generated content, this must be audited for XSS.
 function renderCreationForm(options, forcedSettingId) {
   const form = $("creation-form");
-  const settings = options.settings || [];
-  const sc = options.stat_constraints || {target_sum: 9, min: 0, max: 3};
-  const cd = options.creation_defaults || {max_paths: 2, background_vow_default_rank: "extreme", vow_ranks: ["troublesome","dangerous","formidable","extreme","epic"]};
+  const settings = options.settings;
+  const sc = options.stat_constraints;
+  const cd = options.creation_defaults;
   if (settings.length === 0) { form.innerHTML = `<p>${s("ui.no_settings")}</p>`; return; }
 
   // Resolve which setting to pre-select. In succession mode the campaign's
@@ -687,7 +697,9 @@ function renderCreationForm(options, forcedSettingId) {
   html += `<div class="field"><label for="c-pronouns">${s("ui.pronouns")}</label><select id="c-pronouns"><option value="">—</option><option value="he/him">he/him</option><option value="she/her">she/her</option><option value="they/them">they/them</option></select></div>`;
 
   // Paths
-  html += `<div class="field"><label>${s("ui.paths")}</label><div style="display:flex;gap:0.5rem"><select id="c-path1" style="flex:1"></select><select id="c-path2" style="flex:1"></select></div></div>`;
+  html += `<div class="field"><label>${s("ui.paths")}</label><div style="display:flex;gap:0.5rem">`;
+  for (let i = 1; i <= cd.max_paths; i++) html += `<select class="path-select" aria-label="${s("ui.paths")} ${i}" style="flex:1"></select>`;
+  html += `</div></div>`;
 
   // Truths container (populated per setting)
   html += `<div class="field" id="truths-container"></div>`;
@@ -709,8 +721,8 @@ function renderCreationForm(options, forcedSettingId) {
 
   // Stats
   html += `<div class="field"><label>${s("ui.stats_label", {target: sc.target_sum, min: sc.min, max: sc.max})}</label><div style="display:flex;gap:0.5rem;flex-wrap:wrap">`;
-  ["edge","heart","iron","shadow","wits"].forEach(st => {
-    html += `<label>${st}: <input type="number" class="stat-input" data-stat="${st}" min="${sc.min}" max="${sc.max}" value="1" style="width:3rem"></label>`;
+  sc.names.forEach(st => {
+    html += `<label>${s(`stat.${st}`)}: <input type="number" class="stat-input" data-stat="${st}" min="${sc.min}" max="${sc.max}" value="1" style="width:3rem"></label>`;
   });
   html += `</div><div id="stat-total" style="font-size:0.8rem"></div></div>`;
 
@@ -728,20 +740,19 @@ function renderCreationForm(options, forcedSettingId) {
 
   // Path updates
   function updatePaths() {
-    const st = curSetting();
-    const paths = st.paths || [];
-    ["c-path1","c-path2"].forEach(id => {
-      $(id).innerHTML = paths.map(p => `<option value="${esc(p.id)}">${esc(p.title)}</option>`).join("");
+    const paths = curSetting().paths;
+    document.querySelectorAll(".path-select").forEach((sel, i) => {
+      sel.innerHTML = paths.map(p => `<option value="${esc(p.id)}">${esc(p.title)}</option>`).join("");
+      sel.selectedIndex = Math.min(i, paths.length - 1);
     });
-    if (paths.length > 1) $("c-path2").selectedIndex = 1;
   }
 
   // Truths updates
   function updateTruths() {
     const st = curSetting();
     const container = $("truths-container");
-    const truths = st.truths || [];
-    if (!truths.length || !st.creation_flow?.has_truths) { container.innerHTML = ""; container.classList.add("hidden"); return; }
+    const truths = st.truths;
+    if (!truths.length) { container.innerHTML = ""; container.classList.add("hidden"); return; }
     container.classList.remove("hidden");
     let h = `<label>${s("ui.truths")}</label>`;
     truths.forEach(t => {
@@ -755,27 +766,27 @@ function renderCreationForm(options, forcedSettingId) {
 
   // Starting assets
   function updateAssets() {
-    const st = curSetting();
     const container = $("asset-container");
-    const assets = st.starting_assets || [];
+    const assets = curSetting().starting_assets;
     if (!assets.length) { container.innerHTML = ""; container.classList.add("hidden"); return; }
     container.classList.remove("hidden");
-    let h = `<label for="c-asset">${s("ui.starting_assets")}</label><select id="c-asset" style="width:100%">`;
-    h += `<option value="">— none —</option>`;
+    let assetOptions = `<option value="">${s("ui.no_asset")}</option>`;
     let lastCat = "";
     assets.forEach(a => {
-      if (a.category !== lastCat) { if (lastCat) h += `</optgroup>`; h += `<optgroup label="${esc(a.category)}">`; lastCat = a.category; }
-      h += `<option value="${esc(a.id)}">${esc(a.title)}</option>`;
+      if (a.category !== lastCat) { if (lastCat) assetOptions += `</optgroup>`; assetOptions += `<optgroup label="${esc(a.category)}">`; lastCat = a.category; }
+      assetOptions += `<option value="${esc(a.id)}">${esc(a.title)}</option>`;
     });
-    if (lastCat) h += `</optgroup>`;
-    h += `</select>`;
+    if (lastCat) assetOptions += `</optgroup>`;
+    let h = `<label>${s("ui.starting_assets")}</label>`;
+    for (let i = 1; i <= cd.max_starting_assets; i++) {
+      h += `<select class="asset-select" aria-label="${s("ui.starting_assets")} ${i}" style="width:100%">${assetOptions}</select>`;
+    }
     container.innerHTML = h;
   }
 
   // Name roll
   function rollName() {
-    const st = curSetting();
-    const tables = st.name_tables || {};
+    const tables = curSetting().name_tables;
     const keys = Object.keys(tables);
     if (!keys.length) return;
     const parts = [];
@@ -788,8 +799,7 @@ function renderCreationForm(options, forcedSettingId) {
 
   // Backstory roll
   function rollBackstory() {
-    const st = curSetting();
-    const prompts = st.backstory_prompts || [];
+    const prompts = curSetting().backstory_prompts;
     if (prompts.length) $("c-backstory").value = prompts[Math.floor(Math.random() * prompts.length)];
   }
 
@@ -831,21 +841,18 @@ function renderCreationForm(options, forcedSettingId) {
     document.querySelectorAll(".truth-select").forEach(sel => {
       const tid = sel.dataset.truthId;
       const st = curSetting();
-      const truthDef = (st.truths || []).find(t => t.id === tid);
+      const truthDef = st.truths.find(t => t.id === tid);
       if (truthDef && truthDef.options[sel.value]) truths[tid] = truthDef.options[sel.value].summary;
     });
 
-    // Gather asset
-    const assets = [];
-    const assetSel = $("c-asset");
-    if (assetSel && assetSel.value) assets.push(assetSel.value);
+    const assets = [...document.querySelectorAll(".asset-select")].map(sel => sel.value).filter(v => v);
 
     const creationData = {
       setting_id: document.querySelector('input[name="setting"]:checked')?.value,
       tone: $("c-tone").value,
       player_name: $("c-name").value.trim() || currentPlayer,
       pronouns: $("c-pronouns").value,
-      paths: [$("c-path1").value, $("c-path2").value],
+      paths: [...document.querySelectorAll(".path-select")].map(sel => sel.value),
       backstory: $("c-backstory").value.trim(),
       background_vow: $("c-vow").value.trim(),
       background_vow_rank: $("c-vow-rank").value,

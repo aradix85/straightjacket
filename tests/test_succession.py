@@ -450,12 +450,13 @@ def test_succession_summary_renders_narrative_text(aria: GameState) -> None:
     summary = build_succession_summary(aria)
     assert summary["title"]
     assert "Aria" in summary["headline"]
-    assert summary["predecessor"]["name"] == "Aria"
-    assert "Aria" in summary["predecessor"]["history"]
-    inh = {line["track"]: line["text"] for line in summary["inheritance"]}
-    assert "live on in full" in inh["quests"]
-    assert "carry forward in part" in inh["bonds"]
-    assert "fade" in inh["discoveries"]
+    assert "Aria" in summary["history"]
+    quests, bonds, discoveries = summary["inheritance"]
+    assert "live on in full" in quests
+    assert "quests" in quests
+    assert "carry forward in part" in bonds
+    assert "fade" in discoveries
+    assert set(summary) == {"title", "headline", "history", "inheritance"}
 
 
 class _SuccessionMockProvider:

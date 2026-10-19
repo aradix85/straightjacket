@@ -187,7 +187,6 @@ def build_creation_options() -> dict[str, Any]:
                         {
                             "summary": str(summary_text)[: _trunc.prompt_medium],
                             "description": str(opt["description"])[: _trunc.prompt_medium],
-                            "quest_starter": str(opt["quest_starter"])[: _trunc.prompt_short],
                         }
                     )
 
@@ -230,13 +229,6 @@ def build_creation_options() -> dict[str, Any]:
                 "name_tables": name_tables,
                 "backstory_prompts": backstory_prompts,
                 "starting_assets": starting_assets,
-                "creation_flow": {
-                    "has_truths": flow.has_truths,
-                    "has_backstory_oracle": flow.has_backstory_oracle,
-                    "has_name_tables": flow.has_name_tables,
-                    "has_ship_creation": flow.has_ship_creation,
-                    "starting_asset_categories": flow.starting_asset_categories,
-                },
                 "default_tone": pkg.default_tone,
             }
         )
@@ -244,10 +236,10 @@ def build_creation_options() -> dict[str, Any]:
     return {
         "settings": settings,
         "stat_constraints": {
+            "names": _e.stats.character_names,
             "target_sum": _e.stats.target_sum,
             "min": _e.stats.min,
             "max": _e.stats.max,
-            "valid_arrays": [list(a) for a in _e.stats.valid_arrays],
         },
         "creation_defaults": {
             "max_paths": _e.creation.max_paths,
@@ -265,7 +257,7 @@ def build_succession_summary(game: GameState) -> dict[str, Any]:
     title_key = f"succession.title_{end_reason}"
     headline_key = f"succession.headline_{end_reason}"
 
-    track_lines: list[dict[str, Any]] = []
+    inheritance: list[str] = []
     for roll in record.inheritance_rolls:
         if roll.result == "STRONG_HIT":
             text_key = "succession.legacy_full"
@@ -273,29 +265,18 @@ def build_succession_summary(game: GameState) -> dict[str, Any]:
             text_key = "succession.legacy_partial"
         else:
             text_key = "succession.legacy_lost"
-        track_label = t(f"succession.legacy_track_{roll.track_name}")
-        track_lines.append(
-            {
-                "track": roll.track_name,
-                "text": t(text_key, track=track_label),
-            }
-        )
+        inheritance.append(t(text_key, track=t(f"succession.legacy_track_{roll.track_name}")))
 
     return {
         "title": t(title_key),
         "headline": t(headline_key, predecessor=record.player_name),
-        "predecessor": {
-            "name": record.player_name,
-            "concept": record.character_concept,
-            "history": t(
-                "succession.predecessor_history",
-                name=record.player_name,
-                chapters=record.chapters_played,
-                scenes=record.scenes_played,
-            ),
-            "end_reason": end_reason,
-        },
-        "inheritance": track_lines,
+        "history": t(
+            "succession.predecessor_history",
+            name=record.player_name,
+            chapters=record.chapters_played,
+            scenes=record.scenes_played,
+        ),
+        "inheritance": inheritance,
     }
 
 

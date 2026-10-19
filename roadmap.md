@@ -76,7 +76,7 @@ Closing a step: the checks of CONTRIBUTING.md pass, the step moves to DONE cut t
 
 ## NEXT STEP — 9h: Principle audits
 
-The audits of AUDIT.md, one session per principle or submodule as it prescribes. Principles 2, 3, and 4 are done; principle 1 runs in 9n on the layout it makes, and the two long clean-ups of principle 2 wait in 9o. Principle 5 runs one submodule per session in AUDIT.md's order: `mechanics/`, `npc/`, `game/`, `ai/`, `datasworn/`, `tools/`, `correction/`, and the files directly under `engine/` done, `web/` next, judging a field without a reader as Decisions, Bound to the rules, says. Every finding is fixed in its session or becomes a substep here. Open, waiting for the audit to classify or for the user:
+The audits of AUDIT.md, one session per principle or submodule as it prescribes. Principles 2, 3, and 4 are done; principle 1 runs in 9n on the layout it makes, and the two long clean-ups of principle 2 wait in 9o. Principle 5 runs one submodule per session in AUDIT.md's order: `mechanics/`, `npc/`, `game/`, `ai/`, `datasworn/`, `tools/`, `correction/`, the files directly under `engine/`, and `web/` done, the top level (`i18n.py`) next, judging a field without a reader as Decisions, Bound to the rules, says. Every finding is fixed in its session or becomes a substep here. Open, waiting for the audit to classify or for the user:
 
 **9h.5** The `.get()` scan flags only constant, non-neutral defaults, so `.get("key", variable)` passes unexamined, for example in `web/serializers.py` (pass 4b).
 
@@ -97,6 +97,10 @@ The audits of AUDIT.md, one session per principle or submodule as it prescribes.
 **9h.28** A correction of the state narrates the turn again without the turn's random events, threat events, and filled clocks, since `TurnSnapshot` keeps none of them (`correction/orchestrator.py` → `_rewrite_prompt`); keeping them breaks the save format.
 
 **9h.29** The Brain chooses a move from its name, its ways to roll in the book's words, and hand-written hints for six moves (`ai_text.brain_trigger_hints` in `engine/ai_text.yaml`), while Datasworn gives every move its trigger and full text (`datasworn/moves.py` → `Move.text`, read by nothing yet). Whether the Brain reads the book's trigger instead of the hints, measured on its move choice before and after, since its prompt grows with every move on offer.
+
+**9h.30** Three strings files have no reader and wait for the user's consent to go: `strings/consequence.yaml`, `strings/effect.yaml`, and `strings/position.yaml`, labels for meters, effect, and position that the player never sees, as ARCHITECTURE.md (Interface and accessibility) has it.
+
+**9h.31** For principle 2: the creation form in `web/static/index.html` writes its pronoun options in English instead of taking them from `strings/`.
 
 ### Definition of Done
 

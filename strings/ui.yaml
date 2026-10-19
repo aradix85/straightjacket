@@ -17,6 +17,7 @@ ui.vow_subject: Who or what is this vow about? (for the world to remember)
 ui.truths: World truths
 ui.truth_pick: 'Choose a truth for: {name}'
 ui.starting_assets: Starting asset
+ui.no_asset: '— none —'
 ui.name_roll: Roll a name
 ui.content_boundaries: Content boundaries
 ui.wishes: Wishes
@@ -33,7 +34,7 @@ ui.saves: Saves
 ui.no_saves: No saves found.
 ui.save_as: Save as
 ui.save: Save
-ui.load_entry: 'Load: {name} (scene {scene})'
+ui.load_entry: 'Load: {name} ({player}, chapter {chapter}, scene {scene})'
 ui.delete: Delete
 ui.delete_confirm: Delete?
 ui.burn_title: Burn Momentum?
@@ -57,5 +58,6 @@ ui.session_taken: Session taken over in another window.
 ui.reconnecting: Connection lost, reconnecting... ({retries}/{max})
 ui.connection_lost: Connection lost.
 ui.scene_marker: Scene {n}
+ui.chapter_marker: Chapter {n}
 ui.game_log: Game log
 ui.player_input: Player input

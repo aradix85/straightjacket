@@ -43,7 +43,7 @@ def _valid_ranks() -> set[str]:
 
 def validate_stats(stats: dict[str, int]) -> None:
     _e = eng()
-    stat_names = [n for n in _e.stats.names if n != "none"]
+    stat_names = _e.stats.character_names
     for name in stat_names:
         if name not in stats:
             raise ValueError(f"Missing stat: {name}")
@@ -185,8 +185,7 @@ def start_new_game(provider: AIProvider, creation_data: dict[str, Any]) -> tuple
     concept = ", ".join(path_names)
 
     _e = eng()
-    stat_names = [n for n in _e.stats.names if n != "none"]
-    stat_dict = {n: stats[n] for n in stat_names}
+    stat_dict = {n: stats[n] for n in _e.stats.character_names}
 
     assets = list(creation_data["assets"])
     truths = dict(creation_data["truths"])

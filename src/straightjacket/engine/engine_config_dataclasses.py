@@ -66,6 +66,10 @@ class StatsConfig:
     valid_arrays: list[list[int]]
     prompt_abbreviations: dict[str, str]
 
+    @property
+    def character_names(self) -> list[str]:
+        return [n for n in self.names if n != "none"]
+
 
 @dataclass
 class CreationConfig:

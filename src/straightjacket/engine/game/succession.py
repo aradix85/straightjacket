@@ -169,8 +169,7 @@ def _replace_character_identity(game: GameState, creation_data: dict[str, Any]) 
     concept = ", ".join(path_names)
 
     _e = eng()
-    stat_names = [n for n in _e.stats.names if n != "none"]
-    stat_dict = {n: stats[n] for n in stat_names}
+    stat_dict = {n: stats[n] for n in _e.stats.character_names}
 
     game.player_name = player_name
     game.character_concept = concept

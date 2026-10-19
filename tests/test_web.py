@@ -6,6 +6,7 @@ import pytest
 from starlette.websockets import WebSocket, WebSocketDisconnect
 
 from straightjacket.engine import engine_loader
+from straightjacket.engine.engine_loader import eng
 from straightjacket.engine.game import BurnOffer
 from straightjacket.engine.mechanics.scene import SceneSetup
 from straightjacket.engine.models import (
@@ -14,6 +15,7 @@ from straightjacket.engine.models import (
     TurnSnapshot,
 )
 from tests._helpers import make_brain_result, make_clock, make_game_state, make_npc
+from straightjacket.i18n import t
 from straightjacket.web.session import Session
 from straightjacket.web.serializers import (
     build_creation_options,
@@ -293,6 +295,7 @@ class TestWebSocket:
             msg = ws.receive_json()
             assert msg["type"] == "saves_list"
             assert msg["saves"] == []
+            assert msg["default_save"] == eng().persistence.default_save_name
 
             ws.send_json({"type": "delete_player", "name": "ws_flow"})
             msg = ws.receive_json()
@@ -436,8 +439,7 @@ class TestSuccessionWebSocket:
             msg = ws.receive_json()
             assert msg["type"] == "game_over"
             succ = msg["succession"]
-            assert succ["predecessor"]["name"] == "Aria"
-            assert succ["predecessor"]["end_reason"] == "retire"
+            assert succ["title"] == t("succession.title_retire")
             assert "Aria" in succ["headline"]
             assert len(succ["inheritance"]) == 3
 

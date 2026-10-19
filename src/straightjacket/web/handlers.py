@@ -359,7 +359,7 @@ async def handle_list_saves(session: Session, ws: WebSocket, _msg: dict[str, Any
     if not session.player:
         return
     saves = list_saves_with_info(session.player)
-    await _send(ws, {"type": "saves_list", "saves": saves})
+    await _send(ws, {"type": "saves_list", "saves": saves, "default_save": eng().persistence.default_save_name})
 
 
 async def handle_save(session: Session, ws: WebSocket, msg: dict[str, Any]) -> None:
