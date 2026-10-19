@@ -8,6 +8,12 @@ This log starts at 2026.09.24.0, the restart after a four-month pause. Earlier r
 
 Calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day.
 
+## [2026.10.20.15] — 2026-10-20
+
+The roadmap's DONE line for 9o is cut to what a later session needs, and the note on the render checks outside the repository to how they are used.
+
+Quality gate: 1850 tests, coverage 94.92%, no code changed. Save format unchanged.
+
 ## [2026.10.20.14] — 2026-10-20
 
 Step 9o, 9o.3, and with it step 9o closes; 9p, the test audit, is NEXT STEP. Two places let text from the player's words reach a prompt unescaped, where SECURITY.md says it is escaped, and both now escape it: an NPC's remembered events in the target NPC's block (`prompt_shared.py` → `_format_memories`), whose words the extraction takes from the narration, and the source and condition of a roll bonus in the Brain's `<bonuses>` block (`ruleset/bonuses.py` → `bonus_block`), whose source is a connection's name. A test for each fails without its fix (`tests/test_prompt_xml.py`), and SECURITY.md names both places. The pattern that strips a host's `<think>` reasoning from an answer is read from `engine/parser.yaml` (`think_open`, `think_block`) instead of being written in `ai/provider_base.py`. The render checks of 9o.2 ran again: 642 of their 3621 renders changed, every one only where its text holds `<`, `>`, or `&`, and none in any other way. A prompt changes only for such text, so play does not change otherwise.
