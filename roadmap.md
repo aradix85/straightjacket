@@ -78,8 +78,6 @@ Closing a step: the checks of CONTRIBUTING.md pass, the step moves to DONE cut t
 
 The audits of AUDIT.md, one session per principle or submodule as it prescribes. Principles 2, 3, 4, and 5 are done; principle 1 runs in 9n on the layout it makes, and the two long clean-ups of principle 2 wait in 9o. Every finding is fixed in its session or becomes a substep here. Open, waiting for the audit to classify or for the user:
 
-**9h.5** The `.get()` scan flags only constant, non-neutral defaults, so `.get("key", variable)` passes unexamined, for example in `web/serializers.py` (pass 4b).
-
 **9h.13** For principle 1: `game/succession.py` → `_replace_character_identity` repeats the identity setup of `game/game_start.py` → `start_new_game`.
 
 **9h.14** For principle 1: three keyed-scene id helpers share one body (`mechanics/adventure_crafter.py` → `_next_keyed_scene_id`, `mechanics/random_events.py` → `_re_next_keyed_scene_id`, `mechanics/keyed_scenes.py` → `_next_clock_keyed_scene_id`); `consolidate_threads` repeats `consolidate_characters`; `game/setup_common.py` counts NPC numbers beside `npc/matching.py` → `next_npc_id`; and `npc/processing.py` → `_apply_surname_update` repeats the alias handling of `npc/lifecycle.py` → `merge_npc_identity`. Clock code lives in six places under `mechanics/` (`consequences.py`, `clock_consequences.py`, `clocks.py`, `complications.py`, the spawners in `random_events.py` and `adventure_crafter.py`, and `keyed_scenes.py`) and gathers in `clocks.py`; the same pattern is looked for in threats, tracks, and NPC naming.
