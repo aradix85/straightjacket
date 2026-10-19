@@ -303,7 +303,7 @@ def test_next_move_bonus_effect_is_banked_and_spent_on_the_next_action_roll(
 
     game = make_game_state(setting_id="classic")
     game.last_turn_snapshot = game.snapshot()
-    apply_effects(game, [MoveEffect(type="next_move_bonus", value=1)])
+    apply_effects(game, [MoveEffect(type="next_move_bonus", value=1, target="")])
     assert game.resources.next_move_bonus == 1
     game.resources.meters["momentum"] = 2
     _fixed_dice(monkeypatch, 3, 9, 9)

@@ -8,6 +8,12 @@ This log starts at 2026.09.24.0, the restart after a four-month pause. Earlier r
 
 Calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day.
 
+## [2026.10.20.3] — 2026-10-20
+
+Step 9o, 9o.1, eighth module: `ruleset/move_effects.py` loses the three defaults of `MoveEffect`, the parsed form of an effect in `ruleset/move_outcomes.yaml`. Each branch of `parse_effect` names the value and the target its effect has, zero or empty where it has none, and so does the story complication a miss with a match swaps in for Pay the Price (`ruleset/move_outcome.py`). 22 defaults remain, 20 of them external structures. Play does not change.
+
+Quality gate: 1848 tests, coverage 94.94%. Save format unchanged, since an effect is not saved. No Elvira session (Sessions with the user); none would have been needed, since play does not change.
+
 ## [2026.10.20.2] — 2026-10-20
 
 Step 9o, 9o.1, seventh module: `gamemaster/npc/matching.py` loses the three defaults of the best match its fuzzy name matching keeps. The search starts with no NPC, no score, and no kind of match, and every way of matching now names its own kind: a match by shared words, which took the starting `identity`, sets it itself, so a match never reports a kind left over from the start, and the kind is none exactly when there is no match. Two tests pin a match by a shared word as the same figure and no match as having no kind. 25 defaults remain, 20 of them external structures. Play does not change.

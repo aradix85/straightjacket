@@ -27,9 +27,9 @@ from .suffer import suffer
 
 @dataclass
 class MoveEffect:
-    type: str = ""
-    value: int = 0
-    target: str = ""
+    type: str
+    value: int
+    target: str
 
 
 _EFFECT_RE = re.compile(r"^(\w+)\s+([+-]?\d+)$")
@@ -48,42 +48,42 @@ def parse_effect(effect_str: str) -> MoveEffect:
 
     m = _EFFECT_RE.match(effect_str)
     if m:
-        return MoveEffect(type=m.group(1), value=int(m.group(2)))
+        return MoveEffect(type=m.group(1), value=int(m.group(2)), target="")
 
     m = _POSITION_RE.match(effect_str)
     if m:
-        return MoveEffect(type="position", target=m.group(1))
+        return MoveEffect(type="position", value=0, target=m.group(1))
 
     m = _CHAIN_MOVE_RE.match(effect_str)
     if m:
-        return MoveEffect(type="chain_move", target=m.group(1))
+        return MoveEffect(type="chain_move", value=0, target=m.group(1))
 
     m = _LEGACY_LOWER_RE.match(effect_str)
     if m:
-        return MoveEffect(type="legacy_reward_lower", target=m.group(1))
+        return MoveEffect(type="legacy_reward_lower", value=0, target=m.group(1))
 
     m = _LEGACY_TICKS_RE.match(effect_str)
     if m:
-        return MoveEffect(type="legacy_ticks", target=m.group(1), value=int(m.group(2)))
+        return MoveEffect(type="legacy_ticks", value=int(m.group(2)), target=m.group(1))
 
     m = _LEGACY_RE.match(effect_str)
     if m:
-        return MoveEffect(type="legacy_reward", target=m.group(1))
+        return MoveEffect(type="legacy_reward", value=0, target=m.group(1))
 
     m = _FILL_CLOCK_RE.match(effect_str)
     if m:
-        return MoveEffect(type="fill_clock", value=int(m.group(1)))
+        return MoveEffect(type="fill_clock", value=int(m.group(1)), target="")
 
     m = _COMPLICATION_RE.match(effect_str)
     if m:
-        return MoveEffect(type="complication", target=m.group(1))
+        return MoveEffect(type="complication", value=0, target=m.group(1))
 
     m = _TABLE_RE.match(effect_str)
     if m:
-        return MoveEffect(type="table", target=m.group(1))
+        return MoveEffect(type="table", value=0, target=m.group(1))
 
     if effect_str in ("pay_the_price", "disposition_shift", "raise_connection_rank", "bond_request"):
-        return MoveEffect(type=effect_str)
+        return MoveEffect(type=effect_str, value=0, target="")
 
     raise ValueError(f"Unknown move effect {effect_str!r}")
 
