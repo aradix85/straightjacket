@@ -12,7 +12,7 @@ from ..setting.oracle_rolls import plain_text, roll_table
 from ..setting.packages import load_package
 from .config import rules
 from .outcome_result import OutcomeResult
-from .progress import advance_menace, menace_boxes, menace_total_boxes, new_threat
+from .progress import advance_menace, menace_boxes, menace_total_boxes
 from .tracks import forsake_vow
 
 
@@ -80,12 +80,13 @@ def add_threat(game: GameState, origin: str, source: str, named: tuple[str, str]
         (name, description), category = named, entry.category
     threat_id = next_id(f"threat_{source.split(':', 1)[0]}_", (t.id for t in game.threats))
     game.threats.append(
-        new_threat(
+        ThreatData(
             id=threat_id,
             name=name,
             category=category,
             linked_vow_id=None,
             rank=entry.rank,
+            max_menace_ticks=rules().progress.max_ticks,
             description=description,
             creation_source=source,
         )

@@ -8,6 +8,12 @@ This log starts at 2026.09.24.0, the restart after a four-month pause. Earlier r
 
 Calendar versioning: `YYYY.MM.DD.N`, where `N` is a zero-based counter for releases on the same day.
 
+## [2026.10.19.39] — 2026-10-19
+
+Step 9n, 9n.4: threats, tracks, and NPC naming looked at for one concern spread over several files. Tracks and NPC naming are layers of their concern (a track's arithmetic, its lifecycle, a connection's bond, the legacy tracks; an NPC's oracle name, matching, rename, and the extraction's updates), each in its own module. Threats had two loose ends: `ruleset/progress.py` built a threat for its only caller in `ruleset/threats.py`, which now builds it itself, and wrote a menace track's arithmetic out again beside a progress track's, which the two now share. Found and recorded for step 9j.6, and in `docs/mechanics.md`: no threat links to a vow in play, only in tests, since threats start only from a random event or a plot point, so a miss never advances a vow's threat, a full menace track never forsakes a vow, and a fulfilled vow never resolves its threat; how Delve ties a threat to a vow is read before that is wired. Play does not change.
+
+Quality gate: 1827 tests, coverage 94.86%. Save format unchanged. No Elvira session, the user's choice: the change moves code without changing play.
+
 ## [2026.10.19.38] — 2026-10-19
 
 Step 9n, 9n.4: the clock code lives in one module. It lived in seven places: naming and counting in `gamemaster/clocks.py`, ticking in `gamemaster/clock_ticks.py`, a fill's consequence in `gamemaster/clock_consequences.py`, complication clocks in `gamemaster/complications.py`, a clock's keyed scenes in `gamemaster/keyed_scenes.py`, and the two spawners in `gamemaster/random_events.py` and `crafters/adventure_crafter.py`, which each checked for a clock from the same source, checked the chapter's cap, named it, built it, and gave it its keyed scenes. Now `gamemaster/clocks.py` holds all of it, and the three files that held only clock code are gone. The spawners call `spawn_emergent_clock` with the name, type, and source they own; the three ticks (a miss, an NPC's agency, the autonomous tick at scene end) share one step that fills a clock and fires it (`_advance_clock`), where each wrote it out. Play does not change.

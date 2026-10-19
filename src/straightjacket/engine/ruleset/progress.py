@@ -14,13 +14,21 @@ def new_track(*, id: str, name: str, track_type: str, rank: str) -> ProgressTrac
     )
 
 
-def ticks_per_mark(track: ProgressTrack) -> int:
-    ticks: int = rules().progress.ticks_per_mark[track.rank]
+def _ticks_per_mark(rank: str) -> int:
+    ticks: int = rules().progress.ticks_per_mark[rank]
     return ticks
 
 
+def _boxes(ticks: int) -> int:
+    return ticks // rules().progress.ticks_per_box
+
+
+def ticks_per_mark(track: ProgressTrack) -> int:
+    return _ticks_per_mark(track.rank)
+
+
 def filled_boxes(track: ProgressTrack) -> int:
-    return track.ticks // rules().progress.ticks_per_box
+    return _boxes(track.ticks)
 
 
 def ticks_for_filled_boxes(track: ProgressTrack, boxes: int) -> int:
@@ -33,39 +41,16 @@ def mark_progress(track: ProgressTrack) -> int:
     return track.ticks - old
 
 
-def new_threat(
-    *,
-    id: str,
-    name: str,
-    category: str,
-    linked_vow_id: str | None,
-    rank: str,
-    description: str,
-    creation_source: str,
-) -> ThreatData:
-    return ThreatData(
-        id=id,
-        name=name,
-        category=category,
-        linked_vow_id=linked_vow_id,
-        rank=rank,
-        max_menace_ticks=rules().progress.max_ticks,
-        description=description,
-        creation_source=creation_source,
-    )
-
-
 def menace_per_mark(threat: ThreatData) -> int:
-    ticks: int = rules().progress.ticks_per_mark[threat.rank]
-    return ticks
+    return _ticks_per_mark(threat.rank)
 
 
 def menace_boxes(threat: ThreatData) -> int:
-    return threat.menace_ticks // rules().progress.ticks_per_box
+    return _boxes(threat.menace_ticks)
 
 
 def menace_total_boxes(threat: ThreatData) -> int:
-    return threat.max_menace_ticks // rules().progress.ticks_per_box
+    return _boxes(threat.max_menace_ticks)
 
 
 def advance_menace(threat: ThreatData, marks: int) -> int:
